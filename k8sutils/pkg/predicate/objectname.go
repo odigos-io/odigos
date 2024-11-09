@@ -65,7 +65,7 @@ var OdigosConfigMapPredicate = ObjectNamePredicate{
 //		For(&odigosv1.CollectorsGroup{}).
 //		WithEventFilter(&odigospredicates.OdigosCollectorsGroupCluster).
 //		Complete(r)
-var OdigosCollectorsGroupNode = ObjectNamePredicate{
+var OdigosCollectorsGroupNodePredicate = ObjectNamePredicate{
 	AllowedObjectName: odigosk8sconsts.OdigosNodeCollectorCollectorGroupName,
 }
 
@@ -77,8 +77,8 @@ var OdigosCollectorsGroupNode = ObjectNamePredicate{
 //
 //	err = ctrl.NewControllerManagedBy(mgr).
 //		For(&odigosv1.CollectorsGroup{}).
-//		WithEventFilter(&odigospredicates.OdigosCollectorsGroupCluster).
+//		WithEventFilter(&odigospredicates.OdigosCollectorsGroupClusterPredicate).
 //		Complete(r)
-var OdigosCollectorsGroupCluster = ObjectNamePredicate{
+var OdigosCollectorsGroupClusterPredicate = ObjectNamePredicate{
 	AllowedObjectName: odigosk8sconsts.OdigosClusterCollectorCollectorGroupName,
 }

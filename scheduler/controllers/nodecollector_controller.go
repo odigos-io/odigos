@@ -96,7 +96,7 @@ func (r *NodeCollectorsGroupReconciler) SetupWithManager(mgr ctrl.Manager) error
 	err = ctrl.NewControllerManagedBy(mgr).
 		For(&odigosv1.CollectorsGroup{}).
 		Named("nodecollectorgroup-collectorsgroup").
-		WithEventFilter(predicate.And(&odigospredicates.OdigosCollectorsGroupCluster, &odigospredicates.CgBecomesReadyPredicate{})).
+		WithEventFilter(predicate.And(&odigospredicates.OdigosCollectorsGroupClusterPredicate, &odigospredicates.CgBecomesReadyPredicate{})).
 		Complete(r)
 	if err != nil {
 		return err
