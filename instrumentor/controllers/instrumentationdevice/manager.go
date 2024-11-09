@@ -86,7 +86,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("instrumentationdevice-collectorsgroup").
 		For(&odigosv1.CollectorsGroup{}).
-		WithEventFilter(&collectorsGroupReadyPredicate{}).
+		WithEventFilter(predicate.And(&odigospredicate.OdigosCollectorsGroupNodePredicate, &odigospredicate.CgBecomesReadyPredicate{})).
 		Complete(&CollectorsGroupReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),

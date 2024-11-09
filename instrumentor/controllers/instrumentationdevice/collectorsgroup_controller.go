@@ -22,15 +22,11 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 // CollectorsGroupReconciler is responsible for reconciling the instrumented workloads
@@ -40,60 +36,6 @@ import (
 type CollectorsGroupReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
-}
-
-type collectorsGroupReadyPredicate struct {
-	predicate.Funcs
-}
-
-func (w collectorsGroupReadyPredicate) Create(e event.CreateEvent) bool {
-	if e.Object == nil {
-		return false
-	}
-
-	if e.Object.GetName() != consts.OdigosNodeCollectorCollectorGroupName {
-		return false
-	}
-
-	cg, ok := e.Object.(*odigosv1.CollectorsGroup)
-	if !ok {
-		return false
-	}
-
-	return cg.Status.Ready
-}
-
-func (w collectorsGroupReadyPredicate) Update(e event.UpdateEvent) bool {
-	if e.ObjectOld == nil || e.ObjectNew == nil {
-		return false
-	}
-
-	if e.ObjectNew.GetName() != consts.OdigosNodeCollectorCollectorGroupName {
-		return false
-	}
-
-	oldCG, ok := e.ObjectOld.(*odigosv1.CollectorsGroup)
-	if !ok {
-		return false
-	}
-
-	newCG, ok := e.ObjectNew.(*odigosv1.CollectorsGroup)
-	if !ok {
-		return false
-	}
-
-	wasReady := oldCG.Status.Ready
-	isReady := newCG.Status.Ready
-
-	return !wasReady && isReady
-}
-
-func (w collectorsGroupReadyPredicate) Delete(e event.DeleteEvent) bool {
-	return false
-}
-
-func (w collectorsGroupReadyPredicate) Generic(e event.GenericEvent) bool {
-	return false
 }
 
 func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
