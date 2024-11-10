@@ -1,14 +1,11 @@
 'use client';
 import React from 'react';
-import { OVERVIEW } from '@/utils';
-import { OverviewHeader } from '@/components';
-import { DataFlowContainer } from '@/containers';
+import { OverviewDataFlowContainer } from '@/containers';
 
-export default function OverviewPage() {
+export default function MainPage() {
   return (
     <>
-      <OverviewHeader title={OVERVIEW.MENU.OVERVIEW} />
-      <DataFlowContainer />
+      <OverviewDataFlowContainer />
     </>
   );
 }

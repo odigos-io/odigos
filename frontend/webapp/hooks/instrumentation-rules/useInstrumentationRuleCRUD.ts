@@ -1,5 +1,5 @@
 import { useDrawerStore } from '@/store';
-import { useNotify } from '../useNotify';
+import { useNotify } from '../notification/useNotify';
 import { useMutation } from '@apollo/client';
 import { useComputePlatform } from '../compute-platform';
 import { ACTION, deriveTypeFromRule, getSseTargetFromId, NOTIFICATION } from '@/utils';
@@ -38,7 +38,9 @@ export const useInstrumentationRuleCRUD = (params?: Params) => {
     params?.onSuccess?.();
   };
 
-  const [createInstrumentationRule, cState] = useMutation<{ createInstrumentationRule: { ruleId: string } }>(CREATE_INSTRUMENTATION_RULE, {
+  const [createInstrumentationRule, cState] = useMutation<{
+    createInstrumentationRule: { ruleId: string };
+  }>(CREATE_INSTRUMENTATION_RULE, {
     onError: (error) => handleError(ACTION.CREATE, error.message),
     onCompleted: (res, req) => {
       const id = res.createInstrumentationRule.ruleId;
@@ -46,7 +48,9 @@ export const useInstrumentationRuleCRUD = (params?: Params) => {
       handleComplete(ACTION.CREATE, `instrumentation rule "${name}" was created`, id);
     },
   });
-  const [updateInstrumentationRule, uState] = useMutation<{ updateInstrumentationRule: { ruleId: string } }>(UPDATE_INSTRUMENTATION_RULE, {
+  const [updateInstrumentationRule, uState] = useMutation<{
+    updateInstrumentationRule: { ruleId: string };
+  }>(UPDATE_INSTRUMENTATION_RULE, {
     onError: (error) => handleError(ACTION.UPDATE, error.message),
     onCompleted: (res, req) => {
       const id = res.updateInstrumentationRule.ruleId;
@@ -54,7 +58,9 @@ export const useInstrumentationRuleCRUD = (params?: Params) => {
       handleComplete(ACTION.UPDATE, `instrumentation rule "${name}" was updated`, id);
     },
   });
-  const [deleteInstrumentationRule, dState] = useMutation<{ deleteInstrumentationRule: boolean }>(DELETE_INSTRUMENTATION_RULE, {
+  const [deleteInstrumentationRule, dState] = useMutation<{
+    deleteInstrumentationRule: boolean;
+  }>(DELETE_INSTRUMENTATION_RULE, {
     onError: (error) => handleError(ACTION.DELETE, error.message),
     onCompleted: (res, req) => {
       const id = req?.variables?.ruleId;

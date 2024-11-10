@@ -1,5 +1,5 @@
 import { useDrawerStore } from '@/store';
-import { useNotify } from '../useNotify';
+import { useNotify } from '../notification/useNotify';
 import { useMutation } from '@apollo/client';
 import { useComputePlatform } from '../compute-platform';
 import { ACTION, getSseTargetFromId, NOTIFICATION } from '@/utils';
@@ -38,7 +38,9 @@ export const useDestinationCRUD = (params?: Params) => {
     params?.onSuccess?.();
   };
 
-  const [createDestination, cState] = useMutation<{ createNewDestination: { id: string } }>(CREATE_DESTINATION, {
+  const [createDestination, cState] = useMutation<{
+    createNewDestination: { id: string };
+  }>(CREATE_DESTINATION, {
     onError: (error) => handleError(ACTION.CREATE, error.message),
     onCompleted: (res, req) => {
       const id = res.createNewDestination.id;
@@ -46,7 +48,9 @@ export const useDestinationCRUD = (params?: Params) => {
       handleComplete(ACTION.CREATE, `destination "${name}" was created`, id);
     },
   });
-  const [updateDestination, uState] = useMutation<{ updateDestination: { id: string } }>(UPDATE_DESTINATION, {
+  const [updateDestination, uState] = useMutation<{
+    updateDestination: { id: string };
+  }>(UPDATE_DESTINATION, {
     onError: (error) => handleError(ACTION.UPDATE, error.message),
     onCompleted: (res, req) => {
       const id = res.updateDestination.id;
@@ -54,7 +58,9 @@ export const useDestinationCRUD = (params?: Params) => {
       handleComplete(ACTION.UPDATE, `destination "${name}" was updated`, id);
     },
   });
-  const [deleteDestination, dState] = useMutation<{ deleteDestination: boolean }>(DELETE_DESTINATION, {
+  const [deleteDestination, dState] = useMutation<{
+    deleteDestination: boolean;
+  }>(DELETE_DESTINATION, {
     onError: (error) => handleError(ACTION.DELETE, error.message),
     onCompleted: (res, req) => {
       const id = req?.variables?.id;
