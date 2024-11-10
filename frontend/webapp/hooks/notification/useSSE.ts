@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { API, NOTIFICATION } from '@/utils';
-import { useNotify } from './notification/useNotify';
+import { useNotify } from './useNotify';
 
 export function useSSE() {
   const notify = useNotify();
