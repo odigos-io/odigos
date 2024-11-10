@@ -26,6 +26,9 @@ const (
 	// Used to label instrumentation instances by the corresponding
 	// instrumented app for better query performance.
 	InstrumentedAppNameLabel = "instrumented-app"
+	// Used to indicate that the odiglet is installed on a node.
+	OdigletInstalledLabel      = "odiglet-installed"
+	OdigletInstalledLabelValue = "true"
 )
 
 var (

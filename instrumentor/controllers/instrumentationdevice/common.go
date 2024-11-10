@@ -13,6 +13,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
 	odigosk8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"github.com/odigos-io/odigos/k8sutils/pkg/pod"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -128,6 +129,9 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 		}
 
 		err, deviceApplied, tempDevicePartiallyApplied := instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, runtimeDetails, otelSdkToUse, obj, logger)
+
+		pod.AddOdigletInstalledAffinity(podSpec, consts.OdigletInstalledLabel, consts.OdigletInstalledLabelValue)
+
 		if err != nil {
 			return err
 		}
@@ -178,6 +182,8 @@ func removeInstrumentationDeviceFromWorkload(ctx context.Context, kubeClient cli
 		}
 		// If instrumentation device is removed successfully, remove odigos.io/inject-instrumentation label to disable the webhook
 		instrumentation.RemoveInjectInstrumentationLabel(podSpec)
+
+		pod.RemoveOdigletInstalledAffinity(podSpec, consts.OdigletInstalledLabel, consts.OdigletInstalledLabelValue)
 
 		instrumentation.RevertInstrumentationDevices(podSpec)
 

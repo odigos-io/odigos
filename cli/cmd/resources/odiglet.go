@@ -96,6 +96,7 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 					"get",
 					"list",
 					"watch",
+					"patch",
 				},
 				APIGroups: []string{""},
 				Resources: []string{
