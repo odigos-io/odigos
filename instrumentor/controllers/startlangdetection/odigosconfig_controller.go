@@ -21,6 +21,8 @@ type OdigosConfigReconciler struct {
 }
 
 func (r *OdigosConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	// TODO: this logic can be improved by iterating over the instrumentation configs and marking the invalidate flag
+	// we currently no changing this logic because all the runtime detection logic is still under development
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Odigos Configuration changed, recalculating instrumentated application for potential changes of ignored container list")
 
@@ -84,6 +86,8 @@ func (r *OdigosConfigReconciler) reconcileUnDisabledFreshWorkload(ctx context.Co
 	}
 
 	var err error
+	// a more accurate approach here might be to che
+	// if workload.IsWorkloadInstrumentationEffectiveEnabled
 	if !workload.IsInstrumentationDisabledExplicitly(freshWorkloadCopy) {
 		req := ctrl.Request{NamespacedName: key}
 		_, err = reconcileWorkload(ctx, r.Client, workload.ClientObjectFromWorkloadKind(kind), kind, req, r.Scheme)
