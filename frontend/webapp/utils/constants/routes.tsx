@@ -1,6 +1,7 @@
 export const ROUTES = {
   SETUP: '/setup',
   OVERVIEW: '/overview',
+  APP: '/',
   SOURCES: '/sources',
   INSTRUMENTATION_RULES: '/instrumentation-rules',
   DESTINATIONS: '/destinations',

@@ -2,8 +2,8 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useConfig, useNotify } from '@/hooks';
-import { Loader } from '@keyval-dev/design-system';
 import { ROUTES, CONFIG, NOTIFICATION } from '@/utils';
+import { FadeLoader } from '@/reuseable-components';
 
 export default function App() {
   const router = useRouter();
@@ -33,5 +33,5 @@ export default function App() {
     }
   }, [data, error]);
 
-  return <Loader />;
+  return <FadeLoader />;
 }
