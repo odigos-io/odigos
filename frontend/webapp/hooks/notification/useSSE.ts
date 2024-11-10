@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { API, NOTIFICATION } from '@/utils';
-import { useNotify } from './useNotify';
+import { useNotify } from './notification/useNotify';
 
 export function useSSE() {
   const notify = useNotify();
@@ -26,7 +26,10 @@ export function useSSE() {
         };
 
         // Check if the event is already in the buffer
-        if (eventBuffer.current[key] && eventBuffer.current[key].id > Date.now() - 2000) {
+        if (
+          eventBuffer.current[key] &&
+          eventBuffer.current[key].id > Date.now() - 2000
+        ) {
           eventBuffer.current[key] = notification;
           return;
         } else {
@@ -55,7 +58,10 @@ export function useSSE() {
         setRetryCount((prevRetryCount) => {
           if (prevRetryCount < maxRetries) {
             const newRetryCount = prevRetryCount + 1;
-            const retryTimeout = Math.min(10000, 1000 * Math.pow(2, newRetryCount));
+            const retryTimeout = Math.min(
+              10000,
+              1000 * Math.pow(2, newRetryCount)
+            );
 
             setTimeout(() => {
               connect();
@@ -63,12 +69,15 @@ export function useSSE() {
 
             return newRetryCount;
           } else {
-            console.error('Max retries reached. Could not reconnect to EventSource.');
+            console.error(
+              'Max retries reached. Could not reconnect to EventSource.'
+            );
 
             notify({
               type: NOTIFICATION.ERROR,
               title: 'Connection Error',
-              message: 'Connection to the server failed. Please reboot the application.',
+              message:
+                'Connection to the server failed. Please reboot the application.',
             });
 
             return prevRetryCount;

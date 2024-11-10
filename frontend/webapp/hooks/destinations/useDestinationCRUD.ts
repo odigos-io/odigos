@@ -1,10 +1,18 @@
 import { useDrawerStore } from '@/store';
-import { useNotify } from '../useNotify';
+import { useNotify } from '../notification/useNotify';
 import { useMutation } from '@apollo/client';
 import { useComputePlatform } from '../compute-platform';
 import { ACTION, getSseTargetFromId, NOTIFICATION } from '@/utils';
-import { OVERVIEW_ENTITY_TYPES, type DestinationInput, type NotificationType } from '@/types';
-import { CREATE_DESTINATION, DELETE_DESTINATION, UPDATE_DESTINATION } from '@/graphql/mutations';
+import {
+  OVERVIEW_ENTITY_TYPES,
+  type DestinationInput,
+  type NotificationType,
+} from '@/types';
+import {
+  CREATE_DESTINATION,
+  DELETE_DESTINATION,
+  UPDATE_DESTINATION,
+} from '@/graphql/mutations';
 
 interface Params {
   onSuccess?: () => void;
@@ -16,13 +24,20 @@ export const useDestinationCRUD = (params?: Params) => {
   const { refetch } = useComputePlatform();
   const notify = useNotify();
 
-  const notifyUser = (type: NotificationType, title: string, message: string, id?: string) => {
+  const notifyUser = (
+    type: NotificationType,
+    title: string,
+    message: string,
+    id?: string
+  ) => {
     notify({
       type,
       title,
       message,
       crdType: OVERVIEW_ENTITY_TYPES.DESTINATION,
-      target: id ? getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.DESTINATION) : undefined,
+      target: id
+        ? getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.DESTINATION)
+        : undefined,
     });
   };
 
@@ -38,23 +53,31 @@ export const useDestinationCRUD = (params?: Params) => {
     params?.onSuccess?.();
   };
 
-  const [createDestination, cState] = useMutation<{ createNewDestination: { id: string } }>(CREATE_DESTINATION, {
+  const [createDestination, cState] = useMutation<{
+    createNewDestination: { id: string };
+  }>(CREATE_DESTINATION, {
     onError: (error) => handleError(ACTION.CREATE, error.message),
     onCompleted: (res, req) => {
       const id = res.createNewDestination.id;
-      const name = req?.variables?.destination.name || req?.variables?.destination.type;
+      const name =
+        req?.variables?.destination.name || req?.variables?.destination.type;
       handleComplete(ACTION.CREATE, `destination "${name}" was created`, id);
     },
   });
-  const [updateDestination, uState] = useMutation<{ updateDestination: { id: string } }>(UPDATE_DESTINATION, {
+  const [updateDestination, uState] = useMutation<{
+    updateDestination: { id: string };
+  }>(UPDATE_DESTINATION, {
     onError: (error) => handleError(ACTION.UPDATE, error.message),
     onCompleted: (res, req) => {
       const id = res.updateDestination.id;
-      const name = req?.variables?.destination.name || req?.variables?.destination.type;
+      const name =
+        req?.variables?.destination.name || req?.variables?.destination.type;
       handleComplete(ACTION.UPDATE, `destination "${name}" was updated`, id);
     },
   });
-  const [deleteDestination, dState] = useMutation<{ deleteDestination: boolean }>(DELETE_DESTINATION, {
+  const [deleteDestination, dState] = useMutation<{
+    deleteDestination: boolean;
+  }>(DELETE_DESTINATION, {
     onError: (error) => handleError(ACTION.DELETE, error.message),
     onCompleted: (res, req) => {
       const id = req?.variables?.id;
@@ -64,8 +87,10 @@ export const useDestinationCRUD = (params?: Params) => {
 
   return {
     loading: cState.loading || uState.loading || dState.loading,
-    createDestination: (destination: DestinationInput) => createDestination({ variables: { destination } }),
-    updateDestination: (id: string, destination: DestinationInput) => updateDestination({ variables: { id, destination } }),
+    createDestination: (destination: DestinationInput) =>
+      createDestination({ variables: { destination } }),
+    updateDestination: (id: string, destination: DestinationInput) =>
+      updateDestination({ variables: { id, destination } }),
     deleteDestination: (id: string) => deleteDestination({ variables: { id } }),
   };
 };
