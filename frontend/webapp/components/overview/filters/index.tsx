@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
 import { DropdownOption } from '@/types';
-import { Button, Dropdown, Text } from '@/reuseable-components';
+import { Badge, Button, Dropdown, Text } from '@/reuseable-components';
 
 const Container = styled.div`
   position: relative;
@@ -13,16 +13,6 @@ const ButtonText = styled(Text)`
   font-size: 14px;
   text-transform: none;
   margin: 0 6px;
-`;
-
-const Badge = styled.div`
-  background-color: ${({ theme }) => theme.colors.majestic_blue};
-  border-radius: 100%;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 `;
 
 const CardWrapper = styled.div`
@@ -56,20 +46,13 @@ const Filters = () => {
       <Button variant='secondary' style={{ textDecoration: 'none' }} onClick={toggleOpen}>
         <Image src='/icons/common/filter.svg' alt='filter' width={14} height={14} />
         <ButtonText>Filters</ButtonText>
-        <Badge>{filters.length}</Badge>
+        <Badge label={filters.length} filled />
       </Button>
 
       {isOpen && (
         <CardWrapper>
           <CardContent>
-            <Dropdown
-              title='Namespace'
-              placeholder='Select namespace'
-              options={[]}
-              value={namespace}
-              onSelect={(val) => setNamespace(val)}
-              required
-            />
+            <Dropdown title='Namespace' placeholder='Select namespace' options={[]} value={namespace} onSelect={(val) => setNamespace(val)} required />
 
             {/* TODO: make this a multi-select dropwdown (with internal checkboxes) */}
             <Dropdown title='Type' placeholder='All' options={[]} value={filters[0]} onSelect={(val) => setFilters((prev) => prev)} required />

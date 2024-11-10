@@ -1,4 +1,5 @@
 export * from './text';
+export * from './badge';
 export * from './button';
 export * from './button/docs-button';
 export * from './section-title';
