@@ -73,12 +73,15 @@ func isDataCollectionReady(ctx context.Context, c client.Client) bool {
 	return nodeCollectorsGroup.Status.Ready
 }
 
-func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.Client, runtimeDetails *odigosv1.InstrumentedApplication) error {
+func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.Client, runtimeDetails *odigosv1.InstrumentedApplication) (error, bool) {
+
+	// devicePartiallyApplied is used to indicate that the instrumentation device was partially applied for some of the containers.
+	devicePartiallyApplied := false
 
 	logger := log.FromContext(ctx)
 	obj, err := getWorkloadObject(ctx, kubeClient, runtimeDetails)
 	if err != nil {
-		return err
+		return err, false
 	}
 
 	workload := workload.PodWorkload{
@@ -92,7 +95,7 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 	instrumentationRules := odigosv1.InstrumentationRuleList{}
 	err = kubeClient.List(ctx, &instrumentationRules)
 	if err != nil {
-		return err
+		return err, false
 	}
 
 	// default otel sdk map according to Odigos tier
@@ -119,17 +122,17 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 	}
 
 	result, err := controllerutil.CreateOrPatch(ctx, kubeClient, obj, func() error {
-
 		podSpec, err := getPodSpecFromObject(obj)
 		if err != nil {
 			return err
 		}
 
-		err, deviceApplied := instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, runtimeDetails, otelSdkToUse, obj)
+		err, deviceApplied, tempDevicePartiallyApplied := instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, runtimeDetails, otelSdkToUse, obj, logger)
 		if err != nil {
 			return err
 		}
 
+		devicePartiallyApplied = tempDevicePartiallyApplied
 		// If instrumentation device is applied successfully, add odigos.io/inject-instrumentation label to enable the webhook
 		if deviceApplied {
 			instrumentation.SetInjectInstrumentationLabel(podSpec)
@@ -139,7 +142,7 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 	})
 
 	if err != nil {
-		return err
+		return err, false
 	}
 
 	modified := result != controllerutil.OperationResultNone
@@ -147,7 +150,7 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 		logger.V(0).Info("added instrumentation device to workload", "name", obj.GetName(), "namespace", obj.GetNamespace())
 	}
 
-	return nil
+	return nil, devicePartiallyApplied
 }
 
 func removeInstrumentationDeviceFromWorkload(ctx context.Context, kubeClient client.Client, namespace string, workloadKind workload.WorkloadKind, workloadName string, uninstrumentReason ApplyInstrumentationDeviceReason) error {
@@ -275,9 +278,15 @@ func reconcileSingleWorkload(ctx context.Context, kubeClient client.Client, inst
 		return nil
 	}
 
-	err = addInstrumentationDeviceToWorkload(ctx, kubeClient, instrumentedApplication)
+	err, devicePartiallyApplied := addInstrumentationDeviceToWorkload(ctx, kubeClient, instrumentedApplication)
 	if err == nil {
-		conditions.UpdateStatusConditions(ctx, kubeClient, instrumentedApplication, &instrumentedApplication.Status.Conditions, metav1.ConditionTrue, appliedInstrumentationDeviceType, "InstrumentationDeviceApplied", "Instrumentation device applied successfully")
+		var successMessage string
+		if devicePartiallyApplied {
+			successMessage = "Instrumentation device partially applied"
+		} else {
+			successMessage = "Instrumentation device applied successfully"
+		}
+		conditions.UpdateStatusConditions(ctx, kubeClient, instrumentedApplication, &instrumentedApplication.Status.Conditions, metav1.ConditionTrue, appliedInstrumentationDeviceType, "InstrumentationDeviceApplied", successMessage)
 	} else {
 		conditions.UpdateStatusConditions(ctx, kubeClient, instrumentedApplication, &instrumentedApplication.Status.Conditions, metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonErrApplying), err.Error())
 	}
