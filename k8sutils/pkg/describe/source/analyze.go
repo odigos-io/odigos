@@ -434,11 +434,23 @@ func analyzePods(resources *OdigosSourceResources, expectedDevices Instrumentati
 			Value:   pod.Spec.NodeName,
 			Explain: "the name of the k8s node where the current pod being described is scheduled",
 		}
-		phase := properties.EntityProperty{
-			Name:    "Phase",
-			Value:   pod.Status.Phase,
-			Status:  podPhaseToStatus(pod.Status.Phase),
-			Explain: "the current pod phase for the pod being described",
+
+		var phase properties.EntityProperty
+
+		if pod.DeletionTimestamp != nil {
+			phase = properties.EntityProperty{
+				Name:    "Phase",
+				Value:   "Terminating",
+				Status:  properties.PropertyStatusTransitioning,
+				Explain: "the current pod phase for the pod being described",
+			}
+		} else {
+			phase = properties.EntityProperty{
+				Name:    "Phase",
+				Value:   pod.Status.Phase,
+				Status:  podPhaseToStatus(pod.Status.Phase),
+				Explain: "the current pod phase for the pod being described",
+			}
 		}
 
 		containers := make([]PodContainerAnalyze, 0, len(pod.Spec.Containers))

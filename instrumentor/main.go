@@ -30,9 +30,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/odigos-io/odigos/common/consts"
 	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/apimachinery/pkg/labels"
 
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -178,9 +176,6 @@ func main() {
 						newDs.Spec.Template.Spec = ds.Spec.Template.Spec
 						return newDs, nil
 					},
-				},
-				&corev1.Namespace{}: {
-					Label: labels.Set{consts.OdigosInstrumentationLabel: consts.InstrumentationEnabled}.AsSelector(),
 				},
 				&corev1.ConfigMap{}: {
 					Field: client.InNamespace(env.GetCurrentNamespace()).AsSelector(),

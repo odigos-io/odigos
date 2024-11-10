@@ -18,21 +18,28 @@ package instrumentationdevice
 
 import (
 	"context"
+	"errors"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+// CollectorsGroupReconciler is responsible for reconciling the instrumented workloads
+// once the collectors group becomes ready - by adding the instrumentation device to the workloads.
+// This is necessary to ensure that we won't instrument any workload before the
+// node collectors are ready to receive the data.
 type CollectorsGroupReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
 func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-
+	logger := log.FromContext(ctx)
 	isDataCollectionReady := isDataCollectionReady(ctx, r.Client)
 
 	var instApps odigosv1.InstrumentedApplicationList
@@ -40,12 +47,29 @@ func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
+	logger.V(0).Info("Reconciling instrumented applications after node collectors group became ready", "count", len(instApps.Items))
+
+	var reconcileErr error
+
 	for _, runtimeDetails := range instApps.Items {
-		err := reconcileSingleWorkload(ctx, r.Client, &runtimeDetails, isDataCollectionReady)
+		var currentInstApp odigosv1.InstrumentedApplication
+		err := r.Get(ctx, client.ObjectKey{Namespace: runtimeDetails.Namespace, Name: runtimeDetails.Name}, &currentInstApp)
+		if apierrors.IsNotFound(err) {
+			// the loop can take time, so the instrumented application might get deleted
+			// in the meantime, so we ignore the error
+			continue
+		}
+
 		if err != nil {
-			return ctrl.Result{}, err
+			reconcileErr = errors.Join(reconcileErr, err)
+			continue
+		}
+
+		err = reconcileSingleWorkload(ctx, r.Client, &currentInstApp, isDataCollectionReady)
+		if err != nil {
+			reconcileErr = errors.Join(reconcileErr, err)
 		}
 	}
 
-	return ctrl.Result{}, nil
+	return ctrl.Result{}, reconcileErr
 }
