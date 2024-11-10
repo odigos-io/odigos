@@ -10,10 +10,12 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/instrumentation"
 	"github.com/odigos-io/odigos/instrumentor/sdks"
 	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
+	odigosk8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -42,26 +44,24 @@ var (
 
 func isDataCollectionReady(ctx context.Context, c client.Client) bool {
 	logger := log.FromContext(ctx)
-	var collectorGroups odigosv1.CollectorsGroupList
-	err := c.List(ctx, &collectorGroups, client.InNamespace(env.GetCurrentNamespace()))
-	if err != nil {
-		logger.Error(err, "error getting collectors groups, skipping instrumentation")
-		return false
-	}
 
-	for _, cg := range collectorGroups.Items {
-		// up until v1.0.31, the collectors group role names were "GATEWAY" and "DATA_COLLECTION".
-		// in v1.0.32, the role names were changed to "CLUSTER_GATEWAY" and "NODE_COLLECTOR",
-		// due to adding the Processor CRD which uses these role names.
-		// the new names are more descriptive and are preparations for future roles.
-		// the check for "DATA_COLLECTION" is a temporary support for users that upgrade from <=v1.0.31 to >=v1.0.32.
-		// once we drop support for <=v1.0.31, we can remove this comparison.
-		if (cg.Spec.Role == odigosv1.CollectorsGroupRoleNodeCollector || cg.Spec.Role == "DATA_COLLECTION") && cg.Status.Ready {
-			return true
+	nodeCollectorsGroup := odigosv1.CollectorsGroup{}
+	err := c.Get(ctx, client.ObjectKey{
+		Namespace: env.GetCurrentNamespace(),
+		Name:      odigosk8sconsts.OdigosNodeCollectorCollectorGroupName,
+	}, &nodeCollectorsGroup)
+
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			// if node collector is not yet created, then it is not ready
+			return false
+		} else {
+			logger.Error(err, "error getting node collector group, skipping instrumentation")
+			return false
 		}
 	}
 
-	return false
+	return nodeCollectorsGroup.Status.Ready
 }
 
 func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.Client, runtimeDetails *odigosv1.InstrumentedApplication) error {

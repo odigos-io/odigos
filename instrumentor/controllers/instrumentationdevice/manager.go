@@ -91,6 +91,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("instrumentationdevice-collectorsgroup").
 		For(&odigosv1.CollectorsGroup{}).
+		WithEventFilter(predicate.And(&odigospredicate.OdigosCollectorsGroupNodePredicate, &odigospredicate.CgBecomesReadyPredicate{})).
 		Complete(&CollectorsGroupReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
@@ -105,19 +106,6 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		For(&odigosv1.InstrumentedApplication{}).
 		WithEventFilter(&predicate.GenerationChangedPredicate{}).
 		Complete(&InstrumentedApplicationReconciler{
-			Client: mgr.GetClient(),
-			Scheme: mgr.GetScheme(),
-		})
-	if err != nil {
-		return err
-	}
-
-	err = builder.
-		ControllerManagedBy(mgr).
-		Named("instrumentationdevice-configmaps").
-		For(&corev1.ConfigMap{}).
-		WithEventFilter(&odigospredicate.OnlyUpdatesPredicate{}).
-		Complete(&OdigosConfigReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
 		})
