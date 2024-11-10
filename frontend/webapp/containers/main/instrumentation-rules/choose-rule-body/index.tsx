@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import RuleCustomFields from './custom-fields';
 import type { InstrumentationRuleInput } from '@/types';
 import type { RuleOption } from '../add-rule-modal/rule-options';
-import { DocsButton, Input, Text, TextArea, Toggle, SectionTitle } from '@/reuseable-components';
+import { DocsButton, Input, Text, TextArea, SectionTitle, ToggleButtons } from '@/reuseable-components';
 
 const FieldWrapper = styled.div`
   width: 100%;
@@ -27,11 +27,7 @@ const ChooseRuleBody: React.FC<Props> = ({ isUpdate, rule, formData, handleFormC
       {isUpdate && (
         <FieldWrapper>
           <FieldTitle>Status</FieldTitle>
-          <Toggle
-            title={!formData.disabled ? 'Active' : 'Inactive'}
-            initialValue={!formData.disabled}
-            onChange={(bool) => handleFormChange('disabled', !bool)}
-          />
+          <ToggleButtons initialValue={!formData.disabled} onChange={(bool) => handleFormChange('disabled', !bool)} />
         </FieldWrapper>
       )}
 
@@ -39,12 +35,7 @@ const ChooseRuleBody: React.FC<Props> = ({ isUpdate, rule, formData, handleFormC
 
       {!isUpdate && (
         <FieldWrapper>
-          <Input
-            title='Rule name'
-            placeholder='Use a name that describes the rule'
-            value={formData.ruleName}
-            onChange={({ target: { value } }) => handleFormChange('ruleName', value)}
-          />
+          <Input title='Rule name' placeholder='Use a name that describes the rule' value={formData.ruleName} onChange={({ target: { value } }) => handleFormChange('ruleName', value)} />
         </FieldWrapper>
       )}
 
