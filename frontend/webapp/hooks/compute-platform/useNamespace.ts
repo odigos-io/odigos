@@ -1,8 +1,8 @@
 import { useMutation, useQuery } from '@apollo/client';
 import { GET_NAMESPACES, PERSIST_NAMESPACE } from '@/graphql';
 import { ComputePlatform, PersistNamespaceItemInput } from '@/types';
-import { useNotify } from '../useNotify';
 import { NOTIFICATION } from '@/utils';
+import { useNotify } from '../notification';
 
 export const useNamespace = (namespaceName?: string, instrumentationLabeled = null as boolean | null) => {
   const notify = useNotify();

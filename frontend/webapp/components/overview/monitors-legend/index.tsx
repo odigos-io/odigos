@@ -13,7 +13,7 @@ const List = styled.div`
 
 const ListItem = styled.div`
   display: flex;
-  align-listitems: center;
+  align-items: center;
   gap: 4px;
 `;
 

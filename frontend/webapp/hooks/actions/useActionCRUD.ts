@@ -1,5 +1,5 @@
 import { useDrawerStore } from '@/store';
-import { useNotify } from '../useNotify';
+import { useNotify } from '../notification/useNotify';
 import { useMutation } from '@apollo/client';
 import { useComputePlatform } from '../compute-platform';
 import { ACTION, getSseTargetFromId, NOTIFICATION, safeJsonParse } from '@/utils';
