@@ -1,4 +1,4 @@
-import type { ActionsType, InstrumentationRuleType, NotificationType } from '@/types';
+import { type ActionsType, type InstrumentationRuleType, type NotificationType, OVERVIEW_ENTITY_TYPES } from '@/types';
 
 const BRAND_ICON = '/brand/odigos-icon.svg';
 
@@ -17,6 +17,12 @@ export const getStatusIcon = (status?: NotificationType) => {
     default:
       return BRAND_ICON;
   }
+};
+
+export const getEntityIcon = (type?: OVERVIEW_ENTITY_TYPES) => {
+  if (!type) return BRAND_ICON;
+
+  return `/icons/overview/${type}s.svg`;
 };
 
 export const getRuleIcon = (type?: InstrumentationRuleType) => {
