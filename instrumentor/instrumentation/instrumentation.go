@@ -106,12 +106,13 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 // this function restores a workload manifest env vars to their original values.
 // it is used when the instrumentation is removed from the workload.
 // the original values are read from the annotation which was saved when the instrumentation was applied.
-func RevertEnvOverwrites(obj client.Object, podSpec *corev1.PodTemplateSpec) error {
+func RevertEnvOverwrites(obj client.Object, podSpec *corev1.PodTemplateSpec) (bool, error) {
 	manifestEnvOriginal, err := envoverwrite.NewOrigWorkloadEnvValues(obj.GetAnnotations())
 	if err != nil {
-		return err
+		return false, err
 	}
 
+	changed := false
 	for iContainer, c := range podSpec.Spec.Containers {
 		containerOriginalEnv := manifestEnvOriginal.GetContainerStoredEnvs(c.Name)
 		newContainerEnvs := make([]corev1.EnvVar, 0, len(c.Env))
@@ -127,6 +128,7 @@ func RevertEnvOverwrites(obj client.Object, podSpec *corev1.PodTemplateSpec) err
 					// if the value is nil, the env var was not set by the user to begin with.
 					// we will simply not append it to the new envs to achieve the same effect.
 				}
+				changed = true
 			} else {
 				newContainerEnvs = append(newContainerEnvs, envVar)
 			}
@@ -134,25 +136,29 @@ func RevertEnvOverwrites(obj client.Object, podSpec *corev1.PodTemplateSpec) err
 		podSpec.Spec.Containers[iContainer].Env = newContainerEnvs
 	}
 
-	manifestEnvOriginal.DeleteFromObj(obj)
+	annotationRemoved := manifestEnvOriginal.DeleteFromObj(obj)
 
-	return nil
+	return changed || annotationRemoved, nil
 }
 
-func RevertInstrumentationDevices(original *corev1.PodTemplateSpec) {
+func RevertInstrumentationDevices(original *corev1.PodTemplateSpec) bool {
+	changed := false
 	for _, container := range original.Spec.Containers {
 		for resourceName := range container.Resources.Limits {
 			if strings.HasPrefix(string(resourceName), common.OdigosResourceNamespace) {
 				delete(container.Resources.Limits, resourceName)
+				changed = true
 			}
 		}
 		// Is it needed?
 		for resourceName := range container.Resources.Requests {
 			if strings.HasPrefix(string(resourceName), common.OdigosResourceNamespace) {
 				delete(container.Resources.Requests, resourceName)
+				changed = true
 			}
 		}
 	}
+	return changed
 }
 
 func getLanguageOfContainer(instrumentation *odigosv1.InstrumentedApplication, containerName string) common.ProgrammingLanguage {
@@ -274,8 +280,12 @@ func SetInjectInstrumentationLabel(original *corev1.PodTemplateSpec) {
 }
 
 // RemoveInjectInstrumentationLabel removes the "odigos.io/inject-instrumentation" label if it exists.
-func RemoveInjectInstrumentationLabel(original *corev1.PodTemplateSpec) {
+func RemoveInjectInstrumentationLabel(original *corev1.PodTemplateSpec) bool {
 	if original.Labels != nil {
-		delete(original.Labels, "odigos.io/inject-instrumentation")
+		if _, ok := original.Labels["odigos.io/inject-instrumentation"]; ok {
+			delete(original.Labels, "odigos.io/inject-instrumentation")
+			return true
+		}
 	}
+	return false
 }
