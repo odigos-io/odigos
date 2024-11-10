@@ -13,7 +13,6 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/containers"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -714,7 +713,7 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 		}
 	}
 
-	resources := []client.Object{
+	resources := []kube.Object{
 		NewOdigletServiceAccount(a.ns),
 		NewOdigletClusterRole(a.config.Psp),
 		NewOdigletClusterRoleBinding(a.ns),

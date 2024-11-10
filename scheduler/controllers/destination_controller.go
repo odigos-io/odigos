@@ -22,6 +22,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigospredicates "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	"github.com/odigos-io/odigos/scheduler/controllers/collectorgroups"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -67,5 +68,6 @@ func (r *DestinationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 func (r *DestinationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&odigosv1.Destination{}).
+		WithEventFilter(&odigospredicates.ExistencePredicate{}). // only care when destinations are created or deleted
 		Complete(r)
 }

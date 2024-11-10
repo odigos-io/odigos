@@ -46,7 +46,7 @@ export function DataFlowContainer() {
   const { destinationList, refetchDestinations } = useDestinations();
 
   const useSearch = useSearchParams();
-  const intervalId = useRef<NodeJS.Timer>();
+  const intervalId = useRef<NodeJS.Timeout>();
 
   const { metrics } = useOverviewMetrics();
 

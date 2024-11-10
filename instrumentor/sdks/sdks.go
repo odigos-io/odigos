@@ -5,8 +5,6 @@ import (
 
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
-	"k8s.io/client-go/kubernetes"
 )
 
 var defaultOtelSdkPerLanguage = map[common.ProgrammingLanguage]common.OtelSdk{}
@@ -43,11 +41,8 @@ func otelSdkConfigOnPrem() map[common.ProgrammingLanguage]common.OtelSdk {
 	}
 }
 
-func SetDefaultSDKs(ctx context.Context, clientset *kubernetes.Clientset) error {
-	odigosTier, err := k8sutils.GetCurrentOdigosTier(ctx, env.GetCurrentNamespace(), clientset)
-	if err != nil {
-		return err
-	}
+func SetDefaultSDKs(ctx context.Context) error {
+	odigosTier := env.GetOdigosTierFromEnv()
 
 	switch odigosTier {
 	case common.CommunityOdigosTier:
@@ -61,6 +56,23 @@ func SetDefaultSDKs(ctx context.Context, clientset *kubernetes.Clientset) error 
 	return nil
 }
 
+func copyOtelSdkMap(m map[common.ProgrammingLanguage]common.OtelSdk) map[common.ProgrammingLanguage]common.OtelSdk {
+	// Create a new map with the same capacity as the original
+	newMap := make(map[common.ProgrammingLanguage]common.OtelSdk, len(m))
+
+	// Copy each key-value pair to the new map
+	for key, value := range m {
+		newMap[key] = common.OtelSdk{
+			SdkType: value.SdkType,
+			SdkTier: value.SdkTier,
+		}
+	}
+
+	return newMap
+}
+
 func GetDefaultSDKs() map[common.ProgrammingLanguage]common.OtelSdk {
-	return defaultOtelSdkPerLanguage
+	// return a copy of the map, so it can be modified without affecting the original
+	// and if used by multiple goroutines, it will be safe to write to the instance returned
+	return copyOtelSdkMap(defaultOtelSdkPerLanguage)
 }

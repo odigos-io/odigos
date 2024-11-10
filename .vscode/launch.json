@@ -67,7 +67,7 @@
             "mode": "debug",
             "program": "${workspaceFolder}/cli",
             "cwd": "${workspaceFolder}/cli",
-            "args": ["describe"],
+            "args": ["describe source deployment membership"],
             "buildFlags": "-tags=embed_manifests"
         }
     ]

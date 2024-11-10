@@ -6,368 +6,144 @@ import (
 	"strings"
 
 	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/describe/source"
-	"github.com/odigos-io/odigos/k8sutils/pkg/envoverwrite"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
-func getInstrumentationLabelTexts(workload *source.K8sSourceObject, ns *corev1.Namespace) (workloadText, nsText, decisionText string, instrumented bool) {
-	workloadLabel, workloadFound := workload.GetLabels()[consts.OdigosInstrumentationLabel]
-	nsLabel, nsFound := ns.GetLabels()[consts.OdigosInstrumentationLabel]
-
-	if workloadFound {
-		workloadText = consts.OdigosInstrumentationLabel + "=" + workloadLabel
-	} else {
-		workloadText = consts.OdigosInstrumentationLabel + " label not set"
-	}
-
-	if nsFound {
-		nsText = consts.OdigosInstrumentationLabel + "=" + nsLabel
-	} else {
-		nsText = consts.OdigosInstrumentationLabel + " label not set"
-	}
-
-	if workloadFound {
-		instrumented = workloadLabel == consts.InstrumentationEnabled
-		if instrumented {
-			decisionText = "Workload is instrumented because the " + workload.Kind + " contains the label '" + consts.OdigosInstrumentationLabel + "=" + workloadLabel + "'"
-		} else {
-			decisionText = "Workload is NOT instrumented because the " + workload.Kind + " contains the label '" + consts.OdigosInstrumentationLabel + "=" + workloadLabel + "'"
-		}
-	} else {
-		instrumented = nsLabel == consts.InstrumentationEnabled
-		if instrumented {
-			decisionText = "Workload is instrumented because the " + workload.Kind + " is not labeled, and the namespace is labeled with '" + consts.OdigosInstrumentationLabel + "=" + nsLabel + "'"
-		} else {
-			if nsFound {
-				decisionText = "Workload is NOT instrumented because the " + workload.Kind + " is not labeled, and the namespace is labeled with '" + consts.OdigosInstrumentationLabel + "=" + nsLabel + "'"
-			} else {
-				decisionText = "Workload is NOT instrumented because neither the workload nor the namespace has the '" + consts.OdigosInstrumentationLabel + "' label set"
-			}
-		}
-	}
-
-	return
-}
-
-func printWorkloadManifestInfo(workloadObj *source.K8sSourceObject, namespace *corev1.Namespace, sb *strings.Builder) bool {
-	sb.WriteString(fmt.Sprintf("Name: %s\n", workloadObj.GetName()))
-	sb.WriteString(fmt.Sprintf("Kind: %s\n", workloadObj.Kind))
-	sb.WriteString(fmt.Sprintf("Namespace: %s\n\n", workloadObj.GetNamespace()))
+func printWorkloadManifestInfo(analyze *source.SourceAnalyze, sb *strings.Builder) {
+	printProperty(sb, 0, &analyze.Name)
+	printProperty(sb, 0, &analyze.Kind)
+	printProperty(sb, 0, &analyze.Namespace)
 
 	sb.WriteString("Labels:\n")
-	workloadText, nsText, decisionText, instrumented := getInstrumentationLabelTexts(workloadObj, namespace)
-	if instrumented {
-		sb.WriteString("  Instrumented: " + wrapTextInGreen("true") + "\n")
-	} else {
-		sb.WriteString("  Instrumented: " + wrapTextInRed("false") + "\n")
-	}
-	sb.WriteString("  Workload: " + workloadText + "\n")
-	sb.WriteString("  Namespace: " + nsText + "\n")
-	sb.WriteString("  Decision: " + decisionText + "\n")
-	sb.WriteString("  Troubleshooting: https://docs.odigos.io/architecture/troubleshooting#1-odigos-instrumentation-label\n")
-
-	return instrumented
+	printProperty(sb, 1, &analyze.Labels.Instrumented)
+	printProperty(sb, 1, analyze.Labels.Workload)
+	printProperty(sb, 1, analyze.Labels.Namespace)
+	printProperty(sb, 1, &analyze.Labels.InstrumentedText)
 }
 
-func printInstrumentationConfigInfo(instrumentationConfig *odigosv1.InstrumentationConfig, instrumented bool, sb *strings.Builder) {
-	instrumentationConfigNotFound := instrumentationConfig == nil
-	statusAsExpected := instrumentationConfigNotFound == !instrumented
-	sb.WriteString("\nInstrumentation Config:\n")
-	if instrumentationConfigNotFound {
-		if statusAsExpected {
-			sb.WriteString(wrapTextInGreen("  Workload not instrumented, no instrumentation config\n"))
-		} else {
-			sb.WriteString("  Not yet created\n")
-		}
-	} else {
-		createAtText := "  Created at " + instrumentationConfig.GetCreationTimestamp().String()
-		sb.WriteString(wrapTextSuccessOfFailure(createAtText, statusAsExpected) + "\n")
-	}
-
-	if !statusAsExpected {
-		sb.WriteString("  Troubleshooting: https://docs.odigos.io/architecture/troubleshooting#2-odigos-instrumentation-config\n")
-	}
+func printInstrumentationConfigInfo(analyze *source.SourceAnalyze, sb *strings.Builder) {
+	describeText(sb, 0, "\nInstrumentation Config:")
+	printProperty(sb, 1, &analyze.InstrumentationConfig.Created)
+	printProperty(sb, 1, analyze.InstrumentationConfig.CreateTime)
 }
 
-func printRuntimeDetails(instrumentationConfig *odigosv1.InstrumentationConfig, instrumented bool, sb *strings.Builder) {
-	if instrumentationConfig == nil {
-		sb.WriteString("No runtime details\n")
+func printRuntimeDetails(analyze *source.SourceAnalyze, sb *strings.Builder) {
+	describeText(sb, 0, "\nRuntime Inspection Details (new):")
+
+	if analyze.RuntimeInfo == nil {
+		describeText(sb, 1, "No runtime details")
 		return
 	}
 
-	sb.WriteString("\nRuntime inspection details (new):\n")
-	sb.WriteString(fmt.Sprintf("Workload generation: %d\n", instrumentationConfig.Status.ObservedWorkloadGeneration))
-	for _, container := range instrumentationConfig.Status.RuntimeDetailsByContainer {
-		sb.WriteString(fmt.Sprintf("  Container Name: %s\n", container.ContainerName))
-		colorfulLanguage := string(container.Language)
-		isUnknown := container.Language == common.UnknownProgrammingLanguage
-		if isUnknown {
-			colorfulLanguage = wrapTextInRed(string(container.Language))
-		} else if container.Language != common.IgnoredProgrammingLanguage {
-			colorfulLanguage = wrapTextInGreen(string(container.Language))
-		}
-		sb.WriteString("    Language:      " + colorfulLanguage + "\n")
-		if isUnknown {
-			sb.WriteString("    Troubleshooting: http://localhost:3000/architecture/troubleshooting#4-language-not-detected\n")
-		}
-		if container.RuntimeVersion != "" {
-			sb.WriteString("    Runtime Version: " + container.RuntimeVersion + "\n")
-		} else {
-			sb.WriteString("    Runtime Version: not detected\n")
-		}
-
-		// calculate env vars for this container
-		if container.EnvVars != nil && len(container.EnvVars) > 0 {
-			sb.WriteString("    Relevant Environment Variables:\n")
+	printProperty(sb, 1, &analyze.RuntimeInfo.Generation)
+	describeText(sb, 1, "Detected Containers:")
+	for _, container := range analyze.RuntimeInfo.Containers {
+		printProperty(sb, 2, &container.ContainerName)
+		printProperty(sb, 3, &container.Language)
+		printProperty(sb, 3, &container.RuntimeVersion)
+		if len(container.EnvVars) > 0 {
+			describeText(sb, 3, "Relevant Environment Variables:")
 			for _, envVar := range container.EnvVars {
-				sb.WriteString(fmt.Sprintf("      - %s: %s\n", envVar.Name, envVar.Value))
+				describeText(sb, 4, fmt.Sprintf("%s: %s", envVar.Name, envVar.Value))
 			}
 		}
 	}
 }
 
-func printInstrumentedApplicationInfo(instrumentedApplication *odigosv1.InstrumentedApplication, instrumented bool, sb *strings.Builder) {
-	instrumentedApplicationNotFound := instrumentedApplication == nil
-	statusAsExpected := instrumentedApplicationNotFound == !instrumented
-	sb.WriteString("\nRuntime inspection details (old):\n")
-	if instrumentedApplicationNotFound {
-		if instrumented {
-			sb.WriteString("  Not yet created\n")
-		} else {
-			sb.WriteString(wrapTextInGreen("  Workload not instrumented, no runtime details\n"))
-		}
-	} else {
-		createdAtText := "  Created at " + instrumentedApplication.GetCreationTimestamp().String()
-		sb.WriteString(wrapTextSuccessOfFailure(createdAtText, statusAsExpected) + "\n")
-		sb.WriteString("  Detected Containers:\n")
-		for _, container := range instrumentedApplication.Spec.RuntimeDetails {
-			sb.WriteString(fmt.Sprintf("    - Container Name: %s\n", container.ContainerName))
-			colorfulLanguage := string(container.Language)
-			isUnknown := container.Language == common.UnknownProgrammingLanguage
-			if isUnknown {
-				colorfulLanguage = wrapTextInRed(string(container.Language))
-			} else if container.Language != common.IgnoredProgrammingLanguage {
-				colorfulLanguage = wrapTextInGreen(string(container.Language))
-			}
-			sb.WriteString("      Language:      " + colorfulLanguage + "\n")
-			if isUnknown {
-				sb.WriteString("      Troubleshooting: http://localhost:3000/architecture/troubleshooting#4-language-not-detected\n")
-			}
-			if container.RuntimeVersion != "" {
-				sb.WriteString("      Runtime Version: " + container.RuntimeVersion + "\n")
-			} else {
-				sb.WriteString("      Runtime Version: not detected\n")
-			}
+func printInstrumentedApplicationInfo(analyze *source.SourceAnalyze, sb *strings.Builder) {
 
-			// calculate env vars for this container
-			if container.EnvVars != nil && len(container.EnvVars) > 0 {
-				sb.WriteString("      Relevant Environment Variables:\n")
-				for _, envVar := range container.EnvVars {
-					sb.WriteString(fmt.Sprintf("        - %s: %s\n", envVar.Name, envVar.Value))
+	describeText(sb, 0, "\nRuntime Inspection Details (old):")
+	printProperty(sb, 1, &analyze.InstrumentedApplication.Created)
+	printProperty(sb, 1, analyze.InstrumentedApplication.CreateTime)
+
+	describeText(sb, 1, "Detected Containers:")
+	for _, container := range analyze.InstrumentedApplication.Containers {
+		printProperty(sb, 2, &container.ContainerName)
+		printProperty(sb, 3, &container.Language)
+		printProperty(sb, 3, &container.RuntimeVersion)
+		if len(container.EnvVars) > 0 {
+			describeText(sb, 3, "Relevant Environment Variables:")
+			for _, envVar := range container.EnvVars {
+				describeText(sb, 4, fmt.Sprintf("%s: %s", envVar.Name, envVar.Value))
+			}
+		}
+	}
+}
+
+func printAppliedInstrumentationDeviceInfo(analyze *source.SourceAnalyze, sb *strings.Builder) {
+
+	describeText(sb, 0, "\nInstrumentation Device:")
+	printProperty(sb, 1, &analyze.InstrumentationDevice.StatusText)
+	describeText(sb, 1, "Containers:")
+	for _, container := range analyze.InstrumentationDevice.Containers {
+		printProperty(sb, 2, &container.ContainerName)
+		printProperty(sb, 3, &container.Devices)
+		if len(container.OriginalEnv) > 0 {
+			describeText(sb, 3, "Original Environment Variables:")
+			for _, envVar := range container.OriginalEnv {
+				printProperty(sb, 4, &envVar)
+			}
+		}
+	}
+}
+
+func printPodsInfo(analyze *source.SourceAnalyze, sb *strings.Builder) {
+
+	describeText(sb, 0, "\nPods (Total %d, %s):", analyze.TotalPods, analyze.PodsPhasesCount)
+
+	for _, pod := range analyze.Pods {
+		describeText(sb, 0, "")
+		printProperty(sb, 1, &pod.PodName)
+		printProperty(sb, 1, &pod.NodeName)
+		printProperty(sb, 1, &pod.Phase)
+		describeText(sb, 1, "Containers:")
+		for _, container := range pod.Containers {
+			printProperty(sb, 2, &container.ContainerName)
+			printProperty(sb, 3, &container.ActualDevices)
+			describeText(sb, 3, "")
+			describeText(sb, 3, "Instrumentation Instances:")
+			for _, ii := range container.InstrumentationInstances {
+				printProperty(sb, 4, &ii.Healthy)
+				printProperty(sb, 4, ii.Message)
+				if len(ii.IdentifyingAttributes) > 0 {
+					describeText(sb, 4, "Identifying Attributes:")
+					for _, attr := range ii.IdentifyingAttributes {
+						printProperty(sb, 5, &attr)
+					}
 				}
 			}
 		}
 	}
-	if !statusAsExpected {
-		sb.WriteString("  Troubleshooting: https://docs.odigos.io/architecture/troubleshooting#3-odigos-instrumented-application\n")
-	}
 }
 
-func printAppliedInstrumentationDeviceInfo(workloadObj *source.K8sSourceObject, instrumentedApplication *odigosv1.InstrumentedApplication, instrumented bool, sb *strings.Builder) map[string][]string {
-	appliedInstrumentationDeviceStatusMessage := "Unknown"
-	if !instrumented {
-		// if the workload is not instrumented, the instrumentation device expected
-		appliedInstrumentationDeviceStatusMessage = "No instrumentation devices expected"
-	}
-	if instrumentedApplication != nil && instrumentedApplication.Status.Conditions != nil {
-		for _, condition := range instrumentedApplication.Status.Conditions {
-			if condition.Type == "AppliedInstrumentationDevice" { // TODO: share this constant with instrumentor
-				if condition.ObservedGeneration == instrumentedApplication.GetGeneration() {
-					appliedInstrumentationDeviceStatusMessage = wrapTextSuccessOfFailure(condition.Message, condition.Status == metav1.ConditionTrue)
-				} else {
-					appliedInstrumentationDeviceStatusMessage = "Not yet reconciled"
-				}
-				break
-			}
-		}
-	}
-	// get original env vars:
-	origWorkloadEnvValues, _ := envoverwrite.NewOrigWorkloadEnvValues(workloadObj.GetAnnotations())
-	sb.WriteString("\nInstrumentation Device:\n")
-	sb.WriteString("  Status: " + appliedInstrumentationDeviceStatusMessage + "\n")
-	containerNameToExpectedDevices := make(map[string][]string)
-	for _, container := range workloadObj.PodTemplateSpec.Spec.Containers {
-		sb.WriteString(fmt.Sprintf("  - Container Name: %s\n", container.Name))
-		odigosDevices := make([]string, 0)
-		for resourceName := range container.Resources.Limits {
-			deviceName, found := strings.CutPrefix(resourceName.String(), common.OdigosResourceNamespace+"/")
-			if found {
-				odigosDevices = append(odigosDevices, deviceName)
-			}
-		}
-		if len(odigosDevices) == 0 {
-			if !instrumented {
-				sb.WriteString(wrapTextInGreen("    No instrumentation devices\n"))
-			} else {
-				sb.WriteString("    No instrumentation devices\n")
-				sb.WriteString("    Troubleshooting: https://docs.odigos.io/architecture/troubleshooting#5-odigos-instrumentation-devices-not-added\n")
-			}
-		} else {
-			sb.WriteString("    Instrumentation Devices: " + wrapTextSuccessOfFailure(strings.Join(odigosDevices, ", "), instrumented) + "\n")
-			if !instrumented {
-				sb.WriteString("	 Troubleshooting: https://docs.odigos.io/architecture/troubleshooting#5-odigos-instrumentation-devices-not-added\n")
-			}
-		}
-		containerNameToExpectedDevices[container.Name] = odigosDevices
-
-		// override environment variables
-		originalContainerEnvs := origWorkloadEnvValues.GetContainerStoredEnvs(container.Name)
-		if originalContainerEnvs != nil && len(originalContainerEnvs) > 0 {
-			sb.WriteString("    Original Environment Variables:\n")
-			for envName, envVarOriginalValue := range originalContainerEnvs {
-				if envVarOriginalValue == nil {
-					sb.WriteString("    - " + envName + "=null (not set in manifest)\n")
-				} else {
-					sb.WriteString("    - " + envName + "=" + *envVarOriginalValue + "\n")
-				}
-			}
-		}
-	}
-
-	return containerNameToExpectedDevices
-}
-
-func printPodContainerInstrumentationInstancesInfo(instances []*odigosv1.InstrumentationInstance, sb *strings.Builder) {
-	if len(instances) == 0 {
-		sb.WriteString("    No instrumentation instances\n")
-		return
-	}
-
-	sb.WriteString("    Instrumentation Instances:\n")
-	for _, instance := range instances {
-		unhealthy := false
-		healthyText := "unknown"
-		if instance.Status.Healthy != nil {
-			if *instance.Status.Healthy {
-				healthyText = wrapTextInGreen("true")
-			} else {
-				healthyText = wrapTextInRed("false")
-				unhealthy = true
-			}
-		}
-		sb.WriteString(fmt.Sprintf("    - Healthy: %s\n", healthyText))
-		if instance.Status.Message != "" {
-			sb.WriteString(fmt.Sprintf("      Message: %s\n", instance.Status.Message))
-		}
-		if instance.Status.Reason != "" && instance.Status.Reason != string(common.AgentHealthStatusHealthy) {
-			sb.WriteString(fmt.Sprintf("      Reason: %s\n", instance.Status.Reason))
-		}
-		if unhealthy {
-			sb.WriteString("      Troubleshooting: https://docs.odigos.io/architecture/troubleshooting#7-instrumentation-instance-unhealthy\n")
-		}
-	}
-}
-
-func printPodContainerInfo(pod *corev1.Pod, container *corev1.Container, instrumentationInstances *odigosv1.InstrumentationInstanceList, containerNameToExpectedDevices map[string][]string, sb *strings.Builder) {
-	instrumentationDevices := make([]string, 0)
-	sb.WriteString(fmt.Sprintf("  - Container Name: %s\n", container.Name))
-	for resourceName := range container.Resources.Limits {
-		deviceName, found := strings.CutPrefix(resourceName.String(), common.OdigosResourceNamespace+"/")
-		if found {
-			instrumentationDevices = append(instrumentationDevices, deviceName)
-		}
-	}
-	expectedDevices, foundExpectedDevices := containerNameToExpectedDevices[container.Name]
-	if len(instrumentationDevices) == 0 {
-		isMatch := !foundExpectedDevices || len(expectedDevices) == 0
-		sb.WriteString(wrapTextSuccessOfFailure("    No instrumentation devices", isMatch) + "\n")
-		if !isMatch {
-			sb.WriteString("      Expected Devices: " + strings.Join(expectedDevices, ", ") + "\n")
-			sb.WriteString("      Troubleshooting: https://docs.odigos.io/architecture/troubleshooting#6-pods-instrumentation-devices-not-matching-manifest\n")
-		}
-	} else {
-		actualDevicesText := strings.Join(instrumentationDevices, ", ")
-		expectedDevicesText := strings.Join(expectedDevices, ", ")
-		isMatch := actualDevicesText == expectedDevicesText
-		sb.WriteString("    Instrumentation Devices: " + wrapTextSuccessOfFailure(actualDevicesText, isMatch) + "\n")
-		if !isMatch {
-			sb.WriteString("      Expected Devices: " + expectedDevicesText + "\n")
-			sb.WriteString("      Troubleshooting: https://docs.odigos.io/architecture/troubleshooting#6-pods-instrumentation-devices-not-matching-manifest\n")
-		}
-	}
-
-	// find the instrumentation instances for this pod
-	thisPodInstrumentationInstances := make([]*odigosv1.InstrumentationInstance, 0)
-	for _, instance := range instrumentationInstances.Items {
-		if len(instance.OwnerReferences) != 1 || instance.OwnerReferences[0].Kind != "Pod" {
-			continue
-		}
-		if instance.OwnerReferences[0].Name != pod.GetName() {
-			continue
-		}
-		if instance.Spec.ContainerName != container.Name {
-			continue
-		}
-		thisPodInstrumentationInstances = append(thisPodInstrumentationInstances, &instance)
-	}
-	printPodContainerInstrumentationInstancesInfo(thisPodInstrumentationInstances, sb)
-}
-
-func printSinglePodInfo(pod *corev1.Pod, instrumentationInstances *odigosv1.InstrumentationInstanceList, containerNameToExpectedDevices map[string][]string, sb *strings.Builder) {
-	sb.WriteString(fmt.Sprintf("\n  Pod Name: %s\n", pod.GetName()))
-	sb.WriteString(fmt.Sprintf("  Pod Phase: %s\n", pod.Status.Phase))
-	sb.WriteString(fmt.Sprintf("  Pod Node Name: %s\n", pod.Spec.NodeName))
-	sb.WriteString("  Containers:\n")
-	for _, container := range pod.Spec.Containers {
-		printPodContainerInfo(pod, &container, instrumentationInstances, containerNameToExpectedDevices, sb)
-	}
-}
-
-func printPodsInfo(pods *corev1.PodList, instrumentationInstances *odigosv1.InstrumentationInstanceList, containerNameToExpectedDevices map[string][]string, sb *strings.Builder) {
-	podsStatuses := make(map[corev1.PodPhase]int)
-	for _, pod := range pods.Items {
-		podsStatuses[pod.Status.Phase]++
-	}
-	podPhasesTexts := make([]string, 0)
-	for phase, count := range podsStatuses {
-		podPhasesTexts = append(podPhasesTexts, fmt.Sprintf("%s %d", phase, count))
-	}
-	podPhasesText := strings.Join(podPhasesTexts, ", ")
-	sb.WriteString(fmt.Sprintf("\nPods (Total %d, %s):\n", len(pods.Items), podPhasesText))
-	for _, pod := range pods.Items {
-		printSinglePodInfo(&pod, instrumentationInstances, containerNameToExpectedDevices, sb)
-	}
-}
-
-func PrintDescribeSource(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, workloadObj *source.K8sSourceObject) string {
+func DescribeSourceToText(analyze *source.SourceAnalyze) string {
 	var sb strings.Builder
 
-	resources, err := source.GetRelevantSourceResources(ctx, kubeClient, odigosClient, workloadObj)
-	if err != nil {
-		sb.WriteString(fmt.Sprintf("Error: %v\n", err))
-		return sb.String()
-	}
-
-	instrumented := printWorkloadManifestInfo(workloadObj, resources.Namespace, &sb)
-	printInstrumentationConfigInfo(resources.InstrumentationConfig, instrumented, &sb)
-	printRuntimeDetails(resources.InstrumentationConfig, instrumented, &sb)
-	printInstrumentedApplicationInfo(resources.InstrumentedApplication, instrumented, &sb)
-	containerNameToExpectedDevices := printAppliedInstrumentationDeviceInfo(workloadObj, resources.InstrumentedApplication, instrumented, &sb)
-	printPodsInfo(resources.Pods, resources.InstrumentationInstances, containerNameToExpectedDevices, &sb)
+	printWorkloadManifestInfo(analyze, &sb)
+	printInstrumentationConfigInfo(analyze, &sb)
+	printRuntimeDetails(analyze, &sb)
+	printInstrumentedApplicationInfo(analyze, &sb)
+	printAppliedInstrumentationDeviceInfo(analyze, &sb)
+	printPodsInfo(analyze, &sb)
 
 	return sb.String()
 }
 
-func DescribeDeployment(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, ns string, name string) string {
+func DescribeSource(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, workloadObj *source.K8sSourceObject) (*source.SourceAnalyze, error) {
+	resources, err := source.GetRelevantSourceResources(ctx, kubeClient, odigosClient, workloadObj)
+	if err != nil {
+		return nil, err
+	}
+	analyze := source.AnalyzeSource(resources, workloadObj)
+	return analyze, nil
+}
+
+func DescribeDeployment(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, ns string, name string) (*source.SourceAnalyze, error) {
 	deployment, err := kubeClient.AppsV1().Deployments(ns).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
-		return fmt.Sprintf("Error: %v\n", err)
+		return nil, err
 	}
 	workloadObj := &source.K8sSourceObject{
 		Kind:            "deployment",
@@ -375,13 +151,13 @@ func DescribeDeployment(ctx context.Context, kubeClient kubernetes.Interface, od
 		PodTemplateSpec: &deployment.Spec.Template,
 		LabelSelector:   deployment.Spec.Selector,
 	}
-	return PrintDescribeSource(ctx, kubeClient, odigosClient, workloadObj)
+	return DescribeSource(ctx, kubeClient, odigosClient, workloadObj)
 }
 
-func DescribeDaemonSet(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, ns string, name string) string {
+func DescribeDaemonSet(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, ns string, name string) (*source.SourceAnalyze, error) {
 	ds, err := kubeClient.AppsV1().DaemonSets(ns).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
-		return fmt.Sprintf("Error: %v\n", err)
+		return nil, err
 	}
 	workloadObj := &source.K8sSourceObject{
 		Kind:            "daemonset",
@@ -389,13 +165,13 @@ func DescribeDaemonSet(ctx context.Context, kubeClient kubernetes.Interface, odi
 		PodTemplateSpec: &ds.Spec.Template,
 		LabelSelector:   ds.Spec.Selector,
 	}
-	return PrintDescribeSource(ctx, kubeClient, odigosClient, workloadObj)
+	return DescribeSource(ctx, kubeClient, odigosClient, workloadObj)
 }
 
-func DescribeStatefulSet(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, ns string, name string) string {
+func DescribeStatefulSet(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, ns string, name string) (*source.SourceAnalyze, error) {
 	ss, err := kubeClient.AppsV1().StatefulSets(ns).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
-		return fmt.Sprintf("Error: %v\n", err)
+		return nil, err
 	}
 	workloadObj := &source.K8sSourceObject{
 		Kind:            "statefulset",
@@ -403,5 +179,5 @@ func DescribeStatefulSet(ctx context.Context, kubeClient kubernetes.Interface, o
 		PodTemplateSpec: &ss.Spec.Template,
 		LabelSelector:   ss.Spec.Selector,
 	}
-	return PrintDescribeSource(ctx, kubeClient, odigosClient, workloadObj)
+	return DescribeSource(ctx, kubeClient, odigosClient, workloadObj)
 }
