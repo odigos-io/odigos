@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import type { K8sActualSource } from '@/types';
 import { ChooseSourcesBody } from '../choose-sources-body';
 import { Modal, NavigationButtons } from '@/reuseable-components';
@@ -12,12 +12,11 @@ interface AddSourceModalProps {
 export const AddSourceModal: React.FC<AddSourceModalProps> = ({ isOpen, onClose }) => {
   const [sourcesList, setSourcesList] = useState<K8sActualSource[]>([]);
   const { stateMenu, stateHandlers } = useConnectSourcesMenuState({ sourcesList });
-  const { createSources } = useSourceCRUD();
+  const { createSources } = useSourceCRUD({ onSuccess: onClose });
 
-  const handleNextClick = useCallback(async () => {
+  const handleNextClick = async () => {
     await createSources(stateMenu.selectedItems, stateMenu.futureAppsCheckbox);
-    onClose();
-  }, [stateMenu, createSources, onClose]);
+  };
 
   return (
     <Modal
