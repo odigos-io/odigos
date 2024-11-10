@@ -3,33 +3,18 @@ import { useCallback } from 'react';
 import { useDrawerStore, useModalStore } from '@/store';
 import { K8sActualSource, ActualDestination, ActionDataParsed, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, InstrumentationRuleSpec } from '@/types';
 
-export function useNodeDataFlowHandlers(params: {
-  rules: InstrumentationRuleSpec[];
-  sources: K8sActualSource[];
-  actions: ActionDataParsed[];
-  destinations: ActualDestination[];
-}) {
+export function useNodeDataFlowHandlers(params: { rules: InstrumentationRuleSpec[]; sources: K8sActualSource[]; actions: ActionDataParsed[]; destinations: ActualDestination[] }) {
   const { setCurrentModal } = useModalStore();
   const setSelectedItem = useDrawerStore(({ setSelectedItem }) => setSelectedItem);
 
   const handleNodeClick = useCallback(
-    (
-      _,
-      object: {
-        type: string;
-        id: string;
-        position: { x: number; y: number };
-        data: Record<string, any>;
-      }
-    ) => {
+    (_: unknown, object: { data: { id: any; type: any } }) => {
       const {
         data: { id, type },
       } = object;
 
       if (type === OVERVIEW_ENTITY_TYPES.SOURCE) {
-        const selectedDrawerItem = params['sources'].find(
-          ({ kind, name, namespace }) => kind === id.kind && name === id.name && namespace === id.namespace
-        );
+        const selectedDrawerItem = params['sources'].find(({ kind, name, namespace }) => kind === id.kind && name === id.name && namespace === id.namespace);
         if (!selectedDrawerItem) return;
 
         const { kind, name, namespace } = selectedDrawerItem;
@@ -58,7 +43,7 @@ export function useNodeDataFlowHandlers(params: {
         setCurrentModal(OVERVIEW_ENTITY_TYPES.DESTINATION);
       }
     },
-    [params, setSelectedItem, setCurrentModal]
+    [params, setSelectedItem, setCurrentModal],
   );
 
   return {
