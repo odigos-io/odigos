@@ -10,6 +10,7 @@ import (
 
 // this event filter will only trigger reconciliation when the configmap data was changed.
 // the reconciled type must be corev1.ConfigMap
+// note: this preidcate currently only check the Data field of the ConfigMap (without BinaryData)
 type ConfigMapDataChangedPredicate struct{}
 
 func (o ConfigMapDataChangedPredicate) Create(e event.CreateEvent) bool {
