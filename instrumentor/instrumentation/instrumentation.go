@@ -168,7 +168,9 @@ func getLanguageOfContainer(instrumentation *odigosv1.InstrumentedApplication, c
 func getContainerOtherAgents(instrumentation *odigosv1.InstrumentedApplication, containerName string) *odigosv1.OtherAgent {
 	for _, l := range instrumentation.Spec.RuntimeDetails {
 		if l.ContainerName == containerName {
-			return l.OtherAgent
+			if l.OtherAgent != nil && *l.OtherAgent != (odigosv1.OtherAgent{}) {
+				return l.OtherAgent
+			}
 		}
 	}
 	return nil
