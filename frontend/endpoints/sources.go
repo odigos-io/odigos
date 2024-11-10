@@ -18,10 +18,10 @@ import (
 )
 
 type SourceLanguage struct {
-	ContainerName  string              `json:"container_name"`
-	Language       string              `json:"language"`
-	RuntimeVersion string              `json:"runtime_version,omitempty"`
-	OtherAgent     v1alpha1.OtherAgent `json:"other_agent,omitempty"`
+	ContainerName  string               `json:"container_name"`
+	Language       string               `json:"language"`
+	RuntimeVersion string               `json:"runtime_version,omitempty"`
+	OtherAgent     *v1alpha1.OtherAgent `json:"other_agent,omitempty"`
 }
 
 type InstrumentedApplicationDetails struct {
@@ -399,8 +399,8 @@ func k8sInstrumentedAppToThinSource(app *v1alpha1.InstrumentedApplication) ThinS
 			Language:       string(language.Language),
 			RuntimeVersion: language.RuntimeVersion,
 		}
-		if language.OtherAgent != nil {
-			sourceLanguage.OtherAgent = *language.OtherAgent
+		if language.OtherAgent != nil && *language.OtherAgent != (v1alpha1.OtherAgent{}) {
+			sourceLanguage.OtherAgent = language.OtherAgent
 		}
 
 		source.IaDetails.Languages = append(source.IaDetails.Languages, sourceLanguage)
