@@ -1,10 +1,10 @@
 import { useDrawerStore } from '@/store';
-import { useNotify } from '../useNotify';
 import { useMutation } from '@apollo/client';
 import { ACTION, getSseTargetFromId, NOTIFICATION } from '@/utils';
 import { PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import { useComputePlatform, useNamespace } from '../compute-platform';
 import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type NotificationType, type PatchSourceRequestInput, type K8sActualSource } from '@/types';
+import { useNotify } from '../notification';
 
 interface Params {
   onSuccess?: () => void;
