@@ -44,6 +44,7 @@ const ActiveButton = styled(BaseButton)`
   &:hover {
     border-color: ${({ theme }) => theme.colors.secondary};
   }
+  transition: background-color 0.3s;
 `;
 
 const InactiveButton = styled(BaseButton)`
@@ -55,19 +56,20 @@ const InactiveButton = styled(BaseButton)`
   &:hover {
     border-color: ${({ theme }) => theme.colors.secondary};
   }
+  transition: background-color 0.3s;
 `;
 
 const ToggleButtons: React.FC<ToggleProps> = ({ activeText = 'Active', inactiveText = 'Inactive', tooltip, initialValue = false, onChange, disabled }) => {
   const [isActive, setIsActive] = useState(initialValue);
   useEffect(() => setIsActive(initialValue), [initialValue]);
 
-  const handleToggle = () => {
+  const handleToggle = (forcedBool?: boolean) => {
     if (disabled) return;
 
     let newValue = initialValue;
 
     setIsActive((prev) => {
-      newValue = !prev;
+      newValue = typeof forcedBool === 'boolean' ? forcedBool : !prev;
       return newValue;
     });
 
@@ -77,11 +79,11 @@ const ToggleButtons: React.FC<ToggleProps> = ({ activeText = 'Active', inactiveT
   return (
     <Tooltip text={tooltip || ''}>
       <Container>
-        <ActiveButton className={isActive ? 'colored' : ''} onClick={handleToggle} disabled={disabled}>
+        <ActiveButton className={isActive ? 'colored' : ''} onClick={() => handleToggle(true)} disabled={disabled}>
           <Image src='/icons/common/circled-check.svg' alt='' width={16} height={16} />
           {activeText}
         </ActiveButton>
-        <InactiveButton className={isActive ? '' : 'colored'} onClick={handleToggle} disabled={disabled}>
+        <InactiveButton className={isActive ? '' : 'colored'} onClick={() => handleToggle(false)} disabled={disabled}>
           <Image src='/icons/common/circled-cross.svg' alt='' width={16} height={16} />
           {inactiveText}
         </InactiveButton>
