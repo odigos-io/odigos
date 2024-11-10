@@ -2,9 +2,8 @@
 import './globals.css';
 import React from 'react';
 import { useSSE } from '@/hooks';
-import theme from '@/styles/theme';
 import { ApolloWrapper } from '@/lib';
-import { ThemeProvider } from 'styled-components';
+import { ThemeProviderWrapper } from '@/styles';
 
 const LAYOUT_STYLE: React.CSSProperties = {
   margin: 0,
@@ -14,21 +13,17 @@ const LAYOUT_STYLE: React.CSSProperties = {
   height: '100vh',
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   useSSE();
 
   return (
-    <html lang="en">
+    <html lang='en'>
       <ApolloWrapper>
-        <ThemeProvider theme={theme}>
+        <ThemeProviderWrapper>
           <body suppressHydrationWarning={true} style={LAYOUT_STYLE}>
             {children}
           </body>
-        </ThemeProvider>
+        </ThemeProviderWrapper>
       </ApolloWrapper>
     </html>
   );
