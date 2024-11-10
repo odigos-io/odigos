@@ -4,7 +4,7 @@ import { useMutation } from '@apollo/client';
 import { ACTION, getSseTargetFromId, NOTIFICATION } from '@/utils';
 import { PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import { useComputePlatform, useNamespace } from '../compute-platform';
-import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type NotificationType, PersistSourcesArray, PatchSourceRequestInput, K8sActualSource } from '@/types';
+import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type NotificationType, type PatchSourceRequestInput, type K8sActualSource } from '@/types';
 
 interface Params {
   onSuccess?: () => void;
@@ -13,8 +13,8 @@ interface Params {
 
 export const useSourceCRUD = (params?: Params) => {
   const { setSelectedItem: setDrawerItem } = useDrawerStore((store) => store);
+  const { data, startPolling } = useComputePlatform();
   const { persistNamespace } = useNamespace();
-  const { startPolling } = useComputePlatform();
   const notify = useNotify();
 
   const notifyUser = (type: NotificationType, title: string, message: string, id?: WorkloadId) => {
@@ -90,6 +90,8 @@ export const useSourceCRUD = (params?: Params) => {
 
   return {
     loading: cdState.loading || uState.loading,
+    sources: data?.computePlatform.k8sActualSources || [],
+
     createSources: async (selectAppsList: { [key: string]: K8sActualSource[] }, futureSelectAppsList: { [key: string]: boolean }) => {
       await persistNamespaces(futureSelectAppsList);
       await persistSources(selectAppsList, true);
