@@ -2,22 +2,9 @@ import { useDrawerStore } from '@/store';
 import { useNotify } from '../notification/useNotify';
 import { useMutation } from '@apollo/client';
 import { useComputePlatform } from '../compute-platform';
-import {
-  ACTION,
-  deriveTypeFromRule,
-  getSseTargetFromId,
-  NOTIFICATION,
-} from '@/utils';
-import {
-  OVERVIEW_ENTITY_TYPES,
-  type InstrumentationRuleInput,
-  type NotificationType,
-} from '@/types';
-import {
-  CREATE_INSTRUMENTATION_RULE,
-  UPDATE_INSTRUMENTATION_RULE,
-  DELETE_INSTRUMENTATION_RULE,
-} from '@/graphql/mutations';
+import { ACTION, deriveTypeFromRule, getSseTargetFromId, NOTIFICATION } from '@/utils';
+import { OVERVIEW_ENTITY_TYPES, type InstrumentationRuleInput, type NotificationType } from '@/types';
+import { CREATE_INSTRUMENTATION_RULE, UPDATE_INSTRUMENTATION_RULE, DELETE_INSTRUMENTATION_RULE } from '@/graphql/mutations';
 
 interface Params {
   onSuccess?: () => void;
@@ -26,23 +13,16 @@ interface Params {
 
 export const useInstrumentationRuleCRUD = (params?: Params) => {
   const { setSelectedItem: setDrawerItem } = useDrawerStore((store) => store);
-  const { refetch } = useComputePlatform();
+  const { data, refetch } = useComputePlatform();
   const notify = useNotify();
 
-  const notifyUser = (
-    type: NotificationType,
-    title: string,
-    message: string,
-    id?: string
-  ) => {
+  const notifyUser = (type: NotificationType, title: string, message: string, id?: string) => {
     notify({
       type,
       title,
       message,
       crdType: OVERVIEW_ENTITY_TYPES.RULE,
-      target: id
-        ? getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.RULE)
-        : undefined,
+      target: id ? getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.RULE) : undefined,
     });
   };
 
@@ -64,14 +44,8 @@ export const useInstrumentationRuleCRUD = (params?: Params) => {
     onError: (error) => handleError(ACTION.CREATE, error.message),
     onCompleted: (res, req) => {
       const id = res.createInstrumentationRule.ruleId;
-      const name =
-        req?.variables?.instrumentationRule.ruleName ||
-        deriveTypeFromRule(req?.variables?.instrumentationRule);
-      handleComplete(
-        ACTION.CREATE,
-        `instrumentation rule "${name}" was created`,
-        id
-      );
+      const name = req?.variables?.instrumentationRule.ruleName || deriveTypeFromRule(req?.variables?.instrumentationRule);
+      handleComplete(ACTION.CREATE, `instrumentation rule "${name}" was created`, id);
     },
   });
   const [updateInstrumentationRule, uState] = useMutation<{
@@ -80,14 +54,8 @@ export const useInstrumentationRuleCRUD = (params?: Params) => {
     onError: (error) => handleError(ACTION.UPDATE, error.message),
     onCompleted: (res, req) => {
       const id = res.updateInstrumentationRule.ruleId;
-      const name =
-        req?.variables?.instrumentationRule.ruleName ||
-        deriveTypeFromRule(req?.variables?.instrumentationRule);
-      handleComplete(
-        ACTION.UPDATE,
-        `instrumentation rule "${name}" was updated`,
-        id
-      );
+      const name = req?.variables?.instrumentationRule.ruleName || deriveTypeFromRule(req?.variables?.instrumentationRule);
+      handleComplete(ACTION.UPDATE, `instrumentation rule "${name}" was updated`, id);
     },
   });
   const [deleteInstrumentationRule, dState] = useMutation<{
@@ -102,15 +70,15 @@ export const useInstrumentationRuleCRUD = (params?: Params) => {
 
   return {
     loading: cState.loading || uState.loading || dState.loading,
-    createInstrumentationRule: (
-      instrumentationRule: InstrumentationRuleInput
-    ) => createInstrumentationRule({ variables: { instrumentationRule } }),
-    updateInstrumentationRule: (
-      ruleId: string,
-      instrumentationRule: InstrumentationRuleInput
-    ) =>
-      updateInstrumentationRule({ variables: { ruleId, instrumentationRule } }),
-    deleteInstrumentationRule: (ruleId: string) =>
-      deleteInstrumentationRule({ variables: { ruleId } }),
+    instrumentationRules:
+      data?.computePlatform?.instrumentationRules?.map((item) => {
+        const type = deriveTypeFromRule(item);
+
+        return { ...item, type };
+      }) || [],
+
+    createInstrumentationRule: (instrumentationRule: InstrumentationRuleInput) => createInstrumentationRule({ variables: { instrumentationRule } }),
+    updateInstrumentationRule: (ruleId: string, instrumentationRule: InstrumentationRuleInput) => updateInstrumentationRule({ variables: { ruleId, instrumentationRule } }),
+    deleteInstrumentationRule: (ruleId: string) => deleteInstrumentationRule({ variables: { ruleId } }),
   };
 };

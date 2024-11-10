@@ -4,17 +4,8 @@ import dynamic from 'next/dynamic';
 import styled from 'styled-components';
 import { ToastList } from '@/components';
 import { OverviewActionMenuContainer } from '../overview-actions-menu';
-import { buildNodesAndEdges, NodeBaseDataFlow, } from '@/reuseable-components';
-import {
-  useMetrics,
-  useGetActions,
-  useActualSources,
-  useContainerWidth,
-  useActualDestination,
-  useNodeDataFlowHandlers,
-  useGetInstrumentationRules,
-} from '@/hooks';
-
+import { buildNodesAndEdges, NodeBaseDataFlow } from '@/reuseable-components';
+import { useMetrics, useContainerWidth, useNodeDataFlowHandlers, useSourceCRUD, useDestinationCRUD, useInstrumentationRuleCRUD, useActionCRUD } from '@/hooks';
 
 const AllDrawers = dynamic(() => import('../all-drawers'), {
   ssr: false,
@@ -35,10 +26,10 @@ const NODE_HEIGHT = 80;
 
 export function OverviewDataFlowContainer() {
   const { metrics } = useMetrics();
-  const { actions } = useGetActions();
-  const { sources } = useActualSources();
-  const { destinations } = useActualDestination();
-  const { instrumentationRules } = useGetInstrumentationRules();
+  const { sources } = useSourceCRUD();
+  const { actions } = useActionCRUD();
+  const { destinations } = useDestinationCRUD();
+  const { instrumentationRules } = useInstrumentationRuleCRUD();
   const { containerRef, containerWidth } = useContainerWidth();
   const { handleNodeClick } = useNodeDataFlowHandlers({
     rules: instrumentationRules,
