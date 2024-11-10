@@ -15,7 +15,8 @@ const colors = {
   blank_background: '#11111100',
 
   dark_red: '#802828',
-  dark_green: '#2d4323',
+  darker_red: '#611F1F',
+  dark_green: '#2D4323',
 
   warning: '#472300',
   error: '#431919',

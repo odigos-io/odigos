@@ -8,6 +8,7 @@ export * from './dropdown';
 export * from './divider';
 export * from './counter';
 export * from './toggle';
+export * from './toggle-buttons';
 export * from './checkbox';
 export * from './modal';
 export * from './modal/warning-modal';
