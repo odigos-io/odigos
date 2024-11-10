@@ -1,24 +1,21 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { usePersistSource } from '../sources';
 import { useNamespace } from '../compute-platform';
 import { useUpdateSource } from './useUpdateSource';
 import { useComputePlatform } from '../compute-platform';
-import {
-  PatchSourceRequestInput,
-  PersistSourcesArray,
-  WorkloadId,
-} from '@/types';
+import { useBooleanStore } from '@/store/useBooleanStore';
+import { PatchSourceRequestInput, PersistSourcesArray, WorkloadId } from '@/types';
 
 export function useActualSources() {
   const { data, refetch } = useComputePlatform();
+  const { isPolling, togglePolling } = useBooleanStore();
   const { persistSource, error: sourceError } = usePersistSource();
   const { updateSource, error: updateError } = useUpdateSource();
 
   const { persistNamespace } = useNamespace(undefined);
-  const [isPolling, setIsPolling] = useState(false);
 
   const startPolling = useCallback(async () => {
-    setIsPolling(true);
+    togglePolling(true);
     const maxRetries = 5;
     const retryInterval = 1000; // Poll every second
     let retries = 0;
@@ -29,13 +26,10 @@ export function useActualSources() {
       retries++;
     }
 
-    setIsPolling(false);
-  }, [refetch]);
+    togglePolling(false);
+  }, [refetch, togglePolling]);
 
-  const createSourcesForNamespace = async (
-    namespaceName: string,
-    sources: PersistSourcesArray[]
-  ) => {
+  const createSourcesForNamespace = async (namespaceName: string, sources: PersistSourcesArray[]) => {
     await persistSource(namespaceName, sources);
 
     startPolling();
@@ -44,10 +38,7 @@ export function useActualSources() {
     }
   };
 
-  const deleteSourcesForNamespace = async (
-    namespaceName: string,
-    sources: PersistSourcesArray[]
-  ) => {
+  const deleteSourcesForNamespace = async (namespaceName: string, sources: PersistSourcesArray[]) => {
     await persistSource(namespaceName, sources);
 
     startPolling();
@@ -56,10 +47,7 @@ export function useActualSources() {
     }
   };
 
-  const updateActualSource = async (
-    sourceId: WorkloadId,
-    patchRequest: PatchSourceRequestInput
-  ) => {
+  const updateActualSource = async (sourceId: WorkloadId, patchRequest: PatchSourceRequestInput) => {
     try {
       await updateSource(sourceId, patchRequest);
       refetch();

@@ -1,9 +1,10 @@
 import Image from 'next/image';
 import theme from '@/styles/theme';
 import { useModalStore } from '@/store';
+import { useOnClickOutside } from '@/hooks';
 import React, { useState, useRef } from 'react';
 import styled, { css } from 'styled-components';
-import { useActualSources, useOnClickOutside } from '@/hooks';
+import { useBooleanStore } from '@/store/useBooleanStore';
 import { DropdownOption, OVERVIEW_ENTITY_TYPES } from '@/types';
 import { Button, FadeLoader, Text } from '@/reuseable-components';
 
@@ -71,11 +72,11 @@ interface AddEntityButtonDropdownProps {
 }
 
 const AddEntity: React.FC<AddEntityButtonDropdownProps> = ({ options = DEFAULT_OPTIONS, placeholder = 'ADD...' }) => {
+  const { isPolling } = useBooleanStore();
   const { setCurrentModal } = useModalStore();
+
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  const { isPolling } = useActualSources();
 
   useOnClickOutside(dropdownRef, () => setIsDropdownOpen(false));
 
