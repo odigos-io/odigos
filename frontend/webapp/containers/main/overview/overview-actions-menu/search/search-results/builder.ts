@@ -2,7 +2,7 @@ import { type ActionDataParsed, type ActualDestination, type InstrumentationRule
 
 export type Category = 'all' | OVERVIEW_ENTITY_TYPES;
 
-export const buildFilteredLists = ({
+export const buildSearchResults = ({
   rules,
   sources,
   actions,

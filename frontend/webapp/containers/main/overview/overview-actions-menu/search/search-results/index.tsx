@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { OVERVIEW_ENTITY_TYPES } from '@/types';
 import { CardContent, CardWrapper } from '../styled';
 import { getEntityIcon, getEntityLabel } from '@/utils';
-import { buildFilteredLists, type Category } from './builder';
+import { buildSearchResults, type Category } from './builder';
 import { Divider, SelectionButton, Text } from '@/reuseable-components';
 import { useActionCRUD, useDestinationCRUD, useInstrumentationRuleCRUD, useNodeDataFlowHandlers, useSourceCRUD } from '@/hooks';
 
@@ -39,7 +39,7 @@ export const SearchResults = ({ searchText, onClose }: Props) => {
 
   const { categories, searchResults } = useMemo(
     () =>
-      buildFilteredLists({
+      buildSearchResults({
         rules: instrumentationRules,
         sources,
         actions,
