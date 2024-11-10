@@ -8,18 +8,18 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func AddLabelToNode(clientset *kubernetes.Clientset, nodeName string, labelKey string, labelValue string) error {
+func AddLabelToNode(ctx context.Context, clientset *kubernetes.Clientset, nodeName string, labelKey string, labelValue string) error {
 	patch := []byte(`{"metadata": {"labels": {"` + labelKey + `": "` + labelValue + `"}}}`)
-	_, err := clientset.CoreV1().Nodes().Patch(context.TODO(), nodeName, types.StrategicMergePatchType, patch, metav1.PatchOptions{})
+	_, err := clientset.CoreV1().Nodes().Patch(ctx, nodeName, types.StrategicMergePatchType, patch, metav1.PatchOptions{})
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func RemoveLabelFromNode(clientset *kubernetes.Clientset, nodeName string, labelKey string) error {
+func RemoveLabelFromNode(ctx context.Context, clientset *kubernetes.Clientset, nodeName string, labelKey string) error {
 	patch := []byte(`{"metadata": {"labels": {"` + labelKey + `": null}}}`)
-	_, err := clientset.CoreV1().Nodes().Patch(context.TODO(), nodeName, types.StrategicMergePatchType, patch, metav1.PatchOptions{})
+	_, err := clientset.CoreV1().Nodes().Patch(ctx, nodeName, types.StrategicMergePatchType, patch, metav1.PatchOptions{})
 	if err != nil {
 		return err
 	}
