@@ -13,7 +13,7 @@ interface Params {
 
 export const useDestinationCRUD = (params?: Params) => {
   const { setSelectedItem: setDrawerItem } = useDrawerStore((store) => store);
-  const { refetch } = useComputePlatform();
+  const { data, refetch } = useComputePlatform();
   const notify = useNotify();
 
   const notifyUser = (type: NotificationType, title: string, message: string, id?: string) => {
@@ -64,6 +64,8 @@ export const useDestinationCRUD = (params?: Params) => {
 
   return {
     loading: cState.loading || uState.loading || dState.loading,
+    destinations: data?.computePlatform.destinations || [],
+
     createDestination: (destination: DestinationInput) => createDestination({ variables: { destination } }),
     updateDestination: (id: string, destination: DestinationInput) => updateDestination({ variables: { id, destination } }),
     deleteDestination: (id: string) => deleteDestination({ variables: { id } }),

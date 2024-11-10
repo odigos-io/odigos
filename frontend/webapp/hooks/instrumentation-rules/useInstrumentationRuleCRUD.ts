@@ -13,7 +13,7 @@ interface Params {
 
 export const useInstrumentationRuleCRUD = (params?: Params) => {
   const { setSelectedItem: setDrawerItem } = useDrawerStore((store) => store);
-  const { refetch } = useComputePlatform();
+  const { data, refetch } = useComputePlatform();
   const notify = useNotify();
 
   const notifyUser = (type: NotificationType, title: string, message: string, id?: string) => {
@@ -64,6 +64,13 @@ export const useInstrumentationRuleCRUD = (params?: Params) => {
 
   return {
     loading: cState.loading || uState.loading || dState.loading,
+    instrumentationRules:
+      data?.computePlatform?.instrumentationRules?.map((item) => {
+        const type = deriveTypeFromRule(item);
+
+        return { ...item, type };
+      }) || [],
+
     createInstrumentationRule: (instrumentationRule: InstrumentationRuleInput) => createInstrumentationRule({ variables: { instrumentationRule } }),
     updateInstrumentationRule: (ruleId: string, instrumentationRule: InstrumentationRuleInput) => updateInstrumentationRule({ variables: { ruleId, instrumentationRule } }),
     deleteInstrumentationRule: (ruleId: string) => deleteInstrumentationRule({ variables: { ruleId } }),

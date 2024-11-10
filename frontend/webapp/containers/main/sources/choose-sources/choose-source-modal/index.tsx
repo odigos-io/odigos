@@ -1,8 +1,8 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
+import type { K8sActualSource } from '@/types';
 import { ChooseSourcesBody } from '../choose-sources-body';
 import { Modal, NavigationButtons } from '@/reuseable-components';
-import { K8sActualSource, PersistNamespaceItemInput } from '@/types';
-import { useActualSources, useConnectSourcesMenuState } from '@/hooks';
+import { useConnectSourcesMenuState, useSourceCRUD } from '@/hooks';
 
 interface AddSourceModalProps {
   isOpen: boolean;
@@ -12,33 +12,11 @@ interface AddSourceModalProps {
 export const AddSourceModal: React.FC<AddSourceModalProps> = ({ isOpen, onClose }) => {
   const [sourcesList, setSourcesList] = useState<K8sActualSource[]>([]);
   const { stateMenu, stateHandlers } = useConnectSourcesMenuState({ sourcesList });
-  const { createSourcesForNamespace, persistNamespaceItems } = useActualSources();
+  const { createSources } = useSourceCRUD({ onSuccess: onClose });
 
-  const handleNextClick = useCallback(async () => {
-    try {
-      const namespaceItems: PersistNamespaceItemInput[] = Object.entries(stateMenu.futureAppsCheckbox).map(([namespaceName, futureSelected]) => ({
-        name: namespaceName,
-        futureSelected,
-      }));
-
-      await persistNamespaceItems(namespaceItems);
-
-      await Promise.all(
-        Object.entries(stateMenu.selectedItems).map(async ([namespaceName, sources]) => {
-          const formattedSources = sources.map((source) => ({
-            kind: source.kind,
-            name: source.name,
-            selected: true,
-          }));
-          await createSourcesForNamespace(namespaceName, formattedSources);
-        })
-      );
-
-      onClose();
-    } catch (error) {
-      console.error('Error during handleNextClick:', error);
-    }
-  }, [stateMenu, onClose, createSourcesForNamespace, persistNamespaceItems]);
+  const handleNextClick = async () => {
+    await createSources(stateMenu.selectedItems, stateMenu.futureAppsCheckbox);
+  };
 
   return (
     <Modal
