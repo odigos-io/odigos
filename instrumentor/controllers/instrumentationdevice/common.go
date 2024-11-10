@@ -3,7 +3,6 @@ package instrumentationdevice
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
@@ -281,7 +280,6 @@ func reconcileSingleWorkload(ctx context.Context, kubeClient client.Client, inst
 
 	err, devicePartiallyApplied := addInstrumentationDeviceToWorkload(ctx, kubeClient, instrumentedApplication)
 	if err == nil {
-		fmt.Println("devicePartiallyApplied: ", devicePartiallyApplied)
 		var successMessage string
 		if devicePartiallyApplied {
 			successMessage = "Instrumentation device partially applied"
