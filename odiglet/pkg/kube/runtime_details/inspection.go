@@ -107,6 +107,8 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 			}
 
 			envs := make([]odigosv1.EnvVar, 0)
+			detectedAgent := odigosv1.OtherAgent{} // holds detected agent names
+
 			if inspectProc == nil {
 				log.Logger.V(0).Info("unable to detect language for any process", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
 				programLanguageDetails.Language = common.UnknownProgrammingLanguage
@@ -117,8 +119,15 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 
 				// Convert map to slice for k8s format
 				envs = make([]odigosv1.EnvVar, 0, len(inspectProc.Environments.DetailedEnvs))
+
 				for envName, envValue := range inspectProc.Environments.OverwriteEnvs {
 					envs = append(envs, odigosv1.EnvVar{Name: envName, Value: envValue})
+				}
+
+				for envName := range inspectProc.Environments.DetailedEnvs {
+					if OtherAgent, exists := procdiscovery.OtherAgentEnvs[envName]; exists {
+						detectedAgent = odigosv1.OtherAgent{Name: OtherAgent}
+					}
 				}
 			}
 
@@ -132,6 +141,7 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 				Language:       programLanguageDetails.Language,
 				RuntimeVersion: runtimeVersion,
 				EnvVars:        envs,
+				OtherAgent:     &detectedAgent,
 			}
 		}
 	}
