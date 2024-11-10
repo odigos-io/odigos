@@ -5,7 +5,6 @@ import { useSSE } from '@/hooks';
 import theme from '@/styles/theme';
 import { ApolloWrapper } from '@/lib';
 import { ThemeProvider } from 'styled-components';
-import { QueryClient, QueryClientProvider } from 'react-query';
 
 const LAYOUT_STYLE: React.CSSProperties = {
   margin: 0,
