@@ -107,7 +107,7 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 			}
 
 			envs := make([]odigosv1.EnvVar, 0)
-			detectedAgent := odigosv1.OtherAgent{} // holds detected agent names
+			var detectedAgent *odigosv1.OtherAgent
 
 			if inspectProc == nil {
 				log.Logger.V(0).Info("unable to detect language for any process", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
@@ -125,8 +125,8 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 				}
 
 				for envName := range inspectProc.Environments.DetailedEnvs {
-					if OtherAgent, exists := procdiscovery.OtherAgentEnvs[envName]; exists {
-						detectedAgent = odigosv1.OtherAgent{Name: OtherAgent}
+					if otherAgentName, exists := procdiscovery.OtherAgentEnvs[envName]; exists {
+						detectedAgent = &odigosv1.OtherAgent{Name: otherAgentName}
 					}
 				}
 			}
@@ -141,7 +141,7 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 				Language:       programLanguageDetails.Language,
 				RuntimeVersion: runtimeVersion,
 				EnvVars:        envs,
-				OtherAgent:     &detectedAgent,
+				OtherAgent:     detectedAgent,
 			}
 		}
 	}
