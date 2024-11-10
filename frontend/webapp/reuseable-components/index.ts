@@ -2,6 +2,7 @@ export * from './text';
 export * from './badge';
 export * from './button';
 export * from './button/docs-button';
+export * from './button/selection-button';
 export * from './section-title';
 export * from './input';
 export * from './tooltip';

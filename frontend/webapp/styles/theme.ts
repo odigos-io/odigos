@@ -9,7 +9,6 @@ const colors = {
   border: '#525252',
   translucent_bg: '#1A1A1A',
   majestic_blue: '#444AD9',
-  selected_hover: '#444AD93D',
   card: '#F9F9F90A',
   dropdown_bg: '#242424',
   blank_background: '#11111100',
