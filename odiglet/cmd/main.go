@@ -4,13 +4,14 @@ import (
 	"context"
 	"os"
 
+	detector "github.com/odigos-io/odigos/odiglet/pkg/detector"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf/sdks"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/fs"
-	detector "github.com/odigos-io/odigos/odiglet/pkg/detector"
 
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	"github.com/odigos-io/odigos/common"
 	k8senv "github.com/odigos-io/odigos/k8sutils/pkg/env"
+	k8snode "github.com/odigos-io/odigos/k8sutils/pkg/node"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation"
@@ -109,6 +110,11 @@ func main() {
 		os.Exit(-1)
 	}
 
+	if err := k8snode.AddLabelToNode(clientset, env.Current.NodeName, "test-label", "true"); err != nil {
+		log.Logger.Error(err, "Failed to add label to the node")
+		os.Exit(-1)
+	}
+
 	<-ctx.Done()
 	for _, director := range ebpfDirectors {
 		director.Shutdown()
@@ -117,6 +123,10 @@ func main() {
 	if err != nil {
 		log.Logger.Error(err, "Failed to stop runtime detector")
 		os.Exit(-1)
+	}
+	// Remove the label before exiting
+	if err := k8snode.RemoveLabelFromNode(clientset, env.Current.NodeName, "test-label"); err != nil {
+		log.Logger.Error(err, "Failed to remove label from the node")
 	}
 	log.Logger.V(0).Info("odiglet exiting")
 }
