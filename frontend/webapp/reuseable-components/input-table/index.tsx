@@ -4,7 +4,7 @@ import { Input } from '../input';
 import { Button } from '../button';
 import styled from 'styled-components';
 import { FieldLabel } from '../field-label';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 
 interface Props {
   columns: {
@@ -65,20 +65,20 @@ export const InputTable: React.FC<Props> = ({ columns, initialValues = [], value
     if (!rows.length) setRows([{ ...init }]);
   }, []);
 
-  const recordedPairs = useRef('');
+  // Filter out rows where either key or value is empty
+  const validRows = useMemo(() => rows.filter((row) => !Object.values(row).filter((val) => !val).length), [rows]);
+  const recordedRows = useRef(JSON.stringify(validRows));
 
   useEffect(() => {
-    // Filter out rows where any values are empty
-    const validKeyValuePairs = rows.filter((row) => !Object.values(row).filter((val) => !val).length);
-    const stringified = JSON.stringify(validKeyValuePairs);
+    const stringified = JSON.stringify(validRows);
 
-    // Only trigger onChange if valid pairs have changed
-    if (recordedPairs.current !== stringified) {
-      recordedPairs.current = stringified;
+    // Only trigger onChange if valid key-value pairs have changed
+    if (recordedRows.current !== stringified) {
+      recordedRows.current = stringified;
 
-      if (onChange) onChange(validKeyValuePairs);
+      if (onChange) onChange(validRows);
     }
-  }, [rows, onChange]);
+  }, [validRows, onChange]);
 
   const handleAddRow = () => {
     setRows((prev) => {

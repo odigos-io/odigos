@@ -1,16 +1,8 @@
-import styled from 'styled-components';
 import React, { useState, useCallback } from 'react';
-import { useActualSources, useConnectSourcesMenuState } from '@/hooks';
 import { ChooseSourcesBody } from '../choose-sources-body';
 import { Modal, NavigationButtons } from '@/reuseable-components';
 import { K8sActualSource, PersistNamespaceItemInput } from '@/types';
-
-const ChooseSourcesBodyWrapper = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-`;
+import { useActualSources, useConnectSourcesMenuState } from '@/hooks';
 
 interface AddSourceModalProps {
   isOpen: boolean;
@@ -65,9 +57,7 @@ export const AddSourceModal: React.FC<AddSourceModalProps> = ({ isOpen, onClose 
         />
       }
     >
-      <ChooseSourcesBodyWrapper>
-        <ChooseSourcesBody isModal stateMenu={stateMenu} sourcesList={sourcesList} stateHandlers={stateHandlers} setSourcesList={setSourcesList} />
-      </ChooseSourcesBodyWrapper>
+      <ChooseSourcesBody isModal stateMenu={stateMenu} sourcesList={sourcesList} stateHandlers={stateHandlers} setSourcesList={setSourcesList} />
     </Modal>
   );
 };

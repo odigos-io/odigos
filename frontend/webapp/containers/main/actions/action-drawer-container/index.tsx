@@ -5,17 +5,17 @@ import { useDrawerStore } from '@/store';
 import { CardDetails } from '@/components';
 import type { ActionDataParsed } from '@/types';
 import { ChooseActionBody } from '../choose-action-body';
+import { useActionCRUD, useActionFormData } from '@/hooks';
 import OverviewDrawer from '../../overview/overview-drawer';
 import buildCardFromActionSpec from './build-card-from-action-spec';
-import { useActionCRUD, useActionFormData, useNotify } from '@/hooks';
 import { ACTION_OPTIONS } from '../choose-action-modal/action-options';
 
 interface Props {}
 
 const ActionDrawer: React.FC<Props> = () => {
-  const notify = useNotify();
   const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
   const [isEditing, setIsEditing] = useState(false);
+  const [isFormDirty, setIsFormDirty] = useState(false);
 
   const { formData, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem } = useActionFormData();
   const { updateAction, deleteAction } = useActionCRUD();
@@ -68,15 +68,7 @@ const ActionDrawer: React.FC<Props> = () => {
   };
 
   const handleSave = async (newTitle: string) => {
-    if (!validateForm()) {
-      notify({
-        message: 'Required fields are missing!',
-        title: 'Update Action Error',
-        type: 'error',
-        target: 'notification',
-        crdType: 'notification',
-      });
-    } else {
+    if (validateForm({ withAlert: true })) {
       const payload = {
         ...formData,
         name: newTitle,
@@ -91,14 +83,23 @@ const ActionDrawer: React.FC<Props> = () => {
       title={(item as ActionDataParsed).spec.actionName}
       imageUri={getActionIcon((item as ActionDataParsed).type)}
       isEdit={isEditing}
-      clickEdit={handleEdit}
-      clickSave={handleSave}
-      clickDelete={handleDelete}
-      clickCancel={handleCancel}
+      isFormDirty={isFormDirty}
+      onEdit={handleEdit}
+      onSave={handleSave}
+      onDelete={handleDelete}
+      onCancel={handleCancel}
     >
       {isEditing && thisAction ? (
         <FormContainer>
-          <ChooseActionBody isUpdate action={thisAction} formData={formData} handleFormChange={handleFormChange} />
+          <ChooseActionBody
+            isUpdate
+            action={thisAction}
+            formData={formData}
+            handleFormChange={(...params) => {
+              setIsFormDirty(true);
+              handleFormChange(...params);
+            }}
+          />
         </FormContainer>
       ) : (
         <CardDetails data={cardData} />

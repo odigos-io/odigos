@@ -1,8 +1,9 @@
 import { useDrawerStore } from '@/store';
 import { useNotify } from '../useNotify';
 import { useMutation } from '@apollo/client';
-import type { InstrumentationRuleInput } from '@/types';
 import { useComputePlatform } from '../compute-platform';
+import { ACTION, deriveTypeFromRule, getSseTargetFromId, NOTIFICATION } from '@/utils';
+import { OVERVIEW_ENTITY_TYPES, type InstrumentationRuleInput, type NotificationType } from '@/types';
 import { CREATE_INSTRUMENTATION_RULE, UPDATE_INSTRUMENTATION_RULE, DELETE_INSTRUMENTATION_RULE } from '@/graphql/mutations';
 
 interface Params {
@@ -15,33 +16,50 @@ export const useInstrumentationRuleCRUD = (params?: Params) => {
   const { refetch } = useComputePlatform();
   const notify = useNotify();
 
-  const notifyUser = (title: string, message: string, type: 'error' | 'success') => {
-    notify({ title, message, type, target: 'notification', crdType: 'notification' });
+  const notifyUser = (type: NotificationType, title: string, message: string, id?: string) => {
+    notify({
+      type,
+      title,
+      message,
+      crdType: OVERVIEW_ENTITY_TYPES.RULE,
+      target: id ? getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.RULE) : undefined,
+    });
   };
 
-  const handleError = (title: string, message: string) => {
-    notifyUser(title, message, 'error');
+  const handleError = (title: string, message: string, id?: string) => {
+    notifyUser(NOTIFICATION.ERROR, title, message, id);
     params?.onError?.();
   };
 
-  const handleComplete = (title: string, message: string) => {
-    notifyUser(title, message, 'success');
+  const handleComplete = (title: string, message: string, id?: string) => {
+    notifyUser(NOTIFICATION.SUCCESS, title, message, id);
     setDrawerItem(null);
     refetch();
     params?.onSuccess?.();
   };
 
   const [createInstrumentationRule, cState] = useMutation<{ createInstrumentationRule: { ruleId: string } }>(CREATE_INSTRUMENTATION_RULE, {
-    onError: (error) => handleError('Create Rule', error.message),
-    onCompleted: () => handleComplete('Create Rule', 'successfully created'),
+    onError: (error) => handleError(ACTION.CREATE, error.message),
+    onCompleted: (res, req) => {
+      const id = res.createInstrumentationRule.ruleId;
+      const name = req?.variables?.instrumentationRule.ruleName || deriveTypeFromRule(req?.variables?.instrumentationRule);
+      handleComplete(ACTION.CREATE, `instrumentation rule "${name}" was created`, id);
+    },
   });
   const [updateInstrumentationRule, uState] = useMutation<{ updateInstrumentationRule: { ruleId: string } }>(UPDATE_INSTRUMENTATION_RULE, {
-    onError: (error) => handleError('Update Rule', error.message),
-    onCompleted: () => handleComplete('Update Rule', 'successfully updated'),
+    onError: (error) => handleError(ACTION.UPDATE, error.message),
+    onCompleted: (res, req) => {
+      const id = res.updateInstrumentationRule.ruleId;
+      const name = req?.variables?.instrumentationRule.ruleName || deriveTypeFromRule(req?.variables?.instrumentationRule);
+      handleComplete(ACTION.UPDATE, `instrumentation rule "${name}" was updated`, id);
+    },
   });
   const [deleteInstrumentationRule, dState] = useMutation<{ deleteInstrumentationRule: boolean }>(DELETE_INSTRUMENTATION_RULE, {
-    onError: (error) => handleError('Delete Rule', error.message),
-    onCompleted: () => handleComplete('Delete Rule', 'successfully deleted'),
+    onError: (error) => handleError(ACTION.DELETE, error.message),
+    onCompleted: (res, req) => {
+      const id = req?.variables?.ruleId;
+      handleComplete(ACTION.DELETE, `instrumentation rule "${id}" was deleted`);
+    },
   });
 
   return {

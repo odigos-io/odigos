@@ -2,10 +2,19 @@
 import React, { useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import styled from 'styled-components';
+import { ToastList } from '@/components';
 import { OverviewActionMenuContainer } from '../overview-actions-menu';
-import { buildNodesAndEdges, NodeBaseDataFlow } from '@/reuseable-components';
-import { useGetActions, useActualSources, useContainerWidth, useActualDestination, useNodeDataFlowHandlers } from '@/hooks';
-import { useGetInstrumentationRules } from '@/hooks/instrumentation-rules/useGetInstrumentationRules';
+import { buildNodesAndEdges, NodeBaseDataFlow, } from '@/reuseable-components';
+import {
+  useMetrics,
+  useGetActions,
+  useActualSources,
+  useContainerWidth,
+  useActualDestination,
+  useNodeDataFlowHandlers,
+  useGetInstrumentationRules,
+} from '@/hooks';
+
 
 const AllDrawers = dynamic(() => import('../all-drawers'), {
   ssr: false,
@@ -21,7 +30,11 @@ export const OverviewDataFlowWrapper = styled.div`
   position: relative;
 `;
 
+const NODE_WIDTH = 255;
+const NODE_HEIGHT = 80;
+
 export function OverviewDataFlowContainer() {
+  const { metrics } = useMetrics();
   const { actions } = useGetActions();
   const { sources } = useActualSources();
   const { destinations } = useActualDestination();
@@ -34,8 +47,6 @@ export function OverviewDataFlowContainer() {
     destinations,
   });
 
-  const columnWidth = 255;
-
   // Memoized node and edge builder to improve performance
   const { nodes, edges } = useMemo(() => {
     return buildNodesAndEdges({
@@ -43,18 +54,21 @@ export function OverviewDataFlowContainer() {
       sources,
       actions,
       destinations,
-      columnWidth,
+      metrics,
       containerWidth,
+      nodeWidth: NODE_WIDTH,
+      nodeHeight: NODE_HEIGHT,
     });
-  }, [instrumentationRules, sources, actions, destinations, columnWidth, containerWidth]);
+  }, [instrumentationRules, sources, actions, destinations, metrics, containerWidth]);
 
   return (
     <OverviewDataFlowWrapper ref={containerRef}>
       <OverviewActionMenuContainer />
-      <NodeBaseDataFlow nodes={nodes} edges={edges} onNodeClick={handleNodeClick} columnWidth={columnWidth} />
+      <NodeBaseDataFlow nodes={nodes} edges={edges} onNodeClick={handleNodeClick} nodeWidth={NODE_WIDTH} />
 
       <AllDrawers />
       <AllModals />
+      <ToastList />
     </OverviewDataFlowWrapper>
   );
 }

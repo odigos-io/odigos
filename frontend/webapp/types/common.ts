@@ -1,3 +1,9 @@
+export interface ExportedSignals {
+  logs: boolean;
+  metrics: boolean;
+  traces: boolean;
+}
+
 export interface Condition {
   type: string;
   status: string;
@@ -5,17 +11,18 @@ export interface Condition {
   lastTransitionTime: string;
 }
 
+export type NotificationType = 'warning' | 'error' | 'success' | 'info' | 'default';
+
 export interface Notification {
   id: string;
-  message: string;
+  type: NotificationType;
   title?: string;
-  seen: boolean;
-  isNew?: boolean;
-  time?: string;
-  target?: string;
-  event?: string;
+  message?: string;
   crdType?: string;
-  type: 'success' | 'error' | 'info';
+  target?: string;
+  dismissed: boolean;
+  seen: boolean;
+  time: string;
 }
 
 export type Config = {

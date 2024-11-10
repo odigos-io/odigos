@@ -1,46 +1,37 @@
 'use client';
 import { useEffect } from 'react';
-import { useConfig } from '@/hooks';
-import { ROUTES, CONFIG } from '@/utils';
 import { useRouter } from 'next/navigation';
-import { addNotification, store } from '@/store';
+import { useConfig, useNotify } from '@/hooks';
 import { Loader } from '@keyval-dev/design-system';
+import { ROUTES, CONFIG, NOTIFICATION } from '@/utils';
 
 export default function App() {
   const router = useRouter();
+  const notify = useNotify();
   const { data, error } = useConfig();
 
   useEffect(() => {
-    data && renderCurrentPage();
-  }, [data, error]);
+    if (error) {
+      notify({
+        type: NOTIFICATION.ERROR,
+        title: error.name,
+        message: error.message,
+      });
 
-  useEffect(() => {
-    if (!error) return;
-    store.dispatch(
-      addNotification({
-        id: '1',
-        message: 'An error occurred',
-        title: 'Error',
-        type: 'error',
-        target: 'notification',
-        crdType: 'notification',
-      })
-    );
-    router.push(ROUTES.OVERVIEW);
-  }, [error]);
+      router.push(ROUTES.OVERVIEW);
+    } else if (data) {
+      const { installation } = data;
 
-  function renderCurrentPage() {
-    const { installation } = data;
-
-    switch (installation) {
-      case CONFIG.NEW:
-      case CONFIG.APPS_SELECTED:
-        router.push(ROUTES.CHOOSE_SOURCES);
-        break;
-      case CONFIG.FINISHED:
-        router.push(ROUTES.OVERVIEW);
+      switch (installation) {
+        case CONFIG.NEW:
+        case CONFIG.APPS_SELECTED:
+          router.push(ROUTES.CHOOSE_SOURCES);
+          break;
+        case CONFIG.FINISHED:
+          router.push(ROUTES.OVERVIEW);
+      }
     }
-  }
+  }, [data, error]);
 
   return <Loader />;
 }

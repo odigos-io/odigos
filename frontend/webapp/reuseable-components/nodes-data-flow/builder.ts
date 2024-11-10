@@ -1,7 +1,6 @@
 import theme from '@/styles/theme';
-import { getActionIcon } from '@/utils';
 import { Node, Edge } from 'react-flow-renderer';
-import { getRuleIcon } from '@/utils/functions';
+import { extractMonitors, formatBytes, getActionIcon, getRuleIcon, getValueForRange } from '@/utils';
 import { getMainContainerLanguageLogo } from '@/utils/constants/programming-languages';
 import {
   OVERVIEW_ENTITY_TYPES,
@@ -12,13 +11,20 @@ import {
   type ActionItem,
   type ActualDestination,
   type K8sActualSource,
+  type OverviewMetricsResponse,
 } from '@/types';
 
-const NODE_HEIGHT = 80;
 const HEADER_ICON_PATH = '/icons/overview/';
 
+const getHealthStatus = (item: K8sActualSource | ActualDestination) => {
+  const conditions = (item as K8sActualSource)?.instrumentedApplicationDetails?.conditions || (item as ActualDestination)?.conditions;
+  const isUnhealthy = !conditions?.length || !!conditions.find(({ status }) => status === 'False');
+
+  return isUnhealthy ? STATUSES.UNHEALTHY : STATUSES.HEALTHY;
+};
+
 const createNode = (nodeId: string, nodeType: string, x: number, y: number, data: Record<string, any>, style?: React.CSSProperties): Node => {
-  // const [columnType] = id.split('-');
+  // const [columnType] = nodeId.split('-');
 
   return {
     id: nodeId,
@@ -52,141 +58,195 @@ const createEdge = (
   };
 };
 
-// Extract the monitors from exported signals
-const extractMonitors = (exportedSignals: Record<string, boolean>) =>
-  Object.keys(exportedSignals).filter((signal) => exportedSignals[signal] === true);
-
 export const buildNodesAndEdges = ({
   rules,
   sources,
   actions,
   destinations,
-  columnWidth,
+  metrics,
   containerWidth,
+  nodeWidth,
+  nodeHeight,
 }: {
   rules: InstrumentationRuleSpec[];
   sources: K8sActualSource[];
   actions: ActionData[];
   destinations: ActualDestination[];
-  columnWidth: number;
+  metrics?: OverviewMetricsResponse;
   containerWidth: number;
+  nodeWidth: number;
+  nodeHeight: number;
 }) => {
-  // Calculate x positions for each column
-  const columnPostions = {
-    rules: 0,
-    sources: (containerWidth - columnWidth) / 4,
-    actions: (containerWidth - columnWidth) / 1.6,
-    destinations: containerWidth - columnWidth,
+  const nodes: Node[] = [];
+  const edges: Edge[] = [];
+
+  if (!containerWidth) {
+    return {
+      nodes: [],
+      edges: [],
+    };
+  }
+
+  // Calculate positions for each node
+  const startX = 0;
+  const endX = (containerWidth <= 1500 ? 1500 : containerWidth) - nodeWidth;
+  const postions = {
+    rules: {
+      x: startX,
+      y: (idx?: number) => nodeHeight * ((idx || 0) + 1),
+    },
+    sources: {
+      x: getValueForRange(containerWidth, [
+        [0, 1500, endX / 3.5],
+        [1500, 1600, endX / 4],
+        [1600, null, endX / 4.5],
+      ]),
+      y: (idx?: number) => nodeHeight * ((idx || 0) + 1),
+    },
+    actions: {
+      x: getValueForRange(containerWidth, [
+        [0, 1500, endX / 1.55],
+        [1500, 1600, endX / 1.6],
+        [1600, null, endX / 1.65],
+      ]),
+      y: (idx?: number) => nodeHeight * ((idx || 0) + 1),
+    },
+    destinations: {
+      x: endX,
+      y: (idx?: number) => nodeHeight * ((idx || 0) + 1),
+    },
+  };
+
+  const tempNodes = {
+    rules: [
+      createNode('rule-header', 'header', postions['rules']['x'], 0, {
+        icon: `${HEADER_ICON_PATH}rules.svg`,
+        title: 'Instrumentation Rules',
+        tagValue: rules.length,
+      }),
+    ],
+    sources: [
+      createNode('source-header', 'header', postions['sources']['x'], 0, {
+        icon: `${HEADER_ICON_PATH}sources.svg`,
+        title: 'Sources',
+        tagValue: sources.length,
+      }),
+    ],
+    actions: [
+      createNode('action-header', 'header', postions['actions']['x'], 0, {
+        icon: `${HEADER_ICON_PATH}actions.svg`,
+        title: 'Actions',
+        tagValue: actions.length,
+      }),
+    ],
+    destinations: [
+      createNode('destination-header', 'header', postions['destinations']['x'], 0, {
+        icon: `${HEADER_ICON_PATH}destinations.svg`,
+        title: 'Destinations',
+        tagValue: destinations.length,
+      }),
+    ],
   };
 
   // Build Rules Nodes
-  const ruleNodes: Node[] = [
-    createNode('rule-header', 'header', columnPostions['rules'], 0, {
-      icon: `${HEADER_ICON_PATH}rules.svg`,
-      title: 'Instrumentation Rules',
-      tagValue: rules.length,
-    }),
-    ...(!rules.length
-      ? [
-          createNode('rule-0', 'add', columnPostions['rules'], NODE_HEIGHT, {
-            type: OVERVIEW_NODE_TYPES.ADD_RULE,
-            status: STATUSES.HEALTHY,
-            title: 'ADD RULE',
-            subTitle: 'Add first rule to modify the OpenTelemetry data',
-          }),
-        ]
-      : rules.map((rule, index) =>
-          createNode(`rule-${index}`, 'base', columnPostions['rules'], NODE_HEIGHT * (index + 1), {
-            id: rule.ruleId,
-            type: OVERVIEW_ENTITY_TYPES.RULE,
-            status: STATUSES.HEALTHY,
-            title: rule.ruleName || rule.type,
-            subTitle: rule.type,
-            imageUri: getRuleIcon(rule.type),
-            isActive: !rule.disabled,
-          })
-        )),
-  ];
+  if (!rules.length) {
+    tempNodes['rules'].push(
+      createNode('rule-0', 'add', postions['rules']['x'], postions['rules']['y'](), {
+        type: OVERVIEW_NODE_TYPES.ADD_RULE,
+        status: STATUSES.HEALTHY,
+        title: 'ADD RULE',
+        subTitle: 'Add first rule to modify the OpenTelemetry data',
+      })
+    );
+  } else {
+    rules.forEach((rule, idx) => {
+      tempNodes['rules'].push(
+        createNode(`rule-${idx}`, 'base', postions['rules']['x'], postions['rules']['y'](idx), {
+          id: rule.ruleId,
+          type: OVERVIEW_ENTITY_TYPES.RULE,
+          status: STATUSES.HEALTHY,
+          title: rule.ruleName || rule.type,
+          subTitle: rule.type,
+          imageUri: getRuleIcon(rule.type),
+          isActive: !rule.disabled,
+        })
+      );
+    });
+  }
 
   // Build Source Nodes
-  const sourceNodes: Node[] = [
-    createNode('source-header', 'header', columnPostions['sources'], 0, {
-      icon: `${HEADER_ICON_PATH}sources.svg`,
-      title: 'Sources',
-      tagValue: sources.length,
-    }),
-    ...(!sources.length
-      ? [
-          createNode('source-0', 'add', columnPostions['sources'], NODE_HEIGHT, {
-            type: OVERVIEW_NODE_TYPES.ADD_SOURCE,
-            status: STATUSES.HEALTHY,
-            title: 'ADD SOURCE',
-            subTitle: 'Add first source to collect OpenTelemetry data',
-          }),
-        ]
-      : sources.map((source, index) =>
-          createNode(`source-${index}`, 'base', columnPostions['sources'], NODE_HEIGHT * (index + 1), {
-            id: { kind: source.kind, name: source.name, namespace: source.namespace },
-            type: OVERVIEW_ENTITY_TYPES.SOURCE,
-            status: index === 0 ? STATUSES.UNHEALTHY : STATUSES.HEALTHY,
-            title: source.name + (source.reportedName ? ` (${source.reportedName})` : ''),
-            subTitle: source.kind,
-            imageUri: getMainContainerLanguageLogo(source),
-          })
-        )),
-  ];
+  if (!sources.length) {
+    tempNodes['sources'].push(
+      createNode('source-0', 'add', postions['sources']['x'], postions['rules']['y'](), {
+        type: OVERVIEW_NODE_TYPES.ADD_SOURCE,
+        status: STATUSES.HEALTHY,
+        title: 'ADD SOURCE',
+        subTitle: 'Add first source to collect OpenTelemetry data',
+      })
+    );
+  } else {
+    sources.forEach((source, idx) => {
+      const metric = metrics?.getOverviewMetrics.sources.find(
+        ({ kind, name, namespace }) => kind === source.kind && name === source.name && namespace === source.namespace
+      );
+
+      tempNodes['sources'].push(
+        createNode(`source-${idx}`, 'base', postions['sources']['x'], postions['rules']['y'](idx), {
+          id: { kind: source.kind, name: source.name, namespace: source.namespace },
+          type: OVERVIEW_ENTITY_TYPES.SOURCE,
+          status: getHealthStatus(source),
+          title: source.name + (source.reportedName ? ` (${source.reportedName})` : ''),
+          subTitle: source.kind,
+          imageUri: getMainContainerLanguageLogo(source),
+          metric,
+        })
+      );
+    });
+  }
 
   // Build Action Nodes
-  const actionNodes: Node[] = [
-    createNode('action-header', 'header', columnPostions['actions'], 0, {
-      icon: `${HEADER_ICON_PATH}actions.svg`,
-      title: 'Actions',
-      tagValue: actions.length,
-    }),
-    ...(!actions.length
-      ? [
-          createNode('action-0', 'add', columnPostions['actions'], NODE_HEIGHT, {
-            type: OVERVIEW_NODE_TYPES.ADD_ACTION,
-            status: STATUSES.HEALTHY,
-            title: 'ADD ACTION',
-            subTitle: 'Add first action to modify the OpenTelemetry data',
-          }),
-        ]
-      : actions.map((action, index) => {
-          const actionSpec: ActionItem = typeof action.spec === 'string' ? JSON.parse(action.spec) : (action.spec as ActionItem);
+  if (!actions.length) {
+    tempNodes['actions'].push(
+      createNode('action-0', 'add', postions['actions']['x'], postions['rules']['y'](), {
+        type: OVERVIEW_NODE_TYPES.ADD_ACTION,
+        status: STATUSES.HEALTHY,
+        title: 'ADD ACTION',
+        subTitle: 'Add first action to modify the OpenTelemetry data',
+      })
+    );
+  } else {
+    actions.forEach((action, idx) => {
+      const spec: ActionItem = typeof action.spec === 'string' ? JSON.parse(action.spec) : (action.spec as ActionItem);
 
-          return createNode(`action-${index}`, 'base', columnPostions['actions'], NODE_HEIGHT * (index + 1), {
-            id: action.id,
-            type: OVERVIEW_ENTITY_TYPES.ACTION,
-            status: STATUSES.HEALTHY,
-            title: actionSpec.actionName || action.type,
-            subTitle: action.type,
-            imageUri: getActionIcon(action.type),
-            monitors: actionSpec.signals,
-            isActive: !actionSpec.disabled,
-          });
-        })),
-  ];
+      tempNodes['actions'].push(
+        createNode(`action-${idx}`, 'base', postions['actions']['x'], postions['rules']['y'](idx), {
+          id: action.id,
+          type: OVERVIEW_ENTITY_TYPES.ACTION,
+          status: STATUSES.HEALTHY,
+          title: spec.actionName || action.type,
+          subTitle: action.type,
+          imageUri: getActionIcon(action.type),
+          monitors: spec.signals,
+          isActive: !spec.disabled,
+        })
+      );
+    });
 
-  // Create group for actions
-  if (actions.length) {
+    // Create group
     const padding = 15;
-    const getDifference = (x: number) => {
-      const a = 23.24; // coefficient
-      const b = -0.589; // exponent
-      return a * Math.pow(x, b);
-    };
+    const widthMultiplier = 4.5;
+    const heightMultiplier = 1.5;
 
-    actionNodes.push(
+    tempNodes['actions'].push(
       createNode(
         'action-group',
         'group',
-        columnPostions['actions'] - padding,
-        NODE_HEIGHT - padding,
+        postions['actions']['x'] - padding,
+        postions['rules']['y']() - padding,
         {},
         {
-          width: columnWidth + padding * getDifference(padding),
-          height: NODE_HEIGHT * actions.length + padding,
+          width: nodeWidth + padding * widthMultiplier,
+          height: nodeHeight * actions.length + padding * heightMultiplier,
           background: 'transparent',
           border: `1px dashed ${theme.colors.border}`,
           borderRadius: 24,
@@ -197,53 +257,52 @@ export const buildNodesAndEdges = ({
   }
 
   // Build Destination Nodes
-  const destinationNodes: Node[] = [
-    createNode('destination-header', 'header', columnPostions['destinations'], 0, {
-      icon: `${HEADER_ICON_PATH}destinations.svg`,
-      title: 'Destinations',
-      tagValue: destinations.length,
-    }),
-    ...(!destinations.length
-      ? [
-          createNode('destination-0', 'add', columnPostions['destinations'], NODE_HEIGHT, {
-            type: OVERVIEW_NODE_TYPES.ADD_DESTIONATION,
-            status: STATUSES.HEALTHY,
-            title: 'ADD DESTIONATION',
-            subTitle: 'Add first destination to monitor OpenTelemetry data',
-          }),
-        ]
-      : destinations.map((destination, index) =>
-          createNode(`destination-${index}`, 'base', columnPostions['destinations'], NODE_HEIGHT * (index + 1), {
-            id: destination.id,
-            type: OVERVIEW_ENTITY_TYPES.DESTINATION,
-            status: index === 0 ? STATUSES.UNHEALTHY : STATUSES.HEALTHY,
-            title: destination.name,
-            subTitle: destination.destinationType.displayName,
-            imageUri: destination.destinationType.imageUrl,
-            monitors: extractMonitors(destination.exportedSignals),
-          })
-        )),
-  ];
+  if (!destinations.length) {
+    tempNodes['destinations'].push(
+      createNode('destination-0', 'add', postions['destinations']['x'], postions['rules']['y'](), {
+        type: OVERVIEW_NODE_TYPES.ADD_DESTIONATION,
+        status: STATUSES.HEALTHY,
+        title: 'ADD DESTIONATION',
+        subTitle: 'Add first destination to monitor OpenTelemetry data',
+      })
+    );
+  } else {
+    destinations.forEach((destination, idx) => {
+      const metric = metrics?.getOverviewMetrics.destinations.find(({ id }) => id === destination.id);
 
-  // Combine all nodes
-  const nodes = [...ruleNodes, ...sourceNodes, ...actionNodes, ...destinationNodes];
-
-  // Build edges - connecting sources to actions, and actions to destinations
-  const edges: Edge[] = [];
+      tempNodes['destinations'].push(
+        createNode(`destination-${idx}`, 'base', postions['destinations']['x'], postions['rules']['y'](idx), {
+          id: destination.id,
+          type: OVERVIEW_ENTITY_TYPES.DESTINATION,
+          status: getHealthStatus(destination),
+          title: destination.name || destination.destinationType.displayName,
+          subTitle: destination.destinationType.displayName,
+          imageUri: destination.destinationType.imageUrl,
+          monitors: extractMonitors(destination.exportedSignals),
+          metric,
+        })
+      );
+    });
+  }
 
   // Connect sources to actions
   if (!sources.length) {
     edges.push(createEdge('source-0-to-action-0'));
   } else {
-    sources.forEach((_, sourceIndex) => {
-      const actionIndex = actions.length ? 'group' : 0;
-      edges.push(
-        createEdge(`source-${sourceIndex}-to-action-${actionIndex}`, {
-          label: `${sourceIndex === 0 ? 0 : (Math.random() * 50).toFixed(1)} kb/s`,
-          isMultiTarget: false,
-          isError: sourceIndex === 0,
-        })
-      );
+    tempNodes['sources'].forEach((node, idx) => {
+      if (idx > 0) {
+        const sourceIndex = idx - 1;
+        const actionIndex = actions.length ? 'group' : 0;
+
+        edges.push(
+          createEdge(`source-${sourceIndex}-to-action-${actionIndex}`, {
+            animated: false,
+            isMultiTarget: false,
+            label: formatBytes(node.data.metric?.throughput),
+            isError: node.data.status === STATUSES.UNHEALTHY,
+          })
+        );
+      }
     });
   }
 
@@ -259,17 +318,24 @@ export const buildNodesAndEdges = ({
   if (!destinations.length) {
     edges.push(createEdge('action-0-to-destination-0'));
   } else {
-    destinations.forEach((_, destinationIndex) => {
-      const actionIndex = actions.length ? 'group' : 0;
-      edges.push(
-        createEdge(`action-${actionIndex}-to-destination-${destinationIndex}`, {
-          label: `${destinationIndex === 0 ? 0 : (Math.random() * 10).toFixed(1)} kb/s`,
-          isMultiTarget: true,
-          isError: destinationIndex === 0,
-        })
-      );
+    tempNodes['destinations'].forEach((node, idx) => {
+      if (idx > 0) {
+        const destinationIndex = idx - 1;
+        const actionIndex = actions.length ? 'group' : 0;
+
+        edges.push(
+          createEdge(`action-${actionIndex}-to-destination-${destinationIndex}`, {
+            animated: true,
+            isMultiTarget: true,
+            label: formatBytes(node.data.metric?.throughput),
+            isError: node.data.status === STATUSES.UNHEALTHY,
+          })
+        );
+      }
     });
   }
+
+  Object.values(tempNodes).forEach((arr) => nodes.push(...arr));
 
   return { nodes, edges };
 };

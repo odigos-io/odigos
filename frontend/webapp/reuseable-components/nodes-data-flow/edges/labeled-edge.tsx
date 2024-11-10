@@ -5,7 +5,7 @@ import { EdgeLabelRenderer, BaseEdge, type EdgeProps, type Edge, getSmoothStepPa
 const Label = styled.div<{ labelX: number; labelY: number; isError?: boolean }>`
   position: absolute;
   transform: ${({ labelX, labelY }) => `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`};
-  width: 60px;
+  width: 75px;
   padding: 2px 6px;
   background-color: ${({ theme }) => theme.colors.primary};
   border-radius: 360px;

@@ -11,6 +11,7 @@ interface Props {}
 const DestinationDrawer: React.FC<Props> = () => {
   const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
   const [isEditing, setIsEditing] = useState(false);
+  const [isFormDirty, setIsFormDirty] = useState(false);
 
   const { cardData, dynamicFields, exportedSignals, supportedSignals, destinationType, resetFormData, setDynamicFields, setExportedSignals } =
     useDestinationFormData();
@@ -53,10 +54,11 @@ const DestinationDrawer: React.FC<Props> = () => {
       title={(item as ActualDestination).name}
       imageUri={(item as ActualDestination).destinationType.imageUrl}
       isEdit={isEditing}
-      clickEdit={handleEdit}
-      clickSave={handleSave}
-      clickDelete={handleDelete}
-      clickCancel={handleCancel}
+      isFormDirty={isFormDirty}
+      onEdit={handleEdit}
+      onSave={handleSave}
+      onDelete={handleDelete}
+      onCancel={handleCancel}
     >
       {isEditing ? (
         <FormContainer>
@@ -64,8 +66,14 @@ const DestinationDrawer: React.FC<Props> = () => {
             dynamicFields={dynamicFields}
             exportedSignals={exportedSignals}
             supportedSignals={supportedSignals}
-            handleSignalChange={handleSignalChange}
-            handleDynamicFieldChange={handleDynamicFieldChange}
+            handleSignalChange={(...params) => {
+              setIsFormDirty(true);
+              handleSignalChange(...params);
+            }}
+            handleDynamicFieldChange={(...params) => {
+              setIsFormDirty(true);
+              handleDynamicFieldChange(...params);
+            }}
           />
         </FormContainer>
       ) : (

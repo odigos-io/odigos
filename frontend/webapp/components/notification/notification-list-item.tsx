@@ -5,20 +5,8 @@ import { ROUTES, timeAgo } from '@/utils';
 import { useRouter } from 'next/navigation';
 import { getIcon } from './notification-icon';
 import { KeyvalLink, KeyvalText } from '@/design.system';
-import {
-  NotificationButtonContainer,
-  NotificationDetailsWrapper,
-} from './notification-container';
-interface NotificationListItemProps {
-  id: string;
-  message: string;
-  type: 'success' | 'error' | 'info';
-  seen: boolean;
-  title?: string;
-  crdType?: string;
-  time?: string;
-  target?: string;
-}
+import { NotificationButtonContainer, NotificationDetailsWrapper } from './notification-container';
+import { Notification } from '@/types';
 
 const NotificationItemContainer = styled.div<{ seen: boolean }>`
   border-bottom: 1px solid ${theme.colors.blue_grey};
@@ -27,8 +15,7 @@ const NotificationItemContainer = styled.div<{ seen: boolean }>`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: ${({ seen }) =>
-    seen ? theme.colors.light_dark : theme.colors.dark};
+  background-color: ${({ seen }) => (seen ? theme.colors.light_dark : theme.colors.dark)};
 
   &:hover {
     background-color: ${theme.colors.dark};
@@ -41,15 +28,7 @@ const NotificationContent = styled.div`
   gap: 8px;
 `;
 
-const NotificationListItem: React.FC<NotificationListItemProps> = ({
-  message,
-  type,
-  seen,
-  title,
-  crdType,
-  target,
-  time,
-}) => {
+const NotificationListItem: React.FC<Notification> = ({ message, type, seen, title, crdType, target, time }) => {
   const router = useRouter();
 
   function onDetailsClick() {
@@ -83,11 +62,7 @@ const NotificationListItem: React.FC<NotificationListItemProps> = ({
           )}
         </NotificationDetailsWrapper>
       </NotificationContent>
-      <NotificationButtonContainer>
-        {!!target && (
-          <KeyvalLink fontSize={12} value="Details" onClick={onDetailsClick} />
-        )}
-      </NotificationButtonContainer>
+      <NotificationButtonContainer>{!!target && <KeyvalLink fontSize={12} value='Details' onClick={onDetailsClick} />}</NotificationButtonContainer>
     </NotificationItemContainer>
   );
 };

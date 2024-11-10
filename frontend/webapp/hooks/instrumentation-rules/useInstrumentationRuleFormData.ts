@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { useNotify } from '../useNotify';
 import type { DrawerBaseItem } from '@/store';
+import { ACTION, FORM_ALERTS, NOTIFICATION } from '@/utils';
 import { PayloadCollectionType, type InstrumentationRuleInput, type InstrumentationRuleSpec } from '@/types';
 
 const INITIAL: InstrumentationRuleInput = {
@@ -17,6 +19,7 @@ const INITIAL: InstrumentationRuleInput = {
 };
 
 export function useInstrumentationRuleFormData() {
+  const notify = useNotify();
   const [formData, setFormData] = useState({ ...INITIAL });
 
   const handleFormChange = (key: keyof typeof INITIAL, val: any) => {
@@ -30,7 +33,7 @@ export function useInstrumentationRuleFormData() {
     setFormData({ ...INITIAL });
   };
 
-  const validateForm = () => {
+  const validateForm = (params?: { withAlert?: boolean }) => {
     let ok = true;
 
     Object.entries(formData).forEach(([k, v]) => {
@@ -44,6 +47,14 @@ export function useInstrumentationRuleFormData() {
           break;
       }
     });
+
+    if (!ok && params?.withAlert) {
+      notify({
+        type: NOTIFICATION.ERROR,
+        title: ACTION.UPDATE,
+        message: FORM_ALERTS.REQUIRED_FIELDS,
+      });
+    }
 
     return ok;
   };

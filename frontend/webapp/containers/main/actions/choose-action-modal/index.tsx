@@ -1,8 +1,9 @@
 import { ChooseActionBody } from '../';
 import React, { useMemo, useState } from 'react';
+import { CenterThis, ModalBody } from '@/styles';
 import { useActionCRUD, useActionFormData } from '@/hooks/actions';
 import { ACTION_OPTIONS, type ActionOption } from './action-options';
-import { AutocompleteInput, Modal, NavigationButtons, Divider, FadeLoader, SectionTitle, ModalContent, Center } from '@/reuseable-components';
+import { AutocompleteInput, Modal, NavigationButtons, Divider, FadeLoader, SectionTitle } from '@/reuseable-components';
 
 interface AddActionModalProps {
   isOpen: boolean;
@@ -50,7 +51,7 @@ export const AddActionModal: React.FC<AddActionModalProps> = ({ isOpen, onClose 
         />
       }
     >
-      <ModalContent>
+      <ModalBody>
         <SectionTitle
           title='Define Action'
           description='Actions are a way to modify the OpenTelemetry data recorded by Odigos sources before it is exported to your Odigos destinations. Choose an action type and provide necessary information.'
@@ -62,15 +63,15 @@ export const AddActionModal: React.FC<AddActionModalProps> = ({ isOpen, onClose 
             <Divider margin='16px 0' />
 
             {loading ? (
-              <Center>
+              <CenterThis>
                 <FadeLoader cssOverride={{ scale: 2 }} />
-              </Center>
+              </CenterThis>
             ) : (
               <ChooseActionBody action={selectedItem} formData={formData} handleFormChange={handleFormChange} />
             )}
           </div>
         ) : null}
-      </ModalContent>
+      </ModalBody>
     </Modal>
   );
 };

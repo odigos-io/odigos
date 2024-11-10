@@ -1,23 +1,23 @@
-import { addNotification, store } from '@/store';
+import { useNotificationStore } from '@/store';
+import { Notification } from '@/types';
 
 export const useNotify = () => {
-  const dispatch = store.dispatch;
+  const { addNotification } = useNotificationStore();
 
   const notify = ({
-    message,
-    title,
     type,
-    target,
+    title,
+    message,
     crdType,
+    target,
   }: {
-    message: string;
-    title: string;
-    type: 'success' | 'error' | 'info';
-    target: string;
-    crdType: string;
+    type: Notification['type'];
+    title?: Notification['title'];
+    message?: Notification['message'];
+    crdType?: Notification['crdType'];
+    target?: Notification['target'];
   }) => {
-    const id = new Date().getTime().toString();
-    dispatch(addNotification({ id, message, title, type, target, crdType }));
+    addNotification({ type, title, message, crdType, target });
   };
 
   return notify;

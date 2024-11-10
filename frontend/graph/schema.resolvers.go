@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -275,12 +276,31 @@ func (r *computePlatformResolver) InstrumentationRules(ctx context.Context, obj 
 
 // Type is the resolver for the type field.
 func (r *destinationResolver) Type(ctx context.Context, obj *model.Destination) (string, error) {
-	panic(fmt.Errorf("not implemented: Type - type"))
+	return string(obj.Type), nil
 }
 
 // Conditions is the resolver for the conditions field.
 func (r *destinationResolver) Conditions(ctx context.Context, obj *model.Destination) ([]*model.Condition, error) {
-	panic(fmt.Errorf("not implemented: Conditions - conditions"))
+
+	conditions := make([]*model.Condition, 0, len(obj.Conditions))
+	for _, c := range obj.Conditions {
+		// Convert LastTransitionTime to a string pointer if it's not nil
+		var lastTransitionTime *string
+		if !c.LastTransitionTime.IsZero() {
+			t := c.LastTransitionTime.Format(time.RFC3339)
+			lastTransitionTime = &t
+		}
+
+		// Add the converted Condition to the list
+		conditions = append(conditions, &model.Condition{
+			Type:               c.Type,
+			Status:             model.ConditionStatus(c.Status),
+			LastTransitionTime: lastTransitionTime,
+			Reason:             &c.Reason,
+			Message:            &c.Message,
+		})
+	}
+	return conditions, nil
 }
 
 // K8sActualSources is the resolver for the k8sActualSources field.
