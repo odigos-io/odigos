@@ -65,8 +65,7 @@ export const useInstrumentationRuleCRUD = (params?: Params) => {
   return {
     loading: cState.loading || uState.loading || dState.loading,
     createInstrumentationRule: (instrumentationRule: InstrumentationRuleInput) => createInstrumentationRule({ variables: { instrumentationRule } }),
-    updateInstrumentationRule: (ruleId: string, instrumentationRule: InstrumentationRuleInput) =>
-      updateInstrumentationRule({ variables: { ruleId, instrumentationRule } }),
+    updateInstrumentationRule: (ruleId: string, instrumentationRule: InstrumentationRuleInput) => updateInstrumentationRule({ variables: { ruleId, instrumentationRule } }),
     deleteInstrumentationRule: (ruleId: string) => deleteInstrumentationRule({ variables: { ruleId } }),
   };
 };
