@@ -1,6 +1,6 @@
 import { useAppStore } from '@/store';
 import { DestinationInput } from '@/types';
-import { useActualSources } from '../sources';
+import { useSourceCRUD } from '../sources';
 import { useState, useCallback } from 'react';
 import { useDestinationCRUD } from '../destinations';
 
@@ -10,8 +10,8 @@ type ConnectEnvResult = {
 };
 
 export const useConnectEnv = () => {
+  const { createSources } = useSourceCRUD();
   const { createDestination } = useDestinationCRUD();
-  const { createSourcesForNamespace, persistNamespaceItems } = useActualSources();
 
   const [result, setResult] = useState<ConnectEnvResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -28,48 +28,22 @@ export const useConnectEnv = () => {
       setResult(null);
 
       try {
-        // Persist namespaces based on namespaceFutureSelectAppsList
-        const namespaceItems = Object.entries(namespaceFutureSelectAppsList).map(([namespaceName, futureSelected]) => ({
-          name: namespaceName,
-          futureSelected,
-        }));
-
-        await persistNamespaceItems(namespaceItems);
-
-        // Create sources for each namespace in sourcesList
-        for (const namespaceName in sourcesList) {
-          const sources = sourcesList[namespaceName].map((source) => ({
-            kind: source.kind,
-            name: source.name,
-            selected: true,
-          }));
-          await createSourcesForNamespace(namespaceName, sources);
-        }
-
+        await createSources(sourcesList, namespaceFutureSelectAppsList);
         resetSources();
 
-        // Create destination
         const { data } = await createDestination(destination);
         const destinationId = data?.createNewDestination.id;
 
-        if (!destinationId) {
-          throw new Error('Error creating destination.');
-        }
         callback && callback();
-        setResult({
-          success: true,
-          destinationId,
-        });
+        setResult({ success: true, destinationId });
       } catch (err) {
         setError((err as Error).message);
-        setResult({
-          success: false,
-        });
+        setResult({ success: false });
       } finally {
         setLoading(false);
       }
     },
-    [sourcesList, createDestination, persistNamespaceItems, createSourcesForNamespace, namespaceFutureSelectAppsList]
+    [sourcesList, namespaceFutureSelectAppsList, createSources, resetSources, createDestination],
   );
 
   return {

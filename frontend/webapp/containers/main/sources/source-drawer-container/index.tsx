@@ -1,17 +1,17 @@
 import React, { useMemo, useState } from 'react';
 import { useDrawerStore } from '@/store';
-import { useActualSources } from '@/hooks';
+import { useSourceCRUD } from '@/hooks';
 import { CardDetails } from '@/components';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { K8sActualSource, PatchSourceRequestInput, WorkloadId } from '@/types';
 import { getMainContainerLanguageLogo } from '@/utils/constants/programming-languages';
 
 const SourceDrawer: React.FC = () => {
-  const { selectedItem, setSelectedItem } = useDrawerStore((store) => store);
+  const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
   const [isEditing, setIsEditing] = useState(false);
   const [isFormDirty, setIsFormDirty] = useState(false);
 
-  const { updateActualSource, deleteSourcesForNamespace } = useActualSources();
+  const { deleteSources, updateSource } = useSourceCRUD();
 
   const cardData = useMemo(() => {
     if (!selectedItem) return [];
@@ -47,41 +47,15 @@ const SourceDrawer: React.FC = () => {
   };
 
   const handleDelete = async () => {
-    const { namespace, name, kind } = item as K8sActualSource;
+    const { namespace } = item as K8sActualSource;
 
-    try {
-      await deleteSourcesForNamespace(namespace, [
-        {
-          kind,
-          name,
-          selected: false,
-        },
-      ]);
-      setSelectedItem(null);
-    } catch (error) {
-      console.error('Error deleting source:', error);
-    }
+    await deleteSources({ [namespace]: [item as K8sActualSource] });
   };
 
   const handleSave = async (newTitle: string) => {
     const { namespace, name, kind } = item as K8sActualSource;
 
-    const sourceId: WorkloadId = {
-      namespace,
-      kind,
-      name,
-    };
-
-    const patchRequest: PatchSourceRequestInput = {
-      reportedName: newTitle,
-    };
-
-    try {
-      await updateActualSource(sourceId, patchRequest);
-      setSelectedItem(null);
-    } catch (error) {
-      console.error('Error updating source:', error);
-    }
+    await updateSource({ namespace, kind, name }, { reportedName: newTitle });
   };
 
   return (

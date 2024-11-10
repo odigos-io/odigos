@@ -46,19 +46,19 @@ const ToggleSwitch = styled.div<{ isActive: boolean; disabled?: boolean }>`
 
 const Toggle: React.FC<ToggleProps> = ({ title, tooltip, initialValue = false, onChange, disabled }) => {
   const [isActive, setIsActive] = useState(initialValue);
-
-  useEffect(() => {
-    setIsActive(initialValue);
-  }, [initialValue]);
+  useEffect(() => setIsActive(initialValue), [initialValue]);
 
   const handleToggle = () => {
-    if (!disabled) {
-      const newValue = !isActive;
-      setIsActive(newValue);
-      if (onChange) {
-        onChange(newValue);
-      }
-    }
+    if (disabled) return;
+
+    let newValue = initialValue;
+
+    setIsActive((prev) => {
+      newValue = !prev;
+      return newValue;
+    });
+
+    if (onChange) onChange(newValue);
   };
 
   return (
@@ -66,8 +66,9 @@ const Toggle: React.FC<ToggleProps> = ({ title, tooltip, initialValue = false, o
       <Container disabled={disabled} onClick={handleToggle}>
         <ToggleSwitch isActive={isActive} disabled={disabled} />
         <Text size={14}>{title}</Text>
-        {tooltip && <Image src='/icons/common/info.svg' alt='' width={16} height={16} />}
       </Container>
+
+      {tooltip && <Image src='/icons/common/info.svg' alt='' width={16} height={16} />}
     </Tooltip>
   );
 };

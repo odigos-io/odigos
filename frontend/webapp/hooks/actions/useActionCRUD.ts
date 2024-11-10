@@ -1,10 +1,10 @@
 import { useDrawerStore } from '@/store';
-import { useNotify } from '../useNotify';
+import { useNotify } from '../notification/useNotify';
 import { useMutation } from '@apollo/client';
 import { useComputePlatform } from '../compute-platform';
-import { ACTION, getSseTargetFromId, NOTIFICATION } from '@/utils';
+import { ACTION, getSseTargetFromId, NOTIFICATION, safeJsonParse } from '@/utils';
 import { CREATE_ACTION, DELETE_ACTION, UPDATE_ACTION } from '@/graphql/mutations';
-import { OVERVIEW_ENTITY_TYPES, type ActionInput, type ActionsType, type NotificationType } from '@/types';
+import { type ActionItem, OVERVIEW_ENTITY_TYPES, type ActionInput, type ActionsType, type NotificationType } from '@/types';
 
 interface UseActionCrudParams {
   onSuccess?: () => void;
@@ -13,7 +13,7 @@ interface UseActionCrudParams {
 
 export const useActionCRUD = (params?: UseActionCrudParams) => {
   const { setSelectedItem: setDrawerItem } = useDrawerStore((store) => store);
-  const { refetch } = useComputePlatform();
+  const { data, refetch } = useComputePlatform();
   const notify = useNotify();
 
   const notifyUser = (type: NotificationType, title: string, message: string, id?: string) => {
@@ -64,6 +64,13 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
 
   return {
     loading: cState.loading || uState.loading || dState.loading,
+    actions:
+      data?.computePlatform?.actions?.map((item) => {
+        const parsedSpec = typeof item.spec === 'string' ? safeJsonParse(item.spec, {} as ActionItem) : item.spec;
+
+        return { ...item, spec: parsedSpec };
+      }) || [],
+
     createAction: (action: ActionInput) => createAction({ variables: { action } }),
     updateAction: (id: string, action: ActionInput) => updateAction({ variables: { id, action } }),
     deleteAction: (id: string, actionType: ActionsType) => deleteAction({ variables: { id, actionType } }),

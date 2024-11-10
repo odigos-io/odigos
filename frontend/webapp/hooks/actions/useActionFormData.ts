@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNotify } from '../useNotify';
+import { useNotify } from '../notification/useNotify';
 import { DrawerBaseItem } from '@/store';
 import { ACTION, FORM_ALERTS, NOTIFICATION } from '@/utils';
 import type { ActionDataParsed, ActionInput } from '@/types';
