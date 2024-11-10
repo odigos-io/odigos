@@ -1,10 +1,10 @@
 import React from 'react';
 import styled from 'styled-components';
+import { getIdFromSseTarget } from '@/utils';
 import { NotificationNote } from '@/reuseable-components';
 import { Notification, OVERVIEW_ENTITY_TYPES } from '@/types';
 import { DrawerBaseItem, useDrawerStore, useNotificationStore } from '@/store';
-import { useActualDestination, useActualSources, useGetActions, useGetInstrumentationRules } from '@/hooks';
-import { getIdFromSseTarget } from '@/utils';
+import { useActionCRUD, useDestinationCRUD, useInstrumentationRuleCRUD, useSourceCRUD } from '@/hooks';
 
 const Container = styled.div`
   position: fixed;
@@ -35,10 +35,10 @@ export const ToastList: React.FC = () => {
 const Toast: React.FC<Notification> = ({ id, type, title, message, crdType, target }) => {
   const { markAsDismissed, markAsSeen } = useNotificationStore();
 
-  const { actions } = useGetActions();
-  const { sources } = useActualSources();
-  const { destinations } = useActualDestination();
-  const { instrumentationRules } = useGetInstrumentationRules();
+  const { sources } = useSourceCRUD();
+  const { actions } = useActionCRUD();
+  const { destinations } = useDestinationCRUD();
+  const { instrumentationRules } = useInstrumentationRuleCRUD();
   const setSelectedItem = useDrawerStore(({ setSelectedItem }) => setSelectedItem);
 
   const onClick = () => {
@@ -57,12 +57,7 @@ const Toast: React.FC<Notification> = ({ id, type, title, message, crdType, targ
         case 'InstrumentationInstance':
           drawerItem['type'] = OVERVIEW_ENTITY_TYPES.SOURCE;
           drawerItem['id'] = getIdFromSseTarget(target, OVERVIEW_ENTITY_TYPES.SOURCE);
-          drawerItem['item'] = sources.find(
-            (item) =>
-              item.kind === drawerItem['id']?.['kind'] &&
-              item.name === drawerItem['id']?.['name'] &&
-              item.namespace === drawerItem['id']?.['namespace']
-          );
+          drawerItem['item'] = sources.find((item) => item.kind === drawerItem['id']?.['kind'] && item.name === drawerItem['id']?.['name'] && item.namespace === drawerItem['id']?.['namespace']);
           break;
 
         case OVERVIEW_ENTITY_TYPES.ACTION:

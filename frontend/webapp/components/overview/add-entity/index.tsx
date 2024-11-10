@@ -1,10 +1,9 @@
 import Image from 'next/image';
 import theme from '@/styles/theme';
-import { useModalStore } from '@/store';
 import { useOnClickOutside } from '@/hooks';
 import React, { useState, useRef } from 'react';
 import styled, { css } from 'styled-components';
-import { useBooleanStore } from '@/store/useBooleanStore';
+import { useBooleanStore, useModalStore } from '@/store';
 import { DropdownOption, OVERVIEW_ENTITY_TYPES } from '@/types';
 import { Button, FadeLoader, Text } from '@/reuseable-components';
 
