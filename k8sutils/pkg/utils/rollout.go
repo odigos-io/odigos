@@ -2,11 +2,9 @@ package utils
 
 import (
 	"context"
-	"strings"
 
 	"github.com/odigos-io/odigos/k8sutils/pkg/container"
-
-	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -33,20 +31,62 @@ func checkAllPodsRunningAndContainsInstrumentation(pods *corev1.PodList) bool {
 	return true
 }
 
+func checkAllPodsRunningAndNotInstrumented(pods *corev1.PodList) bool {
+	for _, pod := range pods.Items {
+		if pod.Status.Phase != corev1.PodRunning {
+			return false
+		}
+
+		if isPodContainsInstrumentation(&pod) {
+			return false
+		}
+
+		if !container.AllContainersReady(&pod) {
+			return false
+		}
+	}
+
+	return true
+}
+
 func isPodContainsInstrumentation(pod *corev1.Pod) bool {
 	for _, c := range pod.Spec.Containers {
-		if c.Resources.Limits != nil {
-			for val := range c.Resources.Limits {
-				if strings.HasPrefix(val.String(), common.OdigosResourceNamespace) {
-					return true
-				}
-			}
+		if workload.IsContainerInstrumented(&c) {
+			return true
 		}
 	}
 	return false
 }
 
 func VerifyAllPodsAreInstrumented(ctx context.Context, client kubernetes.Interface, obj client.Object) (bool, error) {
+	labels := getMatchLabels(obj)
+
+	pods, err := client.CoreV1().Pods(obj.GetNamespace()).List(ctx, metav1.ListOptions{
+		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{MatchLabels: labels}),
+	})
+
+	if err != nil {
+		return false, err
+	}
+
+	return checkAllPodsRunningAndContainsInstrumentation(pods), nil
+}
+
+func VerifyAllPodsAreNOTInstrumented(ctx context.Context, client kubernetes.Interface, obj client.Object) (bool, error) {
+	labels := getMatchLabels(obj)
+
+	pods, err := client.CoreV1().Pods(obj.GetNamespace()).List(ctx, metav1.ListOptions{
+		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{MatchLabels: labels}),
+	})
+
+	if err != nil {
+		return false, err
+	}
+
+	return checkAllPodsRunningAndNotInstrumented(pods), nil
+}
+
+func getMatchLabels(obj client.Object) map[string]string {
 	var labels map[string]string
 	switch obj.(type) {
 	case *appsv1.Deployment:
@@ -59,14 +99,5 @@ func VerifyAllPodsAreInstrumented(ctx context.Context, client kubernetes.Interfa
 		daemonSet := obj.(*appsv1.DaemonSet)
 		labels = daemonSet.Spec.Selector.MatchLabels
 	}
-
-	pods, err := client.CoreV1().Pods(obj.GetNamespace()).List(ctx, metav1.ListOptions{
-		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{MatchLabels: labels}),
-	})
-
-	if err != nil {
-		return false, err
-	}
-
-	return checkAllPodsRunningAndContainsInstrumentation(pods), nil
+	return labels
 }

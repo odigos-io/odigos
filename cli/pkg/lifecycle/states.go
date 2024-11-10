@@ -59,37 +59,100 @@ func NewOrchestrator(client *kube.Client, ctx context.Context) (*Orchestrator, e
 	}, nil
 }
 
-func (o *Orchestrator) Apply(ctx context.Context, obj client.Object, templateSpecFetcher PodTemplateSpecFetcher) {
-	templateSpec, err := templateSpecFetcher(ctx, obj.GetName(), obj.GetNamespace())
-	if err != nil {
-		o.log(fmt.Sprintf("Error fetching pod template spec: %s", err))
-		return
-	}
+func (o *Orchestrator) Apply(ctx context.Context, obj client.Object, templateSpecFetcher PodTemplateSpecFetcher) error {
+	// Create a channel to handle cancellation
+	done := make(chan struct{})
+	var finalErr error
 
-	state := o.getCurrentState(ctx, obj, templateSpec)
-	o.log(fmt.Sprintf("Current state: %s", state))
-	nextTransition := o.TransitionsMap[string(state)]
-	for nextTransition != nil {
+	go func() {
+		defer close(done)
+
 		templateSpec, err := templateSpecFetcher(ctx, obj.GetName(), obj.GetNamespace())
 		if err != nil {
 			o.log(fmt.Sprintf("Error fetching pod template spec: %s", err))
+			finalErr = fmt.Errorf("failed to fetch template spec: %w", err)
 			return
 		}
 
-		err = nextTransition.Execute(ctx, obj, templateSpec)
-		if err != nil {
-			o.log(fmt.Sprintf("Error executing transition: %s", err))
-			return
-		}
-
-		// Special case: PreflightCheck change state manualy
-		if nextTransition.To() == PreflightChecksPassed {
-			state = PreflightChecksPassed
-		} else {
-			state = o.getCurrentState(ctx, obj, templateSpec)
-		}
+		state := o.getCurrentState(ctx, obj, templateSpec)
 		o.log(fmt.Sprintf("Current state: %s", state))
-		nextTransition = o.TransitionsMap[string(state)]
+
+		if state == UnknownState {
+			if err := o.rollBack(obj, templateSpecFetcher); err != nil {
+				o.log(fmt.Sprintf("Error rolling back: %s", err))
+				finalErr = fmt.Errorf("failed to rollback from unknown state: %w", err)
+				return
+			}
+			return
+		}
+
+		nextTransition := o.TransitionsMap[string(state)]
+		for nextTransition != nil {
+			select {
+			case <-ctx.Done():
+				// Context was cancelled, perform rollback
+				o.log("Context cancelled, rolling back current object")
+				if err := o.rollBack(obj, templateSpecFetcher); err != nil {
+					o.log(fmt.Sprintf("Error rolling back after context cancellation: %s", err))
+					finalErr = fmt.Errorf("failed to rollback after context cancellation: %w", err)
+					return
+				}
+				finalErr = ctx.Err()
+				return
+			default:
+				templateSpec, err := templateSpecFetcher(ctx, obj.GetName(), obj.GetNamespace())
+				if err != nil {
+					o.log(fmt.Sprintf("Error fetching pod template spec: %s", err))
+					finalErr = fmt.Errorf("failed to fetch template spec during transition: %w", err)
+					return
+				}
+
+				if err := nextTransition.Execute(ctx, obj, templateSpec); err != nil {
+					o.log(fmt.Sprintf("Error executing transition: %s", err))
+					// Attempt rollback on execution error
+					if rbErr := o.rollBack(obj, templateSpecFetcher); rbErr != nil {
+						o.log(fmt.Sprintf("Error rolling back after failed execution: %s", rbErr))
+						finalErr = fmt.Errorf("failed to rollback after execution error: %w", rbErr)
+						return
+					}
+					finalErr = fmt.Errorf("failed to execute transition: %w", err)
+					return
+				}
+
+				// Special case: PreflightCheck change state manually
+				if nextTransition.To() == PreflightChecksPassed {
+					state = PreflightChecksPassed
+				} else {
+					state = o.getCurrentState(ctx, obj, templateSpec)
+				}
+
+				o.log(fmt.Sprintf("Current state: %s", state))
+
+				if state == UnknownState {
+					if err := o.rollBack(obj, templateSpecFetcher); err != nil {
+						o.log(fmt.Sprintf("Error rolling back: %s", err))
+						finalErr = fmt.Errorf("failed to rollback from unknown state during transition: %w", err)
+						return
+					}
+					return
+				}
+
+				nextTransition = o.TransitionsMap[string(state)]
+			}
+		}
+	}()
+
+	// Wait for either completion or context cancellation
+	select {
+	case <-ctx.Done():
+		// Wait for the goroutine to finish rollback
+		<-done
+		if finalErr == nil {
+			return ctx.Err()
+		}
+		return finalErr
+	case <-done:
+		return finalErr
 	}
 }
 

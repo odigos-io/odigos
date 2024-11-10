@@ -3,6 +3,9 @@ package workload
 import (
 	"context"
 	"errors"
+	"strings"
+
+	"github.com/odigos-io/odigos/common"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -58,6 +61,18 @@ func ObjectToWorkload(obj client.Object) (Workload, error) {
 	default:
 		return nil, errors.New("unknown kind")
 	}
+}
+
+func IsContainerInstrumented(c *corev1.Container) bool {
+	if c != nil && c.Resources.Limits != nil {
+		for val := range c.Resources.Limits {
+			if strings.HasPrefix(val.String(), common.OdigosResourceNamespace) {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 func IsObjectLabeledForInstrumentation(obj client.Object) bool {

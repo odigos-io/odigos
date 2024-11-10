@@ -6,8 +6,12 @@ package cmd
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -25,10 +29,11 @@ import (
 )
 
 const (
-	excludeNamespacesFileFlag = "exclude-namespaces-file"
-	excludeAppsFileFlag       = "exclude-apps-file"
-	skipPreflightCheckFlag    = "skip-preflight-checks"
-	dryRunFlag                = "dry-run"
+	excludeNamespacesFileFlag  = "exclude-namespaces-file"
+	excludeAppsFileFlag        = "exclude-apps-file"
+	skipPreflightCheckFlag     = "skip-preflight-checks"
+	dryRunFlag                 = "dry-run"
+	instrumentationCollOffFlag = "instrumentation-cool-off"
 )
 
 // instrumentCmd represents the instrument command
@@ -46,6 +51,16 @@ var clusterCmd = &cobra.Command{
 	Long: `Instrument entire cluster with Odigos. This command will instrument the entire Kubernetes cluster with
 Odigos CLI and monitor the instrumentation status.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		ctx, cancel := context.WithCancel(cmd.Context())
+		ch := make(chan os.Signal, 1)
+		signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
+		defer signal.Stop(ch)
+
+		go func() {
+			<-ch
+			cancel()
+		}()
+
 		excludedNs, err := readFileLines(cmd.Flag(excludeNamespacesFileFlag).Value.String())
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Cannot read exclude-namespaces-file: %s\n", err)
@@ -58,6 +73,12 @@ Odigos CLI and monitor the instrumentation status.`,
 			os.Exit(1)
 		}
 		dryRun := cmd.Flag(dryRunFlag).Changed && cmd.Flag(dryRunFlag).Value.String() == "true"
+		coolOffStr := cmd.Flag(instrumentationCollOffFlag).Value.String()
+		coolOff, err := time.ParseDuration(coolOffStr)
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Invalid duration for instrumentation-cool-off: %s\n", err)
+			os.Exit(1)
+		}
 
 		fmt.Printf("About to instrument an entire cluster with Odigos\n")
 		if dryRun {
@@ -75,14 +96,14 @@ Odigos CLI and monitor the instrumentation status.`,
 			fmt.Printf("\u001B[32mPASS\u001B[0m\n\n")
 		}
 
-		runPreflightChecks(cmd.Context(), cmd, client)
+		runPreflightChecks(ctx, cmd, client)
 
 		fmt.Printf("Starting instrumentation ...\n")
-		instrumentCluster(cmd.Context(), client, excludedNs, excludedApps, dryRun)
+		instrumentCluster(ctx, client, excludedNs, excludedApps, dryRun, coolOff)
 	},
 }
 
-func instrumentCluster(ctx context.Context, client *kube.Client, excludedNs, excludedApps map[string]struct{}, dryRun bool) {
+func instrumentCluster(ctx context.Context, client *kube.Client, excludedNs, excludedApps map[string]struct{}, dryRun bool, coolOff time.Duration) {
 	systemNs := sliceToMap(consts.SystemNamespaces)
 	nsList, err := client.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
 	if err != nil {
@@ -105,15 +126,18 @@ func instrumentCluster(ctx context.Context, client *kube.Client, excludedNs, exc
 			continue
 		}
 
-		instrumentNamespace(ctx, client, ns.Name, excludedApps, orchestrator, dryRun)
+		err = instrumentNamespace(ctx, client, ns.Name, excludedApps, orchestrator, dryRun, coolOff)
+		if errors.Is(err, context.Canceled) {
+			return
+		}
 	}
 }
 
-func instrumentNamespace(ctx context.Context, client *kube.Client, ns string, excludedApps map[string]struct{}, orchestrator *lifecycle.Orchestrator, dryRun bool) {
+func instrumentNamespace(ctx context.Context, client *kube.Client, ns string, excludedApps map[string]struct{}, orchestrator *lifecycle.Orchestrator, dryRun bool, coolOff time.Duration) error {
 	deps, err := client.AppsV1().Deployments(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		fmt.Printf("  - \033[31mERROR\033[0m Cannot list deployments: %s\n", err)
-		return
+		return nil
 	}
 
 	for _, dep := range deps.Items {
@@ -129,14 +153,22 @@ func instrumentNamespace(ctx context.Context, client *kube.Client, ns string, ex
 			continue
 		}
 
-		orchestrator.Apply(ctx, &dep, func(ctx context.Context, name string, namespace string) (*corev1.PodTemplateSpec, error) {
+		err = orchestrator.Apply(ctx, &dep, func(ctx context.Context, name string, namespace string) (*corev1.PodTemplateSpec, error) {
 			dep, err := client.AppsV1().Deployments(namespace).Get(ctx, name, metav1.GetOptions{})
 			if err != nil {
 				return nil, err
 			}
 			return &dep.Spec.Template, nil
 		})
+
+		if errors.Is(err, context.Canceled) {
+			return err
+		}
+
+		time.Sleep(coolOff)
 	}
+
+	return nil
 }
 
 func runPreflightChecks(ctx context.Context, cmd *cobra.Command, client *kube.Client) {
@@ -191,6 +223,7 @@ func init() {
 	clusterCmd.Flags().String(excludeAppsFileFlag, "", "File containing applications to exclude from instrumentation. Each application should be on a new line.")
 	clusterCmd.Flags().Bool(skipPreflightCheckFlag, false, "Skip preflight checks")
 	clusterCmd.Flags().Bool(dryRunFlag, false, "Dry run mode")
+	clusterCmd.Flags().Duration(instrumentationCollOffFlag, 0, "Cool-off period for instrumentation")
 }
 
 func sliceToMap(slice []string) map[string]struct{} {
