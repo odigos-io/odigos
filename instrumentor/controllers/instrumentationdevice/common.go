@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils/versionsupport"
 	"github.com/odigos-io/odigos/instrumentor/instrumentation"
@@ -41,15 +40,6 @@ var (
 	// can be overridden in tests
 	GetDefaultSDKs = sdks.GetDefaultSDKs
 )
-
-func clearInstrumentationEbpf(obj client.Object) {
-	annotations := obj.GetAnnotations()
-	if annotations == nil {
-		return
-	}
-
-	delete(annotations, consts.EbpfInstrumentationAnnotation)
-}
 
 func isDataCollectionReady(ctx context.Context, c client.Client) bool {
 	logger := log.FromContext(ctx)
@@ -168,36 +158,32 @@ func removeInstrumentationDeviceFromWorkload(ctx context.Context, kubeClient cli
 		return client.IgnoreNotFound(err)
 	}
 
-	result, err := controllerutil.CreateOrPatch(ctx, kubeClient, workloadObj, func() error {
-
-		// clear old ebpf instrumentation annotation, just in case it still exists
-		clearInstrumentationEbpf(workloadObj)
-		podSpec, err := getPodSpecFromObject(workloadObj)
-		if err != nil {
-			return err
-		}
-		// If instrumentation device is removed successfully, remove odigos.io/inject-instrumentation label to disable the webhook
-		instrumentation.RemoveInjectInstrumentationLabel(podSpec)
-
-		instrumentation.RevertInstrumentationDevices(podSpec)
-
-		err = instrumentation.RevertEnvOverwrites(workloadObj, podSpec)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	})
-
+	podSpec, err := getPodSpecFromObject(workloadObj)
+	if err != nil {
+		return err
+	}
+	// If instrumentation device is removed successfully, remove odigos.io/inject-instrumentation label to disable the webhook
+	webhookLabelRemoved := instrumentation.RemoveInjectInstrumentationLabel(podSpec)
+	deviceRemoved := instrumentation.RevertInstrumentationDevices(podSpec)
+	envChanged, err := instrumentation.RevertEnvOverwrites(workloadObj, podSpec)
 	if err != nil {
 		return err
 	}
 
-	modified := result != controllerutil.OperationResultNone
-	if modified {
-		logger := log.FromContext(ctx)
-		logger.V(0).Info("removed instrumentation device from workload", "namespace", workloadObj.GetNamespace(), "kind", workloadObj.GetObjectKind(), "name", workloadObj.GetName(), "reason", uninstrumentReason)
+	// if we didn't change anything, we don't need to update the object
+	// skip the api-server call, return no-op and skip the log message
+	if !webhookLabelRemoved && !deviceRemoved && !envChanged {
+		return nil
 	}
+
+	err = kubeClient.Update(ctx, workloadObj)
+	if err != nil {
+		// if the update fails due to a conflict, the controller will retry the operation
+		return err
+	}
+
+	logger := log.FromContext(ctx)
+	logger.V(0).Info("removed instrumentation device from workload", "namespace", workloadObj.GetNamespace(), "kind", workloadObj.GetObjectKind(), "name", workloadObj.GetName(), "reason", uninstrumentReason)
 
 	return nil
 }
