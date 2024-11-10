@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 
+	consts "github.com/odigos-io/odigos/common/consts"
 	detector "github.com/odigos-io/odigos/odiglet/pkg/detector"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf/sdks"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/fs"
@@ -110,7 +111,8 @@ func main() {
 		os.Exit(-1)
 	}
 
-	if err := k8snode.AddLabelToNode(clientset, env.Current.NodeName, "test-label", "true"); err != nil {
+	// add label of Odiglet Installed so the k8s-scheduler can schedule instrumented pods on this nodes
+	if err := k8snode.AddLabelToNode(clientset, env.Current.NodeName, consts.OdigletInstalledLabel, "true"); err != nil {
 		log.Logger.Error(err, "Failed to add label to the node")
 		os.Exit(-1)
 	}
@@ -125,7 +127,7 @@ func main() {
 		os.Exit(-1)
 	}
 	// Remove the label before exiting
-	if err := k8snode.RemoveLabelFromNode(clientset, env.Current.NodeName, "test-label"); err != nil {
+	if err := k8snode.RemoveLabelFromNode(clientset, env.Current.NodeName, consts.OdigletInstalledLabel); err != nil {
 		log.Logger.Error(err, "Failed to remove label from the node")
 	}
 	log.Logger.V(0).Info("odiglet exiting")
