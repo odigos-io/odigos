@@ -398,9 +398,7 @@ func k8sInstrumentedAppToThinSource(app *v1alpha1.InstrumentedApplication) ThinS
 			ContainerName:  language.ContainerName,
 			Language:       string(language.Language),
 			RuntimeVersion: language.RuntimeVersion,
-		}
-		if language.OtherAgent != nil && *language.OtherAgent != (v1alpha1.OtherAgent{}) {
-			sourceLanguage.OtherAgent = language.OtherAgent
+			OtherAgent:     language.OtherAgent,
 		}
 
 		source.IaDetails.Languages = append(source.IaDetails.Languages, sourceLanguage)
