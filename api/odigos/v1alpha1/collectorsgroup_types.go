@@ -32,8 +32,11 @@ const (
 
 // CollectorsGroupSpec defines the desired state of Collector
 type CollectorsGroupSpec struct {
-	InputSvc string              `json:"inputSvc,omitempty"`
-	Role     CollectorsGroupRole `json:"role"`
+	Role CollectorsGroupRole `json:"role"`
+
+	// The port to use for exposing the collector's own metrics as a prometheus endpoint.
+	// This can be used to resolve conflicting ports when a collector is using the host network.
+	CollectorOwnMetricsPort int32 `json:"collectorOwnMetricsPort"`
 }
 
 // CollectorsGroupStatus defines the observed state of Collector

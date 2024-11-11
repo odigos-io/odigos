@@ -20,10 +20,11 @@ import (
 	"context"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	controllerconfig "github.com/odigos-io/odigos/autoscaler/controllers/controller_config"
 	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection"
 	"github.com/odigos-io/odigos/autoscaler/controllers/gateway"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	"github.com/odigos-io/odigos/common"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -34,10 +35,11 @@ import (
 // CollectorsGroupReconciler reconciles a CollectorsGroup object
 type CollectorsGroupReconciler struct {
 	client.Client
-	Scheme           *runtime.Scheme
-	ImagePullSecrets []string
-	OdigosVersion    string
-	OdigosTier       common.OdigosTier
+	Scheme               *runtime.Scheme
+	ImagePullSecrets     []string
+	OdigosVersion        string
+	DisableNameProcessor bool
+	Config               *controllerconfig.ControllerConfig
 }
 
 //+kubebuilder:rbac:groups=odigos.io,namespace=odigos-system,resources=collectorsgroups,verbs=get;list;watch;create;update;patch;delete
@@ -62,12 +64,12 @@ func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling CollectorsGroup")
 
-	err := gateway.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion)
+	err := gateway.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion, r.Config.MetricsServerEnabled)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	err = datacollection.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion, r.OdigosTier)
+	err = datacollection.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion, r.DisableNameProcessor)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -79,5 +81,8 @@ func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 func (r *CollectorsGroupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&odigosv1.CollectorsGroup{}).
+		// we assume everything in the collectorsgroup spec is the configuration for the collectors to generate.
+		// thus, we need to monitor any change to the spec which is what the generation field is for.
+		WithEventFilter(&predicate.GenerationChangedPredicate{}).
 		Complete(r)
 }

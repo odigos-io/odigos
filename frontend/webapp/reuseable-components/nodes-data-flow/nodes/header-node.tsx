@@ -2,7 +2,7 @@
 import React from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
-import { Text } from '@/reuseable-components';
+import { Badge, Text } from '@/reuseable-components';
 
 const ColumnContainer = styled.div<{ nodeWidth: number }>`
   width: ${({ nodeWidth }) => `${nodeWidth + 40}px`};
@@ -13,22 +13,8 @@ const ColumnContainer = styled.div<{ nodeWidth: number }>`
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
-const TagValueContainer = styled.div`
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  padding: 0px 8px;
-  border-radius: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 24px;
-`;
-
 const Title = styled(Text)`
   color: ${({ theme }) => theme.text.grey};
-`;
-
-const TagText = styled(Title)`
-  font-family: ${({ theme }) => theme.font_family.secondary};
 `;
 
 interface Column {
@@ -47,9 +33,7 @@ const HeaderNode = ({ data, nodeWidth }: HeaderNodeProps) => {
     <ColumnContainer nodeWidth={nodeWidth}>
       <Image src={data.icon} width={16} height={16} alt={data.title} />
       <Title size={14}>{data.title}</Title>
-      <TagValueContainer>
-        <TagText size={12}>{data.tagValue}</TagText>
-      </TagValueContainer>
+      <Badge label={data.tagValue} />
     </ColumnContainer>
   );
 };

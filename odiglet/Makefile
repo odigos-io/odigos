@@ -1,5 +1,8 @@
 .PHONY: build-odiglet generate
 
+LIBRARIES := go.opentelemetry.io/auto \
+			github.com/odigos-io/runtime-detector
+
 build-odiglet: generate
 	CGO_ENABLED=0 go build -o odiglet cmd/main.go
 
@@ -8,15 +11,11 @@ debug-build-odiglet: generate
 
 generate:
 	go mod download
-	GO_AUTO_PATH=$$(go list -m -f '{{.Dir}}' "go.opentelemetry.io/auto") && \
-	cd $$GO_AUTO_PATH && \
-	chmod -R +w $$GO_AUTO_PATH && \
-	make generate
+	@for lib in $(LIBRARIES); do \
+		LIB_PATH=$$(go list -m -f '{{.Dir}}' $${lib%@*}) && \
+		chmod -R +w $$LIB_PATH && \
+		make -C "$$LIB_PATH" generate; \
+	done
 
-test:
-	go mod download
-	GO_AUTO_PATH=$$(go list -m -f '{{.Dir}}' "go.opentelemetry.io/auto") && \
-	sudo chmod -R +w $$GO_AUTO_PATH && \
-	cd $$GO_AUTO_PATH && \
-	make generate
+test: generate
 	go test -v ./...

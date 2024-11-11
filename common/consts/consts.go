@@ -5,18 +5,17 @@ import (
 )
 
 const (
-	CurrentNamespaceEnvVar        = "CURRENT_NS"
-	DefaultOdigosNamespace        = "odigos-system"
-	OdigosConfigurationName       = "odigos-config"
-	OdigosConfigurationFileName   = "config.yaml"
-	OTLPPort                      = 4317
-	OTLPHttpPort                  = 4318
-	PprofOdigosPort               = 6060
-	OdigosInstrumentationLabel    = "odigos-instrumentation"
-	InstrumentationEnabled        = "enabled"
-	InstrumentationDisabled       = "disabled"
-	OdigosReportedNameAnnotation  = "odigos.io/reported-name"
-	EbpfInstrumentationAnnotation = "instrumentation.odigos.io/ebpf" // deprecated.
+	CurrentNamespaceEnvVar       = "CURRENT_NS"
+	DefaultOdigosNamespace       = "odigos-system"
+	OdigosConfigurationName      = "odigos-config"
+	OdigosConfigurationFileName  = "config.yaml"
+	OTLPPort                     = 4317
+	OTLPHttpPort                 = 4318
+	PprofOdigosPort              = 6060
+	OdigosInstrumentationLabel   = "odigos-instrumentation"
+	InstrumentationEnabled       = "enabled"
+	InstrumentationDisabled      = "disabled"
+	OdigosReportedNameAnnotation = "odigos.io/reported-name"
 
 	// Used to store the original value of the environment variable in the pod manifest.
 	// This is used to restore the original value when an instrumentation is removed

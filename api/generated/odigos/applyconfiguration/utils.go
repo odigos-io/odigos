@@ -101,6 +101,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.OdigosConfigurationSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("OptionByContainer"):
 		return &odigosv1alpha1.OptionByContainerApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("OtherAgent"):
+		return &odigosv1alpha1.OtherAgentApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("Processor"):
 		return &odigosv1alpha1.ProcessorApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("ProcessorSpec"):

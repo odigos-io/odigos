@@ -1,14 +1,5 @@
 import styled from 'styled-components';
 
-export const HideScroll = styled.div`
-  overflow-y: hidden;
-  ::-webkit-scrollbar {
-    display: none;
-  }
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-`;
-
 export const CenterThis = styled.div`
   width: 100%;
   display: flex;

@@ -8,12 +8,17 @@ import (
 
 func NewClusterCollectorGroup(namespace string) *odigosv1.CollectorsGroup {
 	return &odigosv1.CollectorsGroup{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "CollectorsGroup",
+			APIVersion: "odigos.io/v1alpha1",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      consts.OdigosClusterCollectorCollectorGroupName,
 			Namespace: namespace,
 		},
 		Spec: odigosv1.CollectorsGroupSpec{
-			Role: odigosv1.CollectorsGroupRoleClusterGateway,
+			Role:                    odigosv1.CollectorsGroupRoleClusterGateway,
+			CollectorOwnMetricsPort: consts.OdigosClusterCollectorOwnTelemetryPortDefault,
 		},
 	}
 }

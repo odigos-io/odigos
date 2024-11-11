@@ -2,13 +2,13 @@ package resources
 
 import (
 	"context"
+	"slices"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/containers"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -393,7 +393,18 @@ func NewAutoscalerLeaderElectionRoleBinding(ns string) *rbacv1.RoleBinding {
 	}
 }
 
-func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imageName string) *appsv1.Deployment {
+func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imageName string, disableNameProcessor bool) *appsv1.Deployment {
+
+	optionalEnvs := []corev1.EnvVar{}
+
+	if disableNameProcessor {
+		// temporary until we migrate java and dotnet to OpAMP
+		optionalEnvs = append(optionalEnvs, corev1.EnvVar{
+			Name:  "DISABLE_NAME_PROCESSOR",
+			Value: "true",
+		})
+	}
+
 	dep := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -435,7 +446,7 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 								"--metrics-bind-address=127.0.0.1:8080",
 								"--leader-elect",
 							},
-							Env: []corev1.EnvVar{
+							Env: append([]corev1.EnvVar{
 								{
 									Name:  "OTEL_SERVICE_NAME",
 									Value: AutoScalerServiceName,
@@ -448,7 +459,7 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 										},
 									},
 								},
-							},
+							}, optionalEnvs...),
 							EnvFrom: []corev1.EnvFromSource{
 								{
 									ConfigMapRef: &corev1.ConfigMapEnvSource{
@@ -528,14 +539,17 @@ func NewAutoScalerResourceManager(client *kube.Client, ns string, config *common
 func (a *autoScalerResourceManager) Name() string { return "AutoScaler" }
 
 func (a *autoScalerResourceManager) InstallFromScratch(ctx context.Context) error {
-	resources := []client.Object{
+
+	disableNameProcessor := slices.Contains(a.config.Profiles, "disable-name-processor") || slices.Contains(a.config.Profiles, "kratos")
+
+	resources := []kube.Object{
 		NewAutoscalerServiceAccount(a.ns),
 		NewAutoscalerRole(a.ns),
 		NewAutoscalerRoleBinding(a.ns),
 		NewAutoscalerClusterRole(),
 		NewAutoscalerClusterRoleBinding(a.ns),
 		NewAutoscalerLeaderElectionRoleBinding(a.ns),
-		NewAutoscalerDeployment(a.ns, a.odigosVersion, a.config.ImagePrefix, a.config.AutoscalerImage),
+		NewAutoscalerDeployment(a.ns, a.odigosVersion, a.config.ImagePrefix, a.config.AutoscalerImage, disableNameProcessor),
 	}
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }
