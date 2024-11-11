@@ -1,9 +1,10 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import theme from '@/styles/theme';
 import styled from 'styled-components';
 import { DropdownOption } from '@/types';
+import { useFilterStore } from '@/store/useFilterStore';
 import { useNamespace, useOnClickOutside } from '@/hooks';
 import { Button, Dropdown, SelectionButton } from '@/reuseable-components';
-import theme from '@/styles/theme';
 
 const RelativeContainer = styled.div`
   position: relative;
@@ -34,46 +35,81 @@ const Actions = styled.div`
   border-top: ${({ theme }) => `1px solid ${theme.colors.border}`};
 `;
 
+interface FiltersState {
+  namespace: DropdownOption | undefined;
+  types: DropdownOption[];
+  metrics: DropdownOption[];
+}
+
+const getFilterCount = (params: FiltersState) => {
+  let count = 0;
+  if (!!params.namespace) count++;
+  count += params.types.length;
+  count += params.metrics.length;
+  return count;
+};
+
 const Filters = () => {
-  const [namespace, setNamespace] = useState<DropdownOption | undefined>(undefined);
-  const [types, setTypes] = useState<DropdownOption[]>([]);
-  const [metrics, setMetrics] = useState<DropdownOption[]>([]);
-
-  const [focused, setFocused] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const toggleFocused = () => setFocused((prev) => !prev);
-  useOnClickOutside(ref, () => setFocused(false));
-
+  const { namespace, setNamespace, types, setTypes, metrics, setMetrics } = useFilterStore();
   const { allNamespaces } = useNamespace();
   const namespaceOptions = useMemo(() => allNamespaces?.map((ns) => ({ id: ns.name, value: ns.name })) || [], [allNamespaces]);
 
+  const [filters, setFilters] = useState<FiltersState>({ namespace, types, metrics });
+  const [filterCount, setFilterCount] = useState(getFilterCount(filters));
+  const [focused, setFocused] = useState(false);
+  const toggleFocused = () => setFocused((prev) => !prev);
+
+  useEffect(() => {
+    if (!focused) {
+      const payload = { namespace, types, metrics };
+      setFilters(payload);
+      setFilterCount(getFilterCount(payload));
+    }
+  }, [focused, namespace, types, metrics]);
+
+  const handleChange = (key: 'namespace' | 'types' | 'metrics', val: DropdownOption[] | DropdownOption | undefined) => {
+    setFilters((prev) => ({ ...prev, [key]: val }));
+  };
+
   const onApply = () => {
-    alert('TODO !');
+    // global
+    setNamespace(filters.namespace);
+    setTypes(filters.types);
+    setMetrics(filters.metrics);
+    // local
+    setFilterCount(getFilterCount(filters));
+    setFocused(false);
   };
 
   const onCancel = () => {
-    onReset();
     setFocused(false);
   };
 
   const onReset = () => {
+    // global
     setNamespace(undefined);
     setTypes([]);
     setMetrics([]);
+    // local
+    setFilters({ namespace: undefined, types: [], metrics: [] });
+    setFilterCount(0);
   };
+
+  const ref = useRef<HTMLDivElement>(null);
+  useOnClickOutside(ref, onCancel);
 
   return (
     <RelativeContainer ref={ref}>
-      <SelectionButton label='Filters' icon='/icons/common/filter.svg' badgeLabel={0} badgeFilled withBorder color='transparent' onClick={toggleFocused} />
+      <SelectionButton label='Filters' icon='/icons/common/filter.svg' badgeLabel={filterCount} badgeFilled withBorder color='transparent' onClick={toggleFocused} />
 
       {focused && (
         <CardWrapper>
           <Pad>
-            <Dropdown title='Namespace' placeholder='Select namespace' options={namespaceOptions} value={namespace} onSelect={(val) => setNamespace(val)} required />
+            <Dropdown title='Namespace' placeholder='Select namespace' options={namespaceOptions} value={filters['namespace']} onSelect={(val) => handleChange('namespace', val)} required />
 
             {/* TODO: make these as multi-select dropwdowns (with internal checkboxes) */}
-            <Dropdown title='Type' placeholder='All' options={[]} value={types[0]} onSelect={(val) => setTypes((prev) => prev)} required />
-            <Dropdown title='Metric' placeholder='All' options={[]} value={metrics[0]} onSelect={(val) => setMetrics((prev) => prev)} required />
+            <Dropdown title='Type' placeholder='All' options={[]} value={filters['types'][0]} onSelect={(val) => handleChange('types', [val])} required />
+            <Dropdown title='Metric' placeholder='All' options={[]} value={filters['metrics'][0]} onSelect={(val) => handleChange('metrics', [val])} required />
           </Pad>
 
           <Actions>
