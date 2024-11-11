@@ -1,16 +1,16 @@
 import React, { useState, useRef } from 'react';
 import Image from 'next/image';
 import { Text } from '../text';
+import { Badge } from '../badge';
 import { Input } from '../input';
 import { Divider } from '../divider';
+import { Checkbox } from '../checkbox';
 import { DropdownOption } from '@/types';
 import { FieldLabel } from '../field-label';
 import { useOnClickOutside } from '@/hooks';
 import { NoDataFound } from '../no-data-found';
 import styled, { css } from 'styled-components';
 import theme, { hexPercentValues } from '@/styles/theme';
-import { Badge } from '../badge';
-import { Checkbox } from '../checkbox';
 
 interface DropdownProps {
   options: DropdownOption[];
@@ -32,17 +32,17 @@ const RelativeContainer = styled.div`
   width: 100%;
 `;
 
-const DropdownHeader = styled.div<{ isOpen: boolean }>`
+const DropdownHeader = styled.div<{ isOpen: boolean; isMulti?: boolean; hasSelections?: boolean }>`
   display: flex;
   align-items: center;
   justify-content: space-between;
   height: 36px;
-  padding: 0 16px;
+  padding: ${({ isMulti, hasSelections }) => (isMulti && hasSelections ? '0 6px' : '0 16px')};
   border-radius: 32px;
   cursor: pointer;
 
-  ${({ isOpen, theme }) =>
-    isOpen
+  ${({ isOpen, isMulti, theme }) =>
+    isOpen && !isMulti
       ? css`
           border: 1px solid ${theme.colors.white_opacity['40']};
           background: ${theme.colors.white_opacity['008']};
@@ -53,10 +53,7 @@ const DropdownHeader = styled.div<{ isOpen: boolean }>`
         `};
 
   &:hover {
-    border-color: ${({ theme }) => theme.colors.secondary};
-  }
-  &:focus-within {
-    border-color: ${({ theme }) => theme.colors.secondary};
+    border-color: ${({ isMulti, hasSelections, theme }) => (isMulti && hasSelections ? theme.colors.border : theme.colors.secondary)};
   }
 `;
 
@@ -76,46 +73,6 @@ const ArrowIcon = styled(Image)`
   transition: transform 0.3s;
 `;
 
-const AbsoluteContainer = styled.div`
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  width: calc(100% - 16px);
-  max-height: 200px;
-  gap: 8px;
-  padding: 8px;
-  background-color: ${({ theme }) => theme.colors.dropdown_bg_2};
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 24px;
-`;
-
-const SearchInputContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-`;
-
-const DropdownItem = styled.div<{ isSelected: boolean }>`
-  padding: 8px 12px;
-  cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-radius: 32px;
-  &:hover {
-    background: ${({ theme }) => theme.colors.majestic_blue + hexPercentValues['024']};
-  }
-  ${({ isSelected, theme }) =>
-    isSelected &&
-    css`
-      background: ${({ theme }) => theme.colors.majestic_blue + hexPercentValues['024']};
-    `}
-`;
-
 export const Dropdown: React.FC<DropdownProps> = ({ options, value, onSelect, onDeselect, title, tooltip, placeholder, isMulti = false, showSearch = true, required = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const toggleOpen = () => setIsOpen((prev) => !prev);
@@ -127,9 +84,8 @@ export const Dropdown: React.FC<DropdownProps> = ({ options, value, onSelect, on
     <RelativeContainer ref={ref}>
       <FieldLabel title={title} required={required} tooltip={tooltip} style={{ marginLeft: '8px' }} />
 
-      <DropdownHeader isOpen={isOpen} onClick={toggleOpen}>
-        <DropdownPlaceholder value={value} placeholder={placeholder} />
-
+      <DropdownHeader isOpen={isOpen} isMulti={isMulti} hasSelections={Array.isArray(value) ? !!value.length : false} onClick={toggleOpen}>
+        <DropdownPlaceholder value={value} placeholder={placeholder} onDeselect={onDeselect} />
         <IconWrapper>
           {isMulti && <Badge label={(value as DropdownOption[]).length} filled />}
           <ArrowIcon src='/icons/common/extend-arrow.svg' alt='open-dropdown' width={14} height={14} className={isOpen ? 'open' : 'close'} />
@@ -156,15 +112,51 @@ export const Dropdown: React.FC<DropdownProps> = ({ options, value, onSelect, on
   );
 };
 
+const MultiLabelWrapper = styled(IconWrapper)`
+  overflow-x: auto;
+  max-width: 80%;
+`;
+
+const MultiLabel = styled(Text)`
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 12px;
+  background: ${({ theme }) => theme.colors.white_opacity['008']};
+  border-radius: 360px;
+  img {
+    &:hover {
+      transform: scale(2);
+      transition: transform 0.3s;
+    }
+  }
+`;
+
 const DropdownPlaceholder: React.FC<{
   value: DropdownProps['value'];
   placeholder: DropdownProps['placeholder'];
-}> = ({ value, placeholder }) => {
+  onDeselect: DropdownProps['onDeselect'];
+}> = ({ value, placeholder, onDeselect }) => {
   if (Array.isArray(value)) {
     return !!value.length ? (
-      <Text size={14} color={undefined}>
-        {value.map((s) => s.value).join(', ')}
-      </Text>
+      <MultiLabelWrapper>
+        {value.map((opt) => (
+          <MultiLabel key={`multi-label-${opt.id}`} size={14}>
+            {opt.value}
+            <Divider orientation='vertical' length='10px' margin='0 4px' />
+            <Image
+              src='/icons/common/cross.svg'
+              alt=''
+              width={12}
+              height={12}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeselect?.(opt);
+              }}
+            />
+          </MultiLabel>
+        ))}
+      </MultiLabelWrapper>
     ) : (
       <Text size={14} color={theme.text.grey}>
         {placeholder}
@@ -178,6 +170,29 @@ const DropdownPlaceholder: React.FC<{
     </Text>
   );
 };
+
+const AbsoluteContainer = styled.div`
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  width: calc(100% - 16px);
+  max-height: 200px;
+  gap: 8px;
+  padding: 8px;
+  background-color: ${({ theme }) => theme.colors.dropdown_bg_2};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 24px;
+`;
+
+const SearchInputContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+`;
 
 const DropdownList: React.FC<{
   options: DropdownProps['options'];
@@ -208,6 +223,19 @@ const DropdownList: React.FC<{
   );
 };
 
+const DropdownItem = styled.div`
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 32px;
+  &:hover,
+  &.selected {
+    background: ${({ theme }) => theme.colors.majestic_blue + hexPercentValues['024']};
+  }
+`;
+
 const DropdownListItem: React.FC<{
   option: DropdownOption;
   value: DropdownProps['value'];
@@ -219,14 +247,14 @@ const DropdownListItem: React.FC<{
 
   if (isMulti) {
     return (
-      <DropdownItem isSelected={isSelected}>
+      <DropdownItem className={isSelected ? 'selected' : ''}>
         <Checkbox title={option.value} titleColor={theme.text.secondary} initialValue={isSelected} onChange={(toAdd) => (toAdd ? onSelect(option) : onDeselect?.(option))} style={{ width: '100%' }} />
       </DropdownItem>
     );
   }
 
   return (
-    <DropdownItem isSelected={isSelected} onClick={() => (isSelected ? onDeselect?.(option) : onSelect(option))}>
+    <DropdownItem className={isSelected ? 'selected' : ''} onClick={() => (isSelected ? onDeselect?.(option) : onSelect(option))}>
       <Text size={14}>{option.value}</Text>
       {isSelected && <Image src='/icons/common/check.svg' alt='' width={16} height={16} />}
     </DropdownItem>
