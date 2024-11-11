@@ -95,11 +95,16 @@ func (o *OrigWorkloadEnvValues) SerializeToAnnotation(obj metav1.Object) error {
 	return nil
 }
 
-func (o *OrigWorkloadEnvValues) DeleteFromObj(obj metav1.Object) {
+func (o *OrigWorkloadEnvValues) DeleteFromObj(obj metav1.Object) bool {
 	currentAnnotations := obj.GetAnnotations()
 	if currentAnnotations == nil {
-		return
+		return false
+	}
+
+	if _, ok := currentAnnotations[consts.ManifestEnvOriginalValAnnotation]; !ok {
+		return false
 	}
 
 	delete(currentAnnotations, consts.ManifestEnvOriginalValAnnotation)
+	return true
 }

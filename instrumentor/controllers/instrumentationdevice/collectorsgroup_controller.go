@@ -50,6 +50,7 @@ func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	logger.V(0).Info("Reconciling instrumented applications after node collectors group became ready", "count", len(instApps.Items))
 
 	var reconcileErr error
+	var gotConflict bool
 
 	for _, runtimeDetails := range instApps.Items {
 		var currentInstApp odigosv1.InstrumentedApplication
@@ -67,9 +68,17 @@ func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 		err = reconcileSingleWorkload(ctx, r.Client, &currentInstApp, isDataCollectionReady)
 		if err != nil {
+			if apierrors.IsConflict(err) {
+				gotConflict = true
+			}
 			reconcileErr = errors.Join(reconcileErr, err)
 		}
 	}
 
+	if gotConflict && reconcileErr == nil {
+		// if we got a conflict and no other error, we will request a requeue and not return an error
+		// so we can retry the reconciliation but not have logs filled with errors
+		return ctrl.Result{Requeue: true}, nil
+	}
 	return ctrl.Result{}, reconcileErr
 }
