@@ -3,11 +3,11 @@
 import { ApolloLink, HttpLink } from '@apollo/client';
 import { ApolloNextAppProvider, InMemoryCache, ApolloClient, SSRMultipartLink } from '@apollo/experimental-nextjs-app-support';
 import { onError } from '@apollo/client/link/error';
-import { BASE_URL } from '@/utils';
+import { API } from '@/utils';
 
 function makeClient() {
   const httpLink = new HttpLink({
-    uri: `http://${BASE_URL}:8085/graphql`,
+    uri: API.BASE_URL,
   });
 
   const errorLink = onError(({ graphQLErrors, networkError }) => {
