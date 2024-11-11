@@ -94,6 +94,8 @@ func WorkloadKindFromClientObject(w client.Object) WorkloadKind {
 	}
 }
 
+// ClientObjectFromWorkloadKind returns a new instance of the client object for the given workload kind
+// the returned instance is empty and should be used to fetch the actual object from the k8s api server
 func ClientObjectFromWorkloadKind(kind WorkloadKind) client.Object {
 	switch kind {
 	case WorkloadKindDeployment:
