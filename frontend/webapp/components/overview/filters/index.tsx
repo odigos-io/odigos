@@ -3,7 +3,7 @@ import theme from '@/styles/theme';
 import styled from 'styled-components';
 import { DropdownOption } from '@/types';
 import { useFilterStore } from '@/store/useFilterStore';
-import { useNamespace, useOnClickOutside } from '@/hooks';
+import { useNamespace, useOnClickOutside, useSourceCRUD } from '@/hooks';
 import { Button, Dropdown, SelectionButton } from '@/reuseable-components';
 
 const RelativeContainer = styled.div`
@@ -52,7 +52,27 @@ const getFilterCount = (params: FiltersState) => {
 const Filters = () => {
   const { namespace, setNamespace, types, setTypes, metrics, setMetrics } = useFilterStore();
   const { allNamespaces } = useNamespace();
-  const namespaceOptions = useMemo(() => allNamespaces?.map((ns) => ({ id: ns.name, value: ns.name })) || [], [allNamespaces]);
+  const { sources } = useSourceCRUD();
+
+  const namespaceOptions = useMemo(() => {
+    const options: DropdownOption[] = [];
+
+    allNamespaces?.forEach(({ name: id }) => {
+      if (!options.find((opt) => opt.id === id)) options.push({ id, value: id });
+    });
+
+    return options;
+  }, [allNamespaces]);
+
+  const typesOptions = useMemo(() => {
+    const options: DropdownOption[] = [];
+
+    sources.forEach(({ kind: id }) => {
+      if (!options.find((opt) => opt.id === id)) options.push({ id, value: id });
+    });
+
+    return options;
+  }, [sources]);
 
   const [filters, setFilters] = useState<FiltersState>({ namespace, types, metrics });
   const [filterCount, setFilterCount] = useState(getFilterCount(filters));
@@ -105,11 +125,23 @@ const Filters = () => {
       {focused && (
         <CardWrapper>
           <Pad>
-            <Dropdown title='Namespace' placeholder='Select namespace' options={namespaceOptions} value={filters['namespace']} onSelect={(val) => handleChange('namespace', val)} required />
+            <Dropdown
+              title='Namespace'
+              placeholder='Select namespace'
+              options={namespaceOptions}
+              value={filters['namespace']}
+              onSelect={(val) => {
+                handleChange('namespace', val);
+                handleChange('types', []);
+                handleChange('metrics', []);
+              }}
+              required
+              showSearch={false}
+            />
 
             {/* TODO: make these as multi-select dropwdowns (with internal checkboxes) */}
-            <Dropdown title='Type' placeholder='All' options={[]} value={filters['types'][0]} onSelect={(val) => handleChange('types', [val])} required />
-            <Dropdown title='Metric' placeholder='All' options={[]} value={filters['metrics'][0]} onSelect={(val) => handleChange('metrics', [val])} required />
+            <Dropdown title='Type' placeholder='All' options={typesOptions} value={filters['types'][0]} onSelect={(val) => handleChange('types', [val])} required showSearch={false} />
+            <Dropdown title='Metric' placeholder='All' options={[]} value={filters['metrics'][0]} onSelect={(val) => handleChange('metrics', [val])} required showSearch={false} />
           </Pad>
 
           <Actions>

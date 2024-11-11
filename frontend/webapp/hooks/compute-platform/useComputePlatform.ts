@@ -16,7 +16,7 @@ type UseComputePlatformHook = {
 export const useComputePlatform = (): UseComputePlatformHook => {
   const { data, loading, error, refetch } = useQuery<ComputePlatform>(GET_COMPUTE_PLATFORM);
   const { togglePolling } = useBooleanStore();
-  const { namespace } = useFilterStore();
+  const { namespace, types } = useFilterStore();
 
   const startPolling = useCallback(async () => {
     togglePolling(true);
@@ -37,18 +37,18 @@ export const useComputePlatform = (): UseComputePlatformHook => {
   const filteredData = useMemo(() => {
     if (!data) return undefined;
 
-    const k8sActualSources = !!namespace ? data.computePlatform.k8sActualSources.filter((source) => source.namespace === namespace.id) : data.computePlatform.k8sActualSources;
+    let k8sActualSources = [...data.computePlatform.k8sActualSources];
+
+    if (!!namespace) k8sActualSources = k8sActualSources.filter((source) => source.namespace === namespace.id);
+    if (!!types.length) k8sActualSources = k8sActualSources.filter((source) => !!types.find((type) => type.id === source.kind));
 
     return {
       computePlatform: {
         ...data.computePlatform,
         k8sActualSources,
-        // destinations,
-        // actions,
-        // instrumentationRules,
       },
     };
-  }, [data, namespace]);
+  }, [data, namespace, types]);
 
   return { data: filteredData, loading, error, refetch, startPolling };
 };
