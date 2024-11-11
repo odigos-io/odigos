@@ -14,7 +14,7 @@ const Search = () => {
 
   return (
     <RelativeContainer ref={ref}>
-      <Input placeholder='Search' icon='/icons/common/search.svg' value={input} onChange={(e) => setInput(e.target.value)} onFocus={() => setFocused(true)} />
+      <Input placeholder='Search' icon='/icons/common/search.svg' value={input} onChange={(e) => setInput(e.target.value.toLowerCase())} onFocus={() => setFocused(true)} />
 
       {!!input || focused ? (
         <SearchResults

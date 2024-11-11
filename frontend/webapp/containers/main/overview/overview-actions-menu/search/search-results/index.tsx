@@ -1,8 +1,8 @@
 import React, { Fragment, useMemo, useState } from 'react';
 import theme from '@/styles/theme';
 import styled from 'styled-components';
+import { CardWrapper } from '../styled';
 import { OVERVIEW_ENTITY_TYPES } from '@/types';
-import { CardContent, CardWrapper } from '../styled';
 import { getEntityIcon, getEntityLabel } from '@/utils';
 import { buildSearchResults, type Category } from './builder';
 import { Divider, SelectionButton, Text } from '@/reuseable-components';
@@ -44,7 +44,7 @@ export const SearchResults = ({ searchText, onClose }: Props) => {
         sources,
         actions,
         destinations,
-        searchText: searchText.toLowerCase(),
+        searchText,
         selectedCategory,
       }),
     [instrumentationRules, sources, actions, destinations, searchText, selectedCategory],
@@ -52,46 +52,38 @@ export const SearchResults = ({ searchText, onClose }: Props) => {
 
   return (
     <CardWrapper>
-      <CardContent>
-        <HorizontalScroll style={{ borderBottom: `1px solid ${!searchResults.length ? 'transparent' : theme.colors.border}` }}>
-          {categories.map(({ category, label, count }) => (
-            <SelectionButton
-              key={`category-select-${category}`}
-              label={label}
-              badgeLabel={count}
-              isSelected={selectedCategory === category}
-              onClick={() => setSelectedCategory(category as Category)}
-            />
-          ))}
-        </HorizontalScroll>
-
-        {searchResults.map(({ category, label, entities }, catIdx) => (
-          <Fragment key={`category-list-${category}`}>
-            <VerticalScroll style={{ maxHeight: selectedCategory !== 'all' ? '240px' : '140px' }}>
-              <Text size={12} family='secondary' color={theme.text.dark_grey} style={{ marginLeft: '16px' }}>
-                {label}
-              </Text>
-
-              {entities.map((item, entIdx) => (
-                <SelectionButton
-                  key={`entity-${catIdx}-${entIdx}`}
-                  icon={getEntityIcon(category as OVERVIEW_ENTITY_TYPES)}
-                  label={getEntityLabel(item, category as OVERVIEW_ENTITY_TYPES, { extended: true })}
-                  onClick={() => {
-                    const id = item.id || item.ruleId || { kind: item.kind, name: item.name, namespace: item.namespace };
-                    handleNodeClick(null, { data: { type: category, id } });
-                    onClose();
-                  }}
-                  style={{ width: '100%', justifyContent: 'flex-start' }}
-                  color='transparent'
-                />
-              ))}
-            </VerticalScroll>
-
-            <Divider thickness={catIdx === searchResults.length - 1 ? 0 : 1} length='90%' margin='8px auto' />
-          </Fragment>
+      <HorizontalScroll style={{ borderBottom: `1px solid ${!searchResults.length ? 'transparent' : theme.colors.border}` }}>
+        {categories.map(({ category, label, count }) => (
+          <SelectionButton key={`category-select-${category}`} label={label} badgeLabel={count} isSelected={selectedCategory === category} onClick={() => setSelectedCategory(category as Category)} />
         ))}
-      </CardContent>
+      </HorizontalScroll>
+
+      {searchResults.map(({ category, label, entities }, catIdx) => (
+        <Fragment key={`category-list-${category}`}>
+          <VerticalScroll style={{ maxHeight: selectedCategory !== 'all' ? '240px' : '140px' }}>
+            <Text size={12} family='secondary' color={theme.text.dark_grey} style={{ marginLeft: '16px' }}>
+              {label}
+            </Text>
+
+            {entities.map((item, entIdx) => (
+              <SelectionButton
+                key={`entity-${catIdx}-${entIdx}`}
+                icon={getEntityIcon(category as OVERVIEW_ENTITY_TYPES)}
+                label={getEntityLabel(item, category as OVERVIEW_ENTITY_TYPES, { extended: true })}
+                onClick={() => {
+                  const id = item.id || item.ruleId || { kind: item.kind, name: item.name, namespace: item.namespace };
+                  handleNodeClick(null, { data: { type: category, id } });
+                  onClose();
+                }}
+                style={{ width: '100%', justifyContent: 'flex-start' }}
+                color='transparent'
+              />
+            ))}
+          </VerticalScroll>
+
+          <Divider thickness={catIdx === searchResults.length - 1 ? 0 : 1} length='90%' margin='8px auto' />
+        </Fragment>
+      ))}
     </CardWrapper>
   );
 };
