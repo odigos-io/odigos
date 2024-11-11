@@ -1,4 +1,7 @@
 import Funnel from './funnel.svg';
 import FunnelFocus from './funnel-focus.svg';
 import PayloadCollectionIcon from './payload-collection.svg';
-export { Funnel, FunnelFocus, PayloadCollectionIcon };
+import Describe from './describe.svg';
+import Refresh from './refresh.svg';
+
+export { Funnel, FunnelFocus, PayloadCollectionIcon, Describe, Refresh };

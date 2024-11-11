@@ -1,0 +1,240 @@
+name: Cross-Cloud Chainsaw Tests
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Nightly run at midnight
+  workflow_dispatch: # Manual trigger
+
+
+permissions:
+  id-token: write
+  contents: read  
+
+jobs:
+  build-and-push-images:  
+    permissions:
+      id-token: write
+      contents: read  
+    name: Build and Push Docker Images
+    runs-on: warp-ubuntu-latest-x64-8x-spot
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+
+      - name: Configure AWS credentials from OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::061717858829:role/ecr-pull-push-role
+          aws-region: us-east-1
+
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+
+      - name: Build and Tag Docker Images
+        env:
+          COMMIT_HASH: ${{ github.sha }}
+        run: |
+          # Build images
+          make build-images TAG=${COMMIT_HASH}
+          # Tag images for public ECR
+          docker tag keyval/odigos-collector:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-collector:${COMMIT_HASH}
+          docker tag keyval/odigos-instrumentor:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-instrumentor:${COMMIT_HASH}
+          docker tag keyval/odigos-ui:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-ui:${COMMIT_HASH}
+          docker tag keyval/odigos-scheduler:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-scheduler:${COMMIT_HASH}
+          docker tag keyval/odigos-autoscaler:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-autoscaler:${COMMIT_HASH}
+          docker tag keyval/odigos-odiglet:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-odiglet:${COMMIT_HASH}
+
+          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-collector:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-instrumentor:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-ui:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-scheduler:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-autoscaler:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-odiglet:${COMMIT_HASH}
+
+  test:
+    permissions:
+      id-token: write
+      contents: read    
+    needs: build-and-push-images
+    runs-on: warp-ubuntu-latest-x64-8x-spot
+    strategy:
+      matrix:
+        cloud-provider: [aks] # Add or remove providers as needed [TODO: later add -> eks + gke]
+        test-scenario: [multi-apps, helm-chart] # Add or remove scenarios as needed
+
+    steps:
+
+      - name: Configure AWS credentials from OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::061717858829:role/ecr-pull-push-role
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set Environment Variables for Terraform
+        run: |
+          CLUSTER_NAME="${{ matrix.test-scenario }}-${{ github.run_id }}"
+          echo "CLUSTER_NAME=${CLUSTER_NAME}" >> $GITHUB_ENV
+          echo "TF_VAR_cluster_name=${CLUSTER_NAME}" >> $GITHUB_ENV
+          echo "TF_VAR_resource_group_name=${CLUSTER_NAME}" >> $GITHUB_ENV
+          echo "TF_VAR_test_scenario=${{ matrix.test-scenario }}" >> $GITHUB_ENV
+          echo "TF_VAR_run_id=${{ github.run_id }}" >> $GITHUB_ENV
+
+
+      - name: Configure Cloud Provider
+        run: |
+          if [ "${{ matrix.cloud-provider }}" = "aks" ]; then
+            echo "Configuring for AKS"
+            
+            # Set environment variables for Azure provider
+            echo "ARM_CLIENT_ID=${{ secrets.AZURE_CLIENT_ID }}" >> $GITHUB_ENV
+            echo "ARM_CLIENT_SECRET=${{ secrets.AZURE_CLIENT_SECRET }}" >> $GITHUB_ENV
+            echo "ARM_TENANT_ID=${{ secrets.AZURE_TENANT_ID }}" >> $GITHUB_ENV
+            echo "ARM_SUBSCRIPTION_ID=${{ secrets.AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+
+            az login --service-principal -u ${{ secrets.AZURE_CLIENT_ID }} -p ${{ secrets.AZURE_CLIENT_SECRET }} --tenant ${{ secrets.AZURE_TENANT_ID }}
+            az account set --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+          elif [ "${{ matrix.cloud-provider }}" = "eks" ]; then
+            echo "Configuring for EKS"
+            aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws configure set region us-east-1
+
+          elif [ "${{ matrix.cloud-provider }}" = "gke" ]; then
+            echo "Configuring for GKE"
+            echo "${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}" | base64 --decode > gcp-key.json
+            gcloud auth activate-service-account --key-file=gcp-key.json
+            gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
+
+          else
+            echo "Unknown cloud provider: ${{ matrix.cloud-provider }}"
+            exit 1
+          fi
+
+      - uses: opentofu/setup-opentofu@v1
+
+      - name: Set Terraform Directory Based on Cloud Provider
+        run: |
+          if [ "${{ matrix.cloud-provider }}" == "aks" ]; then
+            echo "TF_DIR=./tests-infrastructure/terraform/aks" >> $GITHUB_ENV
+          elif [ "${{ matrix.cloud-provider }}" == "eks" ]; then
+            echo "TF_DIR=./tests-infrastructure/terraform/eks" >> $GITHUB_ENV
+          elif [ "${{ matrix.cloud-provider }}" == "gke" ]; then
+            echo "TF_DIR=./tests-infrastructure/terraform/gke" >> $GITHUB_ENV
+          else
+            echo "Unknown cloud provider"
+            exit 1
+          fi
+
+      - name: Initialize OpenTofu
+        run: tofu -chdir=$TF_DIR init 
+
+
+      - name: Plan OpenTofu
+        run: tofu -chdir=$TF_DIR plan
+
+      - name: Apply OpenTofu Configuration
+        run: |
+          tofu -chdir=$TF_DIR apply -auto-approve
+
+      - name: Get kubeconfig for AKS/EKS/GKE
+        run: |
+          if [ "${{ matrix.cloud-provider }}" == "aks" ]; then
+            echo "Fetching AKS kubeconfig..."
+            az aks get-credentials --resource-group $CLUSTER_NAME --name $CLUSTER_NAME
+          elif [ "${{ matrix.cloud-provider }}" == "eks" ]; then
+            echo "Fetching EKS kubeconfig..."
+          elif [ "${{ matrix.cloud-provider }}" == "gke" ]; then
+            echo "Fetching GKE kubeconfig..."
+          else
+            echo "Unknown cloud provider"
+            exit 1
+          fi
+
+      - name: Verify cluster Access
+        run: |
+          kubectl get nodes || exit 1 
+
+      - name: Install Chainsaw
+        uses: kyverno/action-install-chainsaw@v0.2.8
+
+      - name: Build CLI
+        run: |
+          cd cli
+          go build -tags=embed_manifests -o odigos
+          chmod +x odigos
+
+      - name: Install FE
+        # this is used for cypress tests which are not run in every scenario
+        if: matrix.test-scenario == 'multi-apps' || matrix.test-scenario == 'helm-chart' || matrix.test-scenario == 'fe-synthetic'
+        run: |
+          cd frontend/webapp
+          yarn install
+
+      - name: Run E2E Tests
+        run: |
+
+          # This uses in chainsaw to split e2e tests from cross cloud tests
+          export MODE=cross-cloud-tests
+          
+          # This uses in chainsaw to verify the odigos version is equal to the commit version
+          export COMMIT_HASH=${{ github.sha }}
+
+          chainsaw test tests/e2e/${{ matrix.test-scenario }}
+      
+      - name: Run diagnose command
+        if: always()
+        run: |
+          ./cli/odigos diagnose
+        continue-on-error: true
+        
+      - name: Upload run details artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: run-details-${{ matrix.cloud-provider }}-${{ matrix.test-scenario }}
+          path: odigos_debug*.tar.gz
+        continue-on-error: true
+
+      - name: Destroy Resources
+        if: always()
+        run: |
+          tofu -chdir=$TF_DIR destroy -auto-approve
+
+      - name: Extract Tag
+        id: extract_tag
+        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+
+      # Notify Slack on Failure or Cancellation
+      - name: Notify Slack on Failure or Cancellation
+        if: ${{ failure() || cancelled() }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.CLOUD_PROVIDERS_TESTS_WEBHOOK_URL }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"section","text":{"type":"mrkdwn","text":"*ERROR*: Providers tests fail > `${{ matrix.cloud-provider }} - ${{ matrix.test-scenario }}`"}},{"type":"section","fields":[{"type":"mrkdwn","text":"*Link:*\n<https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}|View the GitHub Run>"},{"type":"mrkdwn","text":"*Tag:*\n`${{ steps.extract_tag.outputs.tag }}`"}]}]}' ${{ env.SLACK_WEBHOOK_URL }}
+
+      # Notify Slack on Success
+      - name: Notify Slack on Success
+        if: ${{ success() }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.CLOUD_PROVIDERS_TESTS_WEBHOOK_URL }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"section","text":{"type":"mrkdwn","text":"*SUCCESS*: Providers tests succeed > `${{ matrix.cloud-provider }} - ${{ matrix.test-scenario }}`"}},{"type":"section","fields":[{"type":"mrkdwn","text":"*Link:*\n<https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}|View the GitHub Run>"},{"type":"mrkdwn","text":"*Tag:*\n`${{ steps.extract_tag.outputs.tag }}`"}]}]}' ${{ env.SLACK_WEBHOOK_URL }}
+

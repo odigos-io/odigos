@@ -80,20 +80,6 @@ spec:
                 type: object
               configVersion:
                 type: integer
-              defaultSDKs:
-                additionalProperties:
-                  properties:
-                    sdkTier:
-                      type: string
-                    sdkType:
-                      description: 'Odigos supports two types of OpenTelemetry SDKs:
-                        native and ebpf.'
-                      type: string
-                  required:
-                  - sdkTier
-                  - sdkType
-                  type: object
-                type: object
               goAutoIncludeCodeAttributes:
                 description: |-
                   this is internal currently, and is not exposed on the CLI / helm
@@ -119,22 +105,6 @@ spec:
                 type: boolean
               psp:
                 type: boolean
-              supportedSDKs:
-                additionalProperties:
-                  items:
-                    properties:
-                      sdkTier:
-                        type: string
-                      sdkType:
-                        description: 'Odigos supports two types of OpenTelemetry SDKs:
-                          native and ebpf.'
-                        type: string
-                    required:
-                    - sdkTier
-                    - sdkType
-                    type: object
-                  type: array
-                type: object
               telemetryEnabled:
                 type: boolean
             required:

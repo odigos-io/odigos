@@ -1,10 +1,5 @@
 import type { Condition, ExportedSignals } from './common';
 
-export enum DestinationsSortType {
-  NAME = 'name',
-  TYPE = 'type',
-}
-
 interface ObservabilitySignalSupport {
   supported: boolean;
 }
@@ -87,13 +82,6 @@ export type ConfiguredDestination = {
   destinationTypeDetails: DestinationTypeDetail[];
 };
 
-export interface DestinationType {
-  fields: any;
-  display_name: string;
-  image_url: string;
-  id: string;
-}
-
 interface SupportedSignal {
   supported: boolean;
 }
@@ -129,15 +117,6 @@ export interface Destination {
     image_url: string;
     supported_signals: SupportedDestinationSignals;
   };
-}
-
-export interface Field {
-  name: string;
-  component_type: string;
-  display_name: string;
-  component_properties: any;
-  video_url: string;
-  initial_value?: string;
 }
 
 export interface DestinationConfig {

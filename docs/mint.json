@@ -61,7 +61,7 @@
           "pages": [
             {
               "group": "Installation",
-              "pages": ["setup/installation", "setup/installation-options", "setup/docker-registry"]
+              "pages": ["setup/installation", "setup/installation-options", "setup/docker-registry", "setup/odigos-with-argocd"]
             },
             "setup/upgrade",
             "setup/uninstall"

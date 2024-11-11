@@ -9,10 +9,10 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/crypto"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	certv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
+	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -44,7 +44,7 @@ func NewInstrumentorServiceAccount(ns string) *corev1.ServiceAccount {
 	}
 }
 
-func NewInstrumentorRoleBinding(ns string) *rbacv1.RoleBinding {
+func NewInstrumentorLeaderElectionRoleBinding(ns string) *rbacv1.RoleBinding {
 	return &rbacv1.RoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "RoleBinding",
@@ -167,11 +167,6 @@ func NewInstrumentorClusterRole() *rbacv1.ClusterRole {
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"instrumentedapplications/status"},
 				Verbs:     []string{"get", "patch", "update"},
-			},
-			{
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"odigosconfigurations"},
-				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
 			},
 			{
 				APIGroups: []string{"odigos.io"},
@@ -483,7 +478,15 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 										},
 									},
 								},
+								{
+									ConfigMapRef: &corev1.ConfigMapEnvSource{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: consts.OdigosDeploymentConfigMapName,
+										},
+									},
+								},
 							},
+
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "webhook-server",
@@ -585,9 +588,9 @@ func (a *instrumentorResourceManager) Name() string { return "Instrumentor" }
 
 func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) error {
 	certManagerInstalled := isCertManagerInstalled(ctx, a.client)
-	resources := []client.Object{
+	resources := []kube.Object{
 		NewInstrumentorServiceAccount(a.ns),
-		NewInstrumentorRoleBinding(a.ns),
+		NewInstrumentorLeaderElectionRoleBinding(a.ns),
 		NewInstrumentorClusterRole(),
 		NewInstrumentorClusterRoleBinding(a.ns),
 		NewInstrumentorDeployment(a.ns, a.odigosVersion, a.config.TelemetryEnabled, a.config.ImagePrefix, a.config.InstrumentorImage),
@@ -595,7 +598,7 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 	}
 
 	if certManagerInstalled {
-		resources = append([]client.Object{NewInstrumentorIssuer(a.ns),
+		resources = append([]kube.Object{NewInstrumentorIssuer(a.ns),
 			NewInstrumentorCertificate(a.ns),
 			NewMutatingWebhookConfiguration(a.ns, nil),
 		},
@@ -616,7 +619,7 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 			return fmt.Errorf("failed to generate signed certificate: %w", err)
 		}
 
-		resources = append([]client.Object{NewInstrumentorTLSSecret(a.ns, &cert),
+		resources = append([]kube.Object{NewInstrumentorTLSSecret(a.ns, &cert),
 			NewMutatingWebhookConfiguration(a.ns, []byte(cert.Cert)),
 		},
 			resources...)
