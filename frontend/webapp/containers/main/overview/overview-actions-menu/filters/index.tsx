@@ -2,16 +2,20 @@ import React, { useEffect, useRef, useState } from 'react';
 import theme from '@/styles/theme';
 import styled from 'styled-components';
 import { useOnClickOutside } from '@/hooks';
-import { FiltersState, useFilterStore } from '@/store/useFilterStore';
 import { AbsoluteContainer, RelativeContainer } from '../styled';
-import { Button, SelectionButton } from '@/reuseable-components';
-import { MonitorDropdown, NamespaceDropdown, TypeDropdown } from '@/components';
+import { Button, SelectionButton, Toggle } from '@/reuseable-components';
+import { type FiltersState, useFilterStore } from '@/store/useFilterStore';
+import { ErrorDropdown, MonitorDropdown, NamespaceDropdown, TypeDropdown } from '@/components';
 
-const Pad = styled.div`
+const FormWrapper = styled.div`
   display: flex;
   flex-direction: column;
   gap: 12px;
   padding: 12px;
+`;
+
+const ToggleWrapper = styled.div`
+  padding: 12px 6px 6px 6px;
 `;
 
 const Actions = styled.div`
@@ -34,6 +38,7 @@ const Filters = () => {
 
   const [filters, setFilters] = useState<FiltersState>({ namespace, types, monitors });
   const [filterCount, setFilterCount] = useState(getFilterCount(filters));
+  const [showErrors, setShowErrors] = useState(false);
   const [focused, setFocused] = useState(false);
   const toggleFocused = () => setFocused((prev) => !prev);
 
@@ -70,7 +75,7 @@ const Filters = () => {
 
       {focused && (
         <AbsoluteContainer>
-          <Pad>
+          <FormWrapper>
             <NamespaceDropdown
               value={filters['namespace']}
               onSelect={(val) => setFilters({ namespace: val, types: [], monitors: [] })}
@@ -91,7 +96,13 @@ const Filters = () => {
               required
               isMulti
             />
-          </Pad>
+
+            <ToggleWrapper>
+              <Toggle title='Show only sources with errors' initialValue={showErrors} onChange={(bool) => setShowErrors(bool)} disabled />
+            </ToggleWrapper>
+
+            {showErrors && <ErrorDropdown value={[]} onSelect={(val) => {}} onDeselect={(val) => {}} required isMulti />}
+          </FormWrapper>
 
           <Actions>
             <Button variant='primary' onClick={onApply} style={{ fontSize: 14 }}>

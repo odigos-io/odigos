@@ -220,7 +220,7 @@ const DropdownList: React.FC<{
       )}
 
       {filteredOptions.length === 0 ? (
-        <NoDataFound subTitle=' ' />
+        <NoDataFound subTitle={showSearch && !!searchText ? undefined : ' '} />
       ) : (
         filteredOptions.map((opt) => <DropdownListItem key={`dropdown-option-${opt.id}`} option={opt} value={value} isMulti={isMulti} onSelect={onSelect} onDeselect={onDeselect} />)
       )}

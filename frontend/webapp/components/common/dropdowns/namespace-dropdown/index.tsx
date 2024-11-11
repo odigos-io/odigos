@@ -14,15 +14,15 @@ interface Props {
 export const NamespaceDropdown: React.FC<Props> = ({ value, onSelect, onDeselect, ...props }) => {
   const { allNamespaces } = useNamespace();
 
-  const namespaceOptions = useMemo(() => {
-    const options: DropdownOption[] = [];
+  const options = useMemo(() => {
+    const payload: DropdownOption[] = [];
 
     allNamespaces?.forEach(({ name: id }) => {
-      if (!options.find((opt) => opt.id === id)) options.push({ id, value: id });
+      if (!payload.find((opt) => opt.id === id)) payload.push({ id, value: id });
     });
 
-    return options;
+    return payload;
   }, [allNamespaces]);
 
-  return <Dropdown title='Namespace' placeholder='Select namespace' options={namespaceOptions} value={value} onSelect={onSelect} onDeselect={onDeselect} showSearch={false} {...props} />;
+  return <Dropdown title='Namespace' placeholder='Select namespace' options={options} value={value} onSelect={onSelect} onDeselect={onDeselect} showSearch={false} {...props} />;
 };
