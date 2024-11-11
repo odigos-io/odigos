@@ -1,13 +1,12 @@
 FROM --platform=$BUILDPLATFORM node:20.2.0 AS deps
 WORKDIR /app
 COPY frontend/webapp/package.json frontend/webapp/yarn.lock ./
-RUN --mount=type=cache,target=/usr/local/share/.cache/yarn/v6 \
-    yarn install --frozen-lockfile
+RUN yarn install 
 
 FROM --platform=$BUILDPLATFORM node:20.2.0 AS builder
 WORKDIR /webapp
 COPY --from=deps /app/node_modules ./node_modules
-COPY frontend//webapp .
+COPY frontend/webapp .
 RUN yarn build
 
 
