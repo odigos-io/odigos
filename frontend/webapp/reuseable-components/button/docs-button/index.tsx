@@ -1,7 +1,7 @@
 import Image from 'next/image';
-import styled from 'styled-components';
-import { Button, ButtonProps } from '.';
 import { DOCS_LINK } from '@/utils';
+import styled from 'styled-components';
+import { Button, ButtonProps } from '..';
 
 const StyledButton = styled(Button)`
   display: flex;

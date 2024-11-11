@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
 import { DropdownOption } from '@/types';
-import { Button, Dropdown, Text } from '@/reuseable-components';
+import { useOnClickOutside } from '@/hooks';
+import { Badge, Button, Dropdown, Text } from '@/reuseable-components';
 
-const Container = styled.div`
+const RelativeContainer = styled.div`
   position: relative;
 `;
 
@@ -15,22 +16,12 @@ const ButtonText = styled(Text)`
   margin: 0 6px;
 `;
 
-const Badge = styled.div`
-  background-color: ${({ theme }) => theme.colors.majestic_blue};
-  border-radius: 100%;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
 const CardWrapper = styled.div`
   position: absolute;
-  top: 100%;
+  top: calc(100% + 8px);
   left: 0;
   z-index: 10;
-  background-color: ${({ theme }) => theme.colors.translucent_bg};
+  background-color: ${({ theme }) => theme.colors.dropdown_bg};
   border: ${({ theme }) => `1px solid ${theme.colors.border}`};
   border-radius: 24px;
   width: 360px;
@@ -44,32 +35,28 @@ const CardContent = styled.div`
 `;
 
 const Filters = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const toggleOpen = () => setIsOpen((prev) => !prev);
+  const [focused, setFocused] = useState(false);
+  const toggleFocused = () => setFocused((prev) => !prev);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useOnClickOutside(ref, () => setFocused(false));
 
   const [namespace, setNamespace] = useState<DropdownOption | undefined>(undefined);
   const [filters, setFilters] = useState<DropdownOption[]>([]);
   const [metrics, setMetrics] = useState<DropdownOption[]>([]);
 
   return (
-    <Container>
-      <Button variant='secondary' style={{ textDecoration: 'none' }} onClick={toggleOpen}>
+    <RelativeContainer ref={ref}>
+      <Button variant='secondary' style={{ textDecoration: 'none' }} onClick={toggleFocused}>
         <Image src='/icons/common/filter.svg' alt='filter' width={14} height={14} />
         <ButtonText>Filters</ButtonText>
-        <Badge>{filters.length}</Badge>
+        <Badge label={filters.length} filled />
       </Button>
 
-      {isOpen && (
+      {focused && (
         <CardWrapper>
           <CardContent>
-            <Dropdown
-              title='Namespace'
-              placeholder='Select namespace'
-              options={[]}
-              value={namespace}
-              onSelect={(val) => setNamespace(val)}
-              required
-            />
+            <Dropdown title='Namespace' placeholder='Select namespace' options={[]} value={namespace} onSelect={(val) => setNamespace(val)} required />
 
             {/* TODO: make this a multi-select dropwdown (with internal checkboxes) */}
             <Dropdown title='Type' placeholder='All' options={[]} value={filters[0]} onSelect={(val) => setFilters((prev) => prev)} required />
@@ -78,7 +65,7 @@ const Filters = () => {
           </CardContent>
         </CardWrapper>
       )}
-    </Container>
+    </RelativeContainer>
   );
 };
 

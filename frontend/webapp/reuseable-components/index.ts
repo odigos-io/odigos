@@ -1,6 +1,8 @@
 export * from './text';
+export * from './badge';
 export * from './button';
 export * from './button/docs-button';
+export * from './button/selection-button';
 export * from './section-title';
 export * from './input';
 export * from './tooltip';
@@ -8,6 +10,7 @@ export * from './dropdown';
 export * from './divider';
 export * from './counter';
 export * from './toggle';
+export * from './toggle-buttons';
 export * from './checkbox';
 export * from './modal';
 export * from './modal/warning-modal';

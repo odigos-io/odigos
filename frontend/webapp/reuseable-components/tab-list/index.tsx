@@ -28,12 +28,12 @@ const TabContainer = styled.div<{ selected: TabProps['selected']; disabled: TabP
   padding: 0px 12px;
   border-radius: 32px;
   cursor: ${({ disabled }) => (disabled ? 'not-allowed' : 'pointer')};
-  background-color: ${({ selected, theme }) => (selected ? theme.colors.selected_hover : theme.colors.card)};
+  background-color: ${({ selected, theme }) => (selected ? theme.colors.majestic_blue + '3D' : theme.colors.card)};
   opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
   transition: background-color 0.3s, color 0.3s;
 
   &:hover {
-    background-color: ${({ disabled, theme }) => (disabled ? 'none' : theme.colors.selected_hover)};
+    background-color: ${({ disabled, theme }) => (disabled ? 'none' : theme.colors.majestic_blue + '3D')};
   }
 
   svg {

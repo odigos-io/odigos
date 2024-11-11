@@ -1,3 +1,3 @@
 export * from './animations';
-export * from './palette';
+export * from './theme-provider';
 export * from './styled';
