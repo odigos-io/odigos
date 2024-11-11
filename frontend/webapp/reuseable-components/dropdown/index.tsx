@@ -150,7 +150,7 @@ interface DropdownContentProps {
 
 const DropdownContent: React.FC<DropdownContentProps> = ({ options, value, onSelect, showSearch }) => {
   const [searchText, setSearchText] = useState('');
-  const filteredOptions = options.filter((option) => option.value.toLowerCase().includes(searchText.toLowerCase()));
+  const filteredOptions = options.filter((option) => option.value.toLowerCase().includes(searchText));
 
   return (
     <AbsoluteContainer>

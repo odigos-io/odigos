@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from 'react';
+import { safeJsonParse } from '@/utils';
 import { useQuery } from '@apollo/client';
 import { useBooleanStore } from '@/store';
 import type { ComputePlatform } from '@/types';
@@ -16,7 +17,7 @@ type UseComputePlatformHook = {
 export const useComputePlatform = (): UseComputePlatformHook => {
   const { data, loading, error, refetch } = useQuery<ComputePlatform>(GET_COMPUTE_PLATFORM);
   const { togglePolling } = useBooleanStore();
-  const { namespace, types } = useFilterStore();
+  const filters = useFilterStore();
 
   const startPolling = useCallback(async () => {
     togglePolling(true);
@@ -38,17 +39,35 @@ export const useComputePlatform = (): UseComputePlatformHook => {
     if (!data) return undefined;
 
     let k8sActualSources = [...data.computePlatform.k8sActualSources];
+    let destinations = [...data.computePlatform.destinations];
+    let actions = [...data.computePlatform.actions];
 
-    if (!!namespace) k8sActualSources = k8sActualSources.filter((source) => source.namespace === namespace.id);
-    if (!!types.length) k8sActualSources = k8sActualSources.filter((source) => !!types.find((type) => type.id === source.kind));
+    if (!!filters.namespace) {
+      k8sActualSources = k8sActualSources.filter((source) => filters.namespace?.id === source.namespace);
+    }
+    if (!!filters.types.length) {
+      k8sActualSources = k8sActualSources.filter((source) => !!filters.types.find((type) => type.id === source.kind));
+    }
+    if (!!filters.metrics.length) {
+      destinations = destinations.filter((destination) => !!filters.metrics.find((metric) => destination.exportedSignals[metric.id]));
+      actions = actions.filter(
+        (action) =>
+          !!filters.metrics.find((metric) => {
+            const { signals } = safeJsonParse(action.spec as string, { signals: [] as string[] });
+            return signals.find((str) => str.toLowerCase() === metric.id);
+          }),
+      );
+    }
 
     return {
       computePlatform: {
         ...data.computePlatform,
         k8sActualSources,
+        destinations,
+        actions,
       },
     };
-  }, [data, namespace, types]);
+  }, [data, filters]);
 
   return { data: filteredData, loading, error, refetch, startPolling };
 };

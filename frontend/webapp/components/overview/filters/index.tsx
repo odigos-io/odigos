@@ -5,6 +5,7 @@ import { DropdownOption } from '@/types';
 import { useFilterStore } from '@/store/useFilterStore';
 import { useNamespace, useOnClickOutside, useSourceCRUD } from '@/hooks';
 import { Button, Dropdown, SelectionButton } from '@/reuseable-components';
+import { MONITORS_OPTIONS } from '@/utils';
 
 const RelativeContainer = styled.div`
   position: relative;
@@ -74,6 +75,16 @@ const Filters = () => {
     return options;
   }, [sources]);
 
+  const metricsOptions = useMemo(() => {
+    const options: DropdownOption[] = [];
+
+    MONITORS_OPTIONS.forEach(({ id, value }) => {
+      if (!options.find((opt) => opt.id === id)) options.push({ id, value });
+    });
+
+    return options;
+  }, []);
+
   const [filters, setFilters] = useState<FiltersState>({ namespace, types, metrics });
   const [filterCount, setFilterCount] = useState(getFilterCount(filters));
   const [focused, setFocused] = useState(false);
@@ -141,7 +152,7 @@ const Filters = () => {
 
             {/* TODO: make these as multi-select dropwdowns (with internal checkboxes) */}
             <Dropdown title='Type' placeholder='All' options={typesOptions} value={filters['types'][0]} onSelect={(val) => handleChange('types', [val])} required showSearch={false} />
-            <Dropdown title='Metric' placeholder='All' options={[]} value={filters['metrics'][0]} onSelect={(val) => handleChange('metrics', [val])} required showSearch={false} />
+            <Dropdown title='Metric' placeholder='All' options={metricsOptions} value={filters['metrics'][0]} onSelect={(val) => handleChange('metrics', [val])} required showSearch={false} />
           </Pad>
 
           <Actions>
