@@ -5,6 +5,8 @@ export interface FiltersState {
   namespace: DropdownOption | undefined;
   types: DropdownOption[];
   monitors: DropdownOption[];
+  errors: DropdownOption[];
+  onlyErrors: boolean;
 }
 
 interface StoreState {
@@ -16,6 +18,12 @@ interface StoreState {
 
   monitors: FiltersState['monitors'];
   setMonitors: (metrics: FiltersState['monitors']) => void;
+
+  errors: FiltersState['errors'];
+  setErrors: (metrics: FiltersState['errors']) => void;
+
+  onlyErrors: FiltersState['onlyErrors'];
+  setOnlyErrors: (onlyErrors: FiltersState['onlyErrors']) => void;
 
   setAll: (params: FiltersState) => void;
   clearAll: () => void;
@@ -31,6 +39,12 @@ export const useFilterStore = create<StoreState>((set) => ({
   monitors: [],
   setMonitors: (monitors) => set({ monitors }),
 
+  errors: [],
+  setErrors: (errors) => set({ errors }),
+
+  onlyErrors: false,
+  setOnlyErrors: (onlyErrors) => set({ onlyErrors }),
+
   setAll: (params) => set(params),
-  clearAll: () => set({ namespace: undefined, types: [], monitors: [] }),
+  clearAll: () => set({ namespace: undefined, types: [], monitors: [], errors: [], onlyErrors: false }),
 }));

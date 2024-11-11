@@ -16,7 +16,9 @@ export const MonitorDropdown: React.FC<Props> = ({ value, onSelect, onDeselect, 
     const payload: DropdownOption[] = [];
 
     MONITORS_OPTIONS.forEach(({ id, value }) => {
-      if (!payload.find((opt) => opt.id === id)) payload.push({ id, value });
+      if (!payload.find((opt) => opt.id === id)) {
+        payload.push({ id, value });
+      }
     });
 
     return payload;

@@ -18,7 +18,9 @@ export const TypeDropdown: React.FC<Props> = ({ value, onSelect, onDeselect, ...
     const payload: DropdownOption[] = [];
 
     sources.forEach(({ kind: id }) => {
-      if (!payload.find((opt) => opt.id === id)) payload.push({ id, value: id });
+      if (!payload.find((opt) => opt.id === id)) {
+        payload.push({ id, value: id });
+      }
     });
 
     return payload;

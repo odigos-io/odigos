@@ -30,25 +30,26 @@ const getFilterCount = (params: FiltersState) => {
   if (!!params.namespace) count++;
   count += params.types.length;
   count += params.monitors.length;
+  count += params.errors.length;
+  if (!!params.onlyErrors) count++;
   return count;
 };
 
 const Filters = () => {
-  const { namespace, types, monitors, setAll, clearAll } = useFilterStore();
+  const { namespace, types, monitors, errors, onlyErrors, setAll, clearAll } = useFilterStore();
 
-  const [filters, setFilters] = useState<FiltersState>({ namespace, types, monitors });
+  const [filters, setFilters] = useState<FiltersState>({ namespace, types, monitors, errors, onlyErrors });
   const [filterCount, setFilterCount] = useState(getFilterCount(filters));
-  const [showErrors, setShowErrors] = useState(false);
   const [focused, setFocused] = useState(false);
   const toggleFocused = () => setFocused((prev) => !prev);
 
   useEffect(() => {
     if (!focused) {
-      const payload = { namespace, types, monitors };
+      const payload = { namespace, types, monitors, errors, onlyErrors };
       setFilters(payload);
       setFilterCount(getFilterCount(payload));
     }
-  }, [focused, namespace, types, monitors]);
+  }, [focused, namespace, types, monitors, errors, onlyErrors]);
 
   const onApply = () => {
     setAll(filters);
@@ -62,7 +63,7 @@ const Filters = () => {
 
   const onReset = () => {
     clearAll();
-    setFilters({ namespace: undefined, types: [], monitors: [] });
+    setFilters({ namespace: undefined, types: [], monitors: [], errors: [], onlyErrors: false });
     setFilterCount(0);
   };
 
@@ -78,7 +79,7 @@ const Filters = () => {
           <FormWrapper>
             <NamespaceDropdown
               value={filters['namespace']}
-              onSelect={(val) => setFilters({ namespace: val, types: [], monitors: [] })}
+              onSelect={(val) => setFilters({ namespace: val, types: [], monitors: [], errors: [], onlyErrors: false })}
               onDeselect={(val) => setFilters((prev) => ({ ...prev, namespace: undefined }))}
               required
             />
@@ -98,10 +99,18 @@ const Filters = () => {
             />
 
             <ToggleWrapper>
-              <Toggle title='Show only sources with errors' initialValue={showErrors} onChange={(bool) => setShowErrors(bool)} disabled />
+              <Toggle title='Show only sources with errors' initialValue={filters['onlyErrors']} onChange={(bool) => setFilters((prev) => ({ ...prev, errors: [], onlyErrors: bool }))} />
             </ToggleWrapper>
 
-            {showErrors && <ErrorDropdown value={[]} onSelect={(val) => {}} onDeselect={(val) => {}} required isMulti />}
+            {filters['onlyErrors'] && (
+              <ErrorDropdown
+                value={filters['errors']}
+                onSelect={(val) => setFilters((prev) => ({ ...prev, errors: [...prev.errors, val] }))}
+                onDeselect={(val) => setFilters((prev) => ({ ...prev, errors: prev.errors.filter((opt) => opt.id !== val.id) }))}
+                required
+                isMulti
+              />
+            )}
           </FormWrapper>
 
           <Actions>

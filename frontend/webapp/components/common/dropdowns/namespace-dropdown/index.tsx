@@ -18,7 +18,9 @@ export const NamespaceDropdown: React.FC<Props> = ({ value, onSelect, onDeselect
     const payload: DropdownOption[] = [];
 
     allNamespaces?.forEach(({ name: id }) => {
-      if (!payload.find((opt) => opt.id === id)) payload.push({ id, value: id });
+      if (!payload.find((opt) => opt.id === id)) {
+        payload.push({ id, value: id });
+      }
     });
 
     return payload;

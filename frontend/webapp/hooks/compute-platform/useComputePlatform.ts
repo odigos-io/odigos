@@ -48,6 +48,9 @@ export const useComputePlatform = (): UseComputePlatformHook => {
     if (!!filters.types.length) {
       k8sActualSources = k8sActualSources.filter((source) => !!filters.types.find((type) => type.id === source.kind));
     }
+    if (!!filters.errors.length) {
+      k8sActualSources = k8sActualSources.filter((source) => !!filters.errors.find((error) => !!source.instrumentedApplicationDetails?.conditions?.find((cond) => cond.type === error.id)));
+    }
     if (!!filters.monitors.length) {
       destinations = destinations.filter((destination) => !!filters.monitors.find((metric) => destination.exportedSignals[metric.id]));
       actions = actions.filter(

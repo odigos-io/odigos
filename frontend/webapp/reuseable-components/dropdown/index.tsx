@@ -129,6 +129,7 @@ const MultiLabel = styled(Text)`
   padding: 4px 12px;
   background: ${({ theme }) => theme.colors.white_opacity['008']};
   border-radius: 360px;
+  white-space: nowrap;
   img {
     &:hover {
       transform: scale(2);
