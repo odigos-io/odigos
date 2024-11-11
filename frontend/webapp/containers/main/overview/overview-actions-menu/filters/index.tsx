@@ -159,7 +159,7 @@ const Filters = () => {
             <Button variant='secondary' onClick={onCancel} style={{ fontSize: 14 }}>
               Cancel
             </Button>
-            <Button variant='tertiary' onClick={onReset} style={{ fontSize: 14, color: theme.text.error, marginLeft: '100px' }}>
+            <Button variant='tertiary' onClick={onReset} style={{ fontSize: 14, color: theme.text.error, marginLeft: '160px' }}>
               Reset
             </Button>
           </Actions>
