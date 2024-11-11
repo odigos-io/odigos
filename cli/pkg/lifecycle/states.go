@@ -189,9 +189,11 @@ func (o *Orchestrator) getCurrentState(ctx context.Context, obj client.Object, t
 	}
 
 	langFound := false
+	var lang common.ProgrammingLanguage
 	for _, rd := range ia.Spec.RuntimeDetails {
 		if rd.Language != common.UnknownProgrammingLanguage && rd.Language != common.IgnoredProgrammingLanguage {
 			langFound = true
+			lang = rd.Language
 			break
 		}
 	}
@@ -214,6 +216,7 @@ func (o *Orchestrator) getCurrentState(ctx context.Context, obj client.Object, t
 	}
 
 	if !instDeviceFound {
+		o.log("Language detected: " + string(lang))
 		return LangDetectedState
 	}
 

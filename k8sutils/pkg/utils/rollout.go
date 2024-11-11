@@ -19,6 +19,13 @@ func checkAllPodsRunningAndContainsInstrumentation(pods *corev1.PodList) bool {
 			return false
 		}
 
+		// Check if restart count is 0
+		for _, containerStatus := range pod.Status.ContainerStatuses {
+			if containerStatus.RestartCount != 0 {
+				return false
+			}
+		}
+
 		if !isPodContainsInstrumentation(&pod) {
 			return false
 		}
@@ -59,7 +66,7 @@ func isPodContainsInstrumentation(pod *corev1.Pod) bool {
 }
 
 func VerifyAllPodsAreInstrumented(ctx context.Context, client kubernetes.Interface, obj client.Object) (bool, error) {
-	labels := getMatchLabels(obj)
+	labels := GetMatchLabels(obj)
 
 	pods, err := client.CoreV1().Pods(obj.GetNamespace()).List(ctx, metav1.ListOptions{
 		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{MatchLabels: labels}),
@@ -73,7 +80,7 @@ func VerifyAllPodsAreInstrumented(ctx context.Context, client kubernetes.Interfa
 }
 
 func VerifyAllPodsAreNOTInstrumented(ctx context.Context, client kubernetes.Interface, obj client.Object) (bool, error) {
-	labels := getMatchLabels(obj)
+	labels := GetMatchLabels(obj)
 
 	pods, err := client.CoreV1().Pods(obj.GetNamespace()).List(ctx, metav1.ListOptions{
 		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{MatchLabels: labels}),
@@ -86,7 +93,7 @@ func VerifyAllPodsAreNOTInstrumented(ctx context.Context, client kubernetes.Inte
 	return checkAllPodsRunningAndNotInstrumented(pods), nil
 }
 
-func getMatchLabels(obj client.Object) map[string]string {
+func GetMatchLabels(obj client.Object) map[string]string {
 	var labels map[string]string
 	switch obj.(type) {
 	case *appsv1.Deployment:

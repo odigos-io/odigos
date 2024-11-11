@@ -75,6 +75,7 @@ Odigos CLI and monitor the instrumentation status.`,
 		dryRun := cmd.Flag(dryRunFlag).Changed && cmd.Flag(dryRunFlag).Value.String() == "true"
 		coolOffStr := cmd.Flag(instrumentationCollOffFlag).Value.String()
 		coolOff, err := time.ParseDuration(coolOffStr)
+		ctx = lifecycle.SetCoolOff(ctx, coolOff)
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Invalid duration for instrumentation-cool-off: %s\n", err)
 			os.Exit(1)
@@ -99,11 +100,11 @@ Odigos CLI and monitor the instrumentation status.`,
 		runPreflightChecks(ctx, cmd, client)
 
 		fmt.Printf("Starting instrumentation ...\n")
-		instrumentCluster(ctx, client, excludedNs, excludedApps, dryRun, coolOff)
+		instrumentCluster(ctx, client, excludedNs, excludedApps, dryRun)
 	},
 }
 
-func instrumentCluster(ctx context.Context, client *kube.Client, excludedNs, excludedApps map[string]struct{}, dryRun bool, coolOff time.Duration) {
+func instrumentCluster(ctx context.Context, client *kube.Client, excludedNs, excludedApps map[string]struct{}, dryRun bool) {
 	systemNs := sliceToMap(consts.SystemNamespaces)
 	nsList, err := client.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
 	if err != nil {
@@ -126,14 +127,14 @@ func instrumentCluster(ctx context.Context, client *kube.Client, excludedNs, exc
 			continue
 		}
 
-		err = instrumentNamespace(ctx, client, ns.Name, excludedApps, orchestrator, dryRun, coolOff)
+		err = instrumentNamespace(ctx, client, ns.Name, excludedApps, orchestrator, dryRun)
 		if errors.Is(err, context.Canceled) {
 			return
 		}
 	}
 }
 
-func instrumentNamespace(ctx context.Context, client *kube.Client, ns string, excludedApps map[string]struct{}, orchestrator *lifecycle.Orchestrator, dryRun bool, coolOff time.Duration) error {
+func instrumentNamespace(ctx context.Context, client *kube.Client, ns string, excludedApps map[string]struct{}, orchestrator *lifecycle.Orchestrator, dryRun bool) error {
 	deps, err := client.AppsV1().Deployments(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		fmt.Printf("  - \033[31mERROR\033[0m Cannot list deployments: %s\n", err)
@@ -164,8 +165,6 @@ func instrumentNamespace(ctx context.Context, client *kube.Client, ns string, ex
 		if errors.Is(err, context.Canceled) {
 			return err
 		}
-
-		time.Sleep(coolOff)
 	}
 
 	return nil
@@ -223,7 +222,7 @@ func init() {
 	clusterCmd.Flags().String(excludeAppsFileFlag, "", "File containing applications to exclude from instrumentation. Each application should be on a new line.")
 	clusterCmd.Flags().Bool(skipPreflightCheckFlag, false, "Skip preflight checks")
 	clusterCmd.Flags().Bool(dryRunFlag, false, "Dry run mode")
-	clusterCmd.Flags().Duration(instrumentationCollOffFlag, 0, "Cool-off period for instrumentation")
+	clusterCmd.Flags().Duration(instrumentationCollOffFlag, 0, "Cool-off period for instrumentation. Time format is 1h30m")
 }
 
 func sliceToMap(slice []string) map[string]struct{} {

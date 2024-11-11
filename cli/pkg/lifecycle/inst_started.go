@@ -28,7 +28,8 @@ func (i *InstrumentationStarted) To() State {
 }
 
 func (i *InstrumentationStarted) Execute(ctx context.Context, obj client.Object, templateSpec *corev1.PodTemplateSpec) error {
-	return wait.PollUntilContextTimeout(ctx, 1*time.Second, 1*time.Minute, true, func(ctx context.Context) (bool, error) {
+	return wait.PollUntilContextTimeout(ctx, 5*time.Second, 1*time.Minute, true, func(ctx context.Context) (bool, error) {
+		i.log("Waiting for Deployment to be updated ...")
 		updatedPodSpec, err := i.getPodSpecFromAPIServer(ctx, obj)
 		if err != nil {
 			i.log(fmt.Sprintf("Error while fetching PodSpec: %s", err.Error()))
