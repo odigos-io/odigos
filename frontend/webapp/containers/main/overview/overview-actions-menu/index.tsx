@@ -1,5 +1,5 @@
 import React from 'react';
-import Search from './search';
+import { Search } from './search';
 import styled from 'styled-components';
 import { Divider, TabList } from '@/reuseable-components';
 import { AddEntity, Filters, MonitorsLegend } from '@/components';
@@ -8,18 +8,11 @@ const MenuContainer = styled.div`
   display: flex;
   align-items: center;
   margin: 20px 0;
+  gap: 16px;
 `;
 
-const FilterContainer = styled.div`
-  margin-left: 12px;
-`;
-
-const MonitorsContainer = styled.div`
-  margin-left: 24px;
-`;
-
-// Aligns the AddEntityButtonDropdown to the right
-const StyledAddEntityButtonDropdownWrapper = styled.div`
+// Aligns the "AddEntity" button to the right
+const PushToEnd = styled.div`
   margin-left: auto;
 `;
 
@@ -27,20 +20,14 @@ export function OverviewActionMenuContainer() {
   return (
     <MenuContainer>
       <TabList />
-      <Divider orientation='vertical' length='20px' margin='0 16px' />
+      <Divider orientation='vertical' length='20px' margin='0' />
       <Search />
+      <Filters />
+      <MonitorsLegend />
 
-      <FilterContainer>
-        <Filters />
-      </FilterContainer>
-
-      <MonitorsContainer>
-        <MonitorsLegend />
-      </MonitorsContainer>
-
-      <StyledAddEntityButtonDropdownWrapper>
+      <PushToEnd>
         <AddEntity />
-      </StyledAddEntityButtonDropdownWrapper>
+      </PushToEnd>
     </MenuContainer>
   );
 }
