@@ -8,7 +8,7 @@ import { Text } from '@/reuseable-components';
 const List = styled.div`
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 12px;
 `;
 
 const ListItem = styled.div`
