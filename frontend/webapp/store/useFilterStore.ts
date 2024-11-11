@@ -8,8 +8,8 @@ interface StoreState {
   types: DropdownOption[];
   setTypes: (types: DropdownOption[]) => void;
 
-  metrics: DropdownOption[];
-  setMetrics: (metrics: DropdownOption[]) => void;
+  monitors: DropdownOption[];
+  setMonitors: (metrics: DropdownOption[]) => void;
 }
 
 export const useFilterStore = create<StoreState>((set) => ({
@@ -19,6 +19,6 @@ export const useFilterStore = create<StoreState>((set) => ({
   types: [],
   setTypes: (types) => set({ types }),
 
-  metrics: [],
-  setMetrics: (metrics) => set({ metrics }),
+  monitors: [],
+  setMonitors: (monitors) => set({ monitors }),
 }));

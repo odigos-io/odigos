@@ -27,6 +27,7 @@ const TextWrapper = styled.div<{
   text-align: ${({ align }) => align || 'left'};
   opacity: ${({ opacity }) => (opacity !== undefined ? opacity : 1)};
   text-decoration: ${({ decoration }) => decoration || 'none'};
+  text-transform: ${({ family }) => (family === 'secondary' ? 'uppercase' : 'none')};
   font-family: ${({ theme, family }) => {
     if (family === 'secondary') {
       return theme.font_family.secondary;

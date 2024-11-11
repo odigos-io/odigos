@@ -39,19 +39,19 @@ const Actions = styled.div`
 interface FiltersState {
   namespace: DropdownOption | undefined;
   types: DropdownOption[];
-  metrics: DropdownOption[];
+  monitors: DropdownOption[];
 }
 
 const getFilterCount = (params: FiltersState) => {
   let count = 0;
   if (!!params.namespace) count++;
   count += params.types.length;
-  count += params.metrics.length;
+  count += params.monitors.length;
   return count;
 };
 
 const Filters = () => {
-  const { namespace, setNamespace, types, setTypes, metrics, setMetrics } = useFilterStore();
+  const { namespace, setNamespace, types, setTypes, monitors, setMonitors } = useFilterStore();
   const { allNamespaces } = useNamespace();
   const { sources } = useSourceCRUD();
 
@@ -85,24 +85,24 @@ const Filters = () => {
     return options;
   }, []);
 
-  const [filters, setFilters] = useState<FiltersState>({ namespace, types, metrics });
+  const [filters, setFilters] = useState<FiltersState>({ namespace, types, monitors });
   const [filterCount, setFilterCount] = useState(getFilterCount(filters));
   const [focused, setFocused] = useState(false);
   const toggleFocused = () => setFocused((prev) => !prev);
 
   useEffect(() => {
     if (!focused) {
-      const payload = { namespace, types, metrics };
+      const payload = { namespace, types, monitors };
       setFilters(payload);
       setFilterCount(getFilterCount(payload));
     }
-  }, [focused, namespace, types, metrics]);
+  }, [focused, namespace, types, monitors]);
 
   const onApply = () => {
     // global
     setNamespace(filters.namespace);
     setTypes(filters.types);
-    setMetrics(filters.metrics);
+    setMonitors(filters.monitors);
     // local
     setFilterCount(getFilterCount(filters));
     setFocused(false);
@@ -116,9 +116,9 @@ const Filters = () => {
     // global
     setNamespace(undefined);
     setTypes([]);
-    setMetrics([]);
+    setMonitors([]);
     // local
-    setFilters({ namespace: undefined, types: [], metrics: [] });
+    setFilters({ namespace: undefined, types: [], monitors: [] });
     setFilterCount(0);
   };
 
@@ -137,7 +137,7 @@ const Filters = () => {
               placeholder='Select namespace'
               options={namespaceOptions}
               value={filters['namespace']}
-              onSelect={(val) => setFilters({ namespace: val, types: [], metrics: [] })}
+              onSelect={(val) => setFilters({ namespace: val, types: [], monitors: [] })}
               onDeselect={() => setFilters((prev) => ({ ...prev, namespace: undefined }))}
               required
               showSearch={false}
@@ -154,12 +154,12 @@ const Filters = () => {
               showSearch={false}
             />
             <Dropdown
-              title='Metric'
+              title='Monitors'
               placeholder='All'
               options={metricsOptions}
-              value={filters['metrics']}
-              onSelect={(val) => setFilters((prev) => ({ ...prev, metrics: [...prev.metrics, val] }))}
-              onDeselect={(val) => setFilters((prev) => ({ ...prev, metrics: prev.metrics.filter((opt) => opt.id !== val.id) }))}
+              value={filters['monitors']}
+              onSelect={(val) => setFilters((prev) => ({ ...prev, monitors: [...prev.monitors, val] }))}
+              onDeselect={(val) => setFilters((prev) => ({ ...prev, monitors: prev.monitors.filter((opt) => opt.id !== val.id) }))}
               isMulti
               required
               showSearch={false}

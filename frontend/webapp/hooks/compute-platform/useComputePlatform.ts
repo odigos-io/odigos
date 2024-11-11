@@ -48,11 +48,11 @@ export const useComputePlatform = (): UseComputePlatformHook => {
     if (!!filters.types.length) {
       k8sActualSources = k8sActualSources.filter((source) => !!filters.types.find((type) => type.id === source.kind));
     }
-    if (!!filters.metrics.length) {
-      destinations = destinations.filter((destination) => !!filters.metrics.find((metric) => destination.exportedSignals[metric.id]));
+    if (!!filters.monitors.length) {
+      destinations = destinations.filter((destination) => !!filters.monitors.find((metric) => destination.exportedSignals[metric.id]));
       actions = actions.filter(
         (action) =>
-          !!filters.metrics.find((metric) => {
+          !!filters.monitors.find((metric) => {
             const { signals } = safeJsonParse(action.spec as string, { signals: [] as string[] });
             return signals.find((str) => str.toLowerCase() === metric.id);
           }),
