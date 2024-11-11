@@ -7,10 +7,12 @@ import theme from '@/styles/theme';
 
 interface CheckboxProps {
   title?: string;
+  titleColor?: React.CSSProperties['color'];
   tooltip?: string;
   initialValue?: boolean;
   onChange?: (value: boolean) => void;
   disabled?: boolean;
+  style?: React.CSSProperties;
 }
 
 const Container = styled.div<{ disabled?: boolean }>`
@@ -34,7 +36,7 @@ const CheckboxWrapper = styled.div<{ isChecked: boolean; disabled?: boolean }>`
   transition: border 0.3s, background-color 0.3s;
 `;
 
-const Checkbox: React.FC<CheckboxProps> = ({ title, tooltip, initialValue = false, onChange, disabled }) => {
+const Checkbox: React.FC<CheckboxProps> = ({ title, titleColor, tooltip, initialValue = false, onChange, disabled, style }) => {
   const [isChecked, setIsChecked] = useState(initialValue);
 
   useEffect(() => {
@@ -52,12 +54,12 @@ const Checkbox: React.FC<CheckboxProps> = ({ title, tooltip, initialValue = fals
   };
 
   return (
-    <Container disabled={disabled} onClick={handleToggle}>
+    <Container disabled={disabled} onClick={handleToggle} style={style}>
       <CheckboxWrapper isChecked={isChecked} disabled={disabled}>
         {isChecked && <Image src='/icons/common/check.svg' alt='' width={12} height={12} />}
       </CheckboxWrapper>
       {title && (
-        <Text size={12} color={theme.text.grey}>
+        <Text size={12} color={titleColor || theme.text.grey}>
           {title}
         </Text>
       )}

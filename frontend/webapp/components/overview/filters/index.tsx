@@ -98,10 +98,6 @@ const Filters = () => {
     }
   }, [focused, namespace, types, metrics]);
 
-  const handleChange = (key: 'namespace' | 'types' | 'metrics', val: DropdownOption[] | DropdownOption | undefined) => {
-    setFilters((prev) => ({ ...prev, [key]: val }));
-  };
-
   const onApply = () => {
     // global
     setNamespace(filters.namespace);
@@ -140,19 +136,34 @@ const Filters = () => {
               title='Namespace'
               placeholder='Select namespace'
               options={namespaceOptions}
-              value={filters['namespace']}
-              onSelect={(val) => {
-                handleChange('namespace', val);
-                handleChange('types', []);
-                handleChange('metrics', []);
-              }}
+              selected={filters['namespace']}
+              onSelect={(val) => setFilters({ namespace: val, types: [], metrics: [] })}
+              onDeselect={() => setFilters((prev) => ({ ...prev, namespace: undefined }))}
               required
               showSearch={false}
             />
-
-            {/* TODO: make these as multi-select dropwdowns (with internal checkboxes) */}
-            <Dropdown title='Type' placeholder='All' options={typesOptions} value={filters['types'][0]} onSelect={(val) => handleChange('types', [val])} required showSearch={false} />
-            <Dropdown title='Metric' placeholder='All' options={metricsOptions} value={filters['metrics'][0]} onSelect={(val) => handleChange('metrics', [val])} required showSearch={false} />
+            <Dropdown
+              title='Type'
+              placeholder='All'
+              options={typesOptions}
+              selected={filters['types']}
+              onSelect={(val) => setFilters((prev) => ({ ...prev, types: [...prev.types, val] }))}
+              onDeselect={(val) => setFilters((prev) => ({ ...prev, types: prev.types.filter((opt) => opt.id !== val.id) }))}
+              isMulti
+              required
+              showSearch={false}
+            />
+            <Dropdown
+              title='Metric'
+              placeholder='All'
+              options={metricsOptions}
+              selected={filters['metrics']}
+              onSelect={(val) => setFilters((prev) => ({ ...prev, metrics: [...prev.metrics, val] }))}
+              onDeselect={(val) => setFilters((prev) => ({ ...prev, metrics: prev.metrics.filter((opt) => opt.id !== val.id) }))}
+              isMulti
+              required
+              showSearch={false}
+            />
           </Pad>
 
           <Actions>
