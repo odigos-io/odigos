@@ -1,4 +1,4 @@
-// "use client"
+'use client';
 const ENV = process.env.NODE_ENV;
 const IS_PRODUCTION = ENV === 'production';
 
