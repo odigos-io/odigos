@@ -129,9 +129,15 @@ const Dropdown: React.FC<DropdownProps> = ({ options, selected, onSelect, onDese
 
       <DropdownHeader isOpen={isOpen} onClick={toggleOpen}>
         {Array.isArray(selected) ? (
-          <Text size={14} color={!!selected.length ? undefined : theme.text.grey}>
-            {!!selected.length ? 'TODO MULTI LABELS' : placeholder}
-          </Text>
+          !!selected.length ? (
+            <Text size={14} color={!!selected.length ? undefined : theme.text.grey}>
+              {selected.map((s) => s.value).join(', ')}
+            </Text>
+          ) : (
+            <Text size={14} color={theme.text.grey}>
+              {placeholder}
+            </Text>
+          )
         ) : (
           <Text size={14} color={!!selected?.value ? undefined : theme.text.grey}>
             {selected?.value || placeholder}
