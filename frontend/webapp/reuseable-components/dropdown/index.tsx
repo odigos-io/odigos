@@ -25,11 +25,14 @@ interface DropdownProps {
   required?: boolean;
 }
 
-const RelativeContainer = styled.div`
-  position: relative;
+const RootContainer = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
+`;
+
+const RelativeContainer = styled.div`
+  position: relative;
 `;
 
 const DropdownHeader = styled.div<{ isOpen: boolean; isMulti?: boolean; hasSelections?: boolean }>`
@@ -81,34 +84,36 @@ export const Dropdown: React.FC<DropdownProps> = ({ options, value, onSelect, on
   useOnClickOutside(ref, () => setIsOpen(false));
 
   return (
-    <RelativeContainer ref={ref}>
+    <RootContainer>
       <FieldLabel title={title} required={required} tooltip={tooltip} style={{ marginLeft: '8px' }} />
 
-      <DropdownHeader isOpen={isOpen} isMulti={isMulti} hasSelections={Array.isArray(value) ? !!value.length : false} onClick={toggleOpen}>
-        <DropdownPlaceholder value={value} placeholder={placeholder} onDeselect={onDeselect} />
-        <IconWrapper>
-          {isMulti && <Badge label={(value as DropdownOption[]).length} filled />}
-          <ArrowIcon src='/icons/common/extend-arrow.svg' alt='open-dropdown' width={14} height={14} className={isOpen ? 'open' : 'close'} />
-        </IconWrapper>
-      </DropdownHeader>
+      <RelativeContainer ref={ref}>
+        <DropdownHeader isOpen={isOpen} isMulti={isMulti} hasSelections={Array.isArray(value) ? !!value.length : false} onClick={toggleOpen}>
+          <DropdownPlaceholder value={value} placeholder={placeholder} onDeselect={onDeselect} />
+          <IconWrapper>
+            {isMulti && <Badge label={(value as DropdownOption[]).length} filled />}
+            <ArrowIcon src='/icons/common/extend-arrow.svg' alt='open-dropdown' width={14} height={14} className={isOpen ? 'open' : 'close'} />
+          </IconWrapper>
+        </DropdownHeader>
 
-      {isOpen && (
-        <DropdownList
-          options={options}
-          value={value}
-          onSelect={(option) => {
-            onSelect(option);
-            if (!isMulti) toggleOpen();
-          }}
-          onDeselect={(option) => {
-            onDeselect?.(option);
-            if (!isMulti) toggleOpen();
-          }}
-          isMulti={isMulti}
-          showSearch={showSearch}
-        />
-      )}
-    </RelativeContainer>
+        {isOpen && (
+          <DropdownList
+            options={options}
+            value={value}
+            onSelect={(option) => {
+              onSelect(option);
+              if (!isMulti) toggleOpen();
+            }}
+            onDeselect={(option) => {
+              onDeselect?.(option);
+              if (!isMulti) toggleOpen();
+            }}
+            isMulti={isMulti}
+            showSearch={showSearch}
+          />
+        )}
+      </RelativeContainer>
+    </RootContainer>
   );
 };
 

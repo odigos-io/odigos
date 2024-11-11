@@ -1,12 +1,12 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import theme from '@/styles/theme';
 import styled from 'styled-components';
 import { DropdownOption } from '@/types';
-import { MONITORS_OPTIONS } from '@/utils';
+import { useOnClickOutside } from '@/hooks';
 import { useFilterStore } from '@/store/useFilterStore';
 import { AbsoluteContainer, RelativeContainer } from '../styled';
-import { useNamespace, useOnClickOutside, useSourceCRUD } from '@/hooks';
-import { Button, Dropdown, SelectionButton } from '@/reuseable-components';
+import { Button, SelectionButton } from '@/reuseable-components';
+import { MonitorDropdown, NamespaceDropdown, TypeDropdown } from '@/components';
 
 const Pad = styled.div`
   display: flex;
@@ -38,38 +38,6 @@ const getFilterCount = (params: FiltersState) => {
 
 const Filters = () => {
   const { namespace, setNamespace, types, setTypes, monitors, setMonitors } = useFilterStore();
-  const { allNamespaces } = useNamespace();
-  const { sources } = useSourceCRUD();
-
-  const namespaceOptions = useMemo(() => {
-    const options: DropdownOption[] = [];
-
-    allNamespaces?.forEach(({ name: id }) => {
-      if (!options.find((opt) => opt.id === id)) options.push({ id, value: id });
-    });
-
-    return options;
-  }, [allNamespaces]);
-
-  const typesOptions = useMemo(() => {
-    const options: DropdownOption[] = [];
-
-    sources.forEach(({ kind: id }) => {
-      if (!options.find((opt) => opt.id === id)) options.push({ id, value: id });
-    });
-
-    return options;
-  }, [sources]);
-
-  const metricsOptions = useMemo(() => {
-    const options: DropdownOption[] = [];
-
-    MONITORS_OPTIONS.forEach(({ id, value }) => {
-      if (!options.find((opt) => opt.id === id)) options.push({ id, value });
-    });
-
-    return options;
-  }, []);
 
   const [filters, setFilters] = useState<FiltersState>({ namespace, types, monitors });
   const [filterCount, setFilterCount] = useState(getFilterCount(filters));
@@ -118,37 +86,25 @@ const Filters = () => {
       {focused && (
         <AbsoluteContainer>
           <Pad>
-            <Dropdown
-              title='Namespace'
-              placeholder='Select namespace'
-              options={namespaceOptions}
+            <NamespaceDropdown
               value={filters['namespace']}
               onSelect={(val) => setFilters({ namespace: val, types: [], monitors: [] })}
-              onDeselect={() => setFilters((prev) => ({ ...prev, namespace: undefined }))}
+              onDeselect={(val) => setFilters((prev) => ({ ...prev, namespace: undefined }))}
               required
-              showSearch={false}
             />
-            <Dropdown
-              title='Type'
-              placeholder='All'
-              options={typesOptions}
+            <TypeDropdown
               value={filters['types']}
               onSelect={(val) => setFilters((prev) => ({ ...prev, types: [...prev.types, val] }))}
               onDeselect={(val) => setFilters((prev) => ({ ...prev, types: prev.types.filter((opt) => opt.id !== val.id) }))}
-              isMulti
               required
-              showSearch={false}
+              isMulti
             />
-            <Dropdown
-              title='Monitors'
-              placeholder='All'
-              options={metricsOptions}
+            <MonitorDropdown
               value={filters['monitors']}
               onSelect={(val) => setFilters((prev) => ({ ...prev, monitors: [...prev.monitors, val] }))}
               onDeselect={(val) => setFilters((prev) => ({ ...prev, monitors: prev.monitors.filter((opt) => opt.id !== val.id) }))}
-              isMulti
               required
-              showSearch={false}
+              isMulti
             />
           </Pad>
 
