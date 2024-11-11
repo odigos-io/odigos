@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useOnClickOutside } from '@/hooks';
-import { RelativeContainer } from './styled';
+import { RelativeContainer } from '../styled';
 import { Input } from '@/reuseable-components';
 import { SearchResults } from './search-results';
 // import { RecentSearches } from './recent-searches';

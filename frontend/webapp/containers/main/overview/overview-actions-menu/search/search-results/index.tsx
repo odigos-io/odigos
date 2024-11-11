@@ -1,8 +1,8 @@
 import React, { Fragment, useMemo, useState } from 'react';
 import theme from '@/styles/theme';
 import styled from 'styled-components';
-import { CardWrapper } from '../styled';
 import { OVERVIEW_ENTITY_TYPES } from '@/types';
+import { AbsoluteContainer } from '../../styled';
 import { getEntityIcon, getEntityLabel } from '@/utils';
 import { buildSearchResults, type Category } from './builder';
 import { Divider, SelectionButton, Text } from '@/reuseable-components';
@@ -51,7 +51,7 @@ export const SearchResults = ({ searchText, onClose }: Props) => {
   );
 
   return (
-    <CardWrapper>
+    <AbsoluteContainer>
       <HorizontalScroll style={{ borderBottom: `1px solid ${!searchResults.length ? 'transparent' : theme.colors.border}` }}>
         {categories.map(({ category, label, count }) => (
           <SelectionButton key={`category-select-${category}`} label={label} badgeLabel={count} isSelected={selectedCategory === category} onClick={() => setSelectedCategory(category as Category)} />
@@ -84,6 +84,6 @@ export const SearchResults = ({ searchText, onClose }: Props) => {
           <Divider thickness={catIdx === searchResults.length - 1 ? 0 : 1} length='90%' margin='8px auto' />
         </Fragment>
       ))}
-    </CardWrapper>
+    </AbsoluteContainer>
   );
 };

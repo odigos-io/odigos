@@ -2,25 +2,11 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import theme from '@/styles/theme';
 import styled from 'styled-components';
 import { DropdownOption } from '@/types';
+import { MONITORS_OPTIONS } from '@/utils';
 import { useFilterStore } from '@/store/useFilterStore';
+import { AbsoluteContainer, RelativeContainer } from '../styled';
 import { useNamespace, useOnClickOutside, useSourceCRUD } from '@/hooks';
 import { Button, Dropdown, SelectionButton } from '@/reuseable-components';
-import { MONITORS_OPTIONS } from '@/utils';
-
-const RelativeContainer = styled.div`
-  position: relative;
-`;
-
-const CardWrapper = styled.div`
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  z-index: 10;
-  background-color: ${({ theme }) => theme.colors.dropdown_bg};
-  border: ${({ theme }) => `1px solid ${theme.colors.border}`};
-  border-radius: 24px;
-  width: 360px;
-`;
 
 const Pad = styled.div`
   display: flex;
@@ -130,7 +116,7 @@ const Filters = () => {
       <SelectionButton label='Filters' icon='/icons/common/filter.svg' badgeLabel={filterCount} badgeFilled withBorder color='transparent' onClick={toggleFocused} />
 
       {focused && (
-        <CardWrapper>
+        <AbsoluteContainer>
           <Pad>
             <Dropdown
               title='Namespace'
@@ -177,7 +163,7 @@ const Filters = () => {
               Reset
             </Button>
           </Actions>
-        </CardWrapper>
+        </AbsoluteContainer>
       )}
     </RelativeContainer>
   );
