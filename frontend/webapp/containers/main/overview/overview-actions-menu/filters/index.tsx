@@ -1,9 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import theme from '@/styles/theme';
 import styled from 'styled-components';
-import { DropdownOption } from '@/types';
 import { useOnClickOutside } from '@/hooks';
-import { useFilterStore } from '@/store/useFilterStore';
+import { FiltersState, useFilterStore } from '@/store/useFilterStore';
 import { AbsoluteContainer, RelativeContainer } from '../styled';
 import { Button, SelectionButton } from '@/reuseable-components';
 import { MonitorDropdown, NamespaceDropdown, TypeDropdown } from '@/components';
@@ -22,12 +21,6 @@ const Actions = styled.div`
   border-top: ${({ theme }) => `1px solid ${theme.colors.border}`};
 `;
 
-interface FiltersState {
-  namespace: DropdownOption | undefined;
-  types: DropdownOption[];
-  monitors: DropdownOption[];
-}
-
 const getFilterCount = (params: FiltersState) => {
   let count = 0;
   if (!!params.namespace) count++;
@@ -37,7 +30,7 @@ const getFilterCount = (params: FiltersState) => {
 };
 
 const Filters = () => {
-  const { namespace, setNamespace, types, setTypes, monitors, setMonitors } = useFilterStore();
+  const { namespace, types, monitors, setAll, clearAll } = useFilterStore();
 
   const [filters, setFilters] = useState<FiltersState>({ namespace, types, monitors });
   const [filterCount, setFilterCount] = useState(getFilterCount(filters));
@@ -53,11 +46,7 @@ const Filters = () => {
   }, [focused, namespace, types, monitors]);
 
   const onApply = () => {
-    // global
-    setNamespace(filters.namespace);
-    setTypes(filters.types);
-    setMonitors(filters.monitors);
-    // local
+    setAll(filters);
     setFilterCount(getFilterCount(filters));
     setFocused(false);
   };
@@ -67,11 +56,7 @@ const Filters = () => {
   };
 
   const onReset = () => {
-    // global
-    setNamespace(undefined);
-    setTypes([]);
-    setMonitors([]);
-    // local
+    clearAll();
     setFilters({ namespace: undefined, types: [], monitors: [] });
     setFilterCount(0);
   };

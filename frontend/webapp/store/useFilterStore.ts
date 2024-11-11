@@ -1,15 +1,24 @@
-import { DropdownOption } from '@/types';
 import { create } from 'zustand';
+import type { DropdownOption } from '@/types';
+
+export interface FiltersState {
+  namespace: DropdownOption | undefined;
+  types: DropdownOption[];
+  monitors: DropdownOption[];
+}
 
 interface StoreState {
-  namespace: DropdownOption | undefined;
-  setNamespace: (namespace: DropdownOption | undefined) => void;
+  namespace: FiltersState['namespace'];
+  setNamespace: (namespace: FiltersState['namespace']) => void;
 
-  types: DropdownOption[];
-  setTypes: (types: DropdownOption[]) => void;
+  types: FiltersState['types'];
+  setTypes: (types: FiltersState['types']) => void;
 
-  monitors: DropdownOption[];
-  setMonitors: (metrics: DropdownOption[]) => void;
+  monitors: FiltersState['monitors'];
+  setMonitors: (metrics: FiltersState['monitors']) => void;
+
+  setAll: (params: FiltersState) => void;
+  clearAll: () => void;
 }
 
 export const useFilterStore = create<StoreState>((set) => ({
@@ -21,4 +30,7 @@ export const useFilterStore = create<StoreState>((set) => ({
 
   monitors: [],
   setMonitors: (monitors) => set({ monitors }),
+
+  setAll: (params) => set(params),
+  clearAll: () => set({ namespace: undefined, types: [], monitors: [] }),
 }));
