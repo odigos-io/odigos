@@ -10,12 +10,6 @@ export enum ActionsType {
   PII_MASKING = 'PiiMasking',
 }
 
-export enum ActionsSortType {
-  ACTION_NAME = 'action_name',
-  STATUS = 'status',
-  TYPE = 'type',
-}
-
 export type AddClusterInfoSpec = {
   clusterAttributes: {
     attributeName: string;
@@ -54,14 +48,6 @@ export type LatencySamplerSpec = {
   }[];
 };
 
-export interface ActionItemCard {
-  id: string;
-  title: string;
-  description: string;
-  type: string;
-  icon: string;
-}
-
 export interface ActionItem {
   actionName: string;
   notes: string;
@@ -84,22 +70,6 @@ export interface ActionData {
 
 export interface ActionDataParsed extends ActionData {
   spec: ActionItem;
-}
-
-interface Monitor {
-  id: string;
-  label: string;
-  checked: boolean;
-}
-
-export interface ActionState {
-  id?: string;
-  actionName: string;
-  actionNote: string;
-  actionData: any;
-  selectedMonitors: Monitor[];
-  disabled: boolean;
-  type: string;
 }
 
 export type ActionInput = {
