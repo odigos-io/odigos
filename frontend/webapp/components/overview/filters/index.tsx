@@ -136,7 +136,7 @@ const Filters = () => {
               title='Namespace'
               placeholder='Select namespace'
               options={namespaceOptions}
-              selected={filters['namespace']}
+              value={filters['namespace']}
               onSelect={(val) => setFilters({ namespace: val, types: [], metrics: [] })}
               onDeselect={() => setFilters((prev) => ({ ...prev, namespace: undefined }))}
               required
@@ -146,7 +146,7 @@ const Filters = () => {
               title='Type'
               placeholder='All'
               options={typesOptions}
-              selected={filters['types']}
+              value={filters['types']}
               onSelect={(val) => setFilters((prev) => ({ ...prev, types: [...prev.types, val] }))}
               onDeselect={(val) => setFilters((prev) => ({ ...prev, types: prev.types.filter((opt) => opt.id !== val.id) }))}
               isMulti
@@ -157,7 +157,7 @@ const Filters = () => {
               title='Metric'
               placeholder='All'
               options={metricsOptions}
-              selected={filters['metrics']}
+              value={filters['metrics']}
               onSelect={(val) => setFilters((prev) => ({ ...prev, metrics: [...prev.metrics, val] }))}
               onDeselect={(val) => setFilters((prev) => ({ ...prev, metrics: prev.metrics.filter((opt) => opt.id !== val.id) }))}
               isMulti

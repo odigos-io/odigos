@@ -14,9 +14,9 @@ import { Checkbox } from '../checkbox';
 
 interface DropdownProps {
   options: DropdownOption[];
-  selected?: DropdownOption | DropdownOption[];
+  value?: DropdownOption | DropdownOption[];
   onSelect: (option: DropdownOption) => void;
-  onDeselect: (option: DropdownOption) => void;
+  onDeselect?: (option: DropdownOption) => void;
   title?: string;
   tooltip?: string;
   placeholder?: string;
@@ -116,7 +116,7 @@ const DropdownItem = styled.div<{ isSelected: boolean }>`
     `}
 `;
 
-const Dropdown: React.FC<DropdownProps> = ({ options, selected, onSelect, onDeselect, title, tooltip, placeholder, isMulti = false, showSearch = true, required = false }) => {
+export const Dropdown: React.FC<DropdownProps> = ({ options, value, onSelect, onDeselect, title, tooltip, placeholder, isMulti = false, showSearch = true, required = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const toggleOpen = () => setIsOpen((prev) => !prev);
 
@@ -128,38 +128,24 @@ const Dropdown: React.FC<DropdownProps> = ({ options, selected, onSelect, onDese
       <FieldLabel title={title} required={required} tooltip={tooltip} style={{ marginLeft: '8px' }} />
 
       <DropdownHeader isOpen={isOpen} onClick={toggleOpen}>
-        {Array.isArray(selected) ? (
-          !!selected.length ? (
-            <Text size={14} color={!!selected.length ? undefined : theme.text.grey}>
-              {selected.map((s) => s.value).join(', ')}
-            </Text>
-          ) : (
-            <Text size={14} color={theme.text.grey}>
-              {placeholder}
-            </Text>
-          )
-        ) : (
-          <Text size={14} color={!!selected?.value ? undefined : theme.text.grey}>
-            {selected?.value || placeholder}
-          </Text>
-        )}
+        <DropdownPlaceholder value={value} placeholder={placeholder} />
 
         <IconWrapper>
-          {isMulti && <Badge label={(selected as DropdownOption[]).length} filled />}
+          {isMulti && <Badge label={(value as DropdownOption[]).length} filled />}
           <ArrowIcon src='/icons/common/extend-arrow.svg' alt='open-dropdown' width={14} height={14} className={isOpen ? 'open' : 'close'} />
         </IconWrapper>
       </DropdownHeader>
 
       {isOpen && (
-        <DropdownContent
+        <DropdownList
           options={options}
-          selected={selected}
+          value={value}
           onSelect={(option) => {
             onSelect(option);
             if (!isMulti) toggleOpen();
           }}
           onDeselect={(option) => {
-            onDeselect(option);
+            onDeselect?.(option);
             if (!isMulti) toggleOpen();
           }}
           isMulti={isMulti}
@@ -170,18 +156,37 @@ const Dropdown: React.FC<DropdownProps> = ({ options, selected, onSelect, onDese
   );
 };
 
-export { Dropdown };
+const DropdownPlaceholder: React.FC<{
+  value: DropdownProps['value'];
+  placeholder: DropdownProps['placeholder'];
+}> = ({ value, placeholder }) => {
+  if (Array.isArray(value)) {
+    return !!value.length ? (
+      <Text size={14} color={undefined}>
+        {value.map((s) => s.value).join(', ')}
+      </Text>
+    ) : (
+      <Text size={14} color={theme.text.grey}>
+        {placeholder}
+      </Text>
+    );
+  }
 
-interface DropdownContentProps {
+  return (
+    <Text size={14} color={!!value?.value ? undefined : theme.text.grey}>
+      {value?.value || placeholder}
+    </Text>
+  );
+};
+
+const DropdownList: React.FC<{
   options: DropdownProps['options'];
-  selected: DropdownProps['selected'];
+  value: DropdownProps['value'];
   onSelect: DropdownProps['onSelect'];
   onDeselect: DropdownProps['onDeselect'];
   isMulti: DropdownProps['isMulti'];
   showSearch: DropdownProps['showSearch'];
-}
-
-const DropdownContent: React.FC<DropdownContentProps> = ({ options, selected, onSelect, onDeselect, isMulti, showSearch }) => {
+}> = ({ options, value, onSelect, onDeselect, isMulti, showSearch }) => {
   const [searchText, setSearchText] = useState('');
   const filteredOptions = options.filter((option) => option.value.toLowerCase().includes(searchText));
 
@@ -197,25 +202,33 @@ const DropdownContent: React.FC<DropdownContentProps> = ({ options, selected, on
       {filteredOptions.length === 0 ? (
         <NoDataFound subTitle=' ' />
       ) : (
-        filteredOptions.map((opt) => {
-          const isSelected = Array.isArray(selected) ? !!selected?.find((s) => s.id === opt.id) : selected?.id === opt.id;
-
-          if (isMulti) {
-            return (
-              <DropdownItem key={`dropdown-option-${opt.id}`} isSelected={isSelected}>
-                <Checkbox title={opt.value} titleColor={theme.text.secondary} initialValue={isSelected} onChange={(toAdd) => (toAdd ? onSelect(opt) : onDeselect(opt))} style={{ width: '100%' }} />
-              </DropdownItem>
-            );
-          }
-
-          return (
-            <DropdownItem key={`dropdown-option-${opt.id}`} isSelected={isSelected} onClick={() => (isSelected ? onDeselect(opt) : onSelect(opt))}>
-              <Text size={14}>{opt.value}</Text>
-              {isSelected && <Image src='/icons/common/check.svg' alt='' width={16} height={16} />}
-            </DropdownItem>
-          );
-        })
+        filteredOptions.map((opt) => <DropdownListItem key={`dropdown-option-${opt.id}`} option={opt} value={value} isMulti={isMulti} onSelect={onSelect} onDeselect={onDeselect} />)
       )}
     </AbsoluteContainer>
+  );
+};
+
+const DropdownListItem: React.FC<{
+  option: DropdownOption;
+  value: DropdownProps['value'];
+  isMulti: DropdownProps['isMulti'];
+  onSelect: DropdownProps['onSelect'];
+  onDeselect: DropdownProps['onDeselect'];
+}> = ({ option, value, isMulti, onSelect, onDeselect }) => {
+  const isSelected = Array.isArray(value) ? !!value?.find((s) => s.id === option.id) : value?.id === option.id;
+
+  if (isMulti) {
+    return (
+      <DropdownItem isSelected={isSelected}>
+        <Checkbox title={option.value} titleColor={theme.text.secondary} initialValue={isSelected} onChange={(toAdd) => (toAdd ? onSelect(option) : onDeselect?.(option))} style={{ width: '100%' }} />
+      </DropdownItem>
+    );
+  }
+
+  return (
+    <DropdownItem isSelected={isSelected} onClick={() => (isSelected ? onDeselect?.(option) : onSelect(option))}>
+      <Text size={14}>{option.value}</Text>
+      {isSelected && <Image src='/icons/common/check.svg' alt='' width={16} height={16} />}
+    </DropdownItem>
   );
 };
