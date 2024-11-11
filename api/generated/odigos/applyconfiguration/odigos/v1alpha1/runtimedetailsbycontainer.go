@@ -24,10 +24,11 @@ import (
 // RuntimeDetailsByContainerApplyConfiguration represents a declarative configuration of the RuntimeDetailsByContainer type for use
 // with apply.
 type RuntimeDetailsByContainerApplyConfiguration struct {
-	ContainerName  *string                     `json:"containerName,omitempty"`
-	Language       *common.ProgrammingLanguage `json:"language,omitempty"`
-	RuntimeVersion *string                     `json:"runtimeVersion,omitempty"`
-	EnvVars        []EnvVarApplyConfiguration  `json:"envVars,omitempty"`
+	ContainerName  *string                       `json:"containerName,omitempty"`
+	Language       *common.ProgrammingLanguage   `json:"language,omitempty"`
+	RuntimeVersion *string                       `json:"runtimeVersion,omitempty"`
+	EnvVars        []EnvVarApplyConfiguration    `json:"envVars,omitempty"`
+	OtherAgent     *OtherAgentApplyConfiguration `json:"otherAgent,omitempty"`
 }
 
 // RuntimeDetailsByContainerApplyConfiguration constructs a declarative configuration of the RuntimeDetailsByContainer type for use with
@@ -70,5 +71,13 @@ func (b *RuntimeDetailsByContainerApplyConfiguration) WithEnvVars(values ...*Env
 		}
 		b.EnvVars = append(b.EnvVars, *values[i])
 	}
+	return b
+}
+
+// WithOtherAgent sets the OtherAgent field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the OtherAgent field is set to the value of the last call.
+func (b *RuntimeDetailsByContainerApplyConfiguration) WithOtherAgent(value *OtherAgentApplyConfiguration) *RuntimeDetailsByContainerApplyConfiguration {
+	b.OtherAgent = value
 	return b
 }

@@ -53,7 +53,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("deleteinstrumentedapplication-namespace").
 		For(&corev1.Namespace{}).
-		WithEventFilter(predicate.LabelChangedPredicate{}).
+		WithEventFilter(&NsLabelBecameDisabledPredicate{}).
 		Complete(&NamespaceReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),

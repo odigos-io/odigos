@@ -29,7 +29,7 @@ import (
 
 func SyncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList,
 	datacollection *odigosv1.CollectorsGroup, ctx context.Context,
-	c client.Client, scheme *runtime.Scheme, tier common.OdigosTier) (string, error) {
+	c client.Client, scheme *runtime.Scheme, disableNameProcessor bool) (string, error) {
 	logger := log.FromContext(ctx)
 
 	processors := commonconf.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleNodeCollector)
@@ -38,7 +38,7 @@ func SyncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.D
 	SamplingExists := commonconf.FindFirstProcessorByType(allProcessors, "odigossampling")
 	setTracesLoadBalancer := SamplingExists != nil
 
-	desired, err := getDesiredConfigMap(apps, dests, processors, datacollection, scheme, setTracesLoadBalancer, tier)
+	desired, err := getDesiredConfigMap(apps, dests, processors, datacollection, scheme, setTracesLoadBalancer, disableNameProcessor)
 	if err != nil {
 		logger.Error(err, "failed to get desired config map")
 		return "", err
@@ -97,8 +97,8 @@ func createConfigMap(desired *v1.ConfigMap, ctx context.Context, c client.Client
 }
 
 func getDesiredConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors []*odigosv1.Processor,
-	datacollection *odigosv1.CollectorsGroup, scheme *runtime.Scheme, setTracesLoadBalancer bool, tier common.OdigosTier) (*v1.ConfigMap, error) {
-	cmData, err := calculateConfigMapData(apps, dests, processors, setTracesLoadBalancer, tier)
+	datacollection *odigosv1.CollectorsGroup, scheme *runtime.Scheme, setTracesLoadBalancer bool, disableNameProcessor bool) (*v1.ConfigMap, error) {
+	cmData, err := calculateConfigMapData(datacollection, apps, dests, processors, setTracesLoadBalancer, disableNameProcessor)
 	if err != nil {
 		return nil, err
 	}
@@ -124,19 +124,19 @@ func getDesiredConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odig
 	return &desired, nil
 }
 
-func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors []*odigosv1.Processor,
-	setTracesLoadBalancer bool, tier common.OdigosTier) (string, error) {
+func calculateConfigMapData(collectorsGroup *odigosv1.CollectorsGroup, apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors []*odigosv1.Processor,
+	setTracesLoadBalancer bool, disableNameProcessor bool) (string, error) {
+
+	ownMetricsPort := collectorsGroup.Spec.CollectorOwnMetricsPort
 
 	empty := struct{}{}
 
 	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors, errs := config.GetCrdProcessorsConfigMap(commonconf.ToProcessorConfigurerArray(processors))
-	if errs != nil {
-		for name, err := range errs {
-			log.Log.V(0).Info(err.Error(), "processor", name)
-		}
+	for name, err := range errs {
+		log.Log.V(0).Info(err.Error(), "processor", name)
 	}
 
-	if tier != common.OnPremOdigosTier {
+	if !disableNameProcessor {
 		processorsCfg["odigosresourcename"] = empty
 	}
 
@@ -173,6 +173,7 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 			"tls": config.GenericMap{
 				"insecure": true,
 			},
+			"balancer_name": "round_robin",
 		},
 		"otlp/odigos-own-telemetry-ui": config.GenericMap{
 			"endpoint": fmt.Sprintf("ui.%s:%d", env.GetCurrentNamespace(), consts.OTLPPort),
@@ -214,7 +215,7 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 							"scrape_interval": "10s",
 							"static_configs": []config.GenericMap{
 								{
-									"targets": []string{"127.0.0.1:8888"},
+									"targets": []string{fmt.Sprintf("127.0.0.1:%d", ownMetricsPort)},
 								},
 							},
 							"metric_relabel_configs": []config.GenericMap{
@@ -247,7 +248,7 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 			Extensions: []string{"health_check"},
 			Telemetry: config.Telemetry{
 				Metrics: config.GenericMap{
-					"address": "0.0.0.0:8888",
+					"address": fmt.Sprintf("0.0.0.0:%d", ownMetricsPort),
 				},
 				Resource: map[string]*string{
 					// The collector add "otelcol" as a service name, so we need to remove it
@@ -277,7 +278,7 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 		}
 	}
 
-	commonProcessors := getCommonProcessorsByTier(tier)
+	commonProcessors := getCommonProcessors(disableNameProcessor)
 
 	if collectLogs {
 		includes := make([]string, 0)
@@ -402,9 +403,9 @@ func getSignalsFromOtelcolConfig(otelcolConfigContent string) ([]common.Observab
 	return signals, nil
 }
 
-func getCommonProcessorsByTier(tier common.OdigosTier) []string {
+func getCommonProcessors(disableNameProcessor bool) []string {
 	processors := []string{"batch"}
-	if tier != common.OnPremOdigosTier {
+	if !disableNameProcessor {
 		processors = append(processors, "odigosresourcename")
 	}
 	processors = append(processors, "resource", "resourcedetection", "odigostrafficmetrics")

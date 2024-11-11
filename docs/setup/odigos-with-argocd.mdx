@@ -1,0 +1,31 @@
+---
+title: "Configure Odigos with Argo CD"
+sidebarTitle: "Odigos with Argo CD"
+---
+
+This guide explains how to configure Argo CD to work seamlessly with Odigos by preserving the custom labels, annotations, and other fields that Odigos injects into workloads. By utilizing the ignoreDifferences setting in Argo CD, you can prevent these Odigos-specific fields from being overwritten during synchronization.
+
+## Setting up `ignoreDifferences` at the System Level
+
+To configure Argo CD to ignore specific differences at a **system-wide level**, follow the [Argo CD documentation](https://argo-cd.readthedocs.io/en/stable/user-guide/diffing/#system-level-configuration) on configuring `ignoreDifferences`. This approach ensures that fields injected by Odigos will not be removed or modified during Argo CD sync operations.
+
+### Configuration Example
+
+In your Argo CD configuration, add the following entries under `resource.customizations.ignoreDifferences.all` in the `data` section:
+
+```yaml
+data:
+  resource.customizations.ignoreDifferences.all: |
+    jqPathExpressions:
+    - .metadata.labels."odigos-instrumentation"
+    - .metadata.annotations | select(has("odigos.io"))
+    - .spec.template.metadata.labels | select(has("odigos.io"))
+    - .spec.template.spec.containers[].resources.limits | select(keys[] | startswith("instrumentation.odigos.io"))
+```
+
+These paths specify fields added by Odigos that you want Argo CD to ignore during synchronization.
+
+
+Refer to the [Argo CD documentation on diffing](https://argo-cd.readthedocs.io/en/stable/user-guide/diffing/) for further guidance on configuring `ignoreDifferences`.
+
+By setting up `ignoreDifferences` in this way, Argo CD will avoid syncing the fields injected by Odigos, allowing the instrumentation to function without interference.

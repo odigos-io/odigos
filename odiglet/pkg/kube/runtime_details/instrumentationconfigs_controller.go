@@ -124,6 +124,5 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request
 	}
 
 	logger.Info("Completed runtime detection for new instrumentation config", "namespace", request.Namespace, "name", request.Name)
-
 	return reconcile.Result{}, nil
 }
