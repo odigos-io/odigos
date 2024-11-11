@@ -3,7 +3,7 @@ const IS_PRODUCTION = ENV === 'production';
 
 // Define base URLs depending on the environment
 const LOCAL_API_BASE = 'http://localhost:8085';
-const PRODUCTION_GQL_API_BASE = '/graphql';
+const PRODUCTION_GQL_API_BASE = undefined;
 const PRODUCTION_API_BASE = '/';
 const API_BASE_URL = IS_PRODUCTION ? PRODUCTION_GQL_API_BASE : `${LOCAL_API_BASE}/graphql`;
 
