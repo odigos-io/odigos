@@ -36,6 +36,7 @@ const DROPDOWN_OPTIONS = [
   { value: 'Self-hosted', id: 'self hosted' },
 ];
 
+<<<<<<< HEAD
 const DestinationFilterComponent: React.FC<FilterComponentProps> = ({
   selectedTag,
   selectedMonitors,
@@ -43,6 +44,9 @@ const DestinationFilterComponent: React.FC<FilterComponentProps> = ({
   onSearch,
   onMonitorSelect,
 }) => {
+=======
+const DestinationFilterComponent: React.FC<FilterComponentProps> = ({ selectedTag, selectedMonitors, onTagSelect, onSearch, onMonitorSelect }) => {
+>>>>>>> a109419fc0a9639860b5769980d0020fce32e866
   const [searchTerm, setSearchTerm] = useState('');
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -55,6 +59,7 @@ const DestinationFilterComponent: React.FC<FilterComponentProps> = ({
     <FilterContainer>
       <InputAndDropdownContainer>
         <div>
+<<<<<<< HEAD
           <Input
             placeholder="Search..."
             icon="/icons/common/search.svg"
@@ -69,6 +74,13 @@ const DestinationFilterComponent: React.FC<FilterComponentProps> = ({
           showSearch={false}
         />
       </InputAndDropdownContainer>
+=======
+          <Input placeholder='Search...' icon='/icons/common/search.svg' value={searchTerm} onChange={handleSearchChange} />
+        </div>
+        <Dropdown options={DROPDOWN_OPTIONS} value={selectedTag} onSelect={onTagSelect} onDeselect={function (option: DropdownOption): void {}} />
+      </InputAndDropdownContainer>
+
+>>>>>>> a109419fc0a9639860b5769980d0020fce32e866
       <MonitorButtonsContainer>
         {MONITORS_OPTIONS.map((monitor) => (
           <Checkbox
@@ -76,10 +88,14 @@ const DestinationFilterComponent: React.FC<FilterComponentProps> = ({
             title={monitor.value}
             initialValue
             onChange={() => onMonitorSelect(monitor.id)}
+<<<<<<< HEAD
             disabled={
               selectedMonitors.length === 1 &&
               selectedMonitors.includes(monitor.id)
             }
+=======
+            disabled={selectedMonitors.length === 1 && selectedMonitors.includes(monitor.id)}
+>>>>>>> a109419fc0a9639860b5769980d0020fce32e866
           />
         ))}
       </MonitorButtonsContainer>

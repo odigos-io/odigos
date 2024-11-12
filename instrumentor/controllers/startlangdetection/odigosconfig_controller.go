@@ -90,7 +90,11 @@ func (r *OdigosConfigReconciler) reconcileUnDisabledFreshWorkload(ctx context.Co
 	// if workload.IsWorkloadInstrumentationEffectiveEnabled
 	if !workload.IsInstrumentationDisabledExplicitly(freshWorkloadCopy) {
 		req := ctrl.Request{NamespacedName: key}
+<<<<<<< HEAD
 		_, err = reconcileWorkload(ctx, r.Client, workload.ClientObjectFromWorkloadKind(kind), kind, req, r.Scheme)
+=======
+		_, err = reconcileWorkload(ctx, r.Client, kind, req, r.Scheme)
+>>>>>>> a109419fc0a9639860b5769980d0020fce32e866
 	}
 	return err
 }

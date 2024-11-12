@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import Image from 'next/image';
 import React from 'react';
 import styled from 'styled-components';
@@ -5,6 +6,15 @@ import { Text } from '../text';
 
 type NoDataFoundProps = {
   title: string;
+=======
+import React from 'react';
+import Image from 'next/image';
+import { Text } from '../text';
+import styled from 'styled-components';
+
+type NoDataFoundProps = {
+  title?: string;
+>>>>>>> a109419fc0a9639860b5769980d0020fce32e866
   subTitle?: string;
 };
 
@@ -31,6 +41,7 @@ const Container = styled.div`
   flex-direction: column;
   align-items: center;
 `;
+<<<<<<< HEAD
 const NoDataFound: React.FC<NoDataFoundProps> = ({
   title,
   subTitle = 'Check your search phrase and try one more time',
@@ -44,6 +55,14 @@ const NoDataFound: React.FC<NoDataFoundProps> = ({
           width={16}
           height={16}
         />
+=======
+
+const NoDataFound: React.FC<NoDataFoundProps> = ({ title = 'No data found', subTitle = 'Check your search phrase and try one more time' }) => {
+  return (
+    <Container>
+      <TitleWrapper>
+        <Image src='/icons/common/no-data-found.svg' alt='no-found' width={16} height={16} />
+>>>>>>> a109419fc0a9639860b5769980d0020fce32e866
         <Title>{title}</Title>
       </TitleWrapper>
       {subTitle && <SubTitle>{subTitle}</SubTitle>}

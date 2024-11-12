@@ -22,8 +22,22 @@ export type WorkloadId = {
   kind: string;
   name: string;
   namespace: string;
+<<<<<<< HEAD
 };
 
 export interface PatchSourceRequestInput {
   reportedName?: string;
 }
+=======
+};
+
+export interface PatchSourceRequestInput {
+  reportedName?: string;
+}
+
+export type PersistSourcesArray = {
+  kind: string;
+  name: string;
+  selected: boolean;
+};
+>>>>>>> a109419fc0a9639860b5769980d0020fce32e866
