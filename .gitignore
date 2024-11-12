@@ -3,8 +3,13 @@ dist/
 node_modules
 .DS_Store
 go.work.sum
+go.work
 cli/odigos
 .venv
 **/__pycache__/
 **/*.pyc
 serving-certs/
+
+**.tfstate
+**.tfstate.backup
+**.terraform**

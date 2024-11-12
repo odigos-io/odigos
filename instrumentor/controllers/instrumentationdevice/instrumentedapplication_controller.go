@@ -20,6 +20,7 @@ import (
 	"context"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -52,15 +53,10 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 			return ctrl.Result{}, err
 		}
 		err = removeInstrumentationDeviceFromWorkload(ctx, r.Client, req.Namespace, workloadKind, workloadName, ApplyInstrumentationDeviceReasonNoRuntimeDetails)
-		if err != nil {
-			logger.Error(err, "error removing instrumentation")
-			return ctrl.Result{}, err
-		}
-
-		return ctrl.Result{}, nil
+		return utils.RetryOnConflict(err)
 	}
 
 	isNodeCollectorReady := isDataCollectionReady(ctx, r.Client)
 	err = reconcileSingleWorkload(ctx, r.Client, &runtimeDetails, isNodeCollectorReady)
-	return ctrl.Result{}, err
+	return utils.RetryOnConflict(err)
 }

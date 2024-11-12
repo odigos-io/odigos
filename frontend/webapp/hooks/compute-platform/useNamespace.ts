@@ -1,11 +1,13 @@
-import { useMutation, useQuery } from '@apollo/client';
-import { GET_NAMESPACES, PERSIST_NAMESPACE } from '@/graphql';
-import { ComputePlatform, PersistNamespaceItemInput } from '@/types';
 import { NOTIFICATION } from '@/utils';
 import { useNotify } from '../notification';
+import { useMutation, useQuery } from '@apollo/client';
+import { useComputePlatform } from './useComputePlatform';
+import { GET_NAMESPACES, PERSIST_NAMESPACE } from '@/graphql';
+import { ComputePlatform, PersistNamespaceItemInput } from '@/types';
 
 export const useNamespace = (namespaceName?: string, instrumentationLabeled = null as boolean | null) => {
   const notify = useNotify();
+  const cp = useComputePlatform();
 
   const handleError = (title: string, message: string) => {
     notify({ type: NOTIFICATION.ERROR, title, message });
@@ -27,6 +29,7 @@ export const useNamespace = (namespaceName?: string, instrumentationLabeled = nu
   });
 
   return {
+    allNamespaces: cp.data?.computePlatform.k8sActualNamespaces,
     persistNamespace: async (namespace: PersistNamespaceItemInput) => await persistNamespaceMutation({ variables: { namespace } }),
     data: data?.computePlatform.k8sActualNamespace,
     loading,

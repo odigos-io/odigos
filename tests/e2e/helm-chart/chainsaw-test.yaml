@@ -32,17 +32,35 @@ spec:
           P="../../.."
           # "build" complete helm chart by copying CRDs into the template folder
           cp -r $P/api/config/crd/bases/* $P/helm/odigos/templates/crds/
-          helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test-ns --set image.tag=e2e-test
+          if [ "$MODE" = "cross-cloud-tests" ]; then
+            helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test-ns --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7
+          else
+            helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test-ns --set image.tag=e2e-test
+          fi
           kubectl label namespace odigos-test-ns odigos.io/system-object="true"
         timeout: 60s
   - name: Verify Odigos Installation
     try:
     - script:
+        timeout: 200s
         content: |
+          echo "Starting Odigos version check..."
           export ACTUAL_VERSION=$(../../../cli/odigos version --cluster)
-          if [ "$ACTUAL_VERSION" != "e2e-test" ]; then
-            echo "Odigos version is not e2e-test, got $ACTUAL_VERSION"
-            exit 1
+          echo "Actual Version: $ACTUAL_VERSION"
+
+          if [ "$MODE" = "cross-cloud-tests" ]; then
+            if [ "$ACTUAL_VERSION" != "$COMMIT_HASH" ]; then
+              echo "Odigos version is not the expected commit hash, got $ACTUAL_VERSION"
+              exit 1
+            fi
+
+          kubectl wait --for=condition=ready pods --all -n odigos-test-ns --timeout=40s
+
+          else
+            if [ "$ACTUAL_VERSION" != "e2e-test" ]; then
+              echo "Odigos version is not e2e-test, got $ACTUAL_VERSION"
+              exit 1
+            fi
           fi
     - assert:
         file: assert-odigos-installed.yaml
@@ -51,34 +69,69 @@ spec:
     - script:
         timeout: 100s
         content: |
-          docker pull keyval/odigos-demo-inventory:v0.1
-          docker pull keyval/odigos-demo-membership:v0.1
-          docker pull keyval/odigos-demo-coupon:v0.1
-          docker pull keyval/odigos-demo-inventory:v0.1
-          docker pull keyval/odigos-demo-frontend:v0.2
-          kind load docker-image keyval/odigos-demo-inventory:v0.1
-          kind load docker-image keyval/odigos-demo-membership:v0.1
-          kind load docker-image keyval/odigos-demo-coupon:v0.1
-          kind load docker-image keyval/odigos-demo-inventory:v0.1
-          kind load docker-image keyval/odigos-demo-frontend:v0.2
+          if [ "$MODE" != "cross-cloud-tests" ]; then
+            docker pull keyval/odigos-demo-inventory:v0.1
+            docker pull keyval/odigos-demo-membership:v0.1
+            docker pull keyval/odigos-demo-coupon:v0.1
+            docker pull keyval/odigos-demo-frontend:v0.2
+            kind load docker-image keyval/odigos-demo-inventory:v0.1
+            kind load docker-image keyval/odigos-demo-membership:v0.1
+            kind load docker-image keyval/odigos-demo-coupon:v0.1
+            kind load docker-image keyval/odigos-demo-frontend:v0.2
+          else
+            echo "Skipping docker pull and kind load for cross-cloud-tests mode"
+          fi
     - apply:
         file: 02-install-simple-demo.yaml
+    - script:
+        timeout: 70s
+        content: |
+          # Wait for the pods to be ready
+          kubectl wait --for=condition=ready pod -l app=frontend --timeout=60s
+          kubectl wait --for=condition=ready pod -l app=coupon --timeout=60s
+          kubectl wait --for=condition=ready pod -l app=inventory --timeout=60s
+          kubectl wait --for=condition=ready pod -l app=pricing --timeout=60s
+          kubectl wait --for=condition=ready pod -l app=membership --timeout=60s
     - assert:
         file: assert-apps-installed.yaml
-  - name: Detect Languages
+
+  - name: Instrument Namespace
     try:
     - apply:
         file: 03-instrument-ns.yaml
+  
+  - name: Assert Runtime Detected
+    try:
     - assert:
+        timeout: 2m
         file: assert-runtime-detected.yaml
+
   - name: Add Destination
     try:
     - apply:
         file: 04-add-destination.yaml
+
+  - name: Assert Instrumented and Pipeline
+    try:
     - assert:
         file: assert-instrumented-and-pipeline.yaml
+
+  - name: Verify InstrumentationConfig Generation Status
+    try:
+    - script:
+        timeout: 65s
+        content: |
+          kubectl wait --for=jsonpath='{.status.observedWorkloadGeneration}'=2 -n default instrumentationconfig/deployment-frontend --timeout=60s
+          kubectl wait --for=jsonpath='{.status.observedWorkloadGeneration}'=2 -n default instrumentationconfig/deployment-coupon --timeout=60s
+          kubectl wait --for=jsonpath='{.status.observedWorkloadGeneration}'=2 -n default instrumentationconfig/deployment-inventory --timeout=60s
+          kubectl wait --for=jsonpath='{.status.observedWorkloadGeneration}'=2 -n default instrumentationconfig/deployment-pricing --timeout=60s
+          kubectl wait --for=jsonpath='{.status.observedWorkloadGeneration}'=2 -n default instrumentationconfig/deployment-membership --timeout=60s
+
+  - name: Assert Post Destination Runtime Details
+    try:
     - assert:
         file: assert-post-dest-runtime-details.yaml
+
   - name: Generate Traffic
     try:
       - script:

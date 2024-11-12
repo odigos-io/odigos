@@ -1,10 +1,10 @@
-import Image from 'next/image';
 import React from 'react';
-import styled from 'styled-components';
+import Image from 'next/image';
 import { Text } from '../text';
+import styled from 'styled-components';
 
 type NoDataFoundProps = {
-  title: string;
+  title?: string;
   subTitle?: string;
 };
 
@@ -31,19 +31,12 @@ const Container = styled.div`
   flex-direction: column;
   align-items: center;
 `;
-const NoDataFound: React.FC<NoDataFoundProps> = ({
-  title,
-  subTitle = 'Check your search phrase and try one more time',
-}) => {
+
+const NoDataFound: React.FC<NoDataFoundProps> = ({ title = 'No data found', subTitle = 'Check your search phrase and try one more time' }) => {
   return (
     <Container>
       <TitleWrapper>
-        <Image
-          src="/icons/common/no-data-found.svg"
-          alt="no-found"
-          width={16}
-          height={16}
-        />
+        <Image src='/icons/common/no-data-found.svg' alt='no-found' width={16} height={16} />
         <Title>{title}</Title>
       </TitleWrapper>
       {subTitle && <SubTitle>{subTitle}</SubTitle>}

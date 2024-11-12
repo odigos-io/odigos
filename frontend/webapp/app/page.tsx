@@ -1,9 +1,9 @@
 'use client';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useConfig, useNotify } from '@/hooks';
-import { ROUTES, CONFIG, NOTIFICATION } from '@/utils';
+import { useNotify, useConfig } from '@/hooks';
 import { FadeLoader } from '@/reuseable-components';
+import { ROUTES, CONFIG, NOTIFICATION } from '@/utils';
 
 export default function App() {
   const router = useRouter();
@@ -17,8 +17,6 @@ export default function App() {
         title: error.name,
         message: error.message,
       });
-
-      router.push(ROUTES.OVERVIEW);
     } else if (data) {
       const { installation } = data;
 
@@ -31,7 +29,7 @@ export default function App() {
           router.push(ROUTES.OVERVIEW);
       }
     }
-  }, [data, error]);
+  }, [data]);
 
   return <FadeLoader />;
 }

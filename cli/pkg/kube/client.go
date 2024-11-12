@@ -11,9 +11,9 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
 	k8stypes "k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
 	"github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
@@ -34,6 +34,13 @@ type Client struct {
 	ApiExtensions apiextensionsclient.Interface
 	OdigosClient  v1alpha1.OdigosV1alpha1Interface
 	Config        *rest.Config
+}
+
+// Identical to the Object interface defined in controller-runtime: https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/client#Object
+// This is a workaround to avoid importing controller-runtime in the cli package
+type Object interface {
+	metav1.Object
+	runtime.Object
 }
 
 func CreateClient(cmd *cobra.Command) (*Client, error) {
@@ -79,7 +86,7 @@ func PrintClientErrorAndExit(err error) {
 	os.Exit(-1)
 }
 
-func (c *Client) ApplyResources(ctx context.Context, configVersion int, objs []client.Object) error {
+func (c *Client) ApplyResources(ctx context.Context, configVersion int, objs []Object) error {
 	for _, obj := range objs {
 		err := c.ApplyResource(ctx, configVersion, obj)
 		if err != nil {
@@ -94,7 +101,7 @@ func (c *Client) ApplyResources(ctx context.Context, configVersion int, objs []c
 // and apparently this field id immutable:
 // ERROR Deployment.apps "odigos-instrumentor" is invalid: spec.selector: Invalid value: v1.LabelSelector{MatchLabels:map[string]string{"app.kubernetes.io/name":"odigos-instrumentor"}, MatchExpressions:[]v1.LabelSelectorRequirement(nil)}: field is immutable
 // Once we end support for odigos versions <v1.0.23 we can remove this function
-func (c *Client) deleteResourceBeforeAppending(ctx context.Context, obj client.Object) error {
+func (c *Client) deleteResourceBeforeAppending(ctx context.Context, obj Object) error {
 	gvk := obj.GetObjectKind().GroupVersionKind()
 	switch gvk.Kind {
 
@@ -153,7 +160,7 @@ func (c *Client) deleteResourceBeforeAppending(ctx context.Context, obj client.O
 	return nil
 }
 
-func (c *Client) ApplyResource(ctx context.Context, configVersion int, obj client.Object) error {
+func (c *Client) ApplyResource(ctx context.Context, configVersion int, obj Object) error {
 
 	err := c.deleteResourceBeforeAppending(ctx, obj)
 	if err != nil {

@@ -95,14 +95,7 @@ func (sm *sourcesMetrics) updateSourceMetrics(dp pmetric.NumberDataPoint, metric
 		return
 	}
 
-	timeDiff := newTime.Sub(oldTime).Seconds()
-
-	var throughput int64
-	// calculate throughput only if the new value is greater than the old value and the time difference is positive
-	// otherwise, the throughput is set to 0
-	if newVal > oldVal && timeDiff > 0 {
-		throughput = (newVal - oldVal) / int64(timeDiff)
-	}
+	throughput := calculateThroughput(float64(newVal-oldVal), newTime, oldTime)
 
 	*throughputPtr = throughput
 }

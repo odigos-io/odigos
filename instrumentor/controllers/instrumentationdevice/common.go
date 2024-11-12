@@ -5,16 +5,17 @@ import (
 	"errors"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils/versionsupport"
 	"github.com/odigos-io/odigos/instrumentor/instrumentation"
+	"github.com/odigos-io/odigos/instrumentor/sdks"
 	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
+	odigosk8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -35,45 +36,42 @@ const (
 	appliedInstrumentationDeviceType = "AppliedInstrumentationDevice"
 )
 
-func clearInstrumentationEbpf(obj client.Object) {
-	annotations := obj.GetAnnotations()
-	if annotations == nil {
-		return
-	}
-
-	delete(annotations, consts.EbpfInstrumentationAnnotation)
-}
+var (
+	// can be overridden in tests
+	GetDefaultSDKs = sdks.GetDefaultSDKs
+)
 
 func isDataCollectionReady(ctx context.Context, c client.Client) bool {
 	logger := log.FromContext(ctx)
-	var collectorGroups odigosv1.CollectorsGroupList
-	err := c.List(ctx, &collectorGroups, client.InNamespace(env.GetCurrentNamespace()))
-	if err != nil {
-		logger.Error(err, "error getting collectors groups, skipping instrumentation")
-		return false
-	}
 
-	for _, cg := range collectorGroups.Items {
-		// up until v1.0.31, the collectors group role names were "GATEWAY" and "DATA_COLLECTION".
-		// in v1.0.32, the role names were changed to "CLUSTER_GATEWAY" and "NODE_COLLECTOR",
-		// due to adding the Processor CRD which uses these role names.
-		// the new names are more descriptive and are preparations for future roles.
-		// the check for "DATA_COLLECTION" is a temporary support for users that upgrade from <=v1.0.31 to >=v1.0.32.
-		// once we drop support for <=v1.0.31, we can remove this comparison.
-		if (cg.Spec.Role == odigosv1.CollectorsGroupRoleNodeCollector || cg.Spec.Role == "DATA_COLLECTION") && cg.Status.Ready {
-			return true
+	nodeCollectorsGroup := odigosv1.CollectorsGroup{}
+	err := c.Get(ctx, client.ObjectKey{
+		Namespace: env.GetCurrentNamespace(),
+		Name:      odigosk8sconsts.OdigosNodeCollectorCollectorGroupName,
+	}, &nodeCollectorsGroup)
+
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			// if node collector is not yet created, then it is not ready
+			return false
+		} else {
+			logger.Error(err, "error getting node collector group, skipping instrumentation")
+			return false
 		}
 	}
 
-	return false
+	return nodeCollectorsGroup.Status.Ready
 }
 
-func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.Client, runtimeDetails *odigosv1.InstrumentedApplication) error {
+func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.Client, runtimeDetails *odigosv1.InstrumentedApplication) (error, bool) {
+
+	// devicePartiallyApplied is used to indicate that the instrumentation device was partially applied for some of the containers.
+	devicePartiallyApplied := false
 
 	logger := log.FromContext(ctx)
 	obj, err := getWorkloadObject(ctx, kubeClient, runtimeDetails)
 	if err != nil {
-		return err
+		return err, false
 	}
 
 	workload := workload.PodWorkload{
@@ -82,20 +80,16 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 		Kind:      workload.WorkloadKind(obj.GetObjectKind().GroupVersionKind().Kind),
 	}
 
-	odigosConfig, err := k8sutils.GetCurrentOdigosConfig(ctx, kubeClient)
-	if err != nil {
-		return err
-	}
-
 	// build an otel sdk map from instrumentation rules first, and merge it with the default otel sdk map
 	// this way, we can override the default otel sdk with the instrumentation rules
 	instrumentationRules := odigosv1.InstrumentationRuleList{}
 	err = kubeClient.List(ctx, &instrumentationRules)
 	if err != nil {
-		return err
+		return err, false
 	}
 
-	otelSdkToUse := odigosConfig.DefaultSDKs
+	// default otel sdk map according to Odigos tier
+	otelSdkToUse := GetDefaultSDKs()
 
 	for i := range instrumentationRules.Items {
 		instrumentationRule := &instrumentationRules.Items[i]
@@ -123,11 +117,22 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 			return err
 		}
 
-		return instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, runtimeDetails, otelSdkToUse, obj)
+		err, deviceApplied, tempDevicePartiallyApplied := instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, runtimeDetails, otelSdkToUse, obj, logger)
+		if err != nil {
+			return err
+		}
+
+		devicePartiallyApplied = tempDevicePartiallyApplied
+		// If instrumentation device is applied successfully, add odigos.io/inject-instrumentation label to enable the webhook
+		if deviceApplied {
+			instrumentation.SetInjectInstrumentationLabel(podSpec)
+		}
+
+		return nil
 	})
 
 	if err != nil {
-		return err
+		return err, false
 	}
 
 	modified := result != controllerutil.OperationResultNone
@@ -135,7 +140,7 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 		logger.V(0).Info("added instrumentation device to workload", "name", obj.GetName(), "namespace", obj.GetNamespace())
 	}
 
-	return nil
+	return nil, devicePartiallyApplied
 }
 
 func removeInstrumentationDeviceFromWorkload(ctx context.Context, kubeClient client.Client, namespace string, workloadKind workload.WorkloadKind, workloadName string, uninstrumentReason ApplyInstrumentationDeviceReason) error {
@@ -153,32 +158,32 @@ func removeInstrumentationDeviceFromWorkload(ctx context.Context, kubeClient cli
 		return client.IgnoreNotFound(err)
 	}
 
-	result, err := controllerutil.CreateOrPatch(ctx, kubeClient, workloadObj, func() error {
-
-		// clear old ebpf instrumentation annotation, just in case it still exists
-		clearInstrumentationEbpf(workloadObj)
-		podSpec, err := getPodSpecFromObject(workloadObj)
-		if err != nil {
-			return err
-		}
-
-		instrumentation.RevertInstrumentationDevices(podSpec)
-		err = instrumentation.RevertEnvOverwrites(workloadObj, podSpec)
-		if err != nil {
-			return err
-		}
-		return nil
-	})
-
+	podSpec, err := getPodSpecFromObject(workloadObj)
+	if err != nil {
+		return err
+	}
+	// If instrumentation device is removed successfully, remove odigos.io/inject-instrumentation label to disable the webhook
+	webhookLabelRemoved := instrumentation.RemoveInjectInstrumentationLabel(podSpec)
+	deviceRemoved := instrumentation.RevertInstrumentationDevices(podSpec)
+	envChanged, err := instrumentation.RevertEnvOverwrites(workloadObj, podSpec)
 	if err != nil {
 		return err
 	}
 
-	modified := result != controllerutil.OperationResultNone
-	if modified {
-		logger := log.FromContext(ctx)
-		logger.V(0).Info("removed instrumentation device from workload", "namespace", workloadObj.GetNamespace(), "kind", workloadObj.GetObjectKind(), "name", workloadObj.GetName(), "reason", uninstrumentReason)
+	// if we didn't change anything, we don't need to update the object
+	// skip the api-server call, return no-op and skip the log message
+	if !webhookLabelRemoved && !deviceRemoved && !envChanged {
+		return nil
 	}
+
+	err = kubeClient.Update(ctx, workloadObj)
+	if err != nil {
+		// if the update fails due to a conflict, the controller will retry the operation
+		return err
+	}
+
+	logger := log.FromContext(ctx)
+	logger.V(0).Info("removed instrumentation device from workload", "namespace", workloadObj.GetNamespace(), "kind", workloadObj.GetObjectKind(), "name", workloadObj.GetName(), "reason", uninstrumentReason)
 
 	return nil
 }
@@ -259,9 +264,15 @@ func reconcileSingleWorkload(ctx context.Context, kubeClient client.Client, inst
 		return nil
 	}
 
-	err = addInstrumentationDeviceToWorkload(ctx, kubeClient, instrumentedApplication)
+	err, devicePartiallyApplied := addInstrumentationDeviceToWorkload(ctx, kubeClient, instrumentedApplication)
 	if err == nil {
-		conditions.UpdateStatusConditions(ctx, kubeClient, instrumentedApplication, &instrumentedApplication.Status.Conditions, metav1.ConditionTrue, appliedInstrumentationDeviceType, "InstrumentationDeviceApplied", "Instrumentation device applied successfully")
+		var successMessage string
+		if devicePartiallyApplied {
+			successMessage = "Instrumentation device partially applied"
+		} else {
+			successMessage = "Instrumentation device applied successfully"
+		}
+		conditions.UpdateStatusConditions(ctx, kubeClient, instrumentedApplication, &instrumentedApplication.Status.Conditions, metav1.ConditionTrue, appliedInstrumentationDeviceType, "InstrumentationDeviceApplied", successMessage)
 	} else {
 		conditions.UpdateStatusConditions(ctx, kubeClient, instrumentedApplication, &instrumentedApplication.Status.Conditions, metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonErrApplying), err.Error())
 	}
