@@ -1,3 +1,4 @@
+'use client';
 import { useEffect } from 'react';
 import { Config } from '@/types';
 import { GET_CONFIG } from '@/graphql';
