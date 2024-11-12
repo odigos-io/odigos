@@ -2,10 +2,12 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"time"
 
+	"github.com/hashicorp/go-version"
 	"github.com/odigos-io/odigos/cli/pkg/autodetect"
 
 	"github.com/odigos-io/odigos/cli/pkg/labels"
@@ -45,6 +47,10 @@ var (
 	imagePrefix       string
 )
 
+var (
+	minK8SVersionForInstallation = version.Must(version.NewVersion("v1.23.0"))
+)
+
 type ResourceCreationFunc func(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error
 
 // installCmd represents the install command
@@ -69,6 +75,28 @@ This command will install k8s components that will auto-instrument your applicat
 			os.Exit(1)
 		}
 
+		// Check if the cluster meets the minimum requirements
+		kc := cmd.Flag("kubeconfig").Value.String()
+		details, err := autodetect.DetectK8SClusterDetails(ctx, kc, client)
+		if err == nil {
+			autodetect.CurrentKubernetesVersion = autodetect.KubernetesVersion{
+				Kind:    details.Kind,
+				Version: details.K8SVersion.String(),
+			}
+			if details.K8SVersion.LessThan(minK8SVersionForInstallation) {
+				fmt.Printf("\033[31mERROR\033[0m Odigos requires Kubernetes version %s or higher but found %s, aborting\n", minK8SVersionForInstallation.String(), details.K8SVersion.String())
+				os.Exit(1)
+			}
+			fmt.Printf("Detected cluster: %s Kubernetes version: %s\n", details.Kind, details.K8SVersion.String())
+		} else {
+			if errors.Is(err, autodetect.ErrCannotDetectClusterKind) {
+				fmt.Println("Unknown Kubernetes cluster detected, proceeding with installation")
+			}
+			if errors.Is(err, autodetect.ErrCannotDetectK8sVersion) {
+				fmt.Println("Unknown Kubernetes version detected, proceeding with installation")
+			}
+		}
+
 		var odigosProToken string
 		odigosTier := common.CommunityOdigosTier
 		if odigosCloudApiKeyFlag != "" {
@@ -87,18 +115,6 @@ This command will install k8s components that will auto-instrument your applicat
 		config := createOdigosConfig(odigosTier)
 
 		fmt.Printf("Installing Odigos version %s in namespace %s ...\n", versionFlag, ns)
-
-		kc := cmd.Flag("kubeconfig").Value.String()
-		kubeKind, kubeVersion := autodetect.KubernetesClusterProduct(ctx, kc, client)
-		if kubeKind != autodetect.KindUnknown {
-			autodetect.CurrentKubernetesVersion = autodetect.KubernetesVersion{
-				Kind:    kubeKind,
-				Version: kubeVersion,
-			}
-			fmt.Printf("Detected Kubernetes: %s version %s\n", kubeKind, kubeVersion)
-		} else {
-			fmt.Println("Unknown Kubernetes cluster detected, proceeding with installation")
-		}
 
 		// namespace is created on "install" and is not managed by resource manager
 		createKubeResourceWithLogging(ctx, fmt.Sprintf("> Creating namespace %s", ns),
