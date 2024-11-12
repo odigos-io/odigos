@@ -27,3 +27,9 @@ export type WorkloadId = {
 export interface PatchSourceRequestInput {
   reportedName?: string;
 }
+
+export type PersistSourcesArray = {
+  kind: string;
+  name: string;
+  selected: boolean;
+};
