@@ -66,7 +66,6 @@ func GetRelevantEnvVarsKeys() []string {
 	return keys
 }
 
-
 // returns the current value that should be populated in a specific environment variable.
 // if we should not patch the value, returns nil.
 // the are 2 parts to the environment value: odigos part and user part.
@@ -119,18 +118,14 @@ func GetPatchedEnvValue(envName string, observedValue string, currentSdk *common
 			if sdkEnvValue == desiredOdigosPart {
 				// shortcut, the value is already patched
 				// both the odigos part equals to the new value, and the user part we want to keep
-				// Exception: if there is a webhook involved that inject the env value,
-				// we need to remove duplicate values, otherwise it will grow indefinitely in each iteration
+				// Exception: for a value that is injected by a webhook, we don't want to add it to
+				// the deployment, as the webhook will manage when it is needed.
 				parts := strings.Split(observedValue, envMetadata.delim)
-				specialEnvValue := "-javaagent:/opt/sre-agent/sre-agent.jar"
-				specialFound := false
+				ignoreEnvValue := "-javaagent:/opt/sre-agent/sre-agent.jar"
 				newValues := []string{}
 				for _, part := range parts {
-					if part == specialEnvValue {
-						if specialFound {
-							continue
-						}
-						specialFound = true
+					if part == ignoreEnvValue {
+						continue
 					}
 					if strings.TrimSpace(part) == "" {
 						continue
