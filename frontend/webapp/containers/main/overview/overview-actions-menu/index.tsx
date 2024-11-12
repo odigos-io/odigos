@@ -12,7 +12,7 @@ const MenuContainer = styled.div`
   gap: 16px;
 `;
 
-// Aligns the "AddEntity" button to the right
+// Aligns the "AddEntity" button to the right.
 const PushToEnd = styled.div`
   margin-left: auto;
 `;
