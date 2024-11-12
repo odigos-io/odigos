@@ -1,14 +1,14 @@
 'use client';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useNotify } from '@/hooks';
+import { useNotify, useConfig } from '@/hooks';
 import { ROUTES, CONFIG, NOTIFICATION } from '@/utils';
 import { FadeLoader } from '@/reuseable-components';
 
 export default function App() {
   const router = useRouter();
   const notify = useNotify();
-  // const { data, error } = useConfig();
+  const { data, error } = useConfig();
 
   useEffect(() => {
     router.push(ROUTES.OVERVIEW);
