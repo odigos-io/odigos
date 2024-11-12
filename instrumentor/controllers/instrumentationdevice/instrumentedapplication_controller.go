@@ -53,10 +53,10 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 			return ctrl.Result{}, err
 		}
 		err = removeInstrumentationDeviceFromWorkload(ctx, r.Client, req.Namespace, workloadKind, workloadName, ApplyInstrumentationDeviceReasonNoRuntimeDetails)
-		return utils.RetryOnConflict(err)
+		return utils.K8SUpdateErrorHandler(err)
 	}
 
 	isNodeCollectorReady := isDataCollectionReady(ctx, r.Client)
 	err = reconcileSingleWorkload(ctx, r.Client, &runtimeDetails, isNodeCollectorReady)
-	return utils.RetryOnConflict(err)
+	return utils.K8SUpdateErrorHandler(err)
 }
