@@ -1,107 +1,141 @@
-import { useEffect, useState } from 'react';
+import { Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react';
 import { useAppStore } from '@/store';
-import { DropdownOption, K8sActualSource } from '@/types';
+import { useNamespace } from '../compute-platform';
+import type { DropdownOption, K8sActualSource } from '@/types';
 
-export const useConnectSourcesMenuState = ({ sourcesList }) => {
-  const [searchFilter, setSearchFilter] = useState('');
-  const [showSelectedOnly, setShowSelectedOnly] = useState(false);
-  const [selectAllCheckbox, setSelectAllCheckbox] = useState(false);
-  const [selectedOption, setSelectedOption] = useState<DropdownOption>();
-  const [futureAppsCheckbox, setFutureAppsCheckbox] = useState<{
-    [key: string]: boolean;
-  }>({});
-  const [selectedItems, setSelectedItems] = useState<{
-    [key: string]: K8sActualSource[];
-  }>({});
+type SelectedNamespace = DropdownOption | undefined;
 
-  const sources = useAppStore((state) => state.sources);
-  const namespaceFutureSelectAppsList = useAppStore(
-    (state) => state.namespaceFutureSelectAppsList
-  );
+type SourcesByNamespace = {
+  [namespace: string]: K8sActualSource[];
+};
 
+type FutureAppsByNamespace = {
+  [namespace: string]: boolean;
+};
+
+export interface UseConnectSourcesMenuStateResponse {
+  selectedNamespace: SelectedNamespace;
+  onSelectNamespace: (item: DropdownOption) => void;
+  selectedSources: SourcesByNamespace;
+  onSelectSource: (item: K8sActualSource) => void;
+  selectedFutureApps: FutureAppsByNamespace;
+  onSelectFutureApps: (bool: boolean) => void;
+
+  searchText: string;
+  setSearchText: Dispatch<SetStateAction<string>>;
+  selectAll: boolean;
+  setSelectAll: Dispatch<SetStateAction<boolean>>;
+  showSelectedOnly: boolean;
+  setShowSelectedOnly: Dispatch<SetStateAction<boolean>>;
+
+  filteredSources: K8sActualSource[];
+}
+
+export const useConnectSourcesMenuState = (): UseConnectSourcesMenuStateResponse => {
+  // namespace controls/options
+  const [selectedNamespace, setSelectedNamespace] = useState<SelectedNamespace>(undefined);
+  const [availableSources, setAvailableSources] = useState<SourcesByNamespace>({});
+  const { allNamespaces, data: namespacesData } = useNamespace(selectedNamespace?.id, false);
+
+  // auto-select the 1st namespace
   useEffect(() => {
-    sources && setSelectedItems(sources);
-    namespaceFutureSelectAppsList &&
-      setFutureAppsCheckbox(namespaceFutureSelectAppsList);
-  }, [namespaceFutureSelectAppsList, sources]);
-
-  useEffect(() => {
-    selectAllCheckbox && selectAllSources();
-  }, [selectAllCheckbox]);
-
-  function selectAllSources() {
-    if (selectedOption) {
-      setSelectedItems({
-        ...selectedItems,
-        [selectedOption.value]: sourcesList,
-      });
+    if (!!allNamespaces?.length && !selectedNamespace) {
+      const { name } = allNamespaces[0];
+      setSelectedNamespace({ id: name, value: name });
+      setAvailableSources((prev) => ({ ...prev, [name]: prev[name] || [] }));
     }
-  }
+  }, [allNamespaces, selectedNamespace]);
 
-  function filterSources(sources: K8sActualSource[]) {
-    return sources.filter((source: K8sActualSource) => {
-      return (
-        searchFilter === '' ||
-        source.name.toLowerCase().includes(searchFilter.toLowerCase())
-      );
-    });
-  }
+  // set available sources for current selected namespace
+  useEffect(() => {
+    if (!!namespacesData) {
+      const { name, k8sActualSources = [] } = namespacesData;
+      setAvailableSources((prev) => ({ ...prev, [name]: k8sActualSources }));
+    }
+  }, [namespacesData]);
 
-  function handleSelectItem(item: K8sActualSource) {
-    if (selectedOption) {
-      const currentSelectedItems = selectedItems[selectedOption.value] || [];
+  // only for "onboarding" - get unsaved values and set to state
+  // (this is to persist the values when user navigates back to this page)
+  const appStore = useAppStore((state) => state);
 
-      const isItemSelected = currentSelectedItems.some(
-        (currentSelectedItem) =>
-          currentSelectedItem.name === item.name &&
-          currentSelectedItem.kind === item.kind
-      );
+  // form values
+  const [selectedSources, setSelectedSources] = useState<SourcesByNamespace>(appStore.sources);
+  const [selectedFutureApps, setSelectedFutureApps] = useState<FutureAppsByNamespace>(appStore.namespaceFutureSelectAppsList);
 
-      if (isItemSelected) {
-        const updatedSelectedItems = currentSelectedItems.filter(
-          (selectedItem) =>
-            JSON.stringify(selectedItem) !== JSON.stringify(item)
-        );
-        setSelectedItems({
-          ...selectedItems,
-          [selectedOption.value]: updatedSelectedItems,
-        });
-        if (
-          selectAllCheckbox &&
-          updatedSelectedItems.length !== sourcesList.length
-        ) {
-          setSelectAllCheckbox(false);
-        }
+  // form filters
+  const [searchText, setSearchText] = useState('');
+  const [selectAll, setSelectAll] = useState(false);
+  const [showSelectedOnly, setShowSelectedOnly] = useState(false);
+
+  useEffect(() => {
+    if (!!selectedNamespace && !!availableSources[selectedNamespace.id].length) {
+      if (selectAll) {
+        setSelectedSources((prev) => ({ ...prev, [selectedNamespace.id]: availableSources[selectedNamespace.id] }));
       } else {
-        const updatedSelectedItems = [...currentSelectedItems, item];
-        setSelectedItems({
-          ...selectedItems,
-          [selectedOption.value]: updatedSelectedItems,
-        });
-        if (updatedSelectedItems.length === sourcesList.length) {
-          setSelectAllCheckbox(true);
-        }
+        setSelectedSources((prev) => ({ ...prev, [selectedNamespace.id]: [] }));
       }
     }
-  }
+  }, [selectAll, selectedNamespace, availableSources]);
+
+  const onSelectNamespace = (item: DropdownOption) => {
+    setSelectedNamespace(item);
+    setAvailableSources((prev) => ({ ...prev, [item.id]: prev[item.id] || [] }));
+  };
+
+  const onSelectSource = (item: K8sActualSource) => {
+    if (!selectedNamespace) return;
+
+    const preAvailableSources = availableSources[selectedNamespace.id];
+    const preSelectedSources = [...(selectedSources[selectedNamespace.id] || [])];
+    const foundIndex = preSelectedSources.findIndex(({ name, kind }) => name === item.name && kind === item.kind);
+
+    if (foundIndex === -1) {
+      preSelectedSources.push(item);
+    } else {
+      preSelectedSources.splice(foundIndex, 1);
+    }
+
+    setSelectedSources((prev) => ({ ...prev, [selectedNamespace.id]: preSelectedSources }));
+    setSelectAll(preSelectedSources.length === preAvailableSources.length);
+  };
+
+  const onSelectFutureApps = (bool: boolean) => {
+    if (!selectedNamespace) return;
+
+    setSelectedFutureApps((prev) => ({ ...prev, [selectedNamespace.id]: bool }));
+  };
+
+  const filteredSources = useMemo(() => {
+    if (!selectedNamespace) return [];
+
+    const preAvailableSources = availableSources[selectedNamespace.id];
+    const filtered =
+      !!searchText || showSelectedOnly
+        ? preAvailableSources.filter(
+            (source) =>
+              (!searchText || source.name.toLowerCase().includes(searchText.toLowerCase())) &&
+              (!showSelectedOnly || !!selectedSources[selectedNamespace.id]?.find((selected) => selected.name === source.name)),
+          )
+        : preAvailableSources;
+
+    return filtered;
+  }, [selectedNamespace, availableSources, searchText, showSelectedOnly, selectedSources]);
 
   return {
-    stateMenu: {
-      searchFilter,
-      setSearchFilter,
-      showSelectedOnly,
-      setShowSelectedOnly,
-      selectAllCheckbox,
-      setSelectAllCheckbox,
-      selectedOption,
-      setSelectedOption,
-      futureAppsCheckbox,
-      setFutureAppsCheckbox,
-      selectedItems,
-    },
-    stateHandlers: {
-      handleSelectItem,
-      filterSources,
-    },
+    selectedNamespace,
+    onSelectNamespace,
+    selectedSources,
+    onSelectSource,
+    selectedFutureApps,
+    onSelectFutureApps,
+
+    searchText,
+    setSearchText,
+    selectAll,
+    setSelectAll,
+    showSelectedOnly,
+    setShowSelectedOnly,
+
+    filteredSources,
   };
 };

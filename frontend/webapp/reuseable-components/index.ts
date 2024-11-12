@@ -8,7 +8,6 @@ export * from './input';
 export * from './tooltip';
 export * from './dropdown';
 export * from './divider';
-export * from './counter';
 export * from './toggle';
 export * from './toggle-buttons';
 export * from './checkbox';
