@@ -10,17 +10,14 @@ import { FieldLabel } from '../field-label';
 import { useOnClickOutside } from '@/hooks';
 import { NoDataFound } from '../no-data-found';
 import styled, { css } from 'styled-components';
-import theme, { hexPercentValues } from '@/styles/theme';
 
 interface DropdownProps {
   options: DropdownOption[];
-  value?: DropdownOption | DropdownOption[];
+  value: DropdownOption | undefined;
   onSelect: (option: DropdownOption) => void;
-  onDeselect?: (option: DropdownOption) => void;
   title?: string;
   tooltip?: string;
   placeholder?: string;
-  isMulti?: boolean;
   showSearch?: boolean;
   required?: boolean;
 }

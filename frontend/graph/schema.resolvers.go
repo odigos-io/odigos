@@ -13,7 +13,6 @@ import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/frontend/endpoints"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
@@ -711,7 +710,7 @@ func (r *queryResolver) ComputePlatform(ctx context.Context) (*model.ComputePlat
 
 // Config is the resolver for the config field.
 func (r *queryResolver) Config(ctx context.Context) (*model.GetConfigResponse, error) {
-	response := endpoints.GetConfig(ctx)
+	response := services.GetConfig(ctx)
 
 	gqlResponse := &model.GetConfigResponse{
 		Installation: model.InstallationStatus(response.Installation),

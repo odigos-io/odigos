@@ -24,7 +24,7 @@ export const OverviewDataFlowWrapper = styled.div`
 const NODE_WIDTH = 255;
 const NODE_HEIGHT = 80;
 
-export function OverviewDataFlowContainer() {
+export default function OverviewDataFlowContainer() {
   const { metrics } = useMetrics();
   const { sources } = useSourceCRUD();
   const { actions } = useActionCRUD();

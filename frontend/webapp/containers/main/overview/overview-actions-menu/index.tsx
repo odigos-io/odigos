@@ -1,9 +1,8 @@
 import React from 'react';
 import { Search } from './search';
-import { Filters } from './filters';
 import styled from 'styled-components';
 import { Divider, TabList } from '@/reuseable-components';
-import { AddEntity, MonitorsLegend } from '@/components';
+import { AddEntity, Filters, MonitorsLegend } from '@/components';
 
 const MenuContainer = styled.div`
   display: flex;

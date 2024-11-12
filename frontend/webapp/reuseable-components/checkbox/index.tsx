@@ -1,9 +1,9 @@
 import Image from 'next/image';
 import { Text } from '../text';
+import theme from '@/styles/theme';
 import { Tooltip } from '../tooltip';
 import styled from 'styled-components';
 import React, { useEffect, useState } from 'react';
-import theme from '@/styles/theme';
 
 interface CheckboxProps {
   title?: string;
