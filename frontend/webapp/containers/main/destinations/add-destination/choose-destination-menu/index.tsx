@@ -51,7 +51,7 @@ const DestinationFilterComponent: React.FC<FilterComponentProps> = ({ selectedTa
         <div>
           <Input placeholder='Search...' icon='/icons/common/search.svg' value={searchTerm} onChange={handleSearchChange} />
         </div>
-        <Dropdown options={DROPDOWN_OPTIONS} value={selectedTag} onSelect={onTagSelect} />
+        <Dropdown options={DROPDOWN_OPTIONS} value={selectedTag} onSelect={onTagSelect} onDeselect={function (option: DropdownOption): void {}} />
       </InputAndDropdownContainer>
 
       <MonitorButtonsContainer>

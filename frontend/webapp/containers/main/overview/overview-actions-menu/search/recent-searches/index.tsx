@@ -1,5 +1,5 @@
-import { AbsoluteContainer } from '../../styled';
 import { Text } from '@/reuseable-components';
+import { AbsoluteContainer } from '../../styled';
 
 export const RecentSearches = () => {
   return (
