@@ -17,7 +17,7 @@ interface DropdownProps {
   tooltip?: string;
   placeholder?: string;
   options: DropdownOption[];
-  value: DropdownOption | undefined;
+  value: DropdownOption | DropdownOption[] | undefined;
   onSelect: (option: DropdownOption) => void;
   onDeselect: (option: DropdownOption) => void;
   isMulti?: boolean;
