@@ -1,12 +1,10 @@
 'use client';
+import './globals.css';
 import React from 'react';
 import { useSSE } from '@/hooks';
-import theme from '@/styles/palette';
-import { ThemeProvider } from 'styled-components';
-import { NotificationManager } from '@/components';
-import ReduxProvider from '@/store/redux-provider';
-import { QueryClient, QueryClientProvider } from 'react-query';
-import { ThemeProviderWrapper } from '@keyval-dev/design-system';
+import { METADATA } from '@/utils';
+import { ApolloWrapper } from '@/lib';
+import { ThemeProviderWrapper } from '@/styles';
 
 const LAYOUT_STYLE: React.CSSProperties = {
   margin: 0,
@@ -14,39 +12,25 @@ const LAYOUT_STYLE: React.CSSProperties = {
   scrollbarWidth: 'none',
   width: '100vw',
   height: '100vh',
-  backgroundColor: theme.colors.dark,
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 10000,
-        refetchOnWindowFocus: false,
-      },
-    },
-  });
-
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   useSSE();
 
   return (
-    <html lang="en">
-      <ReduxProvider>
-        <QueryClientProvider client={queryClient}>
-          <ThemeProvider theme={theme}>
-            <ThemeProviderWrapper>
-              <body suppressHydrationWarning={true} style={LAYOUT_STYLE}>
-                {children}
-                <NotificationManager />
-              </body>
-            </ThemeProviderWrapper>
-          </ThemeProvider>
-        </QueryClientProvider>
-      </ReduxProvider>
+    <html lang='en'>
+      <head>
+        <link rel='icon' href={`/${METADATA.icons}`} type='image/svg+xml' />
+        <title>{METADATA.title}</title>
+        <meta name='description' content={METADATA.title} />
+      </head>
+      <ApolloWrapper>
+        <ThemeProviderWrapper>
+          <body suppressHydrationWarning={true} style={LAYOUT_STYLE}>
+            {children}
+          </body>
+        </ThemeProviderWrapper>
+      </ApolloWrapper>
     </html>
   );
 }

@@ -1,51 +1,21 @@
-const env = process.env.NODE_ENV;
+'use client';
+const ENV = process.env.NODE_ENV;
+const IS_PRODUCTION = ENV === 'production';
 
-const LOCALHOST = 'http://localhost:8085/api';
-const BASE_URL = env === 'production' ? '/api' : LOCALHOST;
+// Define base URLs depending on the environment and rendering context
+const LOCAL_API_BASE = 'http://localhost:8085';
+//we use localhost:8085 as the base URL for server environment
+const PRODUCTION_GQL_API_BASE = IS_PRODUCTION && typeof window !== 'undefined' ? `${window.location.origin}/graphql` : `${LOCAL_API_BASE}/graphql`;
+const API_BASE_URL = IS_PRODUCTION ? PRODUCTION_GQL_API_BASE : `${LOCAL_API_BASE}/graphql`;
 
+// Define endpoints based on the base URL
 const API = {
-  EVENTS: `${BASE_URL}/events`,
-  CONFIG: `${BASE_URL}/config`,
-  NAMESPACES: `${BASE_URL}/namespaces`,
-  APPLICATIONS: `${BASE_URL}/applications`,
-  DESTINATION_TYPE: `${BASE_URL}/destination-types`,
-  DESTINATIONS: `${BASE_URL}/destinations`,
-  CHECK_CONNECTION: `${BASE_URL}/destinations/testConnection`,
-  SOURCES: `${BASE_URL}/sources`,
-  SET_ACTION: (type: string) => `${BASE_URL}/actions/types/${type}`,
-  PUT_ACTION: (type: string, id: string) =>
-    `${BASE_URL}/actions/types/${type}/${id}`,
-  ACTIONS: `${BASE_URL}/actions`,
-  DELETE_ACTION: (type: string, id: string) =>
-    `${BASE_URL}/actions/types/${type}/${id}`,
-  OVERVIEW_METRICS: `${BASE_URL}/metrics/overview`,
-  INSTRUMENTATION_RULES: `${BASE_URL}/instrumentation-rules`,
-  INSTRUMENTATION_RULE: (id: string) =>
-    `${BASE_URL}/instrumentation-rules/${id}`,
-  DESCRIBE_ODIGOS: `${BASE_URL}/describe/odigos`,
-  DESCRIBE_SOURCE: (namespace: string, kind: string, name: string) =>
-    `${BASE_URL}/describe/source/namespace/${namespace}/kind/${kind}/name/${name}`,
+  BASE_URL: API_BASE_URL,
+  EVENTS: `${IS_PRODUCTION ? '/' : LOCAL_API_BASE}/api/events`,
 };
 
-const QUERIES = {
-  API_CONFIG: 'apiConfig',
-  API_NAMESPACES: 'apiNamespaces',
-  API_APPLICATIONS: 'apiApplications',
-  API_DESTINATIONS: 'apiDestinations',
-  API_SOURCES: 'apiSources',
-  API_DESTINATION_TYPE: 'apiDestinationType',
-  API_DESTINATION_TYPES: 'apiDestinationTypes',
-  API_ACTIONS: 'apiActions',
-};
+// Centralize external links
+export const DOCS_LINK = 'https://docs.odigos.io';
 
-const SLACK_INVITE_LINK =
-  'https://odigos.slack.com/join/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A#/shared-invite/email';
-
-export const ACTION_DOCS_LINK =
-  'https://docs.odigos.io/pipeline/actions/introduction';
-export const ACTION_ITEM_DOCS_LINK = 'https://docs.odigos.io/pipeline/actions';
-
-export const INSTRUMENTATION_RULES_DOCS_LINK =
-  'https://docs.odigos.io/pipeline/rules/overview';
-
-export { API, QUERIES, SLACK_INVITE_LINK };
+// Export modules
+export { API };

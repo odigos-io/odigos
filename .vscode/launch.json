@@ -1,74 +1,69 @@
 {
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "Remote Odiglet",
-            "type": "go",
-            "request": "attach",
-            "mode": "remote",
-            "debugAdapter": "legacy",
-            "port": 2345,
-            "host": "127.0.0.1",
-            "remotePath": ""
-        },
-        {
-            "name": "instrumentor local",
-            "type": "go",
-            "request": "launch",
-            "mode": "debug",
-            "program": "${workspaceFolder}/instrumentor",
-            "cwd": "${workspaceFolder}/instrumentor",
-            "env": {
-                "LOCAL_MUTATING_WEBHOOK_CERT_DIR": "${workspaceFolder}/serving-certs"
-            }            
-        },
-        {
-            "name": "frontend",
-            "type": "go",
-            "request": "launch",
-            "mode": "debug",
-            "program": "${workspaceFolder}/frontend",
-            "cwd": "${workspaceFolder}/frontend",
-            "args": ["--port", "8085", "--address", "0.0.0.0"]
-        },
-        {
-            "name": "autoscaler local",
-            "type": "go",
-            "request": "launch",
-            "mode": "debug",
-            "program": "${workspaceFolder}/autoscaler",
-            "cwd": "${workspaceFolder}/autoscaler",
-            "env": {
-                "ODIGOS_VERSION": "v1.0.90"
-            }
-        },
-        {
-            "name": "scheduler local",
-            "type": "go",
-            "request": "launch",
-            "mode": "debug",
-            "program": "${workspaceFolder}/scheduler",
-            "cwd": "${workspaceFolder}/scheduler"
-        },
-        {
-            "name": "cli uninstall",
-            "type": "go",
-            "request": "launch",
-            "mode": "debug",
-            "program": "${workspaceFolder}/cli",
-            "cwd": "${workspaceFolder}/cli",
-            "args": ["uninstall", "--yes"],
-            "buildFlags": "-tags=embed_manifests"
-        },
-        {
-            "name": "cli describe",
-            "type": "go",
-            "request": "launch",
-            "mode": "debug",
-            "program": "${workspaceFolder}/cli",
-            "cwd": "${workspaceFolder}/cli",
-            "args": ["describe source deployment membership"],
-            "buildFlags": "-tags=embed_manifests"
-        }
-    ]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Remote Odiglet",
+      "type": "go",
+      "request": "attach",
+      "mode": "remote",
+      "debugAdapter": "legacy",
+      "port": 2345,
+      "host": "127.0.0.1",
+      "remotePath": ""
+    },
+    {
+      "name": "instrumentor local",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/instrumentor",
+      "cwd": "${workspaceFolder}/instrumentor"
+    },
+    {
+      "name": "frontend",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/frontend",
+      "cwd": "${workspaceFolder}/frontend",
+      "args": ["--port", "8085", "--address", "0.0.0.0"]
+    },
+    {
+      "name": "gql-playground",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/frontend/main.go",
+      "cwd": "${workspaceFolder}/frontend"
+    },
+    {
+      "name": "autoscaler local",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/autoscaler",
+      "cwd": "${workspaceFolder}/autoscaler",
+      "env": {
+        "ODIGOS_VERSION": "v1.0.90"
+      }
+    },
+    {
+      "name": "scheduler local",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/scheduler",
+      "cwd": "${workspaceFolder}/scheduler"
+    },
+    {
+      "name": "cli uninstall",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/cli",
+      "cwd": "${workspaceFolder}/cli",
+      "args": ["uninstall", "--yes"],
+      "buildFlags": "-tags=embed_manifests"
+    }
+  ]
 }
