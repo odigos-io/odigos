@@ -10,16 +10,19 @@ import { FieldLabel } from '../field-label';
 import { useOnClickOutside } from '@/hooks';
 import { NoDataFound } from '../no-data-found';
 import styled, { css } from 'styled-components';
+import theme, { hexPercentValues } from '@/styles/theme';
 
 interface DropdownProps {
-  options: DropdownOption[];
-  value: DropdownOption | undefined;
-  onSelect: (option: DropdownOption) => void;
   title?: string;
   tooltip?: string;
   placeholder?: string;
-  showSearch?: boolean;
+  options: DropdownOption[];
+  value: DropdownOption | undefined;
+  onSelect: (option: DropdownOption) => void;
+  onDeselect: (option: DropdownOption) => void;
+  isMulti?: boolean;
   required?: boolean;
+  showSearch?: boolean;
 }
 
 const RootContainer = styled.div`
@@ -81,6 +84,8 @@ export const Dropdown: React.FC<DropdownProps> = ({ options, value, onSelect, on
   const ref = useRef<HTMLDivElement>(null);
   useOnClickOutside(ref, () => setIsOpen(false));
 
+  const arrLen = Array.isArray(value) ? value.length : 0;
+
   return (
     <RootContainer>
       <FieldLabel title={title} required={required} tooltip={tooltip} style={{ marginLeft: '8px' }} />
@@ -89,7 +94,7 @@ export const Dropdown: React.FC<DropdownProps> = ({ options, value, onSelect, on
         <DropdownHeader isOpen={isOpen} isMulti={isMulti} hasSelections={Array.isArray(value) ? !!value.length : false} onClick={toggleOpen}>
           <DropdownPlaceholder value={value} placeholder={placeholder} onDeselect={onDeselect} />
           <IconWrapper>
-            {isMulti && <Badge label={(value as DropdownOption[]).length} filled={!!(value as DropdownOption[]).length} />}
+            {isMulti && <Badge label={arrLen} filled={!!arrLen} />}
             <ArrowIcon src='/icons/common/extend-arrow.svg' alt='open-dropdown' width={14} height={14} className={isOpen ? 'open' : 'close'} />
           </IconWrapper>
         </DropdownHeader>
