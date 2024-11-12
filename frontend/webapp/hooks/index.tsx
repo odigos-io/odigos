@@ -8,3 +8,4 @@ export * from './notification';
 export * from './destinations';
 export * from './compute-platform';
 export * from './instrumentation-rules';
+export * from './describe';

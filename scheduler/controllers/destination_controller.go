@@ -18,9 +18,11 @@ package controllers
 
 import (
 	"context"
+
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigospredicates "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	"github.com/odigos-io/odigos/scheduler/controllers/collectorgroups"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -49,22 +51,15 @@ func (r *DestinationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	}
 
 	if len(dests.Items) > 0 {
-		var collectorGroups odigosv1.CollectorsGroupList
-		err := r.List(ctx, &collectorGroups, client.InNamespace(req.Namespace))
+		logger.V(0).Info("destinations found, syncing cluster collector group")
+		err := utils.ApplyCollectorGroup(ctx, r.Client, collectorgroups.NewClusterCollectorGroup(req.Namespace))
 		if err != nil {
-			logger.Error(err, "failed to list collectors groups")
+			logger.Error(err, "failed to sync cluster collector group")
 			return ctrl.Result{}, err
 		}
-
-		if len(collectorGroups.Items) == 0 {
-			logger.V(0).Info("destinations found, but no collectors groups found, creating gateway")
-			err = utils.CreateCollectorGroup(ctx, r.Client, collectorgroups.NewClusterCollectorGroup(req.Namespace))
-			if err != nil {
-				logger.Error(err, "failed to create gateway")
-				return ctrl.Result{}, err
-			}
-		}
 	}
+	// once the gateway is created, it is not deleted, even if there are no destinations.
+	// we might want to re-consider this behavior.
 
 	return ctrl.Result{}, nil
 }
@@ -73,5 +68,6 @@ func (r *DestinationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 func (r *DestinationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&odigosv1.Destination{}).
+		WithEventFilter(&odigospredicates.ExistencePredicate{}). // only care when destinations are created or deleted
 		Complete(r)
 }
