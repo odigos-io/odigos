@@ -7,3 +7,5 @@ version: "0.0.0"
 # docker image and git tags prefix the version with "v"
 appVersion: "v0.0.0"
 icon: https://d2q89wckrml3k4.cloudfront.net/logo.png
+# minimum kubernetes version required, this value must be in sync with the CLI install value
+kubeVersion: ">= 1.23.0"

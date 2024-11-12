@@ -48,6 +48,8 @@ var (
 )
 
 var (
+	// minK8SVersionForInstallation is the minimum Kubernetes version required for Odigos installation
+	// this value must be in sync with the one defined in the kubeVersion field in Chart.yaml
 	minK8SVersionForInstallation = version.Must(version.NewVersion("v1.23.0"))
 )
 
