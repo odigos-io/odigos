@@ -4,14 +4,16 @@ import type { DropdownOption } from '@/types';
 import { Dropdown } from '@/reuseable-components';
 
 interface Props {
+  title?: string;
   value?: DropdownOption[];
   onSelect: (val: DropdownOption) => void;
   onDeselect: (val: DropdownOption) => void;
   isMulti?: boolean;
   required?: boolean;
+  showSearch?: boolean;
 }
 
-export const MonitorDropdown: React.FC<Props> = ({ value, onSelect, onDeselect, ...props }) => {
+export const MonitorDropdown: React.FC<Props> = ({ title = 'Monitors', value, onSelect, onDeselect, ...props }) => {
   const options = useMemo(() => {
     const payload: DropdownOption[] = [];
 
@@ -24,5 +26,5 @@ export const MonitorDropdown: React.FC<Props> = ({ value, onSelect, onDeselect, 
     return payload;
   }, []);
 
-  return <Dropdown title='Monitors' placeholder='All' options={options} value={value} onSelect={onSelect} onDeselect={onDeselect} showSearch={false} {...props} />;
+  return <Dropdown title={title} placeholder='All' options={options} value={value} onSelect={onSelect} onDeselect={onDeselect} {...props} />;
 };

@@ -4,14 +4,16 @@ import { DropdownOption } from '@/types';
 import { Dropdown } from '@/reuseable-components';
 
 interface Props {
+  title?: string;
   value?: DropdownOption[];
   onSelect: (val: DropdownOption) => void;
   onDeselect: (val: DropdownOption) => void;
   isMulti?: boolean;
   required?: boolean;
+  showSearch?: boolean;
 }
 
-export const ErrorDropdown: React.FC<Props> = ({ value, onSelect, onDeselect, ...props }) => {
+export const ErrorDropdown: React.FC<Props> = ({ title = 'Error Message', value, onSelect, onDeselect, ...props }) => {
   const { sources } = useSourceCRUD();
 
   const options = useMemo(() => {
@@ -28,5 +30,5 @@ export const ErrorDropdown: React.FC<Props> = ({ value, onSelect, onDeselect, ..
     return payload;
   }, [sources]);
 
-  return <Dropdown title='Error Message' placeholder='All' options={options} value={value} onSelect={onSelect} onDeselect={onDeselect} showSearch={false} {...props} />;
+  return <Dropdown title={title} placeholder='All' options={options} value={value} onSelect={onSelect} onDeselect={onDeselect} {...props} />;
 };

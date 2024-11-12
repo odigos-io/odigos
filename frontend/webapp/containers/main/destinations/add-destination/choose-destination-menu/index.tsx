@@ -36,13 +36,7 @@ const DROPDOWN_OPTIONS = [
   { value: 'Self-hosted', id: 'self hosted' },
 ];
 
-const DestinationFilterComponent: React.FC<FilterComponentProps> = ({
-  selectedTag,
-  selectedMonitors,
-  onTagSelect,
-  onSearch,
-  onMonitorSelect,
-}) => {
+const DestinationFilterComponent: React.FC<FilterComponentProps> = ({ selectedTag, selectedMonitors, onTagSelect, onSearch, onMonitorSelect }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -55,20 +49,11 @@ const DestinationFilterComponent: React.FC<FilterComponentProps> = ({
     <FilterContainer>
       <InputAndDropdownContainer>
         <div>
-          <Input
-            placeholder="Search..."
-            icon="/icons/common/search.svg"
-            value={searchTerm}
-            onChange={handleSearchChange}
-          />
+          <Input placeholder='Search...' icon='/icons/common/search.svg' value={searchTerm} onChange={handleSearchChange} />
         </div>
-        <Dropdown
-          options={DROPDOWN_OPTIONS}
-          value={selectedTag}
-          onSelect={onTagSelect}
-          showSearch={false}
-        />
+        <Dropdown options={DROPDOWN_OPTIONS} value={selectedTag} onSelect={onTagSelect} />
       </InputAndDropdownContainer>
+
       <MonitorButtonsContainer>
         {MONITORS_OPTIONS.map((monitor) => (
           <Checkbox
@@ -76,10 +61,7 @@ const DestinationFilterComponent: React.FC<FilterComponentProps> = ({
             title={monitor.value}
             initialValue
             onChange={() => onMonitorSelect(monitor.id)}
-            disabled={
-              selectedMonitors.length === 1 &&
-              selectedMonitors.includes(monitor.id)
-            }
+            disabled={selectedMonitors.length === 1 && selectedMonitors.includes(monitor.id)}
           />
         ))}
       </MonitorButtonsContainer>

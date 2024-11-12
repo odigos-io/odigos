@@ -4,14 +4,16 @@ import type { DropdownOption } from '@/types';
 import { Dropdown } from '@/reuseable-components';
 
 interface Props {
+  title?: string;
   value?: DropdownOption;
   onSelect: (val: DropdownOption) => void;
   onDeselect: (val: DropdownOption) => void;
   isMulti?: boolean;
   required?: boolean;
+  showSearch?: boolean;
 }
 
-export const NamespaceDropdown: React.FC<Props> = ({ value, onSelect, onDeselect, ...props }) => {
+export const NamespaceDropdown: React.FC<Props> = ({ title = 'Namespace', value, onSelect, onDeselect, ...props }) => {
   const { allNamespaces } = useNamespace();
 
   const options = useMemo(() => {
@@ -26,5 +28,5 @@ export const NamespaceDropdown: React.FC<Props> = ({ value, onSelect, onDeselect
     return payload;
   }, [allNamespaces]);
 
-  return <Dropdown title='Namespace' placeholder='Select namespace' options={options} value={value} onSelect={onSelect} onDeselect={onDeselect} showSearch={false} {...props} />;
+  return <Dropdown title={title} placeholder='Select namespace' options={options} value={value} onSelect={onSelect} onDeselect={onDeselect} {...props} />;
 };

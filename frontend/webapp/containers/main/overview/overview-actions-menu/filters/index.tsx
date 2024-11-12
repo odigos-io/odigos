@@ -72,7 +72,7 @@ const Filters = () => {
 
   return (
     <RelativeContainer ref={ref}>
-      <SelectionButton label='Filters' icon='/icons/common/filter.svg' badgeLabel={filterCount} badgeFilled withBorder color='transparent' onClick={toggleFocused} />
+      <SelectionButton label='Filters' icon='/icons/common/filter.svg' badgeLabel={filterCount} badgeFilled={!!filterCount} withBorder color='transparent' onClick={toggleFocused} />
 
       {focused && (
         <AbsoluteContainer>
@@ -81,12 +81,14 @@ const Filters = () => {
               value={filters['namespace']}
               onSelect={(val) => setFilters({ namespace: val, types: [], monitors: [], errors: [], onlyErrors: false })}
               onDeselect={(val) => setFilters((prev) => ({ ...prev, namespace: undefined }))}
+              showSearch={false}
               required
             />
             <TypeDropdown
               value={filters['types']}
               onSelect={(val) => setFilters((prev) => ({ ...prev, types: [...prev.types, val] }))}
               onDeselect={(val) => setFilters((prev) => ({ ...prev, types: prev.types.filter((opt) => opt.id !== val.id) }))}
+              showSearch={false}
               required
               isMulti
             />
@@ -94,6 +96,7 @@ const Filters = () => {
               value={filters['monitors']}
               onSelect={(val) => setFilters((prev) => ({ ...prev, monitors: [...prev.monitors, val] }))}
               onDeselect={(val) => setFilters((prev) => ({ ...prev, monitors: prev.monitors.filter((opt) => opt.id !== val.id) }))}
+              showSearch={false}
               required
               isMulti
             />

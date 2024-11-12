@@ -4,14 +4,16 @@ import type { DropdownOption } from '@/types';
 import { Dropdown } from '@/reuseable-components';
 
 interface Props {
+  title?: string;
   value?: DropdownOption[];
   onSelect: (val: DropdownOption) => void;
   onDeselect: (val: DropdownOption) => void;
   isMulti?: boolean;
   required?: boolean;
+  showSearch?: boolean;
 }
 
-export const TypeDropdown: React.FC<Props> = ({ value, onSelect, onDeselect, ...props }) => {
+export const TypeDropdown: React.FC<Props> = ({ title = 'Type', value, onSelect, onDeselect, ...props }) => {
   const { sources } = useSourceCRUD();
 
   const options = useMemo(() => {
@@ -26,5 +28,5 @@ export const TypeDropdown: React.FC<Props> = ({ value, onSelect, onDeselect, ...
     return payload;
   }, [sources]);
 
-  return <Dropdown title='Type' placeholder='All' options={options} value={value} onSelect={onSelect} onDeselect={onDeselect} showSearch={false} {...props} />;
+  return <Dropdown title={title} placeholder='All' options={options} value={value} onSelect={onSelect} onDeselect={onDeselect} {...props} />;
 };

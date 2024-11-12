@@ -28,6 +28,7 @@ interface DropdownProps {
 const RootContainer = styled.div`
   display: flex;
   flex-direction: column;
+  min-width: 120px;
   width: 100%;
 `;
 
@@ -40,7 +41,7 @@ const DropdownHeader = styled.div<{ isOpen: boolean; isMulti?: boolean; hasSelec
   align-items: center;
   justify-content: space-between;
   height: 36px;
-  padding: ${({ isMulti, hasSelections }) => (isMulti && hasSelections ? '0 6px' : '0 16px')};
+  padding: ${({ isMulti, hasSelections }) => (isMulti && hasSelections ? '0 16px 0 6px' : '0 16px')};
   border-radius: 32px;
   cursor: pointer;
 
@@ -76,7 +77,7 @@ const ArrowIcon = styled(Image)`
   transition: transform 0.3s;
 `;
 
-export const Dropdown: React.FC<DropdownProps> = ({ options, value, onSelect, onDeselect, title, tooltip, placeholder, isMulti = false, showSearch = true, required = false }) => {
+export const Dropdown: React.FC<DropdownProps> = ({ options, value, onSelect, onDeselect, title, tooltip, placeholder, isMulti = false, showSearch = false, required = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const toggleOpen = () => setIsOpen((prev) => !prev);
 
@@ -91,7 +92,7 @@ export const Dropdown: React.FC<DropdownProps> = ({ options, value, onSelect, on
         <DropdownHeader isOpen={isOpen} isMulti={isMulti} hasSelections={Array.isArray(value) ? !!value.length : false} onClick={toggleOpen}>
           <DropdownPlaceholder value={value} placeholder={placeholder} onDeselect={onDeselect} />
           <IconWrapper>
-            {isMulti && <Badge label={(value as DropdownOption[]).length} filled />}
+            {isMulti && <Badge label={(value as DropdownOption[]).length} filled={!!(value as DropdownOption[]).length} />}
             <ArrowIcon src='/icons/common/extend-arrow.svg' alt='open-dropdown' width={14} height={14} className={isOpen ? 'open' : 'close'} />
           </IconWrapper>
         </DropdownHeader>
@@ -118,8 +119,8 @@ export const Dropdown: React.FC<DropdownProps> = ({ options, value, onSelect, on
 };
 
 const MultiLabelWrapper = styled(IconWrapper)`
+  max-width: calc(100% - 50px);
   overflow-x: auto;
-  max-width: 80%;
 `;
 
 const MultiLabel = styled(Text)`
@@ -130,6 +131,7 @@ const MultiLabel = styled(Text)`
   background: ${({ theme }) => theme.colors.white_opacity['008']};
   border-radius: 360px;
   white-space: nowrap;
+  text-overflow: ellipsis;
   img {
     &:hover {
       transform: scale(2);
@@ -137,6 +139,8 @@ const MultiLabel = styled(Text)`
     }
   }
 `;
+
+const Label = styled(Text)``;
 
 const DropdownPlaceholder: React.FC<{
   value: DropdownProps['value'];
@@ -164,16 +168,16 @@ const DropdownPlaceholder: React.FC<{
         ))}
       </MultiLabelWrapper>
     ) : (
-      <Text size={14} color={theme.text.grey}>
+      <Label size={14} color={theme.text.grey}>
         {placeholder}
-      </Text>
+      </Label>
     );
   }
 
   return (
-    <Text size={14} color={!!value?.value ? undefined : theme.text.grey}>
+    <Label size={14} color={!!value?.value ? undefined : theme.text.grey}>
       {value?.value || placeholder}
-    </Text>
+    </Label>
   );
 };
 
