@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useOnClickOutside } from '@/hooks';
-import { RelativeContainer } from './styled';
+import { RelativeContainer } from '../styled';
 import { Input } from '@/reuseable-components';
 import { SearchResults } from './search-results';
 // import { RecentSearches } from './recent-searches';
@@ -14,7 +14,7 @@ const Search = () => {
 
   return (
     <RelativeContainer ref={ref}>
-      <Input placeholder='Search' icon='/icons/common/search.svg' value={input} onChange={(e) => setInput(e.target.value)} onFocus={() => setFocused(true)} />
+      <Input placeholder='Search' icon='/icons/common/search.svg' value={input} onChange={(e) => setInput(e.target.value.toLowerCase())} onFocus={() => setFocused(true)} />
 
       {!!input || focused ? (
         <SearchResults
