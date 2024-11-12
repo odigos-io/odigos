@@ -5,16 +5,15 @@ on:
     - cron: '0 0 * * *' # Nightly run at midnight
   workflow_dispatch: # Manual trigger
 
-
 permissions:
   id-token: write
-  contents: read  
+  contents: read
 
 jobs:
-  build-and-push-images:  
+  build-and-push-images:
     permissions:
       id-token: write
-      contents: read  
+      contents: read
     name: Build and Push Docker Images
     runs-on: warp-ubuntu-latest-x64-8x-spot
     steps:
@@ -24,13 +23,11 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-
       - name: Configure AWS credentials from OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::061717858829:role/ecr-pull-push-role
           aws-region: us-east-1
-
 
       - name: Login to Amazon ECR
         run: |
@@ -60,7 +57,7 @@ jobs:
   test:
     permissions:
       id-token: write
-      contents: read    
+      contents: read
     needs: build-and-push-images
     runs-on: warp-ubuntu-latest-x64-8x-spot
     strategy:
@@ -69,7 +66,6 @@ jobs:
         test-scenario: [multi-apps, helm-chart] # Add or remove scenarios as needed
 
     steps:
-
       - name: Configure AWS credentials from OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -91,7 +87,6 @@ jobs:
           echo "TF_VAR_resource_group_name=${CLUSTER_NAME}" >> $GITHUB_ENV
           echo "TF_VAR_test_scenario=${{ matrix.test-scenario }}" >> $GITHUB_ENV
           echo "TF_VAR_run_id=${{ github.run_id }}" >> $GITHUB_ENV
-
 
       - name: Configure Cloud Provider
         run: |
@@ -140,8 +135,7 @@ jobs:
           fi
 
       - name: Initialize OpenTofu
-        run: tofu -chdir=$TF_DIR init 
-
+        run: tofu -chdir=$TF_DIR init
 
       - name: Plan OpenTofu
         run: tofu -chdir=$TF_DIR plan
@@ -166,7 +160,7 @@ jobs:
 
       - name: Verify cluster Access
         run: |
-          kubectl get nodes || exit 1 
+          kubectl get nodes || exit 1
 
       - name: Install Chainsaw
         uses: kyverno/action-install-chainsaw@v0.2.8
@@ -179,7 +173,7 @@ jobs:
 
       - name: Install FE
         # this is used for cypress tests which are not run in every scenario
-        if: matrix.test-scenario == 'multi-apps' || matrix.test-scenario == 'helm-chart' || matrix.test-scenario == 'fe-synthetic'
+        if: matrix.test-scenario == 'multi-apps' || matrix.test-scenario == 'helm-chart'
         run: |
           cd frontend/webapp
           yarn install
@@ -189,18 +183,18 @@ jobs:
 
           # This uses in chainsaw to split e2e tests from cross cloud tests
           export MODE=cross-cloud-tests
-          
+
           # This uses in chainsaw to verify the odigos version is equal to the commit version
           export COMMIT_HASH=${{ github.sha }}
 
           chainsaw test tests/e2e/${{ matrix.test-scenario }}
-      
+
       - name: Run diagnose command
         if: always()
         run: |
           ./cli/odigos diagnose
         continue-on-error: true
-        
+
       - name: Upload run details artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -237,4 +231,3 @@ jobs:
           GITHUB_RUN_ID: ${{ github.run_id }}
         run: |
           curl -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"section","text":{"type":"mrkdwn","text":"*SUCCESS*: Providers tests succeed > `${{ matrix.cloud-provider }} - ${{ matrix.test-scenario }}`"}},{"type":"section","fields":[{"type":"mrkdwn","text":"*Link:*\n<https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}|View the GitHub Run>"},{"type":"mrkdwn","text":"*Tag:*\n`${{ steps.extract_tag.outputs.tag }}`"}]}]}' ${{ env.SLACK_WEBHOOK_URL }}
-
