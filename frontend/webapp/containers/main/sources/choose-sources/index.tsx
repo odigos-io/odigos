@@ -14,14 +14,15 @@ const HeaderWrapper = styled.div`
 export function ChooseSourcesContainer() {
   const router = useRouter();
   const menuState = useSourceFormData();
-  const { setSources, setNamespaceFutureSelectAppsList } = useAppStore();
+  const { setAvailableSources, setConfiguredSources, setConfiguredFutureApps } = useAppStore();
 
   const onNext = () => {
-    const { selectedNamespace, selectedSources, selectedFutureApps } = menuState;
+    const { selectedNamespace, availableSources, selectedSources, selectedFutureApps } = menuState;
 
     if (selectedNamespace) {
-      setSources(selectedSources);
-      setNamespaceFutureSelectAppsList(selectedFutureApps);
+      setAvailableSources(availableSources);
+      setConfiguredSources(selectedSources);
+      setConfiguredFutureApps(selectedFutureApps);
     }
 
     router.push(ROUTES.CHOOSE_DESTINATION);

@@ -44,9 +44,9 @@ export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFo
   const appStore = useAppStore((state) => state);
 
   const [selectedNamespace, setSelectedNamespace] = useState<SelectedNamespace>('');
-  const [availableSources, setAvailableSources] = useState<SourcesByNamespace>({});
-  const [selectedSources, setSelectedSources] = useState<SourcesByNamespace>(appStore.sources);
-  const [selectedFutureApps, setSelectedFutureApps] = useState<FutureAppsByNamespace>(appStore.namespaceFutureSelectAppsList);
+  const [availableSources, setAvailableSources] = useState<SourcesByNamespace>(appStore.availableSources);
+  const [selectedSources, setSelectedSources] = useState<SourcesByNamespace>(appStore.configuredSources);
+  const [selectedFutureApps, setSelectedFutureApps] = useState<FutureAppsByNamespace>(appStore.configuredFutureApps);
   const { allNamespaces, data: namespacesData } = useNamespace(selectedNamespace, false);
 
   useEffect(() => {
