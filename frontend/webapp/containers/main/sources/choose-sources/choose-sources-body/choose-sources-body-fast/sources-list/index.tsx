@@ -123,6 +123,7 @@ export const SourcesList: React.FC<Props> = ({
       {namespaces.map(([namespace, sources]) => {
         const namespaceLoaded = !!selectedSources[namespace];
 
+        const available = availableSources[namespace] || [];
         const selected = selectedSources[namespace] || [];
         const futureApps = selectedFutureApps[namespace] || false;
 
@@ -130,7 +131,7 @@ export const SourcesList: React.FC<Props> = ({
         if (!namespacePassesFilters) return null;
 
         const isNamespaceSelected = selectedNamespace === namespace;
-        const isNamespaceCanSelect = namespaceLoaded && !!selected.length;
+        const isNamespaceCanSelect = namespaceLoaded && !!available.length;
         const isNamespaceAllSourcesSelected = isNamespaceCanSelect && selected.length === sources.length;
 
         const filtered = filterSources(namespace, { cancelSearch: true });
