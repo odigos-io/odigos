@@ -1,8 +1,12 @@
 import React from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
-import { K8sActualSource } from '@/types';
+import { type UseSourceFormDataResponse } from '@/hooks';
 import { Checkbox, NoDataFound, Text } from '@/reuseable-components';
+
+interface Props extends UseSourceFormDataResponse {
+  isModal?: boolean;
+}
 
 const SourcesListWrapper = styled.div<{ isModal: boolean }>`
   display: flex;
@@ -69,15 +73,19 @@ const NoDataFoundWrapper = styled.div`
   overflow-y: auto;
 `;
 
-interface SourcesListProps {
-  isModal: boolean;
-  availableSources: K8sActualSource[];
-  selectedSources: K8sActualSource[];
-  setSelectedSources: (item: K8sActualSource) => void;
-}
+export const SourcesList: React.FC<Props> = ({
+  isModal = false,
 
-export const SourcesList: React.FC<SourcesListProps> = ({ isModal, availableSources, selectedSources, setSelectedSources }) => {
-  if (!availableSources.length) {
+  selectedNamespace,
+  availableSources,
+  selectedSources,
+  onSelectSource,
+
+  filterSources,
+}) => {
+  const sources = availableSources[selectedNamespace] || [];
+
+  if (!sources.length) {
     return (
       <NoDataFoundWrapper>
         <NoDataFound title='No sources found' />
@@ -87,11 +95,11 @@ export const SourcesList: React.FC<SourcesListProps> = ({ isModal, availableSour
 
   return (
     <SourcesListWrapper isModal={isModal}>
-      {availableSources.map((source) => {
-        const isSelected = !!selectedSources.find(({ name }) => name === source.name);
+      {filterSources().map((source) => {
+        const isSelected = !!selectedSources[selectedNamespace].find(({ name }) => name === source.name);
 
         return (
-          <ListItem key={`source-${source.name}`} selected={isSelected} onClick={() => setSelectedSources(source)}>
+          <ListItem key={`source-${source.name}`} selected={isSelected} onClick={() => onSelectSource(source)}>
             <ListItemContent>
               <SourceIconWrapper>
                 <Image src={'/icons/common/folder.svg'} width={20} height={20} alt='source' />

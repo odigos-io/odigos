@@ -1,9 +1,9 @@
 import React from 'react';
-import type { UseConnectSourcesMenuStateResponse } from '@/hooks';
+import { type UseSourceFormDataResponse } from '@/hooks';
 import { ChooseSourcesBodyFast } from './choose-sources-body-fast';
 import { ChooseSourcesBodySimple } from './choose-sources-body-simple';
 
-interface Props extends UseConnectSourcesMenuStateResponse {
+interface Props extends UseSourceFormDataResponse {
   componentType: 'SIMPLE' | 'FAST';
   isModal?: boolean;
 }

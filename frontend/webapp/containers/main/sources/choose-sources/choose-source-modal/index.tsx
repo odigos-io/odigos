@@ -1,7 +1,7 @@
 import React from 'react';
 import { ChooseSourcesBody } from '../choose-sources-body';
+import { useSourceCRUD, useSourceFormData } from '@/hooks';
 import { Modal, NavigationButtons } from '@/reuseable-components';
-import { useConnectSourcesMenuState, useSourceCRUD } from '@/hooks';
 
 interface Props {
   isOpen: boolean;
@@ -9,7 +9,7 @@ interface Props {
 }
 
 export const AddSourceModal: React.FC<Props> = ({ isOpen, onClose }) => {
-  const menuState = useConnectSourcesMenuState();
+  const menuState = useSourceFormData({ autoSelectNamespace: true });
   const { createSources } = useSourceCRUD({ onSuccess: onClose });
 
   const handleNextClick = async () => {

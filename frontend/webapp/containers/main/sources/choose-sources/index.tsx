@@ -4,7 +4,7 @@ import { useAppStore } from '@/store';
 import styled from 'styled-components';
 import { SetupHeader } from '@/components';
 import { useRouter } from 'next/navigation';
-import { useConnectSourcesMenuState } from '@/hooks';
+import { useSourceFormData } from '@/hooks';
 import { ChooseSourcesBody } from './choose-sources-body';
 
 const HeaderWrapper = styled.div`
@@ -13,8 +13,7 @@ const HeaderWrapper = styled.div`
 
 export function ChooseSourcesContainer() {
   const router = useRouter();
-
-  const menuState = useConnectSourcesMenuState();
+  const menuState = useSourceFormData();
   const { setSources, setNamespaceFutureSelectAppsList } = useAppStore();
 
   const onNext = () => {
@@ -42,7 +41,7 @@ export function ChooseSourcesContainer() {
           ]}
         />
       </HeaderWrapper>
-      <ChooseSourcesBody componentType='SIMPLE' {...menuState} />
+      <ChooseSourcesBody componentType='FAST' {...menuState} />
     </>
   );
 }

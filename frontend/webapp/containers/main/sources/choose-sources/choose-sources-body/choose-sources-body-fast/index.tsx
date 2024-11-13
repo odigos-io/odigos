@@ -1,11 +1,18 @@
 import React from 'react';
 import { ModalBody } from '@/styles';
-import { UseConnectSourcesMenuStateResponse } from '@/hooks';
+import { SourcesList } from './sources-list';
+import { SourceControls } from './source-controls';
+import { type UseSourceFormDataResponse } from '@/hooks';
 
-interface Props extends UseConnectSourcesMenuStateResponse {
+interface Props extends UseSourceFormDataResponse {
   isModal?: boolean;
 }
 
-export const ChooseSourcesBodyFast: React.FC<Props> = ({ isModal = false }) => {
-  return <ModalBody></ModalBody>;
+export const ChooseSourcesBodyFast: React.FC<Props> = (props) => {
+  return (
+    <ModalBody>
+      <SourceControls {...props} />
+      <SourcesList {...props} />
+    </ModalBody>
+  );
 };
