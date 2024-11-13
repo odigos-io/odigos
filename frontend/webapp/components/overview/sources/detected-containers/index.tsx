@@ -10,6 +10,7 @@ interface Language {
   container_name: string;
   language: string;
   runtime_version?: string;
+  other_agent?: { [name: string]: string };
 }
 
 interface DetectedContainersProps {
@@ -21,6 +22,9 @@ const Container = styled.div`
   margin-top: 16px;
   max-width: 36vw;
   margin-bottom: 24px;
+  border: 1px solid #374a5b;
+  border-radius: 8px;
+  padding: 24px;
 `;
 
 const List = styled.ul`
@@ -45,27 +49,35 @@ const DetectedContainers: React.FC<DetectedContainersProps> = ({
         Detected Containers:
       </KeyvalText>
       <List>
-        {languages.map((lang) => (
-          <ListItem key={lang.container_name}>
-            <KeyvalText
-              color={
-                lang.language !== 'ignore' && lang.language !== 'unknown'
-                  ? '#4caf50'
-                  : theme.text.light_grey
-              }
-            >
-              {lang.container_name} (Language: {lang.language}
-              {lang?.runtime_version
-                ? `, Runtime: ${lang.runtime_version}`
-                : ''}
-              )
-              {lang.language !== 'ignore' &&
-                lang.language !== 'unknown' &&
-                !hasError &&
-                ' - Instrumented'}
-            </KeyvalText>
-          </ListItem>
-        ))}
+        {languages.map((lang) => {
+          const isInstrumented =
+            lang.language !== 'ignore' &&
+            lang.language !== 'unknown' &&
+            !lang?.other_agent;
+          return (
+            <ListItem key={lang.container_name}>
+              <KeyvalText
+                color={!isInstrumented ? '#4caf50' : theme.text.light_grey}
+              >
+                {lang.container_name} (Language: {lang.language}
+                {lang?.runtime_version
+                  ? `, Runtime: ${lang.runtime_version}`
+                  : ''}
+                ){isInstrumented && !hasError && ' - Instrumented'}
+              </KeyvalText>
+              {lang.other_agent && lang.other_agent.name && (
+                <KeyvalText
+                  color={theme.colors.orange_brown}
+                  size={12}
+                  style={{ marginTop: 6 }}
+                >
+                  {`We detected another agent of ${lang.other_agent.name} that running in the container. Disable it
+                  to instrument this source.`}
+                </KeyvalText>
+              )}
+            </ListItem>
+          );
+        })}
       </List>
       <KeyvalText size={14} color={theme.text.light_grey}>
         Note: The system automatically instruments the containers it detects
