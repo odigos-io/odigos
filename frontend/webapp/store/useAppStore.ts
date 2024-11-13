@@ -30,8 +30,8 @@ const useAppStore = create<IAppState & IAppStateSetters>((set) => ({
   setConfiguredDestinations: (payload) => set({ configuredDestinations: payload }),
   addConfiguredDestination: (payload) => set((state) => ({ configuredDestinations: [...state.configuredDestinations, payload] })),
 
-  resetSources: () => set(() => ({ configuredSources: {}, configuredFutureApps: {} })),
-  resetState: () => set(() => ({ configuredSources: {}, configuredFutureApps: {}, configuredDestinations: [] })),
+  resetSources: () => set(() => ({ availableSources: {}, configuredSources: {}, configuredFutureApps: {} })),
+  resetState: () => set(() => ({ availableSources: {}, configuredSources: {}, configuredFutureApps: {}, configuredDestinations: [] })),
 }));
 
 export { useAppStore };
