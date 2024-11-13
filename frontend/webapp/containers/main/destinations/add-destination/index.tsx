@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ROUTES } from '@/utils';
 import { useAppStore } from '@/store';
 import styled from 'styled-components';
 import { useRouter } from 'next/navigation';
@@ -65,17 +66,14 @@ export function ChooseDestinationContainer() {
             },
             {
               label: 'DONE',
-              onClick: () => router.push('/main'),
+              onClick: () => router.push(ROUTES.OVERVIEW),
               variant: 'primary',
             },
           ]}
         />
       </HeaderWrapper>
       <ContentWrapper>
-        <SectionTitle
-          title='Configure destinations'
-          description='Add backend destinations where collected data will be sent and configure their settings.'
-        />
+        <SectionTitle title='Configure destinations' description='Add backend destinations where collected data will be sent and configure their settings.' />
         {isSourcesListEmpty() && destinations.length === 0 && (
           <NotificationNoteWrapper>
             <NotificationNote
@@ -83,7 +81,7 @@ export function ChooseDestinationContainer() {
               message={'No sources selected.'}
               action={{
                 label: 'Select sources',
-                onClick: () => router.push('/choose-sources'),
+                onClick: () => router.push(ROUTES.CHOOSE_SOURCES),
               }}
             />
           </NotificationNoteWrapper>

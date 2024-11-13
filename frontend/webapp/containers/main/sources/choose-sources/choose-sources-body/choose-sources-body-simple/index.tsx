@@ -1,10 +1,10 @@
 import React from 'react';
 import { ModalBody } from '@/styles';
 import styled from 'styled-components';
+import { SourcesList } from './sources-list';
 import { NamespaceDropdown } from '@/components';
-import { SourcesList } from '../../choose-sources-list';
-import { SectionTitle, Divider, Input, Toggle, Checkbox, Text, Badge } from '@/reuseable-components';
 import { UseConnectSourcesMenuStateResponse } from '@/hooks';
+import { SectionTitle, Divider, Input, Toggle, Checkbox, Text, Badge } from '@/reuseable-components';
 
 interface Props extends UseConnectSourcesMenuStateResponse {
   isModal?: boolean;
@@ -21,17 +21,6 @@ const ToggleWrapper = styled.div`
   display: flex;
   align-items: center;
   gap: 32px;
-`;
-
-const SourcesListWrapper = styled.div<{ isModal: boolean }>`
-  display: flex;
-  align-items: center;
-  flex-direction: column;
-  gap: 12px;
-  max-height: ${({ isModal }) => (isModal ? 'calc(100vh - 548px)' : 'calc(100vh - 360px)')};
-  height: fit-content;
-  padding-bottom: ${({ isModal }) => (isModal ? '48px' : '0')};
-  overflow-y: scroll;
 `;
 
 export const ChooseSourcesBodySimple: React.FC<Props> = ({
@@ -86,9 +75,7 @@ export const ChooseSourcesBodySimple: React.FC<Props> = ({
 
       <Divider margin='16px 0 24px' />
 
-      <SourcesListWrapper isModal={isModal}>
-        <SourcesList items={filteredSources} selectedItems={selectedNamespace ? selectedSources[selectedNamespace.id] || [] : []} setSelectedItems={onSelectSource} />
-      </SourcesListWrapper>
+      <SourcesList isModal={isModal} availableSources={filteredSources} selectedSources={selectedSources[selectedNamespace?.id || ''] || []} setSelectedSources={onSelectSource} />
     </ModalBody>
   );
 };
