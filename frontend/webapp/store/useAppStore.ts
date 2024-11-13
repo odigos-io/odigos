@@ -24,7 +24,7 @@ const useAppStore = create<IAppState & IAppStateSetters>((set) => ({
   configuredFutureApps: {},
   configuredDestinations: [],
 
-  setAvailableSources: (payload) => set({ configuredSources: payload }),
+  setAvailableSources: (payload) => set({ availableSources: payload }),
   setConfiguredSources: (payload) => set({ configuredSources: payload }),
   setConfiguredFutureApps: (payload) => set({ configuredFutureApps: payload }),
   setConfiguredDestinations: (payload) => set({ configuredDestinations: payload }),
