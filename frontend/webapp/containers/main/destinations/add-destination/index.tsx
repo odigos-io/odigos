@@ -30,7 +30,7 @@ export function ChooseDestinationContainer() {
   const [isModalOpen, setModalOpen] = useState(false);
 
   const router = useRouter();
-  const { configuredSources, configuredDestinations } = useAppStore((state) => state);
+  const { configuredSources, configuredDestinations, resetState } = useAppStore((state) => state);
 
   const isSourcesListEmpty = () => {
     const sourceLen = Object.keys(configuredSources).length === 0;
@@ -59,12 +59,15 @@ export function ChooseDestinationContainer() {
             {
               label: 'BACK',
               iconSrc: '/icons/common/arrow-white.svg',
-              onClick: () => router.back(),
+              onClick: () => router.push(ROUTES.CHOOSE_SOURCES),
               variant: 'secondary',
             },
             {
               label: 'DONE',
-              onClick: () => router.push(ROUTES.OVERVIEW),
+              onClick: () => {
+                resetState();
+                router.push(ROUTES.OVERVIEW);
+              },
               variant: 'primary',
             },
           ]}
