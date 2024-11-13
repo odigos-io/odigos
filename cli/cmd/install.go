@@ -83,7 +83,7 @@ This command will install k8s components that will auto-instrument your applicat
 		if err == nil {
 			autodetect.CurrentKubernetesVersion = autodetect.KubernetesVersion{
 				Kind:    details.Kind,
-				Version: details.K8SVersion.String(),
+				Version: details.K8SVersion,
 			}
 			if details.K8SVersion.LessThan(minK8SVersionForInstallation) {
 				fmt.Printf("\033[31mERROR\033[0m Odigos requires Kubernetes version %s or higher but found %s, aborting\n", minK8SVersionForInstallation.String(), details.K8SVersion.String())

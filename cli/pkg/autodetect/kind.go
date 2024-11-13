@@ -16,7 +16,7 @@ var availableDetectors = []ClusterKindDetector{&kindDetector{}, &eksDetector{}, 
 
 type KubernetesVersion struct {
 	Kind    Kind
-	Version string
+	Version *version.Version
 }
 
 var CurrentKubernetesVersion KubernetesVersion
