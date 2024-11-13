@@ -36,7 +36,7 @@ func NewGoInstrumentationFactory() ebpf.Factory {
 	}
 }
 
-func (g *GoInstrumentationFactory) CreateInstrumentation(ctx context.Context, pid int, settings ebpf.Settings) (ebpf.OtelEbpfSdk, error) {
+func (g *GoInstrumentationFactory) CreateInstrumentation(ctx context.Context, pid int, settings ebpf.Settings) (ebpf.Instrumentation, error) {
 	defaultExporter, err := otlptracegrpc.New(
 		ctx,
 		otlptracegrpc.WithInsecure(),
@@ -68,7 +68,6 @@ func (g *GoInstrumentationFactory) CreateInstrumentation(ctx context.Context, pi
 		auto.WithServiceName(settings.ServiceName),
 		auto.WithTraceExporter(defaultExporter),
 		auto.WithGlobal(),
-		auto.WithLoadedIndicator(settings.LoadedIndicator),
 		// auto.WithConfigProvider(cp),
 	)
 	if err != nil {
@@ -84,7 +83,11 @@ func (g *GoOtelEbpfSdk) Run(ctx context.Context) error {
 	return g.inst.Run(ctx)
 }
 
-func (g *GoOtelEbpfSdk) Close(ctx context.Context) error {
+func (g *GoOtelEbpfSdk) Load(ctx context.Context) error {
+	return g.inst.Load(ctx)
+}
+
+func (g *GoOtelEbpfSdk) Close(_ context.Context) error {
 	return g.inst.Close()
 }
 

@@ -12,7 +12,6 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/odiglet/pkg/detector"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
-	"go.opentelemetry.io/otel/attribute"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -24,26 +23,6 @@ var (
 	ErrDeviceNotDetected        = errors.New("device not detected")
 	ErrNoInstrumentationFactory = errors.New("no ebpf factory found")
 )
-
-type Settings struct {
-	ServiceName        string
-	ResourceAttributes []attribute.KeyValue
-	LoadedIndicator    chan struct{}
-}
-
-type Factory interface {
-	CreateInstrumentation(ctx context.Context, pid int, settings Settings) (OtelEbpfSdk, error)
-}
-
-type FactoryID struct {
-	Language common.ProgrammingLanguage
-	OtelSdk  common.OtelSdk
-}
-
-type InstrumentationDetails struct {
-	Inst OtelEbpfSdk
-	Pod  types.NamespacedName
-}
 
 type Manager struct {
 	ProcEvents   chan detector.ProcessEvent
@@ -91,7 +70,7 @@ func (m *Manager) Run(ctx context.Context) {
 			switch e.EventType {
 			case detector.ProcessExecEvent:
 				m.Logger.Info("detected new process", "pid", e.PID, "cmd", e.ExecDetails.CmdLine)
-				err := m.handleProcessExecEvent(e)
+				err := m.handleProcessExecEvent(runLoopCtx, e)
 				// ignore the error if no instrumentation factory is found,
 				// as this is expected for some language and sdk combinations
 				if err != nil && !errors.Is(err, ErrNoInstrumentationFactory) {
@@ -125,10 +104,7 @@ func (m *Manager) Stop() {
 	<-m.done
 }
 
-func (m *Manager) handleProcessExecEvent(e detector.ProcessEvent) error {
-	// TODO: create context from Run context
-	ctx := context.Background()
-
+func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.ProcessEvent) error {
 	if _, found := m.DetailsByPid[e.PID]; found {
 		// this can happen if we have multiple exec events for the same pid (chain loading)
 		// TODO: better handle this?
@@ -166,36 +142,35 @@ func (m *Manager) handleProcessExecEvent(e detector.ProcessEvent) error {
 	settings := Settings{
 		ServiceName:        workload.Name,
 		ResourceAttributes: utils.GetResourceAttributes(workload, pod.Name),
-		LoadedIndicator:    make(chan struct{}),
 	}
 	inst, err := factory.CreateInstrumentation(ctx, e.PID, settings)
 	if err != nil {
 		return fmt.Errorf("failed to create instrumentation: %w", err)
 	}
 
-	runError := make(chan error)
+	err = inst.Load(ctx)
+	if err != nil {
+		m.Logger.Error(err, "failed to load instrumentation")
+		// TODO: write instrumentation instance CR with error status
+		return nil
+	}
+
+	m.DetailsByPid[e.PID] = InstrumentationDetails{
+		Inst: inst,
+		Pod:  types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name},
+	}
+
+	// TODO: move to debug level?
+	m.Logger.Info("instrumentation loaded", "pid", e.PID, "pod", pod.Name)
 
 	go func() {
-		defer close(runError)
 		err := inst.Run(ctx)
-		runError <- err
-	}()
-
-	select {
-	case <-settings.LoadedIndicator:
-		m.Logger.Info("instrumentation loaded", "pid", e.PID)
-		// successfully created and loaded instrumentation, track it by pid
-		m.DetailsByPid[e.PID] = InstrumentationDetails{
-			Inst: inst,
-			Pod:  types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name},
-		}
-		// TODO: write instrumentation instance CR with healthy status
-	case err := <-runError:
 		if err != nil {
 			m.Logger.Error(err, "failed to run instrumentation")
-			// TODO: write instrumentation instance CR with error status
+			// TODO: write instrumentation instance CR with error status?
+			// these errors occur after the instrumentation is loaded
 		}
-	}
+	}()
 
 	return nil
 }
