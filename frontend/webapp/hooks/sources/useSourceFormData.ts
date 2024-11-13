@@ -1,7 +1,7 @@
-import { Dispatch, SetStateAction, useCallback, useEffect, useMemo, useState } from 'react';
+import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { useAppStore } from '@/store';
+import type { K8sActualSource } from '@/types';
 import { useNamespace } from '../compute-platform';
-import type { DropdownOption, K8sActualSource } from '@/types';
 
 type SelectedNamespace = string;
 
