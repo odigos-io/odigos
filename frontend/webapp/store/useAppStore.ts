@@ -1,56 +1,37 @@
 import { create } from 'zustand';
-import { ConfiguredDestination, K8sActualSource } from '@/types';
+import type { ConfiguredDestination, K8sActualSource } from '@/types';
 
 export interface IAppState {
-  sources: { [key: string]: K8sActualSource[] };
-  namespaceFutureSelectAppsList: { [key: string]: boolean };
-  configuredDestinationsList: ConfiguredDestination[];
+  availableSources: { [key: string]: K8sActualSource[] };
+  configuredSources: { [key: string]: K8sActualSource[] };
+  configuredFutureApps: { [key: string]: boolean };
+  configuredDestinations: ConfiguredDestination[];
 }
 
-const useAppStore = create<
-  IAppState & {
-    setSources: (sources: { [key: string]: K8sActualSource[] }) => void;
-    setNamespaceFutureSelectAppsList: (list: {
-      [key: string]: boolean;
-    }) => void;
-    addConfiguredDestination: (destination: ConfiguredDestination) => void;
-    setConfiguredDestinationsList: (list: ConfiguredDestination[]) => void;
-    resetSources: () => void;
-    resetState: () => void;
-  }
->((set) => ({
-  sources: {},
-  namespaceFutureSelectAppsList: {},
-  configuredDestinationsList: [],
+interface IAppStateSetters {
+  setAvailableSources: (payload: IAppState['availableSources']) => void;
+  setConfiguredSources: (payload: IAppState['configuredSources']) => void;
+  setConfiguredFutureApps: (payload: IAppState['configuredFutureApps']) => void;
+  setConfiguredDestinations: (payload: IAppState['configuredDestinations']) => void;
+  addConfiguredDestination: (payload: ConfiguredDestination) => void;
+  resetSources: () => void;
+  resetState: () => void;
+}
 
-  setSources: (sources) => set({ sources }),
+const useAppStore = create<IAppState & IAppStateSetters>((set) => ({
+  availableSources: {},
+  configuredSources: {},
+  configuredFutureApps: {},
+  configuredDestinations: [],
 
-  setNamespaceFutureSelectAppsList: (list) =>
-    set({ namespaceFutureSelectAppsList: list }),
+  setAvailableSources: (payload) => set({ availableSources: payload }),
+  setConfiguredSources: (payload) => set({ configuredSources: payload }),
+  setConfiguredFutureApps: (payload) => set({ configuredFutureApps: payload }),
+  setConfiguredDestinations: (payload) => set({ configuredDestinations: payload }),
+  addConfiguredDestination: (payload) => set((state) => ({ configuredDestinations: [...state.configuredDestinations, payload] })),
 
-  addConfiguredDestination: (destination) =>
-    set((state) => ({
-      configuredDestinationsList: [
-        ...state.configuredDestinationsList,
-        destination,
-      ],
-    })),
-
-  setConfiguredDestinationsList: (list) =>
-    set({ configuredDestinationsList: list }),
-
-  resetSources: () =>
-    set((state) => ({
-      sources: {},
-      namespaceFutureSelectAppsList: {},
-    })),
-
-  resetState: () =>
-    set(() => ({
-      sources: {},
-      namespaceFutureSelectAppsList: {},
-      configuredDestinationsList: [],
-    })),
+  resetSources: () => set(() => ({ configuredSources: {}, configuredFutureApps: {} })),
+  resetState: () => set(() => ({ configuredSources: {}, configuredFutureApps: {}, configuredDestinations: [] })),
 }));
 
 export { useAppStore };

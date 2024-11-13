@@ -92,11 +92,7 @@ export function ConnectDestinationModalBody({ destination, onSubmitRef, onFormVa
     if (!destination) return [];
     const { logs, metrics, traces } = destination.supportedSignals;
 
-    return [
-      logs.supported && { id: 'logs', title: 'Logs' },
-      metrics.supported && { id: 'metrics', title: 'Metrics' },
-      traces.supported && { id: 'traces', title: 'Traces' },
-    ].filter(Boolean);
+    return [logs.supported && { id: 'logs', title: 'Logs' }, metrics.supported && { id: 'metrics', title: 'Metrics' }, traces.supported && { id: 'traces', title: 'Traces' }].filter(Boolean);
   }, [destination]);
 
   function onDynamicFieldChange(name: string, value: any) {
@@ -144,6 +140,7 @@ export function ConnectDestinationModalBody({ destination, onSubmitRef, onFormVa
 
       // Dispatch action to store the destination
       addConfiguredDestination(storedDestination);
+      refetch();
     }
 
     // Prepare the request body
@@ -156,8 +153,8 @@ export function ConnectDestinationModalBody({ destination, onSubmitRef, onFormVa
 
     try {
       // Await connection and store the configured destination if successful
-      // await connectEnv(body, storeConfiguredDestination);
-      await connectEnv(body, refetch);
+      await connectEnv(body, storeConfiguredDestination);
+      // await connectEnv(body, refetch);
     } catch (error) {
       console.error('Failed to submit destination configuration:', error);
       // Handle error (e.g., show notification or alert)

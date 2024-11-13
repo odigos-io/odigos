@@ -8,7 +8,7 @@ interface ToggleProps {
   title: string;
   tooltip?: string;
   initialValue?: boolean;
-  onChange: (value: boolean) => void;
+  onChange?: (value: boolean) => void;
   disabled?: boolean;
 }
 
@@ -46,11 +46,18 @@ const ToggleSwitch = styled.div<{ isActive: boolean; disabled?: boolean }>`
 
 const Toggle: React.FC<ToggleProps> = ({ title, tooltip, initialValue = false, onChange, disabled }) => {
   const [isActive, setIsActive] = useState(initialValue);
-  useEffect(() => onChange(isActive), [isActive]);
+  useEffect(() => setIsActive(initialValue), [initialValue]);
 
-  const handleToggle = () => {
+  const handleToggle: React.MouseEventHandler<HTMLDivElement> = (e) => {
     if (disabled) return;
-    setIsActive((prev) => !prev);
+
+    e.stopPropagation();
+
+    setIsActive((prev) => {
+      const newValue = !prev;
+      if (onChange) onChange(newValue);
+      return newValue;
+    });
   };
 
   return (
