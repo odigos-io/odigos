@@ -35,7 +35,7 @@ export const AddSourceModal: React.FC<Props> = ({ isOpen, onClose }) => {
         />
       }
     >
-      <ChooseSourcesBody componentType='SIMPLE' isModal {...menuState} />
+      <ChooseSourcesBody componentType='FAST' isModal {...menuState} />
     </Modal>
   );
 };
