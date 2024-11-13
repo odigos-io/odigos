@@ -13,7 +13,8 @@ RUN yarn build
 FROM --platform=$BUILDPLATFORM golang:1.22 AS backend
 WORKDIR /app
 COPY . .
-COPY --from=builder /webapp/out frontend/webapp/out
+COPY --from=builder /webapp/dep-out frontend/webapp/out
+COPY --from=builder /webapp/dep-out frontend/webapp/dep-out
 WORKDIR /app/frontend
 ARG TARGETARCH
 RUN CGO_ENABLED=0 GOARCH=$TARGETARCH go build -o odigos-ui

@@ -56,6 +56,9 @@ type Flags struct {
 //go:embed all:webapp/out/*
 var uiFS embed.FS
 
+//go:embed all:webapp/dep-out/*
+var depUIFS embed.FS
+
 func parseFlags() Flags {
 	defaultKubeConfig := env.GetDefaultKubeConfigPath()
 
@@ -78,6 +81,21 @@ func initKubernetesClient(flags *Flags) error {
 
 	kube.SetDefaultClient(client)
 	return nil
+}
+
+func startDepServer() (*gin.Engine, error) {
+	r := gin.New()
+	gin.SetMode(gin.ReleaseMode)
+	r.Use(gin.Recovery())
+
+	// Serve dep-out app
+	dist, err := fs.Sub(depUIFS, "dep-out")
+	if err != nil {
+		return nil, fmt.Errorf("error reading dep-out directory: %s", err)
+	}
+	r.NoRoute(gin.WrapH(http.FileServer(http.FS(dist))))
+
+	return r, nil
 }
 
 func startHTTPServer(flags *Flags, odigosMetrics *collectormetrics.OdigosMetricsConsumer) (*gin.Engine, error) {
@@ -260,6 +278,12 @@ func main() {
 		log.Fatalf("Error starting server: %s", err)
 	}
 
+	// Start the second server for dep-out
+	depServer, err := startDepServer()
+	if err != nil {
+		log.Fatalf("Error starting dep-out server: %s", err)
+	}
+
 	// Start watchers
 	err = watchers.StartInstrumentedApplicationWatcher(ctx, "")
 	if err != nil {
@@ -285,6 +309,14 @@ func main() {
 		err = r.Run(fmt.Sprintf("%s:%d", flags.Address, flags.Port))
 		if err != nil {
 			log.Fatalf("Error starting server: %s", err)
+		}
+	}()
+
+	go func() {
+		log.Println("Starting Odigos dep-out server...")
+		err = depServer.Run(fmt.Sprintf("%s:%d", flags.Address, 3001))
+		if err != nil {
+			log.Fatalf("Error starting dep-out server: %s", err)
 		}
 	}()
 
