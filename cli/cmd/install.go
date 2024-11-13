@@ -7,7 +7,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/hashicorp/go-version"
 	"github.com/odigos-io/odigos/cli/pkg/autodetect"
 
 	"github.com/odigos-io/odigos/cli/pkg/labels"
@@ -25,6 +24,7 @@ import (
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/version"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
@@ -50,7 +50,7 @@ var (
 var (
 	// minK8SVersionForInstallation is the minimum Kubernetes version required for Odigos installation
 	// this value must be in sync with the one defined in the kubeVersion field in Chart.yaml
-	minK8SVersionForInstallation = version.Must(version.NewVersion("v1.23.0"))
+	minK8SVersionForInstallation = version.MustParse("v1.23.0")
 )
 
 type ResourceCreationFunc func(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/hashicorp/go-version"
+	"k8s.io/apimachinery/pkg/util/version"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/client"
 )
@@ -59,11 +59,7 @@ func DetectK8SClusterDetails(ctx context.Context, kc string, client *kube.Client
 	if err != nil {
 		return ClusterDetails{}, errors.Join(ErrCannotDetectK8sVersion, err)
 	}
-	k8sVersion, err := version.NewVersion(serverVersion.GitVersion)
-	if err != nil {
-		return ClusterDetails{}, errors.Join(ErrCannotDetectK8sVersion, err)
-	}
-
+	ver := version.MustParse(serverVersion.String())
 	args := DetectionArguments{
 		ClusterDetails: details,
 		ServerVersion:  serverVersion.GitVersion,
@@ -77,7 +73,7 @@ func DetectK8SClusterDetails(ctx context.Context, kc string, client *kube.Client
 		}
 		return ClusterDetails{
 			Kind:       detector.Kind(),
-			K8SVersion: k8sVersion,
+			K8SVersion: ver,
 		}, nil
 	}
 
