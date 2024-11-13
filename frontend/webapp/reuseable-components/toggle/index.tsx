@@ -8,7 +8,7 @@ interface ToggleProps {
   title: string;
   tooltip?: string;
   initialValue?: boolean;
-  onChange: (value: boolean) => void;
+  onChange?: (value: boolean) => void;
   disabled?: boolean;
 }
 
@@ -48,12 +48,14 @@ const Toggle: React.FC<ToggleProps> = ({ title, tooltip, initialValue = false, o
   const [isActive, setIsActive] = useState(initialValue);
   useEffect(() => setIsActive(initialValue), [initialValue]);
 
-  const handleToggle = () => {
+  const handleToggle: React.MouseEventHandler<HTMLDivElement> = (e) => {
     if (disabled) return;
+
+    e.stopPropagation();
 
     setIsActive((prev) => {
       const newValue = !prev;
-      onChange(newValue);
+      if (onChange) onChange(newValue);
       return newValue;
     });
   };
