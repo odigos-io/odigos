@@ -13,11 +13,12 @@ const HeaderWrapper = styled.div`
 
 export function ChooseSourcesContainer() {
   const router = useRouter();
+  const appState = useAppStore();
   const menuState = useSourceFormData();
-  const { setAvailableSources, setConfiguredSources, setConfiguredFutureApps } = useAppStore();
 
   const onNext = () => {
     const { selectedNamespace, availableSources, selectedSources, selectedFutureApps } = menuState;
+    const { setAvailableSources, setConfiguredSources, setConfiguredFutureApps } = appState;
 
     if (selectedNamespace) {
       setAvailableSources(availableSources);

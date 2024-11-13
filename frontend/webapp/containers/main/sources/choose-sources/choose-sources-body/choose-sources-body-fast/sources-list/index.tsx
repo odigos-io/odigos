@@ -78,7 +78,7 @@ const ArrowIcon = styled(Image)`
 `;
 
 const NoDataFoundWrapper = styled.div`
-  margin-top: 80px;
+  margin: 50px 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -113,7 +113,7 @@ export const SourcesList: React.FC<Props> = ({
   if (!namespaces.length) {
     return (
       <NoDataFoundWrapper>
-        <NoDataFound title='No sources found' />
+        <NoDataFound title='No namespaces found' />
       </NoDataFoundWrapper>
     );
   }
@@ -130,7 +130,8 @@ export const SourcesList: React.FC<Props> = ({
         if (!namespacePassesFilters) return null;
 
         const isNamespaceSelected = selectedNamespace === namespace;
-        const isNamespaceAllSourcesSelected = namespaceLoaded && selected.length === sources.length;
+        const isNamespaceCanSelect = namespaceLoaded && !!selected.length;
+        const isNamespaceAllSourcesSelected = isNamespaceCanSelect && selected.length === sources.length;
 
         const filtered = filterSources(namespace, { cancelSearch: true });
         const hasFilteredSources = !!filtered.length;
@@ -139,7 +140,7 @@ export const SourcesList: React.FC<Props> = ({
           <Group key={`namespace-${namespace}`} isSelected={isNamespaceAllSourcesSelected} isOpen={isNamespaceSelected && hasFilteredSources}>
             <NamespaceItem isSelected={isNamespaceAllSourcesSelected} onClick={() => onSelectNamespace(namespace)}>
               <FlexRow>
-                <Checkbox disabled={!namespaceLoaded} initialValue={isNamespaceAllSourcesSelected} onChange={(bool) => onSelectAll(bool, namespace)} />
+                <Checkbox disabled={!isNamespaceCanSelect} initialValue={isNamespaceAllSourcesSelected} onChange={(bool) => onSelectAll(bool, namespace)} />
                 <Text>{namespace}</Text>
               </FlexRow>
 
@@ -153,29 +154,34 @@ export const SourcesList: React.FC<Props> = ({
               </FlexRow>
             </NamespaceItem>
 
-            {isNamespaceSelected && hasFilteredSources && (
-              <RelativeWrapper>
-                <AbsoluteWrapper>
-                  <Divider orientation='vertical' length={`${filtered.length * 36 - 12}px`} />
-                </AbsoluteWrapper>
+            {isNamespaceSelected &&
+              (hasFilteredSources ? (
+                <RelativeWrapper>
+                  <AbsoluteWrapper>
+                    <Divider orientation='vertical' length={`${filtered.length * 36 - 12}px`} />
+                  </AbsoluteWrapper>
 
-                {filtered.map((source) => {
-                  const isSourceSelected = !!selected.find(({ name }) => name === source.name);
+                  {filtered.map((source) => {
+                    const isSourceSelected = !!selected.find(({ name }) => name === source.name);
 
-                  return (
-                    <SourceItem key={`source-${source.name}`} isSelected={isSourceSelected} onClick={() => onSelectSource(source)}>
-                      <FlexRow>
-                        <Checkbox initialValue={isSourceSelected} onChange={() => onSelectSource(source, namespace)} />
-                        <Text>{source.name}</Text>
-                        <Text opacity={0.8} size={10}>
-                          {source.numberOfInstances} running instances · {source.kind}
-                        </Text>
-                      </FlexRow>
-                    </SourceItem>
-                  );
-                })}
-              </RelativeWrapper>
-            )}
+                    return (
+                      <SourceItem key={`source-${source.name}`} isSelected={isSourceSelected} onClick={() => onSelectSource(source)}>
+                        <FlexRow>
+                          <Checkbox initialValue={isSourceSelected} onChange={() => onSelectSource(source, namespace)} />
+                          <Text>{source.name}</Text>
+                          <Text opacity={0.8} size={10}>
+                            {source.numberOfInstances} running instances · {source.kind}
+                          </Text>
+                        </FlexRow>
+                      </SourceItem>
+                    );
+                  })}
+                </RelativeWrapper>
+              ) : (
+                <NoDataFoundWrapper>
+                  <NoDataFound title='No sources found' />
+                </NoDataFoundWrapper>
+              ))}
           </Group>
         );
       })}
