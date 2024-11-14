@@ -56,6 +56,8 @@ export const useClickNotif = () => {
 
       if (!!drawerItem.item) {
         setSelectedItem(drawerItem as DrawerBaseItem);
+      } else {
+        console.warn('notif item not found for:', { crdType, target });
       }
     }
 
