@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
-import { getStatusIcon } from '@/utils';
+import { ACTION, getStatusIcon } from '@/utils';
 import { useNotificationStore } from '@/store';
 import { useOnClickOutside, useTimeAgo } from '@/hooks';
 import theme, { hexPercentValues } from '@/styles/theme';
@@ -77,46 +77,6 @@ const NewCount = styled(Text)`
   padding: 2px 8px;
 `;
 
-const NotifCard = styled.div`
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 16px;
-  border-radius: 16px;
-  background-color: ${({ theme }) => theme.colors.white_opacity['004']};
-  cursor: not-allowed;
-  &.click-enabled {
-    cursor: pointer;
-    &:hover {
-      background-color: ${({ theme }) => theme.colors.white_opacity['008']};
-    }
-  }
-`;
-
-const NotifIconWrap = styled.div<{ type: NotificationType }>`
-  background-color: ${({ type, theme }) => theme.text[type] + hexPercentValues['012']};
-  border-radius: 8px;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-const NotifContentWrap = styled.div`
-  width: 290px;
-`;
-
-const NotifHeaderTextWrap = styled.div`
-  margin-bottom: 6px;
-`;
-
-const NotifFooterTextWrap = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 6px;
-`;
-
 export const NotificationManager = () => {
   const { notifications } = useNotificationStore();
   const unseenCount = useMemo(() => notifications.filter(({ seen }) => !seen).length, [notifications]);
@@ -153,19 +113,68 @@ export const NotificationManager = () => {
   );
 };
 
+const NotifCard = styled.div`
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 16px;
+  background-color: ${({ theme }) => theme.colors.white_opacity['004']};
+  cursor: not-allowed;
+  &.click-enabled {
+    cursor: pointer;
+    &:hover {
+      background-color: ${({ theme }) => theme.colors.white_opacity['008']};
+    }
+  }
+`;
+
+const StatusIcon = styled.div<{ type: NotificationType }>`
+  background-color: ${({ type, theme }) => theme.text[type] + hexPercentValues['012']};
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const NotifTextWrap = styled.div`
+  width: 290px;
+`;
+
+const NotifHeaderTextWrap = styled.div`
+  margin-bottom: 6px;
+`;
+
+const NotifFooterTextWrap = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+`;
+
 const NotificationListItem: React.FC<Notification> = (props) => {
-  const { id, seen, type, message, time, crdType, target } = props;
+  const { id, seen, type, title, message, time, crdType, target } = props;
   const canClick = !!crdType && !!target;
-  const clickNotif = useClickNotif();
+
+  const isDeleted = useMemo(() => {
+    const deleteAction = ACTION.DELETE.toLowerCase(),
+      titleIncludes = title?.toLowerCase().includes(deleteAction),
+      messageIncludes = message?.toLowerCase().includes(deleteAction);
+
+    return titleIncludes || messageIncludes || false;
+  }, [title, message]);
+
   const timeAgo = useTimeAgo();
+  const clickNotif = useClickNotif();
 
   return (
     <NotifCard key={`notification-${id}`} className={canClick ? 'click-enabled' : ''} onClick={() => (canClick ? clickNotif(props) : null)}>
-      <NotifIconWrap type={type}>
-        <Image src={getStatusIcon(type)} alt='status' width={16} height={16} />
-      </NotifIconWrap>
+      <StatusIcon type={isDeleted ? 'error' : type}>
+        <Image src={isDeleted ? '/icons/common/trash.svg' : getStatusIcon(type)} alt='status' width={16} height={16} />
+      </StatusIcon>
 
-      <NotifContentWrap>
+      <NotifTextWrap>
         <NotifHeaderTextWrap>
           <Text size={14}>{message}</Text>
         </NotifHeaderTextWrap>
@@ -183,7 +192,7 @@ const NotificationListItem: React.FC<Notification> = (props) => {
             </>
           )}
         </NotifFooterTextWrap>
-      </NotifContentWrap>
+      </NotifTextWrap>
     </NotifCard>
   );
 };
