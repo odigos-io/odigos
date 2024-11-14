@@ -114,6 +114,14 @@ func TestGetPatchedEnvValue(t *testing.T) {
 			programmingLanguage:  common.JavaProgrammingLanguage,
 			patchedValueExpected: javaToolsNativeCommunity,
 		},
+		{
+			name:                 "special env with only user value",
+			envName:              "JAVA_TOOL_OPTIONS",
+			observedValue:        fmt.Sprintf("%s ", specialEnvValueJava),
+			sdk:                  &common.OtelSdkNativeCommunity,
+			programmingLanguage:  common.JavaProgrammingLanguage,
+			patchedValueExpected: javaToolsNativeCommunity,
+		},
 	}
 
 	for _, tt := range tests {
