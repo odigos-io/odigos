@@ -1,21 +1,21 @@
-import React, { useState } from 'react';
-import type { K8sActualSource } from '@/types';
+import React from 'react';
 import { ChooseSourcesBody } from '../choose-sources-body';
+import { useSourceCRUD, useSourceFormData } from '@/hooks';
 import { Modal, NavigationButtons } from '@/reuseable-components';
-import { useConnectSourcesMenuState, useSourceCRUD } from '@/hooks';
 
-interface AddSourceModalProps {
+interface Props {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export const AddSourceModal: React.FC<AddSourceModalProps> = ({ isOpen, onClose }) => {
-  const [sourcesList, setSourcesList] = useState<K8sActualSource[]>([]);
-  const { stateMenu, stateHandlers } = useConnectSourcesMenuState({ sourcesList });
+export const AddSourceModal: React.FC<Props> = ({ isOpen, onClose }) => {
+  const menuState = useSourceFormData({ autoSelectNamespace: true });
   const { createSources } = useSourceCRUD({ onSuccess: onClose });
 
   const handleNextClick = async () => {
-    await createSources(stateMenu.selectedItems, stateMenu.futureAppsCheckbox);
+    const { selectedSources, selectedFutureApps } = menuState;
+
+    await createSources(selectedSources, selectedFutureApps);
   };
 
   return (
@@ -35,7 +35,7 @@ export const AddSourceModal: React.FC<AddSourceModalProps> = ({ isOpen, onClose 
         />
       }
     >
-      <ChooseSourcesBody isModal stateMenu={stateMenu} sourcesList={sourcesList} stateHandlers={stateHandlers} setSourcesList={setSourcesList} />
+      <ChooseSourcesBody componentType='FAST' isModal {...menuState} />
     </Modal>
   );
 };
