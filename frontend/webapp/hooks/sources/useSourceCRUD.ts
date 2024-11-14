@@ -58,7 +58,7 @@ export const useSourceCRUD = (params?: Params) => {
         handleComplete(action, `${count} sources were ${action.toLowerCase()}d ${fromOrIn} "${namespace}"`);
       } else {
         const id = { kind, name, namespace };
-        handleComplete(action, `source "${name}" was ${action.toLowerCase()}d ${fromOrIn} "${namespace}"`, id);
+        handleComplete(action, `source "${name}" was ${action.toLowerCase()}d ${fromOrIn} "${namespace}"`, selected ? id : undefined);
       }
     },
   });

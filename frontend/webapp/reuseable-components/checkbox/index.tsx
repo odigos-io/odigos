@@ -58,7 +58,7 @@ const Checkbox: React.FC<CheckboxProps> = ({ title, titleColor, tooltip, initial
         {isChecked && <Image src='/icons/common/check.svg' alt='' width={12} height={12} />}
       </CheckboxWrapper>
       {title && (
-        <Text size={12} color={titleColor || theme.text.grey}>
+        <Text size={12} color={titleColor || theme.text.grey} style={{ maxWidth: '90%' }}>
           {title}
         </Text>
       )}

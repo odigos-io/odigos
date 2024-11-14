@@ -9,7 +9,7 @@ interface Props {
 }
 
 export const AddSourceModal: React.FC<Props> = ({ isOpen, onClose }) => {
-  const menuState = useSourceFormData({ autoSelectNamespace: true });
+  const menuState = useSourceFormData();
   const { createSources } = useSourceCRUD({ onSuccess: onClose });
 
   const handleNextClick = async () => {

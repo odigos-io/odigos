@@ -31,17 +31,7 @@ const ContentArea = styled.div`
   overflow-y: auto;
 `;
 
-const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({
-  children,
-  title,
-  imageUri,
-  isEdit,
-  isFormDirty,
-  onEdit,
-  onSave,
-  onDelete,
-  onCancel,
-}) => {
+const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, imageUri, isEdit, isFormDirty, onEdit, onSave, onDelete, onCancel }) => {
   const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
   const setSelectedItem = useDrawerStore(({ setSelectedItem }) => setSelectedItem);
 
@@ -94,29 +84,14 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({
     <>
       <Drawer isOpen onClose={isEdit ? clickCancel : closeDrawer} width={DRAWER_WIDTH} closeOnEscape={!isDeleteModalOpen && !isCancelModalOpen}>
         <DrawerContent>
-          <DrawerHeader
-            ref={titleRef}
-            title={title}
-            imageUri={imageUri}
-            isEdit={isEdit}
-            onEdit={() => onEdit(true)}
-            onClose={isEdit ? clickCancel : closeDrawer}
-          />
-
+          <DrawerHeader ref={titleRef} title={title} imageUri={imageUri} isEdit={isEdit} onEdit={() => onEdit(true)} onClose={isEdit ? clickCancel : closeDrawer} />
           <ContentArea>{children}</ContentArea>
-
           {isEdit && <DrawerFooter onSave={clickSave} onCancel={clickCancel} onDelete={clickDelete} />}
         </DrawerContent>
       </Drawer>
 
-      <DeleteWarning
-        isOpen={isDeleteModalOpen}
-        name={`${selectedItem?.type}${title ? ` (${title})` : ''}`}
-        onApprove={handleDelete}
-        onDeny={closeWarningModals}
-      />
-
-      <CancelWarning isOpen={isCancelModalOpen} name='edit mode' onApprove={handleCancel} onDeny={closeWarningModals} />
+      <DeleteWarning isOpen={isDeleteModalOpen} noOverlay name={`${selectedItem?.type}${title ? ` (${title})` : ''}`} onApprove={handleDelete} onDeny={closeWarningModals} />
+      <CancelWarning isOpen={isCancelModalOpen} noOverlay name='edit mode' onApprove={handleCancel} onDeny={closeWarningModals} />
     </>
   );
 };
