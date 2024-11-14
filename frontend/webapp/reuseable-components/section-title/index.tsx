@@ -1,14 +1,16 @@
 import React from 'react';
-import { Text } from '../text';
-import styled from 'styled-components';
 import Image from 'next/image';
+import { Text } from '../text';
+import { Badge } from '../badge';
+import styled from 'styled-components';
 
 interface SectionTitleProps {
   title: string;
   description: string;
+  badgeLabel?: string | number;
+  icon?: string;
   actionButton?: React.ReactNode;
   size?: 'small' | 'medium' | 'large';
-  icon?: string;
 }
 
 const Container = styled.div`
@@ -34,28 +36,27 @@ const Title = styled(Text)``;
 
 const Description = styled(Text)``;
 
-const SectionTitle: React.FC<SectionTitleProps> = ({
-  title,
-  description,
-  actionButton,
-  size = 'medium',
-  icon,
-}) => {
+const SectionTitle: React.FC<SectionTitleProps> = ({ title, description, badgeLabel, icon, actionButton, size = 'medium' }) => {
   const titleSize = size === 'small' ? 16 : size === 'medium' ? 20 : 24;
   const descriptionSize = size === 'small' ? 12 : size === 'medium' ? 14 : 16;
+
   return (
     <Container>
       <HeaderWrapper>
         <TitleContainer>
-          {icon && <Image alt="icon" src={icon} width={14} height={24} />}
+          {icon && <Image alt='icon' src={icon} width={14} height={24} />}
           <Title weight={300} size={titleSize}>
             {title}
           </Title>
+          {/* we should allow nullish values like "0" to be displayed */}
+          {badgeLabel !== undefined && <Badge label={badgeLabel} filled={!!badgeLabel} />}
         </TitleContainer>
+
         <Description weight={200} opacity={0.8} size={descriptionSize}>
           {description}
         </Description>
       </HeaderWrapper>
+
       {actionButton && <div>{actionButton}</div>}
     </Container>
   );

@@ -84,8 +84,9 @@ const StyledButton = styled.button<ButtonProps>`
   border-radius: 32px;
   cursor: pointer;
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
+  gap: 8px;
   padding: 0 12px;
   font-family: ${({ theme }) => theme.font_family.secondary};
   text-transform: uppercase;

@@ -21,8 +21,8 @@ export const ErrorDropdown: React.FC<Props> = ({ title = 'Error Message', value,
 
     sources.forEach(({ instrumentedApplicationDetails: { conditions } }) => {
       conditions.forEach(({ type, status, message }) => {
-        if (status === 'False' && !payload.find((opt) => opt.id === type)) {
-          payload.push({ id: type, value: message });
+        if (status === 'False' && !payload.find((opt) => opt.value === message)) {
+          payload.push({ id: message, value: message });
         }
       });
     });

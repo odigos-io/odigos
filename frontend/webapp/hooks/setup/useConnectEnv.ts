@@ -12,14 +12,11 @@ type ConnectEnvResult = {
 export const useConnectEnv = () => {
   const { createSources } = useSourceCRUD();
   const { createDestination } = useDestinationCRUD();
+  const { configuredSources, configuredFutureApps, resetSources } = useAppStore((state) => state);
 
   const [result, setResult] = useState<ConnectEnvResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const sourcesList = useAppStore((state) => state.sources);
-  const resetSources = useAppStore((state) => state.resetSources);
-  const namespaceFutureSelectAppsList = useAppStore((state) => state.namespaceFutureSelectAppsList);
 
   const connectEnv = useCallback(
     async (destination: DestinationInput, callback?: () => void) => {
@@ -28,7 +25,7 @@ export const useConnectEnv = () => {
       setResult(null);
 
       try {
-        await createSources(sourcesList, namespaceFutureSelectAppsList);
+        await createSources(configuredSources, configuredFutureApps);
         resetSources();
 
         const { data } = await createDestination(destination);
@@ -43,7 +40,7 @@ export const useConnectEnv = () => {
         setLoading(false);
       }
     },
-    [sourcesList, namespaceFutureSelectAppsList, createSources, resetSources, createDestination],
+    [configuredSources, configuredFutureApps, createSources, resetSources, createDestination],
   );
 
   return {
