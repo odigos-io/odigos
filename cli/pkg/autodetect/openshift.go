@@ -4,18 +4,24 @@ import "context"
 
 type openshiftDetector struct{}
 
-func (o openshiftDetector) Detect(ctx context.Context, args DetectionArguments) (Kind, error) {
+var _ ClusterKindDetector = &openshiftDetector{}
+
+func (o openshiftDetector) Detect(ctx context.Context, args DetectionArguments) bool {
 	apiList, err := args.KubeClient.Discovery().ServerGroups()
 	if err != nil {
-		return KindUnknown, err
+		return false
 	}
 
 	apiGroups := apiList.Groups
 	for i := 0; i < len(apiGroups); i++ {
 		if apiGroups[i].Name == "route.openshift.io" {
-			return KindOpenShift, nil
+			return true
 		}
 	}
 
-	return KindUnknown, nil
+	return false
+}
+
+func (o openshiftDetector) Kind() Kind {
+	return KindOpenShift
 }
