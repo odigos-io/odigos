@@ -77,12 +77,11 @@ export function useSSE() {
             store.dispatch(
               addNotification({
                 id: Date.now().toString(),
-                message:
-                  'Connection to the server failed. Please reboot the application.',
-                title: 'Connection Error',
+                message: 'Could not reconnect to EventSource.',
+                title: 'Error',
                 type: 'error',
-                target: 'system',
-                crdType: 'connection',
+                target: 'notification',
+                crdType: 'notification',
               })
             );
             return prevRetryCount;
