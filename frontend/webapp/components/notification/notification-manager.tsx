@@ -1,13 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
-import { ACTION, getStatusIcon } from '@/utils';
+import { useClickNotif } from '@/hooks';
 import { useNotificationStore } from '@/store';
+import { ACTION, getStatusIcon } from '@/utils';
 import { useOnClickOutside, useTimeAgo } from '@/hooks';
 import theme, { hexPercentValues } from '@/styles/theme';
 import { NoDataFound, Text } from '@/reuseable-components';
 import type { Notification, NotificationType } from '@/types';
-import { useClickNotif } from '@/hooks/notification/useClickNotif';
 
 const Icon = styled.div`
   position: relative;
