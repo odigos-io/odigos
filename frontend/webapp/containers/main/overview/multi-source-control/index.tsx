@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import { useAppStore } from '@/store';
-import styled from 'styled-components';
-import { Badge, Button, Divider, Text } from '@/reuseable-components';
-import { useSourceCRUD } from '@/hooks';
-import theme from '@/styles/theme';
+import React, { useMemo, useState } from 'react';
 import Image from 'next/image';
 import { slide } from '@/styles';
+import theme from '@/styles/theme';
+import { useAppStore } from '@/store';
+import styled from 'styled-components';
+import { useSourceCRUD } from '@/hooks';
 import { DeleteWarning } from '@/components';
+import { Badge, Button, Divider, Text } from '@/reuseable-components';
 
 const Container = styled.div<{ isEntering: boolean; isLeaving: boolean }>`
   position: fixed;
@@ -25,12 +25,19 @@ const Container = styled.div<{ isEntering: boolean; isLeaving: boolean }>`
 `;
 
 const MultiSourceControl = () => {
-  const { sources, deleteSources } = useSourceCRUD();
+  const { deleteSources } = useSourceCRUD();
   const { configuredSources, setConfiguredSources } = useAppStore((state) => state);
   const [isWarnModalOpen, setIsWarnModalOpen] = useState(false);
 
-  const { namespace } = sources[0] || {};
-  const count = !!configuredSources[namespace] ? configuredSources[namespace].length : 0;
+  const totalSelected = useMemo(() => {
+    let num = 0;
+
+    Object.values(configuredSources).forEach((selectedSources) => {
+      num += selectedSources.length;
+    });
+
+    return num;
+  }, [configuredSources]);
 
   const onDeselect = () => {
     setConfiguredSources({});
@@ -44,9 +51,9 @@ const MultiSourceControl = () => {
 
   return (
     <>
-      <Container isEntering={!!count} isLeaving={!count}>
+      <Container isEntering={!!totalSelected} isLeaving={!totalSelected}>
         <Text>Selected sources</Text>
-        <Badge label={count} filled />
+        <Badge label={totalSelected} filled />
 
         <Divider orientation='vertical' length='16px' />
 
@@ -64,7 +71,7 @@ const MultiSourceControl = () => {
         </Button>
       </Container>
 
-      <DeleteWarning isOpen={isWarnModalOpen} name={`${count} sources`} onApprove={onDelete} onDeny={() => setIsWarnModalOpen(false)} />
+      <DeleteWarning isOpen={isWarnModalOpen} name={`${totalSelected} sources`} onApprove={onDelete} onDeny={() => setIsWarnModalOpen(false)} />
     </>
   );
 };

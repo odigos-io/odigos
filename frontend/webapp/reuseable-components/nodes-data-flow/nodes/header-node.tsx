@@ -1,5 +1,4 @@
-'use client';
-import React from 'react';
+import React, { useMemo } from 'react';
 import Image from 'next/image';
 import { useAppStore } from '@/store';
 import styled from 'styled-components';
@@ -43,11 +42,34 @@ const HeaderNode = ({ data, nodeWidth }: HeaderNodeProps) => {
 
     const { configuredSources, setConfiguredSources } = useAppStore((state) => state);
     const { sources } = useSourceCRUD();
-    const { namespace } = sources[0] || {};
+
+    const totalSelected = useMemo(() => {
+      let num = 0;
+
+      Object.values(configuredSources).forEach((selectedSources) => {
+        num += selectedSources.length;
+      });
+
+      return num;
+    }, [configuredSources]);
+
+    const sourcesToSelect = useMemo(() => {
+      const payload = {};
+
+      sources.forEach((source) => {
+        if (!payload[source.namespace]) {
+          payload[source.namespace] = [source];
+        } else {
+          payload[source.namespace].push(source);
+        }
+      });
+
+      return payload;
+    }, [sources]);
 
     const isDisabled = !sources.length;
-    const isSelected = !isDisabled && sources.length === configuredSources[namespace]?.length;
-    const onSelect = (bool: boolean) => setConfiguredSources(bool ? { [namespace]: [...sources] } : {});
+    const isSelected = !isDisabled && sources.length === totalSelected;
+    const onSelect = (bool: boolean) => setConfiguredSources(bool ? sourcesToSelect : {});
 
     return (
       <ActionsWrapper>
