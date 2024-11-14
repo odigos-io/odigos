@@ -150,9 +150,9 @@ func GetPatchedEnvValue(envName string, observedValue string, currentSdk *common
 	// happens: when the user set some values to this env (either via manifest or dockerfile) and odigos instrumentation not yet applied.
 	// action: we want to keep the user defined values and append the odigos value.
 	if observedValue == "" {
-		// no user defined values, just append the odigos value
 		return &desiredOdigosPart
 	} else {
+		// no user defined values, just append the odigos value
 		mergedEnvValue := observedValue + envMetadata.delim + desiredOdigosPart
 		return &mergedEnvValue
 	}
