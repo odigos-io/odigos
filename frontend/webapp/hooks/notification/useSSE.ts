@@ -5,7 +5,7 @@ import { useConnectionStore } from '@/store';
 
 export function useSSE() {
   const notify = useNotify();
-  const { setConnecting, setActive, setTitle, setMessage } = useConnectionStore();
+  const { setConnectionStore } = useConnectionStore();
 
   const [retryCount, setRetryCount] = useState(0);
   const eventBuffer = useRef({});
@@ -66,26 +66,29 @@ export function useSSE() {
           } else {
             console.error('Max retries reached. Could not reconnect to EventSource.');
 
+            setConnectionStore({
+              connecting: false,
+              active: false,
+              title: `Connection lost on ${new Date().toLocaleString()}`,
+              message: 'Please reboot the application',
+            });
             notify({
               type: NOTIFICATION.ERROR,
               title: 'Connection Error',
               message: 'Connection to the server failed. Please reboot the application.',
             });
 
-            setConnecting(false);
-            setActive(false);
-            setTitle(`Connection lost on ${new Date().toLocaleString()}`);
-            setMessage('Please reboot the application');
-
             return prevRetryCount;
           }
         });
       };
 
-      setConnecting(false);
-      setActive(true);
-      setTitle('Connection Alive');
-      setMessage('');
+      setConnectionStore({
+        connecting: false,
+        active: true,
+        title: 'Connection Alive',
+        message: '',
+      });
 
       return eventSource;
     };
