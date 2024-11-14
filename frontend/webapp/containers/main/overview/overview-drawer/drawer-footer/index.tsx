@@ -10,11 +10,7 @@ interface DrawerFooterProps {
   onDelete: () => void;
 }
 
-const DrawerFooter: React.FC<DrawerFooterProps> = ({
-  onSave,
-  onCancel,
-  onDelete,
-}) => {
+const DrawerFooter: React.FC<DrawerFooterProps> = ({ onSave, onCancel, onDelete }) => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -25,25 +21,16 @@ const DrawerFooter: React.FC<DrawerFooterProps> = ({
   return (
     <FooterContainer isVisible={isVisible}>
       <LeftButtonsWrapper>
-        <FooterButton variant="primary" onClick={onSave}>
-          <ButtonText variant="primary">Save</ButtonText>
+        <FooterButton variant='primary' onClick={onSave}>
+          <ButtonText variant='primary'>Save</ButtonText>
         </FooterButton>
-        <FooterButton variant="secondary" onClick={onCancel}>
+        <FooterButton variant='secondary' onClick={onCancel}>
           <ButtonText>Cancel</ButtonText>
         </FooterButton>
       </LeftButtonsWrapper>
-      <FooterButton
-        style={{ width: 100 }}
-        variant="tertiary"
-        onClick={onDelete}
-      >
-        <Image
-          src="/icons/common/trash.svg"
-          alt="Delete"
-          width={16}
-          height={16}
-        />
-        <ButtonText variant="tertiary">Delete</ButtonText>
+      <FooterButton style={{ width: 100 }} variant='tertiary' onClick={onDelete}>
+        <Image src='/icons/common/trash.svg' alt='Delete' width={16} height={16} />
+        <ButtonText variant='tertiary'>Delete</ButtonText>
       </FooterButton>
     </FooterContainer>
   );
@@ -76,20 +63,15 @@ const LeftButtonsWrapper = styled.div`
 
 const FooterButton = styled(Button)`
   width: 140px;
-  gap: 8px;
 `;
 
 const ButtonText = styled(Text)<{
   variant?: 'primary' | 'secondary' | 'tertiary';
 }>`
-  color: ${({ theme, variant }) =>
-    variant === 'primary'
-      ? theme.text.primary
-      : variant === 'tertiary'
-      ? theme.text.error
-      : theme.text.secondary};
+  color: ${({ theme, variant }) => (variant === 'primary' ? theme.text.primary : variant === 'tertiary' ? theme.text.error : theme.text.secondary)};
   font-size: 14px;
   font-weight: 600;
   font-family: ${({ theme }) => theme.font_family.secondary};
+  text-transform: uppercase;
   width: fit-content;
 `;

@@ -159,6 +159,7 @@ export const buildNodesAndEdges = ({
           subTitle: rule.type,
           imageUri: getRuleIcon(rule.type),
           isActive: !rule.disabled,
+          raw: rule,
         }),
       );
     });
@@ -191,6 +192,7 @@ export const buildNodesAndEdges = ({
           subTitle: source.kind,
           imageUri: getMainContainerLanguageLogo(source),
           metric,
+          raw: source,
         }),
       );
     });
@@ -218,6 +220,7 @@ export const buildNodesAndEdges = ({
           imageUri: getActionIcon(action.type),
           monitors: action.spec.signals,
           isActive: !action.spec.disabled,
+          raw: action,
         }),
       );
     });
@@ -270,6 +273,7 @@ export const buildNodesAndEdges = ({
           imageUri: destination.destinationType.imageUrl,
           monitors: extractMonitors(destination.exportedSignals),
           metric,
+          raw: destination,
         }),
       );
     });
