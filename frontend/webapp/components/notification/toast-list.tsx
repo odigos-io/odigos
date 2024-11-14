@@ -1,10 +1,9 @@
 import React from 'react';
 import styled from 'styled-components';
-import { getIdFromSseTarget } from '@/utils';
+import { Notification } from '@/types';
+import { useNotificationStore } from '@/store';
 import { NotificationNote } from '@/reuseable-components';
-import { Notification, OVERVIEW_ENTITY_TYPES } from '@/types';
-import { DrawerBaseItem, useDrawerStore, useNotificationStore } from '@/store';
-import { useActionCRUD, useDestinationCRUD, useInstrumentationRuleCRUD, useSourceCRUD } from '@/hooks';
+import { useClickNotif } from '@/hooks/notification/useClickNotif';
 
 const Container = styled.div`
   position: fixed;
@@ -13,7 +12,7 @@ const Container = styled.div`
   transform: translateX(-50%);
   z-index: 10000;
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse;
   gap: 6px;
   min-width: 600px;
 `;
@@ -32,59 +31,10 @@ export const ToastList: React.FC = () => {
   );
 };
 
-const Toast: React.FC<Notification> = ({ id, type, title, message, crdType, target }) => {
+const Toast: React.FC<Notification> = (props) => {
+  const { id, type, title, message, crdType, target } = props;
   const { markAsDismissed, markAsSeen } = useNotificationStore();
-
-  const { sources } = useSourceCRUD();
-  const { actions } = useActionCRUD();
-  const { destinations } = useDestinationCRUD();
-  const { instrumentationRules } = useInstrumentationRuleCRUD();
-  const setSelectedItem = useDrawerStore(({ setSelectedItem }) => setSelectedItem);
-
-  const onClick = () => {
-    if (crdType && target) {
-      const drawerItem: Partial<DrawerBaseItem> = {};
-
-      switch (crdType) {
-        case OVERVIEW_ENTITY_TYPES.RULE:
-          drawerItem['type'] = OVERVIEW_ENTITY_TYPES.RULE;
-          drawerItem['id'] = getIdFromSseTarget(target, OVERVIEW_ENTITY_TYPES.RULE);
-          drawerItem['item'] = instrumentationRules.find((item) => item.ruleId === drawerItem['id']);
-          break;
-
-        case OVERVIEW_ENTITY_TYPES.SOURCE:
-        case 'InstrumentedApplication':
-        case 'InstrumentationInstance':
-          drawerItem['type'] = OVERVIEW_ENTITY_TYPES.SOURCE;
-          drawerItem['id'] = getIdFromSseTarget(target, OVERVIEW_ENTITY_TYPES.SOURCE);
-          drawerItem['item'] = sources.find((item) => item.kind === drawerItem['id']?.['kind'] && item.name === drawerItem['id']?.['name'] && item.namespace === drawerItem['id']?.['namespace']);
-          break;
-
-        case OVERVIEW_ENTITY_TYPES.ACTION:
-          drawerItem['type'] = OVERVIEW_ENTITY_TYPES.ACTION;
-          drawerItem['id'] = getIdFromSseTarget(target, OVERVIEW_ENTITY_TYPES.ACTION);
-          drawerItem['item'] = actions.find((item) => item.id === drawerItem['id']);
-          break;
-
-        case OVERVIEW_ENTITY_TYPES.DESTINATION:
-        case 'Destination':
-          drawerItem['type'] = OVERVIEW_ENTITY_TYPES.DESTINATION;
-          drawerItem['id'] = getIdFromSseTarget(target, OVERVIEW_ENTITY_TYPES.DESTINATION);
-          drawerItem['item'] = destinations.find((item) => item.id === drawerItem['id']);
-          break;
-
-        default:
-          break;
-      }
-
-      if (!!drawerItem.item) {
-        setSelectedItem(drawerItem as DrawerBaseItem);
-      }
-    }
-
-    markAsSeen(id);
-    markAsDismissed(id);
-  };
+  const clickNotif = useClickNotif();
 
   const onClose = ({ asSeen }) => {
     markAsDismissed(id);
@@ -101,7 +51,7 @@ const Toast: React.FC<Notification> = ({ id, type, title, message, crdType, targ
         crdType && target
           ? {
               label: 'go to details',
-              onClick,
+              onClick: () => clickNotif(props, { dismissToast: true }),
             }
           : undefined
       }
