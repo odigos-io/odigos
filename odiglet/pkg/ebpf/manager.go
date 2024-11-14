@@ -54,7 +54,7 @@ func (m *Manager) Run(ctx context.Context) {
 
 	for {
 		select {
-		case <-ctx.Done():
+		case <-runLoopCtx.Done():
 			m.Logger.Info("stopping Odiglet instrumentation manager")
 			for pid, details := range m.DetailsByPid {
 				err := details.Inst.Close(ctx)
