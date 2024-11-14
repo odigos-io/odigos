@@ -159,6 +159,7 @@ export const buildNodesAndEdges = ({
           subTitle: rule.type,
           imageUri: getRuleIcon(rule.type),
           isActive: !rule.disabled,
+          raw: rule,
         }),
       );
     });
@@ -191,6 +192,7 @@ export const buildNodesAndEdges = ({
           subTitle: source.kind,
           imageUri: getMainContainerLanguageLogo(source),
           metric,
+          raw: source,
         }),
       );
     });
@@ -218,6 +220,7 @@ export const buildNodesAndEdges = ({
           imageUri: getActionIcon(action.type),
           monitors: action.spec.signals,
           isActive: !action.spec.disabled,
+          raw: action,
         }),
       );
     });
@@ -270,6 +273,7 @@ export const buildNodesAndEdges = ({
           imageUri: destination.destinationType.imageUrl,
           monitors: extractMonitors(destination.exportedSignals),
           metric,
+          raw: destination,
         }),
       );
     });
@@ -277,7 +281,7 @@ export const buildNodesAndEdges = ({
 
   // Connect sources to actions
   if (!sources.length) {
-    edges.push(createEdge('source-0-to-action-0'));
+    edges.push(createEdge(`source-0-to-action-${actions.length ? 'group' : 0}`));
   } else {
     tempNodes['sources'].forEach((node, idx) => {
       if (idx > 0) {
@@ -299,14 +303,16 @@ export const buildNodesAndEdges = ({
   // Connect actions to actions
   if (!!actions.length) {
     actions.forEach((_, sourceActionIndex) => {
-      const targetActionIndex = sourceActionIndex + 1;
-      edges.push(createEdge(`action-${sourceActionIndex}-to-action-${targetActionIndex}`));
+      if (sourceActionIndex < actions.length - 1) {
+        const targetActionIndex = sourceActionIndex + 1;
+        edges.push(createEdge(`action-${sourceActionIndex}-to-action-${targetActionIndex}`));
+      }
     });
   }
 
   // Connect actions to destinations
   if (!destinations.length) {
-    edges.push(createEdge('action-0-to-destination-0'));
+    edges.push(createEdge(`action-${actions.length ? 'group' : 0}-to-destination-0`));
   } else {
     tempNodes['destinations'].forEach((node, idx) => {
       if (idx > 0) {

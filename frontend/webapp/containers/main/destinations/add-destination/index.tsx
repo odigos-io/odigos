@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ROUTES } from '@/utils';
 import { useAppStore } from '@/store';
 import styled from 'styled-components';
 import { useRouter } from 'next/navigation';
@@ -29,19 +30,17 @@ export function ChooseDestinationContainer() {
   const [isModalOpen, setModalOpen] = useState(false);
 
   const router = useRouter();
-
-  const sourcesList = useAppStore((state) => state.sources);
-  const destinations = useAppStore((state) => state.configuredDestinationsList);
+  const { configuredSources, configuredDestinations, resetState } = useAppStore((state) => state);
 
   const isSourcesListEmpty = () => {
-    const sourceLen = Object.keys(sourcesList).length === 0;
+    const sourceLen = Object.keys(configuredSources).length === 0;
     if (sourceLen) {
       return true;
     }
 
     let empty = true;
-    for (const source in sourcesList) {
-      if (sourcesList[source].length > 0) {
+    for (const source in configuredSources) {
+      if (configuredSources[source].length > 0) {
         empty = false;
         break;
       }
@@ -60,30 +59,30 @@ export function ChooseDestinationContainer() {
             {
               label: 'BACK',
               iconSrc: '/icons/common/arrow-white.svg',
-              onClick: () => router.back(),
+              onClick: () => router.push(ROUTES.CHOOSE_SOURCES),
               variant: 'secondary',
             },
             {
               label: 'DONE',
-              onClick: () => router.push('/main'),
+              onClick: () => {
+                resetState();
+                router.push(ROUTES.OVERVIEW);
+              },
               variant: 'primary',
             },
           ]}
         />
       </HeaderWrapper>
       <ContentWrapper>
-        <SectionTitle
-          title='Configure destinations'
-          description='Add backend destinations where collected data will be sent and configure their settings.'
-        />
-        {isSourcesListEmpty() && destinations.length === 0 && (
+        <SectionTitle title='Configure destinations' description='Add backend destinations where collected data will be sent and configure their settings.' />
+        {isSourcesListEmpty() && configuredDestinations.length === 0 && (
           <NotificationNoteWrapper>
             <NotificationNote
               type={'warning'}
               message={'No sources selected.'}
               action={{
                 label: 'Select sources',
-                onClick: () => router.push('/choose-sources'),
+                onClick: () => router.push(ROUTES.CHOOSE_SOURCES),
               }}
             />
           </NotificationNoteWrapper>
@@ -91,7 +90,7 @@ export function ChooseDestinationContainer() {
         <AddDestinationButtonWrapper>
           <AddDestinationButton onClick={() => handleOpenModal()} />
         </AddDestinationButtonWrapper>
-        <ConfiguredDestinationsList data={destinations} />
+        <ConfiguredDestinationsList data={configuredDestinations} />
         <AddDestinationModal isOpen={isModalOpen} onClose={handleCloseModal} />
       </ContentWrapper>
     </>

@@ -65,6 +65,7 @@ const Filters = () => {
     clearAll();
     setFilters({ namespace: undefined, types: [], monitors: [], errors: [], onlyErrors: false });
     setFilterCount(0);
+    setFocused(false);
   };
 
   const ref = useRef<HTMLDivElement>(null);
