@@ -7,14 +7,20 @@ import (
 
 type gkeDetector struct{}
 
-func (g gkeDetector) Detect(ctx context.Context, args DetectionArguments) (Kind, error) {
+var _ ClusterKindDetector = &gkeDetector{}
+
+func (g gkeDetector) Detect(ctx context.Context, args DetectionArguments) bool {
 	if strings.Contains(args.ServerVersion, "-gke.") {
-		return KindGKE, nil
+		return true
 	}
 
 	if strings.HasPrefix(args.ClusterName, "gke_") {
-		return KindGKE, nil
+		return true
 	}
 
-	return KindUnknown, nil
+	return false
+}
+
+func (g gkeDetector) Kind() Kind {
+	return KindGKE
 }

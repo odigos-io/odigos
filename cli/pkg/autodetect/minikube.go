@@ -4,14 +4,20 @@ import "context"
 
 type minikubeDetector struct{}
 
-func (m minikubeDetector) Detect(ctx context.Context, args DetectionArguments) (Kind, error) {
+var _ ClusterKindDetector = &minikubeDetector{}
+
+func (m minikubeDetector) Detect(ctx context.Context, args DetectionArguments) bool {
 	if args.ClusterName == "minikube" {
-		return KindMinikube, nil
+		return true
 	}
 
 	if args.CurrentContext == "minikube" {
-		return KindMinikube, nil
+		return true
 	}
 
-	return KindUnknown, nil
+	return false
+}
+
+func (m minikubeDetector) Kind() Kind {
+	return KindMinikube
 }

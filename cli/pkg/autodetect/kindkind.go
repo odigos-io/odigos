@@ -7,10 +7,16 @@ import (
 
 type kindDetector struct{}
 
-func (k kindDetector) Detect(ctx context.Context, args DetectionArguments) (Kind, error) {
+var _ ClusterKindDetector = &kindDetector{}
+
+func (k kindDetector) Detect(ctx context.Context, args DetectionArguments) bool {
 	if strings.HasPrefix(args.ClusterName, "kind-") || strings.HasPrefix(args.CurrentContext, "kind-") {
-		return KindKind, nil
+		return true
 	}
 
-	return KindUnknown, nil
+	return false
+}
+
+func (k kindDetector) Kind() Kind {
+	return KindKind
 }

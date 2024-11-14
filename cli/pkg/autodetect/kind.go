@@ -2,25 +2,26 @@ package autodetect
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/util/version"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/client"
 )
 
 type Kind string
 
-var availableDetectors = []Detector{&kindDetector{}, &eksDetector{}, &gkeDetector{}, &minikubeDetector{}, &k3sDetector{}, &openshiftDetector{}, &aksDetector{}}
+var availableDetectors = []ClusterKindDetector{&kindDetector{}, &eksDetector{}, &gkeDetector{}, &minikubeDetector{}, &k3sDetector{}, &openshiftDetector{}, &aksDetector{}}
 
 type KubernetesVersion struct {
 	Kind    Kind
-	Version string
+	Version *version.Version
 }
 
 var CurrentKubernetesVersion KubernetesVersion
 
 const (
-	KindUnknown   Kind = "Unknown"
 	KindMinikube  Kind = "Minikube"
 	KindKind      Kind = "Kind"
 	KindEKS       Kind = "EKS"
@@ -37,34 +38,44 @@ type DetectionArguments struct {
 	KubeClient    *kube.Client
 }
 
-type Detector interface {
-	Detect(ctx context.Context, args DetectionArguments) (Kind, error)
+type ClusterKindDetector interface {
+	Detect(ctx context.Context, args DetectionArguments) bool
+	Kind() Kind
 }
 
-func KubernetesClusterProduct(ctx context.Context, kc string, client *kube.Client) (Kind, string) {
+type ClusterDetails struct {
+	Kind       Kind
+	K8SVersion *version.Version
+}
+
+var (
+	ErrCannotDetectK8sVersion  = fmt.Errorf("cannot detect k8s version")
+	ErrCannotDetectClusterKind = fmt.Errorf("cannot detect cluster kind")
+)
+
+func DetectK8SClusterDetails(ctx context.Context, kc string, client *kube.Client) (ClusterDetails, error) {
 	details := k8sutils.GetCurrentClusterDetails(kc)
 	serverVersion, err := client.Discovery().ServerVersion()
-	kubeVersion := fmt.Sprintf("%s.%s", serverVersion.Major, serverVersion.Minor)
-	gitServerVersion := ""
-	if err == nil {
-		gitServerVersion = serverVersion.GitVersion
+	if err != nil {
+		return ClusterDetails{}, errors.Join(ErrCannotDetectK8sVersion, err)
 	}
-
+	ver := version.MustParse(serverVersion.String())
 	args := DetectionArguments{
 		ClusterDetails: details,
-		ServerVersion:  gitServerVersion,
+		ServerVersion:  serverVersion.GitVersion,
 		KubeClient:     client,
 	}
 
 	for _, detector := range availableDetectors {
-		kind, err := detector.Detect(ctx, args)
-		if err != nil {
+		relevant := detector.Detect(ctx, args)
+		if !relevant {
 			continue
 		}
-		if kind != KindUnknown {
-			return kind, kubeVersion
-		}
+		return ClusterDetails{
+			Kind:       detector.Kind(),
+			K8SVersion: ver,
+		}, nil
 	}
 
-	return KindUnknown, kubeVersion
+	return ClusterDetails{}, ErrCannotDetectClusterKind
 }
