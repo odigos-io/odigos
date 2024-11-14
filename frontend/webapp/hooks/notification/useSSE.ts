@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { API, NOTIFICATION } from '@/utils';
 import { useNotify } from './useNotify';
+import { API, NOTIFICATION } from '@/utils';
+import { useConnectionStore } from '@/store';
 
 export function useSSE() {
   const notify = useNotify();
-  const eventBuffer = useRef({});
+  const { setConnecting, setActive, setTitle, setMessage } = useConnectionStore();
+
   const [retryCount, setRetryCount] = useState(0);
+  const eventBuffer = useRef({});
   const maxRetries = 10;
 
   useEffect(() => {
@@ -26,10 +29,7 @@ export function useSSE() {
         };
 
         // Check if the event is already in the buffer
-        if (
-          eventBuffer.current[key] &&
-          eventBuffer.current[key].id > Date.now() - 2000
-        ) {
+        if (eventBuffer.current[key] && eventBuffer.current[key].id > Date.now() - 2000) {
           eventBuffer.current[key] = notification;
           return;
         } else {
@@ -58,32 +58,34 @@ export function useSSE() {
         setRetryCount((prevRetryCount) => {
           if (prevRetryCount < maxRetries) {
             const newRetryCount = prevRetryCount + 1;
-            const retryTimeout = Math.min(
-              10000,
-              1000 * Math.pow(2, newRetryCount)
-            );
+            const retryTimeout = Math.min(10000, 1000 * Math.pow(2, newRetryCount));
 
-            setTimeout(() => {
-              connect();
-            }, retryTimeout);
+            setTimeout(() => connect(), retryTimeout);
 
             return newRetryCount;
           } else {
-            console.error(
-              'Max retries reached. Could not reconnect to EventSource.'
-            );
+            console.error('Max retries reached. Could not reconnect to EventSource.');
 
             notify({
               type: NOTIFICATION.ERROR,
               title: 'Connection Error',
-              message:
-                'Connection to the server failed. Please reboot the application.',
+              message: 'Connection to the server failed. Please reboot the application.',
             });
+
+            setConnecting(false);
+            setActive(false);
+            setTitle(`Connection lost on ${new Date().toLocaleString()}`);
+            setMessage('Please reboot the application');
 
             return prevRetryCount;
           }
         });
       };
+
+      setConnecting(false);
+      setActive(true);
+      setTitle('Connection Alive');
+      setMessage('');
 
       return eventSource;
     };

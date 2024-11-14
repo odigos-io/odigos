@@ -2,6 +2,7 @@ import React from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
 import { PlatformTitle } from './cp-title';
+import { useConnectionStore } from '@/store';
 import { Status } from '@/reuseable-components';
 import { NotificationManager } from '@/components/notification';
 
@@ -32,19 +33,21 @@ const AlignRight = styled(Flex)`
 `;
 
 export const MainHeader: React.FC<MainHeaderProps> = () => {
+  const { connecting, active, title, message } = useConnectionStore();
+
   return (
     <HeaderContainer>
       <AlignLeft>
         <Image src='/brand/transparent-logo-white.svg' alt='logo' width={84} height={20} />
         <PlatformTitle type='k8s' />
-        <Status title='Connection Alive' isActive withIcon withBackground />
+        {!connecting && <Status title={title} subtitle={message} isActive={active} withIcon withBackground />}
       </AlignLeft>
 
       <AlignRight>
         <NotificationManager />
         {/* <Flex style={{ gap: '8px' }}>
           <Image src='/icons/common/avatar.svg' alt='avatar' width={28} height={28} />
-          <Text>Ben Elferink</Text>
+          <Text>Full Name</Text>
         </Flex> */}
       </AlignRight>
     </HeaderContainer>
