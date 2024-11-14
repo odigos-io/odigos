@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
 import { ACTION, getStatusIcon } from '@/utils';
@@ -89,17 +89,25 @@ const NewCount = styled(Text)`
 `;
 
 export const NotificationManager = () => {
-  const { notifications } = useNotificationStore();
-  const unseenCount = useMemo(() => notifications.filter(({ seen }) => !seen).length, [notifications]);
+  const { notifications, markAsSeen } = useNotificationStore();
 
   const [isOpen, setIsOpen] = useState(false);
   const toggleOpen = () => setIsOpen((prev) => !prev);
 
-  const ref = useRef<HTMLDivElement>(null);
-  useOnClickOutside(ref, () => setIsOpen(false));
+  const hasOpenedRef = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  useOnClickOutside(containerRef, () => setIsOpen(false));
+
+  const unseen = notifications.filter(({ seen }) => !seen);
+  const unseenCount = unseen.length;
+
+  useEffect(() => {
+    if (isOpen) hasOpenedRef.current = true;
+    else if (!isOpen && hasOpenedRef.current && !!unseenCount) unseen.forEach(({ id }) => markAsSeen(id));
+  }, [isOpen, unseenCount, unseen, markAsSeen]);
 
   return (
-    <RelativeContainer ref={ref}>
+    <RelativeContainer ref={containerRef}>
       <Icon onClick={toggleOpen}>
         {!!unseenCount && <LiveBadge />}
         <Image src='/icons/common/notification.svg' alt='logo' width={16} height={16} />
