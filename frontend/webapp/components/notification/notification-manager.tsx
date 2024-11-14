@@ -69,6 +69,17 @@ const PopupBody = styled.div`
   overflow-y: auto;
 `;
 
+const PopupShadow = styled.div`
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 45px;
+  border-radius: 0 0 24px 24px;
+  background: linear-gradient(0deg, #242424 0%, rgba(36, 36, 36, 0.64) 50%, rgba(36, 36, 36, 0) 100%);
+  pointer-events: none;
+`;
+
 const NewCount = styled(Text)`
   background-color: ${({ theme }) => theme.colors.orange_soft};
   color: ${({ theme }) => theme.text.primary};
@@ -107,6 +118,7 @@ export const NotificationManager = () => {
           <PopupBody>
             {!notifications.length ? <NoDataFound title='No notifications' subTitle='' /> : notifications.map((notif) => <NotificationListItem key={`notification-${notif.id}`} {...notif} />)}
           </PopupBody>
+          <PopupShadow />
         </AbsoluteContainer>
       )}
     </RelativeContainer>
