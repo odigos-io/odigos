@@ -5,6 +5,7 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
+	predicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -19,10 +20,6 @@ type GatewayDeploymentReconciler struct {
 func (r *GatewayDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling Deployment")
-
-	if req.Name != consts.OdigosClusterCollectorDeploymentName {
-		return ctrl.Result{}, nil
-	}
 
 	var dep appsv1.Deployment
 	if err := r.Get(ctx, req.NamespacedName, &dep); err != nil {
@@ -54,5 +51,6 @@ func (r *GatewayDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Re
 func (r *GatewayDeploymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&appsv1.Deployment{}).
+		WithEventFilter(&predicate.ClusterCollectorDeploymentPredicate).
 		Complete(r)
 }
