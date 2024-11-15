@@ -82,6 +82,7 @@ This command will install k8s components that will auto-instrument your applicat
 		details, err := autodetect.DetectK8SClusterDetails(ctx, kc, client)
 		if !errors.Is(err, autodetect.ErrCannotDetectClusterKind) {
 			autodetect.CurrentKubernetesVersion.Kind = details.Kind
+			fmt.Printf("Detected cluster: Kubernetes kind: %s\n", details.Kind)
 		} else {
 			fmt.Println("Unknown Kubernetes cluster detected, proceeding with installation")
 		}
@@ -92,7 +93,7 @@ This command will install k8s components that will auto-instrument your applicat
 				fmt.Printf("\033[31mERROR\033[0m Odigos requires Kubernetes version %s or higher but found %s, aborting\n", minK8SVersionForInstallation.String(), details.K8SVersion.String())
 				os.Exit(1)
 			}
-			fmt.Printf("Detected cluster: %s Kubernetes version: %s\n", details.Kind, details.K8SVersion.String())
+			fmt.Printf("Detected cluster: Kubernetes version: %s\n", details.K8SVersion.String())
 		} else {
 			fmt.Println("Unknown Kubernetes version detected, proceeding with installation")
 		}

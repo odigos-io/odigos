@@ -173,24 +173,13 @@ func main() {
 	var migrationClient client.Client
 	// Determine if we need to use a non-caching client based on the Kubernetes version, version <1.23 has issues when using caching client
 
+	// The labaling was for ver 1.0.91, migration is not releavant for old k8s versions which couln't run.
+	// This is the reason we skip it for versions < 1.23 (Also, versions < 1.23 require a non-caching client and API chane)
 	if k8sVersion != nil && k8sVersion.GreaterThan(version.MustParse("v1.23")) {
 		// Use the cached client for versions >= 1.23
 		err = MigrateCollectorsWorkloadToNewLabels(context.Background(), mgr.GetClient(), odigosNs)
 		if err != nil {
 			setupLog.Error(err, "unable to migrate collectors workload to new labels")
-			os.Exit(1)
-		}
-	} else {
-		// Create a non-caching client for versions < 1.23
-		migrationClient, err = client.New(cfg, client.Options{Scheme: scheme})
-		if err != nil {
-			setupLog.Error(err, "unable to create non-caching client for migration")
-			os.Exit(1)
-		}
-		// Migrate collectors workload to new labels using old API
-		err = OldVerKubernetesMigrateCollectorsWorkloadToNewLabels(context.Background(), migrationClient, odigosNs)
-		if err != nil {
-			setupLog.Error(err, "legacy unable to migrate collectors workload to new labels")
 			os.Exit(1)
 		}
 	}
