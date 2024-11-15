@@ -3,8 +3,6 @@ package datacollection
 import (
 	"context"
 	"fmt"
-	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -22,8 +20,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -379,30 +375,4 @@ func patchDaemonSet(existing *appsv1.DaemonSet, desired *appsv1.DaemonSet, ctx c
 	}
 
 	return updated, nil
-}
-
-func isVersionSupported(cfg *rest.Config, minMajor int, minMinor int) (bool, error) {
-	discoveryClient, err := discovery.NewDiscoveryClientForConfig(cfg)
-	if err != nil {
-		return false, err
-	}
-
-	serverVersion, err := discoveryClient.ServerVersion()
-	if err != nil {
-		return false, err
-	}
-
-	// Parse major and minor versions
-	major, err := strconv.Atoi(serverVersion.Major)
-	if err != nil {
-		return false, fmt.Errorf("failed to parse major version: %w", err)
-	}
-
-	minor, err := strconv.Atoi(strings.TrimSuffix(serverVersion.Minor, "+"))
-	if err != nil {
-		return false, fmt.Errorf("failed to parse minor version: %w", err)
-	}
-
-	// Check if the server version meets or exceeds minMajor.minMinor
-	return major > minMajor || (major == minMajor && minor >= minMinor), nil
 }
