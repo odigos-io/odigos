@@ -2,7 +2,6 @@ package instrumentation_ebpf
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
@@ -42,7 +41,7 @@ func (p *PodsReconciler) isNamespaceIgnored(ctx context.Context, ns string) bool
 
 func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	logger.Info(fmt.Sprintf("========== Reconciling Pod %s", request.NamespacedName))
+
 	if request.Namespace == env.GetCurrentNamespace() || p.isNamespaceIgnored(ctx, request.Namespace) {
 		return ctrl.Result{}, nil
 	}
