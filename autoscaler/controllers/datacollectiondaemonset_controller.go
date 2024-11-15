@@ -56,7 +56,6 @@ func calcDataCollectionReadyStatus(ds *appsv1.DaemonSet) bool {
 	return ds.Status.DesiredNumberScheduled > 0 && float64(ds.Status.NumberReady) >= float64(ds.Status.DesiredNumberScheduled)/float64(2)
 }
 
-// SetupWithManager sets up the controller with the Manager.
 func (r *DataCollectionDaemonSetReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&appsv1.DaemonSet{}).

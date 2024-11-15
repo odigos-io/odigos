@@ -28,15 +28,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// StatefulSetReconciler reconciles a StatefulSet object
 type StatefulSetReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
-
-//+kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apps,resources=statefulsets/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=apps,resources=statefulsets/finalizers,verbs=update
 
 func (r *StatefulSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
