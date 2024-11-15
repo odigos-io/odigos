@@ -3,6 +3,8 @@ package datacollection
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -10,6 +12,7 @@ import (
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
 	"github.com/odigos-io/odigos/autoscaler/utils"
+
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -18,6 +21,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -179,7 +184,15 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 	maxUnavailable := intstr.FromString("50%")
 	// maxSurge is the number of pods that can be created above the desired number of pods.
 	// we do not want more then 1 datacollection pod on the same node as they need to bind to oltp ports.
-	maxSurge := intstr.FromInt(0)
+	rollingUpdate := &appsv1.RollingUpdateDaemonSet{
+		MaxUnavailable: &maxUnavailable,
+	}
+	cfg := ctrl.GetConfigOrDie()
+	versionSupported, err := isVersionSupported(cfg, 1, 22)
+	if err != nil && versionSupported {
+		maxSurge := intstr.FromInt(0)
+		rollingUpdate.MaxSurge = &maxSurge
+	}
 
 	desiredDs := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -192,11 +205,8 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 				MatchLabels: NodeCollectorsLabels,
 			},
 			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
-				Type: appsv1.RollingUpdateDaemonSetStrategyType,
-				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
-					MaxUnavailable: &maxUnavailable,
-					MaxSurge:       &maxSurge,
-				},
+				Type:          appsv1.RollingUpdateDaemonSetStrategyType,
+				RollingUpdate: rollingUpdate,
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
@@ -332,7 +342,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 		}
 	}
 
-	err := ctrl.SetControllerReference(datacollection, desiredDs, scheme)
+	err = ctrl.SetControllerReference(datacollection, desiredDs, scheme)
 	if err != nil {
 		return nil, err
 	}
@@ -368,4 +378,30 @@ func patchDaemonSet(existing *appsv1.DaemonSet, desired *appsv1.DaemonSet, ctx c
 	}
 
 	return updated, nil
+}
+
+func isVersionSupported(cfg *rest.Config, minMajor int, minMinor int) (bool, error) {
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(cfg)
+	if err != nil {
+		return false, err
+	}
+
+	serverVersion, err := discoveryClient.ServerVersion()
+	if err != nil {
+		return false, err
+	}
+
+	// Parse major and minor versions
+	major, err := strconv.Atoi(serverVersion.Major)
+	if err != nil {
+		return false, fmt.Errorf("failed to parse major version: %w", err)
+	}
+
+	minor, err := strconv.Atoi(strings.TrimSuffix(serverVersion.Minor, "+"))
+	if err != nil {
+		return false, fmt.Errorf("failed to parse minor version: %w", err)
+	}
+
+	// Check if the server version meets or exceeds minMajor.minMinor
+	return major > minMajor || (major == minMajor && minor >= minMinor), nil
 }
