@@ -31,15 +31,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// DestinationReconciler reconciles a Destination object
 type DestinationReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=odigos.io,resources=destinations,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=odigos.io,resources=destinations/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=odigos.io,resources=destinations/finalizers,verbs=update
 func (r *DestinationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
@@ -64,7 +60,6 @@ func (r *DestinationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	return ctrl.Result{}, nil
 }
 
-// SetupWithManager sets up the controller with the Manager.
 func (r *DestinationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&odigosv1.Destination{}).
