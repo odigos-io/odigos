@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/util/version"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/client"
+	"k8s.io/apimachinery/pkg/util/version"
 )
 
 type Kind string
@@ -77,5 +77,5 @@ func DetectK8SClusterDetails(ctx context.Context, kc string, client *kube.Client
 		}, nil
 	}
 
-	return ClusterDetails{}, ErrCannotDetectClusterKind
+	return ClusterDetails{K8SVersion: ver}, ErrCannotDetectClusterKind
 }
