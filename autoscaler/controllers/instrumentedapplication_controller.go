@@ -21,6 +21,7 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection"
+	predicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -49,5 +50,8 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 func (r *InstrumentedApplicationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&odigosv1.InstrumentedApplication{}).
+		// this controller only cares about the instrumented application existence.
+		// when it is created or removed, the node collector config map needs to be updated to scrape logs for it's pods.
+		WithEventFilter(&predicate.ExistencePredicate{}).
 		Complete(r)
 }

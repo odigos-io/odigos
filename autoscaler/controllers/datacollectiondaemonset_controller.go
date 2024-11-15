@@ -5,6 +5,7 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
+	predicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -19,10 +20,6 @@ type DataCollectionDaemonSetReconciler struct {
 func (r *DataCollectionDaemonSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling DaemonSet")
-
-	if req.Name != consts.OdigosNodeCollectorDaemonSetName {
-		return ctrl.Result{}, nil
-	}
 
 	var ds appsv1.DaemonSet
 	if err := r.Get(ctx, req.NamespacedName, &ds); err != nil {
@@ -59,5 +56,6 @@ func calcDataCollectionReadyStatus(ds *appsv1.DaemonSet) bool {
 func (r *DataCollectionDaemonSetReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&appsv1.DaemonSet{}).
+		WithEventFilter(&predicate.NodeCollectorsDaemonSetPredicate).
 		Complete(r)
 }

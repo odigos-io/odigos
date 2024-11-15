@@ -25,6 +25,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	v1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 )
@@ -52,5 +53,8 @@ func (r *DestinationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 func (r *DestinationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1.Destination{}).
+		// auto scaler only cares about the spec of each destination.
+		// filter out events on resource status and metadata changes.
+		WithEventFilter(&predicate.GenerationChangedPredicate{}).
 		Complete(r)
 }
