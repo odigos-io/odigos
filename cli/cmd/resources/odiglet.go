@@ -434,7 +434,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 
 	odigosSeLinuxHostVolumes := []corev1.Volume{}
 	odigosSeLinuxHostVolumeMounts := []corev1.VolumeMount{}
-	if openshiftEnabled || autodetect.CurrentKubernetesVersion.Kind == autodetect.KindOpenShift {
+	if openshiftEnabled || autodetect.GetClusterKind() == autodetect.KindOpenShift {
 		odigosSeLinuxHostVolumes = append(odigosSeLinuxHostVolumes, selinuxHostVolumes()...)
 		odigosSeLinuxHostVolumeMounts = append(odigosSeLinuxHostVolumeMounts, selinuxHostVolumeMounts()...)
 	}
@@ -452,7 +452,8 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 	rollingUpdate := &appsv1.RollingUpdateDaemonSet{
 		MaxUnavailable: &maxUnavailable,
 	}
-	if autodetect.CurrentKubernetesVersion.Version != nil && autodetect.CurrentKubernetesVersion.Version.AtLeast(k8sversion.MustParse("v1.22")) {
+	k8sversionInCluster := autodetect.GetK8SVersion()
+	if k8sversionInCluster != nil && k8sversionInCluster.AtLeast(k8sversion.MustParse("v1.22")) {
 		maxSurge := intstr.FromInt(0)
 		rollingUpdate.MaxSurge = &maxSurge
 	}
@@ -726,13 +727,13 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 	}
 
 	// if openshift is enabled, we need to create additional SCC cluster role binding first
-	if a.config.OpenshiftEnabled || autodetect.CurrentKubernetesVersion.Kind == autodetect.KindOpenShift {
+	if a.config.OpenshiftEnabled || autodetect.GetClusterKind() == autodetect.KindOpenShift {
 		resources = append(resources, NewSCCRoleBinding(a.ns))
 		resources = append(resources, NewSCClusterRoleBinding(a.ns))
 	}
 
 	// if gke, create resource quota
-	if autodetect.CurrentKubernetesVersion.Kind == autodetect.KindGKE {
+	if autodetect.GetClusterKind() == autodetect.KindGKE {
 		resources = append(resources, NewResourceQuota(a.ns))
 	}
 

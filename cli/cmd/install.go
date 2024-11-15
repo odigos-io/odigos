@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -63,10 +62,7 @@ var installCmd = &cobra.Command{
 This command will install k8s components that will auto-instrument your applications with OpenTelemetry and send traces, metrics and logs to any telemetry backend`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		client, err := kube.CreateClient(cmd)
-		if err != nil {
-			kube.PrintClientErrorAndExit(err)
-		}
+		client := kube.GetCLIClient()
 		ctx := cmd.Context()
 		ns := cmd.Flag("namespace").Value.String()
 
@@ -78,25 +74,44 @@ This command will install k8s components that will auto-instrument your applicat
 		}
 
 		// Check if the cluster meets the minimum requirements
-		kc := cmd.Flag("kubeconfig").Value.String()
-		details, err := autodetect.DetectK8SClusterDetails(ctx, kc, client)
-		if !errors.Is(err, autodetect.ErrCannotDetectClusterKind) {
-			autodetect.CurrentKubernetesVersion.Kind = details.Kind
-			fmt.Printf("Detected cluster: Kubernetes kind: %s\n", details.Kind)
-		} else {
+		clusterKink := autodetect.GetClusterKind()
+		if clusterKink == autodetect.KindUnknown {
 			fmt.Println("Unknown Kubernetes cluster detected, proceeding with installation")
+		} else {
+			fmt.Printf("Detected cluster: Kubernetes kind: %s\n", clusterKink)
 		}
 
-		if !errors.Is(err, autodetect.ErrCannotDetectK8sVersion) {
-			autodetect.CurrentKubernetesVersion.Version = details.K8SVersion
-			if details.K8SVersion.LessThan(minK8SVersionForInstallation) {
-				fmt.Printf("\033[31mERROR\033[0m Odigos requires Kubernetes version %s or higher but found %s, aborting\n", minK8SVersionForInstallation.String(), details.K8SVersion.String())
+		k8sVersion := autodetect.GetK8SVersion()
+		if k8sVersion != nil {
+			if k8sVersion.LessThan(minK8SVersionForInstallation) {
+				fmt.Printf("\033[31mERROR\033[0m Odigos requires Kubernetes version %s or higher but found %s, aborting\n", minK8SVersionForInstallation.String(), k8sVersion.String())
 				os.Exit(1)
 			}
-			fmt.Printf("Detected cluster: Kubernetes version: %s\n", details.K8SVersion.String())
+			fmt.Printf("Detected cluster: Kubernetes version: %s\n", k8sVersion.String())
 		} else {
 			fmt.Println("Unknown Kubernetes version detected, proceeding with installation")
 		}
+
+
+		// kc := cmd.Flag("kubeconfig").Value.String()
+		// details, err := autodetect.SetK8SClusterDetails(ctx, kc, client)
+		// if !errors.Is(err, autodetect.ErrCannotDetectClusterKind) {
+		// 	autodetect.CurrentClusterDetails.Kind = details.Kind
+		// 	fmt.Printf("Detected cluster: Kubernetes kind: %s\n", details.Kind)
+		// } else {
+		// 	fmt.Println("Unknown Kubernetes cluster detected, proceeding with installation")
+		// }
+
+		// if !errors.Is(err, autodetect.ErrCannotDetectK8sVersion) {
+		// 	autodetect.CurrentClusterDetails.K8SVersion = details.K8SVersion
+		// 	if details.K8SVersion.LessThan(minK8SVersionForInstallation) {
+		// 		fmt.Printf("\033[31mERROR\033[0m Odigos requires Kubernetes version %s or higher but found %s, aborting\n", minK8SVersionForInstallation.String(), details.K8SVersion.String())
+		// 		os.Exit(1)
+		// 	}
+		// 	fmt.Printf("Detected cluster: Kubernetes version: %s\n", details.K8SVersion.String())
+		// } else {
+		// 	fmt.Println("Unknown Kubernetes version detected, proceeding with installation")
+		// }
 
 		var odigosProToken string
 		odigosTier := common.CommunityOdigosTier

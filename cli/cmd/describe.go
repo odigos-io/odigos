@@ -22,10 +22,7 @@ var describeCmd = &cobra.Command{
 	Long:  `Print detailed description odigos deployment, which can be used to troubleshoot issues`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		client, err := kube.CreateClient(cmd)
-		if err != nil {
-			kube.PrintClientErrorAndExit(err)
-		}
+		client := kube.GetCLIClient()
 		ctx := cmd.Context()
 
 		odigosNs, err := resources.GetOdigosNamespace(client, ctx)
@@ -66,10 +63,7 @@ var describeSourceDeploymentCmd = &cobra.Command{
 	Aliases: []string{"deploy", "deployments", "deploy.apps", "deployment.apps", "deployments.apps"},
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		client, err := kube.CreateClient(cmd)
-		if err != nil {
-			kube.PrintClientErrorAndExit(err)
-		}
+		client := kube.GetCLIClient()
 		ctx := cmd.Context()
 		name := args[0]
 		ns := cmd.Flag("namespace").Value.String()
@@ -96,10 +90,7 @@ var describeSourceDaemonSetCmd = &cobra.Command{
 	Aliases: []string{"ds", "daemonsets", "ds.apps", "daemonset.apps", "daemonsets.apps"},
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		client, err := kube.CreateClient(cmd)
-		if err != nil {
-			kube.PrintClientErrorAndExit(err)
-		}
+		client := kube.GetCLIClient()
 
 		ctx := cmd.Context()
 		name := args[0]
@@ -127,10 +118,7 @@ var describeSourceStatefulSetCmd = &cobra.Command{
 	Aliases: []string{"sts", "statefulsets", "sts.apps", "statefulset.apps", "statefulsets.apps"},
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		client, err := kube.CreateClient(cmd)
-		if err != nil {
-			kube.PrintClientErrorAndExit(err)
-		}
+		client := kube.GetCLIClient()
 
 		ctx := cmd.Context()
 		name := args[0]

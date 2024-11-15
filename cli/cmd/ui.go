@@ -35,10 +35,7 @@ var uiCmd = &cobra.Command{
 	Long:  `Start the Odigos UI. This command will port-forward the odigos-ui pod to your local machine.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
-		client, err := kube.CreateClient(cmd)
-		if err != nil {
-			kube.PrintClientErrorAndExit(err)
-		}
+		client := kube.GetCLIClient()
 
 		ns, err := resources.GetOdigosNamespace(client, ctx)
 		if err != nil {

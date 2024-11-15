@@ -3,6 +3,8 @@ package cmd
 import (
 	"os"
 
+	"github.com/odigos-io/odigos/cli/pkg/autodetect"
+	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/spf13/cobra"
 )
@@ -20,9 +22,10 @@ Key Features of Odigos:
 - Streamlined Kubernetes operations with observability at the forefront.
 
 Get started with Odigos today to effortlessly improve the observability of your Kubernetes services!`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	// Run: func(cmd *cobra.Command, args []string) { },
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		client := kube.SetCLIClientOrExit(cmd)
+		autodetect.SetK8SClusterDetails(cmd.Context(), kubeConfig, client)
+	},
 }
 
 var (

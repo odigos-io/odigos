@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/client"
-	odigosver "github.com/odigos-io/odigos/k8sutils/pkg/version"
 
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -45,7 +44,25 @@ type Object interface {
 	runtime.Object
 }
 
-func CreateClient(cmd *cobra.Command) (*Client, error) {
+var cliClient *Client
+
+func SetCLIClientOrExit(cmd *cobra.Command) *Client {
+	if cliClient != nil {
+		return cliClient
+	}
+	client, err := createClient(cmd)
+	if err != nil {
+		PrintClientErrorAndExit(err)
+	}
+	cliClient = client
+	return cliClient
+}
+
+func GetCLIClient() *Client {
+	return cliClient
+}
+
+func createClient(cmd *cobra.Command) (*Client, error) {
 	kc := cmd.Flag("kubeconfig").Value.String()
 
 	config, err := k8sutils.GetClientConfig(kc)
@@ -193,15 +210,14 @@ func (c *Client) ApplyResource(ctx context.Context, configVersion int, obj Objec
 	return err
 }
 
-func (c *Client) DeleteOldOdigosSystemObjects(ctx context.Context, resourceAndNamespace ResourceAndNs, configVersion int) error {
+func (c *Client) DeleteOldOdigosSystemObjects(ctx context.Context, resourceAndNamespace ResourceAndNs, configVersion int, k8sVersion *version.Version) error {
 	systemObject, _ := k8slabels.NewRequirement(odigoslabels.OdigosSystemLabelKey, selection.Equals, []string{odigoslabels.OdigosSystemLabelValue})
 	notLatestVersion, _ := k8slabels.NewRequirement(odigoslabels.OdigosSystemConfigLabelKey, selection.NotEquals, []string{strconv.Itoa(configVersion)})
 	labelSelector := k8slabels.NewSelector().Add(*systemObject).Add(*notLatestVersion).String()
 	resource := resourceAndNamespace.Resource
 	ns := resourceAndNamespace.Namespace
-	k8sVersion, err := odigosver.GetKubernetesVersion()
-	if err != nil {
-		fmt.Printf("DeleteOldOdigosSystemObjects failed to get k8s version, proceeding.. :%v", err)
+	if k8sVersion == nil {
+		fmt.Printf("DeleteOldOdigosSystemObjects failed to get k8s version, proceeding.. ")
 	}
 	// DeleteCollection is only available in k8s 1.23 and above, for older versions we need to list and delete each resource
 	if k8sVersion != nil && k8sVersion.GreaterThan(version.MustParse("1.23")) {

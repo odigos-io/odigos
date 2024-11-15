@@ -7,6 +7,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
+	"github.com/odigos-io/odigos/cli/pkg/autodetect"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/cli/pkg/log"
 	"github.com/odigos-io/odigos/common"
@@ -32,7 +33,7 @@ func DeleteOldOdigosSystemObjects(ctx context.Context, client *kube.Client, ns s
 	resources := kube.GetManagedResources(ns)
 	for _, resource := range resources {
 		l := log.Print(fmt.Sprintf("Syncing %s", resource.Resource.Resource))
-		err := client.DeleteOldOdigosSystemObjects(ctx, resource, config.ConfigVersion)
+		err := client.DeleteOldOdigosSystemObjects(ctx, resource, config.ConfigVersion, autodetect.GetK8SVersion())
 		if err != nil {
 			l.Error(err)
 			os.Exit(1)

@@ -23,10 +23,7 @@ var logoutCmd = &cobra.Command{
 	You can run 'odigos ui' to manage your Odigos installation locally.
 	`,
 	Run: func(cmd *cobra.Command, args []string) {
-		client, err := kube.CreateClient(cmd)
-		if err != nil {
-			kube.PrintClientErrorAndExit(err)
-		}
+		client := kube.GetCLIClient()
 		ctx := cmd.Context()
 
 		ns, err := resources.GetOdigosNamespace(client, ctx)

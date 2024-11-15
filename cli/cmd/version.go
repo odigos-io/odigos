@@ -66,10 +66,7 @@ func getOdigosVersionInCluster(cmd *cobra.Command) (string, error) {
 }
 
 func getOdigosKubeClientAndNamespace(cmd *cobra.Command) (*kube.Client, string, error) {
-	client, err := kube.CreateClient(cmd)
-	if err != nil {
-		return nil, "", err
-	}
+	client := kube.GetCLIClient()
 	ctx := cmd.Context()
 
 	ns, err := resources.GetOdigosNamespace(client, ctx)

@@ -2,8 +2,6 @@ package autodetect
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/client"
@@ -14,14 +12,10 @@ type Kind string
 
 var availableDetectors = []ClusterKindDetector{&kindDetector{}, &eksDetector{}, &gkeDetector{}, &minikubeDetector{}, &k3sDetector{}, &openshiftDetector{}, &aksDetector{}}
 
-type KubernetesVersion struct {
-	Kind    Kind
-	Version *version.Version
-}
-
-var CurrentKubernetesVersion KubernetesVersion
+var currentClusterDetails ClusterDetails
 
 const (
+	KindUnknown   Kind = "Unknown"
 	KindMinikube  Kind = "Minikube"
 	KindKind      Kind = "Kind"
 	KindEKS       Kind = "EKS"
@@ -48,18 +42,23 @@ type ClusterDetails struct {
 	K8SVersion *version.Version
 }
 
-var (
-	ErrCannotDetectK8sVersion  = fmt.Errorf("cannot detect k8s version")
-	ErrCannotDetectClusterKind = fmt.Errorf("cannot detect cluster kind")
-)
+func GetK8SVersion() *version.Version {
+	return currentClusterDetails.K8SVersion
+}
 
-func DetectK8SClusterDetails(ctx context.Context, kc string, client *kube.Client) (ClusterDetails, error) {
+func GetClusterKind() Kind {
+	return currentClusterDetails.Kind
+}
+
+func SetK8SClusterDetails(ctx context.Context, kc string, client *kube.Client)  {
 	details := k8sutils.GetCurrentClusterDetails(kc)
 	serverVersion, err := client.Discovery().ServerVersion()
 	if err != nil {
-		return ClusterDetails{}, errors.Join(ErrCannotDetectK8sVersion, err)
+		currentClusterDetails.K8SVersion = nil
 	}
 	ver := version.MustParse(serverVersion.String())
+	currentClusterDetails.K8SVersion = ver
+
 	args := DetectionArguments{
 		ClusterDetails: details,
 		ServerVersion:  serverVersion.GitVersion,
@@ -71,11 +70,9 @@ func DetectK8SClusterDetails(ctx context.Context, kc string, client *kube.Client
 		if !relevant {
 			continue
 		}
-		return ClusterDetails{
-			Kind:       detector.Kind(),
-			K8SVersion: ver,
-		}, nil
+		currentClusterDetails.Kind = detector.Kind()
+		return
 	}
 
-	return ClusterDetails{K8SVersion: ver}, ErrCannotDetectClusterKind
+	currentClusterDetails.Kind = KindUnknown
 }
