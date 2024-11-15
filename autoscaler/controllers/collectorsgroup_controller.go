@@ -33,7 +33,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// CollectorsGroupReconciler reconciles a CollectorsGroup object
 type CollectorsGroupReconciler struct {
 	client.Client
 	Scheme               *runtime.Scheme
@@ -44,24 +43,6 @@ type CollectorsGroupReconciler struct {
 	Config               *controllerconfig.ControllerConfig
 }
 
-//+kubebuilder:rbac:groups=odigos.io,namespace=odigos-system,resources=collectorsgroups,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=odigos.io,namespace=odigos-system,resources=collectorsgroups/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=odigos.io,namespace=odigos-system,resources=collectorsgroups/finalizers,verbs=update
-//+kubebuilder:rbac:groups=apps,namespace=odigos-system,resources=deployments,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apps,namespace=odigos-system,resources=deployments/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=apps,namespace=odigos-system,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apps,namespace=odigos-system,resources=daemonsets/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups="",namespace=odigos-system,resources=services,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups="",namespace=odigos-system,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
-
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// the CollectorsGroup object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.2/pkg/reconcile
 func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling CollectorsGroup")
@@ -79,7 +60,6 @@ func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	return ctrl.Result{}, nil
 }
 
-// SetupWithManager sets up the controller with the Manager.
 func (r *CollectorsGroupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&odigosv1.CollectorsGroup{}).

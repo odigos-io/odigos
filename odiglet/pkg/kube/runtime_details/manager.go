@@ -2,6 +2,8 @@ package runtime_details
 
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+
+	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -25,7 +27,7 @@ func SetupWithManager(mgr ctrl.Manager, clientset *kubernetes.Clientset) error {
 		ControllerManagedBy(mgr).
 		Named("Odiglet-RuntimeDetails-Pods").
 		For(&corev1.Pod{}).
-		WithEventFilter(&podPredicate{}).
+		WithEventFilter(&odigospredicate.AllContainersReadyPredicate{}).
 		Complete(&PodsReconciler{
 			Client:    mgr.GetClient(),
 			Scheme:    mgr.GetScheme(),

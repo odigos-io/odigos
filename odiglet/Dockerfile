@@ -1,7 +1,7 @@
 
 ######### python Native Community Agent #########
 
-FROM python:3.11 AS python-builder
+FROM python:3.11.9 AS python-builder
 ARG ODIGOS_VERSION
 WORKDIR /python-instrumentation
 COPY ../agents/python ./agents/configurator
