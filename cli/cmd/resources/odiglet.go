@@ -449,7 +449,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 	// we do not want more then 1 odiglet pod on the same node as it is not supported by the eBPF.
 	// Only set maxSurge if Kubernetes version is >= 1.22
 	var maxSurge *intstr.IntOrString
-	if autodetect.CurrentKubernetesVersion.Version.AtLeast(k8sversion.MustParse("v1.22")) {
+	if autodetect.CurrentKubernetesVersion.Version != nil && autodetect.CurrentKubernetesVersion.Version.AtLeast(k8sversion.MustParse("v1.22")) {
 		maxSurgeValue := intstr.FromInt(0)
 		maxSurge = &maxSurgeValue
 	}
