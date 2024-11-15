@@ -169,9 +169,6 @@ func main() {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
-	// Ver < 1.23
-	var migrationClient client.Client
-	// Determine if we need to use a non-caching client based on the Kubernetes version, version <1.23 has issues when using caching client
 
 	// The labaling was for ver 1.0.91, migration is not releavant for old k8s versions which couln't run.
 	// This is the reason we skip it for versions < 1.23 (Also, versions < 1.23 require a non-caching client and API chane)
