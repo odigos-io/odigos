@@ -21,8 +21,9 @@ func SetupWithManager(mgr ctrl.Manager, ebpfDirectors ebpf.DirectorsMap) error {
 		Named("PodReconciler_ebpf").
 		For(&corev1.Pod{}).
 		// trigger the reconcile when either:
-		// 1. All containers become ready in a pod
-		// 2. Pod is deleted
+		// 1. A Create event is accepted for a pod with all containers ready (this is relevant when Odiglet is restarted)
+		// 2. All containers become ready in a running pod
+		// 3. Pod is deleted
 		WithEventFilter(predicate.Or(&odigospredicate.AllContainersReadyPredicate{}, &odigospredicate.DeletionPredicate{})).
 		Complete(&PodsReconciler{
 			Client:    mgr.GetClient(),

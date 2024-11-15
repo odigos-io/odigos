@@ -19,7 +19,7 @@ func (p *AllContainersReadyPredicate) Create(e event.CreateEvent) bool {
 		return false
 	}
 
-	// Check if pod is in Running phase. This is the first requirement
+	// Check if pod is in Running phase.
 	if pod.Status.Phase != corev1.PodRunning {
 		return false
 	}
@@ -65,11 +65,9 @@ func (p *AllContainersReadyPredicate) Update(e event.UpdateEvent) bool {
 }
 
 func (p *AllContainersReadyPredicate) Delete(e event.DeleteEvent) bool {
-	// no runtime details detection needed when a pod is deleted
 	return false
 }
 
 func (p *AllContainersReadyPredicate) Generic(e event.GenericEvent) bool {
-	// no runtime details detection needed for generic events
 	return false
 }
