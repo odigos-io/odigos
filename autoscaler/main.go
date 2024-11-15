@@ -19,14 +19,13 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"os"
-	"strconv"
 	"strings"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	odigosver "github.com/odigos-io/odigos/k8sutils/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -47,9 +46,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/discovery"
+	"k8s.io/apimachinery/pkg/util/version"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -88,7 +86,6 @@ func main() {
 	var probeAddr string
 	var imagePullSecretsString string
 	var imagePullSecrets []string
-	odigosVersion := os.Getenv("ODIGOS_VERSION")
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
@@ -99,8 +96,14 @@ func main() {
 		"The image pull secrets to use for the collectors created by autoscaler")
 	flag.StringVar(&nameutils.ImagePrefix, "image-prefix", "", "The image prefix to use for the collectors created by autoscaler")
 
+	odigosVersion := os.Getenv("ODIGOS_VERSION")
 	if odigosVersion == "" {
 		flag.StringVar(&odigosVersion, "version", "", "for development purposes only")
+	}
+	// Get k8s version
+	k8sVersion, err := odigosver.GetKubernetesVersion()
+	if err != nil {
+		setupLog.Error(err, "unable to get Kubernetes version, continuing with default oldest supported version")
 	}
 
 	opts := ctrlzap.Options{
@@ -131,12 +134,6 @@ func main() {
 	clusterCollectorLabelSelector := labels.Set(gateway.ClusterCollectorGateway).AsSelector()
 
 	cfg := ctrl.GetConfigOrDie()
-	// Determine if we need to use a non-caching client based on the Kubernetes version, version <1.23 has issues when using caching client
-	useNonCachingClient, err := shouldUseNonCachingClient(cfg)
-	if err != nil {
-		setupLog.Error(err, "unable to determine Kubernetes version")
-		os.Exit(1)
-	}
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
@@ -174,7 +171,16 @@ func main() {
 	}
 	// Ver < 1.23
 	var migrationClient client.Client
-	if useNonCachingClient {
+	// Determine if we need to use a non-caching client based on the Kubernetes version, version <1.23 has issues when using caching client
+
+	if k8sVersion != nil && k8sVersion.GreaterThan(version.MustParse("v1.23")) {
+		// Use the cached client for versions >= 1.23
+		err = MigrateCollectorsWorkloadToNewLabels(context.Background(), mgr.GetClient(), odigosNs)
+		if err != nil {
+			setupLog.Error(err, "unable to migrate collectors workload to new labels")
+			os.Exit(1)
+		}
+	} else {
 		// Create a non-caching client for versions < 1.23
 		migrationClient, err = client.New(cfg, client.Options{Scheme: scheme})
 		if err != nil {
@@ -185,13 +191,6 @@ func main() {
 		err = OldVerKubernetesMigrateCollectorsWorkloadToNewLabels(context.Background(), migrationClient, odigosNs)
 		if err != nil {
 			setupLog.Error(err, "legacy unable to migrate collectors workload to new labels")
-			os.Exit(1)
-		}
-	} else {
-		// Use the cached client for versions >= 1.23
-		err = MigrateCollectorsWorkloadToNewLabels(context.Background(), mgr.GetClient(), odigosNs)
-		if err != nil {
-			setupLog.Error(err, "unable to migrate collectors workload to new labels")
 			os.Exit(1)
 		}
 	}
@@ -222,6 +221,7 @@ func main() {
 		Scheme:               mgr.GetScheme(),
 		ImagePullSecrets:     imagePullSecrets,
 		OdigosVersion:        odigosVersion,
+		K8sVersion:           k8sVersion,
 		DisableNameProcessor: disableNameProcessor,
 		Config:               config,
 	}).SetupWithManager(mgr); err != nil {
@@ -233,6 +233,7 @@ func main() {
 		Scheme:               mgr.GetScheme(),
 		ImagePullSecrets:     imagePullSecrets,
 		OdigosVersion:        odigosVersion,
+		K8sVersion:           k8sVersion,
 		DisableNameProcessor: disableNameProcessor,
 		Config:               config,
 	}).SetupWithManager(mgr); err != nil {
@@ -244,6 +245,7 @@ func main() {
 		Scheme:               mgr.GetScheme(),
 		ImagePullSecrets:     imagePullSecrets,
 		OdigosVersion:        odigosVersion,
+		K8sVersion:           k8sVersion,
 		DisableNameProcessor: disableNameProcessor,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "InstrumentedApplication")
@@ -321,32 +323,4 @@ func isMetricsServerInstalled(mgr ctrl.Manager, logger logr.Logger) bool {
 
 	logger.V(0).Info("Metrics server found")
 	return true
-}
-
-// Kubernetes version <1.23 has issues when using caching client and also DeleteAllOf is not supported in versions <1.23
-// so we need to use legacy delete for versions <1.23
-func shouldUseNonCachingClient(cfg *rest.Config) (bool, error) {
-	discoveryClient, err := discovery.NewDiscoveryClientForConfig(cfg)
-	if err != nil {
-		return false, err
-	}
-
-	serverVersion, err := discoveryClient.ServerVersion()
-	if err != nil {
-		return false, err
-	}
-
-	// Parse the major and minor versions
-	major, err := strconv.Atoi(serverVersion.Major)
-	if err != nil {
-		return false, fmt.Errorf("failed to parse major version: %w", err)
-	}
-
-	minor, err := strconv.Atoi(strings.TrimSuffix(serverVersion.Minor, "+"))
-	if err != nil {
-		return false, fmt.Errorf("failed to parse minor version: %w", err)
-	}
-
-	// Use non-caching client if the version is less than 1.23
-	return major < 1 || (major == 1 && minor < 23), nil
 }

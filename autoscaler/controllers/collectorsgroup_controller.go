@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/version"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -38,6 +39,7 @@ type CollectorsGroupReconciler struct {
 	Scheme               *runtime.Scheme
 	ImagePullSecrets     []string
 	OdigosVersion        string
+	K8sVersion           *version.Version
 	DisableNameProcessor bool
 	Config               *controllerconfig.ControllerConfig
 }
@@ -69,7 +71,7 @@ func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
-	err = datacollection.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion, r.DisableNameProcessor)
+	err = datacollection.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion, r.K8sVersion, r.DisableNameProcessor)
 	if err != nil {
 		return ctrl.Result{}, err
 	}

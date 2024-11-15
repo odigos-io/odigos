@@ -12,6 +12,7 @@ import (
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
 	"github.com/odigos-io/odigos/autoscaler/utils"
+	"k8s.io/apimachinery/pkg/util/version"
 
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	appsv1 "k8s.io/api/apps/v1"
@@ -49,7 +50,8 @@ type DelayManager struct {
 }
 
 // RunSyncDaemonSetWithDelayAndSkipNewCalls runs the function with the specified delay and skips new calls until the function execution is finished
-func (dm *DelayManager) RunSyncDaemonSetWithDelayAndSkipNewCalls(delay time.Duration, retries int, dests *odigosv1.DestinationList, collection *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, secrets []string, version string) {
+func (dm *DelayManager) RunSyncDaemonSetWithDelayAndSkipNewCalls(delay time.Duration, retries int, dests *odigosv1.DestinationList,
+	collection *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, secrets []string, version string, k8sVersion *version.Version) {
 	dm.mu.Lock()
 	defer dm.mu.Unlock()
 
@@ -78,7 +80,7 @@ func (dm *DelayManager) RunSyncDaemonSetWithDelayAndSkipNewCalls(delay time.Dura
 		}()
 
 		for i := 0; i < retries; i++ {
-			_, err = syncDaemonSet(ctx, dests, collection, c, scheme, secrets, version)
+			_, err = syncDaemonSet(ctx, dests, collection, c, scheme, secrets, version, k8sVersion)
 			if err == nil {
 				return
 			}
@@ -93,7 +95,7 @@ func (dm *DelayManager) finishProgress() {
 }
 
 func syncDaemonSet(ctx context.Context, dests *odigosv1.DestinationList, datacollection *odigosv1.CollectorsGroup,
-	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (*appsv1.DaemonSet, error) {
+	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, k8sVersion *version.Version) (*appsv1.DaemonSet, error) {
 	logger := log.FromContext(ctx)
 
 	odigletDaemonsetPodSpec, err := getOdigletDaemonsetPodSpec(ctx, c, datacollection.Namespace)
@@ -114,7 +116,7 @@ func syncDaemonSet(ctx context.Context, dests *odigosv1.DestinationList, datacol
 		logger.Error(err, "Failed to get signals from otelcol config")
 		return nil, err
 	}
-	desiredDs, err := getDesiredDaemonSet(datacollection, otelcolConfigContent, scheme, imagePullSecrets, odigosVersion, odigletDaemonsetPodSpec)
+	desiredDs, err := getDesiredDaemonSet(datacollection, otelcolConfigContent, scheme, imagePullSecrets, odigosVersion, k8sVersion, odigletDaemonsetPodSpec)
 	if err != nil {
 		logger.Error(err, "Failed to get desired DaemonSet")
 		return nil, err
@@ -171,7 +173,7 @@ func getOdigletDaemonsetPodSpec(ctx context.Context, c client.Client, namespace 
 }
 
 func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData string,
-	scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string,
+	scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, k8sVersion *version.Version,
 	odigletDaemonsetPodSpec *corev1.PodSpec,
 ) (*appsv1.DaemonSet, error) {
 	// TODO(edenfed): add log volumes only if needed according to apps or dests
@@ -187,9 +189,8 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 	rollingUpdate := &appsv1.RollingUpdateDaemonSet{
 		MaxUnavailable: &maxUnavailable,
 	}
-	cfg := ctrl.GetConfigOrDie()
-	versionSupported, err := isVersionSupported(cfg, 1, 22)
-	if err != nil && versionSupported {
+	// maxSurge was added to the Kubernetes api at version 1.21.alpha1, we want to be sure so we used 1.22 for the check, the fallback is without it
+	if k8sVersion != nil && k8sVersion.AtLeast(version.MustParse("1.22.0")) {
 		maxSurge := intstr.FromInt(0)
 		rollingUpdate.MaxSurge = &maxSurge
 	}
@@ -342,7 +343,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 		}
 	}
 
-	err = ctrl.SetControllerReference(datacollection, desiredDs, scheme)
+	err := ctrl.SetControllerReference(datacollection, desiredDs, scheme)
 	if err != nil {
 		return nil, err
 	}
