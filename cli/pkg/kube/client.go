@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/client"
+	odigosver "github.com/odigos-io/odigos/k8sutils/pkg/version"
 
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -15,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
 	k8stypes "k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/version"
 	"sigs.k8s.io/yaml"
 
 	"github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
@@ -22,12 +23,10 @@ import (
 	"github.com/spf13/cobra"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	k8slabels "k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 type Client struct {
@@ -200,9 +199,12 @@ func (c *Client) DeleteOldOdigosSystemObjects(ctx context.Context, resourceAndNa
 	labelSelector := k8slabels.NewSelector().Add(*systemObject).Add(*notLatestVersion).String()
 	resource := resourceAndNamespace.Resource
 	ns := resourceAndNamespace.Namespace
-	cfg := ctrl.GetConfigOrDie()
-	versionSupported, err := isVersionSupported(cfg, 1, 23)
-	if err != nil && versionSupported {
+	k8sVersion, err := odigosver.GetKubernetesVersion()
+	if err != nil {
+		fmt.Printf("DeleteOldOdigosSystemObjects failed to get k8s version, proceeding.. :%v", err)
+	}
+	// DeleteCollection is only available in k8s 1.23 and above, for older versions we need to list and delete each resource
+	if k8sVersion != nil && k8sVersion.GreaterThan(version.MustParse("1.23")) {
 		return c.Dynamic.Resource(resource).Namespace(ns).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
 			LabelSelector: labelSelector,
 		})
@@ -224,29 +226,4 @@ func (c *Client) DeleteOldOdigosSystemObjects(ctx context.Context, resourceAndNa
 		}
 	}
 	return nil
-}
-func isVersionSupported(cfg *rest.Config, minMajor int, minMinor int) (bool, error) {
-	discoveryClient, err := discovery.NewDiscoveryClientForConfig(cfg)
-	if err != nil {
-		return false, err
-	}
-
-	serverVersion, err := discoveryClient.ServerVersion()
-	if err != nil {
-		return false, err
-	}
-
-	// Parse major and minor versions
-	major, err := strconv.Atoi(serverVersion.Major)
-	if err != nil {
-		return false, fmt.Errorf("failed to parse major version: %w", err)
-	}
-
-	minor, err := strconv.Atoi(strings.TrimSuffix(serverVersion.Minor, "+"))
-	if err != nil {
-		return false, fmt.Errorf("failed to parse minor version: %w", err)
-	}
-
-	// Check if the server version meets or exceeds minMajor.minMinor
-	return major > minMajor || (major == minMajor && minor >= minMinor), nil
 }
