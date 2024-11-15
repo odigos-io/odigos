@@ -19,16 +19,6 @@ func (p *AllContainersReadyPredicate) Create(e event.CreateEvent) bool {
 		return false
 	}
 
-	// Check if pod is in Running phase.
-	if pod.Status.Phase != corev1.PodRunning {
-		return false
-	}
-
-	// If pod has no containers, return false as we can't determine readiness
-	if len(pod.Status.ContainerStatuses) == 0 {
-		return false
-	}
-
 	allContainersReady := k8scontainer.AllContainersReady(pod)
 	// If all containers are not ready, return false.
 	// Otherwise, return true
@@ -40,11 +30,6 @@ func (p *AllContainersReadyPredicate) Update(e event.UpdateEvent) bool {
 	newPod, newOk := e.ObjectNew.(*corev1.Pod)
 
 	if !oldOk || !newOk {
-		return false
-	}
-
-	// If pod has no containers, return false as we can't determine readiness
-	if len(newPod.Status.ContainerStatuses) == 0 {
 		return false
 	}
 
