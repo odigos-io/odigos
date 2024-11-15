@@ -19,6 +19,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	k8sversion "k8s.io/apimachinery/pkg/util/version"
 )
 
 const (
@@ -446,8 +447,12 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 	maxUnavailable := intstr.FromString("50%")
 	// maxSurge is the number of pods that can be created above the desired number of pods.
 	// we do not want more then 1 odiglet pod on the same node as it is not supported by the eBPF.
-	maxSurge := intstr.FromInt(0)
-
+	// Only set maxSurge if Kubernetes version is >= 1.22
+	var maxSurge *intstr.IntOrString
+	if autodetect.CurrentKubernetesVersion.Version.AtLeast(k8sversion.MustParse("v1.22")) {
+		maxSurgeValue := intstr.FromInt(0)
+		maxSurge = &maxSurgeValue
+	}
 	return &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "DaemonSet",
@@ -470,7 +475,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 				Type: appsv1.RollingUpdateDaemonSetStrategyType,
 				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
 					MaxUnavailable: &maxUnavailable,
-					MaxSurge:       &maxSurge,
+					MaxSurge:       maxSurge, // Set conditionally
 				},
 			},
 			Template: corev1.PodTemplateSpec{

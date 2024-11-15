@@ -50,7 +50,7 @@ var (
 var (
 	// minK8SVersionForInstallation is the minimum Kubernetes version required for Odigos installation
 	// this value must be in sync with the one defined in the kubeVersion field in Chart.yaml
-	minK8SVersionForInstallation = version.MustParse("v1.23.0")
+	minK8SVersionForInstallation = version.MustParse("v1.20.15")
 )
 
 type ResourceCreationFunc func(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error
