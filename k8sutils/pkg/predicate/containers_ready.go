@@ -14,6 +14,10 @@ import (
 type AllContainersReadyPredicate struct{}
 
 func (p *AllContainersReadyPredicate) Create(e event.CreateEvent) bool {
+	if e.Object == nil {
+		return false
+	}
+
 	pod, ok := e.Object.(*corev1.Pod)
 	if !ok {
 		return false
@@ -26,6 +30,10 @@ func (p *AllContainersReadyPredicate) Create(e event.CreateEvent) bool {
 }
 
 func (p *AllContainersReadyPredicate) Update(e event.UpdateEvent) bool {
+	if e.ObjectOld == nil || e.ObjectNew == nil {
+		return false
+	}
+
 	oldPod, oldOk := e.ObjectOld.(*corev1.Pod)
 	newPod, newOk := e.ObjectNew.(*corev1.Pod)
 
