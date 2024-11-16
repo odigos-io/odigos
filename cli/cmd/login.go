@@ -46,8 +46,8 @@ func restartPodsAfterCloudLogin(ctx context.Context, client *kube.Client, ns str
 
 // both login and update trigger this function.
 func updateApiKey(cmd *cobra.Command, args []string) {
-	client := kube.GetCLIClient()
 	ctx := cmd.Context()
+	client := kube.KubeClientFromContextOrExit(ctx)
 
 	ns, err := resources.GetOdigosNamespace(client, ctx)
 	if resources.IsErrNoOdigosNamespaceFound(err) {

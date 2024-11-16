@@ -2,6 +2,7 @@ package kube
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -44,22 +45,44 @@ type Object interface {
 	runtime.Object
 }
 
-var cliClient *Client
+type kubeClientContextKeyType int
 
-func SetCLIClientOrExit(cmd *cobra.Command) *Client {
-	if cliClient != nil {
-		return cliClient
+const currentClientKey kubeClientContextKeyType = iota
+
+// ContextWithKubeClient returns a copy of parent with kubeClient set as the current client.
+func ContextWithKubeClient(parent context.Context, kubeClient *Client) context.Context {
+	return context.WithValue(parent, currentClientKey, kubeClient)
+}
+
+// KubeClientFromContextOrExit returns the current kube client from ctx.
+//
+// If no client is currently set in ctx the program will exit with an error message.
+func KubeClientFromContextOrExit(ctx context.Context) *Client {
+	if ctx == nil {
+		PrintClientErrorAndExit(errors.New("context is nil when trying to get kube client"))
+		return nil
+	}
+	if client, ok := ctx.Value(currentClientKey).(*Client); ok {
+		return client
+	}
+	PrintClientErrorAndExit(errors.New("context does not contain kube client"))
+	return nil
+}
+
+// GetCLIClientOrExit returns the current kube client from cmd.Context() if one exists.
+// otherwise it creates a new client and returns it.
+func GetCLIClientOrExit(cmd *cobra.Command) *Client {
+	cmdCtx := cmd.Context()
+	if cmdCtx != nil {
+		if client, ok := cmdCtx.Value(currentClientKey).(*Client); ok {
+			return client
+		}
 	}
 	client, err := createClient(cmd)
 	if err != nil {
 		PrintClientErrorAndExit(err)
 	}
-	cliClient = client
-	return cliClient
-}
-
-func GetCLIClient() *Client {
-	return cliClient
+	return client
 }
 
 func createClient(cmd *cobra.Command) (*Client, error) {
@@ -216,9 +239,6 @@ func (c *Client) DeleteOldOdigosSystemObjects(ctx context.Context, resourceAndNa
 	labelSelector := k8slabels.NewSelector().Add(*systemObject).Add(*notLatestVersion).String()
 	resource := resourceAndNamespace.Resource
 	ns := resourceAndNamespace.Namespace
-	if k8sVersion == nil {
-		fmt.Printf("DeleteOldOdigosSystemObjects failed to get k8s version, proceeding.. ")
-	}
 	// DeleteCollection is only available in k8s 1.23 and above, for older versions we need to list and delete each resource
 	if k8sVersion != nil && k8sVersion.GreaterThan(version.MustParse("1.23")) {
 		return c.Dynamic.Resource(resource).Namespace(ns).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{

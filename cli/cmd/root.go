@@ -23,8 +23,11 @@ Key Features of Odigos:
 
 Get started with Odigos today to effortlessly improve the observability of your Kubernetes services!`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		client := kube.SetCLIClientOrExit(cmd)
-		autodetect.SetK8SClusterDetails(cmd.Context(), kubeConfig, client)
+		client := kube.GetCLIClientOrExit(cmd)
+		ctx := cmd.Context()
+		autodetect.SetK8SClusterDetails(ctx, kubeConfig, client)
+		ctx = kube.ContextWithKubeClient(ctx, client)
+		cmd.SetContext(ctx)
 	},
 }
 

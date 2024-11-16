@@ -12,6 +12,7 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/log"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 )
@@ -31,9 +32,13 @@ func ApplyResourceManagers(ctx context.Context, client *kube.Client, resourceMan
 
 func DeleteOldOdigosSystemObjects(ctx context.Context, client *kube.Client, ns string, config *common.OdigosConfiguration) error {
 	resources := kube.GetManagedResources(ns)
+	k8sVersion := autodetect.GetK8SVersion()
+	if k8sVersion == nil {
+		fmt.Printf("Unknown k8s version, assuming oldest supported version: %s\n", k8sconsts.MinK8SVersionForInstallation)
+	}
 	for _, resource := range resources {
 		l := log.Print(fmt.Sprintf("Syncing %s", resource.Resource.Resource))
-		err := client.DeleteOldOdigosSystemObjects(ctx, resource, config.ConfigVersion, autodetect.GetK8SVersion())
+		err := client.DeleteOldOdigosSystemObjects(ctx, resource, config.ConfigVersion, k8sVersion)
 		if err != nil {
 			l.Error(err)
 			os.Exit(1)

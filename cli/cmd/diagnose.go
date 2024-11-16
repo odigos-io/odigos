@@ -32,7 +32,7 @@ var diagnoseCmd = &cobra.Command{
 	Long:  `Diagnose Client Cluster to identify issues and resolve them. This command is useful for troubleshooting and debugging.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
-		client := kube.GetCLIClient()
+		client := kube.KubeClientFromContextOrExit(ctx)
 
 		err := startDiagnose(ctx, client)
 		if err != nil {

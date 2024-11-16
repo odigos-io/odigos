@@ -32,8 +32,8 @@ var uninstallCmd = &cobra.Command{
 	Use:   "uninstall",
 	Short: "Unistall Odigos from your cluster",
 	Run: func(cmd *cobra.Command, args []string) {
-		client := kube.GetCLIClient()
 		ctx := cmd.Context()
+		client := kube.KubeClientFromContextOrExit(ctx)
 
 		ns, err := resources.GetOdigosNamespace(client, ctx)
 		if err != nil && !resources.IsErrNoOdigosNamespaceFound(err) {

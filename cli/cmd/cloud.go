@@ -27,8 +27,8 @@ var cloudCmd = &cobra.Command{
 	Short: "Manage odigos cloud",
 	Long:  `Used to interact with odigos managed service.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		client := kube.GetCLIClient()
 		ctx := cmd.Context()
+		client := kube.KubeClientFromContextOrExit(ctx)
 
 		ns, err := resources.GetOdigosNamespace(client, ctx)
 		if resources.IsErrNoOdigosNamespaceFound(err) {

@@ -17,8 +17,8 @@ var profileCmd = &cobra.Command{
 	Short: "Manage odigos profiles",
 	Long:  `Odigos profiles are used to apply some specific preset configuration to the odigos installation`,
 	Run: func(cmd *cobra.Command, args []string) {
-		client := kube.GetCLIClient()
 		ctx := cmd.Context()
+		client := kube.KubeClientFromContextOrExit(ctx)
 
 		ns, err := resources.GetOdigosNamespace(client, ctx)
 		if resources.IsErrNoOdigosNamespaceFound(err) {
@@ -75,8 +75,8 @@ var addProfileCmd = &cobra.Command{
 	Long:  `Add a profile by its name to the current Odigos installation.`,
 	Args:  cobra.ExactArgs(1), // Ensure exactly one argument is passed (the profile name)
 	Run: func(cmd *cobra.Command, args []string) {
-		client := kube.GetCLIClient()
 		ctx := cmd.Context()
+		client := kube.KubeClientFromContextOrExit(ctx)
 
 		ns, err := resources.GetOdigosNamespace(client, ctx)
 		if resources.IsErrNoOdigosNamespaceFound(err) {
@@ -158,8 +158,8 @@ var removeProfileCmd = &cobra.Command{
 	Long:  `Remove a profile by its name from the current Odigos installation.`,
 	Args:  cobra.ExactArgs(1), // Ensure exactly one argument is passed (the profile name)
 	Run: func(cmd *cobra.Command, args []string) {
-		client := kube.GetCLIClient()
 		ctx := cmd.Context()
+		client := kube.KubeClientFromContextOrExit(ctx)
 
 		ns, err := resources.GetOdigosNamespace(client, ctx)
 		if resources.IsErrNoOdigosNamespaceFound(err) {
