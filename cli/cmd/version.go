@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources"
+	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/getters"
 	"github.com/spf13/cobra"
@@ -67,7 +68,7 @@ func getOdigosVersionInCluster(cmd *cobra.Command) (string, error) {
 
 func getOdigosKubeClientAndNamespace(cmd *cobra.Command) (*kube.Client, string, error) {
 	ctx := cmd.Context()
-	client := kube.KubeClientFromContextOrExit(ctx)
+	client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
 	ns, err := resources.GetOdigosNamespace(client, ctx)
 	if err != nil {

@@ -11,6 +11,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/envoverwrite"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources"
+	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/confirm"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/cli/pkg/labels"
@@ -33,7 +34,7 @@ var uninstallCmd = &cobra.Command{
 	Short: "Unistall Odigos from your cluster",
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
-		client := kube.KubeClientFromContextOrExit(ctx)
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
 		ns, err := resources.GetOdigosNamespace(client, ctx)
 		if err != nil && !resources.IsErrNoOdigosNamespaceFound(err) {

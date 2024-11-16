@@ -2,17 +2,17 @@ package autodetect
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/client"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"k8s.io/apimachinery/pkg/util/version"
 )
 
 type Kind string
 
 var availableDetectors = []ClusterKindDetector{&kindDetector{}, &eksDetector{}, &gkeDetector{}, &minikubeDetector{}, &k3sDetector{}, &openshiftDetector{}, &aksDetector{}}
-
-var currentClusterDetails ClusterDetails
 
 const (
 	KindUnknown   Kind = "Unknown"
@@ -42,22 +42,17 @@ type ClusterDetails struct {
 	K8SVersion *version.Version
 }
 
-func GetK8SVersion() *version.Version {
-	return currentClusterDetails.K8SVersion
-}
-
-func GetClusterKind() Kind {
-	return currentClusterDetails.Kind
-}
-
-func SetK8SClusterDetails(ctx context.Context, kc string, client *kube.Client)  {
+func GetK8SClusterDetails(ctx context.Context, kc string, client *kube.Client) *ClusterDetails {
+	clusterDetails := &ClusterDetails{}
 	details := k8sutils.GetCurrentClusterDetails(kc)
 	serverVersion, err := client.Discovery().ServerVersion()
 	if err != nil {
-		currentClusterDetails.K8SVersion = nil
+		clusterDetails.K8SVersion = nil
+		fmt.Printf("Unknown k8s version, assuming oldest supported version: %s\n", k8sconsts.MinK8SVersionForInstallation)
+	} else {
+		ver := version.MustParse(serverVersion.String())
+		clusterDetails.K8SVersion = ver
 	}
-	ver := version.MustParse(serverVersion.String())
-	currentClusterDetails.K8SVersion = ver
 
 	args := DetectionArguments{
 		ClusterDetails: details,
@@ -70,9 +65,10 @@ func SetK8SClusterDetails(ctx context.Context, kc string, client *kube.Client)  
 		if !relevant {
 			continue
 		}
-		currentClusterDetails.Kind = detector.Kind()
-		return
+		clusterDetails.Kind = detector.Kind()
+		return clusterDetails
 	}
 
-	currentClusterDetails.Kind = KindUnknown
+	clusterDetails.Kind = KindUnknown
+	return clusterDetails
 }

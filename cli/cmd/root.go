@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/odigos-io/odigos/cli/pkg/autodetect"
+	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/spf13/cobra"
@@ -23,10 +24,14 @@ Key Features of Odigos:
 
 Get started with Odigos today to effortlessly improve the observability of your Kubernetes services!`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		client := kube.GetCLIClientOrExit(cmd)
 		ctx := cmd.Context()
-		autodetect.SetK8SClusterDetails(ctx, kubeConfig, client)
-		ctx = kube.ContextWithKubeClient(ctx, client)
+
+		client := kube.GetCLIClientOrExit(cmd)
+		ctx = cmdcontext.ContextWithKubeClient(ctx, client)
+
+		details := autodetect.GetK8SClusterDetails(ctx, kubeConfig, client)
+		ctx = cmdcontext.ContextWithClusterDetails(ctx, details)
+
 		cmd.SetContext(ctx)
 	},
 }

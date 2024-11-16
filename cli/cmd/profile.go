@@ -6,7 +6,7 @@ import (
 
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
-	"github.com/odigos-io/odigos/cli/pkg/kube"
+	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/getters"
 	"github.com/spf13/cobra"
@@ -18,7 +18,7 @@ var profileCmd = &cobra.Command{
 	Long:  `Odigos profiles are used to apply some specific preset configuration to the odigos installation`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
-		client := kube.KubeClientFromContextOrExit(ctx)
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
 		ns, err := resources.GetOdigosNamespace(client, ctx)
 		if resources.IsErrNoOdigosNamespaceFound(err) {
@@ -76,7 +76,7 @@ var addProfileCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1), // Ensure exactly one argument is passed (the profile name)
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
-		client := kube.KubeClientFromContextOrExit(ctx)
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
 		ns, err := resources.GetOdigosNamespace(client, ctx)
 		if resources.IsErrNoOdigosNamespaceFound(err) {
@@ -159,7 +159,7 @@ var removeProfileCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1), // Ensure exactly one argument is passed (the profile name)
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
-		client := kube.KubeClientFromContextOrExit(ctx)
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
 		ns, err := resources.GetOdigosNamespace(client, ctx)
 		if resources.IsErrNoOdigosNamespaceFound(err) {

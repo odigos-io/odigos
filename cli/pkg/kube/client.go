@@ -2,7 +2,6 @@ package kube
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -45,39 +44,10 @@ type Object interface {
 	runtime.Object
 }
 
-type kubeClientContextKeyType int
-
-const currentClientKey kubeClientContextKeyType = iota
-
-// ContextWithKubeClient returns a copy of parent with kubeClient set as the current client.
-func ContextWithKubeClient(parent context.Context, kubeClient *Client) context.Context {
-	return context.WithValue(parent, currentClientKey, kubeClient)
-}
-
-// KubeClientFromContextOrExit returns the current kube client from ctx.
-//
-// If no client is currently set in ctx the program will exit with an error message.
-func KubeClientFromContextOrExit(ctx context.Context) *Client {
-	if ctx == nil {
-		PrintClientErrorAndExit(errors.New("context is nil when trying to get kube client"))
-		return nil
-	}
-	if client, ok := ctx.Value(currentClientKey).(*Client); ok {
-		return client
-	}
-	PrintClientErrorAndExit(errors.New("context does not contain kube client"))
-	return nil
-}
-
 // GetCLIClientOrExit returns the current kube client from cmd.Context() if one exists.
 // otherwise it creates a new client and returns it.
 func GetCLIClientOrExit(cmd *cobra.Command) *Client {
-	cmdCtx := cmd.Context()
-	if cmdCtx != nil {
-		if client, ok := cmdCtx.Value(currentClientKey).(*Client); ok {
-			return client
-		}
-	}
+	// we can check the cmd context for client, but currently avoiding that due to circular dependencies
 	client, err := createClient(cmd)
 	if err != nil {
 		PrintClientErrorAndExit(err)

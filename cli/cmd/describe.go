@@ -7,6 +7,7 @@ import (
 
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
+	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/k8sutils/pkg/describe"
 	"github.com/spf13/cobra"
 )
@@ -22,7 +23,7 @@ var describeCmd = &cobra.Command{
 	Long:  `Print detailed description odigos deployment, which can be used to troubleshoot issues`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
-		client := kube.KubeClientFromContextOrExit(ctx)
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
 		odigosNs, err := resources.GetOdigosNamespace(client, ctx)
 		if err != nil {
@@ -63,7 +64,7 @@ var describeSourceDeploymentCmd = &cobra.Command{
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
-		client := kube.KubeClientFromContextOrExit(ctx)
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
 		name := args[0]
 		ns := cmd.Flag("namespace").Value.String()
@@ -91,7 +92,7 @@ var describeSourceDaemonSetCmd = &cobra.Command{
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
-		client := kube.KubeClientFromContextOrExit(ctx)
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
 		name := args[0]
 		ns := cmd.Flag("namespace").Value.String()
@@ -119,7 +120,7 @@ var describeSourceStatefulSetCmd = &cobra.Command{
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
-		client := kube.KubeClientFromContextOrExit(ctx)
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
 		name := args[0]
 		ns := cmd.Flag("namespace").Value.String()

@@ -10,8 +10,8 @@ import (
 	"github.com/hashicorp/go-version"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
+	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/confirm"
-	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/utils"
 	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
@@ -31,7 +31,7 @@ This command will upgrade the Odigos version in the cluster to the version of Od
 and apply any required migrations and adaptations.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
-		client := kube.KubeClientFromContextOrExit(ctx)
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
 		ns, err := resources.GetOdigosNamespace(client, ctx)
 		if err != nil {

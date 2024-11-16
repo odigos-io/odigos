@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
-	"github.com/odigos-io/odigos/cli/pkg/kube"
+	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/common"
 	"github.com/spf13/cobra"
 )
@@ -28,7 +28,7 @@ var cloudCmd = &cobra.Command{
 	Long:  `Used to interact with odigos managed service.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
-		client := kube.KubeClientFromContextOrExit(ctx)
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
 		ns, err := resources.GetOdigosNamespace(client, ctx)
 		if resources.IsErrNoOdigosNamespaceFound(err) {
