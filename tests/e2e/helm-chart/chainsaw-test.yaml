@@ -149,7 +149,9 @@ spec:
         
             while true; do
               ../../common/flush_traces.sh
-              
+              # wait for traces to be available
+              sleep 5
+
               # Run the wait-for-trace script
               ../../common/traceql_runner.sh tracesql/wait-for-trace.yaml
               if [ $? -eq 0 ]; then
