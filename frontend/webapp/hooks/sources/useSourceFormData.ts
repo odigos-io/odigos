@@ -43,6 +43,8 @@ export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFo
   // (this is to persist the values when user navigates back to this page)
   const appStore = useAppStore((state) => state);
 
+  const [selectAll, setSelectAll] = useState(false);
+  const [selectAllForNamespace, setSelectAllForNamespace] = useState<SelectedNamespace>('');
   const [selectedNamespace, setSelectedNamespace] = useState<SelectedNamespace>('');
   const [availableSources, setAvailableSources] = useState<SourcesByNamespace>(appStore.availableSources);
   const [selectedSources, setSelectedSources] = useState<SourcesByNamespace>(appStore.configuredSources);
@@ -79,7 +81,6 @@ export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFo
 
   // form filters
   const [searchText, setSearchText] = useState('');
-  const [selectAll, setSelectAll] = useState(false);
   const [showSelectedOnly, setShowSelectedOnly] = useState(false);
 
   const doSelectAll = () => {
@@ -108,7 +109,14 @@ export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFo
 
   const onSelectAll: UseSourceFormDataResponse['onSelectAll'] = (bool, namespace) => {
     if (!!namespace) {
-      setSelectedSources((prev) => ({ ...prev, [namespace]: bool ? availableSources[namespace] : [] }));
+      const nsAvailableSources = availableSources[namespace];
+      const nsSelectedSources = selectedSources[namespace];
+
+      if (!nsAvailableSources.length && !nsSelectedSources && bool) {
+        setSelectAllForNamespace(namespace);
+      } else {
+        setSelectedSources((prev) => ({ ...prev, [namespace]: bool ? nsAvailableSources : [] }));
+      }
     } else {
       setSelectAll(bool);
 
@@ -119,6 +127,15 @@ export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFo
       }
     }
   };
+
+  // this is to keep trying "select all" per namespace until the sources are loaded (allows for 1-click, better UX).
+  // if selectedSources returns an emtpy array, it will stop to prevent inifnite loop where no availableSources ever exist for that namespace
+  useEffect(() => {
+    if (!!selectAllForNamespace) {
+      setSelectAllForNamespace('');
+      setTimeout(() => onSelectAll(true, selectAllForNamespace), 100);
+    }
+  }, [selectAllForNamespace]);
 
   const onSelectNamespace: UseSourceFormDataResponse['onSelectNamespace'] = (namespace) => {
     const alreadySelected = selectedNamespace === namespace;

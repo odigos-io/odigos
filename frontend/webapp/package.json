@@ -26,6 +26,7 @@
     "eslint": "8.42.0",
     "eslint-config-next": "13.4.5",
     "graphql": "^16.9.0",
+    "javascript-time-ago": "^2.5.11",
     "next": "13.5.4",
     "postcss": "^8.4.26",
     "prop-types": "^15.8.1",
