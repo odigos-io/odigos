@@ -42,12 +42,14 @@ import (
 
 const (
 	defaultPort = 3000
+	betaPort    = 3001
 )
 
 type Flags struct {
 	Version    bool
 	Address    string
 	Port       int
+	BetaPort   int
 	Debug      bool
 	KubeConfig string
 	Namespace  string
@@ -66,6 +68,7 @@ func parseFlags() Flags {
 	flag.BoolVar(&flags.Version, "version", false, "Print Odigos UI version.")
 	flag.StringVar(&flags.Address, "address", "localhost", "Address to listen on")
 	flag.IntVar(&flags.Port, "port", defaultPort, "Port to listen on")
+	flag.IntVar(&flags.BetaPort, "beta-port", betaPort, "Port to listen on for beta UI")
 	flag.BoolVar(&flags.Debug, "debug", false, "Enable debug mode")
 	flag.StringVar(&flags.KubeConfig, "kubeconfig", defaultKubeConfig, "Path to kubeconfig file")
 	flag.StringVar(&flags.Namespace, "namespace", consts.DefaultOdigosNamespace, "Kubernetes namespace where Odigos is installed")
@@ -104,93 +107,6 @@ func startHTTPServer(flags *Flags, odigosMetrics *collectormetrics.OdigosMetrics
 
 	// Serve React app if page not found serve index.html
 	r.NoRoute(gin.WrapH(httpFileServerWith404(http.FS(dist))))
-
-	// Serve API
-	// apis := r.Group("/api")
-	// {
-	// 	apis.GET("/namespaces", func(c *gin.Context) { endpoints.GetNamespaces(c, flags.Namespace) })
-	// 	apis.POST("/namespaces", endpoints.PersistNamespaces)
-
-	// 	apis.GET("/sources", func(c *gin.Context) { endpoints.GetSources(c, flags.Namespace) })
-	// 	apis.GET("/sources/namespace/:namespace/kind/:kind/name/:name", endpoints.GetSource)
-	// 	apis.DELETE("/sources/namespace/:namespace/kind/:kind/name/:name", endpoints.DeleteSource)
-	// 	apis.PATCH("/sources/namespace/:namespace/kind/:kind/name/:name", endpoints.PatchSource)
-
-	// 	apis.GET("/applications/:namespace", endpoints.GetApplicationsInNamespace)
-	// 	apis.GET("/destination-types", endpoints.GetDestinationTypes)
-	// 	apis.GET("/destination-types/:type", endpoints.GetDestinationTypeDetails)
-	// 	apis.GET("/destinations", func(c *gin.Context) { endpoints.GetDestinations(c, flags.Namespace) })
-	// 	apis.GET("/destinations/:id", func(c *gin.Context) { endpoints.GetDestinationById(c, flags.Namespace) })
-	// 	apis.POST("/destinations", func(c *gin.Context) { endpoints.CreateNewDestination(c, flags.Namespace) })
-	// 	apis.POST("/destinations/testConnection", func(c *gin.Context) { endpoints.TestConnectionForDestination(c, flags.Namespace) })
-	// 	apis.PUT("/destinations/:id", func(c *gin.Context) { endpoints.UpdateExistingDestination(c, flags.Namespace) })
-	// 	apis.DELETE("/destinations/:id", func(c *gin.Context) { endpoints.DeleteDestination(c, flags.Namespace) })
-
-	// 	// Instrumentation Rules
-	// 	apis.GET("/instrumentation-rules", func(c *gin.Context) { endpoints.GetInstrumentationRules(c, flags.Namespace) })
-	// 	apis.GET("/instrumentation-rules/:id", func(c *gin.Context) { endpoints.GetInstrumentationRule(c, flags.Namespace, c.Param("id")) })
-	// 	apis.POST("/instrumentation-rules", func(c *gin.Context) { endpoints.CreateInstrumentationRule(c, flags.Namespace) })
-	// 	apis.DELETE("/instrumentation-rules/:id", func(c *gin.Context) { endpoints.DeleteInstrumentationRule(c, flags.Namespace, c.Param("id")) })
-	// 	apis.PUT("/instrumentation-rules/:id", func(c *gin.Context) { endpoints.UpdateInstrumentationRule(c, flags.Namespace, c.Param("id")) })
-
-	// 	// Describe
-	// 	apis.GET("/describe/odigos", func(c *gin.Context) {
-	// 		endpoints.DescribeOdigos(c)
-	// 	})
-	// 	apis.GET("/describe/source/namespace/:namespace/kind/:kind/name/:name", func(c *gin.Context) {
-	// 		endpoints.DescribeSource(c, c.Param("namespace"), c.Param("kind"), c.Param("name"))
-	// 	})
-
-	// 	apis.GET("/actions", func(c *gin.Context) { actions.GetActions(c, flags.Namespace) })
-
-	// 	// AddClusterInfo
-	// 	apis.GET("/actions/types/AddClusterInfo/:id", func(c *gin.Context) { actions.GetAddClusterInfo(c, flags.Namespace, c.Param("id")) })
-	// 	apis.POST("/actions/types/AddClusterInfo", func(c *gin.Context) { actions.CreateAddClusterInfo(c, flags.Namespace) })
-	// 	apis.PUT("/actions/types/AddClusterInfo/:id", func(c *gin.Context) { actions.UpdateAddClusterInfo(c, flags.Namespace, c.Param("id")) })
-	// 	apis.DELETE("/actions/types/AddClusterInfo/:id", func(c *gin.Context) { actions.DeleteAddClusterInfo(c, flags.Namespace, c.Param("id")) })
-
-	// 	// DeleteAttribute
-	// 	apis.GET("/actions/types/DeleteAttribute/:id", func(c *gin.Context) { actions.GetDeleteAttribute(c, flags.Namespace, c.Param("id")) })
-	// 	apis.POST("/actions/types/DeleteAttribute", func(c *gin.Context) { actions.CreateDeleteAttribute(c, flags.Namespace) })
-	// 	apis.PUT("/actions/types/DeleteAttribute/:id", func(c *gin.Context) { actions.UpdateDeleteAttribute(c, flags.Namespace, c.Param("id")) })
-	// 	apis.DELETE("/actions/types/DeleteAttribute/:id", func(c *gin.Context) { actions.DeleteDeleteAttribute(c, flags.Namespace, c.Param("id")) })
-
-	// 	// RenameAttribute
-	// 	apis.GET("/actions/types/RenameAttribute/:id", func(c *gin.Context) { actions.GetRenameAttribute(c, flags.Namespace, c.Param("id")) })
-	// 	apis.POST("/actions/types/RenameAttribute", func(c *gin.Context) { actions.CreateRenameAttribute(c, flags.Namespace) })
-	// 	apis.PUT("/actions/types/RenameAttribute/:id", func(c *gin.Context) { actions.UpdateRenameAttribute(c, flags.Namespace, c.Param("id")) })
-	// 	apis.DELETE("/actions/types/RenameAttribute/:id", func(c *gin.Context) { actions.DeleteRenameAttribute(c, flags.Namespace, c.Param("id")) })
-
-	// 	// Metrics
-	// 	apis.GET("/metrics/namespace/:namespace/kind/:kind/name/:name", func(c *gin.Context) { endpoints.GetSingleSourceMetrics(c, odigosMetrics) })
-	// 	apis.GET("/metrics/destinations/:id", func(c *gin.Context) { endpoints.GetSingleDestinationMetrics(c, odigosMetrics) })
-	// 	apis.GET("/metrics/sources", func(c *gin.Context) { endpoints.GetSourcesMetrics(c, odigosMetrics) })
-	// 	apis.GET("/metrics/destinations", func(c *gin.Context) { endpoints.GetDestinationsMetrics(c, odigosMetrics) })
-	// 	apis.GET("/metrics/overview", func(c *gin.Context) { endpoints.GetOverviewMetrics(c, odigosMetrics) })
-
-	// 	// ErrorSampler
-	// 	apis.GET("/actions/types/ErrorSampler/:id", func(c *gin.Context) { actions.GetErrorSampler(c, flags.Namespace, c.Param("id")) })
-	// 	apis.POST("/actions/types/ErrorSampler", func(c *gin.Context) { actions.CreateErrorSampler(c, flags.Namespace) })
-	// 	apis.PUT("/actions/types/ErrorSampler/:id", func(c *gin.Context) { actions.UpdateErrorSampler(c, flags.Namespace, c.Param("id")) })
-	// 	apis.DELETE("/actions/types/ErrorSampler/:id", func(c *gin.Context) { actions.DeleteErrorSampler(c, flags.Namespace, c.Param("id")) })
-	// 	// LatencySampler
-	// 	apis.GET("/actions/types/LatencySampler/:id", func(c *gin.Context) { actions.GetLatencySampler(c, flags.Namespace, c.Param("id")) })
-	// 	apis.POST("/actions/types/LatencySampler", func(c *gin.Context) { actions.CreateLatencySampler(c, flags.Namespace) })
-	// 	apis.PUT("/actions/types/LatencySampler/:id", func(c *gin.Context) { actions.UpdateLatencySampler(c, flags.Namespace, c.Param("id")) })
-	// 	apis.DELETE("/actions/types/LatencySampler/:id", func(c *gin.Context) { actions.DeleteLatencySampler(c, flags.Namespace, c.Param("id")) })
-
-	// 	//ProbabilisticSampler
-	// 	apis.GET("/actions/types/ProbabilisticSampler/:id", func(c *gin.Context) { actions.GetProbabilisticSampler(c, flags.Namespace, c.Param("id")) })
-	// 	apis.POST("/actions/types/ProbabilisticSampler", func(c *gin.Context) { actions.CreateProbabilisticSampler(c, flags.Namespace) })
-	// 	apis.PUT("/actions/types/ProbabilisticSampler/:id", func(c *gin.Context) { actions.UpdateProbabilisticSampler(c, flags.Namespace, c.Param("id")) })
-	// 	apis.DELETE("/actions/types/ProbabilisticSampler/:id", func(c *gin.Context) { actions.DeleteProbabilisticSampler(c, flags.Namespace, c.Param("id")) })
-
-	// 	// PiiMasking
-	// 	apis.GET("/actions/types/PiiMasking/:id", func(c *gin.Context) { actions.GetPiiMasking(c, flags.Namespace, c.Param("id")) })
-	// 	apis.POST("/actions/types/PiiMasking", func(c *gin.Context) { actions.CreatePiiMasking(c, flags.Namespace) })
-	// 	apis.PUT("/actions/types/PiiMasking/:id", func(c *gin.Context) { actions.UpdatePiiMasking(c, flags.Namespace, c.Param("id")) })
-	// 	apis.DELETE("/actions/types/PiiMasking/:id", func(c *gin.Context) { actions.DeletePiiMasking(c, flags.Namespace, c.Param("id")) })
-	// }
 
 	// GraphQL handlers
 	gqlHandler := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{
@@ -427,10 +343,10 @@ func main() {
 	d.GET("/api/events", sse.HandleSSEConnections)
 
 	log.Println("Starting Odigos UI...")
-	log.Printf("Odigos UI is available at: http://%s:%d", flags.Address, flags.Port)
+	log.Printf("Odigos UI is available at: http://%s:%d", flags.Address, flags.BetaPort)
 
 	go func() {
-		err = r.Run(fmt.Sprintf("%s:%d", flags.Address, flags.Port))
+		err = r.Run(fmt.Sprintf("%s:%d", flags.Address, flags.BetaPort))
 		if err != nil {
 			log.Fatalf("Error starting server: %s", err)
 		}
@@ -438,8 +354,8 @@ func main() {
 
 	go func() {
 		log.Println("Starting Odigos Dep UI...")
-		log.Printf("Odigos UI is available at: http://%s:%d", flags.Address, 3001)
-		err = d.Run(fmt.Sprintf("%s:%d", flags.Address, 3001))
+		log.Printf("Odigos UI is available at: http://%s:%d", flags.Address, flags.Port)
+		err = d.Run(fmt.Sprintf("%s:%d", flags.Address, flags.Port))
 		if err != nil {
 			log.Fatalf("Error starting server: %s", err)
 		}
