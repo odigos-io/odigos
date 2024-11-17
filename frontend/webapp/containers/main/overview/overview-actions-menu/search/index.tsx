@@ -8,13 +8,14 @@ import { SearchResults } from './search-results';
 const Search = () => {
   const [input, setInput] = useState('');
   const [focused, setFocused] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
 
-  useOnClickOutside(ref, () => setFocused(false));
+  const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  useOnClickOutside(containerRef, () => setFocused(false));
 
   return (
-    <RelativeContainer ref={ref}>
-      <Input placeholder='Search' icon='/icons/common/search.svg' value={input} onChange={(e) => setInput(e.target.value.toLowerCase())} onFocus={() => setFocused(true)} />
+    <RelativeContainer ref={containerRef}>
+      <Input ref={inputRef} placeholder='Search' icon='/icons/common/search.svg' value={input} onChange={(e) => setInput(e.target.value.toLowerCase())} onFocus={() => setFocused(true)} />
 
       {!!input || focused ? (
         <SearchResults
@@ -22,6 +23,7 @@ const Search = () => {
           onClose={() => {
             setInput('');
             setFocused(false);
+            inputRef.current?.blur();
           }}
         />
       ) : null}
