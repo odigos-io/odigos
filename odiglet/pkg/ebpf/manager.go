@@ -44,12 +44,20 @@ const (
 	InstrumentationUnhealthy InstrumentationHealth = false
 )
 
+type configUpdate struct {
+	workloadKey types.NamespacedName
+	config      *odigosv1.InstrumentationConfig
+}
+
+type ConfigUpdateFunc func(ctx context.Context, workloadKey types.NamespacedName, config *odigosv1.InstrumentationConfig) error
+
 type Manager struct {
-	ProcEvents   chan detector.ProcessEvent
-	Client       client.Client
-	Factories    map[FactoryID]Factory
-	Logger       logr.Logger
-	DetailsByPid map[int]InstrumentationDetails
+	ProcEvents    <- chan detector.ProcessEvent
+	Client        client.Client
+	Factories     map[FactoryID]Factory
+	Logger        logr.Logger
+	DetailsByPid  map[int]InstrumentationDetails
+	configUpdates chan configUpdate
 
 	done chan struct{}
 	stop context.CancelFunc
@@ -57,12 +65,26 @@ type Manager struct {
 
 func NewManager(client client.Client, logger logr.Logger, factories map[FactoryID]Factory, procEvents chan detector.ProcessEvent) *Manager {
 	return &Manager{
-		ProcEvents:   procEvents,
-		Client:       client,
-		Factories:    factories,
-		Logger:       logger,
-		DetailsByPid: make(map[int]InstrumentationDetails),
-		done:         make(chan struct{}),
+		ProcEvents:    procEvents,
+		Client:        client,
+		Factories:     factories,
+		Logger:        logger,
+		DetailsByPid:  make(map[int]InstrumentationDetails),
+		configUpdates: make(chan configUpdate),
+		done:          make(chan struct{}),
+	}
+}
+
+func (m *Manager) UpdateConfig(ctx context.Context, workloadKey types.NamespacedName, config *odigosv1.InstrumentationConfig) error {
+	// send a config update event for the specified workload
+	select {
+	case m.configUpdates <- configUpdate{workloadKey: workloadKey, config: config}:
+		return nil
+	case <-ctx.Done():
+		if ctx.Err() == context.DeadlineExceeded {
+			return errors.New("failed to update config of workload: timeout waiting for config update")
+		}
+		return ctx.Err()
 	}
 }
 
@@ -72,6 +94,7 @@ func (m *Manager) Run(ctx context.Context) {
 	runLoopCtx, stop := context.WithCancel(ctx)
 	m.stop = stop
 
+	// main event loop for handling instrumentations
 	for {
 		select {
 		case <-runLoopCtx.Done():
@@ -98,6 +121,16 @@ func (m *Manager) Run(ctx context.Context) {
 				}
 			case detector.ProcessExitEvent:
 				m.cleanInstrumentation(runLoopCtx, e.PID)
+			}
+		case configUpdate := <-m.configUpdates:
+			if configUpdate.config == nil {
+				m.Logger.Info("received nil config update, skipping")
+			}
+			for _, sdkConfig := range configUpdate.config.Spec.SdkConfigs {
+				err := m.applyInstrumentationConfigurationForSDK(runLoopCtx, configUpdate.workloadKey, &sdkConfig)
+				if err != nil {
+					m.Logger.Error(err, "failed to apply instrumentation configuration")
+				}
 			}
 		}
 	}
@@ -175,13 +208,31 @@ func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.Process
 		return fmt.Errorf("failed to get workload object: %w", err)
 	}
 
+	// Fetch initial config based on the InstrumentationConfig CR
+	sdkConfig := m.instrumentationSDKConfig(ctx, workload, lang, types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name})
+	// we should always have config for this event.
+	// if missing, it means that either:
+	// - the config will be generated later due to reconciliation timing in instrumentor
+	// - just go deleted and the pod (and the process) will go down soon
+	// TODO: sync reconcilers so ins config is guaranteed be created before the webhook is enabled
+	//
+	// if sdkConfig == nil {
+	// 	m.Logger.Info("no sdk config found for language", "language", lang, "pod", pod.Name)
+	// 	return nil
+	// }
+
 	settings := Settings{
+		// TODO: respect reported name annotation (if present) - to override the service name
+		// refactor from opAmp code
 		ServiceName:        workload.Name,
+		// TODO: add container name
 		ResourceAttributes: utils.GetResourceAttributes(workload, pod.Name),
+		InitialConfig:      sdkConfig,
 	}
+
 	inst, err := factory.CreateInstrumentation(ctx, e.PID, settings)
 	if err != nil {
-		m.Logger.Error(err, "failed to initialize instrumentation")
+		m.Logger.Error(err, "failed to initialize instrumentation", "language", lang, "sdk", sdk)
 
 		// write instrumentation instance CR with error status
 		err = m.updateInstrumentationInstanceStatus(ctx, pod, containerName, workload, e.PID, InstrumentationUnhealthy, FailedToInitialize, err.Error())
@@ -191,7 +242,7 @@ func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.Process
 
 	err = inst.Load(ctx)
 	if err != nil {
-		m.Logger.Error(err, "failed to load instrumentation")
+		m.Logger.Error(err, "failed to load instrumentation", "language", lang, "sdk", sdk)
 
 		// write instrumentation instance CR with error status
 		err = m.updateInstrumentationInstanceStatus(ctx, pod, containerName, workload, e.PID, InstrumentationUnhealthy, FailedToLoad, err.Error())
@@ -200,11 +251,14 @@ func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.Process
 	}
 
 	m.DetailsByPid[e.PID] = InstrumentationDetails{
-		Inst: inst,
-		Pod:  types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name},
+		Inst:              inst,
+		Pod:               types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name},
+		Lang:              lang,
+		WorkloadName:      workload.Name,
+		WorkloadNamespace: workload.Namespace,
 	}
 
-	m.Logger.Info("instrumentation loaded", "pid", e.PID, "pod", pod.Name)
+	m.Logger.Info("instrumentation loaded", "pid", e.PID, "pod", pod.Name, "container", containerName, "language", lang, "sdk", sdk)
 
 	// write instrumentation instance CR with success status
 	msg := fmt.Sprintf("Successfully loaded eBPF probes to pod: %s container: %s", pod.Name, containerName)
@@ -229,6 +283,42 @@ func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.Process
 	return nil
 }
 
+func (m *Manager) instrumentationSDKConfig(ctx context.Context, w *workloadUtils.PodWorkload, lang common.ProgrammingLanguage, podKey types.NamespacedName) *odigosv1.SdkConfig {
+	instrumentationConfig := odigosv1.InstrumentationConfig{}
+	instrumentationConfigKey := client.ObjectKey{
+		Namespace: w.Namespace,
+		Name:      workloadUtils.CalculateWorkloadRuntimeObjectName(w.Name, w.Kind),
+	}
+	if err := m.Client.Get(ctx, instrumentationConfigKey, &instrumentationConfig); err != nil {
+		// this can be valid when the instrumentation config is deleted and current pods will go down soon
+		m.Logger.Error(err, "failed to get initial instrumentation config for instrumented pod", "pod", podKey.Name, "namespace", podKey.Namespace)
+		return nil
+	}
+	for _, config := range instrumentationConfig.Spec.SdkConfigs {
+		if config.Language == lang {
+			return &config
+		}
+	}
+	return nil
+}
+
+func (m *Manager) applyInstrumentationConfigurationForSDK(ctx context.Context, workloadKey types.NamespacedName, sdkConfig *odigosv1.SdkConfig) error {
+	var err error
+	for _, instDetails := range m.DetailsByPid {
+		if instDetails.WorkloadName != workloadKey.Name || instDetails.WorkloadNamespace != workloadKey.Namespace {
+			continue
+		}
+
+		if instDetails.Lang != sdkConfig.Language {
+			continue
+		}
+
+		m.Logger.Info("applying configuration to instrumentation", "workload", workloadKey, "pid", instDetails.Inst, "pod", instDetails.Pod)
+		err = errors.Join(err, instDetails.Inst.ApplyConfig(ctx, sdkConfig))
+	}
+	return err
+}
+
 func (m *Manager) updateInstrumentationInstanceStatus(ctx context.Context, pod *corev1.Pod, containerName string, w *workloadUtils.PodWorkload, pid int, health InstrumentationHealth, reason InstrumentationStatusReason, msg string) error {
 	instrumentedAppName := workloadUtils.CalculateWorkloadRuntimeObjectName(w.Name, w.Kind)
 	healthy := bool(health)
@@ -251,6 +341,7 @@ func (m *Manager) podFromProcEvent(event detector.ProcessEvent) (*corev1.Pod, er
 	}
 
 	pod := corev1.Pod{}
+	// TODO: pass context from outer function
 	err := m.Client.Get(context.Background(), client.ObjectKey{Namespace: podNamespace, Name: podName}, &pod)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching pod object: %w", err)

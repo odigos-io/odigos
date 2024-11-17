@@ -72,13 +72,13 @@ func StartManager(ctx context.Context, mgr ctrl.Manager) error {
 	return nil
 }
 
-func SetupWithManager(mgr ctrl.Manager, ebpfDirectors ebpf.DirectorsMap, clientset *kubernetes.Clientset) error {
+func SetupWithManager(mgr ctrl.Manager, ebpfDirectors ebpf.DirectorsMap, clientset *kubernetes.Clientset, configUpdateFunc ebpf.ConfigUpdateFunc) error {
 	err := runtime_details.SetupWithManager(mgr, clientset)
 	if err != nil {
 		return err
 	}
 
-	err = instrumentation_ebpf.SetupWithManager(mgr, ebpfDirectors)
+	err = instrumentation_ebpf.SetupWithManager(mgr, ebpfDirectors, configUpdateFunc)
 	if err != nil {
 		return err
 	}

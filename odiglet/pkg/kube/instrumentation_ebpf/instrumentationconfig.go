@@ -8,6 +8,7 @@ import (
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -16,6 +17,7 @@ type InstrumentationConfigReconciler struct {
 	client.Client
 	Scheme    *runtime.Scheme
 	Directors ebpf.DirectorsMap
+	OnUpdate  ebpf.ConfigUpdateFunc
 }
 
 func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -50,6 +52,13 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 			if err != nil {
 				return ctrl.Result{}, err
 			}
+		}
+	}
+
+	if i.OnUpdate != nil {
+		err = i.OnUpdate(ctx, types.NamespacedName{Namespace: req.Namespace, Name: workloadName}, instrumentationConfig)
+		if err != nil {
+			return ctrl.Result{}, err
 		}
 	}
 

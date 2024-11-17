@@ -103,7 +103,7 @@ func main() {
 		log.Logger.Error(err, "Failed to start opamp server")
 	}
 
-	err = kube.SetupWithManager(mgr, nil, clientset)
+	err = kube.SetupWithManager(mgr, nil, clientset, instrumentationManager.UpdateConfig)
 	if err != nil {
 		log.Logger.Error(err, "Failed to setup controller-runtime manager")
 		os.Exit(-1)

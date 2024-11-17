@@ -12,7 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 )
 
-func SetupWithManager(mgr ctrl.Manager, ebpfDirectors ebpf.DirectorsMap) error {
+func SetupWithManager(mgr ctrl.Manager, ebpfDirectors ebpf.DirectorsMap, configUpdateFunc ebpf.ConfigUpdateFunc) error {
 
 	log.Logger.V(0).Info("Starting reconcileres for ebpf instrumentation")
 
@@ -43,6 +43,7 @@ func SetupWithManager(mgr ctrl.Manager, ebpfDirectors ebpf.DirectorsMap) error {
 			Client:    mgr.GetClient(),
 			Scheme:    mgr.GetScheme(),
 			Directors: ebpfDirectors,
+			OnUpdate:  configUpdateFunc,
 		})
 	if err != nil {
 		return err

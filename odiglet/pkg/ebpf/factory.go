@@ -14,6 +14,7 @@ import (
 type Settings struct {
 	ServiceName        string
 	ResourceAttributes []attribute.KeyValue
+	InitialConfig	   *odigosv1.SdkConfig
 }
 
 type Factory interface {
@@ -26,13 +27,16 @@ type FactoryID struct {
 }
 
 type InstrumentationDetails struct {
-	Inst Instrumentation
-	Pod  types.NamespacedName
+	Inst              Instrumentation
+	Pod               types.NamespacedName
+	Lang              common.ProgrammingLanguage
+	WorkloadName      string
+	WorkloadNamespace string
 }
 
 type Instrumentation interface {
 	Load(ctx context.Context) error
 	Run(ctx context.Context) error
 	Close(ctx context.Context) error
-	ApplyConfig(ctx context.Context, config *odigosv1.InstrumentationConfig) error
+	ApplyConfig(ctx context.Context, config *odigosv1.SdkConfig) error
 }
