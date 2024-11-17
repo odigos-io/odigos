@@ -15,73 +15,81 @@ interface Props {
   withIcon?: boolean;
 }
 
-const StatusWrapper = styled.div<Props>`
+const StatusWrapper = styled.div<{
+  $isActive?: Props['isActive'];
+  $withIcon?: Props['withIcon'];
+  $withBorder?: Props['withBorder'];
+  $withBackground?: Props['withBackground'];
+  $withSmaller?: Props['withSmaller'];
+}>`
   display: flex;
   align-items: center;
   width: fit-content;
-  padding: ${({ withIcon, withBorder, withSmaller }) => (withIcon || withBorder ? (withSmaller ? '4px 8px' : '8px 24px') : '0')};
+  padding: ${({ $withIcon, $withBorder, $withSmaller }) => ($withIcon || $withBorder ? ($withSmaller ? '4px 8px' : '8px 24px') : '0')};
   border-radius: 32px;
-  border: 1px solid ${({ withBorder, isActive, theme }) => (withBorder ? (isActive ? theme.colors.dark_green : theme.colors.dark_red) : 'transparent')};
-  background: ${({ withBackground, isActive }) =>
-    withBackground
-      ? isActive
+  border: 1px solid ${({ $withBorder, $isActive, theme }) => ($withBorder ? ($isActive ? theme.colors.dark_green : theme.colors.dark_red) : 'transparent')};
+  background: ${({ $withBackground, $isActive }) =>
+    $withBackground
+      ? $isActive
         ? `linear-gradient(90deg, rgba(23, 32, 19, 0) 0%, rgba(23, 32, 19, 0.8) 50%, #172013 100%)`
         : `linear-gradient(90deg, rgba(51, 21, 21, 0.00) 0%, rgba(51, 21, 21, 0.80) 50%, #331515 100%)`
       : 'transparent'};
 `;
 
-const IconWrapper = styled.div<Props>`
+const IconWrapper = styled.div<{ $withSmaller?: Props['withSmaller'] }>`
   display: flex;
   align-items: center;
-  margin-right: ${({ withSmaller }) => (withSmaller ? '6px' : '8px')};
+  margin-right: ${({ $withSmaller }) => ($withSmaller ? '6px' : '8px')};
 `;
 
-const TextWrapper = styled.div<Props>`
+const TextWrapper = styled.div`
   display: flex;
   align-items: center;
 `;
 
-const Title = styled(Text)<Props>`
+const Title = styled(Text)<{ $isActive?: Props['isActive']; $withSpecialFont?: Props['withSpecialFont']; $withSmaller?: Props['withSmaller'] }>`
   font-weight: 400;
-  font-size: ${({ withSmaller }) => (withSmaller ? '12px' : '14px')};
-  font-family: ${({ withSpecialFont, theme }) => (withSpecialFont ? theme.font_family.secondary : theme.font_family.primary)};
-  color: ${({ isActive, theme }) => (isActive ? theme.text.success : theme.text.error)};
-  text-transform: ${({ withSpecialFont }) => (withSpecialFont ? 'uppercase' : 'unset')};
+  font-size: ${({ $withSmaller }) => ($withSmaller ? '12px' : '14px')};
+  font-family: ${({ $withSpecialFont, theme }) => ($withSpecialFont ? theme.font_family.secondary : theme.font_family.primary)};
+  color: ${({ $isActive, theme }) => ($isActive ? theme.text.success : theme.text.error)};
+  text-transform: ${({ $withSpecialFont }) => ($withSpecialFont ? 'uppercase' : 'unset')};
 `;
 
-const SubTitle = styled(Text)<Props>`
+const SubTitle = styled(Text)<{ $isActive?: Props['isActive']; $withSpecialFont?: Props['withSpecialFont']; $withSmaller?: Props['withSmaller'] }>`
   font-weight: 400;
-  font-size: ${({ withSmaller }) => (withSmaller ? '10px' : '12px')};
-  font-family: ${({ withSpecialFont, theme }) => (withSpecialFont ? theme.font_family.secondary : theme.font_family.primary)};
-  color: ${({ isActive }) => (isActive ? '#51DB51' : '#DB5151')};
-  text-transform: ${({ withSpecialFont }) => (withSpecialFont ? 'uppercase' : 'unset')};
+  font-size: ${({ $withSmaller }) => ($withSmaller ? '10px' : '12px')};
+  font-family: ${({ $withSpecialFont, theme }) => ($withSpecialFont ? theme.font_family.secondary : theme.font_family.primary)};
+  color: ${({ $isActive }) => ($isActive ? '#51DB51' : '#DB5151')};
+  text-transform: ${({ $withSpecialFont }) => ($withSpecialFont ? 'uppercase' : 'unset')};
 `;
 
-const TextDivider = styled.div<Props>`
+const TextDivider = styled.div<{ $isActive?: Props['isActive'] }>`
   width: 1px;
   height: 12px;
-  background: ${({ isActive }) => (isActive ? 'rgba(124, 237, 124, 0.16)' : 'rgba(237, 124, 124, 0.16)')};
+  background: ${({ $isActive }) => ($isActive ? 'rgba(124, 237, 124, 0.16)' : 'rgba(237, 124, 124, 0.16)')};
   margin: 0 8px;
 `;
 
-const Status: React.FC<Props> = (props) => {
-  const { title, subtitle, isActive, withIcon, withSmaller } = props;
-
+const Status: React.FC<Props> = ({ title, subtitle, isActive, withIcon, withBorder, withBackground, withSpecialFont, withSmaller }) => {
   return (
-    <StatusWrapper {...props}>
+    <StatusWrapper $isActive={isActive} $withIcon={withIcon} $withBorder={withBorder} $withBackground={withBackground} $withSmaller={withSmaller}>
       {withIcon && (
-        <IconWrapper {...props}>
+        <IconWrapper $withSmaller={withSmaller}>
           <Image src={getStatusIcon(isActive ? 'success' : 'error')} alt='status' width={withSmaller ? 14 : 16} height={withSmaller ? 14 : 16} />
         </IconWrapper>
       )}
 
-      <TextWrapper {...props}>
-        <Title {...props}>{title || (isActive ? 'Active' : 'Inactive')}</Title>
+      <TextWrapper>
+        <Title $isActive={isActive} $withSpecialFont={withSpecialFont} $withSmaller={withSmaller}>
+          {title || (isActive ? 'Active' : 'Inactive')}
+        </Title>
 
         {subtitle && (
-          <TextWrapper {...props}>
-            <TextDivider {...props} />
-            <SubTitle {...props}>{subtitle}</SubTitle>
+          <TextWrapper>
+            <TextDivider $isActive={isActive} />
+            <SubTitle $isActive={isActive} $withSpecialFont={withSpecialFont} $withSmaller={withSmaller}>
+              {subtitle}
+            </SubTitle>
           </TextWrapper>
         )}
       </TextWrapper>

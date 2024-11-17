@@ -1,7 +1,7 @@
 import React, { useState, useRef, ReactNode, useEffect } from 'react';
+import { Text } from '../text';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components';
-import { Text } from '../text';
 
 interface TooltipProps {
   text: ReactNode;
@@ -14,10 +14,10 @@ const TooltipWrapper = styled.div`
   align-items: center;
 `;
 
-const TooltipContent = styled.div<{ top: number; left: number }>`
+const TooltipContent = styled.div<{ $top: number; $left: number }>`
   position: absolute;
-  top: ${(props) => props.top}px;
-  left: ${(props) => props.left}px;
+  top: ${({ $top }) => $top}px;
+  left: ${({ $left }) => $left}px;
   transform: translateY(-100%);
   border-radius: 32px;
   background-color: ${({ theme }) => theme.colors.dark_grey};
@@ -37,8 +37,8 @@ const Tooltip: React.FC<TooltipProps> = ({ text, children }) => {
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (wrapperRef.current) {
-        const { top, left, height } =
-          wrapperRef.current.getBoundingClientRect();
+        const { top, left } = wrapperRef.current.getBoundingClientRect();
+
         setPosition({
           top: top + window.scrollY - 10, // Adjust the offset for the tooltip to be above the element
           left: left + window.scrollX,
@@ -56,7 +56,7 @@ const Tooltip: React.FC<TooltipProps> = ({ text, children }) => {
   }, [isHovered]);
 
   const tooltipContent = (
-    <TooltipContent top={position.top} left={position.left}>
+    <TooltipContent $top={position.top} $left={position.left}>
       <Text size={14}>{text}</Text>
     </TooltipContent>
   );
@@ -66,11 +66,7 @@ const Tooltip: React.FC<TooltipProps> = ({ text, children }) => {
   }
 
   return (
-    <TooltipWrapper
-      ref={wrapperRef}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
+    <TooltipWrapper ref={wrapperRef} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
       {children}
       {isHovered && ReactDOM.createPortal(tooltipContent, document.body)}
     </TooltipWrapper>

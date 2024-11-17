@@ -17,7 +17,7 @@ interface ModalProps {
   children: React.ReactNode;
 }
 
-const ModalWrapper = styled.div<{ isOpen: ModalProps['isOpen'] }>`
+const ModalWrapper = styled.div<{ $isOpen: ModalProps['isOpen'] }>`
   position: fixed;
   top: 50%;
   left: 50%;
@@ -28,9 +28,9 @@ const ModalWrapper = styled.div<{ isOpen: ModalProps['isOpen'] }>`
   background: ${({ theme }) => theme.colors.translucent_bg};
   border: ${({ theme }) => `1px solid ${theme.colors.border}`};
   border-radius: 40px;
-  box-shadow: 0px 1px 1px 0px rgba(17, 17, 17, 0.8), 0px 2px 2px 0px rgba(17, 17, 17, 0.8), 0px 5px 5px 0px rgba(17, 17, 17, 0.8),
-    0px 10px 10px 0px rgba(17, 17, 17, 0.8), 0px 0px 8px 0px rgba(17, 17, 17, 0.8);
-  animation: ${({ isOpen }) => (isOpen ? slide.in['center'] : slide.out['center'])} 0.3s ease;
+  box-shadow: 0px 1px 1px 0px rgba(17, 17, 17, 0.8), 0px 2px 2px 0px rgba(17, 17, 17, 0.8), 0px 5px 5px 0px rgba(17, 17, 17, 0.8), 0px 10px 10px 0px rgba(17, 17, 17, 0.8),
+    0px 0px 8px 0px rgba(17, 17, 17, 0.8);
+  animation: ${({ $isOpen }) => ($isOpen ? slide.in['center'] : slide.out['center'])} 0.3s ease;
 `;
 
 const ModalHeader = styled.div`
@@ -89,7 +89,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, noOverlay, header, actionComponen
       key: 'Escape',
       active: isOpen,
     },
-    () => onClose()
+    () => onClose(),
   );
 
   if (!isOpen) return null;
@@ -98,7 +98,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, noOverlay, header, actionComponen
     <>
       <Overlay onClick={onClose} style={{ opacity: noOverlay ? 0 : 1 }} />
 
-      <ModalWrapper isOpen={isOpen}>
+      <ModalWrapper $isOpen={isOpen}>
         {header && (
           <ModalHeader>
             <ModalCloseButton onClick={onClose}>
@@ -115,7 +115,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, noOverlay, header, actionComponen
         <ModalContent>{children}</ModalContent>
       </ModalWrapper>
     </>,
-    document.body
+    document.body,
   );
 };
 

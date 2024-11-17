@@ -16,11 +16,7 @@ const Container = styled.div`
   width: 100%;
 `;
 
-const InputWrapper = styled.div<{
-  isDisabled?: boolean;
-  hasError?: boolean;
-  isActive?: boolean;
-}>`
+const InputWrapper = styled.div<{ $disabled?: boolean; $hasError?: boolean; $isActive?: boolean }>`
   width: 100%;
 
   display: flex;
@@ -30,22 +26,22 @@ const InputWrapper = styled.div<{
   transition: border-color 0.3s;
   border-radius: 24px;
   border: 1px solid rgba(249, 249, 249, 0.24);
-  ${({ isDisabled }) =>
-    isDisabled &&
+  ${({ $disabled }) =>
+    $disabled &&
     css`
       background-color: #555;
       cursor: not-allowed;
       opacity: 0.6;
     `}
 
-  ${({ hasError }) =>
-    hasError &&
+  ${({ $hasError }) =>
+    $hasError &&
     css`
       border-color: red;
     `}
 
-  ${({ isActive }) =>
-    isActive &&
+  ${({ $isActive }) =>
+    $isActive &&
     css`
       border-color: ${({ theme }) => theme.colors.secondary};
     `}
@@ -58,7 +54,7 @@ const InputWrapper = styled.div<{
   }
 `;
 
-const StyledTextArea = styled.textarea<{}>`
+const StyledTextArea = styled.textarea`
   flex: 1;
   border: none;
   outline: none;
@@ -102,7 +98,7 @@ const TextArea: React.FC<TextAreaProps> = ({ errorMessage, title, tooltip, requi
     <Container>
       <FieldLabel title={title} required={required} tooltip={tooltip} />
 
-      <InputWrapper isDisabled={props.disabled} hasError={!!errorMessage} isActive={!!props.autoFocus}>
+      <InputWrapper $disabled={props.disabled} $hasError={!!errorMessage} $isActive={!!props.autoFocus}>
         <StyledTextArea {...props} />
       </InputWrapper>
 

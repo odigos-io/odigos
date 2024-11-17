@@ -8,7 +8,7 @@ import { useSourceCRUD } from '@/hooks';
 import { DeleteWarning } from '@/components';
 import { Badge, Button, Divider, Text, Transition } from '@/reuseable-components';
 
-const Container = styled.div<{ isEntering: boolean; isLeaving: boolean }>`
+const Container = styled.div`
   position: fixed;
   bottom: 0;
   left: 50%;
