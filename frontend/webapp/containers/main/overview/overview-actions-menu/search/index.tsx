@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { useOnClickOutside } from '@/hooks';
+import { useKeyDown, useOnClickOutside } from '@/hooks';
 import { RelativeContainer } from '../styled';
 import { Input } from '@/reuseable-components';
 import { SearchResults } from './search-results';
@@ -9,24 +9,22 @@ const Search = () => {
   const [input, setInput] = useState('');
   const [focused, setFocused] = useState(false);
 
+  const onClose = () => {
+    setInput('');
+    setFocused(false);
+    inputRef.current?.blur();
+  };
+
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   useOnClickOutside(containerRef, () => setFocused(false));
+  useKeyDown({ key: 'Escape', active: !!input || focused }, onClose);
 
   return (
     <RelativeContainer ref={containerRef}>
       <Input ref={inputRef} placeholder='Search' icon='/icons/common/search.svg' value={input} onChange={(e) => setInput(e.target.value.toLowerCase())} onFocus={() => setFocused(true)} />
 
-      {!!input || focused ? (
-        <SearchResults
-          searchText={input}
-          onClose={() => {
-            setInput('');
-            setFocused(false);
-            inputRef.current?.blur();
-          }}
-        />
-      ) : null}
+      {!!input || focused ? <SearchResults searchText={input} onClose={onClose} /> : null}
 
       {/* TODO: recent searches...
 

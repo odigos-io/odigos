@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import theme from '@/styles/theme';
 import styled from 'styled-components';
-import { useOnClickOutside } from '@/hooks';
+import { useKeyDown, useOnClickOutside } from '@/hooks';
 import { AbsoluteContainer, RelativeContainer } from '../styled';
 import { Button, SelectionButton, Toggle } from '@/reuseable-components';
 import { type FiltersState, useFilterStore } from '@/store/useFilterStore';
@@ -70,6 +70,7 @@ const Filters = () => {
 
   const ref = useRef<HTMLDivElement>(null);
   useOnClickOutside(ref, onCancel);
+  useKeyDown({ key: 'Escape', active: focused }, onCancel);
 
   return (
     <RelativeContainer ref={ref}>

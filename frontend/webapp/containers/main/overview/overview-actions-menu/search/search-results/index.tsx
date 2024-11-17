@@ -6,7 +6,7 @@ import { AbsoluteContainer } from '../../styled';
 import { getEntityIcon, getEntityLabel } from '@/utils';
 import { buildSearchResults, type Category } from './builder';
 import { Divider, SelectionButton, Text } from '@/reuseable-components';
-import { useActionCRUD, useDestinationCRUD, useInstrumentationRuleCRUD, useKeyDown, useNodeDataFlowHandlers, useSourceCRUD } from '@/hooks';
+import { useActionCRUD, useDestinationCRUD, useInstrumentationRuleCRUD, useNodeDataFlowHandlers, useSourceCRUD } from '@/hooks';
 
 interface Props {
   searchText: string;
@@ -29,7 +29,6 @@ const VerticalScroll = styled.div`
 `;
 
 export const SearchResults = ({ searchText, onClose }: Props) => {
-  useKeyDown({ key: 'Escape', active: true }, onClose);
   const [selectedCategory, setSelectedCategory] = useState<Category>('all');
 
   const { sources } = useSourceCRUD();
