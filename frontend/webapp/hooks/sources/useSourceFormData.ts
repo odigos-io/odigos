@@ -128,6 +128,8 @@ export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFo
     }
   };
 
+  // this is to keep trying "select all" per namespace until the sources are loaded (allows for 1-click, better UX).
+  // if selectedSources returns an emtpy array, it will stop to prevent inifnite loop where no availableSources ever exist for that namespace
   useEffect(() => {
     if (!!selectAllForNamespace) {
       setSelectAllForNamespace('');
