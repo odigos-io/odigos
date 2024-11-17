@@ -17,22 +17,23 @@ const ListItem = styled.div`
   gap: 4px;
 `;
 
+const MonitorTitle = styled(Text)`
+  color: ${({ theme }) => theme.text.grey};
+  font-size: 12px;
+  font-weight: 300;
+  line-height: 150%;
+`;
+
 const MonitorsLegend = () => {
   return (
     <List>
       {MONITORS_OPTIONS.map(({ id, value }) => (
         <ListItem key={`monitors-legend-${id}`}>
-          <Image
-            src={`/icons/monitors/${id}.svg`}
-            width={14}
-            height={14}
-            alt={value}
-            style={{ filter: 'invert(40%) brightness(80%) grayscale(100%)' }}
-          />
+          <Image src={`/icons/monitors/${id}.svg`} width={14} height={14} alt={value} style={{ filter: 'invert(40%) brightness(80%) grayscale(100%)' }} />
 
-          <Text size={14} color={theme.text.grey}>
+          <MonitorTitle size={14} color={theme.text.grey}>
             {value}
-          </Text>
+          </MonitorTitle>
         </ListItem>
       ))}
     </List>

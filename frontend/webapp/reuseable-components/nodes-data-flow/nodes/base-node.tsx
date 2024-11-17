@@ -116,7 +116,7 @@ const BaseNode = ({ nodeWidth, isConnectable, data }: BaseNodeProps) => {
       <FooterWrapper>
         <FooterText>{'·'}</FooterText>
         {monitors.map((monitor, index) => (
-          <Image key={index} src={`/icons/monitors/${monitor}.svg`} width={10} height={10} alt={monitor} />
+          <Image key={index} src={`/icons/monitors/${monitor.toLocaleLowerCase()}.svg`} width={10} height={10} alt={monitor} />
         ))}
       </FooterWrapper>
     );

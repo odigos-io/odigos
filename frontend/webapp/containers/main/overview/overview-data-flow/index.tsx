@@ -6,7 +6,7 @@ import { ToastList } from '@/components';
 import MultiSourceControl from '../multi-source-control';
 import { OverviewActionMenuContainer } from '../overview-actions-menu';
 import { buildNodesAndEdges, NodeBaseDataFlow } from '@/reuseable-components';
-import { useMetrics, useContainerWidth, useNodeDataFlowHandlers, useSourceCRUD, useDestinationCRUD, useInstrumentationRuleCRUD, useActionCRUD } from '@/hooks';
+import { useMetrics, useContainerSize, useNodeDataFlowHandlers, useSourceCRUD, useDestinationCRUD, useInstrumentationRuleCRUD, useActionCRUD } from '@/hooks';
 
 const AllDrawers = dynamic(() => import('../all-drawers'), {
   ssr: false,
@@ -17,7 +17,7 @@ const AllModals = dynamic(() => import('../all-modals'), {
 });
 
 export const OverviewDataFlowWrapper = styled.div`
-  width: calc(100% - 64px);
+  width: 100%;
   height: calc(100vh - 176px);
   position: relative;
 `;
@@ -31,7 +31,8 @@ export default function OverviewDataFlowContainer() {
   const { actions } = useActionCRUD();
   const { destinations } = useDestinationCRUD();
   const { instrumentationRules } = useInstrumentationRuleCRUD();
-  const { containerRef, containerWidth } = useContainerWidth();
+  const { containerRef, containerWidth, containerHeight } = useContainerSize();
+
   const { handleNodeClick } = useNodeDataFlowHandlers({
     rules: instrumentationRules,
     sources,
@@ -48,10 +49,11 @@ export default function OverviewDataFlowContainer() {
       destinations,
       metrics,
       containerWidth,
+      containerHeight,
       nodeWidth: NODE_WIDTH,
       nodeHeight: NODE_HEIGHT,
     });
-  }, [instrumentationRules, sources, actions, destinations, metrics, containerWidth]);
+  }, [instrumentationRules, sources, actions, destinations, metrics, containerWidth, containerHeight]);
 
   return (
     <OverviewDataFlowWrapper ref={containerRef}>

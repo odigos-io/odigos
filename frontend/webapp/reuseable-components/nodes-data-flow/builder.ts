@@ -55,6 +55,7 @@ export const buildNodesAndEdges = ({
   destinations,
   metrics,
   containerWidth,
+  containerHeight,
   nodeWidth,
   nodeHeight,
 }: {
@@ -64,6 +65,7 @@ export const buildNodesAndEdges = ({
   destinations: ActualDestination[];
   metrics?: OverviewMetricsResponse;
   containerWidth: number;
+  containerHeight: number;
   nodeWidth: number;
   nodeHeight: number;
 }) => {
@@ -77,33 +79,32 @@ export const buildNodesAndEdges = ({
     };
   }
 
-  // Calculate positions for each node
-  const startX = 0;
-  const endX = (containerWidth <= 1500 ? 1500 : containerWidth) - nodeWidth;
+  const startX = 24;
+  const endX = (containerWidth <= 1500 ? 1500 : containerWidth) - nodeWidth - 40 - startX;
+  const getY = (idx?: number) => nodeHeight * ((idx || 0) + 1);
+
   const postions = {
     rules: {
       x: startX,
-      y: (idx?: number) => nodeHeight * ((idx || 0) + 1),
+      y: getY,
     },
     sources: {
       x: getValueForRange(containerWidth, [
-        [0, 1500, endX / 3.5],
-        [1500, 1600, endX / 4],
-        [1600, null, endX / 4.5],
+        [0, 1600, endX / 3.5],
+        [1600, null, endX / 4],
       ]),
-      y: (idx?: number) => nodeHeight * ((idx || 0) + 1),
+      y: getY,
     },
     actions: {
       x: getValueForRange(containerWidth, [
-        [0, 1500, endX / 1.55],
-        [1500, 1600, endX / 1.6],
-        [1600, null, endX / 1.65],
+        [0, 1600, endX / 1.55],
+        [1600, null, endX / 1.6],
       ]),
-      y: (idx?: number) => nodeHeight * ((idx || 0) + 1),
+      y: getY,
     },
     destinations: {
       x: endX,
-      y: (idx?: number) => nodeHeight * ((idx || 0) + 1),
+      y: getY,
     },
   };
 
@@ -330,6 +331,22 @@ export const buildNodesAndEdges = ({
       }
     });
   }
+
+  tempNodes['rules'].push(
+    createNode(
+      'hidden',
+      'hidden',
+      postions['rules']['x'],
+      containerHeight,
+      {},
+      {
+        width: 1,
+        height: 1,
+        opacity: 0,
+        pointerEvents: 'none',
+      },
+    ),
+  );
 
   Object.values(tempNodes).forEach((arr) => nodes.push(...arr));
 
