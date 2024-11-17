@@ -100,11 +100,8 @@ export const SourcesList: React.FC<Props> = ({
   onSelectFutureApps,
 
   searchText,
-  setSearchText,
-  selectAll,
   onSelectAll,
   showSelectedOnly,
-  setShowSelectedOnly,
 
   filterSources,
 }) => {
@@ -141,7 +138,14 @@ export const SourcesList: React.FC<Props> = ({
           <Group key={`namespace-${namespace}`} isSelected={isNamespaceAllSourcesSelected} isOpen={isNamespaceSelected && hasFilteredSources}>
             <NamespaceItem isSelected={isNamespaceAllSourcesSelected} onClick={() => onSelectNamespace(namespace)}>
               <FlexRow>
-                <Checkbox disabled={!isNamespaceCanSelect} initialValue={isNamespaceAllSourcesSelected} onChange={(bool) => onSelectAll(bool, namespace)} />
+                <Checkbox
+                  // disabled={!isNamespaceCanSelect}
+                  initialValue={isNamespaceAllSourcesSelected}
+                  onChange={(bool) => {
+                    if (bool) onSelectNamespace(namespace);
+                    onSelectAll(bool, namespace);
+                  }}
+                />
                 <Text>{namespace}</Text>
               </FlexRow>
 
