@@ -6,13 +6,13 @@ import { useAppStore } from '@/store';
 import styled from 'styled-components';
 import { useSourceCRUD } from '@/hooks';
 import { DeleteWarning } from '@/components';
-import { Badge, Button, Divider, Text } from '@/reuseable-components';
+import { Badge, Button, Divider, Text, Transition } from '@/reuseable-components';
 
 const Container = styled.div<{ isEntering: boolean; isLeaving: boolean }>`
   position: fixed;
   bottom: 0;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, 100%);
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -21,7 +21,6 @@ const Container = styled.div<{ isEntering: boolean; isLeaving: boolean }>`
   border-radius: 32px;
   border: 1px solid ${({ theme }) => theme.colors.border};
   background-color: ${({ theme }) => theme.colors.dropdown_bg};
-  animation: ${({ isEntering, isLeaving }) => (isEntering ? slide.in['center'] : isLeaving ? slide.out['center'] : 'none')} 0.3s forwards;
 `;
 
 const MultiSourceControl = () => {
@@ -51,7 +50,7 @@ const MultiSourceControl = () => {
 
   return (
     <>
-      <Container isEntering={!!totalSelected} isLeaving={!totalSelected}>
+      <Transition container={Container} enter={!!totalSelected} animateIn={slide.in['center']} animateOut={slide.out['center']}>
         <Text>Selected sources</Text>
         <Badge label={totalSelected} filled />
 
@@ -69,7 +68,7 @@ const MultiSourceControl = () => {
             Delete
           </Text>
         </Button>
-      </Container>
+      </Transition>
 
       <DeleteWarning isOpen={isWarnModalOpen} name={`${totalSelected} sources`} onApprove={onDelete} onDeny={() => setIsWarnModalOpen(false)} />
     </>

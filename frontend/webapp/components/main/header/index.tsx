@@ -2,39 +2,54 @@ import React from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
 import { PlatformTitle } from './cp-title';
+import { useConnectionStore } from '@/store';
 import { Status } from '@/reuseable-components';
+import { NotificationManager } from '@/components/notification';
 
 interface MainHeaderProps {}
 
-const HeaderContainer = styled.div`
+const Flex = styled.div`
   display: flex;
-  padding: 12px 0;
   align-items: center;
+`;
+
+const HeaderContainer = styled(Flex)`
+  width: 100%;
+  padding: 12px 0;
   background-color: ${({ theme }) => theme.colors.dark_grey};
   border-bottom: 1px solid rgba(249, 249, 249, 0.16);
-  width: 100%;
 `;
 
-const Logo = styled.div`
-  display: flex;
-  align-items: center;
+const AlignLeft = styled(Flex)`
+  margin-right: auto;
   margin-left: 32px;
+  gap: 16px;
 `;
 
-const PlatformTitleWrapper = styled.div`
-  margin-left: 32px;
+const AlignRight = styled(Flex)`
+  margin-left: auto;
+  margin-right: 32px;
+  gap: 16px;
 `;
 
 export const MainHeader: React.FC<MainHeaderProps> = () => {
+  const { connecting, active, title, message } = useConnectionStore();
+
   return (
     <HeaderContainer>
-      <Logo>
+      <AlignLeft>
         <Image src='/brand/transparent-logo-white.svg' alt='logo' width={84} height={20} />
-      </Logo>
-      <PlatformTitleWrapper>
         <PlatformTitle type='k8s' />
-      </PlatformTitleWrapper>
-      <Status title='Connection Alive' isActive withIcon withBackground />
+        {!connecting && <Status title={title} subtitle={message} isActive={active} withIcon withBackground />}
+      </AlignLeft>
+
+      <AlignRight>
+        <NotificationManager />
+        {/* <Flex style={{ gap: '8px' }}>
+          <Image src='/icons/common/avatar.svg' alt='avatar' width={28} height={28} />
+          <Text>Full Name</Text>
+        </Flex> */}
+      </AlignRight>
     </HeaderContainer>
   );
 };
