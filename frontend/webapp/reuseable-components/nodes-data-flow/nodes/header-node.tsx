@@ -67,14 +67,14 @@ const HeaderNode = ({ data, nodeWidth }: HeaderNodeProps) => {
 
   const renderActions = () => {
     if (title !== 'Sources') return null;
+    if (!sources.length) return null;
 
-    const isDisabled = !sources.length;
-    const isSelected = !isDisabled && sources.length === totalSelected;
+    const isSelected = sources.length === totalSelected;
     const onSelect = (bool: boolean) => setConfiguredSources(bool ? sourcesToSelect : {});
 
     return (
       <ActionsWrapper>
-        <Checkbox disabled={isDisabled} initialValue={isSelected} onChange={onSelect} />
+        <Checkbox initialValue={isSelected} onChange={onSelect} />
       </ActionsWrapper>
     );
   };
