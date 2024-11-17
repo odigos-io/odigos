@@ -71,14 +71,6 @@ type podDetails[T OtelEbpfSdk] struct {
 	InstrumentedProcesses []*InstrumentedProcess[T]
 }
 
-type InstrumentationStatusReason string
-
-const (
-	FailedToLoad       InstrumentationStatusReason = "FailedToLoad"
-	FailedToInitialize InstrumentationStatusReason = "FailedToInitialize"
-	LoadedSuccessfully InstrumentationStatusReason = "LoadedSuccessfully"
-)
-
 // CleanupInterval is the interval in which the director will check if the instrumented processes are still running
 // and clean up the resources associated to the ones that are not.
 // It is not const for testing purposes.

@@ -6,13 +6,17 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/container"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	instance "github.com/odigos-io/odigos/k8sutils/pkg/instrumentation_instance"
+	workloadUtils "github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/odiglet/pkg/detector"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -24,6 +28,22 @@ var (
 	ErrNoInstrumentationFactory = errors.New("no ebpf factory found")
 )
 
+type InstrumentationStatusReason string
+
+const (
+	FailedToLoad       InstrumentationStatusReason = "FailedToLoad"
+	FailedToInitialize InstrumentationStatusReason = "FailedToInitialize"
+	LoadedSuccessfully InstrumentationStatusReason = "LoadedSuccessfully"
+	FailedToRun        InstrumentationStatusReason = "FailedToRun"
+)
+
+type InstrumentationHealth bool
+
+const (
+	InstrumentationHealthy   InstrumentationHealth = true
+	InstrumentationUnhealthy InstrumentationHealth = false
+)
+
 type Manager struct {
 	ProcEvents   chan detector.ProcessEvent
 	Client       client.Client
@@ -31,8 +51,8 @@ type Manager struct {
 	Logger       logr.Logger
 	DetailsByPid map[int]InstrumentationDetails
 
-	done   chan struct{}
-	stop   context.CancelFunc
+	done chan struct{}
+	stop context.CancelFunc
 }
 
 func NewManager(client client.Client, logger logr.Logger, factories map[FactoryID]Factory, procEvents chan detector.ProcessEvent) *Manager {
@@ -77,23 +97,7 @@ func (m *Manager) Run(ctx context.Context) {
 					m.Logger.Error(err, "failed to handle process exec event")
 				}
 			case detector.ProcessExitEvent:
-				m.Logger.Info("detected process exit", "pid", e.PID)
-
-				details, found := m.DetailsByPid[e.PID]
-				if !found {
-					// TODO: move this to debug level
-					m.Logger.Info("no instrumentation found for exiting pid", "pid", e.PID)
-					continue
-				}
-
-				err := details.Inst.Close(runLoopCtx)
-				if err != nil {
-					m.Logger.Error(err, "failed to close instrumentation")
-				}
-
-				delete(m.DetailsByPid, e.PID)
-
-				// TODO: remove instrumentation instance
+				m.cleanInstrumentation(runLoopCtx, e.PID)
 			}
 		}
 	}
@@ -102,6 +106,33 @@ func (m *Manager) Run(ctx context.Context) {
 func (m *Manager) Stop() {
 	m.stop()
 	<-m.done
+}
+
+func (m *Manager) cleanInstrumentation(ctx context.Context, pid int) {
+	details, found := m.DetailsByPid[pid]
+	if !found {
+		m.Logger.V(3).Info("no instrumentation found for exiting pid", "pid", pid)
+		return
+	}
+
+	m.Logger.Info("cleaning instrumentation resources", "pid", pid)
+
+	err := details.Inst.Close(ctx)
+	if err != nil {
+		m.Logger.Error(err, "failed to close instrumentation")
+	}
+
+	// remove instrumentation instance
+	if err = m.Client.Delete(ctx, &odigosv1.InstrumentationInstance{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      instance.InstrumentationInstanceName(details.Pod.Name, pid),
+			Namespace: details.Pod.Namespace,
+		},
+	}); err != nil && !apierrors.IsNotFound(err) {
+		m.Logger.Error(err, "error deleting instrumentation instance", "pod", details.Pod.Name, "pid", pid)
+	}
+
+	delete(m.DetailsByPid, pid)
 }
 
 func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.ProcessEvent) error {
@@ -120,11 +151,16 @@ func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.Process
 		return fmt.Errorf("failed to get pod from process event: %w", err)
 	}
 
+	containerName, found := containerNameFromProcEvent(e)
+	if !found {
+		return ErrContainerNameNotReported
+	}
+
 	// get the language and sdk for this process event
 	// based on the pod spec and the container name from the process event
 	// TODO: We should have all the required information in the process event
 	// to determine the language - hence in the future we can improve this
-	lang, sdk, err := m.languageSdk(pod, e)
+	lang, sdk, err := m.languageSdk(pod, containerName)
 	if err != nil {
 		return fmt.Errorf("failed to get language and sdk: %w", err)
 	}
@@ -134,7 +170,7 @@ func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.Process
 		return ErrNoInstrumentationFactory
 	}
 
-	workload, err := workload.PodWorkloadObject(ctx, pod)
+	workload, err := workloadUtils.PodWorkloadObject(ctx, pod)
 	if err != nil {
 		return fmt.Errorf("failed to get workload object: %w", err)
 	}
@@ -145,14 +181,22 @@ func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.Process
 	}
 	inst, err := factory.CreateInstrumentation(ctx, e.PID, settings)
 	if err != nil {
-		return fmt.Errorf("failed to create instrumentation: %w", err)
+		m.Logger.Error(err, "failed to initialize instrumentation")
+
+		// write instrumentation instance CR with error status
+		err = m.updateInstrumentationInstanceStatus(ctx, pod, containerName, workload, e.PID, InstrumentationUnhealthy, FailedToInitialize, err.Error())
+		// TODO: should we return here the initialize error? or the instance write error? or both?
+		return err
 	}
 
 	err = inst.Load(ctx)
 	if err != nil {
 		m.Logger.Error(err, "failed to load instrumentation")
-		// TODO: write instrumentation instance CR with error status
-		return nil
+
+		// write instrumentation instance CR with error status
+		err = m.updateInstrumentationInstanceStatus(ctx, pod, containerName, workload, e.PID, InstrumentationUnhealthy, FailedToLoad, err.Error())
+		// TODO: should we return here the load error? or the instance write error? or both?
+		return err
 	}
 
 	m.DetailsByPid[e.PID] = InstrumentationDetails{
@@ -160,19 +204,37 @@ func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.Process
 		Pod:  types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name},
 	}
 
-	// TODO: move to debug level?
 	m.Logger.Info("instrumentation loaded", "pid", e.PID, "pod", pod.Name)
+
+	// write instrumentation instance CR with success status
+	msg := fmt.Sprintf("Successfully loaded eBPF probes to pod: %s container: %s", pod.Name, containerName)
+	err = m.updateInstrumentationInstanceStatus(ctx, pod, containerName, workload, e.PID, InstrumentationHealthy, LoadedSuccessfully, msg)
+	if err != nil {
+		m.Logger.Error(err, "failed to update instrumentation instance for successful load")
+	}
 
 	go func() {
 		err := inst.Run(ctx)
-		if err != nil {
+		if err != nil && !errors.Is(err, context.Canceled) {
 			m.Logger.Error(err, "failed to run instrumentation")
-			// TODO: write instrumentation instance CR with error status?
 			// these errors occur after the instrumentation is loaded
+			// write instrumentation instance CR with error status
+			err = m.updateInstrumentationInstanceStatus(ctx, pod, containerName, workload, e.PID, InstrumentationUnhealthy, FailedToRun, err.Error())
+			if err != nil {
+				m.Logger.Error(err, "failed to update instrumentation instance for failed instrumentation run")
+			}
 		}
 	}()
 
 	return nil
+}
+
+func (m *Manager) updateInstrumentationInstanceStatus(ctx context.Context, pod *corev1.Pod, containerName string, w *workloadUtils.PodWorkload, pid int, health InstrumentationHealth, reason InstrumentationStatusReason, msg string) error {
+	instrumentedAppName := workloadUtils.CalculateWorkloadRuntimeObjectName(w.Name, w.Kind)
+	healthy := bool(health)
+	return instance.UpdateInstrumentationInstanceStatus(ctx, pod, containerName, m.Client, instrumentedAppName, pid, m.Client.Scheme(),
+		instance.WithHealthy(&healthy, string(reason), &msg),
+	)
 }
 
 func (m *Manager) podFromProcEvent(event detector.ProcessEvent) (*corev1.Pod, error) {
@@ -197,12 +259,12 @@ func (m *Manager) podFromProcEvent(event detector.ProcessEvent) (*corev1.Pod, er
 	return &pod, nil
 }
 
-func (m *Manager) languageSdk(pod *corev1.Pod, event detector.ProcessEvent) (common.ProgrammingLanguage, common.OtelSdk, error) {
+func containerNameFromProcEvent(event detector.ProcessEvent) (string, bool) {
 	containerName, ok := event.ExecDetails.Environments[consts.OdigosEnvVarContainerName]
-	if !ok {
-		return common.UnknownProgrammingLanguage, common.OtelSdk{}, ErrContainerNameNotReported
-	}
+	return containerName, ok
+}
 
+func (m *Manager) languageSdk(pod *corev1.Pod, containerName string) (common.ProgrammingLanguage, common.OtelSdk, error) {
 	for _, container := range pod.Spec.Containers {
 		if container.Name == containerName {
 			language, sdk, found := odgiosK8s.GetLanguageAndOtelSdk(container)
