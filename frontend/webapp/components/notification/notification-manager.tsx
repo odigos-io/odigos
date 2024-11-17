@@ -9,18 +9,17 @@ import theme, { hexPercentValues } from '@/styles/theme';
 import { NoDataFound, Text } from '@/reuseable-components';
 import type { Notification, NotificationType } from '@/types';
 
-const Icon = styled.div`
+const BellIcon = styled.div`
   position: relative;
   width: 36px;
   height: 36px;
   border-radius: 100%;
-  background-color: ${({ theme }) => theme.colors.white_opacity['008']};
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   &:hover {
-    background-color: ${({ theme }) => theme.colors.white_opacity['20']};
+    background-color: ${({ theme }) => theme.colors.white_opacity['008']};
   }
 `;
 
@@ -107,10 +106,10 @@ export const NotificationManager = () => {
 
   return (
     <RelativeContainer ref={containerRef}>
-      <Icon onClick={toggleOpen}>
+      <BellIcon onClick={toggleOpen}>
         {!!unseenCount && <LiveBadge />}
         <Image src='/icons/common/notification.svg' alt='logo' width={16} height={16} />
-      </Icon>
+      </BellIcon>
 
       {isOpen && (
         <AbsoluteContainer>
