@@ -17,7 +17,7 @@ interface HeaderNodeProps {
 }
 
 const Container = styled.div<{ $nodeWidth: HeaderNodeProps['nodeWidth'] }>`
-  width: ${({ $nodeWidth }) => `${$nodeWidth + 40}px`};
+  width: ${({ $nodeWidth }) => `${$nodeWidth}px`};
   padding: 12px 0px 16px 0px;
   gap: 8px;
   display: flex;
@@ -36,6 +36,10 @@ const ActionsWrapper = styled.div`
 
 const HeaderNode = ({ data, nodeWidth }: HeaderNodeProps) => {
   const { title, icon, tagValue } = data;
+  const isSources = title === 'Sources';
+  const isActions = title === 'Actions';
+  const extraWidth = isActions && !!tagValue ? 70 : 40;
+
   const { configuredSources, setConfiguredSources } = useAppStore((state) => state);
   const { sources } = useSourceCRUD();
 
@@ -50,8 +54,7 @@ const HeaderNode = ({ data, nodeWidth }: HeaderNodeProps) => {
   }, [configuredSources]);
 
   const renderActions = () => {
-    if (title !== 'Sources') return null;
-    if (!sources.length) return null;
+    if (!isSources || !sources.length) return null;
 
     const onSelect = (bool: boolean) => {
       if (bool) {
@@ -79,7 +82,7 @@ const HeaderNode = ({ data, nodeWidth }: HeaderNodeProps) => {
   };
 
   return (
-    <Container $nodeWidth={nodeWidth}>
+    <Container $nodeWidth={nodeWidth + extraWidth}>
       <Image src={icon} width={16} height={16} alt={title} />
       <Title size={14}>{title}</Title>
       <Badge label={tagValue} />

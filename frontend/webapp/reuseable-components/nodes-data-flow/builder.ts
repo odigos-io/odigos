@@ -123,7 +123,7 @@ export const buildNodesAndEdges = ({
       }),
     ],
     actions: [
-      createNode('action-header', 'header', postions['actions']['x'], 0, {
+      createNode('action-header', 'header', postions['actions']['x'] - (!!actions.length ? 15 : 0), 0, {
         icon: getEntityIcon(OVERVIEW_ENTITY_TYPES.ACTION),
         title: 'Actions',
         tagValue: actions.length,
