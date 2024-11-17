@@ -5,80 +5,15 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	k8scontainer "github.com/odigos-io/odigos/k8sutils/pkg/container"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
-
-type podPredicate struct{}
-
-func (p *podPredicate) Create(e event.CreateEvent) bool {
-	pod, ok := e.Object.(*corev1.Pod)
-	if !ok {
-		return false
-	}
-
-	// Check if pod is in Running phase. This is the first requirement
-	if pod.Status.Phase != corev1.PodRunning {
-		return false
-	}
-
-	// If pod has no containers, return false as we can't determine readiness
-	if len(pod.Status.ContainerStatuses) == 0 {
-		return false
-	}
-
-	allContainersReady := k8scontainer.AllContainersReady(pod)
-	// If all containers are not ready, return false.
-	// Otherwise, return true
-	return allContainersReady
-}
-
-func (p *podPredicate) Update(e event.UpdateEvent) bool {
-	oldPod, oldOk := e.ObjectOld.(*corev1.Pod)
-	newPod, newOk := e.ObjectNew.(*corev1.Pod)
-
-	if !oldOk || !newOk {
-		return false
-	}
-
-	// If pod has no containers, return false as we can't determine readiness
-	if len(newPod.Status.ContainerStatuses) == 0 {
-		return false
-	}
-
-	// First check if all containers in newPod are ready and started
-	allNewContainersReady := k8scontainer.AllContainersReady(newPod)
-
-	// If new containers aren't all ready, return false
-	if !allNewContainersReady {
-		return false
-	}
-
-	// Now check if any container in oldPod was not ready or not started
-	allOldContainersReady := k8scontainer.AllContainersReady(oldPod)
-
-	// Return true only if old pods had at least one container not ready/not started
-	// and new pod has all containers ready/started
-	return !allOldContainersReady && allNewContainersReady
-}
-
-func (p *podPredicate) Delete(e event.DeleteEvent) bool {
-	// no runtime details detection needed when a pod is deleted
-	return false
-}
-
-func (p *podPredicate) Generic(e event.GenericEvent) bool {
-	// no runtime details detection needed for generic events
-	return false
-}
 
 type PodsReconciler struct {
 	client.Client

@@ -7,10 +7,16 @@ import (
 
 type k3sDetector struct{}
 
-func (k k3sDetector) Detect(ctx context.Context, args DetectionArguments) (Kind, error) {
+var _ ClusterKindDetector = &k3sDetector{}
+
+func (k k3sDetector) Detect(ctx context.Context, args DetectionArguments) bool {
 	if strings.Contains(args.ServerVersion, "+k3s") {
-		return KindK3s, nil
+		return true
 	}
 
-	return KindUnknown, nil
+	return false
+}
+
+func (k k3sDetector) Kind() Kind {
+	return KindK3s
 }

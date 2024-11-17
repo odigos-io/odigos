@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/client"
+	odigosver "github.com/odigos-io/odigos/k8sutils/pkg/version"
 
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -14,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
 	k8stypes "k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/version"
 	"sigs.k8s.io/yaml"
 
 	"github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
@@ -197,7 +199,31 @@ func (c *Client) DeleteOldOdigosSystemObjects(ctx context.Context, resourceAndNa
 	labelSelector := k8slabels.NewSelector().Add(*systemObject).Add(*notLatestVersion).String()
 	resource := resourceAndNamespace.Resource
 	ns := resourceAndNamespace.Namespace
-	return c.Dynamic.Resource(resource).Namespace(ns).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
-		LabelSelector: labelSelector,
-	})
+	k8sVersion, err := odigosver.GetKubernetesVersion()
+	if err != nil {
+		fmt.Printf("DeleteOldOdigosSystemObjects failed to get k8s version, proceeding.. :%v", err)
+	}
+	// DeleteCollection is only available in k8s 1.23 and above, for older versions we need to list and delete each resource
+	if k8sVersion != nil && k8sVersion.GreaterThan(version.MustParse("1.23")) {
+		return c.Dynamic.Resource(resource).Namespace(ns).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
+			LabelSelector: labelSelector,
+		})
+	} else {
+		listOptions := metav1.ListOptions{
+			LabelSelector: labelSelector,
+		}
+		resourceList, err := c.Dynamic.Resource(resource).Namespace(ns).List(ctx, listOptions)
+		if err != nil {
+			return fmt.Errorf("failed to list resources: %w", err)
+		}
+
+		// Delete each resource individually
+		for _, item := range resourceList.Items {
+			err = c.Dynamic.Resource(resource).Namespace(ns).Delete(ctx, item.GetName(), metav1.DeleteOptions{})
+			if err != nil {
+				return fmt.Errorf("failed to delete resource %s: %w", item.GetName(), err)
+			}
+		}
+	}
+	return nil
 }
