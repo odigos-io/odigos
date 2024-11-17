@@ -3,6 +3,7 @@ import React, { useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import styled from 'styled-components';
 import { ToastList } from '@/components';
+import MultiSourceControl from '../multi-source-control';
 import { OverviewActionMenuContainer } from '../overview-actions-menu';
 import { buildNodesAndEdges, NodeBaseDataFlow } from '@/reuseable-components';
 import { useMetrics, useContainerWidth, useNodeDataFlowHandlers, useSourceCRUD, useDestinationCRUD, useInstrumentationRuleCRUD, useActionCRUD } from '@/hooks';
@@ -56,6 +57,7 @@ export default function OverviewDataFlowContainer() {
     <OverviewDataFlowWrapper ref={containerRef}>
       <OverviewActionMenuContainer />
       <NodeBaseDataFlow nodes={nodes} edges={edges} onNodeClick={handleNodeClick} nodeWidth={NODE_WIDTH} />
+      <MultiSourceControl />
 
       <AllDrawers />
       <AllModals />

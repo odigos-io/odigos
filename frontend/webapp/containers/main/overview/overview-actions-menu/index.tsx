@@ -1,8 +1,9 @@
 import React from 'react';
 import { Search } from './search';
+import { Filters } from './filters';
 import styled from 'styled-components';
 import { Divider, TabList } from '@/reuseable-components';
-import { AddEntity, Filters, MonitorsLegend } from '@/components';
+import { AddEntity, MonitorsLegend } from '@/components';
 
 const MenuContainer = styled.div`
   display: flex;
@@ -11,7 +12,7 @@ const MenuContainer = styled.div`
   gap: 16px;
 `;
 
-// Aligns the "AddEntity" button to the right
+// Aligns the "AddEntity" button to the right.
 const PushToEnd = styled.div`
   margin-left: auto;
 `;

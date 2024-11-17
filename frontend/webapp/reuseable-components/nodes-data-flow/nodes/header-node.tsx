@@ -1,10 +1,22 @@
-'use client';
-import React from 'react';
+import React, { useMemo } from 'react';
 import Image from 'next/image';
+import { useAppStore } from '@/store';
 import styled from 'styled-components';
-import { Badge, Text } from '@/reuseable-components';
+import { useSourceCRUD } from '@/hooks';
+import { Badge, Checkbox, Text } from '@/reuseable-components';
 
-const ColumnContainer = styled.div<{ nodeWidth: number }>`
+interface Column {
+  icon: string;
+  title: string;
+  tagValue: number;
+}
+
+interface HeaderNodeProps {
+  nodeWidth: number;
+  data: Column;
+}
+
+const Container = styled.div<{ nodeWidth: HeaderNodeProps['nodeWidth'] }>`
   width: ${({ nodeWidth }) => `${nodeWidth + 40}px`};
   padding: 12px 0px 16px 0px;
   gap: 8px;
@@ -17,24 +29,63 @@ const Title = styled(Text)`
   color: ${({ theme }) => theme.text.grey};
 `;
 
-interface Column {
-  icon: string;
-  title: string;
-  tagValue: number;
-}
-
-interface HeaderNodeProps {
-  data: Column;
-  nodeWidth: number;
-}
+const ActionsWrapper = styled.div`
+  margin-left: auto;
+  margin-right: 24px;
+`;
 
 const HeaderNode = ({ data, nodeWidth }: HeaderNodeProps) => {
+  const { title, icon, tagValue } = data;
+  const { configuredSources, setConfiguredSources } = useAppStore((state) => state);
+  const { sources } = useSourceCRUD();
+
+  const totalSelectedSources = useMemo(() => {
+    let num = 0;
+
+    Object.values(configuredSources).forEach((selectedSources) => {
+      num += selectedSources.length;
+    });
+
+    return num;
+  }, [configuredSources]);
+
+  const renderActions = () => {
+    if (title !== 'Sources') return null;
+    if (!sources.length) return null;
+
+    const onSelect = (bool: boolean) => {
+      if (bool) {
+        const payload = {};
+
+        sources.forEach((source) => {
+          if (!payload[source.namespace]) {
+            payload[source.namespace] = [source];
+          } else {
+            payload[source.namespace].push(source);
+          }
+        });
+
+        setConfiguredSources(payload);
+      } else {
+        setConfiguredSources({});
+      }
+    };
+
+    return (
+      <ActionsWrapper>
+        <Checkbox initialValue={sources.length === totalSelectedSources} onChange={onSelect} />
+      </ActionsWrapper>
+    );
+  };
+
   return (
-    <ColumnContainer nodeWidth={nodeWidth}>
-      <Image src={data.icon} width={16} height={16} alt={data.title} />
-      <Title size={14}>{data.title}</Title>
-      <Badge label={data.tagValue} />
-    </ColumnContainer>
+    <Container nodeWidth={nodeWidth}>
+      <Image src={icon} width={16} height={16} alt={title} />
+      <Title size={14}>{title}</Title>
+      <Badge label={tagValue} />
+
+      {renderActions()}
+    </Container>
   );
 };
 

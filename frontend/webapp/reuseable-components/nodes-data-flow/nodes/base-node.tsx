@@ -1,65 +1,11 @@
 import React from 'react';
 import Image from 'next/image';
+import { useAppStore } from '@/store';
 import styled from 'styled-components';
-import { STATUSES } from '@/types';
-import { Handle, Position } from '@xyflow/react';
-import { Status, Text } from '@/reuseable-components';
 import { getStatusIcon } from '@/utils';
-
-const BaseNodeContainer = styled.div<{ nodeWidth: number; isError?: boolean }>`
-  width: ${({ nodeWidth }) => `${nodeWidth}px`};
-  padding: 16px 24px 16px 16px;
-  gap: 8px;
-  display: flex;
-  align-items: center;
-  align-self: stretch;
-  border-radius: 16px;
-  cursor: pointer;
-  background-color: ${({ isError, theme }) => (isError ? '#281515' : theme.colors.white_opacity['004'])};
-
-  &:hover {
-    background-color: ${({ isError, theme }) => (isError ? '#351515' : theme.colors.white_opacity['008'])};
-  }
-`;
-
-const SourceIconWrapper = styled.div<{ isError?: boolean }>`
-  display: flex;
-  width: 36px;
-  height: 36px;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  border-radius: 8px;
-  background: ${({ isError }) =>
-    `linear-gradient(180deg, ${isError ? 'rgba(237, 124, 124, 0.08)' : 'rgba(249, 249, 249, 0.06)'} 0%, ${
-      isError ? 'rgba(237, 124, 124, 0.02)' : 'rgba(249, 249, 249, 0.02)'
-    } 100%)`};
-`;
-
-const BodyWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  height: 36px;
-  justify-content: space-between;
-`;
-
-const FooterWrapper = styled.div`
-  display: flex;
-  gap: 8px;
-  align-items: center;
-`;
-
-const Title = styled(Text)<{ nodeWidth: number }>`
-  width: ${({ nodeWidth }) => `${nodeWidth - 75}px`};
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-`;
-
-const FooterText = styled(Text)`
-  color: ${({ theme }) => theme.text.grey};
-  font-size: 10px;
-`;
+import { Handle, Position } from '@xyflow/react';
+import { Checkbox, Status, Text } from '@/reuseable-components';
+import { type ActionDataParsed, type ActualDestination, type InstrumentationRuleSpec, type K8sActualSource, STATUSES } from '@/types';
 
 export interface NodeDataProps {
   id: string;
@@ -70,6 +16,7 @@ export interface NodeDataProps {
   imageUri: string;
   monitors?: string[];
   isActive?: boolean;
+  raw: InstrumentationRuleSpec | K8sActualSource | ActionDataParsed | ActualDestination;
 }
 
 interface BaseNodeProps {
@@ -79,10 +26,72 @@ interface BaseNodeProps {
   data: NodeDataProps;
 }
 
-const BaseNode = ({ nodeWidth, isConnectable, data }: BaseNodeProps) => {
-  const { type, status, title, subTitle, imageUri, monitors, isActive } = data;
+const Container = styled.div<{ nodeWidth: number; isError?: boolean }>`
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  gap: 8px;
+  padding: 16px 24px 16px 16px;
+  width: ${({ nodeWidth }) => `${nodeWidth}px`};
+  border-radius: 16px;
+  cursor: pointer;
+  background-color: ${({ isError, theme }) => (isError ? '#281515' : theme.colors.white_opacity['004'])};
+  &:hover {
+    background-color: ${({ isError, theme }) => (isError ? '#351515' : theme.colors.white_opacity['008'])};
+  }
+`;
 
-  function renderHandles() {
+const IconWrapper = styled.div<{ isError?: boolean }>`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: ${({ isError }) =>
+    `linear-gradient(180deg, ${isError ? 'rgba(237, 124, 124, 0.08)' : 'rgba(249, 249, 249, 0.06)'} 0%, ${isError ? 'rgba(237, 124, 124, 0.02)' : 'rgba(249, 249, 249, 0.02)'} 100%)`};
+`;
+
+const BodyWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 36px;
+`;
+
+const Title = styled(Text)<{ nodeWidth: number }>`
+  max-width: ${({ nodeWidth }) => `${Math.floor(nodeWidth * 0.5)}px`};
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+`;
+
+const FooterWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const FooterText = styled(Text)`
+  color: ${({ theme }) => theme.text.grey};
+  font-size: 10px;
+`;
+
+const ActionsWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+`;
+
+const BaseNode = ({ nodeWidth, isConnectable, data }: BaseNodeProps) => {
+  const { type, status, title, subTitle, imageUri, monitors, isActive, raw } = data;
+  const isError = status === STATUSES.UNHEALTHY;
+
+  const { configuredSources, setConfiguredSources } = useAppStore((state) => state);
+
+  const renderHandles = () => {
     switch (type) {
       case 'source':
         return <Handle type='source' position={Position.Right} id='source-output' isConnectable={isConnectable} style={{ visibility: 'hidden' }} />;
@@ -94,15 +103,13 @@ const BaseNode = ({ nodeWidth, isConnectable, data }: BaseNodeProps) => {
           </>
         );
       case 'destination':
-        return (
-          <Handle type='target' position={Position.Left} id='destination-input' isConnectable={isConnectable} style={{ visibility: 'hidden' }} />
-        );
+        return <Handle type='target' position={Position.Left} id='destination-input' isConnectable={isConnectable} style={{ visibility: 'hidden' }} />;
       default:
         return null;
     }
-  }
+  };
 
-  function renderMonitors() {
+  const renderMonitors = () => {
     if (!monitors) return null;
 
     return (
@@ -113,9 +120,9 @@ const BaseNode = ({ nodeWidth, isConnectable, data }: BaseNodeProps) => {
         ))}
       </FooterWrapper>
     );
-  }
+  };
 
-  function renderStatus() {
+  const renderStatus = () => {
     if (typeof isActive !== 'boolean') return null;
 
     return (
@@ -124,15 +131,51 @@ const BaseNode = ({ nodeWidth, isConnectable, data }: BaseNodeProps) => {
         <Status isActive={isActive} withSmaller withSpecialFont />
       </FooterWrapper>
     );
-  }
+  };
 
-  const isError = status === STATUSES.UNHEALTHY;
+  const renderActions = () => {
+    const getSourceLocation = () => {
+      const { namespace, name, kind } = raw as K8sActualSource;
+      const selected = { ...configuredSources };
+
+      if (!selected[namespace]) selected[namespace] = [];
+
+      const index = selected[namespace].findIndex((x) => x.name === name && x.kind === kind);
+
+      return { index, namespace, selected };
+    };
+
+    const onSelectSource = () => {
+      const { index, namespace, selected } = getSourceLocation();
+
+      if (index === -1) {
+        selected[namespace].push(raw as K8sActualSource);
+      } else {
+        selected[namespace].splice(index, 1);
+      }
+
+      setConfiguredSources(selected);
+    };
+
+    return (
+      <>
+        {/* TODO: handle instrumentation rules for sources */}
+        {isError ? (
+          <Image src={getStatusIcon('error')} alt='' width={20} height={20} />
+        ) : // : type === 'source' && SOME_INDICATOR_THAT_THIS_IS_INSTRUMENTED ? ( <Image src={getEntityIcon(OVERVIEW_ENTITY_TYPES.RULE)} alt='' width={18} height={18} /> )
+        null}
+
+        {type === 'source' ? <Checkbox initialValue={getSourceLocation().index !== -1} onChange={onSelectSource} /> : null}
+      </>
+    );
+  };
 
   return (
-    <BaseNodeContainer nodeWidth={nodeWidth} isError={isError}>
-      <SourceIconWrapper>
+    <Container nodeWidth={nodeWidth} isError={isError}>
+      <IconWrapper>
         <Image src={imageUri || '/icons/common/folder.svg'} width={20} height={20} alt='source' />
-      </SourceIconWrapper>
+      </IconWrapper>
+
       <BodyWrapper>
         <Title nodeWidth={nodeWidth}>{title}</Title>
         <FooterWrapper>
@@ -141,9 +184,11 @@ const BaseNode = ({ nodeWidth, isConnectable, data }: BaseNodeProps) => {
           {renderStatus()}
         </FooterWrapper>
       </BodyWrapper>
-      {isError ? <Image src={getStatusIcon('error')} alt='' width={20} height={20} /> : null}
+
+      <ActionsWrapper>{renderActions()}</ActionsWrapper>
+
       {renderHandles()}
-    </BaseNodeContainer>
+    </Container>
   );
 };
 

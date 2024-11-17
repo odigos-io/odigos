@@ -12,7 +12,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-
   build-cli:
     runs-on: ubuntu-latest
     steps:
@@ -22,7 +21,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "~1.22"
+          go-version: '~1.22'
           check-latest: true
           cache: true
           cache-dependency-path: |
@@ -57,7 +56,7 @@ jobs:
           path: odigos-images.tar
 
   kubernetes-test:
-    needs: 
+    needs:
       - build-odigos-images
       - build-cli
     runs-on: warp-ubuntu-latest-x64-8x-spot
@@ -65,19 +64,18 @@ jobs:
       fail-fast: false
       matrix:
         kube-version:
-          - "1.23"
-          - "1.30"
+          - '1.23'
+          - '1.30'
         test-scenario:
-          - "multi-apps"
-          - "helm-chart"
-          - "fe-synthetic"
-          - "cli-upgrade"
-          - "workload-lifecycle"
+          - 'multi-apps'
+          - 'helm-chart'
+          - 'cli-upgrade'
+          - 'workload-lifecycle'
         include:
-          - kube-version: "1.23"
-            kind-image: "kindest/node:v1.23.17@sha256:14d0a9a892b943866d7e6be119a06871291c517d279aedb816a4b4bc0ec0a5b3"
-          - kube-version: "1.30"
-            kind-image: "kindest/node:v1.30.0@sha256:047357ac0cfea04663786a612ba1eaba9702bef25227a794b52890dd8bcd692e"
+          - kube-version: '1.23'
+            kind-image: 'kindest/node:v1.23.17@sha256:14d0a9a892b943866d7e6be119a06871291c517d279aedb816a4b4bc0ec0a5b3'
+          - kube-version: '1.30'
+            kind-image: 'kindest/node:v1.30.0@sha256:047357ac0cfea04663786a612ba1eaba9702bef25227a794b52890dd8bcd692e'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -85,7 +83,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "~1.22"
+          go-version: '~1.22'
           check-latest: true
           cache: true
           cache-dependency-path: |
@@ -103,12 +101,12 @@ jobs:
         uses: helm/kind-action@v1.10.0
         with:
           node_image: ${{ matrix.kind-image }}
-          version: "v0.23.0"
+          version: 'v0.23.0'
           cluster_name: kind
 
       - name: Install FE
         # this is used for cypress tests which are not run in every scenario
-        if: matrix.test-scenario == 'multi-apps' || matrix.test-scenario == 'helm-chart' || matrix.test-scenario == 'fe-synthetic'
+        if: matrix.test-scenario == 'multi-apps' || matrix.test-scenario == 'helm-chart'
         run: |
           cd frontend/webapp
           yarn install

@@ -3,13 +3,7 @@ import type { Notification } from '@/types';
 
 interface StoreState {
   notifications: Notification[];
-  addNotification: (notif: {
-    type: Notification['type'];
-    title: Notification['title'];
-    message: Notification['message'];
-    crdType: Notification['crdType'];
-    target: Notification['target'];
-  }) => void;
+  addNotification: (notif: { type: Notification['type']; title: Notification['title']; message: Notification['message']; crdType: Notification['crdType']; target: Notification['target'] }) => void;
   markAsDismissed: (id?: string) => void;
   markAsSeen: (id?: string) => void;
   removeNotification: (id?: string) => void;
@@ -24,7 +18,6 @@ export const useNotificationStore = create<StoreState>((set) => ({
 
       return {
         notifications: [
-          ...state.notifications,
           {
             ...notif,
             id: date.getTime().toString(),
@@ -32,6 +25,7 @@ export const useNotificationStore = create<StoreState>((set) => ({
             dismissed: false,
             seen: false,
           },
+          ...state.notifications,
         ],
       };
     }),
