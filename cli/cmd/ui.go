@@ -44,35 +44,41 @@ var uiCmd = &cobra.Command{
 		ns, err := resources.GetOdigosNamespace(client, ctx)
 		if err != nil {
 			if !resources.IsErrNoOdigosNamespaceFound(err) {
-				fmt.Printf("\033[31mERROR\033[0m Cannot check if odigos is currently installed in your cluster: %s\n", err)
+				fmt.Printf("\033[31mERROR\033[0m Cannot check if Odigos is currently installed in your cluster: %s\n", err)
 				ns = ""
 			} else {
-				fmt.Printf("\033[31mERROR\033[0m Odigos is not installed in your kubernetes cluster. Run 'odigos install' or switch your k8s context to use a different cluster \n")
+				fmt.Printf("\033[31mERROR\033[0m Odigos is not installed in your Kubernetes cluster. Run 'odigos install' or switch your k8s context to use a different cluster.\n")
 				os.Exit(1)
 			}
 		}
 
 		betaFlag, _ := cmd.Flags().GetBool("beta")
 		localPort := cmd.Flag("port").Value.String()
+		if localPort == "" {
+			localPort = fmt.Sprintf("%d", defaultPort)
+		}
+
+		clusterPort := defaultPort
 		if betaFlag {
-			localPort = fmt.Sprintf("%d", betaDefaultPort)
+			clusterPort = betaDefaultPort
 		}
 
 		localAddress := cmd.Flag("address").Value.String()
-		uiPod, err := findOdigosUIPod(client, ctx, ns)
-		if err != nil {
-			fmt.Printf("\033[31mERROR\033[0m Cannot find odigos-ui pod: %s\n", err)
-			os.Exit(1)
-		}
 
-		if err := portForwardWithContext(ctx, uiPod, client, localPort, localAddress); err != nil {
+		if err := portForwardWithContext(ctx, client, ns, resources.UIServiceName, localPort, localAddress, clusterPort); err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Cannot start port-forward: %s\n", err)
 			os.Exit(1)
 		}
 	},
 }
 
-func portForwardWithContext(ctx context.Context, uiPod *corev1.Pod, client *kube.Client, localPort string, localAddress string) error {
+func portForwardWithContext(ctx context.Context, client *kube.Client, ns, serviceName, localPort, localAddress string, clusterPort int) error {
+	// Find a pod behind the specified service
+	podName, err := findPodForService(ctx, client, ns, serviceName)
+	if err != nil {
+		return fmt.Errorf("cannot find a pod for service %s: %w", serviceName, err)
+	}
+
 	stopChannel := make(chan struct{}, 1)
 	readyChannel := make(chan struct{})
 	signals := make(chan os.Signal, 1)
@@ -92,17 +98,37 @@ func portForwardWithContext(ctx context.Context, uiPod *corev1.Pod, client *kube
 	}()
 
 	fmt.Printf("Odigos UI is available at: http://%s:%s\n\n", localAddress, localPort)
-	fmt.Printf("Port-forwarding from %s/%s\n", uiPod.Namespace, uiPod.Name)
+	fmt.Printf("Port-forwarding from pod %s on cluster port %d to local port %s\n", podName, clusterPort, localPort)
 	fmt.Printf("Press Ctrl+C to stop\n")
 
 	req := client.CoreV1().RESTClient().
 		Post().
 		Resource("pods").
-		Namespace(uiPod.Namespace).
-		Name(uiPod.Name).
+		Namespace(ns).
+		Name(podName).
 		SubResource("portforward")
 
-	return forwardPorts("POST", req.URL(), client.Config, stopChannel, readyChannel, localPort, localAddress)
+	return forwardPorts("POST", req.URL(), client.Config, stopChannel, readyChannel, localPort, localAddress, clusterPort)
+}
+
+func findPodForService(ctx context.Context, client *kube.Client, ns, serviceName string) (string, error) {
+	svc, err := client.CoreV1().Services(ns).Get(ctx, serviceName, metav1.GetOptions{})
+	if err != nil {
+		return "", fmt.Errorf("failed to get service: %w", err)
+	}
+
+	// Get pods matching the service selector
+	selector := metav1.FormatLabelSelector(&metav1.LabelSelector{MatchLabels: svc.Spec.Selector})
+	pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{LabelSelector: selector})
+	if err != nil {
+		return "", fmt.Errorf("failed to list pods: %w", err)
+	}
+
+	if len(pods.Items) == 0 {
+		return "", fmt.Errorf("no pods found for service %s", serviceName)
+	}
+
+	return pods.Items[0].Name, nil
 }
 
 func createDialer(method string, url *url.URL, cfg *rest.Config) (httpstream.Dialer, error) {
@@ -122,16 +148,17 @@ func createDialer(method string, url *url.URL, cfg *rest.Config) (httpstream.Dia
 	return dialer, nil
 }
 
-func forwardPorts(method string, url *url.URL, cfg *rest.Config, stopCh chan struct{}, readyCh chan struct{}, localPort string, localAddress string) error {
+func forwardPorts(method string, url *url.URL, cfg *rest.Config, stopCh chan struct{}, readyCh chan struct{}, localPort, localAddress string, clusterPort int) error {
 	dialer, err := createDialer(method, url, cfg)
 	if err != nil {
 		return err
 	}
 
-	port := fmt.Sprintf("%s:%d", localPort, defaultPort)
+	// Map cluster port to the specified local port
+	portMapping := fmt.Sprintf("%s:%d", localPort, clusterPort)
 	fw, err := portforward.NewOnAddresses(dialer,
 		[]string{localAddress},
-		[]string{port}, stopCh, readyCh, nil, os.Stderr)
+		[]string{portMapping}, stopCh, readyCh, nil, os.Stderr)
 
 	if err != nil {
 		return err
