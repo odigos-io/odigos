@@ -31,8 +31,12 @@ const TextWrapper = styled.div<{
   font-family: ${({ theme, $family = 'primary' }) => theme.font_family[$family]};
 `;
 
-const Text: React.FC<TextProps> = ({ children, ...props }) => {
-  return <TextWrapper {...props}>{children}</TextWrapper>;
+const Text: React.FC<TextProps> = ({ children, color, size, weight, align, family, opacity, decoration, ...props }) => {
+  return (
+    <TextWrapper $color={color} $size={size} $weight={weight} $align={align} $family={family} $opacity={opacity} $decoration={decoration} {...props}>
+      {children}
+    </TextWrapper>
+  );
 };
 
 export { Text };
