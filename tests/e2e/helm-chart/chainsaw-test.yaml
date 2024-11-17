@@ -160,12 +160,13 @@ spec:
   - name: Verify Trace - Context Propagation
     try:
     - script:
+        timeout: 30s
         content: |
           ../../common/traceql_runner.sh tracesql/context-propagation.yaml
     catch:
     - podLogs:
         name: odiglet
-        namespace: odigos-system
+        namespace: odigos-test-ns
   - name: Verify Trace - Resource Attributes
     try:
     - script:
@@ -174,7 +175,7 @@ spec:
     catch:
     - podLogs:
         name: odiglet
-        namespace: odigos-system
+        namespace: odigos-test-ns
   - name: Verify Trace - Span Attributes
     try:
       - script:
@@ -183,7 +184,7 @@ spec:
     catch:
       - podLogs:
           name: odiglet
-          namespace: odigos-system
+          namespace: odigos-test-ns
 
   - name: Start Odigos UI in background
     try:
