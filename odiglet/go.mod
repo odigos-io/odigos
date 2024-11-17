@@ -21,11 +21,11 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.30.0
 	go.uber.org/zap v1.27.0
 	google.golang.org/grpc v1.67.1
-	k8s.io/api v0.31.0
-	k8s.io/apimachinery v0.31.0
-	k8s.io/client-go v0.31.0
-	k8s.io/kubelet v0.31.0
-	sigs.k8s.io/controller-runtime v0.19.0
+	k8s.io/api v0.31.2
+	k8s.io/apimachinery v0.31.2
+	k8s.io/client-go v0.31.2
+	k8s.io/kubelet v0.31.2
+	sigs.k8s.io/controller-runtime v0.19.1
 )
 
 require (
