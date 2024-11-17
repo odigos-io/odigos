@@ -31,10 +31,12 @@ const (
 )
 
 type GetApplicationItemInNamespace struct {
-	Name            string       `json:"name"`
-	Kind            WorkloadKind `json:"kind"`
-	Instances       int          `json:"instances"`
-	WorkloadLabeled *bool        `json:"workload_labels"`
+	Name                      string       `json:"name"`
+	Kind                      WorkloadKind `json:"kind"`
+	Instances                 int          `json:"instances"`
+	AppInstrumentationLabeled *bool        `json:"app_instrumentation_labeled"`
+	NsInstrumentationLabeled  *bool        `json:"ns_instrumentation_labeled"`
+	InstrumentationEffective  bool         `json:"instrumentation_effective"`
 }
 
 type GetApplicationItem struct {
@@ -111,6 +113,19 @@ func getApplicationsInNamespace(ctx context.Context, nsName string, nsInstrument
 	copy(items[len(deps):], ss)
 	copy(items[len(deps)+len(ss):], dss)
 
+	for i := range items {
+		item := &items[i]
+		// check if the entire namespace is instrumented
+		// as it affects the applications in the namespace
+		// which use this label to determine if they should be instrumented
+		nsInstrumentationLabeled := nsInstrumentedMap[item.namespace]
+		item.nsItem.NsInstrumentationLabeled = nsInstrumentationLabeled
+		appInstrumented := (item.nsItem.AppInstrumentationLabeled != nil && *item.nsItem.AppInstrumentationLabeled)
+		appInstrumentationInherited := item.nsItem.AppInstrumentationLabeled == nil
+		nsInstrumented := (nsInstrumentationLabeled != nil && *nsInstrumentationLabeled)
+		item.nsItem.InstrumentationEffective = appInstrumented || (appInstrumentationInherited && nsInstrumented)
+	}
+
 	return items, nil
 }
 
@@ -122,10 +137,10 @@ func getDeployments(namespace string, ctx context.Context) ([]GetApplicationItem
 			response = append(response, GetApplicationItem{
 				namespace: dep.Namespace,
 				nsItem: GetApplicationItemInNamespace{
-					Name:            dep.Name,
-					Kind:            WorkloadKindDeployment,
-					Instances:       int(dep.Status.AvailableReplicas),
-					WorkloadLabeled: appInstrumentationLabeled,
+					Name:                      dep.Name,
+					Kind:                      WorkloadKindDeployment,
+					Instances:                 int(dep.Status.AvailableReplicas),
+					AppInstrumentationLabeled: appInstrumentationLabeled,
 				},
 			})
 		}
@@ -147,10 +162,10 @@ func getStatefulSets(namespace string, ctx context.Context) ([]GetApplicationIte
 			response = append(response, GetApplicationItem{
 				namespace: ss.Namespace,
 				nsItem: GetApplicationItemInNamespace{
-					Name:            ss.Name,
-					Kind:            WorkloadKindStatefulSet,
-					Instances:       int(ss.Status.ReadyReplicas),
-					WorkloadLabeled: appInstrumentationLabeled,
+					Name:                      ss.Name,
+					Kind:                      WorkloadKindStatefulSet,
+					Instances:                 int(ss.Status.ReadyReplicas),
+					AppInstrumentationLabeled: appInstrumentationLabeled,
 				},
 			})
 		}
@@ -172,10 +187,10 @@ func getDaemonSets(namespace string, ctx context.Context) ([]GetApplicationItem,
 			response = append(response, GetApplicationItem{
 				namespace: ds.Namespace,
 				nsItem: GetApplicationItemInNamespace{
-					Name:            ds.Name,
-					Kind:            WorkloadKindDaemonSet,
-					Instances:       int(ds.Status.NumberReady),
-					WorkloadLabeled: appInstrumentationLabeled,
+					Name:                      ds.Name,
+					Kind:                      WorkloadKindDaemonSet,
+					Instances:                 int(ds.Status.NumberReady),
+					AppInstrumentationLabeled: appInstrumentationLabeled,
 				},
 			})
 		}
