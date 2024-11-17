@@ -116,8 +116,6 @@ func removeChangedFilesFromKeepMap(filesToKeepMap map[string]struct{}, container
 			return fmt.Errorf("error calculating hash for container file %s: %v", containerPath, err)
 		}
 
-		fmt.Println("hostHash: ", hostHash, " containerHash: ", containerHash)
-
 		// If hashes are different, mark as changed
 		if hostHash != containerHash {
 			delete(filesToKeepMap, hostPath)
