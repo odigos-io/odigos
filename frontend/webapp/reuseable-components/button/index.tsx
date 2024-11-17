@@ -3,7 +3,7 @@ import styled, { css } from 'styled-components';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'tertiary' | 'danger' | 'warning';
-  isDisabled?: boolean;
+  isDisabled?: boolean; // ??? do we need this, i think we can use "disabled" default HTML Button attribute
 }
 
 const variantStyles = {
@@ -79,7 +79,7 @@ const variantStyles = {
   `,
 };
 
-const StyledButton = styled.button<ButtonProps>`
+const StyledButton = styled.button<{ $variant: ButtonProps['variant'] }>`
   height: 36px;
   border-radius: 32px;
   cursor: pointer;
@@ -93,9 +93,9 @@ const StyledButton = styled.button<ButtonProps>`
   text-decoration: underline;
   font-weight: 600;
   outline: none;
-  ${({ variant }) => variant && variantStyles[variant]}
-  ${({ isDisabled }) =>
-    isDisabled &&
+  ${({ $variant }) => $variant && variantStyles[$variant]}
+  ${({ disabled }) =>
+    disabled &&
     css`
       opacity: 0.5;
       cursor: not-allowed;
@@ -105,9 +105,7 @@ const StyledButton = styled.button<ButtonProps>`
     `}
 `;
 
-const ButtonContainer = styled.div<{
-  variant: ButtonProps['variant'];
-}>`
+const ButtonContainer = styled.div<{ $variant: ButtonProps['variant'] }>`
   height: fit-content;
   border: 2px solid transparent;
   padding: 2px;
@@ -121,8 +119,8 @@ const ButtonContainer = styled.div<{
 
 export const Button: React.FC<ButtonProps> = ({ children, variant = 'primary', isDisabled = false, ...props }) => {
   return (
-    <ButtonContainer variant={variant}>
-      <StyledButton variant={variant} disabled={isDisabled} isDisabled={isDisabled} {...props}>
+    <ButtonContainer $variant={variant}>
+      <StyledButton $variant={variant} disabled={isDisabled || props.disabled} {...props}>
         {children}
       </StyledButton>
     </ButtonContainer>

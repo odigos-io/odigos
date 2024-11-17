@@ -16,8 +16,8 @@ interface HeaderNodeProps {
   data: Column;
 }
 
-const Container = styled.div<{ nodeWidth: HeaderNodeProps['nodeWidth'] }>`
-  width: ${({ nodeWidth }) => `${nodeWidth + 40}px`};
+const Container = styled.div<{ $nodeWidth: HeaderNodeProps['nodeWidth'] }>`
+  width: ${({ $nodeWidth }) => `${$nodeWidth + 40}px`};
   padding: 12px 0px 16px 0px;
   gap: 8px;
   display: flex;
@@ -79,7 +79,7 @@ const HeaderNode = ({ data, nodeWidth }: HeaderNodeProps) => {
   };
 
   return (
-    <Container nodeWidth={nodeWidth}>
+    <Container $nodeWidth={nodeWidth}>
       <Image src={icon} width={16} height={16} alt={title} />
       <Title size={14}>{title}</Title>
       <Badge label={tagValue} />

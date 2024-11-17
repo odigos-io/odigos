@@ -16,12 +16,12 @@ export const Transition: React.FC<PropsWithChildren<Props>> = ({ container: Cont
     if (enter) setIsEntered(true);
   }, [enter]);
 
-  const AnimatedContainer = styled(Container)<{ isEntering: boolean; isLeaving: boolean }>`
-    animation: ${({ isEntering, isLeaving }) => (isEntering ? animateIn : isLeaving ? animateOut : 'none')} 0.3s forwards;
+  const AnimatedContainer = styled(Container)<{ $isEntering: boolean; $isLeaving: boolean }>`
+    animation: ${({ $isEntering, $isLeaving }) => ($isEntering ? animateIn : $isLeaving ? animateOut : 'none')} 0.3s forwards;
   `;
 
   return (
-    <AnimatedContainer isEntering={enter} isLeaving={isEntered && !enter}>
+    <AnimatedContainer $isEntering={enter} $isLeaving={isEntered && !enter}>
       {children}
     </AnimatedContainer>
   );

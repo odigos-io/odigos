@@ -8,18 +8,18 @@ interface Props extends UseSourceFormDataResponse {
   isModal?: boolean;
 }
 
-const SourcesListWrapper = styled.div<{ isModal: boolean }>`
+const SourcesListWrapper = styled.div<{ $isModal: Props['isModal'] }>`
   display: flex;
   align-items: center;
   flex-direction: column;
   gap: 12px;
-  max-height: ${({ isModal }) => (isModal ? 'calc(100vh - 548px)' : 'calc(100vh - 360px)')};
+  max-height: ${({ $isModal }) => ($isModal ? 'calc(100vh - 548px)' : 'calc(100vh - 360px)')};
   height: fit-content;
-  padding-bottom: ${({ isModal }) => (isModal ? '48px' : '0')};
+  padding-bottom: ${({ $isModal }) => ($isModal ? '48px' : '0')};
   overflow-y: scroll;
 `;
 
-const ListItem = styled.div<{ selected: boolean }>`
+const ListItem = styled.div<{ $selected: boolean }>`
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -28,9 +28,9 @@ const ListItem = styled.div<{ selected: boolean }>`
   transition: background 0.3s;
   border-radius: 16px;
   cursor: pointer;
-  background: ${({ selected }) => (selected ? 'rgba(68, 74, 217, 0.24)' : 'rgba(249, 249, 249, 0.04)')};
+  background: ${({ $selected }) => ($selected ? 'rgba(68, 74, 217, 0.24)' : 'rgba(249, 249, 249, 0.04)')};
   &:hover {
-    background: ${({ selected }) => (selected ? 'rgba(68, 74, 217, 0.40)' : 'rgba(249, 249, 249, 0.08)')};
+    background: ${({ $selected }) => ($selected ? 'rgba(68, 74, 217, 0.40)' : 'rgba(249, 249, 249, 0.08)')};
   }
 `;
 
@@ -94,12 +94,12 @@ export const SourcesList: React.FC<Props> = ({
   }
 
   return (
-    <SourcesListWrapper isModal={isModal}>
+    <SourcesListWrapper $isModal={isModal}>
       {filterSources().map((source) => {
         const isSelected = !!selectedSources[selectedNamespace].find(({ name }) => name === source.name);
 
         return (
-          <ListItem key={`source-${source.name}`} selected={isSelected} onClick={() => onSelectSource(source)}>
+          <ListItem key={`source-${source.name}`} $selected={isSelected} onClick={() => onSelectSource(source)}>
             <ListItemContent>
               <SourceIconWrapper>
                 <Image src={'/icons/common/folder.svg'} width={20} height={20} alt='source' />

@@ -23,11 +23,7 @@ const Container = styled.div`
   width: 100%;
 `;
 
-const InputWrapper = styled.div<{
-  isDisabled?: boolean;
-  hasError?: boolean;
-  isActive?: boolean;
-}>`
+const InputWrapper = styled.div<{ $disabled?: InputProps['disabled']; $hasError?: boolean; $isActive?: boolean }>`
   width: 100%;
   display: flex;
   align-items: center;
@@ -36,20 +32,20 @@ const InputWrapper = styled.div<{
   transition: border-color 0.3s;
   border-radius: 32px;
   border: 1px solid rgba(249, 249, 249, 0.24);
-  ${({ isDisabled }) =>
-    isDisabled &&
+  ${({ $disabled }) =>
+    $disabled &&
     css`
       background-color: #555;
       cursor: not-allowed;
       opacity: 0.6;
     `}
-  ${({ hasError }) =>
-    hasError &&
+  ${({ $hasError }) =>
+    $hasError &&
     css`
       border-color: red;
     `}
-  ${({ isActive }) =>
-    isActive &&
+  ${({ $isActive }) =>
+    $isActive &&
     css`
       border-color: ${({ theme }) => theme.colors.secondary};
     `}
@@ -61,8 +57,8 @@ const InputWrapper = styled.div<{
   }
 `;
 
-const StyledInput = styled.input<{ hasIcon: boolean }>`
-  padding-left: ${({ hasIcon }) => (hasIcon ? '0' : '16px')};
+const StyledInput = styled.input<{ $hasIcon: boolean }>`
+  padding-left: ${({ $hasIcon }) => ($hasIcon ? '0' : '16px')};
   flex: 1;
   border: none;
   outline: none;
@@ -131,59 +127,57 @@ const ErrorMessage = styled(Text)`
 `;
 
 // Wrap Input with forwardRef to handle the ref prop
-const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ icon, buttonLabel, onButtonClick, errorMessage, title, tooltip, required, initialValue, onChange, type = 'text', ...props }, ref) => {
-    const isSecret = type === 'password';
-    const [revealSecret, setRevealSecret] = useState(false);
-    const [value, setValue] = useState<string>(initialValue || '');
+const Input = forwardRef<HTMLInputElement, InputProps>(({ icon, buttonLabel, onButtonClick, errorMessage, title, tooltip, required, initialValue, onChange, type = 'text', ...props }, ref) => {
+  const isSecret = type === 'password';
+  const [revealSecret, setRevealSecret] = useState(false);
+  const [value, setValue] = useState<string>(initialValue || '');
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      setValue(e.target.value);
-      if (onChange) {
-        onChange(e);
-      }
-    };
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setValue(e.target.value);
+    if (onChange) {
+      onChange(e);
+    }
+  };
 
-    return (
-      <Container>
-        <FieldLabel title={title} required={required} tooltip={tooltip} />
+  return (
+    <Container>
+      <FieldLabel title={title} required={required} tooltip={tooltip} />
 
-        <InputWrapper isDisabled={props.disabled} hasError={!!errorMessage} isActive={!!props.autoFocus}>
-          {isSecret ? (
-            <IconWrapperClickable onClick={() => setRevealSecret((prev) => !prev)}>
-              <Image src={revealSecret ? '/icons/common/eye-closed.svg' : '/icons/common/eye-open.svg'} alt='' width={14} height={14} />
-            </IconWrapperClickable>
-          ) : icon ? (
-            <IconWrapper>
-              <Image src={icon} alt='' width={14} height={14} />
-            </IconWrapper>
-          ) : null}
+      <InputWrapper $disabled={props.disabled} $hasError={!!errorMessage} $isActive={!!props.autoFocus}>
+        {isSecret ? (
+          <IconWrapperClickable onClick={() => setRevealSecret((prev) => !prev)}>
+            <Image src={revealSecret ? '/icons/common/eye-closed.svg' : '/icons/common/eye-open.svg'} alt='' width={14} height={14} />
+          </IconWrapperClickable>
+        ) : icon ? (
+          <IconWrapper>
+            <Image src={icon} alt='' width={14} height={14} />
+          </IconWrapper>
+        ) : null}
 
-          <StyledInput
-            ref={ref} // Pass ref to the StyledInput
-            hasIcon={!!icon || isSecret}
-            value={value}
-            onChange={handleInputChange}
-            type={revealSecret ? 'text' : type}
-            {...props}
-          />
+        <StyledInput
+          ref={ref} // Pass ref to the StyledInput
+          $hasIcon={!!icon || isSecret}
+          value={value}
+          onChange={handleInputChange}
+          type={revealSecret ? 'text' : type}
+          {...props}
+        />
 
-          {buttonLabel && onButtonClick && (
-            <Button onClick={onButtonClick} disabled={props.disabled}>
-              {buttonLabel}
-            </Button>
-          )}
-        </InputWrapper>
-
-        {errorMessage && (
-          <ErrorWrapper>
-            <ErrorMessage>{errorMessage}</ErrorMessage>
-          </ErrorWrapper>
+        {buttonLabel && onButtonClick && (
+          <Button onClick={onButtonClick} disabled={props.disabled}>
+            {buttonLabel}
+          </Button>
         )}
-      </Container>
-    );
-  }
-);
+      </InputWrapper>
+
+      {errorMessage && (
+        <ErrorWrapper>
+          <ErrorMessage>{errorMessage}</ErrorMessage>
+        </ErrorWrapper>
+      )}
+    </Container>
+  );
+});
 
 Input.displayName = 'Input'; // Set a display name for easier debugging
 export { Input };

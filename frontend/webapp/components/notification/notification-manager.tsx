@@ -152,8 +152,8 @@ const NotifCard = styled.div`
   }
 `;
 
-const StatusIcon = styled.div<{ type: NotificationType }>`
-  background-color: ${({ type, theme }) => theme.text[type] + hexPercentValues['012']};
+const StatusIcon = styled.div<{ $type: NotificationType }>`
+  background-color: ${({ $type, theme }) => theme.text[$type] + hexPercentValues['012']};
   border-radius: 8px;
   width: 36px;
   height: 36px;
@@ -202,7 +202,7 @@ const NotificationListItem: React.FC<Notification & { onClick: () => void }> = (
         }
       }}
     >
-      <StatusIcon type={isDeleted ? 'error' : type}>
+      <StatusIcon $type={isDeleted ? 'error' : type}>
         <Image src={isDeleted ? '/icons/common/trash.svg' : getStatusIcon(type)} alt='status' width={16} height={16} />
       </StatusIcon>
 

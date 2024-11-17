@@ -36,7 +36,7 @@ const DeleteButton = styled.button`
   opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
 `;
 
-const AddButton = styled(Button)<{ disabled: boolean }>`
+const AddButton = styled(Button)`
   color: white;
   background: transparent;
   display: flex;
@@ -57,14 +57,7 @@ const ButtonText = styled(Text)`
 
 const INITIAL = [{ key: '', value: '' }];
 
-export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({
-  initialKeyValuePairs = INITIAL,
-  value = INITIAL,
-  onChange,
-  title,
-  tooltip,
-  required,
-}) => {
+export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({ initialKeyValuePairs = INITIAL, value = INITIAL, onChange, title, tooltip, required }) => {
   const [rows, setRows] = useState<{ key: string; value: string }[]>(value || initialKeyValuePairs);
 
   useEffect(() => {
@@ -116,12 +109,7 @@ export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({
 
       {rows.map((pair, idx) => (
         <Row key={`key-value-input-list-${idx}`}>
-          <Input
-            placeholder='Define attribute'
-            value={pair.key}
-            onChange={(e) => handleChange('key', e.target.value, idx)}
-            autoFocus={rows.length > 1 && idx === rows.length - 1}
-          />
+          <Input placeholder='Define attribute' value={pair.key} onChange={(e) => handleChange('key', e.target.value, idx)} autoFocus={rows.length > 1 && idx === rows.length - 1} />
           <Image src='/icons/common/arrow-right.svg' alt='Arrow' width={16} height={16} />
           <Input placeholder='Define value' value={pair.value} onChange={(e) => handleChange('value', e.target.value, idx)} />
           <DeleteButton disabled={isDelButtonDisabled} onClick={() => handleDeleteRow(idx)}>
