@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -23,6 +24,7 @@ import (
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/version"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
@@ -43,6 +45,12 @@ var (
 	odigletImage      string
 	autoScalerImage   string
 	imagePrefix       string
+)
+
+var (
+	// minK8SVersionForInstallation is the minimum Kubernetes version required for Odigos installation
+	// this value must be in sync with the one defined in the kubeVersion field in Chart.yaml
+	minK8SVersionForInstallation = version.MustParse("v1.20.15-0")
 )
 
 type ResourceCreationFunc func(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error
@@ -69,6 +77,27 @@ This command will install k8s components that will auto-instrument your applicat
 			os.Exit(1)
 		}
 
+		// Check if the cluster meets the minimum requirements
+		kc := cmd.Flag("kubeconfig").Value.String()
+		details, err := autodetect.DetectK8SClusterDetails(ctx, kc, client)
+		if !errors.Is(err, autodetect.ErrCannotDetectClusterKind) {
+			autodetect.CurrentKubernetesVersion.Kind = details.Kind
+			fmt.Printf("Detected cluster: Kubernetes kind: %s\n", details.Kind)
+		} else {
+			fmt.Println("Unknown Kubernetes cluster detected, proceeding with installation")
+		}
+
+		if !errors.Is(err, autodetect.ErrCannotDetectK8sVersion) {
+			autodetect.CurrentKubernetesVersion.Version = details.K8SVersion
+			if details.K8SVersion.LessThan(minK8SVersionForInstallation) {
+				fmt.Printf("\033[31mERROR\033[0m Odigos requires Kubernetes version %s or higher but found %s, aborting\n", minK8SVersionForInstallation.String(), details.K8SVersion.String())
+				os.Exit(1)
+			}
+			fmt.Printf("Detected cluster: Kubernetes version: %s\n", details.K8SVersion.String())
+		} else {
+			fmt.Println("Unknown Kubernetes version detected, proceeding with installation")
+		}
+
 		var odigosProToken string
 		odigosTier := common.CommunityOdigosTier
 		if odigosCloudApiKeyFlag != "" {
@@ -87,18 +116,6 @@ This command will install k8s components that will auto-instrument your applicat
 		config := createOdigosConfig(odigosTier)
 
 		fmt.Printf("Installing Odigos version %s in namespace %s ...\n", versionFlag, ns)
-
-		kc := cmd.Flag("kubeconfig").Value.String()
-		kubeKind, kubeVersion := autodetect.KubernetesClusterProduct(ctx, kc, client)
-		if kubeKind != autodetect.KindUnknown {
-			autodetect.CurrentKubernetesVersion = autodetect.KubernetesVersion{
-				Kind:    kubeKind,
-				Version: kubeVersion,
-			}
-			fmt.Printf("Detected Kubernetes: %s version %s\n", kubeKind, kubeVersion)
-		} else {
-			fmt.Println("Unknown Kubernetes cluster detected, proceeding with installation")
-		}
 
 		// namespace is created on "install" and is not managed by resource manager
 		createKubeResourceWithLogging(ctx, fmt.Sprintf("> Creating namespace %s", ns),
