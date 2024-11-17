@@ -4,30 +4,30 @@ import { FieldLabel } from '../field-label';
 import React, { useEffect, useRef, useState } from 'react';
 import { MONITORING_OPTIONS, SignalLowercase, SignalUppercase } from '@/utils';
 
-interface MonitoringCheckboxesProps {
+interface Props {
   isVertical?: boolean;
   allowedSignals?: SignalUppercase[];
   selectedSignals: SignalUppercase[];
   setSelectedSignals: (value: SignalUppercase[]) => void;
 }
 
-const ListContainer = styled.div<{ isVertical?: boolean }>`
+const ListContainer = styled.div<{ $isVertical?: Props['isVertical'] }>`
   display: flex;
-  flex-direction: ${({ isVertical }) => (isVertical ? 'column' : 'row')};
-  gap: ${({ isVertical }) => (isVertical ? '16px' : '32px')};
+  flex-direction: ${({ $isVertical }) => ($isVertical ? 'column' : 'row')};
+  gap: ${({ $isVertical }) => ($isVertical ? '16px' : '32px')};
 `;
 
 const monitors = MONITORING_OPTIONS;
 
-const isAllowed = (type: SignalLowercase, allowedSignals: MonitoringCheckboxesProps['allowedSignals']) => {
+const isAllowed = (type: SignalLowercase, allowedSignals: Props['allowedSignals']) => {
   return !allowedSignals?.length || !!allowedSignals?.find((str) => str === type.toUpperCase());
 };
 
-const isSelected = (type: SignalLowercase, selectedSignals: MonitoringCheckboxesProps['selectedSignals']) => {
+const isSelected = (type: SignalLowercase, selectedSignals: Props['selectedSignals']) => {
   return !!selectedSignals?.find((str) => str === type.toUpperCase());
 };
 
-const MonitoringCheckboxes: React.FC<MonitoringCheckboxesProps> = ({ isVertical, allowedSignals, selectedSignals, setSelectedSignals }) => {
+const MonitoringCheckboxes: React.FC<Props> = ({ isVertical, allowedSignals, selectedSignals, setSelectedSignals }) => {
   const [isLastSelection, setIsLastSelection] = useState(selectedSignals.length === 1);
   const recordedRows = useRef(JSON.stringify(selectedSignals));
 
@@ -62,7 +62,7 @@ const MonitoringCheckboxes: React.FC<MonitoringCheckboxesProps> = ({ isVertical,
     <div>
       <FieldLabel title='Monitoring' required />
 
-      <ListContainer isVertical={isVertical}>
+      <ListContainer $isVertical={isVertical}>
         {monitors.map((monitor) => {
           const allowed = isAllowed(monitor.type, allowedSignals);
           const selected = isSelected(monitor.type, selectedSignals);
@@ -70,13 +70,7 @@ const MonitoringCheckboxes: React.FC<MonitoringCheckboxesProps> = ({ isVertical,
           if (!allowed) return null;
 
           return (
-            <Checkbox
-              key={monitor.id}
-              title={monitor.title}
-              disabled={!allowed || (isLastSelection && selected)}
-              initialValue={selected}
-              onChange={(value) => handleChange(monitor.type, value)}
-            />
+            <Checkbox key={monitor.id} title={monitor.title} disabled={!allowed || (isLastSelection && selected)} initialValue={selected} onChange={(value) => handleChange(monitor.type, value)} />
           );
         })}
       </ListContainer>

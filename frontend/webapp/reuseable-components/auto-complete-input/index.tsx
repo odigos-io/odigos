@@ -34,14 +34,7 @@ const filterOptions = (optionsList: Option[], input: string): Option[] => {
   }, []);
 };
 
-const AutocompleteInput: FC<AutocompleteInputProps> = ({
-  placeholder = 'Type to search...',
-  options,
-  selectedOption,
-  onOptionSelect,
-  style,
-  disabled,
-}) => {
+const AutocompleteInput: FC<AutocompleteInputProps> = ({ placeholder = 'Type to search...', options, selectedOption, onOptionSelect, style, disabled }) => {
   const [query, setQuery] = useState(selectedOption?.label || '');
   const [icon, setIcon] = useState(selectedOption?.icon || '');
   const [filteredOptions, setFilteredOptions] = useState<Option[]>(filterOptions(options, ''));
@@ -126,7 +119,7 @@ const OptionItem: FC<OptionItemProps> = ({ option, isActive, renderIcon = true, 
   const hasSubItems = !!option.items && option.items.length > 0;
 
   return (
-    <OptionItemContainer isActive={isActive} isList={hasSubItems} onMouseDown={() => (hasSubItems ? null : onClick(option))}>
+    <OptionItemContainer $isActive={isActive} $isList={hasSubItems} onMouseDown={() => (hasSubItems ? null : onClick(option))}>
       {option.icon && renderIcon && <Icon src={option.icon} alt={option.label} />}
 
       <OptionContent>
@@ -222,18 +215,17 @@ interface OptionItemContainerProps {
   isList: boolean;
 }
 
-const OptionItemContainer = styled.li<OptionItemContainerProps>`
+const OptionItemContainer = styled.li<{ $isActive: OptionItemContainerProps['isActive']; $isList: OptionItemContainerProps['isList'] }>`
   width: calc(100% - 24px);
   padding: 8px 12px;
-  cursor: ${({ isList }) => (isList ? 'default' : 'pointer')};
+  cursor: ${({ $isList }) => ($isList ? 'default' : 'pointer')};
   border-radius: 24px;
   gap: 8px;
   display: flex;
-  align-items: ${({ isList }) => (isList ? 'flex-start' : 'center')};
-  background: ${({ isActive, theme }) => (isActive ? theme.colors.activeBackground : 'transparent')};
-
+  align-items: ${({ $isList }) => ($isList ? 'flex-start' : 'center')};
+  background: ${({ $isActive, theme }) => ($isActive ? theme.colors.activeBackground : 'transparent')};
   &:hover {
-    background: ${({ theme, isList }) => !isList && theme.colors.white_opacity['008']};
+    background: ${({ theme, $isList }) => !$isList && theme.colors.white_opacity['008']};
   }
 `;
 

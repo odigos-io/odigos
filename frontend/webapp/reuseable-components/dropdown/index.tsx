@@ -36,17 +36,17 @@ const RelativeContainer = styled.div`
   position: relative;
 `;
 
-const DropdownHeader = styled.div<{ isOpen: boolean; isMulti?: boolean; hasSelections?: boolean }>`
+const DropdownHeader = styled.div<{ $isOpen: boolean; $isMulti?: boolean; $hasSelections?: boolean }>`
   display: flex;
   align-items: center;
   justify-content: space-between;
   height: 36px;
-  padding: ${({ isMulti, hasSelections }) => (isMulti && hasSelections ? '0 16px 0 6px' : '0 16px')};
+  padding: ${({ $isMulti, $hasSelections }) => ($isMulti && $hasSelections ? '0 16px 0 6px' : '0 16px')};
   border-radius: 32px;
   cursor: pointer;
 
-  ${({ isOpen, isMulti, theme }) =>
-    isOpen && !isMulti
+  ${({ $isOpen, $isMulti, theme }) =>
+    $isOpen && !$isMulti
       ? css`
           border: 1px solid ${theme.colors.white_opacity['40']};
           background: ${theme.colors.white_opacity['008']};
@@ -57,7 +57,7 @@ const DropdownHeader = styled.div<{ isOpen: boolean; isMulti?: boolean; hasSelec
         `};
 
   &:hover {
-    border-color: ${({ isMulti, hasSelections, theme }) => (isMulti && hasSelections ? theme.colors.border : theme.colors.secondary)};
+    border-color: ${({ $isMulti, $hasSelections, theme }) => ($isMulti && $hasSelections ? theme.colors.border : theme.colors.secondary)};
   }
 `;
 
@@ -91,7 +91,7 @@ export const Dropdown: React.FC<DropdownProps> = ({ options, value, onSelect, on
       <FieldLabel title={title} required={required} tooltip={tooltip} style={{ marginLeft: '8px' }} />
 
       <RelativeContainer ref={ref}>
-        <DropdownHeader isOpen={isOpen} isMulti={isMulti} hasSelections={Array.isArray(value) ? !!value.length : false} onClick={toggleOpen}>
+        <DropdownHeader $isOpen={isOpen} $isMulti={isMulti} $hasSelections={Array.isArray(value) ? !!value.length : false} onClick={toggleOpen}>
           <DropdownPlaceholder value={value} placeholder={placeholder} onDeselect={onDeselect} />
           <IconWrapper>
             {isMulti && <Badge label={arrLen} filled={!!arrLen} />}

@@ -4,8 +4,34 @@ import styled from 'styled-components';
 import { Text } from '@/reuseable-components';
 import { Handle, Position } from '@xyflow/react';
 
-const BaseNodeContainer = styled.div<{ nodeWidth: number }>`
-  width: ${({ nodeWidth }) => `${nodeWidth}px`};
+interface BaseNodeProps {
+  data: Record<string, any>;
+
+  id: string;
+  parentId?: any;
+  type: string;
+
+  isConnectable: boolean;
+  selectable: boolean;
+  selected?: any;
+  deletable: boolean;
+  draggable: boolean;
+  dragging: boolean;
+  dragHandle?: any;
+
+  width: number;
+  height: number;
+  zIndex: number;
+  positionAbsoluteX: number;
+  positionAbsoluteY: number;
+  sourcePosition?: any;
+  targetPosition?: any;
+
+  nodeWidth: number;
+}
+
+const BaseNodeContainer = styled.div<{ $nodeWidth: BaseNodeProps['nodeWidth'] }>`
+  width: ${({ $nodeWidth }) => `${$nodeWidth}px`};
   padding: 16px 24px 16px 16px;
   display: flex;
   flex-direction: column;
@@ -42,35 +68,9 @@ const SubTitle = styled(Text)`
   text-align: center;
 `;
 
-interface BaseNodeProps {
-  data: Record<string, any>;
-
-  id: string;
-  parentId?: any;
-  type: string;
-
-  isConnectable: boolean;
-  selectable: boolean;
-  selected?: any;
-  deletable: boolean;
-  draggable: boolean;
-  dragging: boolean;
-  dragHandle?: any;
-
-  width: number;
-  height: number;
-  zIndex: number;
-  positionAbsoluteX: number;
-  positionAbsoluteY: number;
-  sourcePosition?: any;
-  targetPosition?: any;
-
-  nodeWidth: number;
-}
-
 const AddNode = ({ id, isConnectable, data, nodeWidth }: BaseNodeProps) => {
   return (
-    <BaseNodeContainer nodeWidth={nodeWidth}>
+    <BaseNodeContainer $nodeWidth={nodeWidth}>
       <TitleWrapper>
         <Image src='/icons/common/plus.svg' width={16} height={16} alt='plus' />
         <Title>{data.title}</Title>

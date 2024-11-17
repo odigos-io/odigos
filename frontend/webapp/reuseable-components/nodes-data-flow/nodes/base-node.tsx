@@ -26,22 +26,22 @@ interface BaseNodeProps {
   data: NodeDataProps;
 }
 
-const Container = styled.div<{ nodeWidth: number; isError?: boolean }>`
+const Container = styled.div<{ $nodeWidth: number; $isError?: boolean }>`
   display: flex;
   align-items: center;
   align-self: stretch;
   gap: 8px;
   padding: 16px 24px 16px 16px;
-  width: ${({ nodeWidth }) => `${nodeWidth}px`};
+  width: ${({ $nodeWidth }) => `${$nodeWidth}px`};
   border-radius: 16px;
   cursor: pointer;
-  background-color: ${({ isError, theme }) => (isError ? '#281515' : theme.colors.white_opacity['004'])};
+  background-color: ${({ $isError, theme }) => ($isError ? '#281515' : theme.colors.white_opacity['004'])};
   &:hover {
-    background-color: ${({ isError, theme }) => (isError ? '#351515' : theme.colors.white_opacity['008'])};
+    background-color: ${({ $isError, theme }) => ($isError ? '#351515' : theme.colors.white_opacity['008'])};
   }
 `;
 
-const IconWrapper = styled.div<{ isError?: boolean }>`
+const IconWrapper = styled.div<{ $isError?: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
@@ -49,8 +49,8 @@ const IconWrapper = styled.div<{ isError?: boolean }>`
   width: 36px;
   height: 36px;
   border-radius: 8px;
-  background: ${({ isError }) =>
-    `linear-gradient(180deg, ${isError ? 'rgba(237, 124, 124, 0.08)' : 'rgba(249, 249, 249, 0.06)'} 0%, ${isError ? 'rgba(237, 124, 124, 0.02)' : 'rgba(249, 249, 249, 0.02)'} 100%)`};
+  background: ${({ $isError }) =>
+    `linear-gradient(180deg, ${$isError ? 'rgba(237, 124, 124, 0.08)' : 'rgba(249, 249, 249, 0.06)'} 0%, ${$isError ? 'rgba(237, 124, 124, 0.02)' : 'rgba(249, 249, 249, 0.02)'} 100%)`};
 `;
 
 const BodyWrapper = styled.div`
@@ -60,8 +60,8 @@ const BodyWrapper = styled.div`
   height: 36px;
 `;
 
-const Title = styled(Text)<{ nodeWidth: number }>`
-  max-width: ${({ nodeWidth }) => `${Math.floor(nodeWidth * 0.5)}px`};
+const Title = styled(Text)<{ $nodeWidth: number }>`
+  max-width: ${({ $nodeWidth }) => `${Math.floor($nodeWidth * 0.5)}px`};
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -171,13 +171,13 @@ const BaseNode = ({ nodeWidth, isConnectable, data }: BaseNodeProps) => {
   };
 
   return (
-    <Container nodeWidth={nodeWidth} isError={isError}>
-      <IconWrapper>
+    <Container $nodeWidth={nodeWidth} $isError={isError}>
+      <IconWrapper $isError={isError}>
         <Image src={imageUri || '/icons/common/folder.svg'} width={20} height={20} alt='source' />
       </IconWrapper>
 
       <BodyWrapper>
-        <Title nodeWidth={nodeWidth}>{title}</Title>
+        <Title $nodeWidth={nodeWidth}>{title}</Title>
         <FooterWrapper>
           <FooterText>{subTitle}</FooterText>
           {renderMonitors()}

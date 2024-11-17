@@ -19,10 +19,10 @@ const DrawerFooter: React.FC<DrawerFooterProps> = ({ onSave, onCancel, onDelete 
   }, []);
 
   return (
-    <FooterContainer isVisible={isVisible}>
+    <FooterContainer $isVisible={isVisible}>
       <LeftButtonsWrapper>
         <FooterButton variant='primary' onClick={onSave}>
-          <ButtonText variant='primary'>Save</ButtonText>
+          <ButtonText $variant='primary'>Save</ButtonText>
         </FooterButton>
         <FooterButton variant='secondary' onClick={onCancel}>
           <ButtonText>Cancel</ButtonText>
@@ -30,7 +30,7 @@ const DrawerFooter: React.FC<DrawerFooterProps> = ({ onSave, onCancel, onDelete 
       </LeftButtonsWrapper>
       <FooterButton style={{ width: 100 }} variant='tertiary' onClick={onDelete}>
         <Image src='/icons/common/trash.svg' alt='Delete' width={16} height={16} />
-        <ButtonText variant='tertiary'>Delete</ButtonText>
+        <ButtonText $variant='tertiary'>Delete</ButtonText>
       </FooterButton>
     </FooterContainer>
   );
@@ -38,7 +38,7 @@ const DrawerFooter: React.FC<DrawerFooterProps> = ({ onSave, onCancel, onDelete 
 
 export default DrawerFooter;
 
-const FooterContainer = styled.div<{ isVisible: boolean }>`
+const FooterContainer = styled.div<{ $isVisible: boolean }>`
   display: flex;
   justify-content: space-between;
   padding: 24px 18px 24px 32px;
@@ -48,8 +48,8 @@ const FooterContainer = styled.div<{ isVisible: boolean }>`
   transform: translateY(20px);
   transition: opacity 0.3s ease, transform 0.3s ease;
 
-  ${({ isVisible }) =>
-    isVisible &&
+  ${({ $isVisible }) =>
+    $isVisible &&
     css`
       opacity: 1;
       transform: translateY(0);
@@ -65,10 +65,8 @@ const FooterButton = styled(Button)`
   width: 140px;
 `;
 
-const ButtonText = styled(Text)<{
-  variant?: 'primary' | 'secondary' | 'tertiary';
-}>`
-  color: ${({ theme, variant }) => (variant === 'primary' ? theme.text.primary : variant === 'tertiary' ? theme.text.error : theme.text.secondary)};
+const ButtonText = styled(Text)<{ $variant?: 'primary' | 'secondary' | 'tertiary' }>`
+  color: ${({ theme, $variant }) => ($variant === 'primary' ? theme.text.primary : $variant === 'tertiary' ? theme.text.error : theme.text.secondary)};
   font-size: 14px;
   font-weight: 600;
   font-family: ${({ theme }) => theme.font_family.secondary};
