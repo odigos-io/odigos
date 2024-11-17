@@ -16,8 +16,8 @@ interface HeaderNodeProps {
   data: Column;
 }
 
-const Container = styled.div<{ nodeWidth: HeaderNodeProps['nodeWidth'] }>`
-  width: ${({ nodeWidth }) => `${nodeWidth + 40}px`};
+const Container = styled.div<{ $nodeWidth: HeaderNodeProps['nodeWidth'] }>`
+  width: ${({ $nodeWidth }) => `${$nodeWidth + 40}px`};
   padding: 12px 0px 16px 0px;
   gap: 8px;
   display: flex;
@@ -36,50 +36,50 @@ const ActionsWrapper = styled.div`
 
 const HeaderNode = ({ data, nodeWidth }: HeaderNodeProps) => {
   const { title, icon, tagValue } = data;
+  const { configuredSources, setConfiguredSources } = useAppStore((state) => state);
+  const { sources } = useSourceCRUD();
+
+  const totalSelectedSources = useMemo(() => {
+    let num = 0;
+
+    Object.values(configuredSources).forEach((selectedSources) => {
+      num += selectedSources.length;
+    });
+
+    return num;
+  }, [configuredSources]);
 
   const renderActions = () => {
     if (title !== 'Sources') return null;
+    if (!sources.length) return null;
 
-    const { configuredSources, setConfiguredSources } = useAppStore((state) => state);
-    const { sources } = useSourceCRUD();
+    const onSelect = (bool: boolean) => {
+      if (bool) {
+        const payload = {};
 
-    const totalSelected = useMemo(() => {
-      let num = 0;
+        sources.forEach((source) => {
+          if (!payload[source.namespace]) {
+            payload[source.namespace] = [source];
+          } else {
+            payload[source.namespace].push(source);
+          }
+        });
 
-      Object.values(configuredSources).forEach((selectedSources) => {
-        num += selectedSources.length;
-      });
-
-      return num;
-    }, [configuredSources]);
-
-    const sourcesToSelect = useMemo(() => {
-      const payload = {};
-
-      sources.forEach((source) => {
-        if (!payload[source.namespace]) {
-          payload[source.namespace] = [source];
-        } else {
-          payload[source.namespace].push(source);
-        }
-      });
-
-      return payload;
-    }, [sources]);
-
-    const isDisabled = !sources.length;
-    const isSelected = !isDisabled && sources.length === totalSelected;
-    const onSelect = (bool: boolean) => setConfiguredSources(bool ? sourcesToSelect : {});
+        setConfiguredSources(payload);
+      } else {
+        setConfiguredSources({});
+      }
+    };
 
     return (
       <ActionsWrapper>
-        <Checkbox disabled={isDisabled} initialValue={isSelected} onChange={onSelect} />
+        <Checkbox initialValue={sources.length === totalSelectedSources} onChange={onSelect} />
       </ActionsWrapper>
     );
   };
 
   return (
-    <Container nodeWidth={nodeWidth}>
+    <Container $nodeWidth={nodeWidth}>
       <Image src={icon} width={16} height={16} alt={title} />
       <Title size={14}>{title}</Title>
       <Badge label={tagValue} />

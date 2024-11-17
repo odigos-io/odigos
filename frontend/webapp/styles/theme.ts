@@ -118,6 +118,9 @@ const colors = {
   dropdown_bg_2: '#333333',
   blank_background: '#111111' + hexPercentValues['000'],
 
+  orange_og: '#FE9239',
+  orange_soft: '#FFB160',
+
   dark_red: '#802828',
   darker_red: '#611F1F',
   dark_green: '#2D4323',

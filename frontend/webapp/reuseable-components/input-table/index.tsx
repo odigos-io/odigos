@@ -34,7 +34,7 @@ const DeleteButton = styled.button`
   opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
 `;
 
-const AddButton = styled(Button)<{ disabled: boolean }>`
+const AddButton = styled(Button)`
   color: white;
   background: transparent;
   display: flex;

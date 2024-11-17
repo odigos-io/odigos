@@ -21,20 +21,20 @@ interface TabListProps {
 }
 
 // Styled-components for Tab and TabList
-const TabContainer = styled.div<{ selected: TabProps['selected']; disabled: TabProps['disabled'] }>`
+const TabContainer = styled.div<{ $selected: TabProps['selected']; $disabled: TabProps['disabled'] }>`
   display: flex;
   align-items: center;
   gap: 8px;
   height: 36px;
   padding: 0px 12px;
   border-radius: 32px;
-  cursor: ${({ disabled }) => (disabled ? 'not-allowed' : 'pointer')};
-  background-color: ${({ selected, theme }) => (selected ? theme.colors.majestic_blue + hexPercentValues['024'] : theme.colors.card)};
-  opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
+  cursor: ${({ $disabled }) => ($disabled ? 'not-allowed' : 'pointer')};
+  background-color: ${({ $selected, theme }) => ($selected ? theme.colors.majestic_blue + hexPercentValues['024'] : theme.colors.card)};
+  opacity: ${({ $disabled }) => ($disabled ? 0.5 : 1)};
   transition: background-color 0.3s, color 0.3s;
 
   &:hover {
-    background-color: ${({ disabled, theme }) => (disabled ? 'none' : theme.colors.majestic_blue + hexPercentValues['024'])};
+    background-color: ${({ $disabled, theme }) => ($disabled ? 'none' : theme.colors.majestic_blue + hexPercentValues['024'])};
   }
 
   svg {
@@ -51,7 +51,7 @@ const TabListContainer = styled.div`
 const Tab: React.FC<TabProps> = ({ title, tooltip, icon, selected, disabled, onClick }) => {
   return (
     <Tooltip text={tooltip || ''}>
-      <TabContainer selected={selected} disabled={disabled} onClick={onClick}>
+      <TabContainer $selected={selected} $disabled={disabled} onClick={onClick}>
         <Image src={icon} width={14} height={14} alt={title} />
         <Text size={14}>{title}</Text>
       </TabContainer>

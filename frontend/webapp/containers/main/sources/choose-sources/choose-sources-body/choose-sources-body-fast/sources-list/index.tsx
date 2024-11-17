@@ -9,25 +9,25 @@ interface Props extends UseSourceFormDataResponse {
   isModal?: boolean;
 }
 
-const List = styled.div<{ isModal: boolean }>`
+const List = styled.div<{ $isModal: Props['isModal'] }>`
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  max-height: ${({ isModal }) => (isModal ? 'calc(100vh - 548px)' : 'calc(100vh - 360px)')};
+  max-height: ${({ $isModal }) => ($isModal ? 'calc(100vh - 548px)' : 'calc(100vh - 360px)')};
   height: fit-content;
-  padding-bottom: ${({ isModal }) => (isModal ? '48px' : '0')};
+  padding-bottom: ${({ $isModal }) => ($isModal ? '48px' : '0')};
   overflow-y: scroll;
 `;
 
-const Group = styled.div<{ isSelected: boolean; isOpen: boolean }>`
+const Group = styled.div<{ $selected: boolean; $isOpen: boolean }>`
   width: 100%;
-  padding-bottom: ${({ isOpen }) => (isOpen ? '18px' : '0')};
+  padding-bottom: ${({ $isOpen }) => ($isOpen ? '18px' : '0')};
   border-radius: 16px;
-  background-color: ${({ isSelected }) => (isSelected ? 'rgba(68, 74, 217, 0.24)' : 'rgba(249, 249, 249, 0.04)')};
+  background-color: ${({ $selected }) => ($selected ? 'rgba(68, 74, 217, 0.24)' : 'rgba(249, 249, 249, 0.04)')};
 `;
 
-const NamespaceItem = styled.div<{ isSelected: boolean }>`
+const NamespaceItem = styled.div<{ $selected: boolean }>`
   display: flex;
   justify-content: space-between;
   gap: 12px;
@@ -36,7 +36,7 @@ const NamespaceItem = styled.div<{ isSelected: boolean }>`
   border-radius: 16px;
   cursor: pointer;
   &:hover {
-    background-color: ${({ isSelected }) => (isSelected ? 'rgba(68, 74, 217, 0.40)' : 'rgba(249, 249, 249, 0.08)')};
+    background-color: ${({ $selected }) => ($selected ? 'rgba(68, 74, 217, 0.40)' : 'rgba(249, 249, 249, 0.08)')};
     transition: background-color 0.3s;
   }
 `;
@@ -100,11 +100,8 @@ export const SourcesList: React.FC<Props> = ({
   onSelectFutureApps,
 
   searchText,
-  setSearchText,
-  selectAll,
   onSelectAll,
   showSelectedOnly,
-  setShowSelectedOnly,
 
   filterSources,
 }) => {
@@ -119,7 +116,7 @@ export const SourcesList: React.FC<Props> = ({
   }
 
   return (
-    <List isModal={isModal}>
+    <List $isModal={isModal}>
       {namespaces.map(([namespace, sources]) => {
         const namespaceLoaded = !!selectedSources[namespace];
 
@@ -138,10 +135,17 @@ export const SourcesList: React.FC<Props> = ({
         const hasFilteredSources = !!filtered.length;
 
         return (
-          <Group key={`namespace-${namespace}`} isSelected={isNamespaceAllSourcesSelected} isOpen={isNamespaceSelected && hasFilteredSources}>
-            <NamespaceItem isSelected={isNamespaceAllSourcesSelected} onClick={() => onSelectNamespace(namespace)}>
+          <Group key={`namespace-${namespace}`} $selected={isNamespaceAllSourcesSelected} $isOpen={isNamespaceSelected && hasFilteredSources}>
+            <NamespaceItem $selected={isNamespaceAllSourcesSelected} onClick={() => onSelectNamespace(namespace)}>
               <FlexRow>
-                <Checkbox disabled={!isNamespaceCanSelect} initialValue={isNamespaceAllSourcesSelected} onChange={(bool) => onSelectAll(bool, namespace)} />
+                <Checkbox
+                  // disabled={!isNamespaceCanSelect}
+                  initialValue={isNamespaceAllSourcesSelected}
+                  onChange={(bool) => {
+                    if (bool) onSelectNamespace(namespace);
+                    onSelectAll(bool, namespace);
+                  }}
+                />
                 <Text>{namespace}</Text>
               </FlexRow>
 
@@ -166,7 +170,7 @@ export const SourcesList: React.FC<Props> = ({
                     const isSourceSelected = !!selected.find(({ name }) => name === source.name);
 
                     return (
-                      <SourceItem key={`source-${source.name}`} isSelected={isSourceSelected} onClick={() => onSelectSource(source)}>
+                      <SourceItem key={`source-${source.name}`} $selected={isSourceSelected} onClick={() => onSelectSource(source)}>
                         <FlexRow>
                           <Checkbox initialValue={isSourceSelected} onChange={() => onSelectSource(source, namespace)} />
                           <Text>{source.name}</Text>

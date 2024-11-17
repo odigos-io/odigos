@@ -18,15 +18,15 @@ interface Props {
   style?: React.CSSProperties;
 }
 
-const StyledButton = styled(Button)<{ withBorder: Props['withBorder']; color: Props['color']; hoverColor: Props['hoverColor'] }>`
+const StyledButton = styled(Button)<{ $withBorder: Props['withBorder']; $color: Props['color']; $hoverColor: Props['hoverColor'] }>`
   gap: 8px;
   text-transform: none;
   text-decoration: none;
-  border: ${({ theme, withBorder }) => `1px solid ${withBorder ? theme.colors.border : 'transparent'}`};
-  background-color: ${({ theme, color }) => color || theme.colors.white_opacity['004']};
+  border: ${({ theme, $withBorder }) => `1px solid ${$withBorder ? theme.colors.border : 'transparent'}`};
+  background-color: ${({ theme, $color }) => $color || theme.colors.white_opacity['004']};
   &.not-selected {
     &:hover {
-      background-color: ${({ theme, hoverColor }) => hoverColor || theme.colors.white_opacity['008']};
+      background-color: ${({ theme, $hoverColor }) => $hoverColor || theme.colors.white_opacity['008']};
     }
   }
   &.selected {
@@ -36,7 +36,7 @@ const StyledButton = styled(Button)<{ withBorder: Props['withBorder']; color: Pr
 
 export const SelectionButton = ({ label, onClick, icon, badgeLabel, badgeFilled, isSelected, withBorder, color, hoverColor, style }: Props) => {
   return (
-    <StyledButton onClick={onClick} className={isSelected ? 'selected' : 'not-selected'} withBorder={withBorder} color={color} hoverColor={hoverColor} style={style}>
+    <StyledButton onClick={onClick} className={isSelected ? 'selected' : 'not-selected'} $withBorder={withBorder} $color={color} $hoverColor={hoverColor} style={style}>
       {icon && <Image src={icon} alt='' width={16} height={16} />}
       <Text size={14} style={{ whiteSpace: 'nowrap' }}>
         {label}

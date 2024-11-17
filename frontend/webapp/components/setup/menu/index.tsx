@@ -10,23 +10,23 @@ const Container = styled.div`
   gap: 32px;
 `;
 
-const Step = styled.div<{ state: 'finish' | 'active' | 'disabled' }>`
+const Step = styled.div<{ $state: 'finish' | 'active' | 'disabled' }>`
   display: flex;
   gap: 16px;
   padding: 8px;
-  opacity: ${({ state }) => (state === 'disabled' ? 0.5 : 1)};
+  opacity: ${({ $state }) => ($state === 'disabled' ? 0.5 : 1)};
   transition: all 0.3s;
 
-  ${({ state }) =>
-    state === 'finish' &&
+  ${({ $state }) =>
+    $state === 'finish' &&
     css`
       opacity: 0.8;
     `}
 
-  ${({ state }) => state === 'active' && css``}
+  ${({ $state }) => $state === 'active' && css``}
 
-  ${({ state }) =>
-    state === 'disabled' &&
+  ${({ $state }) =>
+    $state === 'disabled' &&
     css`
       opacity: 0.5;
     `}
@@ -36,7 +36,7 @@ const Step = styled.div<{ state: 'finish' | 'active' | 'disabled' }>`
   }
 `;
 
-const IconWrapper = styled.div<{ state: 'finish' | 'active' | 'disabled' }>`
+const IconWrapper = styled.div<{ $state: 'finish' | 'active' | 'disabled' }>`
   border-radius: 32px;
   width: 24px;
   height: 24px;
@@ -45,12 +45,12 @@ const IconWrapper = styled.div<{ state: 'finish' | 'active' | 'disabled' }>`
   justify-content: center;
   align-items: center;
 
-  ${({ state }) =>
-    state === 'finish'
+  ${({ $state }) =>
+    $state === 'finish'
       ? css`
           opacity: 0.8;
         `
-      : state === 'disabled' &&
+      : $state === 'disabled' &&
         css`
           border: 1px dashed rgba(249, 249, 249, 0.4);
         `}
@@ -69,10 +69,7 @@ const StepTitle = styled(Text)`
 
 const StepSubtitle = styled(Text)``;
 
-const SideMenu: React.FC<{ data?: StepProps[]; currentStep?: number }> = ({
-  data,
-  currentStep,
-}) => {
+const SideMenu: React.FC<{ data?: StepProps[]; currentStep?: number }> = ({ data, currentStep }) => {
   const [stepsList, setStepsList] = React.useState<StepProps[]>([]);
   const steps: StepProps[] = data || [
     {
@@ -94,6 +91,7 @@ const SideMenu: React.FC<{ data?: StepProps[]; currentStep?: number }> = ({
       stepNumber: 3,
     },
   ];
+
   useEffect(() => {
     if (currentStep) {
       const currentSteps = (data || steps).map((step, index) => {
@@ -113,23 +111,13 @@ const SideMenu: React.FC<{ data?: StepProps[]; currentStep?: number }> = ({
   return (
     <Container>
       {stepsList.map((step, index) => (
-        <Step key={index} state={step.state}>
-          <IconWrapper state={step.state}>
-            {step.state === 'finish' && (
-              <Image
-                src="/icons/common/check.svg"
-                width={20}
-                height={20}
-                alt={''}
-              />
-            )}
-            {step.state === 'active' && (
-              <Text size={12}>{step.stepNumber}</Text>
-            )}
-            {step.state === 'disabled' && (
-              <Text size={12}>{step.stepNumber}</Text>
-            )}
+        <Step key={index} $state={step.state}>
+          <IconWrapper $state={step.state}>
+            {step.state === 'finish' && <Image src='/icons/common/check.svg' width={20} height={20} alt={''} />}
+            {step.state === 'active' && <Text size={12}>{step.stepNumber}</Text>}
+            {step.state === 'disabled' && <Text size={12}>{step.stepNumber}</Text>}
           </IconWrapper>
+
           <StepContent>
             <StepTitle family={'secondary'}>{step.title}</StepTitle>
             {step.subtitle && (
