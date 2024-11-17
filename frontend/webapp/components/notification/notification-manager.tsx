@@ -90,21 +90,20 @@ const NewCount = styled(Text)`
 
 export const NotificationManager = () => {
   const { notifications, markAsSeen } = useNotificationStore();
+  const unseen = notifications.filter(({ seen }) => !seen);
+  const unseenCount = unseen.length;
 
   const [isOpen, setIsOpen] = useState(false);
   const toggleOpen = () => setIsOpen((prev) => !prev);
 
-  const hasOpenedRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  useOnClickOutside(containerRef, () => setIsOpen(false));
 
-  const unseen = notifications.filter(({ seen }) => !seen);
-  const unseenCount = unseen.length;
-
-  useEffect(() => {
-    if (isOpen) hasOpenedRef.current = true;
-    else if (!isOpen && hasOpenedRef.current && !!unseenCount) unseen.forEach(({ id }) => markAsSeen(id));
-  }, [isOpen, unseenCount, unseen, markAsSeen]);
+  useOnClickOutside(containerRef, () => {
+    if (isOpen) {
+      setIsOpen(false);
+      if (!!unseenCount) unseen.forEach(({ id }) => markAsSeen(id));
+    }
+  });
 
   return (
     <RelativeContainer ref={containerRef}>
@@ -124,7 +123,11 @@ export const NotificationManager = () => {
             )}
           </PopupHeader>
           <PopupBody>
-            {!notifications.length ? <NoDataFound title='No notifications' subTitle='' /> : notifications.map((notif) => <NotificationListItem key={`notification-${notif.id}`} {...notif} />)}
+            {!notifications.length ? (
+              <NoDataFound title='No notifications' subTitle='' />
+            ) : (
+              notifications.map((notif) => <NotificationListItem key={`notification-${notif.id}`} {...notif} onClick={() => setIsOpen(false)} />)
+            )}
           </PopupBody>
           <PopupShadow />
         </AbsoluteContainer>
@@ -173,7 +176,7 @@ const NotifFooterTextWrap = styled.div`
   gap: 6px;
 `;
 
-const NotificationListItem: React.FC<Notification> = (props) => {
+const NotificationListItem: React.FC<Notification & { onClick: () => void }> = ({ onClick, ...props }) => {
   const { id, seen, type, title, message, time, crdType, target } = props;
   const canClick = !!crdType && !!target;
 
@@ -189,7 +192,16 @@ const NotificationListItem: React.FC<Notification> = (props) => {
   const clickNotif = useClickNotif();
 
   return (
-    <NotifCard key={`notification-${id}`} className={canClick ? 'click-enabled' : ''} onClick={() => (canClick ? clickNotif(props) : null)}>
+    <NotifCard
+      key={`notification-${id}`}
+      className={canClick ? 'click-enabled' : ''}
+      onClick={() => {
+        if (canClick) {
+          onClick(); // this is to close the popup in a controlled manner, to prevent from all notifications being marked as "seen"
+          clickNotif(props);
+        }
+      }}
+    >
       <StatusIcon type={isDeleted ? 'error' : type}>
         <Image src={isDeleted ? '/icons/common/trash.svg' : getStatusIcon(type)} alt='status' width={16} height={16} />
       </StatusIcon>
