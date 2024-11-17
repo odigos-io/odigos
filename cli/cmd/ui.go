@@ -163,7 +163,7 @@ func findOdigosUIPod(client *kube.Client, ctx context.Context, ns string) (*core
 }
 func init() {
 	rootCmd.AddCommand(uiCmd)
-	uiCmd.Flags().Int("port", defaultPort, "Port to listen on 3000")
+	uiCmd.Flags().Int("port", defaultPort, "Port to listen on")
 	uiCmd.Flags().String("address", "localhost", "Address to listen on")
-	uiCmd.Flags().Bool("beta", false, "this flag is used to start the beta version of the UI")
+	uiCmd.Flags().Bool("beta", false, "use new experimental UI")
 }

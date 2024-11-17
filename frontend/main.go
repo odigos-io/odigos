@@ -260,19 +260,6 @@ func startHTTPDepServer(flags *Flags, odigosMetrics *collectormetrics.OdigosMetr
 	return r, nil
 }
 
-func httpFileDepServerWith404(fs http.FileSystem) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, err := fs.Open(r.URL.Path)
-		if err != nil {
-			// Serve index.html
-			r.URL.Path = "/"
-		}
-		http.FileServer(fs).ServeHTTP(w, r)
-	})
-}
-
-////dep server
-
 func main() {
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := parseFlags()
