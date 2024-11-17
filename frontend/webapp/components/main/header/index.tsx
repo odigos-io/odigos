@@ -45,10 +45,6 @@ export const MainHeader: React.FC<MainHeaderProps> = () => {
 
       <AlignRight>
         <NotificationManager />
-        {/* <Flex style={{ gap: '8px' }}>
-          <Image src='/icons/common/avatar.svg' alt='avatar' width={28} height={28} />
-          <Text>Full Name</Text>
-        </Flex> */}
       </AlignRight>
     </HeaderContainer>
   );
