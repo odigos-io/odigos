@@ -39,42 +39,41 @@ const HeaderNode = ({ data, nodeWidth }: HeaderNodeProps) => {
   const { configuredSources, setConfiguredSources } = useAppStore((state) => state);
   const { sources } = useSourceCRUD();
 
-  const totalSelected = useMemo(() => {
+  const totalSelectedSources = useMemo(() => {
     let num = 0;
-    if (title !== 'Sources') return num;
 
     Object.values(configuredSources).forEach((selectedSources) => {
       num += selectedSources.length;
     });
 
     return num;
-  }, [title, configuredSources]);
-
-  const sourcesToSelect = useMemo(() => {
-    const payload = {};
-    if (title !== 'Sources') return payload;
-
-    sources.forEach((source) => {
-      if (!payload[source.namespace]) {
-        payload[source.namespace] = [source];
-      } else {
-        payload[source.namespace].push(source);
-      }
-    });
-
-    return payload;
-  }, [title, sources]);
+  }, [configuredSources]);
 
   const renderActions = () => {
     if (title !== 'Sources') return null;
     if (!sources.length) return null;
 
-    const isSelected = sources.length === totalSelected;
-    const onSelect = (bool: boolean) => setConfiguredSources(bool ? sourcesToSelect : {});
+    const onSelect = (bool: boolean) => {
+      if (bool) {
+        const payload = {};
+
+        sources.forEach((source) => {
+          if (!payload[source.namespace]) {
+            payload[source.namespace] = [source];
+          } else {
+            payload[source.namespace].push(source);
+          }
+        });
+
+        setConfiguredSources(payload);
+      } else {
+        setConfiguredSources({});
+      }
+    };
 
     return (
       <ActionsWrapper>
-        <Checkbox initialValue={isSelected} onChange={onSelect} />
+        <Checkbox initialValue={sources.length === totalSelectedSources} onChange={onSelect} />
       </ActionsWrapper>
     );
   };
