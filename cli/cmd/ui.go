@@ -18,6 +18,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources"
+	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	corev1 "k8s.io/api/core/v1"
 
@@ -35,10 +36,7 @@ var uiCmd = &cobra.Command{
 	Long:  `Start the Odigos UI. This command will port-forward the odigos-ui pod to your local machine.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
-		client, err := kube.CreateClient(cmd)
-		if err != nil {
-			kube.PrintClientErrorAndExit(err)
-		}
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
 		ns, err := resources.GetOdigosNamespace(client, ctx)
 		if err != nil {
