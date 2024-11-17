@@ -50,7 +50,7 @@ const MultiSourceControl = () => {
 
   return (
     <>
-      <Transition Container={Container} enter={!!totalSelected} animateIn={slide.in['center']} animateOut={slide.out['center']}>
+      <Transition container={Container} enter={!!totalSelected} animateIn={slide.in['center']} animateOut={slide.out['center']}>
         <Text>Selected sources</Text>
         <Badge label={totalSelected} filled />
 

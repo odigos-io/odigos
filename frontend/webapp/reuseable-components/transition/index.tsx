@@ -3,13 +3,13 @@ import styled from 'styled-components';
 import type { IStyledComponentBase, Keyframes, Substitute } from 'styled-components/dist/types';
 
 interface Props {
-  Container: IStyledComponentBase<'web', Substitute<React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>, {}>> & string;
+  container: IStyledComponentBase<'web', Substitute<React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>, {}>> & string;
   animateIn: Keyframes;
   animateOut: Keyframes;
   enter: boolean;
 }
 
-export const Transition: React.FC<PropsWithChildren<Props>> = ({ Container, children, animateIn, animateOut, enter }) => {
+export const Transition: React.FC<PropsWithChildren<Props>> = ({ container: Container, children, animateIn, animateOut, enter }) => {
   const [isEntered, setIsEntered] = useState(false);
 
   useEffect(() => {
