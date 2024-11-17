@@ -9,6 +9,7 @@ const MenuContainer = styled.div`
   display: flex;
   align-items: center;
   margin: 20px 0;
+  padding: 0 16px;
   gap: 16px;
 `;
 

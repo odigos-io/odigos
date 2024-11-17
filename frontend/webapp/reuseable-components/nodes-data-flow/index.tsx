@@ -61,7 +61,18 @@ export function NodeBaseDataFlow({ nodes, edges, onNodeClick, nodeWidth }: NodeB
     <FlowWrapper>
       <ReactFlow nodes={nodes} nodeTypes={nodeTypes} edges={edges} edgeTypes={edgeTypes} onNodeClick={onNodeClick} zoomOnScroll={false} fitView={false}>
         <ControllerWrapper>
-          <Controls position='bottom-left' orientation='horizontal' showZoom showFitView showInteractive={false} />
+          <Controls
+            position='bottom-left'
+            orientation='horizontal'
+            showInteractive={false}
+            showZoom
+            showFitView
+            fitViewOptions={{
+              duration: 300,
+              padding: 0.02,
+              includeHiddenNodes: true,
+            }}
+          />
         </ControllerWrapper>
       </ReactFlow>
     </FlowWrapper>
