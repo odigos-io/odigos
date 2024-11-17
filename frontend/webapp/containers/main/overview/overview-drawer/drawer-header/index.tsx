@@ -14,10 +14,10 @@ const HeaderContainer = styled.section`
   border-bottom: 1px solid rgba(249, 249, 249, 0.24);
 `;
 
-const SectionItemsWrapper = styled.div<{ gap?: number }>`
+const SectionItemsWrapper = styled.div<{ $gap?: number }>`
   display: flex;
   align-items: center;
-  gap: ${({ gap }) => gap || 16}px;
+  gap: ${({ $gap }) => $gap || 16}px;
 `;
 
 const InputWrapper = styled(SectionItemsWrapper)`
@@ -95,7 +95,7 @@ const DrawerHeader = forwardRef<DrawerHeaderRef, DrawerHeaderProps>(({ title, im
         </InputWrapper>
       )}
 
-      <SectionItemsWrapper gap={8}>
+      <SectionItemsWrapper $gap={8}>
         {!isEdit && (
           <EditButton variant='tertiary' onClick={onEdit}>
             <Image src='/icons/common/edit.svg' alt='Edit' width={16} height={16} />

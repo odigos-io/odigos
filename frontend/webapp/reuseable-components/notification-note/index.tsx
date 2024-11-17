@@ -28,17 +28,17 @@ interface NotificationProps {
 const TOAST_DURATION = 5000;
 const TRANSITION_DURATION = 500;
 
-const Container = styled.div<{ isLeaving?: boolean }>`
+const Container = styled.div<{ $isLeaving?: boolean }>`
   position: relative;
   &.animated {
     overflow: hidden;
     padding-bottom: 1px;
     border-radius: 32px;
-    animation: ${({ isLeaving }) => (isLeaving ? slide.out['bottom'] : slide.in['bottom'])} ${TRANSITION_DURATION}ms forwards;
+    animation: ${({ $isLeaving }) => ($isLeaving ? slide.out['bottom'] : slide.in['bottom'])} ${TRANSITION_DURATION}ms forwards;
   }
 `;
 
-const DurationAnimation = styled.div<{ type: NotificationType }>`
+const DurationAnimation = styled.div<{ $type: NotificationType }>`
   position: absolute;
   bottom: -1px;
   left: 0;
@@ -46,17 +46,17 @@ const DurationAnimation = styled.div<{ type: NotificationType }>`
   width: 100%;
   height: 100%;
   border-radius: 32px;
-  background-color: ${({ type, theme }) => theme.text[type]};
+  background-color: ${({ $type, theme }) => theme.text[$type]};
   animation: ${progress.out} ${TOAST_DURATION - TRANSITION_DURATION}ms forwards;
 `;
 
-const Content = styled.div<{ type: NotificationType }>`
+const Content = styled.div<{ $type: NotificationType }>`
   display: flex;
   align-items: center;
   flex: 1;
   padding: 12px 16px;
   border-radius: 32px;
-  background-color: ${({ type, theme }) => theme.colors[type]};
+  background-color: ${({ $type, theme }) => theme.colors[$type]};
 `;
 
 const TextWrapper = styled.div`
@@ -66,14 +66,14 @@ const TextWrapper = styled.div`
   height: 12px;
 `;
 
-const Title = styled(Text)<{ type: NotificationType }>`
+const Title = styled(Text)<{ $type: NotificationType }>`
   font-size: 14px;
-  color: ${({ type, theme }) => theme.text[type]};
+  color: ${({ $type, theme }) => theme.text[$type]};
 `;
 
-const Message = styled(Text)<{ type: NotificationType }>`
+const Message = styled(Text)<{ $type: NotificationType }>`
   font-size: 12px;
-  color: ${({ type, theme }) => theme.text[type]};
+  color: ${({ $type, theme }) => theme.text[$type]};
 `;
 
 const ButtonsWrapper = styled.div`
@@ -126,7 +126,7 @@ const NotificationNote: React.FC<NotificationProps> = ({ type, title, message, a
         }, TRANSITION_DURATION);
       }
     },
-    [onClose]
+    [onClose],
   );
 
   useEffect(() => {
@@ -160,14 +160,14 @@ const NotificationNote: React.FC<NotificationProps> = ({ type, title, message, a
   };
 
   return (
-    <Container className={onClose ? 'animated' : ''} isLeaving={isLeaving} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-      <Content type={type} style={style}>
+    <Container className={onClose ? 'animated' : ''} $isLeaving={isLeaving} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+      <Content $type={type} style={style}>
         <Image src={getStatusIcon(type)} alt={type} width={16} height={16} />
 
         <TextWrapper>
-          {title && <Title type={type}>{title}</Title>}
+          {title && <Title $type={type}>{title}</Title>}
           {title && message && <Divider orientation='vertical' color={theme.text[type] + '4D'} thickness={1} />}
-          {message && <Message type={type}>{message}</Message>}
+          {message && <Message $type={type}>{message}</Message>}
         </TextWrapper>
 
         {(action || onClose) && (
@@ -178,7 +178,7 @@ const NotificationNote: React.FC<NotificationProps> = ({ type, title, message, a
         )}
       </Content>
 
-      {onClose && !isEntering && !isLeaving && <DurationAnimation ref={progress} type={type} />}
+      {onClose && !isEntering && !isLeaving && <DurationAnimation ref={progress} $type={type} />}
     </Container>
   );
 };

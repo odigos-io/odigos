@@ -34,7 +34,7 @@ const DropdownListContainer = styled.div`
   padding: 12px;
 `;
 
-const DropdownItem = styled.div<{ isSelected: boolean }>`
+const DropdownItem = styled.div<{ $selected: boolean }>`
   padding: 8px 12px;
   cursor: pointer;
   border-radius: 24px;
@@ -44,8 +44,8 @@ const DropdownItem = styled.div<{ isSelected: boolean }>`
   &:hover {
     background: ${({ theme }) => theme.colors.white_opacity['008']};
   }
-  ${({ isSelected }) =>
-    isSelected &&
+  ${({ $selected }) =>
+    $selected &&
     css`
       background: rgba(68, 74, 217, 0.24);
     `}
@@ -72,7 +72,7 @@ interface AddEntityButtonDropdownProps {
 
 const AddEntity: React.FC<AddEntityButtonDropdownProps> = ({ options = DEFAULT_OPTIONS, placeholder = 'ADD...' }) => {
   const { isPolling } = useBooleanStore();
-  const { setCurrentModal } = useModalStore();
+  const { currentModal, setCurrentModal } = useModalStore();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -98,7 +98,7 @@ const AddEntity: React.FC<AddEntityButtonDropdownProps> = ({ options = DEFAULT_O
       {isDropdownOpen && (
         <DropdownListContainer>
           {options.map((option) => (
-            <DropdownItem key={option.id} isSelected={false} onClick={() => handleSelect(option)}>
+            <DropdownItem key={option.id} $selected={currentModal === option.id} onClick={() => handleSelect(option)}>
               <Image src={`/icons/overview/${option.id}s.svg`} width={16} height={16} alt={`Add ${option.value}`} />
               <Text size={14}>{option.value}</Text>
             </DropdownItem>

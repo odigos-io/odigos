@@ -50,11 +50,7 @@ const DestinationIconWrapper = styled.div`
   align-items: center;
   gap: 8px;
   border-radius: 8px;
-  background: linear-gradient(
-    180deg,
-    rgba(249, 249, 249, 0.06) 0%,
-    rgba(249, 249, 249, 0.02) 100%
-  );
+  background: linear-gradient(180deg, rgba(249, 249, 249, 0.06) 0%, rgba(249, 249, 249, 0.02) 100%);
 `;
 
 const SignalsWrapper = styled.div`
@@ -90,7 +86,7 @@ const IconBorder = styled.div`
   background: ${({ theme }) => theme.colors.border};
 `;
 
-const ExpandIconWrapper = styled.div<{ expand?: boolean }>`
+const ExpandIconWrapper = styled.div<{ $expand?: boolean }>`
   display: flex;
   width: 36px;
   height: 36px;
@@ -99,7 +95,7 @@ const ExpandIconWrapper = styled.div<{ expand?: boolean }>`
   align-items: center;
   border-radius: 100%;
   transition: background 0.3s ease 0s, transform 0.3s ease 0s;
-  transform: ${({ expand }) => (expand ? 'rotate(180deg)' : 'rotate(0deg)')};
+  transform: ${({ $expand }) => ($expand ? 'rotate(180deg)' : 'rotate(0deg)')};
   &:hover {
     background: ${({ theme }) => theme.colors.translucent_bg};
   }
@@ -109,37 +105,24 @@ interface DestinationsListProps {
   data: ConfiguredDestination[];
 }
 
-function ConfiguredDestinationsListItem({
-  item,
-}: {
-  item: ConfiguredDestination;
-}) {
+function ConfiguredDestinationsListItem({ item }: { item: ConfiguredDestination }) {
   const [expand, setExpand] = React.useState(false);
 
   function renderSupportedSignals(item: ConfiguredDestination) {
     const supportedSignals = item.exportedSignals;
     const signals = Object.keys(supportedSignals);
-    const supportedSignalsList = signals.filter(
-      (signal) => supportedSignals[signal].supported
-    );
+    const supportedSignalsList = signals.filter((signal) => supportedSignals[signal].supported);
 
     return Object.keys(supportedSignals).map(
       (signal, index) =>
         supportedSignals[signal] && (
           <SignalsWrapper key={index}>
-            <Image
-              src={`/icons/monitors/${signal}.svg`}
-              alt="monitor"
-              width={10}
-              height={16}
-            />
+            <Image src={`/icons/monitors/${signal}.svg`} alt='monitor' width={10} height={16} />
 
             <SignalText>{signal}</SignalText>
-            {index < supportedSignalsList.length - 1 && (
-              <SignalText>·</SignalText>
-            )}
+            {index < supportedSignalsList.length - 1 && <SignalText>·</SignalText>}
           </SignalsWrapper>
-        )
+        ),
     );
   }
 
@@ -148,12 +131,7 @@ function ConfiguredDestinationsListItem({
       <ListItemHeader style={{ paddingBottom: expand ? 0 : 16 }}>
         <ListItemContent>
           <DestinationIconWrapper>
-            <Image
-              src={item.imageUrl}
-              width={20}
-              height={20}
-              alt="destination"
-            />
+            <Image src={item.imageUrl} width={20} height={20} alt='destination' />
           </DestinationIconWrapper>
           <TextWrapper>
             <Text size={14}>{item.displayName}</Text>
@@ -163,20 +141,15 @@ function ConfiguredDestinationsListItem({
 
         <ExpandIconContainer>
           <IconBorder />
-          <ExpandIconWrapper expand={expand} onClick={() => setExpand(!expand)}>
-            <Image
-              src={'/icons/common/extend-arrow.svg'}
-              width={16}
-              height={16}
-              alt="destination"
-            />
+          <ExpandIconWrapper $expand={expand} onClick={() => setExpand(!expand)}>
+            <Image src={'/icons/common/extend-arrow.svg'} width={16} height={16} alt='destination' />
           </ExpandIconWrapper>
         </ExpandIconContainer>
       </ListItemHeader>
 
       {expand && (
         <ListItemBody>
-          <Divider margin="0 0 16px 0" />
+          <Divider margin='0 0 16px 0' />
           <ConfiguredFields details={item.destinationTypeDetails} />
         </ListItemBody>
       )}
@@ -184,9 +157,7 @@ function ConfiguredDestinationsListItem({
   );
 }
 
-const ConfiguredDestinationsList: React.FC<DestinationsListProps> = ({
-  data,
-}) => {
+const ConfiguredDestinationsList: React.FC<DestinationsListProps> = ({ data }) => {
   return (
     <Container>
       {data.map((item) => (

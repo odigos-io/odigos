@@ -9,7 +9,7 @@ interface TagProps {
   onClick: (id: string) => void;
 }
 
-const TagContainer = styled.div<{ isSelected: boolean; isDisabled: boolean }>`
+const TagContainer = styled.div<{ $selected: boolean; $disabled: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
@@ -17,14 +17,13 @@ const TagContainer = styled.div<{ isSelected: boolean; isDisabled: boolean }>`
   gap: 6px;
   padding: 0 12px;
   border-radius: 32px;
-  background-color: ${({ theme, isSelected }) =>
-    isSelected ? theme.colors.primary : theme.colors.translucent_bg};
-  cursor: ${({ isDisabled }) => (isDisabled ? 'not-allowed' : 'pointer')};
-  opacity: ${({ isDisabled }) => (isDisabled ? 0.5 : 1)};
+  background-color: ${({ theme, $selected }) => ($selected ? theme.colors.primary : theme.colors.translucent_bg)};
+  cursor: ${({ $disabled }) => ($disabled ? 'not-allowed' : 'pointer')};
+  opacity: ${({ $disabled }) => ($disabled ? 0.5 : 1)};
   transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
 
-  ${({ isDisabled, theme }) =>
-    !isDisabled &&
+  ${({ $disabled, theme }) =>
+    !$disabled &&
     css`
       &:hover {
         background-color: ${theme.colors.primary};
@@ -32,28 +31,13 @@ const TagContainer = styled.div<{ isSelected: boolean; isDisabled: boolean }>`
     `}
 `;
 
-const Tag: React.FC<TagProps> = ({
-  id,
-  isSelected,
-  isDisabled = false,
-  onClick,
-  children,
-}) => {
+const Tag: React.FC<TagProps> = ({ id, isSelected, isDisabled = false, onClick, children }) => {
   const handleClick = () => {
-    if (!isDisabled) {
-      onClick(id);
-    }
+    if (!isDisabled) onClick(id);
   };
 
   return (
-    <TagContainer
-      isSelected={isSelected}
-      isDisabled={isDisabled}
-      onClick={handleClick}
-      role="button"
-      aria-disabled={isDisabled}
-      aria-pressed={isSelected}
-    >
+    <TagContainer $selected={isSelected} $disabled={isDisabled} onClick={handleClick} role='button' aria-disabled={isDisabled} aria-pressed={isSelected}>
       {children}
     </TagContainer>
   );
