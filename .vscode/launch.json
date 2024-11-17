@@ -61,6 +61,16 @@
             "buildFlags": "-tags=embed_manifests"
         },
         {
+            "name": "cli install",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cli",
+            "cwd": "${workspaceFolder}/cli",
+            "args": ["install"],
+            "buildFlags": "-tags=embed_manifests"
+        },
+        {
             "name": "cli describe",
             "type": "go",
             "request": "launch",

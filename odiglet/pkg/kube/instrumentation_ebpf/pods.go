@@ -113,3 +113,22 @@ func GetPodSumRestarts(pod *corev1.Pod) int {
 	}
 	return restartCount
 }
+
+func (p *PodsReconciler) getPodWorkloadObject(ctx context.Context, pod *corev1.Pod) (*workload.PodWorkload, error) {
+	for _, owner := range pod.OwnerReferences {
+		workloadName, workloadKind, err := workload.GetWorkloadFromOwnerReference(owner)
+		if err != nil {
+			return nil, workload.IgnoreErrorKindNotSupported(err)
+		}
+
+		return &workload.PodWorkload{
+			Name:      workloadName,
+			Kind:      workloadKind,
+			Namespace: pod.Namespace,
+		}, nil
+	}
+
+	// Pod does not necessarily have to be managed by a controller
+	return nil, nil
+}
+
