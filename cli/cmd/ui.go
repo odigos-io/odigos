@@ -25,7 +25,8 @@ import (
 )
 
 const (
-	defaultPort = 3000
+	defaultPort     = 3000
+	betaDefaultPort = 3001
 )
 
 // uiCmd represents the ui command
@@ -51,14 +52,19 @@ var uiCmd = &cobra.Command{
 			}
 		}
 
+		betaFlag, _ := cmd.Flags().GetBool("beta")
+		localPort := cmd.Flag("port").Value.String()
+		if betaFlag {
+			localPort = fmt.Sprintf("%d", betaDefaultPort)
+		}
+
+		localAddress := cmd.Flag("address").Value.String()
 		uiPod, err := findOdigosUIPod(client, ctx, ns)
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Cannot find odigos-ui pod: %s\n", err)
 			os.Exit(1)
 		}
 
-		localPort := cmd.Flag("port").Value.String()
-		localAddress := cmd.Flag("address").Value.String()
 		if err := portForwardWithContext(ctx, uiPod, client, localPort, localAddress); err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Cannot start port-forward: %s\n", err)
 			os.Exit(1)
@@ -153,9 +159,9 @@ func findOdigosUIPod(client *kube.Client, ctx context.Context, ns string) (*core
 
 	return &pods.Items[0], nil
 }
-
 func init() {
 	rootCmd.AddCommand(uiCmd)
-	uiCmd.Flags().Int("port", defaultPort, "port to listen on")
+	uiCmd.Flags().Int("port", defaultPort, "Port to listen on (default: 3000 or 3001 for beta)")
 	uiCmd.Flags().String("address", "localhost", "Address to listen on")
+	uiCmd.Flags().Bool("beta", false, "Use the beta UI (port-forward the beta UI pod on port 3001)")
 }
