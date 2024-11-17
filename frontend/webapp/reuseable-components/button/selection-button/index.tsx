@@ -23,8 +23,8 @@ const StyledButton = styled(Button)<{ $withBorder: Props['withBorder']; $color: 
   text-transform: none;
   text-decoration: none;
   border: ${({ theme, $withBorder }) => `1px solid ${$withBorder ? theme.colors.border : 'transparent'}`};
-  background-color: ${({ theme, $color }) => $color || theme.colors.white_opacity['004']};
   &.not-selected {
+    background-color: ${({ theme, $color }) => $color || theme.colors.white_opacity['004']};
     &:hover {
       background-color: ${({ theme, $hoverColor }) => $hoverColor || theme.colors.white_opacity['008']};
     }
