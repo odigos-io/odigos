@@ -36,36 +36,37 @@ const ActionsWrapper = styled.div`
 
 const HeaderNode = ({ data, nodeWidth }: HeaderNodeProps) => {
   const { title, icon, tagValue } = data;
+  const { configuredSources, setConfiguredSources } = useAppStore((state) => state);
+  const { sources } = useSourceCRUD();
+
+  const totalSelected = useMemo(() => {
+    let num = 0;
+    if (title !== 'Sources') return num;
+
+    Object.values(configuredSources).forEach((selectedSources) => {
+      num += selectedSources.length;
+    });
+
+    return num;
+  }, [title, configuredSources]);
+
+  const sourcesToSelect = useMemo(() => {
+    const payload = {};
+    if (title !== 'Sources') return payload;
+
+    sources.forEach((source) => {
+      if (!payload[source.namespace]) {
+        payload[source.namespace] = [source];
+      } else {
+        payload[source.namespace].push(source);
+      }
+    });
+
+    return payload;
+  }, [title, sources]);
 
   const renderActions = () => {
     if (title !== 'Sources') return null;
-
-    const { configuredSources, setConfiguredSources } = useAppStore((state) => state);
-    const { sources } = useSourceCRUD();
-
-    const totalSelected = useMemo(() => {
-      let num = 0;
-
-      Object.values(configuredSources).forEach((selectedSources) => {
-        num += selectedSources.length;
-      });
-
-      return num;
-    }, [configuredSources]);
-
-    const sourcesToSelect = useMemo(() => {
-      const payload = {};
-
-      sources.forEach((source) => {
-        if (!payload[source.namespace]) {
-          payload[source.namespace] = [source];
-        } else {
-          payload[source.namespace].push(source);
-        }
-      });
-
-      return payload;
-    }, [sources]);
 
     const isDisabled = !sources.length;
     const isSelected = !isDisabled && sources.length === totalSelected;
