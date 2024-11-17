@@ -74,46 +74,6 @@ func GetNamespaces(c *gin.Context, odigosns string) {
 	c.JSON(http.StatusOK, response)
 }
 
-func GetK8SNamespaces(ctx context.Context, odigosns string) GetNamespacesResponse {
-
-	var (
-		relevantNameSpaces []v1.Namespace
-		appsPerNamespace   map[string]int
-	)
-
-	g, ctx := errgroup.WithContext(ctx)
-	g.Go(func() error {
-		var err error
-		relevantNameSpaces, err = getRelevantNameSpaces(ctx, odigosns)
-		return err
-	})
-
-	g.Go(func() error {
-		var err error
-		appsPerNamespace, err = CountAppsPerNamespace(ctx)
-		return err
-	})
-
-	if err := g.Wait(); err != nil {
-
-		return GetNamespacesResponse{}
-	}
-
-	var response GetNamespacesResponse
-	for _, namespace := range relevantNameSpaces {
-		// check if entire namespace is instrumented
-		selected := namespace.Labels[consts.OdigosInstrumentationLabel] == consts.InstrumentationEnabled
-
-		response.Namespaces = append(response.Namespaces, GetNamespaceItem{
-			Name:      namespace.Name,
-			Selected:  selected,
-			TotalApps: appsPerNamespace[namespace.Name],
-		})
-	}
-
-	return response
-}
-
 // getRelevantNameSpaces returns a list of namespaces that are relevant for instrumentation.
 // Taking into account the ignored namespaces from the OdigosConfiguration.
 func getRelevantNameSpaces(ctx context.Context, odigosns string) ([]v1.Namespace, error) {

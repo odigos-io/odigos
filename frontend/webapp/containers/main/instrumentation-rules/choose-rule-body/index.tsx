@@ -6,7 +6,7 @@ import type { RuleOption } from '../add-rule-modal/rule-options';
 import { DocsButton, Input, Text, TextArea, SectionTitle, ToggleButtons } from '@/reuseable-components';
 
 const FieldWrapper = styled.div`
-  width: 100%;
+  width: calc(100% - 16px);
   margin: 24px 0;
 `;
 
