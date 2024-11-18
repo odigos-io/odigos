@@ -335,7 +335,7 @@ export const buildNodesAndEdges = ({
   tempNodes['rules'].push(
     createNode(
       'hidden',
-      'hidden',
+      'default',
       postions['rules']['x'],
       containerHeight,
       {},
