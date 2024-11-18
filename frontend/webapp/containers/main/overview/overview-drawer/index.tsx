@@ -5,6 +5,8 @@ import DrawerFooter from './drawer-footer';
 import { Drawer } from '@/reuseable-components';
 import DrawerHeader, { DrawerHeaderRef } from './drawer-header';
 import { CancelWarning, DeleteWarning } from '@/components/modals';
+import { OVERVIEW_ENTITY_TYPES } from '@/types';
+import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
 
 const DRAWER_WIDTH = '640px';
 
@@ -32,6 +34,8 @@ const ContentArea = styled.div`
 `;
 
 const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, imageUri, isEdit, isFormDirty, onEdit, onSave, onDelete, onCancel }) => {
+  const { sources } = useSourceCRUD();
+  const { destinations } = useDestinationCRUD();
   const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
   const setSelectedItem = useDrawerStore(({ setSelectedItem }) => setSelectedItem);
 
@@ -80,6 +84,15 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, 
     onSave(titleRef.current?.getTitle() || '');
   };
 
+  const isLastItem = () => {
+    let isLast = false;
+
+    if (selectedItem?.type === OVERVIEW_ENTITY_TYPES.SOURCE) isLast = sources.length === 1;
+    if (selectedItem?.type === OVERVIEW_ENTITY_TYPES.DESTINATION) isLast = destinations.length === 1;
+
+    return isLast;
+  };
+
   return (
     <>
       <Drawer isOpen onClose={isEdit ? clickCancel : closeDrawer} width={DRAWER_WIDTH} closeOnEscape={!isDeleteModalOpen && !isCancelModalOpen}>
@@ -90,7 +103,21 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, 
         </DrawerContent>
       </Drawer>
 
-      <DeleteWarning isOpen={isDeleteModalOpen} noOverlay name={`${selectedItem?.type}${title ? ` (${title})` : ''}`} onApprove={handleDelete} onDeny={closeWarningModals} />
+      <DeleteWarning
+        isOpen={isDeleteModalOpen}
+        noOverlay
+        name={`${selectedItem?.type}${title ? ` (${title})` : ''}`}
+        warnAgain={
+          isLastItem()
+            ? {
+                title: `You're about to delete the last ${selectedItem?.type}`,
+                description: 'This will break your pipeline!',
+              }
+            : undefined
+        }
+        onApprove={handleDelete}
+        onDeny={closeWarningModals}
+      />
       <CancelWarning isOpen={isCancelModalOpen} noOverlay name='edit mode' onApprove={handleCancel} onDeny={closeWarningModals} />
     </>
   );

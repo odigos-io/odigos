@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
-import { Button, ButtonProps, Modal, Text } from '@/reuseable-components';
+import { Button, ButtonProps, Modal, NotificationNote, Text, Transition } from '@/reuseable-components';
 import { useKeyDown } from '@/hooks';
+import { slide } from '@/styles';
 
 interface ButtonParams {
   text: string;
@@ -14,6 +15,10 @@ interface Props {
   noOverlay?: boolean;
   title: string;
   description: string;
+  warnAgain?: {
+    title: string;
+    description: string;
+  };
   approveButton: ButtonParams;
   denyButton: ButtonParams;
 }
@@ -49,17 +54,26 @@ const FooterButton = styled(Button)`
   width: 224px;
 `;
 
-export const WarningModal: React.FC<Props> = ({ isOpen, noOverlay, title = '', description = '', approveButton, denyButton }) => {
-  useKeyDown(
-    {
-      key: 'Enter',
-      active: isOpen,
-    },
-    () => approveButton.onClick()
-  );
+const NoteWrapper = styled.div`
+  margin-top: 12px;
+`;
+
+export const WarningModal: React.FC<Props> = ({ isOpen, noOverlay, title = '', description = '', warnAgain, approveButton, denyButton }) => {
+  useKeyDown({ key: 'Enter', active: isOpen }, () => approveButton.onClick());
+
+  const [showWarnAgain, setShowWarnAgain] = useState(false);
+
+  const onApprove = () => {
+    warnAgain && !showWarnAgain ? setShowWarnAgain(true) : approveButton.onClick();
+  };
+
+  const onDeny = () => {
+    setShowWarnAgain(false);
+    denyButton.onClick();
+  };
 
   return (
-    <Modal isOpen={isOpen} noOverlay={noOverlay} onClose={denyButton.onClick}>
+    <Modal isOpen={isOpen} noOverlay={noOverlay} onClose={onDeny}>
       <Container>
         <Title>{title}</Title>
 
@@ -68,13 +82,19 @@ export const WarningModal: React.FC<Props> = ({ isOpen, noOverlay, title = '', d
         </Content>
 
         <Footer>
-          <FooterButton variant={approveButton.variant || 'primary'} onClick={approveButton.onClick}>
+          <FooterButton variant={approveButton.variant || 'primary'} onClick={onApprove}>
             {approveButton.text}
           </FooterButton>
-          <FooterButton variant={denyButton.variant || 'secondary'} onClick={denyButton.onClick}>
+          <FooterButton variant={denyButton.variant || 'secondary'} onClick={onDeny}>
             {denyButton.text}
           </FooterButton>
         </Footer>
+
+        {!!warnAgain && (
+          <Transition container={NoteWrapper} enter={showWarnAgain} animateIn={slide.in['left']} animateOut={slide.out['left']}>
+            <NotificationNote type='error' title={warnAgain.title} message={warnAgain.description} />
+          </Transition>
+        )}
       </Container>
     </Modal>
   );
