@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
 import { useClickNotif } from '@/hooks';
@@ -182,7 +182,7 @@ const NotificationListItem: React.FC<Notification & { onClick: () => void }> = (
   const isDeleted = useMemo(() => {
     const deleteAction = ACTION.DELETE.toLowerCase(),
       titleIncludes = title?.toLowerCase().includes(deleteAction),
-      messageIncludes = message?.toLowerCase().includes(deleteAction);
+      messageIncludes = false // message?.toLowerCase().includes(deleteAction);
 
     return titleIncludes || messageIncludes || false;
   }, [title, message]);

@@ -1,7 +1,7 @@
-import { useDrawerStore } from '@/store';
-import { useNotify } from '../notification/useNotify';
 import { useMutation } from '@apollo/client';
+import { useNotify } from '../notification/useNotify';
 import { useComputePlatform } from '../compute-platform';
+import { useDrawerStore, useNotificationStore } from '@/store';
 import { ACTION, getSseTargetFromId, NOTIFICATION } from '@/utils';
 import { OVERVIEW_ENTITY_TYPES, type DestinationInput, type NotificationType } from '@/types';
 import { CREATE_DESTINATION, DELETE_DESTINATION, UPDATE_DESTINATION } from '@/graphql/mutations';
@@ -12,6 +12,7 @@ interface Params {
 }
 
 export const useDestinationCRUD = (params?: Params) => {
+  const removeNotifications = useNotificationStore((store) => store.removeNotifications);
   const { setSelectedItem: setDrawerItem } = useDrawerStore((store) => store);
   const { data, refetch } = useComputePlatform();
   const notify = useNotify();
@@ -44,8 +45,10 @@ export const useDestinationCRUD = (params?: Params) => {
     onError: (error) => handleError(ACTION.CREATE, error.message),
     onCompleted: (res, req) => {
       const id = res.createNewDestination.id;
-      const name = req?.variables?.destination.name || req?.variables?.destination.type;
-      handleComplete(ACTION.CREATE, `destination "${name}" was created`, id);
+      const type = req?.variables?.destination.type;
+      const name = req?.variables?.destination.name;
+      const label = `${type}${!!name ? ` (${name})` : ''}`;
+      handleComplete(ACTION.CREATE, `destination "${label}" was created`, id);
     },
   });
   const [updateDestination, uState] = useMutation<{
@@ -54,8 +57,10 @@ export const useDestinationCRUD = (params?: Params) => {
     onError: (error) => handleError(ACTION.UPDATE, error.message),
     onCompleted: (res, req) => {
       const id = res.updateDestination.id;
-      const name = req?.variables?.destination.name || req?.variables?.destination.type;
-      handleComplete(ACTION.UPDATE, `destination "${name}" was updated`, id);
+      const type = req?.variables?.destination.type;
+      const name = req?.variables?.destination.name;
+      const label = `${type}${!!name ? ` (${name})` : ''}`;
+      handleComplete(ACTION.UPDATE, `destination "${label}" was updated`, id);
     },
   });
   const [deleteDestination, dState] = useMutation<{
@@ -64,6 +69,7 @@ export const useDestinationCRUD = (params?: Params) => {
     onError: (error) => handleError(ACTION.DELETE, error.message),
     onCompleted: (res, req) => {
       const id = req?.variables?.id;
+      removeNotifications(getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.DESTINATION));
       handleComplete(ACTION.DELETE, `destination "${id}" was deleted`);
     },
   });
