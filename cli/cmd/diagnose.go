@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/odigos-io/odigos/cli/cmd/diagnose_util"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
+	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/spf13/cobra"
 	"io"
 	"os"
@@ -32,12 +33,9 @@ var diagnoseCmd = &cobra.Command{
 	Long:  `Diagnose Client Cluster to identify issues and resolve them. This command is useful for troubleshooting and debugging.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
-		client, err := kube.CreateClient(cmd)
-		if err != nil {
-			kube.PrintClientErrorAndExit(err)
-		}
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
-		err = startDiagnose(ctx, client)
+		err := startDiagnose(ctx, client)
 		if err != nil {
 			fmt.Printf("The diagnose script crashed on: %v\n", err)
 		}
