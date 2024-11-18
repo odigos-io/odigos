@@ -67,18 +67,15 @@ const RuleDrawer: React.FC<Props> = () => {
 
   const handleSave = async (newTitle: string) => {
     if (validateForm({ withAlert: true })) {
-      const payload = {
-        ...formData,
-        ruleName: newTitle,
-      };
+      const title = newTitle !== ((item as InstrumentationRuleSpec).type as string) ? newTitle : '';
 
-      await updateInstrumentationRule(id as string, payload);
+      await updateInstrumentationRule(id as string, { ...formData, ruleName: title });
     }
   };
 
   return (
     <OverviewDrawer
-      title={(item as InstrumentationRuleSpec).ruleName}
+      title={(item as InstrumentationRuleSpec).ruleName || ((item as InstrumentationRuleSpec).type as string)}
       imageUri={getRuleIcon((item as InstrumentationRuleSpec).type)}
       isEdit={isEditing}
       isFormDirty={isFormDirty}
@@ -111,11 +108,7 @@ export { RuleDrawer };
 const FormContainer = styled.div`
   width: 100%;
   height: 100%;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  padding-right: 16px;
-  box-sizing: border-box;
-  overflow: overlay;
   max-height: calc(100vh - 220px);
+  overflow: overlay;
+  overflow-y: auto;
 `;

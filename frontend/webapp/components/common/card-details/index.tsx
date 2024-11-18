@@ -3,17 +3,15 @@ import styled from 'styled-components';
 import { ConfiguredFields } from '@/components';
 import { Text } from '@/reuseable-components';
 interface CardDetailsProps {
+  title?: string;
   data: {
     title: string;
+    tooltip?: string;
     value: string;
   }[];
-  title?: string;
 }
 
-const CardDetails: React.FC<CardDetailsProps> = ({
-  data,
-  title = 'Details',
-}) => {
+const CardDetails: React.FC<CardDetailsProps> = ({ data, title = 'Details' }) => {
   return (
     <Container>
       <TitleWrapper>

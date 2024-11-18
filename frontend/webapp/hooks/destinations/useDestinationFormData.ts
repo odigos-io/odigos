@@ -4,14 +4,7 @@ import { useDrawerStore } from '@/store';
 import { useQuery } from '@apollo/client';
 import { useConnectDestinationForm } from '@/hooks';
 import { GET_DESTINATION_TYPE_DETAILS } from '@/graphql';
-import {
-  DynamicField,
-  ActualDestination,
-  isActualDestination,
-  DestinationDetailsResponse,
-  SupportedDestinationSignals,
-  DestinationDetailsField,
-} from '@/types';
+import { DynamicField, ActualDestination, isActualDestination, DestinationDetailsResponse, SupportedDestinationSignals, DestinationDetailsField } from '@/types';
 
 const DEFAULT_SUPPORTED_SIGNALS: SupportedDestinationSignals = {
   logs: { supported: false },
@@ -21,12 +14,12 @@ const DEFAULT_SUPPORTED_SIGNALS: SupportedDestinationSignals = {
 
 export function useDestinationFormData() {
   const [dynamicFields, setDynamicFields] = useState<DynamicField[]>([]);
+  const [supportedSignals, setSupportedSignals] = useState<SupportedDestinationSignals>(DEFAULT_SUPPORTED_SIGNALS);
   const [exportedSignals, setExportedSignals] = useState({
     logs: false,
     metrics: false,
     traces: false,
   });
-  const [supportedSignals, setSupportedSignals] = useState<SupportedDestinationSignals>(DEFAULT_SUPPORTED_SIGNALS);
 
   const destination = useDrawerStore(({ selectedItem }) => selectedItem);
   const shouldSkip = !isActualDestination(destination?.item);
@@ -99,11 +92,7 @@ export function useDestinationFormData() {
     const destinationDetails = destinationFields.destinationTypeDetails?.fields;
     const fieldsData = buildDestinationFieldData(parsedFields, destinationDetails);
 
-    return [
-      { title: 'Destination', value: destinationType.displayName || 'N/A' },
-      { title: 'Monitors', value: buildMonitorsList(exportedSignals) },
-      ...fieldsData,
-    ];
+    return [{ title: 'Destination', value: destinationType.displayName || 'N/A' }, { title: 'Monitors', value: buildMonitorsList(exportedSignals) }, ...fieldsData];
   }, [shouldSkip, destination, destinationFields]);
 
   // Reset function using initial values from refs

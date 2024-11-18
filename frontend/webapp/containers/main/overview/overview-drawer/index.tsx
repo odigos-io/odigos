@@ -3,16 +3,16 @@ import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
 import DrawerFooter from './drawer-footer';
 import { Drawer } from '@/reuseable-components';
-import DrawerHeader, { DrawerHeaderRef } from './drawer-header';
-import { CancelWarning, DeleteWarning } from '@/components/modals';
 import { OVERVIEW_ENTITY_TYPES } from '@/types';
 import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
+import DrawerHeader, { DrawerHeaderRef } from './drawer-header';
+import { CancelWarning, DeleteWarning } from '@/components/modals';
 
-// + 64 because of padding
-const DRAWER_WIDTH = `${640 + 64}px`;
+const DRAWER_WIDTH = `${640 + 64}px`; // +64 because of "ContentArea" padding
 
 interface Props {
   title: string;
+  titleTooltip?: string;
   imageUri: string;
   isEdit: boolean;
   isFormDirty: boolean;
@@ -34,7 +34,7 @@ const ContentArea = styled.div`
   overflow-y: auto;
 `;
 
-const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, imageUri, isEdit, isFormDirty, onEdit, onSave, onDelete, onCancel }) => {
+const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, titleTooltip, imageUri, isEdit, isFormDirty, onEdit, onSave, onDelete, onCancel }) => {
   const { sources } = useSourceCRUD();
   const { destinations } = useDestinationCRUD();
   const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
@@ -98,7 +98,7 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, 
     <>
       <Drawer isOpen onClose={isEdit ? clickCancel : closeDrawer} width={DRAWER_WIDTH} closeOnEscape={!isDeleteModalOpen && !isCancelModalOpen}>
         <DrawerContent>
-          <DrawerHeader ref={titleRef} title={title} imageUri={imageUri} isEdit={isEdit} onEdit={() => onEdit(true)} onClose={isEdit ? clickCancel : closeDrawer} />
+          <DrawerHeader ref={titleRef} title={title} titleTooltip={titleTooltip} imageUri={imageUri} isEdit={isEdit} onEdit={() => onEdit(true)} onClose={isEdit ? clickCancel : closeDrawer} />
           <ContentArea>{children}</ContentArea>
           {isEdit && <DrawerFooter onSave={clickSave} onCancel={clickCancel} onDelete={clickDelete} />}
         </DrawerContent>
