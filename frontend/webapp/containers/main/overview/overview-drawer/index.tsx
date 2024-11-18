@@ -108,11 +108,12 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, 
         isOpen={isDeleteModalOpen}
         noOverlay
         name={`${selectedItem?.type}${title ? ` (${title})` : ''}`}
-        warnAgain={
+        note={
           isLastItem()
             ? {
+                type: 'warning',
                 title: `You're about to delete the last ${selectedItem?.type}`,
-                description: 'This will break your pipeline!',
+                message: 'This will break your pipeline!',
               }
             : undefined
         }

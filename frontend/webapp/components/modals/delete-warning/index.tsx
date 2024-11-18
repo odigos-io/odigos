@@ -1,26 +1,28 @@
 import React from 'react';
 import { WarningModal } from '@/reuseable-components';
+import { NotificationType } from '@/types';
 
 interface Props {
   isOpen: boolean;
   noOverlay?: boolean;
   name?: string;
-  warnAgain?: {
+  note?: {
+    type: NotificationType;
     title: string;
-    description: string;
+    message: string;
   };
   onApprove: () => void;
   onDeny: () => void;
 }
 
-const DeleteWarning: React.FC<Props> = ({ isOpen, noOverlay, name, warnAgain, onApprove, onDeny }) => {
+const DeleteWarning: React.FC<Props> = ({ isOpen, noOverlay, name, note, onApprove, onDeny }) => {
   return (
     <WarningModal
       isOpen={isOpen}
       noOverlay={noOverlay}
       title={`Delete${name ? ` ${name}` : ''}`}
       description='Are you sure you want to delete?'
-      warnAgain={warnAgain}
+      note={note}
       approveButton={{
         text: 'Delete',
         variant: 'danger',

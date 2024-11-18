@@ -73,11 +73,12 @@ const MultiSourceControl = () => {
       <DeleteWarning
         isOpen={isWarnModalOpen}
         name={`${totalSelected} sources`}
-        warnAgain={
+        note={
           totalSelected === sources.length
             ? {
+                type: 'warning',
                 title: "You're about to delete the last source",
-                description: 'This will break your pipeline!',
+                message: 'This will break your pipeline!',
               }
             : undefined
         }

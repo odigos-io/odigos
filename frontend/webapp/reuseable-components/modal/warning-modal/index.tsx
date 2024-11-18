@@ -1,6 +1,7 @@
 import React from 'react';
 import { useKeyDown } from '@/hooks';
 import styled from 'styled-components';
+import type { NotificationType } from '@/types';
 import { Button, ButtonProps, Modal, NotificationNote, Text } from '@/reuseable-components';
 
 interface ButtonParams {
@@ -14,9 +15,10 @@ interface Props {
   noOverlay?: boolean;
   title: string;
   description: string;
-  warnAgain?: {
+  note?: {
+    type: NotificationType;
     title: string;
-    description: string;
+    message: string;
   };
   approveButton: ButtonParams;
   denyButton: ButtonParams;
@@ -57,7 +59,7 @@ const NoteWrapper = styled.div`
   margin-bottom: 12px;
 `;
 
-export const WarningModal: React.FC<Props> = ({ isOpen, noOverlay, title = '', description = '', warnAgain, approveButton, denyButton }) => {
+export const WarningModal: React.FC<Props> = ({ isOpen, noOverlay, title = '', description = '', note, approveButton, denyButton }) => {
   useKeyDown({ key: 'Enter', active: isOpen }, () => approveButton.onClick());
 
   const onApprove = () => approveButton.onClick();
@@ -72,9 +74,9 @@ export const WarningModal: React.FC<Props> = ({ isOpen, noOverlay, title = '', d
           <Description>{description}</Description>
         </Content>
 
-        {!!warnAgain && (
+        {!!note && (
           <NoteWrapper>
-            <NotificationNote type='warning' title={warnAgain.title} message={warnAgain.description} />
+            <NotificationNote type={note.type} title={note.title} message={note.message} />
           </NoteWrapper>
         )}
 
