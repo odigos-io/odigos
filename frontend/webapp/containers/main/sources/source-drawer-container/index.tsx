@@ -83,15 +83,16 @@ const SourceDrawer: React.FC = () => {
 
   const handleSave = async () => {
     const { namespace, name, kind } = item as K8sActualSource;
+    const title = formData.reportedName !== (item as K8sActualSource).name ? formData.reportedName : '';
 
-    await updateSource({ namespace, kind, name }, formData);
+    await updateSource({ namespace, kind, name }, { ...formData, reportedName: title });
   };
 
   return (
     <OverviewDrawer
       title={(item as K8sActualSource).reportedName || (item as K8sActualSource).name}
       titleTooltip={
-        !(item as K8sActualSource).reportedName || (item as K8sActualSource).reportedName === (item as K8sActualSource).name
+        !(item as K8sActualSource).reportedName
           ? 'This is the default service name that runs in your cluster. You can override this name.'
           : 'This overrides the default service name that runs in your cluster.'
       }
@@ -114,7 +115,10 @@ const SourceDrawer: React.FC = () => {
           />
         </FormContainer>
       ) : (
-        <CardDetails data={cardData} />
+        <DataContainer>
+          <CardDetails data={cardData} />
+          <CardDetails title='Attributes' data={[{ title: 'Name', value: (item as K8sActualSource).reportedName || 'N/A' }]} />
+        </DataContainer>
       )}
     </OverviewDrawer>
   );
@@ -128,4 +132,10 @@ const FormContainer = styled.div`
   max-height: calc(100vh - 220px);
   overflow: overlay;
   overflow-y: auto;
+`;
+
+const DataContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 `;
