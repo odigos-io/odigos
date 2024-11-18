@@ -74,12 +74,12 @@ export function ChooseDestinationContainer() {
         />
       </HeaderWrapper>
       <ContentWrapper>
-        <SectionTitle title='Configure destinations' description='Add backend destinations where collected data will be sent and configure their settings.' />
+        <SectionTitle title='Configure destinations' description='Select destinations where telemetry data will be sent and configure their settings.' />
         {isSourcesListEmpty() && configuredDestinations.length === 0 && (
           <NotificationNoteWrapper>
             <NotificationNote
               type={'warning'}
-              message={'No sources selected.'}
+              message={'No sources selected. Please go back to select sources.'}
               action={{
                 label: 'Select sources',
                 onClick: () => router.push(ROUTES.CHOOSE_SOURCES),

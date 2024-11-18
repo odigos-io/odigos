@@ -23,11 +23,15 @@ export const SourceControls: React.FC<Props> = ({ selectedSources, searchText, s
 
   return (
     <>
-      <SectionTitle title='Choose sources' badgeLabel={selectedAppsCount} description="Apps will be automatically instrumented, and data will be sent to the relevant APM's destinations." />
+      <SectionTitle
+        title='Select Sources for Instrumentation'
+        badgeLabel={selectedAppsCount}
+        description='Select apps to monitor in each namespace. Odigos will instrument them and send telemetry data to your destinations.'
+      />
 
       <FlexContainer style={{ marginTop: 24 }}>
         <SearchWrapper>
-          <Input placeholder='Search for namespaces' icon='/icons/common/search.svg' value={searchText} onChange={(e) => setSearchText(e.target.value.toLowerCase())} />
+          <Input placeholder='Search Kubernetes Namespaces' icon='/icons/common/search.svg' value={searchText} onChange={(e) => setSearchText(e.target.value.toLowerCase())} />
         </SearchWrapper>
         {/* <Checkbox title='Select all' initialValue={selectAll} onChange={onSelectAll} /> */}
         <Toggle title='Show selected only' initialValue={showSelectedOnly} onChange={setShowSelectedOnly} />

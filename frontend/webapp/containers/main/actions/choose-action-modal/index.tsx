@@ -52,10 +52,7 @@ export const AddActionModal: React.FC<AddActionModalProps> = ({ isOpen, onClose 
       }
     >
       <ModalBody>
-        <SectionTitle
-          title='Define Action'
-          description='Actions are a way to modify the OpenTelemetry data recorded by Odigos sources before it is exported to your Odigos destinations. Choose an action type and provide necessary information.'
-        />
+        <SectionTitle title='Define Action' description='Define an action to modify telemetry data before it`s sent to destinations. Choose an action type and configure its details.' />
         <AutocompleteInput options={ACTION_OPTIONS} selectedOption={selectedItem} onOptionSelect={handleSelect} style={{ marginTop: '24px' }} />
 
         {!!selectedItem?.type ? (
