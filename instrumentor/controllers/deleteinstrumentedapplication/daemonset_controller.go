@@ -28,15 +28,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// DaemonSetReconciler reconciles a DaemonSet object
 type DaemonSetReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
-
-//+kubebuilder:rbac:groups=apps,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apps,resources=daemonsets/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=apps,resources=daemonsets/finalizers,verbs=update
 
 func (r *DaemonSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)

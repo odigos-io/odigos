@@ -24,7 +24,7 @@ const Container = styled.div`
 `;
 
 const MultiSourceControl = () => {
-  const { deleteSources } = useSourceCRUD();
+  const { sources, deleteSources } = useSourceCRUD();
   const { configuredSources, setConfiguredSources } = useAppStore((state) => state);
   const [isWarnModalOpen, setIsWarnModalOpen] = useState(false);
 
@@ -70,7 +70,21 @@ const MultiSourceControl = () => {
         </Button>
       </Transition>
 
-      <DeleteWarning isOpen={isWarnModalOpen} name={`${totalSelected} sources`} onApprove={onDelete} onDeny={() => setIsWarnModalOpen(false)} />
+      <DeleteWarning
+        isOpen={isWarnModalOpen}
+        name={`${totalSelected} sources`}
+        note={
+          totalSelected === sources.length
+            ? {
+                type: 'warning',
+                title: "You're about to delete the last source",
+                message: 'This will break your pipeline!',
+              }
+            : undefined
+        }
+        onApprove={onDelete}
+        onDeny={() => setIsWarnModalOpen(false)}
+      />
     </>
   );
 };

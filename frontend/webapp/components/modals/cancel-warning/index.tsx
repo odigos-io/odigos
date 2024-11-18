@@ -15,7 +15,7 @@ const CancelWarning: React.FC<Props> = ({ isOpen, noOverlay, name, onApprove, on
       isOpen={isOpen}
       noOverlay={noOverlay}
       title={`Cancel${name ? ` ${name}` : ''}`}
-      description='Are you sure you want to cancel?'
+      description='Are you sure you want to discard your changes?'
       approveButton={{
         text: 'Cancel',
         variant: 'warning',

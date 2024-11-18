@@ -57,7 +57,6 @@ func getObjectByOwnerReference(ctx context.Context, k8sClient client.Client, own
 	return nil, fmt.Errorf("unsupported owner kind %s", ownerRef.Kind)
 }
 
-// DeploymentReconciler reconciles a Deployment object
 type InstrumentedApplicationReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
