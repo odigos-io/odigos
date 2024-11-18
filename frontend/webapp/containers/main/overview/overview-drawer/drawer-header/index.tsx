@@ -1,7 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
-import { Button, Text } from '@/reuseable-components';
+import { Button, Text, Tooltip } from '@/reuseable-components';
 
 const HeaderContainer = styled.section`
   display: flex;
@@ -57,20 +57,30 @@ export interface DrawerHeaderRef {
 
 interface DrawerHeaderProps {
   title: string;
+  titleTooltip?: string;
   imageUri: string;
   isEdit: boolean;
   onEdit: () => void;
   onClose: () => void;
 }
 
-const DrawerHeader: React.FC<DrawerHeaderProps> = ({ title, imageUri, isEdit, onEdit, onClose }) => {
+const DrawerHeader: React.FC<DrawerHeaderProps> = ({ title, titleTooltip, imageUri, isEdit, onEdit, onClose }) => {
   return (
     <HeaderContainer>
       <SectionItemsWrapper>
         <DrawerItemImageWrapper>
           <Image src={imageUri} alt='Drawer Item' width={16} height={16} />
         </DrawerItemImageWrapper>
-        {!isEdit && <Title>{title}</Title>}
+        {!isEdit && (
+          <>
+            <Title>{title}</Title>
+            {!!titleTooltip && (
+              <Tooltip text={titleTooltip || ''}>
+                <Image src='/icons/common/info.svg' alt='Info' width={16} height={16} />
+              </Tooltip>
+            )}
+          </>
+        )}
       </SectionItemsWrapper>
 
       <SectionItemsWrapper $gap={8}>

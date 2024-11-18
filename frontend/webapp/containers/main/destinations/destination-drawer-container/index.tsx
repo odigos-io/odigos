@@ -49,9 +49,11 @@ const DestinationDrawer: React.FC<Props> = () => {
     await updateDestination(id as string, payload);
   };
 
+  console.log(item);
+
   return (
     <OverviewDrawer
-      title={(item as ActualDestination).name}
+      title={(item as ActualDestination).name || (item as ActualDestination).destinationType.displayName}
       imageUri={(item as ActualDestination).destinationType.imageUrl}
       isEdit={isEditing}
       isFormDirty={isFormDirty}

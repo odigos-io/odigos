@@ -73,7 +73,7 @@ const RuleDrawer: React.FC<Props> = () => {
 
   return (
     <OverviewDrawer
-      title={(item as InstrumentationRuleSpec).ruleName}
+      title={(item as InstrumentationRuleSpec).ruleName || ((item as InstrumentationRuleSpec).type as string)}
       imageUri={getRuleIcon((item as InstrumentationRuleSpec).type)}
       isEdit={isEditing}
       isFormDirty={isFormDirty}

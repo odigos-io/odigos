@@ -73,7 +73,7 @@ const ActionDrawer: React.FC<Props> = () => {
 
   return (
     <OverviewDrawer
-      title={(item as ActionDataParsed).spec.actionName}
+      title={(item as ActionDataParsed).spec.actionName || (item as ActionDataParsed).type}
       imageUri={getActionIcon((item as ActionDataParsed).type)}
       isEdit={isEditing}
       isFormDirty={isFormDirty}
