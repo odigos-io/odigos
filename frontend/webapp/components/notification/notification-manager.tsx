@@ -180,11 +180,10 @@ const NotificationListItem: React.FC<Notification & { onClick: () => void }> = (
   const canClick = !!crdType && !!target;
 
   const isDeleted = useMemo(() => {
-    const deleteAction = ACTION.DELETE.toLowerCase(),
-      titleIncludes = title?.toLowerCase().includes(deleteAction),
-      messageIncludes = false // message?.toLowerCase().includes(deleteAction);
+    const deleteAction = ACTION.DELETE.toLowerCase();
+    const titleIncludes = title?.toLowerCase().includes(deleteAction);
 
-    return titleIncludes || messageIncludes || false;
+    return titleIncludes || false;
   }, [title, message]);
 
   const timeAgo = useTimeAgo();
