@@ -8,7 +8,8 @@ import { CancelWarning, DeleteWarning } from '@/components/modals';
 import { OVERVIEW_ENTITY_TYPES } from '@/types';
 import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
 
-const DRAWER_WIDTH = '640px';
+// + 64 because of padding
+const DRAWER_WIDTH = `${640 + 64}px`;
 
 interface Props {
   title: string;
