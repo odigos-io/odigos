@@ -11,7 +11,7 @@ export const getStatusIcon = (status?: NotificationType) => {
     case 'error':
       return '/icons/notification/error-icon2.svg';
     case 'warning':
-      return '/icons/notification/warning-icon.svg';
+      return '/icons/notification/warning-icon2.svg';
     case 'info':
       return '/icons/common/info.svg';
     default:

@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, useEffect, useMemo, useState } from 'react';
+import React, { PropsWithChildren, useEffect, useState } from 'react';
 import styled from 'styled-components';
 import type { IStyledComponentBase, Keyframes, Substitute } from 'styled-components/dist/types';
 
@@ -25,6 +25,8 @@ export const Transition: React.FC<PropsWithChildren<Props>> = ({ container: Cont
   useEffect(() => {
     if (enter) setIsEntered(true);
   }, [enter]);
+
+  if (!enter && !isEntered) return null;
 
   return (
     <AnimatedContainer $isEntering={enter} $isLeaving={isEntered && !enter} $animateIn={animateIn} $animateOut={animateOut}>

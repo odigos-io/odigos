@@ -19,7 +19,7 @@ const StyledDivider = styled.div<{
   width: ${({ $orientation, $thickness, $length }) => ($orientation === 'vertical' ? `${$thickness}px` : $length || '100%')};
   height: ${({ $orientation, $thickness, $length }) => ($orientation === 'horizontal' ? `${$thickness}px` : $length || '100%')};
   margin: ${({ $orientation, $margin }) => $margin || ($orientation === 'horizontal' ? '8px 0' : '0 8px')};
-  background-color: ${({ color, theme }) => color || theme.colors.border};
+  background-color: ${({ $color, theme }) => $color || theme.colors.border};
 `;
 
 const Divider: React.FC<Props> = ({ orientation = 'horizontal', thickness = 1, length, color, margin }) => {
