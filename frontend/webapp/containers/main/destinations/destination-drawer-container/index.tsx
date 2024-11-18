@@ -13,7 +13,7 @@ const DestinationDrawer: React.FC<Props> = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isFormDirty, setIsFormDirty] = useState(false);
 
-  const { cardData, dynamicFields, exportedSignals, supportedSignals, destinationType, resetFormData, setDynamicFields, setExportedSignals } =
+  const { cardData, dynamicFields, destinationName, exportedSignals, supportedSignals, destinationType, resetFormData, setDynamicFields, setDestinationName, setExportedSignals } =
     useDestinationFormData();
   const { handleSignalChange, handleDynamicFieldChange } = useEditDestinationFormHandlers(setExportedSignals, setDynamicFields);
   const { updateDestination, deleteDestination } = useDestinationCRUD();
@@ -38,10 +38,10 @@ const DestinationDrawer: React.FC<Props> = () => {
     await deleteDestination(id as string);
   };
 
-  const handleSave = async (newTitle: string) => {
+  const handleSave = async () => {
     const payload = {
       type: destinationType,
-      name: newTitle,
+      name: destinationName,
       exportedSignals,
       fields: dynamicFields.map(({ name, value }) => ({ key: name, value })),
     };
@@ -63,12 +63,17 @@ const DestinationDrawer: React.FC<Props> = () => {
       {isEditing ? (
         <FormContainer>
           <EditDestinationForm
-            dynamicFields={dynamicFields}
             exportedSignals={exportedSignals}
             supportedSignals={supportedSignals}
+            destinationName={destinationName}
+            dynamicFields={dynamicFields}
             handleSignalChange={(...params) => {
               setIsFormDirty(true);
               handleSignalChange(...params);
+            }}
+            handleNameChange={(...params) => {
+              setIsFormDirty(true);
+              setDestinationName(...params);
             }}
             handleDynamicFieldChange={(...params) => {
               setIsFormDirty(true);
@@ -86,14 +91,9 @@ const DestinationDrawer: React.FC<Props> = () => {
 export { DestinationDrawer };
 
 const FormContainer = styled.div`
-  display: flex;
   width: 100%;
-  flex-direction: column;
-  gap: 24px;
   height: 100%;
-  overflow-y: auto;
-  padding-right: 16px;
-  box-sizing: border-box;
-  overflow: overlay;
   max-height: calc(100vh - 220px);
+  overflow: overlay;
+  overflow-y: auto;
 `;

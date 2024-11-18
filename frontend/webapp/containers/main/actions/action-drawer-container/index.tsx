@@ -36,9 +36,7 @@ const ActionDrawer: React.FC<Props> = () => {
     }
 
     const { item } = selectedItem as { item: ActionDataParsed };
-    const found =
-      ACTION_OPTIONS.find(({ type }) => type === item.type) ||
-      ACTION_OPTIONS.find(({ id }) => id === 'sampler')?.items?.find(({ type }) => type === item.type);
+    const found = ACTION_OPTIONS.find(({ type }) => type === item.type) || ACTION_OPTIONS.find(({ id }) => id === 'sampler')?.items?.find(({ type }) => type === item.type);
 
     if (!found) return undefined;
 
@@ -67,14 +65,9 @@ const ActionDrawer: React.FC<Props> = () => {
     await deleteAction(id as string, (item as ActionDataParsed).type);
   };
 
-  const handleSave = async (newTitle: string) => {
+  const handleSave = async () => {
     if (validateForm({ withAlert: true })) {
-      const payload = {
-        ...formData,
-        name: newTitle,
-      };
-
-      await updateAction(id as string, payload);
+      await updateAction(id as string, formData);
     }
   };
 
@@ -113,11 +106,7 @@ export { ActionDrawer };
 const FormContainer = styled.div`
   width: 100%;
   height: 100%;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  padding-right: 16px;
-  box-sizing: border-box;
-  overflow: overlay;
   max-height: calc(100vh - 220px);
+  overflow: overlay;
+  overflow-y: auto;
 `;

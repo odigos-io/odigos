@@ -1,15 +1,14 @@
-import { PropsWithChildren, useRef, useState } from 'react';
+import { PropsWithChildren, useState } from 'react';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
 import DrawerFooter from './drawer-footer';
+import DrawerHeader from './drawer-header';
 import { Drawer } from '@/reuseable-components';
-import DrawerHeader, { DrawerHeaderRef } from './drawer-header';
-import { CancelWarning, DeleteWarning } from '@/components/modals';
 import { OVERVIEW_ENTITY_TYPES } from '@/types';
 import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
+import { CancelWarning, DeleteWarning } from '@/components/modals';
 
-// + 64 because of padding
-const DRAWER_WIDTH = `${640 + 64}px`;
+const DRAWER_WIDTH = `${640 + 64}px`; // +64 because of "ContentArea" padding
 
 interface Props {
   title: string;
@@ -17,7 +16,7 @@ interface Props {
   isEdit: boolean;
   isFormDirty: boolean;
   onEdit: (bool?: boolean) => void;
-  onSave: (newTitle: string) => void;
+  onSave: () => void;
   onDelete: () => void;
   onCancel: () => void;
 }
@@ -43,8 +42,6 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
-  const titleRef = useRef<DrawerHeaderRef>(null);
-
   const closeDrawer = () => {
     setSelectedItem(null);
     onEdit(false);
@@ -58,14 +55,12 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, 
   };
 
   const handleCancel = () => {
-    titleRef.current?.clearTitle();
     onCancel();
     closeWarningModals();
   };
 
   const clickCancel = () => {
-    const isTitleDirty = titleRef.current?.getTitle() !== title;
-    if (isFormDirty || isTitleDirty) {
+    if (isFormDirty) {
       setIsCancelModalOpen(true);
     } else {
       handleCancel();
@@ -82,7 +77,7 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, 
   };
 
   const clickSave = () => {
-    onSave(titleRef.current?.getTitle() || '');
+    onSave();
   };
 
   const isLastItem = () => {
@@ -98,7 +93,7 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, 
     <>
       <Drawer isOpen onClose={isEdit ? clickCancel : closeDrawer} width={DRAWER_WIDTH} closeOnEscape={!isDeleteModalOpen && !isCancelModalOpen}>
         <DrawerContent>
-          <DrawerHeader ref={titleRef} title={title} imageUri={imageUri} isEdit={isEdit} onEdit={() => onEdit(true)} onClose={isEdit ? clickCancel : closeDrawer} />
+          <DrawerHeader title={title} imageUri={imageUri} isEdit={isEdit} onEdit={() => onEdit(true)} onClose={isEdit ? clickCancel : closeDrawer} />
           <ContentArea>{children}</ContentArea>
           {isEdit && <DrawerFooter onSave={clickSave} onCancel={clickCancel} onDelete={clickDelete} />}
         </DrawerContent>

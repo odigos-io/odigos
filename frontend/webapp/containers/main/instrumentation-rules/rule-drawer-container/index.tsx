@@ -65,14 +65,9 @@ const RuleDrawer: React.FC<Props> = () => {
     await deleteInstrumentationRule(id as string);
   };
 
-  const handleSave = async (newTitle: string) => {
+  const handleSave = async () => {
     if (validateForm({ withAlert: true })) {
-      const payload = {
-        ...formData,
-        ruleName: newTitle,
-      };
-
-      await updateInstrumentationRule(id as string, payload);
+      await updateInstrumentationRule(id as string, formData);
     }
   };
 
@@ -111,11 +106,7 @@ export { RuleDrawer };
 const FormContainer = styled.div`
   width: 100%;
   height: 100%;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  padding-right: 16px;
-  box-sizing: border-box;
-  overflow: overlay;
   max-height: calc(100vh - 220px);
+  overflow: overlay;
+  overflow-y: auto;
 `;

@@ -54,21 +54,14 @@ const PiiMasking: React.FC<Props> = ({ value, setValue }) => {
   };
 
   return (
-    <>
+    <div>
       <FieldLabel title='Attributes to mask' required />
-
       <ListContainer>
         {strictPicklist.map(({ id, label }) => (
-          <Checkbox
-            key={id}
-            title={label}
-            disabled={isLastSelection && mappedValue.includes(id)}
-            initialValue={mappedValue.includes(id)}
-            onChange={(bool) => handleChange(id, bool)}
-          />
+          <Checkbox key={id} title={label} disabled={isLastSelection && mappedValue.includes(id)} initialValue={mappedValue.includes(id)} onChange={(bool) => handleChange(id, bool)} />
         ))}
       </ListContainer>
-    </>
+    </div>
   );
 };
 

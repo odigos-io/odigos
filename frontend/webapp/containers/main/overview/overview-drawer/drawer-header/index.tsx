@@ -1,8 +1,7 @@
-// DrawerHeader.tsx
-import React, { useEffect, useState, forwardRef, useImperativeHandle } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
-import { Button, Input, Text } from '@/reuseable-components';
+import { Button, Text } from '@/reuseable-components';
 
 const HeaderContainer = styled.section`
   display: flex;
@@ -18,10 +17,6 @@ const SectionItemsWrapper = styled.div<{ $gap?: number }>`
   display: flex;
   align-items: center;
   gap: ${({ $gap }) => $gap || 16}px;
-`;
-
-const InputWrapper = styled(SectionItemsWrapper)`
-  width: 75%;
 `;
 
 const Title = styled(Text)`
@@ -68,18 +63,7 @@ interface DrawerHeaderProps {
   onClose: () => void;
 }
 
-const DrawerHeader = forwardRef<DrawerHeaderRef, DrawerHeaderProps>(({ title, imageUri, isEdit, onEdit, onClose }, ref) => {
-  const [inputValue, setInputValue] = useState(title);
-
-  useEffect(() => {
-    setInputValue(title);
-  }, [title]);
-
-  useImperativeHandle(ref, () => ({
-    getTitle: () => inputValue,
-    clearTitle: () => setInputValue(title),
-  }));
-
+const DrawerHeader: React.FC<DrawerHeaderProps> = ({ title, imageUri, isEdit, onEdit, onClose }) => {
   return (
     <HeaderContainer>
       <SectionItemsWrapper>
@@ -88,12 +72,6 @@ const DrawerHeader = forwardRef<DrawerHeaderRef, DrawerHeaderProps>(({ title, im
         </DrawerItemImageWrapper>
         {!isEdit && <Title>{title}</Title>}
       </SectionItemsWrapper>
-
-      {isEdit && (
-        <InputWrapper>
-          <Input autoFocus value={inputValue} onChange={(e) => setInputValue(e.target.value)} />
-        </InputWrapper>
-      )}
 
       <SectionItemsWrapper $gap={8}>
         {!isEdit && (
@@ -108,7 +86,7 @@ const DrawerHeader = forwardRef<DrawerHeaderRef, DrawerHeaderProps>(({ title, im
       </SectionItemsWrapper>
     </HeaderContainer>
   );
-});
+};
 
 DrawerHeader.displayName = 'DrawerHeader';
 
