@@ -137,15 +137,15 @@ spec:
       - script:
           timeout: 300s
           content: |
-            # # Apply the job
-            # kubectl apply -f 05-generate-traffic.yaml
+            # Apply the job
+            kubectl apply -f 05-generate-traffic.yaml
 
-            # # Wait for the job to complete
-            # job_name=$(kubectl get -f 05-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
-            # kubectl wait --for=condition=complete job/$job_name
+            # Wait for the job to complete
+            job_name=$(kubectl get -f 05-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
+            kubectl wait --for=condition=complete job/$job_name
 
-            # # Delete the job
-            # kubectl delete -f 05-generate-traffic.yaml
+            # Delete the job
+            kubectl delete -f 05-generate-traffic.yaml
         
             while true; do
               # wait for traces to be available
