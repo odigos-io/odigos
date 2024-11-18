@@ -117,7 +117,12 @@ const SourceDrawer: React.FC = () => {
       ) : (
         <DataContainer>
           <CardDetails data={cardData} />
-          <CardDetails title='Attributes' data={[{ title: 'Name', value: (item as K8sActualSource).reportedName || 'N/A' }]} />
+          {/* <CardDetails
+            title='Resource Attributes'
+            data={[
+              { title: 'Service Name', tooltip: 'This overrides the default service name that runs in your cluster.', value: (item as K8sActualSource).reportedName || (item as K8sActualSource).name },
+            ]}
+          /> */}
         </DataContainer>
       )}
     </OverviewDrawer>
