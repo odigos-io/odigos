@@ -114,6 +114,9 @@ spec:
     - script:
         timeout: 300s
         content: |
+          # Make sure that odigos components are ready
+          sleep 20
+
           # Apply the job
           kubectl apply -f 05-generate-traffic.yaml
           
