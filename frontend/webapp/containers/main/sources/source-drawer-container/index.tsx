@@ -55,7 +55,7 @@ const SourceDrawer: React.FC = () => {
       const { item } = selectedItem as { item: K8sActualSource };
 
       setFormData({
-        reportedName: item.reportedName || '',
+        reportedName: item.reportedName || item.name || '',
       });
     }
   }, [selectedItem, isEditing]);
@@ -91,7 +91,7 @@ const SourceDrawer: React.FC = () => {
     <OverviewDrawer
       title={(item as K8sActualSource).reportedName || (item as K8sActualSource).name}
       titleTooltip={
-        !(item as K8sActualSource).reportedName
+        !(item as K8sActualSource).reportedName || (item as K8sActualSource).reportedName === (item as K8sActualSource).name
           ? 'This is the default service name that runs in your cluster. You can override this name.'
           : 'This overrides the default service name that runs in your cluster.'
       }

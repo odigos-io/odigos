@@ -65,9 +65,11 @@ const ActionDrawer: React.FC<Props> = () => {
     await deleteAction(id as string, (item as ActionDataParsed).type);
   };
 
-  const handleSave = async () => {
+  const handleSave = async (newTitle: string) => {
     if (validateForm({ withAlert: true })) {
-      await updateAction(id as string, formData);
+      const title = newTitle !== (item as ActionDataParsed).type ? newTitle : '';
+
+      await updateAction(id as string, { ...formData, name: title });
     }
   };
 

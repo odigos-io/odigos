@@ -13,8 +13,7 @@ const DestinationDrawer: React.FC<Props> = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isFormDirty, setIsFormDirty] = useState(false);
 
-  const { cardData, dynamicFields, destinationName, exportedSignals, supportedSignals, destinationType, resetFormData, setDynamicFields, setDestinationName, setExportedSignals } =
-    useDestinationFormData();
+  const { cardData, dynamicFields, exportedSignals, supportedSignals, destinationType, resetFormData, setDynamicFields, setExportedSignals } = useDestinationFormData();
   const { handleSignalChange, handleDynamicFieldChange } = useEditDestinationFormHandlers(setExportedSignals, setDynamicFields);
   const { updateDestination, deleteDestination } = useDestinationCRUD();
 
@@ -38,18 +37,17 @@ const DestinationDrawer: React.FC<Props> = () => {
     await deleteDestination(id as string);
   };
 
-  const handleSave = async () => {
+  const handleSave = async (newTitle: string) => {
+    const title = newTitle !== (item as ActualDestination).destinationType.displayName ? newTitle : '';
     const payload = {
       type: destinationType,
-      name: destinationName,
+      name: title,
       exportedSignals,
       fields: dynamicFields.map(({ name, value }) => ({ key: name, value })),
     };
 
     await updateDestination(id as string, payload);
   };
-
-  console.log(item);
 
   return (
     <OverviewDrawer
@@ -67,15 +65,10 @@ const DestinationDrawer: React.FC<Props> = () => {
           <EditDestinationForm
             exportedSignals={exportedSignals}
             supportedSignals={supportedSignals}
-            destinationName={destinationName}
             dynamicFields={dynamicFields}
             handleSignalChange={(...params) => {
               setIsFormDirty(true);
               handleSignalChange(...params);
-            }}
-            handleNameChange={(...params) => {
-              setIsFormDirty(true);
-              setDestinationName(...params);
             }}
             handleDynamicFieldChange={(...params) => {
               setIsFormDirty(true);

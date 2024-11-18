@@ -26,17 +26,19 @@ const FieldTitle = styled(Text)`
 const ChooseRuleBody: React.FC<Props> = ({ isUpdate, rule, formData, handleFormChange }) => {
   return (
     <Container>
-      {isUpdate ? (
+      {isUpdate && (
         <div>
           <FieldTitle>Status</FieldTitle>
           <ToggleButtons initialValue={!formData.disabled} onChange={(bool) => handleFormChange('disabled', !bool)} />
         </div>
-      ) : (
-        <SectionTitle title='' description={rule.docsDescription as string} actionButton={<DocsButton endpoint={rule.docsEndpoint} />} />
       )}
 
-      <Input title='Rule name' placeholder='Use a name that describes the rule' value={formData.ruleName} onChange={({ target: { value } }) => handleFormChange('ruleName', value)} />
+      {!isUpdate && <SectionTitle title='' description={rule.docsDescription as string} actionButton={<DocsButton endpoint={rule.docsEndpoint} />} />}
+
+      {!isUpdate && <Input title='Rule name' placeholder='Use a name that describes the rule' value={formData.ruleName} onChange={({ target: { value } }) => handleFormChange('ruleName', value)} />}
+
       <RuleCustomFields ruleType={rule.type} value={formData} setValue={(key, val) => handleFormChange(key, val)} />
+
       <TextArea title='Notes' value={formData.notes} onChange={({ target: { value } }) => handleFormChange('notes', value)} />
     </Container>
   );

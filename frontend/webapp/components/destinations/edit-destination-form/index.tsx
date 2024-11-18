@@ -1,16 +1,14 @@
 import React from 'react';
 import styled from 'styled-components';
-import { CheckboxList, Input } from '@/reuseable-components';
+import { CheckboxList } from '@/reuseable-components';
 import type { DynamicField, ExportedSignals, SupportedDestinationSignals } from '@/types';
 import { DynamicConnectDestinationFormFields } from '@/containers/main/destinations/add-destination/dynamic-form-fields';
 
 interface DestinationFormProps {
   exportedSignals: ExportedSignals;
   supportedSignals: SupportedDestinationSignals;
-  destinationName: string;
   dynamicFields: DynamicField[];
   handleDynamicFieldChange: (name: string, value: any) => void;
-  handleNameChange: (destinationName: string) => void;
   handleSignalChange: (signal: keyof ExportedSignals, value: boolean) => void;
 }
 
@@ -21,15 +19,7 @@ const Container = styled.div`
   padding: 4px;
 `;
 
-export const EditDestinationForm: React.FC<DestinationFormProps> = ({
-  exportedSignals,
-  supportedSignals,
-  destinationName,
-  dynamicFields,
-  handleSignalChange,
-  handleNameChange,
-  handleDynamicFieldChange,
-}) => {
+export const EditDestinationForm: React.FC<DestinationFormProps> = ({ exportedSignals, supportedSignals, dynamicFields, handleSignalChange, handleDynamicFieldChange }) => {
   const monitors = [
     supportedSignals.logs.supported && { id: 'logs', title: 'Logs' },
     supportedSignals.metrics.supported && { id: 'metrics', title: 'Metrics' },
@@ -39,7 +29,6 @@ export const EditDestinationForm: React.FC<DestinationFormProps> = ({
   return (
     <Container>
       <CheckboxList monitors={monitors as []} title='This connection will monitor:' exportedSignals={exportedSignals} handleSignalChange={handleSignalChange} />
-      <Input title='Destination name' placeholder='Enter destination name' value={destinationName} onChange={(e) => handleNameChange(e.target.value)} />
       <DynamicConnectDestinationFormFields fields={dynamicFields} onChange={handleDynamicFieldChange} />
     </Container>
   );

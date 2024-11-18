@@ -14,7 +14,6 @@ const DEFAULT_SUPPORTED_SIGNALS: SupportedDestinationSignals = {
 
 export function useDestinationFormData() {
   const [dynamicFields, setDynamicFields] = useState<DynamicField[]>([]);
-  const [destinationName, setDestinationName] = useState<string>('');
   const [supportedSignals, setSupportedSignals] = useState<SupportedDestinationSignals>(DEFAULT_SUPPORTED_SIGNALS);
   const [exportedSignals, setExportedSignals] = useState({
     logs: false,
@@ -46,7 +45,7 @@ export function useDestinationFormData() {
 
   useEffect(() => {
     if (destinationFields && isActualDestination(destination?.item)) {
-      const { fields, exportedSignals, destinationType, name } = destination.item;
+      const { fields, exportedSignals, destinationType } = destination.item;
       const destinationTypeDetails = destinationFields.destinationTypeDetails;
 
       const parsedFields = safeJsonParse<Record<string, string>>(fields, {});
@@ -73,7 +72,6 @@ export function useDestinationFormData() {
         };
       });
 
-      setDestinationName(name);
       setDynamicFields(df);
       setExportedSignals(exportedSignals);
       setSupportedSignals(destinationType.supportedSignals);
@@ -107,12 +105,10 @@ export function useDestinationFormData() {
   return {
     cardData,
     dynamicFields,
-    destinationName,
     destinationType: destinationType || '',
     exportedSignals,
     supportedSignals,
     setExportedSignals,
-    setDestinationName,
     setDynamicFields,
     resetFormData,
   };

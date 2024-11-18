@@ -26,18 +26,21 @@ const FieldTitle = styled(Text)`
 const ChooseActionBody: React.FC<ChooseActionContentProps> = ({ isUpdate, action, formData, handleFormChange }) => {
   return (
     <Container>
-      {isUpdate ? (
+      {isUpdate && (
         <div>
           <FieldTitle>Status</FieldTitle>
           <ToggleButtons initialValue={!formData.disable} onChange={(bool) => handleFormChange('disable', !bool)} />
         </div>
-      ) : (
-        <SectionTitle title='' description={action.docsDescription as string} actionButton={<DocsButton endpoint={action.docsEndpoint} />} />
       )}
 
+      {!isUpdate && <SectionTitle title='' description={action.docsDescription as string} actionButton={<DocsButton endpoint={action.docsEndpoint} />} />}
+
       <MonitoringCheckboxes allowedSignals={action.allowedSignals} selectedSignals={formData.signals} setSelectedSignals={(value) => handleFormChange('signals', value)} />
-      <Input title='Action name' placeholder='Use a name that describes the action' value={formData.name} onChange={({ target: { value } }) => handleFormChange('name', value)} />
+
+      {!isUpdate && <Input title='Action name' placeholder='Use a name that describes the action' value={formData.name} onChange={({ target: { value } }) => handleFormChange('name', value)} />}
+
       <ActionCustomFields actionType={action.type} value={formData.details} setValue={(val) => handleFormChange('details', val)} />
+
       <TextArea title='Notes' value={formData.notes} onChange={({ target: { value } }) => handleFormChange('notes', value)} />
     </Container>
   );

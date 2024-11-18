@@ -65,9 +65,11 @@ const RuleDrawer: React.FC<Props> = () => {
     await deleteInstrumentationRule(id as string);
   };
 
-  const handleSave = async () => {
+  const handleSave = async (newTitle: string) => {
     if (validateForm({ withAlert: true })) {
-      await updateInstrumentationRule(id as string, formData);
+      const title = newTitle !== ((item as InstrumentationRuleSpec).type as string) ? newTitle : '';
+
+      await updateInstrumentationRule(id as string, { ...formData, ruleName: title });
     }
   };
 
