@@ -1,8 +1,8 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { DestinationTypeItem } from '@/types';
-import { Modal, NavigationButtons } from '@/reuseable-components';
+import type { DestinationTypeItem } from '@/types';
 import { ChooseDestinationModalBody } from '../choose-destination-modal-body';
 import { ConnectDestinationModalBody } from '../connect-destination-modal-body';
+import { Modal, type NavigationButtonProps, NavigationButtons } from '@/reuseable-components';
 
 interface AddDestinationModalProps {
   isOpen: boolean;
@@ -35,6 +35,28 @@ export const AddDestinationModal: React.FC<AddDestinationModalProps> = ({ isOpen
     onClose();
   }, [onClose]);
 
+  const renderHeaderButtons = () => {
+    const buttons: NavigationButtonProps[] = [
+      {
+        label: 'DONE',
+        variant: 'primary' as const,
+        disabled: !isFormValid,
+        onClick: handleNext,
+      },
+    ];
+
+    if (!!selectedItem) {
+      buttons.unshift({
+        label: 'BACK',
+        iconSrc: '/icons/common/arrow-white.svg',
+        variant: 'secondary' as const,
+        onClick: handleBack,
+      });
+    }
+
+    return buttons;
+  };
+
   const renderModalBody = () => {
     return selectedItem ? (
       <ConnectDestinationModalBody onSubmitRef={submitRef} destination={selectedItem} onFormValidChange={setIsFormValid} />
@@ -44,29 +66,7 @@ export const AddDestinationModal: React.FC<AddDestinationModalProps> = ({ isOpen
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={handleClose}
-      header={{ title: 'Add Destination' }}
-      actionComponent={
-        <NavigationButtons
-          buttons={[
-            {
-              label: 'BACK',
-              iconSrc: '/icons/common/arrow-white.svg',
-              onClick: handleBack,
-              variant: 'secondary' as const,
-            },
-            {
-              label: 'DONE',
-              onClick: handleNext,
-              variant: 'primary' as const,
-              disabled: !isFormValid,
-            },
-          ]}
-        />
-      }
-    >
+    <Modal isOpen={isOpen} onClose={handleClose} header={{ title: 'Add Destination' }} actionComponent={<NavigationButtons buttons={renderHeaderButtons()} />}>
       {renderModalBody()}
     </Modal>
   );
