@@ -5,6 +5,7 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	controllerconfig "github.com/odigos-io/odigos/autoscaler/controllers/controller_config"
 	odigoscommon "github.com/odigos-io/odigos/common"
 	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -22,7 +23,7 @@ var (
 )
 
 func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string,
-	metricsServerExists bool) error {
+	config *controllerconfig.ControllerConfig) error {
 	logger := log.FromContext(ctx)
 
 	odigosNs := env.GetCurrentNamespace()
@@ -55,7 +56,7 @@ func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, 
 	}
 
 	err = syncGateway(&dests, &processors, &gatewayCollectorGroup, ctx, k8sClient, scheme, imagePullSecrets, odigosVersion, &odigosConfig,
-		metricsServerExists)
+		config)
 	statusPatchString := commonconf.GetCollectorsGroupDeployedConditionsPatch(err)
 	statusErr := k8sClient.Status().Patch(ctx, &gatewayCollectorGroup, client.RawPatch(types.MergePatchType, []byte(statusPatchString)))
 	if statusErr != nil {
@@ -68,7 +69,7 @@ func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, 
 func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList,
 	gateway *odigosv1.CollectorsGroup, ctx context.Context,
 	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, odigosConfig *odigoscommon.OdigosConfiguration,
-	metricsServerExists bool) error {
+	config *controllerconfig.ControllerConfig) error {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Syncing gateway")
 
@@ -104,11 +105,9 @@ func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.Processor
 		return err
 	}
 
-	if metricsServerExists {
-		err = syncHPA(gateway, ctx, c, scheme, memConfig)
-		if err != nil {
-			logger.Error(err, "Failed to sync HPA")
-		}
+	err = syncHPA(gateway, ctx, c, scheme, memConfig, config.K8sVersion)
+	if err != nil {
+		logger.Error(err, "Failed to sync HPA")
 	}
 
 	return nil

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/version"
 	"sigs.k8s.io/yaml"
 
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -29,13 +30,15 @@ var (
 	stabilizationWindowSeconds = intPtr(300) // cooldown period for scaling down
 )
 
-func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, memConfig *memoryConfigurations) error {
+func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, memConfig *memoryConfigurations, kubeVersion *version.Version) error {
 	logger := log.FromContext(ctx)
+
 	memLimit := memConfig.gomemlimitMiB * memoryLimitPercentageForHPA / 100.0
 	metricQuantity := resource.MustParse(fmt.Sprintf("%dMi", memLimit))
+
 	hpa := &autoscaling.HorizontalPodAutoscaler{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "autoscaling/v2",
+			APIVersion: getHPAVersion(kubeVersion),
 			Kind:       "HorizontalPodAutoscaler",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -84,4 +87,21 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 	}
 
 	return c.Patch(ctx, hpa, client.RawPatch(types.ApplyPatchType, hpaBytes), &patchOptions)
+}
+
+// getHPAVersion returns the HPA version to use based on the Kubernetes version
+func getHPAVersion(kubeVersion *version.Version) string {
+	if kubeVersion == nil {
+		return "autoscaling/v2" // Default to latest
+	}
+
+	// Kubernetes version compatibility for HPA
+	switch {
+	case kubeVersion.LessThan(version.MustParse("1.23.0")):
+		return "autoscaling/v2beta1"
+	case kubeVersion.LessThan(version.MustParse("1.25.0")):
+		return "autoscaling/v2beta2"
+	default:
+		return "autoscaling/v2"
+	}
 }
