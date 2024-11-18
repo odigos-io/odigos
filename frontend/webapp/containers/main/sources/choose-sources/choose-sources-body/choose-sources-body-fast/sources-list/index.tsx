@@ -150,7 +150,7 @@ export const SourcesList: React.FC<Props> = ({
               </FlexRow>
 
               <FlexRow>
-                <Toggle title='Future select' initialValue={futureApps} onChange={(bool) => onSelectFutureApps(bool, namespace)} />
+                <Toggle title='Include Future Sources' initialValue={futureApps} onChange={(bool) => onSelectFutureApps(bool, namespace)} />
                 <Divider orientation='vertical' length='12px' margin='0' />
                 <SelectionCount size={10} color={theme.text.grey}>
                   {namespaceLoaded ? `${selected.length}/${sources.length}` : null}
@@ -184,7 +184,7 @@ export const SourcesList: React.FC<Props> = ({
                 </RelativeWrapper>
               ) : (
                 <NoDataFoundWrapper>
-                  <NoDataFound title='No sources found' />
+                  <NoDataFound title='No sources available in this namespace' subTitle='Try searching again or select another namespace.' />
                 </NoDataFoundWrapper>
               ))}
           </Group>
