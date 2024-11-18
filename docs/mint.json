@@ -59,6 +59,7 @@
         {
           "group": "Setup",
           "pages": [
+            "setup/system-requirements",
             {
               "group": "Installation",
               "pages": ["setup/installation", "setup/installation-options", "setup/docker-registry", "setup/odigos-with-argocd"]

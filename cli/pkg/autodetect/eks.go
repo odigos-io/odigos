@@ -7,18 +7,24 @@ import (
 
 type eksDetector struct{}
 
-func (e eksDetector) Detect(ctx context.Context, args DetectionArguments) (Kind, error) {
+var _ ClusterKindDetector = &eksDetector{}
+
+func (e eksDetector) Detect(ctx context.Context, args DetectionArguments) bool {
 	if strings.Contains(args.ServerVersion, "-eks-") {
-		return KindEKS, nil
+		return true
 	}
 
 	if strings.HasSuffix(args.ClusterName, ".eksctl.io") {
-		return KindEKS, nil
+		return true
 	}
 
 	if strings.HasSuffix(args.ServerEndpoint, "eks.amazonaws.com") {
-		return KindEKS, nil
+		return true
 	}
 
-	return KindUnknown, nil
+	return false
+}
+
+func (e eksDetector) Kind() Kind {
+	return KindEKS
 }

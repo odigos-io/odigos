@@ -1,0 +1,25 @@
+---
+title: "System Requirements"
+sidebarTitle: "System Requirements"
+---
+
+## System Requirements for Odigos
+To ensure optimal performance and compatibility when deploying Odigos, your environment must meet the following system requirements:
+
+**Kubernetes Version**
+Minimum Version: Odigos requires Kubernetes version 1.23.0 or higher.
+
+**Operating System Compatibility**
+
+<Info>
+  Odigos data collection for Go, Java, Python, and Node.js applications in the Odigos Enterprise edition utilizes eBPF technology, which requires nodes to run a Linux kernel version of 5.4.0 or higher. Note that Go is also supported in the open-source version of Odigos with the same kernel requirement for eBPF-based data collection.
+</Info>
+
+- **Supported Platforms**: Odigos operates on Kubernetes clusters with nodes running Linux kernel versions of 5.4.0 or later. However, since nodes within a cluster may vary in OS versions, some nodes may not meet this requirement.
+
+**What to Expect if Some Nodes Don’t Meet the Kernel Requirement**:
+
+  - eBPF Agents: If a node’s kernel version is below 5.4.0, eBPF-based data collection will not be applied to workloads on that node. An error will appear in the UI for any source running on unsupported nodes, indicating that instrumentation was not possible.
+  - Non-eBPF Agents: Non-eBPF-based agents are not affected by kernel version requirements and will run and instrument workloads on any Linux version.
+
+This allows users to maintain observability on nodes that meet the requirements without needing to upgrade all cluster nodes immediately.
