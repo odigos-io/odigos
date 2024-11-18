@@ -68,7 +68,6 @@ func (i *NsLabelBecameDisabledPredicate) Generic(e event.GenericEvent) bool {
 	return false
 }
 
-// NamespaceReconciler reconciles a Namespace object
 type NamespaceReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme

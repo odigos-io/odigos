@@ -25,6 +25,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	odigosver "github.com/odigos-io/odigos/k8sutils/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -45,6 +46,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/version"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -84,7 +86,6 @@ func main() {
 	var probeAddr string
 	var imagePullSecretsString string
 	var imagePullSecrets []string
-	odigosVersion := os.Getenv("ODIGOS_VERSION")
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
@@ -95,8 +96,14 @@ func main() {
 		"The image pull secrets to use for the collectors created by autoscaler")
 	flag.StringVar(&nameutils.ImagePrefix, "image-prefix", "", "The image prefix to use for the collectors created by autoscaler")
 
+	odigosVersion := os.Getenv("ODIGOS_VERSION")
 	if odigosVersion == "" {
 		flag.StringVar(&odigosVersion, "version", "", "for development purposes only")
+	}
+	// Get k8s version
+	k8sVersion, err := odigosver.GetKubernetesVersion()
+	if err != nil {
+		setupLog.Error(err, "unable to get Kubernetes version, continuing with default oldest supported version")
 	}
 
 	opts := ctrlzap.Options{
@@ -126,7 +133,8 @@ func main() {
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
 	clusterCollectorLabelSelector := labels.Set(gateway.ClusterCollectorGateway).AsSelector()
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	cfg := ctrl.GetConfigOrDie()
+	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
 			BindAddress: metricsAddr,
@@ -162,10 +170,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = MigrateCollectorsWorkloadToNewLabels(context.Background(), mgr.GetClient(), odigosNs)
-	if err != nil {
-		setupLog.Error(err, "unable to migrate collectors workload to new labels")
-		os.Exit(1)
+	// The labaling was for ver 1.0.91, migration is not releavant for old k8s versions which couln't run.
+	// This is the reason we skip it for versions < 1.23 (Also, versions < 1.23 require a non-caching client and API chane)
+	if k8sVersion != nil && k8sVersion.GreaterThan(version.MustParse("v1.23")) {
+		// Use the cached client for versions >= 1.23
+		err = MigrateCollectorsWorkloadToNewLabels(context.Background(), mgr.GetClient(), odigosNs)
+		if err != nil {
+			setupLog.Error(err, "unable to migrate collectors workload to new labels")
+			os.Exit(1)
+		}
 	}
 
 	// The name processor is used to transform device ids injected with the virtual device,
@@ -194,6 +207,7 @@ func main() {
 		Scheme:               mgr.GetScheme(),
 		ImagePullSecrets:     imagePullSecrets,
 		OdigosVersion:        odigosVersion,
+		K8sVersion:           k8sVersion,
 		DisableNameProcessor: disableNameProcessor,
 		Config:               config,
 	}).SetupWithManager(mgr); err != nil {
@@ -205,6 +219,7 @@ func main() {
 		Scheme:               mgr.GetScheme(),
 		ImagePullSecrets:     imagePullSecrets,
 		OdigosVersion:        odigosVersion,
+		K8sVersion:           k8sVersion,
 		DisableNameProcessor: disableNameProcessor,
 		Config:               config,
 	}).SetupWithManager(mgr); err != nil {
@@ -216,6 +231,7 @@ func main() {
 		Scheme:               mgr.GetScheme(),
 		ImagePullSecrets:     imagePullSecrets,
 		OdigosVersion:        odigosVersion,
+		K8sVersion:           k8sVersion,
 		DisableNameProcessor: disableNameProcessor,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "InstrumentedApplication")
