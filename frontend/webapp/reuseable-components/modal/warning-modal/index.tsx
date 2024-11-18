@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
-import styled from 'styled-components';
-import { Button, ButtonProps, Modal, NotificationNote, Text, Transition } from '@/reuseable-components';
+import React from 'react';
 import { useKeyDown } from '@/hooks';
-import { slide } from '@/styles';
+import styled from 'styled-components';
+import { Button, ButtonProps, Modal, NotificationNote, Text } from '@/reuseable-components';
 
 interface ButtonParams {
   text: string;
@@ -51,26 +50,18 @@ const Footer = styled.div`
 `;
 
 const FooterButton = styled(Button)`
-  width: 224px;
+  width: 250px;
 `;
 
 const NoteWrapper = styled.div`
-  margin-top: 12px;
+  margin-bottom: 12px;
 `;
 
 export const WarningModal: React.FC<Props> = ({ isOpen, noOverlay, title = '', description = '', warnAgain, approveButton, denyButton }) => {
   useKeyDown({ key: 'Enter', active: isOpen }, () => approveButton.onClick());
 
-  const [showWarnAgain, setShowWarnAgain] = useState(false);
-
-  const onApprove = () => {
-    warnAgain && !showWarnAgain ? setShowWarnAgain(true) : approveButton.onClick();
-  };
-
-  const onDeny = () => {
-    setShowWarnAgain(false);
-    denyButton.onClick();
-  };
+  const onApprove = () => approveButton.onClick();
+  const onDeny = () => denyButton.onClick();
 
   return (
     <Modal isOpen={isOpen} noOverlay={noOverlay} onClose={onDeny}>
@@ -81,6 +72,12 @@ export const WarningModal: React.FC<Props> = ({ isOpen, noOverlay, title = '', d
           <Description>{description}</Description>
         </Content>
 
+        {!!warnAgain && (
+          <NoteWrapper>
+            <NotificationNote type='warning' title={warnAgain.title} message={warnAgain.description} />
+          </NoteWrapper>
+        )}
+
         <Footer>
           <FooterButton variant={approveButton.variant || 'primary'} onClick={onApprove}>
             {approveButton.text}
@@ -89,12 +86,6 @@ export const WarningModal: React.FC<Props> = ({ isOpen, noOverlay, title = '', d
             {denyButton.text}
           </FooterButton>
         </Footer>
-
-        {!!warnAgain && (
-          <Transition container={NoteWrapper} enter={showWarnAgain} animateIn={slide.in['left']} animateOut={slide.out['left']}>
-            <NotificationNote type='error' title={warnAgain.title} message={warnAgain.description} />
-          </Transition>
-        )}
       </Container>
     </Modal>
   );
