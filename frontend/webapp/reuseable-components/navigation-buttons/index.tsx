@@ -1,10 +1,9 @@
 import React from 'react';
 import Image from 'next/image';
-import { Text } from '../text';
 import { Button } from '../button';
 import styled from 'styled-components';
 
-interface NavigationButtonProps {
+export interface NavigationButtonProps {
   label: string;
   iconSrc?: string;
   onClick: () => void;
@@ -28,10 +27,6 @@ const StyledButton = styled(Button)`
   justify-content: center;
   gap: 8px;
   min-width: 91.6px;
-`;
-
-const ButtonText = styled(Text)`
-  text-decoration: underline;
 `;
 
 export const NavigationButtons: React.FC<NavigationButtonsProps> = ({ buttons }) => {
