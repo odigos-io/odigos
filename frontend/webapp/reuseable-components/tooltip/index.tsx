@@ -18,7 +18,6 @@ const TooltipContent = styled.div<{ $top: number; $left: number }>`
   position: absolute;
   top: ${({ $top }) => $top}px;
   left: ${({ $left }) => $left}px;
-  // transform: translateY(-100%);
   border-radius: 32px;
   background-color: ${({ theme }) => theme.colors.dark_grey};
   border: 1px solid ${({ theme }) => theme.colors.border};
