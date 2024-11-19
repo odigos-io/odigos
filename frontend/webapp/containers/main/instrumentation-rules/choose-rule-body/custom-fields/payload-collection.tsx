@@ -42,7 +42,7 @@ const PayloadCollection: React.FC<Props> = ({ value, setValue }) => {
       Object.entries(value.payloadCollection)
         .filter(([k, v]) => !!v)
         .map(([k]) => k),
-    [value]
+    [value],
   );
 
   const [isLastSelection, setIsLastSelection] = useState(mappedValue.length === 1);
@@ -77,21 +77,14 @@ const PayloadCollection: React.FC<Props> = ({ value, setValue }) => {
   };
 
   return (
-    <>
+    <div>
       <FieldLabel title='Type of data to collect' required />
-
       <ListContainer>
         {strictPicklist.map(({ id, label }) => (
-          <Checkbox
-            key={id}
-            title={label}
-            disabled={isLastSelection && mappedValue.includes(id)}
-            initialValue={mappedValue.includes(id)}
-            onChange={(bool) => handleChange(id, bool)}
-          />
+          <Checkbox key={id} title={label} disabled={isLastSelection && mappedValue.includes(id)} initialValue={mappedValue.includes(id)} onChange={(bool) => handleChange(id, bool)} />
         ))}
       </ListContainer>
-    </>
+    </div>
   );
 };
 

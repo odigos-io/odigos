@@ -36,9 +36,7 @@ const ActionDrawer: React.FC<Props> = () => {
     }
 
     const { item } = selectedItem as { item: ActionDataParsed };
-    const found =
-      ACTION_OPTIONS.find(({ type }) => type === item.type) ||
-      ACTION_OPTIONS.find(({ id }) => id === 'sampler')?.items?.find(({ type }) => type === item.type);
+    const found = ACTION_OPTIONS.find(({ type }) => type === item.type) || ACTION_OPTIONS.find(({ id }) => id === 'sampler')?.items?.find(({ type }) => type === item.type);
 
     if (!found) return undefined;
 
@@ -69,18 +67,15 @@ const ActionDrawer: React.FC<Props> = () => {
 
   const handleSave = async (newTitle: string) => {
     if (validateForm({ withAlert: true })) {
-      const payload = {
-        ...formData,
-        name: newTitle,
-      };
+      const title = newTitle !== (item as ActionDataParsed).type ? newTitle : '';
 
-      await updateAction(id as string, payload);
+      await updateAction(id as string, { ...formData, name: title });
     }
   };
 
   return (
     <OverviewDrawer
-      title={(item as ActionDataParsed).spec.actionName}
+      title={(item as ActionDataParsed).spec.actionName || (item as ActionDataParsed).type}
       imageUri={getActionIcon((item as ActionDataParsed).type)}
       isEdit={isEditing}
       isFormDirty={isFormDirty}
@@ -113,11 +108,7 @@ export { ActionDrawer };
 const FormContainer = styled.div`
   width: 100%;
   height: 100%;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  padding-right: 16px;
-  box-sizing: border-box;
-  overflow: overlay;
   max-height: calc(100vh - 220px);
+  overflow: overlay;
+  overflow-y: auto;
 `;

@@ -13,8 +13,7 @@ const DestinationDrawer: React.FC<Props> = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isFormDirty, setIsFormDirty] = useState(false);
 
-  const { cardData, dynamicFields, exportedSignals, supportedSignals, destinationType, resetFormData, setDynamicFields, setExportedSignals } =
-    useDestinationFormData();
+  const { cardData, dynamicFields, exportedSignals, supportedSignals, destinationType, resetFormData, setDynamicFields, setExportedSignals } = useDestinationFormData();
   const { handleSignalChange, handleDynamicFieldChange } = useEditDestinationFormHandlers(setExportedSignals, setDynamicFields);
   const { updateDestination, deleteDestination } = useDestinationCRUD();
 
@@ -39,9 +38,10 @@ const DestinationDrawer: React.FC<Props> = () => {
   };
 
   const handleSave = async (newTitle: string) => {
+    const title = newTitle !== (item as ActualDestination).destinationType.displayName ? newTitle : '';
     const payload = {
       type: destinationType,
-      name: newTitle,
+      name: title,
       exportedSignals,
       fields: dynamicFields.map(({ name, value }) => ({ key: name, value })),
     };
@@ -51,7 +51,7 @@ const DestinationDrawer: React.FC<Props> = () => {
 
   return (
     <OverviewDrawer
-      title={(item as ActualDestination).name}
+      title={(item as ActualDestination).name || (item as ActualDestination).destinationType.displayName}
       imageUri={(item as ActualDestination).destinationType.imageUrl}
       isEdit={isEditing}
       isFormDirty={isFormDirty}
@@ -63,9 +63,9 @@ const DestinationDrawer: React.FC<Props> = () => {
       {isEditing ? (
         <FormContainer>
           <EditDestinationForm
-            dynamicFields={dynamicFields}
             exportedSignals={exportedSignals}
             supportedSignals={supportedSignals}
+            dynamicFields={dynamicFields}
             handleSignalChange={(...params) => {
               setIsFormDirty(true);
               handleSignalChange(...params);
@@ -86,14 +86,9 @@ const DestinationDrawer: React.FC<Props> = () => {
 export { DestinationDrawer };
 
 const FormContainer = styled.div`
-  display: flex;
   width: 100%;
-  flex-direction: column;
-  gap: 24px;
   height: 100%;
-  overflow-y: auto;
-  padding-right: 16px;
-  box-sizing: border-box;
-  overflow: overlay;
   max-height: calc(100vh - 220px);
+  overflow: overlay;
+  overflow-y: auto;
 `;

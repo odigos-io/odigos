@@ -1,8 +1,7 @@
-// DrawerHeader.tsx
 import React, { useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
-import { Button, Input, Text } from '@/reuseable-components';
+import { Button, Input, Text, Tooltip } from '@/reuseable-components';
 
 const HeaderContainer = styled.section`
   display: flex;
@@ -62,13 +61,14 @@ export interface DrawerHeaderRef {
 
 interface DrawerHeaderProps {
   title: string;
+  titleTooltip?: string;
   imageUri: string;
   isEdit: boolean;
   onEdit: () => void;
   onClose: () => void;
 }
 
-const DrawerHeader = forwardRef<DrawerHeaderRef, DrawerHeaderProps>(({ title, imageUri, isEdit, onEdit, onClose }, ref) => {
+const DrawerHeader = forwardRef<DrawerHeaderRef, DrawerHeaderProps>(({ title, titleTooltip, imageUri, isEdit, onEdit, onClose }, ref) => {
   const [inputValue, setInputValue] = useState(title);
 
   useEffect(() => {
@@ -86,10 +86,20 @@ const DrawerHeader = forwardRef<DrawerHeaderRef, DrawerHeaderProps>(({ title, im
         <DrawerItemImageWrapper>
           <Image src={imageUri} alt='Drawer Item' width={16} height={16} />
         </DrawerItemImageWrapper>
-        {!isEdit && <Title>{title}</Title>}
+        {!isEdit && (
+          <>
+            <Title>{title}</Title>
+            {!!titleTooltip && (
+              <Tooltip text={titleTooltip}>
+                <Image src='/icons/common/info.svg' alt='Info' width={16} height={16} />
+              </Tooltip>
+            )}
+          </>
+        )}
       </SectionItemsWrapper>
 
-      {isEdit && (
+      {/* "titleTooltip" is currently used only by sources, if we add tooltip to other entities we will have to define a "hideTitleInput" prop */}
+      {isEdit && !titleTooltip && (
         <InputWrapper>
           <Input autoFocus value={inputValue} onChange={(e) => setInputValue(e.target.value)} />
         </InputWrapper>
