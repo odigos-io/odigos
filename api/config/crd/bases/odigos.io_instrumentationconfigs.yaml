@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: instrumentationconfigs.odigos.io
 spec:
   group: odigos.io
@@ -118,6 +118,7 @@ spec:
                 description: |-
                   Configuration for the OpenTelemetry SDKs that this workload should use.
                   The SDKs are identified by the programming language they are written in.
+                  TODO: consider adding more granular control over the SDKs, such as community/enterprise, native/ebpf.
                 items:
                   properties:
                     headSamplerConfig:
@@ -416,6 +417,12 @@ spec:
                   - payloadCollection
                   type: object
                 type: array
+              serviceName:
+                description: this value will be populated by the service.name resource
+                  attribute
+                type: string
+            required:
+            - serviceName
             type: object
           status:
             properties:

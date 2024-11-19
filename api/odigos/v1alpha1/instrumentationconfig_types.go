@@ -34,6 +34,9 @@ type InstrumentationConfigStatus struct {
 // Config for the OpenTelemeetry SDKs that should be applied to a workload.
 // The workload is identified by the owner reference
 type InstrumentationConfigSpec struct {
+	// this value will be populated by the service.name resource attribute
+	ServiceName string `json:"serviceName"`
+
 	// true when the runtime details are invalidated and should be recalculated
 	RuntimeDetailsInvalidated bool `json:"runtimeDetailsInvalidated,omitempty"`
 
