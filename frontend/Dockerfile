@@ -1,14 +1,13 @@
-FROM --platform=$BUILDPLATFORM node:20.2.0 AS deps
+FROM --platform=$BUILDPLATFORM node:20.9.0 AS deps
 WORKDIR /app
 COPY frontend/webapp/package.json frontend/webapp/yarn.lock ./
 RUN yarn install 
 
-FROM --platform=$BUILDPLATFORM node:20.2.0 AS builder
+FROM --platform=$BUILDPLATFORM node:20.9.0 AS builder
 WORKDIR /webapp
 COPY --from=deps /app/node_modules ./node_modules
 COPY frontend/webapp .
 RUN yarn build
-
 
 FROM --platform=$BUILDPLATFORM golang:1.22 AS backend
 WORKDIR /app
