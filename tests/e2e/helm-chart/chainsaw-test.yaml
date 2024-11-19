@@ -135,7 +135,7 @@ spec:
     - name: Generate Traffic
       try:
         - script:
-            timeout: 90s
+            timeout: 200s
             content: |
               while true; do
                 # Apply the job

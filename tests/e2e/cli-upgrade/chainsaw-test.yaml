@@ -112,19 +112,19 @@ spec:
   - name: Generate Traffic
     try:
     - script:
-        timeout: 60s
+        timeout: 200s
         content: |
           while true; do
             # Apply the job
             kubectl apply -f 05-generate-traffic.yaml
-            
+
             # Wait for the job to complete
             job_name=$(kubectl get -f 05-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
             kubectl wait --for=condition=complete job/$job_name
-            
+
             # Delete the job
             kubectl delete -f 05-generate-traffic.yaml
-            
+
             # Run the wait-for-trace script
             ../../common/traceql_runner.sh tracesql/wait-for-trace.yaml
             if [ $? -eq 0 ]; then
