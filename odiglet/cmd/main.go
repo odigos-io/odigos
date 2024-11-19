@@ -4,9 +4,9 @@ import (
 	"context"
 	"os"
 
+	detector "github.com/odigos-io/odigos/odiglet/pkg/detector"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf/sdks"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/fs"
-	detector "github.com/odigos-io/odigos/odiglet/pkg/detector"
 
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	"github.com/odigos-io/odigos/common"
@@ -28,6 +28,9 @@ import (
 )
 
 func odigletInitPhase() {
+	if err := log.Init(); err != nil {
+		panic(err)
+	}
 	err := fs.CopyAgentsDirectoryToHost()
 	if err != nil {
 		log.Logger.Error(err, "Failed to copy agents directory to host")

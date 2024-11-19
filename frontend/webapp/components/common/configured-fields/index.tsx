@@ -1,9 +1,11 @@
 import React, { Fragment } from 'react';
 import styled from 'styled-components';
-import { Text, Status } from '@/reuseable-components';
+import { Text, Status, Tooltip } from '@/reuseable-components';
+import Image from 'next/image';
 
 type TypeDetail = {
   title: string;
+  tooltip?: string;
   value: string;
 };
 
@@ -80,13 +82,12 @@ export const ConfiguredFields: React.FC<ConfiguredFieldsProps> = ({ details }) =
     <ListContainer>
       {details.map((detail, index) => (
         <ListItem key={index}>
-          <ItemTitle>{detail.title}</ItemTitle>
+          <Tooltip text={detail.tooltip || ''}>
+            <ItemTitle>{detail.title}</ItemTitle>
+            {detail.tooltip && <Image src='/icons/common/info.svg' alt='Info' width={12} height={12} style={{ marginLeft: 4 }} />}
+          </Tooltip>
 
-          {detail.title === 'Status' ? (
-            <Status isActive={detail.value == 'true'} withIcon withBorder withSmaller withSpecialFont />
-          ) : (
-            <ItemValue>{parseValue(detail.value)}</ItemValue>
-          )}
+          {detail.title === 'Status' ? <Status isActive={detail.value == 'true'} withIcon withBorder withSmaller withSpecialFont /> : <ItemValue>{parseValue(detail.value)}</ItemValue>}
         </ListItem>
       ))}
     </ListContainer>

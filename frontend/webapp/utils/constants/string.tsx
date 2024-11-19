@@ -40,4 +40,7 @@ export const NOTIFICATION: {
 } = {
   ERROR: 'error',
   SUCCESS: 'success',
+  WARNING: 'warning',
+  INFO: 'info',
+  DEFAULT: 'default',
 };

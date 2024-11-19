@@ -34,32 +34,22 @@ interface DestinationsListProps {
   setSelectedItems: (item: DestinationTypeItem) => void;
 }
 
-const DestinationsList: React.FC<DestinationsListProps> = ({
-  items,
-  setSelectedItems,
-}) => {
+const DestinationsList: React.FC<DestinationsListProps> = ({ items, setSelectedItems }) => {
   function renderCategoriesList() {
     if (!items.length) {
       return (
         <NoDataFoundWrapper>
-          <NoDataFound title="No destinations found" />
+          <NoDataFound title='No destinations found' />
         </NoDataFoundWrapper>
       );
     }
 
     return items.map((item) => {
       return (
-        <ListsWrapper>
-          <SectionTitle
-            size="small"
-            title={capitalizeFirstLetter(item.name)}
-            description={item.description}
-          />
+        <ListsWrapper key={`category-${item.name}`}>
+          <SectionTitle size='small' title={capitalizeFirstLetter(item.name)} description={item.description} />
           {item.items.map((categoryItem) => (
-            <DestinationListItem
-              item={categoryItem}
-              onSelect={setSelectedItems}
-            />
+            <DestinationListItem key={`destination-${categoryItem.displayName}`} item={categoryItem} onSelect={setSelectedItems} />
           ))}
         </ListsWrapper>
       );

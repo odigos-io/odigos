@@ -11,7 +11,9 @@ spec:
       app.kubernetes.io/name: odiglet
   updateStrategy:
     rollingUpdate:
+      {{- if semverCompare ">=1.22.0" .Capabilities.KubeVersion.Version }}
       maxSurge: 0
+      {{- end }}
       maxUnavailable: 50%
     type: RollingUpdate
   template:

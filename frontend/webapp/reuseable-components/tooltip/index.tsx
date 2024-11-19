@@ -18,7 +18,6 @@ const TooltipContent = styled.div<{ $top: number; $left: number }>`
   position: absolute;
   top: ${({ $top }) => $top}px;
   left: ${({ $left }) => $left}px;
-  transform: translateY(-100%);
   border-radius: 32px;
   background-color: ${({ theme }) => theme.colors.dark_grey};
   border: 1px solid ${({ theme }) => theme.colors.border};
@@ -40,7 +39,7 @@ const Tooltip: React.FC<TooltipProps> = ({ text, children }) => {
         const { top, left } = wrapperRef.current.getBoundingClientRect();
 
         setPosition({
-          top: top + window.scrollY - 10, // Adjust the offset for the tooltip to be above the element
+          top: top + window.scrollY,
           left: left + window.scrollX,
         });
       }
@@ -55,15 +54,13 @@ const Tooltip: React.FC<TooltipProps> = ({ text, children }) => {
     return () => document.removeEventListener('mousemove', handleMouseMove);
   }, [isHovered]);
 
+  if (!text) return <>{children}</>;
+
   const tooltipContent = (
     <TooltipContent $top={position.top} $left={position.left}>
       <Text size={14}>{text}</Text>
     </TooltipContent>
   );
-
-  if (text === '') {
-    return <>{children}</>;
-  }
 
   return (
     <TooltipWrapper ref={wrapperRef} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>

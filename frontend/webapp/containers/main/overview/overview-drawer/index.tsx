@@ -3,13 +3,16 @@ import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
 import DrawerFooter from './drawer-footer';
 import { Drawer } from '@/reuseable-components';
+import { OVERVIEW_ENTITY_TYPES } from '@/types';
+import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
 import DrawerHeader, { DrawerHeaderRef } from './drawer-header';
 import { CancelWarning, DeleteWarning } from '@/components/modals';
 
-const DRAWER_WIDTH = '640px';
+const DRAWER_WIDTH = `${640 + 64}px`; // +64 because of "ContentArea" padding
 
 interface Props {
   title: string;
+  titleTooltip?: string;
   imageUri: string;
   isEdit: boolean;
   isFormDirty: boolean;
@@ -31,7 +34,9 @@ const ContentArea = styled.div`
   overflow-y: auto;
 `;
 
-const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, imageUri, isEdit, isFormDirty, onEdit, onSave, onDelete, onCancel }) => {
+const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, titleTooltip, imageUri, isEdit, isFormDirty, onEdit, onSave, onDelete, onCancel }) => {
+  const { sources } = useSourceCRUD();
+  const { destinations } = useDestinationCRUD();
   const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
   const setSelectedItem = useDrawerStore(({ setSelectedItem }) => setSelectedItem);
 
@@ -80,17 +85,41 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, 
     onSave(titleRef.current?.getTitle() || '');
   };
 
+  const isLastItem = () => {
+    let isLast = false;
+
+    if (selectedItem?.type === OVERVIEW_ENTITY_TYPES.SOURCE) isLast = sources.length === 1;
+    if (selectedItem?.type === OVERVIEW_ENTITY_TYPES.DESTINATION) isLast = destinations.length === 1;
+
+    return isLast;
+  };
+
   return (
     <>
       <Drawer isOpen onClose={isEdit ? clickCancel : closeDrawer} width={DRAWER_WIDTH} closeOnEscape={!isDeleteModalOpen && !isCancelModalOpen}>
         <DrawerContent>
-          <DrawerHeader ref={titleRef} title={title} imageUri={imageUri} isEdit={isEdit} onEdit={() => onEdit(true)} onClose={isEdit ? clickCancel : closeDrawer} />
+          <DrawerHeader ref={titleRef} title={title} titleTooltip={titleTooltip} imageUri={imageUri} isEdit={isEdit} onEdit={() => onEdit(true)} onClose={isEdit ? clickCancel : closeDrawer} />
           <ContentArea>{children}</ContentArea>
           {isEdit && <DrawerFooter onSave={clickSave} onCancel={clickCancel} onDelete={clickDelete} />}
         </DrawerContent>
       </Drawer>
 
-      <DeleteWarning isOpen={isDeleteModalOpen} noOverlay name={`${selectedItem?.type}${title ? ` (${title})` : ''}`} onApprove={handleDelete} onDeny={closeWarningModals} />
+      <DeleteWarning
+        isOpen={isDeleteModalOpen}
+        noOverlay
+        name={`${selectedItem?.type}${title ? ` (${title})` : ''}`}
+        note={
+          isLastItem()
+            ? {
+                type: 'warning',
+                title: `You're about to delete the last ${selectedItem?.type}`,
+                message: 'This will break your pipeline!',
+              }
+            : undefined
+        }
+        onApprove={handleDelete}
+        onDeny={closeWarningModals}
+      />
       <CancelWarning isOpen={isCancelModalOpen} noOverlay name='edit mode' onApprove={handleCancel} onDeny={closeWarningModals} />
     </>
   );

@@ -56,7 +56,7 @@ export function useInstrumentationRuleFormData() {
 
     if (!ok && params?.withAlert) {
       notify({
-        type: NOTIFICATION.ERROR,
+        type: NOTIFICATION.WARNING,
         title: ACTION.UPDATE,
         message: FORM_ALERTS.REQUIRED_FIELDS,
       });

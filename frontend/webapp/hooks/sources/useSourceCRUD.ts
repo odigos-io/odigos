@@ -1,10 +1,10 @@
-import { useDrawerStore } from '@/store';
+import { useNotify } from '../notification';
 import { useMutation } from '@apollo/client';
+import { useDrawerStore, useNotificationStore } from '@/store';
 import { ACTION, getSseTargetFromId, NOTIFICATION } from '@/utils';
 import { PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import { useComputePlatform, useNamespace } from '../compute-platform';
 import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type NotificationType, type PatchSourceRequestInput, type K8sActualSource } from '@/types';
-import { useNotify } from '../notification';
 
 interface Params {
   onSuccess?: () => void;
@@ -12,6 +12,7 @@ interface Params {
 }
 
 export const useSourceCRUD = (params?: Params) => {
+  const removeNotifications = useNotificationStore((store) => store.removeNotifications);
   const { setSelectedItem: setDrawerItem } = useDrawerStore((store) => store);
   const { data, startPolling } = useComputePlatform();
   const { persistNamespace } = useNamespace();
@@ -58,6 +59,7 @@ export const useSourceCRUD = (params?: Params) => {
         handleComplete(action, `${count} sources were ${action.toLowerCase()}d ${fromOrIn} "${namespace}"`);
       } else {
         const id = { kind, name, namespace };
+        if (!selected) removeNotifications(getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.SOURCE));
         handleComplete(action, `source "${name}" was ${action.toLowerCase()}d ${fromOrIn} "${namespace}"`, selected ? id : undefined);
       }
     },
