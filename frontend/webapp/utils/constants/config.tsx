@@ -6,5 +6,5 @@ export const CONFIG = {
 
 export const METADATA = {
   title: 'Odigos',
-  icons: 'https://d2q89wckrml3k4.cloudfront.net/logo.png',
+  icons: 'brand/odigos_black_icon.svg',
 };

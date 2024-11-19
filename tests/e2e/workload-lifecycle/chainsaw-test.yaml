@@ -9,7 +9,7 @@ spec:
   - name: Build and Load Test App Images
     try:
     - script:
-        timeout: 350s
+        timeout: 450s
         content: |
           docker build -t nodejs-unsupported-version:v0.0.1 -f services/nodejs-http-server/unsupported-version.Dockerfile services/nodejs-http-server
           kind load docker-image nodejs-unsupported-version:v0.0.1

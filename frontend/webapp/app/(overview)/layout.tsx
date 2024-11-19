@@ -1,28 +1,32 @@
-import { Menu } from '@/components/side.menu';
-import theme from '@/styles/palette';
-import { METADATA } from '@/utils/constants';
-import { Metadata } from 'next';
+'use client';
 import React from 'react';
+import styled from 'styled-components';
+import { MainHeader } from '@/components';
 
-const LAYOUT_STYLE = {
-  width: '100%',
-  height: '100%',
-  display: 'flex',
-  backgroundColor: theme.colors.light_dark,
-};
+const LayoutContainer = styled.div`
+  width: 100%;
+  height: 100vh;
+  background-color: ${({ theme }) => theme.colors.primary};
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+`;
 
-const CHILDREN_STYLE = {
-  width: '100%',
-  height: '93%',
-};
+const MainContent = styled.div`
+  display: flex;
+  width: 100vw;
+  height: 76px;
+  flex-direction: column;
+  align-items: center;
+`;
 
-export const metadata: Metadata = METADATA;
-
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default function MainLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div style={LAYOUT_STYLE}>
-      <Menu />
-      <div style={CHILDREN_STYLE}>{children}</div>
-    </div>
+    <LayoutContainer>
+      <MainContent>
+        <MainHeader />
+        {children}
+      </MainContent>
+    </LayoutContainer>
   );
 }
