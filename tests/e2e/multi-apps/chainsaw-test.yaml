@@ -90,26 +90,65 @@ spec:
         - assert:
             file: assert-instrumented-and-pipeline.yaml
 
-    - name: Assert Post Destination Runtime Details
-      try:
-        - assert:
-            file: assert-post-dest-runtime-details.yaml
+  - name: Generate Traffic
+    try:
+    - script:
+        timeout: 300s
+        content: |
+          # Apply the job
+          kubectl apply -f 05-generate-traffic.yaml
 
-    - name: Generate Traffic
-      try:
-        - script:
-            timeout: 200s
-            content: |
-              while true; do
-                # Apply the job
-                kubectl apply -f 05-generate-traffic.yaml
+          # Wait for the job to complete
+          job_name=$(kubectl get -f 05-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
+          kubectl wait --for=condition=complete job/$job_name
 
-                # Wait for the job to complete
-                job_name=$(kubectl get -f 05-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
-                kubectl wait --for=condition=complete job/$job_name
+          # Delete the job        
+          kubectl delete -f 05-generate-traffic.yaml
 
-                # Delete the job
-                kubectl delete -f 05-generate-traffic.yaml
+          while true; do
+            # wait for traces to be available
+            sleep 8
+
+            # Run the wait-for-trace script
+            echo "Running TraceQL test at $(date)"
+            ../../common/traceql_runner.sh tracesql/wait-for-trace.yaml
+            
+            if [ $? -eq 0 ]; then
+              break
+            else
+              ../../common/flush_traces.sh
+              sleep 5
+            fi
+          done
+  - name: Verify Trace - Context Propagation
+    try:
+    - script:
+        timeout: 30s
+        content: |
+          ../../common/traceql_runner.sh tracesql/context-propagation.yaml
+    catch:
+    - podLogs:
+        name: odiglet
+        namespace: odigos-system
+  - name: Verify Trace - Resource Attributes
+    try:
+    - script:
+        content: |
+          ../../common/traceql_runner.sh tracesql/resource-attributes.yaml
+    catch:
+    - podLogs:
+        name: odiglet
+        namespace: odigos-system
+  - name: Verify Trace - Span Attributes
+    try:
+      - script:
+          timeout: 60s
+          content: |
+            ../../common/traceql_runner.sh tracesql/span-attributes.yaml
+    catch:
+      - podLogs:
+          name: odiglet
+          namespace: odigos-system
 
                 # Run the wait-for-trace script
                 ../../common/traceql_runner.sh tracesql/wait-for-trace.yaml
