@@ -96,7 +96,7 @@ func TestGetPatchedEnvValue(t *testing.T) {
 			observedValue:        fmt.Sprintf("%s %s %s %s", specialEnvValueJava, specialEnvValueJava, specialEnvValueJava, javaToolsNativeCommunity),
 			sdk:                  &common.OtelSdkNativeCommunity,
 			programmingLanguage:  common.JavaProgrammingLanguage,
-			patchedValueExpected: specialEnvValueJava + " " + javaToolsNativeCommunity,
+			patchedValueExpected: javaToolsNativeCommunity,
 		},
 		{
 			name:                 "multiple spaces in special env value",
@@ -104,7 +104,7 @@ func TestGetPatchedEnvValue(t *testing.T) {
 			observedValue:        fmt.Sprintf("%s %s              %s", specialEnvValueJava, specialEnvValueJava, javaToolsNativeCommunity),
 			sdk:                  &common.OtelSdkNativeCommunity,
 			programmingLanguage:  common.JavaProgrammingLanguage,
-			patchedValueExpected: specialEnvValueJava + " " + javaToolsNativeCommunity,
+			patchedValueExpected: javaToolsNativeCommunity,
 		},
 		{
 			name:                 "tabs in special env value",
@@ -112,7 +112,15 @@ func TestGetPatchedEnvValue(t *testing.T) {
 			observedValue:        fmt.Sprintf("%s \t %s \t %s", specialEnvValueJava, specialEnvValueJava, javaToolsNativeCommunity),
 			sdk:                  &common.OtelSdkNativeCommunity,
 			programmingLanguage:  common.JavaProgrammingLanguage,
-			patchedValueExpected: specialEnvValueJava + " " + javaToolsNativeCommunity,
+			patchedValueExpected: javaToolsNativeCommunity,
+		},
+		{
+			name:                 "special env with only user value",
+			envName:              "JAVA_TOOL_OPTIONS",
+			observedValue:        fmt.Sprintf("%s ", specialEnvValueJava),
+			sdk:                  &common.OtelSdkNativeCommunity,
+			programmingLanguage:  common.JavaProgrammingLanguage,
+			patchedValueExpected: javaToolsNativeCommunity,
 		},
 	}
 
