@@ -135,37 +135,43 @@ spec:
     - name: Generate Traffic
       try:
         - script:
-            timeout: 60s
+            timeout: 300s
             content: |
+              # Apply the job
+              kubectl apply -f 05-generate-traffic.yaml
+
+              # Wait for the job to complete
+              job_name=$(kubectl get -f 05-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
+              kubectl wait --for=condition=complete job/$job_name
+
+              # Delete the job
+              kubectl delete -f 05-generate-traffic.yaml
+
               while true; do
-                # Apply the job
-                kubectl apply -f 05-generate-traffic.yaml
-
-                # Wait for the job to complete
-                job_name=$(kubectl get -f 05-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
-                kubectl wait --for=condition=complete job/$job_name
-
-                # Delete the job
-                kubectl delete -f 05-generate-traffic.yaml
+                # wait for traces to be available
+                sleep 8
 
                 # Run the wait-for-trace script
+                echo "Running TraceQL test at $(date)"
                 ../../common/traceql_runner.sh tracesql/wait-for-trace.yaml
+                
                 if [ $? -eq 0 ]; then
                   break
                 else
-                  sleep 3
                   ../../common/flush_traces.sh
+                  sleep 5
                 fi
               done
     - name: Verify Trace - Context Propagation
       try:
         - script:
+            timeout: 30s
             content: |
               ../../common/traceql_runner.sh tracesql/context-propagation.yaml
       catch:
         - podLogs:
             name: odiglet
-            namespace: odigos-system
+            namespace: odigos-test-ns
     - name: Verify Trace - Resource Attributes
       try:
         - script:
@@ -174,7 +180,7 @@ spec:
       catch:
         - podLogs:
             name: odiglet
-            namespace: odigos-system
+            namespace: odigos-test-ns
     - name: Verify Trace - Span Attributes
       try:
         - script:
@@ -183,4 +189,25 @@ spec:
       catch:
         - podLogs:
             name: odiglet
-            namespace: odigos-system
+            namespace: odigos-test-ns
+
+    - name: Start Odigos UI in background
+      try:
+        - script:
+            timeout: 60s
+            content: |
+              ../../common/ui-tests/start_odigos_ui.sh
+
+    - name: Run Cypress tests should pass
+      try:
+        - script:
+            timeout: 60s
+            content: |
+              ../../common/ui-tests/run_cypress_tests.sh
+
+    - name: Stop Odigos UI
+      try:
+        - script:
+            timeout: 60s
+            content: |
+              ../../common/ui-tests/stop_ui_and_clean.sh
