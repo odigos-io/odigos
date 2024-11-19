@@ -5,7 +5,7 @@ go 1.22.0
 require (
 	github.com/go-logr/logr v1.4.2
 	github.com/odigos-io/odigos/api v0.0.0
-	github.com/odigos-io/odigos/common v1.0.70
+	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/odigos/k8sutils v0.0.0
 	go.opentelemetry.io/otel v1.29.0
 	google.golang.org/grpc v1.65.0
@@ -16,6 +16,8 @@ require (
 	k8s.io/kubelet v0.31.0
 	sigs.k8s.io/controller-runtime v0.19.0
 )
+
+require github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -37,6 +39,7 @@ require (
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/hashicorp/go-version v1.7.0 // indirect
 	github.com/imdario/mergo v0.3.6 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -52,6 +55,7 @@ require (
 	github.com/prometheus/common v0.55.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/stretchr/testify v1.9.0
 	github.com/x448/float16 v0.8.4 // indirect
 	go.opentelemetry.io/otel/trace v1.29.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
@@ -79,5 +83,6 @@ require (
 
 replace (
 	github.com/odigos-io/odigos/api => ../api
+	github.com/odigos-io/odigos/common => ../common
 	github.com/odigos-io/odigos/k8sutils => ../k8sutils
 )
