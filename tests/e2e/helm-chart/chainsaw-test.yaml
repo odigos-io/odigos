@@ -6,190 +6,47 @@ spec:
   description: This e2e test install Odigos via helm chart on custom namespace
   skipDelete: true
   steps:
-  - name: Prepare destination
-    try:
-      - script:
-          timeout: 60s
-          content: |
-            helm repo add grafana https://grafana.github.io/helm-charts
-            helm repo update
-            helm install e2e-tests grafana/tempo -n traces --create-namespace --set tempo.storage.trace.block.version=vParquet4 \
-            --set tempo.ingester.trace_idle_period=5s \
-            --set tempo.ingester.max_block_duration=20s \
-            --version 1.10.1
-      - assert:
-          file: assert-tempo-running.yaml
-  - name: Wait for destination to be ready
-    try:
-      - script:
-          timeout: 60s
-          content: ../../common/wait_for_dest.sh
-  - name: Install Odigos
-    try:
-    - script:
-        content: |
-          # The pwd is the directory of this file, so we have to walk up to the project root to find the helm chart
-          P="../../.."
-          # "build" complete helm chart by copying CRDs into the template folder
-          cp -r $P/api/config/crd/bases/* $P/helm/odigos/templates/crds/
-          if [ "$MODE" = "cross-cloud-tests" ]; then
-            helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test-ns --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7
-          else
-            helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test-ns --set image.tag=e2e-test
-          fi
-          kubectl label namespace odigos-test-ns odigos.io/system-object="true"
-        timeout: 60s
-  - name: Verify Odigos Installation
-    try:
-    - script:
-        timeout: 200s
-        content: |
-          echo "Starting Odigos version check..."
-          export ACTUAL_VERSION=$(../../../cli/odigos version --cluster)
-          echo "Actual Version: $ACTUAL_VERSION"
-
-          if [ "$MODE" = "cross-cloud-tests" ]; then
-            if [ "$ACTUAL_VERSION" != "$COMMIT_HASH" ]; then
-              echo "Odigos version is not the expected commit hash, got $ACTUAL_VERSION"
-              exit 1
-            fi
-
-          kubectl wait --for=condition=ready pods --all -n odigos-test-ns --timeout=40s
-
-          else
-            if [ "$ACTUAL_VERSION" != "e2e-test" ]; then
-              echo "Odigos version is not e2e-test, got $ACTUAL_VERSION"
-              exit 1
-            fi
-          fi
-    - assert:
-        file: assert-odigos-installed.yaml
-  - name: Install Demo App
-    try:
-    - script:
-        timeout: 100s
-        content: |
-          if [ "$MODE" != "cross-cloud-tests" ]; then
-            docker pull keyval/odigos-demo-inventory:v0.1
-            docker pull keyval/odigos-demo-membership:v0.1
-            docker pull keyval/odigos-demo-coupon:v0.1
-            docker pull keyval/odigos-demo-frontend:v0.2
-            kind load docker-image keyval/odigos-demo-inventory:v0.1
-            kind load docker-image keyval/odigos-demo-membership:v0.1
-            kind load docker-image keyval/odigos-demo-coupon:v0.1
-            kind load docker-image keyval/odigos-demo-frontend:v0.2
-          else
-            echo "Skipping docker pull and kind load for cross-cloud-tests mode"
-          fi
-    - apply:
-        file: 02-install-simple-demo.yaml
-    - script:
-        timeout: 70s
-        content: |
-          # Wait for the pods to be ready
-          kubectl wait --for=condition=ready pod -l app=frontend --timeout=60s
-          kubectl wait --for=condition=ready pod -l app=coupon --timeout=60s
-          kubectl wait --for=condition=ready pod -l app=inventory --timeout=60s
-          kubectl wait --for=condition=ready pod -l app=pricing --timeout=60s
-          kubectl wait --for=condition=ready pod -l app=membership --timeout=60s
-    - assert:
-        file: assert-apps-installed.yaml
-
-  - name: Instrument Namespace
-    try:
-    - apply:
-        file: 03-instrument-ns.yaml
-  
-  - name: Assert Runtime Detected
-    try:
-    - assert:
-        timeout: 2m
-        file: assert-runtime-detected.yaml
-
-  - name: Add Destination
-    try:
-    - apply:
-        file: 04-add-destination.yaml
-
-  - name: Assert Instrumented and Pipeline
-    try:
-    - assert:
-        file: assert-instrumented-and-pipeline.yaml
-
-  - name: Verify InstrumentationConfig Generation Status
-    try:
-    - script:
-        timeout: 65s
-        content: |
-          kubectl wait --for=jsonpath='{.status.observedWorkloadGeneration}'=2 -n default instrumentationconfig/deployment-frontend --timeout=60s
-          kubectl wait --for=jsonpath='{.status.observedWorkloadGeneration}'=2 -n default instrumentationconfig/deployment-coupon --timeout=60s
-          kubectl wait --for=jsonpath='{.status.observedWorkloadGeneration}'=2 -n default instrumentationconfig/deployment-inventory --timeout=60s
-          kubectl wait --for=jsonpath='{.status.observedWorkloadGeneration}'=2 -n default instrumentationconfig/deployment-pricing --timeout=60s
-          kubectl wait --for=jsonpath='{.status.observedWorkloadGeneration}'=2 -n default instrumentationconfig/deployment-membership --timeout=60s
-
-  - name: Assert Post Destination Runtime Details
-    try:
-    - assert:
-        file: assert-post-dest-runtime-details.yaml
-
-  - name: Generate Traffic
-    try:
-      - script:
-          timeout: 300s
-          content: |
-            # Apply the job
-            kubectl apply -f 05-generate-traffic.yaml
-
-            # Wait for the job to complete
-            job_name=$(kubectl get -f 05-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
-            kubectl wait --for=condition=complete job/$job_name
-
-            # Delete the job
-            kubectl delete -f 05-generate-traffic.yaml
-        
-            while true; do
-              # wait for traces to be available
-              sleep 8
-
-              # Run the wait-for-trace script
-              echo "Running TraceQL test at $(date)"
-              ../../common/traceql_runner.sh tracesql/wait-for-trace.yaml
-              
-              if [ $? -eq 0 ]; then
-                break
+    - name: Prepare destination
+      try:
+        - script:
+            timeout: 60s
+            content: |
+              helm repo add grafana https://grafana.github.io/helm-charts
+              helm repo update
+              helm install e2e-tests grafana/tempo -n traces --create-namespace --set tempo.storage.trace.block.version=vParquet4 \
+              --set tempo.ingester.trace_idle_period=5s \
+              --set tempo.ingester.max_block_duration=20s \
+              --version 1.10.1
+        - assert:
+            file: assert-tempo-running.yaml
+    - name: Wait for destination to be ready
+      try:
+        - script:
+            timeout: 60s
+            content: ../../common/wait_for_dest.sh
+    - name: Install Odigos
+      try:
+        - script:
+            content: |
+              # The pwd is the directory of this file, so we have to walk up to the project root to find the helm chart
+              P="../../.."
+              # "build" complete helm chart by copying CRDs into the template folder
+              cp -r $P/api/config/crd/bases/* $P/helm/odigos/templates/crds/
+              if [ "$MODE" = "cross-cloud-tests" ]; then
+                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test-ns --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7
               else
-                ../../common/flush_traces.sh
-                sleep 5
+                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test-ns --set image.tag=e2e-test
               fi
-            done
-  - name: Verify Trace - Context Propagation
-    try:
-    - script:
-        timeout: 30s
-        content: |
-          ../../common/traceql_runner.sh tracesql/context-propagation.yaml
-    catch:
-    - podLogs:
-        name: odiglet
-        namespace: odigos-test-ns
-  - name: Verify Trace - Resource Attributes
-    try:
-    - script:
-        content: |
-          ../../common/traceql_runner.sh tracesql/resource-attributes.yaml
-    catch:
-    - podLogs:
-        name: odiglet
-        namespace: odigos-test-ns
-  - name: Verify Trace - Span Attributes
-    try:
-      - script:
-          content: |
-            ../../common/traceql_runner.sh tracesql/span-attributes.yaml
-    catch:
-      - podLogs:
-          name: odiglet
-          namespace: odigos-test-ns
+              kubectl label namespace odigos-test-ns odigos.io/system-object="true"
+            timeout: 60s
+    - name: Verify Odigos Installation
+      try:
+        - script:
+            timeout: 200s
+            content: |
+              echo "Starting Odigos version check..."
+              export ACTUAL_VERSION=$(../../../cli/odigos version --cluster)
+              echo "Actual Version: $ACTUAL_VERSION"
 
               if [ "$MODE" = "cross-cloud-tests" ]; then
                 if [ "$ACTUAL_VERSION" != "$COMMIT_HASH" ]; then
@@ -278,37 +135,43 @@ spec:
     - name: Generate Traffic
       try:
         - script:
-            timeout: 200s
+            timeout: 300s
             content: |
+              # Apply the job
+              kubectl apply -f 05-generate-traffic.yaml
+
+              # Wait for the job to complete
+              job_name=$(kubectl get -f 05-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
+              kubectl wait --for=condition=complete job/$job_name
+
+              # Delete the job
+              kubectl delete -f 05-generate-traffic.yaml
+
               while true; do
-                # Apply the job
-                kubectl apply -f 05-generate-traffic.yaml
-
-                # Wait for the job to complete
-                job_name=$(kubectl get -f 05-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
-                kubectl wait --for=condition=complete job/$job_name
-
-                # Delete the job
-                kubectl delete -f 05-generate-traffic.yaml
+                # wait for traces to be available
+                sleep 8
 
                 # Run the wait-for-trace script
+                echo "Running TraceQL test at $(date)"
                 ../../common/traceql_runner.sh tracesql/wait-for-trace.yaml
+                
                 if [ $? -eq 0 ]; then
                   break
                 else
-                  sleep 3
                   ../../common/flush_traces.sh
+                  sleep 5
                 fi
               done
     - name: Verify Trace - Context Propagation
       try:
         - script:
+            timeout: 30s
             content: |
               ../../common/traceql_runner.sh tracesql/context-propagation.yaml
       catch:
         - podLogs:
             name: odiglet
-            namespace: odigos-system
+            namespace: odigos-test-ns
     - name: Verify Trace - Resource Attributes
       try:
         - script:
@@ -317,7 +180,7 @@ spec:
       catch:
         - podLogs:
             name: odiglet
-            namespace: odigos-system
+            namespace: odigos-test-ns
     - name: Verify Trace - Span Attributes
       try:
         - script:
@@ -326,4 +189,25 @@ spec:
       catch:
         - podLogs:
             name: odiglet
-            namespace: odigos-system
+            namespace: odigos-test-ns
+
+    - name: Start Odigos UI in background
+      try:
+        - script:
+            timeout: 60s
+            content: |
+              ../../common/ui-tests/start_odigos_ui.sh
+
+    - name: Run Cypress tests should pass
+      try:
+        - script:
+            timeout: 60s
+            content: |
+              ../../common/ui-tests/run_cypress_tests.sh
+
+    - name: Stop Odigos UI
+      try:
+        - script:
+            timeout: 60s
+            content: |
+              ../../common/ui-tests/stop_ui_and_clean.sh
