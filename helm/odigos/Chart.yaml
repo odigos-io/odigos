@@ -8,4 +8,5 @@ version: "0.0.0"
 appVersion: "v0.0.0"
 icon: https://d2q89wckrml3k4.cloudfront.net/logo.png
 # minimum kubernetes version required, this value must be in sync with the CLI install value
-kubeVersion: ">= 1.23.0"
+# we must include '-0' to allow versions such as v1.23.17-eks-ce1d5eb
+kubeVersion: ">= 1.20.15-0"

@@ -33,6 +33,14 @@ func podContainerDeviceName(container v1.Container) *string {
 }
 
 func AllContainersReady(pod *v1.Pod) bool {
+	// If pod has no containers, return false as we can't determine readiness
+	if len(pod.Status.ContainerStatuses) == 0 {
+		return false
+	}
+	// Check if pod is in Running phase.
+	if pod.Status.Phase != v1.PodRunning {
+		return false
+	}
 	// Iterate over all containers in the pod
 	// Return false if any container is:
 	// 1. Not Ready

@@ -6,159 +6,167 @@ spec:
   description: Check successful upgrade from latest version of CLI
   skipDelete: true
   steps:
-  - name: Prepare destination
-    try:
-    - script:
-        timeout: 60s
-        content: |
-          if helm status e2e-tests -n traces >/dev/null 2>&1; then
-            echo "e2e-tests helm already installed, probably from previous run. Skipping..."
-          else
-            helm repo add grafana https://grafana.github.io/helm-charts
-            helm repo update
-            helm install e2e-tests grafana/tempo -n traces --create-namespace --set tempo.storage.trace.block.version=vParquet4 \
-            --set tempo.ingester.trace_idle_period=5s \
-            --set tempo.ingester.max_block_duration=20s \
-            --version 1.10.1
-          fi
-    - assert:
-        file: assert-tempo-running.yaml
-  - name: Wait for destination to be ready
-    try:
-      - script:
-          timeout: 60s
-          content: ../../common/wait_for_dest.sh
-  - name: Install Odigos latest release from GitHub for pre upgrade setup
-    try:
-    - script:
-        content: |
-          #!/bin/bash
-          
-          # Define variables
-          REPO_URL="https://api.github.com/repos/odigos-io/odigos/releases/latest"
-          ARCH=$(uname -m) # Get the system architecture
-          OS=$(uname | tr '[:upper:]' '[:lower:]') # Get the OS name in lowercase
+    - name: Prepare destination
+      try:
+        - script:
+            timeout: 60s
+            content: |
+              if helm status e2e-tests -n traces >/dev/null 2>&1; then
+                echo "e2e-tests helm already installed, probably from previous run. Skipping..."
+              else
+                helm repo add grafana https://grafana.github.io/helm-charts
+                helm repo update
+                helm install e2e-tests grafana/tempo -n traces --create-namespace --set tempo.storage.trace.block.version=vParquet4 \
+                --set tempo.ingester.trace_idle_period=5s \
+                --set tempo.ingester.max_block_duration=20s \
+                --version 1.10.1
+              fi
+        - assert:
+            file: assert-tempo-running.yaml
+    - name: Wait for destination to be ready
+      try:
+        - script:
+            timeout: 60s
+            content: ../../common/wait_for_dest.sh
+    - name: Install Odigos latest release from GitHub for pre upgrade setup
+      try:
+        - script:
+            content: |
+              #!/bin/bash
 
-          # Convert architecture to match GitHub naming conventions if necessary
-          if [ "$ARCH" = "x86_64" ]; then
-              ARCH="amd64"
-          elif [ "$ARCH" = "aarch64" ]; then
-              ARCH="arm64"
-          fi
+              # Define variables
+              REPO_URL="https://api.github.com/repos/odigos-io/odigos/releases/latest"
+              ARCH=$(uname -m) # Get the system architecture
+              OS=$(uname | tr '[:upper:]' '[:lower:]') # Get the OS name in lowercase
 
-          # Fetch the release assets from GitHub API
-          ASSETS_JSON=$(curl -s "$REPO_URL")
+              # Convert architecture to match GitHub naming conventions if necessary
+              if [ "$ARCH" = "x86_64" ]; then
+                  ARCH="amd64"
+              elif [ "$ARCH" = "aarch64" ]; then
+                  ARCH="arm64"
+              fi
 
-          # Find the download URL that matches the OS and architecture
-          DOWNLOAD_URL=$(echo "$ASSETS_JSON" | grep "browser_download_url" | grep "$OS" | grep "$ARCH" | cut -d '"' -f 4)
+              # Fetch the release assets from GitHub API
+              ASSETS_JSON=$(curl -s "$REPO_URL")
 
-          # Check if the download URL was found
-          if [ -z "$DOWNLOAD_URL" ]; then
-              echo "No matching release found for OS: $OS and Architecture: $ARCH"
-              exit 1
-          fi
+              # Find the download URL that matches the OS and architecture
+              DOWNLOAD_URL=$(echo "$ASSETS_JSON" | grep "browser_download_url" | grep "$OS" | grep "$ARCH" | cut -d '"' -f 4)
 
-          # Download the matched asset
-          curl -L -o odigos-latest.tar.gz "$DOWNLOAD_URL"
+              # Check if the download URL was found
+              if [ -z "$DOWNLOAD_URL" ]; then
+                  echo "No matching release found for OS: $OS and Architecture: $ARCH"
+                  exit 1
+              fi
 
-          # Extract the downloaded file
-          tar -xvzf odigos-latest.tar.gz
+              # Download the matched asset
+              curl -L -o odigos-latest.tar.gz "$DOWNLOAD_URL"
 
-          # cleanup any existing installation of odigos the might be left over from previous runs while developing
-          ./odigos uninstall --yes
-          # Run the Odigos CLI installation
-          ./odigos install --namespace odigos-test-cli-upgrade
-        timeout: 120s # longer timeout since the images are being pulled from dockerhub
-    - assert:
-        file: assert-odigos-installed.yaml
-  - name: Install Demo App
-    try:
-    - script:
-        timeout: 100s
-        content: |
-          docker pull keyval/odigos-demo-inventory:v0.1
-          docker pull keyval/odigos-demo-membership:v0.1
-          docker pull keyval/odigos-demo-coupon:v0.1
-          docker pull keyval/odigos-demo-inventory:v0.1
-          docker pull keyval/odigos-demo-frontend:v0.2
-          kind load docker-image keyval/odigos-demo-inventory:v0.1
-          kind load docker-image keyval/odigos-demo-membership:v0.1
-          kind load docker-image keyval/odigos-demo-coupon:v0.1
-          kind load docker-image keyval/odigos-demo-inventory:v0.1
-          kind load docker-image keyval/odigos-demo-frontend:v0.2
-    - apply:
-        file: 02-install-simple-demo.yaml
-    - assert:
-        file: assert-apps-installed.yaml
-  - name: Detect Languages
-    try:
-    - apply:
-        file: 03-instrument-ns.yaml
-    - assert:
-        file: assert-runtime-detected.yaml
-  - name: Add Destination
-    try:
-    - apply:
-        file: 04-add-destination.yaml
-    - assert:
-        file: assert-instrumented-and-pipeline.yaml
-  - name: Upgrade to HEAD version with the current compiled cli
-    try:
-    - script:
-        content: ../../../cli/odigos upgrade --version e2e-test --skip-version-check # since the tag e2e-test is not a valid semantic version, we need to bypass it with --skip-version-check
-        timeout: 60s
-    - assert:
-        file: assert-odigos-upgraded.yaml
-  - name: Generate Traffic
-    try:
-    - script:
-        timeout: 60s
-        content: |
-          while true; do
-            # Apply the job
-            kubectl apply -f 05-generate-traffic.yaml
-            
-            # Wait for the job to complete
-            job_name=$(kubectl get -f 05-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
-            kubectl wait --for=condition=complete job/$job_name
-            
-            # Delete the job
-            kubectl delete -f 05-generate-traffic.yaml
-            
-            # Run the wait-for-trace script
-            ../../common/traceql_runner.sh tracesql/wait-for-trace.yaml
-            if [ $? -eq 0 ]; then
-              break
-            else
-              sleep 3
-              ../../common/flush_traces.sh
-            fi
-          done
-  - name: Verify Trace - Context Propagation
-    try:
-    - script:
-        content: |
-          ../../common/traceql_runner.sh tracesql/context-propagation.yaml
-    catch:
-    - podLogs:
-        name: odiglet
-        namespace: odigos-test-cli-upgrade
-  - name: Verify Trace - Resource Attributes
-    try:
-    - script:
-        content: |
-          ../../common/traceql_runner.sh tracesql/resource-attributes.yaml
-    catch:
-    - podLogs:
-        name: odiglet
-        namespace: odigos-test-cli-upgrade
-  - name: Verify Trace - Span Attributes
-    try:
-      - script:
-          timeout: 60s
-          content: |
-            ../../common/traceql_runner.sh tracesql/span-attributes.yaml
-    catch:
-      - podLogs:
-          name: odiglet
-          namespace: odigos-test-cli-upgrade
+              # Extract the downloaded file
+              tar -xvzf odigos-latest.tar.gz
+
+              # cleanup any existing installation of odigos the might be left over from previous runs while developing
+              ./odigos uninstall --yes
+              # Run the Odigos CLI installation
+              ./odigos install --namespace odigos-test-cli-upgrade
+            timeout: 120s # longer timeout since the images are being pulled from dockerhub
+        - assert:
+            file: assert-odigos-installed.yaml
+    - name: Install Demo App
+      try:
+        - script:
+            timeout: 100s
+            content: |
+              docker pull keyval/odigos-demo-inventory:v0.1
+              docker pull keyval/odigos-demo-membership:v0.1
+              docker pull keyval/odigos-demo-coupon:v0.1
+              docker pull keyval/odigos-demo-inventory:v0.1
+              docker pull keyval/odigos-demo-frontend:v0.2
+              kind load docker-image keyval/odigos-demo-inventory:v0.1
+              kind load docker-image keyval/odigos-demo-membership:v0.1
+              kind load docker-image keyval/odigos-demo-coupon:v0.1
+              kind load docker-image keyval/odigos-demo-inventory:v0.1
+              kind load docker-image keyval/odigos-demo-frontend:v0.2
+        - apply:
+            file: 02-install-simple-demo.yaml
+        - assert:
+            file: assert-apps-installed.yaml
+    - name: Detect Languages
+      try:
+        - apply:
+            file: 03-instrument-ns.yaml
+        - assert:
+            file: assert-runtime-detected.yaml
+    - name: Add Destination
+      try:
+        - apply:
+            file: 04-add-destination.yaml
+        - assert:
+            file: assert-instrumented-and-pipeline.yaml
+    - name: Upgrade to HEAD version with the current compiled cli
+      try:
+        - script:
+            content: ../../../cli/odigos upgrade --version e2e-test --skip-version-check # since the tag e2e-test is not a valid semantic version, we need to bypass it with --skip-version-check
+            timeout: 60s
+        - assert:
+            file: assert-odigos-upgraded.yaml
+    - name: Generate Traffic
+      try:
+        - script:
+            timeout: 300s
+            content: |
+              # Make sure that odigos components are ready
+              sleep 20
+
+              # Apply the job
+              kubectl apply -f 05-generate-traffic.yaml
+
+              # Wait for the job to complete
+              job_name=$(kubectl get -f 05-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
+              kubectl wait --for=condition=complete job/$job_name
+
+              # Delete the job
+              kubectl delete -f 05-generate-traffic.yaml      
+
+              while true; do
+                # wait for traces to be available
+                sleep 8
+
+                # Run the wait-for-trace script
+                echo "Running TraceQL test at $(date)"
+                ../../common/traceql_runner.sh tracesql/wait-for-trace.yaml
+
+                if [ $? -eq 0 ]; then
+                  break
+                else
+                  ../../common/flush_traces.sh
+                  sleep 5
+                fi
+              done
+    - name: Verify Trace - Context Propagation
+      try:
+        - script:
+            content: |
+              ../../common/traceql_runner.sh tracesql/context-propagation.yaml
+      catch:
+        - podLogs:
+            name: odiglet
+            namespace: odigos-test-cli-upgrade
+    - name: Verify Trace - Resource Attributes
+      try:
+        - script:
+            content: |
+              ../../common/traceql_runner.sh tracesql/resource-attributes.yaml
+      catch:
+        - podLogs:
+            name: odiglet
+            namespace: odigos-test-cli-upgrade
+    - name: Verify Trace - Span Attributes
+      try:
+        - script:
+            timeout: 60s
+            content: |
+              ../../common/traceql_runner.sh tracesql/span-attributes.yaml
+      catch:
+        - podLogs:
+            name: odiglet
+            namespace: odigos-test-cli-upgrade
