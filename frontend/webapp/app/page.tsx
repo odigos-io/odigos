@@ -19,10 +19,10 @@ export default function App() {
   } = useQuery([QUERIES.API_DESTINATIONS], getDestinations);
 
   useEffect(() => {
-    if (isConfigLoading || isDestinationLoading) return;
+    if (isConfigLoading || isDestinationLoading || error) return;
 
     renderCurrentPage();
-  }, [data, destinationList, isConfigLoading]);
+  }, [data, destinationList, isConfigLoading || error]);
 
   useEffect(() => {
     if (!error) return;
