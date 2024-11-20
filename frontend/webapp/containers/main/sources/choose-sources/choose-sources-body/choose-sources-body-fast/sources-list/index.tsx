@@ -125,7 +125,7 @@ export const SourcesList: React.FC<Props> = ({
         const selected = selectedSources[namespace] || [];
         const futureApps = selectedFutureApps[namespace] || false;
 
-        const namespacePassesFilters = (!searchText || namespace.toLowerCase().includes(searchText)) && (!showSelectedOnly || !!selected.length);
+        const namespacePassesFilters = !searchText || namespace.toLowerCase().includes(searchText);
         if (!namespacePassesFilters) return null;
 
         const isNamespaceSelected = selectedNamespace === namespace && !selectAllForNamespace;
