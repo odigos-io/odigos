@@ -31,6 +31,7 @@ type ConnectionHandlers struct {
 	kubeClientSet *kubernetes.Clientset
 	scheme        *runtime.Scheme // TODO: revisit this, we should not depend on controller runtime
 	nodeName      string
+	ebpfcb        EbpfHooks
 }
 
 type opampAgentAttributesKeys struct {
@@ -95,6 +96,16 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 	}
 	c.logger.Info("new OpAMP client connected", "deviceId", deviceId, "namespace", k8sAttributes.Namespace, "podName", k8sAttributes.PodName, "instrumentedAppName", instrumentedAppName, "workloadKind", k8sAttributes.WorkloadKind, "workloadName", k8sAttributes.WorkloadName, "containerName", k8sAttributes.ContainerName, "otelServiceName", k8sAttributes.OtelServiceName)
 
+	var ebpfCloseFunction func() error
+	if c.ebpfcb != nil {
+		otelResourceAttrs := opampResourceAttributesToOtel(remoteResourceAttributes)
+		closeFunction, err := c.ebpfcb.OnNewInstrumentedProcess(ctx, attrs.ProgrammingLanguage, pid, k8sAttributes.OtelServiceName, otelResourceAttrs)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to load ebpf instrumentation program: %w", err)
+		}
+		ebpfCloseFunction = closeFunction
+	}
+
 	connectionInfo := &connection.ConnectionInfo{
 		DeviceId:                 deviceId,
 		Workload:                 podWorkload,
@@ -105,6 +116,7 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 		InstrumentedAppName:      instrumentedAppName,
 		AgentRemoteConfig:        fullRemoteConfig,
 		RemoteResourceAttributes: remoteResourceAttributes,
+		EbpfCloseFunction:        ebpfCloseFunction,
 	}
 
 	serverToAgent := &protobufs.ServerToAgent{
@@ -132,10 +144,36 @@ func (c *ConnectionHandlers) OnAgentToServerMessage(ctx context.Context, request
 }
 
 func (c *ConnectionHandlers) OnConnectionClosed(ctx context.Context, connectionInfo *connection.ConnectionInfo) {
+
+	if connectionInfo == nil {
+		// should not happen, safegurad against nil pointer
+		c.logger.Error(fmt.Errorf("missing connection info"), "OnConnectionClosed called with nil connection info")
+		return
+	}
+	if connectionInfo.EbpfCloseFunction != nil {
+		// signal the eBPF program to stop and release resources. fire and forget
+		err := connectionInfo.EbpfCloseFunction()
+		if err != nil {
+			c.logger.Error(err, "failed to unload eBPF program")
+		}
+	}
+
 	// keep the instrumentation instance CR in unhealthy state so it can be used for troubleshooting
 }
 
 func (c *ConnectionHandlers) OnConnectionNoHeartbeat(ctx context.Context, connectionInfo *connection.ConnectionInfo) error {
+
+	if connectionInfo == nil {
+		return fmt.Errorf("missing connection info")
+	}
+	if connectionInfo.EbpfCloseFunction != nil {
+		// signal the eBPF program to stop and release resources. fire and forget
+		err := connectionInfo.EbpfCloseFunction()
+		if err != nil {
+			c.logger.Error(err, "failed to unload eBPF program")
+		}
+	}
+
 	healthy := false
 	message := fmt.Sprintf("OpAMP server did not receive heartbeat from the agent, last message time: %s", connectionInfo.LastMessageTime.Format("2006-01-02 15:04:05 MST"))
 	// keep the instrumentation instance CR in unhealthy state so it can be used for troubleshooting
