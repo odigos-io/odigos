@@ -100,6 +100,7 @@ export const SourcesList: React.FC<Props> = ({
   onSelectFutureApps,
 
   searchText,
+  selectAllForNamespace,
   onSelectAll,
   showSelectedOnly,
 
@@ -124,10 +125,10 @@ export const SourcesList: React.FC<Props> = ({
         const selected = selectedSources[namespace] || [];
         const futureApps = selectedFutureApps[namespace] || false;
 
-        const namespacePassesFilters = (!searchText || namespace.toLowerCase().includes(searchText)) && (!showSelectedOnly || !!selected.length);
+        const namespacePassesFilters = !searchText || namespace.toLowerCase().includes(searchText);
         if (!namespacePassesFilters) return null;
 
-        const isNamespaceSelected = selectedNamespace === namespace;
+        const isNamespaceSelected = selectedNamespace === namespace && !selectAllForNamespace;
         const isNamespaceCanSelect = namespaceLoaded && !!available.length;
         const isNamespaceAllSourcesSelected = isNamespaceCanSelect && selected.length === sources.length;
 
@@ -138,14 +139,7 @@ export const SourcesList: React.FC<Props> = ({
           <Group key={`namespace-${namespace}`} $selected={isNamespaceAllSourcesSelected} $isOpen={isNamespaceSelected && hasFilteredSources}>
             <NamespaceItem $selected={isNamespaceAllSourcesSelected} onClick={() => onSelectNamespace(namespace)}>
               <FlexRow>
-                <Checkbox
-                  // disabled={!isNamespaceCanSelect}
-                  initialValue={isNamespaceAllSourcesSelected}
-                  onChange={(bool) => {
-                    if (bool) onSelectNamespace(namespace);
-                    onSelectAll(bool, namespace);
-                  }}
-                />
+                <Checkbox disabled={namespaceLoaded && !isNamespaceCanSelect} initialValue={isNamespaceAllSourcesSelected} onChange={(bool) => onSelectAll(bool, namespace)} />
                 <Text>{namespace}</Text>
               </FlexRow>
 
@@ -175,7 +169,7 @@ export const SourcesList: React.FC<Props> = ({
                           <Checkbox initialValue={isSourceSelected} onChange={() => onSelectSource(source, namespace)} />
                           <Text>{source.name}</Text>
                           <Text opacity={0.8} size={10}>
-                            {source.numberOfInstances} running instances · {source.kind}
+                            {source.numberOfInstances} running instance{source.numberOfInstances !== 1 && 's'} · {source.kind}
                           </Text>
                         </FlexRow>
                       </SourceItem>
