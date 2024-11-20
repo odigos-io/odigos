@@ -26,13 +26,7 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers/startlangdetection"
 	"github.com/odigos-io/odigos/instrumentor/sdks"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	corev1 "k8s.io/api/core/v1"
-
-	"github.com/odigos-io/odigos/common/consts"
-	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/apimachinery/pkg/labels"
 
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -53,13 +47,11 @@ import (
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
-	"k8s.io/client-go/kubernetes"
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	"k8s.io/client-go/rest"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -118,66 +110,6 @@ func main() {
 			// Store minimum amount of data for every object type.
 			// Currently, instrumentor only need the labels and the .spec.template.spec field of the workloads.
 			ByObject: map[client.Object]cache.ByObject{
-				&appsv1.Deployment{}: {
-					Transform: func(obj interface{}) (interface{}, error) {
-						deployment := obj.(*appsv1.Deployment)
-						newDep := &appsv1.Deployment{
-							TypeMeta: deployment.TypeMeta,
-							ObjectMeta: metav1.ObjectMeta{
-								Name:        deployment.Name,
-								Namespace:   deployment.Namespace,
-								Labels:      deployment.Labels,
-								Annotations: deployment.Annotations,
-								UID:         deployment.UID,
-							},
-							Status: deployment.Status,
-						}
-
-						newDep.Spec.Template.Spec = deployment.Spec.Template.Spec
-						return newDep, nil
-					},
-				},
-				&appsv1.StatefulSet{}: {
-					Transform: func(obj interface{}) (interface{}, error) {
-						ss := obj.(*appsv1.StatefulSet)
-						newSs := &appsv1.StatefulSet{
-							TypeMeta: ss.TypeMeta,
-							ObjectMeta: metav1.ObjectMeta{
-								Name:        ss.Name,
-								Namespace:   ss.Namespace,
-								Labels:      ss.Labels,
-								Annotations: ss.Annotations,
-								UID:         ss.UID,
-							},
-							Status: ss.Status,
-						}
-
-						newSs.Spec.Template.Spec = ss.Spec.Template.Spec
-						return newSs, nil
-					},
-				},
-				&appsv1.DaemonSet{}: {
-					Transform: func(obj interface{}) (interface{}, error) {
-						ds := obj.(*appsv1.DaemonSet)
-						newDs := &appsv1.DaemonSet{
-							TypeMeta: ds.TypeMeta,
-							ObjectMeta: metav1.ObjectMeta{
-								Name:        ds.Name,
-								Namespace:   ds.Namespace,
-								Labels:      ds.Labels,
-								Annotations: ds.Annotations,
-								UID:         ds.UID,
-							},
-							Status: ds.Status,
-						}
-
-						newDs.Spec.Template.Spec = ds.Spec.Template.Spec
-						return newDs, nil
-					},
-				},
-				&corev1.Namespace{}: {
-					Label: labels.Set{consts.OdigosInstrumentationLabel: consts.InstrumentationEnabled}.AsSelector(),
-				},
 				&corev1.ConfigMap{}: {
 					Field: client.InNamespace(env.GetCurrentNamespace()).AsSelector(),
 				},
@@ -202,21 +134,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Init Kubernetes API client
-	cfg, err := rest.InClusterConfig()
-	if err != nil {
-		setupLog.Error(err, "Failed to init Kubernetes API client")
-		os.Exit(-1)
-	}
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		setupLog.Error(err, "Failed to init Kubernetes API client")
-		os.Exit(-1)
-	}
-
 	ctx := signals.SetupSignalHandler()
 
-	err = sdks.SetDefaultSDKs(ctx, clientset)
+	err = sdks.SetDefaultSDKs(ctx)
+
 	if err != nil {
 		setupLog.Error(err, "Failed to set default SDKs")
 		os.Exit(-1)

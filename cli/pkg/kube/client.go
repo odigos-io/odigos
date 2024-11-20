@@ -11,9 +11,10 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
 	k8stypes "k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"k8s.io/apimachinery/pkg/util/version"
 	"sigs.k8s.io/yaml"
 
 	"github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
@@ -36,7 +37,25 @@ type Client struct {
 	Config        *rest.Config
 }
 
-func CreateClient(cmd *cobra.Command) (*Client, error) {
+// Identical to the Object interface defined in controller-runtime: https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/client#Object
+// This is a workaround to avoid importing controller-runtime in the cli package
+type Object interface {
+	metav1.Object
+	runtime.Object
+}
+
+// GetCLIClientOrExit returns the current kube client from cmd.Context() if one exists.
+// otherwise it creates a new client and returns it.
+func GetCLIClientOrExit(cmd *cobra.Command) *Client {
+	// we can check the cmd context for client, but currently avoiding that due to circular dependencies
+	client, err := createClient(cmd)
+	if err != nil {
+		PrintClientErrorAndExit(err)
+	}
+	return client
+}
+
+func createClient(cmd *cobra.Command) (*Client, error) {
 	kc := cmd.Flag("kubeconfig").Value.String()
 
 	config, err := k8sutils.GetClientConfig(kc)
@@ -79,7 +98,7 @@ func PrintClientErrorAndExit(err error) {
 	os.Exit(-1)
 }
 
-func (c *Client) ApplyResources(ctx context.Context, configVersion int, objs []client.Object) error {
+func (c *Client) ApplyResources(ctx context.Context, configVersion int, objs []Object) error {
 	for _, obj := range objs {
 		err := c.ApplyResource(ctx, configVersion, obj)
 		if err != nil {
@@ -94,7 +113,7 @@ func (c *Client) ApplyResources(ctx context.Context, configVersion int, objs []c
 // and apparently this field id immutable:
 // ERROR Deployment.apps "odigos-instrumentor" is invalid: spec.selector: Invalid value: v1.LabelSelector{MatchLabels:map[string]string{"app.kubernetes.io/name":"odigos-instrumentor"}, MatchExpressions:[]v1.LabelSelectorRequirement(nil)}: field is immutable
 // Once we end support for odigos versions <v1.0.23 we can remove this function
-func (c *Client) deleteResourceBeforeAppending(ctx context.Context, obj client.Object) error {
+func (c *Client) deleteResourceBeforeAppending(ctx context.Context, obj Object) error {
 	gvk := obj.GetObjectKind().GroupVersionKind()
 	switch gvk.Kind {
 
@@ -153,7 +172,7 @@ func (c *Client) deleteResourceBeforeAppending(ctx context.Context, obj client.O
 	return nil
 }
 
-func (c *Client) ApplyResource(ctx context.Context, configVersion int, obj client.Object) error {
+func (c *Client) ApplyResource(ctx context.Context, configVersion int, obj Object) error {
 
 	err := c.deleteResourceBeforeAppending(ctx, obj)
 	if err != nil {
@@ -184,13 +203,33 @@ func (c *Client) ApplyResource(ctx context.Context, configVersion int, obj clien
 	return err
 }
 
-func (c *Client) DeleteOldOdigosSystemObjects(ctx context.Context, resourceAndNamespace ResourceAndNs, configVersion int) error {
+func (c *Client) DeleteOldOdigosSystemObjects(ctx context.Context, resourceAndNamespace ResourceAndNs, configVersion int, k8sVersion *version.Version) error {
 	systemObject, _ := k8slabels.NewRequirement(odigoslabels.OdigosSystemLabelKey, selection.Equals, []string{odigoslabels.OdigosSystemLabelValue})
 	notLatestVersion, _ := k8slabels.NewRequirement(odigoslabels.OdigosSystemConfigLabelKey, selection.NotEquals, []string{strconv.Itoa(configVersion)})
 	labelSelector := k8slabels.NewSelector().Add(*systemObject).Add(*notLatestVersion).String()
 	resource := resourceAndNamespace.Resource
 	ns := resourceAndNamespace.Namespace
-	return c.Dynamic.Resource(resource).Namespace(ns).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
-		LabelSelector: labelSelector,
-	})
+	// DeleteCollection is only available in k8s 1.23 and above, for older versions we need to list and delete each resource
+	if k8sVersion != nil && k8sVersion.GreaterThan(version.MustParse("1.23")) {
+		return c.Dynamic.Resource(resource).Namespace(ns).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
+			LabelSelector: labelSelector,
+		})
+	} else {
+		listOptions := metav1.ListOptions{
+			LabelSelector: labelSelector,
+		}
+		resourceList, err := c.Dynamic.Resource(resource).Namespace(ns).List(ctx, listOptions)
+		if err != nil {
+			return fmt.Errorf("failed to list resources: %w", err)
+		}
+
+		// Delete each resource individually
+		for _, item := range resourceList.Items {
+			err = c.Dynamic.Resource(resource).Namespace(ns).Delete(ctx, item.GetName(), metav1.DeleteOptions{})
+			if err != nil {
+				return fmt.Errorf("failed to delete resource %s: %w", item.GetName(), err)
+			}
+		}
+	}
+	return nil
 }

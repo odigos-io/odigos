@@ -1,7 +1,23 @@
 'use client';
 import React from 'react';
-import Logo from '@/assets/logos/odigos-gradient.svg';
-import { LogoWrapper, SetupPageContainer } from './styled';
+import styled from 'styled-components';
+
+const LayoutContainer = styled.div`
+  width: 100%;
+  height: 100vh;
+  background-color: ${({ theme }) => theme.colors.primary};
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+`;
+
+const MainContent = styled.div`
+  display: flex;
+  max-width: 1440px;
+  width: 100vh;
+  flex-direction: column;
+  align-items: center;
+`;
 
 export default function SetupLayout({
   children,
@@ -9,11 +25,8 @@ export default function SetupLayout({
   children: React.ReactNode;
 }) {
   return (
-    <SetupPageContainer>
-      <LogoWrapper>
-        <Logo />
-      </LogoWrapper>
-      {children}
-    </SetupPageContainer>
+    <LayoutContainer>
+      <MainContent>{children}</MainContent>
+    </LayoutContainer>
   );
 }

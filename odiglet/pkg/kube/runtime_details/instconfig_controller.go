@@ -9,9 +9,8 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -30,6 +29,7 @@ type DeprecatedInstrumentationConfigReconciler struct {
 
 func (i *DeprecatedInstrumentationConfigReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	logger := log.FromContext(ctx)
+
 	var instConfig odigosv1.InstrumentationConfig
 	err := i.Get(ctx, request.NamespacedName, &instConfig)
 	if err != nil {

@@ -9,10 +9,10 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/crypto"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	certv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
+	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -64,54 +64,6 @@ func NewInstrumentorLeaderElectionRoleBinding(ns string) *rbacv1.RoleBinding {
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "Role",
 			Name:     "odigos-leader-election-role",
-		},
-	}
-}
-
-func NewInstrumentorRoleBinding(ns string) *rbacv1.RoleBinding {
-	return &rbacv1.RoleBinding{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "RoleBinding",
-			APIVersion: "rbac.authorization.k8s.io/v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "odigos-instrumentor",
-			Namespace: ns,
-		},
-		Subjects: []rbacv1.Subject{
-			{
-				Kind: "ServiceAccount",
-				Name: "odigos-instrumentor",
-			},
-		},
-		RoleRef: rbacv1.RoleRef{
-			APIGroup: "rbac.authorization.k8s.io",
-			Kind:     "Role",
-			Name:     "odigos-instrumentor",
-		},
-	}
-}
-
-func NewInstrumentorRole(ns string) *rbacv1.Role {
-	return &rbacv1.Role{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Role",
-			APIVersion: "rbac.authorization.k8s.io/v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "odigos-instrumentor",
-			Namespace: ns,
-		},
-		Rules: []rbacv1.PolicyRule{
-			{
-				Verbs: []string{
-					"get",
-				},
-				APIGroups: []string{""},
-				Resources: []string{
-					"secrets",
-				},
-			},
 		},
 	}
 }
@@ -526,7 +478,15 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 										},
 									},
 								},
+								{
+									ConfigMapRef: &corev1.ConfigMapEnvSource{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: consts.OdigosDeploymentConfigMapName,
+										},
+									},
+								},
 							},
+
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "webhook-server",
@@ -628,10 +588,8 @@ func (a *instrumentorResourceManager) Name() string { return "Instrumentor" }
 
 func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) error {
 	certManagerInstalled := isCertManagerInstalled(ctx, a.client)
-	resources := []client.Object{
+	resources := []kube.Object{
 		NewInstrumentorServiceAccount(a.ns),
-		NewInstrumentorRole(a.ns),
-		NewInstrumentorRoleBinding(a.ns),
 		NewInstrumentorLeaderElectionRoleBinding(a.ns),
 		NewInstrumentorClusterRole(),
 		NewInstrumentorClusterRoleBinding(a.ns),
@@ -640,7 +598,7 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 	}
 
 	if certManagerInstalled {
-		resources = append([]client.Object{NewInstrumentorIssuer(a.ns),
+		resources = append([]kube.Object{NewInstrumentorIssuer(a.ns),
 			NewInstrumentorCertificate(a.ns),
 			NewMutatingWebhookConfiguration(a.ns, nil),
 		},
@@ -661,7 +619,7 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 			return fmt.Errorf("failed to generate signed certificate: %w", err)
 		}
 
-		resources = append([]client.Object{NewInstrumentorTLSSecret(a.ns, &cert),
+		resources = append([]kube.Object{NewInstrumentorTLSSecret(a.ns, &cert),
 			NewMutatingWebhookConfiguration(a.ns, []byte(cert.Cert)),
 		},
 			resources...)

@@ -22,7 +22,10 @@ import (
 	"os"
 	"strings"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	odigosver "github.com/odigos-io/odigos/k8sutils/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -31,6 +34,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 
+	"github.com/go-logr/logr"
 	"github.com/go-logr/zapr"
 	bridge "github.com/odigos-io/opentelemetry-zap-bridge"
 
@@ -40,7 +44,9 @@ import (
 
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/version"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -53,6 +59,7 @@ import (
 
 	"github.com/odigos-io/odigos/autoscaler/controllers"
 	"github.com/odigos-io/odigos/autoscaler/controllers/actions"
+	controllerconfig "github.com/odigos-io/odigos/autoscaler/controllers/controller_config"
 	"github.com/odigos-io/odigos/autoscaler/controllers/gateway"
 	nameutils "github.com/odigos-io/odigos/autoscaler/utils"
 
@@ -79,7 +86,6 @@ func main() {
 	var probeAddr string
 	var imagePullSecretsString string
 	var imagePullSecrets []string
-	odigosVersion := os.Getenv("ODIGOS_VERSION")
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
@@ -90,8 +96,14 @@ func main() {
 		"The image pull secrets to use for the collectors created by autoscaler")
 	flag.StringVar(&nameutils.ImagePrefix, "image-prefix", "", "The image prefix to use for the collectors created by autoscaler")
 
+	odigosVersion := os.Getenv("ODIGOS_VERSION")
 	if odigosVersion == "" {
 		flag.StringVar(&odigosVersion, "version", "", "for development purposes only")
+	}
+	// Get k8s version
+	k8sVersion, err := odigosver.GetKubernetesVersion()
+	if err != nil {
+		setupLog.Error(err, "unable to get Kubernetes version, continuing with default oldest supported version")
 	}
 
 	opts := ctrlzap.Options{
@@ -121,7 +133,8 @@ func main() {
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
 	clusterCollectorLabelSelector := labels.Set(gateway.ClusterCollectorGateway).AsSelector()
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	cfg := ctrl.GetConfigOrDie()
+	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
 			BindAddress: metricsAddr,
@@ -157,10 +170,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = MigrateCollectorsWorkloadToNewLabels(context.Background(), mgr.GetClient(), odigosNs)
-	if err != nil {
-		setupLog.Error(err, "unable to migrate collectors workload to new labels")
-		os.Exit(1)
+	// The labaling was for ver 1.0.91, migration is not releavant for old k8s versions which couln't run.
+	// This is the reason we skip it for versions < 1.23 (Also, versions < 1.23 require a non-caching client and API chane)
+	if k8sVersion != nil && k8sVersion.GreaterThan(version.MustParse("v1.23")) {
+		// Use the cached client for versions >= 1.23
+		err = MigrateCollectorsWorkloadToNewLabels(context.Background(), mgr.GetClient(), odigosNs)
+		if err != nil {
+			setupLog.Error(err, "unable to migrate collectors workload to new labels")
+			os.Exit(1)
+		}
 	}
 
 	// The name processor is used to transform device ids injected with the virtual device,
@@ -169,11 +187,16 @@ func main() {
 	// at the time of writing (2024-10-22) only dotnet and java native agent are using the name processor.
 	_, disableNameProcessor := os.LookupEnv("DISABLE_NAME_PROCESSOR")
 
+	config := &controllerconfig.ControllerConfig{
+		MetricsServerEnabled: isMetricsServerInstalled(mgr, setupLog),
+	}
+
 	if err = (&controllers.DestinationReconciler{
 		Client:           mgr.GetClient(),
 		Scheme:           mgr.GetScheme(),
 		ImagePullSecrets: imagePullSecrets,
 		OdigosVersion:    odigosVersion,
+		Config:           config,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Destination")
 		os.Exit(1)
@@ -184,7 +207,9 @@ func main() {
 		Scheme:               mgr.GetScheme(),
 		ImagePullSecrets:     imagePullSecrets,
 		OdigosVersion:        odigosVersion,
+		K8sVersion:           k8sVersion,
 		DisableNameProcessor: disableNameProcessor,
+		Config:               config,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Processor")
 		os.Exit(1)
@@ -194,7 +219,9 @@ func main() {
 		Scheme:               mgr.GetScheme(),
 		ImagePullSecrets:     imagePullSecrets,
 		OdigosVersion:        odigosVersion,
+		K8sVersion:           k8sVersion,
 		DisableNameProcessor: disableNameProcessor,
+		Config:               config,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "CollectorsGroup")
 		os.Exit(1)
@@ -204,6 +231,7 @@ func main() {
 		Scheme:               mgr.GetScheme(),
 		ImagePullSecrets:     imagePullSecrets,
 		OdigosVersion:        odigosVersion,
+		K8sVersion:           k8sVersion,
 		DisableNameProcessor: disableNameProcessor,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "InstrumentedApplication")
@@ -214,6 +242,7 @@ func main() {
 		Scheme:           mgr.GetScheme(),
 		ImagePullSecrets: imagePullSecrets,
 		OdigosVersion:    odigosVersion,
+		Config:           config,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "OdigosConfig")
 		os.Exit(1)
@@ -223,6 +252,7 @@ func main() {
 		Scheme:           mgr.GetScheme(),
 		ImagePullSecrets: imagePullSecrets,
 		OdigosVersion:    odigosVersion,
+		Config:           config,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Secret")
 		os.Exit(1)
@@ -261,4 +291,22 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func isMetricsServerInstalled(mgr ctrl.Manager, logger logr.Logger) bool {
+	var metricsServerDeployment appsv1.Deployment
+	// Use APIReader (uncached client) for direct access to the API server
+	// uses because mgr not cache the metrics-server deployment
+	err := mgr.GetAPIReader().Get(context.TODO(), types.NamespacedName{Name: "metrics-server", Namespace: "kube-system"}, &metricsServerDeployment)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			logger.Info("Metrics-server deployment not found")
+		} else {
+			logger.Error(err, "Failed to get metrics-server deployment")
+		}
+		return false
+	}
+
+	logger.V(0).Info("Metrics server found")
+	return true
 }

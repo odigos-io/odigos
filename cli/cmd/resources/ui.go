@@ -12,7 +12,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
@@ -247,7 +246,7 @@ func NewUIClusterRole() *rbacv1.ClusterRole {
 			{
 				APIGroups: []string{"apps"},
 				Resources: []string{"deployments", "statefulsets", "daemonsets"},
-				Verbs:     []string{"get", "list", "watch", "patch"},
+				Verbs:     []string{"get", "list", "watch", "patch", "update"},
 			},
 			{
 				APIGroups: []string{"odigos.io"},
@@ -310,6 +309,10 @@ func NewUIService(ns string) *corev1.Service {
 					Port: 3000,
 				},
 				{
+					Name: "beta-ui",
+					Port: 3001,
+				},
+				{
 					Name: "otlp",
 					Port: consts.OTLPPort,
 				},
@@ -319,7 +322,7 @@ func NewUIService(ns string) *corev1.Service {
 }
 
 func (u *uiResourceManager) InstallFromScratch(ctx context.Context) error {
-	resources := []client.Object{
+	resources := []kube.Object{
 		NewUIServiceAccount(u.ns),
 		NewUIRole(u.ns),
 		NewUIRoleBinding(u.ns),

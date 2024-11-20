@@ -22,7 +22,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    odigos.io/collector-role: "CLUSTER_GATEWAY"
+    odigos.io/collector-role: 'CLUSTER_GATEWAY'
   name: odigos-gateway
   namespace: odigos-test-cli-upgrade
   ownerReferences:
@@ -35,11 +35,11 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      odigos.io/collector-role: "CLUSTER_GATEWAY"
+      odigos.io/collector-role: 'CLUSTER_GATEWAY'
   template:
     metadata:
       labels:
-        odigos.io/collector-role: "CLUSTER_GATEWAY"
+        odigos.io/collector-role: 'CLUSTER_GATEWAY'
     spec:
       containers:
         - env:
@@ -105,7 +105,7 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   labels:
-    odigos.io/collector-role: "NODE_COLLECTOR"
+    odigos.io/collector-role: 'NODE_COLLECTOR'
   name: odigos-data-collection
   namespace: odigos-test-cli-upgrade
   ownerReferences:
@@ -117,11 +117,11 @@ metadata:
 spec:
   selector:
     matchLabels:
-      odigos.io/collector-role: "NODE_COLLECTOR"
+      odigos.io/collector-role: 'NODE_COLLECTOR'
   template:
     metadata:
       labels:
-        odigos.io/collector-role: "NODE_COLLECTOR"
+        odigos.io/collector-role: 'NODE_COLLECTOR'
     spec:
       containers:
         - name: data-collection
@@ -166,15 +166,15 @@ spec:
           name: conf
         - hostPath:
             path: /var/log
-            type: ""
+            type: ''
           name: varlog
         - hostPath:
             path: /var/lib/docker/containers
-            type: ""
+            type: ''
           name: varlibdockercontainers
         - hostPath:
             path: /var/lib/kubelet/pod-resources
-            type: ""
+            type: ''
           name: kubeletpodresources
 status:
   numberAvailable: 1
@@ -191,9 +191,9 @@ spec:
     - name: frontend
       resources:
         limits:
-          instrumentation.odigos.io/java-native-community: "1"
+          instrumentation.odigos.io/java-native-community: '1'
         requests:
-          instrumentation.odigos.io/java-native-community: "1"
+          instrumentation.odigos.io/java-native-community: '1'
 status:
   containerStatuses:
     - name: frontend
@@ -213,9 +213,9 @@ spec:
     - name: coupon
       resources:
         limits:
-          instrumentation.odigos.io/javascript-native-community: "1"
+          instrumentation.odigos.io/javascript-native-community: '1'
         requests:
-          instrumentation.odigos.io/javascript-native-community: "1"
+          instrumentation.odigos.io/javascript-native-community: '1'
 status:
   containerStatuses:
     - name: coupon
@@ -235,9 +235,9 @@ spec:
     - name: inventory
       resources:
         limits:
-          instrumentation.odigos.io/python-native-community: "1"
+          instrumentation.odigos.io/python-native-community: '1'
         requests:
-          instrumentation.odigos.io/python-native-community: "1"
+          instrumentation.odigos.io/python-native-community: '1'
 status:
   containerStatuses:
     - name: inventory
@@ -257,9 +257,9 @@ spec:
     - name: membership
       resources:
         limits:
-          instrumentation.odigos.io/go-ebpf-community: "1"
+          instrumentation.odigos.io/go-ebpf-community: '1'
         requests:
-          instrumentation.odigos.io/go-ebpf-community: "1"
+          instrumentation.odigos.io/go-ebpf-community: '1'
 status:
   containerStatuses:
     - name: membership
@@ -279,9 +279,9 @@ spec:
     - name: pricing
       resources:
         limits:
-          instrumentation.odigos.io/dotnet-native-community: "1"
+          instrumentation.odigos.io/dotnet-native-community: '1'
         requests:
-          instrumentation.odigos.io/dotnet-native-community: "1"
+          instrumentation.odigos.io/dotnet-native-community: '1'
 status:
   containerStatuses:
     - name: pricing
@@ -309,7 +309,12 @@ status:
       (value != null): true # This will hold the version before the upgrade
     - key: process.pid
       (value != null): true
----
+    - key: k8s.namespace.name
+      (value != null): true
+    - key: k8s.container.name
+      (value != null): true
+    - key: k8s.pod.name
+      (value != null): true
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationInstance
 metadata:
@@ -325,7 +330,12 @@ status:
       (value != null): true
     - key: telemetry.sdk.language
       value: python
----
+    - key: k8s.namespace.name
+      (value != null): true
+    - key: k8s.container.name
+      (value != null): true
+    - key: k8s.pod.name
+      (value != null): true          
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationInstance
 metadata:

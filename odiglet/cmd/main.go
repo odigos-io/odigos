@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 
+	detector "github.com/odigos-io/odigos/odiglet/pkg/detector"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf/sdks"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/fs"
 
@@ -27,6 +28,9 @@ import (
 )
 
 func odigletInitPhase() {
+	if err := log.Init(); err != nil {
+		panic(err)
+	}
 	err := fs.CopyAgentsDirectoryToHost()
 	if err != nil {
 		log.Logger.Error(err, "Failed to copy agents directory to host")
@@ -71,6 +75,13 @@ func main() {
 
 	go startDeviceManager(clientset)
 
+	procEvents := make(chan detector.ProcessEvent)
+	runtimeDetector, err := detector.StartRuntimeDetector(ctx, log.Logger, procEvents)
+	if err != nil {
+		log.Logger.Error(err, "Failed to start runtime detector")
+		os.Exit(-1)
+	}
+
 	mgr, err := kube.CreateManager()
 	if err != nil {
 		log.Logger.Error(err, "Failed to create controller-runtime manager")
@@ -105,6 +116,12 @@ func main() {
 	for _, director := range ebpfDirectors {
 		director.Shutdown()
 	}
+	err = runtimeDetector.Stop()
+	if err != nil {
+		log.Logger.Error(err, "Failed to stop runtime detector")
+		os.Exit(-1)
+	}
+	log.Logger.V(0).Info("odiglet exiting")
 }
 
 func startDeviceManager(clientset *kubernetes.Clientset) {
