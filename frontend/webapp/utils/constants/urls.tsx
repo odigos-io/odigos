@@ -1,21 +1,19 @@
 'use client';
-const ENV = process.env.NODE_ENV;
-const IS_PRODUCTION = ENV === 'production';
+const IS_PROD = process.env.NODE_ENV === 'production';
 
-// Define base URLs depending on the environment and rendering context
-const LOCAL_API_BASE = 'http://localhost:8085';
-//we use localhost:8085 as the base URL for server environment
-const PRODUCTION_GQL_API_BASE = IS_PRODUCTION && typeof window !== 'undefined' ? `${window.location.origin}/graphql` : `${LOCAL_API_BASE}/graphql`;
-const API_BASE_URL = IS_PRODUCTION ? PRODUCTION_GQL_API_BASE : `${LOCAL_API_BASE}/graphql`;
+// set base URLs for all environments
+const DEV_API_URL = 'http://localhost:8085';
+const PROD_API_URL = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
 
-// Define endpoints based on the base URL
+// construct final base URL based on environment
+const API_BASE_URL = IS_PROD ? PROD_API_URL : DEV_API_URL;
+
+// add paths to base URL
 const API = {
-  BASE_URL: API_BASE_URL,
-  EVENTS: `${IS_PRODUCTION ? '/' : LOCAL_API_BASE}/api/events`,
+  GRAPHQL: `${API_BASE_URL}/graphql`,
+  EVENTS: `${API_BASE_URL}/api/events`,
 };
 
-// Centralize external links
-export const DOCS_LINK = 'https://docs.odigos.io';
+const DOCS_LINK = 'https://docs.odigos.io';
 
-// Export modules
-export { API };
+export { API, DOCS_LINK };
