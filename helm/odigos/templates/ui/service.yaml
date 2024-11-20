@@ -2,13 +2,15 @@ apiVersion: v1
 kind: Service
 metadata:
   name: ui
-  namespace: {{ .Release.Namespace }}
+  namespace: '{{ .Release.Namespace }}'
   labels:
     app.kubernetes.io/name: odigos-ui
 spec:
   ports:
     - name: ui
       port: 3000
+    - name: 'beta-ui'
+      port: 3001
     - name: otlp
       port: 4317
   selector:

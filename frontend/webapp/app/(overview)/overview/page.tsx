@@ -1,14 +1,15 @@
 'use client';
 import React from 'react';
-import { OVERVIEW } from '@/utils';
-import { OverviewHeader } from '@/components';
-import { DataFlowContainer } from '@/containers';
+import dynamic from 'next/dynamic';
 
-export default function OverviewPage() {
+const OverviewDataFlowContainer = dynamic(() => import('@/containers/main/overview/overview-data-flow'), {
+  ssr: false,
+});
+
+export default function MainPage() {
   return (
     <>
-      <OverviewHeader title={OVERVIEW.MENU.OVERVIEW} />
-      <DataFlowContainer />
+      <OverviewDataFlowContainer />
     </>
   );
 }
