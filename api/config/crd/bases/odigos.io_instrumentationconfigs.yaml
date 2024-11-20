@@ -416,6 +416,10 @@ spec:
                   - payloadCollection
                   type: object
                 type: array
+              serviceName:
+                description: the service.name attribute is used to identify the name
+                  of the service that is generating telemetry data
+                type: string
             type: object
           status:
             properties:
