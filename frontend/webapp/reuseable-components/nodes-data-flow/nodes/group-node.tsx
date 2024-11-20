@@ -1,7 +1,9 @@
 import React from 'react';
-import { Handle, Position } from '@xyflow/react';
+import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';
 
-const GroupNode = () => {
+interface Props extends NodeProps<Node<{}, 'group'>> {}
+
+const GroupNode: React.FC<Props> = () => {
   return (
     <>
       <Handle type='source' position={Position.Right} id='group-output' isConnectable style={{ visibility: 'hidden' }} />
