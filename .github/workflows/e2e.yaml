@@ -33,7 +33,7 @@ jobs:
           go build -tags=embed_manifests -o odigos
 
       - name: Upload CLI
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: odigos-cli
           path: cli/odigos
@@ -50,7 +50,7 @@ jobs:
           docker save -o odigos-images.tar $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "odigos")
 
       - name: Upload Odigos Images
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: odigos-images
           path: odigos-images.tar
@@ -115,7 +115,7 @@ jobs:
           yarn install
 
       - name: Download and Load Docker Images to Kind
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: odigos-images
       - run: |
@@ -123,7 +123,7 @@ jobs:
           TAG=e2e-test make load-to-kind
 
       - name: Download CLI binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: odigos-cli
       - run: |
