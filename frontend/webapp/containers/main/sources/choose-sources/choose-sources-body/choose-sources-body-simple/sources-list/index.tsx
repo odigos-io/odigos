@@ -108,7 +108,7 @@ export const SourcesList: React.FC<Props> = ({
               <TextWrapper>
                 <Text>{source.name}</Text>
                 <Text opacity={0.8} size={10}>
-                  {source.numberOfInstances} running instance{source.numberOfInstances !== 1 && 's'} · {source.kind}
+                  {source.numberOfInstances} running instances · {source.kind}
                 </Text>
               </TextWrapper>
             </ListItemContent>

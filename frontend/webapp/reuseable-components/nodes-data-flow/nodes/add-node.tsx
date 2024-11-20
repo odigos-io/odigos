@@ -2,25 +2,35 @@ import React from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
 import { Text } from '@/reuseable-components';
-import { OVERVIEW_NODE_TYPES, STATUSES } from '@/types';
-import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';
+import { Handle, Position } from '@xyflow/react';
 
-interface Props
-  extends NodeProps<
-    Node<
-      {
-        type: OVERVIEW_NODE_TYPES;
-        status: STATUSES;
-        title: string;
-        subTitle: string;
-      },
-      'add'
-    >
-  > {
+interface BaseNodeProps {
+  data: Record<string, any>;
+
+  id: string;
+  parentId?: any;
+  type: string;
+
+  isConnectable: boolean;
+  selectable: boolean;
+  selected?: any;
+  deletable: boolean;
+  draggable: boolean;
+  dragging: boolean;
+  dragHandle?: any;
+
+  width: number;
+  height: number;
+  zIndex: number;
+  positionAbsoluteX: number;
+  positionAbsoluteY: number;
+  sourcePosition?: any;
+  targetPosition?: any;
+
   nodeWidth: number;
 }
 
-const BaseNodeContainer = styled.div<{ $nodeWidth: Props['nodeWidth'] }>`
+const BaseNodeContainer = styled.div<{ $nodeWidth: BaseNodeProps['nodeWidth'] }>`
   width: ${({ $nodeWidth }) => `${$nodeWidth}px`};
   padding: 16px 24px 16px 16px;
   display: flex;
@@ -58,7 +68,7 @@ const SubTitle = styled(Text)`
   text-align: center;
 `;
 
-const AddNode: React.FC<Props> = ({ nodeWidth, data, id, isConnectable }) => {
+const AddNode = ({ id, isConnectable, data, nodeWidth }: BaseNodeProps) => {
   return (
     <BaseNodeContainer $nodeWidth={nodeWidth}>
       <TitleWrapper>

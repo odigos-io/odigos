@@ -281,7 +281,9 @@ export const buildNodesAndEdges = ({
   }
 
   // Connect sources to actions
-  if (!!sources.length) {
+  if (!sources.length) {
+    edges.push(createEdge(`source-0-to-action-${actions.length ? 'group' : 0}`));
+  } else {
     tempNodes['sources'].forEach((node, idx) => {
       if (idx > 0) {
         const sourceIndex = idx - 1;
@@ -310,7 +312,9 @@ export const buildNodesAndEdges = ({
   }
 
   // Connect actions to destinations
-  if (!!destinations.length) {
+  if (!destinations.length) {
+    edges.push(createEdge(`action-${actions.length ? 'group' : 0}-to-destination-0`));
+  } else {
     tempNodes['destinations'].forEach((node, idx) => {
       if (idx > 0) {
         const destinationIndex = idx - 1;
