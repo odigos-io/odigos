@@ -6,18 +6,13 @@ import (
 
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/client"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
+	"k8s.io/apimachinery/pkg/util/version"
 )
 
 type Kind string
 
-var availableDetectors = []Detector{&kindDetector{}, &eksDetector{}, &gkeDetector{}, &minikubeDetector{}, &k3sDetector{}, &openshiftDetector{}, &aksDetector{}}
-
-type KubernetesVersion struct {
-	Kind    Kind
-	Version string
-}
-
-var CurrentKubernetesVersion KubernetesVersion
+var availableDetectors = []ClusterKindDetector{&kindDetector{}, &eksDetector{}, &gkeDetector{}, &minikubeDetector{}, &k3sDetector{}, &openshiftDetector{}, &aksDetector{}}
 
 const (
 	KindUnknown   Kind = "Unknown"
@@ -37,34 +32,43 @@ type DetectionArguments struct {
 	KubeClient    *kube.Client
 }
 
-type Detector interface {
-	Detect(ctx context.Context, args DetectionArguments) (Kind, error)
+type ClusterKindDetector interface {
+	Detect(ctx context.Context, args DetectionArguments) bool
+	Kind() Kind
 }
 
-func KubernetesClusterProduct(ctx context.Context, kc string, client *kube.Client) (Kind, string) {
+type ClusterDetails struct {
+	Kind       Kind
+	K8SVersion *version.Version
+}
+
+func GetK8SClusterDetails(ctx context.Context, kc string, client *kube.Client) *ClusterDetails {
+	clusterDetails := &ClusterDetails{}
 	details := k8sutils.GetCurrentClusterDetails(kc)
 	serverVersion, err := client.Discovery().ServerVersion()
-	kubeVersion := fmt.Sprintf("%s.%s", serverVersion.Major, serverVersion.Minor)
-	gitServerVersion := ""
-	if err == nil {
-		gitServerVersion = serverVersion.GitVersion
+	if err != nil {
+		clusterDetails.K8SVersion = nil
+		fmt.Printf("Unknown k8s version, assuming oldest supported version: %s\n", k8sconsts.MinK8SVersionForInstallation)
+	} else {
+		ver := version.MustParse(serverVersion.String())
+		clusterDetails.K8SVersion = ver
 	}
 
 	args := DetectionArguments{
 		ClusterDetails: details,
-		ServerVersion:  gitServerVersion,
+		ServerVersion:  serverVersion.GitVersion,
 		KubeClient:     client,
 	}
 
 	for _, detector := range availableDetectors {
-		kind, err := detector.Detect(ctx, args)
-		if err != nil {
+		relevant := detector.Detect(ctx, args)
+		if !relevant {
 			continue
 		}
-		if kind != KindUnknown {
-			return kind, kubeVersion
-		}
+		clusterDetails.Kind = detector.Kind()
+		return clusterDetails
 	}
 
-	return KindUnknown, kubeVersion
+	clusterDetails.Kind = KindUnknown
+	return clusterDetails
 }

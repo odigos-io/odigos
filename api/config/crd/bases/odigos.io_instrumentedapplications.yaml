@@ -114,6 +114,11 @@ spec:
                       - unknown
                       - ignored
                       type: string
+                    otherAgent:
+                      properties:
+                        name:
+                          type: string
+                      type: object
                     runtimeVersion:
                       type: string
                   required:

@@ -14,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
 	k8stypes "k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/version"
 	"sigs.k8s.io/yaml"
 
 	"github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
@@ -43,7 +44,18 @@ type Object interface {
 	runtime.Object
 }
 
-func CreateClient(cmd *cobra.Command) (*Client, error) {
+// GetCLIClientOrExit returns the current kube client from cmd.Context() if one exists.
+// otherwise it creates a new client and returns it.
+func GetCLIClientOrExit(cmd *cobra.Command) *Client {
+	// we can check the cmd context for client, but currently avoiding that due to circular dependencies
+	client, err := createClient(cmd)
+	if err != nil {
+		PrintClientErrorAndExit(err)
+	}
+	return client
+}
+
+func createClient(cmd *cobra.Command) (*Client, error) {
 	kc := cmd.Flag("kubeconfig").Value.String()
 
 	config, err := k8sutils.GetClientConfig(kc)
@@ -191,13 +203,33 @@ func (c *Client) ApplyResource(ctx context.Context, configVersion int, obj Objec
 	return err
 }
 
-func (c *Client) DeleteOldOdigosSystemObjects(ctx context.Context, resourceAndNamespace ResourceAndNs, configVersion int) error {
+func (c *Client) DeleteOldOdigosSystemObjects(ctx context.Context, resourceAndNamespace ResourceAndNs, configVersion int, k8sVersion *version.Version) error {
 	systemObject, _ := k8slabels.NewRequirement(odigoslabels.OdigosSystemLabelKey, selection.Equals, []string{odigoslabels.OdigosSystemLabelValue})
 	notLatestVersion, _ := k8slabels.NewRequirement(odigoslabels.OdigosSystemConfigLabelKey, selection.NotEquals, []string{strconv.Itoa(configVersion)})
 	labelSelector := k8slabels.NewSelector().Add(*systemObject).Add(*notLatestVersion).String()
 	resource := resourceAndNamespace.Resource
 	ns := resourceAndNamespace.Namespace
-	return c.Dynamic.Resource(resource).Namespace(ns).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
-		LabelSelector: labelSelector,
-	})
+	// DeleteCollection is only available in k8s 1.23 and above, for older versions we need to list and delete each resource
+	if k8sVersion != nil && k8sVersion.GreaterThan(version.MustParse("1.23")) {
+		return c.Dynamic.Resource(resource).Namespace(ns).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
+			LabelSelector: labelSelector,
+		})
+	} else {
+		listOptions := metav1.ListOptions{
+			LabelSelector: labelSelector,
+		}
+		resourceList, err := c.Dynamic.Resource(resource).Namespace(ns).List(ctx, listOptions)
+		if err != nil {
+			return fmt.Errorf("failed to list resources: %w", err)
+		}
+
+		// Delete each resource individually
+		for _, item := range resourceList.Items {
+			err = c.Dynamic.Resource(resource).Namespace(ns).Delete(ctx, item.GetName(), metav1.DeleteOptions{})
+			if err != nil {
+				return fmt.Errorf("failed to delete resource %s: %w", item.GetName(), err)
+			}
+		}
+	}
+	return nil
 }

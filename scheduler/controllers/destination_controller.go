@@ -22,6 +22,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigospredicates "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	"github.com/odigos-io/odigos/scheduler/controllers/collectorgroups"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -30,15 +31,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// DestinationReconciler reconciles a Destination object
 type DestinationReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=odigos.io,resources=destinations,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=odigos.io,resources=destinations/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=odigos.io,resources=destinations/finalizers,verbs=update
 func (r *DestinationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
@@ -63,9 +60,9 @@ func (r *DestinationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	return ctrl.Result{}, nil
 }
 
-// SetupWithManager sets up the controller with the Manager.
 func (r *DestinationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&odigosv1.Destination{}).
+		WithEventFilter(&odigospredicates.ExistencePredicate{}). // only care when destinations are created or deleted
 		Complete(r)
 }

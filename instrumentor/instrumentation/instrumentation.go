@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/go-logr/logr"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/envOverwrite"
+	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/envoverwrite"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -21,72 +22,97 @@ var (
 	ErrPatchEnvVars = errors.New("failed to patch env vars")
 )
 
-func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, runtimeDetails *odigosv1.InstrumentedApplication, defaultSdks map[common.ProgrammingLanguage]common.OtelSdk, targetObj client.Object) (error, bool) {
+func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, runtimeDetails *odigosv1.InstrumentedApplication, defaultSdks map[common.ProgrammingLanguage]common.OtelSdk, targetObj client.Object,
+	logger logr.Logger) (error, bool, bool) {
 	// delete any existing instrumentation devices.
 	// this is necessary for example when migrating from community to enterprise,
 	// and we need to cleanup the community device before adding the enterprise one.
 	RevertInstrumentationDevices(original)
 
 	deviceApplied := false
+	deviceSkippedDueToOtherAgent := false
+	var modifiedContainers []corev1.Container
 
 	manifestEnvOriginal, err := envoverwrite.NewOrigWorkloadEnvValues(targetObj.GetAnnotations())
 	if err != nil {
-		return err, deviceApplied
+		return err, deviceApplied, deviceSkippedDueToOtherAgent
 	}
 
-	var modifiedContainers []corev1.Container
 	for _, container := range original.Spec.Containers {
 		containerLanguage := getLanguageOfContainer(runtimeDetails, container.Name)
+		containerHaveOtherAgent := getContainerOtherAgents(runtimeDetails, container.Name)
+
+		// In case there is another agent in the container, we should not apply the instrumentation device.
+		if containerLanguage == common.PythonProgrammingLanguage && containerHaveOtherAgent != nil {
+			logger.Info("Python container has other agent, skip applying instrumentation device", "agent", containerHaveOtherAgent.Name, "container", container.Name)
+
+			// Not actually modifying the container, but we need to append it to the list.
+			modifiedContainers = append(modifiedContainers, container)
+			deviceSkippedDueToOtherAgent = true
+			continue
+
+		}
+		// handle containers with unknown language or ignored language
 		if containerLanguage == common.UnknownProgrammingLanguage || containerLanguage == common.IgnoredProgrammingLanguage || containerLanguage == common.NginxProgrammingLanguage {
 			// always patch the env vars, even if the language is unknown or ignored.
 			// this is necessary to sync the existing envs with the missing language if changed for any reason.
 			err = patchEnvVarsForContainer(runtimeDetails, &container, nil, containerLanguage, manifestEnvOriginal)
 			if err != nil {
-				return fmt.Errorf("%w: %v", ErrPatchEnvVars, err), deviceApplied
+				return fmt.Errorf("%w: %v", ErrPatchEnvVars, err), deviceApplied, deviceSkippedDueToOtherAgent
 			}
 			modifiedContainers = append(modifiedContainers, container)
 			continue
 		}
 
+		// Find and apply the appropriate SDK for the container language.
 		otelSdk, found := defaultSdks[containerLanguage]
 		if !found {
-			return fmt.Errorf("%w for language: %s, container:%s", ErrNoDefaultSDK, containerLanguage, container.Name), deviceApplied
+			return fmt.Errorf("%w for language: %s, container:%s", ErrNoDefaultSDK, containerLanguage, container.Name), deviceApplied, deviceSkippedDueToOtherAgent
 		}
 
 		instrumentationDeviceName := common.InstrumentationDeviceName(containerLanguage, otelSdk)
-
 		if container.Resources.Limits == nil {
 			container.Resources.Limits = make(map[corev1.ResourceName]resource.Quantity)
 		}
 		container.Resources.Limits[corev1.ResourceName(instrumentationDeviceName)] = resource.MustParse("1")
-
 		deviceApplied = true
 
 		err = patchEnvVarsForContainer(runtimeDetails, &container, &otelSdk, containerLanguage, manifestEnvOriginal)
 		if err != nil {
-			return fmt.Errorf("%w: %v", ErrPatchEnvVars, err), deviceApplied
+			return fmt.Errorf("%w: %v", ErrPatchEnvVars, err), deviceApplied, deviceSkippedDueToOtherAgent
 		}
 
 		modifiedContainers = append(modifiedContainers, container)
-
 	}
 
-	original.Spec.Containers = modifiedContainers
+	if modifiedContainers != nil {
+		original.Spec.Containers = modifiedContainers
+	}
 
 	// persist the original values if changed
 	manifestEnvOriginal.SerializeToAnnotation(targetObj)
-	return nil, deviceApplied
+
+	// if non of the devices were applied due to the presence of another agent, return an error.
+	if !deviceApplied && deviceSkippedDueToOtherAgent {
+		return fmt.Errorf("device not added to any container due to the presence of another agent"), false, deviceSkippedDueToOtherAgent
+	}
+
+	// devicePartiallyApplied is used to indicate that the instrumentation device was partially applied for some of the containers.
+	devicePartiallyApplied := deviceSkippedDueToOtherAgent && deviceApplied
+
+	return nil, deviceApplied, devicePartiallyApplied
 }
 
 // this function restores a workload manifest env vars to their original values.
 // it is used when the instrumentation is removed from the workload.
 // the original values are read from the annotation which was saved when the instrumentation was applied.
-func RevertEnvOverwrites(obj client.Object, podSpec *corev1.PodTemplateSpec) error {
+func RevertEnvOverwrites(obj client.Object, podSpec *corev1.PodTemplateSpec) (bool, error) {
 	manifestEnvOriginal, err := envoverwrite.NewOrigWorkloadEnvValues(obj.GetAnnotations())
 	if err != nil {
-		return err
+		return false, err
 	}
 
+	changed := false
 	for iContainer, c := range podSpec.Spec.Containers {
 		containerOriginalEnv := manifestEnvOriginal.GetContainerStoredEnvs(c.Name)
 		newContainerEnvs := make([]corev1.EnvVar, 0, len(c.Env))
@@ -102,6 +128,7 @@ func RevertEnvOverwrites(obj client.Object, podSpec *corev1.PodTemplateSpec) err
 					// if the value is nil, the env var was not set by the user to begin with.
 					// we will simply not append it to the new envs to achieve the same effect.
 				}
+				changed = true
 			} else {
 				newContainerEnvs = append(newContainerEnvs, envVar)
 			}
@@ -109,25 +136,29 @@ func RevertEnvOverwrites(obj client.Object, podSpec *corev1.PodTemplateSpec) err
 		podSpec.Spec.Containers[iContainer].Env = newContainerEnvs
 	}
 
-	manifestEnvOriginal.DeleteFromObj(obj)
+	annotationRemoved := manifestEnvOriginal.DeleteFromObj(obj)
 
-	return nil
+	return changed || annotationRemoved, nil
 }
 
-func RevertInstrumentationDevices(original *corev1.PodTemplateSpec) {
+func RevertInstrumentationDevices(original *corev1.PodTemplateSpec) bool {
+	changed := false
 	for _, container := range original.Spec.Containers {
 		for resourceName := range container.Resources.Limits {
 			if strings.HasPrefix(string(resourceName), common.OdigosResourceNamespace) {
 				delete(container.Resources.Limits, resourceName)
+				changed = true
 			}
 		}
 		// Is it needed?
 		for resourceName := range container.Resources.Requests {
 			if strings.HasPrefix(string(resourceName), common.OdigosResourceNamespace) {
 				delete(container.Resources.Requests, resourceName)
+				changed = true
 			}
 		}
 	}
+	return changed
 }
 
 func getLanguageOfContainer(instrumentation *odigosv1.InstrumentedApplication, containerName string) common.ProgrammingLanguage {
@@ -138,6 +169,17 @@ func getLanguageOfContainer(instrumentation *odigosv1.InstrumentedApplication, c
 	}
 
 	return common.UnknownProgrammingLanguage
+}
+
+func getContainerOtherAgents(instrumentation *odigosv1.InstrumentedApplication, containerName string) *odigosv1.OtherAgent {
+	for _, l := range instrumentation.Spec.RuntimeDetails {
+		if l.ContainerName == containerName {
+			if l.OtherAgent != nil && *l.OtherAgent != (odigosv1.OtherAgent{}) {
+				return l.OtherAgent
+			}
+		}
+	}
+	return nil
 }
 
 // getEnvVarsOfContainer returns the env vars which are defined for the given container and are used for instrumentation purposes.
@@ -226,20 +268,20 @@ func patchEnvVarsForContainer(runtimeDetails *odigosv1.InstrumentedApplication, 
 }
 
 func SetInjectInstrumentationLabel(original *corev1.PodTemplateSpec) {
-	odigosTier := env.GetOdigosTierFromEnv()
 
-	// inject the instrumentation annotation for oss tier only
-	if odigosTier == common.CommunityOdigosTier {
-		if original.Labels == nil {
-			original.Labels = make(map[string]string)
-		}
-		original.Labels["odigos.io/inject-instrumentation"] = "true"
+	if original.Labels == nil {
+		original.Labels = make(map[string]string)
 	}
+	original.Labels[consts.OdigosInjectInstrumentationLabel] = "true"
 }
 
 // RemoveInjectInstrumentationLabel removes the "odigos.io/inject-instrumentation" label if it exists.
-func RemoveInjectInstrumentationLabel(original *corev1.PodTemplateSpec) {
+func RemoveInjectInstrumentationLabel(original *corev1.PodTemplateSpec) bool {
 	if original.Labels != nil {
-		delete(original.Labels, "odigos.io/inject-instrumentation")
+		if _, ok := original.Labels[consts.OdigosInjectInstrumentationLabel]; ok {
+			delete(original.Labels, consts.OdigosInjectInstrumentationLabel)
+			return true
+		}
 	}
+	return false
 }

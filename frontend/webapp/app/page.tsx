@@ -1,60 +1,35 @@
 'use client';
 import { useEffect } from 'react';
-import { useQuery } from 'react-query';
 import { useRouter } from 'next/navigation';
-import { ROUTES, CONFIG, QUERIES } from '@/utils';
-import { Loader } from '@keyval-dev/design-system';
-import { getDestinations, getConfig } from '@/services';
-import { addNotification, store } from '@/store';
+import { useNotify, useConfig } from '@/hooks';
+import { FadeLoader } from '@/reuseable-components';
+import { ROUTES, CONFIG, NOTIFICATION } from '@/utils';
+
 export default function App() {
   const router = useRouter();
-  const { data, isLoading: isConfigLoading } = useQuery(
-    [QUERIES.API_CONFIG],
-    getConfig
-  );
-  const {
-    isLoading: isDestinationLoading,
-    data: destinationList,
-    error,
-  } = useQuery([QUERIES.API_DESTINATIONS], getDestinations);
-  useEffect(() => {
-    if (isConfigLoading || isDestinationLoading) return;
-
-    renderCurrentPage();
-  }, [data, destinationList]);
+  const notify = useNotify();
+  const { data, error } = useConfig();
 
   useEffect(() => {
-    if (!error) return;
-    store.dispatch(
-      addNotification({
-        id: '1',
-        message: 'An error occurred',
-        title: 'Error',
-        type: 'error',
-        target: 'notification',
-        crdType: 'notification',
-      })
-    );
-    router.push(ROUTES.OVERVIEW);
-  }, [error]);
+    if (error) {
+      notify({
+        type: NOTIFICATION.ERROR,
+        title: error.name,
+        message: error.message,
+      });
+    } else if (data) {
+      const { installation } = data;
 
-  function renderCurrentPage() {
-    const { installation } = data;
-
-    if (destinationList.length > 0) {
-      router.push(ROUTES.OVERVIEW);
-      return;
+      switch (installation) {
+        case CONFIG.NEW:
+        case CONFIG.APPS_SELECTED:
+          router.push(ROUTES.CHOOSE_SOURCES);
+          break;
+        case CONFIG.FINISHED:
+          router.push(ROUTES.OVERVIEW);
+      }
     }
+  }, [data]);
 
-    switch (installation) {
-      case CONFIG.NEW:
-      case CONFIG.APPS_SELECTED:
-        router.push(ROUTES.CHOOSE_SOURCES);
-        break;
-      case CONFIG.FINISHED:
-        router.push(ROUTES.OVERVIEW);
-    }
-  }
-
-  return <Loader />;
+  return <FadeLoader />;
 }
