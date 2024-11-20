@@ -3,30 +3,31 @@ import Image from 'next/image';
 import { useAppStore } from '@/store';
 import styled from 'styled-components';
 import { getStatusIcon } from '@/utils';
-import { Handle, Position } from '@xyflow/react';
 import { Checkbox, Status, Text } from '@/reuseable-components';
+import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';
 import { type ActionDataParsed, type ActualDestination, type InstrumentationRuleSpec, type K8sActualSource, STATUSES } from '@/types';
 
-export interface NodeDataProps {
-  id: string;
-  type: 'source' | 'action' | 'destination';
-  status: STATUSES;
-  title: string;
-  subTitle: string;
-  imageUri: string;
-  monitors?: string[];
-  isActive?: boolean;
-  raw: InstrumentationRuleSpec | K8sActualSource | ActionDataParsed | ActualDestination;
-}
-
-interface BaseNodeProps {
-  id: string;
+interface Props
+  extends NodeProps<
+    Node<
+      {
+        id: string;
+        type: 'source' | 'action' | 'destination';
+        status: STATUSES;
+        title: string;
+        subTitle: string;
+        imageUri: string;
+        monitors?: string[];
+        isActive?: boolean;
+        raw: InstrumentationRuleSpec | K8sActualSource | ActionDataParsed | ActualDestination;
+      },
+      'base'
+    >
+  > {
   nodeWidth: number;
-  isConnectable: boolean;
-  data: NodeDataProps;
 }
 
-const Container = styled.div<{ $nodeWidth: number; $isError?: boolean }>`
+const Container = styled.div<{ $nodeWidth: Props['nodeWidth']; $isError?: boolean }>`
   display: flex;
   align-items: center;
   align-self: stretch;
@@ -85,7 +86,7 @@ const ActionsWrapper = styled.div`
   margin-left: auto;
 `;
 
-const BaseNode = ({ nodeWidth, isConnectable, data }: BaseNodeProps) => {
+const BaseNode: React.FC<Props> = ({ nodeWidth, data, isConnectable }) => {
   const { type, status, title, subTitle, imageUri, monitors, isActive, raw } = data;
   const isError = status === STATUSES.UNHEALTHY;
 
