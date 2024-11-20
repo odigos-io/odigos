@@ -1,7 +1,5 @@
-const env = process.env.NODE_ENV;
-
 const LOCALHOST = 'http://localhost:8085/api';
-const BASE_URL = env === 'production' ? '/api' : LOCALHOST;
+const BASE_URL = LOCALHOST;
 
 const API = {
   EVENTS: `${BASE_URL}/events`,
