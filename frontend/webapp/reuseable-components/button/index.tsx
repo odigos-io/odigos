@@ -1,4 +1,4 @@
-import React, { ButtonHTMLAttributes, forwardRef, LegacyRef } from 'react';
+import React, { ButtonHTMLAttributes } from 'react';
 import styled, { css } from 'styled-components';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -117,12 +117,12 @@ const ButtonContainer = styled.div<{ $variant: ButtonProps['variant'] }>`
   }
 `;
 
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(({ children, variant = 'primary', isDisabled = false, ...props }, ref) => {
+export const Button: React.FC<ButtonProps> = ({ children, variant = 'primary', isDisabled = false, ...props }) => {
   return (
     <ButtonContainer $variant={variant}>
-      <StyledButton ref={ref} $variant={variant} disabled={isDisabled || props.disabled} {...props}>
+      <StyledButton $variant={variant} disabled={isDisabled || props.disabled} {...props}>
         {children}
       </StyledButton>
     </ButtonContainer>
   );
-});
+};

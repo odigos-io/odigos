@@ -2,18 +2,6 @@ import React from 'react';
 import styled from 'styled-components';
 import { EdgeLabelRenderer, BaseEdge, type EdgeProps, type Edge, getSmoothStepPath } from '@xyflow/react';
 
-interface Props
-  extends EdgeProps<
-    Edge<
-      {
-        label: string;
-        isMultiTarget?: boolean;
-        isError?: boolean;
-      },
-      'labeled'
-    >
-  > {}
-
 const Label = styled.div<{ $labelX: number; $labelY: number; $isError?: boolean }>`
   position: absolute;
   transform: ${({ $labelX, $labelY }) => `translate(-50%, -50%) translate(${$labelX}px, ${$labelY}px)`};
@@ -32,7 +20,17 @@ const Label = styled.div<{ $labelX: number; $labelY: number; $isError?: boolean 
   justify-content: center;
 `;
 
-const LabeledEdge: React.FC<Props> = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data, style }) => {
+const LabeledEdge: React.FC<EdgeProps<Edge<{ label: string; isMultiTarget?: boolean; isError?: boolean }>>> = ({
+  id,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  sourcePosition,
+  targetPosition,
+  data,
+  style,
+}) => {
   const [edgePath] = getSmoothStepPath({
     sourceX,
     sourceY,
@@ -46,7 +44,12 @@ const LabeledEdge: React.FC<Props> = ({ id, sourceX, sourceY, targetX, targetY, 
     <>
       <BaseEdge id={id} path={edgePath} style={style} />
       <EdgeLabelRenderer>
-        <Label $labelX={data?.isMultiTarget ? targetX - 50 : sourceX + 50} $labelY={data?.isMultiTarget ? targetY : sourceY} $isError={data?.isError} className='nodrag nopan'>
+        <Label
+          $labelX={data?.isMultiTarget ? targetX - 50 : sourceX + 50}
+          $labelY={data?.isMultiTarget ? targetY : sourceY}
+          $isError={data?.isError}
+          className='nodrag nopan'
+        >
           {data?.label}
         </Label>
       </EdgeLabelRenderer>

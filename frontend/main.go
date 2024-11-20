@@ -124,21 +124,14 @@ func startHTTPServer(flags *Flags, odigosMetrics *collectormetrics.OdigosMetrics
 }
 
 func httpFileServerWith404(fs http.FileSystem) http.Handler {
-	// Init outside of handler to respect manipulated paths
-	fileServer := http.FileServer(fs)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		path := r.URL.Path
-
-		// Check if the requested file exists
-		_, err := fs.Open(path)
+		_, err := fs.Open(r.URL.Path)
 		if err != nil {
 			// Redirect to root path
 			r.URL.Path = "/"
 		}
-
-		// Serve the file
-		fileServer.ServeHTTP(w, r)
+		http.FileServer(fs).ServeHTTP(w, r)
 	})
 }
 
