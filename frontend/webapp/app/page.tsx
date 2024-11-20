@@ -19,17 +19,12 @@ export default function App() {
   } = useQuery([QUERIES.API_DESTINATIONS], getDestinations);
 
   useEffect(() => {
-    router.push(ROUTES.OVERVIEW);
-  }, [data, destinationList]);
-  useEffect(() => {
-    console.log({ data, destinationList, isConfigLoading });
     if (isConfigLoading || isDestinationLoading) return;
 
     renderCurrentPage();
   }, [data, destinationList, isConfigLoading]);
 
   useEffect(() => {
-    console.log({ error });
     if (!error) return;
     store.dispatch(
       addNotification({
