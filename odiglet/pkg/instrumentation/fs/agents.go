@@ -88,8 +88,8 @@ func removeChangedFilesFromKeepMap(filesToKeepMap map[string]struct{}, container
 		containerPath := strings.Replace(hostPath, hostDir, containerDir, 1)
 
 		// Check if both files exist
-		hostInfo, hostErr := os.Stat(hostPath)
-		containerInfo, containerErr := os.Stat(containerPath)
+		_, hostErr := os.Stat(hostPath)
+		_, containerErr := os.Stat(containerPath)
 
 		// If either file doesn't exist, mark as changed and remove from filesToKeepMap
 		if hostErr != nil || containerErr != nil {
@@ -98,12 +98,12 @@ func removeChangedFilesFromKeepMap(filesToKeepMap map[string]struct{}, container
 			continue
 		}
 
-		// If sizes are different, mark as changed
-		if hostInfo.Size() != containerInfo.Size() {
-			delete(filesToKeepMap, hostPath)
-			log.Logger.V(0).Info("File marked for deletion (size mismatch)", "file", hostPath)
-			continue
-		}
+		// // If sizes are different, mark as changed
+		// if hostInfo.Size() != containerInfo.Size() {
+		// 	delete(filesToKeepMap, hostPath)
+		// 	log.Logger.V(0).Info("File marked for deletion (size mismatch)", "file", hostPath)
+		// 	continue
+		// }
 
 		// Compare file hashes
 		hostHash, err := calculateFileHash(hostPath)
@@ -116,14 +116,45 @@ func removeChangedFilesFromKeepMap(filesToKeepMap map[string]struct{}, container
 			return fmt.Errorf("error calculating hash for container file %s: %v", containerPath, err)
 		}
 
-		// If hashes are different, mark as changed
+		// If hashes are different, mark as changed and keep the old version in host [origin file name + 12 characters of hash]
 		if hostHash != containerHash {
+			fmt.Println("host hash and container hash are different", hostHash, containerHash)
+			err := renameFileWithHashSuffix(hostPath, hostHash)
+			if err != nil {
+				return fmt.Errorf("error renaming file: %v", err)
+			}
+
 			delete(filesToKeepMap, hostPath)
 			log.Logger.V(0).Info("File marked for deletion (content mismatch)", "file", hostPath)
 		}
 	}
 
 	return nil
+}
+
+// Helper function to rename a file using the first 12 characters of its hash
+func renameFileWithHashSuffix(originalPath, fileHash string) error {
+	// Extract the first 12 characters of the hash
+	hashSuffix := fileHash[:12]
+
+	// Construct the new file path
+	newPath := generateRenamedFilePath(originalPath, hashSuffix)
+
+	// Rename the file
+	fmt.Println("Renaming file", originalPath, "to", newPath)
+	if err := os.Rename(originalPath, newPath); err != nil {
+		return fmt.Errorf("failed to rename file %s to %s: %w", originalPath, newPath, err)
+	}
+
+	log.Logger.V(0).Info("File successfully renamed", "oldPath", originalPath, "newPath", newPath)
+	return nil
+}
+
+// Helper function to construct a renamed file path
+func generateRenamedFilePath(originalPath, hashSuffix string) string {
+	ext := filepath.Ext(originalPath)                    // Get the file extension (e.g., ".so")
+	base := strings.TrimSuffix(originalPath, ext)        // Remove the extension from the original path
+	return fmt.Sprintf("%s_%s%s", base, hashSuffix, ext) // Append the hash and add back the extension
 }
 
 // calculateFileHash computes the SHA-256 hash of a file
