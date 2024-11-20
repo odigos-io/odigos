@@ -21,11 +21,12 @@ export default function App() {
     } else if (data) {
       const { installation } = data;
       switch (installation) {
+        // case CONFIG.FINISHED:
+        // case CONFIG.APPS_SELECTED:
         case CONFIG.NEW:
-        case CONFIG.APPS_SELECTED:
           router.push(ROUTES.CHOOSE_SOURCES);
           break;
-        case CONFIG.FINISHED:
+        default:
           router.push(ROUTES.OVERVIEW);
       }
     }
