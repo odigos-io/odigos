@@ -95,11 +95,6 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 				Behavior: &autoscalingv2beta2.HorizontalPodAutoscalerBehavior{
 					ScaleDown: &autoscalingv2beta2.HPAScalingRules{
 						StabilizationWindowSeconds: stabilizationWindowSeconds,
-						Policies: []autoscalingv2beta2.HPAScalingPolicy{
-							{
-								
-							}
-						},
 					},
 				},
 			},
