@@ -3,24 +3,20 @@ import Image from 'next/image';
 import { useAppStore } from '@/store';
 import styled from 'styled-components';
 import { useSourceCRUD } from '@/hooks';
-import type { Node, NodeProps } from '@xyflow/react';
 import { Badge, Checkbox, Text } from '@/reuseable-components';
 
-interface Props
-  extends NodeProps<
-    Node<
-      {
-        icon: string;
-        title: string;
-        tagValue: number;
-      },
-      'header'
-    >
-  > {
-  nodeWidth: number;
+interface Column {
+  icon: string;
+  title: string;
+  tagValue: number;
 }
 
-const Container = styled.div<{ $nodeWidth: Props['nodeWidth'] }>`
+interface HeaderNodeProps {
+  nodeWidth: number;
+  data: Column;
+}
+
+const Container = styled.div<{ $nodeWidth: HeaderNodeProps['nodeWidth'] }>`
   width: ${({ $nodeWidth }) => `${$nodeWidth}px`};
   padding: 12px 0px 16px 0px;
   gap: 8px;
@@ -38,7 +34,7 @@ const ActionsWrapper = styled.div`
   margin-right: 24px;
 `;
 
-const HeaderNode: React.FC<Props> = ({ nodeWidth, data }) => {
+const HeaderNode = ({ data, nodeWidth }: HeaderNodeProps) => {
   const { title, icon, tagValue } = data;
   const isSources = title === 'Sources';
   const isActions = title === 'Actions';
