@@ -100,6 +100,7 @@ export const SourcesList: React.FC<Props> = ({
   onSelectFutureApps,
 
   searchText,
+  selectAllForNamespace,
   onSelectAll,
   showSelectedOnly,
 
@@ -127,7 +128,7 @@ export const SourcesList: React.FC<Props> = ({
         const namespacePassesFilters = (!searchText || namespace.toLowerCase().includes(searchText)) && (!showSelectedOnly || !!selected.length);
         if (!namespacePassesFilters) return null;
 
-        const isNamespaceSelected = selectedNamespace === namespace;
+        const isNamespaceSelected = selectedNamespace === namespace && !selectAllForNamespace;
         const isNamespaceCanSelect = namespaceLoaded && !!available.length;
         const isNamespaceAllSourcesSelected = isNamespaceCanSelect && selected.length === sources.length;
 
@@ -141,10 +142,7 @@ export const SourcesList: React.FC<Props> = ({
                 <Checkbox
                   // disabled={!isNamespaceCanSelect}
                   initialValue={isNamespaceAllSourcesSelected}
-                  onChange={(bool) => {
-                    if (bool) onSelectNamespace(namespace);
-                    onSelectAll(bool, namespace);
-                  }}
+                  onChange={(bool) => onSelectAll(bool, namespace)}
                 />
                 <Text>{namespace}</Text>
               </FlexRow>

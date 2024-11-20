@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction, useEffect, useState } from 'react';
+import { Dispatch, SetStateAction, useCallback, useEffect, useState } from 'react';
 import { useAppStore } from '@/store';
 import type { K8sActualSource } from '@/types';
 import { useNamespace } from '../compute-platform';
@@ -28,6 +28,7 @@ export interface UseSourceFormDataResponse {
 
   searchText: string;
   selectAll: boolean;
+  selectAllForNamespace: string;
   showSelectedOnly: boolean;
   setSearchText: Dispatch<SetStateAction<string>>;
   onSelectAll: (bool: boolean, namespace?: string) => void;
@@ -107,35 +108,41 @@ export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFo
     });
   };
 
-  const onSelectAll: UseSourceFormDataResponse['onSelectAll'] = (bool, namespace) => {
-    if (!!namespace) {
-      const nsAvailableSources = availableSources[namespace];
-      const nsSelectedSources = selectedSources[namespace];
+  const onSelectAll: UseSourceFormDataResponse['onSelectAll'] = useCallback(
+    (bool, namespace) => {
+      if (!!namespace) {
+        const nsAvailableSources = availableSources[namespace];
+        const nsSelectedSources = selectedSources[namespace];
 
-      if (!nsAvailableSources.length && !nsSelectedSources && bool) {
-        setSelectAllForNamespace(namespace);
+        if (!nsSelectedSources && bool) {
+          onSelectNamespace(namespace);
+          setSelectAllForNamespace(namespace);
+        } else {
+          setSelectedSources((prev) => ({ ...prev, [namespace]: bool ? nsAvailableSources : [] }));
+          setSelectAllForNamespace('');
+          setSelectedNamespace('');
+        }
       } else {
-        setSelectedSources((prev) => ({ ...prev, [namespace]: bool ? nsAvailableSources : [] }));
-      }
-    } else {
-      setSelectAll(bool);
+        setSelectAll(bool);
 
-      if (bool) {
-        doSelectAll();
-      } else {
-        doUnselectAll();
+        if (bool) {
+          doSelectAll();
+        } else {
+          doUnselectAll();
+        }
       }
-    }
-  };
+    },
+    [availableSources, selectedSources],
+  );
 
   // this is to keep trying "select all" per namespace until the sources are loaded (allows for 1-click, better UX).
   // if selectedSources returns an emtpy array, it will stop to prevent inifnite loop where no availableSources ever exist for that namespace
   useEffect(() => {
     if (!!selectAllForNamespace) {
-      setSelectAllForNamespace('');
-      setTimeout(() => onSelectAll(true, selectAllForNamespace), 100);
+      const interval = setInterval(() => onSelectAll(true, selectAllForNamespace), 100);
+      return () => clearInterval(interval);
     }
-  }, [selectAllForNamespace]);
+  }, [selectAllForNamespace, onSelectAll]);
 
   const onSelectNamespace: UseSourceFormDataResponse['onSelectNamespace'] = (namespace) => {
     const alreadySelected = selectedNamespace === namespace;
@@ -194,6 +201,7 @@ export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFo
 
     searchText,
     selectAll,
+    selectAllForNamespace,
     showSelectedOnly,
     setSearchText,
     onSelectAll,
