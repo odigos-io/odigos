@@ -27,7 +27,7 @@ func (r *OdigosConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling Odigos Configuration")
 
-	err := gateway.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion, r.Config.MetricsServerEnabled)
+	err := gateway.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion, r.Config)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
