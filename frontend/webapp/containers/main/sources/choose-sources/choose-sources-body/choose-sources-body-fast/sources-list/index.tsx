@@ -125,7 +125,7 @@ export const SourcesList: React.FC<Props> = ({
         const selected = selectedSources[namespace] || [];
         const futureApps = selectedFutureApps[namespace] || false;
 
-        const namespacePassesFilters = (!searchText || namespace.toLowerCase().includes(searchText)) && (!showSelectedOnly || !!selected.length);
+        const namespacePassesFilters = !searchText || namespace.toLowerCase().includes(searchText);
         if (!namespacePassesFilters) return null;
 
         const isNamespaceSelected = selectedNamespace === namespace && !selectAllForNamespace;
@@ -169,7 +169,7 @@ export const SourcesList: React.FC<Props> = ({
                           <Checkbox initialValue={isSourceSelected} onChange={() => onSelectSource(source, namespace)} />
                           <Text>{source.name}</Text>
                           <Text opacity={0.8} size={10}>
-                            {source.numberOfInstances} running instances · {source.kind}
+                            {source.numberOfInstances} running instance{source.numberOfInstances !== 1 && 's'} · {source.kind}
                           </Text>
                         </FlexRow>
                       </SourceItem>
