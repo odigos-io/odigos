@@ -169,7 +169,7 @@ export const SourcesList: React.FC<Props> = ({
                           <Checkbox initialValue={isSourceSelected} onChange={() => onSelectSource(source, namespace)} />
                           <Text>{source.name}</Text>
                           <Text opacity={0.8} size={10}>
-                            {source.numberOfInstances} running instances · {source.kind}
+                            {source.numberOfInstances} running instance{source.numberOfInstances !== 1 && 's'} · {source.kind}
                           </Text>
                         </FlexRow>
                       </SourceItem>
