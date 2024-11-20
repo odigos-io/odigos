@@ -120,7 +120,7 @@ export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFo
         } else {
           setSelectedSources((prev) => ({ ...prev, [namespace]: bool ? nsAvailableSources : [] }));
           setSelectAllForNamespace('');
-          setSelectedNamespace('');
+          if (!!nsAvailableSources.length) setSelectedNamespace('');
         }
       } else {
         setSelectAll(bool);
