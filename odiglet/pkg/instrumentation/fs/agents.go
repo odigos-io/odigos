@@ -38,18 +38,18 @@ func CopyAgentsDirectoryToHost() error {
 		"/var/odigos/python-ebpf/pythonUSDT.abi3.so":                                                   {},
 	}
 
-	err := removeChangedFilesFromKeepMap(filesToKeep, containerDir, hostDir)
+	updatedFilesToKeepMap, err := removeChangedFilesFromKeepMap(filesToKeep, containerDir, hostDir)
 	if err != nil {
 		log.Logger.Error(err, "Error getting changed files")
 	}
 
-	err = removeFilesInDir(hostDir, filesToKeep)
+	err = removeFilesInDir(hostDir, updatedFilesToKeepMap)
 	if err != nil {
 		log.Logger.Error(err, "Error removing instrumentation directory from host")
 		return err
 	}
 
-	err = copyDirectories(containerDir, hostDir, filesToKeep)
+	err = copyDirectories(containerDir, hostDir, updatedFilesToKeepMap)
 	if err != nil {
 		log.Logger.Error(err, "Error copying instrumentation directory to host")
 		return err
@@ -82,7 +82,10 @@ func CopyAgentsDirectoryToHost() error {
 	return nil
 }
 
-func removeChangedFilesFromKeepMap(filesToKeepMap map[string]struct{}, containerDir string, hostDir string) error {
+func removeChangedFilesFromKeepMap(filesToKeepMap map[string]struct{}, containerDir string, hostDir string) (map[string]struct{}, error) {
+
+	updatedFilesToKeepMap := make(map[string]struct{})
+
 	for hostPath := range filesToKeepMap {
 		// Convert host path to container path
 		containerPath := strings.Replace(hostPath, hostDir, containerDir, 1)
@@ -92,20 +95,19 @@ func removeChangedFilesFromKeepMap(filesToKeepMap map[string]struct{}, container
 		_, containerErr := os.Stat(containerPath)
 
 		if hostErr != nil || containerErr != nil {
-			delete(filesToKeepMap, hostPath)
-			log.Logger.V(0).Info("File marked for deletion (missing)", "file", hostPath)
+			log.Logger.V(0).Info("File marked for recreate (missing)", "file", hostPath)
 			continue
 		}
 
 		// Compare file hashes
 		hostHash, err := calculateFileHash(hostPath)
 		if err != nil {
-			return fmt.Errorf("error calculating hash for host file %s: %v", hostPath, err)
+			return nil, fmt.Errorf("error calculating hash for host file %s: %v", hostPath, err)
 		}
 
 		containerHash, err := calculateFileHash(containerPath)
 		if err != nil {
-			return fmt.Errorf("error calculating hash for container file %s: %v", containerPath, err)
+			return nil, fmt.Errorf("error calculating hash for container file %s: %v", containerPath, err)
 		}
 
 		// If the hashes are different, keep the old version of the file in the host with the new name <ORIGINAL_FILE_NAME_{12_CHARS_OF_HASH}>
@@ -113,17 +115,18 @@ func removeChangedFilesFromKeepMap(filesToKeepMap map[string]struct{}, container
 		if hostHash != containerHash {
 			newHostPath, err := renameFileWithHashSuffix(hostPath, hostHash)
 			if err != nil {
-				return fmt.Errorf("error renaming file: %v", err)
+				return nil, fmt.Errorf("error renaming file: %v", err)
 			}
 
-			filesToKeepMap[newHostPath] = struct{}{}
+			updatedFilesToKeepMap[newHostPath] = struct{}{}
 
-			delete(filesToKeepMap, hostPath)
-			log.Logger.V(0).Info("File marked for deletion (content mismatch)", "file", hostPath)
+			continue // original file is renamed, recreate hostPath and keep NewHostPath
 		}
+
+		updatedFilesToKeepMap[hostPath] = struct{}{}
 	}
 
-	return nil
+	return updatedFilesToKeepMap, nil
 }
 
 // Helper function to rename a file using the first 12 characters of its hash
@@ -143,9 +146,9 @@ func renameFileWithHashSuffix(originalPath, fileHash string) (string, error) {
 
 // Construct a renamed file path
 func generateRenamedFilePath(originalPath, hashSuffix string) string {
-	ext := filepath.Ext(originalPath)                    // Get the file extension (e.g., ".so")
-	base := strings.TrimSuffix(originalPath, ext)        // Remove the extension from the original path
-	return fmt.Sprintf("%s_%s%s", base, hashSuffix, ext) // Append the hash and add back the extension
+	ext := filepath.Ext(originalPath)                                 // Get the file extension (e.g., ".so")
+	base := strings.TrimSuffix(originalPath, ext)                     // Remove the extension from the original path
+	return fmt.Sprintf("%s_hash_version-%s%s", base, hashSuffix, ext) // Append the hash and add back the extension
 }
 
 // calculateFileHash computes the SHA-256 hash of a file
