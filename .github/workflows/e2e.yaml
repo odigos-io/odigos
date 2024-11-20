@@ -33,7 +33,7 @@ jobs:
           go build -tags=embed_manifests -o odigos
 
       - name: Upload CLI
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: odigos-cli
           path: cli/odigos
@@ -50,7 +50,7 @@ jobs:
           docker save -o odigos-images.tar $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "odigos")
 
       - name: Upload Odigos Images
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: odigos-images
           path: odigos-images.tar
