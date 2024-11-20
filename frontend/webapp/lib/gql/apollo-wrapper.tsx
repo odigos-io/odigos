@@ -1,20 +1,18 @@
 'use client';
 
+import { API } from '@/utils';
+import { onError } from '@apollo/client/link/error';
 import { ApolloLink, HttpLink } from '@apollo/client';
 import { ApolloNextAppProvider, InMemoryCache, ApolloClient, SSRMultipartLink } from '@apollo/experimental-nextjs-app-support';
-import { onError } from '@apollo/client/link/error';
-import { API } from '@/utils';
 
 function makeClient() {
   const httpLink = new HttpLink({
-    uri: API.BASE_URL,
+    uri: API.GRAPHQL,
   });
 
   const errorLink = onError(({ graphQLErrors, networkError }) => {
-    if (graphQLErrors) {
-      graphQLErrors.forEach(({ message, locations, path }) => console.log(`[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`));
-    }
-    if (networkError) console.log(`[Network error]: ${networkError}`);
+    if (graphQLErrors) graphQLErrors.forEach(({ message, locations, path }) => console.warn(`[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`));
+    if (networkError) console.warn(`[Network error]: ${networkError}`);
   });
 
   return new ApolloClient({
