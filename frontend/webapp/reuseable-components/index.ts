@@ -31,4 +31,3 @@ export * from './drawer';
 export * from './input-table';
 export * from './status';
 export * from './field-label';
-export * from './transition';
