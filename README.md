@@ -28,7 +28,7 @@ Odigos is an open-source distributed tracing solution that revolutionizes observ
 * **Code-Free Instrumentation**: Set up distributed tracing in minutes, eliminating manual code modifications.
 * **Multi-Language Support**: Works with Java, Python, .NET, Node.js, and Go applications.
 * **eBPF-Powered**: Utilizes eBPF technology for high-performance instrumentation, especially for Go applications.
-* **OpenTelemetry Compatible**: Generates traces in OpenTelemetry format for broad tool compatibility.
+* **OpenTelemetry Compatible**: Generates traces, metrics and logs in OpenTelemetry format for broad tool compatibility.
 * **Vendor Agnostic**: Integrates with various monitoring solutions, avoiding vendor lock-in.
 * **Automatic Scaling**: Manages and scales OpenTelemetry collectors based on data volume.
 * **User-Friendly Management**: Offers a web UI for easy configuration and management.
