@@ -20,6 +20,33 @@
     <a href="https://www.youtube.com/watch?v=nynyV7FC4VI">Demo Video</a> • <a href="https://docs.odigos.io">Documentation</a> • <a href="https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A">Join Slack Community</a>
 </h2>
 
+<<<<<<< Updated upstream
+=======
+## What is Odigos?
+
+Odigos is an open-source distributed tracing solution that revolutionizes observability for Kubernetes environments. It provides instant tracing capabilities without requiring any code changes to your applications.
+
+## Key Features
+
+* **Code-Free Instrumentation**: Set up distributed tracing in minutes, eliminating manual code modifications.
+* **Multi-Language Support**: Works with Java, Python, .NET, Node.js, and Go applications.
+* **eBPF-Powered**: Utilizes eBPF technology for high-performance instrumentation of Go applications. eBPF-based instrumentation for Java, Python, .NET, and Node.js is available in the commercial edition.
+* **OpenTelemetry Compatible**: Generates traces in OpenTelemetry format for broad tool compatibility.
+* **Vendor Agnostic**: Integrates with various monitoring solutions, avoiding vendor lock-in.
+* **Automatic Scaling**: Manages and scales OpenTelemetry collectors based on data volume.
+* **User-Friendly Management**: Offers a web UI for easy configuration and management.
+* **Opinionated Defaults**: Supplies common defaults and best practices out-of-the-box, requiring no deep knowledge of OpenTelemetry.
+
+## Why Choose Odigos
+
+1. **Simplicity**: Implement distributed tracing with minimal effort and complexity.
+2. **Performance**: Separates data recording and processing to minimize runtime impact.
+3. **Community-Backed**: With 3,000+ GitHub stars and growing contributor base.
+
+Odigos empowers platform engineers, DevOps professionals, and SREs to enhance their observability strategies quickly and effectively, making it an ideal solution for modern cloud-native environments.
+
+## Features
+>>>>>>> Stashed changes
 
 ### ✨ Language Agnostic Auto-instrumentation
 
@@ -61,6 +88,7 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 
 ### Managed
 
+<<<<<<< Updated upstream
 |                         | Traces  | Metrics | Logs |
 |-------------------------| ------- | ------- |------|
 | New Relic               | ✅      | ✅      | ✅    |
@@ -93,8 +121,53 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 | Jaeger        | ✅     |         |      |
 | SigNoz        | ✅     | ✅      | ✅   |
 | qryn          | ✅     | ✅      | ✅   |
+=======
+
+
+
+|                         | Traces | Metrics | Logs |
+| ------------------------- | -------- | --------- | ------ |
+| Axiom                   | ✅     |         | ✅   |
+| AWS S3                  | ✅     | ✅      | ✅   |
+| Azure Blob Storage      | ✅     |         | ✅   |
+| Chronosphere            | ✅     | ✅      |      |
+| Coralogix               | ✅     | ✅      | ✅   |
+| Datadog                 | ✅     | ✅      | ✅   |
+| Dynatrace               | ✅     | ✅      | ✅   |
+| Elastic APM             | ✅     |         | ✅   |
+| Gigapipe                | ✅     | ✅      | ✅   |
+| Google Cloud Monitoring | ✅     |         | ✅   |
+| Google Cloud Storage    | ✅     |         | ✅   |
+| Grafana Cloud           | ✅     | ✅      | ✅   |
+| Honeycomb               | ✅     | ✅      | ✅   |
+| Lightstep               | ✅     |         |      |
+| Logz.io                 | ✅     | ✅      | ✅   |
+| New Relic               | ✅     | ✅      | ✅   |
+| OpsVerse                | ✅     | ✅      | ✅   |
+| qryn.cloud              | ✅     | ✅      | ✅   |
+| Sentry                  | ✅     |         |      |
+| Splunk                  | ✅     |         |      |
+| Sumo Logic              | ✅     | ✅      | ✅   |
+
+### Open Source
+
+
+
+
+| Backend       | Traces | Metrics | Logs |
+| --------------- | -------- | --------- | ------ |
+| ClickHouse    | ✅     | ✅      | ✅   |
+>>>>>>> Stashed changes
 | Elasticsearch | ✅     |         | ✅   |
+| Jaeger        | ✅     |         |      |
+| Loki          |        |         | ✅   |
+| OTLP (gRPC)   | ✅     | ✅      | ✅   |
+| OTLP (HTTP)   | ✅     | ✅      | ✅   |
+| Prometheus    |        | ✅      |      |
 | Quickwit      | ✅     |         | ✅   |
+| qryn          | ✅     | ✅      | ✅   |
+| SigNoz        | ✅     | ✅      | ✅   |
+| Tempo         | ✅     |         |      |
 
 Can't find the destination you need? Help us by following our quick [add new destination](https://docs.odigos.io/adding-new-dest) guide and submitting a PR.
 
