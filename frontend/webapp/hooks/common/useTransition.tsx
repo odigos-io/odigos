@@ -5,11 +5,14 @@ import type { IStyledComponentBase, Keyframes, Substitute } from 'styled-compone
 interface HookProps {
   container: IStyledComponentBase<'web', Substitute<React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>, {}>> & string;
   animateIn: Keyframes;
-  animateOut: Keyframes;
+  animateOut?: Keyframes;
   duration?: number; // in milliseconds
 }
 
-type TransitionProps = PropsWithChildren<{ enter: boolean }>;
+type TransitionProps = PropsWithChildren<{
+  enter: boolean;
+  [key: string]: any;
+}>;
 
 export const useTransition = ({ container, animateIn, animateOut, duration = 300 }: HookProps) => {
   const Animated = styled(container)<{ $isEntering: boolean; $isLeaving: boolean }>`
@@ -18,7 +21,7 @@ export const useTransition = ({ container, animateIn, animateOut, duration = 300
     animation-fill-mode: forwards;
   `;
 
-  const Transition = useCallback(({ children, enter }: TransitionProps) => {
+  const Transition = useCallback(({ children, enter, ...props }: TransitionProps) => {
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -27,7 +30,7 @@ export const useTransition = ({ container, animateIn, animateOut, duration = 300
     }, [enter, duration]);
 
     return (
-      <Animated $isEntering={enter} $isLeaving={!enter && mounted}>
+      <Animated $isEntering={enter} $isLeaving={!enter && mounted} {...props}>
         {children}
       </Animated>
     );
