@@ -38,7 +38,10 @@ const CheckboxWrapper = styled.div<{ $isChecked: boolean; $disabled?: CheckboxPr
 
 const Checkbox: React.FC<CheckboxProps> = ({ title, titleColor, tooltip, initialValue = false, onChange, disabled, style }) => {
   const [isChecked, setIsChecked] = useState(initialValue);
-  useEffect(() => setIsChecked(initialValue), [initialValue]);
+
+  useEffect(() => {
+    if (isChecked !== initialValue) setIsChecked(initialValue);
+  }, [isChecked, initialValue]);
 
   const handleToggle: React.MouseEventHandler<HTMLDivElement> = (e) => {
     if (disabled) return;
