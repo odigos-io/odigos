@@ -20,10 +20,9 @@ type WorkloadsReconciler struct {
 }
 
 func (r *WorkloadsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	// Fetch the workload (Deployment, StatefulSet, or DaemonSet)
+
 	var annotations map[string]string
 
-	// Check for Deployment
 	deployment := &appsv1.Deployment{}
 	if err := r.Get(ctx, req.NamespacedName, deployment); err == nil {
 		annotations = deployment.Annotations
@@ -46,7 +45,6 @@ func (r *WorkloadsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	reportedName := annotations[consts.OdigosReportedNameAnnotation]
 
-	// Fetch the corresponding InstrumentationConfig
 	var instrumentationConfig odigosv1alpha1.InstrumentationConfig
 	if err := r.Get(ctx, types.NamespacedName{Name: req.Name, Namespace: req.Namespace}, &instrumentationConfig); err != nil {
 		if errors.IsNotFound(err) {
