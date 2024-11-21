@@ -2,11 +2,11 @@ import React from 'react';
 import Image from 'next/image';
 import { Text } from '../text';
 import ReactDOM from 'react-dom';
-import { useKeyDown } from '@/hooks';
 import styled from 'styled-components';
+import { useKeyDown, useTransition } from '@/hooks';
 import { slide, Overlay, CenterThis } from '@/styles';
 
-interface ModalProps {
+interface Props {
   isOpen: boolean;
   noOverlay?: boolean;
   header?: {
@@ -17,7 +17,7 @@ interface ModalProps {
   children: React.ReactNode;
 }
 
-const ModalWrapper = styled.div<{ $isOpen: ModalProps['isOpen'] }>`
+const Container = styled.div`
   position: fixed;
   top: 50%;
   left: 50%;
@@ -30,7 +30,6 @@ const ModalWrapper = styled.div<{ $isOpen: ModalProps['isOpen'] }>`
   border-radius: 40px;
   box-shadow: 0px 1px 1px 0px rgba(17, 17, 17, 0.8), 0px 2px 2px 0px rgba(17, 17, 17, 0.8), 0px 5px 5px 0px rgba(17, 17, 17, 0.8), 0px 10px 10px 0px rgba(17, 17, 17, 0.8),
     0px 0px 8px 0px rgba(17, 17, 17, 0.8);
-  animation: ${({ $isOpen }) => ($isOpen ? slide.in['center'] : slide.out['center'])} 0.3s ease;
 `;
 
 const ModalHeader = styled.div`
@@ -83,22 +82,22 @@ const CancelText = styled(Text)`
   cursor: pointer;
 `;
 
-const Modal: React.FC<ModalProps> = ({ isOpen, noOverlay, header, actionComponent, onClose, children }) => {
-  useKeyDown(
-    {
-      key: 'Escape',
-      active: isOpen,
-    },
-    () => onClose(),
-  );
+const Modal: React.FC<Props> = ({ isOpen, noOverlay, header, actionComponent, onClose, children }) => {
+  useKeyDown({ key: 'Escape', active: isOpen }, () => onClose());
+
+  const Transition = useTransition({
+    container: Container,
+    animateIn: slide.in['center'],
+    animateOut: slide.out['center'],
+  });
 
   if (!isOpen) return null;
 
   return ReactDOM.createPortal(
     <>
-      <Overlay onClick={onClose} style={{ opacity: noOverlay ? 0 : 1 }} />
+      <Overlay hidden={!isOpen} onClick={onClose} style={{ opacity: noOverlay ? 0 : 1 }} />
 
-      <ModalWrapper $isOpen={isOpen}>
+      <Transition enter={isOpen}>
         {header && (
           <ModalHeader>
             <ModalCloseButton onClick={onClose}>
@@ -113,7 +112,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, noOverlay, header, actionComponen
         )}
 
         <ModalContent>{children}</ModalContent>
-      </ModalWrapper>
+      </Transition>
     </>,
     document.body,
   );
