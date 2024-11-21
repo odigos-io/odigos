@@ -4,9 +4,9 @@ import { slide } from '@/styles';
 import theme from '@/styles/theme';
 import { useAppStore } from '@/store';
 import styled from 'styled-components';
-import { useSourceCRUD } from '@/hooks';
 import { DeleteWarning } from '@/components';
-import { Badge, Button, Divider, Text, Transition } from '@/reuseable-components';
+import { useSourceCRUD, useTransition } from '@/hooks';
+import { Badge, Button, Divider, Text } from '@/reuseable-components';
 
 const Container = styled.div`
   position: fixed;
@@ -24,6 +24,12 @@ const Container = styled.div`
 `;
 
 const MultiSourceControl = () => {
+  const Transition = useTransition({
+    container: Container,
+    animateIn: slide.in['center'],
+    animateOut: slide.out['center'],
+  });
+
   const { sources, deleteSources } = useSourceCRUD();
   const { configuredSources, setConfiguredSources } = useAppStore((state) => state);
   const [isWarnModalOpen, setIsWarnModalOpen] = useState(false);
@@ -50,7 +56,7 @@ const MultiSourceControl = () => {
 
   return (
     <>
-      <Transition container={Container} enter={!!totalSelected} animateIn={slide.in['center']} animateOut={slide.out['center']}>
+      <Transition enter={!!totalSelected}>
         <Text>Selected sources</Text>
         <Badge label={totalSelected} filled />
 
