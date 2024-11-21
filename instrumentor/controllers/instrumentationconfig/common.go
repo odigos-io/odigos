@@ -1,14 +1,21 @@
 package instrumentationconfig
 
 import (
+	"context"
+	"fmt"
+
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationConfig, ia *odigosv1alpha1.InstrumentedApplication, rules *odigosv1alpha1.InstrumentationRuleList) error {
+func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationConfig, ia *odigosv1alpha1.InstrumentedApplication, rules *odigosv1alpha1.InstrumentationRuleList, k8sClient client.Client) error {
 
 	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(ia.Name)
 	if err != nil {
@@ -19,6 +26,35 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 		Namespace: ia.Namespace,
 		Kind:      workloadKind,
 	}
+
+	var serviceName string
+	switch workloadKind {
+	case "Deployment":
+		var deployment appsv1.Deployment
+		err := k8sClient.Get(context.Background(), types.NamespacedName{Name: workloadName, Namespace: ia.Namespace}, &deployment)
+		if err != nil {
+			return fmt.Errorf("failed to get Deployment %s/%s: %w", ia.Namespace, workloadName, err)
+		}
+		serviceName = extractServiceNameFromAnnotations(deployment.Annotations, deployment.Name)
+	case "StatefulSet":
+		var statefulSet appsv1.StatefulSet
+		err := k8sClient.Get(context.Background(), types.NamespacedName{Name: workloadName, Namespace: ia.Namespace}, &statefulSet)
+		if err != nil {
+			return fmt.Errorf("failed to get StatefulSet %s/%s: %w", ia.Namespace, workloadName, err)
+		}
+		serviceName = extractServiceNameFromAnnotations(statefulSet.Annotations, statefulSet.Name)
+	case "DaemonSet":
+		var daemonSet appsv1.DaemonSet
+		err := k8sClient.Get(context.Background(), types.NamespacedName{Name: workloadName, Namespace: ia.Namespace}, &daemonSet)
+		if err != nil {
+			return fmt.Errorf("failed to get DaemonSet %s/%s: %w", ia.Namespace, workloadName, err)
+		}
+		serviceName = extractServiceNameFromAnnotations(daemonSet.Annotations, daemonSet.Name)
+	default:
+		return fmt.Errorf("unsupported workload kind: %s", workloadKind)
+	}
+
+	ic.Spec.ServiceName = serviceName
 
 	sdkConfigs := make([]odigosv1alpha1.SdkConfig, 0, len(ia.Spec.RuntimeDetails))
 
@@ -238,4 +274,14 @@ func mergeMessagingPayloadCollectionRules(rule1 *instrumentationrules.MessagingP
 
 func boolPtr(b bool) *bool {
 	return &b
+}
+
+func extractServiceNameFromAnnotations(annotations map[string]string, defaultName string) string {
+	if annotations == nil {
+		return defaultName
+	}
+	if reportedName, exists := annotations[consts.OdigosReportedNameAnnotation]; exists && reportedName != "" {
+		return reportedName
+	}
+	return defaultName
 }

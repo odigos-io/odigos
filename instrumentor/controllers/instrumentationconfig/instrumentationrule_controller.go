@@ -44,7 +44,7 @@ func (r *InstrumentationRuleReconciler) Reconcile(ctx context.Context, req ctrl.
 			}
 		}
 
-		err := updateInstrumentationConfigForWorkload(ic, &ia, instrumentationRules)
+		err := updateInstrumentationConfigForWorkload(ic, &ia, instrumentationRules, r.Client)
 		if err != nil {
 			logger.Error(err, "error updating instrumentation config", "workload", ia.Name)
 			continue

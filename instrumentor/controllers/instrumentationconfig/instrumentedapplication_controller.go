@@ -56,7 +56,7 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 	instrumentationRules := &odigosv1.InstrumentationRuleList{}
 	err = r.Client.List(ctx, instrumentationRules)
 
-	err = updateInstrumentationConfigForWorkload(&ic, &ia, instrumentationRules)
+	err = updateInstrumentationConfigForWorkload(&ic, &ia, instrumentationRules, r.Client)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
