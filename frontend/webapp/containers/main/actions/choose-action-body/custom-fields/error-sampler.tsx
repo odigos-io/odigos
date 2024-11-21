@@ -17,11 +17,7 @@ const ErrorSampler: React.FC<Props> = ({ value, setValue }) => {
   const mappedValue = useMemo(() => safeJsonParse<Parsed>(value, { fallback_sampling_ratio: 0 }).fallback_sampling_ratio, [value]);
 
   const handleChange = (val: string) => {
-    let num = Number(val);
-
-    if (Number.isNaN(num) || num < MIN || num > MAX) {
-      num = MIN;
-    }
+    const num = Math.max(MIN, Math.min(Number(val), MAX)) || MIN;
 
     const payload: Parsed = {
       fallback_sampling_ratio: num,
