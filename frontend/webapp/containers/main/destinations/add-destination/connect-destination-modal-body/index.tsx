@@ -9,8 +9,8 @@ import { GET_DESTINATION_TYPE_DETAILS } from '@/graphql';
 import { Body, Container, SideMenuWrapper } from '../styled';
 import { Divider, SectionTitle } from '@/reuseable-components';
 import { ConnectionNotification } from './connection-notification';
+import type { StepProps, DestinationInput, DestinationTypeItem, DestinationDetailsResponse, ConfiguredDestination } from '@/types';
 import { useComputePlatform, useConnectDestinationForm, useConnectEnv, useDestinationFormData, useEditDestinationFormHandlers } from '@/hooks';
-import { StepProps, DestinationInput, DestinationTypeItem, DestinationDetailsResponse, ConfiguredDestination } from '@/types';
 
 const SIDE_MENU_DATA: StepProps[] = [
   {
@@ -34,6 +34,7 @@ interface ConnectDestinationModalBodyProps {
 export function ConnectDestinationModalBody({ destination, onSubmitRef, onFormValidChange }: ConnectDestinationModalBodyProps) {
   const [destinationName, setDestinationName] = useState<string>('');
   const [showConnectionError, setShowConnectionError] = useState(false);
+  const [isFormDirty, setIsFormDirty] = useState(false);
 
   const { dynamicFields, exportedSignals, setDynamicFields, setExportedSignals } = useDestinationFormData();
 
@@ -41,7 +42,16 @@ export function ConnectDestinationModalBody({ destination, onSubmitRef, onFormVa
   const { refetch } = useComputePlatform();
   const { buildFormDynamicFields } = useConnectDestinationForm();
 
-  const { handleDynamicFieldChange, handleSignalChange } = useEditDestinationFormHandlers(setExportedSignals, setDynamicFields);
+  const { handleDynamicFieldChange, handleSignalChange } = useEditDestinationFormHandlers(
+    (...params) => {
+      setIsFormDirty(true);
+      setExportedSignals(...params);
+    },
+    (...params) => {
+      setIsFormDirty(true);
+      setDynamicFields(...params);
+    },
+  );
 
   const addConfiguredDestination = useAppStore(({ addConfiguredDestination }) => addConfiguredDestination);
 
@@ -96,6 +106,7 @@ export function ConnectDestinationModalBody({ destination, onSubmitRef, onFormVa
   }, [destination]);
 
   function onDynamicFieldChange(name: string, value: any) {
+    setIsFormDirty(true);
     setShowConnectionError(false);
     handleDynamicFieldChange(name, value);
   }
@@ -161,26 +172,6 @@ export function ConnectDestinationModalBody({ destination, onSubmitRef, onFormVa
     }
   }
 
-  const actionButton = useMemo(() => {
-    if (!!destination?.testConnectionSupported) {
-      return (
-        <TestConnection
-          onError={() => {
-            setShowConnectionError(true);
-            onFormValidChange(false);
-          }}
-          destination={{
-            name: destinationName,
-            type: destination?.type || '',
-            exportedSignals,
-            fields: processFormFields(),
-          }}
-        />
-      );
-    }
-    return null;
-  }, [destination, destinationName, exportedSignals, processFormFields, onFormValidChange]);
-
   if (!destination) return null;
 
   return (
@@ -190,7 +181,28 @@ export function ConnectDestinationModalBody({ destination, onSubmitRef, onFormVa
       </SideMenuWrapper>
 
       <Body>
-        <SectionTitle title='Create connection' description='Connect selected destination with Odigos.' actionButton={actionButton} />
+        <SectionTitle
+          title='Create connection'
+          description='Connect selected destination with Odigos.'
+          actionButton={
+            !!destination.testConnectionSupported ? (
+              <TestConnection
+                destination={{
+                  name: destinationName,
+                  type: destination.type || '',
+                  exportedSignals,
+                  fields: processFormFields(),
+                }}
+                isFormDirty={isFormDirty}
+                clearFormDirty={() => setIsFormDirty(false)}
+                onError={() => {
+                  setShowConnectionError(true);
+                  onFormValidChange(false);
+                }}
+              />
+            ) : undefined
+          }
+        />
         <ConnectionNotification showConnectionError={showConnectionError} destination={destination} />
         <Divider margin='24px 0' />
         <FormContainer
