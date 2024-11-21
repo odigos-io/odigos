@@ -47,6 +47,10 @@ const MonitoringCheckboxes: React.FC<Props> = ({ isVertical, allowedSignals, sel
       setSelectedSignals(payload);
       setIsLastSelection(payload.length === 1);
     }
+
+    return () => {
+      recordedRows.current = '';
+    };
     // eslint-disable-next-line
   }, [allowedSignals]);
 
