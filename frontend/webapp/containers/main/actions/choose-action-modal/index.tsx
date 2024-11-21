@@ -52,7 +52,7 @@ export const AddActionModal: React.FC<AddActionModalProps> = ({ isOpen, onClose 
       }
     >
       <ModalBody>
-        <SectionTitle title='Define Action' description='Define an action to modify telemetry data before it`s sent to destinations. Choose an action type and configure its details.' />
+        <SectionTitle title='Select Action' description='Select an action to modify telemetry data before it`s sent to destinations. Choose an action type and configure its details.' />
         <AutocompleteInput options={ACTION_OPTIONS} selectedOption={selectedItem} onOptionSelect={handleSelect} style={{ marginTop: '24px' }} />
 
         {!!selectedItem?.type ? (
