@@ -11,7 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func newClusterCollectorGroup(namespace string) *odigosv1.CollectorsGroup {
+func newClusterCollectorGroup(namespace string, memorySettings *odigosv1.CollectorsGroupMemorySettings) *odigosv1.CollectorsGroup {
 	return &odigosv1.CollectorsGroup{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "CollectorsGroup",
@@ -24,6 +24,7 @@ func newClusterCollectorGroup(namespace string) *odigosv1.CollectorsGroup {
 		Spec: odigosv1.CollectorsGroupSpec{
 			Role:                    odigosv1.CollectorsGroupRoleClusterGateway,
 			CollectorOwnMetricsPort: consts.OdigosClusterCollectorOwnTelemetryPortDefault,
+			MemorySettings:          *memorySettings,
 		},
 	}
 }
@@ -38,8 +39,15 @@ func sync(ctx context.Context, c client.Client) error {
 		return err
 	}
 
+	odigosConfig, err := utils.GetCurrentOdigosConfig(ctx, c)
+	if err != nil {
+		return err
+	}
+
+	memorySettings := getMemorySettings(&odigosConfig)
+
 	if len(dests.Items) > 0 {
-		err := utils.ApplyCollectorGroup(ctx, c, newClusterCollectorGroup(namespace))
+		err := utils.ApplyCollectorGroup(ctx, c, newClusterCollectorGroup(namespace, memorySettings))
 		if err != nil {
 			return err
 		}

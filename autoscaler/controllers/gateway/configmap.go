@@ -111,13 +111,13 @@ func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32) error {
 	return nil
 }
 
-func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, memConfig *memoryConfigurations) (string, []odigoscommon.ObservabilitySignal, error) {
+func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme) (string, []odigoscommon.ObservabilitySignal, error) {
 	logger := log.FromContext(ctx)
 
 	memoryLimiterConfiguration := config.GenericMap{
 		"check_interval":  "1s",
-		"limit_mib":       memConfig.memoryLimiterLimitMiB,
-		"spike_limit_mib": memConfig.memoryLimiterSpikeLimitMiB,
+		"limit_mib":       gateway.Spec.MemorySettings.MemoryLimiterLimitMiB,
+		"spike_limit_mib": gateway.Spec.MemorySettings.MemoryLimiterSpikeLimitMiB,
 	}
 
 	processors := common.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleClusterGateway)

@@ -1,6 +1,7 @@
-package gateway
+package clustercollectorsgroup
 
 import (
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 )
 
@@ -20,14 +21,9 @@ const (
 	defaultGoMemLimitPercentage = 80.0
 )
 
-type memoryConfigurations struct {
-	memoryRequestMiB           int
-	memoryLimiterLimitMiB      int
-	memoryLimiterSpikeLimitMiB int
-	gomemlimitMiB              int
-}
-
-func getMemoryConfigurations(odigosConfig *common.OdigosConfiguration) *memoryConfigurations {
+// process the memory settings from odigos config and return the memory settings for the collectors group.
+// apply any defaulting and calculations here.
+func getMemorySettings(odigosConfig *common.OdigosConfiguration) *odigosv1.CollectorsGroupMemorySettings {
 	memoryRequestMiB := defaultRequestMemoryMiB
 	if odigosConfig.CollectorGateway != nil && odigosConfig.CollectorGateway.RequestMemoryMiB > 0 {
 		memoryRequestMiB = odigosConfig.CollectorGateway.RequestMemoryMiB
@@ -49,10 +45,10 @@ func getMemoryConfigurations(odigosConfig *common.OdigosConfiguration) *memoryCo
 		gomemlimitMiB = odigosConfig.CollectorGateway.GoMemLimitMib
 	}
 
-	return &memoryConfigurations{
-		memoryRequestMiB:           memoryRequestMiB,
-		memoryLimiterLimitMiB:      memoryLimiterLimitMiB,
-		memoryLimiterSpikeLimitMiB: memoryLimiterSpikeLimitMiB,
-		gomemlimitMiB:              gomemlimitMiB,
+	return &odigosv1.CollectorsGroupMemorySettings{
+		MemoryRequestMiB:           memoryRequestMiB,
+		MemoryLimiterLimitMiB:      memoryLimiterLimitMiB,
+		MemoryLimiterSpikeLimitMiB: memoryLimiterSpikeLimitMiB,
+		GomemlimitMiB:              gomemlimitMiB,
 	}
 }
