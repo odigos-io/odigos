@@ -78,8 +78,6 @@ func (p *conditionalAttributesProcessor) addAttributes(spanAttributes pcommon.Ma
 					spanAttributes.PutStr(configAction.NewAttribute, configAction.Value)
 				} else if _, exists := resourceAttributes.Get(configAction.NewAttribute); !exists {
 					spanAttributes.PutStr(configAction.NewAttribute, configAction.Value)
-				} else {
-					spanAttributes.PutStr(configAction.NewAttribute, p.config.GlobalDefault)
 				}
 			} else if configAction.FromAttribute != "" { // Copy a value from another attribute if specified.
 				if fromAttrValue, ok := spanAttributes.Get(configAction.FromAttribute); ok {
@@ -89,8 +87,6 @@ func (p *conditionalAttributesProcessor) addAttributes(spanAttributes pcommon.Ma
 						spanAttributes.PutStr(configAction.NewAttribute, fromAttrValue.AsString())
 					} else if _, exists := resourceAttributes.Get(configAction.NewAttribute); !exists {
 						spanAttributes.PutStr(configAction.NewAttribute, fromAttrValue.AsString())
-					} else {
-						spanAttributes.PutStr(configAction.NewAttribute, p.config.GlobalDefault)
 					}
 				}
 			}
