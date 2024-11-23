@@ -16,6 +16,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -191,6 +192,8 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 		rollingUpdate.MaxSurge = &maxSurge
 	}
 
+	requestMemoryQuantity := resource.MustParse(fmt.Sprintf("%dMi", datacollection.Spec.MemorySettings.MemoryRequestMiB))
+
 	desiredDs := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      consts.OdigosNodeCollectorDaemonSetName,
@@ -302,6 +305,10 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 										},
 									},
 								},
+								{
+									Name:  "GOMEMLIMIT",
+									Value: fmt.Sprintf("%dMiB", datacollection.Spec.MemorySettings.GomemlimitMiB),
+								},
 							},
 							LivenessProbe: &corev1.Probe{
 								ProbeHandler: corev1.ProbeHandler{
@@ -317,6 +324,11 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 										Path: "/",
 										Port: intstr.FromInt(13133),
 									},
+								},
+							},
+							Resources: corev1.ResourceRequirements{
+								Requests: corev1.ResourceList{
+									corev1.ResourceMemory: requestMemoryQuantity,
 								},
 							},
 							SecurityContext: &corev1.SecurityContext{
