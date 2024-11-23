@@ -27,17 +27,16 @@ func getNumberOfWorkers() int {
 	return min(maxWorkers, max(1, runtime.NumCPU()/4))
 }
 
-func copyDirectories(srcDir string, destDir string, filesToKeepMap map[string]struct{}) error {
+func copyDirectories(srcDir string, destDir string, filesToKeep map[string]struct{}) error {
 	start := time.Now()
 
 	hostContainEbpfDir := HostContainsEbpfDir(destDir)
-	shouldRecreateCFiles := ShouldRecreateAllCFiles()
 
-	// If the host directory NOT contains ebpf directories OR we should recreate C files, we copy all files
-	CopyCFiles := !hostContainEbpfDir || shouldRecreateCFiles
+	// If the host directory NOT contains ebpf directories we copy all files
+	CopyCFiles := !hostContainEbpfDir
 	log.Logger.V(0).Info("Copying instrumentation files to host", "srcDir", srcDir, "destDir", destDir, "CopyCFiles", CopyCFiles)
 
-	files, err := getFiles(srcDir, CopyCFiles, filesToKeepMap)
+	files, err := getFiles(srcDir, CopyCFiles, filesToKeep)
 	if err != nil {
 		return err
 	}
@@ -85,7 +84,7 @@ func worker(fileChan <-chan string, sourceDir, destDir string, wg *sync.WaitGrou
 	}
 }
 
-func getFiles(dir string, CopyCFiles bool, filesToKeepMap map[string]struct{}) ([]string, error) {
+func getFiles(dir string, CopyCFiles bool, filesToKeep map[string]struct{}) ([]string, error) {
 	var files []string
 	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -93,7 +92,7 @@ func getFiles(dir string, CopyCFiles bool, filesToKeepMap map[string]struct{}) (
 		}
 		if !d.IsDir() {
 			if !CopyCFiles {
-				if _, found := filesToKeepMap[strings.Replace(path, "/instrumentations/", "/var/odigos/", 1)]; found {
+				if _, found := filesToKeep[strings.Replace(path, "/instrumentations/", "/var/odigos/", 1)]; found {
 					log.Logger.V(0).Info("Skipping copying file", "file", path)
 					return nil
 				}

@@ -22,8 +22,6 @@ import (
 	"os"
 	"strings"
 
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	odigosver "github.com/odigos-io/odigos/k8sutils/pkg/version"
 
@@ -34,17 +32,16 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 
-	"github.com/go-logr/logr"
 	"github.com/go-logr/zapr"
 	bridge "github.com/odigos-io/opentelemetry-zap-bridge"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
+
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/version"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -188,7 +185,7 @@ func main() {
 	_, disableNameProcessor := os.LookupEnv("DISABLE_NAME_PROCESSOR")
 
 	config := &controllerconfig.ControllerConfig{
-		MetricsServerEnabled: isMetricsServerInstalled(mgr, setupLog),
+		K8sVersion: k8sVersion,
 	}
 
 	if err = (&controllers.DestinationReconciler{
@@ -237,16 +234,6 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "InstrumentedApplication")
 		os.Exit(1)
 	}
-	if err = (&controllers.OdigosConfigReconciler{
-		Client:           mgr.GetClient(),
-		Scheme:           mgr.GetScheme(),
-		ImagePullSecrets: imagePullSecrets,
-		OdigosVersion:    odigosVersion,
-		Config:           config,
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "OdigosConfig")
-		os.Exit(1)
-	}
 	if err = (&controllers.SecretReconciler{
 		Client:           mgr.GetClient(),
 		Scheme:           mgr.GetScheme(),
@@ -291,22 +278,4 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
-}
-
-func isMetricsServerInstalled(mgr ctrl.Manager, logger logr.Logger) bool {
-	var metricsServerDeployment appsv1.Deployment
-	// Use APIReader (uncached client) for direct access to the API server
-	// uses because mgr not cache the metrics-server deployment
-	err := mgr.GetAPIReader().Get(context.TODO(), types.NamespacedName{Name: "metrics-server", Namespace: "kube-system"}, &metricsServerDeployment)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			logger.Info("Metrics-server deployment not found")
-		} else {
-			logger.Error(err, "Failed to get metrics-server deployment")
-		}
-		return false
-	}
-
-	logger.V(0).Info("Metrics server found")
-	return true
 }
