@@ -106,14 +106,6 @@ func (p *PodsReconciler) instrumentWithEbpf(ctx context.Context, pod *corev1.Pod
 	return instrumentPodWithEbpf(ctx, pod, p.Directors, runtimeDetails, podWorkload)
 }
 
-func GetPodSumRestarts(pod *corev1.Pod) int {
-	restartCount := 0
-	for _, containerStatus := range pod.Status.ContainerStatuses {
-		restartCount += int(containerStatus.RestartCount)
-	}
-	return restartCount
-}
-
 func (p *PodsReconciler) getPodWorkloadObject(ctx context.Context, pod *corev1.Pod) (*workload.PodWorkload, error) {
 	for _, owner := range pod.OwnerReferences {
 		workloadName, workloadKind, err := workload.GetWorkloadFromOwnerReference(owner)
