@@ -23,22 +23,22 @@
 
 ### ✨ Language Agnostic Auto-instrumentation
 
-Odigos supports any application written in Java, Python, .NET, Node.js, and **Go**.  
+Odigos supports any application written in Java, Python, .NET, Node.js, and **Go**.
 Historically, compiled languages like Go have been difficult to instrument without code changes. Odigos solves this problem by uniquely leveraging [eBPF](https://ebpf.io).
 
 ![Works on any application](assets/choose_apps.png)
 
 
 ### 🤝 Keep your existing observability tools
-Odigos currently supports all the popular managed and open-source destinations.  
+Odigos currently supports all the popular managed and open-source destinations.
 By producing data in the [OpenTelemetry](https://opentelemetry.io) format, Odigos can be used with any observability tool that supports OTLP.
 
 For a complete list of supported destinations, see [here](#supported-destinations).
 
 ![Works with any observability tool](assets/choose_dest.png)
 
-### 🎛️ Collectors Management 
-Odigos automatically scales OpenTelemetry collectors based on observability data volume.  
+### 🎛️ Collectors Management
+Odigos automatically scales OpenTelemetry collectors based on observability data volume.
 Manage and configure collectors via a convenient web UI.
 
 ![Collectors Management](assets/overview_page.png)
@@ -82,6 +82,7 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 | Axiom                   | ✅      |         | ✅   |
 | Sumo Logic              | ✅      | ✅      | ✅   |
 | Coralogix               | ✅      | ✅      | ✅   |
+| Last9                   | ✅      | ✅      | ✅   |
 
 ### Open Source
 

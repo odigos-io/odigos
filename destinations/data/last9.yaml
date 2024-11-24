@@ -1,0 +1,30 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: last9
+  displayName: Last9
+  category: managed
+spec:
+  image: last9.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+  fields:
+    - name: LAST9_OTLP_ENDPOINT
+      displayName: Last9 OpenTelemetry Endpoint
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+        tooltip: 'Last9 OpenTelemetry Endpoint. Can be found at https://app.last9.io/integrations?category=all&integration=OpenTelemetry'
+    - name: LAST9_OTLP_BASIC_AUTH_HEADER
+      displayName: Basic Auth Header
+      componentType: input
+      componentProps:
+        type: password
+        required: true
+        placeholder: "Last9 Basic Auth Header"
