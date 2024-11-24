@@ -9,9 +9,16 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
+// Settings is used to pass initial configuration to the instrumentation
 type Settings struct {
+	// ServiceName is the name of the service that is being instrumented
+	// It will be used to populate the service.name resource attribute.
 	ServiceName        string
+	// ResourceAttributes can be used to pass additional resource attributes to the instrumentation
+	// These attributes will be added to the resource attributes of the telemetry data.
 	ResourceAttributes []attribute.KeyValue
+	// InitialConfig is the initial configuration that should be applied to the instrumentation,
+	// it can be used to enable/disable specific instrumentation libraries, configure sampling, etc.
 	InitialConfig	   *odigosv1.SdkConfig
 }
 
