@@ -60,7 +60,7 @@ type instrumentationDetails struct {
 }
 
 type Manager struct {
-	ProcEvents    <- chan detector.ProcessEvent
+	ProcEvents    <-chan detector.ProcessEvent
 	Client        client.Client
 	Factories     map[FactoryID]Factory
 	Logger        logr.Logger
@@ -71,7 +71,7 @@ type Manager struct {
 	stop context.CancelFunc
 }
 
-func NewManager(client client.Client, logger logr.Logger, factories map[FactoryID]Factory, procEvents chan detector.ProcessEvent) *Manager {
+func NewManager(client client.Client, logger logr.Logger, factories map[FactoryID]Factory, procEvents <-chan detector.ProcessEvent) *Manager {
 	return &Manager{
 		ProcEvents:    procEvents,
 		Client:        client,
@@ -232,7 +232,7 @@ func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.Process
 	settings := Settings{
 		// TODO: respect reported name annotation (if present) - to override the service name
 		// refactor from opAmp code
-		ServiceName:        workload.Name,
+		ServiceName: workload.Name,
 		// TODO: add container name
 		ResourceAttributes: utils.GetResourceAttributes(workload, pod.Name),
 		InitialConfig:      sdkConfig,
