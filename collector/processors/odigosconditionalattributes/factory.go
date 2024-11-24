@@ -44,10 +44,10 @@ func createTracesProcessor(
 func calculateUniqueNewAttributes(config *Config) map[string]struct{} {
 	uniqueNewAttributes := make(map[string]struct{})
 	for _, rule := range config.Rules {
-		for _, value := range rule.Values {
+		for _, value := range rule.NewAttributeValueConfigurations {
 			for _, v := range value {
-				if v.NewAttribute != "" {
-					uniqueNewAttributes[v.NewAttribute] = struct{}{}
+				if v.NewAttributeName != "" {
+					uniqueNewAttributes[v.NewAttributeName] = struct{}{}
 				}
 			}
 		}

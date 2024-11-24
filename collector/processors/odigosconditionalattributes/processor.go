@@ -67,26 +67,26 @@ func (p *conditionalAttributesProcessor) addAttributes(spanAttributes pcommon.Ma
 	}
 
 	// Check if the value matches a configured value in the rule.
-	if valueConfig, exists := rule.Values[attrStr]; exists {
+	if valueConfig, exists := rule.NewAttributeValueConfigurations[attrStr]; exists {
 		for _, configAction := range valueConfig {
 
 			// Add a static value as a new attribute if defined.
 			if configAction.Value != "" {
-				if _, exists := spanAttributes.Get(configAction.NewAttribute); !exists {
-					spanAttributes.PutStr(configAction.NewAttribute, configAction.Value)
-				} else if _, exists := scopeAttributes.Get(configAction.NewAttribute); !exists {
-					spanAttributes.PutStr(configAction.NewAttribute, configAction.Value)
-				} else if _, exists := resourceAttributes.Get(configAction.NewAttribute); !exists {
-					spanAttributes.PutStr(configAction.NewAttribute, configAction.Value)
+				if _, exists := spanAttributes.Get(configAction.NewAttributeName); !exists {
+					spanAttributes.PutStr(configAction.NewAttributeName, configAction.Value)
+				} else if _, exists := scopeAttributes.Get(configAction.NewAttributeName); !exists {
+					spanAttributes.PutStr(configAction.NewAttributeName, configAction.Value)
+				} else if _, exists := resourceAttributes.Get(configAction.NewAttributeName); !exists {
+					spanAttributes.PutStr(configAction.NewAttributeName, configAction.Value)
 				}
 			} else if configAction.FromAttribute != "" { // Copy a value from another attribute if specified.
 				if fromAttrValue, ok := spanAttributes.Get(configAction.FromAttribute); ok {
-					if _, exists := spanAttributes.Get(configAction.NewAttribute); !exists {
-						spanAttributes.PutStr(configAction.NewAttribute, fromAttrValue.AsString())
-					} else if _, exists := scopeAttributes.Get(configAction.NewAttribute); !exists {
-						spanAttributes.PutStr(configAction.NewAttribute, fromAttrValue.AsString())
-					} else if _, exists := resourceAttributes.Get(configAction.NewAttribute); !exists {
-						spanAttributes.PutStr(configAction.NewAttribute, fromAttrValue.AsString())
+					if _, exists := spanAttributes.Get(configAction.NewAttributeName); !exists {
+						spanAttributes.PutStr(configAction.NewAttributeName, fromAttrValue.AsString())
+					} else if _, exists := scopeAttributes.Get(configAction.NewAttributeName); !exists {
+						spanAttributes.PutStr(configAction.NewAttributeName, fromAttrValue.AsString())
+					} else if _, exists := resourceAttributes.Get(configAction.NewAttributeName); !exists {
+						spanAttributes.PutStr(configAction.NewAttributeName, fromAttrValue.AsString())
 					}
 				}
 			}
@@ -101,18 +101,18 @@ func (p *conditionalAttributesProcessor) handleScopeNameConditionalAttribute(
 	rule ConditionalRule,
 	scopeName string,
 ) {
-	if valueConfigActions, exists := rule.Values[scopeName]; exists {
+	if valueConfigActions, exists := rule.NewAttributeValueConfigurations[scopeName]; exists {
 		for _, configAction := range valueConfigActions {
 			if configAction.Value != "" {
 				// Add static value if not already present
-				if _, exists := spanAttributes.Get(configAction.NewAttribute); !exists {
-					spanAttributes.PutStr(configAction.NewAttribute, configAction.Value)
+				if _, exists := spanAttributes.Get(configAction.NewAttributeName); !exists {
+					spanAttributes.PutStr(configAction.NewAttributeName, configAction.Value)
 				}
 			} else if configAction.FromAttribute != "" {
 				// Copy value from another attribute if defined
 				if fromAttrValue, ok := spanAttributes.Get(configAction.FromAttribute); ok {
-					if _, exists := spanAttributes.Get(configAction.NewAttribute); !exists {
-						spanAttributes.PutStr(configAction.NewAttribute, fromAttrValue.AsString())
+					if _, exists := spanAttributes.Get(configAction.NewAttributeName); !exists {
+						spanAttributes.PutStr(configAction.NewAttributeName, fromAttrValue.AsString())
 					}
 				}
 			}

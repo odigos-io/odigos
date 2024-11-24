@@ -19,18 +19,18 @@ This processor is ideal for enriching spans with categorized or contextual infor
 
 | Field           | Description                                     | Required | Default   |
 |------------------|-------------------------------------------------|----------|-----------|
-| `global_default` | The value assigned when no rules match.         | Yes       | - |
+| `global_default` | The value assigned when no rules match to any value specified in some of the rules.         | Yes       | - |
 
 ## Rule Options
 
 | Field               | Description                                                               | Required |
 |----------------------|---------------------------------------------------------------------------|----------|
 | `attribute_to_check` | The attribute in the span to evaluate.                                   | Yes      |
-| `values`             | A map of conditions to a list of actions for processing.                | Yes      |
+| `new_attribute_value_configurations`             | A map of potential values to a list of actions to execute when `attribute_to_check` equals value.                | Yes      |
 
 ## Value Map Options
 
-Each key in the `values` map corresponds to a potential value of `attribute_to_check`. The associated value is a list of `Value` objects, each specifying how to process the span.
+Each key in the `new_attribute_value_configurations` map corresponds to a potential value of `attribute_to_check`. The associated value is a list of `Value` objects, each specifying how to process the span.
 
 | Field            | Description                                                                | Required |
 |-------------------|----------------------------------------------------------------------------|----------|
@@ -41,11 +41,11 @@ Each key in the `values` map corresponds to a potential value of `attribute_to_c
 # How It Works
 
 1. The processor checks the value of `attribute_to_check` for each span.
-2. It matches the value against the keys in `values`.
-3. For each match, it iterates through the list of `Value` objects:
+2. It matches the value against the keys in `new_attribute_value_configurations`.
+3. For each match, it iterates through the list of `new_attribute_value_configurations` objects:
    - Assigns a static value (`value`) to the `new_attribute`.
    - Copies a value from another attribute (`from_attribute`) to the `new_attribute`.
-4. If no match is found, assigns the `global_default` to all `new_attribute`s specified by the rule.
+4. If no match is found, assigns the `global_default` to all `new_attribute`s specified by some of the rule.
 
 # Example Configuration
 ```yaml
@@ -54,7 +54,7 @@ processors:
     global_default: "Unknown"
     rules:
       - attribute_to_check: "instrumentation_scope.name"
-        values:
+        new_attribute_value_configurations:
           "opentelemetry.instrumentation.flask":
             - new_attribute: "odigos.category"
               value: "flask"
@@ -66,7 +66,7 @@ processors:
             - new_attribute: "odigos.sub_category"
               value: "baz"
       - attribute_to_check: "net.host.name"
-        values:
+        new_attribute_value_configurations:
           "coupon":
             - new_attribute: "odigos.sub_category"
               from_attribute: "http.scheme"
