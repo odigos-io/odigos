@@ -30,7 +30,7 @@ func (r *ProcessorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling Processor")
 
-	err := gateway.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion, r.Config.MetricsServerEnabled)
+	err := gateway.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion, r.Config)
 	if err != nil {
 		return ctrl.Result{}, err
 	}

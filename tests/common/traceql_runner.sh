@@ -49,7 +49,7 @@ function process_yaml_file() {
     echo "Test FAILED: expected $expected_count got $num_of_traces"
     exit 1
   else
-    echo "Test PASSED"
+    echo "Test PASSED: expected $expected_count got $num_of_traces"
     exit 0
   fi
 }

@@ -18,6 +18,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources"
+	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	corev1 "k8s.io/api/core/v1"
 
@@ -25,7 +26,8 @@ import (
 )
 
 const (
-	defaultPort = 3000
+	defaultPort     = 3000
+	betaDefaultPort = 3001
 )
 
 // uiCmd represents the ui command
@@ -35,10 +37,7 @@ var uiCmd = &cobra.Command{
 	Long:  `Start the Odigos UI. This command will port-forward the odigos-ui pod to your local machine.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
-		client, err := kube.CreateClient(cmd)
-		if err != nil {
-			kube.PrintClientErrorAndExit(err)
-		}
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
 		ns, err := resources.GetOdigosNamespace(client, ctx)
 		if err != nil {
@@ -51,22 +50,29 @@ var uiCmd = &cobra.Command{
 			}
 		}
 
+		betaFlag, _ := cmd.Flags().GetBool("beta")
+		localPort := cmd.Flag("port").Value.String()
+		clusterPort := defaultPort
+
+		if betaFlag {
+			clusterPort = betaDefaultPort
+		}
+
+		localAddress := cmd.Flag("address").Value.String()
 		uiPod, err := findOdigosUIPod(client, ctx, ns)
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Cannot find odigos-ui pod: %s\n", err)
 			os.Exit(1)
 		}
 
-		localPort := cmd.Flag("port").Value.String()
-		localAddress := cmd.Flag("address").Value.String()
-		if err := portForwardWithContext(ctx, uiPod, client, localPort, localAddress); err != nil {
+		if err := portForwardWithContext(ctx, uiPod, client, localPort, localAddress, clusterPort); err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Cannot start port-forward: %s\n", err)
 			os.Exit(1)
 		}
 	},
 }
 
-func portForwardWithContext(ctx context.Context, uiPod *corev1.Pod, client *kube.Client, localPort string, localAddress string) error {
+func portForwardWithContext(ctx context.Context, uiPod *corev1.Pod, client *kube.Client, localPort string, localAddress string, clusterPort int) error {
 	stopChannel := make(chan struct{}, 1)
 	readyChannel := make(chan struct{})
 	signals := make(chan os.Signal, 1)
@@ -96,7 +102,7 @@ func portForwardWithContext(ctx context.Context, uiPod *corev1.Pod, client *kube
 		Name(uiPod.Name).
 		SubResource("portforward")
 
-	return forwardPorts("POST", req.URL(), client.Config, stopChannel, readyChannel, localPort, localAddress)
+	return forwardPorts("POST", req.URL(), client.Config, stopChannel, readyChannel, localPort, localAddress, clusterPort)
 }
 
 func createDialer(method string, url *url.URL, cfg *rest.Config) (httpstream.Dialer, error) {
@@ -116,13 +122,13 @@ func createDialer(method string, url *url.URL, cfg *rest.Config) (httpstream.Dia
 	return dialer, nil
 }
 
-func forwardPorts(method string, url *url.URL, cfg *rest.Config, stopCh chan struct{}, readyCh chan struct{}, localPort string, localAddress string) error {
+func forwardPorts(method string, url *url.URL, cfg *rest.Config, stopCh chan struct{}, readyCh chan struct{}, localPort string, localAddress string, clusterPort int) error {
 	dialer, err := createDialer(method, url, cfg)
 	if err != nil {
 		return err
 	}
 
-	port := fmt.Sprintf("%s:%d", localPort, defaultPort)
+	port := fmt.Sprintf("%s:%d", localPort, clusterPort)
 	fw, err := portforward.NewOnAddresses(dialer,
 		[]string{localAddress},
 		[]string{port}, stopCh, readyCh, nil, os.Stderr)
@@ -153,9 +159,9 @@ func findOdigosUIPod(client *kube.Client, ctx context.Context, ns string) (*core
 
 	return &pods.Items[0], nil
 }
-
 func init() {
 	rootCmd.AddCommand(uiCmd)
-	uiCmd.Flags().Int("port", defaultPort, "port to listen on")
+	uiCmd.Flags().Int("port", defaultPort, "Port to listen on")
 	uiCmd.Flags().String("address", "localhost", "Address to listen on")
+	uiCmd.Flags().Bool("beta", false, "use new experimental UI")
 }
