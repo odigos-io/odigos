@@ -51,7 +51,7 @@ func (p *conditionalAttributesProcessor) addAttributes(spanAttributes pcommon.Ma
 	scopeName string, scopeAttributes pcommon.Map, resourceAttributes pcommon.Map) {
 
 	// Handle cases where rule checks for scope_name ['instrumentation_scope.name'].
-	if rule.AttributeToCheck == OTTLScopeNameKey {
+	if rule.FieldToCheck == OTTLScopeNameKey {
 		p.handleScopeNameConditionalAttribute(spanAttributes, rule, scopeName)
 		return
 	}
@@ -60,7 +60,7 @@ func (p *conditionalAttributesProcessor) addAttributes(spanAttributes pcommon.Ma
 
 	attributeSets := []pcommon.Map{spanAttributes, scopeAttributes, resourceAttributes}
 	for _, attrs := range attributeSets {
-		if attrValue, ok := attrs.Get(rule.AttributeToCheck); ok {
+		if attrValue, ok := attrs.Get(rule.FieldToCheck); ok {
 			attrStr = attrValue.AsString()
 			break
 		}
@@ -79,8 +79,8 @@ func (p *conditionalAttributesProcessor) addAttributes(spanAttributes pcommon.Ma
 				} else if _, exists := resourceAttributes.Get(configAction.NewAttributeName); !exists {
 					spanAttributes.PutStr(configAction.NewAttributeName, configAction.Value)
 				}
-			} else if configAction.FromAttribute != "" { // Copy a value from another attribute if specified.
-				if fromAttrValue, ok := spanAttributes.Get(configAction.FromAttribute); ok {
+			} else if configAction.FromField != "" { // Copy a value from another attribute if specified.
+				if fromAttrValue, ok := spanAttributes.Get(configAction.FromField); ok {
 					if _, exists := spanAttributes.Get(configAction.NewAttributeName); !exists {
 						spanAttributes.PutStr(configAction.NewAttributeName, fromAttrValue.AsString())
 					} else if _, exists := scopeAttributes.Get(configAction.NewAttributeName); !exists {
@@ -108,9 +108,9 @@ func (p *conditionalAttributesProcessor) handleScopeNameConditionalAttribute(
 				if _, exists := spanAttributes.Get(configAction.NewAttributeName); !exists {
 					spanAttributes.PutStr(configAction.NewAttributeName, configAction.Value)
 				}
-			} else if configAction.FromAttribute != "" {
+			} else if configAction.FromField != "" {
 				// Copy value from another attribute if defined
-				if fromAttrValue, ok := spanAttributes.Get(configAction.FromAttribute); ok {
+				if fromAttrValue, ok := spanAttributes.Get(configAction.FromField); ok {
 					if _, exists := spanAttributes.Get(configAction.NewAttributeName); !exists {
 						spanAttributes.PutStr(configAction.NewAttributeName, fromAttrValue.AsString())
 					}
