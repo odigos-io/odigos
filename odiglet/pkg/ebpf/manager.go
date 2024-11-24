@@ -23,9 +23,24 @@ import (
 
 var (
 	ErrContainerNotInPodSpec    = errors.New("container not found in pod spec")
-	ErrContainerNameNotReported = errors.New("container name not reported in environment variables")
 	ErrDeviceNotDetected        = errors.New("device not detected")
 	ErrNoInstrumentationFactory = errors.New("no ebpf factory found")
+)
+
+type errRequiredEnvVarNotFound struct {
+	envVarName string
+}
+
+func (e *errRequiredEnvVarNotFound) Error() string {
+	return fmt.Sprintf("required environment variable not found: %s", e.envVarName)
+}
+
+var _ error = &errRequiredEnvVarNotFound{}
+
+var (
+	errContainerNameNotReported = &errRequiredEnvVarNotFound{envVarName: consts.OdigosEnvVarContainerName}
+	errPodNameNotReported       = &errRequiredEnvVarNotFound{envVarName: consts.OdigosEnvVarPodName}
+	errPodNameSpaceNotReported  = &errRequiredEnvVarNotFound{envVarName: consts.OdigosEnvVarNamespace}
 )
 
 type InstrumentationStatusReason string
@@ -194,7 +209,7 @@ func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.Process
 
 	containerName, found := containerNameFromProcEvent(e)
 	if !found {
-		return ErrContainerNameNotReported
+		return errContainerNameNotReported
 	}
 
 	// get the language and sdk for this process event
@@ -340,12 +355,12 @@ func (m *Manager) podFromProcEvent(ctx context.Context, event detector.ProcessEv
 
 	podName, ok := eventEnvs[consts.OdigosEnvVarPodName]
 	if !ok {
-		return nil, fmt.Errorf("missing %s in environment variables", consts.OdigosEnvVarPodName)
+		return nil, errPodNameNotReported
 	}
 
 	podNamespace, ok := eventEnvs[consts.OdigosEnvVarNamespace]
 	if !ok {
-		return nil, fmt.Errorf("missing %s in environment variables", consts.OdigosEnvVarNamespace)
+		return nil, errPodNameSpaceNotReported
 	}
 
 	pod := corev1.Pod{}
