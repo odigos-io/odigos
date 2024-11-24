@@ -37,8 +37,7 @@ func (g *GoInstrumentationFactory) CreateInstrumentation(ctx context.Context, pi
 		otlptracegrpc.WithEndpoint(fmt.Sprintf("%s:%d", env.Current.NodeIP, consts.OTLPPort)),
 	)
 	if err != nil {
-		log.Logger.Error(err, "failed to create exporter")
-		return nil, err
+		return nil, fmt.Errorf("failed to create exporter: %w", err)
 	}
 
 	cp := ebpf.NewConfigProvider(convertToGoInstrumentationConfig(settings.InitialConfig))
