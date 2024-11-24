@@ -21,7 +21,7 @@
 
 ## What is Odigos?
 
-Odigos is an open-source distributed tracing solution that revolutionizes observability for Kubernetes environments. It provides instant tracing capabilities without requiring any code changes to your applications.
+Odigos is an open-source distributed tracing solution that revolutionizes observability for Kubernetes environments. It provides instant distributed tracing, metrics and log capabilities without requiring any code changes to your applications.
 
 ## Key Features
 
