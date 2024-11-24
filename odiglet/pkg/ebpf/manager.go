@@ -76,7 +76,7 @@ func NewManager(client client.Client, logger logr.Logger, factories map[FactoryI
 		procEvents:    procEvents,
 		client:        client,
 		factories:     factories,
-		logger:        logger,
+		logger:        logger.WithName("ebpf-instrumentation-manager"),
 		detailsByPid:  make(map[int]instrumentationDetails),
 		configUpdates: make(chan configUpdate),
 		done:          make(chan struct{}),
@@ -182,7 +182,7 @@ func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.Process
 		// TODO: better handle this?
 		// this can be done by first closing the existing instrumentation,
 		// and then creating a new one
-		m.logger.Info("instrumentation already exists for pid", "pid", e.PID)
+		m.logger.Info("received exec event for process id which is already instrumented with ebpf, skipping it", "pid", e.PID)
 		return nil
 	}
 
