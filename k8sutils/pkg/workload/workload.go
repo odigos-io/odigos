@@ -4,18 +4,29 @@ import (
 	"context"
 	"errors"
 
+	"github.com/odigos-io/odigos/common/consts"
+	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	"github.com/odigos-io/odigos/common/consts"
-	v1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type Workload interface {
 	client.Object
 	AvailableReplicas() int32
+}
+
+type K8sWorkloadResolver struct {
+	kubeClient client.Client
+}
+
+func NewK8sK8sWorkloadResolver(kubeClient client.Client) *K8sWorkloadResolver {
+	return &K8sWorkloadResolver{
+		kubeClient: kubeClient,
+	}
 }
 
 // compile time check for interface implementation
@@ -156,4 +167,45 @@ func GetInstrumentationLabelTexts(workloadLabels map[string]string, workloadKind
 	}
 
 	return
+}
+
+func (k *K8sWorkloadResolver) GetWorkloadObject(ctx context.Context, name string, kind WorkloadKind, namespace string) (metav1.Object, error) {
+	switch kind {
+	case "Deployment":
+		var deployment appsv1.Deployment
+		err := k.kubeClient.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, &deployment)
+		if err != nil {
+			return nil, err
+		}
+		return &deployment, nil
+
+	case "StatefulSet":
+		var statefulSet appsv1.StatefulSet
+		err := k.kubeClient.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, &statefulSet)
+		if err != nil {
+			return nil, err
+		}
+		return &statefulSet, nil
+
+	case "DaemonSet":
+		var daemonSet appsv1.DaemonSet
+		err := k.kubeClient.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, &daemonSet)
+		if err != nil {
+			return nil, err
+		}
+		return &daemonSet, nil
+
+	default:
+		return nil, errors.New("failed to get workload object for kind: " + string(kind))
+	}
+}
+
+func ExtractServiceNameFromAnnotations(annotations map[string]string, defaultName string) string {
+	if annotations == nil {
+		return defaultName
+	}
+	if reportedName, exists := annotations[consts.OdigosReportedNameAnnotation]; exists && reportedName != "" {
+		return reportedName
+	}
+	return defaultName
 }

@@ -7,12 +7,8 @@ import (
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	appsv1 "k8s.io/api/apps/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -250,53 +246,14 @@ func boolPtr(b bool) *bool {
 	return &b
 }
 
-func extractServiceNameFromAnnotations(annotations map[string]string, defaultName string) string {
-	if annotations == nil {
-		return defaultName
-	}
-	if reportedName, exists := annotations[consts.OdigosReportedNameAnnotation]; exists && reportedName != "" {
-		return reportedName
-	}
-	return defaultName
-}
-
 // ResolveServiceName determines the service name based on workload kind
 func resolveServiceName(ctx context.Context, k8sClient client.Client, workloadName string, namespace string, kind workload.WorkloadKind) (string, error) {
-	switch kind {
-	case "Deployment":
-		var deployment appsv1.Deployment
-		err := k8sClient.Get(ctx, types.NamespacedName{Name: workloadName, Namespace: namespace}, &deployment)
-		if err != nil {
-			if apierrors.IsNotFound(err) {
-				return "", fmt.Errorf("deployment %s not found in namespace %s", workloadName, namespace)
-			}
-			return "", fmt.Errorf("failed to fetch Deployment %s/%s: %w", namespace, workloadName, err)
-		}
-		return extractServiceNameFromAnnotations(deployment.Annotations, deployment.Name), nil
 
-	case "StatefulSet":
-		var statefulSet appsv1.StatefulSet
-		err := k8sClient.Get(ctx, types.NamespacedName{Name: workloadName, Namespace: namespace}, &statefulSet)
-		if err != nil {
-			if apierrors.IsNotFound(err) {
-				return "", fmt.Errorf("StatefulSet %s not found in namespace %s", workloadName, namespace)
-			}
-			return "", fmt.Errorf("failed to fetch StatefulSet %s/%s: %w", namespace, workloadName, err)
-		}
-		return extractServiceNameFromAnnotations(statefulSet.Annotations, statefulSet.Name), nil
+	workloadResolver := workload.NewK8sK8sWorkloadResolver(k8sClient)
+	obj, err := workloadResolver.GetWorkloadObject(ctx, workloadName, kind, namespace)
 
-	case "DaemonSet":
-		var daemonSet appsv1.DaemonSet
-		err := k8sClient.Get(ctx, types.NamespacedName{Name: workloadName, Namespace: namespace}, &daemonSet)
-		if err != nil {
-			if apierrors.IsNotFound(err) {
-				return "", fmt.Errorf("DaemonSet %s not found in namespace %s", workloadName, namespace)
-			}
-			return "", fmt.Errorf("failed to fetch DaemonSet %s/%s: %w", namespace, workloadName, err)
-		}
-		return extractServiceNameFromAnnotations(daemonSet.Annotations, daemonSet.Name), nil
-
-	default:
-		return "", fmt.Errorf("unsupported workload kind: %s", kind)
+	if err != nil {
+		return "", fmt.Errorf("failed to get workload object to resolve reported service name annotation. will use fallback service name: %w", err)
 	}
+	return workload.ExtractServiceNameFromAnnotations(obj.GetAnnotations(), workloadName), nil
 }
