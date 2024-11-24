@@ -51,12 +51,20 @@ type configUpdate struct {
 
 type ConfigUpdateFunc func(ctx context.Context, workloadKey types.NamespacedName, config *odigosv1.InstrumentationConfig) error
 
+type instrumentationDetails struct {
+	inst              Instrumentation
+	pod               types.NamespacedName
+	lang              common.ProgrammingLanguage
+	workloadName      string
+	workloadNamespace string
+}
+
 type Manager struct {
 	ProcEvents    <- chan detector.ProcessEvent
 	Client        client.Client
 	Factories     map[FactoryID]Factory
 	Logger        logr.Logger
-	DetailsByPid  map[int]InstrumentationDetails
+	DetailsByPid  map[int]instrumentationDetails
 	configUpdates chan configUpdate
 
 	done chan struct{}
@@ -69,7 +77,7 @@ func NewManager(client client.Client, logger logr.Logger, factories map[FactoryI
 		Client:        client,
 		Factories:     factories,
 		Logger:        logger,
-		DetailsByPid:  make(map[int]InstrumentationDetails),
+		DetailsByPid:  make(map[int]instrumentationDetails),
 		configUpdates: make(chan configUpdate),
 		done:          make(chan struct{}),
 	}
@@ -100,7 +108,7 @@ func (m *Manager) Run(ctx context.Context) {
 		case <-runLoopCtx.Done():
 			m.Logger.Info("stopping Odiglet instrumentation manager")
 			for pid, details := range m.DetailsByPid {
-				err := details.Inst.Close(ctx)
+				err := details.inst.Close(ctx)
 				if err != nil {
 					m.Logger.Error(err, "failed to close instrumentation", "pid", pid)
 				}
@@ -150,7 +158,7 @@ func (m *Manager) cleanInstrumentation(ctx context.Context, pid int) {
 
 	m.Logger.Info("cleaning instrumentation resources", "pid", pid)
 
-	err := details.Inst.Close(ctx)
+	err := details.inst.Close(ctx)
 	if err != nil {
 		m.Logger.Error(err, "failed to close instrumentation")
 	}
@@ -158,11 +166,11 @@ func (m *Manager) cleanInstrumentation(ctx context.Context, pid int) {
 	// remove instrumentation instance
 	if err = m.Client.Delete(ctx, &odigosv1.InstrumentationInstance{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      instance.InstrumentationInstanceName(details.Pod.Name, pid),
-			Namespace: details.Pod.Namespace,
+			Name:      instance.InstrumentationInstanceName(details.pod.Name, pid),
+			Namespace: details.pod.Namespace,
 		},
 	}); err != nil && !apierrors.IsNotFound(err) {
-		m.Logger.Error(err, "error deleting instrumentation instance", "pod", details.Pod.Name, "pid", pid)
+		m.Logger.Error(err, "error deleting instrumentation instance", "pod", details.pod.Name, "pid", pid)
 	}
 
 	delete(m.DetailsByPid, pid)
@@ -250,12 +258,12 @@ func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.Process
 		return err
 	}
 
-	m.DetailsByPid[e.PID] = InstrumentationDetails{
-		Inst:              inst,
-		Pod:               types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name},
-		Lang:              lang,
-		WorkloadName:      workload.Name,
-		WorkloadNamespace: workload.Namespace,
+	m.DetailsByPid[e.PID] = instrumentationDetails{
+		inst:              inst,
+		pod:               types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name},
+		lang:              lang,
+		workloadName:      workload.Name,
+		workloadNamespace: workload.Namespace,
 	}
 
 	m.Logger.Info("instrumentation loaded", "pid", e.PID, "pod", pod.Name, "container", containerName, "language", lang, "sdk", sdk)
@@ -305,16 +313,16 @@ func (m *Manager) instrumentationSDKConfig(ctx context.Context, w *workloadUtils
 func (m *Manager) applyInstrumentationConfigurationForSDK(ctx context.Context, workloadKey types.NamespacedName, sdkConfig *odigosv1.SdkConfig) error {
 	var err error
 	for _, instDetails := range m.DetailsByPid {
-		if instDetails.WorkloadName != workloadKey.Name || instDetails.WorkloadNamespace != workloadKey.Namespace {
+		if instDetails.workloadName != workloadKey.Name || instDetails.workloadNamespace != workloadKey.Namespace {
 			continue
 		}
 
-		if instDetails.Lang != sdkConfig.Language {
+		if instDetails.lang != sdkConfig.Language {
 			continue
 		}
 
-		m.Logger.Info("applying configuration to instrumentation", "workload", workloadKey, "pid", instDetails.Inst, "pod", instDetails.Pod)
-		err = errors.Join(err, instDetails.Inst.ApplyConfig(ctx, sdkConfig))
+		m.Logger.Info("applying configuration to instrumentation", "workload", workloadKey, "pid", instDetails.inst, "pod", instDetails.pod)
+		err = errors.Join(err, instDetails.inst.ApplyConfig(ctx, sdkConfig))
 	}
 	return err
 }

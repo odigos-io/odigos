@@ -7,8 +7,6 @@ import (
 	"github.com/odigos-io/odigos/common"
 
 	"go.opentelemetry.io/otel/attribute"
-
-	"k8s.io/apimachinery/pkg/types"
 )
 
 type Settings struct {
@@ -27,14 +25,6 @@ type Factory interface {
 type FactoryID struct {
 	Language common.ProgrammingLanguage
 	OtelSdk  common.OtelSdk
-}
-
-type InstrumentationDetails struct {
-	Inst              Instrumentation
-	Pod               types.NamespacedName
-	Lang              common.ProgrammingLanguage
-	WorkloadName      string
-	WorkloadNamespace string
 }
 
 // Instrumentation is used to instrument a running process
