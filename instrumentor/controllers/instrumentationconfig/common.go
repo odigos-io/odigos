@@ -246,11 +246,9 @@ func boolPtr(b bool) *bool {
 	return &b
 }
 
-// ResolveServiceName determines the service name based on workload kind
 func resolveServiceName(ctx context.Context, k8sClient client.Client, workloadName string, namespace string, kind workload.WorkloadKind) (string, error) {
 
-	workloadResolver := workload.NewK8sK8sWorkloadResolver(k8sClient)
-	obj, err := workloadResolver.GetWorkloadObject(ctx, workloadName, kind, namespace)
+	obj, err := workload.GetWorkloadObject(ctx, workloadName, kind, namespace, k8sClient)
 
 	if err != nil {
 		return "", fmt.Errorf("failed to get workload object to resolve reported service name annotation. will use fallback service name: %w", err)

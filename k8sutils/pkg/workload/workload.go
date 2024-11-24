@@ -19,16 +19,6 @@ type Workload interface {
 	AvailableReplicas() int32
 }
 
-type K8sWorkloadResolver struct {
-	kubeClient client.Client
-}
-
-func NewK8sK8sWorkloadResolver(kubeClient client.Client) *K8sWorkloadResolver {
-	return &K8sWorkloadResolver{
-		kubeClient: kubeClient,
-	}
-}
-
 // compile time check for interface implementation
 var _ Workload = &DeploymentWorkload{}
 var _ Workload = &DaemonSetWorkload{}
@@ -169,27 +159,27 @@ func GetInstrumentationLabelTexts(workloadLabels map[string]string, workloadKind
 	return
 }
 
-func (k *K8sWorkloadResolver) GetWorkloadObject(ctx context.Context, name string, kind WorkloadKind, namespace string) (metav1.Object, error) {
+func GetWorkloadObject(ctx context.Context, name string, kind WorkloadKind, namespace string, kubeClient client.Client) (metav1.Object, error) {
 	switch kind {
-	case "Deployment":
+	case WorkloadKindDeployment:
 		var deployment appsv1.Deployment
-		err := k.kubeClient.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, &deployment)
+		err := kubeClient.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, &deployment)
 		if err != nil {
 			return nil, err
 		}
 		return &deployment, nil
 
-	case "StatefulSet":
+	case WorkloadKindStatefulSet:
 		var statefulSet appsv1.StatefulSet
-		err := k.kubeClient.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, &statefulSet)
+		err := kubeClient.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, &statefulSet)
 		if err != nil {
 			return nil, err
 		}
 		return &statefulSet, nil
 
-	case "DaemonSet":
+	case WorkloadKindDaemonSet:
 		var daemonSet appsv1.DaemonSet
-		err := k.kubeClient.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, &daemonSet)
+		err := kubeClient.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, &daemonSet)
 		if err != nil {
 			return nil, err
 		}

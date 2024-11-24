@@ -10,16 +10,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-// workloadPodTemplatePredicate handles changes to workloads like Deployment, StatefulSet, and DaemonSet
-type workloadPodTemplatePredicate struct {
+// workloadReportedNameAnnotationChanged is a custom predicate that detects changes
+// to the `odigos.io/reported-name` annotation on workload resources such as
+// Deployment, StatefulSet, and DaemonSet. This ensures that the controller
+// reacts only when the specific annotation is updated.
+type workloadReportedNameAnnotationChanged struct {
 	predicate.Funcs
 }
 
-func (w workloadPodTemplatePredicate) Create(e event.CreateEvent) bool {
+func (w workloadReportedNameAnnotationChanged) Create(e event.CreateEvent) bool {
 	return true
 }
 
-func (w workloadPodTemplatePredicate) Update(e event.UpdateEvent) bool {
+func (w workloadReportedNameAnnotationChanged) Update(e event.UpdateEvent) bool {
 	if e.ObjectOld == nil || e.ObjectNew == nil {
 		return false
 	}
@@ -35,11 +38,11 @@ func (w workloadPodTemplatePredicate) Update(e event.UpdateEvent) bool {
 	return oldName != newName
 }
 
-func (w workloadPodTemplatePredicate) Delete(e event.DeleteEvent) bool {
+func (w workloadReportedNameAnnotationChanged) Delete(e event.DeleteEvent) bool {
 	return false
 }
 
-func (w workloadPodTemplatePredicate) Generic(e event.GenericEvent) bool {
+func (w workloadReportedNameAnnotationChanged) Generic(e event.GenericEvent) bool {
 	return false
 }
 
@@ -75,7 +78,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("instrumentor-instrumentationconfig-workloads-deployment").
 		For(&appsv1.Deployment{}).
-		WithEventFilter(workloadPodTemplatePredicate{}).
+		WithEventFilter(workloadReportedNameAnnotationChanged{}).
 		Complete(&WorkloadsReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
@@ -89,7 +92,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("instrumentor-instrumentationconfig-workloads-statefulset").
 		For(&appsv1.StatefulSet{}).
-		WithEventFilter(workloadPodTemplatePredicate{}).
+		WithEventFilter(workloadReportedNameAnnotationChanged{}).
 		Complete(&WorkloadsReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
@@ -103,7 +106,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("instrumentor-instrumentationconfig-workloads-daemonset").
 		For(&appsv1.DaemonSet{}).
-		WithEventFilter(workloadPodTemplatePredicate{}).
+		WithEventFilter(workloadReportedNameAnnotationChanged{}).
 		Complete(&WorkloadsReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),

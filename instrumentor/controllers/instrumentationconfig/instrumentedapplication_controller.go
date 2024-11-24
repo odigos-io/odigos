@@ -46,6 +46,8 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 	var ic odigosv1.InstrumentationConfig
 	err = r.Client.Get(ctx, req.NamespacedName, &ic)
 	if err != nil {
+		// each InstrumentedApplication should have a corresponding InstrumentationConfig
+		// but it might rarely happen that the InstrumentationConfig is deleted before the InstrumentedApplication
 		if apierrors.IsNotFound(err) {
 			logger.V(0).Info("Ignoring InstrumentedApplication without InstrumentationConfig", "runtime object name", ia.Name)
 			return ctrl.Result{}, nil
