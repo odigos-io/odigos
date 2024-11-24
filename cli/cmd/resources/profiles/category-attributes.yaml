@@ -3,646 +3,1581 @@ kind: Processor
 metadata:
   name: category-attributes
 spec:
-  type: transform
-  processorName: "category attributes"
+  type: odigosconditionalattributes
+  namespace: odigos-system
+  processorName: "category attributes v2"
   notes: "Auto generated rule from category-attributes profile. Do not edit."
   processorConfig:
-    trace_statements:
-      - context: span
-        statements:
-
-        ######## Node.js
-
-        # HTTP
-        - set(attributes["odigos.category"], "HTTP") where 
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-connect" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-express" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-fastify" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-hapi" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-http" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-koa" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-restify" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-router" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-nestjs-core" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-undici"
-        - set(attributes["odigos.sub_category"], attributes["http.request.method"]) where 
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-connect" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-express" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-fastify" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-hapi" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-http" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-koa" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-restify" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-router" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-nestjs-core" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-undici"
-        - set(attributes["odigos.sub_category"], attributes["http.method"]) where 
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-connect" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-express" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-fastify" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-hapi" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-http" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-koa" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-restify" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-router" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-nestjs-core" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-undici"
-        - set(attributes["odigos.transaction.type"], "web") where 
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-connect" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-express" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-fastify" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-hapi" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-http" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-koa" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-restify" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-router" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-nestjs-core" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-undici"            
-
-        # Database
-        - set(attributes["odigos.category"], "Database") where 
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-cassandra-driver" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-ioredis" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-knex" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-mongodb" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-mongoose" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-mysql" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-mysql2" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-pg" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-redis" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-redis-4" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-tedious"
-        - set(attributes["odigos.sub_category"], attributes["db.system"]) where 
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-cassandra-driver" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-ioredis" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-knex" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-mongodb" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-mongoose" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-mysql" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-mysql2" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-pg" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-redis" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-redis-4" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-tedious"
-        - set(attributes["odigos.transaction.type"], "non-web") where 
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-cassandra-driver" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-ioredis" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-knex" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-mongodb" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-mongoose" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-mysql" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-mysql2" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-pg" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-redis" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-redis-4" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-tedious"            
-
-        # Messaging queues
-        - set(attributes["odigos.category"], "Messaging queues") where 
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-amqplib" or 
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-socket.io"
-        - set(attributes["odigos.sub_category"], attributes["messaging.system"]) where 
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-amqplib" or 
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-socket.io"
-        - set(attributes["odigos.transaction.type"], "non-web") where 
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-amqplib" or 
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-socket.io"            
-
-        # RPC Systems
-        - set(attributes["odigos.category"], "RPC Systems") where 
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-aws-sdk" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-grpc"
-        - set(attributes["odigos.sub_category"], attributes["rpc.system"]) where 
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-aws-sdk" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-grpc"
-        - set(attributes["odigos.transaction.type"], "web") where 
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-aws-sdk" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-grpc"
-
-        # Programming Language
-        - set(attributes["odigos.category"], "Programming Language") where 
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-dataloader" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-dns" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-fs" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-generic-pool" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-graphql" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-lru-memoizer" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-net"
-        - set(attributes["odigos.sub_category"], attributes["telemetry.sdk.language"]) where 
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-dataloader" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-dns" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-fs" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-generic-pool" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-graphql" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-lru-memoizer" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-net"
-        - set(attributes["odigos.transaction.type"], "non-web") where 
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-dataloader" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-dns" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-fs" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-generic-pool" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-graphql" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-lru-memoizer" or
-            instrumentation_scope.name == "odigos.io/ebpf/instrumentation-net"            
-
-        ######## golang
-
-        # HTTP
-        - set(attributes["odigos.category"], "HTTP") where 
-            instrumentation_scope.name == "go.opentelemetry.io/auto/net/http" or
-            instrumentation_scope.name == "go.opentelemetry.io/auto/github.com/gin-gonic/gin"
-        - set(attributes["odigos.sub_category"], attributes["http.request.method"]) where
-            instrumentation_scope.name == "go.opentelemetry.io/auto/net/http" or
-            instrumentation_scope.name == "go.opentelemetry.io/auto/github.com/gin-gonic/gin"
-        - set(attributes["odigos.transaction.type"], "web") where
-            instrumentation_scope.name == "go.opentelemetry.io/auto/net/http" or
-            instrumentation_scope.name == "go.opentelemetry.io/auto/github.com/gin-gonic/gin"            
-
-        # Database
-        - set(attributes["odigos.category"], "Database") where 
-            instrumentation_scope.name == "go.opentelemetry.io/auto/database/sql" or
-            instrumentation_scope.name == "go.opentelemetry.io/auto/github.com/bradfitz/gomemcache/memcache" or
-            instrumentation_scope.name == "go.opentelemetry.io/auto/github.com/elastic/go-elasticsearch" or
-            instrumentation_scope.name == "go.opentelemetry.io/auto/github.com/gocql/gocql" or
-            IsMatch(instrumentation_scope.name, "go.opentelemetry.io/auto/github.com/ClickHouse/clickhouse-go/*")
-
-        - set(attributes["odigos.sub_category"], attributes["db.system"]) where
-            instrumentation_scope.name == "go.opentelemetry.io/auto/database/sql" or
-            instrumentation_scope.name == "go.opentelemetry.io/auto/github.com/bradfitz/gomemcache/memcache" or
-            instrumentation_scope.name == "go.opentelemetry.io/auto/github.com/elastic/go-elasticsearch" or
-            instrumentation_scope.name == "go.opentelemetry.io/auto/github.com/gocql/gocql" or 
-            IsMatch(instrumentation_scope.name, "go.opentelemetry.io/auto/github.com/ClickHouse/clickhouse-go/*")
-
-        - set(attributes["odigos.transaction.type"], "non-web") where
-            instrumentation_scope.name == "go.opentelemetry.io/auto/database/sql" or
-            instrumentation_scope.name == "go.opentelemetry.io/auto/github.com/bradfitz/gomemcache/memcache" or
-            instrumentation_scope.name == "go.opentelemetry.io/auto/github.com/elastic/go-elasticsearch" or
-            instrumentation_scope.name == "go.opentelemetry.io/auto/github.com/gocql/gocql" or 
-            IsMatch(instrumentation_scope.name, "go.opentelemetry.io/auto/github.com/ClickHouse/clickhouse-go/*")
-
-        # Messaging queues
-        - set(attributes["odigos.category"], "Messaging queues") where 
-            instrumentation_scope.name == "go.opentelemetry.io/auto/github.com/segmentio/kafka-go" or 
-            instrumentation_scope.name == "go.opentelemetry.io/auto/github.com/IBM/sarama" or 
-            instrumentation_scope.name == "go.opentelemetry.io/auto/github.com/rabbitmq/amqp091-go" or 
-            instrumentation_scope.name == "go.opentelemetry.io/auto/github.com/apache/pulsar-client-go/pulsar"
-        - set(attributes["odigos.sub_category"], attributes["messaging.system"]) where
-            instrumentation_scope.name == "go.opentelemetry.io/auto/github.com/segmentio/kafka-go" or 
-            instrumentation_scope.name == "go.opentelemetry.io/auto/github.com/IBM/sarama" or 
-            instrumentation_scope.name == "go.opentelemetry.io/auto/github.com/rabbitmq/amqp091-go" or 
-            instrumentation_scope.name == "go.opentelemetry.io/auto/github.com/apache/pulsar-client-go/pulsar"
-        - set(attributes["odigos.transaction.type"], "non-web") where
-            instrumentation_scope.name == "go.opentelemetry.io/auto/github.com/segmentio/kafka-go" or 
-            instrumentation_scope.name == "go.opentelemetry.io/auto/github.com/IBM/sarama" or 
-            instrumentation_scope.name == "go.opentelemetry.io/auto/github.com/rabbitmq/amqp091-go" or 
-            instrumentation_scope.name == "go.opentelemetry.io/auto/github.com/apache/pulsar-client-go/pulsar"            
-
-        # RPC Systems
-        - set(attributes["odigos.category"], "RPC Systems") where 
-            instrumentation_scope.name == "go.opentelemetry.io/auto/google.golang.org/grpc"
-        - set(attributes["odigos.sub_category"], attributes["rpc.system"]) where
-            instrumentation_scope.name == "go.opentelemetry.io/auto/google.golang.org/grpc"
-        - set(attributes["odigos.transaction.type"], "web") where
-            instrumentation_scope.name == "go.opentelemetry.io/auto/google.golang.org/grpc"        
-
-        ######## Python
-
-        # HTTP
-        - set(attributes["odigos.category"], "HTTP") where 
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/aiohttp_client" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/asgi" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/boto" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/django" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/falcon" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/fastapi" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/flask" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/httpx" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/pyramid" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/starlette" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/tornado" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/urllib" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/requests" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/urllib3" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/wsgi"
-        - set(attributes["odigos.sub_category"], attributes["http.method"]) where 
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/aiohttp_client" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/asgi" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/boto" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/django" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/falcon" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/fastapi" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/flask" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/httpx" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/pyramid" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/starlette" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/tornado" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/urllib" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/requests" or            
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/urllib3" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/wsgi" 
-        - set(attributes["odigos.sub_category"], attributes["http.request.method"]) where
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/aiohttp_client" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/asgi" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/boto" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/django" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/falcon" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/fastapi" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/flask" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/httpx" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/pyramid" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/starlette" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/tornado" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/urllib" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/requests" or            
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/urllib3" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/wsgi"
-        - set(attributes["odigos.transaction.type"], "web") where
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/aiohttp_client" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/asgi" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/boto" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/django" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/falcon" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/fastapi" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/flask" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/httpx" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/pyramid" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/starlette" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/tornado" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/urllib" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/urllib3" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/requests" or            
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/wsgi"            
-
-        # Database
-        - set(attributes["odigos.category"], "Database") where 
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/aiopg" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/asyncpg" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/cassandra" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/dbapi" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/elasticsearch" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/mysql" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/mysqlclient" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/psycopg2" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/pymemcache" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/pymongo" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/pymysql" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/redis" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/sqlalchemy" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/sqlite3" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/tortoiseorm"
-        - set(attributes["odigos.sub_category"], attributes["db.system"]) where
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/aiopg" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/asyncpg" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/cassandra" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/dbapi" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/elasticsearch" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/mysql" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/mysqlclient" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/psycopg2" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/pymemcache" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/pymongo" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/pymysql" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/redis" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/sqlalchemy" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/sqlite3" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/tortoiseorm"
-        - set(attributes["odigos.transaction.type"], "non-web") where
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/aiopg" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/asyncpg" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/cassandra" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/dbapi" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/elasticsearch" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/mysql" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/mysqlclient" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/psycopg2" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/pymemcache" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/pymongo" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/pymysql" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/redis" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/sqlalchemy" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/sqlite3" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/tortoiseorm"
-
-        # Messaging queues
-        - set(attributes["odigos.category"], "Messaging queues") where 
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/aio_pika" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/boto3sqs" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/celery" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/confluent_kafka" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/kafka" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/pika" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/remoulade"
-        - set(attributes["odigos.sub_category"], attributes["messaging.system"]) where
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/aio_pika" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/boto3sqs" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/celery" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/confluent_kafka" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/kafka" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/pika" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/remoulade"
-        - set(attributes["odigos.transaction.type"], "non-web") where
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/aio_pika" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/boto3sqs" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/celery" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/confluent_kafka" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/kafka" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/pika" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/remoulade"
-
-        # RPC Systems
-        - set(attributes["odigos.category"], "RPC Systems") where 
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/botocore" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/grpc"
-        - set(attributes["odigos.sub_category"], attributes["rpc.system"]) where
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/botocore" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/grpc"
-        - set(attributes["odigos.transaction.type"], "web") where
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/botocore" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/grpc"            
-
-        # Programming Language
-        - set(attributes["odigos.category"], "Programming Language") where 
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/asyncio" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/jinja2" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/sklearn"
-        - set(attributes["odigos.sub_category"], attributes["telemetry.sdk.language"]) where
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/asyncio" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/jinja2" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/sklearn"
-        - set(attributes["odigos.transaction.type"], "non-web") where
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/asyncio" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/jinja2" or
-            instrumentation_scope.name == "instrumentation.odigos.io/ebpf/sklearn"            
-
-          ######## Java
-
+    global_default: "Unknown"
+    rules:
+      - attribute_to_check: "instrumentation_scope.name"
+        values:
+          # Node.js
           # HTTP
-        - set(attributes["odigos.category"], "HTTP") where
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.tomcat-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.akka*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.apache-httpclient*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.apache-httpasyncclient*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.armeria*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.google-http-client-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.grizzly-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.http-url-connection*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.java-http-client*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.jetty-httpclient-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.okhttp-*")
+          "odigos.io/ebpf/instrumentation-connect":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "odigos.io/ebpf/instrumentation-express":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "odigos.io/ebpf/instrumentation-fastify":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "odigos.io/ebpf/instrumentation-hapi":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "odigos.io/ebpf/instrumentation-http":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "odigos.io/ebpf/instrumentation-koa":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "odigos.io/ebpf/instrumentation-restify":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "odigos.io/ebpf/instrumentation-router":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "odigos.io/ebpf/instrumentation-nestjs-core":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "odigos.io/ebpf/instrumentation-undici":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
 
-        - set(attributes["odigos.sub_category"], attributes["http.method"]) where
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.tomcat-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.akka*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.apache-httpclient*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.apache-httpasyncclient*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.armeria*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.google-http-client-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.grizzly-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.http-url-connection*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.java-http-client*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.jetty-httpclient-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.okhttp-*")
-
-        - set(attributes["odigos.sub_category"], attributes["http.request.method"]) where
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.tomcat-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.akka*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.apache-httpclient*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.apache-httpasyncclient*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.armeria*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.google-http-client-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.grizzly-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.http-url-connection*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.java-http-client*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.jetty-httpclient-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.okhttp-*")
-
-        - set(attributes["odigos.transaction.type"], "web") where
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.tomcat-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.akka*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.apache-httpclient*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.apache-httpasyncclient*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.armeria*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.google-http-client-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.grizzly-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.http-url-connection*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.java-http-client*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.jetty-httpclient-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.okhttp-*")            
-
+          # Node.js Database
+          "odigos.io/ebpf/instrumentation-cassandra-driver":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "odigos.io/ebpf/instrumentation-ioredis":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "odigos.io/ebpf/instrumentation-knex":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "odigos.io/ebpf/instrumentation-mongodb":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "odigos.io/ebpf/instrumentation-mongoose":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "odigos.io/ebpf/instrumentation-mysql":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "odigos.io/ebpf/instrumentation-mysql2":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "odigos.io/ebpf/instrumentation-pg":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "odigos.io/ebpf/instrumentation-redis":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "odigos.io/ebpf/instrumentation-redis-4":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "odigos.io/ebpf/instrumentation-tedious":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"              
+          # Messaging Queues
+          "odigos.io/ebpf/instrumentation-amqplib":
+            - new_attribute: "odigos.category"
+              value: "Messaging queues"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "messaging.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "odigos.io/ebpf/instrumentation-socket.io":
+            - new_attribute: "odigos.category"
+              value: "Messaging queues"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "messaging.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
           # RPC Systems
-        - set(attributes["odigos.category"], "RPC Systems") where
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.apache-dubbo-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.grpc-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.rmi*")
-
-        - set(attributes["odigos.sub_category"], attributes["rpc.system"]) where
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.apache-dubbo-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.grpc-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.rmi*")
-
-        - set(attributes["odigos.transaction.type"], "web") where
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.apache-dubbo-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.grpc-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.rmi*")            
-
-          # SOAP
-        - set(attributes["odigos.category"], "SOAP") where
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.apache-dubbo-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.jaxws-*")
-        - set(attributes["odigos.transaction.type"], "non-web") where
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.apache-dubbo-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.jaxws-*")            
-
-          # REST
-        - set(attributes["odigos.category"], "REST") where
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.jaxrs-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.quarkus-resteasy-reactive*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.restlet-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.opensearch-rest-*")
-
-        - set(attributes["odigos.transaction.type"], "web") where
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.jaxrs-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.quarkus-resteasy-reactive*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.restlet-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.opensearch-rest-*")            
-
-          # Messaging queues
-        - set(attributes["odigos.category"], "Messaging queues") where
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.rocketmq-client-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.spring-jms-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.jms-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.kafka-clients-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.kafka-streams-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.reactor-kafka-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.spring-kafka-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.vertx-kafka-client-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.rabbitmq-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.spring-rabbit-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.netty-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.reactor-netty-*")
-
-        - set(attributes["odigos.sub_category"], attributes["messaging.system"]) where
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.rocketmq-client-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.spring-jms-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.jms-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.kafka-clients-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.kafka-streams-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.reactor-kafka-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.spring-kafka-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.vertx-kafka-client-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.rabbitmq-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.spring-rabbit-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.netty-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.reactor-netty-*")
-
-        - set(attributes["odigos.transaction.type"], "non-web") where
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.rocketmq-client-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.spring-jms-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.jms-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.kafka-clients-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.kafka-streams-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.reactor-kafka-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.spring-kafka-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.vertx-kafka-client-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.rabbitmq-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.spring-rabbit-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.netty-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.reactor-netty-*")            
-
-
-          # Web Framework
-        - set(attributes["odigos.category"], "Web Framework") where
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.wicket-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.tapestry-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.dropwizard-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.finatra-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.grails-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.gwt-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.jsp-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.jsf-mojarra-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.jsf-myfaces-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.play-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.ratpack-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.servlet-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.spark-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.spring-web*")
-
-        - set(attributes["odigos.sub_category"], "framework-core-components") where
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.wicket-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.tapestry-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.dropwizard-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.finatra-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.grails-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.gwt-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.jsp-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.jsf-mojarra-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.jsf-myfaces-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.play-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.ratpack-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.servlet-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.spark-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.spring-web*")
-
-        - set(attributes["odigos.transaction.type"], "web") where
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.wicket-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.tapestry-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.dropwizard-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.finatra-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.grails-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.gwt-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.jsp-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.jsf-mojarra-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.jsf-myfaces-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.play-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.ratpack-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.servlet-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.spark-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.spring-web*")            
-
-          # Serverless
-        - set(attributes["odigos.category"], "Serverless") where
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.aws-lambda-*")
-        - set(attributes["odigos.transaction.type"], "non-web") where
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.aws-lambda-*")            
+          "odigos.io/ebpf/instrumentation-aws-sdk":
+            - new_attribute: "odigos.category"
+              value: "RPC Systems"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "rpc.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "odigos.io/ebpf/instrumentation-grpc":
+            - new_attribute: "odigos.category"
+              value: "RPC Systems"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "rpc.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          # Programming Language
+          "odigos.io/ebpf/instrumentation-dataloader":
+            - new_attribute: "odigos.category"
+              value: "Programming Language"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "telemetry.sdk.language"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "odigos.io/ebpf/instrumentation-dns":
+            - new_attribute: "odigos.category"
+              value: "Programming Language"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "telemetry.sdk.language"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "odigos.io/ebpf/instrumentation-fs":
+            - new_attribute: "odigos.category"
+              value: "Programming Language"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "telemetry.sdk.language"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "odigos.io/ebpf/instrumentation-generic-pool":
+            - new_attribute: "odigos.category"
+              value: "Programming Language"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "telemetry.sdk.language"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "odigos.io/ebpf/instrumentation-graphql":
+            - new_attribute: "odigos.category"
+              value: "Programming Language"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "telemetry.sdk.language"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "odigos.io/ebpf/instrumentation-lru-memoizer":
+            - new_attribute: "odigos.category"
+              value: "Programming Language"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "telemetry.sdk.language"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "odigos.io/ebpf/instrumentation-net":
+            - new_attribute: "odigos.category"
+              value: "Programming Language"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "telemetry.sdk.language"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          # HTTP
+          "go.opentelemetry.io/auto/net/http":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "go.opentelemetry.io/auto/github.com/gin-gonic/gin":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
 
           # Database
-        - set(attributes["odigos.category"], "Database") where
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.cassandra-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.couchbase-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.geode-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.mongo-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.jdbc*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.lettuce-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.jedis-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.Rediscala-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.redisson-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.vertx-redis-client-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.hibernate-*")
+          "go.opentelemetry.io/auto/database/sql":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "go.opentelemetry.io/auto/github.com/bradfitz/gomemcache/memcache":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "go.opentelemetry.io/auto/github.com/elastic/go-elasticsearch":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "go.opentelemetry.io/auto/github.com/gocql/gocql":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "go.opentelemetry.io/auto/github.com/ClickHouse/clickhouse-go/v2":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
 
-        - set(attributes["odigos.sub_category"], attributes["db.system"]) where
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.cassandra-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.couchbase-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.geode-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.mongo-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.jdbc*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.lettuce-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.jedis-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.Rediscala-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.redisson-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.vertx-redis-client-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.hibernate-*")
+          # Messaging Queues
+          "go.opentelemetry.io/auto/github.com/segmentio/kafka-go":
+            - new_attribute: "odigos.category"
+              value: "Messaging queues"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "messaging.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "go.opentelemetry.io/auto/github.com/IBM/sarama":
+            - new_attribute: "odigos.category"
+              value: "Messaging queues"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "messaging.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "go.opentelemetry.io/auto/github.com/rabbitmq/amqp091-go":
+            - new_attribute: "odigos.category"
+              value: "Messaging queues"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "messaging.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "go.opentelemetry.io/auto/github.com/apache/pulsar-client-go/pulsar":
+            - new_attribute: "odigos.category"
+              value: "Messaging queues"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "messaging.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"           
+          # RPC Systems
+          "go.opentelemetry.io/auto/google.golang.org/grpc":
+            - new_attribute: "odigos.category"
+              value: "RPC Systems"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "rpc.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"                               
+          # Python
+          # HTTP
+          "instrumentation.odigos.io/ebpf/aiohttp_client":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "instrumentation.odigos.io/ebpf/asgi":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "instrumentation.odigos.io/ebpf/boto":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "instrumentation.odigos.io/ebpf/django":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "instrumentation.odigos.io/ebpf/falcon":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "instrumentation.odigos.io/ebpf/fastapi":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "instrumentation.odigos.io/ebpf/flask":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "instrumentation.odigos.io/ebpf/httpx":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "instrumentation.odigos.io/ebpf/pyramid":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "instrumentation.odigos.io/ebpf/starlette":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "instrumentation.odigos.io/ebpf/tornado":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "instrumentation.odigos.io/ebpf/urllib":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "instrumentation.odigos.io/ebpf/requests":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "instrumentation.odigos.io/ebpf/urllib3":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "instrumentation.odigos.io/ebpf/wsgi":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          # Database
+          "instrumentation.odigos.io/ebpf/aiopg":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "instrumentation.odigos.io/ebpf/asyncpg":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "instrumentation.odigos.io/ebpf/cassandra":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "instrumentation.odigos.io/ebpf/dbapi":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "instrumentation.odigos.io/ebpf/elasticsearch":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "instrumentation.odigos.io/ebpf/mysql":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "instrumentation.odigos.io/ebpf/mysqlclient":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "instrumentation.odigos.io/ebpf/psycopg2":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "instrumentation.odigos.io/ebpf/pymemcache":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "instrumentation.odigos.io/ebpf/pymongo":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "instrumentation.odigos.io/ebpf/pymysql":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "instrumentation.odigos.io/ebpf/redis":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "instrumentation.odigos.io/ebpf/sqlalchemy":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "instrumentation.odigos.io/ebpf/sqlite3":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "instrumentation.odigos.io/ebpf/tortoiseorm":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
 
-        - set(attributes["odigos.transaction.type"], "non-web") where
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.cassandra-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.couchbase-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.geode-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.mongo-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.jdbc*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.lettuce-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.jedis-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.Rediscala-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.redisson-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.vertx-redis-client-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.hibernate-*")
+          # Messaging Queues
+          "instrumentation.odigos.io/ebpf/aio_pika":
+            - new_attribute: "odigos.category"
+              value: "Messaging queues"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "messaging.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "instrumentation.odigos.io/ebpf/boto3sqs":
+            - new_attribute: "odigos.category"
+              value: "Messaging queues"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "messaging.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "instrumentation.odigos.io/ebpf/celery":
+            - new_attribute: "odigos.category"
+              value: "Messaging queues"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "messaging.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "instrumentation.odigos.io/ebpf/confluent_kafka":
+            - new_attribute: "odigos.category"
+              value: "Messaging queues"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "messaging.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "instrumentation.odigos.io/ebpf/kafka":
+            - new_attribute: "odigos.category"
+              value: "Messaging queues"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "messaging.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "instrumentation.odigos.io/ebpf/pika":
+            - new_attribute: "odigos.category"
+              value: "Messaging queues"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "messaging.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "instrumentation.odigos.io/ebpf/remoulade":
+            - new_attribute: "odigos.category"
+              value: "Messaging queues"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "messaging.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          # RPC Systems
+          "instrumentation.odigos.io/ebpf/botocore":
+            - new_attribute: "odigos.category"
+              value: "RPC Systems"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "rpc.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "instrumentation.odigos.io/ebpf/grpc":
+            - new_attribute: "odigos.category"
+              value: "RPC Systems"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "rpc.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
 
+          # Programming Language
+          "instrumentation.odigos.io/ebpf/asyncio":
+            - new_attribute: "odigos.category"
+              value: "Programming Language"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "telemetry.sdk.language"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "instrumentation.odigos.io/ebpf/jinja2":
+            - new_attribute: "odigos.category"
+              value: "Programming Language"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "telemetry.sdk.language"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "instrumentation.odigos.io/ebpf/sklearn":
+            - new_attribute: "odigos.category"
+              value: "Programming Language"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "telemetry.sdk.language"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          # Java
+          # Tomcat
+          "io.opentelemetry.tomcat-10.0":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.tomcat-7.0":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.tomcat-jdbc":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+
+          # Akka
+          "io.opentelemetry.akka-http-10.0":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+
+          # Apache HTTP Client
+          "io.opentelemetry.apache-httpclient-2.0":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.apache-httpclient-4.0":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.apache-httpclient-4.3":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.apache-httpclient-5.0":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.apache-httpclient-5.2":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+
+          # Apache HTTP Async Client
+          "io.opentelemetry.apache-httpasyncclient-4.1":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+
+          # Armeria
+          "io.opentelemetry.armeria-1.3":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+
+          # Google HTTP Client
+          "io.opentelemetry.google-http-client-1.19":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+
+          # Grizzly
+          "io.opentelemetry.grizzly-2.3":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+
+          # HTTP URL Connection
+          "io.opentelemetry.http-url-connection":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+
+          # Java HTTP Client
+          "io.opentelemetry.java-http-client":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+
+          # Jetty HTTP Client
+          "io.opentelemetry.jetty-httpclient-12.0":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.jetty-httpclient-9.2":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+
+          # OkHttp
+          "io.opentelemetry.okhttp-2.2":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.okhttp-3.0":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"              
+        
+          "io.opentelemetry.apache-dubbo-2.7":
+            - new_attribute: "odigos.category"
+              value: "RPC Systems"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "rpc.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.grpc-1.6":
+            - new_attribute: "odigos.category"
+              value: "RPC Systems"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "rpc.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.rmi":
+            - new_attribute: "odigos.category"
+              value: "RPC Systems"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "rpc.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+
+          # SOAP
+          "io.opentelemetry.jaxws-jws-api-1.1":
+            - new_attribute: "odigos.category"
+              value: "SOAP"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.jaxws-2.0":
+            - new_attribute: "odigos.category"
+              value: "SOAP"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.jaxws-2.0-axis2-1.6":
+            - new_attribute: "odigos.category"
+              value: "SOAP"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.jaxws-cxf-3.0":
+            - new_attribute: "odigos.category"
+              value: "SOAP"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.jaxws-metro-2.2":
+            - new_attribute: "odigos.category"
+              value: "SOAP"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+
+         # REST
+          "io.opentelemetry.jaxrs-2.0-cxf-3.2":
+            - new_attribute: "odigos.category"
+              value: "REST"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.jaxrs-2.0-jersey-2.0":
+            - new_attribute: "odigos.category"
+              value: "REST"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.jaxrs-2.0-resteasy-3.0":
+            - new_attribute: "odigos.category"
+              value: "REST"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.jaxrs-2.0-resteasy-3.1":
+            - new_attribute: "odigos.category"
+              value: "REST"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.jaxrs-3.0-resteasy-6.0":
+            - new_attribute: "odigos.category"
+              value: "REST"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.jaxrs-1.0":
+            - new_attribute: "odigos.category"
+              value: "REST"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.jaxrs-2.0-annotations":
+            - new_attribute: "odigos.category"
+              value: "REST"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.jaxrs-3.0-annotations":
+            - new_attribute: "odigos.category"
+              value: "REST"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.jaxrs-3.0-jersey-3.0":
+            - new_attribute: "odigos.category"
+              value: "REST"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.quarkus-resteasy-reactive":
+            - new_attribute: "odigos.category"
+              value: "REST"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.restlet-1.1":
+            - new_attribute: "odigos.category"
+              value: "REST"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.restlet-2.0":
+            - new_attribute: "odigos.category"
+              value: "REST"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.opensearch-rest-1.0":
+            - new_attribute: "odigos.category"
+              value: "REST"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          # Messaging Queues
+          "io.opentelemetry.rocketmq-client-4.8":
+            - new_attribute: "odigos.category"
+              value: "Messaging queues"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "messaging.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.rocketmq-client-5.0":
+            - new_attribute: "odigos.category"
+              value: "Messaging queues"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "messaging.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.spring-jms-2.0":
+            - new_attribute: "odigos.category"
+              value: "Messaging queues"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "messaging.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.spring-jms-6.0":
+            - new_attribute: "odigos.category"
+              value: "Messaging queues"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "messaging.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.jms-1.1":
+            - new_attribute: "odigos.category"
+              value: "Messaging queues"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "messaging.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.jms-3.0":
+            - new_attribute: "odigos.category"
+              value: "Messaging queues"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "messaging.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.kafka-clients-0.11":
+            - new_attribute: "odigos.category"
+              value: "Messaging queues"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "messaging.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.kafka-clients-2.6":
+            - new_attribute: "odigos.category"
+              value: "Messaging queues"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "messaging.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.kafka-streams-0.11":
+            - new_attribute: "odigos.category"
+              value: "Messaging queues"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "messaging.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.reactor-kafka-1.0":
+            - new_attribute: "odigos.category"
+              value: "Messaging queues"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "messaging.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.spring-kafka-2.7":
+            - new_attribute: "odigos.category"
+              value: "Messaging queues"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "messaging.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.vertx-kafka-client-3.6":
+            - new_attribute: "odigos.category"
+              value: "Messaging queues"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "messaging.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.rabbitmq-2.7":
+            - new_attribute: "odigos.category"
+              value: "Messaging queues"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "messaging.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.spring-rabbit-1.0":
+            - new_attribute: "odigos.category"
+              value: "Messaging queues"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "messaging.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.netty-3.8":
+            - new_attribute: "odigos.category"
+              value: "Messaging queues"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "messaging.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.netty-4.0":
+            - new_attribute: "odigos.category"
+              value: "Messaging queues"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "messaging.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.netty-4.1":
+            - new_attribute: "odigos.category"
+              value: "Messaging queues"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "messaging.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.reactor-netty-1.0":
+            - new_attribute: "odigos.category"
+              value: "Messaging queues"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "messaging.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          # Web Framework
+          "io.opentelemetry.wicket":
+            - new_attribute: "odigos.category"
+              value: "Web Framework"
+            - new_attribute: "odigos.sub_category"
+              value: "framework-core-components"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.tapestry-5.4":
+            - new_attribute: "odigos.category"
+              value: "Web Framework"
+            - new_attribute: "odigos.sub_category"
+              value: "framework-core-components"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.dropwizard-4.0":
+            - new_attribute: "odigos.category"
+              value: "Web Framework"
+            - new_attribute: "odigos.sub_category"
+              value: "framework-core-components"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.dropwizard-metrics-4.0":
+            - new_attribute: "odigos.category"
+              value: "Web Framework"
+            - new_attribute: "odigos.sub_category"
+              value: "framework-core-components"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.dropwizard-views-0.7":
+            - new_attribute: "odigos.category"
+              value: "Web Framework"
+            - new_attribute: "odigos.sub_category"
+              value: "framework-core-components"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.finatra-2.9":
+            - new_attribute: "odigos.category"
+              value: "Web Framework"
+            - new_attribute: "odigos.sub_category"
+              value: "framework-core-components"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.grails-3.0":
+            - new_attribute: "odigos.category"
+              value: "Web Framework"
+            - new_attribute: "odigos.sub_category"
+              value: "framework-core-components"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.gwt-2.0":
+            - new_attribute: "odigos.category"
+              value: "Web Framework"
+            - new_attribute: "odigos.sub_category"
+              value: "framework-core-components"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.jsp-2.3":
+            - new_attribute: "odigos.category"
+              value: "Web Framework"
+            - new_attribute: "odigos.sub_category"
+              value: "framework-core-components"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.jsf-mojarra-1.2":
+            - new_attribute: "odigos.category"
+              value: "Web Framework"
+            - new_attribute: "odigos.sub_category"
+              value: "framework-core-components"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.jsf-mojarra-3.0":
+            - new_attribute: "odigos.category"
+              value: "Web Framework"
+            - new_attribute: "odigos.sub_category"
+              value: "framework-core-components"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.jsf-myfaces-1.2":
+            - new_attribute: "odigos.category"
+              value: "Web Framework"
+            - new_attribute: "odigos.sub_category"
+              value: "framework-core-components"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.jsf-myfaces-3.0":
+            - new_attribute: "odigos.category"
+              value: "Web Framework"
+            - new_attribute: "odigos.sub_category"
+              value: "framework-core-components"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.play-mvc-2.4":
+            - new_attribute: "odigos.category"
+              value: "Web Framework"
+            - new_attribute: "odigos.sub_category"
+              value: "framework-core-components"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.play-mvc-2.6":
+            - new_attribute: "odigos.category"
+              value: "Web Framework"
+            - new_attribute: "odigos.sub_category"
+              value: "framework-core-components"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.play-ws-1.0":
+            - new_attribute: "odigos.category"
+              value: "Web Framework"
+            - new_attribute: "odigos.sub_category"
+              value: "framework-core-components"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.play-ws-2.0":
+            - new_attribute: "odigos.category"
+              value: "Web Framework"
+            - new_attribute: "odigos.sub_category"
+              value: "framework-core-components"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.play-ws-2.1":
+            - new_attribute: "odigos.category"
+              value: "Web Framework"
+            - new_attribute: "odigos.sub_category"
+              value: "framework-core-components"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.ratpack-1.4":
+            - new_attribute: "odigos.category"
+              value: "Web Framework"
+            - new_attribute: "odigos.sub_category"
+              value: "framework-core-components"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.ratpack-1.7":
+            - new_attribute: "odigos.category"
+              value: "Web Framework"
+            - new_attribute: "odigos.sub_category"
+              value: "framework-core-components"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.servlet-2.2":
+            - new_attribute: "odigos.category"
+              value: "Web Framework"
+            - new_attribute: "odigos.sub_category"
+              value: "framework-core-components"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.servlet-3.0":
+            - new_attribute: "odigos.category"
+              value: "Web Framework"
+            - new_attribute: "odigos.sub_category"
+              value: "framework-core-components"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.servlet-5.0":
+            - new_attribute: "odigos.category"
+              value: "Web Framework"
+            - new_attribute: "odigos.sub_category"
+              value: "framework-core-components"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.spark":
+            - new_attribute: "odigos.category"
+              value: "Web Framework"
+            - new_attribute: "odigos.sub_category"
+              value: "framework-core-components"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.spring-web-3.1":
+            - new_attribute: "odigos.category"
+              value: "Web Framework"
+            - new_attribute: "odigos.sub_category"
+              value: "framework-core-components"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.spring-webflux-5.0":
+            - new_attribute: "odigos.category"
+              value: "Web Framework"
+            - new_attribute: "odigos.sub_category"
+              value: "framework-core-components"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.spring-webflux-5.3":
+            - new_attribute: "odigos.category"
+              value: "Web Framework"
+            - new_attribute: "odigos.sub_category"
+              value: "framework-core-components"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.spring-webmvc-3.1":
+            - new_attribute: "odigos.category"
+              value: "Web Framework"
+            - new_attribute: "odigos.sub_category"
+              value: "framework-core-components"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.spring-webmvc-5.3":
+            - new_attribute: "odigos.category"
+              value: "Web Framework"
+            - new_attribute: "odigos.sub_category"
+              value: "framework-core-components"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.spring-webmvc-6.0":
+            - new_attribute: "odigos.category"
+              value: "Web Framework"
+            - new_attribute: "odigos.sub_category"
+              value: "framework-core-components"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          # Serverless
+          "io.opentelemetry.aws-lambda-core-1.0":
+            - new_attribute: "odigos.category"
+              value: "Serverless"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.aws-lambda-events-2.2":
+            - new_attribute: "odigos.category"
+              value: "Serverless"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+
+          # Database
+          "io.opentelemetry.cassandra-3.0":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.cassandra-4.0":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.cassandra-4.4":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.couchbase-2.0":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.geode-1.4":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.mongo-3.1":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.jdbc":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.lettuce-4.0":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.lettuce-5.0":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.lettuce-5.1":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.jedis-1.4":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.jedis-3.0":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.jedis-4.0":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.Rediscala-1.8":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.redisson-3.0":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.redisson-3.17":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.vertx-redis-client-4.0":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.hibernate-hibernate-procedure-call-4.3":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.hibernate-3.3":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.hibernate-4.0":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.hibernate-6.0":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_attribute: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
           # Logging
-        - set(attributes["odigos.category"], "Log") where
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.log4j-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.logback-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.internal-application-logger") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.java-util-logging") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.jboss-logmanager-*")
-        - set(attributes["odigos.transaction.type"], "non-web") where
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.log4j-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.logback-*") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.internal-application-logger") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.java-util-logging") or
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.jboss-logmanager-*")            
-
+          "io.opentelemetry.log4j":
+            - new_attribute: "odigos.category"
+              value: "Log"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.logback":
+            - new_attribute: "odigos.category"
+              value: "Log"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.internal-application-logger":
+            - new_attribute: "odigos.category"
+              value: "Log"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.java-util-logging":
+            - new_attribute: "odigos.category"
+              value: "Log"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.jboss-logmanager-1.1":
+            - new_attribute: "odigos.category"
+              value: "Log"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.jboss-logmanager-1.3":
+            - new_attribute: "odigos.category"
+              value: "Log"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.jboss-logmanager-mdc-1.1":
+            - new_attribute: "odigos.category"
+              value: "Log"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.jboss-logmanager-1.1.0.GA":
+            - new_attribute: "odigos.category"
+              value: "Log"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.jboss-logmanager-appender-1.1":
+            - new_attribute: "odigos.category"
+              value: "Log"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
 
           # Kubernetes
-        - set(attributes["odigos.category"], "Kubernetes") where
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.kubernetes-client-*")
-
-        - set(attributes["odigos.transaction.type"], "non-web") where
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.kubernetes-client-*")            
-
+          "io.opentelemetry.kubernetes-client-7.0":
+            - new_attribute: "odigos.category"
+              value: "Kubernetes"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
 
           # Search Engine
-        - set(attributes["odigos.category"], "Search Engine") where
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.elasticsearch-*")
+          "io.opentelemetry.elasticsearch-rest-5.0":
+            - new_attribute: "odigos.category"
+              value: "Search Engine"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.elasticsearch-rest-6.4":
+            - new_attribute: "odigos.category"
+              value: "Search Engine"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.elasticsearch-rest-7.0":
+            - new_attribute: "odigos.category"
+              value: "Search Engine"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.elasticsearch-transport-5.0":
+            - new_attribute: "odigos.category"
+              value: "Search Engine"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.elasticsearch-transport-5.3":
+            - new_attribute: "odigos.category"
+              value: "Search Engine"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.elasticsearch-transport-6.0":
+            - new_attribute: "odigos.category"
+              value: "Search Engine"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
 
-        - set(attributes["odigos.transaction.type"], "non-web") where
-            IsMatch(instrumentation_scope.name, "io.opentelemetry.elasticsearch-*")
-
-
-        # Add this fallback after all your trace_statements:
-        - set(attributes["odigos.category"], "Unknown") where attributes["odigos.category"] == nil
-        - set(attributes["odigos.sub_category"], "Unknown") where attributes["odigos.sub_category"] == nil
-        - set(attributes["odigos.transaction.type"], "Unknown") where attributes["odigos.transaction.type"] == nil
-
-        
-        
   signals:
     - TRACES
   collectorRoles:
