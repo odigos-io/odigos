@@ -60,11 +60,11 @@ type instrumentationDetails struct {
 }
 
 type Manager struct {
-	ProcEvents    <-chan detector.ProcessEvent
-	Client        client.Client
-	Factories     map[FactoryID]Factory
-	Logger        logr.Logger
-	DetailsByPid  map[int]instrumentationDetails
+	procEvents    <-chan detector.ProcessEvent
+	client        client.Client
+	factories     map[FactoryID]Factory
+	logger        logr.Logger
+	detailsByPid  map[int]instrumentationDetails
 	configUpdates chan configUpdate
 
 	done chan struct{}
@@ -73,11 +73,11 @@ type Manager struct {
 
 func NewManager(client client.Client, logger logr.Logger, factories map[FactoryID]Factory, procEvents <-chan detector.ProcessEvent) *Manager {
 	return &Manager{
-		ProcEvents:    procEvents,
-		Client:        client,
-		Factories:     factories,
-		Logger:        logger,
-		DetailsByPid:  make(map[int]instrumentationDetails),
+		procEvents:    procEvents,
+		client:        client,
+		factories:     factories,
+		logger:        logger,
+		detailsByPid:  make(map[int]instrumentationDetails),
 		configUpdates: make(chan configUpdate),
 		done:          make(chan struct{}),
 	}
@@ -106,38 +106,38 @@ func (m *Manager) Run(ctx context.Context) {
 	for {
 		select {
 		case <-runLoopCtx.Done():
-			m.Logger.Info("stopping Odiglet instrumentation manager")
-			for pid, details := range m.DetailsByPid {
+			m.logger.Info("stopping Odiglet instrumentation manager")
+			for pid, details := range m.detailsByPid {
 				err := details.inst.Close(ctx)
 				if err != nil {
-					m.Logger.Error(err, "failed to close instrumentation", "pid", pid)
+					m.logger.Error(err, "failed to close instrumentation", "pid", pid)
 				}
-				delete(m.DetailsByPid, pid)
+				delete(m.detailsByPid, pid)
 				// probably shouldn't remove instrumentation instance here
 				// as this flow is happening when Odiglet is shutting down
 			}
 			return
-		case e := <-m.ProcEvents:
+		case e := <-m.procEvents:
 			switch e.EventType {
 			case detector.ProcessExecEvent:
-				m.Logger.Info("detected new process", "pid", e.PID, "cmd", e.ExecDetails.CmdLine)
+				m.logger.Info("detected new process", "pid", e.PID, "cmd", e.ExecDetails.CmdLine)
 				err := m.handleProcessExecEvent(runLoopCtx, e)
 				// ignore the error if no instrumentation factory is found,
 				// as this is expected for some language and sdk combinations
 				if err != nil && !errors.Is(err, ErrNoInstrumentationFactory) {
-					m.Logger.Error(err, "failed to handle process exec event")
+					m.logger.Error(err, "failed to handle process exec event")
 				}
 			case detector.ProcessExitEvent:
 				m.cleanInstrumentation(runLoopCtx, e.PID)
 			}
 		case configUpdate := <-m.configUpdates:
 			if configUpdate.config == nil {
-				m.Logger.Info("received nil config update, skipping")
+				m.logger.Info("received nil config update, skipping")
 			}
 			for _, sdkConfig := range configUpdate.config.Spec.SdkConfigs {
 				err := m.applyInstrumentationConfigurationForSDK(runLoopCtx, configUpdate.workloadKey, &sdkConfig)
 				if err != nil {
-					m.Logger.Error(err, "failed to apply instrumentation configuration")
+					m.logger.Error(err, "failed to apply instrumentation configuration")
 				}
 			}
 		}
@@ -150,39 +150,39 @@ func (m *Manager) Stop() {
 }
 
 func (m *Manager) cleanInstrumentation(ctx context.Context, pid int) {
-	details, found := m.DetailsByPid[pid]
+	details, found := m.detailsByPid[pid]
 	if !found {
-		m.Logger.V(3).Info("no instrumentation found for exiting pid", "pid", pid)
+		m.logger.V(3).Info("no instrumentation found for exiting pid", "pid", pid)
 		return
 	}
 
-	m.Logger.Info("cleaning instrumentation resources", "pid", pid)
+	m.logger.Info("cleaning instrumentation resources", "pid", pid)
 
 	err := details.inst.Close(ctx)
 	if err != nil {
-		m.Logger.Error(err, "failed to close instrumentation")
+		m.logger.Error(err, "failed to close instrumentation")
 	}
 
 	// remove instrumentation instance
-	if err = m.Client.Delete(ctx, &odigosv1.InstrumentationInstance{
+	if err = m.client.Delete(ctx, &odigosv1.InstrumentationInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      instance.InstrumentationInstanceName(details.pod.Name, pid),
 			Namespace: details.pod.Namespace,
 		},
 	}); err != nil && !apierrors.IsNotFound(err) {
-		m.Logger.Error(err, "error deleting instrumentation instance", "pod", details.pod.Name, "pid", pid)
+		m.logger.Error(err, "error deleting instrumentation instance", "pod", details.pod.Name, "pid", pid)
 	}
 
-	delete(m.DetailsByPid, pid)
+	delete(m.detailsByPid, pid)
 }
 
 func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.ProcessEvent) error {
-	if _, found := m.DetailsByPid[e.PID]; found {
+	if _, found := m.detailsByPid[e.PID]; found {
 		// this can happen if we have multiple exec events for the same pid (chain loading)
 		// TODO: better handle this?
 		// this can be done by first closing the existing instrumentation,
 		// and then creating a new one
-		m.Logger.Info("instrumentation already exists for pid", "pid", e.PID)
+		m.logger.Info("instrumentation already exists for pid", "pid", e.PID)
 		return nil
 	}
 
@@ -206,7 +206,7 @@ func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.Process
 		return fmt.Errorf("failed to get language and sdk: %w", err)
 	}
 
-	factory, found := m.Factories[FactoryID{Language: lang, OtelSdk: sdk}]
+	factory, found := m.factories[FactoryID{Language: lang, OtelSdk: sdk}]
 	if !found {
 		return ErrNoInstrumentationFactory
 	}
@@ -240,7 +240,7 @@ func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.Process
 
 	inst, err := factory.CreateInstrumentation(ctx, e.PID, settings)
 	if err != nil {
-		m.Logger.Error(err, "failed to initialize instrumentation", "language", lang, "sdk", sdk)
+		m.logger.Error(err, "failed to initialize instrumentation", "language", lang, "sdk", sdk)
 
 		// write instrumentation instance CR with error status
 		err = m.updateInstrumentationInstanceStatus(ctx, pod, containerName, workload, e.PID, InstrumentationUnhealthy, FailedToInitialize, err.Error())
@@ -250,7 +250,7 @@ func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.Process
 
 	err = inst.Load(ctx)
 	if err != nil {
-		m.Logger.Error(err, "failed to load instrumentation", "language", lang, "sdk", sdk)
+		m.logger.Error(err, "failed to load instrumentation", "language", lang, "sdk", sdk)
 
 		// write instrumentation instance CR with error status
 		err = m.updateInstrumentationInstanceStatus(ctx, pod, containerName, workload, e.PID, InstrumentationUnhealthy, FailedToLoad, err.Error())
@@ -258,7 +258,7 @@ func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.Process
 		return err
 	}
 
-	m.DetailsByPid[e.PID] = instrumentationDetails{
+	m.detailsByPid[e.PID] = instrumentationDetails{
 		inst:              inst,
 		pod:               types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name},
 		lang:              lang,
@@ -266,24 +266,24 @@ func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.Process
 		workloadNamespace: workload.Namespace,
 	}
 
-	m.Logger.Info("instrumentation loaded", "pid", e.PID, "pod", pod.Name, "container", containerName, "language", lang, "sdk", sdk)
+	m.logger.Info("instrumentation loaded", "pid", e.PID, "pod", pod.Name, "container", containerName, "language", lang, "sdk", sdk)
 
 	// write instrumentation instance CR with success status
 	msg := fmt.Sprintf("Successfully loaded eBPF probes to pod: %s container: %s", pod.Name, containerName)
 	err = m.updateInstrumentationInstanceStatus(ctx, pod, containerName, workload, e.PID, InstrumentationHealthy, LoadedSuccessfully, msg)
 	if err != nil {
-		m.Logger.Error(err, "failed to update instrumentation instance for successful load")
+		m.logger.Error(err, "failed to update instrumentation instance for successful load")
 	}
 
 	go func() {
 		err := inst.Run(ctx)
 		if err != nil && !errors.Is(err, context.Canceled) {
-			m.Logger.Error(err, "failed to run instrumentation")
+			m.logger.Error(err, "failed to run instrumentation")
 			// these errors occur after the instrumentation is loaded
 			// write instrumentation instance CR with error status
 			err = m.updateInstrumentationInstanceStatus(ctx, pod, containerName, workload, e.PID, InstrumentationUnhealthy, FailedToRun, err.Error())
 			if err != nil {
-				m.Logger.Error(err, "failed to update instrumentation instance for failed instrumentation run")
+				m.logger.Error(err, "failed to update instrumentation instance for failed instrumentation run")
 			}
 		}
 	}()
@@ -297,9 +297,9 @@ func (m *Manager) instrumentationSDKConfig(ctx context.Context, w *workloadUtils
 		Namespace: w.Namespace,
 		Name:      workloadUtils.CalculateWorkloadRuntimeObjectName(w.Name, w.Kind),
 	}
-	if err := m.Client.Get(ctx, instrumentationConfigKey, &instrumentationConfig); err != nil {
+	if err := m.client.Get(ctx, instrumentationConfigKey, &instrumentationConfig); err != nil {
 		// this can be valid when the instrumentation config is deleted and current pods will go down soon
-		m.Logger.Error(err, "failed to get initial instrumentation config for instrumented pod", "pod", podKey.Name, "namespace", podKey.Namespace)
+		m.logger.Error(err, "failed to get initial instrumentation config for instrumented pod", "pod", podKey.Name, "namespace", podKey.Namespace)
 		return nil
 	}
 	for _, config := range instrumentationConfig.Spec.SdkConfigs {
@@ -312,7 +312,7 @@ func (m *Manager) instrumentationSDKConfig(ctx context.Context, w *workloadUtils
 
 func (m *Manager) applyInstrumentationConfigurationForSDK(ctx context.Context, workloadKey types.NamespacedName, sdkConfig *odigosv1.SdkConfig) error {
 	var err error
-	for _, instDetails := range m.DetailsByPid {
+	for _, instDetails := range m.detailsByPid {
 		if instDetails.workloadName != workloadKey.Name || instDetails.workloadNamespace != workloadKey.Namespace {
 			continue
 		}
@@ -321,7 +321,7 @@ func (m *Manager) applyInstrumentationConfigurationForSDK(ctx context.Context, w
 			continue
 		}
 
-		m.Logger.Info("applying configuration to instrumentation", "workload", workloadKey, "pid", instDetails.inst, "pod", instDetails.pod)
+		m.logger.Info("applying configuration to instrumentation", "workload", workloadKey, "pid", instDetails.inst, "pod", instDetails.pod)
 		err = errors.Join(err, instDetails.inst.ApplyConfig(ctx, sdkConfig))
 	}
 	return err
@@ -330,7 +330,7 @@ func (m *Manager) applyInstrumentationConfigurationForSDK(ctx context.Context, w
 func (m *Manager) updateInstrumentationInstanceStatus(ctx context.Context, pod *corev1.Pod, containerName string, w *workloadUtils.PodWorkload, pid int, health InstrumentationHealth, reason InstrumentationStatusReason, msg string) error {
 	instrumentedAppName := workloadUtils.CalculateWorkloadRuntimeObjectName(w.Name, w.Kind)
 	healthy := bool(health)
-	return instance.UpdateInstrumentationInstanceStatus(ctx, pod, containerName, m.Client, instrumentedAppName, pid, m.Client.Scheme(),
+	return instance.UpdateInstrumentationInstanceStatus(ctx, pod, containerName, m.client, instrumentedAppName, pid, m.client.Scheme(),
 		instance.WithHealthy(&healthy, string(reason), &msg),
 	)
 }
@@ -350,7 +350,7 @@ func (m *Manager) podFromProcEvent(event detector.ProcessEvent) (*corev1.Pod, er
 
 	pod := corev1.Pod{}
 	// TODO: pass context from outer function
-	err := m.Client.Get(context.Background(), client.ObjectKey{Namespace: podNamespace, Name: podName}, &pod)
+	err := m.client.Get(context.Background(), client.ObjectKey{Namespace: podNamespace, Name: podName}, &pod)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching pod object: %w", err)
 	}
