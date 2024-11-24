@@ -10,28 +10,25 @@
     </a>
 </p>
 
-
 <p align="center">
 <img src="assets/logo.png" width="350" /></br>
 <h2>Generate distributed traces for any application in k8s without code changes.</h2>
 </p>
 
 <h2 align="center">
-    <a href="https://www.youtube.com/watch?v=nynyV7FC4VI">Demo Video</a> • <a href="https://docs.odigos.io">Documentation</a> • <a href="https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A">Join Slack Community</a>
+    <a href="https://youtu.be/bqTrGi3skhk?si=CLAolYpdT7rQb7PH">Demo Videos</a> • <a href="https://docs.odigos.io">Documentation</a> • <a href="https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A">Join Slack Community</a>
 </h2>
 
-<<<<<<< Updated upstream
-=======
 ## What is Odigos?
 
-Odigos is an open-source distributed tracing solution that revolutionizes observability for Kubernetes environments. It provides instant distributed tracing, metrics and log capabilities without requiring any code changes to your applications.
+Odigos is an open-source distributed tracing solution that revolutionizes observability for Kubernetes environments. It provides instant tracing capabilities without requiring any code changes to your applications.
 
 ## Key Features
 
 * **Code-Free Instrumentation**: Set up distributed tracing in minutes, eliminating manual code modifications.
 * **Multi-Language Support**: Works with Java, Python, .NET, Node.js, and Go applications.
 * **eBPF-Powered**: Utilizes eBPF technology for high-performance instrumentation of Go applications. eBPF-based instrumentation for Java, Python, .NET, and Node.js is available in the commercial edition.
-* **OpenTelemetry Compatible**: Generates traces, metrics and logs in OpenTelemetry format for broad tool compatibility.
+* **OpenTelemetry Compatible**: Generates traces in OpenTelemetry format for broad tool compatibility.
 * **Vendor Agnostic**: Integrates with various monitoring solutions, avoiding vendor lock-in.
 * **Automatic Scaling**: Manages and scales OpenTelemetry collectors based on data volume.
 * **User-Friendly Management**: Offers a web UI for easy configuration and management.
@@ -46,26 +43,26 @@ Odigos is an open-source distributed tracing solution that revolutionizes observ
 Odigos empowers platform engineers, DevOps professionals, and SREs to enhance their observability strategies quickly and effectively, making it an ideal solution for modern cloud-native environments.
 
 ## Features
->>>>>>> Stashed changes
 
 ### ✨ Language Agnostic Auto-instrumentation
 
-Odigos supports any application written in Java, Python, .NET, Node.js, and **Go**.  
+Odigos supports any application written in Java, Python, .NET, Node.js, and **Go**.
 Historically, compiled languages like Go have been difficult to instrument without code changes. Odigos solves this problem by uniquely leveraging [eBPF](https://ebpf.io).
 
 ![Works on any application](assets/choose_apps.png)
 
-
 ### 🤝 Keep your existing observability tools
-Odigos currently supports all the popular managed and open-source destinations.  
+
+Odigos currently supports all the popular managed and open-source destinations.
 By producing data in the [OpenTelemetry](https://opentelemetry.io) format, Odigos can be used with any observability tool that supports OTLP.
 
 For a complete list of supported destinations, see [here](#supported-destinations).
 
 ![Works with any observability tool](assets/choose_dest.png)
 
-### 🎛️ Collectors Management 
-Odigos automatically scales OpenTelemetry collectors based on observability data volume.  
+### 🎛️ Collectors Management
+
+Odigos automatically scales OpenTelemetry collectors based on observability data volume.
 Manage and configure collectors via a convenient web UI.
 
 ![Collectors Management](assets/overview_page.png)
@@ -74,7 +71,6 @@ Manage and configure collectors via a convenient web UI.
 
 Installing Odigos takes less than 5 minutes and requires no code changes.
 Download our [CLI](https://docs.odigos.io/installation) and run the following command:
-
 
 ```bash
 odigos install
@@ -88,40 +84,6 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 
 ### Managed
 
-<<<<<<< Updated upstream
-|                         | Traces  | Metrics | Logs |
-|-------------------------| ------- | ------- |------|
-| New Relic               | ✅      | ✅      | ✅    |
-| Datadog                 | ✅      | ✅      | ✅    |
-| Grafana Cloud           | ✅      | ✅      | ✅    |
-| Honeycomb               | ✅      | ✅      | ✅    |
-| Chronosphere            | ✅      | ✅      |       |
-| Logz.io                 | ✅      | ✅      | ✅    |
-| qryn.cloud              | ✅      | ✅      | ✅    |
-| OpsVerse                | ✅      | ✅      | ✅    |
-| Dynatrace               | ✅      | ✅      | ✅    |
-| AWS S3                  | ✅      | ✅      | ✅    |
-| Google Cloud Monitoring | ✅      |         | ✅    |
-| Google Cloud Storage    | ✅      |         | ✅    |
-| Azure Blob Storage      | ✅      |         | ✅    |
-| Splunk                  | ✅      |         |      |
-| Lightstep               | ✅      |         |      |
-| Sentry                  | ✅      |         |      |
-| Axiom                   | ✅      |         | ✅   |
-| Sumo Logic              | ✅      | ✅      | ✅   |
-| Coralogix               | ✅      | ✅      | ✅   |
-
-### Open Source
-
-|               | Traces | Metrics | Logs |
-| ------------- | ------ | ------- | ---- |
-| Prometheus    |        | ✅      |      |
-| Tempo         | ✅     |         |      |
-| Loki          |        |         | ✅   |
-| Jaeger        | ✅     |         |      |
-| SigNoz        | ✅     | ✅      | ✅   |
-| qryn          | ✅     | ✅      | ✅   |
-=======
 
 
 
@@ -154,10 +116,9 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 
 
 
-| Backend       | Traces | Metrics | Logs |
+|               | Traces | Metrics | Logs |
 | --------------- | -------- | --------- | ------ |
 | ClickHouse    | ✅     | ✅      | ✅   |
->>>>>>> Stashed changes
 | Elasticsearch | ✅     |         | ✅   |
 | Jaeger        | ✅     |         |      |
 | Loki          |        |         | ✅   |
