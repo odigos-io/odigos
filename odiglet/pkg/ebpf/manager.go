@@ -187,7 +187,7 @@ func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.Process
 	}
 
 	// get the corresponding pod object for this process event
-	pod, err := m.podFromProcEvent(e)
+	pod, err := m.podFromProcEvent(ctx, e)
 	if err != nil {
 		return fmt.Errorf("failed to get pod from process event: %w", err)
 	}
@@ -335,7 +335,7 @@ func (m *Manager) updateInstrumentationInstanceStatus(ctx context.Context, pod *
 	)
 }
 
-func (m *Manager) podFromProcEvent(event detector.ProcessEvent) (*corev1.Pod, error) {
+func (m *Manager) podFromProcEvent(ctx context.Context, event detector.ProcessEvent) (*corev1.Pod, error) {
 	eventEnvs := event.ExecDetails.Environments
 
 	podName, ok := eventEnvs[consts.OdigosEnvVarPodName]
@@ -349,8 +349,7 @@ func (m *Manager) podFromProcEvent(event detector.ProcessEvent) (*corev1.Pod, er
 	}
 
 	pod := corev1.Pod{}
-	// TODO: pass context from outer function
-	err := m.client.Get(context.Background(), client.ObjectKey{Namespace: podNamespace, Name: podName}, &pod)
+	err := m.client.Get(ctx, client.ObjectKey{Namespace: podNamespace, Name: podName}, &pod)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching pod object: %w", err)
 	}
