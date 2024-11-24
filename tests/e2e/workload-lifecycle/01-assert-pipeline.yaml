@@ -59,6 +59,8 @@ spec:
           resources:
             requests:
               (memory != null): true
+            limits:
+              (memory != null): true
           volumeMounts:
             - mountPath: /conf
               name: collector-conf
