@@ -13,25 +13,29 @@ import (
 )
 
 func SetupWithManager(mgr ctrl.Manager, ebpfDirectors ebpf.DirectorsMap, configUpdateFunc ebpf.ConfigUpdateFunc) error {
-
 	log.Logger.V(0).Info("Starting reconcileres for ebpf instrumentation")
+	var err error
 
-	err := builder.
-		ControllerManagedBy(mgr).
-		Named("PodReconciler_ebpf").
-		For(&corev1.Pod{}).
-		// trigger the reconcile when either:
-		// 1. A Create event is accepted for a pod with all containers ready (this is relevant when Odiglet is restarted)
-		// 2. All containers become ready in a running pod
-		// 3. Pod is deleted
-		WithEventFilter(predicate.Or(&odigospredicate.AllContainersReadyPredicate{}, &odigospredicate.DeletionPredicate{})).
-		Complete(&PodsReconciler{
-			Client:    mgr.GetClient(),
-			Scheme:    mgr.GetScheme(),
-			Directors: ebpfDirectors,
-		})
-	if err != nil {
-		return err
+	// TODO: once we fully move to the new approach of triggering instrumentations based on the
+	// process events, we can remove the PodReconciler entirely.
+	if ebpfDirectors != nil {
+		err = builder.
+			ControllerManagedBy(mgr).
+			Named("PodReconciler_ebpf").
+			For(&corev1.Pod{}).
+			// trigger the reconcile when either:
+			// 1. A Create event is accepted for a pod with all containers ready (this is relevant when Odiglet is restarted)
+			// 2. All containers become ready in a running pod
+			// 3. Pod is deleted
+			WithEventFilter(predicate.Or(&odigospredicate.AllContainersReadyPredicate{}, &odigospredicate.DeletionPredicate{})).
+			Complete(&PodsReconciler{
+				Client:    mgr.GetClient(),
+				Scheme:    mgr.GetScheme(),
+				Directors: ebpfDirectors,
+			})
+		if err != nil {
+			return err
+		}
 	}
 
 	err = builder.
