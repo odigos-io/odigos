@@ -12,9 +12,11 @@ interface IAppStateSetters {
   setAvailableSources: (payload: IAppState['availableSources']) => void;
   setConfiguredSources: (payload: IAppState['configuredSources']) => void;
   setConfiguredFutureApps: (payload: IAppState['configuredFutureApps']) => void;
+
   setConfiguredDestinations: (payload: IAppState['configuredDestinations']) => void;
   addConfiguredDestination: (payload: { stored: ConfiguredDestination; form: DestinationInput }) => void;
-  resetSources: () => void;
+  removeConfiguredDestination: (payload: { type: string }) => void;
+
   resetState: () => void;
 }
 
@@ -27,10 +29,11 @@ const useAppStore = create<IAppState & IAppStateSetters>((set) => ({
   setAvailableSources: (payload) => set({ availableSources: payload }),
   setConfiguredSources: (payload) => set({ configuredSources: payload }),
   setConfiguredFutureApps: (payload) => set({ configuredFutureApps: payload }),
+
   setConfiguredDestinations: (payload) => set({ configuredDestinations: payload }),
   addConfiguredDestination: (payload) => set((state) => ({ configuredDestinations: [...state.configuredDestinations, payload] })),
+  removeConfiguredDestination: (payload) => set((state) => ({ configuredDestinations: state.configuredDestinations.filter(({ stored }) => stored.type !== payload.type) })),
 
-  resetSources: () => set(() => ({ availableSources: {}, configuredSources: {}, configuredFutureApps: {} })),
   resetState: () => set(() => ({ availableSources: {}, configuredSources: {}, configuredFutureApps: {}, configuredDestinations: [] })),
 }));
 

@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
 import { ConfiguredFields } from '@/components';
-import { ConfiguredDestination } from '@/types';
+import { IAppState, useAppStore } from '@/store';
+import type { ConfiguredDestination } from '@/types';
 import { Divider, Text } from '@/reuseable-components';
-import { IAppState } from '@/store';
 
 const Container = styled.div`
   display: flex;
@@ -73,33 +73,22 @@ const TextWrapper = styled.div`
   justify-content: space-between;
 `;
 
-const ExpandIconContainer = styled.div`
+const IconsContainer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
   margin-right: 16px;
 `;
 
-const IconBorder = styled.div`
-  height: 16px;
-  width: 1px;
-  margin-right: 12px;
-  background: ${({ theme }) => theme.colors.border};
-`;
-
-const ExpandIconWrapper = styled.div<{ $expand?: boolean }>`
-  display: flex;
-  width: 36px;
-  height: 36px;
+const IconButton = styled.button<{ $expand?: boolean }>`
+  background: none;
+  border: none;
   cursor: pointer;
-  justify-content: center;
-  align-items: center;
-  border-radius: 100%;
+  cursor: ${({ disabled }) => (disabled ? 'not-allowed' : 'pointer')};
+  opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
+
   transition: background 0.3s ease 0s, transform 0.3s ease 0s;
-  transform: ${({ $expand }) => ($expand ? 'rotate(180deg)' : 'rotate(0deg)')};
-  &:hover {
-    background: ${({ theme }) => theme.colors.translucent_bg};
-  }
+  transform: ${({ $expand }) => ($expand ? 'rotate(-180deg)' : 'rotate(0deg)')};
 `;
 
 interface DestinationsListProps {
@@ -107,7 +96,8 @@ interface DestinationsListProps {
 }
 
 function ConfiguredDestinationsListItem({ item }: { item: ConfiguredDestination }) {
-  const [expand, setExpand] = React.useState(false);
+  const [expand, setExpand] = useState(false);
+  const { removeConfiguredDestination } = useAppStore((state) => state);
 
   function renderSupportedSignals(item: ConfiguredDestination) {
     const supportedSignals = item.exportedSignals;
@@ -140,12 +130,15 @@ function ConfiguredDestinationsListItem({ item }: { item: ConfiguredDestination 
           </TextWrapper>
         </ListItemContent>
 
-        <ExpandIconContainer>
-          <IconBorder />
-          <ExpandIconWrapper $expand={expand} onClick={() => setExpand(!expand)}>
+        <IconsContainer>
+          <IconButton onClick={() => removeConfiguredDestination(item)}>
+            <Image src='/icons/common/trash.svg' alt='Delete' width={16} height={16} />
+          </IconButton>
+          <Divider orientation='vertical' length='16px' />
+          <IconButton $expand={expand} onClick={() => setExpand(!expand)}>
             <Image src={'/icons/common/extend-arrow.svg'} width={16} height={16} alt='destination' />
-          </ExpandIconWrapper>
-        </ExpandIconContainer>
+          </IconButton>
+        </IconsContainer>
       </ListItemHeader>
 
       {expand && (
