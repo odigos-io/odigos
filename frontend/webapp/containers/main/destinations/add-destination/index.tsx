@@ -39,8 +39,8 @@ const StyledAddDestinationButton = styled(Button)`
 
 export function ChooseDestinationContainer() {
   const router = useRouter();
-  const { createSources } = useSourceCRUD();
-  const { createDestination } = useDestinationCRUD();
+  const { createSources, loading: sourcesLoading } = useSourceCRUD();
+  const { createDestination, loading: destinationsLoading } = useDestinationCRUD();
   const { configuredSources, configuredFutureApps, configuredDestinations, resetState } = useAppStore((state) => state);
 
   const isSourcesListEmpty = () => {
@@ -63,6 +63,18 @@ export function ChooseDestinationContainer() {
   const handleOpenModal = () => setModalOpen(true);
   const handleCloseModal = () => setModalOpen(false);
 
+  const clickBack = () => {
+    router.push(ROUTES.CHOOSE_SOURCES);
+  };
+
+  const clickDone = async () => {
+    await createSources(configuredSources, configuredFutureApps);
+    await Promise.all(configuredDestinations.map(async ({ form }) => await createDestination(form)));
+
+    resetState();
+    router.push(ROUTES.OVERVIEW);
+  };
+
   return (
     <>
       <HeaderWrapper>
@@ -71,21 +83,15 @@ export function ChooseDestinationContainer() {
             {
               label: 'BACK',
               iconSrc: '/icons/common/arrow-white.svg',
-              onClick: () => {
-                router.push(ROUTES.CHOOSE_SOURCES);
-              },
               variant: 'secondary',
+              onClick: clickBack,
+              disabled: sourcesLoading || destinationsLoading,
             },
             {
               label: 'DONE',
-              onClick: async () => {
-                await createSources(configuredSources, configuredFutureApps);
-                await Promise.all(configuredDestinations.map(async ({ form }) => await createDestination(form)));
-
-                resetState();
-                router.push(ROUTES.OVERVIEW);
-              },
               variant: 'primary',
+              onClick: clickDone,
+              disabled: sourcesLoading || destinationsLoading,
             },
           ]}
         />
