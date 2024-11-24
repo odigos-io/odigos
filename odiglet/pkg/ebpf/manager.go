@@ -120,7 +120,7 @@ func (m *Manager) Run(ctx context.Context) {
 		case e := <-m.procEvents:
 			switch e.EventType {
 			case detector.ProcessExecEvent:
-				m.logger.Info("detected new process", "pid", e.PID, "cmd", e.ExecDetails.CmdLine)
+				m.logger.V(1).Info("detected new process", "pid", e.PID, "cmd", e.ExecDetails.CmdLine)
 				err := m.handleProcessExecEvent(runLoopCtx, e)
 				// ignore the error if no instrumentation factory is found,
 				// as this is expected for some language and sdk combinations
