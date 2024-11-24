@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
-import { ConfiguredFields } from '@/components';
+import { ConfiguredFields, DeleteWarning } from '@/components';
 import { IAppState, useAppStore } from '@/store';
 import type { ConfiguredDestination } from '@/types';
 import { Divider, Text } from '@/reuseable-components';
@@ -95,8 +95,9 @@ interface DestinationsListProps {
   data: IAppState['configuredDestinations'];
 }
 
-function ConfiguredDestinationsListItem({ item }: { item: ConfiguredDestination }) {
+function ConfiguredDestinationsListItem({ item, isLastItem }: { item: ConfiguredDestination; isLastItem: boolean }) {
   const [expand, setExpand] = useState(false);
+  const [deleteWarning, setDeleteWarning] = useState(false);
   const { removeConfiguredDestination } = useAppStore((state) => state);
 
   function renderSupportedSignals(item: ConfiguredDestination) {
@@ -118,36 +119,54 @@ function ConfiguredDestinationsListItem({ item }: { item: ConfiguredDestination 
   }
 
   return (
-    <ListItem>
-      <ListItemHeader style={{ paddingBottom: expand ? 0 : 16 }}>
-        <ListItemContent>
-          <DestinationIconWrapper>
-            <Image src={item.imageUrl} width={20} height={20} alt='destination' />
-          </DestinationIconWrapper>
-          <TextWrapper>
-            <Text size={14}>{item.displayName}</Text>
-            <SignalsWrapper>{renderSupportedSignals(item)}</SignalsWrapper>
-          </TextWrapper>
-        </ListItemContent>
+    <>
+      <ListItem>
+        <ListItemHeader style={{ paddingBottom: expand ? 0 : 16 }}>
+          <ListItemContent>
+            <DestinationIconWrapper>
+              <Image src={item.imageUrl} width={20} height={20} alt='destination' />
+            </DestinationIconWrapper>
+            <TextWrapper>
+              <Text size={14}>{item.displayName}</Text>
+              <SignalsWrapper>{renderSupportedSignals(item)}</SignalsWrapper>
+            </TextWrapper>
+          </ListItemContent>
 
-        <IconsContainer>
-          <IconButton onClick={() => removeConfiguredDestination(item)}>
-            <Image src='/icons/common/trash.svg' alt='Delete' width={16} height={16} />
-          </IconButton>
-          <Divider orientation='vertical' length='16px' />
-          <IconButton $expand={expand} onClick={() => setExpand(!expand)}>
-            <Image src={'/icons/common/extend-arrow.svg'} width={16} height={16} alt='destination' />
-          </IconButton>
-        </IconsContainer>
-      </ListItemHeader>
+          <IconsContainer>
+            <IconButton onClick={() => setDeleteWarning(true)}>
+              <Image src='/icons/common/trash.svg' alt='Delete' width={16} height={16} />
+            </IconButton>
+            <Divider orientation='vertical' length='16px' />
+            <IconButton $expand={expand} onClick={() => setExpand(!expand)}>
+              <Image src={'/icons/common/extend-arrow.svg'} width={16} height={16} alt='destination' />
+            </IconButton>
+          </IconsContainer>
+        </ListItemHeader>
 
-      {expand && (
-        <ListItemBody>
-          <Divider margin='0 0 16px 0' />
-          <ConfiguredFields details={item.destinationTypeDetails} />
-        </ListItemBody>
-      )}
-    </ListItem>
+        {expand && (
+          <ListItemBody>
+            <Divider margin='0 0 16px 0' />
+            <ConfiguredFields details={item.destinationTypeDetails} />
+          </ListItemBody>
+        )}
+      </ListItem>
+
+      <DeleteWarning
+        isOpen={deleteWarning}
+        name={item.displayName || item.type}
+        note={
+          isLastItem
+            ? {
+                type: 'warning',
+                title: "You're about to delete the last destination",
+                message: 'This will break your pipeline!',
+              }
+            : undefined
+        }
+        onApprove={() => removeConfiguredDestination(item)}
+        onDeny={() => setDeleteWarning(false)}
+      />
+    </>
   );
 }
 
@@ -155,7 +174,7 @@ const ConfiguredDestinationsList: React.FC<DestinationsListProps> = ({ data }) =
   return (
     <Container>
       {data.map(({ stored }) => (
-        <ConfiguredDestinationsListItem key={stored.displayName} item={stored} />
+        <ConfiguredDestinationsListItem key={stored.displayName} item={stored} isLastItem={data.length === 1} />
       ))}
     </Container>
   );
