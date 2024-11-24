@@ -49,7 +49,7 @@ Odigos empowers platform engineers, DevOps professionals, and SREs to enhance th
 Odigos supports any application written in Java, Python, .NET, Node.js, and **Go**.
 Historically, compiled languages like Go have been difficult to instrument without code changes. Odigos solves this problem by uniquely leveraging [eBPF](https://ebpf.io).
 
-![Works on any application](assets/choose_apps.png)
+![Works on any application](assets/choose_sources.png)
 
 ### 🤝 Keep your existing observability tools
 
@@ -58,14 +58,14 @@ By producing data in the [OpenTelemetry](https://opentelemetry.io) format, Odigo
 
 For a complete list of supported destinations, see [here](#supported-destinations).
 
-![Works with any observability tool](assets/choose_dest.png)
+![Works with any observability tool](assets/choose_destination.png)
 
 ### 🎛️ Collectors Management
 
 Odigos automatically scales OpenTelemetry collectors based on observability data volume.
 Manage and configure collectors via a convenient web UI.
 
-![Collectors Management](assets/overview_page.png)
+![Collectors Management](assets/serviceMap.png)
 
 ## Installation
 
@@ -83,8 +83,6 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 **For step-by-step instructions detailed for every destination, see these [docs](https://docs.odigos.io/backends).**
 
 ### Managed
-
-
 
 
 |                         | Traces | Metrics | Logs |
@@ -112,8 +110,6 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 | Sumo Logic              | ✅     | ✅      | ✅   |
 
 ### Open Source
-
-
 
 
 |               | Traces | Metrics | Logs |
