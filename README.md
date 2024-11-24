@@ -21,14 +21,14 @@
 
 ## What is Odigos?
 
-Odigos is an open-source distributed tracing solution that revolutionizes observability for Kubernetes environments. It provides instant distributed tracing, metrics and log capabilities without requiring any code changes to your applications.
+Odigos is an open-source distributed tracing solution that revolutionizes observability for Kubernetes environments. It provides instant tracing capabilities without requiring any code changes to your applications.
 
 ## Key Features
 
 * **Code-Free Instrumentation**: Set up distributed tracing in minutes, eliminating manual code modifications.
 * **Multi-Language Support**: Works with Java, Python, .NET, Node.js, and Go applications.
 * **eBPF-Powered**: Utilizes eBPF technology for high-performance instrumentation of Go applications. eBPF-based instrumentation for Java, Python, and Node.js is available in the enterprise edition.
-* **OpenTelemetry Compatible**: Generates traces, metrics and logs in OpenTelemetry format for broad tool compatibility.
+* **OpenTelemetry Compatible**: Generates traces in OpenTelemetry format for broad tool compatibility.
 * **Vendor Agnostic**: Integrates with various monitoring solutions, avoiding vendor lock-in.
 * **Automatic Scaling**: Manages and scales OpenTelemetry collectors based on data volume.
 * **User-Friendly Management**: Offers a web UI for easy configuration and management.
@@ -49,7 +49,7 @@ Odigos empowers platform engineers, DevOps professionals, and SREs to enhance th
 Odigos supports any application written in Java, Python, .NET, Node.js, and **Go**.
 Historically, compiled languages like Go have been difficult to instrument without code changes. Odigos solves this problem by uniquely leveraging [eBPF](https://ebpf.io).
 
-![Works on any application](assets/choose_sources.png)
+![Works on any application](assets/choose_source.png)
 
 ### 🤝 Keep your existing observability tools
 
@@ -58,14 +58,14 @@ By producing data in the [OpenTelemetry](https://opentelemetry.io) format, Odigo
 
 For a complete list of supported destinations, see [here](#supported-destinations).
 
-![Works with any observability tool](assets/choose_destination.png)
+![Works with any observability tool](assets/choose_destinations.png)
 
 ### 🎛️ Collectors Management
 
 Odigos automatically scales OpenTelemetry collectors based on observability data volume.
 Manage and configure collectors via a convenient web UI.
 
-![Collectors Management](assets/serviceMap.png)
+![Collectors Management](assets/overview.png)
 
 ## Installation
 
