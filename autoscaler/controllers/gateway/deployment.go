@@ -34,7 +34,7 @@ const (
 )
 
 func syncDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup, configData string,
-	ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, memConfig *memoryConfigurations) (*appsv1.Deployment, error) {
+	ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (*appsv1.Deployment, error) {
 	logger := log.FromContext(ctx)
 
 	secretsVersionHash, err := destinationsSecretsVersionsHash(ctx, c, dests)
@@ -44,7 +44,7 @@ func syncDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.Collector
 
 	// Calculate the hash of the config data and the secrets version hash, this is used to make sure the gateway will restart when the config changes
 	configDataHash := common.Sha256Hash(fmt.Sprintf("%s-%s", configData, secretsVersionHash))
-	desiredDeployment, err := getDesiredDeployment(dests, configDataHash, gateway, scheme, imagePullSecrets, odigosVersion, memConfig)
+	desiredDeployment, err := getDesiredDeployment(dests, configDataHash, gateway, scheme, imagePullSecrets, odigosVersion)
 	if err != nil {
 		return nil, errors.Join(err, errors.New("failed to get desired deployment"))
 	}
@@ -88,9 +88,10 @@ func patchDeployment(existing *appsv1.Deployment, desired *appsv1.Deployment, ct
 }
 
 func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string,
-	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, memConfig *memoryConfigurations) (*appsv1.Deployment, error) {
+	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (*appsv1.Deployment, error) {
 
-	requestMemoryQuantity := resource.MustParse(fmt.Sprintf("%dMi", memConfig.memoryRequestMiB))
+	requestMemoryQuantity := resource.MustParse(fmt.Sprintf("%dMi", gateway.Spec.MemorySettings.MemoryRequestMiB))
+	limitMemoryQuantity := resource.MustParse(fmt.Sprintf("%dMi", gateway.Spec.MemorySettings.MemoryLimitMiB))
 
 	desiredDeployment := &appsv1.Deployment{
 		ObjectMeta: v1.ObjectMeta{
@@ -158,7 +159,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 								},
 								{
 									Name:  "GOMEMLIMIT",
-									Value: fmt.Sprintf("%dMiB", memConfig.gomemlimitMiB),
+									Value: fmt.Sprintf("%dMiB", gateway.Spec.MemorySettings.GomemlimitMiB),
 								},
 							},
 							SecurityContext: &corev1.SecurityContext{
@@ -189,6 +190,9 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 							Resources: corev1.ResourceRequirements{
 								Requests: corev1.ResourceList{
 									corev1.ResourceMemory: requestMemoryQuantity,
+								},
+								Limits: corev1.ResourceList{
+									corev1.ResourceMemory: limitMemoryQuantity,
 								},
 							},
 						},

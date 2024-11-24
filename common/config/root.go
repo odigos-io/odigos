@@ -149,7 +149,7 @@ func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {
 					"protocols": GenericMap{
 						"grpc": GenericMap{
 							// setting it to a large value to avoid dropping batches.
-							"max_recv_msg_size_mib": 128 * 1024 * 1024,
+							"max_recv_msg_size_mib": 128,
 							"endpoint":              "0.0.0.0:4317",
 						},
 						// Node collectors send in gRPC, so this is probably not needed
