@@ -22,11 +22,11 @@ const (
 
 type Detector struct {
 	detector *detector.Detector
-	done    chan struct{}
+	done     chan struct{}
 	runError error
 }
 
-func StartRuntimeDetector(ctx context.Context, logger logr.Logger, events chan ProcessEvent) (*Detector, error) {
+func StartRuntimeDetector(ctx context.Context, logger logr.Logger, events chan<- ProcessEvent) (*Detector, error) {
 	detector, err := newDetector(ctx, logger, events)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create runtime detector: %w", err)
@@ -50,7 +50,7 @@ func (d *Detector) Stop() error {
 	return errors.Join(d.runError, err)
 }
 
-func newDetector(ctx context.Context, logger logr.Logger, events chan ProcessEvent) (*detector.Detector, error) {
+func newDetector(ctx context.Context, logger logr.Logger, events chan<- ProcessEvent) (*detector.Detector, error) {
 	sLogger := slog.New(logr.ToSlogHandler(logger))
 
 	opts := []detector.DetectorOption{
