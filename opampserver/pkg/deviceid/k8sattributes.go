@@ -2,23 +2,24 @@ package deviceid
 
 import (
 	"context"
+	"errors"
 
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"k8s.io/client-go/kubernetes"
 )
 
 // the purpose of this class is to use the k8s api to resolve container details
 // into more useful, workloads details
 type K8sPodInfoResolver struct {
 	logger     logr.Logger
-	kubeClient client.Client
+	kubeClient *kubernetes.Clientset
 }
 
-func NewK8sPodInfoResolver(logger logr.Logger, kubeClient client.Client) *K8sPodInfoResolver {
+func NewK8sPodInfoResolver(logger logr.Logger, kubeClient *kubernetes.Clientset) *K8sPodInfoResolver {
 	return &K8sPodInfoResolver{
 		logger:     logger,
 		kubeClient: kubeClient,
@@ -49,14 +50,18 @@ func (k *K8sPodInfoResolver) getServiceNameFromAnnotation(ctx context.Context, n
 }
 
 func (k *K8sPodInfoResolver) getWorkloadObject(ctx context.Context, name string, kind string, namespace string) (metav1.Object, error) {
-
-	workloadResolver := workload.NewK8sK8sWorkloadResolver(k.kubeClient)
-	obj, err := workloadResolver.GetWorkloadObject(ctx, name, workload.WorkloadKindFromString(kind), namespace)
-	if err != nil {
-		return nil, err
+	switch kind {
+	case "Deployment":
+		return k.kubeClient.AppsV1().Deployments(namespace).Get(ctx, name, metav1.GetOptions{})
+	case "StatefulSet":
+		return k.kubeClient.AppsV1().StatefulSets(namespace).Get(ctx, name, metav1.GetOptions{})
+	case "DaemonSet":
+		return k.kubeClient.AppsV1().DaemonSets(namespace).Get(ctx, name, metav1.GetOptions{})
+	case "Pod":
+		return k.kubeClient.CoreV1().Pods(namespace).Get(ctx, name, metav1.GetOptions{})
 	}
-	return obj, nil
 
+	return nil, errors.New("failed to get workload object for kind: " + kind)
 }
 
 // Resolves the service name, with the following priority:
@@ -77,8 +82,7 @@ func (k *K8sPodInfoResolver) ResolveServiceName(ctx context.Context, workloadNam
 
 // GetWorkloadNameByOwner gets the workload name and kind from the owner reference
 func (k *K8sPodInfoResolver) GetWorkloadNameByOwner(ctx context.Context, podNamespace string, podName string) (string, string, *corev1.Pod, error) {
-	var pod corev1.Pod
-	err := k.kubeClient.Get(ctx, client.ObjectKey{Name: podName, Namespace: podNamespace}, &pod)
+	pod, err := k.kubeClient.CoreV1().Pods(podNamespace).Get(ctx, podName, metav1.GetOptions{})
 	if err != nil {
 		return "", "", nil, err
 	}
@@ -87,9 +91,9 @@ func (k *K8sPodInfoResolver) GetWorkloadNameByOwner(ctx context.Context, podName
 	for _, ownerRef := range ownerRefs {
 		workloadName, workloadKind, err := workload.GetWorkloadFromOwnerReference(ownerRef)
 		if err == nil {
-			return workloadName, string(workloadKind), &pod, nil
+			return workloadName, string(workloadKind), pod, nil
 		}
 	}
 
-	return podName, "Pod", &pod, nil
+	return podName, "Pod", pod, nil
 }
