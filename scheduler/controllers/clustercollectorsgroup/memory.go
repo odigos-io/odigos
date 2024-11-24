@@ -19,6 +19,12 @@ const (
 	// the percentage out of the memory limiter hard limit, at which go runtime will start garbage collection.
 	// it is used to calculate the GOMEMLIMIT environment variable value.
 	defaultGoMemLimitPercentage = 80.0
+
+	// the memory settings should prevent the collector from exceeding the memory request.
+	// however, the mechanism is heuristic and does not guarantee to prevent OOMs.
+	// allowing the memory limit to be slightly above the memory request can help in reducing the chances of OOMs in edge cases.
+	// instead of having the process killed, it can use extra memory available on the node without allocating it preemptively.
+	memoryLimitAboveRequestFactor = 1.25
 )
 
 // process the memory settings from odigos config and return the memory settings for the collectors group.
@@ -28,6 +34,8 @@ func getMemorySettings(odigosConfig *common.OdigosConfiguration) *odigosv1.Colle
 	if odigosConfig.CollectorGateway != nil && odigosConfig.CollectorGateway.RequestMemoryMiB > 0 {
 		memoryRequestMiB = odigosConfig.CollectorGateway.RequestMemoryMiB
 	}
+
+	memoryLimitMiB := int(float64(memoryRequestMiB) * memoryLimitAboveRequestFactor)
 
 	// the memory limiter hard limit is set as 50 MiB less than the memory request
 	memoryLimiterLimitMiB := memoryRequestMiB - defaultMemoryLimiterLimitDiffMib
@@ -47,6 +55,7 @@ func getMemorySettings(odigosConfig *common.OdigosConfiguration) *odigosv1.Colle
 
 	return &odigosv1.CollectorsGroupMemorySettings{
 		MemoryRequestMiB:           memoryRequestMiB,
+		MemoryLimitMiB:             memoryLimitMiB,
 		MemoryLimiterLimitMiB:      memoryLimiterLimitMiB,
 		MemoryLimiterSpikeLimitMiB: memoryLimiterSpikeLimitMiB,
 		GomemlimitMiB:              gomemlimitMiB,
