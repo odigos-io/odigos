@@ -1,11 +1,11 @@
 import { create } from 'zustand';
-import type { ConfiguredDestination, K8sActualSource } from '@/types';
+import type { ConfiguredDestination, DestinationInput, K8sActualSource } from '@/types';
 
 export interface IAppState {
   availableSources: { [key: string]: K8sActualSource[] };
   configuredSources: { [key: string]: K8sActualSource[] };
   configuredFutureApps: { [key: string]: boolean };
-  configuredDestinations: ConfiguredDestination[];
+  configuredDestinations: { stored: ConfiguredDestination; form: DestinationInput }[];
 }
 
 interface IAppStateSetters {
@@ -13,7 +13,7 @@ interface IAppStateSetters {
   setConfiguredSources: (payload: IAppState['configuredSources']) => void;
   setConfiguredFutureApps: (payload: IAppState['configuredFutureApps']) => void;
   setConfiguredDestinations: (payload: IAppState['configuredDestinations']) => void;
-  addConfiguredDestination: (payload: ConfiguredDestination) => void;
+  addConfiguredDestination: (payload: { stored: ConfiguredDestination; form: DestinationInput }) => void;
   resetSources: () => void;
   resetState: () => void;
 }

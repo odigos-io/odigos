@@ -6,6 +6,7 @@ import { MONITORING_OPTIONS, SignalLowercase, SignalUppercase } from '@/utils';
 
 interface Props {
   isVertical?: boolean;
+  title?: string;
   allowedSignals?: SignalUppercase[];
   selectedSignals: SignalUppercase[];
   setSelectedSignals: (value: SignalUppercase[]) => void;
@@ -14,7 +15,7 @@ interface Props {
 const ListContainer = styled.div<{ $isVertical?: Props['isVertical'] }>`
   display: flex;
   flex-direction: ${({ $isVertical }) => ($isVertical ? 'column' : 'row')};
-  gap: ${({ $isVertical }) => ($isVertical ? '16px' : '32px')};
+  gap: ${({ $isVertical }) => ($isVertical ? '12px' : '24px')};
 `;
 
 const monitors = MONITORING_OPTIONS;
@@ -27,7 +28,7 @@ const isSelected = (type: SignalLowercase, selectedSignals: Props['selectedSigna
   return !!selectedSignals?.find((str) => str === type.toUpperCase());
 };
 
-const MonitoringCheckboxes: React.FC<Props> = ({ isVertical, allowedSignals, selectedSignals, setSelectedSignals }) => {
+const MonitoringCheckboxes: React.FC<Props> = ({ isVertical, title = 'Monitoring', allowedSignals, selectedSignals, setSelectedSignals }) => {
   const [isLastSelection, setIsLastSelection] = useState(selectedSignals.length === 1);
   const recordedRows = useRef(JSON.stringify(selectedSignals));
 
@@ -64,7 +65,7 @@ const MonitoringCheckboxes: React.FC<Props> = ({ isVertical, allowedSignals, sel
 
   return (
     <div>
-      <FieldLabel title='Monitoring' required />
+      {title && <FieldLabel title={title} required />}
 
       <ListContainer $isVertical={isVertical}>
         {monitors.map((monitor) => {

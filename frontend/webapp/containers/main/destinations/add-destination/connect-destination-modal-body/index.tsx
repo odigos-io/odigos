@@ -1,220 +1,122 @@
-import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react';
-import { useAppStore } from '@/store';
-import { INPUT_TYPES } from '@/utils';
-import { SideMenu } from '@/components';
-import { useQuery } from '@apollo/client';
-import { FormContainer } from './form-container';
+import React, { Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react';
+import styled from 'styled-components';
 import { TestConnection } from '../test-connection';
-import { GET_DESTINATION_TYPE_DETAILS } from '@/graphql';
-import { Body, Container, SideMenuWrapper } from '../styled';
-import { Divider, SectionTitle } from '@/reuseable-components';
-import { ConnectionNotification } from './connection-notification';
-import type { StepProps, DestinationInput, DestinationTypeItem, DestinationDetailsResponse, ConfiguredDestination } from '@/types';
-import { useComputePlatform, useConnectDestinationForm, useConnectEnv, useDestinationFormData, useEditDestinationFormHandlers } from '@/hooks';
-
-const SIDE_MENU_DATA: StepProps[] = [
-  {
-    title: 'DESTINATIONS',
-    state: 'finish',
-    stepNumber: 1,
-  },
-  {
-    title: 'CONNECTION',
-    state: 'active',
-    stepNumber: 2,
-  },
-];
+import { DynamicConnectDestinationFormFields } from '../dynamic-form-fields';
+import type { DestinationInput, DestinationTypeItem, DynamicField } from '@/types';
+import { CheckboxList, Divider, Input, NotificationNote, SectionTitle } from '@/reuseable-components';
 
 interface ConnectDestinationModalBodyProps {
-  destination: DestinationTypeItem | undefined;
-  onSubmitRef: React.MutableRefObject<(() => void) | null>;
-  onFormValidChange: (isValid: boolean) => void;
+  isUpdate?: boolean;
+  destination?: DestinationTypeItem;
+  formData: DestinationInput;
+  handleFormChange: (key: keyof DestinationInput | string, val: any) => void;
+  dynamicFields: DynamicField[];
+  setDynamicFields: Dispatch<SetStateAction<DynamicField[]>>;
 }
 
-export function ConnectDestinationModalBody({ destination, onSubmitRef, onFormValidChange }: ConnectDestinationModalBodyProps) {
-  const [destinationName, setDestinationName] = useState<string>('');
-  const [showConnectionError, setShowConnectionError] = useState(false);
+const Container = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 0 4px;
+`;
+
+export function ConnectDestinationModalBody({ isUpdate, destination, formData, handleFormChange, dynamicFields, setDynamicFields }: ConnectDestinationModalBodyProps) {
+  const { supportedSignals, testConnectionSupported, displayName } = destination || {};
+
+  const [hasSomeFields, setHasSomeFields] = useState(false);
   const [isFormDirty, setIsFormDirty] = useState(false);
-
-  const { dynamicFields, exportedSignals, setDynamicFields, setExportedSignals } = useDestinationFormData();
-
-  const { connectEnv } = useConnectEnv();
-  const { refetch } = useComputePlatform();
-  const { buildFormDynamicFields } = useConnectDestinationForm();
-
-  const { handleDynamicFieldChange, handleSignalChange } = useEditDestinationFormHandlers(
-    (...params) => {
-      setIsFormDirty(true);
-      setExportedSignals(...params);
-    },
-    (...params) => {
-      setIsFormDirty(true);
-      setDynamicFields(...params);
-    },
-  );
-
-  const addConfiguredDestination = useAppStore(({ addConfiguredDestination }) => addConfiguredDestination);
-
-  const { data } = useQuery<DestinationDetailsResponse>(GET_DESTINATION_TYPE_DETAILS, {
-    variables: { type: destination?.type },
-    skip: !destination,
-  });
-
-  useLayoutEffect(() => {
-    if (!destination) return;
-    const { logs, metrics, traces } = destination.supportedSignals;
-    setExportedSignals({
-      logs: logs.supported,
-      metrics: metrics.supported,
-      traces: traces.supported,
-    });
-  }, [destination, setExportedSignals]);
+  const [showConnectionError, setShowConnectionError] = useState(false);
 
   useEffect(() => {
-    if (data && destination) {
-      const df = buildFormDynamicFields(data.destinationTypeDetails.fields);
+    const has = !!formData.fields.find((field) => !!field.value);
+    setHasSomeFields(has);
+    setIsFormDirty(has); // this is to allow test connection when there are default values loaded
+  }, [formData.fields]);
 
-      const newDynamicFields = df.map((field) => {
-        if (destination.fields && field?.name in destination.fields) {
-          return {
-            ...field,
-            value: destination.fields[field.name],
-          };
-        }
-        return field;
-      });
+  const supportedMonitors = useMemo(() => {
+    const { logs, metrics, traces } = supportedSignals || {};
+    const arr: { id: string; title: string }[] = [];
 
-      setDynamicFields(newDynamicFields);
-    }
-  }, [data, destination]);
+    if (logs?.supported) arr.push({ id: 'logs', title: 'Logs' });
+    if (metrics?.supported) arr.push({ id: 'metrics', title: 'Metrics' });
+    if (traces?.supported) arr.push({ id: 'traces', title: 'Traces' });
 
-  useEffect(() => {
-    // Assign handleSubmit to the onSubmitRef so it can be triggered externally
-    onSubmitRef.current = handleSubmit;
-  }, [dynamicFields, destinationName, exportedSignals]);
-
-  useEffect(() => {
-    const isFormValid = dynamicFields.every((field) => (field.required ? field.value : true));
-    onFormValidChange(isFormValid);
-  }, [dynamicFields]);
-
-  const monitors = useMemo(() => {
-    if (!destination) return [];
-    const { logs, metrics, traces } = destination.supportedSignals;
-
-    return [logs.supported && { id: 'logs', title: 'Logs' }, metrics.supported && { id: 'metrics', title: 'Metrics' }, traces.supported && { id: 'traces', title: 'Traces' }].filter(Boolean);
-  }, [destination]);
-
-  function onDynamicFieldChange(name: string, value: any) {
-    setIsFormDirty(true);
-    setShowConnectionError(false);
-    handleDynamicFieldChange(name, value);
-  }
-  function processFieldValue(field) {
-    return field.componentType === INPUT_TYPES.DROPDOWN ? field.value.value : field.value;
-  }
-
-  function processFormFields() {
-    // Prepare fields for the request body
-    return dynamicFields.map((field) => ({
-      key: field.name,
-      value: processFieldValue(field),
-    }));
-  }
-
-  async function handleSubmit() {
-    // Prepare fields for the request body
-    const fields = processFormFields();
-
-    // Function to store configured destination to display in the UI
-    function storeConfiguredDestination() {
-      const destinationTypeDetails = dynamicFields.map((field) => ({
-        title: field.title,
-        value: processFieldValue(field),
-      }));
-
-      // Add 'Destination name' as the first item
-      destinationTypeDetails.unshift({
-        title: 'Destination name',
-        value: destinationName,
-      });
-
-      // Construct the configured destination object
-      const storedDestination: ConfiguredDestination = {
-        exportedSignals,
-        destinationTypeDetails,
-        type: destination?.type || '',
-        imageUrl: destination?.imageUrl || '',
-        category: '', // Could be handled in a more dynamic way if needed
-        displayName: destination?.displayName || '',
-      };
-
-      // Dispatch action to store the destination
-      addConfiguredDestination(storedDestination);
-      refetch();
-    }
-
-    // Prepare the request body
-    const body: DestinationInput = {
-      name: destinationName,
-      type: destination?.type || '',
-      exportedSignals,
-      fields,
-    };
-
-    try {
-      // Await connection and store the configured destination if successful
-      await connectEnv(body, storeConfiguredDestination);
-      // await connectEnv(body, refetch);
-    } catch (error) {
-      console.error('Failed to submit destination configuration:', error);
-      // Handle error (e.g., show notification or alert)
-    }
-  }
-
-  if (!destination) return null;
+    return arr;
+  }, [supportedSignals]);
 
   return (
     <Container>
-      <SideMenuWrapper>
-        <SideMenu data={SIDE_MENU_DATA} currentStep={2} />
-      </SideMenuWrapper>
+      {!isUpdate && (
+        <>
+          <SectionTitle
+            title='Create connection'
+            description='Connect selected destination with Odigos.'
+            actionButton={
+              testConnectionSupported && (
+                <TestConnection
+                  destination={formData}
+                  disabled={!hasSomeFields || !isFormDirty}
+                  clearStatus={() => {
+                    setIsFormDirty(false);
+                    setShowConnectionError(false);
+                  }}
+                  onError={() => {
+                    setIsFormDirty(false);
+                    setShowConnectionError(true);
+                  }}
+                />
+              )
+            }
+          />
 
-      <Body>
-        <SectionTitle
-          title='Create connection'
-          description='Connect selected destination with Odigos.'
-          actionButton={
-            !!destination.testConnectionSupported ? (
-              <TestConnection
-                destination={{
-                  name: destinationName,
-                  type: destination.type || '',
-                  exportedSignals,
-                  fields: processFormFields(),
-                }}
-                isFormDirty={isFormDirty}
-                clearFormDirty={() => setIsFormDirty(false)}
-                onError={() => {
-                  setShowConnectionError(true);
-                  onFormValidChange(false);
-                }}
-              />
-            ) : undefined
-          }
+          {testConnectionSupported && showConnectionError ? (
+            <NotificationNote type='error' message='Connection failed. Please check your input and try again.' />
+          ) : testConnectionSupported && !showConnectionError && !!displayName ? (
+            <NotificationNote type='default' message={`Odigos autocompleted ${displayName} connection details.`} />
+          ) : null}
+          <Divider />
+        </>
+      )}
+
+      <CheckboxList
+        monitors={supportedMonitors}
+        title={isUpdate ? '' : 'This connection will monitor:'}
+        exportedSignals={formData.exportedSignals}
+        handleSignalChange={(signal, value) => {
+          setIsFormDirty(true);
+          handleFormChange(`exportedSignals.${signal}`, value);
+        }}
+      />
+
+      {!isUpdate && (
+        <Input
+          title='Destination name'
+          placeholder='Enter destination name'
+          value={formData.name}
+          onChange={(e) => {
+            setIsFormDirty(true);
+            handleFormChange('name', e.target.value);
+          }}
         />
-        <ConnectionNotification showConnectionError={showConnectionError} destination={destination} />
-        <Divider margin='24px 0' />
-        <FormContainer
-          monitors={monitors}
-          dynamicFields={dynamicFields}
-          exportedSignals={exportedSignals}
-          destinationName={destinationName}
-          handleDynamicFieldChange={onDynamicFieldChange}
-          handleSignalChange={handleSignalChange}
-          setDestinationName={setDestinationName}
-        />
-      </Body>
+      )}
+
+      <DynamicConnectDestinationFormFields
+        fields={dynamicFields}
+        onChange={(name: string, value: any) => {
+          setIsFormDirty(true);
+          setDynamicFields((prev) => {
+            const payload = [...prev];
+            const foundIndex = payload.findIndex((field) => field.name === name);
+
+            if (foundIndex !== -1) {
+              payload[foundIndex] = { ...payload[foundIndex], value };
+            }
+
+            return payload;
+          });
+        }}
+      />
     </Container>
   );
 }

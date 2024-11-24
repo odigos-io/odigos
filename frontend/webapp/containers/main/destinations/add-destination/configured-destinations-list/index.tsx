@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { ConfiguredFields } from '@/components';
 import { ConfiguredDestination } from '@/types';
 import { Divider, Text } from '@/reuseable-components';
+import { IAppState } from '@/store';
 
 const Container = styled.div`
   display: flex;
@@ -102,7 +103,7 @@ const ExpandIconWrapper = styled.div<{ $expand?: boolean }>`
 `;
 
 interface DestinationsListProps {
-  data: ConfiguredDestination[];
+  data: IAppState['configuredDestinations'];
 }
 
 function ConfiguredDestinationsListItem({ item }: { item: ConfiguredDestination }) {
@@ -160,8 +161,8 @@ function ConfiguredDestinationsListItem({ item }: { item: ConfiguredDestination 
 const ConfiguredDestinationsList: React.FC<DestinationsListProps> = ({ data }) => {
   return (
     <Container>
-      {data.map((item) => (
-        <ConfiguredDestinationsListItem key={item.displayName} item={item} />
+      {data.map(({ stored }) => (
+        <ConfiguredDestinationsListItem key={stored.displayName} item={stored} />
       ))}
     </Container>
   );

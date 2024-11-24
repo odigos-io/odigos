@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import styled from 'styled-components';
+import { safeJsonParse } from '@/utils';
 import { useDrawerStore } from '@/store';
-import { ActualDestination } from '@/types';
+import { CardDetails } from '@/components';
+import type { ActualDestination } from '@/types';
 import OverviewDrawer from '../../overview/overview-drawer';
-import { CardDetails, EditDestinationForm } from '@/components';
-import { useDestinationCRUD, useDestinationFormData, useEditDestinationFormHandlers } from '@/hooks';
+import { useDestinationCRUD, useDestinationFormData, useDestinationTypes } from '@/hooks';
+import { ConnectDestinationModalBody } from '../add-destination/connect-destination-modal-body';
 
 interface Props {}
 
@@ -13,9 +15,61 @@ const DestinationDrawer: React.FC<Props> = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isFormDirty, setIsFormDirty] = useState(false);
 
-  const { cardData, dynamicFields, exportedSignals, supportedSignals, destinationType, resetFormData, setDynamicFields, setExportedSignals } = useDestinationFormData();
-  const { handleSignalChange, handleDynamicFieldChange } = useEditDestinationFormHandlers(setExportedSignals, setDynamicFields);
   const { updateDestination, deleteDestination } = useDestinationCRUD();
+  const { formData, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem, destinationTypeDetails, dynamicFields, setDynamicFields } = useDestinationFormData({
+    destinationType: (selectedItem?.item as ActualDestination)?.destinationType?.type,
+    // supportedSignals: thisDestination?.supportedSignals,
+    preLoadedFields: (selectedItem?.item as ActualDestination)?.fields,
+  });
+
+  const cardData = useMemo(() => {
+    if (!selectedItem) return [];
+
+    const buildMonitorsList = (exportedSignals: ActualDestination['exportedSignals']): string => {
+      return (
+        Object.keys(exportedSignals)
+          .filter((key) => exportedSignals[key] && key !== '__typename')
+          .join(', ') || 'None'
+      );
+    };
+
+    const buildDestinationFieldData = (parsedFields: Record<string, string>) => {
+      return Object.entries(parsedFields).map(([key, value]) => {
+        const found = destinationTypeDetails?.fields?.find((field) => field.name === key);
+
+        const { type } = safeJsonParse(found?.componentProperties, { type: '' });
+        const secret = type === 'password' ? new Array(value.length).fill('•').join('') : '';
+
+        return {
+          title: found?.displayName || key,
+          value: secret || value || 'N/A',
+        };
+      });
+    };
+
+    const { exportedSignals, destinationType, fields } = selectedItem.item as ActualDestination;
+    const parsedFields = safeJsonParse<Record<string, string>>(fields, {});
+    const fieldsData = buildDestinationFieldData(parsedFields);
+
+    return [{ title: 'Destination', value: destinationType.displayName || 'N/A' }, { title: 'Monitors', value: buildMonitorsList(exportedSignals) }, ...fieldsData];
+  }, [selectedItem, destinationTypeDetails]);
+
+  const { destinations } = useDestinationTypes();
+  const thisDestination = useMemo(() => {
+    if (!destinations.length || !selectedItem || !isEditing) {
+      resetFormData();
+      return undefined;
+    }
+
+    const { item } = selectedItem as { item: ActualDestination };
+    const found = destinations.map(({ items }) => items.filter(({ type }) => type === item.destinationType.type)).filter((arr) => !!arr.length)[0][0];
+
+    if (!found) return undefined;
+
+    loadFormWithDrawerItem(selectedItem);
+
+    return found;
+  }, [destinations, selectedItem, isEditing]);
 
   if (!selectedItem?.item) return null;
   const { id, item } = selectedItem;
@@ -38,15 +92,11 @@ const DestinationDrawer: React.FC<Props> = () => {
   };
 
   const handleSave = async (newTitle: string) => {
-    const title = newTitle !== (item as ActualDestination).destinationType.displayName ? newTitle : '';
-    const payload = {
-      type: destinationType,
-      name: title,
-      exportedSignals,
-      fields: dynamicFields.map(({ name, value }) => ({ key: name, value })),
-    };
+    if (validateForm({ withAlert: true })) {
+      const title = newTitle !== (item as ActualDestination).destinationType.displayName ? newTitle : '';
 
-    await updateDestination(id as string, payload);
+      await updateDestination(id as string, { ...formData, name: title });
+    }
   };
 
   return (
@@ -62,17 +112,18 @@ const DestinationDrawer: React.FC<Props> = () => {
     >
       {isEditing ? (
         <FormContainer>
-          <EditDestinationForm
-            exportedSignals={exportedSignals}
-            supportedSignals={supportedSignals}
-            dynamicFields={dynamicFields}
-            handleSignalChange={(...params) => {
+          <ConnectDestinationModalBody
+            isUpdate
+            destination={thisDestination}
+            formData={formData}
+            handleFormChange={(...params) => {
               setIsFormDirty(true);
-              handleSignalChange(...params);
+              handleFormChange(...params);
             }}
-            handleDynamicFieldChange={(...params) => {
+            dynamicFields={dynamicFields}
+            setDynamicFields={(...params) => {
               setIsFormDirty(true);
-              handleDynamicFieldChange(...params);
+              setDynamicFields(...params);
             }}
           />
         </FormContainer>

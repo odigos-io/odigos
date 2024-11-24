@@ -36,7 +36,10 @@ const ActionDrawer: React.FC<Props> = () => {
     }
 
     const { item } = selectedItem as { item: ActionDataParsed };
-    const found = ACTION_OPTIONS.find(({ type }) => type === item.type) || ACTION_OPTIONS.find(({ id }) => id === 'sampler')?.items?.find(({ type }) => type === item.type);
+    const found =
+      ACTION_OPTIONS.find(({ type }) => type === item.type) ||
+      ACTION_OPTIONS.find(({ id }) => id === 'attributes')?.items?.find(({ type }) => type === item.type) ||
+      ACTION_OPTIONS.find(({ id }) => id === 'sampler')?.items?.find(({ type }) => type === item.type);
 
     if (!found) return undefined;
 
