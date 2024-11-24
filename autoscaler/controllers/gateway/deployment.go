@@ -91,6 +91,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (*appsv1.Deployment, error) {
 
 	requestMemoryQuantity := resource.MustParse(fmt.Sprintf("%dMi", gateway.Spec.MemorySettings.MemoryRequestMiB))
+	limitMemoryQuantity := resource.MustParse(fmt.Sprintf("%dMi", gateway.Spec.MemorySettings.MemoryLimitMiB))
 
 	desiredDeployment := &appsv1.Deployment{
 		ObjectMeta: v1.ObjectMeta{
@@ -189,6 +190,9 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 							Resources: corev1.ResourceRequirements{
 								Requests: corev1.ResourceList{
 									corev1.ResourceMemory: requestMemoryQuantity,
+								},
+								Limits: corev1.ResourceList{
+									corev1.ResourceMemory: limitMemoryQuantity,
 								},
 							},
 						},
