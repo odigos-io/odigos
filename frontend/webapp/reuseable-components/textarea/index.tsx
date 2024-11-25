@@ -61,7 +61,7 @@ const StyledTextArea = styled.textarea`
   background: none;
   color: ${({ theme }) => theme.colors.text};
   font-size: 14px;
-  padding: 12px 20px;
+  padding: 12px 20px 0 12px;
   font-family: ${({ theme }) => theme.font_family.primary};
   font-weight: 300;
   line-height: 22px;
@@ -104,8 +104,8 @@ const TextArea: React.FC<TextAreaProps> = ({ errorMessage, title, tooltip, requi
         <StyledTextArea
           ref={ref}
           onChange={(e) => {
+            // this is to auto-resize the textarea according to the number of rows typed
             if (ref.current) {
-              // The following auto-resizes the textarea to the number of rows typed
               ref.current.style.height = 'auto';
               ref.current.style.height = `${ref.current.scrollHeight}px`;
             }
