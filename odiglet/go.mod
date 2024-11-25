@@ -1,6 +1,7 @@
 module github.com/odigos-io/odigos/odiglet
 
 go 1.22.0
+toolchain go1.22.9
 
 require (
 	github.com/go-logr/logr v1.4.2
@@ -20,7 +21,7 @@ require (
 	go.opentelemetry.io/otel v1.31.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.31.0
 	go.uber.org/zap v1.27.0
-	google.golang.org/grpc v1.67.1
+	google.golang.org/grpc v1.68.0
 	k8s.io/api v0.31.0
 	k8s.io/apimachinery v0.31.0
 	k8s.io/client-go v0.31.0
