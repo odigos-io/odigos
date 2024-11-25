@@ -1,24 +1,40 @@
 import React, { useMemo, useState } from 'react';
 import { ActionFormBody } from '../';
 import styled from 'styled-components';
-import { getActionIcon } from '@/utils';
 import { useDrawerStore } from '@/store';
 import { CardDetails } from '@/components';
-import type { ActionDataParsed } from '@/types';
+import { ACTION, getActionIcon } from '@/utils';
 import { useActionCRUD, useActionFormData } from '@/hooks';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { ACTION_OPTIONS } from '../action-modal/action-options';
 import buildCardFromActionSpec from './build-card-from-action-spec';
+import { OVERVIEW_ENTITY_TYPES, type ActionDataParsed } from '@/types';
 
 interface Props {}
 
 const ActionDrawer: React.FC<Props> = () => {
-  const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
+  const { selectedItem, setSelectedItem } = useDrawerStore((store) => store);
+  const { formData, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem } = useActionFormData();
+
+  // TODO: GEN-1796 handle CRUD response for drawer
+  const { actions, updateAction, deleteAction } = useActionCRUD({
+    onSuccess: (type) => {
+      if (type === ACTION.DELETE) {
+        setSelectedItem(null);
+      } else {
+        const id = (selectedItem?.item as ActionDataParsed)?.id;
+
+        setSelectedItem({
+          id,
+          type: OVERVIEW_ENTITY_TYPES.ACTION,
+          item: actions.find((item) => item.id === id),
+        });
+      }
+    },
+  });
+
   const [isEditing, setIsEditing] = useState(false);
   const [isFormDirty, setIsFormDirty] = useState(false);
-
-  const { formData, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem } = useActionFormData();
-  const { updateAction, deleteAction } = useActionCRUD();
 
   const cardData = useMemo(() => {
     if (!selectedItem) return [];
@@ -60,8 +76,8 @@ const ActionDrawer: React.FC<Props> = () => {
   };
 
   const handleCancel = () => {
+    handleEdit(false);
     resetFormData();
-    setIsEditing(false);
   };
 
   const handleDelete = async () => {

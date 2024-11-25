@@ -28,6 +28,7 @@ const SourceDrawer: React.FC = () => {
     }));
   };
 
+  // TODO: GEN-1796 handle CRUD response for drawer
   const { deleteSources, updateSource } = useSourceCRUD();
 
   const cardData = useMemo(() => {

@@ -26,6 +26,7 @@ export const RuleDrawer: React.FC<Props> = () => {
   const [isFormDirty, setIsFormDirty] = useState(false);
 
   const { formData, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem } = useInstrumentationRuleFormData();
+  // TODO: GEN-1796 handle CRUD response for drawer
   const { updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
 
   const cardData = useMemo(() => {

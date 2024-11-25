@@ -23,6 +23,7 @@ export const DestinationDrawer: React.FC<Props> = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isFormDirty, setIsFormDirty] = useState(false);
 
+  // TODO: GEN-1796 handle CRUD response for drawer
   const { updateDestination, deleteDestination } = useDestinationCRUD();
   const { formData, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem, destinationTypeDetails, dynamicFields, setDynamicFields } = useDestinationFormData({
     destinationType: (selectedItem?.item as ActualDestination)?.destinationType?.type,
