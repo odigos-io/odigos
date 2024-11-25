@@ -3,7 +3,7 @@ receivers:
     protocols:
       grpc:
         endpoint: 0.0.0.0:4317
-        max_recv_msg_size_mib: 134217728
+        max_recv_msg_size_mib: 128
       http:
         endpoint: 0.0.0.0:4318
 exporters: {}
@@ -17,8 +17,10 @@ processors:
 extensions:
   health_check:
     endpoint: 0.0.0.0:13133
+  pprof: {}
 connectors: {}
 service:
   extensions:
   - health_check
+  - pprof
   pipelines: {}

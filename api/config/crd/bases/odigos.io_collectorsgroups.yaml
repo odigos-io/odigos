@@ -48,6 +48,57 @@ spec:
                   This can be used to resolve conflicting ports when a collector is using the host network.
                 format: int32
                 type: integer
+              memorySettings:
+                description: |-
+                  Memory settings for the collectors group.
+                  these settings are used to protect the collectors instances from:
+                  - running out of memory and being killed by the k8s OOM killer
+                  - consuming all available memory on the node which can lead to node instability
+                  - pushing back pressure to the instrumented applications
+                properties:
+                  gomemlimitMiB:
+                    description: |-
+                      the GOMEMLIMIT environment variable value for the collector pod.
+                      this is when go runtime will start garbage collection.
+                      it is recommended to be set to 80% of the hard limit of the memory limiter.
+                    type: integer
+                  memoryLimitMiB:
+                    description: |-
+                      This option sets the limit on the memory usage of the collector.
+                      since the memory limiter mechanism is heuristic, and operates on fixed intervals,
+                      while it cannot fully prevent OOMs, it can help in reducing the chances of OOMs in edge cases.
+                      the settings should prevent the collector from exceeding the memory request,
+                      so one can set this to the same value as the memory request or higher to allow for some buffer for bursts.
+                    type: integer
+                  memoryLimiterLimitMiB:
+                    description: |-
+                      this parameter sets the "limit_mib" parameter in the memory limiter configuration for the collector.
+                      it is the hard limit after which a force garbage collection will be performed.
+                      this value will end up comparing against the go runtime reported heap Alloc value.
+                      According to the memory limiter docs:
+                      > Note that typically the total memory usage of process will be about 50MiB higher than this value
+                      a test from nov 2024 showed that fresh odigos collector with no traffic takes 38MiB,
+                      thus the 50MiB is a good value to start with.
+                    type: integer
+                  memoryLimiterSpikeLimitMiB:
+                    description: |-
+                      this parameter sets the "spike_limit_mib" parameter in the memory limiter configuration for the collector memory limiter.
+                      note that this is not the processor soft limit itself, but the diff in Mib between the hard limit and the soft limit.
+                      according to the memory limiter docs, it is recommended to set this to 20% of the hard limit.
+                      changing this value allows trade-offs between memory usage and resiliency to bursts.
+                    type: integer
+                  memoryRequestMiB:
+                    description: |-
+                      MemoryRequestMiB is the memory resource request to be used on the pod template.
+                      it will be embedded in the as a resource request of the form "memory: <value>Mi"
+                    type: integer
+                required:
+                - gomemlimitMiB
+                - memoryLimitMiB
+                - memoryLimiterLimitMiB
+                - memoryLimiterSpikeLimitMiB
+                - memoryRequestMiB
+                type: object
               role:
                 enum:
                 - CLUSTER_GATEWAY
@@ -55,6 +106,7 @@ spec:
                 type: string
             required:
             - collectorOwnMetricsPort
+            - memorySettings
             - role
             type: object
           status:
