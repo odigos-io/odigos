@@ -20,6 +20,7 @@ import (
 	"context"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -55,6 +56,9 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 
 	instrumentationRules := &odigosv1.InstrumentationRuleList{}
 	err = r.Client.List(ctx, instrumentationRules)
+	if client.IgnoreNotFound(err) != nil {
+		return ctrl.Result{}, err
+	}
 
 	err = updateInstrumentationConfigForWorkload(&ic, &ia, instrumentationRules)
 	if err != nil {
@@ -62,12 +66,8 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 	}
 
 	err = r.Client.Update(ctx, &ic)
-	if client.IgnoreNotFound(err) != nil {
-		logger.Error(err, "error updating instrumentation config", "workload", ia.Name)
-		return ctrl.Result{}, err
+	if err == nil {
+		logger.V(0).Info("Updated instrumentation config", "workload", ia.Name)
 	}
-
-	logger.V(0).Info("Updated instrumentation config", "workload", ia.Name)
-
-	return ctrl.Result{}, nil
+	return utils.K8SUpdateErrorHandler(err)
 }

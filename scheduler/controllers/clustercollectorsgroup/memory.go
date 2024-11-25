@@ -1,6 +1,7 @@
-package gateway
+package clustercollectorsgroup
 
 import (
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 )
 
@@ -18,20 +19,23 @@ const (
 	// the percentage out of the memory limiter hard limit, at which go runtime will start garbage collection.
 	// it is used to calculate the GOMEMLIMIT environment variable value.
 	defaultGoMemLimitPercentage = 80.0
+
+	// the memory settings should prevent the collector from exceeding the memory request.
+	// however, the mechanism is heuristic and does not guarantee to prevent OOMs.
+	// allowing the memory limit to be slightly above the memory request can help in reducing the chances of OOMs in edge cases.
+	// instead of having the process killed, it can use extra memory available on the node without allocating it preemptively.
+	memoryLimitAboveRequestFactor = 1.25
 )
 
-type memoryConfigurations struct {
-	memoryRequestMiB           int
-	memoryLimiterLimitMiB      int
-	memoryLimiterSpikeLimitMiB int
-	gomemlimitMiB              int
-}
-
-func getMemoryConfigurations(odigosConfig *common.OdigosConfiguration) *memoryConfigurations {
+// process the memory settings from odigos config and return the memory settings for the collectors group.
+// apply any defaulting and calculations here.
+func getMemorySettings(odigosConfig *common.OdigosConfiguration) *odigosv1.CollectorsGroupMemorySettings {
 	memoryRequestMiB := defaultRequestMemoryMiB
 	if odigosConfig.CollectorGateway != nil && odigosConfig.CollectorGateway.RequestMemoryMiB > 0 {
 		memoryRequestMiB = odigosConfig.CollectorGateway.RequestMemoryMiB
 	}
+
+	memoryLimitMiB := int(float64(memoryRequestMiB) * memoryLimitAboveRequestFactor)
 
 	// the memory limiter hard limit is set as 50 MiB less than the memory request
 	memoryLimiterLimitMiB := memoryRequestMiB - defaultMemoryLimiterLimitDiffMib
@@ -49,10 +53,11 @@ func getMemoryConfigurations(odigosConfig *common.OdigosConfiguration) *memoryCo
 		gomemlimitMiB = odigosConfig.CollectorGateway.GoMemLimitMib
 	}
 
-	return &memoryConfigurations{
-		memoryRequestMiB:           memoryRequestMiB,
-		memoryLimiterLimitMiB:      memoryLimiterLimitMiB,
-		memoryLimiterSpikeLimitMiB: memoryLimiterSpikeLimitMiB,
-		gomemlimitMiB:              gomemlimitMiB,
+	return &odigosv1.CollectorsGroupMemorySettings{
+		MemoryRequestMiB:           memoryRequestMiB,
+		MemoryLimitMiB:             memoryLimitMiB,
+		MemoryLimiterLimitMiB:      memoryLimiterLimitMiB,
+		MemoryLimiterSpikeLimitMiB: memoryLimiterSpikeLimitMiB,
+		GomemlimitMiB:              gomemlimitMiB,
 	}
 }

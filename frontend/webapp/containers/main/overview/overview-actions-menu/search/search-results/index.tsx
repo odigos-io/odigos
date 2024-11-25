@@ -18,14 +18,14 @@ const HorizontalScroll = styled.div`
   align-items: center;
   padding: 12px;
   border-bottom: ${({ theme }) => `1px solid ${theme.colors.border}`};
-  overflow-x: auto;
+  overflow-x: scroll;
 `;
 
 const VerticalScroll = styled.div`
   display: flex;
   flex-direction: column;
   padding: 12px;
-  overflow-y: auto;
+  overflow-y: scroll;
 `;
 
 export const SearchResults = ({ searchText, onClose }: Props) => {

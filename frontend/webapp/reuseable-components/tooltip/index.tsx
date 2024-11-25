@@ -1,73 +1,71 @@
-import React, { useState, useRef, ReactNode, useEffect } from 'react';
-import { Text } from '../text';
+import React, { useState, PropsWithChildren } from 'react';
+import Image from 'next/image';
 import ReactDOM from 'react-dom';
+import { Text } from '../text';
 import styled from 'styled-components';
 
-interface TooltipProps {
-  text: ReactNode;
-  children: ReactNode;
+interface Position {
+  top: number;
+  left: number;
 }
 
-const TooltipWrapper = styled.div`
-  display: flex;
+interface TooltipProps extends PropsWithChildren {
+  text?: string;
+  withIcon?: boolean;
+}
+
+interface PopupProps extends PropsWithChildren, Position {}
+
+const TooltipContainer = styled.div`
   position: relative;
+  display: flex;
   align-items: center;
+  gap: 4px;
 `;
 
-const TooltipContent = styled.div<{ $top: number; $left: number }>`
-  position: absolute;
-  top: ${({ $top }) => $top}px;
-  left: ${({ $left }) => $left}px;
-  border-radius: 32px;
-  background-color: ${({ theme }) => theme.colors.dark_grey};
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  color: ${({ theme }) => theme.text.primary};
-  padding: 16px;
-  z-index: 9999;
-  pointer-events: none;
-  max-width: 300px;
-`;
-
-const Tooltip: React.FC<TooltipProps> = ({ text, children }) => {
+export const Tooltip: React.FC<TooltipProps> = ({ text, withIcon, children }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const [position, setPosition] = useState({ top: 0, left: 0 });
-  const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const [popupPosition, setPopupPosition] = useState<Position>({ top: 0, left: 0 });
 
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (wrapperRef.current) {
-        const { top, left } = wrapperRef.current.getBoundingClientRect();
+  const handleMouseEvent = (e: React.MouseEvent) => {
+    const { type, clientX, clientY } = e;
 
-        setPosition({
-          top: top + window.scrollY,
-          left: left + window.scrollX,
-        });
-      }
-    };
-
-    if (isHovered) {
-      document.addEventListener('mousemove', handleMouseMove);
-    } else {
-      document.removeEventListener('mousemove', handleMouseMove);
-    }
-
-    return () => document.removeEventListener('mousemove', handleMouseMove);
-  }, [isHovered]);
+    setIsHovered(type !== 'mouseleave');
+    setPopupPosition({ top: clientY, left: clientX + 24 });
+  };
 
   if (!text) return <>{children}</>;
 
-  const tooltipContent = (
-    <TooltipContent $top={position.top} $left={position.left}>
-      <Text size={14}>{text}</Text>
-    </TooltipContent>
-  );
-
   return (
-    <TooltipWrapper ref={wrapperRef} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
+    <TooltipContainer onMouseEnter={handleMouseEvent} onMouseMove={handleMouseEvent} onMouseLeave={handleMouseEvent}>
       {children}
-      {isHovered && ReactDOM.createPortal(tooltipContent, document.body)}
-    </TooltipWrapper>
+      {withIcon && <Image src='/icons/common/info.svg' alt='info' width={16} height={16} />}
+      {isHovered && <Popup {...popupPosition}>{text}</Popup>}
+    </TooltipContainer>
   );
 };
 
-export { Tooltip };
+const PopupContainer = styled.div<{ $top: number; $left: number }>`
+  position: absolute;
+  top: ${({ $top }) => $top}px;
+  left: ${({ $left }) => $left}px;
+  z-index: 9999;
+
+  max-width: 270px;
+  padding: 8px 12px;
+  border-radius: 16px;
+  border: 1px solid ${({ theme }) => theme.colors.white_opacity['008']};
+  background-color: ${({ theme }) => theme.colors.info};
+  color: ${({ theme }) => theme.text.primary};
+
+  pointer-events: none;
+`;
+
+const Popup: React.FC<PopupProps> = ({ top, left, children }) => {
+  return ReactDOM.createPortal(
+    <PopupContainer $top={top} $left={left}>
+      <Text size={12}>{children}</Text>
+    </PopupContainer>,
+    document.body,
+  );
+};

@@ -61,7 +61,7 @@ const StyledTextArea = styled.textarea`
   background: none;
   color: ${({ theme }) => theme.colors.text};
   font-size: 14px;
-  padding: 12px 20px;
+  padding: 12px 20px 0;
   font-family: ${({ theme }) => theme.font_family.primary};
   font-weight: 300;
   line-height: 22px;
@@ -96,6 +96,14 @@ const ErrorMessage = styled(Text)`
 const TextArea: React.FC<TextAreaProps> = ({ errorMessage, title, tooltip, required, onChange, ...props }) => {
   const ref = useRef<HTMLTextAreaElement>(null);
 
+  const resize = () => {
+    // this is to auto-resize the textarea according to the number of rows typed
+    if (ref.current) {
+      ref.current.style.height = 'auto';
+      ref.current.style.height = `${ref.current.scrollHeight}px`;
+    }
+  };
+
   return (
     <Container>
       <FieldLabel title={title} required={required} tooltip={tooltip} />
@@ -103,13 +111,10 @@ const TextArea: React.FC<TextAreaProps> = ({ errorMessage, title, tooltip, requi
       <InputWrapper $disabled={props.disabled} $hasError={!!errorMessage} $isActive={!!props.autoFocus}>
         <StyledTextArea
           ref={ref}
+          onFocus={resize}
+          onBlur={resize}
           onChange={(e) => {
-            if (ref.current) {
-              // The following auto-resizes the textarea to the number of rows typed
-              ref.current.style.height = 'auto';
-              ref.current.style.height = `${ref.current.scrollHeight}px`;
-            }
-
+            resize();
             onChange?.(e);
           }}
           {...props}

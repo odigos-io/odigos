@@ -19,7 +19,7 @@ type DeploymentReconciler struct {
 func (r *DeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	instrumentedAppName := workload.CalculateWorkloadRuntimeObjectName(req.Name, workload.WorkloadKindDeployment)
 	err := reconcileSingleInstrumentedApplicationByName(ctx, r.Client, instrumentedAppName, req.Namespace)
-	return utils.RetryOnConflict(err)
+	return utils.K8SUpdateErrorHandler(err)
 }
 
 type DaemonSetReconciler struct {
@@ -29,7 +29,7 @@ type DaemonSetReconciler struct {
 func (r *DaemonSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	instrumentedAppName := workload.CalculateWorkloadRuntimeObjectName(req.Name, workload.WorkloadKindDaemonSet)
 	err := reconcileSingleInstrumentedApplicationByName(ctx, r.Client, instrumentedAppName, req.Namespace)
-	return utils.RetryOnConflict(err)
+	return utils.K8SUpdateErrorHandler(err)
 }
 
 type StatefulSetReconciler struct {
@@ -39,7 +39,7 @@ type StatefulSetReconciler struct {
 func (r *StatefulSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	instrumentedAppName := workload.CalculateWorkloadRuntimeObjectName(req.Name, workload.WorkloadKindStatefulSet)
 	err := reconcileSingleInstrumentedApplicationByName(ctx, r.Client, instrumentedAppName, req.Namespace)
-	return utils.RetryOnConflict(err)
+	return utils.K8SUpdateErrorHandler(err)
 }
 
 func reconcileSingleInstrumentedApplicationByName(ctx context.Context, k8sClient client.Client, instrumentedAppName string, namespace string) error {
