@@ -62,6 +62,14 @@ spec:
                       this is when go runtime will start garbage collection.
                       it is recommended to be set to 80% of the hard limit of the memory limiter.
                     type: integer
+                  memoryLimitMiB:
+                    description: |-
+                      This option sets the limit on the memory usage of the collector.
+                      since the memory limiter mechanism is heuristic, and operates on fixed intervals,
+                      while it cannot fully prevent OOMs, it can help in reducing the chances of OOMs in edge cases.
+                      the settings should prevent the collector from exceeding the memory request,
+                      so one can set this to the same value as the memory request or higher to allow for some buffer for bursts.
+                    type: integer
                   memoryLimiterLimitMiB:
                     description: |-
                       this parameter sets the "limit_mib" parameter in the memory limiter configuration for the collector.
@@ -86,6 +94,7 @@ spec:
                     type: integer
                 required:
                 - gomemlimitMiB
+                - memoryLimitMiB
                 - memoryLimiterLimitMiB
                 - memoryLimiterSpikeLimitMiB
                 - memoryRequestMiB

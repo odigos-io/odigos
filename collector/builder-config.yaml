@@ -61,6 +61,7 @@ exporters:
 processors:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosresourcenameprocessor v0.106.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossamplingprocessor v0.106.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosconditionalattributes v0.106.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossqldboperationprocessor v0.106.0
   - gomod: go.opentelemetry.io/collector/processor/batchprocessor v0.106.0
   - gomod: go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.106.0
@@ -108,6 +109,7 @@ connectors:
 replaces:
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosresourcenameprocessor => ../processors/odigosresourcenameprocessor
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossamplingprocessor => ../processors/odigossamplingprocessor
+  - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosconditionalattributes => ../processors/odigosconditionalattributes
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossqldboperationprocessor => ../processors/odigossqldboperationprocessor
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/azureblobstorageexporter => ../exporters/azureblobstorageexporter
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/googlecloudstorageexporter => ../exporters/googlecloudstorageexporter
