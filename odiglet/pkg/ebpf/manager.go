@@ -22,8 +22,6 @@ import (
 )
 
 var (
-	ErrContainerNotInPodSpec    = errors.New("container not found in pod spec")
-	ErrDeviceNotDetected        = errors.New("device not detected")
 	ErrNoInstrumentationFactory = errors.New("no ebpf factory found")
 )
 
@@ -221,7 +219,7 @@ func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.Process
 	// based on the pod spec and the container name from the process event
 	// TODO: We should have all the required information in the process event
 	// to determine the language - hence in the future we can improve this
-	lang, sdk, err := m.languageSdk(pod, containerName)
+	lang, sdk, err := odgiosK8s.LanguageSdkFromPodContainer(pod, containerName)
 	if err != nil {
 		return fmt.Errorf("failed to get language and sdk: %w", err)
 	}
@@ -407,17 +405,3 @@ func containerNameFromProcEvent(event detector.ProcessEvent) (string, bool) {
 	return containerName, ok
 }
 
-func (m *Manager) languageSdk(pod *corev1.Pod, containerName string) (common.ProgrammingLanguage, common.OtelSdk, error) {
-	for _, container := range pod.Spec.Containers {
-		if container.Name == containerName {
-			language, sdk, found := odgiosK8s.GetLanguageAndOtelSdk(container)
-			if !found {
-				return common.UnknownProgrammingLanguage, common.OtelSdk{}, ErrDeviceNotDetected
-			}
-
-			return language, sdk, nil
-		}
-	}
-
-	return common.UnknownProgrammingLanguage, common.OtelSdk{}, ErrContainerNotInPodSpec
-}
