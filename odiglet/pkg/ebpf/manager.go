@@ -229,9 +229,9 @@ func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.Process
 		return ErrNoInstrumentationFactory
 	}
 
-	workload, err := workloadUtils.PodWorkloadObject(ctx, pod)
+	workload, err := workloadUtils.PodWorkloadObjectOrError(ctx, pod)
 	if err != nil {
-		return fmt.Errorf("failed to get workload object: %w", err)
+		return fmt.Errorf("failed to find workload object from pod manifest owners references: %w", err)
 	}
 
 	// Fetch initial config based on the InstrumentationConfig CR
