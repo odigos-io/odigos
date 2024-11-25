@@ -4,7 +4,7 @@ module odigos.io/opentelemetry-collector/cmd/odigosotelcol
 
 go 1.22.0
 
-toolchain go1.22.6
+toolchain go1.22.8
 
 require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/countconnector v0.106.0
@@ -85,13 +85,12 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/zipkinreceiver v0.106.0
 	github.com/stretchr/testify v1.9.0
 	go.opentelemetry.io/collector/component v0.106.0
-	go.opentelemetry.io/collector/confmap v0.106.0
+	go.opentelemetry.io/collector/confmap v1.20.0
 	go.opentelemetry.io/collector/confmap/converter/expandconverter v0.106.0
-	go.opentelemetry.io/collector/confmap/provider/envprovider v0.106.0
-	go.opentelemetry.io/collector/confmap/provider/fileprovider v0.106.0
-	go.opentelemetry.io/collector/confmap/provider/httpprovider v0.106.0
-	go.opentelemetry.io/collector/confmap/provider/httpsprovider v0.106.0
-	go.opentelemetry.io/collector/confmap/provider/yamlprovider v0.106.0
+	go.opentelemetry.io/collector/confmap/provider/envprovider v1.20.0
+	go.opentelemetry.io/collector/confmap/provider/httpprovider v1.20.0
+	go.opentelemetry.io/collector/confmap/provider/httpsprovider v1.20.0
+	go.opentelemetry.io/collector/confmap/provider/yamlprovider v1.20.0
 	go.opentelemetry.io/collector/connector v0.106.0
 	go.opentelemetry.io/collector/connector/forwardconnector v0.106.0
 	go.opentelemetry.io/collector/exporter v0.106.0
@@ -102,6 +101,7 @@ require (
 	go.opentelemetry.io/collector/extension v0.106.0
 	go.opentelemetry.io/collector/extension/ballastextension v0.106.0
 	go.opentelemetry.io/collector/extension/zpagesextension v0.106.0
+	go.opentelemetry.io/collector/odigos/providers/odigosfileprovider v0.106.0
 	go.opentelemetry.io/collector/otelcol v0.106.0
 	go.opentelemetry.io/collector/processor v0.106.0
 	go.opentelemetry.io/collector/processor/batchprocessor v0.106.0
@@ -288,7 +288,7 @@ require (
 	github.com/expr-lang/expr v1.16.9 // indirect
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
-	github.com/fsnotify/fsnotify v1.7.0 // indirect
+	github.com/fsnotify/fsnotify v1.8.0 // indirect
 	github.com/getsentry/sentry-go v0.28.1 // indirect
 	github.com/go-faster/city v1.0.1 // indirect
 	github.com/go-faster/errors v0.7.1 // indirect
@@ -605,5 +605,7 @@ replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporte
 replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/googlecloudstorageexporter => ../exporters/googlecloudstorageexporter
 
 replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics => ../processors/odigostrafficmetrics
+
+replace go.opentelemetry.io/collector/odigos/providers/odigosfileprovider => ../providers/odigosfileprovider
 
 exclude github.com/knadh/koanf v1.5.0
