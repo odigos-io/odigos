@@ -21,6 +21,7 @@ package v1alpha1
 // with apply.
 type CollectorsGroupMemorySettingsApplyConfiguration struct {
 	MemoryRequestMiB           *int `json:"memoryRequestMiB,omitempty"`
+	MemoryLimitMiB             *int `json:"memoryLimitMiB,omitempty"`
 	MemoryLimiterLimitMiB      *int `json:"memoryLimiterLimitMiB,omitempty"`
 	MemoryLimiterSpikeLimitMiB *int `json:"memoryLimiterSpikeLimitMiB,omitempty"`
 	GomemlimitMiB              *int `json:"gomemlimitMiB,omitempty"`
@@ -37,6 +38,14 @@ func CollectorsGroupMemorySettings() *CollectorsGroupMemorySettingsApplyConfigur
 // If called multiple times, the MemoryRequestMiB field is set to the value of the last call.
 func (b *CollectorsGroupMemorySettingsApplyConfiguration) WithMemoryRequestMiB(value int) *CollectorsGroupMemorySettingsApplyConfiguration {
 	b.MemoryRequestMiB = &value
+	return b
+}
+
+// WithMemoryLimitMiB sets the MemoryLimitMiB field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the MemoryLimitMiB field is set to the value of the last call.
+func (b *CollectorsGroupMemorySettingsApplyConfiguration) WithMemoryLimitMiB(value int) *CollectorsGroupMemorySettingsApplyConfiguration {
+	b.MemoryLimitMiB = &value
 	return b
 }
 
