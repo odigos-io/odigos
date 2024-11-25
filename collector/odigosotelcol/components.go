@@ -67,6 +67,7 @@ import (
 	basicauthextension "github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension"
 	odigosresourcenameprocessor "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosresourcenameprocessor"
 	odigossamplingprocessor "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossamplingprocessor"
+	odigosconditionalattributes "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosconditionalattributes"
 	odigossqldboperationprocessor "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossqldboperationprocessor"
 	batchprocessor "go.opentelemetry.io/collector/processor/batchprocessor"
 	memorylimiterprocessor "go.opentelemetry.io/collector/processor/memorylimiterprocessor"
@@ -231,6 +232,7 @@ func components() (otelcol.Factories, error) {
 	factories.Processors, err = processor.MakeFactoryMap(
 		odigosresourcenameprocessor.NewFactory(),
 		odigossamplingprocessor.NewFactory(),
+		odigosconditionalattributes.NewFactory(),
 		odigossqldboperationprocessor.NewFactory(),
 		batchprocessor.NewFactory(),
 		memorylimiterprocessor.NewFactory(),
@@ -261,6 +263,7 @@ func components() (otelcol.Factories, error) {
 	factories.ProcessorModules = make(map[component.Type]string, len(factories.Processors))
 	factories.ProcessorModules[odigosresourcenameprocessor.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosresourcenameprocessor v0.106.0"
 	factories.ProcessorModules[odigossamplingprocessor.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossamplingprocessor v0.106.0"
+	factories.ProcessorModules[odigosconditionalattributes.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosconditionalattributes v0.106.0"
 	factories.ProcessorModules[odigossqldboperationprocessor.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossqldboperationprocessor v0.106.0"
 	factories.ProcessorModules[batchprocessor.NewFactory().Type()] = "go.opentelemetry.io/collector/processor/batchprocessor v0.106.0"
 	factories.ProcessorModules[memorylimiterprocessor.NewFactory().Type()] = "go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.106.0"
