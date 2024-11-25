@@ -40,6 +40,13 @@ type CollectorsGroupMemorySettings struct {
 	// it will be embedded in the as a resource request of the form "memory: <value>Mi"
 	MemoryRequestMiB int `json:"memoryRequestMiB"`
 
+	// This option sets the limit on the memory usage of the collector.
+	// since the memory limiter mechanism is heuristic, and operates on fixed intervals,
+	// while it cannot fully prevent OOMs, it can help in reducing the chances of OOMs in edge cases.
+	// the settings should prevent the collector from exceeding the memory request,
+	// so one can set this to the same value as the memory request or higher to allow for some buffer for bursts.
+	MemoryLimitMiB int `json:"memoryLimitMiB"`
+
 	// this parameter sets the "limit_mib" parameter in the memory limiter configuration for the collector.
 	// it is the hard limit after which a force garbage collection will be performed.
 	// this value will end up comparing against the go runtime reported heap Alloc value.
