@@ -175,12 +175,13 @@ func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {
 				"health_check": GenericMap{
 					"endpoint": "0.0.0.0:13133",
 				},
+				"pprof": GenericMap{},
 			},
 			Exporters:  map[string]interface{}{},
 			Connectors: map[string]interface{}{},
 			Service: Service{
 				Pipelines:  map[string]Pipeline{},
-				Extensions: []string{"health_check"},
+				Extensions: []string{"health_check", "pprof"},
 			},
 		},
 		[]string{memoryLimiterProcessorName, "resource/odigos-version"}
