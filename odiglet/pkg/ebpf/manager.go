@@ -365,8 +365,9 @@ func (m *Manager) applyInstrumentationConfigurationForSDK(ctx context.Context, w
 			continue
 		}
 
-		m.logger.Info("applying configuration to instrumentation", "workload", workloadKey, "pod", instDetails.pod)
-		err = errors.Join(err, instDetails.inst.ApplyConfig(ctx, sdkConfig))
+		m.logger.Info("applying configuration to instrumentation", "workload", workloadKey, "pod", instDetails.pod, "language", instDetails.lang)
+		applyErr := instDetails.inst.ApplyConfig(ctx, sdkConfig)
+		err = errors.Join(err, applyErr)
 	}
 	return err
 }
