@@ -96,6 +96,10 @@ type InstrumentationInstanceStatus struct {
 	// Healthy nil means that the agent did not report any health status yet (prefer to always report health status).
 	Healthy *bool `json:"healthy,omitempty"`
 
+	// Running true means that the SDK is running and generating telemetry.
+	// It is set to false when the SDK is not running or the agent has stopped the SDK.
+	Running *bool `json:"running,omitempty"`
+
 	// message is a human readable message indicating details about the SDK general health.
 	// can be omitted if healthy is true
 	// +kubebuilder:validation:MaxLength=32768

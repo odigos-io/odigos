@@ -27,6 +27,7 @@ type InstrumentationInstanceStatusApplyConfiguration struct {
 	IdentifyingAttributes    []AttributeApplyConfiguration                    `json:"identifyingAttributes,omitempty"`
 	NonIdentifyingAttributes []AttributeApplyConfiguration                    `json:"nonIdentifyingAttributes,omitempty"`
 	Healthy                  *bool                                            `json:"healthy,omitempty"`
+	Running                  *bool                                            `json:"running,omitempty"`
 	Message                  *string                                          `json:"message,omitempty"`
 	Reason                   *string                                          `json:"reason,omitempty"`
 	LastStatusTime           *v1.Time                                         `json:"lastStatusTime,omitempty"`
@@ -70,6 +71,14 @@ func (b *InstrumentationInstanceStatusApplyConfiguration) WithNonIdentifyingAttr
 // If called multiple times, the Healthy field is set to the value of the last call.
 func (b *InstrumentationInstanceStatusApplyConfiguration) WithHealthy(value bool) *InstrumentationInstanceStatusApplyConfiguration {
 	b.Healthy = &value
+	return b
+}
+
+// WithRunning sets the Running field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Running field is set to the value of the last call.
+func (b *InstrumentationInstanceStatusApplyConfiguration) WithRunning(value bool) *InstrumentationInstanceStatusApplyConfiguration {
+	b.Running = &value
 	return b
 }
 

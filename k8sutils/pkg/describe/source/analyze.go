@@ -57,6 +57,7 @@ type InstrumentationDeviceAnalyze struct {
 
 type InstrumentationInstanceAnalyze struct {
 	Healthy               properties.EntityProperty   `json:"healthy"`
+	Running               properties.EntityProperty   `json:"running"`
 	Message               *properties.EntityProperty  `json:"message"`
 	IdentifyingAttributes []properties.EntityProperty `json:"identifyingAttributes"`
 }
@@ -390,6 +391,15 @@ func analyzeInstrumentationInstance(instrumentationInstance *odigosv1.Instrument
 		}
 	}
 
+	var running properties.EntityProperty
+	if instrumentationInstance.Status.Running != nil {
+		running = properties.EntityProperty{
+			Name:   "Running",
+			Value:  *instrumentationInstance.Status.Running,
+			Status: properties.PropertyStatusTransitioning,
+		}
+	}
+
 	identifyingAttributes := make([]properties.EntityProperty, 0, len(instrumentationInstance.Status.IdentifyingAttributes))
 	for _, attribute := range instrumentationInstance.Status.IdentifyingAttributes {
 		identifyingAttributes = append(identifyingAttributes, properties.EntityProperty{
@@ -402,6 +412,7 @@ func analyzeInstrumentationInstance(instrumentationInstance *odigosv1.Instrument
 		Healthy:               healthy,
 		Message:               message,
 		IdentifyingAttributes: identifyingAttributes,
+		Running:               running,
 	}
 }
 

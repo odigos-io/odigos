@@ -105,7 +105,14 @@ func printPodsInfo(analyze *source.SourceAnalyze, sb *strings.Builder) {
 			describeText(sb, 3, "")
 			describeText(sb, 3, "Instrumentation Instances:")
 			for _, ii := range container.InstrumentationInstances {
-				printProperty(sb, 4, &ii.Healthy)
+
+				// This situation may occur when a process has completed successfully (exit code 0).
+				// In such cases, we want to reflect that the process is no longer running.
+				if ii.Healthy.Value == true && ii.Running.Value == false {
+					printProperty(sb, 4, &ii.Running)
+				} else {
+					printProperty(sb, 4, &ii.Healthy)
+				}
 				printProperty(sb, 4, ii.Message)
 				if len(ii.IdentifyingAttributes) > 0 {
 					describeText(sb, 4, "Identifying Attributes:")

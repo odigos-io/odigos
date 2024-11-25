@@ -37,6 +37,14 @@ func WithHealthy(healthy *bool, reason string, message *string) InstrumentationI
 	})
 }
 
+// set Running and related fields in InstrumentationInstanceStatus
+func WithRunning(running *bool) InstrumentationInstanceOption {
+	return updateInstrumentationInstanceStatusOpt(func(s odigosv1.InstrumentationInstanceStatus) odigosv1.InstrumentationInstanceStatus {
+		s.Running = running
+		return s
+	})
+}
+
 func WithAttributes(identifying []odigosv1.Attribute, nonIdentifying []odigosv1.Attribute) InstrumentationInstanceOption {
 	return updateInstrumentationInstanceStatusOpt(func(s odigosv1.InstrumentationInstanceStatus) odigosv1.InstrumentationInstanceStatus {
 		s.IdentifyingAttributes = identifying
