@@ -16,6 +16,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+// These controllers handle update of the InstrumentationConfig's ServiceName
+// whenever there are changes in the associated workloads (Deployments, DaemonSets, StatefulSets).
+
 type DeploymentReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
