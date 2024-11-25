@@ -87,6 +87,7 @@ export function useDestinationFormData(params?: { destinationType?: string; supp
   }, [supportedSignals]);
 
   function handleFormChange(key: keyof typeof INITIAL | string, val: any) {
+    // this is for a case where "exportedSignals" have been changed, it's an object so they children are targeted as: "exportedSignals.logs"
     const [parentKey, childKey] = key.split('.');
 
     if (!!childKey) {
