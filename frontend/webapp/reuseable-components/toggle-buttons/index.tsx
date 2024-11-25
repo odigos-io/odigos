@@ -77,7 +77,7 @@ const ToggleButtons: React.FC<ToggleProps> = ({ activeText = 'Active', inactiveT
   };
 
   return (
-    <Tooltip text={tooltip || ''}>
+    <Tooltip text={tooltip}>
       <Container>
         <ActiveButton className={isActive ? 'colored' : ''} onClick={() => handleToggle(true)} disabled={disabled}>
           <Image src='/icons/common/circled-check.svg' alt='' width={16} height={16} />
@@ -88,8 +88,6 @@ const ToggleButtons: React.FC<ToggleProps> = ({ activeText = 'Active', inactiveT
           {inactiveText}
         </InactiveButton>
       </Container>
-
-      {tooltip && <Image src='/icons/common/info.svg' alt='' width={16} height={16} style={{ margin: '0 8px' }} />}
     </Tooltip>
   );
 };

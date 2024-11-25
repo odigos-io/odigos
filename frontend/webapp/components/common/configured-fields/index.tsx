@@ -82,9 +82,8 @@ export const ConfiguredFields: React.FC<ConfiguredFieldsProps> = ({ details }) =
     <ListContainer>
       {details.map((detail, index) => (
         <ListItem key={index}>
-          <Tooltip text={detail.tooltip || ''}>
+          <Tooltip text={detail.tooltip || ''} withIcon>
             <ItemTitle>{detail.title}</ItemTitle>
-            {detail.tooltip && <Image src='/icons/common/info.svg' alt='Info' width={12} height={12} style={{ marginLeft: 4 }} />}
           </Tooltip>
 
           {detail.title === 'Status' ? <Status isActive={detail.value == 'true'} withIcon withBorder withSmaller withSpecialFont /> : <ItemValue>{parseValue(detail.value)}</ItemValue>}

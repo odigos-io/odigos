@@ -61,14 +61,12 @@ const Toggle: React.FC<ToggleProps> = ({ title, tooltip, initialValue = false, o
   };
 
   return (
-    <Tooltip text={tooltip || ''}>
-      <Container $disabled={disabled} onClick={handleToggle}>
-        <ToggleSwitch $disabled={disabled} $isActive={isActive} />
+    <Container $disabled={disabled} onClick={handleToggle}>
+      <ToggleSwitch $disabled={disabled} $isActive={isActive} />
+      <Tooltip text={tooltip} withIcon>
         <Text size={14}>{title}</Text>
-      </Container>
-
-      {tooltip && <Image src='/icons/common/info.svg' alt='' width={16} height={16} />}
-    </Tooltip>
+      </Tooltip>
+    </Container>
   );
 };
 
