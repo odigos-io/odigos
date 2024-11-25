@@ -17,15 +17,10 @@ const AddClusterInfo: React.FC<Props> = ({ value, setValue }) => {
         key: obj.attributeName,
         value: obj.attributeStringValue,
       })),
-    [value]
+    [value],
   );
 
-  const handleChange = (
-    arr: {
-      key: string;
-      value: string;
-    }[]
-  ) => {
+  const handleChange = (arr: { key: string; value: string }[]) => {
     const payload: Parsed = {
       clusterAttributes: arr.map((obj) => ({
         attributeName: obj.key,
@@ -38,7 +33,7 @@ const AddClusterInfo: React.FC<Props> = ({ value, setValue }) => {
     setValue(str);
   };
 
-  return <KeyValueInputsList title='Attributes to add' required value={mappedValue} onChange={handleChange} />;
+  return <KeyValueInputsList title='Resource Attributes' required value={mappedValue} onChange={handleChange} />;
 };
 
 export default AddClusterInfo;
