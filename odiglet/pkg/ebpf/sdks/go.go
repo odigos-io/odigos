@@ -78,6 +78,10 @@ func (g *GoOtelEbpfSdk) ApplyConfig(ctx context.Context, sdkConfig *odigosv1.Sdk
 
 func convertToGoInstrumentationConfig(sdkConfig *odigosv1.SdkConfig) auto.InstrumentationConfig {
 	ic := auto.InstrumentationConfig{}
+	if sdkConfig == nil {
+		log.Logger.V(0).Info("No SDK config provided for Go instrumentation, using default")
+		return ic
+	}
 	ic.InstrumentationLibraryConfigs = make(map[auto.InstrumentationLibraryID]auto.InstrumentationLibrary)
 	for _, ilc := range sdkConfig.InstrumentationLibraryConfigs {
 		libID := auto.InstrumentationLibraryID{
