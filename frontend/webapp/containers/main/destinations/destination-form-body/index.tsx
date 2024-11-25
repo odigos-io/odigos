@@ -1,13 +1,14 @@
 import React, { Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
-import { TestConnection } from '../test-connection';
-import { DynamicConnectDestinationFormFields } from '../dynamic-form-fields';
+import { TestConnection } from './test-connection';
+import { DestinationDynamicFields } from './dynamic-fields';
 import type { DestinationInput, DestinationTypeItem, DynamicField } from '@/types';
 import { CheckboxList, Divider, Input, NotificationNote, SectionTitle } from '@/reuseable-components';
 
-interface ConnectDestinationModalBodyProps {
+interface Props {
   isUpdate?: boolean;
   destination?: DestinationTypeItem;
+  isFormOk: boolean;
   formData: DestinationInput;
   handleFormChange: (key: keyof DestinationInput | string, val: any) => void;
   dynamicFields: DynamicField[];
@@ -21,18 +22,16 @@ const Container = styled.div`
   padding: 0 4px;
 `;
 
-export function ConnectDestinationModalBody({ isUpdate, destination, formData, handleFormChange, dynamicFields, setDynamicFields }: ConnectDestinationModalBodyProps) {
+export function DestinationFormBody({ isUpdate, destination, isFormOk, formData, handleFormChange, dynamicFields, setDynamicFields }: Props) {
   const { supportedSignals, testConnectionSupported, displayName } = destination || {};
 
-  const [hasSomeFields, setHasSomeFields] = useState(false);
   const [isFormDirty, setIsFormDirty] = useState(false);
   const [showConnectionError, setShowConnectionError] = useState(false);
 
+  // this is to allow test connection when there are default values loaded
   useEffect(() => {
-    const has = !!formData.fields.find((field) => !!field.value);
-    setHasSomeFields(has);
-    setIsFormDirty(has); // this is to allow test connection when there are default values loaded
-  }, [formData.fields]);
+    if (isFormOk) setIsFormDirty(true);
+  }, [isFormOk]);
 
   const supportedMonitors = useMemo(() => {
     const { logs, metrics, traces } = supportedSignals || {};
@@ -56,7 +55,7 @@ export function ConnectDestinationModalBody({ isUpdate, destination, formData, h
               testConnectionSupported && (
                 <TestConnection
                   destination={formData}
-                  disabled={!hasSomeFields || !isFormDirty}
+                  disabled={!isFormOk || !isFormDirty}
                   clearStatus={() => {
                     setIsFormDirty(false);
                     setShowConnectionError(false);
@@ -84,7 +83,7 @@ export function ConnectDestinationModalBody({ isUpdate, destination, formData, h
         title={isUpdate ? '' : 'This connection will monitor:'}
         exportedSignals={formData.exportedSignals}
         handleSignalChange={(signal, value) => {
-          setIsFormDirty(true);
+          if (!isFormDirty) setIsFormDirty(true);
           handleFormChange(`exportedSignals.${signal}`, value);
         }}
       />
@@ -95,16 +94,16 @@ export function ConnectDestinationModalBody({ isUpdate, destination, formData, h
           placeholder='Enter destination name'
           value={formData.name}
           onChange={(e) => {
-            setIsFormDirty(true);
+            if (!isFormDirty) setIsFormDirty(true);
             handleFormChange('name', e.target.value);
           }}
         />
       )}
 
-      <DynamicConnectDestinationFormFields
+      <DestinationDynamicFields
         fields={dynamicFields}
         onChange={(name: string, value: any) => {
-          setIsFormDirty(true);
+          if (!isFormDirty) setIsFormDirty(true);
           setDynamicFields((prev) => {
             const payload = [...prev];
             const foundIndex = payload.findIndex((field) => field.name === name);

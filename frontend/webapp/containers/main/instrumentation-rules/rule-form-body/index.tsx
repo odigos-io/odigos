@@ -2,7 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import RuleCustomFields from './custom-fields';
 import type { InstrumentationRuleInput } from '@/types';
-import type { RuleOption } from '../add-rule-modal/rule-options';
+import type { RuleOption } from '../rule-modal/rule-options';
 import { DocsButton, Input, Text, TextArea, SectionTitle, ToggleButtons } from '@/reuseable-components';
 
 interface Props {
@@ -23,7 +23,7 @@ const FieldTitle = styled(Text)`
   margin-bottom: 12px;
 `;
 
-const ChooseRuleBody: React.FC<Props> = ({ isUpdate, rule, formData, handleFormChange }) => {
+export const RuleFormBody: React.FC<Props> = ({ isUpdate, rule, formData, handleFormChange }) => {
   return (
     <Container>
       {isUpdate && (
@@ -43,5 +43,3 @@ const ChooseRuleBody: React.FC<Props> = ({ isUpdate, rule, formData, handleFormC
     </Container>
   );
 };
-
-export { ChooseRuleBody };

@@ -7,7 +7,7 @@ import styled from 'styled-components';
 import { SetupHeader } from '@/components';
 import { useRouter } from 'next/navigation';
 import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
-import { AddDestinationModal } from './add-destination-modal';
+import { DestinationModal } from '../destination-modal';
 import { ConfiguredDestinationsList } from './configured-destinations-list';
 import { Button, NotificationNote, SectionTitle, Text } from '@/reuseable-components';
 
@@ -37,27 +37,11 @@ const StyledAddDestinationButton = styled(Button)`
   width: 100%;
 `;
 
-export function ChooseDestinationContainer() {
+export function AddDestinationContainer() {
   const router = useRouter();
   const { createSources, loading: sourcesLoading } = useSourceCRUD();
   const { createDestination, loading: destinationsLoading } = useDestinationCRUD();
   const { configuredSources, configuredFutureApps, configuredDestinations, resetState } = useAppStore((state) => state);
-
-  const isSourcesListEmpty = () => {
-    let isEmpty = true;
-
-    const namespaces = Object.keys(configuredSources);
-    if (!namespaces.length) return isEmpty;
-
-    for (const namespace in configuredSources) {
-      if (!!configuredSources[namespace].length) {
-        isEmpty = false;
-        break;
-      }
-    }
-
-    return isEmpty;
-  };
 
   const [isModalOpen, setModalOpen] = useState(false);
   const handleOpenModal = () => setModalOpen(true);
@@ -75,6 +59,9 @@ export function ChooseDestinationContainer() {
     router.push(ROUTES.OVERVIEW);
   };
 
+  const isSourcesListEmpty = () => !Object.values(configuredSources).some((sources) => !!sources.length);
+  const isCreating = sourcesLoading || destinationsLoading;
+
   return (
     <>
       <HeaderWrapper>
@@ -85,13 +72,13 @@ export function ChooseDestinationContainer() {
               iconSrc: '/icons/common/arrow-white.svg',
               variant: 'secondary',
               onClick: clickBack,
-              disabled: sourcesLoading || destinationsLoading,
+              disabled: isCreating,
             },
             {
               label: 'DONE',
               variant: 'primary',
               onClick: clickDone,
-              disabled: sourcesLoading || destinationsLoading,
+              disabled: isCreating,
             },
           ]}
         />
@@ -120,7 +107,7 @@ export function ChooseDestinationContainer() {
             </Text>
           </StyledAddDestinationButton>
 
-          <AddDestinationModal isOnboarding isOpen={isModalOpen} onClose={handleCloseModal} />
+          <DestinationModal isOnboarding isOpen={isModalOpen} onClose={handleCloseModal} />
         </AddDestinationButtonWrapper>
 
         <ConfiguredDestinationsList data={configuredDestinations} />

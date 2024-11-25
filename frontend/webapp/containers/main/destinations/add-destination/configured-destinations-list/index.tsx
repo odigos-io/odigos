@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { ConfiguredFields, DeleteWarning } from '@/components';
 import { IAppState, useAppStore } from '@/store';
 import type { ConfiguredDestination } from '@/types';
-import { Divider, Text } from '@/reuseable-components';
+import { Button, Divider, Text } from '@/reuseable-components';
 
 const Container = styled.div`
   display: flex;
@@ -80,22 +80,12 @@ const IconsContainer = styled.div`
   margin-right: 16px;
 `;
 
-const IconButton = styled.button<{ $expand?: boolean }>`
-  background: none;
-  border: none;
-  cursor: pointer;
-  cursor: ${({ disabled }) => (disabled ? 'not-allowed' : 'pointer')};
-  opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
-
+const IconButton = styled(Button)<{ $expand?: boolean }>`
   transition: background 0.3s ease 0s, transform 0.3s ease 0s;
   transform: ${({ $expand }) => ($expand ? 'rotate(-180deg)' : 'rotate(0deg)')};
 `;
 
-interface DestinationsListProps {
-  data: IAppState['configuredDestinations'];
-}
-
-function ConfiguredDestinationsListItem({ item, isLastItem }: { item: ConfiguredDestination; isLastItem: boolean }) {
+const ConfiguredDestinationsListItem: React.FC<{ item: ConfiguredDestination; isLastItem: boolean }> = ({ item, isLastItem }) => {
   const [expand, setExpand] = useState(false);
   const [deleteWarning, setDeleteWarning] = useState(false);
   const { removeConfiguredDestination } = useAppStore((state) => state);
@@ -124,7 +114,7 @@ function ConfiguredDestinationsListItem({ item, isLastItem }: { item: Configured
         <ListItemHeader style={{ paddingBottom: expand ? 0 : 16 }}>
           <ListItemContent>
             <DestinationIconWrapper>
-              <Image src={item.imageUrl} width={20} height={20} alt='destination' />
+              <Image src={item.imageUrl} alt='destination' width={20} height={20} />
             </DestinationIconWrapper>
             <TextWrapper>
               <Text size={14}>{item.displayName}</Text>
@@ -133,12 +123,12 @@ function ConfiguredDestinationsListItem({ item, isLastItem }: { item: Configured
           </ListItemContent>
 
           <IconsContainer>
-            <IconButton onClick={() => setDeleteWarning(true)}>
-              <Image src='/icons/common/trash.svg' alt='Delete' width={16} height={16} />
+            <IconButton variant='tertiary' onClick={() => setDeleteWarning(true)}>
+              <Image src='/icons/common/trash.svg' alt='delete' width={16} height={16} />
             </IconButton>
             <Divider orientation='vertical' length='16px' />
-            <IconButton $expand={expand} onClick={() => setExpand(!expand)}>
-              <Image src={'/icons/common/extend-arrow.svg'} width={16} height={16} alt='destination' />
+            <IconButton variant='tertiary' $expand={expand} onClick={() => setExpand(!expand)}>
+              <Image src='/icons/common/extend-arrow.svg' alt='show more' width={16} height={16} />
             </IconButton>
           </IconsContainer>
         </ListItemHeader>
@@ -168,9 +158,9 @@ function ConfiguredDestinationsListItem({ item, isLastItem }: { item: Configured
       />
     </>
   );
-}
+};
 
-const ConfiguredDestinationsList: React.FC<DestinationsListProps> = ({ data }) => {
+export const ConfiguredDestinationsList: React.FC<{ data: IAppState['configuredDestinations'] }> = ({ data }) => {
   return (
     <Container>
       {data.map(({ stored }) => (
@@ -179,5 +169,3 @@ const ConfiguredDestinationsList: React.FC<DestinationsListProps> = ({ data }) =
     </Container>
   );
 };
-
-export { ConfiguredDestinationsList };

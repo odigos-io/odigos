@@ -4,7 +4,7 @@ import { SignalUppercase } from '@/utils';
 import type { DropdownOption } from '@/types';
 import { Dropdown, Input, MonitoringCheckboxes } from '@/reuseable-components';
 
-interface FilterComponentProps {
+interface Props {
   selectedTag: DropdownOption | undefined;
   onTagSelect: (option: DropdownOption) => void;
   onSearch: (value: string) => void;
@@ -29,7 +29,7 @@ const DROPDOWN_OPTIONS = [
   { value: 'Self-hosted', id: 'self hosted' },
 ];
 
-const DestinationFilterComponent: React.FC<FilterComponentProps> = ({ selectedTag, onTagSelect, onSearch, selectedMonitors, setSelectedMonitors }) => {
+export const ChooseDestinationFilters: React.FC<Props> = ({ selectedTag, onTagSelect, onSearch, selectedMonitors, setSelectedMonitors }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -50,5 +50,3 @@ const DestinationFilterComponent: React.FC<FilterComponentProps> = ({ selectedTa
     </Container>
   );
 };
-
-export { DestinationFilterComponent };

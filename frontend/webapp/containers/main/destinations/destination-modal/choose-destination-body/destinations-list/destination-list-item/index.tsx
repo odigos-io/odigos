@@ -47,11 +47,7 @@ const DestinationIconWrapper = styled.div`
   align-items: center;
   gap: 8px;
   border-radius: 8px;
-  background: linear-gradient(
-    180deg,
-    rgba(249, 249, 249, 0.06) 0%,
-    rgba(249, 249, 249, 0.02) 100%
-  );
+  background: linear-gradient(180deg, rgba(249, 249, 249, 0.06) 0%, rgba(249, 249, 249, 0.02) 100%);
 `;
 
 const SignalsWrapper = styled.div`
@@ -83,14 +79,9 @@ interface DestinationListItemProps {
   onSelect: (item: DestinationTypeItem) => void;
 }
 
-const DestinationListItem: React.FC<DestinationListItemProps> = ({
-  item,
-  onSelect,
-}) => {
+export const DestinationListItem: React.FC<DestinationListItemProps> = ({ item, onSelect }) => {
   const renderSupportedSignals = () => {
-    const signals = Object.keys(item.supportedSignals).filter(
-      (signal) => item.supportedSignals[signal].supported
-    );
+    const signals = Object.keys(item.supportedSignals).filter((signal) => item.supportedSignals[signal].supported);
 
     return signals.map((signal, index) => (
       <SignalsWrapper key={index}>
@@ -104,7 +95,7 @@ const DestinationListItem: React.FC<DestinationListItemProps> = ({
     <ListItem onClick={() => onSelect(item)}>
       <ListItemContent>
         <DestinationIconWrapper>
-          <Image src={item.imageUrl} width={20} height={20} alt="destination" />
+          <Image src={item.imageUrl} width={20} height={20} alt='destination' />
         </DestinationIconWrapper>
         <TextWrapper>
           <Text size={14}>{item.displayName}</Text>
@@ -117,5 +108,3 @@ const DestinationListItem: React.FC<DestinationListItemProps> = ({
     </ListItem>
   );
 };
-
-export { DestinationListItem };

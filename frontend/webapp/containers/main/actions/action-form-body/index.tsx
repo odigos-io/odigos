@@ -2,10 +2,10 @@ import React from 'react';
 import styled from 'styled-components';
 import { type ActionInput } from '@/types';
 import ActionCustomFields from './custom-fields';
-import { type ActionOption } from '../choose-action-modal/action-options';
+import { type ActionOption } from '../action-modal/action-options';
 import { DocsButton, Input, Text, TextArea, MonitoringCheckboxes, SectionTitle, ToggleButtons } from '@/reuseable-components';
 
-interface ChooseActionContentProps {
+interface Props {
   isUpdate?: boolean;
   action: ActionOption;
   formData: ActionInput;
@@ -23,7 +23,7 @@ const FieldTitle = styled(Text)`
   margin-bottom: 12px;
 `;
 
-const ChooseActionBody: React.FC<ChooseActionContentProps> = ({ isUpdate, action, formData, handleFormChange }) => {
+export const ActionFormBody: React.FC<Props> = ({ isUpdate, action, formData, handleFormChange }) => {
   return (
     <Container>
       {isUpdate && (
@@ -45,5 +45,3 @@ const ChooseActionBody: React.FC<ChooseActionContentProps> = ({ isUpdate, action
     </Container>
   );
 };
-
-export { ChooseActionBody };

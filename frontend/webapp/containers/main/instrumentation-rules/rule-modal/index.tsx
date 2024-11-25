@@ -1,7 +1,7 @@
-import { CenterThis, ModalBody } from '@/styles';
-import { ChooseRuleBody } from '../choose-rule-body';
-import { RULE_OPTIONS, RuleOption } from './rule-options';
 import React, { useMemo, useState } from 'react';
+import { CenterThis, ModalBody } from '@/styles';
+import { RuleFormBody } from '../';
+import { RULE_OPTIONS, RuleOption } from './rule-options';
 import { useInstrumentationRuleCRUD, useInstrumentationRuleFormData } from '@/hooks';
 import { AutocompleteInput, Divider, FadeLoader, Modal, NavigationButtons, NotificationNote, SectionTitle } from '@/reuseable-components';
 
@@ -10,7 +10,7 @@ interface Props {
   onClose: () => void;
 }
 
-export const AddRuleModal: React.FC<Props> = ({ isOpen, onClose }) => {
+export const RuleModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const { formData, handleFormChange, resetFormData, validateForm } = useInstrumentationRuleFormData();
   const { createInstrumentationRule, loading } = useInstrumentationRuleCRUD({ onSuccess: handleClose });
   const [selectedItem, setSelectedItem] = useState<RuleOption | undefined>(RULE_OPTIONS[0]);
@@ -64,7 +64,7 @@ export const AddRuleModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 <FadeLoader cssOverride={{ scale: 2 }} />
               </CenterThis>
             ) : (
-              <ChooseRuleBody rule={selectedItem} formData={formData} handleFormChange={handleFormChange} />
+              <RuleFormBody rule={selectedItem} formData={formData} handleFormChange={handleFormChange} />
             )}
           </div>
         ) : null}

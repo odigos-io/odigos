@@ -23,7 +23,7 @@ export const Overlay = styled.div`
 // note: add-destinations does not use this (yet), because it has a custom sidebar
 export const ModalBody = styled.div`
   width: 640px;
-  height: calc(100vh - 270px);
+  height: calc(100vh - 300px);
   margin: 64px 7vw 0 7vw;
   overflow-y: scroll;
 `;

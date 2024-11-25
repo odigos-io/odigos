@@ -5,12 +5,20 @@ import { useDrawerStore } from '@/store';
 import { CardDetails } from '@/components';
 import type { ActualDestination } from '@/types';
 import OverviewDrawer from '../../overview/overview-drawer';
+import { DestinationFormBody } from '../destination-form-body';
 import { useDestinationCRUD, useDestinationFormData, useDestinationTypes } from '@/hooks';
-import { ConnectDestinationModalBody } from '../add-destination/connect-destination-modal-body';
 
 interface Props {}
 
-const DestinationDrawer: React.FC<Props> = () => {
+const FormContainer = styled.div`
+  width: 100%;
+  height: 100%;
+  max-height: calc(100vh - 220px);
+  overflow: overlay;
+  overflow-y: auto;
+`;
+
+export const DestinationDrawer: React.FC<Props> = () => {
   const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
   const [isEditing, setIsEditing] = useState(false);
   const [isFormDirty, setIsFormDirty] = useState(false);
@@ -18,23 +26,21 @@ const DestinationDrawer: React.FC<Props> = () => {
   const { updateDestination, deleteDestination } = useDestinationCRUD();
   const { formData, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem, destinationTypeDetails, dynamicFields, setDynamicFields } = useDestinationFormData({
     destinationType: (selectedItem?.item as ActualDestination)?.destinationType?.type,
-    // supportedSignals: thisDestination?.supportedSignals,
     preLoadedFields: (selectedItem?.item as ActualDestination)?.fields,
+    // TODO: supportedSignals: thisDestination?.supportedSignals,
+    // currently, the real "supportedSignals" is being used by "destination" passed as prop to "DestinationFormBody"
   });
 
   const cardData = useMemo(() => {
     if (!selectedItem) return [];
 
-    const buildMonitorsList = (exportedSignals: ActualDestination['exportedSignals']): string => {
-      return (
-        Object.keys(exportedSignals)
-          .filter((key) => exportedSignals[key] && key !== '__typename')
-          .join(', ') || 'None'
-      );
-    };
+    const buildMonitorsList = (exportedSignals: ActualDestination['exportedSignals']): string =>
+      Object.keys(exportedSignals)
+        .filter((key) => exportedSignals[key])
+        .join(', ') || 'N/A';
 
-    const buildDestinationFieldData = (parsedFields: Record<string, string>) => {
-      return Object.entries(parsedFields).map(([key, value]) => {
+    const buildDestinationFieldData = (parsedFields: Record<string, string>) =>
+      Object.entries(parsedFields).map(([key, value]) => {
         const found = destinationTypeDetails?.fields?.find((field) => field.name === key);
 
         const { type } = safeJsonParse(found?.componentProperties, { type: '' });
@@ -45,7 +51,6 @@ const DestinationDrawer: React.FC<Props> = () => {
           value: secret || value || 'N/A',
         };
       });
-    };
 
     const { exportedSignals, destinationType, fields } = selectedItem.item as ActualDestination;
     const parsedFields = safeJsonParse<Record<string, string>>(fields, {});
@@ -112,9 +117,10 @@ const DestinationDrawer: React.FC<Props> = () => {
     >
       {isEditing ? (
         <FormContainer>
-          <ConnectDestinationModalBody
+          <DestinationFormBody
             isUpdate
             destination={thisDestination}
+            isFormOk={validateForm()}
             formData={formData}
             handleFormChange={(...params) => {
               setIsFormDirty(true);
@@ -133,13 +139,3 @@ const DestinationDrawer: React.FC<Props> = () => {
     </OverviewDrawer>
   );
 };
-
-export { DestinationDrawer };
-
-const FormContainer = styled.div`
-  width: 100%;
-  height: 100%;
-  max-height: calc(100vh - 220px);
-  overflow: overlay;
-  overflow-y: auto;
-`;

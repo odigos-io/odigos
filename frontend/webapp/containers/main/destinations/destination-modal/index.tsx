@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { ModalBody } from '@/styles';
 import { useAppStore } from '@/store';
 import { INPUT_TYPES } from '@/utils';
+import styled from 'styled-components';
 import { SideMenu } from '@/components';
-import { Container, SideMenuWrapper } from '../styled';
+import { DestinationFormBody } from '../destination-form-body';
+import { ChooseDestinationBody } from './choose-destination-body';
 import { useDestinationCRUD, useDestinationFormData } from '@/hooks';
 import type { ConfiguredDestination, DestinationTypeItem } from '@/types';
-import { ChooseDestinationModalBody } from '../choose-destination-modal-body';
-import { ConnectDestinationModalBody } from '../connect-destination-modal-body';
 import { Modal, type NavigationButtonProps, NavigationButtons } from '@/reuseable-components';
 
 interface AddDestinationModalProps {
@@ -16,7 +16,20 @@ interface AddDestinationModalProps {
   onClose: () => void;
 }
 
-export const AddDestinationModal: React.FC<AddDestinationModalProps> = ({ isOnboarding, isOpen, onClose }) => {
+const Container = styled.div`
+  display: flex;
+`;
+
+const SideMenuWrapper = styled.div`
+  border-right: 1px solid ${({ theme }) => theme.colors.border};
+  padding: 32px;
+  width: 200px;
+  @media (max-width: 1050px) {
+    display: none;
+  }
+`;
+
+export const DestinationModal: React.FC<AddDestinationModalProps> = ({ isOnboarding, isOpen, onClose }) => {
   const [selectedItem, setSelectedItem] = useState<DestinationTypeItem | undefined>();
 
   const { createDestination } = useDestinationCRUD();
@@ -111,9 +124,16 @@ export const AddDestinationModal: React.FC<AddDestinationModalProps> = ({ isOnbo
 
         <ModalBody style={{ margin: '32px 24px 0 24px' }}>
           {!!selectedItem ? (
-            <ConnectDestinationModalBody destination={selectedItem} formData={formData} handleFormChange={handleFormChange} dynamicFields={dynamicFields} setDynamicFields={setDynamicFields} />
+            <DestinationFormBody
+              destination={selectedItem}
+              isFormOk={isFormOk}
+              formData={formData}
+              handleFormChange={handleFormChange}
+              dynamicFields={dynamicFields}
+              setDynamicFields={setDynamicFields}
+            />
           ) : (
-            <ChooseDestinationModalBody onSelect={handleSelect} />
+            <ChooseDestinationBody onSelect={handleSelect} />
           )}
         </ModalBody>
       </Container>

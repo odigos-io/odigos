@@ -1,18 +1,26 @@
 import React, { useMemo, useState } from 'react';
+import { RuleFormBody } from '../';
 import styled from 'styled-components';
 import { getRuleIcon } from '@/utils';
 import { useDrawerStore } from '@/store';
 import { CardDetails } from '@/components';
-import { ChooseRuleBody } from '../choose-rule-body';
 import type { InstrumentationRuleSpec } from '@/types';
+import { RULE_OPTIONS } from '../rule-modal/rule-options';
 import OverviewDrawer from '../../overview/overview-drawer';
-import { RULE_OPTIONS } from '../add-rule-modal/rule-options';
 import buildCardFromRuleSpec from './build-card-from-rule-spec';
 import { useInstrumentationRuleCRUD, useInstrumentationRuleFormData } from '@/hooks';
 
 interface Props {}
 
-const RuleDrawer: React.FC<Props> = () => {
+const FormContainer = styled.div`
+  width: 100%;
+  height: 100%;
+  max-height: calc(100vh - 220px);
+  overflow: overlay;
+  overflow-y: auto;
+`;
+
+export const RuleDrawer: React.FC<Props> = () => {
   const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
   const [isEditing, setIsEditing] = useState(false);
   const [isFormDirty, setIsFormDirty] = useState(false);
@@ -86,7 +94,7 @@ const RuleDrawer: React.FC<Props> = () => {
     >
       {isEditing && thisRule ? (
         <FormContainer>
-          <ChooseRuleBody
+          <RuleFormBody
             isUpdate
             rule={thisRule}
             formData={formData}
@@ -102,13 +110,3 @@ const RuleDrawer: React.FC<Props> = () => {
     </OverviewDrawer>
   );
 };
-
-export { RuleDrawer };
-
-const FormContainer = styled.div`
-  width: 100%;
-  height: 100%;
-  max-height: calc(100vh - 220px);
-  overflow: overlay;
-  overflow-y: auto;
-`;

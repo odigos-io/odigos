@@ -1,16 +1,16 @@
-import { ChooseActionBody } from '../';
+import { ActionFormBody } from '../';
 import React, { useMemo, useState } from 'react';
 import { CenterThis, ModalBody } from '@/styles';
 import { useActionCRUD, useActionFormData } from '@/hooks/actions';
 import { ACTION_OPTIONS, type ActionOption } from './action-options';
 import { AutocompleteInput, Modal, NavigationButtons, Divider, FadeLoader, SectionTitle } from '@/reuseable-components';
 
-interface AddActionModalProps {
+interface Props {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export const AddActionModal: React.FC<AddActionModalProps> = ({ isOpen, onClose }) => {
+export const ActionModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const { formData, handleFormChange, resetFormData, validateForm } = useActionFormData();
   const { createAction, loading } = useActionCRUD({ onSuccess: handleClose });
   const [selectedItem, setSelectedItem] = useState<ActionOption | undefined>(undefined);
@@ -64,7 +64,7 @@ export const AddActionModal: React.FC<AddActionModalProps> = ({ isOpen, onClose 
                 <FadeLoader cssOverride={{ scale: 2 }} />
               </CenterThis>
             ) : (
-              <ChooseActionBody action={selectedItem} formData={formData} handleFormChange={handleFormChange} />
+              <ActionFormBody action={selectedItem} formData={formData} handleFormChange={handleFormChange} />
             )}
           </div>
         ) : null}

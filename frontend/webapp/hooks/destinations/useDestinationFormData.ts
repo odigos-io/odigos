@@ -4,7 +4,15 @@ import { useQuery } from '@apollo/client';
 import { GET_DESTINATION_TYPE_DETAILS } from '@/graphql';
 import { useConnectDestinationForm, useNotify } from '@/hooks';
 import { ACTION, FORM_ALERTS, NOTIFICATION, safeJsonParse } from '@/utils';
-import type { DynamicField, DestinationDetailsResponse, DestinationInput, DestinationTypeItem, ActualDestination, SupportedDestinationSignals } from '@/types';
+import {
+  type DynamicField,
+  type DestinationDetailsResponse,
+  type DestinationInput,
+  type DestinationTypeItem,
+  type ActualDestination,
+  type SupportedDestinationSignals,
+  OVERVIEW_ENTITY_TYPES,
+} from '@/types';
 
 const INITIAL: DestinationInput = {
   type: '',
@@ -19,12 +27,66 @@ const INITIAL: DestinationInput = {
 
 export function useDestinationFormData(params?: { destinationType?: string; supportedSignals?: SupportedDestinationSignals; preLoadedFields?: string | DestinationTypeItem['fields'] }) {
   const { destinationType, supportedSignals, preLoadedFields } = params || {};
+
   const notify = useNotify();
+  const { buildFormDynamicFields } = useConnectDestinationForm();
 
   const [formData, setFormData] = useState({ ...INITIAL });
   const [dynamicFields, setDynamicFields] = useState<DynamicField[]>([]);
 
-  const handleFormChange = (key: keyof typeof INITIAL | string, val: any) => {
+  const t = destinationType || formData.type;
+  const { data: { destinationTypeDetails } = {} } = useQuery<DestinationDetailsResponse>(GET_DESTINATION_TYPE_DETAILS, {
+    variables: { type: t },
+    skip: !t,
+    onError: (error) => notify({ type: NOTIFICATION.ERROR, title: ACTION.FETCH, message: error.message, crdType: OVERVIEW_ENTITY_TYPES.DESTINATION }),
+  });
+
+  useEffect(() => {
+    if (destinationTypeDetails) {
+      setDynamicFields(
+        buildFormDynamicFields(destinationTypeDetails.fields).map((field) => {
+          // if we have preloaded fields, we need to set the value of the field
+          // (this can be from an odigos-detected-destination during create, or from an existing destination during edit/update)
+          if (!!preLoadedFields) {
+            const parsedFields = typeof preLoadedFields === 'string' ? safeJsonParse<Record<string, string>>(preLoadedFields, {}) : preLoadedFields;
+
+            if (field.name in parsedFields) {
+              return {
+                ...field,
+                value: parsedFields[field.name],
+              };
+            }
+          }
+
+          return field;
+        }),
+      );
+    } else {
+      setDynamicFields([]);
+    }
+  }, [destinationTypeDetails, preLoadedFields]);
+
+  useEffect(() => {
+    handleFormChange(
+      'fields',
+      dynamicFields.map((field) => ({
+        key: field.name,
+        value: field.value,
+      })),
+    );
+  }, [dynamicFields]);
+
+  useEffect(() => {
+    const { logs, metrics, traces } = supportedSignals || {};
+
+    handleFormChange('exportedSignals', {
+      logs: logs?.supported || false,
+      metrics: metrics?.supported || false,
+      traces: traces?.supported || false,
+    });
+  }, [supportedSignals]);
+
+  function handleFormChange(key: keyof typeof INITIAL | string, val: any) {
     const [parentKey, childKey] = key.split('.');
 
     if (!!childKey) {
@@ -41,7 +103,7 @@ export function useDestinationFormData(params?: { destinationType?: string; supp
         [parentKey]: val,
       }));
     }
-  };
+  }
 
   const resetFormData = () => {
     setFormData({ ...INITIAL });
@@ -81,57 +143,6 @@ export function useDestinationFormData(params?: { destinationType?: string; supp
 
     setFormData(updatedData);
   };
-
-  const { buildFormDynamicFields } = useConnectDestinationForm();
-
-  const t = destinationType || formData.type;
-  const { data: { destinationTypeDetails } = {} } = useQuery<DestinationDetailsResponse>(GET_DESTINATION_TYPE_DETAILS, {
-    variables: { type: t },
-    skip: !t,
-  });
-
-  useEffect(() => {
-    const { logs, metrics, traces } = supportedSignals || {};
-
-    handleFormChange('exportedSignals', {
-      logs: logs?.supported || false,
-      metrics: metrics?.supported || false,
-      traces: traces?.supported || false,
-    });
-  }, [supportedSignals]);
-
-  useEffect(() => {
-    if (destinationTypeDetails) {
-      setDynamicFields(
-        buildFormDynamicFields(destinationTypeDetails.fields).map((field) => {
-          if (!!preLoadedFields) {
-            const parsedFields = typeof preLoadedFields === 'string' ? safeJsonParse<Record<string, string>>(preLoadedFields, {}) : preLoadedFields;
-
-            if (field.name in parsedFields) {
-              return {
-                ...field,
-                value: parsedFields[field.name],
-              };
-            }
-          }
-
-          return field;
-        }),
-      );
-    } else {
-      setDynamicFields([]);
-    }
-  }, [destinationTypeDetails, preLoadedFields]);
-
-  useEffect(() => {
-    handleFormChange(
-      'fields',
-      dynamicFields.map((field) => ({
-        key: field.name,
-        value: field.value,
-      })),
-    );
-  }, [dynamicFields]);
 
   return {
     formData,

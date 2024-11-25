@@ -30,7 +30,7 @@ const ActionButtonText = styled(Text)<{ $success?: boolean }>`
   color: ${({ theme, $success }) => ($success ? theme.text.success : theme.colors.white)};
 `;
 
-const TestConnection: React.FC<TestConnectionProps> = ({ destination, disabled, clearStatus, onError }) => {
+export const TestConnection: React.FC<TestConnectionProps> = ({ destination, disabled, clearStatus, onError }) => {
   const { testConnection, loading, data } = useTestConnection();
   const success = useMemo(() => data?.testConnectionForDestination.succeeded || false, [data]);
 
@@ -51,5 +51,3 @@ const TestConnection: React.FC<TestConnectionProps> = ({ destination, disabled, 
     </ActionButton>
   );
 };
-
-export { TestConnection };

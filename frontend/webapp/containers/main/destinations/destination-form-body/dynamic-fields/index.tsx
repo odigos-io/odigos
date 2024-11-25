@@ -2,7 +2,12 @@ import React from 'react';
 import { INPUT_TYPES } from '@/utils';
 import { Dropdown, Input, TextArea, InputList, KeyValueInputsList } from '@/reuseable-components';
 
-export function DynamicConnectDestinationFormFields({ fields, onChange }: { fields: any[]; onChange: (name: string, value: any) => void }) {
+interface Props {
+  fields: any[];
+  onChange: (name: string, value: any) => void;
+}
+
+export const DestinationDynamicFields: React.FC<Props> = ({ fields, onChange }) => {
   return fields?.map((field: any) => {
     const { componentType, ...rest } = field;
 
@@ -21,4 +26,4 @@ export function DynamicConnectDestinationFormFields({ fields, onChange }: { fiel
         return null;
     }
   });
-}
+};

@@ -1,14 +1,14 @@
 import React, { useMemo, useState } from 'react';
+import { ActionFormBody } from '../';
 import styled from 'styled-components';
 import { getActionIcon } from '@/utils';
 import { useDrawerStore } from '@/store';
 import { CardDetails } from '@/components';
 import type { ActionDataParsed } from '@/types';
-import { ChooseActionBody } from '../choose-action-body';
 import { useActionCRUD, useActionFormData } from '@/hooks';
 import OverviewDrawer from '../../overview/overview-drawer';
+import { ACTION_OPTIONS } from '../action-modal/action-options';
 import buildCardFromActionSpec from './build-card-from-action-spec';
-import { ACTION_OPTIONS } from '../choose-action-modal/action-options';
 
 interface Props {}
 
@@ -89,7 +89,7 @@ const ActionDrawer: React.FC<Props> = () => {
     >
       {isEditing && thisAction ? (
         <FormContainer>
-          <ChooseActionBody
+          <ActionFormBody
             isUpdate
             action={thisAction}
             formData={formData}
