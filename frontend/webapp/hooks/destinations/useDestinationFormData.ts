@@ -1,137 +1,158 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { safeJsonParse } from '@/utils';
-import { useDrawerStore } from '@/store';
+import { useState, useEffect } from 'react';
+import { DrawerBaseItem } from '@/store';
 import { useQuery } from '@apollo/client';
-import { useConnectDestinationForm } from '@/hooks';
 import { GET_DESTINATION_TYPE_DETAILS } from '@/graphql';
-import { DynamicField, ActualDestination, isActualDestination, DestinationDetailsResponse, SupportedDestinationSignals, DestinationDetailsField } from '@/types';
+import { useConnectDestinationForm, useNotify } from '@/hooks';
+import { ACTION, FORM_ALERTS, NOTIFICATION, safeJsonParse } from '@/utils';
+import {
+  type DynamicField,
+  type DestinationDetailsResponse,
+  type DestinationInput,
+  type DestinationTypeItem,
+  type ActualDestination,
+  type SupportedDestinationSignals,
+  OVERVIEW_ENTITY_TYPES,
+} from '@/types';
 
-const DEFAULT_SUPPORTED_SIGNALS: SupportedDestinationSignals = {
-  logs: { supported: false },
-  metrics: { supported: false },
-  traces: { supported: false },
+const INITIAL: DestinationInput = {
+  type: '',
+  name: '',
+  exportedSignals: {
+    logs: false,
+    metrics: false,
+    traces: false,
+  },
+  fields: [],
 };
 
-export function useDestinationFormData() {
-  const [dynamicFields, setDynamicFields] = useState<DynamicField[]>([]);
-  const [supportedSignals, setSupportedSignals] = useState<SupportedDestinationSignals>(DEFAULT_SUPPORTED_SIGNALS);
-  const [exportedSignals, setExportedSignals] = useState({
-    logs: false,
-    metrics: false,
-    traces: false,
-  });
+export function useDestinationFormData(params?: { destinationType?: string; supportedSignals?: SupportedDestinationSignals; preLoadedFields?: string | DestinationTypeItem['fields'] }) {
+  const { destinationType, supportedSignals, preLoadedFields } = params || {};
 
-  const destination = useDrawerStore(({ selectedItem }) => selectedItem);
-  const shouldSkip = !isActualDestination(destination?.item);
-  const destinationType = isActualDestination(destination?.item) ? destination.item.destinationType.type : null;
-
+  const notify = useNotify();
   const { buildFormDynamicFields } = useConnectDestinationForm();
 
-  const { data: destinationFields } = useQuery<DestinationDetailsResponse>(GET_DESTINATION_TYPE_DETAILS, {
-    variables: { type: destinationType },
-    skip: shouldSkip,
-  });
+  const [formData, setFormData] = useState({ ...INITIAL });
+  const [dynamicFields, setDynamicFields] = useState<DynamicField[]>([]);
 
-  // Memoize the buildFormDynamicFields to ensure it's stable across renders
-  const memoizedBuildFormDynamicFields = useCallback(buildFormDynamicFields, []);
-
-  const initialDynamicFieldsRef = useRef<DynamicField[]>([]);
-  const initialExportedSignalsRef = useRef({
-    logs: false,
-    metrics: false,
-    traces: false,
+  const t = destinationType || formData.type;
+  const { data: { destinationTypeDetails } = {} } = useQuery<DestinationDetailsResponse>(GET_DESTINATION_TYPE_DETAILS, {
+    variables: { type: t },
+    skip: !t,
+    onError: (error) => notify({ type: NOTIFICATION.ERROR, title: ACTION.FETCH, message: error.message, crdType: OVERVIEW_ENTITY_TYPES.DESTINATION }),
   });
-  const initialSupportedSignalsRef = useRef<SupportedDestinationSignals>(DEFAULT_SUPPORTED_SIGNALS);
 
   useEffect(() => {
-    if (destinationFields && isActualDestination(destination?.item)) {
-      const { fields, exportedSignals, destinationType } = destination.item;
-      const destinationTypeDetails = destinationFields.destinationTypeDetails;
+    if (destinationTypeDetails) {
+      setDynamicFields(
+        buildFormDynamicFields(destinationTypeDetails.fields).map((field) => {
+          // if we have preloaded fields, we need to set the value of the field
+          // (this can be from an odigos-detected-destination during create, or from an existing destination during edit/update)
+          if (!!preLoadedFields) {
+            const parsedFields = typeof preLoadedFields === 'string' ? safeJsonParse<Record<string, string>>(preLoadedFields, {}) : preLoadedFields;
 
-      const parsedFields = safeJsonParse<Record<string, string>>(fields, {});
-      const formFields = memoizedBuildFormDynamicFields(destinationTypeDetails?.fields || []);
-
-      const df = formFields.map((field) => {
-        let fieldValue: any = parsedFields[field.name] || '';
-
-        // Check if fieldValue is a JSON string that needs stringifying
-        try {
-          const parsedValue = JSON.parse(fieldValue);
-
-          if (Array.isArray(parsedValue)) {
-            // If it's an array, stringify it for setting the value
-            fieldValue = parsedValue;
+            if (field.name in parsedFields) {
+              return {
+                ...field,
+                value: parsedFields[field.name],
+              };
+            }
           }
-        } catch (e) {
-          // If parsing fails, it's not JSON, so we keep it as is
-        }
 
-        return {
-          ...field,
-          value: fieldValue,
-        };
+          return field;
+        }),
+      );
+    } else {
+      setDynamicFields([]);
+    }
+  }, [destinationTypeDetails, preLoadedFields]);
+
+  useEffect(() => {
+    handleFormChange(
+      'fields',
+      dynamicFields.map((field) => ({
+        key: field.name,
+        value: field.value,
+      })),
+    );
+  }, [dynamicFields]);
+
+  useEffect(() => {
+    const { logs, metrics, traces } = supportedSignals || {};
+
+    handleFormChange('exportedSignals', {
+      logs: logs?.supported || false,
+      metrics: metrics?.supported || false,
+      traces: traces?.supported || false,
+    });
+  }, [supportedSignals]);
+
+  function handleFormChange(key: keyof typeof INITIAL | string, val: any) {
+    const [parentKey, childKey] = key.split('.');
+
+    if (!!childKey) {
+      setFormData((prev) => ({
+        ...prev,
+        [parentKey]: {
+          ...prev[parentKey],
+          [childKey]: val,
+        },
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [parentKey]: val,
+      }));
+    }
+  }
+
+  const resetFormData = () => {
+    setFormData({ ...INITIAL });
+  };
+
+  const validateForm = (params?: { withAlert?: boolean }) => {
+    let ok = true;
+
+    ok = dynamicFields.every((field) => (field.required ? !!field.value : true));
+
+    if (!ok && params?.withAlert) {
+      notify({
+        type: NOTIFICATION.WARNING,
+        title: ACTION.UPDATE,
+        message: FORM_ALERTS.REQUIRED_FIELDS,
       });
-
-      setDynamicFields(df);
-      setExportedSignals(exportedSignals);
-      setSupportedSignals(destinationType.supportedSignals);
-
-      initialDynamicFieldsRef.current = df;
-      initialExportedSignalsRef.current = exportedSignals;
-      initialSupportedSignalsRef.current = destinationType.supportedSignals;
-    }
-  }, [destinationFields, destination, memoizedBuildFormDynamicFields]);
-
-  const cardData = useMemo(() => {
-    if (shouldSkip || !isActualDestination(destination?.item) || !destinationFields) {
-      return [{ title: 'Error', value: 'No destination selected or data missing' }];
     }
 
-    const { exportedSignals, destinationType, fields } = destination.item;
-    const parsedFields = safeJsonParse<Record<string, string>>(fields, {});
-    const destinationDetails = destinationFields.destinationTypeDetails?.fields;
-    const fieldsData = buildDestinationFieldData(parsedFields, destinationDetails);
+    return ok;
+  };
 
-    return [{ title: 'Destination', value: destinationType.displayName || 'N/A' }, { title: 'Monitors', value: buildMonitorsList(exportedSignals) }, ...fieldsData];
-  }, [shouldSkip, destination, destinationFields]);
+  const loadFormWithDrawerItem = (drawerItem: DrawerBaseItem) => {
+    const {
+      destinationType: { type },
+      name,
+      exportedSignals,
+      fields,
+    } = drawerItem.item as ActualDestination;
 
-  // Reset function using initial values from refs
-  const resetFormData = useCallback(() => {
-    setDynamicFields(initialDynamicFieldsRef.current);
-    setExportedSignals(initialExportedSignalsRef.current);
-    setSupportedSignals(initialSupportedSignalsRef.current);
-  }, []);
+    const updatedData: DestinationInput = {
+      ...INITIAL,
+      type,
+      name,
+      exportedSignals,
+      fields: Object.entries(safeJsonParse(fields, {})).map(([key, value]: [string, string]) => ({ key, value })),
+    };
+
+    setFormData(updatedData);
+  };
 
   return {
-    cardData,
-    dynamicFields,
-    destinationType: destinationType || '',
-    exportedSignals,
-    supportedSignals,
-    setExportedSignals,
-    setDynamicFields,
+    formData,
+    handleFormChange,
     resetFormData,
+    validateForm,
+    loadFormWithDrawerItem,
+
+    destinationTypeDetails,
+    dynamicFields,
+    setDynamicFields,
   };
-}
-
-function buildDestinationFieldData(parsedFields: Record<string, string>, fieldDetails?: DestinationDetailsField[]) {
-  return Object.entries(parsedFields).map(([key, value]) => {
-    const found = fieldDetails?.find((field) => field.name === key);
-
-    const { type } = safeJsonParse(found?.componentProperties, { type: '' });
-    const secret = type === 'password' ? new Array(value.length).fill('•').join('') : '';
-
-    return {
-      title: found?.displayName || key,
-      value: secret || value || 'N/A',
-    };
-  });
-}
-
-function buildMonitorsList(exportedSignals: ActualDestination['exportedSignals']): string {
-  return (
-    Object.keys(exportedSignals)
-      .filter((key) => exportedSignals[key] && key !== '__typename')
-      .join(', ') || 'None'
-  );
 }

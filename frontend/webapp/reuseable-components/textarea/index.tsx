@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Text } from '../text';
 import { FieldLabel } from '../field-label';
 import styled, { css } from 'styled-components';
@@ -93,13 +93,27 @@ const ErrorMessage = styled(Text)`
   margin-top: 4px;
 `;
 
-const TextArea: React.FC<TextAreaProps> = ({ errorMessage, title, tooltip, required, ...props }) => {
+const TextArea: React.FC<TextAreaProps> = ({ errorMessage, title, tooltip, required, onChange, ...props }) => {
+  const ref = useRef<HTMLTextAreaElement>(null);
+
   return (
     <Container>
       <FieldLabel title={title} required={required} tooltip={tooltip} />
 
       <InputWrapper $disabled={props.disabled} $hasError={!!errorMessage} $isActive={!!props.autoFocus}>
-        <StyledTextArea {...props} />
+        <StyledTextArea
+          ref={ref}
+          onChange={(e) => {
+            if (ref.current) {
+              // The following auto-resizes the textarea to the number of rows typed
+              ref.current.style.height = 'auto';
+              ref.current.style.height = `${ref.current.scrollHeight}px`;
+            }
+
+            onChange?.(e);
+          }}
+          {...props}
+        />
       </InputWrapper>
 
       {errorMessage && (
