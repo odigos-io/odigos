@@ -60,14 +60,12 @@ const Checkbox: React.FC<CheckboxProps> = ({ title, titleColor, tooltip, initial
       <CheckboxWrapper $isChecked={isChecked} $disabled={disabled}>
         {isChecked && <Image src='/icons/common/check.svg' alt='' width={12} height={12} />}
       </CheckboxWrapper>
+
       {title && (
-        <Text size={12} color={titleColor || theme.text.grey} style={{ maxWidth: '90%' }}>
-          {title}
-        </Text>
-      )}
-      {tooltip && (
-        <Tooltip text={tooltip || ''}>
-          <Image src='/icons/common/info.svg' alt='' width={16} height={16} />
+        <Tooltip text={tooltip} withIcon>
+          <Text size={12} color={titleColor || theme.text.grey} style={{ maxWidth: '90%' }}>
+            {title}
+          </Text>
         </Tooltip>
       )}
     </Container>
