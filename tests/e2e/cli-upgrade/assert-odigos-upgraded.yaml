@@ -98,6 +98,35 @@ apiVersion: v1
 kind: Pod
 metadata:
   labels:
+    odigos.io/collector-role: NODE_COLLECTOR
+  namespace: odigos-test-cli-upgrade
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: DaemonSet
+      name: odigos-data-collection
+spec:
+  containers:
+    - name: data-collection
+      image: keyval/odigos-collector:e2e-test
+  hostNetwork: true
+  nodeSelector:
+    kubernetes.io/os: linux
+  serviceAccount: odigos-data-collection
+  serviceAccountName: odigos-data-collection
+status:
+  containerStatuses:
+    - name: data-collection
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
     odigos.io/collector-role: CLUSTER_GATEWAY
   namespace: odigos-test-cli-upgrade
 spec:
