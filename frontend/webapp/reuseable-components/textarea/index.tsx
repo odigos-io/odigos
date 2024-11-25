@@ -111,8 +111,8 @@ const TextArea: React.FC<TextAreaProps> = ({ errorMessage, title, tooltip, requi
       <InputWrapper $disabled={props.disabled} $hasError={!!errorMessage} $isActive={!!props.autoFocus}>
         <StyledTextArea
           ref={ref}
-          onFocus={() => resize()}
-          onBlur={() => resize()}
+          onFocus={resize}
+          onBlur={resize}
           onChange={(e) => {
             resize();
             onChange?.(e);
