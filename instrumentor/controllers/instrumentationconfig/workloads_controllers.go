@@ -4,10 +4,8 @@ import (
 	"context"
 
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -47,25 +45,13 @@ func (r *StatefulSetReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 }
 
 func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind workload.WorkloadKind, req ctrl.Request) (ctrl.Result, error) {
-	obj := workload.ClientObjectFromWorkloadKind(objKind)
-	instConfigName := workload.CalculateWorkloadRuntimeObjectName(req.Name, objKind)
-
-	if err := getWorkloadObject(ctx, k8sClient, req, obj); err != nil {
-		if errors.IsNotFound(err) {
-			return ctrl.Result{}, nil
-		}
+	serviceName, err := resolveServiceName(ctx, k8sClient, req.Name, req.Namespace, objKind)
+	if err != nil {
 		return ctrl.Result{}, err
 	}
+	instConfigName := workload.CalculateWorkloadRuntimeObjectName(req.Name, objKind)
+	return createOrUpdateInstrumentationConfig(ctx, k8sClient, instConfigName, req.Namespace, serviceName)
 
-	annotations := obj.GetAnnotations()
-	reportedName := annotations[consts.OdigosReportedNameAnnotation]
-
-	return createOrUpdateInstrumentationConfig(ctx, k8sClient, instConfigName, req.Namespace, reportedName)
-
-}
-
-func getWorkloadObject(ctx context.Context, k8sClient client.Client, req ctrl.Request, obj client.Object) error {
-	return k8sClient.Get(ctx, types.NamespacedName{Name: req.Name, Namespace: req.Namespace}, obj)
 }
 
 func createOrUpdateInstrumentationConfig(ctx context.Context, k8sClient client.Client, instConfigName, namespace string, serviceName string) (reconcile.Result, error) {
