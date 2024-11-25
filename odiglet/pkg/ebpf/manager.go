@@ -72,15 +72,21 @@ type instrumentationDetails struct {
 }
 
 type Manager struct {
+	// channel for receiving process events,
+	// used to detect new processes and process exits, and handle their instrumentation accordingly.
 	procEvents        <-chan detector.ProcessEvent
 	client            client.Client
 	factories         map[FactoryID]Factory
 	logger            logr.Logger
 
-	// all the active instrumentations by pid
+	// all the active instrumentations by pid,
+	// this map is not concurrent safe, so it should be accessed only from the main event loop
 	detailsByPid      map[int]*instrumentationDetails
+
 	// active instrumentations by workload, and aggregated by pid
+	// this map is not concurrent safe, so it should be accessed only from the main event loop
 	detailsByWorkload map[types.NamespacedName]map[int]*instrumentationDetails
+
 	configUpdates     chan configUpdate
 
 	done chan struct{}
@@ -151,6 +157,7 @@ func (m *Manager) Run(ctx context.Context) {
 		case configUpdate := <-m.configUpdates:
 			if configUpdate.config == nil {
 				m.logger.Info("received nil config update, skipping")
+				break
 			}
 			for _, sdkConfig := range configUpdate.config.Spec.SdkConfigs {
 				err := m.applyInstrumentationConfigurationForSDK(runLoopCtx, configUpdate.workloadKey, &sdkConfig)
@@ -291,8 +298,6 @@ func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.Process
 		err := inst.Run(ctx)
 		if err != nil && !errors.Is(err, context.Canceled) {
 			m.logger.Error(err, "failed to run instrumentation")
-			// these errors occur after the instrumentation is loaded
-			// write instrumentation instance CR with error status
 			err = m.updateInstrumentationInstanceStatus(ctx, pod, containerName, workload, e.PID, InstrumentationUnhealthy, FailedToRun, err.Error())
 			if err != nil {
 				m.logger.Error(err, "failed to update instrumentation instance for failed instrumentation run")
@@ -321,7 +326,10 @@ func (m *Manager) startTrackInstrumentation(pid int, lang common.ProgrammingLang
 }
 
 func (m *Manager) stopTrackInstrumentation(pid int) {
-	details := m.detailsByPid[pid]
+	details, ok := m.detailsByPid[pid]
+	if !ok {
+		return
+	}
 	workload := details.workload
 
 	delete(m.detailsByPid, pid)
