@@ -1,4 +1,3 @@
-export * from './setup';
 export * from './common';
 export * from './config';
 export * from './sources';

@@ -1,10 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { useKeyDown } from '@/hooks';
 import styled from 'styled-components';
 import { slide, Overlay } from '@/styles';
+import { useKeyDown, useTransition } from '@/hooks';
 
-interface DrawerProps {
+interface Props {
   isOpen: boolean;
   onClose: () => void;
   closeOnEscape?: boolean;
@@ -13,11 +13,9 @@ interface DrawerProps {
   children: React.ReactNode;
 }
 
-// Styled-component for drawer container
-const DrawerContainer = styled.div<{
-  $isOpen: DrawerProps['isOpen'];
-  $position: DrawerProps['position'];
-  $width: DrawerProps['width'];
+const Container = styled.div<{
+  $position: Props['position'];
+  $width: Props['width'];
 }>`
   position: fixed;
   top: 0;
@@ -28,26 +26,26 @@ const DrawerContainer = styled.div<{
   background: ${({ theme }) => theme.colors.translucent_bg};
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
   overflow-y: auto;
-  animation: ${({ $isOpen, $position = 'right' }) => ($isOpen ? slide.in[$position] : slide.out[$position])} 0.3s ease;
 `;
 
-export const Drawer: React.FC<DrawerProps> = ({ isOpen, onClose, position = 'right', width = '300px', children, closeOnEscape = true }) => {
-  useKeyDown(
-    {
-      key: 'Escape',
-      active: isOpen && closeOnEscape,
-    },
-    () => onClose(),
-  );
+export const Drawer: React.FC<Props> = ({ isOpen, onClose, position = 'right', width = '300px', children, closeOnEscape = true }) => {
+  useKeyDown({ key: 'Escape', active: isOpen && closeOnEscape }, () => onClose());
+
+  const Transition = useTransition({
+    container: Container,
+    animateIn: slide.in[position],
+    animateOut: slide.out[position],
+  });
 
   if (!isOpen) return null;
 
   return ReactDOM.createPortal(
     <>
       <Overlay hidden={!isOpen} onClick={onClose} />
-      <DrawerContainer $isOpen={isOpen} $position={position} $width={width}>
+
+      <Transition enter={isOpen} $position={position} $width={width}>
         {children}
-      </DrawerContainer>
+      </Transition>
     </>,
     document.body,
   );
