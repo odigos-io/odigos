@@ -30,12 +30,12 @@ var (
 	stabilizationWindowSeconds = intPtr(300) // cooldown period for scaling down
 )
 
-func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, memConfig *memoryConfigurations, kubeVersion *version.Version) error {
+func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, kubeVersion *version.Version) error {
 	logger := log.FromContext(ctx)
 
 	var hpa client.Object
 
-	memLimit := memConfig.gomemlimitMiB * memoryLimitPercentageForHPA / 100.0
+	memLimit := gateway.Spec.MemorySettings.GomemlimitMiB * memoryLimitPercentageForHPA / 100.0
 	metricQuantity := resource.MustParse(fmt.Sprintf("%dMi", memLimit))
 
 	switch {

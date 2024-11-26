@@ -109,14 +109,15 @@ spec:
             timeout: 60s
         - assert:
             file: assert-odigos-upgraded.yaml
+    - name: Instrumented and pipeline ready after upgrade
+      try:
+        - assert:
+            file: assert-instrumented-and-pipeline.yaml
     - name: Generate Traffic
       try:
         - script:
             timeout: 300s
             content: |
-              # Make sure that odigos components are ready
-              sleep 20
-
               # Apply the job
               kubectl apply -f 05-generate-traffic.yaml
 
