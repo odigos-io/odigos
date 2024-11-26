@@ -53,11 +53,6 @@ func (p *PythonInspector) isLibPythonLinked(proc *process.Details) bool {
 	}
 	defer elfFile.Close()
 
-	section := elfFile.Section(".dynamic")
-	if section == nil {
-		return false
-	}
-
 	dynamicSection, err := elfFile.DynString(elf.DT_NEEDED)
 	if err != nil {
 		return false
