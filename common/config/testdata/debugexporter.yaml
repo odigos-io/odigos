@@ -6,7 +6,7 @@ receivers:
         keepalive:
           server_parameters:
             max_connection_age: 15s
-            max_connection_age_grace: 2s        
+            max_connection_age_grace: 2s
         max_recv_msg_size_mib: 128
       http:
         endpoint: 0.0.0.0:4318
