@@ -5,9 +5,9 @@ const buildCard = (source: K8sActualSource) => {
   const { containerName, language } = instrumentedApplicationDetails?.containers?.[0] || {};
 
   const arr = [
-    { title: 'Name', value: name || 'N/A' },
-    { title: 'Kind', value: kind || 'N/A' },
-    { title: 'Namespace', value: namespace || 'N/A' },
+    { title: 'Namespace', value: namespace },
+    { title: 'Kind', value: kind },
+    { title: 'Name', value: name },
     { title: 'Container Name', value: containerName || 'N/A' },
     { title: 'Language', value: language || 'N/A' },
   ];

@@ -20,11 +20,11 @@ const buildCard = (action: ActionDataParsed) => {
   } = action;
 
   const arr = [
-    { title: 'Type', value: type || 'N/A' },
+    { title: 'Type', value: type },
     { title: 'Status', value: String(!disabled) },
+    { title: 'Monitors', value: signals.map((str) => str.toLowerCase()).join(', ') },
     { title: 'Name', value: actionName || 'N/A' },
     { title: 'Notes', value: notes || 'N/A' },
-    { title: 'Monitors', value: signals.map((str) => str.toLowerCase()).join(', ') },
   ];
 
   if (clusterAttributes) {

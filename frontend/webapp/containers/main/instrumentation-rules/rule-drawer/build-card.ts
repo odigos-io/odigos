@@ -11,12 +11,10 @@ const buildCard = (rule: InstrumentationRuleSpec) => {
   ];
 
   if (payloadCollection) {
-    let str = '';
-    const entries = Object.entries(payloadCollection).filter(([key, val]) => !!val);
-    entries.forEach(([key, val], idx) => {
-      str += key;
-      if (idx < entries.length - 1) str += ', ';
-    });
+    const str = Object.entries(payloadCollection)
+      .filter(([key, val]) => !!val)
+      .map(([key, val]) => key)
+      .join(', ');
 
     arr.push({ title: 'Collect', value: str });
   }

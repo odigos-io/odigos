@@ -10,7 +10,7 @@ const buildCard = (destination: ActualDestination, destinationTypeDetails: Desti
   const { exportedSignals, destinationType, fields } = destination;
 
   const arr = [
-    { title: 'Destination', value: destinationType.displayName || 'N/A' },
+    { title: 'Destination', value: destinationType.displayName },
     { title: 'Monitors', value: buildMonitorsList(exportedSignals) },
   ];
 
