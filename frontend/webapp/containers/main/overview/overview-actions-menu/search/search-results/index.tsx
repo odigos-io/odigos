@@ -61,7 +61,7 @@ export const SearchResults = ({ searchText, onClose }: Props) => {
       {searchResults.map(({ category, label, entities }, catIdx) => (
         <Fragment key={`category-list-${category}`}>
           <VerticalScroll style={{ maxHeight: selectedCategory !== 'all' ? '240px' : '140px' }}>
-            <Text size={12} family='secondary' color={theme.text.dark_grey} style={{ marginLeft: '16px' }}>
+            <Text size={12} family='secondary' color={theme.text.darker_grey} style={{ marginLeft: '16px' }}>
               {label}
             </Text>
 

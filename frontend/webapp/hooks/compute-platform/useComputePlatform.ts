@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo } from 'react';
-import { safeJsonParse } from '@/utils';
+import { BACKEND_BOOLEAN, safeJsonParse } from '@/utils';
 import { useQuery } from '@apollo/client';
 import { useBooleanStore } from '@/store';
 import type { ComputePlatform } from '@/types';
@@ -54,7 +54,7 @@ export const useComputePlatform = (): UseComputePlatformHook => {
       k8sActualSources = k8sActualSources.filter((source) => !!filters.types.find((type) => type.id === source.kind));
     }
     if (!!filters.onlyErrors) {
-      k8sActualSources = k8sActualSources.filter((source) => !!source.instrumentedApplicationDetails?.conditions?.find((cond) => cond.status === 'False'));
+      k8sActualSources = k8sActualSources.filter((source) => !!source.instrumentedApplicationDetails?.conditions?.find((cond) => cond.status === BACKEND_BOOLEAN.FALSE));
     }
     if (!!filters.errors.length) {
       k8sActualSources = k8sActualSources.filter((source) => !!filters.errors.find((error) => !!source.instrumentedApplicationDetails?.conditions?.find((cond) => cond.message === error.id)));

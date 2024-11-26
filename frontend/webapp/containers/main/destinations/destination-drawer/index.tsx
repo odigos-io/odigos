@@ -5,7 +5,7 @@ import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
 import { CardDetails } from '@/components';
 import buildDrawerItem from './build-drawer-item';
-import { NotificationNote } from '@/reuseable-components';
+import { ConditionDetails } from '@/reuseable-components';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { DestinationFormBody } from '../destination-form-body';
 import { OVERVIEW_ENTITY_TYPES, type ActualDestination } from '@/types';
@@ -136,12 +136,7 @@ export const DestinationDrawer: React.FC<Props> = () => {
         </FormContainer>
       ) : (
         <DataContainer>
-          {item.conditions
-            .filter(({ status }) => status === 'False')
-            .map(({ type, message }) => (
-              <NotificationNote key={`error-${type}`} type='error' title={type} message={message} />
-            ))}
-
+          <ConditionDetails conditions={item.conditions} />
           <CardDetails data={cardData} />
         </DataContainer>
       )}
