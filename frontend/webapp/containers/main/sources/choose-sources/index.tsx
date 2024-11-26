@@ -17,14 +17,12 @@ export function ChooseSourcesContainer() {
   const menuState = useSourceFormData();
 
   const onNext = () => {
-    const { selectedNamespace, availableSources, selectedSources, selectedFutureApps } = menuState;
+    const { availableSources, selectedSources, selectedFutureApps } = menuState;
     const { setAvailableSources, setConfiguredSources, setConfiguredFutureApps } = appState;
 
-    if (selectedNamespace) {
-      setAvailableSources(availableSources);
-      setConfiguredSources(selectedSources);
-      setConfiguredFutureApps(selectedFutureApps);
-    }
+    setAvailableSources(availableSources);
+    setConfiguredSources(selectedSources);
+    setConfiguredFutureApps(selectedFutureApps);
 
     router.push(ROUTES.CHOOSE_DESTINATION);
   };

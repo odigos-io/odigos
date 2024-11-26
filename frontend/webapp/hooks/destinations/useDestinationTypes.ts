@@ -5,8 +5,7 @@ import { DestinationsCategory, GetDestinationTypesResponse } from '@/types';
 
 const CATEGORIES_DESCRIPTION = {
   managed: 'Effortless Monitoring with Scalable Performance Management',
-  'self hosted':
-    'Full Control and Customization for Advanced Application Monitoring',
+  'self hosted': 'Full Control and Customization for Advanced Application Monitoring',
 };
 
 export interface IDestinationListItem extends DestinationsCategory {
@@ -19,16 +18,13 @@ export function useDestinationTypes() {
 
   useEffect(() => {
     if (data) {
-      const destinationsCategories = data.destinationTypes.categories.map(
-        (category) => {
-          return {
-            name: category.name,
-            description: CATEGORIES_DESCRIPTION[category.name],
-            items: category.items,
-          };
-        }
+      setDestinations(
+        data.destinationTypes.categories.map((category) => ({
+          name: category.name,
+          description: CATEGORIES_DESCRIPTION[category.name],
+          items: category.items,
+        })),
       );
-      setDestinations(destinationsCategories);
     }
   }, [data]);
 
