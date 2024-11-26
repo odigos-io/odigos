@@ -6,13 +6,15 @@ import styled from 'styled-components';
 import { FieldLabel } from '../field-label';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
+type Row = string;
+
 interface InputListProps {
-  initialValues?: string[];
+  initialValues?: Row[];
+  value?: Row[];
+  onChange: (values: Row[]) => void;
   title?: string;
   tooltip?: string;
   required?: boolean;
-  value?: string[];
-  onChange: (values: string[]) => void;
 }
 
 const Container = styled.div`
@@ -54,13 +56,13 @@ const ButtonText = styled(Text)`
   text-decoration-line: underline;
 `;
 
-const INITIAL = [''];
+const INITIAL_ROW: Row = '';
 
-const InputList: React.FC<InputListProps> = ({ initialValues = INITIAL, value = INITIAL, onChange, title, tooltip, required }) => {
-  const [rows, setRows] = useState<string[]>(value || initialValues);
+const InputList: React.FC<InputListProps> = ({ initialValues = [], value, onChange, title, tooltip, required }) => {
+  const [rows, setRows] = useState<Row[]>(value || initialValues);
 
   useEffect(() => {
-    if (!rows.length) setRows(INITIAL);
+    if (!rows.length) setRows([INITIAL_ROW]);
   }, []);
 
   // Filter out rows where either key or value is empty
@@ -79,7 +81,11 @@ const InputList: React.FC<InputListProps> = ({ initialValues = INITIAL, value = 
   }, [validRows, onChange]);
 
   const handleAddInput = () => {
-    setRows((prev) => [...prev, '']);
+    setRows((prev) => {
+      const payload = [...prev];
+      payload.push(INITIAL_ROW);
+      return payload;
+    });
   };
 
   const handleDeleteInput = (idx: number) => {

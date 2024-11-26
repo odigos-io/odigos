@@ -1,10 +1,10 @@
 import React from 'react';
 import { useDrawerStore } from '@/store';
-import { OVERVIEW_ENTITY_TYPES } from '@/types';
 import { SourceDrawer } from '../../sources';
 import { ActionDrawer } from '../../actions';
+import { OVERVIEW_ENTITY_TYPES } from '@/types';
 import { DestinationDrawer } from '../../destinations';
-import { RuleDrawer } from '../../instrumentation-rules/rule-drawer-container';
+import { RuleDrawer } from '../../instrumentation-rules';
 
 const AllDrawers = () => {
   const selected = useDrawerStore(({ selectedItem }) => selectedItem);

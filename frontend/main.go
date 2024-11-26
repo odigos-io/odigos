@@ -128,7 +128,12 @@ func httpFileServerWith404(fs http.FileSystem) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, err := fs.Open(r.URL.Path)
 		if err != nil {
-			// Redirect to root path
+			// If file not found, serve .html of it (example: /choose-sources -> /choose-sources.html)
+			r.URL.Path = r.URL.Path + ".html"
+		}
+		_, err = fs.Open(r.URL.Path)
+		if err != nil {
+			// If .html file not found, this route does not exist at all (404) so we should redirect to default
 			r.URL.Path = "/"
 		}
 		http.FileServer(fs).ServeHTTP(w, r)
