@@ -123,13 +123,6 @@ export const SourceDrawer: React.FC<Props> = () => {
         <DataContainer>
           <ConditionDetails conditions={item.instrumentedApplicationDetails.conditions} />
           <CardDetails data={cardData} />
-
-          {/* <CardDetails
-            title='Resource Attributes'
-            data={[
-              { title: 'Service Name', tooltip: 'This overrides the default service name that runs in your cluster.', value: (item as K8sActualSource).reportedName || (item as K8sActualSource).name },
-            ]}
-          /> */}
         </DataContainer>
       )}
     </OverviewDrawer>
