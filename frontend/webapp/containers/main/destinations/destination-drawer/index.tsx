@@ -5,6 +5,7 @@ import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
 import { CardDetails } from '@/components';
 import buildDrawerItem from './build-drawer-item';
+import { ConditionDetails } from '@/reuseable-components';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { DestinationFormBody } from '../destination-form-body';
 import { OVERVIEW_ENTITY_TYPES, type ActualDestination } from '@/types';
@@ -18,6 +19,12 @@ const FormContainer = styled.div`
   max-height: calc(100vh - 220px);
   overflow: overlay;
   overflow-y: auto;
+`;
+
+const DataContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 `;
 
 export const DestinationDrawer: React.FC<Props> = () => {
@@ -128,7 +135,10 @@ export const DestinationDrawer: React.FC<Props> = () => {
           />
         </FormContainer>
       ) : (
-        <CardDetails data={cardData} />
+        <DataContainer>
+          <ConditionDetails conditions={item.conditions} />
+          <CardDetails data={cardData} />
+        </DataContainer>
       )}
     </OverviewDrawer>
   );

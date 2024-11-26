@@ -45,3 +45,8 @@ export const NOTIFICATION: {
   INFO: 'info',
   DEFAULT: 'default',
 };
+
+export const BACKEND_BOOLEAN = {
+  FALSE: 'False',
+  TRUE: 'True',
+};

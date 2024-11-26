@@ -6,6 +6,7 @@ import { useDrawerStore } from '@/store';
 import { CardDetails } from '@/components';
 import buildDrawerItem from './build-drawer-item';
 import { UpdateSourceBody } from '../update-source-body';
+import { ConditionDetails } from '@/reuseable-components';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { ACTION, getMainContainerLanguageLogo } from '@/utils';
 import { OVERVIEW_ENTITY_TYPES, WorkloadId, type K8sActualSource } from '@/types';
@@ -121,13 +122,8 @@ export const SourceDrawer: React.FC<Props> = () => {
         </FormContainer>
       ) : (
         <DataContainer>
+          <ConditionDetails conditions={item.instrumentedApplicationDetails.conditions} />
           <CardDetails data={cardData} />
-          {/* <CardDetails
-            title='Resource Attributes'
-            data={[
-              { title: 'Service Name', tooltip: 'This overrides the default service name that runs in your cluster.', value: (item as K8sActualSource).reportedName || (item as K8sActualSource).name },
-            ]}
-          /> */}
         </DataContainer>
       )}
     </OverviewDrawer>
