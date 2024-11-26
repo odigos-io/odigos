@@ -45,7 +45,7 @@ export const ConditionDetails: React.FC<Props> = ({ conditions }) => {
   const [extend, setExtend] = useState(false);
 
   const hasErrors = useMemo(() => conditions.some(({ status }) => status === 'False'), [conditions]);
-  const headerText = loading ? 'Loading...' : hasErrors ? 'Some errors occurred' : 'Successfully loaded';
+  const headerText = loading ? 'Loading...' : hasErrors ? 'Failed to load' : 'Successfully loaded';
 
   return (
     <Container onClick={() => setExtend((prev) => !prev)} $hasErrors={hasErrors}>
