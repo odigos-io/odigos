@@ -108,18 +108,18 @@ export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({ initialK
   };
 
   // Check if any key or value field is empty
-  const isAddButtonDisabled = rows.some((pair) => pair.key.trim() === '' || pair.value.trim() === '');
+  const isAddButtonDisabled = rows.some(({ key, value }) => key.trim() === '' || value.trim() === '');
   const isDelButtonDisabled = rows.length <= 1;
 
   return (
     <Container>
       <FieldLabel title={title} required={required} tooltip={tooltip} />
 
-      {rows.map((pair, idx) => (
+      {rows.map(({ key, value }, idx) => (
         <Row key={`key-value-input-list-${idx}`}>
-          <Input placeholder='Attribute name' value={pair.key} onChange={(e) => handleChange('key', e.target.value, idx)} autoFocus={rows.length > 1 && idx === rows.length - 1} />
+          <Input placeholder='Attribute name' value={key} onChange={(e) => handleChange('key', e.target.value, idx)} autoFocus={!value && rows.length > 1 && idx === rows.length - 1} />
           <Image src='/icons/common/arrow-right.svg' alt='Arrow' width={16} height={16} />
-          <Input placeholder='Attribute value' value={pair.value} onChange={(e) => handleChange('value', e.target.value, idx)} />
+          <Input placeholder='Attribute value' value={value} onChange={(e) => handleChange('value', e.target.value, idx)} />
           <DeleteButton disabled={isDelButtonDisabled} onClick={() => handleDeleteRow(idx)}>
             <Image src='/icons/common/trash.svg' alt='Delete' width={16} height={16} />
           </DeleteButton>
