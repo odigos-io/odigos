@@ -7,8 +7,8 @@ import { CardDetails } from '@/components';
 import buildDrawerItem from './build-drawer-item';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { DestinationFormBody } from '../destination-form-body';
+import { OVERVIEW_ENTITY_TYPES, type ActualDestination } from '@/types';
 import { useDestinationCRUD, useDestinationFormData, useDestinationTypes } from '@/hooks';
-import { DestinationTypeItem, OVERVIEW_ENTITY_TYPES, type ActualDestination } from '@/types';
 
 interface Props {}
 
