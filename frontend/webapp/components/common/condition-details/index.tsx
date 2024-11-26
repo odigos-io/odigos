@@ -15,7 +15,7 @@ const Container = styled.div<{ $hasErrors: boolean }>`
   background-color: ${({ theme, $hasErrors }) => ($hasErrors ? theme.colors.darkest_red : theme.colors.white_opacity['004'])};
   cursor: pointer;
   &:hover {
-    background-color: ${({ theme, $hasErrors }) => ($hasErrors ? theme.colors.darker_red : theme.colors.white_opacity['008'])};
+    background-color: ${({ theme, $hasErrors }) => ($hasErrors ? theme.colors.error : theme.colors.white_opacity['008'])};
   }
   transition: background 0.3s;
 `;
@@ -44,7 +44,8 @@ export const ConditionDetails: React.FC<Props> = ({ conditions }) => {
   const [loading, setLoading] = useState(false);
   const [extend, setExtend] = useState(false);
 
-  const hasErrors = useMemo(() => conditions.some(({ status }) => status === 'False'), [conditions]);
+  const errors = useMemo(() => conditions.filter(({ status }) => status === 'False'), [conditions]);
+  const hasErrors = !!errors.length;
   const headerText = loading ? 'Loading...' : hasErrors ? 'Failed to load' : 'Successfully loaded';
 
   return (
@@ -56,7 +57,7 @@ export const ConditionDetails: React.FC<Props> = ({ conditions }) => {
           {headerText}
         </Text>
         <Text color={hasErrors ? theme.text.error_secondary : theme.text.dark_grey} size={12} family='secondary'>
-          ({conditions.length}/{conditions.length})
+          ({hasErrors ? errors.length : conditions.length}/{conditions.length})
         </Text>
 
         <ExtendIcon extend={extend} />
@@ -67,7 +68,7 @@ export const ConditionDetails: React.FC<Props> = ({ conditions }) => {
           {conditions.map(({ status, message }, idx) => (
             <Row key={`condition-${idx}`}>
               <Image src={getStatusIcon(status === 'False' ? 'error' : 'success')} alt='' width={14} height={14} />
-              <Text color={hasErrors ? theme.text.error : theme.text.darker_grey} size={12}>
+              <Text color={status === 'False' ? theme.text.error : theme.text.darker_grey} size={12}>
                 {message}
               </Text>
             </Row>
