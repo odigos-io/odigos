@@ -1,19 +1,18 @@
 import { useMutation } from '@apollo/client';
+import { useNotificationStore } from '@/store';
 import { useNotify } from '../notification/useNotify';
 import { useComputePlatform } from '../compute-platform';
-import { useDrawerStore, useNotificationStore } from '@/store';
 import { ACTION, deriveTypeFromRule, getSseTargetFromId, NOTIFICATION } from '@/utils';
 import { OVERVIEW_ENTITY_TYPES, type InstrumentationRuleInput, type NotificationType } from '@/types';
 import { CREATE_INSTRUMENTATION_RULE, UPDATE_INSTRUMENTATION_RULE, DELETE_INSTRUMENTATION_RULE } from '@/graphql/mutations';
 
 interface Params {
-  onSuccess?: () => void;
-  onError?: () => void;
+  onSuccess?: (type: string) => void;
+  onError?: (type: string) => void;
 }
 
 export const useInstrumentationRuleCRUD = (params?: Params) => {
   const removeNotifications = useNotificationStore((store) => store.removeNotifications);
-  const { setSelectedItem: setDrawerItem } = useDrawerStore((store) => store);
   const { data, refetch } = useComputePlatform();
   const notify = useNotify();
 
@@ -29,14 +28,13 @@ export const useInstrumentationRuleCRUD = (params?: Params) => {
 
   const handleError = (title: string, message: string, id?: string) => {
     notifyUser(NOTIFICATION.ERROR, title, message, id);
-    params?.onError?.();
+    params?.onError?.(title);
   };
 
   const handleComplete = (title: string, message: string, id?: string) => {
     notifyUser(NOTIFICATION.SUCCESS, title, message, id);
-    setDrawerItem(null);
     refetch();
-    params?.onSuccess?.();
+    params?.onSuccess?.(title);
   };
 
   const [createInstrumentationRule, cState] = useMutation<{
