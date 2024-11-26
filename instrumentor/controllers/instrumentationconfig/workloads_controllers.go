@@ -50,11 +50,11 @@ func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind wor
 		return ctrl.Result{}, err
 	}
 	instConfigName := workload.CalculateWorkloadRuntimeObjectName(req.Name, objKind)
-	return createOrUpdateInstrumentationConfig(ctx, k8sClient, instConfigName, req.Namespace, serviceName)
+	return updateInstrumentationConfigServiceName(ctx, k8sClient, instConfigName, req.Namespace, serviceName)
 
 }
 
-func createOrUpdateInstrumentationConfig(ctx context.Context, k8sClient client.Client, instConfigName, namespace string, serviceName string) (reconcile.Result, error) {
+func updateInstrumentationConfigServiceName(ctx context.Context, k8sClient client.Client, instConfigName, namespace string, serviceName string) (reconcile.Result, error) {
 	logger := log.FromContext(ctx)
 
 	instConfig := &odigosv1alpha1.InstrumentationConfig{}
