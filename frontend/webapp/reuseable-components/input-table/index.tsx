@@ -132,18 +132,22 @@ export const InputTable: React.FC<Props> = ({ columns, initialValues = [], value
         <tbody>
           {rows.map((row, idx) => (
             <tr key={`input-table-row-${idx}`} style={{ height: '50px' }}>
-              {columns.map(({ type, keyName, placeholder }, innerIdx) => (
-                <td key={`input-table-${idx}-${keyName}`} style={{ maxWidth, padding: '0 2px' }}>
-                  <Input
-                    type={type}
-                    placeholder={placeholder}
-                    value={row[keyName]}
-                    onChange={({ target: { value: val } }) => handleChange(keyName, type === 'number' ? Number(val) : val, idx)}
-                    autoFocus={rows.length > 1 && idx === rows.length - 1 && innerIdx === 0}
-                    style={{ maxWidth, paddingLeft: 10 }}
-                  />
-                </td>
-              ))}
+              {columns.map(({ type, keyName, placeholder }, innerIdx) => {
+                const value = row[keyName];
+
+                return (
+                  <td key={`input-table-${idx}-${keyName}`} style={{ maxWidth, padding: '0 2px' }}>
+                    <Input
+                      type={type}
+                      placeholder={placeholder}
+                      value={value}
+                      onChange={({ target: { value: val } }) => handleChange(keyName, type === 'number' ? Number(val) : val, idx)}
+                      autoFocus={!value && rows.length > 1 && idx === rows.length - 1 && innerIdx === 0}
+                      style={{ maxWidth, paddingLeft: 10 }}
+                    />
+                  </td>
+                );
+              })}
 
               <td>
                 <DeleteButton disabled={isDelButtonDisabled} onClick={() => handleDeleteRow(idx)}>
