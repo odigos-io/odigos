@@ -6,6 +6,7 @@ import { useDrawerStore } from '@/store';
 import { CardDetails } from '@/components';
 import buildDrawerItem from './build-drawer-item';
 import { UpdateSourceBody } from '../update-source-body';
+import { NotificationNote } from '@/reuseable-components';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { ACTION, getMainContainerLanguageLogo } from '@/utils';
 import { OVERVIEW_ENTITY_TYPES, WorkloadId, type K8sActualSource } from '@/types';
@@ -121,7 +122,14 @@ export const SourceDrawer: React.FC<Props> = () => {
         </FormContainer>
       ) : (
         <DataContainer>
+          {item.instrumentedApplicationDetails.conditions
+            .filter(({ status }) => status === 'False')
+            .map(({ type, message }) => (
+              <NotificationNote key={`error-${type}`} type='error' title={type} message={message} />
+            ))}
+
           <CardDetails data={cardData} />
+
           {/* <CardDetails
             title='Resource Attributes'
             data={[
