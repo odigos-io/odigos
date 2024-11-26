@@ -1,6 +1,6 @@
 import type { ActionDataParsed } from '@/types';
 
-const buildCardFromActionSpec = (action: ActionDataParsed) => {
+const buildCard = (action: ActionDataParsed) => {
   const {
     type,
     spec: {
@@ -91,4 +91,4 @@ const buildCardFromActionSpec = (action: ActionDataParsed) => {
   return arr;
 };
 
-export default buildCardFromActionSpec;
+export default buildCard;

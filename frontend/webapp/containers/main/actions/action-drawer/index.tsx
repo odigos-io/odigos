@@ -1,13 +1,14 @@
 import React, { useMemo, useState } from 'react';
+import buildCard from './build-card';
 import { ActionFormBody } from '../';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
 import { CardDetails } from '@/components';
 import { ACTION, getActionIcon } from '@/utils';
+import buildDrawerItem from './build-drawer-item';
 import { useActionCRUD, useActionFormData } from '@/hooks';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { ACTION_OPTIONS } from '../action-modal/action-options';
-import buildCardFromActionSpec from './build-card-from-action-spec';
 import { OVERVIEW_ENTITY_TYPES, type ActionDataParsed } from '@/types';
 
 interface Props {}
@@ -16,19 +17,16 @@ const ActionDrawer: React.FC<Props> = () => {
   const { selectedItem, setSelectedItem } = useDrawerStore((store) => store);
   const { formData, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem } = useActionFormData();
 
-  // TODO: GEN-1796 handle CRUD response for drawer
-  const { actions, updateAction, deleteAction } = useActionCRUD({
+  const { updateAction, deleteAction } = useActionCRUD({
     onSuccess: (type) => {
+      setIsEditing(false);
+      setIsFormDirty(false);
+
       if (type === ACTION.DELETE) {
         setSelectedItem(null);
       } else {
         const id = (selectedItem?.item as ActionDataParsed)?.id;
-
-        setSelectedItem({
-          id,
-          type: OVERVIEW_ENTITY_TYPES.ACTION,
-          item: actions.find((item) => item.id === id),
-        });
+        setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.ACTION, item: buildDrawerItem(id, formData) });
       }
     },
   });
@@ -40,7 +38,7 @@ const ActionDrawer: React.FC<Props> = () => {
     if (!selectedItem) return [];
 
     const { item } = selectedItem as { item: ActionDataParsed };
-    const arr = buildCardFromActionSpec(item);
+    const arr = buildCard(item);
 
     return arr;
   }, [selectedItem]);
@@ -68,16 +66,12 @@ const ActionDrawer: React.FC<Props> = () => {
   const { id, item } = selectedItem;
 
   const handleEdit = (bool?: boolean) => {
-    if (typeof bool === 'boolean') {
-      setIsEditing(bool);
-    } else {
-      setIsEditing(true);
-    }
+    setIsEditing(typeof bool === 'boolean' ? bool : true);
   };
 
   const handleCancel = () => {
-    handleEdit(false);
-    resetFormData();
+    setIsEditing(false);
+    setIsFormDirty(false);
   };
 
   const handleDelete = async () => {
@@ -87,7 +81,6 @@ const ActionDrawer: React.FC<Props> = () => {
   const handleSave = async (newTitle: string) => {
     if (validateForm({ withAlert: true })) {
       const title = newTitle !== (item as ActionDataParsed).type ? newTitle : '';
-
       await updateAction(id as string, { ...formData, name: title });
     }
   };
