@@ -33,13 +33,15 @@ const MonitoringCheckboxes: React.FC<Props> = ({ isVertical, title = 'Monitoring
   const recordedRows = useRef(JSON.stringify(selectedSignals));
 
   useEffect(() => {
-    const payload: SignalUppercase[] = [];
+    const payload: SignalUppercase[] = selectedSignals;
 
-    monitors.forEach(({ type }) => {
-      if (isAllowed(type, allowedSignals)) {
-        payload.push(type.toUpperCase() as SignalUppercase);
-      }
-    });
+    if (!payload.length) {
+      monitors.forEach(({ type }) => {
+        if (isAllowed(type, allowedSignals)) {
+          payload.push(type.toUpperCase() as SignalUppercase);
+        }
+      });
+    }
 
     const stringified = JSON.stringify(payload);
 
