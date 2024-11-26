@@ -130,6 +130,10 @@ func httpFileServerWith404(fs http.FileSystem) http.Handler {
 		if err != nil {
 			r.URL.Path = r.URL.Path + ".html"
 		}
+		_, err = fs.Open(r.URL.Path)
+		if err != nil {
+			r.URL.Path = "/"
+		}
 		http.FileServer(fs).ServeHTTP(w, r)
 	})
 }
