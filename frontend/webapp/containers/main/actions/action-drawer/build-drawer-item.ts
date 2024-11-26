@@ -1,7 +1,9 @@
-import { ActionDataParsed, ActionInput } from '@/types';
 import { safeJsonParse } from '@/utils';
+import type { ActionDataParsed, ActionInput } from '@/types';
 
-const buildDrawerItem = (id: string, { type, name, notes, signals, disable, details }: ActionInput): ActionDataParsed => {
+const buildDrawerItem = (id: string, formData: ActionInput): ActionDataParsed => {
+  const { type, name, notes, signals, disable, details } = formData;
+
   return {
     id,
     type,

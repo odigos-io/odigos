@@ -2,14 +2,14 @@ import React, { useMemo, useState } from 'react';
 import buildCard from './build-card';
 import { RuleFormBody } from '../';
 import styled from 'styled-components';
-import { ACTION, getRuleIcon } from '@/utils';
 import { useDrawerStore } from '@/store';
 import { CardDetails } from '@/components';
+import { ACTION, getRuleIcon } from '@/utils';
+import buildDrawerItem from './build-drawer-item';
 import { RULE_OPTIONS } from '../rule-modal/rule-options';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { OVERVIEW_ENTITY_TYPES, type InstrumentationRuleSpec } from '@/types';
 import { useInstrumentationRuleCRUD, useInstrumentationRuleFormData } from '@/hooks';
-import buildDrawerItem from './build-drawer-item';
 
 interface Props {}
 
