@@ -80,27 +80,22 @@ spec:
     try:
     - apply:
         file: 01-install-test-apps.yaml
-
   - name: '01 - Assert Apps installed'
     try:
     - assert:
         file: 01-assert-apps-installed.yaml
-
   - name: '01 Instrument Namespaces'
     try:  
     - apply:
-        file: 01-instrument-ns.yaml
-
+        file: ../../common/instrument-default-ns.yaml
   - name: '01 Assert runtime detection'
     try: 
     - assert:
         file: 01-assert-runtime-detected.yaml
-
   - name: '01 Add Destination'
     try:
     - apply:
-        file: 01-add-destination.yaml
-
+        file: ../../common/add-tempo-traces-destination.yaml
   - name: "01 Assert Pipeline"
     try:
     - assert:

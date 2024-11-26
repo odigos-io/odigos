@@ -87,19 +87,19 @@ spec:
               kind load docker-image keyval/odigos-demo-inventory:v0.1
               kind load docker-image keyval/odigos-demo-frontend:v0.2
         - apply:
-            file: 02-install-simple-demo.yaml
+            file: ../../common/install-simple-demo.yaml
         - assert:
-            file: assert-apps-installed.yaml
+            file: ../../common/assert-simple-demo-installed.yaml
     - name: Detect Languages
       try:
         - apply:
-            file: 03-instrument-ns.yaml
+            file: ../../common/instrument-default-ns.yaml
         - assert:
             file: assert-runtime-detected.yaml
     - name: Add Destination
       try:
         - apply:
-            file: 04-add-destination.yaml
+            file: ../../common/add-tempo-traces-destination.yaml
         - assert:
             file: assert-instrumented-and-pipeline.yaml
     - name: Upgrade to HEAD version with the current compiled cli
@@ -119,14 +119,14 @@ spec:
             timeout: 300s
             content: |
               # Apply the job
-              kubectl apply -f 05-generate-traffic.yaml
+              kubectl apply -f ../../common/generate-traffic-job.yaml
 
               # Wait for the job to complete
-              job_name=$(kubectl get -f 05-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
+              job_name=$(kubectl get -f ../../common/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
               kubectl wait --for=condition=complete job/$job_name
 
               # Delete the job
-              kubectl delete -f 05-generate-traffic.yaml      
+              kubectl delete -f ../../common/generate-traffic-job.yaml      
 
               while true; do
                 # wait for traces to be available
