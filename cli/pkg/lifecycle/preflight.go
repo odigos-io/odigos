@@ -21,7 +21,7 @@ func (p *PreflightCheck) To() State {
 	return PreflightChecksPassed
 }
 
-func (p *PreflightCheck) Execute(ctx context.Context, obj client.Object, templateSpec *v1.PodTemplateSpec) error {
+func (p *PreflightCheck) Execute(ctx context.Context, obj client.Object, templateSpec *v1.PodTemplateSpec, isRemote bool) error {
 	switch obj.(type) {
 	case *appsv1.Deployment:
 		deployment := obj.(*appsv1.Deployment)

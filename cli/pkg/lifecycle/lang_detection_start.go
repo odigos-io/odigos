@@ -25,7 +25,7 @@ func (r *RequestLangDetection) To() State {
 	return LangDetectionInProgress
 }
 
-func (r *RequestLangDetection) Execute(ctx context.Context, obj client.Object, templateSpec *v1.PodTemplateSpec) error {
+func (r *RequestLangDetection) Execute(ctx context.Context, obj client.Object, templateSpec *v1.PodTemplateSpec, isRemote bool) error {
 	labels := obj.GetLabels()
 	if labels == nil {
 		labels = make(map[string]string)

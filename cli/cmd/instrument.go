@@ -13,6 +13,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/odigos-io/odigos/cli/pkg/remote"
+
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/odigos-io/odigos/cli/pkg/lifecycle"
@@ -34,6 +36,7 @@ const (
 	skipPreflightCheckFlag     = "skip-preflight-checks"
 	dryRunFlag                 = "dry-run"
 	instrumentationCollOffFlag = "instrumentation-cool-off"
+	remoteFlag                 = "remote"
 )
 
 // instrumentCmd represents the instrument command
@@ -52,13 +55,22 @@ var clusterCmd = &cobra.Command{
 Odigos CLI and monitor the instrumentation status.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx, cancel := context.WithCancel(cmd.Context())
+		var uiClient *remote.UIClientViaPortForward
 		ch := make(chan os.Signal, 1)
 		signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
+		defer func() {
+			if uiClient != nil {
+				uiClient.Close()
+			}
+		}()
 		defer signal.Stop(ch)
 
 		go func() {
 			<-ch
 			cancel()
+			if uiClient != nil {
+				uiClient.Close()
+			}
 		}()
 
 		excludedNs, err := readFileLines(cmd.Flag(excludeNamespacesFileFlag).Value.String())
@@ -72,7 +84,9 @@ Odigos CLI and monitor the instrumentation status.`,
 			fmt.Printf("\033[31mERROR\033[0m Cannot read exclude-apps-file: %s\n", err)
 			os.Exit(1)
 		}
+
 		dryRun := cmd.Flag(dryRunFlag).Changed && cmd.Flag(dryRunFlag).Value.String() == "true"
+		isRemote := cmd.Flag(remoteFlag).Changed && cmd.Flag(remoteFlag).Value.String() == "true"
 		coolOffStr := cmd.Flag(instrumentationCollOffFlag).Value.String()
 		coolOff, err := time.ParseDuration(coolOffStr)
 		ctx = lifecycle.SetCoolOff(ctx, coolOff)
@@ -97,14 +111,32 @@ Odigos CLI and monitor the instrumentation status.`,
 			fmt.Printf("\u001B[32mPASS\u001B[0m\n\n")
 		}
 
-		runPreflightChecks(ctx, cmd, client)
+		if isRemote {
+			uiClient, err = remote.NewUIClient(client, ctx)
+			if err != nil {
+				fmt.Printf("\033[31mERROR\033[0m Cannot create remote UI client: %s\n", err)
+				os.Exit(1)
+			}
+
+			fmt.Println("Flag --remote is set, starting port-forward to UI pod ...")
+			go func() {
+				if err := uiClient.Start(); err != nil {
+					fmt.Printf("\033[31mERROR\033[0m Cannot start remote UI client: %s\n", err)
+					os.Exit(1)
+				}
+			}()
+
+			<-uiClient.Ready()
+		}
+
+		runPreflightChecks(ctx, cmd, client, isRemote)
 
 		fmt.Printf("Starting instrumentation ...\n")
-		instrumentCluster(ctx, client, excludedNs, excludedApps, dryRun)
+		instrumentCluster(ctx, client, excludedNs, excludedApps, dryRun, isRemote)
 	},
 }
 
-func instrumentCluster(ctx context.Context, client *kube.Client, excludedNs, excludedApps map[string]struct{}, dryRun bool) {
+func instrumentCluster(ctx context.Context, client *kube.Client, excludedNs, excludedApps map[string]struct{}, dryRun bool, remote bool) {
 	systemNs := sliceToMap(consts.SystemNamespaces)
 	nsList, err := client.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
 	if err != nil {
@@ -112,7 +144,7 @@ func instrumentCluster(ctx context.Context, client *kube.Client, excludedNs, exc
 		os.Exit(1)
 	}
 
-	orchestrator, err := lifecycle.NewOrchestrator(client, ctx)
+	orchestrator, err := lifecycle.NewOrchestrator(client, ctx, remote)
 	if err != nil {
 		fmt.Printf("\033[31mERROR\033[0m Cannot create orchestrator: %s\n", err)
 		os.Exit(1)
@@ -170,7 +202,7 @@ func instrumentNamespace(ctx context.Context, client *kube.Client, ns string, ex
 	return nil
 }
 
-func runPreflightChecks(ctx context.Context, cmd *cobra.Command, client *kube.Client) {
+func runPreflightChecks(ctx context.Context, cmd *cobra.Command, client *kube.Client, remote bool) {
 	shouldSkip := cmd.Flag(skipPreflightCheckFlag).Changed && cmd.Flag(skipPreflightCheckFlag).Value.String() == "true"
 	if shouldSkip {
 		fmt.Printf("Skipping preflight checks due to --%s flag\n", skipPreflightCheckFlag)
@@ -180,7 +212,7 @@ func runPreflightChecks(ctx context.Context, cmd *cobra.Command, client *kube.Cl
 	fmt.Printf("Running preflight checks:\n")
 	for _, check := range preflight.AllChecks {
 		fmt.Printf("  - %-60s", check.Description())
-		if err := check.Execute(client, ctx); err != nil {
+		if err := check.Execute(client, ctx, remote); err != nil {
 			fmt.Printf("\u001B[31mERROR\u001B[0m\n\n")
 			fmt.Printf("Check failed: %s\n", err)
 			os.Exit(1)
@@ -223,6 +255,7 @@ func init() {
 	clusterCmd.Flags().Bool(skipPreflightCheckFlag, false, "Skip preflight checks")
 	clusterCmd.Flags().Bool(dryRunFlag, false, "Dry run mode")
 	clusterCmd.Flags().Duration(instrumentationCollOffFlag, 0, "Cool-off period for instrumentation. Time format is 1h30m")
+	clusterCmd.Flags().Bool(remoteFlag, false, "Use remote in-cluster service for checking instrumentation status")
 }
 
 func sliceToMap(slice []string) map[string]struct{} {

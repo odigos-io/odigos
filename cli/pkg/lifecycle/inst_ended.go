@@ -26,7 +26,7 @@ func (i *InstrumentationEnded) To() State {
 	return InstrumentedState
 }
 
-func (i *InstrumentationEnded) Execute(ctx context.Context, obj client.Object, templateSpec *corev1.PodTemplateSpec) error {
+func (i *InstrumentationEnded) Execute(ctx context.Context, obj client.Object, templateSpec *corev1.PodTemplateSpec, isRemote bool) error {
 	return wait.PollUntilContextTimeout(ctx, 5*time.Second, 30*time.Minute, true, func(ctx context.Context) (bool, error) {
 		i.log("Waiting for all pods to be instrumented ...")
 		rolloutCompleted, err := utils.VerifyAllPodsAreInstrumented(ctx, i.client, obj)

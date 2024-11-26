@@ -8,7 +8,7 @@ import (
 
 type Check interface {
 	Description() string
-	Execute(client *kube.Client, ctx context.Context) error
+	Execute(client *kube.Client, ctx context.Context, remote bool) error
 }
 
 var AllChecks = []Check{&isOdigosInstalled{}, &isDestinationConfigured{}}

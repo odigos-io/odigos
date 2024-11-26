@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/odigos-io/odigos/k8sutils/pkg/describe/source"
+
+	"github.com/odigos-io/odigos/cli/pkg/remote"
+
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 
 	"github.com/odigos-io/odigos/common"
@@ -39,9 +43,10 @@ type Orchestrator struct {
 	Client          *kube.Client
 	OdigosNamespace string
 	TransitionsMap  map[string]Transition
+	Remote          bool
 }
 
-func NewOrchestrator(client *kube.Client, ctx context.Context) (*Orchestrator, error) {
+func NewOrchestrator(client *kube.Client, ctx context.Context, isRemote bool) (*Orchestrator, error) {
 	ns, err := resources.GetOdigosNamespace(client, ctx)
 	if err != nil {
 		return nil, err
@@ -56,6 +61,7 @@ func NewOrchestrator(client *kube.Client, ctx context.Context) (*Orchestrator, e
 	return &Orchestrator{Client: client,
 		OdigosNamespace: ns,
 		TransitionsMap:  transitions,
+		Remote:          isRemote,
 	}, nil
 }
 
@@ -107,7 +113,7 @@ func (o *Orchestrator) Apply(ctx context.Context, obj client.Object, templateSpe
 					return
 				}
 
-				if err := nextTransition.Execute(ctx, obj, templateSpec); err != nil {
+				if err := nextTransition.Execute(ctx, obj, templateSpec, o.Remote); err != nil {
 					o.log(fmt.Sprintf("Error executing transition: %s", err))
 					// Attempt rollback on execution error
 					if rbErr := o.rollBack(obj, templateSpecFetcher); rbErr != nil {
@@ -164,43 +170,114 @@ func (o *Orchestrator) getCurrentState(ctx context.Context, obj client.Object, t
 	name := obj.GetName()
 	kind := workload.WorkloadKindFromClientObject(obj)
 	icName := workload.CalculateWorkloadRuntimeObjectName(name, kind)
-	_, err := o.Client.OdigosClient.InstrumentationConfigs(obj.GetNamespace()).Get(ctx, icName, metav1.GetOptions{})
-	if err != nil {
-		if apierrors.IsNotFound(err) {
+	var describe *source.SourceAnalyze
+	var err error
+	if o.Remote {
+		describe, err = remote.DescribeSource(ctx, o.Client, o.OdigosNamespace, string(kind), obj.GetNamespace(), name)
+		if err != nil {
+			o.log(fmt.Sprintf("Error describing source: %s", err))
+			return UnknownState
+		}
+
+		if describe == nil {
+			o.log("Describe source returned nil, skipping")
+			return UnknownState
+		}
+	}
+
+	if !o.Remote {
+		_, err := o.Client.OdigosClient.InstrumentationConfigs(obj.GetNamespace()).Get(ctx, icName, metav1.GetOptions{})
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				return LangDetectionInProgress
+			}
+
+			o.log(fmt.Sprintf("Error getting instrumentation config: %s, skipping", err))
+			return UnknownState
+		}
+	} else {
+		if describe.InstrumentationConfig.Created.Value == nil {
 			return LangDetectionInProgress
 		}
 
-		o.log(fmt.Sprintf("Error getting instrumentation config: %s, skipping", err))
-		return UnknownState
-	}
-
-	ia, err := o.Client.OdigosClient.InstrumentedApplications(obj.GetNamespace()).Get(ctx, icName, metav1.GetOptions{})
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return LangDetectionInProgress
+		instConfigStr, ok := describe.InstrumentationConfig.Created.Value.(string)
+		if !ok {
+			o.log("Failed to get instrumentation config status, skipping")
+			return UnknownState
 		}
 
-		o.log(fmt.Sprintf("Error getting instrumented application: %s, skipping", err))
-		return UnknownState
+		if instConfigStr != "created" {
+			return LangDetectionInProgress
+		}
 	}
 
-	if ia.Spec.RuntimeDetails == nil || len(ia.Spec.RuntimeDetails) == 0 {
-		return LangDetectionInProgress
-	}
-
-	langFound := false
 	var lang common.ProgrammingLanguage
-	for _, rd := range ia.Spec.RuntimeDetails {
-		if rd.Language != common.UnknownProgrammingLanguage && rd.Language != common.IgnoredProgrammingLanguage {
-			langFound = true
-			lang = rd.Language
-			break
-		}
-	}
+	if !o.Remote {
+		ia, err := o.Client.OdigosClient.InstrumentedApplications(obj.GetNamespace()).Get(ctx, icName, metav1.GetOptions{})
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				return LangDetectionInProgress
+			}
 
-	if !langFound {
-		o.log("Failed to deetect language, skipping")
-		return UnknownState
+			o.log(fmt.Sprintf("Error getting instrumented application: %s, skipping", err))
+			return UnknownState
+		}
+
+		if ia.Spec.RuntimeDetails == nil || len(ia.Spec.RuntimeDetails) == 0 {
+			return LangDetectionInProgress
+		}
+
+		langFound := false
+		for _, rd := range ia.Spec.RuntimeDetails {
+			if rd.Language != common.UnknownProgrammingLanguage && rd.Language != common.IgnoredProgrammingLanguage {
+				langFound = true
+				lang = rd.Language
+				break
+			}
+		}
+
+		if !langFound {
+			o.log("Failed to deetect language, skipping")
+			return UnknownState
+		}
+	} else {
+		if describe.InstrumentedApplication.Created.Value == nil {
+			return LangDetectionInProgress
+		}
+
+		iaCreated, ok := describe.InstrumentedApplication.Created.Value.(string)
+		if !ok {
+			o.log("Failed to get instrumented application status, skipping")
+			return UnknownState
+		}
+
+		if iaCreated != "created" {
+			return LangDetectionInProgress
+		}
+
+		if len(describe.InstrumentedApplication.Containers) == 0 {
+			return LangDetectionInProgress
+		}
+
+		langFound := false
+		for _, c := range describe.InstrumentedApplication.Containers {
+			langStr, ok := c.Language.Value.(string)
+			if !ok {
+				continue
+			}
+
+			langParsed := common.ProgrammingLanguage(langStr)
+			if langParsed != common.UnknownProgrammingLanguage && langParsed != common.IgnoredProgrammingLanguage {
+				langFound = true
+				lang = langParsed
+				break
+			}
+		}
+
+		if !langFound {
+			o.log("Failed to deetect language, skipping")
+			return UnknownState
+		}
 	}
 
 	instDeviceFound := false

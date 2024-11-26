@@ -13,7 +13,7 @@ import (
 type Transition interface {
 	From() State
 	To() State
-	Execute(ctx context.Context, obj client.Object, templateSpec *v1.PodTemplateSpec) error
+	Execute(ctx context.Context, obj client.Object, templateSpec *v1.PodTemplateSpec, isRemote bool) error
 	Init(client *kube.Client)
 }
 

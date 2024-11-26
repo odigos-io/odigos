@@ -27,7 +27,7 @@ func (i *InstrumentationStarted) To() State {
 	return InstrumentationInProgress
 }
 
-func (i *InstrumentationStarted) Execute(ctx context.Context, obj client.Object, templateSpec *corev1.PodTemplateSpec) error {
+func (i *InstrumentationStarted) Execute(ctx context.Context, obj client.Object, templateSpec *corev1.PodTemplateSpec, isRemote bool) error {
 	return wait.PollUntilContextTimeout(ctx, 5*time.Second, 1*time.Minute, true, func(ctx context.Context) (bool, error) {
 		i.log("Waiting for Deployment to be updated ...")
 		updatedPodSpec, err := i.getPodSpecFromAPIServer(ctx, obj)
