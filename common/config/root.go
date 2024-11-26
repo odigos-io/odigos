@@ -149,7 +149,7 @@ func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {
 					"protocols": GenericMap{
 						"grpc": GenericMap{
 							// setting it to a large value to avoid dropping batches.
-							"max_recv_msg_size_mib": 128 * 1024 * 1024,
+							"max_recv_msg_size_mib": 128,
 							"endpoint":              "0.0.0.0:4317",
 						},
 						// Node collectors send in gRPC, so this is probably not needed
@@ -175,12 +175,13 @@ func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {
 				"health_check": GenericMap{
 					"endpoint": "0.0.0.0:13133",
 				},
+				"pprof": GenericMap{},
 			},
 			Exporters:  map[string]interface{}{},
 			Connectors: map[string]interface{}{},
 			Service: Service{
 				Pipelines:  map[string]Pipeline{},
-				Extensions: []string{"health_check"},
+				Extensions: []string{"health_check", "pprof"},
 			},
 		},
 		[]string{memoryLimiterProcessorName, "resource/odigos-version"}
