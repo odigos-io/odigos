@@ -1,3 +1,3 @@
-export * from './choose-action-modal';
-export * from './choose-action-body';
-export * from './action-drawer-container';
+export * from './action-modal';
+export * from './action-form-body';
+export * from './action-drawer';

@@ -33,11 +33,14 @@ export const getRuleIcon = (type?: InstrumentationRuleType) => {
   return `/icons/rules/${typeLowerCased}.svg`;
 };
 
-export const getActionIcon = (type?: ActionsType | 'sampler') => {
+export const getActionIcon = (type?: ActionsType | 'sampler' | 'attributes') => {
   if (!type) return BRAND_ICON;
 
   const typeLowerCased = type.toLowerCase();
   const isSampler = typeLowerCased.includes('sampler');
+  const isAttributes = typeLowerCased === 'attributes';
 
-  return `/icons/actions/${isSampler ? 'sampler' : typeLowerCased}.svg`;
+  const iconName = isSampler ? 'sampler' : isAttributes ? 'piimasking' : typeLowerCased;
+
+  return `/icons/actions/${iconName}.svg`;
 };

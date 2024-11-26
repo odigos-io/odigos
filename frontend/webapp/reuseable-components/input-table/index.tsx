@@ -6,6 +6,10 @@ import styled from 'styled-components';
 import { FieldLabel } from '../field-label';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 
+type Row = {
+  [key: string]: any;
+};
+
 interface Props {
   columns: {
     title: string;
@@ -15,9 +19,9 @@ interface Props {
     tooltip?: string;
     required?: boolean;
   }[];
-  initialValues?: Record<string, any>[];
-  value?: Record<string, any>[];
-  onChange?: (values: Record<string, any>[]) => void;
+  initialValues?: Row[];
+  value?: Row[];
+  onChange?: (values: Row[]) => void;
 }
 
 const Container = styled.div`
@@ -53,16 +57,18 @@ const ButtonText = styled(Text)`
   text-decoration-line: underline;
 `;
 
-export const InputTable: React.FC<Props> = ({ columns, initialValues = [], value = [], onChange }) => {
-  const [initialObject, setInitialObject] = useState({});
-  const [rows, setRows] = useState(value || initialValues);
+export const InputTable: React.FC<Props> = ({ columns, initialValues = [], value, onChange }) => {
+  // INITIAL_ROW as state, because it's dynamic to the "columns" prop
+  const [initialRow, setInitialRow] = useState<Row>({});
+  const [rows, setRows] = useState<Row[]>(value || initialValues);
 
   useEffect(() => {
-    const init = {};
-    columns.forEach(({ keyName }) => (init[keyName] = ''));
-    setInitialObject(init);
-
-    if (!rows.length) setRows([{ ...init }]);
+    if (!rows.length) {
+      const init = {};
+      columns.forEach(({ keyName }) => (init[keyName] = ''));
+      setInitialRow(init);
+      setRows([{ ...init }]);
+    }
   }, []);
 
   // Filter out rows where either key or value is empty
@@ -83,7 +89,7 @@ export const InputTable: React.FC<Props> = ({ columns, initialValues = [], value
   const handleAddRow = () => {
     setRows((prev) => {
       const payload = [...prev];
-      payload.push({ ...initialObject });
+      payload.push({ ...initialRow });
       return payload;
     });
   };
