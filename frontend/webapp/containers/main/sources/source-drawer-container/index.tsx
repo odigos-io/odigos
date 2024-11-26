@@ -3,10 +3,11 @@ import buildCard from './build-card';
 import styled from 'styled-components';
 import { useSourceCRUD } from '@/hooks';
 import { useDrawerStore } from '@/store';
+import { CardDetails } from '@/components';
 import buildDrawerItem from './build-drawer-item';
 import { UpdateSourceBody } from '../update-source-body';
+import { ConditionDetails } from '@/reuseable-components';
 import OverviewDrawer from '../../overview/overview-drawer';
-import { CardDetails, ConditionDetails } from '@/components';
 import { ACTION, getMainContainerLanguageLogo } from '@/utils';
 import { OVERVIEW_ENTITY_TYPES, WorkloadId, type K8sActualSource } from '@/types';
 

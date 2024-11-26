@@ -2,8 +2,8 @@ import React, { useMemo, useState } from 'react';
 import Image from 'next/image';
 import theme from '@/styles/theme';
 import styled from 'styled-components';
-import { getStatusIcon } from '@/utils';
 import type { Condition } from '@/types';
+import { BACKEND_BOOLEAN, getStatusIcon } from '@/utils';
 import { ExtendIcon, FadeLoader, Text } from '@/reuseable-components';
 
 interface Props {
@@ -44,7 +44,7 @@ export const ConditionDetails: React.FC<Props> = ({ conditions }) => {
   const [loading, setLoading] = useState(false);
   const [extend, setExtend] = useState(false);
 
-  const errors = useMemo(() => conditions.filter(({ status }) => status === 'False'), [conditions]);
+  const errors = useMemo(() => conditions.filter(({ status }) => status === BACKEND_BOOLEAN.FALSE), [conditions]);
   const hasErrors = !!errors.length;
   const headerText = loading ? 'Loading...' : hasErrors ? 'Operation Failed' : 'Operation Successful';
 
@@ -67,8 +67,8 @@ export const ConditionDetails: React.FC<Props> = ({ conditions }) => {
         <Body>
           {conditions.map(({ status, message }, idx) => (
             <Row key={`condition-${idx}`}>
-              <Image src={getStatusIcon(status === 'False' ? 'error' : 'success')} alt='' width={14} height={14} />
-              <Text color={status === 'False' ? theme.text.error : theme.text.darker_grey} size={12}>
+              <Image src={getStatusIcon(status === BACKEND_BOOLEAN.FALSE ? 'error' : 'success')} alt='' width={14} height={14} />
+              <Text color={status === BACKEND_BOOLEAN.FALSE ? theme.text.error : theme.text.darker_grey} size={12}>
                 {message}
               </Text>
             </Row>
