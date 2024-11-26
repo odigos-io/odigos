@@ -16,7 +16,21 @@ const EMPTY_FORM = {
   reportedName: '',
 };
 
-const SourceDrawer: React.FC<Props> = () => {
+const FormContainer = styled.div`
+  width: 100%;
+  height: 100%;
+  max-height: calc(100vh - 220px);
+  overflow: overlay;
+  overflow-y: auto;
+`;
+
+const DataContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+`;
+
+export const SourceDrawer: React.FC<Props> = () => {
   const { selectedItem, setSelectedItem } = useDrawerStore();
 
   const { deleteSources, updateSource } = useSourceCRUD({
@@ -119,19 +133,3 @@ const SourceDrawer: React.FC<Props> = () => {
     </OverviewDrawer>
   );
 };
-
-export { SourceDrawer };
-
-const FormContainer = styled.div`
-  width: 100%;
-  height: 100%;
-  max-height: calc(100vh - 220px);
-  overflow: overlay;
-  overflow-y: auto;
-`;
-
-const DataContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-`;
