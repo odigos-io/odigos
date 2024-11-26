@@ -1,20 +1,22 @@
 import { create } from 'zustand';
-import type { ConfiguredDestination, K8sActualSource } from '@/types';
+import type { ConfiguredDestination, DestinationInput, K8sActualSource } from '@/types';
 
 export interface IAppState {
   availableSources: { [key: string]: K8sActualSource[] };
   configuredSources: { [key: string]: K8sActualSource[] };
   configuredFutureApps: { [key: string]: boolean };
-  configuredDestinations: ConfiguredDestination[];
+  configuredDestinations: { stored: ConfiguredDestination; form: DestinationInput }[];
 }
 
 interface IAppStateSetters {
   setAvailableSources: (payload: IAppState['availableSources']) => void;
   setConfiguredSources: (payload: IAppState['configuredSources']) => void;
   setConfiguredFutureApps: (payload: IAppState['configuredFutureApps']) => void;
+
   setConfiguredDestinations: (payload: IAppState['configuredDestinations']) => void;
-  addConfiguredDestination: (payload: ConfiguredDestination) => void;
-  resetSources: () => void;
+  addConfiguredDestination: (payload: { stored: ConfiguredDestination; form: DestinationInput }) => void;
+  removeConfiguredDestination: (payload: { type: string }) => void;
+
   resetState: () => void;
 }
 
@@ -27,10 +29,11 @@ const useAppStore = create<IAppState & IAppStateSetters>((set) => ({
   setAvailableSources: (payload) => set({ availableSources: payload }),
   setConfiguredSources: (payload) => set({ configuredSources: payload }),
   setConfiguredFutureApps: (payload) => set({ configuredFutureApps: payload }),
+
   setConfiguredDestinations: (payload) => set({ configuredDestinations: payload }),
   addConfiguredDestination: (payload) => set((state) => ({ configuredDestinations: [...state.configuredDestinations, payload] })),
+  removeConfiguredDestination: (payload) => set((state) => ({ configuredDestinations: state.configuredDestinations.filter(({ stored }) => stored.type !== payload.type) })),
 
-  resetSources: () => set(() => ({ availableSources: {}, configuredSources: {}, configuredFutureApps: {} })),
   resetState: () => set(() => ({ availableSources: {}, configuredSources: {}, configuredFutureApps: {}, configuredDestinations: [] })),
 }));
 

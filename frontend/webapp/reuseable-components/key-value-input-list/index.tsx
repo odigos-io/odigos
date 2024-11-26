@@ -6,13 +6,18 @@ import styled from 'styled-components';
 import { FieldLabel } from '../field-label';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 
+type Row = {
+  key: string;
+  value: string;
+};
+
 interface KeyValueInputsListProps {
-  initialKeyValuePairs?: { key: string; value: string }[];
-  value?: { key: string; value: string }[];
+  initialKeyValuePairs?: Row[];
+  value?: Row[];
+  onChange?: (validKeyValuePairs: Row[]) => void;
   title?: string;
   tooltip?: string;
   required?: boolean;
-  onChange?: (validKeyValuePairs: { key: string; value: string }[]) => void;
 }
 
 const Container = styled.div`
@@ -55,13 +60,16 @@ const ButtonText = styled(Text)`
   text-decoration-line: underline;
 `;
 
-const INITIAL = [{ key: '', value: '' }];
+const INITIAL_ROW: Row = {
+  key: '',
+  value: '',
+};
 
-export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({ initialKeyValuePairs = INITIAL, value = INITIAL, onChange, title, tooltip, required }) => {
-  const [rows, setRows] = useState<{ key: string; value: string }[]>(value || initialKeyValuePairs);
+export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({ initialKeyValuePairs = [], value, onChange, title, tooltip, required }) => {
+  const [rows, setRows] = useState<Row[]>(value || initialKeyValuePairs);
 
   useEffect(() => {
-    if (!rows.length) setRows(INITIAL);
+    if (!rows.length) setRows([{ ...INITIAL_ROW }]);
   }, []);
 
   // Filter out rows where either key or value is empty
@@ -82,7 +90,7 @@ export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({ initialK
   const handleAddRow = () => {
     setRows((prev) => {
       const payload = [...prev];
-      payload.push({ key: '', value: '' });
+      payload.push({ ...INITIAL_ROW });
       return payload;
     });
   };
