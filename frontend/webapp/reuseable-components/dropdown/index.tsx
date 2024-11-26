@@ -6,8 +6,9 @@ import { Input } from '../input';
 import { Divider } from '../divider';
 import { Checkbox } from '../checkbox';
 import { DropdownOption } from '@/types';
-import { FieldLabel } from '../field-label';
 import { useOnClickOutside } from '@/hooks';
+import { FieldLabel } from '../field-label';
+import { ExtendIcon } from '../extend-icon';
 import { NoDataFound } from '../no-data-found';
 import styled, { css } from 'styled-components';
 import theme, { hexPercentValues } from '@/styles/theme';
@@ -95,7 +96,7 @@ export const Dropdown: React.FC<DropdownProps> = ({ options, value, onSelect, on
           <DropdownPlaceholder value={value} placeholder={placeholder} onDeselect={onDeselect} />
           <IconWrapper>
             {isMulti && <Badge label={arrLen} filled={!!arrLen} />}
-            <ArrowIcon src='/icons/common/extend-arrow.svg' alt='open-dropdown' width={14} height={14} className={isOpen ? 'open' : 'close'} />
+            <ExtendIcon extend={isOpen} />
           </IconWrapper>
         </DropdownHeader>
 
