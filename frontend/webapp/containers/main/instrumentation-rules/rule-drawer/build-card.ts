@@ -1,6 +1,6 @@
 import type { InstrumentationRuleSpec } from '@/types';
 
-const buildCardFromRuleSpec = (rule: InstrumentationRuleSpec) => {
+const buildCard = (rule: InstrumentationRuleSpec) => {
   const { type, ruleName, notes, disabled, payloadCollection } = rule as InstrumentationRuleSpec;
 
   const arr = [
@@ -24,4 +24,4 @@ const buildCardFromRuleSpec = (rule: InstrumentationRuleSpec) => {
   return arr;
 };
 
-export default buildCardFromRuleSpec;
+export default buildCard;

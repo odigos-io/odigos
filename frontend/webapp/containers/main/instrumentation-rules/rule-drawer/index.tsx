@@ -1,14 +1,15 @@
 import React, { useMemo, useState } from 'react';
+import buildCard from './build-card';
 import { RuleFormBody } from '../';
 import styled from 'styled-components';
-import { getRuleIcon } from '@/utils';
+import { ACTION, getRuleIcon } from '@/utils';
 import { useDrawerStore } from '@/store';
 import { CardDetails } from '@/components';
-import type { InstrumentationRuleSpec } from '@/types';
 import { RULE_OPTIONS } from '../rule-modal/rule-options';
 import OverviewDrawer from '../../overview/overview-drawer';
-import buildCardFromRuleSpec from './build-card-from-rule-spec';
+import { OVERVIEW_ENTITY_TYPES, type InstrumentationRuleSpec } from '@/types';
 import { useInstrumentationRuleCRUD, useInstrumentationRuleFormData } from '@/hooks';
+import buildDrawerItem from './build-drawer-item';
 
 interface Props {}
 
@@ -21,19 +22,31 @@ const FormContainer = styled.div`
 `;
 
 export const RuleDrawer: React.FC<Props> = () => {
-  const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
+  const { selectedItem, setSelectedItem } = useDrawerStore();
+  const { formData, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem } = useInstrumentationRuleFormData();
+
+  const { updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD({
+    onSuccess: (type) => {
+      setIsEditing(false);
+      setIsFormDirty(false);
+
+      if (type === ACTION.DELETE) {
+        setSelectedItem(null);
+      } else {
+        const id = (selectedItem?.item as InstrumentationRuleSpec)?.ruleId;
+        setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.RULE, item: buildDrawerItem(id, formData) });
+      }
+    },
+  });
+
   const [isEditing, setIsEditing] = useState(false);
   const [isFormDirty, setIsFormDirty] = useState(false);
-
-  const { formData, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem } = useInstrumentationRuleFormData();
-  // TODO: GEN-1796 handle CRUD response for drawer
-  const { updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
 
   const cardData = useMemo(() => {
     if (!selectedItem) return [];
 
     const { item } = selectedItem as { item: InstrumentationRuleSpec };
-    const arr = buildCardFromRuleSpec(item);
+    const arr = buildCard(item);
 
     return arr;
   }, [selectedItem]);
@@ -58,16 +71,12 @@ export const RuleDrawer: React.FC<Props> = () => {
   const { id, item } = selectedItem;
 
   const handleEdit = (bool?: boolean) => {
-    if (typeof bool === 'boolean') {
-      setIsEditing(bool);
-    } else {
-      setIsEditing(true);
-    }
+    setIsEditing(typeof bool === 'boolean' ? bool : true);
   };
 
   const handleCancel = () => {
-    resetFormData();
     setIsEditing(false);
+    setIsFormDirty(false);
   };
 
   const handleDelete = async () => {
@@ -77,7 +86,6 @@ export const RuleDrawer: React.FC<Props> = () => {
   const handleSave = async (newTitle: string) => {
     if (validateForm({ withAlert: true })) {
       const title = newTitle !== ((item as InstrumentationRuleSpec).type as string) ? newTitle : '';
-
       await updateInstrumentationRule(id as string, { ...formData, ruleName: title });
     }
   };

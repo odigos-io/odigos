@@ -14,7 +14,7 @@ import { OVERVIEW_ENTITY_TYPES, type ActionDataParsed } from '@/types';
 interface Props {}
 
 const ActionDrawer: React.FC<Props> = () => {
-  const { selectedItem, setSelectedItem } = useDrawerStore((store) => store);
+  const { selectedItem, setSelectedItem } = useDrawerStore();
   const { formData, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem } = useActionFormData();
 
   const { updateAction, deleteAction } = useActionCRUD({
