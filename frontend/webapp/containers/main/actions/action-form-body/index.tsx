@@ -35,7 +35,12 @@ export const ActionFormBody: React.FC<Props> = ({ isUpdate, action, formData, ha
 
       {!isUpdate && <SectionTitle title='' description={action.docsDescription as string} actionButton={<DocsButton endpoint={action.docsEndpoint} />} />}
 
-      <MonitoringCheckboxes allowedSignals={action.allowedSignals} selectedSignals={formData.signals} setSelectedSignals={(value) => handleFormChange('signals', value)} />
+      <MonitoringCheckboxes
+        title='Signals for Processing'
+        allowedSignals={action.allowedSignals}
+        selectedSignals={formData.signals}
+        setSelectedSignals={(value) => handleFormChange('signals', value)}
+      />
 
       {!isUpdate && <Input title='Action name' placeholder='Use a name that describes the action' value={formData.name} onChange={({ target: { value } }) => handleFormChange('name', value)} />}
 
