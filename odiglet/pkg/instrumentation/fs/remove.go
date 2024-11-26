@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 )
@@ -35,6 +36,11 @@ func removeFilesInDir(hostDir string, filesToKeep map[string]struct{}) error {
 		if !info.IsDir() {
 			if _, found := filesToKeep[path]; found {
 				log.Logger.V(0).Info("Skipping protected file", "file", path)
+				return nil
+			}
+
+			if strings.Contains(path, "_hash_version-") {
+				log.Logger.V(0).Info("Skipping file with versioning suffix", "file", path)
 				return nil
 			}
 		}
