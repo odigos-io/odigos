@@ -1,6 +1,6 @@
 import type { ActionDataParsed } from '@/types';
 
-const buildCardFromActionSpec = (action: ActionDataParsed) => {
+const buildCard = (action: ActionDataParsed) => {
   const {
     type,
     spec: {
@@ -17,14 +17,14 @@ const buildCardFromActionSpec = (action: ActionDataParsed) => {
       sampling_percentage,
       endpoints_filters,
     },
-  } = action as ActionDataParsed;
+  } = action;
 
   const arr = [
-    { title: 'Type', value: type || 'N/A' },
+    { title: 'Type', value: type },
     { title: 'Status', value: String(!disabled) },
+    { title: 'Monitors', value: signals.map((str) => str.toLowerCase()).join(', ') },
     { title: 'Name', value: actionName || 'N/A' },
     { title: 'Notes', value: notes || 'N/A' },
-    { title: 'Monitors', value: signals.map((str) => str.toLowerCase()).join(', ') },
   ];
 
   if (clusterAttributes) {
@@ -91,4 +91,4 @@ const buildCardFromActionSpec = (action: ActionDataParsed) => {
   return arr;
 };
 
-export default buildCardFromActionSpec;
+export default buildCard;
