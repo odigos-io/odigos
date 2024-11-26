@@ -33,8 +33,9 @@ export const RuleDrawer: React.FC<Props> = () => {
       if (type === ACTION.DELETE) {
         setSelectedItem(null);
       } else {
-        const id = (selectedItem?.item as InstrumentationRuleSpec)?.ruleId;
-        setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.RULE, item: buildDrawerItem(id, formData) });
+        const { item } = selectedItem as { item: InstrumentationRuleSpec };
+        const { ruleId: id } = item;
+        setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.RULE, item: buildDrawerItem(id, formData, item) });
       }
     },
   });

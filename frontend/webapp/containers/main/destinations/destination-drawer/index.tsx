@@ -39,8 +39,9 @@ export const DestinationDrawer: React.FC<Props> = () => {
       if (type === ACTION.DELETE) {
         setSelectedItem(null);
       } else {
-        const id = (selectedItem?.item as ActualDestination)?.id;
-        setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.DESTINATION, item: buildDrawerItem(id, formData, thisDestination as DestinationTypeItem) });
+        const { item } = selectedItem as { item: ActualDestination };
+        const { id } = item;
+        setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.DESTINATION, item: buildDrawerItem(id, formData, item) });
       }
     },
   });

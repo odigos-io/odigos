@@ -13,7 +13,15 @@ import { OVERVIEW_ENTITY_TYPES, type ActionDataParsed } from '@/types';
 
 interface Props {}
 
-const ActionDrawer: React.FC<Props> = () => {
+const FormContainer = styled.div`
+  width: 100%;
+  height: 100%;
+  max-height: calc(100vh - 220px);
+  overflow: overlay;
+  overflow-y: auto;
+`;
+
+export const ActionDrawer: React.FC<Props> = () => {
   const { selectedItem, setSelectedItem } = useDrawerStore();
   const { formData, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem } = useActionFormData();
 
@@ -25,8 +33,9 @@ const ActionDrawer: React.FC<Props> = () => {
       if (type === ACTION.DELETE) {
         setSelectedItem(null);
       } else {
-        const id = (selectedItem?.item as ActionDataParsed)?.id;
-        setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.ACTION, item: buildDrawerItem(id, formData) });
+        const { item } = selectedItem as { item: ActionDataParsed };
+        const { id } = item;
+        setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.ACTION, item: buildDrawerItem(id, formData, item) });
       }
     },
   });
@@ -114,13 +123,3 @@ const ActionDrawer: React.FC<Props> = () => {
     </OverviewDrawer>
   );
 };
-
-export { ActionDrawer };
-
-const FormContainer = styled.div`
-  width: 100%;
-  height: 100%;
-  max-height: calc(100vh - 220px);
-  overflow: overlay;
-  overflow-y: auto;
-`;

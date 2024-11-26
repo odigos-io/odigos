@@ -1,7 +1,7 @@
 import type { InstrumentationRuleSpec } from '@/types';
 
 const buildCard = (rule: InstrumentationRuleSpec) => {
-  const { type, ruleName, notes, disabled, payloadCollection } = rule as InstrumentationRuleSpec;
+  const { type, ruleName, notes, disabled, payloadCollection } = rule;
 
   const arr = [
     { title: 'Type', value: type || 'N/A' },

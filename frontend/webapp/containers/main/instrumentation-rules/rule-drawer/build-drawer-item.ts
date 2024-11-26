@@ -1,8 +1,9 @@
 import { deriveTypeFromRule } from '@/utils';
 import { PayloadCollectionType, type InstrumentationRuleInput, type InstrumentationRuleSpec } from '@/types';
 
-const buildDrawerItem = (id: string, formData: InstrumentationRuleInput): InstrumentationRuleSpec => {
-  const { ruleName, notes, disabled, workloads, instrumentationLibraries, payloadCollection } = formData;
+const buildDrawerItem = (id: string, formData: InstrumentationRuleInput, drawerItem: InstrumentationRuleSpec): InstrumentationRuleSpec => {
+  const { ruleName, notes, disabled, payloadCollection } = formData;
+  const { workloads, instrumentationLibraries } = drawerItem;
 
   return {
     ruleId: id,
@@ -10,16 +11,14 @@ const buildDrawerItem = (id: string, formData: InstrumentationRuleInput): Instru
     type: deriveTypeFromRule(formData),
     notes,
     disabled,
-    workloads: workloads || [],
     payloadCollection: {
       [PayloadCollectionType.HTTP_REQUEST]: payloadCollection[PayloadCollectionType.HTTP_REQUEST] || undefined,
       [PayloadCollectionType.HTTP_RESPONSE]: payloadCollection[PayloadCollectionType.HTTP_RESPONSE] || undefined,
       [PayloadCollectionType.DB_QUERY]: payloadCollection[PayloadCollectionType.DB_QUERY] || undefined,
       [PayloadCollectionType.MESSAGING]: payloadCollection[PayloadCollectionType.MESSAGING] || undefined,
     },
-
-    // TODO: map "instrumentationLibraries" (maybe ??)
-    instrumentationLibraries: undefined,
+    workloads,
+    instrumentationLibraries,
   };
 };
 

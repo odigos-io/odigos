@@ -17,7 +17,7 @@ const buildCard = (action: ActionDataParsed) => {
       sampling_percentage,
       endpoints_filters,
     },
-  } = action as ActionDataParsed;
+  } = action;
 
   const arr = [
     { title: 'Type', value: type || 'N/A' },

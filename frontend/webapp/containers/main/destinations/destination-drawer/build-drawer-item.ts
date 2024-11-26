@@ -1,8 +1,8 @@
-import type { ActualDestination, DestinationInput, DestinationTypeItem } from '@/types';
+import type { ActualDestination, DestinationInput } from '@/types';
 
-const buildDrawerItem = (id: string, formData: DestinationInput, extra: DestinationTypeItem): ActualDestination => {
+const buildDrawerItem = (id: string, formData: DestinationInput, drawerItem: ActualDestination): ActualDestination => {
   const { name, exportedSignals, fields } = formData;
-  const { type, displayName, imageUrl, supportedSignals } = extra || {};
+  const { destinationType, conditions } = drawerItem || {};
 
   let fieldsStringified: string | Record<string, any> = {};
   fields.forEach(({ key, value }) => (fieldsStringified[key] = value));
@@ -13,15 +13,8 @@ const buildDrawerItem = (id: string, formData: DestinationInput, extra: Destinat
     name,
     exportedSignals,
     fields: fieldsStringified,
-    destinationType: {
-      type,
-      displayName,
-      imageUrl,
-      supportedSignals,
-    },
-
-    // TODO: map "conditions" (maybe ??)
-    conditions: [],
+    destinationType,
+    conditions,
   };
 };
 
