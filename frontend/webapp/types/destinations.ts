@@ -131,7 +131,6 @@ export interface DestinationConfig {
 export interface ActualDestination {
   id: string;
   name: string;
-  type: string;
   exportedSignals: {
     traces: boolean;
     metrics: boolean;

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Text } from '../text';
 import { FieldLabel } from '../field-label';
 import styled, { css } from 'styled-components';
@@ -61,7 +61,7 @@ const StyledTextArea = styled.textarea`
   background: none;
   color: ${({ theme }) => theme.colors.text};
   font-size: 14px;
-  padding: 12px 20px;
+  padding: 12px 20px 0;
   font-family: ${({ theme }) => theme.font_family.primary};
   font-weight: 300;
   line-height: 22px;
@@ -93,13 +93,32 @@ const ErrorMessage = styled(Text)`
   margin-top: 4px;
 `;
 
-const TextArea: React.FC<TextAreaProps> = ({ errorMessage, title, tooltip, required, ...props }) => {
+const TextArea: React.FC<TextAreaProps> = ({ errorMessage, title, tooltip, required, onChange, ...props }) => {
+  const ref = useRef<HTMLTextAreaElement>(null);
+
+  const resize = () => {
+    // this is to auto-resize the textarea according to the number of rows typed
+    if (ref.current) {
+      ref.current.style.height = 'auto';
+      ref.current.style.height = `${ref.current.scrollHeight}px`;
+    }
+  };
+
   return (
     <Container>
       <FieldLabel title={title} required={required} tooltip={tooltip} />
 
       <InputWrapper $disabled={props.disabled} $hasError={!!errorMessage} $isActive={!!props.autoFocus}>
-        <StyledTextArea {...props} />
+        <StyledTextArea
+          ref={ref}
+          onFocus={resize}
+          onBlur={resize}
+          onChange={(e) => {
+            resize();
+            onChange?.(e);
+          }}
+          {...props}
+        />
       </InputWrapper>
 
       {errorMessage && (

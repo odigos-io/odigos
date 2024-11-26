@@ -91,11 +91,7 @@ const SourceDrawer: React.FC = () => {
   return (
     <OverviewDrawer
       title={(item as K8sActualSource).reportedName || (item as K8sActualSource).name}
-      titleTooltip={
-        !(item as K8sActualSource).reportedName
-          ? 'This is the default service name that runs in your cluster. You can override this name.'
-          : 'This overrides the default service name that runs in your cluster.'
-      }
+      titleTooltip='This attribute is used to identify the name of the service (service.name) that is generating telemetry data.'
       imageUri={getMainContainerLanguageLogo(item as K8sActualSource)}
       isEdit={isEditing}
       isFormDirty={isFormDirty}
