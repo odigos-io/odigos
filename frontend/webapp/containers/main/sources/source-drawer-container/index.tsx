@@ -8,7 +8,7 @@ import buildDrawerItem from './build-drawer-item';
 import { UpdateSourceBody } from '../update-source-body';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { ACTION, getMainContainerLanguageLogo } from '@/utils';
-import { OVERVIEW_ENTITY_TYPES, type K8sActualSource } from '@/types';
+import { OVERVIEW_ENTITY_TYPES, WorkloadId, type K8sActualSource } from '@/types';
 
 interface Props {}
 
@@ -61,7 +61,7 @@ const SourceDrawer: React.FC<Props> = () => {
   }, [selectedItem]);
 
   if (!selectedItem?.item) return null;
-  const { item } = selectedItem;
+  const { id, item } = selectedItem as { id: WorkloadId; item: K8sActualSource };
 
   const handleEdit = (bool?: boolean) => {
     setIsEditing(typeof bool === 'boolean' ? bool : true);
@@ -73,21 +73,21 @@ const SourceDrawer: React.FC<Props> = () => {
   };
 
   const handleDelete = async () => {
-    const { namespace } = item as K8sActualSource;
-    await deleteSources({ [namespace]: [item as K8sActualSource] });
+    const { namespace } = item;
+    await deleteSources({ [namespace]: [item] });
   };
 
   const handleSave = async () => {
-    const { namespace, name, kind } = item as K8sActualSource;
-    const title = formData.reportedName !== (item as K8sActualSource).name ? formData.reportedName : '';
-    await updateSource({ namespace, kind, name }, { ...formData, reportedName: title });
+    const title = formData.reportedName !== item.name ? formData.reportedName : '';
+    handleFormChange('reportedName', title);
+    await updateSource(id, { ...formData, reportedName: title });
   };
 
   return (
     <OverviewDrawer
-      title={(item as K8sActualSource).reportedName || (item as K8sActualSource).name}
+      title={item.reportedName || item.name}
       titleTooltip='This attribute is used to identify the name of the service (service.name) that is generating telemetry data.'
-      imageUri={getMainContainerLanguageLogo(item as K8sActualSource)}
+      imageUri={getMainContainerLanguageLogo(item)}
       isEdit={isEditing}
       isFormDirty={isFormDirty}
       onEdit={handleEdit}

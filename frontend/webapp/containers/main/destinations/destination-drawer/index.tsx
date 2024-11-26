@@ -75,7 +75,7 @@ export const DestinationDrawer: React.FC<Props> = () => {
   }, [destinationTypes, selectedItem, isEditing]);
 
   if (!selectedItem?.item) return null;
-  const { id, item } = selectedItem;
+  const { id, item } = selectedItem as { id: string; item: ActualDestination };
 
   const handleEdit = (bool?: boolean) => {
     setIsEditing(typeof bool === 'boolean' ? bool : true);
@@ -87,20 +87,21 @@ export const DestinationDrawer: React.FC<Props> = () => {
   };
 
   const handleDelete = async () => {
-    await deleteDestination(id as string);
+    await deleteDestination(id);
   };
 
   const handleSave = async (newTitle: string) => {
     if (validateForm({ withAlert: true })) {
-      const title = newTitle !== (item as ActualDestination).destinationType.displayName ? newTitle : '';
-      await updateDestination(id as string, { ...formData, name: title });
+      const title = newTitle !== item.destinationType.displayName ? newTitle : '';
+      handleFormChange('name', title);
+      await updateDestination(id, { ...formData, name: title });
     }
   };
 
   return (
     <OverviewDrawer
-      title={(item as ActualDestination).name || (item as ActualDestination).destinationType.displayName}
-      imageUri={(item as ActualDestination).destinationType.imageUrl}
+      title={item.name || item.destinationType.displayName}
+      imageUri={item.destinationType.imageUrl}
       isEdit={isEditing}
       isFormDirty={isFormDirty}
       onEdit={handleEdit}

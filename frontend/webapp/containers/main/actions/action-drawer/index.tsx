@@ -72,7 +72,7 @@ export const ActionDrawer: React.FC<Props> = () => {
   }, [selectedItem, isEditing]);
 
   if (!selectedItem?.item) return null;
-  const { id, item } = selectedItem;
+  const { id, item } = selectedItem as { id: string; item: ActionDataParsed };
 
   const handleEdit = (bool?: boolean) => {
     setIsEditing(typeof bool === 'boolean' ? bool : true);
@@ -84,20 +84,21 @@ export const ActionDrawer: React.FC<Props> = () => {
   };
 
   const handleDelete = async () => {
-    await deleteAction(id as string, (item as ActionDataParsed).type);
+    await deleteAction(id, item.type);
   };
 
   const handleSave = async (newTitle: string) => {
     if (validateForm({ withAlert: true })) {
-      const title = newTitle !== (item as ActionDataParsed).type ? newTitle : '';
-      await updateAction(id as string, { ...formData, name: title });
+      const title = newTitle !== item.type ? newTitle : '';
+      handleFormChange('name', title);
+      await updateAction(id, { ...formData, name: title });
     }
   };
 
   return (
     <OverviewDrawer
-      title={(item as ActionDataParsed).spec.actionName || (item as ActionDataParsed).type}
-      imageUri={getActionIcon((item as ActionDataParsed).type)}
+      title={item.spec.actionName || item.type}
+      imageUri={getActionIcon(item.type)}
       isEdit={isEditing}
       isFormDirty={isFormDirty}
       onEdit={handleEdit}

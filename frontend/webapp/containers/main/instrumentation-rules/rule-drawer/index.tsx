@@ -69,7 +69,7 @@ export const RuleDrawer: React.FC<Props> = () => {
   }, [selectedItem, isEditing]);
 
   if (!selectedItem?.item) return null;
-  const { id, item } = selectedItem;
+  const { id, item } = selectedItem as { id: string; item: InstrumentationRuleSpec };
 
   const handleEdit = (bool?: boolean) => {
     setIsEditing(typeof bool === 'boolean' ? bool : true);
@@ -81,20 +81,21 @@ export const RuleDrawer: React.FC<Props> = () => {
   };
 
   const handleDelete = async () => {
-    await deleteInstrumentationRule(id as string);
+    await deleteInstrumentationRule(id);
   };
 
   const handleSave = async (newTitle: string) => {
     if (validateForm({ withAlert: true })) {
-      const title = newTitle !== ((item as InstrumentationRuleSpec).type as string) ? newTitle : '';
-      await updateInstrumentationRule(id as string, { ...formData, ruleName: title });
+      const title = newTitle !== item.type ? newTitle : '';
+      handleFormChange('ruleName', title);
+      await updateInstrumentationRule(id, { ...formData, ruleName: title });
     }
   };
 
   return (
     <OverviewDrawer
-      title={(item as InstrumentationRuleSpec).ruleName || ((item as InstrumentationRuleSpec).type as string)}
-      imageUri={getRuleIcon((item as InstrumentationRuleSpec).type)}
+      title={item.ruleName || (item.type as string)}
+      imageUri={getRuleIcon(item.type)}
       isEdit={isEditing}
       isFormDirty={isFormDirty}
       onEdit={handleEdit}
