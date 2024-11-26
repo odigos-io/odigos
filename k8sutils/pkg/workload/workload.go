@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/odigos-io/odigos/common/consts"
-	appsv1 "k8s.io/api/apps/v1"
+
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -159,27 +159,27 @@ func GetInstrumentationLabelTexts(workloadLabels map[string]string, workloadKind
 	return
 }
 
-func GetWorkloadObject(ctx context.Context, name string, kind WorkloadKind, namespace string, kubeClient client.Client) (metav1.Object, error) {
+func GetWorkloadObject(ctx context.Context, objectKey client.ObjectKey, kind WorkloadKind, kubeClient client.Client) (metav1.Object, error) {
 	switch kind {
 	case WorkloadKindDeployment:
-		var deployment appsv1.Deployment
-		err := kubeClient.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, &deployment)
+		var deployment v1.Deployment
+		err := kubeClient.Get(ctx, objectKey, &deployment)
 		if err != nil {
 			return nil, err
 		}
 		return &deployment, nil
 
 	case WorkloadKindStatefulSet:
-		var statefulSet appsv1.StatefulSet
-		err := kubeClient.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, &statefulSet)
+		var statefulSet v1.StatefulSet
+		err := kubeClient.Get(ctx, objectKey, &statefulSet)
 		if err != nil {
 			return nil, err
 		}
 		return &statefulSet, nil
 
 	case WorkloadKindDaemonSet:
-		var daemonSet appsv1.DaemonSet
-		err := kubeClient.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, &daemonSet)
+		var daemonSet v1.DaemonSet
+		err := kubeClient.Get(ctx, objectKey, &daemonSet)
 		if err != nil {
 			return nil, err
 		}

@@ -247,8 +247,8 @@ func boolPtr(b bool) *bool {
 }
 
 func resolveServiceName(ctx context.Context, k8sClient client.Client, workloadName string, namespace string, kind workload.WorkloadKind) (string, error) {
-
-	obj, err := workload.GetWorkloadObject(ctx, workloadName, kind, namespace, k8sClient)
+	objectKey := client.ObjectKey{Name: workloadName, Namespace: namespace}
+	obj, err := workload.GetWorkloadObject(ctx, objectKey, kind, k8sClient)
 
 	if err != nil {
 		return "", fmt.Errorf("failed to get workload object to resolve reported service name annotation. will use fallback service name: %w", err)
