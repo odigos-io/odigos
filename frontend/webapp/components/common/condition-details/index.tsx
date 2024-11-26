@@ -64,8 +64,8 @@ export const ConditionDetails: React.FC<Props> = ({ conditions }) => {
 
       {extend && (
         <Body>
-          {conditions.map(({ status, type, message }) => (
-            <Row key={`condition-${type}`}>
+          {conditions.map(({ status, message }, idx) => (
+            <Row key={`condition-${idx}`}>
               <Image src={getStatusIcon(status === 'False' ? 'error' : 'success')} alt='' width={14} height={14} />
               <Text color={hasErrors ? theme.text.error : theme.text.darker_grey} size={12}>
                 {message}
