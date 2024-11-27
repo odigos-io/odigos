@@ -27,6 +27,10 @@ var OtherAgentEnvs = map[string]string{
 	NewRelicAgentEnv: "New Relic Agent",
 }
 
+var OtherAgentCmdSubstring = map[string]string{
+	"newrelic": "New Relic Agent",
+}
+
 type Details struct {
 	ProcessID    int
 	ExeName      string
