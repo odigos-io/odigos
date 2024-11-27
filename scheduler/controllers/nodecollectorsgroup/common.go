@@ -35,6 +35,7 @@ func getMemorySettings(odigosConfig common.OdigosConfiguration) odigosv1.Collect
 	//
 	return odigosv1.CollectorsGroupMemorySettings{
 		MemoryRequestMiB:           256,
+		MemoryLimitMiB:             512 + 64,
 		MemoryLimiterLimitMiB:      512,
 		MemoryLimiterSpikeLimitMiB: 128,            // meaning that collector will start dropping data at 512-128=384MiB
 		GomemlimitMiB:              512 - 128 - 32, // start aggressive GC 32 MiB before soft limit and dropping data
