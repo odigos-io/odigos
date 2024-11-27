@@ -59,6 +59,11 @@ export const useComputePlatform = (): UseComputePlatformHook => {
     if (!!filters.errors.length) {
       k8sActualSources = k8sActualSources.filter((source) => !!filters.errors.find((error) => !!source.instrumentedApplicationDetails?.conditions?.find((cond) => cond.message === error.id)));
     }
+    if (!!filters.languages.length) {
+      k8sActualSources = k8sActualSources.filter(
+        (source) => !!filters.languages.find((language) => !!source.instrumentedApplicationDetails?.containers?.find((cont) => cont.language === language.id)),
+      );
+    }
     if (!!filters.monitors.length) {
       destinations = destinations.filter((destination) => !!filters.monitors.find((metric) => destination.exportedSignals[metric.id]));
       actions = actions.filter(
