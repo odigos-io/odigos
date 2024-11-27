@@ -6,7 +6,7 @@ sidebarTitle: "Generating Data"
 Trigger the demo application by sending a request to the demo application:
 
 ```bash
-curl http://localhost:8080/buy?id=1
+curl -X POST http://localhost:8080/buy?id=1
 ```
 
 This call will generate a trace that will be sent to the Jaeger backend.
