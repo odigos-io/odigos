@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction, useCallback, useEffect, useState } from 'react';
+import { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } from 'react';
 import { useAppStore } from '@/store';
 import type { K8sActualSource } from '@/types';
 import { useNamespace } from '../compute-platform';
@@ -31,7 +31,7 @@ export interface UseSourceFormDataResponse {
   selectAllForNamespace: string;
   showSelectedOnly: boolean;
   setSearchText: Dispatch<SetStateAction<string>>;
-  onSelectAll: (bool: boolean, namespace?: string) => void;
+  onSelectAll: (bool: boolean, namespace?: string, isFromInterval?: boolean) => void;
   setShowSelectedOnly: Dispatch<SetStateAction<boolean>>;
 
   filterSources: (namespace?: string, options?: { cancelSearch?: boolean; cancelSelected?: boolean }) => K8sActualSource[];
@@ -108,9 +108,11 @@ export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFo
     });
   };
 
+  const namespaceWasSelected = useRef(false);
   const onSelectAll: UseSourceFormDataResponse['onSelectAll'] = useCallback(
-    (bool, namespace) => {
+    (bool, namespace, isFromInterval) => {
       if (!!namespace) {
+        if (!isFromInterval) namespaceWasSelected.current = selectedNamespace === namespace;
         const nsAvailableSources = availableSources[namespace];
         const nsSelectedSources = selectedSources[namespace];
 
@@ -120,7 +122,8 @@ export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFo
         } else {
           setSelectedSources((prev) => ({ ...prev, [namespace]: bool ? nsAvailableSources : [] }));
           setSelectAllForNamespace('');
-          if (!!nsAvailableSources.length) setSelectedNamespace('');
+          if (!!nsAvailableSources.length && !namespaceWasSelected.current) setSelectedNamespace('');
+          namespaceWasSelected.current = false;
         }
       } else {
         setSelectAll(bool);
@@ -139,7 +142,7 @@ export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFo
   // if selectedSources returns an emtpy array, it will stop to prevent inifnite loop where no availableSources ever exist for that namespace
   useEffect(() => {
     if (!!selectAllForNamespace) {
-      const interval = setInterval(() => onSelectAll(true, selectAllForNamespace), 100);
+      const interval = setInterval(() => onSelectAll(true, selectAllForNamespace, true), 100);
       return () => clearInterval(interval);
     }
   }, [selectAllForNamespace, onSelectAll]);

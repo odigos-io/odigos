@@ -1,5 +1,4 @@
 import React from 'react';
-import Image from 'next/image';
 import { Text } from '../text';
 import { Tooltip } from '../tooltip';
 import styled from 'styled-components';
@@ -30,15 +29,12 @@ const FieldLabel = ({ title, required, tooltip, style }: { title?: string; requi
   if (!title) return null;
 
   return (
-    <Wrapper style={style}>
-      <Title>{title}</Title>
-      {!required && <OptionalText>(optional)</OptionalText>}
-      {tooltip && (
-        <Tooltip text={tooltip || ''}>
-          <Image src='/icons/common/info.svg' alt='' width={16} height={16} style={{ marginBottom: 4 }} />
-        </Tooltip>
-      )}
-    </Wrapper>
+    <Tooltip text={tooltip} withIcon>
+      <Wrapper style={style}>
+        <Title>{title}</Title>
+        {!required && <OptionalText>(optional)</OptionalText>}
+      </Wrapper>
+    </Tooltip>
   );
 };
 

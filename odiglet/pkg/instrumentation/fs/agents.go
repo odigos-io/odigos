@@ -38,18 +38,18 @@ func CopyAgentsDirectoryToHost() error {
 		"/var/odigos/python-ebpf/pythonUSDT.abi3.so":                                                   {},
 	}
 
-	err := removeChangedFilesFromKeepMap(filesToKeep, containerDir, hostDir)
+	updatedFilesToKeepMap, err := removeChangedFilesFromKeepMap(filesToKeep, containerDir, hostDir)
 	if err != nil {
 		log.Logger.Error(err, "Error getting changed files")
 	}
 
-	err = removeFilesInDir(hostDir, filesToKeep)
+	err = removeFilesInDir(hostDir, updatedFilesToKeepMap)
 	if err != nil {
 		log.Logger.Error(err, "Error removing instrumentation directory from host")
 		return err
 	}
 
-	err = copyDirectories(containerDir, hostDir, filesToKeep)
+	err = copyDirectories(containerDir, hostDir, updatedFilesToKeepMap)
 	if err != nil {
 		log.Logger.Error(err, "Error copying instrumentation directory to host")
 		return err
@@ -82,48 +82,73 @@ func CopyAgentsDirectoryToHost() error {
 	return nil
 }
 
-func removeChangedFilesFromKeepMap(filesToKeepMap map[string]struct{}, containerDir string, hostDir string) error {
+func removeChangedFilesFromKeepMap(filesToKeepMap map[string]struct{}, containerDir string, hostDir string) (map[string]struct{}, error) {
+
+	updatedFilesToKeepMap := make(map[string]struct{})
+
 	for hostPath := range filesToKeepMap {
 		// Convert host path to container path
 		containerPath := strings.Replace(hostPath, hostDir, containerDir, 1)
 
-		// Check if both files exist
-		hostInfo, hostErr := os.Stat(hostPath)
-		containerInfo, containerErr := os.Stat(containerPath)
-
 		// If either file doesn't exist, mark as changed and remove from filesToKeepMap
-		if hostErr != nil || containerErr != nil {
-			delete(filesToKeepMap, hostPath)
-			log.Logger.V(0).Info("File marked for deletion (missing)", "file", hostPath)
-			continue
-		}
+		_, hostErr := os.Stat(hostPath)
+		_, containerErr := os.Stat(containerPath)
 
-		// If sizes are different, mark as changed
-		if hostInfo.Size() != containerInfo.Size() {
-			delete(filesToKeepMap, hostPath)
-			log.Logger.V(0).Info("File marked for deletion (size mismatch)", "file", hostPath)
+		if hostErr != nil || containerErr != nil {
+			log.Logger.V(0).Info("File marked for recreate (missing)", "file", hostPath)
 			continue
 		}
 
 		// Compare file hashes
 		hostHash, err := calculateFileHash(hostPath)
 		if err != nil {
-			return fmt.Errorf("error calculating hash for host file %s: %v", hostPath, err)
+			return nil, fmt.Errorf("error calculating hash for host file %s: %v", hostPath, err)
 		}
 
 		containerHash, err := calculateFileHash(containerPath)
 		if err != nil {
-			return fmt.Errorf("error calculating hash for container file %s: %v", containerPath, err)
+			return nil, fmt.Errorf("error calculating hash for container file %s: %v", containerPath, err)
 		}
 
-		// If hashes are different, mark as changed
+		// If the hashes are different, keep the old version of the file in the host with the new name <ORIGINAL_FILE_NAME_{12_CHARS_OF_HASH}>
+		// and ensure the renamed file is added to filesToKeepMap to protect it from deletion.
 		if hostHash != containerHash {
-			delete(filesToKeepMap, hostPath)
-			log.Logger.V(0).Info("File marked for deletion (content mismatch)", "file", hostPath)
+			newHostPath, err := renameFileWithHashSuffix(hostPath, hostHash)
+			if err != nil {
+				return nil, fmt.Errorf("error renaming file: %v", err)
+			}
+
+			updatedFilesToKeepMap[newHostPath] = struct{}{}
+
+			continue // original file is renamed, recreate hostPath and keep NewHostPath
 		}
+
+		updatedFilesToKeepMap[hostPath] = struct{}{}
 	}
 
-	return nil
+	return updatedFilesToKeepMap, nil
+}
+
+// Helper function to rename a file using the first 12 characters of its hash
+func renameFileWithHashSuffix(originalPath, fileHash string) (string, error) {
+	// Extract the first 12 characters of the hash
+	hashSuffix := fileHash[:12]
+
+	newPath := generateRenamedFilePath(originalPath, hashSuffix)
+
+	if err := os.Rename(originalPath, newPath); err != nil {
+		return "", fmt.Errorf("failed to rename file %s to %s: %w", originalPath, newPath, err)
+	}
+
+	log.Logger.V(0).Info("File successfully renamed", "oldPath", originalPath, "newPath", newPath)
+	return newPath, nil
+}
+
+// Construct a renamed file path
+func generateRenamedFilePath(originalPath, hashSuffix string) string {
+	ext := filepath.Ext(originalPath)                                 // Get the file extension (e.g., ".so")
+	base := strings.TrimSuffix(originalPath, ext)                     // Remove the extension from the original path
+	return fmt.Sprintf("%s_hash_version-%s%s", base, hashSuffix, ext) // Append the hash and add back the extension
 }
 
 // calculateFileHash computes the SHA-256 hash of a file

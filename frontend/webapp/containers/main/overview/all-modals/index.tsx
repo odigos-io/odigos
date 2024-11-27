@@ -1,9 +1,9 @@
 import React from 'react';
 import { useModalStore } from '@/store';
+import { ActionModal } from '../../actions';
 import { OVERVIEW_ENTITY_TYPES } from '@/types';
-import { AddRuleModal } from '../../instrumentation-rules';
-import { AddActionModal } from '../../actions';
-import { AddDestinationModal } from '../../destinations/add-destination/add-destination-modal';
+import { DestinationModal } from '../../destinations';
+import { RuleModal } from '../../instrumentation-rules';
 import { AddSourceModal } from '../../sources/choose-sources/choose-source-modal';
 
 const AllModals = () => {
@@ -16,16 +16,16 @@ const AllModals = () => {
 
   switch (selected) {
     case OVERVIEW_ENTITY_TYPES.RULE:
-      return <AddRuleModal isOpen onClose={handleClose} />;
+      return <RuleModal isOpen onClose={handleClose} />;
 
     case OVERVIEW_ENTITY_TYPES.SOURCE:
       return <AddSourceModal isOpen onClose={handleClose} />;
 
     case OVERVIEW_ENTITY_TYPES.ACTION:
-      return <AddActionModal isOpen onClose={handleClose} />;
+      return <ActionModal isOpen onClose={handleClose} />;
 
     case OVERVIEW_ENTITY_TYPES.DESTINATION:
-      return <AddDestinationModal isOpen onClose={handleClose} />;
+      return <DestinationModal isOpen onClose={handleClose} />;
 
     default:
       return <></>;

@@ -2,7 +2,7 @@
 import React from 'react';
 import { SideMenu } from '@/components';
 import { SideMenuWrapper } from '../styled';
-import { ChooseDestinationContainer } from '@/containers/main';
+import { AddDestinationContainer } from '@/containers/main';
 
 export default function ChooseDestinationPage() {
   return (
@@ -10,7 +10,7 @@ export default function ChooseDestinationPage() {
       <SideMenuWrapper>
         <SideMenu currentStep={3} />
       </SideMenuWrapper>
-      <ChooseDestinationContainer />
+      <AddDestinationContainer />
     </>
   );
 }

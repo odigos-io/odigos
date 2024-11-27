@@ -29,6 +29,7 @@ export const ACTION = {
   CREATE: 'Create',
   UPDATE: 'Update',
   DELETE: 'Delete',
+  FETCH: 'Fetch',
 };
 
 export const FORM_ALERTS = {
