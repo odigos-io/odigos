@@ -1,20 +1,28 @@
-import styled from 'styled-components';
+import React, { useEffect, useMemo, useState } from 'react';
 import { safeJsonParse } from '@/utils';
 import type { PiiMaskingSpec } from '@/types';
-import React, { useEffect, useMemo, useState } from 'react';
-import { Checkbox, FieldLabel } from '@/reuseable-components';
+import styled, { css } from 'styled-components';
+import { Checkbox, FieldError, FieldLabel } from '@/reuseable-components';
 
 type Props = {
   value: string;
   setValue: (value: string) => void;
+  errorMessage?: string;
 };
 
 type Parsed = PiiMaskingSpec;
 
-const ListContainer = styled.div`
+const ListContainer = styled.div<{ $hasError: boolean }>`
   display: flex;
   flex-direction: row;
   gap: 32px;
+  ${({ $hasError }) =>
+    $hasError &&
+    css`
+      border: 1px solid red;
+      border-radius: 32px;
+      padding: 8px;
+    `}
 `;
 
 const strictPicklist = [
@@ -24,7 +32,7 @@ const strictPicklist = [
   },
 ];
 
-const PiiMasking: React.FC<Props> = ({ value, setValue }) => {
+const PiiMasking: React.FC<Props> = ({ value, setValue, errorMessage }) => {
   const mappedValue = useMemo(() => safeJsonParse<Parsed>(value, { piiCategories: [] }).piiCategories, [value]);
   const [isLastSelection, setIsLastSelection] = useState(mappedValue.length === 1);
 
@@ -56,11 +64,12 @@ const PiiMasking: React.FC<Props> = ({ value, setValue }) => {
   return (
     <div>
       <FieldLabel title='Attributes to mask' required />
-      <ListContainer>
+      <ListContainer $hasError={!!errorMessage}>
         {strictPicklist.map(({ id, label }) => (
           <Checkbox key={id} title={label} disabled={isLastSelection && mappedValue.includes(id)} initialValue={mappedValue.includes(id)} onChange={(bool) => handleChange(id, bool)} />
         ))}
       </ListContainer>
+      {!!errorMessage && <FieldError>{errorMessage}</FieldError>}
     </div>
   );
 };

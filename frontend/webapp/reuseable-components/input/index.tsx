@@ -1,18 +1,18 @@
-import Image from 'next/image';
-import { Text } from '../text';
-import { FieldLabel } from '../field-label';
-import styled, { css } from 'styled-components';
 import React, { useState, forwardRef } from 'react';
+import Image from 'next/image';
+import styled, { css } from 'styled-components';
+import { FieldError, FieldLabel } from '@/reuseable-components';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  title?: string;
   icon?: string;
+  tooltip?: string;
+  initialValue?: string;
   buttonLabel?: string;
   onButtonClick?: () => void;
-  errorMessage?: string;
-  title?: string;
-  tooltip?: string;
   required?: boolean;
-  initialValue?: string;
+  hasError?: boolean; // this is to apply error styles without using an error message
+  errorMessage?: string;
 }
 
 // Styled components remain the same as before
@@ -113,71 +113,56 @@ const Button = styled.button`
   }
 `;
 
-const ErrorWrapper = styled.div`
-  position: relative;
-`;
-
-const ErrorMessage = styled(Text)`
-  color: red;
-  font-size: 12px;
-  position: absolute;
-  top: 100%;
-  left: 0;
-  margin-top: 4px;
-`;
-
 // Wrap Input with forwardRef to handle the ref prop
-const Input = forwardRef<HTMLInputElement, InputProps>(({ icon, buttonLabel, onButtonClick, errorMessage, title, tooltip, required, initialValue, onChange, type = 'text', ...props }, ref) => {
-  const isSecret = type === 'password';
-  const [revealSecret, setRevealSecret] = useState(false);
-  const [value, setValue] = useState<string>(initialValue || '');
+const Input = forwardRef<HTMLInputElement, InputProps>(
+  ({ icon, buttonLabel, onButtonClick, hasError, errorMessage, title, tooltip, required, initialValue, onChange, type = 'text', ...props }, ref) => {
+    const isSecret = type === 'password';
+    const [revealSecret, setRevealSecret] = useState(false);
+    const [value, setValue] = useState<string>(initialValue || '');
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setValue(e.target.value);
-    if (onChange) {
-      onChange(e);
-    }
-  };
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setValue(e.target.value);
+      if (onChange) {
+        onChange(e);
+      }
+    };
 
-  return (
-    <Container>
-      <FieldLabel title={title} required={required} tooltip={tooltip} />
+    return (
+      <Container>
+        <FieldLabel title={title} required={required} tooltip={tooltip} />
 
-      <InputWrapper $disabled={props.disabled} $hasError={!!errorMessage} $isActive={!!props.autoFocus}>
-        {isSecret ? (
-          <IconWrapperClickable onClick={() => setRevealSecret((prev) => !prev)}>
-            <Image src={revealSecret ? '/icons/common/eye-closed.svg' : '/icons/common/eye-open.svg'} alt='' width={14} height={14} />
-          </IconWrapperClickable>
-        ) : icon ? (
-          <IconWrapper>
-            <Image src={icon} alt='' width={14} height={14} />
-          </IconWrapper>
-        ) : null}
+        <InputWrapper $disabled={props.disabled} $hasError={hasError || !!errorMessage} $isActive={!!props.autoFocus}>
+          {isSecret ? (
+            <IconWrapperClickable onClick={() => setRevealSecret((prev) => !prev)}>
+              <Image src={revealSecret ? '/icons/common/eye-closed.svg' : '/icons/common/eye-open.svg'} alt='' width={14} height={14} />
+            </IconWrapperClickable>
+          ) : icon ? (
+            <IconWrapper>
+              <Image src={icon} alt='' width={14} height={14} />
+            </IconWrapper>
+          ) : null}
 
-        <StyledInput
-          ref={ref} // Pass ref to the StyledInput
-          $hasIcon={!!icon || isSecret}
-          value={value}
-          onChange={handleInputChange}
-          type={revealSecret ? 'text' : type}
-          {...props}
-        />
+          <StyledInput
+            ref={ref} // Pass ref to the StyledInput
+            $hasIcon={!!icon || isSecret}
+            value={value}
+            onChange={handleInputChange}
+            type={revealSecret ? 'text' : type}
+            {...props}
+          />
 
-        {buttonLabel && onButtonClick && (
-          <Button onClick={onButtonClick} disabled={props.disabled}>
-            {buttonLabel}
-          </Button>
-        )}
-      </InputWrapper>
+          {buttonLabel && onButtonClick && (
+            <Button onClick={onButtonClick} disabled={props.disabled}>
+              {buttonLabel}
+            </Button>
+          )}
+        </InputWrapper>
 
-      {errorMessage && (
-        <ErrorWrapper>
-          <ErrorMessage>{errorMessage}</ErrorMessage>
-        </ErrorWrapper>
-      )}
-    </Container>
-  );
-});
+        {!!errorMessage && <FieldError>{errorMessage}</FieldError>}
+      </Container>
+    );
+  },
+);
 
 Input.displayName = 'Input'; // Set a display name for easier debugging
 export { Input };

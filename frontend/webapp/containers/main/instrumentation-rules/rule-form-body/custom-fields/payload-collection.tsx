@@ -1,20 +1,28 @@
-import styled from 'styled-components';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Checkbox, FieldLabel } from '@/reuseable-components';
+import styled, { css } from 'styled-components';
+import { Checkbox, FieldError, FieldLabel } from '@/reuseable-components';
 import { PayloadCollectionType, type InstrumentationRuleInput } from '@/types';
 
 type Props = {
   value: InstrumentationRuleInput;
   setValue: (key: keyof InstrumentationRuleInput, value: any) => void;
+  formErrors: Record<string, string>;
 };
 
 type Parsed = InstrumentationRuleInput['payloadCollection'];
 
-const ListContainer = styled.div`
+const ListContainer = styled.div<{ $hasError: boolean }>`
   display: flex;
   flex-direction: column;
   gap: 12px;
   margin-top: 8px;
+  ${({ $hasError }) =>
+    $hasError &&
+    css`
+      border: 1px solid red;
+      border-radius: 16px;
+      padding: 8px;
+    `}
 `;
 
 const strictPicklist = [
@@ -36,10 +44,12 @@ const strictPicklist = [
   },
 ];
 
-const PayloadCollection: React.FC<Props> = ({ value, setValue }) => {
+const PayloadCollection: React.FC<Props> = ({ value, setValue, formErrors }) => {
+  const errorMessage = formErrors['payloadCollection'];
+
   const mappedValue = useMemo(
     () =>
-      Object.entries(value.payloadCollection)
+      Object.entries(value['payloadCollection'])
         .filter(([k, v]) => !!v)
         .map(([k]) => k),
     [value],
@@ -79,11 +89,12 @@ const PayloadCollection: React.FC<Props> = ({ value, setValue }) => {
   return (
     <div>
       <FieldLabel title='Type of data to collect' required />
-      <ListContainer>
+      <ListContainer $hasError={!!errorMessage}>
         {strictPicklist.map(({ id, label }) => (
           <Checkbox key={id} title={label} disabled={isLastSelection && mappedValue.includes(id)} initialValue={mappedValue.includes(id)} onChange={(bool) => handleChange(id, bool)} />
         ))}
       </ListContainer>
+      {!!errorMessage && <FieldError>{errorMessage}</FieldError>}
     </div>
   );
 };

@@ -38,16 +38,26 @@ export const ActionFormBody: React.FC<Props> = ({ isUpdate, action, formData, fo
 
       <MonitoringCheckboxes
         title='Signals for Processing'
+        required
         allowedSignals={action.allowedSignals}
-        selectedSignals={formData.signals}
+        selectedSignals={formData['signals']}
         setSelectedSignals={(value) => handleFormChange('signals', value)}
+        errorMessage={formErrors['signals']}
       />
 
-      {!isUpdate && <Input title='Action name' placeholder='Use a name that describes the action' value={formData.name} onChange={({ target: { value } }) => handleFormChange('name', value)} />}
+      {!isUpdate && (
+        <Input
+          title='Action name'
+          placeholder='Use a name that describes the action'
+          value={formData['name']}
+          onChange={({ target: { value } }) => handleFormChange('name', value)}
+          errorMessage={formErrors['name']}
+        />
+      )}
 
-      <ActionCustomFields actionType={action.type} value={formData.details} setValue={(val) => handleFormChange('details', val)} />
+      <ActionCustomFields actionType={action.type} value={formData['details']} setValue={(val) => handleFormChange('details', val)} errorMessage={formErrors['details']} />
 
-      <TextArea title='Notes' value={formData.notes} onChange={({ target: { value } }) => handleFormChange('notes', value)} />
+      <TextArea title='Notes' value={formData['notes']} onChange={({ target: { value } }) => handleFormChange('notes', value)} errorMessage={formErrors['notes']} />
     </Container>
   );
 };
