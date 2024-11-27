@@ -18,7 +18,7 @@ spec:
               --set tempo.ingester.max_block_duration=20s \
               --version 1.10.1
         - assert:
-            file: assert-tempo-running.yaml
+            file: ../../common/assert/tempo-running.yaml
     - name: Wait for destination to be ready
       try:
         - script:
@@ -33,11 +33,11 @@ spec:
               # "build" complete helm chart by copying CRDs into the template folder
               cp -r $P/api/config/crd/bases/* $P/helm/odigos/templates/crds/
               if [ "$MODE" = "cross-cloud-tests" ]; then
-                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test-ns --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7
+                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7
               else
-                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test-ns --set image.tag=e2e-test
+                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test --set image.tag=e2e-test
               fi
-              kubectl label namespace odigos-test-ns odigos.io/system-object="true"
+              kubectl label namespace odigos-test odigos.io/system-object="true"
             timeout: 60s
     - name: Verify Odigos Installation
       try:
@@ -54,7 +54,7 @@ spec:
                   exit 1
                 fi
 
-              kubectl wait --for=condition=ready pods --all -n odigos-test-ns --timeout=40s
+              kubectl wait --for=condition=ready pods --all -n odigos-test --timeout=40s
 
               else
                 if [ "$ACTUAL_VERSION" != "e2e-test" ]; then
@@ -63,7 +63,7 @@ spec:
                 fi
               fi
         - assert:
-            file: assert-odigos-installed.yaml
+            file: ../../common/assert/odigos-installed.yaml
     - name: Install Demo App
       try:
         - script:
@@ -82,7 +82,7 @@ spec:
                 echo "Skipping docker pull and kind load for cross-cloud-tests mode"
               fi
         - apply:
-            file: ../../common/install-simple-demo.yaml
+            file: ../../common/apply/install-simple-demo.yaml
         - script:
             timeout: 70s
             content: |
@@ -93,55 +93,42 @@ spec:
               kubectl wait --for=condition=ready pod -l app=pricing --timeout=60s
               kubectl wait --for=condition=ready pod -l app=membership --timeout=60s
         - assert:
-            file: ../../common/assert-simple-demo-installed.yaml
+            file: ../../common/assert/simple-demo-installed.yaml
     - name: Instrument Namespace
       try:
         - apply:
-            file: ../../common/instrument-default-ns.yaml
+            file: ../../common/apply/instrument-default-ns.yaml
     - name: Assert Runtime Detected
       try:
         - assert:
             timeout: 2m
-            file: assert-runtime-detected.yaml
+            file: ../../common/assert/simple-demo-runtime-detected.yaml
     - name: Add Destination
       try:
         - apply:
-            file: ../../common/add-tempo-traces-destination.yaml
-    - name: Assert Instrumented and Pipeline
+            file: ../../common/apply/add-tempo-traces-destination.yaml
+    - name: Odigos pipeline ready
       try:
         - assert:
-            file: assert-instrumented-and-pipeline.yaml
-
-    - name: Verify InstrumentationConfig Generation Status
-      try:
-        - script:
-            timeout: 65s
-            content: |
-              kubectl wait --for=jsonpath='{.status.observedWorkloadGeneration}'=2 -n default instrumentationconfig/deployment-frontend --timeout=60s
-              kubectl wait --for=jsonpath='{.status.observedWorkloadGeneration}'=2 -n default instrumentationconfig/deployment-coupon --timeout=60s
-              kubectl wait --for=jsonpath='{.status.observedWorkloadGeneration}'=2 -n default instrumentationconfig/deployment-inventory --timeout=60s
-              kubectl wait --for=jsonpath='{.status.observedWorkloadGeneration}'=2 -n default instrumentationconfig/deployment-pricing --timeout=60s
-              kubectl wait --for=jsonpath='{.status.observedWorkloadGeneration}'=2 -n default instrumentationconfig/deployment-membership --timeout=60s
-
-    - name: Assert Post Destination Runtime Details
+            file:  ../../common/assert/pipeline-ready.yaml
+    - name: Simple-demo instrumented after destination added
       try:
         - assert:
-            file: assert-post-dest-runtime-details.yaml
-
+            file: ../../common/assert/simple-demo-instrumented.yaml
     - name: Generate Traffic
       try:
         - script:
             timeout: 300s
             content: |
               # Apply the job
-              kubectl apply -f ../../common/generate-traffic-job.yaml
+              kubectl apply -f ../../common/apply/generate-traffic-job.yaml
 
               # Wait for the job to complete
-              job_name=$(kubectl get -f ../../common/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
+              job_name=$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
               kubectl wait --for=condition=complete job/$job_name
 
               # Delete the job
-              kubectl delete -f ../../common/generate-traffic-job.yaml
+              kubectl delete -f ../../common/apply/generate-traffic-job.yaml
 
               while true; do
                 # wait for traces to be available
@@ -167,7 +154,7 @@ spec:
       catch:
         - podLogs:
             name: odiglet
-            namespace: odigos-test-ns
+            namespace: odigos-test
     - name: Verify Trace - Resource Attributes
       try:
         - script:
@@ -176,7 +163,7 @@ spec:
       catch:
         - podLogs:
             name: odiglet
-            namespace: odigos-test-ns
+            namespace: odigos-test
     - name: Verify Trace - Span Attributes
       try:
         - script:
@@ -185,4 +172,4 @@ spec:
       catch:
         - podLogs:
             name: odiglet
-            namespace: odigos-test-ns
+            namespace: odigos-test
