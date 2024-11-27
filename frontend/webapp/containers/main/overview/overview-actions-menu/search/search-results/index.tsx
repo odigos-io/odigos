@@ -1,7 +1,7 @@
 import React, { Fragment, useMemo, useState } from 'react';
 import theme from '@/styles/theme';
 import styled from 'styled-components';
-import { OVERVIEW_ENTITY_TYPES } from '@/types';
+import { OVERVIEW_ENTITY_TYPES, WorkloadId } from '@/types';
 import { AbsoluteContainer } from '../../styled';
 import { getEntityIcon, getEntityLabel } from '@/utils';
 import { buildSearchResults, type Category } from './builder';
@@ -35,7 +35,7 @@ export const SearchResults = ({ searchText, onClose }: Props) => {
   const { actions } = useActionCRUD();
   const { destinations } = useDestinationCRUD();
   const { instrumentationRules } = useInstrumentationRuleCRUD();
-  const { handleNodeClick } = useNodeDataFlowHandlers({ rules: instrumentationRules, sources, actions, destinations });
+  const { handleNodeClick } = useNodeDataFlowHandlers();
 
   const { categories, searchResults } = useMemo(
     () =>
@@ -72,6 +72,7 @@ export const SearchResults = ({ searchText, onClose }: Props) => {
                 label={getEntityLabel(item, category as OVERVIEW_ENTITY_TYPES, { extended: true })}
                 onClick={() => {
                   const id = item.id || item.ruleId || { kind: item.kind, name: item.name, namespace: item.namespace };
+                  // @ts-ignore
                   handleNodeClick(null, { data: { type: category, id } });
                   onClose();
                 }}

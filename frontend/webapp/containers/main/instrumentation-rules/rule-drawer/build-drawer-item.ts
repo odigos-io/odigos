@@ -1,5 +1,5 @@
 import { deriveTypeFromRule } from '@/utils';
-import { PayloadCollectionType, type InstrumentationRuleInput, type InstrumentationRuleSpec } from '@/types';
+import { type InstrumentationRuleSpec, type InstrumentationRuleInput, PayloadCollectionType } from '@/types';
 
 const buildDrawerItem = (id: string, formData: InstrumentationRuleInput, drawerItem: InstrumentationRuleSpec): InstrumentationRuleSpec => {
   const { ruleName, notes, disabled, payloadCollection } = formData;

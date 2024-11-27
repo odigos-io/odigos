@@ -1,12 +1,12 @@
 // src/hooks/useNodeDataFlowHandlers.ts
 import { useCallback } from 'react';
+import { type Node } from '@xyflow/react';
 import { useSourceCRUD } from '../sources';
 import { useActionCRUD } from '../actions';
 import { useDestinationCRUD } from '../destinations';
 import { useDrawerStore, useModalStore } from '@/store';
 import { OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, WorkloadId } from '@/types';
 import { useInstrumentationRuleCRUD } from '../instrumentation-rules';
-import { Node } from '@xyflow/react';
 
 export function useNodeDataFlowHandlers() {
   const { sources } = useSourceCRUD();
@@ -19,13 +19,13 @@ export function useNodeDataFlowHandlers() {
 
   const handleNodeClick = useCallback(
     (
-      _: React.MouseEvent,
+      _: React.MouseEvent | null,
       object: Node<
         {
           id: string | WorkloadId;
           type: OVERVIEW_ENTITY_TYPES | OVERVIEW_NODE_TYPES;
         },
-        'add'
+        'id'
       >,
     ) => {
       const {

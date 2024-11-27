@@ -1,17 +1,12 @@
 'use client';
 import React, { useMemo } from 'react';
-import dynamic from 'next/dynamic';
 import styled from 'styled-components';
-import { ToastList } from '@/components';
 import MultiSourceControl from '../multi-source-control';
 import { OverviewActionMenuContainer } from '../overview-actions-menu';
 import { buildNodesAndEdges, NodeBaseDataFlow } from '@/reuseable-components';
 import { useComputePlatform, useContainerSize, useMetrics, useNodeDataFlowHandlers } from '@/hooks';
 
-const AllDrawers = dynamic(() => import('../all-drawers'), { ssr: false });
-const AllModals = dynamic(() => import('../all-modals'), { ssr: false });
-
-export const OverviewDataFlowWrapper = styled.div`
+const OverviewDataFlowWrapper = styled.div`
   width: 100%;
   height: calc(100vh - 176px);
   position: relative;
@@ -44,10 +39,6 @@ export default function OverviewDataFlowContainer() {
       <OverviewActionMenuContainer />
       <MultiSourceControl />
       <NodeBaseDataFlow nodes={nodes} edges={edges} nodeWidth={NODE_WIDTH} onNodeClick={handleNodeClick} />
-
-      <AllDrawers />
-      <AllModals />
-      <ToastList />
     </OverviewDataFlowWrapper>
   );
 }
