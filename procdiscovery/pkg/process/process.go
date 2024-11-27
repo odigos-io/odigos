@@ -28,7 +28,7 @@ var OtherAgentEnvs = map[string]string{
 }
 
 var OtherAgentCmdSubString = map[string]string{
-	"newrelic": "New Relic Agent",
+	"newrelic.jar": "New Relic Agent",
 }
 
 type Details struct {
