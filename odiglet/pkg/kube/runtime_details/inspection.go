@@ -131,8 +131,8 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 						detectedAgent = &odigosv1.OtherAgent{Name: otherAgentName}
 					}
 				}
-				// Languages that can be detected using command line, e.g. Java<>newrelic
-				for otherAgentCmdSubstring, otherAgentName := range procdiscovery.OtherAgentCmdSubstring {
+				// Languages that can be detected using command line Substrings, e.g. Java<>newrelic
+				for otherAgentCmdSubstring, otherAgentName := range procdiscovery.OtherAgentCmdSubString {
 					if strings.Contains(inspectProc.CmdLine, otherAgentCmdSubstring) {
 						detectedAgent = &odigosv1.OtherAgent{Name: otherAgentName}
 					}

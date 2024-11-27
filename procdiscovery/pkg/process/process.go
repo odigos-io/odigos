@@ -27,7 +27,7 @@ var OtherAgentEnvs = map[string]string{
 	NewRelicAgentEnv: "New Relic Agent",
 }
 
-var OtherAgentCmdSubstring = map[string]string{
+var OtherAgentCmdSubString = map[string]string{
 	"newrelic": "New Relic Agent",
 }
 
