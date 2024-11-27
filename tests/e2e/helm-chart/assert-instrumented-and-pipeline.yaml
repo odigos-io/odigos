@@ -152,6 +152,13 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: metadata.name
+            - name: GOMEMLIMIT
+              (value != null): true
+          resources:
+            requests:
+              (memory != null): true
+            limits:
+              (memory != null): true
       hostNetwork: true
       nodeSelector:
         kubernetes.io/os: linux
