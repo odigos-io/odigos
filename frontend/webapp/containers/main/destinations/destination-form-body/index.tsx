@@ -50,7 +50,7 @@ export function DestinationFormBody({ isUpdate, destination, isFormOk, formData,
         <>
           <SectionTitle
             title='Create connection'
-            description='Connect selected destination with Odigos.'
+            description={`Connect ${displayName} destination with Odigos.`}
             actionButton={
               testConnectionSupported && (
                 <TestConnection
