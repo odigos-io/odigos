@@ -119,7 +119,7 @@ export const ActionDrawer: React.FC<Props> = () => {
           />
         </FormContainer>
       ) : (
-        <CardDetails data={cardData} />
+        <CardDetails title='Action Details' data={cardData} />
       )}
     </OverviewDrawer>
   );

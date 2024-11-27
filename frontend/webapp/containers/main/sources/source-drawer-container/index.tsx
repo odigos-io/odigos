@@ -123,7 +123,7 @@ export const SourceDrawer: React.FC<Props> = () => {
       ) : (
         <DataContainer>
           <ConditionDetails conditions={item.instrumentedApplicationDetails.conditions} />
-          <CardDetails data={cardData} />
+          <CardDetails title='Source Details' data={cardData} />
         </DataContainer>
       )}
     </OverviewDrawer>
