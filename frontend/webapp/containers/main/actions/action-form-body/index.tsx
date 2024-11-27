@@ -9,6 +9,7 @@ interface Props {
   isUpdate?: boolean;
   action: ActionOption;
   formData: ActionInput;
+  formErrors: Record<string, string>;
   handleFormChange: (key: keyof ActionInput, val: any) => void;
 }
 
@@ -23,7 +24,7 @@ const FieldTitle = styled(Text)`
   margin-bottom: 12px;
 `;
 
-export const ActionFormBody: React.FC<Props> = ({ isUpdate, action, formData, handleFormChange }) => {
+export const ActionFormBody: React.FC<Props> = ({ isUpdate, action, formData, formErrors, handleFormChange }) => {
   return (
     <Container>
       {isUpdate && (

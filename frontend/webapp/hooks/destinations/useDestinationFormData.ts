@@ -32,6 +32,7 @@ export function useDestinationFormData(params?: { destinationType?: string; supp
   const { buildFormDynamicFields } = useConnectDestinationForm();
 
   const [formData, setFormData] = useState({ ...INITIAL });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [dynamicFields, setDynamicFields] = useState<DynamicField[]>([]);
 
   const t = destinationType || formData.type;
@@ -110,18 +111,26 @@ export function useDestinationFormData(params?: { destinationType?: string; supp
     setFormData({ ...INITIAL });
   };
 
-  const validateForm = (params?: { withAlert?: boolean }) => {
+  const validateForm = (params?: { withAlert?: boolean; alertTitle?: string }) => {
+    const errors = {};
     let ok = true;
 
-    ok = dynamicFields.every((field) => (field.required ? !!field.value : true));
+    dynamicFields.forEach(({ name, value, required }) => {
+      if (required && !value) {
+        ok = false;
+        errors[name] = FORM_ALERTS.FIELD_IS_REQUIRED;
+      }
+    });
 
     if (!ok && params?.withAlert) {
       notify({
         type: NOTIFICATION.WARNING,
-        title: ACTION.UPDATE,
+        title: params.alertTitle,
         message: FORM_ALERTS.REQUIRED_FIELDS,
       });
     }
+
+    setFormErrors(errors);
 
     return ok;
   };
@@ -147,6 +156,7 @@ export function useDestinationFormData(params?: { destinationType?: string; supp
 
   return {
     formData,
+    formErrors,
     handleFormChange,
     resetFormData,
     validateForm,

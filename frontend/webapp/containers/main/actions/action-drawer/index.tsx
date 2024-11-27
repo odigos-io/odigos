@@ -23,7 +23,7 @@ const FormContainer = styled.div`
 
 export const ActionDrawer: React.FC<Props> = () => {
   const { selectedItem, setSelectedItem } = useDrawerStore();
-  const { formData, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem } = useActionFormData();
+  const { formData, formErrors, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem } = useActionFormData();
 
   const { updateAction, deleteAction } = useActionCRUD({
     onSuccess: (type) => {
@@ -88,7 +88,7 @@ export const ActionDrawer: React.FC<Props> = () => {
   };
 
   const handleSave = async (newTitle: string) => {
-    if (validateForm({ withAlert: true })) {
+    if (validateForm({ withAlert: true, alertTitle: ACTION.UPDATE })) {
       const title = newTitle !== item.type ? newTitle : '';
       handleFormChange('name', title);
       await updateAction(id, { ...formData, name: title });
@@ -112,6 +112,7 @@ export const ActionDrawer: React.FC<Props> = () => {
             isUpdate
             action={thisAction}
             formData={formData}
+            formErrors={formErrors}
             handleFormChange={(...params) => {
               setIsFormDirty(true);
               handleFormChange(...params);

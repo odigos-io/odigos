@@ -9,6 +9,7 @@ interface Props {
   isUpdate?: boolean;
   rule: RuleOption;
   formData: InstrumentationRuleInput;
+  formErrors: Record<string, string>;
   handleFormChange: (key: keyof InstrumentationRuleInput, val: any) => void;
 }
 
@@ -23,7 +24,7 @@ const FieldTitle = styled(Text)`
   margin-bottom: 12px;
 `;
 
-export const RuleFormBody: React.FC<Props> = ({ isUpdate, rule, formData, handleFormChange }) => {
+export const RuleFormBody: React.FC<Props> = ({ isUpdate, rule, formData, formErrors, handleFormChange }) => {
   return (
     <Container>
       {isUpdate && (

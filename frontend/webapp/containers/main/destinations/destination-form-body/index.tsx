@@ -8,8 +8,8 @@ import { CheckboxList, Divider, Input, NotificationNote, SectionTitle } from '@/
 interface Props {
   isUpdate?: boolean;
   destination?: DestinationTypeItem;
-  isFormOk: boolean;
   formData: DestinationInput;
+  formErrors: Record<string, string>;
   handleFormChange: (key: keyof DestinationInput | string, val: any) => void;
   dynamicFields: DynamicField[];
   setDynamicFields: Dispatch<SetStateAction<DynamicField[]>>;
@@ -22,8 +22,9 @@ const Container = styled.div`
   padding: 0 4px;
 `;
 
-export function DestinationFormBody({ isUpdate, destination, isFormOk, formData, handleFormChange, dynamicFields, setDynamicFields }: Props) {
+export function DestinationFormBody({ isUpdate, destination, formData, formErrors, handleFormChange, dynamicFields, setDynamicFields }: Props) {
   const { supportedSignals, testConnectionSupported, displayName } = destination || {};
+  const isFormOk = useMemo(() => !Object.keys(formErrors).length, [formErrors]);
 
   const [isFormDirty, setIsFormDirty] = useState(false);
   const [showConnectionError, setShowConnectionError] = useState(false);

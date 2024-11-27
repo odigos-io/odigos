@@ -23,7 +23,7 @@ const FormContainer = styled.div`
 
 export const RuleDrawer: React.FC<Props> = () => {
   const { selectedItem, setSelectedItem } = useDrawerStore();
-  const { formData, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem } = useInstrumentationRuleFormData();
+  const { formData, formErrors, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem } = useInstrumentationRuleFormData();
 
   const { updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD({
     onSuccess: (type) => {
@@ -85,7 +85,7 @@ export const RuleDrawer: React.FC<Props> = () => {
   };
 
   const handleSave = async (newTitle: string) => {
-    if (validateForm({ withAlert: true })) {
+    if (validateForm({ withAlert: true, alertTitle: ACTION.UPDATE })) {
       const title = newTitle !== item.type ? newTitle : '';
       handleFormChange('ruleName', title);
       await updateInstrumentationRule(id, { ...formData, ruleName: title });
@@ -109,6 +109,7 @@ export const RuleDrawer: React.FC<Props> = () => {
             isUpdate
             rule={thisRule}
             formData={formData}
+            formErrors={formErrors}
             handleFormChange={(...params) => {
               setIsFormDirty(true);
               handleFormChange(...params);
