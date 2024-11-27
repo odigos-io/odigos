@@ -123,7 +123,7 @@ export const buildNodesAndEdges = ({ computePlatform, computePlatformFiltered, m
         type: OVERVIEW_NODE_TYPES.ADD_RULE,
         status: STATUSES.HEALTHY,
         title: 'ADD RULE',
-        subTitle: 'Add first rule to modify the OpenTelemetry data',
+        subTitle: `Add ${!!nonFilteredLengths['rules'] ? 'a new' : 'first'} rule to modify the OpenTelemetry data`,
       }),
     );
   } else {
@@ -150,7 +150,7 @@ export const buildNodesAndEdges = ({ computePlatform, computePlatformFiltered, m
         type: OVERVIEW_NODE_TYPES.ADD_SOURCE,
         status: STATUSES.HEALTHY,
         title: 'ADD SOURCE',
-        subTitle: 'Add first source to collect OpenTelemetry data',
+        subTitle: `Add ${!!nonFilteredLengths['sources'] ? 'a new' : 'first'} source to collect OpenTelemetry data`,
       }),
     );
   } else {
@@ -183,7 +183,7 @@ export const buildNodesAndEdges = ({ computePlatform, computePlatformFiltered, m
         type: OVERVIEW_NODE_TYPES.ADD_ACTION,
         status: STATUSES.HEALTHY,
         title: 'ADD ACTION',
-        subTitle: 'Add first action to modify the OpenTelemetry data',
+        subTitle: `Add ${!!nonFilteredLengths['actions'] ? 'a new' : 'first'} action to modify the OpenTelemetry data`,
       }),
     );
   } else {
@@ -234,7 +234,7 @@ export const buildNodesAndEdges = ({ computePlatform, computePlatformFiltered, m
         type: OVERVIEW_NODE_TYPES.ADD_DESTIONATION,
         status: STATUSES.HEALTHY,
         title: 'ADD DESTIONATION',
-        subTitle: 'Add first destination to monitor OpenTelemetry data',
+        subTitle: `Add ${!!nonFilteredLengths['destinations'] ? 'a new' : 'first'} destination to monitor OpenTelemetry data`,
       }),
     );
   } else {
