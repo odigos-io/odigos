@@ -1,5 +1,5 @@
 'use client';
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import styled from 'styled-components';
 import MultiSourceControl from '../multi-source-control';
 import { OverviewActionMenuContainer } from '../overview-actions-menu';
@@ -17,9 +17,15 @@ const NODE_HEIGHT = 80;
 
 export default function OverviewDataFlowContainer() {
   const { containerRef, containerWidth, containerHeight } = useContainerSize();
+  const { data, filteredData, startPolling } = useComputePlatform();
   const { handleNodeClick } = useNodeDataFlowHandlers();
-  const { data, filteredData } = useComputePlatform();
   const { metrics } = useMetrics();
+
+  useEffect(() => {
+    // this is to start polling on component mount in an attempt to fix any initial errors with sources/destinations
+    if (!!data?.computePlatform.k8sActualSources.length || !!data?.computePlatform.destinations.length) startPolling();
+    // only on-mount, if we include "data" this might trigger on every refetch
+  }, []);
 
   // Memoized node and edge builder to improve performance
   const { nodes, edges } = useMemo(() => {
