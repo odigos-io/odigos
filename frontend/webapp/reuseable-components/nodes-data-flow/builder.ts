@@ -49,6 +49,13 @@ export const buildNodesAndEdges = ({ computePlatform, computePlatformFiltered, m
 
   const { instrumentationRules: rules = [], k8sActualSources: sources = [], actions = [], destinations = [] } = computePlatformFiltered || {};
 
+  const nonFilteredLengths = {
+    rules: computePlatform?.instrumentationRules.length || 0,
+    sources: computePlatform?.k8sActualSources.length || 0,
+    actions: computePlatform?.actions.length || 0,
+    destinations: computePlatform?.destinations.length || 0,
+  };
+
   const startX = 24;
   const endX = (containerWidth <= 1500 ? 1500 : containerWidth) - nodeWidth - 40 - startX;
   const getY = (idx?: number) => nodeHeight * ((idx || 0) + 1);
@@ -83,28 +90,28 @@ export const buildNodesAndEdges = ({ computePlatform, computePlatformFiltered, m
       createNode('rule-header', 'header', postions['rules']['x'], 0, {
         icon: getEntityIcon(OVERVIEW_ENTITY_TYPES.RULE),
         title: 'Instrumentation Rules',
-        tagValue: computePlatform?.instrumentationRules.length,
+        tagValue: nonFilteredLengths['rules'],
       }),
     ],
     sources: [
       createNode('source-header', 'header', postions['sources']['x'], 0, {
         icon: getEntityIcon(OVERVIEW_ENTITY_TYPES.SOURCE),
         title: 'Sources',
-        tagValue: computePlatform?.k8sActualSources.length,
+        tagValue: nonFilteredLengths['sources'],
       }),
     ],
     actions: [
       createNode('action-header', 'header', postions['actions']['x'] - (!!actions.length ? 15 : 0), 0, {
         icon: getEntityIcon(OVERVIEW_ENTITY_TYPES.ACTION),
         title: 'Actions',
-        tagValue: computePlatform?.actions.length,
+        tagValue: nonFilteredLengths['actions'],
       }),
     ],
     destinations: [
       createNode('destination-header', 'header', postions['destinations']['x'], 0, {
         icon: getEntityIcon(OVERVIEW_ENTITY_TYPES.DESTINATION),
         title: 'Destinations',
-        tagValue: computePlatform?.destinations.length,
+        tagValue: nonFilteredLengths['destinations'],
       }),
     ],
   };
