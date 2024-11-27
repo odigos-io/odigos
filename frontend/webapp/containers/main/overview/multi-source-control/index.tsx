@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import Image from 'next/image';
 import { slide } from '@/styles';
-import theme from '@/styles/theme';
 import { useAppStore } from '@/store';
 import styled from 'styled-components';
 import { DeleteWarning } from '@/components';
@@ -69,11 +68,20 @@ const MultiSourceControl = () => {
         </Button>
 
         <Button variant='tertiary' onClick={() => setIsWarnModalOpen(true)}>
-          <Image src='/icons/common/trash.svg' alt='' width={16} height={16} />
-          <Text family='secondary' decoration='underline' color={theme.text.error}>
-            Delete
+          <Image src='/icons/common/circled-cross.svg' alt='' width={20} height={20} />
+          <Text family='secondary' decoration='underline'>
+            Uninstrument
           </Text>
         </Button>
+
+        {/* exists in FIGMA, but has same functionality - exclude until we change instrumented behaviour */}
+
+        {/* <Button variant='tertiary' onClick={() => setIsWarnModalOpen(true)}>
+          <Image src='/icons/common/trash.svg' alt='' width={16} height={16} />
+          <Text family='secondary' decoration='underline' color={theme.text.error}>
+            Remove
+          </Text>
+        </Button> */}
       </Transition>
 
       <DeleteWarning

@@ -5,6 +5,7 @@ import { ACTION, FORM_ALERTS, NOTIFICATION } from '@/utils';
 import type { ActionDataParsed, ActionInput } from '@/types';
 
 const INITIAL: ActionInput = {
+  // @ts-ignore (TS complains about empty string because we expect an "ActionsType", but it's fine)
   type: '',
   name: '',
   notes: '',

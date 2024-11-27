@@ -110,7 +110,7 @@ const InputList: React.FC<InputListProps> = ({ initialValues = [], value, onChan
 
       {rows.map((val, idx) => (
         <InputRow key={`input-list-${idx}`}>
-          <Input value={val} onChange={(e) => handleInputChange(e.target.value, idx)} autoFocus={rows.length > 1 && idx === rows.length - 1} />
+          <Input value={val} onChange={(e) => handleInputChange(e.target.value, idx)} autoFocus={!val && rows.length > 1 && idx === rows.length - 1} />
           <DeleteButton disabled={isDelButtonDisabled} onClick={() => handleDeleteInput(idx)}>
             <Image src='/icons/common/trash.svg' alt='Delete' width={16} height={16} />
           </DeleteButton>

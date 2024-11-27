@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo } from 'react';
-import { safeJsonParse } from '@/utils';
 import { useQuery } from '@apollo/client';
 import { useBooleanStore } from '@/store';
-import type { ComputePlatform } from '@/types';
 import { GET_COMPUTE_PLATFORM } from '@/graphql';
 import { useFilterStore } from '@/store/useFilterStore';
+import { BACKEND_BOOLEAN, deriveTypeFromRule, safeJsonParse } from '@/utils';
+import type { ActionItem, ComputePlatform, ComputePlatformMapped } from '@/types';
 
 type UseComputePlatformHook = {
-  data?: ComputePlatform;
+  data?: ComputePlatformMapped;
+  filteredData?: ComputePlatformMapped;
   loading: boolean;
   error?: Error;
   refetch: () => void;
@@ -40,12 +41,32 @@ export const useComputePlatform = (): UseComputePlatformHook => {
     startPolling();
   }, []);
 
-  const filteredData = useMemo(() => {
+  const mappedData = useMemo(() => {
     if (!data) return undefined;
 
-    let k8sActualSources = [...data.computePlatform.k8sActualSources];
-    let destinations = [...data.computePlatform.destinations];
-    let actions = [...data.computePlatform.actions];
+    return {
+      computePlatform: {
+        ...data.computePlatform,
+        actions: data.computePlatform.actions.map((item) => {
+          const parsedSpec = typeof item.spec === 'string' ? safeJsonParse(item.spec, {} as ActionItem) : item.spec;
+
+          return { ...item, spec: parsedSpec };
+        }),
+        instrumentationRules: data.computePlatform.instrumentationRules.map((item) => {
+          const type = deriveTypeFromRule(item);
+
+          return { ...item, type };
+        }),
+      },
+    };
+  }, [data]);
+
+  const filteredData = useMemo(() => {
+    if (!mappedData) return undefined;
+
+    let k8sActualSources = [...mappedData.computePlatform.k8sActualSources];
+    let destinations = [...mappedData.computePlatform.destinations];
+    let actions = [...mappedData.computePlatform.actions];
 
     if (!!filters.namespace) {
       k8sActualSources = k8sActualSources.filter((source) => filters.namespace?.id === source.namespace);
@@ -54,31 +75,30 @@ export const useComputePlatform = (): UseComputePlatformHook => {
       k8sActualSources = k8sActualSources.filter((source) => !!filters.types.find((type) => type.id === source.kind));
     }
     if (!!filters.onlyErrors) {
-      k8sActualSources = k8sActualSources.filter((source) => !!source.instrumentedApplicationDetails?.conditions?.find((cond) => cond.status === 'False'));
+      k8sActualSources = k8sActualSources.filter((source) => !!source.instrumentedApplicationDetails?.conditions?.find((cond) => cond.status === BACKEND_BOOLEAN.FALSE));
     }
     if (!!filters.errors.length) {
       k8sActualSources = k8sActualSources.filter((source) => !!filters.errors.find((error) => !!source.instrumentedApplicationDetails?.conditions?.find((cond) => cond.message === error.id)));
     }
+    if (!!filters.languages.length) {
+      k8sActualSources = k8sActualSources.filter(
+        (source) => !!filters.languages.find((language) => !!source.instrumentedApplicationDetails?.containers?.find((cont) => cont.language === language.id)),
+      );
+    }
     if (!!filters.monitors.length) {
       destinations = destinations.filter((destination) => !!filters.monitors.find((metric) => destination.exportedSignals[metric.id]));
-      actions = actions.filter(
-        (action) =>
-          !!filters.monitors.find((metric) => {
-            const { signals } = safeJsonParse(action.spec as string, { signals: [] as string[] });
-            return signals.find((str) => str.toLowerCase() === metric.id);
-          }),
-      );
+      actions = actions.filter((action) => !!filters.monitors.find((metric) => action.spec.signals.find((str) => str.toLowerCase() === metric.id)));
     }
 
     return {
       computePlatform: {
-        ...data.computePlatform,
+        ...mappedData.computePlatform,
         k8sActualSources,
         destinations,
         actions,
       },
     };
-  }, [data, filters]);
+  }, [mappedData, filters]);
 
-  return { data: filteredData, loading, error, refetch, startPolling };
+  return { data: mappedData, filteredData, loading, error, refetch, startPolling };
 };
