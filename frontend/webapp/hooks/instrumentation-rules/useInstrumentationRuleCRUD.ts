@@ -74,12 +74,7 @@ export const useInstrumentationRuleCRUD = (params?: Params) => {
 
   return {
     loading: cState.loading || uState.loading || dState.loading,
-    instrumentationRules:
-      data?.computePlatform?.instrumentationRules?.map((item) => {
-        const type = deriveTypeFromRule(item);
-
-        return { ...item, type };
-      }) || [],
+    instrumentationRules: data?.computePlatform.instrumentationRules || [],
 
     createInstrumentationRule: (instrumentationRule: InstrumentationRuleInput) => createInstrumentationRule({ variables: { instrumentationRule } }),
     updateInstrumentationRule: (ruleId: string, instrumentationRule: InstrumentationRuleInput) => updateInstrumentationRule({ variables: { ruleId, instrumentationRule } }),

@@ -1,14 +1,14 @@
-import { ActionData } from './actions';
-import { K8sActualSource } from './sources';
-import { ActualDestination } from './destinations';
-import { InstrumentationRuleSpec } from './instrumentation-rules';
+import type { K8sActualSource } from './sources';
+import type { ActualDestination } from './destinations';
+import type { ActionData, ActionDataParsed } from './actions';
+import type { InstrumentationRuleSpec, InstrumentationRuleSpecMapped } from './instrumentation-rules';
 
 export type K8sActualNamespace = {
   name: string;
   k8sActualSources?: K8sActualSource[];
 };
 
-type ComputePlatformData = {
+interface ComputePlatformData {
   id: string;
   name: string;
   computePlatformType: string;
@@ -18,8 +18,17 @@ type ComputePlatformData = {
   k8sActualSources: K8sActualSource[];
   destinations: ActualDestination[];
   instrumentationRules: InstrumentationRuleSpec[];
-};
+}
 
 export type ComputePlatform = {
   computePlatform: ComputePlatformData;
+};
+
+interface ComputePlatformDataMapped extends ComputePlatformData {
+  actions: ActionDataParsed[];
+  instrumentationRules: InstrumentationRuleSpecMapped[];
+}
+
+export type ComputePlatformMapped = {
+  computePlatform: ComputePlatformDataMapped;
 };
