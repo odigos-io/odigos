@@ -154,14 +154,14 @@ spec:
                   fieldPath: metadata.name
             - name: GOMEMLIMIT
               (value != null): true
+          resources:
+            requests:
+              (memory != null): true
+            limits:
+              (memory != null): true
       hostNetwork: true
       nodeSelector:
         kubernetes.io/os: linux
-      resources:
-        requests:
-          (memory != null): true
-        limits:
-          (memory != null): true
       securityContext: {}
       serviceAccount: odigos-data-collection
       serviceAccountName: odigos-data-collection
