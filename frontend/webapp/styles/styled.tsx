@@ -24,6 +24,6 @@ export const Overlay = styled.div`
 export const ModalBody = styled.div`
   width: 640px;
   height: calc(100vh - 350px);
-  margin: 64px 7vw 0 7vw;
+  margin: 64px 7vw 32px 7vw;
   overflow-y: scroll;
 `;

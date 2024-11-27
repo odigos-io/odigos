@@ -124,7 +124,7 @@ export const DestinationModal: React.FC<AddDestinationModalProps> = ({ isOnboard
           />
         </SideMenuWrapper>
 
-        <ModalBody style={{ margin: '32px 24px 0 24px' }}>
+        <ModalBody style={{ margin: '32px 24px 12px 24px' }}>
           {/*
             in other modals we would render this out, but for this case we will use "hidden" instead,
             this is to preserve the filters-state when going back-and-forth between selections
