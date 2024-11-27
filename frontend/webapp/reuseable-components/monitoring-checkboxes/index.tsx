@@ -20,7 +20,7 @@ const ListContainer = styled.div<{ $isVertical?: Props['isVertical']; $hasError:
   ${({ $hasError }) =>
     $hasError &&
     css`
-      border: 1px solid red;
+      border: 1px solid ${({ theme }) => theme.text.error};
       border-radius: 32px;
       padding: 8px;
     `}

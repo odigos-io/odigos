@@ -54,7 +54,7 @@ const DropdownHeader = styled.div<{ $isOpen: boolean; $isMulti?: boolean; $hasSe
   ${({ $hasError }) =>
     $hasError &&
     css`
-      border-color: red;
+      border-color: ${({ theme }) => theme.text.error};
     `}
 
   &:hover {

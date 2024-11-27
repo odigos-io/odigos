@@ -36,7 +36,7 @@ const InputWrapper = styled.div<{ $disabled?: boolean; $hasError?: boolean; $isA
   ${({ $hasError }) =>
     $hasError &&
     css`
-      border-color: red;
+      border-color: ${({ theme }) => theme.text.error};
     `}
 
   ${({ $isActive }) =>

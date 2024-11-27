@@ -8,7 +8,7 @@ const ErrorWrapper = styled.div`
 
 const ErrorMessage = styled(Text)`
   font-size: 12px;
-  color: red;
+  color: ${({ theme }) => theme.text.error};
 `;
 
 export const FieldError: React.FC<React.PropsWithChildren> = ({ children }) => {
