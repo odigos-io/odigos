@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
-import { ConfiguredFields } from '@/components';
-import { ConfiguredDestination } from '@/types';
-import { Divider, Text } from '@/reuseable-components';
+import { ConfiguredFields, DeleteWarning } from '@/components';
+import { IAppState, useAppStore } from '@/store';
+import type { ConfiguredDestination } from '@/types';
+import { Button, Divider, Text } from '@/reuseable-components';
 
 const Container = styled.div`
   display: flex;
@@ -72,41 +73,22 @@ const TextWrapper = styled.div`
   justify-content: space-between;
 `;
 
-const ExpandIconContainer = styled.div`
+const IconsContainer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
   margin-right: 16px;
 `;
 
-const IconBorder = styled.div`
-  height: 16px;
-  width: 1px;
-  margin-right: 12px;
-  background: ${({ theme }) => theme.colors.border};
-`;
-
-const ExpandIconWrapper = styled.div<{ $expand?: boolean }>`
-  display: flex;
-  width: 36px;
-  height: 36px;
-  cursor: pointer;
-  justify-content: center;
-  align-items: center;
-  border-radius: 100%;
+const IconButton = styled(Button)<{ $expand?: boolean }>`
   transition: background 0.3s ease 0s, transform 0.3s ease 0s;
-  transform: ${({ $expand }) => ($expand ? 'rotate(180deg)' : 'rotate(0deg)')};
-  &:hover {
-    background: ${({ theme }) => theme.colors.translucent_bg};
-  }
+  transform: ${({ $expand }) => ($expand ? 'rotate(-180deg)' : 'rotate(0deg)')};
 `;
 
-interface DestinationsListProps {
-  data: ConfiguredDestination[];
-}
-
-function ConfiguredDestinationsListItem({ item }: { item: ConfiguredDestination }) {
-  const [expand, setExpand] = React.useState(false);
+const ConfiguredDestinationsListItem: React.FC<{ item: ConfiguredDestination; isLastItem: boolean }> = ({ item, isLastItem }) => {
+  const [expand, setExpand] = useState(false);
+  const [deleteWarning, setDeleteWarning] = useState(false);
+  const { removeConfiguredDestination } = useAppStore((state) => state);
 
   function renderSupportedSignals(item: ConfiguredDestination) {
     const supportedSignals = item.exportedSignals;
@@ -127,44 +109,63 @@ function ConfiguredDestinationsListItem({ item }: { item: ConfiguredDestination 
   }
 
   return (
-    <ListItem>
-      <ListItemHeader style={{ paddingBottom: expand ? 0 : 16 }}>
-        <ListItemContent>
-          <DestinationIconWrapper>
-            <Image src={item.imageUrl} width={20} height={20} alt='destination' />
-          </DestinationIconWrapper>
-          <TextWrapper>
-            <Text size={14}>{item.displayName}</Text>
-            <SignalsWrapper>{renderSupportedSignals(item)}</SignalsWrapper>
-          </TextWrapper>
-        </ListItemContent>
+    <>
+      <ListItem>
+        <ListItemHeader style={{ paddingBottom: expand ? 0 : 16 }}>
+          <ListItemContent>
+            <DestinationIconWrapper>
+              <Image src={item.imageUrl} alt='destination' width={20} height={20} />
+            </DestinationIconWrapper>
+            <TextWrapper>
+              <Text size={14}>{item.displayName}</Text>
+              <SignalsWrapper>{renderSupportedSignals(item)}</SignalsWrapper>
+            </TextWrapper>
+          </ListItemContent>
 
-        <ExpandIconContainer>
-          <IconBorder />
-          <ExpandIconWrapper $expand={expand} onClick={() => setExpand(!expand)}>
-            <Image src={'/icons/common/extend-arrow.svg'} width={16} height={16} alt='destination' />
-          </ExpandIconWrapper>
-        </ExpandIconContainer>
-      </ListItemHeader>
+          <IconsContainer>
+            <IconButton variant='tertiary' onClick={() => setDeleteWarning(true)}>
+              <Image src='/icons/common/trash.svg' alt='delete' width={16} height={16} />
+            </IconButton>
+            <Divider orientation='vertical' length='16px' />
+            <IconButton variant='tertiary' $expand={expand} onClick={() => setExpand(!expand)}>
+              <Image src='/icons/common/extend-arrow.svg' alt='show more' width={16} height={16} />
+            </IconButton>
+          </IconsContainer>
+        </ListItemHeader>
 
-      {expand && (
-        <ListItemBody>
-          <Divider margin='0 0 16px 0' />
-          <ConfiguredFields details={item.destinationTypeDetails} />
-        </ListItemBody>
-      )}
-    </ListItem>
+        {expand && (
+          <ListItemBody>
+            <Divider margin='0 0 16px 0' />
+            <ConfiguredFields details={item.destinationTypeDetails} />
+          </ListItemBody>
+        )}
+      </ListItem>
+
+      <DeleteWarning
+        isOpen={deleteWarning}
+        name={item.displayName || item.type}
+        note={
+          isLastItem
+            ? {
+                type: 'warning',
+                title: "You're about to delete the last destination",
+                message: 'This will break your pipeline!',
+              }
+            : undefined
+        }
+        onApprove={() => removeConfiguredDestination(item)}
+        onDeny={() => setDeleteWarning(false)}
+      />
+    </>
   );
-}
+};
 
-const ConfiguredDestinationsList: React.FC<DestinationsListProps> = ({ data }) => {
+export const ConfiguredDestinationsList: React.FC<{ data: IAppState['configuredDestinations'] }> = ({ data }) => {
   return (
     <Container>
-      {data.map((item) => (
-        <ConfiguredDestinationsListItem key={item.displayName} item={item} />
+      {data.map(({ stored }) => (
+        <ConfiguredDestinationsListItem key={stored.displayName} item={stored} isLastItem={data.length === 1} />
       ))}
     </Container>
   );
 };
-
-export { ConfiguredDestinationsList };
