@@ -2,6 +2,7 @@ package common
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -21,7 +22,7 @@ func StartPprofServer(ctx context.Context, logger logr.Logger) error {
 	go func() {
 		defer close(done)
 		defer close(errChan)
-		if err := server.ListenAndServe(); err != nil {
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logger.Error(err, "unable to start pprof server")
 			errChan <- err
 		}
