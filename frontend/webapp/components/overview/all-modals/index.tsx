@@ -1,10 +1,7 @@
 import React from 'react';
 import { useModalStore } from '@/store';
-import { ActionModal } from '../../actions';
 import { OVERVIEW_ENTITY_TYPES } from '@/types';
-import { DestinationModal } from '../../destinations';
-import { RuleModal } from '../../instrumentation-rules';
-import { AddSourceModal } from '../../sources/choose-sources/choose-source-modal';
+import { ActionModal, AddSourceModal, DestinationModal, RuleModal } from '@/containers';
 
 const AllModals = () => {
   const selected = useModalStore(({ currentModal }) => currentModal);

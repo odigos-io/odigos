@@ -17,7 +17,7 @@ const Container = styled.div`
   min-width: 600px;
 `;
 
-export const ToastList: React.FC = () => {
+const ToastList: React.FC = () => {
   const { notifications } = useNotificationStore();
 
   return (
@@ -59,3 +59,5 @@ const Toast: React.FC<Notification> = (props) => {
     />
   );
 };
+
+export default ToastList;
