@@ -274,7 +274,15 @@ func main() {
 		return
 	}
 
-	go common.StartPprofServer(logr.FromSlogHandler(slog.Default().Handler()))
+	ctx, cancel := context.WithCancel(context.Background())
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
+	defer func() {
+		signal.Stop(ch)
+		cancel()
+	}()
+
+	go common.StartPprofServer(ctx, logr.FromSlogHandler(slog.Default().Handler()))
 
 	// Load destinations data
 	err := destinations.Load()
@@ -287,14 +295,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error creating Kubernetes client: %s", err)
 	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
-	defer func() {
-		signal.Stop(ch)
-		cancel()
-	}()
 
 	odigosMetrics := collectormetrics.NewOdigosMetrics()
 	var wg sync.WaitGroup
