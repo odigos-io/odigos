@@ -134,7 +134,7 @@ export const DestinationDrawer: React.FC<Props> = () => {
           />
         </FormContainer>
       ) : (
-        <CardDetails data={cardData} />
+        <CardDetails title='Destination Details' data={cardData} />
       )}
     </OverviewDrawer>
   );
