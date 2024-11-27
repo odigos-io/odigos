@@ -116,7 +116,7 @@ export const RuleDrawer: React.FC<Props> = () => {
           />
         </FormContainer>
       ) : (
-        <CardDetails data={cardData} />
+        <CardDetails title='Instrumentation Rule Details' data={cardData} />
       )}
     </OverviewDrawer>
   );

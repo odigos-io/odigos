@@ -123,13 +123,7 @@ export const DestinationModal: React.FC<AddDestinationModalProps> = ({ isOnboard
         </SideMenuWrapper>
 
         <ModalBody style={{ margin: '32px 24px 0 24px' }}>
-          {/*
-            in other modals we would render this out, but for this case we will use "hidden" instead,
-            this is to preserve the filters-state when going back-and-forth between selections
-          */}
-          <ChooseDestinationBody onSelect={handleSelect} hidden={!!selectedItem} />
-
-          {!!selectedItem && (
+          {!!selectedItem ? (
             <DestinationFormBody
               destination={selectedItem}
               isFormOk={isFormOk}
@@ -138,6 +132,8 @@ export const DestinationModal: React.FC<AddDestinationModalProps> = ({ isOnboard
               dynamicFields={dynamicFields}
               setDynamicFields={setDynamicFields}
             />
+          ) : (
+            <ChooseDestinationBody onSelect={handleSelect} />
           )}
         </ModalBody>
       </Container>
