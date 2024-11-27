@@ -72,13 +72,16 @@ export enum RulesSortType {
 
 export interface InstrumentationRuleSpec {
   ruleId: string;
-  type?: InstrumentationRuleType; // does not come from backend, it's derived during GET
   ruleName: string;
   notes: string;
   disabled: boolean;
   workloads?: PodWorkload[];
   instrumentationLibraries?: InstrumentationLibraryGlobalId[];
   payloadCollection?: PayloadCollection;
+}
+
+export interface InstrumentationRuleSpecMapped extends InstrumentationRuleSpec {
+  type?: InstrumentationRuleType; // does not come from backend, it's derived during GET
 }
 
 // Definition of a Pod Workload type

@@ -1,17 +1,8 @@
 import theme from '@/styles/theme';
-import { Node, Edge } from 'react-flow-renderer';
+import { type Edge, type Node } from '@xyflow/react';
 import { getMainContainerLanguageLogo } from '@/utils/constants/programming-languages';
 import { extractMonitors, formatBytes, getActionIcon, getEntityIcon, getEntityLabel, getHealthStatus, getRuleIcon, getValueForRange } from '@/utils';
-import {
-  OVERVIEW_ENTITY_TYPES,
-  OVERVIEW_NODE_TYPES,
-  STATUSES,
-  type InstrumentationRuleSpec,
-  type ActualDestination,
-  type K8sActualSource,
-  type OverviewMetricsResponse,
-  ActionDataParsed,
-} from '@/types';
+import { OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type OverviewMetricsResponse, type SingleDestinationMetricsResponse, type ComputePlatformMapped } from '@/types';
 
 const createNode = (nodeId: string, nodeType: string, x: number, y: number, data: Record<string, any>, style?: React.CSSProperties): Node => {
   // const [columnType] = nodeId.split('-');
@@ -25,15 +16,7 @@ const createNode = (nodeId: string, nodeType: string, x: number, y: number, data
   };
 };
 
-const createEdge = (
-  edgeId: string,
-  params?: {
-    label?: string;
-    isMultiTarget?: boolean;
-    isError?: boolean;
-    animated?: boolean;
-  },
-): Edge => {
+const createEdge = (edgeId: string, params?: { label?: string; isMultiTarget?: boolean; isError?: boolean; animated?: boolean }): Edge => {
   const { label, isMultiTarget, isError, animated } = params || {};
   const [sourceNodeId, targetNodeId] = edgeId.split('-to-');
 
@@ -48,36 +31,30 @@ const createEdge = (
   };
 };
 
-export const buildNodesAndEdges = ({
-  rules,
-  sources,
-  actions,
-  destinations,
-  metrics,
-  containerWidth,
-  containerHeight,
-  nodeWidth,
-  nodeHeight,
-}: {
-  rules: InstrumentationRuleSpec[];
-  sources: K8sActualSource[];
-  actions: ActionDataParsed[];
-  destinations: ActualDestination[];
+interface Params {
+  computePlatform?: ComputePlatformMapped['computePlatform'];
+  computePlatformFiltered?: ComputePlatformMapped['computePlatform'];
   metrics?: OverviewMetricsResponse;
   containerWidth: number;
   containerHeight: number;
   nodeWidth: number;
   nodeHeight: number;
-}) => {
+}
+
+export const buildNodesAndEdges = ({ computePlatform, computePlatformFiltered, metrics, containerWidth, containerHeight, nodeWidth, nodeHeight }: Params) => {
   const nodes: Node[] = [];
   const edges: Edge[] = [];
 
-  if (!containerWidth) {
-    return {
-      nodes: [],
-      edges: [],
-    };
-  }
+  if (!containerWidth) return { nodes, edges };
+
+  const { instrumentationRules: rules = [], k8sActualSources: sources = [], actions = [], destinations = [] } = computePlatformFiltered || {};
+
+  const nonFilteredLengths = {
+    rules: computePlatform?.instrumentationRules.length || 0,
+    sources: computePlatform?.k8sActualSources.length || 0,
+    actions: computePlatform?.actions.length || 0,
+    destinations: computePlatform?.destinations.length || 0,
+  };
 
   const startX = 24;
   const endX = (containerWidth <= 1500 ? 1500 : containerWidth) - nodeWidth - 40 - startX;
@@ -113,28 +90,28 @@ export const buildNodesAndEdges = ({
       createNode('rule-header', 'header', postions['rules']['x'], 0, {
         icon: getEntityIcon(OVERVIEW_ENTITY_TYPES.RULE),
         title: 'Instrumentation Rules',
-        tagValue: rules.length,
+        tagValue: nonFilteredLengths['rules'],
       }),
     ],
     sources: [
       createNode('source-header', 'header', postions['sources']['x'], 0, {
         icon: getEntityIcon(OVERVIEW_ENTITY_TYPES.SOURCE),
         title: 'Sources',
-        tagValue: sources.length,
+        tagValue: nonFilteredLengths['sources'],
       }),
     ],
     actions: [
       createNode('action-header', 'header', postions['actions']['x'] - (!!actions.length ? 15 : 0), 0, {
         icon: getEntityIcon(OVERVIEW_ENTITY_TYPES.ACTION),
         title: 'Actions',
-        tagValue: actions.length,
+        tagValue: nonFilteredLengths['actions'],
       }),
     ],
     destinations: [
       createNode('destination-header', 'header', postions['destinations']['x'], 0, {
         icon: getEntityIcon(OVERVIEW_ENTITY_TYPES.DESTINATION),
         title: 'Destinations',
-        tagValue: destinations.length,
+        tagValue: nonFilteredLengths['destinations'],
       }),
     ],
   };
@@ -291,7 +268,7 @@ export const buildNodesAndEdges = ({
           createEdge(`source-${sourceIndex}-to-action-${actionIndex}`, {
             animated: false,
             isMultiTarget: false,
-            label: formatBytes(node.data.metric?.throughput),
+            label: formatBytes((node.data.metric as SingleDestinationMetricsResponse)?.throughput),
             isError: node.data.status === STATUSES.UNHEALTHY,
           }),
         );
@@ -320,7 +297,7 @@ export const buildNodesAndEdges = ({
           createEdge(`action-${actionIndex}-to-destination-${destinationIndex}`, {
             animated: false,
             isMultiTarget: true,
-            label: formatBytes(node.data.metric?.throughput),
+            label: formatBytes((node.data.metric as SingleDestinationMetricsResponse)?.throughput),
             isError: node.data.status === STATUSES.UNHEALTHY,
           }),
         );
