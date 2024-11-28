@@ -2,7 +2,7 @@ apiVersion: odigos.io/v1alpha1
 kind: Destination
 metadata:
   name: odigos.io.dest.tempo-123123
-  namespace: odigos-test-ns
+  namespace: odigos-test
 spec:
   data:
     TEMPO_URL: e2e-tests-tempo.traces:4317
