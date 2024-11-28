@@ -29,6 +29,7 @@ export function useActionFormData() {
 
   const resetFormData = () => {
     setFormData({ ...INITIAL });
+    setFormErrors({});
   };
 
   const validateForm = (params?: { withAlert?: boolean; alertTitle?: string }) => {
