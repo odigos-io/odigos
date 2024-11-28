@@ -1,4 +1,4 @@
-import React, { Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react';
+import React, { Dispatch, SetStateAction, useMemo, useState } from 'react';
 import styled from 'styled-components';
 import { SignalUppercase } from '@/utils';
 import { TestConnection } from './test-connection';
@@ -11,6 +11,7 @@ interface Props {
   destination?: DestinationTypeItem;
   formData: DestinationInput;
   formErrors: Record<string, string>;
+  validateForm: () => boolean;
   handleFormChange: (key: keyof DestinationInput | string, val: any) => void;
   dynamicFields: DynamicField[];
   setDynamicFields: Dispatch<SetStateAction<DynamicField[]>>;
@@ -23,17 +24,22 @@ const Container = styled.div`
   padding: 0 4px;
 `;
 
-export function DestinationFormBody({ isUpdate, destination, formData, formErrors, handleFormChange, dynamicFields, setDynamicFields }: Props) {
+const NotesWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+`;
+
+export function DestinationFormBody({ isUpdate, destination, formData, formErrors, validateForm, handleFormChange, dynamicFields, setDynamicFields }: Props) {
   const { supportedSignals, testConnectionSupported, displayName } = destination || {};
-  const isFormOk = useMemo(() => !Object.keys(formErrors).length, [formErrors]);
 
   const [isFormDirty, setIsFormDirty] = useState(false);
-  const [showConnectionError, setShowConnectionError] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'success' | 'error'>();
 
-  // this is to allow test connection when there are default values loaded
-  useEffect(() => {
-    if (isFormOk) setIsFormDirty(true);
-  }, [isFormOk]);
+  const dirtyForm = () => {
+    setIsFormDirty(true);
+    setConnectionStatus(undefined);
+  };
 
   const supportedMonitors = useMemo(() => {
     const { logs, metrics, traces } = supportedSignals || {};
@@ -58,7 +64,7 @@ export function DestinationFormBody({ isUpdate, destination, formData, formError
   }, [formData['exportedSignals']]);
 
   const handleSelectedSignals = (signals: SignalUppercase[]) => {
-    setIsFormDirty(true);
+    dirtyForm();
     handleFormChange('exportedSignals', {
       logs: signals.includes('LOGS'),
       metrics: signals.includes('METRICS'),
@@ -72,30 +78,35 @@ export function DestinationFormBody({ isUpdate, destination, formData, formError
         <>
           <SectionTitle
             title='Create connection'
-            description={`Connect ${displayName} destination with Odigos.`}
+            description={`Connect ${displayName} with Odigos.`}
             actionButton={
               testConnectionSupported && (
                 <TestConnection
                   destination={formData}
-                  disabled={!isFormOk || !isFormDirty}
-                  clearStatus={() => {
-                    setIsFormDirty(false);
-                    setShowConnectionError(false);
-                  }}
+                  disabled={!isFormDirty}
+                  status={connectionStatus}
                   onError={() => {
                     setIsFormDirty(false);
-                    setShowConnectionError(true);
+                    setConnectionStatus('error');
                   }}
+                  onSuccess={() => {
+                    setIsFormDirty(false);
+                    setConnectionStatus('success');
+                  }}
+                  validateForm={validateForm}
                 />
               )
             }
           />
 
-          {testConnectionSupported && showConnectionError ? (
-            <NotificationNote type='error' message='Connection failed. Please check your input and try again.' />
-          ) : testConnectionSupported && !showConnectionError && !!displayName ? (
-            <NotificationNote type='default' message={`Odigos autocompleted ${displayName} connection details.`} />
-          ) : null}
+          {testConnectionSupported && (
+            <NotesWrapper>
+              {connectionStatus === 'error' && <NotificationNote type='error' message='Connection failed. Please check your input and try again.' />}
+              {connectionStatus === 'success' && <NotificationNote type='success' message='Connection succeeded.' />}
+              {!connectionStatus && <NotificationNote type='default' message={`Odigos autocompleted ${displayName} connection details.`} />}
+            </NotesWrapper>
+          )}
+
           <Divider />
         </>
       )}
@@ -115,7 +126,7 @@ export function DestinationFormBody({ isUpdate, destination, formData, formError
           placeholder='Enter destination name'
           value={formData['name']}
           onChange={(e) => {
-            setIsFormDirty(true);
+            dirtyForm();
             handleFormChange('name', e.target.value);
           }}
           errorMessage={formErrors['name']}
@@ -125,7 +136,7 @@ export function DestinationFormBody({ isUpdate, destination, formData, formError
       <DestinationDynamicFields
         fields={dynamicFields}
         onChange={(name: string, value: any) => {
-          setIsFormDirty(true);
+          dirtyForm();
           setDynamicFields((prev) => {
             const payload = [...prev];
             const foundIndex = payload.findIndex((field) => field.name === name);
