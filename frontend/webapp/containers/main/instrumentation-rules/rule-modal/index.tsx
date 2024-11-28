@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react';
-import { CenterThis, ModalBody } from '@/styles';
+import React, { useState } from 'react';
+import { ACTION } from '@/utils';
 import { RuleFormBody } from '../';
+import { CenterThis, ModalBody } from '@/styles';
 import { RULE_OPTIONS, RuleOption } from './rule-options';
 import { useInstrumentationRuleCRUD, useInstrumentationRuleFormData } from '@/hooks';
 import { AutocompleteInput, Divider, FadeLoader, Modal, NavigationButtons, NotificationNote, SectionTitle } from '@/reuseable-components';
@@ -11,15 +12,9 @@ interface Props {
 }
 
 export const RuleModal: React.FC<Props> = ({ isOpen, onClose }) => {
-  const { formData, handleFormChange, resetFormData, validateForm } = useInstrumentationRuleFormData();
+  const { formData, formErrors, handleFormChange, resetFormData, validateForm } = useInstrumentationRuleFormData();
   const { createInstrumentationRule, loading } = useInstrumentationRuleCRUD({ onSuccess: handleClose });
   const [selectedItem, setSelectedItem] = useState<RuleOption | undefined>(RULE_OPTIONS[0]);
-
-  const isFormOk = useMemo(() => !!selectedItem && validateForm(), [selectedItem, formData]);
-
-  const handleSubmit = async () => {
-    createInstrumentationRule(formData);
-  };
 
   function handleClose() {
     resetFormData();
@@ -30,6 +25,15 @@ export const RuleModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const handleSelect = (item?: RuleOption) => {
     resetFormData();
     setSelectedItem(item);
+  };
+
+  const handleSubmit = async () => {
+    const isFormOk = validateForm({ withAlert: true, alertTitle: ACTION.CREATE });
+    if (!isFormOk) return null;
+
+    await createInstrumentationRule(formData);
+
+    handleClose();
   };
 
   return (
@@ -44,7 +48,7 @@ export const RuleModal: React.FC<Props> = ({ isOpen, onClose }) => {
               variant: 'primary',
               label: 'DONE',
               onClick: handleSubmit,
-              disabled: !isFormOk || loading,
+              disabled: !selectedItem || loading,
             },
           ]}
         />
@@ -64,7 +68,7 @@ export const RuleModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 <FadeLoader cssOverride={{ scale: 2 }} />
               </CenterThis>
             ) : (
-              <RuleFormBody rule={selectedItem} formData={formData} handleFormChange={handleFormChange} />
+              <RuleFormBody rule={selectedItem} formData={formData} formErrors={formErrors} handleFormChange={handleFormChange} />
             )}
           </div>
         ) : null}

@@ -1,17 +1,18 @@
 import React, { Fragment } from 'react';
 import styled from 'styled-components';
 import { Text, Status, Tooltip } from '@/reuseable-components';
-import Image from 'next/image';
+import { MonitorsLegend } from '@/components/overview';
+import theme from '@/styles/theme';
 
-type TypeDetail = {
+interface Detail {
   title: string;
   tooltip?: string;
   value: string;
-};
+}
 
-type ConfiguredFieldsProps = {
-  details: TypeDetail[];
-};
+interface Props {
+  details: Detail[];
+}
 
 const ListContainer = styled.div`
   display: flex;
@@ -22,7 +23,7 @@ const ListContainer = styled.div`
 const ListItem = styled.div``;
 
 const ItemTitle = styled(Text)`
-  color: #b8b8b8;
+  color: ${({ theme }) => theme.text.grey};
   font-size: 10px;
   line-height: 16px;
 `;
@@ -33,7 +34,7 @@ const ItemValue = styled(Text)`
   line-height: 18px;
 `;
 
-export const ConfiguredFields: React.FC<ConfiguredFieldsProps> = ({ details }) => {
+export const ConfiguredFields: React.FC<Props> = ({ details }) => {
   const parseValue = (value: string) => {
     let str = '';
 
@@ -44,11 +45,8 @@ export const ConfiguredFields: React.FC<ConfiguredFieldsProps> = ({ details }) =
       if (Array.isArray(parsed)) {
         str = parsed
           .map((item) => {
-            if (typeof item === 'object' && item !== null) {
-              return `${item.key}: ${item.value}`;
-            }
-
-            return item;
+            if (typeof item === 'object' && item !== null) return `${item.key}: ${item.value}`;
+            else return item;
           })
           .join(', ');
       }
@@ -78,6 +76,17 @@ export const ConfiguredFields: React.FC<ConfiguredFieldsProps> = ({ details }) =
     ));
   };
 
+  const renderValue = (title: string, value: string) => {
+    switch (title) {
+      case 'Status':
+        return <Status isActive={value == 'true'} withIcon withBorder withSmaller withSpecialFont />;
+      case 'Monitors':
+        return <MonitorsLegend color={theme.colors.text} signals={value.split(', ')} />;
+      default:
+        return <ItemValue>{parseValue(value)}</ItemValue>;
+    }
+  };
+
   return (
     <ListContainer>
       {details.map((detail, index) => (
@@ -85,8 +94,7 @@ export const ConfiguredFields: React.FC<ConfiguredFieldsProps> = ({ details }) =
           <Tooltip text={detail.tooltip || ''} withIcon>
             <ItemTitle>{detail.title}</ItemTitle>
           </Tooltip>
-
-          {detail.title === 'Status' ? <Status isActive={detail.value == 'true'} withIcon withBorder withSmaller withSpecialFont /> : <ItemValue>{parseValue(detail.value)}</ItemValue>}
+          {renderValue(detail.title, detail.value)}
         </ListItem>
       ))}
     </ListContainer>

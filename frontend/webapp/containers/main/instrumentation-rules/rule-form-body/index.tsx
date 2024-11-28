@@ -9,6 +9,7 @@ interface Props {
   isUpdate?: boolean;
   rule: RuleOption;
   formData: InstrumentationRuleInput;
+  formErrors: Record<string, string>;
   handleFormChange: (key: keyof InstrumentationRuleInput, val: any) => void;
 }
 
@@ -23,7 +24,7 @@ const FieldTitle = styled(Text)`
   margin-bottom: 12px;
 `;
 
-export const RuleFormBody: React.FC<Props> = ({ isUpdate, rule, formData, handleFormChange }) => {
+export const RuleFormBody: React.FC<Props> = ({ isUpdate, rule, formData, formErrors, handleFormChange }) => {
   return (
     <Container>
       {isUpdate && (
@@ -35,11 +36,19 @@ export const RuleFormBody: React.FC<Props> = ({ isUpdate, rule, formData, handle
 
       {!isUpdate && <SectionTitle title='' description={rule.docsDescription as string} actionButton={<DocsButton endpoint={rule.docsEndpoint} />} />}
 
-      {!isUpdate && <Input title='Rule name' placeholder='Use a name that describes the rule' value={formData.ruleName} onChange={({ target: { value } }) => handleFormChange('ruleName', value)} />}
+      {!isUpdate && (
+        <Input
+          title='Rule name'
+          placeholder='Use a name that describes the rule'
+          value={formData['ruleName']}
+          onChange={({ target: { value } }) => handleFormChange('ruleName', value)}
+          errorMessage={formErrors['ruleName']}
+        />
+      )}
 
-      <RuleCustomFields ruleType={rule.type} value={formData} setValue={(key, val) => handleFormChange(key, val)} />
+      <RuleCustomFields ruleType={rule.type} value={formData} setValue={(key, val) => handleFormChange(key, val)} formErrors={formErrors} />
 
-      <TextArea title='Notes' value={formData.notes} onChange={({ target: { value } }) => handleFormChange('notes', value)} />
+      <TextArea title='Notes' value={formData['notes']} onChange={({ target: { value } }) => handleFormChange('notes', value)} errorMessage={formErrors['notes']} />
     </Container>
   );
 };

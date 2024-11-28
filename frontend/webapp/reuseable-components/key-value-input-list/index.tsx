@@ -1,10 +1,7 @@
-import Image from 'next/image';
-import { Text } from '../text';
-import { Input } from '../input';
-import { Button } from '../button';
-import styled from 'styled-components';
-import { FieldLabel } from '../field-label';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import Image from 'next/image';
+import styled, { css } from 'styled-components';
+import { Button, FieldError, FieldLabel, Input, Text } from '@/reuseable-components';
 
 type Row = {
   key: string;
@@ -18,6 +15,7 @@ interface KeyValueInputsListProps {
   title?: string;
   tooltip?: string;
   required?: boolean;
+  errorMessage?: string;
 }
 
 const Container = styled.div`
@@ -26,11 +24,16 @@ const Container = styled.div`
   width: 100%;
 `;
 
-const Row = styled.div`
+const ListContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const RowWrapper = styled.div`
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-bottom: 12px;
 `;
 
 const DeleteButton = styled.button`
@@ -65,7 +68,7 @@ const INITIAL_ROW: Row = {
   value: '',
 };
 
-export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({ initialKeyValuePairs = [], value, onChange, title, tooltip, required }) => {
+export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({ initialKeyValuePairs = [], value, onChange, title, tooltip, required, errorMessage }) => {
   const [rows, setRows] = useState<Row[]>(value || initialKeyValuePairs);
 
   useEffect(() => {
@@ -108,25 +111,41 @@ export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({ initialK
   };
 
   // Check if any key or value field is empty
-  const isAddButtonDisabled = rows.some((pair) => pair.key.trim() === '' || pair.value.trim() === '');
+  const isAddButtonDisabled = rows.some(({ key, value }) => key.trim() === '' || value.trim() === '');
   const isDelButtonDisabled = rows.length <= 1;
 
   return (
     <Container>
       <FieldLabel title={title} required={required} tooltip={tooltip} />
 
-      {rows.map((pair, idx) => (
-        <Row key={`key-value-input-list-${idx}`}>
-          <Input placeholder='Attribute name' value={pair.key} onChange={(e) => handleChange('key', e.target.value, idx)} autoFocus={rows.length > 1 && idx === rows.length - 1} />
-          <Image src='/icons/common/arrow-right.svg' alt='Arrow' width={16} height={16} />
-          <Input placeholder='Attribute value' value={pair.value} onChange={(e) => handleChange('value', e.target.value, idx)} />
-          <DeleteButton disabled={isDelButtonDisabled} onClick={() => handleDeleteRow(idx)}>
-            <Image src='/icons/common/trash.svg' alt='Delete' width={16} height={16} />
-          </DeleteButton>
-        </Row>
-      ))}
+      <ListContainer>
+        {rows.map(({ key, value }, idx) => (
+          <RowWrapper key={`key-value-input-list-${idx}`}>
+            <Input
+              placeholder='Attribute name'
+              value={key}
+              onChange={(e) => handleChange('key', e.target.value, idx)}
+              hasError={!!errorMessage && (!required || (required && !key))}
+              autoFocus={!value && rows.length > 1 && idx === rows.length - 1}
+            />
+            <Image src='/icons/common/arrow-right.svg' alt='Arrow' width={16} height={16} />
+            <Input
+              placeholder='Attribute value'
+              value={value}
+              onChange={(e) => handleChange('value', e.target.value, idx)}
+              hasError={!!errorMessage && (!required || (required && !value))}
+              autoFocus={false}
+            />
+            <DeleteButton disabled={isDelButtonDisabled} onClick={() => handleDeleteRow(idx)}>
+              <Image src='/icons/common/trash.svg' alt='Delete' width={16} height={16} />
+            </DeleteButton>
+          </RowWrapper>
+        ))}
+      </ListContainer>
 
-      <AddButton disabled={isAddButtonDisabled} variant={'tertiary'} onClick={handleAddRow}>
+      {!!errorMessage && <FieldError>{errorMessage}</FieldError>}
+
+      <AddButton disabled={isAddButtonDisabled} variant='tertiary' onClick={handleAddRow}>
         <Image src='/icons/common/plus.svg' alt='Add' width={16} height={16} />
         <ButtonText>ADD ATTRIBUTE</ButtonText>
       </AddButton>
