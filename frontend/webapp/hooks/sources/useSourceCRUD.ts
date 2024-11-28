@@ -1,19 +1,18 @@
 import { useNotify } from '../notification';
 import { useMutation } from '@apollo/client';
-import { useDrawerStore, useNotificationStore } from '@/store';
+import { useNotificationStore } from '@/store';
 import { ACTION, getSseTargetFromId, NOTIFICATION } from '@/utils';
 import { PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import { useComputePlatform, useNamespace } from '../compute-platform';
 import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type NotificationType, type PatchSourceRequestInput, type K8sActualSource } from '@/types';
 
 interface Params {
-  onSuccess?: () => void;
-  onError?: () => void;
+  onSuccess?: (type: string) => void;
+  onError?: (type: string) => void;
 }
 
 export const useSourceCRUD = (params?: Params) => {
   const removeNotifications = useNotificationStore((store) => store.removeNotifications);
-  const { setSelectedItem: setDrawerItem } = useDrawerStore((store) => store);
   const { data, startPolling } = useComputePlatform();
   const { persistNamespace } = useNamespace();
   const notify = useNotify();
@@ -30,14 +29,13 @@ export const useSourceCRUD = (params?: Params) => {
 
   const handleError = (title: string, message: string, id?: WorkloadId) => {
     notifyUser(NOTIFICATION.ERROR, title, message, id);
-    params?.onError?.();
+    params?.onError?.(title);
   };
 
   const handleComplete = (title: string, message: string, id?: WorkloadId) => {
     notifyUser(NOTIFICATION.SUCCESS, title, message, id);
-    setDrawerItem(null);
     startPolling();
-    params?.onSuccess?.();
+    params?.onSuccess?.(title);
   };
 
   const [createOrDeleteSources, cdState] = useMutation<{ persistK8sSources: boolean }>(PERSIST_SOURCE, {

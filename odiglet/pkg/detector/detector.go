@@ -2,7 +2,6 @@ package detector
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"sync"
@@ -16,39 +15,29 @@ import (
 
 type ProcessEvent = detector.ProcessEvent
 
-type Detector struct {
-	detector *detector.Detector
-	wg       sync.WaitGroup
-	runError error
-}
-
-func StartRuntimeDetector(ctx context.Context, logger logr.Logger, events chan ProcessEvent) (*Detector, error) {
+func StartRuntimeDetector(ctx context.Context, logger logr.Logger, events chan ProcessEvent) error {
 	detector, err := newDetector(ctx, logger, events)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create runtime detector: %w", err)
+		return fmt.Errorf("failed to create runtime detector: %w", err)
 	}
 
-	d := &Detector{detector: detector}
+	var wg sync.WaitGroup
+	var runError error
 
-	d.wg.Add(1)
+	wg.Add(1)
 	go func() {
-		defer d.wg.Done()
+		defer wg.Done()
 		readProcEventsLoop(logger, events)
 	}()
 
-	d.wg.Add(1)
+	wg.Add(1)
 	go func() {
-		defer d.wg.Done()
-		d.runError = detector.Run(ctx)
+		defer wg.Done()
+		runError = detector.Run(ctx)
 	}()
 
-	return d, nil
-}
-
-func (d *Detector) Stop() error {
-	err := d.detector.Stop()
-	d.wg.Wait()
-	return errors.Join(d.runError, err)
+	wg.Wait()
+	return runError
 }
 
 func newDetector(ctx context.Context, logger logr.Logger, events chan ProcessEvent) (*detector.Detector, error) {

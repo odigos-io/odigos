@@ -26,7 +26,7 @@ const SkeletonThumbnail = styled.div`
   width: 50px;
   height: 50px;
   border-radius: 8px;
-  background: ${({ theme }) => `linear-gradient(90deg, ${theme.colors.primary} 25%, ${theme.colors.primary} 50%, ${theme.colors.dark_grey} 75%)`};
+  background: ${({ theme }) => `linear-gradient(90deg, ${theme.colors.primary} 25%, ${theme.colors.primary} 50%, ${theme.colors.darker_grey} 75%)`};
   background-size: 200% 100%;
   animation: ${shimmer} 10s infinite linear;
 `;
@@ -38,7 +38,7 @@ const SkeletonText = styled.div`
 const SkeletonLine = styled.div<{ $width: string }>`
   height: 16px;
   margin-bottom: 0.5rem;
-  background: ${({ theme }) => `linear-gradient(90deg, ${theme.colors.primary} 25%, ${theme.colors.primary} 50%, ${theme.colors.dark_grey} 75%)`};
+  background: ${({ theme }) => `linear-gradient(90deg, ${theme.colors.primary} 25%, ${theme.colors.primary} 50%, ${theme.colors.darker_grey} 75%)`};
   background-size: 200% 100%;
   animation: ${shimmer} 1.5s infinite linear;
   width: ${({ $width }) => $width};

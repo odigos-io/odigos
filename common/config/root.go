@@ -7,6 +7,7 @@ import (
 
 	"github.com/goccy/go-yaml"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 )
 
 const (
@@ -151,6 +152,13 @@ func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {
 							// setting it to a large value to avoid dropping batches.
 							"max_recv_msg_size_mib": 128,
 							"endpoint":              "0.0.0.0:4317",
+							// The Node Collector opens a gRPC stream to send data. This ensures that the Node Collector establishes a new connection when the Gateway scales up to include additional instances.
+							"keepalive": GenericMap{
+								"server_parameters": GenericMap{
+									"max_connection_age":       consts.GatewayMaxConnectionAge,
+									"max_connection_age_grace": consts.GatewayMaxConnectionAgeGrace,
+								},
+							},
 						},
 						// Node collectors send in gRPC, so this is probably not needed
 						"http": GenericMap{
@@ -175,12 +183,13 @@ func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {
 				"health_check": GenericMap{
 					"endpoint": "0.0.0.0:13133",
 				},
+				"pprof": GenericMap{},
 			},
 			Exporters:  map[string]interface{}{},
 			Connectors: map[string]interface{}{},
 			Service: Service{
 				Pipelines:  map[string]Pipeline{},
-				Extensions: []string{"health_check"},
+				Extensions: []string{"health_check", "pprof"},
 			},
 		},
 		[]string{memoryLimiterProcessorName, "resource/odigos-version"}

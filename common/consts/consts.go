@@ -17,6 +17,10 @@ const (
 	InstrumentationDisabled      = "disabled"
 	OdigosReportedNameAnnotation = "odigos.io/reported-name"
 
+	// GatewayMaxConnectionAge and GatewayMaxConnectionAgeGrace are the default values for the gateway collector.
+	GatewayMaxConnectionAge      = "15s"
+	GatewayMaxConnectionAgeGrace = "2s"
+
 	// Used to store the original value of the environment variable in the pod manifest.
 	// This is used to restore the original value when an instrumentation is removed
 	// or odigos is uninstalled.

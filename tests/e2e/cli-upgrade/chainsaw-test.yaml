@@ -22,7 +22,7 @@ spec:
                 --version 1.10.1
               fi
         - assert:
-            file: assert-tempo-running.yaml
+            file: ../../common/assert/tempo-running.yaml
     - name: Wait for destination to be ready
       try:
         - script:
@@ -67,10 +67,10 @@ spec:
               # cleanup any existing installation of odigos the might be left over from previous runs while developing
               ./odigos uninstall --yes
               # Run the Odigos CLI installation
-              ./odigos install --namespace odigos-test-cli-upgrade
+              ./odigos install --namespace odigos-test
             timeout: 120s # longer timeout since the images are being pulled from dockerhub
         - assert:
-            file: assert-odigos-installed.yaml
+            file: ../../common/assert/odigos-installed.yaml
     - name: Install Demo App
       try:
         - script:
@@ -87,21 +87,30 @@ spec:
               kind load docker-image keyval/odigos-demo-inventory:v0.1
               kind load docker-image keyval/odigos-demo-frontend:v0.2
         - apply:
-            file: 02-install-simple-demo.yaml
+            file: ../../common/apply/install-simple-demo.yaml
         - assert:
-            file: assert-apps-installed.yaml
-    - name: Detect Languages
+            file: ../../common/assert/simple-demo-installed.yaml
+    - name: Instrument Namespace
       try:
         - apply:
-            file: 03-instrument-ns.yaml
+            file: ../../common/apply/instrument-default-ns.yaml
+    - name: Assert Runtime Detected
+      try:
         - assert:
-            file: assert-runtime-detected.yaml
+            timeout: 2m
+            file: ../../common/assert/simple-demo-runtime-detected.yaml
     - name: Add Destination
       try:
         - apply:
-            file: 04-add-destination.yaml
+            file: ../../common/apply/add-tempo-traces-destination.yaml
+    - name: Odigos pipeline ready
+      try:
         - assert:
-            file: assert-instrumented-and-pipeline.yaml
+            file:  ../../common/assert/pipeline-ready.yaml
+    - name: Simple-demo instrumented after destination added
+      try:
+        - assert:
+            file: ../../common/assert/simple-demo-instrumented.yaml
     - name: Upgrade to HEAD version with the current compiled cli
       try:
         - script:
@@ -109,23 +118,28 @@ spec:
             timeout: 60s
         - assert:
             file: assert-odigos-upgraded.yaml
+    - name: Odigos pipeline ready after upgrade
+      try:
+        - assert:
+            file:  ../../common/assert/pipeline-ready.yaml
+    - name: Simple-demo instrumented after upgrade
+      try:
+        - assert:
+            file: ../../common/assert/simple-demo-instrumented.yaml
     - name: Generate Traffic
       try:
         - script:
             timeout: 300s
             content: |
-              # Make sure that odigos components are ready
-              sleep 20
-
               # Apply the job
-              kubectl apply -f 05-generate-traffic.yaml
+              kubectl apply -f ../../common/apply/generate-traffic-job.yaml
 
               # Wait for the job to complete
-              job_name=$(kubectl get -f 05-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
+              job_name=$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
               kubectl wait --for=condition=complete job/$job_name
 
               # Delete the job
-              kubectl delete -f 05-generate-traffic.yaml      
+              kubectl delete -f ../../common/apply/generate-traffic-job.yaml      
 
               while true; do
                 # wait for traces to be available
@@ -150,7 +164,7 @@ spec:
       catch:
         - podLogs:
             name: odiglet
-            namespace: odigos-test-cli-upgrade
+            namespace: odigos-test
     - name: Verify Trace - Resource Attributes
       try:
         - script:
@@ -159,7 +173,7 @@ spec:
       catch:
         - podLogs:
             name: odiglet
-            namespace: odigos-test-cli-upgrade
+            namespace: odigos-test
     - name: Verify Trace - Span Attributes
       try:
         - script:
@@ -169,4 +183,4 @@ spec:
       catch:
         - podLogs:
             name: odiglet
-            namespace: odigos-test-cli-upgrade
+            namespace: odigos-test

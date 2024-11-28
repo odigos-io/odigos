@@ -2,3 +2,25 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Kode+Mono:wght@100;200;300;400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;700&display=swap');
+
+* {
+  scrollbar-color: black transparent;
+  scrollbar-width: thin;
+}
+
+/*
+  The input styles below are to override the browser ":-webkit-autofill" default style declarations.
+  The issue is when someone autocompletes an input field, the browser will apply its own styles (and the browser applies "!important" preventing direct overrides).
+  With the following, we're able to delay the browser styles to be applied for 50000s (13.8 hours), so the user will not see the browser styles applied.
+*/
+
+input {
+  all: unset;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  transition: all 50000s ease-in-out 0s;
+}
