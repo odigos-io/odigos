@@ -24,7 +24,6 @@ const Container = styled.div`
   transform: translate(-50%, -50%);
   z-index: 1000;
   width: fit-content;
-  max-height: 84vh;
   background: ${({ theme }) => theme.colors.translucent_bg};
   border: ${({ theme }) => `1px solid ${theme.colors.border}`};
   border-radius: 40px;
