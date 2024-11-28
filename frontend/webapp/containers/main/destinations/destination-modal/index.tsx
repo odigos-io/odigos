@@ -134,8 +134,9 @@ export const DestinationModal: React.FC<AddDestinationModalProps> = ({ isOnboard
           {!!selectedItem && (
             <DestinationFormBody
               destination={selectedItem}
-              formErrors={formErrors}
               formData={formData}
+              formErrors={formErrors}
+              validateForm={validateForm}
               handleFormChange={handleFormChange}
               dynamicFields={dynamicFields}
               setDynamicFields={setDynamicFields}
