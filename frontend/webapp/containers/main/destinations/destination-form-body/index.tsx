@@ -1,4 +1,4 @@
-import React, { Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react';
+import React, { Dispatch, SetStateAction, useMemo, useState } from 'react';
 import styled from 'styled-components';
 import { SignalUppercase } from '@/utils';
 import { TestConnection } from './test-connection';
@@ -32,15 +32,14 @@ const NotesWrapper = styled.div`
 
 export function DestinationFormBody({ isUpdate, destination, formData, formErrors, validateForm, handleFormChange, dynamicFields, setDynamicFields }: Props) {
   const { supportedSignals, testConnectionSupported, displayName } = destination || {};
-  const isFormOk = useMemo(() => !Object.keys(formErrors).length, [formErrors]);
 
   const [isFormDirty, setIsFormDirty] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'success' | 'error'>();
 
-  // this is to allow test connection when there are default values loaded
-  useEffect(() => {
-    if (isFormOk) setIsFormDirty(true);
-  }, [isFormOk]);
+  const dirtyForm = () => {
+    setIsFormDirty(true);
+    setConnectionStatus(undefined);
+  };
 
   const supportedMonitors = useMemo(() => {
     const { logs, metrics, traces } = supportedSignals || {};
@@ -65,7 +64,7 @@ export function DestinationFormBody({ isUpdate, destination, formData, formError
   }, [formData['exportedSignals']]);
 
   const handleSelectedSignals = (signals: SignalUppercase[]) => {
-    setIsFormDirty(true);
+    dirtyForm();
     handleFormChange('exportedSignals', {
       logs: signals.includes('LOGS'),
       metrics: signals.includes('METRICS'),
@@ -85,10 +84,7 @@ export function DestinationFormBody({ isUpdate, destination, formData, formError
                 <TestConnection
                   destination={formData}
                   disabled={!isFormDirty}
-                  validateForm={validateForm}
-                  clearStatus={() => {
-                    setConnectionStatus(undefined);
-                  }}
+                  status={connectionStatus}
                   onError={() => {
                     setIsFormDirty(false);
                     setConnectionStatus('error');
@@ -97,6 +93,7 @@ export function DestinationFormBody({ isUpdate, destination, formData, formError
                     setIsFormDirty(false);
                     setConnectionStatus('success');
                   }}
+                  validateForm={validateForm}
                 />
               )
             }
@@ -106,7 +103,7 @@ export function DestinationFormBody({ isUpdate, destination, formData, formError
             <NotesWrapper>
               {connectionStatus === 'error' && <NotificationNote type='error' message='Connection failed. Please check your input and try again.' />}
               {connectionStatus === 'success' && <NotificationNote type='success' message='Connection succeeded.' />}
-              {<NotificationNote type='default' message={`Odigos autocompleted ${displayName} connection details.`} />}
+              {!connectionStatus && <NotificationNote type='default' message={`Odigos autocompleted ${displayName} connection details.`} />}
             </NotesWrapper>
           )}
 
@@ -129,7 +126,7 @@ export function DestinationFormBody({ isUpdate, destination, formData, formError
           placeholder='Enter destination name'
           value={formData['name']}
           onChange={(e) => {
-            setIsFormDirty(true);
+            dirtyForm();
             handleFormChange('name', e.target.value);
           }}
           errorMessage={formErrors['name']}
@@ -139,7 +136,7 @@ export function DestinationFormBody({ isUpdate, destination, formData, formError
       <DestinationDynamicFields
         fields={dynamicFields}
         onChange={(name: string, value: any) => {
-          setIsFormDirty(true);
+          dirtyForm();
           setDynamicFields((prev) => {
             const payload = [...prev];
             const foundIndex = payload.findIndex((field) => field.name === name);

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect } from 'react';
 import Image from 'next/image';
 import theme from '@/styles/theme';
 import { getStatusIcon } from '@/utils';
@@ -12,10 +12,10 @@ type Status = 'success' | 'error';
 interface Props {
   destination: DestinationInput;
   disabled: boolean;
-  validateForm: () => boolean;
+  status?: Status;
   onError: () => void;
   onSuccess: () => void;
-  clearStatus: () => void;
+  validateForm: () => boolean;
 }
 
 const ActionButton = styled(Button)<{ $status?: Status }>`
@@ -35,32 +35,20 @@ const ActionButton = styled(Button)<{ $status?: Status }>`
           background-color: ${theme.colors.error};
         `
       : css`
-          // border-color: transparent;
           background-color: transparent;
         `}
 `;
 
-export const TestConnection: React.FC<Props> = ({ destination, disabled, validateForm, onError, onSuccess, clearStatus }) => {
+export const TestConnection: React.FC<Props> = ({ destination, disabled, status, onError, onSuccess, validateForm }) => {
   const { testConnection, loading, data } = useTestConnection();
 
   useEffect(() => {
-    clearStatus();
-
     if (data) {
       const { succeeded } = data.testConnectionForDestination;
 
       if (succeeded) onSuccess();
       else onError();
     }
-  }, [data]);
-
-  const status: Status | undefined = useMemo(() => {
-    if (!data) return undefined;
-
-    const { succeeded } = data.testConnectionForDestination;
-
-    if (succeeded) return 'success';
-    else return 'error';
   }, [data]);
 
   const onClick = async () => {
