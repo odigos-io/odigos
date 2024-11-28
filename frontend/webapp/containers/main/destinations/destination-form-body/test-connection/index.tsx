@@ -1,53 +1,79 @@
 import React, { useEffect, useMemo } from 'react';
 import Image from 'next/image';
-import styled from 'styled-components';
+import theme from '@/styles/theme';
 import { getStatusIcon } from '@/utils';
 import { useTestConnection } from '@/hooks';
 import type { DestinationInput } from '@/types';
+import styled, { css } from 'styled-components';
 import { Button, FadeLoader, Text } from '@/reuseable-components';
 
-interface TestConnectionProps {
+type Status = 'success' | 'error';
+
+interface Props {
   destination: DestinationInput;
   disabled: boolean;
-  clearStatus: () => void;
+  validateForm: () => boolean;
   onError: () => void;
+  onSuccess: () => void;
+  clearStatus: () => void;
 }
 
-const ActionButton = styled(Button)<{ $success?: boolean }>`
+const ActionButton = styled(Button)<{ $status?: Status }>`
   display: flex;
   align-items: center;
   gap: 8px;
-  background-color: ${({ $success }) => ($success ? 'rgba(129, 175, 101, 0.16)' : 'transparent')};
+
+  ${({ $status, theme }) =>
+    $status === 'success'
+      ? css`
+          border-color: transparent;
+          background-color: ${theme.colors.success};
+        `
+      : $status === 'error'
+      ? css`
+          border-color: transparent;
+          background-color: ${theme.colors.error};
+        `
+      : css`
+          // border-color: transparent;
+          background-color: transparent;
+        `}
 `;
 
-const ActionButtonText = styled(Text)<{ $success?: boolean }>`
-  font-family: ${({ theme }) => theme.font_family.secondary};
-  font-weight: 500;
-  text-decoration: underline;
-  text-transform: uppercase;
-  font-size: 14px;
-  line-height: 157.143%;
-  color: ${({ theme, $success }) => ($success ? theme.text.success : theme.colors.white)};
-`;
-
-export const TestConnection: React.FC<TestConnectionProps> = ({ destination, disabled, clearStatus, onError }) => {
+export const TestConnection: React.FC<Props> = ({ destination, disabled, validateForm, onError, onSuccess, clearStatus }) => {
   const { testConnection, loading, data } = useTestConnection();
-  const success = useMemo(() => data?.testConnectionForDestination.succeeded || false, [data]);
 
   useEffect(() => {
+    clearStatus();
+
     if (data) {
-      clearStatus();
-      if (!success) onError && onError();
+      const { succeeded } = data.testConnectionForDestination;
+
+      if (succeeded) onSuccess();
+      else onError();
     }
-  }, [data, success]);
+  }, [data]);
+
+  const status: Status | undefined = useMemo(() => {
+    if (!data) return undefined;
+
+    const { succeeded } = data.testConnectionForDestination;
+
+    if (succeeded) return 'success';
+    else return 'error';
+  }, [data]);
+
+  const onClick = async () => {
+    if (validateForm()) await testConnection(destination);
+  };
 
   return (
-    <ActionButton variant='secondary' disabled={disabled} onClick={() => testConnection(destination)} $success={success}>
-      {loading ? <FadeLoader /> : success ? <Image alt='checkmark' src={getStatusIcon('success')} width={16} height={16} /> : null}
+    <ActionButton $status={status} variant='secondary' disabled={disabled} onClick={onClick}>
+      {loading ? <FadeLoader /> : !!status ? <Image src={getStatusIcon(status)} alt='status' width={16} height={16} /> : null}
 
-      <ActionButtonText size={14} $success={success}>
-        {loading ? 'Checking' : success ? 'Connection OK' : 'Test Connection'}
-      </ActionButtonText>
+      <Text family='secondary' decoration='underline' size={14} color={!!status ? theme.text[status] : undefined}>
+        {loading ? 'Checking' : status === 'success' ? 'Connection OK' : status === 'error' ? 'Connection Failed' : 'Test Connection'}
+      </Text>
     </ActionButton>
   );
 };

@@ -121,8 +121,9 @@ export const DestinationDrawer: React.FC<Props> = () => {
           <DestinationFormBody
             isUpdate
             destination={thisDestination}
-            formErrors={formErrors}
             formData={formData}
+            formErrors={formErrors}
+            validateForm={validateForm}
             handleFormChange={(...params) => {
               setIsFormDirty(true);
               handleFormChange(...params);
