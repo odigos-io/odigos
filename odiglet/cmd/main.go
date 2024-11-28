@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"sync"
 
@@ -48,37 +49,33 @@ type odiglet struct {
 	ebpfDirectors ebpf.DirectorsMap
 }
 
-func newOdiglet() *odiglet {
+func newOdiglet() (*odiglet, error) {
 	// Init Kubernetes API client
 	cfg, err := rest.InClusterConfig()
 	if err != nil {
-		log.Logger.Error(err, "Failed to init Kubernetes API client")
-		os.Exit(-1)
+		return nil, fmt.Errorf("Failed to create in-cluster config for Kubernetes client %w", err)
 	}
+
 	clientset, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
-		log.Logger.Error(err, "Failed to init Kubernetes API client")
-		os.Exit(-1)
+		return nil, fmt.Errorf("Failed to create Kubernetes client %w", err)
 	}
 
 	mgr, err := kube.CreateManager()
 	if err != nil {
-		log.Logger.Error(err, "Failed to create controller-runtime manager")
-		os.Exit(-1)
+		return nil, fmt.Errorf("Failed to create controller-runtime manager %w", err)
 	}
 
 	ctx := signals.SetupSignalHandler()
 
 	ebpfDirectors, err := initEbpf(ctx, mgr.GetClient(), mgr.GetScheme())
 	if err != nil {
-		log.Logger.Error(err, "Failed to init eBPF director")
-		os.Exit(-1)
+		return nil, fmt.Errorf("Failed to init eBPF director %w", err)
 	}
 
 	err = kube.SetupWithManager(mgr, ebpfDirectors, clientset)
 	if err != nil {
-		log.Logger.Error(err, "Failed to setup controller-runtime manager")
-		os.Exit(-1)
+		return nil, fmt.Errorf("Failed to setup controller-runtime manager %w", err)
 	}
 
 	return &odiglet{
@@ -86,7 +83,7 @@ func newOdiglet() *odiglet {
 		mgr:           mgr,
 		ctx:           ctx,
 		ebpfDirectors: ebpfDirectors,
-	}
+	}, nil
 }
 
 func (o *odiglet) run() {
@@ -96,8 +93,12 @@ func (o *odiglet) run() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		common.StartPprofServer(o.ctx, log.Logger)
-		log.Logger.V(0).Info("Pprof server exited")
+		err := common.StartPprofServer(o.ctx, log.Logger)
+		if err != nil {
+			log.Logger.Error(err, "Failed to start pprof server")
+		} else {
+			log.Logger.V(0).Info("Pprof server exited")
+		}
 	}()
 
 	// Start device manager
@@ -170,7 +171,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	o := newOdiglet()
+	o, err := newOdiglet()
+	if err != nil {
+		log.Logger.Error(err, "Failed to initialize odiglet")
+		os.Exit(1)
+	}
 	o.run()
 
 	log.Logger.V(0).Info("odiglet exiting")
