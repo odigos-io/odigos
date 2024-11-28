@@ -2,7 +2,7 @@ apiVersion: odigos.io/v1alpha1
 kind: CollectorsGroup
 metadata:
   name: odigos-data-collection
-  namespace: odigos-test-ns
+  namespace: odigos-test
 spec:
   role: NODE_COLLECTOR
 status:
@@ -12,7 +12,7 @@ apiVersion: odigos.io/v1alpha1
 kind: CollectorsGroup
 metadata:
   name: odigos-gateway
-  namespace: odigos-test-ns
+  namespace: odigos-test
 spec:
   role: CLUSTER_GATEWAY
 status:
@@ -24,7 +24,7 @@ metadata:
   labels:
     odigos.io/collector-role: "CLUSTER_GATEWAY"
   name: odigos-gateway
-  namespace: odigos-test-ns
+  namespace: odigos-test
   ownerReferences:
     - apiVersion: odigos.io/v1alpha1
       blockOwnerDeletion: true
@@ -79,7 +79,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: odigos-gateway
-  namespace: odigos-test-ns
+  namespace: odigos-test
   ownerReferences:
     - apiVersion: odigos.io/v1alpha1
       blockOwnerDeletion: true
@@ -92,7 +92,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: odigos-data-collection
-  namespace: odigos-test-ns
+  namespace: odigos-test
   ownerReferences:
     - apiVersion: odigos.io/v1alpha1
       blockOwnerDeletion: true
@@ -107,7 +107,7 @@ metadata:
   labels:
     odigos.io/collector-role: "NODE_COLLECTOR"
   name: odigos-data-collection
-  namespace: odigos-test-ns
+  namespace: odigos-test
   ownerReferences:
     - apiVersion: odigos.io/v1alpha1
       blockOwnerDeletion: true
@@ -179,171 +179,3 @@ spec:
 status:
   numberAvailable: 1
   numberReady: 1
----
-apiVersion: v1
-kind: Pod
-metadata:
-  namespace: default
-  labels:
-    app: frontend
-spec:
-  containers:
-    - name: frontend
-      resources:
-        limits:
-          instrumentation.odigos.io/java-native-community: "1"
-        requests:
-          instrumentation.odigos.io/java-native-community: "1"
-status:
-  containerStatuses:
-    - name: frontend
-      ready: true
-      restartCount: 0
-      started: true
-  phase: Running
----
-apiVersion: v1
-kind: Pod
-metadata:
-  namespace: default
-  labels:
-    app: coupon
-spec:
-  containers:
-    - name: coupon
-      resources:
-        limits:
-          instrumentation.odigos.io/javascript-native-community: "1"
-        requests:
-          instrumentation.odigos.io/javascript-native-community: "1"
-status:
-  containerStatuses:
-    - name: coupon
-      ready: true
-      restartCount: 0
-      started: true
-  phase: Running
----
-apiVersion: v1
-kind: Pod
-metadata:
-  namespace: default
-  labels:
-    app: inventory
-spec:
-  containers:
-    - name: inventory
-      resources:
-        limits:
-          instrumentation.odigos.io/python-native-community: "1"
-        requests:
-          instrumentation.odigos.io/python-native-community: "1"
-status:
-  containerStatuses:
-    - name: inventory
-      ready: true
-      restartCount: 0
-      started: true
-  phase: Running
----
-apiVersion: v1
-kind: Pod
-metadata:
-  namespace: default
-  labels:
-    app: membership
-spec:
-  containers:
-    - name: membership
-      resources:
-        limits:
-          instrumentation.odigos.io/go-ebpf-community: "1"
-        requests:
-          instrumentation.odigos.io/go-ebpf-community: "1"
-status:
-  containerStatuses:
-    - name: membership
-      ready: true
-      restartCount: 0
-      started: true
-  phase: Running
----
-apiVersion: v1
-kind: Pod
-metadata:
-  namespace: default
-  labels:
-    app: pricing
-spec:
-  containers:
-    - name: pricing
-      resources:
-        limits:
-          instrumentation.odigos.io/dotnet-native-community: "1"
-        requests:
-          instrumentation.odigos.io/dotnet-native-community: "1"
-status:
-  containerStatuses:
-    - name: pricing
-      ready: true
-      restartCount: 0
-      started: true
-  phase: Running
----
-apiVersion: odigos.io/v1alpha1
-kind: InstrumentationInstance
-metadata:
-  namespace: default
-  labels:
-    instrumented-app: deployment-coupon
-status:
-  healthy: true
-  identifyingAttributes:
-    - key: service.instance.id
-      (value != null): true
-    - key: telemetry.sdk.language
-      value: nodejs
-    - key: process.runtime.version
-      (value != null): true
-    - key: telemetry.distro.version
-      (value != null): true
-    - key: process.pid
-      (value != null): true
-    - key: k8s.namespace.name
-      (value != null): true
-    - key: k8s.container.name
-      (value != null): true
-    - key: k8s.pod.name
-      (value != null): true
----
-apiVersion: odigos.io/v1alpha1
-kind: InstrumentationInstance
-metadata:
-  namespace: default
-  labels:
-    instrumented-app: deployment-inventory
-status:
-  healthy: true
-  identifyingAttributes:
-    - key: service.instance.id
-      (value != null): true
-    - key: process.pid
-      (value != null): true
-    - key: telemetry.sdk.language
-      value: python
-    - key: k8s.namespace.name
-      (value != null): true
-    - key: k8s.container.name
-      (value != null): true
-    - key: k8s.pod.name
-      (value != null): true        
----
-apiVersion: odigos.io/v1alpha1
-kind: InstrumentationInstance
-metadata:
-  namespace: default
-  labels:
-    instrumented-app: deployment-membership
-status:
-  healthy: true
-  reason: LoadedSuccessfully
