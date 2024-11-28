@@ -48,11 +48,8 @@ const Checkbox: React.FC<CheckboxProps> = ({ title, titleColor, tooltip, initial
 
     e.stopPropagation();
 
-    setIsChecked((prev) => {
-      const newValue = !prev;
-      if (onChange) onChange(newValue);
-      return newValue;
-    });
+    if (onChange) onChange(!isChecked);
+    else setIsChecked((prev) => !prev);
   };
 
   return (
