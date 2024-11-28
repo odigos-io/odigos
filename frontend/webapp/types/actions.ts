@@ -73,7 +73,7 @@ export interface ActionDataParsed extends ActionData {
 }
 
 export type ActionInput = {
-  type: string;
+  type: ActionsType;
   name: string;
   notes: string;
   disable: boolean;

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
-import { ConfiguredFields, DeleteWarning } from '@/components';
 import { IAppState, useAppStore } from '@/store';
 import type { ConfiguredDestination } from '@/types';
-import { Button, Divider, Text } from '@/reuseable-components';
+import { ConfiguredFields, DeleteWarning } from '@/components';
+import { Button, Divider, ExtendIcon, Text } from '@/reuseable-components';
 
 const Container = styled.div`
   display: flex;
@@ -127,8 +127,8 @@ const ConfiguredDestinationsListItem: React.FC<{ item: ConfiguredDestination; is
               <Image src='/icons/common/trash.svg' alt='delete' width={16} height={16} />
             </IconButton>
             <Divider orientation='vertical' length='16px' />
-            <IconButton variant='tertiary' $expand={expand} onClick={() => setExpand(!expand)}>
-              <Image src='/icons/common/extend-arrow.svg' alt='show more' width={16} height={16} />
+            <IconButton variant='tertiary' onClick={() => setExpand(!expand)}>
+              <ExtendIcon extend={expand} />
             </IconButton>
           </IconsContainer>
         </ListItemHeader>

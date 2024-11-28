@@ -1,18 +1,18 @@
 'use client';
 import React, { useMemo } from 'react';
 import '@xyflow/react/dist/style.css';
+import styled from 'styled-components';
 import AddNode from './nodes/add-node';
 import BaseNode from './nodes/base-node';
-import { Controls, ReactFlow } from '@xyflow/react';
 import GroupNode from './nodes/group-node';
 import HeaderNode from './nodes/header-node';
 import LabeledEdge from './edges/labeled-edge';
-import styled from 'styled-components';
+import { Controls, type Edge, type Node, ReactFlow } from '@xyflow/react';
 
-interface NodeBaseDataFlowProps {
-  nodes: any[];
-  edges: any[];
-  onNodeClick?: (event: React.MouseEvent, object: any) => void;
+interface Props {
+  nodes: Node[];
+  edges: Edge[];
+  onNodeClick?: (event: React.MouseEvent, object: Node) => void;
   nodeWidth: number;
 }
 
@@ -39,7 +39,7 @@ const ControllerWrapper = styled.div`
   }
 `;
 
-export function NodeBaseDataFlow({ nodes, edges, onNodeClick, nodeWidth }: NodeBaseDataFlowProps) {
+export const NodeBaseDataFlow: React.FC<Props> = ({ nodes, edges, onNodeClick, nodeWidth }) => {
   const nodeTypes = useMemo(
     () => ({
       header: (props) => <HeaderNode {...props} nodeWidth={nodeWidth} />,
@@ -77,6 +77,6 @@ export function NodeBaseDataFlow({ nodes, edges, onNodeClick, nodeWidth }: NodeB
       </ReactFlow>
     </FlowWrapper>
   );
-}
+};
 
 export * from './builder';

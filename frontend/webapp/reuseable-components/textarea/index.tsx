@@ -1,7 +1,6 @@
 import React, { useRef } from 'react';
-import { Text } from '../text';
-import { FieldLabel } from '../field-label';
 import styled, { css } from 'styled-components';
+import { FieldError, FieldLabel } from '@/reuseable-components';
 
 interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   errorMessage?: string;
@@ -37,7 +36,7 @@ const InputWrapper = styled.div<{ $disabled?: boolean; $hasError?: boolean; $isA
   ${({ $hasError }) =>
     $hasError &&
     css`
-      border-color: red;
+      border-color: ${({ theme }) => theme.text.error};
     `}
 
   ${({ $isActive }) =>
@@ -80,19 +79,6 @@ const StyledTextArea = styled.textarea`
   }
 `;
 
-const ErrorWrapper = styled.div`
-  position: relative;
-`;
-
-const ErrorMessage = styled(Text)`
-  color: red;
-  font-size: 12px;
-  position: absolute;
-  top: 100%;
-  left: 0;
-  margin-top: 4px;
-`;
-
 const TextArea: React.FC<TextAreaProps> = ({ errorMessage, title, tooltip, required, onChange, ...props }) => {
   const ref = useRef<HTMLTextAreaElement>(null);
 
@@ -121,11 +107,7 @@ const TextArea: React.FC<TextAreaProps> = ({ errorMessage, title, tooltip, requi
         />
       </InputWrapper>
 
-      {errorMessage && (
-        <ErrorWrapper>
-          <ErrorMessage>{errorMessage}</ErrorMessage>
-        </ErrorWrapper>
-      )}
+      {!!errorMessage && <FieldError>{errorMessage}</FieldError>}
     </Container>
   );
 };

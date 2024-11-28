@@ -6,11 +6,12 @@ import { KeyValueInputsList } from '@/reuseable-components';
 type Props = {
   value: string;
   setValue: (value: string) => void;
+  errorMessage?: string;
 };
 
 type Parsed = AddClusterInfoSpec;
 
-const AddClusterInfo: React.FC<Props> = ({ value, setValue }) => {
+const AddClusterInfo: React.FC<Props> = ({ value, setValue, errorMessage }) => {
   const mappedValue = useMemo(
     () =>
       safeJsonParse<Parsed>(value, { clusterAttributes: [] }).clusterAttributes.map((obj) => ({
@@ -33,7 +34,7 @@ const AddClusterInfo: React.FC<Props> = ({ value, setValue }) => {
     setValue(str);
   };
 
-  return <KeyValueInputsList title='Resource Attributes' required value={mappedValue} onChange={handleChange} />;
+  return <KeyValueInputsList title='Resource Attributes' value={mappedValue} onChange={handleChange} required errorMessage={errorMessage} />;
 };
 
 export default AddClusterInfo;
