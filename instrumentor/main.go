@@ -178,7 +178,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	go common.StartPprofServer(setupLog)
+	go common.StartPprofServer(ctx, setupLog)
 
 	if !telemetryDisabled {
 		go report.Start(mgr.GetClient())
