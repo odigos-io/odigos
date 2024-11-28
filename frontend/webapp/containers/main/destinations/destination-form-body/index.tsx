@@ -1,9 +1,10 @@
 import React, { Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
+import { SignalUppercase } from '@/utils';
 import { TestConnection } from './test-connection';
 import { DestinationDynamicFields } from './dynamic-fields';
 import type { DestinationInput, DestinationTypeItem, DynamicField } from '@/types';
-import { CheckboxList, Divider, Input, NotificationNote, SectionTitle } from '@/reuseable-components';
+import { Divider, Input, MonitoringCheckboxes, NotificationNote, SectionTitle } from '@/reuseable-components';
 
 interface Props {
   isUpdate?: boolean;
@@ -36,14 +37,34 @@ export function DestinationFormBody({ isUpdate, destination, formData, formError
 
   const supportedMonitors = useMemo(() => {
     const { logs, metrics, traces } = supportedSignals || {};
-    const arr: { id: string; title: string }[] = [];
+    const arr: SignalUppercase[] = [];
 
-    if (logs?.supported) arr.push({ id: 'logs', title: 'Logs' });
-    if (metrics?.supported) arr.push({ id: 'metrics', title: 'Metrics' });
-    if (traces?.supported) arr.push({ id: 'traces', title: 'Traces' });
+    if (logs?.supported) arr.push('LOGS');
+    if (metrics?.supported) arr.push('METRICS');
+    if (traces?.supported) arr.push('TRACES');
 
     return arr;
   }, [supportedSignals]);
+
+  const selectedMonitors = useMemo(() => {
+    const { logs, metrics, traces } = formData['exportedSignals'] || {};
+    const arr: SignalUppercase[] = [];
+
+    if (logs) arr.push('LOGS');
+    if (metrics) arr.push('METRICS');
+    if (traces) arr.push('TRACES');
+
+    return arr;
+  }, [formData['exportedSignals']]);
+
+  const handleSelectedSignals = (signals: SignalUppercase[]) => {
+    setIsFormDirty(true);
+    handleFormChange('exportedSignals', {
+      logs: signals.includes('LOGS'),
+      metrics: signals.includes('METRICS'),
+      traces: signals.includes('TRACES'),
+    });
+  };
 
   return (
     <Container>
@@ -79,32 +100,32 @@ export function DestinationFormBody({ isUpdate, destination, formData, formError
         </>
       )}
 
-      <CheckboxList
-        monitors={supportedMonitors}
+      <MonitoringCheckboxes
         title={isUpdate ? '' : 'This connection will monitor:'}
-        exportedSignals={formData.exportedSignals}
-        handleSignalChange={(signal, value) => {
-          if (!isFormDirty) setIsFormDirty(true);
-          handleFormChange(`exportedSignals.${signal}`, value);
-        }}
+        required
+        allowedSignals={supportedMonitors}
+        selectedSignals={selectedMonitors}
+        setSelectedSignals={handleSelectedSignals}
+        errorMessage={formErrors['exportedSignals']}
       />
 
       {!isUpdate && (
         <Input
           title='Destination name'
           placeholder='Enter destination name'
-          value={formData.name}
+          value={formData['name']}
           onChange={(e) => {
-            if (!isFormDirty) setIsFormDirty(true);
+            setIsFormDirty(true);
             handleFormChange('name', e.target.value);
           }}
+          errorMessage={formErrors['name']}
         />
       )}
 
       <DestinationDynamicFields
         fields={dynamicFields}
         onChange={(name: string, value: any) => {
-          if (!isFormDirty) setIsFormDirty(true);
+          setIsFormDirty(true);
           setDynamicFields((prev) => {
             const payload = [...prev];
             const foundIndex = payload.findIndex((field) => field.name === name);
@@ -116,6 +137,7 @@ export function DestinationFormBody({ isUpdate, destination, formData, formError
             return payload;
           });
         }}
+        formErrors={formErrors}
       />
     </Container>
   );

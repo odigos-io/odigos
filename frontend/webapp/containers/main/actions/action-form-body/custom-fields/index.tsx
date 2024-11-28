@@ -8,16 +8,18 @@ import DeleteAttributes from './delete-attributes';
 import RenameAttributes from './rename-attributes';
 import ProbabilisticSampler from './probabilistic-sampler';
 
-interface ActionCustomFieldsProps {
+interface Props {
   actionType?: ActionsType;
   value: string;
   setValue: (value: string) => void;
+  errorMessage?: string;
 }
 
-type ComponentProps = {
-  value: string;
-  setValue: (value: string) => void;
-};
+interface ComponentProps {
+  value: Props['value'];
+  setValue: Props['setValue'];
+  errorMessage?: Props['errorMessage'];
+}
 
 type ComponentType = React.FC<ComponentProps> | null;
 
@@ -31,12 +33,12 @@ const componentsMap: Record<ActionsType, ComponentType> = {
   [ActionsType.LATENCY_SAMPLER]: LatencySampler,
 };
 
-const ActionCustomFields: React.FC<ActionCustomFieldsProps> = ({ actionType, value, setValue }) => {
+const ActionCustomFields: React.FC<Props> = ({ actionType, value, setValue, errorMessage }) => {
   if (!actionType) return null;
 
   const Component = componentsMap[actionType];
 
-  return Component ? <Component value={value} setValue={setValue} /> : null;
+  return Component ? <Component value={value} setValue={setValue} errorMessage={errorMessage} /> : null;
 };
 
 export default ActionCustomFields;

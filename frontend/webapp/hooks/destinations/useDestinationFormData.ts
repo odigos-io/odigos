@@ -109,6 +109,7 @@ export function useDestinationFormData(params?: { destinationType?: string; supp
 
   const resetFormData = () => {
     setFormData({ ...INITIAL });
+    setFormErrors({});
   };
 
   const validateForm = (params?: { withAlert?: boolean; alertTitle?: string }) => {

@@ -36,11 +36,19 @@ export const RuleFormBody: React.FC<Props> = ({ isUpdate, rule, formData, formEr
 
       {!isUpdate && <SectionTitle title='' description={rule.docsDescription as string} actionButton={<DocsButton endpoint={rule.docsEndpoint} />} />}
 
-      {!isUpdate && <Input title='Rule name' placeholder='Use a name that describes the rule' value={formData.ruleName} onChange={({ target: { value } }) => handleFormChange('ruleName', value)} />}
+      {!isUpdate && (
+        <Input
+          title='Rule name'
+          placeholder='Use a name that describes the rule'
+          value={formData['ruleName']}
+          onChange={({ target: { value } }) => handleFormChange('ruleName', value)}
+          errorMessage={formErrors['ruleName']}
+        />
+      )}
 
-      <RuleCustomFields ruleType={rule.type} value={formData} setValue={(key, val) => handleFormChange(key, val)} />
+      <RuleCustomFields ruleType={rule.type} value={formData} setValue={(key, val) => handleFormChange(key, val)} formErrors={formErrors} />
 
-      <TextArea title='Notes' value={formData.notes} onChange={({ target: { value } }) => handleFormChange('notes', value)} />
+      <TextArea title='Notes' value={formData['notes']} onChange={({ target: { value } }) => handleFormChange('notes', value)} errorMessage={formErrors['notes']} />
     </Container>
   );
 };
