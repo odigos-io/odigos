@@ -1,19 +1,18 @@
 import { useMutation } from '@apollo/client';
+import { useNotificationStore } from '@/store';
 import { useNotify } from '../notification/useNotify';
 import { useComputePlatform } from '../compute-platform';
-import { useDrawerStore, useNotificationStore } from '@/store';
-import { ACTION, getSseTargetFromId, NOTIFICATION, safeJsonParse } from '@/utils';
+import { ACTION, getSseTargetFromId, NOTIFICATION } from '@/utils';
 import { CREATE_ACTION, DELETE_ACTION, UPDATE_ACTION } from '@/graphql/mutations';
-import { type ActionItem, OVERVIEW_ENTITY_TYPES, type ActionInput, type ActionsType, type NotificationType } from '@/types';
+import { OVERVIEW_ENTITY_TYPES, type ActionInput, type ActionsType, type NotificationType } from '@/types';
 
 interface UseActionCrudParams {
-  onSuccess?: () => void;
-  onError?: () => void;
+  onSuccess?: (type: string) => void;
+  onError?: (type: string) => void;
 }
 
 export const useActionCRUD = (params?: UseActionCrudParams) => {
   const removeNotifications = useNotificationStore((store) => store.removeNotifications);
-  const { setSelectedItem: setDrawerItem } = useDrawerStore((store) => store);
   const { data, refetch } = useComputePlatform();
   const notify = useNotify();
 
@@ -29,14 +28,13 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
 
   const handleError = (title: string, message: string, id?: string) => {
     notifyUser(NOTIFICATION.ERROR, title, message, id);
-    params?.onError?.();
+    params?.onError?.(title);
   };
 
   const handleComplete = (title: string, message: string, id?: string) => {
     notifyUser(NOTIFICATION.SUCCESS, title, message, id);
-    setDrawerItem(null);
     refetch();
-    params?.onSuccess?.();
+    params?.onSuccess?.(title);
   };
 
   const [createAction, cState] = useMutation<{ createAction: { id: string } }>(CREATE_ACTION, {
@@ -70,12 +68,7 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
 
   return {
     loading: cState.loading || uState.loading || dState.loading,
-    actions:
-      data?.computePlatform?.actions?.map((item) => {
-        const parsedSpec = typeof item.spec === 'string' ? safeJsonParse(item.spec, {} as ActionItem) : item.spec;
-
-        return { ...item, spec: parsedSpec };
-      }) || [],
+    actions: data?.computePlatform.actions || [],
 
     createAction: (action: ActionInput) => createAction({ variables: { action } }),
     updateAction: (id: string, action: ActionInput) => updateAction({ variables: { id, action } }),
