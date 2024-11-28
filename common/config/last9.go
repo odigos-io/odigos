@@ -25,17 +25,12 @@ func (m *MyDest) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) er
 		return errors.New("Last9 OpenTelemetry Endpoint key(\"LAST9_OTLP_ENDPOINT\") not specified, Last9 will not be configured")
 	}
 
-	l9OtlpAuthHeader, exists := config[l9OtlpAuthHeaderKey]
-	if !exists {
-		return errors.New("Last9 OpenTelemetry Basic Auth Header key(\"LAST9_OTLP_BASIC_AUTH_HEADER\") not specified, Last9 will not be configured")
-	}
-
 	// to make sure that the exporter name is unique, we'll ask a ID from destination
 	exporterName := "otlp/last9-" + dest.GetID()
 	currentConfig.Exporters["otlp/last9"] = GenericMap{
 		"endpoint": l9OtlpEndpoint,
 		"headers": GenericMap{
-			"Authorization": l9OtlpAuthHeader,
+			"Authorization": "${LAST9_OTLP_BASIC_AUTH_HEADER}",
 		},
 	}
 
