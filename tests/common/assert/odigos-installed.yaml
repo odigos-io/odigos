@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: odigos-test-ns
+  name: odigos-test
   labels:
     odigos.io/system-object: 'true'
 ---
@@ -10,7 +10,7 @@ kind: Pod
 metadata:
   labels:
     app.kubernetes.io/name: odigos-autoscaler
-  namespace: odigos-test-ns
+  namespace: odigos-test
 status:
   containerStatuses:
     - name: manager
@@ -24,7 +24,7 @@ kind: Pod
 metadata:
   labels:
     app.kubernetes.io/name: odigos-scheduler
-  namespace: odigos-test-ns
+  namespace: odigos-test
 status:
   containerStatuses:
     - name: manager
@@ -38,7 +38,7 @@ kind: Pod
 metadata:
   labels:
     app.kubernetes.io/name: odigos-instrumentor
-  namespace: odigos-test-ns
+  namespace: odigos-test
 status:
   containerStatuses:
     - name: manager
@@ -52,7 +52,7 @@ kind: Pod
 metadata:
   labels:
     app.kubernetes.io/name: odiglet
-  namespace: odigos-test-ns
+  namespace: odigos-test
   ownerReferences:
     - apiVersion: apps/v1
       blockOwnerDeletion: true
@@ -85,7 +85,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: ui
-  namespace: odigos-test-ns
+  namespace: odigos-test
 spec:
   ports:
     - name: ui
@@ -110,7 +110,7 @@ metadata:
     odigos.io/config: '1'
     odigos.io/system-object: 'true'
   name: odigos-config
-  namespace: odigos-test-ns
+  namespace: odigos-test
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
