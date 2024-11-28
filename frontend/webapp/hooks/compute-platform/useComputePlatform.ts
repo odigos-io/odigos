@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useQuery } from '@apollo/client';
 import { useBooleanStore } from '@/store';
 import { GET_COMPUTE_PLATFORM } from '@/graphql';
@@ -25,7 +25,7 @@ export const useComputePlatform = (): UseComputePlatformHook => {
 
     let retries = 0;
     const maxRetries = 5;
-    const retryInterval = 2 * 1000; // time in milliseconds
+    const retryInterval = 3 * 1000; // time in milliseconds
 
     while (retries < maxRetries) {
       await new Promise((resolve) => setTimeout(resolve, retryInterval));
@@ -35,11 +35,6 @@ export const useComputePlatform = (): UseComputePlatformHook => {
 
     togglePolling(false);
   }, [refetch, togglePolling]);
-
-  // this is to start polling on component mount in an attempt to fix any initial errors with sources/destinations
-  useEffect(() => {
-    startPolling();
-  }, []);
 
   const mappedData = useMemo(() => {
     if (!data) return undefined;

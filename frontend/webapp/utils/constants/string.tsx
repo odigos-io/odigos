@@ -33,7 +33,8 @@ export const ACTION = {
 };
 
 export const FORM_ALERTS = {
-  REQUIRED_FIELDS: 'Required fields are missing!',
+  REQUIRED_FIELDS: 'Required fields are missing',
+  FIELD_IS_REQUIRED: 'This field is required',
 };
 
 export const NOTIFICATION: {

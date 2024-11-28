@@ -1,17 +1,10 @@
 import React, { useState, useRef } from 'react';
 import Image from 'next/image';
-import { Text } from '../text';
-import { Badge } from '../badge';
-import { Input } from '../input';
-import { Divider } from '../divider';
-import { Checkbox } from '../checkbox';
-import { DropdownOption } from '@/types';
 import { useOnClickOutside } from '@/hooks';
-import { FieldLabel } from '../field-label';
-import { ExtendIcon } from '../extend-icon';
-import { NoDataFound } from '../no-data-found';
+import type { DropdownOption } from '@/types';
 import styled, { css } from 'styled-components';
 import theme, { hexPercentValues } from '@/styles/theme';
+import { Badge, Checkbox, Divider, ExtendIcon, FieldError, FieldLabel, Input, NoDataFound, Text } from '@/reuseable-components';
 
 interface DropdownProps {
   title?: string;
@@ -24,6 +17,7 @@ interface DropdownProps {
   isMulti?: boolean;
   required?: boolean;
   showSearch?: boolean;
+  errorMessage?: string;
 }
 
 const RootContainer = styled.div`
@@ -37,7 +31,7 @@ const RelativeContainer = styled.div`
   position: relative;
 `;
 
-const DropdownHeader = styled.div<{ $isOpen: boolean; $isMulti?: boolean; $hasSelections?: boolean }>`
+const DropdownHeader = styled.div<{ $isOpen: boolean; $isMulti?: boolean; $hasSelections: boolean; $hasError: boolean }>`
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -57,6 +51,12 @@ const DropdownHeader = styled.div<{ $isOpen: boolean; $isMulti?: boolean; $hasSe
           background: transparent;
         `};
 
+  ${({ $hasError }) =>
+    $hasError &&
+    css`
+      border-color: ${({ theme }) => theme.text.error};
+    `}
+
   &:hover {
     border-color: ${({ $isMulti, $hasSelections, theme }) => ($isMulti && $hasSelections ? theme.colors.border : theme.colors.secondary)};
   }
@@ -68,17 +68,7 @@ const IconWrapper = styled.div`
   gap: 4px;
 `;
 
-const ArrowIcon = styled(Image)`
-  &.open {
-    transform: rotate(180deg);
-  }
-  &.close {
-    transform: rotate(0deg);
-  }
-  transition: transform 0.3s;
-`;
-
-export const Dropdown: React.FC<DropdownProps> = ({ options, value, onSelect, onDeselect, title, tooltip, placeholder, isMulti = false, showSearch = false, required = false }) => {
+export const Dropdown: React.FC<DropdownProps> = ({ options, value, onSelect, onDeselect, title, tooltip, placeholder, isMulti = false, showSearch = false, required = false, errorMessage }) => {
   const [isOpen, setIsOpen] = useState(false);
   const toggleOpen = () => setIsOpen((prev) => !prev);
 
@@ -89,10 +79,10 @@ export const Dropdown: React.FC<DropdownProps> = ({ options, value, onSelect, on
 
   return (
     <RootContainer>
-      <FieldLabel title={title} required={required} tooltip={tooltip} style={{ marginLeft: '8px' }} />
+      <FieldLabel title={title} required={required} tooltip={tooltip} />
 
       <RelativeContainer ref={ref}>
-        <DropdownHeader $isOpen={isOpen} $isMulti={isMulti} $hasSelections={Array.isArray(value) ? !!value.length : false} onClick={toggleOpen}>
+        <DropdownHeader $isOpen={isOpen} $isMulti={isMulti} $hasSelections={Array.isArray(value) ? !!value.length : false} $hasError={!!errorMessage} onClick={toggleOpen}>
           <DropdownPlaceholder value={value} placeholder={placeholder} onDeselect={onDeselect} />
           <IconWrapper>
             {isMulti && <Badge label={arrLen} filled={!!arrLen} />}
@@ -117,6 +107,8 @@ export const Dropdown: React.FC<DropdownProps> = ({ options, value, onSelect, on
           />
         )}
       </RelativeContainer>
+
+      {!!errorMessage && <FieldError>{errorMessage}</FieldError>}
     </RootContainer>
   );
 };

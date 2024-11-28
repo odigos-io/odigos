@@ -43,8 +43,8 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 		containerHaveOtherAgent := getContainerOtherAgents(runtimeDetails, container.Name)
 
 		// In case there is another agent in the container, we should not apply the instrumentation device.
-		if containerLanguage == common.PythonProgrammingLanguage && containerHaveOtherAgent != nil {
-			logger.Info("Python container has other agent, skip applying instrumentation device", "agent", containerHaveOtherAgent.Name, "container", container.Name)
+		if containerHaveOtherAgent != nil {
+			logger.Info("Container is running other agent, skip applying instrumentation device", "agent", containerHaveOtherAgent.Name, "container", container.Name)
 
 			// Not actually modifying the container, but we need to append it to the list.
 			modifiedContainers = append(modifiedContainers, container)

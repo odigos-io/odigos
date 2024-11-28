@@ -1,5 +1,6 @@
+import React, { useState } from 'react';
+import { ACTION } from '@/utils';
 import { ActionFormBody } from '../';
-import React, { useMemo, useState } from 'react';
 import { CenterThis, ModalBody } from '@/styles';
 import { useActionCRUD, useActionFormData } from '@/hooks/actions';
 import { ACTION_OPTIONS, type ActionOption } from './action-options';
@@ -11,15 +12,9 @@ interface Props {
 }
 
 export const ActionModal: React.FC<Props> = ({ isOpen, onClose }) => {
-  const { formData, handleFormChange, resetFormData, validateForm } = useActionFormData();
+  const { formData, formErrors, handleFormChange, resetFormData, validateForm } = useActionFormData();
   const { createAction, loading } = useActionCRUD({ onSuccess: handleClose });
   const [selectedItem, setSelectedItem] = useState<ActionOption | undefined>(undefined);
-
-  const isFormOk = useMemo(() => !!selectedItem && validateForm(), [selectedItem, formData]);
-
-  const handleSubmit = async () => {
-    createAction(formData);
-  };
 
   function handleClose() {
     resetFormData();
@@ -31,6 +26,15 @@ export const ActionModal: React.FC<Props> = ({ isOpen, onClose }) => {
     resetFormData();
     handleFormChange('type', item?.type || '');
     setSelectedItem(item);
+  };
+
+  const handleSubmit = async () => {
+    const isFormOk = validateForm({ withAlert: true, alertTitle: ACTION.CREATE });
+    if (!isFormOk) return null;
+
+    await createAction(formData);
+
+    handleClose();
   };
 
   return (
@@ -45,7 +49,7 @@ export const ActionModal: React.FC<Props> = ({ isOpen, onClose }) => {
               variant: 'primary',
               label: 'DONE',
               onClick: handleSubmit,
-              disabled: !isFormOk || loading,
+              disabled: !selectedItem || loading,
             },
           ]}
         />
@@ -64,7 +68,7 @@ export const ActionModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 <FadeLoader cssOverride={{ scale: 2 }} />
               </CenterThis>
             ) : (
-              <ActionFormBody action={selectedItem} formData={formData} handleFormChange={handleFormChange} />
+              <ActionFormBody action={selectedItem} formData={formData} formErrors={formErrors} handleFormChange={handleFormChange} />
             )}
           </div>
         ) : null}

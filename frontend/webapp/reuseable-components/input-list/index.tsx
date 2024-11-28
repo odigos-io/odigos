@@ -1,10 +1,7 @@
-import Image from 'next/image';
-import { Text } from '../text';
-import { Input } from '../input';
-import { Button } from '../button';
-import styled from 'styled-components';
-import { FieldLabel } from '../field-label';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import Image from 'next/image';
+import styled from 'styled-components';
+import { Button, FieldError, FieldLabel, Input, Text } from '@/reuseable-components';
 
 type Row = string;
 
@@ -15,6 +12,7 @@ interface InputListProps {
   title?: string;
   tooltip?: string;
   required?: boolean;
+  errorMessage?: string;
 }
 
 const Container = styled.div`
@@ -23,11 +21,16 @@ const Container = styled.div`
   width: 100%;
 `;
 
-const InputRow = styled.div`
+const ListContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const RowWrapper = styled.div`
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-bottom: 16px;
 `;
 
 const DeleteButton = styled.button`
@@ -58,7 +61,7 @@ const ButtonText = styled(Text)`
 
 const INITIAL_ROW: Row = '';
 
-const InputList: React.FC<InputListProps> = ({ initialValues = [], value, onChange, title, tooltip, required }) => {
+const InputList: React.FC<InputListProps> = ({ initialValues = [], value, onChange, title, tooltip, required, errorMessage }) => {
   const [rows, setRows] = useState<Row[]>(value || initialValues);
 
   useEffect(() => {
@@ -108,16 +111,20 @@ const InputList: React.FC<InputListProps> = ({ initialValues = [], value, onChan
     <Container>
       <FieldLabel title={title} required={required} tooltip={tooltip} />
 
-      {rows.map((val, idx) => (
-        <InputRow key={`input-list-${idx}`}>
-          <Input value={val} onChange={(e) => handleInputChange(e.target.value, idx)} autoFocus={!val && rows.length > 1 && idx === rows.length - 1} />
-          <DeleteButton disabled={isDelButtonDisabled} onClick={() => handleDeleteInput(idx)}>
-            <Image src='/icons/common/trash.svg' alt='Delete' width={16} height={16} />
-          </DeleteButton>
-        </InputRow>
-      ))}
+      <ListContainer>
+        {rows.map((val, idx) => (
+          <RowWrapper key={`input-list-${idx}`}>
+            <Input value={val} onChange={(e) => handleInputChange(e.target.value, idx)} hasError={!!errorMessage} autoFocus={!val && rows.length > 1 && idx === rows.length - 1} />
+            <DeleteButton disabled={isDelButtonDisabled} onClick={() => handleDeleteInput(idx)}>
+              <Image src='/icons/common/trash.svg' alt='Delete' width={16} height={16} />
+            </DeleteButton>
+          </RowWrapper>
+        ))}
+      </ListContainer>
 
-      <AddButton disabled={isAddButtonDisabled} variant={'tertiary'} onClick={handleAddInput}>
+      {!!errorMessage && <FieldError>{errorMessage}</FieldError>}
+
+      <AddButton disabled={isAddButtonDisabled} variant='tertiary' onClick={handleAddInput}>
         <Image src='/icons/common/plus.svg' alt='Add' width={16} height={16} />
         <ButtonText>ADD ATTRIBUTE</ButtonText>
       </AddButton>
