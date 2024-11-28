@@ -248,7 +248,7 @@ export const buildNodesAndEdges = ({ computePlatform, computePlatformFiltered, m
           status: getHealthStatus(destination),
           title: getEntityLabel(destination, OVERVIEW_ENTITY_TYPES.DESTINATION, { prioritizeDisplayName: true }),
           subTitle: destination.destinationType.displayName,
-          imageUri: destination.destinationType.imageUrl,
+          imageUri: destination.destinationType.imageUrl || '/brand/odigos-icon.svg',
           monitors: extractMonitors(destination.exportedSignals),
           metric,
           raw: destination,
