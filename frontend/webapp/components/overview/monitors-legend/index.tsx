@@ -1,43 +1,51 @@
 import React from 'react';
 import Image from 'next/image';
-import theme from '@/styles/theme';
 import styled from 'styled-components';
 import { MONITORS_OPTIONS } from '@/utils';
 import { Text } from '@/reuseable-components';
 
-const List = styled.div`
+interface Props {
+  size?: number;
+  color?: string;
+  signals?: string[];
+}
+
+const List = styled.div<{ $size: number }>`
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: ${({ $size }) => $size}px;
 `;
 
-const ListItem = styled.div`
+const ListItem = styled.div<{ $size: number }>`
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: ${({ $size }) => $size / 3}px;
 `;
 
-const MonitorTitle = styled(Text)`
-  color: ${({ theme }) => theme.text.grey};
-  font-size: 12px;
+const MonitorTitle = styled(Text)<{ $size: number; $color?: string }>`
+  color: ${({ $color, theme }) => $color || theme.text.grey};
+  font-size: ${({ $size }) => $size}px;
   font-weight: 300;
   line-height: 150%;
 `;
 
-const MonitorsLegend = () => {
+export const MonitorsLegend: React.FC<Props> = ({ size = 12, color, signals }) => {
   return (
-    <List>
-      {MONITORS_OPTIONS.map(({ id, value }) => (
-        <ListItem key={`monitors-legend-${id}`}>
-          <Image src={`/icons/monitors/${id}.svg`} width={14} height={14} alt={value} style={{ filter: 'invert(40%) brightness(80%) grayscale(100%)' }} />
+    <List $size={size}>
+      {MONITORS_OPTIONS.map(({ id, value }) => {
+        const ok = !signals || !signals.length || signals.find((str) => str.toLowerCase() === id);
 
-          <MonitorTitle size={14} color={theme.text.grey}>
-            {value}
-          </MonitorTitle>
-        </ListItem>
-      ))}
+        if (!ok) return null;
+
+        return (
+          <ListItem key={`monitors-legend-${id}`} $size={size}>
+            <Image src={`/icons/monitors/${id}.svg`} width={size + 2} height={size + 2} alt={value} style={{ filter: 'invert(40%) brightness(80%) grayscale(100%)' }} />
+            <MonitorTitle $size={size} $color={color}>
+              {value}
+            </MonitorTitle>
+          </ListItem>
+        );
+      })}
     </List>
   );
 };
-
-export { MonitorsLegend };

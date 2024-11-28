@@ -1,8 +1,9 @@
 import React from 'react';
 import styled from 'styled-components';
-import { ConfiguredFields } from '@/components';
 import { Text } from '@/reuseable-components';
-interface CardDetailsProps {
+import { ConfiguredFields } from '@/components';
+
+interface Props {
   title?: string;
   data: {
     title: string;
@@ -10,19 +11,6 @@ interface CardDetailsProps {
     value: string;
   }[];
 }
-
-const CardDetails: React.FC<CardDetailsProps> = ({ data, title = 'Details' }) => {
-  return (
-    <Container>
-      <TitleWrapper>
-        <Text>{title}</Text>
-      </TitleWrapper>
-      <ConfiguredFields details={data} />
-    </Container>
-  );
-};
-
-export { CardDetails };
 
 const Container = styled.div`
   display: flex;
@@ -37,3 +25,14 @@ const Container = styled.div`
 `;
 
 const TitleWrapper = styled.div``;
+
+export const CardDetails: React.FC<Props> = ({ title = 'Details', data }) => {
+  return (
+    <Container>
+      <TitleWrapper>
+        <Text>{title}</Text>
+      </TitleWrapper>
+      <ConfiguredFields details={data} />
+    </Container>
+  );
+};
