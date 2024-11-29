@@ -40,9 +40,10 @@ func odigletInitPhase() {
 }
 
 type odiglet struct {
-	clientset   *kubernetes.Clientset
-	mgr         ctrl.Manager
-	ebpfManager *ebpf.Manager
+	clientset     *kubernetes.Clientset
+	mgr           ctrl.Manager
+	ebpfManager   *ebpf.Manager
+	configUpdates chan<- ebpf.ConfigUpdate
 }
 
 func newOdiglet() (*odiglet, error) {
@@ -76,15 +77,17 @@ func newOdiglet() (*odiglet, error) {
 		return nil, fmt.Errorf("Failed to create ebpf manager %w", err)
 	}
 
-	err = kube.SetupWithManager(mgr, nil, clientset, ebpfManager.UpdateConfig)
+	configUpdates := ebpfManager.ConfigUpdates()
+	err = kube.SetupWithManager(mgr, nil, clientset, configUpdates)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to setup controller-runtime manager %w", err)
 	}
 
 	return &odiglet{
-		clientset:   clientset,
-		mgr:         mgr,
-		ebpfManager: ebpfManager,
+		clientset:     clientset,
+		mgr:           mgr,
+		ebpfManager:   ebpfManager,
+		configUpdates: configUpdates,
 	}, nil
 }
 
@@ -142,8 +145,13 @@ func (o *odiglet) run(ctx context.Context) {
 		err := o.mgr.Start(ctx)
 		if err != nil {
 			log.Logger.Error(err, "error starting kube manager")
+		} else {
+			log.Logger.V(0).Info("Kube manager exited")
 		}
-		log.Logger.V(0).Info("Kube manager exited")
+		// the manager is stopped, it is now safe to close the config updates channel
+		if o.configUpdates != nil {
+			close(o.configUpdates)
+		}
 	}()
 
 	<-ctx.Done()

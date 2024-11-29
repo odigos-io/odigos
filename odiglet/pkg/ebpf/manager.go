@@ -58,12 +58,10 @@ const (
 	InstrumentationUnhealthy InstrumentationHealth = false
 )
 
-type configUpdate struct {
-	workloadKey types.NamespacedName
-	config      *odigosv1.InstrumentationConfig
+type ConfigUpdate struct {
+	WorkloadKey types.NamespacedName
+	Config      *odigosv1.InstrumentationConfig
 }
-
-type ConfigUpdateFunc func(ctx context.Context, workloadKey types.NamespacedName, config *odigosv1.InstrumentationConfig) error
 
 type instrumentationDetails struct {
 	inst     Instrumentation
@@ -89,7 +87,7 @@ type Manager struct {
 	// this map is not concurrent safe, so it should be accessed only from the main event loop
 	detailsByWorkload map[types.NamespacedName]map[int]*instrumentationDetails
 
-	configUpdates     chan configUpdate
+	configUpdates     chan ConfigUpdate
 }
 
 func NewManager(client client.Client, logger logr.Logger, factories map[FactoryID]Factory) (*Manager, error) {
@@ -107,21 +105,15 @@ func NewManager(client client.Client, logger logr.Logger, factories map[FactoryI
 		logger:            logger.WithName("ebpf-instrumentation-manager"),
 		detailsByPid:      make(map[int]*instrumentationDetails),
 		detailsByWorkload: map[types.NamespacedName]map[int]*instrumentationDetails{},
-		configUpdates:     make(chan configUpdate),
+		configUpdates:     make(chan ConfigUpdate),
 	}, nil
 }
 
-func (m *Manager) UpdateConfig(ctx context.Context, workloadKey types.NamespacedName, config *odigosv1.InstrumentationConfig) error {
-	// send a config update event for the specified workload
-	select {
-	case m.configUpdates <- configUpdate{workloadKey: workloadKey, config: config}:
-		return nil
-	case <-ctx.Done():
-		if ctx.Err() == context.DeadlineExceeded {
-			return errors.New("failed to update config of workload: timeout waiting for config update")
-		}
-		return ctx.Err()
-	}
+// ConfigUpdates returns a channel for receiving configuration updates for instrumentations
+// sending on the channel will add an event to the main event loop to apply the configuration.
+// closing this channel is in the responsibility of the caller.
+func (m *Manager) ConfigUpdates() chan<- ConfigUpdate {
+	return m.configUpdates
 }
 
 func (m *Manager) runEventLoop(ctx context.Context) {
@@ -155,12 +147,12 @@ func (m *Manager) runEventLoop(ctx context.Context) {
 				m.cleanInstrumentation(ctx, e.PID)
 			}
 		case configUpdate := <-m.configUpdates:
-			if configUpdate.config == nil {
+			if configUpdate.Config == nil {
 				m.logger.Info("received nil config update, skipping")
 				break
 			}
-			for _, sdkConfig := range configUpdate.config.Spec.SdkConfigs {
-				err := m.applyInstrumentationConfigurationForSDK(ctx, configUpdate.workloadKey, &sdkConfig)
+			for _, sdkConfig := range configUpdate.Config.Spec.SdkConfigs {
+				err := m.applyInstrumentationConfigurationForSDK(ctx, configUpdate.WorkloadKey, &sdkConfig)
 				if err != nil {
 					m.logger.Error(err, "failed to apply instrumentation configuration")
 				}

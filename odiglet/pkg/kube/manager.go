@@ -59,13 +59,13 @@ func CreateManager() (ctrl.Manager, error) {
 	})
 }
 
-func SetupWithManager(mgr ctrl.Manager, ebpfDirectors ebpf.DirectorsMap, clientset *kubernetes.Clientset, configUpdateFunc ebpf.ConfigUpdateFunc) error {
+func SetupWithManager(mgr ctrl.Manager, ebpfDirectors ebpf.DirectorsMap, clientset *kubernetes.Clientset, configUpdates chan<- ebpf.ConfigUpdate) error {
 	err := runtime_details.SetupWithManager(mgr, clientset)
 	if err != nil {
 		return err
 	}
 
-	err = instrumentation_ebpf.SetupWithManager(mgr, ebpfDirectors, configUpdateFunc)
+	err = instrumentation_ebpf.SetupWithManager(mgr, ebpfDirectors, configUpdates)
 	if err != nil {
 		return err
 	}

@@ -12,7 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 )
 
-func SetupWithManager(mgr ctrl.Manager, ebpfDirectors ebpf.DirectorsMap, configUpdateFunc ebpf.ConfigUpdateFunc) error {
+func SetupWithManager(mgr ctrl.Manager, ebpfDirectors ebpf.DirectorsMap, configUpdates chan<- ebpf.ConfigUpdate) error {
 	log.Logger.V(0).Info("Starting reconcileres for ebpf instrumentation")
 	var err error
 
@@ -44,10 +44,10 @@ func SetupWithManager(mgr ctrl.Manager, ebpfDirectors ebpf.DirectorsMap, configU
 		For(&odigosv1.InstrumentationConfig{}).
 		WithEventFilter(predicate.GenerationChangedPredicate{}).
 		Complete(&InstrumentationConfigReconciler{
-			Client:    mgr.GetClient(),
-			Scheme:    mgr.GetScheme(),
-			Directors: ebpfDirectors,
-			OnUpdate:  configUpdateFunc,
+			Client:        mgr.GetClient(),
+			Scheme:        mgr.GetScheme(),
+			Directors:     ebpfDirectors,
+			ConfigUpdates: configUpdates,
 		})
 	if err != nil {
 		return err

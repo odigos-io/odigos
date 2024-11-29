@@ -2,6 +2,8 @@ package instrumentation_ebpf
 
 import (
 	"context"
+	"errors"
+	"time"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -15,10 +17,15 @@ import (
 
 type InstrumentationConfigReconciler struct {
 	client.Client
-	Scheme    *runtime.Scheme
-	Directors ebpf.DirectorsMap
-	OnUpdate  ebpf.ConfigUpdateFunc
+	Scheme        *runtime.Scheme
+	Directors     ebpf.DirectorsMap
+	ConfigUpdates chan<- ebpf.ConfigUpdate
 }
+
+var (
+	configUpdateTimeout    = 1 * time.Second
+	errConfigUpdateTimeout = errors.New("failed to update config of workload: timeout waiting for config update")
+)
 
 func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(req.Name)
@@ -55,10 +62,23 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 		}
 	}
 
-	if i.OnUpdate != nil {
-		err = i.OnUpdate(ctx, types.NamespacedName{Namespace: req.Namespace, Name: workloadName}, instrumentationConfig)
-		if err != nil {
-			return ctrl.Result{}, err
+	if i.ConfigUpdates != nil {
+		// send a config update request for all the instrumentation which are part of the workload.
+		// if the config request is sent, the configuration updates will occur asynchronously.
+		ctx, cancel := context.WithTimeout(ctx, configUpdateTimeout)
+		defer cancel()
+
+		select {
+		case i.ConfigUpdates <- ebpf.ConfigUpdate{
+			WorkloadKey: types.NamespacedName{Namespace: req.Namespace, Name: workloadName},
+			Config:      instrumentationConfig}:
+			return ctrl.Result{}, nil
+		case <-ctx.Done():
+			if ctx.Err() == context.DeadlineExceeded {
+				// returning the error to retry the reconciliation
+				return ctrl.Result{}, errConfigUpdateTimeout
+			}
+			return ctrl.Result{}, ctx.Err()
 		}
 	}
 
