@@ -27,6 +27,10 @@ var (
 	ErrNoInstrumentationFactory = errors.New("no ebpf factory found")
 )
 
+const (
+	configUpdatesBufferSize = 10
+)
+
 type errRequiredEnvVarNotFound struct {
 	envVarName string
 }
@@ -106,7 +110,7 @@ func NewManager(client client.Client, logger logr.Logger, factories map[OtelDist
 		logger:            logger.WithName("ebpf-instrumentation-manager"),
 		detailsByPid:      make(map[int]*instrumentationDetails),
 		detailsByWorkload: map[types.NamespacedName]map[int]*instrumentationDetails{},
-		configUpdates:     make(chan ConfigUpdate),
+		configUpdates:     make(chan ConfigUpdate, configUpdatesBufferSize),
 	}, nil
 }
 
