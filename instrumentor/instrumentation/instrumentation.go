@@ -42,15 +42,15 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 		containerLanguage := getLanguageOfContainer(runtimeDetails, container.Name)
 		containerHaveOtherAgent := getContainerOtherAgents(runtimeDetails, container.Name)
 
-		// In case there is another agent in the container, we should not apply the instrumentation device.
-		if containerLanguage == common.PythonProgrammingLanguage && containerHaveOtherAgent != nil {
-			logger.Info("Python container has other agent, skip applying instrumentation device", "agent", containerHaveOtherAgent.Name, "container", container.Name)
+		// In case there is another agent in the container, we should not apply the instrumentation device '*'.
+		// '*' - In Python, we can run it with New Relic (the only one we detect), but not in other languages.
+		if containerHaveOtherAgent != nil && containerLanguage != common.PythonProgrammingLanguage {
+			logger.Info("Container is running other agent, skip applying instrumentation device", "agent", containerHaveOtherAgent.Name, "container", container.Name)
 
 			// Not actually modifying the container, but we need to append it to the list.
 			modifiedContainers = append(modifiedContainers, container)
 			deviceSkippedDueToOtherAgent = true
 			continue
-
 		}
 		// handle containers with unknown language or ignored language
 		if containerLanguage == common.UnknownProgrammingLanguage || containerLanguage == common.IgnoredProgrammingLanguage || containerLanguage == common.NginxProgrammingLanguage {
