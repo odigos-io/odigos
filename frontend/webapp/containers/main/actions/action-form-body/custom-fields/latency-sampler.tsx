@@ -6,11 +6,12 @@ import type { LatencySamplerSpec } from '@/types';
 type Props = {
   value: string;
   setValue: (value: string) => void;
+  errorMessage?: string;
 };
 
 type Parsed = LatencySamplerSpec;
 
-const LatencySampler: React.FC<Props> = ({ value, setValue }) => {
+const LatencySampler: React.FC<Props> = ({ value, setValue, errorMessage }) => {
   const mappedValue = useMemo(() => safeJsonParse<Parsed>(value, { endpoints_filters: [] }).endpoints_filters, [value]);
 
   const handleChange = (arr: Parsed['endpoints_filters']) => {
@@ -31,8 +32,7 @@ const LatencySampler: React.FC<Props> = ({ value, setValue }) => {
           keyName: 'service_name',
           placeholder: 'Choose service',
           required: true,
-          tooltip:
-            'Service name: The rule applies to a specific service name. Only traces originating from this service’s root span will be considered.',
+          tooltip: 'Service name: The rule applies to a specific service name. Only traces originating from this service’s root span will be considered.',
         },
         {
           title: 'HTTP route',
@@ -48,8 +48,7 @@ const LatencySampler: React.FC<Props> = ({ value, setValue }) => {
           placeholder: 'e.g. 1000',
           required: true,
           type: 'number',
-          tooltip:
-            'Minimum latency threshold (ms): Specifies the minimum latency in milliseconds; traces with latency below this threshold are ignored.',
+          tooltip: 'Minimum latency threshold (ms): Specifies the minimum latency in milliseconds; traces with latency below this threshold are ignored.',
         },
         {
           title: 'Fallback',
@@ -63,6 +62,7 @@ const LatencySampler: React.FC<Props> = ({ value, setValue }) => {
       ]}
       value={mappedValue}
       onChange={handleChange}
+      errorMessage={errorMessage}
     />
   );
 };

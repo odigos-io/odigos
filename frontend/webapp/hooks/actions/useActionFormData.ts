@@ -5,6 +5,7 @@ import { ACTION, FORM_ALERTS, NOTIFICATION } from '@/utils';
 import type { ActionDataParsed, ActionInput } from '@/types';
 
 const INITIAL: ActionInput = {
+  // @ts-ignore (TS complains about empty string because we expect an "ActionsType", but it's fine)
   type: '',
   name: '',
   notes: '',
@@ -15,7 +16,9 @@ const INITIAL: ActionInput = {
 
 export function useActionFormData() {
   const notify = useNotify();
+
   const [formData, setFormData] = useState({ ...INITIAL });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const handleFormChange = (key: keyof typeof INITIAL, val: any) => {
     setFormData((prev) => ({
@@ -26,9 +29,11 @@ export function useActionFormData() {
 
   const resetFormData = () => {
     setFormData({ ...INITIAL });
+    setFormErrors({});
   };
 
-  const validateForm = (params?: { withAlert?: boolean }) => {
+  const validateForm = (params?: { withAlert?: boolean; alertTitle?: string }) => {
+    const errors = {};
     let ok = true;
 
     Object.entries(formData).forEach(([k, v]) => {
@@ -36,7 +41,10 @@ export function useActionFormData() {
         case 'type':
         case 'signals':
         case 'details':
-          if (Array.isArray(v) ? !v.length : !v) ok = false;
+          if (Array.isArray(v) ? !v.length : !v) {
+            ok = false;
+            errors[k] = FORM_ALERTS.FIELD_IS_REQUIRED;
+          }
           break;
 
         default:
@@ -47,10 +55,12 @@ export function useActionFormData() {
     if (!ok && params?.withAlert) {
       notify({
         type: NOTIFICATION.WARNING,
-        title: ACTION.UPDATE,
+        title: params.alertTitle,
         message: FORM_ALERTS.REQUIRED_FIELDS,
       });
     }
+
+    setFormErrors(errors);
 
     return ok;
   };
@@ -93,6 +103,7 @@ export function useActionFormData() {
 
   return {
     formData,
+    formErrors,
     handleFormChange,
     resetFormData,
     validateForm,

@@ -1,52 +1,52 @@
-import React, { ButtonHTMLAttributes, forwardRef, LegacyRef } from 'react';
+import React, { ButtonHTMLAttributes, forwardRef } from 'react';
+import { hexPercentValues } from '@/styles';
 import styled, { css } from 'styled-components';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'tertiary' | 'danger' | 'warning';
-  isDisabled?: boolean; // ??? do we need this, i think we can use "disabled" default HTML Button attribute
 }
 
 const variantStyles = {
   primary: css`
-    border: 1px solid rgba(249, 249, 249, 0.24);
+    border: 1px solid ${({ theme }) => theme.text.secondary + hexPercentValues['024']};
     background: ${({ theme }) => theme.colors.secondary};
     &:hover {
-      background: rgba(224, 224, 224, 1);
+      background: #e0e0e0;
     }
     &:active {
-      background: rgba(184, 184, 184, 1);
+      background: ${({ theme }) => theme.text.grey};
     }
     &:focus {
       background: ${({ theme }) => theme.colors.secondary};
     }
   `,
   secondary: css`
-    background: rgba(249, 249, 249, 0);
-    border: 1px solid rgba(82, 82, 82, 1);
+    background: ${({ theme }) => theme.text.secondary + hexPercentValues['000']};
+    border: 1px solid ${({ theme }) => theme.colors.border};
     color: ${({ theme }) => theme.colors.secondary};
     &:hover {
-      border: 1px solid rgba(249, 249, 249, 0.32);
-      background: rgba(249, 249, 249, 0.04);
+      border: 1px solid ${({ theme }) => theme.colors.white_opacity['30']};
+      background: ${({ theme }) => theme.colors.white_opacity['004']};
     }
     &:active {
-      background: rgba(249, 249, 249, 0.08);
-      border: 1px solid rgba(143, 143, 143, 1);
+      background: ${({ theme }) => theme.colors.white_opacity['008']};
+      border: 1px solid ${({ theme }) => theme.text.dark_grey};
     }
     &:focus {
-      background: rgba(249, 249, 249, 0);
+      background: ${({ theme }) => theme.text.secondary + hexPercentValues['000']};
     }
   `,
   tertiary: css`
     border-color: transparent;
     background: transparent;
     &:hover {
-      background: rgba(249, 249, 249, 0.04);
+      background: ${({ theme }) => theme.colors.white_opacity['004']};
     }
     &:active {
-      background: rgba(249, 249, 249, 0.08);
+      background: ${({ theme }) => theme.colors.white_opacity['008']};
     }
     &:focus {
-      background: rgba(249, 249, 249, 0);
+      background: ${({ theme }) => theme.text.secondary + hexPercentValues['000']};
     }
   `,
   danger: css`
@@ -94,14 +94,21 @@ const StyledButton = styled.button<{ $variant: ButtonProps['variant'] }>`
   font-weight: 600;
   outline: none;
   ${({ $variant }) => $variant && variantStyles[$variant]}
-  ${({ disabled }) =>
+  ${({ disabled, $variant }) =>
     disabled &&
     css`
       opacity: 0.5;
       cursor: not-allowed;
-      &:hover {
-        background-color: #eaeaea;
-      }
+
+      ${$variant === 'primary'
+        ? css`
+            color: ${({ theme }) => theme.colors.secondary};
+            background: ${({ theme }) => theme.text.secondary + hexPercentValues['010']};
+            &:hover {
+              background: ${({ theme }) => theme.text.secondary + hexPercentValues['015']};
+            }
+          `
+        : ''}
     `}
 `;
 
@@ -117,10 +124,10 @@ const ButtonContainer = styled.div<{ $variant: ButtonProps['variant'] }>`
   }
 `;
 
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(({ children, variant = 'primary', isDisabled = false, ...props }, ref) => {
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(({ children, variant = 'primary', ...props }, ref) => {
   return (
     <ButtonContainer $variant={variant}>
-      <StyledButton ref={ref} $variant={variant} disabled={isDisabled || props.disabled} {...props}>
+      <StyledButton ref={ref} $variant={variant} {...props}>
         {children}
       </StyledButton>
     </ButtonContainer>
