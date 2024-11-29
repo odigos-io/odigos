@@ -1,8 +1,6 @@
 package kube
 
 import (
-	"context"
-
 	"github.com/odigos-io/odigos/common/consts"
 	"k8s.io/apimachinery/pkg/labels"
 
@@ -59,17 +57,6 @@ func CreateManager() (ctrl.Manager, error) {
 			BindAddress: "0",
 		},
 	})
-}
-
-func StartManager(ctx context.Context, mgr ctrl.Manager) error {
-	go func() {
-		err := mgr.Start(ctx)
-		if err != nil {
-			log.Logger.Error(err, "error starting kube manager")
-		}
-	}()
-
-	return nil
 }
 
 func SetupWithManager(mgr ctrl.Manager, ebpfDirectors ebpf.DirectorsMap, clientset *kubernetes.Clientset) error {

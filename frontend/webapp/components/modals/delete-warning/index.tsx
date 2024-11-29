@@ -24,12 +24,12 @@ const DeleteWarning: React.FC<Props> = ({ isOpen, noOverlay, name, note, onAppro
       description='Are you sure you want to delete?'
       note={note}
       approveButton={{
-        text: 'Delete',
+        text: 'Confirm',
         variant: 'danger',
         onClick: onApprove,
       }}
       denyButton={{
-        text: 'Cancel',
+        text: 'Go Back',
         onClick: onDeny,
       }}
     />

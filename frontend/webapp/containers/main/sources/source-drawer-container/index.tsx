@@ -1,98 +1,108 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import buildCard from './build-card';
 import styled from 'styled-components';
 import { useSourceCRUD } from '@/hooks';
 import { useDrawerStore } from '@/store';
 import { CardDetails } from '@/components';
-import type { K8sActualSource } from '@/types';
-import { getMainContainerLanguageLogo } from '@/utils';
+import buildDrawerItem from './build-drawer-item';
 import { UpdateSourceBody } from '../update-source-body';
+import { ConditionDetails } from '@/reuseable-components';
 import OverviewDrawer from '../../overview/overview-drawer';
+import { ACTION, getMainContainerLanguageLogo } from '@/utils';
+import { OVERVIEW_ENTITY_TYPES, WorkloadId, type K8sActualSource } from '@/types';
+
+interface Props {}
 
 const EMPTY_FORM = {
   reportedName: '',
 };
 
-const SourceDrawer: React.FC = () => {
-  const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
-  const [isEditing, setIsEditing] = useState(false);
-  const [isFormDirty, setIsFormDirty] = useState(false);
+const FormContainer = styled.div`
+  width: 100%;
+  height: 100%;
+  max-height: calc(100vh - 220px);
+  overflow: overlay;
+  overflow-y: auto;
+`;
 
-  const [formData, setFormData] = useState({
-    ...EMPTY_FORM,
+const DataContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+`;
+
+export const SourceDrawer: React.FC<Props> = () => {
+  const { selectedItem, setSelectedItem } = useDrawerStore();
+
+  const { deleteSources, updateSource } = useSourceCRUD({
+    onSuccess: (type) => {
+      setIsEditing(false);
+      setIsFormDirty(false);
+
+      if (type === ACTION.DELETE) {
+        setSelectedItem(null);
+      } else {
+        const { item } = selectedItem as { item: K8sActualSource };
+        const { namespace, name, kind } = item;
+        const id = { namespace, name, kind };
+        setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.SOURCE, item: buildDrawerItem(id, formData, item) });
+      }
+    },
   });
 
-  const handleFormChange = (key: keyof typeof EMPTY_FORM, val: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      [key]: val,
-    }));
-  };
+  const [isEditing, setIsEditing] = useState(false);
+  const [isFormDirty, setIsFormDirty] = useState(false);
+  const [formData, setFormData] = useState({ ...EMPTY_FORM });
 
-  const { deleteSources, updateSource } = useSourceCRUD();
+  const handleFormChange = (key: keyof typeof EMPTY_FORM, val: any) => setFormData((prev) => ({ ...prev, [key]: val }));
+  const resetFormData = () => setFormData({ ...EMPTY_FORM });
+
+  useEffect(() => {
+    if (!selectedItem || !isEditing) {
+      resetFormData();
+    } else {
+      const { item } = selectedItem as { item: K8sActualSource };
+      handleFormChange('reportedName', item.reportedName || item.name || '');
+    }
+  }, [selectedItem, isEditing]);
 
   const cardData = useMemo(() => {
     if (!selectedItem) return [];
 
-    // Destructure necessary fields from the selected item
-    const { name, kind, namespace, instrumentedApplicationDetails } = selectedItem.item as K8sActualSource;
+    const { item } = selectedItem as { item: K8sActualSource };
+    const arr = buildCard(item);
 
-    // Extract the first container and condition if available
-    const container = instrumentedApplicationDetails?.containers?.[0];
-
-    return [
-      { title: 'Name', value: name || 'N/A' },
-      { title: 'Kind', value: kind || 'N/A' },
-      { title: 'Namespace', value: namespace || 'N/A' },
-      { title: 'Container Name', value: container?.containerName || 'N/A' },
-      { title: 'Language', value: container?.language || 'N/A' },
-    ];
+    return arr;
   }, [selectedItem]);
 
-  useEffect(() => {
-    if (!selectedItem || !isEditing) {
-      setFormData({ ...EMPTY_FORM });
-    } else {
-      const { item } = selectedItem as { item: K8sActualSource };
-
-      setFormData({
-        reportedName: item.reportedName || item.name || '',
-      });
-    }
-  }, [selectedItem, isEditing]);
-
   if (!selectedItem?.item) return null;
-  const { item } = selectedItem;
+  const { id, item } = selectedItem as { id: WorkloadId; item: K8sActualSource };
 
   const handleEdit = (bool?: boolean) => {
-    if (typeof bool === 'boolean') {
-      setIsEditing(bool);
-    } else {
-      setIsEditing(true);
-    }
+    setIsEditing(typeof bool === 'boolean' ? bool : true);
   };
 
   const handleCancel = () => {
     setIsEditing(false);
+    setIsFormDirty(false);
   };
 
   const handleDelete = async () => {
-    const { namespace } = item as K8sActualSource;
-
-    await deleteSources({ [namespace]: [item as K8sActualSource] });
+    const { namespace } = item;
+    await deleteSources({ [namespace]: [item] });
   };
 
   const handleSave = async () => {
-    const { namespace, name, kind } = item as K8sActualSource;
-    const title = formData.reportedName !== (item as K8sActualSource).name ? formData.reportedName : '';
-
-    await updateSource({ namespace, kind, name }, { ...formData, reportedName: title });
+    const title = formData.reportedName !== item.name ? formData.reportedName : '';
+    handleFormChange('reportedName', title);
+    await updateSource(id, { ...formData, reportedName: title });
   };
 
   return (
     <OverviewDrawer
-      title={(item as K8sActualSource).reportedName || (item as K8sActualSource).name}
+      title={item.reportedName || item.name}
       titleTooltip='This attribute is used to identify the name of the service (service.name) that is generating telemetry data.'
-      imageUri={getMainContainerLanguageLogo(item as K8sActualSource)}
+      imageUri={getMainContainerLanguageLogo(item)}
       isEdit={isEditing}
       isFormDirty={isFormDirty}
       onEdit={handleEdit}
@@ -112,31 +122,10 @@ const SourceDrawer: React.FC = () => {
         </FormContainer>
       ) : (
         <DataContainer>
-          <CardDetails data={cardData} />
-          {/* <CardDetails
-            title='Resource Attributes'
-            data={[
-              { title: 'Service Name', tooltip: 'This overrides the default service name that runs in your cluster.', value: (item as K8sActualSource).reportedName || (item as K8sActualSource).name },
-            ]}
-          /> */}
+          <ConditionDetails conditions={item.instrumentedApplicationDetails.conditions} />
+          <CardDetails title='Source Details' data={cardData} />
         </DataContainer>
       )}
     </OverviewDrawer>
   );
 };
-
-export { SourceDrawer };
-
-const FormContainer = styled.div`
-  width: 100%;
-  height: 100%;
-  max-height: calc(100vh - 220px);
-  overflow: overlay;
-  overflow-y: auto;
-`;
-
-const DataContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-`;
