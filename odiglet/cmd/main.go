@@ -66,8 +66,8 @@ func newOdiglet() (*odiglet, error) {
 	ebpfManager, err := ebpf.NewManager(
 		mgr.GetClient(),
 		log.Logger,
-		map[ebpf.FactoryID]ebpf.Factory{
-			ebpf.FactoryID{
+		map[ebpf.OtelDistribution]ebpf.Factory{
+			ebpf.OtelDistribution{
 				Language: common.GoProgrammingLanguage,
 				OtelSdk:  common.OtelSdkEbpfCommunity,
 			}: sdks.NewGoInstrumentationFactory(),

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"golang.org/x/sync/errgroup"
 
 	"github.com/go-logr/logr"
@@ -73,24 +74,24 @@ type instrumentationDetails struct {
 type Manager struct {
 	// channel for receiving process events,
 	// used to detect new processes and process exits, and handle their instrumentation accordingly.
-	procEvents        <-chan detector.ProcessEvent
-	detector 		  *detector.Detector
-	client            client.Client
-	factories         map[FactoryID]Factory
-	logger            logr.Logger
+	procEvents <-chan detector.ProcessEvent
+	detector   *detector.Detector
+	client     client.Client
+	factories  map[OtelDistribution]Factory
+	logger     logr.Logger
 
 	// all the active instrumentations by pid,
 	// this map is not concurrent safe, so it should be accessed only from the main event loop
-	detailsByPid      map[int]*instrumentationDetails
+	detailsByPid map[int]*instrumentationDetails
 
 	// active instrumentations by workload, and aggregated by pid
 	// this map is not concurrent safe, so it should be accessed only from the main event loop
 	detailsByWorkload map[types.NamespacedName]map[int]*instrumentationDetails
 
-	configUpdates     chan ConfigUpdate
+	configUpdates chan ConfigUpdate
 }
 
-func NewManager(client client.Client, logger logr.Logger, factories map[FactoryID]Factory) (*Manager, error) {
+func NewManager(client client.Client, logger logr.Logger, factories map[OtelDistribution]Factory) (*Manager, error) {
 	procEvents := make(chan detector.ProcessEvent)
 	detector, err := detector.NewDetector(context.Background(), logger, procEvents)
 	if err != nil {
@@ -167,7 +168,7 @@ func (m *Manager) Run(ctx context.Context) error {
 	g.Go(func() error {
 		return m.detector.Run(errCtx)
 	})
-	
+
 	g.Go(func() error {
 		m.runEventLoop(errCtx)
 		return nil
@@ -234,7 +235,7 @@ func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.Process
 		return fmt.Errorf("failed to get language and sdk: %w", err)
 	}
 
-	factory, found := m.factories[FactoryID{Language: lang, OtelSdk: sdk}]
+	factory, found := m.factories[OtelDistribution{Language: lang, OtelSdk: sdk}]
 	if !found {
 		return ErrNoInstrumentationFactory
 	}
@@ -415,4 +416,3 @@ func containerNameFromProcEvent(event detector.ProcessEvent) (string, bool) {
 	containerName, ok := event.ExecDetails.Environments[consts.OdigosEnvVarContainerName]
 	return containerName, ok
 }
-

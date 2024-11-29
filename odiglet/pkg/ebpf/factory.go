@@ -13,13 +13,13 @@ import (
 type Settings struct {
 	// ServiceName is the name of the service that is being instrumented
 	// It will be used to populate the service.name resource attribute.
-	ServiceName        string
+	ServiceName string
 	// ResourceAttributes can be used to pass additional resource attributes to the instrumentation
 	// These attributes will be added to the resource attributes of the telemetry data.
 	ResourceAttributes []attribute.KeyValue
 	// InitialConfig is the initial configuration that should be applied to the instrumentation,
 	// it can be used to enable/disable specific instrumentation libraries, configure sampling, etc.
-	InitialConfig	   *odigosv1.SdkConfig
+	InitialConfig *odigosv1.SdkConfig
 }
 
 // Factory is used to create an Instrumentation
@@ -29,7 +29,11 @@ type Factory interface {
 	CreateInstrumentation(ctx context.Context, pid int, settings Settings) (Instrumentation, error)
 }
 
-type FactoryID struct {
+// OtelDistribution is a customized version of an OpenTelemetry component.
+// see https://opentelemetry.io/docs/concepts/distributions  and https://github.com/odigos-io/odigos/pull/1776#discussion_r1853367917 for more information.
+// TODO: This should be moved to a common package, since it will require a bigger refactor across multiple components,
+// we use this local definition for now.
+type OtelDistribution struct {
 	Language common.ProgrammingLanguage
 	OtelSdk  common.OtelSdk
 }
