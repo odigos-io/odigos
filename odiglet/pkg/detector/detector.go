@@ -13,42 +13,14 @@ import (
 
 type ProcessEvent = detector.ProcessEvent
 
+type Detector = detector.Detector
+
 const (
 	ProcessExecEvent = detector.ProcessExecEvent
 	ProcessExitEvent = detector.ProcessExitEvent
 )
 
-type Detector struct {
-	Detector *detector.Detector
-	procEvents chan<- ProcessEvent
-}
-
-func NewDetector(ctx context.Context, logger logr.Logger, events chan<- ProcessEvent) (*Detector, error) {
-	detector, err := newDetector(ctx, logger, events)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Detector{
-		Detector: detector,
-		procEvents: events,
-	}, nil
-}
-
-func (d *Detector) Run(ctx context.Context) error {
-	var runError error
-	done := make(chan struct{})
-
-	go func() {
-		defer close(done)
-		runError = d.Detector.Run(ctx)
-	}()
-
-	<-done
-	return runError
-}
-
-func newDetector(ctx context.Context, logger logr.Logger, events chan<- ProcessEvent) (*detector.Detector, error) {
+func NewK8SProcDetector(ctx context.Context, logger logr.Logger, events chan<- ProcessEvent) (*detector.Detector, error) {
 	sLogger := slog.New(logr.ToSlogHandler(logger))
 
 	opts := []detector.DetectorOption{

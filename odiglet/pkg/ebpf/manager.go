@@ -97,7 +97,7 @@ type Manager struct {
 
 func NewManager(client client.Client, logger logr.Logger, factories map[OtelDistribution]Factory) (*Manager, error) {
 	procEvents := make(chan detector.ProcessEvent)
-	detector, err := detector.NewDetector(context.Background(), logger, procEvents)
+	detector, err := detector.NewK8SProcDetector(context.Background(), logger, procEvents)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create process detector: %w", err)
 	}
