@@ -16,7 +16,7 @@ const Flex = styled.div`
 const HeaderContainer = styled(Flex)`
   width: 100%;
   padding: 12px 0;
-  background-color: ${({ theme }) => theme.colors.dark_grey};
+  background-color: ${({ theme }) => theme.colors.darker_grey};
   border-bottom: 1px solid rgba(249, 249, 249, 0.16);
 `;
 

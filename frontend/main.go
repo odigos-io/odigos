@@ -128,7 +128,12 @@ func httpFileServerWith404(fs http.FileSystem) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, err := fs.Open(r.URL.Path)
 		if err != nil {
-			// Redirect to root path
+			// If file not found, serve .html of it (example: /choose-sources -> /choose-sources.html)
+			r.URL.Path = r.URL.Path + ".html"
+		}
+		_, err = fs.Open(r.URL.Path)
+		if err != nil {
+			// If .html file not found, this route does not exist at all (404) so we should redirect to default
 			r.URL.Path = "/"
 		}
 		http.FileServer(fs).ServeHTTP(w, r)
@@ -269,7 +274,15 @@ func main() {
 		return
 	}
 
-	go common.StartPprofServer(logr.FromSlogHandler(slog.Default().Handler()))
+	ctx, cancel := context.WithCancel(context.Background())
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
+	defer func() {
+		signal.Stop(ch)
+		cancel()
+	}()
+
+	go common.StartPprofServer(ctx, logr.FromSlogHandler(slog.Default().Handler()))
 
 	// Load destinations data
 	err := destinations.Load()
@@ -282,14 +295,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error creating Kubernetes client: %s", err)
 	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
-	defer func() {
-		signal.Stop(ch)
-		cancel()
-	}()
 
 	odigosMetrics := collectormetrics.NewOdigosMetrics()
 	var wg sync.WaitGroup

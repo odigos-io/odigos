@@ -5,6 +5,7 @@ export interface FiltersState {
   namespace: DropdownOption | undefined;
   types: DropdownOption[];
   monitors: DropdownOption[];
+  languages: DropdownOption[];
   errors: DropdownOption[];
   onlyErrors: boolean;
 }
@@ -19,6 +20,9 @@ interface StoreState {
   monitors: FiltersState['monitors'];
   setMonitors: (metrics: FiltersState['monitors']) => void;
 
+  languages: FiltersState['languages'];
+  setLanguages: (metrics: FiltersState['languages']) => void;
+
   errors: FiltersState['errors'];
   setErrors: (metrics: FiltersState['errors']) => void;
 
@@ -27,7 +31,17 @@ interface StoreState {
 
   setAll: (params: FiltersState) => void;
   clearAll: () => void;
+  getEmptyState: () => FiltersState;
 }
+
+const getEmptyState = () => ({
+  namespace: undefined,
+  types: [],
+  monitors: [],
+  languages: [],
+  errors: [],
+  onlyErrors: false,
+});
 
 export const useFilterStore = create<StoreState>((set) => ({
   namespace: undefined,
@@ -39,6 +53,9 @@ export const useFilterStore = create<StoreState>((set) => ({
   monitors: [],
   setMonitors: (monitors) => set({ monitors }),
 
+  languages: [],
+  setLanguages: (languages) => set({ languages }),
+
   errors: [],
   setErrors: (errors) => set({ errors }),
 
@@ -46,5 +63,6 @@ export const useFilterStore = create<StoreState>((set) => ({
   setOnlyErrors: (onlyErrors) => set({ onlyErrors }),
 
   setAll: (params) => set(params),
-  clearAll: () => set({ namespace: undefined, types: [], monitors: [], errors: [], onlyErrors: false }),
+  clearAll: () => set(getEmptyState()),
+  getEmptyState,
 }));

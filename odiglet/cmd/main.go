@@ -2,16 +2,17 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"sync"
 
-	detector "github.com/odigos-io/odigos/odiglet/pkg/detector"
+	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf/sdks"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/fs"
 
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	"github.com/odigos-io/odigos/common"
 	k8senv "github.com/odigos-io/odigos/k8sutils/pkg/env"
-	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/instrumentlang"
@@ -20,6 +21,7 @@ import (
 	"github.com/odigos-io/odigos/opampserver/pkg/server"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 
 	_ "net/http/pprof"
@@ -35,6 +37,117 @@ func odigletInitPhase() {
 		os.Exit(-1)
 	}
 	os.Exit(0)
+}
+
+type odiglet struct {
+	clientset   *kubernetes.Clientset
+	mgr         ctrl.Manager
+	ebpfManager *ebpf.Manager
+}
+
+func newOdiglet() (*odiglet, error) {
+	// Init Kubernetes API client
+	cfg, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, fmt.Errorf("Failed to create in-cluster config for Kubernetes client %w", err)
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to create Kubernetes client %w", err)
+	}
+
+	mgr, err := kube.CreateManager()
+	if err != nil {
+		return nil, fmt.Errorf("Failed to create controller-runtime manager %w", err)
+	}
+
+	ebpfManager, err := ebpf.NewManager(
+		mgr.GetClient(),
+		log.Logger,
+		map[ebpf.FactoryID]ebpf.Factory{
+			ebpf.FactoryID{
+				Language: common.GoProgrammingLanguage,
+				OtelSdk:  common.OtelSdkEbpfCommunity,
+			}: sdks.NewGoInstrumentationFactory(),
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to create ebpf manager %w", err)
+	}
+
+	err = kube.SetupWithManager(mgr, nil, clientset, ebpfManager.UpdateConfig)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to setup controller-runtime manager %w", err)
+	}
+
+	return &odiglet{
+		clientset:   clientset,
+		mgr:         mgr,
+		ebpfManager: ebpfManager,
+	}, nil
+}
+
+func (o *odiglet) run(ctx context.Context) {
+	var wg sync.WaitGroup
+
+	// Start pprof server
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err := common.StartPprofServer(ctx, log.Logger)
+		if err != nil {
+			log.Logger.Error(err, "Failed to start pprof server")
+		} else {
+			log.Logger.V(0).Info("Pprof server exited")
+		}
+	}()
+
+	// Start device manager
+	// the device manager library doesn't support passing a context,
+	// however, internally it uses a context to cancel the device manager once SIGTERM or SIGINT is received.
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		runDeviceManager(o.clientset)
+		log.Logger.V(0).Info("Device manager exited")
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err := o.ebpfManager.Run(ctx)
+		if err != nil {
+			log.Logger.Error(err, "Failed to run ebpf manager")
+		}
+		log.Logger.V(0).Info("Ebpf manager exited")
+	}()
+
+	// start OpAmp server
+	odigosNs := k8senv.GetCurrentNamespace()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err := server.StartOpAmpServer(ctx, log.Logger, o.mgr, o.clientset, env.Current.NodeName, odigosNs)
+		if err != nil {
+			log.Logger.Error(err, "Failed to start opamp server")
+		}
+		log.Logger.V(0).Info("OpAmp server exited")
+	}()
+
+	// start kube manager
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err := o.mgr.Start(ctx)
+		if err != nil {
+			log.Logger.Error(err, "error starting kube manager")
+		}
+		log.Logger.V(0).Info("Kube manager exited")
+	}()
+
+	<-ctx.Done()
+	wg.Wait()
 }
 
 func main() {
@@ -55,80 +168,19 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Init Kubernetes API client
-	cfg, err := rest.InClusterConfig()
+	o, err := newOdiglet()
 	if err != nil {
-		log.Logger.Error(err, "Failed to init Kubernetes API client")
-		os.Exit(-1)
-	}
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		log.Logger.Error(err, "Failed to init Kubernetes API client")
-		os.Exit(-1)
+		log.Logger.Error(err, "Failed to initialize odiglet")
+		os.Exit(1)
 	}
 
 	ctx := signals.SetupSignalHandler()
+	o.run(ctx)
 
-	go common.StartPprofServer(log.Logger)
-
-	go startDeviceManager(clientset)
-
-	procEvents := make(chan detector.ProcessEvent)
-	runtimeDetector, err := detector.StartRuntimeDetector(ctx, log.Logger, procEvents)
-	if err != nil {
-		log.Logger.Error(err, "Failed to start runtime detector")
-		os.Exit(-1)
-	}
-
-	mgr, err := kube.CreateManager()
-	if err != nil {
-		log.Logger.Error(err, "Failed to create controller-runtime manager")
-		os.Exit(-1)
-	}
-
-	instrumentationManager := ebpf.NewManager(
-		mgr.GetClient(),
-		log.Logger,
-		map[ebpf.FactoryID]ebpf.Factory{
-			ebpf.FactoryID{
-				Language: common.GoProgrammingLanguage,
-				OtelSdk:  common.OtelSdkEbpfCommunity,
-			}: sdks.NewGoInstrumentationFactory(),
-		},
-		procEvents,
-	)
-
-	go instrumentationManager.Run(ctx)
-
-	odigosNs := k8senv.GetCurrentNamespace()
-	err = server.StartOpAmpServer(ctx, log.Logger, mgr, clientset, env.Current.NodeName, odigosNs)
-	if err != nil {
-		log.Logger.Error(err, "Failed to start opamp server")
-	}
-
-	err = kube.SetupWithManager(mgr, nil, clientset, instrumentationManager.UpdateConfig)
-	if err != nil {
-		log.Logger.Error(err, "Failed to setup controller-runtime manager")
-		os.Exit(-1)
-	}
-
-	err = kube.StartManager(ctx, mgr)
-	if err != nil {
-		log.Logger.Error(err, "Failed to start controller-runtime manager")
-		os.Exit(-1)
-	}
-
-	<-ctx.Done()
-	err = runtimeDetector.Stop()
-	if err != nil {
-		log.Logger.Error(err, "Failed to stop runtime detector")
-		os.Exit(-1)
-	}
-	instrumentationManager.Stop()
 	log.Logger.V(0).Info("odiglet exiting")
 }
 
-func startDeviceManager(clientset *kubernetes.Clientset) {
+func runDeviceManager(clientset *kubernetes.Clientset) {
 	log.Logger.V(0).Info("Starting device manager")
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

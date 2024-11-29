@@ -2,8 +2,6 @@ package detector
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"log/slog"
 
 	"github.com/go-logr/logr"
@@ -21,33 +19,33 @@ const (
 )
 
 type Detector struct {
-	detector *detector.Detector
-	done     chan struct{}
-	runError error
+	Detector *detector.Detector
+	procEvents chan<- ProcessEvent
 }
 
-func StartRuntimeDetector(ctx context.Context, logger logr.Logger, events chan<- ProcessEvent) (*Detector, error) {
+func NewDetector(ctx context.Context, logger logr.Logger, events chan<- ProcessEvent) (*Detector, error) {
 	detector, err := newDetector(ctx, logger, events)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create runtime detector: %w", err)
+		return nil, err
 	}
 
-	done := make(chan struct{})
-
-	d := &Detector{detector: detector, done: done}
-
-	go func() {
-		defer close(d.done)
-		d.runError = detector.Run(ctx)
-	}()
-
-	return d, nil
+	return &Detector{
+		Detector: detector,
+		procEvents: events,
+	}, nil
 }
 
-func (d *Detector) Stop() error {
-	err := d.detector.Stop()
-	<-d.done
-	return errors.Join(d.runError, err)
+func (d *Detector) Run(ctx context.Context) error {
+	var runError error
+	done := make(chan struct{})
+
+	go func() {
+		defer close(done)
+		runError = d.Detector.Run(ctx)
+	}()
+
+	<-done
+	return runError
 }
 
 func newDetector(ctx context.Context, logger logr.Logger, events chan<- ProcessEvent) (*detector.Detector, error) {

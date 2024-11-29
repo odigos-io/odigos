@@ -3,7 +3,7 @@ import Image from 'next/image';
 import theme from '@/styles/theme';
 import styled from 'styled-components';
 import { UseSourceFormDataResponse } from '@/hooks';
-import { Checkbox, Divider, NoDataFound, Text, Toggle } from '@/reuseable-components';
+import { Checkbox, Divider, ExtendIcon, NoDataFound, Text, Toggle } from '@/reuseable-components';
 
 interface Props extends UseSourceFormDataResponse {
   isModal?: boolean;
@@ -149,7 +149,7 @@ export const SourcesList: React.FC<Props> = ({
                 <SelectionCount size={10} color={theme.text.grey}>
                   {namespaceLoaded ? `${selected.length}/${sources.length}` : null}
                 </SelectionCount>
-                <ArrowIcon src='/icons/common/extend-arrow.svg' alt='open-dropdown' width={14} height={14} className={isNamespaceSelected ? 'open' : 'close'} />
+                <ExtendIcon extend={isNamespaceSelected} />
               </FlexRow>
             </NamespaceItem>
 

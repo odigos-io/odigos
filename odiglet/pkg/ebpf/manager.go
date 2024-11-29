@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -75,6 +76,7 @@ type Manager struct {
 	// channel for receiving process events,
 	// used to detect new processes and process exits, and handle their instrumentation accordingly.
 	procEvents        <-chan detector.ProcessEvent
+	detector 		  *detector.Detector
 	client            client.Client
 	factories         map[FactoryID]Factory
 	logger            logr.Logger
@@ -88,22 +90,25 @@ type Manager struct {
 	detailsByWorkload map[types.NamespacedName]map[int]*instrumentationDetails
 
 	configUpdates     chan configUpdate
-
-	done chan struct{}
-	stop context.CancelFunc
 }
 
-func NewManager(client client.Client, logger logr.Logger, factories map[FactoryID]Factory, procEvents <-chan detector.ProcessEvent) *Manager {
+func NewManager(client client.Client, logger logr.Logger, factories map[FactoryID]Factory) (*Manager, error) {
+	procEvents := make(chan detector.ProcessEvent)
+	detector, err := detector.NewDetector(context.Background(), logger, procEvents)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create process detector: %w", err)
+	}
+
 	return &Manager{
 		procEvents:        procEvents,
+		detector:          detector,
 		client:            client,
 		factories:         factories,
 		logger:            logger.WithName("ebpf-instrumentation-manager"),
 		detailsByPid:      make(map[int]*instrumentationDetails),
 		detailsByWorkload: map[types.NamespacedName]map[int]*instrumentationDetails{},
 		configUpdates:     make(chan configUpdate),
-		done:              make(chan struct{}),
-	}
+	}, nil
 }
 
 func (m *Manager) UpdateConfig(ctx context.Context, workloadKey types.NamespacedName, config *odigosv1.InstrumentationConfig) error {
@@ -119,16 +124,11 @@ func (m *Manager) UpdateConfig(ctx context.Context, workloadKey types.Namespaced
 	}
 }
 
-func (m *Manager) Run(ctx context.Context) {
-	defer close(m.done)
-
-	runLoopCtx, stop := context.WithCancel(ctx)
-	m.stop = stop
-
+func (m *Manager) runEventLoop(ctx context.Context) {
 	// main event loop for handling instrumentations
 	for {
 		select {
-		case <-runLoopCtx.Done():
+		case <-ctx.Done():
 			m.logger.Info("stopping Odiglet instrumentation manager")
 			for pid, details := range m.detailsByPid {
 				err := details.inst.Close(ctx)
@@ -145,14 +145,14 @@ func (m *Manager) Run(ctx context.Context) {
 			switch e.EventType {
 			case detector.ProcessExecEvent:
 				m.logger.V(1).Info("detected new process", "pid", e.PID, "cmd", e.ExecDetails.CmdLine)
-				err := m.handleProcessExecEvent(runLoopCtx, e)
+				err := m.handleProcessExecEvent(ctx, e)
 				// ignore the error if no instrumentation factory is found,
 				// as this is expected for some language and sdk combinations
 				if err != nil && !errors.Is(err, ErrNoInstrumentationFactory) {
 					m.logger.Error(err, "failed to handle process exec event")
 				}
 			case detector.ProcessExitEvent:
-				m.cleanInstrumentation(runLoopCtx, e.PID)
+				m.cleanInstrumentation(ctx, e.PID)
 			}
 		case configUpdate := <-m.configUpdates:
 			if configUpdate.config == nil {
@@ -160,7 +160,7 @@ func (m *Manager) Run(ctx context.Context) {
 				break
 			}
 			for _, sdkConfig := range configUpdate.config.Spec.SdkConfigs {
-				err := m.applyInstrumentationConfigurationForSDK(runLoopCtx, configUpdate.workloadKey, &sdkConfig)
+				err := m.applyInstrumentationConfigurationForSDK(ctx, configUpdate.workloadKey, &sdkConfig)
 				if err != nil {
 					m.logger.Error(err, "failed to apply instrumentation configuration")
 				}
@@ -169,9 +169,20 @@ func (m *Manager) Run(ctx context.Context) {
 	}
 }
 
-func (m *Manager) Stop() {
-	m.stop()
-	<-m.done
+func (m *Manager) Run(ctx context.Context) error {
+	g, errCtx := errgroup.WithContext(ctx)
+
+	g.Go(func() error {
+		return m.detector.Run(errCtx)
+	})
+	
+	g.Go(func() error {
+		m.runEventLoop(errCtx)
+		return nil
+	})
+
+	err := g.Wait()
+	return err
 }
 
 func (m *Manager) cleanInstrumentation(ctx context.Context, pid int) {

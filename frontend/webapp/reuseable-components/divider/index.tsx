@@ -4,7 +4,7 @@ import styled from 'styled-components';
 interface Props {
   orientation?: 'horizontal' | 'vertical';
   thickness?: number;
-  length?: number | string;
+  length?: string;
   color?: string;
   margin?: string;
 }
