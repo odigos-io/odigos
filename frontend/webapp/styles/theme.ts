@@ -120,9 +120,9 @@ const colors = {
 
   orange_og: '#FE9239',
   orange_soft: '#FFB160',
-
   dark_red: '#802828',
   darker_red: '#611F1F',
+  darkest_red: '#281515',
   dark_green: '#2D4323',
 
   warning: '#472300',
@@ -229,12 +229,14 @@ const text = {
   secondary: '#F9F9F9',
   white: '#FFFFFF',
   grey: '#B8B8B8',
-  dark_grey: '#7A7A7A',
+  dark_grey: '#8F8F8F',
+  darker_grey: '#7A7A7A',
   light_grey: '#CCD0D2',
   dark_button: '#0A1824',
 
   warning: '#E9CF35',
   error: '#EF7676',
+  error_secondary: '#DB5151',
   success: '#81AF65',
   info: '#B8B8B8',
   default: '#AABEF7',

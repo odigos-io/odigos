@@ -1,10 +1,11 @@
-import Image from 'next/image';
-import { Text } from '../text';
-import { Input } from '../input';
-import { Button } from '../button';
-import styled from 'styled-components';
-import { FieldLabel } from '../field-label';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import Image from 'next/image';
+import styled from 'styled-components';
+import { Button, FieldError, FieldLabel, Input, Text } from '@/reuseable-components';
+
+type Row = {
+  [key: string]: any;
+};
 
 interface Props {
   columns: {
@@ -15,9 +16,10 @@ interface Props {
     tooltip?: string;
     required?: boolean;
   }[];
-  initialValues?: Record<string, any>[];
-  value?: Record<string, any>[];
-  onChange?: (values: Record<string, any>[]) => void;
+  initialValues?: Row[];
+  value?: Row[];
+  onChange?: (values: Row[]) => void;
+  errorMessage?: string;
 }
 
 const Container = styled.div`
@@ -53,16 +55,18 @@ const ButtonText = styled(Text)`
   text-decoration-line: underline;
 `;
 
-export const InputTable: React.FC<Props> = ({ columns, initialValues = [], value = [], onChange }) => {
-  const [initialObject, setInitialObject] = useState({});
-  const [rows, setRows] = useState(value || initialValues);
+export const InputTable: React.FC<Props> = ({ columns, initialValues = [], value, onChange, errorMessage }) => {
+  // INITIAL_ROW as state, because it's dynamic to the "columns" prop
+  const [initialRow, setInitialRow] = useState<Row>({});
+  const [rows, setRows] = useState<Row[]>(value || initialValues);
 
   useEffect(() => {
-    const init = {};
-    columns.forEach(({ keyName }) => (init[keyName] = ''));
-    setInitialObject(init);
-
-    if (!rows.length) setRows([{ ...init }]);
+    if (!rows.length) {
+      const init = {};
+      columns.forEach(({ keyName }) => (init[keyName] = ''));
+      setInitialRow(init);
+      setRows([{ ...init }]);
+    }
   }, []);
 
   // Filter out rows where either key or value is empty
@@ -83,7 +87,7 @@ export const InputTable: React.FC<Props> = ({ columns, initialValues = [], value
   const handleAddRow = () => {
     setRows((prev) => {
       const payload = [...prev];
-      payload.push({ ...initialObject });
+      payload.push({ ...initialRow });
       return payload;
     });
   };
@@ -110,12 +114,12 @@ export const InputTable: React.FC<Props> = ({ columns, initialValues = [], value
 
   return (
     <Container>
-      <table style={{ marginBottom: '12px', borderCollapse: 'collapse' }}>
+      <table style={{ borderCollapse: 'collapse' }}>
         <thead>
           <tr>
             {columns.map(({ title, tooltip, required }) => (
-              <th key={`input-table-head-${title}`} style={{ maxWidth, paddingLeft: 10 }}>
-                <FieldLabel title={title} required={required} tooltip={tooltip} style={{ marginBottom: 0 }} />
+              <th key={`input-table-head-${title}`} style={{ maxWidth }}>
+                <FieldLabel title={title} required={required} tooltip={tooltip} />
               </th>
             ))}
 
@@ -125,19 +129,24 @@ export const InputTable: React.FC<Props> = ({ columns, initialValues = [], value
 
         <tbody>
           {rows.map((row, idx) => (
-            <tr key={`input-table-row-${idx}`} style={{ height: '50px' }}>
-              {columns.map(({ type, keyName, placeholder }, innerIdx) => (
-                <td key={`input-table-${idx}-${keyName}`} style={{ maxWidth, padding: '0 2px' }}>
-                  <Input
-                    type={type}
-                    placeholder={placeholder}
-                    value={row[keyName]}
-                    onChange={({ target: { value: val } }) => handleChange(keyName, type === 'number' ? Number(val) : val, idx)}
-                    autoFocus={rows.length > 1 && idx === rows.length - 1 && innerIdx === 0}
-                    style={{ maxWidth, paddingLeft: 10 }}
-                  />
-                </td>
-              ))}
+            <tr key={`input-table-row-${idx}`}>
+              {columns.map(({ type, keyName, placeholder, required }, innerIdx) => {
+                const value = row[keyName];
+
+                return (
+                  <td key={`input-table-${idx}-${keyName}`} style={{ maxWidth, padding: '4px 6px 4px 0' }}>
+                    <Input
+                      type={type}
+                      placeholder={placeholder}
+                      value={value}
+                      onChange={({ target: { value: val } }) => handleChange(keyName, type === 'number' ? Number(val) : val, idx)}
+                      autoFocus={!value && rows.length > 1 && idx === rows.length - 1 && innerIdx === 0}
+                      style={{ maxWidth, paddingLeft: 10 }}
+                      hasError={!!errorMessage && (!required || (required && !value))}
+                    />
+                  </td>
+                );
+              })}
 
               <td>
                 <DeleteButton disabled={isDelButtonDisabled} onClick={() => handleDeleteRow(idx)}>
@@ -149,7 +158,9 @@ export const InputTable: React.FC<Props> = ({ columns, initialValues = [], value
         </tbody>
       </table>
 
-      <AddButton disabled={isAddButtonDisabled} variant={'tertiary'} onClick={handleAddRow}>
+      {!!errorMessage && <FieldError>{errorMessage}</FieldError>}
+
+      <AddButton disabled={isAddButtonDisabled} variant='tertiary' onClick={handleAddRow}>
         <Image src='/icons/common/plus.svg' alt='Add' width={16} height={16} />
         <ButtonText>ADD ENDPOINT FILTER</ButtonText>
       </AddButton>

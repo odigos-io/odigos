@@ -50,7 +50,7 @@ const TabListContainer = styled.div`
 // Tab component
 const Tab: React.FC<TabProps> = ({ title, tooltip, icon, selected, disabled, onClick }) => {
   return (
-    <Tooltip text={tooltip || ''}>
+    <Tooltip text={tooltip}>
       <TabContainer $selected={selected} $disabled={disabled} onClick={onClick}>
         <Image src={icon} width={14} height={14} alt={title} />
         <Text size={14}>{title}</Text>

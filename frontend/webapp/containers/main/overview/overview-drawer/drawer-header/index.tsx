@@ -87,14 +87,9 @@ const DrawerHeader = forwardRef<DrawerHeaderRef, DrawerHeaderProps>(({ title, ti
           <Image src={imageUri} alt='Drawer Item' width={16} height={16} />
         </DrawerItemImageWrapper>
         {!isEdit && (
-          <>
+          <Tooltip text={titleTooltip} withIcon>
             <Title>{title}</Title>
-            {!!titleTooltip && (
-              <Tooltip text={titleTooltip}>
-                <Image src='/icons/common/info.svg' alt='Info' width={16} height={16} />
-              </Tooltip>
-            )}
-          </>
+          </Tooltip>
         )}
       </SectionItemsWrapper>
 

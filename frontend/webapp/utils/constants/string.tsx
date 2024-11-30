@@ -29,10 +29,12 @@ export const ACTION = {
   CREATE: 'Create',
   UPDATE: 'Update',
   DELETE: 'Delete',
+  FETCH: 'Fetch',
 };
 
 export const FORM_ALERTS = {
-  REQUIRED_FIELDS: 'Required fields are missing!',
+  REQUIRED_FIELDS: 'Required fields are missing',
+  FIELD_IS_REQUIRED: 'This field is required',
 };
 
 export const NOTIFICATION: {
@@ -43,4 +45,9 @@ export const NOTIFICATION: {
   WARNING: 'warning',
   INFO: 'info',
   DEFAULT: 'default',
+};
+
+export const BACKEND_BOOLEAN = {
+  FALSE: 'False',
+  TRUE: 'True',
 };
