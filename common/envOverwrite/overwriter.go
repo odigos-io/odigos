@@ -112,10 +112,13 @@ func GetPatchedEnvValue(envName string, observedValue string, currentSdk *common
 
 	// temporary fix clean up observed value from the known webhook injected value
 	parts := strings.Split(observedValue, envMetadata.delim)
-	ignoreEnvValue := "-javaagent:/opt/sre-agent/sre-agent.jar"
+	const (
+		ignoredJavaAgentValue       = "-javaagent:/opt/sre-agent/sre-agent.jar"
+		ignoredNRPythonPathAddition = "newrelic/bootstrap"
+	)
 	newValues := []string{}
 	for _, part := range parts {
-		if part == ignoreEnvValue {
+		if part == ignoredJavaAgentValue || strings.Contains(part, ignoredNRPythonPathAddition) {
 			continue
 		}
 		if strings.TrimSpace(part) == "" {
