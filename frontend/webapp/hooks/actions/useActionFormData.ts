@@ -1,7 +1,6 @@
-import { useState } from 'react';
-import { useNotify } from '../notification/useNotify';
 import { DrawerBaseItem } from '@/store';
-import { ACTION, FORM_ALERTS, NOTIFICATION } from '@/utils';
+import { useGenericForm, useNotify } from '@/hooks';
+import { FORM_ALERTS, NOTIFICATION } from '@/utils';
 import type { ActionDataParsed, ActionInput } from '@/types';
 
 const INITIAL: ActionInput = {
@@ -16,21 +15,7 @@ const INITIAL: ActionInput = {
 
 export function useActionFormData() {
   const notify = useNotify();
-
-  const [formData, setFormData] = useState({ ...INITIAL });
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-
-  const handleFormChange = (key: keyof typeof INITIAL, val: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      [key]: val,
-    }));
-  };
-
-  const resetFormData = () => {
-    setFormData({ ...INITIAL });
-    setFormErrors({});
-  };
+  const { formData, formErrors, handleFormChange, handleErrorChange, resetFormData } = useGenericForm<ActionInput>(INITIAL);
 
   const validateForm = (params?: { withAlert?: boolean; alertTitle?: string }) => {
     const errors = {};
@@ -60,7 +45,7 @@ export function useActionFormData() {
       });
     }
 
-    setFormErrors(errors);
+    handleErrorChange(undefined, undefined, errors);
 
     return ok;
   };
@@ -98,7 +83,7 @@ export function useActionFormData() {
       }
     });
 
-    setFormData(updatedData);
+    handleFormChange(undefined, undefined, updatedData);
   };
 
   return {
