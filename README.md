@@ -10,7 +10,6 @@
     </a>
 </p>
 
-
 <p align="center">
 <img src="assets/logo.png" width="350" /></br>
 <h2>Generate distributed traces for any application in k8s without code changes.</h2>
@@ -20,34 +19,33 @@
     <a href="https://www.youtube.com/watch?v=nynyV7FC4VI">Demo Video</a> • <a href="https://docs.odigos.io">Documentation</a> • <a href="https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A">Join Slack Community</a>
 </h2>
 
-
 ### ✨ Language Agnostic Auto-instrumentation
 
 Odigos supports any application written in Java, Python, .NET, Node.js, and **Go**.  
 Historically, compiled languages like Go have been difficult to instrument without code changes. Odigos solves this problem by uniquely leveraging [eBPF](https://ebpf.io).
 
-![Works on any application](assets/choose_apps.png)
-
+![Works on any application](docs/images/ui_choose_apps.png)
 
 ### 🤝 Keep your existing observability tools
+
 Odigos currently supports all the popular managed and open-source destinations.  
 By producing data in the [OpenTelemetry](https://opentelemetry.io) format, Odigos can be used with any observability tool that supports OTLP.
 
 For a complete list of supported destinations, see [here](#supported-destinations).
 
-![Works with any observability tool](assets/choose_dest.png)
+![Works with any observability tool](docs/images/ui_choose_dest.png)
 
-### 🎛️ Collectors Management 
+### 🎛️ Collectors Management
+
 Odigos automatically scales OpenTelemetry collectors based on observability data volume.  
 Manage and configure collectors via a convenient web UI.
 
-![Collectors Management](assets/overview_page.png)
+![Collectors Management](docs/images/ui_overview.png)
 
 ## Installation
 
 Installing Odigos takes less than 5 minutes and requires no code changes.
 Download our [CLI](https://docs.odigos.io/installation) and run the following command:
-
 
 ```bash
 odigos install
@@ -61,27 +59,27 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 
 ### Managed
 
-|                         | Traces  | Metrics | Logs |
-|-------------------------| ------- | ------- |------|
-| New Relic               | ✅      | ✅      | ✅    |
-| Datadog                 | ✅      | ✅      | ✅    |
-| Grafana Cloud           | ✅      | ✅      | ✅    |
-| Honeycomb               | ✅      | ✅      | ✅    |
-| Chronosphere            | ✅      | ✅      |       |
-| Logz.io                 | ✅      | ✅      | ✅    |
-| qryn.cloud              | ✅      | ✅      | ✅    |
-| OpsVerse                | ✅      | ✅      | ✅    |
-| Dynatrace               | ✅      | ✅      | ✅    |
-| AWS S3                  | ✅      | ✅      | ✅    |
-| Google Cloud Monitoring | ✅      |         | ✅    |
-| Google Cloud Storage    | ✅      |         | ✅    |
-| Azure Blob Storage      | ✅      |         | ✅    |
-| Splunk                  | ✅      |         |      |
-| Lightstep               | ✅      |         |      |
-| Sentry                  | ✅      |         |      |
-| Axiom                   | ✅      |         | ✅   |
-| Sumo Logic              | ✅      | ✅      | ✅   |
-| Coralogix               | ✅      | ✅      | ✅   |
+|                         | Traces | Metrics | Logs |
+| ----------------------- | ------ | ------- | ---- |
+| New Relic               | ✅     | ✅      | ✅   |
+| Datadog                 | ✅     | ✅      | ✅   |
+| Grafana Cloud           | ✅     | ✅      | ✅   |
+| Honeycomb               | ✅     | ✅      | ✅   |
+| Chronosphere            | ✅     | ✅      |      |
+| Logz.io                 | ✅     | ✅      | ✅   |
+| qryn.cloud              | ✅     | ✅      | ✅   |
+| OpsVerse                | ✅     | ✅      | ✅   |
+| Dynatrace               | ✅     | ✅      | ✅   |
+| AWS S3                  | ✅     | ✅      | ✅   |
+| Google Cloud Monitoring | ✅     |         | ✅   |
+| Google Cloud Storage    | ✅     |         | ✅   |
+| Azure Blob Storage      | ✅     |         | ✅   |
+| Splunk                  | ✅     |         |      |
+| Lightstep               | ✅     |         |      |
+| Sentry                  | ✅     |         |      |
+| Axiom                   | ✅     |         | ✅   |
+| Sumo Logic              | ✅     | ✅      | ✅   |
+| Coralogix               | ✅     | ✅      | ✅   |
 
 ### Open Source
 
