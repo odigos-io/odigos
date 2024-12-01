@@ -3,8 +3,8 @@ import Image from 'next/image';
 import theme from '@/styles/theme';
 import styled from 'styled-components';
 import type { SourceContainer } from '@/types';
-import { Badge, Text } from '@/reuseable-components';
-import { getProgrammingLanguageIcon, getStatusIcon, INSTUMENTATION_STATUS, WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils';
+import { Badge, DataTab, Text } from '@/reuseable-components';
+import { capitalizeFirstLetter, getProgrammingLanguageIcon, getStatusIcon, INSTUMENTATION_STATUS, WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils';
 
 interface Props {
   containers: SourceContainer[];
@@ -43,32 +43,6 @@ const Body = styled.div`
   gap: 12px;
 `;
 
-const Row = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  border-radius: 12px;
-  background-color: ${({ theme }) => theme.colors.white_opacity['004']};
-`;
-
-const LanguageIcon = styled.div<{ $isError?: boolean }>`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  background: linear-gradient(180deg, rgba(249, 249, 249, 0.06) 0%, rgba(249, 249, 249, 0.02) 100%);
-`;
-
-const RowBody = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-`;
-
 const InstrumentStatus = styled.div<{ $active: boolean }>`
   display: flex;
   align-items: center;
@@ -100,25 +74,14 @@ export const ContainerDetails: React.FC<Props> = ({ containers }) => {
           ].includes(language);
 
           return (
-            <Row key={`container-${idx}`}>
-              <LanguageIcon>
-                <Image src={getProgrammingLanguageIcon(language)} width={20} height={20} alt='source' />
-              </LanguageIcon>
-
-              <RowBody>
-                <Text size={14}>{containerName}</Text>
-                <Text size={10} color={theme.text.grey} style={{ textTransform: 'capitalize' }}>
-                  {language} • Runtime: {runtimeVersion}
-                </Text>
-              </RowBody>
-
+            <DataTab key={`container-${idx}`} title={containerName} subTitle={`${capitalizeFirstLetter(language)} • Runtime: ${runtimeVersion}`} logo={getProgrammingLanguageIcon(language)}>
               <InstrumentStatus $active={active}>
                 <Image src={active ? getStatusIcon('success') : '/icons/common/circled-cross.svg'} alt='' width={12} height={12} />
                 <Text size={10} family='secondary' color={active ? theme.text.success : theme.text.grey}>
                   {active ? INSTUMENTATION_STATUS.INSTRUMENTED : INSTUMENTATION_STATUS.UNINSTRUMENTED}
                 </Text>
               </InstrumentStatus>
-            </Row>
+            </DataTab>
           );
         })}
       </Body>

@@ -1,3 +1,5 @@
+export * from './gap';
+export * from './monitors-icons';
 export * from './text';
 export * from './badge';
 export * from './button';
@@ -34,3 +36,4 @@ export * from './field-error';
 export * from './extend-icon';
 export * from './condition-details';
 export * from './container-details';
+export * from './data-tab';
