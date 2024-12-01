@@ -4,46 +4,24 @@ import Image from 'next/image';
 import styled, { css } from 'styled-components';
 import { Button, Text } from '@/reuseable-components';
 
-interface DrawerFooterProps {
+interface Props {
   onSave: () => void;
+  saveLabel?: string;
   onCancel: () => void;
+  cancelLabel?: string;
   onDelete: () => void;
+  deleteLabel?: string;
 }
-
-const DrawerFooter: React.FC<DrawerFooterProps> = ({ onSave, onCancel, onDelete }) => {
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    // Trigger animation on mount
-    setIsVisible(true);
-  }, []);
-
-  return (
-    <FooterContainer $isVisible={isVisible}>
-      <LeftButtonsWrapper>
-        <FooterButton variant='primary' onClick={onSave}>
-          <ButtonText $variant='primary'>Save</ButtonText>
-        </FooterButton>
-        <FooterButton variant='secondary' onClick={onCancel}>
-          <ButtonText>Cancel</ButtonText>
-        </FooterButton>
-      </LeftButtonsWrapper>
-      <FooterButton style={{ width: 100 }} variant='tertiary' onClick={onDelete}>
-        <Image src='/icons/common/trash.svg' alt='Delete' width={16} height={16} />
-        <ButtonText $variant='tertiary'>Delete</ButtonText>
-      </FooterButton>
-    </FooterContainer>
-  );
-};
-
-export default DrawerFooter;
 
 const FooterContainer = styled.div<{ $isVisible: boolean }>`
   display: flex;
   justify-content: space-between;
+  gap: 8px;
+
   padding: 24px 18px 24px 32px;
+  border-top: 1px solid ${({ theme }) => theme.colors.border};
   background-color: ${({ theme }) => theme.colors.translucent_bg};
-  border-top: 1px solid rgba(249, 249, 249, 0.24);
+
   opacity: 0;
   transform: translateY(20px);
   transition: opacity 0.3s ease, transform 0.3s ease;
@@ -56,9 +34,8 @@ const FooterContainer = styled.div<{ $isVisible: boolean }>`
     `}
 `;
 
-const LeftButtonsWrapper = styled.div`
-  display: flex;
-  gap: 8px;
+const AlignRight = styled.div`
+  margin-left: auto;
 `;
 
 const FooterButton = styled(Button)`
@@ -73,3 +50,32 @@ const ButtonText = styled(Text)<{ $variant?: 'primary' | 'secondary' | 'tertiary
   text-transform: uppercase;
   width: fit-content;
 `;
+
+const DrawerFooter: React.FC<Props> = ({ onSave, saveLabel = 'Save', onCancel, cancelLabel = 'Cancel', onDelete, deleteLabel = 'Delete' }) => {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    // Trigger animation on mount
+    setIsVisible(true);
+  }, []);
+
+  return (
+    <FooterContainer $isVisible={isVisible}>
+      <FooterButton variant='primary' onClick={onSave}>
+        <ButtonText $variant='primary'>{saveLabel}</ButtonText>
+      </FooterButton>
+      <FooterButton variant='secondary' onClick={onCancel}>
+        <ButtonText>{cancelLabel}</ButtonText>
+      </FooterButton>
+
+      <AlignRight>
+        <FooterButton variant='tertiary' onClick={onDelete}>
+          <Image src='/icons/common/trash.svg' alt='Delete' width={16} height={16} />
+          <ButtonText $variant='tertiary'>{deleteLabel}</ButtonText>
+        </FooterButton>
+      </AlignRight>
+    </FooterContainer>
+  );
+};
+
+export default DrawerFooter;

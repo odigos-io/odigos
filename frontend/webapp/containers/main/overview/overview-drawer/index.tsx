@@ -45,6 +45,9 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, 
 
   const titleRef = useRef<DrawerHeaderRef>(null);
 
+  const isSource = selectedItem?.type === OVERVIEW_ENTITY_TYPES.SOURCE;
+  const isDestination = selectedItem?.type === OVERVIEW_ENTITY_TYPES.DESTINATION;
+
   const closeDrawer = () => {
     setSelectedItem(null);
     onEdit(false);
@@ -88,8 +91,8 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, 
   const isLastItem = () => {
     let isLast = false;
 
-    if (selectedItem?.type === OVERVIEW_ENTITY_TYPES.SOURCE) isLast = sources.length === 1;
-    if (selectedItem?.type === OVERVIEW_ENTITY_TYPES.DESTINATION) isLast = destinations.length === 1;
+    if (isSource) isLast = sources.length === 1;
+    if (isDestination) isLast = destinations.length === 1;
 
     return isLast;
   };
@@ -100,7 +103,7 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, 
         <DrawerContent>
           <DrawerHeader ref={titleRef} title={title} titleTooltip={titleTooltip} imageUri={imageUri} isEdit={isEdit} onEdit={() => onEdit(true)} onClose={isEdit ? clickCancel : closeDrawer} />
           <ContentArea>{children}</ContentArea>
-          {isEdit && <DrawerFooter onSave={clickSave} onCancel={clickCancel} onDelete={clickDelete} />}
+          {isEdit && <DrawerFooter onSave={clickSave} onCancel={clickCancel} onDelete={clickDelete} deleteLabel={isSource ? 'Uninstrument' : undefined} />}
         </DrawerContent>
       </Drawer>
 
@@ -108,15 +111,8 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, 
         isOpen={isDeleteModalOpen}
         noOverlay
         name={`${selectedItem?.type}${title ? ` (${title})` : ''}`}
-        note={
-          isLastItem()
-            ? {
-                type: 'warning',
-                title: `You're about to delete the last ${selectedItem?.type}`,
-                message: 'This will break your pipeline!',
-              }
-            : undefined
-        }
+        type={selectedItem?.type}
+        isLastItem={isLastItem()}
         onApprove={handleDelete}
         onDeny={closeWarningModals}
       />
