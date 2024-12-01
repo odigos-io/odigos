@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
 import { IAppState, useAppStore } from '@/store';
-import type { ConfiguredDestination } from '@/types';
 import { ConfiguredFields, DeleteWarning } from '@/components';
 import { Button, Divider, ExtendIcon, Text } from '@/reuseable-components';
+import { OVERVIEW_ENTITY_TYPES, type ConfiguredDestination } from '@/types';
 
 const Container = styled.div`
   display: flex;
@@ -144,15 +144,8 @@ const ConfiguredDestinationsListItem: React.FC<{ item: ConfiguredDestination; is
       <DeleteWarning
         isOpen={deleteWarning}
         name={item.displayName || item.type}
-        note={
-          isLastItem
-            ? {
-                type: 'warning',
-                title: "You're about to delete the last destination",
-                message: 'This will break your pipeline!',
-              }
-            : undefined
-        }
+        type={OVERVIEW_ENTITY_TYPES.DESTINATION}
+        isLastItem={isLastItem}
         onApprove={() => removeConfiguredDestination(item)}
         onDeny={() => setDeleteWarning(false)}
       />
