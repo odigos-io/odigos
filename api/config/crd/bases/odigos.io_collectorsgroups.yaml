@@ -73,7 +73,6 @@ spec:
                       it is recommended to be set to 80% of the hard limit of the memory limiter.
                     type: integer
                   maxReplicas:
-                    description: Maximum number of replicas for the gateway collector.
                     type: integer
                   memoryLimitMiB:
                     description: |-
@@ -106,7 +105,8 @@ spec:
                       it will be embedded in the as a resource request of the form "memory: <value>Mi"
                     type: integer
                   minReplicas:
-                    description: Minumum number of replicas for the gateway collector.
+                    description: Minumum + Maximum number of replicas for the collector
+                      - these relevant only for gateway.
                     type: integer
                 required:
                 - cpuLimitMillicores

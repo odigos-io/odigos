@@ -15,9 +15,9 @@ const (
 	defaultLimitCPUm = 1000
 
 	// MinReplicasDefault is the default number of replicas for the collector
-	MinReplicasDefault = 1
+	defaultMinReplicas = 1
 	// MaxReplicasDefault is the default maximum number of replicas for the collector hpa
-	MaxReplicasDefault = 10
+	defaultMaxReplicas = 10
 
 	// this configures the processor limit_mib, which is the hard limit in MiB, afterwhich garbage collection will be forced.
 	// as recommended by the processor docs, if not set, this is set to 50MiB less than the memory limit of the collector
@@ -43,15 +43,37 @@ const (
 func getGatewayResourceSettings(odigosConfig *common.OdigosConfiguration) *odigosv1.CollectorsGroupResourcesSettings {
 	gatewayConfig := odigosConfig.CollectorGateway
 
-	gatewayMinReplicas := getOrDefault(gatewayConfig, gatewayConfig.MinReplicas, MinReplicasDefault)
-	gatewayMaxReplicas := getOrDefault(gatewayConfig, gatewayConfig.MaxReplicas, MaxReplicasDefault)
-	memoryRequestMiB := getOrDefault(gatewayConfig, gatewayConfig.RequestMemoryMiB, defaultRequestMemoryMiB)
-	cpuRequestm := getOrDefault(gatewayConfig, gatewayConfig.RequestCPUm, defaultRequestCPUm)
-	cpuLimitm := getOrDefault(gatewayConfig, gatewayConfig.LimitCPUm, defaultLimitCPUm)
+	gatewayMinReplicas := defaultMinReplicas
+	if gatewayConfig != nil && gatewayConfig.MinReplicas > 0 {
+		gatewayMinReplicas = gatewayConfig.MinReplicas
+	}
+	gatewayMaxReplicas := defaultMaxReplicas
+	if gatewayConfig != nil && gatewayConfig.MaxReplicas > 0 {
+		gatewayMaxReplicas = gatewayConfig.MaxReplicas
+	}
+	memoryRequestMiB := defaultRequestMemoryMiB
+	if gatewayConfig != nil && gatewayConfig.RequestMemoryMiB > 0 {
+		memoryRequestMiB = gatewayConfig.RequestMemoryMiB
+	}
+	cpuRequestm := defaultRequestCPUm
+	if gatewayConfig != nil && gatewayConfig.RequestCPUm > 0 {
+		cpuRequestm = gatewayConfig.RequestCPUm
+	}
+	cpuLimitm := defaultLimitCPUm
+	if gatewayConfig != nil && gatewayConfig.LimitCPUm > 0 {
+		cpuLimitm = gatewayConfig.LimitCPUm
+	}
+
 	// the memory limiter hard limit is set as 50 MiB less than the memory request
-	memoryLimiterLimitMiB := getOrDefault(gatewayConfig, gatewayConfig.MemoryLimiterLimitMiB, memoryRequestMiB-defaultMemoryLimiterLimitDiffMib)
-	memoryLimiterSpikeLimitMiB := getOrDefault(gatewayConfig, gatewayConfig.MemoryLimiterSpikeLimitMiB,
-		memoryLimiterLimitMiB*defaultMemoryLimiterSpikePercentage/100.0)
+
+	memoryLimiterLimitMiB := memoryRequestMiB - defaultMemoryLimiterLimitDiffMib
+	if odigosConfig.CollectorGateway != nil && odigosConfig.CollectorGateway.MemoryLimiterLimitMiB > 0 {
+		memoryLimiterLimitMiB = odigosConfig.CollectorGateway.MemoryLimiterLimitMiB
+	}
+	memoryLimiterSpikeLimitMiB := memoryLimiterLimitMiB * defaultMemoryLimiterSpikePercentage / 100
+	if odigosConfig.CollectorGateway != nil && odigosConfig.CollectorGateway.MemoryLimiterSpikeLimitMiB > 0 {
+		memoryLimiterSpikeLimitMiB = odigosConfig.CollectorGateway.MemoryLimiterSpikeLimitMiB
+	}
 
 	memoryLimitMiB := int(float64(memoryRequestMiB) * memoryLimitAboveRequestFactor)
 
@@ -61,8 +83,8 @@ func getGatewayResourceSettings(odigosConfig *common.OdigosConfiguration) *odigo
 	}
 
 	return &odigosv1.CollectorsGroupResourcesSettings{
-		MinReplicas:                gatewayMinReplicas,
-		MaxReplicas:                gatewayMaxReplicas,
+		MinReplicas:                &gatewayMinReplicas,
+		MaxReplicas:                &gatewayMaxReplicas,
 		MemoryRequestMiB:           memoryRequestMiB,
 		MemoryLimitMiB:             memoryLimitMiB,
 		CpuRequestMillicores:       cpuRequestm,
@@ -71,12 +93,4 @@ func getGatewayResourceSettings(odigosConfig *common.OdigosConfiguration) *odigo
 		MemoryLimiterSpikeLimitMiB: memoryLimiterSpikeLimitMiB,
 		GomemlimitMiB:              gomemlimitMiB,
 	}
-}
-
-// Returns the value if it is greater than 0, otherwise returns the default value.
-func getOrDefault[T ~int | ~int32 | ~int64 | ~float32 | ~float64](config *common.CollectorGatewayConfiguration, value T, defaultValue T) T {
-	if config != nil && value > 0 {
-		return value
-	}
-	return defaultValue
 }

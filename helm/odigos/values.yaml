@@ -39,9 +39,9 @@ collectorGateway:
 
   # The number of replicas for the cluster gateway collector deployment.
   # Also uses in MinReplicas the HPA config. 
-  MinReplicas: 1
+  minReplicas: 1
   # The maxReplicas in the HPA config.
-  MaxReplicas: 10
+  maxReplicas: 10
 
 
   # sets the "limit_mib" parameter in the memory limiter configuration for the collector gateway.

@@ -22,11 +22,12 @@ import (
 
 const (
 	memoryLimitPercentageForHPA = 75
+	cpuLimitPercentageForHPA    = 75
 )
 
 var (
-	minReplicas                = intPtr(1)
-	maxReplicas                = int32(10)
+	defaltMinReplicas          = intPtr(1)
+	defaultMaxReplicas         = int32(10)
 	stabilizationWindowSeconds = intPtr(300) // cooldown period for scaling down
 )
 
@@ -36,19 +37,23 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 	var hpa client.Object
 
 	// Memory metric calculation
-	memLimit := gateway.Spec.ResourcesSettings.GomemlimitMiB * memoryLimitPercentageForHPA / 100.0
+	memLimit := gateway.Spec.ResourcesSettings.GomemlimitMiB * memoryLimitPercentageForHPA / 100
 	metricQuantity := resource.MustParse(fmt.Sprintf("%dMi", memLimit))
 
 	// CPU metric calculation
-	cpuTargetMillicores := gateway.Spec.ResourcesSettings.CpuLimitMillicores * 75 / 100
+	cpuTargetMillicores := gateway.Spec.ResourcesSettings.CpuLimitMillicores * cpuLimitPercentageForHPA / 100
 	metricQuantityCPU := resource.MustParse(fmt.Sprintf("%dm", cpuTargetMillicores))
 
-	if gateway.Spec.ResourcesSettings.MinReplicas != int(*minReplicas) && gateway.Spec.ResourcesSettings.MinReplicas > 0 {
-		minReplicas = intPtr(int32(gateway.Spec.ResourcesSettings.MinReplicas))
+	minReplicas := defaltMinReplicas
+	if gateway.Spec.ResourcesSettings.MinReplicas != nil &&
+		*gateway.Spec.ResourcesSettings.MinReplicas != int(*minReplicas) && *gateway.Spec.ResourcesSettings.MinReplicas > 0 {
+		minReplicas = intPtr(int32(*gateway.Spec.ResourcesSettings.MinReplicas))
 	}
 
-	if gateway.Spec.ResourcesSettings.MaxReplicas != int(maxReplicas) && gateway.Spec.ResourcesSettings.MaxReplicas > 0 {
-		maxReplicas = int32(gateway.Spec.ResourcesSettings.MaxReplicas)
+	maxReplicas := defaultMaxReplicas
+	if gateway.Spec.ResourcesSettings.MaxReplicas != nil &&
+		*gateway.Spec.ResourcesSettings.MaxReplicas != int(maxReplicas) && *gateway.Spec.ResourcesSettings.MaxReplicas > 0 {
+		maxReplicas = int32(*gateway.Spec.ResourcesSettings.MaxReplicas)
 	}
 
 	switch {

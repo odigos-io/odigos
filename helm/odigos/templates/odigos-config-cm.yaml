@@ -17,10 +17,10 @@ data:
     {{- end }}
     {{- if .Values.collectorGateway }}
     collectorGateway:
-      {{- with .Values.collectorGateway.MinReplicas }}
+      {{- with .Values.collectorGateway.minReplicas }}
       MinReplicas: {{ . }}
       {{- end }}    
-      {{- with .Values.collectorGateway.MaxReplicas }}
+      {{- with .Values.collectorGateway.maxReplicas }}
       MaxReplicas: {{ . }}
       {{- end }}          
       {{- with .Values.collectorGateway.requestMemoryMiB }}

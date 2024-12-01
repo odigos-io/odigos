@@ -98,7 +98,10 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 	limitCPU := resource.MustParse(fmt.Sprintf("%dm", gateway.Spec.ResourcesSettings.CpuLimitMillicores))
 
 	// deployment replicas
-	gatewayReplicas := int32(gateway.Spec.ResourcesSettings.MinReplicas)
+	var gatewayReplicas int32 = 1
+	if gateway.Spec.ResourcesSettings.MinReplicas != nil {
+		gatewayReplicas = int32(*gateway.Spec.ResourcesSettings.MinReplicas)
+	}
 
 	desiredDeployment := &appsv1.Deployment{
 		ObjectMeta: v1.ObjectMeta{
