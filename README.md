@@ -87,44 +87,39 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 
 |                         | Traces | Metrics | Logs |
 | ------------------------- | -------- | --------- | ------ |
-| Axiom                   | ✅     |         | ✅   |
-| AWS S3                  | ✅     | ✅      | ✅   |
-| Azure Blob Storage      | ✅     |         | ✅   |
-| Chronosphere            | ✅     | ✅      |      |
-| Coralogix               | ✅     | ✅      | ✅   |
+| New Relic               | ✅     | ✅      | ✅   |
 | Datadog                 | ✅     | ✅      | ✅   |
-| Dynatrace               | ✅     | ✅      | ✅   |
-| Elastic APM             | ✅     |         | ✅   |
-| Gigapipe                | ✅     | ✅      | ✅   |
-| Google Cloud Monitoring | ✅     |         | ✅   |
-| Google Cloud Storage    | ✅     |         | ✅   |
 | Grafana Cloud           | ✅     | ✅      | ✅   |
 | Honeycomb               | ✅     | ✅      | ✅   |
-| Lightstep               | ✅     |         |      |
+| Chronosphere            | ✅     | ✅      |      |
 | Logz.io                 | ✅     | ✅      | ✅   |
-| New Relic               | ✅     | ✅      | ✅   |
-| OpsVerse                | ✅     | ✅      | ✅   |
 | qryn.cloud              | ✅     | ✅      | ✅   |
-| Sentry                  | ✅     |         |      |
+| OpsVerse                | ✅     | ✅      | ✅   |
+| Dynatrace               | ✅     | ✅      | ✅   |
+| AWS S3                  | ✅     | ✅      | ✅   |
+| Google Cloud Monitoring | ✅     |         | ✅   |
+| Google Cloud Storage    | ✅     |         | ✅   |
+| Azure Blob Storage      | ✅     |         | ✅   |
 | Splunk                  | ✅     |         |      |
+| Lightstep               | ✅     |         |      |
+| Sentry                  | ✅     |         |      |
+| Axiom                   | ✅     |         | ✅   |
 | Sumo Logic              | ✅     | ✅      | ✅   |
+| Coralogix               | ✅     | ✅      | ✅   |
 
 ### Open Source
 
 
 |               | Traces | Metrics | Logs |
 | --------------- | -------- | --------- | ------ |
-| ClickHouse    | ✅     | ✅      | ✅   |
-| Elasticsearch | ✅     |         | ✅   |
-| Jaeger        | ✅     |         |      |
-| Loki          |        |         | ✅   |
-| OTLP (gRPC)   | ✅     | ✅      | ✅   |
-| OTLP (HTTP)   | ✅     | ✅      | ✅   |
 | Prometheus    |        | ✅      |      |
-| Quickwit      | ✅     |         | ✅   |
-| qryn          | ✅     | ✅      | ✅   |
-| SigNoz        | ✅     | ✅      | ✅   |
 | Tempo         | ✅     |         |      |
+| Loki          |        |         | ✅   |
+| Jaeger        | ✅     |         |      |
+| SigNoz        | ✅     | ✅      | ✅   |
+| qryn          | ✅     | ✅      | ✅   |
+| Elasticsearch | ✅     |         | ✅   |
+| Quickwit      | ✅     |         | ✅   |
 
 Can't find the destination you need? Help us by following our quick [add new destination](https://docs.odigos.io/adding-new-dest) guide and submitting a PR.
 
