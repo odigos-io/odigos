@@ -51,3 +51,8 @@ export const BACKEND_BOOLEAN = {
   FALSE: 'False',
   TRUE: 'True',
 };
+
+export const INSTUMENTATION_STATUS = {
+  INSTRUMENTED: 'Instrumented',
+  UNINSTRUMENTED: 'Uninstrumented',
+};
