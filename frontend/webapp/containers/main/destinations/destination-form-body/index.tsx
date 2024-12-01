@@ -12,7 +12,7 @@ interface Props {
   formData: DestinationInput;
   formErrors: Record<string, string>;
   validateForm: () => boolean;
-  handleFormChange: (key: keyof DestinationInput | string, val: any) => void;
+  handleFormChange: (key: keyof DestinationInput, val: any) => void;
   dynamicFields: DynamicField[];
   setDynamicFields: Dispatch<SetStateAction<DynamicField[]>>;
 }
