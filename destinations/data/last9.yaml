@@ -25,6 +25,7 @@ spec:
       displayName: Basic Auth Header
       componentType: input
       componentProps:
+        secret: true
         type: password
         required: true
-        placeholder: "Last9 Basic Auth Header"
+        placeholder: "Basic ..."

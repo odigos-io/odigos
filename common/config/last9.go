@@ -11,14 +11,14 @@ const (
 	l9OtlpAuthHeaderKey = "LAST9_OTLP_BASIC_AUTH_HEADER"
 )
 
-type MyDest struct{}
+type Last9 struct{}
 
-func (m *MyDest) DestType() common.DestinationType {
+func (m *Last9) DestType() common.DestinationType {
 	// DestinationType defined in common/dests.go
 	return common.Last9DestinationType
 }
 
-func (m *MyDest) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (m *Last9) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
 	config := dest.GetConfig()
 	l9OtlpEndpoint, exists := config[l9OtlpEndpointKey]
 	if !exists {
@@ -27,7 +27,7 @@ func (m *MyDest) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) er
 
 	// to make sure that the exporter name is unique, we'll ask a ID from destination
 	exporterName := "otlp/last9-" + dest.GetID()
-	currentConfig.Exporters["otlp/last9"] = GenericMap{
+	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": l9OtlpEndpoint,
 		"headers": GenericMap{
 			"Authorization": "${LAST9_OTLP_BASIC_AUTH_HEADER}",
