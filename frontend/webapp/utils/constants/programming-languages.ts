@@ -10,11 +10,12 @@ export enum WORKLOAD_PROGRAMMING_LANGUAGES {
   PYTHON = 'python',
   DOTNET = 'dotnet',
   MYSQL = 'mysql',
+  NGINX = 'nginx',
+  IGNORED = 'ignored',
   UNKNOWN = 'unknown', // language detection completed but could not find a supported language
   PROCESSING = 'processing', // language detection is not yet complotted, data is not available
   NO_CONTAINERS = 'no containers', // language detection completed but no containers found or they are ignored
   NO_RUNNING_PODS = 'no running pods', // no running pods are available for language detection
-  NGINX = 'nginx',
 }
 
 export const getMainContainerLanguage = (source: K8sActualSource): WORKLOAD_PROGRAMMING_LANGUAGES => {

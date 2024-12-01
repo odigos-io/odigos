@@ -3,7 +3,7 @@ import { WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils';
 
 export type SourceContainer = {
   containerName: string;
-  language: WORKLOAD_PROGRAMMING_LANGUAGES | 'ignored';
+  language: WORKLOAD_PROGRAMMING_LANGUAGES;
   runtimeVersion: string;
   otherAgent: string | null;
 };

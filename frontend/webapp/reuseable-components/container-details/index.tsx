@@ -4,7 +4,7 @@ import theme from '@/styles/theme';
 import styled from 'styled-components';
 import type { SourceContainer } from '@/types';
 import { Badge, Text } from '@/reuseable-components';
-import { getProgrammingLanguageIcon, getStatusIcon } from '@/utils';
+import { getProgrammingLanguageIcon, getStatusIcon, INSTUMENTATION_STATUS, WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils';
 
 interface Props {
   containers: SourceContainer[];
@@ -91,8 +91,13 @@ export const ContainerDetails: React.FC<Props> = ({ containers }) => {
 
       <Body>
         {containers.map(({ containerName, language, runtimeVersion }, idx) => {
-          // TODO: replace with actual status (only after we changed the "get sources" to include uninstrumented & instrumented sources)
-          const active = true;
+          const active = ![
+            WORKLOAD_PROGRAMMING_LANGUAGES.IGNORED,
+            WORKLOAD_PROGRAMMING_LANGUAGES.UNKNOWN,
+            WORKLOAD_PROGRAMMING_LANGUAGES.PROCESSING,
+            WORKLOAD_PROGRAMMING_LANGUAGES.NO_CONTAINERS,
+            WORKLOAD_PROGRAMMING_LANGUAGES.NO_RUNNING_PODS,
+          ].includes(language);
 
           return (
             <Row key={`container-${idx}`}>
@@ -101,17 +106,16 @@ export const ContainerDetails: React.FC<Props> = ({ containers }) => {
               </LanguageIcon>
 
               <RowBody>
-                <Text size={14}> {containerName}</Text>
+                <Text size={14}>{containerName}</Text>
                 <Text size={10} color={theme.text.grey} style={{ textTransform: 'capitalize' }}>
-                  {language}
-                  <span style={{ textTransform: 'none' }}> • Runtime: {runtimeVersion}</span>
+                  {language} • Runtime: {runtimeVersion}
                 </Text>
               </RowBody>
 
               <InstrumentStatus $active={active}>
                 <Image src={active ? getStatusIcon('success') : '/icons/common/circled-cross.svg'} alt='' width={12} height={12} />
                 <Text size={10} family='secondary' color={active ? theme.text.success : theme.text.grey}>
-                  {active ? 'Instrumented' : 'Uninstrumented'}
+                  {active ? INSTUMENTATION_STATUS.INSTRUMENTED : INSTUMENTATION_STATUS.UNINSTRUMENTED}
                 </Text>
               </InstrumentStatus>
             </Row>
