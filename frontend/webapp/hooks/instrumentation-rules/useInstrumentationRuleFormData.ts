@@ -1,7 +1,6 @@
-import { useState } from 'react';
-import { useNotify } from '../notification/useNotify';
 import type { DrawerBaseItem } from '@/store';
-import { ACTION, FORM_ALERTS, NOTIFICATION } from '@/utils';
+import { useGenericForm, useNotify } from '@/hooks';
+import { FORM_ALERTS, NOTIFICATION } from '@/utils';
 import { PayloadCollectionType, type InstrumentationRuleInput, type InstrumentationRuleSpec } from '@/types';
 
 const INITIAL: InstrumentationRuleInput = {
@@ -20,21 +19,7 @@ const INITIAL: InstrumentationRuleInput = {
 
 export function useInstrumentationRuleFormData() {
   const notify = useNotify();
-
-  const [formData, setFormData] = useState({ ...INITIAL });
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-
-  const handleFormChange = (key: keyof typeof INITIAL, val: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      [key]: val,
-    }));
-  };
-
-  const resetFormData = () => {
-    setFormData({ ...INITIAL });
-    setFormErrors({});
-  };
+  const { formData, formErrors, handleFormChange, handleErrorChange, resetFormData } = useGenericForm<InstrumentationRuleInput>(INITIAL);
 
   const validateForm = (params?: { withAlert?: boolean; alertTitle?: string }) => {
     const errors = {};
@@ -63,7 +48,7 @@ export function useInstrumentationRuleFormData() {
       });
     }
 
-    setFormErrors(errors);
+    handleErrorChange(undefined, undefined, errors);
 
     return ok;
   };
@@ -87,7 +72,7 @@ export function useInstrumentationRuleFormData() {
       };
     }
 
-    setFormData(updatedData);
+    handleFormChange(undefined, undefined, updatedData);
   };
 
   return {
