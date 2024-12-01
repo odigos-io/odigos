@@ -9,6 +9,13 @@ type CollectorNodeConfiguration struct {
 }
 
 type CollectorGatewayConfiguration struct {
+	// MinReplicas is the number of replicas for the cluster gateway collector deployment.
+	// Also set the minReplicas for the HPA to this value.
+	MinReplicas int `json:"minReplicas,omitempty"`
+
+	// MaxReplicas set the maxReplicas for the HPA to this value.
+	MaxReplicas int `json:"maxReplicas,omitempty"`
+
 	// RequestMemoryMiB is the memory request for the cluster gateway collector deployment.
 	// it will be embedded in the deployment as a resource request of the form "memory: <value>Mi"
 	// default value is 500Mi

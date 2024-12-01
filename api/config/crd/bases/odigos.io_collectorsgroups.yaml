@@ -72,6 +72,9 @@ spec:
                       this is when go runtime will start garbage collection.
                       it is recommended to be set to 80% of the hard limit of the memory limiter.
                     type: integer
+                  maxReplicas:
+                    description: Maximum number of replicas for the gateway collector.
+                    type: integer
                   memoryLimitMiB:
                     description: |-
                       This option sets the limit on the memory usage of the collector.
@@ -102,14 +105,19 @@ spec:
                       MemoryRequestMiB is the memory resource request to be used on the pod template.
                       it will be embedded in the as a resource request of the form "memory: <value>Mi"
                     type: integer
+                  minReplicas:
+                    description: Minumum number of replicas for the gateway collector.
+                    type: integer
                 required:
                 - cpuLimitMillicores
                 - cpuRequestMillicores
                 - gomemlimitMiB
+                - maxReplicas
                 - memoryLimitMiB
                 - memoryLimiterLimitMiB
                 - memoryLimiterSpikeLimitMiB
                 - memoryRequestMiB
+                - minReplicas
                 type: object
               role:
                 enum:

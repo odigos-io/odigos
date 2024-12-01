@@ -30,11 +30,16 @@ const (
 	CollectorsGroupRoleNodeCollector  CollectorsGroupRole = CollectorsGroupRole(k8sconsts.CollectorsRoleNodeCollector)
 )
 
-// The raw values of the memory settings for the collectors group.
+// The raw values to control the collectors group resources and behavior.
 // any defaulting, validations and calculations should be done in the controllers
 // that create this CR.
 // Values will be used as is without any further processing.
 type CollectorsGroupResourcesSettings struct {
+
+	// Minumum number of replicas for the gateway collector.
+	MinReplicas int `json:"minReplicas"`
+	// Maximum number of replicas for the gateway collector.
+	MaxReplicas int `json:"maxReplicas"`
 
 	// MemoryRequestMiB is the memory resource request to be used on the pod template.
 	// it will be embedded in the as a resource request of the form "memory: <value>Mi"

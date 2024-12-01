@@ -20,6 +20,8 @@ package v1alpha1
 // CollectorsGroupResourcesSettingsApplyConfiguration represents a declarative configuration of the CollectorsGroupResourcesSettings type for use
 // with apply.
 type CollectorsGroupResourcesSettingsApplyConfiguration struct {
+	MinReplicas                *int `json:"minReplicas,omitempty"`
+	MaxReplicas                *int `json:"maxReplicas,omitempty"`
 	MemoryRequestMiB           *int `json:"memoryRequestMiB,omitempty"`
 	MemoryLimitMiB             *int `json:"memoryLimitMiB,omitempty"`
 	CpuRequestMillicores       *int `json:"cpuRequestMillicores,omitempty"`
@@ -33,6 +35,22 @@ type CollectorsGroupResourcesSettingsApplyConfiguration struct {
 // apply.
 func CollectorsGroupResourcesSettings() *CollectorsGroupResourcesSettingsApplyConfiguration {
 	return &CollectorsGroupResourcesSettingsApplyConfiguration{}
+}
+
+// WithMinReplicas sets the MinReplicas field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the MinReplicas field is set to the value of the last call.
+func (b *CollectorsGroupResourcesSettingsApplyConfiguration) WithMinReplicas(value int) *CollectorsGroupResourcesSettingsApplyConfiguration {
+	b.MinReplicas = &value
+	return b
+}
+
+// WithMaxReplicas sets the MaxReplicas field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the MaxReplicas field is set to the value of the last call.
+func (b *CollectorsGroupResourcesSettingsApplyConfiguration) WithMaxReplicas(value int) *CollectorsGroupResourcesSettingsApplyConfiguration {
+	b.MaxReplicas = &value
+	return b
 }
 
 // WithMemoryRequestMiB sets the MemoryRequestMiB field in the declarative configuration to the given value

@@ -90,8 +90,15 @@ func patchDeployment(existing *appsv1.Deployment, desired *appsv1.Deployment, ct
 func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string,
 	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (*appsv1.Deployment, error) {
 
+	// request + limits for memory and cpu
 	requestMemoryQuantity := resource.MustParse(fmt.Sprintf("%dMi", gateway.Spec.ResourcesSettings.MemoryRequestMiB))
 	limitMemoryQuantity := resource.MustParse(fmt.Sprintf("%dMi", gateway.Spec.ResourcesSettings.MemoryLimitMiB))
+
+	requestCPU := resource.MustParse(fmt.Sprintf("%dm", gateway.Spec.ResourcesSettings.CpuRequestMillicores))
+	limitCPU := resource.MustParse(fmt.Sprintf("%dm", gateway.Spec.ResourcesSettings.CpuLimitMillicores))
+
+	// deployment replicas
+	gatewayReplicas := int32(gateway.Spec.ResourcesSettings.MinReplicas)
 
 	desiredDeployment := &appsv1.Deployment{
 		ObjectMeta: v1.ObjectMeta{
@@ -100,7 +107,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 			Labels:    ClusterCollectorGateway,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: intPtr(1),
+			Replicas: intPtr(gatewayReplicas),
 			Selector: &v1.LabelSelector{
 				MatchLabels: ClusterCollectorGateway,
 			},
@@ -190,9 +197,11 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 							Resources: corev1.ResourceRequirements{
 								Requests: corev1.ResourceList{
 									corev1.ResourceMemory: requestMemoryQuantity,
+									corev1.ResourceCPU:    requestCPU,
 								},
 								Limits: corev1.ResourceList{
 									corev1.ResourceMemory: limitMemoryQuantity,
+									corev1.ResourceCPU:    limitCPU,
 								},
 							},
 						},
