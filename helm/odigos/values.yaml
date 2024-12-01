@@ -30,13 +30,19 @@ collectorGateway:
   # it will be embedded in the deployment as a resource request
   # of the form "cpu: <value>m".
   # default value is 500m
-  requestCPUm: 500m
-
-  # the memory limit for the cluster gateway collector deployment.
+  requestCPUm: 500
+  # the CPU limit for the cluster gateway collector deployment.
   # it will be embedded in the deployment as a resource limit
   # of the form "cpu: <value>m".
   # default value is 1000m
-  limitCPUm: 1000m
+  limitCPUm: 1000
+
+  # The number of replicas for the cluster gateway collector deployment.
+  # Also uses in MinReplicas the HPA config. 
+  MinReplicas: 1
+  # The maxReplicas in the HPA config.
+  MaxReplicas: 10
+
 
   # sets the "limit_mib" parameter in the memory limiter configuration for the collector gateway.
   # it is the hard limit after which a force garbage collection will be performed.
