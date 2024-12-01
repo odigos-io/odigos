@@ -4,6 +4,8 @@ import { WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils';
 export type SourceContainer = {
   containerName: string;
   language: WORKLOAD_PROGRAMMING_LANGUAGES | 'ignored';
+  runtimeVersion: string;
+  otherAgent: string | null;
 };
 
 export type K8sActualSource = {

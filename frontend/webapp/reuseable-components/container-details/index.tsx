@@ -90,7 +90,8 @@ export const ContainerDetails: React.FC<Props> = ({ containers }) => {
       </Header>
 
       <Body>
-        {containers.map(({ containerName, language }, idx) => {
+        {containers.map(({ containerName, language, runtimeVersion }, idx) => {
+          // TODO: replace with actual status (only after we changed the "get sources" to include uninstrumented & instrumented sources)
           const active = true;
 
           return (
@@ -103,8 +104,7 @@ export const ContainerDetails: React.FC<Props> = ({ containers }) => {
                 <Text size={14}> {containerName}</Text>
                 <Text size={10} color={theme.text.grey} style={{ textTransform: 'capitalize' }}>
                   {language}
-                  {/* TODO: add actual runtime */}
-                  <span style={{ textTransform: 'none' }}> • Runtime: x.xx.xx</span>
+                  <span style={{ textTransform: 'none' }}> • Runtime: {runtimeVersion}</span>
                 </Text>
               </RowBody>
 
