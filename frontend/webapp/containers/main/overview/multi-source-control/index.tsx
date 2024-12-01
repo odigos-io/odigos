@@ -5,9 +5,9 @@ import theme from '@/styles/theme';
 import { useAppStore } from '@/store';
 import styled from 'styled-components';
 import { DeleteWarning } from '@/components';
+import { OVERVIEW_ENTITY_TYPES } from '@/types';
 import { useSourceCRUD, useTransition } from '@/hooks';
 import { Badge, Button, Divider, Text } from '@/reuseable-components';
-import { OVERVIEW_ENTITY_TYPES } from '@/types';
 
 const Container = styled.div`
   position: fixed;
