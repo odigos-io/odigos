@@ -12,23 +12,48 @@
 
 <p align="center">
 <img src="assets/logo.png" width="350" /></br>
-<h2>Generate distributed traces for any application in k8s without code changes.</h2>
+<h2>Generate distributed traces for any application in Kubernetes without code changes.</h2>
 </p>
 
 <h2 align="center">
     <a href="https://www.youtube.com/watch?v=nynyV7FC4VI">Demo Video</a> • <a href="https://docs.odigos.io">Documentation</a> • <a href="https://join.slack.com/t/odigos/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A">Join Slack Community</a>
 </h2>
 
+## What is Odigos?
+
+Odigos is an open-source distributed tracing solution that simplifyes and improves observability for Kubernetes environments. It provides instant tracing capabilities without requiring any code changes to your applications.
+
+## Key Features
+
+* **Code-Free Instrumentation** : Set up distributed tracing in minutes, eliminating manual code modifications.
+* **Multi-Language Support** : Works with Java, Python, .NET, Node.js, and Go applications.
+* **eBPF-Powered** : Utilizes eBPF technology for high-performance instrumentation of Go applications. eBPF-based instrumentation for Java, Python, and Node.js is available in the enterprise edition.
+* **OpenTelemetry Compatible** : Generates traces in OpenTelemetry format for broad tool compatibility.
+* **Vendor Agnostic** : Integrates with various monitoring solutions, avoiding vendor lock-in.
+* **Automatic Scaling** : Manages and scales OpenTelemetry collectors based on data volume.
+* **Opinionated Defaults** : Supplies common defaults and best practices out-of-the-box, requiring no deep knowledge of OpenTelemetry.
+
+## Why Choose Odigos
+
+1. **Simplicity** : Implement distributed tracing with minimal effort and complexity.
+2. **Performance** : Separates data recording and processing to minimize runtime impact.
+3. **Community-Backed** : With 3,000+ GitHub stars and a growing contributor base.
+4. **Expertise** : Created by multiple maintainers of OpenTelemetry, ensuring deep integration and alignment with industry standards.
+
+Odigos empowers platform engineers, DevOps professionals, and SREs to enhance their observability strategies quickly and effectively. It is an ideal solution for modern cloud-native environments, combining simplicity, performance, and industry expertise.
+
+## Features
+
 ### ✨ Language Agnostic Auto-instrumentation
 
-Odigos supports any application written in Java, Python, .NET, Node.js, and **Go**.  
+Odigos supports any application written in Java, Python, .NET, Node.js, and **Go**.
 Historically, compiled languages like Go have been difficult to instrument without code changes. Odigos solves this problem by uniquely leveraging [eBPF](https://ebpf.io).
 
 ![Works on any application](docs/images/ui_choose_apps.png)
 
 ### 🤝 Keep your existing observability tools
 
-Odigos currently supports all the popular managed and open-source destinations.  
+Odigos currently supports all the popular managed and open-source destinations.
 By producing data in the [OpenTelemetry](https://opentelemetry.io) format, Odigos can be used with any observability tool that supports OTLP.
 
 For a complete list of supported destinations, see [here](#supported-destinations).
@@ -37,7 +62,7 @@ For a complete list of supported destinations, see [here](#supported-destination
 
 ### 🎛️ Collectors Management
 
-Odigos automatically scales OpenTelemetry collectors based on observability data volume.  
+Odigos automatically scales OpenTelemetry collectors based on observability data volume.
 Manage and configure collectors via a convenient web UI.
 
 ![Collectors Management](docs/images/ui_overview.png)
@@ -59,8 +84,9 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 
 ### Managed
 
+
 |                         | Traces | Metrics | Logs |
-| ----------------------- | ------ | ------- | ---- |
+| ------------------------- | -------- | --------- | ------ |
 | New Relic               | ✅     | ✅      | ✅   |
 | Datadog                 | ✅     | ✅      | ✅   |
 | Grafana Cloud           | ✅     | ✅      | ✅   |
@@ -83,8 +109,9 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 
 ### Open Source
 
+
 |               | Traces | Metrics | Logs |
-| ------------- | ------ | ------- | ---- |
+| --------------- | -------- | --------- | ------ |
 | Prometheus    |        | ✅      |      |
 | Tempo         | ✅     |         |      |
 | Loki          |        |         | ✅   |
