@@ -1,8 +1,9 @@
-import { Condition } from './common';
+import { type Condition } from './common';
+import { WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils';
 
 export type SourceContainer = {
   containerName: string;
-  language: string;
+  language: WORKLOAD_PROGRAMMING_LANGUAGES | 'ignored';
 };
 
 export type K8sActualSource = {
