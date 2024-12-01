@@ -71,7 +71,10 @@ const DetectedContainers: React.FC<DetectedContainersProps> = ({
                   size={12}
                   style={{ marginTop: 6 }}
                 >
-                  {`We are running concurrently with the ${lang.other_agent.name}, which is not recommended. It is advisable to disable other agents for optimal performance and compatibility.`}
+                  {lang.language === 'python'
+                    ? `We are running concurrently with the ${lang.other_agent.name}, which is not recommended. It is advisable to disable other agents for optimal performance and compatibility.`
+                    : `We detected another agent of ${lang.other_agent.name} that running in the container. Disable it
+                  to instrument this source.`}
                 </KeyvalText>
               )}
             </ListItem>
