@@ -6,7 +6,13 @@ import (
 )
 
 const (
+	// the default memory request in MiB
 	defaultRequestMemoryMiB = 500
+
+	// the default CPU request in millicores
+	defaultRequestCPUm = 500
+	// the default CPU limit in millicores
+	defaultLimitCPUm = 1000
 
 	// this configures the processor limit_mib, which is the hard limit in MiB, afterwhich garbage collection will be forced.
 	// as recommended by the processor docs, if not set, this is set to 50MiB less than the memory limit of the collector
@@ -27,12 +33,22 @@ const (
 	memoryLimitAboveRequestFactor = 1.25
 )
 
-// process the memory settings from odigos config and return the memory settings for the collectors group.
+// process the memory settings from odigos config and return the resources settings for the collectors group.
 // apply any defaulting and calculations here.
-func getMemorySettings(odigosConfig *common.OdigosConfiguration) *odigosv1.CollectorsGroupMemorySettings {
+func getGatewayResourceSettings(odigosConfig *common.OdigosConfiguration) *odigosv1.CollectorsGroupResourcesSettings {
 	memoryRequestMiB := defaultRequestMemoryMiB
 	if odigosConfig.CollectorGateway != nil && odigosConfig.CollectorGateway.RequestMemoryMiB > 0 {
 		memoryRequestMiB = odigosConfig.CollectorGateway.RequestMemoryMiB
+	}
+
+	cpuRequestm := defaultRequestCPUm
+	if odigosConfig.CollectorGateway != nil && odigosConfig.CollectorGateway.RequestCPUm > 0 {
+		cpuRequestm = odigosConfig.CollectorGateway.RequestCPUm
+	}
+
+	cpuLimitm := defaultLimitCPUm
+	if odigosConfig.CollectorGateway != nil && odigosConfig.CollectorGateway.LimitCPUm > 0 {
+		cpuLimitm = odigosConfig.CollectorGateway.LimitCPUm
 	}
 
 	memoryLimitMiB := int(float64(memoryRequestMiB) * memoryLimitAboveRequestFactor)
@@ -53,9 +69,11 @@ func getMemorySettings(odigosConfig *common.OdigosConfiguration) *odigosv1.Colle
 		gomemlimitMiB = odigosConfig.CollectorGateway.GoMemLimitMib
 	}
 
-	return &odigosv1.CollectorsGroupMemorySettings{
+	return &odigosv1.CollectorsGroupResourcesSettings{
 		MemoryRequestMiB:           memoryRequestMiB,
 		MemoryLimitMiB:             memoryLimitMiB,
+		CpuRequestMillicores:       cpuRequestm,
+		CpuLimitMillicores:         cpuLimitm,
 		MemoryLimiterLimitMiB:      memoryLimiterLimitMiB,
 		MemoryLimiterSpikeLimitMiB: memoryLimiterSpikeLimitMiB,
 		GomemlimitMiB:              gomemlimitMiB,

@@ -34,7 +34,7 @@ const (
 // any defaulting, validations and calculations should be done in the controllers
 // that create this CR.
 // Values will be used as is without any further processing.
-type CollectorsGroupMemorySettings struct {
+type CollectorsGroupResourcesSettings struct {
 
 	// MemoryRequestMiB is the memory resource request to be used on the pod template.
 	// it will be embedded in the as a resource request of the form "memory: <value>Mi"
@@ -46,6 +46,13 @@ type CollectorsGroupMemorySettings struct {
 	// the settings should prevent the collector from exceeding the memory request,
 	// so one can set this to the same value as the memory request or higher to allow for some buffer for bursts.
 	MemoryLimitMiB int `json:"memoryLimitMiB"`
+
+	// CPU resource request to be used on the pod template.
+	// it will be embedded in the as a resource request of the form "cpu: <value>m"
+	CpuRequestMillicores int `json:"cpuRequestMillicores"`
+	// CPU resource limit to be used on the pod template.
+	// it will be embedded in the as a resource limit of the form "cpu: <value>m"
+	CpuLimitMillicores int `json:"cpuLimitMillicores"`
 
 	// this parameter sets the "limit_mib" parameter in the memory limiter configuration for the collector.
 	// it is the hard limit after which a force garbage collection will be performed.
@@ -76,12 +83,12 @@ type CollectorsGroupSpec struct {
 	// This can be used to resolve conflicting ports when a collector is using the host network.
 	CollectorOwnMetricsPort int32 `json:"collectorOwnMetricsPort"`
 
-	// Memory settings for the collectors group.
+	// Resources [memory/cpu] settings for the collectors group.
 	// these settings are used to protect the collectors instances from:
 	// - running out of memory and being killed by the k8s OOM killer
 	// - consuming all available memory on the node which can lead to node instability
 	// - pushing back pressure to the instrumented applications
-	MemorySettings CollectorsGroupMemorySettings `json:"memorySettings"`
+	ResourcesSettings CollectorsGroupResourcesSettings `json:"resourcesSettings"`
 }
 
 // CollectorsGroupStatus defines the observed state of Collector

@@ -35,7 +35,7 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 
 	var hpa client.Object
 
-	memLimit := gateway.Spec.MemorySettings.GomemlimitMiB * memoryLimitPercentageForHPA / 100.0
+	memLimit := gateway.Spec.ResourcesSettings.GomemlimitMiB * memoryLimitPercentageForHPA / 100.0
 	metricQuantity := resource.MustParse(fmt.Sprintf("%dMi", memLimit))
 
 	switch {

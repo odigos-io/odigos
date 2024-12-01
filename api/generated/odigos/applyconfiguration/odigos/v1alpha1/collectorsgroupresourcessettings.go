@@ -17,26 +17,28 @@ limitations under the License.
 
 package v1alpha1
 
-// CollectorsGroupMemorySettingsApplyConfiguration represents a declarative configuration of the CollectorsGroupMemorySettings type for use
+// CollectorsGroupResourcesSettingsApplyConfiguration represents a declarative configuration of the CollectorsGroupResourcesSettings type for use
 // with apply.
-type CollectorsGroupMemorySettingsApplyConfiguration struct {
+type CollectorsGroupResourcesSettingsApplyConfiguration struct {
 	MemoryRequestMiB           *int `json:"memoryRequestMiB,omitempty"`
 	MemoryLimitMiB             *int `json:"memoryLimitMiB,omitempty"`
+	CpuRequestMillicores       *int `json:"cpuRequestMillicores,omitempty"`
+	CpuLimitMillicores         *int `json:"cpuLimitMillicores,omitempty"`
 	MemoryLimiterLimitMiB      *int `json:"memoryLimiterLimitMiB,omitempty"`
 	MemoryLimiterSpikeLimitMiB *int `json:"memoryLimiterSpikeLimitMiB,omitempty"`
 	GomemlimitMiB              *int `json:"gomemlimitMiB,omitempty"`
 }
 
-// CollectorsGroupMemorySettingsApplyConfiguration constructs a declarative configuration of the CollectorsGroupMemorySettings type for use with
+// CollectorsGroupResourcesSettingsApplyConfiguration constructs a declarative configuration of the CollectorsGroupResourcesSettings type for use with
 // apply.
-func CollectorsGroupMemorySettings() *CollectorsGroupMemorySettingsApplyConfiguration {
-	return &CollectorsGroupMemorySettingsApplyConfiguration{}
+func CollectorsGroupResourcesSettings() *CollectorsGroupResourcesSettingsApplyConfiguration {
+	return &CollectorsGroupResourcesSettingsApplyConfiguration{}
 }
 
 // WithMemoryRequestMiB sets the MemoryRequestMiB field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the MemoryRequestMiB field is set to the value of the last call.
-func (b *CollectorsGroupMemorySettingsApplyConfiguration) WithMemoryRequestMiB(value int) *CollectorsGroupMemorySettingsApplyConfiguration {
+func (b *CollectorsGroupResourcesSettingsApplyConfiguration) WithMemoryRequestMiB(value int) *CollectorsGroupResourcesSettingsApplyConfiguration {
 	b.MemoryRequestMiB = &value
 	return b
 }
@@ -44,15 +46,31 @@ func (b *CollectorsGroupMemorySettingsApplyConfiguration) WithMemoryRequestMiB(v
 // WithMemoryLimitMiB sets the MemoryLimitMiB field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the MemoryLimitMiB field is set to the value of the last call.
-func (b *CollectorsGroupMemorySettingsApplyConfiguration) WithMemoryLimitMiB(value int) *CollectorsGroupMemorySettingsApplyConfiguration {
+func (b *CollectorsGroupResourcesSettingsApplyConfiguration) WithMemoryLimitMiB(value int) *CollectorsGroupResourcesSettingsApplyConfiguration {
 	b.MemoryLimitMiB = &value
+	return b
+}
+
+// WithCpuRequestMillicores sets the CpuRequestMillicores field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the CpuRequestMillicores field is set to the value of the last call.
+func (b *CollectorsGroupResourcesSettingsApplyConfiguration) WithCpuRequestMillicores(value int) *CollectorsGroupResourcesSettingsApplyConfiguration {
+	b.CpuRequestMillicores = &value
+	return b
+}
+
+// WithCpuLimitMillicores sets the CpuLimitMillicores field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the CpuLimitMillicores field is set to the value of the last call.
+func (b *CollectorsGroupResourcesSettingsApplyConfiguration) WithCpuLimitMillicores(value int) *CollectorsGroupResourcesSettingsApplyConfiguration {
+	b.CpuLimitMillicores = &value
 	return b
 }
 
 // WithMemoryLimiterLimitMiB sets the MemoryLimiterLimitMiB field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the MemoryLimiterLimitMiB field is set to the value of the last call.
-func (b *CollectorsGroupMemorySettingsApplyConfiguration) WithMemoryLimiterLimitMiB(value int) *CollectorsGroupMemorySettingsApplyConfiguration {
+func (b *CollectorsGroupResourcesSettingsApplyConfiguration) WithMemoryLimiterLimitMiB(value int) *CollectorsGroupResourcesSettingsApplyConfiguration {
 	b.MemoryLimiterLimitMiB = &value
 	return b
 }
@@ -60,7 +78,7 @@ func (b *CollectorsGroupMemorySettingsApplyConfiguration) WithMemoryLimiterLimit
 // WithMemoryLimiterSpikeLimitMiB sets the MemoryLimiterSpikeLimitMiB field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the MemoryLimiterSpikeLimitMiB field is set to the value of the last call.
-func (b *CollectorsGroupMemorySettingsApplyConfiguration) WithMemoryLimiterSpikeLimitMiB(value int) *CollectorsGroupMemorySettingsApplyConfiguration {
+func (b *CollectorsGroupResourcesSettingsApplyConfiguration) WithMemoryLimiterSpikeLimitMiB(value int) *CollectorsGroupResourcesSettingsApplyConfiguration {
 	b.MemoryLimiterSpikeLimitMiB = &value
 	return b
 }
@@ -68,7 +86,7 @@ func (b *CollectorsGroupMemorySettingsApplyConfiguration) WithMemoryLimiterSpike
 // WithGomemlimitMiB sets the GomemlimitMiB field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the GomemlimitMiB field is set to the value of the last call.
-func (b *CollectorsGroupMemorySettingsApplyConfiguration) WithGomemlimitMiB(value int) *CollectorsGroupMemorySettingsApplyConfiguration {
+func (b *CollectorsGroupResourcesSettingsApplyConfiguration) WithGomemlimitMiB(value int) *CollectorsGroupResourcesSettingsApplyConfiguration {
 	b.GomemlimitMiB = &value
 	return b
 }

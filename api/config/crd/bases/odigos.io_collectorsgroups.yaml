@@ -48,14 +48,24 @@ spec:
                   This can be used to resolve conflicting ports when a collector is using the host network.
                 format: int32
                 type: integer
-              memorySettings:
+              resourcesSettings:
                 description: |-
-                  Memory settings for the collectors group.
+                  Resources [memory/cpu] settings for the collectors group.
                   these settings are used to protect the collectors instances from:
                   - running out of memory and being killed by the k8s OOM killer
                   - consuming all available memory on the node which can lead to node instability
                   - pushing back pressure to the instrumented applications
                 properties:
+                  cpuLimitMillicores:
+                    description: |-
+                      CPU resource limit to be used on the pod template.
+                      it will be embedded in the as a resource limit of the form "cpu: <value>m"
+                    type: integer
+                  cpuRequestMillicores:
+                    description: |-
+                      CPU resource request to be used on the pod template.
+                      it will be embedded in the as a resource request of the form "cpu: <value>m"
+                    type: integer
                   gomemlimitMiB:
                     description: |-
                       the GOMEMLIMIT environment variable value for the collector pod.
@@ -93,6 +103,8 @@ spec:
                       it will be embedded in the as a resource request of the form "memory: <value>Mi"
                     type: integer
                 required:
+                - cpuLimitMillicores
+                - cpuRequestMillicores
                 - gomemlimitMiB
                 - memoryLimitMiB
                 - memoryLimiterLimitMiB
@@ -106,7 +118,7 @@ spec:
                 type: string
             required:
             - collectorOwnMetricsPort
-            - memorySettings
+            - resourcesSettings
             - role
             type: object
           status:
