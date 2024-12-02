@@ -96,9 +96,16 @@ func instrumentedApplicationToActualSource(instrumentedApp v1alpha1.Instrumented
 	// Map the container runtime details
 	var containers []*gqlmodel.SourceContainerRuntimeDetails
 	for _, container := range instrumentedApp.Spec.RuntimeDetails {
+		var otherAgentName *string
+		if container.OtherAgent != nil {
+			otherAgentName = &container.OtherAgent.Name
+		}
+
 		containers = append(containers, &gqlmodel.SourceContainerRuntimeDetails{
-			ContainerName: container.ContainerName,
-			Language:      string(container.Language),
+			ContainerName:  container.ContainerName,
+			Language:       string(container.Language),
+			RuntimeVersion: container.RuntimeVersion,
+			OtherAgent:     otherAgentName,
 		})
 	}
 

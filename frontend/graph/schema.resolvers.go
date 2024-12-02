@@ -280,7 +280,6 @@ func (r *destinationResolver) Type(ctx context.Context, obj *model.Destination) 
 
 // Conditions is the resolver for the conditions field.
 func (r *destinationResolver) Conditions(ctx context.Context, obj *model.Destination) ([]*model.Condition, error) {
-
 	conditions := make([]*model.Condition, 0, len(obj.Conditions))
 	for _, c := range obj.Conditions {
 		// Convert LastTransitionTime to a string pointer if it's not nil
