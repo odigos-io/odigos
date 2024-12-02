@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react';
+import React, { Fragment, useId } from 'react';
 import styled from 'styled-components';
 import { DataTab, Divider, InstrumentStatus, MonitorsIcons, Status, Text, Tooltip } from '@/reuseable-components';
 import { capitalizeFirstLetter, getProgrammingLanguageIcon, parseJsonStringToPrettyString, safeJsonParse, WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils';
@@ -21,10 +21,11 @@ const ListContainer = styled.div`
   width: 100%;
 `;
 
-const ListItem = styled.div`
+const ListItem = styled.div<{ $isStretched: boolean }>`
   display: flex;
   flex-direction: column;
   gap: 2px;
+  width: ${({ $isStretched }) => ($isStretched ? '100%' : 'unset')};
 `;
 
 const ItemTitle = styled(Text)`
@@ -39,14 +40,21 @@ const ItemValue = styled(Text)`
   line-height: 18px;
 `;
 
+const PreWrap = styled(Text)`
+  font-size: 12px;
+  white-space: pre-wrap;
+`;
+
 const STRETCH_TYPES = ['source-container']; // Types that should stretch to 100% width
 
 export const DataCardFields: React.FC<Props> = ({ data }) => {
   return (
     <ListContainer>
       {data.map(({ type, title, tooltip, value }) => {
+        const id = useId();
+
         return (
-          <ListItem key={`card-data-${type}-${title}-${value}`} style={{ width: !!type && STRETCH_TYPES.includes(type) ? '100%' : 'unset' }}>
+          <ListItem key={id} $isStretched={!!type && STRETCH_TYPES.includes(type)}>
             <Tooltip text={tooltip} withIcon>
               {!!title && <ItemTitle>{title}</ItemTitle>}
             </Tooltip>
@@ -87,16 +95,11 @@ const renderValue = (type: DataCardRow['type'], value: DataCardRow['value']) => 
     }
 
     default: {
-      const strRows = !!value ? parseJsonStringToPrettyString(value).split('\n') : ['-'];
+      const str = parseJsonStringToPrettyString(value || '-');
 
       return (
         <ItemValue>
-          {strRows.map((str, idx) => (
-            <Fragment key={`str-br-${str}-${idx}`}>
-              {str}
-              {idx < strRows.length - 1 ? <br /> : null}
-            </Fragment>
-          ))}
+          <PreWrap>{str}</PreWrap>
         </ItemValue>
       );
     }
