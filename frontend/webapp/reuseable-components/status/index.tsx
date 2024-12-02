@@ -25,7 +25,7 @@ const StatusWrapper = styled.div<{
   display: flex;
   align-items: center;
   width: fit-content;
-  padding: ${({ $withIcon, $withBorder, $withSmaller }) => ($withIcon || $withBorder ? ($withSmaller ? '4px 8px' : '8px 24px') : '0')};
+  padding: ${({ $withIcon, $withBorder, $withSmaller }) => ($withIcon || $withBorder ? ($withSmaller ? '2px 6px' : '8px 24px') : '0')};
   border-radius: 32px;
   border: 1px solid ${({ $withBorder, $isActive, theme }) => ($withBorder ? ($isActive ? theme.colors.dark_green : theme.colors.dark_red) : 'transparent')};
   background: ${({ $withBackground, $isActive }) =>
@@ -49,7 +49,7 @@ const TextWrapper = styled.div`
 
 const Title = styled(Text)<{ $isActive?: Props['isActive']; $withSpecialFont?: Props['withSpecialFont']; $withSmaller?: Props['withSmaller'] }>`
   font-weight: 400;
-  font-size: ${({ $withSmaller }) => ($withSmaller ? '12px' : '14px')};
+  font-size: ${({ $withSmaller }) => ($withSmaller ? '10px' : '14px')};
   font-family: ${({ $withSpecialFont, theme }) => ($withSpecialFont ? theme.font_family.secondary : theme.font_family.primary)};
   color: ${({ $isActive, theme }) => ($isActive ? theme.text.success : theme.text.error)};
   text-transform: ${({ $withSpecialFont }) => ($withSpecialFont ? 'uppercase' : 'unset')};
@@ -57,7 +57,7 @@ const Title = styled(Text)<{ $isActive?: Props['isActive']; $withSpecialFont?: P
 
 const SubTitle = styled(Text)<{ $isActive?: Props['isActive']; $withSpecialFont?: Props['withSpecialFont']; $withSmaller?: Props['withSmaller'] }>`
   font-weight: 400;
-  font-size: ${({ $withSmaller }) => ($withSmaller ? '10px' : '12px')};
+  font-size: ${({ $withSmaller }) => ($withSmaller ? '8px' : '12px')};
   font-family: ${({ $withSpecialFont, theme }) => ($withSpecialFont ? theme.font_family.secondary : theme.font_family.primary)};
   color: ${({ $isActive }) => ($isActive ? '#51DB51' : '#DB5151')};
   text-transform: ${({ $withSpecialFont }) => ($withSpecialFont ? 'uppercase' : 'unset')};
@@ -75,7 +75,7 @@ const Status: React.FC<Props> = ({ title, subtitle, isActive, withIcon, withBord
     <StatusWrapper $isActive={isActive} $withIcon={withIcon} $withBorder={withBorder} $withBackground={withBackground} $withSmaller={withSmaller}>
       {withIcon && (
         <IconWrapper $withSmaller={withSmaller}>
-          <Image src={getStatusIcon(isActive ? 'success' : 'error')} alt='status' width={withSmaller ? 14 : 16} height={withSmaller ? 14 : 16} />
+          <Image src={getStatusIcon(isActive ? 'success' : 'error')} alt='status' width={withSmaller ? 12 : 16} height={withSmaller ? 14 : 16} />
         </IconWrapper>
       )}
 
