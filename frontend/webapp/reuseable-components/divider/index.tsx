@@ -5,7 +5,7 @@ import type { NotificationType } from '@/types';
 
 interface Props {
   orientation?: 'horizontal' | 'vertical';
-  type?: NotificationType;
+  type?: NotificationType; // this is to apply coloring to the divider
   thickness?: number;
   length?: string;
   margin?: string;
