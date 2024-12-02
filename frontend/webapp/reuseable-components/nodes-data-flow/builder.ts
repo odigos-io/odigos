@@ -1,7 +1,7 @@
 import theme from '@/styles/theme';
 import { type Edge, type Node } from '@xyflow/react';
-import { getMainContainerLanguageLogo } from '@/utils/constants/programming-languages';
-import { extractMonitors, formatBytes, getActionIcon, getEntityIcon, getEntityLabel, getHealthStatus, getRuleIcon, getValueForRange } from '@/utils';
+import { getMainContainerLanguage } from '@/utils/constants/programming-languages';
+import { extractMonitors, formatBytes, getActionIcon, getEntityIcon, getEntityLabel, getHealthStatus, getProgrammingLanguageIcon, getRuleIcon, getValueForRange } from '@/utils';
 import { OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type OverviewMetricsResponse, type SingleDestinationMetricsResponse, type ComputePlatformMapped } from '@/types';
 
 const createNode = (nodeId: string, nodeType: string, x: number, y: number, data: Record<string, any>, style?: React.CSSProperties): Node => {
@@ -168,7 +168,7 @@ export const buildNodesAndEdges = ({ computePlatform, computePlatformFiltered, m
           status: getHealthStatus(source),
           title: getEntityLabel(source, OVERVIEW_ENTITY_TYPES.SOURCE, { extended: true }),
           subTitle: source.kind,
-          imageUri: getMainContainerLanguageLogo(source),
+          imageUri: getProgrammingLanguageIcon(getMainContainerLanguage(source)),
           metric,
           raw: source,
         }),

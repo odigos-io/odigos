@@ -6,10 +6,10 @@ import { useDrawerStore } from '@/store';
 import { CardDetails } from '@/components';
 import buildDrawerItem from './build-drawer-item';
 import { UpdateSourceBody } from '../update-source-body';
-import { ConditionDetails } from '@/reuseable-components';
 import OverviewDrawer from '../../overview/overview-drawer';
-import { ACTION, getMainContainerLanguageLogo } from '@/utils';
-import { OVERVIEW_ENTITY_TYPES, WorkloadId, type K8sActualSource } from '@/types';
+import { ConditionDetails, ContainerDetails } from '@/reuseable-components';
+import { ACTION, getMainContainerLanguage, getProgrammingLanguageIcon } from '@/utils';
+import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type K8sActualSource } from '@/types';
 
 interface Props {}
 
@@ -102,7 +102,7 @@ export const SourceDrawer: React.FC<Props> = () => {
     <OverviewDrawer
       title={item.reportedName || item.name}
       titleTooltip='This attribute is used to identify the name of the service (service.name) that is generating telemetry data.'
-      imageUri={getMainContainerLanguageLogo(item)}
+      imageUri={getProgrammingLanguageIcon(getMainContainerLanguage(item))}
       isEdit={isEditing}
       isFormDirty={isFormDirty}
       onEdit={handleEdit}
@@ -124,6 +124,7 @@ export const SourceDrawer: React.FC<Props> = () => {
         <DataContainer>
           <ConditionDetails conditions={item.instrumentedApplicationDetails.conditions} />
           <CardDetails title='Source Details' data={cardData} />
+          <ContainerDetails containers={item.instrumentedApplicationDetails.containers} />
         </DataContainer>
       )}
     </OverviewDrawer>
