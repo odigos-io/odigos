@@ -3,8 +3,8 @@ import buildCard from './build-card';
 import { RuleFormBody } from '../';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
-import { CardDetails } from '@/components';
-import { ACTION, getRuleIcon } from '@/utils';
+import { ACTION, DATA_CARDS, getRuleIcon } from '@/utils';
+import { DataCard } from '@/reuseable-components';
 import buildDrawerItem from './build-drawer-item';
 import { RULE_OPTIONS } from '../rule-modal/rule-options';
 import OverviewDrawer from '../../overview/overview-drawer';
@@ -117,7 +117,7 @@ export const RuleDrawer: React.FC<Props> = () => {
           />
         </FormContainer>
       ) : (
-        <CardDetails title='Instrumentation Rule Details' data={cardData} />
+        <DataCard title={DATA_CARDS.RULE_DETAILS} data={cardData} />
       )}
     </OverviewDrawer>
   );
