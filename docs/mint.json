@@ -125,7 +125,7 @@
             "instrumentations/java/java",
             "instrumentations/java/ebpf"
           ]
-        }        
+        }
       ]
     },
     {
@@ -218,6 +218,7 @@
             "backends/honeycomb",
             "backends/jaeger",
             "backends/lightstep",
+            "backends/last9",
             "backends/logzio",
             "backends/loki",
             "backends/newrelic",

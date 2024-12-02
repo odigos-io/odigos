@@ -116,8 +116,8 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 
 	memoryLimiterConfiguration := config.GenericMap{
 		"check_interval":  "1s",
-		"limit_mib":       gateway.Spec.MemorySettings.MemoryLimiterLimitMiB,
-		"spike_limit_mib": gateway.Spec.MemorySettings.MemoryLimiterSpikeLimitMiB,
+		"limit_mib":       gateway.Spec.ResourcesSettings.MemoryLimiterLimitMiB,
+		"spike_limit_mib": gateway.Spec.ResourcesSettings.MemoryLimiterSpikeLimitMiB,
 	}
 
 	processors := common.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleClusterGateway)
