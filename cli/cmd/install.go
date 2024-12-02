@@ -12,15 +12,15 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
+	"github.com/odigos-io/odigos/cli/cmd/resources"
+	"github.com/odigos-io/odigos/cli/cmd/resources/size"
+	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
+	"github.com/odigos-io/odigos/cli/pkg/kube"
+	"github.com/odigos-io/odigos/cli/pkg/log"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/utils"
 	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
-
-	"github.com/odigos-io/odigos/cli/cmd/resources"
-	"github.com/odigos-io/odigos/cli/pkg/kube"
-	"github.com/odigos-io/odigos/cli/pkg/log"
-	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
@@ -203,7 +203,7 @@ func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 		}
 	}
 
-	return common.OdigosConfiguration{
+	odigosConfig := common.OdigosConfiguration{
 		ConfigVersion:     1, // config version starts at 1 and incremented on every config change
 		TelemetryEnabled:  telemetryEnabled,
 		OpenshiftEnabled:  openshiftEnabled,
@@ -216,6 +216,17 @@ func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 		AutoscalerImage:   autoScalerImage,
 		Profiles:          selectedProfiles,
 	}
+
+	// Set sizing profile if selected [by a profile or it's dependencies]
+	sizingProfile := size.FilterSizeProfiles(selectedProfiles)
+	if sizingProfile != "" {
+		size := size.GetGatewayConfigBasedOnSize(sizingProfile)
+		if size != nil {
+			odigosConfig.CollectorGateway = size
+		}
+	}
+
+	return odigosConfig
 }
 
 func createKubeResourceWithLogging(ctx context.Context, msg string, client *kube.Client, cmd *cobra.Command, ns string, create ResourceCreationFunc) {

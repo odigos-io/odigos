@@ -2,7 +2,6 @@ package resources
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
@@ -10,10 +9,11 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 func NewOdigosConfiguration(ns string, config *common.OdigosConfiguration) (kube.Object, error) {
-	data, err := json.Marshal(config)
+	data, err := yaml.Marshal(config)
 	if err != nil {
 		return nil, err
 	}
