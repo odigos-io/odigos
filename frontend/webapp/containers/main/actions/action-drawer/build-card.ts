@@ -1,4 +1,6 @@
+import { DISPLAY_TITLES } from '@/utils';
 import type { ActionDataParsed } from '@/types';
+import { DataCardFieldTypes, type DataCardRow } from '@/reuseable-components';
 
 const buildCard = (action: ActionDataParsed) => {
   const {
@@ -19,19 +21,20 @@ const buildCard = (action: ActionDataParsed) => {
     },
   } = action;
 
-  const arr = [
-    { title: 'Type', value: type },
-    { title: 'Status', value: String(!disabled) },
-    { title: 'Monitors', value: signals.map((str) => str.toLowerCase()).join(', ') },
-    { title: 'Name', value: actionName || 'N/A' },
-    { title: 'Notes', value: notes || 'N/A' },
+  const arr: DataCardRow[] = [
+    { title: DISPLAY_TITLES.TYPE, value: type },
+    { title: DISPLAY_TITLES.NAME, value: actionName },
+    { title: DISPLAY_TITLES.NOTES, value: notes },
+    { type: DataCardFieldTypes.DIVIDER, width: '100%' },
+    { type: DataCardFieldTypes.ACTIVE_STATUS, title: DISPLAY_TITLES.STATUS, value: String(!disabled) },
+    { type: DataCardFieldTypes.MONITORS, title: DISPLAY_TITLES.SIGNALS_FOR_PROCESSING, value: signals.map((str) => str.toLowerCase()).join(', ') },
   ];
 
   if (clusterAttributes) {
     let str = '';
     clusterAttributes.forEach(({ attributeName, attributeStringValue }, idx) => {
       str += `${attributeName}: ${attributeStringValue}`;
-      if (idx < clusterAttributes.length - 1) str += '\n';
+      if (idx < clusterAttributes.length - 1) str += ', ';
     });
 
     arr.push({ title: 'Attributes', value: str });
