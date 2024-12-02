@@ -2,7 +2,7 @@ import React, { PropsWithChildren, useCallback } from 'react';
 import Image from 'next/image';
 import { FlexColumn } from '@/styles';
 import styled, { css } from 'styled-components';
-import { MonitorsIcons, Status, Text } from '@/reuseable-components';
+import { ActiveStatus, MonitorsIcons, Text } from '@/reuseable-components';
 
 interface Props extends PropsWithChildren {
   title: string;
@@ -89,7 +89,7 @@ export const DataTab: React.FC<Props> = ({ title, subTitle, logo, monitors, isAc
     return (
       <>
         <SubTitle>{'•'}</SubTitle>
-        <Status isActive={isActive} withSmaller withSpecialFont />
+        <ActiveStatus isActive={isActive} size={10} />
       </>
     );
   }, [isActive]);
