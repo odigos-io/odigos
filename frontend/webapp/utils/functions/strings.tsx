@@ -13,9 +13,7 @@ export function safeJsonParse<T>(str: string | undefined, fallback: T): T {
   }
 }
 
-export function cleanObjectEmptyStringsValues(
-  obj: Record<string, any>
-): Record<string, any> {
+export function cleanObjectEmptyStringsValues(obj: Record<string, any>): Record<string, any> {
   const cleanArray = (arr: any[]): any[] =>
     arr.filter((item) => {
       if (typeof item === 'object' && item !== null) {
@@ -30,10 +28,9 @@ export function cleanObjectEmptyStringsValues(
         .filter(([key, value]) => key !== '' && value !== '')
         .map(([key, value]) => {
           if (Array.isArray(value)) return [key, cleanArray(value)];
-          else if (typeof value === 'object' && value !== null)
-            return [key, cleanObject(value)];
+          else if (typeof value === 'object' && value !== null) return [key, cleanObject(value)];
           return [key, value];
-        })
+        }),
     );
 
   return Object.entries(obj).reduce((acc, [key, value]) => {
@@ -59,9 +56,8 @@ export function cleanObjectEmptyStringsValues(
     return acc;
   }, {} as Record<string, any>);
 }
-export function stringifyNonStringValues(
-  obj: Record<string, any>
-): Record<string, string> {
+
+export function stringifyNonStringValues(obj: Record<string, any>): Record<string, string> {
   return Object.entries(obj).reduce((acc, [key, value]) => {
     // Check if the value is already a string
     if (typeof value === 'string') {
@@ -73,6 +69,40 @@ export function stringifyNonStringValues(
     return acc;
   }, {} as Record<string, string>);
 }
+
+export const parseJsonStringToPrettyString = (value: string) => {
+  let str = '';
+
+  try {
+    const parsed = JSON.parse(value);
+
+    // Handle arrays
+    if (Array.isArray(parsed)) {
+      str = parsed
+        .map((item) => {
+          if (typeof item === 'object' && item !== null) return `${item.key}: ${item.value}`;
+          else return item;
+        })
+        .join(', ');
+    }
+
+    // Handle objects (non-array JSON objects)
+    else if (typeof parsed === 'object' && parsed !== null) {
+      str = Object.entries(parsed)
+        .map(([key, val]) => `${key}: ${val}`)
+        .join(', ');
+    }
+
+    // Should never reach this if it's a string (it will throw)
+    else {
+      str = value;
+    }
+  } catch (error) {
+    str = value;
+  }
+
+  return str;
+};
 
 export const timeAgo = (timestamp: string) => {
   const now = new Date();
@@ -115,27 +145,10 @@ export function formatDate(dateString: string) {
   const seconds = date.getUTCSeconds();
 
   // Define month names
-  const monthNames = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
-  ];
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
   // Format the components into a readable string
-  const formattedDate = `${monthNames[month]} ${day}, ${year} ${hours
-    .toString()
-    .padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds
-    .toString()
-    .padStart(2, '0')}`;
+  const formattedDate = `${monthNames[month]} ${day}, ${year} ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
   return formattedDate;
 }
