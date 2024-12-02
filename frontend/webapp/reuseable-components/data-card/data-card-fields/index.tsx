@@ -1,6 +1,6 @@
 import React, { useId } from 'react';
 import styled from 'styled-components';
-import { DataTab, Divider, InstrumentStatus, MonitorsIcons, Status, Text, Tooltip } from '@/reuseable-components';
+import { ActiveStatus, DataTab, Divider, InstrumentStatus, MonitorsIcons, Text, Tooltip } from '@/reuseable-components';
 import { capitalizeFirstLetter, getProgrammingLanguageIcon, parseJsonStringToPrettyString, safeJsonParse, WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils';
 
 export enum DataCardFieldTypes {
@@ -74,10 +74,10 @@ const renderValue = (type: DataCardRow['type'], value: DataCardRow['value']) => 
       return <Divider length='100%' margin='0' />;
 
     case DataCardFieldTypes.MONITORS:
-      return <MonitorsIcons monitors={value?.split(', ') || []} withLabels size={12} />;
+      return <MonitorsIcons monitors={value?.split(', ') || []} withLabels />;
 
     case DataCardFieldTypes.ACTIVE_STATUS:
-      return <Status isActive={value == 'true'} withIcon withBorder withSmaller withSpecialFont />;
+      return <ActiveStatus isActive={value == 'true'} size={10} withIcon withBorder />;
 
     case DataCardFieldTypes.SOURCE_CONTAINER: {
       const { containerName, language, runtimeVersion } = safeJsonParse(value, {
