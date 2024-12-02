@@ -118,6 +118,11 @@ spec:
             timeout: 60s
         - assert:
             file: assert-odigos-upgraded.yaml
+            timeout: 60s
+        - finally:
+            script:
+              content: |
+                kubectl get pods -A
     - name: Odigos pipeline ready after upgrade
       try:
         - assert:
