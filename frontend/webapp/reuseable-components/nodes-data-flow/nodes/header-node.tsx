@@ -35,7 +35,7 @@ const Title = styled(Text)`
 
 const ActionsWrapper = styled.div`
   margin-left: auto;
-  margin-right: 24px;
+  margin-right: 16px;
 `;
 
 const HeaderNode: React.FC<Props> = ({ nodeWidth, data }) => {
