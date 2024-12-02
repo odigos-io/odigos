@@ -24,8 +24,8 @@ spec:
     - name: LAST9_OTLP_BASIC_AUTH_HEADER
       displayName: Basic Auth Header
       componentType: input
+      secret: true
       componentProps:
-        secret: true
         type: password
         required: true
         placeholder: "Basic ..."
