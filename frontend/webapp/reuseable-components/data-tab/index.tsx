@@ -1,7 +1,8 @@
 import React, { PropsWithChildren, useCallback } from 'react';
 import Image from 'next/image';
+import { FlexColumn } from '@/styles';
 import styled, { css } from 'styled-components';
-import { Gap, MonitorsIcons, Status, Text } from '@/reuseable-components';
+import { MonitorsIcons, Status, Text } from '@/reuseable-components';
 
 interface Props extends PropsWithChildren {
   title: string;
@@ -99,14 +100,14 @@ export const DataTab: React.FC<Props> = ({ title, subTitle, logo, monitors, isAc
         <Image src={logo} alt='' width={20} height={20} />
       </IconWrapper>
 
-      <Gap direction='column'>
+      <FlexColumn>
         <Title>{title}</Title>
         <SubTitleWrapper>
           <SubTitle>{subTitle}</SubTitle>
           {renderMonitors()}
           {renderActiveStatus()}
         </SubTitleWrapper>
-      </Gap>
+      </FlexColumn>
 
       <ActionsWrapper>{children}</ActionsWrapper>
     </Container>

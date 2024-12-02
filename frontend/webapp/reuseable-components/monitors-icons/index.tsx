@@ -1,7 +1,8 @@
 import React from 'react';
 import Image from 'next/image';
+import { FlexRow } from '@/styles';
 import { capitalizeFirstLetter } from '@/utils';
-import { Gap, Tooltip } from '@/reuseable-components';
+import { Tooltip } from '@/reuseable-components';
 
 interface Props {
   monitors: string[];
@@ -11,7 +12,7 @@ interface Props {
 
 export const MonitorsIcons: React.FC<Props> = ({ monitors, withTooltips, size = 12 }) => {
   return (
-    <Gap size={size / 3}>
+    <FlexRow $gap={size / 3}>
       {monitors.map((str) => {
         const signal = str.toLocaleLowerCase();
 
@@ -21,6 +22,6 @@ export const MonitorsIcons: React.FC<Props> = ({ monitors, withTooltips, size = 
           </Tooltip>
         );
       })}
-    </Gap>
+    </FlexRow>
   );
 };
