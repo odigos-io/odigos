@@ -1,0 +1,56 @@
+---
+title: "AppDynamics"
+---
+
+## Configuring AppDynamics Backend
+
+1. [Register](https://accounts.appdynamics.com/trial)/[Login](https://login.appdynamics.com/sso/authenticate) to AppDynamics.
+2. Navigate to the OpenTelemetry page:
+
+```bash
+https://{YOUR_USERNAME_HERE}.saas.appdynamics.com/controller/#/apm/otel
+```
+
+3. Click on the `Configuration` tab, then click on `exporters`.
+4. Copy your `Endpoint`, and generate an `API Key`.
+
+- **Endpoint** - AppDynamics OTeL Endpoint.
+- **API Key** - AppDynamics OTeL API Key.
+
+## Adding a destination to Odigos
+
+Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+
+1. **Using the UI**
+
+- Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI:
+
+```bash
+odigos ui
+```
+
+2. **Using Kubernetes manifests**
+
+- Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
+
+```bash
+kubectl apply -f destination.yaml
+```
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: appdynamics-example
+  namespace: odigos-system
+spec:
+  data:
+    APPDYNAMICS_ENDPOINT: <AppDynamics Endpoint>
+    APPDYNAMICS_API_KEY: <AppDynamics API Key>
+  destinationName: appdynamics
+  signals:
+  - TRACES
+  - METRICS
+  - LOGS
+  type: appdynamics
+```
