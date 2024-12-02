@@ -90,8 +90,18 @@ func patchDeployment(existing *appsv1.Deployment, desired *appsv1.Deployment, ct
 func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string,
 	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (*appsv1.Deployment, error) {
 
-	requestMemoryQuantity := resource.MustParse(fmt.Sprintf("%dMi", gateway.Spec.MemorySettings.MemoryRequestMiB))
-	limitMemoryQuantity := resource.MustParse(fmt.Sprintf("%dMi", gateway.Spec.MemorySettings.MemoryLimitMiB))
+	// request + limits for memory and cpu
+	requestMemoryQuantity := resource.MustParse(fmt.Sprintf("%dMi", gateway.Spec.ResourcesSettings.MemoryRequestMiB))
+	limitMemoryQuantity := resource.MustParse(fmt.Sprintf("%dMi", gateway.Spec.ResourcesSettings.MemoryLimitMiB))
+
+	requestCPU := resource.MustParse(fmt.Sprintf("%dm", gateway.Spec.ResourcesSettings.CpuRequestMillicores))
+	limitCPU := resource.MustParse(fmt.Sprintf("%dm", gateway.Spec.ResourcesSettings.CpuLimitMillicores))
+
+	// deployment replicas
+	var gatewayReplicas int32 = 1
+	if gateway.Spec.ResourcesSettings.MinReplicas != nil {
+		gatewayReplicas = int32(*gateway.Spec.ResourcesSettings.MinReplicas)
+	}
 
 	desiredDeployment := &appsv1.Deployment{
 		ObjectMeta: v1.ObjectMeta{
@@ -100,7 +110,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 			Labels:    ClusterCollectorGateway,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: intPtr(1),
+			Replicas: intPtr(gatewayReplicas),
 			Selector: &v1.LabelSelector{
 				MatchLabels: ClusterCollectorGateway,
 			},
@@ -159,7 +169,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 								},
 								{
 									Name:  "GOMEMLIMIT",
-									Value: fmt.Sprintf("%dMiB", gateway.Spec.MemorySettings.GomemlimitMiB),
+									Value: fmt.Sprintf("%dMiB", gateway.Spec.ResourcesSettings.GomemlimitMiB),
 								},
 							},
 							SecurityContext: &corev1.SecurityContext{
@@ -190,9 +200,11 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 							Resources: corev1.ResourceRequirements{
 								Requests: corev1.ResourceList{
 									corev1.ResourceMemory: requestMemoryQuantity,
+									corev1.ResourceCPU:    requestCPU,
 								},
 								Limits: corev1.ResourceList{
 									corev1.ResourceMemory: limitMemoryQuantity,
+									corev1.ResourceCPU:    limitCPU,
 								},
 							},
 						},
