@@ -10,7 +10,6 @@ import (
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -33,7 +32,7 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, err
 	}
 
-	podWorkload := &workload.PodWorkload{
+	podWorkload := workload.PodWorkload{
 		Namespace: req.Namespace,
 		Kind:      workloadKind,
 		Name:      workloadName,
@@ -55,7 +54,7 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 	for key, director := range i.Directors {
 		// Apply the configuration only for languages specified in the InstrumentationConfig
 		if _, ok := langs[key.Language]; ok {
-			err = director.ApplyInstrumentationConfiguration(ctx, podWorkload, instrumentationConfig)
+			err = director.ApplyInstrumentationConfiguration(ctx, &podWorkload, instrumentationConfig)
 			if err != nil {
 				return ctrl.Result{}, err
 			}
@@ -70,7 +69,7 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 
 		select {
 		case i.ConfigUpdates <- ebpf.ConfigUpdate{
-			WorkloadKey: types.NamespacedName{Namespace: req.Namespace, Name: workloadName},
+			PodWorkload: podWorkload,
 			Config:      instrumentationConfig}:
 			return ctrl.Result{}, nil
 		case <-ctx.Done():

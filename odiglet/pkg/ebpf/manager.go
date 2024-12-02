@@ -13,6 +13,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/container"
 	instance "github.com/odigos-io/odigos/k8sutils/pkg/instrumentation_instance"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	workloadUtils "github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/odiglet/pkg/detector"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
@@ -64,15 +65,20 @@ const (
 )
 
 type ConfigUpdate struct {
-	WorkloadKey types.NamespacedName
+	PodWorkload workload.PodWorkload
 	Config      *odigosv1.InstrumentationConfig
 }
 
 type instrumentationDetails struct {
 	inst     Instrumentation
 	pod      types.NamespacedName
-	lang     common.ProgrammingLanguage
-	workload types.NamespacedName
+	configID workloadConfigID
+}
+
+// workloadConfigID is used to identify a workload and its language for configuration updates
+type workloadConfigID struct {
+	podWorkload workload.PodWorkload
+	lang        common.ProgrammingLanguage
 }
 
 type Manager struct {
@@ -90,7 +96,7 @@ type Manager struct {
 
 	// active instrumentations by workload, and aggregated by pid
 	// this map is not concurrent safe, so it should be accessed only from the main event loop
-	detailsByWorkload map[types.NamespacedName]map[int]*instrumentationDetails
+	detailsByWorkload map[workloadConfigID]map[int]*instrumentationDetails
 
 	configUpdates chan ConfigUpdate
 }
@@ -109,7 +115,7 @@ func NewManager(client client.Client, logger logr.Logger, factories map[OtelDist
 		factories:         factories,
 		logger:            logger.WithName("ebpf-instrumentation-manager"),
 		detailsByPid:      make(map[int]*instrumentationDetails),
-		detailsByWorkload: map[types.NamespacedName]map[int]*instrumentationDetails{},
+		detailsByWorkload: map[workloadConfigID]map[int]*instrumentationDetails{},
 		configUpdates:     make(chan ConfigUpdate, configUpdatesBufferSize),
 	}, nil
 }
@@ -157,7 +163,7 @@ func (m *Manager) runEventLoop(ctx context.Context) {
 				break
 			}
 			for _, sdkConfig := range configUpdate.Config.Spec.SdkConfigs {
-				err := m.applyInstrumentationConfigurationForSDK(ctx, configUpdate.WorkloadKey, &sdkConfig)
+				err := m.applyInstrumentationConfigurationForSDK(ctx, configUpdate.PodWorkload, &sdkConfig)
 				if err != nil {
 					m.logger.Error(err, "failed to apply instrumentation configuration")
 				}
@@ -244,18 +250,18 @@ func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.Process
 		return ErrNoInstrumentationFactory
 	}
 
-	workload, err := workloadUtils.PodWorkloadObjectOrError(ctx, pod)
+	podWorkload, err := workloadUtils.PodWorkloadObjectOrError(ctx, pod)
 	if err != nil {
 		return fmt.Errorf("failed to find workload object from pod manifest owners references: %w", err)
 	}
 
 	// Fetch initial config based on the InstrumentationConfig CR
-	sdkConfig := m.instrumentationSDKConfig(ctx, workload, lang, types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name})
+	sdkConfig := m.instrumentationSDKConfig(ctx, podWorkload, lang, types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name})
 	// we should always have config for this event.
 	// if missing, it means that either:
 	// - the config will be generated later due to reconciliation timing in instrumentor
-	// - just go deleted and the pod (and the process) will go down soon
-	// TODO: sync reconcilers so ins config is guaranteed be created before the webhook is enabled
+	// - just got deleted and the pod (and the process) will go down soon
+	// TODO: sync reconcilers so inst config is guaranteed be created before the webhook is enabled
 	//
 	// if sdkConfig == nil {
 	// 	m.Logger.Info("no sdk config found for language", "language", lang, "pod", pod.Name)
@@ -265,9 +271,9 @@ func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.Process
 	settings := Settings{
 		// TODO: respect reported name annotation (if present) - to override the service name
 		// refactor from opAmp code
-		ServiceName: workload.Name,
+		ServiceName: podWorkload.Name,
 		// TODO: add container name
-		ResourceAttributes: utils.GetResourceAttributes(workload, pod.Name),
+		ResourceAttributes: utils.GetResourceAttributes(podWorkload, pod.Name),
 		InitialConfig:      sdkConfig,
 	}
 
@@ -276,7 +282,7 @@ func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.Process
 		m.logger.Error(err, "failed to initialize instrumentation", "language", lang, "sdk", sdk)
 
 		// write instrumentation instance CR with error status
-		err = m.updateInstrumentationInstanceStatus(ctx, pod, containerName, workload, e.PID, InstrumentationUnhealthy, FailedToInitialize, err.Error())
+		err = m.updateInstrumentationInstanceStatus(ctx, pod, containerName, podWorkload, e.PID, InstrumentationUnhealthy, FailedToInitialize, err.Error())
 		// TODO: should we return here the initialize error? or the instance write error? or both?
 		return err
 	}
@@ -286,18 +292,18 @@ func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.Process
 		m.logger.Error(err, "failed to load instrumentation", "language", lang, "sdk", sdk)
 
 		// write instrumentation instance CR with error status
-		err = m.updateInstrumentationInstanceStatus(ctx, pod, containerName, workload, e.PID, InstrumentationUnhealthy, FailedToLoad, err.Error())
+		err = m.updateInstrumentationInstanceStatus(ctx, pod, containerName, podWorkload, e.PID, InstrumentationUnhealthy, FailedToLoad, err.Error())
 		// TODO: should we return here the load error? or the instance write error? or both?
 		return err
 	}
 
-	m.startTrackInstrumentation(e.PID, lang, inst, types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name}, types.NamespacedName{Namespace: workload.Namespace, Name: workload.Name})
+	m.startTrackInstrumentation(e.PID, lang, inst, types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name}, *podWorkload)
 
 	m.logger.Info("instrumentation loaded", "pid", e.PID, "pod", pod.Name, "container", containerName, "language", lang, "sdk", sdk)
 
 	// write instrumentation instance CR with success status
 	msg := fmt.Sprintf("Successfully loaded eBPF probes to pod: %s container: %s", pod.Name, containerName)
-	err = m.updateInstrumentationInstanceStatus(ctx, pod, containerName, workload, e.PID, InstrumentationHealthy, LoadedSuccessfully, msg)
+	err = m.updateInstrumentationInstanceStatus(ctx, pod, containerName, podWorkload, e.PID, InstrumentationHealthy, LoadedSuccessfully, msg)
 	if err != nil {
 		m.logger.Error(err, "failed to update instrumentation instance for successful load")
 	}
@@ -306,7 +312,7 @@ func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.Process
 		err := inst.Run(ctx)
 		if err != nil && !errors.Is(err, context.Canceled) {
 			m.logger.Error(err, "failed to run instrumentation")
-			err = m.updateInstrumentationInstanceStatus(ctx, pod, containerName, workload, e.PID, InstrumentationUnhealthy, FailedToRun, err.Error())
+			err = m.updateInstrumentationInstanceStatus(ctx, pod, containerName, podWorkload, e.PID, InstrumentationUnhealthy, FailedToRun, err.Error())
 			if err != nil {
 				m.logger.Error(err, "failed to update instrumentation instance for failed instrumentation run")
 			}
@@ -316,20 +322,24 @@ func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.Process
 	return nil
 }
 
-func (m *Manager) startTrackInstrumentation(pid int, lang common.ProgrammingLanguage, inst Instrumentation, pod types.NamespacedName, workload types.NamespacedName) {
+func (m *Manager) startTrackInstrumentation(pid int, lang common.ProgrammingLanguage, inst Instrumentation, pod types.NamespacedName, podWorkload workload.PodWorkload) {
+	workloadConfigID := workloadConfigID{
+		podWorkload: podWorkload,
+		lang:        lang,
+	}
+
 	details := &instrumentationDetails{
 		inst:     inst,
 		pod:      pod,
-		lang:     lang,
-		workload: workload,
+		configID: workloadConfigID,
 	}
 	m.detailsByPid[pid] = details
 
-	if _, found := m.detailsByWorkload[workload]; !found {
+	if _, found := m.detailsByWorkload[workloadConfigID]; !found {
 		// first instrumentation for this workload
-		m.detailsByWorkload[workload] = map[int]*instrumentationDetails{pid: details}
+		m.detailsByWorkload[workloadConfigID] = map[int]*instrumentationDetails{pid: details}
 	} else {
-		m.detailsByWorkload[workload][pid] = details
+		m.detailsByWorkload[workloadConfigID][pid] = details
 	}
 }
 
@@ -338,13 +348,13 @@ func (m *Manager) stopTrackInstrumentation(pid int) {
 	if !ok {
 		return
 	}
-	workload := details.workload
+	workloadConfigID := details.configID
 
 	delete(m.detailsByPid, pid)
-	delete(m.detailsByWorkload[workload], pid)
+	delete(m.detailsByWorkload[workloadConfigID], pid)
 
-	if len(m.detailsByWorkload[workload]) == 0 {
-		delete(m.detailsByWorkload, workload)
+	if len(m.detailsByWorkload[workloadConfigID]) == 0 {
+		delete(m.detailsByWorkload, workloadConfigID)
 	}
 }
 
@@ -367,19 +377,21 @@ func (m *Manager) instrumentationSDKConfig(ctx context.Context, w *workloadUtils
 	return nil
 }
 
-func (m *Manager) applyInstrumentationConfigurationForSDK(ctx context.Context, workloadKey types.NamespacedName, sdkConfig *odigosv1.SdkConfig) error {
+func (m *Manager) applyInstrumentationConfigurationForSDK(ctx context.Context, podWorkload workload.PodWorkload, sdkConfig *odigosv1.SdkConfig) error {
 	var err error
-	workloadInstrumentations, ok := m.detailsByWorkload[workloadKey]
+
+	configID := workloadConfigID{
+		podWorkload: podWorkload,
+		lang:        sdkConfig.Language,
+	}
+
+	workloadInstrumentations, ok := m.detailsByWorkload[configID]
 	if !ok {
 		return nil
 	}
 
 	for _, instDetails := range workloadInstrumentations {
-		if instDetails.lang != sdkConfig.Language {
-			continue
-		}
-
-		m.logger.Info("applying configuration to instrumentation", "workload", workloadKey, "pod", instDetails.pod, "language", instDetails.lang)
+		m.logger.Info("applying configuration to instrumentation", "podWorkload", podWorkload, "pod", instDetails.pod, "language", sdkConfig.Language)
 		applyErr := instDetails.inst.ApplyConfig(ctx, sdkConfig)
 		err = errors.Join(err, applyErr)
 	}
