@@ -26,7 +26,7 @@ const (
 )
 
 var (
-	defaltMinReplicas          = intPtr(1)
+	defaultMinReplicas         = intPtr(1)
 	defaultMaxReplicas         = int32(10)
 	stabilizationWindowSeconds = intPtr(300) // cooldown period for scaling down
 )
@@ -44,15 +44,13 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 	cpuTargetMillicores := gateway.Spec.ResourcesSettings.CpuLimitMillicores * cpuLimitPercentageForHPA / 100
 	metricQuantityCPU := resource.MustParse(fmt.Sprintf("%dm", cpuTargetMillicores))
 
-	minReplicas := defaltMinReplicas
-	if gateway.Spec.ResourcesSettings.MinReplicas != nil &&
-		*gateway.Spec.ResourcesSettings.MinReplicas != int(*minReplicas) && *gateway.Spec.ResourcesSettings.MinReplicas > 0 {
+	minReplicas := defaultMinReplicas
+	if gateway.Spec.ResourcesSettings.MinReplicas != nil && *gateway.Spec.ResourcesSettings.MinReplicas > 0 {
 		minReplicas = intPtr(int32(*gateway.Spec.ResourcesSettings.MinReplicas))
 	}
 
 	maxReplicas := defaultMaxReplicas
-	if gateway.Spec.ResourcesSettings.MaxReplicas != nil &&
-		*gateway.Spec.ResourcesSettings.MaxReplicas != int(maxReplicas) && *gateway.Spec.ResourcesSettings.MaxReplicas > 0 {
+	if gateway.Spec.ResourcesSettings.MaxReplicas != nil && *gateway.Spec.ResourcesSettings.MaxReplicas > 0 {
 		maxReplicas = int32(*gateway.Spec.ResourcesSettings.MaxReplicas)
 	}
 
