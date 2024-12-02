@@ -121,8 +121,8 @@ spec:
             timeout: 60s
       catch:
       - get:
-        apiVersion: v1
-        kind: Pod
+          apiVersion: v1
+          kind: Pod
     - name: Odigos pipeline ready after upgrade
       try:
         - assert:
