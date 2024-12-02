@@ -26,6 +26,7 @@ func NewK8SProcDetector(ctx context.Context, logger logr.Logger, events chan<- P
 	opts := []detector.DetectorOption{
 		detector.WithLogger(sLogger),
 		detector.WithEnvironments(relevantEnvVars()...),
+		detector.WithEnvPrefixFilter(consts.OdigosEnvVarPodName),
 	}
 	detector, err := detector.NewDetector(ctx, events, opts...)
 
