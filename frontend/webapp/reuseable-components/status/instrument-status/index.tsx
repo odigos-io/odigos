@@ -1,26 +1,13 @@
 import React from 'react';
-import Image from 'next/image';
-import theme from '@/styles/theme';
-import styled from 'styled-components';
-import { Text } from '@/reuseable-components';
-import { getStatusIcon, INSTUMENTATION_STATUS, WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils';
+import { Status, type StatusProps } from '@/reuseable-components';
+import { INSTUMENTATION_STATUS, WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils';
 
-interface Props {
+interface Props extends StatusProps {
   language: WORKLOAD_PROGRAMMING_LANGUAGES;
 }
 
-const Container = styled.div<{ $active: boolean }>`
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  margin-left: auto;
-  border-radius: 360px;
-  border: 1px solid ${({ $active, theme }) => ($active ? theme.colors.dark_green : theme.colors.border)};
-`;
-
-export const InstrumentStatus: React.FC<Props> = ({ language }) => {
-  const active = ![
+export const InstrumentStatus: React.FC<Props> = ({ language, ...props }) => {
+  const isActive = ![
     WORKLOAD_PROGRAMMING_LANGUAGES.IGNORED,
     WORKLOAD_PROGRAMMING_LANGUAGES.UNKNOWN,
     WORKLOAD_PROGRAMMING_LANGUAGES.PROCESSING,
@@ -28,12 +15,5 @@ export const InstrumentStatus: React.FC<Props> = ({ language }) => {
     WORKLOAD_PROGRAMMING_LANGUAGES.NO_RUNNING_PODS,
   ].includes(language);
 
-  return (
-    <Container $active={active}>
-      <Image src={active ? getStatusIcon('success') : '/icons/common/circled-cross.svg'} alt='' width={12} height={12} />
-      <Text size={12} family='secondary' color={active ? theme.text.success : theme.text.grey}>
-        {active ? INSTUMENTATION_STATUS.INSTRUMENTED : INSTUMENTATION_STATUS.UNINSTRUMENTED}
-      </Text>
-    </Container>
-  );
+  return <Status title={isActive ? INSTUMENTATION_STATUS.INSTRUMENTED : INSTUMENTATION_STATUS.UNINSTRUMENTED} isPale={!isActive} isActive={isActive} withIcon withBorder {...props} />;
 };

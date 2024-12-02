@@ -30,7 +30,6 @@ export * from './auto-complete-input';
 export * from './drawer';
 export * from './input-table';
 export * from './status';
-export * from './status/instrument-status'
 export * from './field-label';
 export * from './field-error';
 export * from './extend-icon';

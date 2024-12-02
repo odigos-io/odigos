@@ -3,7 +3,7 @@ import Image from 'next/image';
 import styled from 'styled-components';
 import { PlatformTitle } from './cp-title';
 import { useConnectionStore } from '@/store';
-import { Status } from '@/reuseable-components';
+import { ConnectionStatus } from '@/reuseable-components';
 import { NotificationManager } from '@/components/notification';
 
 interface MainHeaderProps {}
@@ -40,7 +40,7 @@ export const MainHeader: React.FC<MainHeaderProps> = () => {
       <AlignLeft>
         <Image src='/brand/transparent-logo-white.svg' alt='logo' width={84} height={20} />
         <PlatformTitle type='k8s' />
-        {!connecting && <Status title={title} subtitle={message} isActive={active} withIcon withBackground />}
+        {!connecting && <ConnectionStatus title={title} subtitle={message} isActive={active} />}
       </AlignLeft>
 
       <AlignRight>
