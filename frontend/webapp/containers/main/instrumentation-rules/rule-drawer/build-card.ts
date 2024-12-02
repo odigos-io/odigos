@@ -1,13 +1,15 @@
 import type { InstrumentationRuleSpec } from '@/types';
+import type { DataCardRow } from '@/reuseable-components';
 
 const buildCard = (rule: InstrumentationRuleSpec) => {
   const { type, ruleName, notes, disabled, payloadCollection } = rule;
 
-  const arr = [
-    { title: 'Type', value: type || 'N/A' },
-    { title: 'Status', value: String(!disabled) },
-    { title: 'Name', value: ruleName || 'N/A' },
-    { title: 'Notes', value: notes || 'N/A' },
+  const arr: DataCardRow[] = [
+    { title: 'Type', value: type },
+    { title: 'Name', value: ruleName },
+    { title: 'Notes', value: notes },
+    { type: 'divider' },
+    { title: 'Status', type: 'active-status', value: String(!disabled) },
   ];
 
   if (payloadCollection) {

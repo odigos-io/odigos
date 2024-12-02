@@ -3,11 +3,10 @@ import { ACTION } from '@/utils';
 import buildCard from './build-card';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
-import { CardDetails } from '@/components';
 import buildDrawerItem from './build-drawer-item';
-import { ConditionDetails } from '@/reuseable-components';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { DestinationFormBody } from '../destination-form-body';
+import { ConditionDetails, DataCard } from '@/reuseable-components';
 import { OVERVIEW_ENTITY_TYPES, type ActualDestination } from '@/types';
 import { useDestinationCRUD, useDestinationFormData, useDestinationTypes } from '@/hooks';
 
@@ -138,7 +137,7 @@ export const DestinationDrawer: React.FC<Props> = () => {
       ) : (
         <DataContainer>
           <ConditionDetails conditions={item.conditions} />
-          <CardDetails title='Destination Details' data={cardData} />
+          <DataCard title='Destination Details' data={cardData} />
         </DataContainer>
       )}
     </OverviewDrawer>

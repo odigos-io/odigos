@@ -3,11 +3,10 @@ import buildCard from './build-card';
 import styled from 'styled-components';
 import { useSourceCRUD } from '@/hooks';
 import { useDrawerStore } from '@/store';
-import { CardDetails } from '@/components';
 import buildDrawerItem from './build-drawer-item';
 import { UpdateSourceBody } from '../update-source-body';
 import OverviewDrawer from '../../overview/overview-drawer';
-import { ConditionDetails, ContainerDetails } from '@/reuseable-components';
+import { DataCardRow, ConditionDetails, DataCard } from '@/reuseable-components';
 import { ACTION, getMainContainerLanguage, getProgrammingLanguageIcon } from '@/utils';
 import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type K8sActualSource } from '@/types';
 
@@ -75,6 +74,22 @@ export const SourceDrawer: React.FC<Props> = () => {
     return arr;
   }, [selectedItem]);
 
+  const containersData = useMemo(() => {
+    if (!selectedItem) return [];
+
+    const { item } = selectedItem as { item: K8sActualSource };
+
+    return (
+      item.instrumentedApplicationDetails.containers.map(
+        (container) =>
+          ({
+            type: 'source-container',
+            value: JSON.stringify(container),
+          } as DataCardRow),
+      ) || []
+    );
+  }, [selectedItem]);
+
   if (!selectedItem?.item) return null;
   const { id, item } = selectedItem as { id: WorkloadId; item: K8sActualSource };
 
@@ -123,8 +138,13 @@ export const SourceDrawer: React.FC<Props> = () => {
       ) : (
         <DataContainer>
           <ConditionDetails conditions={item.instrumentedApplicationDetails.conditions} />
-          <CardDetails title='Source Details' data={cardData} />
-          <ContainerDetails containers={item.instrumentedApplicationDetails.containers} />
+          <DataCard title='Source Details' data={cardData} />
+          <DataCard
+            title='Detected Containers'
+            titleBadge={containersData.length}
+            description='The system automatically instruments the containers it detects with a supported programming language.'
+            data={containersData}
+          />
         </DataContainer>
       )}
     </OverviewDrawer>

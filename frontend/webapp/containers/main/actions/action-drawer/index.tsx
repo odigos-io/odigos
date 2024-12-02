@@ -3,9 +3,9 @@ import buildCard from './build-card';
 import { ActionFormBody } from '../';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
-import { CardDetails } from '@/components';
 import { ACTION, getActionIcon } from '@/utils';
 import buildDrawerItem from './build-drawer-item';
+import { DataCard } from '@/reuseable-components';
 import { useActionCRUD, useActionFormData } from '@/hooks';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { ACTION_OPTIONS } from '../action-modal/action-options';
@@ -120,7 +120,7 @@ export const ActionDrawer: React.FC<Props> = () => {
           />
         </FormContainer>
       ) : (
-        <CardDetails title='Action Details' data={cardData} />
+        <DataCard title='Action Details' data={cardData} />
       )}
     </OverviewDrawer>
   );

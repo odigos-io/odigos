@@ -1,4 +1,5 @@
 import type { ActionDataParsed } from '@/types';
+import type { DataCardRow } from '@/reuseable-components';
 
 const buildCard = (action: ActionDataParsed) => {
   const {
@@ -19,19 +20,20 @@ const buildCard = (action: ActionDataParsed) => {
     },
   } = action;
 
-  const arr = [
+  const arr: DataCardRow[] = [
     { title: 'Type', value: type },
-    { title: 'Status', value: String(!disabled) },
-    { title: 'Monitors', value: signals.map((str) => str.toLowerCase()).join(', ') },
-    { title: 'Name', value: actionName || 'N/A' },
-    { title: 'Notes', value: notes || 'N/A' },
+    { title: 'Name', value: actionName },
+    { title: 'Notes', value: notes },
+    { type: 'divider' },
+    { title: 'Status', type: 'active-status', value: String(!disabled) },
+    { title: 'Signals for Processing', type: 'monitors', value: signals.map((str) => str.toLowerCase()).join(', ') },
   ];
 
   if (clusterAttributes) {
     let str = '';
     clusterAttributes.forEach(({ attributeName, attributeStringValue }, idx) => {
       str += `${attributeName}: ${attributeStringValue}`;
-      if (idx < clusterAttributes.length - 1) str += '\n';
+      if (idx < clusterAttributes.length - 1) str += ', ';
     });
 
     arr.push({ title: 'Attributes', value: str });

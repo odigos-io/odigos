@@ -1,18 +1,16 @@
-import { ActualDestination, DestinationDetailsResponse, ExportedSignals } from '@/types';
 import { safeJsonParse } from '@/utils';
+import type { DataCardRow } from '@/reuseable-components';
+import type { ActualDestination, DestinationDetailsResponse, ExportedSignals } from '@/types';
 
 const buildMonitorsList = (exportedSignals: ExportedSignals): string =>
   Object.keys(exportedSignals)
     .filter((key) => exportedSignals[key])
-    .join(', ') || 'N/A';
+    .join(', ');
 
 const buildCard = (destination: ActualDestination, destinationTypeDetails: DestinationDetailsResponse['destinationTypeDetails']) => {
   const { exportedSignals, destinationType, fields } = destination;
 
-  const arr = [
-    { title: 'Destination', value: destinationType.displayName },
-    { title: 'Monitors', value: buildMonitorsList(exportedSignals) },
-  ];
+  const arr: DataCardRow[] = [{ title: 'Destination', value: destinationType.displayName }, { title: 'Monitors', type: 'monitors', value: buildMonitorsList(exportedSignals) }, { type: 'divider' }];
 
   Object.entries(safeJsonParse<Record<string, string>>(fields, {})).map(([key, value]) => {
     const found = destinationTypeDetails?.fields?.find((field) => field.name === key);
@@ -22,7 +20,7 @@ const buildCard = (destination: ActualDestination, destinationTypeDetails: Desti
 
     arr.push({
       title: found?.displayName || key,
-      value: secret || value || 'N/A',
+      value: secret || value,
     });
   });
 
