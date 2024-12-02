@@ -74,7 +74,7 @@ const renderValue = (type: DataCardRow['type'], value: DataCardRow['value']) => 
       return <Divider length='100%' margin='0' />;
 
     case DataCardFieldTypes.MONITORS:
-      return <MonitorsIcons monitors={value?.split(', ') || []} withTooltips size={14} />;
+      return <MonitorsIcons monitors={value?.split(', ') || []} withLabels size={12} />;
 
     case DataCardFieldTypes.ACTIVE_STATUS:
       return <Status isActive={value == 'true'} withIcon withBorder withSmaller withSpecialFont />;
