@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ACTION } from '@/utils';
+import { ACTION, DATA_CARDS } from '@/utils';
 import buildCard from './build-card';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
@@ -137,7 +137,7 @@ export const DestinationDrawer: React.FC<Props> = () => {
       ) : (
         <DataContainer>
           <ConditionDetails conditions={item.conditions} />
-          <DataCard title='Destination Details' data={cardData} />
+          <DataCard title={DATA_CARDS.DESTINATION_DETAILS} data={cardData} />
         </DataContainer>
       )}
     </OverviewDrawer>

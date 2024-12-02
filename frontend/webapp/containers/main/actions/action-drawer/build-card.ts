@@ -1,5 +1,6 @@
+import { DISPLAY_TITLES } from '@/utils';
 import type { ActionDataParsed } from '@/types';
-import type { DataCardRow } from '@/reuseable-components';
+import { DataCardFieldTypes, type DataCardRow } from '@/reuseable-components';
 
 const buildCard = (action: ActionDataParsed) => {
   const {
@@ -21,12 +22,12 @@ const buildCard = (action: ActionDataParsed) => {
   } = action;
 
   const arr: DataCardRow[] = [
-    { title: 'Type', value: type },
-    { title: 'Name', value: actionName },
-    { title: 'Notes', value: notes },
-    { type: 'divider' },
-    { title: 'Status', type: 'active-status', value: String(!disabled) },
-    { title: 'Signals for Processing', type: 'monitors', value: signals.map((str) => str.toLowerCase()).join(', ') },
+    { title: DISPLAY_TITLES.TYPE, value: type },
+    { title: DISPLAY_TITLES.NAME, value: actionName },
+    { title: DISPLAY_TITLES.NOTES, value: notes },
+    { type: DataCardFieldTypes.DIVIDER, width: '100%' },
+    { type: DataCardFieldTypes.ACTIVE_STATUS, title: DISPLAY_TITLES.STATUS, value: String(!disabled) },
+    { type: DataCardFieldTypes.MONITORS, title: DISPLAY_TITLES.SIGNALS_FOR_PROCESSING, value: signals.map((str) => str.toLowerCase()).join(', ') },
   ];
 
   if (clusterAttributes) {

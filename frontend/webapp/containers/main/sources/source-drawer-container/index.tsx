@@ -6,9 +6,9 @@ import { useDrawerStore } from '@/store';
 import buildDrawerItem from './build-drawer-item';
 import { UpdateSourceBody } from '../update-source-body';
 import OverviewDrawer from '../../overview/overview-drawer';
-import { DataCardRow, ConditionDetails, DataCard } from '@/reuseable-components';
-import { ACTION, getMainContainerLanguage, getProgrammingLanguageIcon } from '@/utils';
 import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type K8sActualSource } from '@/types';
+import { ACTION, DATA_CARDS, getMainContainerLanguage, getProgrammingLanguageIcon } from '@/utils';
+import { ConditionDetails, DataCard, DataCardRow, DataCardFieldTypes } from '@/reuseable-components';
 
 interface Props {}
 
@@ -83,7 +83,8 @@ export const SourceDrawer: React.FC<Props> = () => {
       item.instrumentedApplicationDetails.containers.map(
         (container) =>
           ({
-            type: 'source-container',
+            type: DataCardFieldTypes.SOURCE_CONTAINER,
+            width: '100%',
             value: JSON.stringify(container),
           } as DataCardRow),
       ) || []
@@ -138,13 +139,8 @@ export const SourceDrawer: React.FC<Props> = () => {
       ) : (
         <DataContainer>
           <ConditionDetails conditions={item.instrumentedApplicationDetails.conditions} />
-          <DataCard title='Source Details' data={cardData} />
-          <DataCard
-            title='Detected Containers'
-            titleBadge={containersData.length}
-            description='The system automatically instruments the containers it detects with a supported programming language.'
-            data={containersData}
-          />
+          <DataCard title={DATA_CARDS.SOURCE_DETAILS} data={cardData} />
+          <DataCard title={DATA_CARDS.DETECTED_CONTAINERS} titleBadge={containersData.length} description={DATA_CARDS.DETECTED_CONTAINERS_DESCRIPTION} data={containersData} />
         </DataContainer>
       )}
     </OverviewDrawer>

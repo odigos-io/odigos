@@ -1,13 +1,21 @@
-import React, { Fragment, useId } from 'react';
+import React, { useId } from 'react';
 import styled from 'styled-components';
 import { DataTab, Divider, InstrumentStatus, MonitorsIcons, Status, Text, Tooltip } from '@/reuseable-components';
 import { capitalizeFirstLetter, getProgrammingLanguageIcon, parseJsonStringToPrettyString, safeJsonParse, WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils';
 
+export enum DataCardFieldTypes {
+  DIVIDER = 'divider',
+  MONITORS = 'monitors',
+  ACTIVE_STATUS = 'active-status',
+  SOURCE_CONTAINER = 'source-container',
+}
+
 export interface DataCardRow {
-  type?: 'divider' | 'break-line' | 'monitors' | 'active-status' | 'source-container';
+  type?: DataCardFieldTypes;
   title?: string;
   tooltip?: string;
   value?: string;
+  width?: string;
 }
 
 interface Props {
@@ -21,11 +29,11 @@ const ListContainer = styled.div`
   width: 100%;
 `;
 
-const ListItem = styled.div<{ $isStretched: boolean }>`
+const ListItem = styled.div<{ $width: string }>`
   display: flex;
   flex-direction: column;
   gap: 2px;
-  width: ${({ $isStretched }) => ($isStretched ? '100%' : 'unset')};
+  width: ${({ $width }) => $width};
 `;
 
 const ItemTitle = styled(Text)`
@@ -34,27 +42,14 @@ const ItemTitle = styled(Text)`
   line-height: 16px;
 `;
 
-const ItemValue = styled(Text)`
-  color: ${({ theme }) => theme.colors.text};
-  font-size: 12px;
-  line-height: 18px;
-`;
-
-const PreWrap = styled(Text)`
-  font-size: 12px;
-  white-space: pre-wrap;
-`;
-
-const STRETCH_TYPES = ['source-container']; // Types that should stretch to 100% width
-
 export const DataCardFields: React.FC<Props> = ({ data }) => {
   return (
     <ListContainer>
-      {data.map(({ type, title, tooltip, value }) => {
+      {data.map(({ type, title, tooltip, value, width = 'unset' }) => {
         const id = useId();
 
         return (
-          <ListItem key={id} $isStretched={!!type && STRETCH_TYPES.includes(type)}>
+          <ListItem key={id} $width={width}>
             <Tooltip text={tooltip} withIcon>
               {!!title && <ItemTitle>{title}</ItemTitle>}
             </Tooltip>
@@ -66,21 +61,25 @@ export const DataCardFields: React.FC<Props> = ({ data }) => {
   );
 };
 
+const PreWrap = styled(Text)`
+  font-size: 12px;
+  white-space: pre-wrap;
+`;
+
 const renderValue = (type: DataCardRow['type'], value: DataCardRow['value']) => {
+  // We need to maintain this with new components every time we add a new type to "DataCardFieldTypes"
+
   switch (type) {
-    case 'divider': {
-      return <Divider length='585px' margin='0 auto' />;
-    }
+    case DataCardFieldTypes.DIVIDER:
+      return <Divider length='100%' margin='0' />;
 
-    case 'monitors': {
+    case DataCardFieldTypes.MONITORS:
       return <MonitorsIcons monitors={value?.split(', ') || []} withTooltips size={14} />;
-    }
 
-    case 'active-status': {
+    case DataCardFieldTypes.ACTIVE_STATUS:
       return <Status isActive={value == 'true'} withIcon withBorder withSmaller withSpecialFont />;
-    }
 
-    case 'source-container': {
+    case DataCardFieldTypes.SOURCE_CONTAINER: {
       const { containerName, language, runtimeVersion } = safeJsonParse(value, {
         containerName: '-',
         language: WORKLOAD_PROGRAMMING_LANGUAGES.UNKNOWN,
@@ -95,13 +94,7 @@ const renderValue = (type: DataCardRow['type'], value: DataCardRow['value']) => 
     }
 
     default: {
-      const str = parseJsonStringToPrettyString(value || '-');
-
-      return (
-        <ItemValue>
-          <PreWrap>{str}</PreWrap>
-        </ItemValue>
-      );
+      return <PreWrap>{parseJsonStringToPrettyString(value || '-')}</PreWrap>;
     }
   }
 };

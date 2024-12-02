@@ -1,8 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
 import { Badge, Text } from '@/reuseable-components';
-import { DataCardFields, type DataCardRow } from './data-card-fields';
-export { DataCardFields, type DataCardRow };
+import { DataCardFields, type DataCardRow, DataCardFieldTypes } from './data-card-fields';
+export { DataCardFields, type DataCardRow, DataCardFieldTypes };
 
 interface Props {
   title?: string;
