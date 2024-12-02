@@ -37,8 +37,8 @@ const (
 type CollectorsGroupResourcesSettings struct {
 
 	// Minumum + Maximum number of replicas for the collector - these relevant only for gateway.
-	MinReplicas *int `json:"minReplicas"`
-	MaxReplicas *int `json:"maxReplicas"`
+	MinReplicas *int `json:"minReplicas,omitempty"`
+	MaxReplicas *int `json:"maxReplicas,omitempty"`
 
 	// MemoryRequestMiB is the memory resource request to be used on the pod template.
 	// it will be embedded in the as a resource request of the form "memory: <value>Mi"

@@ -112,12 +112,10 @@ spec:
                 - cpuLimitMillicores
                 - cpuRequestMillicores
                 - gomemlimitMiB
-                - maxReplicas
                 - memoryLimitMiB
                 - memoryLimiterLimitMiB
                 - memoryLimiterSpikeLimitMiB
                 - memoryRequestMiB
-                - minReplicas
                 type: object
               role:
                 enum:
