@@ -54,3 +54,41 @@ spec:
   - LOGS
   type: appdynamics
 ```
+
+2. **Using kubernetes manifests**
+
+Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
+
+```bash
+kubectl apply -f destination.yaml
+```
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: appdynamics-example
+  namespace: odigos-system
+spec:
+  data:
+    APPDYNAMICS_ENDPOINT: <Endpoint>
+  destinationName: appdynamics
+  secretRef:
+    name: appdynamics-secret
+  signals:
+  - TRACES
+  - METRICS
+  - LOGS
+  type: appdynamics
+
+---
+apiVersion: v1
+data:
+  APPDYNAMICS_API_KEY: <base64 API Key>
+kind: Secret
+metadata:
+  name: appdynamics-secret
+  namespace: odigos-system
+type: Opaque
+```
