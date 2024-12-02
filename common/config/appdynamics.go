@@ -6,6 +6,11 @@ import (
 	"github.com/odigos-io/odigos/common"
 )
 
+const (
+	APPDYNAMICS_ENDPOINT = "APPDYNAMICS_ENDPOINT"
+	APPDYNAMICS_API_KEY  = "APPDYNAMICS_API_KEY"
+)
+
 type AppDynamics struct{}
 
 func (m *AppDynamics) DestType() common.DestinationType {
@@ -15,9 +20,15 @@ func (m *AppDynamics) DestType() common.DestinationType {
 
 func (m *AppDynamics) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
 	config := dest.GetConfig()
-	endpoint, exists := config["${APPDYNAMICS_ENDPOINT}"]
+
+	endpoint, exists := config[APPDYNAMICS_ENDPOINT]
 	if !exists {
-		return errors.New("AppDynamics OpenTelemetry Endpoint key(\"APPDYNAMICS_ENDPOINT\") not specified, AppDynamics will not be configured")
+		return errors.New("AppDynamics Endpoint (\"APPDYNAMICS_ENDPOINT\") not specified, AppDynamics will not be configured")
+	}
+
+	apiKey, exists := config[APPDYNAMICS_API_KEY]
+	if !exists {
+		return errors.New("AppDynamics API Key (\"APPDYNAMICS_API_KEY\") not specified, AppDynamics will not be configured")
 	}
 
 	// to make sure that the exporter name is unique, we'll ask a ID from destination
@@ -25,7 +36,7 @@ func (m *AppDynamics) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": endpoint,
 		"headers": GenericMap{
-			"x-api-key": "${APPDYNAMICS_API_KEY}",
+			"x-api-key": apiKey,
 		},
 	}
 
