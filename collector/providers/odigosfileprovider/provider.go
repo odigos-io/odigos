@@ -70,8 +70,10 @@ func (fmp *provider) Retrieve(_ context.Context, uri string, wf confmap.WatcherF
 				if !ok {
 					wf(&confmap.ChangeEvent{Error: fmt.Errorf("error watching event")})
 				}
-				if event.Has(fsnotify.Write) {
-					fmt.Printf("modified file: %+v", event.Name)
+				// k8s configmaps are mounted as symlinks; need to watch for remove, not write
+				if event.Has(fsnotify.Remove) {
+					watcher.Remove(file)
+					watcher.Add(file)
 					wf(&confmap.ChangeEvent{})
 				}
 			case err, ok := <-watcher.Errors:
