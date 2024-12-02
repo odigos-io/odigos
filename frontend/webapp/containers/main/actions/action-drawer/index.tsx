@@ -3,7 +3,7 @@ import buildCard from './build-card';
 import { ActionFormBody } from '../';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
-import { ACTION, getActionIcon } from '@/utils';
+import { ACTION, DATA_CARDS, getActionIcon } from '@/utils';
 import buildDrawerItem from './build-drawer-item';
 import { DataCard } from '@/reuseable-components';
 import { useActionCRUD, useActionFormData } from '@/hooks';
@@ -120,7 +120,7 @@ export const ActionDrawer: React.FC<Props> = () => {
           />
         </FormContainer>
       ) : (
-        <DataCard title='Action Details' data={cardData} />
+        <DataCard title={DATA_CARDS.ACTION_DETAILS} data={cardData} />
       )}
     </OverviewDrawer>
   );
