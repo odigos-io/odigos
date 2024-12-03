@@ -200,6 +200,7 @@
         {
           "group": "Supported Backends",
           "pages": [
+            "backends/appdynamics",
             "backends/s3",
             "backends/azureblob",
             "backends/causely",
@@ -217,8 +218,8 @@
             "backends/grafanacloudtempo",
             "backends/honeycomb",
             "backends/jaeger",
-            "backends/lightstep",
             "backends/last9",
+            "backends/lightstep",
             "backends/logzio",
             "backends/loki",
             "backends/newrelic",

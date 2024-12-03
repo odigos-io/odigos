@@ -1,0 +1,41 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: appdynamics
+  displayName: AppDynamics
+  category: managed
+spec:
+  image: appdynamics.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: false
+    logs:
+      supported: false
+  fields:
+    - name: APPDYNAMICS_APPLICATION_NAME
+      displayName: Application Name
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+    - name: APPDYNAMICS_ACCOUNT_NAME
+      displayName: Account Name
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+    - name: APPDYNAMICS_ENDPOINT_URL
+      displayName: Endpoint URL
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+    - name: APPDYNAMICS_API_KEY
+      displayName: API Key
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: true
