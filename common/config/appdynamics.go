@@ -8,9 +8,10 @@ import (
 )
 
 const (
-	APPDYNAMICS_ACCOUNT_NAME = "APPDYNAMICS_ACCOUNT_NAME"
-	APPDYNAMICS_ENDPOINT_URL = "APPDYNAMICS_ENDPOINT_URL"
-	APPDYNAMICS_API_KEY      = "APPDYNAMICS_API_KEY"
+	APPDYNAMICS_APPLICATION_NAME = "APPDYNAMICS_APPLICATION_NAME"
+	APPDYNAMICS_ACCOUNT_NAME     = "APPDYNAMICS_ACCOUNT_NAME"
+	APPDYNAMICS_ENDPOINT_URL     = "APPDYNAMICS_ENDPOINT_URL"
+	APPDYNAMICS_API_KEY          = "APPDYNAMICS_API_KEY"
 )
 
 type AppDynamics struct{}
@@ -24,10 +25,8 @@ func (m *AppDynamics) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 	config := dest.GetConfig()
 	uniqueUri := "appdynamics-" + dest.GetID()
 
-	// Create config for exporter
-
-	endpoint, exists := config[APPDYNAMICS_ENDPOINT_URL]
-	if !exists {
+	endpoint, endpointExists := config[APPDYNAMICS_ENDPOINT_URL]
+	if !endpointExists {
 		return errors.New("AppDynamics Endpoint URL (\"APPDYNAMICS_ENDPOINT_URL\") not specified, AppDynamics will not be configured")
 	}
 
@@ -38,19 +37,14 @@ func (m *AppDynamics) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		return errors.New("AppDynamics Endpoint URL (\"APPDYNAMICS_ENDPOINT_URL\") malformed, HTTP prefix is required, AppDynamics will not be configured")
 	}
 
-	exporterName := "otlphttp/" + uniqueUri
-	currentConfig.Exporters[exporterName] = GenericMap{
-		"endpoint": endpoint,
-		"headers": GenericMap{
-			"x-api-key": "${APPDYNAMICS_API_KEY}",
-		},
+	accountName, accountNameExists := config[APPDYNAMICS_ACCOUNT_NAME]
+	if !accountNameExists {
+		return errors.New("AppDynamics Account Name (\"APPDYNAMICS_ACCOUNT_NAME\") not specified, AppDynamics will not be configured")
 	}
 
-	// Create config for processor
-
-	accountName, exists := config[APPDYNAMICS_ACCOUNT_NAME]
-	if !exists {
-		return errors.New("AppDynamics Account Name (\"APPDYNAMICS_ACCOUNT_NAME\") not specified, AppDynamics will not be configured")
+	applicationName, applicationNameExists := config[APPDYNAMICS_APPLICATION_NAME]
+	if !applicationNameExists {
+		applicationName = "odigos"
 	}
 
 	endpointParts := strings.Split(endpoint, ".")
@@ -63,9 +57,28 @@ func (m *AppDynamics) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 	}
 	host := strings.Join(endpointParts, ".")
 
+	// Create config for exporter
+
+	exporterName := "otlphttp/" + uniqueUri
+	currentConfig.Exporters[exporterName] = GenericMap{
+		"endpoint": endpoint,
+		"headers": GenericMap{
+			"x-api-key": "${APPDYNAMICS_API_KEY}",
+		},
+	}
+
+	// Create config for processor
+
 	processorName := "resource/" + uniqueUri
 	currentConfig.Processors[processorName] = GenericMap{
 		"attributes": []GenericMap{
+			{
+				// This is required by AppDynamics, without it they will accept the data but not display it.
+				// This key will be used to identify the cluster in AppDynamics.
+				"key":    "service.namespace",
+				"value":  applicationName,
+				"action": "insert",
+			},
 			{
 				"key":    "appdynamics.controller.account",
 				"value":  accountName,
@@ -94,21 +107,21 @@ func (m *AppDynamics) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		}
 	}
 
-	// if isMetricsEnabled(dest) {
-	// 	metricsPipelineName := "metrics/" + uniqueUri
-	// 	currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
-	// 		Exporters:  []string{exporterName},
-	// 		Processors: []string{processorName},
-	// 	}
-	// }
+	if isMetricsEnabled(dest) {
+		metricsPipelineName := "metrics/" + uniqueUri
+		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
+			Exporters:  []string{exporterName},
+			Processors: []string{processorName},
+		}
+	}
 
-	// if isLoggingEnabled(dest) {
-	// 	logsPipelineName := "logs/" + uniqueUri
-	// 	currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
-	// 		Exporters:  []string{exporterName},
-	// 		Processors: []string{processorName},
-	// 	}
-	// }
+	if isLoggingEnabled(dest) {
+		logsPipelineName := "logs/" + uniqueUri
+		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
+			Exporters:  []string{exporterName},
+			Processors: []string{processorName},
+		}
+	}
 
 	return nil
 }

@@ -14,6 +14,12 @@ spec:
     logs:
       supported: false
   fields:
+    - name: APPDYNAMICS_APPLICATION_NAME
+      displayName: Application Name
+      componentType: input
+      componentProps:
+        type: text
+        required: false
     - name: APPDYNAMICS_ACCOUNT_NAME
       displayName: Account Name
       componentType: input
