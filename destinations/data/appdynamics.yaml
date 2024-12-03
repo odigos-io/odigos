@@ -10,12 +10,18 @@ spec:
     traces:
       supported: true
     metrics:
-      supported: true
+      supported: false
     logs:
-      supported: true
+      supported: false
   fields:
-    - name: APPDYNAMICS_ENDPOINT
-      displayName: Endpoint
+    - name: APPDYNAMICS_ACCOUNT_NAME
+      displayName: Account Name
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+    - name: APPDYNAMICS_ENDPOINT_URL
+      displayName: Endpoint URL
       componentType: input
       componentProps:
         type: text

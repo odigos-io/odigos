@@ -86,7 +86,7 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 
 | Destination             | Traces | Metrics | Logs |
 |-------------------------|:------:|:-------:|:----:|
-| AppDynamics             |   ✅   |   ✅    |  ✅  |
+| AppDynamics             |   ✅   |         |      |
 | Axiom                   |   ✅   |         |  ✅  |
 | AWS S3                  |   ✅   |         |  ✅  |
 | Azure Blob Storage      |   ✅   |         |  ✅  |

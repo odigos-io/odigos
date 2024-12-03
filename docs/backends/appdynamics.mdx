@@ -1,21 +1,22 @@
 ---
-title: "AppDynamics"
+title: 'AppDynamics'
 ---
 
 ## Configuring AppDynamics Backend
 
 1. [Register](https://accounts.appdynamics.com/trial)/[Login](https://login.appdynamics.com/sso/authenticate) to AppDynamics.
-2. Navigate to the OpenTelemetry page:
+2. Navigate to the OpenTelemetry Configuration page:
 
 ```bash
-https://{YOUR_USERNAME_HERE}.saas.appdynamics.com/controller/#/apm/otel
+https://{APPDYNAMICS_ACCOUNT_NAME}.saas.appdynamics.com/controller/#/apm/otel/keyManagement
 ```
 
-3. Click on the `Configuration` tab, then click on `exporters`.
-4. Copy your `Endpoint`, and generate an `API Key`.
+3. Click on `Processors`, you'll find 3 attributes, locate `appdynamics.controller.account` and copy it's value, this is your `Account Name`.
+4. Click on `Exporters`, copy the `Endpoint`, and generate an `API Key`.
 
-- **Endpoint** - AppDynamics OTLP HTTP Endpoint.
-- **API Key** - AppDynamics API Key.
+- **APPDYNAMICS_ACCOUNT_NAME** - Account Name from above (step 3).
+- **APPDYNAMICS_ENDPOINT_URL** - OTLP HTTP Endpoint URL from above (step 4).
+- **APPDYNAMICS_API_KEY** - API Key from above  (step 4).
 
 ## Adding a destination to Odigos
 
@@ -27,32 +28,6 @@ Odigos makes it simple to add and configure destinations, allowing you to select
 
 ```bash
 odigos ui
-```
-
-2. **Using Kubernetes manifests**
-
-- Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
-
-```bash
-kubectl apply -f destination.yaml
-```
-
-```yaml
-apiVersion: odigos.io/v1alpha1
-kind: Destination
-metadata:
-  name: appdynamics-example
-  namespace: odigos-system
-spec:
-  data:
-    APPDYNAMICS_ENDPOINT: <AppDynamics Endpoint>
-    APPDYNAMICS_API_KEY: <AppDynamics API Key>
-  destinationName: appdynamics
-  signals:
-  - TRACES
-  - METRICS
-  - LOGS
-  type: appdynamics
 ```
 
 2. **Using kubernetes manifests**
@@ -72,14 +47,13 @@ metadata:
   namespace: odigos-system
 spec:
   data:
-    APPDYNAMICS_ENDPOINT: <Endpoint>
+    APPDYNAMICS_ACCOUNT_NAME: <Account Name>
+    APPDYNAMICS_ENDPOINT_URL: <Endpoint URL>
   destinationName: appdynamics
   secretRef:
     name: appdynamics-secret
   signals:
   - TRACES
-  - METRICS
-  - LOGS
   type: appdynamics
 
 ---
