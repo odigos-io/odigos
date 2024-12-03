@@ -141,7 +141,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, apps *odigosv1.Ins
 		processorsCfg["odigosresourcename"] = empty
 	}
 
-	memoryLimiterConfiguration := common.GetMemoryLimiterConfig(nodeCG.Spec.MemorySettings)
+	memoryLimiterConfiguration := common.GetMemoryLimiterConfig(nodeCG.Spec.ResourcesSettings)
 
 	processorsCfg["batch"] = empty
 	processorsCfg["memory_limiter"] = memoryLimiterConfiguration

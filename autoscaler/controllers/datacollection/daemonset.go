@@ -192,8 +192,8 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 		rollingUpdate.MaxSurge = &maxSurge
 	}
 
-	requestMemoryRequestQuantity := resource.MustParse(fmt.Sprintf("%dMi", datacollection.Spec.MemorySettings.MemoryRequestMiB))
-	requestMemoryLimitQuantity := resource.MustParse(fmt.Sprintf("%dMi", datacollection.Spec.MemorySettings.MemoryLimitMiB))
+	requestMemoryRequestQuantity := resource.MustParse(fmt.Sprintf("%dMi", datacollection.Spec.ResourcesSettings.MemoryRequestMiB))
+	requestMemoryLimitQuantity := resource.MustParse(fmt.Sprintf("%dMi", datacollection.Spec.ResourcesSettings.MemoryLimitMiB))
 
 	desiredDs := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -308,7 +308,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 								},
 								{
 									Name:  "GOMEMLIMIT",
-									Value: fmt.Sprintf("%dMiB", datacollection.Spec.MemorySettings.GomemlimitMiB),
+									Value: fmt.Sprintf("%dMiB", datacollection.Spec.ResourcesSettings.GomemlimitMiB),
 								},
 							},
 							LivenessProbe: &corev1.Probe{

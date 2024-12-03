@@ -6,7 +6,6 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	k8sutilsconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
@@ -14,7 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func getMemorySettings(odigosConfig common.OdigosConfiguration) odigosv1.CollectorsGroupMemorySettings {
+func getMemorySettings(odigosConfig common.OdigosConfiguration) odigosv1.CollectorsGroupResourcesSettings {
 	// TODO: currently using hardcoded values, should be configurable.
 	//
 	// memory request is expensive on daemonsets since it will consume this memory
@@ -33,7 +32,7 @@ func getMemorySettings(odigosConfig common.OdigosConfiguration) odigosv1.Collect
 	// - limit is set way above request: in case of memory spike, collector will use extra memory available on the node to buffer data, but might get killed by OOM killer if this memory is not available.
 	// currently choosing 512MiB as a balance (200MiB guaranteed for heap, and the rest ~300MiB of buffer from node before start dropping).
 	//
-	return odigosv1.CollectorsGroupMemorySettings{
+	return odigosv1.CollectorsGroupResourcesSettings{
 		MemoryRequestMiB:           256,
 		MemoryLimitMiB:             512 + 64,
 		MemoryLimiterLimitMiB:      512,
@@ -44,7 +43,7 @@ func getMemorySettings(odigosConfig common.OdigosConfiguration) odigosv1.Collect
 
 func newNodeCollectorGroup(odigosConfig common.OdigosConfiguration) *odigosv1.CollectorsGroup {
 
-	ownMetricsPort := consts.OdigosNodeCollectorOwnTelemetryPortDefault
+	ownMetricsPort := k8sutilsconsts.OdigosNodeCollectorOwnTelemetryPortDefault
 	if odigosConfig.CollectorNode != nil && odigosConfig.CollectorNode.CollectorOwnMetricsPort != 0 {
 		ownMetricsPort = odigosConfig.CollectorNode.CollectorOwnMetricsPort
 	}
@@ -55,13 +54,13 @@ func newNodeCollectorGroup(odigosConfig common.OdigosConfiguration) *odigosv1.Co
 			APIVersion: "odigos.io/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      consts.OdigosNodeCollectorDaemonSetName,
+			Name:      k8sutilsconsts.OdigosNodeCollectorDaemonSetName,
 			Namespace: env.GetCurrentNamespace(),
 		},
 		Spec: odigosv1.CollectorsGroupSpec{
 			Role:                    odigosv1.CollectorsGroupRoleNodeCollector,
 			CollectorOwnMetricsPort: ownMetricsPort,
-			MemorySettings:          getMemorySettings(odigosConfig),
+			ResourcesSettings:       getMemorySettings(odigosConfig),
 		},
 	}
 }
