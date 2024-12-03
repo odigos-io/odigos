@@ -22,11 +22,7 @@ func (m *AppDynamics) DestType() common.DestinationType {
 
 func (m *AppDynamics) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
 	config := dest.GetConfig()
-
 	uniqueUri := "appdynamics-" + dest.GetID()
-	exporterName := "otlphttp/" + uniqueUri
-	processorName := "resource/" + uniqueUri
-	tracesPipelineName := "traces/" + uniqueUri
 
 	// Create config for exporter
 
@@ -42,6 +38,7 @@ func (m *AppDynamics) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		return errors.New("AppDynamics Endpoint URL (\"APPDYNAMICS_ENDPOINT_URL\") malformed, HTTP prefix is required, AppDynamics will not be configured")
 	}
 
+	exporterName := "otlphttp/" + uniqueUri
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": endpoint,
 		"headers": GenericMap{
@@ -58,11 +55,15 @@ func (m *AppDynamics) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 
 	endpointParts := strings.Split(endpoint, ".")
 	if len(endpointParts) > 0 {
-		// replace the first part of the endpoint with the account name (instead of collecting another input from the user)
+		// Replace the first part of the endpoint with the account name (instead of collecting another input from the user).
+		// Example:
+		// endpoint - "https://<something-with-dashes>.saas.appdynamics.com"
+		// host - "<account-name>.saas.appdynamics.com"
 		endpointParts[0] = accountName
 	}
 	host := strings.Join(endpointParts, ".")
 
+	processorName := "resource/" + uniqueUri
 	currentConfig.Processors[processorName] = GenericMap{
 		"attributes": []GenericMap{
 			{
@@ -75,17 +76,39 @@ func (m *AppDynamics) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 				"value":  host,
 				"action": "insert",
 			},
+			{
+				"key":    "appdynamics.controller.port",
+				"value":  443,
+				"action": "insert",
+			},
 		},
 	}
 
 	// Apply configs to serivce
 
 	if isTracingEnabled(dest) {
+		tracesPipelineName := "traces/" + uniqueUri
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters:  []string{exporterName},
 			Processors: []string{processorName},
 		}
 	}
+
+	// if isMetricsEnabled(dest) {
+	// 	metricsPipelineName := "metrics/" + uniqueUri
+	// 	currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
+	// 		Exporters:  []string{exporterName},
+	// 		Processors: []string{processorName},
+	// 	}
+	// }
+
+	// if isLoggingEnabled(dest) {
+	// 	logsPipelineName := "logs/" + uniqueUri
+	// 	currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
+	// 		Exporters:  []string{exporterName},
+	// 		Processors: []string{processorName},
+	// 	}
+	// }
 
 	return nil
 }
