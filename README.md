@@ -105,9 +105,6 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 | Logz.io                 |   ✅   |   ✅    |  ✅  |
 | New Relic               |   ✅   |   ✅    |  ✅  |
 | OpsVerse                |   ✅   |   ✅    |  ✅  |
-| OTLP                    |   ✅   |   ✅    |  ✅  |
-| OTLP HTTP               |   ✅   |   ✅    |  ✅  |
-| qryn                    |   ✅   |   ✅    |  ✅  |
 | Sentry                  |   ✅   |         |      |
 | Splunk                  |   ✅   |         |      |
 | Sumo Logic              |   ✅   |   ✅    |  ✅  |
@@ -120,6 +117,8 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 | Elasticsearch |   ✅   |         |  ✅  |
 | Jaeger        |   ✅   |         |      |
 | Loki          |        |         |  ✅  |
+| OTLP          |   ✅   |   ✅    |  ✅  |
+| OTLP HTTP     |   ✅   |   ✅    |  ✅  |
 | Prometheus    |        |   ✅    |      |
 | Quickwit      |   ✅   |         |      |
 | qryn          |   ✅   |   ✅    |  ✅  |

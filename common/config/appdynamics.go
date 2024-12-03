@@ -26,17 +26,12 @@ func (m *AppDynamics) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		return errors.New("AppDynamics Endpoint (\"APPDYNAMICS_ENDPOINT\") not specified, AppDynamics will not be configured")
 	}
 
-	apiKey, exists := config[APPDYNAMICS_API_KEY]
-	if !exists {
-		return errors.New("AppDynamics API Key (\"APPDYNAMICS_API_KEY\") not specified, AppDynamics will not be configured")
-	}
-
 	// to make sure that the exporter name is unique, we'll ask a ID from destination
 	exporterName := "otlp/appdynamics-" + dest.GetID()
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": endpoint,
 		"headers": GenericMap{
-			"x-api-key": apiKey,
+			"x-api-key": "${APPDYNAMICS_API_KEY}",
 		},
 	}
 
