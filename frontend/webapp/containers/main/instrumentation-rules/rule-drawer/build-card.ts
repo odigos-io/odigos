@@ -7,10 +7,10 @@ const buildCard = (rule: InstrumentationRuleSpec) => {
 
   const arr: DataCardRow[] = [
     { title: DISPLAY_TITLES.TYPE, value: type },
+    { type: DataCardFieldTypes.ACTIVE_STATUS, title: DISPLAY_TITLES.STATUS, value: String(!disabled) },
     { title: DISPLAY_TITLES.NAME, value: ruleName },
     { title: DISPLAY_TITLES.NOTES, value: notes },
     { type: DataCardFieldTypes.DIVIDER, width: '100%' },
-    { type: DataCardFieldTypes.ACTIVE_STATUS, title: DISPLAY_TITLES.STATUS, value: String(!disabled) },
   ];
 
   if (payloadCollection) {
