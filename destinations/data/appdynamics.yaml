@@ -10,9 +10,9 @@ spec:
     traces:
       supported: true
     metrics:
-      supported: false
+      supported: true
     logs:
-      supported: false
+      supported: true
   fields:
     - name: APPDYNAMICS_APPLICATION_NAME
       displayName: Application Name
