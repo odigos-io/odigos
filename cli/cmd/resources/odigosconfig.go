@@ -47,8 +47,8 @@ func (a *odigosConfigResourceManager) Name() string { return "OdigosConfig" }
 
 func (a *odigosConfigResourceManager) InstallFromScratch(ctx context.Context) error {
 
-	SizingProfile := FilterSizeProfiles(a.config.Profiles)
-	collectorGatewayConfig := GetGatewayConfigBasedOnSize(SizingProfile)
+	sizingProfile := FilterSizeProfiles(a.config.Profiles)
+	collectorGatewayConfig := GetGatewayConfigBasedOnSize(sizingProfile)
 	a.config.CollectorGateway = collectorGatewayConfig
 
 	obj, err := NewOdigosConfiguration(a.ns, a.config)
@@ -63,9 +63,9 @@ func (a *odigosConfigResourceManager) InstallFromScratch(ctx context.Context) er
 }
 
 func GetGatewayConfigBasedOnSize(profile common.ProfileName) *common.CollectorGatewayConfiguration {
-	AggregateProfiles := append([]common.ProfileName{profile}, ProfilesMap[profile].Dependencies...)
+	aggregateProfiles := append([]common.ProfileName{profile}, profilesMap[profile].Dependencies...)
 
-	for _, profile := range AggregateProfiles {
+	for _, profile := range aggregateProfiles {
 		switch profile {
 		case sizeSProfile.ProfileName:
 			return &common.CollectorGatewayConfiguration{

@@ -90,7 +90,7 @@ var (
 		ShortDescription: "Bundle profile that includes db-payload-collection, semconv, category-attributes, copy-scope, hostname-as-podname, java-native-instrumentations, code-attributes, query-operation-detector, disableNameProcessorProfile, small-batches, size_m",
 		Dependencies:     []common.ProfileName{"db-payload-collection", "semconv", "category-attributes", "copy-scope", "hostname-as-podname", "java-native-instrumentations", "code-attributes", "query-operation-detector", "disableNameProcessorProfile", "small-batches", "size_m"},
 	}
-	ProfilesMap = map[common.ProfileName]Profile{
+	profilesMap = map[common.ProfileName]Profile{
 		sizeSProfile.ProfileName:                      sizeSProfile,
 		sizeMProfile.ProfileName:                      sizeMProfile,
 		sizeLProfile.ProfileName:                      sizeLProfile,
@@ -117,7 +117,7 @@ func GetAvailableCommunityProfiles() []Profile {
 func GetAvailableOnPremProfiles() []Profile {
 	return append([]Profile{fullPayloadCollectionProfile, dbPayloadCollectionProfile, categoryAttributesProfile,
 		hostnameAsPodNameProfile, javaNativeInstrumentationsProfile, kratosProfile, queryOperationDetector,
-		smallBatchesProfile, sizeSProfile, sizeMProfile, sizeLProfile},
+		smallBatchesProfile},
 		GetAvailableCommunityProfiles()...)
 }
 
@@ -197,7 +197,7 @@ func FilterSizeProfiles(profiles []common.ProfileName) common.ProfileName {
 		}
 
 		// Check if the profile has a dependency which is a size profile.
-		profileDependencies := ProfilesMap[profile].Dependencies
+		profileDependencies := profilesMap[profile].Dependencies
 		for _, dependencyProfile := range profileDependencies {
 			switch dependencyProfile {
 			case sizeSProfile.ProfileName, sizeMProfile.ProfileName, sizeLProfile.ProfileName:
