@@ -26,11 +26,11 @@ var (
 	}
 	sizeMProfile = Profile{
 		ProfileName:      common.ProfileName("size_m"),
-		ShortDescription: "Small size deployment profile",
+		ShortDescription: "Medium size deployment profile",
 	}
 	sizeLProfile = Profile{
 		ProfileName:      common.ProfileName("size_l"),
-		ShortDescription: "Small size deployment profile",
+		ShortDescription: "Large size deployment profile",
 	}
 	fullPayloadCollectionProfile = Profile{
 		ProfileName:      common.ProfileName("full-payload-collection"),
