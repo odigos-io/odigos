@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	actions "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/cli/cmd/resources/profiles"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
@@ -51,7 +50,7 @@ var (
 	semconvUpgraderProfile = Profile{
 		ProfileName:      common.ProfileName("semconv"),
 		ShortDescription: "Upgrade and align some attribute names to a newer version of the OpenTelemetry semantic conventions",
-		KubeObject:       &actions.RenameAttribute{},
+		KubeObject:       &odigosv1alpha1.Processor{},
 	}
 	categoryAttributesProfile = Profile{
 		ProfileName:      common.ProfileName("category-attributes"),
@@ -185,4 +184,26 @@ func (a *profilesResourceManager) InstallFromScratch(ctx context.Context) error 
 		allResources = append(allResources, profileResources...)
 	}
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, allResources)
+}
+
+func FilterSizeProfiles(profiles []common.ProfileName) common.ProfileName {
+	// In case multiple size profiles are provided, the first one will be used.
+
+	for _, profile := range profiles {
+		// Check if the profile is a size profile.
+		switch profile {
+		case sizeSProfile.ProfileName, sizeMProfile.ProfileName, sizeLProfile.ProfileName:
+			return profile
+		}
+
+		// Check if the profile has a dependency which is a size profile.
+		profileDependencies := ProfilesMap[profile].Dependencies
+		for _, dependencyProfile := range profileDependencies {
+			switch dependencyProfile {
+			case sizeSProfile.ProfileName, sizeMProfile.ProfileName, sizeLProfile.ProfileName:
+				return dependencyProfile
+			}
+		}
+	}
+	return ""
 }

@@ -47,6 +47,10 @@ func (a *odigosConfigResourceManager) Name() string { return "OdigosConfig" }
 
 func (a *odigosConfigResourceManager) InstallFromScratch(ctx context.Context) error {
 
+	SizingProfile := FilterSizeProfiles(a.config.Profiles)
+	collectorGatewayConfig := GetGatewayConfigBasedOnSize(SizingProfile)
+	a.config.CollectorGateway = collectorGatewayConfig
+
 	obj, err := NewOdigosConfiguration(a.ns, a.config)
 	if err != nil {
 		return err
@@ -56,4 +60,39 @@ func (a *odigosConfigResourceManager) InstallFromScratch(ctx context.Context) er
 		obj,
 	}
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
+}
+
+func GetGatewayConfigBasedOnSize(profile common.ProfileName) *common.CollectorGatewayConfiguration {
+	AggregateProfiles := append([]common.ProfileName{profile}, ProfilesMap[profile].Dependencies...)
+
+	for _, profile := range AggregateProfiles {
+		switch profile {
+		case sizeSProfile.ProfileName:
+			return &common.CollectorGatewayConfiguration{
+				MinReplicas:      1,
+				MaxReplicas:      5,
+				RequestCPUm:      150,
+				LimitCPUm:        300,
+				RequestMemoryMiB: 300,
+			}
+		case sizeMProfile.ProfileName:
+			return &common.CollectorGatewayConfiguration{
+				MinReplicas:      2,
+				MaxReplicas:      8,
+				RequestCPUm:      500,
+				LimitCPUm:        1000,
+				RequestMemoryMiB: 500,
+			}
+		case sizeLProfile.ProfileName:
+			return &common.CollectorGatewayConfiguration{
+				MinReplicas:      3,
+				MaxReplicas:      12,
+				RequestCPUm:      750,
+				LimitCPUm:        1250,
+				RequestMemoryMiB: 750,
+			}
+		}
+	}
+	// Return nil if no matching profile is found.
+	return nil
 }

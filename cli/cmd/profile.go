@@ -6,7 +6,6 @@ import (
 
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
-	"github.com/odigos-io/odigos/cli/cmd/resources/size"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/getters"
@@ -136,12 +135,6 @@ var addProfileCmd = &cobra.Command{
 		// Add the profile to the current configuration
 		config.Profiles = append(config.Profiles, selectedProfile.ProfileName)
 
-		// Update the sizing configuration if the profile has a sizing configuration
-		gatewaySizing := size.GetGatewayConfigBasedOnSize(selectedProfile.ProfileName)
-		if gatewaySizing != nil {
-			config.CollectorGateway = gatewaySizing
-		}
-
 		// Apply the updated configuration
 		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, config, currentOdigosVersion)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Updating")
@@ -215,10 +208,6 @@ var removeProfileCmd = &cobra.Command{
 		}
 
 		config.Profiles = newProfiles
-
-		// Removing the profile config from the sizing configuration
-		gatewaySizing := size.GetGatewayConfigBasedOnSize(common.ProfileName(profileName))
-		size.RemoveSizingProfileAddedValues(config.CollectorGateway, gatewaySizing)
 
 		// Apply the updated configuration
 		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, config, currentOdigosVersion)
