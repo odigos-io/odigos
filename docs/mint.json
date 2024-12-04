@@ -125,7 +125,7 @@
             "instrumentations/java/java",
             "instrumentations/java/ebpf"
           ]
-        }        
+        }
       ]
     },
     {
@@ -200,7 +200,9 @@
         {
           "group": "Supported Backends",
           "pages": [
+            "backends/appdynamics",
             "backends/s3",
+            "backends/axiom",
             "backends/azureblob",
             "backends/causely",
             "backends/chronosphere",
@@ -217,6 +219,7 @@
             "backends/grafanacloudtempo",
             "backends/honeycomb",
             "backends/jaeger",
+            "backends/last9",
             "backends/lightstep",
             "backends/logzio",
             "backends/loki",

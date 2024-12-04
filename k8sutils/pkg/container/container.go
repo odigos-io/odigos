@@ -1,11 +1,32 @@
 package container
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/odigos-io/odigos/common"
 	v1 "k8s.io/api/core/v1"
 )
+
+var (
+	ErrDeviceNotDetected     = errors.New("device not detected")
+	ErrContainerNotInPodSpec = errors.New("container not found in pod spec")
+)
+
+func LanguageSdkFromPodContainer(pod *v1.Pod, containerName string) (common.ProgrammingLanguage, common.OtelSdk, error) {
+	for _, container := range pod.Spec.Containers {
+		if container.Name == containerName {
+			language, sdk, found := GetLanguageAndOtelSdk(container)
+			if !found {
+				return common.UnknownProgrammingLanguage, common.OtelSdk{}, ErrDeviceNotDetected
+			}
+
+			return language, sdk, nil
+		}
+	}
+
+	return common.UnknownProgrammingLanguage, common.OtelSdk{}, ErrContainerNotInPodSpec
+}
 
 func GetLanguageAndOtelSdk(container v1.Container) (common.ProgrammingLanguage, common.OtelSdk, bool) {
 	deviceName := podContainerDeviceName(container)

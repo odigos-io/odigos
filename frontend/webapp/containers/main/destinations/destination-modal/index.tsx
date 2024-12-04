@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { ModalBody } from '@/styles';
 import { useAppStore } from '@/store';
-import { INPUT_TYPES } from '@/utils';
 import styled from 'styled-components';
 import { SideMenu } from '@/components';
+import { ACTION, INPUT_TYPES } from '@/utils';
 import { DestinationFormBody } from '../destination-form-body';
 import { ChooseDestinationBody } from './choose-destination-body';
 import { useDestinationCRUD, useDestinationFormData } from '@/hooks';
@@ -32,14 +32,12 @@ const SideMenuWrapper = styled.div`
 export const DestinationModal: React.FC<AddDestinationModalProps> = ({ isOnboarding, isOpen, onClose }) => {
   const [selectedItem, setSelectedItem] = useState<DestinationTypeItem | undefined>();
 
-  const { createDestination } = useDestinationCRUD();
+  const { createDestination, loading } = useDestinationCRUD();
   const addConfiguredDestination = useAppStore(({ addConfiguredDestination }) => addConfiguredDestination);
-  const { formData, handleFormChange, resetFormData, validateForm, dynamicFields, setDynamicFields } = useDestinationFormData({
+  const { formData, formErrors, handleFormChange, resetFormData, validateForm, dynamicFields, setDynamicFields } = useDestinationFormData({
     supportedSignals: selectedItem?.supportedSignals,
     preLoadedFields: selectedItem?.fields,
   });
-
-  const isFormOk = !!selectedItem && validateForm();
 
   const handleClose = () => {
     resetFormData();
@@ -59,6 +57,9 @@ export const DestinationModal: React.FC<AddDestinationModalProps> = ({ isOnboard
   };
 
   const handleSubmit = async () => {
+    const isFormOk = validateForm({ withAlert: !isOnboarding, alertTitle: ACTION.CREATE });
+    if (!isFormOk) return null;
+
     if (isOnboarding) {
       const destinationTypeDetails = dynamicFields.map((field) => ({
         title: field.title,
@@ -81,7 +82,7 @@ export const DestinationModal: React.FC<AddDestinationModalProps> = ({ isOnboard
 
       addConfiguredDestination({ stored: storedDestination, form: formData });
     } else {
-      createDestination(formData);
+      await createDestination(formData);
     }
 
     handleClose();
@@ -93,7 +94,7 @@ export const DestinationModal: React.FC<AddDestinationModalProps> = ({ isOnboard
         label: 'DONE',
         variant: 'primary' as const,
         onClick: handleSubmit,
-        disabled: !isFormOk,
+        disabled: !selectedItem || loading,
       },
     ];
 
@@ -103,6 +104,7 @@ export const DestinationModal: React.FC<AddDestinationModalProps> = ({ isOnboard
         iconSrc: '/icons/common/arrow-white.svg',
         variant: 'secondary' as const,
         onClick: handleBack,
+        disabled: loading,
       });
     }
 
@@ -122,18 +124,23 @@ export const DestinationModal: React.FC<AddDestinationModalProps> = ({ isOnboard
           />
         </SideMenuWrapper>
 
-        <ModalBody style={{ margin: '32px 24px 0 24px' }}>
-          {!!selectedItem ? (
+        <ModalBody style={{ margin: '32px 24px 12px 24px' }}>
+          {/*
+            in other modals we would render this out, but for this case we will use "hidden" instead,
+            this is to preserve the filters-state when going back-and-forth between selections
+          */}
+          <ChooseDestinationBody onSelect={handleSelect} hidden={!!selectedItem} />
+
+          {!!selectedItem && (
             <DestinationFormBody
               destination={selectedItem}
-              isFormOk={isFormOk}
               formData={formData}
+              formErrors={formErrors}
+              validateForm={validateForm}
               handleFormChange={handleFormChange}
               dynamicFields={dynamicFields}
               setDynamicFields={setDynamicFields}
             />
-          ) : (
-            <ChooseDestinationBody onSelect={handleSelect} />
           )}
         </ModalBody>
       </Container>

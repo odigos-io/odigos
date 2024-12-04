@@ -3,6 +3,13 @@ import { Text } from '../text';
 import { Tooltip } from '../tooltip';
 import styled from 'styled-components';
 
+interface Props {
+  title?: string;
+  required?: boolean;
+  tooltip?: string;
+  style?: React.CSSProperties;
+}
+
 const Wrapper = styled.div`
   display: flex;
   align-items: center;
@@ -25,16 +32,16 @@ const OptionalText = styled(Text)`
   opacity: 0.8;
 `;
 
-const FieldLabel = ({ title, required, tooltip, style }: { title?: string; required?: boolean; tooltip?: string; style?: React.CSSProperties }) => {
+const FieldLabel: React.FC<Props> = ({ title, required, tooltip, style }) => {
   if (!title) return null;
 
   return (
-    <Tooltip text={tooltip} withIcon>
-      <Wrapper style={style}>
+    <Wrapper style={style}>
+      <Tooltip text={tooltip} withIcon>
         <Title>{title}</Title>
         {!required && <OptionalText>(optional)</OptionalText>}
-      </Wrapper>
-    </Tooltip>
+      </Tooltip>
+    </Wrapper>
   );
 };
 

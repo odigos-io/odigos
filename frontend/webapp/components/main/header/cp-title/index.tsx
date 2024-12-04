@@ -1,10 +1,11 @@
 import React from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
+import { PlatformTypes } from '@/types';
 import { Text } from '@/reuseable-components';
 
-interface PlatformProps {
-  type: 'k8s' | 'vm';
+interface Props {
+  type: PlatformTypes;
 }
 
 const PlatformWrapper = styled.div`
@@ -28,21 +29,14 @@ const Title = styled(Text)`
   color: ${({ theme }) => theme.colors.white};
 `;
 
-const PlatformTitle: React.FC<PlatformProps> = ({ type }) => {
+const PlatformTitle: React.FC<Props> = ({ type }) => {
   return (
     <PlatformWrapper>
       <IconWrapper>
-        <Image
-          src={`/icons/cp/${type}.svg`}
-          alt={type}
-          width={28}
-          height={28}
-        />
+        <Image src={`/icons/cp/${type}.svg`} alt={type} width={28} height={28} />
       </IconWrapper>
       <TextWrapper>
-        <Title>
-          {type === 'k8s' ? 'Kubernetes Cluster' : 'Virtual Machine'}
-        </Title>
+        <Title>{type === PlatformTypes.K8S ? 'Kubernetes Cluster' : 'Virtual Machine'}</Title>
       </TextWrapper>
     </PlatformWrapper>
   );

@@ -1,21 +1,29 @@
-import styled from 'styled-components';
-import { Checkbox } from '../checkbox';
-import { FieldLabel } from '../field-label';
 import React, { useEffect, useRef, useState } from 'react';
+import styled, { css } from 'styled-components';
+import { Checkbox, FieldError, FieldLabel } from '@/reuseable-components';
 import { MONITORING_OPTIONS, SignalLowercase, SignalUppercase } from '@/utils';
 
 interface Props {
   isVertical?: boolean;
   title?: string;
+  required?: boolean;
+  errorMessage?: string;
   allowedSignals?: SignalUppercase[];
   selectedSignals: SignalUppercase[];
   setSelectedSignals: (value: SignalUppercase[]) => void;
 }
 
-const ListContainer = styled.div<{ $isVertical?: Props['isVertical'] }>`
+const ListContainer = styled.div<{ $isVertical?: Props['isVertical']; $hasError: boolean }>`
   display: flex;
   flex-direction: ${({ $isVertical }) => ($isVertical ? 'column' : 'row')};
   gap: ${({ $isVertical }) => ($isVertical ? '12px' : '24px')};
+  ${({ $hasError }) =>
+    $hasError &&
+    css`
+      border: 1px solid ${({ theme }) => theme.text.error};
+      border-radius: 32px;
+      padding: 8px;
+    `}
 `;
 
 const monitors = MONITORING_OPTIONS;
@@ -28,18 +36,20 @@ const isSelected = (type: SignalLowercase, selectedSignals: Props['selectedSigna
   return !!selectedSignals?.find((str) => str === type.toUpperCase());
 };
 
-const MonitoringCheckboxes: React.FC<Props> = ({ isVertical, title = 'Monitoring', allowedSignals, selectedSignals, setSelectedSignals }) => {
+export const MonitoringCheckboxes: React.FC<Props> = ({ isVertical, title = 'Monitoring', required, errorMessage, allowedSignals, selectedSignals, setSelectedSignals }) => {
   const [isLastSelection, setIsLastSelection] = useState(selectedSignals.length === 1);
   const recordedRows = useRef(JSON.stringify(selectedSignals));
 
   useEffect(() => {
-    const payload: SignalUppercase[] = [];
+    const payload: SignalUppercase[] = selectedSignals;
 
-    monitors.forEach(({ type }) => {
-      if (isAllowed(type, allowedSignals)) {
-        payload.push(type.toUpperCase() as SignalUppercase);
-      }
-    });
+    if (!payload.length) {
+      monitors.forEach(({ type }) => {
+        if (isAllowed(type, allowedSignals)) {
+          payload.push(type.toUpperCase() as SignalUppercase);
+        }
+      });
+    }
 
     const stringified = JSON.stringify(payload);
 
@@ -65,9 +75,9 @@ const MonitoringCheckboxes: React.FC<Props> = ({ isVertical, title = 'Monitoring
 
   return (
     <div>
-      {title && <FieldLabel title={title} required />}
+      {title && <FieldLabel title={title} required={required} />}
 
-      <ListContainer $isVertical={isVertical}>
+      <ListContainer $isVertical={isVertical} $hasError={!!errorMessage}>
         {monitors.map((monitor) => {
           const allowed = isAllowed(monitor.type, allowedSignals);
           const selected = isSelected(monitor.type, selectedSignals);
@@ -79,8 +89,8 @@ const MonitoringCheckboxes: React.FC<Props> = ({ isVertical, title = 'Monitoring
           );
         })}
       </ListContainer>
+
+      {!!errorMessage && <FieldError>{errorMessage}</FieldError>}
     </div>
   );
 };
-
-export { MonitoringCheckboxes };

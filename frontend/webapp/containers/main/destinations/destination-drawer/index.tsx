@@ -1,11 +1,13 @@
 import React, { useMemo, useState } from 'react';
+import { ACTION, DATA_CARDS } from '@/utils';
+import buildCard from './build-card';
 import styled from 'styled-components';
-import { safeJsonParse } from '@/utils';
 import { useDrawerStore } from '@/store';
-import { CardDetails } from '@/components';
-import type { ActualDestination } from '@/types';
+import buildDrawerItem from './build-drawer-item';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { DestinationFormBody } from '../destination-form-body';
+import { ConditionDetails, DataCard } from '@/reuseable-components';
+import { OVERVIEW_ENTITY_TYPES, type ActualDestination } from '@/types';
 import { useDestinationCRUD, useDestinationFormData, useDestinationTypes } from '@/hooks';
 
 interface Props {}
@@ -18,96 +20,94 @@ const FormContainer = styled.div`
   overflow-y: auto;
 `;
 
-export const DestinationDrawer: React.FC<Props> = () => {
-  const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
-  const [isEditing, setIsEditing] = useState(false);
-  const [isFormDirty, setIsFormDirty] = useState(false);
+const DataContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+`;
 
-  const { updateDestination, deleteDestination } = useDestinationCRUD();
-  const { formData, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem, destinationTypeDetails, dynamicFields, setDynamicFields } = useDestinationFormData({
+export const DestinationDrawer: React.FC<Props> = () => {
+  const { selectedItem, setSelectedItem } = useDrawerStore();
+  const { destinations: destinationTypes } = useDestinationTypes();
+
+  const { formData, formErrors, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem, destinationTypeDetails, dynamicFields, setDynamicFields } = useDestinationFormData({
     destinationType: (selectedItem?.item as ActualDestination)?.destinationType?.type,
     preLoadedFields: (selectedItem?.item as ActualDestination)?.fields,
     // TODO: supportedSignals: thisDestination?.supportedSignals,
     // currently, the real "supportedSignals" is being used by "destination" passed as prop to "DestinationFormBody"
   });
 
+  const { updateDestination, deleteDestination } = useDestinationCRUD({
+    onSuccess: (type) => {
+      setIsEditing(false);
+      setIsFormDirty(false);
+
+      if (type === ACTION.DELETE) {
+        setSelectedItem(null);
+      } else {
+        const { item } = selectedItem as { item: ActualDestination };
+        const { id } = item;
+        setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.DESTINATION, item: buildDrawerItem(id, formData, item) });
+      }
+    },
+  });
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [isFormDirty, setIsFormDirty] = useState(false);
+
   const cardData = useMemo(() => {
-    if (!selectedItem) return [];
+    if (!selectedItem || !destinationTypeDetails) return [];
 
-    const buildMonitorsList = (exportedSignals: ActualDestination['exportedSignals']): string =>
-      Object.keys(exportedSignals)
-        .filter((key) => exportedSignals[key])
-        .join(', ') || 'N/A';
+    const { item } = selectedItem as { item: ActualDestination };
+    const arr = buildCard(item, destinationTypeDetails);
 
-    const buildDestinationFieldData = (parsedFields: Record<string, string>) =>
-      Object.entries(parsedFields).map(([key, value]) => {
-        const found = destinationTypeDetails?.fields?.find((field) => field.name === key);
-
-        const { type } = safeJsonParse(found?.componentProperties, { type: '' });
-        const secret = type === 'password' ? new Array(value.length).fill('•').join('') : '';
-
-        return {
-          title: found?.displayName || key,
-          value: secret || value || 'N/A',
-        };
-      });
-
-    const { exportedSignals, destinationType, fields } = selectedItem.item as ActualDestination;
-    const parsedFields = safeJsonParse<Record<string, string>>(fields, {});
-    const fieldsData = buildDestinationFieldData(parsedFields);
-
-    return [{ title: 'Destination', value: destinationType.displayName || 'N/A' }, { title: 'Monitors', value: buildMonitorsList(exportedSignals) }, ...fieldsData];
+    return arr;
   }, [selectedItem, destinationTypeDetails]);
 
-  const { destinations } = useDestinationTypes();
   const thisDestination = useMemo(() => {
-    if (!destinations.length || !selectedItem || !isEditing) {
+    if (!destinationTypes.length || !selectedItem || !isEditing) {
       resetFormData();
       return undefined;
     }
 
     const { item } = selectedItem as { item: ActualDestination };
-    const found = destinations.map(({ items }) => items.filter(({ type }) => type === item.destinationType.type)).filter((arr) => !!arr.length)[0][0];
+    const found = destinationTypes.map(({ items }) => items.filter(({ type }) => type === item.destinationType.type)).filter((arr) => !!arr.length)[0][0];
 
     if (!found) return undefined;
 
     loadFormWithDrawerItem(selectedItem);
 
     return found;
-  }, [destinations, selectedItem, isEditing]);
+  }, [destinationTypes, selectedItem, isEditing]);
 
   if (!selectedItem?.item) return null;
-  const { id, item } = selectedItem;
+  const { id, item } = selectedItem as { id: string; item: ActualDestination };
 
   const handleEdit = (bool?: boolean) => {
-    if (typeof bool === 'boolean') {
-      setIsEditing(bool);
-    } else {
-      setIsEditing(true);
-    }
+    setIsEditing(typeof bool === 'boolean' ? bool : true);
   };
 
   const handleCancel = () => {
-    resetFormData();
     setIsEditing(false);
+    setIsFormDirty(false);
   };
 
   const handleDelete = async () => {
-    await deleteDestination(id as string);
+    await deleteDestination(id);
   };
 
   const handleSave = async (newTitle: string) => {
-    if (validateForm({ withAlert: true })) {
-      const title = newTitle !== (item as ActualDestination).destinationType.displayName ? newTitle : '';
-
-      await updateDestination(id as string, { ...formData, name: title });
+    if (validateForm({ withAlert: true, alertTitle: ACTION.UPDATE })) {
+      const title = newTitle !== item.destinationType.displayName ? newTitle : '';
+      handleFormChange('name', title);
+      await updateDestination(id, { ...formData, name: title });
     }
   };
 
   return (
     <OverviewDrawer
-      title={(item as ActualDestination).name || (item as ActualDestination).destinationType.displayName}
-      imageUri={(item as ActualDestination).destinationType.imageUrl}
+      title={item.name || item.destinationType.displayName}
+      imageUri={item.destinationType.imageUrl}
       isEdit={isEditing}
       isFormDirty={isFormDirty}
       onEdit={handleEdit}
@@ -120,8 +120,9 @@ export const DestinationDrawer: React.FC<Props> = () => {
           <DestinationFormBody
             isUpdate
             destination={thisDestination}
-            isFormOk={validateForm()}
             formData={formData}
+            formErrors={formErrors}
+            validateForm={validateForm}
             handleFormChange={(...params) => {
               setIsFormDirty(true);
               handleFormChange(...params);
@@ -134,7 +135,10 @@ export const DestinationDrawer: React.FC<Props> = () => {
           />
         </FormContainer>
       ) : (
-        <CardDetails data={cardData} />
+        <DataContainer>
+          <ConditionDetails conditions={item.conditions} />
+          <DataCard title={DATA_CARDS.DESTINATION_DETAILS} data={cardData} />
+        </DataContainer>
       )}
     </OverviewDrawer>
   );

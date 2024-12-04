@@ -1,30 +1,53 @@
 import React, { useMemo, useState } from 'react';
+import buildCard from './build-card';
 import { ActionFormBody } from '../';
 import styled from 'styled-components';
-import { getActionIcon } from '@/utils';
 import { useDrawerStore } from '@/store';
-import { CardDetails } from '@/components';
-import type { ActionDataParsed } from '@/types';
+import { ACTION, DATA_CARDS, getActionIcon } from '@/utils';
+import buildDrawerItem from './build-drawer-item';
+import { DataCard } from '@/reuseable-components';
 import { useActionCRUD, useActionFormData } from '@/hooks';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { ACTION_OPTIONS } from '../action-modal/action-options';
-import buildCardFromActionSpec from './build-card-from-action-spec';
+import { OVERVIEW_ENTITY_TYPES, type ActionDataParsed } from '@/types';
 
 interface Props {}
 
-const ActionDrawer: React.FC<Props> = () => {
-  const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
+const FormContainer = styled.div`
+  width: 100%;
+  height: 100%;
+  max-height: calc(100vh - 220px);
+  overflow: overlay;
+  overflow-y: auto;
+`;
+
+export const ActionDrawer: React.FC<Props> = () => {
+  const { selectedItem, setSelectedItem } = useDrawerStore();
+  const { formData, formErrors, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem } = useActionFormData();
+
+  const { updateAction, deleteAction } = useActionCRUD({
+    onSuccess: (type) => {
+      setIsEditing(false);
+      setIsFormDirty(false);
+
+      if (type === ACTION.DELETE) {
+        setSelectedItem(null);
+      } else {
+        const { item } = selectedItem as { item: ActionDataParsed };
+        const { id } = item;
+        setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.ACTION, item: buildDrawerItem(id, formData, item) });
+      }
+    },
+  });
+
   const [isEditing, setIsEditing] = useState(false);
   const [isFormDirty, setIsFormDirty] = useState(false);
-
-  const { formData, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem } = useActionFormData();
-  const { updateAction, deleteAction } = useActionCRUD();
 
   const cardData = useMemo(() => {
     if (!selectedItem) return [];
 
     const { item } = selectedItem as { item: ActionDataParsed };
-    const arr = buildCardFromActionSpec(item);
+    const arr = buildCard(item);
 
     return arr;
   }, [selectedItem]);
@@ -49,37 +72,33 @@ const ActionDrawer: React.FC<Props> = () => {
   }, [selectedItem, isEditing]);
 
   if (!selectedItem?.item) return null;
-  const { id, item } = selectedItem;
+  const { id, item } = selectedItem as { id: string; item: ActionDataParsed };
 
   const handleEdit = (bool?: boolean) => {
-    if (typeof bool === 'boolean') {
-      setIsEditing(bool);
-    } else {
-      setIsEditing(true);
-    }
+    setIsEditing(typeof bool === 'boolean' ? bool : true);
   };
 
   const handleCancel = () => {
-    resetFormData();
     setIsEditing(false);
+    setIsFormDirty(false);
   };
 
   const handleDelete = async () => {
-    await deleteAction(id as string, (item as ActionDataParsed).type);
+    await deleteAction(id, item.type);
   };
 
   const handleSave = async (newTitle: string) => {
-    if (validateForm({ withAlert: true })) {
-      const title = newTitle !== (item as ActionDataParsed).type ? newTitle : '';
-
-      await updateAction(id as string, { ...formData, name: title });
+    if (validateForm({ withAlert: true, alertTitle: ACTION.UPDATE })) {
+      const title = newTitle !== item.type ? newTitle : '';
+      handleFormChange('name', title);
+      await updateAction(id, { ...formData, name: title });
     }
   };
 
   return (
     <OverviewDrawer
-      title={(item as ActionDataParsed).spec.actionName || (item as ActionDataParsed).type}
-      imageUri={getActionIcon((item as ActionDataParsed).type)}
+      title={item.spec.actionName || item.type}
+      imageUri={getActionIcon(item.type)}
       isEdit={isEditing}
       isFormDirty={isFormDirty}
       onEdit={handleEdit}
@@ -93,6 +112,7 @@ const ActionDrawer: React.FC<Props> = () => {
             isUpdate
             action={thisAction}
             formData={formData}
+            formErrors={formErrors}
             handleFormChange={(...params) => {
               setIsFormDirty(true);
               handleFormChange(...params);
@@ -100,18 +120,8 @@ const ActionDrawer: React.FC<Props> = () => {
           />
         </FormContainer>
       ) : (
-        <CardDetails data={cardData} />
+        <DataCard title={DATA_CARDS.ACTION_DETAILS} data={cardData} />
       )}
     </OverviewDrawer>
   );
 };
-
-export { ActionDrawer };
-
-const FormContainer = styled.div`
-  width: 100%;
-  height: 100%;
-  max-height: calc(100vh - 220px);
-  overflow: overlay;
-  overflow-y: auto;
-`;

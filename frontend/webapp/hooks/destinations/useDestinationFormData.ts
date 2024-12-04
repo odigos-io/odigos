@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { DrawerBaseItem } from '@/store';
 import { useQuery } from '@apollo/client';
 import { GET_DESTINATION_TYPE_DETAILS } from '@/graphql';
-import { useConnectDestinationForm, useNotify } from '@/hooks';
+import { useConnectDestinationForm, useGenericForm, useNotify } from '@/hooks';
 import { ACTION, FORM_ALERTS, NOTIFICATION, safeJsonParse } from '@/utils';
 import {
   type DynamicField,
@@ -29,9 +29,9 @@ export function useDestinationFormData(params?: { destinationType?: string; supp
   const { destinationType, supportedSignals, preLoadedFields } = params || {};
 
   const notify = useNotify();
-  const { buildFormDynamicFields } = useConnectDestinationForm();
+  const { formData, formErrors, handleFormChange, handleErrorChange, resetFormData } = useGenericForm<DestinationInput>(INITIAL);
 
-  const [formData, setFormData] = useState({ ...INITIAL });
+  const { buildFormDynamicFields } = useConnectDestinationForm();
   const [dynamicFields, setDynamicFields] = useState<DynamicField[]>([]);
 
   const t = destinationType || formData.type;
@@ -86,42 +86,26 @@ export function useDestinationFormData(params?: { destinationType?: string; supp
     });
   }, [supportedSignals]);
 
-  function handleFormChange(key: keyof typeof INITIAL | string, val: any) {
-    // this is for a case where "exportedSignals" have been changed, it's an object so they children are targeted as: "exportedSignals.logs"
-    const [parentKey, childKey] = key.split('.');
-
-    if (!!childKey) {
-      setFormData((prev) => ({
-        ...prev,
-        [parentKey]: {
-          ...prev[parentKey],
-          [childKey]: val,
-        },
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        [parentKey]: val,
-      }));
-    }
-  }
-
-  const resetFormData = () => {
-    setFormData({ ...INITIAL });
-  };
-
-  const validateForm = (params?: { withAlert?: boolean }) => {
+  const validateForm = (params?: { withAlert?: boolean; alertTitle?: string }) => {
+    const errors = {};
     let ok = true;
 
-    ok = dynamicFields.every((field) => (field.required ? !!field.value : true));
+    dynamicFields.forEach(({ name, value, required }) => {
+      if (required && !value) {
+        ok = false;
+        errors[name] = FORM_ALERTS.FIELD_IS_REQUIRED;
+      }
+    });
 
     if (!ok && params?.withAlert) {
       notify({
         type: NOTIFICATION.WARNING,
-        title: ACTION.UPDATE,
+        title: params.alertTitle,
         message: FORM_ALERTS.REQUIRED_FIELDS,
       });
     }
+
+    handleErrorChange(undefined, undefined, errors);
 
     return ok;
   };
@@ -142,11 +126,12 @@ export function useDestinationFormData(params?: { destinationType?: string; supp
       fields: Object.entries(safeJsonParse(fields, {})).map(([key, value]: [string, string]) => ({ key, value })),
     };
 
-    setFormData(updatedData);
+    handleFormChange(undefined, undefined, updatedData);
   };
 
   return {
     formData,
+    formErrors,
     handleFormChange,
     resetFormData,
     validateForm,

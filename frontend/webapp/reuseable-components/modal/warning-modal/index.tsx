@@ -28,8 +28,8 @@ const Container = styled.div`
   padding: 24px 32px;
 `;
 
-const Content = styled.div`
-  padding: 12px 0px 32px 0;
+const Content = styled.div<{ $withNote: boolean }>`
+  padding: ${({ $withNote }) => ($withNote ? '12px 0px' : '12px 0px 32px 0')};
 `;
 
 const Title = styled(Text)`
@@ -70,7 +70,7 @@ export const WarningModal: React.FC<Props> = ({ isOpen, noOverlay, title = '', d
       <Container>
         <Title>{title}</Title>
 
-        <Content>
+        <Content $withNote={!!note}>
           <Description>{description}</Description>
         </Content>
 
