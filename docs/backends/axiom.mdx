@@ -1,0 +1,62 @@
+---
+title: 'Axiom'
+---
+
+## Configuring Axiom Backend
+
+1. [Register](https://app.axiom.co/register)/[Login](https://app.axiom.co/login) to Axiom.
+2. Navigate to the [Axiom Datasets](https://app.axiom.co/settings/datasets) page, create a dataset and copy it's name.
+3. Navigate to the [Axiom API Tokens](https://app.axiom.co/settings/api-tokens) page, and generate a new API Token.
+
+- **AXIOM_DATASET** - Axiom Dataset Name from above (step 2).
+- **AXIOM_API_TOKEN** - Axiom API Token from above (step 3).
+
+## Adding a destination to Odigos
+
+Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+
+1. **Using the UI**
+
+- Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI:
+
+```bash
+odigos ui
+```
+
+
+2. **Using kubernetes manifests**
+
+Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
+
+```bash
+kubectl apply -f destination.yaml
+```
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: axiom-example
+  namespace: odigos-system
+spec:
+  data:
+    AXIOM_DATASET: <Dataset>
+  destinationName: axiom
+  secretRef:
+    name: axiom-secret
+  signals:
+  - TRACES
+  - LOGS
+  type: axiom
+
+---
+apiVersion: v1
+data:
+  AXIOM_API_TOKEN: <base64 Axiom API token>
+kind: Secret
+metadata:
+  name: axiom-secret
+  namespace: odigos-system
+type: Opaque
+```
