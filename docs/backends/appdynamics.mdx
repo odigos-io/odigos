@@ -1,0 +1,73 @@
+---
+title: 'AppDynamics'
+---
+
+## Configuring AppDynamics Backend
+
+1. [Register](https://accounts.appdynamics.com/trial)/[Login](https://login.appdynamics.com/sso/authenticate) to AppDynamics.
+2. Navigate to the OpenTelemetry Configuration page:
+
+```bash
+https://{APPDYNAMICS_ACCOUNT_NAME}.saas.appdynamics.com/controller/#/apm/otel/keyManagement
+```
+
+3. Click on `Processors`, you'll find 3 attributes, locate `appdynamics.controller.account` and copy it's value, this is your `Account Name`.
+4. Click on `Exporters`, copy the `Endpoint`, and generate an `API Key`.
+
+- **APPDYNAMICS_APPLICATION_NAME** - Application Name (will define a namespace in AppDynamics)
+- **APPDYNAMICS_ACCOUNT_NAME** - Account Name from above (step 3).
+- **APPDYNAMICS_ENDPOINT_URL** - OTLP HTTP Endpoint URL from above (step 4).
+- **APPDYNAMICS_API_KEY** - API Key from above (step 4).
+
+## Adding a destination to Odigos
+
+Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+
+1. **Using the UI**
+
+- Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI:
+
+```bash
+odigos ui
+```
+
+2. **Using kubernetes manifests**
+
+Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
+
+```bash
+kubectl apply -f destination.yaml
+```
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: appdynamics-example
+  namespace: odigos-system
+spec:
+  data:
+    APPDYNAMICS_ACCOUNT_NAME: <Account Name>
+    # APPDYNAMICS_APPLICATION_NAME: <Application Name>
+    # Note: The commented fields above are optional.
+    APPDYNAMICS_ENDPOINT_URL: <Endpoint URL>
+  destinationName: appdynamics
+  secretRef:
+    name: appdynamics-secret
+  signals:
+  - TRACES
+  - METRICS
+  - LOGS
+  type: appdynamics
+
+---
+apiVersion: v1
+data:
+  APPDYNAMICS_API_KEY: <base64 API Key>
+kind: Secret
+metadata:
+  name: appdynamics-secret
+  namespace: odigos-system
+type: Opaque
+```

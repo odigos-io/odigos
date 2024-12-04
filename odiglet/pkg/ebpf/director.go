@@ -47,6 +47,8 @@ type InstrumentationFactory[T OtelEbpfSdk] interface {
 }
 
 // Director manages the instrumentation for a specific SDK in a specific language
+//
+// Deprecated: this will be removed once we fully move to the process event based approach
 type Director interface {
 	Language() common.ProgrammingLanguage
 	Instrument(ctx context.Context, pid int, podDetails types.NamespacedName, podWorkload *workload.PodWorkload, appName string, containerName string) error
@@ -71,14 +73,6 @@ type podDetails[T OtelEbpfSdk] struct {
 	InstrumentedProcesses []*InstrumentedProcess[T]
 }
 
-type InstrumentationStatusReason string
-
-const (
-	FailedToLoad       InstrumentationStatusReason = "FailedToLoad"
-	FailedToInitialize InstrumentationStatusReason = "FailedToInitialize"
-	LoadedSuccessfully InstrumentationStatusReason = "LoadedSuccessfully"
-)
-
 // CleanupInterval is the interval in which the director will check if the instrumented processes are still running
 // and clean up the resources associated to the ones that are not.
 // It is not const for testing purposes.
@@ -94,6 +88,7 @@ type instrumentationStatus struct {
 	Pid           int
 }
 
+// Deprecated: this will be removed once we fully move to the process event based approach
 type EbpfDirector[T OtelEbpfSdk] struct {
 	mux sync.Mutex
 
@@ -127,6 +122,7 @@ type DirectorKey struct {
 	common.OtelSdk
 }
 
+// Deprecated: this will be removed once we fully move to the process event based approach
 type DirectorsMap map[DirectorKey]Director
 
 func NewEbpfDirector[T OtelEbpfSdk](ctx context.Context, client client.Client, scheme *runtime.Scheme, language common.ProgrammingLanguage, instrumentationFactory InstrumentationFactory[T]) *EbpfDirector[T] {
