@@ -12,9 +12,9 @@ back_pid_filename="$scripts_dir/ui_backend.pid"
 front_pid_filename="$scripts_dir/ui_frontend.pid"
 
 function cleanup() {
-  rm -f "../../$front_pid_filename"
-  rm -f "../../$back_pid_filename"
-  rm -f "../../$log_filename"
+  rm -f "$front_pid_filename"
+  rm -f "$back_pid_filename"
+  rm -f "$log_filename"
 }
 
 function get_process_id() {
@@ -55,13 +55,13 @@ function kill_process() {
 
 function kill_all() {
   # Kill processes if they are still running
-  front_pid=$(get_process_id "../../$front_pid_filename")
+  front_pid=$(get_process_id "$front_pid_filename")
   kill_process $front_pid "Frontend"
-  back_pid=$(get_process_id "../../$back_pid_filename")
+  back_pid=$(get_process_id "$back_pid_filename")
   kill_process $back_pid "Backend"
 }
 
-function end () {
+function stop() {
   kill_all
   cleanup
 }
@@ -70,37 +70,37 @@ function start() {
   kill_all
 
   # Install dependencies and build the Frontend
-  cd "../../frontend/webapp"
+  cd "$scripts_dir/../../frontend/webapp"
   echo "Odigos UI - ⏳ Frontend installing"
-  yarn install > /dev/null 2> "../../$log_filename"
+  yarn install > /dev/null 2> "$log_filename"
   echo "Odigos UI - ⏳ Frontend building"
-  yarn build > /dev/null 2> "../../$log_filename"
+  yarn build > /dev/null 2> "$log_filename"
 
   # Build and start the Backend
   cd "../"
   echo "Odigos UI - ⏳ Backend building"
-  go build -o ./odigos-backend > /dev/null 2> "../$log_filename"
+  go build -o ./odigos-backend > /dev/null 2> "$log_filename"
   echo "Odigos UI - ⏳ Backend starting"
-  ./odigos-backend --port 8085 --debug --address 0.0.0.0 > /dev/null 2> "../$log_filename" &
+  ./odigos-backend --port 8085 --debug --address 0.0.0.0 > /dev/null 2> "$log_filename" &
   sleep 3
-  echo $! > "../$back_pid_filename"
-  back_pid=$(get_process_id "../$back_pid_filename")
-  check_process $back_pid "Backend" "../$log_filename"
+  echo $! > "$back_pid_filename"
+  back_pid=$(get_process_id "$back_pid_filename")
+  check_process $back_pid "Backend" "$log_filename"
 
   # Start the Frontend
   # (we could skip this step, and simply use the UI on port 3001 from the Backend build - but we may want to run tests on the UI in real-time while developing, hence we will use port 3000 from the Frontend build)
   cd "./webapp"
   echo "Odigos UI - ⏳ Frontend starting"
-  yarn dev > /dev/null 2> "../../$log_filename" &
+  yarn dev > /dev/null 2> "$log_filename" &
   sleep 3
-  echo $! > "../../$front_pid_filename"
-  front_pid=$(get_process_id "../../$front_pid_filename")
-  check_process $front_pid "Frontend" "../../$log_filename"
+  echo $! > "$front_pid_filename"
+  front_pid=$(get_process_id "$front_pid_filename")
+  check_process $front_pid "Frontend" "$log_filename"
 }
 
 function test() {
   # Run tests on the Frontend
-  cd "../../frontend/webapp"
+  cd "$scripts_dir/../../frontend/webapp"
   echo "Odigos UI - 👀 Frontend testing"
 
   set +e # Temporarily disable "exit on error"
@@ -115,7 +115,7 @@ function test() {
   fi
 }
 
-# This is to allow the script to be used dynamically, we call the function name from the CLI (start/end/test/etc.)
+# This is to allow the script to be used dynamically, we call the function name from the CLI (start/stop/test/etc.)
 # This method prevents duplicated code across multiple-scripts
 function main() {
   if [ $# -lt 1 ]; then

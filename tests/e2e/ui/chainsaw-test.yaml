@@ -20,4 +20,4 @@ spec:
       try:
         - script:
             timeout: 60s
-            content: ../../common/odigos_ui.sh end
+            content: ../../common/odigos_ui.sh stop
