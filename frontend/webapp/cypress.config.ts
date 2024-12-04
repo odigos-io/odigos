@@ -2,7 +2,7 @@ import Cypress from 'cypress';
 
 const config: Cypress.ConfigOptions = {
   e2e: {
-    baseUrl: 'https://example.cypress.io',
+    baseUrl: 'http://localhost:3000',
     setupNodeEvents(on, config) {},
     supportFile: false,
     waitForAnimations: true,
