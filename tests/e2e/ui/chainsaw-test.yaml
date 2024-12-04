@@ -1,0 +1,23 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: ui-cypress
+spec:
+  description: Run E2E tests against Odigos UI using Cypress
+  skipDelete: true
+  steps:
+    - name: Start the UI
+      try:
+        - script:
+            timeout: 300s
+            content: ../../common/odigos_ui.sh start
+    - name: Test the UI
+      try:
+        - script:
+            timeout: 300s
+            content: ../../common/odigos_ui.sh test
+    - name: End the UI
+      try:
+        - script:
+            timeout: 60s
+            content: ../../common/odigos_ui.sh end
