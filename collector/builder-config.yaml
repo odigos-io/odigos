@@ -108,10 +108,10 @@ connectors:
 
 providers:
   - gomod: go.opentelemetry.io/collector/odigos/providers/odigosfileprovider v0.106.0 # fork default file provider for config reloading
-  - gomod: go.opentelemetry.io/collector/confmap/provider/envprovider v1.20.0
-  - gomod: go.opentelemetry.io/collector/confmap/provider/httpprovider v1.20.0
-  - gomod: go.opentelemetry.io/collector/confmap/provider/httpsprovider v1.20.0
-  - gomod: go.opentelemetry.io/collector/confmap/provider/yamlprovider v1.20.0
+  - gomod: go.opentelemetry.io/collector/confmap/provider/envprovider v0.106.0
+  - gomod: go.opentelemetry.io/collector/confmap/provider/httpprovider v0.106.0
+  - gomod: go.opentelemetry.io/collector/confmap/provider/httpsprovider v0.106.0
+  - gomod: go.opentelemetry.io/collector/confmap/provider/yamlprovider v0.106.0
 
 replaces:
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosresourcenameprocessor => ../processors/odigosresourcenameprocessor

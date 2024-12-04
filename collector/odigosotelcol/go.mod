@@ -87,10 +87,10 @@ require (
 	go.opentelemetry.io/collector/component v0.106.0
 	go.opentelemetry.io/collector/confmap v1.20.0
 	go.opentelemetry.io/collector/confmap/converter/expandconverter v0.106.0
-	go.opentelemetry.io/collector/confmap/provider/envprovider v1.20.0
-	go.opentelemetry.io/collector/confmap/provider/httpprovider v1.20.0
-	go.opentelemetry.io/collector/confmap/provider/httpsprovider v1.20.0
-	go.opentelemetry.io/collector/confmap/provider/yamlprovider v1.20.0
+	go.opentelemetry.io/collector/confmap/provider/envprovider v0.106.0
+	go.opentelemetry.io/collector/confmap/provider/httpprovider v0.106.0
+	go.opentelemetry.io/collector/confmap/provider/httpsprovider v0.106.0
+	go.opentelemetry.io/collector/confmap/provider/yamlprovider v0.106.0
 	go.opentelemetry.io/collector/connector v0.106.0
 	go.opentelemetry.io/collector/connector/forwardconnector v0.106.0
 	go.opentelemetry.io/collector/exporter v0.106.0
