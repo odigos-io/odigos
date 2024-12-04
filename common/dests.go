@@ -3,6 +3,7 @@ package common
 type DestinationType string
 
 const (
+	AppDynamicsDestinationType            DestinationType = "appdynamics"
 	AWSS3DestinationType                  DestinationType = "s3"
 	AxiomDestinationType                  DestinationType = "axiom"
 	AzureBlobDestinationType              DestinationType = "azureblob"

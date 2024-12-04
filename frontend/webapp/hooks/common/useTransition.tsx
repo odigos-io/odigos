@@ -29,6 +29,8 @@ export const useTransition = ({ container, animateIn, animateOut, duration = 300
       return () => clearTimeout(t);
     }, [enter, duration]);
 
+    if (!enter && !mounted) return null;
+
     return (
       <Animated $isEntering={enter} $isLeaving={!enter && mounted} {...props}>
         {children}
