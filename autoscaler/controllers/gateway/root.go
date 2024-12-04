@@ -3,14 +3,11 @@ package gateway
 import (
 	"context"
 
-	appsv1 "k8s.io/api/apps/v1"
-
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
-	odigoscommon "github.com/odigos-io/odigos/common"
+	controllerconfig "github.com/odigos-io/odigos/autoscaler/controllers/controller_config"
 	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -23,7 +20,8 @@ var (
 	}
 )
 
-func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) error {
+func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string,
+	config *controllerconfig.ControllerConfig) error {
 	logger := log.FromContext(ctx)
 
 	odigosNs := env.GetCurrentNamespace()
@@ -49,13 +47,7 @@ func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, 
 	// Add the generic batch processor to the list of processors
 	processors.Items = append(processors.Items, commonconf.GetGenericBatchProcessor())
 
-	odigosConfig, err := utils.GetCurrentOdigosConfig(ctx, k8sClient)
-	if err != nil {
-		logger.Error(err, "failed to get odigos config")
-		return err
-	}
-
-	err = syncGateway(&dests, &processors, &gatewayCollectorGroup, ctx, k8sClient, scheme, imagePullSecrets, odigosVersion, &odigosConfig)
+	err = syncGateway(&dests, &processors, &gatewayCollectorGroup, ctx, k8sClient, scheme, imagePullSecrets, odigosVersion, config)
 	statusPatchString := commonconf.GetCollectorsGroupDeployedConditionsPatch(err)
 	statusErr := k8sClient.Status().Patch(ctx, &gatewayCollectorGroup, client.RawPatch(types.MergePatchType, []byte(statusPatchString)))
 	if statusErr != nil {
@@ -67,13 +59,12 @@ func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, 
 
 func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList,
 	gateway *odigosv1.CollectorsGroup, ctx context.Context,
-	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, odigosConfig *odigoscommon.OdigosConfiguration) error {
+	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string,
+	config *controllerconfig.ControllerConfig) error {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Syncing gateway")
 
-	memConfig := getMemoryConfigurations(odigosConfig)
-
-	configData, signals, err := syncConfigMap(dests, processors, gateway, ctx, c, scheme, memConfig)
+	configData, signals, err := syncConfigMap(dests, processors, gateway, ctx, c, scheme)
 	if err != nil {
 		logger.Error(err, "Failed to sync config map")
 		return err
@@ -91,7 +82,7 @@ func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.Processor
 		return err
 	}
 
-	_, err = syncDeployment(dests, gateway, configData, ctx, c, scheme, imagePullSecrets, odigosVersion, memConfig)
+	_, err = syncDeployment(dests, gateway, configData, ctx, c, scheme, imagePullSecrets, odigosVersion)
 	if err != nil {
 		logger.Error(err, "Failed to sync deployment")
 		return err
@@ -103,31 +94,10 @@ func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.Processor
 		return err
 	}
 
-	if isMetricsServerInstalled(ctx, c) {
-		err = syncHPA(gateway, ctx, c, scheme, memConfig)
-		if err != nil {
-			logger.Error(err, "Failed to sync HPA")
-		}
+	err = syncHPA(gateway, ctx, c, scheme, config.K8sVersion)
+	if err != nil {
+		logger.Error(err, "Failed to sync HPA")
 	}
 
 	return nil
-}
-
-func isMetricsServerInstalled(ctx context.Context, c client.Client) bool {
-	// Check if Kubernetes metrics server is installed by checking if the metrics-server deployment exists
-	logger := log.FromContext(ctx)
-	var metricsServerDeployment appsv1.Deployment
-	err := c.Get(ctx, types.NamespacedName{Name: "metrics-server", Namespace: "kube-system"}, &metricsServerDeployment)
-	if err != nil {
-		if client.IgnoreNotFound(err) != nil {
-			logger.Error(err, "Failed to get metrics-server deployment")
-			return false
-		}
-
-		logger.V(0).Info("Metrics server not found, skipping HPA creation")
-		return false
-	}
-
-	logger.V(0).Info("Metrics server found, creating HPA for Gateway")
-	return true
 }

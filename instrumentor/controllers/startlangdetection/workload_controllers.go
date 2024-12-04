@@ -8,8 +8,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 
-	appsv1 "k8s.io/api/apps/v1"
-
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -25,7 +23,7 @@ type DeploymentReconciler struct {
 }
 
 func (r *DeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	return reconcileWorkload(ctx, r.Client, &appsv1.Deployment{}, workload.WorkloadKindDeployment, req, r.Scheme)
+	return reconcileWorkload(ctx, r.Client, workload.WorkloadKindDeployment, req, r.Scheme)
 }
 
 type DaemonSetReconciler struct {
@@ -34,7 +32,7 @@ type DaemonSetReconciler struct {
 }
 
 func (r *DaemonSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	return reconcileWorkload(ctx, r.Client, &appsv1.DaemonSet{}, workload.WorkloadKindDaemonSet, req, r.Scheme)
+	return reconcileWorkload(ctx, r.Client, workload.WorkloadKindDaemonSet, req, r.Scheme)
 }
 
 type StatefulSetReconciler struct {
@@ -43,10 +41,11 @@ type StatefulSetReconciler struct {
 }
 
 func (r *StatefulSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	return reconcileWorkload(ctx, r.Client, &appsv1.StatefulSet{}, workload.WorkloadKindStatefulSet, req, r.Scheme)
+	return reconcileWorkload(ctx, r.Client, workload.WorkloadKindStatefulSet, req, r.Scheme)
 }
 
-func reconcileWorkload(ctx context.Context, k8sClient client.Client, obj client.Object, objKind workload.WorkloadKind, req ctrl.Request, scheme *runtime.Scheme) (ctrl.Result, error) {
+func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind workload.WorkloadKind, req ctrl.Request, scheme *runtime.Scheme) (ctrl.Result, error) {
+	obj := workload.ClientObjectFromWorkloadKind(objKind)
 	instConfigName := workload.CalculateWorkloadRuntimeObjectName(req.Name, objKind)
 	err := getWorkloadObject(ctx, k8sClient, req, obj)
 	if err != nil {

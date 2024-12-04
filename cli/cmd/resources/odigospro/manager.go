@@ -7,7 +7,6 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type odigosCloudResourceManager struct {
@@ -61,6 +60,6 @@ func (a *odigosCloudResourceManager) InstallFromScratch(ctx context.Context) err
 		secret = newOdigosProSecret(a.ns, cloudApiKey, onpremToken)
 	}
 
-	resources := []client.Object{secret}
+	resources := []kube.Object{secret}
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }

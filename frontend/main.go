@@ -34,16 +34,22 @@ import (
 	"github.com/odigos-io/odigos/frontend/endpoints"
 
 	_ "net/http/pprof"
+
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/odigos-io/odigos/frontend/graph"
 )
 
 const (
 	defaultPort = 3000
+	betaPort    = 3001
 )
 
 type Flags struct {
 	Version    bool
 	Address    string
 	Port       int
+	BetaPort   int
 	Debug      bool
 	KubeConfig string
 	Namespace  string
@@ -52,6 +58,9 @@ type Flags struct {
 //go:embed all:webapp/out/*
 var uiFS embed.FS
 
+//go:embed all:webapp/dep-out/*
+var depUIFS embed.FS
+
 func parseFlags() Flags {
 	defaultKubeConfig := env.GetDefaultKubeConfigPath()
 
@@ -59,6 +68,7 @@ func parseFlags() Flags {
 	flag.BoolVar(&flags.Version, "version", false, "Print Odigos UI version.")
 	flag.StringVar(&flags.Address, "address", "localhost", "Address to listen on")
 	flag.IntVar(&flags.Port, "port", defaultPort, "Port to listen on")
+	flag.IntVar(&flags.BetaPort, "beta-port", betaPort, "Port to listen on for beta UI")
 	flag.BoolVar(&flags.Debug, "debug", false, "Enable debug mode")
 	flag.StringVar(&flags.KubeConfig, "kubeconfig", defaultKubeConfig, "Path to kubeconfig file")
 	flag.StringVar(&flags.Namespace, "namespace", consts.DefaultOdigosNamespace, "Kubernetes namespace where Odigos is installed")
@@ -98,6 +108,61 @@ func startHTTPServer(flags *Flags, odigosMetrics *collectormetrics.OdigosMetrics
 	// Serve React app if page not found serve index.html
 	r.NoRoute(gin.WrapH(httpFileServerWith404(http.FS(dist))))
 
+	// GraphQL handlers
+	gqlHandler := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{
+		Resolvers: &graph.Resolver{
+			MetricsConsumer: odigosMetrics,
+		},
+	}))
+
+	r.POST("/graphql", func(c *gin.Context) {
+		gqlHandler.ServeHTTP(c.Writer, c.Request)
+	})
+	r.GET("/playground", gin.WrapH(playground.Handler("GraphQL Playground", "/graphql")))
+
+	return r, nil
+}
+
+func httpFileServerWith404(fs http.FileSystem) http.Handler {
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, err := fs.Open(r.URL.Path)
+		if err != nil {
+			// If file not found, serve .html of it (example: /choose-sources -> /choose-sources.html)
+			r.URL.Path = r.URL.Path + ".html"
+		}
+		_, err = fs.Open(r.URL.Path)
+		if err != nil {
+			// If .html file not found, this route does not exist at all (404) so we should redirect to default
+			r.URL.Path = "/"
+		}
+		http.FileServer(fs).ServeHTTP(w, r)
+	})
+}
+
+// dep server
+func startHTTPDepServer(flags *Flags, odigosMetrics *collectormetrics.OdigosMetricsConsumer) (*gin.Engine, error) {
+	var r *gin.Engine
+	if flags.Debug {
+		r = gin.Default()
+	} else {
+		gin.SetMode(gin.ReleaseMode)
+		r = gin.New()
+		r.Use(gin.Recovery())
+	}
+
+	// Enable CORS
+	r.Use(cors.Default())
+
+	// Serve React app
+	dist, err := fs.Sub(depUIFS, "webapp/dep-out")
+	if err != nil {
+		return nil, fmt.Errorf("error reading webapp/def-out directory: %s", err)
+	}
+
+	// Serve React app if page not found serve index.html
+	r.NoRoute(gin.WrapH(httpFileServerWith404(http.FS(dist))))
+
 	// Serve API
 	apis := r.Group("/api")
 	{
@@ -110,7 +175,6 @@ func startHTTPServer(flags *Flags, odigosMetrics *collectormetrics.OdigosMetrics
 		apis.PATCH("/sources/namespace/:namespace/kind/:kind/name/:name", endpoints.PatchSource)
 
 		apis.GET("/applications/:namespace", endpoints.GetApplicationsInNamespace)
-		apis.GET("/config", endpoints.GetConfig)
 		apis.GET("/destination-types", endpoints.GetDestinationTypes)
 		apis.GET("/destination-types/:type", endpoints.GetDestinationTypeDetails)
 		apis.GET("/destinations", func(c *gin.Context) { endpoints.GetDestinations(c, flags.Namespace) })
@@ -186,18 +250,19 @@ func startHTTPServer(flags *Flags, odigosMetrics *collectormetrics.OdigosMetrics
 		apis.DELETE("/actions/types/PiiMasking/:id", func(c *gin.Context) { actions.DeletePiiMasking(c, flags.Namespace, c.Param("id")) })
 	}
 
-	return r, nil
-}
+	// GraphQL handlers
+	gqlHandler := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{
+		Resolvers: &graph.Resolver{
+			MetricsConsumer: odigosMetrics,
+		},
+	}))
 
-func httpFileServerWith404(fs http.FileSystem) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, err := fs.Open(r.URL.Path)
-		if err != nil {
-			// Serve index.html
-			r.URL.Path = "/"
-		}
-		http.FileServer(fs).ServeHTTP(w, r)
+	r.POST("/graphql", func(c *gin.Context) {
+		gqlHandler.ServeHTTP(c.Writer, c.Request)
 	})
+	r.GET("/playground", gin.WrapH(playground.Handler("GraphQL Playground", "/graphql")))
+
+	return r, nil
 }
 
 func main() {
@@ -209,7 +274,15 @@ func main() {
 		return
 	}
 
-	go common.StartPprofServer(logr.FromSlogHandler(slog.Default().Handler()))
+	ctx, cancel := context.WithCancel(context.Background())
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
+	defer func() {
+		signal.Stop(ch)
+		cancel()
+	}()
+
+	go common.StartPprofServer(ctx, logr.FromSlogHandler(slog.Default().Handler()))
 
 	// Load destinations data
 	err := destinations.Load()
@@ -223,14 +296,6 @@ func main() {
 		log.Fatalf("Error creating Kubernetes client: %s", err)
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
-	defer func() {
-		signal.Stop(ch)
-		cancel()
-	}()
-
 	odigosMetrics := collectormetrics.NewOdigosMetrics()
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -241,6 +306,11 @@ func main() {
 
 	// Start server
 	r, err := startHTTPServer(&flags, odigosMetrics)
+	if err != nil {
+		log.Fatalf("Error starting server: %s", err)
+	}
+
+	d, err := startHTTPDepServer(&flags, odigosMetrics)
 	if err != nil {
 		log.Fatalf("Error starting server: %s", err)
 	}
@@ -262,12 +332,22 @@ func main() {
 	}
 
 	r.GET("/api/events", sse.HandleSSEConnections)
+	d.GET("/api/events", sse.HandleSSEConnections)
 
 	log.Println("Starting Odigos UI...")
-	log.Printf("Odigos UI is available at: http://%s:%d", flags.Address, flags.Port)
+	log.Printf("Odigos UI is available at: http://%s:%d", flags.Address, flags.BetaPort)
 
 	go func() {
-		err = r.Run(fmt.Sprintf("%s:%d", flags.Address, flags.Port))
+		err = r.Run(fmt.Sprintf("%s:%d", flags.Address, flags.BetaPort))
+		if err != nil {
+			log.Fatalf("Error starting server: %s", err)
+		}
+	}()
+
+	go func() {
+		log.Println("Starting Odigos Dep UI...")
+		log.Printf("Odigos UI is available at: http://%s:%d", flags.Address, flags.Port)
+		err = d.Run(fmt.Sprintf("%s:%d", flags.Address, flags.Port))
 		if err != nil {
 			log.Fatalf("Error starting server: %s", err)
 		}

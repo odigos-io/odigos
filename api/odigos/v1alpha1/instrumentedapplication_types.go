@@ -39,12 +39,17 @@ type EnvVar struct {
 	Value string `json:"value"`
 }
 
+type OtherAgent struct {
+	Name string `json:"name,omitempty"`
+}
+
 // +kubebuilder:object:generate=true
 type RuntimeDetailsByContainer struct {
 	ContainerName  string                     `json:"containerName"`
 	Language       common.ProgrammingLanguage `json:"language"`
 	RuntimeVersion string                     `json:"runtimeVersion,omitempty"`
 	EnvVars        []EnvVar                   `json:"envVars,omitempty"`
+	OtherAgent     *OtherAgent                `json:"otherAgent,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

@@ -1,6 +1,7 @@
 package envOverwrite
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/odigos-io/odigos/common"
@@ -10,7 +11,9 @@ import (
 func TestGetPatchedEnvValue(t *testing.T) {
 	nodeOptionsNativeCommunity, _ := ValToAppend("NODE_OPTIONS", common.OtelSdkNativeCommunity)
 	nodeOptionsEbpfEnterprise, _ := ValToAppend("NODE_OPTIONS", common.OtelSdkEbpfEnterprise)
+	javaToolsNativeCommunity, _ := ValToAppend("JAVA_TOOL_OPTIONS", common.OtelSdkNativeCommunity)
 	userVal := "--max-old-space-size=4096"
+	specialEnvValueJava := "-javaagent:/opt/sre-agent/sre-agent.jar"
 
 	// test different cases
 	tests := []struct {
@@ -86,6 +89,38 @@ func TestGetPatchedEnvValue(t *testing.T) {
 			sdk:                  nil,
 			programmingLanguage:  common.UnknownProgrammingLanguage,
 			patchedValueExpected: "",
+		},
+		{
+			name:                 "multiple values in env var",
+			envName:              "JAVA_TOOL_OPTIONS",
+			observedValue:        fmt.Sprintf("%s %s %s %s", specialEnvValueJava, specialEnvValueJava, specialEnvValueJava, javaToolsNativeCommunity),
+			sdk:                  &common.OtelSdkNativeCommunity,
+			programmingLanguage:  common.JavaProgrammingLanguage,
+			patchedValueExpected: javaToolsNativeCommunity,
+		},
+		{
+			name:                 "multiple spaces in special env value",
+			envName:              "JAVA_TOOL_OPTIONS",
+			observedValue:        fmt.Sprintf("%s %s              %s", specialEnvValueJava, specialEnvValueJava, javaToolsNativeCommunity),
+			sdk:                  &common.OtelSdkNativeCommunity,
+			programmingLanguage:  common.JavaProgrammingLanguage,
+			patchedValueExpected: javaToolsNativeCommunity,
+		},
+		{
+			name:                 "tabs in special env value",
+			envName:              "JAVA_TOOL_OPTIONS",
+			observedValue:        fmt.Sprintf("%s \t %s \t %s", specialEnvValueJava, specialEnvValueJava, javaToolsNativeCommunity),
+			sdk:                  &common.OtelSdkNativeCommunity,
+			programmingLanguage:  common.JavaProgrammingLanguage,
+			patchedValueExpected: javaToolsNativeCommunity,
+		},
+		{
+			name:                 "special env with only user value",
+			envName:              "JAVA_TOOL_OPTIONS",
+			observedValue:        fmt.Sprintf("%s ", specialEnvValueJava),
+			sdk:                  &common.OtelSdkNativeCommunity,
+			programmingLanguage:  common.JavaProgrammingLanguage,
+			patchedValueExpected: javaToolsNativeCommunity,
 		},
 	}
 

@@ -11,7 +11,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func printWorkloadManifestInfo(analyze *source.SourceAnalyze, sb *strings.Builder) bool {
+func printWorkloadManifestInfo(analyze *source.SourceAnalyze, sb *strings.Builder) {
 	printProperty(sb, 0, &analyze.Name)
 	printProperty(sb, 0, &analyze.Kind)
 	printProperty(sb, 0, &analyze.Namespace)
@@ -21,8 +21,6 @@ func printWorkloadManifestInfo(analyze *source.SourceAnalyze, sb *strings.Builde
 	printProperty(sb, 1, analyze.Labels.Workload)
 	printProperty(sb, 1, analyze.Labels.Namespace)
 	printProperty(sb, 1, &analyze.Labels.InstrumentedText)
-
-	return analyze.Labels.Instrumented.Value.(bool)
 }
 
 func printInstrumentationConfigInfo(analyze *source.SourceAnalyze, sb *strings.Builder) {
@@ -60,9 +58,8 @@ func printInstrumentedApplicationInfo(analyze *source.SourceAnalyze, sb *strings
 	printProperty(sb, 1, &analyze.InstrumentedApplication.Created)
 	printProperty(sb, 1, analyze.InstrumentedApplication.CreateTime)
 
-	printProperty(sb, 1, &analyze.RuntimeInfo.Generation)
 	describeText(sb, 1, "Detected Containers:")
-	for _, container := range analyze.RuntimeInfo.Containers {
+	for _, container := range analyze.InstrumentedApplication.Containers {
 		printProperty(sb, 2, &container.ContainerName)
 		printProperty(sb, 3, &container.Language)
 		printProperty(sb, 3, &container.RuntimeVersion)
@@ -75,7 +72,7 @@ func printInstrumentedApplicationInfo(analyze *source.SourceAnalyze, sb *strings
 	}
 }
 
-func printAppliedInstrumentationDeviceInfo(analyze *source.SourceAnalyze, workloadObj *source.K8sSourceObject, instrumented bool, sb *strings.Builder) {
+func printAppliedInstrumentationDeviceInfo(analyze *source.SourceAnalyze, sb *strings.Builder) {
 
 	describeText(sb, 0, "\nInstrumentation Device:")
 	printProperty(sb, 1, &analyze.InstrumentationDevice.StatusText)
@@ -124,11 +121,11 @@ func printPodsInfo(analyze *source.SourceAnalyze, sb *strings.Builder) {
 func DescribeSourceToText(analyze *source.SourceAnalyze) string {
 	var sb strings.Builder
 
-	instrumented := printWorkloadManifestInfo(analyze, &sb)
+	printWorkloadManifestInfo(analyze, &sb)
 	printInstrumentationConfigInfo(analyze, &sb)
 	printRuntimeDetails(analyze, &sb)
 	printInstrumentedApplicationInfo(analyze, &sb)
-	printAppliedInstrumentationDeviceInfo(analyze, nil, instrumented, &sb)
+	printAppliedInstrumentationDeviceInfo(analyze, &sb)
 	printPodsInfo(analyze, &sb)
 
 	return sb.String()

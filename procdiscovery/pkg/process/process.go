@@ -10,12 +10,26 @@ import (
 	"github.com/odigos-io/odigos/common/envOverwrite"
 )
 
-const NodeVersionConst = "NODE_VERSION"
-const PythonVersionConst = "PYTHON_VERSION"
-const JavaVersionConst = "JAVA_VERSION"
+const (
+	NodeVersionConst   = "NODE_VERSION"
+	PythonVersionConst = "PYTHON_VERSION"
+	JavaVersionConst   = "JAVA_VERSION"
+)
 
-// envDetailsMap is a map of environment variables and their separators
-var envDetailsMap = map[string]struct{}{NodeVersionConst: {}, PythonVersionConst: {}, JavaVersionConst: {}}
+// LangsVersionEnvs is a map of environment variables used for detecting the versions of different languages
+var LangsVersionEnvs = map[string]struct{}{NodeVersionConst: {}, PythonVersionConst: {}, JavaVersionConst: {}}
+
+const (
+	NewRelicAgentEnv = "NEW_RELIC_CONFIG_FILE"
+)
+
+var OtherAgentEnvs = map[string]string{
+	NewRelicAgentEnv: "New Relic Agent",
+}
+
+var OtherAgentCmdSubString = map[string]string{
+	"newrelic.jar": "New Relic Agent",
+}
 
 type Details struct {
 	ProcessID    int
@@ -158,10 +172,13 @@ func getRelevantEnvVars(pid int) ProcessEnvs {
 			overWriteEnvsResult[envParts[0]] = envParts[1]
 		}
 
-		if _, ok := envDetailsMap[envParts[0]]; ok {
+		if _, ok := LangsVersionEnvs[envParts[0]]; ok {
 			detailedEnvsResult[envParts[0]] = envParts[1]
 		}
 
+		if _, ok := OtherAgentEnvs[envParts[0]]; ok {
+			detailedEnvsResult[envParts[0]] = envParts[1]
+		}
 	}
 
 	envs := ProcessEnvs{

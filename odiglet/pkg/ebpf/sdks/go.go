@@ -117,5 +117,8 @@ func convertToGoInstrumentationConfig(instConfig *odigosv1.InstrumentationConfig
 
 		// TODO: sampling config
 	}
+
+	// TODO: take sampling config from the CR
+	ic.Sampler = auto.DefaultSampler()
 	return ic
 }

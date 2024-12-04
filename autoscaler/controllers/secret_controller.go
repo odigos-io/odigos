@@ -3,11 +3,12 @@ package controllers
 import (
 	"context"
 
+	controllerconfig "github.com/odigos-io/odigos/autoscaler/controllers/controller_config"
 	"github.com/odigos-io/odigos/autoscaler/controllers/gateway"
+	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
@@ -19,40 +20,14 @@ type SecretReconciler struct {
 	Scheme           *runtime.Scheme
 	ImagePullSecrets []string
 	OdigosVersion    string
-}
-
-type secretPredicate struct {
-	predicate.Funcs
-}
-
-func (i *secretPredicate) Create(e event.CreateEvent) bool {
-	return false
-}
-
-func (i *secretPredicate) Update(e event.UpdateEvent) bool {
-	oldSecret, oldOk := e.ObjectOld.(*corev1.Secret)
-	newSecret, newOk := e.ObjectNew.(*corev1.Secret)
-
-	if !oldOk || !newOk {
-		return false
-	}
-
-	return oldSecret.ResourceVersion != newSecret.ResourceVersion
-}
-
-func (i *secretPredicate) Delete(e event.DeleteEvent) bool {
-	return false
-}
-
-func (i *secretPredicate) Generic(e event.GenericEvent) bool {
-	return false
+	Config           *controllerconfig.ControllerConfig
 }
 
 func (r *SecretReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling Secret")
 
-	err := gateway.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion)
+	err := gateway.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion, r.Config)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -60,10 +35,12 @@ func (r *SecretReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	return ctrl.Result{}, nil
 }
 
-// SetupWithManager sets up the controller with the Manager.
 func (r *SecretReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Secret{}).
-		WithEventFilter(&secretPredicate{}).
+		// we need to handle secrets only when they are updated.
+		// this is to trigger redeployment of the cluster collector in case of destination secret change.
+		// when the secret was just created (via auto-scaler restart or initial deployment), the cluster collector will be reconciled by other controllers.
+		WithEventFilter(predicate.And(&odigospredicate.OnlyUpdatesPredicate{}, &predicate.ResourceVersionChangedPredicate{})).
 		Complete(r)
 }
