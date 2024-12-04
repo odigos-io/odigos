@@ -1,6 +1,6 @@
 TAG ?= $(shell odigos version --cluster)
 ODIGOS_CLI_VERSION ?= $(shell odigos version --cli)
-ORG := keyval
+ORG ?= keyval
 
 .PHONY: build-odiglet
 build-odiglet:
@@ -62,6 +62,10 @@ push-scheduler:
 push-collector:
 	docker buildx build --platform linux/amd64,linux/arm64/v8 --push -t $(ORG)/odigos-collector:$(TAG) collector -f collector/Dockerfile
 
+.PHONY: push-ui
+push-ui:
+	docker buildx build --platform linux/amd64,linux/arm64/v8 --push -t $(ORG)/odigos-ui:$(TAG) . -f frontend/Dockerfile
+
 .PHONY: push-images
 push-images:
 	make push-autoscaler TAG=$(TAG)
@@ -69,6 +73,7 @@ push-images:
 	make push-odiglet TAG=$(TAG)
 	make push-instrumentor TAG=$(TAG)
 	make push-collector TAG=$(TAG)
+	make push-ui TAG=$(TAG)
 
 .PHONY: load-to-kind-odiglet
 load-to-kind-odiglet:
