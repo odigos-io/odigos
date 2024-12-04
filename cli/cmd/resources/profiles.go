@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	actions "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/cli/cmd/resources/profiles"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
@@ -20,6 +19,19 @@ type Profile struct {
 }
 
 var (
+	// sizing profiles for the collector gateway
+	sizeSProfile = Profile{
+		ProfileName:      common.ProfileName("size_s"),
+		ShortDescription: "Small size deployment profile",
+	}
+	sizeMProfile = Profile{
+		ProfileName:      common.ProfileName("size_m"),
+		ShortDescription: "Medium size deployment profile",
+	}
+	sizeLProfile = Profile{
+		ProfileName:      common.ProfileName("size_l"),
+		ShortDescription: "Large size deployment profile",
+	}
 	fullPayloadCollectionProfile = Profile{
 		ProfileName:      common.ProfileName("full-payload-collection"),
 		ShortDescription: "Collect any payload from the cluster where supported with default settings",
@@ -38,7 +50,7 @@ var (
 	semconvUpgraderProfile = Profile{
 		ProfileName:      common.ProfileName("semconv"),
 		ShortDescription: "Upgrade and align some attribute names to a newer version of the OpenTelemetry semantic conventions",
-		KubeObject:       &actions.RenameAttribute{},
+		KubeObject:       &odigosv1alpha1.Processor{},
 	}
 	categoryAttributesProfile = Profile{
 		ProfileName:      common.ProfileName("category-attributes"),
@@ -75,17 +87,37 @@ var (
 	}
 	kratosProfile = Profile{
 		ProfileName:      common.ProfileName("kratos"),
-		ShortDescription: "Bundle profile that includes db-payload-collection, semconv, category-attributes, copy-scope, hostname-as-podname, java-native-instrumentations, code-attributes, query-operation-detector",
-		Dependencies:     []common.ProfileName{"db-payload-collection", "semconv", "category-attributes", "copy-scope", "hostname-as-podname", "java-native-instrumentations", "code-attributes", "query-operation-detector", "disableNameProcessorProfile", "small-batches"},
+		ShortDescription: "Bundle profile that includes db-payload-collection, semconv, category-attributes, copy-scope, hostname-as-podname, java-native-instrumentations, code-attributes, query-operation-detector, disableNameProcessorProfile, small-batches, size_m",
+		Dependencies:     []common.ProfileName{"db-payload-collection", "semconv", "category-attributes", "copy-scope", "hostname-as-podname", "java-native-instrumentations", "code-attributes", "query-operation-detector", "disableNameProcessorProfile", "small-batches", "size_m"},
+	}
+	profilesMap = map[common.ProfileName]Profile{
+		sizeSProfile.ProfileName:                      sizeSProfile,
+		sizeMProfile.ProfileName:                      sizeMProfile,
+		sizeLProfile.ProfileName:                      sizeLProfile,
+		fullPayloadCollectionProfile.ProfileName:      fullPayloadCollectionProfile,
+		dbPayloadCollectionProfile.ProfileName:        dbPayloadCollectionProfile,
+		queryOperationDetector.ProfileName:            queryOperationDetector,
+		semconvUpgraderProfile.ProfileName:            semconvUpgraderProfile,
+		categoryAttributesProfile.ProfileName:         categoryAttributesProfile,
+		copyScopeProfile.ProfileName:                  copyScopeProfile,
+		hostnameAsPodNameProfile.ProfileName:          hostnameAsPodNameProfile,
+		javaNativeInstrumentationsProfile.ProfileName: javaNativeInstrumentationsProfile,
+		codeAttributesProfile.ProfileName:             codeAttributesProfile,
+		disableNameProcessorProfile.ProfileName:       disableNameProcessorProfile,
+		smallBatchesProfile.ProfileName:               smallBatchesProfile,
+		kratosProfile.ProfileName:                     kratosProfile,
 	}
 )
 
 func GetAvailableCommunityProfiles() []Profile {
-	return []Profile{semconvUpgraderProfile, copyScopeProfile, disableNameProcessorProfile}
+	return []Profile{semconvUpgraderProfile, copyScopeProfile, disableNameProcessorProfile, sizeSProfile, sizeMProfile,
+		sizeLProfile}
 }
 
 func GetAvailableOnPremProfiles() []Profile {
-	return append([]Profile{fullPayloadCollectionProfile, dbPayloadCollectionProfile, categoryAttributesProfile, hostnameAsPodNameProfile, javaNativeInstrumentationsProfile, kratosProfile, queryOperationDetector, smallBatchesProfile},
+	return append([]Profile{fullPayloadCollectionProfile, dbPayloadCollectionProfile, categoryAttributesProfile,
+		hostnameAsPodNameProfile, javaNativeInstrumentationsProfile, kratosProfile, queryOperationDetector,
+		smallBatchesProfile},
 		GetAvailableCommunityProfiles()...)
 }
 
@@ -152,4 +184,26 @@ func (a *profilesResourceManager) InstallFromScratch(ctx context.Context) error 
 		allResources = append(allResources, profileResources...)
 	}
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, allResources)
+}
+
+func FilterSizeProfiles(profiles []common.ProfileName) common.ProfileName {
+	// In case multiple size profiles are provided, the first one will be used.
+
+	for _, profile := range profiles {
+		// Check if the profile is a size profile.
+		switch profile {
+		case sizeSProfile.ProfileName, sizeMProfile.ProfileName, sizeLProfile.ProfileName:
+			return profile
+		}
+
+		// Check if the profile has a dependency which is a size profile.
+		profileDependencies := profilesMap[profile].Dependencies
+		for _, dependencyProfile := range profileDependencies {
+			switch dependencyProfile {
+			case sizeSProfile.ProfileName, sizeMProfile.ProfileName, sizeLProfile.ProfileName:
+				return dependencyProfile
+			}
+		}
+	}
+	return ""
 }

@@ -19,39 +19,29 @@ package controllers
 import (
 	"context"
 
+	controllerconfig "github.com/odigos-io/odigos/autoscaler/controllers/controller_config"
 	"github.com/odigos-io/odigos/autoscaler/controllers/gateway"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	v1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 )
 
-// DestinationReconciler reconciles a Destination object
 type DestinationReconciler struct {
 	client.Client
 	Scheme           *runtime.Scheme
 	ImagePullSecrets []string
 	OdigosVersion    string
+	Config           *controllerconfig.ControllerConfig
 }
 
-//+kubebuilder:rbac:groups=odigos.io,namespace=odigos-system,resources=destinations,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=odigos.io,namespace=odigos-system,resources=destinations/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=odigos.io,namespace=odigos-system,resources=destinations/finalizers,verbs=update
-
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// the Destination object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.2/pkg/reconcile
 func (r *DestinationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling Destination")
-	err := gateway.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion)
+	err := gateway.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion, r.Config)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -63,5 +53,8 @@ func (r *DestinationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 func (r *DestinationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1.Destination{}).
+		// auto scaler only cares about the spec of each destination.
+		// filter out events on resource status and metadata changes.
+		WithEventFilter(&predicate.GenerationChangedPredicate{}).
 		Complete(r)
 }

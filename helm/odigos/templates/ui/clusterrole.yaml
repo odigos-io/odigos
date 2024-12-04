@@ -15,6 +15,12 @@ rules:
   - apiGroups:
       - ""
     resources:
+      - services
+    verbs:
+      - list
+  - apiGroups:
+      - ""
+    resources:
       - configmaps
     verbs:
       - get

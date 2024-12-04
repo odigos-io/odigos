@@ -3,6 +3,7 @@ package common
 type DestinationType string
 
 const (
+	AppDynamicsDestinationType            DestinationType = "appdynamics"
 	AWSS3DestinationType                  DestinationType = "s3"
 	AxiomDestinationType                  DestinationType = "axiom"
 	AzureBlobDestinationType              DestinationType = "azureblob"
@@ -23,6 +24,7 @@ const (
 	GrafanaCloudTempoDestinationType      DestinationType = "grafanacloudtempo"
 	HoneycombDestinationType              DestinationType = "honeycomb"
 	JaegerDestinationType                 DestinationType = "jaeger"
+	Last9DestinationType                  DestinationType = "last9"
 	LightstepDestinationType              DestinationType = "lightstep"
 	LogzioDestinationType                 DestinationType = "logzio"
 	LokiDestinationType                   DestinationType = "loki"

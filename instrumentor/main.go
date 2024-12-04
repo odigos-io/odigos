@@ -26,13 +26,7 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers/startlangdetection"
 	"github.com/odigos-io/odigos/instrumentor/sdks"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	corev1 "k8s.io/api/core/v1"
-
-	"github.com/odigos-io/odigos/common/consts"
-	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/apimachinery/pkg/labels"
 
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -116,72 +110,6 @@ func main() {
 			// Store minimum amount of data for every object type.
 			// Currently, instrumentor only need the labels and the .spec.template.spec field of the workloads.
 			ByObject: map[client.Object]cache.ByObject{
-				&appsv1.Deployment{}: {
-					Transform: func(obj interface{}) (interface{}, error) {
-						deployment := obj.(*appsv1.Deployment)
-						newDep := &appsv1.Deployment{
-							TypeMeta: deployment.TypeMeta,
-							ObjectMeta: metav1.ObjectMeta{
-								Name:        deployment.Name,
-								Namespace:   deployment.Namespace,
-								Labels:      deployment.Labels,
-								Annotations: deployment.Annotations,
-								UID:         deployment.UID,
-							},
-							Status: deployment.Status,
-							Spec: appsv1.DeploymentSpec{
-								Template: corev1.PodTemplateSpec{
-									ObjectMeta: metav1.ObjectMeta{
-										Labels: deployment.Spec.Template.Labels,
-									},
-								},
-							},
-						}
-						newDep.Spec.Template.Spec = deployment.Spec.Template.Spec
-						return newDep, nil
-					},
-				},
-				&appsv1.StatefulSet{}: {
-					Transform: func(obj interface{}) (interface{}, error) {
-						ss := obj.(*appsv1.StatefulSet)
-						newSs := &appsv1.StatefulSet{
-							TypeMeta: ss.TypeMeta,
-							ObjectMeta: metav1.ObjectMeta{
-								Name:        ss.Name,
-								Namespace:   ss.Namespace,
-								Labels:      ss.Labels,
-								Annotations: ss.Annotations,
-								UID:         ss.UID,
-							},
-							Status: ss.Status,
-						}
-
-						newSs.Spec.Template.Spec = ss.Spec.Template.Spec
-						return newSs, nil
-					},
-				},
-				&appsv1.DaemonSet{}: {
-					Transform: func(obj interface{}) (interface{}, error) {
-						ds := obj.(*appsv1.DaemonSet)
-						newDs := &appsv1.DaemonSet{
-							TypeMeta: ds.TypeMeta,
-							ObjectMeta: metav1.ObjectMeta{
-								Name:        ds.Name,
-								Namespace:   ds.Namespace,
-								Labels:      ds.Labels,
-								Annotations: ds.Annotations,
-								UID:         ds.UID,
-							},
-							Status: ds.Status,
-						}
-
-						newDs.Spec.Template.Spec = ds.Spec.Template.Spec
-						return newDs, nil
-					},
-				},
-				&corev1.Namespace{}: {
-					Label: labels.Set{consts.OdigosInstrumentationLabel: consts.InstrumentationEnabled}.AsSelector(),
-				},
 				&corev1.ConfigMap{}: {
 					Field: client.InNamespace(env.GetCurrentNamespace()).AsSelector(),
 				},
@@ -250,7 +178,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	go common.StartPprofServer(setupLog)
+	go common.StartPprofServer(ctx, setupLog)
 
 	if !telemetryDisabled {
 		go report.Start(mgr.GetClient())

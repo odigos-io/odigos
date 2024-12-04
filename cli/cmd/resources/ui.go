@@ -235,6 +235,11 @@ func NewUIClusterRole() *rbacv1.ClusterRole {
 			},
 			{
 				APIGroups: []string{""},
+				Resources: []string{"services"},
+				Verbs:     []string{"list"},
+			},
+			{
+				APIGroups: []string{""},
 				Resources: []string{"configmaps"},
 				Verbs:     []string{"get", "list", "watch", "patch", "create", "delete", "update"},
 			},
@@ -307,6 +312,10 @@ func NewUIService(ns string) *corev1.Service {
 				{
 					Name: "ui",
 					Port: 3000,
+				},
+				{
+					Name: "beta-ui",
+					Port: 3001,
 				},
 				{
 					Name: "otlp",

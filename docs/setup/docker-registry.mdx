@@ -78,6 +78,20 @@ If your Docker registry is private, configure your Kubernetes cluster to pull im
 
 ### Step 6: Install Odigos Using Custom Images
 Finally, install Odigos using the images from your custom Docker registry:
+
+
+<Tabs>
+  <Tab title="Odigos CLI">
 ```bash
 odigos install --image-prefix=$CUSTOM_DOCKER_REGISTRY
 ```
+  </Tab>
+  <Tab title="Helm Chart">
+```bash
+helm repo update
+helm upgrade --install odigos odigos/odigos --namespace odigos-system --create-namespace --set imagePrefix=$CUSTOM_DOCKER_REGISTRY
+kubectl label namespace odigos-system odigos.io/system-object="true"
+```  
+  </Tab>
+
+</Tabs>
