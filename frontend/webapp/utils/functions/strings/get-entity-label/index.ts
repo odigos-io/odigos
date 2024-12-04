@@ -1,4 +1,4 @@
-import { ActionData, ActionDataParsed, ActualDestination, InstrumentationRuleSpec, K8sActualSource, OVERVIEW_ENTITY_TYPES } from '@/types';
+import { type ActionData, type ActionDataParsed, type ActualDestination, type InstrumentationRuleSpec, type K8sActualSource, OVERVIEW_ENTITY_TYPES } from '@/types';
 
 export const getEntityLabel = (
   entity: InstrumentationRuleSpec | K8sActualSource | ActionData | ActualDestination,
