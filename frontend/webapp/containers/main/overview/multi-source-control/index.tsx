@@ -5,6 +5,7 @@ import theme from '@/styles/theme';
 import { useAppStore } from '@/store';
 import styled from 'styled-components';
 import { DeleteWarning } from '@/components';
+import { OVERVIEW_ENTITY_TYPES } from '@/types';
 import { useSourceCRUD, useTransition } from '@/hooks';
 import { Badge, Button, Divider, Text } from '@/reuseable-components';
 
@@ -71,7 +72,7 @@ const MultiSourceControl = () => {
         <Button variant='tertiary' onClick={() => setIsWarnModalOpen(true)}>
           <Image src='/icons/common/trash.svg' alt='' width={16} height={16} />
           <Text family='secondary' decoration='underline' color={theme.text.error}>
-            Delete
+            Uninstrument
           </Text>
         </Button>
       </Transition>
@@ -79,15 +80,8 @@ const MultiSourceControl = () => {
       <DeleteWarning
         isOpen={isWarnModalOpen}
         name={`${totalSelected} sources`}
-        note={
-          totalSelected === sources.length
-            ? {
-                type: 'warning',
-                title: "You're about to delete the last source",
-                message: 'This will break your pipeline!',
-              }
-            : undefined
-        }
+        type={OVERVIEW_ENTITY_TYPES.SOURCE}
+        isLastItem={totalSelected === sources.length}
         onApprove={onDelete}
         onDeny={() => setIsWarnModalOpen(false)}
       />

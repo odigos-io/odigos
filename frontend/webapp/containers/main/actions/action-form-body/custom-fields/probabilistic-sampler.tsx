@@ -6,6 +6,7 @@ import type { ProbabilisticSamplerSpec } from '@/types';
 type Props = {
   value: string;
   setValue: (value: string) => void;
+  errorMessage?: string;
 };
 
 type Parsed = ProbabilisticSamplerSpec;
@@ -13,7 +14,7 @@ type Parsed = ProbabilisticSamplerSpec;
 const MIN = 0,
   MAX = 100;
 
-const ProbabilisticSampler: React.FC<Props> = ({ value, setValue }) => {
+const ProbabilisticSampler: React.FC<Props> = ({ value, setValue, errorMessage }) => {
   const mappedValue = useMemo(() => safeJsonParse<Parsed>(value, { sampling_percentage: '0' }).sampling_percentage, [value]);
 
   const handleChange = (val: string) => {
@@ -28,17 +29,7 @@ const ProbabilisticSampler: React.FC<Props> = ({ value, setValue }) => {
     setValue(str);
   };
 
-  return (
-    <Input
-      title='Sampling percentage'
-      required
-      type='number'
-      min={MIN}
-      max={MAX}
-      value={mappedValue}
-      onChange={({ target: { value: v } }) => handleChange(v)}
-    />
-  );
+  return <Input title='Sampling percentage' required type='number' min={MIN} max={MAX} value={mappedValue} onChange={({ target: { value: v } }) => handleChange(v)} errorMessage={errorMessage} />;
 };
 
 export default ProbabilisticSampler;

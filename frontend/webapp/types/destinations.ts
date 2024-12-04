@@ -46,7 +46,10 @@ export interface DestinationDetailsField {
 export type DynamicField = {
   name: string;
   componentType: 'input' | 'dropdown' | 'multi_input' | 'textarea';
+  type: string;
   title: string;
+  value?: any;
+  required?: boolean;
   [key: string]: any;
 };
 

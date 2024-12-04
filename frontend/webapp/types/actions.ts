@@ -1,5 +1,10 @@
 import { type SignalUppercase } from '@/utils';
 
+export enum PlatformTypes {
+  K8S = 'k8s',
+  VM = 'vm',
+}
+
 export enum ActionsType {
   ADD_CLUSTER_INFO = 'AddClusterInfo',
   DELETE_ATTRIBUTES = 'DeleteAttribute',
@@ -73,7 +78,7 @@ export interface ActionDataParsed extends ActionData {
 }
 
 export type ActionInput = {
-  type: string;
+  type: ActionsType;
   name: string;
   notes: string;
   disable: boolean;

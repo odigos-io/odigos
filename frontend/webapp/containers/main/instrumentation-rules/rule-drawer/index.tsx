@@ -1,13 +1,14 @@
 import React, { useMemo, useState } from 'react';
+import buildCard from './build-card';
 import { RuleFormBody } from '../';
 import styled from 'styled-components';
-import { getRuleIcon } from '@/utils';
 import { useDrawerStore } from '@/store';
-import { CardDetails } from '@/components';
-import type { InstrumentationRuleSpec } from '@/types';
+import { ACTION, DATA_CARDS, getRuleIcon } from '@/utils';
+import { DataCard } from '@/reuseable-components';
+import buildDrawerItem from './build-drawer-item';
 import { RULE_OPTIONS } from '../rule-modal/rule-options';
 import OverviewDrawer from '../../overview/overview-drawer';
-import buildCardFromRuleSpec from './build-card-from-rule-spec';
+import { OVERVIEW_ENTITY_TYPES, type InstrumentationRuleSpec } from '@/types';
 import { useInstrumentationRuleCRUD, useInstrumentationRuleFormData } from '@/hooks';
 
 interface Props {}
@@ -21,18 +22,32 @@ const FormContainer = styled.div`
 `;
 
 export const RuleDrawer: React.FC<Props> = () => {
-  const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
+  const { selectedItem, setSelectedItem } = useDrawerStore();
+  const { formData, formErrors, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem } = useInstrumentationRuleFormData();
+
+  const { updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD({
+    onSuccess: (type) => {
+      setIsEditing(false);
+      setIsFormDirty(false);
+
+      if (type === ACTION.DELETE) {
+        setSelectedItem(null);
+      } else {
+        const { item } = selectedItem as { item: InstrumentationRuleSpec };
+        const { ruleId: id } = item;
+        setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.RULE, item: buildDrawerItem(id, formData, item) });
+      }
+    },
+  });
+
   const [isEditing, setIsEditing] = useState(false);
   const [isFormDirty, setIsFormDirty] = useState(false);
-
-  const { formData, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem } = useInstrumentationRuleFormData();
-  const { updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
 
   const cardData = useMemo(() => {
     if (!selectedItem) return [];
 
     const { item } = selectedItem as { item: InstrumentationRuleSpec };
-    const arr = buildCardFromRuleSpec(item);
+    const arr = buildCard(item);
 
     return arr;
   }, [selectedItem]);
@@ -54,37 +69,33 @@ export const RuleDrawer: React.FC<Props> = () => {
   }, [selectedItem, isEditing]);
 
   if (!selectedItem?.item) return null;
-  const { id, item } = selectedItem;
+  const { id, item } = selectedItem as { id: string; item: InstrumentationRuleSpec };
 
   const handleEdit = (bool?: boolean) => {
-    if (typeof bool === 'boolean') {
-      setIsEditing(bool);
-    } else {
-      setIsEditing(true);
-    }
+    setIsEditing(typeof bool === 'boolean' ? bool : true);
   };
 
   const handleCancel = () => {
-    resetFormData();
     setIsEditing(false);
+    setIsFormDirty(false);
   };
 
   const handleDelete = async () => {
-    await deleteInstrumentationRule(id as string);
+    await deleteInstrumentationRule(id);
   };
 
   const handleSave = async (newTitle: string) => {
-    if (validateForm({ withAlert: true })) {
-      const title = newTitle !== ((item as InstrumentationRuleSpec).type as string) ? newTitle : '';
-
-      await updateInstrumentationRule(id as string, { ...formData, ruleName: title });
+    if (validateForm({ withAlert: true, alertTitle: ACTION.UPDATE })) {
+      const title = newTitle !== item.type ? newTitle : '';
+      handleFormChange('ruleName', title);
+      await updateInstrumentationRule(id, { ...formData, ruleName: title });
     }
   };
 
   return (
     <OverviewDrawer
-      title={(item as InstrumentationRuleSpec).ruleName || ((item as InstrumentationRuleSpec).type as string)}
-      imageUri={getRuleIcon((item as InstrumentationRuleSpec).type)}
+      title={item.ruleName || (item.type as string)}
+      imageUri={getRuleIcon(item.type)}
       isEdit={isEditing}
       isFormDirty={isFormDirty}
       onEdit={handleEdit}
@@ -98,6 +109,7 @@ export const RuleDrawer: React.FC<Props> = () => {
             isUpdate
             rule={thisRule}
             formData={formData}
+            formErrors={formErrors}
             handleFormChange={(...params) => {
               setIsFormDirty(true);
               handleFormChange(...params);
@@ -105,7 +117,7 @@ export const RuleDrawer: React.FC<Props> = () => {
           />
         </FormContainer>
       ) : (
-        <CardDetails data={cardData} />
+        <DataCard title={DATA_CARDS.RULE_DETAILS} data={cardData} />
       )}
     </OverviewDrawer>
   );

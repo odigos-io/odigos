@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
-import { ConfiguredFields, DeleteWarning } from '@/components';
+import { DeleteWarning } from '@/components';
 import { IAppState, useAppStore } from '@/store';
-import type { ConfiguredDestination } from '@/types';
-import { Button, Divider, Text } from '@/reuseable-components';
+import { OVERVIEW_ENTITY_TYPES, type ConfiguredDestination } from '@/types';
+import { Button, DataCardFields, Divider, ExtendIcon, Text } from '@/reuseable-components';
 
 const Container = styled.div`
   display: flex;
@@ -12,10 +12,10 @@ const Container = styled.div`
   align-items: flex-start;
   gap: 12px;
   margin-top: 24px;
-  align-self: stretch;
+  max-height: calc(100vh - 400px);
   height: 100%;
-  max-height: 548px;
-  overflow-y: auto;
+  overflow-x: hidden;
+  overflow-y: scroll;
 `;
 
 const ListItem = styled.div`
@@ -38,9 +38,9 @@ const ListItemHeader = styled.div`
 `;
 
 const ListItemContent = styled.div`
-  margin-left: 16px;
   display: flex;
   gap: 12px;
+  margin-left: 16px;
 `;
 
 const DestinationIconWrapper = styled.div`
@@ -127,16 +127,16 @@ const ConfiguredDestinationsListItem: React.FC<{ item: ConfiguredDestination; is
               <Image src='/icons/common/trash.svg' alt='delete' width={16} height={16} />
             </IconButton>
             <Divider orientation='vertical' length='16px' />
-            <IconButton variant='tertiary' $expand={expand} onClick={() => setExpand(!expand)}>
-              <Image src='/icons/common/extend-arrow.svg' alt='show more' width={16} height={16} />
+            <IconButton variant='tertiary' onClick={() => setExpand(!expand)}>
+              <ExtendIcon extend={expand} />
             </IconButton>
           </IconsContainer>
         </ListItemHeader>
 
         {expand && (
           <ListItemBody>
-            <Divider margin='0 0 16px 0' />
-            <ConfiguredFields details={item.destinationTypeDetails} />
+            <Divider margin='0 0 16px 0' length='calc(100% - 32px)' />
+            <DataCardFields data={item.destinationTypeDetails} />
           </ListItemBody>
         )}
       </ListItem>
@@ -144,15 +144,8 @@ const ConfiguredDestinationsListItem: React.FC<{ item: ConfiguredDestination; is
       <DeleteWarning
         isOpen={deleteWarning}
         name={item.displayName || item.type}
-        note={
-          isLastItem
-            ? {
-                type: 'warning',
-                title: "You're about to delete the last destination",
-                message: 'This will break your pipeline!',
-              }
-            : undefined
-        }
+        type={OVERVIEW_ENTITY_TYPES.DESTINATION}
+        isLastItem={isLastItem}
         onApprove={() => removeConfiguredDestination(item)}
         onDeny={() => setDeleteWarning(false)}
       />
