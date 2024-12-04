@@ -68,7 +68,7 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 		return ctrl.Result{}, nil
 	}
 
-	podWorkload, err := p.getPodWorkloadObject(ctx, &pod)
+	podWorkload, err := workload.PodWorkloadObject(ctx, &pod)
 	if err != nil {
 		logger.Error(err, "error getting pod workload object")
 		return ctrl.Result{}, err
