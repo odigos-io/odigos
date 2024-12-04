@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Test
+metadata:
+  name: ui-cypress
+spec:
+  description: Run E2E Cypress tests VS. Odigos UI
+  skipDelete: true
+  steps:
+    - name: Start the UI
+      try:
+        - script:
+            timeout: 120s
+            content: ../../common/odigos_ui.sh start
+    - name: Test the UI
+      try:
+        - script:
+            timeout: 120s
+            content: ../../common/odigos_ui.sh test
+    - name: End the UI
+      try:
+        - script:
+            timeout: 120s
+            content: ../../common/odigos_ui.sh end
