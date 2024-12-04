@@ -41,8 +41,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.CollectorGatewayConfigurationApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("CollectorsGroup"):
 		return &odigosv1alpha1.CollectorsGroupApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("CollectorsGroupMemorySettings"):
-		return &odigosv1alpha1.CollectorsGroupMemorySettingsApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("CollectorsGroupResourcesSettings"):
+		return &odigosv1alpha1.CollectorsGroupResourcesSettingsApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("CollectorsGroupSpec"):
 		return &odigosv1alpha1.CollectorsGroupSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("CollectorsGroupStatus"):

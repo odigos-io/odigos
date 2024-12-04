@@ -13,6 +13,8 @@ export const GET_COMPUTE_PLATFORM = gql`
           containers {
             containerName
             language
+            runtimeVersion
+            otherAgent
           }
           conditions {
             type

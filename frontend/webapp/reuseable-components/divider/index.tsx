@@ -1,29 +1,29 @@
 import React from 'react';
 import styled from 'styled-components';
+import { hexPercentValues } from '@/styles';
+import type { NotificationType } from '@/types';
 
 interface Props {
   orientation?: 'horizontal' | 'vertical';
+  type?: NotificationType; // this is to apply coloring to the divider
   thickness?: number;
   length?: string;
-  color?: string;
   margin?: string;
 }
 
 const StyledDivider = styled.div<{
   $orientation?: Props['orientation'];
+  $type?: Props['type'];
   $thickness?: Props['thickness'];
   $length?: Props['length'];
-  $color?: Props['color'];
   $margin?: Props['margin'];
 }>`
   width: ${({ $orientation, $thickness, $length }) => ($orientation === 'vertical' ? `${$thickness}px` : $length || '100%')};
   height: ${({ $orientation, $thickness, $length }) => ($orientation === 'horizontal' ? `${$thickness}px` : $length || '100%')};
   margin: ${({ $orientation, $margin }) => $margin || ($orientation === 'horizontal' ? '8px 0' : '0 8px')};
-  background-color: ${({ $color, theme }) => $color || theme.colors.border};
+  background-color: ${({ $type, theme }) => (!!$type ? theme.text[$type] : theme.colors.border) + hexPercentValues['050']};
 `;
 
-const Divider: React.FC<Props> = ({ orientation = 'horizontal', thickness = 1, length, color, margin }) => {
-  return <StyledDivider $orientation={orientation} $thickness={thickness} $length={length} $color={color} $margin={margin} />;
+export const Divider: React.FC<Props> = ({ orientation = 'horizontal', type, thickness = 1, length, margin }) => {
+  return <StyledDivider $orientation={orientation} $type={type} $thickness={thickness} $length={length} $margin={margin} />;
 };
-
-export { Divider };

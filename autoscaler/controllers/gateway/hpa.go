@@ -22,11 +22,12 @@ import (
 
 const (
 	memoryLimitPercentageForHPA = 75
+	cpuLimitPercentageForHPA    = 75
 )
 
 var (
-	minReplicas                = intPtr(1)
-	maxReplicas                = int32(10)
+	defaultMinReplicas         = intPtr(1)
+	defaultMaxReplicas         = int32(10)
 	stabilizationWindowSeconds = intPtr(300) // cooldown period for scaling down
 )
 
@@ -35,8 +36,23 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 
 	var hpa client.Object
 
-	memLimit := gateway.Spec.MemorySettings.GomemlimitMiB * memoryLimitPercentageForHPA / 100.0
+	// Memory metric calculation
+	memLimit := gateway.Spec.ResourcesSettings.GomemlimitMiB * memoryLimitPercentageForHPA / 100
 	metricQuantity := resource.MustParse(fmt.Sprintf("%dMi", memLimit))
+
+	// CPU metric calculation
+	cpuTargetMillicores := gateway.Spec.ResourcesSettings.CpuLimitMillicores * cpuLimitPercentageForHPA / 100
+	metricQuantityCPU := resource.MustParse(fmt.Sprintf("%dm", cpuTargetMillicores))
+
+	minReplicas := defaultMinReplicas
+	if gateway.Spec.ResourcesSettings.MinReplicas != nil && *gateway.Spec.ResourcesSettings.MinReplicas > 0 {
+		minReplicas = intPtr(int32(*gateway.Spec.ResourcesSettings.MinReplicas))
+	}
+
+	maxReplicas := defaultMaxReplicas
+	if gateway.Spec.ResourcesSettings.MaxReplicas != nil && *gateway.Spec.ResourcesSettings.MaxReplicas > 0 {
+		maxReplicas = int32(*gateway.Spec.ResourcesSettings.MaxReplicas)
+	}
 
 	switch {
 	case kubeVersion.LessThan(version.MustParse("1.23.0")):
@@ -60,6 +76,13 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 						Resource: &autoscalingv2beta1.ResourceMetricSource{
 							Name:               "memory",
 							TargetAverageValue: &metricQuantity,
+						},
+					},
+					{
+						Type: autoscalingv2beta1.ResourceMetricSourceType,
+						Resource: &autoscalingv2beta1.ResourceMetricSource{
+							Name:               "cpu",
+							TargetAverageValue: &metricQuantityCPU,
 						},
 					},
 				},
@@ -88,6 +111,16 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 							Target: autoscalingv2beta2.MetricTarget{
 								Type:         autoscalingv2beta2.AverageValueMetricType,
 								AverageValue: &metricQuantity,
+							},
+						},
+					},
+					{
+						Type: autoscalingv2beta2.ResourceMetricSourceType,
+						Resource: &autoscalingv2beta2.ResourceMetricSource{
+							Name: "cpu",
+							Target: autoscalingv2beta2.MetricTarget{
+								Type:         autoscalingv2beta2.AverageValueMetricType,
+								AverageValue: &metricQuantityCPU,
 							},
 						},
 					},
@@ -122,6 +155,16 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 							Target: autoscalingv2.MetricTarget{
 								Type:         autoscalingv2.AverageValueMetricType,
 								AverageValue: &metricQuantity,
+							},
+						},
+					},
+					{
+						Type: autoscalingv2.ResourceMetricSourceType,
+						Resource: &autoscalingv2.ResourceMetricSource{
+							Name: "cpu",
+							Target: autoscalingv2.MetricTarget{
+								Type:         autoscalingv2.AverageValueMetricType,
+								AverageValue: &metricQuantityCPU,
 							},
 						},
 					},

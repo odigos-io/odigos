@@ -26,6 +26,10 @@ const InputWrapper = styled(SectionItemsWrapper)`
 const Title = styled(Text)`
   font-size: 18px;
   line-height: 26px;
+  max-width: 400px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 `;
 
 const DrawerItemImageWrapper = styled.div`

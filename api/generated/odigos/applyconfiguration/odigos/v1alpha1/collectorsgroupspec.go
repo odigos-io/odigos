@@ -24,9 +24,9 @@ import (
 // CollectorsGroupSpecApplyConfiguration represents a declarative configuration of the CollectorsGroupSpec type for use
 // with apply.
 type CollectorsGroupSpecApplyConfiguration struct {
-	Role                    *v1alpha1.CollectorsGroupRole                    `json:"role,omitempty"`
-	CollectorOwnMetricsPort *int32                                           `json:"collectorOwnMetricsPort,omitempty"`
-	MemorySettings          *CollectorsGroupMemorySettingsApplyConfiguration `json:"memorySettings,omitempty"`
+	Role                    *v1alpha1.CollectorsGroupRole                       `json:"role,omitempty"`
+	CollectorOwnMetricsPort *int32                                              `json:"collectorOwnMetricsPort,omitempty"`
+	ResourcesSettings       *CollectorsGroupResourcesSettingsApplyConfiguration `json:"resourcesSettings,omitempty"`
 }
 
 // CollectorsGroupSpecApplyConfiguration constructs a declarative configuration of the CollectorsGroupSpec type for use with
@@ -51,10 +51,10 @@ func (b *CollectorsGroupSpecApplyConfiguration) WithCollectorOwnMetricsPort(valu
 	return b
 }
 
-// WithMemorySettings sets the MemorySettings field in the declarative configuration to the given value
+// WithResourcesSettings sets the ResourcesSettings field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the MemorySettings field is set to the value of the last call.
-func (b *CollectorsGroupSpecApplyConfiguration) WithMemorySettings(value *CollectorsGroupMemorySettingsApplyConfiguration) *CollectorsGroupSpecApplyConfiguration {
-	b.MemorySettings = value
+// If called multiple times, the ResourcesSettings field is set to the value of the last call.
+func (b *CollectorsGroupSpecApplyConfiguration) WithResourcesSettings(value *CollectorsGroupResourcesSettingsApplyConfiguration) *CollectorsGroupSpecApplyConfiguration {
+	b.ResourcesSettings = value
 	return b
 }
