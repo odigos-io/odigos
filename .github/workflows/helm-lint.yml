@@ -15,5 +15,5 @@ jobs:
         uses: azure/setup-helm@v4
       - name: Lint Charts
         run: |
-        shopt -s extglob
-        helm lint helm/!(*.md)
+          shopt -s extglob
+          helm lint helm/!(*.md)

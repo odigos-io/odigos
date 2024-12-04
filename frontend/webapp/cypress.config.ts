@@ -1,9 +1,12 @@
-import {defineConfig} from 'cypress';
+import Cypress from 'cypress';
 
-export default defineConfig({
-    e2e: {
-        baseUrl: 'http://localhost:3000',
-        setupNodeEvents(on, config) {
-        },
-    },
-});
+const config: Cypress.ConfigOptions = {
+  e2e: {
+    baseUrl: 'https://example.cypress.io',
+    setupNodeEvents(on, config) {},
+    supportFile: false,
+    waitForAnimations: true,
+  },
+};
+
+export default Cypress.defineConfig(config);
