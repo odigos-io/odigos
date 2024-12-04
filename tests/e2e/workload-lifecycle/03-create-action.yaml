@@ -1,0 +1,14 @@
+apiVersion: actions.odigos.io/v1alpha1
+kind: AddClusterInfo
+metadata:
+  name: insert-cluster-name
+  namespace: odigos-test
+spec:
+  actionName: insert-cluster-name
+  clusterAttributes:
+    - attributeName: k8s.cluster.name
+      attributeStringValue: e2e-test-cluster
+  signals:
+    - TRACES
+    - METRICS
+    - LOGS
