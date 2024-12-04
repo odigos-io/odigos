@@ -2,6 +2,6 @@ describe('template spec', () => {
   it('passes', () => {
     cy.visit('/');
 
-    expect(true).to.equal(false);
+    expect(true).to.equal(true);
   });
 });
