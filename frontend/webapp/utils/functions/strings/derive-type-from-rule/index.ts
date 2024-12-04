@@ -7,5 +7,3 @@ export const deriveTypeFromRule = (rule: InstrumentationRuleInput | Instrumentat
 
   return undefined;
 };
-
-// TODO: add "deriveTypeFromAction"

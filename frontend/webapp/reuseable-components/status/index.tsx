@@ -1,45 +1,54 @@
 import React from 'react';
 import Image from 'next/image';
-import { Text } from '../text';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 import { getStatusIcon } from '@/utils';
+import { Divider, Text } from '@/reuseable-components';
+import theme, { hexPercentValues } from '@/styles/theme';
 
-interface Props {
+export * from './active-status';
+export * from './connection-status';
+export * from './instrument-status';
+
+export interface StatusProps {
   title?: string;
   subtitle?: string;
+  size?: number;
+  family?: 'primary' | 'secondary';
+  isPale?: boolean;
   isActive?: boolean;
-  withBackground?: boolean;
-  withBorder?: boolean;
-  withSmaller?: boolean;
-  withSpecialFont?: boolean;
   withIcon?: boolean;
+  withBorder?: boolean;
+  withBackground?: boolean;
 }
 
 const StatusWrapper = styled.div<{
-  $isActive?: Props['isActive'];
-  $withIcon?: Props['withIcon'];
-  $withBorder?: Props['withBorder'];
-  $withBackground?: Props['withBackground'];
-  $withSmaller?: Props['withSmaller'];
+  $size: number;
+  $isPale: StatusProps['isPale'];
+  $isActive: StatusProps['isActive'];
+  $withIcon?: StatusProps['withIcon'];
+  $withBorder?: StatusProps['withBorder'];
+  $withBackground?: StatusProps['withBackground'];
 }>`
   display: flex;
   align-items: center;
+  gap: ${({ $size }) => $size / 3}px;
+  padding: ${({ $size, $withBorder, $withBackground }) => ($withBorder || $withBackground ? `${$size / ($withBorder ? 3 : 2)}px ${$size / ($withBorder ? 1.5 : 1)}px` : '0')};
   width: fit-content;
-  padding: ${({ $withIcon, $withBorder, $withSmaller }) => ($withIcon || $withBorder ? ($withSmaller ? '2px 6px' : '8px 24px') : '0')};
-  border-radius: 32px;
-  border: 1px solid ${({ $withBorder, $isActive, theme }) => ($withBorder ? ($isActive ? theme.colors.dark_green : theme.colors.dark_red) : 'transparent')};
-  background: ${({ $withBackground, $isActive }) =>
+  border-radius: 360px;
+  border: ${({ $withBorder, $isPale, $isActive, theme }) => ($withBorder ? `1px solid ${$isPale ? theme.colors.border : $isActive ? theme.colors.dark_green : theme.colors.dark_red}` : 'none')};
+  background: ${({ $withBackground, $isPale, $isActive, theme }) =>
     $withBackground
-      ? $isActive
-        ? `linear-gradient(90deg, rgba(23, 32, 19, 0) 0%, rgba(23, 32, 19, 0.8) 50%, #172013 100%)`
-        : `linear-gradient(90deg, rgba(51, 21, 21, 0.00) 0%, rgba(51, 21, 21, 0.80) 50%, #331515 100%)`
+      ? $isPale
+        ? `linear-gradient(90deg, transparent 0%, ${theme.colors.info + hexPercentValues['080']} 50%, ${theme.colors.info} 100%)`
+        : $isActive
+        ? `linear-gradient(90deg, transparent 0%, ${theme.colors.success + hexPercentValues['080']} 50%, ${theme.colors.success} 100%)`
+        : `linear-gradient(90deg, transparent 0%, ${theme.colors.error + hexPercentValues['080']} 50%, ${theme.colors.error} 100%)`
       : 'transparent'};
 `;
 
-const IconWrapper = styled.div<{ $withSmaller?: Props['withSmaller'] }>`
+const IconWrapper = styled.div`
   display: flex;
   align-items: center;
-  margin-right: ${({ $withSmaller }) => ($withSmaller ? '6px' : '8px')};
 `;
 
 const TextWrapper = styled.div`
@@ -47,54 +56,48 @@ const TextWrapper = styled.div`
   align-items: center;
 `;
 
-const Title = styled(Text)<{ $isActive?: Props['isActive']; $withSpecialFont?: Props['withSpecialFont']; $withSmaller?: Props['withSmaller'] }>`
-  font-weight: 400;
-  font-size: ${({ $withSmaller }) => ($withSmaller ? '10px' : '14px')};
-  font-family: ${({ $withSpecialFont, theme }) => ($withSpecialFont ? theme.font_family.secondary : theme.font_family.primary)};
-  color: ${({ $isActive, theme }) => ($isActive ? theme.text.success : theme.text.error)};
-  text-transform: ${({ $withSpecialFont }) => ($withSpecialFont ? 'uppercase' : 'unset')};
+const Title = styled(Text)<{
+  $isPale: StatusProps['isPale'];
+  $isActive: StatusProps['isActive'];
+}>`
+  color: ${({ $isPale, $isActive, theme }) => ($isPale ? theme.text.secondary : $isActive ? theme.text.success : theme.text.error)};
 `;
 
-const SubTitle = styled(Text)<{ $isActive?: Props['isActive']; $withSpecialFont?: Props['withSpecialFont']; $withSmaller?: Props['withSmaller'] }>`
-  font-weight: 400;
-  font-size: ${({ $withSmaller }) => ($withSmaller ? '8px' : '12px')};
-  font-family: ${({ $withSpecialFont, theme }) => ($withSpecialFont ? theme.font_family.secondary : theme.font_family.primary)};
-  color: ${({ $isActive }) => ($isActive ? '#51DB51' : '#DB5151')};
-  text-transform: ${({ $withSpecialFont }) => ($withSpecialFont ? 'uppercase' : 'unset')};
+const SubTitle = styled(Text)<{
+  $isPale: StatusProps['isPale'];
+  $isActive: StatusProps['isActive'];
+}>`
+  color: ${({ $isPale, $isActive }) => ($isPale ? theme.text.grey : $isActive ? '#51DB51' : '#DB5151')};
 `;
 
-const TextDivider = styled.div<{ $isActive?: Props['isActive'] }>`
-  width: 1px;
-  height: 12px;
-  background: ${({ $isActive }) => ($isActive ? 'rgba(124, 237, 124, 0.16)' : 'rgba(237, 124, 124, 0.16)')};
-  margin: 0 8px;
-`;
-
-const Status: React.FC<Props> = ({ title, subtitle, isActive, withIcon, withBorder, withBackground, withSpecialFont, withSmaller }) => {
+export const Status: React.FC<StatusProps> = ({ title, subtitle, size = 12, family = 'secondary', isPale, isActive, withIcon, withBorder, withBackground }) => {
   return (
-    <StatusWrapper $isActive={isActive} $withIcon={withIcon} $withBorder={withBorder} $withBackground={withBackground} $withSmaller={withSmaller}>
+    <StatusWrapper $size={size} $isPale={isPale} $isActive={isActive} $withIcon={withIcon} $withBorder={withBorder} $withBackground={withBackground}>
       {withIcon && (
-        <IconWrapper $withSmaller={withSmaller}>
-          <Image src={getStatusIcon(isActive ? 'success' : 'error')} alt='status' width={withSmaller ? 12 : 16} height={withSmaller ? 14 : 16} />
+        <IconWrapper>
+          {/* TODO: SVG to JSX */}
+          <Image src={isPale ? `/icons/common/circled-${isActive ? 'check' : 'cross'}.svg` : getStatusIcon(isActive ? 'success' : 'error')} alt='status' width={size + 2} height={size + 2} />
         </IconWrapper>
       )}
 
-      <TextWrapper>
-        <Title $isActive={isActive} $withSpecialFont={withSpecialFont} $withSmaller={withSmaller}>
-          {title || (isActive ? 'Active' : 'Inactive')}
-        </Title>
+      {(!!title || !!subtitle) && (
+        <TextWrapper>
+          {!!title && (
+            <Title size={size} family={family} $isPale={isPale} $isActive={isActive}>
+              {title}
+            </Title>
+          )}
 
-        {subtitle && (
-          <TextWrapper>
-            <TextDivider $isActive={isActive} />
-            <SubTitle $isActive={isActive} $withSpecialFont={withSpecialFont} $withSmaller={withSmaller}>
-              {subtitle}
-            </SubTitle>
-          </TextWrapper>
-        )}
-      </TextWrapper>
+          {!!subtitle && (
+            <TextWrapper>
+              <Divider orientation='vertical' length={`${size - 2}px`} type={isPale ? undefined : isActive ? 'success' : 'error'} />
+              <SubTitle size={size - 2} family={family} $isPale={isPale} $isActive={isActive}>
+                {subtitle}
+              </SubTitle>
+            </TextWrapper>
+          )}
+        </TextWrapper>
+      )}
     </StatusWrapper>
   );
 };
-
-export { Status };

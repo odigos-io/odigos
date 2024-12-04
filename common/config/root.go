@@ -15,7 +15,7 @@ const (
 )
 
 var availableConfigers = []Configer{
-	&Middleware{}, &Honeycomb{}, &GrafanaCloudPrometheus{}, &GrafanaCloudTempo{},
+	&Middleware{}, &AppDynamics{}, &Honeycomb{}, &GrafanaCloudPrometheus{}, &GrafanaCloudTempo{},
 	&GrafanaCloudLoki{}, &Datadog{}, &NewRelic{}, &Logzio{}, &Last9{}, &Prometheus{},
 	&Tempo{}, &Loki{}, &Jaeger{}, &GenericOTLP{}, &OTLPHttp{}, &Elasticsearch{}, &Quickwit{}, &Signoz{}, &Qryn{},
 	&OpsVerse{}, &Splunk{}, &Lightstep{}, &GoogleCloud{}, &GoogleCloudStorage{}, &Sentry{}, &AzureBlobStorage{},
