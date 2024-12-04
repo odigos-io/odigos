@@ -3,7 +3,10 @@
 # Ensure the script fails if any command fails
 set -e
 
-scripts_dir="/tests/common"
+scripts_dir="$(cd "$(dirname "$0")" && pwd)"
+# The above "$scripts_dir" key is used to identify where the script was called from, to ensure all paths are relative to the script.
+# This is useful when the script is called from another location, and the paths are relative to the calling script (for exmaple YAML file).
+
 log_filename="$scripts_dir/odigos_ui.log"
 back_pid_filename="$scripts_dir/ui_backend.pid"
 front_pid_filename="$scripts_dir/ui_frontend.pid"
@@ -116,7 +119,7 @@ function test() {
 # This method prevents duplicated code across multiple-scripts
 function main() {
   if [ $# -lt 1 ]; then
-    echo "❌ Error: Incorrect usage - '$0 <function_name> [arguments...]'"
+    echo "❌ Error: Incorrect usage - '$0 <function_name>'"
     exit 1
   fi
 
