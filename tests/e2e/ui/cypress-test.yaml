@@ -7,17 +7,14 @@ spec:
   skipDelete: true
   steps:
     - name: Start the UI
-      try:
-        - script:
-            timeout: 300s
-            content: ../../common/odigos_ui.sh start
+      script:
+        timeout: 300s
+        content: ../../common/odigos_ui.sh start
     - name: Test the UI
-      try:
-        - script:
-            timeout: 300s
-            content: ../../common/odigos_ui.sh test
+      script:
+        timeout: 300s
+        content: ../../common/odigos_ui.sh test
     - name: End the UI
-      try:
-        - script:
-            timeout: 60s
-            content: ../../common/odigos_ui.sh end
+      script:
+        timeout: 60s
+        content: ../../common/odigos_ui.sh end
