@@ -10,14 +10,14 @@ spec:
       try:
         - script:
             timeout: 300s
-            content: ../../tests/common/odigos_ui.sh start
+            content: ../../common/odigos_ui.sh start
     - name: Test the UI
       try:
         - script:
             timeout: 300s
-            content: ../../tests/common/odigos_ui.sh test
+            content: ../../common/odigos_ui.sh test
     - name: End the UI
       try:
         - script:
             timeout: 60s
-            content: ../../tests/common/odigos_ui.sh end
+            content: ../../common/odigos_ui.sh end
