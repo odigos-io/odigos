@@ -59,9 +59,10 @@
         {
           "group": "Setup",
           "pages": [
+            "setup/system-requirements",
             {
               "group": "Installation",
-              "pages": ["setup/installation", "setup/installation-options", "setup/docker-registry"]
+              "pages": ["setup/installation", "setup/installation-options", "setup/docker-registry", "setup/odigos-with-argocd"]
             },
             "setup/upgrade",
             "setup/uninstall"
@@ -124,7 +125,7 @@
             "instrumentations/java/java",
             "instrumentations/java/ebpf"
           ]
-        }        
+        }
       ]
     },
     {
@@ -199,10 +200,13 @@
         {
           "group": "Supported Backends",
           "pages": [
+            "backends/appdynamics",
             "backends/s3",
+            "backends/axiom",
             "backends/azureblob",
             "backends/causely",
             "backends/chronosphere",
+            "backends/clickhouse",
             "backends/coralogix",
             "backends/datadog",
             "backends/dynatrace",
@@ -215,6 +219,7 @@
             "backends/grafanacloudtempo",
             "backends/honeycomb",
             "backends/jaeger",
+            "backends/last9",
             "backends/lightstep",
             "backends/logzio",
             "backends/loki",

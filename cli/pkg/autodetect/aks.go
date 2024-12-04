@@ -9,9 +9,11 @@ import (
 
 type aksDetector struct{}
 
-func (a aksDetector) Detect(ctx context.Context, args DetectionArguments) (Kind, error) {
+var _ ClusterKindDetector = &aksDetector{}
+
+func (a aksDetector) Detect(ctx context.Context, args DetectionArguments) bool {
 	if strings.HasSuffix(args.ServerEndpoint, "azmk8s.io:443") {
-		return KindAKS, nil
+		return true
 	}
 
 	// Look for nodes that have an AKS specific label
@@ -23,11 +25,15 @@ func (a aksDetector) Detect(ctx context.Context, args DetectionArguments) (Kind,
 
 	nodes, err := args.KubeClient.CoreV1().Nodes().List(ctx, listOpts)
 	if err != nil {
-		return KindUnknown, err
+		return false
 	}
 	if len(nodes.Items) > 0 {
-		return KindAKS, nil
+		return true
 	}
 
-	return KindUnknown, nil
+	return false
+}
+
+func (a aksDetector) Kind() Kind {
+	return KindAKS
 }

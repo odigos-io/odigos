@@ -21,11 +21,6 @@ func DescribeOdigos(c *gin.Context) {
 
 	// construct the http response code based on the status of the odigos
 	returnCode := 200
-	if desc.HasErrors {
-		returnCode = 500
-	} else if !desc.IsSettled {
-		returnCode = 202
-	}
 
 	// Check for the Accept header
 	acceptHeader := c.GetHeader("Accept")

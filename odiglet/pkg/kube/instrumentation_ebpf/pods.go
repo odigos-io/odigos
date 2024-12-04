@@ -124,10 +124,3 @@ func (p *PodsReconciler) getPodWorkloadObject(ctx context.Context, pod *corev1.P
 	return nil, nil
 }
 
-func GetPodSumRestarts(pod *corev1.Pod) int {
-	restartCount := 0
-	for _, containerStatus := range pod.Status.ContainerStatuses {
-		restartCount += int(containerStatus.RestartCount)
-	}
-	return restartCount
-}

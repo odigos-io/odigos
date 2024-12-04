@@ -1,5 +1,7 @@
 package consts
 
+import "k8s.io/apimachinery/pkg/util/version"
+
 type CollectorRole string
 
 const (
@@ -7,8 +9,12 @@ const (
 	CollectorsRoleNodeCollector  CollectorRole = "NODE_COLLECTOR"
 )
 
-// OdigosCollectorRoleLabel is the label used to identify the role of the Odigos collector.
-const OdigosCollectorRoleLabel = "odigos.io/collector-role"
+const (
+	// OdigosInjectInstrumentationLabel is the label used to enable the mutating webhook.
+	OdigosInjectInstrumentationLabel = "odigos.io/inject-instrumentation"
+	// OdigosCollectorRoleLabel is the label used to identify the role of the Odigos collector.
+	OdigosCollectorRoleLabel = "odigos.io/collector-role"
+)
 
 const (
 	OdigosDeploymentConfigMapName = "odigos-deployment"
@@ -21,6 +27,10 @@ const (
 
 	OdigosClusterCollectorCollectorGroupName = OdigosClusterCollectorDeploymentName
 	OdigosClusterCollectorConfigMapKey       = "collector-conf"
+
+	// The cluster gateway collector runs as a deployment and the pod is exposed as a service.
+	// Thus it cannot collide with other ports on the same node, and we can use an handy default port.
+	OdigosClusterCollectorOwnTelemetryPortDefault = int32(8888)
 )
 
 const (
@@ -45,3 +55,9 @@ func OdigosInjectedEnvVars() []string {
 		OdigosEnvVarPodName,
 	}
 }
+
+var (
+	// MinK8SVersionForInstallation is the minimum Kubernetes version required for Odigos installation
+	// this value must be in sync with the one defined in the kubeVersion field in Chart.yaml
+	MinK8SVersionForInstallation = version.MustParse("v1.20.15-0")
+)

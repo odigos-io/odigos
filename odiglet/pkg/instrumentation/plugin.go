@@ -2,6 +2,7 @@ package instrumentation
 
 import (
 	"context"
+	"errors"
 
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned"
@@ -10,6 +11,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/devices"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
@@ -82,16 +84,25 @@ func (p *plugin) GetPreferredAllocation(ctx context.Context, request *v1beta1.Pr
 func (p *plugin) Allocate(ctx context.Context, request *v1beta1.AllocateRequest) (*v1beta1.AllocateResponse, error) {
 	res := &v1beta1.AllocateResponse{}
 
+	// calculate the enabled signals from the collectors group status.
+	// in any error, just use empty enabled signals.
+	// If the Allocate returns an error, the pod will not be scheduled which we have to avoid no matter what.
+	enabledSignals := make(map[common.ObservabilitySignal]struct{})
+
 	odigosNs := env.GetCurrentNamespace()
 	nodeCollectorGroup, err := p.odigosKubeClient.OdigosV1alpha1().CollectorsGroups(odigosNs).Get(ctx, k8sconsts.OdigosNodeCollectorCollectorGroupName, metav1.GetOptions{})
 	if err != nil {
-		log.Logger.Error(err, "Failed to get node collector group")
-		return nil, err
-	}
-
-	enabledSignals := make(map[common.ObservabilitySignal]struct{})
-	for _, signal := range nodeCollectorGroup.Status.ReceiverSignals {
-		enabledSignals[signal] = struct{}{}
+		// we should have collectors group created for odigos device to trigger.
+		// however if we don't, just log and do not populate the enabled signals.
+		if apierrors.IsNotFound(err) {
+			log.Logger.Error(errors.New("pod with odigos device started, but collectors group not created. disabling all signals for this pod"), "collectorGroupName", k8sconsts.OdigosNodeCollectorCollectorGroupName)
+		} else {
+			log.Logger.Error(err, "error getting node collectors group, no enabled signals are set")
+		}
+	} else {
+		for _, signal := range nodeCollectorGroup.Status.ReceiverSignals {
+			enabledSignals[signal] = struct{}{}
+		}
 	}
 
 	for _, req := range request.ContainerRequests {
