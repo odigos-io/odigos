@@ -110,6 +110,7 @@ function test() {
 
   if [ $test_exit_code -ne 0 ]; then
     echo "Odigos UI - ❌ Frontend tests failed"
+    exit 1
   else
     echo "Odigos UI - ✅ Frontend tests passed"
   fi
