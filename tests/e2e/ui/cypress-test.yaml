@@ -9,15 +9,15 @@ spec:
     - name: Start the UI
       try:
         - script:
-            timeout: 120s
-            content: ../../common/odigos_ui.sh start
+            timeout: 300s
+            content: ../../tests/common/odigos_ui.sh start
     - name: Test the UI
       try:
         - script:
-            timeout: 120s
-            content: ../../common/odigos_ui.sh test
+            timeout: 300s
+            content: ../../tests/common/odigos_ui.sh test
     - name: End the UI
       try:
         - script:
-            timeout: 120s
-            content: ../../common/odigos_ui.sh end
+            timeout: 60s
+            content: ../../tests/common/odigos_ui.sh end
