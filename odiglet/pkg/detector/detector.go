@@ -2,9 +2,7 @@ package detector
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
-	"sync"
 
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/common/envOverwrite"
@@ -15,37 +13,20 @@ import (
 
 type ProcessEvent = detector.ProcessEvent
 
-func StartRuntimeDetector(ctx context.Context, logger logr.Logger, events chan ProcessEvent) error {
-	detector, err := newDetector(ctx, logger, events)
-	if err != nil {
-		return fmt.Errorf("failed to create runtime detector: %w", err)
-	}
+type Detector = detector.Detector
 
-	var wg sync.WaitGroup
-	var runError error
+const (
+	ProcessExecEvent = detector.ProcessExecEvent
+	ProcessExitEvent = detector.ProcessExitEvent
+)
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		readProcEventsLoop(logger, events)
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		runError = detector.Run(ctx)
-	}()
-
-	wg.Wait()
-	return runError
-}
-
-func newDetector(ctx context.Context, logger logr.Logger, events chan ProcessEvent) (*detector.Detector, error) {
+func NewK8SProcDetector(ctx context.Context, logger logr.Logger, events chan<- ProcessEvent) (*detector.Detector, error) {
 	sLogger := slog.New(logr.ToSlogHandler(logger))
 
 	opts := []detector.DetectorOption{
 		detector.WithLogger(sLogger),
 		detector.WithEnvironments(relevantEnvVars()...),
+		detector.WithEnvPrefixFilter(consts.OdigosEnvVarPodName),
 	}
 	detector, err := detector.NewDetector(ctx, events, opts...)
 
@@ -54,27 +35,6 @@ func newDetector(ctx context.Context, logger logr.Logger, events chan ProcessEve
 	}
 
 	return detector, nil
-}
-
-func readProcEventsLoop(l logr.Logger, events chan ProcessEvent) {
-	l = l.WithName("process detector")
-	for e := range events {
-		switch e.EventType {
-		case detector.ProcessExecEvent:
-			l.Info("detected new process",
-				"pid", e.PID,
-				"cmd", e.ExecDetails.CmdLine,
-				"exeName", e.ExecDetails.ExeName,
-				"exeLink", e.ExecDetails.ExeLink,
-				"envs", e.ExecDetails.Environments,
-				"container PID", e.ExecDetails.ContainerProcessID,
-			)
-		case detector.ProcessExitEvent:
-			l.Info("detected process exit",
-				"pid", e.PID,
-			)
-		}
-	}
 }
 
 func relevantEnvVars() []string {
