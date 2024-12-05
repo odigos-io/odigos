@@ -86,16 +86,5 @@ spec:
             timeout: 300s
             content: |
               cd ../../../frontend/webapp
-
-              set +e
-              echo "Odigos UI - 👀 Testing with Cypress..."
+              yarn install
               yarn cy
-              test_exit_code=$?
-              set -e
-
-              if [ $test_exit_code -ne 0 ]; then
-                echo "Odigos UI - ❌ Cypress tests failed"
-                exit 1
-              else
-                echo "Odigos UI - ✅ Cypress tests passed"
-              fi
