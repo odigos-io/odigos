@@ -7,15 +7,8 @@ scripts_dir="$(cd "$(dirname "$0")" && pwd)"
 # The above "$scripts_dir" key is used to identify where the script was called from, to ensure all paths are relative to the script.
 # This is useful when the script is called from another location, and the paths are relative to the calling script (for exmaple YAML file).
 
-log_filename="$scripts_dir/odigos_ui.log"
-back_pid_filename="$scripts_dir/ui_backend.pid"
-front_pid_filename="$scripts_dir/ui_frontend.pid"
-
-function cleanup() {
-  rm -f "$front_pid_filename"
-  rm -f "$back_pid_filename"
-  rm -f "$log_filename"
-}
+log_file="$scripts_dir/odigos_ui.log"
+pid_file="$scripts_dir/odigos_ui.pid"
 
 function get_process_id() {
   if [ ! -f "$1" ]; then
@@ -37,82 +30,73 @@ function get_process_id() {
 function check_process() {
   # Check if the process is running
   if [ "$1" == 0 ]; then
-    echo "Odigos UI - ❌ $2 failed to start"
-    cat "$3"
+    echo "Odigos UI - ❌ Failed to start"
+    cat "$log_file"
     exit 1
   else
-    echo "Odigos UI - ✅ $2 is ready"
+    echo "Odigos UI - ✅ Ready"
+    cat "$log_file"
   fi
 }
 
 function kill_process() {
   # Kill the process
   if [ "$1" != 0 ]; then
-    echo "Odigos UI - 💀 Killing $2 process ($1)"
+    echo "Odigos UI - 💀 Killing process ($1)"
     kill $1
   fi
 }
 
 function kill_all() {
-  # Kill processes if they are still running
-  front_pid=$(get_process_id "$front_pid_filename")
-  kill_process $front_pid "Frontend"
-  back_pid=$(get_process_id "$back_pid_filename")
-  kill_process $back_pid "Backend"
+  pid=$(get_process_id "$pid_file")
+  kill_process $pid
 }
 
 function stop() {
   kill_all
-  cleanup
+
+  # Cleanup
+  rm -f "$log_file"
+  rm -f "$pid_file"
 }
 
 function start() {
   kill_all
-
-  # Install dependencies and build the Frontend
   cd "$scripts_dir/../../frontend/webapp"
-  echo "Odigos UI - ⏳ Frontend installing"
-  yarn install > /dev/null 2> "$log_filename"
-  echo "Odigos UI - ⏳ Frontend building"
-  yarn build > /dev/null 2> "$log_filename"
 
-  # Build and start the Backend
-  cd "../"
-  echo "Odigos UI - ⏳ Backend building"
-  go build -o ./odigos-backend > /dev/null 2> "$log_filename"
-  echo "Odigos UI - ⏳ Backend starting"
-  ./odigos-backend --port 8085 --debug --address 0.0.0.0 > /dev/null 2> "$log_filename" &
-  sleep 3
-  echo $! > "$back_pid_filename"
-  back_pid=$(get_process_id "$back_pid_filename")
-  check_process $back_pid "Backend" "$log_filename"
+  # Install dependencies
+  echo "Odigos UI - ⏳ Installing..."
+  yarn install > /dev/null 2> "$log_file"
 
-  # Start the Frontend
-  # (we could skip this step, and simply use the UI on port 3001 from the Backend build - but we may want to run tests on the UI in real-time while developing, hence we will use port 3000 from the Frontend build)
-  cd "./webapp"
-  echo "Odigos UI - ⏳ Frontend starting"
-  yarn dev > /dev/null 2> "$log_filename" &
+  # Create a production build
+  echo "Odigos UI - ⏳ Building..."
+  yarn build > /dev/null 2> "$log_file"
+
+  # Start the production build
+  echo "Odigos UI - ⏳ Starting..."
+  yarn start > /dev/null 2> "$log_file" &
+
   sleep 3
-  echo $! > "$front_pid_filename"
-  front_pid=$(get_process_id "$front_pid_filename")
-  check_process $front_pid "Frontend" "$log_filename"
+  echo $! > "$pid_file"
+  pid=$(get_process_id "$pid_file")
+  check_process $pid
 }
 
 function test() {
   # Run tests on the Frontend
   cd "$scripts_dir/../../frontend/webapp"
-  echo "Odigos UI - 👀 Frontend testing"
+  echo "Odigos UI - 👀 Testing with Cypress..."
 
   set +e # Temporarily disable "exit on error"
-  yarn cy:run
+  yarn cy
   test_exit_code=$?
   set -e # Re-enable "exit on error"
 
   if [ $test_exit_code -ne 0 ]; then
-    echo "Odigos UI - ❌ Frontend tests failed"
+    echo "Odigos UI - ❌ Cypress tests failed"
     exit 1
   else
-    echo "Odigos UI - ✅ Frontend tests passed"
+    echo "Odigos UI - ✅ Cypress tests passed"
   fi
 }
 
