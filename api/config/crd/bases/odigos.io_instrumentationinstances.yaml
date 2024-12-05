@@ -186,6 +186,11 @@ spec:
                   Producers of specific condition types may define expected values and meanings for this field,
                   and whether the values are considered a guaranteed API.
                 type: string
+              running:
+                description: |-
+                  Running true means that the SDK is running and generating telemetry.
+                  It is set to false when the SDK is not running or the agent has stopped the SDK.
+                type: boolean
             required:
             - lastStatusTime
             type: object

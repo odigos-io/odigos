@@ -153,20 +153,18 @@ func (c *ConnectionHandlers) UpdateInstrumentationInstanceStatus(ctx context.Con
 
 	isAgentDisconnect := message.AgentDisconnect != nil
 	hasHealth := message.Health != nil
+	dynamicOptions := make([]instrumentation_instance.InstrumentationInstanceOption, 0)
 	// when agent disconnects, it need to report that it is unhealthy and disconnected
 	if isAgentDisconnect {
 		if !hasHealth {
 			return fmt.Errorf("missing health in agent disconnect message")
 		}
-		if message.Health.Healthy {
-			return fmt.Errorf("agent disconnect message with healthy status")
-		}
 		if message.Health.LastError == "" {
 			return fmt.Errorf("missing last error in unhealthy message")
 		}
+		running := false
+		dynamicOptions = append(dynamicOptions, instrumentation_instance.WithRunning(&running))
 	}
-
-	dynamicOptions := make([]instrumentation_instance.InstrumentationInstanceOption, 0)
 
 	if message.AgentDescription != nil {
 		identifyingAttributes := make([]odigosv1.Attribute, 0, len(message.AgentDescription.IdentifyingAttributes))
