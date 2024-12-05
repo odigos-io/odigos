@@ -20,8 +20,8 @@ import (
 const schemeName = "file"
 
 type provider struct {
-	wg sync.WaitGroup
-	mu sync.Mutex
+	done chan struct{}
+	mu   sync.Mutex
 
 	watcher fsnotify.Watcher
 	running bool
@@ -64,10 +64,11 @@ func newProvider(c confmap.ProviderSettings) confmap.Provider {
 		logger:  *c.Logger,
 		watcher: *watcher,
 		running: false,
+		done:    make(chan struct{}),
 	}
 }
 
-func (fmp *provider) Retrieve(_ context.Context, uri string, wf confmap.WatcherFunc) (*confmap.Retrieved, error) {
+func (fmp *provider) Retrieve(ctx context.Context, uri string, wf confmap.WatcherFunc) (*confmap.Retrieved, error) {
 	fmp.mu.Lock()
 	defer fmp.mu.Unlock()
 
@@ -89,10 +90,9 @@ func (fmp *provider) Retrieve(_ context.Context, uri string, wf confmap.WatcherF
 
 	// start a new watcher routine only if one isn't already running, since Retrieve could be called multiple times
 	if !fmp.running {
-		fmp.wg.Add(1)
 		go func() {
 			fmp.running = true
-			defer fmp.wg.Done()
+			defer func() { fmp.done <- struct{}{} }()
 		LOOP:
 			for {
 				select {
@@ -107,12 +107,20 @@ func (fmp *provider) Retrieve(_ context.Context, uri string, wf confmap.WatcherF
 						fmp.watcher.Add(file)
 						wf(&confmap.ChangeEvent{})
 					}
+
 				case err, ok := <-fmp.watcher.Errors:
 					if !ok {
 						fmp.logger.Info("fsnotify error channel closed")
 						break LOOP
 					}
 					wf(&confmap.ChangeEvent{Error: fmt.Errorf("error watching event %+v", err)})
+
+				case <-ctx.Done():
+					err := fmp.watcher.Close()
+					if err != nil {
+						fmp.logger.Error("error closing fsnotify watcher", zap.Error(err))
+					}
+					break LOOP
 				}
 			}
 			fmp.running = false
@@ -133,6 +141,6 @@ func (fmp *provider) Shutdown(context.Context) error {
 		fmp.logger.Error("error closing fsnotify watcher", zap.Error(err))
 	}
 	// wait for watcher routine to finish
-	fmp.wg.Wait()
+	<-fmp.done
 	return nil
 }
