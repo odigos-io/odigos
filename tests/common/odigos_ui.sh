@@ -71,10 +71,11 @@ function start() {
   # Create a production build
   echo "Odigos UI - ⏳ Building..."
   yarn build > /dev/null 2> "$log_file"
+  yarn back:build > /dev/null 2> "$log_file"
 
   # Start the production build
   echo "Odigos UI - ⏳ Starting..."
-  yarn start > /dev/null 2> "$log_file" &
+  yarn back:start > /dev/null 2> "$log_file" &
 
   sleep 3
   echo $! > "$pid_file"
