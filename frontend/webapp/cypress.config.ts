@@ -1,10 +1,15 @@
 import Cypress from 'cypress';
 
+// PORT=3001 uses the "production" build (served with Go)
+// PORT=3000 uses the "development" build (served with Next.js)
+// We have to use the "production" build when pushing to GitHub, feel free to change this for local tests...
+const PORT = 3001;
+const BASE_URL = `http://localhost:${PORT}`;
+
 const config: Cypress.ConfigOptions = {
   e2e: {
-    // this uses the "production" build, if you want to use the "development" build, you can use "port=3000" instead
-    baseUrl: 'http://localhost:3001',
     setupNodeEvents(on, config) {},
+    baseUrl: BASE_URL,
     supportFile: false,
     waitForAnimations: true,
   },
