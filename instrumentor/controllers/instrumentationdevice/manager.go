@@ -23,6 +23,27 @@ func countOdigosResources(resources corev1.ResourceList) int {
 	return numOdigosResources
 }
 
+type runtimeDetectionGeneration struct {
+	predicate.Funcs
+}
+
+func (n runtimeDetectionGeneration) Update(e event.UpdateEvent) bool {
+	if e.ObjectOld == nil || e.ObjectNew == nil {
+		return false
+	}
+
+	prevInstrumentationConfig, ok := e.ObjectOld.(*odigosv1.InstrumentationConfig)
+	if !ok {
+		return false
+	}
+	newInstrumentationConfig, ok := e.ObjectNew.(*odigosv1.InstrumentationConfig)
+	if !ok {
+		return false
+	}
+
+	return prevInstrumentationConfig.Status.ObservedWorkloadGeneration != newInstrumentationConfig.Status.ObservedWorkloadGeneration
+}
+
 type workloadPodTemplatePredicate struct {
 	predicate.Funcs
 }
@@ -102,10 +123,10 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
-		Named("instrumentationdevice-instrumentedapplication").
-		For(&odigosv1.InstrumentedApplication{}).
-		WithEventFilter(&predicate.GenerationChangedPredicate{}).
-		Complete(&InstrumentedApplicationReconciler{
+		Named("instrumentationdevice-instrumentationconfig").
+		For(&odigosv1.InstrumentationConfig{}).
+		WithEventFilter(&runtimeDetectionGeneration{}).
+		Complete(&InstrumentationConfigReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
 		})
