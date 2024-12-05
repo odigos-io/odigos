@@ -6,25 +6,22 @@ import (
 	"os"
 	"sync"
 
-	detector "github.com/odigos-io/odigos/odiglet/pkg/detector"
+	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf/sdks"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/fs"
 
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	"github.com/odigos-io/odigos/common"
 	k8senv "github.com/odigos-io/odigos/k8sutils/pkg/env"
-	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/instrumentlang"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"github.com/odigos-io/odigos/opampserver/pkg/server"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 
 	_ "net/http/pprof"
@@ -45,8 +42,8 @@ func odigletInitPhase() {
 type odiglet struct {
 	clientset     *kubernetes.Clientset
 	mgr           ctrl.Manager
-	ctx           context.Context
-	ebpfDirectors ebpf.DirectorsMap
+	ebpfManager   *ebpf.Manager
+	configUpdates chan<- ebpf.ConfigUpdate
 }
 
 func newOdiglet() (*odiglet, error) {
@@ -66,14 +63,22 @@ func newOdiglet() (*odiglet, error) {
 		return nil, fmt.Errorf("Failed to create controller-runtime manager %w", err)
 	}
 
-	ctx := signals.SetupSignalHandler()
-
-	ebpfDirectors, err := initEbpf(ctx, mgr.GetClient(), mgr.GetScheme())
+	ebpfManager, err := ebpf.NewManager(
+		mgr.GetClient(),
+		log.Logger,
+		map[ebpf.OtelDistribution]ebpf.Factory{
+			ebpf.OtelDistribution{
+				Language: common.GoProgrammingLanguage,
+				OtelSdk:  common.OtelSdkEbpfCommunity,
+			}: sdks.NewGoInstrumentationFactory(),
+		},
+	)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to init eBPF director %w", err)
+		return nil, fmt.Errorf("Failed to create ebpf manager %w", err)
 	}
 
-	err = kube.SetupWithManager(mgr, ebpfDirectors, clientset)
+	configUpdates := ebpfManager.ConfigUpdates()
+	err = kube.SetupWithManager(mgr, nil, clientset, configUpdates)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to setup controller-runtime manager %w", err)
 	}
@@ -81,19 +86,19 @@ func newOdiglet() (*odiglet, error) {
 	return &odiglet{
 		clientset:     clientset,
 		mgr:           mgr,
-		ctx:           ctx,
-		ebpfDirectors: ebpfDirectors,
+		ebpfManager:   ebpfManager,
+		configUpdates: configUpdates,
 	}, nil
 }
 
-func (o *odiglet) run() {
+func (o *odiglet) run(ctx context.Context) {
 	var wg sync.WaitGroup
 
 	// Start pprof server
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		err := common.StartPprofServer(o.ctx, log.Logger)
+		err := common.StartPprofServer(ctx, log.Logger)
 		if err != nil {
 			log.Logger.Error(err, "Failed to start pprof server")
 		} else {
@@ -111,16 +116,14 @@ func (o *odiglet) run() {
 		log.Logger.V(0).Info("Device manager exited")
 	}()
 
-	procEvents := make(chan detector.ProcessEvent)
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		err := detector.StartRuntimeDetector(o.ctx, log.Logger, procEvents)
+		err := o.ebpfManager.Run(ctx)
 		if err != nil {
-			log.Logger.Error(err, "Failed to start runtime detector")
-			os.Exit(-1)
+			log.Logger.Error(err, "Failed to run ebpf manager")
 		}
-		log.Logger.V(0).Info("Runtime detector exited")
+		log.Logger.V(0).Info("Ebpf manager exited")
 	}()
 
 	// start OpAmp server
@@ -128,7 +131,7 @@ func (o *odiglet) run() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		err := server.StartOpAmpServer(o.ctx, log.Logger, o.mgr, o.clientset, env.Current.NodeName, odigosNs)
+		err := server.StartOpAmpServer(ctx, log.Logger, o.mgr, o.clientset, env.Current.NodeName, odigosNs)
 		if err != nil {
 			log.Logger.Error(err, "Failed to start opamp server")
 		}
@@ -139,17 +142,19 @@ func (o *odiglet) run() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		err := o.mgr.Start(o.ctx)
+		err := o.mgr.Start(ctx)
 		if err != nil {
 			log.Logger.Error(err, "error starting kube manager")
+		} else {
+			log.Logger.V(0).Info("Kube manager exited")
 		}
-		log.Logger.V(0).Info("Kube manager exited")
+		// the manager is stopped, it is now safe to close the config updates channel
+		if o.configUpdates != nil {
+			close(o.configUpdates)
+		}
 	}()
 
-	<-o.ctx.Done()
-	for _, director := range o.ebpfDirectors {
-		director.Shutdown()
-	}
+	<-ctx.Done()
 	wg.Wait()
 }
 
@@ -176,7 +181,9 @@ func main() {
 		log.Logger.Error(err, "Failed to initialize odiglet")
 		os.Exit(1)
 	}
-	o.run()
+
+	ctx := signals.SetupSignalHandler()
+	o.run(ctx)
 
 	log.Logger.V(0).Info("odiglet exiting")
 }
@@ -215,17 +222,4 @@ func runDeviceManager(clientset *kubernetes.Clientset) {
 
 	manager := dpm.NewManager(lister)
 	manager.Run()
-}
-
-func initEbpf(ctx context.Context, client client.Client, scheme *runtime.Scheme) (ebpf.DirectorsMap, error) {
-	goInstrumentationFactory := sdks.NewGoInstrumentationFactory(client)
-	goDirector := ebpf.NewEbpfDirector(ctx, client, scheme, common.GoProgrammingLanguage, goInstrumentationFactory)
-	goDirectorKey := ebpf.DirectorKey{
-		Language: common.GoProgrammingLanguage,
-		OtelSdk:  common.OtelSdkEbpfCommunity,
-	}
-
-	return ebpf.DirectorsMap{
-		goDirectorKey: goDirector,
-	}, nil
 }

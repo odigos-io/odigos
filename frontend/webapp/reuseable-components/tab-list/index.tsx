@@ -66,22 +66,22 @@ const TABS = [
     selected: true,
     onClick: () => {},
   },
-  {
-    title: 'Service map',
-    icon: '/icons/overview/service-map.svg',
-    selected: false,
-    onClick: () => {},
-    disabled: true,
-    tooltip: 'Coming soon',
-  },
-  {
-    title: 'Trace view',
-    icon: '/icons/overview/trace-view.svg',
-    selected: false,
-    onClick: () => {},
-    disabled: true,
-    tooltip: 'Coming soon',
-  },
+  // {
+  //   title: 'Service map',
+  //   icon: '/icons/overview/service-map.svg',
+  //   selected: false,
+  //   onClick: () => {},
+  //   disabled: true,
+  //   tooltip: 'Coming soon',
+  // },
+  // {
+  //   title: 'Trace view',
+  //   icon: '/icons/overview/trace-view.svg',
+  //   selected: false,
+  //   onClick: () => {},
+  //   disabled: true,
+  //   tooltip: 'Coming soon',
+  // },
 ];
 
 const TabList: React.FC<TabListProps> = ({ tabs = TABS }) => {
