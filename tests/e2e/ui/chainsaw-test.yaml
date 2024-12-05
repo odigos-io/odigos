@@ -11,7 +11,7 @@ spec:
         - script:
             timeout: 60s
             content: |
-              ../../../cli/odigos install
+              ../../../cli/odigos install --version e2e-test
 
     - name: Install App - Simple Demo
       try:
