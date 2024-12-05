@@ -47,6 +47,8 @@ enum InstallationStatus {
 type SourceContainerRuntimeDetails {
   containerName: String!
   language: String!
+  runtimeVersion: String!
+  otherAgent: String
 }
 
 type InstrumentationOption {
@@ -203,11 +205,7 @@ type ComputePlatform {
   computePlatformType: ComputePlatformType!
   k8sActualNamespace(name: String!): K8sActualNamespace
   k8sActualNamespaces: [K8sActualNamespace]!
-  k8sActualSource(
-    name: String
-    namespace: String
-    kind: String
-  ): K8sActualSource
+  k8sActualSource(name: String, namespace: String, kind: String): K8sActualSource
   k8sActualSources: [K8sActualSource]!
   destinations: [Destination!]!
   actions: [IcaInstanceResponse!]!
@@ -456,29 +454,16 @@ type Query {
 type Mutation {
   createNewDestination(destination: DestinationInput!): Destination!
   persistK8sNamespace(namespace: PersistNamespaceItemInput!): Boolean!
-  persistK8sSources(
-    namespace: String!
-    sources: [PersistNamespaceSourceInput!]!
-  ): Boolean!
-  testConnectionForDestination(
-    destination: DestinationInput!
-  ): TestConnectionResponse!
-  updateK8sActualSource(
-    sourceId: K8sSourceId!
-    patchSourceRequest: PatchSourceRequestInput!
-  ): Boolean!
+  persistK8sSources(namespace: String!, sources: [PersistNamespaceSourceInput!]!): Boolean!
+  testConnectionForDestination(destination: DestinationInput!): TestConnectionResponse!
+  updateK8sActualSource(sourceId: K8sSourceId!, patchSourceRequest: PatchSourceRequestInput!): Boolean!
   updateDestination(id: ID!, destination: DestinationInput!): Destination!
   deleteDestination(id: ID!): Boolean!
   createAction(action: ActionInput!): Action!
   updateAction(id: ID!, action: ActionInput!): Action!
   deleteAction(id: ID!, actionType: String!): Boolean!
 
-  createInstrumentationRule(
-    instrumentationRule: InstrumentationRuleInput!
-  ): InstrumentationRule!
-  updateInstrumentationRule(
-    ruleId: ID!
-    instrumentationRule: InstrumentationRuleInput!
-  ): InstrumentationRule!
+  createInstrumentationRule(instrumentationRule: InstrumentationRuleInput!): InstrumentationRule!
+  updateInstrumentationRule(ruleId: ID!, instrumentationRule: InstrumentationRuleInput!): InstrumentationRule!
   deleteInstrumentationRule(ruleId: ID!): Boolean!
 }

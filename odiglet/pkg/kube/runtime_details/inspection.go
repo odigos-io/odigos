@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 
 	procdiscovery "github.com/odigos-io/odigos/procdiscovery/pkg/process"
 
@@ -124,8 +125,15 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 					envs = append(envs, odigosv1.EnvVar{Name: envName, Value: envValue})
 				}
 
+				// Languages that can be detected using environment variables, e.g Python<>newrelic
 				for envName := range inspectProc.Environments.DetailedEnvs {
 					if otherAgentName, exists := procdiscovery.OtherAgentEnvs[envName]; exists {
+						detectedAgent = &odigosv1.OtherAgent{Name: otherAgentName}
+					}
+				}
+				// Languages that can be detected using command line Substrings, e.g. Java<>newrelic
+				for otherAgentCmdSubstring, otherAgentName := range procdiscovery.OtherAgentCmdSubString {
+					if strings.Contains(inspectProc.CmdLine, otherAgentCmdSubstring) {
 						detectedAgent = &odigosv1.OtherAgent{Name: otherAgentName}
 					}
 				}

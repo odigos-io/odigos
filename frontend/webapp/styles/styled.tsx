@@ -23,8 +23,21 @@ export const Overlay = styled.div`
 // note: add-destinations does not use this (yet), because it has a custom sidebar
 export const ModalBody = styled.div`
   width: 640px;
-  height: calc(100vh - 300px);
-  margin: 0 7vw;
-  padding-top: 64px;
+  height: calc(100vh - 350px);
+  margin: 64px 7vw 32px 7vw;
   overflow-y: scroll;
+`;
+
+export const FlexRow = styled.div<{ $gap?: number }>`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: ${({ $gap = 2 }) => $gap}px;
+`;
+
+export const FlexColumn = styled.div<{ $gap?: number }>`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: ${({ $gap = 2 }) => $gap}px;
 `;

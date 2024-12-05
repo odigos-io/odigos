@@ -475,8 +475,10 @@ type SingleSourceMetricsResponse struct {
 }
 
 type SourceContainerRuntimeDetails struct {
-	ContainerName string `json:"containerName"`
-	Language      string `json:"language"`
+	ContainerName  string  `json:"containerName"`
+	Language       string  `json:"language"`
+	RuntimeVersion string  `json:"runtimeVersion"`
+	OtherAgent     *string `json:"otherAgent,omitempty"`
 }
 
 type TestConnectionResponse struct {

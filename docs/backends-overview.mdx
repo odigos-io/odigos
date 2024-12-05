@@ -1,33 +1,43 @@
 ---
-title: "Overview"
+title: 'Overview'
 ---
 
 Odigos has destinations for many observability backends.
 
-|                         | Traces | Metrics | Logs | Open Source |
-| ----------------------- | :---: | :-----: | :--: | :---------:  |
-| SigNoz                  | ✅     | ✅      | ✅   | ✅          |
-| qryn                    | ✅     | ✅      | ✅   | ✅          |
-| Uptrace                 | ✅     | ✅      | ✅   | ✅          |
-| Elasticsearch           | ✅     |         | ✅   | ✅          |
-| Jaeger                  | ✅     |         |      | ✅          |
-| Tempo                   | ✅     |         |      | ✅          |
-| Prometheus              |        | ✅      |      | ✅          |
-| Loki                    |        |         | ✅   | ✅          |
-| Datadog                 | ✅     | ✅      | ✅   |             |
-| Grafana Cloud           | ✅     | ✅      | ✅   |             |
-| Honeycomb               | ✅     | ✅      | ✅   |             |
-| Logz.io                 | ✅     | ✅      | ✅   |             |
-| New Relic               | ✅     | ✅      | ✅   |             |
-| OpsVerse                | ✅     | ✅      | ✅   |             |
-| qryn.cloud              | ✅     | ✅      | ✅   |             |
-| Causely                 | ✅     | ✅      |      |             |
-| AWS S3                  | ✅     |         | ✅   |             |
-| Azure Blob Storage      | ✅     |         | ✅   |             |
-| Google Cloud Monitoring | ✅     |         | ✅   |             |
-| Google Cloud Storage    | ✅     |         | ✅   |             |
-| Lightstep               | ✅     |         |      |             |
-| Sentry                  | ✅     |         |      |             |
-| Splunk                  | ✅     |         |      |             |
+| Destination             | Category         | Traces | Metrics | Logs |
+|-------------------------|------------------|:------:|:-------:|:----:|
+| AppDynamics             | Managed          |   ✅   |   ✅    |  ✅  |
+| Axiom                   | Managed          |   ✅   |         |  ✅  |
+| AWS S3                  | Managed          |   ✅   |         |  ✅  |
+| Azure Blob Storage      | Managed          |   ✅   |         |  ✅  |
+| Causely                 | Managed          |   ✅   |         |      |
+| Chronosphere            | Managed          |   ✅   |   ✅    |      |
+| ClickHouse              | Self-Hosted      |   ✅   |   ✅    |  ✅  |
+| Coralogix               | Managed          |   ✅   |   ✅    |  ✅  |
+| Datadog                 | Managed          |   ✅   |   ✅    |  ✅  |
+| Dynatrace               | Managed          |   ✅   |   ✅    |  ✅  |
+| Elasticsearch           | Self-Hosted      |   ✅   |         |  ✅  |
+| Gigapipe                | Managed          |   ✅   |         |      |
+| Google Cloud Monitoring | Managed          |   ✅   |   ✅    |      |
+| Google Cloud Storage    | Managed          |   ✅   |         |  ✅  |
+| Grafana Cloud           | Managed          |   ✅   |   ✅    |  ✅  |
+| Honeycomb               | Managed          |   ✅   |   ✅    |  ✅  |
+| Jaeger                  | Self-Hosted      |   ✅   |         |      |
+| Last9                   | Managed          |   ✅   |   ✅    |      |
+| Lightstep               | Managed          |   ✅   |         |      |
+| Loki                    | Self-Hosted      |        |         |  ✅  |
+| Logz.io                 | Managed          |   ✅   |   ✅    |  ✅  |
+| New Relic               | Managed          |   ✅   |   ✅    |  ✅  |
+| OpsVerse                | Managed          |   ✅   |   ✅    |  ✅  |
+| OTLP                    | Managed          |   ✅   |   ✅    |  ✅  |
+| OTLP HTTP               | Managed          |   ✅   |   ✅    |  ✅  |
+| Prometheus              | Self-Hosted      |        |   ✅    |      |
+| Quickwit                | Self-Hosted      |   ✅   |         |      |
+| qryn                    | Self-Hosted      |   ✅   |   ✅    |  ✅  |
+| Sentry                  | Managed          |   ✅   |         |      |
+| SigNoz                  | Self-Hosted      |   ✅   |   ✅    |  ✅  |
+| Splunk                  | Managed          |   ✅   |         |      |
+| Sumo Logic              | Managed          |   ✅   |   ✅    |  ✅  |
+| Tempo                   | Self-Hosted      |   ✅   |         |      |
 
 Can't find the destination you need? Help us by following our quick [adding new destination](/adding-new-dest) guide and submit a PR.

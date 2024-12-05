@@ -1,12 +1,7 @@
-import { useState } from 'react';
-import { useNotify } from '../notification/useNotify';
 import type { DrawerBaseItem } from '@/store';
-import { ACTION, FORM_ALERTS, NOTIFICATION } from '@/utils';
-import {
-  PayloadCollectionType,
-  type InstrumentationRuleInput,
-  type InstrumentationRuleSpec,
-} from '@/types';
+import { useGenericForm, useNotify } from '@/hooks';
+import { FORM_ALERTS, NOTIFICATION } from '@/utils';
+import { PayloadCollectionType, type InstrumentationRuleInput, type InstrumentationRuleSpec } from '@/types';
 
 const INITIAL: InstrumentationRuleInput = {
   ruleName: '',
@@ -24,29 +19,20 @@ const INITIAL: InstrumentationRuleInput = {
 
 export function useInstrumentationRuleFormData() {
   const notify = useNotify();
-  const [formData, setFormData] = useState({ ...INITIAL });
+  const { formData, formErrors, handleFormChange, handleErrorChange, resetFormData } = useGenericForm<InstrumentationRuleInput>(INITIAL);
 
-  const handleFormChange = (key: keyof typeof INITIAL, val: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      [key]: val,
-    }));
-  };
-
-  const resetFormData = () => {
-    setFormData({ ...INITIAL });
-  };
-
-  const validateForm = (params?: { withAlert?: boolean }) => {
+  const validateForm = (params?: { withAlert?: boolean; alertTitle?: string }) => {
+    const errors = {};
     let ok = true;
 
     Object.entries(formData).forEach(([k, v]) => {
       switch (k) {
         case 'payloadCollection':
-          const hasNoneSelected = !Object.values(
-            v as InstrumentationRuleInput['payloadCollection']
-          ).filter((val) => !!val).length;
-          ok = !hasNoneSelected;
+          const hasNoneSelected = !Object.values(v as InstrumentationRuleInput['payloadCollection']).filter((val) => !!val).length;
+          if (hasNoneSelected) {
+            ok = false;
+            errors[k] = FORM_ALERTS.FIELD_IS_REQUIRED;
+          }
           break;
 
         default:
@@ -57,17 +43,18 @@ export function useInstrumentationRuleFormData() {
     if (!ok && params?.withAlert) {
       notify({
         type: NOTIFICATION.WARNING,
-        title: ACTION.UPDATE,
+        title: params.alertTitle,
         message: FORM_ALERTS.REQUIRED_FIELDS,
       });
     }
+
+    handleErrorChange(undefined, undefined, errors);
 
     return ok;
   };
 
   const loadFormWithDrawerItem = (drawerItem: DrawerBaseItem) => {
-    const { ruleName, notes, disabled, payloadCollection } =
-      drawerItem.item as InstrumentationRuleSpec;
+    const { ruleName, notes, disabled, payloadCollection } = drawerItem.item as InstrumentationRuleSpec;
 
     const updatedData: InstrumentationRuleInput = {
       ...INITIAL,
@@ -78,34 +65,19 @@ export function useInstrumentationRuleFormData() {
 
     if (payloadCollection) {
       updatedData['payloadCollection'] = {
-        [PayloadCollectionType.HTTP_REQUEST]: !!payloadCollection[
-          PayloadCollectionType.HTTP_REQUEST
-        ]
-          ? {}
-          : null,
-        [PayloadCollectionType.HTTP_RESPONSE]: !!payloadCollection[
-          PayloadCollectionType.HTTP_RESPONSE
-        ]
-          ? {}
-          : null,
-        [PayloadCollectionType.DB_QUERY]: !!payloadCollection[
-          PayloadCollectionType.DB_QUERY
-        ]
-          ? {}
-          : null,
-        [PayloadCollectionType.MESSAGING]: !!payloadCollection[
-          PayloadCollectionType.MESSAGING
-        ]
-          ? {}
-          : null,
+        [PayloadCollectionType.HTTP_REQUEST]: !!payloadCollection[PayloadCollectionType.HTTP_REQUEST] ? {} : null,
+        [PayloadCollectionType.HTTP_RESPONSE]: !!payloadCollection[PayloadCollectionType.HTTP_RESPONSE] ? {} : null,
+        [PayloadCollectionType.DB_QUERY]: !!payloadCollection[PayloadCollectionType.DB_QUERY] ? {} : null,
+        [PayloadCollectionType.MESSAGING]: !!payloadCollection[PayloadCollectionType.MESSAGING] ? {} : null,
       };
     }
 
-    setFormData(updatedData);
+    handleFormChange(undefined, undefined, updatedData);
   };
 
   return {
     formData,
+    formErrors,
     handleFormChange,
     resetFormData,
     validateForm,
