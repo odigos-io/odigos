@@ -102,14 +102,8 @@ Odigos CLI and monitor the instrumentation status.`,
 		fmt.Printf("Excluded Namespaces:   %d\n", len(excludedNs))
 		fmt.Printf("Excluded Applications: %d\n", len(excludedApps))
 		fmt.Printf("%-50s", "Checking if Kubernetes cluster is reachable")
-		client, err := kube.CreateClient(cmd)
-		if err != nil {
-			fmt.Printf("\u001B[31mERROR\u001B[0m\n\n")
-			fmt.Printf("Check failed: %s\n", err)
-			os.Exit(1)
-		} else {
-			fmt.Printf("\u001B[32mPASS\u001B[0m\n\n")
-		}
+		client := kube.GetCLIClientOrExit(cmd)
+		fmt.Printf("\u001B[32mPASS\u001B[0m\n\n")
 
 		if isRemote {
 			uiClient, err = remote.NewUIClient(client, ctx)
