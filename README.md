@@ -82,44 +82,48 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 
 **For step-by-step instructions detailed for every destination, see these [docs](https://docs.odigos.io/backends).**
 
-### Managed
+### Managed Destinations
 
+| Destination             | Traces | Metrics | Logs |
+|-------------------------|:------:|:-------:|:----:|
+| AppDynamics             |   ✅   |   ✅    |  ✅  |
+| Axiom                   |   ✅   |         |  ✅  |
+| AWS S3                  |   ✅   |         |  ✅  |
+| Azure Blob Storage      |   ✅   |         |  ✅  |
+| Causely                 |   ✅   |         |      |
+| Chronosphere            |   ✅   |   ✅    |      |
+| Coralogix               |   ✅   |   ✅    |  ✅  |
+| Datadog                 |   ✅   |   ✅    |  ✅  |
+| Dynatrace               |   ✅   |   ✅    |  ✅  |
+| Gigapipe                |   ✅   |         |      |
+| Google Cloud Monitoring |   ✅   |   ✅    |      |
+| Google Cloud Storage    |   ✅   |         |  ✅  |
+| Grafana Cloud           |   ✅   |   ✅    |  ✅  |
+| Honeycomb               |   ✅   |   ✅    |  ✅  |
+| Last9                   |   ✅   |   ✅    |      |
+| Lightstep               |   ✅   |         |      |
+| Logz.io                 |   ✅   |   ✅    |  ✅  |
+| New Relic               |   ✅   |   ✅    |  ✅  |
+| OpsVerse                |   ✅   |   ✅    |  ✅  |
+| Sentry                  |   ✅   |         |      |
+| Splunk                  |   ✅   |         |      |
+| Sumo Logic              |   ✅   |   ✅    |  ✅  |
 
-|                         | Traces | Metrics | Logs |
-| ------------------------- | -------- | --------- | ------ |
-| New Relic               | ✅     | ✅      | ✅   |
-| Datadog                 | ✅     | ✅      | ✅   |
-| Grafana Cloud           | ✅     | ✅      | ✅   |
-| Honeycomb               | ✅     | ✅      | ✅   |
-| Chronosphere            | ✅     | ✅      |      |
-| Logz.io                 | ✅     | ✅      | ✅   |
-| qryn.cloud              | ✅     | ✅      | ✅   |
-| OpsVerse                | ✅     | ✅      | ✅   |
-| Dynatrace               | ✅     | ✅      | ✅   |
-| AWS S3                  | ✅     | ✅      | ✅   |
-| Google Cloud Monitoring | ✅     |         | ✅   |
-| Google Cloud Storage    | ✅     |         | ✅   |
-| Azure Blob Storage      | ✅     |         | ✅   |
-| Splunk                  | ✅     |         |      |
-| Lightstep               | ✅     |         |      |
-| Sentry                  | ✅     |         |      |
-| Axiom                   | ✅     |         | ✅   |
-| Sumo Logic              | ✅     | ✅      | ✅   |
-| Coralogix               | ✅     | ✅      | ✅   |
+## Self-Hosted (Open Source) Destinations
 
-### Open Source
-
-
-|               | Traces | Metrics | Logs |
-| --------------- | -------- | --------- | ------ |
-| Prometheus    |        | ✅      |      |
-| Tempo         | ✅     |         |      |
-| Loki          |        |         | ✅   |
-| Jaeger        | ✅     |         |      |
-| SigNoz        | ✅     | ✅      | ✅   |
-| qryn          | ✅     | ✅      | ✅   |
-| Elasticsearch | ✅     |         | ✅   |
-| Quickwit      | ✅     |         | ✅   |
+| Destination   | Traces | Metrics | Logs |
+|---------------|:------:|:-------:|:----:|
+| ClickHouse    |   ✅   |   ✅    |  ✅  |
+| Elasticsearch |   ✅   |         |  ✅  |
+| Jaeger        |   ✅   |         |      |
+| Loki          |        |         |  ✅  |
+| OTLP          |   ✅   |   ✅    |  ✅  |
+| OTLP HTTP     |   ✅   |   ✅    |  ✅  |
+| Prometheus    |        |   ✅    |      |
+| Quickwit      |   ✅   |         |      |
+| qryn          |   ✅   |   ✅    |  ✅  |
+| SigNoz        |   ✅   |   ✅    |  ✅  |
+| Tempo         |   ✅   |         |      |
 
 Can't find the destination you need? Help us by following our quick [add new destination](https://docs.odigos.io/adding-new-dest) guide and submitting a PR.
 

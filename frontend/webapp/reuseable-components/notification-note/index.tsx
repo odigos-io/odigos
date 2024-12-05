@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { Text } from '../text';
-import theme from '@/styles/theme';
 import { Divider } from '../divider';
 import styled from 'styled-components';
 import { getStatusIcon } from '@/utils';
@@ -106,7 +105,7 @@ const CloseButton = styled(Image)`
   }
 `;
 
-const NotificationNote: React.FC<NotificationProps> = ({ type, title, message, action, onClose, style }) => {
+export const NotificationNote: React.FC<NotificationProps> = ({ type, title, message, action, onClose, style }) => {
   // These are for handling transitions:
   // isEntering - to stop the progress bar from rendering before the toast is fully slide-in
   // isLeaving - to trigger the slide-out animation
@@ -166,7 +165,7 @@ const NotificationNote: React.FC<NotificationProps> = ({ type, title, message, a
 
         <TextWrapper>
           {title && <Title $type={type}>{title}</Title>}
-          {title && message && <Divider orientation='vertical' color={theme.text[type] + '4D'} thickness={1} />}
+          {title && message && <Divider orientation='vertical' type={type} />}
           {message && <Message $type={type}>{message}</Message>}
         </TextWrapper>
 
@@ -182,5 +181,3 @@ const NotificationNote: React.FC<NotificationProps> = ({ type, title, message, a
     </Container>
   );
 };
-
-export { NotificationNote };

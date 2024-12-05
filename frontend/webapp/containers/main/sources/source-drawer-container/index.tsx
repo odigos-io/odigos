@@ -3,13 +3,12 @@ import buildCard from './build-card';
 import styled from 'styled-components';
 import { useSourceCRUD } from '@/hooks';
 import { useDrawerStore } from '@/store';
-import { CardDetails } from '@/components';
 import buildDrawerItem from './build-drawer-item';
 import { UpdateSourceBody } from '../update-source-body';
-import { ConditionDetails } from '@/reuseable-components';
 import OverviewDrawer from '../../overview/overview-drawer';
-import { ACTION, getMainContainerLanguageLogo } from '@/utils';
-import { OVERVIEW_ENTITY_TYPES, WorkloadId, type K8sActualSource } from '@/types';
+import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type K8sActualSource } from '@/types';
+import { ACTION, DATA_CARDS, getMainContainerLanguage, getProgrammingLanguageIcon } from '@/utils';
+import { ConditionDetails, DataCard, DataCardRow, DataCardFieldTypes } from '@/reuseable-components';
 
 interface Props {}
 
@@ -75,6 +74,23 @@ export const SourceDrawer: React.FC<Props> = () => {
     return arr;
   }, [selectedItem]);
 
+  const containersData = useMemo(() => {
+    if (!selectedItem) return [];
+
+    const { item } = selectedItem as { item: K8sActualSource };
+
+    return (
+      item.instrumentedApplicationDetails.containers.map(
+        (container) =>
+          ({
+            type: DataCardFieldTypes.SOURCE_CONTAINER,
+            width: '100%',
+            value: JSON.stringify(container),
+          } as DataCardRow),
+      ) || []
+    );
+  }, [selectedItem]);
+
   if (!selectedItem?.item) return null;
   const { id, item } = selectedItem as { id: WorkloadId; item: K8sActualSource };
 
@@ -102,7 +118,7 @@ export const SourceDrawer: React.FC<Props> = () => {
     <OverviewDrawer
       title={item.reportedName || item.name}
       titleTooltip='This attribute is used to identify the name of the service (service.name) that is generating telemetry data.'
-      imageUri={getMainContainerLanguageLogo(item)}
+      imageUri={getProgrammingLanguageIcon(getMainContainerLanguage(item))}
       isEdit={isEditing}
       isFormDirty={isFormDirty}
       onEdit={handleEdit}
@@ -123,7 +139,8 @@ export const SourceDrawer: React.FC<Props> = () => {
       ) : (
         <DataContainer>
           <ConditionDetails conditions={item.instrumentedApplicationDetails.conditions} />
-          <CardDetails title='Source Details' data={cardData} />
+          <DataCard title={DATA_CARDS.SOURCE_DETAILS} data={cardData} />
+          <DataCard title={DATA_CARDS.DETECTED_CONTAINERS} titleBadge={containersData.length} description={DATA_CARDS.DETECTED_CONTAINERS_DESCRIPTION} data={containersData} />
         </DataContainer>
       )}
     </OverviewDrawer>

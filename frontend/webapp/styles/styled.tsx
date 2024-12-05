@@ -27,3 +27,17 @@ export const ModalBody = styled.div`
   margin: 64px 7vw 32px 7vw;
   overflow-y: scroll;
 `;
+
+export const FlexRow = styled.div<{ $gap?: number }>`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: ${({ $gap = 2 }) => $gap}px;
+`;
+
+export const FlexColumn = styled.div<{ $gap?: number }>`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: ${({ $gap = 2 }) => $gap}px;
+`;

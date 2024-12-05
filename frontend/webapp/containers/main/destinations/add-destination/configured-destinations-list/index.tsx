@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
+import { DeleteWarning } from '@/components';
 import { IAppState, useAppStore } from '@/store';
-import { ConfiguredFields, DeleteWarning } from '@/components';
-import { Button, Divider, ExtendIcon, Text } from '@/reuseable-components';
 import { OVERVIEW_ENTITY_TYPES, type ConfiguredDestination } from '@/types';
+import { Button, DataCardFields, Divider, ExtendIcon, Text } from '@/reuseable-components';
 
 const Container = styled.div`
   display: flex;
@@ -12,10 +12,10 @@ const Container = styled.div`
   align-items: flex-start;
   gap: 12px;
   margin-top: 24px;
-  align-self: stretch;
+  max-height: calc(100vh - 400px);
   height: 100%;
-  max-height: 548px;
-  overflow-y: auto;
+  overflow-x: hidden;
+  overflow-y: scroll;
 `;
 
 const ListItem = styled.div`
@@ -38,9 +38,9 @@ const ListItemHeader = styled.div`
 `;
 
 const ListItemContent = styled.div`
-  margin-left: 16px;
   display: flex;
   gap: 12px;
+  margin-left: 16px;
 `;
 
 const DestinationIconWrapper = styled.div`
@@ -135,8 +135,8 @@ const ConfiguredDestinationsListItem: React.FC<{ item: ConfiguredDestination; is
 
         {expand && (
           <ListItemBody>
-            <Divider margin='0 0 16px 0' />
-            <ConfiguredFields details={item.destinationTypeDetails} />
+            <Divider margin='0 0 16px 0' length='calc(100% - 32px)' />
+            <DataCardFields data={item.destinationTypeDetails} />
           </ListItemBody>
         )}
       </ListItem>
