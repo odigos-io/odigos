@@ -1,5 +1,10 @@
 import { type SignalUppercase } from '@/utils';
 
+export enum PlatformTypes {
+  K8S = 'k8s',
+  VM = 'vm',
+}
+
 export enum ActionsType {
   ADD_CLUSTER_INFO = 'AddClusterInfo',
   DELETE_ATTRIBUTES = 'DeleteAttribute',

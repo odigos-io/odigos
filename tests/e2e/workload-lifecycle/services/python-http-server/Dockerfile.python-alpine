@@ -1,5 +1,5 @@
 # Dockerfile.alpine
-FROM python:3.10-alpine
+FROM python:3.10.15-alpine
 WORKDIR /app
 COPY . /app
 RUN pip install --no-cache-dir django
