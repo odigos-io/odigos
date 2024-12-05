@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint --fix",
-    "cy": "cypress open --e2e -b electron"
+    "cy:run": "cypress run --e2e -q",
+    "cy:open": "cypress open --e2e -b electron"
   },
   "dependencies": {
     "@apollo/client": "^3.11.10",
