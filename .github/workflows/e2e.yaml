@@ -68,6 +68,7 @@ jobs:
           - '1.23'
           - '1.30'
         test-scenario:
+          - 'ui'
           - 'multi-apps'
           - 'helm-chart'
           - 'cli-upgrade'
@@ -106,13 +107,6 @@ jobs:
           node_image: ${{ matrix.kind-image }}
           version: 'v0.23.0'
           cluster_name: kind
-
-      - name: Install FE
-        # this is used for cypress tests which are not run in every scenario
-        if: matrix.test-scenario == 'multi-apps' || matrix.test-scenario == 'helm-chart'
-        run: |
-          cd frontend/webapp
-          yarn install
 
       - name: Download and Load Docker Images to Kind
         uses: actions/download-artifact@v4
