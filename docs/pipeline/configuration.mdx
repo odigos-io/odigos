@@ -12,7 +12,7 @@ Odigos sets up an observability pipeline in your Kubernetes cluster to collect, 
 
 User can configure the following components:
 
-- **Cluster Gateway Collector** - a collector that runs as a k8s Deployment. It receives the OpenTelemetry data from the Node Collectors, processes it, and exports it to the next component in the pipeline.
+- **Cluster Gateway Collector** - a collector that runs as a k8s Deployment. It receives the OpenTelemetry data from the Node Collectors, processes it, and exports it to the configured destinations.
 
 ### Configuring the Pipeline
 
@@ -23,7 +23,7 @@ When configuring the pipeline, you must use **only one of the two methods**—ei
 
 #### 1. Using Profiles
 
-Profiles are sets of pre-defined rules, specifically sizing profiles (`size_s`, `size_m`, `size_l`), to simplify the configuration of the pipeline. Each profile configures the following parameters for the **Cluster Gateway Collector**:
+Sizing Profiles `size_s`, `size_m`, `size_l` are pre-defined configurations designed to simplify pipeline configurations. Each profile specifies the following parameters for the **Cluster Gateway Collector**:
 
 | Profile  | Minimum Replicas      | HPA Maximum Replicas      | Request CPU (m)      | Limit CPU (m)      | Request Memory (Mi)
 |----------|-----------------------|----------------------|-----------------|---------------|----------------------|
