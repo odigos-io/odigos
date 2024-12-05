@@ -1,23 +1,56 @@
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
-  name: ui-cypress
+  name: ui
 spec:
   description: Run E2E tests against Odigos UI using Cypress
   skipDelete: true
   steps:
-    - name: Start the UI
-      try:
-        - script:
-            timeout: 300s
-            content: ../../common/odigos_ui.sh start
-    - name: Test the UI
-      try:
-        - script:
-            timeout: 300s
-            content: ../../common/odigos_ui.sh test
-    - name: End the UI
+    - name: Install Odigos CLI
       try:
         - script:
             timeout: 60s
-            content: ../../common/odigos_ui.sh stop
+            content: |
+              ../../../cli/odigos install --version e2e-test
+
+    - name: Install App - Simple Demo
+      try:
+        - script:
+            timeout: 120s
+            content: |
+              kubectl apply -f https://raw.githubusercontent.com/odigos-io/simple-demo/main/kubernetes/deployment.yaml
+              kubectl wait --for=condition=available --timeout=120s deployment --all -n default
+
+    - name: Add Destination - Jaeger
+      try:
+        - script:
+            timeout: 120s
+            content: |
+              kubectl apply -f https://raw.githubusercontent.com/odigos-io/simple-demo/main/kubernetes/jaeger.yaml
+              kubectl wait --for=condition=available --timeout=120s deployment/jaeger -n tracing
+
+    - name: Start UI from CLI
+      try:
+        - script:
+            timeout: 10s
+            content: |
+              nohup ../../../cli/odigos ui --beta > odigos-ui.log 2>&1 &
+              sleep 5
+
+    - name: Wait for UI
+      try:
+        - script:
+            timeout: 30s
+            content: |
+              for i in {1..10}; do
+                curl -s http://localhost:3000 && break || sleep 2
+              done
+
+    - name: Run Cypress tests
+      try:
+        - script:
+            timeout: 300s
+            content: |
+              cd ../../../frontend/webapp
+              yarn install
+              yarn cy:run

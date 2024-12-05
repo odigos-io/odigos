@@ -1,7 +1,28 @@
 describe('Onboarding', () => {
-  it('Visiting the root path fetches a config with GraphQL. A fresh install will result in a redirect to the start of onboarding, confirming Front + Back connections', () => {
-    cy.visit('/');
-    // If backend connection failed for any reason, teh default redirect would be "/overview"
-    cy.location('pathname').should('eq', '/choose-sources');
+  it('Should contain at least a "default" namespace', () => {
+    cy.visit('/choose-sources');
+
+    cy.get('#no-data').should('not.exist');
+    cy.get('#namespace-default').should('exist');
+  });
+
+  it('Should contain at least a "Jaeger" destination', () => {
+    cy.visit('/choose-destination');
+
+    cy.get('button').contains('ADD DESTINATION').click();
+    cy.get('#no-data').should('not.exist');
+
+    cy.get('input').should('have.attr', 'placeholder', 'Search...').type('Jaeger');
+    cy.get('#destination-jaeger').should('exist');
+  });
+
+  it('Should allow the user to pass every step, and end-up on the Overview page.', () => {
+    cy.visit('/choose-sources');
+
+    cy.get('button').contains('NEXT').click();
+    cy.location('pathname').should('eq', '/choose-destination');
+
+    cy.get('button').contains('DONE').click();
+    cy.location('pathname').should('eq', '/overview');
   });
 });
