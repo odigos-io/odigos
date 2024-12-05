@@ -75,9 +75,10 @@ function start() {
 
   # Start the production build
   echo "Odigos UI - ⏳ Starting..."
-  yarn back:start > /dev/null 2> "$log_file" &
+  cd ..
+  ./odigos-backend --port 8085 --debug --address 0.0.0.0 > /dev/null 2> "$log_file" &
 
-  sleep 3
+  sleep 1
   echo $! > "$pid_file"
   pid=$(get_process_id "$pid_file")
   check_process $pid
