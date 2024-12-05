@@ -4,9 +4,10 @@ import { slide } from '@/styles';
 import theme from '@/styles/theme';
 import { useAppStore } from '@/store';
 import styled from 'styled-components';
-import { useSourceCRUD } from '@/hooks';
 import { DeleteWarning } from '@/components';
-import { Badge, Button, Divider, Text, Transition } from '@/reuseable-components';
+import { OVERVIEW_ENTITY_TYPES } from '@/types';
+import { useSourceCRUD, useTransition } from '@/hooks';
+import { Badge, Button, Divider, Text } from '@/reuseable-components';
 
 const Container = styled.div`
   position: fixed;
@@ -24,6 +25,12 @@ const Container = styled.div`
 `;
 
 const MultiSourceControl = () => {
+  const Transition = useTransition({
+    container: Container,
+    animateIn: slide.in['center'],
+    animateOut: slide.out['center'],
+  });
+
   const { sources, deleteSources } = useSourceCRUD();
   const { configuredSources, setConfiguredSources } = useAppStore((state) => state);
   const [isWarnModalOpen, setIsWarnModalOpen] = useState(false);
@@ -50,7 +57,7 @@ const MultiSourceControl = () => {
 
   return (
     <>
-      <Transition container={Container} enter={!!totalSelected} animateIn={slide.in['center']} animateOut={slide.out['center']}>
+      <Transition enter={!!totalSelected}>
         <Text>Selected sources</Text>
         <Badge label={totalSelected} filled />
 
@@ -65,7 +72,7 @@ const MultiSourceControl = () => {
         <Button variant='tertiary' onClick={() => setIsWarnModalOpen(true)}>
           <Image src='/icons/common/trash.svg' alt='' width={16} height={16} />
           <Text family='secondary' decoration='underline' color={theme.text.error}>
-            Delete
+            Uninstrument
           </Text>
         </Button>
       </Transition>
@@ -73,15 +80,8 @@ const MultiSourceControl = () => {
       <DeleteWarning
         isOpen={isWarnModalOpen}
         name={`${totalSelected} sources`}
-        note={
-          totalSelected === sources.length
-            ? {
-                type: 'warning',
-                title: "You're about to delete the last source",
-                message: 'This will break your pipeline!',
-              }
-            : undefined
-        }
+        type={OVERVIEW_ENTITY_TYPES.SOURCE}
+        isLastItem={totalSelected === sources.length}
         onApprove={onDelete}
         onDeny={() => setIsWarnModalOpen(false)}
       />

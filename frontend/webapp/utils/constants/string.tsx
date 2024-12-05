@@ -29,10 +29,12 @@ export const ACTION = {
   CREATE: 'Create',
   UPDATE: 'Update',
   DELETE: 'Delete',
+  FETCH: 'Fetch',
 };
 
 export const FORM_ALERTS = {
-  REQUIRED_FIELDS: 'Required fields are missing!',
+  REQUIRED_FIELDS: 'Required fields are missing',
+  FIELD_IS_REQUIRED: 'This field is required',
 };
 
 export const NOTIFICATION: {
@@ -43,4 +45,46 @@ export const NOTIFICATION: {
   WARNING: 'warning',
   INFO: 'info',
   DEFAULT: 'default',
+};
+
+export const BACKEND_BOOLEAN = {
+  FALSE: 'False',
+  TRUE: 'True',
+};
+
+export const INSTUMENTATION_STATUS = {
+  INSTRUMENTED: 'Instrumented',
+  UNINSTRUMENTED: 'Uninstrumented',
+};
+
+export const DATA_CARDS = {
+  ACTION_DETAILS: 'Action Details',
+  RULE_DETAILS: 'Instrumentation Rule Details',
+  DESTINATION_DETAILS: 'Destination Details',
+  SOURCE_DETAILS: 'Source Details',
+
+  DETECTED_CONTAINERS: 'Detected Containers',
+  DETECTED_CONTAINERS_DESCRIPTION: 'The system automatically instruments the containers it detects with a supported programming language.',
+};
+
+export const DISPLAY_TITLES = {
+  ACTION: 'Action',
+  ACTIONS: 'Actions',
+  INSTRUMENTATION_RULE: 'Instrumentation Rule',
+  INSTRUMENTATION_RULES: 'Instrumentation Rules',
+  DESTINATION: 'Destination',
+  DESTINATIONS: 'Destinations',
+  SOURCE: 'Source',
+  SOURCES: 'Sources',
+
+  NAMESPACE: 'Namespace',
+  CONTAINER_NAME: 'Container Name',
+  KIND: 'Kind',
+  TYPE: 'Type',
+  NAME: 'Name',
+  NOTES: 'Notes',
+  STATUS: 'Status',
+  LANGUAGE: 'Language',
+  MONITORS: 'Monitors',
+  SIGNALS_FOR_PROCESSING: 'Signals for Processing',
 };

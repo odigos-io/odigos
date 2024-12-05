@@ -21,6 +21,7 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -54,13 +55,24 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 		return ctrl.Result{}, err
 	}
 
+	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(ia.Name)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	serviceName, err := resolveServiceName(ctx, r.Client, workloadName, ia.Namespace, workloadKind)
+	if err != nil {
+		logger.Error(err, "Failed to resolve service name", "workload", workloadName, "kind", workloadKind)
+		return ctrl.Result{}, err
+	}
+
 	instrumentationRules := &odigosv1.InstrumentationRuleList{}
 	err = r.Client.List(ctx, instrumentationRules)
 	if client.IgnoreNotFound(err) != nil {
 		return ctrl.Result{}, err
 	}
 
-	err = updateInstrumentationConfigForWorkload(&ic, &ia, instrumentationRules)
+	err = updateInstrumentationConfigForWorkload(&ic, &ia, instrumentationRules, serviceName)
 	if err != nil {
 		return ctrl.Result{}, err
 	}

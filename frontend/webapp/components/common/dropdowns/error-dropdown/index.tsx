@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { useSourceCRUD } from '@/hooks';
 import { DropdownOption } from '@/types';
+import { BACKEND_BOOLEAN } from '@/utils';
 import { Dropdown } from '@/reuseable-components';
 
 interface Props {
@@ -21,7 +22,7 @@ export const ErrorDropdown: React.FC<Props> = ({ title = 'Error Message', value,
 
     sources.forEach(({ instrumentedApplicationDetails: { conditions } }) => {
       conditions.forEach(({ type, status, message }) => {
-        if (status === 'False' && !payload.find((opt) => opt.value === message)) {
+        if (status === BACKEND_BOOLEAN.FALSE && !payload.find((opt) => opt.id === message)) {
           payload.push({ id: message, value: message });
         }
       });

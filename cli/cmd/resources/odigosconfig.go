@@ -2,7 +2,6 @@ package resources
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
@@ -10,10 +9,11 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 func NewOdigosConfiguration(ns string, config *common.OdigosConfiguration) (kube.Object, error) {
-	data, err := json.Marshal(config)
+	data, err := yaml.Marshal(config)
 	if err != nil {
 		return nil, err
 	}
@@ -47,6 +47,10 @@ func (a *odigosConfigResourceManager) Name() string { return "OdigosConfig" }
 
 func (a *odigosConfigResourceManager) InstallFromScratch(ctx context.Context) error {
 
+	sizingProfile := FilterSizeProfiles(a.config.Profiles)
+	collectorGatewayConfig := GetGatewayConfigBasedOnSize(sizingProfile)
+	a.config.CollectorGateway = collectorGatewayConfig
+
 	obj, err := NewOdigosConfiguration(a.ns, a.config)
 	if err != nil {
 		return err
@@ -56,4 +60,39 @@ func (a *odigosConfigResourceManager) InstallFromScratch(ctx context.Context) er
 		obj,
 	}
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
+}
+
+func GetGatewayConfigBasedOnSize(profile common.ProfileName) *common.CollectorGatewayConfiguration {
+	aggregateProfiles := append([]common.ProfileName{profile}, profilesMap[profile].Dependencies...)
+
+	for _, profile := range aggregateProfiles {
+		switch profile {
+		case sizeSProfile.ProfileName:
+			return &common.CollectorGatewayConfiguration{
+				MinReplicas:      1,
+				MaxReplicas:      5,
+				RequestCPUm:      150,
+				LimitCPUm:        300,
+				RequestMemoryMiB: 300,
+			}
+		case sizeMProfile.ProfileName:
+			return &common.CollectorGatewayConfiguration{
+				MinReplicas:      2,
+				MaxReplicas:      8,
+				RequestCPUm:      500,
+				LimitCPUm:        1000,
+				RequestMemoryMiB: 500,
+			}
+		case sizeLProfile.ProfileName:
+			return &common.CollectorGatewayConfiguration{
+				MinReplicas:      3,
+				MaxReplicas:      12,
+				RequestCPUm:      750,
+				LimitCPUm:        1250,
+				RequestMemoryMiB: 750,
+			}
+		}
+	}
+	// Return nil if no matching profile is found.
+	return nil
 }
