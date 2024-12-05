@@ -1,0 +1,83 @@
+name: UI E2E Tests
+
+on:
+  merge_group:
+  pull_request:
+    branches:
+      - main
+      - stable
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  cypress-test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        kube-version:
+          - '1.20.15'
+          - '1.23'
+          - '1.30'
+        include:
+          - kube-version: '1.20.15'
+            kind-image: 'kindest/node:v1.20.15@sha256:a32bf55309294120616886b5338f95dd98a2f7231519c7dedcec32ba29699394'
+          - kube-version: '1.23'
+            kind-image: 'kindest/node:v1.23.17@sha256:14d0a9a892b943866d7e6be119a06871291c517d279aedb816a4b4bc0ec0a5b3'
+          - kube-version: '1.30'
+            kind-image: 'kindest/node:v1.30.0@sha256:047357ac0cfea04663786a612ba1eaba9702bef25227a794b52890dd8bcd692e'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '~1.22'
+          check-latest: true
+          cache: true
+          cache-dependency-path: |
+            **/go.sum
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.9.0
+
+      - name: Create Kind Cluster
+        uses: helm/kind-action@v1.10.0
+        with:
+          node_image: ${{ matrix.kind-image }}
+          version: 'v0.23.0'
+          cluster_name: kind
+
+      - name: Install Odigos CLI
+        run: |
+          cli/odigos install
+
+      - name: Install App - Simple Demo
+        run: |
+          kubectl apply -f https://raw.githubusercontent.com/odigos-io/simple-demo/main/kubernetes/deployment.yaml
+          kubectl wait --for=condition=available --timeout=60s deployment --all -n default
+
+      - name: Add Destination - Jaeger
+        run: |
+          kubectl apply -f https://raw.githubusercontent.com/odigos-io/simple-demo/main/kubernetes/jaeger.yaml
+          kubectl wait --for=condition=available --timeout=60s deployment/jaeger -n tracing
+
+      - name: Start UI from CLI
+        run: |
+          nohup cli/odigos ui --beta &
+          sleep 5
+
+      - name: Install dependencies
+        run: |
+          cd frontend/webapp
+          yarn install
+
+      - name: Start Cypress tests
+        run: |
+          cd frontend/webapp
+          yarn cy:run

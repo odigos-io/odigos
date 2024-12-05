@@ -68,7 +68,6 @@ jobs:
           - '1.23'
           - '1.30'
         test-scenario:
-          - 'ui'
           - 'multi-apps'
           - 'helm-chart'
           - 'cli-upgrade'
