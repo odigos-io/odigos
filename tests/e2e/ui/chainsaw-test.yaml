@@ -41,6 +41,11 @@ spec:
             timeout: 120s
             file: ../../common/assert/simple-demo-runtime-detected.yaml
 
+    - name: Odigos pipeline ready
+      try:
+        - assert:
+            file: ../../common/assert/pipeline-ready.yaml
+
     - name: Start the UI
       try:
         - script:
