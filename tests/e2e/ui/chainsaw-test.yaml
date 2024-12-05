@@ -34,8 +34,17 @@ spec:
         - script:
             timeout: 10s
             content: |
-              nohup ../../../cli/odigos ui --beta &
+              nohup ../../../cli/odigos ui --beta > odigos-ui.log 2>&1 &
               sleep 5
+
+    - name: Wait for Odigos UI
+      try:
+        - script:
+            timeout: 30s
+            content: |
+              for i in {1..10}; do
+                curl -s http://localhost:3000 && break || sleep 2
+              done
 
     - name: Install dependencies
       try:
