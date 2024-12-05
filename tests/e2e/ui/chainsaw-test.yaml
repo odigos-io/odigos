@@ -35,12 +35,16 @@ spec:
         - script:
             timeout: 60s
             content: |
-              helm repo add grafana https://grafana.github.io/helm-charts
-              helm repo update
-              helm install e2e-tests grafana/tempo -n traces --create-namespace --set tempo.storage.trace.block.version=vParquet4 \
-              --set tempo.ingester.trace_idle_period=5s \
-              --set tempo.ingester.max_block_duration=20s \
-              --version 1.10.1
+              if helm status e2e-tests -n traces >/dev/null 2>&1; then
+                echo "e2e-tests helm already installed, probably from previous run. Skipping..."
+              else
+                helm repo add grafana https://grafana.github.io/helm-charts
+                helm repo update
+                helm install e2e-tests grafana/tempo -n traces --create-namespace --set tempo.storage.trace.block.version=vParquet4 \
+                --set tempo.ingester.trace_idle_period=5s \
+                --set tempo.ingester.max_block_duration=20s \
+                --version 1.10.1
+              fi
         - assert:
             file: ../../common/assert/tempo-running.yaml
 
@@ -76,20 +80,22 @@ spec:
         - assert:
             file: ../../common/assert/simple-demo-instrumented.yaml
 
-    - name: Start the UI
+    - name: Run Cypress tests
       try:
         - script:
             timeout: 300s
-            content: ../../common/odigos_ui.sh start
+            content: |
+              cd ../../../frontend/webapp
 
-    - name: Test the UI
-      try:
-        - script:
-            timeout: 300s
-            content: ../../common/odigos_ui.sh test
+              set +e
+              echo "Odigos UI - 👀 Testing with Cypress..."
+              yarn cy
+              test_exit_code=$?
+              set -e
 
-    - name: End the UI
-      try:
-        - script:
-            timeout: 60s
-            content: ../../common/odigos_ui.sh stop
+              if [ $test_exit_code -ne 0 ]; then
+                echo "Odigos UI - ❌ Cypress tests failed"
+                exit 1
+              else
+                echo "Odigos UI - ✅ Cypress tests passed"
+              fi
