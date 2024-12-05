@@ -55,7 +55,7 @@ jobs:
 
       - name: Install Odigos CLI
         run: |
-          cli/odigos install
+          ../../cli/odigos install
 
       - name: Install App - Simple Demo
         run: |
@@ -69,15 +69,15 @@ jobs:
 
       - name: Start UI from CLI
         run: |
-          nohup cli/odigos ui --beta &
+          nohup ../../cli/odigos ui --beta &
           sleep 5
 
       - name: Install dependencies
         run: |
-          cd frontend/webapp
+          cd ../../frontend/webapp
           yarn install
 
       - name: Start Cypress tests
         run: |
-          cd frontend/webapp
+          cd ../../frontend/webapp
           yarn cy:run
