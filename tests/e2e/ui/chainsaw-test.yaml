@@ -30,6 +30,17 @@ spec:
         - assert:
             file: ../../common/assert/simple-demo-installed.yaml
 
+    - name: Instrument Namespace
+      try:
+        - apply:
+            file: ../../common/apply/instrument-default-ns.yaml
+
+    - name: Assert Runtime Detected
+      try:
+        - assert:
+            timeout: 120s
+            file: ../../common/assert/simple-demo-runtime-detected.yaml
+
     - name: Prepare destination
       try:
         - script:
@@ -53,17 +64,6 @@ spec:
         - script:
             timeout: 60s
             content: ../../common/wait_for_dest.sh
-
-    - name: Instrument Namespace
-      try:
-        - apply:
-            file: ../../common/apply/instrument-default-ns.yaml
-
-    - name: Assert Runtime Detected
-      try:
-        - assert:
-            timeout: 120s
-            file: ../../common/assert/simple-demo-runtime-detected.yaml
 
     - name: Add Destination
       try:

@@ -3,16 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "back:build": "cd .. && go build -o ./odigos-backend",
-    "back:start": "cd .. && ./odigos-backend --port 8085 --debug --address 0.0.0.0",
-    "predev": "rm -rf .next",
     "dev": "next dev",
-    "prebuild": "rm -rf out",
     "build": "next build",
     "start": "next start",
     "lint": "next lint --fix",
-    "cy": "cypress run --e2e -q",
-    "cy:open": "cypress open --e2e -b electron"
+    "cy": "cypress open --e2e -b electron"
   },
   "dependencies": {
     "@apollo/client": "^3.11.10",
