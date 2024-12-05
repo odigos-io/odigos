@@ -80,11 +80,24 @@ spec:
         - assert:
             file: ../../common/assert/simple-demo-instrumented.yaml
 
-    - name: Run Cypress tests
+    - name: Start Odigos UI
+      try:
+        - script:
+            timeout: 30s
+            content: |
+              ../../../cli/odigos ui --beta
+
+    - name: Install Cypress
+      try:
+        - script:
+            timeout: 60s
+            content: |
+              yarn global add cypress
+
+    - name: Start Cypress tests
       try:
         - script:
             timeout: 300s
             content: |
               cd ../../../frontend/webapp
-              yarn install
-              yarn cy
+              cypress run --e2e -q
