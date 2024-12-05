@@ -1,6 +1,6 @@
 import Cypress from 'cypress';
 
-const PORT = 3001; // odigos ui --beta
+const PORT = 3000;
 const BASE_URL = `http://localhost:${PORT}`;
 
 const config: Cypress.ConfigOptions = {
