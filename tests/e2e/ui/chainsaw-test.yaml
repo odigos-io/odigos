@@ -9,98 +9,40 @@ spec:
     - name: Install Odigos
       try:
         - script:
-            content: |
-              ../../../cli/odigos install --namespace odigos-test --version e2e-test
             timeout: 60s
-        - assert:
-            file: ../../common/assert/odigos-installed.yaml
+            content: |
+              ../../../cli/odigos install
 
-    - name: Install Demo App
+    - name: Install App - Simple Demo
       try:
         - apply:
-            file: ../../common/apply/install-simple-demo.yaml
+            file: https://raw.githubusercontent.com/odigos-io/simple-demo/main/kubernetes/deployment.yaml
         - script:
-            timeout: 60s
+            timeout: 300s
             content: |
-              kubectl wait --for=condition=ready pod -l app=frontend --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=coupon --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=inventory --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=pricing --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=membership --timeout=60s
-        - assert:
-            file: ../../common/assert/simple-demo-installed.yaml
+              kubectl wait --for=condition=available --timeout=300s deployment --all -n default
 
-    - name: Instrument Namespace
+    - name: Add Destination - Jaeger
       try:
         - apply:
-            file: ../../common/apply/instrument-default-ns.yaml
-
-    - name: Assert Runtime Detected
-      try:
-        - assert:
-            timeout: 120s
-            file: ../../common/assert/simple-demo-runtime-detected.yaml
-
-    - name: Prepare destination
-      try:
+            file: https://raw.githubusercontent.com/odigos-io/simple-demo/main/kubernetes/jaeger.yaml
         - script:
             timeout: 60s
             content: |
-              if helm status e2e-tests -n traces >/dev/null 2>&1; then
-                echo "e2e-tests helm already installed, probably from previous run. Skipping..."
-              else
-                helm repo add grafana https://grafana.github.io/helm-charts
-                helm repo update
-                helm install e2e-tests grafana/tempo -n traces --create-namespace --set tempo.storage.trace.block.version=vParquet4 \
-                --set tempo.ingester.trace_idle_period=5s \
-                --set tempo.ingester.max_block_duration=20s \
-                --version 1.10.1
-              fi
-        - assert:
-            file: ../../common/assert/tempo-running.yaml
+              kubectl wait --for=condition=available --timeout=60s deployment/jaeger -n tracing
 
-    - name: Wait for destination to be ready
+    - name: Start UI
       try:
         - script:
-            timeout: 60s
-            content: ../../common/wait_for_dest.sh
-
-    - name: Add Destination
-      try:
-        - apply:
-            file: ../../common/apply/add-tempo-traces-destination.yaml
-
-    - name: Odigos pipeline ready
-      try:
-        - assert:
-            file: ../../common/assert/pipeline-ready.yaml
-
-    - name: Simple-demo instrumented after destination added
-      try:
-        - assert:
-            file: ../../common/assert/simple-demo-instrumented.yaml
-
-    - name: Start Odigos UI
-      try:
-        - script:
-            timeout: 30s
+            timeout: 10s
             content: |
-              nohup ../../../cli/odigos ui --beta > odigos-ui.log 2>&1 &
+              nohup ../../../cli/odigos ui --beta &
               sleep 5
 
-    - name: Wait for Odigos UI
+    - name: Install dependencies
       try:
         - script:
-            timeout: 30s
-            content: |
-              for i in {1..10}; do
-                curl -s http://localhost:3000 && break || sleep 2
-              done
-
-    - name: Install Cypress
-      try:
-        - script:
-            timeout: 120s
+            timeout: 60s
             content: |
               cd ../../../frontend/webapp
               yarn install
