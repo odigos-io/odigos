@@ -6,16 +6,53 @@ spec:
   description: Run E2E tests against Odigos UI using Cypress
   skipDelete: true
   steps:
+    - name: Install Odigos
+      try:
+        - script:
+            content: |
+              ../../../cli/odigos install --namespace odigos-test --version e2e-test
+            timeout: 60s
+        - assert:
+            file: ../../common/assert/odigos-installed.yaml
+
+    - name: Install Demo App
+      try:
+        - apply:
+            file: ../../common/apply/install-simple-demo.yaml
+        - script:
+            timeout: 60s
+            content: |
+              kubectl wait --for=condition=ready pod -l app=frontend --timeout=60s
+              kubectl wait --for=condition=ready pod -l app=coupon --timeout=60s
+              kubectl wait --for=condition=ready pod -l app=inventory --timeout=60s
+              kubectl wait --for=condition=ready pod -l app=pricing --timeout=60s
+              kubectl wait --for=condition=ready pod -l app=membership --timeout=60s
+        - assert:
+            file: ../../common/assert/simple-demo-installed.yaml
+
+    - name: Instrument Namespace
+      try:
+        - apply:
+            file: ../../common/apply/instrument-default-ns.yaml
+
+    - name: Assert Runtime Detected
+      try:
+        - assert:
+            timeout: 120s
+            file: ../../common/assert/simple-demo-runtime-detected.yaml
+
     - name: Start the UI
       try:
         - script:
             timeout: 300s
             content: ../../common/odigos_ui.sh start
+
     - name: Test the UI
       try:
         - script:
             timeout: 300s
             content: ../../common/odigos_ui.sh test
+
     - name: End the UI
       try:
         - script:
