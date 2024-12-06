@@ -96,14 +96,24 @@ func GetPatchedEnvValue(envName string, observedValue string, currentSdk *common
 
 	// check if we already processed this env since it's annotation
 	if annotationOriginalValueFound {
+
+		desiredFullValueWithObserved := observedValue
+		if !strings.Contains(observedValue, desiredOdigosPart) {
+			desiredFullValueWithObserved = observedValue + envMetadata.delim + desiredOdigosPart
+		}
+
 		if currentContainerManifestValue == nil {
-			return &desiredOdigosPart, nil
+			// if the value is from dockerfile, we need to add observed value to it
+			if annotationOriginalValue == nil {
+				return &desiredFullValueWithObserved, nil
+			} else {
+				return &desiredOdigosPart, nil
+			}
 		}
 
 		// this part checks if the value in the env is what odigos would use,
 		// and if it is, don't make any changes
-		desiredFullValue := observedValue + envMetadata.delim + desiredOdigosPart
-		if desiredFullValue == *currentContainerManifestValue {
+		if desiredFullValueWithObserved == *currentContainerManifestValue {
 			return currentContainerManifestValue, annotationOriginalValue
 		}
 
