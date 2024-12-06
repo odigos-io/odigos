@@ -64,8 +64,8 @@ func (o *OrigWorkloadEnvValues) UpsertOriginalValue(containerName string, envNam
 		}
 	}
 
-	currentValue := o.origManifestValues[containerName][envName]
-	if ((currentValue == nil) != (val == nil)) || (currentValue != nil && *currentValue != *val) {
+	currentValue, found := o.origManifestValues[containerName][envName]
+	if !found || ((currentValue == nil) != (val == nil)) || (currentValue != nil && *currentValue != *val) {
 		o.origManifestValues[containerName][envName] = val
 		o.modifiedSinceCreated = true
 	}

@@ -100,6 +100,13 @@ func GetPatchedEnvValue(envName string, observedValue string, currentSdk *common
 			return &desiredOdigosPart, nil
 		}
 
+		// this part checks if the value in the env is what odigos would use,
+		// and if it is, don't make any changes
+		desiredFullValue := observedValue + envMetadata.delim + desiredOdigosPart
+		if desiredFullValue == *currentContainerManifestValue {
+			return currentContainerManifestValue, annotationOriginalValue
+		}
+
 		currentManifestContainsOdigosValue := strings.Contains(*currentContainerManifestValue, desiredOdigosPart)
 		if currentManifestContainsOdigosValue {
 			// our goal is to be in the environment. if we are already there, so no overwrite is required.
@@ -117,8 +124,11 @@ func GetPatchedEnvValue(envName string, observedValue string, currentSdk *common
 	} else {
 		// else means there is no annotation on the workload.
 		if currentContainerManifestValue != nil {
-			userNewValAndOdigos := *currentContainerManifestValue + envMetadata.delim + desiredOdigosPart
-			return &userNewValAndOdigos, currentContainerManifestValue
+			currentManifestContainsOdigosValue := strings.Contains(*currentContainerManifestValue, desiredOdigosPart)
+			if !currentManifestContainsOdigosValue {
+				userNewValAndOdigos := *currentContainerManifestValue + envMetadata.delim + desiredOdigosPart
+				return &userNewValAndOdigos, currentContainerManifestValue
+			}
 		}
 	}
 
