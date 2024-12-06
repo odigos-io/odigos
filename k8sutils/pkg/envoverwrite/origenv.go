@@ -55,13 +55,11 @@ func (o *OrigWorkloadEnvValues) InsertOriginalValue(containerName string, envNam
 	if _, ok := o.origManifestValues[containerName]; !ok {
 		o.origManifestValues[containerName] = make(envOverwrite.OriginalEnv)
 	}
-
-	// this is a temporary workaround to support updating the original value if the user overwrites our value,
-	// while protecting from storing odigos values as original values.
-	if val != nil && envOverwrite.IsEnvContainsOdigosValue(*val) {
+	if _, alreadyExists := o.origManifestValues[containerName][envName]; alreadyExists {
+		// we already have the original value for this env, will not update it
+		// TODO: should we update it if the value is different?
 		return
 	}
-
 	o.origManifestValues[containerName][envName] = val
 	o.modifiedSinceCreated = true
 }

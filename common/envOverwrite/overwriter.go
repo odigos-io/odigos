@@ -171,15 +171,3 @@ func ValToAppend(envName string, sdk common.OtelSdk) (string, bool) {
 
 	return valToAppend, true
 }
-
-// temporary and non-performant function to check if the environment variable contains odigos value directly.
-func IsEnvContainsOdigosValue(envValue string) bool {
-	for _, env := range EnvValuesMap {
-		for _, val := range env.values {
-			if strings.Contains(envValue, val) {
-				return true
-			}
-		}
-	}
-	return false
-}
