@@ -3,6 +3,7 @@ package envoverwrite
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
@@ -51,17 +52,23 @@ func (o *OrigWorkloadEnvValues) RemoveOriginalValue(containerName string, envNam
 	return nil, false
 }
 
-func (o *OrigWorkloadEnvValues) InsertOriginalValue(containerName string, envName string, val *string) {
+func (o *OrigWorkloadEnvValues) UpsertOriginalValue(containerName string, envName string, val *string) {
 	if _, ok := o.origManifestValues[containerName]; !ok {
 		o.origManifestValues[containerName] = make(envOverwrite.OriginalEnv)
 	}
-	if _, alreadyExists := o.origManifestValues[containerName][envName]; alreadyExists {
-		// we already have the original value for this env, will not update it
-		// TODO: should we update it if the value is different?
-		return
+
+	// make sure we are not recording any odigos values into the annotation
+	if val != nil {
+		if strings.Contains(*val, "/var/odigos") {
+			return
+		}
 	}
-	o.origManifestValues[containerName][envName] = val
-	o.modifiedSinceCreated = true
+
+	currentValue, found := o.origManifestValues[containerName][envName]
+	if !found || ((currentValue == nil) != (val == nil)) || (currentValue != nil && *currentValue != *val) {
+		o.origManifestValues[containerName][envName] = val
+		o.modifiedSinceCreated = true
+	}
 }
 
 // stores the original values back into the manifest annotations
