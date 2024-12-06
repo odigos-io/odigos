@@ -126,7 +126,7 @@ func TestGetPatchedEnvValue(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			patchedValue := GetPatchedEnvValue(tt.envName, tt.observedValue, tt.sdk, tt.programmingLanguage)
+			patchedValue, _ := GetPatchedEnvValue(tt.envName, tt.observedValue, tt.sdk, tt.programmingLanguage, "", nil, false)
 			if patchedValue == nil {
 				assert.Equal(t, tt.patchedValueExpected, "", "mismatch in GetPatchedEnvValue: %s", tt.name)
 			} else {
