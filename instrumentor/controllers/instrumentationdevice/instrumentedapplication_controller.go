@@ -29,16 +29,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-type InstrumentationConfigReconciler struct {
+// InstrumentedApplicationReconciler reconciles a InstrumentedApplication object
+type InstrumentedApplicationReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	var instConfig odigosv1.InstrumentationConfig
-	err := r.Client.Get(ctx, req.NamespacedName, &instConfig)
+	var runtimeDetails odigosv1.InstrumentedApplication
+	err := r.Client.Get(ctx, req.NamespacedName, &runtimeDetails)
 	if err != nil {
 
 		if !apierrors.IsNotFound(err) {
@@ -55,13 +56,7 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 		return utils.RetryOnConflict(err)
 	}
 
-	var instrumentedApp odigosv1.InstrumentedApplication
-	err = r.Client.Get(ctx, req.NamespacedName, &instrumentedApp)
-	if err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
-
 	isNodeCollectorReady := isDataCollectionReady(ctx, r.Client)
-	err = reconcileSingleWorkload(ctx, r.Client, &instrumentedApp, isNodeCollectorReady)
+	err = reconcileSingleWorkload(ctx, r.Client, &runtimeDetails, isNodeCollectorReady)
 	return utils.RetryOnConflict(err)
 }
