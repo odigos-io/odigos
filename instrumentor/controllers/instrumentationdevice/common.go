@@ -111,22 +111,13 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 		}
 	}
 
-	var instConfig odigosv1.InstrumentationConfig
-	err = kubeClient.Get(ctx, client.ObjectKey{
-		Namespace: runtimeDetails.Namespace,
-		Name:      runtimeDetails.Name,
-	}, &instConfig)
-	if err != nil {
-		return err, false
-	}
-
 	result, err := controllerutil.CreateOrPatch(ctx, kubeClient, obj, func() error {
 		podSpec, err := getPodSpecFromObject(obj)
 		if err != nil {
 			return err
 		}
 
-		err, deviceApplied, tempDevicePartiallyApplied := instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, &instConfig, otelSdkToUse, obj, logger)
+		err, deviceApplied, tempDevicePartiallyApplied := instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, runtimeDetails, otelSdkToUse, obj, logger)
 		if err != nil {
 			return err
 		}
