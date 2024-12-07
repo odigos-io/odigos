@@ -66,6 +66,37 @@ func GetRelevantEnvVarsKeys() []string {
 	return keys
 }
 
+func calculateSanitizedObservedValue(observedValue string, delim string) string {
+	parts := strings.Split(observedValue, delim)
+	ignoreEnvValue := "-javaagent:/opt/sre-agent/sre-agent.jar"
+	newValues := []string{}
+	for _, part := range parts {
+		if part == ignoreEnvValue {
+			continue
+		}
+		if strings.TrimSpace(part) == "" {
+			continue
+		}
+		newValues = append(newValues, part)
+	}
+	return strings.Join(newValues, delim)
+}
+
+func appendOdigosValueIfNeeded(observedValue string, odigosValue string, delim string) string {
+	// if the observed value is empty, just return the odigos value
+	if observedValue == "" {
+		return odigosValue
+	}
+
+	// if the observed value already contains the odigos value, return the observed value
+	if strings.Contains(observedValue, odigosValue) {
+		return observedValue
+	}
+
+	// if the observed value does not contain the odigos value, append the odigos value to the observed value
+	return observedValue + delim + odigosValue
+}
+
 // returns the current value that should be populated in a specific environment variable.
 // if we should not patch the value, returns nil.
 // the are 2 parts to the environment value: odigos part and user part.
@@ -94,18 +125,18 @@ func GetPatchedEnvValue(envName string, observedValue string, currentSdk *common
 		return nil, nil
 	}
 
+	// temporary fix clean up observed value from the known webhook injected value
+	originalObservedValue := observedValue
+	sanitizedObservedValue := calculateSanitizedObservedValue(originalObservedValue, envMetadata.delim)
+	observedValueWithOdigos := appendOdigosValueIfNeeded(sanitizedObservedValue, desiredOdigosPart, envMetadata.delim)
+
 	// check if we already processed this env since it's annotation
 	if annotationOriginalValueFound {
 
-		desiredFullValueWithObserved := observedValue
-		if !strings.Contains(observedValue, desiredOdigosPart) {
-			desiredFullValueWithObserved = observedValue + envMetadata.delim + desiredOdigosPart
-		}
-
 		if currentContainerManifestValue == nil {
-			// if the value is from dockerfile, we need to add observed value to it
+			// if the value we use came from dockerfile, we need to introduce it again:
 			if annotationOriginalValue == nil {
-				return &desiredFullValueWithObserved, nil
+				return &observedValueWithOdigos, nil
 			} else {
 				return &desiredOdigosPart, nil
 			}
@@ -113,7 +144,7 @@ func GetPatchedEnvValue(envName string, observedValue string, currentSdk *common
 
 		// this part checks if the value in the env is what odigos would use,
 		// and if it is, don't make any changes
-		if desiredFullValueWithObserved == *currentContainerManifestValue {
+		if observedValueWithOdigos == *currentContainerManifestValue {
 			return currentContainerManifestValue, annotationOriginalValue
 		}
 
@@ -128,7 +159,7 @@ func GetPatchedEnvValue(envName string, observedValue string, currentSdk *common
 			// assuming that the manifest value set by the user is what should be used and ignore runtime details.
 			// just add odigos value
 			// TODO: update annotation with the new value
-			newValue := *currentContainerManifestValue + envMetadata.delim + desiredOdigosPart
+			newValue := appendOdigosValueIfNeeded(*currentContainerManifestValue, desiredOdigosPart, envMetadata.delim)
 			return &newValue, currentContainerManifestValue
 		}
 	} else {
@@ -145,7 +176,7 @@ func GetPatchedEnvValue(envName string, observedValue string, currentSdk *common
 	// scenario 1: no user defined values and no odigos value
 	// happens: might be the case right after the source is instrumented, and before the instrumentation is applied.
 	// action: there are no user defined values, so no need to make any changes.
-	if observedValue == "" {
+	if originalObservedValue == "" {
 		return nil, nil
 	}
 
@@ -153,42 +184,27 @@ func GetPatchedEnvValue(envName string, observedValue string, currentSdk *common
 	// happens: when the user did not set any value to this env (either via manifest or dockerfile)
 	// action: we don't need to overwrite the value, just let odigos handle it
 	for _, sdkEnvValue := range envMetadata.values {
-		if sdkEnvValue == observedValue {
+		if sdkEnvValue == originalObservedValue {
 			return nil, nil
 		}
 	}
-
-	// temporary fix clean up observed value from the known webhook injected value
-	parts := strings.Split(observedValue, envMetadata.delim)
-	ignoreEnvValue := "-javaagent:/opt/sre-agent/sre-agent.jar"
-	newValues := []string{}
-	for _, part := range parts {
-		if part == ignoreEnvValue {
-			continue
-		}
-		if strings.TrimSpace(part) == "" {
-			continue
-		}
-		newValues = append(newValues, part)
-	}
-	observedValue = strings.Join(newValues, envMetadata.delim)
 
 	// Scenario 3: both odigos and user defined values are present
 	// happens: when the user set some values to this env (either via manifest or dockerfile) and odigos instrumentation is applied.
 	// action: we want to keep the user defined values and upsert the odigos value.
 	for _, sdkEnvValue := range envMetadata.values {
-		if strings.Contains(observedValue, sdkEnvValue) {
+		if strings.Contains(sanitizedObservedValue, sdkEnvValue) {
 			if sdkEnvValue == desiredOdigosPart {
 				// shortcut, the value is already patched
 				// both the odigos part equals to the new value, and the user part we want to keep
 				// Exception: for a value that is injected by a webhook, we don't want to add it to
 				// the deployment, as the webhook will manage when it is needed.
-				return &observedValue, currentContainerManifestValue
+				return &sanitizedObservedValue, currentContainerManifestValue
 			} else {
 				// The environment variable is patched by some other odigos sdk.
 				// replace just the odigos part with the new desired value.
 				// this can happen when moving between SDKs.
-				patchedEvnValue := strings.ReplaceAll(observedValue, sdkEnvValue, desiredOdigosPart)
+				patchedEvnValue := strings.ReplaceAll(sanitizedObservedValue, sdkEnvValue, desiredOdigosPart)
 				return &patchedEvnValue, currentContainerManifestValue
 			}
 		}
@@ -197,13 +213,7 @@ func GetPatchedEnvValue(envName string, observedValue string, currentSdk *common
 	// Scenario 4: only user defined values are present
 	// happens: when the user set some values to this env (either via manifest or dockerfile) and odigos instrumentation not yet applied.
 	// action: we want to keep the user defined values and append the odigos value.
-	if observedValue == "" {
-		return &desiredOdigosPart, currentContainerManifestValue
-	} else {
-		// no user defined values, just append the odigos value
-		mergedEnvValue := observedValue + envMetadata.delim + desiredOdigosPart
-		return &mergedEnvValue, currentContainerManifestValue
-	}
+	return &observedValueWithOdigos, currentContainerManifestValue
 }
 
 func ValToAppend(envName string, sdk common.OtelSdk) (string, bool) {
