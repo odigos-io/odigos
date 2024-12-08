@@ -338,6 +338,15 @@ func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.Nam
 				}
 				return
 			}
+			d.instrumentationStatusChan <- instrumentationStatus{
+				Healthy:       true,
+				Message:       "Successfully loaded eBPF probes to pod: " + pod.String(),
+				Workload:      *podWorkload,
+				Reason:        LoadedSuccessfully,
+				PodName:       pod,
+				ContainerName: containerName,
+				Pid:           pid,
+			}
 
 			ip.inst = inst
 
