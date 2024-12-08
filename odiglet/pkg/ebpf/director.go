@@ -28,7 +28,10 @@ import (
 
 // This interface should be implemented by all ebpf sdks
 // for example, the go auto instrumentation sdk implements it
+// Deprecated: this will be removed once we fully move to the generic instrumentation manager
 type OtelEbpfSdk interface {
+	// this is temporary until we move to the generic instrumentation manager
+	Load(ctx context.Context) error
 	// Run starts the eBPF instrumentation.
 	// It should block until the instrumentation is stopped or the context is canceled or an error occurs.
 	Run(ctx context.Context) error
@@ -42,6 +45,7 @@ type ConfigurableOtelEbpfSdk interface {
 }
 
 // users can use different eBPF otel SDKs by returning them from this function
+// Deprecated: this will be removed once we fully move to the generic instrumentation manager
 type InstrumentationFactory[T OtelEbpfSdk] interface {
 	CreateEbpfInstrumentation(ctx context.Context, pid int, serviceName string, podWorkload *workload.PodWorkload, containerName string, podName string, loadedIndicator chan struct{}) (T, error)
 }
@@ -301,30 +305,8 @@ func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.Nam
 	d.workloadToPods[*podWorkload][pod] = struct{}{}
 
 	ip.runOnce.Do(func() {
-		loadedIndicator := make(chan struct{})
-		loadedCtx, loadedObserverCancel := context.WithCancel(ctx)
-		// launch an observer for successful loading of the eBPF probes
 		go func() {
-			select {
-			case <-loadedCtx.Done():
-				return
-			case <-loadedIndicator:
-				d.instrumentationStatusChan <- instrumentationStatus{
-					Healthy:       true,
-					Message:       "Successfully loaded eBPF probes to pod: " + pod.String(),
-					Workload:      *podWorkload,
-					Reason:        LoadedSuccessfully,
-					PodName:       pod,
-					ContainerName: containerName,
-					Pid:           pid,
-				}
-			}
-		}()
-
-		go func() {
-			// once the instrumentation finished running (either by error or successful exit), we can cancel the 'loaded' observer for this instrumentation
-			defer loadedObserverCancel()
-			inst, err := d.instrumentationFactory.CreateEbpfInstrumentation(ctx, pid, appName, podWorkload, containerName, pod.Name, loadedIndicator)
+			inst, err := d.instrumentationFactory.CreateEbpfInstrumentation(ctx, pid, appName, podWorkload, containerName, pod.Name, nil)
 			if err != nil {
 				d.instrumentationStatusChan <- instrumentationStatus{
 					Healthy:       false,
@@ -343,6 +325,20 @@ func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.Nam
 				return
 			}
 
+			err = inst.Load(ctx)
+			if err != nil {
+				d.instrumentationStatusChan <- instrumentationStatus{
+					Healthy:       false,
+					Message:       err.Error(),
+					Workload:      *podWorkload,
+					Reason:        FailedToLoad,
+					PodName:       pod,
+					ContainerName: containerName,
+					Pid:           pid,
+				}
+				return
+			}
+
 			ip.inst = inst
 
 			log.Logger.V(0).Info("Running ebpf instrumentation", "workload", podWorkload, "pod", pod, "language", d.language)
@@ -352,7 +348,7 @@ func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.Nam
 					Healthy:       false,
 					Message:       err.Error(),
 					Workload:      *podWorkload,
-					Reason:        FailedToLoad,
+					Reason:        FailedToRun,
 					PodName:       pod,
 					ContainerName: containerName,
 					Pid:           pid,
