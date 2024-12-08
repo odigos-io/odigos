@@ -557,8 +557,8 @@ github.com/frankban/quicktest v1.14.6 h1:7Xjx+VpznH+oBnejlPUj8oUpdxnVs4f8XU8WnHk
 github.com/frankban/quicktest v1.14.6/go.mod h1:4ptaffx2x8+WTWXmUCuVU6aPUX1/Mz7zb5vbUoiM6w0=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4IgpuI1SZQ=
-github.com/fsnotify/fsnotify v1.7.0 h1:8JEhPFa5W2WU7YfeZzPNqzMP6Lwt7L2715Ggo0nosvA=
-github.com/fsnotify/fsnotify v1.7.0/go.mod h1:40Bi/Hjc2AVfZrqy+aj+yEI+/bRxZnMJyTJwOpGvigM=
+github.com/fsnotify/fsnotify v1.8.0 h1:dAwr6QBTBZIkG8roQaJjGof0pp0EeF+tNV7YBP3F/8M=
+github.com/fsnotify/fsnotify v1.8.0/go.mod h1:8jBTzvmWwFyi3Pb8djgCCO5IBqzKJ/Jwo8TRcHyHii0=
 github.com/getsentry/sentry-go v0.28.1 h1:zzaSm/vHmGllRM6Tpx1492r0YDzauArdBfkJRtY6P5k=
 github.com/getsentry/sentry-go v0.28.1/go.mod h1:1fQZ+7l7eeJ3wYi82q5Hg8GqAPgefRq+FP/QhafYVgg=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
@@ -1622,8 +1622,8 @@ go.opentelemetry.io/collector/config/configtls v1.12.0 h1:Px0+GE4LE/9sXMgkwBb5g8
 go.opentelemetry.io/collector/config/configtls v1.12.0/go.mod h1:aeCGPlvrWhc+EySpIKdelPAj4l9wXKzZPouQO3NIoTs=
 go.opentelemetry.io/collector/config/internal v0.106.0 h1:X/p2AfWgMIt5W0zzl/KU1w6UTbcrCYgV4hwVmz9tllA=
 go.opentelemetry.io/collector/config/internal v0.106.0/go.mod h1:tgb4gMdtRnCoMr2EtQGP9cE2dhaoCnSo7y7kZuQzpTM=
-go.opentelemetry.io/collector/confmap v0.106.0 h1:oZ/QfGjtOTz6sEbNkp8CxSwDFRHXej8u6MywvhTzjqI=
-go.opentelemetry.io/collector/confmap v0.106.0/go.mod h1:X+nvuiQs3zdeXKkrEX1Ta3R49eLZ2/NYZLs3KUp1pik=
+go.opentelemetry.io/collector/confmap v1.20.0 h1:ARfOwmkKxFOud1njl03yAHQ30+uenlzqCO6LBYamDTE=
+go.opentelemetry.io/collector/confmap v1.20.0/go.mod h1:DMpd9Ay/ffls3JoQBQ73vWeRsz1rNuLbwjo6WtjSQus=
 go.opentelemetry.io/collector/confmap/converter/expandconverter v0.106.0 h1:V2Ozu9YdupxmjU44L/M5JDwpm4JpxLfZr2A3L4uzpdY=
 go.opentelemetry.io/collector/confmap/converter/expandconverter v0.106.0/go.mod h1:gZkwOSFmD2TjnqbEkEB3S0UnxLHEOU7GO2hqWlBhBxY=
 go.opentelemetry.io/collector/confmap/provider/envprovider v0.106.0 h1:dXFGzEQiywPwIU2hzmATYFAlJ8P62LlMmxhCvrkBsn0=

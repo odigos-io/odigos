@@ -9,8 +9,8 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/confmap"
 	"go.opentelemetry.io/collector/confmap/converter/expandconverter"
+	odigosfileprovider "go.opentelemetry.io/collector/odigos/providers/odigosfileprovider"
 	envprovider "go.opentelemetry.io/collector/confmap/provider/envprovider"
-	fileprovider "go.opentelemetry.io/collector/confmap/provider/fileprovider"
 	httpprovider "go.opentelemetry.io/collector/confmap/provider/httpprovider"
 	httpsprovider "go.opentelemetry.io/collector/confmap/provider/httpsprovider"
 	yamlprovider "go.opentelemetry.io/collector/confmap/provider/yamlprovider"
@@ -30,8 +30,8 @@ func main() {
 		ConfigProviderSettings: otelcol.ConfigProviderSettings{
 			ResolverSettings: confmap.ResolverSettings{
 				ProviderFactories: []confmap.ProviderFactory{
+					odigosfileprovider.NewFactory(),
 					envprovider.NewFactory(),
-					fileprovider.NewFactory(),
 					httpprovider.NewFactory(),
 					httpsprovider.NewFactory(),
 					yamlprovider.NewFactory(),

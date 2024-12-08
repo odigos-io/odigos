@@ -1,0 +1,86 @@
+apiVersion: odigos.io/v1alpha1
+kind: Processor
+metadata:
+  generation: 1
+  name: insert-cluster-name
+  namespace: odigos-test
+  ownerReferences:
+  - apiVersion: actions.odigos.io/v1alpha1
+    kind: AddClusterInfo
+    name: insert-cluster-name
+spec:
+  collectorRoles:
+  - CLUSTER_GATEWAY
+  orderHint: 1
+  processorConfig:
+    attributes:
+    - action: insert
+      key: k8s.cluster.name
+      value: e2e-test-cluster
+  processorName: insert-cluster-name
+  signals:
+  - TRACES
+  - METRICS
+  - LOGS
+  type: resource
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1" # new processor should not cause a new deployment
+  labels:
+    odigos.io/collector-role: "CLUSTER_GATEWAY"
+  name: odigos-gateway
+  namespace: odigos-test
+  ownerReferences:
+    - apiVersion: odigos.io/v1alpha1
+      blockOwnerDeletion: true
+      controller: true
+      kind: CollectorsGroup
+      name: odigos-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      odigos.io/collector-role: "CLUSTER_GATEWAY"
+  template:
+    metadata:
+      labels:
+        odigos.io/collector-role: "CLUSTER_GATEWAY"
+    spec:
+      containers:
+        - env:
+            - name: ODIGOS_VERSION
+              valueFrom:
+                configMapKeyRef:
+                  key: ODIGOS_VERSION
+                  name: odigos-deployment
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: GOMEMLIMIT
+              (value != null): true
+          name: gateway
+          resources:
+            requests:
+              (memory != null): true
+            limits:
+              (memory != null): true
+          volumeMounts:
+            - mountPath: /conf
+              name: collector-conf
+      volumes:
+        - configMap:
+            defaultMode: 420
+            items:
+              - key: collector-conf
+                path: collector-conf.yaml
+            name: odigos-gateway
+          name: collector-conf
+status:
+  availableReplicas: 1
+  readyReplicas: 1
+  replicas: 1
