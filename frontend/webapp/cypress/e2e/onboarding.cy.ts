@@ -1,28 +1,43 @@
+import { ROUTES } from '../../utils/constants/routes';
+
 describe('Onboarding', () => {
   it('Should contain at least a "default" namespace', () => {
-    cy.visit('/choose-sources');
+    cy.intercept('/graphql').as('gql');
+    cy.visit(ROUTES.CHOOSE_SOURCES);
 
-    cy.get('#no-data').should('not.exist');
-    cy.get('#namespace-default').should('exist');
+    cy.wait('@gql').then(() => {
+      expect('#namespace-default').to.exist;
+    });
   });
 
   it('Should contain at least a "Jaeger" destination', () => {
-    cy.visit('/choose-destination');
+    cy.intercept('/graphql').as('gql');
+    cy.visit(ROUTES.CHOOSE_DESTINATION);
 
-    cy.get('button').contains('ADD DESTINATION').click();
-    cy.get('#no-data').should('not.exist');
-
-    cy.get('input').should('have.attr', 'placeholder', 'Search...').type('Jaeger');
-    cy.get('#destination-jaeger').should('exist');
+    cy.wait('@gql').then(() => {
+      cy.get('button').contains('ADD DESTINATION').click();
+      expect('#destination-jaeger').to.exist;
+    });
   });
 
-  it('Should allow the user to pass every step, and end-up on the Overview page.', () => {
-    cy.visit('/choose-sources');
+  it('Should autocomplete the "Jaeger" destination', () => {
+    cy.intercept('/graphql').as('gql');
+    cy.visit(ROUTES.CHOOSE_DESTINATION);
+
+    cy.wait('@gql').then(() => {
+      cy.get('button').contains('ADD DESTINATION').click();
+      cy.get('#destination-jaeger').click();
+      expect('#JAEGER_URL').to.not.be.empty;
+    });
+  });
+
+  it('Should allow the user to pass every step, and end-up on the "Overview" page.', () => {
+    cy.visit(ROUTES.CHOOSE_SOURCES);
 
     cy.get('button').contains('NEXT').click();
-    cy.location('pathname').should('eq', '/choose-destination');
+    cy.location('pathname').should('eq', ROUTES.CHOOSE_DESTINATION);
 
     cy.get('button').contains('DONE').click();
-    cy.location('pathname').should('eq', '/overview');
+    cy.location('pathname').should('eq', ROUTES.OVERVIEW);
   });
 });

@@ -15,11 +15,18 @@ spec:
 
     - name: Install App - Simple Demo
       try:
+        - apply:
+            file: ../../common/apply/install-simple-demo.yaml
         - script:
             timeout: 120s
             content: |
-              kubectl apply -f https://raw.githubusercontent.com/odigos-io/simple-demo/main/kubernetes/deployment.yaml
-              kubectl wait --for=condition=available --timeout=120s deployment --all -n default
+              kubectl wait --for=condition=ready pod -l app=frontend --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=coupon --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=inventory --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=pricing --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=membership --timeout=120s
+        - assert:
+            file: ../../common/assert/simple-demo-installed.yaml
 
     - name: Add Destination - Jaeger
       try:
