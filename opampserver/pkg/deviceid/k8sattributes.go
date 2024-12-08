@@ -35,7 +35,7 @@ func (k *K8sPodInfoResolver) getServiceNameFromInstrumentationConfig(ctx context
 	}
 	odigosKubeClient, err := odigosclientset.NewForConfig(cfg)
 	if err != nil {
-		k.logger.Error(err, "Failed to init odigos client")
+		k.logger.Error(err, "Failed to init Odigos client")
 	}
 
 	instConfig, err := odigosKubeClient.OdigosV1alpha1().InstrumentationConfigs(namespace).Get(ctx, instConfigName, metav1.GetOptions{})
@@ -45,7 +45,6 @@ func (k *K8sPodInfoResolver) getServiceNameFromInstrumentationConfig(ctx context
 	}
 
 	if instConfig.Spec.ServiceName == "" {
-
 		k.logger.Info("ServiceName is not specified in InstrumentationConfig, falling back to workload name", "name", name, "namespace", namespace)
 		return "", false
 	}
