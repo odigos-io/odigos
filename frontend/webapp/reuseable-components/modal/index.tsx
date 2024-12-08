@@ -96,12 +96,12 @@ const Modal: React.FC<Props> = ({ isOpen, noOverlay, header, actionComponent, on
     <>
       <Overlay hidden={!isOpen} onClick={onClose} style={{ opacity: noOverlay ? 0 : 1 }} />
 
-      <Transition enter={isOpen}>
+      <Transition id={`modal${header ? `-${header.title.replaceAll(' ', '-')}` : ''}`} enter={isOpen}>
         {header && (
           <ModalHeader>
             <ModalCloseButton onClick={onClose}>
               <Image src='/icons/common/x.svg' alt='close' width={15} height={12} />
-              <CancelText>{'Cancel'}</CancelText>
+              <CancelText>Cancel</CancelText>
             </ModalCloseButton>
             <ModalTitleContainer>
               <ModalTitle>{header.title}</ModalTitle>

@@ -90,7 +90,7 @@ const AddEntity: React.FC<AddEntityButtonDropdownProps> = ({ options = DEFAULT_O
 
   return (
     <Container ref={dropdownRef}>
-      <StyledButton onClick={handleToggle}>
+      <StyledButton id='add-entity' onClick={handleToggle}>
         {isPolling ? <FadeLoader color={theme.colors.primary} /> : <Image src='/icons/common/plus-black.svg' width={16} height={16} alt='Add' />}
         <ButtonText size={14}>{placeholder}</ButtonText>
       </StyledButton>
@@ -98,7 +98,7 @@ const AddEntity: React.FC<AddEntityButtonDropdownProps> = ({ options = DEFAULT_O
       {isDropdownOpen && (
         <DropdownListContainer>
           {options.map((option) => (
-            <DropdownItem key={option.id} $selected={currentModal === option.id} onClick={() => handleSelect(option)}>
+            <DropdownItem key={option.id} id={`add-${option.id}`} $selected={currentModal === option.id} onClick={() => handleSelect(option)}>
               <Image src={`/icons/overview/${option.id}s.svg`} width={16} height={16} alt={`Add ${option.value}`} />
               <Text size={14}>{option.value}</Text>
             </DropdownItem>
