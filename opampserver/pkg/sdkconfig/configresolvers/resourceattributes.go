@@ -19,7 +19,7 @@ type ResourceAttribute struct {
 // - pod name
 // - container name
 // - object name and kind (deployment, statefulset, daemonset, pod)
-func CalculateServerAttributes(k8sAttributes *deviceid.K8sResourceAttributes, nodeName string) ([]ResourceAttribute, error) {
+func CalculateServerAttributes(k8sAttributes *deviceid.K8sResourceAttributes, nodeName string, serviceName string) ([]ResourceAttribute, error) {
 
 	serverOfferResourceAttributes := []ResourceAttribute{
 		{
@@ -32,7 +32,7 @@ func CalculateServerAttributes(k8sAttributes *deviceid.K8sResourceAttributes, no
 		},
 		{
 			Key:   string(semconv.ServiceNameKey),
-			Value: k8sAttributes.OtelServiceName,
+			Value: serviceName,
 		},
 		{
 			Key:   string(semconv.K8SPodNameKey),
