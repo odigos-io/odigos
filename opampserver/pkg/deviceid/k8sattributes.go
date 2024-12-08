@@ -2,14 +2,14 @@ package deviceid
 
 import (
 	"context"
-	"errors"
 
 	"github.com/go-logr/logr"
-	"github.com/odigos-io/odigos/common/consts"
+	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 )
 
 // the purpose of this class is to use the k8s api to resolve container details
@@ -26,42 +26,30 @@ func NewK8sPodInfoResolver(logger logr.Logger, kubeClient *kubernetes.Clientset)
 	}
 }
 
-func (k *K8sPodInfoResolver) getServiceNameFromAnnotation(ctx context.Context, name string, kind string, namespace string) (string, bool) {
-	obj, err := k.getWorkloadObject(ctx, name, kind, namespace)
+func (k *K8sPodInfoResolver) getServiceNameFromInstrumentationConfig(ctx context.Context, name string, kind string, namespace string) (string, bool) {
+
+	instConfigName := workload.CalculateWorkloadRuntimeObjectName(name, workload.WorkloadKind(kind))
+	cfg, err := rest.InClusterConfig()
 	if err != nil {
-		k.logger.Error(err, "failed to get workload object to resolve reported service name annotation. will use fallback service name")
+		k.logger.Error(err, "Failed to init Kubernetes API client")
+	}
+	odigosKubeClient, err := odigosclientset.NewForConfig(cfg)
+	if err != nil {
+		k.logger.Error(err, "Failed to init odigos client")
+	}
+
+	instConfig, err := odigosKubeClient.OdigosV1alpha1().InstrumentationConfigs(namespace).Get(ctx, instConfigName, metav1.GetOptions{})
+	if err != nil {
+		k.logger.Error(err, "Failed to get InstrumentationConfig for workload", "name", name, "kind", kind, "namespace", namespace)
 		return "", false
 	}
 
-	annotations := obj.GetAnnotations()
-	if annotations == nil {
-		// no annotations, so service name is not specified by user. fallback to workload name
+	if instConfig.Spec.ServiceName == "" {
+
+		k.logger.Info("ServiceName is not specified in InstrumentationConfig, falling back to workload name", "name", name, "namespace", namespace)
 		return "", false
 	}
-
-	overwrittenName, exists := annotations[consts.OdigosReportedNameAnnotation]
-	if !exists {
-		// the is no annotation by user for specific reported service name for this workload
-		// fallback to workload name
-		return "", false
-	}
-
-	return overwrittenName, true
-}
-
-func (k *K8sPodInfoResolver) getWorkloadObject(ctx context.Context, name string, kind string, namespace string) (metav1.Object, error) {
-	switch kind {
-	case "Deployment":
-		return k.kubeClient.AppsV1().Deployments(namespace).Get(ctx, name, metav1.GetOptions{})
-	case "StatefulSet":
-		return k.kubeClient.AppsV1().StatefulSets(namespace).Get(ctx, name, metav1.GetOptions{})
-	case "DaemonSet":
-		return k.kubeClient.AppsV1().DaemonSets(namespace).Get(ctx, name, metav1.GetOptions{})
-	case "Pod":
-		return k.kubeClient.CoreV1().Pods(namespace).Get(ctx, name, metav1.GetOptions{})
-	}
-
-	return nil, errors.New("failed to get workload object for kind: " + kind)
+	return instConfig.Spec.ServiceName, true
 }
 
 // Resolves the service name, with the following priority:
@@ -72,7 +60,7 @@ func (k *K8sPodInfoResolver) getWorkloadObject(ctx context.Context, name string,
 func (k *K8sPodInfoResolver) ResolveServiceName(ctx context.Context, workloadName string, workloadKind string, containerDetails *ContainerDetails) string {
 
 	// we always fetch the fresh service name from the annotation to make sure the most up to date value is returned
-	serviceName, foundReportedName := k.getServiceNameFromAnnotation(ctx, workloadName, workloadKind, containerDetails.PodNamespace)
+	serviceName, foundReportedName := k.getServiceNameFromInstrumentationConfig(ctx, workloadName, workloadKind, containerDetails.PodNamespace)
 	if foundReportedName {
 		return serviceName
 	}
