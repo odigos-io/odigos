@@ -90,6 +90,9 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 	}
 
 	serviceName := instrumentationConfig.Spec.ServiceName
+	if serviceName == "" {
+		serviceName = k8sAttributes.WorkloadName
+	}
 	remoteResourceAttributes, err := configresolvers.CalculateServerAttributes(k8sAttributes, c.nodeName, serviceName)
 	if err != nil {
 		c.logger.Error(err, "failed to calculate server attributes", "k8sAttributes", k8sAttributes)
