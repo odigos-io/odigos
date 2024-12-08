@@ -5,6 +5,7 @@ import (
 	"slices"
 
 	"github.com/go-logr/logr"
+
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
@@ -52,7 +53,8 @@ func NewSdkConfigManager(logger logr.Logger, mgr ctrl.Manager, connectionCache *
 	return sdkConfigManager
 }
 
-func (m *SdkConfigManager) GetFullConfig(ctx context.Context, remoteResourceAttributes []configresolvers.ResourceAttribute, podWorkload *workload.PodWorkload, instrumentedAppName string, instrumentationConfig *odigosv1.InstrumentationConfig) (*protobufs.AgentRemoteConfig, error) {
+func (m *SdkConfigManager) GetFullConfig(ctx context.Context, remoteResourceAttributes []configresolvers.ResourceAttribute, podWorkload *workload.PodWorkload, instrumentedAppName string, programmingLanguage string,
+	instrumentationConfig *odigosv1.InstrumentationConfig) (*protobufs.AgentRemoteConfig, error) {
 
 	var nodeCollectorGroup odigosv1.CollectorsGroup
 	err := m.mgr.GetClient().Get(ctx, client.ObjectKey{Name: k8sconsts.OdigosNodeCollectorCollectorGroupName, Namespace: m.odigosNs}, &nodeCollectorGroup)
@@ -80,10 +82,15 @@ func (m *SdkConfigManager) GetFullConfig(ctx context.Context, remoteResourceAttr
 		return nil, err
 	}
 
+	// // We are moving towards passing all Instrumentation capabilities unchanged within the instrumentationConfig to the opamp client.
+	// // Gradually, we will migrate the InstrumentationLibraryConfigs and SDK remote config into the instrumentationConfig and the agents to use it.
+	opampRemoteConfigInstrumentationConfig, err := configsections.FilterRelevantSdk(instrumentationConfig, programmingLanguage)
+
 	agentConfigMap := protobufs.AgentConfigMap{
 		ConfigMap: map[string]*protobufs.AgentConfigFile{
 			sdkSectionName:                      opampRemoteConfigSdk,
 			instrumentationLibrariesSectionName: opampRemoteConfigInstrumentationLibraries,
+			"":                                  opampRemoteConfigInstrumentationConfig,
 		},
 	}
 	configHash := connection.CalcRemoteConfigHash(&agentConfigMap)
