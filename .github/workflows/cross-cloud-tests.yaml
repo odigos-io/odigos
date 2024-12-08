@@ -163,7 +163,7 @@ jobs:
           kubectl get nodes || exit 1
 
       - name: Install Chainsaw
-        uses: kyverno/action-install-chainsaw@v0.2.8
+        uses: kyverno/action-install-chainsaw@v0.2.12
 
       - name: Build CLI
         run: |
