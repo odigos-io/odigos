@@ -15,7 +15,7 @@ describe('Onboarding', () => {
     cy.visit(ROUTES.CHOOSE_DESTINATION);
 
     cy.wait('@gql').then(() => {
-      cy.get('button').contains('ADD DESTINATION').click();
+      cy.contains('button', 'ADD DESTINATION').click();
       expect('#destination-jaeger').to.exist;
     });
   });
@@ -25,7 +25,7 @@ describe('Onboarding', () => {
     cy.visit(ROUTES.CHOOSE_DESTINATION);
 
     cy.wait('@gql').then(() => {
-      cy.get('button').contains('ADD DESTINATION').click();
+      cy.contains('button', 'ADD DESTINATION').click();
       cy.get('#destination-jaeger').click();
       expect('#JAEGER_URL').to.not.be.empty;
     });
@@ -34,10 +34,10 @@ describe('Onboarding', () => {
   it('Should allow the user to pass every step, and end-up on the "Overview" page.', () => {
     cy.visit(ROUTES.CHOOSE_SOURCES);
 
-    cy.get('button').contains('NEXT').click();
+    cy.contains('button', 'NEXT').click();
     cy.location('pathname').should('eq', ROUTES.CHOOSE_DESTINATION);
 
-    cy.get('button').contains('DONE').click();
+    cy.contains('button', 'DONE').click();
     cy.location('pathname').should('eq', ROUTES.OVERVIEW);
   });
 });
