@@ -1,51 +1,48 @@
 import { ROUTES } from '../../utils/constants/routes';
 
+// The number of CRDs that exist in the cluster before running any tests should be 0.
+// Tests will fail if you have existing CRDs in the cluster.
+// If you have to run tests locally, make sure to clean up the cluster before running the tests.
+
 describe('Actions CRUD', () => {
   const namespace = 'odigos-system';
   const crdName = 'piimaskings.actions.odigos.io';
+  const noResourcesFound = `No resources found in ${namespace} namespace.`;
 
-  let newCrdId = '';
-  let numOfCrds = 0;
-  // The number of CRDs that existed in the cluster before running any tests (should be 0).
-  // Tests will fail if you have existing CRDs in the cluster.
-  // If you have to run tests locally, make sure to clean up the cluster before running the tests.
+  beforeEach(() => {
+    cy.intercept('/graphql').as('gql');
+  });
 
   it('Should create a CRD in the cluster', () => {
-    cy.intercept('/graphql').as('gql');
     cy.visit(ROUTES.OVERVIEW);
 
-    cy.exec(`kubectl get ${crdName} -n ${namespace} | awk 'NR>1 {print $1}'`).then((execBefore) => {
-      expect(execBefore.stderr).to.eq(`No resources found in ${namespace} namespace.`);
+    cy.exec(`kubectl get ${crdName} -n ${namespace} | awk 'NR>1 {print $1}'`).then((crdListBefore) => {
+      expect(crdListBefore.stderr).to.eq(noResourcesFound);
+      expect(crdListBefore.stdout).to.eq('');
 
-      const crdIdsBefore = execBefore.stdout.split('\n').filter((str) => !!str);
-      numOfCrds = crdIdsBefore.length;
-      expect(numOfCrds).to.eq(0);
+      const crdIdsBefore = crdListBefore.stdout.split('\n').filter((str) => !!str);
+      expect(crdIdsBefore.length).to.eq(0);
 
       cy.get('#add-entity').click();
       cy.get('#add-action').click();
-
       cy.get('#modal-Add-Action').should('exist');
       cy.get('#modal-Add-Action').find('input').should('have.attr', 'placeholder', 'Type to search...').click();
       cy.get('#option-pii-masking').click();
       cy.get('button').contains('DONE').click();
 
-      cy.wait(3000).then(() => {
-        cy.exec(`kubectl get ${crdName} -n ${namespace} | awk 'NR>1 {print $1}'`).then((execAfter) => {
-          expect(execAfter.stderr).to.eq('');
-          expect(execAfter.stdout).to.not.be.empty;
+      cy.wait('@gql').then(() => {
+        cy.exec(`kubectl get ${crdName} -n ${namespace} | awk 'NR>1 {print $1}'`).then((crdListAfter) => {
+          expect(crdListAfter.stderr).to.eq('');
+          expect(crdListAfter.stdout).to.not.be.empty;
 
-          const crdIdsAfter = execAfter.stdout.split('\n').filter((str) => !!str);
-          numOfCrds = crdIdsAfter.length;
-          expect(numOfCrds).to.eq(1);
-          newCrdId = crdIdsAfter.filter((id) => !crdIdsBefore.includes(id))[0];
-          expect(newCrdId).to.not.be.empty;
+          const crdIdsAfter = crdListAfter.stdout.split('\n').filter((str) => !!str);
+          expect(crdIdsAfter.length).to.eq(1);
         });
       });
     });
   });
 
   it('Should update the CRD in the cluster', () => {
-    cy.intercept('/graphql').as('gql');
     cy.visit(ROUTES.OVERVIEW);
 
     const node = cy.contains('[data-id=action-0]', 'PiiMasking');
@@ -58,14 +55,48 @@ describe('Actions CRUD', () => {
     cy.get('button#drawer-save').click();
     cy.get('button#drawer-close').click();
 
-    cy.wait(3000).then(() => {
-      cy.exec(`kubectl get ${crdName} ${newCrdId} -n ${namespace} -o json`).then(({ stderr, stdout }) => {
-        expect(stderr).to.eq('');
-        expect(stdout).to.not.be.empty;
+    cy.wait('@gql').then(() => {
+      cy.exec(`kubectl get ${crdName} -n ${namespace} | awk 'NR>1 {print $1}'`).then((crdList) => {
+        expect(crdList.stderr).to.eq('');
+        expect(crdList.stdout).to.not.be.empty;
 
-        const { spec } = JSON.parse(stdout)?.items?.[0] || {};
-        expect(spec).to.exist;
-        expect(spec.actionName).to.eq('Cypress Test');
+        const crdIds = crdList.stdout.split('\n').filter((str) => !!str);
+        expect(crdIds.length).to.eq(1);
+
+        cy.exec(`kubectl get ${crdName} ${crdIds[0]} -n ${namespace} -o json`).then((crd) => {
+          expect(crd.stderr).to.eq('');
+          expect(crd.stdout).to.not.be.empty;
+
+          const parsed = JSON.parse(crd.stdout);
+          const { spec } = parsed?.items?.[0] || parsed || {};
+
+          expect(spec).to.not.be.empty;
+          expect(spec.actionName).to.eq('Cypress Test');
+        });
+      });
+    });
+  });
+
+  it('Should delete the CRD from the cluster', () => {
+    cy.visit(ROUTES.OVERVIEW);
+
+    const node = cy.contains('[data-id=action-0]', 'PiiMasking');
+    expect(node).to.exist;
+    node.click();
+
+    cy.get('#drawer').should('exist');
+    cy.get('button#drawer-edit').click();
+    cy.get('button#drawer-delete').click();
+    cy.get('#modal').contains('Delete action').should('exist');
+    cy.get('button#approve').click();
+
+    cy.wait('@gql').then(() => {
+      cy.exec(`kubectl get ${crdName} -n ${namespace} | awk 'NR>1 {print $1}'`).then((crdList) => {
+        expect(crdList.stderr).to.eq(noResourcesFound);
+        expect(crdList.stdout).to.eq('');
+
+        const crdIds = crdList.stdout.split('\n').filter((str) => !!str);
+        expect(crdIds.length).to.eq(0);
       });
     });
   });
