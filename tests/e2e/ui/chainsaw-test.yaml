@@ -14,12 +14,6 @@ spec:
               ../../../cli/odigos install --version e2e-test
 
     - name: Install App - Simple Demo
-      # try:
-      #   - script:
-      #       timeout: 120s
-      #       content: |
-      #         kubectl apply -f https://raw.githubusercontent.com/odigos-io/simple-demo/main/kubernetes/deployment.yaml
-      #         kubectl wait --for=condition=available --timeout=120s deployment --all -n default
       try:
         - apply:
             file: ../../common/apply/install-simple-demo.yaml
@@ -34,13 +28,13 @@ spec:
         - assert:
             file: ../../common/assert/simple-demo-installed.yaml
 
-    # - name: Add Destination - Jaeger
-    #   try:
-    #     - script:
-    #         timeout: 120s
-    #         content: |
-    #           kubectl apply -f https://raw.githubusercontent.com/odigos-io/simple-demo/main/kubernetes/jaeger.yaml
-    #           kubectl wait --for=condition=available --timeout=120s deployment/jaeger -n tracing
+    - name: Add Destination - Jaeger
+      try:
+        - script:
+            timeout: 120s
+            content: |
+              kubectl apply -f https://raw.githubusercontent.com/odigos-io/simple-demo/main/kubernetes/jaeger.yaml
+              kubectl wait --for=condition=available --timeout=120s deployment/jaeger -n tracing
 
     - name: Start UI from CLI
       try:
