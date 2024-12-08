@@ -52,8 +52,7 @@ func NewSdkConfigManager(logger logr.Logger, mgr ctrl.Manager, connectionCache *
 	return sdkConfigManager
 }
 
-func (m *SdkConfigManager) GetFullConfig(ctx context.Context, remoteResourceAttributes []configresolvers.ResourceAttribute, podWorkload *workload.PodWorkload, instrumentedAppName string, programmingLanguage string,
-	instrumentationConfig *odigosv1.InstrumentationConfig) (*protobufs.AgentRemoteConfig, error) {
+func (m *SdkConfigManager) GetFullConfig(ctx context.Context, remoteResourceAttributes []configresolvers.ResourceAttribute, podWorkload *workload.PodWorkload, instrumentedAppName string, instrumentationConfig *odigosv1.InstrumentationConfig) (*protobufs.AgentRemoteConfig, error) {
 
 	var nodeCollectorGroup odigosv1.CollectorsGroup
 	err := m.mgr.GetClient().Get(ctx, client.ObjectKey{Name: k8sconsts.OdigosNodeCollectorCollectorGroupName, Namespace: m.odigosNs}, &nodeCollectorGroup)

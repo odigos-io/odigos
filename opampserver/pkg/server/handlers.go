@@ -96,7 +96,7 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 		return nil, nil, err
 	}
 
-	fullRemoteConfig, err := c.sdkConfig.GetFullConfig(ctx, remoteResourceAttributes, &podWorkload, instrumentedAppName, attrs.ProgrammingLanguage, instrumentationConfig)
+	fullRemoteConfig, err := c.sdkConfig.GetFullConfig(ctx, remoteResourceAttributes, &podWorkload, instrumentedAppName, instrumentationConfig)
 	if err != nil {
 		c.logger.Error(err, "failed to get full config", "k8sAttributes", k8sAttributes)
 		return nil, nil, err
