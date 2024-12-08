@@ -132,6 +132,7 @@
       "group": "Odigos Pipeline",
       "pages": [
         "pipeline/overview",
+        "pipeline/configuration",
         {
           "group": "Sources",
           "pages": [
