@@ -100,19 +100,19 @@ const DrawerHeader = forwardRef<DrawerHeaderRef, DrawerHeaderProps>(({ title, ti
       {/* "titleTooltip" is currently used only by sources, if we add tooltip to other entities we will have to define a "hideTitleInput" prop */}
       {isEdit && !titleTooltip && (
         <InputWrapper>
-          <Input autoFocus value={inputValue} onChange={(e) => setInputValue(e.target.value)} />
+          <Input id='title' autoFocus value={inputValue} onChange={(e) => setInputValue(e.target.value)} />
         </InputWrapper>
       )}
 
       <SectionItemsWrapper $gap={8}>
         {!isEdit && (
-          <EditButton variant='tertiary' onClick={onEdit}>
+          <EditButton id='drawer-edit' variant='tertiary' onClick={onEdit}>
             <Image src='/icons/common/edit.svg' alt='Edit' width={16} height={16} />
             <ButtonText>Edit</ButtonText>
           </EditButton>
         )}
-        <CloseButton variant='secondary' onClick={onClose}>
-          <Image src='/icons/common/x.svg' alt='Close' width={11} height={10} />
+        <CloseButton id='drawer-close' variant='secondary' onClick={onClose}>
+          <Image src='/icons/common/x.svg' alt='Close' width={12} height={12} />
         </CloseButton>
       </SectionItemsWrapper>
     </HeaderContainer>
