@@ -26,6 +26,9 @@ data:
       {{- with .Values.collectorGateway.requestMemoryMiB }}
       requestMemoryMiB: {{ . }}
       {{- end }}
+      {{- with .Values.collectorGateway.limitMemoryMiB }}
+      limitMemoryMiB: {{ . }}
+      {{- end }}
       {{- with .Values.collectorGateway.requestCPUm }}
       requestCPUm: {{ . }}
       {{- end }}

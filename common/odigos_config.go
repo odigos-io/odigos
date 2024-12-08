@@ -21,6 +21,11 @@ type CollectorGatewayConfiguration struct {
 	// default value is 500Mi
 	RequestMemoryMiB int `json:"requestMemoryMiB,omitempty"`
 
+	// LimitMemoryMiB is the memory limit for the cluster gateway collector deployment.
+	// it will be embedded in the deployment as a resource limit of the form "memory: <value>Mi"
+	// default value is 1.25 the memory request.
+	LimitMemoryMiB int `json:"limitMemoryMiB,omitempty"`
+
 	// RequestCPUm is the CPU request for the cluster gateway collector deployment.
 	// it will be embedded in the deployment as a resource request of the form "cpu: <value>m"
 	// default value is 500m
