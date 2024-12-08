@@ -34,7 +34,7 @@ const Container = styled.div`
 
 const NoDataFound: React.FC<NoDataFoundProps> = ({ title = 'No data found', subTitle = 'Check your search phrase and try one more time' }) => {
   return (
-    <Container>
+    <Container id='no-data'>
       <TitleWrapper>
         <Image src='/icons/common/no-data-found.svg' alt='no-found' width={16} height={16} />
         <Title>{title}</Title>
