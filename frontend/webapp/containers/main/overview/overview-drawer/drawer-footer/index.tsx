@@ -44,15 +44,15 @@ const DrawerFooter: React.FC<Props> = ({ isOpen, onSave, saveLabel = 'Save', onC
 
   return (
     <Transition enter={isOpen}>
-      <FooterButton variant='primary' onClick={onSave}>
+      <FooterButton data-id='drawer-save' variant='primary' onClick={onSave}>
         {saveLabel}
       </FooterButton>
-      <FooterButton variant='secondary' onClick={onCancel}>
+      <FooterButton data-id='drawer-cancel' variant='secondary' onClick={onCancel}>
         {cancelLabel}
       </FooterButton>
 
       <AlignRight>
-        <FooterButton variant='tertiary' onClick={onDelete}>
+        <FooterButton data-id='drawer-delete' variant='tertiary' onClick={onDelete}>
           <Image src='/icons/common/trash.svg' alt='Delete' width={16} height={16} />
           <Text color={theme.text.error} size={14} family='secondary'>
             {deleteLabel}
