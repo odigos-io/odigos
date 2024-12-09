@@ -1,1 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><defs><style>.cls-1{fill:#7d12ff;}</style></defs><g id="Layer_2" data-name="Layer 2"><g id="Layer_1-2" data-name="Layer 1"><path class="cls-1" d="M500,333.34,666.66,500,500,666.66,333.34,500ZM875,625l125-125L500,0,0,500l500,500L833.34,666.67l-125-125L500,750,250,500,500,250,750,500Z"/></g></g></svg>
+<svg fill="#7d12ff" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
+  <title>Gigapipe</title>
+  <g>
+    <path d="M500,333.34,666.66,500,500,666.66,333.34,500ZM875,625l125-125L500,0,0,500l500,500L833.34,666.67l-125-125L500,750,250,500,500,250,750,500Z"/>
+  </g>
+</svg>
