@@ -32,6 +32,10 @@ var (
 		ProfileName:      common.ProfileName("size_l"),
 		ShortDescription: "Large size deployment profile",
 	}
+	allowConcurrentAgents = Profile{
+		ProfileName:      common.ProfileName("allow_concurrent_agents"),
+		ShortDescription: "This profile allows Odigos to run concurrently with other agents",
+	}
 	fullPayloadCollectionProfile = Profile{
 		ProfileName:      common.ProfileName("full-payload-collection"),
 		ShortDescription: "Collect any payload from the cluster where supported with default settings",
@@ -87,8 +91,8 @@ var (
 	}
 	kratosProfile = Profile{
 		ProfileName:      common.ProfileName("kratos"),
-		ShortDescription: "Bundle profile that includes db-payload-collection, semconv, category-attributes, copy-scope, hostname-as-podname, java-native-instrumentations, code-attributes, query-operation-detector, disableNameProcessorProfile, small-batches, size_m",
-		Dependencies:     []common.ProfileName{"db-payload-collection", "semconv", "category-attributes", "copy-scope", "hostname-as-podname", "java-native-instrumentations", "code-attributes", "query-operation-detector", "disableNameProcessorProfile", "small-batches", "size_m"},
+		ShortDescription: "Bundle profile that includes db-payload-collection, semconv, category-attributes, copy-scope, hostname-as-podname, java-native-instrumentations, code-attributes, query-operation-detector, disableNameProcessorProfile, small-batches, size_m, allow_concurrent_agents",
+		Dependencies:     []common.ProfileName{"db-payload-collection", "semconv", "category-attributes", "copy-scope", "hostname-as-podname", "java-native-instrumentations", "code-attributes", "query-operation-detector", "disableNameProcessorProfile", "small-batches", "size_m", "allow_concurrent_agents"},
 	}
 	profilesMap = map[common.ProfileName]Profile{
 		sizeSProfile.ProfileName:                      sizeSProfile,
@@ -106,12 +110,13 @@ var (
 		disableNameProcessorProfile.ProfileName:       disableNameProcessorProfile,
 		smallBatchesProfile.ProfileName:               smallBatchesProfile,
 		kratosProfile.ProfileName:                     kratosProfile,
+		allowConcurrentAgents.ProfileName:             allowConcurrentAgents,
 	}
 )
 
 func GetAvailableCommunityProfiles() []Profile {
 	return []Profile{semconvUpgraderProfile, copyScopeProfile, disableNameProcessorProfile, sizeSProfile, sizeMProfile,
-		sizeLProfile}
+		sizeLProfile, allowConcurrentAgents}
 }
 
 func GetAvailableOnPremProfiles() []Profile {
@@ -206,4 +211,20 @@ func FilterSizeProfiles(profiles []common.ProfileName) common.ProfileName {
 		}
 	}
 	return ""
+}
+
+func AgentsCanRunConcurrently(profiles []common.ProfileName) bool {
+	for _, profile := range profiles {
+		if profile == allowConcurrentAgents.ProfileName {
+			return true
+		}
+
+		profileDependencies := profilesMap[profile].Dependencies
+		for _, dependencyProfile := range profileDependencies {
+			if dependencyProfile == allowConcurrentAgents.ProfileName {
+				return true
+			}
+		}
+	}
+	return false
 }

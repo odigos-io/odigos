@@ -12,6 +12,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
 	odigosk8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -64,7 +65,6 @@ func isDataCollectionReady(ctx context.Context, c client.Client) bool {
 }
 
 func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.Client, runtimeDetails *odigosv1.InstrumentedApplication) (error, bool) {
-
 	// devicePartiallyApplied is used to indicate that the instrumentation device was partially applied for some of the containers.
 	devicePartiallyApplied := false
 
@@ -117,7 +117,15 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 			return err
 		}
 
-		err, deviceApplied, tempDevicePartiallyApplied := instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, runtimeDetails, otelSdkToUse, obj, logger)
+		// get the odigos configuration to check if agents can run concurrently
+		// if the configuration is not found, we assume that agents can't run concurrently [default behavior]
+		odigosConfiguration, err := k8sutils.GetCurrentOdigosConfig(ctx, kubeClient)
+		if err != nil {
+			return err
+		}
+		agentsCanRunConcurrently := odigosConfiguration.AllowConcurrentAgents != nil && *odigosConfiguration.AllowConcurrentAgents
+
+		err, deviceApplied, tempDevicePartiallyApplied := instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, runtimeDetails, otelSdkToUse, obj, logger, agentsCanRunConcurrently)
 		if err != nil {
 			return err
 		}

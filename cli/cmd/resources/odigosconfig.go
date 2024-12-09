@@ -51,6 +51,13 @@ func (a *odigosConfigResourceManager) InstallFromScratch(ctx context.Context) er
 	collectorGatewayConfig := GetGatewayConfigBasedOnSize(sizingProfile)
 	a.config.CollectorGateway = collectorGatewayConfig
 
+	if AgentsCanRunConcurrently(a.config.Profiles) {
+		value := true
+		a.config.AllowConcurrentAgents = &value
+	} else {
+		a.config.AllowConcurrentAgents = nil
+	}
+
 	obj, err := NewOdigosConfiguration(a.ns, a.config)
 	if err != nil {
 		return err
