@@ -7,6 +7,7 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	k8sprofiles "github.com/odigos-io/odigos/k8sutils/pkg/profiles"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
@@ -47,16 +48,9 @@ func (a *odigosConfigResourceManager) Name() string { return "OdigosConfig" }
 
 func (a *odigosConfigResourceManager) InstallFromScratch(ctx context.Context) error {
 
-	sizingProfile := FilterSizeProfiles(a.config.Profiles)
+	sizingProfile := k8sprofiles.FilterSizeProfiles(a.config.Profiles)
 	collectorGatewayConfig := GetGatewayConfigBasedOnSize(sizingProfile)
 	a.config.CollectorGateway = collectorGatewayConfig
-
-	if AgentsCanRunConcurrently(a.config.Profiles) {
-		value := true
-		a.config.AllowConcurrentAgents = &value
-	} else {
-		a.config.AllowConcurrentAgents = nil
-	}
 
 	obj, err := NewOdigosConfiguration(a.ns, a.config)
 	if err != nil {
@@ -70,11 +64,11 @@ func (a *odigosConfigResourceManager) InstallFromScratch(ctx context.Context) er
 }
 
 func GetGatewayConfigBasedOnSize(profile common.ProfileName) *common.CollectorGatewayConfiguration {
-	aggregateProfiles := append([]common.ProfileName{profile}, profilesMap[profile].Dependencies...)
+	aggregateProfiles := append([]common.ProfileName{profile}, k8sprofiles.ProfilesMap[profile].Dependencies...)
 
 	for _, profile := range aggregateProfiles {
 		switch profile {
-		case sizeSProfile.ProfileName:
+		case k8sprofiles.SizeSProfile.ProfileName:
 			return &common.CollectorGatewayConfiguration{
 				MinReplicas:      1,
 				MaxReplicas:      5,
@@ -82,7 +76,7 @@ func GetGatewayConfigBasedOnSize(profile common.ProfileName) *common.CollectorGa
 				LimitCPUm:        300,
 				RequestMemoryMiB: 300,
 			}
-		case sizeMProfile.ProfileName:
+		case k8sprofiles.SizeMProfile.ProfileName:
 			return &common.CollectorGatewayConfiguration{
 				MinReplicas:      2,
 				MaxReplicas:      8,
@@ -90,7 +84,7 @@ func GetGatewayConfigBasedOnSize(profile common.ProfileName) *common.CollectorGa
 				LimitCPUm:        1000,
 				RequestMemoryMiB: 500,
 			}
-		case sizeLProfile.ProfileName:
+		case k8sprofiles.SizeLProfile.ProfileName:
 			return &common.CollectorGatewayConfiguration{
 				MinReplicas:      3,
 				MaxReplicas:      12,

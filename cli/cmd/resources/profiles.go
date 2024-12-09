@@ -4,125 +4,23 @@ import (
 	"context"
 	"fmt"
 
-	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/cli/cmd/resources/profiles"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
+	k8sprofiles "github.com/odigos-io/odigos/k8sutils/pkg/profiles"
 )
 
-type Profile struct {
-	ProfileName      common.ProfileName
-	ShortDescription string
-	KubeObject       kube.Object          // used to read it from the embedded YAML file
-	Dependencies     []common.ProfileName // other profiles that are applied by the current profile
+func GetAvailableCommunityProfiles() []k8sprofiles.Profile {
+	return []k8sprofiles.Profile{k8sprofiles.SemconvUpgraderProfile, k8sprofiles.CopyScopeProfile, k8sprofiles.DisableNameProcessorProfile,
+		k8sprofiles.SizeSProfile, k8sprofiles.SizeMProfile,
+		k8sprofiles.SizeLProfile, k8sprofiles.AllowConcurrentAgents}
 }
 
-var (
-	// sizing profiles for the collector gateway
-	sizeSProfile = Profile{
-		ProfileName:      common.ProfileName("size_s"),
-		ShortDescription: "Small size deployment profile",
-	}
-	sizeMProfile = Profile{
-		ProfileName:      common.ProfileName("size_m"),
-		ShortDescription: "Medium size deployment profile",
-	}
-	sizeLProfile = Profile{
-		ProfileName:      common.ProfileName("size_l"),
-		ShortDescription: "Large size deployment profile",
-	}
-	allowConcurrentAgents = Profile{
-		ProfileName:      common.ProfileName("allow_concurrent_agents"),
-		ShortDescription: "This profile allows Odigos to run concurrently with other agents",
-	}
-	fullPayloadCollectionProfile = Profile{
-		ProfileName:      common.ProfileName("full-payload-collection"),
-		ShortDescription: "Collect any payload from the cluster where supported with default settings",
-		KubeObject:       &odigosv1alpha1.InstrumentationRule{},
-	}
-	dbPayloadCollectionProfile = Profile{
-		ProfileName:      common.ProfileName("db-payload-collection"),
-		ShortDescription: "Collect db payload from the cluster where supported with default settings",
-		KubeObject:       &odigosv1alpha1.InstrumentationRule{},
-	}
-	queryOperationDetector = Profile{
-		ProfileName:      common.ProfileName("query-operation-detector"),
-		ShortDescription: "Detect the SQL operation name from the query text",
-		KubeObject:       &odigosv1alpha1.Processor{},
-	}
-	semconvUpgraderProfile = Profile{
-		ProfileName:      common.ProfileName("semconv"),
-		ShortDescription: "Upgrade and align some attribute names to a newer version of the OpenTelemetry semantic conventions",
-		KubeObject:       &odigosv1alpha1.Processor{},
-	}
-	categoryAttributesProfile = Profile{
-		ProfileName:      common.ProfileName("category-attributes"),
-		ShortDescription: "Add category attributes to the spans",
-		KubeObject:       &odigosv1alpha1.Processor{},
-	}
-	copyScopeProfile = Profile{
-		ProfileName:      common.ProfileName("copy-scope"),
-		ShortDescription: "Copy the scope name into a separate attribute for backends that do not support scopes",
-		KubeObject:       &odigosv1alpha1.Processor{},
-	}
-	hostnameAsPodNameProfile = Profile{
-		ProfileName:      common.ProfileName("hostname-as-podname"),
-		ShortDescription: "Populate the spans resource `host.name` attribute with value of `k8s.pod.name`",
-		KubeObject:       &odigosv1alpha1.Processor{},
-	}
-	javaNativeInstrumentationsProfile = Profile{
-		ProfileName:      common.ProfileName("java-native-instrumentations"),
-		ShortDescription: "Instrument Java applications using native instrumentation and eBPF enterprise processing",
-		KubeObject:       &odigosv1alpha1.InstrumentationRule{},
-	}
-	codeAttributesProfile = Profile{
-		ProfileName:      common.ProfileName("code-attributes"),
-		ShortDescription: "Record span attributes in 'code' namespace where supported",
-	}
-	disableNameProcessorProfile = Profile{
-		ProfileName:      common.ProfileName("disable-name-processor"),
-		ShortDescription: "If not using dotnet or java native instrumentations, disable the name processor which is not needed",
-	}
-	smallBatchesProfile = Profile{
-		ProfileName:      common.ProfileName("small-batches"),
-		ShortDescription: "Reduce the batch size for exports",
-		KubeObject:       &odigosv1alpha1.Processor{},
-	}
-	kratosProfile = Profile{
-		ProfileName:      common.ProfileName("kratos"),
-		ShortDescription: "Bundle profile that includes db-payload-collection, semconv, category-attributes, copy-scope, hostname-as-podname, java-native-instrumentations, code-attributes, query-operation-detector, disableNameProcessorProfile, small-batches, size_m, allow_concurrent_agents",
-		Dependencies:     []common.ProfileName{"db-payload-collection", "semconv", "category-attributes", "copy-scope", "hostname-as-podname", "java-native-instrumentations", "code-attributes", "query-operation-detector", "disableNameProcessorProfile", "small-batches", "size_m", "allow_concurrent_agents"},
-	}
-	profilesMap = map[common.ProfileName]Profile{
-		sizeSProfile.ProfileName:                      sizeSProfile,
-		sizeMProfile.ProfileName:                      sizeMProfile,
-		sizeLProfile.ProfileName:                      sizeLProfile,
-		fullPayloadCollectionProfile.ProfileName:      fullPayloadCollectionProfile,
-		dbPayloadCollectionProfile.ProfileName:        dbPayloadCollectionProfile,
-		queryOperationDetector.ProfileName:            queryOperationDetector,
-		semconvUpgraderProfile.ProfileName:            semconvUpgraderProfile,
-		categoryAttributesProfile.ProfileName:         categoryAttributesProfile,
-		copyScopeProfile.ProfileName:                  copyScopeProfile,
-		hostnameAsPodNameProfile.ProfileName:          hostnameAsPodNameProfile,
-		javaNativeInstrumentationsProfile.ProfileName: javaNativeInstrumentationsProfile,
-		codeAttributesProfile.ProfileName:             codeAttributesProfile,
-		disableNameProcessorProfile.ProfileName:       disableNameProcessorProfile,
-		smallBatchesProfile.ProfileName:               smallBatchesProfile,
-		kratosProfile.ProfileName:                     kratosProfile,
-		allowConcurrentAgents.ProfileName:             allowConcurrentAgents,
-	}
-)
-
-func GetAvailableCommunityProfiles() []Profile {
-	return []Profile{semconvUpgraderProfile, copyScopeProfile, disableNameProcessorProfile, sizeSProfile, sizeMProfile,
-		sizeLProfile, allowConcurrentAgents}
-}
-
-func GetAvailableOnPremProfiles() []Profile {
-	return append([]Profile{fullPayloadCollectionProfile, dbPayloadCollectionProfile, categoryAttributesProfile,
-		hostnameAsPodNameProfile, javaNativeInstrumentationsProfile, kratosProfile, queryOperationDetector,
-		smallBatchesProfile},
+func GetAvailableOnPremProfiles() []k8sprofiles.Profile {
+	return append([]k8sprofiles.Profile{k8sprofiles.FullPayloadCollectionProfile, k8sprofiles.DbPayloadCollectionProfile, k8sprofiles.CategoryAttributesProfile,
+		k8sprofiles.HostnameAsPodNameProfile, k8sprofiles.JavaNativeInstrumentationsProfile, k8sprofiles.KratosProfile, k8sprofiles.QueryOperationDetector,
+		k8sprofiles.SmallBatchesProfile},
 		GetAvailableCommunityProfiles()...)
 }
 
@@ -152,14 +50,14 @@ func GetResourcesForProfileName(profileName common.ProfileName, tier common.Odig
 	return nil, nil
 }
 
-func GetAvailableProfilesForTier(odigosTier common.OdigosTier) []Profile {
+func GetAvailableProfilesForTier(odigosTier common.OdigosTier) []k8sprofiles.Profile {
 	switch odigosTier {
 	case common.CommunityOdigosTier:
 		return GetAvailableCommunityProfiles()
 	case common.OnPremOdigosTier:
 		return GetAvailableOnPremProfiles()
 	default:
-		return []Profile{}
+		return []k8sprofiles.Profile{}
 	}
 }
 
@@ -189,42 +87,4 @@ func (a *profilesResourceManager) InstallFromScratch(ctx context.Context) error 
 		allResources = append(allResources, profileResources...)
 	}
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, allResources)
-}
-
-func FilterSizeProfiles(profiles []common.ProfileName) common.ProfileName {
-	// In case multiple size profiles are provided, the first one will be used.
-
-	for _, profile := range profiles {
-		// Check if the profile is a size profile.
-		switch profile {
-		case sizeSProfile.ProfileName, sizeMProfile.ProfileName, sizeLProfile.ProfileName:
-			return profile
-		}
-
-		// Check if the profile has a dependency which is a size profile.
-		profileDependencies := profilesMap[profile].Dependencies
-		for _, dependencyProfile := range profileDependencies {
-			switch dependencyProfile {
-			case sizeSProfile.ProfileName, sizeMProfile.ProfileName, sizeLProfile.ProfileName:
-				return dependencyProfile
-			}
-		}
-	}
-	return ""
-}
-
-func AgentsCanRunConcurrently(profiles []common.ProfileName) bool {
-	for _, profile := range profiles {
-		if profile == allowConcurrentAgents.ProfileName {
-			return true
-		}
-
-		profileDependencies := profilesMap[profile].Dependencies
-		for _, dependencyProfile := range profileDependencies {
-			if dependencyProfile == allowConcurrentAgents.ProfileName {
-				return true
-			}
-		}
-	}
-	return false
 }

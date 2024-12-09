@@ -3,6 +3,7 @@ package instrumentationdevice
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
@@ -12,6 +13,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
 	odigosk8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	k8sprofiles "github.com/odigos-io/odigos/k8sutils/pkg/profiles"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
@@ -67,6 +69,7 @@ func isDataCollectionReady(ctx context.Context, c client.Client) bool {
 func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.Client, runtimeDetails *odigosv1.InstrumentedApplication) (error, bool) {
 	// devicePartiallyApplied is used to indicate that the instrumentation device was partially applied for some of the containers.
 	devicePartiallyApplied := false
+	deviceNotAppliedDueToPresenceOfAnotherAgent := false
 
 	logger := log.FromContext(ctx)
 	obj, err := getWorkloadObject(ctx, kubeClient, runtimeDetails)
@@ -123,14 +126,23 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 		if err != nil {
 			return err
 		}
-		agentsCanRunConcurrently := odigosConfiguration.AllowConcurrentAgents != nil && *odigosConfiguration.AllowConcurrentAgents
 
-		err, deviceApplied, tempDevicePartiallyApplied := instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, runtimeDetails, otelSdkToUse, obj, logger, agentsCanRunConcurrently)
+		// User input <odigosConfiguration.AllowConcurrentAgents> prefered over the profile configuration
+		agentsCanRunConcurrently := k8sprofiles.AgentsCanRunConcurrently(odigosConfiguration.Profiles)
+		if odigosConfiguration.AllowConcurrentAgents != nil {
+			agentsCanRunConcurrently = *odigosConfiguration.AllowConcurrentAgents
+		}
+
+		err, deviceApplied, deviceSkippedDueToOtherAgent := instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, runtimeDetails, otelSdkToUse, obj, logger, agentsCanRunConcurrently)
 		if err != nil {
 			return err
 		}
+		// if non of the devices were applied due to the presence of another agent, return an error.
+		if !deviceApplied && deviceSkippedDueToOtherAgent {
+			deviceNotAppliedDueToPresenceOfAnotherAgent = true
+		}
 
-		devicePartiallyApplied = tempDevicePartiallyApplied
+		devicePartiallyApplied = deviceSkippedDueToOtherAgent && deviceApplied
 		// If instrumentation device is applied successfully, add odigos.io/inject-instrumentation label to enable the webhook
 		if deviceApplied {
 			instrumentation.SetInjectInstrumentationLabel(podSpec)
@@ -138,6 +150,11 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 
 		return nil
 	})
+
+	// if non of the devices were applied due to the presence of another agent, return an error.
+	if deviceNotAppliedDueToPresenceOfAnotherAgent {
+		return fmt.Errorf("device not added to any container due to the presence of another agent"), false
+	}
 
 	if err != nil {
 		return err, false

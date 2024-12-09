@@ -92,15 +92,7 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 	// persist the original values if changed
 	manifestEnvOriginal.SerializeToAnnotation(targetObj)
 
-	// if non of the devices were applied due to the presence of another agent, return an error.
-	if !deviceApplied && deviceSkippedDueToOtherAgent {
-		return fmt.Errorf("device not added to any container due to the presence of another agent"), false, deviceSkippedDueToOtherAgent
-	}
-
-	// devicePartiallyApplied is used to indicate that the instrumentation device was partially applied for some of the containers.
-	devicePartiallyApplied := deviceSkippedDueToOtherAgent && deviceApplied
-
-	return nil, deviceApplied, devicePartiallyApplied
+	return nil, deviceApplied, deviceSkippedDueToOtherAgent
 }
 
 // this function restores a workload manifest env vars to their original values.
