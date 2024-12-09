@@ -256,7 +256,7 @@ func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.Process
 	}
 
 	// Fetch initial config based on the InstrumentationConfig CR
-	sdkConfig := m.instrumentationSDKConfig(ctx, podWorkload, lang, types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name})
+	sdkConfig, serviceName := m.instrumentationSDKConfig(ctx, podWorkload, lang, types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name})
 	// we should always have config for this event.
 	// if missing, it means that either:
 	// - the config will be generated later due to reconciliation timing in instrumentor
@@ -268,10 +268,14 @@ func (m *Manager) handleProcessExecEvent(ctx context.Context, e detector.Process
 	// 	return nil
 	// }
 
+	OtelServiceName := serviceName
+
+	if serviceName == "" {
+		OtelServiceName = podWorkload.Name
+	}
+
 	settings := Settings{
-		// TODO: respect reported name annotation (if present) - to override the service name
-		// refactor from opAmp code
-		ServiceName: podWorkload.Name,
+		ServiceName: OtelServiceName,
 		// TODO: add container name
 		ResourceAttributes: utils.GetResourceAttributes(podWorkload, pod.Name),
 		InitialConfig:      sdkConfig,
@@ -358,7 +362,7 @@ func (m *Manager) stopTrackInstrumentation(pid int) {
 	}
 }
 
-func (m *Manager) instrumentationSDKConfig(ctx context.Context, w *workloadUtils.PodWorkload, lang common.ProgrammingLanguage, podKey types.NamespacedName) *odigosv1.SdkConfig {
+func (m *Manager) instrumentationSDKConfig(ctx context.Context, w *workloadUtils.PodWorkload, lang common.ProgrammingLanguage, podKey types.NamespacedName) (sdkConfig *odigosv1.SdkConfig, serviceName string) {
 	instrumentationConfig := odigosv1.InstrumentationConfig{}
 	instrumentationConfigKey := client.ObjectKey{
 		Namespace: w.Namespace,
@@ -367,14 +371,15 @@ func (m *Manager) instrumentationSDKConfig(ctx context.Context, w *workloadUtils
 	if err := m.client.Get(ctx, instrumentationConfigKey, &instrumentationConfig); err != nil {
 		// this can be valid when the instrumentation config is deleted and current pods will go down soon
 		m.logger.Error(err, "failed to get initial instrumentation config for instrumented pod", "pod", podKey.Name, "namespace", podKey.Namespace)
-		return nil
+		return nil, ""
 	}
+
 	for _, config := range instrumentationConfig.Spec.SdkConfigs {
 		if config.Language == lang {
-			return &config
+			return &config, instrumentationConfig.Spec.ServiceName
 		}
 	}
-	return nil
+	return nil, instrumentationConfig.Spec.ServiceName
 }
 
 func (m *Manager) applyInstrumentationConfigurationForSDK(ctx context.Context, podWorkload workload.PodWorkload, sdkConfig *odigosv1.SdkConfig) error {
