@@ -43,7 +43,7 @@ export const Drawer: React.FC<Props> = ({ isOpen, onClose, position = 'right', w
     <>
       <Overlay hidden={!isOpen} onClick={onClose} />
 
-      <Transition enter={isOpen} $position={position} $width={width}>
+      <Transition data-id='drawer' enter={isOpen} $position={position} $width={width}>
         {children}
       </Transition>
     </>,

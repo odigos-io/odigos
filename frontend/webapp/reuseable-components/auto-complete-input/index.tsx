@@ -119,7 +119,7 @@ const OptionItem: FC<OptionItemProps> = ({ option, isActive, renderIcon = true, 
   const hasSubItems = !!option.items && option.items.length > 0;
 
   return (
-    <OptionItemContainer $isActive={isActive} $isList={hasSubItems} onMouseDown={() => (hasSubItems ? null : onClick(option))}>
+    <OptionItemContainer data-id={`option-${option.id}`} $isActive={isActive} $isList={hasSubItems} onMouseDown={() => (hasSubItems ? null : onClick(option))}>
       {option.icon && renderIcon && <Icon src={option.icon} alt={option.label} />}
 
       <OptionContent>
