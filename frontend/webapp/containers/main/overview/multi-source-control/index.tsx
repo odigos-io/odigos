@@ -57,7 +57,7 @@ const MultiSourceControl = () => {
 
   return (
     <>
-      <Transition enter={!!totalSelected}>
+      <Transition id='multi-source-control' enter={!!totalSelected}>
         <Text>Selected sources</Text>
         <Badge label={totalSelected} filled />
 
