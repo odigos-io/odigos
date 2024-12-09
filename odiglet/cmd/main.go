@@ -13,6 +13,7 @@ import (
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	"github.com/odigos-io/odigos/common"
 	commonInstrumentation "github.com/odigos-io/odigos/instrumentation"
+	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	k8senv "github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation"
@@ -189,6 +190,31 @@ func main() {
 	}
 
 	ctx := signals.SetupSignalHandler()
+	client := criwrapper.RuntimeClient{}
+	err = client.Connect(ctx)
+	if err != nil {
+		log.Logger.Error(err, "Failed to connect to CRI runtime")
+		os.Exit(1)
+	}
+	defer client.Close()
+
+	// Retrieve the container ID from an environment variable
+	containerID := os.Getenv("TARGET_CONTAINER_ID")
+
+	fmt.Println("Container ID:", containerID)
+	// Fetch environment variables
+	envVars, err := client.GetContainerEnvVars(ctx, containerID)
+	if err != nil {
+		log.Logger.Error(err, "Failed to get container env vars")
+		os.Exit(1)
+	}
+
+	// Print environment variables
+	fmt.Println("Environment Variables:")
+	for key, value := range envVars {
+		fmt.Printf("%s=%s\n", key, value)
+	}
+
 	o.run(ctx)
 
 	log.Logger.V(0).Info("odiglet exiting")
