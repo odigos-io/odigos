@@ -8,24 +8,24 @@ describe('Onboarding', () => {
   it('Should contain at least a "default" namespace', () => {
     cy.visit(ROUTES.CHOOSE_SOURCES);
     cy.wait('@gql').then(() => {
-      expect('#namespace-default').to.exist;
+      cy.get('[data-id=namespace-default]').contains('default').should('exist');
     });
   });
 
   it('Should contain at least a "Jaeger" destination', () => {
     cy.visit(ROUTES.CHOOSE_DESTINATION);
+    cy.contains('button', 'ADD DESTINATION').click();
     cy.wait('@gql').then(() => {
-      cy.contains('button', 'ADD DESTINATION').click();
-      expect('#destination-jaeger').to.exist;
+      cy.get('[data-id=destination-jaeger]').contains('Jaeger').should('exist');
     });
   });
 
   it('Should autocomplete the "Jaeger" destination', () => {
     cy.visit(ROUTES.CHOOSE_DESTINATION);
+    cy.contains('button', 'ADD DESTINATION').click();
     cy.wait('@gql').then(() => {
-      cy.contains('button', 'ADD DESTINATION').click();
-      cy.get('#destination-jaeger').click();
-      expect('#JAEGER_URL').to.not.be.empty;
+      cy.get('[data-id=destination-jaeger]').contains('Jaeger').click();
+      expect('[data-id=JAEGER_URL]').to.not.be.empty;
     });
   });
 
