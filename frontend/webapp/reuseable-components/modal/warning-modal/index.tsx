@@ -81,10 +81,10 @@ export const WarningModal: React.FC<Props> = ({ isOpen, noOverlay, title = '', d
         )}
 
         <Footer>
-          <FooterButton variant={approveButton.variant || 'primary'} onClick={onApprove}>
+          <FooterButton data-id='approve' variant={approveButton.variant || 'primary'} onClick={onApprove}>
             {approveButton.text}
           </FooterButton>
-          <FooterButton variant={denyButton.variant || 'secondary'} onClick={onDeny}>
+          <FooterButton data-id='deny' variant={denyButton.variant || 'secondary'} onClick={onDeny}>
             {denyButton.text}
           </FooterButton>
         </Footer>
