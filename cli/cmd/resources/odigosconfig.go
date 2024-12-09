@@ -74,6 +74,7 @@ func GetGatewayConfigBasedOnSize(profile common.ProfileName) *common.CollectorGa
 				RequestCPUm:      150,
 				LimitCPUm:        300,
 				RequestMemoryMiB: 300,
+				LimitMemoryMiB:   300,
 			}
 		case sizeMProfile.ProfileName:
 			return &common.CollectorGatewayConfiguration{
@@ -82,6 +83,7 @@ func GetGatewayConfigBasedOnSize(profile common.ProfileName) *common.CollectorGa
 				RequestCPUm:      500,
 				LimitCPUm:        1000,
 				RequestMemoryMiB: 500,
+				LimitMemoryMiB:   600,
 			}
 		case sizeLProfile.ProfileName:
 			return &common.CollectorGatewayConfiguration{
@@ -90,6 +92,7 @@ func GetGatewayConfigBasedOnSize(profile common.ProfileName) *common.CollectorGa
 				RequestCPUm:      750,
 				LimitCPUm:        1250,
 				RequestMemoryMiB: 750,
+				LimitMemoryMiB:   850,
 			}
 		}
 	}
