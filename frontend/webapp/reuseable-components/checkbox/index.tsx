@@ -50,7 +50,7 @@ const Checkbox: React.FC<CheckboxProps> = ({ title, titleColor, tooltip, initial
   };
 
   return (
-    <Container id={`checkbox${!!title ? `-${title}` : ''}`} $disabled={disabled} onClick={handleToggle} style={style}>
+    <Container data-id={`checkbox${!!title ? `-${title}` : ''}`} $disabled={disabled} onClick={handleToggle} style={style}>
       <CheckboxWrapper $isChecked={isChecked} $disabled={disabled}>
         {isChecked && <Image src='/icons/common/check.svg' alt='' width={12} height={12} />}
       </CheckboxWrapper>

@@ -23,10 +23,10 @@ describe('Sources CRUD', () => {
       const crdIdsBefore = crdListBefore.stdout.split('\n').filter((str) => !!str);
       expect(crdIdsBefore.length).to.eq(0);
 
-      cy.get('#add-entity').click();
-      cy.get('#add-source').click();
-      cy.get('#modal-Add-Source').should('exist');
-      cy.get('#namespace-default').find('#checkbox').click();
+      cy.get('[data-id=add-entity]').click();
+      cy.get('[data-id=add-source]').click();
+      cy.get('[data-id=modal-Add-Source]').should('exist');
+      cy.get('[data-id=namespace-default]').find('[data-id=checkbox]').click();
 
       // Wait for 3 seconds to allow the namespace & it's resources to be loaded into the UI
       cy.wait(3000).then(() => {
@@ -52,11 +52,11 @@ describe('Sources CRUD', () => {
     expect(node).to.exist;
     node.click();
 
-    cy.get('#drawer').should('exist');
-    cy.get('button#drawer-edit').click();
-    cy.get('input#sourceName').clear().type('Cypress Test');
-    cy.get('button#drawer-save').click();
-    cy.get('button#drawer-close').click();
+    cy.get('[data-id=drawer]').should('exist');
+    cy.get('button[data-id=drawer-edit]').click();
+    cy.get('input[data-id=sourceName]').clear().type('Cypress Test');
+    cy.get('button[data-id=drawer-save]').click();
+    cy.get('button[data-id=drawer-close]').click();
 
     cy.wait('@gql').then(() => {
       cy.exec(`kubectl get ${crdName} -n ${namespace} | awk 'NR>1 {print $1}'`).then((crdList) => {
@@ -85,12 +85,12 @@ describe('Sources CRUD', () => {
   it('Should delete the CRD from the cluster', () => {
     cy.visit(ROUTES.OVERVIEW);
 
-    cy.get('[data-id=source-header]').find('#checkbox').click();
-    cy.get('#multi-source-control').should('exist');
-    cy.get('#multi-source-control').find('button').contains('Uninstrument').click();
-    cy.get('#modal').contains('Uninstrument 5 sources').should('exist');
-    cy.get('#modal').contains("You're about to uninstrument the last source").should('exist');
-    cy.get('button#approve').click();
+    cy.get('[data-id=source-header]').find('[data-id=checkbox]').click();
+    cy.get('[data-id=multi-source-control]').should('exist');
+    cy.get('[data-id=multi-source-control]').find('button').contains('Uninstrument').click();
+    cy.get('[data-id=modal]').contains('Uninstrument 5 sources').should('exist');
+    cy.get('[data-id=modal]').contains("You're about to uninstrument the last source").should('exist');
+    cy.get('button[data-id=approve]').click();
 
     cy.wait('@gql').then(() => {
       cy.exec(`kubectl get ${crdName} -n ${namespace} | awk 'NR>1 {print $1}'`).then((crdList) => {
