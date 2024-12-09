@@ -9,12 +9,11 @@ import (
 )
 
 type K8sResourceAttributes struct {
-	OtelServiceName string
-	Namespace       string
-	WorkloadKind    string
-	WorkloadName    string
-	PodName         string
-	ContainerName   string
+	Namespace     string
+	WorkloadKind  string
+	WorkloadName  string
+	PodName       string
+	ContainerName string
 }
 
 type DeviceIdCache struct {
@@ -64,15 +63,12 @@ func (d *DeviceIdCache) GetAttributesFromDevice(ctx context.Context, deviceId st
 		return nil, pod, err
 	}
 
-	serviceName := d.podInfoResolver.ResolveServiceName(ctx, workloadName, workloadKind, containerDetails)
-
 	k8sAttributes := &K8sResourceAttributes{
-		Namespace:       containerDetails.PodNamespace,
-		PodName:         containerDetails.PodName,
-		ContainerName:   containerDetails.ContainerName,
-		WorkloadKind:    workloadKind,
-		WorkloadName:    workloadName,
-		OtelServiceName: serviceName,
+		Namespace:     containerDetails.PodNamespace,
+		PodName:       containerDetails.PodName,
+		ContainerName: containerDetails.ContainerName,
+		WorkloadKind:  workloadKind,
+		WorkloadName:  workloadName,
 	}
 
 	d.logger.V(1).Info("resolved device id to container details", "k8sAttributes", k8sAttributes)
