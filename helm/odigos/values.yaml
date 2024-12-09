@@ -25,6 +25,11 @@ collectorGateway:
   # of the form "memory: <value>Mi".
   # default value is 500Mi
   requestMemoryMiB: 500
+  # the memory limit for the cluster gateway collector deployment.
+  # it will be embedded in the deployment as a resource limit
+  # of the form "memory: <value>Mi".
+  # default value is 625Mi
+  limitMemoryMiB: 625
 
   # the CPU request for the cluster gateway collector deployment.
   # it will be embedded in the deployment as a resource request
