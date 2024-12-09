@@ -23,11 +23,11 @@ describe('Actions CRUD', () => {
       const crdIdsBefore = crdListBefore.stdout.split('\n').filter((str) => !!str);
       expect(crdIdsBefore.length).to.eq(0);
 
-      cy.get('#add-entity').click();
-      cy.get('#add-action').click();
-      cy.get('#modal-Add-Action').should('exist');
-      cy.get('#modal-Add-Action').find('input').should('have.attr', 'placeholder', 'Type to search...').click();
-      cy.get('#option-pii-masking').click();
+      cy.get('[data-id=add-entity]').click();
+      cy.get('[data-id=add-action]').click();
+      cy.get('[data-id=modal-Add-Action]').should('exist');
+      cy.get('[data-id=modal-Add-Action]').find('input').should('have.attr', 'placeholder', 'Type to search...').click();
+      cy.get('[data-id=option-pii-masking]').click();
       cy.get('button').contains('DONE').click();
 
       cy.wait('@gql').then(() => {
@@ -49,11 +49,11 @@ describe('Actions CRUD', () => {
     expect(node).to.exist;
     node.click();
 
-    cy.get('#drawer').should('exist');
-    cy.get('button#drawer-edit').click();
-    cy.get('input#title').clear().type('Cypress Test');
-    cy.get('button#drawer-save').click();
-    cy.get('button#drawer-close').click();
+    cy.get('[data-id=drawer]').should('exist');
+    cy.get('button[data-id=drawer-edit]').click();
+    cy.get('input[data-id=title]').clear().type('Cypress Test');
+    cy.get('button[data-id=drawer-save]').click();
+    cy.get('button[data-id=drawer-close]').click();
 
     cy.wait('@gql').then(() => {
       cy.exec(`kubectl get ${crdName} -n ${namespace} | awk 'NR>1 {print $1}'`).then((crdList) => {
@@ -84,11 +84,11 @@ describe('Actions CRUD', () => {
     expect(node).to.exist;
     node.click();
 
-    cy.get('#drawer').should('exist');
-    cy.get('button#drawer-edit').click();
-    cy.get('button#drawer-delete').click();
-    cy.get('#modal').contains('Delete action').should('exist');
-    cy.get('button#approve').click();
+    cy.get('[data-id=drawer]').should('exist');
+    cy.get('button[data-id=drawer-edit]').click();
+    cy.get('button[data-id=drawer-delete]').click();
+    cy.get('[data-id=modal]').contains('Delete action').should('exist');
+    cy.get('button[data-id=approve]').click();
 
     cy.wait('@gql').then(() => {
       cy.exec(`kubectl get ${crdName} -n ${namespace} | awk 'NR>1 {print $1}'`).then((crdList) => {

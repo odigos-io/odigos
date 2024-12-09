@@ -96,7 +96,7 @@ const Modal: React.FC<Props> = ({ isOpen, noOverlay, header, actionComponent, on
     <>
       <Overlay hidden={!isOpen} onClick={onClose} style={{ opacity: noOverlay ? 0 : 1 }} />
 
-      <Transition id={`modal${header ? `-${header.title.replaceAll(' ', '-')}` : ''}`} enter={isOpen}>
+      <Transition data-id={`modal${header ? `-${header.title.replaceAll(' ', '-')}` : ''}`} enter={isOpen}>
         {header && (
           <ModalHeader>
             <ModalCloseButton onClick={onClose}>
