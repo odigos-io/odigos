@@ -21,7 +21,6 @@ import (
 )
 
 type FakeEbpfSdk struct {
-	loadedIndicator chan struct{}
 	running         bool
 	pid 		    int
 
@@ -47,10 +46,13 @@ func (f *FakeEbpfSdk) Close(_ context.Context) error {
 	return nil
 }
 
+func (f *FakeEbpfSdk) Load(ctx context.Context) error {
+	return nil
+}
+
 func (f *FakeEbpfSdk) Run(ctx context.Context) error {
 	// To simulate a real instrumentation, Run is blocking until the context is cancelled
 	f.running = true
-	close(f.loadedIndicator)
 
 	cancelCtx, cancel := context.WithCancel(ctx)
 	f.cancel = cancel
@@ -76,7 +78,6 @@ func NewFakeInstrumentationFactory(kubeclient client.Client, setupDuration time.
 func (f *FakeInstrumentationFactory) CreateEbpfInstrumentation(ctx context.Context, pid int, serviceName string, podWorkload *workload.PodWorkload, containerName string, podName string, loadedIndicator chan struct{}) (*FakeEbpfSdk, error) {
 	<-time.After(f.timeToSetup)
 	return &FakeEbpfSdk{
-		loadedIndicator: loadedIndicator,
 		pid:			 pid,
 	}, nil
 }
