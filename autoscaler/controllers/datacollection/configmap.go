@@ -30,7 +30,7 @@ import (
 
 func SyncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList,
 	datacollection *odigosv1.CollectorsGroup, ctx context.Context,
-	c client.Client, scheme *runtime.Scheme, disableNameProcessor bool) (string, error) {
+	c client.Client, scheme *runtime.Scheme, disableNameProcessor bool) error {
 	logger := log.FromContext(ctx)
 
 	processors := commonconf.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleNodeCollector)
@@ -42,9 +42,8 @@ func SyncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.D
 	desired, err := getDesiredConfigMap(apps, dests, processors, datacollection, scheme, setTracesLoadBalancer, disableNameProcessor)
 	if err != nil {
 		logger.Error(err, "failed to get desired config map")
-		return "", err
+		return err
 	}
-	desiredData := desired.Data[constsK8s.OdigosNodeCollectorConfigMapKey]
 
 	existing := &v1.ConfigMap{}
 	if err := c.Get(ctx, client.ObjectKey{Namespace: datacollection.Namespace, Name: datacollection.Name}, existing); err != nil {
@@ -53,12 +52,12 @@ func SyncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.D
 			_, err := createConfigMap(desired, ctx, c)
 			if err != nil {
 				logger.Error(err, "failed to create config map")
-				return "", err
+				return err
 			}
-			return desiredData, nil
+			return nil
 		} else {
 			logger.Error(err, "failed to get config map")
-			return "", err
+			return err
 		}
 	}
 
@@ -66,10 +65,10 @@ func SyncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.D
 	_, err = patchConfigMap(ctx, existing, desired, c)
 	if err != nil {
 		logger.Error(err, "failed to patch config map")
-		return "", err
+		return err
 	}
 
-	return desiredData, nil
+	return nil
 }
 
 func patchConfigMap(ctx context.Context, existing *v1.ConfigMap, desired *v1.ConfigMap, c client.Client) (*v1.ConfigMap, error) {

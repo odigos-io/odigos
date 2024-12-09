@@ -33,7 +33,7 @@ const (
 	configHashAnnotation = "odigos.io/config-hash"
 )
 
-func syncDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup, configData string,
+func syncDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup,
 	ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (*appsv1.Deployment, error) {
 	logger := log.FromContext(ctx)
 
