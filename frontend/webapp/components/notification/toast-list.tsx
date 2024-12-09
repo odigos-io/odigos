@@ -7,7 +7,7 @@ import { NotificationNote } from '@/reuseable-components';
 
 const Container = styled.div`
   position: fixed;
-  bottom: 20px;
+  top: 14px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10000;
