@@ -11,9 +11,6 @@ import (
 	"go.opentelemetry.io/collector/confmap/converter/expandconverter"
 	odigosfileprovider "go.opentelemetry.io/collector/odigos/providers/odigosfileprovider"
 	envprovider "go.opentelemetry.io/collector/confmap/provider/envprovider"
-	httpprovider "go.opentelemetry.io/collector/confmap/provider/httpprovider"
-	httpsprovider "go.opentelemetry.io/collector/confmap/provider/httpsprovider"
-	yamlprovider "go.opentelemetry.io/collector/confmap/provider/yamlprovider"
 	"go.opentelemetry.io/collector/otelcol"
 )
 
@@ -32,9 +29,6 @@ func main() {
 				ProviderFactories: []confmap.ProviderFactory{
 					odigosfileprovider.NewFactory(),
 					envprovider.NewFactory(),
-					httpprovider.NewFactory(),
-					httpsprovider.NewFactory(),
-					yamlprovider.NewFactory(),
 				},
 				ConverterFactories: []confmap.ConverterFactory{
 					expandconverter.NewFactory(),

@@ -20,12 +20,12 @@ import (
 const schemeName = "file"
 
 type provider struct {
-	done chan struct{}
-	mu   sync.Mutex
+	wg sync.WaitGroup
+	mu sync.Mutex
 
-	watcher fsnotify.Watcher
+	watcher *fsnotify.Watcher
 	running bool
-	logger  zap.Logger
+	logger  *zap.Logger
 }
 
 // NewFactory returns a factory for a confmap.Provider that reads the configuration from a file.
@@ -61,10 +61,9 @@ func newProvider(c confmap.ProviderSettings) confmap.Provider {
 		c.Logger.Error("unable to start fsnotify watcher", zap.Error(err))
 	}
 	return &provider{
-		logger:  *c.Logger,
-		watcher: *watcher,
+		logger:  c.Logger,
+		watcher: watcher,
 		running: false,
-		done:    make(chan struct{}),
 	}
 }
 
@@ -90,9 +89,10 @@ func (fmp *provider) Retrieve(ctx context.Context, uri string, wf confmap.Watche
 
 	// start a new watcher routine only if one isn't already running, since Retrieve could be called multiple times
 	if !fmp.running {
+		fmp.running = true
+		fmp.wg.Add(1)
 		go func() {
-			fmp.running = true
-			defer func() { fmp.done <- struct{}{} }()
+			defer fmp.wg.Done()
 		LOOP:
 			for {
 				select {
@@ -123,7 +123,9 @@ func (fmp *provider) Retrieve(ctx context.Context, uri string, wf confmap.Watche
 					break LOOP
 				}
 			}
+			fmp.mu.Lock()
 			fmp.running = false
+			fmp.mu.Unlock()
 		}()
 	}
 
@@ -141,6 +143,6 @@ func (fmp *provider) Shutdown(context.Context) error {
 		fmp.logger.Error("error closing fsnotify watcher", zap.Error(err))
 	}
 	// wait for watcher routine to finish
-	<-fmp.done
+	fmp.wg.Wait()
 	return nil
 }
