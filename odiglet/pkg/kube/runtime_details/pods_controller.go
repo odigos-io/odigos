@@ -4,53 +4,16 @@ import (
 	"context"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
-
-type podPredicate struct{}
-
-func (p *podPredicate) Create(e event.CreateEvent) bool {
-	// this function is called when a new entity is created in the controller-runtime cache.
-	// 1. When odiglet restarts, it will receive create events for all running pods.
-	// 2. When a new pod is created in k8s, should not have status phase as running, but it does not harm to check.
-	pod, ok := e.Object.(*corev1.Pod)
-	if !ok {
-		return false
-	}
-	return pod.Status.Phase == corev1.PodRunning
-}
-
-func (p *podPredicate) Update(e event.UpdateEvent) bool {
-	// this function is called when an entity is updated in the controller-runtime cache.
-	// We care about pod once it's status changes from not running to running -
-	// this is the point in time we want to apply runtime details detection.
-	oldPod, oldOk := e.ObjectOld.(*corev1.Pod)
-	newPod, newOk := e.ObjectNew.(*corev1.Pod)
-
-	if !oldOk || !newOk {
-		return false
-	}
-
-	return oldPod.Status.Phase != corev1.PodRunning && newPod.Status.Phase == corev1.PodRunning
-}
-
-func (p *podPredicate) Delete(e event.DeleteEvent) bool {
-	// no runtime details detection needed when a pod is deleted
-	return false
-}
-
-func (p *podPredicate) Generic(e event.GenericEvent) bool {
-	// no runtime details detection needed for generic events
-	return false
-}
 
 type PodsReconciler struct {
 	client.Client
@@ -91,14 +54,20 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request reconcile.Reques
 	if err != nil {
 		return reconcile.Result{}, client.IgnoreNotFound(err)
 	}
-
 	podGeneration, err := GetPodGeneration(ctx, p.Clientset, &pod)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
 	// prevent runtime inspection on pods for which we already have the runtime details for this generation
-	if podGeneration == 0 || podGeneration <= instrumentationConfig.Status.ObservedWorkloadGeneration {
+	// if instrumentation config contains unknown language we need to re-inspect the pod
+	failedToGetPodGeneration := podGeneration == 0
+	isNewPodGeneration := podGeneration > instrumentationConfig.Status.ObservedWorkloadGeneration
+	instrumentedConfigContainUnknown := InstrumentationConfigContainsUnknownLanguage(instrumentationConfig)
+
+	shouldSkipDetection := failedToGetPodGeneration || (!isNewPodGeneration && !instrumentedConfigContainUnknown)
+
+	if shouldSkipDetection {
 		logger.V(3).Info("skipping redundant runtime details detection since generation is not newer", "name", request.Name, "namespace", request.Namespace, "currentPodGeneration", podGeneration, "observedWorkloadGeneration", instrumentationConfig.Status.ObservedWorkloadGeneration)
 		return reconcile.Result{}, nil
 	}
@@ -142,4 +111,13 @@ func (p *PodsReconciler) getPodWorkloadObject(ctx context.Context, pod *corev1.P
 
 	// Pod does not necessarily have to be managed by a controller
 	return nil, nil
+}
+
+func InstrumentationConfigContainsUnknownLanguage(config odigosv1.InstrumentationConfig) bool {
+	for _, containerDetails := range config.Status.RuntimeDetailsByContainer {
+		if containerDetails.Language == common.UnknownProgrammingLanguage {
+			return true
+		}
+	}
+	return false
 }

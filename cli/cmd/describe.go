@@ -7,6 +7,7 @@ import (
 
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
+	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/k8sutils/pkg/describe"
 	"github.com/spf13/cobra"
 )
@@ -18,8 +19,35 @@ var (
 
 var describeCmd = &cobra.Command{
 	Use:   "describe",
-	Short: "Show details of a specific odigos entity",
-	Long:  `Print detailed description of a specific odigos entity, which can be used to troubleshoot issues`,
+	Short: "Show details on odigos deployment",
+	Long:  `Print detailed description odigos deployment, which can be used to troubleshoot issues`,
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx := cmd.Context()
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
+
+		odigosNs, err := resources.GetOdigosNamespace(client, ctx)
+		if err != nil {
+			if resources.IsErrNoOdigosNamespaceFound(err) {
+				fmt.Println("\033[31mERROR\033[0m Odigos is NOT yet installed in the current cluster")
+			} else {
+				fmt.Println("\033[31mERROR\033[0m Error detecting Odigos namespace in the current cluster")
+			}
+			return
+		}
+
+		var describeText string
+		if describeRemoteFlag {
+			describeText = executeRemoteOdigosDescribe(ctx, client, odigosNs)
+		} else {
+			describeAnalyze, err := describe.DescribeOdigos(ctx, client, client.OdigosClient, odigosNs)
+			if err != nil {
+				describeText = fmt.Sprintf("Failed to describe odigos: %s", err)
+			} else {
+				describeText = describe.DescribeOdigosToText(describeAnalyze)
+			}
+		}
+		fmt.Println(describeText)
+	},
 }
 
 var describeSourceCmd = &cobra.Command{
@@ -35,19 +63,22 @@ var describeSourceDeploymentCmd = &cobra.Command{
 	Aliases: []string{"deploy", "deployments", "deploy.apps", "deployment.apps", "deployments.apps"},
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		client, err := kube.CreateClient(cmd)
-		if err != nil {
-			kube.PrintClientErrorAndExit(err)
-		}
 		ctx := cmd.Context()
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
+
 		name := args[0]
 		ns := cmd.Flag("namespace").Value.String()
 
 		var describeText string
 		if describeRemoteFlag {
-			describeText = executeRemoteDescribe(ctx, client, "deployment", ns, name)
+			describeText = executeRemoteSourceDescribe(ctx, client, "deployment", ns, name)
 		} else {
-			describeText = describe.DescribeDeployment(ctx, client.Interface, client.OdigosClient, ns, name)
+			desc, err := describe.DescribeDeployment(ctx, client.Interface, client.OdigosClient, ns, name)
+			if err != nil {
+				describeText = fmt.Sprintf("Failed to describe deployment: %s", err)
+			} else {
+				describeText = describe.DescribeSourceToText(desc)
+			}
 		}
 		fmt.Println(describeText)
 	},
@@ -60,20 +91,22 @@ var describeSourceDaemonSetCmd = &cobra.Command{
 	Aliases: []string{"ds", "daemonsets", "ds.apps", "daemonset.apps", "daemonsets.apps"},
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		client, err := kube.CreateClient(cmd)
-		if err != nil {
-			kube.PrintClientErrorAndExit(err)
-		}
-
 		ctx := cmd.Context()
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
+
 		name := args[0]
 		ns := cmd.Flag("namespace").Value.String()
 
 		var describeText string
 		if describeRemoteFlag {
-			describeText = executeRemoteDescribe(ctx, client, "daemonset", ns, name)
+			describeText = executeRemoteSourceDescribe(ctx, client, "daemonset", ns, name)
 		} else {
-			describeText = describe.DescribeDaemonSet(ctx, client.Interface, client.OdigosClient, ns, name)
+			desc, err := describe.DescribeDaemonSet(ctx, client.Interface, client.OdigosClient, ns, name)
+			if err != nil {
+				describeText = fmt.Sprintf("Failed to describe daemonset: %s", err)
+			} else {
+				describeText = describe.DescribeSourceToText(desc)
+			}
 		}
 		fmt.Println(describeText)
 	},
@@ -86,27 +119,29 @@ var describeSourceStatefulSetCmd = &cobra.Command{
 	Aliases: []string{"sts", "statefulsets", "sts.apps", "statefulset.apps", "statefulsets.apps"},
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		client, err := kube.CreateClient(cmd)
-		if err != nil {
-			kube.PrintClientErrorAndExit(err)
-		}
-
 		ctx := cmd.Context()
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
+
 		name := args[0]
 		ns := cmd.Flag("namespace").Value.String()
 
 		var describeText string
 		if describeRemoteFlag {
-			describeText = executeRemoteDescribe(ctx, client, "statefulset", ns, name)
+			describeText = executeRemoteSourceDescribe(ctx, client, "statefulset", ns, name)
 		} else {
-			describeText = describe.DescribeStatefulSet(ctx, client.Interface, client.OdigosClient, ns, name)
+			desc, err := describe.DescribeStatefulSet(ctx, client.Interface, client.OdigosClient, ns, name)
+			if err != nil {
+				describeText = fmt.Sprintf("Failed to describe statefulset: %s", err)
+			} else {
+				describeText = describe.DescribeSourceToText(desc)
+			}
 		}
 		fmt.Println(describeText)
 	},
 }
 
-func executeRemoteDescribe(ctx context.Context, client *kube.Client, workloadKind string, workloadNs string, workloadName string) string {
-	uiSvcProxyEndpoint := getUiServiceEndpoint(ctx, client, workloadKind, workloadNs, workloadName)
+func executeRemoteOdigosDescribe(ctx context.Context, client *kube.Client, odigosNs string) string {
+	uiSvcProxyEndpoint := getUiServiceOdigosEndpoint(ctx, client, odigosNs)
 	request := client.Clientset.RESTClient().Get().AbsPath(uiSvcProxyEndpoint).Do(ctx)
 	response, err := request.Raw()
 	if err != nil {
@@ -116,7 +151,25 @@ func executeRemoteDescribe(ctx context.Context, client *kube.Client, workloadKin
 	}
 }
 
-func getUiServiceEndpoint(ctx context.Context, client *kube.Client, workloadKind string, workloadNs string, workloadName string) string {
+func executeRemoteSourceDescribe(ctx context.Context, client *kube.Client, workloadKind string, workloadNs string, workloadName string) string {
+	uiSvcProxyEndpoint := getUiServiceSourceEndpoint(ctx, client, workloadKind, workloadNs, workloadName)
+	request := client.Clientset.RESTClient().Get().AbsPath(uiSvcProxyEndpoint).Do(ctx)
+	response, err := request.Raw()
+	if err != nil {
+		return "Remote describe failed: " + err.Error()
+	} else {
+		return string(response)
+	}
+}
+
+func getUiServiceOdigosEndpoint(ctx context.Context, client *kube.Client, odigosNs string) string {
+	uiServiceName := "ui"
+	uiServicePort := 3000
+
+	return fmt.Sprintf("/api/v1/namespaces/%s/services/%s:%d/proxy/api/describe/odigos", odigosNs, uiServiceName, uiServicePort)
+}
+
+func getUiServiceSourceEndpoint(ctx context.Context, client *kube.Client, workloadKind string, workloadNs string, workloadName string) string {
 	ns, err := resources.GetOdigosNamespace(client, ctx)
 	if resources.IsErrNoOdigosNamespaceFound(err) {
 		fmt.Println("\033[31mERROR\033[0m no odigos installation found in the current cluster. use \"odigos install\" to install odigos in the cluster or check that kubeconfig is pointing to the correct cluster.")

@@ -1,48 +1,19 @@
-const env = process.env.NODE_ENV;
+'use client';
+const IS_PROD = process.env.NODE_ENV === 'production';
 
-const LOCALHOST = 'http://localhost:8085/api';
-const BASE_URL = env === 'production' ? '/api' : LOCALHOST;
+// set base URLs for all environments
+const DEV_API_URL = 'http://localhost:8085';
+const PROD_API_URL = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
 
+// construct final base URL based on environment
+const API_BASE_URL = IS_PROD ? PROD_API_URL : DEV_API_URL;
+
+// add paths to base URL
 const API = {
-  EVENTS: `${BASE_URL}/events`,
-  CONFIG: `${BASE_URL}/config`,
-  NAMESPACES: `${BASE_URL}/namespaces`,
-  APPLICATIONS: `${BASE_URL}/applications`,
-  DESTINATION_TYPE: `${BASE_URL}/destination-types`,
-  DESTINATIONS: `${BASE_URL}/destinations`,
-  CHECK_CONNECTION: `${BASE_URL}/destinations/testConnection`,
-  SOURCES: `${BASE_URL}/sources`,
-  SET_ACTION: (type: string) => `${BASE_URL}/actions/types/${type}`,
-  PUT_ACTION: (type: string, id: string) =>
-    `${BASE_URL}/actions/types/${type}/${id}`,
-  ACTIONS: `${BASE_URL}/actions`,
-  DELETE_ACTION: (type: string, id: string) =>
-    `${BASE_URL}/actions/types/${type}/${id}`,
-  OVERVIEW_METRICS: `${BASE_URL}/metrics/overview`,
-  INSTRUMENTATION_RULES: `${BASE_URL}/instrumentation-rules`,
-  INSTRUMENTATION_RULE: (id: string) =>
-    `${BASE_URL}/instrumentation-rules/${id}`,
+  GRAPHQL: `${API_BASE_URL}/graphql`,
+  EVENTS: `${API_BASE_URL}/api/events`,
 };
 
-const QUERIES = {
-  API_CONFIG: 'apiConfig',
-  API_NAMESPACES: 'apiNamespaces',
-  API_APPLICATIONS: 'apiApplications',
-  API_DESTINATIONS: 'apiDestinations',
-  API_SOURCES: 'apiSources',
-  API_DESTINATION_TYPE: 'apiDestinationType',
-  API_DESTINATION_TYPES: 'apiDestinationTypes',
-  API_ACTIONS: 'apiActions',
-};
+const DOCS_LINK = 'https://docs.odigos.io';
 
-const SLACK_INVITE_LINK =
-  'https://odigos.slack.com/join/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A#/shared-invite/email';
-
-export const ACTION_DOCS_LINK =
-  'https://docs.odigos.io/pipeline/actions/introduction';
-export const ACTION_ITEM_DOCS_LINK = 'https://docs.odigos.io/pipeline/actions';
-
-export const INSTRUMENTATION_RULES_DOCS_LINK =
-  'https://docs.odigos.io/pipeline/rules/overview';
-
-export { API, QUERIES, SLACK_INVITE_LINK };
+export { API, DOCS_LINK };

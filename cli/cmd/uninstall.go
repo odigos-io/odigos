@@ -11,6 +11,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/envoverwrite"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources"
+	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/confirm"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/cli/pkg/labels"
@@ -23,7 +24,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/spf13/cobra"
 )
@@ -33,13 +33,8 @@ var uninstallCmd = &cobra.Command{
 	Use:   "uninstall",
 	Short: "Unistall Odigos from your cluster",
 	Run: func(cmd *cobra.Command, args []string) {
-		client, err := kube.CreateClient(cmd)
-
-		if err != nil {
-			kube.PrintClientErrorAndExit(err)
-		}
-
 		ctx := cmd.Context()
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
 		ns, err := resources.GetOdigosNamespace(client, ctx)
 		if err != nil && !resources.IsErrNoOdigosNamespaceFound(err) {
@@ -102,6 +97,10 @@ var uninstallCmd = &cobra.Command{
 
 		createKubeResourceWithLogging(ctx, "Uninstalling Odigos CRDs",
 			client, cmd, ns, uninstallCRDs)
+
+		createKubeResourceWithLogging(ctx, "Uninstalling Odigos MutatingWebhookConfigurations",
+			client, cmd, ns, uninstallMutatingWebhookConfigs)
+
 		fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos uninstalled.\n")
 	},
 }
@@ -178,7 +177,7 @@ func jsonPatchEscapeKey(key string) string {
 	return strings.Replace(key, "/", "~1", 1)
 }
 
-func getWorkloadRolloutJsonPatch(obj client.Object, pts *v1.PodTemplateSpec) ([]byte, error) {
+func getWorkloadRolloutJsonPatch(obj kube.Object, pts *v1.PodTemplateSpec) ([]byte, error) {
 	patchOperations := []map[string]interface{}{}
 
 	// Remove odigos instrumentation label
@@ -390,6 +389,26 @@ func uninstallCRDs(ctx context.Context, cmd *cobra.Command, client *kube.Client,
 
 	for _, i := range list.Items {
 		err = client.ApiExtensions.ApiextensionsV1().CustomResourceDefinitions().Delete(ctx, i.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func uninstallMutatingWebhookConfigs(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+	list, err := client.AdmissionregistrationV1().MutatingWebhookConfigurations().List(ctx, metav1.ListOptions{
+		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
+			MatchLabels: labels.OdigosSystem,
+		}),
+	})
+	if err != nil {
+		return err
+	}
+
+	for _, webhook := range list.Items {
+		err = client.AdmissionregistrationV1().MutatingWebhookConfigurations().Delete(ctx, webhook.Name, metav1.DeleteOptions{})
 		if err != nil {
 			return err
 		}

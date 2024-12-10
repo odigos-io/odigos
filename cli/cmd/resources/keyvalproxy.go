@@ -8,7 +8,7 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/containers"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -324,7 +324,7 @@ func NewKeyvalProxyDeployment(version string, ns string, imagePrefix string) *ap
 								{
 									ConfigMapRef: &corev1.ConfigMapEnvSource{
 										LocalObjectReference: corev1.LocalObjectReference{
-											Name: OdigosDeploymentConfigMapName,
+											Name: consts.OdigosDeploymentConfigMapName,
 										},
 									},
 								},
@@ -384,7 +384,7 @@ func NewKeyvalProxyResourceManager(client *kube.Client, ns string, config *commo
 func (a *keyvalProxyResourceManager) Name() string { return "CloudProxy" }
 
 func (a *keyvalProxyResourceManager) InstallFromScratch(ctx context.Context) error {
-	resources := []client.Object{
+	resources := []kube.Object{
 		NewKeyvalProxyServiceAccount(a.ns),
 		NewKeyvalProxyRole(a.ns),
 		NewKeyvalProxyRoleBinding(a.ns),

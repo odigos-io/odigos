@@ -6,6 +6,8 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"errors"
+
 	"github.com/odigos-io/odigos/autoscaler/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 
@@ -32,54 +34,42 @@ const (
 )
 
 func syncDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup, configData string,
-	ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, memConfig *memoryConfigurations) (*appsv1.Deployment, error) {
+	ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (*appsv1.Deployment, error) {
 	logger := log.FromContext(ctx)
 
 	secretsVersionHash, err := destinationsSecretsVersionsHash(ctx, c, dests)
 	if err != nil {
-		logger.Error(err, "Failed to get secrets hash")
-		return nil, err
+		return nil, errors.Join(err, errors.New("failed to get secrets hash"))
 	}
 
 	// Calculate the hash of the config data and the secrets version hash, this is used to make sure the gateway will restart when the config changes
 	configDataHash := common.Sha256Hash(fmt.Sprintf("%s-%s", configData, secretsVersionHash))
-	desiredDeployment, err := getDesiredDeployment(dests, configDataHash, gateway, scheme, imagePullSecrets, odigosVersion, memConfig)
+	desiredDeployment, err := getDesiredDeployment(dests, configDataHash, gateway, scheme, imagePullSecrets, odigosVersion)
 	if err != nil {
-		logger.Error(err, "Failed to get desired deployment")
-		return nil, err
+		return nil, errors.Join(err, errors.New("failed to get desired deployment"))
 	}
 
-	existing := &appsv1.Deployment{}
-	if err := c.Get(ctx, client.ObjectKey{Name: gateway.Name, Namespace: gateway.Namespace}, existing); err != nil {
-		if apierrors.IsNotFound(err) {
-			logger.V(0).Info("Creating deployment")
-			newDeployment, err := createDeployment(desiredDeployment, ctx, c)
-			if err != nil {
-				logger.Error(err, "failed to create deployment")
-				return nil, err
-			}
-			return newDeployment, nil
-		} else {
-			logger.Error(err, "failed to get deployment")
-			return nil, err
+	existingDeployment := &appsv1.Deployment{}
+	getError := c.Get(ctx, client.ObjectKey{Name: gateway.Name, Namespace: gateway.Namespace}, existingDeployment)
+	if getError != nil && !apierrors.IsNotFound(getError) {
+		return nil, errors.Join(getError, errors.New("failed to get gateway deployment"))
+	}
+
+	if apierrors.IsNotFound(getError) {
+		logger.V(0).Info("Creating new gateway deployment")
+		err := c.Create(ctx, desiredDeployment)
+		if err != nil {
+			return nil, errors.Join(err, errors.New("failed to create gateway deployment"))
 		}
+		return desiredDeployment, nil
+	} else {
+		logger.V(0).Info("Patching existing gateway deployment")
+		newDep, err := patchDeployment(existingDeployment, desiredDeployment, ctx, c)
+		if err != nil {
+			return nil, errors.Join(err, errors.New("failed to patch gateway deployment"))
+		}
+		return newDep, nil
 	}
-
-	logger.V(0).Info("Patching deployment")
-	newDep, err := patchDeployment(existing, desiredDeployment, ctx, c)
-	if err != nil {
-		logger.Error(err, "failed to patch deployment")
-		return nil, err
-	}
-
-	return newDep, nil
-}
-
-func createDeployment(desired *appsv1.Deployment, ctx context.Context, c client.Client) (*appsv1.Deployment, error) {
-	if err := c.Create(ctx, desired); err != nil {
-		return nil, err
-	}
-	return desired, nil
 }
 
 func patchDeployment(existing *appsv1.Deployment, desired *appsv1.Deployment, ctx context.Context, c client.Client) (*appsv1.Deployment, error) {
@@ -90,7 +80,6 @@ func patchDeployment(existing *appsv1.Deployment, desired *appsv1.Deployment, ct
 	})
 
 	if err != nil {
-		logger.Error(err, "Failed to patch deployment")
 		return nil, err
 	}
 
@@ -99,9 +88,20 @@ func patchDeployment(existing *appsv1.Deployment, desired *appsv1.Deployment, ct
 }
 
 func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string,
-	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, memConfig *memoryConfigurations) (*appsv1.Deployment, error) {
+	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (*appsv1.Deployment, error) {
 
-	requestMemoryQuantity := resource.MustParse(fmt.Sprintf("%dMi", memConfig.memoryRequestMiB))
+	// request + limits for memory and cpu
+	requestMemoryQuantity := resource.MustParse(fmt.Sprintf("%dMi", gateway.Spec.ResourcesSettings.MemoryRequestMiB))
+	limitMemoryQuantity := resource.MustParse(fmt.Sprintf("%dMi", gateway.Spec.ResourcesSettings.MemoryLimitMiB))
+
+	requestCPU := resource.MustParse(fmt.Sprintf("%dm", gateway.Spec.ResourcesSettings.CpuRequestMillicores))
+	limitCPU := resource.MustParse(fmt.Sprintf("%dm", gateway.Spec.ResourcesSettings.CpuLimitMillicores))
+
+	// deployment replicas
+	var gatewayReplicas int32 = 1
+	if gateway.Spec.ResourcesSettings.MinReplicas != nil {
+		gatewayReplicas = int32(*gateway.Spec.ResourcesSettings.MinReplicas)
+	}
 
 	desiredDeployment := &appsv1.Deployment{
 		ObjectMeta: v1.ObjectMeta{
@@ -110,7 +110,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 			Labels:    ClusterCollectorGateway,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: intPtr(1),
+			Replicas: intPtr(gatewayReplicas),
 			Selector: &v1.LabelSelector{
 				MatchLabels: ClusterCollectorGateway,
 			},
@@ -169,7 +169,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 								},
 								{
 									Name:  "GOMEMLIMIT",
-									Value: fmt.Sprintf("%dMiB", memConfig.gomemlimitMiB),
+									Value: fmt.Sprintf("%dMiB", gateway.Spec.ResourcesSettings.GomemlimitMiB),
 								},
 							},
 							SecurityContext: &corev1.SecurityContext{
@@ -200,6 +200,11 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 							Resources: corev1.ResourceRequirements{
 								Requests: corev1.ResourceList{
 									corev1.ResourceMemory: requestMemoryQuantity,
+									corev1.ResourceCPU:    requestCPU,
+								},
+								Limits: corev1.ResourceList{
+									corev1.ResourceMemory: limitMemoryQuantity,
+									corev1.ResourceCPU:    limitCPU,
 								},
 							},
 						},

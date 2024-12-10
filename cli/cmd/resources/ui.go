@@ -12,7 +12,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
@@ -94,7 +93,7 @@ func NewUIDeployment(ns string, version string, imagePrefix string) *appsv1.Depl
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
 									"cpu":    resource.MustParse("500m"),
-									"memory": *resource.NewQuantity(134217728, resource.BinarySI),
+									"memory": *resource.NewQuantity(536870912, resource.BinarySI),
 								},
 								Requests: corev1.ResourceList{
 									"cpu":    resource.MustParse("10m"),
@@ -169,6 +168,16 @@ func NewUIRole(ns string) *rbacv1.Role {
 				Verbs: []string{
 					"get",
 					"list",
+				},
+				APIGroups: []string{"apps"},
+				Resources: []string{
+					"replicasets",
+				},
+			},
+			{
+				Verbs: []string{
+					"get",
+					"list",
 					"watch",
 					"patch",
 					"delete",
@@ -226,6 +235,11 @@ func NewUIClusterRole() *rbacv1.ClusterRole {
 			},
 			{
 				APIGroups: []string{""},
+				Resources: []string{"services"},
+				Verbs:     []string{"list"},
+			},
+			{
+				APIGroups: []string{""},
 				Resources: []string{"configmaps"},
 				Verbs:     []string{"get", "list", "watch", "patch", "create", "delete", "update"},
 			},
@@ -237,7 +251,7 @@ func NewUIClusterRole() *rbacv1.ClusterRole {
 			{
 				APIGroups: []string{"apps"},
 				Resources: []string{"deployments", "statefulsets", "daemonsets"},
-				Verbs:     []string{"get", "list", "watch", "patch"},
+				Verbs:     []string{"get", "list", "watch", "patch", "update"},
 			},
 			{
 				APIGroups: []string{"odigos.io"},
@@ -300,6 +314,10 @@ func NewUIService(ns string) *corev1.Service {
 					Port: 3000,
 				},
 				{
+					Name: "beta-ui",
+					Port: 3001,
+				},
+				{
 					Name: "otlp",
 					Port: consts.OTLPPort,
 				},
@@ -309,7 +327,7 @@ func NewUIService(ns string) *corev1.Service {
 }
 
 func (u *uiResourceManager) InstallFromScratch(ctx context.Context) error {
-	resources := []client.Object{
+	resources := []kube.Object{
 		NewUIServiceAccount(u.ns),
 		NewUIRole(u.ns),
 		NewUIRoleBinding(u.ns),

@@ -6,9 +6,10 @@ import (
 
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
+	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/confirm"
-	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/k8sutils/pkg/getters"
 	"github.com/spf13/cobra"
 )
 
@@ -22,11 +23,8 @@ var logoutCmd = &cobra.Command{
 	You can run 'odigos ui' to manage your Odigos installation locally.
 	`,
 	Run: func(cmd *cobra.Command, args []string) {
-		client, err := kube.CreateClient(cmd)
-		if err != nil {
-			kube.PrintClientErrorAndExit(err)
-		}
 		ctx := cmd.Context()
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
 		ns, err := resources.GetOdigosNamespace(client, ctx)
 		if resources.IsErrNoOdigosNamespaceFound(err) {
@@ -37,7 +35,7 @@ var logoutCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		currentOdigosVersion, err := getOdigosVersionInClusterFromConfigMap(ctx, client, ns)
+		currentOdigosVersion, err := getters.GetOdigosVersionInClusterFromConfigMap(ctx, client.Clientset, ns)
 		if err != nil {
 			fmt.Println("Odigos cloud login failed - unable to read the current Odigos version.")
 			os.Exit(1)

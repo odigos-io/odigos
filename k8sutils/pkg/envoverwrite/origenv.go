@@ -6,7 +6,7 @@ import (
 
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // original manifest values for the env vars of a workload
@@ -42,6 +42,10 @@ func (o *OrigWorkloadEnvValues) GetContainerStoredEnvs(containerName string) env
 func (o *OrigWorkloadEnvValues) RemoveOriginalValue(containerName string, envName string) (*string, bool) {
 	if val, ok := o.origManifestValues[containerName][envName]; ok {
 		delete(o.origManifestValues[containerName], envName)
+		if len(o.origManifestValues[containerName]) == 0 {
+			delete(o.origManifestValues, containerName)
+		}
+		o.modifiedSinceCreated = true
 		return val, true
 	}
 	return nil, false
@@ -62,8 +66,14 @@ func (o *OrigWorkloadEnvValues) InsertOriginalValue(containerName string, envNam
 
 // stores the original values back into the manifest annotations
 // by modifying the annotations map of the input argument
-func (o *OrigWorkloadEnvValues) SerializeToAnnotation(obj client.Object) error {
+func (o *OrigWorkloadEnvValues) SerializeToAnnotation(obj metav1.Object) error {
 	if !o.modifiedSinceCreated {
+		return nil
+	}
+
+	if len(o.origManifestValues) == 0 {
+		// delete the annotation is there are no original values to store
+		o.DeleteFromObj(obj)
 		return nil
 	}
 
@@ -85,11 +95,16 @@ func (o *OrigWorkloadEnvValues) SerializeToAnnotation(obj client.Object) error {
 	return nil
 }
 
-func (o *OrigWorkloadEnvValues) DeleteFromObj(obj client.Object) {
+func (o *OrigWorkloadEnvValues) DeleteFromObj(obj metav1.Object) bool {
 	currentAnnotations := obj.GetAnnotations()
 	if currentAnnotations == nil {
-		return
+		return false
+	}
+
+	if _, ok := currentAnnotations[consts.ManifestEnvOriginalValAnnotation]; !ok {
+		return false
 	}
 
 	delete(currentAnnotations, consts.ManifestEnvOriginalValAnnotation)
+	return true
 }

@@ -149,7 +149,7 @@ func TestCalculateConfigMapData(t *testing.T) {
 				},
 			},
 		},
-		false)
+		false, common.CommunityOdigosTier)
 
 	assert.Equal(t, err, nil)
 	assert.Equal(t, want, got)

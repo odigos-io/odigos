@@ -42,15 +42,14 @@ function process_yaml_file() {
   one_hour=3600
   start_epoch=$(($current_epoch - one_hour))
   end_epoch=$(($current_epoch + one_hour))
-  response=$(kubectl get --raw /api/v1/namespaces/$dest_namespace/services/$dest_service:$dest_port/proxy/api/search\?end=$end_epoch\&start=$start_epoch\&q=$encoded_query)
+  response=$(kubectl get --raw /api/v1/namespaces/$dest_namespace/services/$dest_service:$dest_port/proxy/api/search\?end=$end_epoch\&start=$start_epoch\&q=$encoded_query\&limit=50)
   num_of_traces=$(echo $response | jq '.traces | length')
   # if num_of_traces not equal to expected_count
   if [ "$num_of_traces" -ne "$expected_count" ]; then
     echo "Test FAILED: expected $expected_count got $num_of_traces"
-    echo "$response" | jq
     exit 1
   else
-    echo "Test PASSED"
+    echo "Test PASSED: expected $expected_count got $num_of_traces"
     exit 0
   fi
 }

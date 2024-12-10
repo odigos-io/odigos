@@ -6,7 +6,7 @@ repo: github.com/odigos-io/odigos/scheduler
 resources:
 - controller: true
   domain: odigos.io
-  kind: InstrumentedApplication
+  kind: InstrumentationConfig
   version: v1alpha1
 - controller: true
   domain: odigos.io

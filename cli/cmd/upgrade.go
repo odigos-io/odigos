@@ -10,10 +10,11 @@ import (
 	"github.com/hashicorp/go-version"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
+	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/confirm"
-	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/utils"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -29,12 +30,8 @@ var upgradeCmd = &cobra.Command{
 This command will upgrade the Odigos version in the cluster to the version of Odigos CLI
 and apply any required migrations and adaptations.`,
 	Run: func(cmd *cobra.Command, args []string) {
-
-		client, err := kube.CreateClient(cmd)
-		if err != nil {
-			kube.PrintClientErrorAndExit(err)
-		}
 		ctx := cmd.Context()
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
 		ns, err := resources.GetOdigosNamespace(client, ctx)
 		if err != nil {
@@ -47,7 +44,7 @@ and apply any required migrations and adaptations.`,
 		skipVersionCheckFlag := cmd.Flag("skip-version-check")
 		if skipVersionCheckFlag == nil || !cmd.Flag("skip-version-check").Changed {
 
-			cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, resources.OdigosDeploymentConfigMapName, metav1.GetOptions{})
+			cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
 			if err != nil {
 				fmt.Println("Odigos upgrade failed - unable to read the current Odigos version for migration")
 				os.Exit(1)

@@ -10,12 +10,16 @@ import (
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
 	"github.com/odigos-io/odigos/autoscaler/utils"
+	"k8s.io/apimachinery/pkg/util/version"
+
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -43,7 +47,8 @@ type DelayManager struct {
 }
 
 // RunSyncDaemonSetWithDelayAndSkipNewCalls runs the function with the specified delay and skips new calls until the function execution is finished
-func (dm *DelayManager) RunSyncDaemonSetWithDelayAndSkipNewCalls(delay time.Duration, retries int, dests *odigosv1.DestinationList, collection *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, secrets []string, version string) {
+func (dm *DelayManager) RunSyncDaemonSetWithDelayAndSkipNewCalls(delay time.Duration, retries int, dests *odigosv1.DestinationList,
+	collection *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, secrets []string, version string, k8sVersion *version.Version) {
 	dm.mu.Lock()
 	defer dm.mu.Unlock()
 
@@ -56,17 +61,28 @@ func (dm *DelayManager) RunSyncDaemonSetWithDelayAndSkipNewCalls(delay time.Dura
 
 	// Finish the function execution after the delay
 	time.AfterFunc(delay, func() {
+		var err error
+		logger := log.FromContext(ctx)
+
 		dm.mu.Lock()
 		defer dm.mu.Unlock()
 		defer dm.finishProgress()
-		var err error
+		defer func() {
+			statusPatchString := common.GetCollectorsGroupDeployedConditionsPatch(err)
+			statusErr := c.Status().Patch(ctx, collection, client.RawPatch(types.MergePatchType, []byte(statusPatchString)))
+			if statusErr != nil {
+				logger.Error(statusErr, "Failed to patch collectors group status")
+				// just log the error, do not fail the reconciliation
+			}
+		}()
 
 		for i := 0; i < retries; i++ {
-			_, err = syncDaemonSet(ctx, dests, collection, c, scheme, secrets, version)
+			_, err = syncDaemonSet(ctx, dests, collection, c, scheme, secrets, version, k8sVersion)
 			if err == nil {
 				return
 			}
 		}
+
 		log.FromContext(ctx).Error(err, "Failed to sync DaemonSet")
 	})
 }
@@ -76,7 +92,7 @@ func (dm *DelayManager) finishProgress() {
 }
 
 func syncDaemonSet(ctx context.Context, dests *odigosv1.DestinationList, datacollection *odigosv1.CollectorsGroup,
-	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (*appsv1.DaemonSet, error) {
+	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, k8sVersion *version.Version) (*appsv1.DaemonSet, error) {
 	logger := log.FromContext(ctx)
 
 	odigletDaemonsetPodSpec, err := getOdigletDaemonsetPodSpec(ctx, c, datacollection.Namespace)
@@ -97,7 +113,7 @@ func syncDaemonSet(ctx context.Context, dests *odigosv1.DestinationList, datacol
 		logger.Error(err, "Failed to get signals from otelcol config")
 		return nil, err
 	}
-	desiredDs, err := getDesiredDaemonSet(datacollection, otelcolConfigContent, scheme, imagePullSecrets, odigosVersion, odigletDaemonsetPodSpec)
+	desiredDs, err := getDesiredDaemonSet(datacollection, otelcolConfigContent, scheme, imagePullSecrets, odigosVersion, k8sVersion, odigletDaemonsetPodSpec)
 	if err != nil {
 		logger.Error(err, "Failed to get desired DaemonSet")
 		return nil, err
@@ -154,7 +170,7 @@ func getOdigletDaemonsetPodSpec(ctx context.Context, c client.Client, namespace 
 }
 
 func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData string,
-	scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string,
+	scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, k8sVersion *version.Version,
 	odigletDaemonsetPodSpec *corev1.PodSpec,
 ) (*appsv1.DaemonSet, error) {
 	// TODO(edenfed): add log volumes only if needed according to apps or dests
@@ -167,7 +183,17 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 	maxUnavailable := intstr.FromString("50%")
 	// maxSurge is the number of pods that can be created above the desired number of pods.
 	// we do not want more then 1 datacollection pod on the same node as they need to bind to oltp ports.
-	maxSurge := intstr.FromInt(0)
+	rollingUpdate := &appsv1.RollingUpdateDaemonSet{
+		MaxUnavailable: &maxUnavailable,
+	}
+	// maxSurge was added to the Kubernetes api at version 1.21.alpha1, we want to be sure so we used 1.22 for the check, the fallback is without it
+	if k8sVersion != nil && k8sVersion.AtLeast(version.MustParse("1.22.0")) {
+		maxSurge := intstr.FromInt(0)
+		rollingUpdate.MaxSurge = &maxSurge
+	}
+
+	requestMemoryRequestQuantity := resource.MustParse(fmt.Sprintf("%dMi", datacollection.Spec.ResourcesSettings.MemoryRequestMiB))
+	requestMemoryLimitQuantity := resource.MustParse(fmt.Sprintf("%dMi", datacollection.Spec.ResourcesSettings.MemoryLimitMiB))
 
 	desiredDs := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -180,11 +206,8 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 				MatchLabels: NodeCollectorsLabels,
 			},
 			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
-				Type: appsv1.RollingUpdateDaemonSetStrategyType,
-				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
-					MaxUnavailable: &maxUnavailable,
-					MaxSurge:       &maxSurge,
-				},
+				Type:          appsv1.RollingUpdateDaemonSetStrategyType,
+				RollingUpdate: rollingUpdate,
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
@@ -283,6 +306,10 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 										},
 									},
 								},
+								{
+									Name:  "GOMEMLIMIT",
+									Value: fmt.Sprintf("%dMiB", datacollection.Spec.ResourcesSettings.GomemlimitMiB),
+								},
 							},
 							LivenessProbe: &corev1.Probe{
 								ProbeHandler: corev1.ProbeHandler{
@@ -298,6 +325,14 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 										Path: "/",
 										Port: intstr.FromInt(13133),
 									},
+								},
+							},
+							Resources: corev1.ResourceRequirements{
+								Requests: corev1.ResourceList{
+									corev1.ResourceMemory: requestMemoryRequestQuantity,
+								},
+								Limits: corev1.ResourceList{
+									corev1.ResourceMemory: requestMemoryLimitQuantity,
 								},
 							},
 							SecurityContext: &corev1.SecurityContext{

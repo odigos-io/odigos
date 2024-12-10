@@ -15,6 +15,12 @@ rules:
   - apiGroups:
       - ""
     resources:
+      - services
+    verbs:
+      - list
+  - apiGroups:
+      - ""
+    resources:
       - configmaps
     verbs:
       - get
@@ -41,6 +47,7 @@ rules:
       - get
       - list
       - watch
+      - update
       - patch
   - apiGroups:
       - odigos.io

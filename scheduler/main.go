@@ -22,6 +22,8 @@ import (
 
 	"github.com/go-logr/zapr"
 	bridge "github.com/odigos-io/opentelemetry-zap-bridge"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -29,6 +31,10 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -36,7 +42,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	"github.com/odigos-io/odigos/scheduler/controllers"
+	"github.com/odigos-io/odigos/scheduler/controllers/clustercollectorsgroup"
+	"github.com/odigos-io/odigos/scheduler/controllers/nodecollectorsgroup"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -71,10 +78,23 @@ func main() {
 	logger := zapr.NewLogger(zapLogger)
 	ctrl.SetLogger(logger)
 
+	odigosNs := env.GetCurrentNamespace()
+	nsSelector := client.InNamespace(odigosNs).AsSelector()
+	nameSelector := fields.OneTermEqualSelector("metadata.name", consts.OdigosConfigurationName)
+	odigosConfigSelector := fields.AndSelectors(nsSelector, nameSelector)
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
 			BindAddress: metricsAddr,
+		},
+		Cache: cache.Options{
+			DefaultTransform: cache.TransformStripManagedFields(),
+			ByObject: map[client.Object]cache.ByObject{
+				&corev1.ConfigMap{}: {
+					Field: odigosConfigSelector,
+				},
+			},
 		},
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
@@ -85,28 +105,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.CollectorsGroupReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "CollectorsGroup")
+	err = clustercollectorsgroup.SetupWithManager(mgr)
+	if err != nil {
+		setupLog.Error(err, "unable to create controllers for cluster collectors group")
 		os.Exit(1)
 	}
-	if err = (&controllers.DestinationReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Destination")
+	err = nodecollectorsgroup.SetupWithManager(mgr)
+	if err != nil {
+		setupLog.Error(err, "unable to create controllers for node collectors group")
 		os.Exit(1)
 	}
-	if err = (&controllers.InstrumentedApplicationReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "InstrumentedApplication")
-		os.Exit(1)
-	}
-	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")

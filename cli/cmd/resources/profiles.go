@@ -4,93 +4,36 @@ import (
 	"context"
 	"fmt"
 
-	actions "github.com/odigos-io/odigos/api/actions/v1alpha1"
-	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/cli/cmd/resources/profiles"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	k8sprofiles "github.com/odigos-io/odigos/k8sutils/pkg/profiles"
 )
 
-type Profile struct {
-	ProfileName      common.ProfileName
-	ShortDescription string
-	ClientObject     client.Object        // used to read it from the embedded YAML file
-	Dependencies     []common.ProfileName // other profiles that are applied by the current profile
+func GetAvailableCommunityProfiles() []k8sprofiles.Profile {
+	return []k8sprofiles.Profile{k8sprofiles.SemconvUpgraderProfile, k8sprofiles.CopyScopeProfile, k8sprofiles.DisableNameProcessorProfile,
+		k8sprofiles.SizeSProfile, k8sprofiles.SizeMProfile,
+		k8sprofiles.SizeLProfile, k8sprofiles.AllowConcurrentAgents}
 }
 
-var (
-	fullPayloadCollectionProfile = Profile{
-		ProfileName:      common.ProfileName("full-payload-collection"),
-		ShortDescription: "Collect any payload from the cluster where supported with default settings",
-		ClientObject:     &odigosv1alpha1.InstrumentationRule{},
-	}
-	dbPayloadCollectionProfile = Profile{
-		ProfileName:      common.ProfileName("db-payload-collection"),
-		ShortDescription: "Collect db payload from the cluster where supported with default settings",
-		ClientObject:     &odigosv1alpha1.InstrumentationRule{},
-	}
-	queryOperationDetector = Profile{
-		ProfileName:      common.ProfileName("query-operation-detector"),
-		ShortDescription: "Detect the SQL operation name from the query text",
-		ClientObject:     &odigosv1alpha1.Processor{},
-	}
-	semconvUpgraderProfile = Profile{
-		ProfileName:      common.ProfileName("semconv"),
-		ShortDescription: "Upgrade and align some attribute names to a newer version of the OpenTelemetry semantic conventions",
-		ClientObject:     &actions.RenameAttribute{},
-	}
-	categoryAttributesProfile = Profile{
-		ProfileName:      common.ProfileName("category-attributes"),
-		ShortDescription: "Add category attributes to the spans",
-		ClientObject:     &odigosv1alpha1.Processor{},
-	}
-	copyScopeProfile = Profile{
-		ProfileName:      common.ProfileName("copy-scope"),
-		ShortDescription: "Copy the scope name into a separate attribute for backends that do not support scopes",
-		ClientObject:     &odigosv1alpha1.Processor{},
-	}
-	hostnameAsPodNameProfile = Profile{
-		ProfileName:      common.ProfileName("hostname-as-podname"),
-		ShortDescription: "Populate the spans resource `host.name` attribute with value of `k8s.pod.name`",
-		ClientObject:     &odigosv1alpha1.Processor{},
-	}
-	javaNativeInstrumentationsProfile = Profile{
-		ProfileName:      common.ProfileName("java-native-instrumentations"),
-		ShortDescription: "Instrument Java applications using native instrumentation and eBPF enterprise processing",
-		ClientObject:     &odigosv1alpha1.InstrumentationRule{},
-	}
-	codeAttributesProfile = Profile{
-		ProfileName:      common.ProfileName("code-attributes"),
-		ShortDescription: "Record span attributes in 'code' namespace where supported",
-	}
-	kratosProfile = Profile{
-		ProfileName:      common.ProfileName("kratos"),
-		ShortDescription: "Bundle profile that includes db-payload-collection, semconv, category-attributes, copy-scope, hostname-as-podname, java-native-instrumentations, code-attributes, query-operation-detector",
-		Dependencies:     []common.ProfileName{"db-payload-collection", "semconv", "category-attributes", "copy-scope", "hostname-as-podname", "java-native-instrumentations", "code-attributes", "query-operation-detector"},
-	}
-)
-
-func GetAvailableCommunityProfiles() []Profile {
-	return []Profile{semconvUpgraderProfile, copyScopeProfile}
-}
-
-func GetAvailableOnPremProfiles() []Profile {
-	return append([]Profile{fullPayloadCollectionProfile, dbPayloadCollectionProfile, categoryAttributesProfile, hostnameAsPodNameProfile, javaNativeInstrumentationsProfile, kratosProfile, queryOperationDetector},
+func GetAvailableOnPremProfiles() []k8sprofiles.Profile {
+	return append([]k8sprofiles.Profile{k8sprofiles.FullPayloadCollectionProfile, k8sprofiles.DbPayloadCollectionProfile, k8sprofiles.CategoryAttributesProfile,
+		k8sprofiles.HostnameAsPodNameProfile, k8sprofiles.JavaNativeInstrumentationsProfile, k8sprofiles.KratosProfile, k8sprofiles.QueryOperationDetector,
+		k8sprofiles.SmallBatchesProfile},
 		GetAvailableCommunityProfiles()...)
 }
 
-func GetResourcesForProfileName(profileName common.ProfileName, tier common.OdigosTier) ([]client.Object, error) {
+func GetResourcesForProfileName(profileName common.ProfileName, tier common.OdigosTier) ([]kube.Object, error) {
 	allAvailableProfiles := GetAvailableProfilesForTier(tier)
 	for _, p := range allAvailableProfiles {
 		if p.ProfileName == common.ProfileName(profileName) {
-			if p.ClientObject != nil {
+			if p.KubeObject != nil {
 				filename := fmt.Sprintf("%s.yaml", profileName)
-				return profiles.GetEmbeddedYAMLFileAsObjects(filename, p.ClientObject)
+				return profiles.GetEmbeddedYAMLFileAsObjects(filename, p.KubeObject)
 			}
 			if len(p.Dependencies) > 0 {
-				allResources := []client.Object{}
+				allResources := []kube.Object{}
 				for _, dep := range p.Dependencies {
 					resources, err := GetResourcesForProfileName(dep, tier)
 					if err != nil {
@@ -107,14 +50,14 @@ func GetResourcesForProfileName(profileName common.ProfileName, tier common.Odig
 	return nil, nil
 }
 
-func GetAvailableProfilesForTier(odigosTier common.OdigosTier) []Profile {
+func GetAvailableProfilesForTier(odigosTier common.OdigosTier) []k8sprofiles.Profile {
 	switch odigosTier {
 	case common.CommunityOdigosTier:
 		return GetAvailableCommunityProfiles()
 	case common.OnPremOdigosTier:
 		return GetAvailableOnPremProfiles()
 	default:
-		return []Profile{}
+		return []k8sprofiles.Profile{}
 	}
 }
 
@@ -132,7 +75,7 @@ func NewProfilesResourceManager(client *kube.Client, ns string, config *common.O
 func (a *profilesResourceManager) Name() string { return "Profiles" }
 
 func (a *profilesResourceManager) InstallFromScratch(ctx context.Context) error {
-	allResources := []client.Object{}
+	allResources := []kube.Object{}
 	for _, profile := range a.config.Profiles {
 		profileResources, err := GetResourcesForProfileName(profile, a.tier)
 		if err != nil {

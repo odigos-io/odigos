@@ -60,9 +60,10 @@
         {
           "group": "Setup",
           "pages": [
+            "setup/system-requirements",
             {
               "group": "Installation",
-              "pages": ["setup/installation", "setup/installation-options", "setup/docker-registry"]
+              "pages": ["setup/installation", "setup/installation-options", "setup/docker-registry", "setup/odigos-with-argocd"]
             },
             "setup/upgrade",
             "setup/uninstall"
@@ -71,6 +72,7 @@
         {
           "group": "Architecture",
           "pages": [
+            "architecture/components",
             "architecture/sources",
             "architecture/troubleshooting"
           ]
@@ -81,6 +83,7 @@
             "cli/odigos",
             "cli/odigos_cloud",
             "cli/odigos_describe",
+            "cli/odigos_diagnose",
             "cli/odigos_install",
             "cli/odigos_profile",
             "cli/odigos_ui",
@@ -123,13 +126,14 @@
             "instrumentations/java/java",
             "instrumentations/java/ebpf"
           ]
-        }        
+        }
       ]
     },
     {
       "group": "Odigos Pipeline",
       "pages": [
         "pipeline/overview",
+        "pipeline/configuration",
         {
           "group": "Sources",
           "pages": [
@@ -198,21 +202,26 @@
         {
           "group": "Supported Backends",
           "pages": [
+            "backends/appdynamics",
             "backends/s3",
+            "backends/axiom",
             "backends/azureblob",
             "backends/causely",
             "backends/chronosphere",
+            "backends/clickhouse",
             "backends/coralogix",
             "backends/datadog",
             "backends/dynatrace",
             "backends/elasticsearch",
             "backends/gcs",
+            "backends/gigapipe",
             "backends/googlecloud",
             "backends/grafanacloudloki",
             "backends/grafanacloudprometheus",
             "backends/grafanacloudtempo",
             "backends/honeycomb",
             "backends/jaeger",
+            "backends/last9",
             "backends/lightstep",
             "backends/logzio",
             "backends/loki",
@@ -235,7 +244,6 @@
     {
       "group": "Concepts",
       "pages": [
-        "architecture",
         "telemetry-types",
         "custom-resources",
         "uninstall",
@@ -288,7 +296,7 @@
     }
   ],
   "footerSocials": {
-    "X": "https://twitter.com/odigosio",
+    "x": "https://twitter.com/odigosio",
     "github": "https://github.com/odigos-io/odigos",
     "slack": "https://odigos.slack.com/join/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A#/shared-invite/email"
   }

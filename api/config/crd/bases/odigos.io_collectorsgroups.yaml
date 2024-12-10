@@ -42,19 +42,156 @@ spec:
           spec:
             description: CollectorsGroupSpec defines the desired state of Collector
             properties:
-              inputSvc:
-                type: string
+              collectorOwnMetricsPort:
+                description: |-
+                  The port to use for exposing the collector's own metrics as a prometheus endpoint.
+                  This can be used to resolve conflicting ports when a collector is using the host network.
+                format: int32
+                type: integer
+              resourcesSettings:
+                description: |-
+                  Resources [memory/cpu] settings for the collectors group.
+                  these settings are used to protect the collectors instances from:
+                  - running out of memory and being killed by the k8s OOM killer
+                  - consuming all available memory on the node which can lead to node instability
+                  - pushing back pressure to the instrumented applications
+                properties:
+                  cpuLimitMillicores:
+                    description: |-
+                      CPU resource limit to be used on the pod template.
+                      it will be embedded in the as a resource limit of the form "cpu: <value>m"
+                    type: integer
+                  cpuRequestMillicores:
+                    description: |-
+                      CPU resource request to be used on the pod template.
+                      it will be embedded in the as a resource request of the form "cpu: <value>m"
+                    type: integer
+                  gomemlimitMiB:
+                    description: |-
+                      the GOMEMLIMIT environment variable value for the collector pod.
+                      this is when go runtime will start garbage collection.
+                      it is recommended to be set to 80% of the hard limit of the memory limiter.
+                    type: integer
+                  maxReplicas:
+                    type: integer
+                  memoryLimitMiB:
+                    description: |-
+                      This option sets the limit on the memory usage of the collector.
+                      since the memory limiter mechanism is heuristic, and operates on fixed intervals,
+                      while it cannot fully prevent OOMs, it can help in reducing the chances of OOMs in edge cases.
+                      the settings should prevent the collector from exceeding the memory request,
+                      so one can set this to the same value as the memory request or higher to allow for some buffer for bursts.
+                    type: integer
+                  memoryLimiterLimitMiB:
+                    description: |-
+                      this parameter sets the "limit_mib" parameter in the memory limiter configuration for the collector.
+                      it is the hard limit after which a force garbage collection will be performed.
+                      this value will end up comparing against the go runtime reported heap Alloc value.
+                      According to the memory limiter docs:
+                      > Note that typically the total memory usage of process will be about 50MiB higher than this value
+                      a test from nov 2024 showed that fresh odigos collector with no traffic takes 38MiB,
+                      thus the 50MiB is a good value to start with.
+                    type: integer
+                  memoryLimiterSpikeLimitMiB:
+                    description: |-
+                      this parameter sets the "spike_limit_mib" parameter in the memory limiter configuration for the collector memory limiter.
+                      note that this is not the processor soft limit itself, but the diff in Mib between the hard limit and the soft limit.
+                      according to the memory limiter docs, it is recommended to set this to 20% of the hard limit.
+                      changing this value allows trade-offs between memory usage and resiliency to bursts.
+                    type: integer
+                  memoryRequestMiB:
+                    description: |-
+                      MemoryRequestMiB is the memory resource request to be used on the pod template.
+                      it will be embedded in the as a resource request of the form "memory: <value>Mi"
+                    type: integer
+                  minReplicas:
+                    description: Minumum + Maximum number of replicas for the collector
+                      - these relevant only for gateway.
+                    type: integer
+                required:
+                - cpuLimitMillicores
+                - cpuRequestMillicores
+                - gomemlimitMiB
+                - memoryLimitMiB
+                - memoryLimiterLimitMiB
+                - memoryLimiterSpikeLimitMiB
+                - memoryRequestMiB
+                type: object
               role:
                 enum:
                 - CLUSTER_GATEWAY
                 - NODE_COLLECTOR
                 type: string
             required:
+            - collectorOwnMetricsPort
+            - resourcesSettings
             - role
             type: object
           status:
             description: CollectorsGroupStatus defines the observed state of Collector
             properties:
+              conditions:
+                description: |-
+                  Represents the observations of a collectorsroup's current state.
+                  Known .status.conditions.type are: "Available", "Progressing"
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
               ready:
                 type: boolean
               receiverSignals:

@@ -7,14 +7,14 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
-	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/consts"
-
 	"github.com/ghodss/yaml"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/autoscaler/controllers/common"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
+	odigoscommon "github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
+	"github.com/odigos-io/odigos/common/consts"
 	constsK8s "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	v1 "k8s.io/api/core/v1"
@@ -30,7 +30,7 @@ import (
 
 func SyncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList,
 	datacollection *odigosv1.CollectorsGroup, ctx context.Context,
-	c client.Client, scheme *runtime.Scheme) (string, error) {
+	c client.Client, scheme *runtime.Scheme, disableNameProcessor bool) (string, error) {
 	logger := log.FromContext(ctx)
 
 	processors := commonconf.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleNodeCollector)
@@ -39,7 +39,7 @@ func SyncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.D
 	SamplingExists := commonconf.FindFirstProcessorByType(allProcessors, "odigossampling")
 	setTracesLoadBalancer := SamplingExists != nil
 
-	desired, err := getDesiredConfigMap(apps, dests, processors, datacollection, scheme, setTracesLoadBalancer)
+	desired, err := getDesiredConfigMap(apps, dests, processors, datacollection, scheme, setTracesLoadBalancer, disableNameProcessor)
 	if err != nil {
 		logger.Error(err, "failed to get desired config map")
 		return "", err
@@ -98,8 +98,8 @@ func createConfigMap(desired *v1.ConfigMap, ctx context.Context, c client.Client
 }
 
 func getDesiredConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors []*odigosv1.Processor,
-	datacollection *odigosv1.CollectorsGroup, scheme *runtime.Scheme, setTracesLoadBalancer bool) (*v1.ConfigMap, error) {
-	cmData, err := calculateConfigMapData(apps, dests, processors, setTracesLoadBalancer)
+	datacollection *odigosv1.CollectorsGroup, scheme *runtime.Scheme, setTracesLoadBalancer bool, disableNameProcessor bool) (*v1.ConfigMap, error) {
+	cmData, err := calculateConfigMapData(datacollection, apps, dests, processors, setTracesLoadBalancer, disableNameProcessor)
 	if err != nil {
 		return nil, err
 	}
@@ -125,19 +125,26 @@ func getDesiredConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odig
 	return &desired, nil
 }
 
-func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors []*odigosv1.Processor,
-	setTracesLoadBalancer bool) (string, error) {
+func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors []*odigosv1.Processor,
+	setTracesLoadBalancer bool, disableNameProcessor bool) (string, error) {
+
+	ownMetricsPort := nodeCG.Spec.CollectorOwnMetricsPort
 
 	empty := struct{}{}
 
 	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors, errs := config.GetCrdProcessorsConfigMap(commonconf.ToProcessorConfigurerArray(processors))
-	if errs != nil {
-		for name, err := range errs {
-			log.Log.V(0).Info(err.Error(), "processor", name)
-		}
+	for name, err := range errs {
+		log.Log.V(0).Error(err, "processor", name)
 	}
+
+	if !disableNameProcessor {
+		processorsCfg["odigosresourcename"] = empty
+	}
+
+	memoryLimiterConfiguration := common.GetMemoryLimiterConfig(nodeCG.Spec.ResourcesSettings)
+
 	processorsCfg["batch"] = empty
-	processorsCfg["odigosresourcename"] = empty
+	processorsCfg["memory_limiter"] = memoryLimiterConfiguration
 	processorsCfg["resource"] = config.GenericMap{
 		"attributes": []config.GenericMap{{
 			"key":    "k8s.node.name",
@@ -170,6 +177,7 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 			"tls": config.GenericMap{
 				"insecure": true,
 			},
+			"balancer_name": "round_robin",
 		},
 		"otlp/odigos-own-telemetry-ui": config.GenericMap{
 			"endpoint": fmt.Sprintf("ui.%s:%d", env.GetCurrentNamespace(), consts.OTLPPort),
@@ -207,18 +215,18 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 				"config": config.GenericMap{
 					"scrape_configs": []config.GenericMap{
 						{
-							"job_name": "otelcol",
+							"job_name":        "otelcol",
 							"scrape_interval": "10s",
 							"static_configs": []config.GenericMap{
 								{
-									"targets": []string{"127.0.0.1:8888"},
+									"targets": []string{fmt.Sprintf("127.0.0.1:%d", ownMetricsPort)},
 								},
 							},
 							"metric_relabel_configs": []config.GenericMap{
 								{
 									"source_labels": []string{"__name__"},
-									"regex": "(.*odigos.*|^otelcol_processor_accepted.*)",
-									"action": "keep",
+									"regex":         "(.*odigos.*|^otelcol_processor_accepted.*)",
+									"action":        "keep",
 								},
 							},
 						},
@@ -234,22 +242,22 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 			},
 		},
 		Service: config.Service{
-			Pipelines:  map[string]config.Pipeline{
+			Pipelines: map[string]config.Pipeline{
 				"metrics/otelcol": {
-					Receivers: []string{"prometheus/self-metrics"},
+					Receivers:  []string{"prometheus/self-metrics"},
 					Processors: []string{"resource/pod-name"},
-					Exporters: []string{"otlp/odigos-own-telemetry-ui"},
+					Exporters:  []string{"otlp/odigos-own-telemetry-ui"},
 				},
 			},
 			Extensions: []string{"health_check"},
 			Telemetry: config.Telemetry{
 				Metrics: config.GenericMap{
-					"address": "0.0.0.0:8888",
+					"address": fmt.Sprintf("0.0.0.0:%d", ownMetricsPort),
 				},
 				Resource: map[string]*string{
 					// The collector add "otelcol" as a service name, so we need to remove it
 					// to avoid duplication, since we are interested in the instrumented services.
-					string(semconv.ServiceNameKey):    nil,
+					string(semconv.ServiceNameKey): nil,
 					// The collector adds its own version as a service version, which is not needed currently.
 					string(semconv.ServiceVersionKey): nil,
 				},
@@ -262,17 +270,19 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 	collectLogs := false
 	for _, dst := range dests.Items {
 		for _, s := range dst.Spec.Signals {
-			if s == common.LogsObservabilitySignal && !custom.DestRequiresCustom(dst.Spec.Type) {
+			if s == odigoscommon.LogsObservabilitySignal && !custom.DestRequiresCustom(dst.Spec.Type) {
 				collectLogs = true
 			}
-			if s == common.TracesObservabilitySignal || dst.Spec.Type == common.PrometheusDestinationType {
+			if s == odigoscommon.TracesObservabilitySignal || dst.Spec.Type == odigoscommon.PrometheusDestinationType {
 				collectTraces = true
 			}
-			if s == common.MetricsObservabilitySignal && !custom.DestRequiresCustom(dst.Spec.Type) {
+			if s == odigoscommon.MetricsObservabilitySignal && !custom.DestRequiresCustom(dst.Spec.Type) {
 				collectMetrics = true
 			}
 		}
 	}
+
+	commonProcessors := getCommonProcessors(disableNameProcessor)
 
 	if collectLogs {
 		includes := make([]string, 0)
@@ -313,7 +323,7 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 
 		cfg.Service.Pipelines["logs"] = config.Pipeline{
 			Receivers:  []string{"filelog"},
-			Processors: append([]string{"batch", "odigosresourcename", "resource", "resourcedetection", "odigostrafficmetrics"}, logsProcessors...),
+			Processors: append(commonProcessors, logsProcessors...),
 			Exporters:  []string{"otlp/gateway"},
 		}
 	}
@@ -321,7 +331,7 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 	if collectTraces {
 		cfg.Service.Pipelines["traces"] = config.Pipeline{
 			Receivers:  []string{"otlp"},
-			Processors: append([]string{"batch", "odigosresourcename", "resource", "resourcedetection", "odigostrafficmetrics"}, tracesProcessors...),
+			Processors: append(commonProcessors, tracesProcessors...),
 			Exporters:  tracesPipelineExporter,
 		}
 	}
@@ -336,7 +346,7 @@ func calculateConfigMapData(apps *odigosv1.InstrumentedApplicationList, dests *o
 
 		cfg.Service.Pipelines["metrics"] = config.Pipeline{
 			Receivers:  []string{"otlp", "kubeletstats"},
-			Processors: append([]string{"batch", "odigosresourcename", "resource", "resourcedetection", "odigostrafficmetrics"}, metricsProcessors...),
+			Processors: append(commonProcessors, metricsProcessors...),
 			Exporters:  []string{"otlp/gateway"},
 		}
 	}
@@ -358,7 +368,7 @@ func getConfigMap(ctx context.Context, c client.Client, namespace string) (*v1.C
 	return configMap, nil
 }
 
-func getSignalsFromOtelcolConfig(otelcolConfigContent string) ([]common.ObservabilitySignal, error) {
+func getSignalsFromOtelcolConfig(otelcolConfigContent string) ([]odigoscommon.ObservabilitySignal, error) {
 	config := config.Config{}
 	err := yaml.Unmarshal([]byte(otelcolConfigContent), &config)
 	if err != nil {
@@ -383,16 +393,31 @@ func getSignalsFromOtelcolConfig(otelcolConfigContent string) ([]common.Observab
 		}
 	}
 
-	signals := []common.ObservabilitySignal{}
+	signals := []odigoscommon.ObservabilitySignal{}
 	if tracesEnabled {
-		signals = append(signals, common.TracesObservabilitySignal)
+		signals = append(signals, odigoscommon.TracesObservabilitySignal)
 	}
 	if metricsEnabled {
-		signals = append(signals, common.MetricsObservabilitySignal)
+		signals = append(signals, odigoscommon.MetricsObservabilitySignal)
 	}
 	if logsEnabled {
-		signals = append(signals, common.LogsObservabilitySignal)
+		signals = append(signals, odigoscommon.LogsObservabilitySignal)
 	}
 
 	return signals, nil
+}
+
+func getCommonProcessors(disableNameProcessor bool) []string {
+	// memory limiter is placed right after batch processor an not the first processor in pipeline
+	// this is so that instrumented application always succeeds in sending data to the collector
+	// (on it being added to a batch) and checking the memory limit later after the batch
+	// where memory rejection would drop the data instead of backpressuring the application.
+	// Read more about it here: https://github.com/open-telemetry/opentelemetry-collector/issues/11726
+	// Also related: https://github.com/open-telemetry/opentelemetry-collector/issues/9591
+	processors := []string{"batch", "memory_limiter"}
+	if !disableNameProcessor {
+		processors = append(processors, "odigosresourcename")
+	}
+	processors = append(processors, "resource", "resourcedetection", "odigostrafficmetrics")
+	return processors
 }

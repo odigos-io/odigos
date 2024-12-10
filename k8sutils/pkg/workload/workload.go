@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 
+	"github.com/odigos-io/odigos/common/consts"
+
+	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	"github.com/odigos-io/odigos/common/consts"
-	v1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type Workload interface {
@@ -108,4 +109,93 @@ func IsInstrumentationDisabledExplicitly(obj client.Object) bool {
 	}
 
 	return false
+}
+
+func GetInstrumentationLabelValue(labels map[string]string) *bool {
+	if val, exists := labels[consts.OdigosInstrumentationLabel]; exists {
+		enabled := val == consts.InstrumentationEnabled
+		return &enabled
+	}
+
+	return nil
+}
+
+func GetInstrumentationLabelTexts(workloadLabels map[string]string, workloadKind string, nsLabels map[string]string) (workloadText, nsText, decisionText string, sourceInstrumented bool) {
+	workloadLabel, workloadFound := workloadLabels[consts.OdigosInstrumentationLabel]
+	nsLabel, nsFound := nsLabels[consts.OdigosInstrumentationLabel]
+
+	if workloadFound {
+		workloadText = consts.OdigosInstrumentationLabel + "=" + workloadLabel
+	} else {
+		workloadText = consts.OdigosInstrumentationLabel + " label not set"
+	}
+
+	if nsFound {
+		nsText = consts.OdigosInstrumentationLabel + "=" + nsLabel
+	} else {
+		nsText = consts.OdigosInstrumentationLabel + " label not set"
+	}
+
+	if workloadFound {
+		sourceInstrumented = workloadLabel == consts.InstrumentationEnabled
+		if sourceInstrumented {
+			decisionText = "Workload is instrumented because the " + workloadKind + " contains the label '" + consts.OdigosInstrumentationLabel + "=" + workloadLabel + "'"
+		} else {
+			decisionText = "Workload is NOT instrumented because the " + workloadKind + " contains the label '" + consts.OdigosInstrumentationLabel + "=" + workloadLabel + "'"
+		}
+	} else {
+		sourceInstrumented = nsLabel == consts.InstrumentationEnabled
+		if sourceInstrumented {
+			decisionText = "Workload is instrumented because the " + workloadKind + " is not labeled, and the namespace is labeled with '" + consts.OdigosInstrumentationLabel + "=" + nsLabel + "'"
+		} else {
+			if nsFound {
+				decisionText = "Workload is NOT instrumented because the " + workloadKind + " is not labeled, and the namespace is labeled with '" + consts.OdigosInstrumentationLabel + "=" + nsLabel + "'"
+			} else {
+				decisionText = "Workload is NOT instrumented because neither the workload nor the namespace has the '" + consts.OdigosInstrumentationLabel + "' label set"
+			}
+		}
+	}
+
+	return
+}
+
+func GetWorkloadObject(ctx context.Context, objectKey client.ObjectKey, kind WorkloadKind, kubeClient client.Client) (metav1.Object, error) {
+	switch kind {
+	case WorkloadKindDeployment:
+		var deployment v1.Deployment
+		err := kubeClient.Get(ctx, objectKey, &deployment)
+		if err != nil {
+			return nil, err
+		}
+		return &deployment, nil
+
+	case WorkloadKindStatefulSet:
+		var statefulSet v1.StatefulSet
+		err := kubeClient.Get(ctx, objectKey, &statefulSet)
+		if err != nil {
+			return nil, err
+		}
+		return &statefulSet, nil
+
+	case WorkloadKindDaemonSet:
+		var daemonSet v1.DaemonSet
+		err := kubeClient.Get(ctx, objectKey, &daemonSet)
+		if err != nil {
+			return nil, err
+		}
+		return &daemonSet, nil
+
+	default:
+		return nil, errors.New("failed to get workload object for kind: " + string(kind))
+	}
+}
+
+func ExtractServiceNameFromAnnotations(annotations map[string]string, defaultName string) string {
+	if annotations == nil {
+		return defaultName
+	}
+	if reportedName, exists := annotations[consts.OdigosReportedNameAnnotation]; exists && reportedName != "" {
+		return reportedName
+	}
+	return defaultName
 }

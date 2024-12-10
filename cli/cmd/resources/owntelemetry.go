@@ -15,7 +15,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -250,6 +249,14 @@ func int64Ptr(n int64) *int64 {
 	return &n
 }
 
+func ptrString(s string) *string {
+	return &s
+}
+
+func ptrGeneric[T any](v T) *T {
+	return &v
+}
+
 type ownTelemetryResourceManager struct {
 	client        *kube.Client
 	ns            string
@@ -265,16 +272,16 @@ func NewOwnTelemetryResourceManager(client *kube.Client, ns string, config *comm
 func (a *ownTelemetryResourceManager) Name() string { return "OwnTelemetry Pipeline" }
 
 func (a *ownTelemetryResourceManager) InstallFromScratch(ctx context.Context) error {
-	var resources []client.Object
+	var resources []kube.Object
 	if a.odigosTier == common.CloudOdigosTier {
-		resources = []client.Object{
+		resources = []kube.Object{
 			NewOwnTelemetryConfigMapOtlpGrpc(a.ns, a.odigosVersion),
 			NewOwnTelemetryCollectorConfigMap(a.ns),
 			NewOwnTelemetryCollectorDeployment(a.ns),
 			NewOwnTelemetryCollectorService(a.ns),
 		}
 	} else {
-		resources = []client.Object{
+		resources = []kube.Object{
 			NewOwnTelemetryConfigMapDisabled(a.ns),
 		}
 	}

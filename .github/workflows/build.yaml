@@ -1,9 +1,11 @@
 name: build
 
 on:
+  merge_group:
   pull_request:
     branches:
       - main
+      - stable
 
 jobs:
   build-autoscaler:

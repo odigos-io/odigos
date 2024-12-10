@@ -7,29 +7,26 @@ import (
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	OdigosDeploymentConfigMapName = "odigos-deployment"
-)
-
-func NewOdigosDeploymentConfigMap(ns string, odigosVersion string) *corev1.ConfigMap {
+func NewOdigosDeploymentConfigMap(ns string, odigosVersion string, odigosTier string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		TypeMeta: v1.TypeMeta{
 			Kind:       "ConfigMap",
 			APIVersion: "v1",
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name:      OdigosDeploymentConfigMapName,
+			Name:      consts.OdigosDeploymentConfigMapName,
 			Namespace: ns,
 		},
 		Data: map[string]string{
 			"ODIGOS_VERSION": odigosVersion,
+			"ODIGOS_TIER":    odigosTier,
 		},
 	}
 }
@@ -106,8 +103,8 @@ func NewOdigosDeploymentResourceManager(client *kube.Client, ns string, config *
 func (a *odigosDeploymentResourceManager) Name() string { return "OdigosDeployment" }
 
 func (a *odigosDeploymentResourceManager) InstallFromScratch(ctx context.Context) error {
-	resources := []client.Object{
-		NewOdigosDeploymentConfigMap(a.ns, a.odigosVersion),
+	resources := []kube.Object{
+		NewOdigosDeploymentConfigMap(a.ns, a.odigosVersion, string(a.odigosTier)),
 		NewLeaderElectionRole(a.ns),
 	}
 

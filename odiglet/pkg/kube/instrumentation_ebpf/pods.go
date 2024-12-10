@@ -68,7 +68,7 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 		return ctrl.Result{}, nil
 	}
 
-	podWorkload, err := p.getPodWorkloadObject(ctx, &pod)
+	podWorkload, err := workload.PodWorkloadObject(ctx, &pod)
 	if err != nil {
 		logger.Error(err, "error getting pod workload object")
 		return ctrl.Result{}, err
@@ -124,10 +124,3 @@ func (p *PodsReconciler) getPodWorkloadObject(ctx context.Context, pod *corev1.P
 	return nil, nil
 }
 
-func GetPodSumRestarts(pod *corev1.Pod) int {
-	restartCount := 0
-	for _, containerStatus := range pod.Status.ContainerStatuses {
-		restartCount += int(containerStatus.RestartCount)
-	}
-	return restartCount
-}

@@ -7,7 +7,6 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/containers"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -161,7 +160,7 @@ func NewSchedulerClusterRole() *rbacv1.ClusterRole {
 					"watch",
 				},
 				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentedapplications"},
+				Resources: []string{"instrumentationconfigs"},
 			},
 		},
 	}
@@ -259,7 +258,7 @@ func NewSchedulerDeployment(ns string, version string, imagePrefix string) *apps
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
 									"cpu":    resource.MustParse("500m"),
-									"memory": *resource.NewQuantity(134217728, resource.BinarySI),
+									"memory": *resource.NewQuantity(536870912, resource.BinarySI),
 								},
 								Requests: corev1.ResourceList{
 									"cpu":    resource.MustParse("10m"),
@@ -312,7 +311,7 @@ func NewSchedulerResourceManager(client *kube.Client, ns string, config *common.
 func (a *schedulerResourceManager) Name() string { return "Scheduler" }
 
 func (a *schedulerResourceManager) InstallFromScratch(ctx context.Context) error {
-	resources := []client.Object{
+	resources := []kube.Object{
 		NewSchedulerServiceAccount(a.ns),
 		NewSchedulerRoleBinding(a.ns),
 		NewSchedulerClusterRole(),

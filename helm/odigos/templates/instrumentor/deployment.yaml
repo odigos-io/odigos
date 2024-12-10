@@ -29,6 +29,10 @@ spec:
         {{- else }}
         image: "{{ .Values.instrumentor.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         {{- end }}
+        ports:
+          - containerPort: 9443
+            name: webhook-server
+            protocol: TCP
         env:
           - name: OTEL_SERVICE_NAME
             value: instrumentor
@@ -36,10 +40,16 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
+        volumeMounts:
+          - name: webhook-cert
+            mountPath: /tmp/k8s-webhook-server/serving-certs
+            readOnly: true
         envFrom:
           - configMapRef:
               name: odigos-own-telemetry-otel-config
               optional: true
+          - configMapRef:
+              name: odigos-deployment
         livenessProbe:
           httpGet:
             path: /healthz
@@ -50,7 +60,7 @@ spec:
         resources:
           limits:
             cpu: 500m
-            memory: 128Mi
+            memory: 512Mi
           requests:
             cpu: 10m
             memory: 64Mi
@@ -59,6 +69,11 @@ spec:
       securityContext:
         runAsNonRoot: true
       serviceAccountName: odigos-instrumentor
+      volumes:
+        - name: webhook-cert
+          secret:
+            secretName: instrumentor-webhook-cert
+            defaultMode: 420
       terminationGracePeriodSeconds: 10
 {{- if .Values.imagePullSecrets }}
       imagePullSecrets:

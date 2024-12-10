@@ -12,13 +12,15 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
+	"github.com/odigos-io/odigos/cli/cmd/resources"
+	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
+	"github.com/odigos-io/odigos/cli/pkg/kube"
+	"github.com/odigos-io/odigos/cli/pkg/log"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/utils"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 
-	"github.com/odigos-io/odigos/cli/cmd/resources"
-	"github.com/odigos-io/odigos/cli/pkg/kube"
-	"github.com/odigos-io/odigos/cli/pkg/log"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,19 +55,32 @@ var installCmd = &cobra.Command{
 	Long: `Install Odigos in your kubernetes cluster.
 This command will install k8s components that will auto-instrument your applications with OpenTelemetry and send traces, metrics and logs to any telemetry backend`,
 	Run: func(cmd *cobra.Command, args []string) {
-
-		client, err := kube.CreateClient(cmd)
-		if err != nil {
-			kube.PrintClientErrorAndExit(err)
-		}
 		ctx := cmd.Context()
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 		ns := cmd.Flag("namespace").Value.String()
 
 		// Check if Odigos already installed
-		cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, resources.OdigosDeploymentConfigMapName, metav1.GetOptions{})
+		cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
 		if err == nil && cm != nil {
 			fmt.Printf("\033[31mERROR\033[0m Odigos is already installed in namespace\n")
 			os.Exit(1)
+		}
+
+		// Check if the cluster meets the minimum requirements
+		clusterKind := cmdcontext.ClusterKindFromContext(ctx)
+		if clusterKind == autodetect.KindUnknown {
+			fmt.Println("Unknown Kubernetes cluster detected, proceeding with installation")
+		} else {
+			fmt.Printf("Detected cluster: Kubernetes kind: %s\n", clusterKind)
+		}
+
+		k8sVersion := cmdcontext.K8SVersionFromContext(ctx)
+		if k8sVersion != nil {
+			if k8sVersion.LessThan(k8sconsts.MinK8SVersionForInstallation) {
+				fmt.Printf("\033[31mERROR\033[0m Odigos requires Kubernetes version %s or higher but found %s, aborting\n", k8sconsts.MinK8SVersionForInstallation.String(), k8sVersion.String())
+				os.Exit(1)
+			}
+			fmt.Printf("Detected cluster: Kubernetes version: %s\n", k8sVersion.String())
 		}
 
 		var odigosProToken string
@@ -86,18 +101,6 @@ This command will install k8s components that will auto-instrument your applicat
 		config := createOdigosConfig(odigosTier)
 
 		fmt.Printf("Installing Odigos version %s in namespace %s ...\n", versionFlag, ns)
-
-		kc := cmd.Flag("kubeconfig").Value.String()
-		kubeKind, kubeVersion := autodetect.KubernetesClusterProduct(ctx, kc, client)
-		if kubeKind != autodetect.KindUnknown {
-			autodetect.CurrentKubernetesVersion = autodetect.KubernetesVersion{
-				Kind:    kubeKind,
-				Version: kubeVersion,
-			}
-			fmt.Printf("Detected Kubernetes: %s version %s\n", kubeKind, kubeVersion)
-		} else {
-			fmt.Println("Unknown Kubernetes cluster detected, proceeding with installation")
-		}
 
 		// namespace is created on "install" and is not managed by resource manager
 		createKubeResourceWithLogging(ctx, fmt.Sprintf("> Creating namespace %s", ns),
@@ -178,51 +181,9 @@ func createNamespace(ctx context.Context, cmd *cobra.Command, client *kube.Clien
 	return nil
 }
 
-func otelSdkConfigCommunity() map[common.ProgrammingLanguage]common.OtelSdk {
-	return map[common.ProgrammingLanguage]common.OtelSdk{
-		common.JavaProgrammingLanguage:       common.OtelSdkNativeCommunity,
-		common.PythonProgrammingLanguage:     common.OtelSdkNativeCommunity,
-		common.GoProgrammingLanguage:         common.OtelSdkEbpfCommunity,
-		common.DotNetProgrammingLanguage:     common.OtelSdkNativeCommunity,
-		common.JavascriptProgrammingLanguage: common.OtelSdkNativeCommunity,
-	}
-}
-
-func otelSdkConfigCloud() map[common.ProgrammingLanguage]common.OtelSdk {
-	return map[common.ProgrammingLanguage]common.OtelSdk{
-		common.JavaProgrammingLanguage:       common.OtelSdkNativeCommunity,
-		common.PythonProgrammingLanguage:     common.OtelSdkNativeCommunity,
-		common.GoProgrammingLanguage:         common.OtelSdkEbpfEnterprise,
-		common.DotNetProgrammingLanguage:     common.OtelSdkNativeCommunity,
-		common.JavascriptProgrammingLanguage: common.OtelSdkNativeCommunity,
-	}
-}
-
-func otelSdkConfigOnPrem() map[common.ProgrammingLanguage]common.OtelSdk {
-	return map[common.ProgrammingLanguage]common.OtelSdk{
-		common.JavaProgrammingLanguage:       common.OtelSdkEbpfEnterprise, // Notice - for onprem, the default for java is eBPF
-		common.PythonProgrammingLanguage:     common.OtelSdkEbpfEnterprise,
-		common.GoProgrammingLanguage:         common.OtelSdkEbpfEnterprise,
-		common.DotNetProgrammingLanguage:     common.OtelSdkNativeCommunity,
-		common.JavascriptProgrammingLanguage: common.OtelSdkEbpfEnterprise,
-		common.MySQLProgrammingLanguage:      common.OtelSdkEbpfEnterprise,
-		common.NginxProgrammingLanguage:      common.OtelSdkNativeCommunity,
-	}
-}
-
 func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration {
 	fullIgnoredNamespaces := utils.MergeDefaultIgnoreWithUserInput(userInputIgnoredNamespaces, consts.SystemNamespaces)
 	fullIgnoredContainers := utils.MergeDefaultIgnoreWithUserInput(userInputIgnoredContainers, consts.IgnoredContainers)
-
-	var defaultOtelSdkPerLanguage map[common.ProgrammingLanguage]common.OtelSdk
-	switch odigosTier {
-	case common.CommunityOdigosTier:
-		defaultOtelSdkPerLanguage = otelSdkConfigCommunity()
-	case common.CloudOdigosTier:
-		defaultOtelSdkPerLanguage = otelSdkConfigCloud()
-	case common.OnPremOdigosTier:
-		defaultOtelSdkPerLanguage = otelSdkConfigOnPrem()
-	}
 
 	selectedProfiles := []common.ProfileName{}
 	profiles := resources.GetAvailableProfilesForTier(odigosTier)
@@ -252,7 +213,6 @@ func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 		OdigletImage:      odigletImage,
 		InstrumentorImage: instrumentorImage,
 		AutoscalerImage:   autoScalerImage,
-		DefaultSDKs:       defaultOtelSdkPerLanguage,
 		Profiles:          selectedProfiles,
 	}
 }

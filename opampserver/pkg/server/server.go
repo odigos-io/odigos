@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -17,12 +18,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager, kubeClient *kubernetes.Clientset, nodeName string, odigosNs string) error {
-
+func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager, kubeClientSet *kubernetes.Clientset, nodeName string, odigosNs string) error {
 	listenEndpoint := fmt.Sprintf("0.0.0.0:%d", OpAmpServerDefaultPort)
 	logger.Info("Starting opamp server", "listenEndpoint", listenEndpoint)
 
-	deviceidCache, err := deviceid.NewDeviceIdCache(logger, kubeClient)
+	deviceidCache, err := deviceid.NewDeviceIdCache(logger, kubeClientSet)
 	if err != nil {
 		return err
 	}
@@ -36,6 +36,7 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 		deviceIdCache: deviceidCache,
 		sdkConfig:     sdkConfig,
 		kubeclient:    mgr.GetClient(),
+		kubeClientSet: kubeClientSet,
 		scheme:        mgr.GetScheme(),
 		nodeName:      nodeName,
 	}
@@ -116,7 +117,11 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 		}
 
 		if isAgentDisconnect {
-			logger.Info("Agent disconnected", "workloadNamespace", connectionInfo.Workload.Namespace, "workloadName", connectionInfo.Workload.Name, "workloadKind", connectionInfo.Workload.Kind)
+
+			// This may occurs when Odiglet restarts, and a previously connected pod sends a disconnect message right after reconnecting.
+			if connectionInfo != nil {
+				logger.Info("Agent disconnected", "workloadNamespace", connectionInfo.Workload.Namespace, "workloadName", connectionInfo.Workload.Name, "workloadKind", connectionInfo.Workload.Kind)
+			}
 			// if agent disconnects, remove the connection from the cache
 			// as it is not expected to send additional messages
 			connectionCache.RemoveConnection(instanceUid)
@@ -144,16 +149,22 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 	})
 
 	server := &http.Server{Addr: listenEndpoint, Handler: nil}
+	var wg sync.WaitGroup
 
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Error(err, "Error starting opamp server")
 		}
 	}()
 
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		ticker := time.NewTicker(connection.HeartbeatInterval)
 		defer ticker.Stop() // Clean up when done
+
 		for {
 			select {
 			case <-ctx.Done():
@@ -175,5 +186,6 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 		}
 	}()
 
+	wg.Wait()
 	return nil
 }

@@ -2,15 +2,24 @@ package utils
 
 import (
 	"context"
+
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-func CreateCollectorGroup(ctx context.Context, c client.Client, collectorGroup *odigosv1.CollectorsGroup) error {
-	log.FromContext(ctx).Info("Creating collector group", "collectorGroupName", collectorGroup.Name)
-	return c.Create(ctx, collectorGroup)
+func ApplyCollectorGroup(ctx context.Context, c client.Client, collectorGroup *odigosv1.CollectorsGroup) error {
+	logger := log.FromContext(ctx)
+	logger.Info("Applying collector group", "collectorGroupName", collectorGroup.Name)
+
+	err := c.Patch(ctx, collectorGroup, client.Apply, client.ForceOwnership, client.FieldOwner("scheduler"))
+	if err != nil {
+		logger.Error(err, "Failed to apply collector group")
+		return err
+	}
+
+	return nil
 }
 
 func GetCollectorGroup(ctx context.Context, c client.Client, namespace string, collectorGroupName string) (*odigosv1.CollectorsGroup, error) {

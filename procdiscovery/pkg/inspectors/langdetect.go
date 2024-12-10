@@ -2,6 +2,7 @@ package inspectors
 
 import (
 	"fmt"
+
 	"github.com/hashicorp/go-version"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/dotnet"
@@ -33,9 +34,9 @@ type VersionInspector interface {
 var inspectorsList = []LanguageInspector{
 	&golang.GolangInspector{},
 	&java.JavaInspector{},
-	&python.PythonInspector{},
 	&dotnet.DotnetInspector{},
 	&nodejs.NodejsInspector{},
+	&python.PythonInspector{},
 	&mysql.MySQLInspector{},
 	&nginx.NginxInspector{},
 }

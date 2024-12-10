@@ -8,6 +8,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/version"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -18,7 +19,7 @@ const (
 	syncDaemonsetRetry = 3
 )
 
-func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) error {
+func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, k8sVersion *version.Version, disableNameProcessor bool) error {
 	logger := log.FromContext(ctx)
 
 	var instApps odigosv1.InstrumentedApplicationList
@@ -51,22 +52,22 @@ func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePul
 		return err
 	}
 
-	return syncDataCollection(&instApps, &dests, &processors, &dataCollectionCollectorGroup, ctx, c, scheme, imagePullSecrets, odigosVersion)
+	return syncDataCollection(&instApps, &dests, &processors, &dataCollectionCollectorGroup, ctx, c, scheme, imagePullSecrets, odigosVersion, k8sVersion, disableNameProcessor)
 }
 
 func syncDataCollection(instApps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList,
 	dataCollection *odigosv1.CollectorsGroup, ctx context.Context, c client.Client,
-	scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) error {
+	scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, k8sVersion *version.Version, disableNameProcessor bool) error {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Syncing data collection")
 
-	_, err := SyncConfigMap(instApps, dests, processors, dataCollection, ctx, c, scheme)
+	_, err := SyncConfigMap(instApps, dests, processors, dataCollection, ctx, c, scheme, disableNameProcessor)
 	if err != nil {
 		logger.Error(err, "Failed to sync config map")
 		return err
 	}
 
-	dm.RunSyncDaemonSetWithDelayAndSkipNewCalls(time.Duration(env.GetSyncDaemonSetDelay())*time.Second, syncDaemonsetRetry, dests, dataCollection, ctx, c, scheme, imagePullSecrets, odigosVersion)
+	dm.RunSyncDaemonSetWithDelayAndSkipNewCalls(time.Duration(env.GetSyncDaemonSetDelay())*time.Second, syncDaemonsetRetry, dests, dataCollection, ctx, c, scheme, imagePullSecrets, odigosVersion, k8sVersion)
 
 	return nil
 }

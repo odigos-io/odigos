@@ -13,9 +13,12 @@ jobs:
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    - uses: lycheeverse/lychee-action@v1.10.0
+    - uses: lycheeverse/lychee-action@v2.1.0
       with:
         args: >-
-          -v -n "*.md" "**/*.md"
+          -v -n "*.md" "**/*.md" "**/*.mdx"
           --exclude "http://localhost*"
+          --exclude "^https://logs-prod.*"
+          --exclude ".*your-account.*"
+          --exclude ".*qryn.local.*"
         fail: true

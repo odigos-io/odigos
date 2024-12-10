@@ -17,9 +17,24 @@ data:
     {{- end }}
     {{- if .Values.collectorGateway }}
     collectorGateway:
+      {{- with .Values.collectorGateway.minReplicas }}
+      MinReplicas: {{ . }}
+      {{- end }}    
+      {{- with .Values.collectorGateway.maxReplicas }}
+      MaxReplicas: {{ . }}
+      {{- end }}          
       {{- with .Values.collectorGateway.requestMemoryMiB }}
       requestMemoryMiB: {{ . }}
       {{- end }}
+      {{- with .Values.collectorGateway.limitMemoryMiB }}
+      limitMemoryMiB: {{ . }}
+      {{- end }}
+      {{- with .Values.collectorGateway.requestCPUm }}
+      requestCPUm: {{ . }}
+      {{- end }}
+      {{- with .Values.collectorGateway.limitCPUm }}
+      limitCPUm: {{ . }}
+      {{- end }}                 
       {{- with .Values.collectorGateway.memoryLimiterLimitMiB }}
       memoryLimiterLimitMiB: {{ . }}
       {{- end }}
@@ -28,6 +43,12 @@ data:
       {{- end }}
       {{- with .Values.collectorGateway.goMemLimitMiB }}
       goMemLimitMiB: {{ . }}
+      {{- end }}
+    {{- end }}
+    {{- if .Values.collectorNode }}
+    collectorNode:
+      {{- with .Values.collectorNode.collectorOwnMetricsPort }}
+      collectorOwnMetricsPort: {{ . }}
       {{- end }}
     {{- end }}
     instrumentorImage: {{ .Values.instrumentor.image.repository }}

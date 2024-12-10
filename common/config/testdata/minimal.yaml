@@ -3,7 +3,11 @@ receivers:
     protocols:
       grpc:
         endpoint: 0.0.0.0:4317
-        max_recv_msg_size_mib: 134217728
+        keepalive:
+          server_parameters:
+            max_connection_age: 15s
+            max_connection_age_grace: 2s
+        max_recv_msg_size_mib: 128
       http:
         endpoint: 0.0.0.0:4318
 exporters: {}
@@ -17,8 +21,10 @@ processors:
 extensions:
   health_check:
     endpoint: 0.0.0.0:13133
+  pprof: {}
 connectors: {}
 service:
   extensions:
   - health_check
+  - pprof
   pipelines: {}

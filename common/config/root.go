@@ -7,6 +7,7 @@ import (
 
 	"github.com/goccy/go-yaml"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 )
 
 const (
@@ -14,12 +15,12 @@ const (
 )
 
 var availableConfigers = []Configer{
-	&Middleware{}, &Honeycomb{}, &GrafanaCloudPrometheus{}, &GrafanaCloudTempo{},
-	&GrafanaCloudLoki{}, &Datadog{}, &NewRelic{}, &Logzio{}, &Prometheus{},
+	&Middleware{}, &AppDynamics{}, &Honeycomb{}, &GrafanaCloudPrometheus{}, &GrafanaCloudTempo{},
+	&GrafanaCloudLoki{}, &Datadog{}, &NewRelic{}, &Logzio{}, &Last9{}, &Prometheus{},
 	&Tempo{}, &Loki{}, &Jaeger{}, &GenericOTLP{}, &OTLPHttp{}, &Elasticsearch{}, &Quickwit{}, &Signoz{}, &Qryn{},
 	&OpsVerse{}, &Splunk{}, &Lightstep{}, &GoogleCloud{}, &GoogleCloudStorage{}, &Sentry{}, &AzureBlobStorage{},
 	&AWSS3{}, &Dynatrace{}, &Chronosphere{}, &ElasticAPM{}, &Axiom{}, &SumoLogic{}, &Coralogix{}, &Clickhouse{},
-	&Causely{}, &Uptrace{}, &Debug{},
+	&Causely{}, &Uptrace{}, &Debug{}, &QrynOSS{},
 }
 
 type Configer interface {
@@ -144,46 +145,54 @@ func CalculateWithBase(currentConfig *Config, prefixProcessors []string, dests [
 // In addition it returns prefix processors that should be added to beginning of each pipeline.
 func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {
 	return &Config{
-		Receivers: GenericMap{
-			"otlp": GenericMap{
-				"protocols": GenericMap{
-					"grpc": GenericMap{
-						// setting it to a large value to avoid dropping batches.
-						"max_recv_msg_size_mib": 128 * 1024 * 1024,
-						"endpoint": "0.0.0.0:4317",
-					},
-					// Node collectors send in gRPC, so this is probably not needed
-					"http": GenericMap{
-						"endpoint": "0.0.0.0:4318",
-					},
-				},
-			},
-		},
-		Processors: GenericMap{
-			memoryLimiterProcessorName: memoryLimiterConfig,
-			"resource/odigos-version": GenericMap{
-				"attributes": []GenericMap{
-					{
-						"key":    "odigos.version",
-						"value":  "${ODIGOS_VERSION}",
-						"action": "upsert",
+			Receivers: GenericMap{
+				"otlp": GenericMap{
+					"protocols": GenericMap{
+						"grpc": GenericMap{
+							// setting it to a large value to avoid dropping batches.
+							"max_recv_msg_size_mib": 128,
+							"endpoint":              "0.0.0.0:4317",
+							// The Node Collector opens a gRPC stream to send data. This ensures that the Node Collector establishes a new connection when the Gateway scales up to include additional instances.
+							"keepalive": GenericMap{
+								"server_parameters": GenericMap{
+									"max_connection_age":       consts.GatewayMaxConnectionAge,
+									"max_connection_age_grace": consts.GatewayMaxConnectionAgeGrace,
+								},
+							},
+						},
+						// Node collectors send in gRPC, so this is probably not needed
+						"http": GenericMap{
+							"endpoint": "0.0.0.0:4318",
+						},
 					},
 				},
 			},
-		},
-		Extensions: GenericMap{
-			"health_check": GenericMap{
-				"endpoint": "0.0.0.0:13133",
+			Processors: GenericMap{
+				memoryLimiterProcessorName: memoryLimiterConfig,
+				"resource/odigos-version": GenericMap{
+					"attributes": []GenericMap{
+						{
+							"key":    "odigos.version",
+							"value":  "${ODIGOS_VERSION}",
+							"action": "upsert",
+						},
+					},
+				},
+			},
+			Extensions: GenericMap{
+				"health_check": GenericMap{
+					"endpoint": "0.0.0.0:13133",
+				},
+				"pprof": GenericMap{},
+			},
+			Exporters:  map[string]interface{}{},
+			Connectors: map[string]interface{}{},
+			Service: Service{
+				Pipelines:  map[string]Pipeline{},
+				Extensions: []string{"health_check", "pprof"},
 			},
 		},
-		Exporters:  map[string]interface{}{},
-		Connectors: map[string]interface{}{},
-		Service: Service{
-			Pipelines:  map[string]Pipeline{},
-			Extensions: []string{"health_check"},
-		},
-	},
-	[]string{memoryLimiterProcessorName, "resource/odigos-version"}
+		[]string{memoryLimiterProcessorName, "resource/odigos-version"}
 }
 
 func LoadConfigers() (map[common.DestinationType]Configer, error) {

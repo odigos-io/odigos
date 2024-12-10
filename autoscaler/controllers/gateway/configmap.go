@@ -28,12 +28,12 @@ const (
 )
 
 var (
-	errNoPipelineConfigured = errors.New("no pipeline was configured, cannot add self telemetry pipeline")
+	errNoPipelineConfigured  = errors.New("no pipeline was configured, cannot add self telemetry pipeline")
 	errNoReceiversConfigured = errors.New("no receivers were configured, cannot add self telemetry pipeline")
 	errNoExportersConfigured = errors.New("no exporters were configured, cannot add self telemetry pipeline")
 )
 
-func addSelfTelemetryPipeline(c *config.Config) error {
+func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32) error {
 	if c.Service.Pipelines == nil {
 		return errNoPipelineConfigured
 	}
@@ -47,18 +47,18 @@ func addSelfTelemetryPipeline(c *config.Config) error {
 		"config": config.GenericMap{
 			"scrape_configs": []config.GenericMap{
 				{
-					"job_name": "otelcol",
+					"job_name":        "otelcol",
 					"scrape_interval": "10s",
 					"static_configs": []config.GenericMap{
 						{
-							"targets": []string{"127.0.0.1:8888"},
+							"targets": []string{fmt.Sprintf("127.0.0.1:%d", ownTelemetryPort)},
 						},
 					},
 					"metric_relabel_configs": []config.GenericMap{
 						{
 							"source_labels": []string{"__name__"},
-							"regex": "(.*odigos.*|^otelcol_processor_accepted.*|^otelcol_exporter_sent.*)",
-							"action": "keep",
+							"regex":         "(.*odigos.*|^otelcol_processor_accepted.*|^otelcol_exporter_sent.*)",
+							"action":        "keep",
 						},
 					},
 				},
@@ -91,13 +91,13 @@ func addSelfTelemetryPipeline(c *config.Config) error {
 		},
 	}
 	c.Service.Pipelines["metrics/otelcol"] = config.Pipeline{
-		Receivers: []string{"prometheus/self-metrics"},
+		Receivers:  []string{"prometheus/self-metrics"},
 		Processors: []string{"resource/pod-name"},
-		Exporters: []string{"otlp/odigos-own-telemetry-ui"},
+		Exporters:  []string{"otlp/odigos-own-telemetry-ui"},
 	}
 
 	c.Service.Telemetry.Metrics = config.GenericMap{
-		"address": "0.0.0.0:8888",
+		"address": fmt.Sprintf("0.0.0.0:%d", ownTelemetryPort),
 	}
 
 	for pipelineName, pipeline := range c.Service.Pipelines {
@@ -111,14 +111,9 @@ func addSelfTelemetryPipeline(c *config.Config) error {
 	return nil
 }
 
-func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, memConfig *memoryConfigurations) (string, []odigoscommon.ObservabilitySignal, error) {
+func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme) (string, []odigoscommon.ObservabilitySignal, error) {
 	logger := log.FromContext(ctx)
-
-	memoryLimiterConfiguration := config.GenericMap{
-		"check_interval":  "1s",
-		"limit_mib":       memConfig.memoryLimiterLimitMiB,
-		"spike_limit_mib": memConfig.memoryLimiterSpikeLimitMiB,
-	}
+	memoryLimiterConfiguration := common.GetMemoryLimiterConfig(gateway.Spec.ResourcesSettings)
 
 	processors := common.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleClusterGateway)
 
@@ -126,7 +121,9 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 		common.ToExporterConfigurerArray(dests),
 		common.ToProcessorConfigurerArray(processors),
 		memoryLimiterConfiguration,
-		addSelfTelemetryPipeline,
+		func(c *config.Config) error {
+			return addSelfTelemetryPipeline(c, gateway.Spec.CollectorOwnMetricsPort)
+		},
 	)
 	if err != nil {
 		logger.Error(err, "Failed to calculate config")

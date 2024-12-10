@@ -1,0 +1,152 @@
+---
+title: "Odigos Components"
+sidebarTitle: "Components"
+---
+
+## Goals
+
+Odigos acts as a control plane for all the observability needs in a Kubernetes cluster. It is responsible for:
+
+- Automatic instrumentation of applications
+- Automatic configuration and deployment of collectors
+- Infrastructure observability (Kubernetes nodes, databases, etc)
+
+Odigos achieves its goals by deploying a set of components that work together to collect, process, and export telemetry data.
+
+## High Level Architecture
+
+<Frame>
+    <img src="/images/odigos_architecture.png" alt="Odigos Architecture" />
+</Frame>
+
+### Component types:
+
+- **Kubernetes Operators** - to process changes in the cluster resources and deploy / configure the necessary components.
+- **DaemonSets** - to perform any node-level tasks, like when interacting with a process running on the node os, accessing kubelet, and reading logs from the node filesystem.
+- **Deployments** - to run Cluster level components like the OpenTelemetry collector, and the Odigos UI.
+
+### Component Segments
+
+Odigos is divided into three main segments:
+
+- The instrumentation
+  - inject OpenTelemetry agents to record / collect the instrumentation data from the sources,
+  - record and report any relevant runtime data that is available in the process environment,
+  - export the collected data to the pipeline.
+
+- The pipeline
+  - offload any common or heavy task from the instrumented application runtime,
+  - apply any odigos actions on the telemetry data and modify it to fit the user's needs,
+  - batch and send the telemetry data to the configured destinations in a reliable way.
+
+- Odigos Management
+  - orchestrate the pipeline and the instrumentation based on the user's configuration and cluster state,
+  - provide a UI for the odigos control plane.
+
+## Pipeline
+
+### Auto Scaler (Pipeline manager)
+
+**Type**: The auto scaler is a Kubernetes operator
+
+**Role**: The auto scaler is responsible for managing the OpenTelemetry Collectors which implements the OpenTelemetry pipeline.
+
+- Start and stop collectors when needed (e.g. when sources or destinations are added or removed).
+- Schedule the node collector to start after the cluster collector is ready.
+- Generate the configuration for the collectors based on the Odigos sources, destinations, and action.
+- Restart the collectors when the configuration changes.
+- Auto scale the collectors based on the load.
+
+### Cluster Collector
+
+**Type**: The cluster collector is a deployment of the OpenTelemetry collector
+
+**K8s Resource**: Deployment / `odigos-gateway`
+
+**Role**: The cluster collector receives all the telemetry collected from in the cluster
+
+- Batch it and send it to the configured destinations in a reliable way (retries, backoff, etc).
+- Modify the telemetry data based on the Odigos actions (add/remove/modify attributes, etc).
+- Apply tail sampling based on the Odigos Actions to reduce the volume of data sent to the destinations.
+- Collect metrics about the entities and report it to the UI for monitoring.
+- Offload tasks from the agents, to reduce the overhead on the workload runtime environment
+- Centralize any common processing that can be shared across multiple agents.
+
+### Node Collector
+
+**Type**: The node collector is a daemon set and will run one pod per node in the cluster
+
+**K8s Resource**: DaemonSet / `odigos-data-collection`
+
+**Role**: The node collector implements any node-level tasks that are needed to collect telemetry data.
+
+- Receives the telemetry data collected from agents running on the node.
+- Add node-level attributes to the telemetry data (`k8s.node.name`)
+- Batches and sends the telemetry data to the cluster collector, offloading any network overhead from the instrumented application runtime.
+
+The Node Collector is also responsible for recording some k8s metrics, and collecting the generated logs from the node fs. Read more Under the [Instrumentation](#instrumentation) section.
+
+## Instrumentation
+
+### Instrumentor (Auto Instrumentation Agent Manager)
+
+**Type**: The instrumentor is a Kubernetes operator
+
+**K8s Resource**: Deployment / `odigos-instrumentor`
+
+**Role**: The instrumentor is responsible for managing the auto instrumentation agents which collect the telemetry data from the selected sources.
+
+- Create and manage the `instrumentationconfig.odigos.io` objects
+  - Triggers the `odiglet` to inspect runtime details of the workload.
+  - Triggers the scheduler to deploy the Odigos pipeline.
+  - Merge the Odigos instrumentation rules and odigos config to a per-workload configuration to be used by the agent.
+- Inject the instrumentation device into the workload manifest resource as virtual device.
+- Monitor the `odigos-enabled` label and cleanup any instrumentation related resources when a source is removed.
+
+### Odiglet
+
+**Type**: The odiglet is a daemon set and will run one pod per node in the cluster
+
+**K8s Resource**: DaemonSet / `odiglet`
+
+**Role**: The odiglet component setups the k8s node environment to run the telemetry-collection agents.
+
+- Inspect the runtime details of the workload and detect the programming language, relevant env variables, and runtime versions.
+- Implement the instrumentation devices. On the presence of the supported devices on the pod, odiglet will mount the agent code to the pod, and add the relevant environment variables for starting it and applying the instrumentation.
+- For eBPF based instrumentation, odiglet will inject the eBPF code into the pod, and read the telemetry data from the eBPF queues to push it downstream.
+- Monitor changes to the instrumentation configs, and update the agents accordingly at runtime.
+
+### Node Collector
+
+**Type**: The node collector is a daemon set and will run one pod per node in the cluster
+
+**K8s Resource**: DaemonSet / `odigos-data-collection`
+
+**Role**: The node collector (in the context of instrumentation) is responsible for collecting k8s metrics, and logs from the node filesystem.
+
+- When a destination for logs exists, the node collector will use the ["filelog receiver"](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/filelogreceiver) to read the relevant container logs from the node filesystem and export them as otel logs to the cluster collector.
+- When a destination for metrics exists, the node collector will use the ["kubeletstats receiver"](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver) to scrape k8s related metrics from the kubelet and export them as otel metrics to the cluster collector.
+
+## Odigos
+
+### Odigos UI
+
+**Type**: The Odigos UI is a web application
+
+**K8s Resource**: Deployment / `odigos-ui`
+
+**Role**: The Odigos UI is a web application that allows users to configure the Odigos pipeline.
+
+- Serve as web server for the Odigos UI, to load the control plane in the browser and interact with the Odigos API.
+- Provide a user interface for monitoring and managing the Odigos installation, including the sources, destinations, actions, and instrumentation rules.
+- Examine the current state of odigos, show any errors.
+
+### Scheduler
+
+**Type**: The scheduler is a Kubernetes operator
+
+**K8s Resource**: Deployment / `odigos-scheduler`
+
+**Role**: The scheduler is responsible for managing the Odigos installation itself.
+
+- Monitor the Odigos sources and destinations, to trigger the deployment of the Odigos pipeline.
