@@ -33,7 +33,7 @@ const Container = styled.div<{ $isLeaving?: boolean }>`
     overflow: hidden;
     padding-bottom: 1px;
     border-radius: 32px;
-    animation: ${({ $isLeaving }) => ($isLeaving ? slide.out['right'] : slide.in['right'])} ${TRANSITION_DURATION}ms forwards;
+    animation: ${({ $isLeaving }) => ($isLeaving ? slide.out['left'] : slide.in['right'])} ${TRANSITION_DURATION}ms forwards;
   }
 `;
 
