@@ -45,6 +45,15 @@ func NewMockNamespace() *corev1.Namespace {
 	}
 }
 
+func NewMockOdigosConfig() *corev1.ConfigMap {
+	return &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      consts.OdigosConfigurationName,
+			Namespace: consts.DefaultOdigosNamespace,
+		},
+	}
+}
+
 func NewMockTestDeployment(ns *corev1.Namespace) *appsv1.Deployment {
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{

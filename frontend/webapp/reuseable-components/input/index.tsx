@@ -115,7 +115,7 @@ const Button = styled.button`
 
 // Wrap Input with forwardRef to handle the ref prop
 const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ icon, buttonLabel, onButtonClick, hasError, errorMessage, title, tooltip, required, initialValue, onChange, type = 'text', ...props }, ref) => {
+  ({ icon, buttonLabel, onButtonClick, hasError, errorMessage, title, tooltip, required, initialValue, onChange, type = 'text', name, ...props }, ref) => {
     const isSecret = type === 'password';
     const [revealSecret, setRevealSecret] = useState(false);
     const [value, setValue] = useState<string>(initialValue || '');
@@ -144,6 +144,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 
           <StyledInput
             ref={ref} // Pass ref to the StyledInput
+            data-id={name}
+            name={name}
             $hasIcon={!!icon || isSecret}
             value={value}
             onChange={handleInputChange}

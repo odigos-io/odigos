@@ -86,6 +86,9 @@ var _ = BeforeSuite(func() {
 	odigosSystemNamespace := testutil.NewOdigosSystemNamespace()
 	Expect(k8sClient.Create(testCtx, odigosSystemNamespace)).Should(Succeed())
 
+	configmap := testutil.NewMockOdigosConfig()
+	Expect(k8sClient.Create(testCtx, configmap)).Should(Succeed())
+
 	// report the node collector is ready
 	datacollection := testutil.NewMockDataCollection()
 	Expect(k8sClient.Create(testCtx, datacollection)).Should(Succeed())

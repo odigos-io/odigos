@@ -49,7 +49,7 @@ const DestinationsList: React.FC<DestinationsListProps> = ({ items, setSelectedI
         <ListsWrapper key={`category-${item.name}`}>
           <SectionTitle size='small' title={capitalizeFirstLetter(item.name)} description={item.description} />
           {item.items.map((categoryItem) => (
-            <DestinationListItem key={`destination-${categoryItem.displayName}`} item={categoryItem} onSelect={setSelectedItems} />
+            <DestinationListItem key={`destination-${categoryItem.type}`} item={categoryItem} onSelect={setSelectedItems} />
           ))}
         </ListsWrapper>
       );

@@ -40,14 +40,14 @@ export const useSourceCRUD = (params?: Params) => {
 
   const [createOrDeleteSources, cdState] = useMutation<{ persistK8sSources: boolean }>(PERSIST_SOURCE, {
     onError: (error, req) => {
-      const { selected } = req?.variables?.sources[0];
+      const { selected } = req?.variables?.sources?.[0] || {};
       const action = selected ? ACTION.CREATE : ACTION.DELETE;
 
       handleError(action, error.message);
     },
     onCompleted: (res, req) => {
       const namespace = req?.variables?.namespace;
-      const { name, kind, selected } = req?.variables?.sources[0];
+      const { name, kind, selected } = req?.variables?.sources?.[0] || {};
 
       const count = req?.variables?.sources.length;
       const action = selected ? ACTION.CREATE : ACTION.DELETE;

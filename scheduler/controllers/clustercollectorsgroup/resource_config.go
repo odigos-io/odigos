@@ -55,6 +55,10 @@ func getGatewayResourceSettings(odigosConfig *common.OdigosConfiguration) *odigo
 	if gatewayConfig != nil && gatewayConfig.RequestMemoryMiB > 0 {
 		memoryRequestMiB = gatewayConfig.RequestMemoryMiB
 	}
+	memoryLimitMiB := int(float64(memoryRequestMiB) * memoryLimitAboveRequestFactor)
+	if odigosConfig.CollectorGateway != nil && odigosConfig.CollectorGateway.LimitMemoryMiB > 0 {
+		memoryLimitMiB = odigosConfig.CollectorGateway.LimitMemoryMiB
+	}
 	cpuRequestm := defaultRequestCPUm
 	if gatewayConfig != nil && gatewayConfig.RequestCPUm > 0 {
 		cpuRequestm = gatewayConfig.RequestCPUm
@@ -74,8 +78,6 @@ func getGatewayResourceSettings(odigosConfig *common.OdigosConfiguration) *odigo
 	if odigosConfig.CollectorGateway != nil && odigosConfig.CollectorGateway.MemoryLimiterSpikeLimitMiB > 0 {
 		memoryLimiterSpikeLimitMiB = odigosConfig.CollectorGateway.MemoryLimiterSpikeLimitMiB
 	}
-
-	memoryLimitMiB := int(float64(memoryRequestMiB) * memoryLimitAboveRequestFactor)
 
 	gomemlimitMiB := int(memoryLimiterLimitMiB * defaultGoMemLimitPercentage / 100.0)
 	if odigosConfig.CollectorGateway != nil && odigosConfig.CollectorGateway.GoMemLimitMib != 0 {

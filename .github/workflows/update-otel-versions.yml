@@ -29,7 +29,7 @@ jobs:
           dotnet_latest_version=${{ steps.fetch_latest_version.outputs.dotnet_latest_version }}
           sed -i "s/DOTNET_OTEL_VERSION=.*/DOTNET_OTEL_VERSION=${dotnet_latest_version}/" Dockerfile
       - name: Create pull request
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v7
         with:
           commit-message: 'Update Java instrumentation to  ${{ steps.fetch_latest_version.outputs.java_latest_version }} and .NET instrumentation to ${{ steps.fetch_latest_version.outputs.dotnet_latest_version }}'
           branch: automated/update-opentelemetry-instrumentations
