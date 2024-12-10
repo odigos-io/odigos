@@ -42,7 +42,14 @@ const DetectedContainers: React.FC<DetectedContainersProps> = ({
   languages,
   conditions,
 }) => {
-  const hasError = conditions.some((condition) => condition.status === 'False');
+  const hasDeviceNotAddedCondition = conditions.some(
+    (condition) =>
+      condition.status === 'False' &&
+      condition.message.includes(
+        'device not added to any container due to the presence of another agent'
+      )
+  );
+
   return (
     <Container>
       <KeyvalText size={18} weight={600}>
@@ -53,7 +60,13 @@ const DetectedContainers: React.FC<DetectedContainersProps> = ({
           const isInstrumented =
             lang.language !== 'ignore' &&
             lang.language !== 'unknown' &&
-            !lang?.other_agent;
+            !lang.other_agent;
+
+          // Determine if running concurrently is possible based on language and other_agent
+          const canRunInParallel =
+            (lang.language === 'python' || lang.language === 'java') &&
+            !hasDeviceNotAddedCondition;
+
           return (
             <ListItem key={lang.container_name}>
               <KeyvalText
@@ -63,7 +76,10 @@ const DetectedContainers: React.FC<DetectedContainersProps> = ({
                 {lang?.runtime_version
                   ? `, Runtime: ${lang.runtime_version}`
                   : ''}
-                ){isInstrumented && !hasError && ' - Instrumented'}
+                )
+                {isInstrumented &&
+                  !hasDeviceNotAddedCondition &&
+                  ' - Instrumented'}
               </KeyvalText>
               {lang.other_agent && lang.other_agent.name && (
                 <KeyvalText
@@ -71,10 +87,11 @@ const DetectedContainers: React.FC<DetectedContainersProps> = ({
                   size={12}
                   style={{ marginTop: 6 }}
                 >
-                  {lang.language === 'python'
-                    ? `We are running concurrently with the ${lang.other_agent.name}, which is not recommended. It is advisable to disable other agents for optimal performance and compatibility.`
-                    : `We detected another agent of ${lang.other_agent.name} that running in the container. Disable it
-                  to instrument this source.`}
+                  {hasDeviceNotAddedCondition
+                    ? `We cannot run alongside the ${lang.other_agent.name} agent due to configuration restrictions. `
+                    : canRunInParallel
+                    ? `We are running concurrently with the ${lang.other_agent.name}. Ensure this is configured optimally in Kubernetes.`
+                    : `Concurrent execution with the ${lang.other_agent.name} is not supported. Please disable one of the agents to enable proper instrumentation.`}
                 </KeyvalText>
               )}
             </ListItem>
