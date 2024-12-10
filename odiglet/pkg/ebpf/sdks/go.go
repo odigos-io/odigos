@@ -6,6 +6,7 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/instrumentation/types"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
@@ -26,11 +27,11 @@ var _ auto.ConfigProvider = (*ebpf.ConfigProvider[auto.InstrumentationConfig])(n
 type GoInstrumentationFactory struct {
 }
 
-func NewGoInstrumentationFactory() ebpf.Factory {
+func NewGoInstrumentationFactory() types.Factory {
 	return &GoInstrumentationFactory{}
 }
 
-func (g *GoInstrumentationFactory) CreateInstrumentation(ctx context.Context, pid int, settings ebpf.Settings) (ebpf.Instrumentation, error) {
+func (g *GoInstrumentationFactory) CreateInstrumentation(ctx context.Context, pid int, settings types.Settings) (types.Instrumentation, error) {
 	defaultExporter, err := otlptracegrpc.New(
 		ctx,
 		otlptracegrpc.WithInsecure(),
@@ -40,7 +41,12 @@ func (g *GoInstrumentationFactory) CreateInstrumentation(ctx context.Context, pi
 		return nil, fmt.Errorf("failed to create exporter: %w", err)
 	}
 
-	cp := ebpf.NewConfigProvider(convertToGoInstrumentationConfig(settings.InitialConfig))
+	initialConfig, err := convertToGoInstrumentationConfig(settings.InitialConfig)
+	if err != nil {
+		return nil, fmt.Errorf("invalid initial config type, expected *odigosv1.SdkConfig, got %T", settings.InitialConfig)
+	}
+
+	cp := ebpf.NewConfigProvider(initialConfig)
 
 	inst, err := auto.NewInstrumentation(
 		ctx,
@@ -72,18 +78,27 @@ func (g *GoOtelEbpfSdk) Close(_ context.Context) error {
 	return g.inst.Close()
 }
 
-func (g *GoOtelEbpfSdk) ApplyConfig(ctx context.Context, sdkConfig *odigosv1.SdkConfig) error {
-	return g.cp.SendConfig(ctx, convertToGoInstrumentationConfig(sdkConfig))
+func (g *GoOtelEbpfSdk) ApplyConfig(ctx context.Context, sdkConfig types.Config) error {
+	updatedConfig, err := convertToGoInstrumentationConfig(sdkConfig)
+	if err != nil {
+		return err
+	}
+
+	return g.cp.SendConfig(ctx, updatedConfig)
 }
 
-func convertToGoInstrumentationConfig(sdkConfig *odigosv1.SdkConfig) auto.InstrumentationConfig {
+func convertToGoInstrumentationConfig(sdkConfig types.Config) (auto.InstrumentationConfig, error) {
+	initialConfig, ok := sdkConfig.(*odigosv1.SdkConfig)
+	if !ok {
+		return auto.InstrumentationConfig{}, fmt.Errorf("invalid initial config type, expected *odigosv1.SdkConfig, got %T", sdkConfig)
+	}
 	ic := auto.InstrumentationConfig{}
 	if sdkConfig == nil {
 		log.Logger.V(0).Info("No SDK config provided for Go instrumentation, using default")
-		return ic
+		return ic, nil
 	}
 	ic.InstrumentationLibraryConfigs = make(map[auto.InstrumentationLibraryID]auto.InstrumentationLibrary)
-	for _, ilc := range sdkConfig.InstrumentationLibraryConfigs {
+	for _, ilc := range initialConfig.InstrumentationLibraryConfigs {
 		libID := auto.InstrumentationLibraryID{
 			InstrumentedPkg: ilc.InstrumentationLibraryId.InstrumentationLibraryName,
 			SpanKind:        common.SpanKindOdigosToOtel(ilc.InstrumentationLibraryId.SpanKind),
@@ -99,5 +114,5 @@ func convertToGoInstrumentationConfig(sdkConfig *odigosv1.SdkConfig) auto.Instru
 
 	// TODO: take sampling config from the CR
 	ic.Sampler = auto.DefaultSampler()
-	return ic
+	return ic, nil
 }

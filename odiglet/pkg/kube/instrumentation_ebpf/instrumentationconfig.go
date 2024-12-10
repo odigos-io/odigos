@@ -18,7 +18,7 @@ type InstrumentationConfigReconciler struct {
 	client.Client
 	Scheme        *runtime.Scheme
 	Directors     ebpf.DirectorsMap
-	ConfigUpdates chan<- ebpf.ConfigUpdate
+	ConfigUpdates chan<- ebpf.ConfigUpdate[ebpf.K8sConfigGroup]
 }
 
 var (
@@ -67,10 +67,15 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 		ctx, cancel := context.WithTimeout(ctx, configUpdateTimeout)
 		defer cancel()
 
+		configUpdate := ebpf.ConfigUpdate[ebpf.K8sConfigGroup]{}
+		for _, sdkConfig := range instrumentationConfig.Spec.SdkConfigs {
+			cg := ebpf.K8sConfigGroup{Pw: podWorkload, Lang: sdkConfig.Language}
+			currentConfig := sdkConfig
+			configUpdate[cg] = &currentConfig
+		}
+
 		select {
-		case i.ConfigUpdates <- ebpf.ConfigUpdate{
-			PodWorkload: podWorkload,
-			Config:      instrumentationConfig}:
+		case i.ConfigUpdates <-configUpdate:
 			return ctrl.Result{}, nil
 		case <-ctx.Done():
 			if ctx.Err() == context.DeadlineExceeded {

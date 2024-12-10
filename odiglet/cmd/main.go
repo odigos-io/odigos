@@ -12,6 +12,7 @@ import (
 
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/instrumentation/types"
 	k8senv "github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation"
@@ -42,8 +43,8 @@ func odigletInitPhase() {
 type odiglet struct {
 	clientset     *kubernetes.Clientset
 	mgr           ctrl.Manager
-	ebpfManager   *ebpf.Manager
-	configUpdates chan<- ebpf.ConfigUpdate
+	ebpfManager   *ebpf.Manager[ebpf.K8sDetails, ebpf.K8sConfigGroup]
+	configUpdates chan<- ebpf.ConfigUpdate[ebpf.K8sConfigGroup]
 }
 
 func newOdiglet() (*odiglet, error) {
@@ -63,15 +64,16 @@ func newOdiglet() (*odiglet, error) {
 		return nil, fmt.Errorf("Failed to create controller-runtime manager %w", err)
 	}
 
-	ebpfManager, err := ebpf.NewManager(
-		mgr.GetClient(),
+	handler := ebpf.NewHandler(mgr.GetClient())
+	ebpfManager, err := ebpf.NewManager[ebpf.K8sDetails, ebpf.K8sConfigGroup](
 		log.Logger,
-		map[ebpf.OtelDistribution]ebpf.Factory{
-			ebpf.OtelDistribution{
+		map[types.OtelDistribution]types.Factory{
+			types.OtelDistribution{
 				Language: common.GoProgrammingLanguage,
 				OtelSdk:  common.OtelSdkEbpfCommunity,
 			}: sdks.NewGoInstrumentationFactory(),
 		},
+		handler,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create ebpf manager %w", err)
