@@ -1,46 +1,29 @@
-import { ROUTES } from '../../utils/constants/routes';
+import { deleteEntity, getCrdById, getCrdIds, updateEntity } from '../functions';
+import { BUTTONS, CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
 
 // The number of CRDs that exist in the cluster before running any tests should be 0.
 // Tests will fail if you have existing CRDs in the cluster.
 // If you have to run tests locally, make sure to clean up the cluster before running the tests.
 
-describe('Destinations CRUD', () => {
-  const namespace = 'odigos-system';
-  const crdName = 'destinations.odigos.io';
-  const noResourcesFound = `No resources found in ${namespace} namespace.`;
+const namespace = NAMESPACES.ODIGOS_SYSTEM;
+const crdName = CRD_NAMES.DESTINATION;
 
-  beforeEach(() => {
-    cy.intercept('/graphql').as('gql');
-  });
+describe('Destinations CRUD', () => {
+  beforeEach(() => cy.intercept('/graphql').as('gql'));
 
   it('Should create a CRD in the cluster', () => {
     cy.visit(ROUTES.OVERVIEW);
 
-    cy.exec(`kubectl get ${crdName} -n ${namespace} | awk 'NR>1 {print $1}'`).then((crdListBefore) => {
-      expect(crdListBefore.stderr).to.eq(noResourcesFound);
-      expect(crdListBefore.stdout).to.eq('');
-
-      const crdIdsBefore = crdListBefore.stdout.split('\n').filter((str) => !!str);
-      expect(crdIdsBefore.length).to.eq(0);
-
-      cy.get('[data-id=add-entity]').click();
-      cy.get('[data-id=add-destination]').click();
-      cy.get('[data-id=modal-Add-Destination]').should('exist');
+    getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 }, () => {
+      cy.get(DATA_IDS.ADD_ENTITY).click();
+      cy.get(DATA_IDS.ADD_DESTINATION).click();
+      cy.get(DATA_IDS.MODAL_ADD_DESTINATION).should('exist');
+      cy.get(DATA_IDS.SELECT_DESTINATION).contains(SELECTED_ENTITIES.DESTINATION).click();
+      expect(DATA_IDS.SELECT_DESTINATION_AUTOFILL_FIELD).to.not.be.empty;
+      cy.get('button').contains(BUTTONS.DONE).click();
 
       cy.wait('@gql').then(() => {
-        cy.get('[data-id=destination-jaeger]').contains('Jaeger').click();
-        expect('[data-id=JAEGER_URL]').to.not.be.empty;
-        cy.get('button').contains('DONE').click();
-
-        cy.wait('@gql').then(() => {
-          cy.exec(`kubectl get ${crdName} -n ${namespace} | awk 'NR>1 {print $1}'`).then((crdListAfter) => {
-            expect(crdListAfter.stderr).to.eq('');
-            expect(crdListAfter.stdout).to.not.be.empty;
-
-            const crdIdsAfter = crdListAfter.stdout.split('\n').filter((str) => !!str);
-            expect(crdIdsAfter.length).to.eq(1);
-          });
-        });
+        getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 });
       });
     });
   });
@@ -48,60 +31,39 @@ describe('Destinations CRUD', () => {
   it('Should update the CRD in the cluster', () => {
     cy.visit(ROUTES.OVERVIEW);
 
-    const node = cy.contains('[data-id=destination-0]', 'Jaeger');
-    expect(node).to.exist;
-    node.click();
-
-    cy.get('[data-id=drawer]').should('exist');
-    cy.get('button[data-id=drawer-edit]').click();
-    cy.get('input[data-id=title]').clear().type('Cypress Test');
-    cy.get('button[data-id=drawer-save]').click();
-    cy.get('button[data-id=drawer-close]').click();
-
-    cy.wait('@gql').then(() => {
-      cy.exec(`kubectl get ${crdName} -n ${namespace} | awk 'NR>1 {print $1}'`).then((crdList) => {
-        expect(crdList.stderr).to.eq('');
-        expect(crdList.stdout).to.not.be.empty;
-
-        const crdIds = crdList.stdout.split('\n').filter((str) => !!str);
-        expect(crdIds.length).to.eq(1);
-
-        cy.exec(`kubectl get ${crdName} ${crdIds[0]} -n ${namespace} -o json`).then((crd) => {
-          expect(crd.stderr).to.eq('');
-          expect(crd.stdout).to.not.be.empty;
-
-          const parsed = JSON.parse(crd.stdout);
-          const { spec } = parsed?.items?.[0] || parsed || {};
-
-          expect(spec).to.not.be.empty;
-          expect(spec.destinationName).to.eq('Cypress Test');
+    updateEntity(
+      {
+        nodeId: DATA_IDS.DESTINATION_NODE,
+        nodeContains: SELECTED_ENTITIES.DESTINATION,
+        fieldKey: DATA_IDS.TITLE,
+        fieldValue: TEXTS.UPDATED_NAME,
+      },
+      () => {
+        cy.wait('@gql').then(() => {
+          getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 }, (crdIds) => {
+            const crdId = crdIds[0];
+            getCrdById({ namespace, crdName, crdId, expectedError: '', expectedKey: 'destinationName', expectedValue: TEXTS.UPDATED_NAME });
+          });
         });
-      });
-    });
+      },
+    );
   });
 
   it('Should delete the CRD from the cluster', () => {
     cy.visit(ROUTES.OVERVIEW);
 
-    const node = cy.contains('[data-id=destination-0]', 'Jaeger');
-    expect(node).to.exist;
-    node.click();
-
-    cy.get('[data-id=drawer]').should('exist');
-    cy.get('button[data-id=drawer-edit]').click();
-    cy.get('button[data-id=drawer-delete]').click();
-    cy.get('[data-id=modal]').contains('Delete destination').should('exist');
-    cy.get('[data-id=modal]').contains("You're about to delete the last destination").should('exist');
-    cy.get('button[data-id=approve]').click();
-
-    cy.wait('@gql').then(() => {
-      cy.exec(`kubectl get ${crdName} -n ${namespace} | awk 'NR>1 {print $1}'`).then((crdList) => {
-        expect(crdList.stderr).to.eq(noResourcesFound);
-        expect(crdList.stdout).to.eq('');
-
-        const crdIds = crdList.stdout.split('\n').filter((str) => !!str);
-        expect(crdIds.length).to.eq(0);
-      });
-    });
+    deleteEntity(
+      {
+        nodeId: DATA_IDS.DESTINATION_NODE,
+        nodeContains: SELECTED_ENTITIES.DESTINATION,
+        warnModalTitle: TEXTS.DESTINATION_WARN_MODAL_TITLE,
+        warnModalNote: TEXTS.DESTINATION_WARN_MODAL_NOTE,
+      },
+      () => {
+        cy.wait('@gql').then(() => {
+          getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
+        });
+      },
+    );
   });
 });
