@@ -1,22 +1,12 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<!-- Created with Vectornator (http://vectornator.io/) -->
-<svg height="100%" stroke-miterlimit="10" style="fill-rule:nonzero;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;" version="1.1" viewBox="0 0 27.6287 27" width="100%" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:vectornator="http://vectornator.io" xmlns:xlink="http://www.w3.org/1999/xlink">
-<defs/>
-<g id="Sans-titre" vectornator:layerName="Sans titre">
-<g opacity="1" vectornator:layerName="rect">
-<clipPath id="ClipPath">
-<path d="M0 0.426758L27.5141 0.426758L27.5141 0.426758L27.5141 26.9219L27.5141 26.9219L0 26.9219L0 26.9219L0 0.426758L0 0.426758Z"/>
-</clipPath>
-<g clip-path="url(#ClipPath)">
-<path d="M8.24097 0.426598L6.00684 3.4248L14.6428 9.54304L16.877 6.54484L8.24097 0.426598Z" fill="#ff0026" fill-rule="nonzero" opacity="1" stroke="none" vectornator:layerName="path"/>
-<path d="M10.3099 6.45051L-0.000976562 9.14429L0.982682 12.724L11.2936 10.0302L10.3099 6.45051Z" fill="#ff0026" fill-rule="nonzero" opacity="1" stroke="none" vectornator:layerName="path"/>
-<path d="M6.1032 11.3671L1.76172 20.8755L5.23379 22.3827L9.57527 12.8744L6.1032 11.3671Z" fill="#ff0026" fill-rule="nonzero" opacity="1" stroke="none" vectornator:layerName="path"/>
-<path d="M10.7596 15.9659L7.37305 17.6484L12.2195 26.9226L15.606 25.24L10.7596 15.9659Z" fill="#ff0026" fill-rule="nonzero" opacity="1" stroke="none" vectornator:layerName="path"/>
-<path d="M13.9694 17.0147L13.1792 20.6396L23.6203 22.8036L24.4105 19.1787L13.9694 17.0147Z" fill="#ff0026" fill-rule="nonzero" opacity="1" stroke="none" vectornator:layerName="path"/>
-<path d="M25.1221 8.69101L16.8267 15.2412L19.2185 18.1212L27.514 11.571L25.1221 8.69101Z" fill="#ff0026" fill-rule="nonzero" opacity="1" stroke="none" vectornator:layerName="path"/>
-<path d="M21.0118 1.55273L17.2109 1.55273L17.2109 11.9614L21.0118 11.9614L21.0118 1.55273Z" fill="#ff0026" fill-rule="nonzero" opacity="1" stroke="none" vectornator:layerName="path"/>
-</g>
-</g>
-</g>
+<svg width="100%" height="100%" viewBox="0 0 27.6287 27" xmlns="http://www.w3.org/2000/svg" fill="#ff0026">
+  <title>Quickwit</title>
+  <g>
+    <path d="M8.24097 0.426598L6.00684 3.4248L14.6428 9.54304L16.877 6.54484L8.24097 0.426598Z"/>
+    <path d="M10.3099 6.45051L-0.000976562 9.14429L0.982682 12.724L11.2936 10.0302L10.3099 6.45051Z"/>
+    <path d="M6.1032 11.3671L1.76172 20.8755L5.23379 22.3827L9.57527 12.8744L6.1032 11.3671Z"/>
+    <path d="M10.7596 15.9659L7.37305 17.6484L12.2195 26.9226L15.606 25.24L10.7596 15.9659Z"/>
+    <path d="M13.9694 17.0147L13.1792 20.6396L23.6203 22.8036L24.4105 19.1787L13.9694 17.0147Z"/>
+    <path d="M25.1221 8.69101L16.8267 15.2412L19.2185 18.1212L27.514 11.571L25.1221 8.69101Z"/>
+    <path d="M21.0118 1.55273L17.2109 1.55273L17.2109 11.9614L21.0118 11.9614L21.0118 1.55273Z"/>
+  </g>
 </svg>

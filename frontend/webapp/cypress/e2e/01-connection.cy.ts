@@ -1,10 +1,10 @@
-import { ROUTES } from '../../utils/constants/routes';
+import { ROUTES } from '../constants';
 
 describe('Root Connection', () => {
-  it('Should fetch a config with GraphQL. A redirect of any kind confirms Frontend + Backend connections.', () => {
-    cy.intercept('/graphql').as('gql');
-    cy.visit('/');
+  beforeEach(() => cy.intercept('/graphql').as('gql'));
 
+  it('Should fetch a config with GraphQL. A redirect of any kind confirms Frontend + Backend connections.', () => {
+    cy.visit(ROUTES.ROOT);
     cy.wait('@gql').then(() => {
       cy.location().should((loc) => {
         // If GraphQL failed to fetch the config, the app will remain on "/", thereby failing the test.
