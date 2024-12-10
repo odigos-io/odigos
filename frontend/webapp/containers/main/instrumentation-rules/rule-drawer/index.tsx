@@ -3,13 +3,13 @@ import buildCard from './build-card';
 import { RuleFormBody } from '../';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
-import { ACTION, DATA_CARDS, getRuleIcon } from '@/utils';
 import { DataCard } from '@/reuseable-components';
 import buildDrawerItem from './build-drawer-item';
 import { RULE_OPTIONS } from '../rule-modal/rule-options';
 import OverviewDrawer from '../../overview/overview-drawer';
-import { OVERVIEW_ENTITY_TYPES, type InstrumentationRuleSpec } from '@/types';
-import { useInstrumentationRuleCRUD, useInstrumentationRuleFormData } from '@/hooks';
+import { ACTION, DATA_CARDS, FORM_ALERTS, getRuleIcon, NOTIFICATION } from '@/utils';
+import { useInstrumentationRuleCRUD, useInstrumentationRuleFormData, useNotify } from '@/hooks';
+import { InstrumentationRuleType, OVERVIEW_ENTITY_TYPES, type InstrumentationRuleSpec } from '@/types';
 
 interface Props {}
 
@@ -22,6 +22,7 @@ const FormContainer = styled.div`
 `;
 
 export const RuleDrawer: React.FC<Props> = () => {
+  const notify = useNotify();
   const { selectedItem, setSelectedItem } = useDrawerStore();
   const { formData, formErrors, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem } = useInstrumentationRuleFormData();
 
@@ -72,7 +73,11 @@ export const RuleDrawer: React.FC<Props> = () => {
   const { id, item } = selectedItem as { id: string; item: InstrumentationRuleSpec };
 
   const handleEdit = (bool?: boolean) => {
-    setIsEditing(typeof bool === 'boolean' ? bool : true);
+    if (item.type === InstrumentationRuleType.UNKNOWN_TYPE) {
+      notify({ type: NOTIFICATION.WARNING, title: FORM_ALERTS.FORBIDDEN, message: FORM_ALERTS.CANNOT_EDIT_RULE, crdType: OVERVIEW_ENTITY_TYPES.RULE, target: id });
+    } else {
+      setIsEditing(typeof bool === 'boolean' ? bool : true);
+    }
   };
 
   const handleCancel = () => {
