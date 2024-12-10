@@ -113,7 +113,7 @@ func syncDaemonSet(ctx context.Context, dests *odigosv1.DestinationList, datacol
 		logger.Error(err, "Failed to get signals from otelcol config")
 		return nil, err
 	}
-	desiredDs, err := getDesiredDaemonSet(datacollection, otelcolConfigContent, scheme, imagePullSecrets, odigosVersion, k8sVersion, odigletDaemonsetPodSpec)
+	desiredDs, err := getDesiredDaemonSet(datacollection, scheme, imagePullSecrets, odigosVersion, k8sVersion, odigletDaemonsetPodSpec)
 	if err != nil {
 		logger.Error(err, "Failed to get desired DaemonSet")
 		return nil, err
@@ -169,7 +169,7 @@ func getOdigletDaemonsetPodSpec(ctx context.Context, c client.Client, namespace 
 	return &odigletDaemonset.Spec.Template.Spec, nil
 }
 
-func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData string,
+func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 	scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, k8sVersion *version.Version,
 	odigletDaemonsetPodSpec *corev1.PodSpec,
 ) (*appsv1.DaemonSet, error) {
@@ -212,9 +212,6 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup, configData st
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: NodeCollectorsLabels,
-					Annotations: map[string]string{
-						configHashAnnotation: common.Sha256Hash(configData),
-					},
 				},
 				Spec: corev1.PodSpec{
 					NodeSelector:       odigletDaemonsetPodSpec.NodeSelector,

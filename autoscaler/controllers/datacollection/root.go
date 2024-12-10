@@ -61,7 +61,7 @@ func syncDataCollection(instApps *odigosv1.InstrumentedApplicationList, dests *o
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Syncing data collection")
 
-	_, err := SyncConfigMap(instApps, dests, processors, dataCollection, ctx, c, scheme, disableNameProcessor)
+	err := SyncConfigMap(instApps, dests, processors, dataCollection, ctx, c, scheme, disableNameProcessor)
 	if err != nil {
 		logger.Error(err, "Failed to sync config map")
 		return err
