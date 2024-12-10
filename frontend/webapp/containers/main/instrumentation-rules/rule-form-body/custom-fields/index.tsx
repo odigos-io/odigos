@@ -19,6 +19,7 @@ type ComponentType = React.FC<ComponentProps> | null;
 
 const componentsMap: Record<InstrumentationRuleType, ComponentType> = {
   [InstrumentationRuleType.PAYLOAD_COLLECTION]: PayloadCollection,
+  [InstrumentationRuleType.UNKNOWN_TYPE]: null,
 };
 
 const RuleCustomFields: React.FC<Props> = ({ ruleType, value, setValue, formErrors }) => {
