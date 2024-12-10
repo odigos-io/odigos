@@ -47,7 +47,7 @@ export default function App() {
 
   function renderCurrentPage() {
     // const { installation } = data;
-    if (destinationList.length > 0) {
+    if (destinationList?.length > 0) {
       router.push(ROUTES.OVERVIEW);
       return;
     }
