@@ -41,9 +41,9 @@ const Row = styled.div`
 `;
 
 export const ConditionDetails: React.FC<Props> = ({ conditions }) => {
-  const [loading, setLoading] = useState(false);
   const [extend, setExtend] = useState(false);
 
+  const loading = useMemo(() => !conditions.length, [conditions]);
   const errors = useMemo(() => conditions.filter(({ status }) => status === BACKEND_BOOLEAN.FALSE), [conditions]);
   const hasErrors = !!errors.length;
   const headerText = loading ? 'Loading...' : hasErrors ? 'Operation Failed' : 'Operation Successful';
