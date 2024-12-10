@@ -1,35 +1,29 @@
-import { ROUTES } from '../../utils/constants/routes';
+import { BUTTONS, CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
 
 // The number of CRDs that exist in the cluster before running any tests should be 0.
 // Tests will fail if you have existing CRDs in the cluster.
 // If you have to run tests locally, make sure to clean up the cluster before running the tests.
 
 describe('Instrumentation Rules CRUD', () => {
-  const namespace = 'odigos-system';
-  const crdName = 'instrumentationrules.odigos.io';
-  const noResourcesFound = `No resources found in ${namespace} namespace.`;
-
-  beforeEach(() => {
-    cy.intercept('/graphql').as('gql');
-  });
+  beforeEach(() => cy.intercept('/graphql').as('gql'));
 
   it('Should create a CRD in the cluster', () => {
     cy.visit(ROUTES.OVERVIEW);
 
-    cy.exec(`kubectl get ${crdName} -n ${namespace} | awk 'NR>1 {print $1}'`).then((crdListBefore) => {
-      expect(crdListBefore.stderr).to.eq(noResourcesFound);
+    cy.exec(`kubectl get ${CRD_NAMES.INSTRUMENTATION_RULE} -n ${NAMESPACES.ODIGOS_SYSTEM} | awk 'NR>1 {print $1}'`).then((crdListBefore) => {
+      expect(crdListBefore.stderr).to.eq(TEXTS.NO_RESOURCES(NAMESPACES.ODIGOS_SYSTEM));
       expect(crdListBefore.stdout).to.eq('');
 
       const crdIdsBefore = crdListBefore.stdout.split('\n').filter((str) => !!str);
       expect(crdIdsBefore.length).to.eq(0);
 
-      cy.get('[data-id=add-entity]').click();
-      cy.get('[data-id=add-rule]').click();
-      cy.get('[data-id=modal-Add-Instrumentation-Rule]').should('exist');
-      cy.get('button').contains('DONE').click();
+      cy.get(DATA_IDS.ADD_ENTITY).click();
+      cy.get(DATA_IDS.ADD_INSTRUMENTATION_RULE).click();
+      cy.get(DATA_IDS.MODAL_ADD_INSTRUMENTATION_RULE).should('exist');
+      cy.get('button').contains(BUTTONS.DONE).click();
 
       cy.wait('@gql').then(() => {
-        cy.exec(`kubectl get ${crdName} -n ${namespace} | awk 'NR>1 {print $1}'`).then((crdListAfter) => {
+        cy.exec(`kubectl get ${CRD_NAMES.INSTRUMENTATION_RULE} -n ${NAMESPACES.ODIGOS_SYSTEM} | awk 'NR>1 {print $1}'`).then((crdListAfter) => {
           expect(crdListAfter.stderr).to.eq('');
           expect(crdListAfter.stdout).to.not.be.empty;
 
@@ -43,25 +37,24 @@ describe('Instrumentation Rules CRUD', () => {
   it('Should update the CRD in the cluster', () => {
     cy.visit(ROUTES.OVERVIEW);
 
-    const node = cy.contains('[data-id=rule-0]', 'PayloadCollection');
-    expect(node).to.exist;
-    node.click();
-
-    cy.get('[data-id=drawer]').should('exist');
-    cy.get('button[data-id=drawer-edit]').click();
-    cy.get('input[data-id=title]').clear().type('Cypress Test');
-    cy.get('button[data-id=drawer-save]').click();
-    cy.get('button[data-id=drawer-close]').click();
+    cy.contains(DATA_IDS.INSTRUMENTATION_RULE_NODE, SELECTED_ENTITIES.INSTRUMENTATION_RULE).should('exist').click();
+    cy.get(DATA_IDS.DRAWER).should('exist');
+    cy.get(DATA_IDS.DRAWER_EDIT).click();
+    cy.get(DATA_IDS.TITLE).clear().type(TEXTS.UPDATED_NAME);
+    cy.get(DATA_IDS.DRAWER_SAVE).click();
+    cy.get(DATA_IDS.DRAWER_CLOSE).click();
 
     cy.wait('@gql').then(() => {
-      cy.exec(`kubectl get ${crdName} -n ${namespace} | awk 'NR>1 {print $1}'`).then((crdList) => {
+      cy.exec(`kubectl get ${CRD_NAMES.INSTRUMENTATION_RULE} -n ${NAMESPACES.ODIGOS_SYSTEM} | awk 'NR>1 {print $1}'`).then((crdList) => {
         expect(crdList.stderr).to.eq('');
         expect(crdList.stdout).to.not.be.empty;
 
         const crdIds = crdList.stdout.split('\n').filter((str) => !!str);
+        const crdId = crdIds[0];
         expect(crdIds.length).to.eq(1);
+        expect(crdIds).includes(crdId);
 
-        cy.exec(`kubectl get ${crdName} ${crdIds[0]} -n ${namespace} -o json`).then((crd) => {
+        cy.exec(`kubectl get ${CRD_NAMES.INSTRUMENTATION_RULE} ${crdId} -n ${NAMESPACES.ODIGOS_SYSTEM} -o json`).then((crd) => {
           expect(crd.stderr).to.eq('');
           expect(crd.stdout).to.not.be.empty;
 
@@ -69,7 +62,7 @@ describe('Instrumentation Rules CRUD', () => {
           const { spec } = parsed?.items?.[0] || parsed || {};
 
           expect(spec).to.not.be.empty;
-          expect(spec.ruleName).to.eq('Cypress Test');
+          expect(spec.ruleName).to.eq(TEXTS.UPDATED_NAME);
         });
       });
     });
@@ -78,19 +71,16 @@ describe('Instrumentation Rules CRUD', () => {
   it('Should delete the CRD from the cluster', () => {
     cy.visit(ROUTES.OVERVIEW);
 
-    const node = cy.contains('[data-id=rule-0]', 'PayloadCollection');
-    expect(node).to.exist;
-    node.click();
-
-    cy.get('[data-id=drawer]').should('exist');
-    cy.get('button[data-id=drawer-edit]').click();
-    cy.get('button[data-id=drawer-delete]').click();
-    cy.get('[data-id=modal]').contains('Delete rule').should('exist');
-    cy.get('button[data-id=approve]').click();
+    cy.contains(DATA_IDS.INSTRUMENTATION_RULE_NODE, SELECTED_ENTITIES.INSTRUMENTATION_RULE).should('exist').click();
+    cy.get(DATA_IDS.DRAWER).should('exist');
+    cy.get(DATA_IDS.DRAWER_EDIT).click();
+    cy.get(DATA_IDS.DRAWER_DELETE).click();
+    cy.get(DATA_IDS.MODAL).contains(TEXTS.INSTRUMENTATION_RULE_WARN_MODAL_TITLE).should('exist');
+    cy.get(DATA_IDS.APPROVE).click();
 
     cy.wait('@gql').then(() => {
-      cy.exec(`kubectl get ${crdName} -n ${namespace} | awk 'NR>1 {print $1}'`).then((crdList) => {
-        expect(crdList.stderr).to.eq(noResourcesFound);
+      cy.exec(`kubectl get ${CRD_NAMES.INSTRUMENTATION_RULE} -n ${NAMESPACES.ODIGOS_SYSTEM} | awk 'NR>1 {print $1}'`).then((crdList) => {
+        expect(crdList.stderr).to.eq(TEXTS.NO_RESOURCES(NAMESPACES.ODIGOS_SYSTEM));
         expect(crdList.stdout).to.eq('');
 
         const crdIds = crdList.stdout.split('\n').filter((str) => !!str);
