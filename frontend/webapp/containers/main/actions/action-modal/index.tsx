@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ACTION } from '@/utils';
+import { useKeyDown } from '@/hooks';
 import { ActionFormBody } from '../';
 import { CenterThis, ModalBody } from '@/styles';
 import { useActionCRUD, useActionFormData } from '@/hooks/actions';
@@ -12,8 +13,11 @@ interface Props {
 }
 
 export const ActionModal: React.FC<Props> = ({ isOpen, onClose }) => {
-  const { formData, formErrors, handleFormChange, resetFormData, validateForm } = useActionFormData();
+  useKeyDown({ key: 'Enter', active: isOpen }, () => handleSubmit());
+
   const { createAction, loading } = useActionCRUD({ onSuccess: handleClose });
+  const { formData, formErrors, handleFormChange, resetFormData, validateForm } = useActionFormData();
+
   const [selectedItem, setSelectedItem] = useState<ActionOption | undefined>(undefined);
 
   function handleClose() {
@@ -33,7 +37,6 @@ export const ActionModal: React.FC<Props> = ({ isOpen, onClose }) => {
     if (!isFormOk) return null;
 
     await createAction(formData);
-
     handleClose();
   };
 
