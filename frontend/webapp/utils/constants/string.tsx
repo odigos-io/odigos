@@ -35,6 +35,8 @@ export const ACTION = {
 export const FORM_ALERTS = {
   REQUIRED_FIELDS: 'Required fields are missing',
   FIELD_IS_REQUIRED: 'This field is required',
+  FORBIDDEN: 'Forbidden',
+  CANNOT_EDIT_RULE: 'Cannot edit instrumentation rule of this type',
 };
 
 export const NOTIFICATION: {
