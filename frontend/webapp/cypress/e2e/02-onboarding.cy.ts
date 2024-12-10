@@ -19,7 +19,7 @@ describe('Onboarding', () => {
     });
   });
 
-  it('Should allow the user to pass every step, and end-up on the "Overview" page.', () => {
+  it('Should allow the user to pass every step, and end-up on the "overview" page.', () => {
     cy.visit(ROUTES.CHOOSE_SOURCES);
     cy.contains('button', BUTTONS.NEXT).click();
     cy.location('pathname').should('eq', ROUTES.CHOOSE_DESTINATION);

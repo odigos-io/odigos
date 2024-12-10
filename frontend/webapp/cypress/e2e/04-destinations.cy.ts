@@ -1,4 +1,4 @@
-import { getCrdById, getCrdIds } from '../functions';
+import { deleteEntity, getCrdById, getCrdIds, updateEntity } from '../functions';
 import { BUTTONS, CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
 
 // The number of CRDs that exist in the cluster before running any tests should be 0.
@@ -31,34 +31,39 @@ describe('Destinations CRUD', () => {
   it('Should update the CRD in the cluster', () => {
     cy.visit(ROUTES.OVERVIEW);
 
-    cy.contains(DATA_IDS.DESTINATION_NODE, SELECTED_ENTITIES.DESTINATION).should('exist').click();
-    cy.get(DATA_IDS.DRAWER).should('exist');
-    cy.get(DATA_IDS.DRAWER_EDIT).click();
-    cy.get(DATA_IDS.TITLE).clear().type(TEXTS.UPDATED_NAME);
-    cy.get(DATA_IDS.DRAWER_SAVE).click();
-    cy.get(DATA_IDS.DRAWER_CLOSE).click();
-
-    cy.wait('@gql').then(() => {
-      getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 }, (crdIds) => {
-        const crdId = crdIds[0];
-        getCrdById({ namespace, crdName, crdId, expectedError: '', expectedKey: 'destinationName', expectedValue: TEXTS.UPDATED_NAME });
-      });
-    });
+    updateEntity(
+      {
+        nodeId: DATA_IDS.DESTINATION_NODE,
+        nodeContains: SELECTED_ENTITIES.DESTINATION,
+        fieldKey: DATA_IDS.TITLE,
+        fieldValue: TEXTS.UPDATED_NAME,
+      },
+      () => {
+        cy.wait('@gql').then(() => {
+          getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 }, (crdIds) => {
+            const crdId = crdIds[0];
+            getCrdById({ namespace, crdName, crdId, expectedError: '', expectedKey: 'destinationName', expectedValue: TEXTS.UPDATED_NAME });
+          });
+        });
+      },
+    );
   });
 
   it('Should delete the CRD from the cluster', () => {
     cy.visit(ROUTES.OVERVIEW);
 
-    cy.contains(DATA_IDS.DESTINATION_NODE, SELECTED_ENTITIES.DESTINATION).should('exist').click();
-    cy.get(DATA_IDS.DRAWER).should('exist');
-    cy.get(DATA_IDS.DRAWER_EDIT).click();
-    cy.get(DATA_IDS.DRAWER_DELETE).click();
-    cy.get(DATA_IDS.MODAL).contains(TEXTS.DESTINATION_WARN_MODAL_TITLE).should('exist');
-    cy.get(DATA_IDS.MODAL).contains(TEXTS.DESTINATION_WARN_MODAL_NOTE).should('exist');
-    cy.get(DATA_IDS.APPROVE).click();
-
-    cy.wait('@gql').then(() => {
-      getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
-    });
+    deleteEntity(
+      {
+        nodeId: DATA_IDS.DESTINATION_NODE,
+        nodeContains: SELECTED_ENTITIES.DESTINATION,
+        warnModalTitle: TEXTS.DESTINATION_WARN_MODAL_TITLE,
+        warnModalNote: TEXTS.DESTINATION_WARN_MODAL_NOTE,
+      },
+      () => {
+        cy.wait('@gql').then(() => {
+          getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
+        });
+      },
+    );
   });
 });

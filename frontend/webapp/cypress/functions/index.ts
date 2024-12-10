@@ -1,3 +1,5 @@
+import { DATA_IDS } from '../constants';
+
 interface GetCrdIdsOptions {
   namespace: string;
   crdName: string;
@@ -49,4 +51,43 @@ export const getCrdById = ({ namespace, crdName, crdId, expectedError, expectedK
 
     if (!!callback) callback();
   });
+};
+
+interface UpdateEntityOptions {
+  nodeId: string;
+  nodeContains: string;
+  fieldKey: string;
+  fieldValue: string;
+}
+
+export const updateEntity = ({ nodeId, nodeContains, fieldKey, fieldValue }: UpdateEntityOptions, callback?: () => void) => {
+  cy.contains(nodeId, nodeContains).should('exist').click();
+  cy.get(DATA_IDS.DRAWER).should('exist');
+  cy.get(DATA_IDS.DRAWER_EDIT).click();
+  cy.get(fieldKey).clear().type(fieldValue);
+  cy.get(DATA_IDS.DRAWER_SAVE).click();
+  cy.get(DATA_IDS.DRAWER_CLOSE).click();
+
+  if (!!callback) callback();
+};
+
+interface DeleteEntityOptions {
+  nodeId: string;
+  nodeContains: string;
+  warnModalTitle?: string;
+  warnModalNote?: string;
+}
+
+export const deleteEntity = ({ nodeId, nodeContains, warnModalTitle, warnModalNote }: DeleteEntityOptions, callback?: () => void) => {
+  cy.contains(nodeId, nodeContains).should('exist').click();
+  cy.get(DATA_IDS.DRAWER).should('exist');
+  cy.get(DATA_IDS.DRAWER_EDIT).click();
+  cy.get(DATA_IDS.DRAWER_DELETE).click();
+
+  if (!!warnModalTitle) cy.get(DATA_IDS.MODAL).contains(warnModalTitle).should('exist');
+  if (!!warnModalNote) cy.get(DATA_IDS.MODAL).contains(warnModalNote).should('exist');
+
+  cy.get(DATA_IDS.APPROVE).click();
+
+  if (!!callback) callback();
 };
