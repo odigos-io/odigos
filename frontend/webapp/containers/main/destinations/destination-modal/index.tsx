@@ -6,8 +6,8 @@ import { SideMenu } from '@/components';
 import { ACTION, INPUT_TYPES } from '@/utils';
 import { DestinationFormBody } from '../destination-form-body';
 import { ChooseDestinationBody } from './choose-destination-body';
-import { useDestinationCRUD, useDestinationFormData } from '@/hooks';
 import type { ConfiguredDestination, DestinationTypeItem } from '@/types';
+import { useDestinationCRUD, useDestinationFormData, useKeyDown } from '@/hooks';
 import { Modal, type NavigationButtonProps, NavigationButtons } from '@/reuseable-components';
 
 interface AddDestinationModalProps {
@@ -30,10 +30,12 @@ const SideMenuWrapper = styled.div`
 `;
 
 export const DestinationModal: React.FC<AddDestinationModalProps> = ({ isOnboarding, isOpen, onClose }) => {
+  useKeyDown({ key: 'Enter', active: isOpen }, () => handleSubmit());
+
   const [selectedItem, setSelectedItem] = useState<DestinationTypeItem | undefined>();
 
+  const { addConfiguredDestination } = useAppStore();
   const { createDestination, loading } = useDestinationCRUD();
-  const addConfiguredDestination = useAppStore(({ addConfiguredDestination }) => addConfiguredDestination);
   const { formData, formErrors, handleFormChange, resetFormData, validateForm, dynamicFields, setDynamicFields } = useDestinationFormData({
     supportedSignals: selectedItem?.supportedSignals,
     preLoadedFields: selectedItem?.fields,
