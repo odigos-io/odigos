@@ -111,7 +111,7 @@ func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32) error {
 	return nil
 }
 
-func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme) (string, []odigoscommon.ObservabilitySignal, error) {
+func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme) ([]odigoscommon.ObservabilitySignal, error) {
 	logger := log.FromContext(ctx)
 	memoryLimiterConfiguration := common.GetMemoryLimiterConfig(gateway.Spec.ResourcesSettings)
 
@@ -127,7 +127,7 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 	)
 	if err != nil {
 		logger.Error(err, "Failed to calculate config")
-		return "", nil, err
+		return nil, err
 	}
 
 	for destName, destErr := range status.Destination {
@@ -170,7 +170,7 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 
 	if err := ctrl.SetControllerReference(gateway, desiredCM, scheme); err != nil {
 		logger.Error(err, "Failed to set controller reference")
-		return "", nil, err
+		return nil, err
 	}
 
 	existing := &v1.ConfigMap{}
@@ -180,12 +180,12 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 			_, err := createConfigMap(desiredCM, ctx, c)
 			if err != nil {
 				logger.Error(err, "Failed to create gateway config map")
-				return "", nil, err
+				return nil, err
 			}
-			return desiredData, signals, nil
+			return signals, nil
 		} else {
 			logger.Error(err, "Failed to get gateway config map")
-			return "", nil, err
+			return nil, err
 		}
 	}
 
@@ -193,10 +193,10 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 	_, err = patchConfigMap(existing, desiredCM, ctx, c)
 	if err != nil {
 		logger.Error(err, "Failed to patch gateway config map")
-		return "", nil, err
+		return nil, err
 	}
 
-	return desiredData, signals, nil
+	return signals, nil
 }
 
 func createConfigMap(desired *v1.ConfigMap, ctx context.Context, c client.Client) (*v1.ConfigMap, error) {
