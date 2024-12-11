@@ -75,16 +75,7 @@ func (r *computePlatformResolver) K8sActualNamespaces(ctx context.Context, obj *
 
 // K8sActualSource is the resolver for the k8sActualSource field.
 func (r *computePlatformResolver) K8sActualSource(ctx context.Context, obj *model.ComputePlatform, name *string, namespace *string, kind *string) (*model.K8sActualSource, error) {
-	source, err := services.GetActualSource(ctx, *namespace, *kind, *name)
-	if err != nil {
-		return nil, err
-	}
-	if source == nil {
-		return nil, nil
-	}
-	k8sActualSource := k8sSourceToGql(source)
-
-	return k8sActualSource, nil
+	return nil, nil
 }
 
 // K8sActualSources is the resolver for the k8sActualSources field.

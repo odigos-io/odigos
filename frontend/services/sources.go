@@ -62,42 +62,6 @@ type ThinSource struct {
 	IaDetails                *InstrumentedApplicationDetails `json:"instrumented_application_details"`
 }
 
-func GetActualSource(ctx context.Context, ns string, kind string, name string) (*Source, error) {
-	k8sObjectName := workload.CalculateWorkloadRuntimeObjectName(name, kind)
-	owner, numberOfRunningInstances := GetWorkload(ctx, ns, kind, name)
-	if owner == nil {
-		return nil, fmt.Errorf("owner not found")
-	}
-	ownerAnnotations := owner.GetAnnotations()
-	var reportedName string
-	if ownerAnnotations != nil {
-		reportedName = ownerAnnotations[consts.OdigosReportedNameAnnotation]
-	}
-
-	ts := ThinSource{
-		SourceID: SourceID{
-			Namespace: ns,
-			Kind:      kind,
-			Name:      name,
-		},
-		NumberOfRunningInstances: numberOfRunningInstances,
-	}
-
-	instrumentedApplication, err := kube.DefaultClient.OdigosClient.InstrumentedApplications(ns).Get(ctx, k8sObjectName, metav1.GetOptions{})
-	if err == nil {
-		ts.IaDetails = k8sInstrumentedAppToThinSource(instrumentedApplication).IaDetails
-		err = AddHealthyInstrumentationInstancesCondition(ctx, instrumentedApplication, nil)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return &Source{
-		ThinSource:   ts,
-		ReportedName: reportedName,
-	}, nil
-}
-
 func GetWorkload(c context.Context, ns string, kind string, name string) (metav1.Object, int) {
 	switch kind {
 	case "Deployment":
@@ -165,33 +129,6 @@ func AddHealthyInstrumentationInstancesCondition(ctx context.Context, app *v1alp
 	})
 
 	return nil
-}
-
-func k8sInstrumentedAppToThinSource(app *v1alpha1.InstrumentedApplication) ThinSource {
-	var source ThinSource
-	source.Name = app.OwnerReferences[0].Name
-	source.Kind = app.OwnerReferences[0].Kind
-	source.Namespace = app.Namespace
-	var conditions []metav1.Condition
-	for _, condition := range app.Status.Conditions {
-		conditions = append(conditions, metav1.Condition{
-			Type:               condition.Type,
-			Status:             condition.Status,
-			Message:            condition.Message,
-			LastTransitionTime: condition.LastTransitionTime,
-		})
-	}
-	source.IaDetails = &InstrumentedApplicationDetails{
-		Languages:  []SourceLanguage{},
-		Conditions: conditions,
-	}
-	for _, language := range app.Spec.RuntimeDetails {
-		source.IaDetails.Languages = append(source.IaDetails.Languages, SourceLanguage{
-			ContainerName: language.ContainerName,
-			Language:      string(language.Language),
-		})
-	}
-	return source
 }
 
 func GetWorkloadsInNamespace(ctx context.Context, nsName string, instrumentationLabeled *bool) ([]model.K8sActualSource, error) {
