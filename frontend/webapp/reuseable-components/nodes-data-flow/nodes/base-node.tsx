@@ -11,6 +11,8 @@ interface Props
   extends NodeProps<
     Node<
       {
+        nodeWidth: number;
+
         id: string;
         type: 'source' | 'action' | 'destination';
         status: STATUSES;
@@ -23,16 +25,14 @@ interface Props
       },
       'base'
     >
-  > {
-  nodeWidth: number;
-}
+  > {}
 
-const Container = styled.div<{ $nodeWidth: Props['nodeWidth'] }>`
-  width: ${({ $nodeWidth }) => `${$nodeWidth + 40}px`};
+const Container = styled.div<{ $nodeWidth: Props['data']['nodeWidth'] }>`
+  width: ${({ $nodeWidth }) => `${$nodeWidth}px`};
 `;
 
-const BaseNode: React.FC<Props> = ({ nodeWidth, data, isConnectable }) => {
-  const { type, status, title, subTitle, imageUri, monitors, isActive, raw } = data;
+const BaseNode: React.FC<Props> = ({ data }) => {
+  const { nodeWidth, type, status, title, subTitle, imageUri, monitors, isActive, raw } = data;
   const isError = status === STATUSES.UNHEALTHY;
 
   const { configuredSources, setConfiguredSources } = useAppStore((state) => state);
@@ -75,23 +75,23 @@ const BaseNode: React.FC<Props> = ({ nodeWidth, data, isConnectable }) => {
   const renderHandles = () => {
     switch (type) {
       case 'source':
-        return <Handle type='source' position={Position.Right} id='source-output' isConnectable={isConnectable} style={{ visibility: 'hidden' }} />;
+        return <Handle type='source' position={Position.Right} style={{ visibility: 'hidden' }} />;
       case 'action':
         return (
           <>
-            <Handle type='target' position={Position.Top} id='action-input' isConnectable={isConnectable} style={{ visibility: 'hidden' }} />
-            <Handle type='source' position={Position.Bottom} id='action-output' isConnectable={isConnectable} style={{ visibility: 'hidden' }} />
+            <Handle type='target' position={Position.Top} style={{ visibility: 'hidden' }} />
+            <Handle type='source' position={Position.Bottom} style={{ visibility: 'hidden' }} />
           </>
         );
       case 'destination':
-        return <Handle type='target' position={Position.Left} id='destination-input' isConnectable={isConnectable} style={{ visibility: 'hidden' }} />;
+        return <Handle type='target' position={Position.Left} style={{ visibility: 'hidden' }} />;
       default:
         return null;
     }
   };
 
   return (
-    <Container $nodeWidth={nodeWidth}>
+    <Container $nodeWidth={nodeWidth} className='nowheel nodrag'>
       <DataTab title={title} subTitle={subTitle} logo={imageUri} monitors={monitors} isActive={isActive} isError={isError} onClick={() => {}}>
         {renderActions()}
         {renderHandles()}

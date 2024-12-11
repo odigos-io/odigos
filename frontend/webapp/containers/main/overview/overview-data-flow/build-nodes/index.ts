@@ -1,6 +1,8 @@
 import { type Node } from '@xyflow/react';
 import { type ComputePlatformMapped } from '@/types';
-import { buildLayoutNodes } from './build-layout-nodes';
+
+import { getCounts } from './get-counts';
+import { getPositions } from './get-positions';
 import { buildRuleNodes } from './build-rule-nodes';
 import { buildSourceNodes } from './build-source-nodes';
 import { buildActionNodes } from './build-action-nodes';
@@ -14,17 +16,35 @@ interface Params {
 }
 
 export const buildNodes = ({ containerWidth, containerHeight, computePlatform, computePlatformFiltered }: Params) => {
+  const { instrumentationRules: rules = [], k8sActualSources: sources = [], actions = [], destinations = [] } = computePlatformFiltered || {};
   const nodes: Node[] = [];
 
   if (!containerWidth) return nodes;
 
-  const { instrumentationRules: rules = [], k8sActualSources: sources = [], actions = [], destinations = [] } = computePlatformFiltered || {};
+  const positions = getPositions({ containerWidth });
+  const unfilteredCounts = getCounts({ computePlatform });
 
-  const { nodes: layoutNodes, positions, unfilteredCounts } = buildLayoutNodes({ containerWidth, containerHeight, computePlatform });
-  const ruleNodes = !!layoutNodes.length ? buildRuleNodes({ entities: rules, positions, unfilteredCounts }) : [];
-  const sourceNodes = !!layoutNodes.length ? buildSourceNodes({ entities: sources, positions, unfilteredCounts }) : [];
-  const actionNodes = !!layoutNodes.length ? buildActionNodes({ entities: actions, positions, unfilteredCounts }) : [];
-  const destinationNodes = !!layoutNodes.length ? buildDestinationNodes({ entities: destinations, positions, unfilteredCounts }) : [];
+  const ruleNodes = buildRuleNodes({ entities: rules, positions, unfilteredCounts });
+  const sourceNodes = buildSourceNodes({ entities: sources, positions, unfilteredCounts, containerHeight });
+  const actionNodes = buildActionNodes({ entities: actions, positions, unfilteredCounts });
+  const destinationNodes = buildDestinationNodes({ entities: destinations, positions, unfilteredCounts });
 
-  return layoutNodes.concat(ruleNodes, sourceNodes, actionNodes, destinationNodes);
+  // this is to control the behaviour of the "fit into view" control-button
+  nodes.push({
+    id: 'hidden',
+    type: 'default',
+    position: {
+      x: containerWidth / 2,
+      y: containerHeight,
+    },
+    data: {},
+    style: {
+      width: 1,
+      height: 1,
+      opacity: 0,
+      pointerEvents: 'none',
+    },
+  });
+
+  return nodes.concat(ruleNodes, sourceNodes, actionNodes, destinationNodes);
 };

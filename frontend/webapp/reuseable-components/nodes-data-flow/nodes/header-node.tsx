@@ -10,17 +10,17 @@ interface Props
   extends NodeProps<
     Node<
       {
+        nodeWidth: number;
+
         icon: string;
         title: string;
         tagValue: number;
       },
       'header'
     >
-  > {
-  nodeWidth: number;
-}
+  > {}
 
-const Container = styled.div<{ $nodeWidth: Props['nodeWidth'] }>`
+const Container = styled.div<{ $nodeWidth: Props['data']['nodeWidth'] }>`
   width: ${({ $nodeWidth }) => `${$nodeWidth}px`};
   padding: 12px 0px 16px 0px;
   gap: 8px;
@@ -38,10 +38,9 @@ const ActionsWrapper = styled.div`
   margin-right: 16px;
 `;
 
-const HeaderNode: React.FC<Props> = ({ nodeWidth, data }) => {
-  const { title, icon, tagValue } = data;
+const HeaderNode: React.FC<Props> = ({ data }) => {
+  const { nodeWidth, title, icon, tagValue } = data;
   const isSources = title === 'Sources';
-  const extraWidth = 40;
 
   const { configuredSources, setConfiguredSources } = useAppStore((state) => state);
   const { sources } = useSourceCRUD();
@@ -85,7 +84,7 @@ const HeaderNode: React.FC<Props> = ({ nodeWidth, data }) => {
   };
 
   return (
-    <Container $nodeWidth={nodeWidth + extraWidth}>
+    <Container $nodeWidth={nodeWidth} className='nowheel nodrag'>
       <Image src={icon} width={16} height={16} alt={title} />
       <Title size={14}>{title}</Title>
       <Badge label={tagValue} />

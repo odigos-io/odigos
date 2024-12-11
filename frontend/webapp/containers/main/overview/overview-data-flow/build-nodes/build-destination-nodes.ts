@@ -1,7 +1,9 @@
 import { type Node } from '@xyflow/react';
-import { Positions, UnfilteredCounts } from './build-layout-nodes';
-import { extractMonitors, getEntityLabel, getHealthStatus } from '@/utils';
+import { type Positions } from './get-positions';
+import { type UnfilteredCounts } from './get-counts';
+import { extractMonitors, getEntityIcon, getEntityLabel, getHealthStatus } from '@/utils';
 import { OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type ComputePlatformMapped } from '@/types';
+import config from './config.json';
 
 interface Params {
   entities: ComputePlatformMapped['computePlatform']['destinations'];
@@ -9,10 +11,27 @@ interface Params {
   unfilteredCounts: UnfilteredCounts;
 }
 
+const { nodeWidth } = config;
+
 export const buildDestinationNodes = ({ entities, positions, unfilteredCounts }: Params) => {
   const nodes: Node[] = [];
   const position = positions[OVERVIEW_ENTITY_TYPES.DESTINATION];
   const unfilteredCount = unfilteredCounts[OVERVIEW_ENTITY_TYPES.DESTINATION];
+
+  nodes.push({
+    id: 'destination-header',
+    type: 'header',
+    position: {
+      x: positions[OVERVIEW_ENTITY_TYPES.DESTINATION]['x'],
+      y: 0,
+    },
+    data: {
+      nodeWidth,
+      title: 'Destinations',
+      icon: getEntityIcon(OVERVIEW_ENTITY_TYPES.DESTINATION),
+      tagValue: unfilteredCounts[OVERVIEW_ENTITY_TYPES.DESTINATION],
+    },
+  });
 
   if (!entities.length) {
     nodes.push({
@@ -23,6 +42,7 @@ export const buildDestinationNodes = ({ entities, positions, unfilteredCounts }:
         y: position['y'](),
       },
       data: {
+        nodeWidth,
         type: OVERVIEW_NODE_TYPES.ADD_DESTIONATION,
         status: STATUSES.HEALTHY,
         title: 'ADD DESTIONATION',
@@ -39,6 +59,7 @@ export const buildDestinationNodes = ({ entities, positions, unfilteredCounts }:
           y: position['y'](idx),
         },
         data: {
+          nodeWidth,
           id: destination.id,
           type: OVERVIEW_ENTITY_TYPES.DESTINATION,
           status: getHealthStatus(destination),

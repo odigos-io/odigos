@@ -7,7 +7,6 @@ import { NodeDataFlow } from '@/reuseable-components';
 import MultiSourceControl from '../multi-source-control';
 import { OverviewActionMenuContainer } from '../overview-actions-menu';
 import { useComputePlatform, useContainerSize, useMetrics, useNodeDataFlowHandlers } from '@/hooks';
-import { nodeHeight, nodeWidth } from './build-nodes/config.json';
 
 const Container = styled.div`
   width: 100%;
@@ -48,7 +47,7 @@ export default function OverviewDataFlowContainer() {
     <Container ref={containerRef}>
       <OverviewActionMenuContainer />
       <MultiSourceControl />
-      <NodeDataFlow nodes={nodes} edges={edges} onNodeClick={handleNodeClick} nodeWidth={nodeWidth} nodeHeight={nodeHeight} />
+      <NodeDataFlow nodes={nodes} edges={edges} onNodeClick={handleNodeClick} />
     </Container>
   );
 }

@@ -1,9 +1,9 @@
-import theme from '@/styles/theme';
 import { type Node } from '@xyflow/react';
-import { getActionIcon, getEntityLabel } from '@/utils';
-import { Positions, UnfilteredCounts } from './build-layout-nodes';
+import { type Positions } from './get-positions';
+import { type UnfilteredCounts } from './get-counts';
+import { getActionIcon, getEntityIcon, getEntityLabel } from '@/utils';
 import { OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type ComputePlatformMapped } from '@/types';
-import { nodeWidth, nodeHeight } from './config.json';
+import config from './config.json';
 
 interface Params {
   entities: ComputePlatformMapped['computePlatform']['actions'];
@@ -11,10 +11,27 @@ interface Params {
   unfilteredCounts: UnfilteredCounts;
 }
 
+const { nodeWidth, nodeHeight, framePadding } = config;
+
 export const buildActionNodes = ({ entities, positions, unfilteredCounts }: Params) => {
   const nodes: Node[] = [];
   const position = positions[OVERVIEW_ENTITY_TYPES.ACTION];
   const unfilteredCount = unfilteredCounts[OVERVIEW_ENTITY_TYPES.ACTION];
+
+  nodes.push({
+    id: 'action-header',
+    type: 'header',
+    position: {
+      x: positions[OVERVIEW_ENTITY_TYPES.ACTION]['x'],
+      y: 0,
+    },
+    data: {
+      nodeWidth,
+      title: 'Actions',
+      icon: getEntityIcon(OVERVIEW_ENTITY_TYPES.ACTION),
+      tagValue: unfilteredCounts[OVERVIEW_ENTITY_TYPES.ACTION],
+    },
+  });
 
   if (!entities.length) {
     nodes.push({
@@ -25,6 +42,7 @@ export const buildActionNodes = ({ entities, positions, unfilteredCounts }: Para
         y: position['y'](),
       },
       data: {
+        nodeWidth,
         type: OVERVIEW_NODE_TYPES.ADD_ACTION,
         status: STATUSES.HEALTHY,
         title: 'ADD ACTION',
@@ -32,22 +50,16 @@ export const buildActionNodes = ({ entities, positions, unfilteredCounts }: Para
       },
     });
   } else {
-    const groupPadding = 12;
-
     nodes.push({
-      id: 'action-group',
-      type: 'group',
+      id: 'action-frame',
+      type: 'frame',
       position: {
-        x: position['x'] - groupPadding,
-        y: position['y']() - groupPadding,
+        x: position['x'] - framePadding,
+        y: position['y']() - framePadding,
       },
-      data: {},
-      style: {
-        width: nodeWidth + groupPadding + 50,
-        height: nodeHeight * entities.length + groupPadding,
-        background: 'transparent',
-        border: `1px dashed ${theme.colors.border}`,
-        borderRadius: 24,
+      data: {
+        nodeWidth: nodeWidth + 2 * framePadding,
+        nodeHeight: nodeHeight * entities.length + framePadding,
       },
     });
 
@@ -56,12 +68,13 @@ export const buildActionNodes = ({ entities, positions, unfilteredCounts }: Para
         id: `action-${action.id}`,
         type: 'base',
         extent: 'parent',
-        parentId: 'action-group',
+        parentId: 'action-frame',
         position: {
-          x: groupPadding,
-          y: position['y'](idx) - (nodeHeight - groupPadding),
+          x: framePadding,
+          y: position['y'](idx) - (nodeHeight - framePadding),
         },
         data: {
+          nodeWidth,
           id: action.id,
           type: OVERVIEW_ENTITY_TYPES.ACTION,
           status: STATUSES.HEALTHY,

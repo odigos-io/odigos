@@ -1,4 +1,5 @@
 {
-  "nodeWidth": 255,
-  "nodeHeight": 80
+  "nodeWidth": 295,
+  "nodeHeight": 80,
+  "framePadding": 12
 }

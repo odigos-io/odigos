@@ -1,20 +1,39 @@
 import { type Node } from '@xyflow/react';
-import { Positions, UnfilteredCounts } from './build-layout-nodes';
+import { type Positions } from './get-positions';
+import { type UnfilteredCounts } from './get-counts';
 import { getMainContainerLanguage } from '@/utils/constants/programming-languages';
-import { getEntityLabel, getHealthStatus, getProgrammingLanguageIcon } from '@/utils';
+import { getEntityIcon, getEntityLabel, getHealthStatus, getProgrammingLanguageIcon } from '@/utils';
 import { OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type ComputePlatformMapped } from '@/types';
-import { nodeWidth, nodeHeight } from './config.json';
+import config from './config.json';
 
 interface Params {
   entities: ComputePlatformMapped['computePlatform']['k8sActualSources'];
   positions: Positions;
   unfilteredCounts: UnfilteredCounts;
+  containerHeight: number;
 }
 
-export const buildSourceNodes = ({ entities, positions, unfilteredCounts }: Params) => {
+const { nodeWidth, nodeHeight, framePadding } = config;
+
+export const buildSourceNodes = ({ entities, positions, unfilteredCounts, containerHeight }: Params) => {
   const nodes: Node[] = [];
   const position = positions[OVERVIEW_ENTITY_TYPES.SOURCE];
   const unfilteredCount = unfilteredCounts[OVERVIEW_ENTITY_TYPES.SOURCE];
+
+  nodes.push({
+    id: 'source-header',
+    type: 'header',
+    position: {
+      x: positions[OVERVIEW_ENTITY_TYPES.SOURCE]['x'],
+      y: 0,
+    },
+    data: {
+      nodeWidth,
+      title: 'Sources',
+      icon: getEntityIcon(OVERVIEW_ENTITY_TYPES.SOURCE),
+      tagValue: unfilteredCounts[OVERVIEW_ENTITY_TYPES.SOURCE],
+    },
+  });
 
   if (!entities.length) {
     nodes.push({
@@ -25,6 +44,7 @@ export const buildSourceNodes = ({ entities, positions, unfilteredCounts }: Para
         y: position['y'](),
       },
       data: {
+        nodeWidth,
         type: OVERVIEW_NODE_TYPES.ADD_SOURCE,
         status: STATUSES.HEALTHY,
         title: 'ADD SOURCE',
@@ -32,21 +52,16 @@ export const buildSourceNodes = ({ entities, positions, unfilteredCounts }: Para
       },
     });
   } else {
-    const groupPadding = 12;
-
     nodes.push({
-      id: 'source-group',
-      type: 'group',
+      id: 'source-scroll',
+      type: 'scroll',
       position: {
-        x: position['x'] - groupPadding,
-        y: position['y']() - groupPadding,
+        x: position['x'],
+        y: position['y']() - framePadding,
       },
-      data: {},
-      style: {
-        width: nodeWidth + groupPadding + 50,
-        height: nodeHeight * entities.length + groupPadding,
-        background: 'transparent',
-        border: 'none',
+      data: {
+        nodeWidth,
+        nodeHeight: containerHeight - nodeHeight + framePadding,
       },
     });
 
@@ -55,12 +70,13 @@ export const buildSourceNodes = ({ entities, positions, unfilteredCounts }: Para
         id: `source-${source.namespace}-${source.name}-${source.kind}`,
         type: 'base',
         extent: 'parent',
-        parentId: 'source-group',
+        parentId: 'source-scroll',
         position: {
-          x: groupPadding,
-          y: position['y'](idx) - (nodeHeight - groupPadding),
+          x: framePadding,
+          y: position['y'](idx) - (nodeHeight - framePadding),
         },
         data: {
+          nodeWidth,
           id: {
             namespace: source.namespace,
             name: source.name,

@@ -25,10 +25,7 @@ const createEdge = (edgeId: string, params?: { label?: string; isMultiTarget?: b
 
 export const buildEdges = ({ nodes, metrics }: Params) => {
   const edges: Edge[] = [];
-
-  if (!nodes.length) return edges;
-
-  const actionNodeId = !!nodes.find(({ type: nodeType }) => nodeType === 'group') ? 'action-group' : 'action-add';
+  const actionNodeId = nodes.find(({ id: nodeId }) => ['action-frame', 'action-add'].includes(nodeId))?.id;
 
   nodes.forEach(({ type: nodeType, id: nodeId, data: { type: entityType, id: entityId, status } }) => {
     if (nodeType === 'base') {
