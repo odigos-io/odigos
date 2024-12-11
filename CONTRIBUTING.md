@@ -185,10 +185,10 @@ See the [Odigos docs](https://docs.odigos.io/intro) for the full steps on debugg
 Build the frontend
 
 ```bash
-cd frontend/webapp 
-yarn install
-yarn build
-yarn dev
+cd frontend/webapp
+npm install
+npm run build
+npm run dev
 cd ../.. # back to root of the project for next steps
 ```
 

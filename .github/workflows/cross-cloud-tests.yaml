@@ -176,7 +176,7 @@ jobs:
         if: matrix.test-scenario == 'multi-apps' || matrix.test-scenario == 'helm-chart'
         run: |
           cd frontend/webapp
-          yarn install
+          npm install
 
       - name: Run E2E Tests
         run: |
