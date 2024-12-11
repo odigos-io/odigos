@@ -23,7 +23,7 @@ ARG NODEJS_AGENT_VERSION=main
 RUN git clone https://github.com/odigos-io/opentelemetry-node.git && cd opentelemetry-node && git checkout $NODEJS_AGENT_VERSION
 
 # The second build stage 'nodejs-agent-src' prepares the actual code we are going to compile and embed in odiglet.
-# By default, it uses the previous 'nodejs-agent-src' stage, but one can override it by setting the 
+# By default, it uses the previous 'nodejs-agent-src' stage, but one can override it by setting the
 # --build-context nodejs-agent-src=../opentelemetry-node flag in the docker build command.
 # This allows us to nobe the agent sources and test changes during development.
 # The output of this stage is the resolved source code to be used in the next stage.
@@ -34,14 +34,14 @@ COPY --from=nodejs-agent-clone /src/opentelemetry-node /
 # being dependency of the native-community agent.
 FROM node:18 AS nodejs-agent-build
 ARG ODIGOS_VERSION
-# Note: we have to use YARN here, because the "odigos-io/opentelemetry-node" repo uses YARN.
 WORKDIR /opentelemetry-node
+# TODO: change YARN -> NPM in "odigos-io/opentelemetry-node" repository, then change "yarn.lock" to "package-lock.json", and change "npm i" to "npm ci".
 COPY --from=nodejs-agent-src package.json yarn.lock ./
 # install dependencies with dev so we can build the agent
-RUN yarn --frozen-lockfile
+RUN npm i
 COPY --from=nodejs-agent-src / .
 RUN echo "export const VERSION = \"$ODIGOS_VERSION\";" > ./src/version.ts
-RUN yarn compile
+RUN npm run compile
 
 
 # The fourth step 'nodejs-agent-native-community-src' prepares the agent sources for the native-community agent.
