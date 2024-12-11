@@ -16,7 +16,13 @@ COPY --from=builder /webapp/out frontend/webapp/out
 COPY --from=builder /webapp/dep-out frontend/webapp/dep-out
 WORKDIR /app/frontend
 ARG TARGETARCH
-RUN CGO_ENABLED=0 GOARCH=$TARGETARCH go build -o odigos-ui
+RUN CGO_ENABLED=0 GOARCH=$TARGETARCH
+RUN go env -w GOCACHE=/go-cache
+RUN go env -w GOMODCACHE=/gomod-cache
+# "go mod download" will pull all dependencies defined in go.mod
+# RUN --mount=type=cache,target=GOMODCACHE go mod download
+# "go build" will pull only those which are actually required
+RUN --mount=type=cache,target=GOMODCACHE --mount=type=cache,target=GOCACHE go build -o odigos-ui
 
 FROM gcr.io/distroless/static:nonroot
 WORKDIR /app
