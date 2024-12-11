@@ -36,17 +36,18 @@ COPY --from=nodejs-agent-native-community-clone /src/opentelemetry-node /
 # These artifacts are later copied into the odiglet final image to be mounted into auto-instrumented pods at runtime.
 FROM node:18 AS nodejs-agent-native-community-builder
 ARG ODIGOS_VERSION
+# Note: we have to use YARN here, because the "odigos-io/opentelemetry-node" repo uses YARN.
 WORKDIR /nodejs-instrumentation
-COPY --from=nodejs-agent-native-community-src /package.json /package-lock.json ./
+COPY --from=nodejs-agent-native-community-src /package.json /yarn.lock ./
 # prepare the production node_modules content in a separate directory
-RUN npm ci --only=production
+RUN yarn --production --frozen-lockfile
 RUN mv node_modules ./prod_node_modules
-# install all dependencies including dev so we can create a build
-RUN npm ci
+# install all dependencies including dev so we can yarn compile
+RUN yarn --frozen-lockfile
 COPY --from=nodejs-agent-native-community-src / ./
 # inject the actual version into the agent code
 RUN echo "export const VERSION = \"$ODIGOS_VERSION\";" > ./src/version.ts
-RUN npm run build
+RUN yarn compile
 
 FROM busybox:1.36.1 AS dotnet-builder
 WORKDIR /dotnet-instrumentation

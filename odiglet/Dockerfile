@@ -30,17 +30,18 @@ RUN git clone https://github.com/odigos-io/opentelemetry-node.git && cd opentele
 FROM scratch AS nodejs-agent-src
 COPY --from=nodejs-agent-clone /src/opentelemetry-node /
 
-# The third step 'nodejs-agent-build' compiles the agent sources and prepares it for 
+# The third step 'nodejs-agent-build' compiles the agent sources and prepares it for
 # being dependency of the native-community agent.
 FROM node:18 AS nodejs-agent-build
 ARG ODIGOS_VERSION
+# Note: we have to use YARN here, because the "odigos-io/opentelemetry-node" repo uses YARN.
 WORKDIR /opentelemetry-node
-COPY --from=nodejs-agent-src package.json package-lock.json ./
+COPY --from=nodejs-agent-src package.json yarn.lock ./
 # install dependencies with dev so we can build the agent
-RUN npm ci
+RUN yarn --frozen-lockfile
 COPY --from=nodejs-agent-src / .
 RUN echo "export const VERSION = \"$ODIGOS_VERSION\";" > ./src/version.ts
-RUN npm run build
+RUN yarn compile
 
 
 # The fourth step 'nodejs-agent-native-community-src' prepares the agent sources for the native-community agent.
