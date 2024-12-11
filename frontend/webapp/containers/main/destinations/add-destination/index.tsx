@@ -9,7 +9,8 @@ import { useRouter } from 'next/navigation';
 import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
 import { DestinationModal } from '../destination-modal';
 import { ConfiguredDestinationsList } from './configured-destinations-list';
-import { Button, NotificationNote, SectionTitle, Text } from '@/reuseable-components';
+import { Button, FadeLoader, NotificationNote, SectionTitle, Text } from '@/reuseable-components';
+import { CenterThis } from '@/styles';
 
 const ContentWrapper = styled.div`
   width: 640px;
@@ -39,10 +40,12 @@ const StyledAddDestinationButton = styled(Button)`
 
 export function AddDestinationContainer() {
   const router = useRouter();
-  const { createSources, loading: sourcesLoading } = useSourceCRUD();
-  const { createDestination, loading: destinationsLoading } = useDestinationCRUD();
+  const { createSources } = useSourceCRUD();
+  const { createDestination } = useDestinationCRUD();
   const { configuredSources, configuredFutureApps, configuredDestinations, resetState } = useAppStore((state) => state);
 
+  // we need this state, because "loading" from CRUD hooks is a bit delayed, and allows the user to double-click, as well as see elements render in the UI when they should not be rendered.
+  const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setModalOpen] = useState(false);
   const handleOpenModal = () => setModalOpen(true);
   const handleCloseModal = () => setModalOpen(false);
@@ -52,6 +55,8 @@ export function AddDestinationContainer() {
   };
 
   const clickDone = async () => {
+    setIsLoading(true);
+
     await createSources(configuredSources, configuredFutureApps);
     await Promise.all(configuredDestinations.map(async ({ form }) => await createDestination(form)));
 
@@ -60,7 +65,6 @@ export function AddDestinationContainer() {
   };
 
   const isSourcesListEmpty = () => !Object.values(configuredSources).some((sources) => !!sources.length);
-  const isCreating = sourcesLoading || destinationsLoading;
 
   return (
     <>
@@ -72,13 +76,13 @@ export function AddDestinationContainer() {
               iconSrc: '/icons/common/arrow-white.svg',
               variant: 'secondary',
               onClick: clickBack,
-              disabled: isCreating,
+              disabled: isLoading,
             },
             {
               label: 'DONE',
               variant: 'primary',
               onClick: clickDone,
-              disabled: isCreating,
+              disabled: isLoading,
             },
           ]}
         />
@@ -86,7 +90,7 @@ export function AddDestinationContainer() {
       <ContentWrapper>
         <SectionTitle title='Configure destinations' description='Select destinations where telemetry data will be sent and configure their settings.' />
 
-        {isSourcesListEmpty() && (
+        {!isLoading && isSourcesListEmpty() && (
           <NotificationNoteWrapper>
             <NotificationNote
               type='warning'
@@ -100,17 +104,23 @@ export function AddDestinationContainer() {
         )}
 
         <AddDestinationButtonWrapper>
-          <StyledAddDestinationButton variant='secondary' onClick={() => handleOpenModal()}>
+          <StyledAddDestinationButton variant='secondary' disabled={isLoading} onClick={() => handleOpenModal()}>
             <Image src='/icons/common/plus.svg' alt='back' width={16} height={16} />
             <Text color={theme.colors.secondary} size={14} decoration='underline' family='secondary'>
               ADD DESTINATION
             </Text>
           </StyledAddDestinationButton>
 
-          <DestinationModal isOnboarding isOpen={isModalOpen} onClose={handleCloseModal} />
+          <DestinationModal isOnboarding isOpen={isModalOpen && !isLoading} onClose={handleCloseModal} />
         </AddDestinationButtonWrapper>
 
-        <ConfiguredDestinationsList data={configuredDestinations} />
+        {isLoading ? (
+          <CenterThis>
+            <FadeLoader style={{ transform: 'scale(2)', marginTop: '3rem' }} />
+          </CenterThis>
+        ) : (
+          <ConfiguredDestinationsList data={configuredDestinations} />
+        )}
       </ContentWrapper>
     </>
   );

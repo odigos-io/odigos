@@ -87,7 +87,11 @@ const renderValue = (type: DataCardRow['type'], value: DataCardRow['value']) => 
       });
 
       return (
-        <DataTab title={containerName} subTitle={`${capitalizeFirstLetter(language)} • Runtime: ${runtimeVersion}`} logo={getProgrammingLanguageIcon(language)}>
+        <DataTab
+          title={containerName}
+          subTitle={`${language === WORKLOAD_PROGRAMMING_LANGUAGES.JAVASCRIPT ? 'Node.js' : capitalizeFirstLetter(language)} • Runtime Version: ${runtimeVersion}`}
+          logo={getProgrammingLanguageIcon(language)}
+        >
           <InstrumentStatus language={language} />
         </DataTab>
       );

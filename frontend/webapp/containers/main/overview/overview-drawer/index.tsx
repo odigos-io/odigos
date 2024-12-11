@@ -4,9 +4,9 @@ import { useDrawerStore } from '@/store';
 import DrawerFooter from './drawer-footer';
 import { Drawer } from '@/reuseable-components';
 import { OVERVIEW_ENTITY_TYPES } from '@/types';
-import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
 import DrawerHeader, { DrawerHeaderRef } from './drawer-header';
 import { CancelWarning, DeleteWarning } from '@/components/modals';
+import { useDestinationCRUD, useKeyDown, useSourceCRUD } from '@/hooks';
 
 const DRAWER_WIDTH = `${640 + 64}px`; // +64 because of "ContentArea" padding
 
@@ -35,10 +35,12 @@ const ContentArea = styled.div`
 `;
 
 const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, titleTooltip, imageUri, isEdit, isFormDirty, onEdit, onSave, onDelete, onCancel }) => {
+  const { selectedItem, setSelectedItem } = useDrawerStore();
+
+  useKeyDown({ key: 'Enter', active: !!selectedItem }, () => (isEdit ? clickSave() : closeDrawer()));
+
   const { sources } = useSourceCRUD();
   const { destinations } = useDestinationCRUD();
-  const selectedItem = useDrawerStore(({ selectedItem }) => selectedItem);
-  const setSelectedItem = useDrawerStore(({ setSelectedItem }) => setSelectedItem);
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);

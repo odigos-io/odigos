@@ -1,7 +1,7 @@
 import React from 'react';
 import { ChooseSourcesBody } from '../choose-sources-body';
-import { useSourceCRUD, useSourceFormData } from '@/hooks';
 import { Modal, NavigationButtons } from '@/reuseable-components';
+import { useKeyDown, useSourceCRUD, useSourceFormData } from '@/hooks';
 
 interface Props {
   isOpen: boolean;
@@ -9,10 +9,12 @@ interface Props {
 }
 
 export const AddSourceModal: React.FC<Props> = ({ isOpen, onClose }) => {
+  useKeyDown({ key: 'Enter', active: isOpen }, () => handleSubmit());
+
   const menuState = useSourceFormData();
   const { createSources } = useSourceCRUD({ onSuccess: onClose });
 
-  const handleNextClick = async () => {
+  const handleSubmit = async () => {
     const { selectedSources, selectedFutureApps } = menuState;
 
     await createSources(selectedSources, selectedFutureApps);
@@ -28,7 +30,7 @@ export const AddSourceModal: React.FC<Props> = ({ isOpen, onClose }) => {
           buttons={[
             {
               label: 'DONE',
-              onClick: handleNextClick,
+              onClick: handleSubmit,
               variant: 'primary',
             },
           ]}
