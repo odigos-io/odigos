@@ -86,7 +86,7 @@ func GetActualSource(ctx context.Context, ns string, kind string, name string) (
 	instrumentedApplication, err := kube.DefaultClient.OdigosClient.InstrumentedApplications(ns).Get(ctx, k8sObjectName, metav1.GetOptions{})
 	if err == nil {
 		ts.IaDetails = k8sInstrumentedAppToThinSource(instrumentedApplication).IaDetails
-		err = addHealthyInstrumentationInstancesCondition(ctx, instrumentedApplication, &ts)
+		err = AddHealthyInstrumentationInstancesCondition(ctx, instrumentedApplication, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -123,7 +123,7 @@ func GetWorkload(c context.Context, ns string, kind string, name string) (metav1
 	}
 }
 
-func addHealthyInstrumentationInstancesCondition(ctx context.Context, app *v1alpha1.InstrumentedApplication, source *ThinSource) error {
+func AddHealthyInstrumentationInstancesCondition(ctx context.Context, app *v1alpha1.InstrumentedApplication, source *model.K8sActualSource) error {
 	labelSelector := fmt.Sprintf("%s=%s", consts.InstrumentedAppNameLabel, app.Name)
 	instancesList, err := kube.DefaultClient.OdigosClient.InstrumentationInstances(app.Namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: labelSelector,
@@ -150,16 +150,18 @@ func addHealthyInstrumentationInstancesCondition(ctx context.Context, app *v1alp
 		}
 	}
 
-	status := metav1.ConditionTrue
+	status := model.ConditionStatusTrue
 	if healthyInstances < totalInstances {
-		status = metav1.ConditionFalse
+		status = model.ConditionStatusFalse
 	}
 
-	source.IaDetails.Conditions = append(source.IaDetails.Conditions, metav1.Condition{
+	message := fmt.Sprintf("%d/%d instances are healthy", healthyInstances, totalInstances)
+	lastTransitionTime := Metav1TimeToString(latestStatusTime)
+	source.InstrumentedApplicationDetails.Conditions = append(source.InstrumentedApplicationDetails.Conditions, &model.Condition{
 		Type:               "HealthyInstrumentationInstances",
 		Status:             status,
-		LastTransitionTime: latestStatusTime,
-		Message:            fmt.Sprintf("%d/%d instances are healthy", healthyInstances, totalInstances),
+		LastTransitionTime: &lastTransitionTime,
+		Message:            &message,
 	})
 
 	return nil

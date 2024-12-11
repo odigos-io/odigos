@@ -121,34 +121,14 @@ func instrumentedApplicationToActualSource(instrumentedApp v1alpha1.Instrumented
 		})
 	}
 
-	// Map the options for instrumentation libraries
-	var instrumentationOptions []*gqlmodel.InstrumentedApplicationDetails
-	for _, option := range instrumentedApp.Spec.Options {
-		for _, libOptions := range option.InstrumentationLibraries {
-			var libraries []*gqlmodel.InstrumentationOption
-			for _, configOption := range libOptions.Options {
-				libraries = append(libraries, &gqlmodel.InstrumentationOption{
-					OptionKey: configOption.OptionKey,
-					SpanKind:  gqlmodel.SpanKind(configOption.SpanKind),
-				})
-			}
-
-			instrumentationOptions = append(instrumentationOptions, &gqlmodel.InstrumentedApplicationDetails{
-				Containers: containers,
-				Conditions: conditions,
-			})
-		}
-	}
-
 	// Return the converted K8sActualSource object
 	return &gqlmodel.K8sActualSource{
-		Namespace:                instrumentedApp.Namespace,
-		Kind:                     k8sKindToGql(instrumentedApp.OwnerReferences[0].Kind),
-		Name:                     instrumentedApp.OwnerReferences[0].Name,
-		ServiceName:              &instrumentedApp.Name,
-		NumberOfInstances:        nil,
-		AutoInstrumented:         instrumentedApp.Spec.Options != nil,
-		AutoInstrumentedDecision: "",
+		Namespace:         instrumentedApp.Namespace,
+		Kind:              k8sKindToGql(instrumentedApp.OwnerReferences[0].Kind),
+		Name:              instrumentedApp.OwnerReferences[0].Name,
+		ServiceName:       &instrumentedApp.Name,
+		NumberOfInstances: nil,
+		AutoInstrumented:  instrumentedApp.Spec.Options != nil,
 		InstrumentedApplicationDetails: &gqlmodel.InstrumentedApplicationDetails{
 			Containers: containers,
 			Conditions: conditions,
