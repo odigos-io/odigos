@@ -3,7 +3,7 @@
 project_name: odigos
 before:
   hooks:
-    - sh -c 'cd frontend/webapp && npm install && npm build'
+    - sh -c 'cd frontend/webapp && npm install && npm run build'
 builds:
   - env:
       - CGO_ENABLED=0
