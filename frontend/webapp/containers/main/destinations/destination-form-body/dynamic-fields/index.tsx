@@ -16,7 +16,7 @@ export const DestinationDynamicFields: React.FC<Props> = ({ fields, onChange, fo
       case INPUT_TYPES.INPUT:
         return <Input key={field.name} {...rest} onChange={(e) => onChange(field.name, e.target.value)} errorMessage={formErrors[field.name]} />;
       case INPUT_TYPES.DROPDOWN:
-        return <Dropdown key={field.name} {...rest} onSelect={(option) => onChange(field.name, { id: option.id, value: option.value })} errorMessage={formErrors[field.name]} />;
+        return <Dropdown key={field.name} {...rest} value={{ id: rest.value, value: rest.value }} onSelect={(option) => onChange(field.name, option.value)} errorMessage={formErrors[field.name]} />;
       case INPUT_TYPES.MULTI_INPUT:
         return <InputList key={field.name} {...rest} onChange={(value: string[]) => onChange(field.name, JSON.stringify(value))} errorMessage={formErrors[field.name]} />;
       case INPUT_TYPES.KEY_VALUE_PAIR:
