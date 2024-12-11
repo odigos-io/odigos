@@ -21,30 +21,30 @@ builds:
       - -X github.com/odigos-io/odigos/cli/cmd.OdigosCommit={{ .ShortCommit }}
       - -X github.com/odigos-io/odigos/cli/cmd.OdigosDate={{ .Date }}
     tags:
-     - embed_manifests
+      - embed_manifests
 archives:
   - id: odigos
-    name_template: "cli_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    name_template: 'cli_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
     builds:
       - odigos
     files:
       - none*
 checksum:
-  name_template: "checksums.txt"
+  name_template: 'checksums.txt'
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  name_template: '{{ incpatch .Version }}-next'
 changelog:
   sort: asc
   filters:
     exclude:
-      - "^docs:"
-      - "^test:"
+      - '^docs:'
+      - '^test:'
 brews:
   - repository:
       owner: keyval-dev
       name: homebrew-odigos-cli
-      token: "{{ .Env.HOMEBREW_GITHUB_API_TOKEN }}"
-    commit_msg_template: "release: {{ .Tag }}"
+      token: '{{ .Env.HOMEBREW_GITHUB_API_TOKEN }}'
+    commit_msg_template: 'release: {{ .Tag }}'
     ids:
       - odigos
     commit_author:
@@ -52,6 +52,6 @@ brews:
       email: info@keyval.dev
     homepage: https://odigos.io
     description: Odigos CLI Utility
-    caveats: "Thanks for installing Odigos CLI! Please run `odigos install` to install Odigos in your Kubernetes cluster."
+    caveats: 'Thanks for installing Odigos CLI! Please run `odigos install` to install Odigos in your Kubernetes cluster.'
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 # vim: set ts=2 sw=2 tw=0 fo=cnqoj
