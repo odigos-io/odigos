@@ -33,7 +33,7 @@ const (
 	configHashAnnotation = "odigos.io/config-hash"
 )
 
-func syncDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup, configData string,
+func syncDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup,
 	ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (*appsv1.Deployment, error) {
 	logger := log.FromContext(ctx)
 
@@ -42,8 +42,8 @@ func syncDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.Collector
 		return nil, errors.Join(err, errors.New("failed to get secrets hash"))
 	}
 
-	// Calculate the hash of the config data and the secrets version hash, this is used to make sure the gateway will restart when the config changes
-	configDataHash := common.Sha256Hash(fmt.Sprintf("%s-%s", configData, secretsVersionHash))
+	// Use the hash of the secrets  to make sure the gateway will restart when the secrets (mounted as environment variables) changes
+	configDataHash := common.Sha256Hash(secretsVersionHash)
 	desiredDeployment, err := getDesiredDeployment(dests, configDataHash, gateway, scheme, imagePullSecrets, odigosVersion)
 	if err != nil {
 		return nil, errors.Join(err, errors.New("failed to get desired deployment"))
