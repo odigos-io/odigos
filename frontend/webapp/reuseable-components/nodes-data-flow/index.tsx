@@ -14,6 +14,7 @@ interface Props {
   edges: Edge[];
   onNodeClick?: (event: React.MouseEvent, object: Node) => void;
   nodeWidth: number;
+  nodeHeight: number;
 }
 
 const FlowWrapper = styled.div`
@@ -39,7 +40,7 @@ const ControllerWrapper = styled.div`
   }
 `;
 
-export const NodeBaseDataFlow: React.FC<Props> = ({ nodes, edges, onNodeClick, nodeWidth }) => {
+export const NodeDataFlow: React.FC<Props> = ({ nodes, edges, onNodeClick, nodeWidth, nodeHeight }) => {
   const nodeTypes = useMemo(
     () => ({
       header: (props) => <HeaderNode {...props} nodeWidth={nodeWidth} />,
@@ -78,5 +79,3 @@ export const NodeBaseDataFlow: React.FC<Props> = ({ nodes, edges, onNodeClick, n
     </FlowWrapper>
   );
 };
-
-export * from './builder';

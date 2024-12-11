@@ -1,24 +1,25 @@
 'use client';
 import React, { useEffect, useMemo } from 'react';
 import styled from 'styled-components';
+import { buildNodes } from './build-nodes';
+import { buildEdges } from './build-edges';
+import { NodeDataFlow } from '@/reuseable-components';
 import MultiSourceControl from '../multi-source-control';
 import { OverviewActionMenuContainer } from '../overview-actions-menu';
-import { buildNodesAndEdges, NodeBaseDataFlow } from '@/reuseable-components';
 import { useComputePlatform, useContainerSize, useMetrics, useNodeDataFlowHandlers } from '@/hooks';
+import { nodeHeight, nodeWidth } from './build-nodes/config.json';
 
-const OverviewDataFlowWrapper = styled.div`
+const Container = styled.div`
   width: 100%;
   height: calc(100vh - 176px);
   position: relative;
 `;
 
-const NODE_WIDTH = 255;
-const NODE_HEIGHT = 80;
-
 export default function OverviewDataFlowContainer() {
   const { containerRef, containerWidth, containerHeight } = useContainerSize();
-  const { data, filteredData, startPolling } = useComputePlatform();
   const { handleNodeClick } = useNodeDataFlowHandlers();
+
+  const { data, filteredData, startPolling } = useComputePlatform();
   const { metrics } = useMetrics();
 
   useEffect(() => {
@@ -27,24 +28,27 @@ export default function OverviewDataFlowContainer() {
     // only on-mount, if we include "data" this might trigger on every refetch
   }, []);
 
-  // Memoized node and edge builder to improve performance
-  const { nodes, edges } = useMemo(() => {
-    return buildNodesAndEdges({
-      computePlatform: data?.computePlatform,
-      computePlatformFiltered: filteredData?.computePlatform,
-      metrics,
+  const nodes = useMemo(() => {
+    return buildNodes({
       containerWidth,
       containerHeight,
-      nodeWidth: NODE_WIDTH,
-      nodeHeight: NODE_HEIGHT,
+      computePlatform: data?.computePlatform,
+      computePlatformFiltered: filteredData?.computePlatform,
     });
-  }, [data, filteredData, metrics, containerWidth, containerHeight]);
+  }, [containerWidth, containerHeight, data, filteredData]);
+
+  const edges = useMemo(() => {
+    return buildEdges({
+      nodes,
+      metrics,
+    });
+  }, [nodes, metrics]);
 
   return (
-    <OverviewDataFlowWrapper ref={containerRef}>
+    <Container ref={containerRef}>
       <OverviewActionMenuContainer />
       <MultiSourceControl />
-      <NodeBaseDataFlow nodes={nodes} edges={edges} nodeWidth={NODE_WIDTH} onNodeClick={handleNodeClick} />
-    </OverviewDataFlowWrapper>
+      <NodeDataFlow nodes={nodes} edges={edges} onNodeClick={handleNodeClick} nodeWidth={nodeWidth} nodeHeight={nodeHeight} />
+    </Container>
   );
 }

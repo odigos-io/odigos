@@ -41,8 +41,7 @@ const ActionsWrapper = styled.div`
 const HeaderNode: React.FC<Props> = ({ nodeWidth, data }) => {
   const { title, icon, tagValue } = data;
   const isSources = title === 'Sources';
-  const isActions = title === 'Actions';
-  const extraWidth = isActions && !!tagValue ? 70 : 40;
+  const extraWidth = 40;
 
   const { configuredSources, setConfiguredSources } = useAppStore((state) => state);
   const { sources } = useSourceCRUD();
