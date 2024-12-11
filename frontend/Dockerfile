@@ -15,17 +15,14 @@ COPY . .
 COPY --from=builder /webapp/out frontend/webapp/out
 COPY --from=builder /webapp/dep-out frontend/webapp/dep-out
 WORKDIR /app/frontend
+ENV GOMAXPROCS=4
 ARG TARGETARCH
-RUN CGO_ENABLED=0 GOARCH=$TARGETARCH
-RUN go env -w GOCACHE=/go-cache
-RUN go env -w GOMODCACHE=/gomod-cache
-# "go mod download" will pull all dependencies defined in go.mod
-# RUN --mount=type=cache,target=GOMODCACHE go mod download
-# "go build" will pull only those which are actually required
-RUN --mount=type=cache,target=GOMODCACHE --mount=type=cache,target=GOCACHE go build -o odigos-ui
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg/mod \
+    CGO_ENABLED=0 GOARCH=$TARGETARCH \
+    go build -trimpath -mod=readonly -o odigos-ui
 
-FROM gcr.io/distroless/static:nonroot
+FROM scratch
 WORKDIR /app
 COPY --from=backend /app/frontend/odigos-ui .
-USER 65532:65532
 ENTRYPOINT ["/app/odigos-ui", "--address", "0.0.0.0"]
