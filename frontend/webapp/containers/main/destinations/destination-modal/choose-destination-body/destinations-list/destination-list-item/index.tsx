@@ -92,7 +92,7 @@ export const DestinationListItem: React.FC<DestinationListItemProps> = ({ item, 
   };
 
   return (
-    <ListItem onClick={() => onSelect(item)}>
+    <ListItem data-id={`destination-${item.type}`} onClick={() => onSelect(item)}>
       <ListItemContent>
         <DestinationIconWrapper>
           <Image src={item.imageUrl} width={20} height={20} alt='destination' />

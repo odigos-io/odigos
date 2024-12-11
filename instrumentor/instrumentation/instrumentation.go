@@ -23,7 +23,7 @@ var (
 )
 
 func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, runtimeDetails *odigosv1.InstrumentedApplication, defaultSdks map[common.ProgrammingLanguage]common.OtelSdk, targetObj client.Object,
-	logger logr.Logger) (error, bool, bool) {
+	logger logr.Logger, agentsCanRunConcurrently bool) (error, bool, bool) {
 	// delete any existing instrumentation devices.
 	// this is necessary for example when migrating from community to enterprise,
 	// and we need to cleanup the community device before adding the enterprise one.
@@ -42,9 +42,9 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 		containerLanguage := getLanguageOfContainer(runtimeDetails, container.Name)
 		containerHaveOtherAgent := getContainerOtherAgents(runtimeDetails, container.Name)
 
-		// In case there is another agent in the container, we should not apply the instrumentation device '*'.
-		// '*' - In Python, we can run it with New Relic (the only one we detect), but not in other languages.
-		if containerHaveOtherAgent != nil && containerLanguage != common.PythonProgrammingLanguage {
+		// By default, Odigos does not run alongside other agents.
+		// However, if configured in the odigos-config, it can be allowed to run in parallel.
+		if containerHaveOtherAgent != nil && !agentsCanRunConcurrently {
 			logger.Info("Container is running other agent, skip applying instrumentation device", "agent", containerHaveOtherAgent.Name, "container", container.Name)
 
 			// Not actually modifying the container, but we need to append it to the list.
@@ -92,15 +92,7 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 	// persist the original values if changed
 	manifestEnvOriginal.SerializeToAnnotation(targetObj)
 
-	// if non of the devices were applied due to the presence of another agent, return an error.
-	if !deviceApplied && deviceSkippedDueToOtherAgent {
-		return fmt.Errorf("device not added to any container due to the presence of another agent"), false, deviceSkippedDueToOtherAgent
-	}
-
-	// devicePartiallyApplied is used to indicate that the instrumentation device was partially applied for some of the containers.
-	devicePartiallyApplied := deviceSkippedDueToOtherAgent && deviceApplied
-
-	return nil, deviceApplied, devicePartiallyApplied
+	return nil, deviceApplied, deviceSkippedDueToOtherAgent
 }
 
 // this function restores a workload manifest env vars to their original values.

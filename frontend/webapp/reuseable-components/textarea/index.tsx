@@ -79,7 +79,7 @@ const StyledTextArea = styled.textarea`
   }
 `;
 
-const TextArea: React.FC<TextAreaProps> = ({ errorMessage, title, tooltip, required, onChange, ...props }) => {
+const TextArea: React.FC<TextAreaProps> = ({ errorMessage, title, tooltip, required, onChange, name, ...props }) => {
   const ref = useRef<HTMLTextAreaElement>(null);
 
   const resize = () => {
@@ -97,6 +97,8 @@ const TextArea: React.FC<TextAreaProps> = ({ errorMessage, title, tooltip, requi
       <InputWrapper $disabled={props.disabled} $hasError={!!errorMessage} $isActive={!!props.autoFocus}>
         <StyledTextArea
           ref={ref}
+          data-id={name}
+          name={name}
           onFocus={resize}
           onBlur={resize}
           onChange={(e) => {

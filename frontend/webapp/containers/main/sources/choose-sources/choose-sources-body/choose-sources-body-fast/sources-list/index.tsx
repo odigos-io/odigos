@@ -136,7 +136,7 @@ export const SourcesList: React.FC<Props> = ({
         const hasFilteredSources = !!filtered.length;
 
         return (
-          <Group key={`namespace-${namespace}`} $selected={isNamespaceAllSourcesSelected} $isOpen={isNamespaceSelected && hasFilteredSources}>
+          <Group data-id={`namespace-${namespace}`} key={`namespace-${namespace}`} $selected={isNamespaceAllSourcesSelected} $isOpen={isNamespaceSelected && hasFilteredSources}>
             <NamespaceItem $selected={isNamespaceAllSourcesSelected} onClick={() => onSelectNamespace(namespace)}>
               <FlexRow>
                 <Checkbox disabled={namespaceLoaded && !isNamespaceCanSelect} initialValue={isNamespaceAllSourcesSelected} onChange={(bool) => onSelectAll(bool, namespace)} />

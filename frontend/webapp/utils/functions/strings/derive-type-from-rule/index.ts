@@ -5,5 +5,5 @@ export const deriveTypeFromRule = (rule: InstrumentationRuleInput | Instrumentat
     return InstrumentationRuleType.PAYLOAD_COLLECTION;
   }
 
-  return undefined;
+  return InstrumentationRuleType.UNKNOWN_TYPE;
 };
