@@ -530,6 +530,42 @@ type SourceAnalyze {
   pods: [PodAnalyze!]!
 }
 
+type ClusterCollectorAnalyze {
+  enabled: EntityProperty!
+  collectorGroup: EntityProperty!
+  deployed: EntityProperty
+  deployedError: EntityProperty
+  collectorReady: EntityProperty
+  deploymentCreated: EntityProperty!
+  expectedReplicas: EntityProperty
+  healthyReplicas: EntityProperty
+  failedReplicas: EntityProperty
+  failedReplicasReason: EntityProperty
+}
+
+type NodeCollectorAnalyze {
+  enabled: EntityProperty!
+  collectorGroup: EntityProperty!
+  deployed: EntityProperty
+  deployedError: EntityProperty
+  collectorReady: EntityProperty
+  daemonSet: EntityProperty!
+  desiredNodes: EntityProperty
+  currentNodes: EntityProperty
+  updatedNodes: EntityProperty
+  availableNodes: EntityProperty
+}
+
+type OdigosAnalyze {
+  odigosVersion: EntityProperty!
+  numberOfDestinations: Int!
+  numberOfSources: Int!
+  clusterCollector: ClusterCollectorAnalyze!
+  nodeCollector: NodeCollectorAnalyze!
+  isSettled: Boolean!
+  hasErrors: Boolean!
+}
+
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
@@ -537,6 +573,7 @@ type Query {
   destinationTypeDetails(type: String!): GetDestinationDetailsResponse
   potentialDestinations: [DestinationDetails!]!
   getOverviewMetrics: OverviewMetricsResponse!
+  describeOdigos: OdigosAnalyze!
   describeSource(
     namespace: String!
     kind: String!

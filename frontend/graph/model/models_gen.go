@@ -54,6 +54,19 @@ func (this AddClusterInfoAction) GetSignals() []SignalType {
 	return interfaceSlice
 }
 
+type ClusterCollectorAnalyze struct {
+	Enabled              *EntityProperty `json:"enabled"`
+	CollectorGroup       *EntityProperty `json:"collectorGroup"`
+	Deployed             *EntityProperty `json:"deployed,omitempty"`
+	DeployedError        *EntityProperty `json:"deployedError,omitempty"`
+	CollectorReady       *EntityProperty `json:"collectorReady,omitempty"`
+	DeploymentCreated    *EntityProperty `json:"deploymentCreated"`
+	ExpectedReplicas     *EntityProperty `json:"expectedReplicas,omitempty"`
+	HealthyReplicas      *EntityProperty `json:"healthyReplicas,omitempty"`
+	FailedReplicas       *EntityProperty `json:"failedReplicas,omitempty"`
+	FailedReplicasReason *EntityProperty `json:"failedReplicasReason,omitempty"`
+}
+
 type ClusterInfo struct {
 	AttributeName        string  `json:"attributeName"`
 	AttributeStringValue *string `json:"attributeStringValue,omitempty"`
@@ -377,6 +390,29 @@ type MessagingPayloadCollectionInput struct {
 }
 
 type Mutation struct {
+}
+
+type NodeCollectorAnalyze struct {
+	Enabled        *EntityProperty `json:"enabled"`
+	CollectorGroup *EntityProperty `json:"collectorGroup"`
+	Deployed       *EntityProperty `json:"deployed,omitempty"`
+	DeployedError  *EntityProperty `json:"deployedError,omitempty"`
+	CollectorReady *EntityProperty `json:"collectorReady,omitempty"`
+	DaemonSet      *EntityProperty `json:"daemonSet"`
+	DesiredNodes   *EntityProperty `json:"desiredNodes,omitempty"`
+	CurrentNodes   *EntityProperty `json:"currentNodes,omitempty"`
+	UpdatedNodes   *EntityProperty `json:"updatedNodes,omitempty"`
+	AvailableNodes *EntityProperty `json:"availableNodes,omitempty"`
+}
+
+type OdigosAnalyze struct {
+	OdigosVersion        *EntityProperty          `json:"odigosVersion"`
+	NumberOfDestinations int                      `json:"numberOfDestinations"`
+	NumberOfSources      int                      `json:"numberOfSources"`
+	ClusterCollector     *ClusterCollectorAnalyze `json:"clusterCollector"`
+	NodeCollector        *NodeCollectorAnalyze    `json:"nodeCollector"`
+	IsSettled            bool                     `json:"isSettled"`
+	HasErrors            bool                     `json:"hasErrors"`
 }
 
 type OverviewMetricsResponse struct {
