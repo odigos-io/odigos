@@ -75,16 +75,7 @@ func (r *computePlatformResolver) K8sActualNamespaces(ctx context.Context, obj *
 
 // K8sActualSource is the resolver for the k8sActualSource field.
 func (r *computePlatformResolver) K8sActualSource(ctx context.Context, obj *model.ComputePlatform, name *string, namespace *string, kind *string) (*model.K8sActualSource, error) {
-	source, err := services.GetActualSource(ctx, *namespace, *kind, *name)
-	if err != nil {
-		return nil, err
-	}
-	if source == nil {
-		return nil, nil
-	}
-	k8sActualSource := k8sSourceToGql(source)
-
-	return k8sActualSource, nil
+	return nil, nil
 }
 
 // K8sActualSources is the resolver for the k8sActualSources field.
@@ -100,7 +91,7 @@ func (r *computePlatformResolver) K8sActualSources(ctx context.Context, obj *mod
 	// Convert each instrumented application to the K8sActualSource type
 	for _, app := range instrumentedApplications.Items {
 		actualSource := instrumentedApplicationToActualSource(app)
-
+		services.AddHealthyInstrumentationInstancesCondition(ctx, &app, actualSource)
 		owner, _ := services.GetWorkload(ctx, actualSource.Namespace, string(actualSource.Kind), actualSource.Name)
 		if owner == nil {
 
@@ -152,14 +143,14 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 		return nil, err
 	}
 	for _, action := range icaActions.Items {
-		specStr, err := json.Marshal(action.Spec) // Convert spec to JSON string
+		specStr, err := json.Marshal(action.Spec)
 		if err != nil {
 			return nil, err
 		}
 		response = append(response, &model.IcaInstanceResponse{
 			ID:   action.Name,
 			Type: action.Kind,
-			Spec: string(specStr), // Return the JSON string
+			Spec: string(specStr),
 		})
 	}
 
