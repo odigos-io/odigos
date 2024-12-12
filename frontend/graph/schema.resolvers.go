@@ -17,6 +17,8 @@ import (
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
 	actionservices "github.com/odigos-io/odigos/frontend/services/actions"
+	odigos_describe "github.com/odigos-io/odigos/frontend/services/describe/odigos_describe"
+	source_describe "github.com/odigos-io/odigos/frontend/services/describe/source_describe"
 	testconnection "github.com/odigos-io/odigos/frontend/services/test_connection"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -802,6 +804,16 @@ func (r *queryResolver) GetOverviewMetrics(ctx context.Context) (*model.Overview
 		Sources:      sourcesResp,
 		Destinations: destinationsResp,
 	}, nil
+}
+
+// DescribeOdigos is the resolver for the describeOdigos field.
+func (r *queryResolver) DescribeOdigos(ctx context.Context) (*model.OdigosAnalyze, error) {
+	return odigos_describe.GetOdigosDescription(ctx)
+}
+
+// DescribeSource is the resolver for the describeSource field.
+func (r *queryResolver) DescribeSource(ctx context.Context, namespace string, kind string, name string) (*model.SourceAnalyze, error) {
+	return source_describe.GetSourceDescription(ctx, namespace, kind, name)
 }
 
 // ComputePlatform returns ComputePlatformResolver implementation.
