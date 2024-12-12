@@ -55,7 +55,7 @@ const ScrollNode: React.FC<Props> = ({ data, ...rest }) => {
     const handleScroll = (e: Event) => {
       e.stopPropagation();
 
-      // @ts-ignore - these properties are available on the Event, TS is not aware of it
+      // @ts-ignore - these properties are available on the EventTarget, TS is not aware of it
       const { clientHeight, scrollHeight, scrollTop } = e.target || { clientHeight: 0, scrollHeight: 0, scrollTop: 0 };
       const isTop = scrollTop === 0;
       const isBottom = scrollHeight - scrollTop <= clientHeight;
@@ -66,7 +66,7 @@ const ScrollNode: React.FC<Props> = ({ data, ...rest }) => {
         console.log('Reached bottom of scroll-node');
       }
 
-      onScroll({ clientHeight, scrollHeight, scrollTop });
+      if (!!onScroll) onScroll({ clientHeight, scrollHeight, scrollTop });
     };
 
     const { current } = containerRef;

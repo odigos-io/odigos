@@ -76,13 +76,6 @@ const BaseNode: React.FC<Props> = ({ data }) => {
     switch (type) {
       case 'source':
         return <Handle type='source' position={Position.Right} style={{ visibility: 'hidden' }} />;
-      case 'action':
-        return (
-          <>
-            <Handle type='target' position={Position.Top} style={{ visibility: 'hidden' }} />
-            <Handle type='source' position={Position.Bottom} style={{ visibility: 'hidden' }} />
-          </>
-        );
       case 'destination':
         return <Handle type='target' position={Position.Left} style={{ visibility: 'hidden' }} />;
       default:

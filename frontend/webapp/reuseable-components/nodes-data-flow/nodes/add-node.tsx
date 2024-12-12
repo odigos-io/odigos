@@ -69,6 +69,7 @@ const AddNode: React.FC<Props> = ({ data }) => {
         <Title>{title}</Title>
       </TitleWrapper>
       <SubTitle>{subTitle}</SubTitle>
+
       <Handle type='target' position={Position.Left} style={{ visibility: 'hidden' }} />
       <Handle type='source' position={Position.Right} style={{ visibility: 'hidden' }} />
     </Container>

@@ -1,6 +1,7 @@
-import { useState } from 'react';
 import { type Node } from '@xyflow/react';
-import { nodeConfig, type NodePositions, type EntityCounts } from '@/containers';
+import nodeConfig from './node-config.json';
+import { type EntityCounts } from './get-entity-counts';
+import { type NodePositions } from './get-node-positions';
 import { getMainContainerLanguage } from '@/utils/constants/programming-languages';
 import { getEntityIcon, getEntityLabel, getHealthStatus, getProgrammingLanguageIcon } from '@/utils';
 import { OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type ComputePlatformMapped } from '@/types';
@@ -9,7 +10,10 @@ interface Params {
   entities: ComputePlatformMapped['computePlatform']['k8sActualSources'];
   positions: NodePositions;
   unfilteredCounts: EntityCounts;
+
   containerHeight: number;
+  scrollYOffset: number;
+  onScroll: (params: { clientHeight: number; scrollHeight: number; scrollTop: number }) => void;
 }
 
 const { nodeWidth, nodeHeight, framePadding } = nodeConfig;
@@ -31,9 +35,7 @@ const mapToNodeData = (entity: Params['entities'][0]) => {
   };
 };
 
-export const useSourceNodes = ({ entities, positions, unfilteredCounts, containerHeight }: Params) => {
-  const [scrollYOffset, setScrollYOffset] = useState(0);
-
+export const buildSourceNodes = ({ entities, positions, unfilteredCounts, containerHeight, scrollYOffset, onScroll }: Params) => {
   const nodes: Node[] = [];
   const position = positions[OVERVIEW_ENTITY_TYPES.SOURCE];
   const unfilteredCount = unfilteredCounts[OVERVIEW_ENTITY_TYPES.SOURCE];
@@ -87,11 +89,7 @@ export const useSourceNodes = ({ entities, positions, unfilteredCounts, containe
             ...mapToNodeData(source),
           },
         })),
-        onScroll: ({ clientHeight, scrollHeight, scrollTop }) => {
-          console.log('Node scrolled', { clientHeight, scrollHeight, scrollTop });
-
-          setScrollYOffset(scrollTop);
-        },
+        onScroll,
       },
     });
 

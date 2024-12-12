@@ -1,6 +1,8 @@
 import { type Node } from '@xyflow/react';
+import nodeConfig from './node-config.json';
+import { type EntityCounts } from './get-entity-counts';
+import { type NodePositions } from './get-node-positions';
 import { getActionIcon, getEntityIcon, getEntityLabel } from '@/utils';
-import { nodeConfig, type NodePositions, type EntityCounts } from '@/containers';
 import { OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type ComputePlatformMapped } from '@/types';
 
 interface Params {
@@ -26,7 +28,7 @@ const mapToNodeData = (entity: Params['entities'][0]) => {
   };
 };
 
-export const useActionNodes = ({ entities, positions, unfilteredCounts }: Params) => {
+export const buildActionNodes = ({ entities, positions, unfilteredCounts }: Params) => {
   const nodes: Node[] = [];
   const position = positions[OVERVIEW_ENTITY_TYPES.ACTION];
   const unfilteredCount = unfilteredCounts[OVERVIEW_ENTITY_TYPES.ACTION];

@@ -2,7 +2,7 @@ import theme from '@/styles/theme';
 import { formatBytes } from '@/utils';
 import { type Edge, type Node } from '@xyflow/react';
 import { OVERVIEW_ENTITY_TYPES, STATUSES, WorkloadId, type OverviewMetricsResponse } from '@/types';
-import { nodeConfig } from '.';
+import nodeConfig from './node-config.json';
 
 interface Params {
   nodes: Node[];
