@@ -4,7 +4,7 @@ go 1.22.0
 
 require (
 	github.com/goccy/go-yaml v1.11.3
-	github.com/odigos-io/runtime-detector v0.0.3
+	github.com/odigos-io/runtime-detector v0.0.4
 	github.com/stretchr/testify v1.9.0
 	go.opentelemetry.io/otel/trace v1.29.0
 	golang.org/x/sync v0.1.0

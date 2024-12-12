@@ -19,6 +19,8 @@ var (
 	errFailedToGetConfigGroup   = errors.New("failed to get config group")
 )
 
+// ConfigUpdate is used to send a configuration update request to the manager.
+// The manager will apply the configuration to all instrumentations that match the config group.
 type ConfigUpdate[configGroup ConfigGroup] map[configGroup]Config
 
 type instrumentationDetails[details Details, configGroup ConfigGroup] struct {
@@ -35,7 +37,11 @@ type ManagerOptions[details Details, configGroup ConfigGroup] struct {
 	ConfigUpdates   <-chan ConfigUpdate[configGroup]
 }
 
+// Manager is used to orchestrate the ebpf instrumentations lifecycle.
 type Manager interface {
+	// Run launches the manger.
+	// It will block until the context is canceled.
+	// It is an error to not cancel the context before the program exits, and may result in leaked resources.
 	Run(ctx context.Context) error
 }
 
@@ -91,7 +97,7 @@ func NewManager[details Details, configGroup ConfigGroup](options ManagerOptions
 
 	logger := options.Logger
 	procEvents := make(chan detector.ProcessEvent)
-	detector, err := detector.NewDetector(context.Background(), procEvents, options.DetectorOptions...)
+	detector, err := detector.NewDetector(procEvents, options.DetectorOptions...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create process detector: %w", err)
 	}

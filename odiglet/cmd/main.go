@@ -129,7 +129,7 @@ func (o *odiglet) run(ctx context.Context) {
 		if err != nil {
 			log.Logger.Error(err, "Failed to run ebpf manager")
 		}
-		log.Logger.V(0).Info("Ebpf manager exited")
+		log.Logger.V(0).Info("eBPF manager exited")
 	}()
 
 	// start OpAmp server

@@ -1,8 +1,6 @@
 package detector
 
 import (
-	"context"
-
 	detector "github.com/odigos-io/runtime-detector"
 )
 
@@ -17,6 +15,6 @@ const (
 	ProcessExitEvent = detector.ProcessExitEvent
 )
 
-func NewDetector(ctx context.Context, events chan<- ProcessEvent, opts ...DetectorOption) (*Detector, error) {
-	return detector.NewDetector(ctx, events, opts...)
+func NewDetector(events chan<- ProcessEvent, opts ...DetectorOption) (*Detector, error) {
+	return detector.NewDetector(events, opts...)
 }

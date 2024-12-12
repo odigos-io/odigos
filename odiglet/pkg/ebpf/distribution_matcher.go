@@ -8,9 +8,9 @@ import (
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/container"
 )
 
-type distributionMatcher struct{}
+type podDeviceDistributionMatcher struct{}
 
-func (dm *distributionMatcher) Distribution(ctx context.Context, e K8sDetails) (instrumentation.OtelDistribution, error) {
+func (dm *podDeviceDistributionMatcher) Distribution(ctx context.Context, e K8sDetails) (instrumentation.OtelDistribution, error) {
 	// get the language and sdk for this process event
 	// based on the pod spec and the container name from the process event
 	// TODO: We should have all the required information in the process event
