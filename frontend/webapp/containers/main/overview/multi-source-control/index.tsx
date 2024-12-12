@@ -24,7 +24,7 @@ const Container = styled.div`
   background-color: ${({ theme }) => theme.colors.dropdown_bg};
 `;
 
-const MultiSourceControl = () => {
+export const MultiSourceControl = () => {
   const Transition = useTransition({
     container: Container,
     animateIn: slide.in['center'],
@@ -88,5 +88,3 @@ const MultiSourceControl = () => {
     </>
   );
 };
-
-export default MultiSourceControl;

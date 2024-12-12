@@ -1,4 +1,3 @@
-// src/hooks/useNodeDataFlowHandlers.ts
 import { useCallback } from 'react';
 import { type Node } from '@xyflow/react';
 import { useSourceCRUD } from '../sources';
@@ -15,7 +14,7 @@ export function useNodeDataFlowHandlers() {
   const { instrumentationRules } = useInstrumentationRuleCRUD();
 
   const { setCurrentModal } = useModalStore();
-  const setSelectedItem = useDrawerStore(({ setSelectedItem }) => setSelectedItem);
+  const { setSelectedItem } = useDrawerStore();
 
   const handleNodeClick = useCallback(
     (
@@ -42,7 +41,11 @@ export function useNodeDataFlowHandlers() {
       if (type === OVERVIEW_ENTITY_TYPES.SOURCE) {
         const { kind, name, namespace } = id as WorkloadId;
         const selectedDrawerItem = entities['sources'].find((item) => item.kind === kind && item.name === name && item.namespace === namespace);
-        if (!selectedDrawerItem) return;
+
+        if (!selectedDrawerItem) {
+          console.warn('Selected item not found', { id, [`${type}sCount`]: entities[`${type}s`].length });
+          return;
+        }
 
         setSelectedItem({
           id,
@@ -51,7 +54,11 @@ export function useNodeDataFlowHandlers() {
         });
       } else if ([OVERVIEW_ENTITY_TYPES.RULE, OVERVIEW_ENTITY_TYPES.ACTION, OVERVIEW_ENTITY_TYPES.DESTINATION].includes(type as OVERVIEW_ENTITY_TYPES)) {
         const selectedDrawerItem = entities[`${type}s`].find((item) => id && [item.id, item.ruleId].includes(id));
-        if (!selectedDrawerItem) return;
+
+        if (!selectedDrawerItem) {
+          console.warn('Selected item not found', { id, [`${type}sCount`]: entities[`${type}s`].length });
+          return;
+        }
 
         setSelectedItem({
           id,
@@ -66,6 +73,8 @@ export function useNodeDataFlowHandlers() {
         setCurrentModal(OVERVIEW_ENTITY_TYPES.ACTION);
       } else if (type === OVERVIEW_NODE_TYPES.ADD_DESTIONATION) {
         setCurrentModal(OVERVIEW_ENTITY_TYPES.DESTINATION);
+      } else {
+        console.warn('Unhandled node click', object);
       }
     },
     [sources, actions, destinations, instrumentationRules, setSelectedItem, setCurrentModal],

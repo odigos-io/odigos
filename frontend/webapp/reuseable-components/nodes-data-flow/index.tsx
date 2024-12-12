@@ -1,19 +1,20 @@
-'use client';
-import React, { useMemo } from 'react';
+import React from 'react';
 import '@xyflow/react/dist/style.css';
 import styled from 'styled-components';
 import AddNode from './nodes/add-node';
 import BaseNode from './nodes/base-node';
-import GroupNode from './nodes/group-node';
+import FrameNode from './nodes/frame-node';
+import ScrollNode from './nodes/scroll-node';
 import HeaderNode from './nodes/header-node';
 import LabeledEdge from './edges/labeled-edge';
-import { Controls, type Edge, type Node, ReactFlow } from '@xyflow/react';
+import { Controls, type Edge, type Node, type OnEdgesChange, type OnNodesChange, ReactFlow } from '@xyflow/react';
 
 interface Props {
   nodes: Node[];
   edges: Edge[];
   onNodeClick?: (event: React.MouseEvent, object: Node) => void;
-  nodeWidth: number;
+  onNodesChange?: OnNodesChange<Node>;
+  onEdgesChange?: OnEdgesChange<Edge>;
 }
 
 const FlowWrapper = styled.div`
@@ -39,27 +40,32 @@ const ControllerWrapper = styled.div`
   }
 `;
 
-export const NodeBaseDataFlow: React.FC<Props> = ({ nodes, edges, onNodeClick, nodeWidth }) => {
-  const nodeTypes = useMemo(
-    () => ({
-      header: (props) => <HeaderNode {...props} nodeWidth={nodeWidth} />,
-      add: (props) => <AddNode {...props} nodeWidth={nodeWidth} />,
-      base: (props) => <BaseNode {...props} nodeWidth={nodeWidth} />,
-      group: GroupNode,
-    }),
-    [nodeWidth],
-  );
+const nodeTypes = {
+  header: HeaderNode,
+  add: AddNode,
+  base: BaseNode,
+  frame: FrameNode,
+  scroll: ScrollNode,
+};
 
-  const edgeTypes = useMemo(
-    () => ({
-      labeled: LabeledEdge,
-    }),
-    [],
-  );
+const edgeTypes = {
+  labeled: LabeledEdge,
+};
 
+export const NodeDataFlow: React.FC<Props> = ({ nodes, edges, onNodeClick, onNodesChange, onEdgesChange }) => {
   return (
     <FlowWrapper>
-      <ReactFlow nodes={nodes} nodeTypes={nodeTypes} edges={edges} edgeTypes={edgeTypes} onNodeClick={onNodeClick} zoomOnScroll={false} fitView={false}>
+      <ReactFlow
+        nodes={nodes}
+        nodeTypes={nodeTypes}
+        edges={edges}
+        edgeTypes={edgeTypes}
+        onNodeClick={onNodeClick}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        zoomOnScroll={false}
+        fitView={false}
+      >
         <ControllerWrapper>
           <Controls
             position='bottom-left'
@@ -78,5 +84,3 @@ export const NodeBaseDataFlow: React.FC<Props> = ({ nodes, edges, onNodeClick, n
     </FlowWrapper>
   );
 };
-
-export * from './builder';
