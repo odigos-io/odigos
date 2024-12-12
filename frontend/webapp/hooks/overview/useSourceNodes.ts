@@ -1,21 +1,39 @@
+import { useState } from 'react';
 import { type Node } from '@xyflow/react';
-import { type Positions } from './get-positions';
-import { type UnfilteredCounts } from './get-counts';
+import { nodeConfig, type NodePositions, type EntityCounts } from '@/containers';
 import { getMainContainerLanguage } from '@/utils/constants/programming-languages';
 import { getEntityIcon, getEntityLabel, getHealthStatus, getProgrammingLanguageIcon } from '@/utils';
 import { OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type ComputePlatformMapped } from '@/types';
-import config from './config.json';
 
 interface Params {
   entities: ComputePlatformMapped['computePlatform']['k8sActualSources'];
-  positions: Positions;
-  unfilteredCounts: UnfilteredCounts;
+  positions: NodePositions;
+  unfilteredCounts: EntityCounts;
   containerHeight: number;
 }
 
-const { nodeWidth, nodeHeight, framePadding } = config;
+const { nodeWidth, nodeHeight, framePadding } = nodeConfig;
 
-export const buildSourceNodes = ({ entities, positions, unfilteredCounts, containerHeight }: Params) => {
+const mapToNodeData = (entity: Params['entities'][0]) => {
+  return {
+    nodeWidth,
+    id: {
+      namespace: entity.namespace,
+      name: entity.name,
+      kind: entity.kind,
+    },
+    type: OVERVIEW_ENTITY_TYPES.SOURCE,
+    status: getHealthStatus(entity),
+    title: getEntityLabel(entity, OVERVIEW_ENTITY_TYPES.SOURCE, { extended: true }),
+    subTitle: entity.kind,
+    imageUri: getProgrammingLanguageIcon(getMainContainerLanguage(entity)),
+    raw: entity,
+  };
+};
+
+export const useSourceNodes = ({ entities, positions, unfilteredCounts, containerHeight }: Params) => {
+  const [scrollYOffset, setScrollYOffset] = useState(0);
+
   const nodes: Node[] = [];
   const position = positions[OVERVIEW_ENTITY_TYPES.SOURCE];
   const unfilteredCount = unfilteredCounts[OVERVIEW_ENTITY_TYPES.SOURCE];
@@ -61,7 +79,19 @@ export const buildSourceNodes = ({ entities, positions, unfilteredCounts, contai
       },
       data: {
         nodeWidth,
-        nodeHeight: containerHeight - nodeHeight + framePadding,
+        nodeHeight: containerHeight - nodeHeight + framePadding * 2,
+        items: entities.map((source) => ({
+          id: `source-${source.namespace}-${source.name}-${source.kind}`,
+          data: {
+            framePadding,
+            ...mapToNodeData(source),
+          },
+        })),
+        onScroll: ({ clientHeight, scrollHeight, scrollTop }) => {
+          console.log('Node scrolled', { clientHeight, scrollHeight, scrollTop });
+
+          setScrollYOffset(scrollTop);
+        },
       },
     });
 
@@ -73,21 +103,12 @@ export const buildSourceNodes = ({ entities, positions, unfilteredCounts, contai
         parentId: 'source-scroll',
         position: {
           x: framePadding,
-          y: position['y'](idx) - (nodeHeight - framePadding),
+          y: position['y'](idx) - (nodeHeight - framePadding) - scrollYOffset,
         },
-        data: {
-          nodeWidth,
-          id: {
-            namespace: source.namespace,
-            name: source.name,
-            kind: source.kind,
-          },
-          type: OVERVIEW_ENTITY_TYPES.SOURCE,
-          status: getHealthStatus(source),
-          title: getEntityLabel(source, OVERVIEW_ENTITY_TYPES.SOURCE, { extended: true }),
-          subTitle: source.kind,
-          imageUri: getProgrammingLanguageIcon(getMainContainerLanguage(source)),
-          raw: source,
+        data: mapToNodeData(source),
+        style: {
+          opacity: 0,
+          zIndex: -1,
         },
       });
     });

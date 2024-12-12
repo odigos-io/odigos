@@ -1,12 +1,12 @@
 import { getValueForRange } from '@/utils';
 import { OVERVIEW_ENTITY_TYPES } from '@/types';
-import { nodeWidth, nodeHeight } from './config.json';
+import { nodeWidth, nodeHeight } from './node-config.json';
 
 interface Params {
   containerWidth: number;
 }
 
-export type Positions = Record<
+export type NodePositions = Record<
   OVERVIEW_ENTITY_TYPES,
   {
     x: number;
@@ -14,12 +14,12 @@ export type Positions = Record<
   }
 >;
 
-export const getPositions = ({ containerWidth }: Params) => {
+export const getNodePositions = ({ containerWidth }: Params) => {
   const startX = 24;
   const endX = (containerWidth <= 1500 ? 1500 : containerWidth) - nodeWidth - startX;
   const getY = (idx?: number) => nodeHeight * ((idx || 0) + 1);
 
-  const positions: Positions = {
+  const positions: NodePositions = {
     [OVERVIEW_ENTITY_TYPES.RULE]: {
       x: startX,
       y: getY,

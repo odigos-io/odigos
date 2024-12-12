@@ -1,19 +1,32 @@
 import { type Node } from '@xyflow/react';
-import { type Positions } from './get-positions';
-import { type UnfilteredCounts } from './get-counts';
 import { getActionIcon, getEntityIcon, getEntityLabel } from '@/utils';
+import { nodeConfig, type NodePositions, type EntityCounts } from '@/containers';
 import { OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type ComputePlatformMapped } from '@/types';
-import config from './config.json';
 
 interface Params {
   entities: ComputePlatformMapped['computePlatform']['actions'];
-  positions: Positions;
-  unfilteredCounts: UnfilteredCounts;
+  positions: NodePositions;
+  unfilteredCounts: EntityCounts;
 }
 
-const { nodeWidth, nodeHeight, framePadding } = config;
+const { nodeWidth, nodeHeight, framePadding } = nodeConfig;
 
-export const buildActionNodes = ({ entities, positions, unfilteredCounts }: Params) => {
+const mapToNodeData = (entity: Params['entities'][0]) => {
+  return {
+    nodeWidth,
+    id: entity.id,
+    type: OVERVIEW_ENTITY_TYPES.ACTION,
+    status: STATUSES.HEALTHY,
+    title: getEntityLabel(entity, OVERVIEW_ENTITY_TYPES.ACTION, { prioritizeDisplayName: true }),
+    subTitle: entity.type,
+    imageUri: getActionIcon(entity.type),
+    monitors: entity.spec.signals,
+    isActive: !entity.spec.disabled,
+    raw: entity,
+  };
+};
+
+export const useActionNodes = ({ entities, positions, unfilteredCounts }: Params) => {
   const nodes: Node[] = [];
   const position = positions[OVERVIEW_ENTITY_TYPES.ACTION];
   const unfilteredCount = unfilteredCounts[OVERVIEW_ENTITY_TYPES.ACTION];
@@ -73,18 +86,7 @@ export const buildActionNodes = ({ entities, positions, unfilteredCounts }: Para
           x: framePadding,
           y: position['y'](idx) - (nodeHeight - framePadding),
         },
-        data: {
-          nodeWidth,
-          id: action.id,
-          type: OVERVIEW_ENTITY_TYPES.ACTION,
-          status: STATUSES.HEALTHY,
-          title: getEntityLabel(action, OVERVIEW_ENTITY_TYPES.ACTION, { prioritizeDisplayName: true }),
-          subTitle: action.type,
-          imageUri: getActionIcon(action.type),
-          monitors: action.spec.signals,
-          isActive: !action.spec.disabled,
-          raw: action,
-        },
+        data: mapToNodeData(action),
       });
     });
   }

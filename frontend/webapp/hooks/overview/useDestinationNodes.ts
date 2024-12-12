@@ -1,19 +1,31 @@
 import { type Node } from '@xyflow/react';
-import { type Positions } from './get-positions';
-import { type UnfilteredCounts } from './get-counts';
+import { nodeConfig, type NodePositions, type EntityCounts } from '@/containers';
 import { extractMonitors, getEntityIcon, getEntityLabel, getHealthStatus } from '@/utils';
 import { OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type ComputePlatformMapped } from '@/types';
-import config from './config.json';
 
 interface Params {
   entities: ComputePlatformMapped['computePlatform']['destinations'];
-  positions: Positions;
-  unfilteredCounts: UnfilteredCounts;
+  positions: NodePositions;
+  unfilteredCounts: EntityCounts;
 }
 
-const { nodeWidth } = config;
+const { nodeWidth } = nodeConfig;
 
-export const buildDestinationNodes = ({ entities, positions, unfilteredCounts }: Params) => {
+const mapToNodeData = (entity: Params['entities'][0]) => {
+  return {
+    nodeWidth,
+    id: entity.id,
+    type: OVERVIEW_ENTITY_TYPES.DESTINATION,
+    status: getHealthStatus(entity),
+    title: getEntityLabel(entity, OVERVIEW_ENTITY_TYPES.DESTINATION, { prioritizeDisplayName: true }),
+    subTitle: entity.destinationType.displayName,
+    imageUri: entity.destinationType.imageUrl || '/brand/odigos-icon.svg',
+    monitors: extractMonitors(entity.exportedSignals),
+    raw: entity,
+  };
+};
+
+export const useDestinationNodes = ({ entities, positions, unfilteredCounts }: Params) => {
   const nodes: Node[] = [];
   const position = positions[OVERVIEW_ENTITY_TYPES.DESTINATION];
   const unfilteredCount = unfilteredCounts[OVERVIEW_ENTITY_TYPES.DESTINATION];
@@ -58,17 +70,7 @@ export const buildDestinationNodes = ({ entities, positions, unfilteredCounts }:
           x: position['x'],
           y: position['y'](idx),
         },
-        data: {
-          nodeWidth,
-          id: destination.id,
-          type: OVERVIEW_ENTITY_TYPES.DESTINATION,
-          status: getHealthStatus(destination),
-          title: getEntityLabel(destination, OVERVIEW_ENTITY_TYPES.DESTINATION, { prioritizeDisplayName: true }),
-          subTitle: destination.destinationType.displayName,
-          imageUri: destination.destinationType.imageUrl || '/brand/odigos-icon.svg',
-          monitors: extractMonitors(destination.exportedSignals),
-          raw: destination,
-        },
+        data: mapToNodeData(destination),
       });
     });
   }

@@ -5,7 +5,7 @@ import styled from 'styled-components';
 import { getStatusIcon } from '@/utils';
 import { Checkbox, DataTab } from '@/reuseable-components';
 import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';
-import { type ActionDataParsed, type ActualDestination, type InstrumentationRuleSpec, type K8sActualSource, STATUSES } from '@/types';
+import { type ActionDataParsed, type ActualDestination, type InstrumentationRuleSpec, type K8sActualSource, OVERVIEW_ENTITY_TYPES, STATUSES, WorkloadId } from '@/types';
 
 interface Props
   extends NodeProps<
@@ -13,8 +13,8 @@ interface Props
       {
         nodeWidth: number;
 
-        id: string;
-        type: 'source' | 'action' | 'destination';
+        id: string | WorkloadId;
+        type: OVERVIEW_ENTITY_TYPES;
         status: STATUSES;
         title: string;
         subTitle: string;

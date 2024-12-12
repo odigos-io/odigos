@@ -1,19 +1,31 @@
 import { type Node } from '@xyflow/react';
-import { type Positions } from './get-positions';
-import { type UnfilteredCounts } from './get-counts';
 import { getEntityIcon, getEntityLabel, getRuleIcon } from '@/utils';
+import { nodeConfig, type NodePositions, type EntityCounts } from '@/containers';
 import { OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type ComputePlatformMapped } from '@/types';
-import config from './config.json';
 
 interface Params {
   entities: ComputePlatformMapped['computePlatform']['instrumentationRules'];
-  positions: Positions;
-  unfilteredCounts: UnfilteredCounts;
+  positions: NodePositions;
+  unfilteredCounts: EntityCounts;
 }
 
-const { nodeWidth } = config;
+const { nodeWidth } = nodeConfig;
 
-export const buildRuleNodes = ({ entities, positions, unfilteredCounts }: Params) => {
+const mapToNodeData = (entity: Params['entities'][0]) => {
+  return {
+    nodeWidth,
+    id: entity.ruleId,
+    type: OVERVIEW_ENTITY_TYPES.RULE,
+    status: STATUSES.HEALTHY,
+    title: getEntityLabel(entity, OVERVIEW_ENTITY_TYPES.RULE, { prioritizeDisplayName: true }),
+    subTitle: entity.type,
+    imageUri: getRuleIcon(entity.type),
+    isActive: !entity.disabled,
+    raw: entity,
+  };
+};
+
+export const useRuleNodes = ({ entities, positions, unfilteredCounts }: Params) => {
   const nodes: Node[] = [];
   const position = positions[OVERVIEW_ENTITY_TYPES.RULE];
   const unfilteredCount = unfilteredCounts[OVERVIEW_ENTITY_TYPES.RULE];
@@ -58,17 +70,7 @@ export const buildRuleNodes = ({ entities, positions, unfilteredCounts }: Params
           x: position['x'],
           y: position['y'](idx),
         },
-        data: {
-          nodeWidth,
-          id: rule.ruleId,
-          type: OVERVIEW_ENTITY_TYPES.RULE,
-          status: STATUSES.HEALTHY,
-          title: getEntityLabel(rule, OVERVIEW_ENTITY_TYPES.RULE, { prioritizeDisplayName: true }),
-          subTitle: rule.type,
-          imageUri: getRuleIcon(rule.type),
-          isActive: !rule.disabled,
-          raw: rule,
-        },
+        data: mapToNodeData(rule),
       });
     });
   }
