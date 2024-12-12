@@ -35,6 +35,13 @@ func (d *Datadog) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) e
 		},
 	}
 
+	connectorEnabled := false
+	if isTracingEnabled(dest) && isMetricsEnabled(dest) {
+		connectorName := "datadog/" + dest.GetID()
+		currentConfig.Connectors[connectorName] = struct{}{}
+		connectorEnabled = true
+	}
+
 	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/datadog-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
@@ -44,6 +51,7 @@ func (d *Datadog) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) e
 
 	if isMetricsEnabled(dest) {
 		metricsPipelineName := "metrics/datadog-" + dest.GetID()
+
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
