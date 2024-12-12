@@ -66,7 +66,7 @@ export const buildRuleNodes = ({ entities, positions, unfilteredCounts }: Params
   } else {
     entities.forEach((rule, idx) => {
       nodes.push({
-        id: `rule-${rule.ruleId}`,
+        id: `rule-${idx}`,
         type: 'base',
         position: {
           x: position['x'],

@@ -29,38 +29,42 @@ describe('Instrumentation Rules CRUD', () => {
   it('Should update the CRD in the cluster', () => {
     cy.visit(ROUTES.OVERVIEW);
 
-    updateEntity(
-      {
-        nodeId: DATA_IDS.INSTRUMENTATION_RULE_NODE,
-        nodeContains: SELECTED_ENTITIES.INSTRUMENTATION_RULE,
-        fieldKey: DATA_IDS.TITLE,
-        fieldValue: TEXTS.UPDATED_NAME,
-      },
-      () => {
-        cy.wait('@gql').then(() => {
-          getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 }, (crdIds) => {
-            const crdId = crdIds[0];
-            getCrdById({ namespace, crdName, crdId, expectedError: '', expectedKey: 'ruleName', expectedValue: TEXTS.UPDATED_NAME });
+    getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 }, () => {
+      updateEntity(
+        {
+          nodeId: DATA_IDS.INSTRUMENTATION_RULE_NODE,
+          nodeContains: SELECTED_ENTITIES.INSTRUMENTATION_RULE,
+          fieldKey: DATA_IDS.TITLE,
+          fieldValue: TEXTS.UPDATED_NAME,
+        },
+        () => {
+          cy.wait('@gql').then(() => {
+            getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 }, (crdIds) => {
+              const crdId = crdIds[0];
+              getCrdById({ namespace, crdName, crdId, expectedError: '', expectedKey: 'ruleName', expectedValue: TEXTS.UPDATED_NAME });
+            });
           });
-        });
-      },
-    );
+        },
+      );
+    });
   });
 
   it('Should delete the CRD from the cluster', () => {
     cy.visit(ROUTES.OVERVIEW);
 
-    deleteEntity(
-      {
-        nodeId: DATA_IDS.INSTRUMENTATION_RULE_NODE,
-        nodeContains: SELECTED_ENTITIES.INSTRUMENTATION_RULE,
-        warnModalTitle: TEXTS.INSTRUMENTATION_RULE_WARN_MODAL_TITLE,
-      },
-      () => {
-        cy.wait('@gql').then(() => {
-          getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
-        });
-      },
-    );
+    getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 }, () => {
+      deleteEntity(
+        {
+          nodeId: DATA_IDS.INSTRUMENTATION_RULE_NODE,
+          nodeContains: SELECTED_ENTITIES.INSTRUMENTATION_RULE,
+          warnModalTitle: TEXTS.INSTRUMENTATION_RULE_WARN_MODAL_TITLE,
+        },
+        () => {
+          cy.wait('@gql').then(() => {
+            getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
+          });
+        },
+      );
+    });
   });
 });

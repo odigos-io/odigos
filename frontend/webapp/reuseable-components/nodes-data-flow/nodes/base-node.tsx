@@ -31,7 +31,7 @@ const Container = styled.div<{ $nodeWidth: Props['data']['nodeWidth'] }>`
   width: ${({ $nodeWidth }) => `${$nodeWidth}px`};
 `;
 
-const BaseNode: React.FC<Props> = ({ data }) => {
+const BaseNode: React.FC<Props> = ({ id: nodeId, data }) => {
   const { nodeWidth, type, status, title, subTitle, imageUri, monitors, isActive, raw } = data;
   const isError = status === STATUSES.UNHEALTHY;
 
@@ -84,7 +84,7 @@ const BaseNode: React.FC<Props> = ({ data }) => {
   };
 
   return (
-    <Container $nodeWidth={nodeWidth} className='nowheel nodrag'>
+    <Container data-id={nodeId} $nodeWidth={nodeWidth} className='nowheel nodrag'>
       <DataTab title={title} subTitle={subTitle} logo={imageUri} monitors={monitors} isActive={isActive} isError={isError} onClick={() => {}}>
         {renderActions()}
         {renderHandles()}

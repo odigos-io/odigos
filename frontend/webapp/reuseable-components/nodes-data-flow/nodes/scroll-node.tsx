@@ -83,7 +83,7 @@ const ScrollNode: React.FC<Props> = ({ data, ...rest }) => {
           $framePadding={item.data.framePadding}
           onClick={(e) => {
             e.stopPropagation();
-            setSelectedItem({ id: item.id, type: item.data.type, item: item.data.raw });
+            setSelectedItem({ id: item.data.id, type: item.data.type, item: item.data.raw });
           }}
         >
           <BaseNode {...rest} type='base' id={item.id} data={item.data} />

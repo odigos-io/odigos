@@ -66,7 +66,7 @@ export const buildDestinationNodes = ({ entities, positions, unfilteredCounts }:
   } else {
     entities.forEach((destination, idx) => {
       nodes.push({
-        id: `destination-${destination.id}`,
+        id: `destination-${idx}`,
         type: 'base',
         position: {
           x: position['x'],

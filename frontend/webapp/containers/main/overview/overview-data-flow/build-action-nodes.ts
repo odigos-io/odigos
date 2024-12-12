@@ -80,7 +80,7 @@ export const buildActionNodes = ({ entities, positions, unfilteredCounts }: Para
 
     entities.forEach((action, idx) => {
       nodes.push({
-        id: `action-${action.id}`,
+        id: `action-${idx}`,
         type: 'base',
         extent: 'parent',
         parentId: 'action-frame',

@@ -81,8 +81,8 @@ export const buildSourceNodes = ({ entities, positions, unfilteredCounts, contai
       data: {
         nodeWidth,
         nodeHeight: containerHeight - nodeHeight + framePadding * 2,
-        items: entities.map((source) => ({
-          id: `source-${source.namespace}-${source.name}-${source.kind}`,
+        items: entities.map((source, idx) => ({
+          id: `source-${idx}`,
           data: {
             framePadding,
             ...mapToNodeData(source),
@@ -94,7 +94,7 @@ export const buildSourceNodes = ({ entities, positions, unfilteredCounts, contai
 
     entities.forEach((source, idx) => {
       nodes.push({
-        id: `source-${source.namespace}-${source.name}-${source.kind}`,
+        id: `source-${idx}-hidden`,
         type: 'base',
         extent: 'parent',
         parentId: 'source-scroll',
