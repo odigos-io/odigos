@@ -63,10 +63,7 @@ export default function OverviewDataFlowContainer() {
         positions,
         unfilteredCounts,
         containerHeight,
-        onScroll: ({ clientHeight, scrollHeight, scrollTop }) => {
-          console.log('Node scrolled', { clientHeight, scrollHeight, scrollTop });
-          setScrollYOffset(scrollTop);
-        },
+        onScroll: ({ scrollTop }) => setScrollYOffset(scrollTop),
       }),
     [filteredData?.computePlatform.k8sActualSources, positions, unfilteredCounts, containerHeight],
   );
