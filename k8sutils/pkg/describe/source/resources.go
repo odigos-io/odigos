@@ -2,6 +2,7 @@ package source
 
 import (
 	"context"
+	"fmt"
 
 	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -59,17 +60,54 @@ func GetRelevantSourceResources(ctx context.Context, kubeClient kubernetes.Inter
 		return nil, err
 	}
 
-	podLabelSelector := metav1.FormatLabelSelector(workloadObj.LabelSelector)
+	sourceResources.Pods, err = getSourcePods(ctx, kubeClient, workloadObj)
 	if err != nil {
-		// if pod info cannot be extracted, it is an unrecoverable error
-		return nil, err
-	}
-	pods, err := kubeClient.CoreV1().Pods(workloadNs).List(ctx, metav1.ListOptions{LabelSelector: podLabelSelector})
-	if err == nil {
-		sourceResources.Pods = pods
-	} else {
 		return nil, err
 	}
 
 	return &sourceResources, nil
+}
+
+func getSourcePods(ctx context.Context, kubeClient kubernetes.Interface, workloadObj *K8sSourceObject) (*corev1.PodList, error) {
+	podLabelSelector := metav1.FormatLabelSelector(workloadObj.LabelSelector)
+
+	if workloadObj.Kind == "deployment" {
+		// In case 2 deployment have the same podLabelselector and namespace, we need to get the specific pods
+		// for the deployment, get the pods by listing the replica-sets owned by the deployment and then listing the pods
+		replicaSets, err := kubeClient.AppsV1().ReplicaSets(workloadObj.Namespace).List(ctx, metav1.ListOptions{
+			LabelSelector: podLabelSelector,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("error listing replicasets: %v", err)
+		}
+
+		pods := &corev1.PodList{}
+
+		for _, rs := range replicaSets.Items {
+			// Check if this ReplicaSet is owned by the deployment
+			for _, ownerRef := range rs.OwnerReferences {
+				if string(ownerRef.UID) == string(workloadObj.UID) && ownerRef.Kind == "Deployment" {
+
+					// List pods for this specific ReplicaSet
+					podList, err := kubeClient.CoreV1().Pods(workloadObj.Namespace).List(ctx, metav1.ListOptions{
+						LabelSelector: metav1.FormatLabelSelector(rs.Spec.Selector),
+					})
+					if err != nil {
+						return nil, fmt.Errorf("error listing pods for replicaset: %v", err)
+					}
+
+					// Add these pods to our specific pods list
+					pods.Items = append(pods.Items, podList.Items...)
+					break
+				}
+			}
+		}
+		return pods, nil
+	} else {
+		pods, err := kubeClient.CoreV1().Pods(workloadObj.Namespace).List(ctx, metav1.ListOptions{LabelSelector: podLabelSelector})
+		if err != nil {
+			return nil, err
+		}
+		return pods, nil
+	}
 }

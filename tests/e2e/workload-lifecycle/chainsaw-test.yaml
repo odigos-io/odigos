@@ -217,3 +217,68 @@ spec:
                   ../../common/flush_traces.sh
                 fi
               done
+
+    - name: "03 - Create cluster info action"
+      try:
+        - apply:
+            file: 03-create-action.yaml
+        - assert:
+            file: 03-assert-action-created.yaml
+
+    - name: "03 - Collector config reload"
+      try:
+        - script:
+            timeout: 200s
+            content: |
+              while true; do
+                kubectl logs deployment.apps/odigos-gateway -n odigos-test | grep -q "Config updated"
+                if [ $? -eq 0 ]; then
+                  break;
+                else
+                  sleep 3
+                fi
+              done
+
+    - name: "03 - Generate Traffic"
+      try:
+        - script:
+            timeout: 200s
+            content: |
+              set -e
+
+              NAMESPACE="default"
+              DEPLOYMENTS=$(kubectl get deployments -n $NAMESPACE -o jsonpath='{.items[*].metadata.name}')
+
+
+              for DEPLOYMENT in $DEPLOYMENTS; do
+              echo "Waiting for deployment $DEPLOYMENT to finish rollout..."
+              kubectl rollout status deployment/$DEPLOYMENT -n $NAMESPACE
+              if [ $? -ne 0 ]; then
+              echo "Deployment $DEPLOYMENT failed to finish rollout."
+              exit 1
+              fi
+              done
+
+
+              kubectl apply -f 01-generate-traffic.yaml
+              job_name=$(kubectl get -f 01-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
+              kubectl wait --for=condition=complete job/$job_name
+              kubectl delete -f 01-generate-traffic.yaml
+
+    - name: "03 - Wait for Traces"
+      try:
+        - script:
+            timeout: 60s
+            content: |
+
+              sleep 20
+
+              while true; do
+                ../../common/traceql_runner.sh 03-wait-for-trace.yaml
+                if [ $? -eq 0 ]; then
+                  break
+                else
+                  sleep 3
+                  ../../common/flush_traces.sh
+                fi
+              done
