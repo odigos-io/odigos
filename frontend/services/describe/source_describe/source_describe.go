@@ -6,6 +6,7 @@ import (
 
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
+	describe_utils "github.com/odigos-io/odigos/frontend/services/describe/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/describe"
 	"github.com/odigos-io/odigos/k8sutils/pkg/describe/properties"
 	"github.com/odigos-io/odigos/k8sutils/pkg/describe/source"
@@ -40,27 +41,27 @@ func ConvertSourceAnalyzeToGQL(analyze *source.SourceAnalyze) *model.SourceAnaly
 	}
 
 	return &model.SourceAnalyze{
-		Name:      convertEntityPropertyToGQL(&analyze.Name),
-		Kind:      convertEntityPropertyToGQL(&analyze.Kind),
-		Namespace: convertEntityPropertyToGQL(&analyze.Namespace),
+		Name:      describe_utils.ConvertEntityPropertyToGQL(&analyze.Name),
+		Kind:      describe_utils.ConvertEntityPropertyToGQL(&analyze.Kind),
+		Namespace: describe_utils.ConvertEntityPropertyToGQL(&analyze.Namespace),
 		Labels: &model.InstrumentationLabelsAnalyze{
-			Instrumented:     convertEntityPropertyToGQL(&analyze.Labels.Instrumented),
-			Workload:         convertEntityPropertyToGQL(analyze.Labels.Workload),
-			Namespace:        convertEntityPropertyToGQL(analyze.Labels.Namespace),
-			InstrumentedText: convertEntityPropertyToGQL(&analyze.Labels.InstrumentedText),
+			Instrumented:     describe_utils.ConvertEntityPropertyToGQL(&analyze.Labels.Instrumented),
+			Workload:         describe_utils.ConvertEntityPropertyToGQL(analyze.Labels.Workload),
+			Namespace:        describe_utils.ConvertEntityPropertyToGQL(analyze.Labels.Namespace),
+			InstrumentedText: describe_utils.ConvertEntityPropertyToGQL(&analyze.Labels.InstrumentedText),
 		},
 		InstrumentationConfig: &model.InstrumentationConfigAnalyze{
-			Created:    convertEntityPropertyToGQL(&analyze.InstrumentationConfig.Created),
-			CreateTime: convertEntityPropertyToGQL(analyze.InstrumentationConfig.CreateTime),
+			Created:    describe_utils.ConvertEntityPropertyToGQL(&analyze.InstrumentationConfig.Created),
+			CreateTime: describe_utils.ConvertEntityPropertyToGQL(analyze.InstrumentationConfig.CreateTime),
 		},
 		RuntimeInfo: convertRuntimeInfoToGQL(analyze.RuntimeInfo),
 		InstrumentedApplication: &model.InstrumentedApplicationAnalyze{
-			Created:    convertEntityPropertyToGQL(&analyze.InstrumentedApplication.Created),
-			CreateTime: convertEntityPropertyToGQL(analyze.InstrumentedApplication.CreateTime),
+			Created:    describe_utils.ConvertEntityPropertyToGQL(&analyze.InstrumentedApplication.Created),
+			CreateTime: describe_utils.ConvertEntityPropertyToGQL(analyze.InstrumentedApplication.CreateTime),
 			Containers: convertRuntimeInfoContainersToGQL(analyze.InstrumentedApplication.Containers),
 		},
 		InstrumentationDevice: &model.InstrumentationDeviceAnalyze{
-			StatusText: convertEntityPropertyToGQL(&analyze.InstrumentationDevice.StatusText),
+			StatusText: describe_utils.ConvertEntityPropertyToGQL(&analyze.InstrumentationDevice.StatusText),
 			Containers: convertWorkloadManifestContainersToGQL(analyze.InstrumentationDevice.Containers),
 		},
 		TotalPods:       analyze.TotalPods,
@@ -69,43 +70,12 @@ func ConvertSourceAnalyzeToGQL(analyze *source.SourceAnalyze) *model.SourceAnaly
 	}
 }
 
-func convertEntityPropertyToGQL(prop *properties.EntityProperty) *model.EntityProperty {
-	if prop == nil {
-		return nil
-	}
-
-	var value string
-	if strValue, ok := prop.Value.(string); ok {
-		value = strValue
-	} else {
-		value = fmt.Sprintf("%v", prop.Value)
-	}
-
-	var status *string
-	if prop.Status != "" {
-		statusStr := string(prop.Status)
-		status = &statusStr
-	}
-
-	var explain *string
-	if prop.Explain != "" {
-		explain = &prop.Explain
-	}
-
-	return &model.EntityProperty{
-		Name:    prop.Name,
-		Value:   value,
-		Status:  status,
-		Explain: explain,
-	}
-}
-
 func convertRuntimeInfoToGQL(info *source.RuntimeInfoAnalyze) *model.RuntimeInfoAnalyze {
 	if info == nil {
 		return nil
 	}
 	return &model.RuntimeInfoAnalyze{
-		Generation: convertEntityPropertyToGQL(&info.Generation),
+		Generation: describe_utils.ConvertEntityPropertyToGQL(&info.Generation),
 		Containers: convertRuntimeInfoContainersToGQL(info.Containers),
 	}
 }
@@ -114,9 +84,9 @@ func convertRuntimeInfoContainersToGQL(containers []source.ContainerRuntimeInfoA
 	gqlContainers := make([]*model.ContainerRuntimeInfoAnalyze, 0, len(containers))
 	for _, container := range containers {
 		gqlContainers = append(gqlContainers, &model.ContainerRuntimeInfoAnalyze{
-			ContainerName:  convertEntityPropertyToGQL(&container.ContainerName),
-			Language:       convertEntityPropertyToGQL(&container.Language),
-			RuntimeVersion: convertEntityPropertyToGQL(&container.RuntimeVersion),
+			ContainerName:  describe_utils.ConvertEntityPropertyToGQL(&container.ContainerName),
+			Language:       describe_utils.ConvertEntityPropertyToGQL(&container.Language),
+			RuntimeVersion: describe_utils.ConvertEntityPropertyToGQL(&container.RuntimeVersion),
 			EnvVars:        convertEntityPropertiesToGQL(container.EnvVars),
 		})
 	}
@@ -126,7 +96,7 @@ func convertRuntimeInfoContainersToGQL(containers []source.ContainerRuntimeInfoA
 func convertEntityPropertiesToGQL(props []properties.EntityProperty) []*model.EntityProperty {
 	gqlProps := make([]*model.EntityProperty, 0, len(props))
 	for _, prop := range props {
-		gqlProps = append(gqlProps, convertEntityPropertyToGQL(&prop))
+		gqlProps = append(gqlProps, describe_utils.ConvertEntityPropertyToGQL(&prop))
 	}
 	return gqlProps
 }
@@ -135,8 +105,8 @@ func convertWorkloadManifestContainersToGQL(containers []source.ContainerWorkloa
 	gqlContainers := make([]*model.ContainerWorkloadManifestAnalyze, 0, len(containers))
 	for _, container := range containers {
 		gqlContainers = append(gqlContainers, &model.ContainerWorkloadManifestAnalyze{
-			ContainerName: convertEntityPropertyToGQL(&container.ContainerName),
-			Devices:       convertEntityPropertyToGQL(&container.Devices),
+			ContainerName: describe_utils.ConvertEntityPropertyToGQL(&container.ContainerName),
+			Devices:       describe_utils.ConvertEntityPropertyToGQL(&container.Devices),
 			OriginalEnv:   convertEntityPropertiesToGQL(container.OriginalEnv),
 		})
 	}
@@ -147,9 +117,9 @@ func convertPodsToGQL(pods []source.PodAnalyze) []*model.PodAnalyze {
 	gqlPods := make([]*model.PodAnalyze, 0, len(pods))
 	for _, pod := range pods {
 		gqlPods = append(gqlPods, &model.PodAnalyze{
-			PodName:    convertEntityPropertyToGQL(&pod.PodName),
-			NodeName:   convertEntityPropertyToGQL(&pod.NodeName),
-			Phase:      convertEntityPropertyToGQL(&pod.Phase),
+			PodName:    describe_utils.ConvertEntityPropertyToGQL(&pod.PodName),
+			NodeName:   describe_utils.ConvertEntityPropertyToGQL(&pod.NodeName),
+			Phase:      describe_utils.ConvertEntityPropertyToGQL(&pod.Phase),
 			Containers: convertPodContainersToGQL(pod.Containers),
 		})
 	}
@@ -160,8 +130,8 @@ func convertPodContainersToGQL(containers []source.PodContainerAnalyze) []*model
 	gqlContainers := make([]*model.PodContainerAnalyze, 0, len(containers))
 	for _, container := range containers {
 		gqlContainers = append(gqlContainers, &model.PodContainerAnalyze{
-			ContainerName:            convertEntityPropertyToGQL(&container.ContainerName),
-			ActualDevices:            convertEntityPropertyToGQL(&container.ActualDevices),
+			ContainerName:            describe_utils.ConvertEntityPropertyToGQL(&container.ContainerName),
+			ActualDevices:            describe_utils.ConvertEntityPropertyToGQL(&container.ActualDevices),
 			InstrumentationInstances: convertInstrumentationInstancesToGQL(container.InstrumentationInstances),
 		})
 	}
@@ -172,8 +142,8 @@ func convertInstrumentationInstancesToGQL(instances []source.InstrumentationInst
 	gqlInstances := make([]*model.InstrumentationInstanceAnalyze, 0, len(instances))
 	for _, instance := range instances {
 		gqlInstances = append(gqlInstances, &model.InstrumentationInstanceAnalyze{
-			Healthy:               convertEntityPropertyToGQL(&instance.Healthy),
-			Message:               convertEntityPropertyToGQL(instance.Message),
+			Healthy:               describe_utils.ConvertEntityPropertyToGQL(&instance.Healthy),
+			Message:               describe_utils.ConvertEntityPropertyToGQL(instance.Message),
 			IdentifyingAttributes: convertEntityPropertiesToGQL(instance.IdentifyingAttributes),
 		})
 	}

@@ -2,13 +2,12 @@ package odigos_describe
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
+	describe_utils "github.com/odigos-io/odigos/frontend/services/describe/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/describe"
 	"github.com/odigos-io/odigos/k8sutils/pkg/describe/odigos"
-	"github.com/odigos-io/odigos/k8sutils/pkg/describe/properties"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 )
 
@@ -30,7 +29,7 @@ func convertOdigosToGQL(odigos *odigos.OdigosAnalyze) *model.OdigosAnalyze {
 		return nil
 	}
 	return &model.OdigosAnalyze{
-		OdigosVersion:        convertEntityPropertyToGQL(&odigos.OdigosVersion),
+		OdigosVersion:        describe_utils.ConvertEntityPropertyToGQL(&odigos.OdigosVersion),
 		NumberOfDestinations: odigos.NumberOfDestinations,
 		NumberOfSources:      odigos.NumberOfSources,
 		ClusterCollector:     convertClusterCollectorToGQL(&odigos.ClusterCollector),
@@ -42,61 +41,30 @@ func convertOdigosToGQL(odigos *odigos.OdigosAnalyze) *model.OdigosAnalyze {
 
 func convertClusterCollectorToGQL(collector *odigos.ClusterCollectorAnalyze) *model.ClusterCollectorAnalyze {
 	return &model.ClusterCollectorAnalyze{
-		Enabled:              convertEntityPropertyToGQL(&collector.Enabled),
-		CollectorGroup:       convertEntityPropertyToGQL(&collector.CollectorGroup),
-		Deployed:             convertEntityPropertyToGQL(collector.Deployed),
-		DeployedError:        convertEntityPropertyToGQL(collector.DeployedError),
-		CollectorReady:       convertEntityPropertyToGQL(collector.CollectorReady),
-		DeploymentCreated:    convertEntityPropertyToGQL(&collector.DeploymentCreated),
-		ExpectedReplicas:     convertEntityPropertyToGQL(collector.ExpectedReplicas),
-		HealthyReplicas:      convertEntityPropertyToGQL(collector.HealthyReplicas),
-		FailedReplicas:       convertEntityPropertyToGQL(collector.FailedReplicas),
-		FailedReplicasReason: convertEntityPropertyToGQL(collector.FailedReplicasReason),
+		Enabled:              describe_utils.ConvertEntityPropertyToGQL(&collector.Enabled),
+		CollectorGroup:       describe_utils.ConvertEntityPropertyToGQL(&collector.CollectorGroup),
+		Deployed:             describe_utils.ConvertEntityPropertyToGQL(collector.Deployed),
+		DeployedError:        describe_utils.ConvertEntityPropertyToGQL(collector.DeployedError),
+		CollectorReady:       describe_utils.ConvertEntityPropertyToGQL(collector.CollectorReady),
+		DeploymentCreated:    describe_utils.ConvertEntityPropertyToGQL(&collector.DeploymentCreated),
+		ExpectedReplicas:     describe_utils.ConvertEntityPropertyToGQL(collector.ExpectedReplicas),
+		HealthyReplicas:      describe_utils.ConvertEntityPropertyToGQL(collector.HealthyReplicas),
+		FailedReplicas:       describe_utils.ConvertEntityPropertyToGQL(collector.FailedReplicas),
+		FailedReplicasReason: describe_utils.ConvertEntityPropertyToGQL(collector.FailedReplicasReason),
 	}
 }
 
 func convertNodeCollectorToGQL(collector *odigos.NodeCollectorAnalyze) *model.NodeCollectorAnalyze {
 	return &model.NodeCollectorAnalyze{
-		Enabled:        convertEntityPropertyToGQL(&collector.Enabled),
-		CollectorGroup: convertEntityPropertyToGQL(&collector.CollectorGroup),
-		Deployed:       convertEntityPropertyToGQL(collector.Deployed),
-		DeployedError:  convertEntityPropertyToGQL(collector.DeployedError),
-		CollectorReady: convertEntityPropertyToGQL(collector.CollectorReady),
-		DaemonSet:      convertEntityPropertyToGQL(&collector.DaemonSet),
-		DesiredNodes:   convertEntityPropertyToGQL(collector.DesiredNodes),
-		CurrentNodes:   convertEntityPropertyToGQL(collector.CurrentNodes),
-		UpdatedNodes:   convertEntityPropertyToGQL(collector.UpdatedNodes),
-		AvailableNodes: convertEntityPropertyToGQL(collector.AvailableNodes),
-	}
-}
-
-func convertEntityPropertyToGQL(prop *properties.EntityProperty) *model.EntityProperty {
-	if prop == nil {
-		return nil
-	}
-
-	var value string
-	if strValue, ok := prop.Value.(string); ok {
-		value = strValue
-	} else {
-		value = fmt.Sprintf("%v", prop.Value)
-	}
-
-	var status *string
-	if prop.Status != "" {
-		statusStr := string(prop.Status)
-		status = &statusStr
-	}
-
-	var explain *string
-	if prop.Explain != "" {
-		explain = &prop.Explain
-	}
-
-	return &model.EntityProperty{
-		Name:    prop.Name,
-		Value:   value,
-		Status:  status,
-		Explain: explain,
+		Enabled:        describe_utils.ConvertEntityPropertyToGQL(&collector.Enabled),
+		CollectorGroup: describe_utils.ConvertEntityPropertyToGQL(&collector.CollectorGroup),
+		Deployed:       describe_utils.ConvertEntityPropertyToGQL(collector.Deployed),
+		DeployedError:  describe_utils.ConvertEntityPropertyToGQL(collector.DeployedError),
+		CollectorReady: describe_utils.ConvertEntityPropertyToGQL(collector.CollectorReady),
+		DaemonSet:      describe_utils.ConvertEntityPropertyToGQL(&collector.DaemonSet),
+		DesiredNodes:   describe_utils.ConvertEntityPropertyToGQL(collector.DesiredNodes),
+		CurrentNodes:   describe_utils.ConvertEntityPropertyToGQL(collector.CurrentNodes),
+		UpdatedNodes:   describe_utils.ConvertEntityPropertyToGQL(collector.UpdatedNodes),
+		AvailableNodes: describe_utils.ConvertEntityPropertyToGQL(collector.AvailableNodes),
 	}
 }
