@@ -1,9 +1,11 @@
 import styled from 'styled-components';
 import { Highlight, themes as prismThemes } from 'prism-react-renderer';
+import { flattenObjectKeys, safeJsonParse, safeJsonStringify } from '@/utils';
 
 interface Props {
   language: string;
   code: string;
+  flatten?: boolean;
 }
 
 const Token = styled.span`
@@ -11,9 +13,11 @@ const Token = styled.span`
   opacity: 0.75;
 `;
 
-export const Code: React.FC<Props> = ({ language, code }) => {
+export const Code: React.FC<Props> = ({ language, code, flatten }) => {
+  const str = flatten && language === 'json' ? safeJsonStringify(flattenObjectKeys(safeJsonParse(code, {}))) : code;
+
   return (
-    <Highlight theme={prismThemes.palenight} language={language} code={code}>
+    <Highlight theme={prismThemes.palenight} language={language} code={str}>
       {({ getLineProps, getTokenProps, tokens }) => (
         <pre>
           {tokens.map((line, i) => (

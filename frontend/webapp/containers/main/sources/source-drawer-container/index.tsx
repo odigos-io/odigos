@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-
 import buildCard from './build-card';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
@@ -8,8 +7,8 @@ import { UpdateSourceBody } from '../update-source-body';
 import { useDescribeSource, useSourceCRUD } from '@/hooks';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type K8sActualSource } from '@/types';
-import { ACTION, DATA_CARDS, getMainContainerLanguage, getProgrammingLanguageIcon } from '@/utils';
-import { ConditionDetails, DataCard, DataCardRow, DataCardFieldTypes, Code } from '@/reuseable-components';
+import { ConditionDetails, DataCard, DataCardRow, DataCardFieldTypes } from '@/reuseable-components';
+import { ACTION, DATA_CARDS, getMainContainerLanguage, getProgrammingLanguageIcon, safeJsonStringify } from '@/utils';
 
 interface Props {}
 
@@ -148,10 +147,7 @@ export const SourceDrawer: React.FC<Props> = () => {
             data={[
               {
                 type: DataCardFieldTypes.CODE,
-                value: JSON.stringify({
-                  language: 'json',
-                  code: JSON.stringify(describe || {}, null, 2),
-                }),
+                value: JSON.stringify({ language: 'json', code: safeJsonStringify(describe) }),
               },
             ]}
           />
