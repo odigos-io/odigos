@@ -1,4 +1,4 @@
-package types
+package instrumentation
 
 import (
 	"context"

@@ -6,7 +6,7 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/instrumentation/types"
+	"github.com/odigos-io/odigos/common/instrumentation"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
@@ -27,11 +27,11 @@ var _ auto.ConfigProvider = (*ebpf.ConfigProvider[auto.InstrumentationConfig])(n
 type GoInstrumentationFactory struct {
 }
 
-func NewGoInstrumentationFactory() types.Factory {
+func NewGoInstrumentationFactory() instrumentation.Factory {
 	return &GoInstrumentationFactory{}
 }
 
-func (g *GoInstrumentationFactory) CreateInstrumentation(ctx context.Context, pid int, settings types.Settings) (types.Instrumentation, error) {
+func (g *GoInstrumentationFactory) CreateInstrumentation(ctx context.Context, pid int, settings instrumentation.Settings) (instrumentation.Instrumentation, error) {
 	defaultExporter, err := otlptracegrpc.New(
 		ctx,
 		otlptracegrpc.WithInsecure(),
@@ -78,7 +78,7 @@ func (g *GoOtelEbpfSdk) Close(_ context.Context) error {
 	return g.inst.Close()
 }
 
-func (g *GoOtelEbpfSdk) ApplyConfig(ctx context.Context, sdkConfig types.Config) error {
+func (g *GoOtelEbpfSdk) ApplyConfig(ctx context.Context, sdkConfig instrumentation.Config) error {
 	updatedConfig, err := convertToGoInstrumentationConfig(sdkConfig)
 	if err != nil {
 		return err
@@ -87,7 +87,7 @@ func (g *GoOtelEbpfSdk) ApplyConfig(ctx context.Context, sdkConfig types.Config)
 	return g.cp.SendConfig(ctx, updatedConfig)
 }
 
-func convertToGoInstrumentationConfig(sdkConfig types.Config) (auto.InstrumentationConfig, error) {
+func convertToGoInstrumentationConfig(sdkConfig instrumentation.Config) (auto.InstrumentationConfig, error) {
 	initialConfig, ok := sdkConfig.(*odigosv1.SdkConfig)
 	if !ok {
 		return auto.InstrumentationConfig{}, fmt.Errorf("invalid initial config type, expected *odigosv1.SdkConfig, got %T", sdkConfig)

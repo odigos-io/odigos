@@ -12,7 +12,7 @@ import (
 
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/instrumentation/types"
+	commonInstrumentation "github.com/odigos-io/odigos/common/instrumentation"
 	k8senv "github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation"
@@ -43,9 +43,13 @@ func odigletInitPhase() {
 type odiglet struct {
 	clientset     *kubernetes.Clientset
 	mgr           ctrl.Manager
-	ebpfManager   *ebpf.Manager[ebpf.K8sDetails, ebpf.K8sConfigGroup]
-	configUpdates chan<- ebpf.ConfigUpdate[ebpf.K8sConfigGroup]
+	ebpfManager   commonInstrumentation.Manager
+	configUpdates chan<- commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
 }
+
+const (
+	configUpdatesBufferSize = 10
+)
 
 func newOdiglet() (*odiglet, error) {
 	// Init Kubernetes API client
@@ -64,22 +68,22 @@ func newOdiglet() (*odiglet, error) {
 		return nil, fmt.Errorf("Failed to create controller-runtime manager %w", err)
 	}
 
-	handler := ebpf.NewHandler(mgr.GetClient())
-	ebpfManager, err := ebpf.NewManager[ebpf.K8sDetails, ebpf.K8sConfigGroup](
+	configUpdates := make(chan commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup], configUpdatesBufferSize)
+	ebpfManager, err := ebpf.NewManager(
+		mgr.GetClient(),
 		log.Logger,
-		map[types.OtelDistribution]types.Factory{
-			types.OtelDistribution{
+		map[commonInstrumentation.OtelDistribution]commonInstrumentation.Factory{
+			commonInstrumentation.OtelDistribution{
 				Language: common.GoProgrammingLanguage,
 				OtelSdk:  common.OtelSdkEbpfCommunity,
 			}: sdks.NewGoInstrumentationFactory(),
 		},
-		handler,
+		configUpdates,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create ebpf manager %w", err)
 	}
 
-	configUpdates := ebpfManager.ConfigUpdates()
 	err = kube.SetupWithManager(mgr, nil, clientset, configUpdates)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to setup controller-runtime manager %w", err)

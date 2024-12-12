@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/odigos-io/odigos/common/instrumentation"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
@@ -18,7 +19,7 @@ type InstrumentationConfigReconciler struct {
 	client.Client
 	Scheme        *runtime.Scheme
 	Directors     ebpf.DirectorsMap
-	ConfigUpdates chan<- ebpf.ConfigUpdate[ebpf.K8sConfigGroup]
+	ConfigUpdates chan<- instrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
 }
 
 var (
@@ -62,12 +63,16 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 	}
 
 	if i.ConfigUpdates != nil {
+		if len(instrumentationConfig.Spec.SdkConfigs) == 0 {
+			return ctrl.Result{}, nil
+		}
+	
 		// send a config update request for all the instrumentation which are part of the workload.
 		// if the config request is sent, the configuration updates will occur asynchronously.
 		ctx, cancel := context.WithTimeout(ctx, configUpdateTimeout)
 		defer cancel()
 
-		configUpdate := ebpf.ConfigUpdate[ebpf.K8sConfigGroup]{}
+		configUpdate := instrumentation.ConfigUpdate[ebpf.K8sConfigGroup]{}
 		for _, sdkConfig := range instrumentationConfig.Spec.SdkConfigs {
 			cg := ebpf.K8sConfigGroup{Pw: podWorkload, Lang: sdkConfig.Language}
 			currentConfig := sdkConfig

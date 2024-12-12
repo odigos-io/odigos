@@ -1,20 +1,11 @@
-package types
+package instrumentation
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/runtime-detector"
-)
-
-type ProcessEvent = detector.ProcessEvent
-
-type Detector = detector.Detector
-
-const (
-	ProcessExecEvent = detector.ProcessExecEvent
-	ProcessExitEvent = detector.ProcessExitEvent
+	"github.com/odigos-io/odigos/common/instrumentation/detector"
 )
 
 // OtelDistribution is a customized version of an OpenTelemetry component.
@@ -35,7 +26,7 @@ type ConfigGroup interface {
 }
 
 type ProcessDetailsResolver[details Details] interface {
-	Resolve(context.Context, ProcessEvent) (details, error)
+	Resolve(context.Context, detector.ProcessEvent) (details, error)
 }
 
 type ConfigGroupResolver[details Details, configGroup ConfigGroup] interface {

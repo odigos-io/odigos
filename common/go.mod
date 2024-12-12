@@ -7,6 +7,7 @@ require (
 	github.com/odigos-io/runtime-detector v0.0.3
 	github.com/stretchr/testify v1.9.0
 	go.opentelemetry.io/otel/trace v1.29.0
+	golang.org/x/sync v0.1.0
 )
 
 require (

@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common/instrumentation/types"
+	"github.com/odigos-io/odigos/common/instrumentation"
 	workload "github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -15,12 +15,12 @@ type k8sSettingsGetter struct {
 	client client.Client
 }
 
-var _ types.SettingsGetter[K8sDetails] = &k8sSettingsGetter{}
+var _ instrumentation.SettingsGetter[K8sDetails] = &k8sSettingsGetter{}
 
-func (ksg *k8sSettingsGetter) Settings(ctx context.Context, kd K8sDetails, dist types.OtelDistribution) (types.Settings, error) {
+func (ksg *k8sSettingsGetter) Settings(ctx context.Context, kd K8sDetails, dist instrumentation.OtelDistribution) (instrumentation.Settings, error) {
 	sdkConfig, serviceName, err := ksg.instrumentationSDKConfig(ctx, kd, dist)
 	if err != nil {
-		return types.Settings{}, err
+		return instrumentation.Settings{}, err
 	}
 
 	OtelServiceName := serviceName
@@ -28,14 +28,14 @@ func (ksg *k8sSettingsGetter) Settings(ctx context.Context, kd K8sDetails, dist 
 		OtelServiceName = kd.pw.Name
 	}
 
-	return types.Settings{
+	return instrumentation.Settings{
 		ServiceName:        OtelServiceName,
 		ResourceAttributes: utils.GetResourceAttributes(kd.pw, kd.pod.Name),
 		InitialConfig:      sdkConfig,
 	}, nil
 }
 
-func (ksg *k8sSettingsGetter) instrumentationSDKConfig(ctx context.Context, kd K8sDetails, dist types.OtelDistribution) (*odigosv1.SdkConfig, string, error) {
+func (ksg *k8sSettingsGetter) instrumentationSDKConfig(ctx context.Context, kd K8sDetails, dist instrumentation.OtelDistribution) (*odigosv1.SdkConfig, string, error) {
 	instrumentationConfig := odigosv1.InstrumentationConfig{}
 	instrumentationConfigKey := client.ObjectKey{
 		Namespace: kd.pw.Namespace,

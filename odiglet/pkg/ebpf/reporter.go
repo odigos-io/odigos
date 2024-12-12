@@ -6,7 +6,7 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/instrumentation/types"
+	"github.com/odigos-io/odigos/common/instrumentation"
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	instance "github.com/odigos-io/odigos/k8sutils/pkg/instrumentation_instance"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -30,7 +30,7 @@ func (kd K8sDetails) String() string {
 	)
 }
 
-var _ types.Details = K8sDetails{}
+var _ instrumentation.Details = K8sDetails{}
 
 type k8sReporter struct {
 	client client.Client
@@ -41,7 +41,7 @@ type K8sConfigGroup struct {
 	Lang common.ProgrammingLanguage
 }
 
-var _ types.Reporter[K8sDetails] = &k8sReporter{}
+var _ instrumentation.Reporter[K8sDetails] = &k8sReporter{}
 
 type errRequiredEnvVarNotFound struct {
 	envVarName string
@@ -74,27 +74,6 @@ const (
 	InstrumentationHealthy   InstrumentationHealth = true
 	InstrumentationUnhealthy InstrumentationHealth = false
 )
-
-func NewHandler(client client.Client) *types.Handler[K8sDetails, K8sConfigGroup] {
-	reporter := &k8sReporter{
-		client: client,
-	}
-	detailsResolver := &k8sDetailsResolver{
-		client: client,
-	}
-	configGroupResolver := &k8sConfigGroupResolver{}
-	settingsGetter := &k8sSettingsGetter{
-		client: client,
-	}
-	distributionMatcher := &distributionMatcher{}
-	return &types.Handler[K8sDetails, K8sConfigGroup]{
-		DetailsResolver:     detailsResolver,
-		ConfigGroupResolver: configGroupResolver,
-		Reporter:            reporter,
-		DistributionMatcher: distributionMatcher,
-		SettingsGetter:      settingsGetter,
-	}
-}
 
 func (r *k8sReporter) OnInit(ctx context.Context, pid int, err error, e K8sDetails) error {
 	if err == nil {

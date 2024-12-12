@@ -1,4 +1,4 @@
-package ebpf
+package instrumentation
 
 import (
 	"context"
@@ -8,8 +8,8 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/go-logr/logr"
-	"github.com/odigos-io/odigos/common/instrumentation/types"
-	"github.com/odigos-io/odigos/odiglet/pkg/detector"
+
+	"github.com/odigos-io/odigos/common/instrumentation/detector"
 )
 
 var (
@@ -19,39 +19,48 @@ var (
 	errFailedToGetConfigGroup   = errors.New("failed to get config group")
 )
 
-const (
-	configUpdatesBufferSize = 10
-)
+type ConfigUpdate[configGroup ConfigGroup] map[configGroup]Config
 
-type ConfigUpdate[ConfigGroup types.ConfigGroup] map[ConfigGroup]types.Config
-
-type instrumentationDetails[Details types.Details, ConfigGroup types.ConfigGroup] struct {
-	inst     types.Instrumentation
-	details  Details
-	configID ConfigGroup
+type instrumentationDetails[details Details, configGroup ConfigGroup] struct {
+	inst     Instrumentation
+	details  details
+	configID configGroup
 }
 
-type Manager[Details types.Details, ConfigGroup types.ConfigGroup] struct {
+type ManagerOptions[details Details, configGroup ConfigGroup] struct {
+	Logger          logr.Logger
+	Factories       map[OtelDistribution]Factory
+	Handler         *Handler[details, configGroup]
+	DetectorOptions []detector.DetectorOption
+	ConfigUpdates   <-chan ConfigUpdate[configGroup]
+}
+
+type Manager interface {
+	Run(ctx context.Context) error
+}
+
+type manager[details Details, configGroup ConfigGroup] struct {
 	// channel for receiving process events,
 	// used to detect new processes and process exits, and handle their instrumentation accordingly.
-	procEvents <-chan types.ProcessEvent
-	detector   *types.Detector
-	handler    *types.Handler[Details, ConfigGroup]
-	factories  map[types.OtelDistribution]types.Factory
+	procEvents <-chan detector.ProcessEvent
+	detector   *detector.Detector
+	handler    *Handler[details, configGroup]
+	factories  map[OtelDistribution]Factory
 	logger     logr.Logger
 
 	// all the active instrumentations by pid,
 	// this map is not concurrent safe, so it should be accessed only from the main event loop
-	detailsByPid map[int]*instrumentationDetails[Details, ConfigGroup]
+	detailsByPid map[int]*instrumentationDetails[details, configGroup]
 
 	// active instrumentations by workload, and aggregated by pid
 	// this map is not concurrent safe, so it should be accessed only from the main event loop
-	detailsByWorkload map[ConfigGroup]map[int]*instrumentationDetails[Details, ConfigGroup]
+	detailsByWorkload map[configGroup]map[int]*instrumentationDetails[details, configGroup]
 
-	configUpdates chan ConfigUpdate[ConfigGroup]
+	configUpdates <-chan ConfigUpdate[configGroup]
 }
 
-func NewManager[Details types.Details, ConfigGroup types.ConfigGroup](logger logr.Logger, factories map[types.OtelDistribution]types.Factory, handler *types.Handler[Details, ConfigGroup]) (*Manager[Details, ConfigGroup], error) {
+func NewManager[details Details, configGroup ConfigGroup](options ManagerOptions[details, configGroup]) (Manager, error) {
+	handler := options.Handler
 	if handler == nil {
 		return nil, errors.New("handler is required for ebpf instrumentation manager")
 	}
@@ -76,32 +85,30 @@ func NewManager[Details types.Details, ConfigGroup types.ConfigGroup](logger log
 		return nil, errors.New("settings getter is required for ebpf instrumentation manager")
 	}
 
-	procEvents := make(chan types.ProcessEvent)
-	detector, err := detector.NewK8SProcDetector(context.Background(), logger, procEvents)
+	if options.ConfigUpdates == nil {
+		return nil, errors.New("config updates channel is required for ebpf instrumentation manager")
+	}
+
+	logger := options.Logger
+	procEvents := make(chan detector.ProcessEvent)
+	detector, err := detector.NewDetector(context.Background(), procEvents, options.DetectorOptions...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create process detector: %w", err)
 	}
 
-	return &Manager[Details, ConfigGroup]{
+	return &manager[details, configGroup]{
 		procEvents:        procEvents,
 		detector:          detector,
 		handler:           handler,
-		factories:         factories,
+		factories:         options.Factories,
 		logger:            logger.WithName("ebpf-instrumentation-manager"),
-		detailsByPid:      make(map[int]*instrumentationDetails[Details, ConfigGroup]),
-		detailsByWorkload: map[ConfigGroup]map[int]*instrumentationDetails[Details, ConfigGroup]{},
-		configUpdates:     make(chan ConfigUpdate[ConfigGroup], configUpdatesBufferSize),
+		detailsByPid:      make(map[int]*instrumentationDetails[details, configGroup]),
+		detailsByWorkload: map[configGroup]map[int]*instrumentationDetails[details, configGroup]{},
+		configUpdates:     options.ConfigUpdates,
 	}, nil
 }
 
-// ConfigUpdates returns a channel for receiving configuration updates for instrumentations
-// sending on the channel will add an event to the main event loop to apply the configuration.
-// closing this channel is in the responsibility of the caller.
-func (m *Manager[Details, ConfigGroup]) ConfigUpdates() chan<- ConfigUpdate[ConfigGroup] {
-	return m.configUpdates
-}
-
-func (m *Manager[Details, ConfigGroup]) runEventLoop(ctx context.Context) {
+func (m *manager[Details, ConfigGroup]) runEventLoop(ctx context.Context) {
 	// main event loop for handling instrumentations
 	for {
 		select {
@@ -120,7 +127,7 @@ func (m *Manager[Details, ConfigGroup]) runEventLoop(ctx context.Context) {
 			return
 		case e := <-m.procEvents:
 			switch e.EventType {
-			case types.ProcessExecEvent:
+			case detector.ProcessExecEvent:
 				m.logger.V(1).Info("detected new process", "pid", e.PID, "cmd", e.ExecDetails.CmdLine)
 				err := m.handleProcessExecEvent(ctx, e)
 				// ignore the error if no instrumentation factory is found,
@@ -128,12 +135,11 @@ func (m *Manager[Details, ConfigGroup]) runEventLoop(ctx context.Context) {
 				if err != nil && !errors.Is(err, errNoInstrumentationFactory) {
 					m.logger.Error(err, "failed to handle process exec event")
 				}
-			case types.ProcessExitEvent:
+			case detector.ProcessExitEvent:
 				m.cleanInstrumentation(ctx, e.PID)
 			}
 		case configUpdate := <-m.configUpdates:
 			if len(configUpdate) == 0 {
-				m.logger.Info("received empty config update, skipping")
 				break
 			}
 			for configGroup, config := range configUpdate {
@@ -146,7 +152,7 @@ func (m *Manager[Details, ConfigGroup]) runEventLoop(ctx context.Context) {
 	}
 }
 
-func (m *Manager[Details, ConfigGroup]) Run(ctx context.Context) error {
+func (m *manager[Details, ConfigGroup]) Run(ctx context.Context) error {
 	g, errCtx := errgroup.WithContext(ctx)
 
 	g.Go(func() error {
@@ -162,7 +168,7 @@ func (m *Manager[Details, ConfigGroup]) Run(ctx context.Context) error {
 	return err
 }
 
-func (m *Manager[Details, ConfigGroup]) cleanInstrumentation(ctx context.Context, pid int) {
+func (m *manager[Details, ConfigGroup]) cleanInstrumentation(ctx context.Context, pid int) {
 	details, found := m.detailsByPid[pid]
 	if !found {
 		m.logger.V(3).Info("no instrumentation found for exiting pid, nothing to clean", "pid", pid)
@@ -184,7 +190,7 @@ func (m *Manager[Details, ConfigGroup]) cleanInstrumentation(ctx context.Context
 	m.stopTrackInstrumentation(pid)
 }
 
-func (m *Manager[Details, ConfigGroup]) handleProcessExecEvent(ctx context.Context, e types.ProcessEvent) error {
+func (m *manager[Details, ConfigGroup]) handleProcessExecEvent(ctx context.Context, e detector.ProcessEvent) error {
 	if _, found := m.detailsByPid[e.PID]; found {
 		// this can happen if we have multiple exec events for the same pid (chain loading)
 		// TODO: better handle this?
@@ -267,7 +273,7 @@ func (m *Manager[Details, ConfigGroup]) handleProcessExecEvent(ctx context.Conte
 	return nil
 }
 
-func (m *Manager[Details, ConfigGroup]) startTrackInstrumentation(pid int, inst types.Instrumentation, details Details, configGroup ConfigGroup) {
+func (m *manager[Details, ConfigGroup]) startTrackInstrumentation(pid int, inst Instrumentation, details Details, configGroup ConfigGroup) {
 	instDetails := &instrumentationDetails[Details, ConfigGroup]{
 		inst:     inst,
 		details:  details,
@@ -283,7 +289,7 @@ func (m *Manager[Details, ConfigGroup]) startTrackInstrumentation(pid int, inst 
 	}
 }
 
-func (m *Manager[Details, ConfigGroup]) stopTrackInstrumentation(pid int) {
+func (m *manager[Details, ConfigGroup]) stopTrackInstrumentation(pid int) {
 	details, ok := m.detailsByPid[pid]
 	if !ok {
 		return
@@ -298,7 +304,7 @@ func (m *Manager[Details, ConfigGroup]) stopTrackInstrumentation(pid int) {
 	}
 }
 
-func (m *Manager[Details, ConfigGroup]) applyInstrumentationConfigurationForSDK(ctx context.Context, configGroup ConfigGroup, config types.Config) error {
+func (m *manager[Details, ConfigGroup]) applyInstrumentationConfigurationForSDK(ctx context.Context, configGroup ConfigGroup, config Config) error {
 	var err error
 
 	configGroupInstrumentations, ok := m.detailsByWorkload[configGroup]

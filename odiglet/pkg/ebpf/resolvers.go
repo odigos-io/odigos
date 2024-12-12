@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/odigos-io/odigos/common/instrumentation/types"
+	"github.com/odigos-io/odigos/common/instrumentation"
+	"github.com/odigos-io/odigos/common/instrumentation/detector"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	corev1 "k8s.io/api/core/v1"
@@ -15,7 +16,7 @@ type k8sDetailsResolver struct {
 	client client.Client
 }
 
-func (dr *k8sDetailsResolver) Resolve(ctx context.Context, event types.ProcessEvent) (K8sDetails, error) {
+func (dr *k8sDetailsResolver) Resolve(ctx context.Context, event detector.ProcessEvent) (K8sDetails, error) {
 	pod, err := dr.podFromProcEvent(ctx, event)
 	if err != nil {
 		return K8sDetails{}, err
@@ -38,7 +39,7 @@ func (dr *k8sDetailsResolver) Resolve(ctx context.Context, event types.ProcessEv
 	}, nil
 }
 
-func (dr *k8sDetailsResolver) podFromProcEvent(ctx context.Context, e types.ProcessEvent) (*corev1.Pod, error) {
+func (dr *k8sDetailsResolver) podFromProcEvent(ctx context.Context, e detector.ProcessEvent) (*corev1.Pod, error) {
 	eventEnvs := e.ExecDetails.Environments
 
 	podName, ok := eventEnvs[consts.OdigosEnvVarPodName]
@@ -60,14 +61,14 @@ func (dr *k8sDetailsResolver) podFromProcEvent(ctx context.Context, e types.Proc
 	return &pod, nil
 }
 
-func containerNameFromProcEvent(event types.ProcessEvent) (string, bool) {
+func containerNameFromProcEvent(event detector.ProcessEvent) (string, bool) {
 	containerName, ok := event.ExecDetails.Environments[consts.OdigosEnvVarContainerName]
 	return containerName, ok
 }
 
 type k8sConfigGroupResolver struct{}
 
-func (cr *k8sConfigGroupResolver) Resolve(ctx context.Context, d K8sDetails, dist types.OtelDistribution) (K8sConfigGroup, error) {
+func (cr *k8sConfigGroupResolver) Resolve(ctx context.Context, d K8sDetails, dist instrumentation.OtelDistribution) (K8sConfigGroup, error) {
 	if d.pw == nil {
 		return K8sConfigGroup{}, fmt.Errorf("podWorkload is not provided, cannot resolve config group")
 	}
