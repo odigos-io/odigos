@@ -28,14 +28,15 @@ export const SELECTED_ENTITIES = {
   NAMESPACE: NAMESPACES.DEFAULT,
   SOURCE: 'frontend',
   DESTINATION: 'Jaeger',
+  DESTINATION_AUTOFILL_FIELD: 'JAEGER_URL',
   ACTION: 'PiiMasking',
   INSTRUMENTATION_RULE: 'PayloadCollection',
 };
 
 export const DATA_IDS = {
-  SELECT_NAMESPACE: '[data-id=namespace-default]',
-  SELECT_DESTINATION: '[data-id=destination-jaeger]',
-  SELECT_DESTINATION_AUTOFILL_FIELD: '[data-id=JAEGER_URL]',
+  SELECT_NAMESPACE: `[data-id=namespace-${SELECTED_ENTITIES.NAMESPACE}]`,
+  SELECT_DESTINATION: `[data-id=destination-${SELECTED_ENTITIES.DESTINATION}]`,
+  SELECT_DESTINATION_AUTOFILL_FIELD: `[data-id=${SELECTED_ENTITIES.DESTINATION_AUTOFILL_FIELD}]`,
 
   ADD_ENTITY: '[data-id=add-entity]',
   ADD_SOURCE: '[data-id=add-source]',
