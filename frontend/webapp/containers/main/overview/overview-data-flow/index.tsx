@@ -43,7 +43,7 @@ export default function OverviewDataFlowContainer() {
   const sourceNodes = useSourceNodes({ entities: filteredData?.computePlatform.k8sActualSources || [], positions, unfilteredCounts, containerHeight });
 
   const nodes = useMemo(() => ([] as Node[]).concat(actionNodes, ruleNodes, sourceNodes, destinationNodes), [actionNodes, ruleNodes, sourceNodes, destinationNodes]);
-  const edges = useMemo(() => buildEdges({ nodes, metrics }), [nodes, metrics]);
+  const edges = useMemo(() => buildEdges({ nodes, metrics, containerHeight }), [nodes, metrics, containerHeight]);
 
   return (
     <Container ref={containerRef}>
