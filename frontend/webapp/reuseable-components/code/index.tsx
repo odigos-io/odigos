@@ -6,8 +6,6 @@ interface Props {
   code: string;
 }
 
-const Line = styled.div``;
-
 const Token = styled.span`
   white-space: pre-wrap;
   opacity: 0.75;
@@ -19,12 +17,12 @@ export const Code: React.FC<Props> = ({ language, code }) => {
       {({ getLineProps, getTokenProps, tokens }) => (
         <pre>
           {tokens.map((line, i) => (
-            <Line key={`line-${i}`} {...getLineProps({ line })}>
+            <div key={`line-${i}`} {...getLineProps({ line })}>
               {/* <span>{i + 1}</span> */}
               {line.map((token, ii) => (
                 <Token key={`line-${i}-token-${ii}`} {...getTokenProps({ token })} />
               ))}
-            </Line>
+            </div>
           ))}
         </pre>
       )}
