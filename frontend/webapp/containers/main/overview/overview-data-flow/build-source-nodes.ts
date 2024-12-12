@@ -12,7 +12,6 @@ interface Params {
   unfilteredCounts: EntityCounts;
 
   containerHeight: number;
-  scrollYOffset: number;
   onScroll: (params: { clientHeight: number; scrollHeight: number; scrollTop: number }) => void;
 }
 
@@ -35,7 +34,7 @@ const mapToNodeData = (entity: Params['entities'][0]) => {
   };
 };
 
-export const buildSourceNodes = ({ entities, positions, unfilteredCounts, containerHeight, scrollYOffset, onScroll }: Params) => {
+export const buildSourceNodes = ({ entities, positions, unfilteredCounts, containerHeight, onScroll }: Params) => {
   const nodes: Node[] = [];
   const position = positions[OVERVIEW_ENTITY_TYPES.SOURCE];
   const unfilteredCount = unfilteredCounts[OVERVIEW_ENTITY_TYPES.SOURCE];
@@ -101,7 +100,7 @@ export const buildSourceNodes = ({ entities, positions, unfilteredCounts, contai
         parentId: 'source-scroll',
         position: {
           x: framePadding,
-          y: position['y'](idx) - (nodeHeight - framePadding) - scrollYOffset,
+          y: position['y'](idx) - (nodeHeight - framePadding),
         },
         data: mapToNodeData(source),
         style: {

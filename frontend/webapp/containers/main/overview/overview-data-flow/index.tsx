@@ -1,11 +1,11 @@
 'use client';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
 import { OVERVIEW_ENTITY_TYPES } from '@/types';
 import { NodeDataFlow } from '@/reuseable-components';
 import { MultiSourceControl } from '../multi-source-control';
 import { OverviewActionsMenu } from '../overview-actions-menu';
-import { type Edge, useEdgesState, useNodesState, type Node } from '@xyflow/react';
+import { type Edge, useEdgesState, useNodesState, type Node, applyNodeChanges } from '@xyflow/react';
 import { useComputePlatform, useContainerSize, useMetrics, useNodeDataFlowHandlers } from '@/hooks';
 
 import { buildEdges } from './build-edges';
@@ -63,28 +63,38 @@ export default function OverviewDataFlowContainer() {
         positions,
         unfilteredCounts,
         containerHeight,
-        scrollYOffset,
         onScroll: ({ clientHeight, scrollHeight, scrollTop }) => {
           console.log('Node scrolled', { clientHeight, scrollHeight, scrollTop });
           setScrollYOffset(scrollTop);
         },
       }),
-    [filteredData?.computePlatform.k8sActualSources, positions, unfilteredCounts, containerHeight, scrollYOffset],
+    [filteredData?.computePlatform.k8sActualSources, positions, unfilteredCounts, containerHeight],
   );
 
   const [nodes, setNodes, onNodesChange] = useNodesState(([] as Node[]).concat(actionNodes, ruleNodes, sourceNodes, destinationNodes));
   const [edges, setEdges, onEdgesChange] = useEdgesState([] as Edge[]);
 
-  const handleNodeState = (prevNodes: Node[], currNodes: Node[], key: OVERVIEW_ENTITY_TYPES) => {
+  const handleNodeState = useCallback((prevNodes: Node[], currNodes: Node[], key: OVERVIEW_ENTITY_TYPES, yOffset?: number) => {
     const filtered = [...prevNodes].filter(({ id }) => id.split('-')[0] !== key);
-    filtered.push(...currNodes);
+
+    if (!!yOffset) {
+      const changed = applyNodeChanges(
+        currNodes.filter((node) => node.extent === 'parent').map((node) => ({ id: node.id, type: 'position', position: { ...node.position, y: node.position.y - yOffset } })),
+        prevNodes,
+      );
+
+      return changed;
+    } else {
+      filtered.push(...currNodes);
+    }
+
     return filtered;
-  };
+  }, []);
 
   useEffect(() => setNodes((prev) => handleNodeState(prev, ruleNodes, OVERVIEW_ENTITY_TYPES.RULE)), [ruleNodes]);
   useEffect(() => setNodes((prev) => handleNodeState(prev, actionNodes, OVERVIEW_ENTITY_TYPES.ACTION)), [actionNodes]);
   useEffect(() => setNodes((prev) => handleNodeState(prev, destinationNodes, OVERVIEW_ENTITY_TYPES.DESTINATION)), [destinationNodes]);
-  useEffect(() => setNodes((prev) => handleNodeState(prev, sourceNodes, OVERVIEW_ENTITY_TYPES.SOURCE)), [sourceNodes]);
+  useEffect(() => setNodes((prev) => handleNodeState(prev, sourceNodes, OVERVIEW_ENTITY_TYPES.SOURCE, scrollYOffset)), [sourceNodes, scrollYOffset]);
   useEffect(() => setEdges(buildEdges({ nodes, metrics, containerHeight })), [nodes, metrics, containerHeight]);
 
   return (
