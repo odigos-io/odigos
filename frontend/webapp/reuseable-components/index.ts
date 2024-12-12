@@ -36,3 +36,4 @@ export * from './extend-icon';
 export * from './condition-details';
 export * from './data-card';
 export * from './data-tab';
+export * from './code';

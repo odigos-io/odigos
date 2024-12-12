@@ -1,14 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
+
 import buildCard from './build-card';
 import styled from 'styled-components';
-import { useSourceCRUD } from '@/hooks';
 import { useDrawerStore } from '@/store';
 import buildDrawerItem from './build-drawer-item';
 import { UpdateSourceBody } from '../update-source-body';
+import { useDescribeSource, useSourceCRUD } from '@/hooks';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type K8sActualSource } from '@/types';
 import { ACTION, DATA_CARDS, getMainContainerLanguage, getProgrammingLanguageIcon } from '@/utils';
-import { ConditionDetails, DataCard, DataCardRow, DataCardFieldTypes } from '@/reuseable-components';
+import { ConditionDetails, DataCard, DataCardRow, DataCardFieldTypes, Code } from '@/reuseable-components';
 
 interface Props {}
 
@@ -93,6 +94,7 @@ export const SourceDrawer: React.FC<Props> = () => {
 
   if (!selectedItem?.item) return null;
   const { id, item } = selectedItem as { id: WorkloadId; item: K8sActualSource };
+  const { data: describe } = useDescribeSource(id);
 
   const handleEdit = (bool?: boolean) => {
     setIsEditing(typeof bool === 'boolean' ? bool : true);
@@ -141,6 +143,18 @@ export const SourceDrawer: React.FC<Props> = () => {
           <ConditionDetails conditions={item.instrumentedApplicationDetails.conditions} />
           <DataCard title={DATA_CARDS.SOURCE_DETAILS} data={cardData} />
           <DataCard title={DATA_CARDS.DETECTED_CONTAINERS} titleBadge={containersData.length} description={DATA_CARDS.DETECTED_CONTAINERS_DESCRIPTION} data={containersData} />
+          <DataCard
+            title={DATA_CARDS.DESCRIBE_SOURCE}
+            data={[
+              {
+                type: DataCardFieldTypes.CODE,
+                value: JSON.stringify({
+                  language: 'json',
+                  code: JSON.stringify(describe || {}, null, 2),
+                }),
+              },
+            ]}
+          />
         </DataContainer>
       )}
     </OverviewDrawer>
