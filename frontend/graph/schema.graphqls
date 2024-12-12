@@ -205,7 +205,11 @@ type ComputePlatform {
   computePlatformType: ComputePlatformType!
   k8sActualNamespace(name: String!): K8sActualNamespace
   k8sActualNamespaces: [K8sActualNamespace]!
-  k8sActualSource(name: String, namespace: String, kind: String): K8sActualSource
+  k8sActualSource(
+    name: String
+    namespace: String
+    kind: String
+  ): K8sActualSource
   k8sActualSources: [K8sActualSource]!
   destinations: [Destination!]!
   actions: [IcaInstanceResponse!]!
@@ -442,6 +446,126 @@ type SingleDestinationMetricsResponse {
   throughput: Int!
 }
 
+# describe types
+type EntityProperty {
+  name: String!
+  value: String!
+  status: String
+  explain: String
+}
+
+type InstrumentationLabelsAnalyze {
+  instrumented: EntityProperty!
+  workload: EntityProperty
+  namespace: EntityProperty
+  instrumentedText: EntityProperty
+}
+
+type InstrumentationConfigAnalyze {
+  created: EntityProperty!
+  createTime: EntityProperty
+}
+
+type ContainerRuntimeInfoAnalyze {
+  containerName: EntityProperty!
+  language: EntityProperty!
+  runtimeVersion: EntityProperty!
+  envVars: [EntityProperty!]!
+}
+
+type RuntimeInfoAnalyze {
+  generation: EntityProperty!
+  containers: [ContainerRuntimeInfoAnalyze!]!
+}
+
+type InstrumentedApplicationAnalyze {
+  created: EntityProperty!
+  createTime: EntityProperty
+  containers: [ContainerRuntimeInfoAnalyze!]!
+}
+
+type ContainerWorkloadManifestAnalyze {
+  containerName: EntityProperty!
+  devices: EntityProperty!
+  originalEnv: [EntityProperty!]!
+}
+
+type InstrumentationDeviceAnalyze {
+  statusText: EntityProperty!
+  containers: [ContainerWorkloadManifestAnalyze!]!
+}
+
+type InstrumentationInstanceAnalyze {
+  healthy: EntityProperty!
+  message: EntityProperty
+  identifyingAttributes: [EntityProperty!]!
+}
+
+type PodContainerAnalyze {
+  containerName: EntityProperty!
+  actualDevices: EntityProperty!
+  instrumentationInstances: [InstrumentationInstanceAnalyze!]!
+}
+
+type PodAnalyze {
+  podName: EntityProperty!
+  nodeName: EntityProperty!
+  phase: EntityProperty!
+  containers: [PodContainerAnalyze!]!
+}
+
+type SourceAnalyze {
+  name: EntityProperty!
+  kind: EntityProperty!
+  namespace: EntityProperty!
+  labels: InstrumentationLabelsAnalyze!
+
+  instrumentationConfig: InstrumentationConfigAnalyze!
+  runtimeInfo: RuntimeInfoAnalyze
+  instrumentedApplication: InstrumentedApplicationAnalyze!
+  instrumentationDevice: InstrumentationDeviceAnalyze!
+
+  totalPods: Int!
+  podsPhasesCount: String!
+  pods: [PodAnalyze!]!
+}
+
+type ClusterCollectorAnalyze {
+  enabled: EntityProperty!
+  collectorGroup: EntityProperty!
+  deployed: EntityProperty
+  deployedError: EntityProperty
+  collectorReady: EntityProperty
+  deploymentCreated: EntityProperty!
+  expectedReplicas: EntityProperty
+  healthyReplicas: EntityProperty
+  failedReplicas: EntityProperty
+  failedReplicasReason: EntityProperty
+}
+
+type NodeCollectorAnalyze {
+  enabled: EntityProperty!
+  collectorGroup: EntityProperty!
+  deployed: EntityProperty
+  deployedError: EntityProperty
+  collectorReady: EntityProperty
+  daemonSet: EntityProperty!
+  desiredNodes: EntityProperty
+  currentNodes: EntityProperty
+  updatedNodes: EntityProperty
+  availableNodes: EntityProperty
+}
+
+type OdigosAnalyze {
+  odigosVersion: EntityProperty!
+  numberOfDestinations: Int!
+  numberOfSources: Int!
+  clusterCollector: ClusterCollectorAnalyze!
+  nodeCollector: NodeCollectorAnalyze!
+  isSettled: Boolean!
+  hasErrors: Boolean!
+}
+
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
@@ -449,21 +573,40 @@ type Query {
   destinationTypeDetails(type: String!): GetDestinationDetailsResponse
   potentialDestinations: [DestinationDetails!]!
   getOverviewMetrics: OverviewMetricsResponse!
+  describeOdigos: OdigosAnalyze!
+  describeSource(
+    namespace: String!
+    kind: String!
+    name: String!
+  ): SourceAnalyze!
 }
 
 type Mutation {
   createNewDestination(destination: DestinationInput!): Destination!
   persistK8sNamespace(namespace: PersistNamespaceItemInput!): Boolean!
-  persistK8sSources(namespace: String!, sources: [PersistNamespaceSourceInput!]!): Boolean!
-  testConnectionForDestination(destination: DestinationInput!): TestConnectionResponse!
-  updateK8sActualSource(sourceId: K8sSourceId!, patchSourceRequest: PatchSourceRequestInput!): Boolean!
+  persistK8sSources(
+    namespace: String!
+    sources: [PersistNamespaceSourceInput!]!
+  ): Boolean!
+  testConnectionForDestination(
+    destination: DestinationInput!
+  ): TestConnectionResponse!
+  updateK8sActualSource(
+    sourceId: K8sSourceId!
+    patchSourceRequest: PatchSourceRequestInput!
+  ): Boolean!
   updateDestination(id: ID!, destination: DestinationInput!): Destination!
   deleteDestination(id: ID!): Boolean!
   createAction(action: ActionInput!): Action!
   updateAction(id: ID!, action: ActionInput!): Action!
   deleteAction(id: ID!, actionType: String!): Boolean!
 
-  createInstrumentationRule(instrumentationRule: InstrumentationRuleInput!): InstrumentationRule!
-  updateInstrumentationRule(ruleId: ID!, instrumentationRule: InstrumentationRuleInput!): InstrumentationRule!
+  createInstrumentationRule(
+    instrumentationRule: InstrumentationRuleInput!
+  ): InstrumentationRule!
+  updateInstrumentationRule(
+    ruleId: ID!
+    instrumentationRule: InstrumentationRuleInput!
+  ): InstrumentationRule!
   deleteInstrumentationRule(ruleId: ID!): Boolean!
 }
