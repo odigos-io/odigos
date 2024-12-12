@@ -78,6 +78,19 @@ type Condition struct {
 	Message            *string         `json:"message,omitempty"`
 }
 
+type ContainerRuntimeInfoAnalyze struct {
+	ContainerName  *EntityProperty   `json:"containerName"`
+	Language       *EntityProperty   `json:"language"`
+	RuntimeVersion *EntityProperty   `json:"runtimeVersion"`
+	EnvVars        []*EntityProperty `json:"envVars"`
+}
+
+type ContainerWorkloadManifestAnalyze struct {
+	ContainerName *EntityProperty   `json:"containerName"`
+	Devices       *EntityProperty   `json:"devices"`
+	OriginalEnv   []*EntityProperty `json:"originalEnv"`
+}
+
 type DbQueryPayloadCollection struct {
 	MaxPayloadLength    *int  `json:"maxPayloadLength,omitempty"`
 	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
@@ -130,6 +143,13 @@ type DestinationInput struct {
 	Type            string                `json:"type"`
 	ExportedSignals *ExportedSignalsInput `json:"exportedSignals"`
 	Fields          []*FieldInput         `json:"fields"`
+}
+
+type EntityProperty struct {
+	Name    string  `json:"name"`
+	Value   string  `json:"value"`
+	Status  *string `json:"status,omitempty"`
+	Explain *string `json:"explain,omitempty"`
 }
 
 type ErrorSamplerAction struct {
@@ -206,6 +226,29 @@ type IcaInstanceResponse struct {
 	Spec string `json:"spec"`
 }
 
+type InstrumentationConfigAnalyze struct {
+	Created    *EntityProperty `json:"created"`
+	CreateTime *EntityProperty `json:"createTime,omitempty"`
+}
+
+type InstrumentationDeviceAnalyze struct {
+	StatusText *EntityProperty                     `json:"statusText"`
+	Containers []*ContainerWorkloadManifestAnalyze `json:"containers"`
+}
+
+type InstrumentationInstanceAnalyze struct {
+	Healthy               *EntityProperty   `json:"healthy"`
+	Message               *EntityProperty   `json:"message,omitempty"`
+	IdentifyingAttributes []*EntityProperty `json:"identifyingAttributes"`
+}
+
+type InstrumentationLabelsAnalyze struct {
+	Instrumented     *EntityProperty `json:"instrumented"`
+	Workload         *EntityProperty `json:"workload,omitempty"`
+	Namespace        *EntityProperty `json:"namespace,omitempty"`
+	InstrumentedText *EntityProperty `json:"instrumentedText,omitempty"`
+}
+
 type InstrumentationLibrary struct {
 	LibraryName string                   `json:"libraryName"`
 	Options     []*InstrumentationOption `json:"options"`
@@ -245,6 +288,12 @@ type InstrumentationRuleInput struct {
 	Workloads                []*PodWorkloadInput                    `json:"workloads,omitempty"`
 	InstrumentationLibraries []*InstrumentationLibraryGlobalIDInput `json:"instrumentationLibraries,omitempty"`
 	PayloadCollection        *PayloadCollectionInput                `json:"payloadCollection,omitempty"`
+}
+
+type InstrumentedApplicationAnalyze struct {
+	Created    *EntityProperty                `json:"created"`
+	CreateTime *EntityProperty                `json:"createTime,omitempty"`
+	Containers []*ContainerRuntimeInfoAnalyze `json:"containers"`
 }
 
 type InstrumentedApplicationDetails struct {
@@ -391,6 +440,19 @@ func (this PiiMaskingAction) GetSignals() []SignalType {
 	return interfaceSlice
 }
 
+type PodAnalyze struct {
+	PodName    *EntityProperty        `json:"podName"`
+	NodeName   *EntityProperty        `json:"nodeName"`
+	Phase      *EntityProperty        `json:"phase"`
+	Containers []*PodContainerAnalyze `json:"containers"`
+}
+
+type PodContainerAnalyze struct {
+	ContainerName            *EntityProperty                   `json:"containerName"`
+	ActualDevices            *EntityProperty                   `json:"actualDevices"`
+	InstrumentationInstances []*InstrumentationInstanceAnalyze `json:"instrumentationInstances"`
+}
+
 type PodWorkload struct {
 	Namespace string          `json:"namespace"`
 	Kind      K8sResourceKind `json:"kind"`
@@ -460,6 +522,11 @@ func (this RenameAttributeAction) GetSignals() []SignalType {
 	return interfaceSlice
 }
 
+type RuntimeInfoAnalyze struct {
+	Generation *EntityProperty                `json:"generation"`
+	Containers []*ContainerRuntimeInfoAnalyze `json:"containers"`
+}
+
 type SingleDestinationMetricsResponse struct {
 	ID            string `json:"id"`
 	TotalDataSent int    `json:"totalDataSent"`
@@ -472,6 +539,20 @@ type SingleSourceMetricsResponse struct {
 	Name          string `json:"name"`
 	TotalDataSent int    `json:"totalDataSent"`
 	Throughput    int    `json:"throughput"`
+}
+
+type SourceAnalyze struct {
+	Name                    *EntityProperty                 `json:"name"`
+	Kind                    *EntityProperty                 `json:"kind"`
+	Namespace               *EntityProperty                 `json:"namespace"`
+	Labels                  *InstrumentationLabelsAnalyze   `json:"labels"`
+	InstrumentationConfig   *InstrumentationConfigAnalyze   `json:"instrumentationConfig"`
+	RuntimeInfo             *RuntimeInfoAnalyze             `json:"runtimeInfo,omitempty"`
+	InstrumentedApplication *InstrumentedApplicationAnalyze `json:"instrumentedApplication"`
+	InstrumentationDevice   *InstrumentationDeviceAnalyze   `json:"instrumentationDevice"`
+	TotalPods               int                             `json:"totalPods"`
+	PodsPhasesCount         string                          `json:"podsPhasesCount"`
+	Pods                    []*PodAnalyze                   `json:"pods"`
 }
 
 type SourceContainerRuntimeDetails struct {

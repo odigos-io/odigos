@@ -804,6 +804,11 @@ func (r *queryResolver) GetOverviewMetrics(ctx context.Context) (*model.Overview
 	}, nil
 }
 
+// DescribeSource is the resolver for the describeSource field.
+func (r *Resolver) DescribeSource(ctx context.Context, namespace string, kind string, name string) (*model.SourceAnalyze, error) {
+	return services.GetSourceDescription(ctx, namespace, kind, name)
+}
+
 // ComputePlatform returns ComputePlatformResolver implementation.
 func (r *Resolver) ComputePlatform() ComputePlatformResolver { return &computePlatformResolver{r} }
 
