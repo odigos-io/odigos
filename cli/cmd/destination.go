@@ -105,7 +105,7 @@ func addDestinationToCluster(cmd *cobra.Command, name string, cluster string, au
 	executeAuthCommand(authCommand, cluster)
 
 	client := kube.GetCLIClientOrExit(cmd)
-	odigosNamespace, err := resources.GetOdigosNamespace(client, cmd.Context())
+	_, err := resources.GetOdigosNamespace(client, cmd.Context())
 	if err != nil {
 		return nil
 	}
@@ -161,12 +161,12 @@ var addDestinationCmd = &cobra.Command{
 		}
 
 		if len(clusters) == 0 {
-			if err := addDestinationToCluster(args[0], "", authCommand); err != nil {
+			if err := addDestinationToCluster(cmd, args[0], "", authCommand); err != nil {
 				return
 			}
 		} else {
 			for _, cluster := range clusters {
-				if err := addDestinationToCluster(args[0], cluster, authCommand); err != nil {
+				if err := addDestinationToCluster(cmd, args[0], cluster, authCommand); err != nil {
 					return
 				}
 			}
