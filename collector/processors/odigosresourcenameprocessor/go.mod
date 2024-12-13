@@ -1,8 +1,6 @@
 module github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosresourcenameprocessor
 
-go 1.21.0
-
-toolchain go1.22.6
+go 1.23.0
 
 require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig v0.106.0

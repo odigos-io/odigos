@@ -1,8 +1,6 @@
 module github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/azureblobstorageexporter
 
-go 1.21.0
-
-toolchain go1.22.6
+go 1.23.0
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.7.0
