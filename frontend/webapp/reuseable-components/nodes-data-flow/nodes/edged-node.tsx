@@ -10,27 +10,25 @@ interface Props
         nodeWidth: number;
         nodeHeight: number;
       },
-      NODE_TYPES.FRAME
+      NODE_TYPES.EDGED
     >
   > {}
 
 const Container = styled.div<{ $nodeWidth: Props['data']['nodeWidth']; $nodeHeight: Props['data']['nodeHeight'] }>`
-  width: ${({ $nodeWidth }) => $nodeWidth}px;
-  height: ${({ $nodeHeight }) => $nodeHeight}px;
-  background: transparent;
-  border: 1px dashed ${({ theme }) => theme.colors.border};
-  border-radius: 24px;
+  width: ${({ $nodeWidth }) => `${$nodeWidth}px`};
+  height: ${({ $nodeHeight }) => `${$nodeHeight}px`};
+  opacity: 0;
 `;
 
-const FrameNode: React.FC<Props> = ({ data }) => {
+const EdgedNode: React.FC<Props> = ({ data }) => {
   const { nodeWidth, nodeHeight } = data;
 
   return (
-    <Container $nodeWidth={nodeWidth} $nodeHeight={nodeHeight} className='nowheel nodrag'>
+    <Container $nodeWidth={nodeWidth} $nodeHeight={nodeHeight}>
       <Handle type='source' position={Position.Right} style={{ visibility: 'hidden' }} />
       <Handle type='target' position={Position.Left} style={{ visibility: 'hidden' }} />
     </Container>
   );
 };
 
-export default FrameNode;
+export default EdgedNode;
