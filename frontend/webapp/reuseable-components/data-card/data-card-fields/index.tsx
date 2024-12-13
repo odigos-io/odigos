@@ -46,7 +46,7 @@ const ItemTitle = styled(Text)`
 export const DataCardFields: React.FC<Props> = ({ data }) => {
   return (
     <ListContainer>
-      {data.map(({ type, title, tooltip, value, width = 'unset' }) => {
+      {data.map(({ type, title, tooltip, value, width = 'inherit' }) => {
         const id = useId();
 
         return (
