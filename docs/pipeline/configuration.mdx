@@ -13,6 +13,7 @@ Odigos sets up an observability pipeline in your Kubernetes cluster to collect, 
 User can configure the following components:
 
 - **Cluster Gateway Collector** - a collector that runs as a k8s Deployment. It receives the OpenTelemetry data from the Node Collectors, processes it, and exports it to the configured destinations.
+- **Node Data Collection Collector** - a collector that runs as a k8s DaemonSet. It collects / scrape the OpenTelemetry data from the applications running on the nodes and forwards it to the Cluster Gateway Collector.
 
 ### Configuring the Pipeline
 
@@ -23,13 +24,24 @@ When configuring the pipeline, you must use **only one of the two methods**—ei
 
 #### 1. Using Profiles
 
-Sizing Profiles `size_s`, `size_m`, `size_l` are pre-defined configurations designed to simplify pipeline configurations. Each profile specifies the following parameters for the **Cluster Gateway Collector**:
+Sizing Profiles `size_s`, `size_m`, `size_l` are pre-defined configurations designed to simplify pipeline configurations. Each profile specifies the following parameters:
 
-| Profile  | Minimum Replicas      | HPA Maximum Replicas      | Request CPU (m)      | Limit CPU (m)      | Request Memory (Mi)
-|----------|-----------------------|----------------------|-----------------|---------------|----------------------|
-| `size_s` | **1**                 | **5**                | **150m**        | **300m**      | **300Mi**            |
-| `size_m` | **2**                 | **8**                | **500m**        | **1000m**     | **500Mi**            |
-| `size_l` | **3**                 | **12**               | **750m**        | **1250m**     | **750Mi**            |
+**Cluster Gateway Collector**:
+
+| Profile  | Minimum Replicas      | HPA Maximum Replicas      | Request CPU (m)      | Limit CPU (m)      | Request Memory (Mi) | Limit Memory (Mi) |
+|----------|-----------------------|----------------------|-----------------|---------------|----------------------|-------------------|
+| `size_s` | **1**                 | **5**                | **150m**        | **300m**      | **300Mi**            | **300Mi**         |
+| `size_m` | **2**                 | **8**                | **500m**        | **1000m**     | **500Mi**            | **600Mi**         |
+| `size_l` | **3**                 | **12**               | **750m**        | **1250m**     | **750Mi**            | **850Mi**        |
+
+**Node Data Collection Collector**:
+
+| Profile  | Request Memory (Mi)  | Limit Memory (Mi) |
+|----------|----------------------|-------------------|
+| `size_s` | **150Mi**            | **300Mi**         |
+| `size_m` | **250Mi**            | **500Mi**         |
+| `size_l` | **500Mi**            | **750Mi**         |
+
 
 To use profiles, you need to use the [Odigos CLI Command for Profiles](/cli/odigos_profile).  
 This simplifies the setup process and ensures optimized settings for typical use cases.
@@ -79,6 +91,32 @@ collectorGateway:
   # This is when the Go runtime will start garbage collection.
   # Default: 80% of the hard limit of the memory limiter.
   goMemLimitMiB:
+
+collectorNode:
+  # RequestMemoryMiB is the memory request for the node collector daemonset.
+  # it will be embedded in the daemonset as a resource request of the form "memory: <value>Mi"
+  # default value is 250Mi
+  RequestMemoryMiB int `json:"requestMemoryMiB,omitempty"`
+
+  # LimitMemoryMiB is the memory limit for the node collector daemonset.
+  # it will be embedded in the daemonset as a resource limit of the form "memory: <value>Mi"
+  # default value is 2x the memory request.
+  LimitMemoryMiB int `json:"limitMemoryMiB,omitempty"`
+
+  # this parameter sets the "limit_mib" parameter in the memory limiter configuration for the node collector.
+  # it is the hard limit after which a force garbage collection will be performed.
+  # if not set, it will be 50Mi below the memory request.
+  MemoryLimiterLimitMiB int `json:"memoryLimiterLimitMiB,omitempty"`
+
+  # this parameter sets the "spike_limit_mib" parameter in the memory limiter configuration for the node collector.
+  # note that this is not the processor soft limit, but the diff in Mib between the hard limit and the soft limit.
+  # if not set, this will be set to 20% of the hard limit (so the soft limit will be 80% of the hard limit).
+  MemoryLimiterSpikeLimitMiB int `json:"memoryLimiterSpikeLimitMiB,omitempty"`
+
+  # the GOMEMLIMIT environment variable value for the node collector daemonset.
+  # this is when go runtime will start garbage collection.
+  # if not specified, it will be set to 80% of the hard limit of the memory limiter.
+  GoMemLimitMib int `json:"goMemLimitMiB,omitempty"`
 ```
 
 
