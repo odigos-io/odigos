@@ -70,7 +70,7 @@ type manager[details Details, configGroup ConfigGroup] struct {
 	// channel for receiving process events,
 	// used to detect new processes and process exits, and handle their instrumentation accordingly.
 	procEvents <-chan detector.ProcessEvent
-	detector   *detector.Detector
+	detector   detector.Detector
 	handler    *Handler[details, configGroup]
 	factories  map[OtelDistribution]Factory
 	logger     logr.Logger
