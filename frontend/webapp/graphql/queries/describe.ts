@@ -1,5 +1,146 @@
 import { gql } from '@apollo/client';
 
+export const DESCRIBE_ODIGOS = gql`
+  query DescribeOdigos {
+    describeOdigos {
+      odigosVersion {
+        name
+        value
+        status
+        explain
+      }
+      numberOfDestinations
+      numberOfSources
+      clusterCollector {
+        enabled {
+          name
+          value
+          status
+          explain
+        }
+        collectorGroup {
+          name
+          value
+          status
+          explain
+        }
+        deployed {
+          name
+          value
+          status
+          explain
+        }
+        deployedError {
+          name
+          value
+          status
+          explain
+        }
+        collectorReady {
+          name
+          value
+          status
+          explain
+        }
+        deploymentCreated {
+          name
+          value
+          status
+          explain
+        }
+        expectedReplicas {
+          name
+          value
+          status
+          explain
+        }
+        healthyReplicas {
+          name
+          value
+          status
+          explain
+        }
+        failedReplicas {
+          name
+          value
+          status
+          explain
+        }
+        failedReplicasReason {
+          name
+          value
+          status
+          explain
+        }
+      }
+      nodeCollector {
+        enabled {
+          name
+          value
+          status
+          explain
+        }
+        collectorGroup {
+          name
+          value
+          status
+          explain
+        }
+        deployed {
+          name
+          value
+          status
+          explain
+        }
+        deployedError {
+          name
+          value
+          status
+          explain
+        }
+        collectorReady {
+          name
+          value
+          status
+          explain
+        }
+        daemonSet {
+          name
+          value
+          status
+          explain
+        }
+        desiredNodes {
+          name
+          value
+          status
+          explain
+        }
+        currentNodes {
+          name
+          value
+          status
+          explain
+        }
+        updatedNodes {
+          name
+          value
+          status
+          explain
+        }
+        availableNodes {
+          name
+          value
+          status
+          explain
+        }
+      }
+      isSettled
+      hasErrors
+    }
+  }
+`;
+
 export const DESCRIBE_SOURCE = gql`
   query DescribeSource($namespace: String!, $kind: String!, $name: String!) {
     describeSource(namespace: $namespace, kind: $kind, name: $name) {

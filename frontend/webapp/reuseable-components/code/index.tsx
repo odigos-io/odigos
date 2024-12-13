@@ -10,6 +10,9 @@ interface Props {
 
 const Token = styled.span`
   white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
   opacity: 0.75;
 `;
 
