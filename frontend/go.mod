@@ -1,6 +1,6 @@
 module github.com/odigos-io/odigos/frontend
 
-go 1.22.0
+go 1.23.0
 
 require (
 	github.com/99designs/gqlgen v0.17.49
