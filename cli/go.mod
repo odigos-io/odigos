@@ -1,6 +1,6 @@
 module github.com/odigos-io/odigos/cli
 
-go 1.22.0
+go 1.23.0
 
 require (
 	github.com/cert-manager/cert-manager v1.16.2
