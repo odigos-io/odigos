@@ -1,8 +1,6 @@
 module github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/googlecloudstorageexporter
 
-go 1.21.0
-
-toolchain go1.22.6
+go 1.23.0
 
 require (
 	cloud.google.com/go/storage v1.30.1

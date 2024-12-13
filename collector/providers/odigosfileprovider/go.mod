@@ -1,8 +1,6 @@
 module odigosfileprovider
 
-go 1.22.0
-
-toolchain go1.22.6
+go 1.23.0
 
 require (
 	github.com/fsnotify/fsnotify v1.8.0
