@@ -15,7 +15,7 @@ jobs:
           go-version: "1.23.0"
       - name: Generate collector with ocb
         working-directory: ./collector
-        run: "make genodigoscol"
+        run: "make genodigoscol generate"
       - name: Verify Generate
         working-directory: ./collector
         run: |
