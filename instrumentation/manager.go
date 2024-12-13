@@ -31,9 +31,30 @@ type instrumentationDetails[details Details, configGroup ConfigGroup] struct {
 
 type ManagerOptions[details Details, configGroup ConfigGroup] struct {
 	Logger          logr.Logger
+
+	// Factories is a map of OTel distributions to their corresponding instrumentation factories.
+	//
+	// The manager will use this map to create new instrumentations based on the process event.
+	// If a process event is received and the OTel distribution is not found in this map,
+	// the manager will ignore the event.
 	Factories       map[OtelDistribution]Factory
+
+	// Handler is used to resolve details, config group, OTel distribution and settings for the instrumentation
+	// based on the process event.
+	//
+	// The handler is also used to report the instrumentation lifecycle events.
 	Handler         *Handler[details, configGroup]
+
+	// DetectorOptions is a list of options to configure the process detector.
+	//
+	// The process detector is used to trigger new instrumentation for new relevant processes,
+	// and un-instrumenting processes once they exit.
 	DetectorOptions []detector.DetectorOption
+
+	// ConfigUpdates is a channel for receiving configuration updates.
+	// The manager will apply the configuration to all instrumentations that match the config group.
+	//
+	// The caller is responsible for closing the channel once no more updates are expected.
 	ConfigUpdates   <-chan ConfigUpdate[configGroup]
 }
 
@@ -226,7 +247,7 @@ func (m *manager[Details, ConfigGroup]) handleProcessExecEvent(ctx context.Conte
 		return errNoInstrumentationFactory
 	}
 
-	// Fetch initial config based on the InstrumentationConfig CR
+	// Fetch initial settings for the instrumentation
 	settings, err := m.handler.SettingsGetter.Settings(ctx, details, otelDisto)
 	if err != nil {
 		// for k8s instrumentation config CR will be queried to get the settings
