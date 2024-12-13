@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	Type = component.MustNewType("odigosconditionalattributesprocessor")
+	Type = component.MustNewType("odigosconditionalattributes")
 )
 
 const (
