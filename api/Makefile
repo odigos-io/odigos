@@ -18,7 +18,7 @@ SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
 .PHONY: all
-all: generate manifests generate-client
+all: generate manifests generate-client sync-helm-crd
 
 ##@ General
 
@@ -90,3 +90,8 @@ generate-client:
 	GOWORK=off go mod vendor
 	./hack/update-codegen.sh
 	rm -rf ./vendor
+
+.PHONY: sync-helm
+sync-helm-crd:
+	@echo "Syncing CRD yamls to Helm repo"
+	@cp -r config/crd/bases/* ../helm/odigos/templates/crds/
