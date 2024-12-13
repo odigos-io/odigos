@@ -94,4 +94,5 @@ generate-client:
 .PHONY: sync-helm
 sync-helm-crd:
 	@echo "Syncing CRD yamls to Helm repo"
+	@rm ../helm/odigos/templates/crds/* # remove existing files so we don't get leftovers
 	@cp -r config/crd/bases/* ../helm/odigos/templates/crds/
