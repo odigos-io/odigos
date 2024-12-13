@@ -8,7 +8,7 @@ spec:
     VERBOSITY: detailed
   destinationName: debug
   signals:
-    - TRACES
-    - METRICS
-    - LOGS
+  - TRACES
+  - METRICS
+  - LOGS
   type: debug

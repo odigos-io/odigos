@@ -4,9 +4,9 @@ metadata:
   name: nop
   namespace: odigos-system
 spec:
-  destinationName: nop
   data:
     placeholder: 'here since data is required'
+  destinationName: nop
   signals:
   - TRACES
   - METRICS
