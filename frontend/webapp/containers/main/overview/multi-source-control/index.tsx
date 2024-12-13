@@ -24,7 +24,7 @@ const Container = styled.div`
   background-color: ${({ theme }) => theme.colors.dropdown_bg};
 `;
 
-const MultiSourceControl = () => {
+export const MultiSourceControl = () => {
   const Transition = useTransition({
     container: Container,
     animateIn: slide.in['center'],
@@ -57,7 +57,7 @@ const MultiSourceControl = () => {
 
   return (
     <>
-      <Transition enter={!!totalSelected}>
+      <Transition data-id='multi-source-control' enter={!!totalSelected}>
         <Text>Selected sources</Text>
         <Badge label={totalSelected} filled />
 
@@ -88,5 +88,3 @@ const MultiSourceControl = () => {
     </>
   );
 };
-
-export default MultiSourceControl;

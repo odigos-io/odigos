@@ -1,6 +1,6 @@
 module github.com/odigos-io/odigos/procdiscovery
 
-go 1.22.0
+go 1.23.0
 
 require (
 	github.com/hashicorp/go-version v1.7.0

@@ -62,42 +62,6 @@ type ThinSource struct {
 	IaDetails                *InstrumentedApplicationDetails `json:"instrumented_application_details"`
 }
 
-func GetActualSource(ctx context.Context, ns string, kind string, name string) (*Source, error) {
-	k8sObjectName := workload.CalculateWorkloadRuntimeObjectName(name, kind)
-	owner, numberOfRunningInstances := GetWorkload(ctx, ns, kind, name)
-	if owner == nil {
-		return nil, fmt.Errorf("owner not found")
-	}
-	ownerAnnotations := owner.GetAnnotations()
-	var reportedName string
-	if ownerAnnotations != nil {
-		reportedName = ownerAnnotations[consts.OdigosReportedNameAnnotation]
-	}
-
-	ts := ThinSource{
-		SourceID: SourceID{
-			Namespace: ns,
-			Kind:      kind,
-			Name:      name,
-		},
-		NumberOfRunningInstances: numberOfRunningInstances,
-	}
-
-	instrumentedApplication, err := kube.DefaultClient.OdigosClient.InstrumentedApplications(ns).Get(ctx, k8sObjectName, metav1.GetOptions{})
-	if err == nil {
-		ts.IaDetails = k8sInstrumentedAppToThinSource(instrumentedApplication).IaDetails
-		err = addHealthyInstrumentationInstancesCondition(ctx, instrumentedApplication, &ts)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return &Source{
-		ThinSource:   ts,
-		ReportedName: reportedName,
-	}, nil
-}
-
 func GetWorkload(c context.Context, ns string, kind string, name string) (metav1.Object, int) {
 	switch kind {
 	case "Deployment":
@@ -123,7 +87,7 @@ func GetWorkload(c context.Context, ns string, kind string, name string) (metav1
 	}
 }
 
-func addHealthyInstrumentationInstancesCondition(ctx context.Context, app *v1alpha1.InstrumentedApplication, source *ThinSource) error {
+func AddHealthyInstrumentationInstancesCondition(ctx context.Context, app *v1alpha1.InstrumentedApplication, source *model.K8sActualSource) error {
 	labelSelector := fmt.Sprintf("%s=%s", consts.InstrumentedAppNameLabel, app.Name)
 	instancesList, err := kube.DefaultClient.OdigosClient.InstrumentationInstances(app.Namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: labelSelector,
@@ -150,46 +114,21 @@ func addHealthyInstrumentationInstancesCondition(ctx context.Context, app *v1alp
 		}
 	}
 
-	status := metav1.ConditionTrue
+	status := model.ConditionStatusTrue
 	if healthyInstances < totalInstances {
-		status = metav1.ConditionFalse
+		status = model.ConditionStatusFalse
 	}
 
-	source.IaDetails.Conditions = append(source.IaDetails.Conditions, metav1.Condition{
+	message := fmt.Sprintf("%d/%d instances are healthy", healthyInstances, totalInstances)
+	lastTransitionTime := Metav1TimeToString(latestStatusTime)
+	source.InstrumentedApplicationDetails.Conditions = append(source.InstrumentedApplicationDetails.Conditions, &model.Condition{
 		Type:               "HealthyInstrumentationInstances",
 		Status:             status,
-		LastTransitionTime: latestStatusTime,
-		Message:            fmt.Sprintf("%d/%d instances are healthy", healthyInstances, totalInstances),
+		LastTransitionTime: &lastTransitionTime,
+		Message:            &message,
 	})
 
 	return nil
-}
-
-func k8sInstrumentedAppToThinSource(app *v1alpha1.InstrumentedApplication) ThinSource {
-	var source ThinSource
-	source.Name = app.OwnerReferences[0].Name
-	source.Kind = app.OwnerReferences[0].Kind
-	source.Namespace = app.Namespace
-	var conditions []metav1.Condition
-	for _, condition := range app.Status.Conditions {
-		conditions = append(conditions, metav1.Condition{
-			Type:               condition.Type,
-			Status:             condition.Status,
-			Message:            condition.Message,
-			LastTransitionTime: condition.LastTransitionTime,
-		})
-	}
-	source.IaDetails = &InstrumentedApplicationDetails{
-		Languages:  []SourceLanguage{},
-		Conditions: conditions,
-	}
-	for _, language := range app.Spec.RuntimeDetails {
-		source.IaDetails.Languages = append(source.IaDetails.Languages, SourceLanguage{
-			ContainerName: language.ContainerName,
-			Language:      string(language.Language),
-		})
-	}
-	return source
 }
 
 func GetWorkloadsInNamespace(ctx context.Context, nsName string, instrumentationLabeled *bool) ([]model.K8sActualSource, error) {

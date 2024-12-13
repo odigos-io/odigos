@@ -1,5 +1,6 @@
 // Enumeration of possible Instrumentation Rule Types
 export enum InstrumentationRuleType {
+  UNKNOWN_TYPE = 'UnknownType',
   PAYLOAD_COLLECTION = 'PayloadCollection',
 }
 

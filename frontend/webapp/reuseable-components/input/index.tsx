@@ -144,7 +144,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 
           <StyledInput
             ref={ref} // Pass ref to the StyledInput
-            id={name}
+            data-id={name}
             name={name}
             $hasIcon={!!icon || isSecret}
             value={value}

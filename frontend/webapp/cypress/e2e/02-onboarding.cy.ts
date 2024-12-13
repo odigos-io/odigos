@@ -1,43 +1,29 @@
-import { ROUTES } from '../../utils/constants/routes';
+import { BUTTONS, DATA_IDS, ROUTES, SELECTED_ENTITIES } from '../constants';
 
 describe('Onboarding', () => {
-  it('Should contain at least a "default" namespace', () => {
-    cy.intercept('/graphql').as('gql');
+  beforeEach(() => cy.intercept('/graphql').as('gql'));
+
+  it('Should contain a "default" namespace', () => {
     cy.visit(ROUTES.CHOOSE_SOURCES);
-
     cy.wait('@gql').then(() => {
-      expect('#namespace-default').to.exist;
+      cy.get(DATA_IDS.SELECT_NAMESPACE).contains(SELECTED_ENTITIES.NAMESPACE).should('exist');
     });
   });
 
-  it('Should contain at least a "Jaeger" destination', () => {
-    cy.intercept('/graphql').as('gql');
+  it('Should contain a "Jaeger" destination, and it should be autocompleted', () => {
     cy.visit(ROUTES.CHOOSE_DESTINATION);
-
+    cy.contains('button', BUTTONS.ADD_DESTINATION).click();
     cy.wait('@gql').then(() => {
-      cy.contains('button', 'ADD DESTINATION').click();
-      expect('#destination-jaeger').to.exist;
+      cy.get(DATA_IDS.SELECT_DESTINATION).contains(SELECTED_ENTITIES.DESTINATION).should('exist').click();
+      expect(DATA_IDS.SELECT_DESTINATION_AUTOFILL_FIELD).to.not.be.empty;
     });
   });
 
-  it('Should autocomplete the "Jaeger" destination', () => {
-    cy.intercept('/graphql').as('gql');
-    cy.visit(ROUTES.CHOOSE_DESTINATION);
-
-    cy.wait('@gql').then(() => {
-      cy.contains('button', 'ADD DESTINATION').click();
-      cy.get('#destination-jaeger').click();
-      expect('#JAEGER_URL').to.not.be.empty;
-    });
-  });
-
-  it('Should allow the user to pass every step, and end-up on the "Overview" page.', () => {
+  it('Should allow the user to pass every step, and end-up on the "overview" page.', () => {
     cy.visit(ROUTES.CHOOSE_SOURCES);
-
-    cy.contains('button', 'NEXT').click();
+    cy.contains('button', BUTTONS.NEXT).click();
     cy.location('pathname').should('eq', ROUTES.CHOOSE_DESTINATION);
-
-    cy.contains('button', 'DONE').click();
+    cy.contains('button', BUTTONS.DONE).click();
     cy.location('pathname').should('eq', ROUTES.OVERVIEW);
   });
 });

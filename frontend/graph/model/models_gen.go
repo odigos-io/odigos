@@ -54,6 +54,19 @@ func (this AddClusterInfoAction) GetSignals() []SignalType {
 	return interfaceSlice
 }
 
+type ClusterCollectorAnalyze struct {
+	Enabled              *EntityProperty `json:"enabled"`
+	CollectorGroup       *EntityProperty `json:"collectorGroup"`
+	Deployed             *EntityProperty `json:"deployed,omitempty"`
+	DeployedError        *EntityProperty `json:"deployedError,omitempty"`
+	CollectorReady       *EntityProperty `json:"collectorReady,omitempty"`
+	DeploymentCreated    *EntityProperty `json:"deploymentCreated"`
+	ExpectedReplicas     *EntityProperty `json:"expectedReplicas,omitempty"`
+	HealthyReplicas      *EntityProperty `json:"healthyReplicas,omitempty"`
+	FailedReplicas       *EntityProperty `json:"failedReplicas,omitempty"`
+	FailedReplicasReason *EntityProperty `json:"failedReplicasReason,omitempty"`
+}
+
 type ClusterInfo struct {
 	AttributeName        string  `json:"attributeName"`
 	AttributeStringValue *string `json:"attributeStringValue,omitempty"`
@@ -76,6 +89,19 @@ type Condition struct {
 	LastTransitionTime *string         `json:"lastTransitionTime,omitempty"`
 	Reason             *string         `json:"reason,omitempty"`
 	Message            *string         `json:"message,omitempty"`
+}
+
+type ContainerRuntimeInfoAnalyze struct {
+	ContainerName  *EntityProperty   `json:"containerName"`
+	Language       *EntityProperty   `json:"language"`
+	RuntimeVersion *EntityProperty   `json:"runtimeVersion"`
+	EnvVars        []*EntityProperty `json:"envVars"`
+}
+
+type ContainerWorkloadManifestAnalyze struct {
+	ContainerName *EntityProperty   `json:"containerName"`
+	Devices       *EntityProperty   `json:"devices"`
+	OriginalEnv   []*EntityProperty `json:"originalEnv"`
 }
 
 type DbQueryPayloadCollection struct {
@@ -130,6 +156,13 @@ type DestinationInput struct {
 	Type            string                `json:"type"`
 	ExportedSignals *ExportedSignalsInput `json:"exportedSignals"`
 	Fields          []*FieldInput         `json:"fields"`
+}
+
+type EntityProperty struct {
+	Name    string  `json:"name"`
+	Value   string  `json:"value"`
+	Status  *string `json:"status,omitempty"`
+	Explain *string `json:"explain,omitempty"`
 }
 
 type ErrorSamplerAction struct {
@@ -206,6 +239,29 @@ type IcaInstanceResponse struct {
 	Spec string `json:"spec"`
 }
 
+type InstrumentationConfigAnalyze struct {
+	Created    *EntityProperty `json:"created"`
+	CreateTime *EntityProperty `json:"createTime,omitempty"`
+}
+
+type InstrumentationDeviceAnalyze struct {
+	StatusText *EntityProperty                     `json:"statusText"`
+	Containers []*ContainerWorkloadManifestAnalyze `json:"containers"`
+}
+
+type InstrumentationInstanceAnalyze struct {
+	Healthy               *EntityProperty   `json:"healthy"`
+	Message               *EntityProperty   `json:"message,omitempty"`
+	IdentifyingAttributes []*EntityProperty `json:"identifyingAttributes"`
+}
+
+type InstrumentationLabelsAnalyze struct {
+	Instrumented     *EntityProperty `json:"instrumented"`
+	Workload         *EntityProperty `json:"workload,omitempty"`
+	Namespace        *EntityProperty `json:"namespace,omitempty"`
+	InstrumentedText *EntityProperty `json:"instrumentedText,omitempty"`
+}
+
 type InstrumentationLibrary struct {
 	LibraryName string                   `json:"libraryName"`
 	Options     []*InstrumentationOption `json:"options"`
@@ -245,6 +301,12 @@ type InstrumentationRuleInput struct {
 	Workloads                []*PodWorkloadInput                    `json:"workloads,omitempty"`
 	InstrumentationLibraries []*InstrumentationLibraryGlobalIDInput `json:"instrumentationLibraries,omitempty"`
 	PayloadCollection        *PayloadCollectionInput                `json:"payloadCollection,omitempty"`
+}
+
+type InstrumentedApplicationAnalyze struct {
+	Created    *EntityProperty                `json:"created"`
+	CreateTime *EntityProperty                `json:"createTime,omitempty"`
+	Containers []*ContainerRuntimeInfoAnalyze `json:"containers"`
 }
 
 type InstrumentedApplicationDetails struct {
@@ -330,6 +392,29 @@ type MessagingPayloadCollectionInput struct {
 type Mutation struct {
 }
 
+type NodeCollectorAnalyze struct {
+	Enabled        *EntityProperty `json:"enabled"`
+	CollectorGroup *EntityProperty `json:"collectorGroup"`
+	Deployed       *EntityProperty `json:"deployed,omitempty"`
+	DeployedError  *EntityProperty `json:"deployedError,omitempty"`
+	CollectorReady *EntityProperty `json:"collectorReady,omitempty"`
+	DaemonSet      *EntityProperty `json:"daemonSet"`
+	DesiredNodes   *EntityProperty `json:"desiredNodes,omitempty"`
+	CurrentNodes   *EntityProperty `json:"currentNodes,omitempty"`
+	UpdatedNodes   *EntityProperty `json:"updatedNodes,omitempty"`
+	AvailableNodes *EntityProperty `json:"availableNodes,omitempty"`
+}
+
+type OdigosAnalyze struct {
+	OdigosVersion        *EntityProperty          `json:"odigosVersion"`
+	NumberOfDestinations int                      `json:"numberOfDestinations"`
+	NumberOfSources      int                      `json:"numberOfSources"`
+	ClusterCollector     *ClusterCollectorAnalyze `json:"clusterCollector"`
+	NodeCollector        *NodeCollectorAnalyze    `json:"nodeCollector"`
+	IsSettled            bool                     `json:"isSettled"`
+	HasErrors            bool                     `json:"hasErrors"`
+}
+
 type OverviewMetricsResponse struct {
 	Sources      []*SingleSourceMetricsResponse      `json:"sources"`
 	Destinations []*SingleDestinationMetricsResponse `json:"destinations"`
@@ -389,6 +474,19 @@ func (this PiiMaskingAction) GetSignals() []SignalType {
 		interfaceSlice = append(interfaceSlice, concrete)
 	}
 	return interfaceSlice
+}
+
+type PodAnalyze struct {
+	PodName    *EntityProperty        `json:"podName"`
+	NodeName   *EntityProperty        `json:"nodeName"`
+	Phase      *EntityProperty        `json:"phase"`
+	Containers []*PodContainerAnalyze `json:"containers"`
+}
+
+type PodContainerAnalyze struct {
+	ContainerName            *EntityProperty                   `json:"containerName"`
+	ActualDevices            *EntityProperty                   `json:"actualDevices"`
+	InstrumentationInstances []*InstrumentationInstanceAnalyze `json:"instrumentationInstances"`
 }
 
 type PodWorkload struct {
@@ -460,6 +558,11 @@ func (this RenameAttributeAction) GetSignals() []SignalType {
 	return interfaceSlice
 }
 
+type RuntimeInfoAnalyze struct {
+	Generation *EntityProperty                `json:"generation"`
+	Containers []*ContainerRuntimeInfoAnalyze `json:"containers"`
+}
+
 type SingleDestinationMetricsResponse struct {
 	ID            string `json:"id"`
 	TotalDataSent int    `json:"totalDataSent"`
@@ -472,6 +575,20 @@ type SingleSourceMetricsResponse struct {
 	Name          string `json:"name"`
 	TotalDataSent int    `json:"totalDataSent"`
 	Throughput    int    `json:"throughput"`
+}
+
+type SourceAnalyze struct {
+	Name                    *EntityProperty                 `json:"name"`
+	Kind                    *EntityProperty                 `json:"kind"`
+	Namespace               *EntityProperty                 `json:"namespace"`
+	Labels                  *InstrumentationLabelsAnalyze   `json:"labels"`
+	InstrumentationConfig   *InstrumentationConfigAnalyze   `json:"instrumentationConfig"`
+	RuntimeInfo             *RuntimeInfoAnalyze             `json:"runtimeInfo,omitempty"`
+	InstrumentedApplication *InstrumentedApplicationAnalyze `json:"instrumentedApplication"`
+	InstrumentationDevice   *InstrumentationDeviceAnalyze   `json:"instrumentationDevice"`
+	TotalPods               int                             `json:"totalPods"`
+	PodsPhasesCount         string                          `json:"podsPhasesCount"`
+	Pods                    []*PodAnalyze                   `json:"pods"`
 }
 
 type SourceContainerRuntimeDetails struct {

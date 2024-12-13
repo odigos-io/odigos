@@ -1,8 +1,6 @@
 module github.com/odigos-io/odigos/odiglet
 
-go 1.23
-
-toolchain go1.23.3
+go 1.23.0
 
 require (
 	github.com/go-logr/logr v1.4.2

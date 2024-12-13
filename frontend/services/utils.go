@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/frontend/graph/model"
@@ -77,4 +78,11 @@ func DerefString(s *string) string {
 
 func StringPtr(s string) *string {
 	return &s
+}
+
+func Metav1TimeToString(latestStatusTime metav1.Time) string {
+	if latestStatusTime.IsZero() {
+		return ""
+	}
+	return latestStatusTime.Time.Format(time.RFC3339)
 }

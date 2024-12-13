@@ -3,7 +3,7 @@ import { ACTION } from '@/utils';
 import { RuleFormBody } from '../';
 import { CenterThis, ModalBody } from '@/styles';
 import { RULE_OPTIONS, RuleOption } from './rule-options';
-import { useInstrumentationRuleCRUD, useInstrumentationRuleFormData } from '@/hooks';
+import { useInstrumentationRuleCRUD, useInstrumentationRuleFormData, useKeyDown } from '@/hooks';
 import { AutocompleteInput, Divider, FadeLoader, Modal, NavigationButtons, NotificationNote, SectionTitle } from '@/reuseable-components';
 
 interface Props {
@@ -12,8 +12,11 @@ interface Props {
 }
 
 export const RuleModal: React.FC<Props> = ({ isOpen, onClose }) => {
-  const { formData, formErrors, handleFormChange, resetFormData, validateForm } = useInstrumentationRuleFormData();
+  useKeyDown({ key: 'Enter', active: isOpen }, () => handleSubmit());
+
   const { createInstrumentationRule, loading } = useInstrumentationRuleCRUD({ onSuccess: handleClose });
+  const { formData, formErrors, handleFormChange, resetFormData, validateForm } = useInstrumentationRuleFormData();
+
   const [selectedItem, setSelectedItem] = useState<RuleOption | undefined>(RULE_OPTIONS[0]);
 
   function handleClose() {
@@ -32,7 +35,6 @@ export const RuleModal: React.FC<Props> = ({ isOpen, onClose }) => {
     if (!isFormOk) return null;
 
     await createInstrumentationRule(formData);
-
     handleClose();
   };
 

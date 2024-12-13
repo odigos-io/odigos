@@ -17,6 +17,8 @@ import (
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
 	actionservices "github.com/odigos-io/odigos/frontend/services/actions"
+	odigos_describe "github.com/odigos-io/odigos/frontend/services/describe/odigos_describe"
+	source_describe "github.com/odigos-io/odigos/frontend/services/describe/source_describe"
 	testconnection "github.com/odigos-io/odigos/frontend/services/test_connection"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -75,16 +77,7 @@ func (r *computePlatformResolver) K8sActualNamespaces(ctx context.Context, obj *
 
 // K8sActualSource is the resolver for the k8sActualSource field.
 func (r *computePlatformResolver) K8sActualSource(ctx context.Context, obj *model.ComputePlatform, name *string, namespace *string, kind *string) (*model.K8sActualSource, error) {
-	source, err := services.GetActualSource(ctx, *namespace, *kind, *name)
-	if err != nil {
-		return nil, err
-	}
-	if source == nil {
-		return nil, nil
-	}
-	k8sActualSource := k8sSourceToGql(source)
-
-	return k8sActualSource, nil
+	return nil, nil
 }
 
 // K8sActualSources is the resolver for the k8sActualSources field.
@@ -100,7 +93,7 @@ func (r *computePlatformResolver) K8sActualSources(ctx context.Context, obj *mod
 	// Convert each instrumented application to the K8sActualSource type
 	for _, app := range instrumentedApplications.Items {
 		actualSource := instrumentedApplicationToActualSource(app)
-
+		services.AddHealthyInstrumentationInstancesCondition(ctx, &app, actualSource)
 		owner, _ := services.GetWorkload(ctx, actualSource.Namespace, string(actualSource.Kind), actualSource.Name)
 		if owner == nil {
 
@@ -152,14 +145,14 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 		return nil, err
 	}
 	for _, action := range icaActions.Items {
-		specStr, err := json.Marshal(action.Spec) // Convert spec to JSON string
+		specStr, err := json.Marshal(action.Spec)
 		if err != nil {
 			return nil, err
 		}
 		response = append(response, &model.IcaInstanceResponse{
 			ID:   action.Name,
 			Type: action.Kind,
-			Spec: string(specStr), // Return the JSON string
+			Spec: string(specStr),
 		})
 	}
 
@@ -811,6 +804,16 @@ func (r *queryResolver) GetOverviewMetrics(ctx context.Context) (*model.Overview
 		Sources:      sourcesResp,
 		Destinations: destinationsResp,
 	}, nil
+}
+
+// DescribeOdigos is the resolver for the describeOdigos field.
+func (r *queryResolver) DescribeOdigos(ctx context.Context) (*model.OdigosAnalyze, error) {
+	return odigos_describe.GetOdigosDescription(ctx)
+}
+
+// DescribeSource is the resolver for the describeSource field.
+func (r *queryResolver) DescribeSource(ctx context.Context, namespace string, kind string, name string) (*model.SourceAnalyze, error) {
+	return source_describe.GetSourceDescription(ctx, namespace, kind, name)
 }
 
 // ComputePlatform returns ComputePlatformResolver implementation.

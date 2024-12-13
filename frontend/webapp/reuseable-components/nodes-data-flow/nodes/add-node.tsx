@@ -9,6 +9,8 @@ interface Props
   extends NodeProps<
     Node<
       {
+        nodeWidth: number;
+
         type: OVERVIEW_NODE_TYPES;
         status: STATUSES;
         title: string;
@@ -16,12 +18,11 @@ interface Props
       },
       'add'
     >
-  > {
-  nodeWidth: number;
-}
+  > {}
 
-const BaseNodeContainer = styled.div<{ $nodeWidth: Props['nodeWidth'] }>`
-  width: ${({ $nodeWidth }) => `${$nodeWidth}px`};
+const Container = styled.div<{ $nodeWidth: Props['data']['nodeWidth'] }>`
+  // negative width applied here because of the padding left&right
+  width: ${({ $nodeWidth }) => `${$nodeWidth - 40}px`};
   padding: 16px 24px 16px 16px;
   display: flex;
   flex-direction: column;
@@ -58,17 +59,20 @@ const SubTitle = styled(Text)`
   text-align: center;
 `;
 
-const AddNode: React.FC<Props> = ({ nodeWidth, data, id, isConnectable }) => {
+const AddNode: React.FC<Props> = ({ data }) => {
+  const { nodeWidth, title, subTitle } = data;
+
   return (
-    <BaseNodeContainer $nodeWidth={nodeWidth}>
+    <Container $nodeWidth={nodeWidth} className='nowheel nodrag'>
       <TitleWrapper>
         <Image src='/icons/common/plus.svg' width={16} height={16} alt='plus' />
-        <Title>{data.title}</Title>
+        <Title>{title}</Title>
       </TitleWrapper>
-      <SubTitle>{data.subTitle}</SubTitle>
-      <Handle type='target' position={Position.Left} id={`${id}-input`} isConnectable={isConnectable} style={{ visibility: 'hidden' }} />
-      <Handle type='source' position={Position.Right} id={`${id}-output`} isConnectable={isConnectable} style={{ visibility: 'hidden' }} />
-    </BaseNodeContainer>
+      <SubTitle>{subTitle}</SubTitle>
+
+      <Handle type='target' position={Position.Left} style={{ visibility: 'hidden' }} />
+      <Handle type='source' position={Position.Right} style={{ visibility: 'hidden' }} />
+    </Container>
   );
 };
 
