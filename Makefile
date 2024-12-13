@@ -237,3 +237,12 @@ dev-tests-setup: dev-tests-kind-cluster cli-build build-images load-to-kind
 .PHONY: dev-tests-setup-no-build
 dev-tests-setup-no-build: TAG := e2e-test
 dev-tests-setup-no-build: dev-tests-kind-cluster load-to-kind
+
+# Use this for debug to add a destination which only prints samples of telemetry items to the cluster gateway collector logs
+.PHONY: dev-debug-destination
+dev-debug-destination:
+	kubectl apply -f ./tests/debug-exporter.yaml
+
+.PHONY: dev-add-nop-destination
+dev-nop-destination:
+	kubectl apply -f ./tests/nop-exporter.yaml

@@ -1648,8 +1648,8 @@ go.opentelemetry.io/collector/exporter v0.106.0 h1:ojI2uXwSNUgUespneOxFgAHybl+kq
 go.opentelemetry.io/collector/exporter v0.106.0/go.mod h1:XyTH1g/X0WbG1r6cSZsWGhK2Y2+HO6k2sgEJ1ygPjxE=
 go.opentelemetry.io/collector/exporter/debugexporter v0.106.0 h1:OzdnzTNlG9/4gPqYMSV4KQmU5ms2F0zPPJJ+SU9/L/k=
 go.opentelemetry.io/collector/exporter/debugexporter v0.106.0/go.mod h1:joTvRBLXb00UFxnS3cnY8WidQpRdKiR2R6VjIZ7HOkI=
-go.opentelemetry.io/collector/exporter/loggingexporter v0.106.0 h1:La+sNh06mMlRye+aJd4c6w1Spk8fhGOrek6oG5lr/qQ=
-go.opentelemetry.io/collector/exporter/loggingexporter v0.106.0/go.mod h1:SopnNkOdBdluhkINezabk8xD1r5DlJWJkOEOUmxAHBc=
+go.opentelemetry.io/collector/exporter/nopexporter v0.106.0 h1:shTpN6E/yaM5clsMI+65KPfHhzwyUCttdFgi2tZD3AM=
+go.opentelemetry.io/collector/exporter/nopexporter v0.106.0/go.mod h1:QpGkZoh1G10So5BnFKf/bY7rmHVRK5vFqn/tcGirxIw=
 go.opentelemetry.io/collector/exporter/otlpexporter v0.106.0 h1:o8B5PLOTbVM3Irz+UDB+ee48+DgKt8wwp1VKZwxpQY8=
 go.opentelemetry.io/collector/exporter/otlpexporter v0.106.0/go.mod h1:8oHHHmWStb7dNjphyQ2sppbpy70sVojxyTSkMuSpUZw=
 go.opentelemetry.io/collector/exporter/otlphttpexporter v0.106.0 h1:i8DD64rHYi48R+ZoyB7fQIuuO97u6EEP50k8Q+eDUw4=
@@ -1658,8 +1658,6 @@ go.opentelemetry.io/collector/extension v0.106.0 h1:E/UY7fmFOMClb6qMYsOxHz3rY4LN
 go.opentelemetry.io/collector/extension v0.106.0/go.mod h1:e1vJ444rIPTMn/xRwapkV6oSpr07SPi6t2xrDaGrusY=
 go.opentelemetry.io/collector/extension/auth v0.106.0 h1:pYXfzMH5gaLyfnH0YxNRWoy18pz7hXR+Jbt1ILNIesM=
 go.opentelemetry.io/collector/extension/auth v0.106.0/go.mod h1:LgFJiWTR2y6eiWcYdV3zx1LVlvu+ZD0ZQsWvuFZoOCo=
-go.opentelemetry.io/collector/extension/ballastextension v0.106.0 h1:IsgDMS1GHYSB+OOjebStWPQVeNqibyJhXPwV7bf0D14=
-go.opentelemetry.io/collector/extension/ballastextension v0.106.0/go.mod h1:hrpipX2QOjgT91NNB/3nDwep41YzU5STLahq8sikEJ0=
 go.opentelemetry.io/collector/extension/zpagesextension v0.106.0 h1:GFK8oA1w2/l28y4A6YqomjFztNg16rgURndmg6LPd7g=
 go.opentelemetry.io/collector/extension/zpagesextension v0.106.0/go.mod h1:yj/F/qLEfpY2upkdrcCeMgDmp1E4cBxO29Uacz6xqQM=
 go.opentelemetry.io/collector/featuregate v1.12.0 h1:l5WbV2vMQd2bL8ubfGrbKNtZaeJRckE12CTHvRe47Tw=
