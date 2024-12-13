@@ -9,7 +9,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY frontend/webapp .
 RUN yarn build
 
-FROM --platform=$BUILDPLATFORM golang:1.22 AS backend
+FROM --platform=$BUILDPLATFORM golang:1.23 AS backend
 WORKDIR /app
 COPY . .
 COPY --from=builder /webapp/out frontend/webapp/out
