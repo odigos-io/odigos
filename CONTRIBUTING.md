@@ -251,3 +251,49 @@ spec:
 ```
 
 Once this is done, you can use the .vscode/launch.json configuration and run instrumentor local for debugging.
+
+## Odigos Collector Distribution
+
+### Debugging and Trouble Shooting
+
+To log samples of the data passing via the collectors pipeline, you can add the debug destination as a CR to print 2 telemetry items to the collector gateway log every second in configurable verbosity.
+
+For example:
+
+```sh
+kubectl apply -f - <<EOF
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: debug
+  namespace: odigos-system
+spec:
+  data:
+    VERBOSITY: normal
+  destinationName: debug
+  signals:
+  - TRACES
+  type: debug
+EOF
+```
+
+The VERBOSITY property can be set to `basic`, `normal` and `detailed` to control the amount of data logged.
+
+If you are debugging the collector, and want to have the pipeline but not send data anywhere, use the nop destination:
+
+```sh
+kubectl apply -f - <<EOF
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: nop
+  namespace: odigos-system
+spec:
+  destinationName: nop
+  data:
+    placeholder: 'here since data is required'
+  signals:
+  - TRACES
+  type: nop
+EOF
+```
