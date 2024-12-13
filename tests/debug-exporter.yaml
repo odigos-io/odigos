@@ -1,0 +1,14 @@
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: debug
+  namespace: odigos-system
+spec:
+  data:
+    VERBOSITY: detailed
+  destinationName: debug
+  signals:
+    - TRACES
+    - METRICS
+    - LOGS
+  type: debug
