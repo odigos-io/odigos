@@ -6,6 +6,8 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/odigos-io/odigos/procdiscovery/pkg/libc"
+
 	procdiscovery "github.com/odigos-io/odigos/procdiscovery/pkg/process"
 
 	"github.com/odigos-io/odigos/odiglet/pkg/process"
@@ -109,6 +111,7 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 
 			envs := make([]odigosv1.EnvVar, 0)
 			var detectedAgent *odigosv1.OtherAgent
+			var libcType *common.LibCType
 
 			if inspectProc == nil {
 				log.Logger.V(0).Info("unable to detect language for any process", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
@@ -137,6 +140,18 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 						detectedAgent = &odigosv1.OtherAgent{Name: otherAgentName}
 					}
 				}
+
+				// Inspecting libc type is expensive and not relevant for all languages
+				if libc.ShouldInspectForLanguage(programLanguageDetails.Language) {
+					typeFound, err := libc.InspectType(inspectProc)
+					if typeFound != nil && err == nil {
+						libcType = typeFound
+					} else {
+						if err != nil {
+							log.Logger.Error(err, "error inspecting libc type", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
+						}
+					}
+				}
 			}
 
 			var runtimeVersion string
@@ -150,6 +165,7 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 				RuntimeVersion: runtimeVersion,
 				EnvVars:        envs,
 				OtherAgent:     detectedAgent,
+				LibCType:       libcType,
 			}
 		}
 	}
