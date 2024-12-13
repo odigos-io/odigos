@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/odigos-io/odigos/common/instrumentation"
+	"github.com/odigos-io/odigos/instrumentation"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"

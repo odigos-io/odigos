@@ -2,7 +2,7 @@ package kube
 
 import (
 	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/common/instrumentation"
+	"github.com/odigos-io/odigos/instrumentation"
 	"k8s.io/apimachinery/pkg/labels"
 
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"

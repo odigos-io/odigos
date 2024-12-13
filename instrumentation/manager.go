@@ -9,7 +9,7 @@ import (
 
 	"github.com/go-logr/logr"
 
-	"github.com/odigos-io/odigos/common/instrumentation/detector"
+	"github.com/odigos-io/odigos/instrumentation/detector"
 )
 
 var (

@@ -12,7 +12,7 @@ import (
 
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	"github.com/odigos-io/odigos/common"
-	commonInstrumentation "github.com/odigos-io/odigos/common/instrumentation"
+	commonInstrumentation "github.com/odigos-io/odigos/instrumentation"
 	k8senv "github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation"

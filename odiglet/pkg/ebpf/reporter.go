@@ -6,7 +6,7 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/instrumentation"
+	"github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	instance "github.com/odigos-io/odigos/k8sutils/pkg/instrumentation_instance"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"

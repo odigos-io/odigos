@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/odigos-io/odigos/common/instrumentation"
-	"github.com/odigos-io/odigos/common/instrumentation/detector"
+	"github.com/odigos-io/odigos/instrumentation"
+	"github.com/odigos-io/odigos/instrumentation/detector"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	corev1 "k8s.io/api/core/v1"

@@ -4,16 +4,14 @@ go 1.22.0
 
 require (
 	github.com/goccy/go-yaml v1.11.3
-	github.com/odigos-io/runtime-detector v0.0.4
 	github.com/stretchr/testify v1.9.0
 	go.opentelemetry.io/otel/trace v1.29.0
-	golang.org/x/sync v0.1.0
 )
 
 require (
-	github.com/cilium/ebpf v0.16.0 // indirect
+	github.com/kr/pretty v0.3.1 // indirect
+	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	golang.org/x/crypto v0.21.0 // indirect
-	golang.org/x/exp v0.0.0-20230224173230-c95f2b4c22f2 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 )
 

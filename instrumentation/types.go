@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/instrumentation/detector"
+	"github.com/odigos-io/odigos/instrumentation/detector"
 )
 
 // OtelDistribution is a customized version of an OpenTelemetry component.

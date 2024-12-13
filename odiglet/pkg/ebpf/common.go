@@ -2,7 +2,7 @@ package ebpf
 
 import (
 	"github.com/go-logr/logr"
-	"github.com/odigos-io/odigos/common/instrumentation"
+	"github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/odiglet/pkg/detector"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"

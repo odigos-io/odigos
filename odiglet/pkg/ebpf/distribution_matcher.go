@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/odigos-io/odigos/common/instrumentation"
+	"github.com/odigos-io/odigos/instrumentation"
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/container"
 )
 
