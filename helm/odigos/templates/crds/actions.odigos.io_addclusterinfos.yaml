@@ -8,6 +8,7 @@ metadata:
     metadata.labels.odigos.io/config: "1"
     metadata.labels.odigos.io/system-object: "true"
   name: addclusterinfos.actions.odigos.io
+  foo: TEST to verify CI
 spec:
   group: actions.odigos.io
   names:
