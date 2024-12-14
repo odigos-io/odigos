@@ -30,6 +30,7 @@ const (
 	LokiDestinationType                   DestinationType = "loki"
 	MiddlewareDestinationType             DestinationType = "middleware"
 	NewRelicDestinationType               DestinationType = "newrelic"
+	NopDestinationType                    DestinationType = "nop"
 	OpsVerseDestinationType               DestinationType = "opsverse"
 	OtlpHttpDestinationType               DestinationType = "otlphttp"
 	PrometheusDestinationType             DestinationType = "prometheus"

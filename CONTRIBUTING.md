@@ -165,7 +165,9 @@ make deploy
 make deploy-odiglet 
 make deploy-autoscaler 
 make deploy-collector 
+make deploy-scheduler
 make deploy-instrumentor
+make deploy-ui
 ```
 
 - Deploy odiglet and build instrumentation agents from source code:
@@ -251,3 +253,21 @@ spec:
 ```
 
 Once this is done, you can use the .vscode/launch.json configuration and run instrumentor local for debugging.
+
+## Odigos Collector Distribution
+
+### Debugging and Trouble Shooting
+
+It is sometimes necessary to look at the data flowing through the collector pipeline while debugging or troubleshooting. This can be done by adding a debug destination to the collector configuration.
+
+This collector will write 2 telemetry items per second to the cluster collector logs.
+
+```sh
+make dev-debug-destination
+```
+
+It you want to have the pipeline but don't want to send data anywhere, use the nop destination:
+
+```sh
+make dev-nop-destination
+```
