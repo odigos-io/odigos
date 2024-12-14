@@ -20,7 +20,7 @@ type Object interface {
 }
 
 var (
-	// sizing profiles for the collector gateway
+	// sizing profiles for the collectors resource settings
 	SizeSProfile = Profile{
 		ProfileName:      common.ProfileName("size_s"),
 		ShortDescription: "Small size deployment profile",
