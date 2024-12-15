@@ -144,12 +144,10 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 				// Inspecting libc type is expensive and not relevant for all languages
 				if libc.ShouldInspectForLanguage(programLanguageDetails.Language) {
 					typeFound, err := libc.InspectType(inspectProc)
-					if typeFound != nil && err == nil {
+					if err == nil {
 						libcType = typeFound
 					} else {
-						if err != nil {
 							log.Logger.Error(err, "error inspecting libc type", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
-						}
 					}
 				}
 			}
