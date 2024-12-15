@@ -6,7 +6,7 @@ import { useNotificationStore } from '@/store';
 import { ACTION, getStatusIcon } from '@/utils';
 import { useOnClickOutside, useTimeAgo } from '@/hooks';
 import theme, { hexPercentValues } from '@/styles/theme';
-import type { Notification, NotificationType } from '@/types';
+import { NOTIFICATION_TYPE, type Notification } from '@/types';
 import { IconButton, NoDataFound, Text } from '@/reuseable-components';
 
 const RelativeContainer = styled.div`
@@ -126,7 +126,7 @@ const NotifCard = styled.div`
   }
 `;
 
-const StatusIcon = styled.div<{ $type: NotificationType }>`
+const StatusIcon = styled.div<{ $type: NOTIFICATION_TYPE }>`
   background-color: ${({ $type, theme }) => theme.text[$type] + hexPercentValues['012']};
   border-radius: 8px;
   width: 36px;
@@ -175,7 +175,7 @@ const NotificationListItem: React.FC<Notification & { onClick: () => void }> = (
         }
       }}
     >
-      <StatusIcon $type={isDeleted ? 'error' : type}>
+      <StatusIcon $type={isDeleted ? NOTIFICATION_TYPE.ERROR : type}>
         <Image src={isDeleted ? '/icons/common/trash.svg' : getStatusIcon(type)} alt='status' width={16} height={16} />
       </StatusIcon>
 

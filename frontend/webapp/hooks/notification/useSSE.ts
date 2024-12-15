@@ -1,13 +1,28 @@
-import { useEffect, useRef, useState } from 'react';
-import { useNotify } from './useNotify';
-import { API, NOTIFICATION } from '@/utils';
+import { useEffect, useRef } from 'react';
+import { API } from '@/utils';
+import { NOTIFICATION_TYPE } from '@/types';
 import { useConnectionStore } from '@/store';
+import { useComputePlatform } from '../compute-platform';
+import { type NotifyPayload, useNotify } from './useNotify';
 
-export function useSSE() {
+const modifyType = (notification: NotifyPayload) => {
+  if (notification.title === 'Modified') {
+    if (notification.message?.indexOf('ProcessTerminated') === 0 || notification.message?.indexOf('NoHeartbeat') === 0 || notification.message?.indexOf('Failed') === 0) {
+      return NOTIFICATION_TYPE.ERROR;
+    } else {
+      return NOTIFICATION_TYPE.INFO;
+    }
+  }
+
+  return notification.type;
+};
+
+export const useSSE = () => {
   const notify = useNotify();
   const { setConnectionStore } = useConnectionStore();
+  const { refetch: refetchComputePlatform } = useComputePlatform();
 
-  const [retryCount, setRetryCount] = useState(0);
+  const retryCount = useRef(0);
   const eventBuffer = useRef({});
   const maxRetries = 10;
 
@@ -15,72 +30,61 @@ export function useSSE() {
     const connect = () => {
       const eventSource = new EventSource(API.EVENTS);
 
-      eventSource.onmessage = function (event) {
-        const data = JSON.parse(event.data);
+      eventSource.onmessage = (event) => {
         const key = event.data;
+        const data = JSON.parse(key);
 
-        const notification = {
-          id: Date.now(),
-          message: data.data,
-          title: data.event,
+        const notification: NotifyPayload = {
           type: data.type,
-          target: data.target,
+          title: data.event,
+          message: data.data,
           crdType: data.crdType,
+          target: data.target,
         };
+
+        notification.type = modifyType(notification);
 
         // Check if the event is already in the buffer
         if (eventBuffer.current[key] && eventBuffer.current[key].id > Date.now() - 2000) {
           eventBuffer.current[key] = notification;
-          return;
         } else {
           // Add a new event to the buffer
           eventBuffer.current[key] = notification;
+
+          // Dispatch the notification to the store
+          notify(notification);
+          refetchComputePlatform();
         }
 
-        // Dispatch the notification to the store
-        notify({
-          type: eventBuffer.current[key].type,
-          title: eventBuffer.current[key].title,
-          message: eventBuffer.current[key].message,
-          crdType: eventBuffer.current[key].crdType,
-          target: eventBuffer.current[key].target,
-        });
-
         // Reset retry count on successful connection
-        setRetryCount(0);
+        retryCount.current = 0;
       };
 
-      eventSource.onerror = function (event) {
+      eventSource.onerror = (event) => {
         console.error('EventSource failed:', event);
         eventSource.close();
 
         // Retry connection with exponential backoff if below max retries
-        setRetryCount((prevRetryCount) => {
-          if (prevRetryCount < maxRetries) {
-            const newRetryCount = prevRetryCount + 1;
-            const retryTimeout = Math.min(10000, 1000 * Math.pow(2, newRetryCount));
+        if (retryCount.current < maxRetries) {
+          retryCount.current += 1;
+          const retryTimeout = Math.min(10000, 1000 * Math.pow(2, retryCount.current));
 
-            setTimeout(() => connect(), retryTimeout);
+          setTimeout(() => connect(), retryTimeout);
+        } else {
+          console.error('Max retries reached. Could not reconnect to EventSource.');
 
-            return newRetryCount;
-          } else {
-            console.error('Max retries reached. Could not reconnect to EventSource.');
-
-            setConnectionStore({
-              connecting: false,
-              active: false,
-              title: `Connection lost on ${new Date().toLocaleString()}`,
-              message: 'Please reboot the application',
-            });
-            notify({
-              type: NOTIFICATION.ERROR,
-              title: 'Connection Error',
-              message: 'Connection to the server failed. Please reboot the application.',
-            });
-
-            return prevRetryCount;
-          }
-        });
+          setConnectionStore({
+            connecting: false,
+            active: false,
+            title: `Connection lost on ${new Date().toLocaleString()}`,
+            message: 'Please reboot the application',
+          });
+          notify({
+            type: NOTIFICATION_TYPE.ERROR,
+            title: 'Connection Error',
+            message: 'Connection to the server failed. Please reboot the application.',
+          });
+        }
       };
 
       setConnectionStore({
@@ -100,4 +104,4 @@ export function useSSE() {
       eventSource.close();
     };
   }, []);
-}
+};

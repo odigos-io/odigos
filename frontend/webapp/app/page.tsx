@@ -1,10 +1,11 @@
 'use client';
 import { useEffect } from 'react';
+import { CenterThis } from '@/styles';
+import { ROUTES, CONFIG } from '@/utils';
+import { NOTIFICATION_TYPE } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useNotify, useConfig } from '@/hooks';
 import { FadeLoader } from '@/reuseable-components';
-import { ROUTES, CONFIG, NOTIFICATION } from '@/utils';
-import { CenterThis } from '@/styles';
 
 export default function App() {
   const router = useRouter();
@@ -14,7 +15,7 @@ export default function App() {
   useEffect(() => {
     if (error) {
       notify({
-        type: NOTIFICATION.ERROR,
+        type: NOTIFICATION_TYPE.ERROR,
         title: error.name,
         message: error.message,
       });

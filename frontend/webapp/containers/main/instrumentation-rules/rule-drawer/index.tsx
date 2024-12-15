@@ -7,9 +7,9 @@ import { DataCard } from '@/reuseable-components';
 import buildDrawerItem from './build-drawer-item';
 import { RULE_OPTIONS } from '../rule-modal/rule-options';
 import OverviewDrawer from '../../overview/overview-drawer';
-import { ACTION, DATA_CARDS, FORM_ALERTS, getRuleIcon, NOTIFICATION } from '@/utils';
+import { ACTION, DATA_CARDS, FORM_ALERTS, getRuleIcon } from '@/utils';
 import { useInstrumentationRuleCRUD, useInstrumentationRuleFormData, useNotify } from '@/hooks';
-import { InstrumentationRuleType, OVERVIEW_ENTITY_TYPES, type InstrumentationRuleSpec } from '@/types';
+import { InstrumentationRuleType, NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES, type InstrumentationRuleSpec } from '@/types';
 
 interface Props {}
 
@@ -74,7 +74,7 @@ export const RuleDrawer: React.FC<Props> = () => {
 
   const handleEdit = (bool?: boolean) => {
     if (item.type === InstrumentationRuleType.UNKNOWN_TYPE) {
-      notify({ type: NOTIFICATION.WARNING, title: FORM_ALERTS.FORBIDDEN, message: FORM_ALERTS.CANNOT_EDIT_RULE, crdType: OVERVIEW_ENTITY_TYPES.RULE, target: id });
+      notify({ type: NOTIFICATION_TYPE.WARNING, title: FORM_ALERTS.FORBIDDEN, message: FORM_ALERTS.CANNOT_EDIT_RULE, crdType: OVERVIEW_ENTITY_TYPES.RULE, target: id });
     } else {
       setIsEditing(typeof bool === 'boolean' ? bool : true);
     }

@@ -1,5 +1,3 @@
-import type { NotificationType } from '@/types';
-
 export const SETUP = {
   MONITORS: {
     LOGS: 'Logs',
@@ -37,16 +35,6 @@ export const FORM_ALERTS = {
   FIELD_IS_REQUIRED: 'This field is required',
   FORBIDDEN: 'Forbidden',
   CANNOT_EDIT_RULE: 'Cannot edit instrumentation rule of this type',
-};
-
-export const NOTIFICATION: {
-  [key: string]: NotificationType;
-} = {
-  ERROR: 'error',
-  SUCCESS: 'success',
-  WARNING: 'warning',
-  INFO: 'info',
-  DEFAULT: 'default',
 };
 
 export const BACKEND_BOOLEAN = {

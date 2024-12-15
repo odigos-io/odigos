@@ -1,7 +1,7 @@
 import { DrawerItem } from '@/store';
+import { FORM_ALERTS } from '@/utils';
 import { useGenericForm, useNotify } from '@/hooks';
-import { FORM_ALERTS, NOTIFICATION } from '@/utils';
-import type { ActionDataParsed, ActionInput } from '@/types';
+import { NOTIFICATION_TYPE, type ActionDataParsed, type ActionInput } from '@/types';
 
 const INITIAL: ActionInput = {
   // @ts-ignore (TS complains about empty string because we expect an "ActionsType", but it's fine)
@@ -39,7 +39,7 @@ export function useActionFormData() {
 
     if (!ok && params?.withAlert) {
       notify({
-        type: NOTIFICATION.WARNING,
+        type: NOTIFICATION_TYPE.WARNING,
         title: params.alertTitle,
         message: FORM_ALERTS.REQUIRED_FIELDS,
       });

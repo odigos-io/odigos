@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { DrawerItem } from '@/store';
 import { useQuery } from '@apollo/client';
 import { GET_DESTINATION_TYPE_DETAILS } from '@/graphql';
+import { ACTION, FORM_ALERTS, safeJsonParse } from '@/utils';
 import { useConnectDestinationForm, useGenericForm, useNotify } from '@/hooks';
-import { ACTION, FORM_ALERTS, NOTIFICATION, safeJsonParse } from '@/utils';
 import {
   type DynamicField,
   type DestinationDetailsResponse,
@@ -12,6 +12,7 @@ import {
   type ActualDestination,
   type SupportedDestinationSignals,
   OVERVIEW_ENTITY_TYPES,
+  NOTIFICATION_TYPE,
 } from '@/types';
 
 const INITIAL: DestinationInput = {
@@ -38,7 +39,7 @@ export function useDestinationFormData(params?: { destinationType?: string; supp
   const { data: { destinationTypeDetails } = {} } = useQuery<DestinationDetailsResponse>(GET_DESTINATION_TYPE_DETAILS, {
     variables: { type: t },
     skip: !t,
-    onError: (error) => notify({ type: NOTIFICATION.ERROR, title: ACTION.FETCH, message: error.message, crdType: OVERVIEW_ENTITY_TYPES.DESTINATION }),
+    onError: (error) => notify({ type: NOTIFICATION_TYPE.ERROR, title: ACTION.FETCH, message: error.message, crdType: OVERVIEW_ENTITY_TYPES.DESTINATION }),
   });
 
   useEffect(() => {
@@ -99,7 +100,7 @@ export function useDestinationFormData(params?: { destinationType?: string; supp
 
     if (!ok && params?.withAlert) {
       notify({
-        type: NOTIFICATION.WARNING,
+        type: NOTIFICATION_TYPE.WARNING,
         title: params.alertTitle,
         message: FORM_ALERTS.REQUIRED_FIELDS,
       });

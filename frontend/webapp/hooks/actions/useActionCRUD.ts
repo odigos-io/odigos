@@ -2,9 +2,9 @@ import { useMutation } from '@apollo/client';
 import { useNotificationStore } from '@/store';
 import { useNotify } from '../notification/useNotify';
 import { useComputePlatform } from '../compute-platform';
-import { ACTION, getSseTargetFromId, NOTIFICATION } from '@/utils';
+import { ACTION, getSseTargetFromId } from '@/utils';
 import { CREATE_ACTION, DELETE_ACTION, UPDATE_ACTION } from '@/graphql/mutations';
-import { OVERVIEW_ENTITY_TYPES, type ActionInput, type ActionsType, type NotificationType } from '@/types';
+import { NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES, type ActionInput, type ActionsType } from '@/types';
 
 interface UseActionCrudParams {
   onSuccess?: (type: string) => void;
@@ -16,7 +16,7 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
   const { data, refetch } = useComputePlatform();
   const notify = useNotify();
 
-  const notifyUser = (type: NotificationType, title: string, message: string, id?: string) => {
+  const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string) => {
     notify({
       type,
       title,
@@ -27,12 +27,12 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
   };
 
   const handleError = (title: string, message: string, id?: string) => {
-    notifyUser(NOTIFICATION.ERROR, title, message, id);
+    notifyUser(NOTIFICATION_TYPE.ERROR, title, message, id);
     params?.onError?.(title);
   };
 
   const handleComplete = (title: string, message: string, id?: string) => {
-    notifyUser(NOTIFICATION.SUCCESS, title, message, id);
+    notifyUser(NOTIFICATION_TYPE.SUCCESS, title, message, id);
     refetch();
     params?.onSuccess?.(title);
   };

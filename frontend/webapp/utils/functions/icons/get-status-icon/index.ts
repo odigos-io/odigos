@@ -1,18 +1,18 @@
-import { type NotificationType } from '@/types';
+import { NOTIFICATION_TYPE } from '@/types';
 
 const BRAND_ICON = '/brand/odigos-icon.svg';
 
-export const getStatusIcon = (status?: NotificationType) => {
+export const getStatusIcon = (status?: NOTIFICATION_TYPE) => {
   if (!status) return BRAND_ICON;
 
   switch (status) {
-    case 'success':
+    case NOTIFICATION_TYPE.SUCCESS:
       return '/icons/notification/success-icon.svg';
-    case 'error':
+    case NOTIFICATION_TYPE.ERROR:
       return '/icons/notification/error-icon2.svg';
-    case 'warning':
+    case NOTIFICATION_TYPE.WARNING:
       return '/icons/notification/warning-icon2.svg';
-    case 'info':
+    case NOTIFICATION_TYPE.INFO:
       return '/icons/common/info.svg';
     default:
       return BRAND_ICON;

@@ -1,20 +1,19 @@
-import { NOTIFICATION } from '@/utils';
 import { useNotify } from '../notification';
 import { useMutation, useQuery } from '@apollo/client';
 import { useComputePlatform } from './useComputePlatform';
 import { GET_NAMESPACES, PERSIST_NAMESPACE } from '@/graphql';
-import { ComputePlatform, PersistNamespaceItemInput } from '@/types';
+import { ComputePlatform, NOTIFICATION_TYPE, PersistNamespaceItemInput } from '@/types';
 
 export const useNamespace = (namespaceName?: string, instrumentationLabeled = null as boolean | null) => {
   const notify = useNotify();
   const cp = useComputePlatform();
 
   const handleError = (title: string, message: string) => {
-    notify({ type: NOTIFICATION.ERROR, title, message });
+    notify({ type: NOTIFICATION_TYPE.ERROR, title, message });
   };
 
   const handleComplete = (title: string, message: string) => {
-    notify({ type: NOTIFICATION.SUCCESS, title, message });
+    notify({ type: NOTIFICATION_TYPE.SUCCESS, title, message });
   };
 
   const { data, loading, error } = useQuery<ComputePlatform>(GET_NAMESPACES, {

@@ -1,7 +1,7 @@
 import type { DrawerItem } from '@/store';
 import { useGenericForm, useNotify } from '@/hooks';
-import { FORM_ALERTS, NOTIFICATION } from '@/utils';
-import { PayloadCollectionType, type InstrumentationRuleInput, type InstrumentationRuleSpec } from '@/types';
+import { FORM_ALERTS } from '@/utils';
+import { NOTIFICATION_TYPE, PayloadCollectionType, type InstrumentationRuleInput, type InstrumentationRuleSpec } from '@/types';
 
 const INITIAL: InstrumentationRuleInput = {
   ruleName: '',
@@ -42,7 +42,7 @@ export function useInstrumentationRuleFormData() {
 
     if (!ok && params?.withAlert) {
       notify({
-        type: NOTIFICATION.WARNING,
+        type: NOTIFICATION_TYPE.WARNING,
         title: params.alertTitle,
         message: FORM_ALERTS.REQUIRED_FIELDS,
       });
