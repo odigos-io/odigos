@@ -1,4 +1,4 @@
-import { DrawerBaseItem } from '@/store';
+import { DrawerItem } from '@/store';
 import { useGenericForm, useNotify } from '@/hooks';
 import { FORM_ALERTS, NOTIFICATION } from '@/utils';
 import type { ActionDataParsed, ActionInput } from '@/types';
@@ -50,7 +50,7 @@ export function useActionFormData() {
     return ok;
   };
 
-  const loadFormWithDrawerItem = (drawerItem: DrawerBaseItem) => {
+  const loadFormWithDrawerItem = (drawerItem: DrawerItem) => {
     const { type, spec } = drawerItem.item as ActionDataParsed;
 
     const updatedData: ActionInput = {
