@@ -4,7 +4,7 @@ import { type EntityCounts } from './get-entity-counts';
 import { type NodePositions } from './get-node-positions';
 import { getMainContainerLanguage } from '@/utils/constants/programming-languages';
 import { getEntityIcon, getEntityLabel, getHealthStatus, getProgrammingLanguageIcon } from '@/utils';
-import { OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type ComputePlatformMapped } from '@/types';
+import { NODE_TYPES, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type ComputePlatformMapped } from '@/types';
 
 interface Params {
   entities: ComputePlatformMapped['computePlatform']['k8sActualSources'];
@@ -20,6 +20,8 @@ const { nodeWidth, nodeHeight, framePadding } = nodeConfig;
 const mapToNodeData = (entity: Params['entities'][0]) => {
   return {
     nodeWidth,
+    nodeHeight,
+    framePadding,
     id: {
       namespace: entity.namespace,
       name: entity.name,
@@ -41,7 +43,7 @@ export const buildSourceNodes = ({ entities, positions, unfilteredCounts, contai
 
   nodes.push({
     id: 'source-header',
-    type: 'header',
+    type: NODE_TYPES.HEADER,
     position: {
       x: positions[OVERVIEW_ENTITY_TYPES.SOURCE]['x'],
       y: 0,
@@ -57,7 +59,7 @@ export const buildSourceNodes = ({ entities, positions, unfilteredCounts, contai
   if (!entities.length) {
     nodes.push({
       id: 'source-add',
-      type: 'add',
+      type: NODE_TYPES.ADD,
       position: {
         x: position['x'],
         y: position['y'](),
@@ -73,7 +75,7 @@ export const buildSourceNodes = ({ entities, positions, unfilteredCounts, contai
   } else {
     nodes.push({
       id: 'source-scroll',
-      type: 'scroll',
+      type: NODE_TYPES.SCROLL,
       position: {
         x: position['x'],
         y: position['y']() - framePadding,
@@ -83,10 +85,7 @@ export const buildSourceNodes = ({ entities, positions, unfilteredCounts, contai
         nodeHeight: containerHeight - nodeHeight + framePadding * 2,
         items: entities.map((source, idx) => ({
           id: `source-${idx}`,
-          data: {
-            framePadding,
-            ...mapToNodeData(source),
-          },
+          data: mapToNodeData(source),
         })),
         onScroll,
       },
@@ -95,18 +94,17 @@ export const buildSourceNodes = ({ entities, positions, unfilteredCounts, contai
     entities.forEach((source, idx) => {
       nodes.push({
         id: `source-${idx}-hidden`,
-        type: 'base',
+        type: NODE_TYPES.EDGED,
         extent: 'parent',
         parentId: 'source-scroll',
         position: {
           x: framePadding,
           y: position['y'](idx) - (nodeHeight - framePadding),
         },
-        data: mapToNodeData(source),
         style: {
-          opacity: 0,
           zIndex: -1,
         },
+        data: mapToNodeData(source),
       });
     });
   }
