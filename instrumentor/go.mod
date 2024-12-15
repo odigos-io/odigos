@@ -10,7 +10,7 @@ require (
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/odigos/k8sutils v0.0.0
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.36.0
+	github.com/onsi/gomega v1.36.1
 	github.com/stretchr/testify v1.10.0
 	k8s.io/api v0.31.3
 	k8s.io/apimachinery v0.31.3
