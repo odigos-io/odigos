@@ -5,14 +5,16 @@ import styled from 'styled-components';
 import { getStatusIcon } from '@/utils';
 import { Checkbox, DataTab } from '@/reuseable-components';
 import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';
-import { type ActionDataParsed, type ActualDestination, type InstrumentationRuleSpec, type K8sActualSource, STATUSES } from '@/types';
+import { type ActionDataParsed, type ActualDestination, type InstrumentationRuleSpec, type K8sActualSource, NODE_TYPES, OVERVIEW_ENTITY_TYPES, STATUSES, WorkloadId } from '@/types';
 
 interface Props
   extends NodeProps<
     Node<
       {
-        id: string;
-        type: 'source' | 'action' | 'destination';
+        nodeWidth: number;
+
+        id: string | WorkloadId;
+        type: OVERVIEW_ENTITY_TYPES;
         status: STATUSES;
         title: string;
         subTitle: string;
@@ -21,18 +23,16 @@ interface Props
         isActive?: boolean;
         raw: InstrumentationRuleSpec | K8sActualSource | ActionDataParsed | ActualDestination;
       },
-      'base'
+      NODE_TYPES.BASE
     >
-  > {
-  nodeWidth: number;
-}
+  > {}
 
-const Container = styled.div<{ $nodeWidth: Props['nodeWidth'] }>`
-  width: ${({ $nodeWidth }) => `${$nodeWidth + 40}px`};
+const Container = styled.div<{ $nodeWidth: Props['data']['nodeWidth'] }>`
+  width: ${({ $nodeWidth }) => `${$nodeWidth}px`};
 `;
 
-const BaseNode: React.FC<Props> = ({ nodeWidth, data, isConnectable }) => {
-  const { type, status, title, subTitle, imageUri, monitors, isActive, raw } = data;
+const BaseNode: React.FC<Props> = ({ id: nodeId, data }) => {
+  const { nodeWidth, type, status, title, subTitle, imageUri, monitors, isActive, raw } = data;
   const isError = status === STATUSES.UNHEALTHY;
 
   const { configuredSources, setConfiguredSources } = useAppStore((state) => state);
@@ -72,30 +72,14 @@ const BaseNode: React.FC<Props> = ({ nodeWidth, data, isConnectable }) => {
     );
   };
 
-  const renderHandles = () => {
-    switch (type) {
-      case 'source':
-        return <Handle type='source' position={Position.Right} id='source-output' isConnectable={isConnectable} style={{ visibility: 'hidden' }} />;
-      case 'action':
-        return (
-          <>
-            <Handle type='target' position={Position.Top} id='action-input' isConnectable={isConnectable} style={{ visibility: 'hidden' }} />
-            <Handle type='source' position={Position.Bottom} id='action-output' isConnectable={isConnectable} style={{ visibility: 'hidden' }} />
-          </>
-        );
-      case 'destination':
-        return <Handle type='target' position={Position.Left} id='destination-input' isConnectable={isConnectable} style={{ visibility: 'hidden' }} />;
-      default:
-        return null;
-    }
-  };
-
   return (
-    <Container $nodeWidth={nodeWidth}>
+    <Container data-id={nodeId} $nodeWidth={nodeWidth} className='nowheel nodrag'>
       <DataTab title={title} subTitle={subTitle} logo={imageUri} monitors={monitors} isActive={isActive} isError={isError} onClick={() => {}}>
         {renderActions()}
-        {renderHandles()}
       </DataTab>
+
+      <Handle type='target' position={Position.Left} style={{ visibility: 'hidden' }} />
+      <Handle type='source' position={Position.Right} style={{ visibility: 'hidden' }} />
     </Container>
   );
 };

@@ -1,0 +1,14 @@
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: nop
+  namespace: odigos-system
+spec:
+  data:
+    placeholder: 'here since data is required'
+  destinationName: nop
+  signals:
+  - TRACES
+  - METRICS
+  - LOGS
+  type: nop

@@ -13,9 +13,30 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	// the default memory request in MiB
+	defaultRequestMemoryMiB = 256
+
+	// this configures the processor limit_mib, which is the hard limit in MiB, afterwhich garbage collection will be forced.
+	// as recommended by the processor docs, if not set, this is set to 50MiB less than the memory limit of the collector
+	defaultMemoryLimiterLimitDiffMib = 50
+
+	// the soft limit will be set to 80% of the hard limit.
+	// this value is used to derive the "spike_limit_mib" parameter in the processor configuration if a value is not set
+	defaultMemoryLimiterSpikePercentage = 20.0
+
+	// the percentage out of the memory limiter hard limit, at which go runtime will start garbage collection.
+	// it is used to calculate the GOMEMLIMIT environment variable value.
+	defaultGoMemLimitPercentage = 80.0
+
+	// the memory settings should prevent the collector from exceeding the memory request.
+	// however, the mechanism is heuristic and does not guarantee to prevent OOMs.
+	// allowing the memory limit to be slightly above the memory request can help in reducing the chances of OOMs in edge cases.
+	// instead of having the process killed, it can use extra memory available on the node without allocating it preemptively.
+	memoryLimitAboveRequestFactor = 2.0
+)
+
 func getMemorySettings(odigosConfig common.OdigosConfiguration) odigosv1.CollectorsGroupResourcesSettings {
-	// TODO: currently using hardcoded values, should be configurable.
-	//
 	// memory request is expensive on daemonsets since it will consume this memory
 	// on each node in the cluster. setting to 256, but allowing memory to spike higher
 	// to consume more available memory on the node.
@@ -31,13 +52,38 @@ func getMemorySettings(odigosConfig common.OdigosConfiguration) odigosv1.Collect
 	// - limit is set to request: collector most stable (no OOM) but smaller buffer for bursts and early data drop.
 	// - limit is set way above request: in case of memory spike, collector will use extra memory available on the node to buffer data, but might get killed by OOM killer if this memory is not available.
 	// currently choosing 512MiB as a balance (200MiB guaranteed for heap, and the rest ~300MiB of buffer from node before start dropping).
-	//
+
+	nodeCollectorConfig := odigosConfig.CollectorNode
+
+	memoryRequestMiB := defaultRequestMemoryMiB
+	if nodeCollectorConfig != nil && nodeCollectorConfig.RequestMemoryMiB > 0 {
+		memoryRequestMiB = nodeCollectorConfig.RequestMemoryMiB
+	}
+	memoryLimitMiB := int(float64(memoryRequestMiB) * memoryLimitAboveRequestFactor)
+	if nodeCollectorConfig != nil && nodeCollectorConfig.LimitMemoryMiB > 0 {
+		memoryLimitMiB = nodeCollectorConfig.LimitMemoryMiB
+	}
+
+	memoryLimiterLimitMiB := memoryLimitMiB - defaultMemoryLimiterLimitDiffMib
+	if nodeCollectorConfig != nil && nodeCollectorConfig.MemoryLimiterLimitMiB > 0 {
+		memoryLimiterLimitMiB = nodeCollectorConfig.MemoryLimiterLimitMiB
+	}
+	memoryLimiterSpikeLimitMiB := memoryLimiterLimitMiB * defaultMemoryLimiterSpikePercentage / 100
+	if nodeCollectorConfig != nil && nodeCollectorConfig.MemoryLimiterSpikeLimitMiB > 0 {
+		memoryLimiterSpikeLimitMiB = nodeCollectorConfig.MemoryLimiterSpikeLimitMiB
+	}
+
+	gomemlimitMiB := int(memoryLimiterLimitMiB * defaultGoMemLimitPercentage / 100.0)
+	if nodeCollectorConfig != nil && nodeCollectorConfig.GoMemLimitMib != 0 {
+		gomemlimitMiB = nodeCollectorConfig.GoMemLimitMib
+	}
+
 	return odigosv1.CollectorsGroupResourcesSettings{
-		MemoryRequestMiB:           256,
-		MemoryLimitMiB:             512 + 64,
-		MemoryLimiterLimitMiB:      512,
-		MemoryLimiterSpikeLimitMiB: 128,            // meaning that collector will start dropping data at 512-128=384MiB
-		GomemlimitMiB:              512 - 128 - 32, // start aggressive GC 32 MiB before soft limit and dropping data
+		MemoryRequestMiB:           memoryRequestMiB,
+		MemoryLimitMiB:             memoryLimitMiB,
+		MemoryLimiterLimitMiB:      memoryLimiterLimitMiB,
+		MemoryLimiterSpikeLimitMiB: memoryLimiterSpikeLimitMiB,
+		GomemlimitMiB:              gomemlimitMiB,
 	}
 }
 

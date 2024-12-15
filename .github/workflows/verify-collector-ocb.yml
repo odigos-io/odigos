@@ -12,15 +12,15 @@ jobs:
         uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.22.6"
+          go-version: "1.23.0"
       - name: Generate collector with ocb
         working-directory: ./collector
-        run: "make genodigoscol"
+        run: "make genodigoscol generate"
       - name: Verify Generate
         working-directory: ./collector
         run: |
           if [[ $(git diff --exit-code) ]]; then
             git diff
-            echo "odigos collector distribution module is not in sync with builder config. Please run 'make genodigoscol' in 'collector' directory and commit the changes."
+            echo "odigos collector distribution module is not in sync with builder config. Please run 'make genodigoscol generate' in 'collector' directory and commit the changes."
             exit 1
           fi

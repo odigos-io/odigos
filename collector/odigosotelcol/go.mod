@@ -2,9 +2,7 @@
 
 module odigos.io/opentelemetry-collector/cmd/odigosotelcol
 
-go 1.22.0
-
-toolchain go1.22.6
+go 1.23.0
 
 require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/countconnector v0.106.0
@@ -92,11 +90,10 @@ require (
 	go.opentelemetry.io/collector/connector/forwardconnector v0.106.0
 	go.opentelemetry.io/collector/exporter v0.106.0
 	go.opentelemetry.io/collector/exporter/debugexporter v0.106.0
-	go.opentelemetry.io/collector/exporter/loggingexporter v0.106.0
+	go.opentelemetry.io/collector/exporter/nopexporter v0.106.0
 	go.opentelemetry.io/collector/exporter/otlpexporter v0.106.0
 	go.opentelemetry.io/collector/exporter/otlphttpexporter v0.106.0
 	go.opentelemetry.io/collector/extension v0.106.0
-	go.opentelemetry.io/collector/extension/ballastextension v0.106.0
 	go.opentelemetry.io/collector/extension/zpagesextension v0.106.0
 	go.opentelemetry.io/collector/odigos/providers/odigosfileprovider v0.106.0
 	go.opentelemetry.io/collector/otelcol v0.106.0

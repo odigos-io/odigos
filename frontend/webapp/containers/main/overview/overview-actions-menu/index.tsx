@@ -18,7 +18,7 @@ const PushToEnd = styled.div`
   margin-left: auto;
 `;
 
-export function OverviewActionMenuContainer() {
+export const OverviewActionsMenu = () => {
   return (
     <MenuContainer>
       <TabList />
@@ -32,4 +32,4 @@ export function OverviewActionMenuContainer() {
       </PushToEnd>
     </MenuContainer>
   );
-}
+};

@@ -1,4 +1,4 @@
-type: odigosconditionalattributesprocessor
+type: odigosconditionalattributes
 status:
   class: processor
   stability:

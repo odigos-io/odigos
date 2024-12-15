@@ -269,8 +269,7 @@ spec:
       try:
         - script:
             timeout: 60s
-            content: |
-
+            content: | 
               sleep 20
 
               while true; do
