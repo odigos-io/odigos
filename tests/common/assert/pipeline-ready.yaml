@@ -55,12 +55,20 @@ spec:
                   fieldPath: metadata.name
             - name: GOMEMLIMIT
               (value != null): true
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  containerName: gateway
+                  divisor: "0"
+                  resource: limits.cpu
           name: gateway
           resources:
             requests:
               (memory != null): true
+              (cpu != null): true
             limits:
               (memory != null): true
+              (cpu != null): true
           volumeMounts:
             - mountPath: /conf
               name: collector-conf
