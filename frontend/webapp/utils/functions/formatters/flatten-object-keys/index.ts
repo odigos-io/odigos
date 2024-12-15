@@ -1,18 +1,34 @@
-// const input = {
-//   name: {
-//     name: 'Name',
-//     value: 'load-generator',
-//     status: null,
-//     explain: '...',
-//   },
-// };
-
-// const output = {
-//   'name.name': 'Name',
-//   'name.value': 'load-generator',
-//   'name.status': null,
-//   'name.explain': '...',
-// };
+/**
+ * Recursively flattens a nested object into a single-level object where each key
+ * represents the path to its corresponding value in the original object. Keys for nested
+ * properties are concatenated using a dot (`.`) as a separator, while array elements
+ * include their index in square brackets (`[]`).
+ *
+ * @param {Record<string, any>} obj - The input object to be flattened.
+ * @param {string} [prefix=''] - The current prefix for the keys, used for recursion.
+ * @param {Record<string, any>} [result={}] - The accumulator object that stores the flattened result.
+ * @returns {Record<string, any>} A new object where all nested properties are flattened into
+ *                                a single level with their paths as keys.
+ *
+ * @example
+ * const input = {
+ *   name: {
+ *     name: 'Name',
+ *     value: 'load-generator',
+ *     status: null,
+ *     explain: '...',
+ *   },
+ * };
+ *
+ * const output = flattenObjectKeys(input);
+ * Output:
+ * {
+ *   'name.name': 'Name',
+ *   'name.value': 'load-generator',
+ *   'name.status': null,
+ *   'name.explain': '...',
+ * }
+ */
 
 export const flattenObjectKeys = (obj: Record<string, any>, prefix: string = '', result: Record<string, any> = {}) => {
   for (const key in obj) {
