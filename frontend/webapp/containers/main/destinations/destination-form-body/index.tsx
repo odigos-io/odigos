@@ -1,10 +1,10 @@
 import React, { Dispatch, SetStateAction, useMemo, useState } from 'react';
 import styled from 'styled-components';
 import { SignalUppercase } from '@/utils';
-import { TestConnection } from './test-connection';
+import { type ConnectionStatus, TestConnection } from './test-connection';
 import { DestinationDynamicFields } from './dynamic-fields';
-import type { DestinationInput, DestinationTypeItem, DynamicField } from '@/types';
 import { Divider, Input, MonitoringCheckboxes, NotificationNote, SectionTitle } from '@/reuseable-components';
+import { NOTIFICATION_TYPE, type DestinationInput, type DestinationTypeItem, type DynamicField } from '@/types';
 
 interface Props {
   isUpdate?: boolean;
@@ -34,7 +34,7 @@ export function DestinationFormBody({ isUpdate, destination, formData, formError
   const { supportedSignals, testConnectionSupported, displayName } = destination || {};
 
   const [isFormDirty, setIsFormDirty] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<'success' | 'error'>();
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>();
 
   const dirtyForm = () => {
     setIsFormDirty(true);
@@ -87,11 +87,11 @@ export function DestinationFormBody({ isUpdate, destination, formData, formError
                   status={connectionStatus}
                   onError={() => {
                     setIsFormDirty(false);
-                    setConnectionStatus('error');
+                    setConnectionStatus(NOTIFICATION_TYPE.ERROR);
                   }}
                   onSuccess={() => {
                     setIsFormDirty(false);
-                    setConnectionStatus('success');
+                    setConnectionStatus(NOTIFICATION_TYPE.SUCCESS);
                   }}
                   validateForm={validateForm}
                 />
@@ -101,9 +101,9 @@ export function DestinationFormBody({ isUpdate, destination, formData, formError
 
           {testConnectionSupported && (
             <NotesWrapper>
-              {connectionStatus === 'error' && <NotificationNote type='error' message='Connection failed. Please check your input and try again.' />}
-              {connectionStatus === 'success' && <NotificationNote type='success' message='Connection succeeded.' />}
-              {!connectionStatus && <NotificationNote type='default' message={`Odigos autocompleted ${displayName} connection details.`} />}
+              {connectionStatus === NOTIFICATION_TYPE.ERROR && <NotificationNote type={NOTIFICATION_TYPE.ERROR} message='Connection failed. Please check your input and try again.' />}
+              {connectionStatus === NOTIFICATION_TYPE.SUCCESS && <NotificationNote type={NOTIFICATION_TYPE.SUCCESS} message='Connection succeeded.' />}
+              {!connectionStatus && <NotificationNote type={NOTIFICATION_TYPE.DEFAULT} message={`Odigos autocompleted ${displayName} connection details.`} />}
             </NotesWrapper>
           )}
 

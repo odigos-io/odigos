@@ -1,11 +1,11 @@
+import React, { useState, useRef } from 'react';
 import Image from 'next/image';
 import theme from '@/styles/theme';
-import { useOnClickOutside } from '@/hooks';
-import React, { useState, useRef } from 'react';
+import { useModalStore } from '@/store';
 import styled, { css } from 'styled-components';
-import { useBooleanStore, useModalStore } from '@/store';
-import { DropdownOption, OVERVIEW_ENTITY_TYPES } from '@/types';
+import { useComputePlatform, useOnClickOutside } from '@/hooks';
 import { Button, FadeLoader, Text } from '@/reuseable-components';
+import { type DropdownOption, OVERVIEW_ENTITY_TYPES } from '@/types';
 
 // Styled components for the dropdown UI
 const Container = styled.div`
@@ -65,13 +65,13 @@ const DEFAULT_OPTIONS: DropdownOption[] = [
   { id: OVERVIEW_ENTITY_TYPES.DESTINATION, value: 'Destination' },
 ];
 
-interface AddEntityButtonDropdownProps {
+interface Props {
   options?: DropdownOption[];
   placeholder?: string;
 }
 
-const AddEntity: React.FC<AddEntityButtonDropdownProps> = ({ options = DEFAULT_OPTIONS, placeholder = 'ADD...' }) => {
-  const { isPolling } = useBooleanStore();
+const AddEntity: React.FC<Props> = ({ options = DEFAULT_OPTIONS, placeholder = 'ADD...' }) => {
+  const { loading } = useComputePlatform();
   const { currentModal, setCurrentModal } = useModalStore();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -91,7 +91,7 @@ const AddEntity: React.FC<AddEntityButtonDropdownProps> = ({ options = DEFAULT_O
   return (
     <Container ref={dropdownRef}>
       <StyledButton data-id='add-entity' onClick={handleToggle}>
-        {isPolling ? <FadeLoader color={theme.colors.primary} /> : <Image src='/icons/common/plus-black.svg' width={16} height={16} alt='Add' />}
+        {loading ? <FadeLoader color={theme.colors.primary} /> : <Image src='/icons/common/plus-black.svg' width={16} height={16} alt='Add' />}
         <ButtonText size={14}>{placeholder}</ButtonText>
       </StyledButton>
 

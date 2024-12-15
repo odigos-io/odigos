@@ -1,6 +1,5 @@
-import { useCallback, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useQuery } from '@apollo/client';
-import { useBooleanStore } from '@/store';
 import { GET_COMPUTE_PLATFORM } from '@/graphql';
 import { useFilterStore } from '@/store/useFilterStore';
 import { BACKEND_BOOLEAN, deriveTypeFromRule, safeJsonParse } from '@/utils';
@@ -12,29 +11,11 @@ type UseComputePlatformHook = {
   loading: boolean;
   error?: Error;
   refetch: () => void;
-  startPolling: () => Promise<void>;
 };
 
 export const useComputePlatform = (): UseComputePlatformHook => {
   const { data, loading, error, refetch } = useQuery<ComputePlatform>(GET_COMPUTE_PLATFORM);
-  const { togglePolling } = useBooleanStore();
   const filters = useFilterStore();
-
-  const startPolling = useCallback(async () => {
-    togglePolling(true);
-
-    let retries = 0;
-    const maxRetries = 5;
-    const retryInterval = 3 * 1000; // time in milliseconds
-
-    while (retries < maxRetries) {
-      await new Promise((resolve) => setTimeout(resolve, retryInterval));
-      refetch();
-      retries++;
-    }
-
-    togglePolling(false);
-  }, [refetch, togglePolling]);
 
   const mappedData = useMemo(() => {
     if (!data) return undefined;
@@ -95,5 +76,5 @@ export const useComputePlatform = (): UseComputePlatformHook => {
     };
   }, [mappedData, filters]);
 
-  return { data: mappedData, filteredData, loading, error, refetch, startPolling };
+  return { data: mappedData, filteredData, loading, error, refetch };
 };
