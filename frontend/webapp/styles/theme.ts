@@ -245,6 +245,7 @@ const text = {
 const font_family = {
   primary: 'Inter, sans-serif',
   secondary: 'Kode Mono, sans-serif',
+  code: 'IBM Plex Mono, monospace',
 };
 
 // Define the theme interface
