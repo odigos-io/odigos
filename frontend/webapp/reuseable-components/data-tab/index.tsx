@@ -1,10 +1,10 @@
-import React, { Fragment, PropsWithChildren, useCallback, useState } from 'react';
+import React, { Fragment, useCallback, useState } from 'react';
 import Image from 'next/image';
 import { FlexColumn, FlexRow } from '@/styles';
 import styled, { css } from 'styled-components';
 import { ActiveStatus, Divider, ExtendIcon, IconButton, MonitorsIcons, Text } from '@/reuseable-components';
 
-interface Props extends PropsWithChildren {
+interface Props {
   title: string;
   subTitle: string;
   logo: string;
