@@ -34,9 +34,14 @@ const (
 	// allowing the memory limit to be slightly above the memory request can help in reducing the chances of OOMs in edge cases.
 	// instead of having the process killed, it can use extra memory available on the node without allocating it preemptively.
 	memoryLimitAboveRequestFactor = 2.0
+
+	// the default CPU request in millicores
+	defaultRequestCPUm = 250
+	// the default CPU limit in millicores
+	defaultLimitCPUm = 500
 )
 
-func getMemorySettings(odigosConfig common.OdigosConfiguration) odigosv1.CollectorsGroupResourcesSettings {
+func getResourceSettings(odigosConfig common.OdigosConfiguration) odigosv1.CollectorsGroupResourcesSettings {
 	// memory request is expensive on daemonsets since it will consume this memory
 	// on each node in the cluster. setting to 256, but allowing memory to spike higher
 	// to consume more available memory on the node.
@@ -78,12 +83,23 @@ func getMemorySettings(odigosConfig common.OdigosConfiguration) odigosv1.Collect
 		gomemlimitMiB = nodeCollectorConfig.GoMemLimitMib
 	}
 
+	cpuRequestm := defaultRequestCPUm
+	if nodeCollectorConfig != nil && nodeCollectorConfig.RequestCPUm > 0 {
+		cpuRequestm = nodeCollectorConfig.RequestCPUm
+	}
+	cpuLimitm := defaultLimitCPUm
+	if nodeCollectorConfig != nil && nodeCollectorConfig.LimitCPUm > 0 {
+		cpuLimitm = nodeCollectorConfig.LimitCPUm
+	}
+
 	return odigosv1.CollectorsGroupResourcesSettings{
 		MemoryRequestMiB:           memoryRequestMiB,
 		MemoryLimitMiB:             memoryLimitMiB,
 		MemoryLimiterLimitMiB:      memoryLimiterLimitMiB,
 		MemoryLimiterSpikeLimitMiB: memoryLimiterSpikeLimitMiB,
 		GomemlimitMiB:              gomemlimitMiB,
+		CpuRequestMillicores:       cpuRequestm,
+		CpuLimitMillicores:         cpuLimitm,
 	}
 }
 
@@ -106,7 +122,7 @@ func newNodeCollectorGroup(odigosConfig common.OdigosConfiguration) *odigosv1.Co
 		Spec: odigosv1.CollectorsGroupSpec{
 			Role:                    odigosv1.CollectorsGroupRoleNodeCollector,
 			CollectorOwnMetricsPort: ownMetricsPort,
-			ResourcesSettings:       getMemorySettings(odigosConfig),
+			ResourcesSettings:       getResourceSettings(odigosConfig),
 		},
 	}
 }
