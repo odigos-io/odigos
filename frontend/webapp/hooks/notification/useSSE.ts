@@ -1,9 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { API } from '@/utils';
 import { NOTIFICATION_TYPE } from '@/types';
-import { useConnectionStore } from '@/store';
 import { useComputePlatform } from '../compute-platform';
-import { type NotifyPayload, useNotify } from './useNotify';
+import { type NotifyPayload, useConnectionStore, useNotificationStore } from '@/store';
 
 const modifyType = (notification: NotifyPayload) => {
   if (notification.title === 'Modified') {
@@ -18,7 +17,7 @@ const modifyType = (notification: NotifyPayload) => {
 };
 
 export const useSSE = () => {
-  const notify = useNotify();
+  const { addNotification } = useNotificationStore();
   const { setConnectionStore } = useConnectionStore();
   const { refetch: refetchComputePlatform } = useComputePlatform();
 
@@ -52,7 +51,7 @@ export const useSSE = () => {
           eventBuffer.current[key] = notification;
 
           // Dispatch the notification to the store
-          notify(notification);
+          addNotification(notification);
           refetchComputePlatform();
         }
 
@@ -79,7 +78,7 @@ export const useSSE = () => {
             title: `Connection lost on ${new Date().toLocaleString()}`,
             message: 'Please reboot the application',
           });
-          notify({
+          addNotification({
             type: NOTIFICATION_TYPE.ERROR,
             title: 'Connection Error',
             message: 'Connection to the server failed. Please reboot the application.',

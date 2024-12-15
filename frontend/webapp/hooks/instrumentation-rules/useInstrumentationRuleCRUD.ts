@@ -1,6 +1,5 @@
 import { useMutation } from '@apollo/client';
 import { useNotificationStore } from '@/store';
-import { useNotify } from '../notification/useNotify';
 import { useComputePlatform } from '../compute-platform';
 import { ACTION, deriveTypeFromRule, getSseTargetFromId } from '@/utils';
 import { NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES, type InstrumentationRuleInput } from '@/types';
@@ -14,10 +13,10 @@ interface Params {
 export const useInstrumentationRuleCRUD = (params?: Params) => {
   const removeNotifications = useNotificationStore((store) => store.removeNotifications);
   const { data, refetch } = useComputePlatform();
-  const notify = useNotify();
+  const { addNotification } = useNotificationStore();
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string) => {
-    notify({
+    addNotification({
       type,
       title,
       message,

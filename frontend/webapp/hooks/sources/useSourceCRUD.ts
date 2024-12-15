@@ -1,4 +1,3 @@
-import { useNotify } from '../notification';
 import { useMutation } from '@apollo/client';
 import { useNotificationStore } from '@/store';
 import { ACTION, getSseTargetFromId } from '@/utils';
@@ -13,12 +12,12 @@ interface Params {
 
 export const useSourceCRUD = (params?: Params) => {
   const removeNotifications = useNotificationStore((store) => store.removeNotifications);
-  const { data, refetch } = useComputePlatform();
   const { persistNamespace } = useNamespace();
-  const notify = useNotify();
+  const { data, refetch } = useComputePlatform();
+  const { addNotification } = useNotificationStore();
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: WorkloadId) => {
-    notify({
+    addNotification({
       type,
       title,
       message,

@@ -1,8 +1,7 @@
 import { useMutation } from '@apollo/client';
 import { useNotificationStore } from '@/store';
-import { useNotify } from '../notification/useNotify';
-import { useComputePlatform } from '../compute-platform';
 import { ACTION, getSseTargetFromId } from '@/utils';
+import { useComputePlatform } from '../compute-platform';
 import { CREATE_ACTION, DELETE_ACTION, UPDATE_ACTION } from '@/graphql/mutations';
 import { NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES, type ActionInput, type ActionsType } from '@/types';
 
@@ -14,10 +13,10 @@ interface UseActionCrudParams {
 export const useActionCRUD = (params?: UseActionCrudParams) => {
   const removeNotifications = useNotificationStore((store) => store.removeNotifications);
   const { data, refetch } = useComputePlatform();
-  const notify = useNotify();
+  const { addNotification } = useNotificationStore();
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string) => {
-    notify({
+    addNotification({
       type,
       title,
       message,

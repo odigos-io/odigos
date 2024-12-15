@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { DrawerItem } from '@/store';
 import { useQuery } from '@apollo/client';
 import { GET_DESTINATION_TYPE_DETAILS } from '@/graphql';
+import { DrawerItem, useNotificationStore } from '@/store';
 import { ACTION, FORM_ALERTS, safeJsonParse } from '@/utils';
-import { useConnectDestinationForm, useGenericForm, useNotify } from '@/hooks';
+import { useConnectDestinationForm, useGenericForm } from '@/hooks';
 import {
   type DynamicField,
   type DestinationDetailsResponse,
@@ -29,7 +29,7 @@ const INITIAL: DestinationInput = {
 export function useDestinationFormData(params?: { destinationType?: string; supportedSignals?: SupportedDestinationSignals; preLoadedFields?: string | DestinationTypeItem['fields'] }) {
   const { destinationType, supportedSignals, preLoadedFields } = params || {};
 
-  const notify = useNotify();
+  const { addNotification } = useNotificationStore();
   const { formData, formErrors, handleFormChange, handleErrorChange, resetFormData } = useGenericForm<DestinationInput>(INITIAL);
 
   const { buildFormDynamicFields } = useConnectDestinationForm();
@@ -39,7 +39,13 @@ export function useDestinationFormData(params?: { destinationType?: string; supp
   const { data: { destinationTypeDetails } = {} } = useQuery<DestinationDetailsResponse>(GET_DESTINATION_TYPE_DETAILS, {
     variables: { type: t },
     skip: !t,
-    onError: (error) => notify({ type: NOTIFICATION_TYPE.ERROR, title: ACTION.FETCH, message: error.message, crdType: OVERVIEW_ENTITY_TYPES.DESTINATION }),
+    onError: (error) =>
+      addNotification({
+        type: NOTIFICATION_TYPE.ERROR,
+        title: ACTION.FETCH,
+        message: error.message,
+        crdType: OVERVIEW_ENTITY_TYPES.DESTINATION,
+      }),
   });
 
   useEffect(() => {
@@ -99,7 +105,7 @@ export function useDestinationFormData(params?: { destinationType?: string; supp
     });
 
     if (!ok && params?.withAlert) {
-      notify({
+      addNotification({
         type: NOTIFICATION_TYPE.WARNING,
         title: params.alertTitle,
         message: FORM_ALERTS.REQUIRED_FIELDS,

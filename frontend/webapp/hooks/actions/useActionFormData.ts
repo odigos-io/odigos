@@ -1,6 +1,6 @@
-import { DrawerItem } from '@/store';
+import { DrawerItem, useNotificationStore } from '@/store';
 import { FORM_ALERTS } from '@/utils';
-import { useGenericForm, useNotify } from '@/hooks';
+import { useGenericForm } from '@/hooks';
 import { NOTIFICATION_TYPE, type ActionDataParsed, type ActionInput } from '@/types';
 
 const INITIAL: ActionInput = {
@@ -14,7 +14,7 @@ const INITIAL: ActionInput = {
 };
 
 export function useActionFormData() {
-  const notify = useNotify();
+  const { addNotification } = useNotificationStore();
   const { formData, formErrors, handleFormChange, handleErrorChange, resetFormData } = useGenericForm<ActionInput>(INITIAL);
 
   const validateForm = (params?: { withAlert?: boolean; alertTitle?: string }) => {
@@ -38,7 +38,7 @@ export function useActionFormData() {
     });
 
     if (!ok && params?.withAlert) {
-      notify({
+      addNotification({
         type: NOTIFICATION_TYPE.WARNING,
         title: params.alertTitle,
         message: FORM_ALERTS.REQUIRED_FIELDS,
