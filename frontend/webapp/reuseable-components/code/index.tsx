@@ -10,10 +10,10 @@ interface Props {
 
 const Token = styled.span`
   white-space: pre-wrap;
-  word-wrap: break-word;
   overflow-wrap: break-word;
-  hyphens: auto;
   opacity: 0.75;
+  font-size: 12px;
+  font-family: ${({ theme }) => theme.font_family.code};
 `;
 
 export const Code: React.FC<Props> = ({ language, code, flatten }) => {
