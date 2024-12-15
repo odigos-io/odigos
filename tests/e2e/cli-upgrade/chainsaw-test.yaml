@@ -103,6 +103,15 @@ spec:
       try:
         - apply:
             file: ../../common/apply/add-tempo-traces-destination.yaml
+    - name: Odigos pipeline pods ready
+    # We make sure that the pipeline pods are ready before proceeding with the next steps
+    # This is intentionally different from pipeline-ready.yaml, which checks for the pipeline CRDs
+    # When adding a feature related to the pipeline, if we would use the same assert before the upgrade, the test would fail.
+    # Since the version installed here is latest official one.
+      try:
+        - script:
+            content: ../../common/assert_pipeline_pods_ready.sh
+            timeout: 60s
     - name: Simple-demo instrumented after destination added
       try:
         - assert:

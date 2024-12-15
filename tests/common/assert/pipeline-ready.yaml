@@ -65,6 +65,7 @@ spec:
           resources:
             requests:
               (memory != null): true
+              (cpu != null): true
             limits:
               (memory != null): true
               (cpu != null): true
