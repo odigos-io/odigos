@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ACTION } from '@/utils';
 import { RuleFormBody } from '../';
+import { NOTIFICATION_TYPE } from '@/types';
 import { CenterThis, ModalBody } from '@/styles';
 import { RULE_OPTIONS, RuleOption } from './rule-options';
 import { useInstrumentationRuleCRUD, useInstrumentationRuleFormData, useKeyDown } from '@/hooks';
@@ -58,7 +59,7 @@ export const RuleModal: React.FC<Props> = ({ isOpen, onClose }) => {
     >
       <ModalBody>
         <SectionTitle title='Define Instrumentation Rule' description='Define how telemetry is recorded from your application. Choose a rule type and configure the details.' />
-        <NotificationNote type='info' message='We currently support one rule. We’ll be adding new rule types in the near future.' style={{ marginTop: '24px' }} />
+        <NotificationNote type={NOTIFICATION_TYPE.INFO} message='We currently support one rule. We’ll be adding new rule types in the near future.' style={{ marginTop: '24px' }} />
         <AutocompleteInput disabled options={RULE_OPTIONS} selectedOption={selectedItem} onOptionSelect={handleSelect} style={{ marginTop: '12px' }} />
 
         {!!selectedItem?.type ? (

@@ -1,7 +1,6 @@
 'use client';
 import './globals.css';
 import React from 'react';
-import { useSSE } from '@/hooks';
 import { METADATA } from '@/utils';
 import { ApolloWrapper } from '@/lib';
 import { ThemeProviderWrapper } from '@/styles';
@@ -15,8 +14,6 @@ const LAYOUT_STYLE: React.CSSProperties = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  useSSE();
-
   return (
     <html lang='en'>
       <head>
