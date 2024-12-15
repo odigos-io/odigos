@@ -82,14 +82,14 @@ export const NotificationManager = () => {
 
   return (
     <RelativeContainer ref={containerRef}>
-      <IconButton onClick={toggleOpen} withPing={!!unseenCount} pingColor={theme.colors.orange_og}>
+      <IconButton data-id='notif-manager-button' onClick={toggleOpen} withPing={!!unseenCount} pingColor={theme.colors.orange_og}>
         <Image src='/icons/common/notification.svg' alt='logo' width={16} height={16} />
       </IconButton>
 
       {isOpen && (
-        <AbsoluteContainer>
+        <AbsoluteContainer data-id='notif-manager-content'>
           <PopupHeader>
-            <Text size={20}>Notifications</Text>{' '}
+            <Text size={20}>Notifications</Text>
             {!!unseenCount && (
               <NewCount size={12} family='secondary'>
                 {unseenCount} new

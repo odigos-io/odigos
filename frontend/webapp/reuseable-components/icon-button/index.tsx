@@ -53,9 +53,9 @@ const Ping = styled.div<{ $color: Props['pingColor'] }>`
   }
 `;
 
-export const IconButton: React.FC<Props> = ({ children, onClick, withPing, pingColor }) => {
+export const IconButton: React.FC<Props> = ({ children, onClick, withPing, pingColor, ...props }) => {
   return (
-    <Button onClick={onClick}>
+    <Button onClick={onClick} {...props}>
       {withPing && <Ping $color={pingColor} />}
       {children}
     </Button>
