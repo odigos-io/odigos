@@ -1,6 +1,6 @@
 import React from 'react';
-import { OVERVIEW_ENTITY_TYPES } from '@/types';
 import { WarningModal } from '@/reuseable-components';
+import { NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES } from '@/types';
 
 interface Props {
   isOpen: boolean;
@@ -24,7 +24,7 @@ const DeleteWarning: React.FC<Props> = ({ isOpen, noOverlay, name, type, isLastI
       note={
         isLastItem
           ? {
-              type: 'warning',
+              type: NOTIFICATION_TYPE.WARNING,
               title: `You're about to ${actionText} the last ${type}`,
               message: 'This will break your pipeline!',
             }

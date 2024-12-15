@@ -3,22 +3,22 @@ import Image from 'next/image';
 import theme from '@/styles/theme';
 import { getStatusIcon } from '@/utils';
 import { useTestConnection } from '@/hooks';
-import type { DestinationInput } from '@/types';
 import styled, { css } from 'styled-components';
 import { Button, FadeLoader, Text } from '@/reuseable-components';
+import { type DestinationInput, NOTIFICATION_TYPE } from '@/types';
 
-type Status = 'success' | 'error';
+export type ConnectionStatus = NOTIFICATION_TYPE.SUCCESS | NOTIFICATION_TYPE.ERROR;
 
 interface Props {
   destination: DestinationInput;
   disabled: boolean;
-  status?: Status;
+  status?: ConnectionStatus;
   onError: () => void;
   onSuccess: () => void;
   validateForm: () => boolean;
 }
 
-const ActionButton = styled(Button)<{ $status?: Status }>`
+const ActionButton = styled(Button)<{ $status?: ConnectionStatus }>`
   display: flex;
   align-items: center;
   gap: 8px;
