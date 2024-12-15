@@ -50,6 +50,21 @@ data:
       {{- with .Values.collectorNode.collectorOwnMetricsPort }}
       collectorOwnMetricsPort: {{ . }}
       {{- end }}
+      {{- with .Values.collectorNode.requestMemoryMiB }}
+      requestMemoryMiB: {{ . }}
+      {{- end }}
+      {{- with .Values.collectorNode.limitMemoryMiB }}
+      limitMemoryMiB: {{ . }}
+      {{- end }}
+      {{- with .Values.collectorNode.memoryLimiterLimitMiB }}
+      memoryLimiterLimitMiB: {{ . }}
+      {{- end }}
+      {{- with .Values.collectorNode.memoryLimiterSpikeLimitMiB }}
+      memoryLimiterSpikeLimitMiB: {{ . }}
+      {{- end }}
+      {{- with .Values.collectorNode.goMemLimitMiB }}
+      goMemLimitMiB: {{ . }}
+      {{- end }}
     {{- end }}
     instrumentorImage: {{ .Values.instrumentor.image.repository }}
     telemetryEnabled: {{ .Values.telemetry.enabled }}

@@ -34,3 +34,13 @@ jobs:
             echo "client files are not up to date. Please run 'make generate-client' and commit the changes."
             exit 1
           fi
+      - name: Sync CRDs to Helm 
+        run: make sync-helm-crd
+      - name: Verify Helm
+        run: |
+          if [[ $(git diff --exit-code) ]]; then
+            git diff
+            echo "Helm CRDs are not up to date. Please run 'make sync-helm-crd' and commit the changes."
+            exit 1
+          fi
+

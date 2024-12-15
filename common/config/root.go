@@ -20,7 +20,7 @@ var availableConfigers = []Configer{
 	&Tempo{}, &Loki{}, &Jaeger{}, &GenericOTLP{}, &OTLPHttp{}, &Elasticsearch{}, &Quickwit{}, &Signoz{}, &Qryn{},
 	&OpsVerse{}, &Splunk{}, &Lightstep{}, &GoogleCloud{}, &GoogleCloudStorage{}, &Sentry{}, &AzureBlobStorage{},
 	&AWSS3{}, &Dynatrace{}, &Chronosphere{}, &ElasticAPM{}, &Axiom{}, &SumoLogic{}, &Coralogix{}, &Clickhouse{},
-	&Causely{}, &Uptrace{}, &Debug{}, &QrynOSS{},
+	&Causely{}, &Uptrace{}, &Debug{}, &QrynOSS{}, &Nop{},
 }
 
 type Configer interface {
