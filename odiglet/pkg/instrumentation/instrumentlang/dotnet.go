@@ -35,7 +35,7 @@ func DotNet(deviceId string, uniqueDestinationSignals map[common.ObservabilitySi
 		Envs: map[string]string{
 			enableProfilingEnvVar: "1",
 			profilerEndVar:        profilerId,
-			profilerPathEnv:       fmt.Sprintf(profilerPath, getArch()), // TODO(edenfed): Support both musl and glibc. Requires improved language detection
+			profilerPathEnv:       fmt.Sprintf(profilerPath, getArch()),
 			tracerHomeEnv:         tracerHome,
 			collectorUrlEnv:       fmt.Sprintf("http://%s:%d", env.Current.NodeIP, consts.OTLPHttpPort),
 			serviceNameEnv:        deviceId,

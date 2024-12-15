@@ -16,6 +16,26 @@ func ShouldInspectForLanguage(lang common.ProgrammingLanguage) bool {
 	return lang == common.DotNetProgrammingLanguage
 }
 
+// ModifyEnvVarsForMusl modifies the environment variables for the given language if musl libc is detected
+func ModifyEnvVarsForMusl(lang common.ProgrammingLanguage, envs map[string]string) map[string]string {
+	if envs == nil {
+		return nil
+	}
+
+	if !ShouldInspectForLanguage(lang) {
+		return envs
+	}
+
+	if lang == common.DotNetProgrammingLanguage {
+		val, ok := envs["CORECLR_PROFILER_PATH"]
+		if ok {
+			envs["CORECLR_PROFILER_PATH"] = strings.Replace(val, "linux-glibc", "linux-musl", 1)
+		}
+	}
+
+	return envs
+}
+
 // InspectType inspects the given process for libc type
 func InspectType(process *process.Details) (*common.LibCType, error) {
 	f, err := elf.Open(fmt.Sprintf("/proc/%d/exe", process.ProcessID))
