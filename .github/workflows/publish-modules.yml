@@ -62,6 +62,10 @@ jobs:
         run: |
           git tag opampserver/${{ steps.extract_tag.outputs.tag }}
 
+      - name: tag instrumentation
+        run: |
+          git tag instrumentation/${{ steps.extract_tag.outputs.tag }}
+
       - name: Push Module Tags
         run: |
           git push origin --tags

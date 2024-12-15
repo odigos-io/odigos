@@ -1,8 +1,7 @@
 import React, { Fragment, useCallback, useState } from 'react';
-import Image from 'next/image';
 import { FlexColumn, FlexRow } from '@/styles';
 import styled, { css } from 'styled-components';
-import { ActiveStatus, Divider, ExtendIcon, IconButton, MonitorsIcons, Text } from '@/reuseable-components';
+import { ActiveStatus, Divider, ExtendIcon, IconButton, IconWrapped, MonitorsIcons, Text } from '@/reuseable-components';
 
 interface Props {
   title: string;
@@ -50,18 +49,6 @@ const Container = styled.div<{ $withClick: boolean; $isError: Props['isError'] }
       visibility: visible;
     }
   }
-`;
-
-const IconWrapper = styled.div<{ $isError: Props['isError'] }>`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  background: ${({ $isError }) =>
-    $isError ? 'linear-gradient(180deg, rgba(237, 124, 124, 0.2) 0%, rgba(237, 124, 124, 0.05) 100%);' : 'linear-gradient(180deg, rgba(249, 249, 249, 0.2) 0%, rgba(249, 249, 249, 0.05) 100%);'};
 `;
 
 const Title = styled(Text)`
@@ -143,9 +130,7 @@ export const DataTab: React.FC<Props> = ({
   return (
     <Container $isError={isError} $withClick={!!onClick} onClick={onClick} {...props}>
       <FlexRow $gap={8}>
-        <IconWrapper $isError={isError}>
-          <Image src={logo} alt='' width={22} height={22} />
-        </IconWrapper>
+        <IconWrapped src={logo} isError={isError} />
 
         <FlexColumn $gap={4}>
           <Title>{title}</Title>
