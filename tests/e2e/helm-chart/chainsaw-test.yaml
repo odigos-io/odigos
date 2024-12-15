@@ -30,8 +30,6 @@ spec:
             content: |
               # The pwd is the directory of this file, so we have to walk up to the project root to find the helm chart
               P="../../.."
-              # "build" complete helm chart by copying CRDs into the template folder
-              cp -r $P/api/config/crd/bases/* $P/helm/odigos/templates/crds/
               if [ "$MODE" = "cross-cloud-tests" ]; then
                 helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7
               else

@@ -1,0 +1,310 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.16.1
+  labels:
+    metadata.labels.odigos.io/config: "1"
+    metadata.labels.odigos.io/system-object: "true"
+  name: instrumentationrules.odigos.io
+spec:
+  group: odigos.io
+  names:
+    kind: InstrumentationRule
+    listKind: InstrumentationRuleList
+    plural: instrumentationrules
+    singular: instrumentationrule
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              disabled:
+                description: A boolean field allowing to temporarily disable the rule,
+                  but keep it around for future use
+                type: boolean
+              instrumentationLibraries:
+                description: |-
+                  For fine grained control, the user can specify the instrumentation library to use.
+                  One can specify same rule for multiple languages and libraries at the same time.
+                  If nil, all instrumentation libraries will be used.
+                  If empty, no instrumentation libraries will be used.
+                items:
+                  description: |-
+                    Includes the instrumentation library name, span kind (for golang) and language
+                    which identifies a specific library globally.
+                  properties:
+                    language:
+                      description: The language in which this library will collect
+                        data
+                      enum:
+                      - java
+                      - python
+                      - go
+                      - dotnet
+                      - javascript
+                      - mysql
+                      - nginx
+                      - unknown
+                      - ignored
+                      type: string
+                    name:
+                      description: The name of the instrumentation library
+                      type: string
+                    spanKind:
+                      description: |-
+                        SpanKind is only supported by Golang and will be ignored for any other SDK language.
+                        In Go, SpanKind is used because the same instrumentation library can be utilized for different span kinds (e.g., client/server).
+                      enum:
+                      - client
+                      - server
+                      - producer
+                      - consumer
+                      - internal
+                      type: string
+                  required:
+                  - language
+                  - name
+                  type: object
+                type: array
+              notes:
+                description: 'A free-form text field that allows you to attach notes
+                  regarding the rule for convenience. For example: why it was added.
+                  Odigos does not use or assume any meaning from this field.'
+                type: string
+              otelSdks:
+                description: |-
+                  Set the OtelSdk to use for the workloads in this rule.
+                  instrumentation libraries will be ignored if set.
+                  the rule will be used only for languages which are specified, and ignored otherwise.
+                properties:
+                  otelSdkByLanguage:
+                    additionalProperties:
+                      properties:
+                        sdkTier:
+                          type: string
+                        sdkType:
+                          description: 'Odigos supports two types of OpenTelemetry
+                            SDKs: native and ebpf.'
+                          type: string
+                      required:
+                      - sdkTier
+                      - sdkType
+                      type: object
+                    type: object
+                required:
+                - otelSdkByLanguage
+                type: object
+              payloadCollection:
+                description: Allows to configure payload collection aspects for different
+                  types of payloads.
+                properties:
+                  dbQuery:
+                    description: rule for collecting db payloads for the mentioned
+                      workload and instrumentation libraries
+                    properties:
+                      dropPartialPayloads:
+                        description: |-
+                          If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
+                          This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+                        type: boolean
+                      maxPayloadLength:
+                        description: |-
+                          Maximum length of the payload to collect.
+                          If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option
+                        format: int64
+                        type: integer
+                    type: object
+                  httpRequest:
+                    description: |-
+                      Collect HTTP request payload data when available.
+                      Can be a client (outgoing) request or a server (incoming) request, depending on the instrumentation library
+                    properties:
+                      dropPartialPayloads:
+                        description: |-
+                          If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
+                          This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+                        type: boolean
+                      maxPayloadLength:
+                        description: |-
+                          Maximum length of the payload to collect.
+                          If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option
+                        format: int64
+                        type: integer
+                      mimeTypes:
+                        description: |-
+                          Limit payload collection to specific mime types based on the content type header.
+                          When not specified, all mime types payloads will be collected.
+                          Empty array will make the rule ineffective.
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                  httpResponse:
+                    description: |-
+                      rule for collecting the response part of an http payload.
+                      Can be a client response or a server response, depending on the instrumentation library
+                    properties:
+                      dropPartialPayloads:
+                        description: |-
+                          If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
+                          This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+                        type: boolean
+                      maxPayloadLength:
+                        description: |-
+                          Maximum length of the payload to collect.
+                          If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option
+                        format: int64
+                        type: integer
+                      mimeTypes:
+                        description: |-
+                          Limit payload collection to specific mime types based on the content type header.
+                          When not specified, all mime types payloads will be collected.
+                          Empty array will make the rule ineffective.
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                  messaging:
+                    description: rule for collecting messaging payloads for the mentioned
+                      workload and instrumentation libraries
+                    properties:
+                      dropPartialPayloads:
+                        description: |-
+                          If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
+                          This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+                        type: boolean
+                      maxPayloadLength:
+                        description: |-
+                          Maximum length of the payload to collect.
+                          If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option
+                        format: int64
+                        type: integer
+                    type: object
+                type: object
+              ruleName:
+                description: Allows you to attach a meaningful name to the rule for
+                  convenience. Odigos does not use or assume any meaning from this
+                  field.
+                type: string
+              workloads:
+                description: An array of workload objects (name, namespace, kind)
+                  to which the rule should be applied. If not specified, the rule
+                  will be applied to all workloads. empty array will render the rule
+                  inactive.
+                items:
+                  description: |-
+                    PodWorkload represents the higher-level controller managing a specific Pod within a Kubernetes cluster.
+                    It contains essential details about the controller such as its Name, Namespace, and Kind.
+                    'Kind' refers to the type of controller, which can be a Deployment, StatefulSet, or DaemonSet.
+                    This struct is useful for identifying and interacting with the overarching entity
+                    that governs the lifecycle and behavior of a Pod, especially in contexts where
+                    understanding the relationship between a Pod and its controlling workload is crucial.
+                  properties:
+                    kind:
+                      description: |-
+                        1. the pascal case representation of the workload kind
+                        it is used in k8s api objects as the `Kind` field.
+                      type: string
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                  required:
+                  - kind
+                  - name
+                  - namespace
+                  type: object
+                type: array
+            type: object
+          status:
+            properties:
+              conditions:
+                description: |-
+                  Represents the observations of a instrumentationrule's current state.
+                  Known .status.conditions.type are: "Available", "Progressing"
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
