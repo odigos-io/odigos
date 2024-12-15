@@ -1,5 +1,3 @@
-import type { NotificationType } from '@/types';
-
 export const SETUP = {
   MONITORS: {
     LOGS: 'Logs',
@@ -39,16 +37,6 @@ export const FORM_ALERTS = {
   CANNOT_EDIT_RULE: 'Cannot edit instrumentation rule of this type',
 };
 
-export const NOTIFICATION: {
-  [key: string]: NotificationType;
-} = {
-  ERROR: 'error',
-  SUCCESS: 'success',
-  WARNING: 'warning',
-  INFO: 'info',
-  DEFAULT: 'default',
-};
-
 export const BACKEND_BOOLEAN = {
   FALSE: 'False',
   TRUE: 'True',
@@ -64,9 +52,10 @@ export const DATA_CARDS = {
   RULE_DETAILS: 'Instrumentation Rule Details',
   DESTINATION_DETAILS: 'Destination Details',
   SOURCE_DETAILS: 'Source Details',
-
   DETECTED_CONTAINERS: 'Detected Containers',
   DETECTED_CONTAINERS_DESCRIPTION: 'The system automatically instruments the containers it detects with a supported programming language.',
+  DESCRIBE_SOURCE: 'Describe Source',
+  DESCRIBE_ODIGOS: 'Describe Odigos',
 };
 
 export const DISPLAY_TITLES = {

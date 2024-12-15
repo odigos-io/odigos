@@ -66,9 +66,9 @@ export interface DrawerHeaderRef {
 interface DrawerHeaderProps {
   title: string;
   titleTooltip?: string;
-  imageUri: string;
-  isEdit: boolean;
-  onEdit: () => void;
+  imageUri?: string;
+  isEdit?: boolean;
+  onEdit?: () => void;
   onClose: () => void;
 }
 
@@ -87,9 +87,12 @@ const DrawerHeader = forwardRef<DrawerHeaderRef, DrawerHeaderProps>(({ title, ti
   return (
     <HeaderContainer>
       <SectionItemsWrapper>
-        <DrawerItemImageWrapper>
-          <Image src={imageUri} alt='Drawer Item' width={16} height={16} />
-        </DrawerItemImageWrapper>
+        {!!imageUri && (
+          <DrawerItemImageWrapper>
+            <Image src={imageUri} alt='Drawer Item' width={16} height={16} />
+          </DrawerItemImageWrapper>
+        )}
+
         {!isEdit && (
           <Tooltip text={titleTooltip} withIcon>
             <Title>{title}</Title>
@@ -105,12 +108,13 @@ const DrawerHeader = forwardRef<DrawerHeaderRef, DrawerHeaderProps>(({ title, ti
       )}
 
       <SectionItemsWrapper $gap={8}>
-        {!isEdit && (
+        {!isEdit && !!onEdit && (
           <EditButton data-id='drawer-edit' variant='tertiary' onClick={onEdit}>
             <Image src='/icons/common/edit.svg' alt='Edit' width={16} height={16} />
             <ButtonText>Edit</ButtonText>
           </EditButton>
         )}
+
         <CloseButton data-id='drawer-close' variant='secondary' onClick={onClose}>
           <Image src='/icons/common/x.svg' alt='Close' width={12} height={12} />
         </CloseButton>

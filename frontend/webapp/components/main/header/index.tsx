@@ -6,7 +6,7 @@ import { PlatformTypes } from '@/types';
 import { PlatformTitle } from './cp-title';
 import { useConnectionStore } from '@/store';
 import { ConnectionStatus } from '@/reuseable-components';
-import { NotificationManager } from '@/components/notification';
+import { DescribeOdigos, NotificationManager } from '@/components';
 
 interface MainHeaderProps {}
 
@@ -42,6 +42,7 @@ export const MainHeader: React.FC<MainHeaderProps> = () => {
 
       <AlignRight>
         <NotificationManager />
+        <DescribeOdigos />
       </AlignRight>
     </HeaderContainer>
   );

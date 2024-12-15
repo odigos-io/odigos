@@ -2,15 +2,16 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { ROUTES } from '@/utils';
 import theme from '@/styles/theme';
+import { CenterThis } from '@/styles';
 import { useAppStore } from '@/store';
 import styled from 'styled-components';
 import { SetupHeader } from '@/components';
 import { useRouter } from 'next/navigation';
-import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
+import { NOTIFICATION_TYPE } from '@/types';
 import { DestinationModal } from '../destination-modal';
+import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
 import { ConfiguredDestinationsList } from './configured-destinations-list';
 import { Button, FadeLoader, NotificationNote, SectionTitle, Text } from '@/reuseable-components';
-import { CenterThis } from '@/styles';
 
 const ContentWrapper = styled.div`
   width: 640px;
@@ -93,7 +94,7 @@ export function AddDestinationContainer() {
         {!isLoading && isSourcesListEmpty() && (
           <NotificationNoteWrapper>
             <NotificationNote
-              type='warning'
+              type={NOTIFICATION_TYPE.WARNING}
               message='No sources selected. Please go back to select sources.'
               action={{
                 label: 'Select sources',

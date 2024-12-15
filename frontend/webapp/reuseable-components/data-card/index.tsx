@@ -43,14 +43,19 @@ const Description = styled(Text)`
 export const DataCard: React.FC<Props> = ({ title = 'Details', titleBadge, description, data }) => {
   return (
     <CardContainer>
-      <Header>
-        <Title>
-          {title}
-          {/* NOT undefined, because we should allow zero (0) values */}
-          {titleBadge !== undefined && <Badge label={titleBadge} />}
-        </Title>
-        {!!description && <Description>{description}</Description>}
-      </Header>
+      {!!title || !!description ? (
+        <Header>
+          {!!title && (
+            <Title>
+              {title}
+              {/* NOT undefined, because we should allow zero (0) values */}
+              {titleBadge !== undefined && <Badge label={titleBadge} />}
+            </Title>
+          )}
+
+          {!!description && <Description>{description}</Description>}
+        </Header>
+      ) : null}
 
       <DataCardFields data={data} />
     </CardContainer>
