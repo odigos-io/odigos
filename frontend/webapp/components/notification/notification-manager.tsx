@@ -6,32 +6,8 @@ import { useNotificationStore } from '@/store';
 import { ACTION, getStatusIcon } from '@/utils';
 import { useOnClickOutside, useTimeAgo } from '@/hooks';
 import theme, { hexPercentValues } from '@/styles/theme';
-import { NoDataFound, Text } from '@/reuseable-components';
 import type { Notification, NotificationType } from '@/types';
-
-const BellIcon = styled.div`
-  position: relative;
-  width: 36px;
-  height: 36px;
-  border-radius: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  &:hover {
-    background-color: ${({ theme }) => theme.colors.white_opacity['008']};
-  }
-`;
-
-const LiveBadge = styled.div`
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 6px;
-  height: 6px;
-  border-radius: 100%;
-  background-color: ${({ theme }) => theme.colors.orange_og};
-`;
+import { IconButton, NoDataFound, Text } from '@/reuseable-components';
 
 const RelativeContainer = styled.div`
   position: relative;
@@ -106,10 +82,9 @@ export const NotificationManager = () => {
 
   return (
     <RelativeContainer ref={containerRef}>
-      <BellIcon onClick={toggleOpen}>
-        {!!unseenCount && <LiveBadge />}
+      <IconButton onClick={toggleOpen} withPing={!!unseenCount} pingColor={theme.colors.orange_og}>
         <Image src='/icons/common/notification.svg' alt='logo' width={16} height={16} />
-      </BellIcon>
+      </IconButton>
 
       {isOpen && (
         <AbsoluteContainer>
