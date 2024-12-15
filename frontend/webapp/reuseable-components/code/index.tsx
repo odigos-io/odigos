@@ -25,7 +25,6 @@ export const Code: React.FC<Props> = ({ language, code, flatten }) => {
         <pre>
           {tokens.map((line, i) => (
             <div key={`line-${i}`} {...getLineProps({ line })}>
-              {/* <span>{i + 1}</span> */}
               {line.map((token, ii) => (
                 <Token key={`line-${i}-token-${ii}`} {...getTokenProps({ token })} />
               ))}
