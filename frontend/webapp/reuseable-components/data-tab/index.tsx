@@ -6,8 +6,9 @@ import { ActiveStatus, Divider, ExtendIcon, IconButton, MonitorsIcons, Text } fr
 
 interface Props {
   title: string;
-  subTitle: string;
+  subTitle?: string;
   logo: string;
+  hoverText?: string;
   monitors?: string[];
   monitorsWithLabels?: boolean;
   isActive?: boolean;
@@ -18,6 +19,10 @@ interface Props {
   renderActions?: () => JSX.Element;
   onClick?: () => void;
 }
+
+const ControlledVisibility = styled.div`
+  visibility: hidden;
+`;
 
 const Container = styled.div<{ $withClick: boolean; $isError: Props['isError'] }>`
   display: flex;
@@ -34,8 +39,17 @@ const Container = styled.div<{ $withClick: boolean; $isError: Props['isError'] }
       &:hover {
         cursor: pointer;
         background-color: ${$isError ? '#351515' : theme.colors.white_opacity['008']};
+        ${ControlledVisibility} {
+          visibility: visible;
+        }
       }
     `}
+
+  &:hover {
+    ${ControlledVisibility} {
+      visibility: visible;
+    }
+  }
 `;
 
 const IconWrapper = styled.div<{ $isError: Props['isError'] }>`
@@ -76,7 +90,11 @@ const ActionsWrapper = styled.div`
   margin-left: auto;
 `;
 
-export const DataTab: React.FC<Props> = ({ title, subTitle, logo, monitors, monitorsWithLabels, isActive, isError, withExtend, isExtended, renderExtended, renderActions, onClick }) => {
+const HoverText = styled(Text)`
+  margin-right: 16px;
+`;
+
+export const DataTab: React.FC<Props> = ({ title, subTitle, logo, hoverText, monitors, monitorsWithLabels, isActive, isError, withExtend, isExtended, renderExtended, renderActions, onClick }) => {
   const [extend, setExtend] = useState(isExtended || false);
 
   const renderMonitors = useCallback(
@@ -124,6 +142,13 @@ export const DataTab: React.FC<Props> = ({ title, subTitle, logo, monitors, moni
         </FlexColumn>
 
         <ActionsWrapper>
+          {!!hoverText && (
+            <ControlledVisibility>
+              <HoverText size={14} family='secondary'>
+                {hoverText}
+              </HoverText>
+            </ControlledVisibility>
+          )}
           {renderActions && renderActions()}
           {withExtend && (
             <Fragment>

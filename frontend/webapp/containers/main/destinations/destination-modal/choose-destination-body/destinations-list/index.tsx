@@ -3,14 +3,14 @@ import styled from 'styled-components';
 import { DestinationTypeItem } from '@/types';
 import { IDestinationListItem } from '@/hooks';
 import { capitalizeFirstLetter } from '@/utils';
-import { DestinationListItem } from './destination-list-item';
-import { NoDataFound, SectionTitle } from '@/reuseable-components';
+import { DataTab, NoDataFound, SectionTitle } from '@/reuseable-components';
 import { PotentialDestinationsList } from './potential-destinations-list';
 
 const Container = styled.div`
   display: flex;
   flex-direction: column;
   align-self: stretch;
+  gap: 24px;
   max-height: calc(100vh - 450px);
   overflow-y: auto;
 
@@ -49,7 +49,15 @@ const DestinationsList: React.FC<DestinationsListProps> = ({ items, setSelectedI
         <ListsWrapper key={`category-${item.name}`}>
           <SectionTitle size='small' title={capitalizeFirstLetter(item.name)} description={item.description} />
           {item.items.map((categoryItem) => (
-            <DestinationListItem key={`destination-${categoryItem.type}`} item={categoryItem} onSelect={setSelectedItems} />
+            <DataTab
+              key={`destination-${categoryItem.type}`}
+              title={categoryItem.displayName}
+              logo={categoryItem.imageUrl}
+              hoverText='Select'
+              monitors={Object.keys(categoryItem.supportedSignals).filter((signal) => categoryItem.supportedSignals[signal].supported)}
+              monitorsWithLabels
+              onClick={() => setSelectedItems(categoryItem)}
+            />
           ))}
         </ListsWrapper>
       );
