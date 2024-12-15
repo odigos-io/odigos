@@ -1,7 +1,6 @@
 package detector
 
 import (
-	"context"
 	"log/slog"
 
 	"github.com/go-logr/logr"
@@ -11,16 +10,7 @@ import (
 	"github.com/odigos-io/runtime-detector"
 )
 
-type ProcessEvent = detector.ProcessEvent
-
-type Detector = detector.Detector
-
-const (
-	ProcessExecEvent = detector.ProcessExecEvent
-	ProcessExitEvent = detector.ProcessExitEvent
-)
-
-func NewK8SProcDetector(ctx context.Context, logger logr.Logger, events chan<- ProcessEvent) (*detector.Detector, error) {
+func K8sDetectorOptions(logger logr.Logger) []detector.DetectorOption {
 	sLogger := slog.New(logr.ToSlogHandler(logger))
 
 	opts := []detector.DetectorOption{
@@ -28,13 +18,8 @@ func NewK8SProcDetector(ctx context.Context, logger logr.Logger, events chan<- P
 		detector.WithEnvironments(relevantEnvVars()...),
 		detector.WithEnvPrefixFilter(consts.OdigosEnvVarPodName),
 	}
-	detector, err := detector.NewDetector(ctx, events, opts...)
 
-	if err != nil {
-		return nil, err
-	}
-
-	return detector, nil
+	return opts
 }
 
 func relevantEnvVars() []string {

@@ -111,9 +111,8 @@ const renderValue = (type: DataCardRow['type'], value: DataCardRow['value']) => 
               }
             />
           )}
-        >
-          <InstrumentStatus language={language} />
-        </DataTab>
+          renderActions={() => <InstrumentStatus language={language} />}
+        />
       );
     }
 

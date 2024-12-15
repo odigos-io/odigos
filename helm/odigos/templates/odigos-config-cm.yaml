@@ -56,6 +56,12 @@ data:
       {{- with .Values.collectorNode.limitMemoryMiB }}
       limitMemoryMiB: {{ . }}
       {{- end }}
+      {{- with .Values.collectorNode.requestCPUm }}
+      requestCPUm: {{ . }}
+      {{- end }}
+      {{- with .Values.collectorNode.limitCPUm }}
+      limitCPUm: {{ . }}
+      {{- end }}
       {{- with .Values.collectorNode.memoryLimiterLimitMiB }}
       memoryLimiterLimitMiB: {{ . }}
       {{- end }}

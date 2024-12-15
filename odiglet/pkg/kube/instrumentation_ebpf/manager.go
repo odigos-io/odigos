@@ -3,6 +3,7 @@ package instrumentation_ebpf
 import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
+	"github.com/odigos-io/odigos/instrumentation"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
@@ -12,7 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 )
 
-func SetupWithManager(mgr ctrl.Manager, ebpfDirectors ebpf.DirectorsMap, configUpdates chan<- ebpf.ConfigUpdate) error {
+func SetupWithManager(mgr ctrl.Manager, ebpfDirectors ebpf.DirectorsMap, configUpdates chan<- instrumentation.ConfigUpdate[ebpf.K8sConfigGroup]) error {
 	log.Logger.V(0).Info("Starting reconcileres for ebpf instrumentation")
 	var err error
 

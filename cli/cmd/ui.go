@@ -26,8 +26,8 @@ import (
 )
 
 const (
-	defaultPort     = 3000
-	betaDefaultPort = 3001
+	defaultPort       = 3000
+	legacyDefaultPort = 3001
 )
 
 // uiCmd represents the ui command
@@ -50,12 +50,12 @@ var uiCmd = &cobra.Command{
 			}
 		}
 
-		betaFlag, _ := cmd.Flags().GetBool("beta")
+		legacyFlag, _ := cmd.Flags().GetBool("legacy")
 		localPort := cmd.Flag("port").Value.String()
 		clusterPort := defaultPort
 
-		if betaFlag {
-			clusterPort = betaDefaultPort
+		if legacyFlag {
+			clusterPort = legacyDefaultPort
 		}
 
 		localAddress := cmd.Flag("address").Value.String()

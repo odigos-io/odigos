@@ -36,11 +36,11 @@ Sizing Profiles `size_s`, `size_m`, `size_l` are pre-defined configurations desi
 
 **Node Data Collection Collector**:
 
-| Profile  | Request Memory (Mi)  | Limit Memory (Mi) |
-|----------|----------------------|-------------------|
-| `size_s` | **150Mi**            | **300Mi**         |
-| `size_m` | **250Mi**            | **500Mi**         |
-| `size_l` | **500Mi**            | **750Mi**         |
+| Profile  | Request Memory (Mi)  | Limit Memory (Mi) | Request CPU (m)      | Limit CPU (m)
+|----------|----------------------|-------------------| ---------------------|-------------------|
+| `size_s` | **150Mi**            | **300Mi**         | **150m**             | **300m**         |
+| `size_m` | **250Mi**            | **500Mi**         | **250m**             | **500m**         |
+| `size_l` | **500Mi**            | **750Mi**         | **500m**             | **750m**         |
 
 
 To use profiles, you need to use the [Odigos CLI Command for Profiles](/cli/odigos_profile).  
@@ -96,27 +96,37 @@ collectorNode:
   # RequestMemoryMiB is the memory request for the node collector daemonset.
   # it will be embedded in the daemonset as a resource request of the form "memory: <value>Mi"
   # default value is 250Mi
-  RequestMemoryMiB int `json:"requestMemoryMiB,omitempty"`
+  requestMemoryMiB: 250
 
   # LimitMemoryMiB is the memory limit for the node collector daemonset.
   # it will be embedded in the daemonset as a resource limit of the form "memory: <value>Mi"
   # default value is 2x the memory request.
-  LimitMemoryMiB int `json:"limitMemoryMiB,omitempty"`
+  limitMemoryMiB: 500
+
+  # RequestCPUm is the CPU request for the node collector daemonset.
+  # it will be embedded in the daemonset as a resource request of the form "cpu: <value>m"
+  # default value is 250m
+  requestCPUm: 250
+
+  # LimitCPUm is the CPU limit for the node collector daemonset.
+  # it will be embedded in the daemonset as a resource limit of the form "cpu: <value>m"
+  # default value is 500m
+  limitCPUm: 500
 
   # this parameter sets the "limit_mib" parameter in the memory limiter configuration for the node collector.
   # it is the hard limit after which a force garbage collection will be performed.
   # if not set, it will be 50Mi below the memory request.
-  MemoryLimiterLimitMiB int `json:"memoryLimiterLimitMiB,omitempty"`
+  memoryLimiterLimitMiB: 
 
   # this parameter sets the "spike_limit_mib" parameter in the memory limiter configuration for the node collector.
   # note that this is not the processor soft limit, but the diff in Mib between the hard limit and the soft limit.
   # if not set, this will be set to 20% of the hard limit (so the soft limit will be 80% of the hard limit).
-  MemoryLimiterSpikeLimitMiB int `json:"memoryLimiterSpikeLimitMiB,omitempty"`
+  memoryLimiterSpikeLimitMiB: 
 
   # the GOMEMLIMIT environment variable value for the node collector daemonset.
   # this is when go runtime will start garbage collection.
   # if not specified, it will be set to 80% of the hard limit of the memory limiter.
-  GoMemLimitMib int `json:"goMemLimitMiB,omitempty"`
+  goMemLimitMiB: 
 ```
 
 
