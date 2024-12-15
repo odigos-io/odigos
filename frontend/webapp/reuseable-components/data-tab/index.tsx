@@ -61,7 +61,7 @@ const IconWrapper = styled.div<{ $isError: Props['isError'] }>`
   height: 36px;
   border-radius: 8px;
   background: ${({ $isError }) =>
-    `linear-gradient(180deg, ${$isError ? 'rgba(237, 124, 124, 0.08)' : 'rgba(249, 249, 249, 0.06)'} 0%, ${$isError ? 'rgba(237, 124, 124, 0.02)' : 'rgba(249, 249, 249, 0.02)'} 100%)`};
+    $isError ? 'linear-gradient(180deg, rgba(237, 124, 124, 0.2) 0%, rgba(237, 124, 124, 0.05) 100%);' : 'linear-gradient(180deg, rgba(249, 249, 249, 0.2) 0%, rgba(249, 249, 249, 0.05) 100%);'};
 `;
 
 const Title = styled(Text)`
@@ -129,7 +129,7 @@ export const DataTab: React.FC<Props> = ({ title, subTitle, logo, hoverText, mon
     <Container $isError={isError} $withClick={!!onClick} onClick={onClick}>
       <FlexRow $gap={8}>
         <IconWrapper $isError={isError}>
-          <Image src={logo} alt='' width={20} height={20} />
+          <Image src={logo} alt='' width={22} height={22} />
         </IconWrapper>
 
         <FlexColumn $gap={4}>
