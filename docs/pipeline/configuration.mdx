@@ -106,12 +106,12 @@ collectorNode:
   # RequestCPUm is the CPU request for the node collector daemonset.
   # it will be embedded in the daemonset as a resource request of the form "cpu: <value>m"
   # default value is 250m
-	requestCPUm: 250
+  requestCPUm: 250
 
   # LimitCPUm is the CPU limit for the node collector daemonset.
   # it will be embedded in the daemonset as a resource limit of the form "cpu: <value>m"
   # default value is 500m
-	limitCPUm: 500
+  limitCPUm: 500
 
   # this parameter sets the "limit_mib" parameter in the memory limiter configuration for the node collector.
   # it is the hard limit after which a force garbage collection will be performed.
