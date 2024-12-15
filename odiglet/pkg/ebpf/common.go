@@ -10,7 +10,7 @@ import (
 
 // NewManager creates a new instrumentation manager for eBPF which is configured to work with Kubernetes.
 func NewManager(client client.Client, logger logr.Logger, factories map[instrumentation.OtelDistribution]instrumentation.Factory, configUpdates <-chan instrumentation.ConfigUpdate[K8sConfigGroup]) (instrumentation.Manager, error) {
-	managerOpts := instrumentation.ManagerOptions[K8sDetails, K8sConfigGroup]{
+	managerOpts := instrumentation.ManagerOptions[K8sProcessGroup, K8sConfigGroup]{
 		Logger:          logger,
 		Factories:       factories,
 		Handler:         newHandler(client),
@@ -26,11 +26,11 @@ func NewManager(client client.Client, logger logr.Logger, factories map[instrume
 	return manager, nil
 }
 
-func newHandler(client client.Client) *instrumentation.Handler[K8sDetails, K8sConfigGroup] {
+func newHandler(client client.Client) *instrumentation.Handler[K8sProcessGroup, K8sConfigGroup] {
 	reporter := &k8sReporter{
 		client: client,
 	}
-	detailsResolver := &k8sDetailsResolver{
+	processGroupResolver := &k8sDetailsResolver{
 		client: client,
 	}
 	configGroupResolver := &k8sConfigGroupResolver{}
@@ -38,11 +38,11 @@ func newHandler(client client.Client) *instrumentation.Handler[K8sDetails, K8sCo
 		client: client,
 	}
 	distributionMatcher := &podDeviceDistributionMatcher{}
-	return &instrumentation.Handler[K8sDetails, K8sConfigGroup]{
-		DetailsResolver:     detailsResolver,
-		ConfigGroupResolver: configGroupResolver,
-		Reporter:            reporter,
-		DistributionMatcher: distributionMatcher,
-		SettingsGetter:      settingsGetter,
+	return &instrumentation.Handler[K8sProcessGroup, K8sConfigGroup]{
+		ProcessGroupResolver: processGroupResolver,
+		ConfigGroupResolver:  configGroupResolver,
+		Reporter:             reporter,
+		DistributionMatcher:  distributionMatcher,
+		SettingsGetter:       settingsGetter,
 	}
 }
