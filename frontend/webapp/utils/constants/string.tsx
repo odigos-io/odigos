@@ -64,9 +64,10 @@ export const DATA_CARDS = {
   RULE_DETAILS: 'Instrumentation Rule Details',
   DESTINATION_DETAILS: 'Destination Details',
   SOURCE_DETAILS: 'Source Details',
-
   DETECTED_CONTAINERS: 'Detected Containers',
   DETECTED_CONTAINERS_DESCRIPTION: 'The system automatically instruments the containers it detects with a supported programming language.',
+  DESCRIBE_SOURCE: 'Describe Source',
+  DESCRIBE_ODIGOS: 'Describe Odigos',
 };
 
 export const DISPLAY_TITLES = {

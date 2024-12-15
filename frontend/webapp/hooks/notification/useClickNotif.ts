@@ -4,7 +4,7 @@ import { getIdFromSseTarget } from '@/utils';
 import { useDestinationCRUD } from '../destinations';
 import { type Notification, OVERVIEW_ENTITY_TYPES } from '@/types';
 import { useInstrumentationRuleCRUD } from '../instrumentation-rules';
-import { DrawerBaseItem, useDrawerStore, useNotificationStore } from '@/store';
+import { DrawerItem, useDrawerStore, useNotificationStore } from '@/store';
 
 export const useClickNotif = () => {
   const { sources } = useSourceCRUD();
@@ -19,7 +19,7 @@ export const useClickNotif = () => {
     const { dismissToast } = options || {};
 
     if (crdType && target) {
-      const drawerItem: Partial<DrawerBaseItem> = {};
+      const drawerItem: Partial<DrawerItem> = {};
 
       switch (crdType) {
         case OVERVIEW_ENTITY_TYPES.RULE:
@@ -55,7 +55,7 @@ export const useClickNotif = () => {
       }
 
       if (!!drawerItem.item) {
-        setSelectedItem(drawerItem as DrawerBaseItem);
+        setSelectedItem(drawerItem as DrawerItem);
       } else {
         console.warn('notif item not found for:', { crdType, target });
       }

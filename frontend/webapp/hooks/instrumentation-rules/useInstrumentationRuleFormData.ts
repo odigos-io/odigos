@@ -1,4 +1,4 @@
-import type { DrawerBaseItem } from '@/store';
+import type { DrawerItem } from '@/store';
 import { useGenericForm, useNotify } from '@/hooks';
 import { FORM_ALERTS, NOTIFICATION } from '@/utils';
 import { PayloadCollectionType, type InstrumentationRuleInput, type InstrumentationRuleSpec } from '@/types';
@@ -53,7 +53,7 @@ export function useInstrumentationRuleFormData() {
     return ok;
   };
 
-  const loadFormWithDrawerItem = (drawerItem: DrawerBaseItem) => {
+  const loadFormWithDrawerItem = (drawerItem: DrawerItem) => {
     const { ruleName, notes, disabled, payloadCollection } = drawerItem.item as InstrumentationRuleSpec;
 
     const updatedData: InstrumentationRuleInput = {

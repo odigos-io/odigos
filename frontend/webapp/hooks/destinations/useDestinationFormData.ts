@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { DrawerBaseItem } from '@/store';
+import { DrawerItem } from '@/store';
 import { useQuery } from '@apollo/client';
 import { GET_DESTINATION_TYPE_DETAILS } from '@/graphql';
 import { useConnectDestinationForm, useGenericForm, useNotify } from '@/hooks';
@@ -110,7 +110,7 @@ export function useDestinationFormData(params?: { destinationType?: string; supp
     return ok;
   };
 
-  const loadFormWithDrawerItem = (drawerItem: DrawerBaseItem) => {
+  const loadFormWithDrawerItem = (drawerItem: DrawerItem) => {
     const {
       destinationType: { type },
       name,
