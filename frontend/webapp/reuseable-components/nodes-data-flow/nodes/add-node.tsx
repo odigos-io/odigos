@@ -2,7 +2,7 @@ import React from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
 import { Text } from '@/reuseable-components';
-import { OVERVIEW_NODE_TYPES, STATUSES } from '@/types';
+import { NODE_TYPES, OVERVIEW_NODE_TYPES, STATUSES } from '@/types';
 import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';
 
 interface Props
@@ -16,7 +16,7 @@ interface Props
         title: string;
         subTitle: string;
       },
-      'add'
+      NODE_TYPES.ADD
     >
   > {}
 

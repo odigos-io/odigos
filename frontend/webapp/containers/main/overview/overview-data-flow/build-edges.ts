@@ -1,7 +1,7 @@
 import theme from '@/styles/theme';
 import { formatBytes } from '@/utils';
 import { type Edge, type Node } from '@xyflow/react';
-import { OVERVIEW_ENTITY_TYPES, STATUSES, WorkloadId, type OverviewMetricsResponse } from '@/types';
+import { EDGE_TYPES, NODE_TYPES, OVERVIEW_ENTITY_TYPES, STATUSES, WorkloadId, type OverviewMetricsResponse } from '@/types';
 import nodeConfig from './node-config.json';
 
 interface Params {
@@ -18,7 +18,7 @@ const createEdge = (edgeId: string, params?: { label?: string; isMultiTarget?: b
 
   return {
     id: edgeId,
-    type: !!label ? 'labeled' : 'default',
+    type: !!label ? EDGE_TYPES.LABELED : 'default',
     source: sourceNodeId,
     target: targetNodeId,
     animated,
@@ -32,47 +32,36 @@ export const buildEdges = ({ nodes, metrics, containerHeight }: Params) => {
   const actionNodeId = nodes.find(({ id: nodeId }) => ['action-frame', 'action-add'].includes(nodeId))?.id;
 
   nodes.forEach(({ type: nodeType, id: nodeId, data: { type: entityType, id: entityId, status }, position }) => {
-    if (nodeType === 'base') {
-      switch (entityType) {
-        case OVERVIEW_ENTITY_TYPES.SOURCE: {
-          const { namespace, name, kind } = entityId as WorkloadId;
-          const metric = metrics?.getOverviewMetrics.sources.find((m) => m.kind === kind && m.name === name && m.namespace === namespace);
+    if (nodeType === NODE_TYPES.EDGED && entityType === OVERVIEW_ENTITY_TYPES.SOURCE) {
+      const { namespace, name, kind } = entityId as WorkloadId;
+      const metric = metrics?.getOverviewMetrics.sources.find((m) => m.kind === kind && m.name === name && m.namespace === namespace);
 
-          const topLimit = -nodeHeight / 2 + framePadding;
-          const bottomLimit = containerHeight - nodeHeight + framePadding * 2 + topLimit;
+      const topLimit = -nodeHeight / 2 + framePadding;
+      const bottomLimit = Math.floor(containerHeight / nodeHeight) * nodeHeight - (nodeHeight / 2 + framePadding);
 
-          if (position.y >= topLimit && position.y <= bottomLimit) {
-            edges.push(
-              createEdge(`${nodeId}-to-${actionNodeId}`, {
-                animated: false,
-                isMultiTarget: false,
-                label: formatBytes(metric?.throughput),
-                isError: status === STATUSES.UNHEALTHY,
-              }),
-            );
-          }
-
-          break;
-        }
-
-        case OVERVIEW_ENTITY_TYPES.DESTINATION: {
-          const metric = metrics?.getOverviewMetrics.destinations.find((m) => m.id === entityId);
-
-          edges.push(
-            createEdge(`${actionNodeId}-to-${nodeId}`, {
-              animated: false,
-              isMultiTarget: true,
-              label: formatBytes(metric?.throughput),
-              isError: status === STATUSES.UNHEALTHY,
-            }),
-          );
-
-          break;
-        }
-
-        default:
-          break;
+      if (position.y >= topLimit && position.y <= bottomLimit) {
+        edges.push(
+          createEdge(`${nodeId}-to-${actionNodeId}`, {
+            animated: false,
+            isMultiTarget: false,
+            label: formatBytes(metric?.throughput),
+            isError: status === STATUSES.UNHEALTHY,
+          }),
+        );
       }
+    }
+
+    if (nodeType === NODE_TYPES.BASE && entityType === OVERVIEW_ENTITY_TYPES.DESTINATION) {
+      const metric = metrics?.getOverviewMetrics.destinations.find((m) => m.id === entityId);
+
+      edges.push(
+        createEdge(`${actionNodeId}-to-${nodeId}`, {
+          animated: false,
+          isMultiTarget: true,
+          label: formatBytes(metric?.throughput),
+          isError: status === STATUSES.UNHEALTHY,
+        }),
+      );
     }
   });
 

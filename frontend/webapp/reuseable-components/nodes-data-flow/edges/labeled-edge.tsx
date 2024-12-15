@@ -1,4 +1,5 @@
 import React from 'react';
+import { EDGE_TYPES } from '@/types';
 import styled from 'styled-components';
 import { EdgeLabelRenderer, BaseEdge, type EdgeProps, type Edge, getSmoothStepPath } from '@xyflow/react';
 
@@ -10,7 +11,7 @@ interface Props
         isMultiTarget?: boolean;
         isError?: boolean;
       },
-      'labeled'
+      EDGE_TYPES.LABELED
     >
   > {}
 
