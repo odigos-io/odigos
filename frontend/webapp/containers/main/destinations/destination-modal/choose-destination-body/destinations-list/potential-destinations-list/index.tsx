@@ -33,6 +33,7 @@ export const PotentialDestinationsList: React.FC<Props> = ({ setSelectedItems })
         data.map((item) => (
           <DataTab
             key={`destination-${item.type}`}
+            data-id={`destination-${item.displayName}`}
             title={item.displayName}
             logo={item.imageUrl}
             hoverText='Select'

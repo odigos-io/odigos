@@ -94,7 +94,22 @@ const HoverText = styled(Text)`
   margin-right: 16px;
 `;
 
-export const DataTab: React.FC<Props> = ({ title, subTitle, logo, hoverText, monitors, monitorsWithLabels, isActive, isError, withExtend, isExtended, renderExtended, renderActions, onClick }) => {
+export const DataTab: React.FC<Props> = ({
+  title,
+  subTitle,
+  logo,
+  hoverText,
+  monitors,
+  monitorsWithLabels,
+  isActive,
+  isError,
+  withExtend,
+  isExtended,
+  renderExtended,
+  renderActions,
+  onClick,
+  ...props
+}) => {
   const [extend, setExtend] = useState(isExtended || false);
 
   const renderMonitors = useCallback(
@@ -126,7 +141,7 @@ export const DataTab: React.FC<Props> = ({ title, subTitle, logo, hoverText, mon
   );
 
   return (
-    <Container $isError={isError} $withClick={!!onClick} onClick={onClick}>
+    <Container $isError={isError} $withClick={!!onClick} onClick={onClick} {...props}>
       <FlexRow $gap={8}>
         <IconWrapper $isError={isError}>
           <Image src={logo} alt='' width={22} height={22} />
