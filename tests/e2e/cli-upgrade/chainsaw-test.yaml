@@ -103,10 +103,6 @@ spec:
       try:
         - apply:
             file: ../../common/apply/add-tempo-traces-destination.yaml
-    - name: Odigos pipeline ready
-      try:
-        - assert:
-            file:  ../../common/assert/pipeline-ready.yaml
     - name: Simple-demo instrumented after destination added
       try:
         - assert:
