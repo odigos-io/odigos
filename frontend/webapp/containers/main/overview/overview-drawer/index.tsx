@@ -13,7 +13,7 @@ const DRAWER_WIDTH = `${640 + 64}px`; // +64 because of "ContentArea" padding
 interface Props {
   title: string;
   titleTooltip?: string;
-  imageUri: string;
+  imageUri?: string;
   isEdit?: boolean;
   isFormDirty?: boolean;
   onEdit?: (bool?: boolean) => void;
