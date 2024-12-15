@@ -5,10 +5,11 @@ import styled from 'styled-components';
 interface Props {
   extend: boolean;
   size?: number;
-  align?: 'left' | 'right';
+  align?: 'left' | 'right' | 'center';
 }
 
 const Icon = styled(Image)<{ $align?: Props['align'] }>`
+  margin: ${({ $align }) => ($align === 'right' ? 'auto 0 auto auto' : $align === 'left' ? 'auto auto auto 0' : 'auto')};
   &.open {
     transform: rotate(180deg);
   }
@@ -16,9 +17,8 @@ const Icon = styled(Image)<{ $align?: Props['align'] }>`
     transform: rotate(0deg);
   }
   transition: transform 0.3s;
-  margin-${({ $align }) => ($align === 'right' ? 'left' : 'right')}: auto;
 `;
 
-export const ExtendIcon: React.FC<Props> = ({ extend, size = 14, align = 'right' }) => {
+export const ExtendIcon: React.FC<Props> = ({ extend, size = 14, align = 'center' }) => {
   return <Icon src='/icons/common/extend-arrow.svg' alt='extend' width={size} height={size} $align={align} className={extend ? 'open' : 'close'} />;
 };

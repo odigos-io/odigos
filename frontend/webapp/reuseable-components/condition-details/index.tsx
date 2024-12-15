@@ -60,7 +60,7 @@ export const ConditionDetails: React.FC<Props> = ({ conditions }) => {
           ({hasErrors ? errors.length : conditions.length}/{conditions.length})
         </Text>
 
-        <ExtendIcon extend={extend} />
+        <ExtendIcon extend={extend} align='right' />
       </Header>
 
       {extend && (
