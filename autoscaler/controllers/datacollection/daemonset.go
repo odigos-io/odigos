@@ -192,8 +192,10 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 		rollingUpdate.MaxSurge = &maxSurge
 	}
 
-	requestMemoryRequestQuantity := resource.MustParse(fmt.Sprintf("%dMi", datacollection.Spec.ResourcesSettings.MemoryRequestMiB))
-	requestMemoryLimitQuantity := resource.MustParse(fmt.Sprintf("%dMi", datacollection.Spec.ResourcesSettings.MemoryLimitMiB))
+	resourceMemoryRequestQuantity := resource.MustParse(fmt.Sprintf("%dMi", datacollection.Spec.ResourcesSettings.MemoryRequestMiB))
+	resourceMemoryLimitQuantity := resource.MustParse(fmt.Sprintf("%dMi", datacollection.Spec.ResourcesSettings.MemoryLimitMiB))
+	resourceCpuRequestQuantity := resource.MustParse(fmt.Sprintf("%dm", datacollection.Spec.ResourcesSettings.CpuRequestMillicores))
+	resourceCpuLimitQuantity := resource.MustParse(fmt.Sprintf("%dm", datacollection.Spec.ResourcesSettings.CpuLimitMillicores))
 
 	desiredDs := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -326,10 +328,12 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 							},
 							Resources: corev1.ResourceRequirements{
 								Requests: corev1.ResourceList{
-									corev1.ResourceMemory: requestMemoryRequestQuantity,
+									corev1.ResourceMemory: resourceMemoryRequestQuantity,
+									corev1.ResourceCPU:    resourceCpuRequestQuantity,
 								},
 								Limits: corev1.ResourceList{
-									corev1.ResourceMemory: requestMemoryLimitQuantity,
+									corev1.ResourceMemory: resourceMemoryLimitQuantity,
+									corev1.ResourceCPU:    resourceCpuLimitQuantity,
 								},
 							},
 							SecurityContext: &corev1.SecurityContext{
