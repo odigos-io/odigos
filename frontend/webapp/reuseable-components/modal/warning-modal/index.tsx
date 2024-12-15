@@ -1,7 +1,7 @@
 import React from 'react';
 import { useKeyDown } from '@/hooks';
 import styled from 'styled-components';
-import type { NotificationType } from '@/types';
+import { NOTIFICATION_TYPE } from '@/types';
 import { Button, ButtonProps, Modal, NotificationNote, Text } from '@/reuseable-components';
 
 interface ButtonParams {
@@ -16,7 +16,7 @@ interface Props {
   title: string;
   description: string;
   note?: {
-    type: NotificationType;
+    type: NOTIFICATION_TYPE;
     title: string;
     message: string;
   };

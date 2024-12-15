@@ -1,10 +1,9 @@
-import { useNotify } from '../notification';
 import { useMutation } from '@apollo/client';
 import { useNotificationStore } from '@/store';
-import { ACTION, getSseTargetFromId, NOTIFICATION } from '@/utils';
+import { ACTION, getSseTargetFromId } from '@/utils';
 import { PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import { useComputePlatform, useNamespace } from '../compute-platform';
-import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type NotificationType, type PatchSourceRequestInput, type K8sActualSource } from '@/types';
+import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type PatchSourceRequestInput, type K8sActualSource, NOTIFICATION_TYPE } from '@/types';
 
 interface Params {
   onSuccess?: (type: string) => void;
@@ -13,12 +12,12 @@ interface Params {
 
 export const useSourceCRUD = (params?: Params) => {
   const removeNotifications = useNotificationStore((store) => store.removeNotifications);
-  const { data, startPolling } = useComputePlatform();
   const { persistNamespace } = useNamespace();
-  const notify = useNotify();
+  const { data, refetch } = useComputePlatform();
+  const { addNotification } = useNotificationStore();
 
-  const notifyUser = (type: NotificationType, title: string, message: string, id?: WorkloadId) => {
-    notify({
+  const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: WorkloadId) => {
+    addNotification({
       type,
       title,
       message,
@@ -28,13 +27,13 @@ export const useSourceCRUD = (params?: Params) => {
   };
 
   const handleError = (title: string, message: string, id?: WorkloadId) => {
-    notifyUser(NOTIFICATION.ERROR, title, message, id);
+    notifyUser(NOTIFICATION_TYPE.ERROR, title, message, id);
     params?.onError?.(title);
   };
 
   const handleComplete = (title: string, message: string, id?: WorkloadId) => {
-    notifyUser(NOTIFICATION.SUCCESS, title, message, id);
-    startPolling();
+    notifyUser(NOTIFICATION_TYPE.SUCCESS, title, message, id);
+    refetch();
     params?.onSuccess?.(title);
   };
 
