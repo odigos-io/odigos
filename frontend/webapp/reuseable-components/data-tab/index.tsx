@@ -1,24 +1,28 @@
-import React, { PropsWithChildren, useCallback } from 'react';
+import React, { Fragment, useCallback, useState } from 'react';
 import Image from 'next/image';
-import { FlexColumn } from '@/styles';
+import { FlexColumn, FlexRow } from '@/styles';
 import styled, { css } from 'styled-components';
-import { ActiveStatus, MonitorsIcons, Text } from '@/reuseable-components';
+import { ActiveStatus, Divider, ExtendIcon, IconButton, MonitorsIcons, Text } from '@/reuseable-components';
 
-interface Props extends PropsWithChildren {
+interface Props {
   title: string;
   subTitle: string;
   logo: string;
   monitors?: string[];
+  monitorsWithLabels?: boolean;
   isActive?: boolean;
   isError?: boolean;
+  withExtend?: boolean;
+  isExtended?: boolean;
+  renderExtended?: () => JSX.Element;
+  renderActions?: () => JSX.Element;
   onClick?: () => void;
 }
 
 const Container = styled.div<{ $withClick: boolean; $isError: Props['isError'] }>`
   display: flex;
-  align-items: center;
+  flex-direction: column;
   align-self: stretch;
-  gap: 8px;
   padding: 16px;
   width: calc(100% - 32px);
   border-radius: 16px;
@@ -51,6 +55,7 @@ const Title = styled(Text)`
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  font-size: 14px;
 `;
 
 const SubTitleWrapper = styled.div`
@@ -71,45 +76,72 @@ const ActionsWrapper = styled.div`
   margin-left: auto;
 `;
 
-export const DataTab: React.FC<Props> = ({ title, subTitle, logo, monitors, isActive, isError, onClick, children }) => {
-  const renderMonitors = useCallback(() => {
-    if (!monitors) return null;
+export const DataTab: React.FC<Props> = ({ title, subTitle, logo, monitors, monitorsWithLabels, isActive, isError, withExtend, isExtended, renderExtended, renderActions, onClick }) => {
+  const [extend, setExtend] = useState(isExtended || false);
 
-    return (
-      <>
-        <SubTitle>{'•'}</SubTitle>
-        <MonitorsIcons monitors={monitors} size={10} />
-      </>
-    );
-  }, [monitors]);
+  const renderMonitors = useCallback(
+    (withSeperator: boolean) => {
+      if (!monitors || !monitors.length) return null;
 
-  const renderActiveStatus = useCallback(() => {
-    if (typeof isActive !== 'boolean') return null;
+      return (
+        <>
+          {withSeperator && <SubTitle>{'•'}</SubTitle>}
+          <MonitorsIcons monitors={monitors} withLabels={monitorsWithLabels} size={10} />
+        </>
+      );
+    },
+    [monitors],
+  );
 
-    return (
-      <>
-        <SubTitle>{'•'}</SubTitle>
-        <ActiveStatus isActive={isActive} size={10} />
-      </>
-    );
-  }, [isActive]);
+  const renderActiveStatus = useCallback(
+    (withSeperator: boolean) => {
+      if (typeof isActive !== 'boolean') return null;
+
+      return (
+        <>
+          {withSeperator && <SubTitle>{'•'}</SubTitle>}
+          <ActiveStatus isActive={isActive} size={10} />
+        </>
+      );
+    },
+    [isActive],
+  );
 
   return (
     <Container $isError={isError} $withClick={!!onClick} onClick={onClick}>
-      <IconWrapper $isError={isError}>
-        <Image src={logo} alt='' width={20} height={20} />
-      </IconWrapper>
+      <FlexRow $gap={8}>
+        <IconWrapper $isError={isError}>
+          <Image src={logo} alt='' width={20} height={20} />
+        </IconWrapper>
 
-      <FlexColumn>
-        <Title>{title}</Title>
-        <SubTitleWrapper>
-          <SubTitle>{subTitle}</SubTitle>
-          {renderMonitors()}
-          {renderActiveStatus()}
-        </SubTitleWrapper>
-      </FlexColumn>
+        <FlexColumn $gap={4}>
+          <Title>{title}</Title>
+          <SubTitleWrapper>
+            {subTitle && <SubTitle>{subTitle}</SubTitle>}
+            {renderMonitors(!!subTitle)}
+            {renderActiveStatus(!!monitors?.length)}
+          </SubTitleWrapper>
+        </FlexColumn>
 
-      <ActionsWrapper>{children}</ActionsWrapper>
+        <ActionsWrapper>
+          {renderActions && renderActions()}
+          {withExtend && (
+            <Fragment>
+              <Divider orientation='vertical' length='16px' margin='0 2px' />
+              <IconButton onClick={() => setExtend((prev) => !prev)}>
+                <ExtendIcon extend={extend} />
+              </IconButton>
+            </Fragment>
+          )}
+        </ActionsWrapper>
+      </FlexRow>
+
+      {extend && renderExtended && (
+        <FlexColumn>
+          <Divider margin='16px 0' />
+          {renderExtended()}
+        </FlexColumn>
+      )}
     </Container>
   );
 };
