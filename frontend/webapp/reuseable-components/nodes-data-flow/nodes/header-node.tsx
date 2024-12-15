@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import Image from 'next/image';
+import { NODE_TYPES } from '@/types';
 import { useAppStore } from '@/store';
 import styled from 'styled-components';
 import { useSourceCRUD } from '@/hooks';
@@ -16,7 +17,7 @@ interface Props
         title: string;
         tagValue: number;
       },
-      'header'
+      NODE_TYPES.HEADER
     >
   > {}
 

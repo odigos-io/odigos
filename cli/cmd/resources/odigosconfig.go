@@ -49,8 +49,18 @@ func (a *odigosConfigResourceManager) Name() string { return "OdigosConfig" }
 func (a *odigosConfigResourceManager) InstallFromScratch(ctx context.Context) error {
 
 	sizingProfile := k8sprofiles.FilterSizeProfiles(a.config.Profiles)
+
 	collectorGatewayConfig := GetGatewayConfigBasedOnSize(sizingProfile)
 	a.config.CollectorGateway = collectorGatewayConfig
+
+	collectorNodeConfig := GetNodeCollectorConfigBasedOnSize(sizingProfile)
+	if a.config.CollectorNode != nil && a.config.CollectorNode.CollectorOwnMetricsPort != 0 {
+		if collectorNodeConfig == nil {
+			collectorNodeConfig = &common.CollectorNodeConfiguration{}
+		}
+		collectorNodeConfig.CollectorOwnMetricsPort = a.config.CollectorNode.CollectorOwnMetricsPort
+	}
+	a.config.CollectorNode = collectorNodeConfig
 
 	obj, err := NewOdigosConfiguration(a.ns, a.config)
 	if err != nil {
@@ -61,6 +71,38 @@ func (a *odigosConfigResourceManager) InstallFromScratch(ctx context.Context) er
 		obj,
 	}
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
+}
+
+func GetNodeCollectorConfigBasedOnSize(profile common.ProfileName) *common.CollectorNodeConfiguration {
+	aggregateProfiles := append([]common.ProfileName{profile}, k8sprofiles.ProfilesMap[profile].Dependencies...)
+
+	for _, profile := range aggregateProfiles {
+		switch profile {
+		case k8sprofiles.SizeSProfile.ProfileName:
+			return &common.CollectorNodeConfiguration{
+				RequestMemoryMiB: 150,
+				LimitMemoryMiB:   300,
+				RequestCPUm:      150,
+				LimitCPUm:        300,
+			}
+		case k8sprofiles.SizeMProfile.ProfileName:
+			return &common.CollectorNodeConfiguration{
+				RequestMemoryMiB: 250,
+				LimitMemoryMiB:   500,
+				RequestCPUm:      250,
+				LimitCPUm:        500,
+			}
+		case k8sprofiles.SizeLProfile.ProfileName:
+			return &common.CollectorNodeConfiguration{
+				RequestMemoryMiB: 500,
+				LimitMemoryMiB:   750,
+				RequestCPUm:      500,
+				LimitCPUm:        750,
+			}
+		}
+	}
+	// Return nil if no matching profile is found.
+	return nil
 }
 
 func GetGatewayConfigBasedOnSize(profile common.ProfileName) *common.CollectorGatewayConfiguration {

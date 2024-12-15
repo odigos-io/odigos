@@ -3,7 +3,7 @@ import nodeConfig from './node-config.json';
 import { type EntityCounts } from './get-entity-counts';
 import { type NodePositions } from './get-node-positions';
 import { getEntityIcon, getEntityLabel, getRuleIcon } from '@/utils';
-import { OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type ComputePlatformMapped } from '@/types';
+import { NODE_TYPES, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type ComputePlatformMapped } from '@/types';
 
 interface Params {
   entities: ComputePlatformMapped['computePlatform']['instrumentationRules'];
@@ -34,7 +34,7 @@ export const buildRuleNodes = ({ entities, positions, unfilteredCounts }: Params
 
   nodes.push({
     id: 'rule-header',
-    type: 'header',
+    type: NODE_TYPES.HEADER,
     position: {
       x: positions[OVERVIEW_ENTITY_TYPES.RULE]['x'],
       y: 0,
@@ -50,7 +50,7 @@ export const buildRuleNodes = ({ entities, positions, unfilteredCounts }: Params
   if (!entities.length) {
     nodes.push({
       id: 'rule-add',
-      type: 'add',
+      type: NODE_TYPES.ADD,
       position: {
         x: position['x'],
         y: position['y'](),
@@ -67,7 +67,7 @@ export const buildRuleNodes = ({ entities, positions, unfilteredCounts }: Params
     entities.forEach((rule, idx) => {
       nodes.push({
         id: `rule-${idx}`,
-        type: 'base',
+        type: NODE_TYPES.BASE,
         position: {
           x: position['x'],
           y: position['y'](idx),

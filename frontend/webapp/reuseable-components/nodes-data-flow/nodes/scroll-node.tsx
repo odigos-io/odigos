@@ -1,9 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import BaseNode from './base-node';
 import styled from 'styled-components';
-import { type Node, type NodeProps } from '@xyflow/react';
-import { type K8sActualSource, OVERVIEW_ENTITY_TYPES, STATUSES, type WorkloadId } from '@/types';
 import { useDrawerStore } from '@/store';
+import { type Node, type NodeProps } from '@xyflow/react';
+import { type K8sActualSource, NODE_TYPES, OVERVIEW_ENTITY_TYPES, STATUSES, type WorkloadId } from '@/types';
 
 interface Props
   extends NodeProps<
@@ -24,12 +24,12 @@ interface Props
               imageUri: string;
               raw: K8sActualSource;
             },
-            'scroll-item'
+            NODE_TYPES.BASE
           >
         >[];
         onScroll: (params: { clientHeight: number; scrollHeight: number; scrollTop: number }) => void;
       },
-      'scroll'
+      NODE_TYPES.SCROLL
     >
   > {}
 
@@ -57,16 +57,17 @@ const ScrollNode: React.FC<Props> = ({ data, ...rest }) => {
 
       // @ts-ignore - these properties are available on the EventTarget, TS is not aware of it
       const { clientHeight, scrollHeight, scrollTop } = e.target || { clientHeight: 0, scrollHeight: 0, scrollTop: 0 };
-      const isTop = scrollTop === 0;
-      const isBottom = scrollHeight - scrollTop <= clientHeight;
-
-      if (isTop) {
-        console.log('Reached top of scroll-node');
-      } else if (isBottom) {
-        console.log('Reached bottom of scroll-node');
-      }
 
       if (!!onScroll) onScroll({ clientHeight, scrollHeight, scrollTop });
+
+      // TODO: Use the following once we have to handle paginated API requests:
+      // const isTop = scrollTop === 0;
+      // const isBottom = scrollHeight - scrollTop <= clientHeight;
+      // if (isTop) {
+      //   console.log('Reached top of scroll-node');
+      // } else if (isBottom) {
+      //   console.log('Reached bottom of scroll-node');
+      // }
     };
 
     const { current } = containerRef;
@@ -86,7 +87,7 @@ const ScrollNode: React.FC<Props> = ({ data, ...rest }) => {
             setSelectedItem({ id: item.data.id, type: item.data.type, item: item.data.raw });
           }}
         >
-          <BaseNode {...rest} type='base' id={item.id} data={item.data} />
+          <BaseNode {...rest} type={NODE_TYPES.BASE} id={item.id} data={item.data} />
         </BaseNodeWrapper>
       ))}
     </Container>

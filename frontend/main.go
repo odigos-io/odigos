@@ -42,14 +42,14 @@ import (
 
 const (
 	defaultPort = 3000
-	betaPort    = 3001
+	legacyPort  = 3001
 )
 
 type Flags struct {
 	Version    bool
 	Address    string
 	Port       int
-	BetaPort   int
+	LegacyPort int
 	Debug      bool
 	KubeConfig string
 	Namespace  string
@@ -68,7 +68,7 @@ func parseFlags() Flags {
 	flag.BoolVar(&flags.Version, "version", false, "Print Odigos UI version.")
 	flag.StringVar(&flags.Address, "address", "localhost", "Address to listen on")
 	flag.IntVar(&flags.Port, "port", defaultPort, "Port to listen on")
-	flag.IntVar(&flags.BetaPort, "beta-port", betaPort, "Port to listen on for beta UI")
+	flag.IntVar(&flags.LegacyPort, "legacy-port", legacyPort, "Port to listen on for legacy UI")
 	flag.BoolVar(&flags.Debug, "debug", false, "Enable debug mode")
 	flag.StringVar(&flags.KubeConfig, "kubeconfig", defaultKubeConfig, "Path to kubeconfig file")
 	flag.StringVar(&flags.Namespace, "namespace", consts.DefaultOdigosNamespace, "Kubernetes namespace where Odigos is installed")
@@ -334,20 +334,18 @@ func main() {
 	r.GET("/api/events", sse.HandleSSEConnections)
 	d.GET("/api/events", sse.HandleSSEConnections)
 
-	log.Println("Starting Odigos UI...")
-	log.Printf("Odigos UI is available at: http://%s:%d", flags.Address, flags.BetaPort)
+	log.Printf("Odigos UI is available at: http://%s:%d", flags.Address, flags.Port)
 
 	go func() {
-		err = r.Run(fmt.Sprintf("%s:%d", flags.Address, flags.BetaPort))
+		err = r.Run(fmt.Sprintf("%s:%d", flags.Address, flags.Port))
 		if err != nil {
 			log.Fatalf("Error starting server: %s", err)
 		}
 	}()
 
 	go func() {
-		log.Println("Starting Odigos Dep UI...")
-		log.Printf("Odigos UI is available at: http://%s:%d", flags.Address, flags.Port)
-		err = d.Run(fmt.Sprintf("%s:%d", flags.Address, flags.Port))
+		log.Printf("Odigos Legacy UI is available at: http://%s:%d", flags.Address, flags.LegacyPort)
+		err = d.Run(fmt.Sprintf("%s:%d", flags.Address, flags.LegacyPort))
 		if err != nil {
 			log.Fatalf("Error starting server: %s", err)
 		}

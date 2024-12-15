@@ -1,6 +1,6 @@
 import React, { useId } from 'react';
 import styled from 'styled-components';
-import { ActiveStatus, DataTab, Divider, InstrumentStatus, MonitorsIcons, Text, Tooltip } from '@/reuseable-components';
+import { ActiveStatus, Code, DataTab, Divider, InstrumentStatus, MonitorsIcons, Text, Tooltip } from '@/reuseable-components';
 import { capitalizeFirstLetter, getProgrammingLanguageIcon, parseJsonStringToPrettyString, safeJsonParse, WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils';
 
 export enum DataCardFieldTypes {
@@ -8,6 +8,7 @@ export enum DataCardFieldTypes {
   MONITORS = 'monitors',
   ACTIVE_STATUS = 'active-status',
   SOURCE_CONTAINER = 'source-container',
+  CODE = 'code',
 }
 
 export interface DataCardRow {
@@ -45,7 +46,7 @@ const ItemTitle = styled(Text)`
 export const DataCardFields: React.FC<Props> = ({ data }) => {
   return (
     <ListContainer>
-      {data.map(({ type, title, tooltip, value, width = 'unset' }) => {
+      {data.map(({ type, title, tooltip, value, width = 'inherit' }) => {
         const id = useId();
 
         return (
@@ -95,6 +96,12 @@ const renderValue = (type: DataCardRow['type'], value: DataCardRow['value']) => 
           <InstrumentStatus language={language} />
         </DataTab>
       );
+    }
+
+    case DataCardFieldTypes.CODE: {
+      const params = safeJsonParse(value, { language: '', code: '' });
+
+      return <Code {...params} />;
     }
 
     default: {

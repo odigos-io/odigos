@@ -11,11 +11,17 @@ export interface Condition {
   lastTransitionTime: string;
 }
 
-export type NotificationType = 'warning' | 'error' | 'success' | 'info' | 'default';
+export enum NOTIFICATION_TYPE {
+  WARNING = 'warning',
+  ERROR = 'error',
+  SUCCESS = 'success',
+  INFO = 'info',
+  DEFAULT = 'default',
+}
 
 export interface Notification {
   id: string;
-  type: NotificationType;
+  type: NOTIFICATION_TYPE;
   title?: string;
   message?: string;
   crdType?: string;

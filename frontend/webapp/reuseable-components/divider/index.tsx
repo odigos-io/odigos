@@ -1,11 +1,11 @@
 import React from 'react';
 import styled from 'styled-components';
 import { hexPercentValues } from '@/styles';
-import type { NotificationType } from '@/types';
+import { NOTIFICATION_TYPE } from '@/types';
 
 interface Props {
   orientation?: 'horizontal' | 'vertical';
-  type?: NotificationType; // this is to apply coloring to the divider
+  type?: NOTIFICATION_TYPE; // this is to apply coloring to the divider
   thickness?: number;
   length?: string;
   margin?: string;

@@ -67,6 +67,42 @@ collectorNode:
   # This can be used to resolve conflicting ports when a collector is using the host network.
   collectorOwnMetricsPort: 55682
 
+  # RequestMemoryMiB is the memory request for the node collector daemonset.
+  # it will be embedded in the daemonset as a resource request of the form "memory: <value>Mi"
+  # default value is 250Mi
+  requestMemoryMiB: 250
+
+  # LimitMemoryMiB is the memory limit for the node collector daemonset.
+  # it will be embedded in the daemonset as a resource limit of the form "memory: <value>Mi"
+  # default value is 2x the memory request.
+  limitMemoryMiB: 500
+
+  # the CPU request for the node collector daemonset.
+  # it will be embedded in the daemonset as a resource request
+  # of the form "cpu: <value>m".
+  # default value is 250m
+  requestCPUm: 250
+  # the CPU limit for the node collector daemonset.
+  # it will be embedded in the daemonset as a resource limit
+  # of the form "cpu: <value>m".
+  # default value is 500m
+  limitCPUm: 500
+
+  # this parameter sets the "limit_mib" parameter in the memory limiter configuration for the node collector.
+  # it is the hard limit after which a force garbage collection will be performed.
+  # if not set, it will be 50Mi below the memory limit.
+  memoryLimiterLimitMiB: 450
+
+  # this parameter sets the "spike_limit_mib" parameter in the memory limiter configuration for the node collector.
+  # note that this is not the processor soft limit, but the diff in Mib between the hard limit and the soft limit.
+  # if not set, this will be set to 20% of the hard limit (so the soft limit will be 80% of the hard limit).
+  memoryLimiterSpikeLimitMiB: 55
+
+  # the GOMEMLIMIT environment variable value for the node collector daemonset.
+  # this is when go runtime will start garbage collection.
+  # if not specified, it will be set to 80% of the hard limit of the memory limiter.
+  goMemLimitMiB: 360
+
 autoscaler:
   image:
     repository: keyval/odigos-autoscaler
