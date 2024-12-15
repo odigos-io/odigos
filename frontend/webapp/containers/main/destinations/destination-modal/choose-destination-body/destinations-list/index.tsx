@@ -44,19 +44,20 @@ const DestinationsList: React.FC<DestinationsListProps> = ({ items, setSelectedI
       );
     }
 
-    return items.map((item) => {
+    return items.map((categoryItem) => {
       return (
-        <ListsWrapper key={`category-${item.name}`}>
-          <SectionTitle size='small' title={capitalizeFirstLetter(item.name)} description={item.description} />
-          {item.items.map((categoryItem) => (
+        <ListsWrapper key={`category-${categoryItem.name}`}>
+          <SectionTitle size='small' title={capitalizeFirstLetter(categoryItem.name)} description={categoryItem.description} />
+          {categoryItem.items.map((destinationItem) => (
             <DataTab
-              key={`destination-${categoryItem.type}`}
-              title={categoryItem.displayName}
-              logo={categoryItem.imageUrl}
+              key={`destination-${destinationItem.type}`}
+              data-id={`destination-${destinationItem.displayName}`}
+              title={destinationItem.displayName}
+              logo={destinationItem.imageUrl}
               hoverText='Select'
-              monitors={Object.keys(categoryItem.supportedSignals).filter((signal) => categoryItem.supportedSignals[signal].supported)}
+              monitors={Object.keys(destinationItem.supportedSignals).filter((signal) => destinationItem.supportedSignals[signal].supported)}
               monitorsWithLabels
-              onClick={() => setSelectedItems(categoryItem)}
+              onClick={() => setSelectedItems(destinationItem)}
             />
           ))}
         </ListsWrapper>
