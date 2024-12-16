@@ -1,13 +1,13 @@
 import React, { Fragment, useCallback, useState } from 'react';
-import Image from 'next/image';
 import { FlexColumn, FlexRow } from '@/styles';
 import styled, { css } from 'styled-components';
-import { ActiveStatus, Divider, ExtendIcon, IconButton, MonitorsIcons, Text } from '@/reuseable-components';
+import { ActiveStatus, Divider, ExtendIcon, IconButton, IconWrapped, MonitorsIcons, Text } from '@/reuseable-components';
 
 interface Props {
   title: string;
-  subTitle: string;
+  subTitle?: string;
   logo: string;
+  hoverText?: string;
   monitors?: string[];
   monitorsWithLabels?: boolean;
   isActive?: boolean;
@@ -18,6 +18,10 @@ interface Props {
   renderActions?: () => JSX.Element;
   onClick?: () => void;
 }
+
+const ControlledVisibility = styled.div`
+  visibility: hidden;
+`;
 
 const Container = styled.div<{ $withClick: boolean; $isError: Props['isError'] }>`
   display: flex;
@@ -34,20 +38,17 @@ const Container = styled.div<{ $withClick: boolean; $isError: Props['isError'] }
       &:hover {
         cursor: pointer;
         background-color: ${$isError ? '#351515' : theme.colors.white_opacity['008']};
+        ${ControlledVisibility} {
+          visibility: visible;
+        }
       }
     `}
-`;
 
-const IconWrapper = styled.div<{ $isError: Props['isError'] }>`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  background: ${({ $isError }) =>
-    `linear-gradient(180deg, ${$isError ? 'rgba(237, 124, 124, 0.08)' : 'rgba(249, 249, 249, 0.06)'} 0%, ${$isError ? 'rgba(237, 124, 124, 0.02)' : 'rgba(249, 249, 249, 0.02)'} 100%)`};
+  &:hover {
+    ${ControlledVisibility} {
+      visibility: visible;
+    }
+  }
 `;
 
 const Title = styled(Text)`
@@ -76,7 +77,26 @@ const ActionsWrapper = styled.div`
   margin-left: auto;
 `;
 
-export const DataTab: React.FC<Props> = ({ title, subTitle, logo, monitors, monitorsWithLabels, isActive, isError, withExtend, isExtended, renderExtended, renderActions, onClick }) => {
+const HoverText = styled(Text)`
+  margin-right: 16px;
+`;
+
+export const DataTab: React.FC<Props> = ({
+  title,
+  subTitle,
+  logo,
+  hoverText,
+  monitors,
+  monitorsWithLabels,
+  isActive,
+  isError,
+  withExtend,
+  isExtended,
+  renderExtended,
+  renderActions,
+  onClick,
+  ...props
+}) => {
   const [extend, setExtend] = useState(isExtended || false);
 
   const renderMonitors = useCallback(
@@ -108,11 +128,9 @@ export const DataTab: React.FC<Props> = ({ title, subTitle, logo, monitors, moni
   );
 
   return (
-    <Container $isError={isError} $withClick={!!onClick} onClick={onClick}>
+    <Container $isError={isError} $withClick={!!onClick} onClick={onClick} {...props}>
       <FlexRow $gap={8}>
-        <IconWrapper $isError={isError}>
-          <Image src={logo} alt='' width={20} height={20} />
-        </IconWrapper>
+        <IconWrapped src={logo} isError={isError} />
 
         <FlexColumn $gap={4}>
           <Title>{title}</Title>
@@ -124,6 +142,13 @@ export const DataTab: React.FC<Props> = ({ title, subTitle, logo, monitors, moni
         </FlexColumn>
 
         <ActionsWrapper>
+          {!!hoverText && (
+            <ControlledVisibility>
+              <HoverText size={14} family='secondary'>
+                {hoverText}
+              </HoverText>
+            </ControlledVisibility>
+          )}
           {renderActions && renderActions()}
           {withExtend && (
             <Fragment>
