@@ -82,7 +82,7 @@ export const NotificationManager = () => {
 
   return (
     <RelativeContainer ref={containerRef}>
-      <IconButton data-id='notif-manager-button' onClick={toggleOpen} withPing={!!unseenCount} pingColor={theme.colors.orange_og}>
+      <IconButton data-id='notif-manager-button' onClick={toggleOpen} tooltip='Notifications' withPing={!!unseenCount} pingColor={theme.colors.orange_og}>
         <Image src='/icons/common/notification.svg' alt='logo' width={16} height={16} />
       </IconButton>
 
