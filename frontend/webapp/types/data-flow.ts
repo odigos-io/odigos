@@ -5,6 +5,7 @@ export enum NODE_TYPES {
   EDGED = 'edged',
   FRAME = 'frame',
   SCROLL = 'scroll',
+  SKELETON = 'skeleton',
 }
 
 export enum EDGE_TYPES {

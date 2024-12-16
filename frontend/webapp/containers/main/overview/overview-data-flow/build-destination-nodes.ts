@@ -6,6 +6,7 @@ import { extractMonitors, getEntityIcon, getEntityLabel, getHealthStatus } from 
 import { NODE_TYPES, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type ComputePlatformMapped } from '@/types';
 
 interface Params {
+  allowBuild: boolean;
   entities: ComputePlatformMapped['computePlatform']['destinations'];
   positions: NodePositions;
   unfilteredCounts: EntityCounts;
@@ -27,7 +28,7 @@ const mapToNodeData = (entity: Params['entities'][0]) => {
   };
 };
 
-export const buildDestinationNodes = ({ entities, positions, unfilteredCounts }: Params) => {
+export const buildDestinationNodes = ({ allowBuild, entities, positions, unfilteredCounts }: Params) => {
   const nodes: Node[] = [];
   const position = positions[OVERVIEW_ENTITY_TYPES.DESTINATION];
   const unfilteredCount = unfilteredCounts[OVERVIEW_ENTITY_TYPES.DESTINATION];
@@ -63,7 +64,7 @@ export const buildDestinationNodes = ({ entities, positions, unfilteredCounts }:
         subTitle: `Add ${!!unfilteredCount ? 'a new' : 'first'} destination to monitor the OpenTelemetry data`,
       },
     });
-  } else {
+  } else if (allowBuild) {
     entities.forEach((destination, idx) => {
       nodes.push({
         id: `destination-${idx}`,
@@ -74,6 +75,19 @@ export const buildDestinationNodes = ({ entities, positions, unfilteredCounts }:
         },
         data: mapToNodeData(destination),
       });
+    });
+  } else {
+    nodes.push({
+      id: 'destination-skeleton',
+      type: NODE_TYPES.SKELETON,
+      position: {
+        x: position['x'],
+        y: position['y'](),
+      },
+      data: {
+        nodeWidth,
+        size: 3,
+      },
     });
   }
 

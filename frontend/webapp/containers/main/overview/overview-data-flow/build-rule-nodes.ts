@@ -6,6 +6,7 @@ import { getEntityIcon, getEntityLabel, getRuleIcon } from '@/utils';
 import { NODE_TYPES, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type ComputePlatformMapped } from '@/types';
 
 interface Params {
+  allowBuild: boolean;
   entities: ComputePlatformMapped['computePlatform']['instrumentationRules'];
   positions: NodePositions;
   unfilteredCounts: EntityCounts;
@@ -27,7 +28,7 @@ const mapToNodeData = (entity: Params['entities'][0]) => {
   };
 };
 
-export const buildRuleNodes = ({ entities, positions, unfilteredCounts }: Params) => {
+export const buildRuleNodes = ({ allowBuild, entities, positions, unfilteredCounts }: Params) => {
   const nodes: Node[] = [];
   const position = positions[OVERVIEW_ENTITY_TYPES.RULE];
   const unfilteredCount = unfilteredCounts[OVERVIEW_ENTITY_TYPES.RULE];
@@ -63,7 +64,7 @@ export const buildRuleNodes = ({ entities, positions, unfilteredCounts }: Params
         subTitle: `Add ${!!unfilteredCount ? 'a new' : 'first'} rule to modify the OpenTelemetry data`,
       },
     });
-  } else {
+  } else if (allowBuild) {
     entities.forEach((rule, idx) => {
       nodes.push({
         id: `rule-${idx}`,
@@ -74,6 +75,19 @@ export const buildRuleNodes = ({ entities, positions, unfilteredCounts }: Params
         },
         data: mapToNodeData(rule),
       });
+    });
+  } else {
+    nodes.push({
+      id: 'rule-skeleton',
+      type: NODE_TYPES.SKELETON,
+      position: {
+        x: position['x'],
+        y: position['y'](),
+      },
+      data: {
+        nodeWidth,
+        size: 3,
+      },
     });
   }
 

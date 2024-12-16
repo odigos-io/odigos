@@ -2,12 +2,12 @@ import React from 'react';
 import { FlexColumn } from '@/styles';
 import styled, { keyframes } from 'styled-components';
 
-const shimmer = keyframes`
+const shimmer = keyframes<{ $width: string }>`
   0% {
-    background-position: -1000px 0;
+    background-position: -500px 0;
   }
   100% {
-    background-position: 1000px 0;
+    background-position: 500px 0;
   }
 `;
 
@@ -27,7 +27,7 @@ const Thumbnail = styled.div`
   width: 50px;
   height: 50px;
   border-radius: 8px;
-  background: ${({ theme }) => `linear-gradient(90deg, ${theme.colors.primary} 25%, ${theme.colors.primary} 50%, ${theme.colors.dark_grey} 75%)`};
+  background: ${({ theme }) => `linear-gradient(90deg, ${theme.colors.dropdown_bg_2} 25%, ${theme.colors.dropdown_bg_2} 50%, ${theme.colors.border} 75%)`};
   background-size: 200% 100%;
   animation: ${shimmer} 10s infinite linear;
 `;
@@ -40,7 +40,7 @@ const LineWrapper = styled(FlexColumn)`
 const Line = styled.div<{ $width: string }>`
   width: ${({ $width }) => $width};
   height: 16px;
-  background: ${({ theme }) => `linear-gradient(90deg, ${theme.colors.primary} 25%, ${theme.colors.primary} 50%, ${theme.colors.dark_grey} 75%)`};
+  background: ${({ theme }) => `linear-gradient(90deg, ${theme.colors.dropdown_bg_2} 25%, ${theme.colors.dropdown_bg_2} 50%, ${theme.colors.border} 75%)`};
   background-size: 200% 100%;
   animation: ${shimmer} 1.5s infinite linear;
   border-radius: 4px;
