@@ -2,8 +2,11 @@ import React from 'react';
 import styled from 'styled-components';
 import { DestinationTypeItem } from '@/types';
 import { usePotentialDestinations } from '@/hooks';
-import { DestinationListItem } from '../destination-list-item';
-import { SectionTitle, SkeletonLoader } from '@/reuseable-components';
+import { DataTab, SectionTitle, SkeletonLoader, Text } from '@/reuseable-components';
+
+interface Props {
+  setSelectedItems: (item: DestinationTypeItem) => void;
+}
 
 const ListsWrapper = styled.div`
   display: flex;
@@ -11,11 +14,7 @@ const ListsWrapper = styled.div`
   gap: 12px;
 `;
 
-interface PotentialDestinationsListProps {
-  setSelectedItems: (item: DestinationTypeItem) => void;
-}
-
-export const PotentialDestinationsList: React.FC<PotentialDestinationsListProps> = ({ setSelectedItems }) => {
+export const PotentialDestinationsList: React.FC<Props> = ({ setSelectedItems }) => {
   const { loading, data } = usePotentialDestinations();
 
   if (!data.length) return null;
@@ -28,7 +27,22 @@ export const PotentialDestinationsList: React.FC<PotentialDestinationsListProps>
         title='Detected by Odigos'
         description='Odigos detects destinations for which automatic connection is available. All data will be filled out automatically.'
       />
-      {loading ? <SkeletonLoader size={1} /> : data.map((item) => <DestinationListItem key={item.displayName} item={item} onSelect={setSelectedItems} />)}
+      {loading ? (
+        <SkeletonLoader size={1} />
+      ) : (
+        data.map((item) => (
+          <DataTab
+            key={`destination-${item.type}`}
+            data-id={`destination-${item.displayName}`}
+            title={item.displayName}
+            logo={item.imageUrl}
+            hoverText='Select'
+            monitors={Object.keys(item.supportedSignals).filter((signal) => item.supportedSignals[signal].supported)}
+            monitorsWithLabels
+            onClick={() => setSelectedItems(item)}
+          />
+        ))
+      )}
     </ListsWrapper>
   );
 };
