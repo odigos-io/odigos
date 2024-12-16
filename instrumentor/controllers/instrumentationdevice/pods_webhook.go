@@ -155,9 +155,9 @@ func getWorkloadKindAttributeKey(podWorkload *workload.PodWorkload) attribute.Ke
 	case workload.WorkloadKindDeployment:
 		return semconv.K8SDeploymentNameKey
 	case workload.WorkloadKindStatefulSet:
-		return semconv.K8SStatefulsetNameKey
+		return semconv.K8SStatefulSetNameKey
 	case workload.WorkloadKindDaemonSet:
-		return semconv.K8SDaemonsetNameKey
+		return semconv.K8SDaemonSetNameKey
 	}
 	return attribute.Key("")
 }
