@@ -158,12 +158,6 @@ metadata:
 status:
   runtimeDetailsByContainer:
     - containerName: inventory
-      envVars:
-      - name: PYTHONPATH
-        value: /bar
-      envVarsFromDockerFile:
-      - name: PYTHONPATH
-        value: /bar
       language: python
       runtimeVersion: 3.11.9
 ---
