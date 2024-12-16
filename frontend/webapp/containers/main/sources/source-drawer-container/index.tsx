@@ -7,8 +7,8 @@ import { UpdateSourceBody } from '../update-source-body';
 import { useDescribeSource, useSourceCRUD } from '@/hooks';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type K8sActualSource } from '@/types';
+import { ACTION, BACKEND_BOOLEAN, DATA_CARDS, getEntityIcon, safeJsonStringify } from '@/utils';
 import { ConditionDetails, DataCard, DataCardRow, DataCardFieldTypes } from '@/reuseable-components';
-import { ACTION, BACKEND_BOOLEAN, DATA_CARDS, getMainContainerLanguage, getProgrammingLanguageIcon, safeJsonStringify } from '@/utils';
 
 interface Props {}
 
@@ -123,7 +123,7 @@ export const SourceDrawer: React.FC<Props> = () => {
     <OverviewDrawer
       title={item.reportedName || item.name}
       titleTooltip='This attribute is used to identify the name of the service (service.name) that is generating telemetry data.'
-      imageUri={getProgrammingLanguageIcon(getMainContainerLanguage(item))}
+      imageUri={getEntityIcon(OVERVIEW_ENTITY_TYPES.SOURCE)}
       isEdit={isEditing}
       isFormDirty={isFormDirty}
       onEdit={handleEdit}
