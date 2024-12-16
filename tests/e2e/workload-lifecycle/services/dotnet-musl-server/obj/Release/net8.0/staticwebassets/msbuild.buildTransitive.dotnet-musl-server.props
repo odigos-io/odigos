@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="../buildMultiTargeting/dotnet-musl-server.props" />
-</Project>
