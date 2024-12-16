@@ -21,7 +21,7 @@ export const MonitorsIcons: React.FC<Props> = ({ monitors, withTooltips, withLab
 
         return (
           <Tooltip key={signal} text={withTooltips ? signalDisplayName : ''}>
-            <FlexRow>
+            <FlexRow $gap={size / 3}>
               <Image src={`/icons/monitors/${signal}.svg`} alt={signal} width={size} height={size} />
               {withLabels && (
                 <Text size={size} color={theme.text.grey}>
