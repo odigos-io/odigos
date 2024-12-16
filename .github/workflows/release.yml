@@ -89,15 +89,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_GITHUB_API_TOKEN }}
 
-      # TODO: Remove once we are ready to fully sunset managing charts in a separate repo
-      - name: Trigger Release PR in Odigos Charts
-        run: |
-          curl -X POST \
-            -H "Accept: application/vnd.github.v3+json" \
-            -H "Authorization: token ${{ secrets.RELEASE_BOT_TOKEN }}" \
-            https://api.github.com/repos/odigos-io/odigos-charts/dispatches \
-            -d '{"event_type": "create_release_pr", "client_payload": {"tag": "${{ env.TAG }}"}}'
-
       - uses: ko-build/setup-ko@v0.7
 
       - name: publish cli image to docker registries
