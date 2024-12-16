@@ -41,7 +41,7 @@ export default function OverviewDataFlowContainer() {
   const ruleNodes = useMemo(
     () =>
       buildRuleNodes({
-        allowBuild: !loading,
+        loading,
         entities: filteredData?.computePlatform.instrumentationRules || [],
         positions,
         unfilteredCounts,
@@ -51,7 +51,7 @@ export default function OverviewDataFlowContainer() {
   const actionNodes = useMemo(
     () =>
       buildActionNodes({
-        allowBuild: !loading,
+        loading,
         entities: filteredData?.computePlatform.actions || [],
         positions,
         unfilteredCounts,
@@ -61,7 +61,7 @@ export default function OverviewDataFlowContainer() {
   const destinationNodes = useMemo(
     () =>
       buildDestinationNodes({
-        allowBuild: !loading,
+        loading,
         entities: filteredData?.computePlatform.destinations || [],
         positions,
         unfilteredCounts,
@@ -71,7 +71,7 @@ export default function OverviewDataFlowContainer() {
   const sourceNodes = useMemo(
     () =>
       buildSourceNodes({
-        allowBuild: !loading,
+        loading,
         entities: filteredData?.computePlatform.k8sActualSources || [],
         positions,
         unfilteredCounts,

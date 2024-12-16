@@ -6,7 +6,7 @@ import { extractMonitors, getEntityIcon, getEntityLabel, getHealthStatus } from 
 import { NODE_TYPES, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type ComputePlatformMapped } from '@/types';
 
 interface Params {
-  allowBuild: boolean;
+  loading: boolean;
   entities: ComputePlatformMapped['computePlatform']['destinations'];
   positions: NodePositions;
   unfilteredCounts: EntityCounts;
@@ -28,7 +28,7 @@ const mapToNodeData = (entity: Params['entities'][0]) => {
   };
 };
 
-export const buildDestinationNodes = ({ allowBuild, entities, positions, unfilteredCounts }: Params) => {
+export const buildDestinationNodes = ({ loading, entities, positions, unfilteredCounts }: Params) => {
   const nodes: Node[] = [];
   const position = positions[OVERVIEW_ENTITY_TYPES.DESTINATION];
   const unfilteredCount = unfilteredCounts[OVERVIEW_ENTITY_TYPES.DESTINATION];
@@ -48,7 +48,20 @@ export const buildDestinationNodes = ({ allowBuild, entities, positions, unfilte
     },
   });
 
-  if (!entities.length) {
+  if (loading) {
+    nodes.push({
+      id: 'destination-skeleton',
+      type: NODE_TYPES.SKELETON,
+      position: {
+        x: position['x'],
+        y: position['y'](),
+      },
+      data: {
+        nodeWidth,
+        size: 3,
+      },
+    });
+  } else if (!entities.length) {
     nodes.push({
       id: 'destination-add',
       type: NODE_TYPES.ADD,
@@ -64,7 +77,7 @@ export const buildDestinationNodes = ({ allowBuild, entities, positions, unfilte
         subTitle: `Add ${!!unfilteredCount ? 'a new' : 'first'} destination to monitor the OpenTelemetry data`,
       },
     });
-  } else if (allowBuild) {
+  } else {
     entities.forEach((destination, idx) => {
       nodes.push({
         id: `destination-${idx}`,
@@ -75,19 +88,6 @@ export const buildDestinationNodes = ({ allowBuild, entities, positions, unfilte
         },
         data: mapToNodeData(destination),
       });
-    });
-  } else {
-    nodes.push({
-      id: 'destination-skeleton',
-      type: NODE_TYPES.SKELETON,
-      position: {
-        x: position['x'],
-        y: position['y'](),
-      },
-      data: {
-        nodeWidth,
-        size: 3,
-      },
     });
   }
 

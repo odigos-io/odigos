@@ -6,7 +6,7 @@ import { getEntityIcon, getEntityLabel, getRuleIcon } from '@/utils';
 import { NODE_TYPES, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type ComputePlatformMapped } from '@/types';
 
 interface Params {
-  allowBuild: boolean;
+  loading: boolean;
   entities: ComputePlatformMapped['computePlatform']['instrumentationRules'];
   positions: NodePositions;
   unfilteredCounts: EntityCounts;
@@ -28,7 +28,7 @@ const mapToNodeData = (entity: Params['entities'][0]) => {
   };
 };
 
-export const buildRuleNodes = ({ allowBuild, entities, positions, unfilteredCounts }: Params) => {
+export const buildRuleNodes = ({ loading, entities, positions, unfilteredCounts }: Params) => {
   const nodes: Node[] = [];
   const position = positions[OVERVIEW_ENTITY_TYPES.RULE];
   const unfilteredCount = unfilteredCounts[OVERVIEW_ENTITY_TYPES.RULE];
@@ -48,7 +48,20 @@ export const buildRuleNodes = ({ allowBuild, entities, positions, unfilteredCoun
     },
   });
 
-  if (!entities.length) {
+  if (loading) {
+    nodes.push({
+      id: 'rule-skeleton',
+      type: NODE_TYPES.SKELETON,
+      position: {
+        x: position['x'],
+        y: position['y'](),
+      },
+      data: {
+        nodeWidth,
+        size: 3,
+      },
+    });
+  } else if (!entities.length) {
     nodes.push({
       id: 'rule-add',
       type: NODE_TYPES.ADD,
@@ -64,7 +77,7 @@ export const buildRuleNodes = ({ allowBuild, entities, positions, unfilteredCoun
         subTitle: `Add ${!!unfilteredCount ? 'a new' : 'first'} rule to modify the OpenTelemetry data`,
       },
     });
-  } else if (allowBuild) {
+  } else {
     entities.forEach((rule, idx) => {
       nodes.push({
         id: `rule-${idx}`,
@@ -75,19 +88,6 @@ export const buildRuleNodes = ({ allowBuild, entities, positions, unfilteredCoun
         },
         data: mapToNodeData(rule),
       });
-    });
-  } else {
-    nodes.push({
-      id: 'rule-skeleton',
-      type: NODE_TYPES.SKELETON,
-      position: {
-        x: position['x'],
-        y: position['y'](),
-      },
-      data: {
-        nodeWidth,
-        size: 3,
-      },
     });
   }
 

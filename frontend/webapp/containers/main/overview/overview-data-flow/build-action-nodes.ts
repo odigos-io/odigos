@@ -6,7 +6,7 @@ import { getActionIcon, getEntityIcon, getEntityLabel } from '@/utils';
 import { NODE_TYPES, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type ComputePlatformMapped } from '@/types';
 
 interface Params {
-  allowBuild: boolean;
+  loading: boolean;
   entities: ComputePlatformMapped['computePlatform']['actions'];
   positions: NodePositions;
   unfilteredCounts: EntityCounts;
@@ -29,7 +29,7 @@ const mapToNodeData = (entity: Params['entities'][0]) => {
   };
 };
 
-export const buildActionNodes = ({ allowBuild, entities, positions, unfilteredCounts }: Params) => {
+export const buildActionNodes = ({ loading, entities, positions, unfilteredCounts }: Params) => {
   const nodes: Node[] = [];
   const position = positions[OVERVIEW_ENTITY_TYPES.ACTION];
   const unfilteredCount = unfilteredCounts[OVERVIEW_ENTITY_TYPES.ACTION];
@@ -49,7 +49,20 @@ export const buildActionNodes = ({ allowBuild, entities, positions, unfilteredCo
     },
   });
 
-  if (!entities.length) {
+  if (loading) {
+    nodes.push({
+      id: 'action-skeleton',
+      type: NODE_TYPES.SKELETON,
+      position: {
+        x: position['x'],
+        y: position['y'](),
+      },
+      data: {
+        nodeWidth,
+        size: 3,
+      },
+    });
+  } else if (!entities.length) {
     nodes.push({
       id: 'action-add',
       type: NODE_TYPES.ADD,
@@ -65,7 +78,7 @@ export const buildActionNodes = ({ allowBuild, entities, positions, unfilteredCo
         subTitle: `Add ${!!unfilteredCount ? 'a new' : 'first'} action to modify the OpenTelemetry data`,
       },
     });
-  } else if (allowBuild) {
+  } else {
     nodes.push({
       id: 'action-frame',
       type: NODE_TYPES.FRAME,
@@ -91,19 +104,6 @@ export const buildActionNodes = ({ allowBuild, entities, positions, unfilteredCo
         },
         data: mapToNodeData(action),
       });
-    });
-  } else {
-    nodes.push({
-      id: 'action-skeleton',
-      type: NODE_TYPES.SKELETON,
-      position: {
-        x: position['x'],
-        y: position['y'](),
-      },
-      data: {
-        nodeWidth,
-        size: 3,
-      },
     });
   }
 
