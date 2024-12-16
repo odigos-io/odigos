@@ -1,12 +1,10 @@
 import { WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils';
 import { type SourceContainer } from '@/types';
 
-export const getProgrammingLanguageIcon = (language?: SourceContainer['language']) => {
-  if (!language) return '';
-
+export const getProgrammingLanguageIcon = (language: SourceContainer['language']) => {
   const BASE_URL = 'https://d1n7d4xz7fr8b4.cloudfront.net/';
 
-  const LANGUAGES_LOGOS: Record<WORKLOAD_PROGRAMMING_LANGUAGES, string> = {
+  const LOGOS: Record<WORKLOAD_PROGRAMMING_LANGUAGES, string> = {
     [WORKLOAD_PROGRAMMING_LANGUAGES.JAVA]: `${BASE_URL}java.svg`,
     [WORKLOAD_PROGRAMMING_LANGUAGES.GO]: `${BASE_URL}go.svg`,
     [WORKLOAD_PROGRAMMING_LANGUAGES.JAVASCRIPT]: `${BASE_URL}nodejs.svg`,
@@ -21,5 +19,5 @@ export const getProgrammingLanguageIcon = (language?: SourceContainer['language'
     [WORKLOAD_PROGRAMMING_LANGUAGES.NO_RUNNING_PODS]: '', // TODO: good icon
   };
 
-  return LANGUAGES_LOGOS[language];
+  return LOGOS[language];
 };

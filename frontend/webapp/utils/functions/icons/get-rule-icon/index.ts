@@ -1,12 +1,11 @@
-import { PayloadCollectionIcon } from '@/assets';
 import { InstrumentationRuleType } from '@/types';
+import { OdigosLogo, PayloadCollectionIcon, SVG } from '@/assets';
 
-export const getRuleIcon = (type?: InstrumentationRuleType) => {
-  switch (type) {
-    case InstrumentationRuleType.PAYLOAD_COLLECTION:
-      return PayloadCollectionIcon;
+export const getRuleIcon = (type: InstrumentationRuleType) => {
+  const LOGOS: Record<InstrumentationRuleType, SVG> = {
+    [InstrumentationRuleType.PAYLOAD_COLLECTION]: PayloadCollectionIcon,
+    [InstrumentationRuleType.UNKNOWN_TYPE]: OdigosLogo,
+  };
 
-    default:
-      return undefined;
-  }
+  return LOGOS[type];
 };

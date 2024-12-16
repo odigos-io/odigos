@@ -36,7 +36,7 @@ export const PotentialDestinationsList: React.FC<Props> = ({ setSelectedItems })
             key={`destination-${item.type}`}
             data-id={`destination-${item.displayName}`}
             title={item.displayName}
-            logo={item.imageUrl}
+            iconSrc={item.imageUrl}
             hoverText='Select'
             monitors={Object.keys(item.supportedSignals).filter((signal) => item.supportedSignals[signal].supported)}
             monitorsWithLabels
