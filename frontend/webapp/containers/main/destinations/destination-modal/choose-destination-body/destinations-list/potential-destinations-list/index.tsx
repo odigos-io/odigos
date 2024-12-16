@@ -2,7 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { DestinationTypeItem } from '@/types';
 import { usePotentialDestinations } from '@/hooks';
-import { DataTab, SectionTitle, SkeletonLoader, Text } from '@/reuseable-components';
+import { DataTab, SectionTitle, SkeletonLoader } from '@/reuseable-components';
 
 interface Props {
   setSelectedItems: (item: DestinationTypeItem) => void;
