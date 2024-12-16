@@ -110,16 +110,9 @@ func newOdiglet() (*odiglet, error) {
 func (o *odiglet) run(ctx context.Context) {
 	var wg sync.WaitGroup
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done() // Mark this goroutine as done
-
-		// Attempt to connect
-		if err := o.criWrapper.Connect(); err != nil {
-			log.Logger.Error(err, "Failed to connect to CRI runtime")
-			return
-		}
-	}()
+	if err := o.criWrapper.Connect(); err != nil {
+		log.Logger.Error(err, "Failed to connect to CRI runtime")
+	}
 
 	defer o.criWrapper.Close()
 
