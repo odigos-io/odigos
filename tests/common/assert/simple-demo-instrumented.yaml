@@ -163,7 +163,7 @@ status:
         value: /bar
       envVarsFromDockerFile:
       - name: PYTHONPATH
-        value: /foo
+        value: /bar
       language: python
       runtimeVersion: 3.11.9
 ---
