@@ -163,5 +163,5 @@ func init() {
 	rootCmd.AddCommand(uiCmd)
 	uiCmd.Flags().Int("port", defaultPort, "Port to listen on")
 	uiCmd.Flags().String("address", "localhost", "Address to listen on")
-	uiCmd.Flags().Bool("beta", false, "use new experimental UI")
+	uiCmd.Flags().Bool("legacy", false, "Use the legacy UI port")
 }
