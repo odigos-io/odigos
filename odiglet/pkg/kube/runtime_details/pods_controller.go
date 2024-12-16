@@ -28,7 +28,7 @@ type PodsReconciler struct {
 }
 
 // We need to apply runtime details detection for a new running pod in the following cases:
-// TODO: Change the comment to reflect the actual implementation
+// 1. User Instrument the pod for the first time
 func (p *PodsReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	logger := log.FromContext(ctx)
 
