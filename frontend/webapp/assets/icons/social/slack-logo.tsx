@@ -4,7 +4,7 @@ import { SVG } from '@/assets';
 export const SlackLogo: SVG = ({ size = 16, fill }) => {
   return (
     <svg width={size} height={size} viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg' fill='none'>
-      <g fill-rule='evenodd' clip-rule='evenodd'>
+      <g fillRule='evenodd' clipRule='evenodd'>
         <path
           fill={fill || '#E01E5A'}
           d='M2.471 11.318a1.474 1.474 0 001.47-1.471v-1.47h-1.47A1.474 1.474 0 001 9.846c.001.811.659 1.469 1.47 1.47zm3.682-2.942a1.474 1.474 0 00-1.47 1.471v3.683c.002.811.66 1.468 1.47 1.47a1.474 1.474 0 001.47-1.47V9.846a1.474 1.474 0 00-1.47-1.47z'
