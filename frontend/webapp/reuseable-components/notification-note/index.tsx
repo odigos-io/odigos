@@ -158,10 +158,12 @@ export const NotificationNote: React.FC<Props> = ({ type, title, message, action
     }
   };
 
+  const StatusIcon = getStatusIcon(type);
+
   return (
     <Container className={onClose ? 'animated' : ''} $isLeaving={isLeaving} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
       <Content $type={type} style={style}>
-        <Image src={getStatusIcon(type)} alt={type} width={16} height={16} />
+        <StatusIcon />
 
         <TextWrapper>
           {title && <Title $type={type}>{title}</Title>}

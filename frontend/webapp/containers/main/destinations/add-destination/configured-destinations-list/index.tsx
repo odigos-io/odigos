@@ -27,7 +27,7 @@ const ListItem: React.FC<{ item: ConfiguredDestination; isLastItem: boolean }> =
     <>
       <DataTab
         title={item.displayName}
-        logo={item.imageUrl}
+        iconSrc={item.imageUrl}
         monitors={extractMonitors(item.exportedSignals)}
         monitorsWithLabels
         withExtend

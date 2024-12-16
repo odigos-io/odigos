@@ -161,6 +161,7 @@ const NotificationListItem: React.FC<Notification & { onClick: () => void }> = (
     return titleIncludes || false;
   }, [title, message]);
 
+  const Icon = getStatusIcon(type);
   const timeAgo = useTimeAgo();
   const clickNotif = useClickNotif();
 
@@ -175,9 +176,7 @@ const NotificationListItem: React.FC<Notification & { onClick: () => void }> = (
         }
       }}
     >
-      <StatusIcon $type={isDeleted ? NOTIFICATION_TYPE.ERROR : type}>
-        <Image src={isDeleted ? '/icons/common/trash.svg' : getStatusIcon(type)} alt='status' width={16} height={16} />
-      </StatusIcon>
+      <StatusIcon $type={isDeleted ? NOTIFICATION_TYPE.ERROR : type}>{isDeleted ? <Image src='/icons/common/trash.svg' alt='' width={16} height={16} /> : <Icon />}</StatusIcon>
 
       <NotifTextWrap>
         <NotifHeaderTextWrap>

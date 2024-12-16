@@ -72,17 +72,13 @@ const SubTitle = styled(Text)<{
 `;
 
 export const Status: React.FC<StatusProps> = ({ title, subtitle, size = 12, family = 'secondary', isPale, isActive, withIcon, withBorder, withBackground }) => {
+  const StatusIcon = getStatusIcon(isActive ? NOTIFICATION_TYPE.SUCCESS : NOTIFICATION_TYPE.ERROR);
+
   return (
     <StatusWrapper $size={size} $isPale={isPale} $isActive={isActive} $withIcon={withIcon} $withBorder={withBorder} $withBackground={withBackground}>
       {withIcon && (
         <IconWrapper>
-          {/* TODO: SVG to JSX */}
-          <Image
-            src={isPale ? `/icons/common/circled-${isActive ? 'check' : 'cross'}.svg` : getStatusIcon(isActive ? NOTIFICATION_TYPE.SUCCESS : NOTIFICATION_TYPE.ERROR)}
-            alt='status'
-            width={size + 2}
-            height={size + 2}
-          />
+          {isPale ? <Image src={`/icons/common/circled-${isActive ? 'check' : 'cross'}.svg`} alt='status' width={size + 2} height={size + 2} /> : <StatusIcon size={size + 2} />}
         </IconWrapper>
       )}
 

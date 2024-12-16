@@ -1,9 +1,7 @@
 import React from 'react';
-import Image from 'next/image';
-import { SVG } from '@/assets';
 import { useAppStore } from '@/store';
 import styled from 'styled-components';
-import { getStatusIcon } from '@/utils';
+import { ErrorTriangleIcon, SVG } from '@/assets';
 import { Checkbox, DataTab } from '@/reuseable-components';
 import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';
 import { type ActionDataParsed, type ActualDestination, type InstrumentationRuleSpec, type K8sActualSource, NODE_TYPES, NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES, STATUSES, WorkloadId } from '@/types';
@@ -64,7 +62,7 @@ const BaseNode: React.FC<Props> = ({ id: nodeId, data }) => {
       <>
         {/* TODO: handle instrumentation rules for sources */}
         {isError ? (
-          <Image src={getStatusIcon(NOTIFICATION_TYPE.ERROR)} alt='' width={20} height={20} />
+          <ErrorTriangleIcon size={20} />
         ) : // : type === 'source' && SOME_INDICATOR_THAT_THIS_IS_INSTRUMENTED ? ( <Image src={getEntityIcon(OVERVIEW_ENTITY_TYPES.RULE)} alt='' width={18} height={18} /> )
         null}
 
