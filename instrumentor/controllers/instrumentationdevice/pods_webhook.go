@@ -3,11 +3,14 @@ package instrumentationdevice
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/odigos-io/odigos/common"
 	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	containerutils "github.com/odigos-io/odigos/k8sutils/pkg/container"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	"go.opentelemetry.io/otel/attribute"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -17,6 +20,12 @@ import (
 )
 
 const otelServiceNameEnvVarName = "OTEL_SERVICE_NAME"
+const otelResourceAttributesEnvVarName = "OTEL_RESOURCE_ATTRIBUTES"
+
+type resourceAttribute struct {
+	Key   attribute.Key
+	Value string
+}
 
 type PodsWebhook struct {
 	client.Client
@@ -34,35 +43,35 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		pod.Annotations = map[string]string{}
 	}
 
-	serviceName := p.getServiceNameForEnv(ctx, pod)
+	serviceName, podWorkload := p.getServiceNameForEnv(ctx, pod)
 
 	// Inject ODIGOS environment variables into all containers
-	injectOdigosEnvVars(pod, serviceName)
+	injectOdigosEnvVars(pod, podWorkload, serviceName)
 
 	return nil
 }
 
 // checks for the service name on the annotation, or fallback to the workload name
-func (p *PodsWebhook) getServiceNameForEnv(ctx context.Context, pod *corev1.Pod) *string {
+func (p *PodsWebhook) getServiceNameForEnv(ctx context.Context, pod *corev1.Pod) (*string, *workload.PodWorkload) {
 
 	logger := log.FromContext(ctx)
 
 	podWorkload, err := workload.PodWorkloadObject(ctx, pod)
 	if err != nil {
 		logger.Error(err, "failed to extract pod workload details from pod. skipping OTEL_SERVICE_NAME injection")
-		return nil
+		return nil, nil
 	}
 
 	workloadObj, err := workload.GetWorkloadObject(ctx, client.ObjectKey{Namespace: podWorkload.Namespace, Name: podWorkload.Name}, podWorkload.Kind, p.Client)
 	if err != nil {
 		logger.Error(err, "failed to get workload object from cache. cannot check for workload annotation. using workload name as OTEL_SERVICE_NAME")
-		return &podWorkload.Name
+		return &podWorkload.Name, podWorkload
 	}
 	resolvedServiceName := workload.ExtractServiceNameFromAnnotations(workloadObj.GetAnnotations(), podWorkload.Name)
-	return &resolvedServiceName
+	return &resolvedServiceName, podWorkload
 }
 
-func injectOdigosEnvVars(pod *corev1.Pod, serviceName *string) {
+func injectOdigosEnvVars(pod *corev1.Pod, podWorkload *workload.PodWorkload, serviceName *string) {
 
 	// Common environment variables that do not change across containers
 	commonEnvVars := []corev1.EnvVar{
@@ -109,10 +118,20 @@ func injectOdigosEnvVars(pod *corev1.Pod, serviceName *string) {
 			Name:  k8sconsts.OdigosEnvVarContainerName,
 			Value: container.Name,
 		}
+
+		resourceAttributes := getResourceAttributes(podWorkload, container.Name)
+		resourceAttributesEnvValue := getResourceAttributesEnvVarValue(resourceAttributes)
+
 		container.Env = append(container.Env, append(commonEnvVars, containerNameEnv)...)
 
-		if serviceNameEnv != nil && shouldInjectServiceName(pl, otelsdk) && !otelNameExists(container.Env) {
-			container.Env = append(container.Env, *serviceNameEnv)
+		if serviceNameEnv != nil && shouldInjectServiceName(pl, otelsdk) {
+			if !otelNameExists(container.Env) {
+				container.Env = append(container.Env, *serviceNameEnv)
+			}
+			container.Env = append(container.Env, corev1.EnvVar{
+				Name:  otelResourceAttributesEnvVarName,
+				Value: resourceAttributesEnvValue,
+			})
 		}
 	}
 }
@@ -129,6 +148,48 @@ func envVarsExist(containerEnv []corev1.EnvVar, commonEnvVars []corev1.EnvVar) b
 		}
 	}
 	return false
+}
+
+func getWorkloadKindAttributeKey(podWorkload *workload.PodWorkload) attribute.Key {
+	switch podWorkload.Kind {
+	case workload.WorkloadKindDeployment:
+		return semconv.K8SDeploymentNameKey
+	case workload.WorkloadKindStatefulSet:
+		return semconv.K8SStatefulsetNameKey
+	case workload.WorkloadKindDaemonSet:
+		return semconv.K8SDaemonsetNameKey
+	}
+	return attribute.Key("")
+}
+
+func getResourceAttributes(podWorkload *workload.PodWorkload, containerName string) []resourceAttribute {
+	if podWorkload == nil {
+		return []resourceAttribute{}
+	}
+
+	workloadKindKey := getWorkloadKindAttributeKey(podWorkload)
+	return []resourceAttribute{
+		{
+			Key:   semconv.K8SContainerNameKey,
+			Value: containerName,
+		},
+		{
+			Key:   semconv.K8SNamespaceNameKey,
+			Value: podWorkload.Namespace,
+		},
+		{
+			Key:   workloadKindKey,
+			Value: podWorkload.Name,
+		},
+	}
+}
+
+func getResourceAttributesEnvVarValue(ra []resourceAttribute) string {
+	var attrs []string
+	for _, a := range ra {
+		attrs = append(attrs, fmt.Sprintf("%s=%s", a.Key, a.Value))
+	}
+	return strings.Join(attrs, ",")
 }
 
 func otelNameExists(containerEnv []corev1.EnvVar) bool {
