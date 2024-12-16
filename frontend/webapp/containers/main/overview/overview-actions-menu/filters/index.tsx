@@ -75,7 +75,7 @@ const Filters = () => {
 
   return (
     <RelativeContainer ref={ref}>
-      <SelectionButton label='Filters' icon='/icons/common/filter.svg' badgeLabel={filterCount} badgeFilled={!!filterCount} withBorder color='transparent' onClick={toggleFocused} />
+      <SelectionButton label='Filters' iconSrc='/icons/common/filter.svg' badgeLabel={filterCount} badgeFilled={!!filterCount} withBorder color='transparent' onClick={toggleFocused} />
 
       {focused && (
         <AbsoluteContainer>
