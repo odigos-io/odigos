@@ -124,9 +124,6 @@ metadata:
 status:
   runtimeDetailsByContainer:
     - containerName: coupon
-      envVars:
-      - name: NODE_OPTIONS
-        value: --require /var/odigos/nodejs/autoinstrumentation.js
       language: javascript
       runtimeVersion: 18.3.0
 ---
@@ -144,11 +141,6 @@ metadata:
 status:
   runtimeDetailsByContainer:
     - containerName: frontend
-      (sort_by(envVars, &name)):
-      - name: JAVA_OPTS
-        value: -javaagent:/var/odigos/java/javaagent.jar
-      - name: JAVA_TOOL_OPTIONS
-        value: -javaagent:/var/odigos/java/javaagent.jar
       language: java
       runtimeVersion: 17.0.11+9
 ---
@@ -166,10 +158,6 @@ metadata:
 status:
   runtimeDetailsByContainer:
     - containerName: inventory
-      envVars:
-      - name: PYTHONPATH
-        # The image contains /bar in PYTHONPATH so this is concatenated with odigos value
-        value: /bar:/var/odigos/python:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation
       language: python
       runtimeVersion: 3.11.9
 ---
