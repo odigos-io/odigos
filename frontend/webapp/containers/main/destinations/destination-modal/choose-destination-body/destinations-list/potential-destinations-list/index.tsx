@@ -2,7 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { DestinationTypeItem } from '@/types';
 import { usePotentialDestinations } from '@/hooks';
-import { DataTab, SectionTitle, SkeletonLoader, Text } from '@/reuseable-components';
+import { DataTab, SectionTitle, SkeletonLoader } from '@/reuseable-components';
 
 interface Props {
   setSelectedItems: (item: DestinationTypeItem) => void;
@@ -15,9 +15,9 @@ const ListsWrapper = styled.div`
 `;
 
 export const PotentialDestinationsList: React.FC<Props> = ({ setSelectedItems }) => {
-  const { loading, data } = usePotentialDestinations();
+  const { data, loading } = usePotentialDestinations();
 
-  if (!data.length) return null;
+  if (!data.length && !loading) return null;
 
   return (
     <ListsWrapper>
