@@ -1,13 +1,21 @@
-import { type ActionsType } from '@/types';
+import { ActionsType } from '@/types';
+import { AddClusterInfoIcon } from '@/assets';
 
 export const getActionIcon = (type?: ActionsType | 'sampler' | 'attributes') => {
-  if (!type) return '';
+  // if (!type) return '';
 
-  const typeLowerCased = type.toLowerCase();
-  const isSampler = typeLowerCased.includes('sampler');
-  const isAttributes = typeLowerCased === 'attributes';
+  const typeLowerCased = type?.toLowerCase();
+  const isSamplerCategory = typeLowerCased?.includes('sampler');
+  const isAttributesCategory = typeLowerCased === 'attributes';
 
-  const iconName = isSampler ? 'sampler' : isAttributes ? 'piimasking' : typeLowerCased;
+  // if (isSamplerCategory) return SamplerIcon;
+  // if (isAttributesCategory) return PiiMaskingIcon;
 
-  return `/icons/actions/${iconName}.svg`;
+  switch (type) {
+    case ActionsType.ADD_CLUSTER_INFO:
+      return AddClusterInfoIcon;
+
+    default:
+      return undefined;
+  }
 };

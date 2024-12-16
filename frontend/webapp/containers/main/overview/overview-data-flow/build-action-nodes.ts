@@ -22,7 +22,7 @@ const mapToNodeData = (entity: Params['entities'][0]) => {
     status: STATUSES.HEALTHY,
     title: getEntityLabel(entity, OVERVIEW_ENTITY_TYPES.ACTION, { prioritizeDisplayName: true }),
     subTitle: entity.type,
-    iconSrc: getActionIcon(entity.type),
+    icon: getActionIcon(entity.type),
     monitors: entity.spec.signals,
     isActive: !entity.spec.disabled,
     raw: entity,

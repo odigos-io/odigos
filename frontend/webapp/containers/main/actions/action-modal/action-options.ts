@@ -1,3 +1,4 @@
+import { SVG } from '@/assets';
 import { ActionsType } from '@/types';
 import { getActionIcon, SignalUppercase } from '@/utils';
 
@@ -8,7 +9,7 @@ export type ActionOption = {
   description?: string;
   docsEndpoint?: string;
   docsDescription?: string;
-  icon?: string;
+  icon?: SVG;
   items?: ActionOption[];
   allowedSignals?: SignalUppercase[];
 };

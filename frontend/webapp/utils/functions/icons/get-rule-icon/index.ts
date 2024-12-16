@@ -1,9 +1,12 @@
-import { type InstrumentationRuleType } from '@/types';
+import { PayloadCollectionIcon } from '@/assets';
+import { InstrumentationRuleType } from '@/types';
 
 export const getRuleIcon = (type?: InstrumentationRuleType) => {
-  if (!type) return '';
+  switch (type) {
+    case InstrumentationRuleType.PAYLOAD_COLLECTION:
+      return PayloadCollectionIcon;
 
-  const typeLowerCased = type.replaceAll('-', '').toLowerCase();
-
-  return `/icons/rules/${typeLowerCased}.svg`;
+    default:
+      return undefined;
+  }
 };

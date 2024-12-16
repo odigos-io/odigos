@@ -33,5 +33,5 @@ export const IconWrapped: React.FC<Props> = ({ icon: Icon, src = '', alt = '', i
     );
   }
 
-  return <Container $isError={isError}>{!!Icon ? <Icon /> : <OdigosLogo />}</Container>;
+  return <Container $isError={isError}>{!!Icon ? <Icon size={20} /> : <OdigosLogo size={16} />}</Container>;
 };
