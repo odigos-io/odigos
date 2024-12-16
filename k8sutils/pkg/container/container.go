@@ -16,7 +16,7 @@ var (
 func LanguageSdkFromPodContainer(pod *v1.Pod, containerName string) (common.ProgrammingLanguage, common.OtelSdk, error) {
 	for _, container := range pod.Spec.Containers {
 		if container.Name == containerName {
-			language, sdk, found := GetLanguageAndOtelSdk(container)
+			language, sdk, found := GetLanguageAndOtelSdk(&container)
 			if !found {
 				return common.UnknownProgrammingLanguage, common.OtelSdk{}, ErrDeviceNotDetected
 			}
@@ -28,7 +28,7 @@ func LanguageSdkFromPodContainer(pod *v1.Pod, containerName string) (common.Prog
 	return common.UnknownProgrammingLanguage, common.OtelSdk{}, ErrContainerNotInPodSpec
 }
 
-func GetLanguageAndOtelSdk(container v1.Container) (common.ProgrammingLanguage, common.OtelSdk, bool) {
+func GetLanguageAndOtelSdk(container *v1.Container) (common.ProgrammingLanguage, common.OtelSdk, bool) {
 	deviceName := podContainerDeviceName(container)
 	if deviceName == nil {
 		return common.UnknownProgrammingLanguage, common.OtelSdk{}, false
@@ -38,7 +38,7 @@ func GetLanguageAndOtelSdk(container v1.Container) (common.ProgrammingLanguage, 
 	return language, sdk, true
 }
 
-func podContainerDeviceName(container v1.Container) *string {
+func podContainerDeviceName(container *v1.Container) *string {
 	if container.Resources.Limits == nil {
 		return nil
 	}
