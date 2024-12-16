@@ -31,7 +31,7 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, withIcon, children }) =>
     const { type, clientX, clientY } = e;
 
     setIsHovered(type !== 'mouseleave');
-    setPopupPosition({ top: clientY, left: clientX + 24 });
+    setPopupPosition({ top: clientY, left: clientX });
   };
 
   if (!text) return <>{children}</>;
