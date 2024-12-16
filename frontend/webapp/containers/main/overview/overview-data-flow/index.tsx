@@ -29,63 +29,56 @@ const Container = styled.div`
 
 export default function OverviewDataFlowContainer() {
   const [scrollYOffset, setScrollYOffset] = useState(0);
-  const [allowBuild, setAllowBuild] = useState(false);
-
-  useEffect(() => {
-    // this is to display the skeleton loaders and allow the data to be fetched in the background
-    const t = setTimeout(() => setAllowBuild(true), 3 * 1000);
-    return () => clearTimeout(t);
-  }, []);
 
   const { handleNodeClick } = useNodeDataFlowHandlers();
   const { containerRef, containerWidth, containerHeight } = useContainerSize();
   const positions = useMemo(() => getNodePositions({ containerWidth }), [containerWidth]);
 
   const { metrics } = useMetrics();
-  const { data, filteredData } = useComputePlatform();
+  const { data, filteredData, loading } = useComputePlatform();
   const unfilteredCounts = useMemo(() => getEntityCounts({ computePlatform: data?.computePlatform }), [data]);
 
   const ruleNodes = useMemo(
     () =>
       buildRuleNodes({
-        allowBuild,
+        allowBuild: !loading,
         entities: filteredData?.computePlatform.instrumentationRules || [],
         positions,
         unfilteredCounts,
       }),
-    [allowBuild, filteredData?.computePlatform.instrumentationRules, positions, unfilteredCounts],
+    [loading, filteredData?.computePlatform.instrumentationRules, positions, unfilteredCounts],
   );
   const actionNodes = useMemo(
     () =>
       buildActionNodes({
-        allowBuild,
+        allowBuild: !loading,
         entities: filteredData?.computePlatform.actions || [],
         positions,
         unfilteredCounts,
       }),
-    [allowBuild, filteredData?.computePlatform.actions, positions, unfilteredCounts],
+    [loading, filteredData?.computePlatform.actions, positions, unfilteredCounts],
   );
   const destinationNodes = useMemo(
     () =>
       buildDestinationNodes({
-        allowBuild,
+        allowBuild: !loading,
         entities: filteredData?.computePlatform.destinations || [],
         positions,
         unfilteredCounts,
       }),
-    [allowBuild, filteredData?.computePlatform.destinations, positions, unfilteredCounts],
+    [loading, filteredData?.computePlatform.destinations, positions, unfilteredCounts],
   );
   const sourceNodes = useMemo(
     () =>
       buildSourceNodes({
-        allowBuild,
+        allowBuild: !loading,
         entities: filteredData?.computePlatform.k8sActualSources || [],
         positions,
         unfilteredCounts,
         containerHeight,
         onScroll: ({ scrollTop }) => setScrollYOffset(scrollTop),
       }),
-    [allowBuild, filteredData?.computePlatform.k8sActualSources, positions, unfilteredCounts, containerHeight],
+    [loading, filteredData?.computePlatform.k8sActualSources, positions, unfilteredCounts, containerHeight],
   );
 
   const [nodes, setNodes, onNodesChange] = useNodesState(([] as Node[]).concat(actionNodes, ruleNodes, sourceNodes, destinationNodes));
