@@ -29,9 +29,17 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, withIcon, children }) =>
 
   const handleMouseEvent = (e: React.MouseEvent) => {
     const { type, clientX, clientY } = e;
+    const { innerWidth, innerHeight } = window;
 
+    let top = clientY;
+    let left = clientX;
+    const textLen = text?.length || 0;
+
+    if (top >= innerHeight / 2) top += -40;
+    if (left >= innerWidth / 2) left += -(textLen * 8);
+
+    setPopupPosition({ top, left });
     setIsHovered(type !== 'mouseleave');
-    setPopupPosition({ top: clientY, left: clientX });
   };
 
   if (!text) return <>{children}</>;
