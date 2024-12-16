@@ -36,6 +36,14 @@ func init() {
 	utilruntime.Must(odigosv1.AddToScheme(scheme))
 }
 
+type KubeManagerOptions struct {
+	Mgr           ctrl.Manager
+	EbpfDirectors ebpf.DirectorsMap
+	Clientset     *kubernetes.Clientset
+	ConfigUpdates chan<- instrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
+	CriClient     *criwrapper.CriClient
+}
+
 func CreateManager() (ctrl.Manager, error) {
 	log.Logger.V(0).Info("Starting reconcileres for runtime details")
 	ctrl.SetLogger(log.Logger)
@@ -61,14 +69,13 @@ func CreateManager() (ctrl.Manager, error) {
 	})
 }
 
-func SetupWithManager(mgr ctrl.Manager, ebpfDirectors ebpf.DirectorsMap, clientset *kubernetes.Clientset, configUpdates chan<- instrumentation.ConfigUpdate[ebpf.K8sConfigGroup],
-	criClient *criwrapper.CriClient) error {
-	err := runtime_details.SetupWithManager(mgr, clientset, criClient)
+func SetupWithManager(kubeManagerOptions KubeManagerOptions) error {
+	err := runtime_details.SetupWithManager(kubeManagerOptions.Mgr, kubeManagerOptions.Clientset, kubeManagerOptions.CriClient)
 	if err != nil {
 		return err
 	}
 
-	err = instrumentation_ebpf.SetupWithManager(mgr, ebpfDirectors, configUpdates)
+	err = instrumentation_ebpf.SetupWithManager(kubeManagerOptions.Mgr, kubeManagerOptions.EbpfDirectors, kubeManagerOptions.ConfigUpdates)
 	if err != nil {
 		return err
 	}

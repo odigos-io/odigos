@@ -88,7 +88,15 @@ func newOdiglet() (*odiglet, error) {
 		return nil, fmt.Errorf("Failed to create ebpf manager %w", err)
 	}
 
-	err = kube.SetupWithManager(mgr, nil, clientset, configUpdates, &criWrapper)
+	kubeManagerOptions := kube.KubeManagerOptions{
+		Mgr:           mgr,
+		EbpfDirectors: nil,
+		Clientset:     clientset,
+		ConfigUpdates: configUpdates,
+		CriClient:     &criWrapper,
+	}
+
+	err = kube.SetupWithManager(kubeManagerOptions)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to setup controller-runtime manager %w", err)
 	}
