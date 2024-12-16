@@ -273,3 +273,16 @@ status:
       started: true
   phase: Running
 ---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: dotnet-musl
+  namespace: default
+status:
+  containerStatuses:
+    - name: dotnet-musl
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running

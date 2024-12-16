@@ -1,0 +1,5 @@
+/app2/dotnet-musl-server
+/app2/dotnet-musl-server.dll
+/app2/dotnet-musl-server.deps.json
+/app2/dotnet-musl-server.runtimeconfig.json
+/app2/dotnet-musl-server.pdb
