@@ -7,10 +7,10 @@ import { getEntityIcon, getEntityLabel, getHealthStatus, getProgrammingLanguageI
 import { NODE_TYPES, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type ComputePlatformMapped } from '@/types';
 
 interface Params {
+  loading: boolean;
   entities: ComputePlatformMapped['computePlatform']['k8sActualSources'];
   positions: NodePositions;
   unfilteredCounts: EntityCounts;
-
   containerHeight: number;
   onScroll: (params: { clientHeight: number; scrollHeight: number; scrollTop: number }) => void;
 }
@@ -36,7 +36,7 @@ const mapToNodeData = (entity: Params['entities'][0]) => {
   };
 };
 
-export const buildSourceNodes = ({ entities, positions, unfilteredCounts, containerHeight, onScroll }: Params) => {
+export const buildSourceNodes = ({ loading, entities, positions, unfilteredCounts, containerHeight, onScroll }: Params) => {
   const nodes: Node[] = [];
   const position = positions[OVERVIEW_ENTITY_TYPES.SOURCE];
   const unfilteredCount = unfilteredCounts[OVERVIEW_ENTITY_TYPES.SOURCE];
@@ -56,7 +56,20 @@ export const buildSourceNodes = ({ entities, positions, unfilteredCounts, contai
     },
   });
 
-  if (!entities.length) {
+  if (loading) {
+    nodes.push({
+      id: 'source-skeleton',
+      type: NODE_TYPES.SKELETON,
+      position: {
+        x: position['x'],
+        y: position['y'](),
+      },
+      data: {
+        nodeWidth,
+        size: 3,
+      },
+    });
+  } else if (!entities.length) {
     nodes.push({
       id: 'source-add',
       type: NODE_TYPES.ADD,

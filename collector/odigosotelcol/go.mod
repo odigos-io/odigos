@@ -53,6 +53,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.106.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/azureblobstorageexporter v0.106.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/googlecloudstorageexporter v0.106.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/mockdestinationexporter v0.106.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosconditionalattributes v0.106.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosresourcenameprocessor v0.106.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossamplingprocessor v0.106.0
@@ -597,6 +598,8 @@ replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/process
 replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/azureblobstorageexporter => ../exporters/azureblobstorageexporter
 
 replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/googlecloudstorageexporter => ../exporters/googlecloudstorageexporter
+
+replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/mockdestinationexporter => ../exporters/mockdestinationexporter
 
 replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics => ../processors/odigostrafficmetrics
 

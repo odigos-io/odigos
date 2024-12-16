@@ -6,6 +6,7 @@ import { getActionIcon, getEntityIcon, getEntityLabel } from '@/utils';
 import { NODE_TYPES, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type ComputePlatformMapped } from '@/types';
 
 interface Params {
+  loading: boolean;
   entities: ComputePlatformMapped['computePlatform']['actions'];
   positions: NodePositions;
   unfilteredCounts: EntityCounts;
@@ -28,7 +29,7 @@ const mapToNodeData = (entity: Params['entities'][0]) => {
   };
 };
 
-export const buildActionNodes = ({ entities, positions, unfilteredCounts }: Params) => {
+export const buildActionNodes = ({ loading, entities, positions, unfilteredCounts }: Params) => {
   const nodes: Node[] = [];
   const position = positions[OVERVIEW_ENTITY_TYPES.ACTION];
   const unfilteredCount = unfilteredCounts[OVERVIEW_ENTITY_TYPES.ACTION];
@@ -48,7 +49,20 @@ export const buildActionNodes = ({ entities, positions, unfilteredCounts }: Para
     },
   });
 
-  if (!entities.length) {
+  if (loading) {
+    nodes.push({
+      id: 'action-skeleton',
+      type: NODE_TYPES.SKELETON,
+      position: {
+        x: position['x'],
+        y: position['y'](),
+      },
+      data: {
+        nodeWidth,
+        size: 3,
+      },
+    });
+  } else if (!entities.length) {
     nodes.push({
       id: 'action-add',
       type: NODE_TYPES.ADD,

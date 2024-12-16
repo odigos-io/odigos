@@ -18,7 +18,7 @@ const HeaderContainer = styled.div`
   justify-content: space-between;
   padding: 0 24px 0 32px;
   align-items: center;
-  background-color: ${({ theme }) => theme.colors.darker_grey};
+  background-color: ${({ theme }) => theme.colors.dark_grey};
   border-bottom: 1px solid rgba(249, 249, 249, 0.16);
   height: 80px;
 `;

@@ -246,3 +246,7 @@ dev-debug-destination:
 .PHONY: dev-add-nop-destination
 dev-nop-destination:
 	kubectl apply -f ./tests/nop-exporter.yaml
+
+.PHONY: dev-add-backpressue-destination
+dev-backpressue-destination:
+	kubectl apply -f ./tests/backpressure-exporter.yaml
