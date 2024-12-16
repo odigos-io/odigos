@@ -55,7 +55,6 @@ func (e *MockDestinationExporter) ConsumeLogs(ctx context.Context, logs plog.Log
 func (e *MockDestinationExporter) mockExport(context.Context) error {
 	// not taking care of ctx cancel and shutdown as this is a dummy exporter and not used in production
 	<-time.After(e.config.ResponseDuration)
-	// check if we should reject the trace by comparing random number with reject fraction
 	if rand.Float64() < e.config.RejectFraction {
 		return errors.New("export rejected by mock destination")
 	}
