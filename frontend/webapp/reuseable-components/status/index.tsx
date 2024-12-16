@@ -1,7 +1,8 @@
 import React from 'react';
 import Image from 'next/image';
-import styled, { css } from 'styled-components';
+import styled from 'styled-components';
 import { getStatusIcon } from '@/utils';
+import { NOTIFICATION_TYPE } from '@/types';
 import { Divider, Text } from '@/reuseable-components';
 import theme, { hexPercentValues } from '@/styles/theme';
 
@@ -76,7 +77,12 @@ export const Status: React.FC<StatusProps> = ({ title, subtitle, size = 12, fami
       {withIcon && (
         <IconWrapper>
           {/* TODO: SVG to JSX */}
-          <Image src={isPale ? `/icons/common/circled-${isActive ? 'check' : 'cross'}.svg` : getStatusIcon(isActive ? 'success' : 'error')} alt='status' width={size + 2} height={size + 2} />
+          <Image
+            src={isPale ? `/icons/common/circled-${isActive ? 'check' : 'cross'}.svg` : getStatusIcon(isActive ? NOTIFICATION_TYPE.SUCCESS : NOTIFICATION_TYPE.ERROR)}
+            alt='status'
+            width={size + 2}
+            height={size + 2}
+          />
         </IconWrapper>
       )}
 
@@ -90,7 +96,7 @@ export const Status: React.FC<StatusProps> = ({ title, subtitle, size = 12, fami
 
           {!!subtitle && (
             <TextWrapper>
-              <Divider orientation='vertical' length={`${size - 2}px`} type={isPale ? undefined : isActive ? 'success' : 'error'} />
+              <Divider orientation='vertical' length={`${size - 2}px`} type={isPale ? undefined : isActive ? NOTIFICATION_TYPE.SUCCESS : NOTIFICATION_TYPE.ERROR} />
               <SubTitle size={size - 2} family={family} $isPale={isPale} $isActive={isActive}>
                 {subtitle}
               </SubTitle>

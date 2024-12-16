@@ -1,13 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import buildCard from './build-card';
 import styled from 'styled-components';
-import { useSourceCRUD } from '@/hooks';
 import { useDrawerStore } from '@/store';
 import buildDrawerItem from './build-drawer-item';
 import { UpdateSourceBody } from '../update-source-body';
+import { useDescribeSource, useSourceCRUD } from '@/hooks';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type K8sActualSource } from '@/types';
-import { ACTION, DATA_CARDS, getMainContainerLanguage, getProgrammingLanguageIcon } from '@/utils';
+import { ACTION, BACKEND_BOOLEAN, DATA_CARDS, getEntityIcon, safeJsonStringify } from '@/utils';
 import { ConditionDetails, DataCard, DataCardRow, DataCardFieldTypes } from '@/reuseable-components';
 
 interface Props {}
@@ -79,13 +79,17 @@ export const SourceDrawer: React.FC<Props> = () => {
 
     const { item } = selectedItem as { item: K8sActualSource };
 
+    const hasPresenceOfOtherAgent = item.instrumentedApplicationDetails.conditions.some(
+      (condition) => condition.status === BACKEND_BOOLEAN.FALSE && condition.message.includes('device not added to any container due to the presence of another agent'),
+    );
+
     return (
       item.instrumentedApplicationDetails.containers.map(
         (container) =>
           ({
             type: DataCardFieldTypes.SOURCE_CONTAINER,
             width: '100%',
-            value: JSON.stringify(container),
+            value: JSON.stringify({ ...container, hasPresenceOfOtherAgent }),
           } as DataCardRow),
       ) || []
     );
@@ -93,6 +97,7 @@ export const SourceDrawer: React.FC<Props> = () => {
 
   if (!selectedItem?.item) return null;
   const { id, item } = selectedItem as { id: WorkloadId; item: K8sActualSource };
+  const { data: describe } = useDescribeSource(id);
 
   const handleEdit = (bool?: boolean) => {
     setIsEditing(typeof bool === 'boolean' ? bool : true);
@@ -118,7 +123,7 @@ export const SourceDrawer: React.FC<Props> = () => {
     <OverviewDrawer
       title={item.reportedName || item.name}
       titleTooltip='This attribute is used to identify the name of the service (service.name) that is generating telemetry data.'
-      imageUri={getProgrammingLanguageIcon(getMainContainerLanguage(item))}
+      imageUri={getEntityIcon(OVERVIEW_ENTITY_TYPES.SOURCE)}
       isEdit={isEditing}
       isFormDirty={isFormDirty}
       onEdit={handleEdit}
@@ -141,6 +146,16 @@ export const SourceDrawer: React.FC<Props> = () => {
           <ConditionDetails conditions={item.instrumentedApplicationDetails.conditions} />
           <DataCard title={DATA_CARDS.SOURCE_DETAILS} data={cardData} />
           <DataCard title={DATA_CARDS.DETECTED_CONTAINERS} titleBadge={containersData.length} description={DATA_CARDS.DETECTED_CONTAINERS_DESCRIPTION} data={containersData} />
+          <DataCard
+            title={DATA_CARDS.DESCRIBE_SOURCE}
+            data={[
+              {
+                type: DataCardFieldTypes.CODE,
+                width: 'inherit',
+                value: JSON.stringify({ language: 'json', code: safeJsonStringify(describe) }),
+              },
+            ]}
+          />
         </DataContainer>
       )}
     </OverviewDrawer>

@@ -3,9 +3,10 @@ import nodeConfig from './node-config.json';
 import { type EntityCounts } from './get-entity-counts';
 import { type NodePositions } from './get-node-positions';
 import { extractMonitors, getEntityIcon, getEntityLabel, getHealthStatus } from '@/utils';
-import { OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type ComputePlatformMapped } from '@/types';
+import { NODE_TYPES, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type ComputePlatformMapped } from '@/types';
 
 interface Params {
+  loading: boolean;
   entities: ComputePlatformMapped['computePlatform']['destinations'];
   positions: NodePositions;
   unfilteredCounts: EntityCounts;
@@ -27,14 +28,14 @@ const mapToNodeData = (entity: Params['entities'][0]) => {
   };
 };
 
-export const buildDestinationNodes = ({ entities, positions, unfilteredCounts }: Params) => {
+export const buildDestinationNodes = ({ loading, entities, positions, unfilteredCounts }: Params) => {
   const nodes: Node[] = [];
   const position = positions[OVERVIEW_ENTITY_TYPES.DESTINATION];
   const unfilteredCount = unfilteredCounts[OVERVIEW_ENTITY_TYPES.DESTINATION];
 
   nodes.push({
     id: 'destination-header',
-    type: 'header',
+    type: NODE_TYPES.HEADER,
     position: {
       x: positions[OVERVIEW_ENTITY_TYPES.DESTINATION]['x'],
       y: 0,
@@ -47,10 +48,23 @@ export const buildDestinationNodes = ({ entities, positions, unfilteredCounts }:
     },
   });
 
-  if (!entities.length) {
+  if (loading) {
+    nodes.push({
+      id: 'destination-skeleton',
+      type: NODE_TYPES.SKELETON,
+      position: {
+        x: position['x'],
+        y: position['y'](),
+      },
+      data: {
+        nodeWidth,
+        size: 3,
+      },
+    });
+  } else if (!entities.length) {
     nodes.push({
       id: 'destination-add',
-      type: 'add',
+      type: NODE_TYPES.ADD,
       position: {
         x: position['x'],
         y: position['y'](),
@@ -67,7 +81,7 @@ export const buildDestinationNodes = ({ entities, positions, unfilteredCounts }:
     entities.forEach((destination, idx) => {
       nodes.push({
         id: `destination-${idx}`,
-        type: 'base',
+        type: NODE_TYPES.BASE,
         position: {
           x: position['x'],
           y: position['y'](idx),

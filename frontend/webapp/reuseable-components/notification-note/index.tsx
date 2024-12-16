@@ -5,15 +5,15 @@ import { Divider } from '../divider';
 import styled from 'styled-components';
 import { getStatusIcon } from '@/utils';
 import { progress, slide } from '@/styles';
-import type { Notification, NotificationType } from '@/types';
+import { type Notification, NOTIFICATION_TYPE } from '@/types';
 
 interface OnCloseParams {
   asSeen: boolean;
 }
 
-interface NotificationProps {
+interface Props {
   id?: string;
-  type: NotificationType;
+  type: NOTIFICATION_TYPE;
   title?: Notification['title'];
   message?: Notification['message'];
   action?: {
@@ -37,7 +37,7 @@ const Container = styled.div<{ $isLeaving?: boolean }>`
   }
 `;
 
-const DurationAnimation = styled.div<{ $type: NotificationType }>`
+const DurationAnimation = styled.div<{ $type: Props['type'] }>`
   position: absolute;
   bottom: -1px;
   left: 0;
@@ -49,7 +49,7 @@ const DurationAnimation = styled.div<{ $type: NotificationType }>`
   animation: ${progress.out} ${TOAST_DURATION - TRANSITION_DURATION}ms forwards;
 `;
 
-const Content = styled.div<{ $type: NotificationType }>`
+const Content = styled.div<{ $type: Props['type'] }>`
   display: flex;
   align-items: center;
   flex: 1;
@@ -65,12 +65,12 @@ const TextWrapper = styled.div`
   height: 12px;
 `;
 
-const Title = styled(Text)<{ $type: NotificationType }>`
+const Title = styled(Text)<{ $type: Props['type'] }>`
   font-size: 14px;
   color: ${({ $type, theme }) => theme.text[$type]};
 `;
 
-const Message = styled(Text)<{ $type: NotificationType }>`
+const Message = styled(Text)<{ $type: Props['type'] }>`
   font-size: 12px;
   color: ${({ $type, theme }) => theme.text[$type]};
 `;
@@ -105,7 +105,7 @@ const CloseButton = styled(Image)`
   }
 `;
 
-export const NotificationNote: React.FC<NotificationProps> = ({ type, title, message, action, onClose, style }) => {
+export const NotificationNote: React.FC<Props> = ({ type, title, message, action, onClose, style }) => {
   // These are for handling transitions:
   // isEntering - to stop the progress bar from rendering before the toast is fully slide-in
   // isLeaving - to trigger the slide-out animation

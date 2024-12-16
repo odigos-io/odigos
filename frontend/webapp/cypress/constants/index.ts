@@ -70,6 +70,9 @@ export const DATA_IDS = {
   TITLE: '[data-id=title]',
   SOURCE_TITLE: '[data-id=sourceName]',
   CHECKBOX: '[data-id=checkbox]',
+
+  NOTIF_MANAGER_BUTTON: '[data-id=notif-manager-button]',
+  NOTIF_MANAGER_CONTENR: '[data-id=notif-manager-content]',
 };
 
 export const BUTTONS = {
@@ -88,6 +91,8 @@ const CYPRESS_TEST = 'Cypress Test';
 export const TEXTS = {
   UPDATED_NAME: CYPRESS_TEST,
 
+  NO_RESOURCES: (namespace: string) => `No resources found in ${namespace} namespace.`,
+
   SOURCE_WARN_MODAL_TITLE: 'Uninstrument 5 sources',
   SOURCE_WARN_MODAL_NOTE: "You're about to uninstrument the last source",
   DESTINATION_WARN_MODAL_TITLE: `Delete destination (${CYPRESS_TEST})`,
@@ -95,5 +100,6 @@ export const TEXTS = {
   ACTION_WARN_MODAL_TITLE: `Delete action (${CYPRESS_TEST})`,
   INSTRUMENTATION_RULE_WARN_MODAL_TITLE: `Delete rule (${CYPRESS_TEST})`,
 
-  NO_RESOURCES: (namespace: string) => `No resources found in ${namespace} namespace.`,
+  NOTIF_SOURCES_CREATED: 'successfully added 5 sources',
+  NOTIF_SOURCES_DELETED: 'successfully deleted 5 sources',
 };

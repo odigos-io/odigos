@@ -18,6 +18,7 @@
     "graphql": "^16.9.0",
     "javascript-time-ago": "^2.5.11",
     "next": "15.0.3",
+    "prism-react-renderer": "^2.4.1",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-flow-renderer": "^10.3.17",

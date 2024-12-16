@@ -63,6 +63,12 @@ spec:
                   fieldPath: metadata.name
             - name: GOMEMLIMIT
               (value != null): true
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  containerName: gateway
+                  divisor: "0"
+                  resource: limits.cpu
           name: gateway
           resources:
             requests:

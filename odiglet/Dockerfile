@@ -82,6 +82,7 @@ COPY common/ common/
 COPY k8sutils/ k8sutils/
 COPY procdiscovery/ procdiscovery/
 COPY opampserver/ opampserver/
+COPY instrumentation/ instrumentation/
 WORKDIR /go/src/github.com/odigos-io/odigos/odiglet
 COPY odiglet/ .
 

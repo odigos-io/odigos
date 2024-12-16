@@ -11,7 +11,7 @@ const crdName = CRD_NAMES.SOURCE;
 describe('Sources CRUD', () => {
   beforeEach(() => cy.intercept('/graphql').as('gql'));
 
-  it('Should create a CRD in the cluster', () => {
+  it('Should create a CRD in the cluster, and notify with SSE', () => {
     cy.visit(ROUTES.OVERVIEW);
 
     getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 }, () => {
@@ -25,7 +25,10 @@ describe('Sources CRUD', () => {
         cy.contains('button', BUTTONS.DONE).click();
 
         cy.wait('@gql').then(() => {
-          getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 5 });
+          getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 5 }, () => {
+            cy.get(DATA_IDS.NOTIF_MANAGER_BUTTON).click();
+            cy.get(DATA_IDS.NOTIF_MANAGER_CONTENR).contains(TEXTS.NOTIF_SOURCES_CREATED).should('exist');
+          });
         });
       });
     });
@@ -55,7 +58,7 @@ describe('Sources CRUD', () => {
     });
   });
 
-  it('Should delete the CRD from the cluster', () => {
+  it('Should delete the CRD from the cluster, and notify with SSE', () => {
     cy.visit(ROUTES.OVERVIEW);
 
     getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 5 }, () => {
@@ -66,7 +69,10 @@ describe('Sources CRUD', () => {
       cy.get(DATA_IDS.APPROVE).click();
 
       cy.wait('@gql').then(() => {
-        getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
+        getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 }, () => {
+          cy.get(DATA_IDS.NOTIF_MANAGER_BUTTON).click();
+          cy.get(DATA_IDS.NOTIF_MANAGER_CONTENR).contains(TEXTS.NOTIF_SOURCES_DELETED).should('exist');
+        });
       });
     });
   });

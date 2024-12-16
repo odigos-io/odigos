@@ -71,4 +71,3 @@ describe('Destinations CRUD', () => {
     });
   });
 });
-// destination-odigos.io.dest.jaeger-chc52

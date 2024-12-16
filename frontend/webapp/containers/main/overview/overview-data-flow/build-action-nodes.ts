@@ -3,9 +3,10 @@ import nodeConfig from './node-config.json';
 import { type EntityCounts } from './get-entity-counts';
 import { type NodePositions } from './get-node-positions';
 import { getActionIcon, getEntityIcon, getEntityLabel } from '@/utils';
-import { OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type ComputePlatformMapped } from '@/types';
+import { NODE_TYPES, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type ComputePlatformMapped } from '@/types';
 
 interface Params {
+  loading: boolean;
   entities: ComputePlatformMapped['computePlatform']['actions'];
   positions: NodePositions;
   unfilteredCounts: EntityCounts;
@@ -28,14 +29,14 @@ const mapToNodeData = (entity: Params['entities'][0]) => {
   };
 };
 
-export const buildActionNodes = ({ entities, positions, unfilteredCounts }: Params) => {
+export const buildActionNodes = ({ loading, entities, positions, unfilteredCounts }: Params) => {
   const nodes: Node[] = [];
   const position = positions[OVERVIEW_ENTITY_TYPES.ACTION];
   const unfilteredCount = unfilteredCounts[OVERVIEW_ENTITY_TYPES.ACTION];
 
   nodes.push({
     id: 'action-header',
-    type: 'header',
+    type: NODE_TYPES.HEADER,
     position: {
       x: positions[OVERVIEW_ENTITY_TYPES.ACTION]['x'],
       y: 0,
@@ -48,10 +49,23 @@ export const buildActionNodes = ({ entities, positions, unfilteredCounts }: Para
     },
   });
 
-  if (!entities.length) {
+  if (loading) {
+    nodes.push({
+      id: 'action-skeleton',
+      type: NODE_TYPES.SKELETON,
+      position: {
+        x: position['x'],
+        y: position['y'](),
+      },
+      data: {
+        nodeWidth,
+        size: 3,
+      },
+    });
+  } else if (!entities.length) {
     nodes.push({
       id: 'action-add',
-      type: 'add',
+      type: NODE_TYPES.ADD,
       position: {
         x: position['x'],
         y: position['y'](),
@@ -67,7 +81,7 @@ export const buildActionNodes = ({ entities, positions, unfilteredCounts }: Para
   } else {
     nodes.push({
       id: 'action-frame',
-      type: 'frame',
+      type: NODE_TYPES.FRAME,
       position: {
         x: position['x'] - framePadding,
         y: position['y']() - framePadding,
@@ -81,7 +95,7 @@ export const buildActionNodes = ({ entities, positions, unfilteredCounts }: Para
     entities.forEach((action, idx) => {
       nodes.push({
         id: `action-${idx}`,
-        type: 'base',
+        type: NODE_TYPES.BASE,
         extent: 'parent',
         parentId: 'action-frame',
         position: {

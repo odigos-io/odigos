@@ -2,8 +2,8 @@ import React, { useMemo, useState } from 'react';
 import Image from 'next/image';
 import theme from '@/styles/theme';
 import styled from 'styled-components';
-import type { Condition } from '@/types';
 import { BACKEND_BOOLEAN, getStatusIcon } from '@/utils';
+import { NOTIFICATION_TYPE, type Condition } from '@/types';
 import { ExtendIcon, FadeLoader, Text } from '@/reuseable-components';
 
 interface Props {
@@ -51,7 +51,7 @@ export const ConditionDetails: React.FC<Props> = ({ conditions }) => {
   return (
     <Container onClick={() => setExtend((prev) => !prev)} $hasErrors={hasErrors}>
       <Header>
-        {loading ? <FadeLoader /> : <Image src={getStatusIcon(hasErrors ? 'error' : 'success')} alt='' width={16} height={16} />}
+        {loading ? <FadeLoader /> : <Image src={getStatusIcon(hasErrors ? NOTIFICATION_TYPE.ERROR : NOTIFICATION_TYPE.SUCCESS)} alt='' width={16} height={16} />}
 
         <Text color={hasErrors ? theme.text.error : theme.text.grey} size={14}>
           {headerText}
@@ -60,14 +60,14 @@ export const ConditionDetails: React.FC<Props> = ({ conditions }) => {
           ({hasErrors ? errors.length : conditions.length}/{conditions.length})
         </Text>
 
-        <ExtendIcon extend={extend} />
+        <ExtendIcon extend={extend} align='right' />
       </Header>
 
       {extend && (
         <Body>
           {conditions.map(({ status, message }, idx) => (
             <Row key={`condition-${idx}`}>
-              <Image src={getStatusIcon(status === BACKEND_BOOLEAN.FALSE ? 'error' : 'success')} alt='' width={14} height={14} />
+              <Image src={getStatusIcon(status === BACKEND_BOOLEAN.FALSE ? NOTIFICATION_TYPE.ERROR : NOTIFICATION_TYPE.SUCCESS)} alt='' width={14} height={14} />
               <Text color={status === BACKEND_BOOLEAN.FALSE ? theme.text.error : theme.text.darker_grey} size={12}>
                 {message}
               </Text>

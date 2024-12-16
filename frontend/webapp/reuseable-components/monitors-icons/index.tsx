@@ -1,5 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
+import theme from '@/styles/theme';
 import { FlexRow } from '@/styles';
 import { capitalizeFirstLetter } from '@/utils';
 import { Text, Tooltip } from '@/reuseable-components';
@@ -15,14 +16,18 @@ export const MonitorsIcons: React.FC<Props> = ({ monitors, withTooltips, withLab
   return (
     <FlexRow $gap={size / 2}>
       {monitors.map((str) => {
-        const signal = str.toLocaleLowerCase();
+        const signal = str.toLowerCase();
         const signalDisplayName = capitalizeFirstLetter(signal);
 
         return (
           <Tooltip key={signal} text={withTooltips ? signalDisplayName : ''}>
-            <FlexRow>
+            <FlexRow $gap={size / 3}>
               <Image src={`/icons/monitors/${signal}.svg`} alt={signal} width={size} height={size} />
-              {withLabels && <Text size={size}>{signalDisplayName}</Text>}
+              {withLabels && (
+                <Text size={size} color={theme.text.grey}>
+                  {signalDisplayName}
+                </Text>
+              )}
             </FlexRow>
           </Tooltip>
         );

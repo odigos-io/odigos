@@ -250,7 +250,7 @@ func NewUIClusterRole() *rbacv1.ClusterRole {
 			},
 			{
 				APIGroups: []string{"apps"},
-				Resources: []string{"deployments", "statefulsets", "daemonsets"},
+				Resources: []string{"deployments", "statefulsets", "daemonsets", "replicasets"},
 				Verbs:     []string{"get", "list", "watch", "patch", "update"},
 			},
 			{
@@ -314,7 +314,7 @@ func NewUIService(ns string) *corev1.Service {
 					Port: 3000,
 				},
 				{
-					Name: "beta-ui",
+					Name: "legacy-ui",
 					Port: 3001,
 				},
 				{

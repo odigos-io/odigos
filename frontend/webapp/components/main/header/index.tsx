@@ -6,14 +6,14 @@ import { PlatformTypes } from '@/types';
 import { PlatformTitle } from './cp-title';
 import { useConnectionStore } from '@/store';
 import { ConnectionStatus } from '@/reuseable-components';
-import { NotificationManager } from '@/components/notification';
+import { DescribeOdigos, NotificationManager } from '@/components';
 
 interface MainHeaderProps {}
 
 const HeaderContainer = styled(FlexRow)`
   width: 100%;
   padding: 12px 0;
-  background-color: ${({ theme }) => theme.colors.darker_grey};
+  background-color: ${({ theme }) => theme.colors.dark_grey};
   border-bottom: 1px solid rgba(249, 249, 249, 0.16);
 `;
 
@@ -42,6 +42,7 @@ export const MainHeader: React.FC<MainHeaderProps> = () => {
 
       <AlignRight>
         <NotificationManager />
+        <DescribeOdigos />
       </AlignRight>
     </HeaderContainer>
   );

@@ -3,10 +3,13 @@ import '@xyflow/react/dist/style.css';
 import styled from 'styled-components';
 import AddNode from './nodes/add-node';
 import BaseNode from './nodes/base-node';
+import EdgedNode from './nodes/edged-node';
 import FrameNode from './nodes/frame-node';
 import ScrollNode from './nodes/scroll-node';
 import HeaderNode from './nodes/header-node';
 import LabeledEdge from './edges/labeled-edge';
+import SkeletonNode from './nodes/skeleton-node';
+import { EDGE_TYPES, NODE_TYPES } from '@/types';
 import { Controls, type Edge, type Node, type OnEdgesChange, type OnNodesChange, ReactFlow } from '@xyflow/react';
 
 interface Props {
@@ -41,15 +44,17 @@ const ControllerWrapper = styled.div`
 `;
 
 const nodeTypes = {
-  header: HeaderNode,
-  add: AddNode,
-  base: BaseNode,
-  frame: FrameNode,
-  scroll: ScrollNode,
+  [NODE_TYPES.HEADER]: HeaderNode,
+  [NODE_TYPES.ADD]: AddNode,
+  [NODE_TYPES.BASE]: BaseNode,
+  [NODE_TYPES.EDGED]: EdgedNode,
+  [NODE_TYPES.FRAME]: FrameNode,
+  [NODE_TYPES.SCROLL]: ScrollNode,
+  [NODE_TYPES.SKELETON]: SkeletonNode,
 };
 
 const edgeTypes = {
-  labeled: LabeledEdge,
+  [EDGE_TYPES.LABELED]: LabeledEdge,
 };
 
 export const NodeDataFlow: React.FC<Props> = ({ nodes, edges, onNodeClick, onNodesChange, onEdgesChange }) => {

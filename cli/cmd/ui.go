@@ -26,8 +26,8 @@ import (
 )
 
 const (
-	defaultPort     = 3000
-	betaDefaultPort = 3001
+	defaultPort       = 3000
+	legacyDefaultPort = 3001
 )
 
 // uiCmd represents the ui command
@@ -50,14 +50,15 @@ var uiCmd = &cobra.Command{
 			}
 		}
 
-		betaFlag, _ := cmd.Flags().GetBool("beta")
+		legacyFlag, _ := cmd.Flags().GetBool("legacy")
 		localPort := cmd.Flag("port").Value.String()
 		clusterPort := defaultPort
 
-		if betaFlag {
-			clusterPort = betaDefaultPort
+		if legacyFlag {
+			clusterPort = legacyDefaultPort
 		}
-
+		fmt.Printf("Is legacy: %v\n", legacyFlag)
+		fmt.Printf("Cluster port: %d\n", clusterPort)
 		localAddress := cmd.Flag("address").Value.String()
 		uiPod, err := findOdigosUIPod(client, ctx, ns)
 		if err != nil {
@@ -163,5 +164,5 @@ func init() {
 	rootCmd.AddCommand(uiCmd)
 	uiCmd.Flags().Int("port", defaultPort, "Port to listen on")
 	uiCmd.Flags().String("address", "localhost", "Address to listen on")
-	uiCmd.Flags().Bool("beta", false, "use new experimental UI")
+	uiCmd.Flags().Bool("legacy", false, "Use the legacy UI port")
 }

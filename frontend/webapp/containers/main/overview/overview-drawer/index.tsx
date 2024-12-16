@@ -13,13 +13,13 @@ const DRAWER_WIDTH = `${640 + 64}px`; // +64 because of "ContentArea" padding
 interface Props {
   title: string;
   titleTooltip?: string;
-  imageUri: string;
-  isEdit: boolean;
-  isFormDirty: boolean;
-  onEdit: (bool?: boolean) => void;
-  onSave: (newTitle: string) => void;
-  onDelete: () => void;
-  onCancel: () => void;
+  imageUri?: string;
+  isEdit?: boolean;
+  isFormDirty?: boolean;
+  onEdit?: (bool?: boolean) => void;
+  onSave?: (newTitle: string) => void;
+  onDelete?: () => void;
+  onCancel?: () => void;
 }
 
 const DrawerContent = styled.div`
@@ -34,7 +34,7 @@ const ContentArea = styled.div`
   overflow-y: auto;
 `;
 
-const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, titleTooltip, imageUri, isEdit, isFormDirty, onEdit, onSave, onDelete, onCancel }) => {
+const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, titleTooltip, imageUri, isEdit = false, isFormDirty = false, onEdit, onSave, onDelete, onCancel }) => {
   const { selectedItem, setSelectedItem } = useDrawerStore();
 
   useKeyDown({ key: 'Enter', active: !!selectedItem }, () => (isEdit ? clickSave() : closeDrawer()));
@@ -52,7 +52,7 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, 
 
   const closeDrawer = () => {
     setSelectedItem(null);
-    onEdit(false);
+    if (onEdit) onEdit(false);
     setIsDeleteModalOpen(false);
     setIsCancelModalOpen(false);
   };
@@ -64,7 +64,7 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, 
 
   const handleCancel = () => {
     titleRef.current?.clearTitle();
-    onCancel();
+    if (onCancel) onCancel();
     closeWarningModals();
   };
 
@@ -78,7 +78,7 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, 
   };
 
   const handleDelete = () => {
-    onDelete();
+    if (onDelete) onDelete();
     closeWarningModals();
   };
 
@@ -87,7 +87,7 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, 
   };
 
   const clickSave = () => {
-    onSave(titleRef.current?.getTitle() || '');
+    if (onSave) onSave(titleRef.current?.getTitle() || '');
   };
 
   const isLastItem = () => {
@@ -103,7 +103,15 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, 
     <>
       <Drawer isOpen onClose={isEdit ? clickCancel : closeDrawer} width={DRAWER_WIDTH} closeOnEscape={!isDeleteModalOpen && !isCancelModalOpen}>
         <DrawerContent>
-          <DrawerHeader ref={titleRef} title={title} titleTooltip={titleTooltip} imageUri={imageUri} isEdit={isEdit} onEdit={() => onEdit(true)} onClose={isEdit ? clickCancel : closeDrawer} />
+          <DrawerHeader
+            ref={titleRef}
+            title={title}
+            titleTooltip={titleTooltip}
+            imageUri={imageUri}
+            isEdit={isEdit}
+            onEdit={onEdit ? () => onEdit(true) : undefined}
+            onClose={isEdit ? clickCancel : closeDrawer}
+          />
           <ContentArea>{children}</ContentArea>
           <DrawerFooter isOpen={isEdit} onSave={clickSave} onCancel={clickCancel} onDelete={clickDelete} deleteLabel={isSource ? 'Uninstrument' : undefined} />
         </DrawerContent>
@@ -113,7 +121,7 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, 
         isOpen={isDeleteModalOpen}
         noOverlay
         name={`${selectedItem?.type}${title ? ` (${title})` : ''}`}
-        type={selectedItem?.type}
+        type={selectedItem?.type as OVERVIEW_ENTITY_TYPES}
         isLastItem={isLastItem()}
         onApprove={handleDelete}
         onDeny={closeWarningModals}

@@ -17,6 +17,16 @@ type CollectorNodeConfiguration struct {
 	// default value is 2x the memory request.
 	LimitMemoryMiB int `json:"limitMemoryMiB,omitempty"`
 
+	// RequestCPUm is the CPU request for the node collector daemonset.
+	// it will be embedded in the daemonset as a resource request of the form "cpu: <value>m"
+	// default value is 250m
+	RequestCPUm int `json:"requestCPUm,omitempty"`
+
+	// LimitCPUm is the CPU limit for the node collector daemonset.
+	// it will be embedded in the daemonset as a resource limit of the form "cpu: <value>m"
+	// default value is 500m
+	LimitCPUm int `json:"limitCPUm,omitempty"`
+
 	// this parameter sets the "limit_mib" parameter in the memory limiter configuration for the node collector.
 	// it is the hard limit after which a force garbage collection will be performed.
 	// if not set, it will be 50Mi below the memory request.
