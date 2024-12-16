@@ -200,7 +200,6 @@ func main() {
 	}
 
 	ctx := signals.SetupSignalHandler()
-
 	o.run(ctx)
 
 	log.Logger.V(0).Info("odiglet exiting")
