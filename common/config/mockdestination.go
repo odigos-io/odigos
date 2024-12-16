@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/odigos-io/odigos/common"
 )
@@ -21,11 +22,14 @@ func (s *Mock) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) erro
 	exporterName := "mockdestination/" + dest.GetID()
 
 	responseDuration := dest.GetConfig()[mockResponseDurationMs]
-	reject := dest.GetConfig()[rejectFraction]
+	// this destination is for development, assuming the input is always valid
+	rejectFractionStr := dest.GetConfig()[rejectFraction]
+	reject, _ := strconv.ParseFloat(rejectFractionStr, 64)
 
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"response_duration": fmt.Sprintf("%sms", responseDuration),
-		"reject_fraction":   reject,
+		// convert string to float
+		"reject_fraction": reject,
 	}
 
 	if isTracingEnabled(dest) {
