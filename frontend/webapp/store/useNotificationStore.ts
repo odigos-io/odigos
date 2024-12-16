@@ -1,9 +1,11 @@
 import { create } from 'zustand';
 import type { Notification } from '@/types';
 
+export type NotifyPayload = Omit<Notification, 'id' | 'dismissed' | 'seen' | 'time'>;
+
 interface StoreState {
   notifications: Notification[];
-  addNotification: (notif: { type: Notification['type']; title: Notification['title']; message: Notification['message']; crdType: Notification['crdType']; target: Notification['target'] }) => void;
+  addNotification: (notif: NotifyPayload) => void;
   markAsDismissed: (id: string) => void;
   markAsSeen: (id: string) => void;
   removeNotification: (id: string) => void;

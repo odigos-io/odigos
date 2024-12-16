@@ -1,4 +1,5 @@
 import React from 'react';
+import { NOTIFICATION_TYPE } from '@/types';
 import { WarningModal } from '@/reuseable-components';
 
 interface Props {
@@ -18,7 +19,7 @@ const CancelWarning: React.FC<Props> = ({ isOpen, noOverlay, name, onApprove, on
       description='Are you sure you want to cancel?'
       approveButton={{
         text: 'Confirm',
-        variant: 'warning',
+        variant: NOTIFICATION_TYPE.WARNING,
         onClick: onApprove,
       }}
       denyButton={{

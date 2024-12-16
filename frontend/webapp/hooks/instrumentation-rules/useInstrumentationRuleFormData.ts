@@ -1,7 +1,7 @@
-import type { DrawerBaseItem } from '@/store';
-import { useGenericForm, useNotify } from '@/hooks';
-import { FORM_ALERTS, NOTIFICATION } from '@/utils';
-import { PayloadCollectionType, type InstrumentationRuleInput, type InstrumentationRuleSpec } from '@/types';
+import { FORM_ALERTS } from '@/utils';
+import { useGenericForm } from '@/hooks';
+import { useNotificationStore, type DrawerItem } from '@/store';
+import { NOTIFICATION_TYPE, PayloadCollectionType, type InstrumentationRuleInput, type InstrumentationRuleSpec } from '@/types';
 
 const INITIAL: InstrumentationRuleInput = {
   ruleName: '',
@@ -18,7 +18,7 @@ const INITIAL: InstrumentationRuleInput = {
 };
 
 export function useInstrumentationRuleFormData() {
-  const notify = useNotify();
+  const { addNotification } = useNotificationStore();
   const { formData, formErrors, handleFormChange, handleErrorChange, resetFormData } = useGenericForm<InstrumentationRuleInput>(INITIAL);
 
   const validateForm = (params?: { withAlert?: boolean; alertTitle?: string }) => {
@@ -41,8 +41,8 @@ export function useInstrumentationRuleFormData() {
     });
 
     if (!ok && params?.withAlert) {
-      notify({
-        type: NOTIFICATION.WARNING,
+      addNotification({
+        type: NOTIFICATION_TYPE.WARNING,
         title: params.alertTitle,
         message: FORM_ALERTS.REQUIRED_FIELDS,
       });
@@ -53,7 +53,7 @@ export function useInstrumentationRuleFormData() {
     return ok;
   };
 
-  const loadFormWithDrawerItem = (drawerItem: DrawerBaseItem) => {
+  const loadFormWithDrawerItem = (drawerItem: DrawerItem) => {
     const { ruleName, notes, disabled, payloadCollection } = drawerItem.item as InstrumentationRuleSpec;
 
     const updatedData: InstrumentationRuleInput = {
