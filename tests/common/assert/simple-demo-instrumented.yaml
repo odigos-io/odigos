@@ -122,7 +122,6 @@ metadata:
       kind: Deployment
       name: coupon
 status:
-  observedWorkloadGeneration: 2 # pod has been restarted after destination was added
   runtimeDetailsByContainer:
     - containerName: coupon
       envVars:
@@ -143,7 +142,6 @@ metadata:
       kind: Deployment
       name: frontend
 status:
-  observedWorkloadGeneration: 2 # pod has been restarted after destination was added
   runtimeDetailsByContainer:
     - containerName: frontend
       (sort_by(envVars, &name)):
@@ -166,7 +164,6 @@ metadata:
       kind: Deployment
       name: inventory
 status:
-  observedWorkloadGeneration: 2 # pod has been restarted after destination was added
   runtimeDetailsByContainer:
     - containerName: inventory
       envVars:
@@ -188,7 +185,6 @@ metadata:
       kind: Deployment
       name: membership
 status:
-  observedWorkloadGeneration: 2 # pod has been restarted after destination was added
   runtimeDetailsByContainer:
     - containerName: membership
       language: go
@@ -206,7 +202,6 @@ metadata:
       kind: Deployment
       name: pricing
 status:
-  observedWorkloadGeneration: 2
   runtimeDetailsByContainer:
     - containerName: pricing
       language: dotnet
