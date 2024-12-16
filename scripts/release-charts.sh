@@ -30,8 +30,6 @@ if [[ $(git diff -- ${CHARTDIRS[*]} | wc -c) -ne 0 ]]; then
 	exit 1
 fi
 
-# Ignore errors because it will mostly always error locally
-helm repo add odigos https://odigos-io.github.io/odigos-charts 2> /dev/null || true
 git worktree add $TMPDIR gh-pages -f
 
 # Update index with new packages

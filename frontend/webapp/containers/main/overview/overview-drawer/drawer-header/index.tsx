@@ -1,7 +1,7 @@
 import React, { useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
-import { Button, Input, Text, Tooltip } from '@/reuseable-components';
+import { Button, IconWrapped, Input, Text, Tooltip } from '@/reuseable-components';
 
 const HeaderContainer = styled.section`
   display: flex;
@@ -30,17 +30,6 @@ const Title = styled(Text)`
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-`;
-
-const DrawerItemImageWrapper = styled.div`
-  display: flex;
-  width: 36px;
-  height: 36px;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  border-radius: 8px;
-  background: linear-gradient(180deg, rgba(249, 249, 249, 0.06) 0%, rgba(249, 249, 249, 0.02) 100%);
 `;
 
 const EditButton = styled(Button)`
@@ -87,11 +76,7 @@ const DrawerHeader = forwardRef<DrawerHeaderRef, DrawerHeaderProps>(({ title, ti
   return (
     <HeaderContainer>
       <SectionItemsWrapper>
-        {!!imageUri && (
-          <DrawerItemImageWrapper>
-            <Image src={imageUri} alt='Drawer Item' width={16} height={16} />
-          </DrawerItemImageWrapper>
-        )}
+        {!!imageUri && <IconWrapped src={imageUri} alt='Drawer Item' />}
 
         {!isEdit && (
           <Tooltip text={titleTooltip} withIcon>

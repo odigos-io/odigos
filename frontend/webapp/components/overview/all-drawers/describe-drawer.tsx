@@ -24,6 +24,7 @@ export const DescribeDrawer: React.FC<Props> = () => {
           data={[
             {
               type: DataCardFieldTypes.CODE,
+              width: 'inherit',
               value: JSON.stringify({ language: 'json', code: safeJsonStringify(describe) }),
             },
           ]}

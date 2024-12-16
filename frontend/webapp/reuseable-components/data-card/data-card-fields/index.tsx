@@ -1,8 +1,8 @@
 import React, { useId } from 'react';
 import styled from 'styled-components';
+import { NOTIFICATION_TYPE } from '@/types';
 import { ActiveStatus, Code, DataTab, Divider, InstrumentStatus, MonitorsIcons, NotificationNote, Text, Tooltip } from '@/reuseable-components';
 import { capitalizeFirstLetter, getProgrammingLanguageIcon, parseJsonStringToPrettyString, safeJsonParse, WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils';
-import { NOTIFICATION_TYPE } from '@/types';
 
 export enum DataCardFieldTypes {
   DIVIDER = 'divider',
@@ -47,7 +47,7 @@ const ItemTitle = styled(Text)`
 export const DataCardFields: React.FC<Props> = ({ data }) => {
   return (
     <ListContainer>
-      {data.map(({ type, title, tooltip, value, width = 'inherit' }) => {
+      {data.map(({ type, title, tooltip, value, width = 'unset' }) => {
         const id = useId();
 
         return (
