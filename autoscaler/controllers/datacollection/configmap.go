@@ -239,6 +239,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, apps *odigosv1.Ins
 			"health_check": config.GenericMap{
 				"endpoint": "0.0.0.0:13133",
 			},
+			"pprof": config.GenericMap{},
 		},
 		Service: config.Service{
 			Pipelines: map[string]config.Pipeline{
@@ -248,7 +249,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, apps *odigosv1.Ins
 					Exporters:  []string{"otlp/odigos-own-telemetry-ui"},
 				},
 			},
-			Extensions: []string{"health_check"},
+			Extensions: []string{"health_check", "pprof"},
 			Telemetry: config.Telemetry{
 				Metrics: config.GenericMap{
 					"address": fmt.Sprintf("0.0.0.0:%d", ownMetricsPort),
