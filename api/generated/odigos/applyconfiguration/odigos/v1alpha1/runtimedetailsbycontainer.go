@@ -24,12 +24,14 @@ import (
 // RuntimeDetailsByContainerApplyConfiguration represents a declarative configuration of the RuntimeDetailsByContainer type for use
 // with apply.
 type RuntimeDetailsByContainerApplyConfiguration struct {
-	ContainerName  *string                       `json:"containerName,omitempty"`
-	Language       *common.ProgrammingLanguage   `json:"language,omitempty"`
-	RuntimeVersion *string                       `json:"runtimeVersion,omitempty"`
-	EnvVars        []EnvVarApplyConfiguration    `json:"envVars,omitempty"`
-	OtherAgent     *OtherAgentApplyConfiguration `json:"otherAgent,omitempty"`
+	ContainerName         *string                       `json:"containerName,omitempty"`
+	Language              *common.ProgrammingLanguage   `json:"language,omitempty"`
+	RuntimeVersion        *string                       `json:"runtimeVersion,omitempty"`
+	EnvVars               []EnvVarApplyConfiguration    `json:"envVars,omitempty"`
+	OtherAgent            *OtherAgentApplyConfiguration `json:"otherAgent,omitempty"`
 	LibCType       *common.LibCType              `json:"libCType,omitempty"`
+	CriErrorMessage       *string                       `json:"criErrorMessage,omitempty"`
+	EnvVarsFromDockerFile []EnvVarApplyConfiguration    `json:"envVarsFromDockerFile,omitempty"`
 }
 
 // RuntimeDetailsByContainerApplyConfiguration constructs a declarative configuration of the RuntimeDetailsByContainer type for use with
@@ -88,5 +90,23 @@ func (b *RuntimeDetailsByContainerApplyConfiguration) WithOtherAgent(value *Othe
 // If called multiple times, the LibCType field is set to the value of the last call.
 func (b *RuntimeDetailsByContainerApplyConfiguration) WithLibCType(value common.LibCType) *RuntimeDetailsByContainerApplyConfiguration {
 	b.LibCType = &value
+// WithCriErrorMessage sets the CriErrorMessage field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the CriErrorMessage field is set to the value of the last call.
+func (b *RuntimeDetailsByContainerApplyConfiguration) WithCriErrorMessage(value string) *RuntimeDetailsByContainerApplyConfiguration {
+	b.CriErrorMessage = &value
+	return b
+}
+
+// WithEnvVarsFromDockerFile adds the given value to the EnvVarsFromDockerFile field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the EnvVarsFromDockerFile field.
+func (b *RuntimeDetailsByContainerApplyConfiguration) WithEnvVarsFromDockerFile(values ...*EnvVarApplyConfiguration) *RuntimeDetailsByContainerApplyConfiguration {
+	for i := range values {
+		if values[i] == nil {
+			panic("nil value passed to WithEnvVarsFromDockerFile")
+		}
+		b.EnvVarsFromDockerFile = append(b.EnvVarsFromDockerFile, *values[i])
+	}
 	return b
 }

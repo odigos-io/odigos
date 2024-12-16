@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -51,6 +51,7 @@ type InstrumentationConfigReconciler struct {
 	// without pulling in specific objects into the controller runtime cache
 	// which can be expensive (memory and CPU)
 	Clientset *kubernetes.Clientset
+	CriClient *criwrapper.CriClient
 }
 
 func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -78,46 +79,18 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request
 		return reconcile.Result{}, err
 	}
 
-	// we need to apply runtime detection for just one pod with newer generation
-	var selectedPodForInspection *corev1.Pod
-	selectedPodGeneration := int64(0)
-	for i := range pods {
-		podPtr := &pods[i]
-		podGeneration, err := GetPodGeneration(ctx, r.Clientset, podPtr)
-		if err != nil {
-			logger.Error(err, "Failed to get pod generation")
-			return reconcile.Result{}, err
-		}
-		if podGeneration == 0 {
-			// 0 means the pod is not relevant for runtime detection
-			continue
-		}
-
-		if podGeneration > instrumentationConfig.Status.ObservedWorkloadGeneration && podGeneration > selectedPodGeneration {
-			selectedPodGeneration = podGeneration
-			selectedPodForInspection = podPtr
-		}
-	}
-
-	if selectedPodForInspection == nil {
-		// when a instrumentation config is created, many nodes may not have any running pods for it
-		// or the runtime detection has already been completed for this generation in other odiglets
-		return reconcile.Result{}, nil
-	}
-
 	odigosConfig, err := k8sutils.GetCurrentOdigosConfig(ctx, r.Client)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	runtimeResults, err := runtimeInspection([]corev1.Pod{*selectedPodForInspection}, odigosConfig.IgnoredContainers)
+	runtimeResults, err := runtimeInspection(ctx, pods, odigosConfig.IgnoredContainers, r.CriClient)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
 	err = persistRuntimeDetailsToInstrumentationConfig(ctx, r.Client, &instrumentationConfig, odigosv1.InstrumentationConfigStatus{
-		RuntimeDetailsByContainer:  runtimeResults,
-		ObservedWorkloadGeneration: selectedPodGeneration,
+		RuntimeDetailsByContainer: runtimeResults,
 	})
 	if err != nil {
 		return reconcile.Result{}, err

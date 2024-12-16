@@ -45,12 +45,14 @@ type OtherAgent struct {
 
 // +kubebuilder:object:generate=true
 type RuntimeDetailsByContainer struct {
-	ContainerName  string                     `json:"containerName"`
-	Language       common.ProgrammingLanguage `json:"language"`
-	RuntimeVersion string                     `json:"runtimeVersion,omitempty"`
-	EnvVars        []EnvVar                   `json:"envVars,omitempty"`
-	OtherAgent     *OtherAgent                `json:"otherAgent,omitempty"`
-	LibCType       *common.LibCType           `json:"libCType,omitempty"`
+	ContainerName         string                     `json:"containerName"`
+	Language              common.ProgrammingLanguage `json:"language"`
+	RuntimeVersion        string                     `json:"runtimeVersion,omitempty"`
+	EnvVars               []EnvVar                   `json:"envVars,omitempty"`
+	OtherAgent            *OtherAgent                `json:"otherAgent,omitempty"`
+	LibCType              *common.LibCType           `json:"libCType,omitempty"`
+	CriErrorMessage       *string                    `json:"criErrorMessage,omitempty"`
+	EnvVarsFromDockerFile []EnvVar                   `json:"envVarsFromDockerFile,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

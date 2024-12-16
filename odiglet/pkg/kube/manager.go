@@ -13,6 +13,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -60,8 +61,15 @@ func CreateManager() (ctrl.Manager, error) {
 	})
 }
 
+<<<<<<< HEAD
 func SetupWithManager(mgr ctrl.Manager, ebpfDirectors ebpf.DirectorsMap, clientset *kubernetes.Clientset, configUpdates chan<- instrumentation.ConfigUpdate[ebpf.K8sConfigGroup]) error {
 	err := runtime_details.SetupWithManager(mgr, clientset)
+=======
+func SetupWithManager(mgr ctrl.Manager, ebpfDirectors ebpf.DirectorsMap, clientset *kubernetes.Clientset, configUpdates chan<- ebpf.ConfigUpdate,
+	criClient *criwrapper.CriClient) error {
+
+	err := runtime_details.SetupWithManager(mgr, clientset, criClient)
+>>>>>>> fd0ade1f (feat: initial commit)
 	if err != nil {
 		return err
 	}

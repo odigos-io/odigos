@@ -5,6 +5,7 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
@@ -23,11 +24,11 @@ type PodsReconciler struct {
 	// without pulling in specific objects into the controller runtime cache
 	// which can be expensive (memory and CPU)
 	Clientset *kubernetes.Clientset
+	CriClient *criwrapper.CriClient
 }
 
 // We need to apply runtime details detection for a new running pod in the following cases:
-// 1. When a new workload generation is applied, the runtime details might be changed (different env, versions, etc).
-// 2. When a source is added, but there are no running pods yet. When the first pod starts running, this is chance to apply runtime details detection.
+// TODO: Change the comment to reflect the actual implementation
 func (p *PodsReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	logger := log.FromContext(ctx)
 
@@ -54,23 +55,6 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request reconcile.Reques
 	if err != nil {
 		return reconcile.Result{}, client.IgnoreNotFound(err)
 	}
-	podGeneration, err := GetPodGeneration(ctx, p.Clientset, &pod)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	// prevent runtime inspection on pods for which we already have the runtime details for this generation
-	// if instrumentation config contains unknown language we need to re-inspect the pod
-	failedToGetPodGeneration := podGeneration == 0
-	isNewPodGeneration := podGeneration > instrumentationConfig.Status.ObservedWorkloadGeneration
-	instrumentedConfigContainUnknown := InstrumentationConfigContainsUnknownLanguage(instrumentationConfig)
-
-	shouldSkipDetection := failedToGetPodGeneration || (!isNewPodGeneration && !instrumentedConfigContainUnknown)
-
-	if shouldSkipDetection {
-		logger.V(3).Info("skipping redundant runtime details detection since generation is not newer", "name", request.Name, "namespace", request.Namespace, "currentPodGeneration", podGeneration, "observedWorkloadGeneration", instrumentationConfig.Status.ObservedWorkloadGeneration)
-		return reconcile.Result{}, nil
-	}
 
 	odigosConfig, err := k8sutils.GetCurrentOdigosConfig(ctx, p.Client)
 	if err != nil {
@@ -78,20 +62,19 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request reconcile.Reques
 	}
 
 	// Perform runtime inspection once we know the pod is newer that the latest runtime inspection performed and saved.
-	runtimeResults, err := runtimeInspection([]corev1.Pod{pod}, odigosConfig.IgnoredContainers)
+	runtimeResults, err := runtimeInspection(ctx, []corev1.Pod{pod}, odigosConfig.IgnoredContainers, p.CriClient)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
 	err = persistRuntimeDetailsToInstrumentationConfig(ctx, p.Client, &instrumentationConfig, odigosv1.InstrumentationConfigStatus{
-		RuntimeDetailsByContainer:  runtimeResults,
-		ObservedWorkloadGeneration: podGeneration,
+		RuntimeDetailsByContainer: runtimeResults,
 	})
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	logger.V(0).Info("Completed runtime details detection for a new running pod", "name", request.Name, "namespace", request.Namespace, "generation", podGeneration)
+	logger.V(0).Info("Completed runtime details detection for a new running pod", "name", request.Name, "namespace", request.Namespace)
 	return reconcile.Result{}, nil
 }
 

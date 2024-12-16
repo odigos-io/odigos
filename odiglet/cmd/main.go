@@ -46,6 +46,7 @@ type odiglet struct {
 	mgr           ctrl.Manager
 	ebpfManager   commonInstrumentation.Manager
 	configUpdates chan<- commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
+	criWrapper    *criwrapper.CriClient
 }
 
 const (
@@ -63,6 +64,8 @@ func newOdiglet() (*odiglet, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create Kubernetes client %w", err)
 	}
+
+	criWrapper := criwrapper.CriClient{Logger: log.Logger}
 
 	mgr, err := kube.CreateManager()
 	if err != nil {
@@ -85,7 +88,12 @@ func newOdiglet() (*odiglet, error) {
 		return nil, fmt.Errorf("Failed to create ebpf manager %w", err)
 	}
 
+<<<<<<< HEAD
 	err = kube.SetupWithManager(mgr, nil, clientset, configUpdates)
+=======
+	configUpdates := ebpfManager.ConfigUpdates()
+	err = kube.SetupWithManager(mgr, nil, clientset, configUpdates, &criWrapper)
+>>>>>>> fd0ade1f (feat: initial commit)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to setup controller-runtime manager %w", err)
 	}
@@ -95,11 +103,25 @@ func newOdiglet() (*odiglet, error) {
 		mgr:           mgr,
 		ebpfManager:   ebpfManager,
 		configUpdates: configUpdates,
+		criWrapper:    &criWrapper,
 	}, nil
 }
 
 func (o *odiglet) run(ctx context.Context) {
 	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done() // Mark this goroutine as done
+
+		// Attempt to connect
+		if err := o.criWrapper.Connect(ctx); err != nil {
+			log.Logger.Error(err, "Failed to connect to CRI runtime")
+			return
+		}
+	}()
+
+	defer o.criWrapper.Close()
 
 	// Start pprof server
 	wg.Add(1)
@@ -190,30 +212,6 @@ func main() {
 	}
 
 	ctx := signals.SetupSignalHandler()
-	client := criwrapper.RuntimeClient{}
-	err = client.Connect(ctx)
-	if err != nil {
-		log.Logger.Error(err, "Failed to connect to CRI runtime")
-		os.Exit(1)
-	}
-	defer client.Close()
-
-	// Retrieve the container ID from an environment variable
-	containerID := os.Getenv("TARGET_CONTAINER_ID")
-
-	fmt.Println("Container ID:", containerID)
-	// Fetch environment variables
-	envVars, err := client.GetContainerEnvVars(ctx, containerID)
-	if err != nil {
-		log.Logger.Error(err, "Failed to get container env vars")
-		os.Exit(1)
-	}
-
-	// Print environment variables
-	fmt.Println("Environment Variables:")
-	for key, value := range envVars {
-		fmt.Printf("%s=%s\n", key, value)
-	}
 
 	o.run(ctx)
 
