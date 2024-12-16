@@ -222,7 +222,7 @@ func (m *manager[ProcessGroup, ConfigGroup]) cleanInstrumentation(ctx context.Co
 }
 
 func (m *manager[ProcessGroup, ConfigGroup]) handleProcessExecEvent(ctx context.Context, e detector.ProcessEvent) error {
-	if _, found := m.detailsByPid[e.PID]; found {
+	if details, found := m.detailsByPid[e.PID]; found && details.active {
 		// this can happen if we have multiple exec events for the same pid (chain loading)
 		// TODO: better handle this?
 		// this can be done by first closing the existing instrumentation,
