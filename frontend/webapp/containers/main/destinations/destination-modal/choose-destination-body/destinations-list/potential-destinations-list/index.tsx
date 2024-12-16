@@ -15,9 +15,9 @@ const ListsWrapper = styled.div`
 `;
 
 export const PotentialDestinationsList: React.FC<Props> = ({ setSelectedItems }) => {
-  const { loading, data } = usePotentialDestinations();
+  const { data, loading } = usePotentialDestinations();
 
-  if (!data.length) return null;
+  if (!data.length && !loading) return null;
 
   return (
     <ListsWrapper>
