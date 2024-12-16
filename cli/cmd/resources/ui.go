@@ -314,7 +314,7 @@ func NewUIService(ns string) *corev1.Service {
 					Port: 3000,
 				},
 				{
-					Name: "beta-ui",
+					Name: "legacy-ui",
 					Port: 3001,
 				},
 				{

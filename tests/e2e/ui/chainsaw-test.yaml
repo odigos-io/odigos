@@ -41,7 +41,7 @@ spec:
         - script:
             timeout: 10s
             content: |
-              nohup ../../../cli/odigos ui --beta > odigos-ui.log 2>&1 &
+              nohup ../../../cli/odigos ui > odigos-ui.log 2>&1 &
               sleep 5
 
     - name: Wait for UI
