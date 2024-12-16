@@ -1,0 +1,15 @@
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: mockdestination
+  namespace: odigos-system
+spec:
+  data:
+    MOCK_RESPONSE_DURATION_MS: "500"
+    MOCK_REJECT_FRACTION: "1"
+  destinationName: mock-back-pressure
+  signals:
+  - TRACES
+  - METRICS
+  - LOGS
+  type: mock
