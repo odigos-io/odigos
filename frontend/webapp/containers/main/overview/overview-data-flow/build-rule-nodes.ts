@@ -6,6 +6,7 @@ import { getEntityIcon, getEntityLabel, getRuleIcon } from '@/utils';
 import { NODE_TYPES, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type ComputePlatformMapped } from '@/types';
 
 interface Params {
+  loading: boolean;
   entities: ComputePlatformMapped['computePlatform']['instrumentationRules'];
   positions: NodePositions;
   unfilteredCounts: EntityCounts;
@@ -27,7 +28,7 @@ const mapToNodeData = (entity: Params['entities'][0]) => {
   };
 };
 
-export const buildRuleNodes = ({ entities, positions, unfilteredCounts }: Params) => {
+export const buildRuleNodes = ({ loading, entities, positions, unfilteredCounts }: Params) => {
   const nodes: Node[] = [];
   const position = positions[OVERVIEW_ENTITY_TYPES.RULE];
   const unfilteredCount = unfilteredCounts[OVERVIEW_ENTITY_TYPES.RULE];
@@ -47,7 +48,20 @@ export const buildRuleNodes = ({ entities, positions, unfilteredCounts }: Params
     },
   });
 
-  if (!entities.length) {
+  if (loading) {
+    nodes.push({
+      id: 'rule-skeleton',
+      type: NODE_TYPES.SKELETON,
+      position: {
+        x: position['x'],
+        y: position['y'](),
+      },
+      data: {
+        nodeWidth,
+        size: 3,
+      },
+    });
+  } else if (!entities.length) {
     nodes.push({
       id: 'rule-add',
       type: NODE_TYPES.ADD,

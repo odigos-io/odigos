@@ -35,31 +35,50 @@ export default function OverviewDataFlowContainer() {
   const positions = useMemo(() => getNodePositions({ containerWidth }), [containerWidth]);
 
   const { metrics } = useMetrics();
-  const { data, filteredData } = useComputePlatform();
+  const { data, filteredData, loading } = useComputePlatform();
   const unfilteredCounts = useMemo(() => getEntityCounts({ computePlatform: data?.computePlatform }), [data]);
 
   const ruleNodes = useMemo(
-    () => buildRuleNodes({ entities: filteredData?.computePlatform.instrumentationRules || [], positions, unfilteredCounts }),
-    [filteredData?.computePlatform.instrumentationRules, positions, unfilteredCounts],
+    () =>
+      buildRuleNodes({
+        loading,
+        entities: filteredData?.computePlatform.instrumentationRules || [],
+        positions,
+        unfilteredCounts,
+      }),
+    [loading, filteredData?.computePlatform.instrumentationRules, positions, unfilteredCounts],
   );
   const actionNodes = useMemo(
-    () => buildActionNodes({ entities: filteredData?.computePlatform.actions || [], positions, unfilteredCounts }),
-    [filteredData?.computePlatform.actions, positions, unfilteredCounts],
+    () =>
+      buildActionNodes({
+        loading,
+        entities: filteredData?.computePlatform.actions || [],
+        positions,
+        unfilteredCounts,
+      }),
+    [loading, filteredData?.computePlatform.actions, positions, unfilteredCounts],
   );
   const destinationNodes = useMemo(
-    () => buildDestinationNodes({ entities: filteredData?.computePlatform.destinations || [], positions, unfilteredCounts }),
-    [filteredData?.computePlatform.destinations, positions, unfilteredCounts],
+    () =>
+      buildDestinationNodes({
+        loading,
+        entities: filteredData?.computePlatform.destinations || [],
+        positions,
+        unfilteredCounts,
+      }),
+    [loading, filteredData?.computePlatform.destinations, positions, unfilteredCounts],
   );
   const sourceNodes = useMemo(
     () =>
       buildSourceNodes({
+        loading,
         entities: filteredData?.computePlatform.k8sActualSources || [],
         positions,
         unfilteredCounts,
         containerHeight,
         onScroll: ({ scrollTop }) => setScrollYOffset(scrollTop),
       }),
-    [filteredData?.computePlatform.k8sActualSources, positions, unfilteredCounts, containerHeight],
+    [loading, filteredData?.computePlatform.k8sActualSources, positions, unfilteredCounts, containerHeight],
   );
 
   const [nodes, setNodes, onNodesChange] = useNodesState(([] as Node[]).concat(actionNodes, ruleNodes, sourceNodes, destinationNodes));

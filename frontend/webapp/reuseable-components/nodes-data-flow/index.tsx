@@ -8,6 +8,7 @@ import FrameNode from './nodes/frame-node';
 import ScrollNode from './nodes/scroll-node';
 import HeaderNode from './nodes/header-node';
 import LabeledEdge from './edges/labeled-edge';
+import SkeletonNode from './nodes/skeleton-node';
 import { EDGE_TYPES, NODE_TYPES } from '@/types';
 import { Controls, type Edge, type Node, type OnEdgesChange, type OnNodesChange, ReactFlow } from '@xyflow/react';
 
@@ -49,6 +50,7 @@ const nodeTypes = {
   [NODE_TYPES.EDGED]: EdgedNode,
   [NODE_TYPES.FRAME]: FrameNode,
   [NODE_TYPES.SCROLL]: ScrollNode,
+  [NODE_TYPES.SKELETON]: SkeletonNode,
 };
 
 const edgeTypes = {
