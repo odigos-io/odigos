@@ -12,6 +12,7 @@ import (
 
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	"github.com/odigos-io/odigos/common"
+	commonInstrumentation "github.com/odigos-io/odigos/instrumentation"
 	k8senv "github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation"
@@ -42,9 +43,13 @@ func odigletInitPhase() {
 type odiglet struct {
 	clientset     *kubernetes.Clientset
 	mgr           ctrl.Manager
-	ebpfManager   *ebpf.Manager
-	configUpdates chan<- ebpf.ConfigUpdate
+	ebpfManager   commonInstrumentation.Manager
+	configUpdates chan<- commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
 }
+
+const (
+	configUpdatesBufferSize = 10
+)
 
 func newOdiglet() (*odiglet, error) {
 	// Init Kubernetes API client
@@ -63,21 +68,22 @@ func newOdiglet() (*odiglet, error) {
 		return nil, fmt.Errorf("Failed to create controller-runtime manager %w", err)
 	}
 
+	configUpdates := make(chan commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup], configUpdatesBufferSize)
 	ebpfManager, err := ebpf.NewManager(
 		mgr.GetClient(),
 		log.Logger,
-		map[ebpf.OtelDistribution]ebpf.Factory{
-			ebpf.OtelDistribution{
+		map[commonInstrumentation.OtelDistribution]commonInstrumentation.Factory{
+			commonInstrumentation.OtelDistribution{
 				Language: common.GoProgrammingLanguage,
 				OtelSdk:  common.OtelSdkEbpfCommunity,
 			}: sdks.NewGoInstrumentationFactory(),
 		},
+		configUpdates,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create ebpf manager %w", err)
 	}
 
-	configUpdates := ebpfManager.ConfigUpdates()
 	err = kube.SetupWithManager(mgr, nil, clientset, configUpdates)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to setup controller-runtime manager %w", err)
@@ -123,7 +129,7 @@ func (o *odiglet) run(ctx context.Context) {
 		if err != nil {
 			log.Logger.Error(err, "Failed to run ebpf manager")
 		}
-		log.Logger.V(0).Info("Ebpf manager exited")
+		log.Logger.V(0).Info("eBPF manager exited")
 	}()
 
 	// start OpAmp server

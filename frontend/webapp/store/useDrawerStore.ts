@@ -1,19 +1,19 @@
-// drawerStore.ts
 import { create } from 'zustand';
 import type { ActionDataParsed, ActualDestination, InstrumentationRuleSpec, K8sActualSource, OVERVIEW_ENTITY_TYPES, WorkloadId } from '@/types';
 
-type ItemType = OVERVIEW_ENTITY_TYPES;
+export enum DRAWER_OTHER_TYPES {
+  DESCRIBE_ODIGOS = 'describe-odigos',
+}
 
-export interface DrawerBaseItem {
+export interface DrawerItem {
+  type: OVERVIEW_ENTITY_TYPES | DRAWER_OTHER_TYPES;
   id: string | WorkloadId;
   item?: InstrumentationRuleSpec | K8sActualSource | ActionDataParsed | ActualDestination;
-  type: ItemType;
-  // Add common properties here
 }
 
 interface DrawerStoreState {
-  selectedItem: DrawerBaseItem | null;
-  setSelectedItem: (item: DrawerBaseItem | null) => void;
+  selectedItem: DrawerItem | null;
+  setSelectedItem: (item: DrawerItem | null) => void;
   isDrawerOpen: boolean;
   openDrawer: () => void;
   closeDrawer: () => void;

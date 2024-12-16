@@ -1,4 +1,5 @@
 import React from 'react';
+import { NODE_TYPES } from '@/types';
 import styled from 'styled-components';
 import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';
 
@@ -9,7 +10,7 @@ interface Props
         nodeWidth: number;
         nodeHeight: number;
       },
-      'frame'
+      NODE_TYPES.FRAME
     >
   > {}
 

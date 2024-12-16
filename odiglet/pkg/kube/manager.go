@@ -2,6 +2,7 @@ package kube
 
 import (
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/instrumentation"
 	"k8s.io/apimachinery/pkg/labels"
 
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
@@ -59,7 +60,7 @@ func CreateManager() (ctrl.Manager, error) {
 	})
 }
 
-func SetupWithManager(mgr ctrl.Manager, ebpfDirectors ebpf.DirectorsMap, clientset *kubernetes.Clientset, configUpdates chan<- ebpf.ConfigUpdate) error {
+func SetupWithManager(mgr ctrl.Manager, ebpfDirectors ebpf.DirectorsMap, clientset *kubernetes.Clientset, configUpdates chan<- instrumentation.ConfigUpdate[ebpf.K8sConfigGroup]) error {
 	err := runtime_details.SetupWithManager(mgr, clientset)
 	if err != nil {
 		return err
