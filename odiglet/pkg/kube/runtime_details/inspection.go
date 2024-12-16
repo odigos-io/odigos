@@ -193,7 +193,8 @@ func updateRuntimeDetailsWithDockerFileEnvs(ctx context.Context, criClient criwr
 		return
 	}
 
-	// Check if environment variables exist in the container manifest
+	// Verify if environment variables already exist in the container manifest.
+	// If they exist, there's no need to fetch them from the Dockerfile, and we will just append our additions in the webhook.
 	if envsExistsInManifest := checkEnvVarsInContainerManifest(container, envVarNames); envsExistsInManifest {
 		return
 	}

@@ -9,6 +9,7 @@ import (
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	criapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 )
 
@@ -32,13 +33,11 @@ func (rc *CriClient) Connect(ctx context.Context) error {
 	for _, endpoint := range defaultRuntimeEndpoints {
 		rc.Logger.Info("Attempting to connect to CRI runtime", "endpoint", endpoint)
 
-		// Attempt to dial the gRPC server
-		rc.conn, err = grpc.DialContext(
-			ctx,
+		rc.conn, err = grpc.NewClient(
 			endpoint,
-			grpc.WithInsecure(),
-			grpc.WithBlock(),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
 		)
+
 		if err != nil {
 			continue
 		}
@@ -68,7 +67,6 @@ func (rc *CriClient) GetContainerInfo(ctx context.Context, containerID string) (
 		return nil, err
 	}
 
-	// Return only the "info" field
 	return response.GetInfo(), nil
 }
 
@@ -127,7 +125,7 @@ func (rc *CriClient) GetContainerEnvVarsList(ctx context.Context, envVarKeys []s
 // Close closes the gRPC connection.
 func (rc *CriClient) Close() {
 	if rc.conn != nil {
-		rc.Logger.V(0).Info("GRPC connection is closed")
+		rc.Logger.V(0).Info("gRPC connection is closed")
 		rc.conn.Close()
 	}
 }
