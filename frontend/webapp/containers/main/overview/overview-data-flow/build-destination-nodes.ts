@@ -1,3 +1,4 @@
+import { OdigosLogo } from '@/assets';
 import { type Node } from '@xyflow/react';
 import nodeConfig from './node-config.json';
 import { type EntityCounts } from './get-entity-counts';
@@ -22,7 +23,7 @@ const mapToNodeData = (entity: Params['entities'][0]) => {
     status: getHealthStatus(entity),
     title: getEntityLabel(entity, OVERVIEW_ENTITY_TYPES.DESTINATION, { prioritizeDisplayName: true }),
     subTitle: entity.destinationType.displayName,
-    imageUri: entity.destinationType.imageUrl || '/brand/odigos-icon.svg',
+    iconSrc: entity.destinationType.imageUrl,
     monitors: extractMonitors(entity.exportedSignals),
     raw: entity,
   };

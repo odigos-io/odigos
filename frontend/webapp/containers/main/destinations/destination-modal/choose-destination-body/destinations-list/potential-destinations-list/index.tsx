@@ -1,4 +1,5 @@
 import React from 'react';
+import { OdigosLogo } from '@/assets';
 import styled from 'styled-components';
 import { DestinationTypeItem } from '@/types';
 import { usePotentialDestinations } from '@/hooks';
@@ -23,7 +24,7 @@ export const PotentialDestinationsList: React.FC<Props> = ({ setSelectedItems })
     <ListsWrapper>
       <SectionTitle
         size='small'
-        icon='/brand/odigos-icon.svg'
+        icon={OdigosLogo}
         title='Detected by Odigos'
         description='Odigos detects destinations for which automatic connection is available. All data will be filled out automatically.'
       />

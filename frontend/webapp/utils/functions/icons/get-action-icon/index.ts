@@ -1,9 +1,7 @@
 import { type ActionsType } from '@/types';
 
-const BRAND_ICON = '/brand/odigos-icon.svg';
-
 export const getActionIcon = (type?: ActionsType | 'sampler' | 'attributes') => {
-  if (!type) return BRAND_ICON;
+  if (!type) return '';
 
   const typeLowerCased = type.toLowerCase();
   const isSampler = typeLowerCased.includes('sampler');

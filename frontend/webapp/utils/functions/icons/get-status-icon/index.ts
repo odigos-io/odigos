@@ -1,9 +1,7 @@
 import { NOTIFICATION_TYPE } from '@/types';
 
-const BRAND_ICON = '/brand/odigos-icon.svg';
-
 export const getStatusIcon = (status?: NOTIFICATION_TYPE) => {
-  if (!status) return BRAND_ICON;
+  if (!status) return '';
 
   switch (status) {
     case NOTIFICATION_TYPE.SUCCESS:
@@ -15,6 +13,6 @@ export const getStatusIcon = (status?: NOTIFICATION_TYPE) => {
     case NOTIFICATION_TYPE.INFO:
       return '/icons/common/info.svg';
     default:
-      return BRAND_ICON;
+      return '';
   }
 };

@@ -100,7 +100,7 @@ export const RuleDrawer: React.FC<Props> = () => {
   return (
     <OverviewDrawer
       title={item.ruleName || (item.type as string)}
-      imageUri={getRuleIcon(item.type)}
+      iconSrc={getRuleIcon(item.type)}
       isEdit={isEditing}
       isFormDirty={isFormDirty}
       onEdit={handleEdit}

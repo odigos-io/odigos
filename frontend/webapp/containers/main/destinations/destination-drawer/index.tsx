@@ -107,7 +107,7 @@ export const DestinationDrawer: React.FC<Props> = () => {
   return (
     <OverviewDrawer
       title={item.name || item.destinationType.displayName}
-      imageUri={item.destinationType.imageUrl}
+      iconSrc={item.destinationType.imageUrl}
       isEdit={isEditing}
       isFormDirty={isFormDirty}
       onEdit={handleEdit}

@@ -98,7 +98,7 @@ export const ActionDrawer: React.FC<Props> = () => {
   return (
     <OverviewDrawer
       title={item.spec.actionName || item.type}
-      imageUri={getActionIcon(item.type)}
+      iconSrc={getActionIcon(item.type)}
       isEdit={isEditing}
       isFormDirty={isFormDirty}
       onEdit={handleEdit}

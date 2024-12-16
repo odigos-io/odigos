@@ -1,5 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
+import { SVG } from '@/assets';
 import { useAppStore } from '@/store';
 import styled from 'styled-components';
 import { getStatusIcon } from '@/utils';
@@ -12,13 +13,13 @@ interface Props
     Node<
       {
         nodeWidth: number;
-
         id: string | WorkloadId;
         type: OVERVIEW_ENTITY_TYPES;
         status: STATUSES;
         title: string;
         subTitle: string;
-        imageUri: string;
+        icon?: SVG;
+        iconSrc?: string;
         monitors?: string[];
         isActive?: boolean;
         raw: InstrumentationRuleSpec | K8sActualSource | ActionDataParsed | ActualDestination;
@@ -32,7 +33,7 @@ const Container = styled.div<{ $nodeWidth: Props['data']['nodeWidth'] }>`
 `;
 
 const BaseNode: React.FC<Props> = ({ id: nodeId, data }) => {
-  const { nodeWidth, type, status, title, subTitle, imageUri, monitors, isActive, raw } = data;
+  const { nodeWidth, type, status, title, subTitle, icon, iconSrc, monitors, isActive, raw } = data;
   const isError = status === STATUSES.UNHEALTHY;
 
   const { configuredSources, setConfiguredSources } = useAppStore((state) => state);
@@ -74,7 +75,7 @@ const BaseNode: React.FC<Props> = ({ id: nodeId, data }) => {
 
   return (
     <Container data-id={nodeId} $nodeWidth={nodeWidth} className='nowheel nodrag'>
-      <DataTab title={title} subTitle={subTitle} logo={imageUri} monitors={monitors} isActive={isActive} isError={isError} onClick={() => {}} renderActions={renderActions} />
+      <DataTab title={title} subTitle={subTitle} icon={icon} iconSrc={iconSrc} monitors={monitors} isActive={isActive} isError={isError} onClick={() => {}} renderActions={renderActions} />
       <Handle type='target' position={Position.Left} style={{ visibility: 'hidden' }} />
       <Handle type='source' position={Position.Right} style={{ visibility: 'hidden' }} />
     </Container>

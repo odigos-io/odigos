@@ -1,5 +1,5 @@
 import React from 'react';
-import Image from 'next/image';
+import { SVG } from '@/assets';
 import { Text } from '../text';
 import { Badge } from '../badge';
 import styled from 'styled-components';
@@ -8,7 +8,7 @@ interface SectionTitleProps {
   title: string;
   description: string;
   badgeLabel?: string | number;
-  icon?: string;
+  icon?: SVG;
   actionButton?: React.ReactNode;
   size?: 'small' | 'medium' | 'large';
 }
@@ -36,7 +36,7 @@ const Title = styled(Text)``;
 
 const Description = styled(Text)``;
 
-const SectionTitle: React.FC<SectionTitleProps> = ({ title, description, badgeLabel, icon, actionButton, size = 'medium' }) => {
+const SectionTitle: React.FC<SectionTitleProps> = ({ title, description, badgeLabel, icon: Icon, actionButton, size = 'medium' }) => {
   const titleSize = size === 'small' ? 16 : size === 'medium' ? 20 : 24;
   const descriptionSize = size === 'small' ? 12 : size === 'medium' ? 14 : 16;
 
@@ -44,7 +44,7 @@ const SectionTitle: React.FC<SectionTitleProps> = ({ title, description, badgeLa
     <Container>
       <HeaderWrapper>
         <TitleContainer>
-          {icon && <Image alt='icon' src={icon} width={14} height={24} />}
+          {Icon && <Icon size={12} />}
           <Title weight={300} size={titleSize}>
             {title}
           </Title>

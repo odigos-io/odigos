@@ -1,9 +1,9 @@
-import Image from 'next/image';
 import React from 'react';
 import styled from 'styled-components';
+import { OdigosLogoText } from '@/assets';
 import { NavigationButtons, Text } from '@/reuseable-components';
 
-interface SetupHeaderProps {
+interface Props {
   navigationButtons: {
     label: string;
     iconSrc?: string;
@@ -13,7 +13,7 @@ interface SetupHeaderProps {
   }[];
 }
 
-const HeaderContainer = styled.div`
+const Container = styled.div`
   display: flex;
   justify-content: space-between;
   padding: 0 24px 0 32px;
@@ -23,30 +23,18 @@ const HeaderContainer = styled.div`
   height: 80px;
 `;
 
-const Title = styled(Text)``;
-
-const Logo = styled.div`
-  display: flex;
-  align-items: center;
-  font-size: 1.2em;
-`;
-
-const NavigationButtonsWrapper = styled.div`
+const Title = styled(Text)`
   position: absolute;
-  right: 24px;
+  left: 50%;
+  transform: translateX(-50%);
 `;
 
-export const SetupHeader: React.FC<SetupHeaderProps> = ({ navigationButtons }) => {
+export const SetupHeader: React.FC<Props> = ({ navigationButtons }) => {
   return (
-    <HeaderContainer>
-      <Logo>
-        <Image src='/brand/transparent-logo-white.svg' alt='logo' width={84} height={20} />
-      </Logo>
-      <Title family={'secondary'}>START WITH ODIGOS</Title>
-      <div style={{ width: 84 }} />
-      <NavigationButtonsWrapper>
-        <NavigationButtons buttons={navigationButtons} />
-      </NavigationButtonsWrapper>
-    </HeaderContainer>
+    <Container>
+      <OdigosLogoText size={20} />
+      <Title family='secondary'>START WITH ODIGOS</Title>
+      <NavigationButtons buttons={navigationButtons} />
+    </Container>
   );
 };

@@ -1,6 +1,6 @@
 import React from 'react';
-import Image from 'next/image';
 import theme from '@/styles/theme';
+import { OdigosLogo } from '@/assets';
 import { IconButton } from '@/reuseable-components';
 import { DRAWER_OTHER_TYPES, useDrawerStore } from '@/store';
 
@@ -10,7 +10,7 @@ export const DescribeOdigos = () => {
 
   return (
     <IconButton onClick={handleClick} tooltip='Describe Odigos' withPing pingColor={theme.colors.majestic_blue}>
-      <Image src='/brand/odigos-icon.svg' alt='logo' width={16} height={16} />
+      <OdigosLogo size={12} />
     </IconButton>
   );
 };

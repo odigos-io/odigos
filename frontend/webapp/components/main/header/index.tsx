@@ -1,8 +1,8 @@
 import React from 'react';
-import Image from 'next/image';
 import { FlexRow } from '@/styles';
 import styled from 'styled-components';
 import { PlatformTypes } from '@/types';
+import { OdigosLogoText } from '@/assets';
 import { PlatformTitle } from './cp-title';
 import { useConnectionStore } from '@/store';
 import { ConnectionStatus } from '@/reuseable-components';
@@ -35,7 +35,7 @@ export const MainHeader: React.FC<MainHeaderProps> = () => {
   return (
     <HeaderContainer>
       <AlignLeft>
-        <Image src='/brand/transparent-logo-white.svg' alt='logo' width={84} height={20} />
+        <OdigosLogoText size={20} />
         <PlatformTitle type={PlatformTypes.K8S} />
         {!connecting && <ConnectionStatus title={title} subtitle={message} isActive={active} />}
       </AlignLeft>
