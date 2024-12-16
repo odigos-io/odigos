@@ -5,3 +5,4 @@ export * from './modals';
 export * from './notification';
 export * from './overview';
 export * from './setup';
+export * from './slack-invite';

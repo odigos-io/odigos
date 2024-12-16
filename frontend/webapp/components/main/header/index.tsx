@@ -6,7 +6,7 @@ import { PlatformTypes } from '@/types';
 import { PlatformTitle } from './cp-title';
 import { useConnectionStore } from '@/store';
 import { ConnectionStatus } from '@/reuseable-components';
-import { DescribeOdigos, NotificationManager } from '@/components';
+import { DescribeOdigos, NotificationManager, SlackInvite } from '@/components';
 
 interface MainHeaderProps {}
 
@@ -26,7 +26,7 @@ const AlignLeft = styled(FlexRow)`
 const AlignRight = styled(FlexRow)`
   margin-left: auto;
   margin-right: 32px;
-  gap: 16px;
+  gap: 12px;
 `;
 
 export const MainHeader: React.FC<MainHeaderProps> = () => {
@@ -43,6 +43,7 @@ export const MainHeader: React.FC<MainHeaderProps> = () => {
       <AlignRight>
         <NotificationManager />
         <DescribeOdigos />
+        <SlackInvite />
       </AlignRight>
     </HeaderContainer>
   );
