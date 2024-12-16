@@ -92,7 +92,7 @@ spec:
       port: 3000
       protocol: TCP
       targetPort: 3000
-    - name: beta-ui
+    - name: legacy-ui
       port: 3001
       protocol: TCP
       targetPort: 3001
