@@ -115,7 +115,7 @@ func (o *odiglet) run(ctx context.Context) {
 		defer wg.Done() // Mark this goroutine as done
 
 		// Attempt to connect
-		if err := o.criWrapper.Connect(ctx); err != nil {
+		if err := o.criWrapper.Connect(); err != nil {
 			log.Logger.Error(err, "Failed to connect to CRI runtime")
 			return
 		}

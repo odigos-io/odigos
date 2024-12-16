@@ -27,7 +27,7 @@ var defaultRuntimeEndpoints = []string{
 }
 
 // Connect attempts to establish a connection to a CRI runtime.
-func (rc *CriClient) Connect(ctx context.Context) error {
+func (rc *CriClient) Connect() error {
 	var err error
 
 	for _, endpoint := range defaultRuntimeEndpoints {
