@@ -49,10 +49,15 @@ func (a *odigosConfigResourceManager) Name() string { return "OdigosConfig" }
 func (a *odigosConfigResourceManager) InstallFromScratch(ctx context.Context) error {
 
 	sizingProfile := k8sprofiles.FilterSizeProfiles(a.config.Profiles)
+
 	collectorGatewayConfig := GetGatewayConfigBasedOnSize(sizingProfile)
-	collectorNodeConfig := GetNodeCollectorConfigBasedOnSize(sizingProfile)
 	a.config.CollectorGateway = collectorGatewayConfig
-	if a.config.CollectorNode != nil {
+
+	collectorNodeConfig := GetNodeCollectorConfigBasedOnSize(sizingProfile)
+	if a.config.CollectorNode != nil && a.config.CollectorNode.CollectorOwnMetricsPort != 0 {
+		if collectorNodeConfig == nil {
+			collectorNodeConfig = &common.CollectorNodeConfiguration{}
+		}
 		collectorNodeConfig.CollectorOwnMetricsPort = a.config.CollectorNode.CollectorOwnMetricsPort
 	}
 	a.config.CollectorNode = collectorNodeConfig
@@ -77,16 +82,22 @@ func GetNodeCollectorConfigBasedOnSize(profile common.ProfileName) *common.Colle
 			return &common.CollectorNodeConfiguration{
 				RequestMemoryMiB: 150,
 				LimitMemoryMiB:   300,
+				RequestCPUm:      150,
+				LimitCPUm:        300,
 			}
 		case k8sprofiles.SizeMProfile.ProfileName:
 			return &common.CollectorNodeConfiguration{
 				RequestMemoryMiB: 250,
 				LimitMemoryMiB:   500,
+				RequestCPUm:      250,
+				LimitCPUm:        500,
 			}
 		case k8sprofiles.SizeLProfile.ProfileName:
 			return &common.CollectorNodeConfiguration{
 				RequestMemoryMiB: 500,
 				LimitMemoryMiB:   750,
+				RequestCPUm:      500,
+				LimitCPUm:        750,
 			}
 		}
 	}

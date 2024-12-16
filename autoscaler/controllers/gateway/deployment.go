@@ -171,6 +171,19 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 									Name:  "GOMEMLIMIT",
 									Value: fmt.Sprintf("%dMiB", gateway.Spec.ResourcesSettings.GomemlimitMiB),
 								},
+								{
+									// let the Go runtime know how many CPUs are available,
+									// without this, Go will assume all the cores are available.
+									Name:  "GOMAXPROCS",
+									ValueFrom:  &corev1.EnvVarSource{
+										ResourceFieldRef: &corev1.ResourceFieldSelector{
+											ContainerName: containerName,
+											// limitCPU, Kubernetes automatically rounds up the value to an integer
+											// (700m -> 1, 1200m -> 2)
+											Resource:      "limits.cpu",
+										},
+									},
+								},
 							},
 							SecurityContext: &corev1.SecurityContext{
 								AllowPrivilegeEscalation: boolPtr(false),

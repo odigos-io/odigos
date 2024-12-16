@@ -8,7 +8,7 @@ import { useDescribeSource, useSourceCRUD } from '@/hooks';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type K8sActualSource } from '@/types';
 import { ConditionDetails, DataCard, DataCardRow, DataCardFieldTypes } from '@/reuseable-components';
-import { ACTION, DATA_CARDS, getMainContainerLanguage, getProgrammingLanguageIcon, safeJsonStringify } from '@/utils';
+import { ACTION, BACKEND_BOOLEAN, DATA_CARDS, getMainContainerLanguage, getProgrammingLanguageIcon, safeJsonStringify } from '@/utils';
 
 interface Props {}
 
@@ -79,13 +79,17 @@ export const SourceDrawer: React.FC<Props> = () => {
 
     const { item } = selectedItem as { item: K8sActualSource };
 
+    const hasPresenceOfOtherAgent = item.instrumentedApplicationDetails.conditions.some(
+      (condition) => condition.status === BACKEND_BOOLEAN.FALSE && condition.message.includes('device not added to any container due to the presence of another agent'),
+    );
+
     return (
       item.instrumentedApplicationDetails.containers.map(
         (container) =>
           ({
             type: DataCardFieldTypes.SOURCE_CONTAINER,
             width: '100%',
-            value: JSON.stringify(container),
+            value: JSON.stringify({ ...container, hasPresenceOfOtherAgent }),
           } as DataCardRow),
       ) || []
     );

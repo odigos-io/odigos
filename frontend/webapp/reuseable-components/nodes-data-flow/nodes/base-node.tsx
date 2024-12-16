@@ -74,10 +74,7 @@ const BaseNode: React.FC<Props> = ({ id: nodeId, data }) => {
 
   return (
     <Container data-id={nodeId} $nodeWidth={nodeWidth} className='nowheel nodrag'>
-      <DataTab title={title} subTitle={subTitle} logo={imageUri} monitors={monitors} isActive={isActive} isError={isError} onClick={() => {}}>
-        {renderActions()}
-      </DataTab>
-
+      <DataTab title={title} subTitle={subTitle} logo={imageUri} monitors={monitors} isActive={isActive} isError={isError} onClick={() => {}} renderActions={renderActions} />
       <Handle type='target' position={Position.Left} style={{ visibility: 'hidden' }} />
       <Handle type='source' position={Position.Right} style={{ visibility: 'hidden' }} />
     </Container>

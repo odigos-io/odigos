@@ -3,7 +3,7 @@ module github.com/odigos-io/odigos/destinations
 go 1.23.0
 
 require (
-	github.com/odigos-io/odigos/common v1.0.48
+	github.com/odigos-io/odigos/common v0.0.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 

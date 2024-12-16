@@ -16,6 +16,7 @@ updates:
       - /instrumentor
       - /odiglet
       - /opampserver
+      - /instrumentation
     schedule:
       day: monday
       interval: weekly
