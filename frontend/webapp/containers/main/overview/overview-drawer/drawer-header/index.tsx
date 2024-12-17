@@ -1,7 +1,7 @@
 import React, { useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 import Image from 'next/image';
-import { SVG } from '@/assets';
 import styled from 'styled-components';
+import { EditIcon, SVG } from '@/assets';
 import { Button, IconWrapped, Input, Text, Tooltip } from '@/reuseable-components';
 
 const HeaderContainer = styled.section`
@@ -97,7 +97,7 @@ const DrawerHeader = forwardRef<DrawerHeaderRef, DrawerHeaderProps>(({ title, ti
       <SectionItemsWrapper $gap={8}>
         {!isEdit && !!onEdit && (
           <EditButton data-id='drawer-edit' variant='tertiary' onClick={onEdit}>
-            <Image src='/icons/common/edit.svg' alt='Edit' width={16} height={16} />
+            <EditIcon />
             <ButtonText>Edit</ButtonText>
           </EditButton>
         )}

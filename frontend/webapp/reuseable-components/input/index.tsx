@@ -1,6 +1,7 @@
 import React, { useState, forwardRef } from 'react';
 import Image from 'next/image';
 import styled, { css } from 'styled-components';
+import { EyeClosedIcon, EyeOpenIcon } from '@/assets';
 import { FieldError, FieldLabel } from '@/reuseable-components';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -133,9 +134,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 
         <InputWrapper $disabled={props.disabled} $hasError={hasError || !!errorMessage} $isActive={!!props.autoFocus}>
           {isSecret ? (
-            <IconWrapperClickable onClick={() => setRevealSecret((prev) => !prev)}>
-              <Image src={revealSecret ? '/icons/common/eye-closed.svg' : '/icons/common/eye-open.svg'} alt='' width={14} height={14} />
-            </IconWrapperClickable>
+            <IconWrapperClickable onClick={() => setRevealSecret((prev) => !prev)}>{revealSecret ? <EyeClosedIcon /> : <EyeOpenIcon />}</IconWrapperClickable>
           ) : icon ? (
             <IconWrapper>
               <Image src={icon} alt='' width={14} height={14} />

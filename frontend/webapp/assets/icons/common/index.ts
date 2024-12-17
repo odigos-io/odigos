@@ -5,10 +5,12 @@ export * from './check-icon';
 export * from './cross-circled-icon';
 export * from './code-icon';
 export * from './cross-icon';
-
+export * from './edit-icon';
 export * from './error-round-icon';
 export * from './error-triangle-icon';
-
+export * from './extend-arrow-icon';
+export * from './eye-closed-icon';
+export * from './eye-open-icon';
 export * from './filter-icon';
 export * from './folder-icon';
 export * from './info-icon';
