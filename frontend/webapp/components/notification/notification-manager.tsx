@@ -1,14 +1,13 @@
 import React, { useMemo, useRef, useState } from 'react';
-import Image from 'next/image';
 import styled from 'styled-components';
 import { useClickNotif } from '@/hooks';
 import { useNotificationStore } from '@/store';
 import { ACTION, getStatusIcon } from '@/utils';
+import { NotificationIcon, TrashIcon } from '@/assets';
 import { useOnClickOutside, useTimeAgo } from '@/hooks';
 import theme, { hexPercentValues } from '@/styles/theme';
 import { NOTIFICATION_TYPE, type Notification } from '@/types';
 import { IconButton, NoDataFound, Text } from '@/reuseable-components';
-import { NotificationIcon } from '@/assets';
 
 const RelativeContainer = styled.div`
   position: relative;
@@ -177,7 +176,7 @@ const NotificationListItem: React.FC<Notification & { onClick: () => void }> = (
         }
       }}
     >
-      <StatusIcon $type={isDeleted ? NOTIFICATION_TYPE.ERROR : type}>{isDeleted ? <Image src='/icons/common/trash.svg' alt='' width={16} height={16} /> : <Icon />}</StatusIcon>
+      <StatusIcon $type={isDeleted ? NOTIFICATION_TYPE.ERROR : type}>{isDeleted ? <TrashIcon /> : <Icon />}</StatusIcon>
 
       <NotifTextWrap>
         <NotifHeaderTextWrap>

@@ -1,7 +1,6 @@
 import React, { useEffect, useState, forwardRef, useImperativeHandle } from 'react';
-import Image from 'next/image';
 import styled from 'styled-components';
-import { EditIcon, SVG } from '@/assets';
+import { EditIcon, SVG, XIcon } from '@/assets';
 import { Button, IconWrapped, Input, Text, Tooltip } from '@/reuseable-components';
 
 const HeaderContainer = styled.section`
@@ -103,7 +102,7 @@ const DrawerHeader = forwardRef<DrawerHeaderRef, DrawerHeaderProps>(({ title, ti
         )}
 
         <CloseButton data-id='drawer-close' variant='secondary' onClick={onClose}>
-          <Image src='/icons/common/x.svg' alt='Close' width={12} height={12} />
+          <XIcon size={12} />
         </CloseButton>
       </SectionItemsWrapper>
     </HeaderContainer>

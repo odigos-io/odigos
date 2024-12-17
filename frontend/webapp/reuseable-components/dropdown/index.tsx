@@ -2,8 +2,8 @@ import React, { useState, useRef } from 'react';
 import { useOnClickOutside } from '@/hooks';
 import type { DropdownOption } from '@/types';
 import styled, { css } from 'styled-components';
-import { CheckIcon, CrossIcon } from '@/assets';
 import theme, { hexPercentValues } from '@/styles/theme';
+import { CheckIcon, CrossIcon, SearchIcon } from '@/assets';
 import { Badge, Checkbox, Divider, ExtendIcon, FieldError, FieldLabel, Input, NoDataFound, Text } from '@/reuseable-components';
 
 interface DropdownProps {
@@ -211,7 +211,7 @@ const DropdownList: React.FC<{
     <AbsoluteContainer>
       {showSearch && (
         <SearchInputContainer>
-          <Input placeholder='Search...' icon='/icons/common/search.svg' value={searchText} onChange={(e) => setSearchText(e.target.value.toLowerCase())} />
+          <Input placeholder='Search...' icon={SearchIcon} value={searchText} onChange={(e) => setSearchText(e.target.value.toLowerCase())} />
           <Divider thickness={1} margin='8px 0 0 0' />
         </SearchInputContainer>
       )}

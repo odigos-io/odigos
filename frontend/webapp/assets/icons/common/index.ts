@@ -17,5 +17,8 @@ export * from './info-icon';
 export * from './no-data-icon';
 export * from './notebook-icon';
 export * from './notification-icon';
-
+export * from './plus-icon';
+export * from './search-icon';
+export * from './trash-icon';
 export * from './warning-triangle-icon';
+export * from './x-icon';

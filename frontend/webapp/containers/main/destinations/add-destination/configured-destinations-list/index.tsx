@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Image from 'next/image';
+import { TrashIcon } from '@/assets';
 import styled from 'styled-components';
 import { extractMonitors } from '@/utils';
 import { DeleteWarning } from '@/components';
@@ -34,7 +34,7 @@ const ListItem: React.FC<{ item: ConfiguredDestination; isLastItem: boolean }> =
         renderExtended={() => <DataCardFields data={item.destinationTypeDetails} />}
         renderActions={() => (
           <IconButton onClick={() => setDeleteWarning(true)}>
-            <Image src='/icons/common/trash.svg' alt='delete' width={16} height={16} />
+            <TrashIcon />
           </IconButton>
         )}
       />

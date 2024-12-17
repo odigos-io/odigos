@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
-import Image from 'next/image';
 import theme from '@/styles/theme';
+import { PlusIcon } from '@/assets';
 import { useModalStore } from '@/store';
 import { getEntityIcon } from '@/utils';
 import styled, { css } from 'styled-components';
@@ -92,7 +92,7 @@ export const AddEntity: React.FC<Props> = ({ options = DEFAULT_OPTIONS, placehol
   return (
     <Container ref={dropdownRef}>
       <StyledButton data-id='add-entity' onClick={handleToggle}>
-        {loading ? <FadeLoader color={theme.colors.primary} /> : <Image src='/icons/common/plus-black.svg' width={16} height={16} alt='Add' />}
+        {loading ? <FadeLoader color={theme.colors.primary} /> : <PlusIcon fill={theme.colors.primary} />}
         <ButtonText size={14}>{placeholder}</ButtonText>
       </StyledButton>
 

@@ -1,12 +1,13 @@
 import React, { useState, forwardRef } from 'react';
 import Image from 'next/image';
 import styled, { css } from 'styled-components';
-import { EyeClosedIcon, EyeOpenIcon } from '@/assets';
+import { EyeClosedIcon, EyeOpenIcon, SVG } from '@/assets';
 import { FieldError, FieldLabel } from '@/reuseable-components';
+import theme from '@/styles/theme';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   title?: string;
-  icon?: string;
+  icon?: SVG;
   tooltip?: string;
   initialValue?: string;
   buttonLabel?: string;
@@ -116,7 +117,7 @@ const Button = styled.button`
 
 // Wrap Input with forwardRef to handle the ref prop
 const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ icon, buttonLabel, onButtonClick, hasError, errorMessage, title, tooltip, required, initialValue, onChange, type = 'text', name, ...props }, ref) => {
+  ({ icon: Icon, buttonLabel, onButtonClick, hasError, errorMessage, title, tooltip, required, initialValue, onChange, type = 'text', name, ...props }, ref) => {
     const isSecret = type === 'password';
     const [revealSecret, setRevealSecret] = useState(false);
     const [value, setValue] = useState<string>(initialValue || '');
@@ -134,10 +135,12 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 
         <InputWrapper $disabled={props.disabled} $hasError={hasError || !!errorMessage} $isActive={!!props.autoFocus}>
           {isSecret ? (
-            <IconWrapperClickable onClick={() => setRevealSecret((prev) => !prev)}>{revealSecret ? <EyeClosedIcon /> : <EyeOpenIcon />}</IconWrapperClickable>
-          ) : icon ? (
+            <IconWrapperClickable onClick={() => setRevealSecret((prev) => !prev)}>
+              {revealSecret ? <EyeClosedIcon size={14} fill={theme.text.grey} /> : <EyeOpenIcon size={14} fill={theme.text.grey} />}
+            </IconWrapperClickable>
+          ) : Icon ? (
             <IconWrapper>
-              <Image src={icon} alt='' width={14} height={14} />
+              <Icon size={14} fill={theme.text.grey} />
             </IconWrapper>
           ) : null}
 
@@ -145,7 +148,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref} // Pass ref to the StyledInput
             data-id={name}
             name={name}
-            $hasIcon={!!icon || isSecret}
+            $hasIcon={!!Icon || isSecret}
             value={value}
             onChange={handleInputChange}
             type={revealSecret ? 'text' : type}

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { Text } from '../text';
+import { XIcon } from '@/assets';
 import { Divider } from '../divider';
 import styled from 'styled-components';
 import { getStatusIcon } from '@/utils';
@@ -174,7 +175,7 @@ export const NotificationNote: React.FC<Props> = ({ type, title, message, action
         {(action || onClose) && (
           <ButtonsWrapper>
             {action && <ActionButton onClick={action.onClick}>{action.label}</ActionButton>}
-            {onClose && <CloseButton src='/icons/common/x.svg' alt='x' width={12} height={12} onClick={() => closeToast({ asSeen: true })} />}
+            {onClose && <XIcon size={12} onClick={() => closeToast({ asSeen: true })} />}
           </ButtonsWrapper>
         )}
       </Content>
