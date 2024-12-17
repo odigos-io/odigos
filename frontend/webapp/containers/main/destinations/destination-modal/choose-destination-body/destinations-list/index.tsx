@@ -34,7 +34,7 @@ interface DestinationsListProps {
   setSelectedItems: (item: DestinationTypeItem) => void;
 }
 
-const DestinationsList: React.FC<DestinationsListProps> = ({ items, setSelectedItems }) => {
+export const DestinationsList: React.FC<DestinationsListProps> = ({ items, setSelectedItems }) => {
   function renderCategoriesList() {
     if (!items.length) {
       return (
@@ -72,5 +72,3 @@ const DestinationsList: React.FC<DestinationsListProps> = ({ items, setSelectedI
     </Container>
   );
 };
-
-export { DestinationsList };
