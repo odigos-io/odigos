@@ -1,4 +1,3 @@
-import { OdigosLogo } from '@/assets';
 import { type Node } from '@xyflow/react';
 import nodeConfig from './node-config.json';
 import { type EntityCounts } from './get-entity-counts';

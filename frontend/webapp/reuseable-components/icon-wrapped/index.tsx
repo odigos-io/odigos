@@ -14,7 +14,6 @@ const Container = styled.div<{ $isError: Props['isError'] }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
   width: 36px;
   height: 36px;
   border-radius: 8px;
@@ -33,5 +32,5 @@ export const IconWrapped: React.FC<Props> = ({ icon: Icon, src = '', alt = '', i
     );
   }
 
-  return <Container $isError={isError}>{!!Icon ? <Icon size={20} /> : <OdigosLogo size={16} />}</Container>;
+  return <Container $isError={isError}>{!!Icon ? <Icon size={20} /> : <OdigosLogo />}</Container>;
 };

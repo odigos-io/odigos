@@ -1,9 +1,9 @@
 import React from 'react';
 import { SVG } from '@/assets';
 
-export const SlackLogo: SVG = ({ size = 16, fill }) => {
+export const SlackLogo: SVG = ({ size = 16, fill, rotate = 0 }) => {
   return (
-    <svg width={size} height={size} viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg' fill='none'>
+    <svg width={size} height={size} viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg' fill='none' style={{ transform: `rotate(${rotate}deg)` }}>
       <g fillRule='evenodd' clipRule='evenodd'>
         <path
           fill={fill || '#E01E5A'}

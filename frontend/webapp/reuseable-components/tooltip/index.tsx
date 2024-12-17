@@ -3,6 +3,7 @@ import Image from 'next/image';
 import ReactDOM from 'react-dom';
 import { Text } from '../text';
 import styled from 'styled-components';
+import { InfoIcon } from '@/assets';
 
 interface Position {
   top: number;
@@ -47,7 +48,7 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, withIcon, children }) =>
   return (
     <TooltipContainer onMouseEnter={handleMouseEvent} onMouseMove={handleMouseEvent} onMouseLeave={handleMouseEvent}>
       {children}
-      {withIcon && <Image src='/icons/common/info.svg' alt='info' width={16} height={16} />}
+      {withIcon && <InfoIcon />}
       {isHovered && <Popup {...popupPosition}>{text}</Popup>}
     </TooltipContainer>
   );

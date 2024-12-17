@@ -12,6 +12,7 @@ import { DestinationModal } from '../destination-modal';
 import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
 import { ConfiguredDestinationsList } from './configured-destinations-list';
 import { Button, FadeLoader, NotificationNote, SectionTitle, Text } from '@/reuseable-components';
+import { ArrowIcon } from '@/assets';
 
 const ContentWrapper = styled.div`
   width: 640px;
@@ -74,7 +75,7 @@ export function AddDestinationContainer() {
           navigationButtons={[
             {
               label: 'BACK',
-              iconSrc: '/icons/common/arrow-white.svg',
+              icon: ArrowIcon,
               variant: 'secondary',
               onClick: clickBack,
               disabled: isLoading,

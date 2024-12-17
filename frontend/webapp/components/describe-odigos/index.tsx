@@ -10,7 +10,7 @@ export const DescribeOdigos = () => {
 
   return (
     <IconButton onClick={handleClick} tooltip='Describe Odigos' withPing pingColor={theme.colors.majestic_blue}>
-      <OdigosLogo size={12} />
+      <OdigosLogo />
     </IconButton>
   );
 };

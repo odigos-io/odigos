@@ -1,9 +1,9 @@
 import React from 'react';
 import { SVG } from '@/assets';
 
-export const RulesIcon: SVG = ({ size = 16, fill = '#B8B8B8' }) => {
+export const RulesIcon: SVG = ({ size = 16, fill = '#B8B8B8', rotate = 0 }) => {
   return (
-    <svg width={size} height={size} viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg' fill='none'>
+    <svg width={size} height={size} viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg' fill='none' style={{ transform: `rotate(${rotate}deg)` }}>
       <path
         stroke={fill}
         strokeWidth='1.2'

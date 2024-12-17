@@ -44,7 +44,7 @@ const SectionTitle: React.FC<SectionTitleProps> = ({ title, description, badgeLa
     <Container>
       <HeaderWrapper>
         <TitleContainer>
-          {Icon && <Icon size={12} />}
+          {Icon && <Icon size={14} />}
           <Title weight={300} size={titleSize}>
             {title}
           </Title>

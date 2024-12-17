@@ -18,7 +18,7 @@ export const DescribeDrawer: React.FC<Props> = () => {
   const { data: describe } = useDescribeOdigos();
 
   return (
-    <OverviewDrawer title={DATA_CARDS.DESCRIBE_ODIGOS} titleTooltip='' icon={OdigosLogo}>
+    <OverviewDrawer title={DATA_CARDS.DESCRIBE_ODIGOS} icon={OdigosLogo}>
       <DataContainer>
         <DataCard
           title=''

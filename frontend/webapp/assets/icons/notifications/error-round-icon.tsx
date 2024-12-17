@@ -1,9 +1,9 @@
 import React from 'react';
 import { SVG } from '@/assets';
 
-export const ErrorRoundIcon: SVG = ({ size = 16, fill = '#EF7676' }) => {
+export const ErrorRoundIcon: SVG = ({ size = 16, fill = '#EF7676', rotate = 0 }) => {
   return (
-    <svg width={size} height={size * (15 / 14)} viewBox='0 0 14 15' xmlns='http://www.w3.org/2000/svg' fill='none'>
+    <svg width={size * (14 / 15)} height={size} viewBox='0 0 14 15' xmlns='http://www.w3.org/2000/svg' fill='none' style={{ transform: `rotate(${rotate}deg)` }}>
       <path
         stroke={fill}
         strokeLinecap='round'

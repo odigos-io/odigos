@@ -1,4 +1,4 @@
-import { ErrorTriangleIcon, SuccessRoundIcon, SVG, WarningTriangleIcon } from '@/assets';
+import { ErrorTriangleIcon, InfoIcon, OdigosLogo, SuccessRoundIcon, SVG, WarningTriangleIcon } from '@/assets';
 import { NOTIFICATION_TYPE } from '@/types';
 
 export const getStatusIcon = (type: NOTIFICATION_TYPE) => {
@@ -6,8 +6,8 @@ export const getStatusIcon = (type: NOTIFICATION_TYPE) => {
     [NOTIFICATION_TYPE.SUCCESS]: SuccessRoundIcon,
     [NOTIFICATION_TYPE.ERROR]: ErrorTriangleIcon,
     [NOTIFICATION_TYPE.WARNING]: WarningTriangleIcon,
-    [NOTIFICATION_TYPE.INFO]: WarningTriangleIcon,
-    [NOTIFICATION_TYPE.DEFAULT]: WarningTriangleIcon,
+    [NOTIFICATION_TYPE.INFO]: InfoIcon,
+    [NOTIFICATION_TYPE.DEFAULT]: OdigosLogo,
   };
 
   return LOGOS[type];

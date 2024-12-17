@@ -35,7 +35,7 @@ export const MainHeader: React.FC<MainHeaderProps> = () => {
   return (
     <HeaderContainer>
       <AlignLeft>
-        <OdigosLogoText size={20} />
+        <OdigosLogoText size={80} />
         <PlatformTitle type={PlatformTypes.K8S} />
         {!connecting && <ConnectionStatus title={title} subtitle={message} isActive={active} />}
       </AlignLeft>

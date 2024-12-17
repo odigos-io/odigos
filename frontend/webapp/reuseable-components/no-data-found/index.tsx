@@ -1,12 +1,12 @@
 import React from 'react';
-import Image from 'next/image';
 import { Text } from '../text';
+import { NoDataIcon } from '@/assets';
 import styled from 'styled-components';
 
-type NoDataFoundProps = {
+interface Props {
   title?: string;
   subTitle?: string;
-};
+}
 
 const Title = styled(Text)`
   color: #7a7a7a;
@@ -32,16 +32,14 @@ const Container = styled.div`
   align-items: center;
 `;
 
-const NoDataFound: React.FC<NoDataFoundProps> = ({ title = 'No data found', subTitle = 'Check your search phrase and try one more time' }) => {
+export const NoDataFound: React.FC<Props> = ({ title = 'No data found', subTitle = 'Check your search phrase and try one more time' }) => {
   return (
     <Container>
       <TitleWrapper>
-        <Image src='/icons/common/no-data-found.svg' alt='no-found' width={16} height={16} />
+        <NoDataIcon />
         <Title>{title}</Title>
       </TitleWrapper>
       {subTitle && <SubTitle>{subTitle}</SubTitle>}
     </Container>
   );
 };
-
-export { NoDataFound };

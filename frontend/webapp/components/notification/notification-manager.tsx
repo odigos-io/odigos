@@ -8,6 +8,7 @@ import { useOnClickOutside, useTimeAgo } from '@/hooks';
 import theme, { hexPercentValues } from '@/styles/theme';
 import { NOTIFICATION_TYPE, type Notification } from '@/types';
 import { IconButton, NoDataFound, Text } from '@/reuseable-components';
+import { NotificationIcon } from '@/assets';
 
 const RelativeContainer = styled.div`
   position: relative;
@@ -83,7 +84,7 @@ export const NotificationManager = () => {
   return (
     <RelativeContainer ref={containerRef}>
       <IconButton data-id='notif-manager-button' onClick={toggleOpen} tooltip='Notifications' withPing={!!unseenCount} pingColor={theme.colors.orange_og}>
-        <Image src='/icons/common/notification.svg' alt='logo' width={16} height={16} />
+        <NotificationIcon />
       </IconButton>
 
       {isOpen && (

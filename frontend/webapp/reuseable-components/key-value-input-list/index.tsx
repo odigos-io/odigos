@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Image from 'next/image';
-import styled, { css } from 'styled-components';
+import theme from '@/styles/theme';
+import { ArrowIcon } from '@/assets';
+import styled from 'styled-components';
 import { Button, FieldError, FieldLabel, Input, Text } from '@/reuseable-components';
 
 type Row = {
@@ -128,7 +130,9 @@ export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({ initialK
               hasError={!!errorMessage && (!required || (required && !key))}
               autoFocus={!value && rows.length > 1 && idx === rows.length - 1}
             />
-            <Image src='/icons/common/arrow-right.svg' alt='Arrow' width={16} height={16} />
+            <div>
+              <ArrowIcon rotate={180} fill={theme.text.darker_grey} />
+            </div>
             <Input
               placeholder='Attribute value'
               value={value}

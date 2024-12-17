@@ -1,9 +1,9 @@
 import React from 'react';
 import { SVG } from '@/assets';
 
-export const K8sLogo: SVG = ({ size = 16 }) => {
+export const K8sLogo: SVG = ({ size = 16, rotate = 0 }) => {
   return (
-    <svg width={size} height={size} viewBox='0 0 28 28' xmlns='http://www.w3.org/2000/svg' fill='none'>
+    <svg width={size} height={size} viewBox='0 0 28 28' xmlns='http://www.w3.org/2000/svg' fill='none' style={{ transform: `rotate(${rotate}deg)` }}>
       <path fill='#242424' d='M0 14C0 6.26801 6.26801 0 14 0C21.732 0 28 6.26801 28 14C28 21.732 21.732 28 14 28C6.26801 28 0 21.732 0 14Z' />
       <path
         fill='#B8B8B8'
