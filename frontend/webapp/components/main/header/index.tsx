@@ -1,12 +1,13 @@
 import React from 'react';
 import { FlexRow } from '@/styles';
+import { SLACK_LINK } from '@/utils';
 import styled from 'styled-components';
 import { PlatformTypes } from '@/types';
-import { OdigosLogoText } from '@/assets';
 import { PlatformTitle } from './cp-title';
-import { useConnectionStore } from '@/store';
-import { ConnectionStatus } from '@/reuseable-components';
-import { DescribeOdigos, NotificationManager, SlackInvite } from '@/components';
+import { NotificationManager } from '@/components';
+import { OdigosLogo, OdigosLogoText, SlackLogo } from '@/assets';
+import { ConnectionStatus, IconButton } from '@/reuseable-components';
+import { DRAWER_OTHER_TYPES, useConnectionStore, useDrawerStore } from '@/store';
 
 interface MainHeaderProps {}
 
@@ -30,7 +31,11 @@ const AlignRight = styled(FlexRow)`
 `;
 
 export const MainHeader: React.FC<MainHeaderProps> = () => {
+  const { setSelectedItem } = useDrawerStore();
   const { connecting, active, title, message } = useConnectionStore();
+
+  const handleClickDescribe = () => setSelectedItem({ type: DRAWER_OTHER_TYPES.DESCRIBE_ODIGOS, id: DRAWER_OTHER_TYPES.DESCRIBE_ODIGOS });
+  const handleClickSlack = () => window.open(SLACK_LINK, '_blank', 'noopener noreferrer');
 
   return (
     <HeaderContainer>
@@ -42,8 +47,12 @@ export const MainHeader: React.FC<MainHeaderProps> = () => {
 
       <AlignRight>
         <NotificationManager />
-        <DescribeOdigos />
-        <SlackInvite />
+        <IconButton onClick={handleClickDescribe} tooltip='Describe Odigos'>
+          <OdigosLogo />
+        </IconButton>
+        <IconButton onClick={handleClickSlack} tooltip='Join our Slack community'>
+          <SlackLogo />
+        </IconButton>
       </AlignRight>
     </HeaderContainer>
   );
