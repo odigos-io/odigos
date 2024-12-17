@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/odigos-io/odigos/procdiscovery/pkg/libc"
+
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned"
 	"github.com/odigos-io/odigos/common"
@@ -13,7 +15,6 @@ import (
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/rest"
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 )
 
@@ -26,17 +27,8 @@ type plugin struct {
 	odigosKubeClient *odigosclientset.Clientset
 }
 
-func NewPlugin(maxPods int64, lsf LangSpecificFunc) dpm.PluginInterface {
+func NewPlugin(maxPods int64, lsf LangSpecificFunc, odigosKubeClient *odigosclientset.Clientset) dpm.PluginInterface {
 	idManager := devices.NewIDManager(maxPods)
-
-	cfg, err := rest.InClusterConfig()
-	if err != nil {
-		log.Logger.Error(err, "Failed to init Kubernetes API client")
-	}
-	odigosKubeClient, err := odigosclientset.NewForConfig(cfg)
-	if err != nil {
-		log.Logger.Error(err, "Failed to init odigos client")
-	}
 
 	return &plugin{
 		idsManager:       idManager,
@@ -44,6 +36,16 @@ func NewPlugin(maxPods int64, lsf LangSpecificFunc) dpm.PluginInterface {
 		LangSpecificFunc: lsf,
 		odigosKubeClient: odigosKubeClient,
 	}
+}
+
+func NewMuslPlugin(lang common.ProgrammingLanguage, maxPods int64, lsf LangSpecificFunc, odigosKubeClient *odigosclientset.Clientset) dpm.PluginInterface {
+	wrappedLsf := func(deviceId string, uniqueDestinationSignals map[common.ObservabilitySignal]struct{}) *v1beta1.ContainerAllocateResponse {
+		res := lsf(deviceId, uniqueDestinationSignals)
+		libc.ModifyEnvVarsForMusl(lang, res.Envs)
+		return res
+	}
+
+	return NewPlugin(maxPods, wrappedLsf, odigosKubeClient)
 }
 
 func (p *plugin) GetDevicePluginOptions(ctx context.Context, empty *v1beta1.Empty) (*v1beta1.DevicePluginOptions, error) {

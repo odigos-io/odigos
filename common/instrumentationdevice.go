@@ -21,18 +21,31 @@ const OdigosResourceNamespace = "instrumentation.odigos.io"
 // the native Java SDK will be named "java-native-community".
 // the ebpf Java enterprise sdk will be named "java-ebpf-enterprise".
 
-func InstrumentationPluginName(language ProgrammingLanguage, otelSdk OtelSdk) string {
-	return string(language) + "-" + string(otelSdk.SdkType) + "-" + string(otelSdk.SdkTier)
+func InstrumentationPluginName(language ProgrammingLanguage, otelSdk OtelSdk, libc *LibCType) string {
+	result := string(language) + "-" + string(otelSdk.SdkType) + "-" + string(otelSdk.SdkTier)
+
+	// If musl libc type recorded - we use different plugin name
+	if libc != nil && *libc == Musl {
+		result = "musl-" + result
+	}
+
+	return result
 }
 
 func InstrumentationPluginNameToComponents(pluginName string) (ProgrammingLanguage, OtelSdk) {
 	components := strings.Split(pluginName, "-")
+	if len(components) > 3 {
+		// This is a musl libc plugin
+		pluginName = strings.Join(components[1:], "-")
+		components = strings.Split(pluginName, "-")
+	}
+
 	otelSdk := OtelSdk{SdkType: OtelSdkType(components[1]), SdkTier: OtelSdkTier(components[2])}
 	return ProgrammingLanguage(components[0]), otelSdk
 }
 
-func InstrumentationDeviceName(language ProgrammingLanguage, otelSdk OtelSdk) OdigosInstrumentationDevice {
-	pluginName := InstrumentationPluginName(language, otelSdk)
+func InstrumentationDeviceName(language ProgrammingLanguage, otelSdk OtelSdk, libc *LibCType) OdigosInstrumentationDevice {
+	pluginName := InstrumentationPluginName(language, otelSdk, libc)
 	return OdigosInstrumentationDevice(OdigosResourceNamespace + "/" + pluginName)
 }
 
