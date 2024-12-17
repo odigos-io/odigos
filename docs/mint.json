@@ -125,6 +125,12 @@
             "instrumentations/java/java",
             "instrumentations/java/ebpf"
           ]
+        },
+        {
+          "group": ".NET",
+            "pages": [
+                "instrumentations/dotnet/dotnet"
+            ]
         }
       ]
     },

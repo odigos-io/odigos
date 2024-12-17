@@ -526,3 +526,30 @@ spec:
             failureThreshold: 3
             successThreshold: 1
 ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dotnet-musl
+  namespace: default
+  labels:
+    app: dotnet-musl
+spec:
+  selector:
+    matchLabels:
+      app: dotnet-musl
+  template:
+    metadata:
+      labels:
+        app: dotnet-musl
+      annotations:
+        odigos-test-step: "2"
+    spec:
+      containers:
+        - name: dotnet-musl
+          image: dotnet-musl:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            tcpSocket:
+              port: 8080
