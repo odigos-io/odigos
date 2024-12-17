@@ -1,7 +1,8 @@
 import React from 'react';
 import { SVG } from '@/assets';
+import theme from '@/styles/theme';
 
-export const NoDataIcon: SVG = ({ size = 16, fill = '#7A7A7A', rotate = 0, onClick }) => {
+export const NoDataIcon: SVG = ({ size = 16, fill = theme.text.secondary, rotate = 0, onClick }) => {
   return (
     <svg width={size} height={size} viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg' fill='none' style={{ transform: `rotate(${rotate}deg)` }} onClick={onClick}>
       <path

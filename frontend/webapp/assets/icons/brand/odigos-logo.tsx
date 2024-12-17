@@ -1,7 +1,8 @@
 import React from 'react';
 import { SVG } from '@/assets';
+import theme from '@/styles/theme';
 
-export const OdigosLogo: SVG = ({ size = 16, fill = '#F9F9F9', rotate = 0, onClick }) => {
+export const OdigosLogo: SVG = ({ size = 16, fill = theme.text.secondary, rotate = 0, onClick }) => {
   return (
     <svg xmlns='http://www.w3.org/2000/svg' width={size} height={size * (431 / 552)} viewBox='0 0 552 431' fill={fill} style={{ transform: `rotate(${rotate}deg)` }} onClick={onClick}>
       <path d='M308.491 83.3091V0.0765381H472.573C493.785 0.0765381 511 16.4464 511 36.6589V374.508C511 394.72 493.785 411.09 472.573 411.09H308.491V328.396L454.666 263.762C478.721 253.079 493.708 230.791 493.708 205.583C493.708 180.375 478.721 158.011 454.666 147.405L308.414 83.3859L308.491 83.3091Z' />

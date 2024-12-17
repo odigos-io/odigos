@@ -1,7 +1,8 @@
 import React from 'react';
 import { SVG } from '@/assets';
+import theme from '@/styles/theme';
 
-export const ErrorRoundIcon: SVG = ({ size = 16, fill = '#EF7676', rotate = 0, onClick }) => {
+export const ErrorRoundIcon: SVG = ({ size = 16, fill = theme.text.error, rotate = 0, onClick }) => {
   return (
     <svg width={size * (14 / 15)} height={size} viewBox='0 0 14 15' xmlns='http://www.w3.org/2000/svg' fill='none' style={{ transform: `rotate(${rotate}deg)` }} onClick={onClick}>
       <path

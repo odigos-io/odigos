@@ -1,7 +1,8 @@
 import React from 'react';
 import { SVG } from '@/assets';
+import theme from '@/styles/theme';
 
-export const OdigosLogoText: SVG = ({ size = 16, fill = '#F9F9F9', rotate = 0, onClick }) => {
+export const OdigosLogoText: SVG = ({ size = 16, fill = theme.text.secondary, rotate = 0, onClick }) => {
   return (
     <svg width={size} height={size * (103 / 429)} viewBox='0 0 429 103' fill={fill} xmlns='http://www.w3.org/2000/svg' style={{ transform: `rotate(${rotate}deg)` }} onClick={onClick}>
       <defs>

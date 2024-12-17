@@ -1,5 +1,6 @@
 import React from 'react';
 import { Text } from '../text';
+import theme from '@/styles/theme';
 import { NoDataIcon } from '@/assets';
 import styled from 'styled-components';
 
@@ -36,7 +37,7 @@ export const NoDataFound: React.FC<Props> = ({ title = 'No data found', subTitle
   return (
     <Container>
       <TitleWrapper>
-        <NoDataIcon />
+        <NoDataIcon fill={theme.text.dark_grey} />
         <Title>{title}</Title>
       </TitleWrapper>
       {subTitle && <SubTitle>{subTitle}</SubTitle>}
