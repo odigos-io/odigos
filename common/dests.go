@@ -29,6 +29,7 @@ const (
 	LogzioDestinationType                 DestinationType = "logzio"
 	LokiDestinationType                   DestinationType = "loki"
 	MiddlewareDestinationType             DestinationType = "middleware"
+	MockDestinationType                   DestinationType = "mock"
 	NewRelicDestinationType               DestinationType = "newrelic"
 	NopDestinationType                    DestinationType = "nop"
 	OpsVerseDestinationType               DestinationType = "opsverse"

@@ -5,7 +5,7 @@ import { extractMonitors } from '@/utils';
 import { DeleteWarning } from '@/components';
 import { IAppState, useAppStore } from '@/store';
 import { OVERVIEW_ENTITY_TYPES, type ConfiguredDestination } from '@/types';
-import { DataCardFields, DataTab, IconButton, Text } from '@/reuseable-components';
+import { DataCardFields, DataTab, IconButton } from '@/reuseable-components';
 
 const Container = styled.div`
   display: flex;
@@ -27,7 +27,6 @@ const ListItem: React.FC<{ item: ConfiguredDestination; isLastItem: boolean }> =
     <>
       <DataTab
         title={item.displayName}
-        subTitle=''
         logo={item.imageUrl}
         monitors={extractMonitors(item.exportedSignals)}
         monitorsWithLabels

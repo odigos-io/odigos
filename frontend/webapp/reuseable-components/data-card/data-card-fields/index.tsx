@@ -1,8 +1,8 @@
 import React, { useId } from 'react';
 import styled from 'styled-components';
+import { NOTIFICATION_TYPE } from '@/types';
 import { ActiveStatus, Code, DataTab, Divider, InstrumentStatus, MonitorsIcons, NotificationNote, Text, Tooltip } from '@/reuseable-components';
 import { capitalizeFirstLetter, getProgrammingLanguageIcon, parseJsonStringToPrettyString, safeJsonParse, WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils';
-import { NOTIFICATION_TYPE } from '@/types';
 
 export enum DataCardFieldTypes {
   DIVIDER = 'divider',
@@ -47,7 +47,7 @@ const ItemTitle = styled(Text)`
 export const DataCardFields: React.FC<Props> = ({ data }) => {
   return (
     <ListContainer>
-      {data.map(({ type, title, tooltip, value, width = 'inherit' }) => {
+      {data.map(({ type, title, tooltip, value, width = 'unset' }) => {
         const id = useId();
 
         return (
@@ -104,9 +104,9 @@ const renderValue = (type: DataCardRow['type'], value: DataCardRow['value']) => 
               type={NOTIFICATION_TYPE.INFO}
               message={
                 hasPresenceOfOtherAgent
-                  ? `By default, we do not operate alongside the ${otherAgent} Agent. Please contact the Odigos team for guidance on enabling this configuration.`
+                  ? `By default, we do not operate alongside the ${otherAgent}. Please contact the Odigos team for guidance on enabling this configuration.`
                   : canRunInParallel
-                  ? `We are operating alongside the ${otherAgent} Agent, which is not the recommended configuration. We suggest disabling the ${otherAgent} Agent for optimal performance.`
+                  ? `We are operating alongside the ${otherAgent}, which is not the recommended configuration. We suggest disabling the ${otherAgent} for optimal performance.`
                   : `Concurrent execution with the ${otherAgent} is not supported. Please disable one of the agents to enable proper instrumentation.`
               }
             />
