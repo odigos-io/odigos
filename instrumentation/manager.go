@@ -24,14 +24,12 @@ var (
 type ConfigUpdate[configGroup ConfigGroup] map[configGroup]Config
 
 type instrumentationDetails[processGroup ProcessGroup, configGroup ConfigGroup] struct {
+	// we want to track the instrumentation even if it failed to load, to be able to report the error
+	// and clean up the reporter resources once the process exits.
+	// hence, this might be nil if the instrumentation failed to load.
 	inst Instrumentation
 	pg   processGroup
 	cg   configGroup
-
-	// active is used to track if the instrumentation is loaded successfully or not.
-	// we want to track the instrumentation even if it failed to load, to be able to report the error
-	// and clean up the instrumentation resources and the reporter resources once the process exits.
-	active bool
 }
 
 type ManagerOptions[processGroup ProcessGroup, configGroup ConfigGroup] struct {
@@ -147,6 +145,9 @@ func (m *manager[ProcessGroup, ConfigGroup]) runEventLoop(ctx context.Context) {
 		case <-ctx.Done():
 			m.logger.Info("stopping eBPF instrumentation manager")
 			for pid, details := range m.detailsByPid {
+				if details.inst == nil {
+					continue
+				}
 				err := details.inst.Close(ctx)
 				if err != nil {
 					m.logger.Error(err, "failed to close instrumentation", "pid", pid)
@@ -206,7 +207,7 @@ func (m *manager[ProcessGroup, ConfigGroup]) cleanInstrumentation(ctx context.Co
 
 	m.logger.Info("cleaning instrumentation resources", "pid", pid, "process group details", details.pg)
 
-	if details.active {
+	if details.inst != nil {
 		err := details.inst.Close(ctx)
 		if err != nil {
 			m.logger.Error(err, "failed to close instrumentation")
@@ -222,7 +223,7 @@ func (m *manager[ProcessGroup, ConfigGroup]) cleanInstrumentation(ctx context.Co
 }
 
 func (m *manager[ProcessGroup, ConfigGroup]) handleProcessExecEvent(ctx context.Context, e detector.ProcessEvent) error {
-	if details, found := m.detailsByPid[e.PID]; found && details.active {
+	if details, found := m.detailsByPid[e.PID]; found && details.inst != nil {
 		// this can happen if we have multiple exec events for the same pid (chain loading)
 		// TODO: better handle this?
 		// this can be done by first closing the existing instrumentation,
@@ -275,22 +276,22 @@ func (m *manager[ProcessGroup, ConfigGroup]) handleProcessExecEvent(ctx context.
 
 	loadErr := inst.Load(ctx)
 
-	// we need to track the instrumentation even if the load failed.
-	// consider a reporter which writes a persistent record for a failed/successful load
-	// we need to notify the reporter once that PID exists to clean up the resources
-	m.startTrackInstrumentation(e.PID, inst, pg, configGroup, loadErr == nil)
-
 	reporterErr := m.handler.Reporter.OnLoad(ctx, e.PID, loadErr, pg)
+	if reporterErr != nil {
+		m.logger.Error(reporterErr, "failed to report instrumentation load", "loaded", loadErr == nil, "pid", e.PID, "process group details", pg)
+	}
 	if loadErr != nil {
+		// we need to track the instrumentation even if the load failed.
+		// consider a reporter which writes a persistent record for a failed/successful load
+		// we need to notify the reporter once that PID exits to clean up the resources - hence we track it.
+		// saving the inst as nil marking the instrumentation failed to load, and is not valid to run/configure/close.
+		m.startTrackInstrumentation(e.PID, nil, pg, configGroup)
 		m.logger.Error(err, "failed to load instrumentation", "language", otelDisto.Language, "sdk", otelDisto.OtelSdk)
 		// TODO: should we return here the load error? or the instance write error? or both?
 		return err
 	}
 
-	if reporterErr != nil {
-		m.logger.Error(reporterErr, "failed to report instrumentation load")
-	}
-
+	m.startTrackInstrumentation(e.PID, inst, pg, configGroup)
 	m.logger.Info("instrumentation loaded", "pid", e.PID, "process group details", pg)
 
 	go func() {
@@ -307,12 +308,11 @@ func (m *manager[ProcessGroup, ConfigGroup]) handleProcessExecEvent(ctx context.
 	return nil
 }
 
-func (m *manager[ProcessGroup, ConfigGroup]) startTrackInstrumentation(pid int, inst Instrumentation, processGroup ProcessGroup, configGroup ConfigGroup, active bool) {
+func (m *manager[ProcessGroup, ConfigGroup]) startTrackInstrumentation(pid int, inst Instrumentation, processGroup ProcessGroup, configGroup ConfigGroup) {
 	instDetails := &instrumentationDetails[ProcessGroup, ConfigGroup]{
-		inst:   inst,
-		pg:     processGroup,
-		cg:     configGroup,
-		active: active,
+		inst: inst,
+		pg:   processGroup,
+		cg:   configGroup,
 	}
 	m.detailsByPid[pid] = instDetails
 
@@ -348,7 +348,7 @@ func (m *manager[ProcessGroup, ConfigGroup]) applyInstrumentationConfigurationFo
 	}
 
 	for _, instDetails := range configGroupInstrumentations {
-		if !instDetails.active {
+		if instDetails.inst == nil {
 			continue
 		}
 		m.logger.Info("applying configuration to instrumentation", "process group details", instDetails.pg, "configGroup", configGroup)
