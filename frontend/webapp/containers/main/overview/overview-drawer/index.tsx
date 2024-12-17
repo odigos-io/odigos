@@ -1,4 +1,5 @@
 import { PropsWithChildren, useRef, useState } from 'react';
+import { SVG } from '@/assets';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
 import DrawerFooter from './drawer-footer';
@@ -13,7 +14,8 @@ const DRAWER_WIDTH = `${640 + 64}px`; // +64 because of "ContentArea" padding
 interface Props {
   title: string;
   titleTooltip?: string;
-  imageUri?: string;
+  icon?: SVG;
+  iconSrc?: string;
   isEdit?: boolean;
   isFormDirty?: boolean;
   onEdit?: (bool?: boolean) => void;
@@ -34,7 +36,7 @@ const ContentArea = styled.div`
   overflow-y: auto;
 `;
 
-const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, titleTooltip, imageUri, isEdit = false, isFormDirty = false, onEdit, onSave, onDelete, onCancel }) => {
+const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, titleTooltip, icon, iconSrc, isEdit = false, isFormDirty = false, onEdit, onSave, onDelete, onCancel }) => {
   const { selectedItem, setSelectedItem } = useDrawerStore();
 
   useKeyDown({ key: 'Enter', active: !!selectedItem }, () => (isEdit ? clickSave() : closeDrawer()));
@@ -107,7 +109,8 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, 
             ref={titleRef}
             title={title}
             titleTooltip={titleTooltip}
-            imageUri={imageUri}
+            icon={icon}
+            iconSrc={iconSrc}
             isEdit={isEdit}
             onEdit={onEdit ? () => onEdit(true) : undefined}
             onClose={isEdit ? clickCancel : closeDrawer}

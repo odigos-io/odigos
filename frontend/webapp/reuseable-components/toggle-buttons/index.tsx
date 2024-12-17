@@ -1,7 +1,7 @@
-import Image from 'next/image';
+import React, { useEffect, useState } from 'react';
 import { Tooltip } from '../tooltip';
 import styled from 'styled-components';
-import React, { useEffect, useState } from 'react';
+import { CheckCircledIcon, CrossCircledIcon } from '@/assets';
 
 interface ToggleProps {
   activeText?: string;
@@ -59,7 +59,7 @@ const InactiveButton = styled(BaseButton)`
   transition: background-color 0.3s;
 `;
 
-const ToggleButtons: React.FC<ToggleProps> = ({ activeText = 'Active', inactiveText = 'Inactive', tooltip, initialValue = false, onChange, disabled }) => {
+export const ToggleButtons: React.FC<ToggleProps> = ({ activeText = 'Active', inactiveText = 'Inactive', tooltip, initialValue = false, onChange, disabled }) => {
   const [isActive, setIsActive] = useState(initialValue);
   useEffect(() => setIsActive(initialValue), [initialValue]);
 
@@ -80,16 +80,14 @@ const ToggleButtons: React.FC<ToggleProps> = ({ activeText = 'Active', inactiveT
     <Tooltip text={tooltip}>
       <Container>
         <ActiveButton className={isActive ? 'colored' : ''} onClick={() => handleToggle(true)} disabled={disabled}>
-          <Image src='/icons/common/circled-check.svg' alt='' width={16} height={16} />
+          <CheckCircledIcon />
           {activeText}
         </ActiveButton>
         <InactiveButton className={isActive ? '' : 'colored'} onClick={() => handleToggle(false)} disabled={disabled}>
-          <Image src='/icons/common/circled-cross.svg' alt='' width={16} height={16} />
+          <CrossCircledIcon />
           {inactiveText}
         </InactiveButton>
       </Container>
     </Tooltip>
   );
 };
-
-export { ToggleButtons };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import Image from 'next/image';
 import styled from 'styled-components';
+import { PlusIcon, TrashIcon } from '@/assets';
 import { Button, FieldError, FieldLabel, Input, Text } from '@/reuseable-components';
 
 type Row = {
@@ -150,7 +150,7 @@ export const InputTable: React.FC<Props> = ({ columns, initialValues = [], value
 
               <td>
                 <DeleteButton disabled={isDelButtonDisabled} onClick={() => handleDeleteRow(idx)}>
-                  <Image src='/icons/common/trash.svg' alt='Delete' width={16} height={16} />
+                  <TrashIcon />
                 </DeleteButton>
               </td>
             </tr>
@@ -161,7 +161,7 @@ export const InputTable: React.FC<Props> = ({ columns, initialValues = [], value
       {!!errorMessage && <FieldError>{errorMessage}</FieldError>}
 
       <AddButton disabled={isAddButtonDisabled} variant='tertiary' onClick={handleAddRow}>
-        <Image src='/icons/common/plus.svg' alt='Add' width={16} height={16} />
+        <PlusIcon />
         <ButtonText>ADD ENDPOINT FILTER</ButtonText>
       </AddButton>
     </Container>

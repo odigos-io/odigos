@@ -1,12 +1,13 @@
 import React from 'react';
-import Image from 'next/image';
 import { FlexRow } from '@/styles';
+import { SLACK_LINK } from '@/utils';
 import styled from 'styled-components';
 import { PlatformTypes } from '@/types';
 import { PlatformTitle } from './cp-title';
-import { useConnectionStore } from '@/store';
-import { ConnectionStatus } from '@/reuseable-components';
-import { DescribeOdigos, NotificationManager } from '@/components';
+import { NotificationManager } from '@/components';
+import { OdigosLogo, OdigosLogoText, SlackLogo } from '@/assets';
+import { ConnectionStatus, IconButton } from '@/reuseable-components';
+import { DRAWER_OTHER_TYPES, useConnectionStore, useDrawerStore } from '@/store';
 
 interface MainHeaderProps {}
 
@@ -26,23 +27,32 @@ const AlignLeft = styled(FlexRow)`
 const AlignRight = styled(FlexRow)`
   margin-left: auto;
   margin-right: 32px;
-  gap: 16px;
+  gap: 12px;
 `;
 
 export const MainHeader: React.FC<MainHeaderProps> = () => {
+  const { setSelectedItem } = useDrawerStore();
   const { connecting, active, title, message } = useConnectionStore();
+
+  const handleClickDescribe = () => setSelectedItem({ type: DRAWER_OTHER_TYPES.DESCRIBE_ODIGOS, id: DRAWER_OTHER_TYPES.DESCRIBE_ODIGOS });
+  const handleClickSlack = () => window.open(SLACK_LINK, '_blank', 'noopener noreferrer');
 
   return (
     <HeaderContainer>
       <AlignLeft>
-        <Image src='/brand/transparent-logo-white.svg' alt='logo' width={84} height={20} />
+        <OdigosLogoText size={80} />
         <PlatformTitle type={PlatformTypes.K8S} />
         {!connecting && <ConnectionStatus title={title} subtitle={message} isActive={active} />}
       </AlignLeft>
 
       <AlignRight>
         <NotificationManager />
-        <DescribeOdigos />
+        <IconButton onClick={handleClickDescribe} tooltip='Describe Odigos'>
+          <OdigosLogo />
+        </IconButton>
+        <IconButton onClick={handleClickSlack} tooltip='Join our Slack community'>
+          <SlackLogo />
+        </IconButton>
       </AlignRight>
     </HeaderContainer>
   );

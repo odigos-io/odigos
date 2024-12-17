@@ -53,7 +53,7 @@ const DestinationsList: React.FC<DestinationsListProps> = ({ items, setSelectedI
               key={`destination-${destinationItem.type}`}
               data-id={`destination-${destinationItem.displayName}`}
               title={destinationItem.displayName}
-              logo={destinationItem.imageUrl}
+              iconSrc={destinationItem.imageUrl}
               hoverText='Select'
               monitors={Object.keys(destinationItem.supportedSignals).filter((signal) => destinationItem.supportedSignals[signal].supported)}
               monitorsWithLabels

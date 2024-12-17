@@ -12,7 +12,6 @@ interface Props
     Node<
       {
         nodeWidth: number;
-
         icon: string;
         title: string;
         tagValue: number;
@@ -40,7 +39,7 @@ const ActionsWrapper = styled.div`
 `;
 
 const HeaderNode: React.FC<Props> = ({ data }) => {
-  const { nodeWidth, title, icon, tagValue } = data;
+  const { nodeWidth, title, icon: Icon, tagValue } = data;
   const isSources = title === 'Sources';
 
   const { configuredSources, setConfiguredSources } = useAppStore((state) => state);
@@ -86,7 +85,7 @@ const HeaderNode: React.FC<Props> = ({ data }) => {
 
   return (
     <Container $nodeWidth={nodeWidth} className='nowheel nodrag'>
-      <Image src={icon} width={16} height={16} alt={title} />
+      {Icon && <Icon />}
       <Title size={14}>{title}</Title>
       <Badge label={tagValue} />
 
