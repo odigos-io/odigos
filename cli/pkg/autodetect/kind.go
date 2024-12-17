@@ -42,9 +42,9 @@ type ClusterDetails struct {
 	K8SVersion *version.Version
 }
 
-func GetK8SClusterDetails(ctx context.Context, kc string, client *kube.Client) *ClusterDetails {
+func GetK8SClusterDetails(ctx context.Context, kc string, kContext string, client *kube.Client) *ClusterDetails {
 	clusterDetails := &ClusterDetails{}
-	details := k8sutils.GetCurrentClusterDetails(kc)
+	details := k8sutils.GetCurrentClusterDetails(kc, kContext)
 	serverVersion, err := client.Discovery().ServerVersion()
 	if err != nil {
 		clusterDetails.K8SVersion = nil

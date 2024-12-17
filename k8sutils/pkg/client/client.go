@@ -9,16 +9,36 @@ import (
 )
 
 func GetClientConfig(kc string) (*rest.Config, error) {
+	return GetClientConfigWithContext(kc, "")
+}
+
+func GetClientConfigWithContext(kc string, context string) (*rest.Config, error) {
 	var kubeConfig *rest.Config
 	var err error
 
 	if IsRunningInKubernetes() {
+		// Running inside a Kubernetes cluster
 		kubeConfig, err = rest.InClusterConfig()
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		kubeConfig, err = clientcmd.BuildConfigFromFlags("", kc)
+		// Loading kubeconfig from file with optional context override
+		loadingRules := &clientcmd.ClientConfigLoadingRules{
+			ExplicitPath: kc, // Path to kubeconfig
+		}
+
+		configOverrides := &clientcmd.ConfigOverrides{}
+		if context != "" {
+			configOverrides.CurrentContext = context
+		}
+
+		// Build the kubeconfig
+		kubeConfig, err = clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
+			loadingRules,
+			configOverrides,
+		).ClientConfig()
+
 		if err != nil {
 			return nil, err
 		}
@@ -36,13 +56,18 @@ type ClusterDetails struct {
 	ServerEndpoint string
 }
 
-func GetCurrentClusterDetails(kc string) ClusterDetails {
+func GetCurrentClusterDetails(kc string, kContext string) ClusterDetails {
 	config, err := clientcmd.LoadFromFile(kc)
 	if err != nil {
 		return ClusterDetails{}
 	}
 
-	ctx := config.CurrentContext
+	var ctx string
+	if kContext != "" {
+		ctx = kContext
+	} else {
+		ctx = config.CurrentContext
+	}
 	cluster := ""
 	if val, ok := config.Contexts[ctx]; ok {
 		cluster = val.Cluster
