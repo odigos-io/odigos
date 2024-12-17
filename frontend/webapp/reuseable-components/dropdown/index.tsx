@@ -1,9 +1,9 @@
 import React, { useState, useRef } from 'react';
-import Image from 'next/image';
 import { useOnClickOutside } from '@/hooks';
 import type { DropdownOption } from '@/types';
 import styled, { css } from 'styled-components';
 import theme, { hexPercentValues } from '@/styles/theme';
+import { CheckIcon, CrossIcon, SearchIcon } from '@/assets';
 import { Badge, Checkbox, Divider, ExtendIcon, FieldError, FieldLabel, Input, NoDataFound, Text } from '@/reuseable-components';
 
 interface DropdownProps {
@@ -149,11 +149,8 @@ const DropdownPlaceholder: React.FC<{
           <MultiLabel key={`multi-label-${opt.id}`} size={14}>
             {opt.value}
             <Divider orientation='vertical' length='10px' margin='0 4px' />
-            <Image
-              src='/icons/common/cross.svg'
-              alt=''
-              width={12}
-              height={12}
+            <CrossIcon
+              size={12}
               onClick={(e) => {
                 e.stopPropagation();
                 onDeselect?.(opt);
@@ -214,7 +211,7 @@ const DropdownList: React.FC<{
     <AbsoluteContainer>
       {showSearch && (
         <SearchInputContainer>
-          <Input placeholder='Search...' icon='/icons/common/search.svg' value={searchText} onChange={(e) => setSearchText(e.target.value.toLowerCase())} />
+          <Input placeholder='Search...' icon={SearchIcon} value={searchText} onChange={(e) => setSearchText(e.target.value.toLowerCase())} />
           <Divider thickness={1} margin='8px 0 0 0' />
         </SearchInputContainer>
       )}
@@ -261,7 +258,7 @@ const DropdownListItem: React.FC<{
   return (
     <DropdownItem className={isSelected ? 'selected' : ''} onClick={() => (isSelected ? onDeselect?.(option) : onSelect(option))}>
       <Text size={14}>{option.value}</Text>
-      {isSelected && <Image src='/icons/common/check.svg' alt='' width={16} height={16} />}
+      {isSelected && <CheckIcon />}
     </DropdownItem>
   );
 };

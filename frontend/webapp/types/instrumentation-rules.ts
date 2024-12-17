@@ -83,7 +83,7 @@ export interface InstrumentationRuleSpec {
 }
 
 export interface InstrumentationRuleSpecMapped extends InstrumentationRuleSpec {
-  type?: InstrumentationRuleType; // does not come from backend, it's derived during GET
+  type: InstrumentationRuleType; // does not come from backend, it's derived during GET
 }
 
 // Definition of a Pod Workload type
