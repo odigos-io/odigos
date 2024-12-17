@@ -1,9 +1,9 @@
 import React from 'react';
 import { SVG } from '@/assets';
 
-export const OdigosLogoText: SVG = ({ size = 16, fill = '#F9F9F9', rotate = 0 }) => {
+export const OdigosLogoText: SVG = ({ size = 16, fill = '#F9F9F9', rotate = 0, onClick }) => {
   return (
-    <svg width={size} height={size * (103 / 429)} viewBox='0 0 429 103' fill={fill} xmlns='http://www.w3.org/2000/svg' style={{ transform: `rotate(${rotate}deg)` }}>
+    <svg width={size} height={size * (103 / 429)} viewBox='0 0 429 103' fill={fill} xmlns='http://www.w3.org/2000/svg' style={{ transform: `rotate(${rotate}deg)` }} onClick={onClick}>
       <defs>
         <clipPath id='clip0_116_120'>
           <rect width='429' height='102.681' fill='none' />

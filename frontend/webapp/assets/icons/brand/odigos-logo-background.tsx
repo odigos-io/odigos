@@ -1,9 +1,9 @@
 import React from 'react';
 import { SVG } from '@/assets';
 
-export const OdigosLogoBackground: SVG = ({ size = 16, rotate = 0 }) => {
+export const OdigosLogoBackground: SVG = ({ size = 16, rotate = 0, onClick }) => {
   return (
-    <svg fill='#F9F9F9' width={size} height={size} viewBox='0 0 1000 1000' xmlns='http://www.w3.org/2000/svg' style={{ transform: `rotate(${rotate}deg)` }}>
+    <svg fill='#F9F9F9' width={size} height={size} viewBox='0 0 1000 1000' xmlns='http://www.w3.org/2000/svg' style={{ transform: `rotate(${rotate}deg)` }} onClick={onClick}>
       <rect width={size} height={size} fill='#242023' />
       <path d='M553.491 377.309V294.077H717.573C738.785 294.077 756 310.446 756 330.659V668.508C756 688.72 738.785 705.09 717.573 705.09H553.491V622.396L699.666 557.762C723.721 547.079 738.708 524.791 738.708 499.583C738.708 474.375 723.721 452.011 699.666 441.405L553.414 377.386L553.491 377.309Z' />
       <path d='M447.51 621.781V705.014H283.427C262.215 705.014 245 688.644 245 668.431V330.582C245 310.37 262.215 294 283.427 294H447.51V376.695L301.334 441.329C277.279 452.011 262.292 474.299 262.292 499.507C262.292 524.715 277.279 547.079 301.334 557.685L447.586 621.704L447.51 621.781Z' />

@@ -1,9 +1,9 @@
 import React from 'react';
 import { SVG } from '@/assets';
 
-export const FolderIcon: SVG = ({ size = 16, fill = '#F9F9F9', rotate = 0 }) => {
+export const FolderIcon: SVG = ({ size = 16, fill = '#F9F9F9', rotate = 0, onClick }) => {
   return (
-    <svg width={size * (18 / 19)} height={size} viewBox='0 0 18 19' xmlns='http://www.w3.org/2000/svg' fill='none' style={{ transform: `rotate(${rotate}deg)` }}>
+    <svg width={size * (18 / 19)} height={size} viewBox='0 0 18 19' xmlns='http://www.w3.org/2000/svg' fill='none' style={{ transform: `rotate(${rotate}deg)` }} onClick={onClick}>
       <path
         stroke={fill}
         strokeLinecap='round'

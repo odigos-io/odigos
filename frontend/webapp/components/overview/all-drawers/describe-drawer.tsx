@@ -1,5 +1,5 @@
 import React from 'react';
-import { OdigosLogo } from '@/assets';
+import { CodeIcon } from '@/assets';
 import styled from 'styled-components';
 import { useDescribeOdigos } from '@/hooks';
 import { DATA_CARDS, safeJsonStringify } from '@/utils';
@@ -18,7 +18,7 @@ export const DescribeDrawer: React.FC<Props> = () => {
   const { data: describe } = useDescribeOdigos();
 
   return (
-    <OverviewDrawer title={DATA_CARDS.DESCRIBE_ODIGOS} icon={OdigosLogo}>
+    <OverviewDrawer title={DATA_CARDS.DESCRIBE_ODIGOS} icon={CodeIcon}>
       <DataContainer>
         <DataCard
           title=''
