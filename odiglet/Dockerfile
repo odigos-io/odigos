@@ -100,7 +100,7 @@ WORKDIR /instrumentations
 # Java
 ARG JAVA_OTEL_VERSION=v2.10.0
 ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/$JAVA_OTEL_VERSION/opentelemetry-javaagent.jar /instrumentations/java/javaagent.jar
-RUN chmod 644 /instrumentations///javaagent.jar
+RUN chmod 644 /instrumentations/java/javaagent.jar
 
 # Python
 COPY --from=python-builder /python-instrumentation/workspace /instrumentations/python
