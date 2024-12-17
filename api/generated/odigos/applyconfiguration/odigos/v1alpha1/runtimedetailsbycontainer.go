@@ -29,6 +29,7 @@ type RuntimeDetailsByContainerApplyConfiguration struct {
 	RuntimeVersion *string                       `json:"runtimeVersion,omitempty"`
 	EnvVars        []EnvVarApplyConfiguration    `json:"envVars,omitempty"`
 	OtherAgent     *OtherAgentApplyConfiguration `json:"otherAgent,omitempty"`
+	LibCType       *common.LibCType              `json:"libCType,omitempty"`
 }
 
 // RuntimeDetailsByContainerApplyConfiguration constructs a declarative configuration of the RuntimeDetailsByContainer type for use with
@@ -79,5 +80,13 @@ func (b *RuntimeDetailsByContainerApplyConfiguration) WithEnvVars(values ...*Env
 // If called multiple times, the OtherAgent field is set to the value of the last call.
 func (b *RuntimeDetailsByContainerApplyConfiguration) WithOtherAgent(value *OtherAgentApplyConfiguration) *RuntimeDetailsByContainerApplyConfiguration {
 	b.OtherAgent = value
+	return b
+}
+
+// WithLibCType sets the LibCType field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the LibCType field is set to the value of the last call.
+func (b *RuntimeDetailsByContainerApplyConfiguration) WithLibCType(value common.LibCType) *RuntimeDetailsByContainerApplyConfiguration {
+	b.LibCType = &value
 	return b
 }
