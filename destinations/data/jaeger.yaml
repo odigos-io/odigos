@@ -20,4 +20,12 @@ spec:
       componentProps:
         type: text
         required: true
+    - name: JAEGER_CA
+      displayName: CA Certificate
+      componentType: textarea
+      componentProps:
+        type: text
+        required: false
+        placeholder: '-----BEGIN CERTIFICATE-----'
+        tooltip: 'When using TLS, provide the CA certificate.'
   testConnectionSupported: true
