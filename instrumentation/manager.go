@@ -24,6 +24,9 @@ var (
 type ConfigUpdate[configGroup ConfigGroup] map[configGroup]Config
 
 type instrumentationDetails[processGroup ProcessGroup, configGroup ConfigGroup] struct {
+	// we want to track the instrumentation even if it failed to load, to be able to report the error
+	// and clean up the reporter resources once the process exits.
+	// hence, this might be nil if the instrumentation failed to load.
 	inst Instrumentation
 	pg   processGroup
 	cg   configGroup
@@ -75,11 +78,11 @@ type manager[processGroup ProcessGroup, configGroup ConfigGroup] struct {
 	factories  map[OtelDistribution]Factory
 	logger     logr.Logger
 
-	// all the active instrumentations by pid,
+	// all the created instrumentations by pid,
 	// this map is not concurrent safe, so it should be accessed only from the main event loop
 	detailsByPid map[int]*instrumentationDetails[processGroup, configGroup]
 
-	// active instrumentations by workload, and aggregated by pid
+	// instrumentations by workload, and aggregated by pid
 	// this map is not concurrent safe, so it should be accessed only from the main event loop
 	detailsByWorkload map[configGroup]map[int]*instrumentationDetails[processGroup, configGroup]
 
@@ -142,6 +145,9 @@ func (m *manager[ProcessGroup, ConfigGroup]) runEventLoop(ctx context.Context) {
 		case <-ctx.Done():
 			m.logger.Info("stopping eBPF instrumentation manager")
 			for pid, details := range m.detailsByPid {
+				if details.inst == nil {
+					continue
+				}
 				err := details.inst.Close(ctx)
 				if err != nil {
 					m.logger.Error(err, "failed to close instrumentation", "pid", pid)
@@ -201,12 +207,14 @@ func (m *manager[ProcessGroup, ConfigGroup]) cleanInstrumentation(ctx context.Co
 
 	m.logger.Info("cleaning instrumentation resources", "pid", pid, "process group details", details.pg)
 
-	err := details.inst.Close(ctx)
-	if err != nil {
-		m.logger.Error(err, "failed to close instrumentation")
+	if details.inst != nil {
+		err := details.inst.Close(ctx)
+		if err != nil {
+			m.logger.Error(err, "failed to close instrumentation")
+		}
 	}
 
-	err = m.handler.Reporter.OnExit(ctx, pid, details.pg)
+	err := m.handler.Reporter.OnExit(ctx, pid, details.pg)
 	if err != nil {
 		m.logger.Error(err, "failed to report instrumentation exit")
 	}
@@ -215,7 +223,7 @@ func (m *manager[ProcessGroup, ConfigGroup]) cleanInstrumentation(ctx context.Co
 }
 
 func (m *manager[ProcessGroup, ConfigGroup]) handleProcessExecEvent(ctx context.Context, e detector.ProcessEvent) error {
-	if _, found := m.detailsByPid[e.PID]; found {
+	if details, found := m.detailsByPid[e.PID]; found && details.inst != nil {
 		// this can happen if we have multiple exec events for the same pid (chain loading)
 		// TODO: better handle this?
 		// this can be done by first closing the existing instrumentation,
@@ -266,21 +274,24 @@ func (m *manager[ProcessGroup, ConfigGroup]) handleProcessExecEvent(ctx context.
 		return err
 	}
 
-	err = inst.Load(ctx)
-	// call the reporter regardless of the load result - as we want to report the load status
-	reporterErr := m.handler.Reporter.OnLoad(ctx, e.PID, err, pg)
-	if err != nil {
+	loadErr := inst.Load(ctx)
+
+	reporterErr := m.handler.Reporter.OnLoad(ctx, e.PID, loadErr, pg)
+	if reporterErr != nil {
+		m.logger.Error(reporterErr, "failed to report instrumentation load", "loaded", loadErr == nil, "pid", e.PID, "process group details", pg)
+	}
+	if loadErr != nil {
+		// we need to track the instrumentation even if the load failed.
+		// consider a reporter which writes a persistent record for a failed/successful load
+		// we need to notify the reporter once that PID exits to clean up the resources - hence we track it.
+		// saving the inst as nil marking the instrumentation failed to load, and is not valid to run/configure/close.
+		m.startTrackInstrumentation(e.PID, nil, pg, configGroup)
 		m.logger.Error(err, "failed to load instrumentation", "language", otelDisto.Language, "sdk", otelDisto.OtelSdk)
 		// TODO: should we return here the load error? or the instance write error? or both?
 		return err
 	}
 
-	if reporterErr != nil {
-		m.logger.Error(reporterErr, "failed to report instrumentation load")
-	}
-
 	m.startTrackInstrumentation(e.PID, inst, pg, configGroup)
-
 	m.logger.Info("instrumentation loaded", "pid", e.PID, "process group details", pg)
 
 	go func() {
@@ -337,6 +348,9 @@ func (m *manager[ProcessGroup, ConfigGroup]) applyInstrumentationConfigurationFo
 	}
 
 	for _, instDetails := range configGroupInstrumentations {
+		if instDetails.inst == nil {
+			continue
+		}
 		m.logger.Info("applying configuration to instrumentation", "process group details", instDetails.pg, "configGroup", configGroup)
 		applyErr := instDetails.inst.ApplyConfig(ctx, config)
 		err = errors.Join(err, applyErr)

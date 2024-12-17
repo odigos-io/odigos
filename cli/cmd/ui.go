@@ -57,8 +57,7 @@ var uiCmd = &cobra.Command{
 		if legacyFlag {
 			clusterPort = legacyDefaultPort
 		}
-		fmt.Printf("Is legacy: %v\n", legacyFlag)
-		fmt.Printf("Cluster port: %d\n", clusterPort)
+
 		localAddress := cmd.Flag("address").Value.String()
 		uiPod, err := findOdigosUIPod(client, ctx, ns)
 		if err != nil {

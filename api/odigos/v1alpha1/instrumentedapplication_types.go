@@ -50,6 +50,7 @@ type RuntimeDetailsByContainer struct {
 	RuntimeVersion string                     `json:"runtimeVersion,omitempty"`
 	EnvVars        []EnvVar                   `json:"envVars,omitempty"`
 	OtherAgent     *OtherAgent                `json:"otherAgent,omitempty"`
+	LibCType       *common.LibCType           `json:"libCType,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
