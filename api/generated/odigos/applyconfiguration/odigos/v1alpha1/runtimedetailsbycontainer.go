@@ -29,7 +29,7 @@ type RuntimeDetailsByContainerApplyConfiguration struct {
 	RuntimeVersion        *string                       `json:"runtimeVersion,omitempty"`
 	EnvVars               []EnvVarApplyConfiguration    `json:"envVars,omitempty"`
 	OtherAgent            *OtherAgentApplyConfiguration `json:"otherAgent,omitempty"`
-	LibCType       		  *common.LibCType              `json:"libCType,omitempty"`
+	LibCType              *common.LibCType              `json:"libCType,omitempty"`
 	CriErrorMessage       *string                       `json:"criErrorMessage,omitempty"`
 	EnvVarsFromDockerFile []EnvVarApplyConfiguration    `json:"envVarsFromDockerFile,omitempty"`
 }
