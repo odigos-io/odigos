@@ -320,3 +320,20 @@ spec:
     - containerName: python-not-supported
       language: python
       runtimeVersion: 3.6.15
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  name: deployment-dotnet-musl
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: dotnet-musl
+spec:
+  runtimeDetails:
+    - containerName: dotnet-musl
+      language: dotnet
+      libCType: musl
