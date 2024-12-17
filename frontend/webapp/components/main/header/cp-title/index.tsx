@@ -1,5 +1,5 @@
 import React from 'react';
-import Image from 'next/image';
+import { K8sLogo } from '@/assets';
 import styled from 'styled-components';
 import { PlatformTypes } from '@/types';
 import { Text } from '@/reuseable-components';
@@ -8,19 +8,11 @@ interface Props {
   type: PlatformTypes;
 }
 
-const PlatformWrapper = styled.div`
+const Container = styled.div`
   display: flex;
   align-items: center;
+  gap: 10px;
   padding: 10px;
-`;
-
-const IconWrapper = styled.div`
-  margin-right: 10px;
-`;
-
-const TextWrapper = styled.div`
-  display: flex;
-  align-items: center;
 `;
 
 const Title = styled(Text)`
@@ -29,17 +21,19 @@ const Title = styled(Text)`
   color: ${({ theme }) => theme.colors.white};
 `;
 
-const PlatformTitle: React.FC<Props> = ({ type }) => {
+export const PlatformTitle: React.FC<Props> = ({ type }) => {
+  if (PlatformTypes.K8S) {
+    return (
+      <Container>
+        <K8sLogo size={28} />
+        <Title>Kubernetes Cluster</Title>
+      </Container>
+    );
+  }
+
   return (
-    <PlatformWrapper>
-      <IconWrapper>
-        <Image src={`/icons/cp/${type}.svg`} alt={type} width={28} height={28} />
-      </IconWrapper>
-      <TextWrapper>
-        <Title>{type === PlatformTypes.K8S ? 'Kubernetes Cluster' : 'Virtual Machine'}</Title>
-      </TextWrapper>
-    </PlatformWrapper>
+    <Container>
+      <Title>Virtual Machine</Title>
+    </Container>
   );
 };
-
-export { PlatformTitle };

@@ -1,6 +1,6 @@
 import React from 'react';
-import Image from 'next/image';
 import styled from 'styled-components';
+import { ExtendArrowIcon } from '@/assets';
 
 interface Props {
   extend: boolean;
@@ -8,17 +8,14 @@ interface Props {
   align?: 'left' | 'right' | 'center';
 }
 
-const Icon = styled(Image)<{ $align?: Props['align'] }>`
+const Container = styled.div<{ $align?: Props['align'] }>`
   margin: ${({ $align }) => ($align === 'right' ? 'auto 0 auto auto' : $align === 'left' ? 'auto auto auto 0' : 'auto')};
-  &.open {
-    transform: rotate(180deg);
-  }
-  &.close {
-    transform: rotate(0deg);
-  }
-  transition: transform 0.3s;
 `;
 
 export const ExtendIcon: React.FC<Props> = ({ extend, size = 14, align = 'center' }) => {
-  return <Icon src='/icons/common/extend-arrow.svg' alt='extend' width={size} height={size} $align={align} className={extend ? 'open' : 'close'} />;
+  return (
+    <Container $align={align}>
+      <ExtendArrowIcon size={size} rotate={extend ? 180 : 0} />
+    </Container>
+  );
 };

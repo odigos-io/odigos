@@ -1,10 +1,10 @@
 import React from 'react';
-import Image from 'next/image';
 import styled from 'styled-components';
 import { getStatusIcon } from '@/utils';
 import { NOTIFICATION_TYPE } from '@/types';
 import { Divider, Text } from '@/reuseable-components';
 import theme, { hexPercentValues } from '@/styles/theme';
+import { CheckCircledIcon, CrossCircledIcon } from '@/assets';
 
 export * from './active-status';
 export * from './connection-status';
@@ -72,19 +72,11 @@ const SubTitle = styled(Text)<{
 `;
 
 export const Status: React.FC<StatusProps> = ({ title, subtitle, size = 12, family = 'secondary', isPale, isActive, withIcon, withBorder, withBackground }) => {
+  const StatusIcon = getStatusIcon(isActive ? NOTIFICATION_TYPE.SUCCESS : NOTIFICATION_TYPE.ERROR);
+
   return (
     <StatusWrapper $size={size} $isPale={isPale} $isActive={isActive} $withIcon={withIcon} $withBorder={withBorder} $withBackground={withBackground}>
-      {withIcon && (
-        <IconWrapper>
-          {/* TODO: SVG to JSX */}
-          <Image
-            src={isPale ? `/icons/common/circled-${isActive ? 'check' : 'cross'}.svg` : getStatusIcon(isActive ? NOTIFICATION_TYPE.SUCCESS : NOTIFICATION_TYPE.ERROR)}
-            alt='status'
-            width={size + 2}
-            height={size + 2}
-          />
-        </IconWrapper>
-      )}
+      {withIcon && <IconWrapper>{isPale && isActive ? <CheckCircledIcon size={size + 2} /> : isPale && !isActive ? <CrossCircledIcon size={size + 2} /> : <StatusIcon size={size + 2} />}</IconWrapper>}
 
       {(!!title || !!subtitle) && (
         <TextWrapper>

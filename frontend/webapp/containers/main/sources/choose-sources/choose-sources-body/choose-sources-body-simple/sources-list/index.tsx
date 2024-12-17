@@ -1,5 +1,5 @@
 import React from 'react';
-import Image from 'next/image';
+import { FolderIcon } from '@/assets';
 import styled from 'styled-components';
 import { type UseSourceFormDataResponse } from '@/hooks';
 import { Checkbox, NoDataFound, Text } from '@/reuseable-components';
@@ -102,7 +102,7 @@ export const SourcesList: React.FC<Props> = ({
           <ListItem key={`source-${source.name}`} $selected={isSelected} onClick={() => onSelectSource(source)}>
             <ListItemContent>
               <SourceIconWrapper>
-                <Image src={'/icons/common/folder.svg'} width={20} height={20} alt='source' />
+                <FolderIcon size={20} />
               </SourceIconWrapper>
 
               <TextWrapper>
