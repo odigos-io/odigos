@@ -11,7 +11,6 @@ interface Props {
 const Token = styled.span`
   white-space: pre-wrap;
   overflow-wrap: break-word;
-  opacity: 0.75;
   font-size: 12px;
   font-family: ${({ theme }) => theme.font_family.code};
 `;
