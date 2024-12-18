@@ -1,16 +1,13 @@
 package client
 
 import (
+	"fmt"
 	"os"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
-
-func GetClientConfig(kc string) (*rest.Config, error) {
-	return GetClientConfigWithContext(kc, "")
-}
 
 func GetClientConfigWithContext(kc string, context string) (*rest.Config, error) {
 	var kubeConfig *rest.Config
@@ -71,6 +68,9 @@ func GetCurrentClusterDetails(kc string, kContext string) ClusterDetails {
 	cluster := ""
 	if val, ok := config.Contexts[ctx]; ok {
 		cluster = val.Cluster
+	} else if kContext != "" { // If context is provided, but not found in kubeconfig
+		fmt.Printf("Context %s not found in kubeconfig, bailing\n", kContext)
+		os.Exit(1)
 	}
 
 	server := ""
