@@ -1,20 +1,15 @@
+import { CheckCircledIcon, ErrorTriangleIcon, InfoIcon, OdigosLogo, SVG, WarningTriangleIcon } from '@/assets';
+import theme from '@/styles/theme';
 import { NOTIFICATION_TYPE } from '@/types';
 
-const BRAND_ICON = '/brand/odigos-icon.svg';
+export const getStatusIcon = (type: NOTIFICATION_TYPE) => {
+  const LOGOS: Record<NOTIFICATION_TYPE, SVG> = {
+    [NOTIFICATION_TYPE.SUCCESS]: () => CheckCircledIcon({ fill: theme.text.success }),
+    [NOTIFICATION_TYPE.ERROR]: ErrorTriangleIcon,
+    [NOTIFICATION_TYPE.WARNING]: WarningTriangleIcon,
+    [NOTIFICATION_TYPE.INFO]: InfoIcon,
+    [NOTIFICATION_TYPE.DEFAULT]: OdigosLogo,
+  };
 
-export const getStatusIcon = (status?: NOTIFICATION_TYPE) => {
-  if (!status) return BRAND_ICON;
-
-  switch (status) {
-    case NOTIFICATION_TYPE.SUCCESS:
-      return '/icons/notification/success-icon.svg';
-    case NOTIFICATION_TYPE.ERROR:
-      return '/icons/notification/error-icon2.svg';
-    case NOTIFICATION_TYPE.WARNING:
-      return '/icons/notification/warning-icon2.svg';
-    case NOTIFICATION_TYPE.INFO:
-      return '/icons/common/info.svg';
-    default:
-      return BRAND_ICON;
-  }
+  return LOGOS[type];
 };

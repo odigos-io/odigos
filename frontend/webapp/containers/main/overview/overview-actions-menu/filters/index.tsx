@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import theme from '@/styles/theme';
+import { FilterIcon } from '@/assets';
 import styled from 'styled-components';
 import { useKeyDown, useOnClickOutside } from '@/hooks';
 import { AbsoluteContainer, RelativeContainer } from '../styled';
@@ -36,7 +37,7 @@ const getFilterCount = (params: FiltersState) => {
   return count;
 };
 
-const Filters = () => {
+export const Filters = () => {
   const { namespace, types, monitors, languages, errors, onlyErrors, setAll, clearAll, getEmptyState } = useFilterStore();
 
   const [filters, setFilters] = useState<FiltersState>({ namespace, types, monitors, languages, errors, onlyErrors });
@@ -75,7 +76,7 @@ const Filters = () => {
 
   return (
     <RelativeContainer ref={ref}>
-      <SelectionButton label='Filters' icon='/icons/common/filter.svg' badgeLabel={filterCount} badgeFilled={!!filterCount} withBorder color='transparent' onClick={toggleFocused} />
+      <SelectionButton label='Filters' icon={FilterIcon} badgeLabel={filterCount} badgeFilled={!!filterCount} withBorder color='transparent' onClick={toggleFocused} />
 
       {focused && (
         <AbsoluteContainer>
@@ -142,5 +143,3 @@ const Filters = () => {
     </RelativeContainer>
   );
 };
-
-export { Filters };

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import Image from 'next/image';
 import { slide } from '@/styles';
 import theme from '@/styles/theme';
+import { TrashIcon } from '@/assets';
 import { useAppStore } from '@/store';
 import styled from 'styled-components';
 import { DeleteWarning } from '@/components';
@@ -70,7 +70,7 @@ export const MultiSourceControl = () => {
         </Button>
 
         <Button variant='tertiary' onClick={() => setIsWarnModalOpen(true)}>
-          <Image src='/icons/common/trash.svg' alt='' width={16} height={16} />
+          <TrashIcon />
           <Text family='secondary' decoration='underline' color={theme.text.error}>
             Uninstrument
           </Text>

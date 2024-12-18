@@ -1,3 +1,4 @@
+import { SVG } from '@/assets';
 import { InstrumentationRuleType } from '@/types';
 import { getRuleIcon } from '@/utils';
 
@@ -5,7 +6,7 @@ export type RuleOption = {
   id: string;
   label: string;
   type?: InstrumentationRuleType;
-  icon?: string;
+  icon?: SVG;
   description?: string;
   docsEndpoint?: string;
   docsDescription?: string;

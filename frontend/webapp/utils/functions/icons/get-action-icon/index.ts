@@ -1,15 +1,23 @@
-import { type ActionsType } from '@/types';
+import { ActionsType } from '@/types';
+import { AddClusterInfoIcon, DeleteAttributeIcon, PiiMaskingIcon, RenameAttributeIcon, SamplerIcon, SVG } from '@/assets';
 
-const BRAND_ICON = '/brand/odigos-icon.svg';
+export const getActionIcon = (type: ActionsType | 'sampler' | 'attributes') => {
+  const typeLowerCased = type?.toLowerCase();
+  const isSamplerCategory = typeLowerCased?.includes('sampler');
+  const isAttributesCategory = typeLowerCased === 'attributes';
 
-export const getActionIcon = (type?: ActionsType | 'sampler' | 'attributes') => {
-  if (!type) return BRAND_ICON;
+  if (isSamplerCategory) return SamplerIcon;
+  if (isAttributesCategory) return PiiMaskingIcon;
 
-  const typeLowerCased = type.toLowerCase();
-  const isSampler = typeLowerCased.includes('sampler');
-  const isAttributes = typeLowerCased === 'attributes';
+  const LOGOS: Record<ActionsType, SVG> = {
+    [ActionsType.ADD_CLUSTER_INFO]: AddClusterInfoIcon,
+    [ActionsType.DELETE_ATTRIBUTES]: DeleteAttributeIcon,
+    [ActionsType.PII_MASKING]: PiiMaskingIcon,
+    [ActionsType.RENAME_ATTRIBUTES]: RenameAttributeIcon,
+    [ActionsType.ERROR_SAMPLER]: SamplerIcon,
+    [ActionsType.PROBABILISTIC_SAMPLER]: SamplerIcon,
+    [ActionsType.LATENCY_SAMPLER]: SamplerIcon,
+  };
 
-  const iconName = isSampler ? 'sampler' : isAttributes ? 'piimasking' : typeLowerCased;
-
-  return `/icons/actions/${iconName}.svg`;
+  return LOGOS[type];
 };

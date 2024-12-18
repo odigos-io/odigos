@@ -1,7 +1,7 @@
 import React from 'react';
-import Image from 'next/image';
 import { Text } from '../text';
 import ReactDOM from 'react-dom';
+import { XIcon } from '@/assets';
 import styled from 'styled-components';
 import { useKeyDown, useTransition } from '@/hooks';
 import { slide, Overlay, CenterThis } from '@/styles';
@@ -81,7 +81,7 @@ const CancelText = styled(Text)`
   cursor: pointer;
 `;
 
-const Modal: React.FC<Props> = ({ isOpen, noOverlay, header, actionComponent, onClose, children }) => {
+export const Modal: React.FC<Props> = ({ isOpen, noOverlay, header, actionComponent, onClose, children }) => {
   useKeyDown({ key: 'Escape', active: isOpen }, () => onClose());
 
   const Transition = useTransition({
@@ -100,7 +100,7 @@ const Modal: React.FC<Props> = ({ isOpen, noOverlay, header, actionComponent, on
         {header && (
           <ModalHeader>
             <ModalCloseButton onClick={onClose}>
-              <Image src='/icons/common/x.svg' alt='close' width={15} height={12} />
+              <XIcon />
               <CancelText>Cancel</CancelText>
             </ModalCloseButton>
             <ModalTitleContainer>
@@ -116,5 +116,3 @@ const Modal: React.FC<Props> = ({ isOpen, noOverlay, header, actionComponent, on
     document.body,
   );
 };
-
-export { Modal };

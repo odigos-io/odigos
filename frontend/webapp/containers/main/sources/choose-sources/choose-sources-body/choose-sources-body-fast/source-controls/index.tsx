@@ -1,4 +1,5 @@
 import React from 'react';
+import { SearchIcon } from '@/assets';
 import styled from 'styled-components';
 import { type UseSourceFormDataResponse } from '@/hooks';
 import { Divider, Input, SectionTitle, Toggle } from '@/reuseable-components';
@@ -31,7 +32,7 @@ export const SourceControls: React.FC<Props> = ({ selectedSources, searchText, s
 
       <FlexContainer style={{ marginTop: 24 }}>
         <SearchWrapper>
-          <Input placeholder='Search Kubernetes Namespaces' icon='/icons/common/search.svg' value={searchText} onChange={(e) => setSearchText(e.target.value.toLowerCase())} />
+          <Input placeholder='Search Kubernetes Namespaces' icon={SearchIcon} value={searchText} onChange={(e) => setSearchText(e.target.value.toLowerCase())} />
         </SearchWrapper>
         {/* <Checkbox title='Select all' initialValue={selectAll} onChange={onSelectAll} /> */}
         <Toggle title='Show selected only' initialValue={showSelectedOnly} onChange={setShowSelectedOnly} />

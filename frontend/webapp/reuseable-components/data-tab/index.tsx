@@ -1,4 +1,5 @@
 import React, { Fragment, useCallback, useState } from 'react';
+import { SVG } from '@/assets';
 import { FlexColumn, FlexRow } from '@/styles';
 import styled, { css } from 'styled-components';
 import { ActiveStatus, Divider, ExtendIcon, IconButton, IconWrapped, MonitorsIcons, Text } from '@/reuseable-components';
@@ -6,7 +7,8 @@ import { ActiveStatus, Divider, ExtendIcon, IconButton, IconWrapped, MonitorsIco
 interface Props {
   title: string;
   subTitle?: string;
-  logo: string;
+  icon?: SVG;
+  iconSrc?: string;
   hoverText?: string;
   monitors?: string[];
   monitorsWithLabels?: boolean;
@@ -84,7 +86,8 @@ const HoverText = styled(Text)`
 export const DataTab: React.FC<Props> = ({
   title,
   subTitle,
-  logo,
+  icon,
+  iconSrc,
   hoverText,
   monitors,
   monitorsWithLabels,
@@ -130,7 +133,7 @@ export const DataTab: React.FC<Props> = ({
   return (
     <Container $isError={isError} $withClick={!!onClick} onClick={onClick} {...props}>
       <FlexRow $gap={8}>
-        <IconWrapped src={logo} isError={isError} />
+        <IconWrapped icon={icon} src={iconSrc} isError={isError} />
 
         <FlexColumn $gap={4}>
           <Title>{title}</Title>

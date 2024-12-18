@@ -22,7 +22,7 @@ const mapToNodeData = (entity: Params['entities'][0]) => {
     status: getHealthStatus(entity),
     title: getEntityLabel(entity, OVERVIEW_ENTITY_TYPES.DESTINATION, { prioritizeDisplayName: true }),
     subTitle: entity.destinationType.displayName,
-    imageUri: entity.destinationType.imageUrl || '/brand/odigos-icon.svg',
+    iconSrc: entity.destinationType.imageUrl,
     monitors: extractMonitors(entity.exportedSignals),
     raw: entity,
   };

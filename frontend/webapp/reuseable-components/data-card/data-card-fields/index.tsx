@@ -97,7 +97,7 @@ const renderValue = (type: DataCardRow['type'], value: DataCardRow['value']) => 
         <DataTab
           title={containerName}
           subTitle={`${language === WORKLOAD_PROGRAMMING_LANGUAGES.JAVASCRIPT ? 'Node.js' : capitalizeFirstLetter(language)} • Runtime Version: ${runtimeVersion}`}
-          logo={getProgrammingLanguageIcon(language)}
+          iconSrc={getProgrammingLanguageIcon(language)}
           isExtended={!!otherAgent}
           renderExtended={() => (
             <NotificationNote

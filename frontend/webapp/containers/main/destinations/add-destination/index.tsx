@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import Image from 'next/image';
 import { ROUTES } from '@/utils';
 import theme from '@/styles/theme';
 import { CenterThis } from '@/styles';
@@ -8,6 +7,7 @@ import styled from 'styled-components';
 import { SetupHeader } from '@/components';
 import { useRouter } from 'next/navigation';
 import { NOTIFICATION_TYPE } from '@/types';
+import { ArrowIcon, PlusIcon } from '@/assets';
 import { DestinationModal } from '../destination-modal';
 import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
 import { ConfiguredDestinationsList } from './configured-destinations-list';
@@ -74,7 +74,7 @@ export function AddDestinationContainer() {
           navigationButtons={[
             {
               label: 'BACK',
-              iconSrc: '/icons/common/arrow-white.svg',
+              icon: ArrowIcon,
               variant: 'secondary',
               onClick: clickBack,
               disabled: isLoading,
@@ -106,7 +106,7 @@ export function AddDestinationContainer() {
 
         <AddDestinationButtonWrapper>
           <StyledAddDestinationButton variant='secondary' disabled={isLoading} onClick={() => handleOpenModal()}>
-            <Image src='/icons/common/plus.svg' alt='back' width={16} height={16} />
+            <PlusIcon />
             <Text color={theme.colors.secondary} size={14} decoration='underline' family='secondary'>
               ADD DESTINATION
             </Text>

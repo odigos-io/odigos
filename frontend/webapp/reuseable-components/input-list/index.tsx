@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import Image from 'next/image';
 import styled from 'styled-components';
+import { PlusIcon, TrashIcon } from '@/assets';
 import { Button, FieldError, FieldLabel, Input, Text } from '@/reuseable-components';
 
 type Row = string;
@@ -116,7 +116,7 @@ const InputList: React.FC<InputListProps> = ({ initialValues = [], value, onChan
           <RowWrapper key={`input-list-${idx}`}>
             <Input value={val} onChange={(e) => handleInputChange(e.target.value, idx)} hasError={!!errorMessage} autoFocus={!val && rows.length > 1 && idx === rows.length - 1} />
             <DeleteButton disabled={isDelButtonDisabled} onClick={() => handleDeleteInput(idx)}>
-              <Image src='/icons/common/trash.svg' alt='Delete' width={16} height={16} />
+              <TrashIcon />
             </DeleteButton>
           </RowWrapper>
         ))}
@@ -125,7 +125,7 @@ const InputList: React.FC<InputListProps> = ({ initialValues = [], value, onChan
       {!!errorMessage && <FieldError>{errorMessage}</FieldError>}
 
       <AddButton disabled={isAddButtonDisabled} variant='tertiary' onClick={handleAddInput}>
-        <Image src='/icons/common/plus.svg' alt='Add' width={16} height={16} />
+        <PlusIcon />
         <ButtonText>ADD ATTRIBUTE</ButtonText>
       </AddButton>
     </Container>

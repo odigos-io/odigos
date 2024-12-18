@@ -1,7 +1,7 @@
 import React from 'react';
-import Image from 'next/image';
-import { slide } from '@/styles';
+import { FlexRow, slide } from '@/styles';
 import theme from '@/styles/theme';
+import { TrashIcon } from '@/assets';
 import styled from 'styled-components';
 import { useTransition } from '@/hooks';
 import { Button, Text } from '@/reuseable-components';
@@ -53,7 +53,9 @@ const DrawerFooter: React.FC<Props> = ({ isOpen, onSave, saveLabel = 'Save', onC
 
       <AlignRight>
         <FooterButton data-id='drawer-delete' variant='tertiary' onClick={onDelete}>
-          <Image src='/icons/common/trash.svg' alt='Delete' width={16} height={16} />
+          <FlexRow>
+            <TrashIcon />
+          </FlexRow>
           <Text color={theme.text.error} size={14} family='secondary'>
             {deleteLabel}
           </Text>

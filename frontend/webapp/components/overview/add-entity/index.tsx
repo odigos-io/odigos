@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
-import Image from 'next/image';
 import theme from '@/styles/theme';
+import { PlusIcon } from '@/assets';
 import { useModalStore } from '@/store';
+import { getEntityIcon } from '@/utils';
 import styled, { css } from 'styled-components';
 import { useComputePlatform, useOnClickOutside } from '@/hooks';
 import { Button, FadeLoader, Text } from '@/reuseable-components';
@@ -70,7 +71,7 @@ interface Props {
   placeholder?: string;
 }
 
-const AddEntity: React.FC<Props> = ({ options = DEFAULT_OPTIONS, placeholder = 'ADD...' }) => {
+export const AddEntity: React.FC<Props> = ({ options = DEFAULT_OPTIONS, placeholder = 'ADD...' }) => {
   const { loading } = useComputePlatform();
   const { currentModal, setCurrentModal } = useModalStore();
 
@@ -91,22 +92,24 @@ const AddEntity: React.FC<Props> = ({ options = DEFAULT_OPTIONS, placeholder = '
   return (
     <Container ref={dropdownRef}>
       <StyledButton data-id='add-entity' onClick={handleToggle}>
-        {loading ? <FadeLoader color={theme.colors.primary} /> : <Image src='/icons/common/plus-black.svg' width={16} height={16} alt='Add' />}
+        {loading ? <FadeLoader color={theme.colors.primary} /> : <PlusIcon fill={theme.colors.primary} />}
         <ButtonText size={14}>{placeholder}</ButtonText>
       </StyledButton>
 
       {isDropdownOpen && (
         <DropdownListContainer>
-          {options.map((option) => (
-            <DropdownItem key={option.id} data-id={`add-${option.id}`} $selected={currentModal === option.id} onClick={() => handleSelect(option)}>
-              <Image src={`/icons/overview/${option.id}s.svg`} width={16} height={16} alt={`Add ${option.value}`} />
-              <Text size={14}>{option.value}</Text>
-            </DropdownItem>
-          ))}
+          {options.map((option) => {
+            const Icon = getEntityIcon(option.id as OVERVIEW_ENTITY_TYPES);
+
+            return (
+              <DropdownItem key={option.id} data-id={`add-${option.id}`} $selected={currentModal === option.id} onClick={() => handleSelect(option)}>
+                <Icon />
+                <Text size={14}>{option.value}</Text>
+              </DropdownItem>
+            );
+          })}
         </DropdownListContainer>
       )}
     </Container>
   );
 };
-
-export { AddEntity };

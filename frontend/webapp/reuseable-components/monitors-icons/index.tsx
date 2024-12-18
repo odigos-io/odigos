@@ -1,30 +1,34 @@
 import React from 'react';
-import Image from 'next/image';
 import theme from '@/styles/theme';
 import { FlexRow } from '@/styles';
-import { capitalizeFirstLetter } from '@/utils';
 import { Text, Tooltip } from '@/reuseable-components';
+import { capitalizeFirstLetter, getMonitorIcon, MONITORS_OPTIONS } from '@/utils';
 
 interface Props {
-  monitors: string[];
+  monitors?: string[];
   withTooltips?: boolean;
   withLabels?: boolean;
   size?: number;
+  color?: string;
 }
 
-export const MonitorsIcons: React.FC<Props> = ({ monitors, withTooltips, withLabels, size = 12 }) => {
+const defaultMonitors = MONITORS_OPTIONS.map(({ id }) => id);
+
+export const MonitorsIcons: React.FC<Props> = ({ monitors = defaultMonitors, withTooltips, withLabels, size = 12, color = theme.text.grey }) => {
   return (
-    <FlexRow $gap={size / 2}>
+    <FlexRow $gap={withLabels ? size : size / 2}>
       {monitors.map((str) => {
         const signal = str.toLowerCase();
         const signalDisplayName = capitalizeFirstLetter(signal);
+        const Icon = getMonitorIcon(signal);
 
         return (
           <Tooltip key={signal} text={withTooltips ? signalDisplayName : ''}>
             <FlexRow $gap={size / 3}>
-              <Image src={`/icons/monitors/${signal}.svg`} alt={signal} width={size} height={size} />
+              <Icon size={withLabels ? size + 2 : size} fill={color} />
+
               {withLabels && (
-                <Text size={size} color={theme.text.grey}>
+                <Text size={size} color={color}>
                   {signalDisplayName}
                 </Text>
               )}

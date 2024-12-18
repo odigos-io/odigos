@@ -1,9 +1,9 @@
-import Image from 'next/image';
+import React, { useEffect, useState } from 'react';
 import { Text } from '../text';
 import theme from '@/styles/theme';
+import { CheckIcon } from '@/assets';
 import { Tooltip } from '../tooltip';
 import styled from 'styled-components';
-import React, { useEffect, useState } from 'react';
 
 interface CheckboxProps {
   title?: string;
@@ -36,7 +36,7 @@ const CheckboxWrapper = styled.div<{ $isChecked: boolean; $disabled?: CheckboxPr
   transition: border 0.3s, background-color 0.3s;
 `;
 
-const Checkbox: React.FC<CheckboxProps> = ({ title, titleColor, tooltip, initialValue = false, onChange, disabled, style }) => {
+export const Checkbox: React.FC<CheckboxProps> = ({ title, titleColor, tooltip, initialValue = false, onChange, disabled, style }) => {
   const [isChecked, setIsChecked] = useState(initialValue);
   useEffect(() => setIsChecked(initialValue), [initialValue]);
 
@@ -52,7 +52,7 @@ const Checkbox: React.FC<CheckboxProps> = ({ title, titleColor, tooltip, initial
   return (
     <Container data-id={`checkbox${!!title ? `-${title}` : ''}`} $disabled={disabled} onClick={handleToggle} style={style}>
       <CheckboxWrapper $isChecked={isChecked} $disabled={disabled}>
-        {isChecked && <Image src='/icons/common/check.svg' alt='' width={12} height={12} />}
+        {isChecked && <CheckIcon />}
       </CheckboxWrapper>
 
       {title && (
@@ -65,5 +65,3 @@ const Checkbox: React.FC<CheckboxProps> = ({ title, titleColor, tooltip, initial
     </Container>
   );
 };
-
-export { Checkbox };

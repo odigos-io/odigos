@@ -15,5 +15,6 @@ const API = {
 };
 
 const DOCS_LINK = 'https://docs.odigos.io';
+const SLACK_LINK = 'https://join.slack.com/t/odigos/shared_invite/zt-2wc6gm4j9-EhcVFYrLwHqvcIErO9sVzw';
 
-export { API, DOCS_LINK };
+export { API, DOCS_LINK, SLACK_LINK };

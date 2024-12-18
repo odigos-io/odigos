@@ -1,15 +1,15 @@
-import Image from 'next/image';
 import React from 'react';
 import { Text } from '../text';
 import { Tooltip } from '../tooltip';
 import styled from 'styled-components';
+import { OverviewIcon, SVG } from '@/assets';
 import { hexPercentValues } from '@/styles/theme';
 
 // Define types for the Tab component props
 interface TabProps {
   title: string;
   tooltip?: string;
-  icon: string;
+  icon: SVG;
   selected: boolean;
   disabled?: boolean;
   onClick: () => void;
@@ -24,9 +24,7 @@ interface TabListProps {
 const TabContainer = styled.div<{ $selected: TabProps['selected']; $disabled: TabProps['disabled'] }>`
   display: flex;
   align-items: center;
-  gap: 8px;
-  height: 36px;
-  padding: 0px 12px;
+  padding: 10px 12px;
   border-radius: 32px;
   cursor: ${({ $disabled }) => ($disabled ? 'not-allowed' : 'pointer')};
   background-color: ${({ $selected, theme }) => ($selected ? theme.colors.majestic_blue + hexPercentValues['024'] : theme.colors.card)};
@@ -48,11 +46,11 @@ const TabListContainer = styled.div`
 `;
 
 // Tab component
-const Tab: React.FC<TabProps> = ({ title, tooltip, icon, selected, disabled, onClick }) => {
+const Tab: React.FC<TabProps> = ({ title, tooltip, icon: Icon, selected, disabled, onClick }) => {
   return (
     <Tooltip text={tooltip}>
       <TabContainer $selected={selected} $disabled={disabled} onClick={onClick}>
-        <Image src={icon} width={14} height={14} alt={title} />
+        <Icon size={14} />
         <Text size={14}>{title}</Text>
       </TabContainer>
     </Tooltip>
@@ -62,21 +60,21 @@ const Tab: React.FC<TabProps> = ({ title, tooltip, icon, selected, disabled, onC
 const TABS = [
   {
     title: 'Overview',
-    icon: '/icons/overview/overview.svg',
+    icon: OverviewIcon,
     selected: true,
     onClick: () => {},
   },
   // {
-  //   title: 'Service map',
-  //   icon: '/icons/overview/service-map.svg',
+  //   title: 'Service Map',
+  //   icon: ServiceMapIcon,
   //   selected: false,
   //   onClick: () => {},
   //   disabled: true,
   //   tooltip: 'Coming soon',
   // },
   // {
-  //   title: 'Trace view',
-  //   icon: '/icons/overview/trace-view.svg',
+  //   title: 'Trace View',
+  //   icon: TraceViewIcon,
   //   selected: false,
   //   onClick: () => {},
   //   disabled: true,

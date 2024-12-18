@@ -1,11 +1,11 @@
-import { type InstrumentationRuleType } from '@/types';
+import { InstrumentationRuleType } from '@/types';
+import { OdigosLogo, PayloadCollectionIcon, SVG } from '@/assets';
 
-const BRAND_ICON = '/brand/odigos-icon.svg';
+export const getRuleIcon = (type: InstrumentationRuleType) => {
+  const LOGOS: Record<InstrumentationRuleType, SVG> = {
+    [InstrumentationRuleType.PAYLOAD_COLLECTION]: PayloadCollectionIcon,
+    [InstrumentationRuleType.UNKNOWN_TYPE]: OdigosLogo,
+  };
 
-export const getRuleIcon = (type?: InstrumentationRuleType) => {
-  if (!type) return BRAND_ICON;
-
-  const typeLowerCased = type.replaceAll('-', '').toLowerCase();
-
-  return `/icons/rules/${typeLowerCased}.svg`;
+  return LOGOS[type];
 };

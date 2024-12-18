@@ -55,9 +55,11 @@ export const TestConnection: React.FC<Props> = ({ destination, disabled, status,
     if (validateForm()) await testConnection(destination);
   };
 
+  const Icon = !!status ? getStatusIcon(status) : undefined;
+
   return (
     <ActionButton $status={status} variant='secondary' disabled={disabled} onClick={onClick}>
-      {loading ? <FadeLoader /> : !!status ? <Image src={getStatusIcon(status)} alt='status' width={16} height={16} /> : null}
+      {loading ? <FadeLoader /> : Icon ? <Icon /> : null}
 
       <Text family='secondary' decoration='underline' size={14} color={!!status ? theme.text[status] : undefined}>
         {loading ? 'Checking' : status === 'success' ? 'Connection OK' : status === 'error' ? 'Connection Failed' : 'Test Connection'}

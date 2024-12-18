@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { SearchIcon } from '@/assets';
 import styled from 'styled-components';
 import { SignalUppercase } from '@/utils';
 import { useDestinationTypes } from '@/hooks';
@@ -68,7 +69,7 @@ export const ChooseDestinationBody: React.FC<Props> = ({ onSelect, hidden }) => 
 
       <Filters>
         <WidthConstraint>
-          <Input placeholder='Search...' icon='/icons/common/search.svg' value={search} onChange={({ target: { value } }) => setSearch(value)} />
+          <Input placeholder='Search...' icon={SearchIcon} value={search} onChange={({ target: { value } }) => setSearch(value)} />
         </WidthConstraint>
         <WidthConstraint>
           <Dropdown options={DROPDOWN_OPTIONS} value={selectedCategory} onSelect={(opt) => setSelectedCategory(opt)} onDeselect={() => {}} />

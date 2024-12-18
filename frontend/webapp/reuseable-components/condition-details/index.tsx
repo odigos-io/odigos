@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from 'react';
-import Image from 'next/image';
 import theme from '@/styles/theme';
 import styled from 'styled-components';
 import { BACKEND_BOOLEAN, getStatusIcon } from '@/utils';
@@ -47,11 +46,12 @@ export const ConditionDetails: React.FC<Props> = ({ conditions }) => {
   const errors = useMemo(() => conditions.filter(({ status }) => status === BACKEND_BOOLEAN.FALSE), [conditions]);
   const hasErrors = !!errors.length;
   const headerText = loading ? 'Loading...' : hasErrors ? 'Operation Failed' : 'Operation Successful';
+  const HeaderIcon = getStatusIcon(hasErrors ? NOTIFICATION_TYPE.ERROR : NOTIFICATION_TYPE.SUCCESS);
 
   return (
     <Container onClick={() => setExtend((prev) => !prev)} $hasErrors={hasErrors}>
       <Header>
-        {loading ? <FadeLoader /> : <Image src={getStatusIcon(hasErrors ? NOTIFICATION_TYPE.ERROR : NOTIFICATION_TYPE.SUCCESS)} alt='' width={16} height={16} />}
+        {loading ? <FadeLoader /> : <HeaderIcon />}
 
         <Text color={hasErrors ? theme.text.error : theme.text.grey} size={14}>
           {headerText}
@@ -65,14 +65,18 @@ export const ConditionDetails: React.FC<Props> = ({ conditions }) => {
 
       {extend && (
         <Body>
-          {conditions.map(({ status, message }, idx) => (
-            <Row key={`condition-${idx}`}>
-              <Image src={getStatusIcon(status === BACKEND_BOOLEAN.FALSE ? NOTIFICATION_TYPE.ERROR : NOTIFICATION_TYPE.SUCCESS)} alt='' width={14} height={14} />
-              <Text color={status === BACKEND_BOOLEAN.FALSE ? theme.text.error : theme.text.darker_grey} size={12}>
-                {message}
-              </Text>
-            </Row>
-          ))}
+          {conditions.map(({ status, message }, idx) => {
+            const Icon = getStatusIcon(status === BACKEND_BOOLEAN.FALSE ? NOTIFICATION_TYPE.ERROR : NOTIFICATION_TYPE.SUCCESS);
+
+            return (
+              <Row key={`condition-${idx}`}>
+                <Icon />
+                <Text color={status === BACKEND_BOOLEAN.FALSE ? theme.text.error : theme.text.darker_grey} size={12}>
+                  {message}
+                </Text>
+              </Row>
+            );
+          })}
         </Body>
       )}
     </Container>

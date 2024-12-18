@@ -1,6 +1,6 @@
 import React, { useEffect, useState, forwardRef, useImperativeHandle } from 'react';
-import Image from 'next/image';
 import styled from 'styled-components';
+import { EditIcon, SVG, XIcon } from '@/assets';
 import { Button, IconWrapped, Input, Text, Tooltip } from '@/reuseable-components';
 
 const HeaderContainer = styled.section`
@@ -55,13 +55,14 @@ export interface DrawerHeaderRef {
 interface DrawerHeaderProps {
   title: string;
   titleTooltip?: string;
-  imageUri?: string;
+  icon?: SVG;
+  iconSrc?: string;
   isEdit?: boolean;
   onEdit?: () => void;
   onClose: () => void;
 }
 
-const DrawerHeader = forwardRef<DrawerHeaderRef, DrawerHeaderProps>(({ title, titleTooltip, imageUri, isEdit, onEdit, onClose }, ref) => {
+const DrawerHeader = forwardRef<DrawerHeaderRef, DrawerHeaderProps>(({ title, titleTooltip, icon, iconSrc, isEdit, onEdit, onClose }, ref) => {
   const [inputValue, setInputValue] = useState(title);
 
   useEffect(() => {
@@ -76,7 +77,7 @@ const DrawerHeader = forwardRef<DrawerHeaderRef, DrawerHeaderProps>(({ title, ti
   return (
     <HeaderContainer>
       <SectionItemsWrapper>
-        {!!imageUri && <IconWrapped src={imageUri} alt='Drawer Item' />}
+        {(!!icon || !!iconSrc) && <IconWrapped icon={icon} src={iconSrc} alt='Drawer Item' />}
 
         {!isEdit && (
           <Tooltip text={titleTooltip} withIcon>
@@ -95,13 +96,13 @@ const DrawerHeader = forwardRef<DrawerHeaderRef, DrawerHeaderProps>(({ title, ti
       <SectionItemsWrapper $gap={8}>
         {!isEdit && !!onEdit && (
           <EditButton data-id='drawer-edit' variant='tertiary' onClick={onEdit}>
-            <Image src='/icons/common/edit.svg' alt='Edit' width={16} height={16} />
+            <EditIcon />
             <ButtonText>Edit</ButtonText>
           </EditButton>
         )}
 
         <CloseButton data-id='drawer-close' variant='secondary' onClick={onClose}>
-          <Image src='/icons/common/x.svg' alt='Close' width={12} height={12} />
+          <XIcon size={12} />
         </CloseButton>
       </SectionItemsWrapper>
     </HeaderContainer>

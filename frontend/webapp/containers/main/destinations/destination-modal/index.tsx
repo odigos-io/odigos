@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ArrowIcon } from '@/assets';
 import { ModalBody } from '@/styles';
 import { useAppStore } from '@/store';
 import styled from 'styled-components';
@@ -103,7 +104,7 @@ export const DestinationModal: React.FC<AddDestinationModalProps> = ({ isOnboard
     if (!!selectedItem) {
       buttons.unshift({
         label: 'BACK',
-        iconSrc: '/icons/common/arrow-white.svg',
+        icon: ArrowIcon,
         variant: 'secondary' as const,
         onClick: handleBack,
         disabled: loading,

@@ -1,8 +1,10 @@
 import React, { CSSProperties, PropsWithChildren } from 'react';
 import styled, { keyframes } from 'styled-components';
+import { Tooltip } from '../tooltip';
 
 interface Props extends PropsWithChildren {
   onClick?: () => void;
+  tooltip?: string;
   withPing?: boolean;
   pingColor?: CSSProperties['backgroundColor'];
 }
@@ -53,11 +55,13 @@ const Ping = styled.div<{ $color: Props['pingColor'] }>`
   }
 `;
 
-export const IconButton: React.FC<Props> = ({ children, onClick, withPing, pingColor, ...props }) => {
+export const IconButton: React.FC<Props> = ({ children, onClick, tooltip, withPing, pingColor, ...props }) => {
   return (
-    <Button onClick={onClick} {...props}>
-      {withPing && <Ping $color={pingColor} />}
-      {children}
-    </Button>
+    <Tooltip text={tooltip}>
+      <Button onClick={onClick} {...props}>
+        {withPing && <Ping $color={pingColor} />}
+        {children}
+      </Button>
+    </Tooltip>
   );
 };

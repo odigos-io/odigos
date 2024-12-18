@@ -1,8 +1,8 @@
-import Image from 'next/image';
+import { useRef } from 'react';
 import { DOCS_LINK } from '@/utils';
 import styled from 'styled-components';
+import { NotebookIcon } from '@/assets';
 import { Button, ButtonProps } from '..';
-import { useRef } from 'react';
 
 const StyledButton = styled(Button)`
   display: flex;
@@ -25,7 +25,7 @@ export const DocsButton = ({ endpoint = '/', variant = 'secondary' }: { endpoint
         ref.current?.blur();
       }}
     >
-      <Image src='/icons/common/notebook.svg' alt='Docs' width={18} height={18} />
+      <NotebookIcon size={18} />
       Docs
     </StyledButton>
   );

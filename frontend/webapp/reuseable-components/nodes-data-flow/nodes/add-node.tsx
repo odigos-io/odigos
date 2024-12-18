@@ -1,5 +1,5 @@
 import React from 'react';
-import Image from 'next/image';
+import { PlusIcon } from '@/assets';
 import styled from 'styled-components';
 import { Text } from '@/reuseable-components';
 import { NODE_TYPES, OVERVIEW_NODE_TYPES, STATUSES } from '@/types';
@@ -65,7 +65,7 @@ const AddNode: React.FC<Props> = ({ data }) => {
   return (
     <Container $nodeWidth={nodeWidth} className='nowheel nodrag'>
       <TitleWrapper>
-        <Image src='/icons/common/plus.svg' width={16} height={16} alt='plus' />
+        <PlusIcon />
         <Title>{title}</Title>
       </TitleWrapper>
       <SubTitle>{subTitle}</SubTitle>

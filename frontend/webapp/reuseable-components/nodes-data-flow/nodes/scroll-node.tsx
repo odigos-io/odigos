@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { SVG } from '@/assets';
 import BaseNode from './base-node';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
@@ -21,7 +22,8 @@ interface Props
               status: STATUSES;
               title: string;
               subTitle: string;
-              imageUri: string;
+              icon?: SVG;
+              iconSrc?: string;
               raw: K8sActualSource;
             },
             NODE_TYPES.BASE

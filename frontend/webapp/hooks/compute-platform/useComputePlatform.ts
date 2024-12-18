@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useQuery } from '@apollo/client';
+import { useNotificationStore } from '@/store';
 import { GET_COMPUTE_PLATFORM } from '@/graphql';
 import { useFilterStore } from '@/store/useFilterStore';
 import { BACKEND_BOOLEAN, deriveTypeFromRule, safeJsonParse } from '@/utils';
-import type { ActionItem, ComputePlatform, ComputePlatformMapped } from '@/types';
+import { NOTIFICATION_TYPE, type ActionItem, type ComputePlatform, type ComputePlatformMapped } from '@/types';
 
 type UseComputePlatformHook = {
   data?: ComputePlatformMapped;
@@ -15,7 +16,18 @@ type UseComputePlatformHook = {
 
 export const useComputePlatform = (): UseComputePlatformHook => {
   const { data, loading, error, refetch } = useQuery<ComputePlatform>(GET_COMPUTE_PLATFORM);
+  const { addNotification } = useNotificationStore();
   const filters = useFilterStore();
+
+  useEffect(() => {
+    if (error) {
+      addNotification({
+        type: NOTIFICATION_TYPE.ERROR,
+        title: error.name,
+        message: error.cause?.message,
+      });
+    }
+  }, [error]);
 
   const mappedData = useMemo(() => {
     if (!data) return undefined;
