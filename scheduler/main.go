@@ -94,6 +94,12 @@ func main() {
 				&corev1.ConfigMap{}: {
 					Field: odigosConfigSelector,
 				},
+				&odigosv1.CollectorsGroup{}: {
+					Field: nsSelector,
+				},
+				&odigosv1.Destination{}: {
+					Field: nsSelector,
+				},
 			},
 		},
 		HealthProbeBindAddress: probeAddr,
