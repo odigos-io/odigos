@@ -67,10 +67,6 @@ type DestinationList struct {
 	Items           []Destination `json:"items"`
 }
 
-func init() {
-	SchemeBuilder.Register(&Destination{}, &DestinationList{})
-}
-
 var _ config.ExporterConfigurer = &Destination{}
 
 /* Implement common.ExporterConfigurer */

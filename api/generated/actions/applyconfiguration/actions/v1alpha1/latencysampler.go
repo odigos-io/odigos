@@ -39,7 +39,7 @@ func LatencySampler(name, namespace string) *LatencySamplerApplyConfiguration {
 	b.WithName(name)
 	b.WithNamespace(namespace)
 	b.WithKind("LatencySampler")
-	b.WithAPIVersion("actions/v1alpha1")
+	b.WithAPIVersion("actions.odigos.io/v1alpha1")
 	return b
 }
 

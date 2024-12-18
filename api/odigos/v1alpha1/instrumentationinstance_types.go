@@ -143,7 +143,3 @@ type InstrumentationInstanceList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []InstrumentationInstance `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&InstrumentationInstance{}, &InstrumentationInstanceList{})
-}

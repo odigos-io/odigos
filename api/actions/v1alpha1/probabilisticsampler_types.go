@@ -67,7 +67,3 @@ type ProbabilisticSamplerList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []ProbabilisticSampler `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&ProbabilisticSampler{}, &ProbabilisticSamplerList{})
-}

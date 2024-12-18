@@ -37,7 +37,7 @@ type ActionsV1alpha1Interface interface {
 	RenameAttributesGetter
 }
 
-// ActionsV1alpha1Client is used to interact with features provided by the actions group.
+// ActionsV1alpha1Client is used to interact with features provided by the actions.odigos.io group.
 type ActionsV1alpha1Client struct {
 	restClient rest.Interface
 }

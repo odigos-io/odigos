@@ -88,7 +88,3 @@ type InstrumentedApplicationList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []InstrumentedApplication `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&InstrumentedApplication{}, &InstrumentedApplicationList{})
-}

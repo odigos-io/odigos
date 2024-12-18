@@ -51,7 +51,7 @@ func (f *genericInformer) Lister() cache.GenericLister {
 // TODO extend this to unknown resources with a client pool
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
-	// Group=actions, Version=v1alpha1
+	// Group=actions.odigos.io, Version=v1alpha1
 	case v1alpha1.SchemeGroupVersion.WithResource("addclusterinfos"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Actions().V1alpha1().AddClusterInfos().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("deleteattributes"):
