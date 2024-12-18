@@ -20,12 +20,28 @@ spec:
       componentProps:
         type: text
         required: true
-    - name: JAEGER_CA
+    - name: JAEGER_CERT_PEM
+      displayName: Client Certificate
+      componentType: textarea
+      componentProps:
+        type: text
+        required: false
+        placeholder: '-----BEGIN CERTIFICATE-----'
+        tooltip: 'When using TLS, the client certificate is required.'
+    - name: JAEGER_KEY_PEM
+      displayName: Client Key
+      componentType: textarea
+      componentProps:
+        type: text
+        required: false
+        placeholder: '-----BEGIN PRIVATE KEY-----'
+        tooltip: 'When using TLS, the client key is required.'
+    - name: JAEGER_CA_PEM
       displayName: CA Certificate
       componentType: textarea
       componentProps:
         type: text
         required: false
         placeholder: '-----BEGIN CERTIFICATE-----'
-        tooltip: 'When using TLS, provide the CA certificate.'
+        tooltip: 'When using TLS, the CA certificate is optional. Unless TLS is used with self-signed certificates, then the CA certificate is required.'
   testConnectionSupported: true

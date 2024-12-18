@@ -7,8 +7,10 @@ import (
 )
 
 const (
-	JaegerUrlKey = "JAEGER_URL"
-	JaegerCa     = "JAEGER_CA"
+	JaegerUrlKey     = "JAEGER_URL"
+	JaegerCertPemKey = "JAEGER_CERT_PEM"
+	JaegerKeyPemKey  = "JAEGER_KEY_PEM"
+	JaegerCaPemKey   = "JAEGER_CA_PEM"
 )
 
 var (
@@ -24,7 +26,6 @@ type Jaeger struct{}
 var _ Configer = (*Jaeger)(nil)
 
 func (j *Jaeger) DestType() common.DestinationType {
-	// DestinationType defined in common/dests.go
 	return common.JaegerDestinationType
 }
 
@@ -32,42 +33,56 @@ func (j *Jaeger) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) er
 	config := dest.GetConfig()
 	uniqueUri := "jaeger-" + dest.GetID()
 
-	url, exists := config[JaegerUrlKey]
-	if !exists {
+	url, urlExists := config[JaegerUrlKey]
+	if !urlExists {
 		return ErrorJaegerMissingURL
 	}
 
-	endpoint, err := parseUnencryptedOtlpGrpcUrl(url)
-	if err != nil {
-		return err
-	}
+	var exporterName string
+	var exporterConfig GenericMap
 
-	// Create config for exporter
-
-	exporterName := "otlp/" + uniqueUri
-	exporterConfig := GenericMap{
-		"endpoint": endpoint,
-	}
-
-	ca, exists := dest.GetConfig()[JaegerCa]
-	if exists && ca != "" {
-		exporterConfig["tls"] = GenericMap{
-			"ca_pem": ca,
+	certPem, certExists := dest.GetConfig()[JaegerCertPemKey]
+	keyPem, keyExists := dest.GetConfig()[JaegerKeyPemKey]
+	if certExists && keyExists {
+		// Client cert & key were found, we will use a secure connection with TLS over GRPC
+		endpoint, err := parseEncryptedOtlpGrpcUrl(url)
+		if err != nil {
+			return err
 		}
+
+		exporterName = "otlp/" + uniqueUri
+		exporterConfig = GenericMap{
+			"endpoint": endpoint,
+		}
+		tlsConfig := GenericMap{
+			"cert_pem": certPem,
+			"key_pem":  keyPem,
+		}
+
+		caPem, caExists := dest.GetConfig()[JaegerCaPemKey]
+		if caExists {
+			// CA cert was found, we will include it to allow self-signed certificates to be used
+			tlsConfig["ca_pem"] = caPem
+		}
+
+		exporterConfig["tls"] = tlsConfig
 	} else {
-		exporterConfig["tls"] = GenericMap{
-			"insecure": true,
+		// Client cert & key were not found, we will use an insecure connection over GRPC
+		endpoint, err := parseUnencryptedOtlpGrpcUrl(url)
+		if err != nil {
+			return err
+		}
+
+		exporterName = "otlp/" + uniqueUri
+		exporterConfig = GenericMap{
+			"endpoint": endpoint,
+			"tls": GenericMap{
+				"insecure": true,
+			},
 		}
 	}
 
 	currentConfig.Exporters[exporterName] = exporterConfig
-
-	pipelineName := "traces/" + uniqueUri
-	currentConfig.Service.Pipelines[pipelineName] = Pipeline{
-		Exporters: []string{exporterName},
-	}
-
-	// Apply configs to service
 
 	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/" + uniqueUri
