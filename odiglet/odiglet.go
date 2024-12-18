@@ -22,11 +22,11 @@ import (
 )
 
 type Odiglet struct {
-	clientset     *kubernetes.Clientset
-	mgr           controllerruntime.Manager
-	ebpfManager   commonInstrumentation.Manager
-	configUpdates chan<- commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
-	lsf           instrumentation.OtelSdksLsf
+	clientset                *kubernetes.Clientset
+	mgr                      controllerruntime.Manager
+	ebpfManager              commonInstrumentation.Manager
+	configUpdates            chan<- commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
+	deviceInjectionCallbacks instrumentation.OtelSdksLsf
 }
 
 const (
@@ -34,7 +34,7 @@ const (
 )
 
 // New creates a new Odiglet instance.
-func New(lsf instrumentation.OtelSdksLsf, factories map[commonInstrumentation.OtelDistribution]commonInstrumentation.Factory) (*Odiglet, error) {
+func New(deviceInjectionCallbacks instrumentation.OtelSdksLsf, factories map[commonInstrumentation.OtelDistribution]commonInstrumentation.Factory) (*Odiglet, error) {
 	// Init Kubernetes API client
 	cfg, err := rest.InClusterConfig()
 	if err != nil {
@@ -63,11 +63,11 @@ func New(lsf instrumentation.OtelSdksLsf, factories map[commonInstrumentation.Ot
 	}
 
 	return &Odiglet{
-		clientset:     clientset,
-		mgr:           mgr,
-		ebpfManager:   ebpfManager,
-		configUpdates: configUpdates,
-		lsf:           lsf,
+		clientset:                clientset,
+		mgr:                      mgr,
+		ebpfManager:              ebpfManager,
+		configUpdates:            configUpdates,
+		deviceInjectionCallbacks: deviceInjectionCallbacks,
 	}, nil
 }
 
@@ -92,7 +92,7 @@ func (o *Odiglet) Run(ctx context.Context) {
 	// the device manager library doesn't support passing a context,
 	// however, internally it uses a context to cancel the device manager once SIGTERM or SIGINT is received.
 	g.Go(func() error {
-		err := runDeviceManager(o.clientset, o.lsf)
+		err := runDeviceManager(o.clientset, o.deviceInjectionCallbacks)
 		log.Logger.V(0).Info("Device manager exited")
 		return err
 	})

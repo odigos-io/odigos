@@ -7,8 +7,8 @@ import (
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf/sdks"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/fs"
 
-	commonInstrumentation "github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/common"
+	commonInstrumentation "github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/instrumentlang"
@@ -48,7 +48,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	o, err := odiglet.New(otelSdkLsf(), factories())
+	o, err := odiglet.New(deviceInjectionCallbacks(), ebpfInstrumentationFactories())
 	if err != nil {
 		log.Logger.Error(err, "Failed to initialize odiglet")
 		os.Exit(1)
@@ -60,7 +60,7 @@ func main() {
 	log.Logger.V(0).Info("odiglet exiting")
 }
 
-func otelSdkLsf() instrumentation.OtelSdksLsf{
+func deviceInjectionCallbacks() instrumentation.OtelSdksLsf {
 	return map[common.ProgrammingLanguage]map[common.OtelSdk]instrumentation.LangSpecificFunc{
 		common.GoProgrammingLanguage: {
 			common.OtelSdkEbpfCommunity: instrumentlang.Go,
@@ -83,7 +83,7 @@ func otelSdkLsf() instrumentation.OtelSdksLsf{
 	}
 }
 
-func factories() map[commonInstrumentation.OtelDistribution]commonInstrumentation.Factory {
+func ebpfInstrumentationFactories() map[commonInstrumentation.OtelDistribution]commonInstrumentation.Factory {
 	return map[commonInstrumentation.OtelDistribution]commonInstrumentation.Factory{
 		commonInstrumentation.OtelDistribution{
 			Language: common.GoProgrammingLanguage,
