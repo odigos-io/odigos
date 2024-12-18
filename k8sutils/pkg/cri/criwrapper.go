@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
+	"time"
 
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -26,29 +28,52 @@ var defaultRuntimeEndpoints = []string{
 	"unix:///var/run/cri-dockerd.sock",
 }
 
+func detectRuntimeSocket() string {
+	for _, endpoint := range defaultRuntimeEndpoints {
+		// Extract the file path from the endpoint
+		socketPath := strings.TrimPrefix(endpoint, "unix://")
+		if _, err := os.Stat(socketPath); err == nil {
+			return endpoint
+		}
+	}
+	return ""
+}
+
 // Connect attempts to establish a connection to a CRI runtime.
 func (rc *CriClient) Connect() error {
 	var err error
 
-	for _, endpoint := range defaultRuntimeEndpoints {
-		rc.Logger.Info("Attempting to connect to CRI runtime", "endpoint", endpoint)
-
-		rc.conn, err = grpc.NewClient(
-			endpoint,
-			grpc.WithTransportCredentials(insecure.NewCredentials()),
-		)
-
-		if err != nil {
-			continue
-		}
-
-		// Create a new RuntimeService client
-		rc.client = criapi.NewRuntimeServiceClient(rc.conn)
-		rc.Logger.Info("Successfully connected to CRI runtime", "endpoint", endpoint)
-		return nil
+	endpoint := detectRuntimeSocket()
+	if endpoint == "" {
+		return fmt.Errorf("unable to detect CRI runtime endpoint")
 	}
 
-	return fmt.Errorf("unable to connect to any CRI runtime endpoints: %v", defaultRuntimeEndpoints)
+	rc.Logger.Info("Starting connection attempt to CRI runtime", "endpoint", endpoint)
+
+	rc.conn, err = grpc.NewClient(
+		endpoint,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to create gRPC connection: %v", err)
+	}
+
+	// Create a new RuntimeService client
+	rc.client = criapi.NewRuntimeServiceClient(rc.conn)
+
+	// Validate the connection by invoking a lightweight method
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
+	defer cancel()
+
+	_, err = rc.client.Version(ctx, &criapi.VersionRequest{})
+	if err != nil {
+		return fmt.Errorf("Failed to validate CRI runtime connection")
+	}
+
+	rc.Logger.Info("Successfully connected to CRI runtime", "endpoint", endpoint)
+	return nil
+
 }
 
 // GetContainerInfo retrieves the "info" field of the specified container.

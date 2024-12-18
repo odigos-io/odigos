@@ -18,20 +18,22 @@ limitations under the License.
 package v1alpha1
 
 import (
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	common "github.com/odigos-io/odigos/common"
 )
 
 // RuntimeDetailsByContainerApplyConfiguration represents a declarative configuration of the RuntimeDetailsByContainer type for use
 // with apply.
 type RuntimeDetailsByContainerApplyConfiguration struct {
-	ContainerName         *string                       `json:"containerName,omitempty"`
-	Language              *common.ProgrammingLanguage   `json:"language,omitempty"`
-	RuntimeVersion        *string                       `json:"runtimeVersion,omitempty"`
-	EnvVars               []EnvVarApplyConfiguration    `json:"envVars,omitempty"`
-	OtherAgent            *OtherAgentApplyConfiguration `json:"otherAgent,omitempty"`
-	LibCType              *common.LibCType              `json:"libCType,omitempty"`
-	CriErrorMessage       *string                       `json:"criErrorMessage,omitempty"`
-	EnvVarsFromDockerFile []EnvVarApplyConfiguration    `json:"envVarsFromDockerFile,omitempty"`
+	ContainerName         *string                         `json:"containerName,omitempty"`
+	Language              *common.ProgrammingLanguage     `json:"language,omitempty"`
+	RuntimeVersion        *string                         `json:"runtimeVersion,omitempty"`
+	EnvVars               []EnvVarApplyConfiguration      `json:"envVars,omitempty"`
+	OtherAgent            *OtherAgentApplyConfiguration   `json:"otherAgent,omitempty"`
+	LibCType              *common.LibCType                `json:"libCType,omitempty"`
+	CriErrorMessage       *string                         `json:"criErrorMessage,omitempty"`
+	EnvVarsFromDockerFile []EnvVarApplyConfiguration      `json:"envVarsFromDockerFile,omitempty"`
+	RuntimeUpdateState    *odigosv1alpha1.ProcessingState `json:"runtimeUpdateState,omitempty"`
 }
 
 // RuntimeDetailsByContainerApplyConfiguration constructs a declarative configuration of the RuntimeDetailsByContainer type for use with
@@ -111,5 +113,13 @@ func (b *RuntimeDetailsByContainerApplyConfiguration) WithEnvVarsFromDockerFile(
 		}
 		b.EnvVarsFromDockerFile = append(b.EnvVarsFromDockerFile, *values[i])
 	}
+	return b
+}
+
+// WithRuntimeUpdateState sets the RuntimeUpdateState field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the RuntimeUpdateState field is set to the value of the last call.
+func (b *RuntimeDetailsByContainerApplyConfiguration) WithRuntimeUpdateState(value odigosv1alpha1.ProcessingState) *RuntimeDetailsByContainerApplyConfiguration {
+	b.RuntimeUpdateState = &value
 	return b
 }

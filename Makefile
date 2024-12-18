@@ -4,7 +4,7 @@ ORG ?= keyval
 
 .PHONY: build-odiglet
 build-odiglet:
-	docker build -t $(ORG)/odigos-odiglet:$(TAG) . -f odiglet/Dockerfile --build-arg ODIGOS_VERSION=$(TAG)
+	docker build -t $(ORG)/odigos-odiglet:$(TAG) . -f odiglet/Dockerfile --build-arg ODIGOS_VERSION=$(TAG) --no-cache
 
 .PHONY: verify-nodejs-agent
 verify-nodejs-agent:

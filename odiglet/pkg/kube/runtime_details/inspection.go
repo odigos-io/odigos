@@ -149,7 +149,7 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, ignoredContainers
 					if err == nil {
 						libcType = typeFound
 					} else {
-							log.Logger.Error(err, "error inspecting libc type", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
+						log.Logger.Error(err, "error inspecting libc type", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
 					}
 				}
 			}
@@ -168,7 +168,7 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, ignoredContainers
 				LibCType:       libcType,
 			}
 
-			if criClient != nil { // CRIClient passed as nil so it wont be used in future deprecated flow [InstrumentedApplication]
+			if criClient != nil { // CriClient passed as nil in cases that will be deprecated in the future [InstrumentedApplication]
 				updateRuntimeDetailsWithDockerFileEnvs(ctx, *criClient, pod, container, programLanguageDetails, &resultsMap)
 			}
 
@@ -215,15 +215,20 @@ func fetchAndSetEnvVarsFromDockerfile(ctx context.Context, criClient criwrapper.
 	envVars, err := criClient.GetContainerEnvVarsList(ctx, envVarKeys, containerID)
 	runtimeDetailsByContainer := (*resultsMap)[container.Name]
 
+	var state odigosv1.ProcessingState
+
 	if err != nil {
 		log.Logger.Error(err, "failed to get relevant env var per language", "container", container.Name, "pod", pod.Name, "namespace", pod.Namespace)
 		errMessage := fmt.Sprintf("CRI communication error for container %s in pod %s/%s",
 			container.Name, pod.Namespace, pod.Name)
 		runtimeDetailsByContainer.CriErrorMessage = &errMessage
-	} else if envVars != nil {
-		runtimeDetailsByContainer.CriErrorMessage = nil
+		state = odigosv1.ProcessingStateFailed
+	} else {
+		state = odigosv1.ProcessingStateSucceeded
 		runtimeDetailsByContainer.EnvVarsFromDockerFile = envVars
 	}
+
+	runtimeDetailsByContainer.RuntimeUpdateState = &state
 
 	// Update the results map with the modified runtime details
 	(*resultsMap)[container.Name] = runtimeDetailsByContainer
@@ -263,10 +268,12 @@ func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclien
 		return fmt.Errorf("failed to retrieve current InstrumentationConfig: %w", err)
 	}
 
-	// Check if status is already set
-	if len(currentConfig.Status.RuntimeDetailsByContainer) != 0 {
-		// Status already exists, no need to update
-		return nil
+	// Verify if the new RuntimeDetails process has already been executed.
+	// If it has, skip updating the RuntimeDetails to ensure the new runtime detection is performed only once.
+	for _, container := range currentConfig.Status.RuntimeDetailsByContainer {
+		if container.RuntimeUpdateState != nil {
+			return nil
+		}
 	}
 
 	// persist the runtime results into the status of the instrumentation config

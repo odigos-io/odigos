@@ -43,6 +43,14 @@ type OtherAgent struct {
 	Name string `json:"name,omitempty"`
 }
 
+type ProcessingState string
+
+const (
+	ProcessingStateFailed    ProcessingState = "Failed"
+	ProcessingStateSucceeded ProcessingState = "Succeeded"
+	ProcessingStateSkipped   ProcessingState = "Skipped"
+)
+
 // +kubebuilder:object:generate=true
 type RuntimeDetailsByContainer struct {
 	ContainerName         string                     `json:"containerName"`
@@ -53,6 +61,7 @@ type RuntimeDetailsByContainer struct {
 	LibCType              *common.LibCType           `json:"libCType,omitempty"`
 	CriErrorMessage       *string                    `json:"criErrorMessage,omitempty"`
 	EnvVarsFromDockerFile []EnvVar                   `json:"envVarsFromDockerFile,omitempty"`
+	RuntimeUpdateState    *ProcessingState           `json:"runtimeUpdateState,omitempty"` // Tracks whether the new runtime detection process has been executed. If empty, the process has not been executed.
 }
 
 // +kubebuilder:object:generate=true
