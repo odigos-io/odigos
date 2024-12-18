@@ -42,6 +42,7 @@ require (
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.55.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
+	github.com/xwb1989/sqlparser v0.0.0-20180606152119-120387863bf2
 	go.opentelemetry.io/collector v0.106.0 // indirect
 	go.opentelemetry.io/collector/config/configtelemetry v0.106.0 // indirect
 	go.opentelemetry.io/collector/consumer/consumerprofiles v0.106.0 // indirect
