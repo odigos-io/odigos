@@ -12,11 +12,7 @@ This allows to create a new Jaeger backend by simply specifying the Jaeger OTLP 
   - host is required
   - port is optional and defaults to the default OTLP gRPC port `4317`.
 
-- **JAEGER_CERT_PEM** - Client certificate in PEM format. This is optional and only required if the Jaeger backend requires client authentication (TLS).
-
-- **JAEGER_KEY_PEM** - Client private key in PEM format. This is optional and only required if the Jaeger backend requires client authentication (TLS).
-
-- **JAEGER_CA_PEM** - Certificate authority in PEM format. This is optional and only required if the Jaeger backend requires client authentication (TLS).
+- **JAEGER_CA_PEM** - Certificate Authority in PEM format. This is required only if Jaeger requires client authentication (TLS).
 
 ## Adding a Destination to Odigos
 
@@ -48,8 +44,7 @@ metadata:
 spec:
   data:
     JAEGER_URL: <Jaeger OTLP gRPC Endpoint>
-    # JAEGER_CERT_PEM: <Client Certificate>
-    # JAEGER_KEY_PEM: <Client Key>
+    # JAEGER_TLS: <Enable TLS (secure connection)>
     # JAEGER_CA_PEM: <Certificate Authority>
     # Note: The commented fields above are optional.
   destinationName: jaeger
