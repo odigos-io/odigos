@@ -37,11 +37,11 @@ spec:
         placeholder: '-----BEGIN PRIVATE KEY-----'
         tooltip: 'When using TLS, the client key is required.'
     - name: JAEGER_CA_PEM
-      displayName: CA Certificate
+      displayName: Certificate Authority
       componentType: textarea
       componentProps:
         type: text
         required: false
         placeholder: '-----BEGIN CERTIFICATE-----'
-        tooltip: 'When using TLS, the CA certificate is optional. Unless TLS is used with self-signed certificates, then the CA certificate is required.'
+        tooltip: 'When using TLS, the Certificate Authority is optional. Unless TLS is used with self-signed certificates, then the Certificate Authority is required.'
   testConnectionSupported: true
