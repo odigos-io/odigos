@@ -28,7 +28,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
-func SyncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList,
+func SyncConfigMap(sources *odigosv1.InstrumentationConfigList, dests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList,
 	datacollection *odigosv1.CollectorsGroup, ctx context.Context,
 	c client.Client, scheme *runtime.Scheme, disableNameProcessor bool) error {
 	logger := log.FromContext(ctx)
@@ -39,7 +39,7 @@ func SyncConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.D
 	SamplingExists := commonconf.FindFirstProcessorByType(allProcessors, "odigossampling")
 	setTracesLoadBalancer := SamplingExists != nil
 
-	desired, err := getDesiredConfigMap(apps, dests, processors, datacollection, scheme, setTracesLoadBalancer, disableNameProcessor)
+	desired, err := getDesiredConfigMap(sources, dests, processors, datacollection, scheme, setTracesLoadBalancer, disableNameProcessor)
 	if err != nil {
 		logger.Error(err, "failed to get desired config map")
 		return err
@@ -96,9 +96,9 @@ func createConfigMap(desired *v1.ConfigMap, ctx context.Context, c client.Client
 	return desired, nil
 }
 
-func getDesiredConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors []*odigosv1.Processor,
+func getDesiredConfigMap(sources *odigosv1.InstrumentationConfigList, dests *odigosv1.DestinationList, processors []*odigosv1.Processor,
 	datacollection *odigosv1.CollectorsGroup, scheme *runtime.Scheme, setTracesLoadBalancer bool, disableNameProcessor bool) (*v1.ConfigMap, error) {
-	cmData, err := calculateConfigMapData(datacollection, apps, dests, processors, setTracesLoadBalancer, disableNameProcessor)
+	cmData, err := calculateConfigMapData(datacollection, sources, dests, processors, setTracesLoadBalancer, disableNameProcessor)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +124,7 @@ func getDesiredConfigMap(apps *odigosv1.InstrumentedApplicationList, dests *odig
 	return &desired, nil
 }
 
-func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, apps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors []*odigosv1.Processor,
+func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.InstrumentationConfigList, dests *odigosv1.DestinationList, processors []*odigosv1.Processor,
 	setTracesLoadBalancer bool, disableNameProcessor bool) (string, error) {
 
 	ownMetricsPort := nodeCG.Spec.CollectorOwnMetricsPort
@@ -286,7 +286,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, apps *odigosv1.Ins
 
 	if collectLogs {
 		includes := make([]string, 0)
-		for _, element := range apps.Items {
+		for _, element := range sources.Items {
 			// Paths for log files: /var/log/pods/<namespace>_<pod name>_<pod ID>/<container name>/<auto-incremented file number>.log
 			// Pod specifiers
 			// 	Deployment:  <namespace>_<deployment  name>-<replicaset suffix[~10]>-<pod suffix[~5]>_<pod ID>

@@ -224,7 +224,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "CollectorsGroup")
 		os.Exit(1)
 	}
-	if err = (&controllers.InstrumentedApplicationReconciler{
+	if err = (&controllers.InstrumentationConfigReconciler{
 		Client:               mgr.GetClient(),
 		Scheme:               mgr.GetScheme(),
 		ImagePullSecrets:     imagePullSecrets,

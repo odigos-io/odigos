@@ -218,32 +218,12 @@ func NewAutoscalerClusterRole() *rbacv1.ClusterRole {
 			},
 			{
 				Verbs: []string{
-					"create",
-					"delete",
 					"get",
 					"list",
-					"patch",
-					"update",
 					"watch",
 				},
 				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentedapplications"},
-			},
-			{
-				Verbs: []string{
-					"update",
-				},
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentedapplications/finalizers"},
-			},
-			{
-				Verbs: []string{
-					"get",
-					"patch",
-					"update",
-				},
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentedapplications/status"},
+				Resources: []string{"instrumentationconfigs"},
 			}, {
 				Verbs: []string{
 					"create",
