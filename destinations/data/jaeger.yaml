@@ -24,7 +24,7 @@ spec:
       displayName: Client Certificate
       componentType: textarea
       componentProps:
-        type: text
+        type: password
         required: false
         placeholder: '-----BEGIN CERTIFICATE-----'
         tooltip: 'When using TLS, the client certificate is required.'
@@ -32,7 +32,7 @@ spec:
       displayName: Client Key
       componentType: textarea
       componentProps:
-        type: text
+        type: password
         required: false
         placeholder: '-----BEGIN PRIVATE KEY-----'
         tooltip: 'When using TLS, the client key is required.'
@@ -40,7 +40,7 @@ spec:
       displayName: Certificate Authority
       componentType: textarea
       componentProps:
-        type: text
+        type: password
         required: false
         placeholder: '-----BEGIN CERTIFICATE-----'
         tooltip: 'When using TLS, the Certificate Authority is optional. Unless TLS is used with self-signed certificates, then the Certificate Authority is required.'
