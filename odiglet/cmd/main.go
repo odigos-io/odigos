@@ -13,6 +13,7 @@ import (
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	"github.com/odigos-io/odigos/common"
 	commonInstrumentation "github.com/odigos-io/odigos/instrumentation"
+	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	k8senv "github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation"
@@ -45,6 +46,7 @@ type odiglet struct {
 	mgr           ctrl.Manager
 	ebpfManager   commonInstrumentation.Manager
 	configUpdates chan<- commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
+	criWrapper    *criwrapper.CriClient
 }
 
 const (
@@ -62,6 +64,8 @@ func newOdiglet() (*odiglet, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create Kubernetes client %w", err)
 	}
+
+	criWrapper := criwrapper.CriClient{Logger: log.Logger}
 
 	mgr, err := kube.CreateManager()
 	if err != nil {
@@ -84,7 +88,15 @@ func newOdiglet() (*odiglet, error) {
 		return nil, fmt.Errorf("Failed to create ebpf manager %w", err)
 	}
 
-	err = kube.SetupWithManager(mgr, nil, clientset, configUpdates)
+	kubeManagerOptions := kube.KubeManagerOptions{
+		Mgr:           mgr,
+		EbpfDirectors: nil,
+		Clientset:     clientset,
+		ConfigUpdates: configUpdates,
+		CriClient:     &criWrapper,
+	}
+
+	err = kube.SetupWithManager(kubeManagerOptions)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to setup controller-runtime manager %w", err)
 	}
@@ -94,11 +106,18 @@ func newOdiglet() (*odiglet, error) {
 		mgr:           mgr,
 		ebpfManager:   ebpfManager,
 		configUpdates: configUpdates,
+		criWrapper:    &criWrapper,
 	}, nil
 }
 
 func (o *odiglet) run(ctx context.Context) {
 	var wg sync.WaitGroup
+
+	if err := o.criWrapper.Connect(); err != nil {
+		log.Logger.Error(err, "Failed to connect to CRI runtime")
+	}
+
+	defer o.criWrapper.Close()
 
 	// Start pprof server
 	wg.Add(1)
