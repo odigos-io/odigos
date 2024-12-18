@@ -29,7 +29,7 @@ Get started with Odigos today to effortlessly improve the observability of your 
 		client := kube.GetCLIClientOrExit(cmd)
 		ctx = cmdcontext.ContextWithKubeClient(ctx, client)
 
-		details := autodetect.GetK8SClusterDetails(ctx, kubeConfig, client)
+		details := autodetect.GetK8SClusterDetails(ctx, kubeConfig, kubeContext, client)
 		ctx = cmdcontext.ContextWithClusterDetails(ctx, details)
 
 		cmd.SetContext(ctx)
@@ -37,7 +37,8 @@ Get started with Odigos today to effortlessly improve the observability of your 
 }
 
 var (
-	kubeConfig string
+	kubeConfig  string
+	kubeContext string
 )
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -51,4 +52,5 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&kubeConfig, "kubeconfig", env.GetDefaultKubeConfigPath(), "(optional) absolute path to the kubeconfig file")
+	rootCmd.PersistentFlags().StringVar(&kubeContext, "kube-context", "", "(optional) name of the kubeconfig context to use")
 }

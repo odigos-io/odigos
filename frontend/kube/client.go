@@ -32,8 +32,8 @@ type Client struct {
 	MetadataClient metadata.Interface
 }
 
-func CreateClient(kubeConfig string) (*Client, error) {
-	config, err := k8sutils.GetClientConfig(kubeConfig)
+func CreateClient(kubeConfig string, kContext string) (*Client, error) {
+	config, err := k8sutils.GetClientConfigWithContext(kubeConfig, kContext)
 	if err != nil {
 		return nil, err
 	}

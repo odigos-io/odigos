@@ -46,13 +46,14 @@ const (
 )
 
 type Flags struct {
-	Version    bool
-	Address    string
-	Port       int
-	LegacyPort int
-	Debug      bool
-	KubeConfig string
-	Namespace  string
+	Version     bool
+	Address     string
+	Port        int
+	LegacyPort  int
+	Debug       bool
+	KubeConfig  string
+	KubeContext string
+	Namespace   string
 }
 
 //go:embed all:webapp/out/*
@@ -71,13 +72,14 @@ func parseFlags() Flags {
 	flag.IntVar(&flags.LegacyPort, "legacy-port", legacyPort, "Port to listen on for legacy UI")
 	flag.BoolVar(&flags.Debug, "debug", false, "Enable debug mode")
 	flag.StringVar(&flags.KubeConfig, "kubeconfig", defaultKubeConfig, "Path to kubeconfig file")
+	flag.StringVar(&flags.KubeContext, "kube-context", "", "Name of the kubeconfig context to use")
 	flag.StringVar(&flags.Namespace, "namespace", consts.DefaultOdigosNamespace, "Kubernetes namespace where Odigos is installed")
 	flag.Parse()
 	return flags
 }
 
 func initKubernetesClient(flags *Flags) error {
-	client, err := kube.CreateClient(flags.KubeConfig)
+	client, err := kube.CreateClient(flags.KubeConfig, flags.KubeContext)
 	if err != nil {
 		return fmt.Errorf("error creating Kubernetes client: %w", err)
 	}
