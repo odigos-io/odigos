@@ -7,10 +7,9 @@ import (
 )
 
 const (
-	JaegerUrlKey     = "JAEGER_URL"
-	JaegerCertPemKey = "JAEGER_CERT_PEM"
-	JaegerKeyPemKey  = "JAEGER_KEY_PEM"
-	JaegerCaPemKey   = "JAEGER_CA_PEM"
+	JaegerUrlKey   = "JAEGER_URL"
+	JaegerTlsKey   = "JAEGER_TLS"
+	JaegerCaPemKey = "JAEGER_CA_PEM"
 )
 
 var (
@@ -38,42 +37,37 @@ func (j *Jaeger) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) er
 		return ErrorJaegerMissingURL
 	}
 
-	var exporterName string
+	exporterName := "otlp/" + uniqueUri
 	var exporterConfig GenericMap
 
-	certPem, certExists := dest.GetConfig()[JaegerCertPemKey]
-	keyPem, keyExists := dest.GetConfig()[JaegerKeyPemKey]
-	if certExists && keyExists {
-		// Client cert & key were found, we will use a secure connection with TLS over GRPC
+	tls, tlsExists := dest.GetConfig()[JaegerTlsKey]
+	if tlsExists && tls == "true" {
+		// Will use a secure connection with TLS over GRPC
 		endpoint, err := parseEncryptedOtlpGrpcUrl(url)
 		if err != nil {
 			return err
 		}
 
-		exporterName = "otlp/" + uniqueUri
 		exporterConfig = GenericMap{
 			"endpoint": endpoint,
 		}
 		tlsConfig := GenericMap{
-			"cert_pem": certPem,
-			"key_pem":  keyPem,
+			"insecure": false,
 		}
 
 		caPem, caExists := dest.GetConfig()[JaegerCaPemKey]
-		if caExists {
-			// CA cert was found, we will include it to allow self-signed certificates to be used
+		if caExists && caPem != "" {
 			tlsConfig["ca_pem"] = caPem
 		}
 
 		exporterConfig["tls"] = tlsConfig
 	} else {
-		// Client cert & key were not found, we will use an insecure connection over GRPC
+		// Will use an insecure connection over GRPC
 		endpoint, err := parseUnencryptedOtlpGrpcUrl(url)
 		if err != nil {
 			return err
 		}
 
-		exporterName = "otlp/" + uniqueUri
 		exporterConfig = GenericMap{
 			"endpoint": endpoint,
 			"tls": GenericMap{

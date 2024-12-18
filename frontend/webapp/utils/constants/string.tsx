@@ -12,6 +12,7 @@ export const INPUT_TYPES = {
   MULTI_INPUT: 'multiInput',
   KEY_VALUE_PAIR: 'keyValuePairs',
   TEXTAREA: 'textarea',
+  CHECKBOX: 'checkbox',
 };
 
 export const ACTION = {
