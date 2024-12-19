@@ -175,13 +175,13 @@ func TestParseUnencryptedOtlpGrpcUrl(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := parseUnencryptedOtlpGrpcUrl(tt.args.rawURL)
+			got, err := parseOtlpGrpcUrl(tt.args.rawURL, false)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("parseUnencryptedOtlpGrpcUrl() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("parseOtlpGrpcUrl() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("parseUnencryptedOtlpGrpcUrl() = %v, want %v", got, tt.want)
+				t.Errorf("parseOtlpGrpcUrl() = %v, want %v", got, tt.want)
 			}
 		})
 	}

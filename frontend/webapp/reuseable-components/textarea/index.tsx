@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { type ChangeEventHandler, type KeyboardEventHandler, useRef } from 'react';
 import styled, { css } from 'styled-components';
 import { FieldError, FieldLabel } from '@/reuseable-components';
 
@@ -79,15 +79,25 @@ const StyledTextArea = styled.textarea`
   }
 `;
 
-const TextArea: React.FC<TextAreaProps> = ({ errorMessage, title, tooltip, required, onChange, name, ...props }) => {
+export const TextArea: React.FC<TextAreaProps> = ({ errorMessage, title, tooltip, required, onChange, name, ...props }) => {
   const ref = useRef<HTMLTextAreaElement>(null);
 
-  const resize = () => {
+  const resize = (focused: boolean) => {
     // this is to auto-resize the textarea according to the number of rows typed
     if (ref.current) {
       ref.current.style.height = 'auto';
-      ref.current.style.height = `${ref.current.scrollHeight}px`;
+      if (focused) ref.current.style.height = `${ref.current.scrollHeight}px`;
     }
+  };
+
+  const handleChange: ChangeEventHandler<HTMLTextAreaElement> = (e) => {
+    e.stopPropagation();
+    resize(true);
+    onChange?.(e);
+  };
+
+  const handleKeyDown: KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
+    e.stopPropagation();
   };
 
   return (
@@ -95,23 +105,10 @@ const TextArea: React.FC<TextAreaProps> = ({ errorMessage, title, tooltip, requi
       <FieldLabel title={title} required={required} tooltip={tooltip} />
 
       <InputWrapper $disabled={props.disabled} $hasError={!!errorMessage} $isActive={!!props.autoFocus}>
-        <StyledTextArea
-          ref={ref}
-          data-id={name}
-          name={name}
-          onFocus={resize}
-          onBlur={resize}
-          onChange={(e) => {
-            resize();
-            onChange?.(e);
-          }}
-          {...props}
-        />
+        <StyledTextArea ref={ref} data-id={name} name={name} onFocus={() => resize(true)} onBlur={() => resize(false)} onChange={handleChange} onKeyDown={handleKeyDown} {...props} />
       </InputWrapper>
 
       {!!errorMessage && <FieldError>{errorMessage}</FieldError>}
     </Container>
   );
 };
-
-export { TextArea };
