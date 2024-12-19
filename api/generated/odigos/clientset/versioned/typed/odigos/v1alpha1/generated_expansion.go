@@ -21,6 +21,8 @@ type CollectorsGroupExpansion interface{}
 
 type DestinationExpansion interface{}
 
+type InstrumentationExpansion interface{}
+
 type InstrumentationConfigExpansion interface{}
 
 type InstrumentationInstanceExpansion interface{}

@@ -27,6 +27,8 @@ type Interface interface {
 	CollectorsGroups() CollectorsGroupInformer
 	// Destinations returns a DestinationInformer.
 	Destinations() DestinationInformer
+	// Instrumentations returns a InstrumentationInformer.
+	Instrumentations() InstrumentationInformer
 	// InstrumentationConfigs returns a InstrumentationConfigInformer.
 	InstrumentationConfigs() InstrumentationConfigInformer
 	// InstrumentationInstances returns a InstrumentationInstanceInformer.
@@ -60,6 +62,11 @@ func (v *version) CollectorsGroups() CollectorsGroupInformer {
 // Destinations returns a DestinationInformer.
 func (v *version) Destinations() DestinationInformer {
 	return &destinationInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// Instrumentations returns a InstrumentationInformer.
+func (v *version) Instrumentations() InstrumentationInformer {
+	return &instrumentationInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // InstrumentationConfigs returns a InstrumentationConfigInformer.
