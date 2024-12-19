@@ -83,7 +83,3 @@ type LatencySamplerList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []LatencySampler `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&LatencySampler{}, &LatencySamplerList{})
-}

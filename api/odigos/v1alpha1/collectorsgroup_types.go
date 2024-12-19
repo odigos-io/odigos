@@ -137,7 +137,3 @@ type CollectorsGroupList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []CollectorsGroup `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&CollectorsGroup{}, &CollectorsGroupList{})
-}

@@ -76,10 +76,6 @@ type OdigosConfigurationList struct {
 	Items           []OdigosConfiguration `json:"items"`
 }
 
-func init() {
-	SchemeBuilder.Register(&OdigosConfiguration{}, &OdigosConfigurationList{})
-}
-
 func (odigosConfig *OdigosConfiguration) ToCommonConfig() *common.OdigosConfiguration {
 	var collectorGateway common.CollectorGatewayConfiguration
 	if odigosConfig.Spec.CollectorGateway != nil {

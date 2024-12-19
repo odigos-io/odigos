@@ -68,7 +68,3 @@ type ErrorSamplerList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []ErrorSampler `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&ErrorSampler{}, &ErrorSamplerList{})
-}
