@@ -19,11 +19,15 @@ import (
 )
 
 const (
-	AutoScalerDeploymentName     = "odigos-autoscaler"
-	AutoScalerServiceAccountName = AutoScalerDeploymentName
-	AutoScalerAppLabelValue      = AutoScalerDeploymentName
-	AutoScalerServiceName        = "auto-scaler"
-	AutoScalerContainerName      = "manager"
+	AutoScalerDeploymentName         = "odigos-autoscaler"
+	AutoScalerServiceAccountName     = AutoScalerDeploymentName
+	AutoScalerAppLabelValue          = AutoScalerDeploymentName
+	AutoScalerRoleName               = AutoScalerDeploymentName
+	AutoScalerRoleBindingName        = AutoScalerDeploymentName
+	AutoScalerClusterRoleName        = AutoScalerDeploymentName
+	AutoScalerClusterRoleBindingName = AutoScalerDeploymentName
+	AutoScalerServiceName            = "auto-scaler"
+	AutoScalerContainerName          = "manager"
 )
 
 func NewAutoscalerServiceAccount(ns string) *corev1.ServiceAccount {
@@ -46,7 +50,7 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "odigos-autoscaler",
+			Name:      AutoScalerRoleName,
 			Namespace: ns,
 		},
 		Rules: []rbacv1.PolicyRule{
@@ -117,8 +121,8 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 			{
 				Verbs: []string{
 					"get",
-					"patch",
-					"update",
+					"list",
+					"watch",
 				},
 				APIGroups: []string{"apps"},
 				Resources: []string{"deployments/status"},
@@ -142,111 +146,23 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 				APIGroups: []string{""},
 				Resources: []string{"secrets"},
 			},
-		},
-	}
-}
-
-func NewAutoscalerRoleBinding(ns string) *rbacv1.RoleBinding {
-	return &rbacv1.RoleBinding{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "RoleBinding",
-			APIVersion: "rbac.authorization.k8s.io/v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "odigos-autoscaler",
-			Namespace: ns,
-		},
-		Subjects: []rbacv1.Subject{
-			{
-				Kind: "ServiceAccount",
-				Name: AutoScalerServiceAccountName,
-			},
-		},
-		RoleRef: rbacv1.RoleRef{
-			APIGroup: "rbac.authorization.k8s.io",
-			Kind:     "Role",
-			Name:     "odigos-autoscaler",
-		},
-	}
-}
-
-func NewAutoscalerClusterRole() *rbacv1.ClusterRole {
-	return &rbacv1.ClusterRole{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "ClusterRole",
-			APIVersion: "rbac.authorization.k8s.io/v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-autoscaler",
-		},
-		Rules: []rbacv1.PolicyRule{
 			{
 				Verbs: []string{
 					"get",
 					"list",
-					"watch",
-				},
-				APIGroups: []string{""},
-				Resources: []string{"configmaps"},
-			},
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
-				APIGroups: []string{"apps"},
-				Resources: []string{"daemonsets"},
-			},
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentationconfigs"},
-			}, {
-				Verbs: []string{
-					"create",
-					"delete",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"collectorsgroups"},
-			},
-			{
-				Verbs: []string{
-					"update",
-				},
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"collectorsgroups/finalizers"},
-			},
-			{
-				Verbs: []string{
-					"get",
-					"patch",
-					"update",
-				},
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"collectorsgroups/status"},
-			},
-			{
-				Verbs: []string{
-					"create",
-					"delete",
-					"get",
-					"list",
-					"patch",
-					"update",
 					"watch",
 				},
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"destinations"},
+			},
+			{
+				Verbs: []string{
+					"get",
+					"patch",
+					"update",
+				},
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"destinations/status"},
 			},
 			{
 				Verbs: []string{
@@ -259,22 +175,6 @@ func NewAutoscalerClusterRole() *rbacv1.ClusterRole {
 				},
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"processors"},
-			},
-			{
-				Verbs: []string{
-					"update",
-				},
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"destinations/finalizers"},
-			},
-			{
-				Verbs: []string{
-					"get",
-					"patch",
-					"update",
-				},
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"destinations/status"},
 			},
 			{
 				Verbs: []string{
@@ -301,7 +201,63 @@ func NewAutoscalerClusterRole() *rbacv1.ClusterRole {
 					"watch",
 				},
 				APIGroups: []string{"odigos.io"},
-				Resources: []string{"odigosconfigurations"},
+				Resources: []string{"collectorsgroups"},
+			},
+			{
+				Verbs: []string{
+					"get",
+					"patch",
+					"update",
+				},
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"collectorsgroups/status"},
+			},
+		},
+	}
+}
+
+func NewAutoscalerRoleBinding(ns string) *rbacv1.RoleBinding {
+	return &rbacv1.RoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "RoleBinding",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      AutoScalerRoleBindingName,
+			Namespace: ns,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind: "ServiceAccount",
+				Name: AutoScalerServiceAccountName,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "Role",
+			Name:     AutoScalerRoleName,
+		},
+	}
+}
+
+func NewAutoscalerClusterRole() *rbacv1.ClusterRole {
+	return &rbacv1.ClusterRole{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ClusterRole",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: AutoScalerClusterRoleName,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+				},
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"instrumentationconfigs"},
 			},
 		},
 	}
@@ -314,7 +270,7 @@ func NewAutoscalerClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-autoscaler",
+			Name: AutoScalerClusterRoleBindingName,
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -326,7 +282,7 @@ func NewAutoscalerClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "ClusterRole",
-			Name:     "odigos-autoscaler",
+			Name:     AutoScalerClusterRoleName,
 		},
 	}
 }
@@ -344,7 +300,7 @@ func NewAutoscalerLeaderElectionRoleBinding(ns string) *rbacv1.RoleBinding {
 		Subjects: []rbacv1.Subject{
 			{
 				Kind: "ServiceAccount",
-				Name: "odigos-autoscaler",
+				Name: AutoScalerServiceAccountName,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
