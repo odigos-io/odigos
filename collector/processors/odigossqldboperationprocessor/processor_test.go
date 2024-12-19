@@ -84,7 +84,7 @@ func TestDBOperationProcessor_SetDbOperationName(t *testing.T) {
 		{"INSERT INTO users VALUES(1)", "INSERT"},
 		{"UPDATE users SET name='John'", "UPDATE"},
 		{"DELETE FROM users WHERE id=1", "DELETE"},
-		{"CREATE TABLE users", "CREATE"},
+		{"CREATE TABLE users", "CREATE TABLE"},
 		{"", "UNKNOWN"},
 	}
 
@@ -121,7 +121,7 @@ func TestDBOperationProcessor_SetDbCollectionName(t *testing.T) {
 		{"INSERT INTO users VALUES(1)", "users"},
 		{"UPDATE users SET name='John'", "users"},
 		{"DELETE FROM users WHERE id=1", "users"},
-		{"CREATE TABLE users", "UNKNOWN"},
+		{"CREATE TABLE users", "users"},
 		{"", "UNKNOWN"},
 	}
 

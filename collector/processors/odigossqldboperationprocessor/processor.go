@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/xwb1989/sqlparser"
 	"go.uber.org/zap"
+	"vitess.io/vitess/go/vt/sqlparser"
 
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
@@ -16,14 +16,20 @@ type DBOperationProcessor struct {
 }
 
 const (
-	OperationSelect  string = "SELECT"
-	OperationInsert  string = "INSERT"
-	OperationUpdate  string = "UPDATE"
-	OperationDelete  string = "DELETE"
-	OperationCreate  string = "CREATE"
-	OperationDrop    string = "DROP"
-	OperationAlter   string = "ALTER"
-	OperationUnknown string = "UNKNOWN"
+	OperationSelect         string = "SELECT"
+	OperationInsert         string = "INSERT"
+	OperationUpdate         string = "UPDATE"
+	OperationDelete         string = "DELETE"
+	OperationCreate         string = "CREATE"
+	OperationCreateTable    string = "CREATE TABLE"
+	OperationCreateDatabase string = "CREATE DATABASE"
+	OperationDrop           string = "DROP"
+	OperationDropTable      string = "DROP TABLE"
+	OperationDropDatabase   string = "DROP DATABASE"
+	OperationAlter          string = "ALTER"
+	OperationAlterTable     string = "ALTER TABLE"
+	OperationTruncateTable  string = "TRUNCATE TABLE"
+	OperationUnknown        string = "UNKNOWN"
 )
 
 func (sp *DBOperationProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
@@ -92,19 +98,53 @@ func DetectSQLOperationAndTableName(query string) (string, string) {
 		return OperationUnknown, OperationUnknown
 	}
 
-	stmt, err := sqlparser.Parse(query)
+	p, err := sqlparser.New(sqlparser.Options{})
 	if err == nil {
-		switch stmt := stmt.(type) {
-		case *sqlparser.Select:
-			return "SELECT", getTableName(stmt.From)
-		case *sqlparser.Update:
-			return "UPDATE", getTableName(stmt.TableExprs)
-		case *sqlparser.Insert:
-			return "INSERT", stmt.Table.Name.String()
-		case *sqlparser.Delete:
-			return "DELETE", getTableName(stmt.TableExprs)
+		stmt, err := p.Parse(query)
+		if err == nil {
+			var statementType string
+			var tables []string
+
+			switch stmt := stmt.(type) {
+			case *sqlparser.Select:
+				statementType = OperationSelect
+				tables = extractTables(stmt.From)
+			case *sqlparser.Update:
+				statementType = OperationUpdate
+				tables = extractTables(stmt.TableExprs)
+			case *sqlparser.Insert:
+				statementType = OperationInsert
+				tables = []string{stmt.Table.TableNameString()}
+			case *sqlparser.Delete:
+				statementType = OperationDelete
+				tables = extractTables(stmt.TableExprs)
+			case *sqlparser.CreateTable:
+				statementType = OperationCreateTable
+				tables = []string{stmt.Table.Name.String()}
+			case *sqlparser.AlterTable:
+				statementType = OperationAlterTable
+				tables = []string{stmt.Table.Name.String()}
+			case *sqlparser.DropTable:
+				statementType = OperationDropTable
+				for _, table := range stmt.FromTables {
+					tables = append(tables, table.Name.String())
+				}
+			case *sqlparser.CreateDatabase:
+				statementType = OperationCreateDatabase
+				tables = []string{stmt.DBName.String()}
+			case *sqlparser.DropDatabase:
+				statementType = OperationDropDatabase
+				tables = []string{stmt.DBName.String()}
+			case *sqlparser.TruncateTable:
+				statementType = OperationTruncateTable
+				tables = []string{stmt.Table.Name.String()}
+			}
+			if statementType != "" && len(tables) > 0 {
+				return statementType, tables[0]
+			}
 		}
 	}
+
 	return detectBasedOnFirstWord(query), OperationUnknown
 }
 
@@ -151,4 +191,18 @@ func getTableName(node sqlparser.SQLNode) string {
 		}
 	}
 	return OperationUnknown
+}
+
+// extractTables extracts table names from a list of SQL nodes.
+func extractTables(exprs sqlparser.TableExprs) []string {
+	var tables []string
+	for _, expr := range exprs {
+		switch tableExpr := expr.(type) {
+		case *sqlparser.AliasedTableExpr:
+			if name, ok := tableExpr.Expr.(sqlparser.TableName); ok {
+				tables = append(tables, name.Name.String())
+			}
+		}
+	}
+	return tables
 }
