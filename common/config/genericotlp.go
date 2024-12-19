@@ -23,7 +23,7 @@ func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		return errors.New("Generic OTLP gRPC endpoint not specified, gateway will not be configured for otlp")
 	}
 
-	grpcEndpoint, err := parseUnencryptedOtlpGrpcUrl(url)
+	grpcEndpoint, err := parseOtlpGrpcUrl(url, false)
 	if err != nil {
 		return errors.Join(err, errors.New("otlp endpoint invalid, gateway will not be configured for otlp"))
 	}

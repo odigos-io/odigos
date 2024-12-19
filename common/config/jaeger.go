@@ -43,7 +43,7 @@ func (j *Jaeger) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) er
 	tls, tlsExists := dest.GetConfig()[JaegerTlsKey]
 	if tlsExists && tls == "true" {
 		// Will use a secure connection with TLS over GRPC
-		endpoint, err := parseEncryptedOtlpGrpcUrl(url)
+		endpoint, err := parseOtlpGrpcUrl(url, true)
 		if err != nil {
 			return err
 		}
@@ -63,7 +63,7 @@ func (j *Jaeger) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) er
 		exporterConfig["tls"] = tlsConfig
 	} else {
 		// Will use an insecure connection over GRPC
-		endpoint, err := parseUnencryptedOtlpGrpcUrl(url)
+		endpoint, err := parseOtlpGrpcUrl(url, false)
 		if err != nil {
 			return err
 		}
