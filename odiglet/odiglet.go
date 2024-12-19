@@ -98,7 +98,7 @@ func (o *Odiglet) Run(ctx context.Context) {
 	})
 
 	g.Go(func() error {
-		err := o.ebpfManager.Run(ctx)
+		err := o.ebpfManager.Run(groupCtx)
 		if err != nil {
 			log.Logger.Error(err, "Failed to run ebpf manager")
 		}
@@ -109,7 +109,7 @@ func (o *Odiglet) Run(ctx context.Context) {
 	// start OpAmp server
 	odigosNs := k8senv.GetCurrentNamespace()
 	g.Go(func() error {
-		err := server.StartOpAmpServer(ctx, log.Logger, o.mgr, o.clientset, env.Current.NodeName, odigosNs)
+		err := server.StartOpAmpServer(groupCtx, log.Logger, o.mgr, o.clientset, env.Current.NodeName, odigosNs)
 		if err != nil {
 			log.Logger.Error(err, "Failed to start opamp server")
 		}
@@ -119,7 +119,7 @@ func (o *Odiglet) Run(ctx context.Context) {
 
 	// start kube manager
 	g.Go(func() error {
-		err := o.mgr.Start(ctx)
+		err := o.mgr.Start(groupCtx)
 		if err != nil {
 			log.Logger.Error(err, "error starting kube manager")
 		} else {
