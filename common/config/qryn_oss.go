@@ -23,9 +23,19 @@ func (d QrynOssDest) GetConfig() map[string]string {
 	conf := d.ExporterConfigurer.GetConfig()
 	conf[qrynHost] = conf[qrynOssHost]
 	conf[qrynAPIKey] = conf[qrynOssUsername]
-	conf[resourceToTelemetryConversion] = conf[qrynOssresourceToTelemetryConversion]
+	// Yes/No are deperecated, use true/false
+	if conf[qrynOssresourceToTelemetryConversion] == "true" || conf[qrynOssresourceToTelemetryConversion] == "Yes" {
+		conf[resourceToTelemetryConversion] = "true"
+	} else {
+		conf[resourceToTelemetryConversion] = "false"
+	}
+	// Yes/No are deperecated, use true/false
+	if conf[qrynOssAddExporterName] == "true" || conf[qrynOssAddExporterName] == "Yes" {
+		conf[qrynAddExporterName] = "true"
+	} else {
+		conf[qrynAddExporterName] = "false"
+	}
 	conf[qrynSecretsOptional] = "1"
-	conf[qrynAddExporterName] = conf[qrynOssAddExporterName]
 	conf[qrynPasswordFieldName] = "QRYN_OSS_PASSWORD"
 	return conf
 }

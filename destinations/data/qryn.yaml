@@ -33,19 +33,13 @@ spec:
         type: text
     - name: QRYN_OSS_RESOURCE_TO_TELEMETRY_CONVERSION
       displayName: Convert container attributes to labels
-      componentType: dropdown
+      componentType: checkbox
       componentProps:
-        values:
-          - "Yes"
-          - "No"
         required: false
       initialValue: Yes
     - name: QRYN_OSS_ADD_EXPORTER_NAME
       displayName: Add exporter name to labels
-      componentType: dropdown
+      componentType: checkbox
       componentProps:
-        values:
-          - "Yes"
-          - "No"
         required: false
       initialValue: Yes
