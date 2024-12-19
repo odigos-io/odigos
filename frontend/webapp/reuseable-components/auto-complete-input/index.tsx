@@ -1,7 +1,7 @@
+import React, { useState, type ChangeEvent, type KeyboardEvent, type FC } from 'react';
 import { SVG } from '@/assets';
 import { Text } from '../text';
 import styled from 'styled-components';
-import React, { useState, ChangeEvent, KeyboardEvent, FC } from 'react';
 
 export interface Option {
   id: string;
@@ -43,6 +43,8 @@ export const AutocompleteInput: FC<Props> = ({ placeholder = 'Type to search...'
   const Icon = selectedOption?.icon;
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+
     const input = e.target.value;
     const filtered = filterOptions(options, input);
     const matched = filtered.length === 1 && filtered[0].label === input ? filtered[0] : undefined;
@@ -69,8 +71,11 @@ export const AutocompleteInput: FC<Props> = ({ placeholder = 'Type to search...'
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+
     // Flatten the options to handle keyboard navigation - TODO: Refactor this
     return;
+
     const flatOptions = flattenOptions(filteredOptions);
     if (e.key === 'ArrowDown' && activeIndex < flatOptions.length - 1) {
       setActiveIndex(activeIndex + 1);
