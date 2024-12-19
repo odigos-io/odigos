@@ -159,7 +159,7 @@ func NewAutoscalerRoleBinding(ns string) *rbacv1.RoleBinding {
 		Subjects: []rbacv1.Subject{
 			{
 				Kind: "ServiceAccount",
-				Name: "odigos-autoscaler",
+				Name: AutoScalerServiceAccountName,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
@@ -188,15 +188,6 @@ func NewAutoscalerClusterRole() *rbacv1.ClusterRole {
 				},
 				APIGroups: []string{""},
 				Resources: []string{"configmaps"},
-			},
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
-				APIGroups: []string{""},
-				Resources: []string{"services"},
 			},
 			{
 				Verbs: []string{
@@ -328,7 +319,7 @@ func NewAutoscalerClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      "odigos-autoscaler",
+				Name:      AutoScalerServiceAccountName,
 				Namespace: ns,
 			},
 		},
@@ -477,7 +468,7 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 						},
 					},
 					TerminationGracePeriodSeconds: ptrint64(10),
-					ServiceAccountName:            "odigos-autoscaler",
+					ServiceAccountName:            AutoScalerServiceAccountName,
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot: ptrbool(true),
 					},
