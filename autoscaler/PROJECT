@@ -25,7 +25,7 @@ resources:
     namespaced: true
   controller: true
   domain: odigos.io
-  kind: InstrumentedApplication
+  kind: InstrumentationConfig
   path: github.com/odigos-io/odigos/api/odigos/v1alpha1
   version: v1alpha1
 version: "3"

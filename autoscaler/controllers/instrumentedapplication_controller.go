@@ -26,10 +26,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/version"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-type InstrumentedApplicationReconciler struct {
+type InstrumentationConfigReconciler struct {
 	client.Client
 	Scheme               *runtime.Scheme
 	ImagePullSecrets     []string
@@ -38,9 +37,7 @@ type InstrumentedApplicationReconciler struct {
 	DisableNameProcessor bool
 }
 
-func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
-	logger.V(0).Info("Reconciling InstrumentedApps")
+func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	err := datacollection.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion, r.K8sVersion, r.DisableNameProcessor)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -49,9 +46,9 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 	return ctrl.Result{}, nil
 }
 
-func (r *InstrumentedApplicationReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *InstrumentationConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&odigosv1.InstrumentedApplication{}).
+		For(&odigosv1.InstrumentationConfig{}).
 		// this controller only cares about the instrumented application existence.
 		// when it is created or removed, the node collector config map needs to be updated to scrape logs for it's pods.
 		WithEventFilter(&predicate.ExistencePredicate{}).

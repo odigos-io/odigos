@@ -63,9 +63,9 @@ func NewMockTestStatefulSet(ns *corev1.Namespace) *appsv1.StatefulSet {
 
 // givin a workload object (deployment, daemonset, statefulset) return a mock instrumented application
 // with a single container with the GoProgrammingLanguage
-func NewMockInstrumentedApplication(workloadObject client.Object) *odigosv1.InstrumentedApplication {
+func NewMockInstrumentationConfig(workloadObject client.Object) *odigosv1.InstrumentationConfig {
 	gvk, _ := apiutil.GVKForObject(workloadObject, scheme.Scheme)
-	return &odigosv1.InstrumentedApplication{
+	return &odigosv1.InstrumentationConfig{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      workload.CalculateWorkloadRuntimeObjectName(workloadObject.GetName(), gvk.Kind),
 			Namespace: workloadObject.GetNamespace(),
@@ -79,9 +79,9 @@ func NewMockInstrumentedApplication(workloadObject client.Object) *odigosv1.Inst
 	}
 }
 
-func NewMockInstrumentedApplicationWoOwner(workloadObject client.Object) *odigosv1.InstrumentedApplication {
+func NewMockInstrumentationConfigWoOwner(workloadObject client.Object) *odigosv1.InstrumentationConfig {
 	gvk, _ := apiutil.GVKForObject(workloadObject, scheme.Scheme)
-	return &odigosv1.InstrumentedApplication{
+	return &odigosv1.InstrumentationConfig{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      workload.CalculateWorkloadRuntimeObjectName(workloadObject.GetName(), gvk.Kind),
 			Namespace: workloadObject.GetNamespace(),
@@ -118,15 +118,15 @@ func TestCalculateConfigMapData(t *testing.T) {
 	ns := NewMockNamespace("default")
 	ns2 := NewMockNamespace("other-namespace")
 
-	items := []v1alpha1.InstrumentedApplication{
-		*NewMockInstrumentedApplication(NewMockTestDeployment(ns)),
-		*NewMockInstrumentedApplication(NewMockTestDaemonSet(ns)),
-		*NewMockInstrumentedApplication(NewMockTestStatefulSet(ns2)),
-		*NewMockInstrumentedApplicationWoOwner(NewMockTestDeployment(ns2)),
+	items := []v1alpha1.InstrumentationConfig{
+		*NewMockInstrumentationConfig(NewMockTestDeployment(ns)),
+		*NewMockInstrumentationConfig(NewMockTestDaemonSet(ns)),
+		*NewMockInstrumentationConfig(NewMockTestStatefulSet(ns2)),
+		*NewMockInstrumentationConfigWoOwner(NewMockTestDeployment(ns2)),
 	}
 
 	got, err := calculateConfigMapData(
-		&v1alpha1.InstrumentedApplicationList{
+		&v1alpha1.InstrumentationConfigList{
 			Items: items,
 		},
 		NewMockDestinationList(),
