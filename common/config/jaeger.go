@@ -6,14 +6,17 @@ import (
 	"github.com/odigos-io/odigos/common"
 )
 
-var (
-	ErrorJaegerTracingDisabled = errors.New("attempting to configure Jaeger tracing, but tracing is disabled")
-	ErrorJaegerMissingURL      = errors.New("missing Jaeger JAEGER_URL config")
-	ErrorJaegerNoTls           = errors.New("jaeger destination only supports non tls connections")
+const (
+	JaegerUrlKey   = "JAEGER_URL"
+	JaegerTlsKey   = "JAEGER_TLS_ENABLED"
+	JaegerCaPemKey = "JAEGER_CA_PEM"
 )
 
-const (
-	JaegerUrlKey = "JAEGER_URL"
+var (
+	ErrorJaegerMissingURL        = errors.New("Jaeger is missing a required field (\"JAEGER_URL\"), Jaeger will not be configured")
+	ErrorJaegerTracingDisabled   = errors.New("Jaeger is missing a required field (\"TRACES\"), Jaeger will not be configured")
+	ErrorJaegerMetricsNotAllowed = errors.New("Jaeger has a forbidden field (\"METRICS\"), Jaeger will not be configured")
+	ErrorJaegerLogsNotAllowed    = errors.New("Jaeger has a forbidden field (\"LOGS\"), Jaeger will not be configured")
 )
 
 type Jaeger struct{}
@@ -26,32 +29,53 @@ func (j *Jaeger) DestType() common.DestinationType {
 }
 
 func (j *Jaeger) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+	config := dest.GetConfig()
+	uniqueUri := "jaeger-" + dest.GetID()
 
-	if !isTracingEnabled(dest) {
-		return ErrorJaegerTracingDisabled
-	}
-
-	url, urlExist := dest.GetConfig()[JaegerUrlKey]
-	if !urlExist {
+	url, urlExists := config[JaegerUrlKey]
+	if !urlExists {
 		return ErrorJaegerMissingURL
 	}
 
-	grpcEndpoint, err := parseUnencryptedOtlpGrpcUrl(url)
+	tls := dest.GetConfig()[JaegerTlsKey]
+	tlsEnabled := tls == "true"
+
+	endpoint, err := parseOtlpGrpcUrl(url, tlsEnabled)
 	if err != nil {
 		return err
 	}
 
-	exporterName := "otlp/jaeger-" + dest.GetID()
-	currentConfig.Exporters[exporterName] = GenericMap{
-		"endpoint": grpcEndpoint,
-		"tls": GenericMap{
-			"insecure": true,
-		},
+	exporterName := "otlp/" + uniqueUri
+	exporterConfig := GenericMap{
+		"endpoint": endpoint,
+	}
+	tlsConfig := GenericMap{
+		"insecure": !tlsEnabled,
+	}
+	caPem, caExists := dest.GetConfig()[JaegerCaPemKey]
+	if caExists && caPem != "" {
+		tlsConfig["ca_pem"] = caPem
 	}
 
-	pipelineName := "traces/jaeger-" + dest.GetID()
-	currentConfig.Service.Pipelines[pipelineName] = Pipeline{
-		Exporters: []string{exporterName},
+	exporterConfig["tls"] = tlsConfig
+	currentConfig.Exporters[exporterName] = exporterConfig
+
+	if isTracingEnabled(dest) {
+		tracesPipelineName := "traces/" + uniqueUri
+		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
+			Exporters: []string{exporterName},
+		}
+	} else {
+		return ErrorJaegerTracingDisabled
 	}
+
+	if isMetricsEnabled(dest) {
+		return ErrorJaegerMetricsNotAllowed
+	}
+
+	if isLoggingEnabled(dest) {
+		return ErrorJaegerLogsNotAllowed
+	}
+
 	return nil
 }
