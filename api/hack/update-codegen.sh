@@ -10,7 +10,11 @@ CODEGEN_PKG=${CODEGEN_PKG:-$(cd "${SCRIPT_ROOT}"; ls -d -1 ./vendor/k8s.io/code-
 
 source "${CODEGEN_PKG}/kube_codegen.sh"
 
-THIS_PKG="k8s.io/code-generator/examples"
+THIS_PKG="github.com/odigos-io/odigos/api"
+
+kube::codegen::gen_register \
+    --boilerplate "${SCRIPT_ROOT}/hack/boilerplate.go.txt" \
+    "${SCRIPT_ROOT}"
 
 # https://github.com/kubernetes/code-generator/blob/de98b55e3b8c7dca2dfcbf840c0d0a4e6f6b29c9/kube_codegen.sh#L436
 kube::codegen::gen_client \
