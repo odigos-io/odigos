@@ -32,5 +32,5 @@ spec:
         type: text
         required: false
         placeholder: '-----BEGIN CERTIFICATE-----'
-        tooltip: 'When using TLS, the Certificate Authority is required.'
+        tooltip: 'When using TLS, provide the CA certificate to verify the server. If empty uses system root CA'
   testConnectionSupported: true
