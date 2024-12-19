@@ -22,14 +22,13 @@ const (
 func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, k8sVersion *version.Version, disableNameProcessor bool) error {
 	logger := log.FromContext(ctx)
 
-	var instApps odigosv1.InstrumentedApplicationList
-	if err := c.List(ctx, &instApps); err != nil {
-		logger.Error(err, "Failed to list instrumented apps")
+	var sources odigosv1.InstrumentationConfigList
+	if err := c.List(ctx, &sources); err != nil {
 		return err
 	}
 
-	if len(instApps.Items) == 0 {
-		logger.V(3).Info("No instrumented apps")
+	if len(sources.Items) == 0 {
+		logger.V(3).Info("No odigos sources found, skipping data collection sync")
 		return nil
 	}
 
@@ -52,16 +51,16 @@ func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePul
 		return err
 	}
 
-	return syncDataCollection(&instApps, &dests, &processors, &dataCollectionCollectorGroup, ctx, c, scheme, imagePullSecrets, odigosVersion, k8sVersion, disableNameProcessor)
+	return syncDataCollection(&sources, &dests, &processors, &dataCollectionCollectorGroup, ctx, c, scheme, imagePullSecrets, odigosVersion, k8sVersion, disableNameProcessor)
 }
 
-func syncDataCollection(instApps *odigosv1.InstrumentedApplicationList, dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList,
+func syncDataCollection(sources *odigosv1.InstrumentationConfigList, dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList,
 	dataCollection *odigosv1.CollectorsGroup, ctx context.Context, c client.Client,
 	scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, k8sVersion *version.Version, disableNameProcessor bool) error {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Syncing data collection")
 
-	err := SyncConfigMap(instApps, dests, processors, dataCollection, ctx, c, scheme, disableNameProcessor)
+	err := SyncConfigMap(sources, dests, processors, dataCollection, ctx, c, scheme, disableNameProcessor)
 	if err != nil {
 		logger.Error(err, "Failed to sync config map")
 		return err
