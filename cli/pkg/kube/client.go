@@ -57,8 +57,8 @@ func GetCLIClientOrExit(cmd *cobra.Command) *Client {
 
 func createClient(cmd *cobra.Command) (*Client, error) {
 	kc := cmd.Flag("kubeconfig").Value.String()
-
-	config, err := k8sutils.GetClientConfig(kc)
+	kContext := cmd.Flag("kube-context").Value.String()
+	config, err := k8sutils.GetClientConfigWithContext(kc, kContext)
 	if err != nil {
 		return nil, err
 	}
