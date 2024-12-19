@@ -24,6 +24,8 @@ const (
 	OperationDrop    string = "DROP"
 	OperationAlter   string = "ALTER"
 	OperationUnknown string = "UNKNOWN"
+
+	ValueUnknown string = "UNKNOWN"
 )
 
 func (sp *DBOperationProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
@@ -48,7 +50,8 @@ func (sp *DBOperationProcessor) processTraces(ctx context.Context, td ptrace.Tra
 
 				// Check if `db.operation.name` is already defined, If already defined, continue to the next span
 				_, operationNameExists := span.Attributes().Get(string(semconv.DBOperationNameKey))
-				if operationNameExists {
+				_, collectionNameExists := span.Attributes().Get(string(semconv.DBCollectionNameKey))
+				if operationNameExists && collectionNameExists {
 					continue
 				}
 
@@ -58,12 +61,12 @@ func (sp *DBOperationProcessor) processTraces(ctx context.Context, td ptrace.Tra
 				// Used to build "{operation} {table}" span name
 				spanName := ""
 				// Only set the `db.operation.name` if the detected operation name is not "UNKNOWN"
-				if operationName != OperationUnknown {
+				if operationName != ValueUnknown && !operationNameExists {
 					span.Attributes().PutStr(string(semconv.DBOperationNameKey), operationName)
 					spanName = operationName
 				}
 
-				if tableName != OperationUnknown {
+				if tableName != ValueUnknown && !collectionNameExists {
 					span.Attributes().PutStr(string(semconv.DBCollectionNameKey), tableName)
 					if spanName != "" {
 						spanName = spanName + " " + tableName
@@ -89,7 +92,7 @@ func (sp *DBOperationProcessor) processTraces(ctx context.Context, td ptrace.Tra
 func DetectSQLOperationAndTableName(query string) (string, string) {
 	query = strings.TrimSpace(query)
 	if len(query) == 0 {
-		return OperationUnknown, OperationUnknown
+		return ValueUnknown, ValueUnknown
 	}
 
 	stmt, err := sqlparser.Parse(query)
@@ -105,7 +108,8 @@ func DetectSQLOperationAndTableName(query string) (string, string) {
 			return "DELETE", getTableName(stmt.TableExprs)
 		}
 	}
-	return detectBasedOnFirstWord(query), OperationUnknown
+
+	return detectBasedOnFirstWord(query), ValueUnknown
 }
 
 func detectBasedOnFirstWord(query string) string {
@@ -118,7 +122,7 @@ func detectBasedOnFirstWord(query string) string {
 	case OperationSelect, OperationInsert, OperationUpdate, OperationDelete, OperationCreate, OperationDrop, OperationAlter:
 		return firstWord
 	default:
-		return OperationUnknown
+		return ValueUnknown
 	}
 }
 
@@ -150,5 +154,5 @@ func getTableName(node sqlparser.SQLNode) string {
 			}
 		}
 	}
-	return OperationUnknown
+	return ValueUnknown
 }
