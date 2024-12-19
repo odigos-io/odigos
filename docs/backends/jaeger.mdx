@@ -1,5 +1,5 @@
 ---
-title: "Jaeger"
+title: 'Jaeger'
 ---
 
 ## Configuring Jaeger Backend
@@ -7,28 +7,23 @@ title: "Jaeger"
 Version v1.35 of Jaeger introduced the ability to receive OpenTelemetry trace data via the OpenTelemetry Protocol (OTLP).
 This allows to create a new Jaeger backend by simply specifying the Jaeger OTLP gRPC unencrypted URL.
 
-The endpoint format is `host:port`. 
-- host is required
-- port is optional and defaults to the default OTLP gRPC port `4317`.
-
+- **JAEGER_URL** - Endpoint, the format is `host:port`.
+  - host is required
+  - port is optional and defaults to the default OTLP gRPC port `4317`.
+- **JAEGER_TLS_ENABLED** - Enable TLS (secure connection). This is optional and defaults to `false`.
+- **JAEGER_CA_PEM** - Certificate Authority in PEM format. When using TLS, provide the CA certificate to verify the server. If empty uses system root CA
 
 ## Adding a Destination to Odigos
 
 Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
 
-1. **Using the UI**  
-   To add a destination via the UI, follow these steps:
-   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
-   ```bash
-   odigos ui
-    ```
-- In the left sidebar, navigate to the `Destination` page.
+1. **Using the UI**
 
-- Click `Add New Destination`
+Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI:
 
-- Select `Jaeger` and follow the on-screen instructions.
-
-
+```bash
+odigos ui
+```
 
 2. **Using kubernetes manifests**
 
@@ -48,6 +43,9 @@ metadata:
 spec:
   data:
     JAEGER_URL: <Jaeger OTLP gRPC Endpoint>
+    # JAEGER_TLS_ENABLED: <Enable TLS (secure connection)>
+    # JAEGER_CA_PEM: <Certificate Authority>
+    # Note: The commented fields above are optional.
   destinationName: jaeger
   signals:
   - TRACES
