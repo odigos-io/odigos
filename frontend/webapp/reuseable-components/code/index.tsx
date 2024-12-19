@@ -1,6 +1,7 @@
+import { useMemo } from 'react';
 import styled from 'styled-components';
 import { Highlight, themes as prismThemes } from 'prism-react-renderer';
-import { flattenObjectKeys, safeJsonParse, safeJsonStringify } from '@/utils';
+import { flattenObjectKeys, removeNoValues, safeJsonParse, safeJsonStringify } from '@/utils';
 
 interface Props {
   language: string;
@@ -16,7 +17,17 @@ const Token = styled.span`
 `;
 
 export const Code: React.FC<Props> = ({ language, code, flatten }) => {
-  const str = flatten && language === 'json' ? safeJsonStringify(flattenObjectKeys(safeJsonParse(code, {}))) : code;
+  const str = useMemo(() => {
+    if (language === 'json') {
+      const obj = safeJsonParse(code, {});
+      const objNoNull = removeNoValues(obj);
+
+      if (flatten) return safeJsonStringify(flattenObjectKeys(objNoNull));
+      return safeJsonStringify(objNoNull);
+    }
+
+    return code;
+  }, [code, language, flatten]);
 
   return (
     <Highlight theme={prismThemes.palenight} language={language} code={str}>
