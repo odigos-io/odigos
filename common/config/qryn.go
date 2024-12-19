@@ -126,8 +126,8 @@ func (g *Qryn) getConfigs(dest ExporterConfigurer) qrynConf {
 	return qrynConf{
 		host:                          dest.GetConfig()[qrynHost],
 		key:                           dest.GetConfig()[qrynAPIKey],
-		addExporterName:               dest.GetConfig()[qrynAddExporterName] == "true" || dest.GetConfig()[qrynAddExporterName] == "Yes",                     // yes is deprecated, use true
-		resourceToTelemetryConversion: dest.GetConfig()[resourceToTelemetryConversion] == "true" || dest.GetConfig()[resourceToTelemetryConversion] == "Yes", // yes is deprecated, use true
+		addExporterName:               getBooleanConfig(dest.GetConfig()[qrynAddExporterName], "Yes"),
+		resourceToTelemetryConversion: getBooleanConfig(dest.GetConfig()[resourceToTelemetryConversion], "Yes"),
 		secretsOptional:               dest.GetConfig()[qrynSecretsOptional] == "1",
 		passwordFieldName:             dest.GetConfig()[qrynPasswordFieldName],
 	}

@@ -56,8 +56,7 @@ func (c *Clickhouse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 	}
 
 	createSchema := dest.GetConfig()[clickhouseCreateSchema]
-	createSchemaBoolValue := strings.ToLower(createSchema) == "true" || strings.ToLower(createSchema) == "create" // create is deprecated, use true
-	exporterConfig["create_schema"] = createSchemaBoolValue
+	exporterConfig["create_schema"] = getBooleanConfig(createSchema, "create")
 
 	dbName, exists := dest.GetConfig()[clickhouseDatabaseName]
 	if !exists {
