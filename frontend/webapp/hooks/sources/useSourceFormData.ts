@@ -122,7 +122,10 @@ export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFo
         } else {
           setSelectedSources((prev) => ({ ...prev, [namespace]: bool ? nsAvailableSources : [] }));
           setSelectAllForNamespace('');
-          if (!!nsAvailableSources.length && !namespaceWasSelected.current) setSelectedNamespace('');
+
+          // Note: if we want to select all, but not open the expanded view, we can use the following:
+          // if (!!nsAvailableSources.length && !namespaceWasSelected.current) setSelectedNamespace('');
+
           namespaceWasSelected.current = false;
         }
       } else {
