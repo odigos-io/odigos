@@ -20,7 +20,7 @@ spec:
       componentProps:
         type: text
         required: true
-    - name: JAEGER_TLS
+    - name: JAEGER_TLS_ENABLED
       displayName: Enable TLS (secure connection)
       componentType: checkbox
       componentProps:

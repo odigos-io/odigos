@@ -8,7 +8,7 @@ import (
 
 const (
 	JaegerUrlKey   = "JAEGER_URL"
-	JaegerTlsKey   = "JAEGER_TLS"
+	JaegerTlsKey   = "JAEGER_TLS_ENABLED"
 	JaegerCaPemKey = "JAEGER_CA_PEM"
 )
 
