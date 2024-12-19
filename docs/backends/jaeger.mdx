@@ -11,7 +11,7 @@ This allows to create a new Jaeger backend by simply specifying the Jaeger OTLP 
   - host is required
   - port is optional and defaults to the default OTLP gRPC port `4317`.
 - **JAEGER_TLS_ENABLED** - Enable TLS (secure connection). This is optional and defaults to `false`.
-- **JAEGER_CA_PEM** - Certificate Authority in PEM format. This is required only if Jaeger requires server authentication (TLS), if not provided, the system CA will be used.
+- **JAEGER_CA_PEM** - Certificate Authority in PEM format. When using TLS, provide the CA certificate to verify the server. If empty uses system root CA
 
 ## Adding a Destination to Odigos
 
