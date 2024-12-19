@@ -40,42 +40,26 @@ func (j *Jaeger) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) er
 	exporterName := "otlp/" + uniqueUri
 	var exporterConfig GenericMap
 
-	tls, tlsExists := dest.GetConfig()[JaegerTlsKey]
-	if tlsExists && tls == "true" {
-		// Will use a secure connection with TLS over GRPC
-		endpoint, err := parseOtlpGrpcUrl(url, true)
-		if err != nil {
-			return err
-		}
+	tls := dest.GetConfig()[JaegerTlsKey]
+	tlsEnabled := tls == "true"
 
-		exporterConfig = GenericMap{
-			"endpoint": endpoint,
-		}
-		tlsConfig := GenericMap{
-			"insecure": false,
-		}
-
-		caPem, caExists := dest.GetConfig()[JaegerCaPemKey]
-		if caExists && caPem != "" {
-			tlsConfig["ca_pem"] = caPem
-		}
-
-		exporterConfig["tls"] = tlsConfig
-	} else {
-		// Will use an insecure connection over GRPC
-		endpoint, err := parseOtlpGrpcUrl(url, false)
-		if err != nil {
-			return err
-		}
-
-		exporterConfig = GenericMap{
-			"endpoint": endpoint,
-			"tls": GenericMap{
-				"insecure": true,
-			},
-		}
+	endpoint, err := parseOtlpGrpcUrl(url, tlsEnabled)
+	if err != nil {
+		return err
 	}
 
+	exporterConfig = GenericMap{
+		"endpoint": endpoint,
+	}
+	tlsConfig := GenericMap{
+		"insecure": !tlsEnabled,
+	}
+	caPem, caExists := dest.GetConfig()[JaegerCaPemKey]
+	if caExists && caPem != "" {
+		tlsConfig["ca_pem"] = caPem
+	}
+
+	exporterConfig["tls"] = tlsConfig
 	currentConfig.Exporters[exporterName] = exporterConfig
 
 	if isTracingEnabled(dest) {

@@ -28,22 +28,22 @@ func parseOtlpGrpcUrl(rawURL string, encrypted bool) (grpcUrl string, err error)
 	}
 
 	// Validate scheme based on encryption flag
-	validSchemes := map[string]bool{
-		"grpc":  true,
-		"http":  true,
-		"grpcs": true,
-		"https": true,
+	validSchemes := map[string]struct{}{
+		"grpc":  {},
+		"http":  {},
+		"grpcs": {},
+		"https": {},
 	}
 
 	if encrypted {
-		if parsedUrl.Scheme != "https" && parsedUrl.Scheme != "grpcs" {
+		if _, ok := validSchemes[parsedUrl.Scheme]; !ok || (parsedUrl.Scheme != "https" && parsedUrl.Scheme != "grpcs") {
 			return "", fmt.Errorf("unexpected scheme %s for encrypted gRPC endpoint", parsedUrl.Scheme)
 		}
 	} else {
 		if parsedUrl.Scheme == "https" || parsedUrl.Scheme == "grpcs" {
 			return "", fmt.Errorf("grpc endpoint does not support TLS")
 		}
-		if !validSchemes[parsedUrl.Scheme] {
+		if _, ok := validSchemes[parsedUrl.Scheme]; !ok {
 			return "", fmt.Errorf("unexpected scheme %s for unencrypted gRPC endpoint", parsedUrl.Scheme)
 		}
 	}
