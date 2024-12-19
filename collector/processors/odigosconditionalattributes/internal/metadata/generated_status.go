@@ -7,7 +7,8 @@ import (
 )
 
 var (
-	Type = component.MustNewType("odigosconditionalattributes")
+	Type      = component.MustNewType("odigosconditionalattributes")
+	ScopeName = "odigosconditionalattributes"
 )
 
 const (
