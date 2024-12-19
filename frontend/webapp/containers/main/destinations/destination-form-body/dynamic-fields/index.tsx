@@ -1,6 +1,6 @@
 import React from 'react';
 import { INPUT_TYPES } from '@/utils';
-import { Dropdown, Input, TextArea, InputList, KeyValueInputsList } from '@/reuseable-components';
+import { Dropdown, Input, TextArea, InputList, KeyValueInputsList, Checkbox } from '@/reuseable-components';
 
 interface Props {
   fields: any[];
@@ -23,6 +23,8 @@ export const DestinationDynamicFields: React.FC<Props> = ({ fields, onChange, fo
         return <KeyValueInputsList key={field.name} {...rest} onChange={(value) => onChange(field.name, JSON.stringify(value))} errorMessage={formErrors[field.name]} />;
       case INPUT_TYPES.TEXTAREA:
         return <TextArea key={field.name} {...rest} onChange={(e) => onChange(field.name, e.target.value)} errorMessage={formErrors[field.name]} />;
+      case INPUT_TYPES.CHECKBOX:
+        return <Checkbox key={field.name} {...rest} initialValue={rest.value == 'true'} onChange={(bool) => onChange(field.name, String(bool))} errorMessage={formErrors[field.name]} />;
       default:
         return null;
     }

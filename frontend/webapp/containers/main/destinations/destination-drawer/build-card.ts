@@ -20,7 +20,7 @@ const buildCard = (destination: ActualDestination, destinationTypeDetails: Desti
     const found = destinationTypeDetails?.fields?.find((field) => field.name === key);
 
     const { type } = safeJsonParse(found?.componentProperties, { type: '' });
-    const secret = type === 'password' ? new Array(value.length).fill('•').join('') : '';
+    const secret = type === 'password' ? new Array(11).fill('•').join('') : '';
 
     arr.push({
       title: found?.displayName || key,

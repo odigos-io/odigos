@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, type KeyboardEventHandler } from 'react';
 import theme from '@/styles/theme';
 import styled from 'styled-components';
 import { ArrowIcon, PlusIcon, TrashIcon } from '@/assets';
@@ -111,6 +111,10 @@ export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({ initialK
     });
   };
 
+  const handleKeyDown: KeyboardEventHandler<HTMLInputElement> = (e) => {
+    e.stopPropagation();
+  };
+
   // Check if any key or value field is empty
   const isAddButtonDisabled = rows.some(({ key, value }) => key.trim() === '' || value.trim() === '');
   const isDelButtonDisabled = rows.length <= 1;
@@ -125,7 +129,11 @@ export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({ initialK
             <Input
               placeholder='Attribute name'
               value={key}
-              onChange={(e) => handleChange('key', e.target.value, idx)}
+              onChange={(e) => {
+                e.stopPropagation();
+                handleChange('key', e.target.value, idx);
+              }}
+              onKeyDown={handleKeyDown}
               hasError={!!errorMessage && (!required || (required && !key))}
               autoFocus={!value && rows.length > 1 && idx === rows.length - 1}
             />
@@ -135,7 +143,11 @@ export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({ initialK
             <Input
               placeholder='Attribute value'
               value={value}
-              onChange={(e) => handleChange('value', e.target.value, idx)}
+              onChange={(e) => {
+                e.stopPropagation();
+                handleChange('value', e.target.value, idx);
+              }}
+              onKeyDown={handleKeyDown}
               hasError={!!errorMessage && (!required || (required && !value))}
               autoFocus={false}
             />
