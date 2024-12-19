@@ -7,7 +7,7 @@ const buildMonitorsList = (exportedSignals: ExportedSignals): string =>
     .filter((key) => exportedSignals[key])
     .join(', ');
 
-const buildCard = (destination: ActualDestination, destinationTypeDetails: DestinationDetailsResponse['destinationTypeDetails']) => {
+const buildCard = (destination: ActualDestination, destinationTypeDetails?: DestinationDetailsResponse['destinationTypeDetails']) => {
   const { exportedSignals, destinationType, fields } = destination;
 
   const arr: DataCardRow[] = [
