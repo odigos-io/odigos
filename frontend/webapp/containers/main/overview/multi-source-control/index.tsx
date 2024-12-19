@@ -32,7 +32,7 @@ export const MultiSourceControl = () => {
   });
 
   const { sources, deleteSources } = useSourceCRUD();
-  const { configuredSources, setConfiguredSources } = useAppStore((state) => state);
+  const { configuredSources, setConfiguredSources } = useAppStore();
   const [isWarnModalOpen, setIsWarnModalOpen] = useState(false);
 
   const totalSelected = useMemo(() => {
