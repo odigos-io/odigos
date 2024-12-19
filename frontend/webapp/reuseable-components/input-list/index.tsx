@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { type KeyboardEventHandler, useEffect, useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { PlusIcon, TrashIcon } from '@/assets';
 import { Button, FieldError, FieldLabel, Input, Text } from '@/reuseable-components';
@@ -103,6 +103,10 @@ const InputList: React.FC<InputListProps> = ({ initialValues = [], value, onChan
     });
   };
 
+  const handleKeyDown: KeyboardEventHandler<HTMLInputElement> = (e) => {
+    e.stopPropagation();
+  };
+
   // Check if any input field is empty
   const isAddButtonDisabled = rows.some((input) => input.trim() === '');
   const isDelButtonDisabled = rows.length <= 1;
@@ -114,7 +118,16 @@ const InputList: React.FC<InputListProps> = ({ initialValues = [], value, onChan
       <ListContainer>
         {rows.map((val, idx) => (
           <RowWrapper key={`input-list-${idx}`}>
-            <Input value={val} onChange={(e) => handleInputChange(e.target.value, idx)} hasError={!!errorMessage} autoFocus={!val && rows.length > 1 && idx === rows.length - 1} />
+            <Input
+              value={val}
+              onChange={(e) => {
+                e.stopPropagation();
+                handleInputChange(e.target.value, idx);
+              }}
+              onKeyDown={handleKeyDown}
+              hasError={!!errorMessage}
+              autoFocus={!val && rows.length > 1 && idx === rows.length - 1}
+            />
             <DeleteButton disabled={isDelButtonDisabled} onClick={() => handleDeleteInput(idx)}>
               <TrashIcon />
             </DeleteButton>

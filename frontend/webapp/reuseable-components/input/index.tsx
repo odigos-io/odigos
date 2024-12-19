@@ -1,9 +1,8 @@
-import React, { useState, forwardRef } from 'react';
-import Image from 'next/image';
+import React, { useState, forwardRef, type ChangeEvent, type KeyboardEventHandler } from 'react';
+import theme from '@/styles/theme';
 import styled, { css } from 'styled-components';
 import { EyeClosedIcon, EyeOpenIcon, SVG } from '@/assets';
 import { FieldError, FieldLabel } from '@/reuseable-components';
-import theme from '@/styles/theme';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   title?: string;
@@ -122,11 +121,14 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     const [revealSecret, setRevealSecret] = useState(false);
     const [value, setValue] = useState<string>(initialValue || '');
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+      e.stopPropagation();
       setValue(e.target.value);
-      if (onChange) {
-        onChange(e);
-      }
+      onChange?.(e);
+    };
+
+    const handleKeyDown: KeyboardEventHandler<HTMLInputElement> = (e) => {
+      e.stopPropagation();
     };
 
     return (
@@ -145,13 +147,14 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           ) : null}
 
           <StyledInput
-            ref={ref} // Pass ref to the StyledInput
+            ref={ref}
             data-id={name}
-            name={name}
+            type={revealSecret ? 'text' : type}
             $hasIcon={!!Icon || isSecret}
+            name={name}
             value={value}
             onChange={handleInputChange}
-            type={revealSecret ? 'text' : type}
+            onKeyDown={handleKeyDown}
             {...props}
           />
 
