@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useMutation } from '@apollo/client';
-import { useNotificationStore } from '@/store';
 import { ACTION, getSseTargetFromId } from '@/utils';
+import { useAppStore, useNotificationStore } from '@/store';
 import { PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import { useComputePlatform, useNamespace } from '../compute-platform';
 import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type PatchSourceRequestInput, type K8sActualSource, NOTIFICATION_TYPE } from '@/types';
@@ -13,6 +13,8 @@ interface Params {
 
 export const useSourceCRUD = (params?: Params) => {
   const removeNotifications = useNotificationStore((store) => store.removeNotifications);
+  const { configuredSources, setConfiguredSources } = useAppStore();
+
   const { persistNamespace } = useNamespace();
   const { data, refetch } = useComputePlatform();
   const { addNotification } = useNotificationStore();
@@ -70,6 +72,7 @@ export const useSourceCRUD = (params?: Params) => {
       } else {
         const id = { kind, name, namespace };
         if (!selected) removeNotifications(getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.SOURCE));
+        if (!selected) setConfiguredSources({ ...configuredSources, [namespace]: configuredSources[namespace].filter((source) => source.name !== name) });
         handleComplete(action, `source "${name}" was ${action.toLowerCase()}d ${fromOrIn} "${namespace}"`, selected ? id : undefined);
       }
     },
