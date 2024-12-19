@@ -19,10 +19,10 @@ import (
 )
 
 const (
-	AutoScalerServiceAccountName = "odigos-autoscaler"
-	AutoScalerServiceName        = "auto-scaler"
 	AutoScalerDeploymentName     = "odigos-autoscaler"
-	AutoScalerAppLabelValue      = "odigos-autoscaler"
+	AutoScalerServiceAccountName = AutoScalerDeploymentName
+	AutoScalerAppLabelValue      = AutoScalerDeploymentName
+	AutoScalerServiceName        = "auto-scaler"
 	AutoScalerContainerName      = "manager"
 )
 
@@ -206,15 +206,6 @@ func NewAutoscalerClusterRole() *rbacv1.ClusterRole {
 				},
 				APIGroups: []string{"apps"},
 				Resources: []string{"daemonsets"},
-			},
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
-				APIGroups: []string{"apps"},
-				Resources: []string{"deployments"},
 			},
 			{
 				Verbs: []string{
