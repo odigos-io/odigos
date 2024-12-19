@@ -56,7 +56,7 @@ export const DestinationDrawer: React.FC<Props> = () => {
   const [isFormDirty, setIsFormDirty] = useState(false);
 
   const cardData = useMemo(() => {
-    if (!selectedItem || !destinationTypeDetails) return [];
+    if (!selectedItem) return [];
 
     const { item } = selectedItem as { item: ActualDestination };
     const arr = buildCard(item, destinationTypeDetails);
@@ -64,16 +64,14 @@ export const DestinationDrawer: React.FC<Props> = () => {
     return arr;
   }, [selectedItem, destinationTypeDetails]);
 
-  const thisDestination = useMemo(() => {
+  const thisDestinationType = useMemo(() => {
     if (!destinationTypes.length || !selectedItem || !isEditing) {
       resetFormData();
       return undefined;
     }
 
     const { item } = selectedItem as { item: ActualDestination };
-    const found = destinationTypes.map(({ items }) => items.filter(({ type }) => type === item.destinationType.type)).filter((arr) => !!arr.length)[0][0];
-
-    if (!found) return undefined;
+    const found = destinationTypes.map(({ items }) => items.filter(({ type }) => type === item.destinationType.type)).filter((arr) => !!arr.length)?.[0]?.[0];
 
     loadFormWithDrawerItem(selectedItem);
 
@@ -119,7 +117,7 @@ export const DestinationDrawer: React.FC<Props> = () => {
         <FormContainer>
           <DestinationFormBody
             isUpdate
-            destination={thisDestination}
+            destination={thisDestinationType}
             formData={formData}
             formErrors={formErrors}
             validateForm={validateForm}

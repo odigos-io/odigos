@@ -62,8 +62,6 @@ export const RuleDrawer: React.FC<Props> = () => {
     const { item } = selectedItem as { item: InstrumentationRuleSpecMapped };
     const found = RULE_OPTIONS.find(({ type }) => type === item.type);
 
-    if (!found) return undefined;
-
     loadFormWithDrawerItem(selectedItem);
 
     return found;
