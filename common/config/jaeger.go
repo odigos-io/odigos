@@ -37,9 +37,6 @@ func (j *Jaeger) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) er
 		return ErrorJaegerMissingURL
 	}
 
-	exporterName := "otlp/" + uniqueUri
-	var exporterConfig GenericMap
-
 	tls := dest.GetConfig()[JaegerTlsKey]
 	tlsEnabled := tls == "true"
 
@@ -48,7 +45,8 @@ func (j *Jaeger) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) er
 		return err
 	}
 
-	exporterConfig = GenericMap{
+	exporterName := "otlp/" + uniqueUri
+	exporterConfig := GenericMap{
 		"endpoint": endpoint,
 	}
 	tlsConfig := GenericMap{
