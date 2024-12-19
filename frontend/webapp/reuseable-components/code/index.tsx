@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import styled from 'styled-components';
 import { Highlight, themes as prismThemes } from 'prism-react-renderer';
-import { flattenObjectKeys, removeNoValues, safeJsonParse, safeJsonStringify } from '@/utils';
+import { flattenObjectKeys, removeEmptyValuesFromObject, safeJsonParse, safeJsonStringify } from '@/utils';
 
 interface Props {
   language: string;
@@ -20,7 +20,7 @@ export const Code: React.FC<Props> = ({ language, code, flatten }) => {
   const str = useMemo(() => {
     if (language === 'json') {
       const obj = safeJsonParse(code, {});
-      const objNoNull = removeNoValues(obj);
+      const objNoNull = removeEmptyValuesFromObject(obj);
 
       if (flatten) return safeJsonStringify(flattenObjectKeys(objNoNull));
       return safeJsonStringify(objNoNull);
