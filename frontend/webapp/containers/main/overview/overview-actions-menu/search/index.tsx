@@ -1,8 +1,9 @@
 import React, { useRef, useState } from 'react';
-import { useKeyDown, useOnClickOutside } from '@/hooks';
+import { SearchIcon } from '@/assets';
 import { RelativeContainer } from '../styled';
 import { Input } from '@/reuseable-components';
 import { SearchResults } from './search-results';
+import { useKeyDown, useOnClickOutside } from '@/hooks';
 // import { RecentSearches } from './recent-searches';
 
 const Search = () => {
@@ -22,7 +23,7 @@ const Search = () => {
 
   return (
     <RelativeContainer ref={containerRef}>
-      <Input ref={inputRef} placeholder='Search' icon='/icons/common/search.svg' value={input} onChange={(e) => setInput(e.target.value.toLowerCase())} onFocus={() => setFocused(true)} />
+      <Input ref={inputRef} placeholder='Search' icon={SearchIcon} value={input} onChange={(e) => setInput(e.target.value.toLowerCase())} onFocus={() => setFocused(true)} />
 
       {!!input || focused ? <SearchResults searchText={input} onClose={onClose} /> : null}
 

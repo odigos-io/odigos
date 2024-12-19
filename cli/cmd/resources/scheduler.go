@@ -7,6 +7,7 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/containers"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -17,11 +18,16 @@ import (
 )
 
 const (
-	SchedulerImage          = "keyval/odigos-scheduler"
-	SchedulerServiceName    = "scheduler"
-	SchedulerDeploymentName = "odigos-scheduler"
-	SchedulerAppLabelValue  = "odigos-scheduler"
-	SchedulerContainerName  = "manager"
+	SchedulerImage                  = "keyval/odigos-scheduler"
+	SchedulerServiceName            = "scheduler"
+	SchedulerDeploymentName         = "odigos-scheduler"
+	SchedulerAppLabelValue          = SchedulerDeploymentName
+	SchedulerRoleName               = SchedulerDeploymentName
+	SchedulerRoleBindingName        = SchedulerDeploymentName
+	SchedulerClusterRoleName        = SchedulerDeploymentName
+	SchedulerClusterRoleBindingName = SchedulerDeploymentName
+	SchedulerServiceAccountName     = SchedulerDeploymentName
+	SchedulerContainerName          = "manager"
 )
 
 func NewSchedulerServiceAccount(ns string) *corev1.ServiceAccount {
@@ -31,13 +37,13 @@ func NewSchedulerServiceAccount(ns string) *corev1.ServiceAccount {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "odigos-scheduler",
+			Name:      SchedulerServiceAccountName,
 			Namespace: ns,
 		},
 	}
 }
 
-func NewSchedulerRoleBinding(ns string) *rbacv1.RoleBinding {
+func NewSchedulerLeaderElectionRoleBinding(ns string) *rbacv1.RoleBinding {
 	return &rbacv1.RoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "RoleBinding",
@@ -50,7 +56,7 @@ func NewSchedulerRoleBinding(ns string) *rbacv1.RoleBinding {
 		Subjects: []rbacv1.Subject{
 			{
 				Kind: "ServiceAccount",
-				Name: "odigos-scheduler",
+				Name: SchedulerServiceAccountName,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
@@ -61,16 +67,33 @@ func NewSchedulerRoleBinding(ns string) *rbacv1.RoleBinding {
 	}
 }
 
-func NewSchedulerClusterRole() *rbacv1.ClusterRole {
-	return &rbacv1.ClusterRole{
+func NewSchedulerRole(ns string) *rbacv1.Role {
+	return &rbacv1.Role{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "ClusterRole",
+			Kind:       "Role",
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-scheduler",
+			Name:      SchedulerRoleName,
+			Namespace: ns,
 		},
 		Rules: []rbacv1.PolicyRule{
+			{
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+				},
+				APIGroups: []string{
+					"",
+				},
+				Resources: []string{
+					"configmaps",
+				},
+				ResourceNames: []string{
+					consts.OdigosConfigurationName,
+				},
+			},
 			{
 				Verbs: []string{
 					"create",
@@ -90,17 +113,6 @@ func NewSchedulerClusterRole() *rbacv1.ClusterRole {
 			},
 			{
 				Verbs: []string{
-					"update",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"collectorsgroups/finalizers",
-				},
-			},
-			{
-				Verbs: []string{
 					"get",
 					"patch",
 					"update",
@@ -114,12 +126,8 @@ func NewSchedulerClusterRole() *rbacv1.ClusterRole {
 			},
 			{
 				Verbs: []string{
-					"create",
-					"delete",
 					"get",
 					"list",
-					"patch",
-					"update",
 					"watch",
 				},
 				APIGroups: []string{
@@ -127,17 +135,6 @@ func NewSchedulerClusterRole() *rbacv1.ClusterRole {
 				},
 				Resources: []string{
 					"destinations",
-				},
-			},
-			{
-				Verbs: []string{
-					"update",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"destinations/finalizers",
 				},
 			},
 			{
@@ -153,6 +150,44 @@ func NewSchedulerClusterRole() *rbacv1.ClusterRole {
 					"destinations/status",
 				},
 			},
+		},
+	}
+}
+
+func NewSchedulerRoleBinding(ns string) *rbacv1.RoleBinding {
+	return &rbacv1.RoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "RoleBinding",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      SchedulerRoleBindingName,
+			Namespace: ns,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind: "ServiceAccount",
+				Name: SchedulerServiceAccountName,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "Role",
+			Name:     SchedulerRoleName,
+		},
+	}
+}
+
+func NewSchedulerClusterRole() *rbacv1.ClusterRole {
+	return &rbacv1.ClusterRole{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ClusterRole",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: SchedulerClusterRoleName,
+		},
+		Rules: []rbacv1.PolicyRule{
 			{
 				Verbs: []string{
 					"list",
@@ -173,19 +208,19 @@ func NewSchedulerClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-scheduler",
+			Name: SchedulerClusterRoleBindingName,
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      "odigos-scheduler",
+				Name:      SchedulerServiceAccountName,
 				Namespace: ns,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "ClusterRole",
-			Name:     "odigos-scheduler",
+			Name:     SchedulerClusterRoleName,
 		},
 	}
 }
@@ -285,7 +320,7 @@ func NewSchedulerDeployment(ns string, version string, imagePrefix string) *apps
 						},
 					},
 					TerminationGracePeriodSeconds: ptrint64(10),
-					ServiceAccountName:            "odigos-scheduler",
+					ServiceAccountName:            SchedulerServiceAccountName,
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot: ptrbool(true),
 					},
@@ -313,6 +348,8 @@ func (a *schedulerResourceManager) Name() string { return "Scheduler" }
 func (a *schedulerResourceManager) InstallFromScratch(ctx context.Context) error {
 	resources := []kube.Object{
 		NewSchedulerServiceAccount(a.ns),
+		NewSchedulerLeaderElectionRoleBinding(a.ns),
+		NewSchedulerRole(a.ns),
 		NewSchedulerRoleBinding(a.ns),
 		NewSchedulerClusterRole(),
 		NewSchedulerClusterRoleBinding(a.ns),

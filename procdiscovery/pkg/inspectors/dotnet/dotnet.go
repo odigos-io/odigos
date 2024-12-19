@@ -1,8 +1,10 @@
 package dotnet
 
 import (
-	"fmt"
+	"bufio"
 	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/odigos-io/odigos/common"
@@ -11,16 +13,19 @@ import (
 
 type DotnetInspector struct{}
 
-const (
-	aspnet = "ASPNET"
-	dotnet = "DOTNET"
-)
-
 func (d *DotnetInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
-	data, err := os.ReadFile(fmt.Sprintf("/proc/%d/environ", p.ProcessID))
-	if err == nil {
-		environ := string(data)
-		if strings.Contains(environ, aspnet) || strings.Contains(environ, dotnet) {
+	mapsPath := filepath.Join("/proc", strconv.Itoa(p.ProcessID), "maps")
+	f, err := os.Open(mapsPath)
+	if err != nil {
+		return "", false
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := scanner.Text()
+		// Check if the .NET core runtime library is present
+		if strings.Contains(line, "libcoreclr.so") {
 			return common.DotNetProgrammingLanguage, true
 		}
 	}

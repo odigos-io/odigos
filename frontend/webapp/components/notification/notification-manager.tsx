@@ -1,9 +1,9 @@
 import React, { useMemo, useRef, useState } from 'react';
-import Image from 'next/image';
 import styled from 'styled-components';
 import { useClickNotif } from '@/hooks';
 import { useNotificationStore } from '@/store';
 import { ACTION, getStatusIcon } from '@/utils';
+import { NotificationIcon, TrashIcon } from '@/assets';
 import { useOnClickOutside, useTimeAgo } from '@/hooks';
 import theme, { hexPercentValues } from '@/styles/theme';
 import { NOTIFICATION_TYPE, type Notification } from '@/types';
@@ -82,8 +82,8 @@ export const NotificationManager = () => {
 
   return (
     <RelativeContainer ref={containerRef}>
-      <IconButton data-id='notif-manager-button' onClick={toggleOpen} withPing={!!unseenCount} pingColor={theme.colors.orange_og}>
-        <Image src='/icons/common/notification.svg' alt='logo' width={16} height={16} />
+      <IconButton data-id='notif-manager-button' onClick={toggleOpen} tooltip='Notifications' withPing={!!unseenCount} pingColor={theme.colors.orange_og}>
+        <NotificationIcon />
       </IconButton>
 
       {isOpen && (
@@ -161,6 +161,7 @@ const NotificationListItem: React.FC<Notification & { onClick: () => void }> = (
     return titleIncludes || false;
   }, [title, message]);
 
+  const Icon = getStatusIcon(type);
   const timeAgo = useTimeAgo();
   const clickNotif = useClickNotif();
 
@@ -175,9 +176,7 @@ const NotificationListItem: React.FC<Notification & { onClick: () => void }> = (
         }
       }}
     >
-      <StatusIcon $type={isDeleted ? NOTIFICATION_TYPE.ERROR : type}>
-        <Image src={isDeleted ? '/icons/common/trash.svg' : getStatusIcon(type)} alt='status' width={16} height={16} />
-      </StatusIcon>
+      <StatusIcon $type={isDeleted ? NOTIFICATION_TYPE.ERROR : type}>{isDeleted ? <TrashIcon /> : <Icon />}</StatusIcon>
 
       <NotifTextWrap>
         <NotifHeaderTextWrap>

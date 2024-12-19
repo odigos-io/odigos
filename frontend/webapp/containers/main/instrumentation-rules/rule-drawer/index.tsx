@@ -9,7 +9,7 @@ import OverviewDrawer from '../../overview/overview-drawer';
 import { useDrawerStore, useNotificationStore } from '@/store';
 import { ACTION, DATA_CARDS, FORM_ALERTS, getRuleIcon } from '@/utils';
 import { useInstrumentationRuleCRUD, useInstrumentationRuleFormData } from '@/hooks';
-import { InstrumentationRuleType, NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES, type InstrumentationRuleSpec } from '@/types';
+import { InstrumentationRuleType, NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES, type InstrumentationRuleSpecMapped } from '@/types';
 
 interface Props {}
 
@@ -34,7 +34,7 @@ export const RuleDrawer: React.FC<Props> = () => {
       if (type === ACTION.DELETE) {
         setSelectedItem(null);
       } else {
-        const { item } = selectedItem as { item: InstrumentationRuleSpec };
+        const { item } = selectedItem as { item: InstrumentationRuleSpecMapped };
         const { ruleId: id } = item;
         setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.RULE, item: buildDrawerItem(id, formData, item) });
       }
@@ -47,7 +47,7 @@ export const RuleDrawer: React.FC<Props> = () => {
   const cardData = useMemo(() => {
     if (!selectedItem) return [];
 
-    const { item } = selectedItem as { item: InstrumentationRuleSpec };
+    const { item } = selectedItem as { item: InstrumentationRuleSpecMapped };
     const arr = buildCard(item);
 
     return arr;
@@ -59,7 +59,7 @@ export const RuleDrawer: React.FC<Props> = () => {
       return undefined;
     }
 
-    const { item } = selectedItem as { item: InstrumentationRuleSpec };
+    const { item } = selectedItem as { item: InstrumentationRuleSpecMapped };
     const found = RULE_OPTIONS.find(({ type }) => type === item.type);
 
     if (!found) return undefined;
@@ -70,7 +70,7 @@ export const RuleDrawer: React.FC<Props> = () => {
   }, [selectedItem, isEditing]);
 
   if (!selectedItem?.item) return null;
-  const { id, item } = selectedItem as { id: string; item: InstrumentationRuleSpec };
+  const { id, item } = selectedItem as { id: string; item: InstrumentationRuleSpecMapped };
 
   const handleEdit = (bool?: boolean) => {
     if (item.type === InstrumentationRuleType.UNKNOWN_TYPE) {
@@ -100,7 +100,7 @@ export const RuleDrawer: React.FC<Props> = () => {
   return (
     <OverviewDrawer
       title={item.ruleName || (item.type as string)}
-      imageUri={getRuleIcon(item.type)}
+      icon={getRuleIcon(item.type)}
       isEdit={isEditing}
       isFormDirty={isFormDirty}
       onEdit={handleEdit}
