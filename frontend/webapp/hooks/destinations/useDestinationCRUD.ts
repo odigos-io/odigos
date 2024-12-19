@@ -75,7 +75,7 @@ export const useDestinationCRUD = (params?: Params) => {
     loading: cState.loading || uState.loading || dState.loading,
     destinations: data?.computePlatform.destinations || [],
 
-    createDestination: (destination: DestinationInput) => createDestination({ variables: { destination } }),
+    createDestination: (destination: DestinationInput) => createDestination({ variables: { destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } }),
     updateDestination: (id: string, destination: DestinationInput) => updateDestination({ variables: { id, destination } }),
     deleteDestination: (id: string) => deleteDestination({ variables: { id } }),
   };

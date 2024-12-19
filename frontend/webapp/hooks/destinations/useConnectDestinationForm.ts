@@ -58,6 +58,7 @@ export function useConnectDestinationForm() {
             };
 
           case INPUT_TYPES.KEY_VALUE_PAIR:
+          case INPUT_TYPES.CHECKBOX:
             return {
               name,
               componentType,
