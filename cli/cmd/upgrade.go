@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/hashicorp/go-version"
+	"github.com/odigos-io/odigos/cli/cmd/migrations"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
@@ -41,6 +42,7 @@ and apply any required migrations and adaptations.`,
 
 		var operation string
 
+		var currOdigosVersion string
 		skipVersionCheckFlag := cmd.Flag("skip-version-check")
 		if skipVersionCheckFlag == nil || !cmd.Flag("skip-version-check").Changed {
 
@@ -50,7 +52,7 @@ and apply any required migrations and adaptations.`,
 				os.Exit(1)
 			}
 
-			currOdigosVersion := cm.Data["ODIGOS_VERSION"]
+			currOdigosVersion = cm.Data["ODIGOS_VERSION"]
 			if currOdigosVersion == "" {
 				fmt.Println("Odigos upgrade failed - unable to read the current Odigos version for migration")
 				os.Exit(1)
@@ -125,6 +127,12 @@ and apply any required migrations and adaptations.`,
 		if err != nil {
 			fmt.Println("Odigos upgrade failed - unable to cleanup old Odigos resources.")
 			os.Exit(1)
+		}
+		manager := migrations.NewMigrationManager(client)
+		// Run migrations
+		if err := manager.Run(currOdigosVersion, versionFlag); err != nil {
+			fmt.Printf("Upgrade failed: %v\n", err)
+			return
 		}
 	},
 }
