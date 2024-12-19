@@ -92,3 +92,8 @@ func urlHostContainsPort(host string) bool {
 		return strings.Contains(host, ":")
 	}
 }
+
+func getBooleanConfig(currentValue string, deprecatedValue string) bool {
+	lowerCaseValue := strings.ToLower(currentValue)
+	return lowerCaseValue == "true" || lowerCaseValue == deprecatedValue
+}
