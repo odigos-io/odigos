@@ -8,11 +8,10 @@ Version v1.35 of Jaeger introduced the ability to receive OpenTelemetry trace da
 This allows to create a new Jaeger backend by simply specifying the Jaeger OTLP gRPC unencrypted URL.
 
 - **JAEGER_URL** - Endpoint, the format is `host:port`.
-
   - host is required
   - port is optional and defaults to the default OTLP gRPC port `4317`.
-
-- **JAEGER_CA_PEM** - Certificate Authority in PEM format. This is required only if Jaeger requires client authentication (TLS).
+- **JAEGER_TLS_ENABLED** - Enable TLS (secure connection). This is optional and defaults to `false`.
+- **JAEGER_CA_PEM** - Certificate Authority in PEM format. This is required only if Jaeger requires server authentication (TLS), if not provided, the system CA will be used.
 
 ## Adding a Destination to Odigos
 
