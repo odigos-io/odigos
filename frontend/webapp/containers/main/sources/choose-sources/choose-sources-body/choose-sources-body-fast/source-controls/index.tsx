@@ -34,7 +34,7 @@ export const SourceControls: React.FC<Props> = ({ selectedSources, searchText, s
         <SearchWrapper>
           <Input placeholder='Search Kubernetes Namespaces' icon={SearchIcon} value={searchText} onChange={(e) => setSearchText(e.target.value.toLowerCase())} />
         </SearchWrapper>
-        {/* <Checkbox title='Select all' initialValue={selectAll} onChange={onSelectAll} /> */}
+        {/* <Checkbox title='Select all' value={selectAll} onChange={onSelectAll} /> */}
         <Toggle title='Show selected only' initialValue={showSelectedOnly} onChange={setShowSelectedOnly} />
       </FlexContainer>
 

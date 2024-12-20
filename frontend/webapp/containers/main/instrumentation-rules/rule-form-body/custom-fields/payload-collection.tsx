@@ -91,7 +91,7 @@ const PayloadCollection: React.FC<Props> = ({ value, setValue, formErrors }) => 
       <FieldLabel title='Type of data to collect' required />
       <ListContainer $hasError={!!errorMessage}>
         {strictPicklist.map(({ id, label }) => (
-          <Checkbox key={id} title={label} disabled={isLastSelection && mappedValue.includes(id)} initialValue={mappedValue.includes(id)} onChange={(bool) => handleChange(id, bool)} />
+          <Checkbox key={id} title={label} disabled={isLastSelection && mappedValue.includes(id)} value={mappedValue.includes(id)} onChange={(bool) => handleChange(id, bool)} />
         ))}
       </ListContainer>
       {!!errorMessage && <FieldError>{errorMessage}</FieldError>}

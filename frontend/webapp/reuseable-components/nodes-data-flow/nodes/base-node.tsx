@@ -66,7 +66,7 @@ const BaseNode: React.FC<Props> = ({ id: nodeId, data }) => {
         ) : // : type === 'source' && SOME_INDICATOR_THAT_THIS_IS_INSTRUMENTED ? ( <Image src={getEntityIcon(OVERVIEW_ENTITY_TYPES.RULE)} alt='' width={18} height={18} /> )
         null}
 
-        {type === 'source' ? <Checkbox initialValue={getSourceLocation().index !== -1} onChange={onSelectSource} /> : null}
+        {type === 'source' ? <Checkbox value={getSourceLocation().index !== -1} onChange={onSelectSource} /> : null}
       </>
     );
   };

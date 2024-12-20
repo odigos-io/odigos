@@ -115,7 +115,7 @@ export const SourcesList: React.FC<Props> = ({
 
             {isSelected && (
               <SelectedTextWrapper>
-                <Checkbox initialValue={true} />
+                <Checkbox value={true} />
               </SelectedTextWrapper>
             )}
           </ListItem>
