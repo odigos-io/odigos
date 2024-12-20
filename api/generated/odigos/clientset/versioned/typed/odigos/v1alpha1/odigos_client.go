@@ -29,13 +29,13 @@ type OdigosV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	CollectorsGroupsGetter
 	DestinationsGetter
-	InstrumentationsGetter
 	InstrumentationConfigsGetter
 	InstrumentationInstancesGetter
 	InstrumentationRulesGetter
 	InstrumentedApplicationsGetter
 	OdigosConfigurationsGetter
 	ProcessorsGetter
+	SourcesGetter
 }
 
 // OdigosV1alpha1Client is used to interact with features provided by the odigos.io group.
@@ -49,10 +49,6 @@ func (c *OdigosV1alpha1Client) CollectorsGroups(namespace string) CollectorsGrou
 
 func (c *OdigosV1alpha1Client) Destinations(namespace string) DestinationInterface {
 	return newDestinations(c, namespace)
-}
-
-func (c *OdigosV1alpha1Client) Instrumentations(namespace string) InstrumentationInterface {
-	return newInstrumentations(c, namespace)
 }
 
 func (c *OdigosV1alpha1Client) InstrumentationConfigs(namespace string) InstrumentationConfigInterface {
@@ -77,6 +73,10 @@ func (c *OdigosV1alpha1Client) OdigosConfigurations(namespace string) OdigosConf
 
 func (c *OdigosV1alpha1Client) Processors(namespace string) ProcessorInterface {
 	return newProcessors(c, namespace)
+}
+
+func (c *OdigosV1alpha1Client) Sources(namespace string) SourceInterface {
+	return newSources(c, namespace)
 }
 
 // NewForConfig creates a new OdigosV1alpha1Client for the given config.

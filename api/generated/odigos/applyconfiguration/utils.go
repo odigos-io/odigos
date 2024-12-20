@@ -59,8 +59,6 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.EnvVarApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("HeadSamplingConfig"):
 		return &odigosv1alpha1.HeadSamplingConfigApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("Instrumentation"):
-		return &odigosv1alpha1.InstrumentationApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationConfig"):
 		return &odigosv1alpha1.InstrumentationConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationConfigSpec"):
@@ -93,10 +91,6 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.InstrumentationRuleSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationRuleStatus"):
 		return &odigosv1alpha1.InstrumentationRuleStatusApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationSpec"):
-		return &odigosv1alpha1.InstrumentationSpecApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationStatus"):
-		return &odigosv1alpha1.InstrumentationStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentedApplication"):
 		return &odigosv1alpha1.InstrumentedApplicationApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentedApplicationSpec"):
@@ -119,6 +113,12 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.RuntimeDetailsByContainerApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("SdkConfig"):
 		return &odigosv1alpha1.SdkConfigApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("Source"):
+		return &odigosv1alpha1.SourceApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("SourceSpec"):
+		return &odigosv1alpha1.SourceSpecApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("SourceStatus"):
+		return &odigosv1alpha1.SourceStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("WorkloadInstrumentationConfig"):
 		return &odigosv1alpha1.WorkloadInstrumentationConfigApplyConfiguration{}
 

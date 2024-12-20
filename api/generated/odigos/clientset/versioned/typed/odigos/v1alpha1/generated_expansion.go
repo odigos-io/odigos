@@ -21,8 +21,6 @@ type CollectorsGroupExpansion interface{}
 
 type DestinationExpansion interface{}
 
-type InstrumentationExpansion interface{}
-
 type InstrumentationConfigExpansion interface{}
 
 type InstrumentationInstanceExpansion interface{}
@@ -34,3 +32,5 @@ type InstrumentedApplicationExpansion interface{}
 type OdigosConfigurationExpansion interface{}
 
 type ProcessorExpansion interface{}
+
+type SourceExpansion interface{}

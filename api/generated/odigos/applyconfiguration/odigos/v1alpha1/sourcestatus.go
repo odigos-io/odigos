@@ -21,22 +21,22 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// InstrumentationStatusApplyConfiguration represents a declarative configuration of the InstrumentationStatus type for use
+// SourceStatusApplyConfiguration represents a declarative configuration of the SourceStatus type for use
 // with apply.
-type InstrumentationStatusApplyConfiguration struct {
+type SourceStatusApplyConfiguration struct {
 	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 
-// InstrumentationStatusApplyConfiguration constructs a declarative configuration of the InstrumentationStatus type for use with
+// SourceStatusApplyConfiguration constructs a declarative configuration of the SourceStatus type for use with
 // apply.
-func InstrumentationStatus() *InstrumentationStatusApplyConfiguration {
-	return &InstrumentationStatusApplyConfiguration{}
+func SourceStatus() *SourceStatusApplyConfiguration {
+	return &SourceStatusApplyConfiguration{}
 }
 
 // WithConditions adds the given value to the Conditions field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the Conditions field.
-func (b *InstrumentationStatusApplyConfiguration) WithConditions(values ...*v1.ConditionApplyConfiguration) *InstrumentationStatusApplyConfiguration {
+func (b *SourceStatusApplyConfiguration) WithConditions(values ...*v1.ConditionApplyConfiguration) *SourceStatusApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
 			panic("nil value passed to WithConditions")

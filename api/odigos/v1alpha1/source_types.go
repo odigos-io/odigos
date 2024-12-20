@@ -22,7 +22,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
-// Instrumentation configures an application for auto-instrumentation.
+// Source configures an application for auto-instrumentation.
 // +genclient
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
@@ -31,23 +31,23 @@ import (
 // +kubebuilder:printcolumn:name="Workload",type=string,JSONPath=`.spec.workload.name`
 // +kubebuilder:printcolumn:name="Kind",type=string,JSONPath=`.spec.workload.kind`
 // +kubebuilder:printcolumn:name="Namespace",type=string,JSONPath=`.spec.workload.namespace`
-type Instrumentation struct {
+type Source struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   InstrumentationSpec   `json:"spec,omitempty"`
-	Status InstrumentationStatus `json:"status,omitempty"`
+	Spec   SourceSpec   `json:"spec"`
+	Status SourceStatus `json:"status,omitempty"`
 }
 
-type InstrumentationSpec struct {
+type SourceSpec struct {
 	// Workload represents the workload or namespace to be instrumented.
 	// This field is required upon creation and cannot be modified.
 	// +kubebuilder:validation:Required
-	Workload workload.PodWorkload `json:"workload,omitempty"`
+	Workload workload.PodWorkload `json:"workload"`
 }
 
-type InstrumentationStatus struct {
-	// Represents the observations of a instrumentationrule's current state.
+type SourceStatus struct {
+	// Represents the observations of a source's current state.
 	// Known .status.conditions.type are: "Available", "Progressing"
 	// +patchMergeKey=type
 	// +patchStrategy=merge
@@ -58,12 +58,12 @@ type InstrumentationStatus struct {
 
 //+kubebuilder:object:root=true
 
-type InstrumentationList struct {
+type SourceList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Instrumentation `json:"items"`
+	Items           []Source `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Instrumentation{}, &InstrumentationList{})
+	SchemeBuilder.Register(&Source{}, &SourceList{})
 }
