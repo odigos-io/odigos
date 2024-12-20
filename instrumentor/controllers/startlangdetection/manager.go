@@ -1,12 +1,14 @@
 package startlangdetection
 
 import (
-	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 )
 
 func SetupWithManager(mgr ctrl.Manager) error {
@@ -67,6 +69,18 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		For(&corev1.ConfigMap{}).
 		WithEventFilter(predicate.And(odigospredicate.OdigosConfigMapPredicate, odigospredicate.ConfigMapDataChangedPredicate{})).
 		Complete(&OdigosConfigReconciler{
+			Client: mgr.GetClient(),
+			Scheme: mgr.GetScheme(),
+		})
+	if err != nil {
+		return err
+	}
+
+	err = builder.
+		ControllerManagedBy(mgr).
+		Named("startlangdetection-source").
+		For(&v1alpha1.Source{}).
+		Complete(&SourceReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
 		})
