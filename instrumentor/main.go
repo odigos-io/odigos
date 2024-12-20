@@ -120,9 +120,6 @@ func main() {
 				&corev1.ConfigMap{}: {
 					Field: odigosConfigSelector,
 				},
-				&corev1.ConfigMap{}: {
-					Field: nsSelector,
-				},
 				&odigosv1.CollectorsGroup{}: {
 					Field: nsSelector,
 				},
