@@ -6,3 +6,27 @@ status:
   distributions: [contrib]
   codeowners:
     active: [RonFed]
+
+telemetry:
+  metrics:
+    log_data_size:
+      enabled: true
+      description: "Total size of log data passed to the processor"
+      unit: "By"
+      sum:
+        value_type: int
+        monotonic: true
+    metric_data_size:
+      enabled: true
+      description: "Total size of metric data passed to the processor"
+      unit: "By"
+      sum:
+        value_type: int
+        monotonic: true
+    trace_data_size:
+      enabled: true
+      description: "Total size of trace data passed to the processor"
+      unit: "By"
+      sum:
+        value_type: int
+        monotonic: true

@@ -34,7 +34,7 @@ func createTracesProcessor(
 
 	proc := &samplingProcessor{logger: set.Logger, config: cfg.(*Config)}
 
-	return processorhelper.NewTracesProcessor(
+	return processorhelper.NewTraces(
 		ctx,
 		set,
 		cfg,
