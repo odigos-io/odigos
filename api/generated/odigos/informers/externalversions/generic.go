@@ -56,8 +56,6 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Odigos().V1alpha1().CollectorsGroups().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("destinations"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Odigos().V1alpha1().Destinations().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("instrumentations"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Odigos().V1alpha1().Instrumentations().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("instrumentationconfigs"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Odigos().V1alpha1().InstrumentationConfigs().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("instrumentationinstances"):
@@ -70,6 +68,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Odigos().V1alpha1().OdigosConfigurations().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("processors"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Odigos().V1alpha1().Processors().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("sources"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Odigos().V1alpha1().Sources().Informer()}, nil
 
 	}
 

@@ -7,14 +7,14 @@ metadata:
   labels:
     metadata.labels.odigos.io/config: "1"
     metadata.labels.odigos.io/system-object: "true"
-  name: instrumentations.odigos.io
+  name: sources.odigos.io
 spec:
   group: odigos.io
   names:
-    kind: Instrumentation
-    listKind: InstrumentationList
-    plural: instrumentations
-    singular: instrumentation
+    kind: Source
+    listKind: SourceList
+    plural: sources
+    singular: source
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -30,7 +30,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Instrumentation configures an application for auto-instrumentation.
+        description: Source configures an application for auto-instrumentation.
         properties:
           apiVersion:
             description: |-
@@ -77,7 +77,7 @@ spec:
             properties:
               conditions:
                 description: |-
-                  Represents the observations of a instrumentationrule's current state.
+                  Represents the observations of a source's current state.
                   Known .status.conditions.type are: "Available", "Progressing"
                 items:
                   description: Condition contains details for one aspect of the current
@@ -138,6 +138,8 @@ spec:
                 - type
                 x-kubernetes-list-type: map
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true

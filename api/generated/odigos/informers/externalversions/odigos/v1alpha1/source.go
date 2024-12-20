@@ -31,59 +31,59 @@ import (
 	cache "k8s.io/client-go/tools/cache"
 )
 
-// InstrumentationInformer provides access to a shared informer and lister for
-// Instrumentations.
-type InstrumentationInformer interface {
+// SourceInformer provides access to a shared informer and lister for
+// Sources.
+type SourceInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.InstrumentationLister
+	Lister() v1alpha1.SourceLister
 }
 
-type instrumentationInformer struct {
+type sourceInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
 	namespace        string
 }
 
-// NewInstrumentationInformer constructs a new informer for Instrumentation type.
+// NewSourceInformer constructs a new informer for Source type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewInstrumentationInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredInstrumentationInformer(client, namespace, resyncPeriod, indexers, nil)
+func NewSourceInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return NewFilteredSourceInformer(client, namespace, resyncPeriod, indexers, nil)
 }
 
-// NewFilteredInstrumentationInformer constructs a new informer for Instrumentation type.
+// NewFilteredSourceInformer constructs a new informer for Source type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewFilteredInstrumentationInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
+func NewFilteredSourceInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.OdigosV1alpha1().Instrumentations(namespace).List(context.TODO(), options)
+				return client.OdigosV1alpha1().Sources(namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.OdigosV1alpha1().Instrumentations(namespace).Watch(context.TODO(), options)
+				return client.OdigosV1alpha1().Sources(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&odigosv1alpha1.Instrumentation{},
+		&odigosv1alpha1.Source{},
 		resyncPeriod,
 		indexers,
 	)
 }
 
-func (f *instrumentationInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredInstrumentationInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
+func (f *sourceInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+	return NewFilteredSourceInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
 }
 
-func (f *instrumentationInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&odigosv1alpha1.Instrumentation{}, f.defaultInformer)
+func (f *sourceInformer) Informer() cache.SharedIndexInformer {
+	return f.factory.InformerFor(&odigosv1alpha1.Source{}, f.defaultInformer)
 }
 
-func (f *instrumentationInformer) Lister() v1alpha1.InstrumentationLister {
-	return v1alpha1.NewInstrumentationLister(f.Informer().GetIndexer())
+func (f *sourceInformer) Lister() v1alpha1.SourceLister {
+	return v1alpha1.NewSourceLister(f.Informer().GetIndexer())
 }

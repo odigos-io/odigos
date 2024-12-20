@@ -35,10 +35,6 @@ func (c *FakeOdigosV1alpha1) Destinations(namespace string) v1alpha1.Destination
 	return &FakeDestinations{c, namespace}
 }
 
-func (c *FakeOdigosV1alpha1) Instrumentations(namespace string) v1alpha1.InstrumentationInterface {
-	return &FakeInstrumentations{c, namespace}
-}
-
 func (c *FakeOdigosV1alpha1) InstrumentationConfigs(namespace string) v1alpha1.InstrumentationConfigInterface {
 	return &FakeInstrumentationConfigs{c, namespace}
 }
@@ -61,6 +57,10 @@ func (c *FakeOdigosV1alpha1) OdigosConfigurations(namespace string) v1alpha1.Odi
 
 func (c *FakeOdigosV1alpha1) Processors(namespace string) v1alpha1.ProcessorInterface {
 	return &FakeProcessors{c, namespace}
+}
+
+func (c *FakeOdigosV1alpha1) Sources(namespace string) v1alpha1.SourceInterface {
+	return &FakeSources{c, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate

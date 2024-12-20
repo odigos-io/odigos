@@ -27,8 +27,6 @@ type Interface interface {
 	CollectorsGroups() CollectorsGroupInformer
 	// Destinations returns a DestinationInformer.
 	Destinations() DestinationInformer
-	// Instrumentations returns a InstrumentationInformer.
-	Instrumentations() InstrumentationInformer
 	// InstrumentationConfigs returns a InstrumentationConfigInformer.
 	InstrumentationConfigs() InstrumentationConfigInformer
 	// InstrumentationInstances returns a InstrumentationInstanceInformer.
@@ -41,6 +39,8 @@ type Interface interface {
 	OdigosConfigurations() OdigosConfigurationInformer
 	// Processors returns a ProcessorInformer.
 	Processors() ProcessorInformer
+	// Sources returns a SourceInformer.
+	Sources() SourceInformer
 }
 
 type version struct {
@@ -62,11 +62,6 @@ func (v *version) CollectorsGroups() CollectorsGroupInformer {
 // Destinations returns a DestinationInformer.
 func (v *version) Destinations() DestinationInformer {
 	return &destinationInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// Instrumentations returns a InstrumentationInformer.
-func (v *version) Instrumentations() InstrumentationInformer {
-	return &instrumentationInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // InstrumentationConfigs returns a InstrumentationConfigInformer.
@@ -97,4 +92,9 @@ func (v *version) OdigosConfigurations() OdigosConfigurationInformer {
 // Processors returns a ProcessorInformer.
 func (v *version) Processors() ProcessorInformer {
 	return &processorInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// Sources returns a SourceInformer.
+func (v *version) Sources() SourceInformer {
+	return &sourceInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

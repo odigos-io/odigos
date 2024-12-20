@@ -21,22 +21,22 @@ import (
 	workload "github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
-// InstrumentationSpecApplyConfiguration represents a declarative configuration of the InstrumentationSpec type for use
+// SourceSpecApplyConfiguration represents a declarative configuration of the SourceSpec type for use
 // with apply.
-type InstrumentationSpecApplyConfiguration struct {
+type SourceSpecApplyConfiguration struct {
 	Workload *workload.PodWorkload `json:"workload,omitempty"`
 }
 
-// InstrumentationSpecApplyConfiguration constructs a declarative configuration of the InstrumentationSpec type for use with
+// SourceSpecApplyConfiguration constructs a declarative configuration of the SourceSpec type for use with
 // apply.
-func InstrumentationSpec() *InstrumentationSpecApplyConfiguration {
-	return &InstrumentationSpecApplyConfiguration{}
+func SourceSpec() *SourceSpecApplyConfiguration {
+	return &SourceSpecApplyConfiguration{}
 }
 
 // WithWorkload sets the Workload field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Workload field is set to the value of the last call.
-func (b *InstrumentationSpecApplyConfiguration) WithWorkload(value workload.PodWorkload) *InstrumentationSpecApplyConfiguration {
+func (b *SourceSpecApplyConfiguration) WithWorkload(value workload.PodWorkload) *SourceSpecApplyConfiguration {
 	b.Workload = &value
 	return b
 }

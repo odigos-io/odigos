@@ -33,14 +33,6 @@ type DestinationListerExpansion interface{}
 // DestinationNamespaceLister.
 type DestinationNamespaceListerExpansion interface{}
 
-// InstrumentationListerExpansion allows custom methods to be added to
-// InstrumentationLister.
-type InstrumentationListerExpansion interface{}
-
-// InstrumentationNamespaceListerExpansion allows custom methods to be added to
-// InstrumentationNamespaceLister.
-type InstrumentationNamespaceListerExpansion interface{}
-
 // InstrumentationConfigListerExpansion allows custom methods to be added to
 // InstrumentationConfigLister.
 type InstrumentationConfigListerExpansion interface{}
@@ -88,3 +80,11 @@ type ProcessorListerExpansion interface{}
 // ProcessorNamespaceListerExpansion allows custom methods to be added to
 // ProcessorNamespaceLister.
 type ProcessorNamespaceListerExpansion interface{}
+
+// SourceListerExpansion allows custom methods to be added to
+// SourceLister.
+type SourceListerExpansion interface{}
+
+// SourceNamespaceListerExpansion allows custom methods to be added to
+// SourceNamespaceLister.
+type SourceNamespaceListerExpansion interface{}
