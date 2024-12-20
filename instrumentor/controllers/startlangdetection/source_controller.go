@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -29,9 +30,10 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	obj := workload.ClientObjectFromWorkloadKind(source.Spec.Workload.Kind)
 	err = r.Client.Get(ctx, types.NamespacedName{Name: source.Spec.Workload.Name, Namespace: source.Spec.Workload.Namespace}, obj)
 	if err != nil {
-		// Deleted objects should be filtered in the event filter
+		// TODO: Deleted objects should be filtered in the event filter
 		return ctrl.Result{}, err
 	}
+	instConfigName := workload.CalculateWorkloadRuntimeObjectName(source.Spec.Workload.Name, source.Spec.Workload.Kind)
 
 	if source.DeletionTimestamp.IsZero() {
 		if !controllerutil.ContainsFinalizer(source, sourceFinalizer) {
@@ -40,18 +42,28 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 				return ctrl.Result{}, err
 			}
 
-			instConfigName := workload.CalculateWorkloadRuntimeObjectName(req.Name, source.Spec.Workload.Kind)
 			err = requestOdigletsToCalculateRuntimeDetails(ctx, r.Client, instConfigName, req.Namespace, obj, r.Scheme)
 			return ctrl.Result{}, err
 		}
 	} else {
 		// Source is being deleted
 		if controllerutil.ContainsFinalizer(source, sourceFinalizer) {
-			// TODO: delete resources
-
+			// Remove the finalizer first, because if the InstrumentationConfig is not found we
+			// will deadlock on the finalizer never getting removed.
+			// On the other hand, this could end up deleting a Source with an orphaned InstrumentationConfig.
 			controllerutil.RemoveFinalizer(source, sourceFinalizer)
 			if err := r.Update(ctx, source); err != nil {
 				return ctrl.Result{}, err
+			}
+
+			instConfig := &v1alpha1.InstrumentationConfig{}
+			err = r.Client.Get(ctx, types.NamespacedName{Name: instConfigName, Namespace: req.Namespace}, instConfig)
+			if err != nil {
+				return ctrl.Result{}, client.IgnoreNotFound(err)
+			}
+			err = r.Client.Delete(ctx, instConfig)
+			if err != nil {
+				return ctrl.Result{}, client.IgnoreNotFound(err)
 			}
 		}
 	}
