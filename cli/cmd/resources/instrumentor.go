@@ -23,20 +23,20 @@ import (
 )
 
 const (
-	InstrumentorOtelServiceName     = "instrumentor"
-	InstrumentorDeploymentName      = "odigos-instrumentor"
-	InstrumentorAppLabelValue       = InstrumentorDeploymentName
-	InstrumentorServiceName         = InstrumentorDeploymentName
-	InstrumentorServiceAccountName  = InstrumentorDeploymentName
-	InstrumentorRoleName            = InstrumentorDeploymentName
-	InstrumentorRoleBindingName     = InstrumentorDeploymentName
-	InstrumentorClusterRoleName     = InstrumentorDeploymentName
-	InstrumentorClusterRoleBinding  = InstrumentorDeploymentName
-	InstrumentorCertificateName     = InstrumentorDeploymentName
-	InstrumentorMutatingWebhookName = "mutating-webhook-configuration"
-	InstrumentorContainerName       = "manager"
-	InstrumentorWebhookSecretName   = "instrumentor-webhook-cert"
-	InstrumentorWebhookVolumeName   = "webhook-cert"
+	InstrumentorOtelServiceName        = "instrumentor"
+	InstrumentorDeploymentName         = "odigos-instrumentor"
+	InstrumentorAppLabelValue          = InstrumentorDeploymentName
+	InstrumentorServiceName            = InstrumentorDeploymentName
+	InstrumentorServiceAccountName     = InstrumentorDeploymentName
+	InstrumentorRoleName               = InstrumentorDeploymentName
+	InstrumentorRoleBindingName        = InstrumentorDeploymentName
+	InstrumentorClusterRoleName        = InstrumentorDeploymentName
+	InstrumentorClusterRoleBindingName = InstrumentorDeploymentName
+	InstrumentorCertificateName        = InstrumentorDeploymentName
+	InstrumentorMutatingWebhookName    = "mutating-webhook-configuration"
+	InstrumentorContainerName          = "manager"
+	InstrumentorWebhookSecretName      = "instrumentor-webhook-cert"
+	InstrumentorWebhookVolumeName      = "webhook-cert"
 )
 
 func NewInstrumentorServiceAccount(ns string) *corev1.ServiceAccount {
@@ -202,7 +202,7 @@ func NewInstrumentorClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: InstrumentorClusterRoleBinding,
+			Name: InstrumentorClusterRoleBindingName,
 		},
 		Subjects: []rbacv1.Subject{
 			{
