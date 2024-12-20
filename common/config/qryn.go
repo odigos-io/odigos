@@ -45,7 +45,7 @@ func (g *Qryn) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) erro
 	if conf.passwordFieldName != "" {
 		passwordPlaceholder = "${" + conf.passwordFieldName + "}"
 	}
-	baseURL, err := parseURL(dest.GetConfig()[qrynHost], conf.key, passwordPlaceholder)
+	baseURL, err := parseURL(conf.host, conf.key, passwordPlaceholder)
 	if err != nil {
 		return errors.Join(err, errors.New("invalid qryn endpoint. gateway will not be configured with qryn"))
 	}
@@ -55,7 +55,7 @@ func (g *Qryn) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) erro
 		currentConfig.Exporters[rwExporterName] = GenericMap{
 			"endpoint": fmt.Sprintf("%s/api/v1/prom/remote/write", baseURL),
 			"resource_to_telemetry_conversion": GenericMap{
-				"enabled": dest.GetConfig()[resourceToTelemetryConversion] == "Yes",
+				"enabled": conf.resourceToTelemetryConversion,
 			},
 		}
 		metricsPipelineName := "metrics/qryn-" + dest.GetID()
@@ -126,8 +126,8 @@ func (g *Qryn) getConfigs(dest ExporterConfigurer) qrynConf {
 	return qrynConf{
 		host:                          dest.GetConfig()[qrynHost],
 		key:                           dest.GetConfig()[qrynAPIKey],
-		addExporterName:               dest.GetConfig()[qrynAddExporterName] == "Yes",
-		resourceToTelemetryConversion: dest.GetConfig()[resourceToTelemetryConversion] == "Yes",
+		addExporterName:               getBooleanConfig(dest.GetConfig()[qrynAddExporterName], "Yes"),
+		resourceToTelemetryConversion: getBooleanConfig(dest.GetConfig()[resourceToTelemetryConversion], "Yes"),
 		secretsOptional:               dest.GetConfig()[qrynSecretsOptional] == "1",
 		passwordFieldName:             dest.GetConfig()[qrynPasswordFieldName],
 	}
