@@ -17,6 +17,7 @@ func K8sDetectorOptions(logger logr.Logger) []detector.DetectorOption {
 		detector.WithLogger(sLogger),
 		detector.WithEnvironments(relevantEnvVars()...),
 		detector.WithEnvPrefixFilter(consts.OdigosEnvVarPodName),
+		detector.WithExePathsToFilter("/usr/bin/bash", "/bin/bash", "/bin/sh", "/usr/bin/sh", "/bin/busybox", "/usr/bin/dash"),
 	}
 
 	return opts
