@@ -16,23 +16,23 @@ type k8sDetailsResolver struct {
 	client client.Client
 }
 
-func (dr *k8sDetailsResolver) Resolve(ctx context.Context, event detector.ProcessEvent) (K8sProcessGroup, error) {
+func (dr *k8sDetailsResolver) Resolve(ctx context.Context, event detector.ProcessEvent) (K8sProcessDetails, error) {
 	pod, err := dr.podFromProcEvent(ctx, event)
 	if err != nil {
-		return K8sProcessGroup{}, err
+		return K8sProcessDetails{}, err
 	}
 
 	containerName, found := containerNameFromProcEvent(event)
 	if !found {
-		return K8sProcessGroup{}, errContainerNameNotReported
+		return K8sProcessDetails{}, errContainerNameNotReported
 	}
 
 	podWorkload, err := workload.PodWorkloadObjectOrError(ctx, pod)
 	if err != nil {
-		return K8sProcessGroup{}, fmt.Errorf("failed to find workload object from pod manifest owners references: %w", err)
+		return K8sProcessDetails{}, fmt.Errorf("failed to find workload object from pod manifest owners references: %w", err)
 	}
 
-	return K8sProcessGroup{
+	return K8sProcessDetails{
 		pod:           pod,
 		containerName: containerName,
 		pw:            podWorkload,
@@ -68,7 +68,7 @@ func containerNameFromProcEvent(event detector.ProcessEvent) (string, bool) {
 
 type k8sConfigGroupResolver struct{}
 
-func (cr *k8sConfigGroupResolver) Resolve(ctx context.Context, d K8sProcessGroup, dist instrumentation.OtelDistribution) (K8sConfigGroup, error) {
+func (cr *k8sConfigGroupResolver) Resolve(ctx context.Context, d K8sProcessDetails, dist instrumentation.OtelDistribution) (K8sConfigGroup, error) {
 	if d.pw == nil {
 		return K8sConfigGroup{}, fmt.Errorf("podWorkload is not provided, cannot resolve config group")
 	}
