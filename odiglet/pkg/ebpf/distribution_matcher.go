@@ -10,7 +10,7 @@ import (
 
 type podDeviceDistributionMatcher struct{}
 
-func (dm *podDeviceDistributionMatcher) Distribution(ctx context.Context, e K8sProcessGroup) (instrumentation.OtelDistribution, error) {
+func (dm *podDeviceDistributionMatcher) Distribution(ctx context.Context, e K8sProcessDetails) (instrumentation.OtelDistribution, error) {
 	// get the language and sdk for this process event
 	// based on the pod spec and the container name from the process event
 	// TODO: We should have all the required information in the process event
