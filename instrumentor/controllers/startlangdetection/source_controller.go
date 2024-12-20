@@ -13,7 +13,13 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
-var sourceFinalizer = "odigos.io/source-finalizer"
+var (
+	sourceFinalizer = "odigos.io/source-finalizer"
+
+	workloadNameLabel      = "odigos.io/workload-name"
+	workloadNamespaceLabel = "odigos.io/workload-namespace"
+	workloadKindLabel      = "odigos.io/workload-kind"
+)
 
 type SourceReconciler struct {
 	client.Client
@@ -38,6 +44,14 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if source.DeletionTimestamp.IsZero() {
 		if !controllerutil.ContainsFinalizer(source, sourceFinalizer) {
 			controllerutil.AddFinalizer(source, sourceFinalizer)
+
+			if source.Labels == nil {
+				source.Labels = make(map[string]string)
+			}
+			source.Labels[workloadNameLabel] = source.Spec.Workload.Name
+			source.Labels[workloadNamespaceLabel] = source.Spec.Workload.Namespace
+			source.Labels[workloadKindLabel] = string(source.Spec.Workload.Kind)
+
 			if err := r.Update(ctx, source); err != nil {
 				return ctrl.Result{}, err
 			}
