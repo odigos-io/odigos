@@ -35,7 +35,7 @@ rules:
   - apiGroups:
       - odigos.io
     resources:
-      - instrumentedapplications
+      - instrumentationconfigs
       - collectorsgroups
       - odigosconfigurations
       - destinations
@@ -52,7 +52,6 @@ rules:
       - odigos.io
     resources:
       - collectorsgroups/finalizers
-      - instrumentedapplications/finalizers
       - destinations/finalizers
     verbs:
       - update
@@ -60,7 +59,6 @@ rules:
       - odigos.io
     resources:
       - collectorsgroups/status
-      - instrumentedapplications/status
       - destinations/status
     verbs:
       - get
