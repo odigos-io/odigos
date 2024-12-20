@@ -23,19 +23,20 @@ import (
 )
 
 const (
-	InstrumentorOtelServiceName    = "instrumentor"
-	InstrumentorDeploymentName     = "odigos-instrumentor"
-	InstrumentorAppLabelValue      = InstrumentorDeploymentName
-	InstrumentorServiceName        = InstrumentorDeploymentName
-	InstrumentorServiceAccountName = InstrumentorDeploymentName
-	InstrumentorRoleName           = InstrumentorDeploymentName
-	InstrumentorRoleBindingName    = InstrumentorDeploymentName
-	InstrumentorClusterRoleName    = InstrumentorDeploymentName
-	InstrumentorClusterRoleBinding = InstrumentorDeploymentName
-	InstrumentorCertificateName    = InstrumentorDeploymentName
-	InstrumentorContainerName      = "manager"
-	InstrumentorWebhookSecretName  = "instrumentor-webhook-cert"
-	InstrumentorWebhookVolumeName  = "webhook-cert"
+	InstrumentorOtelServiceName     = "instrumentor"
+	InstrumentorDeploymentName      = "odigos-instrumentor"
+	InstrumentorAppLabelValue       = InstrumentorDeploymentName
+	InstrumentorServiceName         = InstrumentorDeploymentName
+	InstrumentorServiceAccountName  = InstrumentorDeploymentName
+	InstrumentorRoleName            = InstrumentorDeploymentName
+	InstrumentorRoleBindingName     = InstrumentorDeploymentName
+	InstrumentorClusterRoleName     = InstrumentorDeploymentName
+	InstrumentorClusterRoleBinding  = InstrumentorDeploymentName
+	InstrumentorCertificateName     = InstrumentorDeploymentName
+	InstrumentorMutatingWebhookName = "mutating-webhook-configuration"
+	InstrumentorContainerName       = "manager"
+	InstrumentorWebhookSecretName   = "instrumentor-webhook-cert"
+	InstrumentorWebhookVolumeName   = "webhook-cert"
 )
 
 func NewInstrumentorServiceAccount(ns string) *corev1.ServiceAccount {
@@ -85,7 +86,34 @@ func NewInstrumentorRole(ns string) *rbacv1.Role {
 			Name:      InstrumentorRoleName,
 			Namespace: ns,
 		},
-		Rules: []rbacv1.PolicyRule{},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups:     []string{""},
+				Resources:     []string{"configmaps"},
+				ResourceNames: []string{"odigos-config"},
+				Verbs:         []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"collectorsgroups"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"collectorsgroups/status"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{ // Needed for odigos own telemetry events reporting. Consider moving to scheduler
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"destinations"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"instrumentationrules"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+		},
 	}
 }
 
@@ -123,120 +151,45 @@ func NewInstrumentorClusterRole() *rbacv1.ClusterRole {
 			Name: InstrumentorClusterRoleName,
 		},
 		Rules: []rbacv1.PolicyRule{
-			{
+			{ // Used in events reporting for own telemetry
 				APIGroups: []string{""},
 				Resources: []string{"nodes"},
 				Verbs:     []string{"list", "watch", "get"},
 			},
-			{
+			{ // Read instrumentation labels from namespaces
 				APIGroups: []string{""},
 				Resources: []string{"namespaces"},
 				Verbs:     []string{"list", "watch", "get"},
 			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"configmaps"},
-				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
-			},
-			{
+			{ // Read instrumentation labels from daemonsets
 				APIGroups: []string{"apps"},
 				Resources: []string{"daemonsets"},
-				Verbs:     []string{"create", "get", "list", "patch", "update", "watch"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
-			{
-				APIGroups: []string{"apps"},
-				Resources: []string{"daemonsets/finalizers"},
-				Verbs:     []string{"update"},
-			},
-			{
-				APIGroups: []string{"apps"},
-				Resources: []string{"daemonsets/status"},
-				Verbs:     []string{"get"},
-			},
-			{
+			{ // Read instrumentation labels from deployments
 				APIGroups: []string{"apps"},
 				Resources: []string{"deployments"},
-				Verbs:     []string{"create", "get", "list", "patch", "update", "watch"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
-			{
-				APIGroups: []string{"apps"},
-				Resources: []string{"deployments/finalizers"},
-				Verbs:     []string{"update"},
-			},
-			{
-				APIGroups: []string{"apps"},
-				Resources: []string{"deployments/status"},
-				Verbs:     []string{"get"},
-			},
-			{
+			{ // Read instrumentation labels from statefulsets
 				APIGroups: []string{"apps"},
 				Resources: []string{"statefulsets"},
-				Verbs:     []string{"create", "get", "list", "patch", "update", "watch"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
-			{
-				APIGroups: []string{"apps"},
-				Resources: []string{"statefulsets/finalizers"},
-				Verbs:     []string{"update"},
-			},
-			{
-				APIGroups: []string{"apps"},
-				Resources: []string{"statefulsets/status"},
-				Verbs:     []string{"get"},
-			},
-			{
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"collectorsgroups"},
-				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
-			},
-			{
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"collectorsgroups/finalizers"},
-				Verbs:     []string{"update"},
-			},
-			{
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"collectorsgroups/status"},
-				Verbs:     []string{"get", "patch", "update"},
-			},
-			{
+			{ // React to runtime detection in user workloads in all namespaces
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"instrumentedapplications"},
-				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
+				Verbs:     []string{"delete", "get", "list", "watch"},
 			},
-			{
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentedapplications/finalizers"},
-				Verbs:     []string{"update"},
-			},
-			{
+			{ // Update the status of the instrumented applications after device injection
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"instrumentedapplications/status"},
 				Verbs:     []string{"get", "patch", "update"},
 			},
 			{
 				APIGroups: []string{"odigos.io"},
-				Resources: []string{"destinations"},
-				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
-			},
-			{
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"destinations/finalizers"},
-				Verbs:     []string{"update"},
-			},
-			{
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"destinations/status"},
-				Verbs:     []string{"get", "patch", "update"},
-			},
-			{
-				APIGroups: []string{"odigos.io"},
 				Resources: []string{"instrumentationconfigs"},
 				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
-			},
-			{
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentationrules"},
-				Verbs:     []string{"get", "list", "watch"},
 			},
 		},
 	}
@@ -364,10 +317,10 @@ func NewMutatingWebhookConfiguration(ns string, caBundle []byte) *admissionregis
 			APIVersion: "admissionregistration.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "mutating-webhook-configuration",
+			Name: InstrumentorMutatingWebhookName,
 			Labels: map[string]string{
 				"app.kubernetes.io/name":       "pod-mutating-webhook",
-				"app.kubernetes.io/instance":   "mutating-webhook-configuration",
+				"app.kubernetes.io/instance":   InstrumentorMutatingWebhookName,
 				"app.kubernetes.io/component":  "webhook",
 				"app.kubernetes.io/created-by": "instrumentor",
 				"app.kubernetes.io/part-of":    "odigos",
@@ -404,7 +357,7 @@ func NewMutatingWebhookConfiguration(ns string, caBundle []byte) *admissionregis
 				TimeoutSeconds:     intPtr(10),
 				ObjectSelector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						"odigos.io/inject-instrumentation": "true",
+						consts.OdigosInjectInstrumentationLabel: "true",
 					},
 				},
 				AdmissionReviewVersions: []string{

@@ -20,6 +20,7 @@ import (
 	"flag"
 	"os"
 
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 
 	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentationconfig"
@@ -38,7 +39,7 @@ import (
 	"github.com/go-logr/zapr"
 	bridge "github.com/odigos-io/opentelemetry-zap-bridge"
 
-	v1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 
 	"github.com/odigos-io/odigos/instrumentor/controllers/deleteinstrumentedapplication"
@@ -48,6 +49,7 @@ import (
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -69,7 +71,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(v1.AddToScheme(scheme))
+	utilruntime.Must(odigosv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -97,6 +99,11 @@ func main() {
 	logger := zapr.NewLogger(zapLogger)
 	ctrl.SetLogger(logger)
 
+	odigosNs := env.GetCurrentNamespace()
+	nsSelector := client.InNamespace(odigosNs).AsSelector()
+	odigosConfigNameSelector := fields.OneTermEqualSelector("metadata.name", consts.OdigosConfigurationName)
+	odigosConfigSelector := fields.AndSelectors(nsSelector, odigosConfigNameSelector)
+
 	mgrOptions := ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
@@ -111,7 +118,19 @@ func main() {
 			// Currently, instrumentor only need the labels and the .spec.template.spec field of the workloads.
 			ByObject: map[client.Object]cache.ByObject{
 				&corev1.ConfigMap{}: {
-					Field: client.InNamespace(env.GetCurrentNamespace()).AsSelector(),
+					Field: odigosConfigSelector,
+				},
+				&corev1.ConfigMap{}: {
+					Field: nsSelector,
+				},
+				&odigosv1.CollectorsGroup{}: {
+					Field: nsSelector,
+				},
+				&odigosv1.Destination{}: {
+					Field: nsSelector,
+				},
+				&odigosv1.InstrumentationRule{}: {
+					Field: nsSelector,
 				},
 			},
 		},
