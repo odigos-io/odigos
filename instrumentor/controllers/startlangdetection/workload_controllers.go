@@ -4,6 +4,7 @@ import (
 	"context"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/yaml"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -59,7 +60,21 @@ func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind wor
 	}
 
 	if !instrumented {
-		return ctrl.Result{}, nil
+		// Check if a Source object exists for this workload
+		// TODO: Move this to IsWorkloadInstrumentationEffectiveEnabled (creates import loop right now)
+		sourceList := &odigosv1.SourceList{}
+		selector := labels.SelectorFromSet(labels.Set{
+			"odigos.io/workload-name":      obj.GetName(),
+			"odigos.io/workload-namespace": obj.GetNamespace(),
+			"odigos.io/workload-kind":      obj.GetObjectKind().GroupVersionKind().Kind,
+		})
+		err := k8sClient.List(ctx, sourceList, &client.ListOptions{LabelSelector: selector})
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		if len(sourceList.Items) == 0 {
+			return ctrl.Result{}, nil
+		}
 	}
 
 	err = requestOdigletsToCalculateRuntimeDetails(ctx, k8sClient, instConfigName, req.Namespace, obj, scheme)
