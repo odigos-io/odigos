@@ -5,12 +5,39 @@ export function useConnectDestinationForm() {
   function buildFormDynamicFields(fields: DestinationDetailsField[]): DynamicField[] {
     return fields
       .map((field) => {
-        const { componentType, displayName, componentProperties, initialValue, ...restOfField } = field;
+        const { componentType, displayName, initialValue, componentProperties, ...restOfField } = field;
 
         let componentPropertiesJson;
         let initialValuesJson;
 
         switch (componentType) {
+          case INPUT_TYPES.INPUT:
+          case INPUT_TYPES.TEXTAREA:
+          case INPUT_TYPES.CHECKBOX:
+          case INPUT_TYPES.KEY_VALUE_PAIR:
+            componentPropertiesJson = safeJsonParse<{ [key: string]: string }>(componentProperties, {});
+
+            return {
+              componentType,
+              title: displayName,
+              value: initialValue,
+              ...restOfField,
+              ...componentPropertiesJson,
+            };
+
+          case INPUT_TYPES.MULTI_INPUT:
+            componentPropertiesJson = safeJsonParse<{ [key: string]: string }>(componentProperties, {});
+            initialValuesJson = safeJsonParse<string[]>(initialValue, []);
+
+            return {
+              componentType,
+              title: displayName,
+              value: initialValuesJson,
+              initialValues: initialValuesJson,
+              ...restOfField,
+              ...componentPropertiesJson,
+            };
+
           case INPUT_TYPES.DROPDOWN:
             componentPropertiesJson = safeJsonParse<{ [key: string]: string }>(componentProperties, {});
 
@@ -27,57 +54,10 @@ export function useConnectDestinationForm() {
             return {
               componentType,
               title: displayName,
+              value: initialValue,
+              placeholder: componentPropertiesJson.placeholder || 'Select an option',
               options,
               onSelect: () => {},
-              placeholder: componentPropertiesJson.placeholder || 'Select an option',
-              ...restOfField,
-              ...componentPropertiesJson,
-            };
-
-          case INPUT_TYPES.INPUT:
-          case INPUT_TYPES.TEXTAREA:
-            componentPropertiesJson = safeJsonParse<string[]>(componentProperties, []);
-
-            return {
-              componentType,
-              title: displayName,
-              initialValue,
-              value: initialValue,
-              ...restOfField,
-              ...componentPropertiesJson,
-            };
-
-          case INPUT_TYPES.MULTI_INPUT:
-            componentPropertiesJson = safeJsonParse<string[]>(componentProperties, []);
-            initialValuesJson = safeJsonParse<string[]>(initialValue, []);
-
-            return {
-              componentType,
-              title: displayName,
-              initialValues: initialValuesJson,
-              value: initialValuesJson,
-              ...restOfField,
-              ...componentPropertiesJson,
-            };
-
-          case INPUT_TYPES.KEY_VALUE_PAIR:
-            return {
-              componentType,
-              title: displayName,
-              initialValue,
-              value: initialValue,
-              componentProperties,
-              ...restOfField,
-            };
-
-          case INPUT_TYPES.CHECKBOX:
-            componentPropertiesJson = safeJsonParse<{ [key: string]: string }>(componentProperties, {});
-
-            return {
-              componentType,
-              title: displayName,
-              initialValue,
-              value: initialValue,
               ...restOfField,
               ...componentPropertiesJson,
             };
