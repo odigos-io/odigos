@@ -23,12 +23,19 @@ import (
 )
 
 const (
-	InstrumentorServiceName       = "instrumentor"
-	InstrumentorDeploymentName    = "odigos-instrumentor"
-	InstrumentorAppLabelValue     = "odigos-instrumentor"
-	InstrumentorContainerName     = "manager"
-	InstrumentorWebhookSecretName = "instrumentor-webhook-cert"
-	InstrumentorWebhookVolumeName = "webhook-cert"
+	InstrumentorOtelServiceName    = "instrumentor"
+	InstrumentorDeploymentName     = "odigos-instrumentor"
+	InstrumentorAppLabelValue      = InstrumentorDeploymentName
+	InstrumentorServiceName        = InstrumentorDeploymentName
+	InstrumentorServiceAccountName = InstrumentorDeploymentName
+	InstrumentorRoleName           = InstrumentorDeploymentName
+	InstrumentorRoleBindingName    = InstrumentorDeploymentName
+	InstrumentorClusterRoleName    = InstrumentorDeploymentName
+	InstrumentorClusterRoleBinding = InstrumentorDeploymentName
+	InstrumentorCertificateName    = InstrumentorDeploymentName
+	InstrumentorContainerName      = "manager"
+	InstrumentorWebhookSecretName  = "instrumentor-webhook-cert"
+	InstrumentorWebhookVolumeName  = "webhook-cert"
 )
 
 func NewInstrumentorServiceAccount(ns string) *corev1.ServiceAccount {
@@ -38,7 +45,7 @@ func NewInstrumentorServiceAccount(ns string) *corev1.ServiceAccount {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      InstrumentorDeploymentName,
+			Name:      InstrumentorServiceAccountName,
 			Namespace: ns,
 		},
 	}
@@ -57,13 +64,51 @@ func NewInstrumentorLeaderElectionRoleBinding(ns string) *rbacv1.RoleBinding {
 		Subjects: []rbacv1.Subject{
 			{
 				Kind: "ServiceAccount",
-				Name: "odigos-instrumentor",
+				Name: InstrumentorServiceAccountName,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "Role",
 			Name:     "odigos-leader-election-role",
+		},
+	}
+}
+
+func NewInstrumentorRole(ns string) *rbacv1.Role {
+	return &rbacv1.Role{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Role",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      InstrumentorRoleName,
+			Namespace: ns,
+		},
+		Rules: []rbacv1.PolicyRule{},
+	}
+}
+
+func NewInstrumentorRoleBinding(ns string) *rbacv1.RoleBinding {
+	return &rbacv1.RoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "RoleBinding",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      InstrumentorRoleBindingName,
+			Namespace: ns,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind: "ServiceAccount",
+				Name: InstrumentorServiceAccountName,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "Role",
+			Name:     InstrumentorRoleName,
 		},
 	}
 }
@@ -75,7 +120,7 @@ func NewInstrumentorClusterRole() *rbacv1.ClusterRole {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-instrumentor",
+			Name: InstrumentorClusterRoleName,
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -204,19 +249,19 @@ func NewInstrumentorClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-instrumentor",
+			Name: InstrumentorClusterRoleBinding,
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      "odigos-instrumentor",
+				Name:      InstrumentorServiceAccountName,
 				Namespace: ns,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "ClusterRole",
-			Name:     "odigos-instrumentor",
+			Name:     InstrumentorClusterRoleName,
 		},
 	}
 }
@@ -294,7 +339,7 @@ func NewInstrumentorService(ns string) *corev1.Service {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "odigos-instrumentor",
+			Name:      InstrumentorServiceName,
 			Namespace: ns,
 		},
 		Spec: corev1.ServiceSpec{
@@ -333,7 +378,7 @@ func NewMutatingWebhookConfiguration(ns string, caBundle []byte) *admissionregis
 				Name: "pod-mutating-webhook.odigos.io",
 				ClientConfig: admissionregistrationv1.WebhookClientConfig{
 					Service: &admissionregistrationv1.ServiceReference{
-						Name:      "odigos-instrumentor",
+						Name:      InstrumentorServiceName,
 						Namespace: ns,
 						Path:      ptrString("/mutate--v1-pod"),
 						Port:      intPtr(9443),
@@ -425,7 +470,7 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "odigos-instrumentor",
+			Name:      InstrumentorDeploymentName,
 			Namespace: ns,
 			Labels: map[string]string{
 				"app.kubernetes.io/name": InstrumentorAppLabelValue,
@@ -459,7 +504,7 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 							Env: []corev1.EnvVar{
 								{
 									Name:  "OTEL_SERVICE_NAME",
-									Value: InstrumentorServiceName,
+									Value: InstrumentorOtelServiceName,
 								},
 								{
 									Name: "CURRENT_NS",
@@ -531,7 +576,7 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 						},
 					},
 					TerminationGracePeriodSeconds: ptrint64(10),
-					ServiceAccountName:            "odigos-instrumentor",
+					ServiceAccountName:            InstrumentorServiceAccountName,
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot: ptrbool(true),
 					},
@@ -591,6 +636,8 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 	resources := []kube.Object{
 		NewInstrumentorServiceAccount(a.ns),
 		NewInstrumentorLeaderElectionRoleBinding(a.ns),
+		NewInstrumentorRole(a.ns),
+		NewInstrumentorRoleBinding(a.ns),
 		NewInstrumentorClusterRole(),
 		NewInstrumentorClusterRoleBinding(a.ns),
 		NewInstrumentorDeployment(a.ns, a.odigosVersion, a.config.TelemetryEnabled, a.config.ImagePrefix, a.config.InstrumentorImage),
@@ -604,14 +651,14 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 		},
 			resources...)
 	} else {
-		ca, err := crypto.GenCA("odigos-instrumentor", 365)
+		ca, err := crypto.GenCA(InstrumentorCertificateName, 365)
 		if err != nil {
 			return fmt.Errorf("failed to generate CA: %w", err)
 		}
 
 		altNames := []string{
-			fmt.Sprintf("odigos-instrumentor.%s.svc", a.ns),
-			fmt.Sprintf("odigos-instrumentor.%s.svc.cluster.local", a.ns),
+			fmt.Sprintf("%s.%s.svc", InstrumentorServiceName, a.ns),
+			fmt.Sprintf("%s.%s.svc.cluster.local", InstrumentorServiceName, a.ns),
 		}
 
 		cert, err := crypto.GenerateSignedCertificate("serving-cert", nil, altNames, 365, ca)
