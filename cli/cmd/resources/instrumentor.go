@@ -161,20 +161,20 @@ func NewInstrumentorClusterRole() *rbacv1.ClusterRole {
 				Resources: []string{"namespaces"},
 				Verbs:     []string{"list", "watch", "get"},
 			},
-			{ // Read instrumentation labels from daemonsets
+			{ // Read instrumentation labels from daemonsets and apply pod spec changes
 				APIGroups: []string{"apps"},
 				Resources: []string{"daemonsets"},
-				Verbs:     []string{"get", "list", "watch"},
+				Verbs:     []string{"get", "list", "watch", "update", "patch"},
 			},
-			{ // Read instrumentation labels from deployments
+			{ // Read instrumentation labels from deployments and apply pod spec changes
 				APIGroups: []string{"apps"},
 				Resources: []string{"deployments"},
-				Verbs:     []string{"get", "list", "watch"},
+				Verbs:     []string{"get", "list", "watch", "update", "patch"},
 			},
-			{ // Read instrumentation labels from statefulsets
+			{ // Read instrumentation labels from statefulsets and apply pod spec changes
 				APIGroups: []string{"apps"},
 				Resources: []string{"statefulsets"},
-				Verbs:     []string{"get", "list", "watch"},
+				Verbs:     []string{"get", "list", "watch", "update", "patch"},
 			},
 			{ // React to runtime detection in user workloads in all namespaces
 				APIGroups: []string{"odigos.io"},
