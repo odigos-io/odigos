@@ -58,7 +58,16 @@ export function useConnectDestinationForm() {
             };
 
           case INPUT_TYPES.KEY_VALUE_PAIR:
+            return {
+              name,
+              componentType,
+              title: displayName,
+              ...componentPropertiesJson,
+            };
+
           case INPUT_TYPES.CHECKBOX:
+            componentPropertiesJson = safeJsonParse<{ [key: string]: string }>(componentProperties, {});
+
             return {
               name,
               componentType,
