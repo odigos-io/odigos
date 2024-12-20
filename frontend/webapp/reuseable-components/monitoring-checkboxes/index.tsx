@@ -84,9 +84,7 @@ export const MonitoringCheckboxes: React.FC<Props> = ({ isVertical, title = 'Mon
 
           if (!allowed) return null;
 
-          return (
-            <Checkbox key={monitor.id} title={monitor.title} disabled={!allowed || (isLastSelection && selected)} initialValue={selected} onChange={(value) => handleChange(monitor.type, value)} />
-          );
+          return <Checkbox key={monitor.id} title={monitor.title} disabled={!allowed || (isLastSelection && selected)} value={selected} onChange={(value) => handleChange(monitor.type, value)} />;
         })}
       </ListContainer>
 
