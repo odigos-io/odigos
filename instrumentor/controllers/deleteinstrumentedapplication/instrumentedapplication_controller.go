@@ -20,11 +20,12 @@ import (
 	"context"
 	"fmt"
 
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -90,9 +91,24 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 	}
 
 	if !instEffectiveEnabled {
-		logger.Info("Deleting instrumented application for non-enabled workload")
-		err := r.Client.Delete(ctx, &instrumentedApplication)
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		// Check if a Source object exists for this workload
+		// TODO: Move this to IsWorkloadInstrumentationEffectiveEnabled (creates import loop right now)
+		sourceList := &odigosv1.SourceList{}
+		selector := labels.SelectorFromSet(labels.Set{
+			"odigos.io/workload-name":      workloadObject.GetName(),
+			"odigos.io/workload-namespace": workloadObject.GetNamespace(),
+			"odigos.io/workload-kind":      workloadObject.GetObjectKind().GroupVersionKind().Kind,
+		})
+		err := r.Client.List(ctx, sourceList, &client.ListOptions{LabelSelector: selector})
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		if len(sourceList.Items) == 0 {
+			logger.Info("Deleting instrumented application for non-enabled workload")
+			err := r.Client.Delete(ctx, &instrumentedApplication)
+			return ctrl.Result{}, client.IgnoreNotFound(err)
+		}
+
 	}
 
 	return ctrl.Result{}, nil
