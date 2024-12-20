@@ -16,7 +16,13 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
-var sourceFinalizer = "odigos.io/source-finalizer"
+var (
+	sourceFinalizer = "odigos.io/source-finalizer"
+
+	workloadNameLabel      = "odigos.io/workload-name"
+	workloadNamespaceLabel = "odigos.io/workload-namespace"
+	workloadKindLabel      = "odigos.io/workload-kind"
+)
 
 type SourceReconciler struct {
 	client.Client
