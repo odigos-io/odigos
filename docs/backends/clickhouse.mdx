@@ -35,8 +35,8 @@ The benefit of this option is that you can see the value fast, without needing t
 The downside is that the schema may not be optimized for your specific use case, and may make changes more complicated.
 
 To use it:
-- Odigos UI - When adding a new ClickHouse destination, select the `Create` Option under the `Create Scheme` field.
-- Destination K8s Manifest - Set the `CLICKHOUSE_CREATE_SCHEME` setting to value `Create`.
+- Odigos UI - When adding a new ClickHouse destination, select the `Create Scheme` checkbox field.
+- Destination K8s Manifest - Set the `CLICKHOUSE_CREATE_SCHEME` setting to value `true`.
 
 The schema which will be used by default can be found [here](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/clickhouseexporter/example/default_ddl).
 
@@ -54,8 +54,8 @@ This option is not recommended for production workloads:
 With this option, you are responsible for creating and managing the schema yourself.
 
 To use it:
-- Odigos UI - In `Create Scheme` field, select the the `Skip` Option.
-- Destination K8s Manifest - Set the `CLICKHOUSE_CREATE_SCHEME` setting to value `Skip`.
+- Odigos UI - Unselect the `Create Scheme` checkbox field.
+- Destination K8s Manifest - Set the `CLICKHOUSE_CREATE_SCHEME` setting to value `false`.
 
 The benefit of this option is that you have full control over the schema, and can optimize it for your specific use case.
 
@@ -103,7 +103,7 @@ These are optional, keep empty if your ClickHouse server does not require authen
 
 ### Schema
 
-- Create Schema - Set to `Skip` if you manage your own schema, or `Create` to have Odigos create the schema for you. See [Create Schema](#create-schema) for more details.
+- Create Schema - Set to `false` if you manage your own schema, or `true` to have Odigos create the schema for you. See [Create Schema](#create-schema) for more details.
 - Database Name (Required) - The name of the Clickhouse Database where the telemetry data will be stored. The default is `otel`. The Database will not be created when not exists, so make sure you have created it before.
 - Table Names - Allows you to customize the names of the tables where the telemetry data will be stored. The default is `otel_traces` for traces and `otel_metrics` for metrics.
 
@@ -140,7 +140,7 @@ metadata:
   namespace: odigos-system
 spec:
   data:
-    CLICKHOUSE_CREATE_SCHEME: <Create Scheme [Create, Skip]>
+    CLICKHOUSE_CREATE_SCHEME: <Create Scheme>
     # CLICKHOUSE_USERNAME: <Username>
     # Note: The commented fields above are optional.
     CLICKHOUSE_DATABASE_NAME: <Database Name>
