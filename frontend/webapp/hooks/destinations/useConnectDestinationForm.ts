@@ -5,10 +5,11 @@ export function useConnectDestinationForm() {
   function buildFormDynamicFields(fields: DestinationDetailsField[]): DynamicField[] {
     return fields
       .map((field) => {
-        const { name, componentType, displayName, componentProperties, initialValue } = field;
+        const { componentType, displayName, componentProperties, initialValue, ...restOfField } = field;
 
         let componentPropertiesJson;
         let initialValuesJson;
+
         switch (componentType) {
           case INPUT_TYPES.DROPDOWN:
             componentPropertiesJson = safeJsonParse<{ [key: string]: string }>(componentProperties, {});
@@ -24,12 +25,12 @@ export function useConnectDestinationForm() {
                 }));
 
             return {
-              name,
               componentType,
               title: displayName,
-              onSelect: () => {},
               options,
-              placeholder: 'Select an option',
+              onSelect: () => {},
+              placeholder: componentPropertiesJson.placeholder || 'Select an option',
+              ...restOfField,
               ...componentPropertiesJson,
             };
 
@@ -38,9 +39,11 @@ export function useConnectDestinationForm() {
             componentPropertiesJson = safeJsonParse<string[]>(componentProperties, []);
 
             return {
-              name,
               componentType,
               title: displayName,
+              initialValue,
+              value: initialValue,
+              ...restOfField,
               ...componentPropertiesJson,
             };
 
@@ -49,29 +52,33 @@ export function useConnectDestinationForm() {
             initialValuesJson = safeJsonParse<string[]>(initialValue, []);
 
             return {
-              name,
               componentType,
               title: displayName,
               initialValues: initialValuesJson,
               value: initialValuesJson,
+              ...restOfField,
               ...componentPropertiesJson,
             };
 
           case INPUT_TYPES.KEY_VALUE_PAIR:
             return {
-              name,
               componentType,
               title: displayName,
-              ...componentPropertiesJson,
+              initialValue,
+              value: initialValue,
+              componentProperties,
+              ...restOfField,
             };
 
           case INPUT_TYPES.CHECKBOX:
             componentPropertiesJson = safeJsonParse<{ [key: string]: string }>(componentProperties, {});
 
             return {
-              name,
               componentType,
               title: displayName,
+              initialValue,
+              value: initialValue,
+              ...restOfField,
               ...componentPropertiesJson,
             };
 
