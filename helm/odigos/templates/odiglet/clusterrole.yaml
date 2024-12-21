@@ -6,9 +6,8 @@ rules:
   - apiGroups:
       - ""
     resources:
-      - configmaps
-      - nodes
       - pods
+      - pods/status
     verbs:
       - get
       - list
@@ -16,14 +15,16 @@ rules:
   - apiGroups:
       - ""
     resources:
-      - pods/status
+      - nodes
     verbs:
       - get
+      - list
+      - watch
   - apiGroups:
       - apps
     resources:
-      - daemonsets
       - deployments
+      - daemonsets
       - statefulsets
     verbs:
       - get
@@ -32,37 +33,11 @@ rules:
   - apiGroups:
       - apps
     resources:
-      - daemonsets/finalizers
-      - deployments/finalizers
-      - statefulsets/finalizers
-    verbs:
-      - update
-  - apiGroups:
-      - apps
-    resources:
-      - daemonsets/status
       - deployments/status
+      - daemonsets/status
       - statefulsets/status
     verbs:
       - get
-  - apiGroups:
-      - odigos.io
-    resources:
-      - collectorsgroups
-      - collectorsgroups/status
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - odigos.io
-    resources:
-      - instrumentationconfigs/status
-    verbs:
-      - get
-      - list
-      - watch
-      - patch
   - apiGroups:
       - apps
     resources:
@@ -72,31 +47,13 @@ rules:
   - apiGroups:
       - odigos.io
     resources:
-      - instrumentationconfigs
-    verbs:
-      - get
-      - list
-      - watch
-      - patch
-      - update
-  - apiGroups:
-      - odigos.io
-    resources:
-     - instrumentedapplications
+      - instrumentedapplications
     verbs:
       - create
       - get
       - list
       - patch
       - update
-      - watch
-  - apiGroups:
-      - odigos.io
-    resources:
-      - odigosconfigurations
-    verbs:
-      - get
-      - list
       - watch
   - apiGroups:
       - odigos.io
@@ -109,7 +66,7 @@ rules:
   - apiGroups:
       - odigos.io
     resources:
-     - instrumentationinstances
+      - instrumentationinstances
     verbs:
       - create
       - get
@@ -126,13 +83,32 @@ rules:
       - get
       - patch
       - update
+  - apiGroups:
+      - odigos.io
+    resources:
+      - instrumentationconfigs
+    verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - update
+  - apiGroups:
+      - odigos.io
+    resources:
+      - instrumentationconfigs/status
+    verbs:
+      - get
+      - list
+      - watch
+      - patch
 {{ if .Values.psp.enabled }}
   - apiGroups:
-    - policy
+      - policy
     resourceNames:
-    - privileged
+      - privileged
     resources:
-    - podsecuritypolicies
+      - podsecuritypolicies
     verbs:
-    - use
+      - use
 {{ end }}

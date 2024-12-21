@@ -1,6 +1,7 @@
 package kube
 
 import (
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/instrumentation"
 
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
@@ -39,6 +40,9 @@ func CreateManager() (ctrl.Manager, error) {
 
 	odigosNs := env.Current.Namespace
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
+	nameSelector := fields.OneTermEqualSelector("metadata.name", consts.OdigosConfigurationName)
+	odigosConfigSelector := fields.AndSelectors(nsSelector, nameSelector)
+	currentNodeSelector := fields.OneTermEqualSelector("spec.nodeName", env.Current.NodeName)
 
 	return manager.New(config.GetConfigOrDie(), manager.Options{
 		Scheme: scheme,
@@ -47,9 +51,11 @@ func CreateManager() (ctrl.Manager, error) {
 			// running `kubectl get .... --show-managed-fields` will show the managed fields.
 			DefaultTransform: cache.TransformStripManagedFields(),
 			ByObject: map[client.Object]cache.ByObject{
+				&corev1.ConfigMap{}: {
+					Field: odigosConfigSelector,
+				},
 				&corev1.Pod{}: {
-					// only watch and list pods in the current node
-					Field: fields.OneTermEqualSelector("spec.nodeName", env.Current.NodeName),
+					Field: currentNodeSelector,
 				},
 				&odigosv1.CollectorsGroup{}: { // Used by OpAMP server to figure out which signals are collected
 					Field: nsSelector,

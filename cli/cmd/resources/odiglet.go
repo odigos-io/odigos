@@ -8,6 +8,7 @@ import (
 
 	"github.com/odigos-io/odigos/cli/pkg/autodetect"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
+	"github.com/odigos-io/odigos/common/consts"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
@@ -68,6 +69,16 @@ func NewOdigletRole(ns string) *rbacv1.Role {
 				},
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"collectorsgroups", "collectorsgroups/status"},
+			},
+			{
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+				},
+				APIGroups:     []string{""},
+				Resources:     []string{"configmaps"},
+				ResourceNames: []string{consts.OdigosConfigurationName},
 			},
 		},
 	}
@@ -134,6 +145,7 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 				Verbs: []string{
 					"get",
 					"list",
+					"watch",
 				},
 				APIGroups: []string{"apps"},
 				Resources: []string{"deployments", "daemonsets", "statefulsets"},
