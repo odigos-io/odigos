@@ -116,16 +116,7 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 				},
 				APIGroups: []string{""},
 				Resources: []string{
-					"pods",
-				},
-			},
-			{
-				Verbs: []string{
-					"get",
-				},
-				APIGroups: []string{""},
-				Resources: []string{
-					"pods/status",
+					"pods", "pods/status",
 				},
 			},
 			{
@@ -143,10 +134,9 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 				Verbs: []string{
 					"get",
 					"list",
-					"watch",
 				},
 				APIGroups: []string{"apps"},
-				Resources: []string{"deployments"},
+				Resources: []string{"deployments", "daemonsets", "statefulsets"},
 			},
 			{
 				Verbs: []string{
@@ -154,43 +144,7 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 				},
 				APIGroups: []string{"apps"},
 				Resources: []string{
-					"deployments/status",
-				},
-			},
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
-				APIGroups: []string{"apps"},
-				Resources: []string{"statefulsets"},
-			},
-			{
-				Verbs: []string{
-					"get",
-				},
-				APIGroups: []string{"apps"},
-				Resources: []string{
-					"statefulsets/status",
-				},
-			},
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
-				APIGroups: []string{"apps"},
-				Resources: []string{"daemonsets"},
-			},
-			{
-				Verbs: []string{
-					"get",
-				},
-				APIGroups: []string{"apps"},
-				Resources: []string{
-					"daemonsets/status",
+					"deployments/status", "daemonsets/status", "statefulsets/status",
 				},
 			},
 			{
