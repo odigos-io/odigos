@@ -36,6 +36,10 @@ func init() {
 func CreateManager() (ctrl.Manager, error) {
 	log.Logger.V(0).Info("Starting reconcileres for runtime details")
 	ctrl.SetLogger(log.Logger)
+
+	odigosNs := env.Current.Namespace
+	nsSelector := client.InNamespace(odigosNs).AsSelector()
+
 	return manager.New(config.GetConfigOrDie(), manager.Options{
 		Scheme: scheme,
 		Cache: cache.Options{
@@ -46,6 +50,9 @@ func CreateManager() (ctrl.Manager, error) {
 				&corev1.Pod{}: {
 					// only watch and list pods in the current node
 					Field: fields.OneTermEqualSelector("spec.nodeName", env.Current.NodeName),
+				},
+				&odigosv1.CollectorsGroup{}: { // Used by OpAMP server to figure out which signals are collected
+					Field: nsSelector,
 				},
 			},
 		},

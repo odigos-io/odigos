@@ -24,12 +24,16 @@ import (
 )
 
 const (
-	OdigletServiceName         = "odiglet"
-	OdigletDaemonSetName       = "odiglet"
-	OdigletAppLabelValue       = "odiglet"
-	OdigletContainerName       = "odiglet"
-	OdigletImageName           = "keyval/odigos-odiglet"
-	OdigletEnterpriseImageName = "keyval/odigos-enterprise-odiglet"
+	OdigletDaemonSetName          = "odiglet"
+	OdigletAppLabelValue          = OdigletDaemonSetName
+	OdigletServiceAccountName     = OdigletDaemonSetName
+	OdigletRoleName               = OdigletDaemonSetName
+	OdigletRoleBindingName        = OdigletDaemonSetName
+	OdigletClusterRoleName        = OdigletDaemonSetName
+	OdigletClusterRoleBindingName = OdigletDaemonSetName
+	OdigletContainerName          = "odiglet"
+	OdigletImageName              = "keyval/odigos-odiglet"
+	OdigletEnterpriseImageName    = "keyval/odigos-enterprise-odiglet"
 )
 
 func NewOdigletServiceAccount(ns string) *corev1.ServiceAccount {
@@ -39,20 +43,21 @@ func NewOdigletServiceAccount(ns string) *corev1.ServiceAccount {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "odiglet",
+			Name:      OdigletServiceAccountName,
 			Namespace: ns,
 		},
 	}
 }
 
-func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
-	clusterrole := &rbacv1.ClusterRole{
+func NewOdigletRole(ns string) *rbacv1.Role {
+	return &rbacv1.Role{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "ClusterRole",
+			Kind:       "Role",
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odiglet",
+			Name:      OdigletRoleName,
+			Namespace: ns,
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -64,6 +69,45 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"collectorsgroups", "collectorsgroups/status"},
 			},
+		},
+	}
+}
+
+func NewOdigletRoleBinding(ns string) *rbacv1.RoleBinding {
+	return &rbacv1.RoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "RoleBinding",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      OdigletRoleBindingName,
+			Namespace: ns,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      OdigletServiceAccountName,
+				Namespace: ns,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "Role",
+			Name:     OdigletRoleName,
+		},
+	}
+}
+
+func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
+	clusterrole := &rbacv1.ClusterRole{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ClusterRole",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: OdigletClusterRoleName,
+		},
+		Rules: []rbacv1.PolicyRule{
 			{
 				Verbs: []string{
 					"get",
@@ -125,15 +169,6 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 			{
 				Verbs: []string{
 					"get",
-				},
-				APIGroups: []string{"apps"},
-				Resources: []string{
-					"deployments/finalizers",
-				},
-			},
-			{
-				Verbs: []string{
-					"get",
 					"list",
 					"watch",
 				},
@@ -152,15 +187,6 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 			{
 				Verbs: []string{
 					"get",
-				},
-				APIGroups: []string{"apps"},
-				Resources: []string{
-					"statefulsets/finalizers",
-				},
-			},
-			{
-				Verbs: []string{
-					"get",
 					"list",
 					"watch",
 				},
@@ -174,15 +200,6 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 				APIGroups: []string{"apps"},
 				Resources: []string{
 					"daemonsets/status",
-				},
-			},
-			{
-				Verbs: []string{
-					"get",
-				},
-				APIGroups: []string{"apps"},
-				Resources: []string{
-					"daemonsets/finalizers",
 				},
 			},
 			{
@@ -308,19 +325,19 @@ func NewOdigletClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odiglet",
+			Name: OdigletClusterRoleBindingName,
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      "odiglet",
+				Name:      OdigletServiceAccountName,
 				Namespace: ns,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "ClusterRole",
-			Name:     "odiglet",
+			Name:     OdigletClusterRoleName,
 		},
 	}
 }
@@ -338,7 +355,7 @@ func NewSCCRoleBinding(ns string) *rbacv1.RoleBinding {
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      "odiglet",
+				Name:      OdigletServiceAccountName,
 				Namespace: ns,
 			},
 			{
@@ -630,7 +647,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 						},
 					},
 					DNSPolicy:          "ClusterFirstWithHostNet",
-					ServiceAccountName: "odiglet",
+					ServiceAccountName: OdigletServiceAccountName,
 					HostNetwork:        true,
 					HostPID:            true,
 					PriorityClassName:  "system-node-critical",
@@ -712,6 +729,8 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 
 	resources := []kube.Object{
 		NewOdigletServiceAccount(a.ns),
+		NewOdigletRole(a.ns),
+		NewOdigletRoleBinding(a.ns),
 		NewOdigletClusterRole(a.config.Psp),
 		NewOdigletClusterRoleBinding(a.ns),
 	}
