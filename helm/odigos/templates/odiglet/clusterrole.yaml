@@ -7,10 +7,8 @@ rules:
       - ""
     resources:
       - configmaps
-      - namespaces
       - nodes
       - pods
-      - services
     verbs:
       - get
       - list

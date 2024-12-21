@@ -1,9 +1,7 @@
 package kube
 
 import (
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/instrumentation"
-	"k8s.io/apimachinery/pkg/labels"
 
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
@@ -48,9 +46,6 @@ func CreateManager() (ctrl.Manager, error) {
 				&corev1.Pod{}: {
 					// only watch and list pods in the current node
 					Field: fields.OneTermEqualSelector("spec.nodeName", env.Current.NodeName),
-				},
-				&corev1.Namespace{}: {
-					Label: labels.Set{consts.OdigosInstrumentationLabel: consts.InstrumentationEnabled}.AsSelector(),
 				},
 			},
 		},
