@@ -79,6 +79,10 @@ func (rc *CriClient) Connect(ctx context.Context) error {
 // GetContainerInfo retrieves the "info" field of the specified container.
 func (rc *CriClient) GetContainerInfo(ctx context.Context, containerID string) (map[string]string, error) {
 	containerID = extractContainerID(containerID)
+	if containerID == "" {
+		return nil, fmt.Errorf("invalid container ID")
+	}
+
 	if rc.client == nil {
 		return nil, fmt.Errorf("runtime client is not connected")
 	}
