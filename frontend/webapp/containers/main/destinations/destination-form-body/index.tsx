@@ -1,8 +1,8 @@
-import React, { Dispatch, SetStateAction, useMemo, useState } from 'react';
+import React, { Dispatch, SetStateAction, useEffect, useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { SignalUppercase } from '@/utils';
-import { type ConnectionStatus, TestConnection } from './test-connection';
 import { DestinationDynamicFields } from './dynamic-fields';
+import { type ConnectionStatus, TestConnection } from './test-connection';
 import { Divider, Input, MonitoringCheckboxes, NotificationNote, SectionTitle } from '@/reuseable-components';
 import { NOTIFICATION_TYPE, type DestinationInput, type DestinationTypeItem, type DynamicField } from '@/types';
 
@@ -30,11 +30,36 @@ const NotesWrapper = styled.div`
   gap: 12px;
 `;
 
-export function DestinationFormBody({ isUpdate, destination, formData, formErrors, validateForm, handleFormChange, dynamicFields, setDynamicFields }: Props) {
+export const DestinationFormBody = ({ isUpdate, destination, formData, formErrors, validateForm, handleFormChange, dynamicFields, setDynamicFields }: Props) => {
   const { supportedSignals, testConnectionSupported, displayName } = destination || {};
 
+  const [autoFilled, setAutoFilled] = useState(false);
   const [isFormDirty, setIsFormDirty] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>();
+
+  const autoFillCheckRef = useRef(false);
+
+  useEffect(() => {
+    if (!!dynamicFields.length && !autoFillCheckRef.current) {
+      autoFillCheckRef.current = true;
+      let didAutoFill = false;
+
+      for (let i = 0; i < dynamicFields.length; i++) {
+        const { required, value } = dynamicFields[i];
+
+        if (required) {
+          if (value !== undefined) {
+            didAutoFill = true;
+          } else {
+            didAutoFill = false;
+            break;
+          }
+        }
+      }
+
+      setAutoFilled(didAutoFill);
+    }
+  }, [dynamicFields, isFormDirty]);
 
   const dirtyForm = () => {
     setIsFormDirty(true);
@@ -99,11 +124,13 @@ export function DestinationFormBody({ isUpdate, destination, formData, formError
             }
           />
 
-          {testConnectionSupported && (
+          {(testConnectionSupported || autoFilled) && (
             <NotesWrapper>
-              {connectionStatus === NOTIFICATION_TYPE.ERROR && <NotificationNote type={NOTIFICATION_TYPE.ERROR} message='Connection failed. Please check your input and try again.' />}
-              {connectionStatus === NOTIFICATION_TYPE.SUCCESS && <NotificationNote type={NOTIFICATION_TYPE.SUCCESS} message='Connection succeeded.' />}
-              {!connectionStatus && <NotificationNote type={NOTIFICATION_TYPE.DEFAULT} message={`Odigos autocompleted ${displayName} connection details.`} />}
+              {testConnectionSupported && connectionStatus === NOTIFICATION_TYPE.ERROR && (
+                <NotificationNote type={NOTIFICATION_TYPE.ERROR} message='Connection failed. Please check your input and try again.' />
+              )}
+              {testConnectionSupported && connectionStatus === NOTIFICATION_TYPE.SUCCESS && <NotificationNote type={NOTIFICATION_TYPE.SUCCESS} message='Connection succeeded.' />}
+              {autoFilled && <NotificationNote type={NOTIFICATION_TYPE.DEFAULT} message={`Odigos autocompleted ${displayName} connection details.`} />}
             </NotesWrapper>
           )}
 
@@ -152,4 +179,4 @@ export function DestinationFormBody({ isUpdate, destination, formData, formError
       />
     </Container>
   );
-}
+};

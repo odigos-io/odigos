@@ -23,12 +23,20 @@ import (
 )
 
 const (
-	InstrumentorServiceName       = "instrumentor"
-	InstrumentorDeploymentName    = "odigos-instrumentor"
-	InstrumentorAppLabelValue     = "odigos-instrumentor"
-	InstrumentorContainerName     = "manager"
-	InstrumentorWebhookSecretName = "instrumentor-webhook-cert"
-	InstrumentorWebhookVolumeName = "webhook-cert"
+	InstrumentorOtelServiceName        = "instrumentor"
+	InstrumentorDeploymentName         = "odigos-instrumentor"
+	InstrumentorAppLabelValue          = InstrumentorDeploymentName
+	InstrumentorServiceName            = InstrumentorDeploymentName
+	InstrumentorServiceAccountName     = InstrumentorDeploymentName
+	InstrumentorRoleName               = InstrumentorDeploymentName
+	InstrumentorRoleBindingName        = InstrumentorDeploymentName
+	InstrumentorClusterRoleName        = InstrumentorDeploymentName
+	InstrumentorClusterRoleBindingName = InstrumentorDeploymentName
+	InstrumentorCertificateName        = InstrumentorDeploymentName
+	InstrumentorMutatingWebhookName    = "mutating-webhook-configuration"
+	InstrumentorContainerName          = "manager"
+	InstrumentorWebhookSecretName      = "instrumentor-webhook-cert"
+	InstrumentorWebhookVolumeName      = "webhook-cert"
 )
 
 func NewInstrumentorServiceAccount(ns string) *corev1.ServiceAccount {
@@ -38,7 +46,7 @@ func NewInstrumentorServiceAccount(ns string) *corev1.ServiceAccount {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      InstrumentorDeploymentName,
+			Name:      InstrumentorServiceAccountName,
 			Namespace: ns,
 		},
 	}
@@ -57,13 +65,78 @@ func NewInstrumentorLeaderElectionRoleBinding(ns string) *rbacv1.RoleBinding {
 		Subjects: []rbacv1.Subject{
 			{
 				Kind: "ServiceAccount",
-				Name: "odigos-instrumentor",
+				Name: InstrumentorServiceAccountName,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "Role",
 			Name:     "odigos-leader-election-role",
+		},
+	}
+}
+
+func NewInstrumentorRole(ns string) *rbacv1.Role {
+	return &rbacv1.Role{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Role",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      InstrumentorRoleName,
+			Namespace: ns,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups:     []string{""},
+				Resources:     []string{"configmaps"},
+				ResourceNames: []string{"odigos-config"},
+				Verbs:         []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"collectorsgroups"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"collectorsgroups/status"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{ // Needed for odigos own telemetry events reporting. Consider moving to scheduler
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"destinations"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"instrumentationrules"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+		},
+	}
+}
+
+func NewInstrumentorRoleBinding(ns string) *rbacv1.RoleBinding {
+	return &rbacv1.RoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "RoleBinding",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      InstrumentorRoleBindingName,
+			Namespace: ns,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind: "ServiceAccount",
+				Name: InstrumentorServiceAccountName,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "Role",
+			Name:     InstrumentorRoleName,
 		},
 	}
 }
@@ -75,123 +148,48 @@ func NewInstrumentorClusterRole() *rbacv1.ClusterRole {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-instrumentor",
+			Name: InstrumentorClusterRoleName,
 		},
 		Rules: []rbacv1.PolicyRule{
-			{
+			{ // Used in events reporting for own telemetry
 				APIGroups: []string{""},
 				Resources: []string{"nodes"},
 				Verbs:     []string{"list", "watch", "get"},
 			},
-			{
+			{ // Read instrumentation labels from namespaces
 				APIGroups: []string{""},
 				Resources: []string{"namespaces"},
 				Verbs:     []string{"list", "watch", "get"},
 			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"configmaps"},
-				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
-			},
-			{
+			{ // Read instrumentation labels from daemonsets and apply pod spec changes
 				APIGroups: []string{"apps"},
 				Resources: []string{"daemonsets"},
-				Verbs:     []string{"create", "get", "list", "patch", "update", "watch"},
+				Verbs:     []string{"get", "list", "watch", "update", "patch"},
 			},
-			{
-				APIGroups: []string{"apps"},
-				Resources: []string{"daemonsets/finalizers"},
-				Verbs:     []string{"update"},
-			},
-			{
-				APIGroups: []string{"apps"},
-				Resources: []string{"daemonsets/status"},
-				Verbs:     []string{"get"},
-			},
-			{
+			{ // Read instrumentation labels from deployments and apply pod spec changes
 				APIGroups: []string{"apps"},
 				Resources: []string{"deployments"},
-				Verbs:     []string{"create", "get", "list", "patch", "update", "watch"},
+				Verbs:     []string{"get", "list", "watch", "update", "patch"},
 			},
-			{
-				APIGroups: []string{"apps"},
-				Resources: []string{"deployments/finalizers"},
-				Verbs:     []string{"update"},
-			},
-			{
-				APIGroups: []string{"apps"},
-				Resources: []string{"deployments/status"},
-				Verbs:     []string{"get"},
-			},
-			{
+			{ // Read instrumentation labels from statefulsets and apply pod spec changes
 				APIGroups: []string{"apps"},
 				Resources: []string{"statefulsets"},
-				Verbs:     []string{"create", "get", "list", "patch", "update", "watch"},
+				Verbs:     []string{"get", "list", "watch", "update", "patch"},
 			},
-			{
-				APIGroups: []string{"apps"},
-				Resources: []string{"statefulsets/finalizers"},
-				Verbs:     []string{"update"},
-			},
-			{
-				APIGroups: []string{"apps"},
-				Resources: []string{"statefulsets/status"},
-				Verbs:     []string{"get"},
-			},
-			{
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"collectorsgroups"},
-				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
-			},
-			{
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"collectorsgroups/finalizers"},
-				Verbs:     []string{"update"},
-			},
-			{
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"collectorsgroups/status"},
-				Verbs:     []string{"get", "patch", "update"},
-			},
-			{
+			{ // React to runtime detection in user workloads in all namespaces
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"instrumentedapplications"},
-				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
+				Verbs:     []string{"delete", "get", "list", "watch"},
 			},
-			{
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentedapplications/finalizers"},
-				Verbs:     []string{"update"},
-			},
-			{
+			{ // Update the status of the instrumented applications after device injection
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"instrumentedapplications/status"},
 				Verbs:     []string{"get", "patch", "update"},
 			},
 			{
 				APIGroups: []string{"odigos.io"},
-				Resources: []string{"destinations"},
-				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
-			},
-			{
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"destinations/finalizers"},
-				Verbs:     []string{"update"},
-			},
-			{
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"destinations/status"},
-				Verbs:     []string{"get", "patch", "update"},
-			},
-			{
-				APIGroups: []string{"odigos.io"},
 				Resources: []string{"instrumentationconfigs"},
 				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
-			},
-			{
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentationrules"},
-				Verbs:     []string{"get", "list", "watch"},
 			},
 		},
 	}
@@ -204,19 +202,19 @@ func NewInstrumentorClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-instrumentor",
+			Name: InstrumentorClusterRoleBindingName,
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      "odigos-instrumentor",
+				Name:      InstrumentorServiceAccountName,
 				Namespace: ns,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "ClusterRole",
-			Name:     "odigos-instrumentor",
+			Name:     InstrumentorClusterRoleName,
 		},
 	}
 }
@@ -294,7 +292,7 @@ func NewInstrumentorService(ns string) *corev1.Service {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "odigos-instrumentor",
+			Name:      InstrumentorServiceName,
 			Namespace: ns,
 		},
 		Spec: corev1.ServiceSpec{
@@ -319,10 +317,10 @@ func NewMutatingWebhookConfiguration(ns string, caBundle []byte) *admissionregis
 			APIVersion: "admissionregistration.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "mutating-webhook-configuration",
+			Name: InstrumentorMutatingWebhookName,
 			Labels: map[string]string{
 				"app.kubernetes.io/name":       "pod-mutating-webhook",
-				"app.kubernetes.io/instance":   "mutating-webhook-configuration",
+				"app.kubernetes.io/instance":   InstrumentorMutatingWebhookName,
 				"app.kubernetes.io/component":  "webhook",
 				"app.kubernetes.io/created-by": "instrumentor",
 				"app.kubernetes.io/part-of":    "odigos",
@@ -333,7 +331,7 @@ func NewMutatingWebhookConfiguration(ns string, caBundle []byte) *admissionregis
 				Name: "pod-mutating-webhook.odigos.io",
 				ClientConfig: admissionregistrationv1.WebhookClientConfig{
 					Service: &admissionregistrationv1.ServiceReference{
-						Name:      "odigos-instrumentor",
+						Name:      InstrumentorServiceName,
 						Namespace: ns,
 						Path:      ptrString("/mutate--v1-pod"),
 						Port:      intPtr(9443),
@@ -359,7 +357,7 @@ func NewMutatingWebhookConfiguration(ns string, caBundle []byte) *admissionregis
 				TimeoutSeconds:     intPtr(10),
 				ObjectSelector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						"odigos.io/inject-instrumentation": "true",
+						consts.OdigosInjectInstrumentationLabel: "true",
 					},
 				},
 				AdmissionReviewVersions: []string{
@@ -425,7 +423,7 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "odigos-instrumentor",
+			Name:      InstrumentorDeploymentName,
 			Namespace: ns,
 			Labels: map[string]string{
 				"app.kubernetes.io/name": InstrumentorAppLabelValue,
@@ -459,7 +457,7 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 							Env: []corev1.EnvVar{
 								{
 									Name:  "OTEL_SERVICE_NAME",
-									Value: InstrumentorServiceName,
+									Value: InstrumentorOtelServiceName,
 								},
 								{
 									Name: "CURRENT_NS",
@@ -531,7 +529,7 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 						},
 					},
 					TerminationGracePeriodSeconds: ptrint64(10),
-					ServiceAccountName:            "odigos-instrumentor",
+					ServiceAccountName:            InstrumentorServiceAccountName,
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot: ptrbool(true),
 					},
@@ -591,6 +589,8 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 	resources := []kube.Object{
 		NewInstrumentorServiceAccount(a.ns),
 		NewInstrumentorLeaderElectionRoleBinding(a.ns),
+		NewInstrumentorRole(a.ns),
+		NewInstrumentorRoleBinding(a.ns),
 		NewInstrumentorClusterRole(),
 		NewInstrumentorClusterRoleBinding(a.ns),
 		NewInstrumentorDeployment(a.ns, a.odigosVersion, a.config.TelemetryEnabled, a.config.ImagePrefix, a.config.InstrumentorImage),
@@ -604,14 +604,14 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 		},
 			resources...)
 	} else {
-		ca, err := crypto.GenCA("odigos-instrumentor", 365)
+		ca, err := crypto.GenCA(InstrumentorCertificateName, 365)
 		if err != nil {
 			return fmt.Errorf("failed to generate CA: %w", err)
 		}
 
 		altNames := []string{
-			fmt.Sprintf("odigos-instrumentor.%s.svc", a.ns),
-			fmt.Sprintf("odigos-instrumentor.%s.svc.cluster.local", a.ns),
+			fmt.Sprintf("%s.%s.svc", InstrumentorServiceName, a.ns),
+			fmt.Sprintf("%s.%s.svc.cluster.local", InstrumentorServiceName, a.ns),
 		}
 
 		cert, err := crypto.GenerateSignedCertificate("serving-cert", nil, altNames, 365, ca)

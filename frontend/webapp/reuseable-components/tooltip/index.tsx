@@ -3,6 +3,7 @@ import Image from 'next/image';
 import ReactDOM from 'react-dom';
 import { Text } from '../text';
 import styled from 'styled-components';
+import { InfoIcon } from '@/assets';
 
 interface Position {
   top: number;
@@ -29,9 +30,17 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, withIcon, children }) =>
 
   const handleMouseEvent = (e: React.MouseEvent) => {
     const { type, clientX, clientY } = e;
+    const { innerWidth, innerHeight } = window;
 
+    let top = clientY;
+    let left = clientX;
+    const textLen = text?.length || 0;
+
+    if (top >= innerHeight / 2) top += -40;
+    if (left >= innerWidth / 2) left += -(textLen * 8);
+
+    setPopupPosition({ top, left });
     setIsHovered(type !== 'mouseleave');
-    setPopupPosition({ top: clientY, left: clientX + 24 });
   };
 
   if (!text) return <>{children}</>;
@@ -39,7 +48,7 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, withIcon, children }) =>
   return (
     <TooltipContainer onMouseEnter={handleMouseEvent} onMouseMove={handleMouseEvent} onMouseLeave={handleMouseEvent}>
       {children}
-      {withIcon && <Image src='/icons/common/info.svg' alt='info' width={16} height={16} />}
+      {withIcon && <InfoIcon />}
       {isHovered && <Popup {...popupPosition}>{text}</Popup>}
     </TooltipContainer>
   );

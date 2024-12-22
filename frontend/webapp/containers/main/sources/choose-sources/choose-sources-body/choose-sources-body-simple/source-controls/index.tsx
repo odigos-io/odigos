@@ -1,4 +1,5 @@
 import React from 'react';
+import { SearchIcon } from '@/assets';
 import styled from 'styled-components';
 import { NamespaceDropdown } from '@/components';
 import { type UseSourceFormDataResponse } from '@/hooks';
@@ -42,7 +43,7 @@ export const SourceControls: React.FC<Props> = ({
       <SectionTitle title='Choose sources' description="Apps will be automatically instrumented, and data will be sent to the relevant APM's destinations." />
 
       <FlexContainer style={{ marginTop: 24 }}>
-        <Input placeholder='Search for sources' icon='/icons/common/search.svg' value={searchText} onChange={(e) => setSearchText(e.target.value.toLowerCase())} />
+        <Input placeholder='Search for sources' icon={SearchIcon} value={searchText} onChange={(e) => setSearchText(e.target.value.toLowerCase())} />
         <NamespaceDropdown
           title=''
           value={selectedNamespace ? { value: selectedNamespace, id: selectedNamespace } : undefined}

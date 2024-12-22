@@ -51,7 +51,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	apiactions "github.com/odigos-io/odigos/api/actions/v1alpha1"
-	observabilitycontrolplanev1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 
 	"github.com/odigos-io/odigos/autoscaler/controllers"
@@ -72,7 +72,7 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(observabilitycontrolplanev1.AddToScheme(scheme))
+	utilruntime.Must(odigosv1.AddToScheme(scheme))
 	utilruntime.Must(apiactions.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
@@ -157,6 +157,36 @@ func main() {
 				&corev1.Secret{}: {
 					Field: nsSelector,
 				},
+				&odigosv1.CollectorsGroup{}: {
+					Field: nsSelector,
+				},
+				&odigosv1.Destination{}: {
+					Field: nsSelector,
+				},
+				&odigosv1.Processor{}: {
+					Field: nsSelector,
+				},
+				&apiactions.AddClusterInfo{}: {
+					Field: nsSelector,
+				},
+				&apiactions.DeleteAttribute{}: {
+					Field: nsSelector,
+				},
+				&apiactions.ErrorSampler{}: {
+					Field: nsSelector,
+				},
+				&apiactions.LatencySampler{}: {
+					Field: nsSelector,
+				},
+				&apiactions.PiiMasking{}: {
+					Field: nsSelector,
+				},
+				&apiactions.ProbabilisticSampler{}: {
+					Field: nsSelector,
+				},
+				&apiactions.RenameAttribute{}: {
+					Field: nsSelector,
+				},
 			},
 		},
 		HealthProbeBindAddress: probeAddr,
@@ -224,7 +254,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "CollectorsGroup")
 		os.Exit(1)
 	}
-	if err = (&controllers.InstrumentedApplicationReconciler{
+	if err = (&controllers.InstrumentationConfigReconciler{
 		Client:               mgr.GetClient(),
 		Scheme:               mgr.GetScheme(),
 		ImagePullSecrets:     imagePullSecrets,
@@ -232,7 +262,7 @@ func main() {
 		K8sVersion:           k8sVersion,
 		DisableNameProcessor: disableNameProcessor,
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "InstrumentedApplication")
+		setupLog.Error(err, "unable to create controller", "controller", "InstrumentationConfig")
 		os.Exit(1)
 	}
 	if err = (&controllers.SecretReconciler{

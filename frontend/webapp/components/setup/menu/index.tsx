@@ -1,6 +1,6 @@
-import Image from 'next/image';
-import { StepProps } from '@/types';
 import React, { useEffect } from 'react';
+import { CheckIcon } from '@/assets';
+import { type StepProps } from '@/types';
 import { Text } from '@/reuseable-components';
 import styled, { css } from 'styled-components';
 
@@ -69,7 +69,7 @@ const StepTitle = styled(Text)`
 
 const StepSubtitle = styled(Text)``;
 
-const SideMenu: React.FC<{ data?: StepProps[]; currentStep?: number }> = ({ data, currentStep }) => {
+export const SideMenu: React.FC<{ data?: StepProps[]; currentStep?: number }> = ({ data, currentStep }) => {
   const [stepsList, setStepsList] = React.useState<StepProps[]>([]);
   const steps: StepProps[] = data || [
     {
@@ -113,7 +113,7 @@ const SideMenu: React.FC<{ data?: StepProps[]; currentStep?: number }> = ({ data
       {stepsList.map((step, index) => (
         <Step key={index} $state={step.state}>
           <IconWrapper $state={step.state}>
-            {step.state === 'finish' && <Image src='/icons/common/check.svg' width={20} height={20} alt={''} />}
+            {step.state === 'finish' && <CheckIcon size={20} />}
             {step.state === 'active' && <Text size={12}>{step.stepNumber}</Text>}
             {step.state === 'disabled' && <Text size={12}>{step.stepNumber}</Text>}
           </IconWrapper>
@@ -131,5 +131,3 @@ const SideMenu: React.FC<{ data?: StepProps[]; currentStep?: number }> = ({ data
     </Container>
   );
 };
-
-export { SideMenu };

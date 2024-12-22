@@ -1,5 +1,6 @@
 import React from 'react';
 import { ROUTES } from '@/utils';
+import { ArrowIcon } from '@/assets';
 import { useAppStore } from '@/store';
 import styled from 'styled-components';
 import { SetupHeader } from '@/components';
@@ -34,7 +35,7 @@ export function ChooseSourcesContainer() {
           navigationButtons={[
             {
               label: 'NEXT',
-              iconSrc: '/icons/common/arrow-black.svg',
+              icon: ArrowIcon,
               onClick: () => onNext(),
               variant: 'primary',
             },

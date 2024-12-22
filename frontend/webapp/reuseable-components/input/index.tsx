@@ -1,11 +1,12 @@
-import React, { useState, forwardRef } from 'react';
-import Image from 'next/image';
+import React, { useState, forwardRef, type ChangeEvent, type KeyboardEventHandler } from 'react';
+import theme from '@/styles/theme';
 import styled, { css } from 'styled-components';
+import { EyeClosedIcon, EyeOpenIcon, SVG } from '@/assets';
 import { FieldError, FieldLabel } from '@/reuseable-components';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   title?: string;
-  icon?: string;
+  icon?: SVG;
   tooltip?: string;
   initialValue?: string;
   buttonLabel?: string;
@@ -115,16 +116,19 @@ const Button = styled.button`
 
 // Wrap Input with forwardRef to handle the ref prop
 const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ icon, buttonLabel, onButtonClick, hasError, errorMessage, title, tooltip, required, initialValue, onChange, type = 'text', name, ...props }, ref) => {
+  ({ icon: Icon, buttonLabel, onButtonClick, hasError, errorMessage, title, tooltip, required, initialValue, onChange, type = 'text', name, ...props }, ref) => {
     const isSecret = type === 'password';
     const [revealSecret, setRevealSecret] = useState(false);
     const [value, setValue] = useState<string>(initialValue || '');
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+      e.stopPropagation();
       setValue(e.target.value);
-      if (onChange) {
-        onChange(e);
-      }
+      onChange?.(e);
+    };
+
+    const handleKeyDown: KeyboardEventHandler<HTMLInputElement> = (e) => {
+      e.stopPropagation();
     };
 
     return (
@@ -134,22 +138,23 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         <InputWrapper $disabled={props.disabled} $hasError={hasError || !!errorMessage} $isActive={!!props.autoFocus}>
           {isSecret ? (
             <IconWrapperClickable onClick={() => setRevealSecret((prev) => !prev)}>
-              <Image src={revealSecret ? '/icons/common/eye-closed.svg' : '/icons/common/eye-open.svg'} alt='' width={14} height={14} />
+              {revealSecret ? <EyeClosedIcon size={14} fill={theme.text.grey} /> : <EyeOpenIcon size={14} fill={theme.text.grey} />}
             </IconWrapperClickable>
-          ) : icon ? (
+          ) : Icon ? (
             <IconWrapper>
-              <Image src={icon} alt='' width={14} height={14} />
+              <Icon size={14} fill={theme.text.grey} />
             </IconWrapper>
           ) : null}
 
           <StyledInput
-            ref={ref} // Pass ref to the StyledInput
+            ref={ref}
             data-id={name}
+            type={revealSecret ? 'text' : type}
+            $hasIcon={!!Icon || isSecret}
             name={name}
-            $hasIcon={!!icon || isSecret}
             value={value}
             onChange={handleInputChange}
-            type={revealSecret ? 'text' : type}
+            onKeyDown={handleKeyDown}
             {...props}
           />
 

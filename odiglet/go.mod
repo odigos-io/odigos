@@ -15,12 +15,13 @@ require (
 	github.com/odigos-io/odigos/opampserver v0.0.0
 	github.com/odigos-io/odigos/procdiscovery v0.0.0
 	github.com/odigos-io/opentelemetry-zap-bridge v0.0.5
-	github.com/odigos-io/runtime-detector v0.0.4
+	github.com/odigos-io/runtime-detector v0.0.5
 	github.com/stretchr/testify v1.10.0
 	go.opentelemetry.io/auto v0.19.0-alpha
 	go.opentelemetry.io/otel v1.33.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.33.0
 	go.uber.org/zap v1.27.0
+	golang.org/x/sync v0.10.0
 	google.golang.org/grpc v1.69.0
 	k8s.io/api v0.32.0
 	k8s.io/apimachinery v0.32.0
@@ -94,7 +95,6 @@ require (
 	golang.org/x/exp v0.0.0-20241210194714-1829a127f884 // indirect
 	golang.org/x/net v0.32.0 // indirect
 	golang.org/x/oauth2 v0.24.0 // indirect
-	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/term v0.27.0 // indirect
 	golang.org/x/text v0.21.0 // indirect

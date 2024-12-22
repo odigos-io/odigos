@@ -2,10 +2,11 @@ package destination_recognition
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 	k8s "k8s.io/api/core/v1"
-	"strings"
 )
 
 type JaegerDestinationFinder struct{}

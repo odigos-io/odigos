@@ -1,0 +1,52 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: odigos-scheduler
+  namespace: {{ .Release.Namespace }}
+rules:
+  - apiGroups:
+    - ""
+    resourceNames:
+    - odigos-config
+    resources:
+    - configmaps
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - odigos.io
+    resources:
+    - collectorsgroups
+    verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
+  - apiGroups:
+    - odigos.io
+    resources:
+    - collectorsgroups/status
+    verbs:
+    - get
+    - patch
+    - update
+  - apiGroups:
+    - odigos.io
+    resources:
+    - destinations
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - odigos.io
+    resources:
+    - destinations/status
+    verbs:
+    - get
+    - patch
+    - update

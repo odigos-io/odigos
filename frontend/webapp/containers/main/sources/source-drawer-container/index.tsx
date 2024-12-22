@@ -123,7 +123,7 @@ export const SourceDrawer: React.FC<Props> = () => {
     <OverviewDrawer
       title={item.reportedName || item.name}
       titleTooltip='This attribute is used to identify the name of the service (service.name) that is generating telemetry data.'
-      imageUri={getEntityIcon(OVERVIEW_ENTITY_TYPES.SOURCE)}
+      icon={getEntityIcon(OVERVIEW_ENTITY_TYPES.SOURCE)}
       isEdit={isEditing}
       isFormDirty={isFormDirty}
       onEdit={handleEdit}

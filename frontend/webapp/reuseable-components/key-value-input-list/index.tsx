@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import Image from 'next/image';
-import styled, { css } from 'styled-components';
+import React, { useState, useEffect, useRef, useMemo, type KeyboardEventHandler } from 'react';
+import theme from '@/styles/theme';
+import styled from 'styled-components';
+import { ArrowIcon, PlusIcon, TrashIcon } from '@/assets';
 import { Button, FieldError, FieldLabel, Input, Text } from '@/reuseable-components';
 
 type Row = {
@@ -110,6 +111,10 @@ export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({ initialK
     });
   };
 
+  const handleKeyDown: KeyboardEventHandler<HTMLInputElement> = (e) => {
+    e.stopPropagation();
+  };
+
   // Check if any key or value field is empty
   const isAddButtonDisabled = rows.some(({ key, value }) => key.trim() === '' || value.trim() === '');
   const isDelButtonDisabled = rows.length <= 1;
@@ -124,20 +129,30 @@ export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({ initialK
             <Input
               placeholder='Attribute name'
               value={key}
-              onChange={(e) => handleChange('key', e.target.value, idx)}
+              onChange={(e) => {
+                e.stopPropagation();
+                handleChange('key', e.target.value, idx);
+              }}
+              onKeyDown={handleKeyDown}
               hasError={!!errorMessage && (!required || (required && !key))}
               autoFocus={!value && rows.length > 1 && idx === rows.length - 1}
             />
-            <Image src='/icons/common/arrow-right.svg' alt='Arrow' width={16} height={16} />
+            <div>
+              <ArrowIcon rotate={180} fill={theme.text.darker_grey} />
+            </div>
             <Input
               placeholder='Attribute value'
               value={value}
-              onChange={(e) => handleChange('value', e.target.value, idx)}
+              onChange={(e) => {
+                e.stopPropagation();
+                handleChange('value', e.target.value, idx);
+              }}
+              onKeyDown={handleKeyDown}
               hasError={!!errorMessage && (!required || (required && !value))}
               autoFocus={false}
             />
             <DeleteButton disabled={isDelButtonDisabled} onClick={() => handleDeleteRow(idx)}>
-              <Image src='/icons/common/trash.svg' alt='Delete' width={16} height={16} />
+              <TrashIcon />
             </DeleteButton>
           </RowWrapper>
         ))}
@@ -146,7 +161,7 @@ export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({ initialK
       {!!errorMessage && <FieldError>{errorMessage}</FieldError>}
 
       <AddButton disabled={isAddButtonDisabled} variant='tertiary' onClick={handleAddRow}>
-        <Image src='/icons/common/plus.svg' alt='Add' width={16} height={16} />
+        <PlusIcon />
         <ButtonText>ADD ATTRIBUTE</ButtonText>
       </AddButton>
     </Container>

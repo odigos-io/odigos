@@ -64,8 +64,6 @@ export const ActionDrawer: React.FC<Props> = () => {
       ACTION_OPTIONS.find(({ id }) => id === 'attributes')?.items?.find(({ type }) => type === item.type) ||
       ACTION_OPTIONS.find(({ id }) => id === 'sampler')?.items?.find(({ type }) => type === item.type);
 
-    if (!found) return undefined;
-
     loadFormWithDrawerItem(selectedItem);
 
     return found;
@@ -98,7 +96,7 @@ export const ActionDrawer: React.FC<Props> = () => {
   return (
     <OverviewDrawer
       title={item.spec.actionName || item.type}
-      imageUri={getActionIcon(item.type)}
+      icon={getActionIcon(item.type)}
       isEdit={isEditing}
       isFormDirty={isFormDirty}
       onEdit={handleEdit}

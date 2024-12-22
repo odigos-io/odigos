@@ -8,6 +8,17 @@ rules:
       - ""
     resources:
       - configmaps
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
       - services
     verbs:
       - create
@@ -22,7 +33,6 @@ rules:
       - apps
     resources:
       - daemonsets
-      - deployments
     verbs:
       - create
       - delete
@@ -36,6 +46,26 @@ rules:
       - apps
     resources:
       - daemonsets/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+    verbs:
+      - create
+      - delete
+      - deletecollection
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - apps
+    resources:
       - deployments/status
     verbs:
       - get
@@ -55,6 +85,77 @@ rules:
     resources:
       - secrets
     verbs:
+      - list
+      - watch
+      - get
+  - apiGroups:
+      - odigos.io
+    resources:
+      - destinations
+    verbs:
       - get
       - list
       - watch
+  - apiGroups:
+      - odigos.io
+    resources:
+      - destinations/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - odigos.io
+    resources:
+      - processors
+    verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - create
+      - update
+  - apiGroups:
+      - actions.odigos.io
+    resources:
+      - addclusterinfos
+      - deleteattributes
+      - renameattributes
+      - probabilisticsamplers
+      - piimaskings
+      - latencysamplers
+      - errorsamplers
+    verbs:
+      - watch
+      - get
+      - list
+  - apiGroups:
+      - actions.odigos.io
+    resources:
+      - addclusterinfos/status
+      - deleteattributes/status
+      - renameattributes/status
+      - probabilisticsamplers/status
+      - piimaskings/status
+      - latencysamplers/status
+      - errorsamplers/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - odigos.io
+    resources:
+      - collectorsgroups
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - odigos.io
+    resources:
+      - collectorsgroups/status
+    verbs:
+      - get
+      - patch
+      - update

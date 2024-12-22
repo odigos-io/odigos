@@ -1,17 +1,17 @@
-import Image from 'next/image';
+import React, { useState, type ChangeEvent, type KeyboardEvent, type FC } from 'react';
+import { SVG } from '@/assets';
 import { Text } from '../text';
 import styled from 'styled-components';
-import React, { useState, ChangeEvent, KeyboardEvent, FC } from 'react';
 
 export interface Option {
   id: string;
   label: string;
   description?: string;
-  icon?: string;
+  icon?: SVG;
   items?: Option[]; // For handling a list of items
 }
 
-interface AutocompleteInputProps {
+interface Props {
   options: Option[];
   placeholder?: string;
   selectedOption?: Option;
@@ -34,14 +34,17 @@ const filterOptions = (optionsList: Option[], input: string): Option[] => {
   }, []);
 };
 
-const AutocompleteInput: FC<AutocompleteInputProps> = ({ placeholder = 'Type to search...', options, selectedOption, onOptionSelect, style, disabled }) => {
+export const AutocompleteInput: FC<Props> = ({ placeholder = 'Type to search...', options, selectedOption, onOptionSelect, style, disabled }) => {
   const [query, setQuery] = useState(selectedOption?.label || '');
-  const [icon, setIcon] = useState(selectedOption?.icon || '');
   const [filteredOptions, setFilteredOptions] = useState<Option[]>(filterOptions(options, ''));
   const [showOptions, setShowOptions] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
 
+  const Icon = selectedOption?.icon;
+
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+
     const input = e.target.value;
     const filtered = filterOptions(options, input);
     const matched = filtered.length === 1 && filtered[0].label === input ? filtered[0] : undefined;
@@ -53,7 +56,6 @@ const AutocompleteInput: FC<AutocompleteInputProps> = ({ placeholder = 'Type to 
 
   const handleOptionClick = (option?: Option) => {
     if (!!option) setQuery(option.label);
-    setIcon(option?.icon || '');
     setShowOptions(!option);
     onOptionSelect?.(option);
   };
@@ -69,8 +71,11 @@ const AutocompleteInput: FC<AutocompleteInputProps> = ({ placeholder = 'Type to 
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+
     // Flatten the options to handle keyboard navigation - TODO: Refactor this
     return;
+
     const flatOptions = flattenOptions(filteredOptions);
     if (e.key === 'ArrowDown' && activeIndex < flatOptions.length - 1) {
       setActiveIndex(activeIndex + 1);
@@ -84,7 +89,7 @@ const AutocompleteInput: FC<AutocompleteInputProps> = ({ placeholder = 'Type to 
   return (
     <AutocompleteContainer style={style}>
       <InputWrapper>
-        {icon && <Icon src={icon} />}
+        {Icon && <Icon />}
         <StyledInput
           type='text'
           value={query}
@@ -117,10 +122,11 @@ interface OptionItemProps {
 
 const OptionItem: FC<OptionItemProps> = ({ option, isActive, renderIcon = true, onClick }) => {
   const hasSubItems = !!option.items && option.items.length > 0;
+  const Icon = option.icon;
 
   return (
     <OptionItemContainer data-id={`option-${option.id}`} $isActive={isActive} $isList={hasSubItems} onMouseDown={() => (hasSubItems ? null : onClick(option))}>
-      {option.icon && renderIcon && <Icon src={option.icon} alt={option.label} />}
+      {Icon && renderIcon && <Icon />}
 
       <OptionContent>
         <OptionLabelWrapper>
@@ -142,12 +148,6 @@ const OptionItem: FC<OptionItemProps> = ({ option, isActive, renderIcon = true, 
     </OptionItemContainer>
   );
 };
-
-const Icon = ({ src, alt = '' }: { src: string; alt?: string }) => {
-  return <Image width={16} height={16} src={src} alt={alt} />;
-};
-
-export { AutocompleteInput };
 
 /** Styled Components */
 

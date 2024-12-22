@@ -22,7 +22,6 @@ export const useSSE = () => {
   const { refetch: refetchComputePlatform } = useComputePlatform();
 
   const retryCount = useRef(0);
-  const eventBuffer = useRef({});
   const maxRetries = 10;
 
   useEffect(() => {
@@ -43,17 +42,9 @@ export const useSSE = () => {
 
         notification.type = modifyType(notification);
 
-        // Check if the event is already in the buffer
-        if (eventBuffer.current[key] && eventBuffer.current[key].id > Date.now() - 2000) {
-          eventBuffer.current[key] = notification;
-        } else {
-          // Add a new event to the buffer
-          eventBuffer.current[key] = notification;
-
-          // Dispatch the notification to the store
-          addNotification(notification);
-          refetchComputePlatform();
-        }
+        // Dispatch the notification to the store
+        addNotification(notification);
+        refetchComputePlatform();
 
         // Reset retry count on successful connection
         retryCount.current = 0;
