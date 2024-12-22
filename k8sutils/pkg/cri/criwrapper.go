@@ -40,7 +40,7 @@ func detectRuntimeSocket() string {
 }
 
 // Connect attempts to establish a connection to a CRI runtime.
-func (rc *CriClient) Connect() error {
+func (rc *CriClient) Connect(ctx context.Context) error {
 	var err error
 
 	endpoint := detectRuntimeSocket()
@@ -63,7 +63,7 @@ func (rc *CriClient) Connect() error {
 	rc.client = criapi.NewRuntimeServiceClient(rc.conn)
 
 	// Validate the connection by invoking a lightweight method
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
+	ctx, cancel := context.WithTimeout(ctx, time.Second*2)
 	defer cancel()
 
 	_, err = rc.client.Version(ctx, &criapi.VersionRequest{})

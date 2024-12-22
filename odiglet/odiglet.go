@@ -18,7 +18,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime"
+	controllerruntime "sigs.k8s.io/controller-runtime"
 )
 
 type Odiglet struct {
@@ -86,7 +86,7 @@ func New(deviceInjectionCallbacks instrumentation.OtelSdksLsf, factories map[com
 func (o *Odiglet) Run(ctx context.Context) {
 	g, groupCtx := errgroup.WithContext(ctx)
 
-	if err := o.criWrapper.Connect(); err != nil {
+	if err := o.criWrapper.Connect(ctx); err != nil {
 		log.Logger.Error(err, "Failed to connect to CRI runtime")
 	}
 
