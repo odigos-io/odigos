@@ -158,10 +158,10 @@ func (rc *CriClient) Close() {
 // ExtractContainerID extracts the actual container ID from a containerID string.
 // The input format is '<type>://<container_id>'.
 // If the input is invalid, it returns an empty string.
-func extractContainerID(containerID string) string {
-	if containerID == "" || !strings.Contains(containerID, "://") {
+func extractContainerID(containerUri string) string {
+	if containerUri == "" || !strings.Contains(containerUri, "://") {
 		return ""
 	}
-	parts := strings.SplitN(containerID, "://", 2)
+	parts := strings.SplitN(containerUri, "://", 2)
 	return parts[1]
 }
