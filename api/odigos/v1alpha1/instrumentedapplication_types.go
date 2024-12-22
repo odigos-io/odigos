@@ -53,15 +53,15 @@ const (
 
 // +kubebuilder:object:generate=true
 type RuntimeDetailsByContainer struct {
-	ContainerName         string                     `json:"containerName"`
-	Language              common.ProgrammingLanguage `json:"language"`
-	RuntimeVersion        string                     `json:"runtimeVersion,omitempty"`
-	EnvVars               []EnvVar                   `json:"envVars,omitempty"`
-	OtherAgent            *OtherAgent                `json:"otherAgent,omitempty"`
-	LibCType              *common.LibCType           `json:"libCType,omitempty"`
-	CriErrorMessage       *string                    `json:"criErrorMessage,omitempty"`
-	EnvVarsFromDockerFile []EnvVar                   `json:"envVarsFromDockerFile,omitempty"`
-	RuntimeUpdateState    *ProcessingState           `json:"runtimeUpdateState,omitempty"` // Tracks whether the new runtime detection process has been executed. If empty, the process has not been executed.
+	ContainerName           string                     `json:"containerName"`
+	Language                common.ProgrammingLanguage `json:"language"`
+	RuntimeVersion          string                     `json:"runtimeVersion,omitempty"`
+	EnvVars                 []EnvVar                   `json:"envVars,omitempty"`
+	OtherAgent              *OtherAgent                `json:"otherAgent,omitempty"`
+	LibCType                *common.LibCType           `json:"libCType,omitempty"`
+	CriErrorMessage         *string                    `json:"criErrorMessage,omitempty"`
+	EnvFromContainerRuntime []EnvVar                   `json:"envFromContainerRuntime,omitempty"`
+	RuntimeUpdateState      *ProcessingState           `json:"runtimeUpdateState,omitempty"` // Tracks whether the new runtime detection process has been executed. If empty, the process has not been executed.
 }
 
 // +kubebuilder:object:generate=true

@@ -1232,8 +1232,8 @@ func (in *RuntimeDetailsByContainer) DeepCopyInto(out *RuntimeDetailsByContainer
 		*out = new(string)
 		**out = **in
 	}
-	if in.EnvVarsFromDockerFile != nil {
-		in, out := &in.EnvVarsFromDockerFile, &out.EnvVarsFromDockerFile
+	if in.EnvFromContainerRuntime != nil {
+		in, out := &in.EnvFromContainerRuntime, &out.EnvFromContainerRuntime
 		*out = make([]EnvVar, len(*in))
 		copy(*out, *in)
 	}

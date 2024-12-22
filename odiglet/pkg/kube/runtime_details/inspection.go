@@ -169,7 +169,7 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, ignoredContainers
 			}
 
 			if criClient != nil { // CriClient passed as nil in cases that will be deprecated in the future [InstrumentedApplication]
-				updateRuntimeDetailsWithDockerFileEnvs(ctx, *criClient, pod, container, programLanguageDetails, &resultsMap)
+				updateRuntimeDetailsWithContainerRuntimeEnvs(ctx, *criClient, pod, container, programLanguageDetails, &resultsMap)
 			}
 
 		}
@@ -183,9 +183,9 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, ignoredContainers
 	return results, nil
 }
 
-// updateRuntimeDetailsWithDockerFileEnvs checks if relevant environment variables are set in the Dockerfile
+// updateRuntimeDetailsWithContainerRuntimeEnvs checks if relevant environment variables are set in the Runtime
 // and updates the RuntimeDetailsByContainer accordingly.
-func updateRuntimeDetailsWithDockerFileEnvs(ctx context.Context, criClient criwrapper.CriClient, pod corev1.Pod, container corev1.Container,
+func updateRuntimeDetailsWithContainerRuntimeEnvs(ctx context.Context, criClient criwrapper.CriClient, pod corev1.Pod, container corev1.Container,
 	programLanguageDetails common.ProgramLanguageDetails, resultsMap *map[string]odigosv1.RuntimeDetailsByContainer) {
 	// Retrieve environment variable names for the specified language
 	envVarNames, exists := envOverwrite.EnvVarsForLanguage[programLanguageDetails.Language]
@@ -194,17 +194,17 @@ func updateRuntimeDetailsWithDockerFileEnvs(ctx context.Context, criClient criwr
 	}
 
 	// Verify if environment variables already exist in the container manifest.
-	// If they exist, there's no need to fetch them from the Dockerfile, and we will just append our additions in the webhook.
+	// If they exist, there's no need to fetch them from the Container Runtime, and we will just append our additions in the webhook.
 	if envsExistsInManifest := checkEnvVarsInContainerManifest(container, envVarNames); envsExistsInManifest {
 		return
 	}
 
-	// Environment variables do not exist in the manifest; fetch them from the container's Dockerfile
-	fetchAndSetEnvVarsFromDockerfile(ctx, criClient, pod, container, envVarNames, resultsMap)
+	// Environment variables do not exist in the manifest; fetch them from the container's Runtime
+	fetchAndSetEnvFromContainerRuntime(ctx, criClient, pod, container, envVarNames, resultsMap)
 }
 
-// fetchAndSetEnvVarsFromDockerfile retrieves environment variables from the container's Dockerfile and updates the runtime details.
-func fetchAndSetEnvVarsFromDockerfile(ctx context.Context, criClient criwrapper.CriClient, pod corev1.Pod, container corev1.Container,
+// fetchAndSetEnvFromContainerRuntime retrieves environment variables from the container's runtime and updates the runtime details.
+func fetchAndSetEnvFromContainerRuntime(ctx context.Context, criClient criwrapper.CriClient, pod corev1.Pod, container corev1.Container,
 	envVarKeys []string, resultsMap *map[string]odigosv1.RuntimeDetailsByContainer) {
 	containerID := getContainerID(pod.Status.ContainerStatuses, container.Name)
 	if containerID == "" {
@@ -225,7 +225,7 @@ func fetchAndSetEnvVarsFromDockerfile(ctx context.Context, criClient criwrapper.
 		state = odigosv1.ProcessingStateFailed
 	} else {
 		state = odigosv1.ProcessingStateSucceeded
-		runtimeDetailsByContainer.EnvVarsFromDockerFile = envVars
+		runtimeDetailsByContainer.EnvFromContainerRuntime = envVars
 	}
 
 	runtimeDetailsByContainer.RuntimeUpdateState = &state

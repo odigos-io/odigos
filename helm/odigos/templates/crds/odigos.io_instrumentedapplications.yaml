@@ -92,7 +92,7 @@ spec:
                       type: string
                     criErrorMessage:
                       type: string
-                    envVars:
+                    envFromContainerRuntime:
                       items:
                         properties:
                           name:
@@ -104,7 +104,7 @@ spec:
                         - value
                         type: object
                       type: array
-                    envVarsFromDockerFile:
+                    envVars:
                       items:
                         properties:
                           name:
@@ -139,8 +139,6 @@ spec:
                           type: string
                       type: object
                     runtimeUpdateState:
-                      description: Tracks whether the new runtime detection process
-                        has been executed. If empty, the process has not been executed.
                       type: string
                     runtimeVersion:
                       type: string

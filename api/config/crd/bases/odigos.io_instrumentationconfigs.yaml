@@ -432,7 +432,7 @@ spec:
                       type: string
                     criErrorMessage:
                       type: string
-                    envVars:
+                    envFromContainerRuntime:
                       items:
                         properties:
                           name:
@@ -444,7 +444,7 @@ spec:
                         - value
                         type: object
                       type: array
-                    envVarsFromDockerFile:
+                    envVars:
                       items:
                         properties:
                           name:

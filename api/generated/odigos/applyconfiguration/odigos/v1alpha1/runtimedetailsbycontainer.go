@@ -25,15 +25,15 @@ import (
 // RuntimeDetailsByContainerApplyConfiguration represents a declarative configuration of the RuntimeDetailsByContainer type for use
 // with apply.
 type RuntimeDetailsByContainerApplyConfiguration struct {
-	ContainerName         *string                         `json:"containerName,omitempty"`
-	Language              *common.ProgrammingLanguage     `json:"language,omitempty"`
-	RuntimeVersion        *string                         `json:"runtimeVersion,omitempty"`
-	EnvVars               []EnvVarApplyConfiguration      `json:"envVars,omitempty"`
-	OtherAgent            *OtherAgentApplyConfiguration   `json:"otherAgent,omitempty"`
-	LibCType              *common.LibCType                `json:"libCType,omitempty"`
-	CriErrorMessage       *string                         `json:"criErrorMessage,omitempty"`
-	EnvVarsFromDockerFile []EnvVarApplyConfiguration      `json:"envVarsFromDockerFile,omitempty"`
-	RuntimeUpdateState    *odigosv1alpha1.ProcessingState `json:"runtimeUpdateState,omitempty"`
+	ContainerName           *string                         `json:"containerName,omitempty"`
+	Language                *common.ProgrammingLanguage     `json:"language,omitempty"`
+	RuntimeVersion          *string                         `json:"runtimeVersion,omitempty"`
+	EnvVars                 []EnvVarApplyConfiguration      `json:"envVars,omitempty"`
+	OtherAgent              *OtherAgentApplyConfiguration   `json:"otherAgent,omitempty"`
+	LibCType                *common.LibCType                `json:"libCType,omitempty"`
+	CriErrorMessage         *string                         `json:"criErrorMessage,omitempty"`
+	EnvFromContainerRuntime []EnvVarApplyConfiguration      `json:"envFromContainerRuntime,omitempty"`
+	RuntimeUpdateState      *odigosv1alpha1.ProcessingState `json:"runtimeUpdateState,omitempty"`
 }
 
 // RuntimeDetailsByContainerApplyConfiguration constructs a declarative configuration of the RuntimeDetailsByContainer type for use with
@@ -103,15 +103,15 @@ func (b *RuntimeDetailsByContainerApplyConfiguration) WithCriErrorMessage(value 
 	return b
 }
 
-// WithEnvVarsFromDockerFile adds the given value to the EnvVarsFromDockerFile field in the declarative configuration
+// WithEnvFromContainerRuntime adds the given value to the EnvFromContainerRuntime field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the EnvVarsFromDockerFile field.
-func (b *RuntimeDetailsByContainerApplyConfiguration) WithEnvVarsFromDockerFile(values ...*EnvVarApplyConfiguration) *RuntimeDetailsByContainerApplyConfiguration {
+// If called multiple times, values provided by each call will be appended to the EnvFromContainerRuntime field.
+func (b *RuntimeDetailsByContainerApplyConfiguration) WithEnvFromContainerRuntime(values ...*EnvVarApplyConfiguration) *RuntimeDetailsByContainerApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
-			panic("nil value passed to WithEnvVarsFromDockerFile")
+			panic("nil value passed to WithEnvFromContainerRuntime")
 		}
-		b.EnvVarsFromDockerFile = append(b.EnvVarsFromDockerFile, *values[i])
+		b.EnvFromContainerRuntime = append(b.EnvFromContainerRuntime, *values[i])
 	}
 	return b
 }
