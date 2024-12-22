@@ -154,8 +154,13 @@ func (rc *CriClient) GetContainerEnvVarsList(ctx context.Context, envVarKeys []s
 // Close closes the gRPC connection.
 func (rc *CriClient) Close() {
 	if rc.conn != nil {
-		rc.Logger.V(0).Info("gRPC connection is closed")
-		rc.conn.Close()
+		rc.Logger.V(0).Info("Closing gRPC connection")
+		if err := rc.conn.Close(); err != nil {
+			rc.Logger.V(0).Error(err, "Failed to close gRPC connection")
+			// Optional: Handle the error further, such as retrying or logging to an external service.
+		} else {
+			rc.Logger.V(0).Info("gRPC connection closed successfully")
+		}
 	}
 }
 
