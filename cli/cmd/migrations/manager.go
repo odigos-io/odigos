@@ -37,15 +37,12 @@ func (m *MigrationManager) Run(fromVersion, toVersion string) error {
 		}
 
 		// Check if migration should be executed
-		if true { //semver.Compare(fromVersion, cutVersion) < 0 && semver.Compare(toVersion, cutVersion) >= 0
+		if semver.Compare(fromVersion, cutVersion) < 0 && semver.Compare(toVersion, cutVersion) >= 0 {
 			fmt.Printf("Executing migration: %s - %s\n", migration.Name(), migration.Description())
 			if err := migration.Execute(); err != nil {
 				return fmt.Errorf("migration %s failed: %w", migration.Name(), err)
 			}
 			fmt.Printf("Migration %s completed successfully.\n", migration.Name())
-		} else {
-			fmt.Printf("Skipping migration: %s (cut version: %s, from: %s, to: %s)\n",
-				migration.Name(), cutVersion, fromVersion, toVersion)
 		}
 	}
 	return nil

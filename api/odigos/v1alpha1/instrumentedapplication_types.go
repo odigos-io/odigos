@@ -46,9 +46,9 @@ type OtherAgent struct {
 type ProcessingState string
 
 const (
-	ProcessingStateFailed    ProcessingState = "Failed"
-	ProcessingStateSucceeded ProcessingState = "Succeeded"
-	ProcessingStateSkipped   ProcessingState = "Skipped"
+	ProcessingStateFailed    ProcessingState = "Failed"    // Used when CRI fails to detect the runtime
+	ProcessingStateSucceeded ProcessingState = "Succeeded" // Used when originally come from CRI
+	ProcessingStateSkipped   ProcessingState = "Skipped"   // Used when env originally come from manifest
 )
 
 // +kubebuilder:object:generate=true
