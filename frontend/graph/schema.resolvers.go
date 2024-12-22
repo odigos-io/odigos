@@ -13,12 +13,13 @@ import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
 	actionservices "github.com/odigos-io/odigos/frontend/services/actions"
-	odigos_describe "github.com/odigos-io/odigos/frontend/services/describe/odigos_describe"
-	source_describe "github.com/odigos-io/odigos/frontend/services/describe/source_describe"
+	"github.com/odigos-io/odigos/frontend/services/describe/odigos_describe"
+	"github.com/odigos-io/odigos/frontend/services/describe/source_describe"
 	testconnection "github.com/odigos-io/odigos/frontend/services/test_connection"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -732,16 +733,16 @@ func (r *queryResolver) DestinationTypeDetails(ctx context.Context, typeArg stri
 		if err != nil {
 			return nil, fmt.Errorf("error marshalling component properties: %v", err)
 		}
-
 		resp.Fields = append(resp.Fields, &model.Field{
-			Name:                field.Name,
-			DisplayName:         field.DisplayName,
-			ComponentType:       field.ComponentType,
-			ComponentProperties: string(componentPropsJSON),
-			Secret:              &field.Secret,
-			InitialValue:        &field.InitialValue,
-			RenderCondition:     field.RenderCondition,
-			HideFromReadData:    field.HideFromReadData,
+			Name:                 field.Name,
+			DisplayName:          field.DisplayName,
+			ComponentType:        field.ComponentType,
+			ComponentProperties:  string(componentPropsJSON),
+			Secret:               field.Secret,
+			InitialValue:         field.InitialValue,
+			RenderCondition:      field.RenderCondition,
+			HideFromReadData:     field.HideFromReadData,
+			CustomReadDataLabels: convertCustomReadDataLabels(field.CustomReadDataLabels),
 		})
 	}
 
@@ -840,3 +841,21 @@ type destinationResolver struct{ *Resolver }
 type k8sActualNamespaceResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//     it when you're done.
+//   - You have helper methods in this file. Move them out to keep these resolver files clean.
+func convertCustomReadDataLabels(labels []*destinations.CustomReadDataLabel) []*model.CustomReadDataLabel {
+	var result []*model.CustomReadDataLabel
+	for _, label := range labels {
+		result = append(result, &model.CustomReadDataLabel{
+			Condition: label.Condition,
+			Title:     label.Title,
+			Value:     label.Value,
+		})
+	}
+	return result
+}

@@ -259,15 +259,22 @@ type GetConfigResponse {
   installation: InstallationStatus!
 }
 
+type CustomReadDataLabel {
+  condition: Boolean!
+  title: String!
+  value: String!
+}
+
 type Field {
   name: String!
   displayName: String!
   componentType: String!
   componentProperties: String! # Using String to store JSON data as a string
-  secret: Boolean
-  initialValue: String
-  renderCondition: [String!]
+  secret: Boolean!
+  initialValue: String!
+  renderCondition: [String!]!
   hideFromReadData: Boolean!
+  customReadDataLabels: [CustomReadDataLabel!]!
 }
 
 type GetDestinationDetailsResponse {

@@ -37,6 +37,7 @@ const buildFormDynamicFields = (fields: DestinationDetailsField[]): DynamicField
         initialValue,
         secret, // deconstruct here (even if unused), to avoid passing to the DOM
         hideFromReadData, // deconstruct here (even if unused), to avoid passing to the DOM
+        customReadDataLabels, // deconstruct here (even if unused), to avoid passing to the DOM
         ...restOfField
       } = field;
 

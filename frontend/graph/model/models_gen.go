@@ -104,6 +104,12 @@ type ContainerWorkloadManifestAnalyze struct {
 	OriginalEnv   []*EntityProperty `json:"originalEnv"`
 }
 
+type CustomReadDataLabel struct {
+	Condition bool   `json:"condition"`
+	Title     string `json:"title"`
+	Value     string `json:"value"`
+}
+
 type DbQueryPayloadCollection struct {
 	MaxPayloadLength    *int  `json:"maxPayloadLength,omitempty"`
 	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
@@ -199,14 +205,15 @@ type ExportedSignalsInput struct {
 }
 
 type Field struct {
-	Name                string   `json:"name"`
-	DisplayName         string   `json:"displayName"`
-	ComponentType       string   `json:"componentType"`
-	ComponentProperties string   `json:"componentProperties"`
-	Secret              *bool    `json:"secret,omitempty"`
-	InitialValue        *string  `json:"initialValue,omitempty"`
-	RenderCondition     []string `json:"renderCondition,omitempty"`
-	HideFromReadData    bool     `json:"hideFromReadData"`
+	Name                 string                 `json:"name"`
+	DisplayName          string                 `json:"displayName"`
+	ComponentType        string                 `json:"componentType"`
+	ComponentProperties  string                 `json:"componentProperties"`
+	Secret               bool                   `json:"secret"`
+	InitialValue         string                 `json:"initialValue"`
+	RenderCondition      []string               `json:"renderCondition"`
+	HideFromReadData     bool                   `json:"hideFromReadData"`
+	CustomReadDataLabels []*CustomReadDataLabel `json:"customReadDataLabels"`
 }
 
 type FieldInput struct {

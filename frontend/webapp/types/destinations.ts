@@ -39,8 +39,13 @@ export interface DestinationDetailsField {
   componentProperties: string;
   secret: boolean;
   initialValue: string;
-  renderCondition: string[] | null;
+  renderCondition: string[];
   hideFromReadData: boolean;
+  customReadDataLabels: {
+    condition: boolean;
+    title: string;
+    value: string;
+  }[];
 }
 
 export interface DynamicField {
@@ -52,7 +57,7 @@ export interface DynamicField {
   placeholder?: string;
   required?: boolean;
   options?: DropdownOption[];
-  renderCondition: string[] | null;
+  renderCondition: string[];
 }
 
 export interface DestinationDetailsResponse {

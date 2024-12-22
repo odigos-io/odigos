@@ -22,16 +22,27 @@ const buildCard = (destination: ActualDestination, destinationTypeDetails?: Dest
     Object.entries(parsedFields).map(([key, value]) => ({ key, value }));
 
   sortedParsedFields.map(({ key, value }) => {
-    const { hideFromReadData, componentProperties, displayName, secret } = destinationTypeDetails?.fields?.find((field) => field.name === key) || {};
+    const { displayName, secret, componentProperties, hideFromReadData, customReadDataLabels } = destinationTypeDetails?.fields?.find((field) => field.name === key) || {};
 
     if (!hideFromReadData) {
       const { type } = safeJsonParse(componentProperties, { type: '' });
       const isSecret = secret || type === 'password' ? new Array(10).fill('•').join('') : '';
 
-      arr.push({
-        title: displayName || key,
-        value: isSecret || value,
-      });
+      if (!!customReadDataLabels?.length) {
+        customReadDataLabels.forEach(({ condition, ...custom }) => {
+          if (String(condition) == value) {
+            arr.push({
+              title: custom.title,
+              value: custom.value,
+            });
+          }
+        });
+      } else {
+        arr.push({
+          title: displayName || key,
+          value: isSecret || value,
+        });
+      }
     }
   });
 

@@ -26,6 +26,13 @@ spec:
       componentProps:
         required: false
         tooltip: 'Secure connection (Transport Layer Security)'
+      customReadDataLabels:
+        - condition: true
+          title: 'Connection'
+          value: 'Encrypted'
+        - condition: false
+          title: 'Connection'
+          value: 'Unencrypted'
     - name: JAEGER_CA_PEM
       displayName: Certificate Authority
       componentType: textarea

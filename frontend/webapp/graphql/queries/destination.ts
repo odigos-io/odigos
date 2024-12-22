@@ -39,6 +39,11 @@ export const GET_DESTINATION_TYPE_DETAILS = gql`
         initialValue
         renderCondition
         hideFromReadData
+        customReadDataLabels {
+          condition
+          title
+          value
+        }
       }
     }
   }

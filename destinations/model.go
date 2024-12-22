@@ -32,13 +32,20 @@ type Spec struct {
 	TestConnectionSupported bool    `yaml:"testConnectionSupported"`
 }
 
+type CustomReadDataLabel struct {
+	Condition bool   `yaml:"condition"`
+	Title     string `yaml:"title"`
+	Value     string `yaml:"value"`
+}
+
 type Field struct {
-	Name             string                 `yaml:"name"`
-	DisplayName      string                 `yaml:"displayName"`
-	ComponentType    string                 `yaml:"componentType"`
-	ComponentProps   map[string]interface{} `yaml:"componentProps"`
-	Secret           bool                   `yaml:"secret"`
-	InitialValue     string                 `yaml:"initialValue"`
-	RenderCondition  []string               `yaml:"renderCondition"`
-	HideFromReadData bool                   `yaml:"hideFromReadData"`
+	Name                 string                 `yaml:"name"`
+	DisplayName          string                 `yaml:"displayName"`
+	ComponentType        string                 `yaml:"componentType"`
+	ComponentProps       map[string]interface{} `yaml:"componentProps"`
+	Secret               bool                   `yaml:"secret"`
+	InitialValue         string                 `yaml:"initialValue"`
+	RenderCondition      []string               `yaml:"renderCondition"`
+	HideFromReadData     bool                   `yaml:"hideFromReadData"`
+	CustomReadDataLabels []*CustomReadDataLabel `yaml:"customReadDataLabels"`
 }
