@@ -231,8 +231,10 @@ func handleContainerRuntimeDetailsUpdate(
 		annotationEnvVarsForContainer := originalWorkloadEnvVar.GetContainerStoredEnvs(containerObject.Name)
 		for envKey, envValue := range annotationEnvVarsForContainer {
 			isEnvVarAlreadyExists := isEnvVarPresent(containerRuntimeDetails.EnvVarsFromDockerFile, envKey)
+			// The runtimeDetails might already contain the environment variable if Odiglet started before the migration was executed and modified the env vars.
+			// In this case, we want to overwrite the value set by Odiglet with a new one.
 			if isEnvVarAlreadyExists {
-				continue
+				containerRuntimeDetails.EnvVarsFromDockerFile = removeEnvVar(containerRuntimeDetails.EnvVarsFromDockerFile, envKey)
 			}
 
 			// Handle runtime-originated environment variables
@@ -240,10 +242,14 @@ func handleContainerRuntimeDetailsUpdate(
 				containerEnvFromManifestValue := k8scontainer.GetContainerEnvVarValue(&containerObject, envKey)
 				if containerEnvFromManifestValue != nil {
 					workloadEnvVarWithoutOdigosAdditions := cleanUpManifestValueFromOdigosAdditions(envKey, *containerEnvFromManifestValue)
-					envVarWithoutOdigosAddition := v1alpha1.EnvVar{Name: envKey, Value: workloadEnvVarWithoutOdigosAdditions}
-					containerRuntimeDetails.EnvVarsFromDockerFile = append(containerRuntimeDetails.EnvVarsFromDockerFile, envVarWithoutOdigosAddition)
-					state := v1alpha1.ProcessingStateSucceeded
-					containerRuntimeDetails.RuntimeUpdateState = &state
+
+					if workloadEnvVarWithoutOdigosAdditions != "" {
+						envVarWithoutOdigosAddition := v1alpha1.EnvVar{Name: envKey, Value: workloadEnvVarWithoutOdigosAdditions}
+						containerRuntimeDetails.EnvVarsFromDockerFile = append(containerRuntimeDetails.EnvVarsFromDockerFile, envVarWithoutOdigosAddition)
+						state := v1alpha1.ProcessingStateSucceeded
+						containerRuntimeDetails.RuntimeUpdateState = &state
+					}
+
 				}
 			}
 		}
@@ -293,4 +299,14 @@ func isEnvVarPresent(envVars []v1alpha1.EnvVar, envVarName string) bool {
 		}
 	}
 	return false
+}
+
+func removeEnvVar(envVars []v1alpha1.EnvVar, key string) []v1alpha1.EnvVar {
+	filteredEnvVars := []v1alpha1.EnvVar{}
+	for _, envVar := range envVars {
+		if envVar.Name != key {
+			filteredEnvVars = append(filteredEnvVars, envVar)
+		}
+	}
+	return filteredEnvVars
 }
