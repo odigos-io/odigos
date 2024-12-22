@@ -27,7 +27,7 @@ type Odiglet struct {
 	ebpfManager              commonInstrumentation.Manager
 	configUpdates            chan<- commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
 	deviceInjectionCallbacks instrumentation.OtelSdksLsf
-	criWrapper               *criwrapper.CriClient
+	criClient                *criwrapper.CriClient
 }
 
 const (
@@ -78,7 +78,7 @@ func New(deviceInjectionCallbacks instrumentation.OtelSdksLsf, factories map[com
 		ebpfManager:              ebpfManager,
 		configUpdates:            configUpdates,
 		deviceInjectionCallbacks: deviceInjectionCallbacks,
-		criWrapper:               &criWrapper,
+		criClient:                &criWrapper,
 	}, nil
 }
 
@@ -86,11 +86,11 @@ func New(deviceInjectionCallbacks instrumentation.OtelSdksLsf, factories map[com
 func (o *Odiglet) Run(ctx context.Context) {
 	g, groupCtx := errgroup.WithContext(ctx)
 
-	if err := o.criWrapper.Connect(ctx); err != nil {
+	if err := o.criClient.Connect(ctx); err != nil {
 		log.Logger.Error(err, "Failed to connect to CRI runtime")
 	}
 
-	defer o.criWrapper.Close()
+	defer o.criClient.Close()
 
 	// Start pprof server
 	g.Go(func() error {
