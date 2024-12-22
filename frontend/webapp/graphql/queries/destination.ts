@@ -35,8 +35,10 @@ export const GET_DESTINATION_TYPE_DETAILS = gql`
         displayName
         componentType
         componentProperties
+        secret
         initialValue
         renderCondition
+        hideFromReadData
       }
     }
   }

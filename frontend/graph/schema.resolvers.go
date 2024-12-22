@@ -738,8 +738,10 @@ func (r *queryResolver) DestinationTypeDetails(ctx context.Context, typeArg stri
 			DisplayName:         field.DisplayName,
 			ComponentType:       field.ComponentType,
 			ComponentProperties: string(componentPropsJSON),
+			Secret:              &field.Secret,
 			InitialValue:        &field.InitialValue,
 			RenderCondition:     field.RenderCondition,
+			HideFromReadData:    field.HideFromReadData,
 		})
 	}
 

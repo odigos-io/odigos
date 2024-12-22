@@ -206,6 +206,7 @@ type Field struct {
 	Secret              *bool    `json:"secret,omitempty"`
 	InitialValue        *string  `json:"initialValue,omitempty"`
 	RenderCondition     []string `json:"renderCondition,omitempty"`
+	HideFromReadData    bool     `json:"hideFromReadData"`
 }
 
 type FieldInput struct {

@@ -1,4 +1,4 @@
-import React, { useId } from 'react';
+import React from 'react';
 import styled from 'styled-components';
 import { NOTIFICATION_TYPE } from '@/types';
 import { ActiveStatus, Code, DataTab, Divider, InstrumentStatus, MonitorsIcons, NotificationNote, Text, Tooltip } from '@/reuseable-components';
@@ -47,18 +47,14 @@ const ItemTitle = styled(Text)`
 export const DataCardFields: React.FC<Props> = ({ data }) => {
   return (
     <ListContainer>
-      {data.map(({ type, title, tooltip, value, width = 'unset' }) => {
-        const id = useId();
-
-        return (
-          <ListItem key={id} $width={width}>
-            <Tooltip text={tooltip} withIcon>
-              {!!title && <ItemTitle>{title}</ItemTitle>}
-            </Tooltip>
-            {renderValue(type, value)}
-          </ListItem>
-        );
-      })}
+      {data.map(({ type, title, tooltip, value, width = 'unset' }) => (
+        <ListItem key={`data-field-${title || value}`} $width={width}>
+          <Tooltip text={tooltip} withIcon>
+            {!!title && <ItemTitle>{title}</ItemTitle>}
+          </Tooltip>
+          {renderValue(type, value)}
+        </ListItem>
+      ))}
     </ListContainer>
   );
 };

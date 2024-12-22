@@ -267,6 +267,7 @@ type Field {
   secret: Boolean
   initialValue: String
   renderCondition: [String!]
+  hideFromReadData: Boolean!
 }
 
 type GetDestinationDetailsResponse {

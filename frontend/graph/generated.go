@@ -185,6 +185,7 @@ type ComplexityRoot struct {
 		ComponentProperties func(childComplexity int) int
 		ComponentType       func(childComplexity int) int
 		DisplayName         func(childComplexity int) int
+		HideFromReadData    func(childComplexity int) int
 		InitialValue        func(childComplexity int) int
 		Name                func(childComplexity int) int
 		RenderCondition     func(childComplexity int) int
@@ -1131,6 +1132,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Field.DisplayName(childComplexity), true
+
+	case "Field.hideFromReadData":
+		if e.complexity.Field.HideFromReadData == nil {
+			break
+		}
+
+		return e.complexity.Field.HideFromReadData(childComplexity), true
 
 	case "Field.initialValue":
 		if e.complexity.Field.InitialValue == nil {
@@ -7078,6 +7086,50 @@ func (ec *executionContext) fieldContext_Field_renderCondition(_ context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _Field_hideFromReadData(ctx context.Context, field graphql.CollectedField, obj *model.Field) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Field_hideFromReadData(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HideFromReadData, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Field_hideFromReadData(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Field",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _GetConfigResponse_installation(ctx context.Context, field graphql.CollectedField, obj *model.GetConfigResponse) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_GetConfigResponse_installation(ctx, field)
 	if err != nil {
@@ -7175,6 +7227,8 @@ func (ec *executionContext) fieldContext_GetDestinationDetailsResponse_fields(_ 
 				return ec.fieldContext_Field_initialValue(ctx, field)
 			case "renderCondition":
 				return ec.fieldContext_Field_renderCondition(ctx, field)
+			case "hideFromReadData":
+				return ec.fieldContext_Field_hideFromReadData(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Field", field.Name)
 		},
@@ -19260,6 +19314,11 @@ func (ec *executionContext) _Field(ctx context.Context, sel ast.SelectionSet, ob
 			out.Values[i] = ec._Field_initialValue(ctx, field, obj)
 		case "renderCondition":
 			out.Values[i] = ec._Field_renderCondition(ctx, field, obj)
+		case "hideFromReadData":
+			out.Values[i] = ec._Field_hideFromReadData(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

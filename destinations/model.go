@@ -33,11 +33,12 @@ type Spec struct {
 }
 
 type Field struct {
-	Name            string                 `yaml:"name"`
-	DisplayName     string                 `yaml:"displayName"`
-	ComponentType   string                 `yaml:"componentType"`
-	ComponentProps  map[string]interface{} `yaml:"componentProps"`
-	Secret          bool                   `yaml:"secret"`
-	InitialValue    string                 `yaml:"initialValue"`
-	RenderCondition []string               `yaml:"renderCondition"`
+	Name             string                 `yaml:"name"`
+	DisplayName      string                 `yaml:"displayName"`
+	ComponentType    string                 `yaml:"componentType"`
+	ComponentProps   map[string]interface{} `yaml:"componentProps"`
+	Secret           bool                   `yaml:"secret"`
+	InitialValue     string                 `yaml:"initialValue"`
+	RenderCondition  []string               `yaml:"renderCondition"`
+	HideFromReadData bool                   `yaml:"hideFromReadData"`
 }

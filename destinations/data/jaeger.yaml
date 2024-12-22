@@ -35,4 +35,5 @@ spec:
         placeholder: '-----BEGIN CERTIFICATE-----'
         tooltip: 'When using TLS, provide the CA certificate to verify the server. If empty uses system root CA'
       renderCondition: ['JAEGER_TLS_ENABLED', '==', 'true']
+      hideFromReadData: true
   testConnectionSupported: true

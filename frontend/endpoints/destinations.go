@@ -109,6 +109,7 @@ type Field struct {
 	Secret              bool                   `json:"secret,omitempty"`
 	InitialValue        string                 `json:"initial_value,omitempty"`
 	RenderCondition     []string               `json:"render_condition,omitempty"`
+	HideFromReadData    bool                   `json:"hideFromReadData,omitempty"`
 }
 
 func GetDestinationTypeDetails(c *gin.Context) {
@@ -131,6 +132,7 @@ func GetDestinationTypeDetails(c *gin.Context) {
 			Secret:              field.Secret,
 			InitialValue:        field.InitialValue,
 			RenderCondition:     field.RenderCondition,
+			HideFromReadData:    field.HideFromReadData,
 		})
 	}
 

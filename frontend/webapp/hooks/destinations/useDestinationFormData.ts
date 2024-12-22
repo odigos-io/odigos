@@ -30,7 +30,15 @@ const INITIAL: DestinationInput = {
 const buildFormDynamicFields = (fields: DestinationDetailsField[]): DynamicField[] => {
   return fields
     .map((field) => {
-      const { componentType, componentProperties, displayName, initialValue, ...restOfField } = field;
+      const {
+        componentType,
+        componentProperties,
+        displayName,
+        initialValue,
+        secret, // deconstruct here (even if unused), to avoid passing to the DOM
+        hideFromReadData, // deconstruct here (even if unused), to avoid passing to the DOM
+        ...restOfField
+      } = field;
 
       switch (componentType) {
         case INPUT_TYPES.MULTI_INPUT: {
