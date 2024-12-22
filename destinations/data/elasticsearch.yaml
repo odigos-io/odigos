@@ -36,6 +36,12 @@ spec:
         type: text
         placeholder: 'log_index'
         tooltip: 'The name of the index where logs will be stored. Defaults to log_index'
+    - name: ELASTICSEARCH_BASIC_AUTH_ENABLED
+      displayName: Enable HTTP Basic Authentication
+      componentType: checkbox
+      componentProps:
+        required: false
+      initialValue: false
     - name: ELASTICSEARCH_USERNAME
       displayName: Username
       componentType: input
@@ -43,6 +49,7 @@ spec:
         type: text
         required: false
         tooltip: 'Username used for HTTP Basic Authentication'
+      renderCondition: ['ELASTICSEARCH_BASIC_AUTH_ENABLED', '==', 'true']
     - name: ELASTICSEARCH_PASSWORD
       displayName: Password
       componentType: input
@@ -51,6 +58,14 @@ spec:
         required: false
         tooltip: 'Password used for HTTP Basic Authentication'
       secret: true
+      renderCondition: ['ELASTICSEARCH_BASIC_AUTH_ENABLED', '==', 'true']
+    - name: ELASTICSEARCH_TLS_ENABLED
+      displayName: Enable TLS
+      componentType: checkbox
+      componentProps:
+        required: false
+        tooltip: 'Secure connection (Transport Layer Security)'
+      initialValue: false
     - name: ELASTICSEARCH_CA_PEM
       displayName: CA Certificate
       componentType: textarea
@@ -58,4 +73,5 @@ spec:
         type: text
         required: false
         placeholder: '-----BEGIN CERTIFICATE-----'
-        tooltip: 'When using https, provide the CA certificate to verify the server. If empty uses system root CA'
+        tooltip: 'When using TLS, provide the CA certificate to verify the server. If empty uses system root CA'
+      renderCondition: ['ELASTICSEARCH_TLS_ENABLED', '==', 'true']

@@ -187,8 +187,8 @@ type ComplexityRoot struct {
 		DisplayName         func(childComplexity int) int
 		InitialValue        func(childComplexity int) int
 		Name                func(childComplexity int) int
-		ThumbnailURL        func(childComplexity int) int
-		VideoURL            func(childComplexity int) int
+		RenderCondition     func(childComplexity int) int
+		Secret              func(childComplexity int) int
 	}
 
 	GetConfigResponse struct {
@@ -1146,19 +1146,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Field.Name(childComplexity), true
 
-	case "Field.thumbnailURL":
-		if e.complexity.Field.ThumbnailURL == nil {
+	case "Field.renderCondition":
+		if e.complexity.Field.RenderCondition == nil {
 			break
 		}
 
-		return e.complexity.Field.ThumbnailURL(childComplexity), true
+		return e.complexity.Field.RenderCondition(childComplexity), true
 
-	case "Field.videoUrl":
-		if e.complexity.Field.VideoURL == nil {
+	case "Field.secret":
+		if e.complexity.Field.Secret == nil {
 			break
 		}
 
-		return e.complexity.Field.VideoURL(childComplexity), true
+		return e.complexity.Field.Secret(childComplexity), true
 
 	case "GetConfigResponse.installation":
 		if e.complexity.GetConfigResponse.Installation == nil {
@@ -6955,8 +6955,8 @@ func (ec *executionContext) fieldContext_Field_componentProperties(_ context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _Field_videoUrl(ctx context.Context, field graphql.CollectedField, obj *model.Field) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Field_videoUrl(ctx, field)
+func (ec *executionContext) _Field_secret(ctx context.Context, field graphql.CollectedField, obj *model.Field) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Field_secret(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -6969,7 +6969,7 @@ func (ec *executionContext) _Field_videoUrl(ctx context.Context, field graphql.C
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.VideoURL, nil
+		return obj.Secret, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6978,60 +6978,19 @@ func (ec *executionContext) _Field_videoUrl(ctx context.Context, field graphql.C
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*bool)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Field_videoUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Field_secret(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Field",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Field_thumbnailURL(ctx context.Context, field graphql.CollectedField, obj *model.Field) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Field_thumbnailURL(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ThumbnailURL, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Field_thumbnailURL(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Field",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -7066,6 +7025,47 @@ func (ec *executionContext) _Field_initialValue(ctx context.Context, field graph
 }
 
 func (ec *executionContext) fieldContext_Field_initialValue(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Field",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Field_renderCondition(ctx context.Context, field graphql.CollectedField, obj *model.Field) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Field_renderCondition(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RenderCondition, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Field_renderCondition(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Field",
 		Field:      field,
@@ -7169,12 +7169,12 @@ func (ec *executionContext) fieldContext_GetDestinationDetailsResponse_fields(_ 
 				return ec.fieldContext_Field_componentType(ctx, field)
 			case "componentProperties":
 				return ec.fieldContext_Field_componentProperties(ctx, field)
-			case "videoUrl":
-				return ec.fieldContext_Field_videoUrl(ctx, field)
-			case "thumbnailURL":
-				return ec.fieldContext_Field_thumbnailURL(ctx, field)
+			case "secret":
+				return ec.fieldContext_Field_secret(ctx, field)
 			case "initialValue":
 				return ec.fieldContext_Field_initialValue(ctx, field)
+			case "renderCondition":
+				return ec.fieldContext_Field_renderCondition(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Field", field.Name)
 		},
@@ -19254,12 +19254,12 @@ func (ec *executionContext) _Field(ctx context.Context, sel ast.SelectionSet, ob
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "videoUrl":
-			out.Values[i] = ec._Field_videoUrl(ctx, field, obj)
-		case "thumbnailURL":
-			out.Values[i] = ec._Field_thumbnailURL(ctx, field, obj)
+		case "secret":
+			out.Values[i] = ec._Field_secret(ctx, field, obj)
 		case "initialValue":
 			out.Values[i] = ec._Field_initialValue(ctx, field, obj)
+		case "renderCondition":
+			out.Values[i] = ec._Field_renderCondition(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

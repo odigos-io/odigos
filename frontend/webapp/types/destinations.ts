@@ -1,4 +1,4 @@
-import type { Condition, ExportedSignals } from './common';
+import type { Condition, DropdownOption, ExportedSignals } from './common';
 
 interface ObservabilitySignalSupport {
   supported: boolean;
@@ -37,21 +37,21 @@ export interface DestinationDetailsField {
   displayName: string;
   componentType: string;
   componentProperties: string;
-  videoUrl: string | null;
-  thumbnailURL: string | null;
   initialValue: string;
-  __typename: string;
+  renderCondition: string[] | null;
 }
 
-export type DynamicField = {
+export interface DynamicField {
+  componentType: string;
   name: string;
-  componentType: 'input' | 'dropdown' | 'multi_input' | 'textarea';
-  type: string;
   title: string;
-  value?: any;
+  value: any;
+  type?: string;
+  placeholder?: string;
   required?: boolean;
-  [key: string]: any;
-};
+  renderCondition: string[] | null;
+  options?: DropdownOption[];
+}
 
 export interface DestinationDetailsResponse {
   destinationTypeDetails: {

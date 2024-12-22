@@ -106,9 +106,9 @@ type Field struct {
 	DisplayName         string                 `json:"display_name"`
 	ComponentType       string                 `json:"component_type"`
 	ComponentProperties map[string]interface{} `json:"component_properties"`
-	VideoUrl            string                 `json:"video_url,omitempty"`
-	ThumbnailURL        string                 `json:"thumbnail_url,omitempty"`
+	Secret              bool                   `json:"secret,omitempty"`
 	InitialValue        string                 `json:"initial_value,omitempty"`
+	RenderCondition     []string               `json:"render_condition,omitempty"`
 }
 
 func GetDestinationTypeDetails(c *gin.Context) {
@@ -128,9 +128,9 @@ func GetDestinationTypeDetails(c *gin.Context) {
 			DisplayName:         field.DisplayName,
 			ComponentType:       field.ComponentType,
 			ComponentProperties: field.ComponentProps,
-			VideoUrl:            field.VideoURL,
-			ThumbnailURL:        field.ThumbnailURL,
+			Secret:              field.Secret,
 			InitialValue:        field.InitialValue,
+			RenderCondition:     field.RenderCondition,
 		})
 	}
 

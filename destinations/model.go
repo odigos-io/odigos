@@ -28,17 +28,16 @@ type Spec struct {
 			Supported bool `yaml:"supported"`
 		}
 	}
-	Fields []Field `yaml:"fields"`
-	TestConnectionSupported bool `yaml:"testConnectionSupported"`
+	Fields                  []Field `yaml:"fields"`
+	TestConnectionSupported bool    `yaml:"testConnectionSupported"`
 }
 
 type Field struct {
-	Name           string                 `yaml:"name"`
-	DisplayName    string                 `yaml:"displayName"`
-	VideoURL       string                 `yaml:"videoUrl"`
-	ThumbnailURL   string                 `yaml:"thumbnailUrl"`
-	ComponentType  string                 `yaml:"componentType"`
-	ComponentProps map[string]interface{} `yaml:"componentProps"`
-	Secret         bool                   `yaml:"secret"`
-	InitialValue   string                 `yaml:"initialValue"`
+	Name            string                 `yaml:"name"`
+	DisplayName     string                 `yaml:"displayName"`
+	ComponentType   string                 `yaml:"componentType"`
+	ComponentProps  map[string]interface{} `yaml:"componentProps"`
+	Secret          bool                   `yaml:"secret"`
+	InitialValue    string                 `yaml:"initialValue"`
+	RenderCondition []string               `yaml:"renderCondition"`
 }

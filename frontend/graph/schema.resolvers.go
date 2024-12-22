@@ -739,8 +739,8 @@ func (r *queryResolver) DestinationTypeDetails(ctx context.Context, typeArg stri
 			ComponentType:       field.ComponentType,
 			ComponentProperties: string(componentPropsJSON),
 			InitialValue:        &field.InitialValue,
+			RenderCondition:     field.RenderCondition,
 		})
-
 	}
 
 	return &resp, nil

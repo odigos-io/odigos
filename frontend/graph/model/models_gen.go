@@ -199,13 +199,13 @@ type ExportedSignalsInput struct {
 }
 
 type Field struct {
-	Name                string  `json:"name"`
-	DisplayName         string  `json:"displayName"`
-	ComponentType       string  `json:"componentType"`
-	ComponentProperties string  `json:"componentProperties"`
-	VideoURL            *string `json:"videoUrl,omitempty"`
-	ThumbnailURL        *string `json:"thumbnailURL,omitempty"`
-	InitialValue        *string `json:"initialValue,omitempty"`
+	Name                string   `json:"name"`
+	DisplayName         string   `json:"displayName"`
+	ComponentType       string   `json:"componentType"`
+	ComponentProperties string   `json:"componentProperties"`
+	Secret              *bool    `json:"secret,omitempty"`
+	InitialValue        *string  `json:"initialValue,omitempty"`
+	RenderCondition     []string `json:"renderCondition,omitempty"`
 }
 
 type FieldInput struct {
