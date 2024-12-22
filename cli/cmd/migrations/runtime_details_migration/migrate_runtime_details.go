@@ -230,11 +230,11 @@ func handleContainerRuntimeDetailsUpdate(
 		// Process environment variables for the container
 		annotationEnvVarsForContainer := originalWorkloadEnvVar.GetContainerStoredEnvs(containerObject.Name)
 		for envKey, envValue := range annotationEnvVarsForContainer {
-			isEnvVarAlreadyExists := isEnvVarPresent(containerRuntimeDetails.EnvVarsFromDockerFile, envKey)
+			isEnvVarAlreadyExists := isEnvVarPresent(containerRuntimeDetails.EnvFromContainerRuntime, envKey)
 			// The runtimeDetails might already contain the environment variable if Odiglet started before the migration was executed and modified the env vars.
 			// In this case, we want to overwrite the value set by Odiglet with a new one.
 			if isEnvVarAlreadyExists {
-				containerRuntimeDetails.EnvVarsFromDockerFile = removeEnvVar(containerRuntimeDetails.EnvVarsFromDockerFile, envKey)
+				containerRuntimeDetails.EnvFromContainerRuntime = removeEnvVar(containerRuntimeDetails.EnvFromContainerRuntime, envKey)
 			}
 
 			// Handle runtime-originated environment variables
@@ -245,7 +245,7 @@ func handleContainerRuntimeDetailsUpdate(
 
 					if workloadEnvVarWithoutOdigosAdditions != "" {
 						envVarWithoutOdigosAddition := v1alpha1.EnvVar{Name: envKey, Value: workloadEnvVarWithoutOdigosAdditions}
-						containerRuntimeDetails.EnvVarsFromDockerFile = append(containerRuntimeDetails.EnvVarsFromDockerFile, envVarWithoutOdigosAddition)
+						containerRuntimeDetails.EnvFromContainerRuntime = append(containerRuntimeDetails.EnvFromContainerRuntime, envVarWithoutOdigosAddition)
 						state := v1alpha1.ProcessingStateSucceeded
 						containerRuntimeDetails.RuntimeUpdateState = &state
 					}
@@ -255,7 +255,7 @@ func handleContainerRuntimeDetailsUpdate(
 		}
 
 		// Mark container as skipped if no runtime environment variables exist
-		if len(containerRuntimeDetails.EnvVarsFromDockerFile) == 0 {
+		if len(containerRuntimeDetails.EnvFromContainerRuntime) == 0 {
 			state := v1alpha1.ProcessingStateSkipped
 			containerRuntimeDetails.RuntimeUpdateState = &state
 		}
