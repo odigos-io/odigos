@@ -26,8 +26,6 @@ import (
 // +genclient
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:metadata:labels=metadata.labels.odigos.io/config=1
-// +kubebuilder:metadata:labels=metadata.labels.odigos.io/system-object=true
 // +kubebuilder:printcolumn:name="Workload",type=string,JSONPath=`.spec.workload.name`
 // +kubebuilder:printcolumn:name="Kind",type=string,JSONPath=`.spec.workload.kind`
 // +kubebuilder:printcolumn:name="Namespace",type=string,JSONPath=`.spec.workload.namespace`
