@@ -53,15 +53,20 @@ const (
 
 // +kubebuilder:object:generate=true
 type RuntimeDetailsByContainer struct {
-	ContainerName           string                     `json:"containerName"`
-	Language                common.ProgrammingLanguage `json:"language"`
-	RuntimeVersion          string                     `json:"runtimeVersion,omitempty"`
-	EnvVars                 []EnvVar                   `json:"envVars,omitempty"`
-	OtherAgent              *OtherAgent                `json:"otherAgent,omitempty"`
-	LibCType                *common.LibCType           `json:"libCType,omitempty"`
-	CriErrorMessage         *string                    `json:"criErrorMessage,omitempty"`
-	EnvFromContainerRuntime []EnvVar                   `json:"envFromContainerRuntime,omitempty"`
-	RuntimeUpdateState      *ProcessingState           `json:"runtimeUpdateState,omitempty"` // Tracks whether the new runtime detection process has been executed. If empty, the process has not been executed.
+	ContainerName  string                     `json:"containerName"`
+	Language       common.ProgrammingLanguage `json:"language"`
+	RuntimeVersion string                     `json:"runtimeVersion,omitempty"`
+	EnvVars        []EnvVar                   `json:"envVars,omitempty"`
+	OtherAgent     *OtherAgent                `json:"otherAgent,omitempty"`
+	LibCType       *common.LibCType           `json:"libCType,omitempty"`
+
+	// These three fields are used to facilitate a new runtime detection process for the container runtime.
+	// - CriErrorMessage: Stores the error message from the CRI runtime to prevent instrumenting the container if an error exists.
+	// - EnvFromContainerRuntime: Holds the environment variables retrieved from the container runtime.
+	// - RuntimeUpdateState: A temporary variable used during migration to track whether the new runtime detection process has been executed. If empty, it indicates the process has not yet been run. This field may be removed later.
+	CriErrorMessage         *string          `json:"criErrorMessage,omitempty"`
+	EnvFromContainerRuntime []EnvVar         `json:"envFromContainerRuntime,omitempty"`
+	RuntimeUpdateState      *ProcessingState `json:"runtimeUpdateState,omitempty"` // Tracks whether the new runtime detection process has been executed. If empty, the process has not been executed.
 }
 
 // +kubebuilder:object:generate=true
