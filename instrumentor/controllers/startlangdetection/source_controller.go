@@ -16,6 +16,8 @@ import (
 
 var (
 	sourceFinalizer = "odigos.io/source-finalizer"
+	// TODO: Needed until InstrumentedApplication is removed
+	instrumentedApplicationFinalizer = "odigos.io/source-instrumentedapplication-finalizer"
 
 	workloadNameLabel      = "odigos.io/workload-name"
 	workloadNamespaceLabel = "odigos.io/workload-namespace"
@@ -47,6 +49,8 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if source.DeletionTimestamp.IsZero() {
 		if !controllerutil.ContainsFinalizer(source, sourceFinalizer) {
 			controllerutil.AddFinalizer(source, sourceFinalizer)
+			// Removed by deleteinstrumentedapplication controller
+			controllerutil.AddFinalizer(source, instrumentedApplicationFinalizer)
 
 			if source.Labels == nil {
 				source.Labels = make(map[string]string)
