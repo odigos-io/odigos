@@ -31,7 +31,7 @@ func createTracesProcessor(
 	uniqueNewAttributes := calculateUniqueNewAttributes(cfg.(*Config))
 	proc := &conditionalAttributesProcessor{logger: set.Logger, config: cfg.(*Config), uniqueNewAttributes: uniqueNewAttributes}
 
-	return processorhelper.NewTracesProcessor(
+	return processorhelper.NewTraces(
 		ctx,
 		set,
 		cfg,
