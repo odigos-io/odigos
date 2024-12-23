@@ -78,7 +78,7 @@ const HeaderNode: React.FC<Props> = ({ data }) => {
 
     return (
       <ActionsWrapper>
-        <Checkbox initialValue={sources.length === totalSelectedSources} onChange={onSelect} />
+        <Checkbox value={sources.length === totalSelectedSources} onChange={onSelect} />
       </ActionsWrapper>
     );
   };

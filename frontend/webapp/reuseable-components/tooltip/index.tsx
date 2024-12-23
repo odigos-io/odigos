@@ -1,9 +1,8 @@
-import React, { useState, PropsWithChildren } from 'react';
-import Image from 'next/image';
+import React, { useState, PropsWithChildren, useRef, MouseEvent, forwardRef } from 'react';
 import ReactDOM from 'react-dom';
-import { Text } from '../text';
-import styled from 'styled-components';
+import { Text } from '..';
 import { InfoIcon } from '@/assets';
+import styled from 'styled-components';
 
 interface Position {
   top: number;
@@ -27,17 +26,17 @@ const TooltipContainer = styled.div`
 export const Tooltip: React.FC<TooltipProps> = ({ text, withIcon, children }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [popupPosition, setPopupPosition] = useState<Position>({ top: 0, left: 0 });
+  const popupRef = useRef<HTMLDivElement>(null);
 
-  const handleMouseEvent = (e: React.MouseEvent) => {
+  const handleMouseEvent = (e: MouseEvent) => {
     const { type, clientX, clientY } = e;
     const { innerWidth, innerHeight } = window;
 
     let top = clientY;
     let left = clientX;
-    const textLen = text?.length || 0;
 
-    if (top >= innerHeight / 2) top += -40;
-    if (left >= innerWidth / 2) left += -(textLen * 8);
+    if (top >= innerHeight / 2) top += -(popupRef.current?.clientHeight || 40);
+    if (left >= innerWidth / 2) left += -(popupRef.current?.clientWidth || Math.min((text?.length || 0) * 7.5, 300));
 
     setPopupPosition({ top, left });
     setIsHovered(type !== 'mouseleave');
@@ -49,7 +48,11 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, withIcon, children }) =>
     <TooltipContainer onMouseEnter={handleMouseEvent} onMouseMove={handleMouseEvent} onMouseLeave={handleMouseEvent}>
       {children}
       {withIcon && <InfoIcon />}
-      {isHovered && <Popup {...popupPosition}>{text}</Popup>}
+      {isHovered && (
+        <Popup ref={popupRef} {...popupPosition}>
+          {text}
+        </Popup>
+      )}
     </TooltipContainer>
   );
 };
@@ -70,11 +73,11 @@ const PopupContainer = styled.div<{ $top: number; $left: number }>`
   pointer-events: none;
 `;
 
-const Popup: React.FC<PopupProps> = ({ top, left, children }) => {
+const Popup = forwardRef<HTMLDivElement, PopupProps>(({ top, left, children }, ref) => {
   return ReactDOM.createPortal(
-    <PopupContainer $top={top} $left={left}>
+    <PopupContainer ref={ref} $top={top} $left={left}>
       <Text size={12}>{children}</Text>
     </PopupContainer>,
     document.body,
   );
-};
+});
