@@ -387,6 +387,20 @@ func uninstallCRDs(ctx context.Context, cmd *cobra.Command, client *kube.Client,
 		return err
 	}
 
+	// Clear finalizers from Source objects so they can be uninstalled
+	sources, err := client.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
+	for _, i := range sources.Items {
+		source, err := client.OdigosClient.Sources(i.Namespace).Get(ctx, i.Name, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		source.SetFinalizers([]string{})
+		_, err = client.OdigosClient.Sources(i.Namespace).Update(ctx, source, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
 	for _, i := range list.Items {
 		err = client.ApiExtensions.ApiextensionsV1().CustomResourceDefinitions().Delete(ctx, i.Name, metav1.DeleteOptions{})
 		if err != nil {

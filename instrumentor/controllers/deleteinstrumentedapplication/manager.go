@@ -74,6 +74,19 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
+	err = builder.
+	ControllerManagedBy(mgr).
+	Named("deleteinstrumentedapplication-source").
+	WithEventFilter(&SourceDeletedPredicate{}).
+	For(&odigosv1.Source{}).
+	Complete(&SourceReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	})
+if err != nil {
+	return err
+}
+
 	return nil
 
 }
