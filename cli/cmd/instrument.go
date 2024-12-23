@@ -37,6 +37,8 @@ const (
 	dryRunFlag                 = "dry-run"
 	instrumentationCollOffFlag = "instrumentation-cool-off"
 	remoteFlag                 = "remote"
+	onlyDeploymentFlag         = "only-deployment"
+	onlyNamespaceFlag          = "only-namespace"
 )
 
 // instrumentCmd represents the instrument command
@@ -95,12 +97,24 @@ Odigos CLI and monitor the instrumentation status.`,
 			os.Exit(1)
 		}
 
-		fmt.Printf("About to instrument an entire cluster with Odigos\n")
+		onlyDeployment := cmd.Flag(onlyDeploymentFlag).Value.String()
+		onlyNamespace := cmd.Flag(onlyNamespaceFlag).Value.String()
+
+		if (onlyDeployment != "" && onlyNamespace == "") || (onlyDeployment == "" && onlyNamespace != "") {
+			fmt.Printf("\033[31mERROR\033[0m --only-deployment and --only-namespace must be set together\n")
+			os.Exit(1)
+		}
+
+		fmt.Printf("About to instrument with Odigos\n")
 		if dryRun {
 			fmt.Printf("Dry-Run mode ENABLED - No changes will be made\n")
 		}
-		fmt.Printf("Excluded Namespaces:   %d\n", len(excludedNs))
-		fmt.Printf("Excluded Applications: %d\n", len(excludedApps))
+		if onlyDeployment != "" {
+			fmt.Printf("Instrumenting deployment %s in namespace %s\n", onlyDeployment, onlyNamespace)
+		} else {
+			fmt.Printf("Excluded Namespaces:   %d\n", len(excludedNs))
+			fmt.Printf("Excluded Applications: %d\n", len(excludedApps))
+		}
 		fmt.Printf("%-50s", "Checking if Kubernetes cluster is reachable")
 		client := kube.GetCLIClientOrExit(cmd)
 		fmt.Printf("\u001B[32mPASS\u001B[0m\n\n")
@@ -126,12 +140,45 @@ Odigos CLI and monitor the instrumentation status.`,
 		runPreflightChecks(ctx, cmd, client, isRemote)
 
 		fmt.Printf("Starting instrumentation ...\n")
-		instrumentCluster(ctx, client, excludedNs, excludedApps, dryRun, isRemote)
+		instrumentCluster(ctx, client, excludedNs, excludedApps, dryRun, isRemote, onlyNamespace, onlyDeployment)
 	},
 }
 
-func instrumentCluster(ctx context.Context, client *kube.Client, excludedNs, excludedApps map[string]struct{}, dryRun bool, remote bool) {
+func instrumentCluster(ctx context.Context, client *kube.Client, excludedNs, excludedApps map[string]struct{}, dryRun bool, remote bool, onlyNamespace, onlyDeployment string) {
 	systemNs := sliceToMap(consts.SystemNamespaces)
+
+	if onlyDeployment != "" {
+		orchestrator, err := lifecycle.NewOrchestrator(client, ctx, remote)
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Cannot create orchestrator: %s\n", err)
+			os.Exit(1)
+		}
+
+		dep, err := client.AppsV1().Deployments(onlyNamespace).Get(ctx, onlyDeployment, metav1.GetOptions{})
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Cannot get deployment %s in namespace %s: %s\n", onlyDeployment, onlyNamespace, err)
+			os.Exit(1)
+		}
+
+		if dryRun {
+			fmt.Printf("Dry-Run mode ENABLED - No changes will be made\n")
+			return
+		}
+
+		err = orchestrator.Apply(ctx, dep, func(ctx context.Context, name string, namespace string) (*corev1.PodTemplateSpec, error) {
+			dep, err := client.AppsV1().Deployments(namespace).Get(ctx, name, metav1.GetOptions{})
+			if err != nil {
+				return nil, err
+			}
+			return &dep.Spec.Template, nil
+		})
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Failed to instrument deployment: %s\n", err)
+			os.Exit(1)
+		}
+		return
+	}
+
 	nsList, err := client.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		fmt.Printf("\033[31mERROR\033[0m Cannot list namespaces: %s\n", err)
@@ -250,6 +297,8 @@ func init() {
 	clusterCmd.Flags().Bool(dryRunFlag, false, "Dry run mode")
 	clusterCmd.Flags().Duration(instrumentationCollOffFlag, 0, "Cool-off period for instrumentation. Time format is 1h30m")
 	clusterCmd.Flags().Bool(remoteFlag, false, "Use remote in-cluster service for checking instrumentation status")
+	clusterCmd.Flags().String(onlyNamespaceFlag, "", "Namespace of the deployment to instrument (must be used with --only-deployment)")
+	clusterCmd.Flags().String(onlyDeploymentFlag, "", "Name of the deployment to instrument (must be used with --only-namespace)")
 }
 
 func sliceToMap(slice []string) map[string]struct{} {
