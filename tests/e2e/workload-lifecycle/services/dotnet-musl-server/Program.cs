@@ -13,7 +13,10 @@ namespace LegacyWebHostTest
         {
             var host = new WebHostBuilder()
                 // Configure Kestrel, etc.
-                .UseKestrel()
+                .UseKestrel(options =>
+                {
+                    options.ListenAnyIP(8080);
+                })
 
                 // Logging
                 .ConfigureLogging(logging =>
@@ -44,7 +47,7 @@ namespace LegacyWebHostTest
                 .Build();
 
             // Run
-            host.Run("http://0.0.0.0:8080");
+            host.Run();
         }
     }
 }
