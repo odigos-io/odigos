@@ -140,54 +140,20 @@ func NewUIRole(ns string) *rbacv1.Role {
 			Namespace: ns,
 		},
 		Rules: []rbacv1.PolicyRule{
-			{
-				Verbs: []string{
-					"create",
-					"get",
-					"update",
-					"watch",
-					"patch",
-				},
+			{ // Needed to get namespaces
 				APIGroups: []string{""},
-				Resources: []string{
-					"secrets",
-				},
+				Resources: []string{"configmaps"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
-			{
-				Verbs: []string{
-					"watch",
-					"list",
-					"get",
-				},
+			{ // Needed for secret values in destinations
 				APIGroups: []string{""},
-				Resources: []string{
-					"pods",
-				},
+				Resources: []string{"secrets"},
+				Verbs:     []string{"get", "list", "watch", "create", "patch", "update"},
 			},
-			{
-				Verbs: []string{
-					"get",
-					"list",
-				},
-				APIGroups: []string{"apps"},
-				Resources: []string{
-					"replicasets",
-				},
-			},
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-					"patch",
-					"delete",
-					"create",
-					"update",
-				},
+			{ // Needed for CRUD on Odigos entities
 				APIGroups: []string{"odigos.io"},
-				Resources: []string{
-					"instrumentaitonrules",
-				},
+				Resources: []string{"instrumentationrules", "destinations", "collectorsgroups"},
+				Verbs:     []string{"get", "list", "watch", "create", "patch", "update", "delete"},
 			},
 		},
 	}
@@ -228,40 +194,40 @@ func NewUIClusterRole() *rbacv1.ClusterRole {
 			Name: "odigos-ui",
 		},
 		Rules: []rbacv1.PolicyRule{
-			{
+			{ // Needed to get and instrument namespaces
 				APIGroups: []string{""},
 				Resources: []string{"namespaces"},
 				Verbs:     []string{"get", "list", "watch", "patch"},
 			},
-			{
+			{ // Needed to get "potential destinations"
 				APIGroups: []string{""},
 				Resources: []string{"services"},
-				Verbs:     []string{"list"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"configmaps"},
-				Verbs:     []string{"get", "list", "watch", "patch", "create", "delete", "update"},
-			},
-			{
+			{ // Needed for "Describe Source"
 				APIGroups: []string{""},
 				Resources: []string{"pods"},
-				Verbs:     []string{"get", "list"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
-			{
+			{ // Needed for "Describe Source", and for "Describe Odigos"
 				APIGroups: []string{"apps"},
-				Resources: []string{"deployments", "statefulsets", "daemonsets", "replicasets"},
+				Resources: []string{"replicasets"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{ // Needed to instrument applications
+				APIGroups: []string{"apps"},
+				Resources: []string{"deployments", "statefulsets", "daemonsets"},
 				Verbs:     []string{"get", "list", "watch", "patch", "update"},
 			},
-			{
+			{ // Needed for CRUD on Odigos entities
 				APIGroups: []string{"odigos.io"},
-				Resources: []string{"*"},
-				Verbs:     []string{"get", "list", "watch", "patch", "create", "delete", "update"},
+				Resources: []string{"instrumentedapplications", "instrumentationinstances", "instrumentationconfigs"},
+				Verbs:     []string{"get", "list", "watch", "create", "patch", "update", "delete"},
 			},
-			{
+			{ // Needed for CRUD on Pipeline Actions
 				APIGroups: []string{"actions.odigos.io"},
 				Resources: []string{"*"},
-				Verbs:     []string{"get", "list", "watch", "patch", "create", "delete", "update"},
+				Verbs:     []string{"get", "list", "watch", "create", "patch", "update", "delete"},
 			},
 		},
 	}
