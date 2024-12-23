@@ -181,3 +181,7 @@ func ValToAppend(envName string, sdk common.OtelSdk) (string, bool) {
 
 	return valToAppend, true
 }
+
+func GetPossibleValuesPerEnv(env string) map[common.OtelSdk]string {
+	return EnvValuesMap[env].values
+}
