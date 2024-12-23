@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - stable
+      - feature/source-crd
 
 jobs:
   build-autoscaler:
