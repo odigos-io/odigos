@@ -86,12 +86,16 @@ func (rc *CriClient) GetContainerInfo(ctx context.Context, containerID string) (
 	if rc.client == nil {
 		return nil, fmt.Errorf("runtime client is not connected")
 	}
+	// Set a timeout for the request
+	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 
 	// Call the ContainerStatus API
-	response, err := rc.client.ContainerStatus(ctx, &criapi.ContainerStatusRequest{
+	response, err := rc.client.ContainerStatus(timeoutCtx, &criapi.ContainerStatusRequest{
 		ContainerId: containerID,
 		Verbose:     true,
 	})
+
 	if err != nil {
 		return nil, err
 	}
