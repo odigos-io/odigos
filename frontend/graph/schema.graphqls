@@ -260,7 +260,7 @@ type GetConfigResponse {
 }
 
 type CustomReadDataLabel {
-  condition: Boolean!
+  condition: String!
   title: String!
   value: String!
 }

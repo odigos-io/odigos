@@ -42,7 +42,7 @@ export interface DestinationDetailsField {
   renderCondition: string[];
   hideFromReadData: boolean;
   customReadDataLabels: {
-    condition: boolean;
+    condition: string;
     title: string;
     value: string;
   }[];

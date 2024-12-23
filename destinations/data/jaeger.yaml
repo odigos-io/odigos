@@ -23,15 +23,16 @@ spec:
     - name: JAEGER_TLS_ENABLED
       displayName: Enable TLS
       componentType: checkbox
+      initialValue: false
       componentProps:
         required: false
         tooltip: 'Secure connection (Transport Layer Security)'
       customReadDataLabels:
-        - condition: true
-          title: 'Connection'
+        - condition: 'true'
+          title: 'TLS'
           value: 'Encrypted'
-        - condition: false
-          title: 'Connection'
+        - condition: 'false'
+          title: 'TLS'
           value: 'Unencrypted'
     - name: JAEGER_CA_PEM
       displayName: Certificate Authority

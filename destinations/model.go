@@ -33,7 +33,7 @@ type Spec struct {
 }
 
 type CustomReadDataLabel struct {
-	Condition bool   `yaml:"condition"`
+	Condition string `yaml:"condition"`
 	Title     string `yaml:"title"`
 	Value     string `yaml:"value"`
 }

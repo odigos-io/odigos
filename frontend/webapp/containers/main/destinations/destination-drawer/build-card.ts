@@ -30,7 +30,7 @@ const buildCard = (destination: ActualDestination, destinationTypeDetails?: Dest
 
       if (!!customReadDataLabels?.length) {
         customReadDataLabels.forEach(({ condition, ...custom }) => {
-          if (String(condition) == value) {
+          if (condition == value) {
             arr.push({
               title: custom.title,
               value: custom.value,

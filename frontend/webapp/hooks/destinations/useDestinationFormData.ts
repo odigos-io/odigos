@@ -30,16 +30,7 @@ const INITIAL: DestinationInput = {
 const buildFormDynamicFields = (fields: DestinationDetailsField[]): DynamicField[] => {
   return fields
     .map((field) => {
-      const {
-        componentType,
-        componentProperties,
-        displayName,
-        initialValue,
-        secret, // deconstruct here (even if unused), to avoid passing to the DOM
-        hideFromReadData, // deconstruct here (even if unused), to avoid passing to the DOM
-        customReadDataLabels, // deconstruct here (even if unused), to avoid passing to the DOM
-        ...restOfField
-      } = field;
+      const { name, componentType, componentProperties, displayName, initialValue, renderCondition } = field;
 
       switch (componentType) {
         case INPUT_TYPES.MULTI_INPUT: {
@@ -47,18 +38,18 @@ const buildFormDynamicFields = (fields: DestinationDetailsField[]): DynamicField
           const initialValuesJson = safeJsonParse<string[]>(initialValue, []);
 
           return {
+            name,
             componentType,
             title: displayName,
             value: initialValuesJson,
             initialValues: initialValuesJson,
-            ...restOfField,
+            renderCondition,
             ...componentPropertiesJson,
           };
         }
 
         case INPUT_TYPES.DROPDOWN: {
           const componentPropertiesJson = safeJsonParse<{ [key: string]: string }>(componentProperties, {});
-
           const options = Array.isArray(componentPropertiesJson.values)
             ? componentPropertiesJson.values.map((value) => ({
                 id: value,
@@ -70,12 +61,13 @@ const buildFormDynamicFields = (fields: DestinationDetailsField[]): DynamicField
               }));
 
           return {
+            name,
             componentType,
             title: displayName,
             value: initialValue,
             placeholder: componentPropertiesJson.placeholder || 'Select an option',
             options,
-            ...restOfField,
+            renderCondition,
             ...componentPropertiesJson,
           };
         }
@@ -84,10 +76,11 @@ const buildFormDynamicFields = (fields: DestinationDetailsField[]): DynamicField
           const componentPropertiesJson = safeJsonParse<{ [key: string]: string }>(componentProperties, {});
 
           return {
+            name,
             componentType,
             title: displayName,
             value: initialValue,
-            ...restOfField,
+            renderCondition,
             ...componentPropertiesJson,
           };
         }

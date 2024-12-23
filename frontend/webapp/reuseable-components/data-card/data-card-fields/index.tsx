@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { NOTIFICATION_TYPE } from '@/types';
 import { ActiveStatus, Code, DataTab, Divider, InstrumentStatus, MonitorsIcons, NotificationNote, Text, Tooltip } from '@/reuseable-components';
 import { capitalizeFirstLetter, getProgrammingLanguageIcon, parseJsonStringToPrettyString, safeJsonParse, WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils';
+import theme from '@/styles/theme';
 
 export enum DataCardFieldTypes {
   DIVIDER = 'divider',
@@ -72,7 +73,7 @@ const renderValue = (type: DataCardRow['type'], value: DataCardRow['value']) => 
       return <Divider length='100%' margin='0' />;
 
     case DataCardFieldTypes.MONITORS:
-      return <MonitorsIcons monitors={value?.split(', ') || []} withLabels />;
+      return <MonitorsIcons monitors={value?.split(', ') || []} withLabels color={theme.colors.secondary} />;
 
     case DataCardFieldTypes.ACTIVE_STATUS:
       return <ActiveStatus isActive={value == 'true'} size={10} withIcon withBorder />;

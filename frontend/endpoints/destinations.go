@@ -102,7 +102,7 @@ type GetDestinationDetailsResponse struct {
 }
 
 type CustomReadDataLabel struct {
-	Condition bool   `json:"condition"`
+	Condition string `json:"condition"`
 	Title     string `json:"title"`
 	Value     string `json:"value"`
 }
