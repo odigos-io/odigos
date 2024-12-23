@@ -8,6 +8,7 @@ import (
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -84,7 +85,12 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request
 		return reconcile.Result{}, err
 	}
 
-	runtimeResults, err := runtimeInspection(ctx, pods, odigosConfig.IgnoredContainers, r.CriClient)
+	var selectedPods []corev1.Pod
+	if len(pods) > 0 {
+		selectedPods = append(selectedPods, pods[0])
+	}
+
+	runtimeResults, err := runtimeInspection(ctx, selectedPods, odigosConfig.IgnoredContainers, r.CriClient)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
