@@ -55,6 +55,8 @@ spec:
               kind load docker-image dotnet6-musl:v0.0.1
               docker build -t dotnet8-glibc:v0.0.1 -f services/dotnet-http-server/net8-glibc.Dockerfile services/dotnet-http-server
               kind load docker-image dotnet8-glibc:v0.0.1
+              docker build -t dotnet6-glibc:v0.0.1 -f services/dotnet-http-server/net6-glibc.Dockerfile services/dotnet-http-server
+              kind load docker-image dotnet6-glibc:v0.0.1
     - name: Prepare destination
       try:
         - script:
