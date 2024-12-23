@@ -3,11 +3,11 @@ package deleteinstrumentedapplication
 import (
 	"context"
 
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -23,14 +23,7 @@ func reconcileWorkloadObject(ctx context.Context, kubeClient client.Client, work
 
 	if instEffectiveEnabled {
 		// Check if a Source object exists for this workload
-		// TODO: Move this to IsWorkloadInstrumentationEffectiveEnabled (creates import loop right now)
-		sourceList := &odigosv1.SourceList{}
-		selector := labels.SelectorFromSet(labels.Set{
-			"odigos.io/workload-name":      workloadObject.GetName(),
-			"odigos.io/workload-namespace": workloadObject.GetNamespace(),
-			"odigos.io/workload-kind":      workloadObject.GetObjectKind().GroupVersionKind().Kind,
-		})
-		err := kubeClient.List(ctx, sourceList, &client.ListOptions{LabelSelector: selector})
+		sourceList, err := v1alpha1.GetSourceListForWorkload(ctx, kubeClient, workloadObject)
 		if err != nil {
 			return err
 		}
