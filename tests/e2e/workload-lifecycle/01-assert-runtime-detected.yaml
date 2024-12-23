@@ -324,16 +324,33 @@ spec:
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentedApplication
 metadata:
-  name: deployment-dotnet-musl
+  name: deployment-dotnet8-musl
   namespace: default
   ownerReferences:
     - apiVersion: apps/v1
       blockOwnerDeletion: true
       controller: true
       kind: Deployment
-      name: dotnet-musl
+      name: dotnet8-musl
 spec:
   runtimeDetails:
-    - containerName: dotnet-musl
+    - containerName: dotnet8-musl
+      language: dotnet
+      libCType: musl
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  name: deployment-dotnet8-musl
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: dotnet6-musl
+spec:
+  runtimeDetails:
+    - containerName: dotnet6-musl
       language: dotnet
       libCType: musl

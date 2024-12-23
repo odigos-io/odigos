@@ -277,11 +277,25 @@ apiVersion: v1
 kind: Pod
 metadata:
   labels:
-    app: dotnet-musl
+    app: dotnet8-musl
   namespace: default
 status:
   containerStatuses:
-    - name: dotnet-musl
+    - name: dotnet8-musl
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: dotnet6-musl
+  namespace: default
+status:
+  containerStatuses:
+    - name: dotnet6-musl
       ready: true
       restartCount: 0
       started: true

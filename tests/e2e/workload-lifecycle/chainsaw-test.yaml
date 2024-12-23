@@ -49,8 +49,10 @@ spec:
               docker build -t python-min-version:v0.0.1 -f services/python-http-server/Dockerfile.python-min-version services/python-http-server
               kind load docker-image python-min-version:v0.0.1
               
-              docker build -t dotnet-musl:v0.0.1 -f services/dotnet-musl-server/Dockerfile services/dotnet-musl-server
-              kind load docker-image dotnet-musl:v0.0.1
+              docker build -t dotnet8-musl:v0.0.1 -f services/dotnet-http-server/net8-musl.Dockerfile services/dotnet-http-server
+              kind load docker-image dotnet8-musl:v0.0.1
+              docker build -t dotnet6-musl:v0.0.1 -f services/dotnet-http-server/net6-musl.Dockerfile services/dotnet-http-server
+              kind load docker-image dotnet6-musl:v0.0.1
     - name: Prepare destination
       try:
         - script:

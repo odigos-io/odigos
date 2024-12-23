@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework Condition="'$(USE_DOTNET6)' == 'true'">net6.0</TargetFramework>
     <TargetFramework Condition="'$(USE_DOTNET6)' != 'true'">net8.0</TargetFramework>
-    <RootNamespace>dotnet-musl-server</RootNamespace>
+    <RootNamespace>dotnet-http-server</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
