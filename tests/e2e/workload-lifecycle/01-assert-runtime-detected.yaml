@@ -354,3 +354,37 @@ spec:
     - containerName: dotnet6-musl
       language: dotnet
       libCType: musl
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  name: deployment-dotnet8-glibc
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: dotnet8-glibc
+spec:
+  runtimeDetails:
+    - containerName: dotnet8-glibc
+      language: dotnet
+      libCType: glibc
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  name: deployment-dotnet6-glibc
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: dotnet6-glibc
+spec:
+  runtimeDetails:
+    - containerName: dotnet6-glibc
+      language: dotnet
+      libCType: glibc

@@ -300,3 +300,31 @@ status:
       restartCount: 0
       started: true
   phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: dotnet6-glibc
+  namespace: default
+status:
+  containerStatuses:
+    - name: dotnet6-glibc
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: dotnet8-glibc
+  namespace: default
+status:
+  containerStatuses:
+    - name: dotnet8-glibc
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running

@@ -791,3 +791,79 @@ spec:
   ports:
     - protocol: TCP
       port: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dotnet8-glibc
+  namespace: default
+  labels:
+    app: dotnet8-glibc
+spec:
+  selector:
+    matchLabels:
+      app: dotnet8-glibc
+  template:
+    metadata:
+      labels:
+        app: dotnet8-glibc
+    spec:
+      containers:
+        - name: dotnet8-glibc
+          image: dotnet8-glibc:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: dotnet8-glibc
+  namespace: default
+spec:
+  selector:
+    app: dotnet8-glibc
+  ports:
+    - protocol: TCP
+      port: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dotnet6-glibc
+  namespace: default
+  labels:
+    app: dotnet6-glibc
+spec:
+  selector:
+    matchLabels:
+      app: dotnet6-glibc
+  template:
+    metadata:
+      labels:
+        app: dotnet6-glibc
+    spec:
+      containers:
+        - name: dotnet6-glibc
+          image: dotnet6-glibc:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: dotnet6-glibc
+  namespace: default
+spec:
+  selector:
+    app: dotnet6-glibc
+  ports:
+    - protocol: TCP
+      port: 8080
