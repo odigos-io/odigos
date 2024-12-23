@@ -250,7 +250,7 @@ const DropdownListItem: React.FC<{
   if (isMulti) {
     return (
       <DropdownItem className={isSelected ? 'selected' : ''}>
-        <Checkbox title={option.value} titleColor={theme.text.secondary} initialValue={isSelected} onChange={(toAdd) => (toAdd ? onSelect(option) : onDeselect?.(option))} style={{ width: '100%' }} />
+        <Checkbox title={option.value} titleColor={theme.text.secondary} value={isSelected} onChange={(toAdd) => (toAdd ? onSelect(option) : onDeselect?.(option))} style={{ width: '100%' }} />
       </DropdownItem>
     );
   }

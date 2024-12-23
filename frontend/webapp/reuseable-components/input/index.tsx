@@ -1,10 +1,10 @@
-import React, { useState, forwardRef, type ChangeEvent, type KeyboardEventHandler } from 'react';
+import React, { useState, forwardRef, type ChangeEvent, type KeyboardEventHandler, type InputHTMLAttributes } from 'react';
 import theme from '@/styles/theme';
 import styled, { css } from 'styled-components';
 import { EyeClosedIcon, EyeOpenIcon, SVG } from '@/assets';
 import { FieldError, FieldLabel } from '@/reuseable-components';
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   title?: string;
   icon?: SVG;
   tooltip?: string;
@@ -116,10 +116,10 @@ const Button = styled.button`
 
 // Wrap Input with forwardRef to handle the ref prop
 const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ icon: Icon, buttonLabel, onButtonClick, hasError, errorMessage, title, tooltip, required, initialValue, onChange, type = 'text', name, ...props }, ref) => {
+  ({ icon: Icon, buttonLabel, onButtonClick, hasError, errorMessage, title, tooltip, required, initialValue, value: v, onChange, type = 'text', name, ...props }, ref) => {
     const isSecret = type === 'password';
     const [revealSecret, setRevealSecret] = useState(false);
-    const [value, setValue] = useState<string>(initialValue || '');
+    const [value, setValue] = useState<string>(v?.toString() || initialValue || '');
 
     const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
       e.stopPropagation();
