@@ -1,4 +1,4 @@
-import { DISPLAY_TITLES, safeJsonParse } from '@/utils';
+import { compareCondition, DISPLAY_TITLES, safeJsonParse } from '@/utils';
 import { DataCardRow, DataCardFieldTypes } from '@/reuseable-components';
 import type { ActualDestination, DestinationDetailsResponse, ExportedSignals } from '@/types';
 
@@ -24,9 +24,16 @@ const buildCard = (destination: ActualDestination, destinationTypeDetails?: Dest
   sortedParsedFields.map(({ key, value }) => {
     const { displayName, secret, componentProperties, hideFromReadData, customReadDataLabels } = destinationTypeDetails?.fields?.find((field) => field.name === key) || {};
 
-    if (!hideFromReadData) {
+    const shouldHide = !!hideFromReadData?.length
+      ? compareCondition(
+          hideFromReadData,
+          (destinationTypeDetails?.fields || []).map((field) => ({ name: field.name, value: parsedFields[field.name] ?? null })),
+        )
+      : false;
+
+    if (!shouldHide) {
       const { type } = safeJsonParse(componentProperties, { type: '' });
-      const isSecret = secret || type === 'password' ? new Array(10).fill('•').join('') : '';
+      const isSecret = (secret || type === 'password') && !!value.length ? new Array(10).fill('•').join('') : '';
 
       if (!!customReadDataLabels?.length) {
         customReadDataLabels.forEach(({ condition, ...custom }) => {

@@ -115,7 +115,7 @@ type Field struct {
 	Secret               bool                   `json:"secret,omitempty"`
 	InitialValue         string                 `json:"initial_value,omitempty"`
 	RenderCondition      []string               `json:"render_condition,omitempty"`
-	HideFromReadData     bool                   `json:"hide_from_read_data,omitempty"`
+	HideFromReadData     []string               `json:"hide_from_read_data,omitempty"`
 	CustomReadDataLabels []*CustomReadDataLabel `json:"custom_read_data_labels,omitempty"`
 }
 

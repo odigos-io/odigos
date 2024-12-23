@@ -57,6 +57,7 @@ spec:
         required: false
         tooltip: 'Username used for HTTP Basic Authentication'
       renderCondition: ['ELASTICSEARCH_BASIC_AUTH_ENABLED', '==', 'true']
+      hideFromReadData: ['ELASTICSEARCH_BASIC_AUTH_ENABLED', '==', 'false']
     - name: ELASTICSEARCH_PASSWORD
       displayName: Password
       componentType: input
@@ -66,6 +67,7 @@ spec:
         tooltip: 'Password used for HTTP Basic Authentication'
       secret: true
       renderCondition: ['ELASTICSEARCH_BASIC_AUTH_ENABLED', '==', 'true']
+      hideFromReadData: ['ELASTICSEARCH_BASIC_AUTH_ENABLED', '==', 'false']
     - name: ELASTICSEARCH_TLS_ENABLED
       displayName: Enable TLS
       componentType: checkbox
@@ -89,4 +91,4 @@ spec:
         placeholder: '-----BEGIN CERTIFICATE-----'
         tooltip: 'When using TLS, provide the CA certificate to verify the server. If empty uses system root CA'
       renderCondition: ['ELASTICSEARCH_TLS_ENABLED', '==', 'true']
-      hideFromReadData: true
+      hideFromReadData: ['true']

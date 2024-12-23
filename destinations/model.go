@@ -46,6 +46,6 @@ type Field struct {
 	Secret               bool                   `yaml:"secret"`
 	InitialValue         string                 `yaml:"initialValue"`
 	RenderCondition      []string               `yaml:"renderCondition"`
-	HideFromReadData     bool                   `yaml:"hideFromReadData"`
+	HideFromReadData     []string               `yaml:"hideFromReadData"`
 	CustomReadDataLabels []*CustomReadDataLabel `yaml:"customReadDataLabels"`
 }

@@ -40,7 +40,7 @@ export interface DestinationDetailsField {
   secret: boolean;
   initialValue: string;
   renderCondition: string[];
-  hideFromReadData: boolean;
+  hideFromReadData: string[];
   customReadDataLabels: {
     condition: string;
     title: string;

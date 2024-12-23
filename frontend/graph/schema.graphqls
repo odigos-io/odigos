@@ -273,7 +273,7 @@ type Field {
   secret: Boolean!
   initialValue: String!
   renderCondition: [String!]!
-  hideFromReadData: Boolean!
+  hideFromReadData: [String!]!
   customReadDataLabels: [CustomReadDataLabel!]!
 }
 
