@@ -9,7 +9,7 @@ interface CheckboxProps {
   title?: string;
   titleColor?: React.CSSProperties['color'];
   tooltip?: string;
-  initialValue?: boolean;
+  value?: boolean;
   onChange?: (value: boolean) => void;
   disabled?: boolean;
   style?: React.CSSProperties;
@@ -36,9 +36,9 @@ const CheckboxWrapper = styled.div<{ $isChecked: boolean; $disabled?: CheckboxPr
   transition: border 0.3s, background-color 0.3s;
 `;
 
-export const Checkbox: React.FC<CheckboxProps> = ({ title, titleColor, tooltip, initialValue = false, onChange, disabled, style }) => {
-  const [isChecked, setIsChecked] = useState(initialValue);
-  useEffect(() => setIsChecked(initialValue), [initialValue]);
+export const Checkbox: React.FC<CheckboxProps> = ({ title, titleColor, tooltip, value = false, onChange, disabled, style }) => {
+  const [isChecked, setIsChecked] = useState(value);
+  useEffect(() => setIsChecked(value), [value]);
 
   const handleToggle: React.MouseEventHandler<HTMLDivElement> = (e) => {
     if (disabled) return;

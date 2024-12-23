@@ -63,12 +63,7 @@ export const SourceControls: React.FC<Props> = ({
         <ToggleWrapper>
           <Toggle title='Select all' initialValue={selectAll} onChange={onSelectAll} />
           <Toggle title='Show selected only' initialValue={showSelectedOnly} onChange={setShowSelectedOnly} />
-          <Checkbox
-            title='Future apps'
-            tooltip='Automatically instrument all future apps'
-            initialValue={!!selectedNamespace ? selectedFutureApps[selectedNamespace] : false}
-            onChange={onSelectFutureApps}
-          />
+          <Checkbox title='Future apps' tooltip='Automatically instrument all future apps' value={!!selectedNamespace ? selectedFutureApps[selectedNamespace] : false} onChange={onSelectFutureApps} />
         </ToggleWrapper>
       </FlexContainer>
 
