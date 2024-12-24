@@ -13,17 +13,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// updateTokenCmd represents the update-token command
-var updateTokenCmd = &cobra.Command{
-	Use:   "update-token",
-	Short: "Update a client's token for Odigos",
-	Long: `Update the token used for authenticating with Odigos.
-This command is useful for updating your on-prem or cloud token for an existing installation.`,
+
+var proCmd = &cobra.Command{
+	Use:   "pro",
+	Short: "operations for pro clients of Odigos",
+	Long:  `The pro command provides various operations and functionalities specifically designed for professional clients of Odigos. Use this command to access advanced features and manage your pro account.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 		ns, err := resources.GetOdigosNamespace(client, ctx)
-		if err != nil {
+		if (err != nil) {
 			fmt.Errorf("No Odigos installation found in cluster to upgrade")
 			os.Exit(1)
 		}
@@ -72,9 +71,9 @@ func updateOdigosToken(ctx context.Context, client *kube.Client, namespace strin
 }
 
 func init() {
-	rootCmd.AddCommand(updateTokenCmd)
+	rootCmd.AddCommand(proCmd)
 
 	// Flags for update-token
-	updateTokenCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")
-	updateTokenCmd.MarkFlagRequired("onprem-token")
+	proCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")
+	proCmd.MarkFlagRequired("onprem-token")
 }
