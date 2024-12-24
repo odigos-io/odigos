@@ -75,6 +75,17 @@
       "cwd": "${workspaceFolder}/cli",
       "args": ["install"],
       "buildFlags": "-tags=embed_manifests"
+    },
+    {
+      "name": "cli update",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/cli",
+      "cwd": "${workspaceFolder}/cli",
+      "args": ["update-token", "--onprem-token", "<>"], // Set the onprem-token as the third argument
+      // Note: Remember to remove or replace the onprem-token before committing your changes!
+      "buildFlags": "-tags=embed_manifests"
     }
   ]
 }
