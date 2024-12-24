@@ -42,8 +42,13 @@ This command is useful for updating your on-prem or cloud token for an existing 
 			fmt.Errorf("\033[31mERROR\033[0m Failed to update token: %s\n", err)
 			os.Exit(1)
 		}
-
+		
+		fmt.Println()
 		fmt.Printf("\u001B[32mSUCCESS:\u001B[0m Token updated successfully in namespace %s\n", ns)
+		fmt.Println()
+		fmt.Println("The new token will take effect only after the Odiglets are restarted.")
+		fmt.Println("To trigger a restart, run the following command:")
+		fmt.Println("kubectl rollout restart daemonset odiglet -n", ns)
 	},
 }
 
@@ -63,7 +68,6 @@ func updateOdigosToken(ctx context.Context, client *kube.Client, namespace strin
 		return fmt.Errorf("failed to update secret %s in namespace %s: %w", consts.OdigosProSecretName, namespace, err)
 	}
 
-	fmt.Printf("Updated secret %s in namespace %s with new %s token\n", consts.OdigosProSecretName, namespace, tokenType)
 	return nil
 }
 
