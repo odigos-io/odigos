@@ -8,6 +8,7 @@ import (
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
+	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -47,12 +48,11 @@ This command is useful for updating your on-prem or cloud token for an existing 
 }
 
 func updateOdigosToken(ctx context.Context, client *kube.Client, namespace string, tokenType, tokenValue string) error {
-	secretName := "odigos-pro"
 
 	// Retrieve the existing secret
-	secret, err := client.CoreV1().Secrets(namespace).Get(ctx, secretName, metav1.GetOptions{})
+	secret, err := client.CoreV1().Secrets(namespace).Get(ctx, consts.OdigosProSecretName, metav1.GetOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to get secret %s in namespace %s: %w", secretName, namespace, err)
+		return fmt.Errorf("failed to get secret %s in namespace %s: %w", consts.OdigosProSecretName, namespace, err)
 	}
 
 	secret.Data["odigos-onprem-token"] = []byte(tokenValue)
@@ -60,10 +60,10 @@ func updateOdigosToken(ctx context.Context, client *kube.Client, namespace strin
 	// Apply the updated secret
 	_, err = client.CoreV1().Secrets(namespace).Update(ctx, secret, metav1.UpdateOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to update secret %s in namespace %s: %w", secretName, namespace, err)
+		return fmt.Errorf("failed to update secret %s in namespace %s: %w", consts.OdigosProSecretName, namespace, err)
 	}
 
-	fmt.Printf("Updated secret %s in namespace %s with new %s token\n", secretName, namespace, tokenType)
+	fmt.Printf("Updated secret %s in namespace %s with new %s token\n", consts.OdigosProSecretName, namespace, tokenType)
 	return nil
 }
 
