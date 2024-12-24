@@ -43,14 +43,25 @@ type OtherAgent struct {
 	Name string `json:"name,omitempty"`
 }
 
+type ProcessingState string
+
+const (
+	ProcessingStateFailed    ProcessingState = "Failed"    // Used when CRI fails to detect the runtime
+	ProcessingStateSucceeded ProcessingState = "Succeeded" // Used when originally come from CRI
+	ProcessingStateSkipped   ProcessingState = "Skipped"   // Used when env originally come from manifest
+)
+
 // +kubebuilder:object:generate=true
 type RuntimeDetailsByContainer struct {
-	ContainerName  string                     `json:"containerName"`
-	Language       common.ProgrammingLanguage `json:"language"`
-	RuntimeVersion string                     `json:"runtimeVersion,omitempty"`
-	EnvVars        []EnvVar                   `json:"envVars,omitempty"`
-	OtherAgent     *OtherAgent                `json:"otherAgent,omitempty"`
-	LibCType       *common.LibCType           `json:"libCType,omitempty"`
+	ContainerName           string                     `json:"containerName"`
+	Language                common.ProgrammingLanguage `json:"language"`
+	RuntimeVersion          string                     `json:"runtimeVersion,omitempty"`
+	EnvVars                 []EnvVar                   `json:"envVars,omitempty"`
+	OtherAgent              *OtherAgent                `json:"otherAgent,omitempty"`
+	LibCType                *common.LibCType           `json:"libCType,omitempty"`
+	CriErrorMessage         *string                    `json:"criErrorMessage,omitempty"`
+	EnvFromContainerRuntime []EnvVar                   `json:"envFromContainerRuntime,omitempty"`
+	RuntimeUpdateState      *ProcessingState           `json:"runtimeUpdateState,omitempty"` // Tracks whether the new runtime detection process has been executed. If empty, the process has not been executed.
 }
 
 // +kubebuilder:object:generate=true

@@ -23,12 +23,6 @@ type InstrumentationConfig struct {
 type InstrumentationConfigStatus struct {
 	// Capture Runtime Details for the workloads that this CR applies to.
 	RuntimeDetailsByContainer []RuntimeDetailsByContainer `json:"runtimeDetailsByContainer,omitempty"`
-
-	// Runtime detection is applied on pods.
-	// Pods run a specific workload template spec, so it's important to capture it do avoid
-	// unpredictable behavior when multiple generations co-exist,
-	// and to avoid running the detection when unnecessary.
-	ObservedWorkloadGeneration int64 `json:"observedWorkloadGeneration,omitempty"`
 }
 
 // Config for the OpenTelemeetry SDKs that should be applied to a workload.

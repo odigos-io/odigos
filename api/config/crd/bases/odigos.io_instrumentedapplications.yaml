@@ -90,6 +90,20 @@ spec:
                   properties:
                     containerName:
                       type: string
+                    criErrorMessage:
+                      type: string
+                    envFromContainerRuntime:
+                      items:
+                        properties:
+                          name:
+                            type: string
+                          value:
+                            type: string
+                        required:
+                        - name
+                        - value
+                        type: object
+                      type: array
                     envVars:
                       items:
                         properties:
@@ -124,6 +138,8 @@ spec:
                         name:
                           type: string
                       type: object
+                    runtimeUpdateState:
+                      type: string
                     runtimeVersion:
                       type: string
                   required:

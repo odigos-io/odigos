@@ -12,7 +12,7 @@ import (
 // original manifest values for the env vars of a workload
 // This is specific to k8s as it assumes there is OriginalEnv per container
 type OrigWorkloadEnvValues struct {
-	origManifestValues   map[string]envOverwrite.OriginalEnv
+	origManifestValues   map[string]envOverwrite.OriginalEnv //container name -> env name -> original value
 	modifiedSinceCreated bool
 }
 
@@ -106,5 +106,18 @@ func (o *OrigWorkloadEnvValues) DeleteFromObj(obj metav1.Object) bool {
 	}
 
 	delete(currentAnnotations, consts.ManifestEnvOriginalValAnnotation)
+	return true
+}
+
+// AreAllEnvValuesNil iterates over all containers in origManifestValues
+// and checks if all their keys' values are nil. Returns true if all values are nil.
+func (o *OrigWorkloadEnvValues) AreAllEnvValuesNil() bool {
+	for _, envMap := range o.origManifestValues {
+		for _, originalValue := range envMap {
+			if originalValue != nil {
+				return false
+			}
+		}
+	}
 	return true
 }
