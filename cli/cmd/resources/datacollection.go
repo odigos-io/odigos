@@ -34,18 +34,19 @@ func NewDataCollectionClusterRole(psp bool) *rbacv1.ClusterRole {
 			Name: "odigos-data-collection",
 		},
 		Rules: []rbacv1.PolicyRule{
-			{ // ??? ask for help, these are not regular methods that can be searched in-repo
+			{ // TODO: remove this after we remove honeycomb custom exporter config
+				// located at: autoscaler/controllers/datacollection/custom/honeycomb.go
 				APIGroups: []string{""},
-				Resources: []string{"endpoints", "nodes/stats", "nodes/proxy"},
-				Verbs:     []string{"get", "list", "watch"},
+				Resources: []string{"nodes/stats", "nodes/proxy"},
+				Verbs:     []string{"get", "list"},
 			},
-			{ // Needed to get "resource name" in processor
+			{ // Needed to get "resource name" in processor (TODO: remove this after we kill the resource name processor)
 				APIGroups: []string{""},
 				Resources: []string{"pods"},
 				Verbs:     []string{"get", "list"},
 			},
-			{ // Need "replicasets" to get "resource name" in processor,
-				// Need others to get applications from cluster
+			{ // Need "replicasets" to get "resource name" in processor (TODO: remove this after we kill the resource name processor),
+				// Others needed to get applications from cluster
 				APIGroups: []string{"apps"},
 				Resources: []string{"replicasets", "deployments", "daemonsets", "statefulsets"},
 				Verbs:     []string{"get", "list"},
@@ -55,7 +56,7 @@ func NewDataCollectionClusterRole(psp bool) *rbacv1.ClusterRole {
 
 	if psp {
 		clusterrole.Rules = append(clusterrole.Rules, rbacv1.PolicyRule{
-			// ??? ask for help, these are not regular methods that can be searched in-repo
+			// Needed for clients who enable pod security policies
 			APIGroups:     []string{"policy"},
 			Resources:     []string{"podsecuritypolicies"},
 			ResourceNames: []string{"privileged"},
