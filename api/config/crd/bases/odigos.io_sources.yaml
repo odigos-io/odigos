@@ -51,6 +51,12 @@ spec:
             type: object
           spec:
             properties:
+              groups:
+                description: Groups represents the logical group(s) this source belongs
+                  to.
+                items:
+                  type: string
+                type: array
               workload:
                 description: |-
                   Workload represents the workload or namespace to be instrumented.

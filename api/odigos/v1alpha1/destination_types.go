@@ -30,6 +30,27 @@ type DestinationSpec struct {
 	Data            map[string]string            `json:"data"`
 	SecretRef       *v1.LocalObjectReference     `json:"secretRef,omitempty"`
 	Signals         []common.ObservabilitySignal `json:"signals"`
+
+	// SourceSelector defines which sources can send data to this destination.
+	// If not specified, defaults to "all".
+	// +optional
+	SourceSelector *SourceSelector `json:"sourceSelector,omitempty"`
+}
+
+// SourceSelector defines the criteria for selecting sources.
+type SourceSelector struct {
+	// Mode can be "all", "namespaces", or "groups".
+	// Determines how sources are selected for this destination.
+	// +kubebuilder:validation:Enum=all;namespaces;groups
+	Mode string `json:"mode"`
+
+	// Namespaces specifies the namespaces for "namespaces" mode.
+	// +optional
+	Namespaces []string `json:"namespaces,omitempty"`
+
+	// Groups specifies the groups for "groups" mode.
+	// +optional
+	Groups []string `json:"groups,omitempty"`
 }
 
 // DestinationStatus defines the observed state of Destination

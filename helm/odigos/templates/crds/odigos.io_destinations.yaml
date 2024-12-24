@@ -72,6 +72,34 @@ spec:
                   - METRICS
                   type: string
                 type: array
+              sourceSelector:
+                description: |-
+                  SourceSelector defines which sources can send data to this destination.
+                  If not specified, defaults to "all".
+                properties:
+                  groups:
+                    description: Groups specifies the groups for "groups" mode.
+                    items:
+                      type: string
+                    type: array
+                  mode:
+                    description: |-
+                      Mode can be "all", "namespaces", or "groups".
+                      Determines how sources are selected for this destination.
+                    enum:
+                    - all
+                    - namespaces
+                    - groups
+                    type: string
+                  namespaces:
+                    description: Namespaces specifies the namespaces for "namespaces"
+                      mode.
+                    items:
+                      type: string
+                    type: array
+                required:
+                - mode
+                type: object
               type:
                 type: string
             required:

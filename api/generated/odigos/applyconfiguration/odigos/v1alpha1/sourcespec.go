@@ -25,6 +25,7 @@ import (
 // with apply.
 type SourceSpecApplyConfiguration struct {
 	Workload *workload.PodWorkload `json:"workload,omitempty"`
+	Groups   []string              `json:"groups,omitempty"`
 }
 
 // SourceSpecApplyConfiguration constructs a declarative configuration of the SourceSpec type for use with
@@ -38,5 +39,15 @@ func SourceSpec() *SourceSpecApplyConfiguration {
 // If called multiple times, the Workload field is set to the value of the last call.
 func (b *SourceSpecApplyConfiguration) WithWorkload(value workload.PodWorkload) *SourceSpecApplyConfiguration {
 	b.Workload = &value
+	return b
+}
+
+// WithGroups adds the given value to the Groups field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the Groups field.
+func (b *SourceSpecApplyConfiguration) WithGroups(values ...string) *SourceSpecApplyConfiguration {
+	for i := range values {
+		b.Groups = append(b.Groups, values[i])
+	}
 	return b
 }
