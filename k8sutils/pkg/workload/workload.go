@@ -10,6 +10,7 @@ import (
 
 	"github.com/odigos-io/odigos/common/consts"
 	v1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -108,4 +109,45 @@ func IsInstrumentationDisabledExplicitly(obj client.Object) bool {
 	}
 
 	return false
+}
+
+func ExtractServiceNameFromAnnotations(annotations map[string]string, defaultName string) string {
+	if annotations == nil {
+		return defaultName
+	}
+	if reportedName, exists := annotations[consts.OdigosReportedNameAnnotation]; exists && reportedName != "" {
+		return reportedName
+	}
+	return defaultName
+}
+
+func GetWorkloadObject(ctx context.Context, objectKey client.ObjectKey, kind WorkloadKind, kubeClient client.Client) (metav1.Object, error) {
+	switch kind {
+	case WorkloadKindDeployment:
+		var deployment v1.Deployment
+		err := kubeClient.Get(ctx, objectKey, &deployment)
+		if err != nil {
+			return nil, err
+		}
+		return &deployment, nil
+
+	case WorkloadKindStatefulSet:
+		var statefulSet v1.StatefulSet
+		err := kubeClient.Get(ctx, objectKey, &statefulSet)
+		if err != nil {
+			return nil, err
+		}
+		return &statefulSet, nil
+
+	case WorkloadKindDaemonSet:
+		var daemonSet v1.DaemonSet
+		err := kubeClient.Get(ctx, objectKey, &daemonSet)
+		if err != nil {
+			return nil, err
+		}
+		return &daemonSet, nil
+
+	default:
+		return nil, errors.New("failed to get workload object for kind: " + string(kind))
+	}
 }

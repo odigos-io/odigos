@@ -1,8 +1,12 @@
 package workload
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"strings"
+
+	corev1 "k8s.io/api/core/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -40,4 +44,24 @@ func handleNonReplicaSet(ownerName, ownerKind string) (string, WorkloadKind, err
 	}
 
 	return ownerName, workloadKind, nil
+}
+func PodWorkloadObject(ctx context.Context, pod *corev1.Pod) (*PodWorkload, error) {
+	for _, owner := range pod.OwnerReferences {
+		workloadName, workloadKind, err := GetWorkloadFromOwnerReference(owner)
+		if err != nil {
+			if errors.Is(err, ErrKindNotSupported) {
+				continue
+			}
+			return nil, IgnoreErrorKindNotSupported(err)
+		}
+
+		return &PodWorkload{
+			Name:      workloadName,
+			Kind:      workloadKind,
+			Namespace: pod.Namespace,
+		}, nil
+	}
+
+	// Pod does not necessarily have to be managed by a controller
+	return nil, nil
 }
