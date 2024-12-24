@@ -169,7 +169,8 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, ignoredContainers
 			}
 
 			if criClient != nil { // CriClient passed as nil in cases that will be deprecated in the future [InstrumentedApplication]
-				updateRuntimeDetailsWithContainerRuntimeEnvs(ctx, *criClient, pod, container, programLanguageDetails, &resultsMap)
+				procEnvVars := inspectProc.Environments.OverwriteEnvs
+				updateRuntimeDetailsWithContainerRuntimeEnvs(ctx, *criClient, pod, container, programLanguageDetails, &resultsMap, procEnvVars)
 			}
 
 		}
@@ -186,7 +187,7 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, ignoredContainers
 // updateRuntimeDetailsWithContainerRuntimeEnvs checks if relevant environment variables are set in the Runtime
 // and updates the RuntimeDetailsByContainer accordingly.
 func updateRuntimeDetailsWithContainerRuntimeEnvs(ctx context.Context, criClient criwrapper.CriClient, pod corev1.Pod, container corev1.Container,
-	programLanguageDetails common.ProgramLanguageDetails, resultsMap *map[string]odigosv1.RuntimeDetailsByContainer) {
+	programLanguageDetails common.ProgramLanguageDetails, resultsMap *map[string]odigosv1.RuntimeDetailsByContainer, procEnvVars map[string]string) {
 	// Retrieve environment variable names for the specified language
 	envVarNames, exists := envOverwrite.EnvVarsForLanguage[programLanguageDetails.Language]
 	if !exists {
@@ -200,12 +201,12 @@ func updateRuntimeDetailsWithContainerRuntimeEnvs(ctx context.Context, criClient
 	}
 
 	// Environment variables do not exist in the manifest; fetch them from the container's Runtime
-	fetchAndSetEnvFromContainerRuntime(ctx, criClient, pod, container, envVarNames, resultsMap)
+	fetchAndSetEnvFromContainerRuntime(ctx, criClient, pod, container, envVarNames, resultsMap, procEnvVars)
 }
 
 // fetchAndSetEnvFromContainerRuntime retrieves environment variables from the container's runtime and updates the runtime details.
 func fetchAndSetEnvFromContainerRuntime(ctx context.Context, criClient criwrapper.CriClient, pod corev1.Pod, container corev1.Container,
-	envVarKeys []string, resultsMap *map[string]odigosv1.RuntimeDetailsByContainer) {
+	envVarKeys []string, resultsMap *map[string]odigosv1.RuntimeDetailsByContainer, procEnvVars map[string]string) {
 	containerID := getContainerID(pod.Status.ContainerStatuses, container.Name)
 	if containerID == "" {
 		log.Logger.V(0).Info("containerID not found for container", "container", container.Name, "pod", pod.Name, "namespace", pod.Namespace)
@@ -218,6 +219,10 @@ func fetchAndSetEnvFromContainerRuntime(ctx context.Context, criClient criwrappe
 	var state odigosv1.ProcessingState
 
 	if err != nil {
+		// If the CRI request fails, we can still attempt to check the /proc/<pid>/environ file.
+		// This is only applicable if the relevant value in /proc is EMPTY and we are certain it wasn't present in the manifest (as indicated by reaching this point in the code).
+		// In such cases, we can mark the state as `ProcessingStateSucceeded` and proceed without setting any environment variables.
+
 		log.Logger.Error(err, "failed to get relevant env var per language", "container", container.Name, "pod", pod.Name, "namespace", pod.Namespace)
 		errMessage := fmt.Sprintf("CRI communication error for container %s in pod %s/%s",
 			container.Name, pod.Namespace, pod.Name)
