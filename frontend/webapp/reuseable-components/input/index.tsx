@@ -130,7 +130,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({ icon: Icon, buttonLabe
   };
 
   const handleKeyDown: KeyboardEventHandler<HTMLInputElement> = (e) => {
-    e.stopPropagation();
+    if (!['Enter'].includes(e.key)) e.stopPropagation();
   };
 
   return (
