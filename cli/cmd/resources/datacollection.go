@@ -34,51 +34,32 @@ func NewDataCollectionClusterRole(psp bool) *rbacv1.ClusterRole {
 			Name: "odigos-data-collection",
 		},
 		Rules: []rbacv1.PolicyRule{
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
+			{ // ??? ask for help, these are not regular methods that can be searched in-repo
 				APIGroups: []string{""},
-				Resources: []string{
-					"pods",
-					"endpoints",
-					"nodes/stats",
-					"nodes/proxy",
-				},
+				Resources: []string{"endpoints", "nodes/stats", "nodes/proxy"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
+			{ // Needed to get "resource name" in processor
+				APIGroups: []string{""},
+				Resources: []string{"pods"},
+				Verbs:     []string{"get", "list"},
+			},
+			{ // Need "replicasets" to get "resource name" in processor,
+				// Need others to get applications from cluster
 				APIGroups: []string{"apps"},
-				Resources: []string{
-					"replicasets",
-					"deployments",
-					"daemonsets",
-					"statefulsets",
-				},
+				Resources: []string{"replicasets", "deployments", "daemonsets", "statefulsets"},
+				Verbs:     []string{"get", "list"},
 			},
 		},
 	}
 
 	if psp {
 		clusterrole.Rules = append(clusterrole.Rules, rbacv1.PolicyRule{
-			Verbs: []string{
-				"use",
-			},
-			APIGroups: []string{
-				"policy",
-			},
-			Resources: []string{
-				"podsecuritypolicies",
-			},
-			ResourceNames: []string{
-				"privileged",
-			},
+			// ??? ask for help, these are not regular methods that can be searched in-repo
+			APIGroups:     []string{"policy"},
+			Resources:     []string{"podsecuritypolicies"},
+			ResourceNames: []string{"privileged"},
+			Verbs:         []string{"use"},
 		})
 	}
 
