@@ -107,10 +107,10 @@ export const NotificationNote: React.FC<Props> = ({ type, title, message, action
   const closeToast = useCallback(
     (params: OnCloseParams) => {
       if (onClose) {
-        // setIsLeaving(true);
-        // setTimeout(() => {
-        //   onClose({ asSeen: params?.asSeen });
-        // }, TRANSITION_DURATION);
+        setIsLeaving(true);
+        setTimeout(() => {
+          onClose({ asSeen: params?.asSeen });
+        }, TRANSITION_DURATION);
       }
     },
     [onClose],
