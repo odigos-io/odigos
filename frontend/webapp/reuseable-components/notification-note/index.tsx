@@ -64,7 +64,7 @@ const TextWrapper = styled.div<{ $withAction: boolean }>`
   display: flex;
   align-items: center;
   margin: 0 auto 0 0;
-  max-width: ${({ $withAction }) => ($withAction ? '420px' : '500px')};
+  max-width: ${({ $withAction }) => ($withAction ? '400px' : '500px')};
   height: 12px;
 `;
 
@@ -83,7 +83,7 @@ const ButtonsWrapper = styled(FlexRow)``;
 const ActionButton = styled(Text)`
   text-transform: uppercase;
   text-decoration: underline;
-  font-size: 10px;
+  font-size: 12px;
   font-family: ${({ theme }) => theme.font_family.secondary};
   white-space: nowrap;
   cursor: pointer;
@@ -107,10 +107,10 @@ export const NotificationNote: React.FC<Props> = ({ type, title, message, action
   const closeToast = useCallback(
     (params: OnCloseParams) => {
       if (onClose) {
-        setIsLeaving(true);
-        setTimeout(() => {
-          onClose({ asSeen: params?.asSeen });
-        }, TRANSITION_DURATION);
+        // setIsLeaving(true);
+        // setTimeout(() => {
+        //   onClose({ asSeen: params?.asSeen });
+        // }, TRANSITION_DURATION);
       }
     },
     [onClose],
