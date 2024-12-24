@@ -1,0 +1,60 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: groundcover
+  displayName: Groundcover inCloud
+  category: managed
+spec:
+  image: groundcover.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+  fields:
+    - name: GROUNDCOVER_ENDPOINT
+      displayName: Groundcover inCloud Site
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+        tooltip: 'Your inCloud Site is part of the configuration provided to you by groundcover when setting up the managed inCloud backend.'
+    - name: GROUNDCOVER_API_KEY
+      displayName: Groundcover API Key
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: true
+    # - name: GROUNDCOVER_BASIC_AUTH_ENABLED
+    #   displayName: Enable HTTP Basic Authentication
+    #   componentType: checkbox
+    #   initialValue: false
+    #   componentProps:
+    #     required: false
+    #   customReadDataLabels:
+    #     - condition: 'true'
+    #       title: 'Basic Auth'
+    #       value: 'Enabled'
+    #     - condition: 'false'
+    #       title: 'Basic Auth'
+    #       value: 'Disabled'
+    # - name: GROUNDCOVER_BASIC_AUTH_USERNAME
+    #   displayName: Basic Auth Username
+    #   componentType: input
+    #   initialValue: 'groundcover'
+    #   componentProps:
+    #     type: text
+    #     placeholder: 'groundcover'
+    #     required: false
+    #   renderCondition: ['GROUNDCOVER_BASIC_AUTH_ENABLED', '==', 'true']
+    # - name: GROUNDCOVER_BASIC_AUTH_PASSWORD
+    #   displayName: Basic Auth Password
+    #   componentType: input
+    #   secret: true
+    #   componentProps:
+    #     type: password
+    #     required: false
+    #   renderCondition: ['GROUNDCOVER_BASIC_AUTH_ENABLED', '==', 'true']

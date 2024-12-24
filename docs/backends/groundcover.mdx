@@ -1,0 +1,62 @@
+---
+title: 'Groundcover inCloud'
+---
+
+## Configuring Groundcover inCloud Managed Backend
+
+Groundcover inCloud Managed is an enterprise solution designed for installing groundcover’s observability backend infrastructure within your own cloud environment.
+
+- **GROUNDCOVER_ENDPOINT** - Endpoint, the format is `host:port`.
+  - host is required, your `inCloud_Site` is part of the configuration provided to you by Groundcover when setting up the managed inCloud backend.
+  - port is optional and defaults to the default OTLP gRPC port `4317`.
+- **GROUNDCOVER_API_KEY** - API Key, provided by Groundcover.
+
+## Adding a Destination to Odigos
+
+Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+
+1. **Using the UI**
+
+Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI:
+
+```bash
+odigos ui
+```
+
+2. **Using kubernetes manifests**
+
+Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
+
+```bash
+kubectl apply -f destination.yaml
+```
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: groundcover-example
+  namespace: odigos-system
+spec:
+  data:
+    GROUNDCOVER_ENDPOINT: <Groundcover inCloud Site>
+  destinationName: groundcover
+  secretRef:
+    name: groundcover-secret
+  signals:
+  - TRACES
+  - METRICS
+  - LOGS
+  type: groundcover
+
+---
+apiVersion: v1
+data:
+  GROUNDCOVER_API_KEY: <base64 Groundcover API Key>
+kind: Secret
+metadata:
+  name: groundcover-secret
+  namespace: odigos-system
+type: Opaque
+```
