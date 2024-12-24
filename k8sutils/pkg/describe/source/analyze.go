@@ -224,14 +224,7 @@ func analyzeRuntimeInfo(resources *OdigosSourceResources) *RuntimeInfoAnalyze {
 		return nil
 	}
 
-	generation := properties.EntityProperty{
-		Name:    "Workload Generation",
-		Value:   resources.InstrumentationConfig.Status.ObservedWorkloadGeneration,
-		Explain: "the k8s object generation of the workload object that this instrumentation config is associated with",
-	}
-
 	return &RuntimeInfoAnalyze{
-		Generation: generation,
 		Containers: analyzeRuntimeDetails(resources.InstrumentationConfig.Status.RuntimeDetailsByContainer),
 	}
 }
