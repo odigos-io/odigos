@@ -1,6 +1,7 @@
 package odigospro
 
 import (
+	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -21,7 +22,7 @@ func newOdigosProSecret(ns string, cloudApiKey string, onpremToken string) *core
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      odigosProSecretName,
+			Name:      consts.OdigosProSecretName,
 			Namespace: ns,
 		},
 		StringData: data,
