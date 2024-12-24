@@ -7,8 +7,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-func GetLanguageAndOtelSdk(container *v1.Container) (common.ProgrammingLanguage, common.OtelSdk, bool) {
-	deviceName := podContainerDeviceName(container)
+func GetLanguageAndOtelSdk(container v1.Container) (common.ProgrammingLanguage, common.OtelSdk, bool) {
+	deviceName := podContainerDeviceName(&container)
 	if deviceName == nil {
 		return common.UnknownProgrammingLanguage, common.OtelSdk{}, false
 	}
