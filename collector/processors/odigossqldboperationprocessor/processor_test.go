@@ -108,3 +108,40 @@ func TestDBOperationProcessor_SetDbOperationName(t *testing.T) {
 		}
 	}
 }
+
+func TestDBOperationProcessor_SetDbCollectionName(t *testing.T) {
+	logger, _ := zap.NewDevelopment() // Enable logging in development mode
+	processor := &DBOperationProcessor{logger: logger}
+
+	testCases := []struct {
+		query    string
+		expected string
+	}{
+		{"SELECT * FROM users", "users"},
+		{"INSERT INTO users VALUES(1)", "users"},
+		{"UPDATE users SET name='John'", "users"},
+		{"DELETE FROM users WHERE id=1", "users"},
+		{"CREATE TABLE users", "UNKNOWN"},
+		{"", "UNKNOWN"},
+	}
+
+	for _, tc := range testCases {
+		logger.Info("Running test: SetDbCollectionName", zap.String("Query", tc.query), zap.String("Expected Collection", tc.expected))
+		traces := generateTestTrace(tc.query, false)
+		processedTraces, err := processor.processTraces(context.Background(), traces)
+
+		require.NoError(t, err)
+
+		// Ensure that db.operation.name was set correctly
+		span := processedTraces.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0)
+		attrValue, exists := span.Attributes().Get(string(semconv.DBCollectionNameKey))
+		// Check if the attribute exists before asserting its value
+		if exists {
+			require.Equal(t, tc.expected, attrValue.AsString())
+			logger.Info("Test passed: SetDbCollectionName", zap.String("Query", tc.query), zap.String("Detected Collection", attrValue.AsString()))
+		} else {
+			require.Equal(t, tc.expected, "UNKNOWN")
+			logger.Info("Test passed: SetDbCollectionName", zap.String("Query", tc.query), zap.String("Detected Collection", "UNKNOWN"))
+		}
+	}
+}

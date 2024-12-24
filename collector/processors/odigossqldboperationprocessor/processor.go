@@ -4,9 +4,11 @@ import (
 	"context"
 	"strings"
 
+	"github.com/xwb1989/sqlparser"
+	"go.uber.org/zap"
+
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
-	"go.uber.org/zap"
 )
 
 type DBOperationProcessor struct {
@@ -22,6 +24,8 @@ const (
 	OperationDrop    string = "DROP"
 	OperationAlter   string = "ALTER"
 	OperationUnknown string = "UNKNOWN"
+
+	ValueUnknown string = "UNKNOWN"
 )
 
 func (sp *DBOperationProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
@@ -46,17 +50,35 @@ func (sp *DBOperationProcessor) processTraces(ctx context.Context, td ptrace.Tra
 
 				// Check if `db.operation.name` is already defined, If already defined, continue to the next span
 				_, operationNameExists := span.Attributes().Get(string(semconv.DBOperationNameKey))
-				if operationNameExists {
+				_, collectionNameExists := span.Attributes().Get(string(semconv.DBCollectionNameKey))
+				if operationNameExists && collectionNameExists {
 					continue
 				}
 
 				// Detect the `db.operation.name` from the query text
-				operationName := DetectSQLOperationName(dbQueryText.AsString())
+				operationName, tableName := DetectSQLOperationAndTableName(dbQueryText.AsString())
 
+				// Used to build "{operation} {table}" span name
+				spanName := ""
 				// Only set the `db.operation.name` if the detected operation name is not "UNKNOWN"
-				if operationName != OperationUnknown {
+				if operationName != ValueUnknown && !operationNameExists {
 					span.Attributes().PutStr(string(semconv.DBOperationNameKey), operationName)
+					spanName = operationName
 				}
+
+				if tableName != ValueUnknown && !collectionNameExists {
+					span.Attributes().PutStr(string(semconv.DBCollectionNameKey), tableName)
+					if spanName != "" {
+						spanName = spanName + " " + tableName
+					}
+				}
+
+				// If we have a new span name, use that (but only if the current span name is
+				// our default "DB" auto-instrumentation name).
+				if spanName != "" && span.Name() == "DB" {
+					span.SetName(spanName)
+				}
+
 			}
 		}
 	}
@@ -67,12 +89,30 @@ func (sp *DBOperationProcessor) processTraces(ctx context.Context, td ptrace.Tra
 // the first word of the query is a common keyword (e.g., SELECT, INSERT, UPDATE, DELETE, CREATE).
 // It returns the corresponding operation name or "UNKNOWN" if no match is found,
 // providing an efficient, lightweight solution for quick query classification.
-func DetectSQLOperationName(query string) string {
+func DetectSQLOperationAndTableName(query string) (string, string) {
 	query = strings.TrimSpace(query)
 	if len(query) == 0 {
-		return OperationUnknown
+		return ValueUnknown, ValueUnknown
 	}
 
+	stmt, err := sqlparser.Parse(query)
+	if err == nil {
+		switch stmt := stmt.(type) {
+		case *sqlparser.Select:
+			return "SELECT", getTableName(stmt.From)
+		case *sqlparser.Update:
+			return "UPDATE", getTableName(stmt.TableExprs)
+		case *sqlparser.Insert:
+			return "INSERT", stmt.Table.Name.String()
+		case *sqlparser.Delete:
+			return "DELETE", getTableName(stmt.TableExprs)
+		}
+	}
+
+	return detectBasedOnFirstWord(query), ValueUnknown
+}
+
+func detectBasedOnFirstWord(query string) string {
 	firstWord := extractFirstWord(query)
 
 	// Convert the first word to uppercase for comparison
@@ -82,7 +122,7 @@ func DetectSQLOperationName(query string) string {
 	case OperationSelect, OperationInsert, OperationUpdate, OperationDelete, OperationCreate, OperationDrop, OperationAlter:
 		return firstWord
 	default:
-		return OperationUnknown
+		return ValueUnknown
 	}
 }
 
@@ -98,4 +138,21 @@ func extractFirstWord(query string) string {
 
 	// return the entire query (single-word case)
 	return query
+}
+
+// getTableName extracts the table name from a SQL node.
+func getTableName(node sqlparser.SQLNode) string {
+	switch tableExpr := node.(type) {
+	case sqlparser.TableName:
+		return tableExpr.Name.String()
+	case sqlparser.TableExprs:
+		for _, expr := range tableExpr {
+			if tableName, ok := expr.(*sqlparser.AliasedTableExpr); ok {
+				if name, ok := tableName.Expr.(sqlparser.TableName); ok {
+					return name.Name.String()
+				}
+			}
+		}
+	}
+	return ValueUnknown
 }
