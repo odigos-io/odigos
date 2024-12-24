@@ -114,6 +114,8 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, 
             isEdit={isEdit}
             onEdit={onEdit ? () => onEdit(true) : undefined}
             onClose={isEdit ? clickCancel : closeDrawer}
+            onDelete={onEdit ? clickDelete : undefined}
+            deleteLabel={isSource ? 'Uninstrument' : undefined}
           />
           <ContentArea>{children}</ContentArea>
           <DrawerFooter isOpen={isEdit} onSave={clickSave} onCancel={clickCancel} onDelete={clickDelete} deleteLabel={isSource ? 'Uninstrument' : undefined} />
