@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+
+	"github.com/odigos-io/odigos/common/consts"
 )
 
 const (
@@ -12,8 +14,9 @@ const (
 )
 
 type Environment struct {
-	NodeName string
-	NodeIP   string
+	NodeName  string
+	NodeIP    string
+	Namespace string
 }
 
 var Current Environment
@@ -29,9 +32,15 @@ func Load() error {
 		return fmt.Errorf("env var %s is not set", NodeIPEnvVar)
 	}
 
+	ns, ok := os.LookupEnv(consts.CurrentNamespaceEnvVar)
+	if !ok {
+		return fmt.Errorf("env var %s is not set", consts.CurrentNamespaceEnvVar)
+	}
+
 	Current = Environment{
-		NodeName: nn,
-		NodeIP:   ni,
+		NodeName:  nn,
+		NodeIP:    ni,
+		Namespace: ns,
 	}
 	return nil
 }

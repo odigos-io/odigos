@@ -101,14 +101,34 @@ type GetDestinationDetailsResponse struct {
 	Fields []Field `json:"fields"`
 }
 
+type CustomReadDataLabel struct {
+	Condition string `json:"condition"`
+	Title     string `json:"title"`
+	Value     string `json:"value"`
+}
+
 type Field struct {
-	Name                string                 `json:"name"`
-	DisplayName         string                 `json:"display_name"`
-	ComponentType       string                 `json:"component_type"`
-	ComponentProperties map[string]interface{} `json:"component_properties"`
-	VideoUrl            string                 `json:"video_url,omitempty"`
-	ThumbnailURL        string                 `json:"thumbnail_url,omitempty"`
-	InitialValue        string                 `json:"initial_value,omitempty"`
+	Name                 string                 `json:"name"`
+	DisplayName          string                 `json:"display_name"`
+	ComponentType        string                 `json:"component_type"`
+	ComponentProperties  map[string]interface{} `json:"component_properties"`
+	Secret               bool                   `json:"secret,omitempty"`
+	InitialValue         string                 `json:"initial_value,omitempty"`
+	RenderCondition      []string               `json:"render_condition,omitempty"`
+	HideFromReadData     []string               `json:"hide_from_read_data,omitempty"`
+	CustomReadDataLabels []*CustomReadDataLabel `json:"custom_read_data_labels,omitempty"`
+}
+
+func convertCustomReadDataLabels(labels []*destinations.CustomReadDataLabel) []*CustomReadDataLabel {
+	var result []*CustomReadDataLabel
+	for _, label := range labels {
+		result = append(result, &CustomReadDataLabel{
+			Condition: label.Condition,
+			Title:     label.Title,
+			Value:     label.Value,
+		})
+	}
+	return result
 }
 
 func GetDestinationTypeDetails(c *gin.Context) {
@@ -124,13 +144,15 @@ func GetDestinationTypeDetails(c *gin.Context) {
 	var resp GetDestinationDetailsResponse
 	for _, field := range destTypeConfig.Spec.Fields {
 		resp.Fields = append(resp.Fields, Field{
-			Name:                field.Name,
-			DisplayName:         field.DisplayName,
-			ComponentType:       field.ComponentType,
-			ComponentProperties: field.ComponentProps,
-			VideoUrl:            field.VideoURL,
-			ThumbnailURL:        field.ThumbnailURL,
-			InitialValue:        field.InitialValue,
+			Name:                 field.Name,
+			DisplayName:          field.DisplayName,
+			ComponentType:        field.ComponentType,
+			ComponentProperties:  field.ComponentProps,
+			Secret:               field.Secret,
+			InitialValue:         field.InitialValue,
+			RenderCondition:      field.RenderCondition,
+			HideFromReadData:     field.HideFromReadData,
+			CustomReadDataLabels: convertCustomReadDataLabels(field.CustomReadDataLabels),
 		})
 	}
 

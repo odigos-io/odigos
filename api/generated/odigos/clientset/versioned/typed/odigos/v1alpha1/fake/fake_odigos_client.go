@@ -59,6 +59,10 @@ func (c *FakeOdigosV1alpha1) Processors(namespace string) v1alpha1.ProcessorInte
 	return &FakeProcessors{c, namespace}
 }
 
+func (c *FakeOdigosV1alpha1) Sources(namespace string) v1alpha1.SourceInterface {
+	return &FakeSources{c, namespace}
+}
+
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
 func (c *FakeOdigosV1alpha1) RESTClient() rest.Interface {

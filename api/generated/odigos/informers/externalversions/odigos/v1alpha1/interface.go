@@ -39,6 +39,8 @@ type Interface interface {
 	OdigosConfigurations() OdigosConfigurationInformer
 	// Processors returns a ProcessorInformer.
 	Processors() ProcessorInformer
+	// Sources returns a SourceInformer.
+	Sources() SourceInformer
 }
 
 type version struct {
@@ -90,4 +92,9 @@ func (v *version) OdigosConfigurations() OdigosConfigurationInformer {
 // Processors returns a ProcessorInformer.
 func (v *version) Processors() ProcessorInformer {
 	return &processorInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// Sources returns a SourceInformer.
+func (v *version) Sources() SourceInformer {
+	return &sourceInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

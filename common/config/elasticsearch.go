@@ -12,8 +12,10 @@ const (
 	ElasticsearchUrlKey = "ELASTICSEARCH_URL"
 	esTracesIndexKey    = "ES_TRACES_INDEX"
 	esLogsIndexKey      = "ES_LOGS_INDEX"
+	esBasicAuthKey      = "ELASTICSEARCH_BASIC_AUTH_ENABLED" // unused in this file, currently UI only (we do not want to break existing setups by requiring this boolean)
 	esUsername          = "ELASTICSEARCH_USERNAME"
 	esPassword          = "ELASTICSEARCH_PASSWORD"
+	esTlsKey            = "ELASTICSEARCH_TLS_ENABLED" // unused in this file, currently UI only (we do not want to break existing setups by requiring this boolean)
 	esCaPem             = "ELASTICSEARCH_CA_PEM"
 )
 
@@ -46,21 +48,20 @@ func (e *Elasticsearch) ModifyConfig(dest ExporterConfigurer, currentConfig *Con
 		logIndexVal = "log_index"
 	}
 
-	basicAuthUsername := dest.GetConfig()[esUsername]
-	caPem := dest.GetConfig()[esCaPem]
-
 	exporterConfig := GenericMap{
 		"endpoints":    []string{parsedURL},
 		"traces_index": traceIndexVal,
 		"logs_index":   logIndexVal,
 	}
 
+	caPem := dest.GetConfig()[esCaPem]
 	if caPem != "" {
 		exporterConfig["tls"] = GenericMap{
 			"ca_pem": caPem,
 		}
 	}
 
+	basicAuthUsername := dest.GetConfig()[esUsername]
 	if basicAuthUsername != "" {
 		exporterConfig["user"] = basicAuthUsername
 		exporterConfig["password"] = fmt.Sprintf("${%s}", esPassword)

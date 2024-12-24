@@ -17,8 +17,8 @@ import (
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
 	actionservices "github.com/odigos-io/odigos/frontend/services/actions"
-	odigos_describe "github.com/odigos-io/odigos/frontend/services/describe/odigos_describe"
-	source_describe "github.com/odigos-io/odigos/frontend/services/describe/source_describe"
+	"github.com/odigos-io/odigos/frontend/services/describe/odigos_describe"
+	"github.com/odigos-io/odigos/frontend/services/describe/source_describe"
 	testconnection "github.com/odigos-io/odigos/frontend/services/test_connection"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -732,15 +732,17 @@ func (r *queryResolver) DestinationTypeDetails(ctx context.Context, typeArg stri
 		if err != nil {
 			return nil, fmt.Errorf("error marshalling component properties: %v", err)
 		}
-
 		resp.Fields = append(resp.Fields, &model.Field{
-			Name:                field.Name,
-			DisplayName:         field.DisplayName,
-			ComponentType:       field.ComponentType,
-			ComponentProperties: string(componentPropsJSON),
-			InitialValue:        &field.InitialValue,
+			Name:                 field.Name,
+			DisplayName:          field.DisplayName,
+			ComponentType:        field.ComponentType,
+			ComponentProperties:  string(componentPropsJSON),
+			Secret:               field.Secret,
+			InitialValue:         field.InitialValue,
+			RenderCondition:      field.RenderCondition,
+			HideFromReadData:     field.HideFromReadData,
+			CustomReadDataLabels: convertCustomReadDataLabels(field.CustomReadDataLabels),
 		})
-
 	}
 
 	return &resp, nil

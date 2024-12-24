@@ -13,7 +13,6 @@ const SourcesListWrapper = styled.div<{ $isModal: Props['isModal'] }>`
   align-items: center;
   flex-direction: column;
   gap: 12px;
-  max-height: ${({ $isModal }) => ($isModal ? 'calc(100vh - 548px)' : 'calc(100vh - 360px)')};
   height: fit-content;
   padding-bottom: ${({ $isModal }) => ($isModal ? '48px' : '0')};
   overflow-y: scroll;

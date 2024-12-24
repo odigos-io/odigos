@@ -13,7 +13,7 @@ interface DropdownProps {
   options: DropdownOption[];
   value: DropdownOption | DropdownOption[] | undefined;
   onSelect: (option: DropdownOption) => void;
-  onDeselect: (option: DropdownOption) => void;
+  onDeselect?: (option: DropdownOption) => void;
   isMulti?: boolean;
   required?: boolean;
   showSearch?: boolean;
