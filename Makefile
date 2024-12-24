@@ -106,30 +106,30 @@ load-to-kind:
 
 .PHONY: restart-ui
 restart-ui:
-	kubectl rollout restart deployment odigos-ui -n odigos-system
+	-kubectl rollout restart deployment odigos-ui -n odigos-system
 
 .PHONY: restart-odiglet
 restart-odiglet:
-	kubectl rollout restart daemonset odiglet -n odigos-system
+	-kubectl rollout restart daemonset odiglet -n odigos-system
 
 .PHONY: restart-autoscaler
 restart-autoscaler:
-	kubectl rollout restart deployment odigos-autoscaler -n odigos-system
+	-kubectl rollout restart deployment odigos-autoscaler -n odigos-system
 
 .PHONY: restart-instrumentor
 restart-instrumentor:
-	kubectl rollout restart deployment odigos-instrumentor -n odigos-system
+	-kubectl rollout restart deployment odigos-instrumentor -n odigos-system
 
 .PHONY: restart-scheduler
 restart-scheduler:
-	kubectl rollout restart deployment odigos-scheduler -n odigos-system
-
+	-kubectl rollout restart deployment odigos-scheduler -n odigos-system
 
 .PHONY: restart-collector
 restart-collector:
-	kubectl rollout restart deployment odigos-gateway -n odigos-system
+	-kubectl rollout restart deployment odigos-gateway -n odigos-system
 	# DaemonSets don't directly support the rollout restart command in the same way Deployments do. However, you can achieve the same result by updating an environment variable or any other field in the DaemonSet's pod template, triggering a rolling update of the pods managed by the DaemonSet
-	kubectl -n odigos-system patch daemonset odigos-data-collection -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"kubectl.kubernetes.io/restartedAt\":\"$(date +%Y-%m-%dT%H:%M:%S%z)\"}}}}}"
+	-kubectl -n odigos-system patch daemonset odigos-data-collection -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"kubectl.kubernetes.io/restartedAt\":\"$(date +%Y-%m-%dT%H:%M:%S%z)\"}}}}}"
+
 
 .PHONY: deploy-odiglet
 deploy-odiglet:

@@ -78,77 +78,26 @@ func NewSchedulerRole(ns string) *rbacv1.Role {
 			Namespace: ns,
 		},
 		Rules: []rbacv1.PolicyRule{
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
-				APIGroups: []string{
-					"",
-				},
-				Resources: []string{
-					"configmaps",
-				},
-				ResourceNames: []string{
-					consts.OdigosConfigurationName,
-				},
+			{ // Needed to extract the configmap of odigos-config
+				APIGroups:     []string{""},
+				Resources:     []string{"configmaps"},
+				ResourceNames: []string{consts.OdigosConfigurationName},
+				Verbs:         []string{"get", "list", "watch"},
 			},
-			{
-				Verbs: []string{
-					"create",
-					"delete",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"collectorsgroups",
-				},
+			{ // Needed because the scheduler is managing the collectorsgroups
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"collectorsgroups"},
+				Verbs:     []string{"get", "list", "create", "patch", "update", "watch", "delete"},
 			},
-			{
-				Verbs: []string{
-					"get",
-					"patch",
-					"update",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"collectorsgroups/status",
-				},
+			{ // Needed to read the status of the gateway collector, to wake the data collector
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"collectorsgroups/status"},
+				Verbs:     []string{"get"},
 			},
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"destinations",
-				},
-			},
-			{
-				Verbs: []string{
-					"get",
-					"patch",
-					"update",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"destinations/status",
-				},
+			{ // Needed to wake the gateway collector (based on the presence of any destination)
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"destinations"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
 		},
 	}
@@ -188,14 +137,10 @@ func NewSchedulerClusterRole() *rbacv1.ClusterRole {
 			Name: SchedulerClusterRoleName,
 		},
 		Rules: []rbacv1.PolicyRule{
-			{
-				Verbs: []string{
-					"list",
-					"get",
-					"watch",
-				},
+			{ // Needed to track presence/status of configs to wake the data/gateway collectors
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"instrumentationconfigs"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
 		},
 	}

@@ -8,6 +8,6 @@ rules:
     resources:
       - instrumentationconfigs
     verbs:
-      - list
       - get
+      - list
       - watch
