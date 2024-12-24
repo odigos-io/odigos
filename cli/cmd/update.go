@@ -72,4 +72,5 @@ func init() {
 
 	// Flags for update-token
 	updateTokenCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")
+	updateTokenCmd.MarkFlagRequired("onprem-token")
 }
