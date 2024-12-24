@@ -341,7 +341,7 @@ spec:
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentedApplication
 metadata:
-  name: deployment-dotnet8-musl
+  name: deployment-dotnet6-musl
   namespace: default
   ownerReferences:
     - apiVersion: apps/v1

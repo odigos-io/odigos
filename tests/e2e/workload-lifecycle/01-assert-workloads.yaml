@@ -590,7 +590,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: dotnet8-musl
+      app: dotnet6-musl
   template:
     spec:
       containers:
