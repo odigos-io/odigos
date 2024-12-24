@@ -12,6 +12,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -32,6 +33,14 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(odigosv1.AddToScheme(scheme))
+}
+
+type KubeManagerOptions struct {
+	Mgr           ctrl.Manager
+	EbpfDirectors ebpf.DirectorsMap
+	Clientset     *kubernetes.Clientset
+	ConfigUpdates chan<- instrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
+	CriClient     *criwrapper.CriClient
 }
 
 func CreateManager() (ctrl.Manager, error) {
@@ -68,13 +77,13 @@ func CreateManager() (ctrl.Manager, error) {
 	})
 }
 
-func SetupWithManager(mgr ctrl.Manager, ebpfDirectors ebpf.DirectorsMap, clientset *kubernetes.Clientset, configUpdates chan<- instrumentation.ConfigUpdate[ebpf.K8sConfigGroup]) error {
-	err := runtime_details.SetupWithManager(mgr, clientset)
+func SetupWithManager(kubeManagerOptions KubeManagerOptions) error {
+	err := runtime_details.SetupWithManager(kubeManagerOptions.Mgr, kubeManagerOptions.Clientset, kubeManagerOptions.CriClient)
 	if err != nil {
 		return err
 	}
 
-	err = instrumentation_ebpf.SetupWithManager(mgr, ebpfDirectors, configUpdates)
+	err = instrumentation_ebpf.SetupWithManager(kubeManagerOptions.Mgr, kubeManagerOptions.EbpfDirectors, kubeManagerOptions.ConfigUpdates)
 	if err != nil {
 		return err
 	}
