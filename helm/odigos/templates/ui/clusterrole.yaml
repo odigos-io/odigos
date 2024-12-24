@@ -4,73 +4,52 @@ metadata:
   name: odigos-ui
 rules:
   - apiGroups:
-      - ""
+      - ''
     resources:
       - namespaces
     verbs:
       - get
       - list
-      - watch
       - patch
-  - apiGroups:
-      - ""
-    resources:
-      - services
-    verbs:
-      - list
-  - apiGroups:
-      - ""
-    resources:
-      - configmaps
-    verbs:
-      - get
-      - list
-      - watch
-      - patch
-      - create
-      - delete
-      - update
-  - apiGroups:
-      - ""
-    resources:
-      - pods
-    verbs:
-      - get
-      - list
   - apiGroups:
       - apps
     resources:
       - deployments
       - statefulsets
       - daemonsets
+    verbs:
+      - get
+      - list
+      - patch
+      - update
+  - apiGroups:
+      - apps
+    resources:
       - replicasets
     verbs:
       - get
       - list
-      - watch
-      - update
-      - patch
+  - apiGroups:
+      - ''
+    resources:
+      - services
+      - pods
+    verbs:
+      - get
+      - list
   - apiGroups:
       - odigos.io
     resources:
-      - "*"
+      - instrumentedapplications
+      - instrumentationinstances
+      - instrumentationconfigs
     verbs:
       - get
       - list
-      - watch
-      - patch
-      - create
-      - delete
-      - update
   - apiGroups:
-      - actions.odigos.io
+      - odigos.io
     resources:
-      - "*"
+      - instrumentedapplications
+      - instrumentationinstances
     verbs:
-      - get
-      - list
       - watch
-      - patch
-      - create
-      - delete
-      - update

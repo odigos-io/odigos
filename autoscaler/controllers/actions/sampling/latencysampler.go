@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	actionv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -86,6 +87,9 @@ func (lc *LatencyConfig) Validate() error {
 	}
 	if lc.HttpRoute == "" {
 		return errors.New("http_route cannot be empty")
+	}
+	if !strings.HasPrefix(lc.HttpRoute, "/") {
+		return errors.New("http_route must start with /")
 	}
 	if lc.ServiceName == "" {
 		return errors.New("service_name cannot be empty")
