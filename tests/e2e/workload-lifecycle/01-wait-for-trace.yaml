@@ -16,6 +16,10 @@ query: |
   { resource.service.name = "python-latest-version" && span.http.route = "insert-random/" } ||
   { resource.service.name = "python-alpine" && span.http.route = "insert-random/" } ||
   { resource.service.name = "python-not-supported" && span.http.route = "insert-random/" } ||
-  { resource.service.name = "python-min-version" && span.http.route = "insert-random/" }  
+  { resource.service.name = "python-min-version" && span.http.route = "insert-random/" }  ||
+  { resource.service.name = "dotnet8-glibc" } ||
+  { resource.service.name = "dotnet8-musl" } ||
+  { resource.service.name = "dotnet6-glibc" } ||
+  { resource.service.name = "dotnet6-musl" }
 expected:
   count: 14
