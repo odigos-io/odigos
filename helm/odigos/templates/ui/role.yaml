@@ -2,7 +2,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: odigos-ui
-  namespace: { { .Release.Namespace } }
+  namespace: '{{ .Release.Namespace }}'
 rules:
   - apiGroups:
       - ''
