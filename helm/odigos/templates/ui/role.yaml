@@ -2,42 +2,58 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: odigos-ui
-  namespace: {{ .Release.Namespace }}
+  namespace: { { .Release.Namespace } }
 rules:
   - apiGroups:
-      - ""
+      - ''
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - ''
     resources:
       - secrets
     verbs:
-      - create
       - get
       - list
+      - create
       - patch
       - update
-      - watch
   - apiGroups:
-      - ""
-    resources:
-      - pods
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - "apps"
-    resources:
-      - replicasets
-    verbs:
-      - get
-      - list
-  - apiGroups:
-      - "odigos.io"
+      - odigos.io
     resources:
       - instrumentationrules
+      - destinations
     verbs:
-      - create
-      - delete
       - get
       - list
+      - create
       - patch
       - update
+      - delete
+  - apiGroups:
+      - odigos.io
+    resources:
+      - destinations
+    verbs:
+      - watch
+  - apiGroups:
+      - odigos.io
+    resources:
+      - collectorsgroups
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - actions.odigos.io
+    resources:
+      - '*'
+    verbs:
+      - get
+      - list
+      - create
+      - patch
+      - update
+      - delete
