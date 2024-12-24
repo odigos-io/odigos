@@ -17,7 +17,11 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"context"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
@@ -26,8 +30,6 @@ import (
 // +genclient
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:metadata:labels=metadata.labels.odigos.io/config=1
-// +kubebuilder:metadata:labels=metadata.labels.odigos.io/system-object=true
 // +kubebuilder:printcolumn:name="Workload",type=string,JSONPath=`.spec.workload.name`
 // +kubebuilder:printcolumn:name="Kind",type=string,JSONPath=`.spec.workload.kind`
 // +kubebuilder:printcolumn:name="Namespace",type=string,JSONPath=`.spec.workload.namespace`
@@ -66,6 +68,23 @@ type SourceList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Source `json:"items"`
+}
+
+// GetSourceListForWorkload returns a SourceList of all Sources that have matching
+// workload name, namespace, and kind labels for an object. In theory, this should only
+// ever return a list with 0 or 1 items, but due diligence should handle unexpected cases.
+func GetSourceListForWorkload(ctx context.Context, kubeClient client.Client, obj client.Object) (*SourceList, error) {
+	sourceList := &SourceList{}
+	selector := labels.SelectorFromSet(labels.Set{
+		"odigos.io/workload-name":      obj.GetName(),
+		"odigos.io/workload-namespace": obj.GetNamespace(),
+		"odigos.io/workload-kind":      obj.GetObjectKind().GroupVersionKind().Kind,
+	})
+	err := kubeClient.List(ctx, sourceList, &client.ListOptions{LabelSelector: selector})
+	if err != nil {
+		return nil, err
+	}
+	return sourceList, nil
 }
 
 func init() {

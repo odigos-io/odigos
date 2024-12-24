@@ -4,9 +4,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.16.1
-  labels:
-    metadata.labels.odigos.io/config: "1"
-    metadata.labels.odigos.io/system-object: "true"
   name: sources.odigos.io
 spec:
   group: odigos.io
@@ -17,137 +14,139 @@ spec:
     singular: source
   scope: Namespaced
   versions:
-  - additionalPrinterColumns:
-    - jsonPath: .spec.workload.name
-      name: Workload
-      type: string
-    - jsonPath: .spec.workload.kind
-      name: Kind
-      type: string
-    - jsonPath: .spec.workload.namespace
-      name: Namespace
-      type: string
-    name: v1alpha1
-    schema:
-      openAPIV3Schema:
-        description: Source configures an application for auto-instrumentation.
-        properties:
-          apiVersion:
-            description: |-
-              APIVersion defines the versioned schema of this representation of an object.
-              Servers should convert recognized schemas to the latest internal value, and
-              may reject unrecognized values.
-              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-            type: string
-          kind:
-            description: |-
-              Kind is a string value representing the REST resource this object represents.
-              Servers may infer this from the endpoint the client submits requests to.
-              Cannot be updated.
-              In CamelCase.
-              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-            type: string
-          metadata:
-            type: object
-          spec:
-            properties:
-              groups:
-                description: Groups represents the logical group(s) this source belongs
-                  to.
-                items:
-                  type: string
-                type: array
-              workload:
-                description: |-
-                  Workload represents the workload or namespace to be instrumented.
-                  This field is required upon creation and cannot be modified.
-                properties:
-                  kind:
-                    description: |-
-                      1. the pascal case representation of the workload kind
-                      it is used in k8s api objects as the `Kind` field.
+    - additionalPrinterColumns:
+        - jsonPath: .spec.workload.name
+          name: Workload
+          type: string
+        - jsonPath: .spec.workload.kind
+          name: Kind
+          type: string
+        - jsonPath: .spec.workload.namespace
+          name: Namespace
+          type: string
+      name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: Source configures an application for auto-instrumentation.
+          properties:
+            apiVersion:
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+              type: string
+            kind:
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+              type: string
+            metadata:
+              type: object
+            spec:
+              properties:
+                groups:
+                  description:
+                    Groups represents the logical group(s) this source belongs
+                    to.
+                  items:
                     type: string
-                  name:
-                    type: string
-                  namespace:
-                    type: string
-                required:
-                - kind
-                - name
-                - namespace
-                type: object
-            required:
-            - workload
-            type: object
-          status:
-            properties:
-              conditions:
-                description: |-
-                  Represents the observations of a source's current state.
-                  Known .status.conditions.type are: "Available", "Progressing"
-                items:
-                  description: Condition contains details for one aspect of the current
-                    state of this API Resource.
+                  type: array
+                workload:
+                  description: |-
+                    Workload represents the workload or namespace to be instrumented.
+                    This field is required upon creation and cannot be modified.
                   properties:
-                    lastTransitionTime:
+                    kind:
                       description: |-
-                        lastTransitionTime is the last time the condition transitioned from one status to another.
-                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
-                      format: date-time
+                        1. the pascal case representation of the workload kind
+                        it is used in k8s api objects as the `Kind` field.
                       type: string
-                    message:
-                      description: |-
-                        message is a human readable message indicating details about the transition.
-                        This may be an empty string.
-                      maxLength: 32768
+                    name:
                       type: string
-                    observedGeneration:
-                      description: |-
-                        observedGeneration represents the .metadata.generation that the condition was set based upon.
-                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
-                        with respect to the current state of the instance.
-                      format: int64
-                      minimum: 0
-                      type: integer
-                    reason:
-                      description: |-
-                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
-                        Producers of specific condition types may define expected values and meanings for this field,
-                        and whether the values are considered a guaranteed API.
-                        The value should be a CamelCase string.
-                        This field may not be empty.
-                      maxLength: 1024
-                      minLength: 1
-                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
-                      type: string
-                    status:
-                      description: status of the condition, one of True, False, Unknown.
-                      enum:
-                      - "True"
-                      - "False"
-                      - Unknown
-                      type: string
-                    type:
-                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
-                      maxLength: 316
-                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                    namespace:
                       type: string
                   required:
-                  - lastTransitionTime
-                  - message
-                  - reason
-                  - status
-                  - type
+                    - kind
+                    - name
+                    - namespace
                   type: object
-                type: array
-                x-kubernetes-list-map-keys:
-                - type
-                x-kubernetes-list-type: map
-            type: object
-        required:
-        - spec
-        type: object
-    served: true
-    storage: true
-    subresources:
-      status: {}
+              required:
+                - workload
+              type: object
+            status:
+              properties:
+                conditions:
+                  description: |-
+                    Represents the observations of a source's current state.
+                    Known .status.conditions.type are: "Available", "Progressing"
+                  items:
+                    description:
+                      Condition contains details for one aspect of the current
+                      state of this API Resource.
+                    properties:
+                      lastTransitionTime:
+                        description: |-
+                          lastTransitionTime is the last time the condition transitioned from one status to another.
+                          This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                        format: date-time
+                        type: string
+                      message:
+                        description: |-
+                          message is a human readable message indicating details about the transition.
+                          This may be an empty string.
+                        maxLength: 32768
+                        type: string
+                      observedGeneration:
+                        description: |-
+                          observedGeneration represents the .metadata.generation that the condition was set based upon.
+                          For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                          with respect to the current state of the instance.
+                        format: int64
+                        minimum: 0
+                        type: integer
+                      reason:
+                        description: |-
+                          reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                          Producers of specific condition types may define expected values and meanings for this field,
+                          and whether the values are considered a guaranteed API.
+                          The value should be a CamelCase string.
+                          This field may not be empty.
+                        maxLength: 1024
+                        minLength: 1
+                        pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                        type: string
+                      status:
+                        description: status of the condition, one of True, False, Unknown.
+                        enum:
+                          - 'True'
+                          - 'False'
+                          - Unknown
+                        type: string
+                      type:
+                        description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                        maxLength: 316
+                        pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                        type: string
+                    required:
+                      - lastTransitionTime
+                      - message
+                      - reason
+                      - status
+                      - type
+                    type: object
+                  type: array
+                  x-kubernetes-list-map-keys:
+                    - type
+                  x-kubernetes-list-type: map
+              type: object
+          required:
+            - spec
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}
