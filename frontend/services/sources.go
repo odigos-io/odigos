@@ -16,6 +16,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	labels "k8s.io/apimachinery/pkg/labels"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -318,6 +319,31 @@ func updateAnnotations(annotations map[string]string, reportedName string) map[s
 	return annotations
 }
 
+func GetSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) (*v1alpha1.Source, error) {
+	if workloadKind != WorkloadKindDeployment && workloadKind != WorkloadKindStatefulSet && workloadKind != WorkloadKindDaemonSet {
+		return nil, errors.New("unsupported workload kind " + string(workloadKind))
+	}
+
+	selector := labels.SelectorFromSet(labels.Set{
+		"odigos.io/workload-name":      workloadName,
+		"odigos.io/workload-namespace": nsName,
+		"odigos.io/workload-kind":      string(workloadKind),
+	})
+
+	sourceList, err := kube.DefaultClient.OdigosClient.Sources(consts.DefaultOdigosNamespace).List(ctx, metav1.ListOptions{LabelSelector: selector.String()})
+	if err != nil {
+		return nil, err
+	}
+
+	crdName := sourceList.Items[0].Name
+	source, err := kube.DefaultClient.OdigosClient.Sources(consts.DefaultOdigosNamespace).Get(ctx, crdName, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return source, nil
+}
+
 func CreateSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) error {
 	if workloadKind != WorkloadKindDeployment && workloadKind != WorkloadKindStatefulSet && workloadKind != WorkloadKindDaemonSet {
 		return errors.New("unsupported workload kind " + string(workloadKind))
@@ -345,7 +371,15 @@ func DeleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		return errors.New("unsupported workload kind " + string(workloadKind))
 	}
 
-	err := kube.DefaultClient.OdigosClient.Sources(consts.DefaultOdigosNamespace).Delete(ctx, workloadName, metav1.DeleteOptions{})
+	source, err := GetSourceCRD(ctx, nsName, workloadName, workloadKind)
+	if err != nil {
+		return err
+	}
+	if source == nil {
+		return errors.New("source not found" + workloadName)
+	}
+
+	err = kube.DefaultClient.OdigosClient.Sources(consts.DefaultOdigosNamespace).Delete(ctx, source.Name, metav1.DeleteOptions{})
 	return err
 }
 
