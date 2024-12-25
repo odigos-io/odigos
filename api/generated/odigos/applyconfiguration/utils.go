@@ -113,6 +113,12 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.RuntimeDetailsByContainerApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("SdkConfig"):
 		return &odigosv1alpha1.SdkConfigApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("Source"):
+		return &odigosv1alpha1.SourceApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("SourceSpec"):
+		return &odigosv1alpha1.SourceSpecApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("SourceStatus"):
+		return &odigosv1alpha1.SourceStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("WorkloadInstrumentationConfig"):
 		return &odigosv1alpha1.WorkloadInstrumentationConfigApplyConfiguration{}
 

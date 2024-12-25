@@ -78,6 +78,7 @@ export const SourceDrawer: React.FC<Props> = () => {
     if (!selectedItem) return [];
 
     const { item } = selectedItem as { item: K8sActualSource };
+    if (!item?.instrumentedApplicationDetails?.conditions) return [];
 
     const hasPresenceOfOtherAgent = item.instrumentedApplicationDetails.conditions.some(
       (condition) => condition.status === BACKEND_BOOLEAN.FALSE && condition.message.includes('device not added to any container due to the presence of another agent'),

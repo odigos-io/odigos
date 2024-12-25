@@ -1,10 +1,10 @@
-import React, { useState, forwardRef, type ChangeEvent, type KeyboardEventHandler } from 'react';
+import React, { useState, forwardRef, type ChangeEvent, type KeyboardEventHandler, type InputHTMLAttributes } from 'react';
 import theme from '@/styles/theme';
 import styled, { css } from 'styled-components';
 import { EyeClosedIcon, EyeOpenIcon, SVG } from '@/assets';
 import { FieldError, FieldLabel } from '@/reuseable-components';
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   title?: string;
   icon?: SVG;
   tooltip?: string;
@@ -115,61 +115,52 @@ const Button = styled.button`
 `;
 
 // Wrap Input with forwardRef to handle the ref prop
-const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ icon: Icon, buttonLabel, onButtonClick, hasError, errorMessage, title, tooltip, required, initialValue, onChange, type = 'text', name, ...props }, ref) => {
-    const isSecret = type === 'password';
-    const [revealSecret, setRevealSecret] = useState(false);
-    const [value, setValue] = useState<string>(initialValue || '');
+const Input = forwardRef<HTMLInputElement, InputProps>(({ icon: Icon, buttonLabel, onButtonClick, hasError, errorMessage, title, tooltip, required, onChange, type = 'text', name, ...props }, ref) => {
+  const isSecret = type === 'password';
+  const [revealSecret, setRevealSecret] = useState(false);
 
-    const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-      e.stopPropagation();
-      setValue(e.target.value);
-      onChange?.(e);
-    };
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
 
-    const handleKeyDown: KeyboardEventHandler<HTMLInputElement> = (e) => {
-      e.stopPropagation();
-    };
+    const v = e.target.value;
+    const actualValue = type === 'number' ? v.replace(/[^\d]/g, '') : v;
+    e.target.value = actualValue;
 
-    return (
-      <Container>
-        <FieldLabel title={title} required={required} tooltip={tooltip} />
+    onChange?.(e);
+  };
 
-        <InputWrapper $disabled={props.disabled} $hasError={hasError || !!errorMessage} $isActive={!!props.autoFocus}>
-          {isSecret ? (
-            <IconWrapperClickable onClick={() => setRevealSecret((prev) => !prev)}>
-              {revealSecret ? <EyeClosedIcon size={14} fill={theme.text.grey} /> : <EyeOpenIcon size={14} fill={theme.text.grey} />}
-            </IconWrapperClickable>
-          ) : Icon ? (
-            <IconWrapper>
-              <Icon size={14} fill={theme.text.grey} />
-            </IconWrapper>
-          ) : null}
+  const handleKeyDown: KeyboardEventHandler<HTMLInputElement> = (e) => {
+    if (!['Enter'].includes(e.key)) e.stopPropagation();
+  };
 
-          <StyledInput
-            ref={ref}
-            data-id={name}
-            type={revealSecret ? 'text' : type}
-            $hasIcon={!!Icon || isSecret}
-            name={name}
-            value={value}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            {...props}
-          />
+  return (
+    <Container>
+      <FieldLabel title={title} required={required} tooltip={tooltip} />
 
-          {buttonLabel && onButtonClick && (
-            <Button onClick={onButtonClick} disabled={props.disabled}>
-              {buttonLabel}
-            </Button>
-          )}
-        </InputWrapper>
+      <InputWrapper $disabled={props.disabled} $hasError={hasError || !!errorMessage} $isActive={!!props.autoFocus}>
+        {isSecret ? (
+          <IconWrapperClickable onClick={() => setRevealSecret((prev) => !prev)}>
+            {revealSecret ? <EyeClosedIcon size={14} fill={theme.text.grey} /> : <EyeOpenIcon size={14} fill={theme.text.grey} />}
+          </IconWrapperClickable>
+        ) : Icon ? (
+          <IconWrapper>
+            <Icon size={14} fill={theme.text.grey} />
+          </IconWrapper>
+        ) : null}
 
-        {!!errorMessage && <FieldError>{errorMessage}</FieldError>}
-      </Container>
-    );
-  },
-);
+        <StyledInput ref={ref} data-id={name} type={revealSecret ? 'text' : type} $hasIcon={!!Icon || isSecret} name={name} onChange={handleInputChange} onKeyDown={handleKeyDown} {...props} />
 
-Input.displayName = 'Input'; // Set a display name for easier debugging
+        {buttonLabel && onButtonClick && (
+          <Button onClick={onButtonClick} disabled={props.disabled}>
+            {buttonLabel}
+          </Button>
+        )}
+      </InputWrapper>
+
+      {!!errorMessage && <FieldError>{errorMessage}</FieldError>}
+    </Container>
+  );
+});
+
+Input.displayName = 'Input';
 export { Input };
