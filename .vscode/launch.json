@@ -73,7 +73,7 @@
       "mode": "debug",
       "program": "${workspaceFolder}/cli",
       "cwd": "${workspaceFolder}/cli",
-      "args": ["install"],
+      "args": ["install", "--version", "<version_number>"], // Specify the desired version as the third argument in the command
       "buildFlags": "-tags=embed_manifests"
     },
     {
@@ -83,7 +83,7 @@
       "mode": "debug",
       "program": "${workspaceFolder}/cli",
       "cwd": "${workspaceFolder}/cli",
-      "args": ["update-token", "--onprem-token", "<>"], // Set the onprem-token as the third argument
+      "args": ["update-token", "--onprem-token", "<onprem_token>"], // Provide the on-prem token as the third argument in the command
       // Note: Remember to remove or replace the onprem-token before committing your changes!
       "buildFlags": "-tags=embed_manifests"
     }
