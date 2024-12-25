@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"strings"
 
 	"github.com/odigos-io/odigos/procdiscovery/pkg/libc"
 
@@ -134,20 +133,13 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 						detectedAgent = &odigosv1.OtherAgent{Name: otherAgentName}
 					}
 				}
-				// Languages that can be detected using command line Substrings, e.g. Java<>newrelic
-				for otherAgentCmdSubstring, otherAgentName := range procdiscovery.OtherAgentCmdSubString {
-					if strings.Contains(inspectProc.CmdLine, otherAgentCmdSubstring) {
-						detectedAgent = &odigosv1.OtherAgent{Name: otherAgentName}
-					}
-				}
-
 				// Inspecting libc type is expensive and not relevant for all languages
 				if libc.ShouldInspectForLanguage(programLanguageDetails.Language) {
 					typeFound, err := libc.InspectType(inspectProc)
 					if err == nil {
 						libcType = typeFound
 					} else {
-							log.Logger.Error(err, "error inspecting libc type", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
+						log.Logger.Error(err, "error inspecting libc type", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
 					}
 				}
 			}
