@@ -212,7 +212,6 @@ func fetchAndSetEnvFromContainerRuntime(ctx context.Context, criClient criwrappe
 		log.Logger.V(0).Info("containerID not found for container", "container", container.Name, "pod", pod.Name, "namespace", pod.Namespace)
 		return
 	}
-
 	envVars, err := criClient.GetContainerEnvVarsList(ctx, envVarKeys, containerID)
 	runtimeDetailsByContainer := (*resultsMap)[container.Name]
 
@@ -222,12 +221,23 @@ func fetchAndSetEnvFromContainerRuntime(ctx context.Context, criClient criwrappe
 		// If the CRI request fails, we can still attempt to check the /proc/<pid>/environ file.
 		// This is only applicable if the relevant value in /proc is EMPTY and we are certain it wasn't present in the manifest (as indicated by reaching this point in the code).
 		// In such cases, we can mark the state as `ProcessingStateSucceeded` and proceed without setting any environment variables.
+		for _, envVarKey := range envVarKeys {
+			procEnvVarValue, exists := procEnvVars[envVarKey]
+			if !exists || procEnvVarValue == "" {
+				state = odigosv1.ProcessingStateSucceeded
+			} else {
+				state = odigosv1.ProcessingStateFailed
+				// In Java, there are two potential relevant environment variables. If either of them exists or is not nil, we cannot consider the process as succeeded.
+				break
+			}
+		}
 
-		log.Logger.Error(err, "failed to get relevant env var per language", "container", container.Name, "pod", pod.Name, "namespace", pod.Namespace)
+		log.Logger.Error(err, "failed to get relevant env var per language from CRI", "container", container.Name, "pod", pod.Name, "namespace", pod.Namespace)
 		errMessage := fmt.Sprintf("CRI communication error for container %s in pod %s/%s",
 			container.Name, pod.Namespace, pod.Name)
+
 		runtimeDetailsByContainer.CriErrorMessage = &errMessage
-		state = odigosv1.ProcessingStateFailed
+
 	} else {
 		state = odigosv1.ProcessingStateSucceeded
 		runtimeDetailsByContainer.EnvFromContainerRuntime = envVars
