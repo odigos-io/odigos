@@ -235,9 +235,14 @@ func NewUIClusterRole() *rbacv1.ClusterRole {
 				Resources: []string{"instrumentedapplications", "instrumentationinstances", "instrumentationconfigs"},
 				Verbs:     []string{"get", "list"},
 			},
-			{ // Needed to watch Odigos entities
+			{ // Needed to instrument / uninstrument applications
 				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentedapplications", "instrumentationinstances"},
+				Resources: []string{"sources"},
+				Verbs:     []string{"get", "list", "create", "delete"},
+			},
+			{ // Needed to watch instrumented applications
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"instrumentedapplications", "instrumentationinstances", "sources"},
 				Verbs:     []string{"watch"},
 			},
 		},
