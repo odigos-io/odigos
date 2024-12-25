@@ -324,15 +324,11 @@ type DestinationDetails {
   fields: String!
 }
 
-type ActionStatus {
-  conditions: [Condition!]
-}
-
 type PipelineAction {
   id: String!
   type: String!
   spec: String!
-  status: ActionStatus!
+  conditions: [Condition!]
 }
 
 input PatchSourceRequestInput {

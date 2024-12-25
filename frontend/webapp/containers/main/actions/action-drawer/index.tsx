@@ -125,7 +125,7 @@ export const ActionDrawer: React.FC<Props> = () => {
         </FormContainer>
       ) : (
         <DataContainer>
-          <ConditionDetails conditions={item?.status?.conditions || []} />
+          <ConditionDetails conditions={item?.conditions || []} />
           <DataCard title={DATA_CARDS.ACTION_DETAILS} data={cardData} />
         </DataContainer>
       )}

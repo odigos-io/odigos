@@ -60,14 +60,12 @@ export const GET_COMPUTE_PLATFORM = gql`
         id
         type
         spec
-        status {
-          conditions {
-            status
-            type
-            reason
-            message
-            lastTransitionTime
-          }
+        conditions {
+          status
+          type
+          reason
+          message
+          lastTransitionTime
         }
       }
       instrumentationRules {

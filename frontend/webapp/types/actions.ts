@@ -72,9 +72,7 @@ export interface ActionData {
   id: string;
   type: ActionsType;
   spec: ActionItem | string;
-  status: {
-    conditions: Condition[];
-  };
+  conditions: Condition[];
 }
 
 export interface ActionDataParsed extends ActionData {
