@@ -487,24 +487,129 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   generation: 4
-  name: dotnet-musl
+  name: dotnet8-musl
   namespace: default
   labels:
-    app: dotnet-musl
+    app: dotnet8-musl
 spec:
   selector:
     matchLabels:
-      app: dotnet-musl
+      app: dotnet8-musl
   template:
     metadata:
       labels:
-        app: dotnet-musl
+        app: dotnet8-musl
       annotations:
         odigos-test-step: "2"
     spec:
       containers:
-        - name: dotnet-musl
-          image: dotnet-musl:v0.0.1
+        - name: dotnet8-musl
+          image: dotnet8-musl:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+status:
+  availableReplicas: 1
+  observedGeneration: 4
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  generation: 4
+  name: dotnet6-musl
+  namespace: default
+  labels:
+    app: dotnet6-musl
+spec:
+  selector:
+    matchLabels:
+      app: dotnet6-musl
+  template:
+    metadata:
+      labels:
+        app: dotnet6-musl
+      annotations:
+        odigos-test-step: "2"
+    spec:
+      containers:
+        - name: dotnet6-musl
+          image: dotnet6-musl:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+status:
+  availableReplicas: 1
+  observedGeneration: 4
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  generation: 4
+  name: dotnet8-glibc
+  namespace: default
+  labels:
+    app: dotnet8-glibc
+spec:
+  selector:
+    matchLabels:
+      app: dotnet8-glibc
+  template:
+    metadata:
+      labels:
+        app: dotnet8-glibc
+      annotations:
+        odigos-test-step: "2"
+    spec:
+      containers:
+        - name: dotnet8-glibc
+          image: dotnet8-glibc:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+status:
+  availableReplicas: 1
+  observedGeneration: 4
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  generation: 4
+  name: dotnet6-glibc
+  namespace: default
+  labels:
+    app: dotnet6-glibc
+spec:
+  selector:
+    matchLabels:
+      app: dotnet6-glibc
+  template:
+    metadata:
+      labels:
+        app: dotnet6-glibc
+      annotations:
+        odigos-test-step: "2"
+    spec:
+      containers:
+        - name: dotnet6-glibc
+          image: dotnet6-glibc:v0.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
