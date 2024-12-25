@@ -139,7 +139,7 @@ export const SourcesList: React.FC<Props> = ({
           <Group data-id={`namespace-${namespace}`} key={`namespace-${namespace}`} $selected={isNamespaceAllSourcesSelected} $isOpen={isNamespaceSelected && hasFilteredSources}>
             <NamespaceItem $selected={isNamespaceAllSourcesSelected} onClick={() => onSelectNamespace(namespace)}>
               <FlexRow>
-                <Checkbox disabled={namespaceLoaded && !isNamespaceCanSelect} initialValue={isNamespaceAllSourcesSelected} onChange={(bool) => onSelectAll(bool, namespace)} />
+                <Checkbox disabled={namespaceLoaded && !isNamespaceCanSelect} value={isNamespaceAllSourcesSelected} onChange={(bool) => onSelectAll(bool, namespace)} />
                 <Text>{namespace}</Text>
               </FlexRow>
 
@@ -166,7 +166,7 @@ export const SourcesList: React.FC<Props> = ({
                     return (
                       <SourceItem key={`source-${source.name}`} $selected={isSourceSelected} onClick={() => onSelectSource(source)}>
                         <FlexRow>
-                          <Checkbox initialValue={isSourceSelected} onChange={() => onSelectSource(source, namespace)} />
+                          <Checkbox value={isSourceSelected} onChange={() => onSelectSource(source, namespace)} />
                           <Text>{source.name}</Text>
                           <Text opacity={0.8} size={10}>
                             {source.numberOfInstances} running instance{source.numberOfInstances !== 1 && 's'} · {source.kind}

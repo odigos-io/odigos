@@ -80,3 +80,11 @@ type ProcessorListerExpansion interface{}
 // ProcessorNamespaceListerExpansion allows custom methods to be added to
 // ProcessorNamespaceLister.
 type ProcessorNamespaceListerExpansion interface{}
+
+// SourceListerExpansion allows custom methods to be added to
+// SourceLister.
+type SourceListerExpansion interface{}
+
+// SourceNamespaceListerExpansion allows custom methods to be added to
+// SourceNamespaceLister.
+type SourceNamespaceListerExpansion interface{}

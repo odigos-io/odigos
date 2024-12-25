@@ -1,4 +1,4 @@
-package describe
+package source_describe
 
 import (
 	"context"

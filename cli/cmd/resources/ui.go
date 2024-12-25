@@ -140,54 +140,35 @@ func NewUIRole(ns string) *rbacv1.Role {
 			Namespace: ns,
 		},
 		Rules: []rbacv1.PolicyRule{
-			{
-				Verbs: []string{
-					"create",
-					"get",
-					"update",
-					"watch",
-					"patch",
-				},
+			{ // Needed to read odigos-config configmap for settings
 				APIGroups: []string{""},
-				Resources: []string{
-					"secrets",
-				},
+				Resources: []string{"configmaps"},
+				Verbs:     []string{"get", "list"},
 			},
-			{
-				Verbs: []string{
-					"watch",
-					"list",
-					"get",
-				},
+			{ // Needed for secret values in destinations
 				APIGroups: []string{""},
-				Resources: []string{
-					"pods",
-				},
+				Resources: []string{"secrets"},
+				Verbs:     []string{"get", "list", "create", "patch", "update"},
 			},
-			{
-				Verbs: []string{
-					"get",
-					"list",
-				},
-				APIGroups: []string{"apps"},
-				Resources: []string{
-					"replicasets",
-				},
-			},
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-					"patch",
-					"delete",
-					"create",
-					"update",
-				},
+			{ // Needed for CRUD on Odigos entities
 				APIGroups: []string{"odigos.io"},
-				Resources: []string{
-					"instrumentaitonrules",
-				},
+				Resources: []string{"instrumentationrules", "destinations"},
+				Verbs:     []string{"get", "list", "create", "patch", "update", "delete"},
+			},
+			{ // Needed to watch Odigos entities
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"destinations"},
+				Verbs:     []string{"watch"},
+			},
+			{ // Needed to read Odigos entities
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"collectorsgroups"},
+				Verbs:     []string{"get", "list"},
+			},
+			{ // Needed for CRUD on Pipeline Actions
+				APIGroups: []string{"actions.odigos.io"},
+				Resources: []string{"*"},
+				Verbs:     []string{"get", "list", "create", "patch", "update", "delete"},
 			},
 		},
 	}
@@ -228,40 +209,36 @@ func NewUIClusterRole() *rbacv1.ClusterRole {
 			Name: "odigos-ui",
 		},
 		Rules: []rbacv1.PolicyRule{
-			{
+			{ // Needed to get and instrument namespaces
 				APIGroups: []string{""},
 				Resources: []string{"namespaces"},
-				Verbs:     []string{"get", "list", "watch", "patch"},
+				Verbs:     []string{"get", "list", "patch"},
 			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"services"},
-				Verbs:     []string{"list"},
+			{ // Needed to instrument applications
+				APIGroups: []string{"apps"},
+				Resources: []string{"deployments", "statefulsets", "daemonsets"},
+				Verbs:     []string{"get", "list", "patch", "update"},
 			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"configmaps"},
-				Verbs:     []string{"get", "list", "watch", "patch", "create", "delete", "update"},
-			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"pods"},
+			{ // Needed for "Describe Source" and for "Describe Odigos"
+				APIGroups: []string{"apps"},
+				Resources: []string{"replicasets"},
 				Verbs:     []string{"get", "list"},
 			},
-			{
-				APIGroups: []string{"apps"},
-				Resources: []string{"deployments", "statefulsets", "daemonsets", "replicasets"},
-				Verbs:     []string{"get", "list", "watch", "patch", "update"},
+			{ // Need "services" for "Potential Destinations"
+				// Need "pods" for "Describe Source"
+				APIGroups: []string{""},
+				Resources: []string{"services", "pods"},
+				Verbs:     []string{"get", "list"},
 			},
-			{
+			{ // Needed to read Odigos entities
 				APIGroups: []string{"odigos.io"},
-				Resources: []string{"*"},
-				Verbs:     []string{"get", "list", "watch", "patch", "create", "delete", "update"},
+				Resources: []string{"instrumentedapplications", "instrumentationinstances", "instrumentationconfigs"},
+				Verbs:     []string{"get", "list"},
 			},
-			{
-				APIGroups: []string{"actions.odigos.io"},
-				Resources: []string{"*"},
-				Verbs:     []string{"get", "list", "watch", "patch", "create", "delete", "update"},
+			{ // Needed to watch Odigos entities
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"instrumentedapplications", "instrumentationinstances"},
+				Verbs:     []string{"watch"},
 			},
 		},
 	}
