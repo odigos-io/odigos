@@ -36,12 +36,3 @@ export type PersistSourcesArray = {
   name: string;
   selected: boolean;
 };
-
-export interface Source {
-  spec: {
-    workload: WorkloadId;
-  };
-  status: {
-    conditions: Condition[];
-  };
-}

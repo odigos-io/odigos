@@ -3,6 +3,9 @@ import { gql } from '@apollo/client';
 export const GET_COMPUTE_PLATFORM = gql`
   query GetComputePlatform {
     computePlatform {
+      k8sActualNamespaces {
+        name
+      }
       k8sActualSources {
         name
         kind
@@ -16,24 +19,6 @@ export const GET_COMPUTE_PLATFORM = gql`
             runtimeVersion
             otherAgent
           }
-          conditions {
-            status
-            type
-            reason
-            message
-            lastTransitionTime
-          }
-        }
-      }
-      sources {
-        spec {
-          workload {
-            kind
-            name
-            namespace
-          }
-        }
-        status {
           conditions {
             status
             type
@@ -113,9 +98,6 @@ export const GET_COMPUTE_PLATFORM = gql`
             dropPartialPayloads
           }
         }
-      }
-      k8sActualNamespaces {
-        name
       }
     }
   }
