@@ -3,6 +3,9 @@ import { gql } from '@apollo/client';
 export const GET_COMPUTE_PLATFORM = gql`
   query GetComputePlatform {
     computePlatform {
+      k8sActualNamespaces {
+        name
+      }
       k8sActualSources {
         name
         kind
@@ -95,9 +98,6 @@ export const GET_COMPUTE_PLATFORM = gql`
             dropPartialPayloads
           }
         }
-      }
-      k8sActualNamespaces {
-        name
       }
     }
   }

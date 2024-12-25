@@ -20,9 +20,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -90,9 +91,16 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 	}
 
 	if !instEffectiveEnabled {
-		logger.Info("Deleting instrumented application for non-enabled workload")
-		err := r.Client.Delete(ctx, &instrumentedApplication)
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		// Check if a Source object exists for this workload
+		sourceList, err := v1alpha1.GetSourceListForWorkload(ctx, r.Client, workloadObject)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		if len(sourceList.Items) == 0 {
+			logger.Info("Deleting instrumented application for non-enabled workload")
+			err := r.Client.Delete(ctx, &instrumentedApplication)
+			return ctrl.Result{}, client.IgnoreNotFound(err)
+		}
 	}
 
 	return ctrl.Result{}, nil

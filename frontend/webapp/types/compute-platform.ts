@@ -14,9 +14,9 @@ interface ComputePlatformData {
   computePlatformType: string;
   k8sActualNamespace?: K8sActualNamespace;
   k8sActualNamespaces: K8sActualNamespace[];
-  actions: ActionData[];
   k8sActualSources: K8sActualSource[];
   destinations: ActualDestination[];
+  actions: ActionData[];
   instrumentationRules: InstrumentationRuleSpec[];
 }
 
