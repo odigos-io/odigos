@@ -278,8 +278,8 @@ func cleanUpManifestValueFromOdigosAdditions(manifestEnvVarKey string, manifestE
 			manifestEnvVarValue = strings.ReplaceAll(manifestEnvVarValue, value, "")
 		}
 		withoutTrailingColon := cleanTrailingChar(manifestEnvVarValue, ":")
-		withoutTrailingSpace := cleanTrailingChar(withoutTrailingColon, " ")
-		return withoutTrailingSpace
+		withoutTrailingAndLeadingSpace := strings.TrimSpace(withoutTrailingColon)
+		return withoutTrailingAndLeadingSpace
 	} else {
 		// manifestEnvVarKey does not exist in the EnvValuesMap
 		return ""
