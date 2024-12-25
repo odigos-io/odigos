@@ -2,24 +2,22 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
-
+	"github.com/odigos-io/odigos/k8sutils/pkg/client"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
-
-	"github.com/odigos-io/odigos/frontend/graph/model"
-
-	"github.com/odigos-io/odigos/k8sutils/pkg/client"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"golang.org/x/sync/errgroup"
-	corev1 "k8s.io/api/core/v1"
 )
 
 type WorkloadKind string
@@ -318,4 +316,47 @@ func updateAnnotations(annotations map[string]string, reportedName string) map[s
 		annotations[consts.OdigosReportedNameAnnotation] = reportedName
 	}
 	return annotations
+}
+
+func CreateSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) error {
+	if workloadKind != WorkloadKindDeployment && workloadKind != WorkloadKindStatefulSet && workloadKind != WorkloadKindDaemonSet {
+		return errors.New("unsupported workload kind " + string(workloadKind))
+	}
+
+	newSource := &v1alpha1.Source{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "source-",
+		},
+		Spec: v1alpha1.SourceSpec{
+			Workload: workload.PodWorkload{
+				Namespace: nsName,
+				Name:      workloadName,
+				Kind:      workload.WorkloadKind(workloadKind),
+			},
+		},
+	}
+
+	_, err := kube.DefaultClient.OdigosClient.Sources(consts.DefaultOdigosNamespace).Create(ctx, newSource, metav1.CreateOptions{})
+	return err
+}
+
+func DeleteSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) error {
+	if workloadKind != WorkloadKindDeployment && workloadKind != WorkloadKindStatefulSet && workloadKind != WorkloadKindDaemonSet {
+		return errors.New("unsupported workload kind " + string(workloadKind))
+	}
+
+	err := kube.DefaultClient.OdigosClient.Sources(consts.DefaultOdigosNamespace).Delete(ctx, workloadName, metav1.DeleteOptions{})
+	return err
+}
+
+func ToggleSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind, enabled *bool) error {
+	if enabled == nil {
+		return errors.New("enabled must be provided")
+	}
+
+	if *enabled {
+		return CreateSourceCRD(ctx, nsName, workloadName, workloadKind)
+	} else {
+		return DeleteSourceCRD(ctx, nsName, workloadName, workloadKind)
+	}
 }
