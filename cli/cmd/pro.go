@@ -57,14 +57,14 @@ func updateOdigosToken(ctx context.Context, client *kube.Client, namespace strin
 	// Retrieve the existing secret
 	secret, err := client.CoreV1().Secrets(namespace).Get(ctx, consts.OdigosProSecretName, metav1.GetOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to retrieve Odigos token in namespace '%s': %v", namespace, err)
+		return fmt.Errorf("Tokens are not available in the open-source version of Odigos. Please use the on-premises version.")
 	}
 	secret.Data[consts.OdigosOnpremTokenSecretKey] = []byte(tokenValue)
 
 	// Apply the updated secret
 	_, err = client.CoreV1().Secrets(namespace).Update(ctx, secret, metav1.UpdateOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to update Odigos token %s in namespace %s: %w", consts.OdigosProSecretName, namespace, err)
+		return fmt.Errorf("Tokens are not available in the open-source version of Odigos. Please use the on-premises version.")
 	}
 
 	return nil
