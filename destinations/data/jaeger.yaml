@@ -21,10 +21,19 @@ spec:
         type: text
         required: true
     - name: JAEGER_TLS_ENABLED
-      displayName: Enable TLS (secure connection)
+      displayName: Enable TLS
       componentType: checkbox
+      initialValue: false
       componentProps:
         required: false
+        tooltip: 'Secure connection (Transport Layer Security)'
+      customReadDataLabels:
+        - condition: 'true'
+          title: 'TLS'
+          value: 'Encrypted'
+        - condition: 'false'
+          title: 'TLS'
+          value: 'Unencrypted'
     - name: JAEGER_CA_PEM
       displayName: Certificate Authority
       componentType: textarea
@@ -33,4 +42,6 @@ spec:
         required: false
         placeholder: '-----BEGIN CERTIFICATE-----'
         tooltip: 'When using TLS, provide the CA certificate to verify the server. If empty uses system root CA'
+      renderCondition: ['JAEGER_TLS_ENABLED', '==', 'true']
+      hideFromReadData: ['true']
   testConnectionSupported: true

@@ -46,4 +46,7 @@ spec:
               curl -s --fail http://python-min-version:3000/insert-random/
               curl -s --fail http://python-not-supported:3000/insert-random/
               
-              curl -s --fail http://dotnet-musl:8080
+              curl -s --fail http://dotnet8-musl:8080
+              curl -s --fail http://dotnet6-musl:8080
+              curl -s --fail http://dotnet8-glibc:8080
+              curl -s --fail http://dotnet6-glibc:8080

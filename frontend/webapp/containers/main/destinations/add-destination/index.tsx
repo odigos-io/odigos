@@ -61,8 +61,12 @@ export function AddDestinationContainer() {
     await createSources(configuredSources, configuredFutureApps);
     await Promise.all(configuredDestinations.map(async ({ form }) => await createDestination(form)));
 
-    resetState();
-    router.push(ROUTES.OVERVIEW);
+    // Delay redirect by 3 seconds to allow the sources to be created on the backend 1st,
+    // otherwise we would have to apply polling on the overview page on every mount.
+    setTimeout(() => {
+      resetState();
+      router.push(ROUTES.OVERVIEW);
+    }, 3000);
   };
 
   const isSourcesListEmpty = () => !Object.values(configuredSources).some((sources) => !!sources.length);

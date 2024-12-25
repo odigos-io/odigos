@@ -110,6 +110,12 @@ type ComplexityRoot struct {
 		OriginalEnv   func(childComplexity int) int
 	}
 
+	CustomReadDataLabel struct {
+		Condition func(childComplexity int) int
+		Title     func(childComplexity int) int
+		Value     func(childComplexity int) int
+	}
+
 	DbQueryPayloadCollection struct {
 		DropPartialPayloads func(childComplexity int) int
 		MaxPayloadLength    func(childComplexity int) int
@@ -182,13 +188,15 @@ type ComplexityRoot struct {
 	}
 
 	Field struct {
-		ComponentProperties func(childComplexity int) int
-		ComponentType       func(childComplexity int) int
-		DisplayName         func(childComplexity int) int
-		InitialValue        func(childComplexity int) int
-		Name                func(childComplexity int) int
-		ThumbnailURL        func(childComplexity int) int
-		VideoURL            func(childComplexity int) int
+		ComponentProperties  func(childComplexity int) int
+		ComponentType        func(childComplexity int) int
+		CustomReadDataLabels func(childComplexity int) int
+		DisplayName          func(childComplexity int) int
+		HideFromReadData     func(childComplexity int) int
+		InitialValue         func(childComplexity int) int
+		Name                 func(childComplexity int) int
+		RenderCondition      func(childComplexity int) int
+		Secret               func(childComplexity int) int
 	}
 
 	GetConfigResponse struct {
@@ -824,6 +832,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ContainerWorkloadManifestAnalyze.OriginalEnv(childComplexity), true
 
+	case "CustomReadDataLabel.condition":
+		if e.complexity.CustomReadDataLabel.Condition == nil {
+			break
+		}
+
+		return e.complexity.CustomReadDataLabel.Condition(childComplexity), true
+
+	case "CustomReadDataLabel.title":
+		if e.complexity.CustomReadDataLabel.Title == nil {
+			break
+		}
+
+		return e.complexity.CustomReadDataLabel.Title(childComplexity), true
+
+	case "CustomReadDataLabel.value":
+		if e.complexity.CustomReadDataLabel.Value == nil {
+			break
+		}
+
+		return e.complexity.CustomReadDataLabel.Value(childComplexity), true
+
 	case "DbQueryPayloadCollection.dropPartialPayloads":
 		if e.complexity.DbQueryPayloadCollection.DropPartialPayloads == nil {
 			break
@@ -1125,12 +1154,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Field.ComponentType(childComplexity), true
 
+	case "Field.customReadDataLabels":
+		if e.complexity.Field.CustomReadDataLabels == nil {
+			break
+		}
+
+		return e.complexity.Field.CustomReadDataLabels(childComplexity), true
+
 	case "Field.displayName":
 		if e.complexity.Field.DisplayName == nil {
 			break
 		}
 
 		return e.complexity.Field.DisplayName(childComplexity), true
+
+	case "Field.hideFromReadData":
+		if e.complexity.Field.HideFromReadData == nil {
+			break
+		}
+
+		return e.complexity.Field.HideFromReadData(childComplexity), true
 
 	case "Field.initialValue":
 		if e.complexity.Field.InitialValue == nil {
@@ -1146,19 +1189,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Field.Name(childComplexity), true
 
-	case "Field.thumbnailURL":
-		if e.complexity.Field.ThumbnailURL == nil {
+	case "Field.renderCondition":
+		if e.complexity.Field.RenderCondition == nil {
 			break
 		}
 
-		return e.complexity.Field.ThumbnailURL(childComplexity), true
+		return e.complexity.Field.RenderCondition(childComplexity), true
 
-	case "Field.videoUrl":
-		if e.complexity.Field.VideoURL == nil {
+	case "Field.secret":
+		if e.complexity.Field.Secret == nil {
 			break
 		}
 
-		return e.complexity.Field.VideoURL(childComplexity), true
+		return e.complexity.Field.Secret(childComplexity), true
 
 	case "GetConfigResponse.installation":
 		if e.complexity.GetConfigResponse.Installation == nil {
@@ -4950,6 +4993,138 @@ func (ec *executionContext) fieldContext_ContainerWorkloadManifestAnalyze_origin
 	return fc, nil
 }
 
+func (ec *executionContext) _CustomReadDataLabel_condition(ctx context.Context, field graphql.CollectedField, obj *model.CustomReadDataLabel) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CustomReadDataLabel_condition(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Condition, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CustomReadDataLabel_condition(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CustomReadDataLabel",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CustomReadDataLabel_title(ctx context.Context, field graphql.CollectedField, obj *model.CustomReadDataLabel) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CustomReadDataLabel_title(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Title, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CustomReadDataLabel_title(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CustomReadDataLabel",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CustomReadDataLabel_value(ctx context.Context, field graphql.CollectedField, obj *model.CustomReadDataLabel) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CustomReadDataLabel_value(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Value, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CustomReadDataLabel_value(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CustomReadDataLabel",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _DbQueryPayloadCollection_maxPayloadLength(ctx context.Context, field graphql.CollectedField, obj *model.DbQueryPayloadCollection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DbQueryPayloadCollection_maxPayloadLength(ctx, field)
 	if err != nil {
@@ -6955,8 +7130,8 @@ func (ec *executionContext) fieldContext_Field_componentProperties(_ context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _Field_videoUrl(ctx context.Context, field graphql.CollectedField, obj *model.Field) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Field_videoUrl(ctx, field)
+func (ec *executionContext) _Field_secret(ctx context.Context, field graphql.CollectedField, obj *model.Field) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Field_secret(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -6969,69 +7144,31 @@ func (ec *executionContext) _Field_videoUrl(ctx context.Context, field graphql.C
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.VideoURL, nil
+		return obj.Secret, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Field_videoUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Field",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Field_thumbnailURL(ctx context.Context, field graphql.CollectedField, obj *model.Field) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Field_thumbnailURL(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
 		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ThumbnailURL, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
 		return graphql.Null
 	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
+	res := resTmp.(bool)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Field_thumbnailURL(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Field_secret(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Field",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -7058,11 +7195,14 @@ func (ec *executionContext) _Field_initialValue(ctx context.Context, field graph
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Field_initialValue(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -7073,6 +7213,146 @@ func (ec *executionContext) fieldContext_Field_initialValue(_ context.Context, f
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Field_renderCondition(ctx context.Context, field graphql.CollectedField, obj *model.Field) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Field_renderCondition(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RenderCondition, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Field_renderCondition(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Field",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Field_hideFromReadData(ctx context.Context, field graphql.CollectedField, obj *model.Field) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Field_hideFromReadData(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HideFromReadData, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Field_hideFromReadData(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Field",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Field_customReadDataLabels(ctx context.Context, field graphql.CollectedField, obj *model.Field) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Field_customReadDataLabels(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CustomReadDataLabels, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.CustomReadDataLabel)
+	fc.Result = res
+	return ec.marshalNCustomReadDataLabel2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCustomReadDataLabelᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Field_customReadDataLabels(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Field",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "condition":
+				return ec.fieldContext_CustomReadDataLabel_condition(ctx, field)
+			case "title":
+				return ec.fieldContext_CustomReadDataLabel_title(ctx, field)
+			case "value":
+				return ec.fieldContext_CustomReadDataLabel_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CustomReadDataLabel", field.Name)
 		},
 	}
 	return fc, nil
@@ -7169,12 +7449,16 @@ func (ec *executionContext) fieldContext_GetDestinationDetailsResponse_fields(_ 
 				return ec.fieldContext_Field_componentType(ctx, field)
 			case "componentProperties":
 				return ec.fieldContext_Field_componentProperties(ctx, field)
-			case "videoUrl":
-				return ec.fieldContext_Field_videoUrl(ctx, field)
-			case "thumbnailURL":
-				return ec.fieldContext_Field_thumbnailURL(ctx, field)
+			case "secret":
+				return ec.fieldContext_Field_secret(ctx, field)
 			case "initialValue":
 				return ec.fieldContext_Field_initialValue(ctx, field)
+			case "renderCondition":
+				return ec.fieldContext_Field_renderCondition(ctx, field)
+			case "hideFromReadData":
+				return ec.fieldContext_Field_hideFromReadData(ctx, field)
+			case "customReadDataLabels":
+				return ec.fieldContext_Field_customReadDataLabels(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Field", field.Name)
 		},
@@ -18643,6 +18927,55 @@ func (ec *executionContext) _ContainerWorkloadManifestAnalyze(ctx context.Contex
 	return out
 }
 
+var customReadDataLabelImplementors = []string{"CustomReadDataLabel"}
+
+func (ec *executionContext) _CustomReadDataLabel(ctx context.Context, sel ast.SelectionSet, obj *model.CustomReadDataLabel) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, customReadDataLabelImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CustomReadDataLabel")
+		case "condition":
+			out.Values[i] = ec._CustomReadDataLabel_condition(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "title":
+			out.Values[i] = ec._CustomReadDataLabel_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "value":
+			out.Values[i] = ec._CustomReadDataLabel_value(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var dbQueryPayloadCollectionImplementors = []string{"DbQueryPayloadCollection"}
 
 func (ec *executionContext) _DbQueryPayloadCollection(ctx context.Context, sel ast.SelectionSet, obj *model.DbQueryPayloadCollection) graphql.Marshaler {
@@ -19254,12 +19587,31 @@ func (ec *executionContext) _Field(ctx context.Context, sel ast.SelectionSet, ob
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "videoUrl":
-			out.Values[i] = ec._Field_videoUrl(ctx, field, obj)
-		case "thumbnailURL":
-			out.Values[i] = ec._Field_thumbnailURL(ctx, field, obj)
+		case "secret":
+			out.Values[i] = ec._Field_secret(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "initialValue":
 			out.Values[i] = ec._Field_initialValue(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "renderCondition":
+			out.Values[i] = ec._Field_renderCondition(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "hideFromReadData":
+			out.Values[i] = ec._Field_hideFromReadData(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "customReadDataLabels":
+			out.Values[i] = ec._Field_customReadDataLabels(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -22067,6 +22419,60 @@ func (ec *executionContext) marshalNContainerWorkloadManifestAnalyze2ᚖgithub�
 		return graphql.Null
 	}
 	return ec._ContainerWorkloadManifestAnalyze(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNCustomReadDataLabel2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCustomReadDataLabelᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.CustomReadDataLabel) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNCustomReadDataLabel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCustomReadDataLabel(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNCustomReadDataLabel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCustomReadDataLabel(ctx context.Context, sel ast.SelectionSet, v *model.CustomReadDataLabel) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._CustomReadDataLabel(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNDestination2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDestination(ctx context.Context, sel ast.SelectionSet, v model.Destination) graphql.Marshaler {
