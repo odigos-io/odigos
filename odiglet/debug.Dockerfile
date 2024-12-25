@@ -61,7 +61,18 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
 RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     wget https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
     unzip opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
-    rm opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip
+    rm opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
+    mv linux-$ARCH_SUFFIX linux-glibc-$ARCH_SUFFIX && \
+    wget https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip && \
+    unzip opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip "linux-musl-$ARCH_SUFFIX/*" -d . && \
+    rm opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip
+
+# TODO(edenfed): Currently .NET Automatic instrumentation does not work on dotnet 6.0 with glibc,
+# This is due to compilation of the .so file on a newer version of glibc than the one used by the dotnet runtime.
+# The following override the .so file with our own which is compiled on the same glibc version as the dotnet runtime.
+RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
+    wget https://github.com/odigos-io/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so && \
+    mv OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so linux-glibc-${ARCH_SUFFIX}/OpenTelemetry.AutoInstrumentation.Native.so
 
 FROM --platform=$BUILDPLATFORM keyval/odiglet-base:v1.5 AS builder
 WORKDIR /go/src/github.com/odigos-io/odigos
