@@ -71,6 +71,10 @@ func Metav1TimeToString(latestStatusTime metav1.Time) string {
 }
 
 func CreateWorkloadSource(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) error {
+	if workloadKind != WorkloadKindDeployment && workloadKind != WorkloadKindStatefulSet && workloadKind != WorkloadKindDaemonSet {
+		return errors.New("unsupported workload kind " + string(workloadKind))
+	}
+
 	newSource := &v1alpha1.Source{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "source-",
@@ -85,10 +89,6 @@ func CreateWorkloadSource(ctx context.Context, nsName string, workloadName strin
 		Status: v1alpha1.SourceStatus{
 			Conditions: []metav1.Condition{},
 		},
-	}
-
-	if workloadKind != WorkloadKindDeployment && workloadKind != WorkloadKindStatefulSet && workloadKind != WorkloadKindDaemonSet {
-		return errors.New("unsupported workload kind " + string(workloadKind))
 	}
 
 	_, err := kube.DefaultClient.OdigosClient.Sources("").Create(ctx, newSource, metav1.CreateOptions{})
