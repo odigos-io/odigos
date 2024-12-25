@@ -110,32 +110,6 @@ func (r *computePlatformResolver) K8sActualSources(ctx context.Context, obj *mod
 	return actualSources, nil
 }
 
-// Sources is the resolver for the sources field.
-func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.ComputePlatform) ([]*model.Source, error) {
-	sources, err := kube.DefaultClient.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	var result []*model.Source
-	for _, source := range sources.Items {
-		result = append(result, &model.Source{
-			Spec: &model.SourceSpec{
-				Workload: &model.PodWorkload{
-					Namespace: source.Spec.Workload.Namespace,
-					Name:      source.Spec.Workload.Name,
-					Kind:      model.K8sResourceKind(source.Spec.Workload.Kind),
-				},
-			},
-			Status: &model.SourceStatus{
-				Conditions: convertConditions(source.Status.Conditions),
-			},
-		})
-	}
-
-	return result, nil
-}
-
 // Destinations is the resolver for the destinations field.
 func (r *computePlatformResolver) Destinations(ctx context.Context, obj *model.ComputePlatform) ([]*model.Destination, error) {
 	odigosns := consts.DefaultOdigosNamespace

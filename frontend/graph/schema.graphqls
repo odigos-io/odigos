@@ -106,19 +106,6 @@ input K8sDesiredSourceInput {
   autoInstrument: Boolean
 }
 
-type SourceSpec {
-  workload: PodWorkload!
-}
-
-type SourceStatus {
-  conditions: [Condition!]
-}
-
-type Source {
-  spec: SourceSpec!
-  status: SourceStatus!
-}
-
 type PodWorkload {
   namespace: String!
   name: String!
@@ -220,7 +207,6 @@ type ComputePlatform {
   k8sActualNamespaces: [K8sActualNamespace]!
   k8sActualSource(name: String, namespace: String, kind: String): K8sActualSource
   k8sActualSources: [K8sActualSource]!
-  sources: [Source!]!
   destinations: [Destination!]!
   actions: [PipelineAction!]!
   instrumentationRules: [InstrumentationRule!]!
