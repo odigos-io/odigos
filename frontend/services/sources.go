@@ -334,6 +334,9 @@ func GetSourceCRD(ctx context.Context, nsName string, workloadName string, workl
 	if err != nil {
 		return nil, err
 	}
+	if len(sourceList.Items) == 0 {
+		return nil, errors.New("source not found" + workloadName)
+	}
 
 	crdName := sourceList.Items[0].Name
 	source, err := kube.DefaultClient.OdigosClient.Sources(consts.DefaultOdigosNamespace).Get(ctx, crdName, metav1.GetOptions{})
@@ -374,9 +377,6 @@ func DeleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 	source, err := GetSourceCRD(ctx, nsName, workloadName, workloadKind)
 	if err != nil {
 		return err
-	}
-	if source == nil {
-		return errors.New("source not found" + workloadName)
 	}
 
 	err = kube.DefaultClient.OdigosClient.Sources(consts.DefaultOdigosNamespace).Delete(ctx, source.Name, metav1.DeleteOptions{})
