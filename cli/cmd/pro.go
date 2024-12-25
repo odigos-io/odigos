@@ -38,7 +38,8 @@ var proCmd = &cobra.Command{
 
 		err = updateOdigosToken(ctx, client, ns, tokenType, tokenValue)
 		if err != nil {
-			fmt.Errorf("\033[31mERROR\033[0m Failed to update token: %s\n", err)
+			fmt.Println("\033[31mERROR\033[0m Failed to update token:")
+			fmt.Println(err)
 			os.Exit(1)
 		}
 		
@@ -56,15 +57,14 @@ func updateOdigosToken(ctx context.Context, client *kube.Client, namespace strin
 	// Retrieve the existing secret
 	secret, err := client.CoreV1().Secrets(namespace).Get(ctx, consts.OdigosProSecretName, metav1.GetOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to get secret %s in namespace %s: %w", consts.OdigosProSecretName, namespace, err)
+		return fmt.Errorf("failed to retrieve Odigos token in namespace '%s': %v", namespace, err)
 	}
-
 	secret.Data[consts.OdigosOnpremTokenSecretKey] = []byte(tokenValue)
 
 	// Apply the updated secret
 	_, err = client.CoreV1().Secrets(namespace).Update(ctx, secret, metav1.UpdateOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to update secret %s in namespace %s: %w", consts.OdigosProSecretName, namespace, err)
+		return fmt.Errorf("failed to update Odigos token %s in namespace %s: %w", consts.OdigosProSecretName, namespace, err)
 	}
 
 	return nil

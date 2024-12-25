@@ -77,7 +77,7 @@
       "buildFlags": "-tags=embed_manifests"
     },
     {
-      "name": "cli update",
+      "name": "cli pro",
       "type": "go",
       "request": "launch",
       "mode": "debug",
