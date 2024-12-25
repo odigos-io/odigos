@@ -181,7 +181,7 @@ func SyncWorkloadsInNamespace(ctx context.Context, nsName string, workloads []mo
 		g.Go(func() error {
 			// Only label selected sources, ignore the rest
 			if currWorkload.Selected != nil {
-				return ToggleWorkloadSource(ctx, nsName, currWorkload.Name, WorkloadKind(currWorkload.Kind.String()), currWorkload.Selected)
+				return ToggleSourceCRD(ctx, nsName, currWorkload.Name, WorkloadKind(currWorkload.Kind.String()), currWorkload.Selected)
 			}
 			return nil
 		})
