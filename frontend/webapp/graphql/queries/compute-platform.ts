@@ -25,6 +25,24 @@ export const GET_COMPUTE_PLATFORM = gql`
           }
         }
       }
+      sources {
+        spec {
+          workload {
+            kind
+            name
+            namespace
+          }
+        }
+        status {
+          conditions {
+            status
+            type
+            reason
+            message
+            lastTransitionTime
+          }
+        }
+      }
       destinations {
         id
         name
