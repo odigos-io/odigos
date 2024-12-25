@@ -52,8 +52,6 @@ models:
         resolver: true
       k8sActualSources:
         resolver: true
-      sources:
-        resolver: true
       destinations:
         resolver: true
       actions:
