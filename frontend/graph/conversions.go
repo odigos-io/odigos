@@ -97,3 +97,29 @@ func convertCustomReadDataLabels(labels []*destinations.CustomReadDataLabel) []*
 	}
 	return result
 }
+
+func convertConditions(conditions []v1.Condition) []*model.Condition {
+	var result []*model.Condition
+	for _, c := range conditions {
+		result = append(result, &model.Condition{
+			Status:             model.ConditionStatus(c.Status),
+			Type:               c.Type,
+			Reason:             &c.Reason,
+			Message:            &c.Message,
+			LastTransitionTime: convertLastTransitionTime(c.LastTransitionTime),
+		})
+	}
+	return result
+}
+
+// Convert LastTransitionTime to a string pointer if it's not nil
+func convertLastTransitionTime(transitionTime v1.Time) *string {
+	var lastTransitionTime *string
+
+	if !transitionTime.IsZero() {
+		t := transitionTime.Format(time.RFC3339)
+		lastTransitionTime = &t
+	}
+
+	return lastTransitionTime
+}

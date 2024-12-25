@@ -4,7 +4,7 @@ import { ActionFormBody } from '../';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
 import buildDrawerItem from './build-drawer-item';
-import { DataCard } from '@/reuseable-components';
+import { ConditionDetails, DataCard } from '@/reuseable-components';
 import { useActionCRUD, useActionFormData } from '@/hooks';
 import { ACTION, DATA_CARDS, getActionIcon } from '@/utils';
 import OverviewDrawer from '../../overview/overview-drawer';
@@ -19,6 +19,12 @@ const FormContainer = styled.div`
   max-height: calc(100vh - 220px);
   overflow: overlay;
   overflow-y: auto;
+`;
+
+const DataContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 `;
 
 export const ActionDrawer: React.FC<Props> = () => {
@@ -118,7 +124,10 @@ export const ActionDrawer: React.FC<Props> = () => {
           />
         </FormContainer>
       ) : (
-        <DataCard title={DATA_CARDS.ACTION_DETAILS} data={cardData} />
+        <DataContainer>
+          <ConditionDetails conditions={item?.status?.conditions || []} />
+          <DataCard title={DATA_CARDS.ACTION_DETAILS} data={cardData} />
+        </DataContainer>
       )}
     </OverviewDrawer>
   );

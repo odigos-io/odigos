@@ -17,9 +17,11 @@ export const GET_COMPUTE_PLATFORM = gql`
             otherAgent
           }
           conditions {
-            type
             status
+            type
+            reason
             message
+            lastTransitionTime
           }
         }
       }
@@ -58,6 +60,15 @@ export const GET_COMPUTE_PLATFORM = gql`
         id
         type
         spec
+        status {
+          conditions {
+            status
+            type
+            reason
+            message
+            lastTransitionTime
+          }
+        }
       }
       instrumentationRules {
         ruleId

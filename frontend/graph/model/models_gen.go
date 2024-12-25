@@ -27,6 +27,10 @@ type ActionInput struct {
 	Details string       `json:"details"`
 }
 
+type ActionStatus struct {
+	Conditions []*Condition `json:"conditions,omitempty"`
+}
+
 type AddClusterInfoAction struct {
 	ID      string         `json:"id"`
 	Type    string         `json:"type"`
@@ -79,16 +83,16 @@ type ComputePlatform struct {
 	K8sActualSource      *K8sActualSource       `json:"k8sActualSource,omitempty"`
 	K8sActualSources     []*K8sActualSource     `json:"k8sActualSources"`
 	Destinations         []*Destination         `json:"destinations"`
-	Actions              []*IcaInstanceResponse `json:"actions"`
+	Actions              []*PipelineAction      `json:"actions"`
 	InstrumentationRules []*InstrumentationRule `json:"instrumentationRules"`
 }
 
 type Condition struct {
-	Type               string          `json:"type"`
 	Status             ConditionStatus `json:"status"`
-	LastTransitionTime *string         `json:"lastTransitionTime,omitempty"`
+	Type               string          `json:"type"`
 	Reason             *string         `json:"reason,omitempty"`
 	Message            *string         `json:"message,omitempty"`
+	LastTransitionTime *string         `json:"lastTransitionTime,omitempty"`
 }
 
 type ContainerRuntimeInfoAnalyze struct {
@@ -239,12 +243,6 @@ type HTTPPayloadCollectionInput struct {
 	MimeTypes           []*string `json:"mimeTypes,omitempty"`
 	MaxPayloadLength    *int      `json:"maxPayloadLength,omitempty"`
 	DropPartialPayloads *bool     `json:"dropPartialPayloads,omitempty"`
-}
-
-type IcaInstanceResponse struct {
-	ID   string `json:"id"`
-	Type string `json:"type"`
-	Spec string `json:"spec"`
 }
 
 type InstrumentationConfigAnalyze struct {
@@ -482,6 +480,13 @@ func (this PiiMaskingAction) GetSignals() []SignalType {
 		interfaceSlice = append(interfaceSlice, concrete)
 	}
 	return interfaceSlice
+}
+
+type PipelineAction struct {
+	ID     string        `json:"id"`
+	Type   string        `json:"type"`
+	Spec   string        `json:"spec"`
+	Status *ActionStatus `json:"status"`
 }
 
 type PodAnalyze struct {
