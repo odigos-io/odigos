@@ -87,31 +87,23 @@ func CreateWorkloadSource(ctx context.Context, nsName string, workloadName strin
 		},
 	}
 
-	switch workloadKind {
-	case WorkloadKindDeployment:
-	case WorkloadKindStatefulSet:
-	case WorkloadKindDaemonSet:
-		_, err := kube.DefaultClient.OdigosClient.Sources("").Create(ctx, newSource, metav1.CreateOptions{})
-		return err
-	default:
+	if workloadKind != WorkloadKindDeployment && workloadKind != WorkloadKindStatefulSet && workloadKind != WorkloadKindDaemonSet {
 		return errors.New("unsupported workload kind " + string(workloadKind))
 	}
 
-	return nil
+	_, err := kube.DefaultClient.OdigosClient.Sources("").Create(ctx, newSource, metav1.CreateOptions{})
+	return err
+
 }
 
 func DeleteWorkloadSource(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) error {
-	switch workloadKind {
-	case WorkloadKindDeployment:
-	case WorkloadKindStatefulSet:
-	case WorkloadKindDaemonSet:
-		err := kube.DefaultClient.OdigosClient.Sources("").Delete(ctx, workloadName, metav1.DeleteOptions{})
-		return err
-	default:
+	if workloadKind != WorkloadKindDeployment && workloadKind != WorkloadKindStatefulSet && workloadKind != WorkloadKindDaemonSet {
 		return errors.New("unsupported workload kind " + string(workloadKind))
 	}
 
-	return nil
+	err := kube.DefaultClient.OdigosClient.Sources("").Delete(ctx, workloadName, metav1.DeleteOptions{})
+	return err
+
 }
 
 func ToggleWorkloadSource(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind, enabled *bool) error {
