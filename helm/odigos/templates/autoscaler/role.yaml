@@ -9,47 +9,45 @@ rules:
     resources:
       - configmaps
     verbs:
-      - create
-      - delete
       - get
       - list
+      - watch
+      - create
       - patch
       - update
-      - watch
+      - delete
   - apiGroups:
       - ''
     resources:
       - services
     verbs:
-      - create
-      - delete
-      - deletecollection
       - get
       - list
+      - watch
+      - create
       - patch
       - update
-      - watch
+      - delete
+      - deletecollection
   - apiGroups:
       - apps
     resources:
       - daemonsets
     verbs:
-      - create
-      - delete
-      - deletecollection
       - get
       - list
+      - watch
+      - create
       - patch
       - update
-      - watch
+      - delete
+      - deletecollection
   - apiGroups:
       - apps
     resources:
       - daemonsets/status
     verbs:
       - get
-      - patch
-      - update
   - apiGroups:
       - apps
     resources:
@@ -69,8 +67,6 @@ rules:
       - deployments/status
     verbs:
       - get
-      - list
-      - watch
   - apiGroups:
       - autoscaling
     resources:
@@ -85,9 +81,9 @@ rules:
     resources:
       - secrets
     verbs:
+      - get
       - list
       - watch
-      - get
   - apiGroups:
       - odigos.io
     resources:
@@ -112,33 +108,21 @@ rules:
       - get
       - list
       - watch
-      - patch
       - create
+      - patch
       - update
   - apiGroups:
       - actions.odigos.io
     resources:
-      - addclusterinfos
-      - deleteattributes
-      - renameattributes
-      - probabilisticsamplers
-      - piimaskings
-      - latencysamplers
-      - errorsamplers
+      - '*'
     verbs:
-      - watch
       - get
       - list
+      - watch
   - apiGroups:
       - actions.odigos.io
     resources:
-      - addclusterinfos/status
-      - deleteattributes/status
-      - renameattributes/status
-      - probabilisticsamplers/status
-      - piimaskings/status
-      - latencysamplers/status
-      - errorsamplers/status
+      - '*/status'
     verbs:
       - get
       - patch

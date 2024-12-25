@@ -2,7 +2,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: odiglet
-  namespace: {{ .Release.Namespace }}
+  namespace: '{{ .Release.Namespace }}'
 rules:
   - apiGroups:
       - odigos.io
@@ -14,7 +14,7 @@ rules:
       - list
       - watch
   - apiGroups:
-      - ""
+      - ''
     resourceNames:
       - odigos-config
     resources:
