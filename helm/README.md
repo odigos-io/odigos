@@ -40,8 +40,6 @@ kubectl label namespace odigos-system odigos.io/system-object="true"
 
 By default, images are pulled from Docker Hub. To use a custom Docker registry instead, set the `imagePrefix` value during installation:
 
-For example:
-
 ```sh
 helm upgrade --install odigos odigos/odigos \
   --namespace odigos-system \
