@@ -10,6 +10,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -91,9 +92,8 @@ func CreateWorkloadSource(ctx context.Context, nsName string, workloadName strin
 		},
 	}
 
-	_, err := kube.DefaultClient.OdigosClient.Sources("").Create(ctx, newSource, metav1.CreateOptions{})
+	_, err := kube.DefaultClient.OdigosClient.Sources(consts.DefaultOdigosNamespace).Create(ctx, newSource, metav1.CreateOptions{})
 	return err
-
 }
 
 func DeleteWorkloadSource(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) error {
@@ -101,9 +101,8 @@ func DeleteWorkloadSource(ctx context.Context, nsName string, workloadName strin
 		return errors.New("unsupported workload kind " + string(workloadKind))
 	}
 
-	err := kube.DefaultClient.OdigosClient.Sources("").Delete(ctx, workloadName, metav1.DeleteOptions{})
+	err := kube.DefaultClient.OdigosClient.Sources(consts.DefaultOdigosNamespace).Delete(ctx, workloadName, metav1.DeleteOptions{})
 	return err
-
 }
 
 func ToggleWorkloadSource(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind, enabled *bool) error {
@@ -112,10 +111,8 @@ func ToggleWorkloadSource(ctx context.Context, nsName string, workloadName strin
 	}
 
 	if *enabled {
-		CreateWorkloadSource(ctx, nsName, workloadName, workloadKind)
+		return CreateWorkloadSource(ctx, nsName, workloadName, workloadKind)
 	} else {
-		DeleteWorkloadSource(ctx, nsName, workloadName, workloadKind)
+		return DeleteWorkloadSource(ctx, nsName, workloadName, workloadKind)
 	}
-
-	return nil
 }
