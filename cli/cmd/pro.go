@@ -22,20 +22,20 @@ var proCmd = &cobra.Command{
 		ctx := cmd.Context()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 		ns, err := resources.GetOdigosNamespace(client, ctx)
-		if (err != nil) {
-			fmt.Errorf("No Odigos installation found in cluster to upgrade")
+		if resources.IsErrNoOdigosNamespaceFound(err) {
+			fmt.Println("\033[31mERROR\033[0m no odigos installation found in the current cluster")
+			os.Exit(1)
+		} else if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Failed to check if Odigos is already installed: %s\n", err)
 			os.Exit(1)
 		}
 
 		// Retrieve token
 		onPremToken := cmd.Flag("onprem-token").Value.String()
 
-		if onPremToken == "" {
-			fmt.Errorf("\033[31mERROR\033[0m --onprem-token is required")
-			os.Exit(1)
-		}
+		tokenType := "onprem" 
+		tokenValue := onPremToken
 
-		var tokenType, tokenValue string = "onprem", onPremToken
 		err = updateOdigosToken(ctx, client, ns, tokenType, tokenValue)
 		if err != nil {
 			fmt.Errorf("\033[31mERROR\033[0m Failed to update token: %s\n", err)
@@ -59,7 +59,7 @@ func updateOdigosToken(ctx context.Context, client *kube.Client, namespace strin
 		return fmt.Errorf("failed to get secret %s in namespace %s: %w", consts.OdigosProSecretName, namespace, err)
 	}
 
-	secret.Data["odigos-onprem-token"] = []byte(tokenValue)
+	secret.Data[consts.OdigosOnpremTokenSecretKey] = []byte(tokenValue)
 
 	// Apply the updated secret
 	_, err = client.CoreV1().Secrets(namespace).Update(ctx, secret, metav1.UpdateOptions{})
