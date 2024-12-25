@@ -3,7 +3,7 @@ import type { ActionDataParsed, ActionInput } from '@/types';
 
 const buildDrawerItem = (id: string, formData: ActionInput, drawerItem: ActionDataParsed): ActionDataParsed => {
   const { type, name, notes, signals, disable, details } = formData;
-  const { status } = drawerItem;
+  const { conditions } = drawerItem;
 
   return {
     id,
@@ -15,7 +15,7 @@ const buildDrawerItem = (id: string, formData: ActionInput, drawerItem: ActionDa
       disabled: disable,
       ...safeJsonParse(details, {}),
     },
-    status,
+    conditions,
   };
 };
 
