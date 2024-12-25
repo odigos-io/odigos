@@ -458,6 +458,11 @@ spec:
                       - unknown
                       - ignored
                       type: string
+                    libCType:
+                      enum:
+                      - glibc
+                      - musl
+                      type: string
                     otherAgent:
                       properties:
                         name:

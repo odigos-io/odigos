@@ -3,6 +3,11 @@ package instrumentation
 import (
 	"context"
 
+	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned"
+	"k8s.io/client-go/rest"
+
+	"github.com/odigos-io/odigos/procdiscovery/pkg/libc"
+
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
@@ -49,14 +54,29 @@ func NewLister(ctx context.Context, clientset *kubernetes.Clientset, otelSdksLsf
 
 	isEbpfSupported := env.Current.IsEBPFSupported()
 
+	cfg, err := rest.InClusterConfig()
+	if err != nil {
+		log.Logger.Error(err, "Failed to init Kubernetes API client")
+	}
+	odigosKubeClient, err := odigosclientset.NewForConfig(cfg)
+	if err != nil {
+		log.Logger.Error(err, "Failed to init odigos client")
+	}
+
 	availablePlugins := map[string]dpm.PluginInterface{}
 	for lang, otelSdkLsfMap := range otelSdksLsf {
 		for otelSdk, lsf := range otelSdkLsfMap {
 			if otelSdk.SdkType == common.EbpfOtelSdkType && !isEbpfSupported {
 				continue
 			}
-			pluginName := common.InstrumentationPluginName(lang, otelSdk)
-			availablePlugins[pluginName] = NewPlugin(maxPods, lsf)
+			pluginName := common.InstrumentationPluginName(lang, otelSdk, nil)
+			availablePlugins[pluginName] = NewPlugin(maxPods, lsf, odigosKubeClient)
+
+			if libc.ShouldInspectForLanguage(lang) {
+				musl := common.Musl
+				pluginNameMusl := common.InstrumentationPluginName(lang, otelSdk, &musl)
+				availablePlugins[pluginNameMusl] = NewMuslPlugin(lang, maxPods, lsf, odigosKubeClient)
+			}
 		}
 	}
 

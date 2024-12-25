@@ -40,6 +40,7 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 	for _, container := range original.Spec.Containers {
 		containerLanguage := getLanguageOfContainer(runtimeDetails, container.Name)
 		containerHaveOtherAgent := getContainerOtherAgents(runtimeDetails, container.Name)
+		libcType := getLibCTypeOfContainer(runtimeDetails, container.Name)
 
 		// In case there is another agent in the container, we should not apply the instrumentation device.
 		if containerLanguage == common.PythonProgrammingLanguage && containerHaveOtherAgent != nil {
@@ -69,7 +70,7 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 			return fmt.Errorf("%w for language: %s, container:%s", ErrNoDefaultSDK, containerLanguage, container.Name), deviceApplied, deviceSkippedDueToOtherAgent
 		}
 
-		instrumentationDeviceName := common.InstrumentationDeviceName(containerLanguage, otelSdk)
+		instrumentationDeviceName := common.InstrumentationDeviceName(containerLanguage, otelSdk, libcType)
 		if container.Resources.Limits == nil {
 			container.Resources.Limits = make(map[corev1.ResourceName]resource.Quantity)
 		}
@@ -178,6 +179,16 @@ func getContainerOtherAgents(instrumentation *odigosv1.InstrumentedApplication, 
 			}
 		}
 	}
+	return nil
+}
+
+func getLibCTypeOfContainer(instrumentation *odigosv1.InstrumentedApplication, containerName string) *common.LibCType {
+	for _, l := range instrumentation.Spec.RuntimeDetails {
+		if l.ContainerName == containerName {
+			return l.LibCType
+		}
+	}
+
 	return nil
 }
 

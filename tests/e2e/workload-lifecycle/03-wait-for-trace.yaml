@@ -1,0 +1,7 @@
+apiVersion: e2e.tests.odigos.io/v1
+kind: TraceTest
+description: This test waits for a trace that is generated from the successful instrumented services.
+query: |
+  { resource.k8s.cluster.name = "e2e-test-cluster" }
+expected:
+  count: 14
