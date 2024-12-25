@@ -41,7 +41,31 @@ type DestinationReconciler struct {
 func (r *DestinationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling Destination")
-	err := gateway.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion, r.Config)
+
+	var destination v1.Destination
+	if err := r.Client.Get(ctx, req.NamespacedName, &destination); err != nil {
+		logger.Error(err, "Failed to get Destination")
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	var sources v1.SourceList
+	if err := r.Client.List(ctx, &sources); err != nil {
+		logger.Error(err, "Failed to list Sources")
+		return ctrl.Result{}, err
+	}
+	logger.V(1).Info("Sources", "sources", sources.Items)
+	logger.V(1).Info("Destination", "destination", destination)
+	logger.V(1).Info("SourceSelector", "sourceSelector", destination.Spec.SourceSelector)
+	filteredSources := filterSources(sources.Items, destination.Spec.SourceSelector)
+	logger.V(1).Info("Filtered Sources", "filteredSources", filteredSources)
+	// Generate route configuration
+	err := generateRouteConfig(ctx, r.Client, destination, filteredSources)
+	if err != nil {
+		logger.Error(err, "Failed to generate route configuration")
+		return ctrl.Result{}, err
+	}
+
+	err = gateway.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion, r.Config)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -57,4 +81,75 @@ func (r *DestinationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		// filter out events on resource status and metadata changes.
 		WithEventFilter(&predicate.GenerationChangedPredicate{}).
 		Complete(r)
+}
+
+func generateRouteConfig(ctx context.Context, client client.Client, destination v1.Destination, sources []v1.Source) error {
+	// Build route configuration based on filtered sources and destination signals
+	routeConfig := buildRouteConfig(destination, sources)
+
+	// Apply the route configuration to the OpenTelemetry collector
+	// This could involve updating a ConfigMap or another custom resource
+	// that the collector watches
+	configMapName := "otelcol-route-config"
+	configMapNamespace := "odigos-system" // Replace with your namespace
+	err := updateConfigMap(ctx, client, configMapName, configMapNamespace, routeConfig)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func buildRouteConfig(destination v1.Destination, sources []v1.Source) map[string]interface{} {
+	// Example structure of the route configuration
+	routeConfig := map[string]interface{}{
+		"destination": destination.Spec.DestinationName,
+		"signals":     destination.Spec.Signals,
+		"sources":     []string{},
+	}
+
+	for _, source := range sources {
+		routeConfig["sources"] = append(routeConfig["sources"].([]string), source.Name)
+	}
+
+	return routeConfig
+}
+
+func updateConfigMap(ctx context.Context, client client.Client, name, namespace string, data map[string]interface{}) error {
+
+	// Update the ConfigMap with the new data
+	// This could involve creating a new ConfigMap or updating an existing one
+	// based on the name and namespace provided
+	return nil
+}
+
+func filterSources(sources []v1.Source, selector *v1.SourceSelector) []v1.Source {
+	if selector == nil || selector.Mode == "all" {
+		// Return all sources if selector is nil or mode is "all"
+		return sources
+	}
+
+	var filtered []v1.Source
+	for _, source := range sources {
+		switch selector.Mode {
+		case "namespaces":
+			for _, ns := range selector.Namespaces {
+				if source.Spec.Workload.Namespace == ns {
+					filtered = append(filtered, source)
+					break
+				}
+			}
+		case "groups":
+			for _, group := range selector.Groups {
+				for _, srcGroup := range source.Spec.Groups {
+					if group == srcGroup {
+						filtered = append(filtered, source)
+						break
+					}
+				}
+			}
+		}
+	}
+
+	return filtered
 }
