@@ -65,3 +65,8 @@ var (
 	// this value must be in sync with the one defined in the kubeVersion field in Chart.yaml
 	MinK8SVersionForInstallation = version.MustParse("v1.20.15-0")
 )
+
+const (
+	OdigosCloudApiKeySecretKey = "odigos-cloud-api-key"
+	OdigosOnpremTokenSecretKey = "odigos-onprem-token"
+)
