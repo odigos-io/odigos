@@ -27,10 +27,6 @@ type ActionInput struct {
 	Details string       `json:"details"`
 }
 
-type ActionStatus struct {
-	Conditions []*Condition `json:"conditions,omitempty"`
-}
-
 type AddClusterInfoAction struct {
 	ID      string         `json:"id"`
 	Type    string         `json:"type"`
@@ -484,10 +480,10 @@ func (this PiiMaskingAction) GetSignals() []SignalType {
 }
 
 type PipelineAction struct {
-	ID     string        `json:"id"`
-	Type   string        `json:"type"`
-	Spec   string        `json:"spec"`
-	Status *ActionStatus `json:"status"`
+	ID         string       `json:"id"`
+	Type       string       `json:"type"`
+	Spec       string       `json:"spec"`
+	Conditions []*Condition `json:"conditions,omitempty"`
 }
 
 type PodAnalyze struct {

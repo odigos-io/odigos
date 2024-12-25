@@ -175,12 +175,10 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 			return nil, err
 		}
 		response = append(response, &model.PipelineAction{
-			ID:   action.Name,
-			Type: action.Kind,
-			Spec: string(specStr),
-			Status: &model.ActionStatus{
-				Conditions: convertConditions(action.Status.Conditions),
-			},
+			ID:         action.Name,
+			Type:       action.Kind,
+			Spec:       string(specStr),
+			Conditions: convertConditions(action.Status.Conditions),
 		})
 	}
 
@@ -195,12 +193,10 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 			return nil, err
 		}
 		response = append(response, &model.PipelineAction{
-			ID:   action.Name,
-			Type: action.Kind,
-			Spec: string(specStr),
-			Status: &model.ActionStatus{
-				Conditions: convertConditions(action.Status.Conditions),
-			},
+			ID:         action.Name,
+			Type:       action.Kind,
+			Spec:       string(specStr),
+			Conditions: convertConditions(action.Status.Conditions),
 		})
 	}
 
@@ -215,12 +211,10 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 			return nil, err
 		}
 		response = append(response, &model.PipelineAction{
-			ID:   action.Name,
-			Type: action.Kind,
-			Spec: string(specStr),
-			Status: &model.ActionStatus{
-				Conditions: convertConditions(action.Status.Conditions),
-			},
+			ID:         action.Name,
+			Type:       action.Kind,
+			Spec:       string(specStr),
+			Conditions: convertConditions(action.Status.Conditions),
 		})
 	}
 
@@ -235,12 +229,10 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 			return nil, err
 		}
 		response = append(response, &model.PipelineAction{
-			ID:   action.Name,
-			Type: action.Kind,
-			Spec: string(specStr),
-			Status: &model.ActionStatus{
-				Conditions: convertConditions(action.Status.Conditions),
-			},
+			ID:         action.Name,
+			Type:       action.Kind,
+			Spec:       string(specStr),
+			Conditions: convertConditions(action.Status.Conditions),
 		})
 	}
 
@@ -255,12 +247,10 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 			return nil, err
 		}
 		response = append(response, &model.PipelineAction{
-			ID:   action.Name,
-			Type: action.Kind,
-			Spec: string(specStr),
-			Status: &model.ActionStatus{
-				Conditions: convertConditions(action.Status.Conditions),
-			},
+			ID:         action.Name,
+			Type:       action.Kind,
+			Spec:       string(specStr),
+			Conditions: convertConditions(action.Status.Conditions),
 		})
 	}
 
@@ -275,12 +265,10 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 			return nil, err
 		}
 		response = append(response, &model.PipelineAction{
-			ID:   action.Name,
-			Type: action.Kind,
-			Spec: string(specStr),
-			Status: &model.ActionStatus{
-				Conditions: convertConditions(action.Status.Conditions),
-			},
+			ID:         action.Name,
+			Type:       action.Kind,
+			Spec:       string(specStr),
+			Conditions: convertConditions(action.Status.Conditions),
 		})
 	}
 
@@ -295,12 +283,10 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 			return nil, err
 		}
 		response = append(response, &model.PipelineAction{
-			ID:   action.Name,
-			Type: action.Kind,
-			Spec: string(specStr),
-			Status: &model.ActionStatus{
-				Conditions: convertConditions(action.Status.Conditions),
-			},
+			ID:         action.Name,
+			Type:       action.Kind,
+			Spec:       string(specStr),
+			Conditions: convertConditions(action.Status.Conditions),
 		})
 	}
 
@@ -319,17 +305,7 @@ func (r *destinationResolver) Type(ctx context.Context, obj *model.Destination) 
 
 // Conditions is the resolver for the conditions field.
 func (r *destinationResolver) Conditions(ctx context.Context, obj *model.Destination) ([]*model.Condition, error) {
-	conditions := make([]*model.Condition, 0, len(obj.Conditions))
-	for _, c := range obj.Conditions {
-		// Add the converted Condition to the list
-		conditions = append(conditions, &model.Condition{
-			Type:               c.Type,
-			Status:             model.ConditionStatus(c.Status),
-			LastTransitionTime: convertLastTransitionTime(c.LastTransitionTime),
-			Reason:             &c.Reason,
-			Message:            &c.Message,
-		})
-	}
+	conditions := convertConditions(obj.Conditions)
 	return conditions, nil
 }
 

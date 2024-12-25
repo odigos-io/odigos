@@ -50,10 +50,6 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
-	ActionStatus struct {
-		Conditions func(childComplexity int) int
-	}
-
 	AddClusterInfoAction struct {
 		Details func(childComplexity int) int
 		Disable func(childComplexity int) int
@@ -382,10 +378,10 @@ type ComplexityRoot struct {
 	}
 
 	PipelineAction struct {
-		ID     func(childComplexity int) int
-		Spec   func(childComplexity int) int
-		Status func(childComplexity int) int
-		Type   func(childComplexity int) int
+		Conditions func(childComplexity int) int
+		ID         func(childComplexity int) int
+		Spec       func(childComplexity int) int
+		Type       func(childComplexity int) int
 	}
 
 	PodAnalyze struct {
@@ -568,13 +564,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e, 0, 0, nil}
 	_ = ec
 	switch typeName + "." + field {
-
-	case "ActionStatus.conditions":
-		if e.complexity.ActionStatus.Conditions == nil {
-			break
-		}
-
-		return e.complexity.ActionStatus.Conditions(childComplexity), true
 
 	case "AddClusterInfoAction.details":
 		if e.complexity.AddClusterInfoAction.Details == nil {
@@ -2021,6 +2010,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PiiMaskingAction.Type(childComplexity), true
 
+	case "PipelineAction.conditions":
+		if e.complexity.PipelineAction.Conditions == nil {
+			break
+		}
+
+		return e.complexity.PipelineAction.Conditions(childComplexity), true
+
 	case "PipelineAction.id":
 		if e.complexity.PipelineAction.ID == nil {
 			break
@@ -2034,13 +2030,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PipelineAction.Spec(childComplexity), true
-
-	case "PipelineAction.status":
-		if e.complexity.PipelineAction.Status == nil {
-			break
-		}
-
-		return e.complexity.PipelineAction.Status(childComplexity), true
 
 	case "PipelineAction.type":
 		if e.complexity.PipelineAction.Type == nil {
@@ -3096,59 +3085,6 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
-
-func (ec *executionContext) _ActionStatus_conditions(ctx context.Context, field graphql.CollectedField, obj *model.ActionStatus) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ActionStatus_conditions(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Conditions, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*model.Condition)
-	fc.Result = res
-	return ec.marshalOCondition2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐConditionᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_ActionStatus_conditions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ActionStatus",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "status":
-				return ec.fieldContext_Condition_status(ctx, field)
-			case "type":
-				return ec.fieldContext_Condition_type(ctx, field)
-			case "reason":
-				return ec.fieldContext_Condition_reason(ctx, field)
-			case "message":
-				return ec.fieldContext_Condition_message(ctx, field)
-			case "lastTransitionTime":
-				return ec.fieldContext_Condition_lastTransitionTime(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Condition", field.Name)
-		},
-	}
-	return fc, nil
-}
 
 func (ec *executionContext) _AddClusterInfoAction_id(ctx context.Context, field graphql.CollectedField, obj *model.AddClusterInfoAction) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_AddClusterInfoAction_id(ctx, field)
@@ -4509,8 +4445,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_actions(_ context.Conte
 				return ec.fieldContext_PipelineAction_type(ctx, field)
 			case "spec":
 				return ec.fieldContext_PipelineAction_spec(ctx, field)
-			case "status":
-				return ec.fieldContext_PipelineAction_status(ctx, field)
+			case "conditions":
+				return ec.fieldContext_PipelineAction_conditions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type PipelineAction", field.Name)
 		},
@@ -12710,8 +12646,8 @@ func (ec *executionContext) fieldContext_PipelineAction_spec(_ context.Context, 
 	return fc, nil
 }
 
-func (ec *executionContext) _PipelineAction_status(ctx context.Context, field graphql.CollectedField, obj *model.PipelineAction) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_PipelineAction_status(ctx, field)
+func (ec *executionContext) _PipelineAction_conditions(ctx context.Context, field graphql.CollectedField, obj *model.PipelineAction) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PipelineAction_conditions(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -12724,24 +12660,21 @@ func (ec *executionContext) _PipelineAction_status(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Status, nil
+		return obj.Conditions, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.ActionStatus)
+	res := resTmp.([]*model.Condition)
 	fc.Result = res
-	return ec.marshalNActionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐActionStatus(ctx, field.Selections, res)
+	return ec.marshalOCondition2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐConditionᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_PipelineAction_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_PipelineAction_conditions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "PipelineAction",
 		Field:      field,
@@ -12749,10 +12682,18 @@ func (ec *executionContext) fieldContext_PipelineAction_status(_ context.Context
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "conditions":
-				return ec.fieldContext_ActionStatus_conditions(ctx, field)
+			case "status":
+				return ec.fieldContext_Condition_status(ctx, field)
+			case "type":
+				return ec.fieldContext_Condition_type(ctx, field)
+			case "reason":
+				return ec.fieldContext_Condition_reason(ctx, field)
+			case "message":
+				return ec.fieldContext_Condition_message(ctx, field)
+			case "lastTransitionTime":
+				return ec.fieldContext_Condition_lastTransitionTime(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type ActionStatus", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type Condition", field.Name)
 		},
 	}
 	return fc, nil
@@ -18747,42 +18688,6 @@ func (ec *executionContext) _Action(ctx context.Context, sel ast.SelectionSet, o
 
 // region    **************************** object.gotpl ****************************
 
-var actionStatusImplementors = []string{"ActionStatus"}
-
-func (ec *executionContext) _ActionStatus(ctx context.Context, sel ast.SelectionSet, obj *model.ActionStatus) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, actionStatusImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("ActionStatus")
-		case "conditions":
-			out.Values[i] = ec._ActionStatus_conditions(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
 var addClusterInfoActionImplementors = []string{"AddClusterInfoAction", "Action"}
 
 func (ec *executionContext) _AddClusterInfoAction(ctx context.Context, sel ast.SelectionSet, obj *model.AddClusterInfoAction) graphql.Marshaler {
@@ -21457,11 +21362,8 @@ func (ec *executionContext) _PipelineAction(ctx context.Context, sel ast.Selecti
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "status":
-			out.Values[i] = ec._PipelineAction_status(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
+		case "conditions":
+			out.Values[i] = ec._PipelineAction_conditions(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -22823,16 +22725,6 @@ func (ec *executionContext) marshalNAction2githubᚗcomᚋodigosᚑioᚋodigos�
 func (ec *executionContext) unmarshalNActionInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐActionInput(ctx context.Context, v interface{}) (model.ActionInput, error) {
 	res, err := ec.unmarshalInputActionInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNActionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐActionStatus(ctx context.Context, sel ast.SelectionSet, v *model.ActionStatus) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._ActionStatus(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
