@@ -82,6 +82,7 @@ type ComputePlatform struct {
 	K8sActualNamespaces  []*K8sActualNamespace  `json:"k8sActualNamespaces"`
 	K8sActualSource      *K8sActualSource       `json:"k8sActualSource,omitempty"`
 	K8sActualSources     []*K8sActualSource     `json:"k8sActualSources"`
+	Sources              []*Source              `json:"sources"`
 	Destinations         []*Destination         `json:"destinations"`
 	Actions              []*PipelineAction      `json:"actions"`
 	InstrumentationRules []*InstrumentationRule `json:"instrumentationRules"`
@@ -504,8 +505,8 @@ type PodContainerAnalyze struct {
 
 type PodWorkload struct {
 	Namespace string          `json:"namespace"`
-	Kind      K8sResourceKind `json:"kind"`
 	Name      string          `json:"name"`
+	Kind      K8sResourceKind `json:"kind"`
 }
 
 type PodWorkloadInput struct {
@@ -590,6 +591,11 @@ type SingleSourceMetricsResponse struct {
 	Throughput    int    `json:"throughput"`
 }
 
+type Source struct {
+	Spec   *SourceSpec   `json:"spec"`
+	Status *SourceStatus `json:"status"`
+}
+
 type SourceAnalyze struct {
 	Name                    *EntityProperty                 `json:"name"`
 	Kind                    *EntityProperty                 `json:"kind"`
@@ -609,6 +615,14 @@ type SourceContainerRuntimeDetails struct {
 	Language       string  `json:"language"`
 	RuntimeVersion string  `json:"runtimeVersion"`
 	OtherAgent     *string `json:"otherAgent,omitempty"`
+}
+
+type SourceSpec struct {
+	Workload *PodWorkload `json:"workload"`
+}
+
+type SourceStatus struct {
+	Conditions []*Condition `json:"conditions,omitempty"`
 }
 
 type TestConnectionResponse struct {

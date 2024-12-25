@@ -1,4 +1,4 @@
-import type { K8sActualSource } from './sources';
+import type { K8sActualSource, Source } from './sources';
 import type { ActualDestination } from './destinations';
 import type { ActionData, ActionDataParsed } from './actions';
 import type { InstrumentationRuleSpec, InstrumentationRuleSpecMapped } from './instrumentation-rules';
@@ -14,9 +14,10 @@ interface ComputePlatformData {
   computePlatformType: string;
   k8sActualNamespace?: K8sActualNamespace;
   k8sActualNamespaces: K8sActualNamespace[];
-  actions: ActionData[];
   k8sActualSources: K8sActualSource[];
+  sources: Source[];
   destinations: ActualDestination[];
+  actions: ActionData[];
   instrumentationRules: InstrumentationRuleSpec[];
 }
 
