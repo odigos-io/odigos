@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
+
+	"github.com/odigos-io/odigos/procdiscovery/pkg/libc"
 
 	procdiscovery "github.com/odigos-io/odigos/procdiscovery/pkg/process"
 
@@ -108,6 +111,7 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 
 			envs := make([]odigosv1.EnvVar, 0)
 			var detectedAgent *odigosv1.OtherAgent
+			var libcType *common.LibCType
 
 			if inspectProc == nil {
 				log.Logger.V(0).Info("unable to detect language for any process", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
@@ -124,9 +128,26 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 					envs = append(envs, odigosv1.EnvVar{Name: envName, Value: envValue})
 				}
 
+				// Languages that can be detected using environment variables, e.g Python<>newrelic
 				for envName := range inspectProc.Environments.DetailedEnvs {
 					if otherAgentName, exists := procdiscovery.OtherAgentEnvs[envName]; exists {
 						detectedAgent = &odigosv1.OtherAgent{Name: otherAgentName}
+					}
+				}
+				// Languages that can be detected using command line Substrings, e.g. Java<>newrelic
+				for otherAgentCmdSubstring, otherAgentName := range procdiscovery.OtherAgentCmdSubString {
+					if strings.Contains(inspectProc.CmdLine, otherAgentCmdSubstring) {
+						detectedAgent = &odigosv1.OtherAgent{Name: otherAgentName}
+					}
+				}
+
+				// Inspecting libc type is expensive and not relevant for all languages
+				if libc.ShouldInspectForLanguage(programLanguageDetails.Language) {
+					typeFound, err := libc.InspectType(inspectProc)
+					if err == nil {
+						libcType = typeFound
+					} else {
+							log.Logger.Error(err, "error inspecting libc type", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
 					}
 				}
 			}
@@ -142,6 +163,7 @@ func runtimeInspection(pods []corev1.Pod, ignoredContainers []string) ([]odigosv
 				RuntimeVersion: runtimeVersion,
 				EnvVars:        envs,
 				OtherAgent:     detectedAgent,
+				LibCType:       libcType,
 			}
 		}
 	}

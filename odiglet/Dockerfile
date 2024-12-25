@@ -1,7 +1,7 @@
 
 ######### python Native Community Agent #########
 
-FROM python:3.11 AS python-builder
+FROM python:3.11.9 AS python-builder
 ARG ODIGOS_VERSION
 WORKDIR /python-instrumentation
 COPY ../agents/python ./agents/configurator
@@ -61,7 +61,7 @@ RUN yarn --cwd ./odigos/agents/nodejs-native-community --production --frozen-loc
 
 FROM --platform=$BUILDPLATFORM busybox:1.36.1 AS dotnet-builder
 WORKDIR /dotnet-instrumentation
-ARG DOTNET_OTEL_VERSION=v1.8.0
+ARG DOTNET_OTEL_VERSION=v1.9.0
 ARG TARGETARCH
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
         echo "arm64" > /tmp/arch_suffix; \
@@ -72,9 +72,20 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
 RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     wget https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
     unzip opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
-    rm opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip
+    rm opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
+    mv linux-$ARCH_SUFFIX linux-glibc-$ARCH_SUFFIX && \
+    wget https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip && \
+    unzip opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip "linux-musl-$ARCH_SUFFIX/*" -d . && \
+    rm opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip
 
-FROM --platform=$BUILDPLATFORM keyval/odiglet-base:v1.5 AS builder
+# TODO(edenfed): Currently .NET Automatic instrumentation does not work on dotnet 6.0 with glibc,
+# This is due to compilation of the .so file on a newer version of glibc than the one used by the dotnet runtime.
+# The following override the .so file with our own which is compiled on the same glibc version as the dotnet runtime.
+RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
+    wget https://github.com/odigos-io/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so && \
+    mv OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so linux-glibc-${ARCH_SUFFIX}/OpenTelemetry.AutoInstrumentation.Native.so
+
+FROM --platform=$BUILDPLATFORM keyval/odiglet-base:v1.7 AS builder
 WORKDIR /go/src/github.com/odigos-io/odigos
 # Copy local modules required by the build
 COPY api/ api/
@@ -82,6 +93,7 @@ COPY common/ common/
 COPY k8sutils/ k8sutils/
 COPY procdiscovery/ procdiscovery/
 COPY opampserver/ opampserver/
+COPY instrumentation/ instrumentation/
 WORKDIR /go/src/github.com/odigos-io/odigos/odiglet
 COPY odiglet/ .
 
@@ -93,7 +105,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 WORKDIR /instrumentations
 
 # Java
-ARG JAVA_OTEL_VERSION=v2.8.0
+ARG JAVA_OTEL_VERSION=v2.10.0
 ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/$JAVA_OTEL_VERSION/opentelemetry-javaagent.jar /instrumentations/java/javaagent.jar
 RUN chmod 644 /instrumentations/java/javaagent.jar
 

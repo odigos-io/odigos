@@ -11,7 +11,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/envoverwrite"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -41,6 +40,7 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 	for _, container := range original.Spec.Containers {
 		containerLanguage := getLanguageOfContainer(runtimeDetails, container.Name)
 		containerHaveOtherAgent := getContainerOtherAgents(runtimeDetails, container.Name)
+		libcType := getLibCTypeOfContainer(runtimeDetails, container.Name)
 
 		// In case there is another agent in the container, we should not apply the instrumentation device.
 		if containerLanguage == common.PythonProgrammingLanguage && containerHaveOtherAgent != nil {
@@ -70,7 +70,7 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 			return fmt.Errorf("%w for language: %s, container:%s", ErrNoDefaultSDK, containerLanguage, container.Name), deviceApplied, deviceSkippedDueToOtherAgent
 		}
 
-		instrumentationDeviceName := common.InstrumentationDeviceName(containerLanguage, otelSdk)
+		instrumentationDeviceName := common.InstrumentationDeviceName(containerLanguage, otelSdk, libcType)
 		if container.Resources.Limits == nil {
 			container.Resources.Limits = make(map[corev1.ResourceName]resource.Quantity)
 		}
@@ -182,6 +182,16 @@ func getContainerOtherAgents(instrumentation *odigosv1.InstrumentedApplication, 
 	return nil
 }
 
+func getLibCTypeOfContainer(instrumentation *odigosv1.InstrumentedApplication, containerName string) *common.LibCType {
+	for _, l := range instrumentation.Spec.RuntimeDetails {
+		if l.ContainerName == containerName {
+			return l.LibCType
+		}
+	}
+
+	return nil
+}
+
 // getEnvVarsOfContainer returns the env vars which are defined for the given container and are used for instrumentation purposes.
 // This function also returns env vars which are declared in the container build.
 func getEnvVarsOfContainer(instrumentation *odigosv1.InstrumentedApplication, containerName string) map[string]string {
@@ -271,15 +281,11 @@ func patchEnvVarsForContainer(runtimeDetails *odigosv1.InstrumentedApplication, 
 }
 
 func SetInjectInstrumentationLabel(original *corev1.PodTemplateSpec) {
-	odigosTier := env.GetOdigosTierFromEnv()
-
-	// inject the instrumentation annotation for oss tier only
-	if odigosTier == common.CommunityOdigosTier {
-		if original.Labels == nil {
-			original.Labels = make(map[string]string)
-		}
-		original.Labels["odigos.io/inject-instrumentation"] = "true"
+	if original.Labels == nil {
+		original.Labels = make(map[string]string)
 	}
+	original.Labels["odigos.io/inject-instrumentation"] = "true"
+
 }
 
 // RemoveInjectInstrumentationLabel removes the "odigos.io/inject-instrumentation" label if it exists.

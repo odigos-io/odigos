@@ -15,7 +15,7 @@ const (
 	profilerEndVar        = "CORECLR_PROFILER"
 	profilerId            = "{918728DD-259F-4A6A-AC2B-B85E1B658318}"
 	profilerPathEnv       = "CORECLR_PROFILER_PATH"
-	profilerPath          = "/var/odigos/dotnet/linux-%s/OpenTelemetry.AutoInstrumentation.Native.so"
+	profilerPath          = "/var/odigos/dotnet/linux-glibc-%s/OpenTelemetry.AutoInstrumentation.Native.so"
 	serviceNameEnv        = "OTEL_SERVICE_NAME"
 	collectorUrlEnv       = "OTEL_EXPORTER_OTLP_ENDPOINT"
 	tracerHomeEnv         = "OTEL_DOTNET_AUTO_HOME"
@@ -35,7 +35,7 @@ func DotNet(deviceId string, uniqueDestinationSignals map[common.ObservabilitySi
 		Envs: map[string]string{
 			enableProfilingEnvVar: "1",
 			profilerEndVar:        profilerId,
-			profilerPathEnv:       fmt.Sprintf(profilerPath, getArch()), // TODO(edenfed): Support both musl and glibc. Requires improved language detection
+			profilerPathEnv:       fmt.Sprintf(profilerPath, getArch()),
 			tracerHomeEnv:         tracerHome,
 			collectorUrlEnv:       fmt.Sprintf("http://%s:%d", env.Current.NodeIP, consts.OTLPHttpPort),
 			serviceNameEnv:        deviceId,
