@@ -26,13 +26,13 @@ Odigos is an open-source distributed tracing solution that simplifyes and improv
 
 ## Key Features
 
-* **Code-Free Instrumentation** : Set up distributed tracing in minutes, eliminating manual code modifications.
-* **Multi-Language Support** : Works with Java, Python, .NET, Node.js, and Go applications.
-* **eBPF-Powered** : Utilizes eBPF technology for high-performance instrumentation of Go applications. eBPF-based instrumentation for Java, Python, and Node.js is available in the enterprise edition.
-* **OpenTelemetry Compatible** : Generates traces in OpenTelemetry format for broad tool compatibility.
-* **Vendor Agnostic** : Integrates with various monitoring solutions, avoiding vendor lock-in.
-* **Automatic Scaling** : Manages and scales OpenTelemetry collectors based on data volume.
-* **Opinionated Defaults** : Supplies common defaults and best practices out-of-the-box, requiring no deep knowledge of OpenTelemetry.
+- **Code-Free Instrumentation** : Set up distributed tracing in minutes, eliminating manual code modifications.
+- **Multi-Language Support** : Works with Java, Python, .NET, Node.js, and Go applications.
+- **eBPF-Powered** : Utilizes eBPF technology for high-performance instrumentation of Go applications. eBPF-based instrumentation for Java, Python, and Node.js is available in the enterprise edition.
+- **OpenTelemetry Compatible** : Generates traces in OpenTelemetry format for broad tool compatibility.
+- **Vendor Agnostic** : Integrates with various monitoring solutions, avoiding vendor lock-in.
+- **Automatic Scaling** : Manages and scales OpenTelemetry collectors based on data volume.
+- **Opinionated Defaults** : Supplies common defaults and best practices out-of-the-box, requiring no deep knowledge of OpenTelemetry.
 
 ## Why Choose Odigos
 
@@ -85,48 +85,47 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 
 ### Managed Destinations
 
-
 | Destination             | Traces | Metrics | Logs |
-| ------------------------- | :------: | :-------: | :----: |
-| AppDynamics             |   ✅   |   ✅   |  ✅  |
-| Axiom                   |   ✅   |        |  ✅  |
-| AWS S3                  |   ✅   |        |  ✅  |
-| Azure Blob Storage      |   ✅   |        |  ✅  |
-| Causely                 |   ✅   |        |      |
-| Chronosphere            |   ✅   |   ✅   |      |
-| Coralogix               |   ✅   |   ✅   |  ✅  |
-| Datadog                 |   ✅   |   ✅   |  ✅  |
-| Dynatrace               |   ✅   |   ✅   |  ✅  |
-| Gigapipe                |   ✅   |        |      |
-| Google Cloud Monitoring |   ✅   |   ✅   |      |
-| Google Cloud Storage    |   ✅   |        |  ✅  |
-| Grafana Cloud           |   ✅   |   ✅   |  ✅  |
-| Honeycomb               |   ✅   |   ✅   |  ✅  |
-| Last9                   |   ✅   |   ✅   |      |
-| Lightstep               |   ✅   |        |      |
-| Logz.io                 |   ✅   |   ✅   |  ✅  |
-| New Relic               |   ✅   |   ✅   |  ✅  |
-| OpsVerse                |   ✅   |   ✅   |  ✅  |
-| Sentry                  |   ✅   |        |      |
-| Splunk                  |   ✅   |        |      |
-| Sumo Logic              |   ✅   |   ✅   |  ✅  |
+| ----------------------- | :----: | :-----: | :--: |
+| AppDynamics             |   ✅   |   ✅    |  ✅  |
+| Axiom                   |   ✅   |         |  ✅  |
+| AWS S3                  |   ✅   |         |  ✅  |
+| Azure Blob Storage      |   ✅   |         |  ✅  |
+| Causely                 |   ✅   |         |      |
+| Chronosphere            |   ✅   |   ✅    |      |
+| Coralogix               |   ✅   |   ✅    |  ✅  |
+| Datadog                 |   ✅   |   ✅    |  ✅  |
+| Dynatrace               |   ✅   |   ✅    |  ✅  |
+| Gigapipe                |   ✅   |         |      |
+| Google Cloud Monitoring |   ✅   |   ✅    |      |
+| Google Cloud Storage    |   ✅   |         |  ✅  |
+| Grafana Cloud           |   ✅   |   ✅    |  ✅  |
+| Honeycomb               |   ✅   |   ✅    |  ✅  |
+| HyperDX                 |   ✅   |   ✅    |  ✅  |
+| Last9                   |   ✅   |   ✅    |      |
+| Lightstep               |   ✅   |         |      |
+| Logz.io                 |   ✅   |   ✅    |  ✅  |
+| New Relic               |   ✅   |   ✅    |  ✅  |
+| OpsVerse                |   ✅   |   ✅    |  ✅  |
+| Sentry                  |   ✅   |         |      |
+| Splunk                  |   ✅   |         |      |
+| Sumo Logic              |   ✅   |   ✅    |  ✅  |
 
 ## Self-Hosted (Open Source) Destinations
 
-
 | Destination   | Traces | Metrics | Logs |
-| --------------- | :------: | :-------: | :----: |
-| ClickHouse    |   ✅   |   ✅   |  ✅  |
-| Elasticsearch |   ✅   |        |  ✅  |
-| Jaeger        |   ✅   |        |      |
-| Loki          |        |        |  ✅  |
-| OTLP          |   ✅   |   ✅   |  ✅  |
-| OTLP HTTP     |   ✅   |   ✅   |  ✅  |
-| Prometheus    |        |   ✅   |      |
-| Quickwit      |   ✅   |        |      |
-| qryn          |   ✅   |   ✅   |  ✅  |
-| SigNoz        |   ✅   |   ✅   |  ✅  |
-| Tempo         |   ✅   |        |      |
+| ------------- | :----: | :-----: | :--: |
+| ClickHouse    |   ✅   |   ✅    |  ✅  |
+| Elasticsearch |   ✅   |         |  ✅  |
+| Jaeger        |   ✅   |         |      |
+| Loki          |        |         |  ✅  |
+| OTLP          |   ✅   |   ✅    |  ✅  |
+| OTLP HTTP     |   ✅   |   ✅    |  ✅  |
+| Prometheus    |        |   ✅    |      |
+| Quickwit      |   ✅   |         |      |
+| qryn          |   ✅   |   ✅    |  ✅  |
+| SigNoz        |   ✅   |   ✅    |  ✅  |
+| Tempo         |   ✅   |         |      |
 
 Can't find the destination you need? Help us by following our quick [add new destination](https://docs.odigos.io/adding-new-dest) guide and submitting a PR.
 
