@@ -297,14 +297,14 @@ metadata:
       blockOwnerDeletion: true
       controller: true
       kind: Deployment
-      name: deployment-python-other-agent
+      name: python-other-agent
 spec:
   runtimeDetails:
     - containerName: python-other-agent        
       language: python
-      (runtimeVersion != null): true
       otherAgent:
         name: New Relic Agent
+      (runtimeVersion != null): true
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentedApplication
