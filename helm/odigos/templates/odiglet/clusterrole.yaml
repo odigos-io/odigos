@@ -4,22 +4,19 @@ metadata:
   name: odiglet
 rules:
   - apiGroups:
-      - ""
+      - ''
     resources:
       - pods
-      - pods/status
     verbs:
       - get
       - list
       - watch
   - apiGroups:
-      - ""
+      - ''
     resources:
-      - nodes
+      - pods/status
     verbs:
       - get
-      - list
-      - watch
   - apiGroups:
       - apps
     resources:
@@ -45,16 +42,24 @@ rules:
     verbs:
       - get
   - apiGroups:
+      - ''
+    resources:
+      - nodes
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
       - odigos.io
     resources:
       - instrumentedapplications
     verbs:
-      - create
       - get
       - list
+      - watch
+      - create
       - patch
       - update
-      - watch
   - apiGroups:
       - odigos.io
     resources:
@@ -99,16 +104,5 @@ rules:
       - instrumentationconfigs/status
     verbs:
       - get
-      - list
-      - watch
       - patch
-{{ if .Values.psp.enabled }}
-  - apiGroups:
-      - policy
-    resourceNames:
-      - privileged
-    resources:
-      - podsecuritypolicies
-    verbs:
-      - use
-{{ end }}
+      - update
