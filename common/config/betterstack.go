@@ -25,27 +25,27 @@ func (j *BetterStack) ModifyConfig(dest ExporterConfigurer, cfg *Config) error {
 	}
 
 	if isMetricsEnabled(dest) {
-		metricsExporterName := "prometheusremotewrite/" + uniqueUri
-		cfg.Exporters[metricsExporterName] = GenericMap{
+		exporterName := "prometheusremotewrite/" + uniqueUri
+		cfg.Exporters[exporterName] = GenericMap{
 			"endpoint": "https://in-otel.logs.betterstack.com/metrics",
 		}
 
 		pipeName := "metrics/" + uniqueUri
 		cfg.Service.Pipelines[pipeName] = Pipeline{
 			Processors: []string{processorName},
-			Exporters:  []string{metricsExporterName},
+			Exporters:  []string{exporterName},
 		}
 
 		if isLoggingEnabled(dest) {
-			logsExporterName := "otlp/" + uniqueUri
-			cfg.Exporters[logsExporterName] = GenericMap{
+			exporterName := "otlp/" + uniqueUri
+			cfg.Exporters[exporterName] = GenericMap{
 				"endpoint": "https://in-otel.logs.betterstack.com:443",
 			}
 
 			pipeName := "logs/" + uniqueUri
 			cfg.Service.Pipelines[pipeName] = Pipeline{
 				Processors: []string{processorName},
-				Exporters:  []string{logsExporterName},
+				Exporters:  []string{exporterName},
 			}
 		}
 
