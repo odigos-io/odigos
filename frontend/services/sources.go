@@ -320,39 +320,10 @@ func updateAnnotations(annotations map[string]string, reportedName string) map[s
 	return annotations
 }
 
-func GetSourceCRDs(ctx context.Context, args ...interface{}) ([]*v1alpha1.Source, error) {
-	var nsName, workloadName string
-	var workloadKind WorkloadKind
-	if len(args) > 0 {
-		nsName, _ = args[0].(string)
-	}
-	if len(args) > 1 {
-		workloadName, _ = args[1].(string)
-	}
-	if len(args) > 2 {
-		workloadKind, _ = args[2].(WorkloadKind)
-		if workloadKind != WorkloadKindDeployment && workloadKind != WorkloadKindStatefulSet && workloadKind != WorkloadKindDaemonSet {
-			return nil, errors.New("unsupported workload kind " + string(workloadKind))
-		}
-	}
-
-	labelsSet := labels.Set{}
-	if nsName != "" {
-		labelsSet["odigos.io/workload-namespace"] = nsName
-	}
-	if workloadName != "" {
-		labelsSet["odigos.io/workload-name"] = workloadName
-	}
-	if string(workloadKind) != "" {
-		labelsSet["odigos.io/workload-kind"] = string(workloadKind)
-	}
-
-	sourceList, err := kube.DefaultClient.OdigosClient.Sources(consts.DefaultOdigosNamespace).List(ctx, metav1.ListOptions{LabelSelector: labels.SelectorFromSet(labelsSet).String()})
+func GetAllSourceCRDs(ctx context.Context) ([]*v1alpha1.Source, error) {
+	sourceList, err := kube.DefaultClient.OdigosClient.Sources(consts.DefaultOdigosNamespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
-	}
-	if workloadName != "" && len(sourceList.Items) == 0 {
-		return nil, errors.New("source not found" + workloadName)
 	}
 
 	var sources []*v1alpha1.Source
@@ -369,7 +340,30 @@ func GetSourceCRDs(ctx context.Context, args ...interface{}) ([]*v1alpha1.Source
 	return sources, nil
 }
 
-func CreateSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) error {
+func getSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) (*v1alpha1.Source, error) {
+	sourceList, err := kube.DefaultClient.OdigosClient.Sources(consts.DefaultOdigosNamespace).List(ctx, metav1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set{
+		"odigos.io/workload-namespace": nsName,
+		"odigos.io/workload-name":      workloadName,
+		"odigos.io/workload-kind":      string(workloadKind),
+	}).String()})
+
+	if err != nil {
+		return nil, err
+	}
+	if len(sourceList.Items) == 0 {
+		return nil, errors.New("source not found" + workloadName)
+	}
+	if len(sourceList.Items) > 1 {
+		return nil, errors.New("too many sources" + workloadName)
+	}
+
+	crdName := sourceList.Items[0].Name
+	source, err := kube.DefaultClient.OdigosClient.Sources(consts.DefaultOdigosNamespace).Get(ctx, crdName, metav1.GetOptions{})
+
+	return source, err
+}
+
+func createSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) error {
 	if workloadKind != WorkloadKindDeployment && workloadKind != WorkloadKindStatefulSet && workloadKind != WorkloadKindDaemonSet {
 		return errors.New("unsupported workload kind " + string(workloadKind))
 	}
@@ -391,17 +385,17 @@ func CreateSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 	return err
 }
 
-func DeleteSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) error {
+func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) error {
 	if workloadKind != WorkloadKindDeployment && workloadKind != WorkloadKindStatefulSet && workloadKind != WorkloadKindDaemonSet {
 		return errors.New("unsupported workload kind " + string(workloadKind))
 	}
 
-	sources, err := GetSourceCRDs(ctx, nsName, workloadName, workloadKind)
+	source, err := getSourceCRD(ctx, nsName, workloadName, workloadKind)
 	if err != nil {
 		return err
 	}
 
-	err = kube.DefaultClient.OdigosClient.Sources(consts.DefaultOdigosNamespace).Delete(ctx, sources[0].Name, metav1.DeleteOptions{})
+	err = kube.DefaultClient.OdigosClient.Sources(consts.DefaultOdigosNamespace).Delete(ctx, source.Name, metav1.DeleteOptions{})
 	return err
 }
 
@@ -411,9 +405,9 @@ func ToggleSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 	}
 
 	if *enabled {
-		return CreateSourceCRD(ctx, nsName, workloadName, workloadKind)
+		return createSourceCRD(ctx, nsName, workloadName, workloadKind)
 	} else {
-		return DeleteSourceCRD(ctx, nsName, workloadName, workloadKind)
+		return deleteSourceCRD(ctx, nsName, workloadName, workloadKind)
 	}
 }
 

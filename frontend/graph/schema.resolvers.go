@@ -82,7 +82,7 @@ func (r *computePlatformResolver) K8sActualSource(ctx context.Context, obj *mode
 
 // K8sActualSources is the resolver for the k8sActualSources field.
 func (r *computePlatformResolver) K8sActualSources(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualSource, error) {
-	// sourceList, err := services.GetSourceCRDs(ctx)
+	// sourceList, err := services.GetAllSourceCRDs(ctx)
 	// if err != nil {
 	// 	return nil, err
 	// }
