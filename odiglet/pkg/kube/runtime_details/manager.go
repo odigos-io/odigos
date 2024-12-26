@@ -3,6 +3,7 @@ package runtime_details
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 
+	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
@@ -10,7 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 )
 
-func SetupWithManager(mgr ctrl.Manager, clientset *kubernetes.Clientset) error {
+func SetupWithManager(mgr ctrl.Manager, clientset *kubernetes.Clientset, criClient *criwrapper.CriClient) error {
 	err := builder.
 		ControllerManagedBy(mgr).
 		For(&odigosv1.InstrumentationConfig{}).
@@ -32,6 +33,7 @@ func SetupWithManager(mgr ctrl.Manager, clientset *kubernetes.Clientset) error {
 			Client:    mgr.GetClient(),
 			Scheme:    mgr.GetScheme(),
 			Clientset: clientset,
+			CriClient: criClient,
 		})
 	if err != nil {
 		return err
@@ -46,6 +48,7 @@ func SetupWithManager(mgr ctrl.Manager, clientset *kubernetes.Clientset) error {
 			Client:    mgr.GetClient(),
 			Scheme:    mgr.GetScheme(),
 			Clientset: clientset,
+			CriClient: criClient,
 		})
 	if err != nil {
 		return err
