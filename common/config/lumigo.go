@@ -29,7 +29,7 @@ func (j *Lumigo) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) er
 
 	url, exists := config[LumigoEndpoint]
 	if !exists {
-		return ErrorJaegerMissingURL
+		return ErrorLumigoEndpointMissing
 	}
 	if !strings.HasPrefix(url, "https://") {
 		return errors.New("Lumigo Endpoint (\"LUMIGO_ENDPOINT\") malformed, HTTPS prefix is required, Lumigo will not be configured")
