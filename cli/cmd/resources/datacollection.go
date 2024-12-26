@@ -51,6 +51,11 @@ func NewDataCollectionClusterRole(psp bool) *rbacv1.ClusterRole {
 				Resources: []string{"replicasets", "deployments", "daemonsets", "statefulsets"},
 				Verbs:     []string{"get", "list"},
 			},
+			{ // Needed for load balancer
+				APIGroups: []string{""},
+				Resources: []string{"endpoints"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
 		},
 	}
 

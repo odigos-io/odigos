@@ -28,3 +28,11 @@ rules:
     verbs:
       - get
       - list
+  - apiGroups:
+      - ''
+    resources:
+      - endpoints
+    verbs:
+      - get
+      - list
+      - watch
