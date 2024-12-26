@@ -20,6 +20,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/services/describe/source_describe"
 	testconnection "github.com/odigos-io/odigos/frontend/services/test_connection"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -81,13 +82,20 @@ func (r *computePlatformResolver) K8sActualSource(ctx context.Context, obj *mode
 
 // K8sActualSources is the resolver for the k8sActualSources field.
 func (r *computePlatformResolver) K8sActualSources(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualSource, error) {
+	// sourceList, err := services.GetSourceCRDs(ctx)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// Initialize an empty list of K8sActualSource
+	var actualSources []*model.K8sActualSource
+
+	// for _, source := range sourceList {
+	// TODO: remove "InstrumentedApplications" once we're ready to move over to "InstrumentationConfigs" combined with "Source CRDs"
 	instrumentedApplications, err := kube.DefaultClient.OdigosClient.InstrumentedApplications("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
-
-	// Initialize an empty list of K8sActualSource
-	var actualSources []*model.K8sActualSource
 
 	// Convert each instrumented application to the K8sActualSource type
 	for _, app := range instrumentedApplications.Items {
@@ -106,6 +114,7 @@ func (r *computePlatformResolver) K8sActualSources(ctx context.Context, obj *mod
 		actualSource.ReportedName = &reportedName
 		actualSources = append(actualSources, actualSource)
 	}
+	// }
 
 	return actualSources, nil
 }
