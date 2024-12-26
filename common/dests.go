@@ -11,6 +11,7 @@ const (
 	ChronosphereDestinationType           DestinationType = "chronosphere"
 	ClickhouseDestinationType             DestinationType = "clickhouse"
 	CoralogixDestinationType              DestinationType = "coralogix"
+	Dash0DestinationType                  DestinationType = "dash0"
 	DatadogDestinationType                DestinationType = "datadog"
 	DebugDestinationType                  DestinationType = "debug"
 	DynatraceDestinationType              DestinationType = "dynatrace"
