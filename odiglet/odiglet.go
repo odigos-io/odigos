@@ -6,6 +6,8 @@ import (
 
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	"github.com/odigos-io/odigos/common"
+	commonInstrumentation "github.com/odigos-io/odigos/instrumentation"
+	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	k8senv "github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
@@ -14,11 +16,9 @@ import (
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"github.com/odigos-io/odigos/opampserver/pkg/server"
 	"golang.org/x/sync/errgroup"
-
-	commonInstrumentation "github.com/odigos-io/odigos/instrumentation"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime"
+	controllerruntime "sigs.k8s.io/controller-runtime"
 )
 
 type Odiglet struct {
@@ -27,6 +27,7 @@ type Odiglet struct {
 	ebpfManager              commonInstrumentation.Manager
 	configUpdates            chan<- commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
 	deviceInjectionCallbacks instrumentation.OtelSdksLsf
+	criClient                *criwrapper.CriClient
 }
 
 const (
@@ -56,8 +57,17 @@ func New(deviceInjectionCallbacks instrumentation.OtelSdksLsf, factories map[com
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ebpf manager %w", err)
 	}
+	criWrapper := criwrapper.CriClient{Logger: log.Logger}
 
-	err = kube.SetupWithManager(mgr, nil, clientset, configUpdates)
+	kubeManagerOptions := kube.KubeManagerOptions{
+		Mgr:           mgr,
+		EbpfDirectors: nil,
+		Clientset:     clientset,
+		ConfigUpdates: configUpdates,
+		CriClient:     &criWrapper,
+	}
+
+	err = kube.SetupWithManager(kubeManagerOptions)
 	if err != nil {
 		return nil, fmt.Errorf("failed to setup controller-runtime manager %w", err)
 	}
@@ -68,12 +78,19 @@ func New(deviceInjectionCallbacks instrumentation.OtelSdksLsf, factories map[com
 		ebpfManager:              ebpfManager,
 		configUpdates:            configUpdates,
 		deviceInjectionCallbacks: deviceInjectionCallbacks,
+		criClient:                &criWrapper,
 	}, nil
 }
 
 // Run starts the Odiglet components and blocks until the context is cancelled, or a critical error occurs.
 func (o *Odiglet) Run(ctx context.Context) {
 	g, groupCtx := errgroup.WithContext(ctx)
+
+	if err := o.criClient.Connect(ctx); err != nil {
+		log.Logger.Error(err, "Failed to connect to CRI runtime")
+	}
+
+	defer o.criClient.Close()
 
 	// Start pprof server
 	g.Go(func() error {
