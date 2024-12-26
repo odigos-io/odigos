@@ -10,14 +10,15 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/spf13/cobra"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 
 var proCmd = &cobra.Command{
 	Use:   "pro",
-	Short: "operations for pro clients of Odigos",
-	Long:  `The pro command provides various operations and functionalities specifically designed for professional clients of Odigos. Use this command to access advanced features and manage your pro account.`,
+	Short: "manage odigos pro",
+	Long:  `The pro command provides various operations and functionalities specifically designed for enterprise users. Use this command to access advanced features and manage your pro account.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
@@ -30,7 +31,6 @@ var proCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		// Retrieve token
 		onPremToken := cmd.Flag("onprem-token").Value.String()
 
 		tokenType := "onprem" 
@@ -53,18 +53,21 @@ var proCmd = &cobra.Command{
 }
 
 func updateOdigosToken(ctx context.Context, client *kube.Client, namespace string, tokenType, tokenValue string) error {
-
-	// Retrieve the existing secret
 	secret, err := client.CoreV1().Secrets(namespace).Get(ctx, consts.OdigosProSecretName, metav1.GetOptions{})
 	if err != nil {
+		if apierrors.IsForbidden(err) {
+			return fmt.Errorf("Insufficient permissions to retrieve the token")
+		}
 		return fmt.Errorf("Tokens are not available in the open-source version of Odigos. Please use the on-premises version.")
 	}
 	secret.Data[consts.OdigosOnpremTokenSecretKey] = []byte(tokenValue)
 
-	// Apply the updated secret
 	_, err = client.CoreV1().Secrets(namespace).Update(ctx, secret, metav1.UpdateOptions{})
 	if err != nil {
-		return fmt.Errorf("Tokens are not available in the open-source version of Odigos. Please use the on-premises version.")
+		if apierrors.IsForbidden(err) {
+			return fmt.Errorf("Insufficient permissions to update the token")
+		}
+		return fmt.Errorf("%v", err)
 	}
 
 	return nil
