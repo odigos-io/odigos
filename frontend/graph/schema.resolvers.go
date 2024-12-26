@@ -8,7 +8,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -17,8 +16,8 @@ import (
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
 	actionservices "github.com/odigos-io/odigos/frontend/services/actions"
-	odigos_describe "github.com/odigos-io/odigos/frontend/services/describe/odigos_describe"
-	source_describe "github.com/odigos-io/odigos/frontend/services/describe/source_describe"
+	"github.com/odigos-io/odigos/frontend/services/describe/odigos_describe"
+	"github.com/odigos-io/odigos/frontend/services/describe/source_describe"
 	testconnection "github.com/odigos-io/odigos/frontend/services/test_connection"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -135,8 +134,8 @@ func (r *computePlatformResolver) Destinations(ctx context.Context, obj *model.C
 }
 
 // Actions is the resolver for the actions field.
-func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.ComputePlatform) ([]*model.IcaInstanceResponse, error) {
-	var response []*model.IcaInstanceResponse
+func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.ComputePlatform) ([]*model.PipelineAction, error) {
+	var response []*model.PipelineAction
 	odigosns := consts.DefaultOdigosNamespace
 
 	// AddClusterInfos actions
@@ -149,10 +148,11 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 		if err != nil {
 			return nil, err
 		}
-		response = append(response, &model.IcaInstanceResponse{
-			ID:   action.Name,
-			Type: action.Kind,
-			Spec: string(specStr),
+		response = append(response, &model.PipelineAction{
+			ID:         action.Name,
+			Type:       action.Kind,
+			Spec:       string(specStr),
+			Conditions: convertConditions(action.Status.Conditions),
 		})
 	}
 
@@ -166,10 +166,11 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 		if err != nil {
 			return nil, err
 		}
-		response = append(response, &model.IcaInstanceResponse{
-			ID:   action.Name,
-			Type: action.Kind,
-			Spec: string(specStr),
+		response = append(response, &model.PipelineAction{
+			ID:         action.Name,
+			Type:       action.Kind,
+			Spec:       string(specStr),
+			Conditions: convertConditions(action.Status.Conditions),
 		})
 	}
 
@@ -183,10 +184,11 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 		if err != nil {
 			return nil, err
 		}
-		response = append(response, &model.IcaInstanceResponse{
-			ID:   action.Name,
-			Type: action.Kind,
-			Spec: string(specStr),
+		response = append(response, &model.PipelineAction{
+			ID:         action.Name,
+			Type:       action.Kind,
+			Spec:       string(specStr),
+			Conditions: convertConditions(action.Status.Conditions),
 		})
 	}
 
@@ -200,10 +202,11 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 		if err != nil {
 			return nil, err
 		}
-		response = append(response, &model.IcaInstanceResponse{
-			ID:   action.Name,
-			Type: action.Kind,
-			Spec: string(specStr),
+		response = append(response, &model.PipelineAction{
+			ID:         action.Name,
+			Type:       action.Kind,
+			Spec:       string(specStr),
+			Conditions: convertConditions(action.Status.Conditions),
 		})
 	}
 
@@ -217,10 +220,11 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 		if err != nil {
 			return nil, err
 		}
-		response = append(response, &model.IcaInstanceResponse{
-			ID:   action.Name,
-			Type: action.Kind,
-			Spec: string(specStr),
+		response = append(response, &model.PipelineAction{
+			ID:         action.Name,
+			Type:       action.Kind,
+			Spec:       string(specStr),
+			Conditions: convertConditions(action.Status.Conditions),
 		})
 	}
 
@@ -234,10 +238,11 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 		if err != nil {
 			return nil, err
 		}
-		response = append(response, &model.IcaInstanceResponse{
-			ID:   action.Name,
-			Type: action.Kind,
-			Spec: string(specStr),
+		response = append(response, &model.PipelineAction{
+			ID:         action.Name,
+			Type:       action.Kind,
+			Spec:       string(specStr),
+			Conditions: convertConditions(action.Status.Conditions),
 		})
 	}
 
@@ -251,10 +256,11 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 		if err != nil {
 			return nil, err
 		}
-		response = append(response, &model.IcaInstanceResponse{
-			ID:   action.Name,
-			Type: action.Kind,
-			Spec: string(specStr),
+		response = append(response, &model.PipelineAction{
+			ID:         action.Name,
+			Type:       action.Kind,
+			Spec:       string(specStr),
+			Conditions: convertConditions(action.Status.Conditions),
 		})
 	}
 
@@ -273,24 +279,7 @@ func (r *destinationResolver) Type(ctx context.Context, obj *model.Destination) 
 
 // Conditions is the resolver for the conditions field.
 func (r *destinationResolver) Conditions(ctx context.Context, obj *model.Destination) ([]*model.Condition, error) {
-	conditions := make([]*model.Condition, 0, len(obj.Conditions))
-	for _, c := range obj.Conditions {
-		// Convert LastTransitionTime to a string pointer if it's not nil
-		var lastTransitionTime *string
-		if !c.LastTransitionTime.IsZero() {
-			t := c.LastTransitionTime.Format(time.RFC3339)
-			lastTransitionTime = &t
-		}
-
-		// Add the converted Condition to the list
-		conditions = append(conditions, &model.Condition{
-			Type:               c.Type,
-			Status:             model.ConditionStatus(c.Status),
-			LastTransitionTime: lastTransitionTime,
-			Reason:             &c.Reason,
-			Message:            &c.Message,
-		})
-	}
+	conditions := convertConditions(obj.Conditions)
 	return conditions, nil
 }
 
@@ -732,15 +721,17 @@ func (r *queryResolver) DestinationTypeDetails(ctx context.Context, typeArg stri
 		if err != nil {
 			return nil, fmt.Errorf("error marshalling component properties: %v", err)
 		}
-
 		resp.Fields = append(resp.Fields, &model.Field{
-			Name:                field.Name,
-			DisplayName:         field.DisplayName,
-			ComponentType:       field.ComponentType,
-			ComponentProperties: string(componentPropsJSON),
-			InitialValue:        &field.InitialValue,
+			Name:                 field.Name,
+			DisplayName:          field.DisplayName,
+			ComponentType:        field.ComponentType,
+			ComponentProperties:  string(componentPropsJSON),
+			Secret:               field.Secret,
+			InitialValue:         field.InitialValue,
+			RenderCondition:      field.RenderCondition,
+			HideFromReadData:     field.HideFromReadData,
+			CustomReadDataLabels: convertCustomReadDataLabels(field.CustomReadDataLabels),
 		})
-
 	}
 
 	return &resp, nil

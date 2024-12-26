@@ -104,10 +104,6 @@ export const InputTable: React.FC<Props> = ({ columns, initialValues = [], value
     });
   };
 
-  const handleKeyDown: KeyboardEventHandler<HTMLInputElement> = (e) => {
-    e.stopPropagation();
-  };
-
   // Check if any key or value field is empty
   const isAddButtonDisabled = rows.some((row) => !!Object.values(row).filter((val) => !val).length);
   const isDelButtonDisabled = rows.length <= 1;
@@ -143,11 +139,7 @@ export const InputTable: React.FC<Props> = ({ columns, initialValues = [], value
                       type={type}
                       placeholder={placeholder}
                       value={value}
-                      onChange={({ stopPropagation, target: { value: val } }) => {
-                        stopPropagation();
-                        handleChange(keyName, type === 'number' ? Number(val) : val, idx);
-                      }}
-                      onKeyDown={handleKeyDown}
+                      onChange={({ target: { value: val } }) => handleChange(keyName, type === 'number' ? Number(val) : val, idx)}
                       autoFocus={!value && rows.length > 1 && idx === rows.length - 1 && innerIdx === 0}
                       style={{ maxWidth, paddingLeft: 10 }}
                       hasError={!!errorMessage && (!required || (required && !value))}

@@ -111,10 +111,6 @@ export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({ initialK
     });
   };
 
-  const handleKeyDown: KeyboardEventHandler<HTMLInputElement> = (e) => {
-    e.stopPropagation();
-  };
-
   // Check if any key or value field is empty
   const isAddButtonDisabled = rows.some(({ key, value }) => key.trim() === '' || value.trim() === '');
   const isDelButtonDisabled = rows.length <= 1;
@@ -129,11 +125,7 @@ export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({ initialK
             <Input
               placeholder='Attribute name'
               value={key}
-              onChange={(e) => {
-                e.stopPropagation();
-                handleChange('key', e.target.value, idx);
-              }}
-              onKeyDown={handleKeyDown}
+              onChange={(e) => handleChange('key', e.target.value, idx)}
               hasError={!!errorMessage && (!required || (required && !key))}
               autoFocus={!value && rows.length > 1 && idx === rows.length - 1}
             />
@@ -143,11 +135,7 @@ export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({ initialK
             <Input
               placeholder='Attribute value'
               value={value}
-              onChange={(e) => {
-                e.stopPropagation();
-                handleChange('value', e.target.value, idx);
-              }}
-              onKeyDown={handleKeyDown}
+              onChange={(e) => handleChange('value', e.target.value, idx)}
               hasError={!!errorMessage && (!required || (required && !value))}
               autoFocus={false}
             />

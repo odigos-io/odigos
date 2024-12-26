@@ -4,19 +4,15 @@ metadata:
   name: odiglet
 rules:
   - apiGroups:
-      - ""
+      - ''
     resources:
-      - configmaps
-      - namespaces
-      - nodes
       - pods
-      - services
     verbs:
       - get
       - list
       - watch
   - apiGroups:
-      - ""
+      - ''
     resources:
       - pods/status
     verbs:
@@ -24,8 +20,8 @@ rules:
   - apiGroups:
       - apps
     resources:
-      - daemonsets
       - deployments
+      - daemonsets
       - statefulsets
     verbs:
       - get
@@ -34,37 +30,11 @@ rules:
   - apiGroups:
       - apps
     resources:
-      - daemonsets/finalizers
-      - deployments/finalizers
-      - statefulsets/finalizers
-    verbs:
-      - update
-  - apiGroups:
-      - apps
-    resources:
-      - daemonsets/status
       - deployments/status
+      - daemonsets/status
       - statefulsets/status
     verbs:
       - get
-  - apiGroups:
-      - odigos.io
-    resources:
-      - collectorsgroups
-      - collectorsgroups/status
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - odigos.io
-    resources:
-      - instrumentationconfigs/status
-    verbs:
-      - get
-      - list
-      - watch
-      - patch
   - apiGroups:
       - apps
     resources:
@@ -72,34 +42,24 @@ rules:
     verbs:
       - get
   - apiGroups:
-      - odigos.io
+      - ''
     resources:
-      - instrumentationconfigs
+      - nodes
     verbs:
       - get
       - list
       - watch
-      - patch
-      - update
   - apiGroups:
       - odigos.io
     resources:
-     - instrumentedapplications
+      - instrumentedapplications
     verbs:
+      - get
+      - list
+      - watch
       - create
-      - get
-      - list
       - patch
       - update
-      - watch
-  - apiGroups:
-      - odigos.io
-    resources:
-      - odigosconfigurations
-    verbs:
-      - get
-      - list
-      - watch
   - apiGroups:
       - odigos.io
     resources:
@@ -111,7 +71,7 @@ rules:
   - apiGroups:
       - odigos.io
     resources:
-     - instrumentationinstances
+      - instrumentationinstances
     verbs:
       - create
       - get
@@ -128,13 +88,21 @@ rules:
       - get
       - patch
       - update
-{{ if .Values.psp.enabled }}
   - apiGroups:
-    - policy
-    resourceNames:
-    - privileged
+      - odigos.io
     resources:
-    - podsecuritypolicies
+      - instrumentationconfigs
     verbs:
-    - use
-{{ end }}
+      - get
+      - list
+      - watch
+      - patch
+      - update
+  - apiGroups:
+      - odigos.io
+    resources:
+      - instrumentationconfigs/status
+    verbs:
+      - get
+      - patch
+      - update

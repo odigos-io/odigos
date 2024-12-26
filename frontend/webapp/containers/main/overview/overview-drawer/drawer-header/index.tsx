@@ -1,6 +1,7 @@
 import React, { useEffect, useState, forwardRef, useImperativeHandle } from 'react';
+import theme from '@/styles/theme';
 import styled from 'styled-components';
-import { EditIcon, SVG, XIcon } from '@/assets';
+import { EditIcon, SVG, TrashIcon, XIcon } from '@/assets';
 import { Button, IconWrapped, Input, Text, Tooltip } from '@/reuseable-components';
 
 const HeaderContainer = styled.section`
@@ -60,9 +61,11 @@ interface DrawerHeaderProps {
   isEdit?: boolean;
   onEdit?: () => void;
   onClose: () => void;
+  onDelete?: () => void;
+  deleteLabel?: string;
 }
 
-const DrawerHeader = forwardRef<DrawerHeaderRef, DrawerHeaderProps>(({ title, titleTooltip, icon, iconSrc, isEdit, onEdit, onClose }, ref) => {
+const DrawerHeader = forwardRef<DrawerHeaderRef, DrawerHeaderProps>(({ title, titleTooltip, icon, iconSrc, isEdit, onEdit, onClose, onDelete, deleteLabel = 'Delete' }, ref) => {
   const [inputValue, setInputValue] = useState(title);
 
   useEffect(() => {
@@ -93,11 +96,20 @@ const DrawerHeader = forwardRef<DrawerHeaderRef, DrawerHeaderProps>(({ title, ti
         </InputWrapper>
       )}
 
-      <SectionItemsWrapper $gap={8}>
-        {!isEdit && !!onEdit && (
+      <SectionItemsWrapper $gap={2}>
+        {!!onEdit && !isEdit && (
           <EditButton data-id='drawer-edit' variant='tertiary' onClick={onEdit}>
             <EditIcon />
             <ButtonText>Edit</ButtonText>
+          </EditButton>
+        )}
+
+        {!!onDelete && !isEdit && (
+          <EditButton data-id='drawer-delete' variant='tertiary' onClick={onDelete}>
+            <TrashIcon />
+            <Text color={theme.text.error} size={14} family='secondary'>
+              {deleteLabel}
+            </Text>
           </EditButton>
         )}
 

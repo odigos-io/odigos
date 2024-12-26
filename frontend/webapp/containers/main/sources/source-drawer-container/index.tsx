@@ -78,18 +78,21 @@ export const SourceDrawer: React.FC<Props> = () => {
     if (!selectedItem) return [];
 
     const { item } = selectedItem as { item: K8sActualSource };
-
-    const hasPresenceOfOtherAgent = item.instrumentedApplicationDetails.conditions.some(
-      (condition) => condition.status === BACKEND_BOOLEAN.FALSE && condition.message.includes('device not added to any container due to the presence of another agent'),
-    );
+    const hasPresenceOfOtherAgent =
+      item?.instrumentedApplicationDetails?.conditions?.some(
+        (condition) => condition.status === BACKEND_BOOLEAN.FALSE && condition.message.includes('device not added to any container due to the presence of another agent'),
+      ) || false;
 
     return (
-      item.instrumentedApplicationDetails.containers.map(
+      item?.instrumentedApplicationDetails?.containers?.map(
         (container) =>
           ({
             type: DataCardFieldTypes.SOURCE_CONTAINER,
             width: '100%',
-            value: JSON.stringify({ ...container, hasPresenceOfOtherAgent }),
+            value: JSON.stringify({
+              ...container,
+              hasPresenceOfOtherAgent,
+            }),
           } as DataCardRow),
       ) || []
     );
@@ -143,7 +146,7 @@ export const SourceDrawer: React.FC<Props> = () => {
         </FormContainer>
       ) : (
         <DataContainer>
-          <ConditionDetails conditions={item.instrumentedApplicationDetails.conditions} />
+          <ConditionDetails conditions={item?.instrumentedApplicationDetails?.conditions || []} />
           <DataCard title={DATA_CARDS.SOURCE_DETAILS} data={cardData} />
           <DataCard title={DATA_CARDS.DETECTED_CONTAINERS} titleBadge={containersData.length} description={DATA_CARDS.DETECTED_CONTAINERS_DESCRIPTION} data={containersData} />
           <DataCard

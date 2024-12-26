@@ -72,7 +72,7 @@ export const useSourceCRUD = (params?: Params) => {
       } else {
         const id = { kind, name, namespace };
         if (!selected) removeNotifications(getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.SOURCE));
-        if (!selected) setConfiguredSources({ ...configuredSources, [namespace]: configuredSources[namespace].filter((source) => source.name !== name) });
+        if (!selected) setConfiguredSources({ ...configuredSources, [namespace]: configuredSources[namespace]?.filter((source) => source.name !== name) || [] });
         handleComplete(action, `source "${name}" was ${action.toLowerCase()}d ${fromOrIn} "${namespace}"`, selected ? id : undefined);
       }
     },
