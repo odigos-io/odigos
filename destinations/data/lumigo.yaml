@@ -14,14 +14,6 @@ spec:
     logs:
       supported: true
   fields:
-    - name: LUMIGO_ENDPOINT
-      displayName: Lumigo OTLP HTTP Endpoint
-      componentType: input
-      initialValue: 'https://ga-otlp.lumigo-tracer-edge.golumigo.com'
-      componentProps:
-        type: text
-        required: true
-        placeholder: 'https://ga-otlp.lumigo-tracer-edge.golumigo.com'
     - name: LUMIGO_TOKEN
       displayName: Lumigo Token
       componentType: input

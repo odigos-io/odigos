@@ -6,7 +6,6 @@ title: 'Lumigo'
 
 Lumigo is a monitoring and debugging platform for serverless applications. It provides end-to-end visibility into serverless applications, including monitoring, troubleshooting, and security.
 
-- **LUMIGO_ENDPOINT** - Lumigo OpenTelemetry endpoint URL, globally available at: `https://ga-otlp.lumigo-tracer-edge.golumigo.com`
 - **LUMIGO_TOKEN** - Lumigo OpenTelemetry Authorization Token.
 
 ## Adding a Destination to Odigos
@@ -37,8 +36,7 @@ metadata:
   name: lumigo-example
   namespace: odigos-system
 spec:
-  data:
-    LUMIGO_ENDPOINT: <Lumigo OTLP HTTP Endpoint>
+  data: {}
   destinationName: lumigo
   secretRef:
     name: lumigo-secret
