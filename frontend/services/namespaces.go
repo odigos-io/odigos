@@ -181,7 +181,15 @@ func SyncWorkloadsInNamespace(ctx context.Context, nsName string, workloads []mo
 		g.Go(func() error {
 			// Only label selected sources, ignore the rest
 			if currWorkload.Selected != nil {
-				return ToggleSourceCRD(ctx, nsName, currWorkload.Name, WorkloadKind(currWorkload.Kind.String()), currWorkload.Selected)
+				err := ToggleSourceCRD(ctx, nsName, currWorkload.Name, WorkloadKind(currWorkload.Kind.String()), currWorkload.Selected)
+				if err != nil {
+					return err
+				}
+				// TODO: remove this after a fix was made in the backend to correctly handle the InstrumentedApplication on-create Source CRD
+				err = SetWorkloadInstrumentationLabel(ctx, nsName, currWorkload.Name, WorkloadKind(currWorkload.Kind.String()), currWorkload.Selected)
+				if err != nil {
+					return err
+				}
 			}
 			return nil
 		})

@@ -17,6 +17,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -413,5 +414,24 @@ func ToggleSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		return CreateSourceCRD(ctx, nsName, workloadName, workloadKind)
 	} else {
 		return DeleteSourceCRD(ctx, nsName, workloadName, workloadKind)
+	}
+}
+
+// TODO: remove this after a fix was made in the backend to correctly handle the InstrumentedApplication on-create Source CRD
+func SetWorkloadInstrumentationLabel(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind, enabled *bool) error {
+	jsonMergePatchData := GetJsonMergePatchForInstrumentationLabel(enabled)
+
+	switch workloadKind {
+	case WorkloadKindDeployment:
+		_, err := kube.DefaultClient.AppsV1().Deployments(nsName).Patch(ctx, workloadName, types.MergePatchType, jsonMergePatchData, metav1.PatchOptions{})
+		return err
+	case WorkloadKindStatefulSet:
+		_, err := kube.DefaultClient.AppsV1().StatefulSets(nsName).Patch(ctx, workloadName, types.MergePatchType, jsonMergePatchData, metav1.PatchOptions{})
+		return err
+	case WorkloadKindDaemonSet:
+		_, err := kube.DefaultClient.AppsV1().DaemonSets(nsName).Patch(ctx, workloadName, types.MergePatchType, jsonMergePatchData, metav1.PatchOptions{})
+		return err
+	default:
+		return errors.New("unsupported workload kind " + string(workloadKind))
 	}
 }
