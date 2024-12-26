@@ -319,32 +319,53 @@ func updateAnnotations(annotations map[string]string, reportedName string) map[s
 	return annotations
 }
 
-func GetSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) (*v1alpha1.Source, error) {
-	if workloadKind != WorkloadKindDeployment && workloadKind != WorkloadKindStatefulSet && workloadKind != WorkloadKindDaemonSet {
-		return nil, errors.New("unsupported workload kind " + string(workloadKind))
+func GetSourceCRDs(ctx context.Context, args ...interface{}) ([]*v1alpha1.Source, error) {
+	var nsName, workloadName string
+	var workloadKind WorkloadKind
+	if len(args) > 0 {
+		nsName, _ = args[0].(string)
+	}
+	if len(args) > 1 {
+		workloadName, _ = args[1].(string)
+	}
+	if len(args) > 2 {
+		workloadKind, _ = args[2].(WorkloadKind)
+		if workloadKind != WorkloadKindDeployment && workloadKind != WorkloadKindStatefulSet && workloadKind != WorkloadKindDaemonSet {
+			return nil, errors.New("unsupported workload kind " + string(workloadKind))
+		}
 	}
 
-	selector := labels.SelectorFromSet(labels.Set{
-		"odigos.io/workload-name":      workloadName,
-		"odigos.io/workload-namespace": nsName,
-		"odigos.io/workload-kind":      string(workloadKind),
-	})
+	labelsSet := labels.Set{}
+	if nsName != "" {
+		labelsSet["odigos.io/workload-namespace"] = nsName
+	}
+	if workloadName != "" {
+		labelsSet["odigos.io/workload-name"] = workloadName
+	}
+	if string(workloadKind) != "" {
+		labelsSet["odigos.io/workload-kind"] = string(workloadKind)
+	}
 
-	sourceList, err := kube.DefaultClient.OdigosClient.Sources(consts.DefaultOdigosNamespace).List(ctx, metav1.ListOptions{LabelSelector: selector.String()})
+	sourceList, err := kube.DefaultClient.OdigosClient.Sources(consts.DefaultOdigosNamespace).List(ctx, metav1.ListOptions{LabelSelector: labels.SelectorFromSet(labelsSet).String()})
 	if err != nil {
 		return nil, err
 	}
-	if len(sourceList.Items) == 0 {
+	if workloadName != "" && len(sourceList.Items) == 0 {
 		return nil, errors.New("source not found" + workloadName)
 	}
 
-	crdName := sourceList.Items[0].Name
-	source, err := kube.DefaultClient.OdigosClient.Sources(consts.DefaultOdigosNamespace).Get(ctx, crdName, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
+	var sources []*v1alpha1.Source
+
+	for _, crd := range sourceList.Items {
+		crdName := crd.Name
+		source, err := kube.DefaultClient.OdigosClient.Sources(consts.DefaultOdigosNamespace).Get(ctx, crdName, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		sources = append(sources, source)
 	}
 
-	return source, nil
+	return sources, nil
 }
 
 func CreateSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) error {
@@ -374,12 +395,12 @@ func DeleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		return errors.New("unsupported workload kind " + string(workloadKind))
 	}
 
-	source, err := GetSourceCRD(ctx, nsName, workloadName, workloadKind)
+	sources, err := GetSourceCRDs(ctx, nsName, workloadName, workloadKind)
 	if err != nil {
 		return err
 	}
 
-	err = kube.DefaultClient.OdigosClient.Sources(consts.DefaultOdigosNamespace).Delete(ctx, source.Name, metav1.DeleteOptions{})
+	err = kube.DefaultClient.OdigosClient.Sources(consts.DefaultOdigosNamespace).Delete(ctx, sources[0].Name, metav1.DeleteOptions{})
 	return err
 }
 
