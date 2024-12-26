@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="33" height="33" viewBox="0 0 33 33" fill="none">
+  <title>Highlight</title>
+  <g>
+    <circle cx="16" cy="16" r="16" fill="#6c37f4"/>
+    <path fill="#ffffff" fill-rule="evenodd" clip-rule="evenodd" d="M11 10C9.89543 10 9 10.8954 9 12V22C9 23.1046 9.89543 24 11 24H17L12 10H11ZM15 10L20 24H21C22.1046 24 23 23.1046 23 22V12C23 10.8954 22.1046 10 21 10H15Z"/>
+  </g>
+</svg>
