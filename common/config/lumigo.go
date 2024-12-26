@@ -31,8 +31,8 @@ func (j *Lumigo) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) er
 	if !exists {
 		return ErrorJaegerMissingURL
 	}
-	if !strings.HasPrefix(url, "http://") {
-		return errors.New("Lumigo Endpoint (\"LUMIGO_ENDPOINT\") malformed, HTTP prefix is required, Lumigo will not be configured")
+	if !strings.HasPrefix(url, "https://") {
+		return errors.New("Lumigo Endpoint (\"LUMIGO_ENDPOINT\") malformed, HTTPS prefix is required, Lumigo will not be configured")
 	}
 	if strings.HasSuffix(url, "/") {
 		return errors.New("Lumigo Endpoint (\"LUMIGO_ENDPOINT\") malformed, forward-slash \"/\" suffix is forbidden, Lumigo will not be configured")
@@ -42,7 +42,7 @@ func (j *Lumigo) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) er
 	exporterConfig := GenericMap{
 		"endpoint": url,
 		"headers": GenericMap{
-			"Authorization": "LumigoToken ${GROUNDCOVER_API_KEY}",
+			"Authorization": "LumigoToken ${LUMIGO_TOKEN}",
 		},
 	}
 
