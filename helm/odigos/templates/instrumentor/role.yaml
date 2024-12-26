@@ -2,10 +2,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: odigos-instrumentor
-  namespace: {{ .Release.Namespace }}
+  namespace: '{{ .Release.Namespace }}'
 rules:
   - apiGroups:
-      - ""
+      - ''
     resourceNames:
       - odigos-config
     resources:
@@ -25,7 +25,7 @@ rules:
   - apiGroups:
       - odigos.io
     resources:
-     - collectorsgroups/status
+      - collectorsgroups/status
     verbs:
       - get
       - list
