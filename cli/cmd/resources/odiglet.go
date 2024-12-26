@@ -62,23 +62,17 @@ func NewOdigletRole(ns string) *rbacv1.Role {
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
+				// Needed for reading the enabled signals for each source
+				// TODO: rely on inctr. config instead of collectorsgroups, then remove this
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"collectorsgroups", "collectorsgroups/status"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
+			{ // Needed to read the odigos_config for ignored containers
 				APIGroups:     []string{""},
 				Resources:     []string{"configmaps"},
 				ResourceNames: []string{consts.OdigosConfigurationName},
+				Verbs:         []string{"get", "list", "watch"},
 			},
 		},
 	}
@@ -119,156 +113,81 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 			Name: OdigletClusterRoleName,
 		},
 		Rules: []rbacv1.PolicyRule{
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
+			{ // Needed for language detection
 				APIGroups: []string{""},
-				Resources: []string{
-					"pods", "pods/status",
-				},
+				Resources: []string{"pods"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
+			{ // Needed for language detection
 				APIGroups: []string{""},
-				Resources: []string{
-					"nodes",
-				},
+				Resources: []string{"pods/status"},
+				Verbs:     []string{"get"},
 			},
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
+			{ // Needed for language detection
+				// TODO: remove this once Tamir/PR is read for new language detection
 				APIGroups: []string{"apps"},
 				Resources: []string{"deployments", "daemonsets", "statefulsets"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
-			{
-				Verbs: []string{
-					"get",
-				},
+			{ // Needed for language detection
+				// TODO: remove this once Tamir/PR is read for new language detection
 				APIGroups: []string{"apps"},
-				Resources: []string{
-					"deployments/status", "daemonsets/status", "statefulsets/status",
-				},
+				Resources: []string{"deployments/status", "daemonsets/status", "statefulsets/status"},
+				Verbs:     []string{"get"},
 			},
-			{
-				Verbs: []string{
-					"get",
-				},
+			{ // Needed for language detection
+				// TODO: remove this once Tamir/PR is read for new language detection
 				APIGroups: []string{"apps"},
-				Resources: []string{
-					"replicasets",
-				},
+				Resources: []string{"replicasets"},
+				Verbs:     []string{"get"},
 			},
-			{
-				Verbs: []string{
-					"create",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"instrumentedapplications",
-				},
+			{ // Needed for virtual device registration
+				APIGroups: []string{""},
+				Resources: []string{"nodes"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
-			{
-				Verbs: []string{
-					"get",
-					"patch",
-					"update",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"instrumentedapplications/status",
-				},
-			},
-			{
-				Verbs: []string{
-					"create",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-					"delete",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"instrumentationinstances",
-				},
-			},
-			{
-				Verbs: []string{
-					"get",
-					"patch",
-					"update",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"instrumentationinstances/status",
-				},
-			},
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-					"patch",
-					"update",
-				},
+			{ // Needed for storage of runtime details / language detection (almost deprecated)
+				// TODO: remove this once Tamir/PR is read for instrumentation app ---> instrumentation config migration
 				APIGroups: []string{"odigos.io"},
-				Resources: []string{
-					"instrumentationconfigs",
-				},
+				Resources: []string{"instrumentedapplications"},
+				Verbs:     []string{"get", "list", "watch", "create", "patch", "update"},
 			},
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-					"patch",
-				},
+			{ // Needed for storage of runtime details / language detection (almost deprecated)
+				// TODO: remove this once Tamir/PR is read for instrumentation app ---> instrumentation config migration
 				APIGroups: []string{"odigos.io"},
-				Resources: []string{
-					"instrumentationconfigs/status",
-				},
+				Resources: []string{"instrumentedapplications/status"},
+				Verbs:     []string{"get", "patch", "update"},
+			},
+			{ // Needed for storage of the process instrumentation state
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"instrumentationinstances"},
+				Verbs:     []string{"create", "get", "list", "patch", "update", "watch", "delete"},
+			},
+			{ // Needed for storage of the process instrumentation state
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"instrumentationinstances/status"},
+				Verbs:     []string{"get", "patch", "update"},
+			},
+			{ // Need for storage of runtime details / language detection (future update)
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"instrumentationconfigs"},
+				Verbs:     []string{"get", "list", "watch", "patch", "update"},
+			},
+			{ // Need for storage of runtime details / language detection (future update)
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"instrumentationconfigs/status"},
+				Verbs:     []string{"get", "patch", "update"},
 			},
 		},
 	}
 
 	if psp {
 		clusterrole.Rules = append(clusterrole.Rules, rbacv1.PolicyRule{
-			Verbs: []string{
-				"use",
-			},
-			APIGroups: []string{
-				"policy",
-			},
-			Resources: []string{
-				"podsecuritypolicies",
-			},
-			ResourceNames: []string{
-				"privileged",
-			},
+			// Needed for clients who enable pod security policies
+			APIGroups:     []string{"policy"},
+			Resources:     []string{"podsecuritypolicies"},
+			ResourceNames: []string{"privileged"},
+			Verbs:         []string{"use"},
 		})
 	}
 
