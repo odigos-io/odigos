@@ -3,6 +3,7 @@ package criwrapper
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -13,6 +14,11 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	criapi "k8s.io/cri-api/pkg/apis/runtime/v1"
+)
+
+var (
+	ErrDetectingCRIEndpoint          = errors.New("Unable to detect CRI runtime endpoint")
+	ErrFailedToValidateCRIConnection = errors.New("Failed to validate CRI runtime connection")
 )
 
 type CriClient struct {
@@ -45,7 +51,7 @@ func (rc *CriClient) Connect(ctx context.Context) error {
 
 	endpoint := detectRuntimeSocket()
 	if endpoint == "" {
-		return fmt.Errorf("unable to detect CRI runtime endpoint")
+		return ErrDetectingCRIEndpoint
 	}
 
 	rc.Logger.Info("Starting connection attempt to CRI runtime", "endpoint", endpoint)
@@ -68,7 +74,7 @@ func (rc *CriClient) Connect(ctx context.Context) error {
 
 	_, err = rc.client.Version(ctx, &criapi.VersionRequest{})
 	if err != nil {
-		return fmt.Errorf("Failed to validate CRI runtime connection")
+		return ErrFailedToValidateCRIConnection
 	}
 
 	rc.Logger.Info("Successfully connected to CRI runtime", "endpoint", endpoint)
