@@ -68,11 +68,11 @@ type InstrumentedApplicationDetails {
 }
 
 type Condition {
-  type: String!
   status: ConditionStatus!
-  lastTransitionTime: String
+  type: String!
   reason: String
   message: String
+  lastTransitionTime: String
 }
 
 type K8sActualNamespace {
@@ -208,7 +208,7 @@ type ComputePlatform {
   k8sActualSource(name: String, namespace: String, kind: String): K8sActualSource
   k8sActualSources: [K8sActualSource]!
   destinations: [Destination!]!
-  actions: [IcaInstanceResponse!]!
+  actions: [PipelineAction!]!
   instrumentationRules: [InstrumentationRule!]!
 }
 
@@ -324,10 +324,11 @@ type DestinationDetails {
   fields: String!
 }
 
-type IcaInstanceResponse {
+type PipelineAction {
   id: String!
   type: String!
   spec: String!
+  conditions: [Condition!]
 }
 
 input PatchSourceRequestInput {

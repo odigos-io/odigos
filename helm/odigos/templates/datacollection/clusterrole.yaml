@@ -4,34 +4,35 @@ metadata:
   name: odigos-data-collection
 rules:
   - apiGroups:
-      - ""
+      - ''
     resources:
-      - pods
-      - endpoints
       - nodes/stats
       - nodes/proxy
     verbs:
       - get
       - list
-      - watch
+  - apiGroups:
+      - ''
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
   - apiGroups:
       - apps
     resources:
-      - daemonsets
-      - deployments
       - replicasets
+      - deployments
+      - daemonsets
       - statefulsets
     verbs:
+      - get
+      - list
+  - apiGroups:
+      - ''
+    resources:
+      - endpoints
+    verbs:
+      - get
       - list
       - watch
-      - get
-{{ if .Values.psp.enabled }}
-  - apiGroups:
-    - policy
-    resourceNames:
-    - privileged
-    resources:
-    - podsecuritypolicies
-    verbs:
-    - use
-{{ end }}
