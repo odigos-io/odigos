@@ -58,6 +58,13 @@ var EnvValuesMap = map[string]envValues{
 	},
 }
 
+// EnvVarsForLanguage is a map of environment variables that are relevant for each language.
+var EnvVarsForLanguage = map[common.ProgrammingLanguage][]string{
+	common.JavascriptProgrammingLanguage: {"NODE_OPTIONS"},
+	common.PythonProgrammingLanguage:     {"PYTHONPATH"},
+	common.JavaProgrammingLanguage:       {"JAVA_OPTS", "JAVA_TOOL_OPTIONS"},
+}
+
 func GetRelevantEnvVarsKeys() []string {
 	keys := make([]string, 0, len(EnvValuesMap))
 	for key := range EnvValuesMap {
