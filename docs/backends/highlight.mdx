@@ -2,10 +2,9 @@
 title: 'Highlight'
 ---
 
-## Configuring Highlight Backend
+## Configuring Backend
 
-The open source, fullstack Monitoring Platform.
-
+- **HIGHLIGHT_ENDPOINT** - OpenTelemetry HTTP Endpoint.
 - **HIGHLIGHT_PROJECT_ID** - Project ID, generated via Highligh UI.
 
 ## Adding a Destination to Odigos
@@ -29,15 +28,6 @@ kubectl apply -f destination.yaml
 ```
 
 
-2. **Using kubernetes manifests**
-
-Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
-
-```bash
-kubectl apply -f destination.yaml
-```
-
-
 ```yaml
 apiVersion: odigos.io/v1alpha1
 kind: Destination
@@ -45,7 +35,8 @@ metadata:
   name: highlight-example
   namespace: odigos-system
 spec:
-  data: {}
+  data:
+    HIGHLIGHT_ENDPOINT: <Highlight OTLP HTTP Endpoint>
   destinationName: highlight
   secretRef:
     name: highlight-secret

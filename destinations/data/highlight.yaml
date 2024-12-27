@@ -14,6 +14,13 @@ spec:
     logs:
       supported: true
   fields:
+    - name: HIGHLIGHT_ENDPOINT
+      displayName: Highlight OTLP HTTP Endpoint
+      componentType: input
+      initialValue: 'https://otel.highlight.io:4318'
+      componentProps:
+        type: text
+        required: true
     - name: HIGHLIGHT_PROJECT_ID
       displayName: Highlight Project ID
       componentType: input
