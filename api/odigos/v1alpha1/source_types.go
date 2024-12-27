@@ -23,6 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
@@ -72,9 +73,9 @@ type SourceList struct {
 func GetSourceListForWorkload(ctx context.Context, kubeClient client.Client, obj client.Object) (*SourceList, error) {
 	sourceList := &SourceList{}
 	selector := labels.SelectorFromSet(labels.Set{
-		"odigos.io/workload-name":      obj.GetName(),
-		"odigos.io/workload-namespace": obj.GetNamespace(),
-		"odigos.io/workload-kind":      obj.GetObjectKind().GroupVersionKind().Kind,
+		consts.WorkloadNameLabel:      obj.GetName(),
+		consts.WorkloadNamespaceLabel: obj.GetNamespace(),
+		consts.WorkloadKindLabel:      obj.GetObjectKind().GroupVersionKind().Kind,
 	})
 	err := kubeClient.List(ctx, sourceList, &client.ListOptions{LabelSelector: selector})
 	if err != nil {

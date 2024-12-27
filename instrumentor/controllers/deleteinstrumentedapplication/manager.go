@@ -2,6 +2,8 @@ package deleteinstrumentedapplication
 
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -77,7 +79,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 	err = builder.
 	ControllerManagedBy(mgr).
 	Named("deleteinstrumentedapplication-source").
-	WithEventFilter(&SourceDeletedPredicate{}).
+	WithEventFilter(&k8sutils.OnlyUpdatesPredicate{}).
 	For(&odigosv1.Source{}).
 	Complete(&SourceReconciler{
 		Client: mgr.GetClient(),
