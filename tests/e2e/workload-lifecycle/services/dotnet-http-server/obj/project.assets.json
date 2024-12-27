@@ -13,9 +13,9 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/app/dotnet-musl-server.csproj",
-      "projectName": "dotnet-musl-server",
-      "projectPath": "/app/dotnet-musl-server.csproj",
+      "projectUniqueName": "/app/dotnet-http-server.csproj",
+      "projectName": "dotnet-http-server",
+      "projectPath": "/app/dotnet-http-server.csproj",
       "packagesPath": "/root/.nuget/packages/",
       "outputPath": "/app/obj/",
       "projectStyle": "PackageReference",

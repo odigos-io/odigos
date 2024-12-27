@@ -48,7 +48,7 @@ export const DestinationFormBody = ({ isUpdate, destination, formData, formError
         const { required, value } = dynamicFields[i];
 
         if (required) {
-          if (value !== undefined) {
+          if (![undefined, null, ''].includes(value)) {
             didAutoFill = true;
           } else {
             didAutoFill = false;
