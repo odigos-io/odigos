@@ -15,12 +15,12 @@ const (
 )
 
 var availableConfigers = []Configer{
-	&Middleware{}, &AppDynamics{}, &Honeycomb{}, &GrafanaCloudPrometheus{}, &GrafanaCloudTempo{},
-	&GrafanaCloudLoki{}, &Datadog{}, &NewRelic{}, &Logzio{}, &Last9{}, &Prometheus{},
-	&Tempo{}, &Loki{}, &Jaeger{}, &GenericOTLP{}, &OTLPHttp{}, &Elasticsearch{}, &Quickwit{}, &Signoz{}, &Qryn{},
-	&OpsVerse{}, &Splunk{}, &Lightstep{}, &GoogleCloud{}, &GoogleCloudStorage{}, &Sentry{}, &AzureBlobStorage{},
-	&AWSS3{}, &Dynatrace{}, &Chronosphere{}, &ElasticAPM{}, &Axiom{}, &SumoLogic{}, &Coralogix{}, &Clickhouse{},
-	&Causely{}, &Uptrace{}, &Debug{}, &QrynOSS{}, &Nop{}, &Mock{},
+	&AppDynamics{}, &Axiom{}, &AWSS3{}, &AzureBlobStorage{}, &Causely{}, &Chronosphere{}, &Clickhouse{}, &Coralogix{},
+	&Datadog{}, &Debug{}, &Dynatrace{}, &ElasticAPM{}, &Elasticsearch{}, &GenericOTLP{}, &GoogleCloud{},
+	&GoogleCloudStorage{}, &GrafanaCloudLoki{}, &GrafanaCloudPrometheus{}, &GrafanaCloudTempo{},
+	&Honeycomb{}, &Jaeger{}, &KloudMate{}, &Last9{}, &Lightstep{}, &Logzio{}, &Loki{}, &Middleware{}, &Mock{}, &NewRelic{},
+	&Nop{}, &OpsVerse{}, &OTLPHttp{}, &Prometheus{}, &Qryn{}, &QrynOSS{}, &Quickwit{}, &Sentry{},
+	&Signoz{}, &Splunk{}, &SumoLogic{}, &Tempo{}, &Uptrace{},
 }
 
 type Configer interface {
