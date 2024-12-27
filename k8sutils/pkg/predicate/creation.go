@@ -5,7 +5,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-// CreationPredicate only allows delete events.
+// CreationPredicate only allows create events.
 type CreationPredicate struct{}
 
 func (i CreationPredicate) Create(e event.CreateEvent) bool {
