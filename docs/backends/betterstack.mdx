@@ -6,8 +6,9 @@ title: 'Better Stack'
 
 Better Stack lets you see inside any stack, debug any issue, and resolve any incident.
 
-- **BETTERSTACK_ENDPOINT** - Better Stack OTLP gRPC Endpoint, defaults to `https://in-otel.logs.betterstack.com:443`.
-- **BETTERSTACK_TOKEN** - Better Stack Source Token, generated from the Better Stack UI.
+- **BETTERSTACK_METRICS_ENDPOINT** - OTLP HTTP Metrics Endpoint, defaults to `https://in-otel.logs.betterstack.com/metrics`.
+- **BETTERSTACK_LOGS_ENDPOINT** - OTLP HTTP Logs Endpoint, defaults to `https://in-otel.logs.betterstack.com:443`.
+- **BETTERSTACK_TOKEN** - Source Token, generated from Better Stack UI.
 
 
 ## Adding a Destination to Odigos
@@ -38,7 +39,9 @@ metadata:
   name: betterstack-example
   namespace: odigos-system
 spec:
-  data: {}
+  data:
+    BETTERSTACK_LOGS_ENDPOINT: <OTLP HTTP Logs Endpoint>
+    BETTERSTACK_METRICS_ENDPOINT: <OTLP HTTP Metrics Endpoint>
   destinationName: betterstack
   secretRef:
     name: betterstack-secret

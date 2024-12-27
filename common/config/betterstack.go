@@ -1,7 +1,19 @@
 package config
 
 import (
+	"errors"
+
 	"github.com/odigos-io/odigos/common"
+)
+
+const (
+	BetterStackMetricsEndpoint = "BETTERSTACK_METRICS_ENDPOINT"
+	BetterStackLogsEndpoint    = "BETTERSTACK_LOGS_ENDPOINT"
+)
+
+var (
+	ErrorBetterStackMetricsEndpointMissing = errors.New("BetterStack is missing a required field (\"BETTERSTACK_METRICS_ENDPOINT\"), BetterStack will not be configured")
+	ErrorBetterStackLogsEndpointMissing    = errors.New("BetterStack is missing a required field (\"BETTERSTACK_LOGS_ENDPOINT\"), BetterStack will not be configured")
 )
 
 type BetterStack struct{}
@@ -11,6 +23,7 @@ func (j *BetterStack) DestType() common.DestinationType {
 }
 
 func (j *BetterStack) ModifyConfig(dest ExporterConfigurer, cfg *Config) error {
+	config := dest.GetConfig()
 	uniqueUri := "betterstack-" + dest.GetID()
 
 	processorName := "attributes/betterstack"
@@ -25,9 +38,19 @@ func (j *BetterStack) ModifyConfig(dest ExporterConfigurer, cfg *Config) error {
 	}
 
 	if isMetricsEnabled(dest) {
+		url, exists := config[BetterStackMetricsEndpoint]
+		if !exists {
+			return ErrorBetterStackMetricsEndpointMissing
+		}
+
+		endpoint, err := parseOtlpHttpEndpoint(url)
+		if err != nil {
+			return err
+		}
+
 		exporterName := "prometheusremotewrite/" + uniqueUri
 		cfg.Exporters[exporterName] = GenericMap{
-			"endpoint": "https://in-otel.logs.betterstack.com/metrics",
+			"endpoint": endpoint,
 		}
 
 		pipeName := "metrics/" + uniqueUri
@@ -38,9 +61,19 @@ func (j *BetterStack) ModifyConfig(dest ExporterConfigurer, cfg *Config) error {
 	}
 
 	if isLoggingEnabled(dest) {
+		url, exists := config[BetterStackLogsEndpoint]
+		if !exists {
+			return ErrorBetterStackLogsEndpointMissing
+		}
+
+		endpoint, err := parseOtlpHttpEndpoint(url)
+		if err != nil {
+			return err
+		}
+
 		exporterName := "otlp/" + uniqueUri
 		cfg.Exporters[exporterName] = GenericMap{
-			"endpoint": "https://in-otel.logs.betterstack.com:443",
+			"endpoint": endpoint,
 		}
 
 		pipeName := "logs/" + uniqueUri
