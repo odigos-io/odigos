@@ -1,7 +1,17 @@
 package config
 
 import (
+	"errors"
+
 	"github.com/odigos-io/odigos/common"
+)
+
+const (
+	LumigoEndpoint = "LUMIGO_ENDPOINT"
+)
+
+var (
+	ErrorLumigoEndpointMissing = errors.New("Lumigo is missing a required field (\"LUMIGO_ENDPOINT\"), Lumigo will not be configured")
 )
 
 type Lumigo struct{}
@@ -11,11 +21,22 @@ func (j *Lumigo) DestType() common.DestinationType {
 }
 
 func (j *Lumigo) ModifyConfig(dest ExporterConfigurer, cfg *Config) error {
+	config := dest.GetConfig()
 	uniqueUri := "lumigo-" + dest.GetID()
+
+	url, exists := config[LumigoEndpoint]
+	if !exists {
+		return ErrorLumigoEndpointMissing
+	}
+
+	endpoint, err := parseOtlpHttpEndpoint(url)
+	if err != nil {
+		return err
+	}
 
 	exporterName := "otlphttp/" + uniqueUri
 	exporterConfig := GenericMap{
-		"endpoint": "https://ga-otlp.lumigo-tracer-edge.golumigo.com",
+		"endpoint": endpoint,
 		"headers": GenericMap{
 			"Authorization": "LumigoToken ${LUMIGO_TOKEN}",
 		},
