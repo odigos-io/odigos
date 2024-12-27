@@ -35,20 +35,19 @@ func (j *BetterStack) ModifyConfig(dest ExporterConfigurer, cfg *Config) error {
 			Processors: []string{processorName},
 			Exporters:  []string{exporterName},
 		}
+	}
 
-		if isLoggingEnabled(dest) {
-			exporterName := "otlp/" + uniqueUri
-			cfg.Exporters[exporterName] = GenericMap{
-				"endpoint": "https://in-otel.logs.betterstack.com:443",
-			}
-
-			pipeName := "logs/" + uniqueUri
-			cfg.Service.Pipelines[pipeName] = Pipeline{
-				Processors: []string{processorName},
-				Exporters:  []string{exporterName},
-			}
+	if isLoggingEnabled(dest) {
+		exporterName := "otlp/" + uniqueUri
+		cfg.Exporters[exporterName] = GenericMap{
+			"endpoint": "https://in-otel.logs.betterstack.com:443",
 		}
 
+		pipeName := "logs/" + uniqueUri
+		cfg.Service.Pipelines[pipeName] = Pipeline{
+			Processors: []string{processorName},
+			Exporters:  []string{exporterName},
+		}
 	}
 
 	return nil
