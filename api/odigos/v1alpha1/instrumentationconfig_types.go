@@ -5,7 +5,15 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"go.opentelemetry.io/otel/attribute"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+// +kubebuilder:object:generate=false
+type WorkloadDetails interface {
+	client.Object
+	RuntimeDetailsByContainer() []RuntimeDetailsByContainer
+	Conditions() *[]metav1.Condition
+}
 
 // +genclient
 // +kubebuilder:object:root=true
@@ -20,9 +28,38 @@ type InstrumentationConfig struct {
 	Status InstrumentationConfigStatus `json:"status,omitempty"`
 }
 
+var _ WorkloadDetails = &InstrumentationConfig{}
+
+func (ic *InstrumentationConfig) RuntimeDetailsByContainer() []RuntimeDetailsByContainer {
+	return ic.Status.RuntimeDetailsByContainer
+}
+
+func (ic *InstrumentationConfig) Conditions() *[]metav1.Condition {
+	return &ic.Status.Conditions
+}
+
+// +kubebuilder:object:generate=true
+type RuntimeDetailsByContainer struct {
+	ContainerName  string                     `json:"containerName"`
+	Language       common.ProgrammingLanguage `json:"language"`
+	RuntimeVersion string                     `json:"runtimeVersion,omitempty"`
+	EnvVars        []EnvVar                   `json:"envVars,omitempty"`
+	OtherAgent     *OtherAgent                `json:"otherAgent,omitempty"`
+	LibCType       *common.LibCType           `json:"libCType,omitempty"`
+
+	// Stores the error message from the CRI runtime if returned to prevent instrumenting the container if an error exists.
+	CriErrorMessage *string `json:"criErrorMessage,omitempty"`
+	// Holds the environment variables retrieved from the container runtime.
+	EnvFromContainerRuntime []EnvVar `json:"envFromContainerRuntime,omitempty"`
+	// A temporary variable used during migration to track whether the new runtime detection process has been executed. If empty, it indicates the process has not yet been run. This field may be removed later.
+	RuntimeUpdateState *ProcessingState `json:"runtimeUpdateState,omitempty"`
+}
+
 type InstrumentationConfigStatus struct {
 	// Capture Runtime Details for the workloads that this CR applies to.
 	RuntimeDetailsByContainer []RuntimeDetailsByContainer `json:"runtimeDetailsByContainer,omitempty"`
+
+	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" protobuf:"bytes,1,rep,name=conditions"`
 }
 
 // Config for the OpenTelemeetry SDKs that should be applied to a workload.
