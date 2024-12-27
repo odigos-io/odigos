@@ -93,7 +93,7 @@ type InstrumentedApplicationList struct {
 	Items           []InstrumentedApplication `json:"items"`
 }
 
-var _ WorkloadDetails = &InstrumentedApplication{}
+var _ WorkloadDetailsObject = &InstrumentedApplication{}
 
 func (ia *InstrumentedApplication) RuntimeDetailsByContainer() []RuntimeDetailsByContainer {
 	return ia.Spec.RuntimeDetails

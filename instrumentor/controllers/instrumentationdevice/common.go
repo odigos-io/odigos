@@ -66,7 +66,7 @@ func isDataCollectionReady(ctx context.Context, c client.Client) bool {
 	return nodeCollectorsGroup.Status.Ready
 }
 
-func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.Client, workloadDetails odigosv1.WorkloadDetails) (error, bool) {
+func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.Client, workloadDetails odigosv1.WorkloadDetailsObject) (error, bool) {
 	// devicePartiallyApplied is used to indicate that the instrumentation device was partially applied for some of the containers.
 	devicePartiallyApplied := false
 	deviceNotAppliedDueToPresenceOfAnotherAgent := false
@@ -251,7 +251,7 @@ func getPodSpecFromObject(obj client.Object) (*corev1.PodTemplateSpec, error) {
 // reconciles a single workload, which might be triggered by a change in multiple resources.
 // each time a relevant resource changes, this function is called to reconcile the workload
 // and always writes the status into the InstrumentedApplication CR
-func reconcileSingleWorkload(ctx context.Context, kubeClient client.Client, workloadDetails odigosv1.WorkloadDetails, isNodeCollectorReady bool) error {
+func reconcileSingleWorkload(ctx context.Context, kubeClient client.Client, workloadDetails odigosv1.WorkloadDetailsObject, isNodeCollectorReady bool) error {
 
 	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(workloadDetails.GetName())
 	if err != nil {

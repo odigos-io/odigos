@@ -9,7 +9,7 @@ import (
 )
 
 // +kubebuilder:object:generate=false
-type WorkloadDetails interface {
+type WorkloadDetailsObject interface {
 	client.Object
 	RuntimeDetailsByContainer() []RuntimeDetailsByContainer
 	Conditions() *[]metav1.Condition
@@ -28,7 +28,7 @@ type InstrumentationConfig struct {
 	Status InstrumentationConfigStatus `json:"status,omitempty"`
 }
 
-var _ WorkloadDetails = &InstrumentationConfig{}
+var _ WorkloadDetailsObject = &InstrumentationConfig{}
 
 func (ic *InstrumentationConfig) RuntimeDetailsByContainer() []RuntimeDetailsByContainer {
 	return ic.Status.RuntimeDetailsByContainer
