@@ -2,9 +2,10 @@
 title: 'HyperDX'
 ---
 
-## Configuring HyperDX Backend
+## Configuring Backend
 
-- **HYPERDX_API_KEY** - Hyper DX API Key
+- **HYPERDX_ENDPOINT** - OpenTelemetry gRPC Endpoint, defaults to `in-otel.hyperdx.io:4317`.
+- **HYPERDX_API_KEY** - HyperDX API Key.
 
 ## Adding a Destination to Odigos
 
@@ -34,7 +35,8 @@ metadata:
   name: hyperdx-example
   namespace: odigos-system
 spec:
-  data: {}
+  data:
+    HYPERDX_ENDPOINT: <OTLP gRPC Endpoint>
   destinationName: hyperdx
   secretRef:
     name: hyperdx-secret
