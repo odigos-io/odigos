@@ -1,0 +1,30 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: traceloop
+  displayName: Traceloop
+  category: managed
+spec:
+  image: traceloop.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: false
+  fields:
+    - name: TRACELOOP_ENDPOINT
+      displayName: Traceloop OTLP HTTP Endpoint
+      componentType: input
+      initialValue: 'https://api.traceloop.com'
+      componentProps:
+        type: text
+        required: true
+    - name: TRACELOOP_API_KEY
+      displayName: Traceloop API Key
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: true

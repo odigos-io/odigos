@@ -43,5 +43,6 @@ const (
 	SplunkDestinationType                 DestinationType = "splunk"
 	SumoLogicDestinationType              DestinationType = "sumologic"
 	TempoDestinationType                  DestinationType = "tempo"
+	TraceloopDestinationType              DestinationType = "traceloop"
 	UptraceDestinationType                DestinationType = "uptrace"
 )
