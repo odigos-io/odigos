@@ -1,0 +1,14 @@
+apiVersion: e2e.tests.odigos.io/v1
+kind: TraceTest
+description: |
+  This test check the following resource attributes:
+  A. odigos.version attribute exists on all spans and has the correct value
+  B. Kubernetes attributes are correctly set on all spans
+  At the time of writing this test, TraceQL api does not support not equal to nil so we use regex instead.
+query: |
+    { resource.odigos.version !~ ".*" ||
+      resource.k8s.deployment.name !~ ".*" ||
+      resource.k8s.node.name !~ "(kind-control-plane|aks-.*)" ||
+      resource.k8s.pod.name !~ ".*" }
+expected:
+  count: 0
