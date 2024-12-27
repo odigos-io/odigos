@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - stable
+      - greatwall
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
