@@ -16,16 +16,6 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
-var (
-	sourceFinalizer = "odigos.io/source-finalizer"
-	// TODO: Needed until InstrumentedApplication is removed
-	instrumentedApplicationFinalizer = "odigos.io/source-instrumentedapplication-finalizer"
-
-	workloadNameLabel      = "odigos.io/workload-name"
-	workloadNamespaceLabel = "odigos.io/workload-namespace"
-	workloadKindLabel      = "odigos.io/workload-kind"
-)
-
 type SourceReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
