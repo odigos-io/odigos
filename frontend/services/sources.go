@@ -17,7 +17,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/types"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -320,28 +319,8 @@ func updateAnnotations(annotations map[string]string, reportedName string) map[s
 	return annotations
 }
 
-func GetAllSourceCRDs(ctx context.Context) ([]*v1alpha1.Source, error) {
-	sourceList, err := kube.DefaultClient.OdigosClient.Sources(consts.DefaultOdigosNamespace).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	var sources []*v1alpha1.Source
-
-	for _, crd := range sourceList.Items {
-		crdName := crd.Name
-		source, err := kube.DefaultClient.OdigosClient.Sources(consts.DefaultOdigosNamespace).Get(ctx, crdName, metav1.GetOptions{})
-		if err != nil {
-			return nil, err
-		}
-		sources = append(sources, source)
-	}
-
-	return sources, nil
-}
-
 func getSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) (*v1alpha1.Source, error) {
-	sourceList, err := kube.DefaultClient.OdigosClient.Sources(consts.DefaultOdigosNamespace).List(ctx, metav1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set{
+	sourceList, err := kube.DefaultClient.OdigosClient.Sources(nsName).List(ctx, metav1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set{
 		"odigos.io/workload-namespace": nsName,
 		"odigos.io/workload-name":      workloadName,
 		"odigos.io/workload-kind":      string(workloadKind),
@@ -351,14 +330,14 @@ func getSourceCRD(ctx context.Context, nsName string, workloadName string, workl
 		return nil, err
 	}
 	if len(sourceList.Items) == 0 {
-		return nil, errors.New("source not found" + workloadName)
+		return nil, errors.New("source not found " + "\"" + workloadName + "\"")
 	}
 	if len(sourceList.Items) > 1 {
-		return nil, errors.New("too many sources" + workloadName)
+		return nil, errors.New("too many sources " + "\"" + workloadName + "\"")
 	}
 
 	crdName := sourceList.Items[0].Name
-	source, err := kube.DefaultClient.OdigosClient.Sources(consts.DefaultOdigosNamespace).Get(ctx, crdName, metav1.GetOptions{})
+	source, err := kube.DefaultClient.OdigosClient.Sources(nsName).Get(ctx, crdName, metav1.GetOptions{})
 
 	return source, err
 }
@@ -370,7 +349,7 @@ func createSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 
 	source, err := getSourceCRD(ctx, nsName, workloadName, workloadKind)
 	if source != nil && err == nil {
-		return errors.New("source already exists" + workloadName)
+		return errors.New("source already exists " + "\"" + workloadName + "\"")
 	}
 
 	newSource := &v1alpha1.Source{
@@ -386,7 +365,7 @@ func createSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		},
 	}
 
-	_, err = kube.DefaultClient.OdigosClient.Sources(consts.DefaultOdigosNamespace).Create(ctx, newSource, metav1.CreateOptions{})
+	_, err = kube.DefaultClient.OdigosClient.Sources(nsName).Create(ctx, newSource, metav1.CreateOptions{})
 	return err
 }
 
@@ -400,7 +379,7 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		return err
 	}
 
-	err = kube.DefaultClient.OdigosClient.Sources(consts.DefaultOdigosNamespace).Delete(ctx, source.Name, metav1.DeleteOptions{})
+	err = kube.DefaultClient.OdigosClient.Sources(nsName).Delete(ctx, source.Name, metav1.DeleteOptions{})
 	return err
 }
 
@@ -413,24 +392,5 @@ func ToggleSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		return createSourceCRD(ctx, nsName, workloadName, workloadKind)
 	} else {
 		return deleteSourceCRD(ctx, nsName, workloadName, workloadKind)
-	}
-}
-
-// TODO: remove this after a fix was made in the backend to correctly handle the InstrumentedApplication on-create Source CRD
-func SetWorkloadInstrumentationLabel(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind, enabled *bool) error {
-	jsonMergePatchData := GetJsonMergePatchForInstrumentationLabel(enabled)
-
-	switch workloadKind {
-	case WorkloadKindDeployment:
-		_, err := kube.DefaultClient.AppsV1().Deployments(nsName).Patch(ctx, workloadName, types.MergePatchType, jsonMergePatchData, metav1.PatchOptions{})
-		return err
-	case WorkloadKindStatefulSet:
-		_, err := kube.DefaultClient.AppsV1().StatefulSets(nsName).Patch(ctx, workloadName, types.MergePatchType, jsonMergePatchData, metav1.PatchOptions{})
-		return err
-	case WorkloadKindDaemonSet:
-		_, err := kube.DefaultClient.AppsV1().DaemonSets(nsName).Patch(ctx, workloadName, types.MergePatchType, jsonMergePatchData, metav1.PatchOptions{})
-		return err
-	default:
-		return errors.New("unsupported workload kind " + string(workloadKind))
 	}
 }

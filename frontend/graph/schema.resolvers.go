@@ -82,15 +82,9 @@ func (r *computePlatformResolver) K8sActualSource(ctx context.Context, obj *mode
 
 // K8sActualSources is the resolver for the k8sActualSources field.
 func (r *computePlatformResolver) K8sActualSources(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualSource, error) {
-	// sourceList, err := services.GetAllSourceCRDs(ctx)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
 	// Initialize an empty list of K8sActualSource
 	var actualSources []*model.K8sActualSource
 
-	// for _, source := range sourceList {
 	// TODO: remove "InstrumentedApplications" once we're ready to move over to "InstrumentationConfigs" combined with "Source CRDs"
 	instrumentedApplications, err := kube.DefaultClient.OdigosClient.InstrumentedApplications("").List(ctx, metav1.ListOptions{})
 	if err != nil {
@@ -103,7 +97,6 @@ func (r *computePlatformResolver) K8sActualSources(ctx context.Context, obj *mod
 		services.AddHealthyInstrumentationInstancesCondition(ctx, &app, actualSource)
 		owner, _ := services.GetWorkload(ctx, actualSource.Namespace, string(actualSource.Kind), actualSource.Name)
 		if owner == nil {
-
 			continue
 		}
 		ownerAnnotations := owner.GetAnnotations()
@@ -114,7 +107,6 @@ func (r *computePlatformResolver) K8sActualSources(ctx context.Context, obj *mod
 		actualSource.ReportedName = &reportedName
 		actualSources = append(actualSources, actualSource)
 	}
-	// }
 
 	return actualSources, nil
 }
