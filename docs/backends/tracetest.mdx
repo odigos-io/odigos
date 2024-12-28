@@ -1,0 +1,45 @@
+---
+title: 'Tracetest'
+---
+
+## Configuring Backend
+
+- **TRACETEST_ENDPOINT** - OpenTelemetry gRPC Endpoint, the format is `host:port`.
+  - host is required.
+  - port is optional, and defaults to the default OTLP gRPC port `4317`.
+
+## Adding a Destination to Odigos
+
+Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+
+1. **Using the UI**
+
+Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI:
+
+```bash
+odigos ui
+```
+
+2. **Using kubernetes manifests**
+
+Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
+
+```bash
+kubectl apply -f destination.yaml
+```
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: tracetest-example
+  namespace: odigos-system
+spec:
+  data:
+    TRACETEST_ENDPOINT: <Tracetest OTLP gRPC Endpoint>
+  destinationName: tracetest
+  signals:
+  - TRACES
+  type: tracetest
+```

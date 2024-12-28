@@ -70,11 +70,7 @@
         },
         {
           "group": "Architecture",
-          "pages": [
-            "architecture/components",
-            "architecture/sources",
-            "architecture/troubleshooting"
-          ]
+          "pages": ["architecture/components", "architecture/sources", "architecture/troubleshooting"]
         },
         {
           "group": "CLI Reference",
@@ -99,38 +95,23 @@
         "instrumentations/overview",
         {
           "group": "Go",
-          "pages": [
-            "instrumentations/golang/golang",
-            "instrumentations/golang/enrichment"
-          ]
+          "pages": ["instrumentations/golang/golang", "instrumentations/golang/enrichment"]
         },
         {
           "group": "Node.js",
-          "pages": [
-            "instrumentations/nodejs/nodejs",
-            "instrumentations/nodejs/enrichment",
-            "instrumentations/nodejs/ebpf"
-          ]
+          "pages": ["instrumentations/nodejs/nodejs", "instrumentations/nodejs/enrichment", "instrumentations/nodejs/ebpf"]
         },
         {
           "group": "Python",
-          "pages": [
-            "instrumentations/python/python",
-            "instrumentations/python/enrichment"
-          ]
+          "pages": ["instrumentations/python/python", "instrumentations/python/enrichment"]
         },
         {
           "group": "Java",
-          "pages": [
-            "instrumentations/java/java",
-            "instrumentations/java/ebpf"
-          ]
+          "pages": ["instrumentations/java/java", "instrumentations/java/ebpf"]
         },
         {
           "group": ".NET",
-            "pages": [
-                "instrumentations/dotnet/dotnet"
-            ]
+          "pages": ["instrumentations/dotnet/dotnet"]
         }
       ]
     },
@@ -150,10 +131,7 @@
         },
         {
           "group": "Instrumentation Rules",
-          "pages": [
-            "pipeline/rules/overview",
-            "pipeline/rules/payloadcollection"
-          ]
+          "pages": ["pipeline/rules/overview", "pipeline/rules/payloadcollection"]
         },
         {
           "group": "Actions",
@@ -189,14 +167,7 @@
       "pages": [
         {
           "group": "Enrich with OpenTelemetry APIs",
-          "pages": [
-            "data/otel-apis",
-            "data/java",
-            "data/python",
-            "data/javascript",
-            "data/golang",
-            "data/dotnet"
-          ]
+          "pages": ["data/otel-apis", "data/java", "data/python", "data/javascript", "data/golang", "data/dotnet"]
         }
       ]
     },
@@ -241,20 +212,15 @@
             "backends/signoz",
             "backends/splunk",
             "backends/sumologic",
-            "backends/tempo"
+            "backends/tempo",
+            "backends/tracetest"
           ]
         }
       ]
     },
     {
       "group": "Concepts",
-      "pages": [
-        "telemetry-types",
-        "custom-resources",
-        "uninstall",
-        "usage-reports",
-        "benchmarks"
-      ]
+      "pages": ["telemetry-types", "custom-resources", "uninstall", "usage-reports", "benchmarks"]
     },
     {
       "group": "Contibution Guidelines",
@@ -282,20 +248,14 @@
             "vmagent/setup/installation",
             {
               "group": "Configuration",
-              "pages": [
-                "vmagent/setup/configuration/service",
-                "vmagent/setup/configuration/agent"
-              ]
+              "pages": ["vmagent/setup/configuration/service", "vmagent/setup/configuration/agent"]
             },
             "vmagent/setup/uninstall"
           ]
         },
         {
           "group": "Configuration",
-          "pages": [
-            "vmagent/configuration/reference",
-            "vmagent/configuration/updating"
-          ]
+          "pages": ["vmagent/configuration/reference", "vmagent/configuration/updating"]
         }
       ]
     }
