@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"fmt"
 	"path"
 	"time"
@@ -49,4 +50,13 @@ func Metav1TimeToString(latestStatusTime metav1.Time) string {
 		return ""
 	}
 	return latestStatusTime.Time.Format(time.RFC3339)
+}
+
+func CheckWorkloadKind(kind WorkloadKind) error {
+	switch kind {
+	case WorkloadKindDeployment, WorkloadKindStatefulSet, WorkloadKindDaemonSet:
+		return nil
+	default:
+		return errors.New("unsupported workload kind: " + string(kind))
+	}
 }

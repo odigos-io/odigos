@@ -330,10 +330,10 @@ func getSourceCRD(ctx context.Context, nsName string, workloadName string, workl
 		return nil, err
 	}
 	if len(sourceList.Items) == 0 {
-		return nil, errors.New("source not found " + "\"" + workloadName + "\"")
+		return nil, errors.New("\"" + workloadName + "\"" + " source not found")
 	}
 	if len(sourceList.Items) > 1 {
-		return nil, errors.New("too many sources " + "\"" + workloadName + "\"")
+		return nil, errors.New("\"" + workloadName + "\"" + " expected to get 1 source got " + string(len(sourceList.Items)))
 	}
 
 	crdName := sourceList.Items[0].Name
@@ -343,13 +343,14 @@ func getSourceCRD(ctx context.Context, nsName string, workloadName string, workl
 }
 
 func createSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) error {
-	if workloadKind != WorkloadKindDeployment && workloadKind != WorkloadKindStatefulSet && workloadKind != WorkloadKindDaemonSet {
-		return errors.New("unsupported workload kind " + string(workloadKind))
+	err := CheckWorkloadKind(workloadKind)
+	if err != nil {
+		return err
 	}
 
 	source, err := getSourceCRD(ctx, nsName, workloadName, workloadKind)
 	if source != nil && err == nil {
-		return errors.New("source already exists " + "\"" + workloadName + "\"")
+		return errors.New("\"" + workloadName + "\"" + " source already exists")
 	}
 
 	newSource := &v1alpha1.Source{
@@ -370,8 +371,9 @@ func createSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 }
 
 func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) error {
-	if workloadKind != WorkloadKindDeployment && workloadKind != WorkloadKindStatefulSet && workloadKind != WorkloadKindDaemonSet {
-		return errors.New("unsupported workload kind " + string(workloadKind))
+	err := CheckWorkloadKind(workloadKind)
+	if err != nil {
+		return err
 	}
 
 	source, err := getSourceCRD(ctx, nsName, workloadName, workloadKind)
