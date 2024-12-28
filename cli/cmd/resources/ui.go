@@ -242,7 +242,7 @@ func NewUIClusterRole() *rbacv1.ClusterRole {
 			},
 			{ // Needed to watch instrumented applications
 				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentedapplications", "instrumentationinstances", "sources"},
+				Resources: []string{"instrumentedapplications", "instrumentationinstances"},
 				Verbs:     []string{"watch"},
 			},
 		},
