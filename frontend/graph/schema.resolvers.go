@@ -20,10 +20,32 @@ import (
 	"github.com/odigos-io/odigos/frontend/services/describe/source_describe"
 	testconnection "github.com/odigos-io/odigos/frontend/services/test_connection"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
+
+// K8sActualNamespaces is the resolver for the k8sActualNamespaces field.
+func (r *computePlatformResolver) K8sActualNamespaces(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualNamespace, error) {
+	namespacesResponse := services.GetK8SNamespaces(ctx)
+
+	K8sActualNamespaces := make([]*model.K8sActualNamespace, len(namespacesResponse.Namespaces))
+	for i, namespace := range namespacesResponse.Namespaces {
+
+		namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, namespace.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+
+		nsInstrumented := workload.GetInstrumentationLabelValue(namespace.GetLabels())
+
+		K8sActualNamespaces[i] = &model.K8sActualNamespace{
+			Name:                        namespace.Name,
+			InstrumentationLabelEnabled: nsInstrumented,
+		}
+	}
+
+	return K8sActualNamespaces, nil
+}
 
 // K8sActualNamespace is the resolver for the k8sActualNamespace field.
 func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *model.ComputePlatform, name string) (*model.K8sActualNamespace, error) {
@@ -52,59 +74,20 @@ func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *m
 	}, nil
 }
 
-// K8sActualNamespaces is the resolver for the k8sActualNamespaces field.
-func (r *computePlatformResolver) K8sActualNamespaces(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualNamespace, error) {
-	namespacesResponse := services.GetK8SNamespaces(ctx)
-
-	K8sActualNamespaces := make([]*model.K8sActualNamespace, len(namespacesResponse.Namespaces))
-	for i, namespace := range namespacesResponse.Namespaces {
-
-		namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, namespace.Name, metav1.GetOptions{})
-		if err != nil {
-			return nil, err
-		}
-
-		nsInstrumented := workload.GetInstrumentationLabelValue(namespace.GetLabels())
-
-		K8sActualNamespaces[i] = &model.K8sActualNamespace{
-			Name:                        namespace.Name,
-			InstrumentationLabelEnabled: nsInstrumented,
-		}
-	}
-
-	return K8sActualNamespaces, nil
-}
-
-// K8sActualSource is the resolver for the k8sActualSource field.
-func (r *computePlatformResolver) K8sActualSource(ctx context.Context, obj *model.ComputePlatform, name *string, namespace *string, kind *string) (*model.K8sActualSource, error) {
-	return nil, nil
-}
-
 // K8sActualSources is the resolver for the k8sActualSources field.
 func (r *computePlatformResolver) K8sActualSources(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualSource, error) {
 	// Initialize an empty list of K8sActualSource
 	var actualSources []*model.K8sActualSource
 
-	// TODO: remove "InstrumentedApplications" once we're ready to move over to "InstrumentationConfigs" combined with "Source CRDs"
-	instrumentedApplications, err := kube.DefaultClient.OdigosClient.InstrumentedApplications("").List(ctx, metav1.ListOptions{})
+	instrumentationConfigs, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	// Convert each instrumented application to the K8sActualSource type
-	for _, app := range instrumentedApplications.Items {
-		actualSource := instrumentedApplicationToActualSource(app)
-		services.AddHealthyInstrumentationInstancesCondition(ctx, &app, actualSource)
-		owner, _ := services.GetWorkload(ctx, actualSource.Namespace, string(actualSource.Kind), actualSource.Name)
-		if owner == nil {
-			continue
-		}
-		ownerAnnotations := owner.GetAnnotations()
-		var reportedName string
-		if ownerAnnotations != nil {
-			reportedName = ownerAnnotations[consts.OdigosReportedNameAnnotation]
-		}
-		actualSource.ReportedName = &reportedName
+	for _, instruConfig := range instrumentationConfigs.Items {
+		actualSource := instrumentationConfigToActualSource(instruConfig)
+		// services.AddHealthyInstrumentationInstancesCondition(ctx, &instruConfig, actualSource)
 		actualSources = append(actualSources, actualSource)
 	}
 
