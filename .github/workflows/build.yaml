@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - stable
+      - greatwall
 
 jobs:
   build-autoscaler:
