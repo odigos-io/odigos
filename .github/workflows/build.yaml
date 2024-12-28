@@ -7,6 +7,7 @@ on:
       - main
       - stable
       - feature/source-crd
+      - greatwall
 
 jobs:
   build-autoscaler:

@@ -423,14 +423,6 @@ spec:
             type: object
           status:
             properties:
-              observedWorkloadGeneration:
-                description: |-
-                  Runtime detection is applied on pods.
-                  Pods run a specific workload template spec, so it's important to capture it do avoid
-                  unpredictable behavior when multiple generations co-exist,
-                  and to avoid running the detection when unnecessary.
-                format: int64
-                type: integer
               runtimeDetailsByContainer:
                 description: Capture Runtime Details for the workloads that this CR
                   applies to.
@@ -438,6 +430,25 @@ spec:
                   properties:
                     containerName:
                       type: string
+                    criErrorMessage:
+                      description: Stores the error message from the CRI runtime if
+                        returned to prevent instrumenting the container if an error
+                        exists.
+                      type: string
+                    envFromContainerRuntime:
+                      description: Holds the environment variables retrieved from
+                        the container runtime.
+                      items:
+                        properties:
+                          name:
+                            type: string
+                          value:
+                            type: string
+                        required:
+                        - name
+                        - value
+                        type: object
+                      type: array
                     envVars:
                       items:
                         properties:
@@ -472,6 +483,12 @@ spec:
                         name:
                           type: string
                       type: object
+                    runtimeUpdateState:
+                      description: A temporary variable used during migration to track
+                        whether the new runtime detection process has been executed.
+                        If empty, it indicates the process has not yet been run. This
+                        field may be removed later.
+                      type: string
                     runtimeVersion:
                       type: string
                   required:
