@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - stable
+      - feature/source-crd
       - greatwall
 
 concurrency:
