@@ -370,7 +370,7 @@ func createSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 
 	source, err := getSourceCRD(ctx, nsName, workloadName, workloadKind)
 	if source != nil && err == nil {
-		return errors.New("source already exists")
+		return errors.New("source already exists" + workloadName)
 	}
 
 	newSource := &v1alpha1.Source{
