@@ -368,6 +368,11 @@ func createSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		return errors.New("unsupported workload kind " + string(workloadKind))
 	}
 
+	source, err := getSourceCRD(ctx, nsName, workloadName, workloadKind)
+	if source != nil && err == nil {
+		return errors.New("source already exists")
+	}
+
 	newSource := &v1alpha1.Source{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "source-",
@@ -381,7 +386,7 @@ func createSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		},
 	}
 
-	_, err := kube.DefaultClient.OdigosClient.Sources(consts.DefaultOdigosNamespace).Create(ctx, newSource, metav1.CreateOptions{})
+	_, err = kube.DefaultClient.OdigosClient.Sources(consts.DefaultOdigosNamespace).Create(ctx, newSource, metav1.CreateOptions{})
 	return err
 }
 
