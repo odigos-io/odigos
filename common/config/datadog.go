@@ -36,23 +36,32 @@ func (d *Datadog) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) e
 	}
 
 	connectorEnabled := false
+	connectorName := "datadog/" + dest.GetID()
 	if isTracingEnabled(dest) && isMetricsEnabled(dest) {
-		connectorName := "datadog/" + dest.GetID()
 		currentConfig.Connectors[connectorName] = struct{}{}
 		connectorEnabled = true
 	}
 
 	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/datadog-" + dest.GetID()
+		exporters := []string{exporterName}
+		if connectorEnabled {
+			exporters = append(exporters, connectorName)
+		}
+
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
-			Exporters: []string{exporterName},
+			Exporters: exporters,
 		}
 	}
 
 	if isMetricsEnabled(dest) {
 		metricsPipelineName := "metrics/datadog-" + dest.GetID()
-
+		var receivers []string
+		if connectorEnabled {
+			receivers = []string{connectorName}
+		}
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
+			Receivers: receivers,
 			Exporters: []string{exporterName},
 		}
 	}
