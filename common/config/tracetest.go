@@ -37,13 +37,16 @@ func (j *Tracetest) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 	exporterName := "otlp/" + uniqueUri
 	exporterConfig := GenericMap{
 		"endpoint": endpoint,
+		"tls": GenericMap{
+			"insecure": true,
+		},
 	}
 
 	currentConfig.Exporters[exporterName] = exporterConfig
 
 	if isTracingEnabled(dest) {
-		tracesPipelineName := "traces/" + uniqueUri
-		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
+		pipeName := "traces/" + uniqueUri
+		currentConfig.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
 	}
