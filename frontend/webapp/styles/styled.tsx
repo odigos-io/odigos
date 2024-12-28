@@ -21,9 +21,9 @@ export const Overlay = styled.div`
 
 // this is to control modal size + scroll
 // note: add-destinations does not use this (yet), because it has a custom sidebar
-export const ModalBody = styled.div`
+export const ModalBody = styled.div<{ $isModal?: boolean }>`
   width: 640px;
-  height: calc(100vh - 350px);
+  height: ${({ $isModal }) => ($isModal ? 'calc(100vh - 350px)' : 'fit-content')};
   margin: 64px 7vw 32px 7vw;
   overflow-y: scroll;
 `;
