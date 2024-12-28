@@ -23,6 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
@@ -69,18 +70,15 @@ type SourceList struct {
 // GetSourceListForWorkload returns a SourceList of all Sources that have matching
 // workload name, namespace, and kind labels for an object. In theory, this should only
 // ever return a list with 0 or 1 items, but due diligence should handle unexpected cases.
-func GetSourceListForWorkload(ctx context.Context, kubeClient client.Client, obj client.Object) (*SourceList, error) {
-	sourceList := &SourceList{}
+func GetSourceListForWorkload(ctx context.Context, kubeClient client.Client, obj client.Object) (SourceList, error) {
+	sourceList := SourceList{}
 	selector := labels.SelectorFromSet(labels.Set{
-		"odigos.io/workload-name":      obj.GetName(),
-		"odigos.io/workload-namespace": obj.GetNamespace(),
-		"odigos.io/workload-kind":      obj.GetObjectKind().GroupVersionKind().Kind,
+		consts.WorkloadNameLabel:      obj.GetName(),
+		consts.WorkloadNamespaceLabel: obj.GetNamespace(),
+		consts.WorkloadKindLabel:      obj.GetObjectKind().GroupVersionKind().Kind,
 	})
-	err := kubeClient.List(ctx, sourceList, &client.ListOptions{LabelSelector: selector})
-	if err != nil {
-		return nil, err
-	}
-	return sourceList, nil
+	err := kubeClient.List(ctx, &sourceList, &client.ListOptions{LabelSelector: selector})
+	return sourceList, err
 }
 
 func init() {

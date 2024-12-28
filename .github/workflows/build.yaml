@@ -6,8 +6,8 @@ on:
     branches:
       - main
       - stable
-      - greatwall
       - feature/source-crd
+      - greatwall
 
 jobs:
   build-autoscaler:

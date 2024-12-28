@@ -80,6 +80,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("startlangdetection-source").
 		For(&v1alpha1.Source{}).
+		WithEventFilter(predicate.Or(&odigospredicate.CreationPredicate{}, &odigospredicate.OnlyUpdatesPredicate{})).
 		Complete(&SourceReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
