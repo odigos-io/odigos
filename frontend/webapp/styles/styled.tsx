@@ -24,7 +24,7 @@ export const Overlay = styled.div`
 export const ModalBody = styled.div<{ $isModal?: boolean }>`
   width: 640px;
   height: ${({ $isModal }) => ($isModal ? 'calc(100vh - 350px)' : 'fit-content')};
-  margin: 64px 7vw 32px 7vw;
+  margin: ${({ $isModal }) => ($isModal ? '64px 7vw 32px 7vw' : '64px 0 0 0')};
   overflow-y: scroll;
 `;
 
