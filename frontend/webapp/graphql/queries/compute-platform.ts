@@ -7,25 +7,24 @@ export const GET_COMPUTE_PLATFORM = gql`
         name
       }
       k8sActualSources {
+        namespace
         name
         kind
-        namespace
         numberOfInstances
+        # serviceName
         reportedName
-        instrumentedApplicationDetails {
-          containers {
-            containerName
-            language
-            runtimeVersion
-            otherAgent
-          }
-          conditions {
-            status
-            type
-            reason
-            message
-            lastTransitionTime
-          }
+        containers {
+          containerName
+          language
+          runtimeVersion
+          otherAgent
+        }
+        conditions {
+          status
+          type
+          reason
+          message
+          lastTransitionTime
         }
       }
       destinations {
