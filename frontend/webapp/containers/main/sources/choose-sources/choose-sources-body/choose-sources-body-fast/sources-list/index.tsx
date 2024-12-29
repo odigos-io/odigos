@@ -14,9 +14,8 @@ const List = styled.div<{ $isModal: Props['isModal'] }>`
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  max-height: ${({ $isModal }) => ($isModal ? 'calc(100vh - 548px)' : 'calc(100vh - 360px)')};
+  max-height: ${({ $isModal }) => ($isModal ? 'calc(100vh - 510px)' : 'calc(100vh - 310px)')};
   height: fit-content;
-  padding-bottom: ${({ $isModal }) => ($isModal ? '48px' : '0')};
   overflow-y: scroll;
 `;
 
