@@ -29,7 +29,7 @@ func (j *HyperDX) ModifyConfig(dest ExporterConfigurer, cfg *Config) error {
 		return ErrorHyperDXEndpointMissing
 	}
 
-	endpoint, err := parseOtlpGrpcUrl(url, false)
+	endpoint, err := parseOtlpGrpcUrl(url, true)
 	if err != nil {
 		return err
 	}
