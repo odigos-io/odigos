@@ -103,6 +103,7 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 | Grafana Cloud           |   ✅   |   ✅    |  ✅  |
 | Groundcover inCloud     |   ✅   |   ✅    |  ✅  |
 | Honeycomb               |   ✅   |   ✅    |  ✅  |
+| HyperDX                 |   ✅   |   ✅    |  ✅  |
 | KloudMate               |   ✅   |   ✅    |  ✅  |
 | Last9                   |   ✅   |   ✅    |      |
 | Lightstep               |   ✅   |         |      |

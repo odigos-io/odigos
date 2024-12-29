@@ -198,6 +198,7 @@
             "backends/grafanacloudtempo",
             "backends/groundcover",
             "backends/honeycomb",
+            "backends/hyperdx",
             "backends/jaeger",
             "backends/kloudmate",
             "backends/last9",
