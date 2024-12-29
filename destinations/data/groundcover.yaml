@@ -28,33 +28,3 @@ spec:
       componentProps:
         type: password
         required: true
-    # - name: GROUNDCOVER_BASIC_AUTH_ENABLED
-    #   displayName: Enable HTTP Basic Authentication
-    #   componentType: checkbox
-    #   initialValue: false
-    #   componentProps:
-    #     required: false
-    #   customReadDataLabels:
-    #     - condition: 'true'
-    #       title: 'Basic Auth'
-    #       value: 'Enabled'
-    #     - condition: 'false'
-    #       title: 'Basic Auth'
-    #       value: 'Disabled'
-    # - name: GROUNDCOVER_BASIC_AUTH_USERNAME
-    #   displayName: Basic Auth Username
-    #   componentType: input
-    #   initialValue: 'groundcover'
-    #   componentProps:
-    #     type: text
-    #     placeholder: 'groundcover'
-    #     required: false
-    #   renderCondition: ['GROUNDCOVER_BASIC_AUTH_ENABLED', '==', 'true']
-    # - name: GROUNDCOVER_BASIC_AUTH_PASSWORD
-    #   displayName: Basic Auth Password
-    #   componentType: input
-    #   secret: true
-    #   componentProps:
-    #     type: password
-    #     required: false
-    #   renderCondition: ['GROUNDCOVER_BASIC_AUTH_ENABLED', '==', 'true']
