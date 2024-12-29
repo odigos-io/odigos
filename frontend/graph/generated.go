@@ -275,7 +275,6 @@ type ComplexityRoot struct {
 		Namespace         func(childComplexity int) int
 		NumberOfInstances func(childComplexity int) int
 		ReportedName      func(childComplexity int) int
-		ServiceName       func(childComplexity int) int
 	}
 
 	LatencySamplerAction struct {
@@ -1457,13 +1456,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.K8sActualSource.ReportedName(childComplexity), true
-
-	case "K8sActualSource.serviceName":
-		if e.complexity.K8sActualSource.ServiceName == nil {
-			break
-		}
-
-		return e.complexity.K8sActualSource.ServiceName(childComplexity), true
 
 	case "LatencySamplerAction.details":
 		if e.complexity.LatencySamplerAction.Details == nil {
@@ -4031,8 +4023,6 @@ func (ec *executionContext) fieldContext_ComputePlatform_k8sActualSources(_ cont
 				return ec.fieldContext_K8sActualSource_kind(ctx, field)
 			case "numberOfInstances":
 				return ec.fieldContext_K8sActualSource_numberOfInstances(ctx, field)
-			case "serviceName":
-				return ec.fieldContext_K8sActualSource_serviceName(ctx, field)
 			case "reportedName":
 				return ec.fieldContext_K8sActualSource_reportedName(ctx, field)
 			case "containers":
@@ -8765,8 +8755,6 @@ func (ec *executionContext) fieldContext_K8sActualNamespace_k8sActualSources(ctx
 				return ec.fieldContext_K8sActualSource_kind(ctx, field)
 			case "numberOfInstances":
 				return ec.fieldContext_K8sActualSource_numberOfInstances(ctx, field)
-			case "serviceName":
-				return ec.fieldContext_K8sActualSource_serviceName(ctx, field)
 			case "reportedName":
 				return ec.fieldContext_K8sActualSource_reportedName(ctx, field)
 			case "containers":
@@ -8959,47 +8947,6 @@ func (ec *executionContext) fieldContext_K8sActualSource_numberOfInstances(_ con
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _K8sActualSource_serviceName(ctx context.Context, field graphql.CollectedField, obj *model.K8sActualSource) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_K8sActualSource_serviceName(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ServiceName, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_K8sActualSource_serviceName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "K8sActualSource",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -19676,8 +19623,6 @@ func (ec *executionContext) _K8sActualSource(ctx context.Context, sel ast.Select
 			}
 		case "numberOfInstances":
 			out.Values[i] = ec._K8sActualSource_numberOfInstances(ctx, field, obj)
-		case "serviceName":
-			out.Values[i] = ec._K8sActualSource_serviceName(ctx, field, obj)
 		case "reportedName":
 			out.Values[i] = ec._K8sActualSource_reportedName(ctx, field, obj)
 		case "containers":

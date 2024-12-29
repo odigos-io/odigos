@@ -15,6 +15,9 @@ const (
 	OdigosInstrumentationLabel   = "odigos-instrumentation"
 	InstrumentationEnabled       = "enabled"
 	InstrumentationDisabled      = "disabled"
+	OdigosNamespaceAnnotation    = "odigos.io/workload-namespace"
+	OdigosWorkloadKindAnnotation = "odigos.io/workload-kind"
+	OdigosWorkloadNameAnnotation = "odigos.io/workload-name"
 	OdigosReportedNameAnnotation = "odigos.io/reported-name"
 
 	// GatewayMaxConnectionAge and GatewayMaxConnectionAgeGrace are the default values for the gateway collector.
@@ -32,7 +35,7 @@ const (
 )
 
 var (
-	PodsNotFoundErr = errors.New("could not find a ready pod")
+	ErrorPodsNotFound = errors.New("could not find a ready pod")
 )
 
 var (

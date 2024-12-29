@@ -78,7 +78,6 @@ type K8sActualSource {
   name: String!
   kind: K8sResourceKind!
   numberOfInstances: Int
-  serviceName: String
   reportedName: String
   containers: [SourceContainerRuntimeDetails!]
   conditions: [Condition!]

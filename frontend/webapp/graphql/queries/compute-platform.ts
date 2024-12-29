@@ -11,7 +11,6 @@ export const GET_COMPUTE_PLATFORM = gql`
         name
         kind
         numberOfInstances
-        # serviceName
         reportedName
         containers {
           containerName
