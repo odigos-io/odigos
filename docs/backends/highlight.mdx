@@ -4,8 +4,11 @@ title: 'Highlight'
 
 ## Configuring Backend
 
-- **HIGHLIGHT_ENDPOINT** - OpenTelemetry HTTP Endpoint.
 - **HIGHLIGHT_PROJECT_ID** - Project ID, generated via Highligh UI.
+
+**Note:**
+We handle the endpoint internally, so you don't need to provide it.
+- The endpoint is `https://otel.highlight.io:4318`.
 
 ## Adding a Destination to Odigos
 
@@ -35,8 +38,7 @@ metadata:
   name: highlight-example
   namespace: odigos-system
 spec:
-  data:
-    HIGHLIGHT_ENDPOINT: <Highlight OTLP HTTP Endpoint>
+  data: {}
   destinationName: highlight
   secretRef:
     name: highlight-secret
