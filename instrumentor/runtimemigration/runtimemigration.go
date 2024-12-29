@@ -111,19 +111,19 @@ func (m *MigrationRunnable) fetchAndProcessDeployments(ctx context.Context, kube
 				}
 
 				workloadInstrumentationConfigReference := workloadNames[dep.Name]
-				workloadInstrumentationConfigName := workloadInstrumentationConfigReference.Name
 
 				// Fetching the latest state of the InstrumentationConfig resource from the Kubernetes API.
 				// This is necessary to ensure we work with the most up-to-date version of the resource, as it may
 				// have been modified by other processes or controllers in the cluster. Without this step, there is
 				// a risk of encountering conflicts or using stale data during operations on the InstrumentationConfig object.
 				err = m.KubeClient.Get(ctx, client.ObjectKey{
-					Namespace: dep.Namespace,
-					Name:      workloadInstrumentationConfigName,
+					Namespace: workloadInstrumentationConfigReference.Namespace,
+					Name:      workloadInstrumentationConfigReference.Name,
 				}, workloadInstrumentationConfigReference)
 
 				if err != nil {
-					m.Logger.Error(err, "Failed to get InstrumentationConfig", "Name", workloadInstrumentationConfigName, "Namespace", dep.Namespace)
+					m.Logger.Error(err, "Failed to get InstrumentationConfig", "Name", workloadInstrumentationConfigReference.Name,
+						"Namespace", workloadInstrumentationConfigReference.Namespace)
 					continue
 				}
 
@@ -173,19 +173,19 @@ func (m *MigrationRunnable) fetchAndProcessStatefulSets(ctx context.Context, kub
 				}
 
 				workloadInstrumentationConfigReference := workloadNames[sts.Name]
-				workloadInstrumentationConfigName := workloadInstrumentationConfigReference.Name
 
 				// Fetching the latest state of the InstrumentationConfig resource from the Kubernetes API.
 				// This is necessary to ensure we work with the most up-to-date version of the resource, as it may
 				// have been modified by other processes or controllers in the cluster. Without this step, there is
 				// a risk of encountering conflicts or using stale data during operations on the InstrumentationConfig object.
 				err = m.KubeClient.Get(ctx, client.ObjectKey{
-					Namespace: sts.Namespace,
-					Name:      workloadInstrumentationConfigName,
+					Namespace: workloadInstrumentationConfigReference.Namespace,
+					Name:      workloadInstrumentationConfigReference.Name,
 				}, workloadInstrumentationConfigReference)
 
 				if err != nil {
-					m.Logger.Error(err, "Failed to get InstrumentationConfig", "Name", workloadInstrumentationConfigName, "Namespace", sts.Namespace)
+					m.Logger.Error(err, "Failed to get InstrumentationConfig", "Name", workloadInstrumentationConfigReference.Name,
+						"Namespace", workloadInstrumentationConfigReference.Namespace)
 					continue
 				}
 
@@ -238,19 +238,19 @@ func (m *MigrationRunnable) fetchAndProcessDaemonSets(ctx context.Context, kubeC
 					continue
 				}
 				workloadInstrumentationConfigReference := workloadNames[ds.Name]
-				workloadInstrumentationConfigName := workloadInstrumentationConfigReference.Name
 
 				// Fetching the latest state of the InstrumentationConfig resource from the Kubernetes API.
 				// This is necessary to ensure we work with the most up-to-date version of the resource, as it may
 				// have been modified by other processes or controllers in the cluster. Without this step, there is
 				// a risk of encountering conflicts or using stale data during operations on the InstrumentationConfig object.
 				err = m.KubeClient.Get(ctx, client.ObjectKey{
-					Namespace: ds.Namespace,
-					Name:      workloadInstrumentationConfigName,
+					Namespace: workloadInstrumentationConfigReference.Namespace,
+					Name:      workloadInstrumentationConfigReference.Name,
 				}, workloadInstrumentationConfigReference)
 
 				if err != nil {
-					m.Logger.Error(err, "Failed to get InstrumentationConfig", "Name", workloadInstrumentationConfigName, "Namespace", ds.Namespace)
+					m.Logger.Error(err, "Failed to get InstrumentationConfig", "Name", workloadInstrumentationConfigReference.Name,
+						"Namespace", workloadInstrumentationConfigReference.Namespace)
 					continue
 				}
 				runtimeDetailsByContainer := workloadInstrumentationConfigReference.Status.RuntimeDetailsByContainer
