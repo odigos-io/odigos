@@ -126,6 +126,7 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 | qryn          |   ✅   |   ✅    |  ✅  |
 | SigNoz        |   ✅   |   ✅    |  ✅  |
 | Tempo         |   ✅   |         |      |
+| Tracetest     |   ✅   |   ✅    |  ✅  |
 
 Can't find the destination you need? Help us by following our quick [add new destination](https://docs.odigos.io/adding-new-dest) guide and submitting a PR.
 

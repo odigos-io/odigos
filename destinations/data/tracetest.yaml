@@ -1,0 +1,22 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: tracetest
+  displayName: Tracetest
+  category: self hosted
+spec:
+  image: tracetest.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: false
+    logs:
+      supported: false
+  fields:
+    - name: TRACETEST_ENDPOINT
+      displayName: Tracetest OTLP gRPC Endpoint
+      componentType: input
+      componentProps:
+        type: text
+        required: true
