@@ -232,7 +232,7 @@ func NewUIClusterRole() *rbacv1.ClusterRole {
 			},
 			{ // Needed to read Odigos entities
 				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentedapplications", "instrumentationinstances", "instrumentationconfigs"},
+				Resources: []string{"instrumentationinstances", "instrumentationconfigs"},
 				Verbs:     []string{"get", "list"},
 			},
 			{ // Needed to instrument / uninstrument applications
@@ -242,7 +242,7 @@ func NewUIClusterRole() *rbacv1.ClusterRole {
 			},
 			{ // Needed to watch instrumented applications
 				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentedapplications", "instrumentationinstances"},
+				Resources: []string{"instrumentationconfigs", "instrumentationinstances"},
 				Verbs:     []string{"watch"},
 			},
 		},
