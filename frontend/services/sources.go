@@ -178,19 +178,12 @@ func getDeployments(ctx context.Context, namespace corev1.Namespace, instrumenta
 	var response []model.K8sActualSource
 	err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.AppsV1().Deployments(namespace.Name).List, ctx, metav1.ListOptions{}, func(deps *appsv1.DeploymentList) error {
 		for _, dep := range deps.Items {
-			// _, _, decisionText, autoInstrumented := workload.GetInstrumentationLabelTexts(dep.GetLabels(), string(WorkloadKindDeployment), namespace.GetLabels())
-			// if instrumentationLabeled != nil && *instrumentationLabeled != autoInstrumented {
-			// 	continue
-			// }
 			numberOfInstances := int(dep.Status.ReadyReplicas)
 			response = append(response, model.K8sActualSource{
 				Namespace:         dep.Namespace,
 				Name:              dep.Name,
 				Kind:              k8sKindToGql(string(WorkloadKindDeployment)),
 				NumberOfInstances: &numberOfInstances,
-				// AutoInstrumented:               autoInstrumented,
-				// AutoInstrumentedDecision:       decisionText,
-				// InstrumentedApplicationDetails: nil, // TODO: fill this
 			})
 		}
 		return nil
@@ -207,19 +200,12 @@ func getDaemonSets(ctx context.Context, namespace corev1.Namespace, instrumentat
 	var response []model.K8sActualSource
 	err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.AppsV1().DaemonSets(namespace.Name).List, ctx, metav1.ListOptions{}, func(dss *appsv1.DaemonSetList) error {
 		for _, ds := range dss.Items {
-			// _, _, decisionText, autoInstrumented := workload.GetInstrumentationLabelTexts(ds.GetLabels(), string(WorkloadKindDaemonSet), namespace.GetLabels())
-			// if instrumentationLabeled != nil && *instrumentationLabeled != autoInstrumented {
-			// 	continue
-			// }
 			numberOfInstances := int(ds.Status.NumberReady)
 			response = append(response, model.K8sActualSource{
 				Namespace:         ds.Namespace,
 				Name:              ds.Name,
 				Kind:              k8sKindToGql(string(WorkloadKindDaemonSet)),
 				NumberOfInstances: &numberOfInstances,
-				// AutoInstrumented:               autoInstrumented,
-				// AutoInstrumentedDecision:       decisionText,
-				// InstrumentedApplicationDetails: nil, // TODO: fill this
 			})
 		}
 		return nil
@@ -236,19 +222,12 @@ func getStatefulSets(ctx context.Context, namespace corev1.Namespace, instrument
 	var response []model.K8sActualSource
 	err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.AppsV1().StatefulSets(namespace.Name).List, ctx, metav1.ListOptions{}, func(sss *appsv1.StatefulSetList) error {
 		for _, ss := range sss.Items {
-			// _, _, decisionText, autoInstrumented := workload.GetInstrumentationLabelTexts(ss.GetLabels(), string(WorkloadKindStatefulSet), namespace.GetLabels())
-			// if instrumentationLabeled != nil && *instrumentationLabeled != autoInstrumented {
-			// 	continue
-			// }
 			numberOfInstances := int(ss.Status.ReadyReplicas)
 			response = append(response, model.K8sActualSource{
 				Namespace:         ss.Namespace,
 				Name:              ss.Name,
 				Kind:              k8sKindToGql(string(WorkloadKindStatefulSet)),
 				NumberOfInstances: &numberOfInstances,
-				// AutoInstrumented:               autoInstrumented,
-				// AutoInstrumentedDecision:       decisionText,
-				// InstrumentedApplicationDetails: nil, // TODO: fill this
 			})
 		}
 		return nil
@@ -320,26 +299,26 @@ func updateAnnotations(annotations map[string]string, reportedName string) map[s
 }
 
 func getSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) (*v1alpha1.Source, error) {
-	sourceList, err := kube.DefaultClient.OdigosClient.Sources(nsName).List(ctx, metav1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set{
-		"odigos.io/workload-namespace": nsName,
-		"odigos.io/workload-name":      workloadName,
-		"odigos.io/workload-kind":      string(workloadKind),
+	source, err := kube.DefaultClient.OdigosClient.Sources(nsName).List(ctx, metav1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set{
+		consts.OdigosNamespaceAnnotation:    nsName,
+		consts.OdigosWorkloadNameAnnotation: workloadName,
+		consts.OdigosWorkloadKindAnnotation: string(workloadKind),
 	}).String()})
 
 	if err != nil {
 		return nil, err
 	}
-	if len(sourceList.Items) == 0 {
+	if len(source.Items) == 0 {
 		return nil, errors.New("\"" + workloadName + "\"" + " source not found")
 	}
-	if len(sourceList.Items) > 1 {
-		return nil, errors.New("\"" + workloadName + "\"" + " expected to get 1 source got " + string(len(sourceList.Items)))
+	if len(source.Items) > 1 {
+		return nil, errors.New("\"" + workloadName + "\"" + " expected to get 1 source got " + string(len(source.Items)))
 	}
 
-	crdName := sourceList.Items[0].Name
-	source, err := kube.DefaultClient.OdigosClient.Sources(nsName).Get(ctx, crdName, metav1.GetOptions{})
+	crdName := source.Items[0].Name
+	crd, err := kube.DefaultClient.OdigosClient.Sources(nsName).Get(ctx, crdName, metav1.GetOptions{})
 
-	return source, err
+	return crd, err
 }
 
 func createSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) error {

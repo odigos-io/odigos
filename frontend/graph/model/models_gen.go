@@ -311,7 +311,6 @@ type K8sActualSource struct {
 	Name              string                           `json:"name"`
 	Kind              K8sResourceKind                  `json:"kind"`
 	NumberOfInstances *int                             `json:"numberOfInstances,omitempty"`
-	ServiceName       *string                          `json:"serviceName,omitempty"`
 	ReportedName      *string                          `json:"reportedName,omitempty"`
 	Containers        []*SourceContainerRuntimeDetails `json:"containers,omitempty"`
 	Conditions        []*Condition                     `json:"conditions,omitempty"`

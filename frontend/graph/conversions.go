@@ -77,7 +77,6 @@ func instrumentationConfigToActualSource(instruConfig v1alpha1.InstrumentationCo
 		Kind:              k8sKindToGql(instruConfig.OwnerReferences[0].Kind),
 		Name:              instruConfig.OwnerReferences[0].Name,
 		NumberOfInstances: nil,
-		ServiceName:       &instruConfig.Name,
 		ReportedName:      &instruConfig.Spec.ServiceName,
 		Containers:        containers,
 		Conditions:        conditions,

@@ -13,7 +13,6 @@ export type K8sActualSource = {
   name: string;
   kind: string;
   numberOfInstances: number;
-  // serviceName: string;
   reportedName: string;
   containers: Array<SourceContainer>;
   conditions: Array<Condition>;

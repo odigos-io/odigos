@@ -87,7 +87,7 @@ func (r *computePlatformResolver) K8sActualSources(ctx context.Context, obj *mod
 	// Convert each instrumented application to the K8sActualSource type
 	for _, instruConfig := range instrumentationConfigs.Items {
 		actualSource := instrumentationConfigToActualSource(instruConfig)
-		// services.AddHealthyInstrumentationInstancesCondition(ctx, &instruConfig, actualSource)
+		services.AddHealthyInstrumentationInstancesCondition(ctx, &instruConfig, actualSource)
 		actualSources = append(actualSources, actualSource)
 	}
 
