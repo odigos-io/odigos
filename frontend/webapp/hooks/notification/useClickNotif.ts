@@ -29,6 +29,7 @@ export const useClickNotif = () => {
           break;
 
         case OVERVIEW_ENTITY_TYPES.SOURCE:
+        case 'InstrumentationConfig':
         case 'InstrumentedApplication':
         case 'InstrumentationInstance':
           drawerItem['type'] = OVERVIEW_ENTITY_TYPES.SOURCE;

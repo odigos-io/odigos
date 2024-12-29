@@ -19,7 +19,7 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 	addedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			Event:   sse.MessageEventAdded,
-			CRDType: "InstrumentationConfigs",
+			CRDType: "InstrumentationConfig",
 			SuccessBatchMessageFunc: func(count int, crdType string) string {
 				return fmt.Sprintf("successfully added %d sources", count)
 			},
@@ -32,7 +32,7 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 	deletedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			Event:   sse.MessageEventDeleted,
-			CRDType: "InstrumentationConfigs",
+			CRDType: "InstrumentationConfig",
 			SuccessBatchMessageFunc: func(count int, crdType string) string {
 				return fmt.Sprintf("successfully deleted %d sources", count)
 			},
