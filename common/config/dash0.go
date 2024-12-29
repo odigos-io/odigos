@@ -28,7 +28,7 @@ func (j *Dash0) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) err
 	if !exists {
 		return ErrorDash0EndpointMissing
 	}
-	endpoint, err := parseOtlpGrpcUrl(url, false)
+	endpoint, err := parseOtlpGrpcUrl(url, true)
 	if err != nil {
 		return err
 	}
