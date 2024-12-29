@@ -199,6 +199,7 @@
             "backends/groundcover",
             "backends/honeycomb",
             "backends/jaeger",
+            "backends/kloudmate",
             "backends/last9",
             "backends/lightstep",
             "backends/logzio",
