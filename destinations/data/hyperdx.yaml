@@ -14,13 +14,6 @@ spec:
     logs:
       supported: true
   fields:
-    - name: HYPERDX_ENDPOINT
-      displayName: OTLP gRPC Endpoint
-      componentType: input
-      initialValue: 'in-otel.hyperdx.io:4317'
-      componentProps:
-        type: text
-        required: true
     - name: HYPERDX_API_KEY
       displayName: HyperDX API Key
       componentType: input
