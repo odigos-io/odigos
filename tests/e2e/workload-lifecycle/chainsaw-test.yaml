@@ -42,6 +42,8 @@ spec:
 
               docker build -t python-latest-version:v0.0.1 -f services/python-http-server/Dockerfile.python-latest services/python-http-server
               kind load docker-image python-latest-version:v0.0.1
+              docker build -t python-other-agent:v0.0.1 -f services/python-http-server/Dockerfile.python-other-agent services/python-http-server
+              kind load docker-image python-other-agent:v0.0.1
               docker build -t python-alpine:v0.0.1 -f services/python-http-server/Dockerfile.python-alpine services/python-http-server
               kind load docker-image python-alpine:v0.0.1
               docker build -t python-not-supported:v0.0.1 -f services/python-http-server/Dockerfile.python-not-supported-version services/python-http-server
