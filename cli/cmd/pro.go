@@ -55,8 +55,8 @@ var proCmd = &cobra.Command{
 func updateOdigosToken(ctx context.Context, client *kube.Client, namespace string, tokenType, tokenValue string) error {
 	secret, err := client.CoreV1().Secrets(namespace).Get(ctx, consts.OdigosProSecretName, metav1.GetOptions{})
 	if err != nil {
-		if apierrors.IsForbidden(err) {
-			return fmt.Errorf("Insufficient permissions to retrieve the token")
+		if apierrors.IsNotFound(err) {
+			return err;
 		}
 		return fmt.Errorf("Tokens are not available in the open-source version of Odigos. Please use the on-premises version.")
 	}
@@ -64,10 +64,10 @@ func updateOdigosToken(ctx context.Context, client *kube.Client, namespace strin
 
 	_, err = client.CoreV1().Secrets(namespace).Update(ctx, secret, metav1.UpdateOptions{})
 	if err != nil {
-		if apierrors.IsForbidden(err) {
-			return fmt.Errorf("Insufficient permissions to update the token")
+		if apierrors.IsNotFound(err) {
+			return err;
 		}
-		return fmt.Errorf("%v", err)
+		return err
 	}
 
 	return nil
