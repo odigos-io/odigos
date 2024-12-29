@@ -20,7 +20,7 @@ var availableConfigers = []Configer{
 	&GoogleCloudStorage{}, &GrafanaCloudLoki{}, &GrafanaCloudPrometheus{}, &GrafanaCloudTempo{},
 	&Honeycomb{}, &Jaeger{}, &Last9{}, &Lightstep{}, &Logzio{}, &Loki{}, &Lumigo{}, &Middleware{}, &Mock{}, &NewRelic{},
 	&Nop{}, &OpsVerse{}, &OTLPHttp{}, &Prometheus{}, &Qryn{}, &QrynOSS{}, &Quickwit{}, &Sentry{},
-	&Signoz{}, &Splunk{}, &SumoLogic{}, &Tempo{}, &Uptrace{},
+	&Signoz{}, &Splunk{}, &SumoLogic{}, &Tempo{}, &Traceloop{}, &Uptrace{},
 }
 
 type Configer interface {

@@ -110,6 +110,7 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 | Sentry                  |   ✅   |         |      |
 | Splunk                  |   ✅   |         |      |
 | Sumo Logic              |   ✅   |   ✅    |  ✅  |
+| Traceloop               |   ✅   |   ✅    |      |
 
 ## Self-Hosted (Open Source) Destinations
 
