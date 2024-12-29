@@ -10,7 +10,7 @@ interface Props extends UseSourceFormDataResponse {
 
 export const ChooseSourcesBodySimple: React.FC<Props> = (props) => {
   return (
-    <ModalBody>
+    <ModalBody $isNotModal={!props.isModal}>
       <SourceControls {...props} />
       <SourcesList {...props} />
     </ModalBody>

@@ -91,6 +91,7 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 | Axiom                   |   ✅   |         |  ✅  |
 | AWS S3                  |   ✅   |         |  ✅  |
 | Azure Blob Storage      |   ✅   |         |  ✅  |
+| Better Stack            |        |   ✅    |  ✅  |
 | Causely                 |   ✅   |         |      |
 | Chronosphere            |   ✅   |   ✅    |      |
 | Coralogix               |   ✅   |   ✅    |  ✅  |
@@ -100,6 +101,7 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 | Google Cloud Monitoring |   ✅   |   ✅    |      |
 | Google Cloud Storage    |   ✅   |         |  ✅  |
 | Grafana Cloud           |   ✅   |   ✅    |  ✅  |
+| Groundcover inCloud     |   ✅   |   ✅    |  ✅  |
 | Honeycomb               |   ✅   |   ✅    |  ✅  |
 | KloudMate               |   ✅   |   ✅    |  ✅  |
 | Last9                   |   ✅   |   ✅    |      |
