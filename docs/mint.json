@@ -187,6 +187,7 @@
             "backends/chronosphere",
             "backends/clickhouse",
             "backends/coralogix",
+            "backends/dash0",
             "backends/datadog",
             "backends/dynatrace",
             "backends/elasticsearch",

@@ -1,0 +1,29 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: dash0
+  displayName: Dash0
+  category: managed
+spec:
+  image: dash0.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+  fields:
+    - name: DASH0_ENDPOINT
+      displayName: Dash0 OTLP gRPC Endpoint
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+    - name: DASH0_TOKEN
+      displayName: Dash0 Bearer Token
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: true
