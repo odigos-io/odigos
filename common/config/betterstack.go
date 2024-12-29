@@ -13,7 +13,7 @@ func (j *BetterStack) DestType() common.DestinationType {
 func (j *BetterStack) ModifyConfig(dest ExporterConfigurer, cfg *Config) error {
 	uniqueUri := "betterstack-" + dest.GetID()
 
-	processorName := "attributes/betterstack"
+	processorName := "attributes/" + uniqueUri
 	cfg.Processors[processorName] = GenericMap{
 		"actions": []GenericMap{
 			{
