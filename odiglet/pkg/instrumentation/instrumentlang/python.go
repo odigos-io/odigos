@@ -17,6 +17,8 @@ const (
 	envLogCorrelation                  = "OTEL_PYTHON_LOG_CORRELATION"
 	envPythonPath                      = "PYTHONPATH"
 	envOtelExporterOTLPTracesProtocol  = "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL"
+	pythonConfiguratorEnvVar           = "OTEL_PYTHON_CONFIGURATOR"
+	pythonConfiguratorValue            = "odigos-python-configurator"
 	envOtelExporterOTLPMetricsProtocol = "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL"
 	httpProtobufProtocol               = "http/protobuf"
 	pythonOdigosOpampServer            = "ODIGOS_OPAMP_SERVER_HOST"
@@ -45,6 +47,7 @@ func Python(deviceId string, uniqueDestinationSignals map[common.ObservabilitySi
 			pythonOdigosOpampServer:       opampServerHost,
 			envLogCorrelation:             "true",
 			envPythonPath:                 pythonpathVal,
+			pythonConfiguratorEnvVar:      pythonConfiguratorValue,
 			"OTEL_EXPORTER_OTLP_ENDPOINT": otlpEndpoint,
 			envOtelTracesExporter:         tracesExporter,
 			envOtelMetricsExporter:        metricsExporter,
