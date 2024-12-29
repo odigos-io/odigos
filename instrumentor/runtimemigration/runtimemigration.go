@@ -10,6 +10,7 @@ import (
 	"github.com/odigos-io/odigos/common/envOverwrite"
 	k8scontainer "github.com/odigos-io/odigos/k8sutils/pkg/container"
 	"github.com/odigos-io/odigos/k8sutils/pkg/envoverwrite"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,10 +35,14 @@ func (m *MigrationRunnable) Start(ctx context.Context) error {
 		return nil
 	}
 
-	workloadNamespaces := make(map[string]map[string]map[string]*v1alpha1.InstrumentationConfig)
+	workloadNamespaces := map[string]map[string]map[string]*v1alpha1.InstrumentationConfig{
+		"Deployment":  make(map[string]map[string]*v1alpha1.InstrumentationConfig),
+		"StatefulSet": make(map[string]map[string]*v1alpha1.InstrumentationConfig),
+		"DaemonSet":   make(map[string]map[string]*v1alpha1.InstrumentationConfig),
+	}
 	// Example structure:
 	// {
-	//   "deployment": {
+	//   "Deployment": {
 	//       "default": {
 	//           "frontend": *<InstrumentationConfig>,
 	//       },
@@ -46,38 +51,35 @@ func (m *MigrationRunnable) Start(ctx context.Context) error {
 	for _, item := range instrumentationConfigs.Items {
 
 		IcName := item.GetName()
-		parts := strings.Split(IcName, "-")
-		if len(parts) < 2 {
+		IcNamespace := item.GetNamespace()
+		workloadName, workloadType, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(IcName)
+
+		if err != nil {
+			m.Logger.Error(err, "Failed to extract workload info from runtime object name")
 			continue
 		}
 
-		IcNamespace := item.GetNamespace()
-		workloadType := parts[0] // deployment/statefulset/daemonset
-		workloadName := strings.Join(parts[1:], "-")
-		if _, exists := workloadNamespaces[workloadType]; !exists {
-			workloadNamespaces[workloadType] = make(map[string]map[string]*v1alpha1.InstrumentationConfig)
-		}
-		if _, exists := workloadNamespaces[workloadType][IcNamespace]; !exists {
-			workloadNamespaces[workloadType][IcNamespace] = make(map[string]*v1alpha1.InstrumentationConfig)
+		if _, exists := workloadNamespaces[string(workloadType)][IcNamespace]; !exists {
+			workloadNamespaces[string(workloadType)][IcNamespace] = make(map[string]*v1alpha1.InstrumentationConfig)
 		}
 
 		// Save workloadName and the corresponding InstrumentationConfig reference
-		workloadNamespaces[workloadType][IcNamespace][workloadName] = &item
+		workloadNamespaces[string(workloadType)][IcNamespace][workloadName] = &item
 	}
 	for workloadType, namespaces := range workloadNamespaces {
 		switch workloadType {
-		case "deployment":
-			if err := fetchAndProcessDeployments(ctx, m.KubeClient, namespaces); err != nil {
+		case "Deployment":
+			if err := m.fetchAndProcessDeployments(ctx, m.KubeClient, namespaces); err != nil {
 				m.Logger.Error(err, "Failed to fetch and process deployments")
 				return nil
 			}
-		case "statefulset":
-			if err := fetchAndProcessStatefulSets(ctx, m.KubeClient, namespaces); err != nil {
+		case "StatefulSet":
+			if err := m.fetchAndProcessStatefulSets(ctx, m.KubeClient, namespaces); err != nil {
 				m.Logger.Error(err, "Failed to fetch and process statefulsets")
 				return nil
 			}
-		case "daemonset":
-			if err := fetchAndProcessDaemonSets(ctx, m.KubeClient, namespaces); err != nil {
+		case "DaemonSet":
+			if err := m.fetchAndProcessDaemonSets(ctx, m.KubeClient, namespaces); err != nil {
 				m.Logger.Error(err, "Failed to fetch and process daemonsets")
 				return nil
 			}
@@ -89,10 +91,10 @@ func (m *MigrationRunnable) Start(ctx context.Context) error {
 	return nil
 }
 
-func fetchAndProcessDeployments(ctx context.Context, clientset client.Client, namespaces map[string]map[string]*v1alpha1.InstrumentationConfig) error {
+func (m *MigrationRunnable) fetchAndProcessDeployments(ctx context.Context, kubeClient client.Client, namespaces map[string]map[string]*v1alpha1.InstrumentationConfig) error {
 	for namespace, workloadNames := range namespaces {
 		var deployments appsv1.DeploymentList
-		err := clientset.List(ctx, &deployments, &client.ListOptions{Namespace: namespace})
+		err := kubeClient.List(ctx, &deployments, &client.ListOptions{Namespace: namespace})
 		if err != nil {
 			return fmt.Errorf("failed to list deployments in namespace %s: %v", namespace, err)
 		}
@@ -102,8 +104,29 @@ func fetchAndProcessDeployments(ctx context.Context, clientset client.Client, na
 			// Checking if the deployment is in the list of deployments that need to be processed
 			if contains(workloadNames, dep.Name) {
 
-				originalWorkloadEnvVar, _ := envoverwrite.NewOrigWorkloadEnvValues(dep.Annotations)
+				originalWorkloadEnvVar, err := envoverwrite.NewOrigWorkloadEnvValues(dep.Annotations)
+				if err != nil {
+					m.Logger.Error(err, "Failed to get original workload environment variables")
+					continue
+				}
+
 				workloadInstrumentationConfigReference := workloadNames[dep.Name]
+				workloadInstrumentationConfigName := workloadInstrumentationConfigReference.Name
+
+				// Fetching the latest state of the InstrumentationConfig resource from the Kubernetes API.
+				// This is necessary to ensure we work with the most up-to-date version of the resource, as it may
+				// have been modified by other processes or controllers in the cluster. Without this step, there is
+				// a risk of encountering conflicts or using stale data during operations on the InstrumentationConfig object.
+				err = m.KubeClient.Get(ctx, client.ObjectKey{
+					Namespace: dep.Namespace,
+					Name:      workloadInstrumentationConfigName,
+				}, workloadInstrumentationConfigReference)
+
+				if err != nil {
+					m.Logger.Error(err, "Failed to get InstrumentationConfig", "Name", workloadInstrumentationConfigName, "Namespace", dep.Namespace)
+					continue
+				}
+
 				runtimeDetailsByContainer := workloadInstrumentationConfigReference.Status.RuntimeDetailsByContainer
 
 				for _, containerObject := range dep.Spec.Template.Spec.Containers {
@@ -111,18 +134,19 @@ func fetchAndProcessDeployments(ctx context.Context, clientset client.Client, na
 					err := handleContainerRuntimeDetailsUpdate(
 						containerObject,
 						*originalWorkloadEnvVar,
-						&runtimeDetailsByContainer,
+						runtimeDetailsByContainer,
 					)
 					if err != nil {
 						return fmt.Errorf("failed to process container %s in deployment %s: %v", containerObject.Name, dep.Name, err)
 					}
 				}
-				err := clientset.Status().Update(
+				err = kubeClient.Status().Update(
 					ctx,
 					workloadInstrumentationConfigReference,
 				)
 				if err != nil {
-					return err
+					m.Logger.Error(err, "Failed to update status for deployment", "Name", dep.Name, "Namespace", dep.Namespace)
+					continue
 				}
 			}
 		}
@@ -130,10 +154,10 @@ func fetchAndProcessDeployments(ctx context.Context, clientset client.Client, na
 	return nil
 }
 
-func fetchAndProcessStatefulSets(ctx context.Context, clientset client.Client, namespaces map[string]map[string]*v1alpha1.InstrumentationConfig) error {
+func (m *MigrationRunnable) fetchAndProcessStatefulSets(ctx context.Context, kubeClient client.Client, namespaces map[string]map[string]*v1alpha1.InstrumentationConfig) error {
 	for namespace, workloadNames := range namespaces {
 		var statefulSets appsv1.StatefulSetList
-		err := clientset.List(ctx, &statefulSets, &client.ListOptions{Namespace: namespace})
+		err := kubeClient.List(ctx, &statefulSets, &client.ListOptions{Namespace: namespace})
 		if err != nil {
 			return fmt.Errorf("failed to list statefulsets in namespace %s: %v", namespace, err)
 		}
@@ -142,15 +166,36 @@ func fetchAndProcessStatefulSets(ctx context.Context, clientset client.Client, n
 			// Checking if the statefulset is in the list of statefulsets that need to be processed
 			if contains(workloadNames, sts.Name) {
 
-				originalWorkloadEnvVar, _ := envoverwrite.NewOrigWorkloadEnvValues(sts.Annotations)
+				originalWorkloadEnvVar, err := envoverwrite.NewOrigWorkloadEnvValues(sts.Annotations)
+				if err != nil {
+					m.Logger.Error(err, "Failed to get original workload environment variables")
+					continue
+				}
+
 				workloadInstrumentationConfigReference := workloadNames[sts.Name]
+				workloadInstrumentationConfigName := workloadInstrumentationConfigReference.Name
+
+				// Fetching the latest state of the InstrumentationConfig resource from the Kubernetes API.
+				// This is necessary to ensure we work with the most up-to-date version of the resource, as it may
+				// have been modified by other processes or controllers in the cluster. Without this step, there is
+				// a risk of encountering conflicts or using stale data during operations on the InstrumentationConfig object.
+				err = m.KubeClient.Get(ctx, client.ObjectKey{
+					Namespace: sts.Namespace,
+					Name:      workloadInstrumentationConfigName,
+				}, workloadInstrumentationConfigReference)
+
+				if err != nil {
+					m.Logger.Error(err, "Failed to get InstrumentationConfig", "Name", workloadInstrumentationConfigName, "Namespace", sts.Namespace)
+					continue
+				}
+
 				runtimeDetailsByContainer := workloadInstrumentationConfigReference.Status.RuntimeDetailsByContainer
 
 				for _, containerObject := range sts.Spec.Template.Spec.Containers {
 					err := handleContainerRuntimeDetailsUpdate(
 						containerObject,
 						*originalWorkloadEnvVar,
-						&runtimeDetailsByContainer,
+						runtimeDetailsByContainer,
 					)
 					if err != nil {
 						return fmt.Errorf("failed to process container %s in statefulset %s: %v", containerObject.Name, sts.Name, err)
@@ -161,12 +206,13 @@ func fetchAndProcessStatefulSets(ctx context.Context, clientset client.Client, n
 				workloadInstrumentationConfigReference.Status.RuntimeDetailsByContainer = runtimeDetailsByContainer
 
 				// Update the InstrumentationConfig status
-				err := clientset.Status().Update(
+				err = kubeClient.Status().Update(
 					ctx,
 					workloadInstrumentationConfigReference,
 				)
 				if err != nil {
-					return fmt.Errorf("failed to update status for statefulset %s in namespace %s: %v", sts.Name, sts.Namespace, err)
+					m.Logger.Error(err, "Failed to update status for Statefulset", "Name", sts.Name, "Namespace", sts.Namespace)
+					continue
 				}
 			}
 		}
@@ -174,10 +220,10 @@ func fetchAndProcessStatefulSets(ctx context.Context, clientset client.Client, n
 	return nil
 }
 
-func fetchAndProcessDaemonSets(ctx context.Context, clientset client.Client, namespaces map[string]map[string]*v1alpha1.InstrumentationConfig) error {
+func (m *MigrationRunnable) fetchAndProcessDaemonSets(ctx context.Context, kubeClient client.Client, namespaces map[string]map[string]*v1alpha1.InstrumentationConfig) error {
 	for namespace, workloadNames := range namespaces {
 		var daemonSets appsv1.DaemonSetList
-		err := clientset.List(ctx, &daemonSets, &client.ListOptions{Namespace: namespace})
+		err := kubeClient.List(ctx, &daemonSets, &client.ListOptions{Namespace: namespace})
 		if err != nil {
 			return fmt.Errorf("failed to list daemonsets in namespace %s: %v", namespace, err)
 		}
@@ -186,15 +232,34 @@ func fetchAndProcessDaemonSets(ctx context.Context, clientset client.Client, nam
 			// Checking if the daemonset is in the list of daemonsets that need to be processed
 			if contains(workloadNames, ds.Name) {
 
-				originalWorkloadEnvVar, _ := envoverwrite.NewOrigWorkloadEnvValues(ds.Annotations)
+				originalWorkloadEnvVar, err := envoverwrite.NewOrigWorkloadEnvValues(ds.Annotations)
+				if err != nil {
+					m.Logger.Error(err, "Failed to get original workload environment variables")
+					continue
+				}
 				workloadInstrumentationConfigReference := workloadNames[ds.Name]
+				workloadInstrumentationConfigName := workloadInstrumentationConfigReference.Name
+
+				// Fetching the latest state of the InstrumentationConfig resource from the Kubernetes API.
+				// This is necessary to ensure we work with the most up-to-date version of the resource, as it may
+				// have been modified by other processes or controllers in the cluster. Without this step, there is
+				// a risk of encountering conflicts or using stale data during operations on the InstrumentationConfig object.
+				err = m.KubeClient.Get(ctx, client.ObjectKey{
+					Namespace: ds.Namespace,
+					Name:      workloadInstrumentationConfigName,
+				}, workloadInstrumentationConfigReference)
+
+				if err != nil {
+					m.Logger.Error(err, "Failed to get InstrumentationConfig", "Name", workloadInstrumentationConfigName, "Namespace", ds.Namespace)
+					continue
+				}
 				runtimeDetailsByContainer := workloadInstrumentationConfigReference.Status.RuntimeDetailsByContainer
 
 				for _, containerObject := range ds.Spec.Template.Spec.Containers {
 					err := handleContainerRuntimeDetailsUpdate(
 						containerObject,
 						*originalWorkloadEnvVar,
-						&runtimeDetailsByContainer)
+						runtimeDetailsByContainer)
 					if err != nil {
 						return fmt.Errorf("failed to process container %s in daemonset %s: %v", containerObject.Name, ds.Name, err)
 					}
@@ -204,12 +269,13 @@ func fetchAndProcessDaemonSets(ctx context.Context, clientset client.Client, nam
 				workloadInstrumentationConfigReference.Status.RuntimeDetailsByContainer = runtimeDetailsByContainer
 
 				// Update the InstrumentationConfig status
-				err := clientset.Status().Update(
+				err = kubeClient.Status().Update(
 					ctx,
 					workloadInstrumentationConfigReference,
 				)
 				if err != nil {
-					return fmt.Errorf("failed to update status for daemonset %s in namespace %s: %v", ds.Name, ds.Namespace, err)
+					m.Logger.Error(err, "Failed to update status for Daemonset", "Name", ds.Name, "Namespace", ds.Namespace)
+					continue
 				}
 			}
 		}
@@ -219,10 +285,10 @@ func fetchAndProcessDaemonSets(ctx context.Context, clientset client.Client, nam
 func handleContainerRuntimeDetailsUpdate(
 	containerObject v1.Container,
 	originalWorkloadEnvVar envoverwrite.OrigWorkloadEnvValues,
-	runtimeDetailsByContainer *[]v1alpha1.RuntimeDetailsByContainer,
+	runtimeDetailsByContainer []v1alpha1.RuntimeDetailsByContainer,
 ) error {
-	for i := range *runtimeDetailsByContainer {
-		containerRuntimeDetails := &(*runtimeDetailsByContainer)[i]
+	for i := range runtimeDetailsByContainer {
+		containerRuntimeDetails := &(runtimeDetailsByContainer)[i]
 
 		// Find the relevant container in runtimeDetailsByContainer
 		if containerRuntimeDetails.ContainerName != containerObject.Name {
