@@ -352,8 +352,19 @@ status:
       reason: RuntimeVersionNotSupported
       status: "False"
       type: AppliedInstrumentationDevice
-
-
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
+  namespace: default
+  name: deployment-python-other-agent
+status:
+  conditions:
+    - message: "device not added to any container due to the presence of another agent"
+      observedGeneration: 1
+      reason: ErrApplyingInstrumentationDevice
+      status: "False"
+      type: AppliedInstrumentationDevice
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationInstance

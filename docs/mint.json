@@ -202,6 +202,7 @@
             "backends/lightstep",
             "backends/logzio",
             "backends/loki",
+            "backends/lumigo",
             "backends/newrelic",
             "backends/opsverse",
             "backends/otlp",
