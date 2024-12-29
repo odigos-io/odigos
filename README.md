@@ -95,6 +95,7 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 | Causely                 |   ✅   |         |      |
 | Chronosphere            |   ✅   |   ✅    |      |
 | Coralogix               |   ✅   |   ✅    |  ✅  |
+| Dash0                   |   ✅   |   ✅    |  ✅  |
 | Datadog                 |   ✅   |   ✅    |  ✅  |
 | Dynatrace               |   ✅   |   ✅    |  ✅  |
 | Gigapipe                |   ✅   |         |      |
@@ -103,6 +104,8 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 | Grafana Cloud           |   ✅   |   ✅    |  ✅  |
 | Groundcover inCloud     |   ✅   |   ✅    |  ✅  |
 | Honeycomb               |   ✅   |   ✅    |  ✅  |
+| HyperDX                 |   ✅   |   ✅    |  ✅  |
+| KloudMate               |   ✅   |   ✅    |  ✅  |
 | Last9                   |   ✅   |   ✅    |      |
 | Lightstep               |   ✅   |         |      |
 | Logz.io                 |   ✅   |   ✅    |  ✅  |
