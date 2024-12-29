@@ -31,7 +31,7 @@ func (j *Groundcover) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		return ErrorGroundcoverEndpointMissing
 	}
 
-	endpoint, err := parseOtlpGrpcUrl(url, false)
+	endpoint, err := parseOtlpGrpcUrl(url, true)
 	if err != nil {
 		return err
 	}
