@@ -28,6 +28,7 @@ const (
 	LightstepDestinationType              DestinationType = "lightstep"
 	LogzioDestinationType                 DestinationType = "logzio"
 	LokiDestinationType                   DestinationType = "loki"
+	LumigoDestinationType                 DestinationType = "lumigo"
 	MiddlewareDestinationType             DestinationType = "middleware"
 	MockDestinationType                   DestinationType = "mock"
 	NewRelicDestinationType               DestinationType = "newrelic"
