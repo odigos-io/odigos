@@ -95,6 +95,7 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 | Causely                 |   ✅   |         |      |
 | Chronosphere            |   ✅   |   ✅    |      |
 | Coralogix               |   ✅   |   ✅    |  ✅  |
+| Dash0                   |   ✅   |   ✅    |  ✅  |
 | Datadog                 |   ✅   |   ✅    |  ✅  |
 | Dynatrace               |   ✅   |   ✅    |  ✅  |
 | Gigapipe                |   ✅   |         |      |
