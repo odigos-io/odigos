@@ -211,6 +211,11 @@ cli-uninstall:
 	@echo "Uninstalling odigos from source. version: $(ODIGOS_CLI_VERSION)"
 	cd ./cli ; go run -tags=embed_manifests . uninstall
 
+.PHONY: cli-uninstall
+cli-uninstall:
+	@echo "Uninstalling odigos from source. version: $(ODIGOS_CLI_VERSION)"
+	cd ./cli ; go run -tags=embed_manifests . uninstall
+
 .PHONY: cli-upgrade
 cli-upgrade:
 	@echo "Upgrading odigos from source. version: $(ODIGOS_CLI_VERSION)"
