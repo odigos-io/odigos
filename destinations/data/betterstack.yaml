@@ -14,20 +14,6 @@ spec:
     logs:
       supported: true
   fields:
-    - name: BETTERSTACK_METRICS_ENDPOINT
-      displayName: OTLP HTTP Metrics Endpoint
-      componentType: input
-      initialValue: 'https://in-otel.logs.betterstack.com/metrics'
-      componentProps:
-        type: text
-        required: true
-    - name: BETTERSTACK_LOGS_ENDPOINT
-      displayName: OTLP HTTP Logs Endpoint
-      componentType: input
-      initialValue: 'https://in-otel.logs.betterstack.com:443'
-      componentProps:
-        type: text
-        required: true
     - name: BETTERSTACK_TOKEN
       displayName: Better Stack Source Token
       componentType: input

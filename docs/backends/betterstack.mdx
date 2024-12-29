@@ -4,9 +4,12 @@ title: 'Better Stack'
 
 ## Configuring Backend
 
-- **BETTERSTACK_METRICS_ENDPOINT** - OpenTelemetry HTTP Metrics Endpoint, defaults to `https://in-otel.logs.betterstack.com/metrics`.
-- **BETTERSTACK_LOGS_ENDPOINT** - OpenTelemetry HTTP Logs Endpoint, defaults to `https://in-otel.logs.betterstack.com:443`.
 - **BETTERSTACK_TOKEN** - Source Token, generated from Better Stack UI.
+
+**Note:**
+We handle the endpoint internally, so you don't need to provide it.
+- The endpoint for metrics is `https://in-otel.logs.betterstack.com/metrics`.
+- The endpoint for logs is `https://in-otel.logs.betterstack.com:443`.
 
 ## Adding a Destination to Odigos
 
@@ -36,9 +39,7 @@ metadata:
   name: betterstack-example
   namespace: odigos-system
 spec:
-  data:
-    BETTERSTACK_LOGS_ENDPOINT: <OTLP HTTP Logs Endpoint>
-    BETTERSTACK_METRICS_ENDPOINT: <OTLP HTTP Metrics Endpoint>
+  data: {}
   destinationName: betterstack
   secretRef:
     name: betterstack-secret
