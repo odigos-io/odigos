@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -309,10 +308,10 @@ func getSourceCRD(ctx context.Context, nsName string, workloadName string, workl
 		return nil, err
 	}
 	if len(source.Items) == 0 {
-		return nil, errors.New("\"" + workloadName + "\"" + " source not found")
+		return nil, fmt.Errorf(`source "%s" not found`, workloadName)
 	}
 	if len(source.Items) > 1 {
-		return nil, errors.New("\"" + workloadName + "\"" + " expected to get 1 source got " + string(len(source.Items)))
+		return nil, fmt.Errorf(`expected to get 1 source "%s", got %s`, workloadName, fmt.Sprint(len(source.Items)))
 	}
 
 	crdName := source.Items[0].Name
@@ -329,7 +328,7 @@ func createSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 
 	source, err := getSourceCRD(ctx, nsName, workloadName, workloadKind)
 	if source != nil && err == nil {
-		return errors.New("\"" + workloadName + "\"" + " source already exists")
+		return fmt.Errorf(`source "%s" already exists`, workloadName)
 	}
 
 	newSource := &v1alpha1.Source{
@@ -366,7 +365,7 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 
 func ToggleSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind, enabled *bool) error {
 	if enabled == nil {
-		return errors.New("enabled must be provided")
+		return fmt.Errorf("enabled must be provided")
 	}
 
 	if *enabled {
