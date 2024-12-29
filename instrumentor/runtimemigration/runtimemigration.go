@@ -145,7 +145,7 @@ func (m *MigrationRunnable) fetchAndProcessDeployments(ctx context.Context, kube
 					workloadInstrumentationConfigReference,
 				)
 				if err != nil {
-					m.Logger.Error(err, "Failed to update status for deployment", "Name", dep.Name, "Namespace", dep.Namespace)
+					m.Logger.Error(err, "Failed to update InstrumentationConfig status", "Name", dep.Name, "Namespace", dep.Namespace)
 					continue
 				}
 			}
@@ -211,7 +211,7 @@ func (m *MigrationRunnable) fetchAndProcessStatefulSets(ctx context.Context, kub
 					workloadInstrumentationConfigReference,
 				)
 				if err != nil {
-					m.Logger.Error(err, "Failed to update status for Statefulset", "Name", sts.Name, "Namespace", sts.Namespace)
+					m.Logger.Error(err, "Failed to update InstrumentationConfig status", "Name", sts.Name, "Namespace", sts.Namespace)
 					continue
 				}
 			}
@@ -274,7 +274,7 @@ func (m *MigrationRunnable) fetchAndProcessDaemonSets(ctx context.Context, kubeC
 					workloadInstrumentationConfigReference,
 				)
 				if err != nil {
-					m.Logger.Error(err, "Failed to update status for Daemonset", "Name", ds.Name, "Namespace", ds.Namespace)
+					m.Logger.Error(err, "Failed to update InstrumentationConfig status", "Name", ds.Name, "Namespace", ds.Namespace)
 					continue
 				}
 			}
