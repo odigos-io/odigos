@@ -573,6 +573,54 @@ spec:
 kind: Deployment
 apiVersion: apps/v1
 metadata:
+  name: python-other-agent
+  namespace: default
+  labels:
+    app: python-other-agent
+spec:
+  selector:
+    matchLabels:
+      app: python-other-agent
+  template:
+    metadata:
+      labels:
+        app: python-other-agent
+    spec:
+      containers:
+        - name: python-other-agent
+          image: python-other-agent:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DJANGO_SETTINGS_MODULE
+              value: "myapp.settings"
+          livenessProbe:
+            httpGet:
+              path: /health/
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: python-other-agent
+  namespace: default
+spec:
+  selector:
+    app: python-other-agent
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 8000
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
   name: python-alpine
   namespace: default
   labels:

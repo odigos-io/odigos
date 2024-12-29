@@ -290,6 +290,25 @@ spec:
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentedApplication
 metadata:
+  name: deployment-python-other-agent
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: python-other-agent
+spec:
+  runtimeDetails:
+    - containerName: python-other-agent        
+      language: python
+      otherAgent:
+        name: New Relic Agent
+      (runtimeVersion != null): true
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentedApplication
+metadata:
   name: deployment-python-min-version
   namespace: default
   ownerReferences:
