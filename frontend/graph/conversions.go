@@ -61,15 +61,15 @@ func instrumentationConfigToActualSource(instruConfig v1alpha1.InstrumentationCo
 
 	// Map the conditions
 	var conditions []*model.Condition
-	for _, condition := range instruConfig.Status.Conditions {
-		conditions = append(conditions, &model.Condition{
-			Status:             k8sConditionStatusToGql(condition.Status),
-			Type:               condition.Type,
-			Reason:             &condition.Reason,
-			Message:            &condition.Message,
-			LastTransitionTime: k8sLastTransitionTimeToGql(condition.LastTransitionTime),
-		})
-	}
+	// for _, condition := range instruConfig.Status.Conditions {
+	// 	conditions = append(conditions, &model.Condition{
+	// 		Status:             k8sConditionStatusToGql(condition.Status),
+	// 		Type:               condition.Type,
+	// 		Reason:             &condition.Reason,
+	// 		Message:            &condition.Message,
+	// 		LastTransitionTime: k8sLastTransitionTimeToGql(condition.LastTransitionTime),
+	// 	})
+	// }
 
 	// Return the converted K8sActualSource object
 	return &model.K8sActualSource{
