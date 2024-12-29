@@ -15,10 +15,10 @@ const (
 )
 
 var availableConfigers = []Configer{
-	&AppDynamics{}, &Axiom{}, &AWSS3{}, &AzureBlobStorage{}, &Causely{}, &Chronosphere{}, &Clickhouse{}, &Coralogix{},
+	&AppDynamics{}, &Axiom{}, &AWSS3{}, &AzureBlobStorage{}, &BetterStack{}, &Causely{}, &Chronosphere{}, &Clickhouse{}, &Coralogix{},
 	&Datadog{}, &Debug{}, &Dynatrace{}, &ElasticAPM{}, &Elasticsearch{}, &GenericOTLP{}, &GoogleCloud{},
-	&GoogleCloudStorage{}, &GrafanaCloudLoki{}, &GrafanaCloudPrometheus{}, &GrafanaCloudTempo{},
-	&Honeycomb{}, &Jaeger{}, &Last9{}, &Lightstep{}, &Logzio{}, &Loki{}, &Lumigo{}, &Middleware{}, &Mock{}, &NewRelic{},
+	&GoogleCloudStorage{}, &GrafanaCloudLoki{}, &GrafanaCloudPrometheus{}, &GrafanaCloudTempo{}, &Groundcover{},
+	&Honeycomb{}, &HyperDX{}, &Jaeger{}, &KloudMate{}, &Last9{}, &Lightstep{}, &Logzio{}, &Loki{}, &Lumigo{}, &Middleware{}, &Mock{}, &NewRelic{},
 	&Nop{}, &OpsVerse{}, &OTLPHttp{}, &Prometheus{}, &Qryn{}, &QrynOSS{}, &Quickwit{}, &Sentry{},
 	&Signoz{}, &Splunk{}, &SumoLogic{}, &Tempo{}, &Uptrace{},
 }
