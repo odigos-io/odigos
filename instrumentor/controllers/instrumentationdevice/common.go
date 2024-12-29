@@ -66,13 +66,13 @@ func isDataCollectionReady(ctx context.Context, c client.Client) bool {
 	return nodeCollectorsGroup.Status.Ready
 }
 
-func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.Client, workloadDetails odigosv1.WorkloadDetailsObject) (error, bool) {
+func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.Client, runtimeDetails *odigosv1.InstrumentedApplication) (error, bool) {
 	// devicePartiallyApplied is used to indicate that the instrumentation device was partially applied for some of the containers.
 	devicePartiallyApplied := false
 	deviceNotAppliedDueToPresenceOfAnotherAgent := false
 
 	logger := log.FromContext(ctx)
-	obj, err := getWorkloadObject(ctx, kubeClient, workloadDetails)
+	obj, err := getWorkloadObject(ctx, kubeClient, runtimeDetails)
 	if err != nil {
 		return err, false
 	}
@@ -133,7 +133,7 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 			agentsCanRunConcurrently = *odigosConfiguration.AllowConcurrentAgents
 		}
 
-		err, deviceApplied, deviceSkippedDueToOtherAgent := instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, workloadDetails.RuntimeDetailsByContainer(), otelSdkToUse, obj, logger, agentsCanRunConcurrently)
+		err, deviceApplied, deviceSkippedDueToOtherAgent := instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, runtimeDetails, otelSdkToUse, obj, logger, agentsCanRunConcurrently)
 		if err != nil {
 			return err
 		}
@@ -213,8 +213,8 @@ func removeInstrumentationDeviceFromWorkload(ctx context.Context, kubeClient cli
 	return nil
 }
 
-func getWorkloadObject(ctx context.Context, kubeClient client.Client, runtimeDetailsObject client.Object) (client.Object, error) {
-	name, kind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(runtimeDetailsObject.GetName())
+func getWorkloadObject(ctx context.Context, kubeClient client.Client, runtimeDetails *odigosv1.InstrumentedApplication) (client.Object, error) {
+	name, kind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(runtimeDetails.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +225,7 @@ func getWorkloadObject(ctx context.Context, kubeClient client.Client, runtimeDet
 	}
 
 	err = kubeClient.Get(ctx, client.ObjectKey{
-		Namespace: runtimeDetailsObject.GetNamespace(),
+		Namespace: runtimeDetails.Namespace,
 		Name:      name,
 	}, workloadObject)
 	if err != nil {
@@ -251,45 +251,45 @@ func getPodSpecFromObject(obj client.Object) (*corev1.PodTemplateSpec, error) {
 // reconciles a single workload, which might be triggered by a change in multiple resources.
 // each time a relevant resource changes, this function is called to reconcile the workload
 // and always writes the status into the InstrumentedApplication CR
-func reconcileSingleWorkload(ctx context.Context, kubeClient client.Client, workloadDetails odigosv1.WorkloadDetailsObject, isNodeCollectorReady bool) error {
+func reconcileSingleWorkload(ctx context.Context, kubeClient client.Client, instrumentedApplication *odigosv1.InstrumentedApplication, isNodeCollectorReady bool) error {
 
-	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(workloadDetails.GetName())
+	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(instrumentedApplication.Name)
 	if err != nil {
-		conditions.UpdateStatusConditions(ctx, kubeClient, workloadDetails, workloadDetails.Conditions(), metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonErrRemoving), err.Error())
+		conditions.UpdateStatusConditions(ctx, kubeClient, instrumentedApplication, &instrumentedApplication.Status.Conditions, metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonErrRemoving), err.Error())
 		return err
 	}
 
 	if !isNodeCollectorReady {
-		err := removeInstrumentationDeviceFromWorkload(ctx, kubeClient, workloadDetails.GetNamespace(), workloadKind, workloadName, ApplyInstrumentationDeviceReasonDataCollectionNotReady)
+		err := removeInstrumentationDeviceFromWorkload(ctx, kubeClient, instrumentedApplication.Namespace, workloadKind, workloadName, ApplyInstrumentationDeviceReasonDataCollectionNotReady)
 		if err == nil {
-			conditions.UpdateStatusConditions(ctx, kubeClient, workloadDetails, workloadDetails.Conditions(), metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonDataCollectionNotReady), "OpenTelemetry pipeline not yet ready to receive data")
+			conditions.UpdateStatusConditions(ctx, kubeClient, instrumentedApplication, &instrumentedApplication.Status.Conditions, metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonDataCollectionNotReady), "OpenTelemetry pipeline not yet ready to receive data")
 		} else {
-			conditions.UpdateStatusConditions(ctx, kubeClient, workloadDetails, workloadDetails.Conditions(), metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonErrRemoving), err.Error())
+			conditions.UpdateStatusConditions(ctx, kubeClient, instrumentedApplication, &instrumentedApplication.Status.Conditions, metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonErrRemoving), err.Error())
 		}
 		return err
 	}
 
-	if len(workloadDetails.RuntimeDetailsByContainer()) == 0 {
-		err := removeInstrumentationDeviceFromWorkload(ctx, kubeClient, workloadDetails.GetNamespace(), workloadKind, workloadName, ApplyInstrumentationDeviceReasonNoRuntimeDetails)
+	if len(instrumentedApplication.Spec.RuntimeDetails) == 0 {
+		err := removeInstrumentationDeviceFromWorkload(ctx, kubeClient, instrumentedApplication.Namespace, workloadKind, workloadName, ApplyInstrumentationDeviceReasonNoRuntimeDetails)
 		if err == nil {
-			conditions.UpdateStatusConditions(ctx, kubeClient, workloadDetails, workloadDetails.Conditions(), metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonNoRuntimeDetails), "No runtime details found")
+			conditions.UpdateStatusConditions(ctx, kubeClient, instrumentedApplication, &instrumentedApplication.Status.Conditions, metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonNoRuntimeDetails), "No runtime details found")
 		} else {
-			conditions.UpdateStatusConditions(ctx, kubeClient, workloadDetails, workloadDetails.Conditions(), metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonErrRemoving), err.Error())
+			conditions.UpdateStatusConditions(ctx, kubeClient, instrumentedApplication, &instrumentedApplication.Status.Conditions, metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonErrRemoving), err.Error())
 		}
 		return err
 	}
-	runtimeVersionSupport, err := versionsupport.IsRuntimeVersionSupported(ctx, workloadDetails.RuntimeDetailsByContainer())
+	runtimeVersionSupport, err := versionsupport.IsRuntimeVersionSupported(ctx, instrumentedApplication.Spec.RuntimeDetails)
 	if !runtimeVersionSupport {
-		errRemove := removeInstrumentationDeviceFromWorkload(ctx, kubeClient, workloadDetails.GetNamespace(), workloadKind, workloadName, ApplyInstrumentationDeviceReasonRuntimeVersionNotSupported)
+		errRemove := removeInstrumentationDeviceFromWorkload(ctx, kubeClient, instrumentedApplication.Namespace, workloadKind, workloadName, ApplyInstrumentationDeviceReasonRuntimeVersionNotSupported)
 		if errRemove == nil {
-			conditions.UpdateStatusConditions(ctx, kubeClient, workloadDetails, workloadDetails.Conditions(), metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonRuntimeVersionNotSupported), err.Error())
+			conditions.UpdateStatusConditions(ctx, kubeClient, instrumentedApplication, &instrumentedApplication.Status.Conditions, metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonRuntimeVersionNotSupported), err.Error())
 		} else {
-			conditions.UpdateStatusConditions(ctx, kubeClient, workloadDetails, workloadDetails.Conditions(), metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonErrRemoving), errRemove.Error())
+			conditions.UpdateStatusConditions(ctx, kubeClient, instrumentedApplication, &instrumentedApplication.Status.Conditions, metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonErrRemoving), errRemove.Error())
 		}
 		return nil
 	}
 
-	err, devicePartiallyApplied := addInstrumentationDeviceToWorkload(ctx, kubeClient, workloadDetails)
+	err, devicePartiallyApplied := addInstrumentationDeviceToWorkload(ctx, kubeClient, instrumentedApplication)
 	if err == nil {
 		var successMessage string
 		if devicePartiallyApplied {
@@ -297,9 +297,9 @@ func reconcileSingleWorkload(ctx context.Context, kubeClient client.Client, work
 		} else {
 			successMessage = "Instrumentation device applied successfully"
 		}
-		conditions.UpdateStatusConditions(ctx, kubeClient, workloadDetails, workloadDetails.Conditions(), metav1.ConditionTrue, appliedInstrumentationDeviceType, "InstrumentationDeviceApplied", successMessage)
+		conditions.UpdateStatusConditions(ctx, kubeClient, instrumentedApplication, &instrumentedApplication.Status.Conditions, metav1.ConditionTrue, appliedInstrumentationDeviceType, "InstrumentationDeviceApplied", successMessage)
 	} else {
-		conditions.UpdateStatusConditions(ctx, kubeClient, workloadDetails, workloadDetails.Conditions(), metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonErrApplying), err.Error())
+		conditions.UpdateStatusConditions(ctx, kubeClient, instrumentedApplication, &instrumentedApplication.Status.Conditions, metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonErrApplying), err.Error())
 	}
 	return err
 }
