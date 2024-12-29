@@ -31,7 +31,7 @@ type Config struct {
 	Exporters  GenericMap `json:"exporters"`
 	Processors GenericMap `json:"processors"`
 	Extensions GenericMap `json:"extensions"`
-	Connectors GenericMap `json:"connectors"`
+	Connectors GenericMap `json:"connectors,omitempty"`
 	Service    Service    `json:"service"`
 }
 

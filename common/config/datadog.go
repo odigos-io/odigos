@@ -36,7 +36,7 @@ func (d *Datadog) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) e
 	}
 
 	connectorEnabled := false
-	connectorName := "datadog/" + dest.GetID()
+	connectorName := "datadog/connector-" + dest.GetID()
 	if isTracingEnabled(dest) && isMetricsEnabled(dest) {
 		currentConfig.Connectors[connectorName] = struct{}{}
 		connectorEnabled = true
