@@ -195,6 +195,7 @@
             "backends/grafanacloudloki",
             "backends/grafanacloudprometheus",
             "backends/grafanacloudtempo",
+            "backends/groundcover",
             "backends/honeycomb",
             "backends/jaeger",
             "backends/last9",
