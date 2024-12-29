@@ -6,7 +6,7 @@ require (
 	github.com/cert-manager/cert-manager v1.16.2
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-version v1.7.0
-	github.com/odigos-io/odigos/api v0.0.0
+	github.com/odigos-io/odigos/api v1.0.138
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/odigos/k8sutils v0.0.0
 	github.com/spf13/cobra v1.8.1

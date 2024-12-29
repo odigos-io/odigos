@@ -27,6 +27,7 @@ const (
 	OdigletServiceName         = "odiglet"
 	OdigletDaemonSetName       = "odiglet"
 	OdigletAppLabelValue       = "odiglet"
+	OdigletAppLabelKey         = "app.kubernetes.io/name"
 	OdigletContainerName       = "odiglet"
 	OdigletImageName           = "keyval/odigos-odiglet"
 	OdigletEnterpriseImageName = "keyval/odigos-enterprise-odiglet"
