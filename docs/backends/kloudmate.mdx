@@ -4,10 +4,11 @@ title: 'KloudMate'
 
 ## Configuring Backend
 
-- **KLOUDMATE_ENDPOINT** - OpenTelemetry HTTP Endpoint, the format is `host:port`.
-  - host is required.
-  - port is required.
-- **KLOUDMATE_API_KEY** - API Key, required.
+- **KLOUDMATE_API_KEY** - KloudMate API Key, required.
+
+**Note:**
+We handle the endpoint internally, so you don't need to provide it.
+- The endpoint is `https://otel.kloudmate.com:4318`.
 
 ## Adding a Destination to Odigos
 
@@ -37,8 +38,7 @@ metadata:
   name: kloudmate-example
   namespace: odigos-system
 spec:
-  data:
-    KLOUDMATE_ENDPOINT: <KloudMate OTLP HTTP Endpoint>
+  data: {}
   destinationName: kloudmate
   secretRef:
     name: kloudmate-secret

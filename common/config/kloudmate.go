@@ -1,17 +1,7 @@
 package config
 
 import (
-	"errors"
-
 	"github.com/odigos-io/odigos/common"
-)
-
-const (
-	KloudMateEndpoint = "KLOUDMATE_ENDPOINT"
-)
-
-var (
-	ErrorKloudMateEndpointMissing = errors.New("KloudMate is missing a required field (\"KLOUDMATE_ENDPOINT\"), KloudMate will not be configured")
 )
 
 type KloudMate struct{}
@@ -21,22 +11,11 @@ func (j *KloudMate) DestType() common.DestinationType {
 }
 
 func (j *KloudMate) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
-	config := dest.GetConfig()
 	uniqueUri := "kloudmate-" + dest.GetID()
-
-	url, exists := config[KloudMateEndpoint]
-	if !exists {
-		return ErrorKloudMateEndpointMissing
-	}
-
-	endpoint, err := parseOtlpHttpEndpoint(url)
-	if err != nil {
-		return err
-	}
 
 	exporterName := "otlphttp/" + uniqueUri
 	exporterConfig := GenericMap{
-		"endpoint": endpoint,
+		"endpoint": "https://otel.kloudmate.com:4318",
 		"headers": GenericMap{
 			"Authorization": "${KLOUDMATE_API_KEY}",
 		},
