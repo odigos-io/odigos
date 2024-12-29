@@ -7,6 +7,7 @@ const (
 	AWSS3DestinationType                  DestinationType = "s3"
 	AxiomDestinationType                  DestinationType = "axiom"
 	AzureBlobDestinationType              DestinationType = "azureblob"
+	BetterStackDestinationType            DestinationType = "betterstack"
 	CauselyDestinationType                DestinationType = "causely"
 	ChronosphereDestinationType           DestinationType = "chronosphere"
 	ClickhouseDestinationType             DestinationType = "clickhouse"

@@ -1,0 +1,23 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: betterstack
+  displayName: Better Stack
+  category: managed
+spec:
+  image: betterstack.svg
+  signals:
+    traces:
+      supported: false
+    metrics:
+      supported: true
+    logs:
+      supported: true
+  fields:
+    - name: BETTERSTACK_TOKEN
+      displayName: Better Stack Source Token
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: true
