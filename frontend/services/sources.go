@@ -311,7 +311,7 @@ func getSourceCRD(ctx context.Context, nsName string, workloadName string, workl
 		return nil, fmt.Errorf(`source "%s" not found`, workloadName)
 	}
 	if len(source.Items) > 1 {
-		return nil, fmt.Errorf(`expected to get 1 source "%s", got %s`, workloadName, fmt.Sprint(len(source.Items)))
+		return nil, fmt.Errorf(`expected to get 1 source "%s", got %d`, workloadName, len(source.Items))
 	}
 
 	crdName := source.Items[0].Name

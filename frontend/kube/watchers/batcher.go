@@ -32,7 +32,7 @@ type EventBatcher struct {
 }
 
 type EventBatcherConfig struct {
-	// Event to batch, not configuring this value (empty string) will cause to all events to be batched
+	// Event to batch, not configuring this value (empty string) will cause all events to be batched
 	Event sse.MessageEvent
 	// Message type to batch, not configuring this value (empty string) will cause all messages to be batched
 	MessageType sse.MessageType
