@@ -43,13 +43,6 @@ func GetRelevantSourceResources(ctx context.Context, kubeClient kubernetes.Inter
 		return nil, err
 	}
 
-	ia, err := odigosClient.InstrumentedApplications(workloadNs).Get(ctx, runtimeObjectName, metav1.GetOptions{})
-	if err == nil {
-		sourceResources.InstrumentedApplication = ia
-	} else if !apierrors.IsNotFound(err) {
-		return nil, err
-	}
-
 	instrumentedAppSelector := labels.SelectorFromSet(labels.Set{
 		"instrumented-app": runtimeObjectName,
 	})
