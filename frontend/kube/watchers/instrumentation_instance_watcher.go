@@ -14,10 +14,10 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 )
 
-var instruInstanceModifiedBatcher *EventBatcher
+var instrumentationInstanceModifiedEventBatcher *EventBatcher
 
 func StartInstrumentationInstanceWatcher(ctx context.Context, namespace string) error {
-	instruInstanceModifiedBatcher = NewEventBatcher(
+	instrumentationInstanceModifiedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			MinBatchSize: 1,
 			Duration:     10 * time.Second,
@@ -41,7 +41,7 @@ func StartInstrumentationInstanceWatcher(ctx context.Context, namespace string) 
 
 func handleInstrumentationInstanceWatchEvents(ctx context.Context, watcher watch.Interface) {
 	ch := watcher.ResultChan()
-	defer instruInstanceModifiedBatcher.Cancel()
+	defer instrumentationInstanceModifiedEventBatcher.Cancel()
 	for {
 		select {
 		case <-ctx.Done():
@@ -84,5 +84,5 @@ func handleModifiedInstrumentationInstance(instruInstance *v1alpha1.Instrumentat
 
 	target := fmt.Sprintf("name=%s&kind=%s&namespace=%s", name, kind, namespace)
 	data := fmt.Sprintf(`%s "%s" %s: %s`, consts.InstrumentationInstance, name, instruInstance.Status.Reason, instruInstance.Status.Message)
-	instruInstanceModifiedBatcher.AddEvent(sse.MessageTypeError, data, target)
+	instrumentationInstanceModifiedEventBatcher.AddEvent(sse.MessageTypeError, data, target)
 }

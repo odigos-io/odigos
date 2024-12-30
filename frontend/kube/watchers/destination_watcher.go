@@ -14,7 +14,7 @@ import (
 )
 
 var destinationAddedEventBatcher *EventBatcher
-var destinationModifiedBatcher *EventBatcher
+var destinationModifiedEventBatcher *EventBatcher
 var destinationDeletedEventBatcher *EventBatcher
 
 func StartDestinationWatcher(ctx context.Context, namespace string) error {
@@ -33,7 +33,7 @@ func StartDestinationWatcher(ctx context.Context, namespace string) error {
 		},
 	)
 
-	destinationModifiedBatcher = NewEventBatcher(
+	destinationModifiedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			MinBatchSize: 1,
 			Duration:     10 * time.Second,
@@ -75,7 +75,7 @@ func StartDestinationWatcher(ctx context.Context, namespace string) error {
 func handleDestinationWatchEvents(ctx context.Context, watcher watch.Interface) {
 	ch := watcher.ResultChan()
 	defer destinationAddedEventBatcher.Cancel()
-	defer destinationModifiedBatcher.Cancel()
+	defer destinationModifiedEventBatcher.Cancel()
 	defer destinationDeletedEventBatcher.Cancel()
 	for {
 		select {
@@ -126,7 +126,7 @@ func handleModifiedDestination(destination *v1alpha1.Destination) {
 		conditionType = sse.MessageTypeError
 	}
 
-	destinationModifiedBatcher.AddEvent(conditionType, data, target)
+	destinationModifiedEventBatcher.AddEvent(conditionType, data, target)
 }
 
 func handleDeletedDestination(destination *v1alpha1.Destination) {
