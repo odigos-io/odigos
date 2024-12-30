@@ -12,12 +12,20 @@ export const AddSourceModal: React.FC<Props> = ({ isOpen, onClose }) => {
   useKeyDown({ key: 'Enter', active: isOpen }, () => handleSubmit());
 
   const menuState = useSourceFormData();
-  const { createSources } = useSourceCRUD({ onSuccess: onClose });
+  const { persistSources } = useSourceCRUD({ onSuccess: onClose });
 
   const handleSubmit = async () => {
-    const { selectedSources, selectedFutureApps } = menuState;
+    const { availableSources, selectedSources, selectedFutureApps } = menuState;
+    const payload: typeof availableSources = {};
 
-    await createSources(selectedSources, selectedFutureApps);
+    Object.entries(availableSources).forEach(([namespace, sources]) => {
+      payload[namespace] = sources.map((source) => ({
+        ...source,
+        selected: !!selectedSources[namespace].find(({ kind, name }) => kind === source.kind && name === source.name),
+      }));
+    });
+
+    await persistSources(payload, selectedFutureApps);
   };
 
   return (
