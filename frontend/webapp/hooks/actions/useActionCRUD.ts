@@ -31,25 +31,32 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
     params?.onError?.(actionType);
   };
 
-  const handleComplete = (actionType: string) => {
+  const handleComplete = (actionType: string, message: string, id?: string) => {
     refetch();
+    notifyUser(NOTIFICATION_TYPE.SUCCESS, actionType, message, id);
     params?.onSuccess?.(actionType);
   };
 
   const [createAction, cState] = useMutation<{ createAction: { id: string } }>(CREATE_ACTION, {
     onError: (error) => handleError(ACTION.CREATE, error.message),
-    onCompleted: () => handleComplete(ACTION.CREATE),
+    onCompleted: (res, req) => {
+      const id = res?.createAction?.id;
+      handleComplete(ACTION.CREATE, `Action "${id}" created`, id);
+    },
   });
   const [updateAction, uState] = useMutation<{ updateAction: { id: string } }>(UPDATE_ACTION, {
     onError: (error) => handleError(ACTION.UPDATE, error.message),
-    onCompleted: () => handleComplete(ACTION.UPDATE),
+    onCompleted: (res, req) => {
+      const id = res?.updateAction?.id;
+      handleComplete(ACTION.UPDATE, `Action "${id}" updated`, id);
+    },
   });
   const [deleteAction, dState] = useMutation<{ deleteAction: boolean }>(DELETE_ACTION, {
     onError: (error) => handleError(ACTION.DELETE, error.message),
     onCompleted: (res, req) => {
       const id = req?.variables?.id;
       removeNotifications(getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.ACTION));
-      handleComplete(ACTION.DELETE);
+      handleComplete(ACTION.DELETE, `Action "${id}" deleted`, id);
     },
   });
 
@@ -58,15 +65,12 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
     actions: data?.computePlatform?.actions || [],
 
     createAction: (action: ActionInput) => {
-      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'creating pipeline action...', undefined, true);
       createAction({ variables: { action } });
     },
     updateAction: (id: string, action: ActionInput) => {
-      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'updating pipeline action...', undefined, true);
       updateAction({ variables: { id, action } });
     },
     deleteAction: (id: string, actionType: ActionsType) => {
-      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'deleting pipeline action...', undefined, true);
       deleteAction({ variables: { id, actionType } });
     },
   };
