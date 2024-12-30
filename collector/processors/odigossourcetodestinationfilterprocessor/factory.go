@@ -14,6 +14,8 @@ func NewFactory() processor.Factory {
 		component.MustNewType("odigossourcetodestinationfilterprocessor"),
 		createDefaultConfig,
 		processor.WithTraces(createTracesProcessor, component.StabilityLevelBeta),
+		processor.WithLogs(createLogsProcessor, component.StabilityLevelBeta),
+		processor.WithMetrics(createMetricsProcessor, component.StabilityLevelBeta),
 	)
 }
 
@@ -40,6 +42,48 @@ func createTracesProcessor(
 		cfg,
 		nextConsumer,
 		filterProc.processTraces,
+		processorhelper.WithCapabilities(consumer.Capabilities{MutatesData: true}),
+	)
+}
+
+func createLogsProcessor(
+	ctx context.Context,
+	set processor.Settings,
+	cfg component.Config,
+	nextConsumer consumer.Logs) (processor.Logs, error) {
+
+	filterProc := &filterProcessor{
+		logger: set.Logger,
+		config: cfg.(*Config),
+	}
+
+	return processorhelper.NewLogsProcessor(
+		ctx,
+		set,
+		cfg,
+		nextConsumer,
+		filterProc.processLogs,
+		processorhelper.WithCapabilities(consumer.Capabilities{MutatesData: true}),
+	)
+}
+
+func createMetricsProcessor(
+	ctx context.Context,
+	set processor.Settings,
+	cfg component.Config,
+	nextConsumer consumer.Metrics) (processor.Metrics, error) {
+
+	filterProc := &filterProcessor{
+		logger: set.Logger,
+		config: cfg.(*Config),
+	}
+
+	return processorhelper.NewMetricsProcessor(
+		ctx,
+		set,
+		cfg,
+		nextConsumer,
+		filterProc.processMetrics,
 		processorhelper.WithCapabilities(consumer.Capabilities{MutatesData: true}),
 	)
 }

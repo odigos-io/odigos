@@ -5,6 +5,8 @@ status:
   stability:
     beta:
       - traces
+      - metrics
+      - logs
   distributions:
     - contrib
   codeowners:

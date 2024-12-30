@@ -39,6 +39,12 @@ func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, 
 		return err
 	}
 
+	var sources odigosv1.SourceList
+	if err := k8sClient.List(ctx, &sources); err != nil {
+		logger.Error(err, "Failed to list sources")
+		return err
+	}
+
 	var processors odigosv1.ProcessorList
 	if err := k8sClient.List(ctx, &processors); err != nil {
 		logger.Error(err, "Failed to list processors")
@@ -47,7 +53,7 @@ func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, 
 	// Add the generic batch processor to the list of processors
 	processors.Items = append(processors.Items, commonconf.GetGenericBatchProcessor())
 
-	err = syncGateway(&dests, &processors, &gatewayCollectorGroup, ctx, k8sClient, scheme, imagePullSecrets, odigosVersion, config)
+	err = syncGateway(&dests, &processors, &gatewayCollectorGroup, ctx, k8sClient, scheme, imagePullSecrets, odigosVersion, config, &sources)
 	statusPatchString := commonconf.GetCollectorsGroupDeployedConditionsPatch(err)
 	statusErr := k8sClient.Status().Patch(ctx, &gatewayCollectorGroup, client.RawPatch(types.MergePatchType, []byte(statusPatchString)))
 	if statusErr != nil {
@@ -60,11 +66,11 @@ func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, 
 func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList,
 	gateway *odigosv1.CollectorsGroup, ctx context.Context,
 	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string,
-	config *controllerconfig.ControllerConfig) error {
+	config *controllerconfig.ControllerConfig, sources *odigosv1.SourceList) error {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Syncing gateway")
 
-	signals, err := syncConfigMap(dests, processors, gateway, ctx, c, scheme)
+	signals, err := syncConfigMap(dests, processors, gateway, ctx, c, scheme, sources)
 	if err != nil {
 		logger.Error(err, "Failed to sync config map")
 		return err
