@@ -298,17 +298,28 @@ func handleContainerRuntimeDetailsUpdate(
 		if containerRuntimeDetails.RuntimeUpdateState != nil {
 			continue
 		}
-		// Process environment variables for the container
+
 		annotationEnvVarsForContainer := originalWorkloadEnvVar.GetContainerStoredEnvs(containerObject.Name)
+
+		// Mark as succeeded if no annotation set.
+		// This occurs when no values were present in the manifest, and the envOverwriter was not executed.
+		if len(annotationEnvVarsForContainer) == 0 {
+			state := v1alpha1.ProcessingStateSucceeded
+			containerRuntimeDetails.RuntimeUpdateState = &state
+		}
+
 		for envKey, envValue := range annotationEnvVarsForContainer {
+
+			// The containerRuntimeDetails might already include the EnvFromContainerRuntime if the runtime inspection was executed before the migration modified the environment variables.
+			// In this case, we want to avoid overwriting the value set by Odiglet.
+			// This check is only for safety, as we have already skipped processed containers.
 			isEnvVarAlreadyExists := isEnvVarPresent(containerRuntimeDetails.EnvFromContainerRuntime, envKey)
-			// The runtimeDetails might already contain the environment variable if Odiglet started before the migration was executed and modified the env vars.
-			// In this case, we want to overwrite the value set by Odiglet with a new one.
 			if isEnvVarAlreadyExists {
-				containerRuntimeDetails.EnvFromContainerRuntime = removeEnvVar(containerRuntimeDetails.EnvFromContainerRuntime, envKey)
+				continue
 			}
 
-			// Handle runtime-originated environment variables
+			// if envValue is nil, it means that the value in the manifest is come from the runtime by the envOverwriter.
+			// In his case, we mark as succeeded and set the EnvFromContainerRuntime as clean version of the manifest env values (without odigos additions).
 			if envValue == nil {
 				containerEnvFromManifestValue := k8scontainer.GetContainerEnvVarValue(&containerObject, envKey)
 				if containerEnvFromManifestValue != nil {
@@ -322,13 +333,12 @@ func handleContainerRuntimeDetailsUpdate(
 					}
 
 				}
+			} else {
+				// If envKey exists and != nil, it indicates that the environment variable originally came from the manifest.
+				// In this case, we will set the RuntimeUpdateState to ProcessingStateSkipped.
+				state := v1alpha1.ProcessingStateSkipped
+				containerRuntimeDetails.RuntimeUpdateState = &state
 			}
-		}
-
-		// Mark container as skipped if no runtime environment variables exist
-		if len(containerRuntimeDetails.EnvFromContainerRuntime) == 0 {
-			state := v1alpha1.ProcessingStateSkipped
-			containerRuntimeDetails.RuntimeUpdateState = &state
 		}
 	}
 	return nil
