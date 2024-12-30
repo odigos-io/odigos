@@ -39,7 +39,7 @@ const Row = styled.div`
   gap: 12px;
 `;
 
-export const ConditionDetails: React.FC<Props> = ({ conditions }) => {
+export const ConditionDetails: React.FC<Props> = ({ conditions = [] }) => {
   const [extend, setExtend] = useState(false);
 
   const loading = useMemo(() => !conditions.length, [conditions]);
