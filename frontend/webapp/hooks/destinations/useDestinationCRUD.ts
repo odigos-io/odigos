@@ -12,7 +12,7 @@ interface Params {
 
 export const useDestinationCRUD = (params?: Params) => {
   const removeNotifications = useNotificationStore((store) => store.removeNotifications);
-  const { data, refetch } = useComputePlatform();
+  const { data } = useComputePlatform();
   const { addNotification } = useNotificationStore();
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
@@ -32,7 +32,6 @@ export const useDestinationCRUD = (params?: Params) => {
   };
 
   const handleComplete = (actionType: string) => {
-    refetch();
     params?.onSuccess?.(actionType);
   };
 

@@ -15,7 +15,7 @@ export const useSourceCRUD = (params?: Params) => {
   const { configuredSources, setConfiguredSources } = useAppStore();
 
   const { persistNamespace } = useNamespace();
-  const { data, refetch } = useComputePlatform();
+  const { data } = useComputePlatform();
   const { addNotification } = useNotificationStore();
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: WorkloadId, hideFromHistory?: boolean) => {
@@ -35,7 +35,6 @@ export const useSourceCRUD = (params?: Params) => {
   };
 
   const handleComplete = (actionType: string) => {
-    refetch();
     params?.onSuccess?.(actionType);
   };
 
