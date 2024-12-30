@@ -25,6 +25,7 @@ const (
 	GrafanaCloudPrometheusDestinationType DestinationType = "grafanacloudprometheus"
 	GrafanaCloudTempoDestinationType      DestinationType = "grafanacloudtempo"
 	GroundcoverDestinationType            DestinationType = "groundcover"
+	HighlightDestinationType              DestinationType = "highlight"
 	HoneycombDestinationType              DestinationType = "honeycomb"
 	HyperDxDestinationType                DestinationType = "hyperdx"
 	JaegerDestinationType                 DestinationType = "jaeger"

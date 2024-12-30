@@ -37,6 +37,7 @@ var availableConfigers = []Configer{
 	&GrafanaCloudPrometheus{},
 	&GrafanaCloudTempo{},
 	&Groundcover{},
+  &Highlight{},
 	&Honeycomb{},
 	&HyperDX{},
 	&Jaeger{},

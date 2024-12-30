@@ -198,6 +198,7 @@
             "backends/grafanacloudprometheus",
             "backends/grafanacloudtempo",
             "backends/groundcover",
+            "backends/highlight",
             "backends/honeycomb",
             "backends/hyperdx",
             "backends/jaeger",

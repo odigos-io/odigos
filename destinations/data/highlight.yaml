@@ -1,0 +1,23 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: highlight
+  displayName: Highlight
+  category: managed
+spec:
+  image: highlight.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: false
+    logs:
+      supported: true
+  fields:
+    - name: HIGHLIGHT_PROJECT_ID
+      displayName: Highlight Project ID
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: true
