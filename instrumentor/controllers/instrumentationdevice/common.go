@@ -66,13 +66,13 @@ func isDataCollectionReady(ctx context.Context, c client.Client) bool {
 	return nodeCollectorsGroup.Status.Ready
 }
 
-func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.Client, runtimeDetails *odigosv1.InstrumentedApplication) (error, bool) {
+func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.Client, instApp *odigosv1.InstrumentedApplication) (error, bool) {
 	// devicePartiallyApplied is used to indicate that the instrumentation device was partially applied for some of the containers.
 	devicePartiallyApplied := false
 	deviceNotAppliedDueToPresenceOfAnotherAgent := false
 
 	logger := log.FromContext(ctx)
-	obj, err := getWorkloadObject(ctx, kubeClient, runtimeDetails)
+	obj, err := getWorkloadObject(ctx, kubeClient, instApp)
 	if err != nil {
 		return err, false
 	}
@@ -133,7 +133,7 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 			agentsCanRunConcurrently = *odigosConfiguration.AllowConcurrentAgents
 		}
 
-		err, deviceApplied, deviceSkippedDueToOtherAgent := instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, runtimeDetails, otelSdkToUse, obj, logger, agentsCanRunConcurrently)
+		err, deviceApplied, deviceSkippedDueToOtherAgent := instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, instApp.Spec.RuntimeDetails, otelSdkToUse, obj, logger, agentsCanRunConcurrently)
 		if err != nil {
 			return err
 		}
