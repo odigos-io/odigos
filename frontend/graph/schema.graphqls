@@ -447,11 +447,6 @@ type InstrumentationLabelsAnalyze {
   instrumentedText: EntityProperty
 }
 
-type InstrumentationConfigAnalyze {
-  created: EntityProperty!
-  createTime: EntityProperty
-}
-
 type ContainerRuntimeInfoAnalyze {
   containerName: EntityProperty!
   language: EntityProperty!
@@ -459,14 +454,14 @@ type ContainerRuntimeInfoAnalyze {
   envVars: [EntityProperty!]!
 }
 
-type RuntimeInfoAnalyze {
-  generation: EntityProperty!
+type InstrumentationConfigAnalyze {
+  created: EntityProperty!
+  createTime: EntityProperty
   containers: [ContainerRuntimeInfoAnalyze!]!
 }
 
-type InstrumentedApplicationAnalyze {
-  created: EntityProperty!
-  createTime: EntityProperty
+type RuntimeInfoAnalyze {
+  generation: EntityProperty!
   containers: [ContainerRuntimeInfoAnalyze!]!
 }
 
@@ -506,9 +501,8 @@ type SourceAnalyze {
   namespace: EntityProperty!
   labels: InstrumentationLabelsAnalyze!
 
+  runtimeInfo: RuntimeInfoAnalyze!
   instrumentationConfig: InstrumentationConfigAnalyze!
-  runtimeInfo: RuntimeInfoAnalyze
-  instrumentedApplication: InstrumentedApplicationAnalyze!
   instrumentationDevice: InstrumentationDeviceAnalyze!
 
   totalPods: Int!
