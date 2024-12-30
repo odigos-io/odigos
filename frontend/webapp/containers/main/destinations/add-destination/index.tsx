@@ -61,11 +61,8 @@ export function AddDestinationContainer() {
     await createSources(configuredSources, configuredFutureApps);
     await Promise.all(configuredDestinations.map(async ({ form }) => await createDestination(form)));
 
-    // Delay redirect by 1 seconds to allow the data to reach the backend 1st
-    setTimeout(() => {
-      resetState();
-      router.push(ROUTES.OVERVIEW);
-    }, 1000);
+    resetState();
+    router.push(ROUTES.OVERVIEW);
   };
 
   const isSourcesListEmpty = () => !Object.values(configuredSources).some((sources) => !!sources.length);
