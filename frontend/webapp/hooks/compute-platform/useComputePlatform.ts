@@ -1,9 +1,9 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useQuery } from '@apollo/client';
 import { useNotificationStore } from '@/store';
 import { GET_COMPUTE_PLATFORM } from '@/graphql';
 import { useFilterStore } from '@/store/useFilterStore';
-import { BACKEND_BOOLEAN, deriveTypeFromRule, safeJsonParse } from '@/utils';
+import { ACTION, BACKEND_BOOLEAN, deriveTypeFromRule, safeJsonParse } from '@/utils';
 import { NOTIFICATION_TYPE, type ActionItem, type ComputePlatform, type ComputePlatformMapped } from '@/types';
 
 type UseComputePlatformHook = {
@@ -15,19 +15,17 @@ type UseComputePlatformHook = {
 };
 
 export const useComputePlatform = (): UseComputePlatformHook => {
-  const { data, loading, error, refetch } = useQuery<ComputePlatform>(GET_COMPUTE_PLATFORM);
   const { addNotification } = useNotificationStore();
   const filters = useFilterStore();
 
-  useEffect(() => {
-    if (error) {
+  const { data, loading, error, refetch } = useQuery<ComputePlatform>(GET_COMPUTE_PLATFORM, {
+    onError: (error) =>
       addNotification({
         type: NOTIFICATION_TYPE.ERROR,
-        title: error.name,
-        message: error.cause?.message,
-      });
-    }
-  }, [error]);
+        title: error.name || ACTION.FETCH,
+        message: error.cause?.message || error.message,
+      }),
+  });
 
   const mappedData = useMemo(() => {
     if (!data) return undefined;
@@ -84,15 +82,13 @@ export const useComputePlatform = (): UseComputePlatformHook => {
       k8sActualSources = k8sActualSources.filter((source) => !!filters.types.find((type) => type.id === source.kind));
     }
     if (!!filters.onlyErrors) {
-      k8sActualSources = k8sActualSources.filter((source) => !!source.instrumentedApplicationDetails?.conditions?.find((cond) => cond.status === BACKEND_BOOLEAN.FALSE));
+      k8sActualSources = k8sActualSources.filter((source) => !!source.conditions?.find((cond) => cond.status === BACKEND_BOOLEAN.FALSE));
     }
     if (!!filters.errors.length) {
-      k8sActualSources = k8sActualSources.filter((source) => !!filters.errors.find((error) => !!source.instrumentedApplicationDetails?.conditions?.find((cond) => cond.message === error.id)));
+      k8sActualSources = k8sActualSources.filter((source) => !!filters.errors.find((error) => !!source.conditions?.find((cond) => cond.message === error.id)));
     }
     if (!!filters.languages.length) {
-      k8sActualSources = k8sActualSources.filter(
-        (source) => !!filters.languages.find((language) => !!source.instrumentedApplicationDetails?.containers?.find((cont) => cont.language === language.id)),
-      );
+      k8sActualSources = k8sActualSources.filter((source) => !!filters.languages.find((language) => !!source.containers?.find((cont) => cont.language === language.id)));
     }
     if (!!filters.monitors.length) {
       destinations = destinations.filter((destination) => !!filters.monitors.find((metric) => destination.exportedSignals[metric.id]));

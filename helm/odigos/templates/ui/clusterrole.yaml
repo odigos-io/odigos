@@ -40,16 +40,24 @@ rules:
   - apiGroups:
       - odigos.io
     resources:
-      - instrumentedapplications
-      - instrumentationinstances
       - instrumentationconfigs
+      - instrumentationinstances
     verbs:
       - get
       - list
   - apiGroups:
       - odigos.io
     resources:
-      - instrumentedapplications
+      - sources
+    verbs:
+      - get
+      - list
+      - create
+      - delete
+  - apiGroups:
+      - odigos.io
+    resources:
+      - instrumentationconfigs
       - instrumentationinstances
     verbs:
       - watch

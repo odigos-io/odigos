@@ -41,7 +41,7 @@ const StyledAddDestinationButton = styled(Button)`
 
 export function AddDestinationContainer() {
   const router = useRouter();
-  const { createSources } = useSourceCRUD();
+  const { persistSources } = useSourceCRUD();
   const { createDestination } = useDestinationCRUD();
   const { configuredSources, configuredFutureApps, configuredDestinations, resetState } = useAppStore((state) => state);
 
@@ -58,15 +58,20 @@ export function AddDestinationContainer() {
   const clickDone = async () => {
     setIsLoading(true);
 
-    await createSources(configuredSources, configuredFutureApps);
+    const payload: typeof configuredSources = {};
+
+    Object.entries(configuredSources).forEach(([namespace, sources]) => {
+      payload[namespace] = sources.map((source) => ({
+        ...source,
+        selected: true,
+      }));
+    });
+
+    await persistSources(payload, configuredFutureApps);
     await Promise.all(configuredDestinations.map(async ({ form }) => await createDestination(form)));
 
-    // Delay redirect by 3 seconds to allow the sources to be created on the backend 1st,
-    // otherwise we would have to apply polling on the overview page on every mount.
-    setTimeout(() => {
-      resetState();
-      router.push(ROUTES.OVERVIEW);
-    }, 3000);
+    resetState();
+    router.push(ROUTES.OVERVIEW);
   };
 
   const isSourcesListEmpty = () => !Object.values(configuredSources).some((sources) => !!sources.length);

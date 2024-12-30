@@ -7,19 +7,17 @@ import (
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
-
+	"github.com/odigos-io/odigos/k8sutils/pkg/client"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
-
-	"github.com/odigos-io/odigos/frontend/graph/model"
-
-	"github.com/odigos-io/odigos/k8sutils/pkg/client"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	labels "k8s.io/apimachinery/pkg/labels"
 
 	"golang.org/x/sync/errgroup"
-	corev1 "k8s.io/api/core/v1"
 )
 
 type WorkloadKind string
@@ -29,38 +27,6 @@ const (
 	WorkloadKindStatefulSet WorkloadKind = "StatefulSet"
 	WorkloadKindDaemonSet   WorkloadKind = "DaemonSet"
 )
-
-type SourceLanguage struct {
-	ContainerName string `json:"container_name"`
-	Language      string `json:"language"`
-}
-
-type InstrumentedApplicationDetails struct {
-	Languages  []SourceLanguage   `json:"languages,omitempty"`
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
-}
-type SourceID struct {
-	// combination of namespace, kind and name is unique
-	Name      string `json:"name"`
-	Kind      string `json:"kind"`
-	Namespace string `json:"namespace"`
-}
-
-type Source struct {
-	ThinSource
-	ReportedName string `json:"reported_name,omitempty"`
-}
-
-type PatchSourceRequest struct {
-	ReportedName *string `json:"reported_name"`
-}
-
-// this object contains only part of the source fields. It is used to display the sources in the frontend
-type ThinSource struct {
-	SourceID
-	NumberOfRunningInstances int                             `json:"number_of_running_instances"`
-	IaDetails                *InstrumentedApplicationDetails `json:"instrumented_application_details"`
-}
 
 func GetWorkload(c context.Context, ns string, kind string, name string) (metav1.Object, int) {
 	switch kind {
@@ -87,9 +53,9 @@ func GetWorkload(c context.Context, ns string, kind string, name string) (metav1
 	}
 }
 
-func AddHealthyInstrumentationInstancesCondition(ctx context.Context, app *v1alpha1.InstrumentedApplication, source *model.K8sActualSource) error {
-	labelSelector := fmt.Sprintf("%s=%s", consts.InstrumentedAppNameLabel, app.Name)
-	instancesList, err := kube.DefaultClient.OdigosClient.InstrumentationInstances(app.Namespace).List(ctx, metav1.ListOptions{
+func AddHealthyInstrumentationInstancesCondition(ctx context.Context, instruConfig *v1alpha1.InstrumentationConfig, source *model.K8sActualSource) error {
+	labelSelector := fmt.Sprintf("%s=%s", consts.InstrumentedAppNameLabel, instruConfig.Name)
+	instancesList, err := kube.DefaultClient.OdigosClient.InstrumentationInstances(instruConfig.Namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
 
@@ -121,7 +87,7 @@ func AddHealthyInstrumentationInstancesCondition(ctx context.Context, app *v1alp
 
 	message := fmt.Sprintf("%d/%d instances are healthy", healthyInstances, totalInstances)
 	lastTransitionTime := Metav1TimeToString(latestStatusTime)
-	source.InstrumentedApplicationDetails.Conditions = append(source.InstrumentedApplicationDetails.Conditions, &model.Condition{
+	source.Conditions = append(source.Conditions, &model.Condition{
 		Type:               "HealthyInstrumentationInstances",
 		Status:             status,
 		LastTransitionTime: &lastTransitionTime,
@@ -131,8 +97,7 @@ func AddHealthyInstrumentationInstancesCondition(ctx context.Context, app *v1alp
 	return nil
 }
 
-func GetWorkloadsInNamespace(ctx context.Context, nsName string, instrumentationLabeled *bool) ([]model.K8sActualSource, error) {
-
+func GetWorkloadsInNamespace(ctx context.Context, nsName string) ([]model.K8sActualSource, error) {
 	namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, nsName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
@@ -147,19 +112,19 @@ func GetWorkloadsInNamespace(ctx context.Context, nsName string, instrumentation
 
 	g.Go(func() error {
 		var err error
-		deps, err = getDeployments(ctx, *namespace, instrumentationLabeled)
+		deps, err = getDeployments(ctx, *namespace)
 		return err
 	})
 
 	g.Go(func() error {
 		var err error
-		ss, err = getStatefulSets(ctx, *namespace, instrumentationLabeled)
+		ss, err = getStatefulSets(ctx, *namespace)
 		return err
 	})
 
 	g.Go(func() error {
 		var err error
-		dss, err = getDaemonSets(ctx, *namespace, instrumentationLabeled)
+		dss, err = getDaemonSets(ctx, *namespace)
 		return err
 	})
 
@@ -175,23 +140,16 @@ func GetWorkloadsInNamespace(ctx context.Context, nsName string, instrumentation
 	return items, nil
 }
 
-func getDeployments(ctx context.Context, namespace corev1.Namespace, instrumentationLabeled *bool) ([]model.K8sActualSource, error) {
+func getDeployments(ctx context.Context, namespace corev1.Namespace) ([]model.K8sActualSource, error) {
 	var response []model.K8sActualSource
 	err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.AppsV1().Deployments(namespace.Name).List, ctx, metav1.ListOptions{}, func(deps *appsv1.DeploymentList) error {
 		for _, dep := range deps.Items {
-			_, _, decisionText, autoInstrumented := workload.GetInstrumentationLabelTexts(dep.GetLabels(), string(WorkloadKindDeployment), namespace.GetLabels())
-			if instrumentationLabeled != nil && *instrumentationLabeled != autoInstrumented {
-				continue
-			}
 			numberOfInstances := int(dep.Status.ReadyReplicas)
 			response = append(response, model.K8sActualSource{
-				Namespace:                      dep.Namespace,
-				Name:                           dep.Name,
-				Kind:                           k8sKindToGql(string(WorkloadKindDeployment)),
-				NumberOfInstances:              &numberOfInstances,
-				AutoInstrumented:               autoInstrumented,
-				AutoInstrumentedDecision:       decisionText,
-				InstrumentedApplicationDetails: nil, // TODO: fill this
+				Namespace:         dep.Namespace,
+				Name:              dep.Name,
+				Kind:              k8sKindToGql(string(WorkloadKindDeployment)),
+				NumberOfInstances: &numberOfInstances,
 			})
 		}
 		return nil
@@ -204,23 +162,16 @@ func getDeployments(ctx context.Context, namespace corev1.Namespace, instrumenta
 	return response, nil
 }
 
-func getDaemonSets(ctx context.Context, namespace corev1.Namespace, instrumentationLabeled *bool) ([]model.K8sActualSource, error) {
+func getDaemonSets(ctx context.Context, namespace corev1.Namespace) ([]model.K8sActualSource, error) {
 	var response []model.K8sActualSource
 	err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.AppsV1().DaemonSets(namespace.Name).List, ctx, metav1.ListOptions{}, func(dss *appsv1.DaemonSetList) error {
 		for _, ds := range dss.Items {
-			_, _, decisionText, autoInstrumented := workload.GetInstrumentationLabelTexts(ds.GetLabels(), string(WorkloadKindDaemonSet), namespace.GetLabels())
-			if instrumentationLabeled != nil && *instrumentationLabeled != autoInstrumented {
-				continue
-			}
 			numberOfInstances := int(ds.Status.NumberReady)
 			response = append(response, model.K8sActualSource{
-				Namespace:                      ds.Namespace,
-				Name:                           ds.Name,
-				Kind:                           k8sKindToGql(string(WorkloadKindDaemonSet)),
-				NumberOfInstances:              &numberOfInstances,
-				AutoInstrumented:               autoInstrumented,
-				AutoInstrumentedDecision:       decisionText,
-				InstrumentedApplicationDetails: nil, // TODO: fill this
+				Namespace:         ds.Namespace,
+				Name:              ds.Name,
+				Kind:              k8sKindToGql(string(WorkloadKindDaemonSet)),
+				NumberOfInstances: &numberOfInstances,
 			})
 		}
 		return nil
@@ -233,23 +184,16 @@ func getDaemonSets(ctx context.Context, namespace corev1.Namespace, instrumentat
 	return response, nil
 }
 
-func getStatefulSets(ctx context.Context, namespace corev1.Namespace, instrumentationLabeled *bool) ([]model.K8sActualSource, error) {
+func getStatefulSets(ctx context.Context, namespace corev1.Namespace) ([]model.K8sActualSource, error) {
 	var response []model.K8sActualSource
 	err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.AppsV1().StatefulSets(namespace.Name).List, ctx, metav1.ListOptions{}, func(sss *appsv1.StatefulSetList) error {
 		for _, ss := range sss.Items {
-			_, _, decisionText, autoInstrumented := workload.GetInstrumentationLabelTexts(ss.GetLabels(), string(WorkloadKindStatefulSet), namespace.GetLabels())
-			if instrumentationLabeled != nil && *instrumentationLabeled != autoInstrumented {
-				continue
-			}
 			numberOfInstances := int(ss.Status.ReadyReplicas)
 			response = append(response, model.K8sActualSource{
-				Namespace:                      ss.Namespace,
-				Name:                           ss.Name,
-				Kind:                           k8sKindToGql(string(WorkloadKindStatefulSet)),
-				NumberOfInstances:              &numberOfInstances,
-				AutoInstrumented:               autoInstrumented,
-				AutoInstrumentedDecision:       decisionText,
-				InstrumentedApplicationDetails: nil, // TODO: fill this
+				Namespace:         ss.Namespace,
+				Name:              ss.Name,
+				Kind:              k8sKindToGql(string(WorkloadKindStatefulSet)),
+				NumberOfInstances: &numberOfInstances,
 			})
 		}
 		return nil
@@ -318,4 +262,84 @@ func updateAnnotations(annotations map[string]string, reportedName string) map[s
 		annotations[consts.OdigosReportedNameAnnotation] = reportedName
 	}
 	return annotations
+}
+
+func GetSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) (*v1alpha1.Source, error) {
+	source, err := kube.DefaultClient.OdigosClient.Sources(nsName).List(ctx, metav1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set{
+		consts.OdigosNamespaceAnnotation:    nsName,
+		consts.OdigosWorkloadNameAnnotation: workloadName,
+		consts.OdigosWorkloadKindAnnotation: string(workloadKind),
+	}).String()})
+
+	if err != nil {
+		return nil, err
+	}
+	if len(source.Items) == 0 {
+		return nil, fmt.Errorf(`source "%s" not found`, workloadName)
+	}
+	if len(source.Items) > 1 {
+		return nil, fmt.Errorf(`expected to get 1 source "%s", got %d`, workloadName, len(source.Items))
+	}
+
+	crdName := source.Items[0].Name
+	crd, err := kube.DefaultClient.OdigosClient.Sources(nsName).Get(ctx, crdName, metav1.GetOptions{})
+
+	return crd, err
+}
+
+func createSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) error {
+	err := CheckWorkloadKind(workloadKind)
+	if err != nil {
+		return err
+	}
+
+	source, err := GetSourceCRD(ctx, nsName, workloadName, workloadKind)
+	if source != nil && err == nil {
+		// we don't want to throw error, because we want to allow the UI to send an array of all sources even if instrumented
+		return nil
+	}
+
+	newSource := &v1alpha1.Source{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "source-",
+		},
+		Spec: v1alpha1.SourceSpec{
+			Workload: workload.PodWorkload{
+				Namespace: nsName,
+				Name:      workloadName,
+				Kind:      workload.WorkloadKind(workloadKind),
+			},
+		},
+	}
+
+	_, err = kube.DefaultClient.OdigosClient.Sources(nsName).Create(ctx, newSource, metav1.CreateOptions{})
+	return err
+}
+
+func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) error {
+	err := CheckWorkloadKind(workloadKind)
+	if err != nil {
+		return err
+	}
+
+	source, err := GetSourceCRD(ctx, nsName, workloadName, workloadKind)
+	if err != nil {
+		// we don't want to throw error, because we want to allow the UI to send an array of all sources even if not instrumented
+		return nil
+	}
+
+	err = kube.DefaultClient.OdigosClient.Sources(nsName).Delete(ctx, source.Name, metav1.DeleteOptions{})
+	return err
+}
+
+func ToggleSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind, enabled *bool) error {
+	if enabled == nil {
+		return fmt.Errorf("enabled must be provided")
+	}
+
+	if *enabled {
+		return createSourceCRD(ctx, nsName, workloadName, workloadKind)
+	} else {
+		return deleteSourceCRD(ctx, nsName, workloadName, workloadKind)
+	}
 }

@@ -150,12 +150,12 @@ func NewUIRole(ns string) *rbacv1.Role {
 				Resources: []string{"secrets"},
 				Verbs:     []string{"get", "list", "create", "patch", "update"},
 			},
-			{ // Needed for CRUD on Odigos entities
+			{ // Needed for CRUD on instr. rule and destinations
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"instrumentationrules", "destinations"},
 				Verbs:     []string{"get", "list", "create", "patch", "update", "delete"},
 			},
-			{ // Needed to watch Odigos entities
+			{ // Needed to notify UI about changes with destinations
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"destinations"},
 				Verbs:     []string{"watch"},
@@ -165,7 +165,7 @@ func NewUIRole(ns string) *rbacv1.Role {
 				Resources: []string{"collectorsgroups"},
 				Verbs:     []string{"get", "list"},
 			},
-			{ // Needed for CRUD on Pipeline Actions
+			{ // Needed for CRUD on pipeline actions
 				APIGroups: []string{"actions.odigos.io"},
 				Resources: []string{"*"},
 				Verbs:     []string{"get", "list", "create", "patch", "update", "delete"},
@@ -214,7 +214,7 @@ func NewUIClusterRole() *rbacv1.ClusterRole {
 				Resources: []string{"namespaces"},
 				Verbs:     []string{"get", "list", "patch"},
 			},
-			{ // Needed to instrument applications
+			{ // Needed to get and instrument sources
 				APIGroups: []string{"apps"},
 				Resources: []string{"deployments", "statefulsets", "daemonsets"},
 				Verbs:     []string{"get", "list", "patch", "update"},
@@ -230,14 +230,19 @@ func NewUIClusterRole() *rbacv1.ClusterRole {
 				Resources: []string{"services", "pods"},
 				Verbs:     []string{"get", "list"},
 			},
-			{ // Needed to read Odigos entities
+			{ // Needed to get sources
 				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentedapplications", "instrumentationinstances", "instrumentationconfigs"},
+				Resources: []string{"instrumentationconfigs", "instrumentationinstances"},
 				Verbs:     []string{"get", "list"},
 			},
-			{ // Needed to watch Odigos entities
+			{ // Needed to instrument / uninstrument sources
 				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentedapplications", "instrumentationinstances"},
+				Resources: []string{"sources"},
+				Verbs:     []string{"get", "list", "create", "delete"},
+			},
+			{ // Needed to notify UI about changes with sources
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"instrumentationconfigs", "instrumentationinstances"},
 				Verbs:     []string{"watch"},
 			},
 		},
