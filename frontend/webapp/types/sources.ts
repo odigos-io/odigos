@@ -13,10 +13,10 @@ export type K8sActualSource = {
   name: string;
   kind: string;
   numberOfInstances: number;
+  selected: boolean;
   reportedName: string;
   containers: Array<SourceContainer>;
   conditions: Array<Condition>;
-  selected?: boolean; // not from backend
 };
 
 export type WorkloadId = {
