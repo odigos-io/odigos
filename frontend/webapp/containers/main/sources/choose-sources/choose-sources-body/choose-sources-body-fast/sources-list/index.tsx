@@ -3,7 +3,7 @@ import Image from 'next/image';
 import theme from '@/styles/theme';
 import styled from 'styled-components';
 import { UseSourceFormDataResponse } from '@/hooks';
-import { Checkbox, Divider, ExtendIcon, NoDataFound, Text, Toggle } from '@/reuseable-components';
+import { Checkbox, Divider, ExtendIcon, FadeLoader, NoDataFound, Text, Toggle } from '@/reuseable-components';
 
 interface Props extends UseSourceFormDataResponse {
   isModal?: boolean;
@@ -89,6 +89,7 @@ const NoDataFoundWrapper = styled.div`
 
 export const SourcesList: React.FC<Props> = ({
   isModal = false,
+  namespacesLoading,
 
   selectedNamespace,
   onSelectNamespace,
@@ -101,18 +102,13 @@ export const SourcesList: React.FC<Props> = ({
   searchText,
   selectAllForNamespace,
   onSelectAll,
-  showSelectedOnly,
 
   filterSources,
 }) => {
   const namespaces = Object.entries(availableSources);
 
   if (!namespaces.length) {
-    return (
-      <NoDataFoundWrapper>
-        <NoDataFound title='No namespaces found' />
-      </NoDataFoundWrapper>
-    );
+    return <NoDataFoundWrapper>{namespacesLoading ? <FadeLoader style={{ transform: 'scale(2)' }} /> : <NoDataFound title='No namespaces found' />}</NoDataFoundWrapper>;
   }
 
   return (

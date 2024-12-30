@@ -2,7 +2,7 @@ import React from 'react';
 import { FolderIcon } from '@/assets';
 import styled from 'styled-components';
 import { type UseSourceFormDataResponse } from '@/hooks';
-import { Checkbox, NoDataFound, Text } from '@/reuseable-components';
+import { Checkbox, FadeLoader, NoDataFound, Text } from '@/reuseable-components';
 
 interface Props extends UseSourceFormDataResponse {
   isModal?: boolean;
@@ -74,6 +74,7 @@ const NoDataFoundWrapper = styled.div`
 
 export const SourcesList: React.FC<Props> = ({
   isModal = false,
+  namespacesLoading,
 
   selectedNamespace,
   availableSources,
@@ -85,11 +86,7 @@ export const SourcesList: React.FC<Props> = ({
   const sources = availableSources[selectedNamespace] || [];
 
   if (!sources.length) {
-    return (
-      <NoDataFoundWrapper>
-        <NoDataFound title='No sources found' />
-      </NoDataFoundWrapper>
-    );
+    return <NoDataFoundWrapper>{namespacesLoading ? <FadeLoader style={{ transform: 'scale(2)' }} /> : <NoDataFound title='No namespaces found' />}</NoDataFoundWrapper>;
   }
 
   return (
