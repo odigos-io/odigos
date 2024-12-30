@@ -111,15 +111,6 @@ func IsInstrumentationDisabledExplicitly(obj client.Object) bool {
 	return false
 }
 
-func GetInstrumentationLabelValue(labels map[string]string) *bool {
-	if val, exists := labels[consts.OdigosInstrumentationLabel]; exists {
-		enabled := val == consts.InstrumentationEnabled
-		return &enabled
-	}
-
-	return nil
-}
-
 func GetWorkloadObject(ctx context.Context, objectKey client.ObjectKey, kind WorkloadKind, kubeClient client.Client) (metav1.Object, error) {
 	switch kind {
 	case WorkloadKindDeployment:

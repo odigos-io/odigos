@@ -296,9 +296,8 @@ type InstrumentationRuleInput struct {
 }
 
 type K8sActualNamespace struct {
-	Name                        string             `json:"name"`
-	InstrumentationLabelEnabled *bool              `json:"instrumentationLabelEnabled,omitempty"`
-	K8sActualSources            []*K8sActualSource `json:"k8sActualSources"`
+	Name             string             `json:"name"`
+	K8sActualSources []*K8sActualSource `json:"k8sActualSources"`
 }
 
 type K8sActualSource struct {
@@ -306,6 +305,7 @@ type K8sActualSource struct {
 	Name              string                           `json:"name"`
 	Kind              K8sResourceKind                  `json:"kind"`
 	NumberOfInstances *int                             `json:"numberOfInstances,omitempty"`
+	Selected          *bool                            `json:"selected,omitempty"`
 	ReportedName      *string                          `json:"reportedName,omitempty"`
 	Containers        []*SourceContainerRuntimeDetails `json:"containers,omitempty"`
 	Conditions        []*Condition                     `json:"conditions,omitempty"`

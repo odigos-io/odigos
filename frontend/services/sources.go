@@ -97,7 +97,7 @@ func AddHealthyInstrumentationInstancesCondition(ctx context.Context, instruConf
 	return nil
 }
 
-func GetWorkloadsInNamespace(ctx context.Context, nsName string, instrumentationLabeled *bool) ([]model.K8sActualSource, error) {
+func GetWorkloadsInNamespace(ctx context.Context, nsName string) ([]model.K8sActualSource, error) {
 	namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, nsName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
@@ -112,19 +112,19 @@ func GetWorkloadsInNamespace(ctx context.Context, nsName string, instrumentation
 
 	g.Go(func() error {
 		var err error
-		deps, err = getDeployments(ctx, *namespace, instrumentationLabeled)
+		deps, err = getDeployments(ctx, *namespace)
 		return err
 	})
 
 	g.Go(func() error {
 		var err error
-		ss, err = getStatefulSets(ctx, *namespace, instrumentationLabeled)
+		ss, err = getStatefulSets(ctx, *namespace)
 		return err
 	})
 
 	g.Go(func() error {
 		var err error
-		dss, err = getDaemonSets(ctx, *namespace, instrumentationLabeled)
+		dss, err = getDaemonSets(ctx, *namespace)
 		return err
 	})
 
@@ -140,7 +140,7 @@ func GetWorkloadsInNamespace(ctx context.Context, nsName string, instrumentation
 	return items, nil
 }
 
-func getDeployments(ctx context.Context, namespace corev1.Namespace, instrumentationLabeled *bool) ([]model.K8sActualSource, error) {
+func getDeployments(ctx context.Context, namespace corev1.Namespace) ([]model.K8sActualSource, error) {
 	var response []model.K8sActualSource
 	err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.AppsV1().Deployments(namespace.Name).List, ctx, metav1.ListOptions{}, func(deps *appsv1.DeploymentList) error {
 		for _, dep := range deps.Items {
@@ -162,7 +162,7 @@ func getDeployments(ctx context.Context, namespace corev1.Namespace, instrumenta
 	return response, nil
 }
 
-func getDaemonSets(ctx context.Context, namespace corev1.Namespace, instrumentationLabeled *bool) ([]model.K8sActualSource, error) {
+func getDaemonSets(ctx context.Context, namespace corev1.Namespace) ([]model.K8sActualSource, error) {
 	var response []model.K8sActualSource
 	err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.AppsV1().DaemonSets(namespace.Name).List, ctx, metav1.ListOptions{}, func(dss *appsv1.DaemonSetList) error {
 		for _, ds := range dss.Items {
@@ -184,7 +184,7 @@ func getDaemonSets(ctx context.Context, namespace corev1.Namespace, instrumentat
 	return response, nil
 }
 
-func getStatefulSets(ctx context.Context, namespace corev1.Namespace, instrumentationLabeled *bool) ([]model.K8sActualSource, error) {
+func getStatefulSets(ctx context.Context, namespace corev1.Namespace) ([]model.K8sActualSource, error) {
 	var response []model.K8sActualSource
 	err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.AppsV1().StatefulSets(namespace.Name).List, ctx, metav1.ListOptions{}, func(sss *appsv1.StatefulSetList) error {
 		for _, ss := range sss.Items {
@@ -264,7 +264,7 @@ func updateAnnotations(annotations map[string]string, reportedName string) map[s
 	return annotations
 }
 
-func getSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) (*v1alpha1.Source, error) {
+func GetSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) (*v1alpha1.Source, error) {
 	source, err := kube.DefaultClient.OdigosClient.Sources(nsName).List(ctx, metav1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set{
 		consts.OdigosNamespaceAnnotation:    nsName,
 		consts.OdigosWorkloadNameAnnotation: workloadName,
@@ -293,7 +293,7 @@ func createSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		return err
 	}
 
-	source, err := getSourceCRD(ctx, nsName, workloadName, workloadKind)
+	source, err := GetSourceCRD(ctx, nsName, workloadName, workloadKind)
 	if source != nil && err == nil {
 		return fmt.Errorf(`source "%s" already exists`, workloadName)
 	}
@@ -321,7 +321,7 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		return err
 	}
 
-	source, err := getSourceCRD(ctx, nsName, workloadName, workloadKind)
+	source, err := GetSourceCRD(ctx, nsName, workloadName, workloadKind)
 	if err != nil {
 		return err
 	}

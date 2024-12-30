@@ -52,7 +52,7 @@ export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFo
   const [availableSources, setAvailableSources] = useState<SourcesByNamespace>(appStore.availableSources);
   const [selectedSources, setSelectedSources] = useState<SourcesByNamespace>(appStore.configuredSources);
   const [selectedFutureApps, setSelectedFutureApps] = useState<FutureAppsByNamespace>(appStore.configuredFutureApps);
-  const { allNamespaces, data: namespacesData, loading: namespacesLoading } = useNamespace(selectedNamespace, false);
+  const { allNamespaces, data: namespacesData, loading: namespacesLoading } = useNamespace(selectedNamespace);
 
   useEffect(() => {
     if (!!allNamespaces?.length) {
@@ -78,7 +78,7 @@ export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFo
       // set available sources for current selected namespace
       const { name, k8sActualSources = [] } = namespacesData;
       setAvailableSources((prev) => ({ ...prev, [name]: k8sActualSources }));
-      setSelectedSources((prev) => ({ ...prev, [name]: prev[name] || [] }));
+      setSelectedSources((prev) => ({ ...prev, [name]: prev[name] || k8sActualSources.filter(({ selected }) => selected) }));
     }
   }, [namespacesData]);
 

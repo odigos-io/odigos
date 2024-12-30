@@ -11,6 +11,7 @@ export const GET_COMPUTE_PLATFORM = gql`
         name
         kind
         numberOfInstances
+        selected
         reportedName
         containers {
           containerName
@@ -102,15 +103,15 @@ export const GET_COMPUTE_PLATFORM = gql`
 `;
 
 export const GET_NAMESPACES = gql`
-  query GetK8sActualNamespace($namespaceName: String!, $instrumentationLabeled: Boolean) {
+  query GetK8sActualNamespace($namespaceName: String!) {
     computePlatform {
       k8sActualNamespace(name: $namespaceName) {
         name
-        instrumentationLabelEnabled
-        k8sActualSources(instrumentationLabeled: $instrumentationLabeled) {
+        k8sActualSources {
           kind
           name
           numberOfInstances
+          selected
         }
       }
     }
