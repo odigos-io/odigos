@@ -15,13 +15,14 @@ export const useInstrumentationRuleCRUD = (params?: Params) => {
   const { data, refetch } = useComputePlatform();
   const { addNotification } = useNotificationStore();
 
-  const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string) => {
+  const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
     addNotification({
       type,
       title,
       message,
       crdType: OVERVIEW_ENTITY_TYPES.RULE,
       target: id ? getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.RULE) : undefined,
+      hideFromHistory,
     });
   };
 
@@ -57,15 +58,15 @@ export const useInstrumentationRuleCRUD = (params?: Params) => {
     instrumentationRules: data?.computePlatform?.instrumentationRules || [],
 
     createInstrumentationRule: (instrumentationRule: InstrumentationRuleInput) => {
-      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'creating instrumentation rule...');
+      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'creating instrumentation rule...', undefined, true);
       createInstrumentationRule({ variables: { instrumentationRule } });
     },
     updateInstrumentationRule: (ruleId: string, instrumentationRule: InstrumentationRuleInput) => {
-      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'updating instrumentation rule...');
+      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'updating instrumentation rule...', undefined, true);
       updateInstrumentationRule({ variables: { ruleId, instrumentationRule } });
     },
     deleteInstrumentationRule: (ruleId: string) => {
-      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'deleting instrumentation rule...');
+      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'deleting instrumentation rule...', undefined, true);
       deleteInstrumentationRule({ variables: { ruleId } });
     },
   };

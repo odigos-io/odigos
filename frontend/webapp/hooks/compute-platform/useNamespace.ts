@@ -20,7 +20,7 @@ export const useNamespace = (namespaceName?: string, instrumentationLabeled = nu
       addNotification({
         type: NOTIFICATION_TYPE.ERROR,
         title: error.name || ACTION.FETCH,
-        message: error.message,
+        message: error.cause?.message || error.message,
       }),
   });
 

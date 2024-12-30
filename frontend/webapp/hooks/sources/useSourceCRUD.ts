@@ -31,13 +31,14 @@ export const useSourceCRUD = (params?: Params) => {
     }
   }, [refetch]);
 
-  const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: WorkloadId) => {
+  const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: WorkloadId, hideFromHistory?: boolean) => {
     addNotification({
       type,
       title,
       message,
       crdType: OVERVIEW_ENTITY_TYPES.SOURCE,
       target: id ? getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.SOURCE) : undefined,
+      hideFromHistory,
     });
   };
 
@@ -106,16 +107,16 @@ export const useSourceCRUD = (params?: Params) => {
     sources: data?.computePlatform.k8sActualSources || [],
 
     createSources: async (selectAppsList: { [key: string]: K8sActualSource[] }, futureSelectAppsList: { [key: string]: boolean }) => {
-      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'creating sources...');
+      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'creating sources...', undefined, true);
       await persistNamespaces(futureSelectAppsList);
       await persistSources(selectAppsList, true);
     },
     updateSource: async (sourceId: WorkloadId, patchSourceRequest: PatchSourceRequestInput) => {
-      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'updating sources...');
+      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'updating sources...', undefined, true);
       await updateSource({ variables: { sourceId, patchSourceRequest } });
     },
     deleteSources: async (selectAppsList: { [key: string]: K8sActualSource[] }) => {
-      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'deleting sources...');
+      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'deleting sources...', undefined, true);
       await persistSources(selectAppsList, false);
     },
   };

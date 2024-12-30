@@ -4,18 +4,6 @@ import { NOTIFICATION_TYPE } from '@/types';
 import { useComputePlatform } from '../compute-platform';
 import { type NotifyPayload, useConnectionStore, useNotificationStore } from '@/store';
 
-const modifyType = (notification: NotifyPayload) => {
-  if (notification.title === 'Modified') {
-    if (notification.message?.indexOf('ProcessTerminated') === 0 || notification.message?.indexOf('NoHeartbeat') === 0 || notification.message?.indexOf('Failed') === 0) {
-      return NOTIFICATION_TYPE.ERROR;
-    } else {
-      return NOTIFICATION_TYPE.INFO;
-    }
-  }
-
-  return notification.type;
-};
-
 export const useSSE = () => {
   const { addNotification } = useNotificationStore();
   const { setConnectionStore } = useConnectionStore();
@@ -39,8 +27,6 @@ export const useSSE = () => {
           crdType: data.crdType,
           target: data.target,
         };
-
-        // notification.type = modifyType(notification);
 
         // Dispatch the notification to the store
         addNotification(notification);

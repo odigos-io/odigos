@@ -29,6 +29,7 @@ export interface Notification {
   target?: string;
   dismissed: boolean;
   seen: boolean;
+  hideFromHistory?: boolean;
   time: string;
 }
 
