@@ -25,10 +25,10 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 			Event:        sse.MessageEventAdded,
 			CRDType:      consts.InstrumentationConfig,
 			SuccessBatchMessageFunc: func(count int, crdType string) string {
-				return fmt.Sprintf("Successfully added %d sources", count)
+				return fmt.Sprintf("Successfully created %d sources", count)
 			},
 			FailureBatchMessageFunc: func(count int, crdType string) string {
-				return fmt.Sprintf("Failed to add %d sources", count)
+				return fmt.Sprintf("Failed to create %d sources", count)
 			},
 		},
 	)
@@ -40,10 +40,10 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 			Event:        sse.MessageEventDeleted,
 			CRDType:      consts.InstrumentationConfig,
 			SuccessBatchMessageFunc: func(count int, crdType string) string {
-				return fmt.Sprintf("Successfully removed %d sources", count)
+				return fmt.Sprintf("Successfully deleted %d sources", count)
 			},
 			FailureBatchMessageFunc: func(count int, crdType string) string {
-				return fmt.Sprintf("Failed to remove %d sources", count)
+				return fmt.Sprintf("Failed to delete %d sources", count)
 			},
 		},
 	)
@@ -89,7 +89,7 @@ func handleAddedEvent(instruConfig *v1alpha1.InstrumentationConfig) {
 	}
 
 	target := fmt.Sprintf("namespace=%s&name=%s&kind=%s", namespace, name, kind)
-	data := fmt.Sprintf(`Successfully added "%s" source`, name)
+	data := fmt.Sprintf(`Source "%s" created`, name)
 	addedEventBatcher.AddEvent(sse.MessageTypeSuccess, data, target)
 }
 
@@ -102,6 +102,6 @@ func handleDeletedEvent(instruConfig *v1alpha1.InstrumentationConfig) {
 	}
 
 	target := fmt.Sprintf("namespace=%s&name=%s&kind=%s", namespace, name, kind)
-	data := fmt.Sprintf(`Successfully removed "%s" source`, name)
+	data := fmt.Sprintf(`Source "%s" deleted`, name)
 	deletedEventBatcher.AddEvent(sse.MessageTypeSuccess, data, target)
 }

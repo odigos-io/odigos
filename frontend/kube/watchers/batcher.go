@@ -141,21 +141,21 @@ func (eb *EventBatcher) prepareBatchMessage() []sse.SSEMessage {
 	var result []sse.SSEMessage
 	if successCount > 0 {
 		result = append(result, sse.SSEMessage{
-			Event:   eb.config.Event,
 			Type:    sse.MessageTypeSuccess,
-			Target:  "",
+			Event:   eb.config.Event,
 			Data:    eb.config.SuccessBatchMessageFunc(successCount, eb.config.CRDType),
 			CRDType: eb.config.CRDType,
+			Target:  "",
 		})
 	}
 
 	if failureCount > 0 {
 		result = append(result, sse.SSEMessage{
-			Event:   eb.config.Event,
 			Type:    sse.MessageTypeError,
-			Target:  "",
+			Event:   eb.config.Event,
 			Data:    eb.config.FailureBatchMessageFunc(failureCount, eb.config.CRDType),
 			CRDType: eb.config.CRDType,
+			Target:  "",
 		})
 	}
 	return result

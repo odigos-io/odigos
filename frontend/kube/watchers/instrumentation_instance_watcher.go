@@ -21,8 +21,8 @@ func StartInstrumentationInstanceWatcher(ctx context.Context, namespace string) 
 		EventBatcherConfig{
 			MinBatchSize: 1,
 			Duration:     10 * time.Second,
-			Event:        sse.MessageEventModified,
 			MessageType:  sse.MessageTypeError,
+			Event:        sse.MessageEventModified,
 			CRDType:      consts.InstrumentationInstance,
 			FailureBatchMessageFunc: func(batchSize int, crd string) string {
 				return fmt.Sprintf("Failed to instrument %d instances", batchSize)
@@ -82,7 +82,6 @@ func handleModifiedInstrumentationInstance(instruInsta *v1alpha1.Instrumentation
 	}
 
 	target := fmt.Sprintf("name=%s&kind=%s&namespace=%s", name, kind, namespace)
-	data := fmt.Sprintf("%s %s", instruInsta.Status.Reason, instruInsta.Status.Message)
-	fmt.Printf("%s %s modified\n", consts.InstrumentationInstance, name)
+	data := fmt.Sprintf(`%s "%s" %s: %s`, consts.InstrumentationInstance, name, instruInsta.Status.Reason, instruInsta.Status.Message)
 	modifiedBatcher.AddEvent(sse.MessageTypeError, data, target)
 }
