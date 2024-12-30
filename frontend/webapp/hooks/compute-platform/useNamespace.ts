@@ -1,3 +1,4 @@
+import { ACTION } from '@/utils';
 import { useNotificationStore } from '@/store';
 import { useMutation, useQuery } from '@apollo/client';
 import { useComputePlatform } from './useComputePlatform';
@@ -8,14 +9,6 @@ export const useNamespace = (namespaceName?: string, instrumentationLabeled = nu
   const { addNotification } = useNotificationStore();
   const cp = useComputePlatform();
 
-  const handleError = (title: string, message: string) => {
-    addNotification({ type: NOTIFICATION_TYPE.ERROR, title, message });
-  };
-
-  const handleComplete = (title: string, message: string) => {
-    addNotification({ type: NOTIFICATION_TYPE.SUCCESS, title, message });
-  };
-
   const { data, loading, error } = useQuery<ComputePlatform>(GET_NAMESPACES, {
     skip: !namespaceName,
     fetchPolicy: 'cache-first',
@@ -23,8 +16,12 @@ export const useNamespace = (namespaceName?: string, instrumentationLabeled = nu
   });
 
   const [persistNamespaceMutation] = useMutation(PERSIST_NAMESPACE, {
-    onError: (error) => handleError('', error.message),
-    onCompleted: (res, req) => {},
+    onError: (error) =>
+      addNotification({
+        type: NOTIFICATION_TYPE.ERROR,
+        title: error.name || ACTION.FETCH,
+        message: error.message,
+      }),
   });
 
   return {

@@ -40,7 +40,7 @@ export const useSSE = () => {
           target: data.target,
         };
 
-        notification.type = modifyType(notification);
+        // notification.type = modifyType(notification);
 
         // Dispatch the notification to the store
         addNotification(notification);

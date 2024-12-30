@@ -25,63 +25,47 @@ export const useDestinationCRUD = (params?: Params) => {
     });
   };
 
-  const handleError = (title: string, message: string, id?: string) => {
-    notifyUser(NOTIFICATION_TYPE.ERROR, title, message, id);
-    params?.onError?.(title);
+  const handleError = (actionType: string, message: string) => {
+    notifyUser(NOTIFICATION_TYPE.ERROR, actionType, message);
+    params?.onError?.(actionType);
   };
 
-  const handleComplete = (title: string, message: string, id?: string) => {
-    notifyUser(NOTIFICATION_TYPE.SUCCESS, title, message, id);
+  const handleComplete = (actionType: string) => {
     refetch();
-    params?.onSuccess?.(title);
+    params?.onSuccess?.(actionType);
   };
 
-  const [createDestination, cState] = useMutation<{
-    createNewDestination: { id: string };
-  }>(CREATE_DESTINATION, {
+  const [createDestination, cState] = useMutation<{ createNewDestination: { id: string } }>(CREATE_DESTINATION, {
     onError: (error) => handleError(ACTION.CREATE, error.message),
-    onCompleted: (res, req) => {
-      const id = res.createNewDestination.id;
-      const type = req?.variables?.destination.type;
-      const name = req?.variables?.destination.name;
-      const label = `${type}${!!name ? ` (${name})` : ''}`;
-      handleComplete(ACTION.CREATE, `destination "${label}" was created`, id);
-    },
+    onCompleted: () => handleComplete(ACTION.CREATE),
   });
-  const [updateDestination, uState] = useMutation<{
-    updateDestination: { id: string };
-  }>(UPDATE_DESTINATION, {
+  const [updateDestination, uState] = useMutation<{ updateDestination: { id: string } }>(UPDATE_DESTINATION, {
     onError: (error) => handleError(ACTION.UPDATE, error.message),
-    onCompleted: (res, req) => {
-      const id = res.updateDestination.id;
-      const type = req?.variables?.destination.type;
-      const name = req?.variables?.destination.name;
-      const label = `${type}${!!name ? ` (${name})` : ''}`;
-      handleComplete(ACTION.UPDATE, `destination "${label}" was updated`, id);
-    },
+    onCompleted: () => handleComplete(ACTION.UPDATE),
   });
-  const [deleteDestination, dState] = useMutation<{
-    deleteDestination: boolean;
-  }>(DELETE_DESTINATION, {
+  const [deleteDestination, dState] = useMutation<{ deleteDestination: boolean }>(DELETE_DESTINATION, {
     onError: (error) => handleError(ACTION.DELETE, error.message),
     onCompleted: (res, req) => {
       const id = req?.variables?.id;
       removeNotifications(getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.DESTINATION));
-      handleComplete(ACTION.DELETE, `destination "${id}" was deleted`);
+      handleComplete(ACTION.DELETE);
     },
   });
 
   return {
     loading: cState.loading || uState.loading || dState.loading,
-    destinations: data?.computePlatform.destinations || [],
+    destinations: data?.computePlatform?.destinations || [],
 
     createDestination: (destination: DestinationInput) => {
+      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'creating destination...');
       createDestination({ variables: { destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
     },
     updateDestination: (id: string, destination: DestinationInput) => {
+      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'updating destination...');
       updateDestination({ variables: { id, destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
     },
     deleteDestination: (id: string) => {
+      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'deleting destination...');
       deleteDestination({ variables: { id } });
     },
   };

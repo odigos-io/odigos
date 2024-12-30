@@ -1,7 +1,7 @@
 import { useMutation } from '@apollo/client';
 import { useNotificationStore } from '@/store';
+import { ACTION, getSseTargetFromId } from '@/utils';
 import { useComputePlatform } from '../compute-platform';
-import { ACTION, deriveTypeFromRule, getSseTargetFromId } from '@/utils';
 import { NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES, type InstrumentationRuleInput } from '@/types';
 import { CREATE_INSTRUMENTATION_RULE, UPDATE_INSTRUMENTATION_RULE, DELETE_INSTRUMENTATION_RULE } from '@/graphql/mutations';
 
@@ -25,58 +25,48 @@ export const useInstrumentationRuleCRUD = (params?: Params) => {
     });
   };
 
-  const handleError = (title: string, message: string, id?: string) => {
-    notifyUser(NOTIFICATION_TYPE.ERROR, title, message, id);
+  const handleError = (title: string, message: string) => {
+    notifyUser(NOTIFICATION_TYPE.ERROR, title, message);
     params?.onError?.(title);
   };
 
-  const handleComplete = (title: string, message: string, id?: string) => {
-    notifyUser(NOTIFICATION_TYPE.SUCCESS, title, message, id);
+  const handleComplete = (title: string) => {
     refetch();
     params?.onSuccess?.(title);
   };
 
-  const [createInstrumentationRule, cState] = useMutation<{
-    createInstrumentationRule: { ruleId: string };
-  }>(CREATE_INSTRUMENTATION_RULE, {
+  const [createInstrumentationRule, cState] = useMutation<{ createInstrumentationRule: { ruleId: string } }>(CREATE_INSTRUMENTATION_RULE, {
     onError: (error) => handleError(ACTION.CREATE, error.message),
-    onCompleted: (res, req) => {
-      const id = res.createInstrumentationRule.ruleId;
-      const type = deriveTypeFromRule(req?.variables?.instrumentationRule);
-      const name = req?.variables?.instrumentationRule.ruleName;
-      const label = `${type}${!!name ? ` (${name})` : ''}`;
-      handleComplete(ACTION.CREATE, `instrumentation rule "${label}" was created`, id);
-    },
+    onCompleted: () => handleComplete(ACTION.CREATE),
   });
-  const [updateInstrumentationRule, uState] = useMutation<{
-    updateInstrumentationRule: { ruleId: string };
-  }>(UPDATE_INSTRUMENTATION_RULE, {
+  const [updateInstrumentationRule, uState] = useMutation<{ updateInstrumentationRule: { ruleId: string } }>(UPDATE_INSTRUMENTATION_RULE, {
     onError: (error) => handleError(ACTION.UPDATE, error.message),
-    onCompleted: (res, req) => {
-      const id = res.updateInstrumentationRule.ruleId;
-      const type = deriveTypeFromRule(req?.variables?.instrumentationRule);
-      const name = req?.variables?.instrumentationRule.ruleName;
-      const label = `${type}${!!name ? ` (${name})` : ''}`;
-      handleComplete(ACTION.UPDATE, `instrumentation rule "${label}" was updated`, id);
-    },
+    onCompleted: () => handleComplete(ACTION.UPDATE),
   });
-  const [deleteInstrumentationRule, dState] = useMutation<{
-    deleteInstrumentationRule: boolean;
-  }>(DELETE_INSTRUMENTATION_RULE, {
+  const [deleteInstrumentationRule, dState] = useMutation<{ deleteInstrumentationRule: boolean }>(DELETE_INSTRUMENTATION_RULE, {
     onError: (error) => handleError(ACTION.DELETE, error.message),
     onCompleted: (res, req) => {
       const id = req?.variables?.ruleId;
       removeNotifications(getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.RULE));
-      handleComplete(ACTION.DELETE, `instrumentation rule "${id}" was deleted`);
+      handleComplete(ACTION.DELETE);
     },
   });
 
   return {
     loading: cState.loading || uState.loading || dState.loading,
-    instrumentationRules: data?.computePlatform.instrumentationRules || [],
+    instrumentationRules: data?.computePlatform?.instrumentationRules || [],
 
-    createInstrumentationRule: (instrumentationRule: InstrumentationRuleInput) => createInstrumentationRule({ variables: { instrumentationRule } }),
-    updateInstrumentationRule: (ruleId: string, instrumentationRule: InstrumentationRuleInput) => updateInstrumentationRule({ variables: { ruleId, instrumentationRule } }),
-    deleteInstrumentationRule: (ruleId: string) => deleteInstrumentationRule({ variables: { ruleId } }),
+    createInstrumentationRule: (instrumentationRule: InstrumentationRuleInput) => {
+      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'creating instrumentation rule...');
+      createInstrumentationRule({ variables: { instrumentationRule } });
+    },
+    updateInstrumentationRule: (ruleId: string, instrumentationRule: InstrumentationRuleInput) => {
+      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'updating instrumentation rule...');
+      updateInstrumentationRule({ variables: { ruleId, instrumentationRule } });
+    },
+    deleteInstrumentationRule: (ruleId: string) => {
+      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'deleting instrumentation rule...');
+      deleteInstrumentationRule({ variables: { ruleId } });
+    },
   };
 };
