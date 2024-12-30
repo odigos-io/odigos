@@ -76,7 +76,3 @@ type AddClusterInfoList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []AddClusterInfo `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&AddClusterInfo{}, &AddClusterInfoList{})
-}

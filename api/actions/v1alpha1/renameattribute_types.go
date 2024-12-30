@@ -67,7 +67,3 @@ type RenameAttributeList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []RenameAttribute `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&RenameAttribute{}, &RenameAttributeList{})
-}

@@ -92,10 +92,6 @@ type ProcessorList struct {
 	Items           []Processor `json:"items"`
 }
 
-func init() {
-	SchemeBuilder.Register(&Processor{}, &ProcessorList{})
-}
-
 /* Implement common.ProcessorConfigurer */
 func (processor Processor) GetID() string {
 	return processor.Name
