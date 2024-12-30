@@ -29,6 +29,7 @@ func StartInstrumentationInstanceWatcher(ctx context.Context, namespace string) 
 			},
 		},
 	)
+
 	watcher, err := kube.DefaultClient.OdigosClient.InstrumentationInstances(namespace).Watch(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("error creating watcher: %v", err)

@@ -3,6 +3,7 @@ package watchers
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
@@ -12,7 +13,56 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 )
 
+var destinationAddedEventBatcher *EventBatcher
+var destinationModifiedBatcher *EventBatcher
+var destinationDeletedEventBatcher *EventBatcher
+
 func StartDestinationWatcher(ctx context.Context, namespace string) error {
+	destinationAddedEventBatcher = NewEventBatcher(
+		EventBatcherConfig{
+			MinBatchSize: 1,
+			Duration:     10 * time.Second,
+			Event:        sse.MessageEventAdded,
+			CRDType:      consts.Destination,
+			SuccessBatchMessageFunc: func(count int, crdType string) string {
+				return fmt.Sprintf("Successfully created %d destinations", count)
+			},
+			FailureBatchMessageFunc: func(count int, crdType string) string {
+				return fmt.Sprintf("Failed to create %d destinations", count)
+			},
+		},
+	)
+
+	destinationModifiedBatcher = NewEventBatcher(
+		EventBatcherConfig{
+			MinBatchSize: 1,
+			Duration:     10 * time.Second,
+			Event:        sse.MessageEventModified,
+			CRDType:      consts.Destination,
+			SuccessBatchMessageFunc: func(batchSize int, crd string) string {
+				return fmt.Sprintf("Successfully transformed %d destinations to otelcol configuration", batchSize)
+			},
+			FailureBatchMessageFunc: func(batchSize int, crd string) string {
+				return fmt.Sprintf("Failed to transform %d destinations to otelcol configuration", batchSize)
+			},
+		},
+	)
+
+	destinationDeletedEventBatcher = NewEventBatcher(
+		EventBatcherConfig{
+			MinBatchSize: 1,
+			Duration:     10 * time.Second,
+			Event:        sse.MessageEventDeleted,
+			CRDType:      consts.Destination,
+			SuccessBatchMessageFunc: func(count int, crdType string) string {
+				return fmt.Sprintf("Successfully deleted %d destinations", count)
+			},
+			FailureBatchMessageFunc: func(count int, crdType string) string {
+				return fmt.Sprintf("Failed to delete %d destinations", count)
+			},
+		},
+	)
+
 	watcher, err := kube.DefaultClient.OdigosClient.Destinations(namespace).Watch(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("error creating watcher: %v", err)
@@ -24,6 +74,9 @@ func StartDestinationWatcher(ctx context.Context, namespace string) error {
 
 func handleDestinationWatchEvents(ctx context.Context, watcher watch.Interface) {
 	ch := watcher.ResultChan()
+	defer destinationAddedEventBatcher.Cancel()
+	defer destinationModifiedBatcher.Cancel()
+	defer destinationDeletedEventBatcher.Cancel()
 	for {
 		select {
 		case <-ctx.Done():
@@ -51,14 +104,9 @@ func handleAddedDestination(destination *v1alpha1.Destination) {
 		name = string(destination.Spec.Type)
 	}
 
+	target := destination.Name
 	data := fmt.Sprintf(`%s "%s" created`, consts.Destination, name)
-	sse.SendMessageToClient(sse.SSEMessage{
-		Type:    sse.MessageTypeSuccess,
-		Event:   sse.MessageEventAdded,
-		Data:    data,
-		CRDType: consts.Destination,
-		Target:  destination.Name,
-	})
+	destinationAddedEventBatcher.AddEvent(sse.MessageTypeSuccess, data, target)
 }
 
 func handleModifiedDestination(destination *v1alpha1.Destination) {
@@ -67,6 +115,7 @@ func handleModifiedDestination(destination *v1alpha1.Destination) {
 		return
 	}
 
+	target := destination.Name
 	lastCondition := destination.Status.Conditions[length-1]
 	data := lastCondition.Message
 
@@ -77,13 +126,7 @@ func handleModifiedDestination(destination *v1alpha1.Destination) {
 		conditionType = sse.MessageTypeError
 	}
 
-	sse.SendMessageToClient(sse.SSEMessage{
-		Type:    conditionType,
-		Event:   sse.MessageEventModified,
-		Data:    data,
-		CRDType: consts.Destination,
-		Target:  destination.Name,
-	})
+	destinationModifiedBatcher.AddEvent(conditionType, data, target)
 }
 
 func handleDeletedDestination(destination *v1alpha1.Destination) {
@@ -92,12 +135,7 @@ func handleDeletedDestination(destination *v1alpha1.Destination) {
 		name = string(destination.Spec.Type)
 	}
 
+	target := destination.Name
 	data := fmt.Sprintf(`%s "%s" deleted`, consts.Destination, name)
-	sse.SendMessageToClient(sse.SSEMessage{
-		Type:    sse.MessageTypeSuccess,
-		Event:   sse.MessageEventDeleted,
-		Data:    data,
-		CRDType: consts.Destination,
-		Target:  destination.Name,
-	})
+	destinationDeletedEventBatcher.AddEvent(sse.MessageTypeSuccess, data, target)
 }
