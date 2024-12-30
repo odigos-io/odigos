@@ -18,6 +18,7 @@ const (
 	OdigosNamespaceAnnotation    = "odigos.io/workload-namespace"
 	OdigosWorkloadKindAnnotation = "odigos.io/workload-kind"
 	OdigosWorkloadNameAnnotation = "odigos.io/workload-name"
+	OdigosWorkloadExcludedLabel  = "odigos.io/excluded"
 	OdigosReportedNameAnnotation = "odigos.io/reported-name"
 
 	// GatewayMaxConnectionAge and GatewayMaxConnectionAgeGrace are the default values for the gateway collector.
