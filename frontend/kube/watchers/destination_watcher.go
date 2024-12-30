@@ -51,7 +51,7 @@ func handleAddedDestination(destination *v1alpha1.Destination) {
 		name = string(destination.Spec.Type)
 	}
 
-	data := fmt.Sprintf(`Successfully added "%s" %s`, name, consts.Destination)
+	data := fmt.Sprintf(`%s "%s" created`, consts.Destination, name)
 	sse.SendMessageToClient(sse.SSEMessage{
 		Type:    sse.MessageTypeSuccess,
 		Event:   sse.MessageEventAdded,
@@ -69,8 +69,11 @@ func handleModifiedDestination(destination *v1alpha1.Destination) {
 
 	lastCondition := destination.Status.Conditions[length-1]
 	data := lastCondition.Message
-	conditionType := sse.MessageTypeSuccess
-	if lastCondition.Status == metav1.ConditionFalse {
+
+	conditionType := sse.MessageTypeInfo
+	if lastCondition.Status == metav1.ConditionTrue {
+		conditionType = sse.MessageTypeSuccess
+	} else if lastCondition.Status == metav1.ConditionFalse {
 		conditionType = sse.MessageTypeError
 	}
 
@@ -89,7 +92,7 @@ func handleDeletedDestination(destination *v1alpha1.Destination) {
 		name = string(destination.Spec.Type)
 	}
 
-	data := fmt.Sprintf(`Successfully removed "%s" %s`, name, consts.Destination)
+	data := fmt.Sprintf(`%s "%s" deleted`, consts.Destination, name)
 	sse.SendMessageToClient(sse.SSEMessage{
 		Type:    sse.MessageTypeSuccess,
 		Event:   sse.MessageEventDeleted,
