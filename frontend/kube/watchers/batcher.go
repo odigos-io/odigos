@@ -83,11 +83,11 @@ func (eb *EventBatcher) AddEvent(msgType sse.MessageType, data, target string) e
 	defer eb.mu.Unlock()
 
 	message := sse.SSEMessage{
-		Event:   eb.config.Event,
 		Type:    msgType,
-		Target:  target,
+		Event:   eb.config.Event,
 		Data:    data,
 		CRDType: eb.config.CRDType,
+		Target:  target,
 	}
 
 	eb.batch = append(eb.batch, message)

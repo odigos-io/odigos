@@ -78,7 +78,7 @@ func handleModifiedInstrumentationInstance(instruInsta *v1alpha1.Instrumentation
 	namespace := instruInsta.Namespace
 	name, kind, err := commonutils.ExtractWorkloadInfoFromRuntimeObjectName(instrumentedAppName)
 	if err != nil {
-		genericErrorMessage(sse.MessageEventModified, consts.InstrumentationInstance, "error getting workload info")
+		genericErrorMessage(sse.MessageEventModified, consts.InstrumentationInstance, err.Error())
 	}
 
 	target := fmt.Sprintf("name=%s&kind=%s&namespace=%s", name, kind, namespace)
