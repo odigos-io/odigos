@@ -14,11 +14,12 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 )
 
-var instruConfigAddedEventBatcher *EventBatcher
-var instruConfigDeletedEventBatcher *EventBatcher
+var instrumentationConfigAddedEventBatcher *EventBatcher
+var instrumentationConfigModifiedEventBatcher *EventBatcher
+var instrumentationConfigDeletedEventBatcher *EventBatcher
 
 func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) error {
-	instruConfigAddedEventBatcher = NewEventBatcher(
+	instrumentationConfigAddedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			MinBatchSize: 1,
 			Duration:     10 * time.Second,
@@ -33,7 +34,22 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 		},
 	)
 
-	instruConfigDeletedEventBatcher = NewEventBatcher(
+	instrumentationConfigModifiedEventBatcher = NewEventBatcher(
+		EventBatcherConfig{
+			MinBatchSize: 1,
+			Duration:     10 * time.Second,
+			Event:        sse.MessageEventModified,
+			CRDType:      consts.InstrumentationConfig,
+			SuccessBatchMessageFunc: func(batchSize int, crd string) string {
+				return fmt.Sprintf("Successfully updated %d sources", batchSize)
+			},
+			FailureBatchMessageFunc: func(batchSize int, crd string) string {
+				return fmt.Sprintf("Failed to update %d sources", batchSize)
+			},
+		},
+	)
+
+	instrumentationConfigDeletedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			MinBatchSize: 1,
 			Duration:     10 * time.Second,
@@ -59,8 +75,9 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 
 func handleInstrumentationConfigWatchEvents(ctx context.Context, watcher watch.Interface) {
 	ch := watcher.ResultChan()
-	defer instruConfigAddedEventBatcher.Cancel()
-	defer instruConfigDeletedEventBatcher.Cancel()
+	defer instrumentationConfigAddedEventBatcher.Cancel()
+	defer instrumentationConfigModifiedEventBatcher.Cancel()
+	defer instrumentationConfigDeletedEventBatcher.Cancel()
 	for {
 		select {
 		case <-ctx.Done():
@@ -72,15 +89,17 @@ func handleInstrumentationConfigWatchEvents(ctx context.Context, watcher watch.I
 			}
 			switch event.Type {
 			case watch.Added:
-				handleAddedEvent(event.Object.(*v1alpha1.InstrumentationConfig))
+				handleAddedInstrumentationConfig(event.Object.(*v1alpha1.InstrumentationConfig))
+			case watch.Modified:
+				handleModifiedInstrumentationConfig(event.Object.(*v1alpha1.InstrumentationConfig))
 			case watch.Deleted:
-				handleDeletedEvent(event.Object.(*v1alpha1.InstrumentationConfig))
+				handleDeletedInstrumentationConfig(event.Object.(*v1alpha1.InstrumentationConfig))
 			}
 		}
 	}
 }
 
-func handleAddedEvent(instruConfig *v1alpha1.InstrumentationConfig) {
+func handleAddedInstrumentationConfig(instruConfig *v1alpha1.InstrumentationConfig) {
 	namespace := instruConfig.Namespace
 	name, kind, err := commonutils.ExtractWorkloadInfoFromRuntimeObjectName(instruConfig.Name)
 	if err != nil {
@@ -90,10 +109,23 @@ func handleAddedEvent(instruConfig *v1alpha1.InstrumentationConfig) {
 
 	target := fmt.Sprintf("namespace=%s&name=%s&kind=%s", namespace, name, kind)
 	data := fmt.Sprintf(`Source "%s" created`, name)
-	instruConfigAddedEventBatcher.AddEvent(sse.MessageTypeSuccess, data, target)
+	instrumentationConfigAddedEventBatcher.AddEvent(sse.MessageTypeSuccess, data, target)
 }
 
-func handleDeletedEvent(instruConfig *v1alpha1.InstrumentationConfig) {
+func handleModifiedInstrumentationConfig(instruConfig *v1alpha1.InstrumentationConfig) {
+	namespace := instruConfig.Namespace
+	name, kind, err := commonutils.ExtractWorkloadInfoFromRuntimeObjectName(instruConfig.Name)
+	if err != nil {
+		genericErrorMessage(sse.MessageEventAdded, consts.InstrumentationConfig, err.Error())
+		return
+	}
+
+	target := fmt.Sprintf("namespace=%s&name=%s&kind=%s", namespace, name, kind)
+	data := fmt.Sprintf(`Source "%s" updated`, name)
+	instrumentationConfigModifiedEventBatcher.AddEvent(sse.MessageTypeSuccess, data, target)
+}
+
+func handleDeletedInstrumentationConfig(instruConfig *v1alpha1.InstrumentationConfig) {
 	namespace := instruConfig.Namespace
 	name, kind, err := commonutils.ExtractWorkloadInfoFromRuntimeObjectName(instruConfig.Name)
 	if err != nil {
@@ -103,5 +135,5 @@ func handleDeletedEvent(instruConfig *v1alpha1.InstrumentationConfig) {
 
 	target := fmt.Sprintf("namespace=%s&name=%s&kind=%s", namespace, name, kind)
 	data := fmt.Sprintf(`Source "%s" deleted`, name)
-	instruConfigDeletedEventBatcher.AddEvent(sse.MessageTypeSuccess, data, target)
+	instrumentationConfigDeletedEventBatcher.AddEvent(sse.MessageTypeSuccess, data, target)
 }

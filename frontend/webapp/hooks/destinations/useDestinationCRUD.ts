@@ -57,15 +57,15 @@ export const useDestinationCRUD = (params?: Params) => {
     destinations: data?.computePlatform?.destinations || [],
 
     createDestination: (destination: DestinationInput) => {
-      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'creating destination...', undefined, true);
+      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Creating destination...', undefined, true);
       createDestination({ variables: { destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
     },
     updateDestination: (id: string, destination: DestinationInput) => {
-      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'updating destination...', undefined, true);
+      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Updating destination...', undefined, true);
       updateDestination({ variables: { id, destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
     },
     deleteDestination: (id: string) => {
-      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'deleting destination...', undefined, true);
+      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Deleting destination...', undefined, true);
       deleteDestination({ variables: { id } });
     },
   };
