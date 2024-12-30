@@ -18,6 +18,8 @@ interface UseSourceFormDataParams {
 }
 
 export interface UseSourceFormDataResponse {
+  namespacesLoading: boolean;
+
   selectedNamespace: SelectedNamespace;
   availableSources: SourcesByNamespace;
   selectedSources: SourcesByNamespace;
@@ -50,7 +52,7 @@ export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFo
   const [availableSources, setAvailableSources] = useState<SourcesByNamespace>(appStore.availableSources);
   const [selectedSources, setSelectedSources] = useState<SourcesByNamespace>(appStore.configuredSources);
   const [selectedFutureApps, setSelectedFutureApps] = useState<FutureAppsByNamespace>(appStore.configuredFutureApps);
-  const { allNamespaces, data: namespacesData } = useNamespace(selectedNamespace, false);
+  const { allNamespaces, data: namespacesData, loading: namespacesLoading } = useNamespace(selectedNamespace, false);
 
   useEffect(() => {
     if (!!allNamespaces?.length) {
@@ -197,6 +199,8 @@ export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFo
   };
 
   return {
+    namespacesLoading,
+
     selectedNamespace,
     availableSources,
     selectedSources,
