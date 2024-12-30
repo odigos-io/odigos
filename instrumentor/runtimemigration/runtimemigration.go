@@ -111,6 +111,10 @@ func (m *MigrationRunnable) fetchAndProcessDeployments(ctx context.Context, kube
 				}
 
 				workloadInstrumentationConfigReference := workloadNames[dep.Name]
+				if workloadInstrumentationConfigReference == nil {
+					m.Logger.Error(err, "Failed to get InstrumentationConfig reference")
+					continue
+				}
 
 				// Fetching the latest state of the InstrumentationConfig resource from the Kubernetes API.
 				// This is necessary to ensure we work with the most up-to-date version of the resource, as it may
@@ -296,7 +300,7 @@ func handleContainerRuntimeDetailsUpdate(
 		}
 		// Skip if the container has already been processed
 		if containerRuntimeDetails.RuntimeUpdateState != nil {
-			continue
+			return nil
 		}
 
 		annotationEnvVarsForContainer := originalWorkloadEnvVar.GetContainerStoredEnvs(containerObject.Name)
@@ -380,14 +384,4 @@ func isEnvVarPresent(envVars []v1alpha1.EnvVar, envVarName string) bool {
 		}
 	}
 	return false
-}
-
-func removeEnvVar(envVars []v1alpha1.EnvVar, key string) []v1alpha1.EnvVar {
-	filteredEnvVars := []v1alpha1.EnvVar{}
-	for _, envVar := range envVars {
-		if envVar.Name != key {
-			filteredEnvVars = append(filteredEnvVars, envVar)
-		}
-	}
-	return filteredEnvVars
 }
