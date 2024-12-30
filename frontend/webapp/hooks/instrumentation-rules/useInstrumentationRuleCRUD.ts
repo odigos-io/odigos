@@ -1,6 +1,6 @@
 import { useMutation } from '@apollo/client';
 import { useNotificationStore } from '@/store';
-import { ACTION, deriveTypeFromRule, getSseTargetFromId } from '@/utils';
+import { ACTION, getSseTargetFromId } from '@/utils';
 import { useComputePlatform } from '../compute-platform';
 import { NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES, type InstrumentationRuleInput } from '@/types';
 import { CREATE_INSTRUMENTATION_RULE, UPDATE_INSTRUMENTATION_RULE, DELETE_INSTRUMENTATION_RULE } from '@/graphql/mutations';
