@@ -20,14 +20,14 @@ describe('Sources CRUD', () => {
       cy.get(DATA_IDS.MODAL_ADD_SOURCE).should('exist');
       cy.get(DATA_IDS.SELECT_NAMESPACE).find(DATA_IDS.CHECKBOX).click();
 
-      // Wait for 2 seconds to allow the namespace & it's resources to be loaded into the UI
-      cy.wait(2000).then(() => {
+      // Wait for 3 seconds to allow the namespace & it's resources to be loaded into the UI
+      cy.wait(3000).then(() => {
         cy.contains('button', BUTTONS.DONE).click();
 
         cy.wait('@gql').then(() => {
           getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 5 }, () => {
-            // Wait for 5 seconds to allow the backend to batch an SSE notification
-            cy.wait(5000).then(() => {
+            // Wait for 10 seconds to allow the backend to batch an SSE notification
+            cy.wait(10000).then(() => {
               cy.get(DATA_IDS.NOTIF_MANAGER_BUTTON).click();
               cy.get(DATA_IDS.NOTIF_MANAGER_CONTENR).contains(TEXTS.NOTIF_SOURCES_CREATED).should('exist');
             });
@@ -73,8 +73,8 @@ describe('Sources CRUD', () => {
 
       cy.wait('@gql').then(() => {
         getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 }, () => {
-          // Wait for 5 seconds to allow the backend to batch an SSE notification
-          cy.wait(5000).then(() => {
+          // Wait for 10 seconds to allow the backend to batch an SSE notification
+          cy.wait(10000).then(() => {
             cy.get(DATA_IDS.NOTIF_MANAGER_BUTTON).click();
             cy.get(DATA_IDS.NOTIF_MANAGER_CONTENR).contains(TEXTS.NOTIF_SOURCES_DELETED).should('exist');
           });
