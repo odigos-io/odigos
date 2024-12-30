@@ -11,7 +11,6 @@ export const useNamespace = (namespaceName?: string) => {
 
   const { data, loading } = useQuery<ComputePlatform>(GET_NAMESPACES, {
     skip: !namespaceName,
-    fetchPolicy: 'cache-first',
     variables: { namespaceName },
     onError: (error) =>
       addNotification({

@@ -33,7 +33,7 @@ const DataContainer = styled.div`
 export const SourceDrawer: React.FC<Props> = () => {
   const { selectedItem, setSelectedItem } = useDrawerStore();
 
-  const { deleteSources, updateSource } = useSourceCRUD({
+  const { persistSources, updateSource } = useSourceCRUD({
     onSuccess: (type) => {
       setIsEditing(false);
       setIsFormDirty(false);
@@ -112,7 +112,8 @@ export const SourceDrawer: React.FC<Props> = () => {
 
   const handleDelete = async () => {
     const { namespace } = item;
-    await deleteSources({ [namespace]: [item] });
+
+    await persistSources({ [namespace]: [{ ...item, selected: false }] }, {});
   };
 
   const handleSave = async () => {

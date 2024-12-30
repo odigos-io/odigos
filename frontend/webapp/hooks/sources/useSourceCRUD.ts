@@ -39,25 +39,20 @@ export const useSourceCRUD = (params?: Params) => {
   };
 
   const [createOrDeleteSources, cdState] = useMutation<{ persistK8sSources: boolean }>(PERSIST_SOURCE, {
-    onError: (error, req) => {
-      const { selected } = req?.variables?.sources?.[0] || {};
-      const action = selected ? ACTION.CREATE : ACTION.DELETE;
-
-      handleError(action, error.message);
-    },
+    onError: (error, req) => handleError('', error.message),
     onCompleted: (res, req) => {
       const count = req?.variables?.sources.length;
-      const namespace = req?.variables?.namespace;
-      const { name, kind, selected } = req?.variables?.sources?.[0] || {};
-      const action = selected ? ACTION.CREATE : ACTION.DELETE;
 
-      if (count > 1) {
-        handleComplete(action);
-      } else {
+      if (count === 1) {
+        const namespace = req?.variables?.namespace;
+        const { name, kind, selected } = req?.variables?.sources?.[0] || {};
         const id = { namespace, name, kind };
+
         if (!selected) removeNotifications(getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.SOURCE));
         if (!selected) setConfiguredSources({ ...configuredSources, [namespace]: configuredSources[namespace]?.filter((source) => source.name !== name) || [] });
-        handleComplete(action);
+        handleComplete(selected ? ACTION.CREATE : ACTION.DELETE);
+      } else {
+        handleComplete('');
       }
     },
   });
@@ -73,7 +68,7 @@ export const useSourceCRUD = (params?: Params) => {
     }
   };
 
-  const persistSources = async (items: { [key: string]: K8sActualSource[] }, selected: boolean) => {
+  const persistSources = async (items: { [key: string]: K8sActualSource[] }) => {
     for (const [namespace, sources] of Object.entries(items)) {
       await createOrDeleteSources({
         variables: {
@@ -81,7 +76,7 @@ export const useSourceCRUD = (params?: Params) => {
           sources: sources.map((source) => ({
             kind: source.kind,
             name: source.name,
-            selected,
+            selected: source.selected,
           })),
         },
       });
@@ -92,18 +87,14 @@ export const useSourceCRUD = (params?: Params) => {
     loading: cdState.loading || uState.loading,
     sources: data?.computePlatform.k8sActualSources || [],
 
-    createSources: async (selectAppsList: { [key: string]: K8sActualSource[] }, futureSelectAppsList: { [key: string]: boolean }) => {
-      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Creating sources...', undefined, true);
+    persistSources: async (selectAppsList: { [key: string]: K8sActualSource[] }, futureSelectAppsList: { [key: string]: boolean }) => {
+      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Persisting sources...', undefined, true);
       await persistNamespaces(futureSelectAppsList);
-      await persistSources(selectAppsList, true);
+      await persistSources(selectAppsList);
     },
     updateSource: async (sourceId: WorkloadId, patchSourceRequest: PatchSourceRequestInput) => {
       notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Updating sources...', undefined, true);
       await updateSource({ variables: { sourceId, patchSourceRequest } });
-    },
-    deleteSources: async (selectAppsList: { [key: string]: K8sActualSource[] }) => {
-      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Deleting sources...', undefined, true);
-      await persistSources(selectAppsList, false);
     },
   };
 };
