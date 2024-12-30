@@ -294,7 +294,10 @@ func handleContainerRuntimeDetailsUpdate(
 		if containerRuntimeDetails.ContainerName != containerObject.Name {
 			continue
 		}
-
+		// Skip if the container has already been processed
+		if containerRuntimeDetails.RuntimeUpdateState != nil {
+			continue
+		}
 		// Process environment variables for the container
 		annotationEnvVarsForContainer := originalWorkloadEnvVar.GetContainerStoredEnvs(containerObject.Name)
 		for envKey, envValue := range annotationEnvVarsForContainer {
