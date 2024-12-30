@@ -104,7 +104,7 @@ export function useDestinationFormData(params?: { destinationType?: string; supp
     onError: (error) =>
       addNotification({
         type: NOTIFICATION_TYPE.ERROR,
-        title: ACTION.FETCH,
+        title: error.name || ACTION.FETCH,
         message: error.message,
         crdType: OVERVIEW_ENTITY_TYPES.DESTINATION,
       }),

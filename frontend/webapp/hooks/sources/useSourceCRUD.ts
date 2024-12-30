@@ -41,14 +41,13 @@ export const useSourceCRUD = (params?: Params) => {
     });
   };
 
-  const handleError = (title: string, message: string, id?: WorkloadId) => {
-    notifyUser(NOTIFICATION_TYPE.ERROR, title, message, id);
+  const handleError = (title: string, message: string) => {
+    notifyUser(NOTIFICATION_TYPE.ERROR, title, message);
     params?.onError?.(title);
   };
 
-  const handleComplete = (title: string, message: string, id?: WorkloadId) => {
-    notifyUser(NOTIFICATION_TYPE.SUCCESS, title, message, id);
-    startPolling();
+  const handleComplete = (title: string) => {
+    refetch();
     params?.onSuccess?.(title);
   };
 
@@ -60,31 +59,25 @@ export const useSourceCRUD = (params?: Params) => {
       handleError(action, error.message);
     },
     onCompleted: (res, req) => {
+      const count = req?.variables?.sources.length;
       const namespace = req?.variables?.namespace;
       const { name, kind, selected } = req?.variables?.sources?.[0] || {};
-
-      const count = req?.variables?.sources.length;
       const action = selected ? ACTION.CREATE : ACTION.DELETE;
-      const fromOrIn = selected ? 'in' : 'from';
 
       if (count > 1) {
-        handleComplete(action, `${count} sources were ${action.toLowerCase()}d ${fromOrIn} "${namespace}"`);
+        handleComplete(action);
       } else {
-        const id = { kind, name, namespace };
+        const id = { namespace, name, kind };
         if (!selected) removeNotifications(getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.SOURCE));
         if (!selected) setConfiguredSources({ ...configuredSources, [namespace]: configuredSources[namespace]?.filter((source) => source.name !== name) || [] });
-        handleComplete(action, `source "${name}" was ${action.toLowerCase()}d ${fromOrIn} "${namespace}"`, selected ? id : undefined);
+        handleComplete(action);
       }
     },
   });
 
   const [updateSource, uState] = useMutation<{ updateK8sActualSource: boolean }>(UPDATE_K8S_ACTUAL_SOURCE, {
     onError: (error) => handleError(ACTION.UPDATE, error.message),
-    onCompleted: (res, req) => {
-      const id = req?.variables?.sourceId;
-      const name = id?.name;
-      handleComplete(ACTION.UPDATE, `source "${name}" was updated`, id);
-    },
+    onCompleted: () => handleComplete(ACTION.UPDATE),
   });
 
   const persistNamespaces = async (items: { [key: string]: boolean }) => {
@@ -113,10 +106,17 @@ export const useSourceCRUD = (params?: Params) => {
     sources: data?.computePlatform.k8sActualSources || [],
 
     createSources: async (selectAppsList: { [key: string]: K8sActualSource[] }, futureSelectAppsList: { [key: string]: boolean }) => {
+      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'creating sources...');
       await persistNamespaces(futureSelectAppsList);
       await persistSources(selectAppsList, true);
     },
-    updateSource: async (sourceId: WorkloadId, patchSourceRequest: PatchSourceRequestInput) => await updateSource({ variables: { sourceId, patchSourceRequest } }),
-    deleteSources: async (selectAppsList: { [key: string]: K8sActualSource[] }) => await persistSources(selectAppsList, false),
+    updateSource: async (sourceId: WorkloadId, patchSourceRequest: PatchSourceRequestInput) => {
+      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'updating sources...');
+      await updateSource({ variables: { sourceId, patchSourceRequest } });
+    },
+    deleteSources: async (selectAppsList: { [key: string]: K8sActualSource[] }) => {
+      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'deleting sources...');
+      await persistSources(selectAppsList, false);
+    },
   };
 };

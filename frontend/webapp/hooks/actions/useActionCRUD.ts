@@ -25,52 +25,48 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
     });
   };
 
-  const handleError = (title: string, message: string, id?: string) => {
-    notifyUser(NOTIFICATION_TYPE.ERROR, title, message, id);
-    params?.onError?.(title);
+  const handleError = (actionType: string, message: string) => {
+    notifyUser(NOTIFICATION_TYPE.ERROR, actionType, message);
+    params?.onError?.(actionType);
   };
 
-  const handleComplete = (title: string, message: string, id?: string) => {
-    notifyUser(NOTIFICATION_TYPE.SUCCESS, title, message, id);
+  const handleComplete = (actionType: string) => {
     refetch();
-    params?.onSuccess?.(title);
+    params?.onSuccess?.(actionType);
   };
 
   const [createAction, cState] = useMutation<{ createAction: { id: string } }>(CREATE_ACTION, {
     onError: (error) => handleError(ACTION.CREATE, error.message),
-    onCompleted: (res, req) => {
-      const id = res.createAction.id;
-      const type = req?.variables?.action.type;
-      const name = req?.variables?.action.name;
-      const label = `${type}${!!name ? ` (${name})` : ''}`;
-      handleComplete(ACTION.CREATE, `action "${label}" was created`, id);
-    },
+    onCompleted: () => handleComplete(ACTION.CREATE),
   });
   const [updateAction, uState] = useMutation<{ updateAction: { id: string } }>(UPDATE_ACTION, {
     onError: (error) => handleError(ACTION.UPDATE, error.message),
-    onCompleted: (res, req) => {
-      const id = res.updateAction.id;
-      const type = req?.variables?.action.type;
-      const name = req?.variables?.action.name;
-      const label = `${type}${!!name ? ` (${name})` : ''}`;
-      handleComplete(ACTION.UPDATE, `action "${label}" was updated`, id);
-    },
+    onCompleted: () => handleComplete(ACTION.UPDATE),
   });
   const [deleteAction, dState] = useMutation<{ deleteAction: boolean }>(DELETE_ACTION, {
     onError: (error) => handleError(ACTION.DELETE, error.message),
     onCompleted: (res, req) => {
       const id = req?.variables?.id;
       removeNotifications(getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.ACTION));
-      handleComplete(ACTION.DELETE, `action "${id}" was deleted`);
+      handleComplete(ACTION.DELETE);
     },
   });
 
   return {
     loading: cState.loading || uState.loading || dState.loading,
-    actions: data?.computePlatform.actions || [],
+    actions: data?.computePlatform?.actions || [],
 
-    createAction: (action: ActionInput) => createAction({ variables: { action } }),
-    updateAction: (id: string, action: ActionInput) => updateAction({ variables: { id, action } }),
-    deleteAction: (id: string, actionType: ActionsType) => deleteAction({ variables: { id, actionType } }),
+    createAction: (action: ActionInput) => {
+      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'creating pipeline action...');
+      createAction({ variables: { action } });
+    },
+    updateAction: (id: string, action: ActionInput) => {
+      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'updating pipeline action...');
+      updateAction({ variables: { id, action } });
+    },
+    deleteAction: (id: string, actionType: ActionsType) => {
+      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'deleting pipeline action...');
+      deleteAction({ variables: { id, actionType } });
+    },
   };
 };
