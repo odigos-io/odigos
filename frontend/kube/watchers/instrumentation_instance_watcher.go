@@ -19,10 +19,11 @@ var modifiedBatcher *EventBatcher
 func StartInstrumentationInstanceWatcher(ctx context.Context, namespace string) error {
 	modifiedBatcher = NewEventBatcher(
 		EventBatcherConfig{
-			Event:       sse.MessageEventModified,
-			MessageType: sse.MessageTypeError,
-			Duration:    10 * time.Second,
-			CRDType:     "InstrumentationInstance",
+			MinBatchSize: 1,
+			Duration:     10 * time.Second,
+			Event:        sse.MessageEventModified,
+			MessageType:  sse.MessageTypeError,
+			CRDType:      consts.InstrumentationInstance,
 			FailureBatchMessageFunc: func(batchSize int, crd string) string {
 				return fmt.Sprintf("Failed to instrument %d instances", batchSize)
 			},
@@ -51,48 +52,37 @@ func handleInstrumentationInstanceWatchEvents(ctx context.Context, watcher watch
 			}
 			switch event.Type {
 			case watch.Modified:
-				handleModifiedInstrumentationInstance(event)
+				handleModifiedInstrumentationInstance(event.Object.(*v1alpha1.InstrumentationInstance))
 			}
 		}
 	}
 }
 
-func handleModifiedInstrumentationInstance(event watch.Event) {
-	instrumentedInstance, ok := event.Object.(*v1alpha1.InstrumentationInstance)
-	if !ok {
-		genericErrorMessage(sse.MessageEventModified, "InstrumentationInstance", "error type assertion")
-	}
-	healthy := instrumentedInstance.Status.Healthy
-
-	if healthy == nil {
-		return
-	}
-
-	if *healthy {
+func handleModifiedInstrumentationInstance(instruInsta *v1alpha1.InstrumentationInstance) {
+	healthy := instruInsta.Status.Healthy
+	if healthy == nil || *healthy {
 		// send notification to frontend only if the instance is not healthy
 		return
 	}
 
-	labels := instrumentedInstance.GetLabels()
+	labels := instruInsta.GetLabels()
 	if labels == nil {
-		genericErrorMessage(sse.MessageEventModified, "InstrumentationInstance", "error getting labels")
+		genericErrorMessage(sse.MessageEventModified, consts.InstrumentationInstance, "error getting labels")
 	}
 
 	instrumentedAppName, ok := labels[consts.InstrumentedAppNameLabel]
 	if !ok {
-		genericErrorMessage(sse.MessageEventModified, "InstrumentationInstance", "error getting instrumented app name from labels")
+		genericErrorMessage(sse.MessageEventModified, consts.InstrumentationInstance, "error getting instrumented app name from labels")
 	}
 
+	namespace := instruInsta.Namespace
 	name, kind, err := commonutils.ExtractWorkloadInfoFromRuntimeObjectName(instrumentedAppName)
 	if err != nil {
-		genericErrorMessage(sse.MessageEventModified, "InstrumentationInstance", "error getting workload info")
+		genericErrorMessage(sse.MessageEventModified, consts.InstrumentationInstance, "error getting workload info")
 	}
 
-	namespace := instrumentedInstance.Namespace
-
 	target := fmt.Sprintf("name=%s&kind=%s&namespace=%s", name, kind, namespace)
-	data := fmt.Sprintf("%s %s", instrumentedInstance.Status.Reason, instrumentedInstance.Status.Message)
-
-	fmt.Printf("InstrumentationInstance %s modified\n", name)
+	data := fmt.Sprintf("%s %s", instruInsta.Status.Reason, instruInsta.Status.Message)
+	fmt.Printf("%s %s modified\n", consts.InstrumentationInstance, name)
 	modifiedBatcher.AddEvent(sse.MessageTypeError, data, target)
 }

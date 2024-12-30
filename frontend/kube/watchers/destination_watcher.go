@@ -3,9 +3,9 @@ package watchers
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/endpoints/sse"
 	"github.com/odigos-io/odigos/frontend/kube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,50 +35,66 @@ func handleDestinationWatchEvents(ctx context.Context, watcher watch.Interface) 
 			}
 			switch event.Type {
 			case watch.Added:
-				handleAddedDestination(event)
+				handleAddedDestination(event.Object.(*v1alpha1.Destination))
 			case watch.Modified:
-				handleModifiedDestination(event)
+				handleModifiedDestination(event.Object.(*v1alpha1.Destination))
 			case watch.Deleted:
-				handleDeletedDestination(event)
-			default:
-				log.Printf("unexpected type: %T", event.Object)
+				handleDeletedDestination(event.Object.(*v1alpha1.Destination))
 			}
 		}
 	}
 }
 
-func handleAddedDestination(event watch.Event) {
-	destination, ok := event.Object.(*v1alpha1.Destination)
-	if !ok {
-		genericErrorMessage(sse.MessageEventAdded, "Destination", "error type assertion")
+func handleAddedDestination(destination *v1alpha1.Destination) {
+	name := destination.Spec.DestinationName
+	if name == "" {
+		name = string(destination.Spec.Type)
 	}
-	data := fmt.Sprintf("Destination %s created", destination.Spec.DestinationName)
-	sse.SendMessageToClient(sse.SSEMessage{Event: sse.MessageEventAdded, Type: "success", Target: destination.Name, Data: data, CRDType: "Destination"})
+
+	data := fmt.Sprintf(`Successfully added "%s" %s`, name, consts.Destination)
+	sse.SendMessageToClient(sse.SSEMessage{
+		Type:    sse.MessageTypeSuccess,
+		Event:   sse.MessageEventAdded,
+		Data:    data,
+		CRDType: consts.Destination,
+		Target:  destination.Name,
+	})
 }
 
-func handleModifiedDestination(event watch.Event) {
-	destination, ok := event.Object.(*v1alpha1.Destination)
-	if !ok {
-		genericErrorMessage(sse.MessageEventModified, "Destination", "error type assertion")
-	}
-	if len(destination.Status.Conditions) == 0 {
+func handleModifiedDestination(destination *v1alpha1.Destination) {
+	length := len(destination.Status.Conditions)
+	if length == 0 {
 		return
 	}
 
-	lastCondition := destination.Status.Conditions[len(destination.Status.Conditions)-1]
+	lastCondition := destination.Status.Conditions[length-1]
 	data := lastCondition.Message
 	conditionType := sse.MessageTypeSuccess
-	if lastCondition.Status == "False" {
+	if lastCondition.Status == metav1.ConditionFalse {
 		conditionType = sse.MessageTypeError
 	}
-	sse.SendMessageToClient(sse.SSEMessage{Event: sse.MessageEventModified, Type: conditionType, Target: destination.Name, Data: data, CRDType: "Destination"})
+
+	sse.SendMessageToClient(sse.SSEMessage{
+		Type:    conditionType,
+		Event:   sse.MessageEventModified,
+		Data:    data,
+		CRDType: consts.Destination,
+		Target:  destination.Name,
+	})
 }
 
-func handleDeletedDestination(event watch.Event) {
-	destination, ok := event.Object.(*v1alpha1.Destination)
-	if !ok {
-		genericErrorMessage(sse.MessageEventDeleted, "Destination", "error type assertion")
+func handleDeletedDestination(destination *v1alpha1.Destination) {
+	name := destination.Spec.DestinationName
+	if name == "" {
+		name = string(destination.Spec.Type)
 	}
-	data := fmt.Sprintf("Destination %s deleted successfully", destination.Spec.DestinationName)
-	sse.SendMessageToClient(sse.SSEMessage{Event: sse.MessageEventDeleted, Type: "success", Target: "", Data: data, CRDType: "Destination"})
+
+	data := fmt.Sprintf(`Successfully removed "%s" %s`, name, consts.Destination)
+	sse.SendMessageToClient(sse.SSEMessage{
+		Type:    sse.MessageTypeSuccess,
+		Event:   sse.MessageEventDeleted,
+		Data:    data,
+		CRDType: consts.Destination,
+		Target:  destination.Name,
+	})
 }
