@@ -195,8 +195,13 @@ func updateRuntimeDetailsWithContainerRuntimeEnvs(ctx context.Context, criClient
 	}
 
 	// Verify if environment variables already exist in the container manifest.
-	// If they exist, there's no need to fetch them from the Container Runtime, and we will just append our additions in the webhook.
+	// If they exist, set the RuntimeUpdateState as ProcessingStateSkipped.
+	// there's no need to fetch them from the Container Runtime, and we will just append our additions in the webhook.
 	if envsExistsInManifest := checkEnvVarsInContainerManifest(container, envVarNames); envsExistsInManifest {
+		runtimeDetailsByContainer := (*resultsMap)[container.Name]
+		state := odigosv1.ProcessingStateSkipped
+		runtimeDetailsByContainer.RuntimeUpdateState = &state
+		(*resultsMap)[container.Name] = runtimeDetailsByContainer
 		return
 	}
 
@@ -283,12 +288,10 @@ func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclien
 		return fmt.Errorf("failed to retrieve current InstrumentationConfig: %w", err)
 	}
 
-	// Verify if the new RuntimeDetails process has already been executed.
+	// Verify if the RuntimeDetailsByContainer already set.
 	// If it has, skip updating the RuntimeDetails to ensure the new runtime detection is performed only once.
-	for _, container := range currentConfig.Status.RuntimeDetailsByContainer {
-		if container.RuntimeUpdateState != nil {
-			return nil
-		}
+	if len(currentConfig.Status.RuntimeDetailsByContainer) > 0 {
+		return nil
 	}
 
 	// persist the runtime results into the status of the instrumentation config

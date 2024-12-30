@@ -29,6 +29,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
+	runtimemigration "github.com/odigos-io/odigos/instrumentor/runtimemigration"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
@@ -151,6 +152,10 @@ func main() {
 	}
 
 	ctx := signals.SetupSignalHandler()
+
+	// This temporary migration step ensures the runtimeDetails migration in the instrumentationConfig is performed.
+	// This code can be removed once the migration is confirmed to be successful.
+	mgr.Add(&runtimemigration.MigrationRunnable{KubeClient: mgr.GetClient(), Logger: setupLog})
 
 	err = sdks.SetDefaultSDKs(ctx)
 
