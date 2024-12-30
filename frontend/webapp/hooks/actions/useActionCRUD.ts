@@ -32,8 +32,8 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
   };
 
   const handleComplete = (actionType: string, message: string, id?: string) => {
-    refetch();
     notifyUser(NOTIFICATION_TYPE.SUCCESS, actionType, message, id);
+    refetch();
     params?.onSuccess?.(actionType);
   };
 
