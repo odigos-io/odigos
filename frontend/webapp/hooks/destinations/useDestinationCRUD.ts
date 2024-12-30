@@ -15,13 +15,14 @@ export const useDestinationCRUD = (params?: Params) => {
   const { data, refetch } = useComputePlatform();
   const { addNotification } = useNotificationStore();
 
-  const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string) => {
+  const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
     addNotification({
       type,
       title,
       message,
       crdType: OVERVIEW_ENTITY_TYPES.DESTINATION,
       target: id ? getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.DESTINATION) : undefined,
+      hideFromHistory,
     });
   };
 
@@ -57,15 +58,15 @@ export const useDestinationCRUD = (params?: Params) => {
     destinations: data?.computePlatform?.destinations || [],
 
     createDestination: (destination: DestinationInput) => {
-      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'creating destination...');
+      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'creating destination...', undefined, true);
       createDestination({ variables: { destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
     },
     updateDestination: (id: string, destination: DestinationInput) => {
-      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'updating destination...');
+      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'updating destination...', undefined, true);
       updateDestination({ variables: { id, destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
     },
     deleteDestination: (id: string) => {
-      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'deleting destination...');
+      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'deleting destination...', undefined, true);
       deleteDestination({ variables: { id } });
     },
   };

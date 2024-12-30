@@ -15,13 +15,14 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
   const { data, refetch } = useComputePlatform();
   const { addNotification } = useNotificationStore();
 
-  const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string) => {
+  const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
     addNotification({
       type,
       title,
       message,
       crdType: OVERVIEW_ENTITY_TYPES.ACTION,
       target: id ? getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.ACTION) : undefined,
+      hideFromHistory,
     });
   };
 
@@ -57,15 +58,15 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
     actions: data?.computePlatform?.actions || [],
 
     createAction: (action: ActionInput) => {
-      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'creating pipeline action...');
+      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'creating pipeline action...', undefined, true);
       createAction({ variables: { action } });
     },
     updateAction: (id: string, action: ActionInput) => {
-      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'updating pipeline action...');
+      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'updating pipeline action...', undefined, true);
       updateAction({ variables: { id, action } });
     },
     deleteAction: (id: string, actionType: ActionsType) => {
-      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'deleting pipeline action...');
+      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'deleting pipeline action...', undefined, true);
       deleteAction({ variables: { id, actionType } });
     },
   };

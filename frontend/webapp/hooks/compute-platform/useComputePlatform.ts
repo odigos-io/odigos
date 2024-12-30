@@ -23,7 +23,7 @@ export const useComputePlatform = (): UseComputePlatformHook => {
       addNotification({
         type: NOTIFICATION_TYPE.ERROR,
         title: error.name || ACTION.FETCH,
-        message: error.cause?.message,
+        message: error.cause?.message || error.message,
       }),
   });
 
