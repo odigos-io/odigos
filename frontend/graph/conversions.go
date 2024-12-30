@@ -21,27 +21,6 @@ func k8sKindToGql(k8sResourceKind string) model.K8sResourceKind {
 	return ""
 }
 
-func k8sConditionStatusToGql(status v1.ConditionStatus) model.ConditionStatus {
-	switch status {
-	case v1.ConditionTrue:
-		return model.ConditionStatusTrue
-	case v1.ConditionFalse:
-		return model.ConditionStatusFalse
-	case v1.ConditionUnknown:
-		return model.ConditionStatusUnknown
-	}
-	return model.ConditionStatusUnknown
-
-}
-
-func k8sLastTransitionTimeToGql(t v1.Time) *string {
-	if t.IsZero() {
-		return nil
-	}
-	str := t.UTC().Format(time.RFC3339)
-	return &str
-}
-
 func instrumentationConfigToActualSource(instruConfig v1alpha1.InstrumentationConfig) *model.K8sActualSource {
 	// Map the containers runtime details
 	var containers []*model.SourceContainerRuntimeDetails
