@@ -33,16 +33,6 @@ type InstrumentationLibraryOptions struct {
 	Options     []ConfigOption `json:"options"`
 }
 
-// +kubebuilder:object:generate=true
-type EnvVar struct {
-	Name  string `json:"name"`
-	Value string `json:"value"`
-}
-
-type OtherAgent struct {
-	Name string `json:"name,omitempty"`
-}
-
 type ProcessingState string
 
 const (
@@ -50,23 +40,6 @@ const (
 	ProcessingStateSucceeded ProcessingState = "Succeeded"
 	ProcessingStateSkipped   ProcessingState = "Skipped"
 )
-
-// +kubebuilder:object:generate=true
-type RuntimeDetailsByContainer struct {
-	ContainerName  string                     `json:"containerName"`
-	Language       common.ProgrammingLanguage `json:"language"`
-	RuntimeVersion string                     `json:"runtimeVersion,omitempty"`
-	EnvVars        []EnvVar                   `json:"envVars,omitempty"`
-	OtherAgent     *OtherAgent                `json:"otherAgent,omitempty"`
-	LibCType       *common.LibCType           `json:"libCType,omitempty"`
-
-	// Stores the error message from the CRI runtime if returned to prevent instrumenting the container if an error exists.
-	CriErrorMessage *string `json:"criErrorMessage,omitempty"`
-	// Holds the environment variables retrieved from the container runtime.
-	EnvFromContainerRuntime []EnvVar `json:"envFromContainerRuntime,omitempty"`
-	// A temporary variable used during migration to track whether the new runtime detection process has been executed. If empty, it indicates the process has not yet been run. This field may be removed later.
-	RuntimeUpdateState *ProcessingState `json:"runtimeUpdateState,omitempty"`
-}
 
 // +kubebuilder:object:generate=true
 type OptionByContainer struct {
