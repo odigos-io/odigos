@@ -14,11 +14,11 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 )
 
-var addedEventBatcher *EventBatcher
-var deletedEventBatcher *EventBatcher
+var instruConfigAddedEventBatcher *EventBatcher
+var instruConfigDeletedEventBatcher *EventBatcher
 
 func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) error {
-	addedEventBatcher = NewEventBatcher(
+	instruConfigAddedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			MinBatchSize: 1,
 			Duration:     10 * time.Second,
@@ -33,7 +33,7 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 		},
 	)
 
-	deletedEventBatcher = NewEventBatcher(
+	instruConfigDeletedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			MinBatchSize: 1,
 			Duration:     10 * time.Second,
@@ -59,8 +59,8 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 
 func handleInstrumentationConfigWatchEvents(ctx context.Context, watcher watch.Interface) {
 	ch := watcher.ResultChan()
-	defer addedEventBatcher.Cancel()
-	defer deletedEventBatcher.Cancel()
+	defer instruConfigAddedEventBatcher.Cancel()
+	defer instruConfigDeletedEventBatcher.Cancel()
 	for {
 		select {
 		case <-ctx.Done():
@@ -90,7 +90,7 @@ func handleAddedEvent(instruConfig *v1alpha1.InstrumentationConfig) {
 
 	target := fmt.Sprintf("namespace=%s&name=%s&kind=%s", namespace, name, kind)
 	data := fmt.Sprintf(`Source "%s" created`, name)
-	addedEventBatcher.AddEvent(sse.MessageTypeSuccess, data, target)
+	instruConfigAddedEventBatcher.AddEvent(sse.MessageTypeSuccess, data, target)
 }
 
 func handleDeletedEvent(instruConfig *v1alpha1.InstrumentationConfig) {
@@ -103,5 +103,5 @@ func handleDeletedEvent(instruConfig *v1alpha1.InstrumentationConfig) {
 
 	target := fmt.Sprintf("namespace=%s&name=%s&kind=%s", namespace, name, kind)
 	data := fmt.Sprintf(`Source "%s" deleted`, name)
-	deletedEventBatcher.AddEvent(sse.MessageTypeSuccess, data, target)
+	instruConfigDeletedEventBatcher.AddEvent(sse.MessageTypeSuccess, data, target)
 }

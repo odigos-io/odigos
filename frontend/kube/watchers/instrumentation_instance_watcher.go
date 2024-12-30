@@ -14,10 +14,10 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 )
 
-var modifiedBatcher *EventBatcher
+var instruInstanceModifiedBatcher *EventBatcher
 
 func StartInstrumentationInstanceWatcher(ctx context.Context, namespace string) error {
-	modifiedBatcher = NewEventBatcher(
+	instruInstanceModifiedBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			MinBatchSize: 1,
 			Duration:     10 * time.Second,
@@ -40,7 +40,7 @@ func StartInstrumentationInstanceWatcher(ctx context.Context, namespace string) 
 
 func handleInstrumentationInstanceWatchEvents(ctx context.Context, watcher watch.Interface) {
 	ch := watcher.ResultChan()
-	defer modifiedBatcher.Cancel()
+	defer instruInstanceModifiedBatcher.Cancel()
 	for {
 		select {
 		case <-ctx.Done():
@@ -58,14 +58,14 @@ func handleInstrumentationInstanceWatchEvents(ctx context.Context, watcher watch
 	}
 }
 
-func handleModifiedInstrumentationInstance(instruInsta *v1alpha1.InstrumentationInstance) {
-	healthy := instruInsta.Status.Healthy
+func handleModifiedInstrumentationInstance(instruInstance *v1alpha1.InstrumentationInstance) {
+	healthy := instruInstance.Status.Healthy
 	if healthy == nil || *healthy {
 		// send notification to frontend only if the instance is not healthy
 		return
 	}
 
-	labels := instruInsta.GetLabels()
+	labels := instruInstance.GetLabels()
 	if labels == nil {
 		genericErrorMessage(sse.MessageEventModified, consts.InstrumentationInstance, "error getting labels")
 	}
@@ -75,13 +75,13 @@ func handleModifiedInstrumentationInstance(instruInsta *v1alpha1.Instrumentation
 		genericErrorMessage(sse.MessageEventModified, consts.InstrumentationInstance, "error getting instrumented app name from labels")
 	}
 
-	namespace := instruInsta.Namespace
+	namespace := instruInstance.Namespace
 	name, kind, err := commonutils.ExtractWorkloadInfoFromRuntimeObjectName(instrumentedAppName)
 	if err != nil {
 		genericErrorMessage(sse.MessageEventModified, consts.InstrumentationInstance, err.Error())
 	}
 
 	target := fmt.Sprintf("name=%s&kind=%s&namespace=%s", name, kind, namespace)
-	data := fmt.Sprintf(`%s "%s" %s: %s`, consts.InstrumentationInstance, name, instruInsta.Status.Reason, instruInsta.Status.Message)
-	modifiedBatcher.AddEvent(sse.MessageTypeError, data, target)
+	data := fmt.Sprintf(`%s "%s" %s: %s`, consts.InstrumentationInstance, name, instruInstance.Status.Reason, instruInstance.Status.Message)
+	instruInstanceModifiedBatcher.AddEvent(sse.MessageTypeError, data, target)
 }
