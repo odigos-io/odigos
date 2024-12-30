@@ -1,4 +1,3 @@
-import { useCallback } from 'react';
 import { useMutation } from '@apollo/client';
 import { ACTION, getSseTargetFromId } from '@/utils';
 import { useAppStore, useNotificationStore } from '@/store';
@@ -19,18 +18,6 @@ export const useSourceCRUD = (params?: Params) => {
   const { data, refetch } = useComputePlatform();
   const { addNotification } = useNotificationStore();
 
-  const startPolling = useCallback(async () => {
-    let retries = 0;
-    const maxRetries = 5;
-    const retryInterval = 1 * 1000; // time in milliseconds
-
-    while (retries < maxRetries) {
-      await new Promise((resolve) => setTimeout(resolve, retryInterval));
-      refetch();
-      retries++;
-    }
-  }, [refetch]);
-
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: WorkloadId, hideFromHistory?: boolean) => {
     addNotification({
       type,
@@ -42,14 +29,14 @@ export const useSourceCRUD = (params?: Params) => {
     });
   };
 
-  const handleError = (title: string, message: string) => {
-    notifyUser(NOTIFICATION_TYPE.ERROR, title, message);
-    params?.onError?.(title);
+  const handleError = (actionType: string, message: string) => {
+    notifyUser(NOTIFICATION_TYPE.ERROR, actionType, message);
+    params?.onError?.(actionType);
   };
 
-  const handleComplete = (title: string) => {
+  const handleComplete = (actionType: string) => {
     refetch();
-    params?.onSuccess?.(title);
+    params?.onSuccess?.(actionType);
   };
 
   const [createOrDeleteSources, cdState] = useMutation<{ persistK8sSources: boolean }>(PERSIST_SOURCE, {
