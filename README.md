@@ -91,9 +91,11 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 | Axiom                   |   ✅   |         |  ✅  |
 | AWS S3                  |   ✅   |         |  ✅  |
 | Azure Blob Storage      |   ✅   |         |  ✅  |
+| Better Stack            |        |   ✅    |  ✅  |
 | Causely                 |   ✅   |         |      |
 | Chronosphere            |   ✅   |   ✅    |      |
 | Coralogix               |   ✅   |   ✅    |  ✅  |
+| Dash0                   |   ✅   |   ✅    |  ✅  |
 | Datadog                 |   ✅   |   ✅    |  ✅  |
 | Dynatrace               |   ✅   |   ✅    |  ✅  |
 | Gigapipe                |   ✅   |         |      |
@@ -103,6 +105,8 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 | Groundcover inCloud     |   ✅   |   ✅    |  ✅  |
 | Highlight               |   ✅   |         |  ✅  |
 | Honeycomb               |   ✅   |   ✅    |  ✅  |
+| HyperDX                 |   ✅   |   ✅    |  ✅  |
+| KloudMate               |   ✅   |   ✅    |  ✅  |
 | Last9                   |   ✅   |   ✅    |      |
 | Lightstep               |   ✅   |         |      |
 | Logz.io                 |   ✅   |   ✅    |  ✅  |
