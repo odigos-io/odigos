@@ -302,7 +302,7 @@ func handleContainerRuntimeDetailsUpdate(
 		annotationEnvVarsForContainer := originalWorkloadEnvVar.GetContainerStoredEnvs(containerObject.Name)
 
 		// Mark as succeeded if no annotation set.
-		// This occurs when no values were present in the manifest, and the envOverwriter was not executed.
+		// This occurs when the values were not originally present in the manifest, and the envOverwriter was skipped.
 		if len(annotationEnvVarsForContainer) == 0 {
 			state := v1alpha1.ProcessingStateSucceeded
 			containerRuntimeDetails.RuntimeUpdateState = &state
