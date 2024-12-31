@@ -70,7 +70,7 @@ export const useNodeDataFlowHandlers = () => {
         setCurrentModal(OVERVIEW_ENTITY_TYPES.SOURCE);
       } else if (type === OVERVIEW_NODE_TYPES.ADD_ACTION) {
         setCurrentModal(OVERVIEW_ENTITY_TYPES.ACTION);
-      } else if (type === OVERVIEW_NODE_TYPES.ADD_DESTIONATION) {
+      } else if (type === OVERVIEW_NODE_TYPES.ADD_DESTINATION) {
         setCurrentModal(OVERVIEW_ENTITY_TYPES.DESTINATION);
       } else {
         console.warn('Unhandled node click', object);
