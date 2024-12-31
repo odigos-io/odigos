@@ -11,10 +11,10 @@ interface Params {
 }
 
 export const useSourceCRUD = (params?: Params) => {
-  const { data } = useComputePlatform();
   const { persistNamespace } = useNamespace();
-  const { addPendingItems } = usePendingStore();
+  const { data, refetch } = useComputePlatform();
   const { setConfiguredSources } = useAppStore();
+  const { addPendingItems, removePendingItems } = usePendingStore();
   const { addNotification, removeNotifications } = useNotificationStore();
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: WorkloadId, hideFromHistory?: boolean) => {
@@ -59,7 +59,22 @@ export const useSourceCRUD = (params?: Params) => {
 
   const [updateSource, uState] = useMutation<{ updateK8sActualSource: boolean }>(UPDATE_K8S_ACTUAL_SOURCE, {
     onError: (error) => handleError(ACTION.UPDATE, error.message),
-    onCompleted: () => handleComplete(ACTION.UPDATE),
+    onCompleted: (res, req) => {
+      handleComplete(ACTION.UPDATE);
+
+      // This is instead of using a k8s modified-event watcher...
+      // If we do use a watcher, we can't guarantee an SSE will be sent for this update alone.
+      // It will definitely include SSE for all updates, that can be instrument/uninstrument, conditions changed etc.
+      // Not that there's anything about a watcher that would break the UI, it's just that we would receive unexpected events with ridiculous amounts,
+      // (example: instrument 5 apps, update the name of 2, then uninstrument the other 3, we would get an SSE with minimum 10 updated sources, when we expect it to show only 2 due to name change).
+      setTimeout(() => {
+        const id = req?.variables?.sourceId;
+
+        refetch();
+        notifyUser(NOTIFICATION_TYPE.SUCCESS, ACTION.UPDATE, 'Successfully updated 1 source', id);
+        removePendingItems([{ entityType: OVERVIEW_ENTITY_TYPES.SOURCE, entityId: id }]);
+      }, 2000);
+    },
   });
 
   return {
@@ -88,7 +103,7 @@ export const useSourceCRUD = (params?: Params) => {
     },
 
     updateSource: async (sourceId: WorkloadId, patchSourceRequest: PatchSourceRequestInput) => {
-      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Updating sources...', undefined, true);
+      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Updating source...', undefined, true);
       addPendingItems([{ entityType: OVERVIEW_ENTITY_TYPES.SOURCE, entityId: sourceId }]);
       await updateSource({ variables: { sourceId, patchSourceRequest } });
     },
