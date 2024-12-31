@@ -111,6 +111,7 @@ func (fp *filterProcessor) logMatches(logAttributes, resourceAttributes pcommon.
 }
 
 func (fp *filterProcessor) matches(span ptrace.Span, resourceSpan ptrace.ResourceSpans) bool {
+
 	attributes := resourceSpan.Resource().Attributes()
 
 	namespace := getAttribute(attributes, "k8s.namespace.name")
@@ -140,7 +141,7 @@ func getDynamicNameAndKind(attributes pcommon.Map) (name string, kind string) {
 		kind string
 		key  string
 	}{
-		{"deployment", "k8s.deployment.name"},
+		{"Deployment", "k8s.deployment.name"},
 		{"statefulSet", "k8s.statefulset.name"},
 		{"daemonSet", "k8s.daemonset.name"},
 	}

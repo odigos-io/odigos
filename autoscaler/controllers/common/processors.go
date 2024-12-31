@@ -87,13 +87,13 @@ func AddFilterProcessors(allProcessors *odigosv1.ProcessorList, dests *odigosv1.
 		//TODO: remove this log
 		matchedSources := filterSources(sources.Items, dest.Spec.SourceSelector)
 
-		if len(matchedSources) == 0 {
-			//TODO: remove this log
-			logger.Info("No matching sources found for destination. Skipping processor creation.")
+		// if len(matchedSources) == 0 {
+		// 	//TODO: remove this log
+		// 	logger.Info("No matching sources found for destination. Skipping processor creation.")
 
-			//TODO: remove this log
-			continue
-		}
+		// 	//TODO: remove this log
+		// 	continue
+		// }
 		//TODO: remove this log
 		logger.Info("Matched sources for destination", "matchedSources", matchedSources)
 		//TODO: remove this log
@@ -145,8 +145,14 @@ func filterSources(sources []odigosv1.Source, selector *odigosv1.SourceSelector)
 	for _, source := range sources {
 		if selector.Mode == "namespaces" && contains(selector.Namespaces, source.Spec.Workload.Namespace) {
 			filtered = append(filtered, source)
-		} else if selector.Mode == "groups" && containsAny(selector.Groups, source.Spec.Groups) {
-			filtered = append(filtered, source)
+		} else if selector.Mode == "groups" {
+			// Handle nil or empty groups gracefully
+			if source.Spec.Groups == nil || len(source.Spec.Groups) == 0 {
+				continue
+			}
+			if containsAny(selector.Groups, source.Spec.Groups) {
+				filtered = append(filtered, source)
+			}
 		}
 	}
 	return filtered
