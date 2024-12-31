@@ -15,7 +15,6 @@ import (
 )
 
 var instrumentationConfigAddedEventBatcher *EventBatcher
-var instrumentationConfigModifiedEventBatcher *EventBatcher
 var instrumentationConfigDeletedEventBatcher *EventBatcher
 
 func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) error {
@@ -30,21 +29,6 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 			},
 			FailureBatchMessageFunc: func(count int, crdType string) string {
 				return fmt.Sprintf("Failed to create %d sources", count)
-			},
-		},
-	)
-
-	instrumentationConfigModifiedEventBatcher = NewEventBatcher(
-		EventBatcherConfig{
-			MinBatchSize: 1,
-			Duration:     10 * time.Second,
-			Event:        sse.MessageEventModified,
-			CRDType:      consts.InstrumentationConfig,
-			SuccessBatchMessageFunc: func(batchSize int, crd string) string {
-				return fmt.Sprintf("Successfully updated %d sources", batchSize)
-			},
-			FailureBatchMessageFunc: func(batchSize int, crd string) string {
-				return fmt.Sprintf("Failed to update %d sources", batchSize)
 			},
 		},
 	)
@@ -76,7 +60,6 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 func handleInstrumentationConfigWatchEvents(ctx context.Context, watcher watch.Interface) {
 	ch := watcher.ResultChan()
 	defer instrumentationConfigAddedEventBatcher.Cancel()
-	defer instrumentationConfigModifiedEventBatcher.Cancel()
 	defer instrumentationConfigDeletedEventBatcher.Cancel()
 	for {
 		select {
@@ -90,8 +73,6 @@ func handleInstrumentationConfigWatchEvents(ctx context.Context, watcher watch.I
 			switch event.Type {
 			case watch.Added:
 				handleAddedInstrumentationConfig(event.Object.(*v1alpha1.InstrumentationConfig))
-			case watch.Modified:
-				handleModifiedInstrumentationConfig(event.Object.(*v1alpha1.InstrumentationConfig))
 			case watch.Deleted:
 				handleDeletedInstrumentationConfig(event.Object.(*v1alpha1.InstrumentationConfig))
 			}
@@ -110,19 +91,6 @@ func handleAddedInstrumentationConfig(instruConfig *v1alpha1.InstrumentationConf
 	target := fmt.Sprintf("namespace=%s&name=%s&kind=%s", namespace, name, kind)
 	data := fmt.Sprintf(`Source "%s" created`, name)
 	instrumentationConfigAddedEventBatcher.AddEvent(sse.MessageTypeSuccess, data, target)
-}
-
-func handleModifiedInstrumentationConfig(instruConfig *v1alpha1.InstrumentationConfig) {
-	namespace := instruConfig.Namespace
-	name, kind, err := commonutils.ExtractWorkloadInfoFromRuntimeObjectName(instruConfig.Name)
-	if err != nil {
-		genericErrorMessage(sse.MessageEventAdded, consts.InstrumentationConfig, err.Error())
-		return
-	}
-
-	target := fmt.Sprintf("namespace=%s&name=%s&kind=%s", namespace, name, kind)
-	data := fmt.Sprintf(`Source "%s" updated`, name)
-	instrumentationConfigModifiedEventBatcher.AddEvent(sse.MessageTypeSuccess, data, target)
 }
 
 func handleDeletedInstrumentationConfig(instruConfig *v1alpha1.InstrumentationConfig) {

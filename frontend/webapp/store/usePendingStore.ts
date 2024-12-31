@@ -1,6 +1,15 @@
 import { create } from 'zustand';
 import { OVERVIEW_ENTITY_TYPES, WorkloadId } from '@/types';
 
+// This store is used to keep track of pending items that are being created, updated, or deleted.
+// This is used for entities that require an SSE event to be sent from the backend after a CRUD action.
+// ---
+// Imagine a user instruments a few sources, we want to show loading spinners, toasts etc.
+// The CLI will finish processing the CRDs and send an SSE event to the frontend.
+// The frontend will then remove the pending item from the store and update the UI by refetching the data.
+// ---
+// This can be used for non-SSE entities (like actions & rules), but it's not necessary as we refetch-instantly in those cases.
+
 export interface PendingItem {
   entityType: OVERVIEW_ENTITY_TYPES;
   entityId?: string | WorkloadId;
@@ -32,6 +41,8 @@ export const usePendingStore = create<StoreState>((set, get) => ({
   addPendingItems: (arr) => set((state) => ({ pendingItems: state.pendingItems.concat(arr.filter((addItem) => !state.pendingItems.some((existingItem) => itemsAreEqual(existingItem, addItem)))) })),
   removePendingItems: (arr) => set((state) => ({ pendingItems: state.pendingItems.filter((existingItem) => !arr.find((removeItem) => itemsAreEqual(existingItem, removeItem))) })),
 
+  // Pass an item to check if it's in the pending items array.
+  // This is used to show loading spinners, toasts etc.
   isThisPending: (item) => {
     const { pendingItems } = get();
     let bool = false;
