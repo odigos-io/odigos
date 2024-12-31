@@ -1,5 +1,4 @@
 import { useCallback } from 'react';
-import { type Node } from '@xyflow/react';
 import { useSourceCRUD } from '../sources';
 import { useActionCRUD } from '../actions';
 import { useDestinationCRUD } from '../destinations';
@@ -19,13 +18,12 @@ export function useNodeDataFlowHandlers() {
   const handleNodeClick = useCallback(
     (
       _: React.MouseEvent | null,
-      object: Node<
-        {
+      object: {
+        data: {
           id: string | WorkloadId;
           type: OVERVIEW_ENTITY_TYPES | OVERVIEW_NODE_TYPES;
-        },
-        'id'
-      >,
+        };
+      },
     ) => {
       const {
         data: { id, type },
@@ -40,8 +38,8 @@ export function useNodeDataFlowHandlers() {
 
       if (type === OVERVIEW_ENTITY_TYPES.SOURCE) {
         const { kind, name, namespace } = id as WorkloadId;
-        const selectedDrawerItem = entities['sources'].find((item) => item.kind === kind && item.name === name && item.namespace === namespace);
 
+        const selectedDrawerItem = entities['sources'].find((item) => item.kind === kind && item.name === name && item.namespace === namespace);
         if (!selectedDrawerItem) {
           console.warn('Selected item not found', { id, [`${type}sCount`]: entities[`${type}s`].length });
           return;
@@ -54,7 +52,6 @@ export function useNodeDataFlowHandlers() {
         });
       } else if ([OVERVIEW_ENTITY_TYPES.RULE, OVERVIEW_ENTITY_TYPES.ACTION, OVERVIEW_ENTITY_TYPES.DESTINATION].includes(type as OVERVIEW_ENTITY_TYPES)) {
         const selectedDrawerItem = entities[`${type}s`].find((item) => id && [item.id, item.ruleId].includes(id));
-
         if (!selectedDrawerItem) {
           console.warn('Selected item not found', { id, [`${type}sCount`]: entities[`${type}s`].length });
           return;
