@@ -2,9 +2,10 @@ import { useEffect, useRef } from 'react';
 import { API } from '@/utils';
 import { NOTIFICATION_TYPE } from '@/types';
 import { useComputePlatform } from '../compute-platform';
-import { type NotifyPayload, useConnectionStore, useNotificationStore } from '@/store';
+import { type NotifyPayload, useConnectionStore, useNotificationStore, usePendingStore } from '@/store';
 
 export const useSSE = () => {
+  const { setPendingItems } = usePendingStore();
   const { addNotification } = useNotificationStore();
   const { setConnectionStore } = useConnectionStore();
   const { refetch: refetchComputePlatform } = useComputePlatform();
@@ -31,6 +32,7 @@ export const useSSE = () => {
         // Dispatch the notification to the store
         addNotification(notification);
         refetchComputePlatform();
+        setPendingItems([]);
 
         // Reset retry count on successful connection
         retryCount.current = 0;
