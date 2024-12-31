@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useGenericForm } from '@/hooks';
 import { useQuery } from '@apollo/client';
 import { GET_DESTINATION_TYPE_DETAILS } from '@/graphql';
-import { DrawerItem, useNotificationStore } from '@/store';
-import { ACTION, FORM_ALERTS, safeJsonParse } from '@/utils';
-import { useConnectDestinationForm, useGenericForm } from '@/hooks';
+import { type DrawerItem, useNotificationStore } from '@/store';
+import { ACTION, FORM_ALERTS, INPUT_TYPES, safeJsonParse } from '@/utils';
 import {
   type DynamicField,
   type DestinationDetailsResponse,
@@ -13,6 +13,7 @@ import {
   type SupportedDestinationSignals,
   OVERVIEW_ENTITY_TYPES,
   NOTIFICATION_TYPE,
+  type DestinationDetailsField,
 } from '@/types';
 
 const INITIAL: DestinationInput = {
@@ -26,13 +27,74 @@ const INITIAL: DestinationInput = {
   fields: [],
 };
 
+const buildFormDynamicFields = (fields: DestinationDetailsField[]): DynamicField[] => {
+  return fields
+    .map((field) => {
+      const { name, componentType, componentProperties, displayName, initialValue, renderCondition } = field;
+
+      switch (componentType) {
+        case INPUT_TYPES.MULTI_INPUT: {
+          const componentPropertiesJson = safeJsonParse<{ [key: string]: string }>(componentProperties, {});
+          const initialValuesJson = safeJsonParse<string[]>(initialValue, []);
+
+          return {
+            name,
+            componentType,
+            title: displayName,
+            value: initialValuesJson,
+            initialValues: initialValuesJson,
+            renderCondition,
+            ...componentPropertiesJson,
+          };
+        }
+
+        case INPUT_TYPES.DROPDOWN: {
+          const componentPropertiesJson = safeJsonParse<{ [key: string]: string }>(componentProperties, {});
+          const options = Array.isArray(componentPropertiesJson.values)
+            ? componentPropertiesJson.values.map((value) => ({
+                id: value,
+                value,
+              }))
+            : Object.entries(componentPropertiesJson.values).map(([key, value]) => ({
+                id: key,
+                value,
+              }));
+
+          return {
+            name,
+            componentType,
+            title: displayName,
+            value: initialValue,
+            placeholder: componentPropertiesJson.placeholder || 'Select an option',
+            options,
+            renderCondition,
+            ...componentPropertiesJson,
+          };
+        }
+
+        default: {
+          const componentPropertiesJson = safeJsonParse<{ [key: string]: string }>(componentProperties, {});
+
+          return {
+            name,
+            componentType,
+            title: displayName,
+            value: initialValue,
+            renderCondition,
+            ...componentPropertiesJson,
+          };
+        }
+      }
+    })
+    .filter((field): field is DynamicField => field !== undefined);
+};
+
 export function useDestinationFormData(params?: { destinationType?: string; supportedSignals?: SupportedDestinationSignals; preLoadedFields?: string | DestinationTypeItem['fields'] }) {
   const { destinationType, supportedSignals, preLoadedFields } = params || {};
 
   const { addNotification } = useNotificationStore();
   const { formData, formErrors, handleFormChange, handleErrorChange, resetFormData } = useGenericForm<DestinationInput>(INITIAL);
 
-  const { buildFormDynamicFields } = useConnectDestinationForm();
   const [dynamicFields, setDynamicFields] = useState<DynamicField[]>([]);
 
   const t = destinationType || formData.type;
@@ -42,8 +104,8 @@ export function useDestinationFormData(params?: { destinationType?: string; supp
     onError: (error) =>
       addNotification({
         type: NOTIFICATION_TYPE.ERROR,
-        title: ACTION.FETCH,
-        message: error.message,
+        title: error.name || ACTION.FETCH,
+        message: error.cause?.message || error.message,
         crdType: OVERVIEW_ENTITY_TYPES.DESTINATION,
       }),
   });
@@ -109,6 +171,7 @@ export function useDestinationFormData(params?: { destinationType?: string; supp
         type: NOTIFICATION_TYPE.WARNING,
         title: params.alertTitle,
         message: FORM_ALERTS.REQUIRED_FIELDS,
+        hideFromHistory: true,
       });
     }
 

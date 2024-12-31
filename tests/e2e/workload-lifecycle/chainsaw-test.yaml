@@ -42,6 +42,8 @@ spec:
 
               docker build -t python-latest-version:v0.0.1 -f services/python-http-server/Dockerfile.python-latest services/python-http-server
               kind load docker-image python-latest-version:v0.0.1
+              docker build -t python-other-agent:v0.0.1 -f services/python-http-server/Dockerfile.python-other-agent services/python-http-server
+              kind load docker-image python-other-agent:v0.0.1
               docker build -t python-alpine:v0.0.1 -f services/python-http-server/Dockerfile.python-alpine services/python-http-server
               kind load docker-image python-alpine:v0.0.1
               docker build -t python-not-supported:v0.0.1 -f services/python-http-server/Dockerfile.python-not-supported-version services/python-http-server
@@ -49,8 +51,14 @@ spec:
               docker build -t python-min-version:v0.0.1 -f services/python-http-server/Dockerfile.python-min-version services/python-http-server
               kind load docker-image python-min-version:v0.0.1
               
-              docker build -t dotnet-musl:v0.0.1 -f services/dotnet-musl-server/Dockerfile services/dotnet-musl-server
-              kind load docker-image dotnet-musl:v0.0.1
+              docker build -t dotnet8-musl:v0.0.1 -f services/dotnet-http-server/net8-musl.Dockerfile services/dotnet-http-server
+              kind load docker-image dotnet8-musl:v0.0.1
+              docker build -t dotnet6-musl:v0.0.1 -f services/dotnet-http-server/net6-musl.Dockerfile services/dotnet-http-server
+              kind load docker-image dotnet6-musl:v0.0.1
+              docker build -t dotnet8-glibc:v0.0.1 -f services/dotnet-http-server/net8-glibc.Dockerfile services/dotnet-http-server
+              kind load docker-image dotnet8-glibc:v0.0.1
+              docker build -t dotnet6-glibc:v0.0.1 -f services/dotnet-http-server/net6-glibc.Dockerfile services/dotnet-http-server
+              kind load docker-image dotnet6-glibc:v0.0.1
     - name: Prepare destination
       try:
         - script:

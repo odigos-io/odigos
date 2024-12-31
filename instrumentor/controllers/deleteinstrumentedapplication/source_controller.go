@@ -20,6 +20,7 @@ import (
 	"context"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -27,33 +28,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
-
-// Added by startlangdetection controller when Source is created
-var instrumentedApplicationFinalizer = "odigos.io/source-instrumentedapplication-finalizer"
-
-type SourceDeletedPredicate struct{}
-
-func (i *SourceDeletedPredicate) Create(_ event.CreateEvent) bool {
-	return false
-}
-
-func (i *SourceDeletedPredicate) Update(_ event.UpdateEvent) bool {
-	// We are actually looking for Update events that add a DeletionTimestamp
-	// This is so we can still get the workload from the Source object and remove the finalizer
-	// Then actual deletion of the Source will proceed
-	return true
-}
-
-func (i *SourceDeletedPredicate) Delete(_ event.DeleteEvent) bool {
-	return true
-}
-
-func (i *SourceDeletedPredicate) Generic(_ event.GenericEvent) bool {
-	return false
-}
 
 type SourceReconciler struct {
 	client.Client
@@ -79,8 +55,8 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			return ctrl.Result{}, err
 		}
 
-		if controllerutil.ContainsFinalizer(source, instrumentedApplicationFinalizer) {
-			controllerutil.RemoveFinalizer(source, instrumentedApplicationFinalizer)
+		if controllerutil.ContainsFinalizer(source, consts.InstrumentedApplicationFinalizer) {
+			controllerutil.RemoveFinalizer(source, consts.InstrumentedApplicationFinalizer)
 			if err := r.Update(ctx, source); err != nil {
 				return ctrl.Result{}, err
 			}

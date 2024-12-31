@@ -54,163 +54,80 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 			Namespace: ns,
 		},
 		Rules: []rbacv1.PolicyRule{
-			{
-				Verbs: []string{
-					"create",
-					"delete",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
+			{ // Needed to manage the configmaps of the data-collector and gateway-collector
 				APIGroups: []string{""},
 				Resources: []string{"configmaps"},
+				Verbs:     []string{"get", "list", "watch", "create", "patch", "update", "delete"},
 			},
-			{
-				Verbs: []string{
-					"create",
-					"delete",
-					"deletecollection",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
+			{ // Needed to manage the k8s-service of gateway-collector
 				APIGroups: []string{""},
 				Resources: []string{"services"},
+				Verbs:     []string{"get", "list", "watch", "create", "patch", "update", "delete", "deletecollection"},
 			},
-			{
-				Verbs: []string{
-					"create",
-					"delete",
-					"deletecollection",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
+			{ // Needed to manage the daemonsets for data-collector
 				APIGroups: []string{"apps"},
 				Resources: []string{"daemonsets"},
+				Verbs:     []string{"get", "list", "watch", "create", "patch", "update", "delete", "deletecollection"},
 			},
-			{
-				Verbs: []string{
-					"get",
-					"patch",
-					"update",
-				},
+			{ // Needed to read the "readiness" status of the collectorsgroup
 				APIGroups: []string{"apps"},
 				Resources: []string{"daemonsets/status"},
+				Verbs:     []string{"get"},
 			},
-			{
-				Verbs: []string{
-					"create",
-					"delete",
-					"deletecollection",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
+			{ // Needed to manage the deployments for data-collector
 				APIGroups: []string{"apps"},
 				Resources: []string{"deployments"},
+				Verbs:     []string{"create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"},
 			},
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
+			{ // Needed to read the "readiness" status of the collectorsgroup
 				APIGroups: []string{"apps"},
 				Resources: []string{"deployments/status"},
+				Verbs:     []string{"get"},
 			},
-			{
-				Verbs: []string{
-					"create",
-					"patch",
-					"update",
-					"delete",
-				},
+			{ // Needed to apply autoscaling to the gateway-collector
 				APIGroups: []string{"autoscaling"},
 				Resources: []string{"horizontalpodautoscalers"},
+				Verbs:     []string{"create", "patch", "update", "delete"},
 			},
-			{
-				Verbs: []string{
-					"list",
-					"watch",
-					"get",
-				},
+			{ // Needed to track changes and restart gateway-collector
 				APIGroups: []string{""},
 				Resources: []string{"secrets"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
+			{ // Needed to sync the gateway-collector configuration
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"destinations"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
-			{
-				Verbs: []string{
-					"get",
-					"patch",
-					"update",
-				},
+			{ // Needed to track destination-config changes and update the status accordingly
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"destinations/status"},
+				Verbs:     []string{"get", "patch", "update"},
 			},
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-					"patch",
-					"create",
-					"update",
-				},
+			{ // Needed to identify changes to pipeline-actions and update the data & gateway collectors configmap
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"processors"},
+				Verbs:     []string{"get", "list", "watch", "create", "patch", "update"},
 			},
-			{
-				Verbs: []string{
-					"watch",
-					"get",
-					"list",
-				},
+			{ // Needed to read actions transform them to processors
 				APIGroups: []string{"actions.odigos.io"},
-				Resources: []string{"addclusterinfos", "deleteattributes", "renameattributes", "probabilisticsamplers", "piimaskings", "latencysamplers", "errorsamplers"},
+				Resources: []string{"*"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
-			{
-				Verbs: []string{
-					"get",
-					"patch",
-					"update",
-				},
+			{ // Needed to updated the status of the actions (confirms the user-made-changes)
 				APIGroups: []string{"actions.odigos.io"},
-				Resources: []string{"addclusterinfos/status", "deleteattributes/status", "renameattributes/status", "probabilisticsamplers/status", "piimaskings/status", "latencysamplers/status", "errorsamplers/status"},
+				Resources: []string{"*/status"},
+				Verbs:     []string{"get", "patch", "update"},
 			},
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
+			{ // Needed to watch for changes made in the the collectorgroups and apply them to the cluster
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"collectorsgroups"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
-			{
-				Verbs: []string{
-					"get",
-					"patch",
-					"update",
-				},
+			{ // After applying the collectorgroups tot he cluster, we need to update the status of the operation
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"collectorsgroups/status"},
+				Verbs:     []string{"get", "patch", "update"},
 			},
 		},
 	}
@@ -250,14 +167,10 @@ func NewAutoscalerClusterRole() *rbacv1.ClusterRole {
 			Name: AutoScalerClusterRoleName,
 		},
 		Rules: []rbacv1.PolicyRule{
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
+			{ // Needed to read the applications, to populate the receivers.filelog in the data-collector configmap
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"instrumentationconfigs"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
 			{
 				Verbs: []string{

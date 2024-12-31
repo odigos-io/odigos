@@ -56,3 +56,14 @@ The following .NET modules will be auto instrumented by Odigos:
 | [Kafka](https://www.nuget.org/packages/Confluent.Kafka)                           |                                                 |                 |                                                                                                        |
 | [NServiceBus](https://docs.particular.net/nservicebus/)                           | Yes                                             | Yes             |                                                                                                        |
 | [MassTransit](https://masstransit-project.com/)                                   | Yes                                             |                 |                                                                                                        |
+
+## Automatic Testing
+
+The following scenarios are automatically tested with every release:
+
+| .NET Version | LibC type | CPU   |
+|--------------|-----------|-------|
+| 6.0          | glibc     | amd64 |
+| 6.0          | musl      | amd64 |
+| 8.0          | glibc     | amd64 |
+| 8.0          | musl      | amd64 |

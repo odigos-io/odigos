@@ -11,17 +11,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-)
-
-var (
-	sourceFinalizer = "odigos.io/source-finalizer"
-	// TODO: Needed until InstrumentedApplication is removed
-	instrumentedApplicationFinalizer = "odigos.io/source-instrumentedapplication-finalizer"
-
-	workloadNameLabel      = "odigos.io/workload-name"
-	workloadNamespaceLabel = "odigos.io/workload-namespace"
-	workloadKindLabel      = "odigos.io/workload-kind"
 )
 
 type SourceReconciler struct {
@@ -47,20 +39,20 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	instConfigName := workload.CalculateWorkloadRuntimeObjectName(source.Spec.Workload.Name, source.Spec.Workload.Kind)
 
 	if source.DeletionTimestamp.IsZero() {
-		if !controllerutil.ContainsFinalizer(source, sourceFinalizer) {
-			controllerutil.AddFinalizer(source, sourceFinalizer)
+		if !controllerutil.ContainsFinalizer(source, consts.SourceFinalizer) {
+			controllerutil.AddFinalizer(source, consts.SourceFinalizer)
 			// Removed by deleteinstrumentedapplication controller
-			controllerutil.AddFinalizer(source, instrumentedApplicationFinalizer)
+			controllerutil.AddFinalizer(source, consts.InstrumentedApplicationFinalizer)
 
 			if source.Labels == nil {
 				source.Labels = make(map[string]string)
 			}
-			source.Labels[workloadNameLabel] = source.Spec.Workload.Name
-			source.Labels[workloadNamespaceLabel] = source.Spec.Workload.Namespace
-			source.Labels[workloadKindLabel] = string(source.Spec.Workload.Kind)
+			source.Labels[consts.WorkloadNameLabel] = source.Spec.Workload.Name
+			source.Labels[consts.WorkloadNamespaceLabel] = source.Spec.Workload.Namespace
+			source.Labels[consts.WorkloadKindLabel] = string(source.Spec.Workload.Kind)
 
 			if err := r.Update(ctx, source); err != nil {
-				return ctrl.Result{}, err
+				return k8sutils.K8SUpdateErrorHandler(err)
 			}
 
 			err = requestOdigletsToCalculateRuntimeDetails(ctx, r.Client, instConfigName, req.Namespace, obj, r.Scheme)
@@ -68,11 +60,11 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	} else {
 		// Source is being deleted
-		if controllerutil.ContainsFinalizer(source, sourceFinalizer) {
+		if controllerutil.ContainsFinalizer(source, consts.SourceFinalizer) {
 			// Remove the finalizer first, because if the InstrumentationConfig is not found we
 			// will deadlock on the finalizer never getting removed.
 			// On the other hand, this could end up deleting a Source with an orphaned InstrumentationConfig.
-			controllerutil.RemoveFinalizer(source, sourceFinalizer)
+			controllerutil.RemoveFinalizer(source, consts.SourceFinalizer)
 			if err := r.Update(ctx, source); err != nil {
 				return ctrl.Result{}, err
 			}

@@ -90,7 +90,7 @@ export const ACTION_OPTIONS: ActionOption[] = [
       },
       {
         id: 'latency-action',
-        label: 'Latency Action',
+        label: 'Latency Sampler',
         description: 'Add latency to your traces.',
         type: ActionsType.LATENCY_SAMPLER,
         icon: getActionIcon('sampler'),

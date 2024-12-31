@@ -3,16 +3,66 @@ package watchers
 import (
 	"context"
 	"fmt"
-	"log"
+	"time"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/endpoints/sse"
 	"github.com/odigos-io/odigos/frontend/kube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 )
 
+var destinationAddedEventBatcher *EventBatcher
+var destinationModifiedEventBatcher *EventBatcher
+var destinationDeletedEventBatcher *EventBatcher
+
 func StartDestinationWatcher(ctx context.Context, namespace string) error {
+	destinationAddedEventBatcher = NewEventBatcher(
+		EventBatcherConfig{
+			MinBatchSize: 1,
+			Duration:     10 * time.Second,
+			Event:        sse.MessageEventAdded,
+			CRDType:      consts.Destination,
+			SuccessBatchMessageFunc: func(count int, crdType string) string {
+				return fmt.Sprintf("Successfully created %d destinations", count)
+			},
+			FailureBatchMessageFunc: func(count int, crdType string) string {
+				return fmt.Sprintf("Failed to create %d destinations", count)
+			},
+		},
+	)
+
+	destinationModifiedEventBatcher = NewEventBatcher(
+		EventBatcherConfig{
+			MinBatchSize: 1,
+			Duration:     10 * time.Second,
+			Event:        sse.MessageEventModified,
+			CRDType:      consts.Destination,
+			SuccessBatchMessageFunc: func(batchSize int, crd string) string {
+				return fmt.Sprintf("Successfully transformed %d destinations to otelcol configuration", batchSize)
+			},
+			FailureBatchMessageFunc: func(batchSize int, crd string) string {
+				return fmt.Sprintf("Failed to transform %d destinations to otelcol configuration", batchSize)
+			},
+		},
+	)
+
+	destinationDeletedEventBatcher = NewEventBatcher(
+		EventBatcherConfig{
+			MinBatchSize: 1,
+			Duration:     10 * time.Second,
+			Event:        sse.MessageEventDeleted,
+			CRDType:      consts.Destination,
+			SuccessBatchMessageFunc: func(count int, crdType string) string {
+				return fmt.Sprintf("Successfully deleted %d destinations", count)
+			},
+			FailureBatchMessageFunc: func(count int, crdType string) string {
+				return fmt.Sprintf("Failed to delete %d destinations", count)
+			},
+		},
+	)
+
 	watcher, err := kube.DefaultClient.OdigosClient.Destinations(namespace).Watch(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("error creating watcher: %v", err)
@@ -24,6 +74,9 @@ func StartDestinationWatcher(ctx context.Context, namespace string) error {
 
 func handleDestinationWatchEvents(ctx context.Context, watcher watch.Interface) {
 	ch := watcher.ResultChan()
+	defer destinationAddedEventBatcher.Cancel()
+	defer destinationModifiedEventBatcher.Cancel()
+	defer destinationDeletedEventBatcher.Cancel()
 	for {
 		select {
 		case <-ctx.Done():
@@ -35,50 +88,54 @@ func handleDestinationWatchEvents(ctx context.Context, watcher watch.Interface) 
 			}
 			switch event.Type {
 			case watch.Added:
-				handleAddedDestination(event)
+				handleAddedDestination(event.Object.(*v1alpha1.Destination))
 			case watch.Modified:
-				handleModifiedDestination(event)
+				handleModifiedDestination(event.Object.(*v1alpha1.Destination))
 			case watch.Deleted:
-				handleDeletedDestination(event)
-			default:
-				log.Printf("unexpected type: %T", event.Object)
+				handleDeletedDestination(event.Object.(*v1alpha1.Destination))
 			}
 		}
 	}
 }
 
-func handleAddedDestination(event watch.Event) {
-	destination, ok := event.Object.(*v1alpha1.Destination)
-	if !ok {
-		genericErrorMessage(sse.MessageEventAdded, "Destination", "error type assertion")
+func handleAddedDestination(destination *v1alpha1.Destination) {
+	name := destination.Spec.DestinationName
+	if name == "" {
+		name = string(destination.Spec.Type)
 	}
-	data := fmt.Sprintf("Destination %s created", destination.Spec.DestinationName)
-	sse.SendMessageToClient(sse.SSEMessage{Event: sse.MessageEventAdded, Type: "success", Target: destination.Name, Data: data, CRDType: "Destination"})
+
+	target := destination.Name
+	data := fmt.Sprintf(`%s "%s" created`, consts.Destination, name)
+	destinationAddedEventBatcher.AddEvent(sse.MessageTypeSuccess, data, target)
 }
 
-func handleModifiedDestination(event watch.Event) {
-	destination, ok := event.Object.(*v1alpha1.Destination)
-	if !ok {
-		genericErrorMessage(sse.MessageEventModified, "Destination", "error type assertion")
-	}
-	if len(destination.Status.Conditions) == 0 {
+func handleModifiedDestination(destination *v1alpha1.Destination) {
+	length := len(destination.Status.Conditions)
+	if length == 0 {
 		return
 	}
 
-	lastCondition := destination.Status.Conditions[len(destination.Status.Conditions)-1]
+	target := destination.Name
+	lastCondition := destination.Status.Conditions[length-1]
 	data := lastCondition.Message
-	conditionType := sse.MessageTypeSuccess
-	if lastCondition.Status == "False" {
+
+	conditionType := sse.MessageTypeInfo
+	if lastCondition.Status == metav1.ConditionTrue {
+		conditionType = sse.MessageTypeSuccess
+	} else if lastCondition.Status == metav1.ConditionFalse {
 		conditionType = sse.MessageTypeError
 	}
-	sse.SendMessageToClient(sse.SSEMessage{Event: sse.MessageEventModified, Type: conditionType, Target: destination.Name, Data: data, CRDType: "Destination"})
+
+	destinationModifiedEventBatcher.AddEvent(conditionType, data, target)
 }
 
-func handleDeletedDestination(event watch.Event) {
-	destination, ok := event.Object.(*v1alpha1.Destination)
-	if !ok {
-		genericErrorMessage(sse.MessageEventDeleted, "Destination", "error type assertion")
+func handleDeletedDestination(destination *v1alpha1.Destination) {
+	name := destination.Spec.DestinationName
+	if name == "" {
+		name = string(destination.Spec.Type)
 	}
-	data := fmt.Sprintf("Destination %s deleted successfully", destination.Spec.DestinationName)
-	sse.SendMessageToClient(sse.SSEMessage{Event: sse.MessageEventDeleted, Type: "success", Target: "", Data: data, CRDType: "Destination"})
+
+	target := destination.Name
+	data := fmt.Sprintf(`%s "%s" deleted`, consts.Destination, name)
+	destinationDeletedEventBatcher.AddEvent(sse.MessageTypeSuccess, data, target)
 }

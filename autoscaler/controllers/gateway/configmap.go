@@ -150,7 +150,7 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 					logger.Error(err, "Failed to update destination error status conditions")
 				}
 			} else {
-				err := odgiosK8s.UpdateStatusConditions(ctx, c, &dest, &dest.Status.Conditions, metav1.ConditionTrue, destinationConfiguredType, "TransformedToOtelcolConfig", "destination successfully transformed to otelcol configuration")
+				err := odgiosK8s.UpdateStatusConditions(ctx, c, &dest, &dest.Status.Conditions, metav1.ConditionTrue, destinationConfiguredType, "TransformedToOtelcolConfig", "Destination successfully transformed to otelcol configuration")
 				if err != nil {
 					logger.Error(err, "Failed to update destination success status conditions")
 				}

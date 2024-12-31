@@ -71,7 +71,7 @@ export const AutocompleteInput: FC<Props> = ({ placeholder = 'Type to search...'
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    e.stopPropagation();
+    if (!['Enter'].includes(e.key)) e.stopPropagation();
 
     // Flatten the options to handle keyboard navigation - TODO: Refactor this
     return;

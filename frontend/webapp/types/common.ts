@@ -5,8 +5,9 @@ export interface ExportedSignals {
 }
 
 export interface Condition {
-  type: string;
   status: string;
+  type: string;
+  reason: string;
   message: string;
   lastTransitionTime: string;
 }
@@ -28,6 +29,7 @@ export interface Notification {
   target?: string;
   dismissed: boolean;
   seen: boolean;
+  hideFromHistory?: boolean;
   time: string;
 }
 
