@@ -183,7 +183,9 @@ func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {
 				"health_check": GenericMap{
 					"endpoint": "0.0.0.0:13133",
 				},
-				"pprof": GenericMap{},
+				"pprof": GenericMap{
+					"endpoint": "0.0.0.0:1777",
+				},
 			},
 			Exporters:  map[string]interface{}{},
 			Connectors: map[string]interface{}{},
