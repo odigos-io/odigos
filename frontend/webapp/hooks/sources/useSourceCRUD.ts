@@ -12,7 +12,7 @@ interface Params {
 
 export const useSourceCRUD = (params?: Params) => {
   const { removeNotifications } = useNotificationStore();
-  const { configuredSources, setConfiguredSources } = useAppStore();
+  const { setConfiguredSources } = useAppStore();
 
   const { data } = useComputePlatform();
   const { persistNamespace } = useNamespace();
