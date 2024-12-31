@@ -1,8 +1,8 @@
 import { useMutation } from '@apollo/client';
 import { ACTION, getSseTargetFromId } from '@/utils';
-import { useAppStore, useNotificationStore } from '@/store';
 import { PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import { useComputePlatform, useNamespace } from '../compute-platform';
+import { useAppStore, useNotificationStore, usePendingStore } from '@/store';
 import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type PatchSourceRequestInput, type K8sActualSource, NOTIFICATION_TYPE } from '@/types';
 
 interface Params {
@@ -16,6 +16,7 @@ export const useSourceCRUD = (params?: Params) => {
 
   const { data } = useComputePlatform();
   const { persistNamespace } = useNamespace();
+  const { addPendingItems } = usePendingStore();
   const { addNotification } = useNotificationStore();
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: WorkloadId, hideFromHistory?: boolean) => {
@@ -62,38 +63,26 @@ export const useSourceCRUD = (params?: Params) => {
     onCompleted: (res, req) => handleComplete(ACTION.UPDATE),
   });
 
-  const persistNamespaces = async (items: { [key: string]: boolean }) => {
-    for (const [namespace, futureSelected] of Object.entries(items)) {
-      await persistNamespace({ name: namespace, futureSelected });
-    }
-  };
-
-  const persistSources = async (items: { [key: string]: K8sActualSource[] }) => {
-    for (const [namespace, sources] of Object.entries(items)) {
-      await createOrDeleteSources({
-        variables: {
-          namespace,
-          sources: sources.map((source) => ({
-            kind: source.kind,
-            name: source.name,
-            selected: source.selected,
-          })),
-        },
-      });
-    }
-  };
-
   return {
     loading: cdState.loading || uState.loading,
     sources: data?.computePlatform.k8sActualSources || [],
 
     persistSources: async (selectAppsList: { [key: string]: K8sActualSource[] }, futureSelectAppsList: { [key: string]: boolean }) => {
       notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Persisting sources...', undefined, true);
-      await persistNamespaces(futureSelectAppsList);
-      await persistSources(selectAppsList);
+
+      for (const [namespace, sources] of Object.entries(selectAppsList)) {
+        addPendingItems(sources.map(({ name, kind, selected }) => ({ id: { namespace, name, kind }, entityType: OVERVIEW_ENTITY_TYPES.SOURCE, crudType: selected ? ACTION.CREATE : ACTION.DELETE })));
+        await createOrDeleteSources({ variables: { namespace, sources } });
+      }
+
+      for (const [namespace, futureSelected] of Object.entries(futureSelectAppsList)) {
+        await persistNamespace({ name: namespace, futureSelected });
+      }
     },
+
     updateSource: async (sourceId: WorkloadId, patchSourceRequest: PatchSourceRequestInput) => {
       notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Updating sources...', undefined, true);
+      addPendingItems([{ id: sourceId, entityType: OVERVIEW_ENTITY_TYPES.SOURCE, crudType: ACTION.UPDATE }]);
       await updateSource({ variables: { sourceId, patchSourceRequest } });
     },
   };
