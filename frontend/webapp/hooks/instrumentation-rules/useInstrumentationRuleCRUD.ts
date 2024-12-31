@@ -11,9 +11,8 @@ interface Params {
 }
 
 export const useInstrumentationRuleCRUD = (params?: Params) => {
-  const removeNotifications = useNotificationStore((store) => store.removeNotifications);
   const { data, refetch } = useComputePlatform();
-  const { addNotification } = useNotificationStore();
+  const { addNotification, removeNotifications } = useNotificationStore();
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
     addNotification({

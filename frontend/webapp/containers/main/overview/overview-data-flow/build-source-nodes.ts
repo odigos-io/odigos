@@ -30,7 +30,7 @@ const mapToNodeData = (entity: Params['entities'][0]) => {
     type: OVERVIEW_ENTITY_TYPES.SOURCE,
     status: getHealthStatus(entity),
     title: getEntityLabel(entity, OVERVIEW_ENTITY_TYPES.SOURCE, { extended: true }),
-    subTitle: entity.kind,
+    subTitle: `${entity.namespace} • ${entity.kind}`,
     iconSrc: getProgrammingLanguageIcon(getMainContainerLanguage(entity)),
     raw: entity,
   };

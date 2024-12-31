@@ -2,9 +2,10 @@ import { useEffect, useRef } from 'react';
 import { API } from '@/utils';
 import { NOTIFICATION_TYPE } from '@/types';
 import { useComputePlatform } from '../compute-platform';
-import { type NotifyPayload, useConnectionStore, useNotificationStore } from '@/store';
+import { type NotifyPayload, useConnectionStore, useNotificationStore, usePendingStore } from '@/store';
 
 export const useSSE = () => {
+  const { setPendingItems } = usePendingStore();
   const { addNotification } = useNotificationStore();
   const { setConnectionStore } = useConnectionStore();
   const { refetch: refetchComputePlatform } = useComputePlatform();
@@ -28,9 +29,13 @@ export const useSSE = () => {
           target: data.target,
         };
 
-        // Dispatch the notification to the store
         addNotification(notification);
         refetchComputePlatform();
+
+        // This works for now,
+        // but in the future we might have to change this to "removePendingItems",
+        // and remove the specific pending items based on their entityType and entityId
+        setPendingItems([]);
 
         // Reset retry count on successful connection
         retryCount.current = 0;
