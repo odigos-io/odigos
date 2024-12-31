@@ -40,13 +40,14 @@ export const usePendingStore = create<StoreState>((set, get) => ({
       const pendingItem = pendingItems[i];
       if (
         pendingItem.entityType === item.entityType &&
-        (pendingItem.entityType === OVERVIEW_ENTITY_TYPES.SOURCE
-          ? !!pendingItem.entityId &&
-            !!item.entityId &&
-            (pendingItem.entityId as WorkloadId).namespace === (item.entityId as WorkloadId).namespace &&
-            (pendingItem.entityId as WorkloadId).name === (item.entityId as WorkloadId).name &&
-            (pendingItem.entityId as WorkloadId).kind === (item.entityId as WorkloadId).kind
-          : pendingItem.entityId === item.entityId) // this line can be valued with string and/or undefined, undefined should only happen on create-destination!
+        (!item.entityId ||
+          (pendingItem.entityType === OVERVIEW_ENTITY_TYPES.SOURCE
+            ? !!pendingItem.entityId &&
+              !!item.entityId &&
+              (pendingItem.entityId as WorkloadId).namespace === (item.entityId as WorkloadId).namespace &&
+              (pendingItem.entityId as WorkloadId).name === (item.entityId as WorkloadId).name &&
+              (pendingItem.entityId as WorkloadId).kind === (item.entityId as WorkloadId).kind
+            : pendingItem.entityId === item.entityId))
       ) {
         bool = true;
         break;

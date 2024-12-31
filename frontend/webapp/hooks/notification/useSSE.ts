@@ -29,9 +29,12 @@ export const useSSE = () => {
           target: data.target,
         };
 
-        // Dispatch the notification to the store
         addNotification(notification);
         refetchComputePlatform();
+
+        // This works for now,
+        // but in the future we might have to change this to "removePendingItems",
+        // and remove the specific pending items based on their entityType and entityId
         setPendingItems([]);
 
         // Reset retry count on successful connection
