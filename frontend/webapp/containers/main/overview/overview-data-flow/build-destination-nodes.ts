@@ -73,7 +73,7 @@ export const buildDestinationNodes = ({ loading, entities, positions, unfiltered
         nodeWidth,
         type: OVERVIEW_NODE_TYPES.ADD_DESTIONATION,
         status: STATUSES.HEALTHY,
-        title: 'ADD DESTIONATION',
+        title: 'ADD DESTINATION',
         subTitle: `Add ${!!unfilteredCount ? 'a new' : 'first'} destination to monitor the OpenTelemetry data`,
       },
     });
