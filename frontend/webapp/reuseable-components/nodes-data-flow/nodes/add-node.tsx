@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { Fragment, useMemo } from 'react';
 import { PlusIcon } from '@/assets';
 import styled from 'styled-components';
-import { Text } from '@/reuseable-components';
-import { NODE_TYPES, OVERVIEW_NODE_TYPES, STATUSES } from '@/types';
+import { usePendingStore } from '@/store';
+import { FadeLoader, Text } from '@/reuseable-components';
 import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';
+import { NODE_TYPES, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES } from '@/types';
 
 interface Props
   extends NodeProps<
@@ -59,16 +60,43 @@ const SubTitle = styled(Text)`
   text-align: center;
 `;
 
-const AddNode: React.FC<Props> = ({ data }) => {
+const AddNode: React.FC<Props> = ({ id: nodeId, data }) => {
   const { nodeWidth, title, subTitle } = data;
+  const { pendingItems } = usePendingStore();
+
+  const [isPending, entity] = useMemo(() => {
+    let bool = false;
+    let txt = '';
+
+    for (let i = 0; i < pendingItems.length; i++) {
+      const { entityType } = pendingItems[i];
+      if (entityType === OVERVIEW_ENTITY_TYPES.DESTINATION && nodeId === 'destination-add') {
+        bool = true;
+        txt = OVERVIEW_ENTITY_TYPES.DESTINATION;
+        break;
+      } else if (entityType === OVERVIEW_ENTITY_TYPES.SOURCE && nodeId === 'source-add') {
+        bool = true;
+        txt = `${OVERVIEW_ENTITY_TYPES.SOURCE}s`;
+        break;
+      }
+    }
+
+    return [bool, txt];
+  }, [nodeId, pendingItems]);
 
   return (
     <Container $nodeWidth={nodeWidth} className='nowheel nodrag'>
       <TitleWrapper>
-        <PlusIcon />
-        <Title>{title}</Title>
+        {isPending ? (
+          <FadeLoader />
+        ) : (
+          <Fragment>
+            <PlusIcon />
+            <Title>{title}</Title>
+          </Fragment>
+        )}
       </TitleWrapper>
-      <SubTitle>{subTitle}</SubTitle>
+      <SubTitle>{isPending ? `Adding ${entity}...` : subTitle}</SubTitle>
 
       <Handle type='target' position={Position.Left} style={{ visibility: 'hidden' }} />
       <Handle type='source' position={Position.Right} style={{ visibility: 'hidden' }} />
