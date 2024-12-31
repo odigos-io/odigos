@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { OVERVIEW_ENTITY_TYPES, WorkloadId } from '@/types';
 
-interface PendingItem {
+export interface PendingItem {
   entityType: OVERVIEW_ENTITY_TYPES;
   entityId?: string | WorkloadId;
 }
