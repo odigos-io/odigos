@@ -5,8 +5,9 @@ import { useDestinationCRUD } from '../destinations';
 import { useDrawerStore, useModalStore } from '@/store';
 import { useInstrumentationRuleCRUD } from '../instrumentation-rules';
 import { OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, WorkloadId } from '@/types';
+import { Node } from '@xyflow/react';
 
-export function useNodeDataFlowHandlers() {
+export const useNodeDataFlowHandlers = () => {
   const { sources } = useSourceCRUD();
   const { actions } = useActionCRUD();
   const { destinations } = useDestinationCRUD();
@@ -18,12 +19,13 @@ export function useNodeDataFlowHandlers() {
   const handleNodeClick = useCallback(
     (
       _: React.MouseEvent | null,
-      object: {
-        data: {
+      object: Node<
+        {
           id: string | WorkloadId;
           type: OVERVIEW_ENTITY_TYPES | OVERVIEW_NODE_TYPES;
-        };
-      },
+        },
+        'any-node'
+      >,
     ) => {
       const {
         data: { id, type },
@@ -80,4 +82,4 @@ export function useNodeDataFlowHandlers() {
   return {
     handleNodeClick,
   };
-}
+};

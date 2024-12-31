@@ -86,6 +86,7 @@ const ScrollNode: React.FC<Props> = ({ data, ...rest }) => {
           $framePadding={item.data.framePadding}
           onClick={(e) => {
             e.stopPropagation();
+            // @ts-ignore
             handleNodeClick(e, item);
           }}
         >

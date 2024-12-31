@@ -61,7 +61,7 @@ export const useSourceCRUD = (params?: Params) => {
 
   const [updateSource, uState] = useMutation<{ updateK8sActualSource: boolean }>(UPDATE_K8S_ACTUAL_SOURCE, {
     onError: (error) => handleError(ACTION.UPDATE, error.message),
-    onCompleted: (res, req) => handleComplete(ACTION.UPDATE),
+    onCompleted: () => handleComplete(ACTION.UPDATE),
   });
 
   return {
