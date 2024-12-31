@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/common"
+	webhookenvinjector "github.com/odigos-io/odigos/instrumentor/internal/webhook_env_injector"
 	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	containerutils "github.com/odigos-io/odigos/k8sutils/pkg/container"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -34,6 +36,8 @@ type PodsWebhook struct {
 var _ webhook.CustomDefaulter = &PodsWebhook{}
 
 func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
+	logger := log.FromContext(ctx)
+
 	pod, ok := obj.(*corev1.Pod)
 	if !ok {
 		return fmt.Errorf("expected a Pod but got a %T", obj)
@@ -43,96 +47,68 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		pod.Annotations = map[string]string{}
 	}
 
-	serviceName, podWorkload := p.getServiceNameForEnv(ctx, pod)
-
 	// Inject ODIGOS environment variables into all containers
-	injectOdigosEnvVars(pod, podWorkload, serviceName)
+	p.injectOdigosEnvVars(ctx, logger, pod)
 
 	return nil
 }
 
-// checks for the service name on the annotation, or fallback to the workload name
-func (p *PodsWebhook) getServiceNameForEnv(ctx context.Context, pod *corev1.Pod) (*string, *workload.PodWorkload) {
-
-	logger := log.FromContext(ctx)
+func (p *PodsWebhook) injectOdigosEnvVars(ctx context.Context, logger logr.Logger, pod *corev1.Pod) {
+	// Environment variables that remain consistent across all containers
+	commonEnvVars := getCommonEnvVars()
 
 	podWorkload, err := workload.PodWorkloadObject(ctx, pod)
 	if err != nil {
 		logger.Error(err, "failed to extract pod workload details from pod. skipping OTEL_SERVICE_NAME injection")
-		return nil, nil
+		return
 	}
 
-	workloadObj, err := workload.GetWorkloadObject(ctx, client.ObjectKey{Namespace: podWorkload.Namespace, Name: podWorkload.Name}, podWorkload.Kind, p.Client)
-	if err != nil {
-		logger.Error(err, "failed to get workload object from cache. cannot check for workload annotation. using workload name as OTEL_SERVICE_NAME")
-		return &podWorkload.Name, podWorkload
-	}
-	resolvedServiceName := workload.ExtractServiceNameFromAnnotations(workloadObj.GetAnnotations(), podWorkload.Name)
-	return &resolvedServiceName, podWorkload
-}
-
-func injectOdigosEnvVars(pod *corev1.Pod, podWorkload *workload.PodWorkload, serviceName *string) {
-
-	// Common environment variables that do not change across containers
-	commonEnvVars := []corev1.EnvVar{
-		{
-			Name: k8sconsts.OdigosEnvVarNamespace,
-			ValueFrom: &corev1.EnvVarSource{
-				FieldRef: &corev1.ObjectFieldSelector{
-					FieldPath: "metadata.namespace",
-				},
-			},
-		},
-		{
-			Name: k8sconsts.OdigosEnvVarPodName,
-			ValueFrom: &corev1.EnvVarSource{
-				FieldRef: &corev1.ObjectFieldSelector{
-					FieldPath: "metadata.name",
-				},
-			},
-		},
-	}
-
+	var serviceName *string
 	var serviceNameEnv *corev1.EnvVar
-	if serviceName != nil {
-		serviceNameEnv = &corev1.EnvVar{
-			Name:  otelServiceNameEnvVarName,
-			Value: *serviceName,
-		}
-	}
 
 	for i := range pod.Spec.Containers {
 		container := &pod.Spec.Containers[i]
 
-		pl, otelsdk, found := containerutils.GetLanguageAndOtelSdk(container)
+		pl, otelsdk, found := containerutils.GetLanguageAndOtelSdk(*container) // TODO check otel sdk !nil nil
 		if !found {
 			continue
 		}
+
+		webhookenvinjector.InjectOdigosAgentEnvVars(ctx, p.Client, logger, *podWorkload, container, pl, otelsdk)
 
 		// Check if the environment variables are already present, if so skip inject them again.
 		if envVarsExist(container.Env, commonEnvVars) {
 			continue
 		}
 
-		containerNameEnv := corev1.EnvVar{
-			Name:  k8sconsts.OdigosEnvVarContainerName,
-			Value: container.Name,
+		containerNameEnv := corev1.EnvVar{Name: k8sconsts.OdigosEnvVarContainerName, Value: container.Name}
+		container.Env = append(container.Env, append(commonEnvVars, containerNameEnv)...)
+
+		if shouldInjectServiceName(pl, otelsdk) {
+			// Ensure the serviceName is fetched only once per pod
+			if serviceName == nil {
+				serviceName = p.getServiceNameForEnv(ctx, logger, podWorkload)
+			}
+			// Initialize serviceNameEnv only once per pod if serviceName is valid
+			if serviceName != nil && serviceNameEnv == nil {
+				serviceNameEnv = &corev1.EnvVar{
+					Name:  otelServiceNameEnvVarName,
+					Value: *serviceName,
+				}
+			}
+
+			if serviceNameEnv != nil && !otelNameExists(container.Env) {
+				container.Env = append(container.Env, *serviceNameEnv)
+			}
 		}
 
 		resourceAttributes := getResourceAttributes(podWorkload, container.Name)
 		resourceAttributesEnvValue := getResourceAttributesEnvVarValue(resourceAttributes)
 
-		container.Env = append(container.Env, append(commonEnvVars, containerNameEnv)...)
-
-		if serviceNameEnv != nil && shouldInjectServiceName(pl, otelsdk) {
-			if !otelNameExists(container.Env) {
-				container.Env = append(container.Env, *serviceNameEnv)
-			}
-			container.Env = append(container.Env, corev1.EnvVar{
-				Name:  otelResourceAttributesEnvVarName,
-				Value: resourceAttributesEnvValue,
-			})
-		}
+		container.Env = append(container.Env, corev1.EnvVar{
+			Name:  otelResourceAttributesEnvVarName,
+			Value: resourceAttributesEnvValue,
+		})
 	}
 }
 
@@ -213,4 +189,36 @@ func shouldInjectServiceName(pl common.ProgrammingLanguage, otelsdk common.OtelS
 		return true
 	}
 	return false
+}
+
+func getCommonEnvVars() []corev1.EnvVar {
+	return []corev1.EnvVar{
+		{
+			Name: k8sconsts.OdigosEnvVarNamespace,
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "metadata.namespace",
+				},
+			},
+		},
+		{
+			Name: k8sconsts.OdigosEnvVarPodName,
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "metadata.name",
+				},
+			},
+		},
+	}
+}
+
+// checks for the service name on the annotation, or fallback to the workload name
+func (p *PodsWebhook) getServiceNameForEnv(ctx context.Context, logger logr.Logger, podWorkload *workload.PodWorkload) *string {
+	workloadObj, err := workload.GetWorkloadObject(ctx, client.ObjectKey{Namespace: podWorkload.Namespace, Name: podWorkload.Name}, podWorkload.Kind, p.Client)
+	if err != nil {
+		logger.Error(err, "failed to get workload object from cache. cannot check for workload annotation. using workload name as OTEL_SERVICE_NAME")
+		return &podWorkload.Name
+	}
+	resolvedServiceName := workload.ExtractServiceNameFromAnnotations(workloadObj.GetAnnotations(), podWorkload.Name)
+	return &resolvedServiceName
 }

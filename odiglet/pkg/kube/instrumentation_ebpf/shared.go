@@ -36,7 +36,7 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors ebpf.
 			continue
 		}
 
-		language, sdk, found := odgiosK8s.GetLanguageAndOtelSdk(&container)
+		language, sdk, found := odgiosK8s.GetLanguageAndOtelSdk(container)
 		if !found {
 			continue
 		}

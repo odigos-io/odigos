@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/envOverwrite"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/consts"
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
@@ -15,7 +14,6 @@ const (
 	envOtelMetricsExporter             = "OTEL_METRICS_EXPORTER"
 	envOtelLogsExporter                = "OTEL_LOGS_EXPORTER"
 	envLogCorrelation                  = "OTEL_PYTHON_LOG_CORRELATION"
-	envPythonPath                      = "PYTHONPATH"
 	envOtelExporterOTLPTracesProtocol  = "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL"
 	pythonConfiguratorEnvVar           = "OTEL_PYTHON_CONFIGURATOR"
 	pythonConfiguratorValue            = "odigos-python-configurator"
@@ -27,7 +25,6 @@ const (
 
 func Python(deviceId string, uniqueDestinationSignals map[common.ObservabilitySignal]struct{}) *v1beta1.ContainerAllocateResponse {
 	otlpEndpoint := fmt.Sprintf("http://%s:%d", env.Current.NodeIP, consts.OTLPHttpPort)
-	pythonpathVal, _ := envOverwrite.ValToAppend(envPythonPath, common.OtelSdkNativeCommunity)
 	opampServerHost := fmt.Sprintf("%s:%d", env.Current.NodeIP, consts.OpAMPPort)
 
 	logsExporter := "none"
@@ -46,7 +43,6 @@ func Python(deviceId string, uniqueDestinationSignals map[common.ObservabilitySi
 			pythonOdigosDeviceId:          deviceId,
 			pythonOdigosOpampServer:       opampServerHost,
 			envLogCorrelation:             "true",
-			envPythonPath:                 pythonpathVal,
 			pythonConfiguratorEnvVar:      pythonConfiguratorValue,
 			"OTEL_EXPORTER_OTLP_ENDPOINT": otlpEndpoint,
 			envOtelTracesExporter:         tracesExporter,

@@ -183,5 +183,12 @@ func ValToAppend(envName string, sdk common.OtelSdk) (string, bool) {
 }
 
 func GetPossibleValuesPerEnv(env string) map[common.OtelSdk]string {
-	return EnvValuesMap[env].values
+	if envValues, ok := EnvValuesMap[env]; ok {
+		return envValues.values
+	}
+	return nil
+}
+
+func GetDelimPerEnv(env string) string {
+	return EnvValuesMap[env].delim
 }
