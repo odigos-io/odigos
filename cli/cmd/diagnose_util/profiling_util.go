@@ -21,11 +21,39 @@ import (
 
 var ProfilingMetricsFunctions = []ProfileInterface{CPUProfiler{}, HeapProfiler{}, GoRoutineProfiler{}, AllocsProfiler{}}
 
-var profilingPodsLabels = []labels.Selector{
-	labels.Set{resources.OdigletAppLabelKey: resources.OdigletAppLabelValue}.AsSelector(),
-	labels.Set{consts.OdigosCollectorRoleLabel: string(consts.CollectorsRoleClusterGateway)}.AsSelector(),
-	labels.Set{consts.OdigosCollectorRoleLabel: string(consts.CollectorsRoleNodeCollector)}.AsSelector(),
+type ProfilingPodConfig struct {
+	Port      int32
+	Selectors []labels.Selector
 }
+type PodPprofMetadata struct {
+	Pod  corev1.Pod
+	Pprofort int32
+}
+
+// servicesProfilingMetadata is a map that associates service names with their corresponding pprof endpoint ports and selectors.
+// To add new Odigos services to be profiled, include the service name along with the appropriate port and selectors in this map.
+// Note: In DaemonSets, pods expose ports on the node, so the same port cannot be used for multiple services.
+var servicesProfilingMetadata = map[string]ProfilingPodConfig{
+	"odiglet": {
+		Port: consts.OdigletPprofEndpointPort,
+		Selectors: []labels.Selector{
+			labels.Set{resources.OdigletAppLabelKey: resources.OdigletAppLabelValue}.AsSelector(),
+		},
+	},
+	"data-collection": {
+		Port: consts.CollectorsPprofEndpointPort,
+		Selectors: []labels.Selector{
+			labels.Set{consts.OdigosCollectorRoleLabel: string(consts.CollectorsRoleNodeCollector)}.AsSelector(),
+		},
+	},
+	"gateway": {	
+		Port: consts.CollectorsPprofEndpointPort,
+		Selectors: []labels.Selector{
+			labels.Set{consts.OdigosCollectorRoleLabel: string(consts.CollectorsRoleClusterGateway)}.AsSelector(),
+		},
+	},
+}
+
 
 type ProfileInterface interface {
 	GetFileName() string
@@ -73,38 +101,51 @@ func (h AllocsProfiler) GetUrlSuffix() string {
 }
 
 func FetchOdigosProfiles(ctx context.Context, client *kube.Client, profileDir string) error {
-
 	odigosNamespace, err := resources.GetOdigosNamespace(client, ctx)
 	if err != nil {
 		return nil
 	}
-	var combinedPods = []corev1.Pod{}
+	var combinedPodsToProfile []PodPprofMetadata
 
-	for _, selector := range profilingPodsLabels {
-		podsToProfile, err := client.CoreV1().Pods(odigosNamespace).List(ctx, metav1.ListOptions{
+	for _, service := range servicesProfilingMetadata {
+		selectors := service.Selectors
+
+		for _, selector := range selectors {
+			podsToProfile, err := client.CoreV1().Pods(odigosNamespace).List(ctx, metav1.ListOptions{
 			LabelSelector: selector.String(),
-		})
-		if err != nil {
-			return err
-		}
-		combinedPods = append(podsToProfile.Items, combinedPods...)
+			})
+			if err != nil {
+				return err
+			}
+			for _, pod := range podsToProfile.Items {
+				combinedPodsToProfile = append(combinedPodsToProfile, PodPprofMetadata{
+					Pod:  pod,
+					Pprofort: service.Port,
+				})
+			}
+		}	
 	}
 
 	var profilingPods = make(map[string]corev1.Pod)
-	for _, pod := range combinedPods {
-		profilingPods[pod.Name] = pod
+	for _, pod := range combinedPodsToProfile {
+		_, exists := profilingPods[pod.Pod.ObjectMeta.Name]
+		if !exists {
+			profilingPods[pod.Pod.ObjectMeta.Name] = pod.Pod
+		}
 	}
 
 	var podsWaitGroup sync.WaitGroup
 
-	for _, pod := range profilingPods {
-		pod := pod
+	for _, podElement := range combinedPodsToProfile {
+		pprofPort := podElement.Pprofort
+		pod := podElement.Pod
 		podsWaitGroup.Add(1)
 
-		go func(pod v1.Pod) {
+		go func(pod v1.Pod, pprofPort int32) {
 			defer podsWaitGroup.Done()
 
-			nodeFilePath := filepath.Join(profileDir, pod.Name)
+			directoryName := fmt.Sprintf("%s-%s", pod.Name, pod.Spec.NodeName)
+			nodeFilePath := filepath.Join(profileDir, directoryName)
 			err := os.Mkdir(nodeFilePath, os.ModePerm)
 			if err != nil {
 				fmt.Printf("Error creating directory for node: %v, because: %v", nodeFilePath, err)
@@ -129,7 +170,7 @@ func FetchOdigosProfiles(ctx context.Context, client *kube.Client, profileDir st
 					}
 					defer metricFile.Close()
 
-					err = captureProfile(ctx, client, pod.Name, odigosNamespace, metricFile, profileFunc)
+					err = captureProfile(ctx, client, pod.Name, pprofPort, odigosNamespace, metricFile, profileFunc)
 					if err != nil {
 						fmt.Printf(
 							"Failed to capture profile data for Pod: %s, Node: %s, Profile Type: %s. Reason: %v\n",
@@ -141,20 +182,19 @@ func FetchOdigosProfiles(ctx context.Context, client *kube.Client, profileDir st
 					}
 				}(metricFilePath, profileMetricFunction)
 			}
-			// Wait for all profiling tasks for this pod to complete
-			profileWaitGroup.Wait()
-		}(pod)
+			// Wait for all profiling tasks of pod to complete
+			profileWaitGroup.Wait()	
+		}(pod, pprofPort)
 	}
 	// Wait for all pod-level tasks to complete
 	podsWaitGroup.Wait()
-	return nil
+	return nil  
 }
 
-func captureProfile(ctx context.Context, client *kube.Client, podName string, namespace string, metricFile *os.File, profileInterface ProfileInterface) error {
-	fmt.Println("Fetching profile for pod:", podName)
-	proxyURL := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s:6060/proxy/debug/pprof%s", namespace, podName, profileInterface.GetUrlSuffix())
-	fmt.Println(proxyURL)
-	// Make the HTTP GET request via the API server proxy
+func captureProfile(ctx context.Context, client *kube.Client, podName string, pprofPort int32, namespace string, metricFile *os.File, profileInterface ProfileInterface) error {
+	fmt.Printf("Generating %s file for pod: %s\n", profileInterface.GetFileName(), podName)
+	proxyURL := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s:%d/proxy/debug/pprof%s", namespace, podName, pprofPort,  profileInterface.GetUrlSuffix())
+
 	request := client.Clientset.CoreV1().RESTClient().
 		Get().
 		AbsPath(proxyURL).
