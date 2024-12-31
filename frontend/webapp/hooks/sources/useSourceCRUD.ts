@@ -2,7 +2,7 @@ import { useMutation } from '@apollo/client';
 import { ACTION, getSseTargetFromId } from '@/utils';
 import { PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import { useComputePlatform, useNamespace } from '../compute-platform';
-import { useAppStore, useNotificationStore, usePendingStore } from '@/store';
+import { PendingItem, useAppStore, useNotificationStore, usePendingStore } from '@/store';
 import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type PatchSourceRequestInput, type K8sActualSource, NOTIFICATION_TYPE } from '@/types';
 
 interface Params {
@@ -36,21 +36,22 @@ export const useSourceCRUD = (params?: Params) => {
   };
 
   const handleComplete = (actionType: string) => {
+    setConfiguredSources({});
     params?.onSuccess?.(actionType);
   };
 
   const [createOrDeleteSources, cdState] = useMutation<{ persistK8sSources: boolean }>(PERSIST_SOURCE, {
     onError: (error, req) => handleError('', error.message),
     onCompleted: (res, req) => {
+      const namespace = req?.variables?.namespace;
       const count = req?.variables?.sources.length;
 
-      if (count === 1) {
-        const namespace = req?.variables?.namespace;
-        const { name, kind, selected } = req?.variables?.sources?.[0] || {};
-        const id = { namespace, name, kind };
+      req?.variables?.sources.forEach(({ name, kind, selected }) => {
+        if (!selected) removeNotifications(getSseTargetFromId({ namespace, name, kind }, OVERVIEW_ENTITY_TYPES.SOURCE));
+      });
 
-        if (!selected) removeNotifications(getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.SOURCE));
-        if (!selected) setConfiguredSources({ ...configuredSources, [namespace]: configuredSources[namespace]?.filter((source) => source.name !== name) || [] });
+      if (count === 1) {
+        const { selected } = req?.variables?.sources?.[0] || {};
         handleComplete(selected ? ACTION.CREATE : ACTION.DELETE);
       } else {
         handleComplete('');
@@ -71,8 +72,16 @@ export const useSourceCRUD = (params?: Params) => {
       notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Persisting sources...', undefined, true);
 
       for (const [namespace, sources] of Object.entries(selectAppsList)) {
-        addPendingItems(sources.map(({ name, kind }) => ({ entityType: OVERVIEW_ENTITY_TYPES.SOURCE, entityId: { namespace, name, kind } })));
-        await createOrDeleteSources({ variables: { namespace, sources } });
+        const forPendingStore: PendingItem[] = [];
+        const forGql: { name: string; kind: string; selected: boolean }[] = [];
+
+        sources.forEach(({ name, kind, selected }) => {
+          forPendingStore.push({ entityType: OVERVIEW_ENTITY_TYPES.SOURCE, entityId: { namespace, name, kind } });
+          forGql.push({ name, kind, selected });
+        });
+
+        addPendingItems(forPendingStore);
+        await createOrDeleteSources({ variables: { namespace, sources: forGql } });
       }
 
       for (const [namespace, futureSelected] of Object.entries(futureSelectAppsList)) {
