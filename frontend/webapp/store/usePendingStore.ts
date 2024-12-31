@@ -46,7 +46,7 @@ export const usePendingStore = create<StoreState>((set, get) => ({
             (pendingItem.entityId as WorkloadId).namespace === (item.entityId as WorkloadId).namespace &&
             (pendingItem.entityId as WorkloadId).name === (item.entityId as WorkloadId).name &&
             (pendingItem.entityId as WorkloadId).kind === (item.entityId as WorkloadId).kind
-          : pendingItem.entityId === item.entityId || !item.entityId)
+          : pendingItem.entityId === item.entityId) // this line can be valued with string and/or undefined, undefined should only happen on create-destination!
       ) {
         bool = true;
         break;

@@ -2,7 +2,7 @@ import { useMutation } from '@apollo/client';
 import { ACTION, getSseTargetFromId } from '@/utils';
 import { PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import { useComputePlatform, useNamespace } from '../compute-platform';
-import { PendingItem, useAppStore, useNotificationStore, usePendingStore } from '@/store';
+import { type PendingItem, useAppStore, useNotificationStore, usePendingStore } from '@/store';
 import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type PatchSourceRequestInput, type K8sActualSource, NOTIFICATION_TYPE } from '@/types';
 
 interface Params {
@@ -11,13 +11,11 @@ interface Params {
 }
 
 export const useSourceCRUD = (params?: Params) => {
-  const { removeNotifications } = useNotificationStore();
-  const { setConfiguredSources } = useAppStore();
-
   const { data } = useComputePlatform();
   const { persistNamespace } = useNamespace();
   const { addPendingItems } = usePendingStore();
-  const { addNotification } = useNotificationStore();
+  const { setConfiguredSources } = useAppStore();
+  const { addNotification, removeNotifications } = useNotificationStore();
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: WorkloadId, hideFromHistory?: boolean) => {
     addNotification({
@@ -41,7 +39,7 @@ export const useSourceCRUD = (params?: Params) => {
   };
 
   const [createOrDeleteSources, cdState] = useMutation<{ persistK8sSources: boolean }>(PERSIST_SOURCE, {
-    onError: (error, req) => handleError('', error.message),
+    onError: (error) => handleError('', error.message),
     onCompleted: (res, req) => {
       const namespace = req?.variables?.namespace;
       const count = req?.variables?.sources.length;
@@ -72,16 +70,16 @@ export const useSourceCRUD = (params?: Params) => {
       notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Persisting sources...', undefined, true);
 
       for (const [namespace, sources] of Object.entries(selectAppsList)) {
-        const forPendingStore: PendingItem[] = [];
-        const forGql: { name: string; kind: string; selected: boolean }[] = [];
+        const addToPendingStore: PendingItem[] = [];
+        const sendToGql: { name: string; kind: string; selected: boolean }[] = [];
 
         sources.forEach(({ name, kind, selected }) => {
-          forPendingStore.push({ entityType: OVERVIEW_ENTITY_TYPES.SOURCE, entityId: { namespace, name, kind } });
-          forGql.push({ name, kind, selected });
+          addToPendingStore.push({ entityType: OVERVIEW_ENTITY_TYPES.SOURCE, entityId: { namespace, name, kind } });
+          sendToGql.push({ name, kind, selected });
         });
 
-        addPendingItems(forPendingStore);
-        await createOrDeleteSources({ variables: { namespace, sources: forGql } });
+        addPendingItems(addToPendingStore);
+        await createOrDeleteSources({ variables: { namespace, sources: sendToGql } });
       }
 
       for (const [namespace, futureSelected] of Object.entries(futureSelectAppsList)) {
