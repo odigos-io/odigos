@@ -71,7 +71,7 @@ export const useSourceCRUD = (params?: Params) => {
       notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Persisting sources...', undefined, true);
 
       for (const [namespace, sources] of Object.entries(selectAppsList)) {
-        addPendingItems(sources.map(({ name, kind, selected }) => ({ id: { namespace, name, kind }, entityType: OVERVIEW_ENTITY_TYPES.SOURCE, crudType: selected ? ACTION.CREATE : ACTION.DELETE })));
+        addPendingItems(sources.map(({ name, kind }) => ({ entityType: OVERVIEW_ENTITY_TYPES.SOURCE, entityId: { namespace, name, kind } })));
         await createOrDeleteSources({ variables: { namespace, sources } });
       }
 
@@ -82,7 +82,7 @@ export const useSourceCRUD = (params?: Params) => {
 
     updateSource: async (sourceId: WorkloadId, patchSourceRequest: PatchSourceRequestInput) => {
       notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Updating sources...', undefined, true);
-      addPendingItems([{ id: sourceId, entityType: OVERVIEW_ENTITY_TYPES.SOURCE, crudType: ACTION.UPDATE }]);
+      addPendingItems([{ entityType: OVERVIEW_ENTITY_TYPES.SOURCE, entityId: sourceId }]);
       await updateSource({ variables: { sourceId, patchSourceRequest } });
     },
   };

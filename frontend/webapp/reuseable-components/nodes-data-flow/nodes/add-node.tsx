@@ -1,4 +1,4 @@
-import React, { Fragment, useMemo } from 'react';
+import React, { Fragment } from 'react';
 import { PlusIcon } from '@/assets';
 import styled from 'styled-components';
 import { usePendingStore } from '@/store';
@@ -62,27 +62,10 @@ const SubTitle = styled(Text)`
 
 const AddNode: React.FC<Props> = ({ id: nodeId, data }) => {
   const { nodeWidth, title, subTitle } = data;
-  const { pendingItems } = usePendingStore();
 
-  const [isPending, entity] = useMemo(() => {
-    let bool = false;
-    let txt = '';
-
-    for (let i = 0; i < pendingItems.length; i++) {
-      const { entityType } = pendingItems[i];
-      if (entityType === OVERVIEW_ENTITY_TYPES.DESTINATION && nodeId === 'destination-add') {
-        bool = true;
-        txt = OVERVIEW_ENTITY_TYPES.DESTINATION;
-        break;
-      } else if (entityType === OVERVIEW_ENTITY_TYPES.SOURCE && nodeId === 'source-add') {
-        bool = true;
-        txt = `${OVERVIEW_ENTITY_TYPES.SOURCE}s`;
-        break;
-      }
-    }
-
-    return [bool, txt];
-  }, [nodeId, pendingItems]);
+  const { isThisPending } = usePendingStore();
+  const entity = nodeId.split('-')[0] as OVERVIEW_ENTITY_TYPES;
+  const isPending = isThisPending({ entityType: entity });
 
   return (
     <Container $nodeWidth={nodeWidth} className='nowheel nodrag'>

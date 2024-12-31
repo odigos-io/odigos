@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { SVG } from '@/assets';
 import BaseNode from './base-node';
 import styled from 'styled-components';
-import { useDrawerStore } from '@/store';
+import { useNodeDataFlowHandlers } from '@/hooks';
 import { type Node, type NodeProps } from '@xyflow/react';
 import { type K8sActualSource, NODE_TYPES, OVERVIEW_ENTITY_TYPES, STATUSES, type WorkloadId } from '@/types';
 
@@ -50,7 +50,7 @@ const BaseNodeWrapper = styled.div<{ $framePadding: number }>`
 const ScrollNode: React.FC<Props> = ({ data, ...rest }) => {
   const { nodeWidth, nodeHeight, items, onScroll } = data;
 
-  const { setSelectedItem } = useDrawerStore();
+  const { handleNodeClick } = useNodeDataFlowHandlers();
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -86,7 +86,7 @@ const ScrollNode: React.FC<Props> = ({ data, ...rest }) => {
           $framePadding={item.data.framePadding}
           onClick={(e) => {
             e.stopPropagation();
-            setSelectedItem({ id: item.data.id, type: item.data.type, item: item.data.raw });
+            handleNodeClick(e, item);
           }}
         >
           <BaseNode {...rest} type={NODE_TYPES.BASE} id={item.id} data={item.data} />

@@ -1,11 +1,9 @@
 import { create } from 'zustand';
-import { CRUD } from '@/utils';
 import { OVERVIEW_ENTITY_TYPES, WorkloadId } from '@/types';
 
 interface PendingItem {
-  id?: string | WorkloadId;
   entityType: OVERVIEW_ENTITY_TYPES;
-  crudType: CRUD;
+  entityId?: string | WorkloadId;
 }
 
 interface StoreState {
@@ -13,24 +11,46 @@ interface StoreState {
   setPendingItems: (arr: PendingItem[]) => void;
   addPendingItems: (arr: PendingItem[]) => void;
   removePendingItems: (arr: PendingItem[]) => void;
+  isThisPending: (item: PendingItem) => boolean;
 }
 
 const itemsAreEqual = (item1: PendingItem, item2: PendingItem) => {
-  const idsEqual =
-    typeof item1.id === 'string' && typeof item2.id === 'string'
-      ? item1.id === item2.id
-      : typeof item1.id === 'object' && typeof item2.id === 'object'
-      ? item1.id.namespace === item2.id.namespace && item1.id.name === item2.id.name && item1.id.kind === item2.id.kind
-      : !item1.id && !item2.id;
   const entityTypesEqual = item1.entityType === item2.entityType;
-  const crudTypesEqual = item1.crudType === item2.crudType;
+  const idsEqual =
+    typeof item1.entityId === 'string' && typeof item2.entityId === 'string'
+      ? item1.entityId === item2.entityId
+      : typeof item1.entityId === 'object' && typeof item2.entityId === 'object'
+      ? item1.entityId.namespace === item2.entityId.namespace && item1.entityId.name === item2.entityId.name && item1.entityId.kind === item2.entityId.kind
+      : !item1.entityId && !item2.entityId;
 
-  return idsEqual && entityTypesEqual && crudTypesEqual;
+  return entityTypesEqual && idsEqual;
 };
 
-export const usePendingStore = create<StoreState>((set) => ({
+export const usePendingStore = create<StoreState>((set, get) => ({
   pendingItems: [],
   setPendingItems: (arr) => set({ pendingItems: arr }),
   addPendingItems: (arr) => set((state) => ({ pendingItems: state.pendingItems.concat(arr.filter((addItem) => !state.pendingItems.some((existingItem) => itemsAreEqual(existingItem, addItem)))) })),
   removePendingItems: (arr) => set((state) => ({ pendingItems: state.pendingItems.filter((existingItem) => !arr.find((removeItem) => itemsAreEqual(existingItem, removeItem))) })),
+
+  isThisPending: (item) => {
+    const { pendingItems } = get();
+    let bool = false;
+
+    for (let i = 0; i < pendingItems.length; i++) {
+      const pendingItem = pendingItems[i];
+      if (
+        pendingItem.entityType === item.entityType &&
+        (pendingItem.entityType === OVERVIEW_ENTITY_TYPES.SOURCE
+          ? (pendingItem.entityId as WorkloadId).namespace === (item.entityId as WorkloadId).namespace &&
+            (pendingItem.entityId as WorkloadId).name === (item.entityId as WorkloadId).name &&
+            (pendingItem.entityId as WorkloadId).kind === (item.entityId as WorkloadId).kind
+          : pendingItem.entityId === item.entityId || !item.entityId)
+      ) {
+        bool = true;
+        break;
+      }
+    }
+
+    return bool;
+  },
 }));
