@@ -41,7 +41,9 @@ export const usePendingStore = create<StoreState>((set, get) => ({
       if (
         pendingItem.entityType === item.entityType &&
         (pendingItem.entityType === OVERVIEW_ENTITY_TYPES.SOURCE
-          ? (pendingItem.entityId as WorkloadId).namespace === (item.entityId as WorkloadId).namespace &&
+          ? !!pendingItem.entityId &&
+            !!item.entityId &&
+            (pendingItem.entityId as WorkloadId).namespace === (item.entityId as WorkloadId).namespace &&
             (pendingItem.entityId as WorkloadId).name === (item.entityId as WorkloadId).name &&
             (pendingItem.entityId as WorkloadId).kind === (item.entityId as WorkloadId).kind
           : pendingItem.entityId === item.entityId || !item.entityId)
