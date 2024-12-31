@@ -62,27 +62,6 @@ export const useSourceCRUD = (params?: Params) => {
     onCompleted: () => handleComplete(ACTION.UPDATE),
   });
 
-  const persistNamespaces = async (items: { [key: string]: boolean }) => {
-    for (const [namespace, futureSelected] of Object.entries(items)) {
-      await persistNamespace({ name: namespace, futureSelected });
-    }
-  };
-
-  const persistSources = async (items: { [key: string]: K8sActualSource[] }) => {
-    for (const [namespace, sources] of Object.entries(items)) {
-      await createOrDeleteSources({
-        variables: {
-          namespace,
-          sources: sources.map((source) => ({
-            kind: source.kind,
-            name: source.name,
-            selected: source.selected,
-          })),
-        },
-      });
-    }
-  };
-
   return {
     loading: cdState.loading || uState.loading,
     sources: data?.computePlatform.k8sActualSources || [],
