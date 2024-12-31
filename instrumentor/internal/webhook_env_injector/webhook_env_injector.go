@@ -134,7 +134,11 @@ func updatedGetPatchedEnvValue(envName string, observedValue string, desiredOdig
 	} else {
 		// In case observedValue is not empty, we need to append the desiredOdigosAddition with the delim
 		delim := envOverwrite.GetDelimPerEnv(envName)
-		mergedEnvValue := observedValue + delim + desiredOdigosAddition
+		if delim == nil { // for safety
+			return nil
+		}
+
+		mergedEnvValue := observedValue + *delim + desiredOdigosAddition
 		return &mergedEnvValue
 	}
 }

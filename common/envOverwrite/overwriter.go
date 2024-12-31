@@ -189,6 +189,9 @@ func GetPossibleValuesPerEnv(env string) map[common.OtelSdk]string {
 	return nil
 }
 
-func GetDelimPerEnv(env string) string {
-	return EnvValuesMap[env].delim
+func GetDelimPerEnv(env string) *string {
+	if envValues, ok := EnvValuesMap[env]; ok {
+		return &envValues.delim
+	}
+	return nil // Return nil if the key doesn't exist
 }
