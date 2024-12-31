@@ -616,8 +616,7 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 		NewInstrumentorDeployment(a.ns, a.odigosVersion, a.config.TelemetryEnabled, a.config.ImagePrefix, a.config.InstrumentorImage),
 		NewInstrumentorService(a.ns),
 	}
-
-	if certManagerInstalled {
+	if certManagerInstalled && a.config.SkipWebhookIssuerCreation != true {
 		resources = append([]kube.Object{NewInstrumentorIssuer(a.ns),
 			NewInstrumentorCertificate(a.ns),
 			NewMutatingWebhookConfiguration(a.ns, nil),
