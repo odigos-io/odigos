@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
-	"strings"
 
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -90,7 +89,6 @@ func AddFilterProcessors(ctx context.Context, kubeClient client.Client, allProce
 		logger.Info("Processing destination for filter processor")
 
 		if dest.Spec.SourceSelector == nil || contains(dest.Spec.SourceSelector.Modes, "all") {
-			logger.Info("Skipping destination as SourceSelector is nil or set to 'all'")
 			continue
 		}
 
@@ -102,19 +100,12 @@ func AddFilterProcessors(ctx context.Context, kubeClient client.Client, allProce
 			matchedSources = append(matchedSources, fetchSourcesByGroups(ctx, kubeClient, dest.Spec.SourceSelector.Groups, logger)...)
 		}
 
-		logger.Info("Matched sources for destination", "matchedSources", matchedSources)
-
 		matchConditions := make(map[string]bool)
 		for _, source := range matchedSources {
 			logger.Info("Adding match condition for source", "sourceName", source.Spec.Workload.Name, "namespace", source.Spec.Workload.Namespace, "kind", source.Spec.Workload.Kind)
 
 			key := fmt.Sprintf("%s/%s/%s", source.Spec.Workload.Namespace, source.Spec.Workload.Name, source.Spec.Workload.Kind)
 			matchConditions[key] = true
-		}
-
-		if len(matchConditions) == 0 {
-			logger.Info("No matched sources for destination. Skipping processor creation.")
-			continue
 		}
 
 		filterConfig := map[string]interface{}{
@@ -154,23 +145,31 @@ func fetchSourcesByNamespaces(ctx context.Context, kubeClient client.Client, nam
 }
 
 func fetchSourcesByGroups(ctx context.Context, kubeClient client.Client, groups []string, logger logr.Logger) []odigosv1.Source {
-	selectors := make([]string, len(groups))
-	for i, group := range groups {
-		selectors[i] = fmt.Sprintf("odigos.io/group-%s=true", group)
-	}
-	labelSelector := labels.SelectorFromSet(labels.Set{
-		strings.Join(selectors, ","): "",
-	})
+	sourceMap := make(map[string]odigosv1.Source)
+	for _, group := range groups {
+		labelSelector := labels.Set{fmt.Sprintf("odigos.io/group-%s", group): "true"}.AsSelector()
 
-	sourceList := &odigosv1.SourceList{}
-	err := kubeClient.List(ctx, sourceList, &client.ListOptions{
-		LabelSelector: labelSelector,
-	})
-	if err != nil {
-		logger.Error(err, "Failed to fetch sources by groups", "groups", groups)
-		return nil
+		sourceList := &odigosv1.SourceList{}
+		err := kubeClient.List(ctx, sourceList, &client.ListOptions{
+			LabelSelector: labelSelector,
+		})
+		if err != nil {
+			logger.Error(err, "Failed to fetch sources for group", "group", group)
+			continue
+		}
+
+		for _, source := range sourceList.Items {
+			key := fmt.Sprintf("%s/%s", source.Namespace, source.Name)
+			if _, exists := sourceMap[key]; !exists {
+				sourceMap[key] = source
+			}
+		}
 	}
-	return sourceList.Items
+	sources := make([]odigosv1.Source, 0, len(sourceMap))
+	for _, source := range sourceMap {
+		sources = append(sources, source)
+	}
+	return sources
 }
 
 func marshalConfig(config map[string]interface{}) []byte {

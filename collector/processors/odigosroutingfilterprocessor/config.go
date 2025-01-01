@@ -1,7 +1,6 @@
 package odigosroutingfilterprocessor
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -16,7 +15,7 @@ var _ component.Config = (*Config)(nil)
 
 func (cfg *Config) Validate() error {
 	if len(cfg.MatchConditions) == 0 {
-		return errors.New("at least one match condition must be specified")
+		return nil
 	}
 
 	for key := range cfg.MatchConditions {

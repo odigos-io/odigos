@@ -84,12 +84,8 @@ spec:
                     type: array
                   modes:
                     description: |-
-                      Mode can contain a combination of "all", "namespaces", or "groups".
+                      Modes can contain a combination of "all", "namespaces", or "groups".
                       Determines how sources are selected for this destination.
-                    enum:
-                    - all
-                    - namespaces
-                    - groups
                     items:
                       type: string
                     type: array
