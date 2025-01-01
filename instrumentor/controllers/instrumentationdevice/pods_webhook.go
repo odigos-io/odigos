@@ -88,7 +88,7 @@ func (p *PodsWebhook) injectOdigosEnvVars(ctx context.Context, logger logr.Logge
 	for i := range pod.Spec.Containers {
 		container := &pod.Spec.Containers[i]
 
-		pl, otelsdk, found := containerutils.GetLanguageAndOtelSdk(*container) // TODO check otel sdk !nil nil
+		pl, otelsdk, found := containerutils.GetLanguageAndOtelSdk(container)
 		if !found {
 			continue
 		}
