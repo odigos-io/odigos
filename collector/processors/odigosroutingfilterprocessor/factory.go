@@ -21,7 +21,7 @@ func NewFactory() processor.Factory {
 
 func createDefaultConfig() component.Config {
 	return &Config{
-		MatchConditions: []MatchCondition{},
+		MatchConditions: map[string]bool{},
 	}
 }
 
