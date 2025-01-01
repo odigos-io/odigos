@@ -1,5 +1,5 @@
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-nodejs-unsupported-version
@@ -14,7 +14,7 @@ status:
 ---
 # expecting injection of instrumentation device to be successful since the runtime version was not detected
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-nodejs-very-old-version
@@ -28,7 +28,7 @@ status:
 ---
 # expecting injection of instrumentation device to be successful since the runtime version is supported
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-nodejs-minimum-version
@@ -67,7 +67,7 @@ status:
       (value != null): true      
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-nodejs-latest-version
@@ -106,7 +106,7 @@ status:
       (value != null): true      
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-nodejs-dockerfile-env
@@ -145,7 +145,7 @@ status:
       (value != null): true      
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-nodejs-manifest-env
@@ -184,7 +184,7 @@ status:
       (value != null): true      
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-cpp-http-server
@@ -197,7 +197,7 @@ status:
       type: AppliedInstrumentationDevice
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-language-change
@@ -221,7 +221,7 @@ status:
 ---
 
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-java-supported-version
@@ -234,7 +234,7 @@ status:
       type: AppliedInstrumentationDevice
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-java-azul
@@ -247,7 +247,7 @@ status:
       type: AppliedInstrumentationDevice
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-java-supported-docker-env
@@ -260,7 +260,7 @@ status:
       type: AppliedInstrumentationDevice
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-java-supported-manifest-env
@@ -273,7 +273,7 @@ status:
       type: AppliedInstrumentationDevice
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-java-latest-version
@@ -286,7 +286,7 @@ status:
       type: AppliedInstrumentationDevice
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-java-old-version
@@ -299,7 +299,7 @@ status:
       type: AppliedInstrumentationDevice
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-python-alpine
@@ -315,7 +315,7 @@ status:
       type: AppliedInstrumentationDevice
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-python-latest-version
@@ -328,7 +328,7 @@ status:
       type: AppliedInstrumentationDevice
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-python-min-version
@@ -341,7 +341,7 @@ status:
       type: AppliedInstrumentationDevice
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-python-not-supported
@@ -354,7 +354,7 @@ status:
       type: AppliedInstrumentationDevice
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-python-other-agent
