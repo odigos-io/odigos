@@ -18,6 +18,7 @@ package instrumentationdevice
 
 import (
 	"context"
+	"fmt"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
@@ -26,13 +27,60 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 type InstrumentationConfigReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
+
+type RuntimeDetailsChangedPredicate struct{}
+
+func (o RuntimeDetailsChangedPredicate) Create(e event.CreateEvent) bool {
+	if e.Object == nil {
+		return false
+	}
+
+	ic, ok := e.Object.(*odigosv1.InstrumentationConfig)
+	if !ok {
+		return false
+	}
+
+	fmt.Printf("InstrumentationConfig created: %v len of runtime details %d\n", ic.Name, len(ic.Status.RuntimeDetailsByContainer))
+	return len(ic.Status.RuntimeDetailsByContainer) > 0
+}
+
+func (i RuntimeDetailsChangedPredicate) Update(e event.UpdateEvent) bool {
+	if e.ObjectOld == nil || e.ObjectNew == nil {
+		return false
+	}
+
+	oldIc, oldOk := e.ObjectOld.(*odigosv1.InstrumentationConfig)
+	newIc, newOk := e.ObjectNew.(*odigosv1.InstrumentationConfig)
+
+	if !oldOk || !newOk {
+		return false
+	}
+
+	if len(oldIc.Status.RuntimeDetailsByContainer) != len(newIc.Status.RuntimeDetailsByContainer) {
+		return true
+	}
+
+	return false
+}
+
+func (i RuntimeDetailsChangedPredicate) Delete(e event.DeleteEvent) bool {
+	return false
+}
+
+func (i RuntimeDetailsChangedPredicate) Generic(e event.GenericEvent) bool {
+	return false
+}
+
+var _ predicate.Predicate = &RuntimeDetailsChangedPredicate{}
 
 func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
@@ -56,6 +104,7 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 	}
 
 	isNodeCollectorReady := isDataCollectionReady(ctx, r.Client)
+	fmt.Println("######### instrumentationConfig controller #########")
 	err = reconcileSingleWorkload(ctx, r.Client, &instConfig, isNodeCollectorReady)
 	return utils.K8SUpdateErrorHandler(err)
 }
