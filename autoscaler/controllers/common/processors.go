@@ -127,10 +127,10 @@ func AddFilterProcessors(ctx context.Context, kubeClient client.Client, allProce
 
 		allProcessors.Items = append(allProcessors.Items, odigosv1.Processor{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: fmt.Sprintf("odigossourcetodestinationfilter-%s", dest.Name),
+				Name: fmt.Sprintf("odigosroutingfilterprocessor-%s", dest.Name),
 			},
 			Spec: odigosv1.ProcessorSpec{
-				Type:            "odigossourcetodestinationfilterprocessor",
+				Type:            "odigosroutingfilterprocessor",
 				ProcessorConfig: runtime.RawExtension{Raw: marshalConfig(filterConfig)},
 				CollectorRoles: []odigosv1.CollectorsGroupRole{
 					odigosv1.CollectorsGroupRoleClusterGateway,
