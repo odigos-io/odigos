@@ -20,6 +20,7 @@ func (fp *filterProcessor) processTraces(ctx context.Context, td ptrace.Traces) 
 
 	for i := 0; i < rspans.Len(); i++ {
 		resourceSpan := rspans.At(i)
+		resourceAttributes := resourceSpan.Resource().Attributes()
 		ilSpans := resourceSpan.ScopeSpans()
 
 		for j := 0; j < ilSpans.Len(); j++ {
@@ -27,7 +28,8 @@ func (fp *filterProcessor) processTraces(ctx context.Context, td ptrace.Traces) 
 			spans := scopeSpan.Spans()
 
 			spans.RemoveIf(func(span ptrace.Span) bool {
-				return !fp.matches(span, resourceSpan)
+				namespace, name, kind := extractResourceDetails(resourceAttributes)
+				return !fp.matches(name, namespace, kind)
 			})
 		}
 	}
@@ -48,28 +50,13 @@ func (fp *filterProcessor) processMetrics(ctx context.Context, md pmetric.Metric
 			metrics := scopeMetric.Metrics()
 
 			metrics.RemoveIf(func(metric pmetric.Metric) bool {
-				return !fp.metricMatches(metric, resourceAttributes)
+				namespace, name, kind := extractResourceDetails(resourceAttributes)
+				return !fp.matches(name, namespace, kind)
 			})
 		}
 	}
 
 	return md, nil
-}
-
-func (fp *filterProcessor) metricMatches(metric pmetric.Metric, resourceAttributes pcommon.Map) bool {
-	for _, condition := range fp.config.MatchConditions {
-		name, _ := resourceAttributes.Get("name")
-		namespace, _ := resourceAttributes.Get("namespace")
-		kind, _ := resourceAttributes.Get("kind")
-
-		if name.AsString() == condition.Name &&
-			namespace.AsString() == condition.Namespace &&
-			kind.AsString() == condition.Kind {
-			return true
-		}
-	}
-
-	return false
 }
 
 func (fp *filterProcessor) processLogs(ctx context.Context, ld plog.Logs) (plog.Logs, error) {
@@ -85,7 +72,8 @@ func (fp *filterProcessor) processLogs(ctx context.Context, ld plog.Logs) (plog.
 			logRecords := scopeLog.LogRecords()
 
 			logRecords.RemoveIf(func(log plog.LogRecord) bool {
-				return !fp.logMatches(log.Attributes(), resourceAttributes)
+				namespace, name, kind := extractResourceDetails(resourceAttributes)
+				return !fp.matches(name, namespace, kind)
 			})
 		}
 	}
@@ -93,34 +81,8 @@ func (fp *filterProcessor) processLogs(ctx context.Context, ld plog.Logs) (plog.
 	return ld, nil
 }
 
-func (fp *filterProcessor) logMatches(logAttributes, resourceAttributes pcommon.Map) bool {
-
-	name, _ := resourceAttributes.Get("name")
-	namespace, _ := resourceAttributes.Get("namespace")
-	kind, _ := resourceAttributes.Get("kind")
-
-	for _, condition := range fp.config.MatchConditions {
-		if name.AsString() == condition.Name &&
-			namespace.AsString() == condition.Namespace &&
-			kind.AsString() == condition.Kind {
-			return true
-		}
-	}
-
-	return false
-}
-
-func (fp *filterProcessor) matches(span ptrace.Span, resourceSpan ptrace.ResourceSpans) bool {
-
-	attributes := resourceSpan.Resource().Attributes()
-
-	namespace := getAttribute(attributes, "k8s.namespace.name")
-	if namespace == "" {
-		return false
-	}
-
-	name, kind := getDynamicNameAndKind(attributes)
-	if name == "" || kind == "" {
+func (fp *filterProcessor) matches(name, namespace, kind string) bool {
+	if name == "" || namespace == "" || kind == "" {
 		return false
 	}
 
@@ -135,15 +97,28 @@ func (fp *filterProcessor) matches(span ptrace.Span, resourceSpan ptrace.Resourc
 	return false
 }
 
-func getDynamicNameAndKind(attributes pcommon.Map) (name string, kind string) {
+func extractResourceDetails(attributes pcommon.Map) (namespace, name, kind string) {
+	namespace = getAttribute(attributes, "k8s.namespace.name")
+	if namespace == "" {
+		return "", "", ""
+	}
 
+	name, kind = getDynamicNameAndKind(attributes)
+	if name == "" || kind == "" {
+		return "", "", ""
+	}
+
+	return namespace, name, kind
+}
+
+func getDynamicNameAndKind(attributes pcommon.Map) (name string, kind string) {
 	resourceTypes := []struct {
 		kind string
 		key  string
 	}{
 		{"Deployment", "k8s.deployment.name"},
-		{"statefulSet", "k8s.statefulset.name"},
-		{"daemonSet", "k8s.daemonset.name"},
+		{"StatefulSet", "k8s.statefulset.name"},
+		{"DaemonSet", "k8s.daemonset.name"},
 	}
 
 	for _, resourceType := range resourceTypes {
