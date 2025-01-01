@@ -264,11 +264,6 @@ type InstrumentationLabelsAnalyze struct {
 	InstrumentedText *EntityProperty `json:"instrumentedText,omitempty"`
 }
 
-type InstrumentationLibrary struct {
-	LibraryName string                   `json:"libraryName"`
-	Options     []*InstrumentationOption `json:"options"`
-}
-
 type InstrumentationLibraryGlobalID struct {
 	Name     string               `json:"name"`
 	SpanKind *SpanKind            `json:"spanKind,omitempty"`
@@ -279,11 +274,6 @@ type InstrumentationLibraryGlobalIDInput struct {
 	Name     string               `json:"name"`
 	SpanKind *SpanKind            `json:"spanKind,omitempty"`
 	Language *ProgrammingLanguage `json:"language,omitempty"`
-}
-
-type InstrumentationOption struct {
-	OptionKey string   `json:"optionKey"`
-	SpanKind  SpanKind `json:"spanKind"`
 }
 
 type InstrumentationRule struct {
@@ -312,9 +302,8 @@ type InstrumentedApplicationAnalyze struct {
 }
 
 type InstrumentedApplicationDetails struct {
-	Containers             []*SourceContainerRuntimeDetails `json:"containers,omitempty"`
-	Conditions             []*Condition                     `json:"conditions,omitempty"`
-	InstrumentationOptions []*InstrumentationLibrary        `json:"instrumentationOptions"`
+	Containers []*SourceContainerRuntimeDetails `json:"containers,omitempty"`
+	Conditions []*Condition                     `json:"conditions,omitempty"`
 }
 
 type K8sActualNamespace struct {
@@ -327,11 +316,8 @@ type K8sActualSource struct {
 	Namespace                      string                          `json:"namespace"`
 	Kind                           K8sResourceKind                 `json:"kind"`
 	Name                           string                          `json:"name"`
-	ServiceName                    *string                         `json:"serviceName,omitempty"`
 	NumberOfInstances              *int                            `json:"numberOfInstances,omitempty"`
 	ReportedName                   *string                         `json:"reportedName,omitempty"`
-	AutoInstrumented               bool                            `json:"autoInstrumented"`
-	AutoInstrumentedDecision       string                          `json:"autoInstrumentedDecision"`
 	InstrumentedApplicationDetails *InstrumentedApplicationDetails `json:"instrumentedApplicationDetails,omitempty"`
 }
 

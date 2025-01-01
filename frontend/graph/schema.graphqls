@@ -51,20 +51,9 @@ type SourceContainerRuntimeDetails {
   otherAgent: String
 }
 
-type InstrumentationOption {
-  optionKey: String!
-  spanKind: SpanKind!
-}
-
-type InstrumentationLibrary {
-  libraryName: String!
-  options: [InstrumentationOption!]!
-}
-
 type InstrumentedApplicationDetails {
   containers: [SourceContainerRuntimeDetails!]
   conditions: [Condition!]
-  instrumentationOptions: [InstrumentationLibrary!]!
 }
 
 type Condition {
@@ -93,11 +82,8 @@ type K8sActualSource {
   namespace: String!
   kind: K8sResourceKind!
   name: String!
-  serviceName: String
   numberOfInstances: Int
   reportedName: String
-  autoInstrumented: Boolean!
-  autoInstrumentedDecision: String!
   instrumentedApplicationDetails: InstrumentedApplicationDetails
 }
 
