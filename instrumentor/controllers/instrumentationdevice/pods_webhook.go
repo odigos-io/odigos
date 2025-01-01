@@ -16,6 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -38,6 +39,12 @@ var _ webhook.CustomDefaulter = &PodsWebhook{}
 func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 	logger := log.FromContext(ctx)
 
+	// In certain scenarios, the raw request can be utilized to retrieve missing details, like the namespace.
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get admission request: %w", err)
+	}
+
 	pod, ok := obj.(*corev1.Pod)
 	if !ok {
 		return fmt.Errorf("expected a Pod but got a %T", obj)
@@ -48,12 +55,12 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 	}
 
 	// Inject ODIGOS environment variables into all containers
-	p.injectOdigosEnvVars(ctx, logger, pod)
+	p.injectOdigosEnvVars(ctx, logger, pod, req)
 
 	return nil
 }
 
-func (p *PodsWebhook) injectOdigosEnvVars(ctx context.Context, logger logr.Logger, pod *corev1.Pod) {
+func (p *PodsWebhook) injectOdigosEnvVars(ctx context.Context, logger logr.Logger, pod *corev1.Pod, admissionRequest admission.Request) {
 	// Environment variables that remain consistent across all containers
 	commonEnvVars := getCommonEnvVars()
 
@@ -61,6 +68,18 @@ func (p *PodsWebhook) injectOdigosEnvVars(ctx context.Context, logger logr.Logge
 	if err != nil {
 		logger.Error(err, "failed to extract pod workload details from pod. skipping OTEL_SERVICE_NAME injection")
 		return
+	}
+
+	if podWorkload.Namespace == "" {
+		if admissionRequest.Namespace != "" {
+			// If the namespace is available in the admission request, set it in the podWorkload.Namespace.
+			podWorkload.Namespace = admissionRequest.Namespace
+		} else {
+			// It is a case that not supposed to happen, but if it does, log an error and return.
+			err := fmt.Errorf("namespace is empty for pod %s/%s", pod.Namespace, pod.Name)
+			logger.Error(err, "Skipping Injection of ODIGOS environment variables")
+			return
+		}
 	}
 
 	var serviceName *string

@@ -73,7 +73,7 @@ func injectEnvVarsFromRuntime(ctx context.Context, p client.Client, logger logr.
 	container *corev1.Container, envVarName string, otelsdk common.OtelSdk) error {
 
 	var workloadInstrumentationConfig v1alpha1.InstrumentationConfig
-	instrumentationConfigName := fmt.Sprintf("%s-%s", strings.ToLower(string(podWorkload.Kind)), podWorkload.Name)
+	instrumentationConfigName := workload.CalculateWorkloadRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
 
 	if err := p.Get(ctx, client.ObjectKey{Namespace: podWorkload.Namespace, Name: instrumentationConfigName}, &workloadInstrumentationConfig); err != nil {
 		return fmt.Errorf("failed to get instrumentationConfig: %w", err)
