@@ -1,4 +1,5 @@
 import React from 'react';
+import { type IAppState } from '@/store';
 import { ChooseSourcesBody } from '../choose-sources-body';
 import { Modal, NavigationButtons } from '@/reuseable-components';
 import { useKeyDown, useSourceCRUD, useSourceFormData } from '@/hooks';
@@ -15,17 +16,18 @@ export const AddSourceModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const { persistSources } = useSourceCRUD({ onSuccess: onClose });
 
   const handleSubmit = async () => {
-    const { availableSources, selectedSources, selectedFutureApps } = menuState;
-    const payload: typeof availableSources = {};
+    const { getApiPaylod, selectedFutureApps } = menuState;
 
-    Object.entries(availableSources).forEach(([namespace, sources]) => {
-      payload[namespace] = sources.map((source) => ({
-        ...source,
-        selected: !!selectedSources[namespace].find(({ kind, name }) => kind === source.kind && name === source.name),
-      }));
-    });
+    // Type of "getApiPaylod()" is actually:
+    // { [namespace: string]: Pick<K8sActualSource, 'name' | 'kind' | 'selected' | 'numberOfInstances'>[] };
+    //
+    // But we will force it as type:
+    // { [namespace: string]: K8sActualSource[] };
+    //
+    // This forced type is to satisfy TypeScript,
+    // while knowing that this doesn't break the onboarding flow in any-way...
 
-    await persistSources(payload, selectedFutureApps);
+    await persistSources(getApiPaylod() as IAppState['configuredSources'], selectedFutureApps);
   };
 
   return (

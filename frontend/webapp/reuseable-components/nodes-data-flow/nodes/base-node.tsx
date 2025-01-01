@@ -39,32 +39,27 @@ const BaseNode: React.FC<Props> = ({ id: nodeId, data }) => {
   const isPending = isThisPending({ entityType, entityId });
 
   const renderActions = () => {
-    const getSourceLocation = () => {
-      const { namespace, name, kind } = raw as K8sActualSource;
-      const selected = { ...configuredSources };
-      if (!selected[namespace]) selected[namespace] = [];
+    const { namespace, name, kind } = raw as K8sActualSource;
+    const sources = { ...configuredSources };
+    if (!sources[namespace]) sources[namespace] = [];
 
-      const index = selected[namespace].findIndex((x) => x.name === name && x.kind === kind);
-      return { index, namespace, selected };
-    };
+    const index = sources[namespace].findIndex((x) => x.name === name && x.kind === kind);
 
     const onSelectSource = () => {
-      const { index, namespace, selected } = getSourceLocation();
-
       if (index === -1) {
-        selected[namespace].push(raw as K8sActualSource);
+        sources[namespace].push(raw as K8sActualSource);
       } else {
-        selected[namespace].splice(index, 1);
+        sources[namespace].splice(index, 1);
       }
 
-      setConfiguredSources(selected);
+      setConfiguredSources(sources);
     };
 
     return (
       <>
         {/* TODO: handle action/icon to apply instrumentation-rules for individual sources (@Notion GEN-1650) */}
         {isPending ? <FadeLoader /> : isError ? <ErrorTriangleIcon size={20} /> : null}
-        {entityType === 'source' ? <Checkbox value={getSourceLocation().index !== -1} onChange={onSelectSource} disabled={isPending} /> : null}
+        {entityType === 'source' ? <Checkbox value={index !== -1} onChange={onSelectSource} disabled={isPending} /> : null}
       </>
     );
   };

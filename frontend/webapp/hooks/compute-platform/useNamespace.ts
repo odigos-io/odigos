@@ -7,7 +7,7 @@ import { type ComputePlatform, NOTIFICATION_TYPE, type PersistNamespaceItemInput
 
 export const useNamespace = (namespaceName?: string) => {
   const { addNotification } = useNotificationStore();
-  const cp = useComputePlatform();
+  const { data: cpData, loading: cpLoading } = useComputePlatform();
 
   const { data, loading } = useQuery<ComputePlatform>(GET_NAMESPACES, {
     skip: !namespaceName,
@@ -30,9 +30,9 @@ export const useNamespace = (namespaceName?: string) => {
   });
 
   return {
-    loading,
+    loading: loading || cpLoading,
     data: data?.computePlatform.k8sActualNamespace,
-    allNamespaces: cp.data?.computePlatform.k8sActualNamespaces,
+    allNamespaces: cpData?.computePlatform.k8sActualNamespaces,
     persistNamespace: async (namespace: PersistNamespaceItemInput) => await persistNamespaceMutation({ variables: { namespace } }),
   };
 };
