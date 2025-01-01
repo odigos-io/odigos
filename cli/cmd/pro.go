@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-
-	"github.com/joho/godotenv"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
@@ -21,16 +19,6 @@ var proCmd = &cobra.Command{
 	Long:  `The pro command provides various operations and functionalities specifically designed for enterprise users. Use this command to access advanced features and manage your pro account.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
-		var onPremToken string
-		if err := godotenv.Load(); err != nil {
-			fmt.Println("\033[31mERROR\033[0m Failed to load .env file")
-		}
-		if os.Getenv("DEBUG") == "true" {
-			fmt.Println("DEBUG mode is enabled. Loading environment variables from .env file")
-			onPremToken = os.Getenv("ONPREM_TOKEN")
-		} else {
-			onPremToken = cmd.Flag("onprem-token").Value.String()
-		}
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 		ns, err := resources.GetOdigosNamespace(client, ctx)
 		if resources.IsErrNoOdigosNamespaceFound(err) {
@@ -40,6 +28,7 @@ var proCmd = &cobra.Command{
 			fmt.Printf("\033[31mERROR\033[0m Failed to check if Odigos is already installed: %s\n", err)
 			os.Exit(1)
 		}
+		onPremToken := cmd.Flag("onprem-token").Value.String()
 		err = updateOdigosToken(ctx, client, ns, onPremToken)
 		if err != nil {
 			fmt.Println("\033[31mERROR\033[0m Failed to update token:")

@@ -41,3 +41,54 @@ go tool pprof -http=:8080 <output file>
 This opens an interactive interface in your browser where you can:
 - **Visualize Hotspots**: View flame graphs or directed graphs for easy identification of bottlenecks.
 - **Drill Down**: Explore specific functions or memory allocations for detailed insights.
+
+---
+
+## Debugging CLI commands
+
+### Debugging the `cli pro` Command
+
+In order to debug the `cli pro` command in Visual Studio Code, you can use the following configuration in your `.vscode/launch.json` file:
+
+```jsonc
+{
+  "name": "cli pro",
+  "type": "go",
+  "request": "launch",
+  "mode": "debug",
+  "program": "${workspaceFolder}/cli",
+  "cwd": "${workspaceFolder}/cli",
+  "args": ["pro", "--onprem-token", "${input:onprem_token}"],
+  "buildFlags": "-tags=embed_manifests"
+}
+
+How to Use
+1. Open the Run and Debug view in Visual Studio Code (Ctrl+Shift+D or Cmd+Shift+D on macOS).
+2. Select the cli pro configuration from the dropdown menu.
+3. Click the green play button to start debugging.
+4. When prompted, enter your onprem token value.
+5. The debugger will start the cli pro command with the provided token and attach to the process for debugging.
+
+```
+
+### Debugging the `cli install` Command
+
+To debug the cli install command in Visual Studio Code, use the following configuration in your launch.json file:
+
+```jsonc
+{
+  "name": "cli install",
+  "type": "go",
+  "request": "launch",
+  "mode": "debug",
+  "program": "${workspaceFolder}/cli",
+  "cwd": "${workspaceFolder}/cli",
+  "args": ["install", "--version", "ODIGOS_VERSION"],
+  "buildFlags": "-tags=embed_manifests"
+}
+How to Use
+1. Open the Run and Debug view in Visual Studio Code (Ctrl+Shift+D or Cmd+Shift+D on macOS).
+2. Select the cli install configuration.
+3. Manually replace "ODIGOS_VERSION" with the actual version number you want to use.
+4. Click the green play button to start debugging.
+5. The debugger will start the cli install command with the specified version.
