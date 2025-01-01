@@ -287,6 +287,16 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "DaemonSet")
 		os.Exit(1)
 	}
+	if err = (&controllers.SourceReconciler{
+		Client:           mgr.GetClient(),
+		Scheme:           mgr.GetScheme(),
+		ImagePullSecrets: imagePullSecrets,
+		OdigosVersion:    odigosVersion,
+		Config:           config,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Source")
+		os.Exit(1)
+	}
 
 	if err = actions.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create odigos actions controllers")
