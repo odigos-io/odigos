@@ -31,11 +31,9 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	err := gateway.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion, r.Config)
 	if err != nil {
-		logger.Error(err, "Failed to sync gateway configuration")
 		return ctrl.Result{}, err
 	}
 
-	logger.V(1).Info("Successfully synced gateway configuration for Source", "Source", req.NamespacedName)
 	return ctrl.Result{}, nil
 }
 
