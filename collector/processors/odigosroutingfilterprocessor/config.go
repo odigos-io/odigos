@@ -1,4 +1,4 @@
-package odigossourcetodestinationfilterprocessor
+package odigosroutingfilterprocessor
 
 import (
 	"errors"

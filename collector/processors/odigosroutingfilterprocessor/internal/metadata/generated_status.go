@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	Type = component.MustNewType("odigossourcetodestinationfilterprocessor")
+	Type = component.MustNewType("odigosroutingfilterprocessor")
 )
 
 const (

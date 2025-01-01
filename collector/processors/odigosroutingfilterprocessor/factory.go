@@ -1,4 +1,4 @@
-package odigossourcetodestinationfilterprocessor
+package odigosroutingfilterprocessor
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 
 func NewFactory() processor.Factory {
 	return processor.NewFactory(
-		component.MustNewType("odigossourcetodestinationfilterprocessor"),
+		component.MustNewType("odigosroutingfilterprocessor"),
 		createDefaultConfig,
 		processor.WithTraces(createTracesProcessor, component.StabilityLevelBeta),
 		processor.WithLogs(createLogsProcessor, component.StabilityLevelBeta),

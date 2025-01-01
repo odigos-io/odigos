@@ -7,7 +7,7 @@ go 1.23.0
 toolchain go1.23.4
 
 require (
-	github.com/odigos-io/odigos/processor/odigossourcetodestinationfilterprocessor v0.106.0
+	github.com/odigos-io/odigos/processor/odigosroutingfilterprocessor v0.106.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/countconnector v0.106.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/datadogconnector v0.106.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/exceptionsconnector v0.106.0
@@ -608,6 +608,6 @@ replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/process
 
 replace go.opentelemetry.io/collector/odigos/providers/odigosfileprovider => ../providers/odigosfileprovider
 
-replace github.com/odigos-io/odigos/processor/odigossourcetodestinationfilterprocessor => ../processors/odigossourcetodestinationfilterprocessor
+replace github.com/odigos-io/odigos/processor/odigosroutingfilterprocessor => ../processors/odigosroutingfilterprocessor
 
 exclude github.com/knadh/koanf v1.5.0

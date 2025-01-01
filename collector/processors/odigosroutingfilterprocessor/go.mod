@@ -1,4 +1,4 @@
-module github.com/odigos-io/odigos/processor/odigossourcetodestinationfilterprocessor
+module github.com/odigos-io/odigos/processor/odigosroutingfilterprocessor
 
 go 1.23.0
 

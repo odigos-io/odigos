@@ -85,7 +85,7 @@ processors:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.106.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/remotetapprocessor v0.106.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics v0.106.0
-  - gomod: github.com/odigos-io/odigos/processor/odigossourcetodestinationfilterprocessor v0.106.0
+  - gomod: github.com/odigos-io/odigos/processor/odigosroutingfilterprocessor v0.106.0
 
 receivers:
   - gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.106.0
@@ -121,4 +121,4 @@ replaces:
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/mockdestinationexporter => ../exporters/mockdestinationexporter
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics => ../processors/odigostrafficmetrics
   - go.opentelemetry.io/collector/odigos/providers/odigosfileprovider => ../providers/odigosfileprovider
-  - github.com/odigos-io/odigos/processor/odigossourcetodestinationfilterprocessor => ../processors/odigossourcetodestinationfilterprocessor
+  - github.com/odigos-io/odigos/processor/odigosroutingfilterprocessor => ../processors/odigosroutingfilterprocessor

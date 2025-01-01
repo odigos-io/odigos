@@ -1,4 +1,4 @@
-type: odigossourcetodestinationfilterprocessor
+type: odigosroutingfilterprocessor
 
 status:
   class: processor
@@ -11,4 +11,4 @@ status:
     - contrib
   codeowners:
     active:
-      - along
+      - alon
