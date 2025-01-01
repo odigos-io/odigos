@@ -54,8 +54,6 @@ Odigos is divided into three main segments:
 - Start and stop collectors when needed (e.g. when sources or destinations are added or removed).
 - Schedule the node collector to start after the cluster collector is ready.
 - Generate the configuration for the collectors based on the Odigos sources, destinations, and action.
-- Restart the collectors when the configuration changes.
-- Auto scale the collectors based on the load.
 
 ### Cluster Collector
 
@@ -78,13 +76,15 @@ Odigos is divided into three main segments:
 
 **K8s Resource**: DaemonSet / `odigos-data-collection`
 
-**Role**: The node collector implements any node-level tasks that are needed to collect telemetry data.
+**Role**: The Node Collector (in the context of Pipeline component) receives telemetry data from agents running on the node and enriches it with node-level attributes.
 
 - Receives the telemetry data collected from agents running on the node.
 - Add node-level attributes to the telemetry data (`k8s.node.name`)
 - Batches and sends the telemetry data to the cluster collector, offloading any network overhead from the instrumented application runtime.
 
-The Node Collector is also responsible for recording some k8s metrics, and collecting the generated logs from the node fs. Read more Under the [Instrumentation](#instrumentation) section.
+<Info>
+The Node Collector is also responsible for recording some k8s metrics, and collecting the generated logs from the node fs. Read more Under the [Instrumentation](#node-collector-2) section.
+</Info>
 
 ## Instrumentation
 
@@ -117,10 +117,6 @@ The Node Collector is also responsible for recording some k8s metrics, and colle
 - Monitor changes to the instrumentation configs, and update the agents accordingly at runtime.
 
 ### Node Collector
-
-**Type**: The node collector is a daemon set and will run one pod per node in the cluster
-
-**K8s Resource**: DaemonSet / `odigos-data-collection`
 
 **Role**: The node collector (in the context of instrumentation) is responsible for collecting k8s metrics, and logs from the node filesystem.
 
