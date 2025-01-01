@@ -62,7 +62,7 @@ export enum OVERVIEW_NODE_TYPES {
   ADD_RULE = 'addRule',
   ADD_SOURCE = 'addSource',
   ADD_ACTION = 'addAction',
-  ADD_DESTIONATION = 'addDestination',
+  ADD_DESTINATION = 'addDestination',
 }
 
 export enum STATUSES {

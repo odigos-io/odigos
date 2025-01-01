@@ -4,14 +4,7 @@ import type { K8sActualSource } from '@/types';
 import { useNamespace } from '../compute-platform';
 
 type SelectedNamespace = string;
-
-export type SourcesByNamespace = {
-  [namespace: string]: K8sActualSource[];
-};
-
-export type FutureAppsByNamespace = {
-  [namespace: string]: boolean;
-};
+type SelectedSource = Pick<K8sActualSource, 'name' | 'kind' | 'selected' | 'numberOfInstances'>;
 
 interface UseSourceFormDataParams {
   autoSelectNamespace?: boolean;
@@ -19,24 +12,24 @@ interface UseSourceFormDataParams {
 
 export interface UseSourceFormDataResponse {
   namespacesLoading: boolean;
+  recordedInitialValues: { [namespace: SelectedNamespace]: SelectedSource[] };
+  filterNamespaces: (options?: { cancelSearch?: boolean }) => [SelectedNamespace, SelectedSource[]][];
+  filterSources: (namespace?: SelectedNamespace, options?: { cancelSearch?: boolean; cancelSelected?: boolean }) => SelectedSource[];
+  getApiPaylod: () => { [namespace: SelectedNamespace]: SelectedSource[] };
 
   selectedNamespace: SelectedNamespace;
-  availableSources: SourcesByNamespace;
-  selectedSources: SourcesByNamespace;
-  selectedFutureApps: FutureAppsByNamespace;
   onSelectNamespace: (namespace: SelectedNamespace) => void;
-  onSelectSource: (source: K8sActualSource, namespace?: SelectedNamespace) => void;
+  selectedSources: { [namespace: SelectedNamespace]: SelectedSource[] };
+  onSelectSource: (source: SelectedSource, namespace?: SelectedNamespace) => void;
+  selectedFutureApps: { [namespace: SelectedNamespace]: boolean };
   onSelectFutureApps: (bool: boolean, namespace?: SelectedNamespace) => void;
 
   searchText: string;
-  selectAll: boolean;
-  selectAllForNamespace: string;
-  showSelectedOnly: boolean;
   setSearchText: Dispatch<SetStateAction<string>>;
-  onSelectAll: (bool: boolean, namespace?: string, isFromInterval?: boolean) => void;
+  showSelectedOnly: boolean;
   setShowSelectedOnly: Dispatch<SetStateAction<boolean>>;
-
-  filterSources: (namespace?: string, options?: { cancelSearch?: boolean; cancelSelected?: boolean }) => K8sActualSource[];
+  selectAllForNamespace: SelectedNamespace;
+  onSelectAll: (bool: boolean, namespace?: SelectedNamespace, isFromInterval?: boolean) => void;
 }
 
 export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFormDataResponse => {
@@ -44,23 +37,26 @@ export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFo
 
   // only for "onboarding" - get unsaved values and set to state
   // (this is to persist the values when user navigates back to this page)
-  const appStore = useAppStore((state) => state);
+  const appStore = useAppStore();
 
-  const [selectAll, setSelectAll] = useState(false);
   const [selectAllForNamespace, setSelectAllForNamespace] = useState<SelectedNamespace>('');
   const [selectedNamespace, setSelectedNamespace] = useState<SelectedNamespace>('');
-  const [availableSources, setAvailableSources] = useState<SourcesByNamespace>(appStore.availableSources);
-  const [selectedSources, setSelectedSources] = useState<SourcesByNamespace>(appStore.configuredSources);
-  const [selectedFutureApps, setSelectedFutureApps] = useState<FutureAppsByNamespace>(appStore.configuredFutureApps);
-  const { allNamespaces, data: namespacesData, loading: namespacesLoading } = useNamespace(selectedNamespace);
+  const [selectedSources, setSelectedSources] = useState<UseSourceFormDataResponse['selectedSources']>(appStore.configuredSources);
+  const [selectedFutureApps, setSelectedFutureApps] = useState<UseSourceFormDataResponse['selectedFutureApps']>(appStore.configuredFutureApps);
+
+  const { allNamespaces, data: singleNamespace, loading: namespacesLoading } = useNamespace(selectedNamespace);
+  // Keeps intial values fetched from API, so we can later filter the user-specific-selections, therebey minimizing the amount of data sent to the API on "persist sources".
+  const [recordedInitialValues, setRecordedInitialValues] = useState<UseSourceFormDataResponse['selectedSources']>(appStore.availableSources);
 
   useEffect(() => {
     if (!!allNamespaces?.length) {
-      // auto-select the 1st namespace
-      if (autoSelectNamespace) setSelectedNamespace(allNamespaces[0].name);
-
-      // initialize all namespaces (to avoid undefined errors)
-      setAvailableSources((prev) => {
+      // initialize all states (to avoid undefined errors)
+      setRecordedInitialValues((prev) => {
+        const payload = { ...prev };
+        allNamespaces.forEach(({ name }) => (payload[name] = payload[name] || []));
+        return payload;
+      });
+      setSelectedSources((prev) => {
         const payload = { ...prev };
         allNamespaces.forEach(({ name }) => (payload[name] = payload[name] || []));
         return payload;
@@ -70,81 +66,54 @@ export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFo
         allNamespaces.forEach(({ name }) => (payload[name] = payload[name] || false));
         return payload;
       });
+      // auto-select the 1st namespace
+      if (autoSelectNamespace) setSelectedNamespace(allNamespaces[0].name);
     }
   }, [allNamespaces, autoSelectNamespace]);
 
   useEffect(() => {
-    if (!!namespacesData) {
-      // set available sources for current selected namespace
-      const { name, k8sActualSources = [] } = namespacesData;
-      setAvailableSources((prev) => ({ ...prev, [name]: k8sActualSources }));
-      setSelectedSources((prev) => ({ ...prev, [name]: prev[name] || k8sActualSources.filter(({ selected }) => selected) }));
+    if (!!singleNamespace) {
+      // initialize sources for this namespace
+      const { name, k8sActualSources = [] } = singleNamespace;
+      setRecordedInitialValues((prev) => ({ ...prev, [name]: k8sActualSources }));
+      setSelectedSources((prev) => ({ ...prev, [name]: !!prev[name].length ? prev[name] : k8sActualSources }));
     }
-  }, [namespacesData]);
+  }, [singleNamespace]);
 
   // form filters
   const [searchText, setSearchText] = useState('');
   const [showSelectedOnly, setShowSelectedOnly] = useState(false);
 
-  const doSelectAll = () => {
-    setSelectedSources((prev) => {
-      const payload = { ...prev };
-
-      Object.entries(availableSources).forEach(([namespace, sources]) => {
-        payload[namespace] = sources;
-      });
-
-      return payload;
-    });
-  };
-
-  const doUnselectAll = () => {
-    setSelectedSources((prev) => {
-      const payload = { ...prev };
-
-      Object.keys(availableSources).forEach((namespace) => {
-        payload[namespace] = [];
-      });
-
-      return payload;
-    });
-  };
-
-  const namespaceWasSelected = useRef(false);
   const onSelectAll: UseSourceFormDataResponse['onSelectAll'] = useCallback(
     (bool, namespace, isFromInterval) => {
       if (!!namespace) {
-        if (!isFromInterval) namespaceWasSelected.current = selectedNamespace === namespace;
-        const nsAvailableSources = availableSources[namespace];
-        const nsSelectedSources = selectedSources[namespace];
+        // When clicking "select all" on a namespace
 
-        if (!nsSelectedSources && bool) {
+        if (!isFromInterval && bool) {
           onSelectNamespace(namespace);
           setSelectAllForNamespace(namespace);
         } else {
-          setSelectedSources((prev) => ({ ...prev, [namespace]: bool ? nsAvailableSources : [] }));
+          setSelectedSources((prev) => ({ ...prev, [namespace]: selectedSources[namespace].map((source) => ({ ...source, selected: bool })) }));
           setSelectAllForNamespace('');
-
-          // Note: if we want to select all, but not open the expanded view, we can use the following:
-          // if (!!nsAvailableSources.length && !namespaceWasSelected.current) setSelectedNamespace('');
-
-          namespaceWasSelected.current = false;
         }
       } else {
-        setSelectAll(bool);
+        // When clicking "select all" on all namespaces
 
-        if (bool) {
-          doSelectAll();
-        } else {
-          doUnselectAll();
-        }
+        setSelectedSources((prev) => {
+          const payload = { ...prev };
+
+          Object.entries(payload).forEach(([namespace, sources]) => {
+            payload[namespace] = sources.map((source) => ({ ...source, selected: bool }));
+          });
+
+          return payload;
+        });
       }
     },
-    [availableSources, selectedSources],
+    [selectedSources],
   );
 
-  // this is to keep trying "select all" per namespace until the sources are loaded (allows for 1-click, better UX).
-  // if selectedSources returns an emtpy array, it will stop to prevent inifnite loop where no availableSources ever exist for that namespace
+  // This is to keep trying "select all" per namespace, until the sources are loaded (allows for 1-click, better UX).
   useEffect(() => {
     if (!!selectAllForNamespace) {
       const interval = setInterval(() => onSelectAll(true, selectAllForNamespace, true), 100);
@@ -153,10 +122,7 @@ export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFo
   }, [selectAllForNamespace, onSelectAll]);
 
   const onSelectNamespace: UseSourceFormDataResponse['onSelectNamespace'] = (namespace) => {
-    const alreadySelected = selectedNamespace === namespace;
-
-    setSelectedNamespace(alreadySelected ? '' : namespace);
-    setAvailableSources((prev) => ({ ...prev, [namespace]: prev[namespace] || [] }));
+    setSelectedNamespace((prev) => (prev === namespace ? '' : namespace));
   };
 
   const onSelectSource: UseSourceFormDataResponse['onSelectSource'] = (source, namespace) => {
@@ -164,17 +130,18 @@ export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFo
 
     if (!id) return;
 
-    const selected = [...(selectedSources[id] || [])];
-    const foundIdx = selected.findIndex(({ name, kind }) => name === source.name && kind === source.kind);
+    const arr = [...(selectedSources[id] || [])];
+    const foundIdx = arr.findIndex(({ name, kind }) => name === source.name && kind === source.kind);
 
     if (foundIdx !== -1) {
-      selected.splice(foundIdx, 1);
+      // Replace the item with a new object to avoid mutating a possibly read-only object
+      const updatedItem = { ...arr[foundIdx], selected: !arr[foundIdx].selected };
+      arr[foundIdx] = updatedItem;
     } else {
-      selected.push(source);
+      arr.push({ ...source, selected: true });
     }
 
-    setSelectedSources((prev) => ({ ...prev, [id]: selected }));
-    setSelectAll(false);
+    setSelectedSources((prev) => ({ ...prev, [id]: arr }));
   };
 
   const onSelectFutureApps: UseSourceFormDataResponse['onSelectFutureApps'] = (bool, namespace) => {
@@ -185,6 +152,15 @@ export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFo
     setSelectedFutureApps((prev) => ({ ...prev, [id]: bool }));
   };
 
+  const filterNamespaces: UseSourceFormDataResponse['filterNamespaces'] = (options) => {
+    const { cancelSearch } = options || {};
+    const namespaces = Object.entries(selectedSources);
+
+    const isSearchOk = (targetText: string) => cancelSearch || !searchText || targetText.toLowerCase().includes(searchText);
+
+    return namespaces.filter(([namespace]) => isSearchOk(namespace));
+  };
+
   const filterSources: UseSourceFormDataResponse['filterSources'] = (namespace, options) => {
     const { cancelSearch, cancelSelected } = options || {};
     const id = namespace || selectedNamespace;
@@ -192,31 +168,48 @@ export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFo
     if (!id) return [];
 
     const isSearchOk = (targetText: string) => cancelSearch || !searchText || targetText.toLowerCase().includes(searchText);
-    const isOnlySelectedOk = (selected: Record<string, any>[], compareKey: string, target: string) => cancelSelected || !showSelectedOnly || !!selected.find((item) => item[compareKey] === target);
-    const filtered = availableSources[id].filter((source) => isSearchOk(source.name) && isOnlySelectedOk(selectedSources[id], 'name', source.name));
+    const isOnlySelectedOk = (sources: Record<string, any>[], compareKey: string, target: string) =>
+      cancelSelected || !showSelectedOnly || !!sources.find((item) => item[compareKey] === target && item.selected);
 
-    return filtered;
+    return selectedSources[id].filter((source) => isSearchOk(source.name) && isOnlySelectedOk(selectedSources[id], 'name', source.name));
+  };
+
+  const getApiPaylod: UseSourceFormDataResponse['getApiPaylod'] = () => {
+    const payload: UseSourceFormDataResponse['selectedSources'] = {};
+
+    Object.entries(selectedSources).forEach(([namespace, sources]) => {
+      sources.forEach((source) => {
+        const foundInitial = recordedInitialValues[namespace]?.find((initialSource) => initialSource.name === source.name && initialSource.kind === source.kind);
+
+        if (foundInitial?.selected !== source.selected) {
+          if (!payload[namespace]) payload[namespace] = [];
+          payload[namespace].push(source);
+        }
+      });
+    });
+
+    return payload;
   };
 
   return {
     namespacesLoading,
+    recordedInitialValues,
+    filterNamespaces,
+    filterSources,
+    getApiPaylod,
 
     selectedNamespace,
-    availableSources,
-    selectedSources,
-    selectedFutureApps,
     onSelectNamespace,
+    selectedSources,
     onSelectSource,
+    selectedFutureApps,
     onSelectFutureApps,
 
     searchText,
-    selectAll,
-    selectAllForNamespace,
-    showSelectedOnly,
     setSearchText,
-    onSelectAll,
+    showSelectedOnly,
     setShowSelectedOnly,
-
-    filterSources,
+    selectAllForNamespace,
+    onSelectAll,
   };
 };

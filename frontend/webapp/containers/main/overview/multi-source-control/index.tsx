@@ -50,15 +50,15 @@ export const MultiSourceControl = () => {
   };
 
   const onDelete = () => {
-    const payload: typeof configuredSources = {};
+    const payload = {};
 
-    Object.entries(configuredSources).forEach(([namespace, selectedSources]) => {
-      payload[namespace] = selectedSources.map(({ selected, ...rest }) => ({ ...rest, selected: false }));
+    Object.entries(configuredSources).forEach(([namespace, sources]) => {
+      payload[namespace] = sources.map(({ name, kind }) => ({ name, kind, selected: false }));
     });
 
     persistSources(payload, {});
-    onDeselect();
     setIsWarnModalOpen(false);
+    onDeselect();
   };
 
   return (
