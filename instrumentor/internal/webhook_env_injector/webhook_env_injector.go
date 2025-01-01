@@ -86,12 +86,12 @@ func injectEnvVarsFromRuntime(ctx context.Context, p client.Client, logger logr.
 		return nil
 	}
 
-	envVarsToInject := prepareEnvVars(runtimeDetails, envVarName, otelsdk)
+	envVarsToInject := processEnvVarsFromRuntimeDetails(runtimeDetails, envVarName, otelsdk)
 	container.Env = append(container.Env, envVarsToInject...)
 	return nil
 }
 
-func prepareEnvVars(runtimeDetails *v1alpha1.RuntimeDetailsByContainer, envVarName string, otelsdk common.OtelSdk) []corev1.EnvVar {
+func processEnvVarsFromRuntimeDetails(runtimeDetails *v1alpha1.RuntimeDetailsByContainer, envVarName string, otelsdk common.OtelSdk) []corev1.EnvVar {
 	var envVars []corev1.EnvVar
 	if runtimeDetails.EnvFromContainerRuntime == nil {
 		odigosValueForOtelSdk := envOverwrite.GetPossibleValuesPerEnv(envVarName)
