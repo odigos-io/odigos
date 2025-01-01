@@ -201,10 +201,6 @@ cli-install:
 	@echo "Installing odigos from source. version: $(ODIGOS_CLI_VERSION)"
 	cd ./cli ; go run -tags=embed_manifests . install --version $(ODIGOS_CLI_VERSION) --nowait
 
-.PHONY: cli-uninstall
-cli-uninstall:
-	@echo "Uninstalling odigos from source. version: $(ODIGOS_CLI_VERSION)"
-	cd ./cli ; go run -tags=embed_manifests . uninstall
 
 .PHONY: cli-uninstall
 cli-uninstall:
