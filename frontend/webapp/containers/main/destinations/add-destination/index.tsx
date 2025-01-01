@@ -58,16 +58,8 @@ export function AddDestinationContainer() {
   const clickDone = async () => {
     setIsLoading(true);
 
-    const payload: typeof configuredSources = {};
-
-    Object.entries(configuredSources).forEach(([namespace, sources]) => {
-      payload[namespace] = sources.map((source) => ({
-        ...source,
-        selected: true,
-      }));
-    });
-
-    await persistSources(payload, configuredFutureApps);
+    // configuredSources & configuredFutureApps are set in store from the previous step in onboarding flow
+    await persistSources(configuredSources, configuredFutureApps);
     await Promise.all(configuredDestinations.map(async ({ form }) => await createDestination(form)));
 
     resetState();

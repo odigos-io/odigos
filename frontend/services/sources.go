@@ -295,8 +295,7 @@ func createSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 
 	source, err := GetSourceCRD(ctx, nsName, workloadName, workloadKind)
 	if source != nil && err == nil {
-		// we don't want to throw error, because we want to allow the UI to send an array of all sources even if instrumented
-		return nil
+		return err
 	}
 
 	newSource := &v1alpha1.Source{
@@ -324,8 +323,7 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 
 	source, err := GetSourceCRD(ctx, nsName, workloadName, workloadKind)
 	if err != nil {
-		// we don't want to throw error, because we want to allow the UI to send an array of all sources even if not instrumented
-		return nil
+		return err
 	}
 
 	err = kube.DefaultClient.OdigosClient.Sources(nsName).Delete(ctx, source.Name, metav1.DeleteOptions{})

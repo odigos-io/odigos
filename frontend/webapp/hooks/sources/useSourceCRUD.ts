@@ -3,7 +3,7 @@ import { ACTION, getSseTargetFromId } from '@/utils';
 import { PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import { useComputePlatform, useNamespace } from '../compute-platform';
 import { type PendingItem, useAppStore, useNotificationStore, usePendingStore } from '@/store';
-import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type PatchSourceRequestInput, type K8sActualSource, NOTIFICATION_TYPE } from '@/types';
+import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type PatchSourceRequestInput, NOTIFICATION_TYPE, type K8sActualSource } from '@/types';
 
 interface Params {
   onSuccess?: (type: string) => void;
@@ -86,7 +86,7 @@ export const useSourceCRUD = (params?: Params) => {
 
       for (const [namespace, sources] of Object.entries(selectAppsList)) {
         const addToPendingStore: PendingItem[] = [];
-        const sendToGql: { name: string; kind: string; selected: boolean }[] = [];
+        const sendToGql: Pick<K8sActualSource, 'name' | 'kind' | 'selected'>[] = [];
 
         sources.forEach(({ name, kind, selected }) => {
           addToPendingStore.push({ entityType: OVERVIEW_ENTITY_TYPES.SOURCE, entityId: { namespace, name, kind } });

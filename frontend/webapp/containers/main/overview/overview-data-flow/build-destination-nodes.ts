@@ -74,7 +74,7 @@ export const buildDestinationNodes = ({ loading, entities, positions, unfiltered
         type: OVERVIEW_NODE_TYPES.ADD_DESTINATION,
         status: STATUSES.HEALTHY,
         title: 'ADD DESTINATION',
-        subTitle: `Add ${!!unfilteredCount ? 'a new' : 'first'} destination to monitor the OpenTelemetry data`,
+        subTitle: 'To monitor OpenTelemetry data',
       },
     });
   } else {

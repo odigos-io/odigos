@@ -77,22 +77,21 @@ export const SourcesList: React.FC<Props> = ({
   namespacesLoading,
 
   selectedNamespace,
-  availableSources,
   selectedSources,
   onSelectSource,
 
   filterSources,
 }) => {
-  const sources = availableSources[selectedNamespace] || [];
+  const sources = selectedSources[selectedNamespace] || [];
 
   if (!sources.length) {
-    return <NoDataFoundWrapper>{namespacesLoading ? <FadeLoader style={{ transform: 'scale(2)' }} /> : <NoDataFound title='No namespaces found' />}</NoDataFoundWrapper>;
+    return <NoDataFoundWrapper>{namespacesLoading ? <FadeLoader style={{ transform: 'scale(2)' }} /> : <NoDataFound title='No sources found' />}</NoDataFoundWrapper>;
   }
 
   return (
     <SourcesListWrapper $isModal={isModal}>
       {filterSources().map((source) => {
-        const isSelected = !!selectedSources[selectedNamespace].find(({ name }) => name === source.name);
+        const isSelected = selectedSources[selectedNamespace].find(({ name }) => name === source.name)?.selected || false;
 
         return (
           <ListItem key={`source-${source.name}`} $selected={isSelected} onClick={() => onSelectSource(source)}>
@@ -111,7 +110,7 @@ export const SourcesList: React.FC<Props> = ({
 
             {isSelected && (
               <SelectedTextWrapper>
-                <Checkbox value={true} />
+                <Checkbox value={true} allowPropagation />
               </SelectedTextWrapper>
             )}
           </ListItem>

@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 
 interface Props {
-  label: string | number;
+  label: string | number | JSX.Element;
   filled?: boolean;
 }
 
