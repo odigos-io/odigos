@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/autoscaler/utils"
 	"github.com/odigos-io/odigos/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -88,15 +89,15 @@ func AddFilterProcessors(ctx context.Context, kubeClient client.Client, allProce
 		logger := log.Log.WithValues("destination", dest.Name)
 		logger.Info("Processing destination for filter processor")
 
-		if dest.Spec.SourceSelector == nil || contains(dest.Spec.SourceSelector.Modes, "all") {
+		if dest.Spec.SourceSelector == nil || utils.Contains(dest.Spec.SourceSelector.Modes, "all") {
 			continue
 		}
 
 		var matchedSources []odigosv1.Source
-		if contains(dest.Spec.SourceSelector.Modes, "namespaces") {
+		if utils.Contains(dest.Spec.SourceSelector.Modes, "namespaces") {
 			matchedSources = append(matchedSources, fetchSourcesByNamespaces(ctx, kubeClient, dest.Spec.SourceSelector.Namespaces, logger)...)
 		}
-		if contains(dest.Spec.SourceSelector.Modes, "groups") {
+		if utils.Contains(dest.Spec.SourceSelector.Modes, "groups") {
 			matchedSources = append(matchedSources, fetchSourcesByGroups(ctx, kubeClient, dest.Spec.SourceSelector.Groups, logger)...)
 		}
 
@@ -118,7 +119,7 @@ func AddFilterProcessors(ctx context.Context, kubeClient client.Client, allProce
 			},
 			Spec: odigosv1.ProcessorSpec{
 				Type:            "odigosroutingfilterprocessor",
-				ProcessorConfig: runtime.RawExtension{Raw: marshalConfig(filterConfig)},
+				ProcessorConfig: runtime.RawExtension{Raw: utils.MarshalConfig(filterConfig, logger)},
 				CollectorRoles: []odigosv1.CollectorsGroupRole{
 					odigosv1.CollectorsGroupRoleClusterGateway,
 				},
@@ -170,21 +171,4 @@ func fetchSourcesByGroups(ctx context.Context, kubeClient client.Client, groups 
 		sources = append(sources, source)
 	}
 	return sources
-}
-
-func marshalConfig(config map[string]interface{}) []byte {
-	data, err := json.Marshal(config)
-	if err != nil {
-		log.Log.Error(err, "Failed to marshal processor config")
-	}
-	return data
-}
-
-func contains(arr []string, val string) bool {
-	for _, item := range arr {
-		if item == val {
-			return true
-		}
-	}
-	return false
 }
