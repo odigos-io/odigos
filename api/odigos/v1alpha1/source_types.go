@@ -47,10 +47,6 @@ type SourceSpec struct {
 	// This field is required upon creation and cannot be modified.
 	// +kubebuilder:validation:Required
 	Workload workload.PodWorkload `json:"workload"`
-
-	// Groups represents the logical group(s) this source belongs to.
-	// +optional
-	Groups []string `json:"groups,omitempty"`
 }
 
 type SourceStatus struct {

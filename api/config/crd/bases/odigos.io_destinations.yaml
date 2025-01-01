@@ -82,23 +82,23 @@ spec:
                     items:
                       type: string
                     type: array
-                  mode:
+                  modes:
                     description: |-
-                      Mode can be "all", "namespaces", or "groups".
+                      Mode can contain a combination of "all", "namespaces", or "groups".
                       Determines how sources are selected for this destination.
                     enum:
                     - all
                     - namespaces
                     - groups
-                    type: string
+                    items:
+                      type: string
+                    type: array
                   namespaces:
                     description: Namespaces specifies the namespaces for "namespaces"
                       mode.
                     items:
                       type: string
                     type: array
-                required:
-                - mode
                 type: object
               type:
                 type: string

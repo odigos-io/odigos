@@ -1,14 +1,19 @@
 package common
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
 
+	"github.com/go-logr/logr"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -79,29 +84,29 @@ type MatchCondition struct {
 	Kind      string `mapstructure:"kind"`
 }
 
-func AddFilterProcessors(allProcessors *odigosv1.ProcessorList, dests *odigosv1.DestinationList, sources *odigosv1.SourceList) {
+func AddFilterProcessors(ctx context.Context, kubeClient client.Client, allProcessors *odigosv1.ProcessorList, dests *odigosv1.DestinationList) {
 	for _, dest := range dests.Items {
-		//TODO: remove this log
 		logger := log.Log.WithValues("destination", dest.Name)
 		logger.Info("Processing destination for filter processor")
-		//TODO: remove this log
-		matchedSources := filterSources(sources.Items, dest.Spec.SourceSelector)
 
-		// if len(matchedSources) == 0 {
-		// 	//TODO: remove this log
-		// 	logger.Info("No matching sources found for destination. Skipping processor creation.")
+		if dest.Spec.SourceSelector == nil || contains(dest.Spec.SourceSelector.Modes, "all") {
+			logger.Info("Skipping destination as SourceSelector is nil or set to 'all'")
+			continue
+		}
 
-		// 	//TODO: remove this log
-		// 	continue
-		// }
-		//TODO: remove this log
+		var matchedSources []odigosv1.Source
+		if contains(dest.Spec.SourceSelector.Modes, "namespaces") {
+			matchedSources = append(matchedSources, fetchSourcesByNamespaces(ctx, kubeClient, dest.Spec.SourceSelector.Namespaces, logger)...)
+		}
+		if contains(dest.Spec.SourceSelector.Modes, "groups") {
+			matchedSources = append(matchedSources, fetchSourcesByGroups(ctx, kubeClient, dest.Spec.SourceSelector.Groups, logger)...)
+		}
+
 		logger.Info("Matched sources for destination", "matchedSources", matchedSources)
-		//TODO: remove this log
+
 		var matchConditions []map[string]string
 		for _, source := range matchedSources {
-			//TODO: remove this log
 			logger.Info("Adding match condition for source", "sourceName", source.Spec.Workload.Name, "namespace", source.Spec.Workload.Namespace, "kind", source.Spec.Workload.Kind)
-			//TODO: remove this log
 
 			matchCondition := map[string]string{
 				"name":      source.Spec.Workload.Name,
@@ -109,6 +114,11 @@ func AddFilterProcessors(allProcessors *odigosv1.ProcessorList, dests *odigosv1.
 				"kind":      string(source.Spec.Workload.Kind),
 			}
 			matchConditions = append(matchConditions, matchCondition)
+		}
+
+		if len(matchConditions) == 0 {
+			logger.Info("No matched sources for destination. Skipping processor creation.")
+			continue
 		}
 
 		filterConfig := map[string]interface{}{
@@ -129,33 +139,50 @@ func AddFilterProcessors(allProcessors *odigosv1.ProcessorList, dests *odigosv1.
 				Signals:   dest.Spec.Signals,
 			},
 		})
-		//TODO: remove this log
-		logger.Info("Filter processor added successfully", "processorName", fmt.Sprintf("odigossourcetodestinationfilter-%s", dest.Name))
-		//TODO: remove this log
 
 	}
 }
 
-func filterSources(sources []odigosv1.Source, selector *odigosv1.SourceSelector) []odigosv1.Source {
-	if selector == nil || selector.Mode == "all" {
-		return sources
-	}
-
-	var filtered []odigosv1.Source
-	for _, source := range sources {
-		if selector.Mode == "namespaces" && contains(selector.Namespaces, source.Spec.Workload.Namespace) {
-			filtered = append(filtered, source)
-		} else if selector.Mode == "groups" {
-			// Handle nil or empty groups gracefully
-			if source.Spec.Groups == nil || len(source.Spec.Groups) == 0 {
-				continue
-			}
-			if containsAny(selector.Groups, source.Spec.Groups) {
-				filtered = append(filtered, source)
-			}
+func fetchSourcesByNamespaces(ctx context.Context, kubeClient client.Client, namespaces []string, logger logr.Logger) []odigosv1.Source {
+	var sources []odigosv1.Source
+	for _, ns := range namespaces {
+		sourceList := &odigosv1.SourceList{}
+		err := kubeClient.List(ctx, sourceList, &client.ListOptions{Namespace: ns})
+		if err != nil {
+			logger.Error(err, "Failed to fetch sources by namespace", "namespace", ns)
+			continue
 		}
+		sources = append(sources, sourceList.Items...)
 	}
-	return filtered
+	return sources
+}
+
+func fetchSourcesByGroups(ctx context.Context, kubeClient client.Client, groups []string, logger logr.Logger) []odigosv1.Source {
+	selectors := make([]string, len(groups))
+	for i, group := range groups {
+		selectors[i] = fmt.Sprintf("odigos.io/group-%s=true", group)
+	}
+	labelSelector := labels.SelectorFromSet(labels.Set{
+		strings.Join(selectors, ","): "",
+	})
+
+	sourceList := &odigosv1.SourceList{}
+	err := kubeClient.List(ctx, sourceList, &client.ListOptions{
+		LabelSelector: labelSelector,
+	})
+	if err != nil {
+		logger.Error(err, "Failed to fetch sources by groups", "groups", groups)
+		return nil
+	}
+	return sourceList.Items
+}
+
+func marshalConfig(config map[string]interface{}) []byte {
+	data, err := json.Marshal(config)
+	if err != nil {
+		log.Log.Error(err, "Failed to marshal processor config")
+	}
+	return data
 }
 
 func contains(arr []string, val string) bool {
@@ -165,31 +192,4 @@ func contains(arr []string, val string) bool {
 		}
 	}
 	return false
-}
-
-func containsAny(arr1, arr2 []string) bool {
-	for _, item1 := range arr1 {
-		for _, item2 := range arr2 {
-			if item1 == item2 {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func buildFilterConditions(sources []odigosv1.Source) []string {
-	var conditions []string
-	for _, source := range sources {
-		conditions = append(conditions, source.Name)
-	}
-	return conditions
-}
-
-func marshalConfig(config map[string]interface{}) []byte {
-	data, err := json.Marshal(config)
-	if err != nil {
-		log.Log.Error(err, "Failed to marshal processor config")
-	}
-	return data
 }
