@@ -17,7 +17,7 @@ import (
 
 func InjectOdigosAgentEnvVars(ctx context.Context, p client.Client, logger logr.Logger, podWorkload workload.PodWorkload, container *corev1.Container,
 	pl common.ProgrammingLanguage, otelsdk common.OtelSdk) {
-	envVarsPerLanguage := getEnvVarsForLanguage(pl)
+	envVarsPerLanguage := getEnvVarNamesForLanguage(pl)
 	if envVarsPerLanguage == nil {
 		return
 	}
@@ -34,16 +34,12 @@ func InjectOdigosAgentEnvVars(ctx context.Context, p client.Client, logger logr.
 	}
 }
 
-func getEnvVarsForLanguage(pl common.ProgrammingLanguage) []string {
-	// Check if the key exists in the map - for safety
-	if envVars, exists := envOverwrite.EnvVarsForLanguage[pl]; exists {
-		return envVars
-	}
-
-	// Return nil if the key doesn't exist
-	return nil
+func getEnvVarNamesForLanguage(pl common.ProgrammingLanguage) []string {
+	return envOverwrite.EnvVarsForLanguage[pl]
 }
 
+// Return true if further processing should be skipped, either because it was already handled or due to a potential error (e.g., missing possible values)
+// Return false if the env was not processed using the manifest value and requires further handling by other methods.
 func handleManifestEnvVar(container *corev1.Container, envVarName string, otelsdk common.OtelSdk, logger logr.Logger) bool {
 	manifestEnvVar := getContainerEnvVarPointer(&container.Env, envVarName)
 	if manifestEnvVar == nil {
@@ -57,11 +53,12 @@ func handleManifestEnvVar(container *corev1.Container, envVarName string, otelsd
 
 	odigosValueForOtelSdk := possibleValues[otelsdk]
 	if strings.Contains(manifestEnvVar.Value, "/var/odigos/") {
-		logger.Info("env var exists in the manifest and already includes odigos values", "envVarName", envVarName)
+		logger.Info("env var exists in the manifest and already includes odigos values, skipping injection into manifest", "envVarName", envVarName,
+			"container", container.Name)
 		return true // Skip further processing
 	}
 
-	updatedEnvValue := updatedGetPatchedEnvValue(envVarName, manifestEnvVar.Value, odigosValueForOtelSdk)
+	updatedEnvValue := appendOdigosAdditionsToEnvVar(envVarName, manifestEnvVar.Value, odigosValueForOtelSdk)
 	if updatedEnvValue != nil {
 		manifestEnvVar.Value = *updatedEnvValue
 		logger.Info("updated manifest environment variable", "envVarName", envVarName, "value", *updatedEnvValue)
@@ -100,7 +97,7 @@ func prepareEnvVars(runtimeDetails *v1alpha1.RuntimeDetailsByContainer, envVarNa
 		odigosValueForOtelSdk := envOverwrite.GetPossibleValuesPerEnv(envVarName)
 		if odigosValueForOtelSdk != nil {
 			valueToInject := odigosValueForOtelSdk[otelsdk]
-			patchedEnvVarValue := updatedGetPatchedEnvValue(envVarName, "", valueToInject) // empty observedValue
+			patchedEnvVarValue := appendOdigosAdditionsToEnvVar(envVarName, "", valueToInject) // empty observedValue
 			envVars = append(envVars, corev1.EnvVar{Name: envVarName, Value: *patchedEnvVarValue})
 		}
 
@@ -113,7 +110,7 @@ func prepareEnvVars(runtimeDetails *v1alpha1.RuntimeDetailsByContainer, envVarNa
 			odigosValueForOtelSdk := envOverwrite.GetPossibleValuesPerEnv(envVarName)
 			if odigosValueForOtelSdk != nil {
 				valueToInject := odigosValueForOtelSdk[otelsdk]
-				patchedEnvVarValue := updatedGetPatchedEnvValue(envVarName, envVar.Value, valueToInject)
+				patchedEnvVarValue := appendOdigosAdditionsToEnvVar(envVarName, envVar.Value, valueToInject)
 				envVars = append(envVars, corev1.EnvVar{Name: envVarName, Value: *patchedEnvVarValue})
 			}
 		}
@@ -121,24 +118,19 @@ func prepareEnvVars(runtimeDetails *v1alpha1.RuntimeDetailsByContainer, envVarNa
 	return envVars
 }
 
-func updatedGetPatchedEnvValue(envName string, observedValue string, desiredOdigosAddition string) *string {
-	_, ok := envOverwrite.EnvValuesMap[envName]
+func appendOdigosAdditionsToEnvVar(envName string, observedValue string, desiredOdigosAddition string) *string {
+	envValues, ok := envOverwrite.EnvValuesMap[envName]
 	if !ok {
 		// Odigos does not manipulate this environment variable, so ignore it
 		return nil
 	}
 
 	// In case observedValue is exists but empty, we just need to set the desiredOdigosAddition without delim before
-	if observedValue == "" {
+	if strings.TrimSpace(observedValue) == "" {
 		return &desiredOdigosAddition
 	} else {
 		// In case observedValue is not empty, we need to append the desiredOdigosAddition with the delim
-		delim := envOverwrite.GetDelimPerEnv(envName)
-		if delim == nil { // for safety
-			return nil
-		}
-
-		mergedEnvValue := observedValue + *delim + desiredOdigosAddition
+		mergedEnvValue := observedValue + envValues.Delim + desiredOdigosAddition
 		return &mergedEnvValue
 	}
 }
@@ -149,6 +141,8 @@ func shouldInject(runtimeDetails *v1alpha1.RuntimeDetailsByContainer, logger log
 		return false
 	}
 
+	// Skip injection if runtimeDetails.RuntimeUpdateState is nil.
+	// This indicates that either the new runtime detection or the new runtime detection migrator did not run for this container.
 	if runtimeDetails.RuntimeUpdateState == nil {
 		logger.Info("RuntimeUpdateState is nil, skipping environment variable injection", "container", containerName)
 		return false

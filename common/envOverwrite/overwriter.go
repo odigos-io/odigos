@@ -7,7 +7,7 @@ import (
 )
 
 type envValues struct {
-	delim               string
+	Delim               string
 	programmingLanguage common.ProgrammingLanguage
 	values              map[common.OtelSdk]string
 }
@@ -21,7 +21,7 @@ type envValues struct {
 // If the paths are changed in the odigos images, the values here should be updated accordingly.
 var EnvValuesMap = map[string]envValues{
 	"NODE_OPTIONS": {
-		delim:               " ",
+		Delim:               " ",
 		programmingLanguage: common.JavascriptProgrammingLanguage,
 		values: map[common.OtelSdk]string{
 			common.OtelSdkNativeCommunity: "--require /var/odigos/nodejs/autoinstrumentation.js",
@@ -29,7 +29,7 @@ var EnvValuesMap = map[string]envValues{
 		},
 	},
 	"PYTHONPATH": {
-		delim:               ":",
+		Delim:               ":",
 		programmingLanguage: common.PythonProgrammingLanguage,
 		values: map[common.OtelSdk]string{
 			common.OtelSdkNativeCommunity: "/var/odigos/python:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation",
@@ -37,7 +37,7 @@ var EnvValuesMap = map[string]envValues{
 		},
 	},
 	"JAVA_OPTS": {
-		delim:               " ",
+		Delim:               " ",
 		programmingLanguage: common.JavaProgrammingLanguage,
 		values: map[common.OtelSdk]string{
 			common.OtelSdkNativeCommunity: "-javaagent:/var/odigos/java/javaagent.jar",
@@ -47,7 +47,7 @@ var EnvValuesMap = map[string]envValues{
 		},
 	},
 	"JAVA_TOOL_OPTIONS": {
-		delim:               " ",
+		Delim:               " ",
 		programmingLanguage: common.JavaProgrammingLanguage,
 		values: map[common.OtelSdk]string{
 			common.OtelSdkNativeCommunity: "-javaagent:/var/odigos/java/javaagent.jar",
@@ -118,7 +118,7 @@ func GetPatchedEnvValue(envName string, observedValue string, currentSdk *common
 	}
 
 	// temporary fix clean up observed value from the known webhook injected value
-	parts := strings.Split(observedValue, envMetadata.delim)
+	parts := strings.Split(observedValue, envMetadata.Delim)
 	const (
 		ignoredJavaAgentValue       = "-javaagent:/opt/sre-agent/sre-agent.jar"
 		ignoredNRPythonPathAddition = "newrelic/bootstrap"
@@ -133,7 +133,7 @@ func GetPatchedEnvValue(envName string, observedValue string, currentSdk *common
 		}
 		newValues = append(newValues, part)
 	}
-	observedValue = strings.Join(newValues, envMetadata.delim)
+	observedValue = strings.Join(newValues, envMetadata.Delim)
 
 	// Scenario 3: both odigos and user defined values are present
 	// happens: when the user set some values to this env (either via manifest or dockerfile) and odigos instrumentation is applied.
@@ -163,7 +163,7 @@ func GetPatchedEnvValue(envName string, observedValue string, currentSdk *common
 		return &desiredOdigosPart
 	} else {
 		// no user defined values, just append the odigos value
-		mergedEnvValue := observedValue + envMetadata.delim + desiredOdigosPart
+		mergedEnvValue := observedValue + envMetadata.Delim + desiredOdigosPart
 		return &mergedEnvValue
 	}
 }
@@ -187,11 +187,4 @@ func GetPossibleValuesPerEnv(env string) map[common.OtelSdk]string {
 		return envValues.values
 	}
 	return nil
-}
-
-func GetDelimPerEnv(env string) *string {
-	if envValues, ok := EnvValuesMap[env]; ok {
-		return &envValues.delim
-	}
-	return nil // Return nil if the key doesn't exist
 }
