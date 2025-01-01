@@ -1,4 +1,3 @@
-```markdown
 # Development Guide
 
 This guide provides advanced instructions for contributors and maintainers, covering topics such as debugging specific components, analyzing performance profiles, and working with internal tools. It complements the `CONTRIBUTING.md` by offering insights into advanced development workflows and optimization techniques.
