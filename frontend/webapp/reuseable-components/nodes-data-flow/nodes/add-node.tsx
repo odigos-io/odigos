@@ -23,7 +23,7 @@ interface Props
   > {}
 
 const Container = styled(FlexColumn)<{ $nodeWidth: Props['data']['nodeWidth'] }>`
-  min-height: 69px;
+  min-height: 50px;
   // negative width applied here because of the padding left&right
   width: ${({ $nodeWidth }) => `${$nodeWidth - 40}px`};
   padding: 16px 24px 16px 16px;
