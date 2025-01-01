@@ -23,7 +23,7 @@ var ProfilingMetricsFunctions = []ProfileInterface{CPUProfiler{}, HeapProfiler{}
 
 type ProfilingPodConfig struct {
 	Port      int32
-	Selectors []labels.Selector
+	Selector labels.Selector
 }
 type PodPprofMetadata struct {
 	Pod  corev1.Pod
@@ -36,21 +36,18 @@ type PodPprofMetadata struct {
 var servicesProfilingMetadata = map[string]ProfilingPodConfig{
 	"odiglet": {
 		Port: consts.OdigletPprofEndpointPort,
-		Selectors: []labels.Selector{
-			labels.Set{resources.OdigletAppLabelKey: resources.OdigletAppLabelValue}.AsSelector(),
-		},
+		Selector: labels.Set{
+			"app.kubernetes.io/name": resources.OdigletAppLabelValue}.AsSelector(),
 	},
 	"data-collection": {
 		Port: consts.CollectorsPprofEndpointPort,
-		Selectors: []labels.Selector{
-			labels.Set{consts.OdigosCollectorRoleLabel: string(consts.CollectorsRoleNodeCollector)}.AsSelector(),
-		},
+		Selector: labels.Set{
+			consts.OdigosCollectorRoleLabel: string(consts.CollectorsRoleNodeCollector)}.AsSelector(),
 	},
 	"gateway": {	
 		Port: consts.CollectorsPprofEndpointPort,
-		Selectors: []labels.Selector{
-			labels.Set{consts.OdigosCollectorRoleLabel: string(consts.CollectorsRoleClusterGateway)}.AsSelector(),
-		},
+		Selector: labels.Set{
+			consts.OdigosCollectorRoleLabel: string(consts.CollectorsRoleClusterGateway)}.AsSelector(),
 	},
 }
 
@@ -105,94 +102,68 @@ func FetchOdigosProfiles(ctx context.Context, client *kube.Client, profileDir st
 	if err != nil {
 		return nil
 	}
-	var combinedPodsToProfile []PodPprofMetadata
-
-	for _, service := range servicesProfilingMetadata {
-		selectors := service.Selectors
-
-		for _, selector := range selectors {
-			podsToProfile, err := client.CoreV1().Pods(odigosNamespace).List(ctx, metav1.ListOptions{
-			LabelSelector: selector.String(),
-			})
-			if err != nil {
-				return err
-			}
-			for _, pod := range podsToProfile.Items {
-				combinedPodsToProfile = append(combinedPodsToProfile, PodPprofMetadata{
-					Pod:  pod,
-					Pprofort: service.Port,
-				})
-			}
-		}	
-	}
-
-	var profilingPods = make(map[string]corev1.Pod)
-	for _, pod := range combinedPodsToProfile {
-		_, exists := profilingPods[pod.Pod.ObjectMeta.Name]
-		if !exists {
-			profilingPods[pod.Pod.ObjectMeta.Name] = pod.Pod
-		}
-	}
-
 	var podsWaitGroup sync.WaitGroup
+	for _, service := range servicesProfilingMetadata {
+		selector := service.Selector
+		podsToProfile, err := client.CoreV1().Pods(odigosNamespace).List(ctx, metav1.ListOptions{
+		LabelSelector: selector.String(),
+		})
+		if err != nil {
+			return err
+		}
+		for _, pod := range podsToProfile.Items {
+			fmt.Printf("Fetching profile for Pod: %s\n", pod.Name)
+			podsWaitGroup.Add(1)
+			go func(pod v1.Pod, pprofPort int32) {
+				defer podsWaitGroup.Done()
 
-	for _, podElement := range combinedPodsToProfile {
-		pprofPort := podElement.Pprofort
-		pod := podElement.Pod
-		podsWaitGroup.Add(1)
+				directoryName := fmt.Sprintf("%s-%s", pod.Name, pod.Spec.NodeName)
+				nodeFilePath := filepath.Join(profileDir, directoryName)
+				err := os.Mkdir(nodeFilePath, os.ModePerm)
+				if err != nil {
+					fmt.Printf("Error creating directory for node: %v, because: %v", nodeFilePath, err)
+					return
+				}
+				// Inner WaitGroup for profiling functions of this pod
+				var profileWaitGroup sync.WaitGroup
+				for _, profileMetricFunction := range ProfilingMetricsFunctions {
+					profileMetricFunction := profileMetricFunction // Capture range variable
+					metricFilePath := filepath.Join(nodeFilePath, profileMetricFunction.GetFileName())
 
-		go func(pod v1.Pod, pprofPort int32) {
-			defer podsWaitGroup.Done()
+					profileWaitGroup.Add(1)
 
-			directoryName := fmt.Sprintf("%s-%s", pod.Name, pod.Spec.NodeName)
-			nodeFilePath := filepath.Join(profileDir, directoryName)
-			err := os.Mkdir(nodeFilePath, os.ModePerm)
-			if err != nil {
-				fmt.Printf("Error creating directory for node: %v, because: %v", nodeFilePath, err)
-				return
-			}
+					go func(metricFilePath string, profileFunc ProfileInterface) {
+						defer profileWaitGroup.Done()
+						metricFile, err := os.OpenFile(metricFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+						if err != nil {
+							fmt.Printf("Error creating file: %v, because: %v\n", metricFilePath, err)
+							return
+						}
+						defer metricFile.Close()
 
-			// Inner WaitGroup for profiling functions of this pod
-			var profileWaitGroup sync.WaitGroup
-			for _, profileMetricFunction := range ProfilingMetricsFunctions {
-				profileMetricFunction := profileMetricFunction // Capture range variable
-				metricFilePath := filepath.Join(nodeFilePath, profileMetricFunction.GetFileName())
-
-				profileWaitGroup.Add(1)
-
-				go func(metricFilePath string, profileFunc ProfileInterface) {
-					defer profileWaitGroup.Done()
-
-					metricFile, err := os.OpenFile(metricFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-					if err != nil {
-						fmt.Printf("Error creating file: %v, because: %v\n", metricFilePath, err)
-						return
-					}
-					defer metricFile.Close()
-
-					err = captureProfile(ctx, client, pod.Name, pprofPort, odigosNamespace, metricFile, profileFunc)
-					if err != nil {
-						fmt.Printf(
-							"Failed to capture profile data for Pod: %s, Node: %s, Profile Type: %s. Reason: %v\n",
-							pod.Name,
-							pod.Spec.NodeName,
-							profileFunc.GetFileName(),
-							err,
-						)
-					}
-				}(metricFilePath, profileMetricFunction)
-			}
-			// Wait for all profiling tasks of pod to complete
-			profileWaitGroup.Wait()	
-		}(pod, pprofPort)
-	}
+						err = captureProfile(ctx, client, pod.Name, pprofPort, odigosNamespace, metricFile, profileFunc)
+						if err != nil {
+							fmt.Printf(
+								"Failed to capture profile data for Pod: %s, Node: %s, Profile Type: %s. Reason: %v\n",
+								pod.Name,
+								pod.Spec.NodeName,
+								profileFunc.GetFileName(),
+								err,
+							)
+						}
+					}(metricFilePath, profileMetricFunction)
+				}
+				// Wait for all profiling tasks of pod to complete
+				profileWaitGroup.Wait()	
+			}(pod, service.Port)
+		}
+	}	
 	// Wait for all pod-level tasks to complete
 	podsWaitGroup.Wait()
 	return nil  
 }
 
 func captureProfile(ctx context.Context, client *kube.Client, podName string, pprofPort int32, namespace string, metricFile *os.File, profileInterface ProfileInterface) error {
-	fmt.Printf("Generating %s file for pod: %s\n", profileInterface.GetFileName(), podName)
 	proxyURL := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s:%d/proxy/debug/pprof%s", namespace, podName, pprofPort,  profileInterface.GetUrlSuffix())
 
 	request := client.Clientset.CoreV1().RESTClient().
