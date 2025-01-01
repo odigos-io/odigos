@@ -2,6 +2,7 @@ package odigosroutingfilterprocessor
 
 import (
 	"context"
+	"fmt"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
@@ -86,15 +87,8 @@ func (fp *filterProcessor) matches(name, namespace, kind string) bool {
 		return false
 	}
 
-	for _, condition := range fp.config.MatchConditions {
-		if name == condition.Name &&
-			namespace == condition.Namespace &&
-			kind == condition.Kind {
-			return true
-		}
-	}
-
-	return false
+	key := fmt.Sprintf("%s/%s/%s", namespace, name, kind)
+	return fp.config.MatchConditions[key]
 }
 
 func extractResourceDetails(attributes pcommon.Map) (namespace, name, kind string) {

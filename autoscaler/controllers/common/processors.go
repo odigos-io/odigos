@@ -104,16 +104,12 @@ func AddFilterProcessors(ctx context.Context, kubeClient client.Client, allProce
 
 		logger.Info("Matched sources for destination", "matchedSources", matchedSources)
 
-		var matchConditions []map[string]string
+		matchConditions := make(map[string]bool)
 		for _, source := range matchedSources {
 			logger.Info("Adding match condition for source", "sourceName", source.Spec.Workload.Name, "namespace", source.Spec.Workload.Namespace, "kind", source.Spec.Workload.Kind)
 
-			matchCondition := map[string]string{
-				"name":      source.Spec.Workload.Name,
-				"namespace": source.Spec.Workload.Namespace,
-				"kind":      string(source.Spec.Workload.Kind),
-			}
-			matchConditions = append(matchConditions, matchCondition)
+			key := fmt.Sprintf("%s/%s/%s", source.Spec.Workload.Namespace, source.Spec.Workload.Name, source.Spec.Workload.Kind)
+			matchConditions[key] = true
 		}
 
 		if len(matchConditions) == 0 {
