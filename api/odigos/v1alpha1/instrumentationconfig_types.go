@@ -50,6 +50,9 @@ type RuntimeDetailsByContainer struct {
 type InstrumentationConfigStatus struct {
 	// Capture Runtime Details for the workloads that this CR applies to.
 	RuntimeDetailsByContainer []RuntimeDetailsByContainer `json:"runtimeDetailsByContainer,omitempty"`
+
+	// Represents the observations of a InstrumentationConfig's current state.
+	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" protobuf:"bytes,1,rep,name=conditions"`
 }
 
 // Config for the OpenTelemeetry SDKs that should be applied to a workload.

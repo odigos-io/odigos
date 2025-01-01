@@ -105,7 +105,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		Named("instrumentationdevice-instrumentedapplication").
 		For(&odigosv1.InstrumentedApplication{}).
 		WithEventFilter(&predicate.GenerationChangedPredicate{}).
-		Complete(&InstrumentedApplicationReconciler{
+		Complete(&InstrumentationConfigReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
 		})

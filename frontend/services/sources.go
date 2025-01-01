@@ -87,9 +87,9 @@ func GetWorkload(c context.Context, ns string, kind string, name string) (metav1
 	}
 }
 
-func AddHealthyInstrumentationInstancesCondition(ctx context.Context, app *v1alpha1.InstrumentedApplication, source *model.K8sActualSource) error {
-	labelSelector := fmt.Sprintf("%s=%s", consts.InstrumentedAppNameLabel, app.Name)
-	instancesList, err := kube.DefaultClient.OdigosClient.InstrumentationInstances(app.Namespace).List(ctx, metav1.ListOptions{
+func AddHealthyInstrumentationInstancesCondition(ctx context.Context, instConfig *v1alpha1.InstrumentationConfig, source *model.K8sActualSource) error {
+	labelSelector := fmt.Sprintf("%s=%s", consts.InstrumentedAppNameLabel, instConfig.Name)
+	instancesList, err := kube.DefaultClient.OdigosClient.InstrumentationInstances(instConfig.Namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
 

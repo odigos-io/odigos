@@ -29,16 +29,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-type InstrumentedApplicationReconciler struct {
+type InstrumentationConfigReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	var runtimeDetails odigosv1.InstrumentedApplication
-	err := r.Client.Get(ctx, req.NamespacedName, &runtimeDetails)
+	var instConfig odigosv1.InstrumentationConfig
+	err := r.Client.Get(ctx, req.NamespacedName, &instConfig)
 	if err != nil {
 
 		if !apierrors.IsNotFound(err) {
@@ -56,6 +56,6 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 	}
 
 	isNodeCollectorReady := isDataCollectionReady(ctx, r.Client)
-	err = reconcileSingleWorkload(ctx, r.Client, &runtimeDetails, isNodeCollectorReady)
+	err = reconcileSingleWorkload(ctx, r.Client, &instConfig, isNodeCollectorReady)
 	return utils.K8SUpdateErrorHandler(err)
 }

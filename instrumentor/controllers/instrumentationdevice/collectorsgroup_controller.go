@@ -42,7 +42,7 @@ func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	logger := log.FromContext(ctx)
 	isDataCollectionReady := isDataCollectionReady(ctx, r.Client)
 
-	var instApps odigosv1.InstrumentedApplicationList
+	var instApps odigosv1.InstrumentationConfigList
 	if err := r.List(ctx, &instApps); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -53,7 +53,7 @@ func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	var gotConflict bool
 
 	for _, runtimeDetails := range instApps.Items {
-		var currentInstApp odigosv1.InstrumentedApplication
+		var currentInstApp odigosv1.InstrumentationConfig
 		err := r.Get(ctx, client.ObjectKey{Namespace: runtimeDetails.Namespace, Name: runtimeDetails.Name}, &currentInstApp)
 		if apierrors.IsNotFound(err) {
 			// the loop can take time, so the instrumented application might get deleted
