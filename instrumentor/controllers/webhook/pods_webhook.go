@@ -77,7 +77,11 @@ func (p *PodsWebhook) injectOdigosEnvVars(pod *corev1.Pod, podWorkload *workload
 			ContainerName: container.Name,
 		}
 
-		// Add container identifier as seperate env vars - this is used by process discovery to identify the container
+		// Add container identifier as seperate env vars:
+		// This is used by process discovery to identify the container
+		// Also, used by OpAMP clients to send it back to the server on the first heartbeat
+		// TODO(edenfed): these values will be duplicated between the resource attributes and the env vars
+		// We should consider removing these and only use the resource attributes
 		modifications := map[string]envVarModification{
 			k8sconsts.OdigosEnvVarNamespace: {
 				Value:  identifier.Namespace,

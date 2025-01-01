@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/odigos-io/odigos/common/resourceattributes"
+
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/instrumentation"
 	workload "github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	"github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -29,9 +30,13 @@ func (ksg *k8sSettingsGetter) Settings(ctx context.Context, kd K8sProcessDetails
 	}
 
 	return instrumentation.Settings{
-		ServiceName:        OtelServiceName,
-		ResourceAttributes: utils.GetResourceAttributes(kd.pw, kd.pod.Name),
-		InitialConfig:      sdkConfig,
+		ServiceName: OtelServiceName,
+		ResourceAttributes: resourceattributes.AfterPodStart(&resourceattributes.ContainerIdentifier{
+			PodName:       kd.pod.Name,
+			Namespace:     kd.pod.Namespace,
+			ContainerName: kd.containerName,
+		}),
+		InitialConfig: sdkConfig,
 	}, nil
 }
 
