@@ -73,7 +73,7 @@
       "mode": "debug",
       "program": "${workspaceFolder}/cli",
       "cwd": "${workspaceFolder}/cli",
-      "args": ["install", "--version", "${env:VERSION_NUMBER}"],
+      "args": ["install", "--version", "${env:ODIGOS_VERSION}"],
       "buildFlags": "-tags=embed_manifests"
     },
     {
@@ -83,9 +83,10 @@
       "mode": "debug",
       "program": "${workspaceFolder}/cli",
       "cwd": "${workspaceFolder}/cli",
-      "args": ["pro", "--onprem-token", "{env: ONPREM_TOKEN}"],
+      "args": ["pro", "--onprem-token", "${env:ONPREM_TOKEN}"],
       "buildFlags": "-tags=embed_manifests"
     }
-  ]
+  ],
+  "envFile": "${workspaceFolder}/.env"
 }
 
