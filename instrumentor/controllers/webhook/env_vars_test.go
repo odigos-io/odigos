@@ -129,6 +129,31 @@ func TestModifyEnvVars(t *testing.T) {
 				{Name: "VAR2", Value: "value2"},
 			},
 		},
+		{
+			name: "Add value with ValueFrom",
+			original: []corev1.EnvVar{
+				{Name: "VAR1", Value: "value1"},
+			},
+			modifications: map[string]envVarModification{
+				"VAR2": {ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}}, Action: Upsert},
+			},
+			expected: []corev1.EnvVar{
+				{Name: "VAR1", Value: "value1"},
+				{Name: "VAR2", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}}},
+			},
+		},
+		{
+			name: "Modify existing key with ValueFrom",
+			original: []corev1.EnvVar{
+				{Name: "VAR1", Value: "value1"},
+			},
+			modifications: map[string]envVarModification{
+				"VAR1": {ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}}, Action: Upsert},
+			},
+			expected: []corev1.EnvVar{
+				{Name: "VAR1", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}}},
+			},
+		},
 	}
 
 	for _, tt := range tests {

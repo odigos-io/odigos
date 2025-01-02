@@ -18,7 +18,7 @@ import (
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 )
 
-type LangSpecificFunc func(deviceId string, uniqueDestinationSignals map[common.ObservabilitySignal]struct{}) *v1beta1.ContainerAllocateResponse
+type LangSpecificFunc func(uniqueDestinationSignals map[common.ObservabilitySignal]struct{}) *v1beta1.ContainerAllocateResponse
 
 type plugin struct {
 	idsManager       devices.DeviceManager
@@ -39,8 +39,8 @@ func NewPlugin(maxPods int64, lsf LangSpecificFunc, odigosKubeClient *odigosclie
 }
 
 func NewMuslPlugin(lang common.ProgrammingLanguage, maxPods int64, lsf LangSpecificFunc, odigosKubeClient *odigosclientset.Clientset) dpm.PluginInterface {
-	wrappedLsf := func(deviceId string, uniqueDestinationSignals map[common.ObservabilitySignal]struct{}) *v1beta1.ContainerAllocateResponse {
-		res := lsf(deviceId, uniqueDestinationSignals)
+	wrappedLsf := func(uniqueDestinationSignals map[common.ObservabilitySignal]struct{}) *v1beta1.ContainerAllocateResponse {
+		res := lsf(uniqueDestinationSignals)
 		libc.ModifyEnvVarsForMusl(lang, res.Envs)
 		return res
 	}
@@ -107,16 +107,7 @@ func (p *plugin) Allocate(ctx context.Context, request *v1beta1.AllocateRequest)
 		}
 	}
 
-	for _, req := range request.ContainerRequests {
-		if len(req.DevicesIDs) != 1 {
-			log.Logger.V(0).Info("got  instrumentation device not equal to 1, skipping", "devices", req.DevicesIDs)
-			continue
-		}
-
-		deviceId := req.DevicesIDs[0]
-		res.ContainerResponses = append(res.ContainerResponses, p.LangSpecificFunc(deviceId, enabledSignals))
-	}
-
+	res.ContainerResponses = append(res.ContainerResponses, p.LangSpecificFunc(enabledSignals))
 	return res, nil
 }
 
