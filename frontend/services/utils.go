@@ -60,3 +60,13 @@ func CheckWorkloadKind(kind WorkloadKind) error {
 		return errors.New("unsupported workload kind: " + string(kind))
 	}
 }
+
+func CheckWorkloadKindForSourceCRD(kind WorkloadKind) error {
+	switch kind {
+	// Namespace is not a workload, but we need it to "select future apps" by creating a Source CRD for it
+	case WorkloadKindNamespace, WorkloadKindDeployment, WorkloadKindStatefulSet, WorkloadKindDaemonSet:
+		return nil
+	default:
+		return errors.New("unsupported workload kind: " + string(kind))
+	}
+}

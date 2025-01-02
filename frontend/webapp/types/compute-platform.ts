@@ -5,6 +5,7 @@ import type { InstrumentationRuleSpec, InstrumentationRuleSpecMapped } from './i
 
 export type K8sActualNamespace = {
   name: string;
+  selected: boolean;
   k8sActualSources?: K8sActualSource[];
 };
 
