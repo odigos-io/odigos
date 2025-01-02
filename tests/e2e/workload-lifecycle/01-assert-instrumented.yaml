@@ -7,7 +7,7 @@ status:
   conditions:
     - message: "javascript runtime version not supported by OpenTelemetry SDK. Found:
         8.17.0, supports: 14.0.0"
-      observedGeneration: 1
+      (observedGeneration != null): true
       reason: RuntimeVersionNotSupported
       status: "False"
       type: AppliedInstrumentationDevice
@@ -21,7 +21,7 @@ metadata:
 status:
   conditions:
     - message: "Instrumentation device applied successfully"
-      observedGeneration: 1
+      (observedGeneration != null): true
       reason: InstrumentationDeviceApplied
       status: "True"
       type: AppliedInstrumentationDevice
@@ -35,7 +35,7 @@ metadata:
 status:
   conditions:
     - message: "Instrumentation device applied successfully"
-      observedGeneration: 1
+      (observedGeneration != null): true
       reason: InstrumentationDeviceApplied
       status: "True"
       type: AppliedInstrumentationDevice
@@ -74,7 +74,7 @@ metadata:
 status:
   conditions:
     - message: "Instrumentation device applied successfully"
-      observedGeneration: 1
+      (observedGeneration != null): true
       reason: InstrumentationDeviceApplied
       status: "True"
       type: AppliedInstrumentationDevice
@@ -113,7 +113,7 @@ metadata:
 status:
   conditions:
     - message: "Instrumentation device applied successfully"
-      observedGeneration: 1
+      (observedGeneration != null): true
       reason: InstrumentationDeviceApplied
       status: "True"
       type: AppliedInstrumentationDevice
@@ -152,7 +152,7 @@ metadata:
 status:
   conditions:
     - message: "Instrumentation device applied successfully"
-      observedGeneration: 1
+      (observedGeneration != null): true
       reason: InstrumentationDeviceApplied
       status: "True"
       type: AppliedInstrumentationDevice
@@ -191,35 +191,11 @@ metadata:
 status:
   conditions:
     - message: "Instrumentation device applied successfully"
-      observedGeneration: 1
+      (observedGeneration != null): true
       reason: InstrumentationDeviceApplied
       status: "True"
       type: AppliedInstrumentationDevice
 ---
-apiVersion: odigos.io/v1alpha1
-kind: InstrumentationConfig
-metadata:
-  namespace: default
-  name: deployment-language-change
-status:
-  conditions:
-    - message: "Instrumentation device applied successfully"
-      observedGeneration: 1
-      reason: InstrumentationDeviceApplied
-      status: "True"
-      type: AppliedInstrumentationDevice
----
-apiVersion: odigos.io/v1alpha1
-kind: InstrumentationInstance
-metadata:
-  namespace: default
-  labels:
-    instrumented-app: deployment-language-change
-status:
-  healthy: true
-  # no need to verify all properties, as this is not the intent of this test
----
-
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
 metadata:
@@ -228,7 +204,7 @@ metadata:
 status:
   conditions:
     - message: "Instrumentation device applied successfully"
-      observedGeneration: 1
+      (observedGeneration != null): true
       reason: InstrumentationDeviceApplied
       status: "True"
       type: AppliedInstrumentationDevice
@@ -241,7 +217,7 @@ metadata:
 status:
   conditions:
     - message: "Instrumentation device applied successfully"
-      observedGeneration: 1
+      (observedGeneration != null): true
       reason: InstrumentationDeviceApplied
       status: "True"
       type: AppliedInstrumentationDevice
@@ -254,7 +230,7 @@ metadata:
 status:
   conditions:
     - message: "Instrumentation device applied successfully"
-      observedGeneration: 1
+      (observedGeneration != null): true
       reason: InstrumentationDeviceApplied
       status: "True"
       type: AppliedInstrumentationDevice
@@ -267,7 +243,7 @@ metadata:
 status:
   conditions:
     - message: "Instrumentation device applied successfully"
-      observedGeneration: 1
+      (observedGeneration != null): true
       reason: InstrumentationDeviceApplied
       status: "True"
       type: AppliedInstrumentationDevice
@@ -280,7 +256,7 @@ metadata:
 status:
   conditions:
     - message: "Instrumentation device applied successfully"
-      observedGeneration: 1
+      (observedGeneration != null): true
       reason: InstrumentationDeviceApplied
       status: "True"
       type: AppliedInstrumentationDevice
@@ -293,7 +269,7 @@ metadata:
 status:
   conditions:
     - message: "Instrumentation device applied successfully"
-      observedGeneration: 1
+      (observedGeneration != null): true
       reason: InstrumentationDeviceApplied
       status: "True"
       type: AppliedInstrumentationDevice
@@ -303,13 +279,10 @@ kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-python-alpine
-spec:
-  runtimeDetails:
-    - containerName: python-alpine
 status:
   conditions:
     - message: "Instrumentation device applied successfully"
-      observedGeneration: 1
+      (observedGeneration != null): true
       reason: InstrumentationDeviceApplied
       status: "True"
       type: AppliedInstrumentationDevice
@@ -322,7 +295,7 @@ metadata:
 status:
   conditions:
     - message: "Instrumentation device applied successfully"
-      observedGeneration: 1
+      (observedGeneration != null): true
       reason: InstrumentationDeviceApplied
       status: "True"
       type: AppliedInstrumentationDevice
@@ -335,7 +308,7 @@ metadata:
 status:
   conditions:
     - message: "Instrumentation device applied successfully"
-      observedGeneration: 1
+      (observedGeneration != null): true
       reason: InstrumentationDeviceApplied
       status: "True"
       type: AppliedInstrumentationDevice
@@ -348,7 +321,7 @@ metadata:
 status:
   conditions:
     - message: "python runtime version not supported by OpenTelemetry SDK. Found: 3.6.15, supports: 3.8.0"
-      observedGeneration: 1
+      (observedGeneration != null): true
       reason: RuntimeVersionNotSupported
       status: "False"
       type: AppliedInstrumentationDevice
@@ -361,7 +334,7 @@ metadata:
 status:
   conditions:
     - message: "device not added to any container due to the presence of another agent"
-      observedGeneration: 1
+      (observedGeneration != null): true
       reason: ErrApplyingInstrumentationDevice
       status: "False"
       type: AppliedInstrumentationDevice

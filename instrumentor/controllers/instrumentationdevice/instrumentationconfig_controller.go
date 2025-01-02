@@ -18,7 +18,6 @@ package instrumentationdevice
 
 import (
 	"context"
-	"fmt"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
@@ -49,7 +48,6 @@ func (o RuntimeDetailsChangedPredicate) Create(e event.CreateEvent) bool {
 		return false
 	}
 
-	fmt.Printf("InstrumentationConfig created: %v len of runtime details %d\n", ic.Name, len(ic.Status.RuntimeDetailsByContainer))
 	return len(ic.Status.RuntimeDetailsByContainer) > 0
 }
 
@@ -104,7 +102,6 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 	}
 
 	isNodeCollectorReady := isDataCollectionReady(ctx, r.Client)
-	fmt.Println("######### instrumentationConfig controller #########")
 	err = reconcileSingleWorkload(ctx, r.Client, &instConfig, isNodeCollectorReady)
 	return utils.K8SUpdateErrorHandler(err)
 }
