@@ -10,7 +10,6 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -62,7 +61,7 @@ func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind wor
 
 	if !instrumented {
 		// Check if a Source object exists for this workload
-		sourceList, err := v1alpha1.GetSourceListForWorkload(ctx, k8sClient, obj)
+		sourceList, err := odigosv1.GetSourceListForWorkload(ctx, k8sClient, obj)
 		if err != nil {
 			return ctrl.Result{}, err
 		}

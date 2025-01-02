@@ -100,11 +100,22 @@ spec:
               kubectl rollout status deployment -l app=inventory
               kubectl rollout status deployment -l app=pricing
               kubectl rollout status deployment -l app=membership
+    - name: Simple-demo pods ready for traffic
+      try:
+        - script:
+            timeout: 70s
+            content: |
               kubectl wait --for=condition=ready pod -l app=frontend --timeout=60s
               kubectl wait --for=condition=ready pod -l app=coupon --timeout=60s
               kubectl wait --for=condition=ready pod -l app=inventory --timeout=60s
               kubectl wait --for=condition=ready pod -l app=pricing --timeout=60s
               kubectl wait --for=condition=ready pod -l app=membership --timeout=60s
+    - name: Wait for apps auto-instrumentation
+      try:
+        - script:
+            timeout: 60s
+            content: |
+              sleep 30
     - name: Generate Traffic
       try:
         - script:
@@ -171,7 +182,7 @@ spec:
             content: |
               kubectl delete sources --all
               while true; do
-                ic_count=$(kubectl get instrumentationconfigs | wc -l)
+                ic_count=$(kubectl get instrumentationconfigs --output name | wc -l)
                 if [ $ic_count -eq "0" ]; then
                   break
                 fi
@@ -190,6 +201,11 @@ spec:
               kubectl rollout status deployment -l app=inventory
               kubectl rollout status deployment -l app=pricing
               kubectl rollout status deployment -l app=membership
+    - name: Simple-demo pods ready for traffic
+      try:
+        - script:
+            timeout: 70s
+            content: |
               kubectl wait --for=condition=ready pod -l app=frontend --timeout=60s
               kubectl wait --for=condition=ready pod -l app=coupon --timeout=60s
               kubectl wait --for=condition=ready pod -l app=inventory --timeout=60s
@@ -219,12 +235,22 @@ spec:
               kubectl rollout status deployment -l app=inventory
               kubectl rollout status deployment -l app=pricing
               kubectl rollout status deployment -l app=membership
+    - name: Simple-demo pods ready for traffic
+      try:
+        - script:
+            timeout: 70s
+            content: |
               kubectl wait --for=condition=ready pod -l app=frontend --timeout=60s
               kubectl wait --for=condition=ready pod -l app=coupon --timeout=60s
               kubectl wait --for=condition=ready pod -l app=inventory --timeout=60s
               kubectl wait --for=condition=ready pod -l app=pricing --timeout=60s
               kubectl wait --for=condition=ready pod -l app=membership --timeout=60s
-              sleep 5
+    - name: Wait for apps auto-instrumentation
+      try:
+        - script:
+            timeout: 60s
+            content: |
+              sleep 30
     - name: Generate Traffic
       try:
         - script:
@@ -291,7 +317,7 @@ spec:
             content: |
               kubectl delete sources --all
               while true; do
-                ic_count=$(kubectl get instrumentationconfigs | wc -l)
+                ic_count=$(kubectl get instrumentationconfigs --output name | wc -l)
                 if [ $ic_count -eq "0" ]; then
                   break
                 fi
@@ -302,3 +328,86 @@ spec:
         - assert:
             timeout: 2m
             file: 04-workloads.yaml
+        - script:
+            timeout: 70s
+            content: |
+              kubectl rollout status deployment -l app=coupon
+              kubectl rollout status deployment -l app=frontend
+              kubectl rollout status deployment -l app=inventory
+              kubectl rollout status deployment -l app=pricing
+              kubectl rollout status deployment -l app=membership
+    - name: Simple-demo pods ready for traffic
+      try:
+        - script:
+            timeout: 70s
+            content: |
+              kubectl wait --for=condition=ready pod -l app=frontend --timeout=60s
+              kubectl wait --for=condition=ready pod -l app=coupon --timeout=60s
+              kubectl wait --for=condition=ready pod -l app=inventory --timeout=60s
+              kubectl wait --for=condition=ready pod -l app=pricing --timeout=60s
+              kubectl wait --for=condition=ready pod -l app=membership --timeout=60s
+    - name: Instrument frontend workload specifically
+      try:
+        - apply:
+            file: 05-source.yaml
+    - name: Assert Runtime Detected for single workload
+      try:
+        - assert:
+            timeout: 2m
+            file: 05-assert-runtime-detected.yaml
+        - assert:
+            timeout: 2m
+            file: 05-workloads.yaml
+    - name: Single workload instrumented after runtime detection
+      try:
+        - script:
+            timeout: 70s
+            content: |
+              kubectl rollout status deployment -l app=coupon
+              kubectl rollout status deployment -l app=frontend
+              kubectl rollout status deployment -l app=inventory
+              kubectl rollout status deployment -l app=pricing
+              kubectl rollout status deployment -l app=membership
+    - name: Simple-demo pods ready for traffic
+      try:
+        - script:
+            timeout: 70s
+            content: |
+              kubectl wait --for=condition=ready pod -l app=frontend --timeout=60s
+              kubectl wait --for=condition=ready pod -l app=coupon --timeout=60s
+              kubectl wait --for=condition=ready pod -l app=inventory --timeout=60s
+              kubectl wait --for=condition=ready pod -l app=pricing --timeout=60s
+              kubectl wait --for=condition=ready pod -l app=membership --timeout=60s
+    - name: Instrument rest of Namespace
+      try:
+        - apply:
+            file: 02-source-ns.yaml
+    - name: Assert Runtime Detected for all workloads
+      try:
+        - assert:
+            timeout: 2m
+            file: ../../common/assert/simple-demo-runtime-detected.yaml
+        - assert:
+            timeout: 2m
+            file: 06-workloads.yaml
+    - name: Uninstrument namespace
+      try:
+        - script:
+            timeout: 60s
+            content: |
+              kubectl delete sources/default
+              while true; do
+                ic_count=$(kubectl get instrumentationconfigs --output name | wc -l)
+                if [ $ic_count -eq "1" ]; then
+                  break
+                fi
+                sleep 5
+              done
+    - name: Assert Runtime still Detected for single workload
+      try:
+        - assert:
+            timeout: 2m
+            file: 05-assert-runtime-detected.yaml
+        - assert:
+            timeout: 2m
+            file: 07-workloads.yaml

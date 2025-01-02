@@ -47,6 +47,22 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			return k8sutils.K8SUpdateErrorHandler(err)
 		}
 
+		// pre-process existing Sources for specific workloads so we don't have to make a bunch of API calls
+		// This is used to check if a workload already has an explicit Source, so we don't overwrite its InstrumentationConfig
+		sourceList := v1alpha1.SourceList{}
+		err := r.Client.List(ctx, &sourceList, client.InNamespace(source.Spec.Workload.Name))
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		namespaceKindSources := make(map[workload.WorkloadKind]map[string]struct{})
+		for _, source := range sourceList.Items {
+			if _, exists := namespaceKindSources[source.Spec.Workload.Kind]; !exists {
+				namespaceKindSources[source.Spec.Workload.Kind] = make(map[string]struct{})
+			}
+			// ex: map["Deployment"]["my-app"] = ...
+			namespaceKindSources[source.Spec.Workload.Kind][source.Spec.Workload.Name] = struct{}{}
+		}
+
 		if source.Spec.Workload.Kind == "Namespace" {
 			var deps appsv1.DeploymentList
 			err = r.Client.List(ctx, &deps, client.InNamespace(source.Spec.Workload.Name))
@@ -56,10 +72,12 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			}
 
 			for _, dep := range deps.Items {
-				request := ctrl.Request{NamespacedName: client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace}}
-				_, err = reconcileWorkload(ctx, r.Client, workload.WorkloadKindDeployment, request, r.Scheme)
-				if err != nil {
-					logger.Error(err, "error requesting runtime details from odiglets", "name", dep.Name, "namespace", dep.Namespace)
+				if _, exists := namespaceKindSources[workload.WorkloadKindDeployment][dep.Name]; !exists {
+					request := ctrl.Request{NamespacedName: client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace}}
+					_, err = reconcileWorkload(ctx, r.Client, workload.WorkloadKindDeployment, request, r.Scheme)
+					if err != nil {
+						logger.Error(err, "error requesting runtime details from odiglets", "name", dep.Name, "namespace", dep.Namespace)
+					}
 				}
 			}
 
@@ -71,10 +89,12 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			}
 
 			for _, st := range sts.Items {
-				request := ctrl.Request{NamespacedName: client.ObjectKey{Name: st.Name, Namespace: st.Namespace}}
-				_, err = reconcileWorkload(ctx, r.Client, workload.WorkloadKindStatefulSet, request, r.Scheme)
-				if err != nil {
-					logger.Error(err, "error requesting runtime details from odiglets", "name", st.Name, "namespace", st.Namespace)
+				if _, exists := namespaceKindSources[workload.WorkloadKindStatefulSet][st.Name]; !exists {
+					request := ctrl.Request{NamespacedName: client.ObjectKey{Name: st.Name, Namespace: st.Namespace}}
+					_, err = reconcileWorkload(ctx, r.Client, workload.WorkloadKindStatefulSet, request, r.Scheme)
+					if err != nil {
+						logger.Error(err, "error requesting runtime details from odiglets", "name", st.Name, "namespace", st.Namespace)
+					}
 				}
 			}
 
@@ -86,10 +106,12 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			}
 
 			for _, ds := range dss.Items {
-				request := ctrl.Request{NamespacedName: client.ObjectKey{Name: ds.Name, Namespace: ds.Namespace}}
-				_, err = reconcileWorkload(ctx, r.Client, workload.WorkloadKindDaemonSet, request, r.Scheme)
-				if err != nil {
-					logger.Error(err, "error requesting runtime details from odiglets", "name", ds.Name, "namespace", ds.Namespace)
+				if _, exists := namespaceKindSources[workload.WorkloadKindDaemonSet][ds.Name]; !exists {
+					request := ctrl.Request{NamespacedName: client.ObjectKey{Name: ds.Name, Namespace: ds.Namespace}}
+					_, err = reconcileWorkload(ctx, r.Client, workload.WorkloadKindDaemonSet, request, r.Scheme)
+					if err != nil {
+						logger.Error(err, "error requesting runtime details from odiglets", "name", ds.Name, "namespace", ds.Namespace)
+					}
 				}
 			}
 		} else {

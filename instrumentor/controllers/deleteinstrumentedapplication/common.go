@@ -27,7 +27,7 @@ func reconcileWorkloadObject(ctx context.Context, kubeClient client.Client, work
 		if err != nil {
 			return err
 		}
-		if len(sourceList.Items) == 0 {
+		if len(sourceList.Items) > 0 {
 			return nil
 		}
 	}
