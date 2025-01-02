@@ -22,6 +22,7 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -70,6 +71,9 @@ func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		if err != nil {
 			if apierrors.IsConflict(err) {
 				gotConflict = true
+			}
+			if errors.Is(err, k8sutils.OtherAgentRunError) {
+				continue
 			}
 			reconcileErr = errors.Join(reconcileErr, err)
 		}
