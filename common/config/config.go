@@ -31,19 +31,19 @@ type Config struct {
 	Exporters  GenericMap `json:"exporters"`
 	Processors GenericMap `json:"processors"`
 	Extensions GenericMap `json:"extensions"`
-	Connectors GenericMap `json:"connectors"`
+	Connectors GenericMap `json:"connectors,omitempty"`
 	Service    Service    `json:"service"`
 }
 
 type Telemetry struct {
-	Metrics GenericMap `json:"metrics"`
+	Metrics  GenericMap         `json:"metrics"`
 	Resource map[string]*string `json:"resource"`
 }
 
 type Service struct {
 	Extensions []string            `json:"extensions"`
 	Pipelines  map[string]Pipeline `json:"pipelines"`
-	Telemetry Telemetry            `json:"telemetry,omitempty"`
+	Telemetry  Telemetry           `json:"telemetry,omitempty"`
 }
 
 type Pipeline struct {
