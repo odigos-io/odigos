@@ -188,20 +188,6 @@ export const DESCRIBE_SOURCE = gql`
           explain
         }
       }
-      instrumentationConfig {
-        created {
-          name
-          value
-          status
-          explain
-        }
-        createTime {
-          name
-          value
-          status
-          explain
-        }
-      }
       runtimeInfo {
         generation {
           name
@@ -236,7 +222,7 @@ export const DESCRIBE_SOURCE = gql`
           }
         }
       }
-      instrumentedApplication {
+      instrumentationConfig {
         created {
           name
           value

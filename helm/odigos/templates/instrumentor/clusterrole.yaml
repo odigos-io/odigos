@@ -81,6 +81,18 @@ rules:
   - apiGroups:
       - odigos.io
     resources:
-      - instrumentationconfigs/status
+      - sources
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - odigos.io
+    resources:
+      - sources/finalizers
     verbs:
       - update

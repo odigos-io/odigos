@@ -72,7 +72,14 @@ export const RuleDrawer: React.FC<Props> = () => {
 
   const handleEdit = (bool?: boolean) => {
     if (item.type === InstrumentationRuleType.UNKNOWN_TYPE && (bool || bool === undefined)) {
-      addNotification({ type: NOTIFICATION_TYPE.WARNING, title: FORM_ALERTS.FORBIDDEN, message: FORM_ALERTS.CANNOT_EDIT_RULE, crdType: OVERVIEW_ENTITY_TYPES.RULE, target: id });
+      addNotification({
+        type: NOTIFICATION_TYPE.WARNING,
+        title: FORM_ALERTS.FORBIDDEN,
+        message: FORM_ALERTS.CANNOT_EDIT_RULE,
+        crdType: OVERVIEW_ENTITY_TYPES.RULE,
+        target: id,
+        hideFromHistory: true,
+      });
     } else {
       setIsEditing(typeof bool === 'boolean' ? bool : true);
     }

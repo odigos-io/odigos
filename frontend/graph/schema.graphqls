@@ -51,22 +51,6 @@ type SourceContainerRuntimeDetails {
   otherAgent: String
 }
 
-type InstrumentationOption {
-  optionKey: String!
-  spanKind: SpanKind!
-}
-
-type InstrumentationLibrary {
-  libraryName: String!
-  options: [InstrumentationOption!]!
-}
-
-type InstrumentedApplicationDetails {
-  containers: [SourceContainerRuntimeDetails!]
-  conditions: [Condition!]
-  instrumentationOptions: [InstrumentationLibrary!]!
-}
-
 type Condition {
   status: ConditionStatus!
   type: String!
@@ -77,8 +61,7 @@ type Condition {
 
 type K8sActualNamespace {
   name: String!
-  instrumentationLabelEnabled: Boolean
-  k8sActualSources(instrumentationLabeled: Boolean): [K8sActualSource]!
+  k8sActualSources: [K8sActualSource]!
 }
 
 input K8sDesiredNamespaceInput {
@@ -91,14 +74,13 @@ input K8sNamespaceId {
 
 type K8sActualSource {
   namespace: String!
-  kind: K8sResourceKind!
   name: String!
-  serviceName: String
+  kind: K8sResourceKind!
   numberOfInstances: Int
+  selected: Boolean
   reportedName: String
-  autoInstrumented: Boolean!
-  autoInstrumentedDecision: String!
-  instrumentedApplicationDetails: InstrumentedApplicationDetails
+  containers: [SourceContainerRuntimeDetails!]
+  conditions: [Condition!]
 }
 
 input K8sDesiredSourceInput {
@@ -108,8 +90,8 @@ input K8sDesiredSourceInput {
 
 type PodWorkload {
   namespace: String!
-  kind: K8sResourceKind!
   name: String!
+  kind: K8sResourceKind!
 }
 
 input PodWorkloadInput {
@@ -203,9 +185,8 @@ input MessagingPayloadCollectionInput {
 
 type ComputePlatform {
   computePlatformType: ComputePlatformType!
-  k8sActualNamespace(name: String!): K8sActualNamespace
   k8sActualNamespaces: [K8sActualNamespace]!
-  k8sActualSource(name: String, namespace: String, kind: String): K8sActualSource
+  k8sActualNamespace(name: String!): K8sActualNamespace
   k8sActualSources: [K8sActualSource]!
   destinations: [Destination!]!
   actions: [PipelineAction!]!
@@ -466,11 +447,6 @@ type InstrumentationLabelsAnalyze {
   instrumentedText: EntityProperty
 }
 
-type InstrumentationConfigAnalyze {
-  created: EntityProperty!
-  createTime: EntityProperty
-}
-
 type ContainerRuntimeInfoAnalyze {
   containerName: EntityProperty!
   language: EntityProperty!
@@ -478,14 +454,14 @@ type ContainerRuntimeInfoAnalyze {
   envVars: [EntityProperty!]!
 }
 
-type RuntimeInfoAnalyze {
-  generation: EntityProperty!
+type InstrumentationConfigAnalyze {
+  created: EntityProperty!
+  createTime: EntityProperty
   containers: [ContainerRuntimeInfoAnalyze!]!
 }
 
-type InstrumentedApplicationAnalyze {
-  created: EntityProperty!
-  createTime: EntityProperty
+type RuntimeInfoAnalyze {
+  generation: EntityProperty!
   containers: [ContainerRuntimeInfoAnalyze!]!
 }
 
@@ -525,9 +501,8 @@ type SourceAnalyze {
   namespace: EntityProperty!
   labels: InstrumentationLabelsAnalyze!
 
+  runtimeInfo: RuntimeInfoAnalyze!
   instrumentationConfig: InstrumentationConfigAnalyze!
-  runtimeInfo: RuntimeInfoAnalyze
-  instrumentedApplication: InstrumentedApplicationAnalyze!
   instrumentationDevice: InstrumentationDeviceAnalyze!
 
   totalPods: Int!

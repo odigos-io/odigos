@@ -39,7 +39,7 @@ export const getEntityLabel = (
       break;
   }
 
-  if (extended) return type + (name ? ` (${name})` : '');
+  if (extended) return type + (name && name !== type ? ` (${name})` : '');
   else if (prioritizeDisplayName) return name || type;
   else return type;
 };

@@ -318,9 +318,9 @@ func main() {
 	}
 
 	// Start watchers
-	err = watchers.StartInstrumentedApplicationWatcher(ctx, "")
+	err = watchers.StartInstrumentationConfigWatcher(ctx, "")
 	if err != nil {
-		log.Printf("Error starting InstrumentedApplication watcher: %v", err)
+		log.Printf("Error starting InstrumentationConfig watcher: %v", err)
 	}
 
 	err = watchers.StartDestinationWatcher(ctx, flags.Namespace)

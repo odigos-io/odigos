@@ -19,14 +19,32 @@ import (
 	"github.com/odigos-io/odigos/frontend/services/describe/odigos_describe"
 	"github.com/odigos-io/odigos/frontend/services/describe/source_describe"
 	testconnection "github.com/odigos-io/odigos/frontend/services/test_connection"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
+// K8sActualNamespaces is the resolver for the k8sActualNamespaces field.
+func (r *computePlatformResolver) K8sActualNamespaces(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualNamespace, error) {
+	namespacesResponse := services.GetK8SNamespaces(ctx)
+
+	K8sActualNamespaces := make([]*model.K8sActualNamespace, len(namespacesResponse.Namespaces))
+	for i, namespace := range namespacesResponse.Namespaces {
+		K8sActualNamespaces[i] = &model.K8sActualNamespace{
+			Name: namespace.Name,
+		}
+	}
+
+	return K8sActualNamespaces, nil
+}
+
 // K8sActualNamespace is the resolver for the k8sActualNamespace field.
 func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *model.ComputePlatform, name string) (*model.K8sActualNamespace, error) {
-	namespaceActualSources, err := services.GetWorkloadsInNamespace(ctx, name, nil)
+	namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	namespaceActualSources, err := services.GetWorkloadsInNamespace(ctx, name)
 	if err != nil {
 		return nil, err
 	}
@@ -37,73 +55,26 @@ func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *m
 		namespaceActualSourcesPointers[i] = &source
 	}
 
-	namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	nsInstrumented := workload.GetInstrumentationLabelValue(namespace.GetLabels())
-
 	return &model.K8sActualNamespace{
-		Name:                        name,
-		InstrumentationLabelEnabled: nsInstrumented,
-		K8sActualSources:            namespaceActualSourcesPointers,
+		Name:             namespace.Name,
+		K8sActualSources: namespaceActualSourcesPointers,
 	}, nil
-}
-
-// K8sActualNamespaces is the resolver for the k8sActualNamespaces field.
-func (r *computePlatformResolver) K8sActualNamespaces(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualNamespace, error) {
-	namespacesResponse := services.GetK8SNamespaces(ctx)
-
-	K8sActualNamespaces := make([]*model.K8sActualNamespace, len(namespacesResponse.Namespaces))
-	for i, namespace := range namespacesResponse.Namespaces {
-
-		namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, namespace.Name, metav1.GetOptions{})
-		if err != nil {
-			return nil, err
-		}
-
-		nsInstrumented := workload.GetInstrumentationLabelValue(namespace.GetLabels())
-
-		K8sActualNamespaces[i] = &model.K8sActualNamespace{
-			Name:                        namespace.Name,
-			InstrumentationLabelEnabled: nsInstrumented,
-		}
-	}
-
-	return K8sActualNamespaces, nil
-}
-
-// K8sActualSource is the resolver for the k8sActualSource field.
-func (r *computePlatformResolver) K8sActualSource(ctx context.Context, obj *model.ComputePlatform, name *string, namespace *string, kind *string) (*model.K8sActualSource, error) {
-	return nil, nil
 }
 
 // K8sActualSources is the resolver for the k8sActualSources field.
 func (r *computePlatformResolver) K8sActualSources(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualSource, error) {
-	instrumentedApplications, err := kube.DefaultClient.OdigosClient.InstrumentedApplications("").List(ctx, metav1.ListOptions{})
+	// Initialize an empty list of K8sActualSource
+	var actualSources []*model.K8sActualSource
+
+	instrumentationConfigs, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	// Initialize an empty list of K8sActualSource
-	var actualSources []*model.K8sActualSource
-
 	// Convert each instrumented application to the K8sActualSource type
-	for _, app := range instrumentedApplications.Items {
-		actualSource := instrumentedApplicationToActualSource(app)
-		services.AddHealthyInstrumentationInstancesCondition(ctx, &app, actualSource)
-		owner, _ := services.GetWorkload(ctx, actualSource.Namespace, string(actualSource.Kind), actualSource.Name)
-		if owner == nil {
-
-			continue
-		}
-		ownerAnnotations := owner.GetAnnotations()
-		var reportedName string
-		if ownerAnnotations != nil {
-			reportedName = ownerAnnotations[consts.OdigosReportedNameAnnotation]
-		}
-		actualSource.ReportedName = &reportedName
+	for _, instruConfig := range instrumentationConfigs.Items {
+		actualSource := instrumentationConfigToActualSource(instruConfig)
+		services.AddHealthyInstrumentationInstancesCondition(ctx, &instruConfig, actualSource)
 		actualSources = append(actualSources, actualSource)
 	}
 
@@ -284,8 +255,8 @@ func (r *destinationResolver) Conditions(ctx context.Context, obj *model.Destina
 }
 
 // K8sActualSources is the resolver for the k8sActualSources field.
-func (r *k8sActualNamespaceResolver) K8sActualSources(ctx context.Context, obj *model.K8sActualNamespace, instrumentationLabeled *bool) ([]*model.K8sActualSource, error) {
-	namespaceActualSources, err := services.GetWorkloadsInNamespace(ctx, obj.Name, instrumentationLabeled)
+func (r *k8sActualNamespaceResolver) K8sActualSources(ctx context.Context, obj *model.K8sActualNamespace) ([]*model.K8sActualSource, error) {
+	namespaceActualSources, err := services.GetWorkloadsInNamespace(ctx, obj.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -294,6 +265,14 @@ func (r *k8sActualNamespaceResolver) K8sActualSources(ctx context.Context, obj *
 	namespaceActualSourcesPointers := make([]*model.K8sActualSource, len(namespaceActualSources))
 	for i, source := range namespaceActualSources {
 		namespaceActualSourcesPointers[i] = &source
+
+		crd, err := services.GetSourceCRD(ctx, obj.Name, source.Name, services.WorkloadKind(source.Kind))
+		instrumented := false
+		if crd != nil && err == nil {
+			instrumented = true
+		}
+
+		namespaceActualSourcesPointers[i].Selected = &instrumented
 	}
 
 	return namespaceActualSourcesPointers, nil

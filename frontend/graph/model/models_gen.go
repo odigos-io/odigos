@@ -74,9 +74,8 @@ type ClusterInfo struct {
 
 type ComputePlatform struct {
 	ComputePlatformType  ComputePlatformType    `json:"computePlatformType"`
-	K8sActualNamespace   *K8sActualNamespace    `json:"k8sActualNamespace,omitempty"`
 	K8sActualNamespaces  []*K8sActualNamespace  `json:"k8sActualNamespaces"`
-	K8sActualSource      *K8sActualSource       `json:"k8sActualSource,omitempty"`
+	K8sActualNamespace   *K8sActualNamespace    `json:"k8sActualNamespace,omitempty"`
 	K8sActualSources     []*K8sActualSource     `json:"k8sActualSources"`
 	Destinations         []*Destination         `json:"destinations"`
 	Actions              []*PipelineAction      `json:"actions"`
@@ -242,8 +241,9 @@ type HTTPPayloadCollectionInput struct {
 }
 
 type InstrumentationConfigAnalyze struct {
-	Created    *EntityProperty `json:"created"`
-	CreateTime *EntityProperty `json:"createTime,omitempty"`
+	Created    *EntityProperty                `json:"created"`
+	CreateTime *EntityProperty                `json:"createTime,omitempty"`
+	Containers []*ContainerRuntimeInfoAnalyze `json:"containers"`
 }
 
 type InstrumentationDeviceAnalyze struct {
@@ -264,11 +264,6 @@ type InstrumentationLabelsAnalyze struct {
 	InstrumentedText *EntityProperty `json:"instrumentedText,omitempty"`
 }
 
-type InstrumentationLibrary struct {
-	LibraryName string                   `json:"libraryName"`
-	Options     []*InstrumentationOption `json:"options"`
-}
-
 type InstrumentationLibraryGlobalID struct {
 	Name     string               `json:"name"`
 	SpanKind *SpanKind            `json:"spanKind,omitempty"`
@@ -279,11 +274,6 @@ type InstrumentationLibraryGlobalIDInput struct {
 	Name     string               `json:"name"`
 	SpanKind *SpanKind            `json:"spanKind,omitempty"`
 	Language *ProgrammingLanguage `json:"language,omitempty"`
-}
-
-type InstrumentationOption struct {
-	OptionKey string   `json:"optionKey"`
-	SpanKind  SpanKind `json:"spanKind"`
 }
 
 type InstrumentationRule struct {
@@ -305,34 +295,20 @@ type InstrumentationRuleInput struct {
 	PayloadCollection        *PayloadCollectionInput                `json:"payloadCollection,omitempty"`
 }
 
-type InstrumentedApplicationAnalyze struct {
-	Created    *EntityProperty                `json:"created"`
-	CreateTime *EntityProperty                `json:"createTime,omitempty"`
-	Containers []*ContainerRuntimeInfoAnalyze `json:"containers"`
-}
-
-type InstrumentedApplicationDetails struct {
-	Containers             []*SourceContainerRuntimeDetails `json:"containers,omitempty"`
-	Conditions             []*Condition                     `json:"conditions,omitempty"`
-	InstrumentationOptions []*InstrumentationLibrary        `json:"instrumentationOptions"`
-}
-
 type K8sActualNamespace struct {
-	Name                        string             `json:"name"`
-	InstrumentationLabelEnabled *bool              `json:"instrumentationLabelEnabled,omitempty"`
-	K8sActualSources            []*K8sActualSource `json:"k8sActualSources"`
+	Name             string             `json:"name"`
+	K8sActualSources []*K8sActualSource `json:"k8sActualSources"`
 }
 
 type K8sActualSource struct {
-	Namespace                      string                          `json:"namespace"`
-	Kind                           K8sResourceKind                 `json:"kind"`
-	Name                           string                          `json:"name"`
-	ServiceName                    *string                         `json:"serviceName,omitempty"`
-	NumberOfInstances              *int                            `json:"numberOfInstances,omitempty"`
-	ReportedName                   *string                         `json:"reportedName,omitempty"`
-	AutoInstrumented               bool                            `json:"autoInstrumented"`
-	AutoInstrumentedDecision       string                          `json:"autoInstrumentedDecision"`
-	InstrumentedApplicationDetails *InstrumentedApplicationDetails `json:"instrumentedApplicationDetails,omitempty"`
+	Namespace         string                           `json:"namespace"`
+	Name              string                           `json:"name"`
+	Kind              K8sResourceKind                  `json:"kind"`
+	NumberOfInstances *int                             `json:"numberOfInstances,omitempty"`
+	Selected          *bool                            `json:"selected,omitempty"`
+	ReportedName      *string                          `json:"reportedName,omitempty"`
+	Containers        []*SourceContainerRuntimeDetails `json:"containers,omitempty"`
+	Conditions        []*Condition                     `json:"conditions,omitempty"`
 }
 
 type K8sDesiredNamespaceInput struct {
@@ -500,8 +476,8 @@ type PodContainerAnalyze struct {
 
 type PodWorkload struct {
 	Namespace string          `json:"namespace"`
-	Kind      K8sResourceKind `json:"kind"`
 	Name      string          `json:"name"`
+	Kind      K8sResourceKind `json:"kind"`
 }
 
 type PodWorkloadInput struct {
@@ -587,17 +563,16 @@ type SingleSourceMetricsResponse struct {
 }
 
 type SourceAnalyze struct {
-	Name                    *EntityProperty                 `json:"name"`
-	Kind                    *EntityProperty                 `json:"kind"`
-	Namespace               *EntityProperty                 `json:"namespace"`
-	Labels                  *InstrumentationLabelsAnalyze   `json:"labels"`
-	InstrumentationConfig   *InstrumentationConfigAnalyze   `json:"instrumentationConfig"`
-	RuntimeInfo             *RuntimeInfoAnalyze             `json:"runtimeInfo,omitempty"`
-	InstrumentedApplication *InstrumentedApplicationAnalyze `json:"instrumentedApplication"`
-	InstrumentationDevice   *InstrumentationDeviceAnalyze   `json:"instrumentationDevice"`
-	TotalPods               int                             `json:"totalPods"`
-	PodsPhasesCount         string                          `json:"podsPhasesCount"`
-	Pods                    []*PodAnalyze                   `json:"pods"`
+	Name                  *EntityProperty               `json:"name"`
+	Kind                  *EntityProperty               `json:"kind"`
+	Namespace             *EntityProperty               `json:"namespace"`
+	Labels                *InstrumentationLabelsAnalyze `json:"labels"`
+	RuntimeInfo           *RuntimeInfoAnalyze           `json:"runtimeInfo"`
+	InstrumentationConfig *InstrumentationConfigAnalyze `json:"instrumentationConfig"`
+	InstrumentationDevice *InstrumentationDeviceAnalyze `json:"instrumentationDevice"`
+	TotalPods             int                           `json:"totalPods"`
+	PodsPhasesCount       string                        `json:"podsPhasesCount"`
+	Pods                  []*PodAnalyze                 `json:"pods"`
 }
 
 type SourceContainerRuntimeDetails struct {

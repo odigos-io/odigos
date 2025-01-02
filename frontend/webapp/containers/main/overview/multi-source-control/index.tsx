@@ -31,7 +31,7 @@ export const MultiSourceControl = () => {
     animateOut: slide.out['center'],
   });
 
-  const { sources, deleteSources } = useSourceCRUD();
+  const { sources, persistSources } = useSourceCRUD();
   const { configuredSources, setConfiguredSources } = useAppStore();
   const [isWarnModalOpen, setIsWarnModalOpen] = useState(false);
 
@@ -50,9 +50,15 @@ export const MultiSourceControl = () => {
   };
 
   const onDelete = () => {
-    deleteSources(configuredSources);
-    onDeselect();
+    const payload = {};
+
+    Object.entries(configuredSources).forEach(([namespace, sources]) => {
+      payload[namespace] = sources.map(({ name, kind }) => ({ name, kind, selected: false }));
+    });
+
+    persistSources(payload, {});
     setIsWarnModalOpen(false);
+    onDeselect();
   };
 
   return (

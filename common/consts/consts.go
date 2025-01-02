@@ -15,6 +15,9 @@ const (
 	OdigosInstrumentationLabel   = "odigos-instrumentation"
 	InstrumentationEnabled       = "enabled"
 	InstrumentationDisabled      = "disabled"
+	OdigosNamespaceAnnotation    = "odigos.io/workload-namespace"
+	OdigosWorkloadKindAnnotation = "odigos.io/workload-kind"
+	OdigosWorkloadNameAnnotation = "odigos.io/workload-name"
 	OdigosReportedNameAnnotation = "odigos.io/reported-name"
 
 	// GatewayMaxConnectionAge and GatewayMaxConnectionAgeGrace are the default values for the gateway collector.
@@ -26,13 +29,19 @@ const (
 	// or odigos is uninstalled.
 	// Should only be used for environment variables that are modified by odigos.
 	ManifestEnvOriginalValAnnotation = "odigos.io/manifest-env-original-val"
+
 	// Used to label instrumentation instances by the corresponding
 	// instrumented app for better query performance.
 	InstrumentedAppNameLabel = "instrumented-app"
+
+	// CRD types
+	InstrumentationConfig   = "InstrumentationConfig"
+	InstrumentationInstance = "InstrumentationInstance"
+	Destination             = "Destination"
 )
 
 var (
-	PodsNotFoundErr = errors.New("could not find a ready pod")
+	ErrorPodsNotFound = errors.New("could not find a ready pod")
 )
 
 var (

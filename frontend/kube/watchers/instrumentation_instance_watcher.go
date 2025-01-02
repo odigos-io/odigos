@@ -14,20 +14,22 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 )
 
-var modifiedBatcher *EventBatcher
+var instrumentationInstanceModifiedEventBatcher *EventBatcher
 
 func StartInstrumentationInstanceWatcher(ctx context.Context, namespace string) error {
-	modifiedBatcher = NewEventBatcher(
+	instrumentationInstanceModifiedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
-			Event:       sse.MessageEventModified,
-			MessageType: sse.MessageTypeError,
-			Duration:    10 * time.Second,
-			CRDType:     "InstrumentationInstance",
+			MinBatchSize: 1,
+			Duration:     10 * time.Second,
+			MessageType:  sse.MessageTypeError,
+			Event:        sse.MessageEventModified,
+			CRDType:      consts.InstrumentationInstance,
 			FailureBatchMessageFunc: func(batchSize int, crd string) string {
 				return fmt.Sprintf("Failed to instrument %d instances", batchSize)
 			},
 		},
 	)
+
 	watcher, err := kube.DefaultClient.OdigosClient.InstrumentationInstances(namespace).Watch(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("error creating watcher: %v", err)
@@ -39,7 +41,7 @@ func StartInstrumentationInstanceWatcher(ctx context.Context, namespace string) 
 
 func handleInstrumentationInstanceWatchEvents(ctx context.Context, watcher watch.Interface) {
 	ch := watcher.ResultChan()
-	defer modifiedBatcher.Cancel()
+	defer instrumentationInstanceModifiedEventBatcher.Cancel()
 	for {
 		select {
 		case <-ctx.Done():
@@ -51,48 +53,36 @@ func handleInstrumentationInstanceWatchEvents(ctx context.Context, watcher watch
 			}
 			switch event.Type {
 			case watch.Modified:
-				handleModifiedInstrumentationInstance(event)
+				handleModifiedInstrumentationInstance(event.Object.(*v1alpha1.InstrumentationInstance))
 			}
 		}
 	}
 }
 
-func handleModifiedInstrumentationInstance(event watch.Event) {
-	instrumentedInstance, ok := event.Object.(*v1alpha1.InstrumentationInstance)
-	if !ok {
-		genericErrorMessage(sse.MessageEventModified, "InstrumentationInstance", "error type assertion")
-	}
-	healthy := instrumentedInstance.Status.Healthy
-
-	if healthy == nil {
-		return
-	}
-
-	if *healthy {
+func handleModifiedInstrumentationInstance(instruInstance *v1alpha1.InstrumentationInstance) {
+	healthy := instruInstance.Status.Healthy
+	if healthy == nil || *healthy {
 		// send notification to frontend only if the instance is not healthy
 		return
 	}
 
-	labels := instrumentedInstance.GetLabels()
+	labels := instruInstance.GetLabels()
 	if labels == nil {
-		genericErrorMessage(sse.MessageEventModified, "InstrumentationInstance", "error getting labels")
+		genericErrorMessage(sse.MessageEventModified, consts.InstrumentationInstance, "error getting labels")
 	}
 
 	instrumentedAppName, ok := labels[consts.InstrumentedAppNameLabel]
 	if !ok {
-		genericErrorMessage(sse.MessageEventModified, "InstrumentationInstance", "error getting instrumented app name from labels")
+		genericErrorMessage(sse.MessageEventModified, consts.InstrumentationInstance, "error getting instrumented app name from labels")
 	}
 
+	namespace := instruInstance.Namespace
 	name, kind, err := commonutils.ExtractWorkloadInfoFromRuntimeObjectName(instrumentedAppName)
 	if err != nil {
-		genericErrorMessage(sse.MessageEventModified, "InstrumentationInstance", "error getting workload info")
+		genericErrorMessage(sse.MessageEventModified, consts.InstrumentationInstance, err.Error())
 	}
 
-	namespace := instrumentedInstance.Namespace
-
 	target := fmt.Sprintf("name=%s&kind=%s&namespace=%s", name, kind, namespace)
-	data := fmt.Sprintf("%s %s", instrumentedInstance.Status.Reason, instrumentedInstance.Status.Message)
-
-	fmt.Printf("InstrumentationInstance %s modified\n", name)
-	modifiedBatcher.AddEvent(sse.MessageTypeError, data, target)
+	data := fmt.Sprintf(`%s "%s" %s: %s`, consts.InstrumentationInstance, name, instruInstance.Status.Reason, instruInstance.Status.Message)
+	instrumentationInstanceModifiedEventBatcher.AddEvent(sse.MessageTypeError, data, target)
 }

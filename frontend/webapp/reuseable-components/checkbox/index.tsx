@@ -16,6 +16,7 @@ interface CheckboxProps {
   disabled?: boolean;
   style?: React.CSSProperties;
   errorMessage?: string;
+  allowPropagation?: boolean;
 }
 
 const Container = styled.div<{ $disabled?: CheckboxProps['disabled'] }>`
@@ -39,14 +40,13 @@ const CheckboxWrapper = styled.div<{ $isChecked: boolean; $disabled?: CheckboxPr
   transition: border 0.3s, background-color 0.3s;
 `;
 
-export const Checkbox: React.FC<CheckboxProps> = ({ title, titleColor, tooltip, value = false, onChange, disabled, style, errorMessage }) => {
+export const Checkbox: React.FC<CheckboxProps> = ({ title, titleColor, tooltip, value = false, onChange, disabled, style, errorMessage, allowPropagation = false }) => {
   const [isChecked, setIsChecked] = useState(value);
   useEffect(() => setIsChecked(value), [value]);
 
   const handleToggle: React.MouseEventHandler<HTMLDivElement> = (e) => {
     if (disabled) return;
-
-    e.stopPropagation();
+    if (!allowPropagation) e.stopPropagation();
 
     if (onChange) onChange(!isChecked);
     else setIsChecked((prev) => !prev);

@@ -55,6 +55,7 @@ export function useActionFormData() {
         type: NOTIFICATION_TYPE.WARNING,
         title: params.alertTitle,
         message: FORM_ALERTS.REQUIRED_FIELDS,
+        hideFromHistory: true,
       });
     }
 

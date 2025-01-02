@@ -1,10 +1,9 @@
 import React, { useMemo } from 'react';
-import Image from 'next/image';
-import { NODE_TYPES } from '@/types';
-import { useAppStore } from '@/store';
 import styled from 'styled-components';
 import { useSourceCRUD } from '@/hooks';
 import type { Node, NodeProps } from '@xyflow/react';
+import { useAppStore, usePendingStore } from '@/store';
+import { NODE_TYPES, OVERVIEW_ENTITY_TYPES } from '@/types';
 import { Badge, Checkbox, Text } from '@/reuseable-components';
 
 interface Props
@@ -42,7 +41,8 @@ const HeaderNode: React.FC<Props> = ({ data }) => {
   const { nodeWidth, title, icon: Icon, tagValue } = data;
   const isSources = title === 'Sources';
 
-  const { configuredSources, setConfiguredSources } = useAppStore((state) => state);
+  const { configuredSources, setConfiguredSources } = useAppStore();
+  const { isThisPending } = usePendingStore();
   const { sources } = useSourceCRUD();
 
   const totalSelectedSources = useMemo(() => {
@@ -63,10 +63,15 @@ const HeaderNode: React.FC<Props> = ({ data }) => {
         const payload = {};
 
         sources.forEach((source) => {
-          if (!payload[source.namespace]) {
-            payload[source.namespace] = [source];
-          } else {
-            payload[source.namespace].push(source);
+          const id = { namespace: source.namespace, name: source.name, kind: source.kind };
+          const isPending = isThisPending({ entityType: OVERVIEW_ENTITY_TYPES.SOURCE, entityId: id });
+
+          if (!isPending) {
+            if (!payload[source.namespace]) {
+              payload[source.namespace] = [source];
+            } else {
+              payload[source.namespace].push(source);
+            }
           }
         });
 

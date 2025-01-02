@@ -3,6 +3,7 @@ package deleteinstrumentedapplication
 import (
 	"context"
 
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -21,7 +22,14 @@ func reconcileWorkloadObject(ctx context.Context, kubeClient client.Client, work
 	}
 
 	if instEffectiveEnabled {
-		return nil
+		// Check if a Source object exists for this workload
+		sourceList, err := v1alpha1.GetSourceListForWorkload(ctx, kubeClient, workloadObject)
+		if err != nil {
+			return err
+		}
+		if len(sourceList.Items) == 0 {
+			return nil
+		}
 	}
 
 	if err := deleteWorkloadInstrumentedApplication(ctx, kubeClient, workloadObject); err != nil {

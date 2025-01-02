@@ -104,8 +104,8 @@ export function useDestinationFormData(params?: { destinationType?: string; supp
     onError: (error) =>
       addNotification({
         type: NOTIFICATION_TYPE.ERROR,
-        title: ACTION.FETCH,
-        message: error.message,
+        title: error.name || ACTION.FETCH,
+        message: error.cause?.message || error.message,
         crdType: OVERVIEW_ENTITY_TYPES.DESTINATION,
       }),
   });
@@ -171,6 +171,7 @@ export function useDestinationFormData(params?: { destinationType?: string; supp
         type: NOTIFICATION_TYPE.WARNING,
         title: params.alertTitle,
         message: FORM_ALERTS.REQUIRED_FIELDS,
+        hideFromHistory: true,
       });
     }
 

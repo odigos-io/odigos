@@ -75,7 +75,7 @@ export const buildActionNodes = ({ loading, entities, positions, unfilteredCount
         type: OVERVIEW_NODE_TYPES.ADD_ACTION,
         status: STATUSES.HEALTHY,
         title: 'ADD ACTION',
-        subTitle: `Add ${!!unfilteredCount ? 'a new' : 'first'} action to modify the OpenTelemetry data`,
+        subTitle: 'To modify OpenTelemetry data',
       },
     });
   } else {

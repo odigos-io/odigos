@@ -11,22 +11,25 @@ import (
 type MessageType string
 
 const (
-	MessageTypeSuccess MessageType = "success"
+	MessageTypeWarning MessageType = "warning"
 	MessageTypeError   MessageType = "error"
+	MessageTypeSuccess MessageType = "success"
+	MessageTypeInfo    MessageType = "info"
+	MessageTypeDefault MessageType = "default"
 )
 
 type MessageEvent string
 
 const (
-	MessageEventDeleted MessageEvent = "Deleted"
-	MessageEventModified MessageEvent = "Modified"
 	MessageEventAdded    MessageEvent = "Added"
+	MessageEventDeleted  MessageEvent = "Deleted"
+	MessageEventModified MessageEvent = "Modified"
 )
 
 type SSEMessage struct {
 	Type    MessageType  `json:"type"`
-	Data    string       `json:"data"`
 	Event   MessageEvent `json:"event"`
+	Data    string       `json:"data"`
 	Target  string       `json:"target"`
 	CRDType string       `json:"crdType"`
 }

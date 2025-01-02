@@ -193,7 +193,12 @@ func NewInstrumentorClusterRole() *rbacv1.ClusterRole {
 			},
 			{
 				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentationconfigs/status"},
+				Resources: []string{"sources"},
+				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
+			},
+			{
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"sources/finalizers"},
 				Verbs:     []string{"update"},
 			},
 		},

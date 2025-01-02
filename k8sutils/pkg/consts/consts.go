@@ -61,3 +61,13 @@ var (
 	// this value must be in sync with the one defined in the kubeVersion field in Chart.yaml
 	MinK8SVersionForInstallation = version.MustParse("v1.20.15-0")
 )
+
+const (
+	SourceFinalizer = "odigos.io/source-finalizer"
+	// TODO: Needed until InstrumentedApplication is removed
+	InstrumentedApplicationFinalizer = "odigos.io/source-instrumentedapplication-finalizer"
+
+	WorkloadNameLabel      = "odigos.io/workload-name"
+	WorkloadNamespaceLabel = "odigos.io/workload-namespace"
+	WorkloadKindLabel      = "odigos.io/workload-kind"
+)
