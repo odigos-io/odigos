@@ -1,0 +1,25 @@
+name: Trigger Odigos Enterprise Workflow
+
+on:
+#  pull_request:
+#    types:
+#      - opened
+#      - reopened
+#      - synchronize
+    push:
+      branches:
+        - main
+        - feature/*
+
+jobs:
+  trigger-odigos-enterprise:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Trigger process PR in Odigos Enterprise
+      run: |
+        curl -X POST \
+        -H "Accept: application/vnd.github.v3+json" \
+        -H "Authorization: token ${{ secrets.RELEASE_BOT_TOKEN }}" \
+        https://api.github.com/repos/odigos-io/odigos-enterprise/dispatches \
+        -d '{"event_type": "process_oss_pr", "client_payload": {"tag": "${{ steps.extract_tag.outputs.tag }}", pr_creator: "${{ github.event.pull_request.user.login }}"} }'
+
