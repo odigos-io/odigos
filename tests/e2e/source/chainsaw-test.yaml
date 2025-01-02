@@ -148,3 +148,251 @@ spec:
         - podLogs:
             name: odiglet
             namespace: odigos-system
+    - name: Uninstrument individual deployments
+      try:
+        - delete:
+            ref:
+              apiVersion: odigos.io/v1alpha1
+              kind: Source
+              namespace: default
+              labels:
+                odigos.io/e2e: source
+            expect:
+              - match:
+                  apiVersion: odigos.io/v1alpha1
+                  kind: InstrumentationConfig
+                  metadata:
+                    name: deployment-coupon
+                    namespace: default
+                check:
+                  ($error != null): true
+              - match:
+                  apiVersion: odigos.io/v1alpha1
+                  kind: InstrumentationConfig
+                  metadata:
+                    name: deployment-frontend
+                    namespace: default
+                check:
+                  ($error != null): true
+              - match:
+                  apiVersion: odigos.io/v1alpha1
+                  kind: InstrumentationConfig
+                  metadata:
+                    name: deployment-inventory
+                    namespace: default
+                check:
+                  ($error != null): true
+              - match:
+                  apiVersion: odigos.io/v1alpha1
+                  kind: InstrumentationConfig
+                  metadata:
+                    name: deployment-membership
+                    namespace: default
+                check:
+                  ($error != null): true
+              - match:
+                  apiVersion: odigos.io/v1alpha1
+                  kind: InstrumentationConfig
+                  metadata:
+                    name: deployment-pricing
+                    namespace: default
+                check:
+                  ($error != null): true
+              - match:
+                  apiVersion: odigos.io/v1alpha1
+                  kind: InstrumentedApplication
+                  metadata:
+                    name: deployment-coupon
+                    namespace: default
+                check:
+                  ($error != null): true
+              - match:
+                  apiVersion: odigos.io/v1alpha1
+                  kind: InstrumentedApplication
+                  metadata:
+                    name: deployment-frontend
+                    namespace: default
+                check:
+                  ($error != null): true
+              - match:
+                  apiVersion: odigos.io/v1alpha1
+                  kind: InstrumentedApplication
+                  metadata:
+                    name: deployment-inventory
+                    namespace: default
+                check:
+                  ($error != null): true
+              - match:
+                  apiVersion: odigos.io/v1alpha1
+                  kind: InstrumentedApplication
+                  metadata:
+                    name: deployment-membership
+                    namespace: default
+                check:
+                  ($error != null): true
+              - match:
+                  apiVersion: odigos.io/v1alpha1
+                  kind: InstrumentedApplication
+                  metadata:
+                    name: deployment-pricing
+                    namespace: default
+                check:
+                  ($error != null): true
+    - name: Instrument Namespace
+      try:
+        - apply:
+            file: 02-source-ns.yaml
+    - name: Assert Runtime Detected
+      try:
+        - assert:
+            timeout: 2m
+            file: ../../common/assert/simple-demo-runtime-detected.yaml
+    - name: Generate Traffic
+      try:
+        - script:
+            timeout: 300s
+            content: |
+              # Apply the job
+              kubectl apply -f ../../common/apply/generate-traffic-job.yaml
+
+              # Wait for the job to complete
+              job_name=$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
+              kubectl wait --for=condition=complete job/$job_name
+
+              # Delete the job        
+              kubectl delete -f ../../common/apply/generate-traffic-job.yaml
+
+              while true; do
+                # wait for traces to be available
+                sleep 8
+
+                # Run the wait-for-trace script
+                echo "Running TraceQL test at $(date)"
+                ../../common/traceql_runner.sh tracesql/wait-for-trace-2.yaml
+                
+                if [ $? -eq 0 ]; then
+                  break
+                else
+                  ../../common/flush_traces.sh
+                  sleep 5
+                fi
+              done
+    - name: Verify Trace - Context Propagation
+      try:
+        - script:
+            timeout: 30s
+            content: |
+              ../../common/traceql_runner.sh tracesql/context-propagation-2.yaml
+      catch:
+        - podLogs:
+            name: odiglet
+            namespace: odigos-system
+    - name: Verify Trace - Resource Attributes
+      try:
+        - script:
+            content: |
+              ../../common/traceql_runner.sh tracesql/resource-attributes-2.yaml
+      catch:
+        - podLogs:
+            name: odiglet
+            namespace: odigos-system
+    - name: Verify Trace - Span Attributes
+      try:
+        - script:
+            timeout: 60s
+            content: |
+              ../../common/traceql_runner.sh tracesql/span-attributes-2.yaml
+      catch:
+        - podLogs:
+            name: odiglet
+            namespace: odigos-system
+    - name: Uninstrument namespace
+      try:
+        - delete:
+            ref:
+              apiVersion: odigos.io/v1alpha1
+              kind: Source
+              namespace: default
+              labels:
+                odigos.io/e2e: source
+            expect:
+              - match:
+                  apiVersion: odigos.io/v1alpha1
+                  kind: InstrumentationConfig
+                  metadata:
+                    name: deployment-coupon
+                    namespace: default
+                check:
+                  ($error != null): true
+              - match:
+                  apiVersion: odigos.io/v1alpha1
+                  kind: InstrumentationConfig
+                  metadata:
+                    name: deployment-frontend
+                    namespace: default
+                check:
+                  ($error != null): true
+              - match:
+                  apiVersion: odigos.io/v1alpha1
+                  kind: InstrumentationConfig
+                  metadata:
+                    name: deployment-inventory
+                    namespace: default
+                check:
+                  ($error != null): true
+              - match:
+                  apiVersion: odigos.io/v1alpha1
+                  kind: InstrumentationConfig
+                  metadata:
+                    name: deployment-membership
+                    namespace: default
+                check:
+                  ($error != null): true
+              - match:
+                  apiVersion: odigos.io/v1alpha1
+                  kind: InstrumentationConfig
+                  metadata:
+                    name: deployment-pricing
+                    namespace: default
+                check:
+                  ($error != null): true
+              - match:
+                  apiVersion: odigos.io/v1alpha1
+                  kind: InstrumentedApplication
+                  metadata:
+                    name: deployment-coupon
+                    namespace: default
+                check:
+                  ($error != null): true
+              - match:
+                  apiVersion: odigos.io/v1alpha1
+                  kind: InstrumentedApplication
+                  metadata:
+                    name: deployment-frontend
+                    namespace: default
+                check:
+                  ($error != null): true
+              - match:
+                  apiVersion: odigos.io/v1alpha1
+                  kind: InstrumentedApplication
+                  metadata:
+                    name: deployment-inventory
+                    namespace: default
+                check:
+                  ($error != null): true
+              - match:
+                  apiVersion: odigos.io/v1alpha1
+                  kind: InstrumentedApplication
+                  metadata:
+                    name: deployment-membership
+                    namespace: default
+                check:
+                  ($error != null): true
+              - match:
+                  apiVersion: odigos.io/v1alpha1
+                  kind: InstrumentedApplication
+                  metadata:
+                    name: deployment-pricing
+                    namespace: default
+                check:
+                  ($error != null): true

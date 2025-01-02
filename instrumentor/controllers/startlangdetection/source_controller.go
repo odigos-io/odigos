@@ -3,6 +3,7 @@ package startlangdetection
 import (
 	"context"
 
+	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -30,54 +31,78 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	obj := workload.ClientObjectFromWorkloadKind(source.Spec.Workload.Kind)
-	err = r.Client.Get(ctx, types.NamespacedName{Name: source.Spec.Workload.Name, Namespace: source.Spec.Workload.Namespace}, obj)
-	if err != nil {
-		// TODO: Deleted objects should be filtered in the event filter
-		return ctrl.Result{}, err
-	}
-	instConfigName := workload.CalculateWorkloadRuntimeObjectName(source.Spec.Workload.Name, source.Spec.Workload.Kind)
-
 	if source.DeletionTimestamp.IsZero() {
-		if !controllerutil.ContainsFinalizer(source, consts.SourceFinalizer) {
-			controllerutil.AddFinalizer(source, consts.SourceFinalizer)
-			// Removed by deleteinstrumentedapplication controller
+		if !controllerutil.ContainsFinalizer(source, consts.InstrumentedApplicationFinalizer) {
 			controllerutil.AddFinalizer(source, consts.InstrumentedApplicationFinalizer)
-
-			if source.Labels == nil {
-				source.Labels = make(map[string]string)
-			}
-			source.Labels[consts.WorkloadNameLabel] = source.Spec.Workload.Name
-			source.Labels[consts.WorkloadNamespaceLabel] = source.Spec.Workload.Namespace
-			source.Labels[consts.WorkloadKindLabel] = string(source.Spec.Workload.Kind)
-
-			if err := r.Update(ctx, source); err != nil {
-				return k8sutils.K8SUpdateErrorHandler(err)
-			}
-
-			err = requestOdigletsToCalculateRuntimeDetails(ctx, r.Client, instConfigName, req.Namespace, obj, r.Scheme)
-			return ctrl.Result{}, err
 		}
-	} else {
-		// Source is being deleted
-		if controllerutil.ContainsFinalizer(source, consts.SourceFinalizer) {
-			// Remove the finalizer first, because if the InstrumentationConfig is not found we
-			// will deadlock on the finalizer never getting removed.
-			// On the other hand, this could end up deleting a Source with an orphaned InstrumentationConfig.
-			controllerutil.RemoveFinalizer(source, consts.SourceFinalizer)
-			if err := r.Update(ctx, source); err != nil {
+		if source.Labels == nil {
+			source.Labels = make(map[string]string)
+		}
+
+		source.Labels[consts.WorkloadNameLabel] = source.Spec.Workload.Name
+		source.Labels[consts.WorkloadNamespaceLabel] = source.Spec.Workload.Namespace
+		source.Labels[consts.WorkloadKindLabel] = string(source.Spec.Workload.Kind)
+
+		if err := r.Update(ctx, source); err != nil {
+			return k8sutils.K8SUpdateErrorHandler(err)
+		}
+
+		if source.Spec.Workload.Kind == "Namespace" {
+			var deps appsv1.DeploymentList
+			err = r.Client.List(ctx, &deps, client.InNamespace(source.Spec.Workload.Name))
+			if client.IgnoreNotFound(err) != nil {
+				logger.Error(err, "error fetching deployments")
 				return ctrl.Result{}, err
 			}
 
-			instConfig := &v1alpha1.InstrumentationConfig{}
-			err = r.Client.Get(ctx, types.NamespacedName{Name: instConfigName, Namespace: req.Namespace}, instConfig)
-			if err != nil {
-				return ctrl.Result{}, client.IgnoreNotFound(err)
+			for _, dep := range deps.Items {
+				request := ctrl.Request{NamespacedName: client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace}}
+				_, err = reconcileWorkload(ctx, r.Client, workload.WorkloadKindDeployment, request, r.Scheme)
+				if err != nil {
+					logger.Error(err, "error requesting runtime details from odiglets", "name", dep.Name, "namespace", dep.Namespace)
+				}
 			}
-			err = r.Client.Delete(ctx, instConfig)
-			if err != nil {
-				return ctrl.Result{}, client.IgnoreNotFound(err)
+
+			var sts appsv1.StatefulSetList
+			err = r.Client.List(ctx, &sts, client.InNamespace(source.Spec.Workload.Name))
+			if client.IgnoreNotFound(err) != nil {
+				logger.Error(err, "error fetching statefulsets")
+				return ctrl.Result{}, err
 			}
+
+			for _, st := range sts.Items {
+				request := ctrl.Request{NamespacedName: client.ObjectKey{Name: st.Name, Namespace: st.Namespace}}
+				_, err = reconcileWorkload(ctx, r.Client, workload.WorkloadKindStatefulSet, request, r.Scheme)
+				if err != nil {
+					logger.Error(err, "error requesting runtime details from odiglets", "name", st.Name, "namespace", st.Namespace)
+				}
+			}
+
+			var dss appsv1.DaemonSetList
+			err = r.Client.List(ctx, &dss, client.InNamespace(source.Spec.Workload.Name))
+			if client.IgnoreNotFound(err) != nil {
+				logger.Error(err, "error fetching daemonsets")
+				return ctrl.Result{}, err
+			}
+
+			for _, ds := range dss.Items {
+				request := ctrl.Request{NamespacedName: client.ObjectKey{Name: ds.Name, Namespace: ds.Namespace}}
+				_, err = reconcileWorkload(ctx, r.Client, workload.WorkloadKindDaemonSet, request, r.Scheme)
+				if err != nil {
+					logger.Error(err, "error requesting runtime details from odiglets", "name", ds.Name, "namespace", ds.Namespace)
+				}
+			}
+		} else {
+			return reconcileWorkload(ctx,
+				r.Client,
+				source.Spec.Workload.Kind,
+				ctrl.Request{
+					NamespacedName: types.NamespacedName{
+						Namespace: source.Spec.Workload.Namespace,
+						Name:      source.Spec.Workload.Name,
+					},
+				},
+				r.Scheme)
 		}
 	}
 

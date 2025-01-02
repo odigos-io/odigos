@@ -5,6 +5,7 @@ export const GET_COMPUTE_PLATFORM = gql`
     computePlatform {
       k8sActualNamespaces {
         name
+        selected
       }
       k8sActualSources {
         namespace
@@ -107,6 +108,7 @@ export const GET_NAMESPACES = gql`
     computePlatform {
       k8sActualNamespace(name: $namespaceName) {
         name
+        selected
         k8sActualSources {
           kind
           name

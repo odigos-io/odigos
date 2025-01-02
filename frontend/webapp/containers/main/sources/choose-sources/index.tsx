@@ -18,10 +18,10 @@ export function ChooseSourcesContainer() {
   const menuState = useSourceFormData();
 
   const onNext = () => {
-    const { recordedInitialValues, getApiPaylod, selectedFutureApps } = menuState;
+    const { recordedInitialSources, getApiSourcesPayload, getApiFutureAppsPayload } = menuState;
     const { setAvailableSources, setConfiguredSources, setConfiguredFutureApps } = appState;
 
-    // Types of "recordedInitialValues" and "getApiPaylod()" are actually:
+    // Types of "recordedInitialSources" and "getApiSourcesPayload()" are actually:
     // { [namespace: string]: Pick<K8sActualSource, 'name' | 'kind' | 'selected' | 'numberOfInstances'>[] };
     //
     // But we will force them as type:
@@ -30,9 +30,9 @@ export function ChooseSourcesContainer() {
     // This forced type is to satisfy TypeScript,
     // while knowing that this doesn't break the onboarding flow in any-way...
 
-    setAvailableSources(recordedInitialValues as IAppState['availableSources']);
-    setConfiguredSources(getApiPaylod() as IAppState['configuredSources']);
-    setConfiguredFutureApps(selectedFutureApps);
+    setAvailableSources(recordedInitialSources as IAppState['availableSources']);
+    setConfiguredSources(getApiSourcesPayload() as IAppState['configuredSources']);
+    setConfiguredFutureApps(getApiFutureAppsPayload());
 
     router.push(ROUTES.CHOOSE_DESTINATION);
   };

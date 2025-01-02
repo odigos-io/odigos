@@ -12,6 +12,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -67,6 +68,12 @@ func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind wor
 		}
 		if len(sourceList.Items) == 0 {
 			return ctrl.Result{}, nil
+		}
+		// if this is explicitly excluded (ie, namespace instrumentation), skip
+		for _, s := range sourceList.Items {
+			if _, exists := s.Labels[consts.OdigosWorkloadExcludedLabel]; exists {
+				return ctrl.Result{}, nil
+			}
 		}
 	}
 

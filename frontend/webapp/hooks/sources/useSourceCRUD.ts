@@ -4,6 +4,7 @@ import { PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import { useComputePlatform, useNamespace } from '../compute-platform';
 import { type PendingItem, useAppStore, useNotificationStore, usePendingStore } from '@/store';
 import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type PatchSourceRequestInput, NOTIFICATION_TYPE, type K8sActualSource } from '@/types';
+import { send } from 'process';
 
 interface Params {
   onSuccess?: (type: string) => void;
@@ -84,6 +85,9 @@ export const useSourceCRUD = (params?: Params) => {
     persistSources: async (selectAppsList: { [key: string]: K8sActualSource[] }, futureSelectAppsList: { [key: string]: boolean }) => {
       notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Persisting sources...', undefined, true);
 
+      // this is to handle "on success" callback if there are no sources to persist
+      let hasSources = false;
+
       for (const [namespace, sources] of Object.entries(selectAppsList)) {
         const addToPendingStore: PendingItem[] = [];
         const sendToGql: Pick<K8sActualSource, 'name' | 'kind' | 'selected'>[] = [];
@@ -93,6 +97,8 @@ export const useSourceCRUD = (params?: Params) => {
           sendToGql.push({ name, kind, selected });
         });
 
+        if (!!sendToGql.length) hasSources = true;
+
         addPendingItems(addToPendingStore);
         await createOrDeleteSources({ variables: { namespace, sources: sendToGql } });
       }
@@ -100,6 +106,8 @@ export const useSourceCRUD = (params?: Params) => {
       for (const [namespace, futureSelected] of Object.entries(futureSelectAppsList)) {
         await persistNamespace({ name: namespace, futureSelected });
       }
+
+      if (!hasSources) handleComplete('');
     },
 
     updateSource: async (sourceId: WorkloadId, patchSourceRequest: PatchSourceRequestInput) => {
