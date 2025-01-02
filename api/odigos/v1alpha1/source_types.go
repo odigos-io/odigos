@@ -78,6 +78,23 @@ func GetSourceListForWorkload(ctx context.Context, kubeClient client.Client, obj
 		consts.WorkloadKindLabel:      obj.GetObjectKind().GroupVersionKind().Kind,
 	})
 	err := kubeClient.List(ctx, &sourceList, &client.ListOptions{LabelSelector: selector})
+	if err != nil {
+		return sourceList, err
+	}
+
+	namespaceSourceList := SourceList{}
+	namespaceSelector := labels.SelectorFromSet(labels.Set{
+		consts.WorkloadNameLabel:      obj.GetNamespace(),
+		consts.WorkloadNamespaceLabel: obj.GetNamespace(),
+		consts.WorkloadKindLabel:      "Namespace",
+	})
+	err = kubeClient.List(ctx, &namespaceSourceList, &client.ListOptions{LabelSelector: namespaceSelector})
+	if err != nil {
+		return sourceList, err
+	}
+
+	// merge the lists
+	sourceList.Items = append(sourceList.Items, namespaceSourceList.Items...)
 	return sourceList, err
 }
 

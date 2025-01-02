@@ -46,11 +46,12 @@ func reconcileWorkloadObject(ctx context.Context, kubeClient client.Client, work
 }
 
 func deleteWorkloadInstrumentedApplication(ctx context.Context, kubeClient client.Client, workloadObject client.Object) error {
-
+	logger := log.FromContext(ctx)
 	ns := workloadObject.GetNamespace()
 	name := workloadObject.GetName()
 	kind := workload.WorkloadKindFromClientObject(workloadObject)
 	instrumentedApplicationName := workload.CalculateWorkloadRuntimeObjectName(name, kind)
+	logger.V(1).Info("deleting instrumented application", "name", instrumentedApplicationName, "kind", kind)
 
 	instAppErr := kubeClient.Delete(ctx, &odigosv1.InstrumentedApplication{
 		ObjectMeta: metav1.ObjectMeta{
@@ -73,7 +74,6 @@ func deleteWorkloadInstrumentedApplication(ctx context.Context, kubeClient clien
 		return client.IgnoreNotFound(instConfigErr)
 	}
 
-	logger := log.FromContext(ctx)
 	logger.V(1).Info("instrumented application deleted", "namespace", ns, "name", name, "kind", kind)
 	return nil
 }

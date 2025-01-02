@@ -137,7 +137,6 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 }
 
 func syncGenericWorkloadListToNs(ctx context.Context, c client.Client, kind workload.WorkloadKind, key client.ObjectKey) error {
-
 	// it is very important that we make the changes based on a fresh copy of the workload object
 	// if a list operation pulled in state and is now slowly iterating over it, we might be working with stale data
 	freshWorkloadCopy := workload.ClientObjectFromWorkloadKind(kind)
