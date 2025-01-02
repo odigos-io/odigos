@@ -1,6 +1,8 @@
 package utils
 
 import (
+	nativeErrors "errors"
+
 	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -18,6 +20,11 @@ func K8SUpdateErrorHandler(err error) (reconcile.Result, error) {
 	}
 	if errors.IsNotFound(err) {
 		// For not found errors, ignore
+		return reconcile.Result{}, nil
+	}
+
+	if nativeErrors.Is(err, OtherAgentRunError) {
+		// For other agent run no need to log the stack trace
 		return reconcile.Result{}, nil
 	}
 	// For other errors, return as is (will log the stack trace)

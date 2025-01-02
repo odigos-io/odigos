@@ -3,7 +3,6 @@ package instrumentationdevice
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
@@ -153,7 +152,7 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 
 	// if non of the devices were applied due to the presence of another agent, return an error.
 	if deviceNotAppliedDueToPresenceOfAnotherAgent {
-		return fmt.Errorf("device not added to any container due to the presence of another agent"), false
+		return k8sutils.OtherAgentRunError, false
 	}
 
 	if err != nil {
