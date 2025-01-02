@@ -22,14 +22,16 @@ func reconcileWorkloadObject(ctx context.Context, kubeClient client.Client, work
 	}
 
 	if instEffectiveEnabled {
-		// Check if a Source object exists for this workload
-		sourceList, err := v1alpha1.GetSourceListForWorkload(ctx, kubeClient, workloadObject)
-		if err != nil {
-			return err
-		}
-		if len(sourceList.Items) > 0 {
-			return nil
-		}
+		return nil
+	}
+
+	// Check if a Source object exists for this workload
+	sourceList, err := v1alpha1.GetSourceListForWorkload(ctx, kubeClient, workloadObject)
+	if err != nil {
+		return err
+	}
+	if len(sourceList.Items) > 0 {
+		return nil
 	}
 
 	if err := deleteWorkloadInstrumentedApplication(ctx, kubeClient, workloadObject); err != nil {
