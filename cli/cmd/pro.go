@@ -10,6 +10,7 @@ import (
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
+	odigosconsts "github.com/odigos-io/odigos/common/consts"
 	"github.com/spf13/cobra"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,8 +41,6 @@ var proCmd = &cobra.Command{
 
 		fmt.Println()
 		fmt.Printf("\u001B[32mSUCCESS:\u001B[0m Token updated successfully in namespace %s\n", ns)
-		fmt.Println()
-		fmt.Println("The new token will take effect only after the Odiglets are restarted.")
 	},
 }
 
@@ -49,17 +48,14 @@ func updateOdigosToken(ctx context.Context, client *kube.Client, namespace strin
 	secret, err := client.CoreV1().Secrets(namespace).Get(ctx, consts.OdigosProSecretName, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			return err
+			return fmt.Errorf("Tokens are not available in the open-source version of Odigos. Please contact Odigos team to inquire about pro version.")
 		}
-		return fmt.Errorf("Tokens are not available in the open-source version of Odigos. Please use the on-premises version.")
+		return err
 	}
 	secret.Data[consts.OdigosOnpremTokenSecretKey] = []byte(onPremToken)
 
 	_, err = client.CoreV1().Secrets(namespace).Update(ctx, secret, metav1.UpdateOptions{})
 	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return err
-		}
 		return err
 	}
 
@@ -72,9 +68,9 @@ func updateOdigosToken(ctx context.Context, client *kube.Client, namespace strin
 	if daemonSet.Spec.Template.Annotations == nil {
 		daemonSet.Spec.Template.Annotations = make(map[string]string)
 	}
-	daemonSet.Spec.Template.Annotations["rollout-trigger"] = time.Now().Format(time.RFC3339)
+	daemonSet.Spec.Template.Annotations[odigosconsts.RolloutTriggerAnnotation] = time.Now().Format(time.RFC3339)
 
-	_, err = client.AppsV1().DaemonSets(namespace).Update(context.TODO(), daemonSet, metav1.UpdateOptions{})
+	_, err = client.AppsV1().DaemonSets(namespace).Update(ctx, daemonSet, metav1.UpdateOptions{})
 	if err != nil {
 		fmt.Printf("Failed to restart Odiglets. Reason: %s\n", err)
 		fmt.Printf("To trigger a restart manually, run the following command:\n")
@@ -87,7 +83,6 @@ func updateOdigosToken(ctx context.Context, client *kube.Client, namespace strin
 func init() {
 	rootCmd.AddCommand(proCmd)
 
-	// Flags for update-token
 	proCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")
 	proCmd.MarkFlagRequired("onprem-token")
 }
