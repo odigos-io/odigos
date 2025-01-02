@@ -40,7 +40,7 @@ var proCmd = &cobra.Command{
 		}
 
 		fmt.Println()
-		fmt.Printf("\u001B[32mSUCCESS:\u001B[0m Token updated successfully in namespace %s\n", ns)
+		fmt.Println("\u001B[32mSUCCESS:\u001B[0m Token updated successfully")
 	},
 }
 
