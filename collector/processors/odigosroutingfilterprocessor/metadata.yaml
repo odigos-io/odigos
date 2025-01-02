@@ -1,0 +1,14 @@
+type: odigosroutingfilterprocessor
+
+status:
+  class: processor
+  stability:
+    beta:
+      - traces
+      - metrics
+      - logs
+  distributions:
+    - contrib
+  codeowners:
+    active:
+      - alon

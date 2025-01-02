@@ -1,13 +1,20 @@
 package common
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"sort"
 
+	"github.com/go-logr/logr"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/autoscaler/utils"
 	"github.com/odigos-io/odigos/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func FilterAndSortProcessorsByOrderHint(processors *odigosv1.ProcessorList, collectorRole odigosv1.CollectorsGroupRole) []*odigosv1.Processor {
@@ -69,4 +76,99 @@ func GetGenericBatchProcessor() odigosv1.Processor {
 			},
 		},
 	}
+}
+
+type MatchCondition struct {
+	Name      string `mapstructure:"name"`
+	Namespace string `mapstructure:"namespace"`
+	Kind      string `mapstructure:"kind"`
+}
+
+func AddFilterProcessors(ctx context.Context, kubeClient client.Client, allProcessors *odigosv1.ProcessorList, dests *odigosv1.DestinationList) {
+	for _, dest := range dests.Items {
+		logger := log.Log.WithValues("destination", dest.Name)
+		logger.Info("Processing destination for filter processor")
+
+		if dest.Spec.SourceSelector == nil || utils.Contains(dest.Spec.SourceSelector.Modes, "all") {
+			continue
+		}
+
+		var matchedSources []odigosv1.Source
+		if utils.Contains(dest.Spec.SourceSelector.Modes, "namespaces") {
+			matchedSources = append(matchedSources, fetchSourcesByNamespaces(ctx, kubeClient, dest.Spec.SourceSelector.Namespaces, logger)...)
+		}
+		if utils.Contains(dest.Spec.SourceSelector.Modes, "groups") {
+			matchedSources = append(matchedSources, fetchSourcesByGroups(ctx, kubeClient, dest.Spec.SourceSelector.Groups, logger)...)
+		}
+
+		matchConditions := make(map[string]bool)
+		for _, source := range matchedSources {
+			logger.Info("Adding match condition for source", "sourceName", source.Spec.Workload.Name, "namespace", source.Spec.Workload.Namespace, "kind", source.Spec.Workload.Kind)
+
+			key := fmt.Sprintf("%s/%s/%s", source.Spec.Workload.Namespace, source.Spec.Workload.Name, source.Spec.Workload.Kind)
+			matchConditions[key] = true
+		}
+
+		filterConfig := map[string]interface{}{
+			"match_conditions": matchConditions,
+		}
+
+		allProcessors.Items = append(allProcessors.Items, odigosv1.Processor{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: fmt.Sprintf("odigosroutingfilterprocessor-%s", dest.Name),
+			},
+			Spec: odigosv1.ProcessorSpec{
+				Type:            "odigosroutingfilterprocessor",
+				ProcessorConfig: runtime.RawExtension{Raw: utils.MarshalConfig(filterConfig, logger)},
+				CollectorRoles: []odigosv1.CollectorsGroupRole{
+					odigosv1.CollectorsGroupRoleClusterGateway,
+				},
+				OrderHint: len(allProcessors.Items) + 1,
+				Signals:   dest.Spec.Signals,
+			},
+		})
+
+	}
+}
+
+func fetchSourcesByNamespaces(ctx context.Context, kubeClient client.Client, namespaces []string, logger logr.Logger) []odigosv1.Source {
+	var sources []odigosv1.Source
+	for _, ns := range namespaces {
+		sourceList := &odigosv1.SourceList{}
+		err := kubeClient.List(ctx, sourceList, &client.ListOptions{Namespace: ns})
+		if err != nil {
+			logger.Error(err, "Failed to fetch sources by namespace", "namespace", ns)
+			continue
+		}
+		sources = append(sources, sourceList.Items...)
+	}
+	return sources
+}
+
+func fetchSourcesByGroups(ctx context.Context, kubeClient client.Client, groups []string, logger logr.Logger) []odigosv1.Source {
+	sourceMap := make(map[string]odigosv1.Source)
+	for _, group := range groups {
+		labelSelector := labels.Set{fmt.Sprintf("odigos.io/group-%s", group): "true"}.AsSelector()
+
+		sourceList := &odigosv1.SourceList{}
+		err := kubeClient.List(ctx, sourceList, &client.ListOptions{
+			LabelSelector: labelSelector,
+		})
+		if err != nil {
+			logger.Error(err, "Failed to fetch sources for group", "group", group)
+			continue
+		}
+
+		for _, source := range sourceList.Items {
+			key := fmt.Sprintf("%s/%s", source.Namespace, source.Name)
+			if _, exists := sourceMap[key]; !exists {
+				sourceMap[key] = source
+			}
+		}
+	}
+	sources := make([]odigosv1.Source, 0, len(sourceMap))
+	for _, source := range sourceMap {
+		sources = append(sources, source)
+	}
+	return sources
 }
