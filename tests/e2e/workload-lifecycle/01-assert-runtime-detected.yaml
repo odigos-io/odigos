@@ -10,7 +10,7 @@ metadata:
       kind: Deployment
       name: nodejs-unsupported-version
 status:
-  runtimeDetailsByContainerByContainer:
+  runtimeDetailsByContainer:
     - containerName: nodejs-unsupported-version
       language: javascript
       runtimeVersion: 8.17.0
