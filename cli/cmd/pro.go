@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
+
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
@@ -40,8 +42,6 @@ var proCmd = &cobra.Command{
 		fmt.Printf("\u001B[32mSUCCESS:\u001B[0m Token updated successfully in namespace %s\n", ns)
 		fmt.Println()
 		fmt.Println("The new token will take effect only after the Odiglets are restarted.")
-		fmt.Println("To trigger a restart, run the following command:")
-		fmt.Println("kubectl rollout restart daemonset odiglet -n", ns)
 	},
 }
 
@@ -61,6 +61,24 @@ func updateOdigosToken(ctx context.Context, client *kube.Client, namespace strin
 			return err
 		}
 		return err
+	}
+
+	daemonSet, err := client.AppsV1().DaemonSets(namespace).Get(ctx, "odiglet", metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get DaemonSet odiglet in namespace %s: %v", namespace, err)
+	}
+	
+	// Modify the DaemonSet spec.template to trigger a rollout
+	if daemonSet.Spec.Template.Annotations == nil {
+		daemonSet.Spec.Template.Annotations = make(map[string]string)
+	}
+	daemonSet.Spec.Template.Annotations["rollout-trigger"] = time.Now().Format(time.RFC3339)
+
+	_, err = client.AppsV1().DaemonSets(namespace).Update(context.TODO(), daemonSet, metav1.UpdateOptions{})
+	if err != nil {
+		fmt.Printf("Failed to restart Odiglets. Reason: %s\n", err)
+		fmt.Printf("To trigger a restart manually, run the following command:\n")
+		fmt.Printf("kubectl rollout restart daemonset odiglet -n %s\n", daemonSet.Namespace)
 	}
 
 	return nil
