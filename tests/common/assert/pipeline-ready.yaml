@@ -149,6 +149,9 @@ spec:
             - mountPath: /var/lib/kubelet/pod-resources
               name: kubeletpodresources
               readOnly: true
+            - mountPath: /hostfs
+              name: hostfs
+              readOnly: true
           env:
             - name: NODE_NAME
               valueFrom:
@@ -193,6 +196,10 @@ spec:
             path: /var/lib/kubelet/pod-resources
             type: ""
           name: kubeletpodresources
+        - hostPath:
+            path: /
+            type: ""
+          name: hostfs
 status:
   numberAvailable: 1
   numberReady: 1

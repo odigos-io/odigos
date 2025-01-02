@@ -261,6 +261,14 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 								},
 							},
 						},
+						{
+							Name: "hostfs",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/",
+								},
+							},
+						},
 					},
 					Containers: []corev1.Container{
 						{
@@ -285,6 +293,11 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 								{
 									Name:      "kubeletpodresources",
 									MountPath: "/var/lib/kubelet/pod-resources",
+									ReadOnly:  true,
+								},
+								{
+									Name:      "hostfs",
+									MountPath: "/hostfs",
 									ReadOnly:  true,
 								},
 							},

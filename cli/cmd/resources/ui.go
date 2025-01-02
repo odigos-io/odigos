@@ -225,10 +225,15 @@ func NewUIClusterRole() *rbacv1.ClusterRole {
 				Verbs:     []string{"get", "list"},
 			},
 			{ // Need "services" for "Potential Destinations"
-				// Need "pods" for "Describe Source"
 				APIGroups: []string{""},
-				Resources: []string{"services", "pods"},
+				Resources: []string{"services"},
 				Verbs:     []string{"get", "list"},
+			},
+			{ // Need "pods" for "Describe Source"
+			  // for collector metrics - watch and list collectors pods
+				APIGroups: []string{""},
+				Resources: []string{"pods"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
 			{ // Needed to read Odigos entities
 				APIGroups: []string{"odigos.io"},
