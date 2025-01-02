@@ -1,6 +1,7 @@
 {
   "version": "0.2.0",
   "configurations": [
+
     {
       "name": "Remote Odiglet",
       "type": "go",
@@ -64,7 +65,33 @@
       "cwd": "${workspaceFolder}/cli",
       "args": ["uninstall", "--yes"],
       "buildFlags": "-tags=embed_manifests"
+    }, 
+    {
+      "name": "cli install",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/cli",
+      "cwd": "${workspaceFolder}/cli",
+      "args": ["install", "--version", "ODIGOS_VERSION"],
+      "buildFlags": "-tags=embed_manifests"
+    },
+    {
+      "name": "cli pro",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/cli",
+      "cwd": "${workspaceFolder}/cli",
+      "args": ["pro", "--onprem-token", "${input:onprem_token}"],
+      "buildFlags": "-tags=embed_manifests"
     }
-  ]
+  ],
+    "inputs": [
+    {
+      "id": "onprem_token",
+      "type": "promptString",
+      "description": "Enter your onprem token"
+    }]
 }
 
