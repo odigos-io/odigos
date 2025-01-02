@@ -7,7 +7,6 @@ exporters: {}
 processors:
   batch: {}
 extensions: {}
-connectors: {}
 service:
   extensions: []
   pipelines: {}

@@ -34,51 +34,38 @@ func NewDataCollectionClusterRole(psp bool) *rbacv1.ClusterRole {
 			Name: "odigos-data-collection",
 		},
 		Rules: []rbacv1.PolicyRule{
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
+			{ // TODO: remove this after we remove honeycomb custom exporter config
+				// located at: autoscaler/controllers/datacollection/custom/honeycomb.go
 				APIGroups: []string{""},
-				Resources: []string{
-					"pods",
-					"endpoints",
-					"nodes/stats",
-					"nodes/proxy",
-				},
+				Resources: []string{"nodes/stats", "nodes/proxy"},
+				Verbs:     []string{"get", "list"},
 			},
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
+			{ // Needed to get "resource name" in processor (TODO: remove this after we kill the resource name processor)
+				APIGroups: []string{""},
+				Resources: []string{"pods"},
+				Verbs:     []string{"get", "list"},
+			},
+			{ // Need "replicasets" to get "resource name" in processor (TODO: remove this after we kill the resource name processor),
+				// Others needed to get applications from cluster
 				APIGroups: []string{"apps"},
-				Resources: []string{
-					"replicasets",
-					"deployments",
-					"daemonsets",
-					"statefulsets",
-				},
+				Resources: []string{"replicasets", "deployments", "daemonsets", "statefulsets"},
+				Verbs:     []string{"get", "list"},
+			},
+			{ // Needed for load balancer
+				APIGroups: []string{""},
+				Resources: []string{"endpoints"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
 		},
 	}
 
 	if psp {
 		clusterrole.Rules = append(clusterrole.Rules, rbacv1.PolicyRule{
-			Verbs: []string{
-				"use",
-			},
-			APIGroups: []string{
-				"policy",
-			},
-			Resources: []string{
-				"podsecuritypolicies",
-			},
-			ResourceNames: []string{
-				"privileged",
-			},
+			// Needed for clients who enable pod security policies
+			APIGroups:     []string{"policy"},
+			Resources:     []string{"podsecuritypolicies"},
+			ResourceNames: []string{"privileged"},
+			Verbs:         []string{"use"},
 		})
 	}
 

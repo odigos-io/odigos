@@ -4,7 +4,7 @@ metadata:
   name: odigos-instrumentor
 rules:
   - apiGroups:
-      - ""
+      - ''
     resources:
       - nodes
     verbs:
@@ -12,7 +12,7 @@ rules:
       - watch
       - get
   - apiGroups:
-      - ""
+      - ''
     resources:
       - namespaces
     verbs:
@@ -78,3 +78,9 @@ rules:
       - patch
       - update
       - watch
+  - apiGroups:
+      - odigos.io
+    resources:
+      - instrumentationconfigs/status
+    verbs:
+      - update

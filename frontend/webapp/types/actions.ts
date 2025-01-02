@@ -1,4 +1,5 @@
-import { type SignalUppercase } from '@/utils';
+import type { Condition } from './common';
+import type { SignalUppercase } from '@/utils';
 
 export enum PlatformTypes {
   K8S = 'k8s',
@@ -71,6 +72,7 @@ export interface ActionData {
   id: string;
   type: ActionsType;
   spec: ActionItem | string;
+  conditions: Condition[];
 }
 
 export interface ActionDataParsed extends ActionData {
