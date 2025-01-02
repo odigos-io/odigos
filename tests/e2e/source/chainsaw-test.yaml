@@ -89,6 +89,22 @@ spec:
       try:
         - assert:
             file: ../../common/assert/simple-demo-instrumented.yaml
+        - assert:
+            timeout: 2m
+            file: 01-workloads.yaml
+        - script:
+            timeout: 70s
+            content: |
+              kubectl rollout status deployment -l app=coupon
+              kubectl rollout status deployment -l app=frontend
+              kubectl rollout status deployment -l app=inventory
+              kubectl rollout status deployment -l app=pricing
+              kubectl rollout status deployment -l app=membership
+              kubectl wait --for=condition=ready pod -l app=frontend --timeout=60s
+              kubectl wait --for=condition=ready pod -l app=coupon --timeout=60s
+              kubectl wait --for=condition=ready pod -l app=inventory --timeout=60s
+              kubectl wait --for=condition=ready pod -l app=pricing --timeout=60s
+              kubectl wait --for=condition=ready pod -l app=membership --timeout=60s
     - name: Generate Traffic
       try:
         - script:
@@ -150,94 +166,35 @@ spec:
             namespace: odigos-system
     - name: Uninstrument individual deployments
       try:
-        - delete:
-            ref:
-              apiVersion: odigos.io/v1alpha1
-              kind: Source
-              namespace: default
-              labels:
-                odigos.io/e2e: source
-            expect:
-              - match:
-                  apiVersion: odigos.io/v1alpha1
-                  kind: InstrumentationConfig
-                  metadata:
-                    name: deployment-coupon
-                    namespace: default
-                check:
-                  ($error != null): true
-              - match:
-                  apiVersion: odigos.io/v1alpha1
-                  kind: InstrumentationConfig
-                  metadata:
-                    name: deployment-frontend
-                    namespace: default
-                check:
-                  ($error != null): true
-              - match:
-                  apiVersion: odigos.io/v1alpha1
-                  kind: InstrumentationConfig
-                  metadata:
-                    name: deployment-inventory
-                    namespace: default
-                check:
-                  ($error != null): true
-              - match:
-                  apiVersion: odigos.io/v1alpha1
-                  kind: InstrumentationConfig
-                  metadata:
-                    name: deployment-membership
-                    namespace: default
-                check:
-                  ($error != null): true
-              - match:
-                  apiVersion: odigos.io/v1alpha1
-                  kind: InstrumentationConfig
-                  metadata:
-                    name: deployment-pricing
-                    namespace: default
-                check:
-                  ($error != null): true
-              - match:
-                  apiVersion: odigos.io/v1alpha1
-                  kind: InstrumentedApplication
-                  metadata:
-                    name: deployment-coupon
-                    namespace: default
-                check:
-                  ($error != null): true
-              - match:
-                  apiVersion: odigos.io/v1alpha1
-                  kind: InstrumentedApplication
-                  metadata:
-                    name: deployment-frontend
-                    namespace: default
-                check:
-                  ($error != null): true
-              - match:
-                  apiVersion: odigos.io/v1alpha1
-                  kind: InstrumentedApplication
-                  metadata:
-                    name: deployment-inventory
-                    namespace: default
-                check:
-                  ($error != null): true
-              - match:
-                  apiVersion: odigos.io/v1alpha1
-                  kind: InstrumentedApplication
-                  metadata:
-                    name: deployment-membership
-                    namespace: default
-                check:
-                  ($error != null): true
-              - match:
-                  apiVersion: odigos.io/v1alpha1
-                  kind: InstrumentedApplication
-                  metadata:
-                    name: deployment-pricing
-                    namespace: default
-                check:
-                  ($error != null): true
+        - script:
+            timeout: 60s
+            content: |
+              kubectl delete sources --all
+              while true; do
+                ic_count=$(kubectl get instrumentationconfigs | wc -l)
+                if [ $ic_count -eq "0" ]; then
+                  break
+                fi
+                sleep 5
+              done
+    - name: Assert workloads updated after uninstrumentation
+      try:
+        - assert:
+            timeout: 2m
+            file: 02-workloads.yaml
+        - script:
+            timeout: 70s
+            content: |
+              kubectl rollout status deployment -l app=coupon
+              kubectl rollout status deployment -l app=frontend
+              kubectl rollout status deployment -l app=inventory
+              kubectl rollout status deployment -l app=pricing
+              kubectl rollout status deployment -l app=membership
+              kubectl wait --for=condition=ready pod -l app=frontend --timeout=60s
+              kubectl wait --for=condition=ready pod -l app=coupon --timeout=60s
+              kubectl wait --for=condition=ready pod -l app=inventory --timeout=60s
+              kubectl wait --for=condition=ready pod -l app=pricing --timeout=60s
+              kubectl wait --for=condition=ready pod -l app=membership --timeout=60s
     - name: Instrument Namespace
       try:
         - apply:
@@ -247,6 +204,27 @@ spec:
         - assert:
             timeout: 2m
             file: ../../common/assert/simple-demo-runtime-detected.yaml
+        - assert:
+            timeout: 2m
+            file: 03-workloads.yaml
+    - name: Simple demo instrumented after runtime detection
+      try:
+        - assert:
+            file: ../../common/assert/simple-demo-instrumented.yaml
+        - script:
+            timeout: 70s
+            content: |
+              kubectl rollout status deployment -l app=coupon
+              kubectl rollout status deployment -l app=frontend
+              kubectl rollout status deployment -l app=inventory
+              kubectl rollout status deployment -l app=pricing
+              kubectl rollout status deployment -l app=membership
+              kubectl wait --for=condition=ready pod -l app=frontend --timeout=60s
+              kubectl wait --for=condition=ready pod -l app=coupon --timeout=60s
+              kubectl wait --for=condition=ready pod -l app=inventory --timeout=60s
+              kubectl wait --for=condition=ready pod -l app=pricing --timeout=60s
+              kubectl wait --for=condition=ready pod -l app=membership --timeout=60s
+              sleep 5
     - name: Generate Traffic
       try:
         - script:
@@ -308,91 +286,19 @@ spec:
             namespace: odigos-system
     - name: Uninstrument namespace
       try:
-        - delete:
-            ref:
-              apiVersion: odigos.io/v1alpha1
-              kind: Source
-              namespace: default
-              labels:
-                odigos.io/e2e: source
-            expect:
-              - match:
-                  apiVersion: odigos.io/v1alpha1
-                  kind: InstrumentationConfig
-                  metadata:
-                    name: deployment-coupon
-                    namespace: default
-                check:
-                  ($error != null): true
-              - match:
-                  apiVersion: odigos.io/v1alpha1
-                  kind: InstrumentationConfig
-                  metadata:
-                    name: deployment-frontend
-                    namespace: default
-                check:
-                  ($error != null): true
-              - match:
-                  apiVersion: odigos.io/v1alpha1
-                  kind: InstrumentationConfig
-                  metadata:
-                    name: deployment-inventory
-                    namespace: default
-                check:
-                  ($error != null): true
-              - match:
-                  apiVersion: odigos.io/v1alpha1
-                  kind: InstrumentationConfig
-                  metadata:
-                    name: deployment-membership
-                    namespace: default
-                check:
-                  ($error != null): true
-              - match:
-                  apiVersion: odigos.io/v1alpha1
-                  kind: InstrumentationConfig
-                  metadata:
-                    name: deployment-pricing
-                    namespace: default
-                check:
-                  ($error != null): true
-              - match:
-                  apiVersion: odigos.io/v1alpha1
-                  kind: InstrumentedApplication
-                  metadata:
-                    name: deployment-coupon
-                    namespace: default
-                check:
-                  ($error != null): true
-              - match:
-                  apiVersion: odigos.io/v1alpha1
-                  kind: InstrumentedApplication
-                  metadata:
-                    name: deployment-frontend
-                    namespace: default
-                check:
-                  ($error != null): true
-              - match:
-                  apiVersion: odigos.io/v1alpha1
-                  kind: InstrumentedApplication
-                  metadata:
-                    name: deployment-inventory
-                    namespace: default
-                check:
-                  ($error != null): true
-              - match:
-                  apiVersion: odigos.io/v1alpha1
-                  kind: InstrumentedApplication
-                  metadata:
-                    name: deployment-membership
-                    namespace: default
-                check:
-                  ($error != null): true
-              - match:
-                  apiVersion: odigos.io/v1alpha1
-                  kind: InstrumentedApplication
-                  metadata:
-                    name: deployment-pricing
-                    namespace: default
-                check:
-                  ($error != null): true
+        - script:
+            timeout: 60s
+            content: |
+              kubectl delete sources --all
+              while true; do
+                ic_count=$(kubectl get instrumentationconfigs | wc -l)
+                if [ $ic_count -eq "0" ]; then
+                  break
+                fi
+                sleep 5
+              done
+    - name: Assert workloads updated after uninstrumentation
+      try:
+        - assert:
+            timeout: 2m
+            file: 04-workloads.yaml
