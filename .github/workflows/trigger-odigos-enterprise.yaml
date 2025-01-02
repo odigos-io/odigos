@@ -8,8 +8,7 @@ on:
 #      - synchronize
     push:
       branches:
-        - main
-        - feature/*
+        - '**'
 
 jobs:
   trigger-odigos-enterprise:
