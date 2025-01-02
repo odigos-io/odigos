@@ -40,6 +40,8 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 	logger := log.FromContext(ctx)
 
 	// In certain scenarios, the raw request can be utilized to retrieve missing details, like the namespace.
+	// For example, prior to Kubernetes version 1.24 (see https://github.com/kubernetes/kubernetes/pull/94637),
+	// namespaced objects could be sent to admission webhooks with empty namespaces during their creation.
 	req, err := admission.RequestFromContext(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get admission request: %w", err)
@@ -66,7 +68,7 @@ func (p *PodsWebhook) injectOdigosEnvVars(ctx context.Context, logger logr.Logge
 
 	podWorkload, err := workload.PodWorkloadObject(ctx, pod)
 	if err != nil {
-		logger.Error(err, "failed to extract pod workload details from pod. skipping OTEL_SERVICE_NAME injection")
+		logger.Error(err, "failed to extract pod workload details from pod.")
 		return
 	}
 
@@ -116,7 +118,7 @@ func (p *PodsWebhook) injectOdigosEnvVars(ctx context.Context, logger logr.Logge
 				}
 			}
 
-			if serviceNameEnv != nil && !otelNameExists(container.Env) {
+			if !otelNameExists(container.Env) {
 				container.Env = append(container.Env, *serviceNameEnv)
 			}
 		}

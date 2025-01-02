@@ -68,6 +68,7 @@ func handleManifestEnvVar(container *corev1.Container, envVarName string, otelsd
 
 func injectEnvVarsFromRuntime(ctx context.Context, p client.Client, logger logr.Logger, podWorkload workload.PodWorkload,
 	container *corev1.Container, envVarName string, otelsdk common.OtelSdk) error {
+	logger.Info("Inject Odigos values based on runtime details", "envVarName", envVarName, "container", container.Name)
 
 	var workloadInstrumentationConfig v1alpha1.InstrumentationConfig
 	instrumentationConfigName := workload.CalculateWorkloadRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
@@ -93,26 +94,32 @@ func injectEnvVarsFromRuntime(ctx context.Context, p client.Client, logger logr.
 
 func processEnvVarsFromRuntimeDetails(runtimeDetails *v1alpha1.RuntimeDetailsByContainer, envVarName string, otelsdk common.OtelSdk) []corev1.EnvVar {
 	var envVars []corev1.EnvVar
-	if runtimeDetails.EnvFromContainerRuntime == nil {
-		odigosValueForOtelSdk := envOverwrite.GetPossibleValuesPerEnv(envVarName)
-		if odigosValueForOtelSdk != nil {
-			valueToInject := odigosValueForOtelSdk[otelsdk]
-			patchedEnvVarValue := appendOdigosAdditionsToEnvVar(envVarName, "", valueToInject) // empty observedValue
-			envVars = append(envVars, corev1.EnvVar{Name: envVarName, Value: *patchedEnvVarValue})
-		}
 
+	odigosValueForOtelSdk := envOverwrite.GetPossibleValuesPerEnv(envVarName)
+	if odigosValueForOtelSdk == nil { // No odigos values for this env var
+		return envVars
+	}
+	valueToInject, ok := odigosValueForOtelSdk[otelsdk]
+	if !ok { // No odigos value for this SDK
+		return envVars
+	}
+
+	if runtimeDetails.EnvFromContainerRuntime == nil {
+		envVars = append(envVars, corev1.EnvVar{Name: envVarName, Value: valueToInject})
 	} else {
 		for _, envVar := range runtimeDetails.EnvFromContainerRuntime {
+
 			// Get the relevant envVar that we're iterating over
 			if envVar.Name != envVarName {
 				continue
 			}
-			odigosValueForOtelSdk := envOverwrite.GetPossibleValuesPerEnv(envVarName)
-			if odigosValueForOtelSdk != nil {
-				valueToInject := odigosValueForOtelSdk[otelsdk]
-				patchedEnvVarValue := appendOdigosAdditionsToEnvVar(envVarName, envVar.Value, valueToInject)
-				envVars = append(envVars, corev1.EnvVar{Name: envVarName, Value: *patchedEnvVarValue})
-			}
+
+			patchedEnvVarValue := appendOdigosAdditionsToEnvVar(envVarName, envVar.Value, valueToInject)
+			envVars = append(envVars, corev1.EnvVar{Name: envVarName, Value: *patchedEnvVarValue})
+		}
+		// If EnvFromContainerRuntime does not include the relevant envVar (e.g., JAVA_OPTS), it should still be added with the Odigos value.
+		if len(envVars) == 0 {
+			envVars = append(envVars, corev1.EnvVar{Name: envVarName, Value: valueToInject})
 		}
 	}
 	return envVars
