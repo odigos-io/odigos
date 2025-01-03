@@ -25,7 +25,7 @@ const (
 	pythonOdigosDeviceId               = "ODIGOS_INSTRUMENTATION_DEVICE_ID"
 )
 
-func Python(deviceId string, uniqueDestinationSignals map[common.ObservabilitySignal]struct{}) *v1beta1.ContainerAllocateResponse {
+func Python(uniqueDestinationSignals map[common.ObservabilitySignal]struct{}) *v1beta1.ContainerAllocateResponse {
 	otlpEndpoint := fmt.Sprintf("http://%s:%d", env.Current.NodeIP, consts.OTLPHttpPort)
 	pythonpathVal, _ := envOverwrite.ValToAppend(envPythonPath, common.OtelSdkNativeCommunity)
 	opampServerHost := fmt.Sprintf("%s:%d", env.Current.NodeIP, consts.OpAMPPort)
@@ -43,7 +43,7 @@ func Python(deviceId string, uniqueDestinationSignals map[common.ObservabilitySi
 
 	return &v1beta1.ContainerAllocateResponse{
 		Envs: map[string]string{
-			pythonOdigosDeviceId:          deviceId,
+			pythonOdigosDeviceId:          "123123123", //TODO(edenfed): this is not needed anymore, delete it from python instrumentation and then delete from here
 			pythonOdigosOpampServer:       opampServerHost,
 			envLogCorrelation:             "true",
 			envPythonPath:                 pythonpathVal,

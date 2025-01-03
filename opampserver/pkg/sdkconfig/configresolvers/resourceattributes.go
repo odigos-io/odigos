@@ -1,10 +1,9 @@
 package configresolvers
 
 import (
-	"errors"
+	"github.com/odigos-io/odigos/common/resourceattributes"
 
 	"github.com/odigos-io/odigos/opampserver/pkg/deviceid"
-	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
 )
 
 type ResourceAttribute struct {
@@ -19,48 +18,20 @@ type ResourceAttribute struct {
 // - pod name
 // - container name
 // - object name and kind (deployment, statefulset, daemonset, pod)
-func CalculateServerAttributes(k8sAttributes *deviceid.K8sResourceAttributes, nodeName string, serviceName string) ([]ResourceAttribute, error) {
+func CalculateServerAttributes(k8sAttributes *deviceid.K8sResourceAttributes, serviceName string) ([]ResourceAttribute, error) {
+	resAttributes := resourceattributes.AfterPodStart(&resourceattributes.ContainerIdentifier{
+		PodName:       k8sAttributes.PodName,
+		Namespace:     k8sAttributes.Namespace,
+		ContainerName: k8sAttributes.ContainerName,
+	}).IncludeServiceName(serviceName)
 
-	serverOfferResourceAttributes := []ResourceAttribute{
-		{
-			Key:   string(semconv.K8SNodeNameKey),
-			Value: nodeName,
-		},
-		{
-			Key:   string(semconv.K8SNamespaceNameKey),
-			Value: k8sAttributes.Namespace,
-		},
-		{
-			Key:   string(semconv.ServiceNameKey),
-			Value: serviceName,
-		},
-		{
-			Key:   string(semconv.K8SPodNameKey),
-			Value: k8sAttributes.PodName,
-		},
-		{
-			Key:   string(semconv.K8SContainerNameKey),
-			Value: k8sAttributes.ContainerName,
-		},
+	var result []ResourceAttribute
+	for _, attr := range resAttributes {
+		result = append(result, ResourceAttribute{
+			Key:   string(attr.Key),
+			Value: attr.Value.AsString(),
+		})
 	}
 
-	var objectNameKey string
-	switch k8sAttributes.WorkloadKind {
-	case "Deployment":
-		objectNameKey = string(semconv.K8SDeploymentNameKey)
-	case "StatefulSet":
-		objectNameKey = string(semconv.K8SStatefulSetNameKey)
-	case "DaemonSet":
-		objectNameKey = string(semconv.K8SDaemonSetNameKey)
-	case "Pod":
-		objectNameKey = string(semconv.K8SPodNameKey)
-	default:
-		return serverOfferResourceAttributes, errors.New("unsupported workload kind")
-	}
-
-	serverOfferResourceAttributes = append(serverOfferResourceAttributes, ResourceAttribute{
-		Key:   objectNameKey,
-		Value: k8sAttributes.WorkloadName,
-	})
-	return serverOfferResourceAttributes, nil
+	return result, nil
 }

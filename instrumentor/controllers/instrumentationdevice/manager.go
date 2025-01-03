@@ -4,11 +4,13 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
+	"github.com/odigos-io/odigos/instrumentor/controllers/webhook"
 	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
@@ -91,7 +93,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("instrumentationdevice-collectorsgroup").
 		For(&odigosv1.CollectorsGroup{}).
-		WithEventFilter(predicate.And(&odigospredicate.OdigosCollectorsGroupNodePredicate, &odigospredicate.CgBecomesReadyPredicate{})).
+		WithEventFilter(predicate.And[client.Object](&odigospredicate.OdigosCollectorsGroupNodePredicate, &odigospredicate.CgBecomesReadyPredicate{})).
 		Complete(&CollectorsGroupReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
@@ -163,7 +165,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 	err = builder.
 		WebhookManagedBy(mgr).
 		For(&corev1.Pod{}).
-		WithDefaulter(&PodsWebhook{
+		WithDefaulter(&webhook.PodsWebhook{
 			Client: mgr.GetClient(),
 		}).
 		Complete()

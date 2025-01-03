@@ -3,7 +3,7 @@ package instrumentation
 import (
 	"context"
 
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/odigos-io/odigos/common/resourceattributes"
 )
 
 type Config any
@@ -15,7 +15,7 @@ type Settings struct {
 	ServiceName string
 	// ResourceAttributes can be used to pass additional resource attributes to the instrumentation
 	// These attributes will be added to the resource attributes of the telemetry data.
-	ResourceAttributes []attribute.KeyValue
+	ResourceAttributes resourceattributes.Attributes
 	// InitialConfig is the initial configuration that should be applied to the instrumentation,
 	// it can be used to enable/disable specific instrumentation libraries, configure sampling, etc.
 	InitialConfig Config
