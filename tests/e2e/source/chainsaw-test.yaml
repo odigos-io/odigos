@@ -110,16 +110,10 @@ spec:
               kubectl wait --for=condition=ready pod -l app=inventory --timeout=60s
               kubectl wait --for=condition=ready pod -l app=pricing --timeout=60s
               kubectl wait --for=condition=ready pod -l app=membership --timeout=60s
-    - name: Wait for apps auto-instrumentation
-      try:
-        - script:
-            timeout: 60s
-            content: |
-              sleep 30
     - name: Generate Traffic
       try:
         - script:
-            timeout: 300s
+            timeout: 500s
             content: |
               while true; do
                 # wait for traces to be available
@@ -255,16 +249,10 @@ spec:
               kubectl wait --for=condition=ready pod -l app=inventory --timeout=60s
               kubectl wait --for=condition=ready pod -l app=pricing --timeout=60s
               kubectl wait --for=condition=ready pod -l app=membership --timeout=60s
-    - name: Wait for apps auto-instrumentation
-      try:
-        - script:
-            timeout: 60s
-            content: |
-              sleep 30
     - name: Generate Traffic
       try:
         - script:
-            timeout: 300s
+            timeout: 500s
             content: |
               while true; do
                 # wait for traces to be available
