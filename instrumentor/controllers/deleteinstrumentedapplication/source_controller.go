@@ -18,6 +18,7 @@ package deleteinstrumentedapplication
 
 import (
 	"context"
+	"errors"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
@@ -99,6 +100,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 				}
 			}
 		} else {
+			// This is a Source for a specific workload, not an entire namespace
 			obj := workload.ClientObjectFromWorkloadKind(source.Spec.Workload.Kind)
 			err = r.Client.Get(ctx, types.NamespacedName{Name: source.Spec.Workload.Name, Namespace: source.Spec.Workload.Namespace}, obj)
 			if err != nil {
@@ -106,7 +108,18 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 				return ctrl.Result{}, err
 			}
 
-			err = reconcileWorkloadObject(ctx, r.Client, obj)
+			// Check if this workload is also inheriting Instrumentation from namespace
+			inheriting, err := isInheritingInstrumentationFromNs(ctx, r.Client, obj)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+			if inheriting {
+				// if it is inheriting, don't delete the instrumentation config
+				return ctrl.Result{}, err
+			}
+
+			err = errors.Join(err, deleteWorkloadInstrumentedApplication(ctx, r.Client, obj))
+			err = errors.Join(err, removeReportedNameAnnotation(ctx, r.Client, obj))
 			if err != nil {
 				return ctrl.Result{}, err
 			}
