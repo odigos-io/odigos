@@ -64,6 +64,16 @@
       "cwd": "${workspaceFolder}/cli",
       "args": ["uninstall", "--yes"],
       "buildFlags": "-tags=embed_manifests"
+    },
+    {
+      "name": "cli diagnose",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/cli",
+      "args": ["diagnose"],
+      "cwd": "${workspaceFolder}/cli",
+      "buildFlags": "-tags=embed_manifests"
     }
   ]
 }
