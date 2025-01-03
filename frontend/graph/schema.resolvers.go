@@ -81,7 +81,7 @@ func (r *computePlatformResolver) K8sActualSource(ctx context.Context, obj *mode
 
 // K8sActualSources is the resolver for the k8sActualSources field.
 func (r *computePlatformResolver) K8sActualSources(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualSource, error) {
-	instrumentedApplications, err := kube.DefaultClient.OdigosClient.InstrumentedApplications("").List(ctx, metav1.ListOptions{})
+	instrumentationConfigs, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -90,9 +90,9 @@ func (r *computePlatformResolver) K8sActualSources(ctx context.Context, obj *mod
 	var actualSources []*model.K8sActualSource
 
 	// Convert each instrumented application to the K8sActualSource type
-	for _, app := range instrumentedApplications.Items {
-		actualSource := instrumentedApplicationToActualSource(app)
-		services.AddHealthyInstrumentationInstancesCondition(ctx, &app, actualSource)
+	for _, ic := range instrumentationConfigs.Items {
+		actualSource := instrumentationConfigToActualSource(ic)
+		services.AddHealthyInstrumentationInstancesCondition(ctx, &ic, actualSource)
 		owner, _ := services.GetWorkload(ctx, actualSource.Namespace, string(actualSource.Kind), actualSource.Name)
 		if owner == nil {
 

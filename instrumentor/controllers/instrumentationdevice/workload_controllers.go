@@ -43,8 +43,8 @@ func (r *StatefulSetReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 }
 
 func reconcileSingleInstrumentedApplicationByName(ctx context.Context, k8sClient client.Client, instrumentedAppName string, namespace string) error {
-	var instrumentedApplication odigosv1.InstrumentedApplication
-	err := k8sClient.Get(ctx, types.NamespacedName{Name: instrumentedAppName, Namespace: namespace}, &instrumentedApplication)
+	var instrumentationConfig odigosv1.InstrumentationConfig
+	err := k8sClient.Get(ctx, types.NamespacedName{Name: instrumentedAppName, Namespace: namespace}, &instrumentationConfig)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			// if there is no instrumented application, make sure the device is removed from the workload pod template manifest
@@ -60,5 +60,5 @@ func reconcileSingleInstrumentedApplicationByName(ctx context.Context, k8sClient
 	}
 	isNodeCollectorReady := isDataCollectionReady(ctx, k8sClient)
 
-	return reconcileSingleWorkload(ctx, k8sClient, &instrumentedApplication, isNodeCollectorReady)
+	return reconcileSingleWorkload(ctx, k8sClient, &instrumentationConfig, isNodeCollectorReady)
 }

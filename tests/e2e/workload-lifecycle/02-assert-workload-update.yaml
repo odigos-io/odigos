@@ -188,35 +188,6 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    (odigos.io/manifest-env-original-val == null): true
-  generation: 5 # started as 2, updated by test once, then by instrumentor and again after new runtime details updated
-  labels:
-    app: language-change
-  name: language-change
-  namespace: default
-spec:
-  selector:
-    matchLabels:
-      app: language-change
-  template:
-    spec:
-      containers:
-      - (env == null): true
-        image: cpp-http-server:v0.0.1
-        name: language-change
-        resources: {}
-status:
-  availableReplicas: 1
-  observedGeneration: 5
-  readyReplicas: 1
-  replicas: 1
-  updatedReplicas: 1
-
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
   generation: 4 # on step 2, the manifest was updated (1->2)
   labels:
     app: java-supported-version

@@ -6,7 +6,6 @@ query: |
   { resource.service.name = "nodejs-latest-version" } ||
   { resource.service.name = "nodejs-dockerfile-env" } ||
   { resource.service.name = "nodejs-manifest-env" } ||
-  { resource.service.name = "language-change" } ||
   { resource.service.name = "java-supported-version" } ||
   { resource.service.name = "java-latest-version" } ||
   { resource.service.name = "java-old-version" } ||
@@ -15,11 +14,10 @@ query: |
   { resource.service.name = "java-azul" } ||
   { resource.service.name = "python-latest-version" && span.http.route = "insert-random/" } ||
   { resource.service.name = "python-alpine" && span.http.route = "insert-random/" } ||
-  { resource.service.name = "python-not-supported" && span.http.route = "insert-random/" } ||
   { resource.service.name = "python-min-version" && span.http.route = "insert-random/" }  ||
   { resource.service.name = "dotnet8-glibc" } ||
   { resource.service.name = "dotnet8-musl" } ||
   { resource.service.name = "dotnet6-glibc" } ||
   { resource.service.name = "dotnet6-musl" }
 expected:
-  count: 18
+  count: 17

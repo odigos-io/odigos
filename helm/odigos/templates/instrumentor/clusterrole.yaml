@@ -61,7 +61,7 @@ rules:
   - apiGroups:
       - odigos.io
     resources:
-      - instrumentedapplications/status
+      - instrumentationconfigs/status
     verbs:
       - get
       - patch

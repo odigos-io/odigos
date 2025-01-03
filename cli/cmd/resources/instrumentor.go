@@ -181,9 +181,9 @@ func NewInstrumentorClusterRole() *rbacv1.ClusterRole {
 				Resources: []string{"instrumentedapplications"},
 				Verbs:     []string{"delete", "get", "list", "watch"},
 			},
-			{ // Update the status of the instrumented applications after device injection
+			{ // Update the status of the instrumentation configs after device injection
 				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentedapplications/status"},
+				Resources: []string{"instrumentationconfigs/status"},
 				Verbs:     []string{"get", "patch", "update"},
 			},
 			{
