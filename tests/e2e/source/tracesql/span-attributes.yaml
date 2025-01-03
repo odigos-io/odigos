@@ -15,4 +15,4 @@ query: |
       span.http.request.method = "GET" && span:kind = server &&
       span.http.response.status_code = 200 && span.url.path = "/isMember" }))
 expected:
-  count: 1
+  minimum: 1

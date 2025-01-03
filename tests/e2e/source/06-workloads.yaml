@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   annotations:
     deployment.kubernetes.io/revision: "6"
-  generation: 6
+  generation: 8
   name: coupon
   namespace: default
 ---
@@ -12,7 +12,7 @@ kind: Deployment
 metadata:
   annotations:
     deployment.kubernetes.io/revision: "6"
-  generation: 6
+  generation: 8
   name: frontend
   namespace: default
 ---
@@ -21,7 +21,7 @@ kind: Deployment
 metadata:
   annotations:
     deployment.kubernetes.io/revision: "6"
-  generation: 6
+  generation: 8
   name: inventory
   namespace: default
 ---
@@ -30,7 +30,7 @@ kind: Deployment
 metadata:
   annotations:
     deployment.kubernetes.io/revision: "6"
-  generation: 6
+  generation: 8
   name: membership
   namespace: default
 ---
@@ -39,6 +39,6 @@ kind: Deployment
 metadata:
   annotations:
     deployment.kubernetes.io/revision: "6"
-  generation: 6
+  generation: 8
   name: pricing
   namespace: default

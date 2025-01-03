@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   annotations:
     deployment.kubernetes.io/revision: "4"
-  generation: 4
+  generation: 5 # Note new generation after annotating service.name, but not new revision
   name: coupon
   namespace: default
 ---
@@ -12,7 +12,7 @@ kind: Deployment
 metadata:
   annotations:
     deployment.kubernetes.io/revision: "4"
-  generation: 4
+  generation: 5 # Note new generation after annotating service.name, but not new revision
   name: frontend
   namespace: default
 ---
@@ -21,7 +21,7 @@ kind: Deployment
 metadata:
   annotations:
     deployment.kubernetes.io/revision: "4"
-  generation: 4
+  generation: 5 # Note new generation after annotating service.name, but not new revision
   name: inventory
   namespace: default
 ---
@@ -30,7 +30,7 @@ kind: Deployment
 metadata:
   annotations:
     deployment.kubernetes.io/revision: "4"
-  generation: 4
+  generation: 5 # Note new generation after annotating service.name, but not new revision
   name: membership
   namespace: default
 ---
@@ -39,6 +39,6 @@ kind: Deployment
 metadata:
   annotations:
     deployment.kubernetes.io/revision: "4"
-  generation: 4
+  generation: 5 # Note new generation after annotating service.name, but not new revision
   name: pricing
   namespace: default

@@ -121,19 +121,19 @@ spec:
         - script:
             timeout: 300s
             content: |
-              # Apply the job
-              kubectl apply -f ../../common/apply/generate-traffic-job.yaml
-
-              # Wait for the job to complete
-              job_name=$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
-              kubectl wait --for=condition=complete job/$job_name
-
-              # Delete the job        
-              kubectl delete -f ../../common/apply/generate-traffic-job.yaml
-
               while true; do
                 # wait for traces to be available
                 sleep 8
+
+                # Apply the job
+                kubectl apply -f ../../common/apply/generate-traffic-job.yaml
+
+                # Wait for the job to complete
+                job_name=$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
+                kubectl wait --for=condition=complete job/$job_name
+
+                # Delete the job        
+                kubectl delete -f ../../common/apply/generate-traffic-job.yaml
 
                 # Run the wait-for-trace script
                 echo "Running TraceQL test at $(date)"
@@ -211,6 +211,16 @@ spec:
               kubectl wait --for=condition=ready pod -l app=inventory --timeout=60s
               kubectl wait --for=condition=ready pod -l app=pricing --timeout=60s
               kubectl wait --for=condition=ready pod -l app=membership --timeout=60s
+    - name: Update reported service name for second phase of test
+      try:
+        - script:
+            timeout: 70s
+            content: |
+              kubectl annotate deployment coupon odigos.io/reported-name=coupon-2
+              kubectl annotate deployment frontend odigos.io/reported-name=frontend-2
+              kubectl annotate deployment inventory odigos.io/reported-name=inventory-2
+              kubectl annotate deployment pricing odigos.io/reported-name=pricing-2
+              kubectl annotate deployment membership odigos.io/reported-name=membership-2
     - name: Instrument Namespace
       try:
         - apply:
@@ -256,19 +266,19 @@ spec:
         - script:
             timeout: 300s
             content: |
-              # Apply the job
-              kubectl apply -f ../../common/apply/generate-traffic-job.yaml
-
-              # Wait for the job to complete
-              job_name=$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
-              kubectl wait --for=condition=complete job/$job_name
-
-              # Delete the job        
-              kubectl delete -f ../../common/apply/generate-traffic-job.yaml
-
               while true; do
                 # wait for traces to be available
                 sleep 8
+
+                # Apply the job
+                kubectl apply -f ../../common/apply/generate-traffic-job.yaml
+
+                # Wait for the job to complete
+                job_name=$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
+                kubectl wait --for=condition=complete job/$job_name
+
+                # Delete the job        
+                kubectl delete -f ../../common/apply/generate-traffic-job.yaml
 
                 # Run the wait-for-trace script
                 echo "Running TraceQL test at $(date)"
@@ -295,7 +305,7 @@ spec:
       try:
         - script:
             content: |
-              ../../common/traceql_runner.sh tracesql/resource-attributes-2.yaml
+              ../../common/traceql_runner.sh tracesql/resource-attributes.yaml
       catch:
         - podLogs:
             name: odiglet
