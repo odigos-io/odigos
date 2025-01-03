@@ -4,6 +4,7 @@ import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
 	"go.opentelemetry.io/otel/attribute"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -50,6 +51,15 @@ type RuntimeDetailsByContainer struct {
 type InstrumentationConfigStatus struct {
 	// Capture Runtime Details for the workloads that this CR applies to.
 	RuntimeDetailsByContainer []RuntimeDetailsByContainer `json:"runtimeDetailsByContainer,omitempty"`
+}
+
+func (in *InstrumentationConfigStatus) GetRuntimeDetailsForContainer(container v1.Container) *RuntimeDetailsByContainer {
+	for _, runtimeDetails := range in.RuntimeDetailsByContainer {
+		if runtimeDetails.ContainerName == container.Name {
+			return &runtimeDetails
+		}
+	}
+	return nil
 }
 
 // Config for the OpenTelemeetry SDKs that should be applied to a workload.
