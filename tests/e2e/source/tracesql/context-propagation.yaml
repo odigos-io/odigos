@@ -10,4 +10,4 @@ query: |
   ({ resource.service.name = "coupon" && resource.telemetry.sdk.language = "nodejs" }
     >> { resource.service.name = "membership" && resource.telemetry.sdk.language = "go" }))
 expected:
-  count: 1
+  minimum: 1

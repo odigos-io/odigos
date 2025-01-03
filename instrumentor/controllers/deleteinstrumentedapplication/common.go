@@ -22,14 +22,18 @@ func reconcileWorkloadObject(ctx context.Context, kubeClient client.Client, work
 	}
 
 	if instEffectiveEnabled {
-		// Check if a Source object exists for this workload
-		sourceList, err := v1alpha1.GetSourceListForWorkload(ctx, kubeClient, workloadObject)
-		if err != nil {
-			return err
-		}
-		if len(sourceList.Items) == 0 {
-			return nil
-		}
+		return nil
+	}
+
+	// Check if a Source object exists for this workload
+	sourceList, err := v1alpha1.GetSourceListForWorkload(ctx, kubeClient, workloadObject)
+	if err != nil {
+		return err
+	}
+	if len(sourceList.Items) > 0 {
+		// Note that if a Source is being deleted, but still has the finalizer, it will still show up in this List
+		// So we can't use this check to trigger un-instrumentation via Source deletion
+		return nil
 	}
 
 	if err := deleteWorkloadInstrumentedApplication(ctx, kubeClient, workloadObject); err != nil {
@@ -46,11 +50,12 @@ func reconcileWorkloadObject(ctx context.Context, kubeClient client.Client, work
 }
 
 func deleteWorkloadInstrumentedApplication(ctx context.Context, kubeClient client.Client, workloadObject client.Object) error {
-
+	logger := log.FromContext(ctx)
 	ns := workloadObject.GetNamespace()
 	name := workloadObject.GetName()
 	kind := workload.WorkloadKindFromClientObject(workloadObject)
 	instrumentedApplicationName := workload.CalculateWorkloadRuntimeObjectName(name, kind)
+	logger.V(1).Info("deleting instrumented application", "name", instrumentedApplicationName, "kind", kind)
 
 	instAppErr := kubeClient.Delete(ctx, &odigosv1.InstrumentedApplication{
 		ObjectMeta: metav1.ObjectMeta{
@@ -73,7 +78,6 @@ func deleteWorkloadInstrumentedApplication(ctx context.Context, kubeClient clien
 		return client.IgnoreNotFound(instConfigErr)
 	}
 
-	logger := log.FromContext(ctx)
 	logger.V(1).Info("instrumented application deleted", "namespace", ns, "name", name, "kind", kind)
 	return nil
 }
