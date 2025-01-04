@@ -252,6 +252,7 @@ func getPodSpecFromObject(obj client.Object) (*corev1.PodTemplateSpec, error) {
 // each time a relevant resource changes, this function is called to reconcile the workload
 // and always writes the status into the InstrumentationConfig CR
 func reconcileSingleWorkload(ctx context.Context, kubeClient client.Client, instrumentationConfig *odigosv1.InstrumentationConfig, isNodeCollectorReady bool) error {
+	// RuntimeDetailsByContainer will be empty for short period until the first language detection is executed
 	if len(instrumentationConfig.Status.RuntimeDetailsByContainer) == 0 {
 		return nil
 	}

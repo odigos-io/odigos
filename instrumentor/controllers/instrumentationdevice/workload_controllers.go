@@ -47,7 +47,7 @@ func reconcileSingleInstrumentedApplicationByName(ctx context.Context, k8sClient
 	err := k8sClient.Get(ctx, types.NamespacedName{Name: instrumentedAppName, Namespace: namespace}, &instrumentationConfig)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			// if there is no instrumented application, make sure the device is removed from the workload pod template manifest
+			// if there is no instrumentation config, make sure the device is removed from the workload pod template manifest
 			workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(instrumentedAppName)
 			if err != nil {
 				return err
