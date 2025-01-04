@@ -25,13 +25,6 @@ interface ContainerRuntimeInfoAnalyze {
 }
 
 interface RuntimeInfoAnalyze {
-  generation: EntityProperty;
-  containers: ContainerRuntimeInfoAnalyze[];
-}
-
-interface InstrumentedApplicationAnalyze {
-  created: EntityProperty;
-  createTime?: EntityProperty;
   containers: ContainerRuntimeInfoAnalyze[];
 }
 
@@ -73,7 +66,6 @@ interface SourceAnalyze {
 
   instrumentationConfig: InstrumentationConfigAnalyze;
   runtimeInfo?: RuntimeInfoAnalyze;
-  instrumentedApplication: InstrumentedApplicationAnalyze;
   instrumentationDevice: InstrumentationDeviceAnalyze;
 
   totalPods: number;
