@@ -34,13 +34,6 @@ type ContainerRuntimeInfoAnalyze struct {
 }
 
 type RuntimeInfoAnalyze struct {
-	Generation properties.EntityProperty     `json:"generation"`
-	Containers []ContainerRuntimeInfoAnalyze `json:"containers"`
-}
-
-type InstrumentedApplicationAnalyze struct {
-	Created    properties.EntityProperty     `json:"created"`
-	CreateTime *properties.EntityProperty    `json:"createTime"`
 	Containers []ContainerRuntimeInfoAnalyze `json:"containers"`
 }
 
@@ -82,7 +75,6 @@ type SourceAnalyze struct {
 
 	InstrumentationConfig   InstrumentationConfigAnalyze   `json:"instrumentationConfig"`
 	RuntimeInfo             *RuntimeInfoAnalyze            `json:"runtimeInfo"`
-	InstrumentedApplication InstrumentedApplicationAnalyze `json:"instrumentedApplication"`
 	InstrumentationDevice   InstrumentationDeviceAnalyze   `json:"instrumentationDevice"`
 
 	TotalPods       int          `json:"totalPods"`
@@ -231,7 +223,7 @@ func analyzeRuntimeInfo(resources *OdigosSourceResources) *RuntimeInfoAnalyze {
 
 func analyzeInstrumentationDevice(resources *OdigosSourceResources, workloadObj *K8sSourceObject, instrumented bool) InstrumentationDeviceAnalyze {
 
-	instrumentedApplication := resources.InstrumentationConfig
+	instrumentationConfig := resources.InstrumentationConfig
 
 	appliedInstrumentationDeviceStatusMessage := "Unknown"
 	var appliedDeviceStatus properties.PropertyStatus
@@ -240,10 +232,10 @@ func analyzeInstrumentationDevice(resources *OdigosSourceResources, workloadObj 
 		appliedInstrumentationDeviceStatusMessage = "No instrumentation devices expected"
 		appliedDeviceStatus = properties.PropertyStatusSuccess
 	}
-	if instrumentedApplication != nil && instrumentedApplication.Status.Conditions != nil {
-		for _, condition := range instrumentedApplication.Status.Conditions {
+	if instrumentationConfig != nil && instrumentationConfig.Status.Conditions != nil {
+		for _, condition := range instrumentationConfig.Status.Conditions {
 			if condition.Type == "AppliedInstrumentationDevice" { // TODO: share this constant with instrumentor
-				if condition.ObservedGeneration == instrumentedApplication.GetGeneration() {
+				if condition.ObservedGeneration == instrumentationConfig.GetGeneration() {
 					appliedInstrumentationDeviceStatusMessage = condition.Message
 					if condition.Status == metav1.ConditionTrue {
 						appliedDeviceStatus = properties.PropertyStatusSuccess

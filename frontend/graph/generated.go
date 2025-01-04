@@ -256,12 +256,6 @@ type ComplexityRoot struct {
 		Workloads                func(childComplexity int) int
 	}
 
-	InstrumentedApplicationAnalyze struct {
-		Containers func(childComplexity int) int
-		CreateTime func(childComplexity int) int
-		Created    func(childComplexity int) int
-	}
-
 	InstrumentedApplicationDetails struct {
 		Conditions func(childComplexity int) int
 		Containers func(childComplexity int) int
@@ -421,7 +415,6 @@ type ComplexityRoot struct {
 
 	RuntimeInfoAnalyze struct {
 		Containers func(childComplexity int) int
-		Generation func(childComplexity int) int
 	}
 
 	SingleDestinationMetricsResponse struct {
@@ -439,17 +432,16 @@ type ComplexityRoot struct {
 	}
 
 	SourceAnalyze struct {
-		InstrumentationConfig   func(childComplexity int) int
-		InstrumentationDevice   func(childComplexity int) int
-		InstrumentedApplication func(childComplexity int) int
-		Kind                    func(childComplexity int) int
-		Labels                  func(childComplexity int) int
-		Name                    func(childComplexity int) int
-		Namespace               func(childComplexity int) int
-		Pods                    func(childComplexity int) int
-		PodsPhasesCount         func(childComplexity int) int
-		RuntimeInfo             func(childComplexity int) int
-		TotalPods               func(childComplexity int) int
+		InstrumentationConfig func(childComplexity int) int
+		InstrumentationDevice func(childComplexity int) int
+		Kind                  func(childComplexity int) int
+		Labels                func(childComplexity int) int
+		Name                  func(childComplexity int) int
+		Namespace             func(childComplexity int) int
+		Pods                  func(childComplexity int) int
+		PodsPhasesCount       func(childComplexity int) int
+		RuntimeInfo           func(childComplexity int) int
+		TotalPods             func(childComplexity int) int
 	}
 
 	SourceContainerRuntimeDetails struct {
@@ -1379,27 +1371,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InstrumentationRule.Workloads(childComplexity), true
 
-	case "InstrumentedApplicationAnalyze.containers":
-		if e.complexity.InstrumentedApplicationAnalyze.Containers == nil {
-			break
-		}
-
-		return e.complexity.InstrumentedApplicationAnalyze.Containers(childComplexity), true
-
-	case "InstrumentedApplicationAnalyze.createTime":
-		if e.complexity.InstrumentedApplicationAnalyze.CreateTime == nil {
-			break
-		}
-
-		return e.complexity.InstrumentedApplicationAnalyze.CreateTime(childComplexity), true
-
-	case "InstrumentedApplicationAnalyze.created":
-		if e.complexity.InstrumentedApplicationAnalyze.Created == nil {
-			break
-		}
-
-		return e.complexity.InstrumentedApplicationAnalyze.Created(childComplexity), true
-
 	case "InstrumentedApplicationDetails.conditions":
 		if e.complexity.InstrumentedApplicationDetails.Conditions == nil {
 			break
@@ -2187,13 +2158,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RuntimeInfoAnalyze.Containers(childComplexity), true
 
-	case "RuntimeInfoAnalyze.generation":
-		if e.complexity.RuntimeInfoAnalyze.Generation == nil {
-			break
-		}
-
-		return e.complexity.RuntimeInfoAnalyze.Generation(childComplexity), true
-
 	case "SingleDestinationMetricsResponse.id":
 		if e.complexity.SingleDestinationMetricsResponse.ID == nil {
 			break
@@ -2263,13 +2227,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.SourceAnalyze.InstrumentationDevice(childComplexity), true
-
-	case "SourceAnalyze.instrumentedApplication":
-		if e.complexity.SourceAnalyze.InstrumentedApplication == nil {
-			break
-		}
-
-		return e.complexity.SourceAnalyze.InstrumentedApplication(childComplexity), true
 
 	case "SourceAnalyze.kind":
 		if e.complexity.SourceAnalyze.Kind == nil {
@@ -8586,165 +8543,6 @@ func (ec *executionContext) fieldContext_InstrumentationRule_payloadCollection(_
 	return fc, nil
 }
 
-func (ec *executionContext) _InstrumentedApplicationAnalyze_created(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentedApplicationAnalyze) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_InstrumentedApplicationAnalyze_created(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Created, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.EntityProperty)
-	fc.Result = res
-	return ec.marshalNEntityProperty2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐEntityProperty(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_InstrumentedApplicationAnalyze_created(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "InstrumentedApplicationAnalyze",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "name":
-				return ec.fieldContext_EntityProperty_name(ctx, field)
-			case "value":
-				return ec.fieldContext_EntityProperty_value(ctx, field)
-			case "status":
-				return ec.fieldContext_EntityProperty_status(ctx, field)
-			case "explain":
-				return ec.fieldContext_EntityProperty_explain(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type EntityProperty", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _InstrumentedApplicationAnalyze_createTime(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentedApplicationAnalyze) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_InstrumentedApplicationAnalyze_createTime(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CreateTime, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.EntityProperty)
-	fc.Result = res
-	return ec.marshalOEntityProperty2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐEntityProperty(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_InstrumentedApplicationAnalyze_createTime(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "InstrumentedApplicationAnalyze",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "name":
-				return ec.fieldContext_EntityProperty_name(ctx, field)
-			case "value":
-				return ec.fieldContext_EntityProperty_value(ctx, field)
-			case "status":
-				return ec.fieldContext_EntityProperty_status(ctx, field)
-			case "explain":
-				return ec.fieldContext_EntityProperty_explain(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type EntityProperty", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _InstrumentedApplicationAnalyze_containers(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentedApplicationAnalyze) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_InstrumentedApplicationAnalyze_containers(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Containers, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*model.ContainerRuntimeInfoAnalyze)
-	fc.Result = res
-	return ec.marshalNContainerRuntimeInfoAnalyze2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐContainerRuntimeInfoAnalyzeᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_InstrumentedApplicationAnalyze_containers(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "InstrumentedApplicationAnalyze",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "containerName":
-				return ec.fieldContext_ContainerRuntimeInfoAnalyze_containerName(ctx, field)
-			case "language":
-				return ec.fieldContext_ContainerRuntimeInfoAnalyze_language(ctx, field)
-			case "runtimeVersion":
-				return ec.fieldContext_ContainerRuntimeInfoAnalyze_runtimeVersion(ctx, field)
-			case "envVars":
-				return ec.fieldContext_ContainerRuntimeInfoAnalyze_envVars(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type ContainerRuntimeInfoAnalyze", field.Name)
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _InstrumentedApplicationDetails_containers(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentedApplicationDetails) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InstrumentedApplicationDetails_containers(ctx, field)
 	if err != nil {
@@ -13374,8 +13172,6 @@ func (ec *executionContext) fieldContext_Query_describeSource(ctx context.Contex
 				return ec.fieldContext_SourceAnalyze_instrumentationConfig(ctx, field)
 			case "runtimeInfo":
 				return ec.fieldContext_SourceAnalyze_runtimeInfo(ctx, field)
-			case "instrumentedApplication":
-				return ec.fieldContext_SourceAnalyze_instrumentedApplication(ctx, field)
 			case "instrumentationDevice":
 				return ec.fieldContext_SourceAnalyze_instrumentationDevice(ctx, field)
 			case "totalPods":
@@ -13828,60 +13624,6 @@ func (ec *executionContext) fieldContext_RenameAttributeAction_details(_ context
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _RuntimeInfoAnalyze_generation(ctx context.Context, field graphql.CollectedField, obj *model.RuntimeInfoAnalyze) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_RuntimeInfoAnalyze_generation(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Generation, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.EntityProperty)
-	fc.Result = res
-	return ec.marshalNEntityProperty2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐEntityProperty(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_RuntimeInfoAnalyze_generation(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "RuntimeInfoAnalyze",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "name":
-				return ec.fieldContext_EntityProperty_name(ctx, field)
-			case "value":
-				return ec.fieldContext_EntityProperty_value(ctx, field)
-			case "status":
-				return ec.fieldContext_EntityProperty_status(ctx, field)
-			case "explain":
-				return ec.fieldContext_EntityProperty_explain(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type EntityProperty", field.Name)
 		},
 	}
 	return fc, nil
@@ -14595,64 +14337,10 @@ func (ec *executionContext) fieldContext_SourceAnalyze_runtimeInfo(_ context.Con
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "generation":
-				return ec.fieldContext_RuntimeInfoAnalyze_generation(ctx, field)
 			case "containers":
 				return ec.fieldContext_RuntimeInfoAnalyze_containers(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type RuntimeInfoAnalyze", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _SourceAnalyze_instrumentedApplication(ctx context.Context, field graphql.CollectedField, obj *model.SourceAnalyze) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_SourceAnalyze_instrumentedApplication(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.InstrumentedApplication, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.InstrumentedApplicationAnalyze)
-	fc.Result = res
-	return ec.marshalNInstrumentedApplicationAnalyze2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentedApplicationAnalyze(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_SourceAnalyze_instrumentedApplication(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "SourceAnalyze",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "created":
-				return ec.fieldContext_InstrumentedApplicationAnalyze_created(ctx, field)
-			case "createTime":
-				return ec.fieldContext_InstrumentedApplicationAnalyze_createTime(ctx, field)
-			case "containers":
-				return ec.fieldContext_InstrumentedApplicationAnalyze_containers(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type InstrumentedApplicationAnalyze", field.Name)
 		},
 	}
 	return fc, nil
@@ -19674,52 +19362,6 @@ func (ec *executionContext) _InstrumentationRule(ctx context.Context, sel ast.Se
 	return out
 }
 
-var instrumentedApplicationAnalyzeImplementors = []string{"InstrumentedApplicationAnalyze"}
-
-func (ec *executionContext) _InstrumentedApplicationAnalyze(ctx context.Context, sel ast.SelectionSet, obj *model.InstrumentedApplicationAnalyze) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, instrumentedApplicationAnalyzeImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("InstrumentedApplicationAnalyze")
-		case "created":
-			out.Values[i] = ec._InstrumentedApplicationAnalyze_created(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "createTime":
-			out.Values[i] = ec._InstrumentedApplicationAnalyze_createTime(ctx, field, obj)
-		case "containers":
-			out.Values[i] = ec._InstrumentedApplicationAnalyze_containers(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
 var instrumentedApplicationDetailsImplementors = []string{"InstrumentedApplicationDetails"}
 
 func (ec *executionContext) _InstrumentedApplicationDetails(ctx context.Context, sel ast.SelectionSet, obj *model.InstrumentedApplicationDetails) graphql.Marshaler {
@@ -20995,11 +20637,6 @@ func (ec *executionContext) _RuntimeInfoAnalyze(ctx context.Context, sel ast.Sel
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("RuntimeInfoAnalyze")
-		case "generation":
-			out.Values[i] = ec._RuntimeInfoAnalyze_generation(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "containers":
 			out.Values[i] = ec._RuntimeInfoAnalyze_containers(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -21174,11 +20811,6 @@ func (ec *executionContext) _SourceAnalyze(ctx context.Context, sel ast.Selectio
 			}
 		case "runtimeInfo":
 			out.Values[i] = ec._SourceAnalyze_runtimeInfo(ctx, field, obj)
-		case "instrumentedApplication":
-			out.Values[i] = ec._SourceAnalyze_instrumentedApplication(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "instrumentationDevice":
 			out.Values[i] = ec._SourceAnalyze_instrumentationDevice(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -22521,16 +22153,6 @@ func (ec *executionContext) marshalNInstrumentationRule2ᚖgithubᚗcomᚋodigos
 func (ec *executionContext) unmarshalNInstrumentationRuleInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationRuleInput(ctx context.Context, v interface{}) (model.InstrumentationRuleInput, error) {
 	res, err := ec.unmarshalInputInstrumentationRuleInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNInstrumentedApplicationAnalyze2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentedApplicationAnalyze(ctx context.Context, sel ast.SelectionSet, v *model.InstrumentedApplicationAnalyze) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._InstrumentedApplicationAnalyze(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {

@@ -465,13 +465,6 @@ type ContainerRuntimeInfoAnalyze {
 }
 
 type RuntimeInfoAnalyze {
-  generation: EntityProperty!
-  containers: [ContainerRuntimeInfoAnalyze!]!
-}
-
-type InstrumentedApplicationAnalyze {
-  created: EntityProperty!
-  createTime: EntityProperty
   containers: [ContainerRuntimeInfoAnalyze!]!
 }
 
@@ -513,7 +506,6 @@ type SourceAnalyze {
 
   instrumentationConfig: InstrumentationConfigAnalyze!
   runtimeInfo: RuntimeInfoAnalyze
-  instrumentedApplication: InstrumentedApplicationAnalyze!
   instrumentationDevice: InstrumentationDeviceAnalyze!
 
   totalPods: Int!
