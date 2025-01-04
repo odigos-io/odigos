@@ -17,12 +17,11 @@ import (
 
 type ProcessorReconciler struct {
 	client.Client
-	Scheme               *runtime.Scheme
-	ImagePullSecrets     []string
-	OdigosVersion        string
-	K8sVersion           *version.Version
-	DisableNameProcessor bool
-	Config               *controllerconfig.ControllerConfig
+	Scheme           *runtime.Scheme
+	ImagePullSecrets []string
+	OdigosVersion    string
+	K8sVersion       *version.Version
+	Config           *controllerconfig.ControllerConfig
 }
 
 func (r *ProcessorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -35,7 +34,7 @@ func (r *ProcessorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
-	err = datacollection.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion, r.K8sVersion, r.DisableNameProcessor)
+	err = datacollection.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion, r.K8sVersion)
 	if err != nil {
 		return ctrl.Result{}, err
 	}

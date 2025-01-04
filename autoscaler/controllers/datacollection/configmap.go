@@ -30,7 +30,7 @@ import (
 
 func SyncConfigMap(sources *odigosv1.InstrumentationConfigList, dests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList,
 	datacollection *odigosv1.CollectorsGroup, ctx context.Context,
-	c client.Client, scheme *runtime.Scheme, disableNameProcessor bool) error {
+	c client.Client, scheme *runtime.Scheme) error {
 	logger := log.FromContext(ctx)
 
 	processors := commonconf.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleNodeCollector)
@@ -39,7 +39,7 @@ func SyncConfigMap(sources *odigosv1.InstrumentationConfigList, dests *odigosv1.
 	SamplingExists := commonconf.FindFirstProcessorByType(allProcessors, "odigossampling")
 	setTracesLoadBalancer := SamplingExists != nil
 
-	desired, err := getDesiredConfigMap(sources, dests, processors, datacollection, scheme, setTracesLoadBalancer, disableNameProcessor)
+	desired, err := getDesiredConfigMap(sources, dests, processors, datacollection, scheme, setTracesLoadBalancer)
 	if err != nil {
 		logger.Error(err, "failed to get desired config map")
 		return err
@@ -97,8 +97,8 @@ func createConfigMap(desired *v1.ConfigMap, ctx context.Context, c client.Client
 }
 
 func getDesiredConfigMap(sources *odigosv1.InstrumentationConfigList, dests *odigosv1.DestinationList, processors []*odigosv1.Processor,
-	datacollection *odigosv1.CollectorsGroup, scheme *runtime.Scheme, setTracesLoadBalancer bool, disableNameProcessor bool) (*v1.ConfigMap, error) {
-	cmData, err := calculateConfigMapData(datacollection, sources, dests, processors, setTracesLoadBalancer, disableNameProcessor)
+	datacollection *odigosv1.CollectorsGroup, scheme *runtime.Scheme, setTracesLoadBalancer bool) (*v1.ConfigMap, error) {
+	cmData, err := calculateConfigMapData(datacollection, sources, dests, processors, setTracesLoadBalancer)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func getDesiredConfigMap(sources *odigosv1.InstrumentationConfigList, dests *odi
 }
 
 func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.InstrumentationConfigList, dests *odigosv1.DestinationList, processors []*odigosv1.Processor,
-	setTracesLoadBalancer bool, disableNameProcessor bool) (string, error) {
+	setTracesLoadBalancer bool) (string, error) {
 
 	ownMetricsPort := nodeCG.Spec.CollectorOwnMetricsPort
 
@@ -136,12 +136,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 		log.Log.V(0).Error(err, "processor", name)
 	}
 
-	if !disableNameProcessor {
-		processorsCfg["odigosresourcename"] = empty
-	}
-
 	memoryLimiterConfiguration := common.GetMemoryLimiterConfig(nodeCG.Spec.ResourcesSettings)
-
 	processorsCfg["batch"] = empty
 	processorsCfg["memory_limiter"] = memoryLimiterConfiguration
 	processorsCfg["resource"] = config.GenericMap{
@@ -282,7 +277,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 		}
 	}
 
-	commonProcessors := getCommonProcessors(disableNameProcessor)
+	commonProcessors := getCommonProcessors()
 
 	if collectLogs {
 		includes := make([]string, 0)
@@ -407,17 +402,18 @@ func getSignalsFromOtelcolConfig(otelcolConfigContent string) ([]odigoscommon.Ob
 	return signals, nil
 }
 
-func getCommonProcessors(disableNameProcessor bool) []string {
+func getCommonProcessors() []string {
 	// memory limiter is placed right after batch processor an not the first processor in pipeline
 	// this is so that instrumented application always succeeds in sending data to the collector
 	// (on it being added to a batch) and checking the memory limit later after the batch
 	// where memory rejection would drop the data instead of backpressuring the application.
 	// Read more about it here: https://github.com/open-telemetry/opentelemetry-collector/issues/11726
 	// Also related: https://github.com/open-telemetry/opentelemetry-collector/issues/9591
-	processors := []string{"batch", "memory_limiter"}
-	if !disableNameProcessor {
-		processors = append(processors, "odigosresourcename")
+	return []string{
+		"batch",
+		"memory_limiter",
+		"resource",
+		"resourcedetection",
+		"odigostrafficmetrics",
 	}
-	processors = append(processors, "resource", "resourcedetection", "odigostrafficmetrics")
-	return processors
 }
