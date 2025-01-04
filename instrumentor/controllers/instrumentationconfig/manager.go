@@ -21,12 +21,11 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
-	// Watch InstrumentedApplication
 	err = builder.
 		ControllerManagedBy(mgr).
-		Named("instrumentor-instrumentationconfig-instrumentedapplication").
-		For(&odigosv1alpha1.InstrumentedApplication{}).
-		Complete(&InstrumentedApplicationReconciler{
+		Named("instrumentor-instrumentationconfig-instrumentationconfig").
+		For(&odigosv1alpha1.InstrumentationConfig{}).
+		Complete(&InstrumentationConfigReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
 		})
