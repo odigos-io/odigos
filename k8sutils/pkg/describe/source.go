@@ -30,36 +30,15 @@ func printInstrumentationConfigInfo(analyze *source.SourceAnalyze, sb *strings.B
 }
 
 func printRuntimeDetails(analyze *source.SourceAnalyze, sb *strings.Builder) {
-	describeText(sb, 0, "\nRuntime Inspection Details (new):")
+	describeText(sb, 0, "\nRuntime Inspection Details:")
 
 	if analyze.RuntimeInfo == nil {
 		describeText(sb, 1, "No runtime details")
 		return
 	}
 
-	printProperty(sb, 1, &analyze.RuntimeInfo.Generation)
 	describeText(sb, 1, "Detected Containers:")
 	for _, container := range analyze.RuntimeInfo.Containers {
-		printProperty(sb, 2, &container.ContainerName)
-		printProperty(sb, 3, &container.Language)
-		printProperty(sb, 3, &container.RuntimeVersion)
-		if len(container.EnvVars) > 0 {
-			describeText(sb, 3, "Relevant Environment Variables:")
-			for _, envVar := range container.EnvVars {
-				describeText(sb, 4, fmt.Sprintf("%s: %s", envVar.Name, envVar.Value))
-			}
-		}
-	}
-}
-
-func printInstrumentedApplicationInfo(analyze *source.SourceAnalyze, sb *strings.Builder) {
-
-	describeText(sb, 0, "\nRuntime Inspection Details (old):")
-	printProperty(sb, 1, &analyze.InstrumentedApplication.Created)
-	printProperty(sb, 1, analyze.InstrumentedApplication.CreateTime)
-
-	describeText(sb, 1, "Detected Containers:")
-	for _, container := range analyze.InstrumentedApplication.Containers {
 		printProperty(sb, 2, &container.ContainerName)
 		printProperty(sb, 3, &container.Language)
 		printProperty(sb, 3, &container.RuntimeVersion)
@@ -124,7 +103,6 @@ func DescribeSourceToText(analyze *source.SourceAnalyze) string {
 	printWorkloadManifestInfo(analyze, &sb)
 	printInstrumentationConfigInfo(analyze, &sb)
 	printRuntimeDetails(analyze, &sb)
-	printInstrumentedApplicationInfo(analyze, &sb)
 	printAppliedInstrumentationDeviceInfo(analyze, &sb)
 	printPodsInfo(analyze, &sb)
 

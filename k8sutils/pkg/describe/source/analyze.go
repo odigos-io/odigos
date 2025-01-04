@@ -34,13 +34,6 @@ type ContainerRuntimeInfoAnalyze struct {
 }
 
 type RuntimeInfoAnalyze struct {
-	Generation properties.EntityProperty     `json:"generation"`
-	Containers []ContainerRuntimeInfoAnalyze `json:"containers"`
-}
-
-type InstrumentedApplicationAnalyze struct {
-	Created    properties.EntityProperty     `json:"created"`
-	CreateTime *properties.EntityProperty    `json:"createTime"`
 	Containers []ContainerRuntimeInfoAnalyze `json:"containers"`
 }
 
@@ -82,7 +75,6 @@ type SourceAnalyze struct {
 
 	InstrumentationConfig   InstrumentationConfigAnalyze   `json:"instrumentationConfig"`
 	RuntimeInfo             *RuntimeInfoAnalyze            `json:"runtimeInfo"`
-	InstrumentedApplication InstrumentedApplicationAnalyze `json:"instrumentedApplication"`
 	InstrumentationDevice   InstrumentationDeviceAnalyze   `json:"instrumentationDevice"`
 
 	TotalPods       int          `json:"totalPods"`
@@ -229,40 +221,9 @@ func analyzeRuntimeInfo(resources *OdigosSourceResources) *RuntimeInfoAnalyze {
 	}
 }
 
-func analyzeInstrumentedApplication(resources *OdigosSourceResources) InstrumentedApplicationAnalyze {
-	instrumentedApplicationCreated := resources.InstrumentedApplication != nil
-
-	created := properties.EntityProperty{
-		Name:    "Created",
-		Value:   properties.GetTextCreated(instrumentedApplicationCreated),
-		Status:  properties.GetSuccessOrTransitioning(instrumentedApplicationCreated),
-		Explain: "whether the instrumented application object exists in the cluster. When a workload is labeled for instrumentation, an instrumented application object is created",
-	}
-
-	var createdTime *properties.EntityProperty
-	if instrumentedApplicationCreated {
-		createdTime = &properties.EntityProperty{
-			Name:    "create time",
-			Value:   resources.InstrumentedApplication.GetCreationTimestamp().String(),
-			Explain: "the time when the instrumented application object was created",
-		}
-	}
-
-	containers := make([]ContainerRuntimeInfoAnalyze, 0)
-	if resources.InstrumentedApplication != nil {
-		containers = analyzeRuntimeDetails(resources.InstrumentedApplication.Spec.RuntimeDetails)
-	}
-
-	return InstrumentedApplicationAnalyze{
-		Created:    created,
-		CreateTime: createdTime,
-		Containers: containers,
-	}
-}
-
 func analyzeInstrumentationDevice(resources *OdigosSourceResources, workloadObj *K8sSourceObject, instrumented bool) InstrumentationDeviceAnalyze {
 
-	instrumentedApplication := resources.InstrumentedApplication
+	instrumentationConfig := resources.InstrumentationConfig
 
 	appliedInstrumentationDeviceStatusMessage := "Unknown"
 	var appliedDeviceStatus properties.PropertyStatus
@@ -271,10 +232,10 @@ func analyzeInstrumentationDevice(resources *OdigosSourceResources, workloadObj 
 		appliedInstrumentationDeviceStatusMessage = "No instrumentation devices expected"
 		appliedDeviceStatus = properties.PropertyStatusSuccess
 	}
-	if instrumentedApplication != nil && instrumentedApplication.Status.Conditions != nil {
-		for _, condition := range instrumentedApplication.Status.Conditions {
+	if instrumentationConfig != nil && instrumentationConfig.Status.Conditions != nil {
+		for _, condition := range instrumentationConfig.Status.Conditions {
 			if condition.Type == "AppliedInstrumentationDevice" { // TODO: share this constant with instrumentor
-				if condition.ObservedGeneration == instrumentedApplication.GetGeneration() {
+				if condition.ObservedGeneration == instrumentationConfig.GetGeneration() {
 					appliedInstrumentationDeviceStatusMessage = condition.Message
 					if condition.Status == metav1.ConditionTrue {
 						appliedDeviceStatus = properties.PropertyStatusSuccess
@@ -522,7 +483,6 @@ func AnalyzeSource(resources *OdigosSourceResources, workloadObj *K8sSourceObjec
 	labelsAnalysis, instrumented := analyzeInstrumentationLabels(resources, workloadObj)
 	icAnalysis := analyzeInstrumentationConfig(resources, instrumented)
 	runtimeAnalysis := analyzeRuntimeInfo(resources)
-	instrumentedApplication := analyzeInstrumentedApplication(resources)
 	device := analyzeInstrumentationDevice(resources, workloadObj, instrumented)
 	pods, podsText := analyzePods(resources, device)
 
@@ -534,7 +494,6 @@ func AnalyzeSource(resources *OdigosSourceResources, workloadObj *K8sSourceObjec
 
 		InstrumentationConfig:   icAnalysis,
 		RuntimeInfo:             runtimeAnalysis,
-		InstrumentedApplication: instrumentedApplication,
 		InstrumentationDevice:   device,
 
 		TotalPods:       len(pods),

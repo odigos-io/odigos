@@ -20,7 +20,7 @@ type InstrumentationRuleReconciler struct {
 
 func (r *InstrumentationRuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 
-	var instApps odigosv1.InstrumentedApplicationList
+	var instApps odigosv1.InstrumentationConfigList
 	if err := r.List(ctx, &instApps); err != nil {
 		return ctrl.Result{}, err
 	}
