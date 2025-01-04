@@ -138,8 +138,8 @@ func TestModifyEnvVars(t *testing.T) {
 				"VAR2": {ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}}, Action: Upsert},
 			},
 			expected: []corev1.EnvVar{
-				{Name: "VAR1", Value: "value1"},
 				{Name: "VAR2", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}}},
+				{Name: "VAR1", Value: "value1"},
 			},
 		},
 		{

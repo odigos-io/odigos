@@ -1,6 +1,8 @@
 package webhook
 
-import corev1 "k8s.io/api/core/v1"
+import (
+	corev1 "k8s.io/api/core/v1"
+)
 
 type modificationFunc func(origVal string, newVal string) string
 
@@ -36,7 +38,8 @@ func (p *PodsWebhook) modifyEnvVars(original []corev1.EnvVar, modifications map[
 	for _, envVar := range original {
 		if modification, ok := modifications[envVar.Name]; ok {
 			if modification.ValueFrom != nil {
-				result = append(result, corev1.EnvVar{Name: envVar.Name, ValueFrom: modification.ValueFrom})
+				// modifications of ValueFrom are placed at the start of the list so they are available for substitution
+				result = append([]corev1.EnvVar{{Name: envVar.Name, ValueFrom: modification.ValueFrom}}, result...)
 			} else {
 				val := modification.Value
 				if modification.Action != nil {
@@ -54,7 +57,7 @@ func (p *PodsWebhook) modifyEnvVars(original []corev1.EnvVar, modifications map[
 	for k := range remainingModifications {
 		details := modifications[k]
 		if details.ValueFrom != nil {
-			result = append(result, corev1.EnvVar{Name: k, ValueFrom: details.ValueFrom})
+			result = append([]corev1.EnvVar{{Name: k, ValueFrom: details.ValueFrom}}, result...)
 		} else {
 			result = append(result, corev1.EnvVar{Name: k, Value: details.Value})
 		}

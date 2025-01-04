@@ -144,14 +144,64 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 
 	processorsCfg["batch"] = empty
 	processorsCfg["memory_limiter"] = memoryLimiterConfiguration
-	processorsCfg["resource"] = config.GenericMap{
+	processorsCfg["resource/node-name"] = config.GenericMap{
 		"attributes": []config.GenericMap{{
 			"key":    "k8s.node.name",
 			"value":  "${NODE_NAME}",
 			"action": "upsert",
 		}},
 	}
+
+	// This processor is needed because some vanilla OTel instrumentations (Java, Python) emits wrong container.id
+	// TODO(edenfed): configure instrumentations to not emit container.id (disable container resource provider)
+	processorsCfg["resource/remove-container-id"] = config.GenericMap{
+		"attributes": []config.GenericMap{{
+			"key":    "container.id",
+			"action": "delete",
+		}},
+	}
+
+	// Adds k8s / container attributes to the resource - this is important for correlation of traces with metrics
+	processorsCfg["k8sattributes"] = config.GenericMap{
+		"auth_type":   "serviceAccount",
+		"passthrough": false,
+		"filter": config.GenericMap{
+			"node_from_env_var": "NODE_NAME",
+		},
+		"extract": config.GenericMap{
+			"metadata": []string{
+				"k8s.deployment.name",
+				"k8s.statefulset.name",
+				"k8s.daemonset.name",
+				"k8s.cronjob.name",
+				"k8s.job.name",
+				"k8s.cluster.uid",
+				"k8s.node.name",
+				"container.id",
+				"container.image.name",
+				"container.image.tag",
+			},
+		},
+		"pod_association": []config.GenericMap{
+			{
+				"sources": []config.GenericMap{
+					{
+						"from": "resource_attribute",
+						"name": "k8s.pod.name",
+					},
+					{
+						"from": "resource_attribute",
+						"name": "k8s.namespace.name",
+					},
+				},
+			},
+		},
+	}
+
+	// Add cloud provider specific resource attributes
 	processorsCfg["resourcedetection"] = config.GenericMap{"detectors": []string{"ec2", "gcp", "azure"}}
+
+	// Calculate traffic metrics for visibility in the UI
 	processorsCfg["odigostrafficmetrics"] = config.GenericMap{
 		// adding the following resource attributes to the metrics allows to aggregate the metrics by source.
 		"res_attributes_keys": []string{
@@ -329,9 +379,12 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 	}
 
 	if collectTraces {
+		procs := append(commonProcessors, tracesProcessors...)
+		// Special handling for traces: remove wrong container.id and add more k8s attributes
+		procs = append(procs, "resource/remove-container-id", "k8sattributes")
 		cfg.Service.Pipelines["traces"] = config.Pipeline{
 			Receivers:  []string{"otlp"},
-			Processors: append(commonProcessors, tracesProcessors...),
+			Processors: procs,
 			Exporters:  tracesPipelineExporter,
 		}
 	}
@@ -455,6 +508,6 @@ func getCommonProcessors(disableNameProcessor bool) []string {
 	if !disableNameProcessor {
 		processors = append(processors, "odigosresourcename")
 	}
-	processors = append(processors, "resource", "resourcedetection", "odigostrafficmetrics")
+	processors = append(processors, "resource/node-name", "resourcedetection", "odigostrafficmetrics")
 	return processors
 }

@@ -8,16 +8,20 @@ rules:
     resources:
       - nodes/stats
       - nodes/proxy
+      - nodes
     verbs:
       - get
       - list
+      - watch
   - apiGroups:
       - ''
     resources:
       - pods
+      - namespaces
     verbs:
       - get
       - list
+      - watch
   - apiGroups:
       - apps
     resources:
@@ -28,6 +32,7 @@ rules:
     verbs:
       - get
       - list
+      - watch
   - apiGroups:
       - ''
     resources:
