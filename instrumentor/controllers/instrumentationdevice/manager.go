@@ -104,7 +104,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("instrumentationdevice-instrumentationconfig").
 		For(&odigosv1.InstrumentationConfig{}).
-		// The following events are relevant to the device from the instrumentation config:
+		// The following events are relevant to the device injection/removal from the instrumentation config:
 		// 1. When the runtime details are changed
 		// 2. When the instrumentation config is deleted
 		WithEventFilter(predicate.Or(&instrumentorpredicate.RuntimeDetailsChangedPredicate{}, &odigospredicate.DeletionPredicate{})).
