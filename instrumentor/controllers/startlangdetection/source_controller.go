@@ -3,6 +3,7 @@ package startlangdetection
 import (
 	"context"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -61,23 +62,28 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	} else {
 		// Source is being deleted
 		if controllerutil.ContainsFinalizer(source, consts.SourceFinalizer) {
-			// Remove the finalizer first, because if the InstrumentationConfig is not found we
-			// will deadlock on the finalizer never getting removed.
-			// On the other hand, this could end up deleting a Source with an orphaned InstrumentationConfig.
+
+			instConfig := &v1alpha1.InstrumentationConfig{}
+			err = r.Client.Get(ctx, types.NamespacedName{Name: instConfigName, Namespace: req.Namespace}, instConfig)
+			if err != nil {
+				if !apierrors.IsNotFound(err) {
+					// report any real error so the controller can retry
+					return ctrl.Result{}, err
+				} // else, no need to delete the InstrumentationConfig, just continue to remove the finalizer
+			} else {
+				err = r.Client.Delete(ctx, instConfig)
+				if err != nil {
+					// report any real error so the controller can retry
+					return ctrl.Result{}, err
+				}
+			}
+
 			controllerutil.RemoveFinalizer(source, consts.SourceFinalizer)
 			if err := r.Update(ctx, source); err != nil {
 				return ctrl.Result{}, err
 			}
 
-			instConfig := &v1alpha1.InstrumentationConfig{}
-			err = r.Client.Get(ctx, types.NamespacedName{Name: instConfigName, Namespace: req.Namespace}, instConfig)
-			if err != nil {
-				return ctrl.Result{}, client.IgnoreNotFound(err)
-			}
-			err = r.Client.Delete(ctx, instConfig)
-			if err != nil {
-				return ctrl.Result{}, client.IgnoreNotFound(err)
-			}
+			return ctrl.Result{}, nil
 		}
 	}
 
