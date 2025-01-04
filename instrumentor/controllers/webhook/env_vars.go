@@ -19,8 +19,9 @@ var (
 )
 
 type envVarModification struct {
-	Value  string
-	Action modificationFunc
+	Value     string
+	ValueFrom *corev1.EnvVarSource
+	Action    modificationFunc
 }
 
 // modifyEnvVars modifies the environment variables of a container based on the modifications map.
@@ -34,12 +35,16 @@ func (p *PodsWebhook) modifyEnvVars(original []corev1.EnvVar, modifications map[
 	var result []corev1.EnvVar
 	for _, envVar := range original {
 		if modification, ok := modifications[envVar.Name]; ok {
-			val := modification.Value
-			if modification.Action != nil {
-				val = modification.Action(envVar.Value, modification.Value)
-			}
+			if modification.ValueFrom != nil {
+				result = append(result, corev1.EnvVar{Name: envVar.Name, ValueFrom: modification.ValueFrom})
+			} else {
+				val := modification.Value
+				if modification.Action != nil {
+					val = modification.Action(envVar.Value, modification.Value)
+				}
 
-			result = append(result, corev1.EnvVar{Name: envVar.Name, Value: val})
+				result = append(result, corev1.EnvVar{Name: envVar.Name, Value: val})
+			}
 			delete(remainingModifications, envVar.Name)
 		} else {
 			result = append(result, envVar)
@@ -48,7 +53,11 @@ func (p *PodsWebhook) modifyEnvVars(original []corev1.EnvVar, modifications map[
 
 	for k := range remainingModifications {
 		details := modifications[k]
-		result = append(result, corev1.EnvVar{Name: k, Value: details.Value})
+		if details.ValueFrom != nil {
+			result = append(result, corev1.EnvVar{Name: k, ValueFrom: details.ValueFrom})
+		} else {
+			result = append(result, corev1.EnvVar{Name: k, Value: details.Value})
+		}
 	}
 
 	return result

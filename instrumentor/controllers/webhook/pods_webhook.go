@@ -71,13 +71,17 @@ func (p *PodsWebhook) getServiceNameForEnv(ctx context.Context, pod *corev1.Pod)
 func (p *PodsWebhook) injectOdigosEnvVars(pod *corev1.Pod, podWorkload *workload.PodWorkload, serviceName *string) {
 	for i := range pod.Spec.Containers {
 		container := &pod.Spec.Containers[i]
+
+		// Pod name is not available yet in webhook so use downward API to get it
+		podName := fmt.Sprintf("$(%s)", k8sconsts.OdigosEnvVarPodName)
+
 		identifier := &resourceattributes.ContainerIdentifier{
-			PodName:       pod.Name,
+			PodName:       podName,
 			Namespace:     pod.Namespace,
 			ContainerName: container.Name,
 		}
 
-		// Add container identifier as seperate env vars:
+		// Add container identifier as separate env vars:
 		// This is used by process discovery to identify the container
 		// Also, used by OpAMP clients to send it back to the server on the first heartbeat
 		// TODO(edenfed): these values will be duplicated between the resource attributes and the env vars
@@ -88,7 +92,11 @@ func (p *PodsWebhook) injectOdigosEnvVars(pod *corev1.Pod, podWorkload *workload
 				Action: Upsert,
 			},
 			k8sconsts.OdigosEnvVarPodName: {
-				Value:  identifier.PodName,
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: &corev1.ObjectFieldSelector{
+						FieldPath: "metadata.name",
+					},
+				},
 				Action: Upsert,
 			},
 			k8sconsts.OdigosEnvVarContainerName: {
