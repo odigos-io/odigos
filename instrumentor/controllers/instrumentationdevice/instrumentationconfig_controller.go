@@ -63,6 +63,8 @@ func (i runtimeDetailsChangedPredicate) Update(e event.UpdateEvent) bool {
 		return false
 	}
 
+	// currently, we only check the lengths of the runtime details
+	// we should improve this once we support updating the runtime details more than once
 	if len(oldIc.Status.RuntimeDetailsByContainer) != len(newIc.Status.RuntimeDetailsByContainer) {
 		return true
 	}
@@ -71,7 +73,8 @@ func (i runtimeDetailsChangedPredicate) Update(e event.UpdateEvent) bool {
 }
 
 func (i runtimeDetailsChangedPredicate) Delete(e event.DeleteEvent) bool {
-	return false
+	// when the instrumentation config is deleted we need to clean up the device
+	return true
 }
 
 func (i runtimeDetailsChangedPredicate) Generic(e event.GenericEvent) bool {
@@ -91,7 +94,7 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 			return ctrl.Result{}, err
 		}
 
-		// runtime details deleted: remove instrumentation from resource requests
+		// instrumentation config deleted: remove instrumentation from resource requests
 		workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(req.Name)
 		if err != nil {
 			logger.Error(err, "error parsing workload info from runtime object name")
