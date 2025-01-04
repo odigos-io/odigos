@@ -36,9 +36,9 @@ type InstrumentationConfigReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-type RuntimeDetailsChangedPredicate struct{}
+type runtimeDetailsChangedPredicate struct{}
 
-func (o RuntimeDetailsChangedPredicate) Create(e event.CreateEvent) bool {
+func (o runtimeDetailsChangedPredicate) Create(e event.CreateEvent) bool {
 	if e.Object == nil {
 		return false
 	}
@@ -51,7 +51,7 @@ func (o RuntimeDetailsChangedPredicate) Create(e event.CreateEvent) bool {
 	return len(ic.Status.RuntimeDetailsByContainer) > 0
 }
 
-func (i RuntimeDetailsChangedPredicate) Update(e event.UpdateEvent) bool {
+func (i runtimeDetailsChangedPredicate) Update(e event.UpdateEvent) bool {
 	if e.ObjectOld == nil || e.ObjectNew == nil {
 		return false
 	}
@@ -70,15 +70,15 @@ func (i RuntimeDetailsChangedPredicate) Update(e event.UpdateEvent) bool {
 	return false
 }
 
-func (i RuntimeDetailsChangedPredicate) Delete(e event.DeleteEvent) bool {
+func (i runtimeDetailsChangedPredicate) Delete(e event.DeleteEvent) bool {
 	return false
 }
 
-func (i RuntimeDetailsChangedPredicate) Generic(e event.GenericEvent) bool {
+func (i runtimeDetailsChangedPredicate) Generic(e event.GenericEvent) bool {
 	return false
 }
 
-var _ predicate.Predicate = &RuntimeDetailsChangedPredicate{}
+var _ predicate.Predicate = &runtimeDetailsChangedPredicate{}
 
 func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
