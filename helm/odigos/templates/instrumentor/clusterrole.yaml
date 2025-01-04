@@ -78,9 +78,4 @@ rules:
       - patch
       - update
       - watch
-  - apiGroups:
-      - odigos.io
-    resources:
-      - instrumentationconfigs/status
-    verbs:
-      - update
+
