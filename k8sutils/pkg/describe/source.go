@@ -24,14 +24,13 @@ func printWorkloadManifestInfo(analyze *source.SourceAnalyze, sb *strings.Builde
 }
 
 func printRuntimeDetails(analyze *source.SourceAnalyze, sb *strings.Builder) {
-	describeText(sb, 0, "\nRuntime Inspection Details (new):")
+	describeText(sb, 0, "\nRuntime Inspection Details:")
 
 	if analyze.RuntimeInfo == nil {
 		describeText(sb, 1, "No runtime details")
 		return
 	}
 
-	printProperty(sb, 1, &analyze.RuntimeInfo.Generation)
 	describeText(sb, 1, "Detected Containers:")
 	for _, container := range analyze.RuntimeInfo.Containers {
 		printProperty(sb, 2, &container.ContainerName)

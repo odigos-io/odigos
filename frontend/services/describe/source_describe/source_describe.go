@@ -71,7 +71,6 @@ func convertRuntimeInfoToGQL(info *source.RuntimeInfoAnalyze) *model.RuntimeInfo
 		return nil
 	}
 	return &model.RuntimeInfoAnalyze{
-		Generation: describe_utils.ConvertEntityPropertyToGQL(&info.Generation),
 		Containers: convertRuntimeInfoContainersToGQL(info.Containers),
 	}
 }
