@@ -1,4 +1,4 @@
-package utils
+package predicates
 
 import (
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -6,6 +6,7 @@ import (
 )
 
 type OtelSdkInstrumentationRulePredicate struct{}
+
 
 func (o OtelSdkInstrumentationRulePredicate) Create(e event.CreateEvent) bool {
 	// check if delete rule is for otel sdk
