@@ -76,6 +76,18 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
+	err = builder.
+		ControllerManagedBy(mgr).
+		Named("deleteinstrumentationconfig-instrumentedapp-migration").
+		For(&odigosv1.InstrumentedApplication{}).
+		WithEventFilter(&odigospredicate.CreationPredicate{}).
+		Complete(&InstrumentedApplicationMigrationReconciler{
+			Client: mgr.GetClient(),
+		})
+	if err != nil {
+		return err
+	}
+
 	return nil
 
 }
