@@ -15,11 +15,11 @@ import (
 var addedEventBatcher *EventBatcher
 var deletedEventBatcher *EventBatcher
 
-func StartInstrumentedApplicationWatcher(ctx context.Context, namespace string) error {
+func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) error {
 	addedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			Event:   sse.MessageEventAdded,
-			CRDType: "InstrumentedApplication",
+			CRDType: "InstrumentationConfig",
 			SuccessBatchMessageFunc: func(count int, crdType string) string {
 				return fmt.Sprintf("successfully added %d sources", count)
 			},
@@ -32,7 +32,7 @@ func StartInstrumentedApplicationWatcher(ctx context.Context, namespace string) 
 	deletedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			Event:   sse.MessageEventDeleted,
-			CRDType: "InstrumentedApplication",
+			CRDType: "InstrumentationConfig",
 			SuccessBatchMessageFunc: func(count int, crdType string) string {
 				return fmt.Sprintf("successfully deleted %d sources", count)
 			},
@@ -42,16 +42,16 @@ func StartInstrumentedApplicationWatcher(ctx context.Context, namespace string) 
 		},
 	)
 
-	watcher, err := kube.DefaultClient.OdigosClient.InstrumentedApplications(namespace).Watch(context.Background(), metav1.ListOptions{})
+	watcher, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs(namespace).Watch(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("error creating watcher: %v", err)
 	}
 
-	go handleInstrumentedApplicationWatchEvents(ctx, watcher)
+	go handleInstrumentationConfigWatchEvents(ctx, watcher)
 	return nil
 }
 
-func handleInstrumentedApplicationWatchEvents(ctx context.Context, watcher watch.Interface) {
+func handleInstrumentationConfigWatchEvents(ctx context.Context, watcher watch.Interface) {
 	ch := watcher.ResultChan()
 	defer addedEventBatcher.Cancel()
 	defer deletedEventBatcher.Cancel()
@@ -66,30 +66,30 @@ func handleInstrumentedApplicationWatchEvents(ctx context.Context, watcher watch
 			}
 			switch event.Type {
 			case watch.Added:
-				handleAddedEvent(event.Object.(*v1alpha1.InstrumentedApplication))
+				handleAddedEvent(event.Object.(*v1alpha1.InstrumentationConfig))
 			case watch.Deleted:
-				handleDeletedEvent(event.Object.(*v1alpha1.InstrumentedApplication))
+				handleDeletedEvent(event.Object.(*v1alpha1.InstrumentationConfig))
 			}
 		}
 	}
 }
 
-func handleAddedEvent(app *v1alpha1.InstrumentedApplication) {
-	name, kind, err := commonutils.ExtractWorkloadInfoFromRuntimeObjectName(app.Name)
+func handleAddedEvent(ic *v1alpha1.InstrumentationConfig) {
+	name, kind, err := commonutils.ExtractWorkloadInfoFromRuntimeObjectName(ic.Name)
 	if err != nil {
-		genericErrorMessage(sse.MessageEventAdded, "InstrumentedApplication", "error getting workload info")
+		genericErrorMessage(sse.MessageEventAdded, "InstrumentationConfig", "error getting workload info")
 		return
 	}
-	namespace := app.Namespace
+	namespace := ic.Namespace
 	target := fmt.Sprintf("name=%s&kind=%s&namespace=%s", name, kind, namespace)
-	data := fmt.Sprintf("InstrumentedApplication %s created", name)
+	data := fmt.Sprintf("InstrumentationConfig %s created", name)
 	addedEventBatcher.AddEvent(sse.MessageTypeSuccess, data, target)
 }
 
-func handleDeletedEvent(app *v1alpha1.InstrumentedApplication) {
-	name, _, err := commonutils.ExtractWorkloadInfoFromRuntimeObjectName(app.Name)
+func handleDeletedEvent(ic *v1alpha1.InstrumentationConfig) {
+	name, _, err := commonutils.ExtractWorkloadInfoFromRuntimeObjectName(ic.Name)
 	if err != nil {
-		genericErrorMessage(sse.MessageEventDeleted, "InstrumentedApplication", "error getting workload info")
+		genericErrorMessage(sse.MessageEventDeleted, "InstrumentationConfig", "error getting workload info")
 		return
 	}
 	data := fmt.Sprintf("Source %s deleted successfully", name)

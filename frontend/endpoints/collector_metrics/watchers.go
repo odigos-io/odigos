@@ -53,7 +53,7 @@ func runDeleteWatcher(ctx context.Context, cw *deleteWatcher) error {
 	if err != nil {
 		return err
 	}
-	sourcesWatcher, err := kube.DefaultClient.OdigosClient.InstrumentedApplications("").Watch(ctx, metav1.ListOptions{})
+	sourcesWatcher, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").Watch(ctx, metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
@@ -124,12 +124,12 @@ func runWatcherLoop(ctx context.Context, w watchers, notifyChan chan<- deleteNot
 			}
 			switch event.Type {
 			case watch.Deleted:
-				app := event.Object.(*v1alpha1.InstrumentedApplication)
-				name, kind, err := commonutils.ExtractWorkloadInfoFromRuntimeObjectName(app.Name)
+				ic := event.Object.(*v1alpha1.InstrumentationConfig)
+				name, kind, err := commonutils.ExtractWorkloadInfoFromRuntimeObjectName(ic.Name)
 				if err != nil {
 					fmt.Printf("error getting workload info: %v\n", err)
 				}
-				notifyChan <- deleteNotification{notificationType: source, sourceID: common.SourceID{Kind: kind, Name: name, Namespace: app.Namespace}}
+				notifyChan <- deleteNotification{notificationType: source, sourceID: common.SourceID{Kind: kind, Name: name, Namespace: ic.Namespace}}
 			}
 		}
 	}

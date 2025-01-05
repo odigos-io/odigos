@@ -36,7 +36,7 @@ In this doc, we'll keep track of the permissions requested across different reso
 | UI           | ""        | pods                                                                       | get, list, watch                                | Required for discovering potential destinations and describing application workloads, and for updating collector metrics.  |
 | UI           | apps      | deployments, statefulsets, daemonsets                                      | get, list, patch, update                        | Needed for application instrumentation.                                               |
 | UI           | apps      | replicasets                                                                | get, list                                       | Used for describing source and application configurations.                            |
-| UI           | odigos.io | instrumentedapplications, instrumentationinstances, instrumentationconfigs | get, list, watch                                | Used to retrieve and monitor instrumented applications and configurations.            |
+| UI           | odigos.io | instrumentationinstances, instrumentationconfigs | get, list, watch                                | Used to retrieve and monitor instrumented applications and configurations.            |
 
 ---
 
