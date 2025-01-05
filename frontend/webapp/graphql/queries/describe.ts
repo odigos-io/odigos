@@ -203,52 +203,6 @@ export const DESCRIBE_SOURCE = gql`
         }
       }
       runtimeInfo {
-        generation {
-          name
-          value
-          status
-          explain
-        }
-        containers {
-          containerName {
-            name
-            value
-            status
-            explain
-          }
-          language {
-            name
-            value
-            status
-            explain
-          }
-          runtimeVersion {
-            name
-            value
-            status
-            explain
-          }
-          envVars {
-            name
-            value
-            status
-            explain
-          }
-        }
-      }
-      instrumentedApplication {
-        created {
-          name
-          value
-          status
-          explain
-        }
-        createTime {
-          name
-          value
-          status
-          explain
-        }
         containers {
           containerName {
             name

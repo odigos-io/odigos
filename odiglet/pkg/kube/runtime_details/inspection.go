@@ -168,7 +168,7 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, ignoredContainers
 				LibCType:       libcType,
 			}
 
-			if criClient != nil { // CriClient passed as nil in cases that will be deprecated in the future [InstrumentedApplication]
+			if criClient != nil && inspectProc != nil { // CriClient passed as nil in cases that will be deprecated in the future [InstrumentedApplication]
 				procEnvVars := inspectProc.Environments.OverwriteEnvs
 				updateRuntimeDetailsWithContainerRuntimeEnvs(ctx, *criClient, pod, container, programLanguageDetails, &resultsMap, procEnvVars)
 			}
