@@ -50,11 +50,12 @@ func ConvertSourceAnalyzeToGQL(analyze *source.SourceAnalyze) *model.SourceAnaly
 			Namespace:        describe_utils.ConvertEntityPropertyToGQL(analyze.Labels.Namespace),
 			InstrumentedText: describe_utils.ConvertEntityPropertyToGQL(&analyze.Labels.InstrumentedText),
 		},
+		RuntimeInfo: convertRuntimeInfoToGQL(analyze.RuntimeInfo),
 		InstrumentationConfig: &model.InstrumentationConfigAnalyze{
 			Created:    describe_utils.ConvertEntityPropertyToGQL(&analyze.InstrumentationConfig.Created),
 			CreateTime: describe_utils.ConvertEntityPropertyToGQL(analyze.InstrumentationConfig.CreateTime),
+			Containers: convertRuntimeInfoContainersToGQL(analyze.InstrumentationConfig.Containers),
 		},
-		RuntimeInfo: convertRuntimeInfoToGQL(analyze.RuntimeInfo),
 		InstrumentationDevice: &model.InstrumentationDeviceAnalyze{
 			StatusText: describe_utils.ConvertEntityPropertyToGQL(&analyze.InstrumentationDevice.StatusText),
 			Containers: convertWorkloadManifestContainersToGQL(analyze.InstrumentationDevice.Containers),

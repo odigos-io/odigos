@@ -30,7 +30,7 @@ const mapToNodeData = (entity: Params['entities'][0]) => {
     type: OVERVIEW_ENTITY_TYPES.SOURCE,
     status: getHealthStatus(entity),
     title: getEntityLabel(entity, OVERVIEW_ENTITY_TYPES.SOURCE, { extended: true }),
-    subTitle: entity.kind,
+    subTitle: `${entity.namespace} • ${entity.kind}`,
     iconSrc: getProgrammingLanguageIcon(getMainContainerLanguage(entity)),
     raw: entity,
   };
@@ -82,7 +82,7 @@ export const buildSourceNodes = ({ loading, entities, positions, unfilteredCount
         type: OVERVIEW_NODE_TYPES.ADD_SOURCE,
         status: STATUSES.HEALTHY,
         title: 'ADD SOURCE',
-        subTitle: `Add ${!!unfilteredCount ? 'a new' : 'first'} source to collect OpenTelemetry data`,
+        subTitle: 'To collect OpenTelemetry data',
       },
     });
   } else {

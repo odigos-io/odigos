@@ -24,6 +24,29 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
+// K8sActualNamespaces is the resolver for the k8sActualNamespaces field.
+func (r *computePlatformResolver) K8sActualNamespaces(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualNamespace, error) {
+	namespacesResponse := services.GetK8SNamespaces(ctx)
+
+	K8sActualNamespaces := make([]*model.K8sActualNamespace, len(namespacesResponse.Namespaces))
+	for i, namespace := range namespacesResponse.Namespaces {
+
+		namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, namespace.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+
+		nsInstrumented := workload.GetInstrumentationLabelValue(namespace.GetLabels())
+
+		K8sActualNamespaces[i] = &model.K8sActualNamespace{
+			Name:     namespace.Name,
+			Selected: *nsInstrumented,
+		}
+	}
+
+	return K8sActualNamespaces, nil
+}
+
 // K8sActualNamespace is the resolver for the k8sActualNamespace field.
 func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *model.ComputePlatform, name string) (*model.K8sActualNamespace, error) {
 	namespaceActualSources, err := services.GetWorkloadsInNamespace(ctx, name, nil)
@@ -45,65 +68,26 @@ func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *m
 	nsInstrumented := workload.GetInstrumentationLabelValue(namespace.GetLabels())
 
 	return &model.K8sActualNamespace{
-		Name:                        name,
-		InstrumentationLabelEnabled: nsInstrumented,
-		K8sActualSources:            namespaceActualSourcesPointers,
+		Name:             name,
+		Selected:         *nsInstrumented,
+		K8sActualSources: namespaceActualSourcesPointers,
 	}, nil
-}
-
-// K8sActualNamespaces is the resolver for the k8sActualNamespaces field.
-func (r *computePlatformResolver) K8sActualNamespaces(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualNamespace, error) {
-	namespacesResponse := services.GetK8SNamespaces(ctx)
-
-	K8sActualNamespaces := make([]*model.K8sActualNamespace, len(namespacesResponse.Namespaces))
-	for i, namespace := range namespacesResponse.Namespaces {
-
-		namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, namespace.Name, metav1.GetOptions{})
-		if err != nil {
-			return nil, err
-		}
-
-		nsInstrumented := workload.GetInstrumentationLabelValue(namespace.GetLabels())
-
-		K8sActualNamespaces[i] = &model.K8sActualNamespace{
-			Name:                        namespace.Name,
-			InstrumentationLabelEnabled: nsInstrumented,
-		}
-	}
-
-	return K8sActualNamespaces, nil
-}
-
-// K8sActualSource is the resolver for the k8sActualSource field.
-func (r *computePlatformResolver) K8sActualSource(ctx context.Context, obj *model.ComputePlatform, name *string, namespace *string, kind *string) (*model.K8sActualSource, error) {
-	return nil, nil
 }
 
 // K8sActualSources is the resolver for the k8sActualSources field.
 func (r *computePlatformResolver) K8sActualSources(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualSource, error) {
+	// Initialize an empty list of K8sActualSource
+	var actualSources []*model.K8sActualSource
+
 	instrumentationConfigs, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	// Initialize an empty list of K8sActualSource
-	var actualSources []*model.K8sActualSource
-
 	// Convert each instrumented application to the K8sActualSource type
-	for _, ic := range instrumentationConfigs.Items {
-		actualSource := instrumentationConfigToActualSource(ic)
-		services.AddHealthyInstrumentationInstancesCondition(ctx, &ic, actualSource)
-		owner, _ := services.GetWorkload(ctx, actualSource.Namespace, string(actualSource.Kind), actualSource.Name)
-		if owner == nil {
-
-			continue
-		}
-		ownerAnnotations := owner.GetAnnotations()
-		var reportedName string
-		if ownerAnnotations != nil {
-			reportedName = ownerAnnotations[consts.OdigosReportedNameAnnotation]
-		}
-		actualSource.ReportedName = &reportedName
+	for _, instruConfig := range instrumentationConfigs.Items {
+		actualSource := instrumentationConfigToActualSource(instruConfig)
+		services.AddHealthyInstrumentationInstancesCondition(ctx, &instruConfig, actualSource)
 		actualSources = append(actualSources, actualSource)
 	}
 
@@ -372,7 +356,7 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 
 // PersistK8sNamespace is the resolver for the persistK8sNamespace field.
 func (r *mutationResolver) PersistK8sNamespace(ctx context.Context, namespace model.PersistNamespaceItemInput) (bool, error) {
-	jsonMergePayload := services.GetJsonMergePatchForInstrumentationLabel(namespace.FutureSelected)
+	jsonMergePayload := services.GetJsonMergePatchForInstrumentationLabel(&namespace.FutureSelected)
 	_, err := kube.DefaultClient.CoreV1().Namespaces().Patch(ctx, namespace.Name, types.MergePatchType, jsonMergePayload, metav1.PatchOptions{})
 	if err != nil {
 		return false, fmt.Errorf("failed to patch namespace: %v", err)

@@ -87,9 +87,9 @@ func GetWorkload(c context.Context, ns string, kind string, name string) (metav1
 	}
 }
 
-func AddHealthyInstrumentationInstancesCondition(ctx context.Context, instConfig *v1alpha1.InstrumentationConfig, source *model.K8sActualSource) error {
-	labelSelector := fmt.Sprintf("%s=%s", consts.InstrumentedAppNameLabel, instConfig.Name)
-	instancesList, err := kube.DefaultClient.OdigosClient.InstrumentationInstances(instConfig.Namespace).List(ctx, metav1.ListOptions{
+func AddHealthyInstrumentationInstancesCondition(ctx context.Context, instruConfig *v1alpha1.InstrumentationConfig, source *model.K8sActualSource) error {
+	labelSelector := fmt.Sprintf("%s=%s", consts.InstrumentedAppNameLabel, instruConfig.Name)
+	instancesList, err := kube.DefaultClient.OdigosClient.InstrumentationInstances(instruConfig.Namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
 
@@ -121,7 +121,7 @@ func AddHealthyInstrumentationInstancesCondition(ctx context.Context, instConfig
 
 	message := fmt.Sprintf("%d/%d instances are healthy", healthyInstances, totalInstances)
 	lastTransitionTime := Metav1TimeToString(latestStatusTime)
-	source.InstrumentedApplicationDetails.Conditions = append(source.InstrumentedApplicationDetails.Conditions, &model.Condition{
+	source.Conditions = append(source.Conditions, &model.Condition{
 		Type:               "HealthyInstrumentationInstances",
 		Status:             status,
 		LastTransitionTime: &lastTransitionTime,
@@ -185,10 +185,10 @@ func getDeployments(ctx context.Context, namespace corev1.Namespace, instrumenta
 			}
 			numberOfInstances := int(dep.Status.ReadyReplicas)
 			response = append(response, model.K8sActualSource{
-				Namespace:                      dep.Namespace,
-				Name:                           dep.Name,
-				Kind:                           k8sKindToGql(string(WorkloadKindDeployment)),
-				NumberOfInstances:              &numberOfInstances,
+				Namespace:         dep.Namespace,
+				Name:              dep.Name,
+				Kind:              k8sKindToGql(string(WorkloadKindDeployment)),
+				NumberOfInstances: &numberOfInstances,
 			})
 		}
 		return nil
@@ -211,10 +211,10 @@ func getDaemonSets(ctx context.Context, namespace corev1.Namespace, instrumentat
 			}
 			numberOfInstances := int(ds.Status.NumberReady)
 			response = append(response, model.K8sActualSource{
-				Namespace:                      ds.Namespace,
-				Name:                           ds.Name,
-				Kind:                           k8sKindToGql(string(WorkloadKindDaemonSet)),
-				NumberOfInstances:              &numberOfInstances,
+				Namespace:         ds.Namespace,
+				Name:              ds.Name,
+				Kind:              k8sKindToGql(string(WorkloadKindDaemonSet)),
+				NumberOfInstances: &numberOfInstances,
 			})
 		}
 		return nil
@@ -237,10 +237,10 @@ func getStatefulSets(ctx context.Context, namespace corev1.Namespace, instrument
 			}
 			numberOfInstances := int(ss.Status.ReadyReplicas)
 			response = append(response, model.K8sActualSource{
-				Namespace:                      ss.Namespace,
-				Name:                           ss.Name,
-				Kind:                           k8sKindToGql(string(WorkloadKindStatefulSet)),
-				NumberOfInstances:              &numberOfInstances,
+				Namespace:         ss.Namespace,
+				Name:              ss.Name,
+				Kind:              k8sKindToGql(string(WorkloadKindStatefulSet)),
+				NumberOfInstances: &numberOfInstances,
 			})
 		}
 		return nil

@@ -188,6 +188,40 @@ export const DESCRIBE_SOURCE = gql`
           explain
         }
       }
+      runtimeInfo {
+        generation {
+          name
+          value
+          status
+          explain
+        }
+        containers {
+          containerName {
+            name
+            value
+            status
+            explain
+          }
+          language {
+            name
+            value
+            status
+            explain
+          }
+          runtimeVersion {
+            name
+            value
+            status
+            explain
+          }
+          envVars {
+            name
+            value
+            status
+            explain
+          }
+        }
+      }
       instrumentationConfig {
         created {
           name
@@ -201,8 +235,6 @@ export const DESCRIBE_SOURCE = gql`
           status
           explain
         }
-      }
-      runtimeInfo {
         containers {
           containerName {
             name
