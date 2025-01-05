@@ -1,13 +1,13 @@
 import { useCallback } from 'react';
-import { type Node } from '@xyflow/react';
 import { useSourceCRUD } from '../sources';
 import { useActionCRUD } from '../actions';
 import { useDestinationCRUD } from '../destinations';
 import { useDrawerStore, useModalStore } from '@/store';
 import { useInstrumentationRuleCRUD } from '../instrumentation-rules';
 import { OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, WorkloadId } from '@/types';
+import { Node } from '@xyflow/react';
 
-export function useNodeDataFlowHandlers() {
+export const useNodeDataFlowHandlers = () => {
   const { sources } = useSourceCRUD();
   const { actions } = useActionCRUD();
   const { destinations } = useDestinationCRUD();
@@ -24,7 +24,7 @@ export function useNodeDataFlowHandlers() {
           id: string | WorkloadId;
           type: OVERVIEW_ENTITY_TYPES | OVERVIEW_NODE_TYPES;
         },
-        'id'
+        'any-node'
       >,
     ) => {
       const {
@@ -40,8 +40,8 @@ export function useNodeDataFlowHandlers() {
 
       if (type === OVERVIEW_ENTITY_TYPES.SOURCE) {
         const { kind, name, namespace } = id as WorkloadId;
-        const selectedDrawerItem = entities['sources'].find((item) => item.kind === kind && item.name === name && item.namespace === namespace);
 
+        const selectedDrawerItem = entities['sources'].find((item) => item.kind === kind && item.name === name && item.namespace === namespace);
         if (!selectedDrawerItem) {
           console.warn('Selected item not found', { id, [`${type}sCount`]: entities[`${type}s`].length });
           return;
@@ -54,7 +54,6 @@ export function useNodeDataFlowHandlers() {
         });
       } else if ([OVERVIEW_ENTITY_TYPES.RULE, OVERVIEW_ENTITY_TYPES.ACTION, OVERVIEW_ENTITY_TYPES.DESTINATION].includes(type as OVERVIEW_ENTITY_TYPES)) {
         const selectedDrawerItem = entities[`${type}s`].find((item) => id && [item.id, item.ruleId].includes(id));
-
         if (!selectedDrawerItem) {
           console.warn('Selected item not found', { id, [`${type}sCount`]: entities[`${type}s`].length });
           return;
@@ -71,7 +70,7 @@ export function useNodeDataFlowHandlers() {
         setCurrentModal(OVERVIEW_ENTITY_TYPES.SOURCE);
       } else if (type === OVERVIEW_NODE_TYPES.ADD_ACTION) {
         setCurrentModal(OVERVIEW_ENTITY_TYPES.ACTION);
-      } else if (type === OVERVIEW_NODE_TYPES.ADD_DESTIONATION) {
+      } else if (type === OVERVIEW_NODE_TYPES.ADD_DESTINATION) {
         setCurrentModal(OVERVIEW_ENTITY_TYPES.DESTINATION);
       } else {
         console.warn('Unhandled node click', object);
@@ -83,4 +82,4 @@ export function useNodeDataFlowHandlers() {
   return {
     handleNodeClick,
   };
-}
+};

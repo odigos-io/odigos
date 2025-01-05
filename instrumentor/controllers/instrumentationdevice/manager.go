@@ -3,7 +3,7 @@ package instrumentationdevice
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
+	instrumentorpredicate "github.com/odigos-io/odigos/instrumentor/controllers/utils/predicates"
 	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -102,9 +102,12 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
-		Named("instrumentationdevice-instrumentedapplication").
+		Named("instrumentationdevice-instrumentationconfig").
 		For(&odigosv1.InstrumentationConfig{}).
-		WithEventFilter(&runtimeDetailsChangedPredicate{}).
+		// The following events are relevant to the device injection/removal from the instrumentation config:
+		// 1. When the runtime details are changed
+		// 2. When the instrumentation config is deleted
+		WithEventFilter(predicate.Or(&instrumentorpredicate.RuntimeDetailsChangedPredicate{}, &odigospredicate.DeletionPredicate{})).
 		Complete(&InstrumentationConfigReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
@@ -152,7 +155,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("instrumentationdevice-instrumentationrules").
 		For(&odigosv1.InstrumentationRule{}).
-		WithEventFilter(&utils.OtelSdkInstrumentationRulePredicate{}).
+		WithEventFilter(&instrumentorpredicate.OtelSdkInstrumentationRulePredicate{}).
 		Complete(&InstrumentationRuleReconciler{
 			Client: mgr.GetClient(),
 		})

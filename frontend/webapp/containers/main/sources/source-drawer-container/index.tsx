@@ -34,7 +34,7 @@ const DataContainer = styled.div`
 export const SourceDrawer: React.FC<Props> = () => {
   const { selectedItem, setSelectedItem } = useDrawerStore();
 
-  const { deleteSources, updateSource } = useSourceCRUD({
+  const { persistSources, updateSource } = useSourceCRUD({
     onSuccess: (type) => {
       setIsEditing(false);
       setIsFormDirty(false);
@@ -81,12 +81,11 @@ export const SourceDrawer: React.FC<Props> = () => {
 
     const { item } = selectedItem as { item: K8sActualSource };
     const hasPresenceOfOtherAgent =
-      item?.instrumentedApplicationDetails?.conditions?.some(
-        (condition) => condition.status === BACKEND_BOOLEAN.FALSE && condition.message.includes('device not added to any container due to the presence of another agent'),
-      ) || false;
+      item?.conditions?.some((condition) => condition.status === BACKEND_BOOLEAN.FALSE && condition.message.includes('device not added to any container due to the presence of another agent')) ||
+      false;
 
     return (
-      item?.instrumentedApplicationDetails?.containers?.map(
+      item?.containers?.map(
         (container) =>
           ({
             type: DataCardFieldTypes.SOURCE_CONTAINER,
@@ -115,7 +114,8 @@ export const SourceDrawer: React.FC<Props> = () => {
 
   const handleDelete = async () => {
     const { namespace } = item;
-    await deleteSources({ [namespace]: [item] });
+
+    await persistSources({ [namespace]: [{ ...item, selected: false }] }, {});
   };
 
   const handleSave = async () => {
@@ -148,7 +148,7 @@ export const SourceDrawer: React.FC<Props> = () => {
         </FormContainer>
       ) : (
         <DataContainer>
-          <ConditionDetails conditions={item?.instrumentedApplicationDetails?.conditions || []} />
+          <ConditionDetails conditions={item.conditions || []} />
           <DataCard title={DATA_CARDS.SOURCE_DETAILS} data={cardData} />
           <DataCard title={DATA_CARDS.DETECTED_CONTAINERS} titleBadge={containersData.length} description={DATA_CARDS.DETECTED_CONTAINERS_DESCRIPTION} data={containersData} />
           <DataCard

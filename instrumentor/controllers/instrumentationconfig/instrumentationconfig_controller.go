@@ -22,45 +22,32 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-type InstrumentedApplicationReconciler struct {
+type InstrumentationConfigReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	var ia odigosv1.InstrumentedApplication
-	err := r.Client.Get(ctx, req.NamespacedName, &ia)
+	var ic odigosv1.InstrumentationConfig
+	err := r.Client.Get(ctx, req.NamespacedName, &ic)
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	var ic odigosv1.InstrumentationConfig
-	err = r.Client.Get(ctx, req.NamespacedName, &ic)
-	if err != nil {
-		// each InstrumentedApplication should have a corresponding InstrumentationConfig
-		// but it might rarely happen that the InstrumentationConfig is deleted before the InstrumentedApplication
-		if apierrors.IsNotFound(err) {
-			logger.V(0).Info("Ignoring InstrumentedApplication without InstrumentationConfig", "runtime object name", ia.Name)
-			return ctrl.Result{}, nil
-		}
-		return ctrl.Result{}, err
-	}
-
-	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(ia.Name)
+	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(ic.Name)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	serviceName, err := resolveServiceName(ctx, r.Client, workloadName, ia.Namespace, workloadKind)
+	serviceName, err := resolveServiceName(ctx, r.Client, workloadName, ic.Namespace, workloadKind)
 	if err != nil {
 		logger.Error(err, "Failed to resolve service name", "workload", workloadName, "kind", workloadKind)
 		return ctrl.Result{}, err
@@ -72,14 +59,14 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 		return ctrl.Result{}, err
 	}
 
-	err = updateInstrumentationConfigForWorkload(&ic, &ia, instrumentationRules, serviceName)
+	err = updateInstrumentationConfigForWorkload(&ic, instrumentationRules, serviceName)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
 	err = r.Client.Update(ctx, &ic)
 	if err == nil {
-		logger.V(0).Info("Updated instrumentation config", "workload", ia.Name)
+		logger.V(0).Info("Updated instrumentation config", "workload", ic.Name)
 	}
 	return utils.K8SUpdateErrorHandler(err)
 }
