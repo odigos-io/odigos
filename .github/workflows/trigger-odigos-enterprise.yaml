@@ -14,7 +14,5 @@ jobs:
           curl -X POST \
           -H "Accept: application/vnd.github.v3+json" \
           -H "Authorization: token ${{ secrets.RELEASE_BOT_TOKEN }}" \
-          https://api.github.com/repos/odigos-io/odigos-enterprise/branches/process-oss-pr \
-          -d '{"event_type": "process_oss_pr", "client_payload": {"pr_creator": "'"${{ github.event.pull_request.user.login }}"'"}}'
-
-          
+          https://api.github.com/repos/odigos-io/odigos-enterprise/dispatches \
+          -d '{"event_type": "process_oss_pr", "client_payload": {"pr_creator": "${{ github.event.pull_request.user.login }}"}}'
