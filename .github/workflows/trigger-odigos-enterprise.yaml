@@ -13,8 +13,7 @@ on:
 jobs:
   trigger-odigos-enterprise:
     runs-on: ubuntu-latest
-    steps:
-        
+    steps:    
       - name: Trigger process PR in Odigos Enterprise
         run: |
           curl -X POST \
