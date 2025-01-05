@@ -102,7 +102,7 @@ export const SourceDrawer: React.FC<Props> = () => {
 
   if (!selectedItem?.item) return null;
   const { id, item } = selectedItem as { id: WorkloadId; item: K8sActualSource };
-  const { data: describe } = useDescribeSource(id);
+  const { data: describe, restructureForPrettyMode } = useDescribeSource(id);
 
   const handleEdit = (bool?: boolean) => {
     setIsEditing(typeof bool === 'boolean' ? bool : true);
@@ -159,7 +159,7 @@ export const SourceDrawer: React.FC<Props> = () => {
                 type: DataCardFieldTypes.CODE,
                 value: JSON.stringify({
                   language: 'json',
-                  code: safeJsonStringify(describe),
+                  code: safeJsonStringify(isCodeMode ? describe : restructureForPrettyMode(describe)),
                   pretty: !isCodeMode,
                 }),
                 width: 'inherit',

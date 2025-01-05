@@ -84,8 +84,8 @@ const formatLineForPrettyMode = (line: Token[]) => {
 
       // override types for prettier colors
       if (updatedTypes[0] === 'string') {
-        if (['true', 'false'].includes(updatedContent.split('#')[0])) updatedTypes[0] = 'boolean';
-        if (updatedContent.split('#')[0].match(/^[0-9]+$/)) updatedTypes[0] = 'number';
+        if (['true', 'false'].includes(updatedContent.split('@')[0])) updatedTypes[0] = 'boolean';
+        if (updatedContent.split('@')[0].match(/^[0-9]+$/)) updatedTypes[0] = 'number';
       }
 
       return {
@@ -96,7 +96,7 @@ const formatLineForPrettyMode = (line: Token[]) => {
 };
 
 const getComponentsFromPropertyString = (propertyString: string) => {
-  const [text, ...rest] = propertyString.split('#');
+  const [text, ...rest] = propertyString.split('@');
   const components =
     rest
       ?.map((c) => {
@@ -169,9 +169,9 @@ const PrettyJsonCode: React.FC<{ str: string }> = ({ str }) => {
 
                       return (
                         <TableData key={`line-${i}-token-${ii}`}>
-                          <FlexRow>
-                            <CodeLineToken $noWrap={isRowTitle}>{text}</CodeLineToken>
+                          <FlexRow style={{ alignItems: 'flex-start' }}>
                             <FlexRow>{...components}</FlexRow>
+                            <CodeLineToken $noWrap={isRowTitle}>{text}</CodeLineToken>
                           </FlexRow>
                         </TableData>
                       );

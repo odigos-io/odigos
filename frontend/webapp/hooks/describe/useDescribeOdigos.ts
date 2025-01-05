@@ -23,9 +23,9 @@ export const useDescribeOdigos = () => {
         let key = obj.name;
         let val = obj.value;
 
-        if (obj.explain) key += `#tooltip=${obj.explain}`;
-        if (obj.status) val += `#status=${obj.status}`;
-        else val += '#status=none';
+        if (obj.explain) key += `@tooltip=${obj.explain}`;
+        if (obj.status) val += `@status=${obj.status}`;
+        else val += '@status=none';
 
         if (!payload[objectName]) payload[objectName] = {};
         payload[objectName][key] = val;
