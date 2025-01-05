@@ -29,10 +29,15 @@ const (
 	// Used to label instrumentation instances by the corresponding
 	// instrumented app for better query performance.
 	InstrumentedAppNameLabel = "instrumented-app"
+
+	// CRD types
+	InstrumentationConfig   = "InstrumentationConfig"
+	InstrumentationInstance = "InstrumentationInstance"
+	Destination             = "Destination"
 )
 
 var (
-	PodsNotFoundErr = errors.New("could not find a ready pod")
+	ErrorPodsNotFound = errors.New("could not find a ready pod")
 )
 
 var (
