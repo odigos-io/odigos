@@ -45,6 +45,7 @@ export function useInstrumentationRuleFormData() {
         type: NOTIFICATION_TYPE.WARNING,
         title: params.alertTitle,
         message: FORM_ALERTS.REQUIRED_FIELDS,
+        hideFromHistory: true,
       });
     }
 
