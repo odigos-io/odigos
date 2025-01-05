@@ -12,21 +12,20 @@ export const useDescribeOdigos = () => {
   const restructureForPrettyMode = (code?: DescribeOdigos['describeOdigos']) => {
     if (!code) return {};
 
-    const payload = {
+    const payload: Record<string, any> = {
       [code.odigosVersion.name]: code.odigosVersion.value,
       'Number Of Sources': code.numberOfSources,
       'Number Of Destinations': code.numberOfDestinations,
-      'Cluster Collector': {},
-      'Node Collector': {},
     };
 
-    const mapObjects = (obj: any, objectName: string) => {
+    const mapObjects = (obj: any, objectName?: string) => {
       if (typeof obj === 'object' && !!obj?.name) {
         let key = obj.name;
         let val = obj.value;
         if (obj.explain) key += `#tooltip=${obj.explain}`;
-        if (!payload[objectName]) payload[objectName] = {};
-        payload[objectName][key] = val;
+        if (!!objectName && !payload[objectName]) payload[objectName] = {};
+        if (!!objectName) payload[objectName][key] = val;
+        else payload[key] = val;
       }
     };
 
