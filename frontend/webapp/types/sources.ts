@@ -9,16 +9,14 @@ export type SourceContainer = {
 };
 
 export type K8sActualSource = {
+  namespace: string;
   name: string;
   kind: string;
-  namespace: string;
-  reportedName: string;
   numberOfInstances: number;
-  selected?: boolean;
-  instrumentedApplicationDetails: {
-    containers: Array<SourceContainer>;
-    conditions: Array<Condition>;
-  };
+  selected: boolean;
+  reportedName: string;
+  containers: Array<SourceContainer>;
+  conditions: Array<Condition>;
 };
 
 export type WorkloadId = {

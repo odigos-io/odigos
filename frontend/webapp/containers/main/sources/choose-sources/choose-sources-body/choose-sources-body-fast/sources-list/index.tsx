@@ -1,9 +1,8 @@
 import React from 'react';
-import Image from 'next/image';
 import theme from '@/styles/theme';
 import styled from 'styled-components';
-import { UseSourceFormDataResponse } from '@/hooks';
-import { Checkbox, Divider, ExtendIcon, NoDataFound, Text, Toggle } from '@/reuseable-components';
+import { type UseSourceFormDataResponse } from '@/hooks';
+import { Checkbox, Divider, ExtendIcon, FadeLoader, NoDataFound, Text, Toggle } from '@/reuseable-components';
 
 interface Props extends UseSourceFormDataResponse {
   isModal?: boolean;
@@ -66,16 +65,6 @@ const SelectionCount = styled(Text)`
   width: 18px;
 `;
 
-const ArrowIcon = styled(Image)`
-  &.open {
-    transform: rotate(180deg);
-  }
-  &.close {
-    transform: rotate(0deg);
-  }
-  transition: transform 0.3s;
-`;
-
 const NoDataFoundWrapper = styled.div`
   margin: 50px 0;
   display: flex;
@@ -89,64 +78,53 @@ const NoDataFoundWrapper = styled.div`
 
 export const SourcesList: React.FC<Props> = ({
   isModal = false,
+  namespacesLoading,
+  filterNamespaces,
+  filterSources,
 
   selectedNamespace,
   onSelectNamespace,
-  availableSources,
   selectedSources,
   onSelectSource,
   selectedFutureApps,
   onSelectFutureApps,
 
-  searchText,
   selectAllForNamespace,
   onSelectAll,
-  showSelectedOnly,
-
-  filterSources,
 }) => {
-  const namespaces = Object.entries(availableSources);
+  const namespaces = filterNamespaces();
 
   if (!namespaces.length) {
-    return (
-      <NoDataFoundWrapper>
-        <NoDataFound title='No namespaces found' />
-      </NoDataFoundWrapper>
-    );
+    return <NoDataFoundWrapper>{namespacesLoading ? <FadeLoader style={{ transform: 'scale(2)' }} /> : <NoDataFound title='No namespaces found' />}</NoDataFoundWrapper>;
   }
 
   return (
     <List $isModal={isModal}>
       {namespaces.map(([namespace, sources]) => {
-        const namespaceLoaded = !!selectedSources[namespace];
-
-        const available = availableSources[namespace] || [];
-        const selected = selectedSources[namespace] || [];
-        const futureApps = selectedFutureApps[namespace] || false;
-
-        const namespacePassesFilters = !searchText || namespace.toLowerCase().includes(searchText);
-        if (!namespacePassesFilters) return null;
-
+        const sourcesForNamespace = selectedSources[namespace] || [];
+        const futureAppsForNamespace = selectedFutureApps[namespace] || false;
+        const isNamespaceLoaded = !!sourcesForNamespace.length;
         const isNamespaceSelected = selectedNamespace === namespace && !selectAllForNamespace;
-        const isNamespaceCanSelect = namespaceLoaded && !!available.length;
-        const isNamespaceAllSourcesSelected = isNamespaceCanSelect && selected.length === sources.length;
 
-        const filtered = filterSources(namespace, { cancelSearch: true });
-        const hasFilteredSources = !!filtered.length;
+        const onlySelectedSources = sourcesForNamespace.filter(({ selected }) => selected);
+        const filteredSources = filterSources(namespace, { cancelSearch: true });
+
+        const isNamespaceAllSourcesSelected = !!onlySelectedSources.length && onlySelectedSources.length === sources.length;
+        const hasFilteredSources = !!filteredSources.length;
 
         return (
           <Group data-id={`namespace-${namespace}`} key={`namespace-${namespace}`} $selected={isNamespaceAllSourcesSelected} $isOpen={isNamespaceSelected && hasFilteredSources}>
             <NamespaceItem $selected={isNamespaceAllSourcesSelected} onClick={() => onSelectNamespace(namespace)}>
               <FlexRow>
-                <Checkbox disabled={namespaceLoaded && !isNamespaceCanSelect} value={isNamespaceAllSourcesSelected} onChange={(bool) => onSelectAll(bool, namespace)} />
+                <Checkbox value={isNamespaceAllSourcesSelected} onChange={(bool) => onSelectAll(bool, namespace)} />
                 <Text>{namespace}</Text>
               </FlexRow>
 
               <FlexRow>
-                <Toggle title='Include Future Sources' initialValue={futureApps} onChange={(bool) => onSelectFutureApps(bool, namespace)} />
+                <Toggle title='Include Future Sources' initialValue={futureAppsForNamespace} onChange={(bool) => onSelectFutureApps(bool, namespace)} />
                 <Divider orientation='vertical' length='12px' margin='0' />
                 <SelectionCount size={10} color={theme.text.grey}>
-                  {namespaceLoaded ? `${selected.length}/${sources.length}` : null}
+                  {isNamespaceLoaded ? `${onlySelectedSources.length}/${sources.length}` : null}
                 </SelectionCount>
                 <ExtendIcon extend={isNamespaceSelected} />
               </FlexRow>
@@ -156,11 +134,11 @@ export const SourcesList: React.FC<Props> = ({
               (hasFilteredSources ? (
                 <RelativeWrapper>
                   <AbsoluteWrapper>
-                    <Divider orientation='vertical' length={`${filtered.length * 36 - 12}px`} />
+                    <Divider orientation='vertical' length={`${filteredSources.length * 36 - 12}px`} />
                   </AbsoluteWrapper>
 
-                  {filtered.map((source) => {
-                    const isSourceSelected = !!selected.find(({ name }) => name === source.name);
+                  {filteredSources.map((source) => {
+                    const isSourceSelected = !!onlySelectedSources.find(({ name }) => name === source.name);
 
                     return (
                       <SourceItem key={`source-${source.name}`} $selected={isSourceSelected} onClick={() => onSelectSource(source)}>

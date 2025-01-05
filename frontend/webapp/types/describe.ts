@@ -12,11 +12,6 @@ interface InstrumentationLabelsAnalyze {
   instrumentedText?: EntityProperty;
 }
 
-interface InstrumentationConfigAnalyze {
-  created: EntityProperty;
-  createTime?: EntityProperty;
-}
-
 interface ContainerRuntimeInfoAnalyze {
   containerName: EntityProperty;
   language: EntityProperty;
@@ -25,6 +20,13 @@ interface ContainerRuntimeInfoAnalyze {
 }
 
 interface RuntimeInfoAnalyze {
+  generation: EntityProperty;
+  containers: ContainerRuntimeInfoAnalyze[];
+}
+
+interface InstrumentationConfigAnalyze {
+  created: EntityProperty;
+  createTime?: EntityProperty;
   containers: ContainerRuntimeInfoAnalyze[];
 }
 
@@ -64,8 +66,8 @@ interface SourceAnalyze {
   namespace: EntityProperty;
   labels: InstrumentationLabelsAnalyze;
 
-  instrumentationConfig: InstrumentationConfigAnalyze;
   runtimeInfo?: RuntimeInfoAnalyze;
+  instrumentationConfig: InstrumentationConfigAnalyze;
   instrumentationDevice: InstrumentationDeviceAnalyze;
 
   totalPods: number;
