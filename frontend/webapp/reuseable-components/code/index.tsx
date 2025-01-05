@@ -1,5 +1,8 @@
 import React, { Fragment, useId, useMemo } from 'react';
+import { Text } from '../text';
+import { FlexRow } from '@/styles';
 import theme from '@/styles/theme';
+import { Tooltip } from '../tooltip';
 import styled from 'styled-components';
 import { Highlight, themes as prismThemes, type Token } from 'prism-react-renderer';
 import { flattenObjectKeys, removeEmptyValuesFromObject, safeJsonParse, safeJsonStringify } from '@/utils';
@@ -66,29 +69,50 @@ export const Code: React.FC<Props> = ({ language, code, flatten, pretty }) => {
   );
 };
 
-const PrettyJsonCode: React.FC<{ str: string }> = ({ str }) => {
-  const formatLineForPrettyMode = (line: Token[]) => {
-    const ignoreTypes = ['punctuation', 'plain', 'operator'];
+const formatLineForPrettyMode = (line: Token[]) => {
+  const ignoreTypes = ['punctuation', 'plain', 'operator'];
 
-    return line
-      .filter((token) => !ignoreTypes.includes(token.types[0]))
-      .map(({ types, content }) => {
-        const updatedTypes = [...types];
-        const updatedContent = ['property', 'string'].includes(updatedTypes[0]) ? content.replace(/"/g, '') : content;
+  return line
+    .filter((token) => !ignoreTypes.includes(token.types[0]))
+    .map(({ types, content }) => {
+      const updatedTypes = [...types];
+      const updatedContent = ['property', 'string'].includes(updatedTypes[0]) ? content.replace(/"/g, '') : content;
 
-        // override types for prettier colors
-        if (updatedTypes[0] === 'string') {
-          if (['true', 'false'].includes(updatedContent)) updatedTypes[0] = 'boolean';
-          if (updatedContent.match(/^[0-9]+$/)) updatedTypes[0] = 'number';
+      // override types for prettier colors
+      if (updatedTypes[0] === 'string') {
+        if (['true', 'false'].includes(updatedContent.split('#')[0])) updatedTypes[0] = 'boolean';
+        if (updatedContent.split('#')[0].match(/^[0-9]+$/)) updatedTypes[0] = 'number';
+      }
+
+      return {
+        types: updatedTypes,
+        content: updatedContent,
+      };
+    });
+};
+
+const getComponentsFromPropertyString = (propertyString: string) => {
+  const [text, ...rest] = propertyString.split('#');
+  const components =
+    rest
+      ?.map((c) => {
+        if (!c.includes('=')) return null;
+        const [type, value] = c.split('=');
+
+        switch (type) {
+          case 'tooltip':
+            return <Tooltip key={propertyString} withIcon text={value} />;
+          default:
+            console.warn('unexpected component type!', type);
+            return null;
         }
+      })
+      ?.filter((c) => !!c) || [];
 
-        return {
-          types: updatedTypes,
-          content: updatedContent,
-        };
-      });
-  };
+  return { text, components };
+};
 
+const PrettyJsonCode: React.FC<{ str: string }> = ({ str }) => {
   const renderEmptyRows = (count: number = 2) => {
     const rows = new Array(count).fill((props) => (
       <TableRow {...props}>
@@ -107,7 +131,7 @@ const PrettyJsonCode: React.FC<{ str: string }> = ({ str }) => {
   };
 
   return (
-    <Highlight theme={prismThemes.palenight} language='json' code={str}>
+    <Highlight theme={prismThemes.vsDark} language='json' code={str}>
       {({ getLineProps, getTokenProps, tokens }) => (
         <Table>
           <TableBody>
@@ -120,7 +144,9 @@ const PrettyJsonCode: React.FC<{ str: string }> = ({ str }) => {
                   <Fragment key={`line-${i}`}>
                     {renderEmptyRows()}
                     <TableRow {...lineProps}>
-                      <TableData>{formattedLine[0].content}</TableData>
+                      <TableData>
+                        <Text>{formattedLine[0].content}</Text>
+                      </TableData>
                       <TableData />
                     </TableRow>
                   </Fragment>
@@ -128,11 +154,21 @@ const PrettyJsonCode: React.FC<{ str: string }> = ({ str }) => {
               } else if (formattedLine.length === 2) {
                 return (
                   <TableRow key={`line-${i}`} {...lineProps}>
-                    {formattedLine.map((token, ii) => (
-                      <TableData key={`line-${i}-token-${ii}`}>
-                        <CodeLineToken $isNoCode {...getTokenProps({ token })} />
-                      </TableData>
-                    ))}
+                    {formattedLine.map((token, ii) => {
+                      const { children, ...tokenProps } = getTokenProps({ token });
+                      const { text, components } = getComponentsFromPropertyString(children);
+
+                      return (
+                        <TableData key={`line-${i}-token-${ii}`}>
+                          <FlexRow>
+                            <CodeLineToken $isNoCode {...tokenProps}>
+                              {text}
+                            </CodeLineToken>
+                            <FlexRow>{components}</FlexRow>
+                          </FlexRow>
+                        </TableData>
+                      );
+                    })}
                   </TableRow>
                 );
               } else {
