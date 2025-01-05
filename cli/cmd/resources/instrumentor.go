@@ -179,7 +179,7 @@ func NewInstrumentorClusterRole() *rbacv1.ClusterRole {
 			{ // React to runtime detection in user workloads in all namespaces
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"instrumentedapplications"},
-				Verbs:     []string{"delete", "get", "list", "watch"},
+				Verbs:     []string{"delete"},
 			},
 			{ // Update the status of the instrumentation configs after device injection
 				APIGroups: []string{"odigos.io"},
