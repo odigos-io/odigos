@@ -5,7 +5,8 @@ import theme from '@/styles/theme';
 import { Tooltip } from '../tooltip';
 import styled from 'styled-components';
 import { Highlight, themes as prismThemes, type Token } from 'prism-react-renderer';
-import { flattenObjectKeys, removeEmptyValuesFromObject, safeJsonParse, safeJsonStringify } from '@/utils';
+import { flattenObjectKeys, getStatusIcon, removeEmptyValuesFromObject, safeJsonParse, safeJsonStringify } from '@/utils';
+import { NOTIFICATION_TYPE } from '@/types';
 
 interface Props {
   language: string;
@@ -28,11 +29,14 @@ const TableData = styled.td`
   padding: 4px 6px;
 `;
 
-const CodeLineToken = styled.span<{ $isNoCode?: boolean }>`
-  white-space: pre-wrap;
+const Title = styled(Text)`
+  white-space: nowrap;
+`;
+
+const CodeLineToken = styled.span<{ $noWrap?: boolean }>`
+  white-space: ${({ $noWrap }) => ($noWrap ? 'nowrap' : 'pre-wrap')};
   overflow-wrap: break-word;
   font-size: 12px;
-  font-family: ${({ theme, $isNoCode }) => ($isNoCode ? theme.font_family.primary : theme.font_family.code)};
 `;
 
 export const Code: React.FC<Props> = ({ language, code, flatten, pretty }) => {
@@ -101,7 +105,12 @@ const getComponentsFromPropertyString = (propertyString: string) => {
 
         switch (type) {
           case 'tooltip':
-            return <Tooltip key={propertyString} withIcon text={value} />;
+            return <Tooltip key={useId()} withIcon text={value} />;
+          case 'status':
+            if (value === 'none') return <div style={{ width: 16, height: 16 }} />;
+            let Icon = getStatusIcon(value as NOTIFICATION_TYPE);
+            if (!Icon) Icon = getStatusIcon(NOTIFICATION_TYPE.WARNING);
+            return <Icon key={useId()} />;
           default:
             console.warn('unexpected component type!', type);
             return null;
@@ -131,7 +140,7 @@ const PrettyJsonCode: React.FC<{ str: string }> = ({ str }) => {
   };
 
   return (
-    <Highlight theme={prismThemes.vsDark} language='json' code={str}>
+    <Highlight theme={prismThemes.palenight} language='json' code={str}>
       {({ getLineProps, getTokenProps, tokens }) => (
         <Table>
           <TableBody>
@@ -145,7 +154,7 @@ const PrettyJsonCode: React.FC<{ str: string }> = ({ str }) => {
                     {renderEmptyRows()}
                     <TableRow {...lineProps}>
                       <TableData>
-                        <Text>{formattedLine[0].content}</Text>
+                        <Title>{formattedLine[0].content}</Title>
                       </TableData>
                       <TableData />
                     </TableRow>
@@ -155,16 +164,14 @@ const PrettyJsonCode: React.FC<{ str: string }> = ({ str }) => {
                 return (
                   <TableRow key={`line-${i}`} {...lineProps}>
                     {formattedLine.map((token, ii) => {
-                      const { children, ...tokenProps } = getTokenProps({ token });
-                      const { text, components } = getComponentsFromPropertyString(children);
+                      const { text, components } = getComponentsFromPropertyString(token.content);
+                      const isRowTitle = ii === 0;
 
                       return (
                         <TableData key={`line-${i}-token-${ii}`}>
                           <FlexRow>
-                            <CodeLineToken $isNoCode {...tokenProps}>
-                              {text}
-                            </CodeLineToken>
-                            <FlexRow>{components}</FlexRow>
+                            <CodeLineToken $noWrap={isRowTitle}>{text}</CodeLineToken>
+                            <FlexRow>{...components}</FlexRow>
                           </FlexRow>
                         </TableData>
                       );
