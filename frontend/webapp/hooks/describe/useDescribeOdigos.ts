@@ -18,14 +18,13 @@ export const useDescribeOdigos = () => {
       'Number Of Destinations': code.numberOfDestinations,
     };
 
-    const mapObjects = (obj: any, objectName?: string) => {
+    const mapObjects = (obj: any, objectName: string) => {
       if (typeof obj === 'object' && !!obj?.name) {
         let key = obj.name;
         let val = obj.value;
         if (obj.explain) key += `#tooltip=${obj.explain}`;
-        if (!!objectName && !payload[objectName]) payload[objectName] = {};
-        if (!!objectName) payload[objectName][key] = val;
-        else payload[key] = val;
+        if (!payload[objectName]) payload[objectName] = {};
+        payload[objectName][key] = val;
       }
     };
 
