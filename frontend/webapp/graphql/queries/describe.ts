@@ -189,12 +189,6 @@ export const DESCRIBE_SOURCE = gql`
         }
       }
       runtimeInfo {
-        generation {
-          name
-          value
-          status
-          explain
-        }
         containers {
           containerName {
             name
