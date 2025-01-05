@@ -6,9 +6,9 @@ on:
 #      - opened
 #      - reopened
 #      - synchronize
-    push:
-      branches:
-        - '**'
+  push:
+    branches:
+      - '**'
 
 jobs:
   trigger-odigos-enterprise:
