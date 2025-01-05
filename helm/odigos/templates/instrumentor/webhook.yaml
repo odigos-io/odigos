@@ -1,4 +1,3 @@
-{{- $certManagerApiVersion := include "utils.certManagerApiVersion" . -}}
 {{- $altNames := list (printf "odigos-instrumentor.%s.svc" .Release.Namespace) (printf "odigos-instrumentor.%s.svc.cluster.local" .Release.Namespace) -}}
 {{- $ca := genCA "serving-cert" 365 -}}
 {{- $cert := genSignedCert "serving-cert" nil $altNames 365 $ca -}}
@@ -12,16 +11,10 @@ metadata:
     app.kubernetes.io/component: webhook
     app.kubernetes.io/created-by: instrumentor
     app.kubernetes.io/part-of: odigos
-{{- if $certManagerApiVersion }}
-  annotations:
-    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/serving-cert
-{{- end }}
 webhooks:
   - name: pod-mutating-webhook.odigos.io
     clientConfig:
-{{- if not $certManagerApiVersion }}
       caBundle: {{ $ca.Cert | b64enc }}
-{{- end }}
       service:
         name: odigos-instrumentor
         namespace: {{ .Release.Namespace }}
@@ -44,7 +37,6 @@ webhooks:
     timeoutSeconds: 10
     admissionReviewVersions: ["v1"]
 ---
-{{- if not $certManagerApiVersion }}
 apiVersion: v1
 kind: Secret
 type: kubernetes.io/tls
@@ -63,4 +55,3 @@ metadata:
 data:
   tls.crt: {{ $cert.Cert | b64enc }}
   tls.key: {{ $cert.Key | b64enc }}
-{{- end }}
