@@ -40,7 +40,7 @@ func (r *computePlatformResolver) K8sActualNamespaces(ctx context.Context, obj *
 
 		K8sActualNamespaces[i] = &model.K8sActualNamespace{
 			Name:     namespace.Name,
-			Selected: *nsInstrumented,
+			Selected: nsInstrumented,
 		}
 	}
 
@@ -69,7 +69,7 @@ func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *m
 
 	return &model.K8sActualNamespace{
 		Name:             name,
-		Selected:         *nsInstrumented,
+		Selected:         nsInstrumented,
 		K8sActualSources: namespaceActualSourcesPointers,
 	}, nil
 }

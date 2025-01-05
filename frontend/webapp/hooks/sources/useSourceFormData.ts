@@ -45,7 +45,7 @@ export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFo
   const [selectedSources, setSelectedSources] = useState<UseSourceFormDataResponse['selectedSources']>(appStore.configuredSources);
   const [selectedFutureApps, setSelectedFutureApps] = useState<UseSourceFormDataResponse['selectedFutureApps']>(appStore.configuredFutureApps);
 
-  const { allNamespaces, data: singleNamespace, loading: namespacesLoading } = useNamespace(selectedNamespace);
+  const { allNamespaces, data: singleNamespace, loading: namespacesLoading } = useNamespace(selectedNamespace, false);
   // Keeps intial values fetched from API, so we can later filter the user-specific-selections, therebey minimizing the amount of data sent to the API on "persist sources".
   const [recordedInitialSources, setRecordedInitialSources] = useState<UseSourceFormDataResponse['selectedSources']>(appStore.availableSources);
 

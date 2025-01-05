@@ -30,38 +30,6 @@ const (
 	WorkloadKindDaemonSet   WorkloadKind = "DaemonSet"
 )
 
-type SourceLanguage struct {
-	ContainerName string `json:"container_name"`
-	Language      string `json:"language"`
-}
-
-type InstrumentedApplicationDetails struct {
-	Languages  []SourceLanguage   `json:"languages,omitempty"`
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
-}
-type SourceID struct {
-	// combination of namespace, kind and name is unique
-	Name      string `json:"name"`
-	Kind      string `json:"kind"`
-	Namespace string `json:"namespace"`
-}
-
-type Source struct {
-	ThinSource
-	ReportedName string `json:"reported_name,omitempty"`
-}
-
-type PatchSourceRequest struct {
-	ReportedName *string `json:"reported_name"`
-}
-
-// this object contains only part of the source fields. It is used to display the sources in the frontend
-type ThinSource struct {
-	SourceID
-	NumberOfRunningInstances int                             `json:"number_of_running_instances"`
-	IaDetails                *InstrumentedApplicationDetails `json:"instrumented_application_details"`
-}
-
 func GetWorkload(c context.Context, ns string, kind string, name string) (metav1.Object, int) {
 	switch kind {
 	case "Deployment":

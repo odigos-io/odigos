@@ -5,13 +5,13 @@ import { useComputePlatform } from './useComputePlatform';
 import { GET_NAMESPACES, PERSIST_NAMESPACE } from '@/graphql';
 import { type ComputePlatform, NOTIFICATION_TYPE, type PersistNamespaceItemInput } from '@/types';
 
-export const useNamespace = (namespaceName?: string) => {
+export const useNamespace = (namespaceName?: string, instrumentationLabeled = null as boolean | null) => {
   const { addNotification } = useNotificationStore();
   const { data: cpData, loading: cpLoading } = useComputePlatform();
 
   const { data, loading } = useQuery<ComputePlatform>(GET_NAMESPACES, {
     skip: !namespaceName,
-    variables: { namespaceName },
+    variables: { namespaceName, instrumentationLabeled },
     onError: (error) =>
       addNotification({
         type: NOTIFICATION_TYPE.ERROR,
