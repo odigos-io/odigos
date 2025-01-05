@@ -58,7 +58,7 @@ func handleManifestEnvVar(container *corev1.Container, envVarName string, otelsd
 		return true // Skip further processing
 	}
 
-	updatedEnvValue := appendOdigosAdditionsToEnvVar(envVarName, manifestEnvVar.Value, odigosValueForOtelSdk)
+	updatedEnvValue := envOverwrite.AppendOdigosAdditionsToEnvVar(envVarName, manifestEnvVar.Value, odigosValueForOtelSdk)
 	if updatedEnvValue != nil {
 		manifestEnvVar.Value = *updatedEnvValue
 		logger.Info("updated manifest environment variable", "envVarName", envVarName, "value", *updatedEnvValue)
@@ -114,7 +114,7 @@ func processEnvVarsFromRuntimeDetails(runtimeDetails *v1alpha1.RuntimeDetailsByC
 				continue
 			}
 
-			patchedEnvVarValue := appendOdigosAdditionsToEnvVar(envVarName, envVar.Value, valueToInject)
+			patchedEnvVarValue := envOverwrite.AppendOdigosAdditionsToEnvVar(envVarName, envVar.Value, valueToInject)
 			envVars = append(envVars, corev1.EnvVar{Name: envVarName, Value: *patchedEnvVarValue})
 		}
 		// If EnvFromContainerRuntime does not include the relevant envVar (e.g., JAVA_OPTS), it should still be added with the Odigos value.
@@ -123,23 +123,6 @@ func processEnvVarsFromRuntimeDetails(runtimeDetails *v1alpha1.RuntimeDetailsByC
 		}
 	}
 	return envVars
-}
-
-func appendOdigosAdditionsToEnvVar(envName string, observedValue string, desiredOdigosAddition string) *string {
-	envValues, ok := envOverwrite.EnvValuesMap[envName]
-	if !ok {
-		// Odigos does not manipulate this environment variable, so ignore it
-		return nil
-	}
-
-	// In case observedValue is exists but empty, we just need to set the desiredOdigosAddition without delim before
-	if strings.TrimSpace(observedValue) == "" {
-		return &desiredOdigosAddition
-	} else {
-		// In case observedValue is not empty, we need to append the desiredOdigosAddition with the delim
-		mergedEnvValue := observedValue + envValues.Delim + desiredOdigosAddition
-		return &mergedEnvValue
-	}
 }
 
 func shouldInject(runtimeDetails *v1alpha1.RuntimeDetailsByContainer, logger logr.Logger, containerName string) bool {
