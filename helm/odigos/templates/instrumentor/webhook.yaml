@@ -41,7 +41,7 @@ apiVersion: v1
 kind: Secret
 type: kubernetes.io/tls
 metadata:
-  name: instrumentor-webhook-cert
+  name: webhook-cert
   namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: instrumentor-cert

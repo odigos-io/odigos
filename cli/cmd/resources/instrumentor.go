@@ -25,7 +25,7 @@ const (
 	InstrumentorDeploymentName    = "odigos-instrumentor"
 	InstrumentorAppLabelValue     = "odigos-instrumentor"
 	InstrumentorContainerName     = "manager"
-	InstrumentorWebhookSecretName = "instrumentor-webhook-cert"
+	InstrumentorWebhookSecretName = "webhook-cert"
 	InstrumentorWebhookVolumeName = "webhook-cert"
 )
 
