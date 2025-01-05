@@ -13,7 +13,6 @@ import (
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
-	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -22,12 +21,8 @@ import (
 var ProfilingMetricsFunctions = []ProfileInterface{CPUProfiler{}, HeapProfiler{}, GoRoutineProfiler{}, AllocsProfiler{}}
 
 type ProfilingPodConfig struct {
-	Port      int32
+	Port     int32
 	Selector labels.Selector
-}
-type PodPprofMetadata struct {
-	Pod  corev1.Pod
-	Pprofort int32
 }
 
 // servicesProfilingMetadata is a map that associates service names with their corresponding pprof endpoint ports and selectors.
@@ -44,13 +39,12 @@ var servicesProfilingMetadata = map[string]ProfilingPodConfig{
 		Selector: labels.Set{
 			consts.OdigosCollectorRoleLabel: string(consts.CollectorsRoleNodeCollector)}.AsSelector(),
 	},
-	"gateway": {	
+	"gateway": {
 		Port: consts.CollectorsPprofEndpointPort,
 		Selector: labels.Set{
 			consts.OdigosCollectorRoleLabel: string(consts.CollectorsRoleClusterGateway)}.AsSelector(),
 	},
 }
-
 
 type ProfileInterface interface {
 	GetFileName() string
@@ -106,7 +100,7 @@ func FetchOdigosProfiles(ctx context.Context, client *kube.Client, profileDir st
 	for _, service := range servicesProfilingMetadata {
 		selector := service.Selector
 		podsToProfile, err := client.CoreV1().Pods(odigosNamespace).List(ctx, metav1.ListOptions{
-		LabelSelector: selector.String(),
+			LabelSelector: selector.String(),
 		})
 		if err != nil {
 			return err
@@ -154,17 +148,17 @@ func FetchOdigosProfiles(ctx context.Context, client *kube.Client, profileDir st
 					}(metricFilePath, profileMetricFunction)
 				}
 				// Wait for all profiling tasks of pod to complete
-				profileWaitGroup.Wait()	
+				profileWaitGroup.Wait()
 			}(pod, service.Port)
 		}
-	}	
+	}
 	// Wait for all pod-level tasks to complete
 	podsWaitGroup.Wait()
-	return nil  
+	return nil
 }
 
 func captureProfile(ctx context.Context, client *kube.Client, podName string, pprofPort int32, namespace string, metricFile *os.File, profileInterface ProfileInterface) error {
-	proxyURL := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s:%d/proxy/debug/pprof%s", namespace, podName, pprofPort,  profileInterface.GetUrlSuffix())
+	proxyURL := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s:%d/proxy/debug/pprof%s", namespace, podName, pprofPort, profileInterface.GetUrlSuffix())
 
 	request := client.Clientset.CoreV1().RESTClient().
 		Get().
