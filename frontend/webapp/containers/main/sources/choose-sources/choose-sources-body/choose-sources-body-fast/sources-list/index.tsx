@@ -109,7 +109,7 @@ export const SourcesList: React.FC<Props> = ({
         const onlySelectedSources = sourcesForNamespace.filter(({ selected }) => selected);
         const filteredSources = filterSources(namespace, { cancelSearch: true });
 
-        const isNamespaceAllSourcesSelected = isNamespaceLoaded && onlySelectedSources.length === sources.length;
+        const isNamespaceAllSourcesSelected = !!onlySelectedSources.length && onlySelectedSources.length === sources.length;
         const hasFilteredSources = !!filteredSources.length;
 
         return (

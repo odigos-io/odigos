@@ -17394,7 +17394,7 @@ func (ec *executionContext) unmarshalInputPersistNamespaceItemInput(ctx context.
 			it.Name = data
 		case "futureSelected":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("futureSelected"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -17435,7 +17435,7 @@ func (ec *executionContext) unmarshalInputPersistNamespaceSourceInput(ctx contex
 			it.Kind = data
 		case "selected":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("selected"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
 			}

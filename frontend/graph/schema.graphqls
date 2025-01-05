@@ -282,13 +282,13 @@ input ExportedSignalsInput {
 
 input PersistNamespaceItemInput {
   name: String!
-  futureSelected: Boolean
+  futureSelected: Boolean!
 }
 
 input PersistNamespaceSourceInput {
   name: String!
   kind: K8sResourceKind!
-  selected: Boolean
+  selected: Boolean!
 }
 
 type TestConnectionResponse {
