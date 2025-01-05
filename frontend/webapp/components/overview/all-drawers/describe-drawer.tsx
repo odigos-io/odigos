@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { CodeBracketsIcon } from '@/assets';
 import { useDescribeOdigos } from '@/hooks';
-import { NOTIFICATION_TYPE, type DescribeOdigos } from '@/types';
 import { DATA_CARDS, safeJsonStringify } from '@/utils';
 import { ToggleCodeComponent } from '@/components/common';
 import { DataCard, DataCardFieldTypes } from '@/reuseable-components';
