@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package deleteinstrumentedapplication_test
+package deleteinstrumentationconfig_test
 
 import (
 	"context"
@@ -32,7 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/instrumentor/controllers/deleteinstrumentedapplication"
+	"github.com/odigos-io/odigos/instrumentor/controllers/deleteinstrumentationconfig"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -81,7 +81,7 @@ var _ = BeforeSuite(func() {
 	})
 	Expect(err).ToNot(HaveOccurred())
 
-	err = deleteinstrumentedapplication.SetupWithManager(k8sManager)
+	err = deleteinstrumentationconfig.SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
 	go func() {

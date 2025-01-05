@@ -1,4 +1,4 @@
-package deleteinstrumentedapplication_test
+package deleteinstrumentationconfig_test
 
 import (
 	"context"
@@ -15,7 +15,7 @@ var _ = Describe("deleteInstrumentedApplication InstrumentedApplication controll
 	ctx := context.Background()
 	var namespace *corev1.Namespace
 	var deployment *appsv1.Deployment
-	var instrumentedApplication *odigosv1.InstrumentedApplication
+	var instrumentationConfig *odigosv1.InstrumentationConfig
 
 	Describe("Delete InstrumentedApplication", func() {
 
@@ -31,10 +31,10 @@ var _ = Describe("deleteInstrumentedApplication InstrumentedApplication controll
 
 			It("InstrumentedApplication created for deployment which is not enabled", func() {
 
-				instrumentedApplication = testutil.NewMockInstrumentedApplication(deployment)
-				Expect(k8sClient.Create(ctx, instrumentedApplication)).Should(Succeed())
+				instrumentationConfig = testutil.NewMockInstrumentationConfig(deployment)
+				Expect(k8sClient.Create(ctx, instrumentationConfig)).Should(Succeed())
 
-				testutil.AssertInstrumentedApplicationDeleted(ctx, k8sClient, instrumentedApplication)
+				testutil.AssertInstrumentationConfigDeleted(ctx, k8sClient, instrumentationConfig)
 			})
 
 		})
