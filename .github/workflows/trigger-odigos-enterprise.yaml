@@ -16,6 +16,7 @@ jobs:
     steps:
     - name: Trigger process PR in Odigos Enterprise
       run: |
+      
         curl -X POST \
         -H "Accept: application/vnd.github.v3+json" \
         -H "Authorization: token ${{ secrets.RELEASE_BOT_TOKEN }}" \
