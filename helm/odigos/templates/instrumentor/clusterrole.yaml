@@ -55,6 +55,9 @@ rules:
       - instrumentedapplications
     verbs:
       - delete
+      - get
+      - list
+      - watch
   - apiGroups:
       - odigos.io
     resources:
