@@ -100,16 +100,6 @@ spec:
               kubectl rollout status deployment -l app=inventory
               kubectl rollout status deployment -l app=pricing
               kubectl rollout status deployment -l app=membership
-    - name: Simple-demo pods ready for traffic
-      try:
-        - script:
-            timeout: 70s
-            content: |
-              kubectl wait --for=condition=ready pod -l app=frontend --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=coupon --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=inventory --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=pricing --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=membership --timeout=60s
     - name: Generate Traffic
       try:
         - script:
@@ -187,24 +177,6 @@ spec:
         - assert:
             timeout: 2m
             file: 02-workloads.yaml
-        - script:
-            timeout: 70s
-            content: |
-              kubectl rollout status deployment -l app=coupon
-              kubectl rollout status deployment -l app=frontend
-              kubectl rollout status deployment -l app=inventory
-              kubectl rollout status deployment -l app=pricing
-              kubectl rollout status deployment -l app=membership
-    - name: Simple-demo pods ready for traffic
-      try:
-        - script:
-            timeout: 70s
-            content: |
-              kubectl wait --for=condition=ready pod -l app=frontend --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=coupon --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=inventory --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=pricing --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=membership --timeout=60s
     - name: Update reported service name for second phase of test
       try:
         - script:
@@ -215,6 +187,14 @@ spec:
               kubectl annotate deployment inventory odigos.io/reported-name=inventory-2
               kubectl annotate deployment pricing odigos.io/reported-name=pricing-2
               kubectl annotate deployment membership odigos.io/reported-name=membership-2
+        - script:
+            timeout: 70s
+            content: |
+              kubectl rollout status deployment -l app=coupon
+              kubectl rollout status deployment -l app=frontend
+              kubectl rollout status deployment -l app=inventory
+              kubectl rollout status deployment -l app=pricing
+              kubectl rollout status deployment -l app=membership
     - name: Instrument Namespace
       try:
         - apply:
@@ -239,16 +219,6 @@ spec:
               kubectl rollout status deployment -l app=inventory
               kubectl rollout status deployment -l app=pricing
               kubectl rollout status deployment -l app=membership
-    - name: Simple-demo pods ready for traffic
-      try:
-        - script:
-            timeout: 70s
-            content: |
-              kubectl wait --for=condition=ready pod -l app=frontend --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=coupon --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=inventory --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=pricing --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=membership --timeout=60s
     - name: Generate Traffic
       try:
         - script:
@@ -334,16 +304,6 @@ spec:
               kubectl rollout status deployment -l app=inventory
               kubectl rollout status deployment -l app=pricing
               kubectl rollout status deployment -l app=membership
-    - name: Simple-demo pods ready for traffic
-      try:
-        - script:
-            timeout: 70s
-            content: |
-              kubectl wait --for=condition=ready pod -l app=frontend --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=coupon --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=inventory --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=pricing --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=membership --timeout=60s
     - name: Instrument frontend workload specifically
       try:
         - apply:
@@ -366,16 +326,6 @@ spec:
               kubectl rollout status deployment -l app=inventory
               kubectl rollout status deployment -l app=pricing
               kubectl rollout status deployment -l app=membership
-    - name: Simple-demo pods ready for traffic
-      try:
-        - script:
-            timeout: 70s
-            content: |
-              kubectl wait --for=condition=ready pod -l app=frontend --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=coupon --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=inventory --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=pricing --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=membership --timeout=60s
     - name: Instrument rest of Namespace
       try:
         - apply:
