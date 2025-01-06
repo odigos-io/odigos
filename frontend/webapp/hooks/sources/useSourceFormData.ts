@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } from 'react';
+import { Dispatch, SetStateAction, useCallback, useEffect, useState } from 'react';
 import { useAppStore } from '@/store';
 import type { K8sActualSource } from '@/types';
 import { useNamespace } from '../compute-platform';

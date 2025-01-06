@@ -18,20 +18,20 @@ const (
 	interval = time.Millisecond * 250
 )
 
-func AssertInstrumentedApplicationDeleted(ctx context.Context, k8sClient client.Client, instrumentedApplication *odigosv1.InstrumentedApplication) {
-	key := client.ObjectKey{Namespace: instrumentedApplication.GetNamespace(), Name: instrumentedApplication.GetName()}
+func AssertInstrumentationConfigDeleted(ctx context.Context, k8sClient client.Client, instrumentationConfig *odigosv1.InstrumentationConfig) {
+	key := client.ObjectKey{Namespace: instrumentationConfig.GetNamespace(), Name: instrumentationConfig.GetName()}
 	Eventually(func() bool {
-		var runtimeDetails odigosv1.InstrumentedApplication
-		err := k8sClient.Get(ctx, key, &runtimeDetails)
+		var ic odigosv1.InstrumentationConfig
+		err := k8sClient.Get(ctx, key, &ic)
 		return apierrors.IsNotFound(err)
 	}, timeout, interval).Should(BeTrue())
 }
 
-func AssertInstrumentedApplicationRetained(ctx context.Context, k8sClient client.Client, instrumentedApplication *odigosv1.InstrumentedApplication) {
-	key := client.ObjectKey{Namespace: instrumentedApplication.GetNamespace(), Name: instrumentedApplication.GetName()}
+func AssertInstrumentationConfigRetained(ctx context.Context, k8sClient client.Client, instrumentationConfig *odigosv1.InstrumentationConfig) {
+	key := client.ObjectKey{Namespace: instrumentationConfig.GetNamespace(), Name: instrumentationConfig.GetName()}
 	Consistently(func() bool {
-		var runtimeDetails odigosv1.InstrumentedApplication
-		err := k8sClient.Get(ctx, key, &runtimeDetails)
+		var ic odigosv1.InstrumentationConfig
+		err := k8sClient.Get(ctx, key, &ic)
 		return err == nil
 	}, duration, interval).Should(BeTrue())
 }

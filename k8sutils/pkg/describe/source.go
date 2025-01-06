@@ -55,10 +55,17 @@ func printInstrumentationConfigInfo(analyze *source.SourceAnalyze, sb *strings.B
 		printProperty(sb, 2, &container.ContainerName)
 		printProperty(sb, 3, &container.Language)
 		printProperty(sb, 3, &container.RuntimeVersion)
+		printProperty(sb, 3, &container.CriError)
 		if len(container.EnvVars) > 0 {
 			describeText(sb, 3, "Relevant Environment Variables:")
 			for _, envVar := range container.EnvVars {
 				describeText(sb, 4, fmt.Sprintf("%s: %s", envVar.Name, envVar.Value))
+			}
+		}
+		if len(container.ContainerRuntimeEnvs) > 0 {
+			describeText(sb, 3, "Relevant Container Runtime Environment Variables:")
+			for _, containerRuntimeEnvVar := range container.ContainerRuntimeEnvs {
+				describeText(sb, 4, fmt.Sprintf("%s: %s", containerRuntimeEnvVar.Name, containerRuntimeEnvVar.Value))
 			}
 		}
 	}

@@ -52,6 +52,7 @@ rules:
     verbs:
       - get
       - list
+      - watch
   - apiGroups:
       - odigos.io
     resources:
@@ -61,10 +62,3 @@ rules:
       - list
       - create
       - delete
-  - apiGroups:
-      - odigos.io
-    resources:
-      - instrumentationconfigs
-      - instrumentationinstances
-    verbs:
-      - watch

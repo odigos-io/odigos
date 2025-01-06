@@ -14,20 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package instrumentationdevice_test
+package deleteinstrumentationconfig_test
 
 import (
 	"context"
 	"path/filepath"
 	"testing"
 
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
-
-	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/instrumentor/internal/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -37,23 +32,22 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentationdevice"
+	"github.com/odigos-io/odigos/instrumentor/controllers/deleteinstrumentationconfig"
 	//+kubebuilder:scaffold:imports
 )
 
 var (
-	cfg                *rest.Config
-	k8sClient          client.Client
-	testEnv            *envtest.Environment
-	testCtx            context.Context
-	cancel             context.CancelFunc
-	origGetDefaultSDKs func() map[common.ProgrammingLanguage]common.OtelSdk
+	cfg       *rest.Config
+	k8sClient client.Client
+	testEnv   *envtest.Environment
+	testCtx   context.Context
+	cancel    context.CancelFunc
 )
 
 func TestControllers(t *testing.T) {
 	RegisterFailHandler(Fail)
 
-	RunSpecs(t, "InstrumentationDevice Controllers Suite")
+	RunSpecs(t, "DeleteInstrumentationConfig Controllers Suite")
 }
 
 var _ = BeforeSuite(func() {
@@ -82,36 +76,12 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
-	// create the odigos system namespace
-	odigosSystemNamespace := testutil.NewOdigosSystemNamespace()
-	Expect(k8sClient.Create(testCtx, odigosSystemNamespace)).Should(Succeed())
-
-	configmap := testutil.NewMockOdigosConfig()
-	Expect(k8sClient.Create(testCtx, configmap)).Should(Succeed())
-
-	// report the node collector is ready
-	datacollection := testutil.NewMockDataCollection()
-	Expect(k8sClient.Create(testCtx, datacollection)).Should(Succeed())
-	k8sClient.Get(testCtx, types.NamespacedName{Name: datacollection.GetName(), Namespace: datacollection.GetNamespace()}, datacollection)
-	datacollection.Status.Ready = true
-	Expect(k8sClient.Status().Update(testCtx, datacollection)).Should(Succeed())
-
-	// create odigos configuration with default sdks
-	origGetDefaultSDKs = instrumentationdevice.GetDefaultSDKs
-	instrumentationdevice.GetDefaultSDKs = testutil.MockGetDefaultSDKs
-
-	webhookInstallOptions := &testEnv.WebhookInstallOptions
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme: scheme.Scheme,
-		WebhookServer: webhook.NewServer(webhook.Options{
-			Host:    webhookInstallOptions.LocalServingHost,
-			Port:    webhookInstallOptions.LocalServingPort,
-			CertDir: webhookInstallOptions.LocalServingCertDir,
-		}),
 	})
 	Expect(err).ToNot(HaveOccurred())
 
-	err = instrumentationdevice.SetupWithManager(k8sManager)
+	err = deleteinstrumentationconfig.SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
 	go func() {
@@ -127,5 +97,4 @@ var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
-	instrumentationdevice.GetDefaultSDKs = origGetDefaultSDKs
 })

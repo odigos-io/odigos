@@ -5,8 +5,8 @@ import DrawerFooter from './drawer-footer';
 import { Drawer } from '@/reuseable-components';
 import DrawerHeader, { DrawerHeaderRef } from './drawer-header';
 import { CancelWarning, DeleteWarning } from '@/components/modals';
+import { NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES } from '@/types';
 import { useDestinationCRUD, useKeyDown, useSourceCRUD } from '@/hooks';
-import { NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES, WorkloadId } from '@/types';
 import { useDrawerStore, useNotificationStore, usePendingStore } from '@/store';
 
 const DRAWER_WIDTH = `${640 + 64}px`; // +64 because of "ContentArea" padding

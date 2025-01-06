@@ -32,7 +32,9 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	if source.DeletionTimestamp.IsZero() {
-		if !controllerutil.ContainsFinalizer(source, consts.InstrumentedApplicationFinalizer) {
+		if !controllerutil.ContainsFinalizer(source, consts.SourceFinalizer) {
+			controllerutil.AddFinalizer(source, consts.SourceFinalizer)
+			// Removed by deleteinstrumentationconfig controller
 			controllerutil.AddFinalizer(source, consts.InstrumentedApplicationFinalizer)
 		}
 		if source.Labels == nil {
