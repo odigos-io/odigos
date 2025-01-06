@@ -4,7 +4,6 @@ import (
 	"context"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/yaml"
 
 	"k8s.io/apimachinery/pkg/runtime"
 
@@ -89,9 +88,6 @@ func requestOdigletsToCalculateRuntimeDetails(ctx context.Context, k8sClient cli
 			Name:      instConfigName,
 			Namespace: namespace,
 		},
-		Spec: odigosv1.InstrumentationConfigSpec{
-			RuntimeDetailsInvalidated: true,
-		},
 	}
 
 	if err := ctrl.SetControllerReference(obj, instConfig, scheme); err != nil {
@@ -99,14 +95,11 @@ func requestOdigletsToCalculateRuntimeDetails(ctx context.Context, k8sClient cli
 		return err
 	}
 
-	instConfigBytes, _ := yaml.Marshal(instConfig)
-
-	force := true
-	patchOptions := client.PatchOptions{
-		FieldManager: "instrumentor",
-		Force:        &force,
+	err := k8sClient.Create(ctx, instConfig)
+	if err != nil {
+		return client.IgnoreAlreadyExists(err)
 	}
 
 	logger.V(0).Info("Requested calculation of runtime details from odiglets", "name", instConfigName, "namespace", namespace)
-	return k8sClient.Patch(ctx, instConfig, client.RawPatch(types.ApplyPatchType, instConfigBytes), &patchOptions)
+	return nil
 }
