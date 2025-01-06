@@ -47,23 +47,23 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			return k8sutils.K8SUpdateErrorHandler(err)
 		}
 
-		// pre-process existing Sources for specific workloads so we don't have to make a bunch of API calls
-		// This is used to check if a workload already has an explicit Source, so we don't overwrite its InstrumentationConfig
-		sourceList := v1alpha1.SourceList{}
-		err := r.Client.List(ctx, &sourceList, client.InNamespace(source.Spec.Workload.Name))
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-		namespaceKindSources := make(map[workload.WorkloadKind]map[string]struct{})
-		for _, source := range sourceList.Items {
-			if _, exists := namespaceKindSources[source.Spec.Workload.Kind]; !exists {
-				namespaceKindSources[source.Spec.Workload.Kind] = make(map[string]struct{})
-			}
-			// ex: map["Deployment"]["my-app"] = ...
-			namespaceKindSources[source.Spec.Workload.Kind][source.Spec.Workload.Name] = struct{}{}
-		}
-
 		if source.Spec.Workload.Kind == "Namespace" {
+			// pre-process existing Sources for specific workloads so we don't have to make a bunch of API calls
+			// This is used to check if a workload already has an explicit Source, so we don't overwrite its InstrumentationConfig
+			sourceList := v1alpha1.SourceList{}
+			err := r.Client.List(ctx, &sourceList, client.InNamespace(source.Spec.Workload.Name))
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+			namespaceKindSources := make(map[workload.WorkloadKind]map[string]struct{})
+			for _, source := range sourceList.Items {
+				if _, exists := namespaceKindSources[source.Spec.Workload.Kind]; !exists {
+					namespaceKindSources[source.Spec.Workload.Kind] = make(map[string]struct{})
+				}
+				// ex: map["Deployment"]["my-app"] = ...
+				namespaceKindSources[source.Spec.Workload.Kind][source.Spec.Workload.Name] = struct{}{}
+			}
+
 			var deps appsv1.DeploymentList
 			err = r.Client.List(ctx, &deps, client.InNamespace(source.Spec.Workload.Name))
 			if client.IgnoreNotFound(err) != nil {
