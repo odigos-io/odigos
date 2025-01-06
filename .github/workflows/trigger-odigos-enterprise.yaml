@@ -5,13 +5,14 @@ on:
     branches:
       - '**'
     paths:
-      - 'common/**'
-      - 'k8sUtils/**'
-      - 'procdiscovery/**'
-      - 'opamserver/**'
-      - 'instrumentation/**'
-      - 'enterprise-go-insrumentation/**'
-      - 'ebpf-java-instrumentation/**'
+      - 'github.com/odigos-io/odigos/common/**'
+      - 'github.com/odigos-io/odigos/k8sUtils/**'
+      - 'github.com/odigos-io/odigos/procdiscovery/**'
+      - 'github.com/odigos-io/odigos/opamserver/**'
+      - 'github.com/odigos-io/odigos/instrumentation/**'
+      - 'github.com/odigos-io/ebpf-java-instrumentation/**'
+      - 'github.com/odigos-io/ebpf-generic-instrumentation/**'
+      - 'github.com/odigos-io/ebpf-nodejs-instrumentation/**'
 jobs:
   trigger-odigos-enterprise:
     runs-on: ubuntu-latest
