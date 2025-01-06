@@ -64,12 +64,12 @@ func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind wor
 		if err != nil {
 			return ctrl.Result{}, err
 		}
-		if len(sourceList.Items) == 0 {
+		if sourceList.Workload == nil && sourceList.Namespace == nil {
 			return ctrl.Result{}, nil
 		}
-		// if this is explicitly excluded (ie, namespace instrumentation), skip
-		for _, s := range sourceList.Items {
-			if _, exists := s.Labels[consts.OdigosWorkloadExcludedLabel]; exists {
+		// if this is explicitly excluded, skip
+		if sourceList.Workload != nil {
+			if val, exists := sourceList.Workload.Labels[consts.OdigosWorkloadExcludedLabel]; exists && val == "true" {
 				return ctrl.Result{}, nil
 			}
 		}

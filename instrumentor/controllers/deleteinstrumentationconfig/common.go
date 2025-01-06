@@ -30,7 +30,7 @@ func reconcileWorkloadObject(ctx context.Context, kubeClient client.Client, work
 	if err != nil {
 		return err
 	}
-	if len(sourceList.Items) > 0 {
+	if sourceList.Workload == nil && sourceList.Namespace == nil {
 		// Note that if a Source is being deleted, but still has the finalizer, it will still show up in this List
 		// So we can't use this check to trigger un-instrumentation via Source deletion
 		return nil

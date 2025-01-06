@@ -96,7 +96,7 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 		if err != nil {
 			return ctrl.Result{}, err
 		}
-		if len(sourceList.Items) == 0 {
+		if sourceList.Workload == nil && sourceList.Namespace == nil {
 			logger.Info("Deleting instrumented application for non-enabled workload")
 			err := r.Client.Delete(ctx, &instrumentationConfig)
 			return ctrl.Result{}, client.IgnoreNotFound(err)

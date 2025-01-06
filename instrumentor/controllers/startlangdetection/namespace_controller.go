@@ -34,7 +34,7 @@ func (n *NamespacesReconciler) Reconcile(ctx context.Context, request ctrl.Reque
 		if err != nil {
 			return ctrl.Result{}, err
 		}
-		if len(sourceList.Items) == 0 {
+		if sourceList.Namespace == nil {
 			return ctrl.Result{}, nil
 		}
 	}

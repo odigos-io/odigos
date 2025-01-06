@@ -174,12 +174,10 @@ func isInheritingInstrumentationFromNs(ctx context.Context, c client.Client, obj
 	if err != nil {
 		return false, err
 	}
-	for _, source := range sourceList.Items {
-		// if a source exists for this workload specifically, then it is not inheriting from Namespace
-		if source.Spec.Workload.Name == obj.GetName() &&
-			source.Spec.Workload.Kind == workload.WorkloadKind(obj.GetObjectKind().GroupVersionKind().Kind) {
-			return false, nil
-		}
+
+	// if a source exists for this workload specifically, then it is not inheriting from Namespace
+	if sourceList.Workload != nil {
+		return false, nil
 	}
 
 	labels := obj.GetLabels()

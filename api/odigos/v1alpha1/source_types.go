@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	"context"
+	"errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -26,6 +27,8 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
+
+var ErrorTooManySources = errors.New("too many Sources found for workload")
 
 // Source configures an application for auto-instrumentation.
 // +genclient
@@ -67,19 +70,38 @@ type SourceList struct {
 	Items           []Source `json:"items"`
 }
 
+// +kubebuilder:object:generate=false
+
+type WorkloadSources struct {
+	Workload  *Source
+	Namespace *Source
+}
+
 // GetSourceListForWorkload returns a SourceList of all Sources that have matching
 // workload name, namespace, and kind labels for an object. In theory, this should only
-// ever return a list with 0 or 1 items, but due diligence should handle unexpected cases.
-func GetSourceListForWorkload(ctx context.Context, kubeClient client.Client, obj client.Object) (SourceList, error) {
-	sourceList := SourceList{}
-	selector := labels.SelectorFromSet(labels.Set{
-		consts.WorkloadNameLabel:      obj.GetName(),
-		consts.WorkloadNamespaceLabel: obj.GetNamespace(),
-		consts.WorkloadKindLabel:      obj.GetObjectKind().GroupVersionKind().Kind,
-	})
-	err := kubeClient.List(ctx, &sourceList, &client.ListOptions{LabelSelector: selector})
-	if err != nil {
-		return sourceList, err
+// ever return a list with 0, 1, or 2 items, but due diligence should handle unexpected cases.
+// If a Workload returns >1 Namespace or Workload Source, this function returns an error.
+func GetSourceListForWorkload(ctx context.Context, kubeClient client.Client, obj client.Object) (*WorkloadSources, error) {
+	var err error
+	workloadSources := &WorkloadSources{}
+
+	if obj.GetObjectKind().GroupVersionKind().Kind != "Namespace" {
+		sourceList := SourceList{}
+		selector := labels.SelectorFromSet(labels.Set{
+			consts.WorkloadNameLabel:      obj.GetName(),
+			consts.WorkloadNamespaceLabel: obj.GetNamespace(),
+			consts.WorkloadKindLabel:      obj.GetObjectKind().GroupVersionKind().Kind,
+		})
+		err := kubeClient.List(ctx, &sourceList, &client.ListOptions{LabelSelector: selector})
+		if err != nil {
+			return nil, err
+		}
+		if len(sourceList.Items) > 1 {
+			return nil, ErrorTooManySources
+		}
+		if len(sourceList.Items) == 1 {
+			workloadSources.Workload = &sourceList.Items[0]
+		}
 	}
 
 	namespaceSourceList := SourceList{}
@@ -90,12 +112,16 @@ func GetSourceListForWorkload(ctx context.Context, kubeClient client.Client, obj
 	})
 	err = kubeClient.List(ctx, &namespaceSourceList, &client.ListOptions{LabelSelector: namespaceSelector})
 	if err != nil {
-		return sourceList, err
+		return nil, err
+	}
+	if len(namespaceSourceList.Items) > 1 {
+		return nil, ErrorTooManySources
+	}
+	if len(namespaceSourceList.Items) == 1 {
+		workloadSources.Namespace = &namespaceSourceList.Items[0]
 	}
 
-	// merge the lists
-	sourceList.Items = append(sourceList.Items, namespaceSourceList.Items...)
-	return sourceList, err
+	return workloadSources, nil
 }
 
 func init() {
