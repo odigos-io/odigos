@@ -64,7 +64,8 @@ const NewCount = styled(Text)`
 `;
 
 export const NotificationManager = () => {
-  const { notifications, markAsSeen } = useNotificationStore();
+  const { notifications: n, markAsSeen } = useNotificationStore();
+  const notifications = n.filter(({ hideFromHistory }) => !hideFromHistory);
   const unseen = notifications.filter(({ seen }) => !seen);
   const unseenCount = unseen.length;
 

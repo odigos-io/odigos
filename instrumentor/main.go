@@ -43,7 +43,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 
-	"github.com/odigos-io/odigos/instrumentor/controllers/deleteinstrumentedapplication"
+	"github.com/odigos-io/odigos/instrumentor/controllers/deleteinstrumentationconfig"
 	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentationdevice"
 	"github.com/odigos-io/odigos/instrumentor/report"
 
@@ -170,7 +170,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = deleteinstrumentedapplication.SetupWithManager(mgr)
+	err = deleteinstrumentationconfig.SetupWithManager(mgr)
 	if err != nil {
 		setupLog.Error(err, "unable to create controller")
 		os.Exit(1)

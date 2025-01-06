@@ -21,19 +21,23 @@ type InstrumentationLabelsAnalyze struct {
 	InstrumentedText properties.EntityProperty  `json:"instrumentedText"`
 }
 
-type InstrumentationConfigAnalyze struct {
-	Created    properties.EntityProperty  `json:"created"`
-	CreateTime *properties.EntityProperty `json:"createTime"`
-}
-
 type ContainerRuntimeInfoAnalyze struct {
-	ContainerName  properties.EntityProperty   `json:"containerName"`
-	Language       properties.EntityProperty   `json:"language"`
-	RuntimeVersion properties.EntityProperty   `json:"runtimeVersion"`
-	EnvVars        []properties.EntityProperty `json:"envVars"`
+	ContainerName        properties.EntityProperty   `json:"containerName"`
+	Language             properties.EntityProperty   `json:"language"`
+	RuntimeVersion       properties.EntityProperty   `json:"runtimeVersion"`
+	CriError             properties.EntityProperty   `json:"criError"`
+	EnvVars              []properties.EntityProperty `json:"envVars"`
+	ContainerRuntimeEnvs []properties.EntityProperty `json:"containerRuntimeEnvs"`
 }
 
 type RuntimeInfoAnalyze struct {
+	Generation properties.EntityProperty     `json:"generation"`
+	Containers []ContainerRuntimeInfoAnalyze `json:"containers"`
+}
+
+type InstrumentationConfigAnalyze struct {
+	Created    properties.EntityProperty     `json:"created"`
+	CreateTime *properties.EntityProperty    `json:"createTime"`
 	Containers []ContainerRuntimeInfoAnalyze `json:"containers"`
 }
 
@@ -73,9 +77,9 @@ type SourceAnalyze struct {
 	Namespace properties.EntityProperty    `json:"namespace"`
 	Labels    InstrumentationLabelsAnalyze `json:"labels"`
 
-	InstrumentationConfig   InstrumentationConfigAnalyze   `json:"instrumentationConfig"`
-	RuntimeInfo             *RuntimeInfoAnalyze            `json:"runtimeInfo"`
-	InstrumentationDevice   InstrumentationDeviceAnalyze   `json:"instrumentationDevice"`
+	RuntimeInfo           *RuntimeInfoAnalyze          `json:"runtimeInfo"`
+	InstrumentationConfig InstrumentationConfigAnalyze `json:"instrumentationConfig"`
+	InstrumentationDevice InstrumentationDeviceAnalyze `json:"instrumentationDevice"`
 
 	TotalPods       int          `json:"totalPods"`
 	PodsPhasesCount string       `json:"podsPhasesCount"`
@@ -159,9 +163,15 @@ func analyzeInstrumentationConfig(resources *OdigosSourceResources, instrumented
 		}
 	}
 
+	containers := make([]ContainerRuntimeInfoAnalyze, 0)
+	if instrumentationConfigCreated {
+		containers = analyzeRuntimeDetails(resources.InstrumentationConfig.Status.RuntimeDetailsByContainer)
+	}
+
 	return InstrumentationConfigAnalyze{
 		Created:    created,
 		CreateTime: createdTime,
+		Containers: containers,
 	}
 }
 
@@ -192,6 +202,18 @@ func analyzeRuntimeDetails(runtimeDetailsByContainer []odigosv1.RuntimeDetailsBy
 			runtimeVersion.Value = "not available"
 		}
 
+		criError := properties.EntityProperty{
+			Name:    "CRI Error",
+			Explain: "an error message from the container runtime interface (CRI) when trying to get runtime details for this container",
+		}
+		if container.CriErrorMessage != nil {
+			criError.Value = *container.CriErrorMessage
+			criError.Status = properties.PropertyStatusError
+
+		} else {
+			criError.Value = "No CRI error observed"
+		}
+
 		envVars := make([]properties.EntityProperty, 0, len(container.EnvVars))
 		for _, envVar := range container.EnvVars {
 			envVars = append(envVars, properties.EntityProperty{
@@ -199,12 +221,21 @@ func analyzeRuntimeDetails(runtimeDetailsByContainer []odigosv1.RuntimeDetailsBy
 				Value: envVar.Value,
 			})
 		}
+		containerRuntimeEnvs := make([]properties.EntityProperty, 0, len(container.EnvFromContainerRuntime))
+		for _, envVar := range container.EnvFromContainerRuntime {
+			containerRuntimeEnvs = append(containerRuntimeEnvs, properties.EntityProperty{
+				Name:  envVar.Name,
+				Value: envVar.Value,
+			})
+		}
 
 		containers = append(containers, ContainerRuntimeInfoAnalyze{
-			ContainerName:  containerName,
-			Language:       language,
-			RuntimeVersion: runtimeVersion,
-			EnvVars:        envVars,
+			ContainerName:        containerName,
+			Language:             language,
+			RuntimeVersion:       runtimeVersion,
+			EnvVars:              envVars,
+			ContainerRuntimeEnvs: containerRuntimeEnvs,
+			CriError:             criError,
 		})
 	}
 
@@ -481,8 +512,8 @@ func analyzePods(resources *OdigosSourceResources, expectedDevices Instrumentati
 func AnalyzeSource(resources *OdigosSourceResources, workloadObj *K8sSourceObject) *SourceAnalyze {
 
 	labelsAnalysis, instrumented := analyzeInstrumentationLabels(resources, workloadObj)
-	icAnalysis := analyzeInstrumentationConfig(resources, instrumented)
 	runtimeAnalysis := analyzeRuntimeInfo(resources)
+	icAnalysis := analyzeInstrumentationConfig(resources, instrumented)
 	device := analyzeInstrumentationDevice(resources, workloadObj, instrumented)
 	pods, podsText := analyzePods(resources, device)
 
@@ -492,9 +523,9 @@ func AnalyzeSource(resources *OdigosSourceResources, workloadObj *K8sSourceObjec
 		Namespace: properties.EntityProperty{Name: "Namespace", Value: workloadObj.GetNamespace(), Explain: "the namespace of the k8s workload object that this source describes"},
 		Labels:    labelsAnalysis,
 
-		InstrumentationConfig:   icAnalysis,
-		RuntimeInfo:             runtimeAnalysis,
-		InstrumentationDevice:   device,
+		RuntimeInfo:           runtimeAnalysis,
+		InstrumentationConfig: icAnalysis,
+		InstrumentationDevice: device,
 
 		TotalPods:       len(pods),
 		PodsPhasesCount: podsText,

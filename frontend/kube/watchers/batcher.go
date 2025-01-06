@@ -32,7 +32,7 @@ type EventBatcher struct {
 }
 
 type EventBatcherConfig struct {
-	// Event to batch, not configuring this value (empty string) will cause to all events to be batched
+	// Event to batch, not configuring this value (empty string) will cause all events to be batched
 	Event sse.MessageEvent
 	// Message type to batch, not configuring this value (empty string) will cause all messages to be batched
 	MessageType sse.MessageType
@@ -83,11 +83,11 @@ func (eb *EventBatcher) AddEvent(msgType sse.MessageType, data, target string) e
 	defer eb.mu.Unlock()
 
 	message := sse.SSEMessage{
-		Event:   eb.config.Event,
 		Type:    msgType,
-		Target:  target,
+		Event:   eb.config.Event,
 		Data:    data,
 		CRDType: eb.config.CRDType,
+		Target:  target,
 	}
 
 	eb.batch = append(eb.batch, message)
@@ -141,21 +141,21 @@ func (eb *EventBatcher) prepareBatchMessage() []sse.SSEMessage {
 	var result []sse.SSEMessage
 	if successCount > 0 {
 		result = append(result, sse.SSEMessage{
-			Event:   eb.config.Event,
 			Type:    sse.MessageTypeSuccess,
-			Target:  "",
+			Event:   eb.config.Event,
 			Data:    eb.config.SuccessBatchMessageFunc(successCount, eb.config.CRDType),
 			CRDType: eb.config.CRDType,
+			Target:  "",
 		})
 	}
 
 	if failureCount > 0 {
 		result = append(result, sse.SSEMessage{
-			Event:   eb.config.Event,
 			Type:    sse.MessageTypeError,
-			Target:  "",
+			Event:   eb.config.Event,
 			Data:    eb.config.FailureBatchMessageFunc(failureCount, eb.config.CRDType),
 			CRDType: eb.config.CRDType,
+			Target:  "",
 		})
 	}
 	return result

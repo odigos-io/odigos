@@ -43,7 +43,7 @@ func k8sLastTransitionTimeToGql(t v1.Time) *string {
 }
 
 func instrumentationConfigToActualSource(instruConfig v1alpha1.InstrumentationConfig) *model.K8sActualSource {
-	// Map the container runtime details
+	// Map the containers runtime details
 	var containers []*model.SourceContainerRuntimeDetails
 	for _, container := range instruConfig.Status.RuntimeDetailsByContainer {
 		var otherAgentName *string
@@ -59,15 +59,15 @@ func instrumentationConfigToActualSource(instruConfig v1alpha1.InstrumentationCo
 		})
 	}
 
-	// Map the conditions of the application
+	// Map the conditions
 	var conditions []*model.Condition
 	for _, condition := range instruConfig.Status.Conditions {
 		conditions = append(conditions, &model.Condition{
-			Type:               condition.Type,
 			Status:             k8sConditionStatusToGql(condition.Status),
+			Type:               condition.Type,
 			Reason:             &condition.Reason,
-			LastTransitionTime: k8sLastTransitionTimeToGql(condition.LastTransitionTime),
 			Message:            &condition.Message,
+			LastTransitionTime: k8sLastTransitionTimeToGql(condition.LastTransitionTime),
 		})
 	}
 
@@ -76,12 +76,10 @@ func instrumentationConfigToActualSource(instruConfig v1alpha1.InstrumentationCo
 		Namespace:         instruConfig.Namespace,
 		Kind:              k8sKindToGql(instruConfig.OwnerReferences[0].Kind),
 		Name:              instruConfig.OwnerReferences[0].Name,
-		ReportedName:      &instruConfig.Spec.ServiceName,
 		NumberOfInstances: nil,
-		InstrumentedApplicationDetails: &model.InstrumentedApplicationDetails{
-			Containers: containers,
-			Conditions: conditions,
-		},
+		ReportedName:      &instruConfig.Spec.ServiceName,
+		Containers:        containers,
+		Conditions:        conditions,
 	}
 }
 
