@@ -146,18 +146,6 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 				Resources: []string{"nodes"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
-			{ // Needed for storage of runtime details / language detection (almost deprecated)
-				// TODO: remove this once Tamir/PR is read for instrumentation app ---> instrumentation config migration
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentedapplications"},
-				Verbs:     []string{"get", "list", "watch", "create", "patch", "update"},
-			},
-			{ // Needed for storage of runtime details / language detection (almost deprecated)
-				// TODO: remove this once Tamir/PR is read for instrumentation app ---> instrumentation config migration
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentedapplications/status"},
-				Verbs:     []string{"get", "patch", "update"},
-			},
 			{ // Needed for storage of the process instrumentation state
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"instrumentationinstances"},

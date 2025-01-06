@@ -2,13 +2,17 @@ package runtime_details
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 	corev1 "k8s.io/api/core/v1"
+	appsv1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -105,3 +109,39 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request
 	logger.Info("Completed runtime detection for new instrumentation config", "namespace", request.Namespace, "name", request.Name)
 	return reconcile.Result{}, nil
 }
+
+func getWorkloadAndLabelsfromOwner(ctx context.Context, k8sClient client.Client, ns string, ownerReference metav1.OwnerReference) (client.Object, map[string]string, error) {
+	workloadName, workloadKind, err := workload.GetWorkloadFromOwnerReference(ownerReference)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	switch workloadKind {
+	case "Deployment":
+		var dep appsv1.Deployment
+		err := k8sClient.Get(ctx, client.ObjectKey{Namespace: ns, Name: workloadName}, &dep)
+		if err != nil {
+			return nil, nil, err
+		}
+		return &dep, dep.Spec.Selector.MatchLabels, nil
+	case "DaemonSet":
+		var ds appsv1.DaemonSet
+		err := k8sClient.Get(ctx, client.ObjectKey{Namespace: ns, Name: workloadName}, &ds)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		return &ds, ds.Spec.Selector.MatchLabels, nil
+	case "StatefulSet":
+		var sts appsv1.StatefulSet
+		err := k8sClient.Get(ctx, client.ObjectKey{Namespace: ns, Name: workloadName}, &sts)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		return &sts, sts.Spec.Selector.MatchLabels, nil
+	}
+
+	return nil, nil, errors.New("workload kind not supported")
+}
+

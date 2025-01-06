@@ -1,4 +1,4 @@
-package deleteinstrumentedapplication_test
+package deleteinstrumentationconfig_test
 
 import (
 	"context"
@@ -11,13 +11,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-var _ = Describe("deleteInstrumentedApplication InstrumentedApplication controller", func() {
+var _ = Describe("deleteInstrumentationConfig InstrumentationConfig controller", func() {
 	ctx := context.Background()
 	var namespace *corev1.Namespace
 	var deployment *appsv1.Deployment
-	var instrumentedApplication *odigosv1.InstrumentedApplication
+	var instrumentationConfig *odigosv1.InstrumentationConfig
 
-	Describe("Delete InstrumentedApplication", func() {
+	Describe("Delete InstrumentationConfig", func() {
 
 		When("Object created after deployment reconciled", func() {
 
@@ -29,12 +29,12 @@ var _ = Describe("deleteInstrumentedApplication InstrumentedApplication controll
 				Expect(k8sClient.Create(ctx, deployment)).Should(Succeed())
 			})
 
-			It("InstrumentedApplication created for deployment which is not enabled", func() {
+			It("InstrumentationConfig created for deployment which is not enabled", func() {
 
-				instrumentedApplication = testutil.NewMockInstrumentedApplication(deployment)
-				Expect(k8sClient.Create(ctx, instrumentedApplication)).Should(Succeed())
+				instrumentationConfig = testutil.NewMockInstrumentationConfig(deployment)
+				Expect(k8sClient.Create(ctx, instrumentationConfig)).Should(Succeed())
 
-				testutil.AssertInstrumentedApplicationDeleted(ctx, k8sClient, instrumentedApplication)
+				testutil.AssertInstrumentationConfigDeleted(ctx, k8sClient, instrumentationConfig)
 			})
 
 		})

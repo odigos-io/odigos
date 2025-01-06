@@ -81,7 +81,6 @@ interface DeleteEntityOptions {
 export const deleteEntity = ({ nodeId, nodeContains, warnModalTitle, warnModalNote }: DeleteEntityOptions, callback?: () => void) => {
   cy.contains(nodeId, nodeContains).should('exist').click();
   cy.get(DATA_IDS.DRAWER).should('exist');
-  cy.get(DATA_IDS.DRAWER_EDIT).click();
   cy.get(DATA_IDS.DRAWER_DELETE).click();
 
   if (!!warnModalTitle) cy.get(DATA_IDS.MODAL).contains(warnModalTitle).should('exist');

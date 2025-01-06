@@ -259,6 +259,7 @@ type ComplexityRoot struct {
 	K8sActualNamespace struct {
 		K8sActualSources func(childComplexity int) int
 		Name             func(childComplexity int) int
+		Selected         func(childComplexity int) int
 	}
 
 	K8sActualSource struct {
@@ -1375,6 +1376,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.K8sActualNamespace.Name(childComplexity), true
+
+	case "K8sActualNamespace.selected":
+		if e.complexity.K8sActualNamespace.Selected == nil {
+			break
+		}
+
+		return e.complexity.K8sActualNamespace.Selected(childComplexity), true
 
 	case "K8sActualSource.conditions":
 		if e.complexity.K8sActualSource.Conditions == nil {
@@ -3858,6 +3866,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_k8sActualNamespaces(_ c
 			switch field.Name {
 			case "name":
 				return ec.fieldContext_K8sActualNamespace_name(ctx, field)
+			case "selected":
+				return ec.fieldContext_K8sActualNamespace_selected(ctx, field)
 			case "k8sActualSources":
 				return ec.fieldContext_K8sActualNamespace_k8sActualSources(ctx, field)
 			}
@@ -3905,6 +3915,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_k8sActualNamespace(ctx 
 			switch field.Name {
 			case "name":
 				return ec.fieldContext_K8sActualNamespace_name(ctx, field)
+			case "selected":
+				return ec.fieldContext_K8sActualNamespace_selected(ctx, field)
 			case "k8sActualSources":
 				return ec.fieldContext_K8sActualNamespace_k8sActualSources(ctx, field)
 			}
@@ -8508,6 +8520,47 @@ func (ec *executionContext) fieldContext_K8sActualNamespace_name(_ context.Conte
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sActualNamespace_selected(ctx context.Context, field graphql.CollectedField, obj *model.K8sActualNamespace) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sActualNamespace_selected(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Selected, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sActualNamespace_selected(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sActualNamespace",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -17394,7 +17447,7 @@ func (ec *executionContext) unmarshalInputPersistNamespaceItemInput(ctx context.
 			it.Name = data
 		case "futureSelected":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("futureSelected"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -17435,7 +17488,7 @@ func (ec *executionContext) unmarshalInputPersistNamespaceSourceInput(ctx contex
 			it.Kind = data
 		case "selected":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("selected"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -19281,6 +19334,8 @@ func (ec *executionContext) _K8sActualNamespace(ctx context.Context, sel ast.Sel
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "selected":
+			out.Values[i] = ec._K8sActualNamespace_selected(ctx, field, obj)
 		case "k8sActualSources":
 			field := field
 

@@ -22,10 +22,12 @@ type InstrumentationLabelsAnalyze struct {
 }
 
 type ContainerRuntimeInfoAnalyze struct {
-	ContainerName  properties.EntityProperty   `json:"containerName"`
-	Language       properties.EntityProperty   `json:"language"`
-	RuntimeVersion properties.EntityProperty   `json:"runtimeVersion"`
-	EnvVars        []properties.EntityProperty `json:"envVars"`
+	ContainerName        properties.EntityProperty   `json:"containerName"`
+	Language             properties.EntityProperty   `json:"language"`
+	RuntimeVersion       properties.EntityProperty   `json:"runtimeVersion"`
+	CriError             properties.EntityProperty   `json:"criError"`
+	EnvVars              []properties.EntityProperty `json:"envVars"`
+	ContainerRuntimeEnvs []properties.EntityProperty `json:"containerRuntimeEnvs"`
 }
 
 type RuntimeInfoAnalyze struct {
@@ -162,8 +164,8 @@ func analyzeInstrumentationConfig(resources *OdigosSourceResources, instrumented
 	}
 
 	containers := make([]ContainerRuntimeInfoAnalyze, 0)
-	if resources.InstrumentedApplication != nil {
-		containers = analyzeRuntimeDetails(resources.InstrumentedApplication.Spec.RuntimeDetails)
+	if instrumentationConfigCreated {
+		containers = analyzeRuntimeDetails(resources.InstrumentationConfig.Status.RuntimeDetailsByContainer)
 	}
 
 	return InstrumentationConfigAnalyze{
@@ -200,6 +202,18 @@ func analyzeRuntimeDetails(runtimeDetailsByContainer []odigosv1.RuntimeDetailsBy
 			runtimeVersion.Value = "not available"
 		}
 
+		criError := properties.EntityProperty{
+			Name:    "CRI Error",
+			Explain: "an error message from the container runtime interface (CRI) when trying to get runtime details for this container",
+		}
+		if container.CriErrorMessage != nil {
+			criError.Value = *container.CriErrorMessage
+			criError.Status = properties.PropertyStatusError
+
+		} else {
+			criError.Value = "No CRI error observed"
+		}
+
 		envVars := make([]properties.EntityProperty, 0, len(container.EnvVars))
 		for _, envVar := range container.EnvVars {
 			envVars = append(envVars, properties.EntityProperty{
@@ -207,12 +221,21 @@ func analyzeRuntimeDetails(runtimeDetailsByContainer []odigosv1.RuntimeDetailsBy
 				Value: envVar.Value,
 			})
 		}
+		containerRuntimeEnvs := make([]properties.EntityProperty, 0, len(container.EnvFromContainerRuntime))
+		for _, envVar := range container.EnvFromContainerRuntime {
+			containerRuntimeEnvs = append(containerRuntimeEnvs, properties.EntityProperty{
+				Name:  envVar.Name,
+				Value: envVar.Value,
+			})
+		}
 
 		containers = append(containers, ContainerRuntimeInfoAnalyze{
-			ContainerName:  containerName,
-			Language:       language,
-			RuntimeVersion: runtimeVersion,
-			EnvVars:        envVars,
+			ContainerName:        containerName,
+			Language:             language,
+			RuntimeVersion:       runtimeVersion,
+			EnvVars:              envVars,
+			ContainerRuntimeEnvs: containerRuntimeEnvs,
+			CriError:             criError,
 		})
 	}
 
@@ -231,7 +254,7 @@ func analyzeRuntimeInfo(resources *OdigosSourceResources) *RuntimeInfoAnalyze {
 
 func analyzeInstrumentationDevice(resources *OdigosSourceResources, workloadObj *K8sSourceObject, instrumented bool) InstrumentationDeviceAnalyze {
 
-	instrumentedApplication := resources.InstrumentedApplication
+	instrumentationConfig := resources.InstrumentationConfig
 
 	appliedInstrumentationDeviceStatusMessage := "Unknown"
 	var appliedDeviceStatus properties.PropertyStatus
@@ -240,10 +263,10 @@ func analyzeInstrumentationDevice(resources *OdigosSourceResources, workloadObj 
 		appliedInstrumentationDeviceStatusMessage = "No instrumentation devices expected"
 		appliedDeviceStatus = properties.PropertyStatusSuccess
 	}
-	if instrumentedApplication != nil && instrumentedApplication.Status.Conditions != nil {
-		for _, condition := range instrumentedApplication.Status.Conditions {
+	if instrumentationConfig != nil && instrumentationConfig.Status.Conditions != nil {
+		for _, condition := range instrumentationConfig.Status.Conditions {
 			if condition.Type == "AppliedInstrumentationDevice" { // TODO: share this constant with instrumentor
-				if condition.ObservedGeneration == instrumentedApplication.GetGeneration() {
+				if condition.ObservedGeneration == instrumentationConfig.GetGeneration() {
 					appliedInstrumentationDeviceStatusMessage = condition.Message
 					if condition.Status == metav1.ConditionTrue {
 						appliedDeviceStatus = properties.PropertyStatusSuccess

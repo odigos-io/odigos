@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } from 'react';
+import { Dispatch, SetStateAction, useCallback, useEffect, useState } from 'react';
 import { useAppStore } from '@/store';
 import type { K8sActualSource } from '@/types';
 import { useNamespace } from '../compute-platform';
@@ -12,10 +12,11 @@ interface UseSourceFormDataParams {
 
 export interface UseSourceFormDataResponse {
   namespacesLoading: boolean;
-  recordedInitialValues: { [namespace: SelectedNamespace]: SelectedSource[] };
+  recordedInitialSources: { [namespace: SelectedNamespace]: SelectedSource[] };
   filterNamespaces: (options?: { cancelSearch?: boolean }) => [SelectedNamespace, SelectedSource[]][];
   filterSources: (namespace?: SelectedNamespace, options?: { cancelSearch?: boolean; cancelSelected?: boolean }) => SelectedSource[];
-  getApiPaylod: () => { [namespace: SelectedNamespace]: SelectedSource[] };
+  getApiSourcesPayload: () => { [namespace: SelectedNamespace]: SelectedSource[] };
+  getApiFutureAppsPayload: () => { [namespace: SelectedNamespace]: boolean };
 
   selectedNamespace: SelectedNamespace;
   onSelectNamespace: (namespace: SelectedNamespace) => void;
@@ -46,12 +47,12 @@ export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFo
 
   const { allNamespaces, data: singleNamespace, loading: namespacesLoading } = useNamespace(selectedNamespace);
   // Keeps intial values fetched from API, so we can later filter the user-specific-selections, therebey minimizing the amount of data sent to the API on "persist sources".
-  const [recordedInitialValues, setRecordedInitialValues] = useState<UseSourceFormDataResponse['selectedSources']>(appStore.availableSources);
+  const [recordedInitialSources, setRecordedInitialSources] = useState<UseSourceFormDataResponse['selectedSources']>(appStore.availableSources);
 
   useEffect(() => {
     if (!!allNamespaces?.length) {
       // initialize all states (to avoid undefined errors)
-      setRecordedInitialValues((prev) => {
+      setRecordedInitialSources((prev) => {
         const payload = { ...prev };
         allNamespaces.forEach(({ name }) => (payload[name] = payload[name] || []));
         return payload;
@@ -63,7 +64,7 @@ export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFo
       });
       setSelectedFutureApps((prev) => {
         const payload = { ...prev };
-        allNamespaces.forEach(({ name }) => (payload[name] = payload[name] || false));
+        allNamespaces.forEach(({ name, selected }) => (payload[name] = payload[name] || selected || false));
         return payload;
       });
       // auto-select the 1st namespace
@@ -75,7 +76,7 @@ export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFo
     if (!!singleNamespace) {
       // initialize sources for this namespace
       const { name, k8sActualSources = [] } = singleNamespace;
-      setRecordedInitialValues((prev) => ({ ...prev, [name]: k8sActualSources }));
+      setRecordedInitialSources((prev) => ({ ...prev, [name]: k8sActualSources }));
       setSelectedSources((prev) => ({ ...prev, [name]: !!prev[name].length ? prev[name] : k8sActualSources }));
     }
   }, [singleNamespace]);
@@ -174,12 +175,13 @@ export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFo
     return selectedSources[id].filter((source) => isSearchOk(source.name) && isOnlySelectedOk(selectedSources[id], 'name', source.name));
   };
 
-  const getApiPaylod: UseSourceFormDataResponse['getApiPaylod'] = () => {
+  // This is to filter the user-specific-selections, therebey minimizing the amount of data sent to the API on "persist sources".
+  const getApiSourcesPayload: UseSourceFormDataResponse['getApiSourcesPayload'] = () => {
     const payload: UseSourceFormDataResponse['selectedSources'] = {};
 
     Object.entries(selectedSources).forEach(([namespace, sources]) => {
       sources.forEach((source) => {
-        const foundInitial = recordedInitialValues[namespace]?.find((initialSource) => initialSource.name === source.name && initialSource.kind === source.kind);
+        const foundInitial = recordedInitialSources[namespace]?.find((initialSource) => initialSource.name === source.name && initialSource.kind === source.kind);
 
         if (foundInitial?.selected !== source.selected) {
           if (!payload[namespace]) payload[namespace] = [];
@@ -191,12 +193,28 @@ export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFo
     return payload;
   };
 
+  // This is to filter the user-specific-selections, therebey minimizing the amount of data sent to the API on "persist namespaces".
+  const getApiFutureAppsPayload: UseSourceFormDataResponse['getApiFutureAppsPayload'] = () => {
+    const payload: UseSourceFormDataResponse['selectedFutureApps'] = {};
+
+    Object.entries(selectedFutureApps).forEach(([namespace, selected]) => {
+      const foundInitial = allNamespaces?.find((ns) => ns.name === namespace);
+
+      if (foundInitial?.selected !== selected) {
+        payload[namespace] = selected;
+      }
+    });
+
+    return payload;
+  };
+
   return {
     namespacesLoading,
-    recordedInitialValues,
+    recordedInitialSources,
     filterNamespaces,
     filterSources,
-    getApiPaylod,
+    getApiSourcesPayload,
+    getApiFutureAppsPayload,
 
     selectedNamespace,
     onSelectNamespace,
