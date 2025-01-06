@@ -90,12 +90,9 @@ func requestOdigletsToCalculateRuntimeDetails(ctx context.Context, k8sClient cli
 
 	err := k8sClient.Create(ctx, instConfig)
 	if err != nil {
-		if !apierrors.IsAlreadyExists(err) {
-			return err
-		}
-	} else {
-		logger.V(0).Info("Requested calculation of runtime details from odiglets", "name", instConfigName, "namespace", namespace)
+		return client.IgnoreAlreadyExists(err)
 	}
 
+	logger.V(0).Info("Requested calculation of runtime details from odiglets", "name", instConfigName, "namespace", namespace)
 	return nil
 }
