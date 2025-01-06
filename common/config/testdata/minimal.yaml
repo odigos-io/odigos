@@ -21,7 +21,8 @@ processors:
 extensions:
   health_check:
     endpoint: 0.0.0.0:13133
-  pprof: {}
+  pprof:
+    endpoint: 0.0.0.0:1777
 connectors: {}
 service:
   extensions:
