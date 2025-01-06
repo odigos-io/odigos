@@ -80,7 +80,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
-		Named("deleteinstrumentedapplication-source").
+		Named("deleteinstrumentationconfig-source").
 		WithEventFilter(&k8sutils.OnlyUpdatesPredicate{}).
 		For(&odigosv1.Source{}).
 		Complete(&SourceReconciler{
