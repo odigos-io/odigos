@@ -1,4 +1,4 @@
-import React, { useState, type ChangeEvent, type KeyboardEvent, type FC } from 'react';
+import React, { useState, type ChangeEvent, type KeyboardEvent, type FC, type InputHTMLAttributes } from 'react';
 import { SVG } from '@/assets';
 import { Text } from '../text';
 import styled from 'styled-components';
@@ -11,7 +11,7 @@ export interface Option {
   items?: Option[]; // For handling a list of items
 }
 
-interface Props {
+interface Props extends InputHTMLAttributes<HTMLInputElement> {
   options: Option[];
   placeholder?: string;
   selectedOption?: Option;
@@ -34,7 +34,7 @@ const filterOptions = (optionsList: Option[], input: string): Option[] => {
   }, []);
 };
 
-export const AutocompleteInput: FC<Props> = ({ placeholder = 'Type to search...', options, selectedOption, onOptionSelect, style, disabled }) => {
+export const AutocompleteInput: FC<Props> = ({ placeholder = 'Type to search...', options, selectedOption, onOptionSelect, style, disabled, ...props }) => {
   const [query, setQuery] = useState(selectedOption?.label || '');
   const [filteredOptions, setFilteredOptions] = useState<Option[]>(filterOptions(options, ''));
   const [showOptions, setShowOptions] = useState(false);
@@ -71,7 +71,7 @@ export const AutocompleteInput: FC<Props> = ({ placeholder = 'Type to search...'
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    e.stopPropagation();
+    if (!['Enter'].includes(e.key)) e.stopPropagation();
 
     // Flatten the options to handle keyboard navigation - TODO: Refactor this
     return;
@@ -99,6 +99,7 @@ export const AutocompleteInput: FC<Props> = ({ placeholder = 'Type to search...'
           disabled={disabled}
           onBlur={() => !disabled && setShowOptions(false)}
           onFocus={() => !disabled && setShowOptions(true)}
+          {...props}
         />
       </InputWrapper>
 
@@ -199,10 +200,10 @@ const StyledInput = styled.input`
 
 const OptionsList = styled.ul`
   position: absolute;
-  max-height: 348px;
+  max-height: 500px;
   top: 32px;
   border-radius: 24px;
-  width: calc(100% - 24px);
+  width: calc(100% - 32px);
   overflow-y: auto;
   background-color: ${({ theme }) => theme.colors.dropdown_bg};
   border: 1px solid ${({ theme }) => theme.colors.border};

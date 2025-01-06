@@ -1,4 +1,4 @@
-import { DISPLAY_TITLES, safeJsonParse } from '@/utils';
+import { compareCondition, DISPLAY_TITLES, safeJsonParse } from '@/utils';
 import { DataCardRow, DataCardFieldTypes } from '@/reuseable-components';
 import type { ActualDestination, DestinationDetailsResponse, ExportedSignals } from '@/types';
 
@@ -16,16 +16,41 @@ const buildCard = (destination: ActualDestination, destinationTypeDetails?: Dest
     { type: DataCardFieldTypes.DIVIDER, width: '100%' },
   ];
 
-  Object.entries(safeJsonParse<Record<string, string>>(fields, {})).map(([key, value]) => {
-    const found = destinationTypeDetails?.fields?.find((field) => field.name === key);
+  const parsedFields = safeJsonParse<Record<string, string>>(fields, {});
+  const sortedParsedFields =
+    destinationTypeDetails?.fields.map((field) => ({ key: field.name, value: parsedFields[field.name] ?? null })).filter((item) => item.value !== null) ||
+    Object.entries(parsedFields).map(([key, value]) => ({ key, value }));
 
-    const { type } = safeJsonParse(found?.componentProperties, { type: '' });
-    const secret = type === 'password' ? new Array(11).fill('•').join('') : '';
+  sortedParsedFields.map(({ key, value }) => {
+    const { displayName, secret, componentProperties, hideFromReadData, customReadDataLabels } = destinationTypeDetails?.fields?.find((field) => field.name === key) || {};
 
-    arr.push({
-      title: found?.displayName || key,
-      value: secret || value,
-    });
+    const shouldHide = !!hideFromReadData?.length
+      ? compareCondition(
+          hideFromReadData,
+          (destinationTypeDetails?.fields || []).map((field) => ({ name: field.name, value: parsedFields[field.name] ?? null })),
+        )
+      : false;
+
+    if (!shouldHide) {
+      const { type } = safeJsonParse(componentProperties, { type: '' });
+      const isSecret = (secret || type === 'password') && !!value.length ? new Array(10).fill('•').join('') : '';
+
+      if (!!customReadDataLabels?.length) {
+        customReadDataLabels.forEach(({ condition, ...custom }) => {
+          if (condition == value) {
+            arr.push({
+              title: custom.title,
+              value: custom.value,
+            });
+          }
+        });
+      } else {
+        arr.push({
+          title: displayName || key,
+          value: isSecret || value,
+        });
+      }
+    }
   });
 
   return arr;

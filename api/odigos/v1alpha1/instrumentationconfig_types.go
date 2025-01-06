@@ -20,15 +20,39 @@ type InstrumentationConfig struct {
 	Status InstrumentationConfigStatus `json:"status,omitempty"`
 }
 
+type OtherAgent struct {
+	Name string `json:"name,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+type EnvVar struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+// +kubebuilder:object:generate=true
+type RuntimeDetailsByContainer struct {
+	ContainerName  string                     `json:"containerName"`
+	Language       common.ProgrammingLanguage `json:"language"`
+	RuntimeVersion string                     `json:"runtimeVersion,omitempty"`
+	EnvVars        []EnvVar                   `json:"envVars,omitempty"`
+	OtherAgent     *OtherAgent                `json:"otherAgent,omitempty"`
+	LibCType       *common.LibCType           `json:"libCType,omitempty"`
+
+	// Stores the error message from the CRI runtime if returned to prevent instrumenting the container if an error exists.
+	CriErrorMessage *string `json:"criErrorMessage,omitempty"`
+	// Holds the environment variables retrieved from the container runtime.
+	EnvFromContainerRuntime []EnvVar `json:"envFromContainerRuntime,omitempty"`
+	// A temporary variable used during migration to track whether the new runtime detection process has been executed. If empty, it indicates the process has not yet been run. This field may be removed later.
+	RuntimeUpdateState *ProcessingState `json:"runtimeUpdateState,omitempty"`
+}
+
 type InstrumentationConfigStatus struct {
 	// Capture Runtime Details for the workloads that this CR applies to.
 	RuntimeDetailsByContainer []RuntimeDetailsByContainer `json:"runtimeDetailsByContainer,omitempty"`
 
-	// Runtime detection is applied on pods.
-	// Pods run a specific workload template spec, so it's important to capture it do avoid
-	// unpredictable behavior when multiple generations co-exist,
-	// and to avoid running the detection when unnecessary.
-	ObservedWorkloadGeneration int64 `json:"observedWorkloadGeneration,omitempty"`
+	// Represents the observations of a InstrumentationConfig's current state.
+	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" protobuf:"bytes,1,rep,name=conditions"`
 }
 
 // Config for the OpenTelemeetry SDKs that should be applied to a workload.

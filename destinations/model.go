@@ -28,17 +28,24 @@ type Spec struct {
 			Supported bool `yaml:"supported"`
 		}
 	}
-	Fields []Field `yaml:"fields"`
-	TestConnectionSupported bool `yaml:"testConnectionSupported"`
+	Fields                  []Field `yaml:"fields"`
+	TestConnectionSupported bool    `yaml:"testConnectionSupported"`
+}
+
+type CustomReadDataLabel struct {
+	Condition string `yaml:"condition"`
+	Title     string `yaml:"title"`
+	Value     string `yaml:"value"`
 }
 
 type Field struct {
-	Name           string                 `yaml:"name"`
-	DisplayName    string                 `yaml:"displayName"`
-	VideoURL       string                 `yaml:"videoUrl"`
-	ThumbnailURL   string                 `yaml:"thumbnailUrl"`
-	ComponentType  string                 `yaml:"componentType"`
-	ComponentProps map[string]interface{} `yaml:"componentProps"`
-	Secret         bool                   `yaml:"secret"`
-	InitialValue   string                 `yaml:"initialValue"`
+	Name                 string                 `yaml:"name"`
+	DisplayName          string                 `yaml:"displayName"`
+	ComponentType        string                 `yaml:"componentType"`
+	ComponentProps       map[string]interface{} `yaml:"componentProps"`
+	Secret               bool                   `yaml:"secret"`
+	InitialValue         string                 `yaml:"initialValue"`
+	RenderCondition      []string               `yaml:"renderCondition"`
+	HideFromReadData     []string               `yaml:"hideFromReadData"`
+	CustomReadDataLabels []*CustomReadDataLabel `yaml:"customReadDataLabels"`
 }

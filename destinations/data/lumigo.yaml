@@ -1,0 +1,30 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: lumigo
+  displayName: Lumigo
+  category: managed
+spec:
+  image: lumigo.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+  fields:
+    - name: LUMIGO_ENDPOINT
+      displayName: Lumigo OTLP HTTP Endpoint
+      componentType: input
+      initialValue: 'https://ga-otlp.lumigo-tracer-edge.golumigo.com'
+      componentProps:
+        type: text
+        required: true
+    - name: LUMIGO_TOKEN
+      displayName: Lumigo Token
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: true

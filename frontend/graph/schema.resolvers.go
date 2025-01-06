@@ -8,7 +8,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -17,13 +16,36 @@ import (
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
 	actionservices "github.com/odigos-io/odigos/frontend/services/actions"
-	odigos_describe "github.com/odigos-io/odigos/frontend/services/describe/odigos_describe"
-	source_describe "github.com/odigos-io/odigos/frontend/services/describe/source_describe"
+	"github.com/odigos-io/odigos/frontend/services/describe/odigos_describe"
+	"github.com/odigos-io/odigos/frontend/services/describe/source_describe"
 	testconnection "github.com/odigos-io/odigos/frontend/services/test_connection"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
+
+// K8sActualNamespaces is the resolver for the k8sActualNamespaces field.
+func (r *computePlatformResolver) K8sActualNamespaces(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualNamespace, error) {
+	namespacesResponse := services.GetK8SNamespaces(ctx)
+
+	K8sActualNamespaces := make([]*model.K8sActualNamespace, len(namespacesResponse.Namespaces))
+	for i, namespace := range namespacesResponse.Namespaces {
+
+		namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, namespace.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+
+		nsInstrumented := workload.GetInstrumentationLabelValue(namespace.GetLabels())
+
+		K8sActualNamespaces[i] = &model.K8sActualNamespace{
+			Name:     namespace.Name,
+			Selected: nsInstrumented,
+		}
+	}
+
+	return K8sActualNamespaces, nil
+}
 
 // K8sActualNamespace is the resolver for the k8sActualNamespace field.
 func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *model.ComputePlatform, name string) (*model.K8sActualNamespace, error) {
@@ -46,65 +68,26 @@ func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *m
 	nsInstrumented := workload.GetInstrumentationLabelValue(namespace.GetLabels())
 
 	return &model.K8sActualNamespace{
-		Name:                        name,
-		InstrumentationLabelEnabled: nsInstrumented,
-		K8sActualSources:            namespaceActualSourcesPointers,
+		Name:             name,
+		Selected:         nsInstrumented,
+		K8sActualSources: namespaceActualSourcesPointers,
 	}, nil
-}
-
-// K8sActualNamespaces is the resolver for the k8sActualNamespaces field.
-func (r *computePlatformResolver) K8sActualNamespaces(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualNamespace, error) {
-	namespacesResponse := services.GetK8SNamespaces(ctx)
-
-	K8sActualNamespaces := make([]*model.K8sActualNamespace, len(namespacesResponse.Namespaces))
-	for i, namespace := range namespacesResponse.Namespaces {
-
-		namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, namespace.Name, metav1.GetOptions{})
-		if err != nil {
-			return nil, err
-		}
-
-		nsInstrumented := workload.GetInstrumentationLabelValue(namespace.GetLabels())
-
-		K8sActualNamespaces[i] = &model.K8sActualNamespace{
-			Name:                        namespace.Name,
-			InstrumentationLabelEnabled: nsInstrumented,
-		}
-	}
-
-	return K8sActualNamespaces, nil
-}
-
-// K8sActualSource is the resolver for the k8sActualSource field.
-func (r *computePlatformResolver) K8sActualSource(ctx context.Context, obj *model.ComputePlatform, name *string, namespace *string, kind *string) (*model.K8sActualSource, error) {
-	return nil, nil
 }
 
 // K8sActualSources is the resolver for the k8sActualSources field.
 func (r *computePlatformResolver) K8sActualSources(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualSource, error) {
-	instrumentedApplications, err := kube.DefaultClient.OdigosClient.InstrumentedApplications("").List(ctx, metav1.ListOptions{})
+	// Initialize an empty list of K8sActualSource
+	var actualSources []*model.K8sActualSource
+
+	instrumentationConfigs, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	// Initialize an empty list of K8sActualSource
-	var actualSources []*model.K8sActualSource
-
 	// Convert each instrumented application to the K8sActualSource type
-	for _, app := range instrumentedApplications.Items {
-		actualSource := instrumentedApplicationToActualSource(app)
-		services.AddHealthyInstrumentationInstancesCondition(ctx, &app, actualSource)
-		owner, _ := services.GetWorkload(ctx, actualSource.Namespace, string(actualSource.Kind), actualSource.Name)
-		if owner == nil {
-
-			continue
-		}
-		ownerAnnotations := owner.GetAnnotations()
-		var reportedName string
-		if ownerAnnotations != nil {
-			reportedName = ownerAnnotations[consts.OdigosReportedNameAnnotation]
-		}
-		actualSource.ReportedName = &reportedName
+	for _, instruConfig := range instrumentationConfigs.Items {
+		actualSource := instrumentationConfigToActualSource(instruConfig)
+		services.AddHealthyInstrumentationInstancesCondition(ctx, &instruConfig, actualSource)
 		actualSources = append(actualSources, actualSource)
 	}
 
@@ -135,8 +118,8 @@ func (r *computePlatformResolver) Destinations(ctx context.Context, obj *model.C
 }
 
 // Actions is the resolver for the actions field.
-func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.ComputePlatform) ([]*model.IcaInstanceResponse, error) {
-	var response []*model.IcaInstanceResponse
+func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.ComputePlatform) ([]*model.PipelineAction, error) {
+	var response []*model.PipelineAction
 	odigosns := consts.DefaultOdigosNamespace
 
 	// AddClusterInfos actions
@@ -149,10 +132,11 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 		if err != nil {
 			return nil, err
 		}
-		response = append(response, &model.IcaInstanceResponse{
-			ID:   action.Name,
-			Type: action.Kind,
-			Spec: string(specStr),
+		response = append(response, &model.PipelineAction{
+			ID:         action.Name,
+			Type:       action.Kind,
+			Spec:       string(specStr),
+			Conditions: convertConditions(action.Status.Conditions),
 		})
 	}
 
@@ -166,10 +150,11 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 		if err != nil {
 			return nil, err
 		}
-		response = append(response, &model.IcaInstanceResponse{
-			ID:   action.Name,
-			Type: action.Kind,
-			Spec: string(specStr),
+		response = append(response, &model.PipelineAction{
+			ID:         action.Name,
+			Type:       action.Kind,
+			Spec:       string(specStr),
+			Conditions: convertConditions(action.Status.Conditions),
 		})
 	}
 
@@ -183,10 +168,11 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 		if err != nil {
 			return nil, err
 		}
-		response = append(response, &model.IcaInstanceResponse{
-			ID:   action.Name,
-			Type: action.Kind,
-			Spec: string(specStr),
+		response = append(response, &model.PipelineAction{
+			ID:         action.Name,
+			Type:       action.Kind,
+			Spec:       string(specStr),
+			Conditions: convertConditions(action.Status.Conditions),
 		})
 	}
 
@@ -200,10 +186,11 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 		if err != nil {
 			return nil, err
 		}
-		response = append(response, &model.IcaInstanceResponse{
-			ID:   action.Name,
-			Type: action.Kind,
-			Spec: string(specStr),
+		response = append(response, &model.PipelineAction{
+			ID:         action.Name,
+			Type:       action.Kind,
+			Spec:       string(specStr),
+			Conditions: convertConditions(action.Status.Conditions),
 		})
 	}
 
@@ -217,10 +204,11 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 		if err != nil {
 			return nil, err
 		}
-		response = append(response, &model.IcaInstanceResponse{
-			ID:   action.Name,
-			Type: action.Kind,
-			Spec: string(specStr),
+		response = append(response, &model.PipelineAction{
+			ID:         action.Name,
+			Type:       action.Kind,
+			Spec:       string(specStr),
+			Conditions: convertConditions(action.Status.Conditions),
 		})
 	}
 
@@ -234,10 +222,11 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 		if err != nil {
 			return nil, err
 		}
-		response = append(response, &model.IcaInstanceResponse{
-			ID:   action.Name,
-			Type: action.Kind,
-			Spec: string(specStr),
+		response = append(response, &model.PipelineAction{
+			ID:         action.Name,
+			Type:       action.Kind,
+			Spec:       string(specStr),
+			Conditions: convertConditions(action.Status.Conditions),
 		})
 	}
 
@@ -251,10 +240,11 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 		if err != nil {
 			return nil, err
 		}
-		response = append(response, &model.IcaInstanceResponse{
-			ID:   action.Name,
-			Type: action.Kind,
-			Spec: string(specStr),
+		response = append(response, &model.PipelineAction{
+			ID:         action.Name,
+			Type:       action.Kind,
+			Spec:       string(specStr),
+			Conditions: convertConditions(action.Status.Conditions),
 		})
 	}
 
@@ -273,24 +263,7 @@ func (r *destinationResolver) Type(ctx context.Context, obj *model.Destination) 
 
 // Conditions is the resolver for the conditions field.
 func (r *destinationResolver) Conditions(ctx context.Context, obj *model.Destination) ([]*model.Condition, error) {
-	conditions := make([]*model.Condition, 0, len(obj.Conditions))
-	for _, c := range obj.Conditions {
-		// Convert LastTransitionTime to a string pointer if it's not nil
-		var lastTransitionTime *string
-		if !c.LastTransitionTime.IsZero() {
-			t := c.LastTransitionTime.Format(time.RFC3339)
-			lastTransitionTime = &t
-		}
-
-		// Add the converted Condition to the list
-		conditions = append(conditions, &model.Condition{
-			Type:               c.Type,
-			Status:             model.ConditionStatus(c.Status),
-			LastTransitionTime: lastTransitionTime,
-			Reason:             &c.Reason,
-			Message:            &c.Message,
-		})
-	}
+	conditions := convertConditions(obj.Conditions)
 	return conditions, nil
 }
 
@@ -383,7 +356,7 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 
 // PersistK8sNamespace is the resolver for the persistK8sNamespace field.
 func (r *mutationResolver) PersistK8sNamespace(ctx context.Context, namespace model.PersistNamespaceItemInput) (bool, error) {
-	jsonMergePayload := services.GetJsonMergePatchForInstrumentationLabel(namespace.FutureSelected)
+	jsonMergePayload := services.GetJsonMergePatchForInstrumentationLabel(&namespace.FutureSelected)
 	_, err := kube.DefaultClient.CoreV1().Namespaces().Patch(ctx, namespace.Name, types.MergePatchType, jsonMergePayload, metav1.PatchOptions{})
 	if err != nil {
 		return false, fmt.Errorf("failed to patch namespace: %v", err)
@@ -732,15 +705,17 @@ func (r *queryResolver) DestinationTypeDetails(ctx context.Context, typeArg stri
 		if err != nil {
 			return nil, fmt.Errorf("error marshalling component properties: %v", err)
 		}
-
 		resp.Fields = append(resp.Fields, &model.Field{
-			Name:                field.Name,
-			DisplayName:         field.DisplayName,
-			ComponentType:       field.ComponentType,
-			ComponentProperties: string(componentPropsJSON),
-			InitialValue:        &field.InitialValue,
+			Name:                 field.Name,
+			DisplayName:          field.DisplayName,
+			ComponentType:        field.ComponentType,
+			ComponentProperties:  string(componentPropsJSON),
+			Secret:               field.Secret,
+			InitialValue:         field.InitialValue,
+			RenderCondition:      field.RenderCondition,
+			HideFromReadData:     field.HideFromReadData,
+			CustomReadDataLabels: convertCustomReadDataLabels(field.CustomReadDataLabels),
 		})
-
 	}
 
 	return &resp, nil

@@ -30,38 +30,6 @@ const (
 	WorkloadKindDaemonSet   WorkloadKind = "DaemonSet"
 )
 
-type SourceLanguage struct {
-	ContainerName string `json:"container_name"`
-	Language      string `json:"language"`
-}
-
-type InstrumentedApplicationDetails struct {
-	Languages  []SourceLanguage   `json:"languages,omitempty"`
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
-}
-type SourceID struct {
-	// combination of namespace, kind and name is unique
-	Name      string `json:"name"`
-	Kind      string `json:"kind"`
-	Namespace string `json:"namespace"`
-}
-
-type Source struct {
-	ThinSource
-	ReportedName string `json:"reported_name,omitempty"`
-}
-
-type PatchSourceRequest struct {
-	ReportedName *string `json:"reported_name"`
-}
-
-// this object contains only part of the source fields. It is used to display the sources in the frontend
-type ThinSource struct {
-	SourceID
-	NumberOfRunningInstances int                             `json:"number_of_running_instances"`
-	IaDetails                *InstrumentedApplicationDetails `json:"instrumented_application_details"`
-}
-
 func GetWorkload(c context.Context, ns string, kind string, name string) (metav1.Object, int) {
 	switch kind {
 	case "Deployment":
@@ -87,9 +55,9 @@ func GetWorkload(c context.Context, ns string, kind string, name string) (metav1
 	}
 }
 
-func AddHealthyInstrumentationInstancesCondition(ctx context.Context, app *v1alpha1.InstrumentedApplication, source *model.K8sActualSource) error {
-	labelSelector := fmt.Sprintf("%s=%s", consts.InstrumentedAppNameLabel, app.Name)
-	instancesList, err := kube.DefaultClient.OdigosClient.InstrumentationInstances(app.Namespace).List(ctx, metav1.ListOptions{
+func AddHealthyInstrumentationInstancesCondition(ctx context.Context, instruConfig *v1alpha1.InstrumentationConfig, source *model.K8sActualSource) error {
+	labelSelector := fmt.Sprintf("%s=%s", consts.InstrumentedAppNameLabel, instruConfig.Name)
+	instancesList, err := kube.DefaultClient.OdigosClient.InstrumentationInstances(instruConfig.Namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
 
@@ -121,7 +89,7 @@ func AddHealthyInstrumentationInstancesCondition(ctx context.Context, app *v1alp
 
 	message := fmt.Sprintf("%d/%d instances are healthy", healthyInstances, totalInstances)
 	lastTransitionTime := Metav1TimeToString(latestStatusTime)
-	source.InstrumentedApplicationDetails.Conditions = append(source.InstrumentedApplicationDetails.Conditions, &model.Condition{
+	source.Conditions = append(source.Conditions, &model.Condition{
 		Type:               "HealthyInstrumentationInstances",
 		Status:             status,
 		LastTransitionTime: &lastTransitionTime,
@@ -179,19 +147,16 @@ func getDeployments(ctx context.Context, namespace corev1.Namespace, instrumenta
 	var response []model.K8sActualSource
 	err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.AppsV1().Deployments(namespace.Name).List, ctx, metav1.ListOptions{}, func(deps *appsv1.DeploymentList) error {
 		for _, dep := range deps.Items {
-			_, _, decisionText, autoInstrumented := workload.GetInstrumentationLabelTexts(dep.GetLabels(), string(WorkloadKindDeployment), namespace.GetLabels())
+			_, _, _, autoInstrumented := workload.GetInstrumentationLabelTexts(dep.GetLabels(), string(WorkloadKindDeployment), namespace.GetLabels())
 			if instrumentationLabeled != nil && *instrumentationLabeled != autoInstrumented {
 				continue
 			}
 			numberOfInstances := int(dep.Status.ReadyReplicas)
 			response = append(response, model.K8sActualSource{
-				Namespace:                      dep.Namespace,
-				Name:                           dep.Name,
-				Kind:                           k8sKindToGql(string(WorkloadKindDeployment)),
-				NumberOfInstances:              &numberOfInstances,
-				AutoInstrumented:               autoInstrumented,
-				AutoInstrumentedDecision:       decisionText,
-				InstrumentedApplicationDetails: nil, // TODO: fill this
+				Namespace:         dep.Namespace,
+				Name:              dep.Name,
+				Kind:              k8sKindToGql(string(WorkloadKindDeployment)),
+				NumberOfInstances: &numberOfInstances,
 			})
 		}
 		return nil
@@ -208,19 +173,16 @@ func getDaemonSets(ctx context.Context, namespace corev1.Namespace, instrumentat
 	var response []model.K8sActualSource
 	err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.AppsV1().DaemonSets(namespace.Name).List, ctx, metav1.ListOptions{}, func(dss *appsv1.DaemonSetList) error {
 		for _, ds := range dss.Items {
-			_, _, decisionText, autoInstrumented := workload.GetInstrumentationLabelTexts(ds.GetLabels(), string(WorkloadKindDaemonSet), namespace.GetLabels())
+			_, _, _, autoInstrumented := workload.GetInstrumentationLabelTexts(ds.GetLabels(), string(WorkloadKindDaemonSet), namespace.GetLabels())
 			if instrumentationLabeled != nil && *instrumentationLabeled != autoInstrumented {
 				continue
 			}
 			numberOfInstances := int(ds.Status.NumberReady)
 			response = append(response, model.K8sActualSource{
-				Namespace:                      ds.Namespace,
-				Name:                           ds.Name,
-				Kind:                           k8sKindToGql(string(WorkloadKindDaemonSet)),
-				NumberOfInstances:              &numberOfInstances,
-				AutoInstrumented:               autoInstrumented,
-				AutoInstrumentedDecision:       decisionText,
-				InstrumentedApplicationDetails: nil, // TODO: fill this
+				Namespace:         ds.Namespace,
+				Name:              ds.Name,
+				Kind:              k8sKindToGql(string(WorkloadKindDaemonSet)),
+				NumberOfInstances: &numberOfInstances,
 			})
 		}
 		return nil
@@ -237,19 +199,16 @@ func getStatefulSets(ctx context.Context, namespace corev1.Namespace, instrument
 	var response []model.K8sActualSource
 	err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.AppsV1().StatefulSets(namespace.Name).List, ctx, metav1.ListOptions{}, func(sss *appsv1.StatefulSetList) error {
 		for _, ss := range sss.Items {
-			_, _, decisionText, autoInstrumented := workload.GetInstrumentationLabelTexts(ss.GetLabels(), string(WorkloadKindStatefulSet), namespace.GetLabels())
+			_, _, _, autoInstrumented := workload.GetInstrumentationLabelTexts(ss.GetLabels(), string(WorkloadKindStatefulSet), namespace.GetLabels())
 			if instrumentationLabeled != nil && *instrumentationLabeled != autoInstrumented {
 				continue
 			}
 			numberOfInstances := int(ss.Status.ReadyReplicas)
 			response = append(response, model.K8sActualSource{
-				Namespace:                      ss.Namespace,
-				Name:                           ss.Name,
-				Kind:                           k8sKindToGql(string(WorkloadKindStatefulSet)),
-				NumberOfInstances:              &numberOfInstances,
-				AutoInstrumented:               autoInstrumented,
-				AutoInstrumentedDecision:       decisionText,
-				InstrumentedApplicationDetails: nil, // TODO: fill this
+				Namespace:         ss.Namespace,
+				Name:              ss.Name,
+				Kind:              k8sKindToGql(string(WorkloadKindStatefulSet)),
+				NumberOfInstances: &numberOfInstances,
 			})
 		}
 		return nil

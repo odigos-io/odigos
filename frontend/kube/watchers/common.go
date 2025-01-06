@@ -6,10 +6,10 @@ import (
 
 func genericErrorMessage(event sse.MessageEvent, crd string, data string) {
 	sse.SendMessageToClient(sse.SSEMessage{
-		Event: event,
-		Type: sse.MessageTypeError,
-		Target: "",
-		Data: "Something went wrong: " + data,
+		Type:    sse.MessageTypeError,
+		Event:   event,
+		Data:    "Something went wrong: " + data,
 		CRDType: crd,
+		Target:  "",
 	})
 }
