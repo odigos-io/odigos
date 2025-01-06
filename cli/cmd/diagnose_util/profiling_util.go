@@ -225,7 +225,7 @@ func collectMetrics(ctx context.Context, client *kube.Client, odigosNamespace st
 		metricFilePath := filepath.Join(metricsDir, collectorPod.Name)
 		metricFile, err := os.OpenFile(metricFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 		if err != nil {
-			fmt.Println("Error creating file: %v, because: %v", metricFilePath, err)
+			fmt.Printf("Error creating file: %v, because: %v", metricFilePath, err)
 			continue
 		}
 		defer metricFile.Close()
