@@ -3,6 +3,7 @@ import buildCard from './build-card';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
 import buildDrawerItem from './build-drawer-item';
+import { ToggleCodeComponent } from '@/components';
 import { UpdateSourceBody } from '../update-source-body';
 import { useDescribeSource, useSourceCRUD } from '@/hooks';
 import OverviewDrawer from '../../overview/overview-drawer';
@@ -49,6 +50,7 @@ export const SourceDrawer: React.FC<Props> = () => {
     },
   });
 
+  const [isCodeMode, setIsCodeMode] = useState(false); // for "describe source"
   const [isEditing, setIsEditing] = useState(false);
   const [isFormDirty, setIsFormDirty] = useState(false);
   const [formData, setFormData] = useState({ ...EMPTY_FORM });
@@ -99,7 +101,7 @@ export const SourceDrawer: React.FC<Props> = () => {
 
   if (!selectedItem?.item) return null;
   const { id, item } = selectedItem as { id: WorkloadId; item: K8sActualSource };
-  const { data: describe } = useDescribeSource(id);
+  const { data: describe, restructureForPrettyMode } = useDescribeSource(id);
 
   const handleEdit = (bool?: boolean) => {
     setIsEditing(typeof bool === 'boolean' ? bool : true);
@@ -151,11 +153,16 @@ export const SourceDrawer: React.FC<Props> = () => {
           <DataCard title={DATA_CARDS.DETECTED_CONTAINERS} titleBadge={containersData.length} description={DATA_CARDS.DETECTED_CONTAINERS_DESCRIPTION} data={containersData} />
           <DataCard
             title={DATA_CARDS.DESCRIBE_SOURCE}
+            action={<ToggleCodeComponent isCodeMode={isCodeMode} setIsCodeMode={setIsCodeMode} />}
             data={[
               {
                 type: DataCardFieldTypes.CODE,
+                value: JSON.stringify({
+                  language: 'json',
+                  code: safeJsonStringify(isCodeMode ? describe : restructureForPrettyMode(describe)),
+                  pretty: !isCodeMode,
+                }),
                 width: 'inherit',
-                value: JSON.stringify({ language: 'json', code: safeJsonStringify(describe) }),
               },
             ]}
           />
