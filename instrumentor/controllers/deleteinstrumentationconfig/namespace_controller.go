@@ -151,6 +151,7 @@ func syncGenericWorkloadListToNs(ctx context.Context, c client.Client, kind work
 		}
 	}
 
+	var err error
 	inheriting, err := isInheritingInstrumentationFromNs(ctx, c, freshWorkloadCopy)
 	if err != nil {
 		return err
@@ -159,7 +160,6 @@ func syncGenericWorkloadListToNs(ctx context.Context, c client.Client, kind work
 		return nil
 	}
 
-	var err error
 	err = errors.Join(err, deleteWorkloadInstrumentationConfig(ctx, c, freshWorkloadCopy))
 	err = errors.Join(err, removeReportedNameAnnotation(ctx, c, freshWorkloadCopy))
 	return err

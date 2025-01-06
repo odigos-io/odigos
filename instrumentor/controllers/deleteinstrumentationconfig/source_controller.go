@@ -118,7 +118,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 				return ctrl.Result{}, err
 			}
 
-			err = errors.Join(err, deleteWorkloadInstrumentedApplication(ctx, r.Client, obj))
+			err = errors.Join(err, deleteWorkloadInstrumentationConfig(ctx, r.Client, obj))
 			err = errors.Join(err, removeReportedNameAnnotation(ctx, r.Client, obj))
 			if err != nil {
 				return ctrl.Result{}, err
