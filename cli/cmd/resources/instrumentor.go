@@ -10,8 +10,6 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 
-	certv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
-	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -27,7 +25,7 @@ const (
 	InstrumentorDeploymentName    = "odigos-instrumentor"
 	InstrumentorAppLabelValue     = "odigos-instrumentor"
 	InstrumentorContainerName     = "manager"
-	InstrumentorWebhookSecretName = "instrumentor-webhook-cert"
+	InstrumentorWebhookSecretName = "webhook-cert"
 	InstrumentorWebhookVolumeName = "webhook-cert"
 )
 
@@ -217,72 +215,6 @@ func NewInstrumentorClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "ClusterRole",
 			Name:     "odigos-instrumentor",
-		},
-	}
-}
-
-func isCertManagerInstalled(ctx context.Context, c *kube.Client) bool {
-	// Check if CRD is installed
-	_, err := c.ApiExtensions.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, "issuers.cert-manager.io", metav1.GetOptions{})
-	if err != nil {
-		return false
-	}
-
-	return true
-}
-
-func NewInstrumentorIssuer(ns string) *certv1.Issuer {
-	return &certv1.Issuer{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Issuer",
-			APIVersion: "cert-manager.io/v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "selfsigned-issuer",
-			Namespace: ns,
-			Labels: map[string]string{
-				"app.kubernetes.io/name":       "issuer",
-				"app.kubernetes.io/instance":   "selfsigned-issuer",
-				"app.kubernetes.io/component":  "certificate",
-				"app.kubernetes.io/created-by": "instrumentor",
-				"app.kubernetes.io/part-of":    "odigos",
-			},
-		},
-		Spec: certv1.IssuerSpec{
-			IssuerConfig: certv1.IssuerConfig{
-				SelfSigned: &certv1.SelfSignedIssuer{},
-			},
-		},
-	}
-}
-
-func NewInstrumentorCertificate(ns string) *certv1.Certificate {
-	return &certv1.Certificate{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Certificate",
-			APIVersion: "cert-manager.io/v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "serving-cert",
-			Namespace: ns,
-			Labels: map[string]string{
-				"app.kubernetes.io/name":       "instrumentor-cert",
-				"app.kubernetes.io/instance":   "instrumentor-cert",
-				"app.kubernetes.io/component":  "certificate",
-				"app.kubernetes.io/created-by": "instrumentor",
-				"app.kubernetes.io/part-of":    "odigos",
-			},
-		},
-		Spec: certv1.CertificateSpec{
-			DNSNames: []string{
-				fmt.Sprintf("odigos-instrumentor.%s.svc", ns),
-				fmt.Sprintf("odigos-instrumentor.%s.svc.cluster.local", ns),
-			},
-			IssuerRef: cmmeta.ObjectReference{
-				Kind: "Issuer",
-				Name: "selfsigned-issuer",
-			},
-			SecretName: InstrumentorWebhookSecretName,
 		},
 	}
 }
@@ -587,7 +519,6 @@ func NewInstrumentorResourceManager(client *kube.Client, ns string, config *comm
 func (a *instrumentorResourceManager) Name() string { return "Instrumentor" }
 
 func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) error {
-	certManagerInstalled := isCertManagerInstalled(ctx, a.client)
 	resources := []kube.Object{
 		NewInstrumentorServiceAccount(a.ns),
 		NewInstrumentorLeaderElectionRoleBinding(a.ns),
@@ -597,33 +528,25 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 		NewInstrumentorService(a.ns),
 	}
 
-	if certManagerInstalled {
-		resources = append([]kube.Object{NewInstrumentorIssuer(a.ns),
-			NewInstrumentorCertificate(a.ns),
-			NewMutatingWebhookConfiguration(a.ns, nil),
-		},
-			resources...)
-	} else {
-		ca, err := crypto.GenCA("odigos-instrumentor", 365)
-		if err != nil {
-			return fmt.Errorf("failed to generate CA: %w", err)
-		}
-
-		altNames := []string{
-			fmt.Sprintf("odigos-instrumentor.%s.svc", a.ns),
-			fmt.Sprintf("odigos-instrumentor.%s.svc.cluster.local", a.ns),
-		}
-
-		cert, err := crypto.GenerateSignedCertificate("serving-cert", nil, altNames, 365, ca)
-		if err != nil {
-			return fmt.Errorf("failed to generate signed certificate: %w", err)
-		}
-
-		resources = append([]kube.Object{NewInstrumentorTLSSecret(a.ns, &cert),
-			NewMutatingWebhookConfiguration(a.ns, []byte(cert.Cert)),
-		},
-			resources...)
+	ca, err := crypto.GenCA("odigos-instrumentor", 365)
+	if err != nil {
+		return fmt.Errorf("failed to generate CA: %w", err)
 	}
+
+	altNames := []string{
+		fmt.Sprintf("odigos-instrumentor.%s.svc", a.ns),
+		fmt.Sprintf("odigos-instrumentor.%s.svc.cluster.local", a.ns),
+	}
+
+	cert, err := crypto.GenerateSignedCertificate("serving-cert", nil, altNames, 365, ca)
+	if err != nil {
+		return fmt.Errorf("failed to generate signed certificate: %w", err)
+	}
+
+	resources = append([]kube.Object{NewInstrumentorTLSSecret(a.ns, &cert),
+		NewMutatingWebhookConfiguration(a.ns, []byte(cert.Cert)),
+	},
+		resources...)
 
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }
