@@ -27,7 +27,8 @@ type ProfilingPodConfig struct {
 
 // servicesProfilingMetadata is a map that associates service names with their corresponding pprof endpoint ports and selectors.
 // To add new Odigos services to be profiled, include the service name along with the appropriate port and selectors in this map.
-// Note: In DaemonSets, pods expose ports on the node, so the same port cannot be used for multiple services.
+// Note: Since HostNetwork is set to true in DaemonSet services, pods expose ports on the node itself.
+// Therefore, the same port cannot be used for multiple services on the same node.
 var servicesProfilingMetadata = map[string]ProfilingPodConfig{
 	"odiglet": {
 		Port: consts.OdigletPprofEndpointPort,
