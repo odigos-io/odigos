@@ -230,25 +230,21 @@ func NewUIClusterRole() *rbacv1.ClusterRole {
 				Verbs:     []string{"get", "list"},
 			},
 			{ // Need "pods" for "Describe Source"
-			  // for collector metrics - watch and list collectors pods
+				// for collector metrics - watch and list collectors pods
 				APIGroups: []string{""},
 				Resources: []string{"pods"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
-			{ // Needed to read Odigos entities
+			{ // Needed to read Odigos entities,
+				// "watch" to notify UI about changes with sources
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"instrumentationconfigs", "instrumentationinstances"},
-				Verbs:     []string{"get", "list"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
 			{ // Needed to instrument / uninstrument sources
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"sources"},
 				Verbs:     []string{"get", "list", "create", "delete"},
-			},
-			{ // Needed to notify UI about changes with sources
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentationconfigs", "instrumentationinstances"},
-				Verbs:     []string{"watch"},
 			},
 		},
 	}

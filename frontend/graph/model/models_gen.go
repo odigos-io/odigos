@@ -297,6 +297,7 @@ type InstrumentationRuleInput struct {
 
 type K8sActualNamespace struct {
 	Name             string             `json:"name"`
+	Selected         *bool              `json:"selected,omitempty"`
 	K8sActualSources []*K8sActualSource `json:"k8sActualSources"`
 }
 
@@ -418,13 +419,13 @@ type PayloadCollectionInput struct {
 
 type PersistNamespaceItemInput struct {
 	Name           string `json:"name"`
-	FutureSelected *bool  `json:"futureSelected,omitempty"`
+	FutureSelected bool   `json:"futureSelected"`
 }
 
 type PersistNamespaceSourceInput struct {
 	Name     string          `json:"name"`
 	Kind     K8sResourceKind `json:"kind"`
-	Selected *bool           `json:"selected,omitempty"`
+	Selected bool            `json:"selected"`
 }
 
 type PiiMaskingAction struct {

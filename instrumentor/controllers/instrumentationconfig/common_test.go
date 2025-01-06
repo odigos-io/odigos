@@ -11,28 +11,23 @@ import (
 )
 
 func TestUpdateInstrumentationConfigForWorkload_SingleLanguage(t *testing.T) {
-
 	ic := odigosv1.InstrumentationConfig{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "deployment-test",
 			Namespace: "testns",
 		},
 		Spec: odigosv1.InstrumentationConfigSpec{},
-	}
-	ia := odigosv1.InstrumentedApplication{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "deployment-test",
-			Namespace: "testns",
-		},
-		Spec: odigosv1.InstrumentedApplicationSpec{
-			RuntimeDetails: []odigosv1.RuntimeDetailsByContainer{{
-				ContainerName: "test-container",
-				Language:      common.JavascriptProgrammingLanguage,
-			}},
+		Status: odigosv1.InstrumentationConfigStatus{
+			RuntimeDetailsByContainer: []odigosv1.RuntimeDetailsByContainer{
+				{
+					ContainerName: "test-container",
+					Language:      common.JavascriptProgrammingLanguage,
+				},
+			},
 		},
 	}
 	rules := &odigosv1.InstrumentationRuleList{}
-	err := updateInstrumentationConfigForWorkload(&ic, &ia, rules, "service-name")
+	err := updateInstrumentationConfigForWorkload(&ic, rules, "service-name")
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -45,21 +40,14 @@ func TestUpdateInstrumentationConfigForWorkload_SingleLanguage(t *testing.T) {
 }
 
 func TestUpdateInstrumentationConfigForWorkload_MultipleLanguages(t *testing.T) {
-
 	ic := odigosv1.InstrumentationConfig{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "deployment-test",
 			Namespace: "testns",
 		},
 		Spec: odigosv1.InstrumentationConfigSpec{},
-	}
-	ia := odigosv1.InstrumentedApplication{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "deployment-test",
-			Namespace: "testns",
-		},
-		Spec: odigosv1.InstrumentedApplicationSpec{
-			RuntimeDetails: []odigosv1.RuntimeDetailsByContainer{
+		Status: odigosv1.InstrumentationConfigStatus{
+			RuntimeDetailsByContainer: []odigosv1.RuntimeDetailsByContainer{
 				{
 					ContainerName: "test-container-1",
 					Language:      common.JavascriptProgrammingLanguage,
@@ -72,7 +60,7 @@ func TestUpdateInstrumentationConfigForWorkload_MultipleLanguages(t *testing.T) 
 		},
 	}
 	rules := &odigosv1.InstrumentationRuleList{}
-	err := updateInstrumentationConfigForWorkload(&ic, &ia, rules, "service-name")
+	err := updateInstrumentationConfigForWorkload(&ic, rules, "service-name")
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -95,14 +83,8 @@ func TestUpdateInstrumentationConfigForWorkload_IgnoreUnknownLanguage(t *testing
 			Namespace: "testns",
 		},
 		Spec: odigosv1.InstrumentationConfigSpec{},
-	}
-	ia := odigosv1.InstrumentedApplication{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "deployment-test",
-			Namespace: "testns",
-		},
-		Spec: odigosv1.InstrumentedApplicationSpec{
-			RuntimeDetails: []odigosv1.RuntimeDetailsByContainer{
+		Status: odigosv1.InstrumentationConfigStatus{
+			RuntimeDetailsByContainer: []odigosv1.RuntimeDetailsByContainer{
 				{
 					ContainerName: "test-container-1",
 					Language:      common.JavascriptProgrammingLanguage,
@@ -119,7 +101,7 @@ func TestUpdateInstrumentationConfigForWorkload_IgnoreUnknownLanguage(t *testing
 		},
 	}
 	rules := &odigosv1.InstrumentationRuleList{}
-	err := updateInstrumentationConfigForWorkload(&ic, &ia, rules, "service-name")
+	err := updateInstrumentationConfigForWorkload(&ic, rules, "service-name")
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -139,18 +121,12 @@ func TestUpdateInstrumentationConfigForWorkload_NoLanguages(t *testing.T) {
 			Namespace: "testns",
 		},
 		Spec: odigosv1.InstrumentationConfigSpec{},
-	}
-	ia := odigosv1.InstrumentedApplication{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "deployment-test",
-			Namespace: "testns",
-		},
-		Spec: odigosv1.InstrumentedApplicationSpec{
-			RuntimeDetails: []odigosv1.RuntimeDetailsByContainer{},
+		Status: odigosv1.InstrumentationConfigStatus{
+			RuntimeDetailsByContainer: []odigosv1.RuntimeDetailsByContainer{},
 		},
 	}
 	rules := &odigosv1.InstrumentationRuleList{}
-	err := updateInstrumentationConfigForWorkload(&ic, &ia, rules, "service-name")
+	err := updateInstrumentationConfigForWorkload(&ic, rules, "service-name")
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -160,21 +136,14 @@ func TestUpdateInstrumentationConfigForWorkload_NoLanguages(t *testing.T) {
 }
 
 func TestUpdateInstrumentationConfigForWorkload_SameLanguageMultipleContainers(t *testing.T) {
-
 	ic := odigosv1.InstrumentationConfig{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "deployment-test",
 			Namespace: "testns",
 		},
 		Spec: odigosv1.InstrumentationConfigSpec{},
-	}
-	ia := odigosv1.InstrumentedApplication{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "deployment-test",
-			Namespace: "testns",
-		},
-		Spec: odigosv1.InstrumentedApplicationSpec{
-			RuntimeDetails: []odigosv1.RuntimeDetailsByContainer{
+		Status: odigosv1.InstrumentationConfigStatus{
+			RuntimeDetailsByContainer: []odigosv1.RuntimeDetailsByContainer{
 				{
 					ContainerName: "test-container-1",
 					Language:      common.JavascriptProgrammingLanguage,
@@ -187,7 +156,7 @@ func TestUpdateInstrumentationConfigForWorkload_SameLanguageMultipleContainers(t
 		},
 	}
 	rules := &odigosv1.InstrumentationRuleList{}
-	err := updateInstrumentationConfigForWorkload(&ic, &ia, rules, "service-name")
+	err := updateInstrumentationConfigForWorkload(&ic, rules, "service-name")
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -200,21 +169,14 @@ func TestUpdateInstrumentationConfigForWorkload_SameLanguageMultipleContainers(t
 }
 
 func TestUpdateInstrumentationConfigForWorkload_SingleMatchingRule(t *testing.T) {
-
 	ic := odigosv1.InstrumentationConfig{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "deployment-test",
 			Namespace: "testns",
 		},
 		Spec: odigosv1.InstrumentationConfigSpec{},
-	}
-	ia := odigosv1.InstrumentedApplication{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "deployment-test",
-			Namespace: "testns",
-		},
-		Spec: odigosv1.InstrumentedApplicationSpec{
-			RuntimeDetails: []odigosv1.RuntimeDetailsByContainer{
+		Status: odigosv1.InstrumentationConfigStatus{
+			RuntimeDetailsByContainer: []odigosv1.RuntimeDetailsByContainer{
 				{
 					ContainerName: "test-container",
 					Language:      common.JavascriptProgrammingLanguage,
@@ -237,7 +199,7 @@ func TestUpdateInstrumentationConfigForWorkload_SingleMatchingRule(t *testing.T)
 			},
 		},
 	}
-	err := updateInstrumentationConfigForWorkload(&ic, &ia, rules, "service-name")
+	err := updateInstrumentationConfigForWorkload(&ic, rules, "service-name")
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -266,14 +228,8 @@ func TestUpdateInstrumentationConfigForWorkload_InWorkloadList(t *testing.T) {
 			Namespace: "testns",
 		},
 		Spec: odigosv1.InstrumentationConfigSpec{},
-	}
-	ia := odigosv1.InstrumentedApplication{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "deployment-test",
-			Namespace: "testns",
-		},
-		Spec: odigosv1.InstrumentedApplicationSpec{
-			RuntimeDetails: []odigosv1.RuntimeDetailsByContainer{
+		Status: odigosv1.InstrumentationConfigStatus{
+			RuntimeDetailsByContainer: []odigosv1.RuntimeDetailsByContainer{
 				{
 					ContainerName: "test-container",
 					Language:      common.JavascriptProgrammingLanguage,
@@ -303,7 +259,7 @@ func TestUpdateInstrumentationConfigForWorkload_InWorkloadList(t *testing.T) {
 		},
 	}
 
-	err := updateInstrumentationConfigForWorkload(&ic, &ia, rules, "service-name")
+	err := updateInstrumentationConfigForWorkload(&ic, rules, "service-name")
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -316,21 +272,14 @@ func TestUpdateInstrumentationConfigForWorkload_InWorkloadList(t *testing.T) {
 }
 
 func TestUpdateInstrumentationConfigForWorkload_NotInWorkloadList(t *testing.T) {
-
 	ic := odigosv1.InstrumentationConfig{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "deployment-test",
 			Namespace: "testns",
 		},
 		Spec: odigosv1.InstrumentationConfigSpec{},
-	}
-	ia := odigosv1.InstrumentedApplication{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "deployment-test",
-			Namespace: "testns",
-		},
-		Spec: odigosv1.InstrumentedApplicationSpec{
-			RuntimeDetails: []odigosv1.RuntimeDetailsByContainer{
+		Status: odigosv1.InstrumentationConfigStatus{
+			RuntimeDetailsByContainer: []odigosv1.RuntimeDetailsByContainer{
 				{
 					ContainerName: "test-container",
 					Language:      common.JavascriptProgrammingLanguage,
@@ -360,7 +309,7 @@ func TestUpdateInstrumentationConfigForWorkload_NotInWorkloadList(t *testing.T) 
 		},
 	}
 
-	err := updateInstrumentationConfigForWorkload(&ic, &ia, rules, "service-name")
+	err := updateInstrumentationConfigForWorkload(&ic, rules, "service-name")
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -374,21 +323,14 @@ func TestUpdateInstrumentationConfigForWorkload_NotInWorkloadList(t *testing.T) 
 }
 
 func TestUpdateInstrumentationConfigForWorkload_DisabledRule(t *testing.T) {
-
 	ic := odigosv1.InstrumentationConfig{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "deployment-test",
 			Namespace: "testns",
 		},
 		Spec: odigosv1.InstrumentationConfigSpec{},
-	}
-	ia := odigosv1.InstrumentedApplication{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "deployment-test",
-			Namespace: "testns",
-		},
-		Spec: odigosv1.InstrumentedApplicationSpec{
-			RuntimeDetails: []odigosv1.RuntimeDetailsByContainer{
+		Status: odigosv1.InstrumentationConfigStatus{
+			RuntimeDetailsByContainer: []odigosv1.RuntimeDetailsByContainer{
 				{
 					ContainerName: "test-container",
 					Language:      common.JavascriptProgrammingLanguage,
@@ -412,7 +354,7 @@ func TestUpdateInstrumentationConfigForWorkload_DisabledRule(t *testing.T) {
 		},
 	}
 
-	err := updateInstrumentationConfigForWorkload(&ic, &ia, rules, "service-name")
+	err := updateInstrumentationConfigForWorkload(&ic, rules, "service-name")
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -426,21 +368,14 @@ func TestUpdateInstrumentationConfigForWorkload_DisabledRule(t *testing.T) {
 }
 
 func TestUpdateInstrumentationConfigForWorkload_MultipleDefaultRules(t *testing.T) {
-
 	ic := odigosv1.InstrumentationConfig{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "deployment-test",
 			Namespace: "testns",
 		},
 		Spec: odigosv1.InstrumentationConfigSpec{},
-	}
-	ia := odigosv1.InstrumentedApplication{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "deployment-test",
-			Namespace: "testns",
-		},
-		Spec: odigosv1.InstrumentedApplicationSpec{
-			RuntimeDetails: []odigosv1.RuntimeDetailsByContainer{
+		Status: odigosv1.InstrumentationConfigStatus{
+			RuntimeDetailsByContainer: []odigosv1.RuntimeDetailsByContainer{
 				{
 					ContainerName: "test-container",
 					Language:      common.JavascriptProgrammingLanguage,
@@ -476,7 +411,7 @@ func TestUpdateInstrumentationConfigForWorkload_MultipleDefaultRules(t *testing.
 		},
 	}
 
-	err := updateInstrumentationConfigForWorkload(&ic, &ia, rules, "service-name")
+	err := updateInstrumentationConfigForWorkload(&ic, rules, "service-name")
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -531,14 +466,8 @@ func TestUpdateInstrumentationConfigForWorkload_RuleForLibrary(t *testing.T) {
 			Namespace: "testns",
 		},
 		Spec: odigosv1.InstrumentationConfigSpec{},
-	}
-	ia := odigosv1.InstrumentedApplication{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "deployment-test",
-			Namespace: "testns",
-		},
-		Spec: odigosv1.InstrumentedApplicationSpec{
-			RuntimeDetails: []odigosv1.RuntimeDetailsByContainer{
+		Status: odigosv1.InstrumentationConfigStatus{
+			RuntimeDetailsByContainer: []odigosv1.RuntimeDetailsByContainer{
 				{
 					ContainerName: "test-container",
 					Language:      common.JavascriptProgrammingLanguage,
@@ -567,7 +496,7 @@ func TestUpdateInstrumentationConfigForWorkload_RuleForLibrary(t *testing.T) {
 		},
 	}
 
-	err := updateInstrumentationConfigForWorkload(&ic, &ia, rules, "service-name")
+	err := updateInstrumentationConfigForWorkload(&ic, rules, "service-name")
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -593,14 +522,8 @@ func TestUpdateInstrumentationConfigForWorkload_LibraryRuleOtherLanguage(t *test
 			Namespace: "testns",
 		},
 		Spec: odigosv1.InstrumentationConfigSpec{},
-	}
-	ia := odigosv1.InstrumentedApplication{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "deployment-test",
-			Namespace: "testns",
-		},
-		Spec: odigosv1.InstrumentedApplicationSpec{
-			RuntimeDetails: []odigosv1.RuntimeDetailsByContainer{
+		Status: odigosv1.InstrumentationConfigStatus{
+			RuntimeDetailsByContainer: []odigosv1.RuntimeDetailsByContainer{
 				{
 					ContainerName: "test-container",
 					Language:      common.JavascriptProgrammingLanguage,
@@ -630,7 +553,7 @@ func TestUpdateInstrumentationConfigForWorkload_LibraryRuleOtherLanguage(t *test
 		},
 	}
 
-	err := updateInstrumentationConfigForWorkload(&ic, &ia, rules, "service-name")
+	err := updateInstrumentationConfigForWorkload(&ic, rules, "service-name")
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
