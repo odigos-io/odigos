@@ -4,15 +4,19 @@ import theme from '@/styles/theme';
 import { CheckIcon } from '@/assets';
 import { Tooltip } from '../tooltip';
 import styled from 'styled-components';
+import { FlexColumn } from '@/styles';
+import { FieldError } from '../field-error';
 
 interface CheckboxProps {
   title?: string;
   titleColor?: React.CSSProperties['color'];
   tooltip?: string;
-  initialValue?: boolean;
+  value?: boolean;
   onChange?: (value: boolean) => void;
   disabled?: boolean;
   style?: React.CSSProperties;
+  errorMessage?: string;
+  allowPropagation?: boolean;
 }
 
 const Container = styled.div<{ $disabled?: CheckboxProps['disabled'] }>`
@@ -36,32 +40,35 @@ const CheckboxWrapper = styled.div<{ $isChecked: boolean; $disabled?: CheckboxPr
   transition: border 0.3s, background-color 0.3s;
 `;
 
-export const Checkbox: React.FC<CheckboxProps> = ({ title, titleColor, tooltip, initialValue = false, onChange, disabled, style }) => {
-  const [isChecked, setIsChecked] = useState(initialValue);
-  useEffect(() => setIsChecked(initialValue), [initialValue]);
+export const Checkbox: React.FC<CheckboxProps> = ({ title, titleColor, tooltip, value = false, onChange, disabled, style, errorMessage, allowPropagation = false }) => {
+  const [isChecked, setIsChecked] = useState(value);
+  useEffect(() => setIsChecked(value), [value]);
 
   const handleToggle: React.MouseEventHandler<HTMLDivElement> = (e) => {
     if (disabled) return;
-
-    e.stopPropagation();
+    if (!allowPropagation) e.stopPropagation();
 
     if (onChange) onChange(!isChecked);
     else setIsChecked((prev) => !prev);
   };
 
   return (
-    <Container data-id={`checkbox${!!title ? `-${title}` : ''}`} $disabled={disabled} onClick={handleToggle} style={style}>
-      <CheckboxWrapper $isChecked={isChecked} $disabled={disabled}>
-        {isChecked && <CheckIcon />}
-      </CheckboxWrapper>
+    <FlexColumn>
+      <Container data-id={`checkbox${!!title ? `-${title}` : ''}`} $disabled={disabled} onClick={handleToggle} style={style}>
+        <CheckboxWrapper $isChecked={isChecked} $disabled={disabled}>
+          {isChecked && <CheckIcon />}
+        </CheckboxWrapper>
 
-      {title && (
-        <Tooltip text={tooltip} withIcon>
-          <Text size={12} color={titleColor || theme.text.grey} style={{ maxWidth: '90%' }}>
-            {title}
-          </Text>
-        </Tooltip>
-      )}
-    </Container>
+        {title && (
+          <Tooltip text={tooltip} withIcon>
+            <Text size={12} color={titleColor || theme.text.grey} style={{ maxWidth: '90%' }}>
+              {title}
+            </Text>
+          </Tooltip>
+        )}
+      </Container>
+
+      {!!errorMessage && <FieldError>{errorMessage}</FieldError>}
+    </FlexColumn>
   );
 };

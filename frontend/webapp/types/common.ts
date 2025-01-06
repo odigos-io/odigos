@@ -5,8 +5,9 @@ export interface ExportedSignals {
 }
 
 export interface Condition {
-  type: string;
   status: string;
+  type: string;
+  reason: string;
   message: string;
   lastTransitionTime: string;
 }
@@ -28,6 +29,7 @@ export interface Notification {
   target?: string;
   dismissed: boolean;
   seen: boolean;
+  hideFromHistory?: boolean;
   time: string;
 }
 
@@ -60,7 +62,7 @@ export enum OVERVIEW_NODE_TYPES {
   ADD_RULE = 'addRule',
   ADD_SOURCE = 'addSource',
   ADD_ACTION = 'addAction',
-  ADD_DESTIONATION = 'addDestination',
+  ADD_DESTINATION = 'addDestination',
 }
 
 export enum STATUSES {

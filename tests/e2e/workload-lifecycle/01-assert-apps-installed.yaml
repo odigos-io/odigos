@@ -96,20 +96,6 @@ status:
       started: true
   phase: Running
 ---
-apiVersion: v1
-kind: Pod
-metadata:
-  labels:
-    app: language-change
-  namespace: default
-status:
-  containerStatuses:
-    - name: language-change
-      ready: true
-      restartCount: 0
-      started: true
-  phase: Running
----
 
 apiVersion: v1
 kind: Pod
@@ -218,6 +204,25 @@ apiVersion: v1
 kind: Pod
 metadata:
   labels:
+    app: python-other-agent
+  namespace: default
+spec:
+  containers:
+  - env:
+    - name: DJANGO_SETTINGS_MODULE
+      (value != null): true
+status:
+  containerStatuses:
+    - name: python-other-agent
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
     app: python-alpine
   namespace: default
 spec:
@@ -277,11 +282,53 @@ apiVersion: v1
 kind: Pod
 metadata:
   labels:
-    app: dotnet-musl
+    app: dotnet8-musl
   namespace: default
 status:
   containerStatuses:
-    - name: dotnet-musl
+    - name: dotnet8-musl
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: dotnet6-musl
+  namespace: default
+status:
+  containerStatuses:
+    - name: dotnet6-musl
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: dotnet6-glibc
+  namespace: default
+status:
+  containerStatuses:
+    - name: dotnet6-glibc
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: dotnet8-glibc
+  namespace: default
+status:
+  containerStatuses:
+    - name: dotnet8-glibc
       ready: true
       restartCount: 0
       started: true

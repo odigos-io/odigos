@@ -1,13 +1,13 @@
-import { PropsWithChildren, useRef, useState } from 'react';
+import { PropsWithChildren, useMemo, useRef, useState } from 'react';
 import { SVG } from '@/assets';
 import styled from 'styled-components';
-import { useDrawerStore } from '@/store';
 import DrawerFooter from './drawer-footer';
 import { Drawer } from '@/reuseable-components';
-import { OVERVIEW_ENTITY_TYPES } from '@/types';
 import DrawerHeader, { DrawerHeaderRef } from './drawer-header';
 import { CancelWarning, DeleteWarning } from '@/components/modals';
+import { NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES } from '@/types';
 import { useDestinationCRUD, useKeyDown, useSourceCRUD } from '@/hooks';
+import { useDrawerStore, useNotificationStore, usePendingStore } from '@/store';
 
 const DRAWER_WIDTH = `${640 + 64}px`; // +64 because of "ContentArea" padding
 
@@ -37,6 +37,8 @@ const ContentArea = styled.div`
 `;
 
 const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, titleTooltip, icon, iconSrc, isEdit = false, isFormDirty = false, onEdit, onSave, onDelete, onCancel }) => {
+  const { isThisPending } = usePendingStore();
+  const { addNotification } = useNotificationStore();
   const { selectedItem, setSelectedItem } = useDrawerStore();
 
   useKeyDown({ key: 'Enter', active: !!selectedItem }, () => (isEdit ? clickSave() : closeDrawer()));
@@ -101,6 +103,24 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, 
     return isLast;
   };
 
+  const isPending = useMemo(() => {
+    if (!selectedItem?.type) return false;
+
+    return isThisPending({
+      entityType: selectedItem.type as OVERVIEW_ENTITY_TYPES,
+      entityId: selectedItem.id,
+    });
+  }, [selectedItem]);
+
+  const handlePending = (action: string) => {
+    addNotification({
+      type: NOTIFICATION_TYPE.WARNING,
+      title: 'Pending',
+      message: `Cannot click ${action}, ${selectedItem?.type} is pending`,
+      hideFromHistory: true,
+    });
+  };
+
   return (
     <>
       <Drawer isOpen onClose={isEdit ? clickCancel : closeDrawer} width={DRAWER_WIDTH} closeOnEscape={!isDeleteModalOpen && !isCancelModalOpen}>
@@ -112,8 +132,10 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, 
             icon={icon}
             iconSrc={iconSrc}
             isEdit={isEdit}
-            onEdit={onEdit ? () => onEdit(true) : undefined}
+            onEdit={isPending ? () => handlePending('edit') : onEdit ? () => onEdit(true) : undefined}
             onClose={isEdit ? clickCancel : closeDrawer}
+            onDelete={isPending ? () => handlePending(isSource ? 'uninstrument' : 'delete') : onEdit ? clickDelete : undefined}
+            deleteLabel={isSource ? 'Uninstrument' : undefined}
           />
           <ContentArea>{children}</ContentArea>
           <DrawerFooter isOpen={isEdit} onSave={clickSave} onCancel={clickCancel} onDelete={clickDelete} deleteLabel={isSource ? 'Uninstrument' : undefined} />

@@ -1,4 +1,4 @@
-package describe
+package source_describe
 
 import (
 	"context"
@@ -50,15 +50,11 @@ func ConvertSourceAnalyzeToGQL(analyze *source.SourceAnalyze) *model.SourceAnaly
 			Namespace:        describe_utils.ConvertEntityPropertyToGQL(analyze.Labels.Namespace),
 			InstrumentedText: describe_utils.ConvertEntityPropertyToGQL(&analyze.Labels.InstrumentedText),
 		},
+		RuntimeInfo: convertRuntimeInfoToGQL(analyze.RuntimeInfo),
 		InstrumentationConfig: &model.InstrumentationConfigAnalyze{
 			Created:    describe_utils.ConvertEntityPropertyToGQL(&analyze.InstrumentationConfig.Created),
 			CreateTime: describe_utils.ConvertEntityPropertyToGQL(analyze.InstrumentationConfig.CreateTime),
-		},
-		RuntimeInfo: convertRuntimeInfoToGQL(analyze.RuntimeInfo),
-		InstrumentedApplication: &model.InstrumentedApplicationAnalyze{
-			Created:    describe_utils.ConvertEntityPropertyToGQL(&analyze.InstrumentedApplication.Created),
-			CreateTime: describe_utils.ConvertEntityPropertyToGQL(analyze.InstrumentedApplication.CreateTime),
-			Containers: convertRuntimeInfoContainersToGQL(analyze.InstrumentedApplication.Containers),
+			Containers: convertRuntimeInfoContainersToGQL(analyze.InstrumentationConfig.Containers),
 		},
 		InstrumentationDevice: &model.InstrumentationDeviceAnalyze{
 			StatusText: describe_utils.ConvertEntityPropertyToGQL(&analyze.InstrumentationDevice.StatusText),
@@ -75,7 +71,6 @@ func convertRuntimeInfoToGQL(info *source.RuntimeInfoAnalyze) *model.RuntimeInfo
 		return nil
 	}
 	return &model.RuntimeInfoAnalyze{
-		Generation: describe_utils.ConvertEntityPropertyToGQL(&info.Generation),
 		Containers: convertRuntimeInfoContainersToGQL(info.Containers),
 	}
 }

@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import Image from 'next/image';
 import { Text } from '../text';
 import { XIcon } from '@/assets';
 import { Divider } from '../divider';
 import styled from 'styled-components';
 import { getStatusIcon } from '@/utils';
-import { progress, slide } from '@/styles';
+import { IconButton } from '../icon-button';
+import { FlexRow, progress, slide } from '@/styles';
 import { type Notification, NOTIFICATION_TYPE } from '@/types';
 
 interface OnCloseParams {
@@ -54,15 +54,17 @@ const Content = styled.div<{ $type: Props['type'] }>`
   display: flex;
   align-items: center;
   flex: 1;
+  gap: 8px;
   padding: 12px 16px;
   border-radius: 32px;
   background-color: ${({ $type, theme }) => theme.colors[$type]};
 `;
 
-const TextWrapper = styled.div`
+const TextWrapper = styled.div<{ $withAction: boolean }>`
   display: flex;
   align-items: center;
-  margin: 0 auto 0 12px;
+  margin: 0 auto 0 0;
+  max-width: ${({ $withAction }) => ($withAction ? '400px' : '500px')};
   height: 12px;
 `;
 
@@ -72,37 +74,22 @@ const Title = styled(Text)<{ $type: Props['type'] }>`
 `;
 
 const Message = styled(Text)<{ $type: Props['type'] }>`
-  font-size: 12px;
   color: ${({ $type, theme }) => theme.text[$type]};
+  font-size: 12px;
 `;
 
-const ButtonsWrapper = styled.div`
-  margin-left: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
+const ButtonsWrapper = styled(FlexRow)``;
 
 const ActionButton = styled(Text)`
   text-transform: uppercase;
   text-decoration: underline;
-  font-size: 14px;
+  font-size: 12px;
   font-family: ${({ theme }) => theme.font_family.secondary};
-  cursor: pointer;
-`;
-
-const CloseButton = styled(Image)`
-  margin-left: 12px;
-  width: 18px;
-  height: 18px;
-  padding: 4px;
-  border-radius: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  white-space: nowrap;
   cursor: pointer;
   &:hover {
-    background-color: ${({ theme }) => theme.colors.white_opacity['10']};
+    transform: scale(1.1);
+    transition: transform 0.3s;
   }
 `;
 
@@ -131,15 +118,11 @@ export const NotificationNote: React.FC<Props> = ({ type, title, message, action
 
   useEffect(() => {
     const t = setTimeout(() => setIsEntering(false), TRANSITION_DURATION);
-
-    return () => {
-      clearTimeout(t);
-    };
+    return () => clearTimeout(t);
   }, []);
 
   useEffect(() => {
     timerForClosure.current = setTimeout(() => closeToast({ asSeen: false }), TOAST_DURATION);
-
     return () => {
       if (timerForClosure.current) clearTimeout(timerForClosure.current);
     };
@@ -166,16 +149,20 @@ export const NotificationNote: React.FC<Props> = ({ type, title, message, action
       <Content $type={type} style={style}>
         <StatusIcon />
 
-        <TextWrapper>
+        <TextWrapper $withAction={!!action}>
           {title && <Title $type={type}>{title}</Title>}
           {title && message && <Divider orientation='vertical' type={type} />}
           {message && <Message $type={type}>{message}</Message>}
         </TextWrapper>
 
-        {(action || onClose) && (
+        {(!!action || !!onClose) && (
           <ButtonsWrapper>
             {action && <ActionButton onClick={action.onClick}>{action.label}</ActionButton>}
-            {onClose && <XIcon size={12} onClick={() => closeToast({ asSeen: true })} />}
+            {onClose && (
+              <IconButton onClick={() => closeToast({ asSeen: true })}>
+                <XIcon size={12} />
+              </IconButton>
+            )}
           </ButtonsWrapper>
         )}
       </Content>
