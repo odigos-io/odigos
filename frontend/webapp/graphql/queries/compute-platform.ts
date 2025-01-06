@@ -3,26 +3,29 @@ import { gql } from '@apollo/client';
 export const GET_COMPUTE_PLATFORM = gql`
   query GetComputePlatform {
     computePlatform {
+      k8sActualNamespaces {
+        name
+        selected
+      }
       k8sActualSources {
+        namespace
         name
         kind
-        namespace
         numberOfInstances
+        selected
         reportedName
-        instrumentedApplicationDetails {
-          containers {
-            containerName
-            language
-            runtimeVersion
-            otherAgent
-          }
-          conditions {
-            status
-            type
-            reason
-            message
-            lastTransitionTime
-          }
+        containers {
+          containerName
+          language
+          runtimeVersion
+          otherAgent
+        }
+        conditions {
+          status
+          type
+          reason
+          message
+          lastTransitionTime
         }
       }
       destinations {
@@ -96,9 +99,6 @@ export const GET_COMPUTE_PLATFORM = gql`
           }
         }
       }
-      k8sActualNamespaces {
-        name
-      }
     }
   }
 `;
@@ -108,11 +108,12 @@ export const GET_NAMESPACES = gql`
     computePlatform {
       k8sActualNamespace(name: $namespaceName) {
         name
-        instrumentationLabelEnabled
+        selected
         k8sActualSources(instrumentationLabeled: $instrumentationLabeled) {
           kind
           name
           numberOfInstances
+          selected
         }
       }
     }

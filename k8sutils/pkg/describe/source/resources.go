@@ -17,7 +17,6 @@ import (
 type OdigosSourceResources struct {
 	Namespace                *corev1.Namespace
 	InstrumentationConfig    *odigosv1.InstrumentationConfig
-	InstrumentedApplication  *odigosv1.InstrumentedApplication
 	InstrumentationInstances *odigosv1.InstrumentationInstanceList
 	Pods                     *corev1.PodList
 }
@@ -39,13 +38,6 @@ func GetRelevantSourceResources(ctx context.Context, kubeClient kubernetes.Inter
 	ic, err := odigosClient.InstrumentationConfigs(workloadNs).Get(ctx, runtimeObjectName, metav1.GetOptions{})
 	if err == nil {
 		sourceResources.InstrumentationConfig = ic
-	} else if !apierrors.IsNotFound(err) {
-		return nil, err
-	}
-
-	ia, err := odigosClient.InstrumentedApplications(workloadNs).Get(ctx, runtimeObjectName, metav1.GetOptions{})
-	if err == nil {
-		sourceResources.InstrumentedApplication = ia
 	} else if !apierrors.IsNotFound(err) {
 		return nil, err
 	}
