@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package deleteinstrumentedapplication
+package deleteinstrumentationconfig
 
 import (
 	"context"
@@ -28,25 +28,25 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-type StatefulSetReconciler struct {
+type DaemonSetReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-func (r *StatefulSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *DaemonSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	var ss appsv1.StatefulSet
-	err := r.Get(ctx, req.NamespacedName, &ss)
+	var ds appsv1.DaemonSet
+	err := r.Get(ctx, req.NamespacedName, &ds)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return ctrl.Result{}, nil
 		}
 
-		logger.Error(err, "error fetching statefulset object")
+		logger.Error(err, "error fetching daemonset object")
 		return ctrl.Result{}, err
 	}
 
-	err = reconcileWorkloadObject(ctx, r.Client, &ss)
+	err = reconcileWorkloadObject(ctx, r.Client, &ds)
 	return ctrl.Result{}, err
 }

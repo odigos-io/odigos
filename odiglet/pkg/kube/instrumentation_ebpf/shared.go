@@ -24,7 +24,7 @@ func cleanupEbpf(directors ebpf.DirectorsMap, name types.NamespacedName) {
 	}
 }
 
-func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors ebpf.DirectorsMap, runtimeDetails *odigosv1.InstrumentedApplication, podWorkload *workload.PodWorkload) (error, bool) {
+func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors ebpf.DirectorsMap, runtimeDetails *odigosv1.InstrumentationConfig, podWorkload *workload.PodWorkload) (error, bool) {
 	logger := log.FromContext(ctx)
 	podUid := string(pod.UID)
 	instrumentedEbpf := false
@@ -82,9 +82,9 @@ func instrumentPodWithEbpf(ctx context.Context, pod *corev1.Pod, directors ebpf.
 	return nil, instrumentedEbpf
 }
 
-func getIgnoredContainers(instApp *odigosv1.InstrumentedApplication) map[string]struct{} {
+func getIgnoredContainers(instConfig *odigosv1.InstrumentationConfig) map[string]struct{} {
 	ignoredContainers := make(map[string]struct{})
-	for _, container := range instApp.Spec.RuntimeDetails {
+	for _, container := range instConfig.Status.RuntimeDetailsByContainer {
 		if container.Language == common.IgnoredProgrammingLanguage {
 			ignoredContainers[container.ContainerName] = struct{}{}
 		}
