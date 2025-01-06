@@ -206,10 +206,6 @@ type InstrumentationConfigList struct {
 	Items           []InstrumentationConfig `json:"items"`
 }
 
-func init() {
-	SchemeBuilder.Register(&InstrumentationConfig{}, &InstrumentationConfigList{})
-}
-
 // Languages returns the set of languages that this configuration applies to
 func (ic *InstrumentationConfig) Languages() map[common.ProgrammingLanguage]struct{} {
 	langs := make(map[common.ProgrammingLanguage]struct{})

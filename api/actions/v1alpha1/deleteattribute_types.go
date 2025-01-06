@@ -66,7 +66,3 @@ type DeleteAttributeList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []DeleteAttribute `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&DeleteAttribute{}, &DeleteAttributeList{})
-}
