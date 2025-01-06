@@ -4,7 +4,14 @@ on:
   push:
     branches:
       - '**'
-
+    paths:
+      - 'common/**'
+      - 'k8sUtils/**'
+      - 'procdiscovery/**'
+      - 'opamserver/**'
+      - 'instrumentation/**'
+      - 'enterprise-go-insrumentation/**'
+      - 'ebpf-java-instrumentation/**'
 jobs:
   trigger-odigos-enterprise:
     runs-on: ubuntu-latest
