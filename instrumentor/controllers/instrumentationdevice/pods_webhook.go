@@ -39,14 +39,6 @@ var _ webhook.CustomDefaulter = &PodsWebhook{}
 func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 	logger := log.FromContext(ctx)
 
-	// In certain scenarios, the raw request can be utilized to retrieve missing details, like the namespace.
-	// For example, prior to Kubernetes version 1.24 (see https://github.com/kubernetes/kubernetes/pull/94637),
-	// namespaced objects could be sent to admission webhooks with empty namespaces during their creation.
-	req, err := admission.RequestFromContext(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get admission request: %w", err)
-	}
-
 	pod, ok := obj.(*corev1.Pod)
 	if !ok {
 		return fmt.Errorf("expected a Pod but got a %T", obj)
@@ -57,19 +49,24 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 	}
 
 	// Inject ODIGOS environment variables into all containers
-	p.injectOdigosEnvVars(ctx, logger, pod, req)
-
-	return nil
+	return p.injectOdigosEnvVars(ctx, logger, pod)
 }
 
-func (p *PodsWebhook) injectOdigosEnvVars(ctx context.Context, logger logr.Logger, pod *corev1.Pod, admissionRequest admission.Request) {
+func (p *PodsWebhook) injectOdigosEnvVars(ctx context.Context, logger logr.Logger, pod *corev1.Pod) error {
 	// Environment variables that remain consistent across all containers
 	commonEnvVars := getCommonEnvVars()
 
+	// In certain scenarios, the raw request can be utilized to retrieve missing details, like the namespace.
+	// For example, prior to Kubernetes version 1.24 (see https://github.com/kubernetes/kubernetes/pull/94637),
+	// namespaced objects could be sent to admission webhooks with empty namespaces during their creation.
+	admissionRequest, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get admission request: %w", err)
+	}
+
 	podWorkload, err := workload.PodWorkloadObject(ctx, pod)
 	if err != nil {
-		logger.Error(err, "failed to extract pod workload details from pod.")
-		return
+		return fmt.Errorf("failed to extract pod workload details from pod: %w", err)
 	}
 
 	if podWorkload.Namespace == "" {
@@ -77,10 +74,8 @@ func (p *PodsWebhook) injectOdigosEnvVars(ctx context.Context, logger logr.Logge
 			// If the namespace is available in the admission request, set it in the podWorkload.Namespace.
 			podWorkload.Namespace = admissionRequest.Namespace
 		} else {
-			// It is a case that not supposed to happen, but if it does, log an error and return.
-			err := fmt.Errorf("namespace is empty for pod %s/%s", pod.Namespace, pod.Name)
-			logger.Error(err, "Skipping Injection of ODIGOS environment variables")
-			return
+			// It is a case that not supposed to happen, but if it does, return an error.
+			return fmt.Errorf("namespace is empty for pod %s/%s, Skipping Injection of ODIGOS environment variables", pod.Namespace, pod.Name)
 		}
 	}
 
@@ -131,6 +126,7 @@ func (p *PodsWebhook) injectOdigosEnvVars(ctx context.Context, logger logr.Logge
 			Value: resourceAttributesEnvValue,
 		})
 	}
+	return nil
 }
 
 func envVarsExist(containerEnv []corev1.EnvVar, commonEnvVars []corev1.EnvVar) bool {
