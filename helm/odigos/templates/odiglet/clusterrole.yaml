@@ -52,25 +52,6 @@ rules:
   - apiGroups:
       - odigos.io
     resources:
-      - instrumentedapplications
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - patch
-      - update
-  - apiGroups:
-      - odigos.io
-    resources:
-      - instrumentedapplications/status
-    verbs:
-      - get
-      - patch
-      - update
-  - apiGroups:
-      - odigos.io
-    resources:
       - instrumentationinstances
     verbs:
       - create
