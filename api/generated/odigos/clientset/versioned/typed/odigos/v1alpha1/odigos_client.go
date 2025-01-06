@@ -35,6 +35,7 @@ type OdigosV1alpha1Interface interface {
 	InstrumentedApplicationsGetter
 	OdigosConfigurationsGetter
 	ProcessorsGetter
+	SourcesGetter
 }
 
 // OdigosV1alpha1Client is used to interact with features provided by the odigos.io group.
@@ -72,6 +73,10 @@ func (c *OdigosV1alpha1Client) OdigosConfigurations(namespace string) OdigosConf
 
 func (c *OdigosV1alpha1Client) Processors(namespace string) ProcessorInterface {
 	return newProcessors(c, namespace)
+}
+
+func (c *OdigosV1alpha1Client) Sources(namespace string) SourceInterface {
+	return newSources(c, namespace)
 }
 
 // NewForConfig creates a new OdigosV1alpha1Client for the given config.

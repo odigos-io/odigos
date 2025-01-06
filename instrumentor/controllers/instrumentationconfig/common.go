@@ -12,24 +12,24 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationConfig, ia *odigosv1alpha1.InstrumentedApplication, rules *odigosv1alpha1.InstrumentationRuleList, serviceName string) error {
+func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationConfig, rules *odigosv1alpha1.InstrumentationRuleList, serviceName string) error {
 
-	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(ia.Name)
+	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(ic.Name)
 	if err != nil {
 		return err
 	}
 	workload := workload.PodWorkload{
 		Name:      workloadName,
-		Namespace: ia.Namespace,
+		Namespace: ic.Namespace,
 		Kind:      workloadKind,
 	}
 
 	ic.Spec.ServiceName = serviceName
 
-	sdkConfigs := make([]odigosv1alpha1.SdkConfig, 0, len(ia.Spec.RuntimeDetails))
+	sdkConfigs := make([]odigosv1alpha1.SdkConfig, 0, len(ic.Status.RuntimeDetailsByContainer))
 
 	// create an empty sdk config for each detected programming language
-	for _, container := range ia.Spec.RuntimeDetails {
+	for _, container := range ic.Status.RuntimeDetailsByContainer {
 		containerLanguage := container.Language
 		if containerLanguage == common.IgnoredProgrammingLanguage || containerLanguage == common.UnknownProgrammingLanguage {
 			continue

@@ -346,8 +346,45 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 			"collection_interval":  "10s",
 		}
 
+		cfg.Receivers["hostmetrics"] = config.GenericMap{
+			"collection_interval": "10s",
+			"root_path":           "/hostfs",
+			"scrapers": config.GenericMap{
+				"paging": config.GenericMap{
+					"metrics": config.GenericMap{
+						"system.paging.utilization": config.GenericMap{
+							"enabled": true,
+						},
+					},
+				},
+				"cpu": config.GenericMap{
+					"metrics": config.GenericMap{
+						"system.cpu.utilization": config.GenericMap{
+							"enabled": true,
+						},
+					},
+				},
+				"disk": struct{}{},
+				"filesystem": config.GenericMap{
+					"metrics": config.GenericMap{
+						"system.filesystem.utilization": config.GenericMap{
+							"enabled": true,
+						},
+					},
+					"exclude_mount_points": config.GenericMap{
+						"match_type":   "regexp",
+						"mount_points": []string{"/var/lib/kubelet/*"},
+					},
+				},
+				"load":      struct{}{},
+				"memory":    struct{}{},
+				"network":   struct{}{},
+				"processes": struct{}{},
+			},
+		}
+
 		cfg.Service.Pipelines["metrics"] = config.Pipeline{
-			Receivers:  []string{"otlp", "kubeletstats"},
+			Receivers:  []string{"otlp", "kubeletstats", "hostmetrics"},
 			Processors: append(commonProcessors, metricsProcessors...),
 			Exporters:  []string{"otlp/gateway"},
 		}

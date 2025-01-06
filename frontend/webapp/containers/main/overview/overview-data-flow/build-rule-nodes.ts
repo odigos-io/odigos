@@ -74,7 +74,7 @@ export const buildRuleNodes = ({ loading, entities, positions, unfilteredCounts 
         type: OVERVIEW_NODE_TYPES.ADD_RULE,
         status: STATUSES.HEALTHY,
         title: 'ADD RULE',
-        subTitle: `Add ${!!unfilteredCount ? 'a new' : 'first'} rule to modify the OpenTelemetry data`,
+        subTitle: 'To modify OpenTelemetry data',
       },
     });
   } else {

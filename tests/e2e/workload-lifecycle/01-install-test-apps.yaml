@@ -246,41 +246,6 @@ spec:
     - protocol: TCP
       port: 3000
 ---
-kind: Deployment
-apiVersion: apps/v1
-metadata:
-  name: language-change
-  namespace: default
-  labels:
-    app: language-change
-spec:
-  selector:
-    matchLabels:
-      app: language-change
-  template:
-    metadata:
-      labels:
-        app: language-change
-    spec:
-      containers:
-        - name: language-change
-          image: nodejs-dockerfile-env:v0.0.1
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 3000
----
-kind: Service
-apiVersion: v1
-metadata:
-  name: language-change
-  namespace: default
-spec:
-  selector:
-    app: language-change
-  ports:
-    - protocol: TCP
-      port: 3000
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -573,6 +538,54 @@ spec:
 kind: Deployment
 apiVersion: apps/v1
 metadata:
+  name: python-other-agent
+  namespace: default
+  labels:
+    app: python-other-agent
+spec:
+  selector:
+    matchLabels:
+      app: python-other-agent
+  template:
+    metadata:
+      labels:
+        app: python-other-agent
+    spec:
+      containers:
+        - name: python-other-agent
+          image: python-other-agent:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DJANGO_SETTINGS_MODULE
+              value: "myapp.settings"
+          livenessProbe:
+            httpGet:
+              path: /health/
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: python-other-agent
+  namespace: default
+spec:
+  selector:
+    app: python-other-agent
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 8000
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
   name: python-alpine
   namespace: default
   labels:
@@ -719,22 +732,22 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: dotnet-musl
+  name: dotnet8-musl
   namespace: default
   labels:
-    app: dotnet-musl
+    app: dotnet8-musl
 spec:
   selector:
     matchLabels:
-      app: dotnet-musl
+      app: dotnet8-musl
   template:
     metadata:
       labels:
-        app: dotnet-musl
+        app: dotnet8-musl
     spec:
       containers:
-        - name: dotnet-musl
-          image: dotnet-musl:v0.0.1
+        - name: dotnet8-musl
+          image: dotnet8-musl:v0.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -745,11 +758,125 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-  name: dotnet-musl
+  name: dotnet8-musl
   namespace: default
 spec:
     selector:
-        app: dotnet-musl
+        app: dotnet8-musl
     ports:
         - protocol: TCP
           port: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dotnet6-musl
+  namespace: default
+  labels:
+    app: dotnet6-musl
+spec:
+  selector:
+    matchLabels:
+      app: dotnet6-musl
+  template:
+    metadata:
+      labels:
+        app: dotnet6-musl
+    spec:
+      containers:
+        - name: dotnet6-musl
+          image: dotnet6-musl:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: dotnet6-musl
+  namespace: default
+spec:
+  selector:
+    app: dotnet6-musl
+  ports:
+    - protocol: TCP
+      port: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dotnet8-glibc
+  namespace: default
+  labels:
+    app: dotnet8-glibc
+spec:
+  selector:
+    matchLabels:
+      app: dotnet8-glibc
+  template:
+    metadata:
+      labels:
+        app: dotnet8-glibc
+    spec:
+      containers:
+        - name: dotnet8-glibc
+          image: dotnet8-glibc:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: dotnet8-glibc
+  namespace: default
+spec:
+  selector:
+    app: dotnet8-glibc
+  ports:
+    - protocol: TCP
+      port: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dotnet6-glibc
+  namespace: default
+  labels:
+    app: dotnet6-glibc
+spec:
+  selector:
+    matchLabels:
+      app: dotnet6-glibc
+  template:
+    metadata:
+      labels:
+        app: dotnet6-glibc
+    spec:
+      containers:
+        - name: dotnet6-glibc
+          image: dotnet6-glibc:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: dotnet6-glibc
+  namespace: default
+spec:
+  selector:
+    app: dotnet6-glibc
+  ports:
+    - protocol: TCP
+      port: 8080

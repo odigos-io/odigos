@@ -106,30 +106,30 @@ load-to-kind:
 
 .PHONY: restart-ui
 restart-ui:
-	kubectl rollout restart deployment odigos-ui -n odigos-system
+	-kubectl rollout restart deployment odigos-ui -n odigos-system
 
 .PHONY: restart-odiglet
 restart-odiglet:
-	kubectl rollout restart daemonset odiglet -n odigos-system
+	-kubectl rollout restart daemonset odiglet -n odigos-system
 
 .PHONY: restart-autoscaler
 restart-autoscaler:
-	kubectl rollout restart deployment odigos-autoscaler -n odigos-system
+	-kubectl rollout restart deployment odigos-autoscaler -n odigos-system
 
 .PHONY: restart-instrumentor
 restart-instrumentor:
-	kubectl rollout restart deployment odigos-instrumentor -n odigos-system
+	-kubectl rollout restart deployment odigos-instrumentor -n odigos-system
 
 .PHONY: restart-scheduler
 restart-scheduler:
-	kubectl rollout restart deployment odigos-scheduler -n odigos-system
-
+	-kubectl rollout restart deployment odigos-scheduler -n odigos-system
 
 .PHONY: restart-collector
 restart-collector:
-	kubectl rollout restart deployment odigos-gateway -n odigos-system
+	-kubectl rollout restart deployment odigos-gateway -n odigos-system
 	# DaemonSets don't directly support the rollout restart command in the same way Deployments do. However, you can achieve the same result by updating an environment variable or any other field in the DaemonSet's pod template, triggering a rolling update of the pods managed by the DaemonSet
-	kubectl -n odigos-system patch daemonset odigos-data-collection -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"kubectl.kubernetes.io/restartedAt\":\"$(date +%Y-%m-%dT%H:%M:%S%z)\"}}}}}"
+	-kubectl -n odigos-system patch daemonset odigos-data-collection -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"kubectl.kubernetes.io/restartedAt\":\"$(date +%Y-%m-%dT%H:%M:%S%z)\"}}}}}"
+
 
 .PHONY: deploy-odiglet
 deploy-odiglet:
@@ -171,7 +171,8 @@ debug-odiglet:
 	kubectl port-forward -n odigos-system daemonset/odiglet 2345:2345
 
 .PHONY: deploy
-deploy: deploy-odiglet deploy-autoscaler deploy-collector deploy-instrumentor deploy-scheduler
+deploy:
+	make deploy-odiglet && make deploy-autoscaler && make deploy-collector && make deploy-instrumentor && make deploy-scheduler && make deploy-ui
 
 ,PHONY: e2e-test
 e2e-test:
@@ -198,7 +199,12 @@ check-clean-work-tree:
 .PHONY: cli-install
 cli-install:
 	@echo "Installing odigos from source. version: $(ODIGOS_CLI_VERSION)"
-	cd ./cli ; go run -tags=embed_manifests . install --version $(ODIGOS_CLI_VERSION)
+	cd ./cli ; go run -tags=embed_manifests . install --version $(ODIGOS_CLI_VERSION) --nowait
+
+.PHONY: cli-uninstall
+cli-uninstall:
+	@echo "Uninstalling odigos from source. version: $(ODIGOS_CLI_VERSION)"
+	cd ./cli ; go run -tags=embed_manifests . uninstall
 
 .PHONY: cli-upgrade
 cli-upgrade:

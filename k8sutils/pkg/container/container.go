@@ -73,3 +73,12 @@ func AllContainersReady(pod *v1.Pod) bool {
 	}
 	return true
 }
+
+func GetContainerEnvVarValue(container *v1.Container, envVarName string) *string {
+	for _, env := range container.Env {
+		if env.Name == envVarName {
+			return &env.Value
+		}
+	}
+	return nil
+}

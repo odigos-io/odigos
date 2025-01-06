@@ -41,7 +41,7 @@ const StyledAddDestinationButton = styled(Button)`
 
 export function AddDestinationContainer() {
   const router = useRouter();
-  const { createSources } = useSourceCRUD();
+  const { persistSources } = useSourceCRUD();
   const { createDestination } = useDestinationCRUD();
   const { configuredSources, configuredFutureApps, configuredDestinations, resetState } = useAppStore((state) => state);
 
@@ -58,7 +58,8 @@ export function AddDestinationContainer() {
   const clickDone = async () => {
     setIsLoading(true);
 
-    await createSources(configuredSources, configuredFutureApps);
+    // configuredSources & configuredFutureApps are set in store from the previous step in onboarding flow
+    await persistSources(configuredSources, configuredFutureApps);
     await Promise.all(configuredDestinations.map(async ({ form }) => await createDestination(form)));
 
     resetState();
