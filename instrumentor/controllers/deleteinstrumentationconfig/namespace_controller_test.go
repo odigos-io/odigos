@@ -11,7 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-var _ = Describe("DeleteInstrumentedApplication Namespace controller", func() {
+var _ = Describe("DeleteInstrumentationConfig Namespace controller", func() {
 
 	ctx := context.Background()
 	var namespace *corev1.Namespace
