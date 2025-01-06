@@ -19,7 +19,9 @@ import (
 	"github.com/odigos-io/odigos/frontend/services/describe/odigos_describe"
 	"github.com/odigos-io/odigos/frontend/services/describe/source_describe"
 	testconnection "github.com/odigos-io/odigos/frontend/services/test_connection"
+	"github.com/odigos-io/odigos/k8sutils/pkg/client"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -76,16 +78,22 @@ func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *m
 
 // K8sActualSources is the resolver for the k8sActualSources field.
 func (r *computePlatformResolver) K8sActualSources(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualSource, error) {
-	// Initialize an empty list of K8sActualSource
-	var actualSources []*model.K8sActualSource
+	var instrumentationConfigs []v1alpha1.InstrumentationConfig
 
-	instrumentationConfigs, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{})
+	// Get all InstrumentationConfigs
+	err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List, ctx, metav1.ListOptions{}, func(deps *v1alpha1.InstrumentationConfigList) error {
+		instrumentationConfigs = append(instrumentationConfigs, deps.Items...)
+		return nil
+	})
+
 	if err != nil {
 		return nil, err
 	}
 
-	// Convert each instrumented application to the K8sActualSource type
-	for _, instruConfig := range instrumentationConfigs.Items {
+	var actualSources []*model.K8sActualSource
+
+	// Convert each InstrumentationConfig to the K8sActualSource type
+	for _, instruConfig := range instrumentationConfigs {
 		actualSource := instrumentationConfigToActualSource(instruConfig)
 		services.AddHealthyInstrumentationInstancesCondition(ctx, &instruConfig, actualSource)
 		actualSources = append(actualSources, actualSource)
