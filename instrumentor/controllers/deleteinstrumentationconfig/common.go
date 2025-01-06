@@ -3,7 +3,6 @@ package deleteinstrumentationconfig
 import (
 	"context"
 
-	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -26,11 +25,11 @@ func reconcileWorkloadObject(ctx context.Context, kubeClient client.Client, work
 	}
 
 	// Check if a Source object exists for this workload
-	sourceList, err := v1alpha1.GetSourceListForWorkload(ctx, kubeClient, workloadObject)
+	sourceList, err := odigosv1.GetSourceListForWorkload(ctx, kubeClient, workloadObject)
 	if err != nil {
 		return err
 	}
-	if sourceList.Workload == nil && sourceList.Namespace == nil {
+	if sourceList.Workload != nil || sourceList.Namespace != nil {
 		// Note that if a Source is being deleted, but still has the finalizer, it will still show up in this List
 		// So we can't use this check to trigger un-instrumentation via Source deletion
 		return nil
@@ -54,13 +53,13 @@ func deleteWorkloadInstrumentationConfig(ctx context.Context, kubeClient client.
 	ns := workloadObject.GetNamespace()
 	name := workloadObject.GetName()
 	kind := workload.WorkloadKindFromClientObject(workloadObject)
-	instrumentedApplicationName := workload.CalculateWorkloadRuntimeObjectName(name, kind)
-	logger.V(1).Info("deleting instrumented application", "name", instrumentedApplicationName, "kind", kind)
+	instrumentationConfigName := workload.CalculateWorkloadRuntimeObjectName(name, kind)
+	logger.V(1).Info("deleting instrumentationconfig", "name", instrumentationConfigName, "kind", kind)
 
 	instConfigErr := kubeClient.Delete(ctx, &odigosv1.InstrumentationConfig{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,
-			Name:      instrumentedApplicationName,
+			Name:      instrumentationConfigName,
 		},
 	})
 
@@ -68,7 +67,7 @@ func deleteWorkloadInstrumentationConfig(ctx context.Context, kubeClient client.
 		return client.IgnoreNotFound(instConfigErr)
 	}
 
-	logger.V(1).Info("instrumented application deleted", "namespace", ns, "name", name, "kind", kind)
+	logger.V(1).Info("instrumentationconfig deleted", "namespace", ns, "name", name, "kind", kind)
 	return nil
 }
 
