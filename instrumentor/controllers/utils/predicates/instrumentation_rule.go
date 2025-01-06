@@ -7,7 +7,6 @@ import (
 
 type OtelSdkInstrumentationRulePredicate struct{}
 
-
 func (o OtelSdkInstrumentationRulePredicate) Create(e event.CreateEvent) bool {
 	// check if delete rule is for otel sdk
 	instrumentationRule, ok := e.Object.(*odigosv1alpha1.InstrumentationRule)

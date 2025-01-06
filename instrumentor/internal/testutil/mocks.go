@@ -137,9 +137,9 @@ func NewMockTestStatefulSet(ns *corev1.Namespace) *appsv1.StatefulSet {
 
 // givin a workload object (deployment, daemonset, statefulset) return a mock instrumented application
 // with a single container with the GoProgrammingLanguage
-func NewMockInstrumentedApplication(workloadObject client.Object) *odigosv1.InstrumentedApplication {
+func NewMockInstrumentationConfig(workloadObject client.Object) *odigosv1.InstrumentationConfig {
 	gvk, _ := apiutil.GVKForObject(workloadObject, scheme.Scheme)
-	return &odigosv1.InstrumentedApplication{
+	return &odigosv1.InstrumentationConfig{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      workload.CalculateWorkloadRuntimeObjectName(workloadObject.GetName(), gvk.Kind),
 			Namespace: workloadObject.GetNamespace(),
@@ -152,8 +152,8 @@ func NewMockInstrumentedApplication(workloadObject client.Object) *odigosv1.Inst
 				},
 			},
 		},
-		Spec: odigosv1.InstrumentedApplicationSpec{
-			RuntimeDetails: []odigosv1.RuntimeDetailsByContainer{
+		Status: odigosv1.InstrumentationConfigStatus{
+			RuntimeDetailsByContainer: []odigosv1.RuntimeDetailsByContainer{
 				{
 					ContainerName: "test",
 					Language:      common.GoProgrammingLanguage,

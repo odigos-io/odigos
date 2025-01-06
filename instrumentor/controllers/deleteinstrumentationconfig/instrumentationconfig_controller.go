@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package deleteinstrumentedapplication
+package deleteinstrumentationconfig
 
 import (
 	"context"
@@ -57,24 +57,24 @@ func getObjectByOwnerReference(ctx context.Context, k8sClient client.Client, own
 	return nil, fmt.Errorf("unsupported owner kind %s", ownerRef.Kind)
 }
 
-type InstrumentedApplicationReconciler struct {
+type InstrumentationConfigReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	var instrumentedApplication odigosv1.InstrumentedApplication
-	err := r.Client.Get(ctx, req.NamespacedName, &instrumentedApplication)
+	var instrumentationConfig odigosv1.InstrumentationConfig
+	err := r.Client.Get(ctx, req.NamespacedName, &instrumentationConfig)
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// find the workload object which is the owner of the InstrumentedApplication
-	ownerReferences := instrumentedApplication.GetOwnerReferences()
+	// find the workload object which is the owner of the InstrumentationConfig
+	ownerReferences := instrumentationConfig.GetOwnerReferences()
 	if len(ownerReferences) != 1 {
-		logger.Info("InstrumentedApplication should have exactly one owner reference")
+		logger.Info("InstrumentationConfig should have exactly one owner reference")
 		return ctrl.Result{}, nil
 	}
 	workloadObject, err := getObjectByOwnerReference(ctx, r.Client, ownerReferences[0], req.Namespace)
@@ -91,7 +91,7 @@ func (r *InstrumentedApplicationReconciler) Reconcile(ctx context.Context, req c
 
 	if !instEffectiveEnabled {
 		logger.Info("Deleting instrumented application for non-enabled workload")
-		err := r.Client.Delete(ctx, &instrumentedApplication)
+		err := r.Client.Delete(ctx, &instrumentationConfig)
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
