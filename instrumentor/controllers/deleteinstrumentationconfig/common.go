@@ -1,4 +1,4 @@
-package deleteinstrumentedapplication
+package deleteinstrumentationconfig
 
 import (
 	"context"
@@ -32,7 +32,7 @@ func reconcileWorkloadObject(ctx context.Context, kubeClient client.Client, work
 		}
 	}
 
-	if err := deleteWorkloadInstrumentedApplication(ctx, kubeClient, workloadObject); err != nil {
+	if err := deleteWorkloadInstrumentationConfig(ctx, kubeClient, workloadObject); err != nil {
 		logger.Error(err, "error removing runtime details")
 		return err
 	}
@@ -45,19 +45,11 @@ func reconcileWorkloadObject(ctx context.Context, kubeClient client.Client, work
 	return nil
 }
 
-func deleteWorkloadInstrumentedApplication(ctx context.Context, kubeClient client.Client, workloadObject client.Object) error {
-
+func deleteWorkloadInstrumentationConfig(ctx context.Context, kubeClient client.Client, workloadObject client.Object) error {
 	ns := workloadObject.GetNamespace()
 	name := workloadObject.GetName()
 	kind := workload.WorkloadKindFromClientObject(workloadObject)
 	instrumentedApplicationName := workload.CalculateWorkloadRuntimeObjectName(name, kind)
-
-	instAppErr := kubeClient.Delete(ctx, &odigosv1.InstrumentedApplication{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: ns,
-			Name:      instrumentedApplicationName,
-		},
-	})
 
 	instConfigErr := kubeClient.Delete(ctx, &odigosv1.InstrumentationConfig{
 		ObjectMeta: metav1.ObjectMeta{
@@ -65,9 +57,6 @@ func deleteWorkloadInstrumentedApplication(ctx context.Context, kubeClient clien
 			Name:      instrumentedApplicationName,
 		},
 	})
-	if instAppErr != nil {
-		return client.IgnoreNotFound(instAppErr)
-	}
 
 	if instConfigErr != nil {
 		return client.IgnoreNotFound(instConfigErr)

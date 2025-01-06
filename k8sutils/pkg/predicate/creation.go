@@ -24,4 +24,4 @@ func (i CreationPredicate) Generic(e event.GenericEvent) bool {
 	return false
 }
 
-var _ predicate.Predicate = &DeletionPredicate{}
+var _ predicate.Predicate = &CreationPredicate{}

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package deleteinstrumentedapplication
+package deleteinstrumentationconfig
 
 import (
 	"context"
@@ -156,7 +156,7 @@ func syncGenericWorkloadListToNs(ctx context.Context, c client.Client, kind work
 	}
 
 	var err error
-	err = errors.Join(err, deleteWorkloadInstrumentedApplication(ctx, c, freshWorkloadCopy))
+	err = errors.Join(err, deleteWorkloadInstrumentationConfig(ctx, c, freshWorkloadCopy))
 	err = errors.Join(err, removeReportedNameAnnotation(ctx, c, freshWorkloadCopy))
 	return err
 }

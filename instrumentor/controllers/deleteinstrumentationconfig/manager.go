@@ -1,8 +1,9 @@
-package deleteinstrumentedapplication
+package deleteinstrumentationconfig
 
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
+	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -14,7 +15,7 @@ import (
 func SetupWithManager(mgr ctrl.Manager) error {
 	err := builder.
 		ControllerManagedBy(mgr).
-		Named("deleteinstrumentedapplication-deployment").
+		Named("deleteinstrumentationconfig-deployment").
 		For(&appsv1.Deployment{}).
 		WithEventFilter(predicate.LabelChangedPredicate{}).
 		Complete(&DeploymentReconciler{
@@ -27,7 +28,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
-		Named("deleteinstrumentedapplication-statefulset").
+		Named("deleteinstrumentationconfig-statefulset").
 		For(&appsv1.StatefulSet{}).
 		WithEventFilter(predicate.LabelChangedPredicate{}).
 		Complete(&StatefulSetReconciler{
@@ -40,7 +41,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
-		Named("deleteinstrumentedapplication-daemonset").
+		Named("deleteinstrumentationconfig-daemonset").
 		For(&appsv1.DaemonSet{}).
 		WithEventFilter(predicate.LabelChangedPredicate{}).
 		Complete(&DaemonSetReconciler{
@@ -53,7 +54,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
-		Named("deleteinstrumentedapplication-namespace").
+		Named("deleteinstrumentationconfig-namespace").
 		For(&corev1.Namespace{}).
 		WithEventFilter(&NsLabelBecameDisabledPredicate{}).
 		Complete(&NamespaceReconciler{
@@ -66,9 +67,10 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
-		Named("deleteinstrumentedapplication-instrumentedapplication").
-		For(&odigosv1.InstrumentedApplication{}).
-		Complete(&InstrumentedApplicationReconciler{
+		Named("deleteinstrumentationconfig-instrumentationconfig").
+		For(&odigosv1.InstrumentationConfig{}).
+		WithEventFilter(&odigospredicate.CreationPredicate{}).
+		Complete(&InstrumentationConfigReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
 		})
@@ -84,6 +86,18 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		Complete(&SourceReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
+		})
+	if err != nil {
+		return err
+	}
+
+	err = builder.
+		ControllerManagedBy(mgr).
+		Named("deleteinstrumentationconfig-instrumentedapp-migration").
+		For(&odigosv1.InstrumentedApplication{}).
+		WithEventFilter(&odigospredicate.CreationPredicate{}).
+		Complete(&InstrumentedApplicationMigrationReconciler{
+			Client: mgr.GetClient(),
 		})
 	if err != nil {
 		return err
