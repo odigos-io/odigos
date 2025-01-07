@@ -4,11 +4,11 @@ import { type EntityCounts } from './get-entity-counts';
 import { type NodePositions } from './get-node-positions';
 import { getMainContainerLanguage } from '@/utils/constants/programming-languages';
 import { getEntityIcon, getEntityLabel, getHealthStatus, getProgrammingLanguageIcon } from '@/utils';
-import { NODE_TYPES, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type ComputePlatformMapped } from '@/types';
+import { type K8sActualSource, NODE_TYPES, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES } from '@/types';
 
 interface Params {
   loading: boolean;
-  entities: ComputePlatformMapped['computePlatform']['k8sActualSources'];
+  entities: K8sActualSource[];
   positions: NodePositions;
   unfilteredCounts: EntityCounts;
   containerHeight: number;
@@ -52,7 +52,7 @@ export const buildSourceNodes = ({ loading, entities, positions, unfilteredCount
       nodeWidth,
       title: 'Sources',
       icon: getEntityIcon(OVERVIEW_ENTITY_TYPES.SOURCE),
-      tagValue: unfilteredCounts[OVERVIEW_ENTITY_TYPES.SOURCE],
+      tagValue: unfilteredCount,
     },
   });
 

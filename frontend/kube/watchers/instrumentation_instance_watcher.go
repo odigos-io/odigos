@@ -20,7 +20,7 @@ func StartInstrumentationInstanceWatcher(ctx context.Context, namespace string) 
 	instrumentationInstanceModifiedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			MinBatchSize: 1,
-			Duration:     10 * time.Second,
+			Duration:     5 * time.Second,
 			MessageType:  sse.MessageTypeError,
 			Event:        sse.MessageEventModified,
 			CRDType:      consts.InstrumentationInstance,

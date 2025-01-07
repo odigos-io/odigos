@@ -26,8 +26,8 @@ describe('Sources CRUD', () => {
 
         cy.wait('@gql').then(() => {
           getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 5 }, () => {
-            // Wait for 10 seconds to allow the backend to batch an SSE notification
-            cy.wait(10000).then(() => {
+            // Wait for 5 seconds to allow the backend to batch an SSE notification
+            cy.wait(5000).then(() => {
               cy.get(DATA_IDS.NOTIF_MANAGER_BUTTON).click();
               cy.get(DATA_IDS.NOTIF_MANAGER_CONTENR).contains(TEXTS.NOTIF_SOURCES_CREATED).should('exist');
             });
@@ -73,8 +73,8 @@ describe('Sources CRUD', () => {
 
       cy.wait('@gql').then(() => {
         getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 }, () => {
-          // Wait for 10 seconds to allow the backend to batch an SSE notification
-          cy.wait(10000).then(() => {
+          // Wait for 5 seconds to allow the backend to batch an SSE notification
+          cy.wait(5000).then(() => {
             cy.get(DATA_IDS.NOTIF_MANAGER_BUTTON).click();
             cy.get(DATA_IDS.NOTIF_MANAGER_CONTENR).contains(TEXTS.NOTIF_SOURCES_DELETED).should('exist');
           });
