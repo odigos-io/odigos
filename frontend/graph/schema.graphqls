@@ -193,8 +193,7 @@ type ComputePlatform {
   computePlatformType: ComputePlatformType!
   k8sActualNamespaces: [K8sActualNamespace]!
   k8sActualNamespace(name: String!): K8sActualNamespace
-  k8sActualSources: [K8sActualSource]! # old way (gets all, bad performance)
-  sources(nextPage: String!): PaginatedSources! # new way (paginated)
+  sources(nextPage: String!): PaginatedSources!
   destinations: [Destination!]!
   actions: [PipelineAction!]!
   instrumentationRules: [InstrumentationRule!]!

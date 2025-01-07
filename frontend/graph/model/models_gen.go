@@ -76,7 +76,6 @@ type ComputePlatform struct {
 	ComputePlatformType  ComputePlatformType    `json:"computePlatformType"`
 	K8sActualNamespaces  []*K8sActualNamespace  `json:"k8sActualNamespaces"`
 	K8sActualNamespace   *K8sActualNamespace    `json:"k8sActualNamespace,omitempty"`
-	K8sActualSources     []*K8sActualSource     `json:"k8sActualSources"`
 	Sources              *PaginatedSources      `json:"sources"`
 	Destinations         []*Destination         `json:"destinations"`
 	Actions              []*PipelineAction      `json:"actions"`
