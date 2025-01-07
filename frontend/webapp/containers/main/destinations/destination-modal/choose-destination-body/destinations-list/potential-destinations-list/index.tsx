@@ -1,7 +1,7 @@
 import React from 'react';
 import { OdigosLogo } from '@/assets';
 import styled from 'styled-components';
-import { DestinationTypeItem } from '@/types';
+import type { DestinationTypeItem } from '@/types';
 import { usePotentialDestinations } from '@/hooks';
 import { DataTab, SectionTitle, SkeletonLoader } from '@/reuseable-components';
 
@@ -31,7 +31,7 @@ export const PotentialDestinationsList: React.FC<Props> = ({ setSelectedItems })
       {loading ? (
         <SkeletonLoader size={1} />
       ) : (
-        data.map((item: DestinationTypeItem) => (
+        data.map((item) => (
           <DataTab
             key={`destination-${item.type}`}
             data-id={`destination-${item.displayName}`}
