@@ -2,11 +2,11 @@ import { useEffect, useRef } from 'react';
 import { API } from '@/utils';
 import { NOTIFICATION_TYPE } from '@/types';
 import { useComputePlatform, usePaginatedSources } from '../compute-platform';
-import { type NotifyPayload, useConnectionStore, useNotificationStore, usePendingStore } from '@/store';
+import { type NotifyPayload, useConnectionStore, useNotificationStore, usePaginatedStore, usePendingStore } from '@/store';
 
 export const useSSE = () => {
   const { setPendingItems } = usePendingStore();
-  const { fetchSources } = usePaginatedSources();
+  const { fetchSources, sourcesNotFinished } = usePaginatedSources();
   const { addNotification } = useNotificationStore();
   const { setConnectionStore } = useConnectionStore();
   const { refetch: refetchComputePlatform } = useComputePlatform();
@@ -34,7 +34,7 @@ export const useSSE = () => {
 
         if (notification.crdType === 'InstrumentationConfig') {
           // We handle update/delete in CRUD hook, refetch only on create
-          if (notification.title === 'Added') fetchSources(true);
+          if (notification.title === 'Added') fetchSources(sourcesNotFinished);
         } else {
           refetchComputePlatform();
         }

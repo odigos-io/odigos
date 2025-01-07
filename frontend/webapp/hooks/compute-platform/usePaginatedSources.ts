@@ -7,7 +7,7 @@ import { NOTIFICATION_TYPE, type ComputePlatform } from '@/types';
 
 export const usePaginatedSources = () => {
   const { addNotification } = useNotificationStore();
-  const { sources, addSources, setSources } = usePaginatedStore();
+  const { sources, addSources, setSources, sourcesNotFinished, setSourcesNotFinished } = usePaginatedStore();
 
   const [getSources, { loading }] = useLazyQuery<{ computePlatform: { sources: ComputePlatform['computePlatform']['sources'] } }>(GET_SOURCES, {
     onError: (error) =>
@@ -22,22 +22,31 @@ export const usePaginatedSources = () => {
     if (nextPage === '') setSources([]);
     const { data } = await getSources({ variables: { nextPage } });
 
-    if (getAll && !!data?.computePlatform.sources) {
+    if (!!data?.computePlatform.sources) {
       const { nextPage, items } = data.computePlatform.sources;
 
       addSources(items);
-      // This timeout is to prevent react-flow from flickering on re-renders
-      setTimeout(() => !!nextPage && fetchSources(true, nextPage), 100);
+
+      if (getAll) {
+        // This timeout is to prevent react-flow from flickering on re-renders
+        setTimeout(() => {
+          if (!!nextPage) fetchSources(true, nextPage);
+          else setSourcesNotFinished(false);
+        }, 10);
+      } else if (!!nextPage) {
+        setSourcesNotFinished(true);
+      }
     }
   };
 
-  // TODO: paginate all on a button click
+  // Fetch 1 batch on initial mount
   useEffect(() => {
-    if (!sources.length && !loading) fetchSources(true);
+    if (!sources.length && !loading) fetchSources();
   }, []);
 
   return {
     sources,
     fetchSources,
+    sourcesNotFinished,
   };
 };

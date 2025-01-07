@@ -2,8 +2,10 @@ import React, { useEffect, useRef } from 'react';
 import { SVG } from '@/assets';
 import BaseNode from './base-node';
 import styled from 'styled-components';
-import { useNodeDataFlowHandlers } from '@/hooks';
+import { usePaginatedStore } from '@/store';
+import { Button } from '@/reuseable-components';
 import { type Node, type NodeProps } from '@xyflow/react';
+import { useNodeDataFlowHandlers, usePaginatedSources } from '@/hooks';
 import { type K8sActualSource, NODE_TYPES, OVERVIEW_ENTITY_TYPES, STATUSES, type WorkloadId } from '@/types';
 
 interface Props
@@ -36,6 +38,7 @@ interface Props
   > {}
 
 const Container = styled.div<{ $nodeWidth: number; $nodeHeight: number }>`
+  position: relative;
   width: ${({ $nodeWidth }) => $nodeWidth}px;
   height: ${({ $nodeHeight }) => $nodeHeight}px;
   background: transparent;
@@ -47,10 +50,35 @@ const BaseNodeWrapper = styled.div<{ $framePadding: number }>`
   margin: ${({ $framePadding }) => $framePadding}px 0;
 `;
 
+const LoadMoreWrapper = styled.div`
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+
+  width: 100%;
+  height: 100px;
+  padding-bottom: 12px;
+
+  background: linear-gradient(to top, ${({ theme }) => theme.colors.primary}, transparent);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+`;
+
+const LoadMoreButton = styled(Button)`
+  background: ${({ theme }) => theme.colors.primary} !important;
+  &:hover {
+    background: ${({ theme }) => theme.colors.dropdown_bg_2} !important;
+  }
+`;
+
 const ScrollNode: React.FC<Props> = ({ data, ...rest }) => {
   const { nodeWidth, nodeHeight, items, onScroll } = data;
 
   const { handleNodeClick } = useNodeDataFlowHandlers();
+  const { sourcesNotFinished } = usePaginatedStore();
+  const { fetchSources } = usePaginatedSources();
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -62,7 +90,7 @@ const ScrollNode: React.FC<Props> = ({ data, ...rest }) => {
 
       if (!!onScroll) onScroll({ clientHeight, scrollHeight, scrollTop });
 
-      // TODO: Use the following once we have to handle paginated API requests:
+      // TODO: Use the following if we have to handle paginated API requests using scroll:
       // const isTop = scrollTop === 0;
       // const isBottom = scrollHeight - scrollTop <= clientHeight;
       // if (isTop) {
@@ -93,6 +121,20 @@ const ScrollNode: React.FC<Props> = ({ data, ...rest }) => {
           <BaseNode {...rest} type={NODE_TYPES.BASE} id={item.id} data={item.data} />
         </BaseNodeWrapper>
       ))}
+
+      <LoadMoreWrapper>
+        {sourcesNotFinished && (
+          <LoadMoreButton
+            variant='secondary'
+            onClick={(e) => {
+              e.stopPropagation();
+              fetchSources(true);
+            }}
+          >
+            load more
+          </LoadMoreButton>
+        )}
+      </LoadMoreWrapper>
     </Container>
   );
 };
