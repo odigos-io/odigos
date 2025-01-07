@@ -51,7 +51,7 @@ export const ChooseDestinationBody: React.FC<Props> = ({ onSelect, hidden }) => 
         const filteredItems = category.items.filter((item) => {
           const matchesSearch = !search || item.displayName.toLowerCase().includes(search.toLowerCase());
           const matchesCategory = selectedCategory.id === 'all' || selectedCategory.id === category.name;
-          const matchesMonitor = selectedMonitors.some((monitor) => item.supportedSignals?.[monitor.toLowerCase()]?.supported);
+          const matchesMonitor = selectedMonitors.some((monitor) => item.supportedSignals[monitor.toLowerCase()]?.supported);
 
           return matchesSearch && matchesCategory && matchesMonitor;
         });

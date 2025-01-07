@@ -15,9 +15,7 @@ export interface DestinationTypeItem {
   testConnectionSupported: boolean;
   displayName: string;
   imageUrl: string;
-  // rare bug can make this undefined
-  // TODO: investigate source of bug (start with "usePotentialDestinations")
-  supportedSignals?: SupportedSignals;
+  supportedSignals: SupportedSignals;
   fields: {
     [key: string]: string;
   };
