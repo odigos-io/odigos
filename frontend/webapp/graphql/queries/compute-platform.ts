@@ -100,7 +100,7 @@ export const GET_NAMESPACES = gql`
 `;
 
 export const GET_SOURCES = gql`
-  query GetK8sActualSources($nextPage: String!) {
+  query GetSources($nextPage: String!) {
     computePlatform {
       sources(nextPage: $nextPage) {
         nextPage
@@ -108,7 +108,6 @@ export const GET_SOURCES = gql`
           namespace
           name
           kind
-          numberOfInstances
           selected
           reportedName
           containers {

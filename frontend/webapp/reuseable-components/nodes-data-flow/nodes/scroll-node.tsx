@@ -1,11 +1,10 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { SVG } from '@/assets';
 import BaseNode from './base-node';
 import styled from 'styled-components';
-import { usePaginatedStore } from '@/store';
 import { Button } from '@/reuseable-components';
+import { useNodeDataFlowHandlers } from '@/hooks';
 import { type Node, type NodeProps } from '@xyflow/react';
-import { useNodeDataFlowHandlers, usePaginatedSources } from '@/hooks';
 import { type K8sActualSource, NODE_TYPES, OVERVIEW_ENTITY_TYPES, STATUSES, type WorkloadId } from '@/types';
 
 interface Props
@@ -50,7 +49,7 @@ const BaseNodeWrapper = styled.div<{ $framePadding: number }>`
   margin: ${({ $framePadding }) => $framePadding}px 0;
 `;
 
-const LoadMoreWrapper = styled.div`
+const LoadMoreWrapper = styled.div<{ $hide?: boolean }>`
   position: fixed;
   bottom: 0;
   left: 50%;
@@ -60,26 +59,28 @@ const LoadMoreWrapper = styled.div`
   height: 100px;
   padding-bottom: 12px;
 
-  background: linear-gradient(to top, ${({ theme }) => theme.colors.primary}, transparent);
+  background: ${({ theme, $hide }) => ($hide ? 'transparent' : `linear-gradient(to top, ${theme.colors.primary}, transparent)`)};
   display: flex;
   align-items: flex-end;
   justify-content: center;
+
+  pointer-events: none;
 `;
 
-const LoadMoreButton = styled(Button)`
-  background: ${({ theme }) => theme.colors.primary} !important;
-  &:hover {
-    background: ${({ theme }) => theme.colors.dropdown_bg_2} !important;
-  }
-`;
+// const LoadMoreButton = styled(Button)`
+//   background: ${({ theme }) => theme.colors.primary} !important;
+//   &:hover {
+//     background: ${({ theme }) => theme.colors.dropdown_bg_2} !important;
+//   }
+// `;
 
 const ScrollNode: React.FC<Props> = ({ data, ...rest }) => {
   const { nodeWidth, nodeHeight, items, onScroll } = data;
 
   const { handleNodeClick } = useNodeDataFlowHandlers();
-  const { sourcesNotFinished } = usePaginatedStore();
-  const { fetchSources } = usePaginatedSources();
+  // const { fetchSources, sourcesNotFinished } = usePaginatedSources();
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isBottomOfList, setIsBottomOfList] = useState(false);
 
   useEffect(() => {
     const handleScroll = (e: Event) => {
@@ -92,12 +93,14 @@ const ScrollNode: React.FC<Props> = ({ data, ...rest }) => {
 
       // TODO: Use the following if we have to handle paginated API requests using scroll:
       // const isTop = scrollTop === 0;
-      // const isBottom = scrollHeight - scrollTop <= clientHeight;
+      const isBottom = scrollHeight - scrollTop <= clientHeight;
       // if (isTop) {
       //   console.log('Reached top of scroll-node');
       // } else if (isBottom) {
       //   console.log('Reached bottom of scroll-node');
       // }
+
+      setIsBottomOfList(isBottom);
     };
 
     const { current } = containerRef;
@@ -122,8 +125,8 @@ const ScrollNode: React.FC<Props> = ({ data, ...rest }) => {
         </BaseNodeWrapper>
       ))}
 
-      <LoadMoreWrapper>
-        {sourcesNotFinished && (
+      <LoadMoreWrapper $hide={isBottomOfList}>
+        {/* {sourcesNotFinished && (
           <LoadMoreButton
             variant='secondary'
             onClick={(e) => {
@@ -133,7 +136,7 @@ const ScrollNode: React.FC<Props> = ({ data, ...rest }) => {
           >
             load more
           </LoadMoreButton>
-        )}
+        )} */}
       </LoadMoreWrapper>
     </Container>
   );

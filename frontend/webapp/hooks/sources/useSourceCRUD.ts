@@ -48,12 +48,7 @@ export const useSourceCRUD = (params?: Params) => {
       const count = req?.variables?.sources.length;
 
       req?.variables?.sources.forEach(({ name, kind, selected }) => {
-        if (!selected) {
-          const id = { namespace, name, kind };
-
-          removeNotifications(getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.SOURCE));
-          removeSource(id);
-        }
+        if (!selected) removeNotifications(getSseTargetFromId({ namespace, name, kind }, OVERVIEW_ENTITY_TYPES.SOURCE));
       });
 
       if (count === 1) {

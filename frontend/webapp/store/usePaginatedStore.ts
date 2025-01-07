@@ -4,6 +4,7 @@ import type { K8sActualSource, WorkloadId } from '@/types';
 interface IPaginatedState {
   sources: K8sActualSource[];
   sourcesNotFinished: boolean;
+  sourcesFetching: boolean;
 }
 
 interface IPaginatedStateSetters {
@@ -12,6 +13,7 @@ interface IPaginatedStateSetters {
   updateSource: (id: WorkloadId, payload: Partial<IPaginatedState['sources'][0]>) => void;
   removeSource: (id: WorkloadId) => void;
   setSourcesNotFinished: (bool: boolean) => void;
+  setSourcesFetching: (bool: boolean) => void;
 }
 
 export const usePaginatedStore = create<IPaginatedState & IPaginatedStateSetters>((set) => ({
@@ -52,4 +54,7 @@ export const usePaginatedStore = create<IPaginatedState & IPaginatedStateSetters
 
   sourcesNotFinished: false,
   setSourcesNotFinished: (bool) => set({ sourcesNotFinished: bool }),
+
+  sourcesFetching: false,
+  setSourcesFetching: (bool) => set({ sourcesFetching: bool }),
 }));
