@@ -201,6 +201,18 @@ func main() {
 		os.Exit(1)
 	}
 
+	err = builder.
+		WebhookManagedBy(mgr).
+		For(&odigosv1.Source{}).
+		WithValidator(&SourcesValidator{
+			Client: mgr.GetClient(),
+		}).
+		Complete()
+	if err != nil {
+		setupLog.Error(err, "unable to create Sources validating webhook")
+		os.Exit(1)
+	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
