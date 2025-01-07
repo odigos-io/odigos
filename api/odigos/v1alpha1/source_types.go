@@ -24,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	commonconsts "github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
@@ -122,6 +123,15 @@ func GetSourceListForWorkload(ctx context.Context, kubeClient client.Client, obj
 	}
 
 	return workloadSources, nil
+}
+
+// IsWorkloadExcludedSource returns true if the Source is used to exclude a workload.
+// Otherwise, it returns false.
+func IsWorkloadExcludedSource(source *Source) bool {
+	if val, exists := source.Labels[commonconsts.OdigosWorkloadExcludedLabel]; exists && val == "true" {
+		return true
+	}
+	return false
 }
 
 func init() {

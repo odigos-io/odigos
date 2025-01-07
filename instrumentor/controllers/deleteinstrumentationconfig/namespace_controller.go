@@ -175,8 +175,11 @@ func isInheritingInstrumentationFromNs(ctx context.Context, c client.Client, obj
 		return false, err
 	}
 
-	// if a source exists for this workload specifically, then it is not inheriting from Namespace
-	if sourceList.Workload != nil {
+	if sourceList.Namespace != nil && sourceList.Namespace.DeletionTimestamp.IsZero() {
+		return true, nil
+	}
+
+	if sourceList.Workload != nil && sourceList.Workload.DeletionTimestamp.IsZero() {
 		return false, nil
 	}
 

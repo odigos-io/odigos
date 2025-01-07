@@ -351,6 +351,16 @@ spec:
                 fi
                 sleep 5
               done
+    - name: Wait for deleted sources to roll out new revisions
+      try:
+        - script:
+            timeout: 70s
+            content: |
+              kubectl rollout status deployment -l app=coupon
+              kubectl rollout status deployment -l app=frontend
+              kubectl rollout status deployment -l app=inventory
+              kubectl rollout status deployment -l app=pricing
+              kubectl rollout status deployment -l app=membership
     - name: Assert Runtime still Detected for single workload
       try:
         - assert:
@@ -359,3 +369,88 @@ spec:
         - assert:
             timeout: 2m
             file: 07-workloads.yaml
+    - name: Create Workload exclusion Source for single workload
+      try:
+        - apply:
+            file: 08-source.yaml
+    - name: Instrument rest of Namespace
+      try:
+        - apply:
+            file: 02-source-ns.yaml
+    - name: Wait for created source to roll out new revisions
+      try:
+        - script:
+            timeout: 70s
+            content: |
+              kubectl rollout status deployment -l app=coupon
+              kubectl rollout status deployment -l app=frontend
+              kubectl rollout status deployment -l app=inventory
+              kubectl rollout status deployment -l app=pricing
+              kubectl rollout status deployment -l app=membership
+    - name: Assert runtime detected for all workloads except excluded (coupon)
+      try:
+        - assert:
+            timeout: 2m
+            file: 08-assert-runtime-detected.yaml
+        - assert:
+            timeout: 2m
+            file: 08-workloads.yaml
+    - name: Assert runtime not detected for excluded (coupon)
+      try:
+        - script:
+            content: kubectl get instrumentationconfigs/deployment-coupon
+            check:
+              ($error != null): true
+    - name: Delete excluded workload Source
+      try:
+        - script:
+            content: kubectl delete sources -l odigos.io/e2e=source-excluded
+            check:
+              ($error == null): true
+    - name: Wait for deleted exclusion source to roll out new revisions
+      try:
+        - script:
+            timeout: 70s
+            content: |
+              kubectl rollout status deployment -l app=coupon
+              kubectl rollout status deployment -l app=frontend
+              kubectl rollout status deployment -l app=inventory
+              kubectl rollout status deployment -l app=pricing
+              kubectl rollout status deployment -l app=membership
+    - name: Assert runtime detected for no-longer-excluded workload
+      try:
+        - assert:
+            timeout: 2m
+            file: ../../common/assert/simple-demo-runtime-detected.yaml
+        - assert:
+            timeout: 2m
+            file: 08-workloads-2.yaml
+    - name: Create excluded workload Source while namespace is instrumented
+      try:
+        - apply:
+            file: 09-source.yaml
+    - name: Wait for created source to roll out new revisions
+      try:
+        - script:
+            timeout: 70s
+            content: |
+              kubectl rollout status deployment -l app=coupon
+              kubectl rollout status deployment -l app=frontend
+              kubectl rollout status deployment -l app=inventory
+              kubectl rollout status deployment -l app=pricing
+              kubectl rollout status deployment -l app=membership
+    - name: Assert runtime detected for all workloads except newly excluded (membership)
+      try:
+        - assert:
+            timeout: 2m
+            file: 09-assert-runtime-detected.yaml
+        - assert:
+            timeout: 2m
+            file: 09-workloads.yaml
+    - name: Assert runtime not detected for newly excluded (membership)
+      try:
+        - script:
+            content: kubectl get instrumentationconfigs/deployment-membership
+            check:
+              ($error != null): true
+

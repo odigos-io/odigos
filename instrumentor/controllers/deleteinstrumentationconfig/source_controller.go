@@ -49,14 +49,26 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if !source.DeletionTimestamp.IsZero() {
+	// If this is a regular Source that's being deleted, or a workload Exclusion Source
+	// that's being created, try to uninstrument relevant workloads.
+	if source.DeletionTimestamp.IsZero() == v1alpha1.IsWorkloadExcludedSource(source) {
 		logger.Info("Reconciling workload for deleted Source object", "name", req.Name, "namespace", req.Namespace)
+
+		if result, err := r.setSourceLabelsIfNecessary(ctx, source); err != nil {
+			return result, err
+		}
+		if v1alpha1.IsWorkloadExcludedSource(source) && !controllerutil.ContainsFinalizer(source, consts.StartLangDetectionFinalizer) {
+			controllerutil.AddFinalizer(source, consts.StartLangDetectionFinalizer)
+			if err := r.Update(ctx, source); err != nil {
+				return k8sutils.K8SUpdateErrorHandler(err)
+			}
+		}
+
 		if source.Spec.Workload.Kind == "Namespace" {
 			logger.V(2).Info("Uninstrumenting deployments for Namespace Source", "name", req.Name, "namespace", req.Namespace)
 			var deps appsv1.DeploymentList
 			err = r.Client.List(ctx, &deps, client.InNamespace(req.Namespace))
-			if client.IgnoreNotFound(err) != nil {
-				logger.Error(err, "error fetching deployments")
+			if err != nil {
 				return ctrl.Result{}, err
 			}
 
@@ -71,8 +83,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			logger.V(2).Info("Uninstrumenting statefulsets for Namespace Source", "name", req.Name, "namespace", req.Namespace)
 			var ss appsv1.StatefulSetList
 			err = r.Client.List(ctx, &ss, client.InNamespace(req.Namespace))
-			if client.IgnoreNotFound(err) != nil {
-				logger.Error(err, "error fetching statefulsets")
+			if err != nil {
 				return ctrl.Result{}, err
 			}
 
@@ -87,8 +98,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			logger.V(2).Info("Uninstrumenting daemonsets for Namespace Source", "name", req.Name, "namespace", req.Namespace)
 			var ds appsv1.DaemonSetList
 			err = r.Client.List(ctx, &ds, client.InNamespace(req.Namespace))
-			if client.IgnoreNotFound(err) != nil {
-				logger.Error(err, "error fetching daemonsets")
+			if err != nil {
 				return ctrl.Result{}, err
 			}
 
@@ -108,28 +118,48 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 				return ctrl.Result{}, err
 			}
 
-			// Check if this workload is also inheriting Instrumentation from namespace
-			inheriting, err := isInheritingInstrumentationFromNs(ctx, r.Client, obj)
+			sourceList, err := v1alpha1.GetSourceListForWorkload(ctx, r.Client, obj)
 			if err != nil {
 				return ctrl.Result{}, err
 			}
-			if inheriting {
-				// if it is inheriting, don't delete the instrumentation config
-				return ctrl.Result{}, err
-			}
-
-			err = errors.Join(err, deleteWorkloadInstrumentationConfig(ctx, r.Client, obj))
-			err = errors.Join(err, removeReportedNameAnnotation(ctx, r.Client, obj))
-			if err != nil {
-				return ctrl.Result{}, err
+			if sourceList.Namespace == nil ||
+				(sourceList.Namespace != nil && !sourceList.Namespace.DeletionTimestamp.IsZero()) ||
+				(sourceList.Workload != nil && sourceList.Workload.DeletionTimestamp.IsZero() && v1alpha1.IsWorkloadExcludedSource(source)) {
+				// if this workload doesn't have a live Namespace instrumentation, or it has a live exclusion source, uninstrument it
+				err = errors.Join(err, deleteWorkloadInstrumentationConfig(ctx, r.Client, obj))
+				err = errors.Join(err, removeReportedNameAnnotation(ctx, r.Client, obj))
+				if err != nil {
+					return ctrl.Result{}, err
+				}
 			}
 		}
 
-		if controllerutil.ContainsFinalizer(source, consts.InstrumentedApplicationFinalizer) {
-			controllerutil.RemoveFinalizer(source, consts.InstrumentedApplicationFinalizer)
+		if !v1alpha1.IsWorkloadExcludedSource(source) && controllerutil.ContainsFinalizer(source, consts.DeleteInstrumentationConfigFinalizer) {
+			controllerutil.RemoveFinalizer(source, consts.DeleteInstrumentationConfigFinalizer)
 			if err := r.Update(ctx, source); err != nil {
 				return k8sutils.K8SUpdateErrorHandler(err)
 			}
+		}
+	}
+	return ctrl.Result{}, nil
+}
+
+// TODO: Move to mutating webhook
+func (r *SourceReconciler) setSourceLabelsIfNecessary(ctx context.Context, source *v1alpha1.Source) (ctrl.Result, error) {
+	if source.Labels == nil {
+		source.Labels = make(map[string]string)
+	}
+
+	if source.Labels[consts.WorkloadNameLabel] != source.Spec.Workload.Name ||
+		source.Labels[consts.WorkloadNamespaceLabel] != source.Spec.Workload.Namespace ||
+		source.Labels[consts.WorkloadKindLabel] != string(source.Spec.Workload.Kind) {
+
+		source.Labels[consts.WorkloadNameLabel] = source.Spec.Workload.Name
+		source.Labels[consts.WorkloadNamespaceLabel] = source.Spec.Workload.Namespace
+		source.Labels[consts.WorkloadKindLabel] = string(source.Spec.Workload.Kind)
+
+		if err := r.Update(ctx, source); err != nil {
+			return k8sutils.K8SUpdateErrorHandler(err)
 		}
 	}
 	return ctrl.Result{}, nil
