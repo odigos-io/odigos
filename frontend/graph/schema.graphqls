@@ -84,6 +84,11 @@ type K8sActualSource {
   conditions: [Condition!]
 }
 
+type PaginatedSources {
+  nextPage: String!
+  items: [K8sActualSource]!
+}
+
 input K8sDesiredSourceInput {
   serviceName: String
   autoInstrument: Boolean
@@ -188,7 +193,8 @@ type ComputePlatform {
   computePlatformType: ComputePlatformType!
   k8sActualNamespaces: [K8sActualNamespace]!
   k8sActualNamespace(name: String!): K8sActualNamespace
-  k8sActualSources: [K8sActualSource]!
+  k8sActualSources: [K8sActualSource]! # old way (gets all, bad performance)
+  sources(nextPage: String!): PaginatedSources! # new way (paginated)
   destinations: [Destination!]!
   actions: [PipelineAction!]!
   instrumentationRules: [InstrumentationRule!]!

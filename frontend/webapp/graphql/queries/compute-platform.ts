@@ -7,27 +7,6 @@ export const GET_COMPUTE_PLATFORM = gql`
         name
         selected
       }
-      k8sActualSources {
-        namespace
-        name
-        kind
-        numberOfInstances
-        selected
-        reportedName
-        containers {
-          containerName
-          language
-          runtimeVersion
-          otherAgent
-        }
-        conditions {
-          status
-          type
-          reason
-          message
-          lastTransitionTime
-        }
-      }
       destinations {
         id
         name
@@ -114,6 +93,37 @@ export const GET_NAMESPACES = gql`
           name
           numberOfInstances
           selected
+        }
+      }
+    }
+  }
+`;
+
+export const GET_SOURCES = gql`
+  query GetK8sActualSources($nextPage: String!) {
+    computePlatform {
+      sources(nextPage: $nextPage) {
+        nextPage
+        items {
+          namespace
+          name
+          kind
+          numberOfInstances
+          selected
+          reportedName
+          containers {
+            containerName
+            language
+            runtimeVersion
+            otherAgent
+          }
+          conditions {
+            status
+            type
+            reason
+            message
+            lastTransitionTime
+          }
         }
       }
     }

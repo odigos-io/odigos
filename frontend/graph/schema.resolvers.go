@@ -21,7 +21,6 @@ import (
 	testconnection "github.com/odigos-io/odigos/frontend/services/test_connection"
 	"github.com/odigos-io/odigos/k8sutils/pkg/client"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -100,6 +99,32 @@ func (r *computePlatformResolver) K8sActualSources(ctx context.Context, obj *mod
 	}
 
 	return actualSources, nil
+}
+
+// Sources is the resolver for the sources field.
+func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.ComputePlatform, nextPage string) (*model.PaginatedSources, error) {
+	list, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{
+		Limit:    int64(10),
+		Continue: nextPage,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	var actualSources []*model.K8sActualSource
+
+	// Convert each InstrumentationConfig to the K8sActualSource type
+	for _, ic := range list.Items {
+		src := instrumentationConfigToActualSource(ic)
+		services.AddHealthyInstrumentationInstancesCondition(ctx, &ic, src)
+		actualSources = append(actualSources, src)
+	}
+
+	return &model.PaginatedSources{
+		NextPage: list.GetContinue(),
+		Items:    actualSources,
+	}, nil
 }
 
 // Destinations is the resolver for the destinations field.
