@@ -38,7 +38,6 @@ export const usePotentialDestinations = () => {
 
             return {
               ...matchedType,
-              ...pd,
               fields: safeJsonParse<{ [key: string]: string }>(pd.fields, {}),
             };
           }
