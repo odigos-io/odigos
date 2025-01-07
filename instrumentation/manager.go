@@ -139,26 +139,33 @@ func NewManager[processDetails ProcessDetails, configGroup ConfigGroup](options 
 }
 
 func (m *manager[ProcessDetails, ConfigGroup]) runEventLoop(ctx context.Context) {
+	defer func () {
+		for pid, details := range m.detailsByPid {
+			if details.inst == nil {
+				continue
+			}
+			err := details.inst.Close(ctx)
+			if err != nil {
+				m.logger.Error(err, "failed to close instrumentation", "pid", pid)
+			}
+			// probably shouldn't remove instrumentation instance here
+			// as this flow is happening when Odiglet is shutting down
+		}
+		m.detailsByPid = nil
+		m.detailsByWorkload = nil
+	} ()
+
 	// main event loop for handling instrumentations
 	for {
 		select {
 		case <-ctx.Done():
-			m.logger.Info("stopping eBPF instrumentation manager")
-			for pid, details := range m.detailsByPid {
-				if details.inst == nil {
-					continue
-				}
-				err := details.inst.Close(ctx)
-				if err != nil {
-					m.logger.Error(err, "failed to close instrumentation", "pid", pid)
-				}
-				// probably shouldn't remove instrumentation instance here
-				// as this flow is happening when Odiglet is shutting down
-			}
-			m.detailsByPid = nil
-			m.detailsByWorkload = nil
+			m.logger.Info("context canceled, stopping eBPF instrumentation manager")
 			return
-		case e := <-m.procEvents:
+		case e, ok := <-m.procEvents:
+			if !ok {
+				m.logger.Info("process events channel closed, stopping eBPF instrumentation manager")
+				return
+			}
 			switch e.EventType {
 			case detector.ProcessExecEvent:
 				m.logger.V(1).Info("detected new process", "pid", e.PID, "cmd", e.ExecDetails.CmdLine)
