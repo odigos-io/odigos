@@ -66,47 +66,15 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 		if source.Spec.Workload.Kind == "Namespace" {
 			logger.V(2).Info("Uninstrumenting deployments for Namespace Source", "name", req.Name, "namespace", req.Namespace)
-			var deps appsv1.DeploymentList
-			err = r.Client.List(ctx, &deps, client.InNamespace(req.Namespace))
-			if err != nil {
-				return ctrl.Result{}, err
-			}
 
-			for _, dep := range deps.Items {
-				logger.V(4).Info("uninstrumenting deployment", "name", dep.Name, "namespace", dep.Namespace)
-				err := syncGenericWorkloadListToNs(ctx, r.Client, workload.WorkloadKindDeployment, client.ObjectKey{Namespace: dep.Namespace, Name: dep.Name})
+			for _, kind := range []workload.WorkloadKind{
+				workload.WorkloadKindDaemonSet,
+				workload.WorkloadKindDeployment,
+				workload.WorkloadKindStatefulSet,
+			} {
+				result, err := r.listAndSyncWorkloadList(ctx, req, kind)
 				if err != nil {
-					return ctrl.Result{}, err
-				}
-			}
-
-			logger.V(2).Info("Uninstrumenting statefulsets for Namespace Source", "name", req.Name, "namespace", req.Namespace)
-			var ss appsv1.StatefulSetList
-			err = r.Client.List(ctx, &ss, client.InNamespace(req.Namespace))
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-
-			for _, s := range ss.Items {
-				logger.V(4).Info("uninstrumenting statefulset", "name", s.Name, "namespace", s.Namespace)
-				err := syncGenericWorkloadListToNs(ctx, r.Client, workload.WorkloadKindStatefulSet, client.ObjectKey{Namespace: s.Namespace, Name: s.Name})
-				if err != nil {
-					return ctrl.Result{}, err
-				}
-			}
-
-			logger.V(2).Info("Uninstrumenting daemonsets for Namespace Source", "name", req.Name, "namespace", req.Namespace)
-			var ds appsv1.DaemonSetList
-			err = r.Client.List(ctx, &ds, client.InNamespace(req.Namespace))
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-
-			for _, d := range ds.Items {
-				logger.V(4).Info("uninstrumenting daemonset", "name", d.Name, "namespace", d.Namespace)
-				err := syncGenericWorkloadListToNs(ctx, r.Client, workload.WorkloadKindDaemonSet, client.ObjectKey{Namespace: d.Namespace, Name: d.Name})
-				if err != nil {
-					return ctrl.Result{}, err
+					return result, err
 				}
 			}
 		} else {
@@ -163,4 +131,48 @@ func (r *SourceReconciler) setSourceLabelsIfNecessary(ctx context.Context, sourc
 		}
 	}
 	return ctrl.Result{}, nil
+}
+
+func (r *SourceReconciler) listAndSyncWorkloadList(ctx context.Context,
+	req ctrl.Request,
+	kind workload.WorkloadKind) (ctrl.Result, error) {
+	logger := log.FromContext(ctx)
+	logger.V(2).Info("Uninstrumenting workloads for Namespace Source", "name", req.Name, "namespace", req.Namespace, "kind", kind)
+
+	deps := workload.ClientListObjectFromWorkloadKind(kind)
+	err := r.Client.List(ctx, deps, client.InNamespace(req.Name))
+	if client.IgnoreNotFound(err) != nil {
+		return ctrl.Result{}, err
+	}
+
+	switch obj := deps.(type) {
+	case *appsv1.DeploymentList:
+		for _, dep := range obj.Items {
+			err = r.syncWorkloadList(ctx, kind, client.ObjectKey{Namespace: dep.Namespace, Name: dep.Name})
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+	case *appsv1.DaemonSetList:
+		for _, dep := range obj.Items {
+			err = r.syncWorkloadList(ctx, kind, client.ObjectKey{Namespace: dep.Namespace, Name: dep.Name})
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+	case *appsv1.StatefulSetList:
+		for _, dep := range obj.Items {
+			err = r.syncWorkloadList(ctx, kind, client.ObjectKey{Namespace: dep.Namespace, Name: dep.Name})
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+	}
+	return ctrl.Result{}, err
+}
+
+func (r *SourceReconciler) syncWorkloadList(ctx context.Context,
+	kind workload.WorkloadKind,
+	key client.ObjectKey) error {
+	return syncGenericWorkloadListToNs(ctx, r.Client, kind, key)
 }

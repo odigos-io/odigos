@@ -3,7 +3,7 @@ package startlangdetection
 import (
 	"context"
 
-	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -61,54 +61,14 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 				namespaceKindSources[source.Spec.Workload.Kind][source.Spec.Workload.Name] = struct{}{}
 			}
 
-			var deps appsv1.DeploymentList
-			err = r.Client.List(ctx, &deps, client.InNamespace(source.Spec.Workload.Name))
-			if client.IgnoreNotFound(err) != nil {
-				logger.Error(err, "error fetching deployments")
-				return ctrl.Result{}, err
-			}
-
-			for _, dep := range deps.Items {
-				if _, exists := namespaceKindSources[workload.WorkloadKindDeployment][dep.Name]; !exists {
-					request := ctrl.Request{NamespacedName: client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace}}
-					_, err = reconcileWorkload(ctx, r.Client, workload.WorkloadKindDeployment, request, r.Scheme)
-					if err != nil {
-						logger.Error(err, "error requesting runtime details from odiglets", "name", dep.Name, "namespace", dep.Namespace)
-					}
-				}
-			}
-
-			var sts appsv1.StatefulSetList
-			err = r.Client.List(ctx, &sts, client.InNamespace(source.Spec.Workload.Name))
-			if client.IgnoreNotFound(err) != nil {
-				logger.Error(err, "error fetching statefulsets")
-				return ctrl.Result{}, err
-			}
-
-			for _, st := range sts.Items {
-				if _, exists := namespaceKindSources[workload.WorkloadKindStatefulSet][st.Name]; !exists {
-					request := ctrl.Request{NamespacedName: client.ObjectKey{Name: st.Name, Namespace: st.Namespace}}
-					_, err = reconcileWorkload(ctx, r.Client, workload.WorkloadKindStatefulSet, request, r.Scheme)
-					if err != nil {
-						logger.Error(err, "error requesting runtime details from odiglets", "name", st.Name, "namespace", st.Namespace)
-					}
-				}
-			}
-
-			var dss appsv1.DaemonSetList
-			err = r.Client.List(ctx, &dss, client.InNamespace(source.Spec.Workload.Name))
-			if client.IgnoreNotFound(err) != nil {
-				logger.Error(err, "error fetching daemonsets")
-				return ctrl.Result{}, err
-			}
-
-			for _, ds := range dss.Items {
-				if _, exists := namespaceKindSources[workload.WorkloadKindDaemonSet][ds.Name]; !exists {
-					request := ctrl.Request{NamespacedName: client.ObjectKey{Name: ds.Name, Namespace: ds.Namespace}}
-					_, err = reconcileWorkload(ctx, r.Client, workload.WorkloadKindDaemonSet, request, r.Scheme)
-					if err != nil {
-						logger.Error(err, "error requesting runtime details from odiglets", "name", ds.Name, "namespace", ds.Namespace)
-					}
+			for _, kind := range []workload.WorkloadKind{
+				workload.WorkloadKindDaemonSet,
+				workload.WorkloadKindDeployment,
+				workload.WorkloadKindStatefulSet,
+			} {
+				result, err := r.listAndReconcileWorkloadList(ctx, source, kind, namespaceKindSources)
+				if err != nil {
+					return result, err
 				}
 			}
 		} else {
@@ -157,4 +117,55 @@ func (r *SourceReconciler) setSourceLabelsIfNecessary(ctx context.Context, sourc
 		}
 	}
 	return ctrl.Result{}, nil
+}
+
+func (r *SourceReconciler) listAndReconcileWorkloadList(ctx context.Context,
+	source *v1alpha1.Source,
+	kind workload.WorkloadKind,
+	namespaceKindSources map[workload.WorkloadKind]map[string]struct{}) (ctrl.Result, error) {
+
+	deps := workload.ClientListObjectFromWorkloadKind(kind)
+	err := r.Client.List(ctx, deps, client.InNamespace(source.Spec.Workload.Name))
+	if client.IgnoreNotFound(err) != nil {
+		return ctrl.Result{}, err
+	}
+
+	switch obj := deps.(type) {
+	case *v1.DeploymentList:
+		for _, dep := range obj.Items {
+			err = r.reconcileWorkloadList(ctx, ctrl.Request{NamespacedName: client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace}}, kind, namespaceKindSources)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+	case *v1.DaemonSetList:
+		for _, dep := range obj.Items {
+			err = r.reconcileWorkloadList(ctx, ctrl.Request{NamespacedName: client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace}}, kind, namespaceKindSources)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+	case *v1.StatefulSetList:
+		for _, dep := range obj.Items {
+			err = r.reconcileWorkloadList(ctx, ctrl.Request{NamespacedName: client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace}}, kind, namespaceKindSources)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+	}
+	return ctrl.Result{}, nil
+}
+
+func (r *SourceReconciler) reconcileWorkloadList(ctx context.Context,
+	req ctrl.Request,
+	kind workload.WorkloadKind,
+	namespaceKindSources map[workload.WorkloadKind]map[string]struct{}) error {
+	logger := log.FromContext(ctx)
+	if _, exists := namespaceKindSources[kind][req.Name]; !exists {
+		_, err := reconcileWorkload(ctx, r.Client, kind, req, r.Scheme)
+		if err != nil {
+			logger.Error(err, "error requesting runtime details from odiglets", "name", req.Name, "namespace", req.Namespace, "kind", kind)
+		}
+	}
+	return nil
 }
