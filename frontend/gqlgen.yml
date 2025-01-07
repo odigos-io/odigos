@@ -48,9 +48,7 @@ models:
         resolver: true
       k8sActualNamespaces:
         resolver: true
-      k8sActualSource:
-        resolver: true
-      k8sActualSources:
+      sources:
         resolver: true
       destinations:
         resolver: true
