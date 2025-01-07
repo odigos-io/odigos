@@ -54,9 +54,6 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if source.DeletionTimestamp.IsZero() == v1alpha1.IsWorkloadExcludedSource(source) {
 		logger.Info("Reconciling workload for Source object", "name", req.Name, "namespace", req.Namespace)
 
-		if result, err := r.setSourceLabelsIfNecessary(ctx, source); err != nil {
-			return result, err
-		}
 		if v1alpha1.IsWorkloadExcludedSource(source) && !controllerutil.ContainsFinalizer(source, consts.StartLangDetectionFinalizer) {
 			controllerutil.AddFinalizer(source, consts.StartLangDetectionFinalizer)
 			if err := r.Update(ctx, source); err != nil {
@@ -107,27 +104,6 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			if err := r.Update(ctx, source); err != nil {
 				return k8sutils.K8SUpdateErrorHandler(err)
 			}
-		}
-	}
-	return ctrl.Result{}, nil
-}
-
-// TODO: Move to mutating webhook
-func (r *SourceReconciler) setSourceLabelsIfNecessary(ctx context.Context, source *v1alpha1.Source) (ctrl.Result, error) {
-	if source.Labels == nil {
-		source.Labels = make(map[string]string)
-	}
-
-	if source.Labels[consts.WorkloadNameLabel] != source.Spec.Workload.Name ||
-		source.Labels[consts.WorkloadNamespaceLabel] != source.Spec.Workload.Namespace ||
-		source.Labels[consts.WorkloadKindLabel] != string(source.Spec.Workload.Kind) {
-
-		source.Labels[consts.WorkloadNameLabel] = source.Spec.Workload.Name
-		source.Labels[consts.WorkloadNamespaceLabel] = source.Spec.Workload.Namespace
-		source.Labels[consts.WorkloadKindLabel] = string(source.Spec.Workload.Kind)
-
-		if err := r.Update(ctx, source); err != nil {
-			return k8sutils.K8SUpdateErrorHandler(err)
 		}
 	}
 	return ctrl.Result{}, nil

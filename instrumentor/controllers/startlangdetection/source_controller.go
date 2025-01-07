@@ -34,9 +34,6 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// If this is a regular Source that is being created, or an Exclusion Source that is being deleted,
 	// Attempt to reconcile the workloads for instrumentation.
 	if source.DeletionTimestamp.IsZero() != v1alpha1.IsWorkloadExcludedSource(source) {
-		if result, err := r.setSourceLabelsIfNecessary(ctx, source); err != nil {
-			return result, err
-		}
 		if !v1alpha1.IsWorkloadExcludedSource(source) && !controllerutil.ContainsFinalizer(source, consts.DeleteInstrumentationConfigFinalizer) {
 			controllerutil.AddFinalizer(source, consts.DeleteInstrumentationConfigFinalizer)
 			if err := r.Update(ctx, source); err != nil {
@@ -96,27 +93,6 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	return ctrl.Result{}, err
-}
-
-// TODO: Move to mutating webhook
-func (r *SourceReconciler) setSourceLabelsIfNecessary(ctx context.Context, source *v1alpha1.Source) (ctrl.Result, error) {
-	if source.Labels == nil {
-		source.Labels = make(map[string]string)
-	}
-
-	if source.Labels[consts.WorkloadNameLabel] != source.Spec.Workload.Name ||
-		source.Labels[consts.WorkloadNamespaceLabel] != source.Spec.Workload.Namespace ||
-		source.Labels[consts.WorkloadKindLabel] != string(source.Spec.Workload.Kind) {
-
-		source.Labels[consts.WorkloadNameLabel] = source.Spec.Workload.Name
-		source.Labels[consts.WorkloadNamespaceLabel] = source.Spec.Workload.Namespace
-		source.Labels[consts.WorkloadKindLabel] = string(source.Spec.Workload.Kind)
-
-		if err := r.Update(ctx, source); err != nil {
-			return k8sutils.K8SUpdateErrorHandler(err)
-		}
-	}
-	return ctrl.Result{}, nil
 }
 
 func (r *SourceReconciler) listAndReconcileWorkloadList(ctx context.Context,
