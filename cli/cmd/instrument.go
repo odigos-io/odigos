@@ -135,6 +135,12 @@ Odigos CLI and monitor the instrumentation status.`,
 			}()
 
 			<-uiClient.Ready()
+			port, err := uiClient.DiscoverLocalPort()
+			if err != nil {
+				fmt.Printf("\033[31mERROR\033[0m Cannot discover local port for UI client: %s\n", err)
+				os.Exit(1)
+			}
+			fmt.Printf("Remote client is using local port %s\n", port)
 		}
 
 		runPreflightChecks(ctx, cmd, client, isRemote)

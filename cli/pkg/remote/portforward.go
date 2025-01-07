@@ -19,9 +19,12 @@ import (
 )
 
 const (
-	DefaultLocalPort = "3333"
-	DefaultAddress   = "localhost"
-	UiPort           = 3000
+	DefaultAddress = "localhost"
+	UiPort         = 3000
+)
+
+var (
+	DefaultLocalPort = "0"
 )
 
 func NewUIClient(client *kube.Client, ctx context.Context) (*UIClientViaPortForward, error) {
@@ -47,7 +50,8 @@ func NewUIClient(client *kube.Client, ctx context.Context) (*UIClientViaPortForw
 		return nil, err
 	}
 
-	port := fmt.Sprintf("%s:%d", DefaultLocalPort, UiPort)
+	// Choose random port for local port
+	port := fmt.Sprintf("0:%d", UiPort)
 	stopChannel := make(chan struct{}, 1)
 	readyChannel := make(chan struct{})
 
@@ -72,6 +76,22 @@ type UIClientViaPortForward struct {
 	readyCh  chan struct{}
 	stopCh   chan struct{}
 	isClosed bool
+}
+
+func (u *UIClientViaPortForward) DiscoverLocalPort() (string, error) {
+	ports, err := u.pf.GetPorts()
+	if err != nil {
+		return "", err
+	}
+
+	if len(ports) != 1 {
+		return "", fmt.Errorf("expected to get 1 port got %d", len(ports))
+	}
+
+	portNum := ports[0].Local
+	port := fmt.Sprintf("%d", portNum)
+	DefaultLocalPort = port
+	return port, nil
 }
 
 func (u *UIClientViaPortForward) Start() error {
