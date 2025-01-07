@@ -236,7 +236,7 @@ func collectMetrics(ctx context.Context, client *kube.Client, odigosNamespace st
 			defer wg.Done()
 			err = captureMetrics(ctx, client, collectorPod.Name, odigosNamespace, metricFile, collectorRole)
 			if err != nil {
-				fmt.Println("Error Getting Metrics Data of: %v, because: %v\n", metricFile, err)
+				fmt.Printf("Error Getting Metrics Data of: %v, because: %v\n", metricFile, err)
 			}
 		}()
 	}
