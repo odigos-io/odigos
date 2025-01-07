@@ -110,10 +110,6 @@ spec:
                   - optionKey
                   type: object
                 type: array
-              runtimeDetailsInvalidated:
-                description: true when the runtime details are invalidated and should
-                  be recalculated
-                type: boolean
               sdkConfigs:
                 description: |-
                   Configuration for the OpenTelemetry SDKs that this workload should use.
