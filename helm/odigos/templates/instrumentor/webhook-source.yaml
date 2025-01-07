@@ -33,3 +33,35 @@ webhooks:
     sideEffects: None
     timeoutSeconds: 10
     admissionReviewVersions: ["v1"]
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: source-validating-webhook-configuration
+  labels:
+    app.kubernetes.io/name: source-validating-webhook
+    app.kubernetes.io/instance: source-validating-webhook-configuration
+    app.kubernetes.io/component: webhook
+    app.kubernetes.io/created-by: instrumentor
+    app.kubernetes.io/part-of: odigos
+webhooks:
+  - name: source-validating-webhook.odigos.io
+    clientConfig:
+      caBundle: {{ $ca.Cert | b64enc }}
+      service:
+        name: odigos-instrumentor
+        namespace: {{ .Release.Namespace }}
+        path: /validate-odigos-io-v1alpha1-source
+        port: 9443
+    rules:
+      - operations:
+          - CREATE
+          - UPDATE
+        apiGroups: ["odigos.io"]
+        apiVersions: ["v1alpha1"]
+        resources: ["sources"]
+        scope: Namespaced
+    failurePolicy: Ignore
+    sideEffects: None
+    timeoutSeconds: 10
+    admissionReviewVersions: ["v1"]
