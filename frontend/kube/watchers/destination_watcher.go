@@ -21,7 +21,7 @@ func StartDestinationWatcher(ctx context.Context, namespace string) error {
 	destinationAddedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			MinBatchSize: 1,
-			Duration:     10 * time.Second,
+			Duration:     5 * time.Second,
 			Event:        sse.MessageEventAdded,
 			CRDType:      consts.Destination,
 			SuccessBatchMessageFunc: func(count int, crdType string) string {
@@ -36,7 +36,7 @@ func StartDestinationWatcher(ctx context.Context, namespace string) error {
 	destinationModifiedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			MinBatchSize: 1,
-			Duration:     10 * time.Second,
+			Duration:     5 * time.Second,
 			Event:        sse.MessageEventModified,
 			CRDType:      consts.Destination,
 			SuccessBatchMessageFunc: func(batchSize int, crd string) string {
@@ -51,7 +51,7 @@ func StartDestinationWatcher(ctx context.Context, namespace string) error {
 	destinationDeletedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			MinBatchSize: 1,
-			Duration:     10 * time.Second,
+			Duration:     5 * time.Second,
 			Event:        sse.MessageEventDeleted,
 			CRDType:      consts.Destination,
 			SuccessBatchMessageFunc: func(count int, crdType string) string {
