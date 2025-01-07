@@ -25,6 +25,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
@@ -52,5 +53,17 @@ func (p *SourcesDefaulter) Default(ctx context.Context, obj runtime.Object) erro
 		source.Labels[consts.WorkloadNamespaceLabel] = source.Spec.Workload.Namespace
 		source.Labels[consts.WorkloadKindLabel] = string(source.Spec.Workload.Kind)
 	}
+
+	if !v1alpha1.IsWorkloadExcludedSource(source) &&
+		source.DeletionTimestamp.IsZero() &&
+		!controllerutil.ContainsFinalizer(source, consts.DeleteInstrumentationConfigFinalizer) {
+		controllerutil.AddFinalizer(source, consts.DeleteInstrumentationConfigFinalizer)
+	}
+	if v1alpha1.IsWorkloadExcludedSource(source) &&
+		source.DeletionTimestamp.IsZero() &&
+		!controllerutil.ContainsFinalizer(source, consts.StartLangDetectionFinalizer) {
+		controllerutil.AddFinalizer(source, consts.StartLangDetectionFinalizer)
+	}
+
 	return nil
 }

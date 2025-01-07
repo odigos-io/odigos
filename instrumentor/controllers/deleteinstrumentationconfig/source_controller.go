@@ -54,13 +54,6 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if source.DeletionTimestamp.IsZero() == v1alpha1.IsWorkloadExcludedSource(source) {
 		logger.Info("Reconciling workload for Source object", "name", req.Name, "namespace", req.Namespace)
 
-		if v1alpha1.IsWorkloadExcludedSource(source) && !controllerutil.ContainsFinalizer(source, consts.StartLangDetectionFinalizer) {
-			controllerutil.AddFinalizer(source, consts.StartLangDetectionFinalizer)
-			if err := r.Update(ctx, source); err != nil {
-				return k8sutils.K8SUpdateErrorHandler(err)
-			}
-		}
-
 		if source.Spec.Workload.Kind == "Namespace" {
 			logger.V(2).Info("Uninstrumenting workloads for Namespace Source", "name", req.Name, "namespace", req.Namespace)
 
