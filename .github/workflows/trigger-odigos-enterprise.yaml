@@ -20,8 +20,4 @@ jobs:
           -H "Accept: application/vnd.github.v3+json" \
           -H "Authorization: token ${{ secrets.RELEASE_BOT_TOKEN }}" \
           https://api.github.com/repos/odigos-io/odigos-enterprise/dispatches \
-<<<<<<< HEAD
           -d '{"event_type": "process_update_dependencies_pr", "client_payload": {"pr_creator": "${{ github.event.pull_request.user.login }}"}}'
-=======
-          -d '{"event_type": "process_oss_pr", "client_payload": {"pr_creator": "${{ github.event.pull_request.user.login }}"}}'
->>>>>>> upstream/main
