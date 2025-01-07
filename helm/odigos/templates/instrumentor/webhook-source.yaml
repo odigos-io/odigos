@@ -1,0 +1,35 @@
+{{- $altNames := list (printf "odigos-instrumentor.%s.svc" .Release.Namespace) (printf "odigos-instrumentor.%s.svc.cluster.local" .Release.Namespace) -}}
+{{- $ca := genCA "serving-cert" 365 -}}
+{{- $cert := genSignedCert "serving-cert" nil $altNames 365 $ca -}}
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: source-mutating-webhook-configuration
+  labels:
+    app.kubernetes.io/name: source-mutating-webhook
+    app.kubernetes.io/instance: source-mutating-webhook-configuration
+    app.kubernetes.io/component: webhook
+    app.kubernetes.io/created-by: instrumentor
+    app.kubernetes.io/part-of: odigos
+webhooks:
+  - name: source-mutating-webhook.odigos.io
+    clientConfig:
+      caBundle: {{ $ca.Cert | b64enc }}
+      service:
+        name: odigos-instrumentor
+        namespace: {{ .Release.Namespace }}
+        path: /mutate-odigos-io-v1alpha1-source
+        port: 9443
+    rules:
+      - operations:
+          - CREATE
+          - UPDATE
+        apiGroups: ["odigos.io"]
+        apiVersions: ["v1alpha1"]
+        resources: ["sources"]
+        scope: Namespaced
+    failurePolicy: Ignore
+    reinvocationPolicy: IfNeeded
+    sideEffects: None
+    timeoutSeconds: 10
+    admissionReviewVersions: ["v1"]
