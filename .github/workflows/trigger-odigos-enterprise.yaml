@@ -6,9 +6,9 @@ on:
       - 'main'
     paths:
       - 'common/**'
-      - 'k8sUtils/**'
+      - 'k8sutils/**'
       - 'procdiscovery/**'
-      - 'opamserver/**'
+      - 'opampserver/**'
       - 'instrumentation/**'
 jobs:
   trigger-odigos-enterprise:
