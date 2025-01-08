@@ -13,12 +13,18 @@ const INITIAL: ActionInput = {
   details: '',
 };
 
+type Errors = {
+  type?: string;
+  signals?: string;
+  details?: string;
+};
+
 export function useActionFormData() {
   const { addNotification } = useNotificationStore();
   const { formData, formErrors, handleFormChange, handleErrorChange, resetFormData } = useGenericForm<ActionInput>(INITIAL);
 
   const validateForm = (params?: { withAlert?: boolean; alertTitle?: string }) => {
-    const errors = {};
+    const errors: Errors = {};
     let ok = true;
 
     Object.entries(formData).forEach(([k, v]) => {
@@ -26,18 +32,18 @@ export function useActionFormData() {
         case 'type':
         case 'signals':
           if (Array.isArray(v) ? !v.length : !v) {
-            errors[k] = FORM_ALERTS.FIELD_IS_REQUIRED;
+            errors[k as keyof Errors] = FORM_ALERTS.FIELD_IS_REQUIRED;
           }
           break;
 
         case 'details':
           if (Array.isArray(v) ? !v.length : !v) {
-            errors[k] = FORM_ALERTS.FIELD_IS_REQUIRED;
+            errors[k as keyof Errors] = FORM_ALERTS.FIELD_IS_REQUIRED;
           }
           if (formData.type === ActionsType.LATENCY_SAMPLER) {
             (safeJsonParse(v as string, { endpoints_filters: [] }) as LatencySamplerSpec).endpoints_filters.forEach((endpoint) => {
               if (endpoint.http_route.charAt(0) !== '/') {
-                errors[k] = FORM_ALERTS.LATENCY_HTTP_ROUTE;
+                errors[k as keyof Errors] = FORM_ALERTS.LATENCY_HTTP_ROUTE;
               }
             });
           }
