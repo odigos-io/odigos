@@ -1,10 +1,10 @@
 import React from 'react';
 import styled from 'styled-components';
-import { DestinationTypeItem } from '@/types';
 import { IDestinationListItem } from '@/hooks';
 import { capitalizeFirstLetter } from '@/utils';
-import { DataTab, NoDataFound, SectionTitle } from '@/reuseable-components';
+import type { SupportedSignals, DestinationTypeItem } from '@/types';
 import { PotentialDestinationsList } from './potential-destinations-list';
+import { DataTab, NoDataFound, SectionTitle } from '@/reuseable-components';
 
 const Container = styled.div`
   display: flex;
@@ -55,7 +55,7 @@ export const DestinationsList: React.FC<DestinationsListProps> = ({ items, setSe
               title={item.displayName}
               iconSrc={item.imageUrl}
               hoverText='Select'
-              monitors={Object.keys(item.supportedSignals).filter((signal) => item.supportedSignals[signal].supported)}
+              monitors={Object.keys(item.supportedSignals).filter((signal) => item.supportedSignals[signal as keyof SupportedSignals].supported)}
               monitorsWithLabels
               onClick={() => setSelectedItems(item)}
             />
