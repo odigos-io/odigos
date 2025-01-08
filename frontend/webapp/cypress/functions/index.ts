@@ -98,11 +98,13 @@ interface AwaitToastOptions {
 
 export const awaitToast = ({ withSSE, message }: AwaitToastOptions, callback?: () => void) => {
   // In case of SSE, we need around 5 seconds to allow the backend to batch a notification.
-  // We will force 1 seconds, and Cypress will add 4 more seconds, giving us 5 seconds total.
+  // We will force 2 seconds, and Cypress will add 4 more seconds, giving us 6 seconds total.
   // We don't want to force too much time or we might miss a notification that was sent earlier than expected!
-  cy.wait(withSSE ? 1000 : 0).then(() => {
-    cy.get(DATA_IDS.TOAST).contains(message).should('exist');
-    cy.get(DATA_IDS.TOAST_CLOSE).click({ multiple: true });
+
+  cy.wait(withSSE ? 2000 : 0).then(() => {
+    cy.get(DATA_IDS.TOAST).contains(message).as('toast-msg');
+    cy.get('@toast-msg').should('exist');
+    cy.get('@toast-msg').parent().parent().find(DATA_IDS.TOAST_CLOSE).click();
 
     if (!!callback) callback();
   });
