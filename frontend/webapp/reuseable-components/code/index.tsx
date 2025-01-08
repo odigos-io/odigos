@@ -169,7 +169,7 @@ const PrettyJsonCode: React.FC<{ str: string }> = ({ str }) => {
 
                       return (
                         <TableData key={`line-${i}-token-${ii}`}>
-                          <FlexRow style={{ alignItems: 'flex-start' }}>
+                          <FlexRow>
                             <FlexRow>{...components}</FlexRow>
                             <CodeLineToken $noWrap={isRowTitle}>{text}</CodeLineToken>
                           </FlexRow>
