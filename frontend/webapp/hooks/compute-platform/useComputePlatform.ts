@@ -4,7 +4,7 @@ import { useNotificationStore } from '@/store';
 import { GET_COMPUTE_PLATFORM } from '@/graphql';
 import { useFilterStore } from '@/store/useFilterStore';
 import { ACTION, deriveTypeFromRule, safeJsonParse } from '@/utils';
-import { NOTIFICATION_TYPE, type ActionItem, type ComputePlatform, type ComputePlatformMapped } from '@/types';
+import { NOTIFICATION_TYPE, SupportedSignals, type ActionItem, type ComputePlatform, type ComputePlatformMapped } from '@/types';
 
 type UseComputePlatformHook = {
   data?: ComputePlatformMapped;
@@ -84,7 +84,7 @@ export const useComputePlatform = (): UseComputePlatformHook => {
     let actions = [...mappedCP.computePlatform.actions];
 
     if (!!filters.monitors.length) {
-      destinations = destinations.filter((destination) => !!filters.monitors.find((metric) => destination.exportedSignals[metric.id]));
+      destinations = destinations.filter((destination) => !!filters.monitors.find((metric) => destination.exportedSignals[metric.id as keyof SupportedSignals]));
       actions = actions.filter((action) => !!filters.monitors.find((metric) => action.spec.signals.find((str) => str.toLowerCase() === metric.id)));
     }
 

@@ -123,7 +123,7 @@ const getComponentsFromPropertyString = (propertyString: string) => {
 
 const PrettyJsonCode: React.FC<{ str: string }> = ({ str }) => {
   const renderEmptyRows = (count: number = 2) => {
-    const rows = new Array(count).fill((props) => (
+    const rows = new Array(count).fill((props: React.HTMLAttributes<HTMLTableRowElement>) => (
       <TableRow {...props}>
         <TableData />
         <TableData />
@@ -169,7 +169,7 @@ const PrettyJsonCode: React.FC<{ str: string }> = ({ str }) => {
 
                       return (
                         <TableData key={`line-${i}-token-${ii}`}>
-                          <FlexRow style={{ alignItems: 'flex-start' }}>
+                          <FlexRow>
                             <FlexRow>{...components}</FlexRow>
                             <CodeLineToken $noWrap={isRowTitle}>{text}</CodeLineToken>
                           </FlexRow>

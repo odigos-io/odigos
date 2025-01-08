@@ -3,8 +3,8 @@ import { SearchIcon } from '@/assets';
 import styled from 'styled-components';
 import { SignalUppercase } from '@/utils';
 import { useDestinationTypes } from '@/hooks';
-import type { DestinationTypeItem } from '@/types';
 import { DestinationsList } from './destinations-list';
+import type { DestinationTypeItem, SupportedSignals } from '@/types';
 import { Divider, Dropdown, Input, MonitoringCheckboxes, SectionTitle } from '@/reuseable-components';
 
 interface Props {
@@ -51,7 +51,7 @@ export const ChooseDestinationBody: React.FC<Props> = ({ onSelect, hidden }) => 
         const filteredItems = category.items.filter((item) => {
           const matchesSearch = !search || item.displayName.toLowerCase().includes(search.toLowerCase());
           const matchesCategory = selectedCategory.id === 'all' || selectedCategory.id === category.name;
-          const matchesMonitor = selectedMonitors.some((monitor) => item.supportedSignals[monitor.toLowerCase()]?.supported);
+          const matchesMonitor = selectedMonitors.some((monitor) => item.supportedSignals[monitor.toLowerCase() as keyof SupportedSignals]?.supported);
 
           return matchesSearch && matchesCategory && matchesMonitor;
         });
