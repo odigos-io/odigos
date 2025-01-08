@@ -1,4 +1,4 @@
-import { deleteEntity, getCrdById, getCrdIds, updateEntity } from '../functions';
+import { awaitToast, deleteEntity, getCrdById, getCrdIds, updateEntity } from '../functions';
 import { BUTTONS, CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
 
 // The number of CRDs that exist in the cluster before running any tests should be 0.
@@ -23,7 +23,9 @@ describe('Destinations CRUD', () => {
       cy.get('button').contains(BUTTONS.DONE).click();
 
       cy.wait('@gql').then(() => {
-        getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 });
+        awaitToast({ withSSE: true, message: TEXTS.NOTIF_DESTINATIONS_CREATED(1) }, () => {
+          getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 });
+        });
       });
     });
   });
@@ -43,7 +45,10 @@ describe('Destinations CRUD', () => {
           cy.wait('@gql').then(() => {
             getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 }, (crdIds) => {
               const crdId = crdIds[0];
-              getCrdById({ namespace, crdName, crdId, expectedError: '', expectedKey: 'destinationName', expectedValue: TEXTS.UPDATED_NAME });
+
+              awaitToast({ withSSE: true, message: TEXTS.NOTIF_DESTINATIONS_UPDATED(1) }, () => {
+                getCrdById({ namespace, crdName, crdId, expectedError: '', expectedKey: 'destinationName', expectedValue: TEXTS.UPDATED_NAME });
+              });
             });
           });
         },
@@ -64,7 +69,9 @@ describe('Destinations CRUD', () => {
         },
         () => {
           cy.wait('@gql').then(() => {
-            getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
+            awaitToast({ withSSE: true, message: TEXTS.NOTIF_DESTINATIONS_DELETED(1) }, () => {
+              getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
+            });
           });
         },
       );

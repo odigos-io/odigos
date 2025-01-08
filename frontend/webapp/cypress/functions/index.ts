@@ -90,3 +90,20 @@ export const deleteEntity = ({ nodeId, nodeContains, warnModalTitle, warnModalNo
 
   if (!!callback) callback();
 };
+
+interface AwaitToastOptions {
+  withSSE: boolean;
+  message: string;
+}
+
+export const awaitToast = ({ withSSE, message }: AwaitToastOptions, callback?: () => void) => {
+  // In case of SSE, we need around 5 seconds to allow the backend to batch a notification.
+  // We will force 1 seconds, and Cypress will add 4 more seconds, giving us 5 seconds total.
+  // We don't want to force too much time or we might miss a notification that was sent earlier than expected!
+  cy.wait(withSSE ? 1000 : 0).then(() => {
+    cy.get(DATA_IDS.TOAST).contains(message).should('exist');
+    cy.get(DATA_IDS.TOAST_CLOSE).click({ multiple: true });
+
+    if (!!callback) callback();
+  });
+};
