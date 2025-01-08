@@ -58,4 +58,5 @@ func odigletRolloutTrigger(ctx context.Context, client *kube.Client, namespace s
 		fmt.Printf("To trigger a restart manually, run the following command:\n")
 		fmt.Printf("kubectl rollout restart daemonset odiglet -n %s\n", daemonSet.Namespace)
 	}
+	return nil
 }
