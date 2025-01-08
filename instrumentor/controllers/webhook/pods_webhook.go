@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+
 	"github.com/odigos-io/odigos/common/resourceattributes"
 
 	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
@@ -37,11 +39,23 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		return fmt.Errorf("expected a Pod but got a %T", obj)
 	}
 
+	// Get namespace from admission request (needed for kubernetes < 1.24)
+	logger := log.FromContext(ctx)
+	ns := pod.Namespace
+	if ns == "" {
+		req, err := admission.RequestFromContext(ctx)
+		if err != nil {
+			logger.Error(err, "failed to extract admission request from context")
+			return err
+		}
+		ns = req.Namespace
+	}
+
 	if pod.Annotations == nil {
 		pod.Annotations = map[string]string{}
 	}
 
-	serviceName, podWorkload := p.getServiceNameForEnv(ctx, pod)
+	serviceName, podWorkload := p.getServiceNameForEnv(ctx, pod, ns)
 
 	// Inject ODIGOS environment variables into all containers
 	p.injectOdigosEnvVars(pod, podWorkload, serviceName)
@@ -50,10 +64,10 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 }
 
 // checks for the service name on the annotation, or fallback to the workload name
-func (p *PodsWebhook) getServiceNameForEnv(ctx context.Context, pod *corev1.Pod) (*string, *workload.PodWorkload) {
+func (p *PodsWebhook) getServiceNameForEnv(ctx context.Context, pod *corev1.Pod, ns string) (*string, *workload.PodWorkload) {
 	logger := log.FromContext(ctx)
 
-	podWorkload, err := workload.PodWorkloadObject(ctx, pod)
+	podWorkload, err := workload.PodWorkloadObjectWithNamespace(ctx, pod, ns)
 	if err != nil {
 		logger.Error(err, "failed to extract pod workload details from pod. skipping OTEL_SERVICE_NAME injection")
 		return nil, nil
@@ -77,7 +91,7 @@ func (p *PodsWebhook) injectOdigosEnvVars(pod *corev1.Pod, podWorkload *workload
 
 		identifier := &resourceattributes.ContainerIdentifier{
 			PodName:       podName,
-			Namespace:     pod.Namespace,
+			Namespace:     podWorkload.Namespace,
 			ContainerName: container.Name,
 		}
 
