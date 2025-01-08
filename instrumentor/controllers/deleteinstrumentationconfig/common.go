@@ -24,6 +24,17 @@ func reconcileWorkloadObject(ctx context.Context, kubeClient client.Client, work
 		return nil
 	}
 
+	// Check if a Source object exists for this workload
+	sourceList, err := odigosv1.GetWorkloadSources(ctx, kubeClient, workloadObject)
+	if err != nil {
+		return err
+	}
+	if sourceList.Workload != nil || sourceList.Namespace != nil {
+		// Note that if a Source is being deleted, but still has the finalizer, it will still show up in this List
+		// So we can't use this check to trigger un-instrumentation via Source deletion
+		return nil
+	}
+
 	if err := deleteWorkloadInstrumentationConfig(ctx, kubeClient, workloadObject); err != nil {
 		logger.Error(err, "error removing runtime details")
 		return err
@@ -38,15 +49,17 @@ func reconcileWorkloadObject(ctx context.Context, kubeClient client.Client, work
 }
 
 func deleteWorkloadInstrumentationConfig(ctx context.Context, kubeClient client.Client, workloadObject client.Object) error {
+	logger := log.FromContext(ctx)
 	ns := workloadObject.GetNamespace()
 	name := workloadObject.GetName()
 	kind := workload.WorkloadKindFromClientObject(workloadObject)
-	instrumentedApplicationName := workload.CalculateWorkloadRuntimeObjectName(name, kind)
+	instrumentationConfigName := workload.CalculateWorkloadRuntimeObjectName(name, kind)
+	logger.V(1).Info("deleting instrumentationconfig", "name", instrumentationConfigName, "kind", kind)
 
 	instConfigErr := kubeClient.Delete(ctx, &odigosv1.InstrumentationConfig{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,
-			Name:      instrumentedApplicationName,
+			Name:      instrumentationConfigName,
 		},
 	})
 
@@ -54,8 +67,7 @@ func deleteWorkloadInstrumentationConfig(ctx context.Context, kubeClient client.
 		return client.IgnoreNotFound(instConfigErr)
 	}
 
-	logger := log.FromContext(ctx)
-	logger.V(1).Info("instrumented application deleted", "namespace", ns, "name", name, "kind", kind)
+	logger.V(1).Info("instrumentationconfig deleted", "namespace", ns, "name", name, "kind", kind)
 	return nil
 }
 

@@ -1,0 +1,13 @@
+apiVersion: e2e.tests.odigos.io/v1
+kind: TraceTest
+description: This test checks if the context propagation is working correctly between different languages
+query: |
+  { resource.service.name = "frontend" && resource.telemetry.sdk.language = "java" &&
+    span.http.request.method = "POST" && span.http.route = "/buy" && span:kind = server }
+  >> (
+  { resource.service.name = "pricing" && resource.telemetry.sdk.language = "dotnet" } &&
+  { resource.service.name = "inventory" && resource.telemetry.sdk.language = "python" } &&
+  ({ resource.service.name = "coupon" && resource.telemetry.sdk.language = "nodejs" }
+    >> { resource.service.name = "membership" && resource.telemetry.sdk.language = "go" }))
+expected:
+  minimum: 1

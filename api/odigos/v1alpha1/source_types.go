@@ -17,10 +17,19 @@ limitations under the License.
 package v1alpha1
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"context"
+	"errors"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	commonconsts "github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
+
+var ErrorTooManySources = errors.New("too many Sources found for workload")
 
 // Source configures an application for auto-instrumentation.
 // +genclient
@@ -60,6 +69,68 @@ type SourceList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Source `json:"items"`
+}
+
+// +kubebuilder:object:generate=false
+
+type WorkloadSources struct {
+	Workload  *Source
+	Namespace *Source
+}
+
+// GetWorkloadSources returns a WorkloadSources listing the Workload and Namespace Source
+// that currently apply to the given object. In theory, this should only ever return at most
+// 1 Namespace and/or 1 Workload Source for an object. If more are found, an error is returned.
+func GetWorkloadSources(ctx context.Context, kubeClient client.Client, obj client.Object) (*WorkloadSources, error) {
+	var err error
+	workloadSources := &WorkloadSources{}
+
+	if obj.GetObjectKind().GroupVersionKind().Kind != "Namespace" {
+		sourceList := SourceList{}
+		selector := labels.SelectorFromSet(labels.Set{
+			consts.WorkloadNameLabel:      obj.GetName(),
+			consts.WorkloadNamespaceLabel: obj.GetNamespace(),
+			consts.WorkloadKindLabel:      obj.GetObjectKind().GroupVersionKind().Kind,
+		})
+		err := kubeClient.List(ctx, &sourceList, &client.ListOptions{LabelSelector: selector})
+		if err != nil {
+			return nil, err
+		}
+		if len(sourceList.Items) > 1 {
+			return nil, ErrorTooManySources
+		}
+		if len(sourceList.Items) == 1 {
+			workloadSources.Workload = &sourceList.Items[0]
+		}
+	}
+
+	namespaceSourceList := SourceList{}
+	namespaceSelector := labels.SelectorFromSet(labels.Set{
+		consts.WorkloadNameLabel:      obj.GetNamespace(),
+		consts.WorkloadNamespaceLabel: obj.GetNamespace(),
+		consts.WorkloadKindLabel:      "Namespace",
+	})
+	err = kubeClient.List(ctx, &namespaceSourceList, &client.ListOptions{LabelSelector: namespaceSelector})
+	if err != nil {
+		return nil, err
+	}
+	if len(namespaceSourceList.Items) > 1 {
+		return nil, ErrorTooManySources
+	}
+	if len(namespaceSourceList.Items) == 1 {
+		workloadSources.Namespace = &namespaceSourceList.Items[0]
+	}
+
+	return workloadSources, nil
+}
+
+// IsWorkloadExcludedSource returns true if the Source is used to exclude a workload.
+// Otherwise, it returns false.
+func IsWorkloadExcludedSource(source *Source) bool {
+	if val, exists := source.Labels[commonconsts.OdigosWorkloadExcludedLabel]; exists && val == "true" {
+		return true
+	}
+	return false
 }
 
 func init() {

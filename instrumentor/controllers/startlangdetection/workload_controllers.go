@@ -58,9 +58,21 @@ func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind wor
 	}
 
 	if !instrumented {
-		return ctrl.Result{}, nil
+		// Check if a Source object exists for this workload
+		sourceList, err := odigosv1.GetWorkloadSources(ctx, k8sClient, obj)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		if sourceList.Workload == nil && sourceList.Namespace == nil {
+			return ctrl.Result{}, nil
+		}
+		// if this is explicitly excluded (and the excluded Source isn't being deleted), skip
+		if sourceList.Workload != nil {
+			if odigosv1.IsWorkloadExcludedSource(sourceList.Workload) && sourceList.Workload.DeletionTimestamp.IsZero() {
+				return ctrl.Result{}, nil
+			}
+		}
 	}
-
 	err = requestOdigletsToCalculateRuntimeDetails(ctx, k8sClient, instConfigName, req.Namespace, obj, scheme)
 	return ctrl.Result{}, err
 }

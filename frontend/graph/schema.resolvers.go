@@ -19,37 +19,32 @@ import (
 	"github.com/odigos-io/odigos/frontend/services/describe/odigos_describe"
 	"github.com/odigos-io/odigos/frontend/services/describe/source_describe"
 	testconnection "github.com/odigos-io/odigos/frontend/services/test_connection"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 // K8sActualNamespaces is the resolver for the k8sActualNamespaces field.
 func (r *computePlatformResolver) K8sActualNamespaces(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualNamespace, error) {
-	namespacesResponse := services.GetK8SNamespaces(ctx)
-
-	K8sActualNamespaces := make([]*model.K8sActualNamespace, len(namespacesResponse.Namespaces))
-	for i, namespace := range namespacesResponse.Namespaces {
-
-		namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, namespace.Name, metav1.GetOptions{})
-		if err != nil {
-			return nil, err
-		}
-
-		nsInstrumented := workload.GetInstrumentationLabelValue(namespace.GetLabels())
-
-		K8sActualNamespaces[i] = &model.K8sActualNamespace{
-			Name:     namespace.Name,
-			Selected: nsInstrumented,
-		}
+	k8sNamespaces, err := services.GetK8SNamespaces(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	return K8sActualNamespaces, nil
+	k8sActualNamespaces := make([]*model.K8sActualNamespace, len(k8sNamespaces.Namespaces))
+	for i, namespace := range k8sNamespaces.Namespaces {
+		k8sActualNamespaces[i] = &namespace
+	}
+
+	return k8sActualNamespaces, nil
 }
 
 // K8sActualNamespace is the resolver for the k8sActualNamespace field.
 func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *model.ComputePlatform, name string) (*model.K8sActualNamespace, error) {
-	namespaceActualSources, err := services.GetWorkloadsInNamespace(ctx, name, nil)
+	namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	namespaceActualSources, err := services.GetWorkloadsInNamespace(ctx, name)
 	if err != nil {
 		return nil, err
 	}
@@ -60,16 +55,8 @@ func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *m
 		namespaceActualSourcesPointers[i] = &source
 	}
 
-	namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	nsInstrumented := workload.GetInstrumentationLabelValue(namespace.GetLabels())
-
 	return &model.K8sActualNamespace{
-		Name:             name,
-		Selected:         nsInstrumented,
+		Name:             namespace.Name,
 		K8sActualSources: namespaceActualSourcesPointers,
 	}, nil
 }
@@ -274,8 +261,8 @@ func (r *destinationResolver) Conditions(ctx context.Context, obj *model.Destina
 }
 
 // K8sActualSources is the resolver for the k8sActualSources field.
-func (r *k8sActualNamespaceResolver) K8sActualSources(ctx context.Context, obj *model.K8sActualNamespace, instrumentationLabeled *bool) ([]*model.K8sActualSource, error) {
-	namespaceActualSources, err := services.GetWorkloadsInNamespace(ctx, obj.Name, instrumentationLabeled)
+func (r *k8sActualNamespaceResolver) K8sActualSources(ctx context.Context, obj *model.K8sActualNamespace) ([]*model.K8sActualSource, error) {
+	namespaceActualSources, err := services.GetWorkloadsInNamespace(ctx, obj.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -284,6 +271,14 @@ func (r *k8sActualNamespaceResolver) K8sActualSources(ctx context.Context, obj *
 	namespaceActualSourcesPointers := make([]*model.K8sActualSource, len(namespaceActualSources))
 	for i, source := range namespaceActualSources {
 		namespaceActualSourcesPointers[i] = &source
+
+		crd, err := services.GetSourceCRD(ctx, obj.Name, source.Name, services.WorkloadKind(source.Kind))
+		instrumented := false
+		if crd != nil && err == nil {
+			instrumented = true
+		}
+
+		namespaceActualSourcesPointers[i].Selected = &instrumented
 	}
 
 	return namespaceActualSourcesPointers, nil
@@ -362,10 +357,16 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 
 // PersistK8sNamespace is the resolver for the persistK8sNamespace field.
 func (r *mutationResolver) PersistK8sNamespace(ctx context.Context, namespace model.PersistNamespaceItemInput) (bool, error) {
-	jsonMergePayload := services.GetJsonMergePatchForInstrumentationLabel(&namespace.FutureSelected)
-	_, err := kube.DefaultClient.CoreV1().Namespaces().Patch(ctx, namespace.Name, types.MergePatchType, jsonMergePayload, metav1.PatchOptions{})
+	persistObjects := []model.PersistNamespaceSourceInput{}
+	persistObjects = append(persistObjects, model.PersistNamespaceSourceInput{
+		Name:     namespace.Name,
+		Kind:     model.K8sResourceKind(services.WorkloadKindNamespace),
+		Selected: namespace.FutureSelected,
+	})
+
+	err := services.SyncWorkloadsInNamespace(ctx, namespace.Name, persistObjects)
 	if err != nil {
-		return false, fmt.Errorf("failed to patch namespace: %v", err)
+		return false, fmt.Errorf("failed to sync workloads: %v", err)
 	}
 
 	return true, nil

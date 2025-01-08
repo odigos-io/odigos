@@ -34,6 +34,7 @@ In this doc, we'll keep track of the permissions requested across different reso
 | UI           | apps              | deployments, statefulsets, daemonsets                      | get, list, patch, update                        | Required for instrumentation of application sources.                                                                      |
 | UI           | apps              | replicasets                                                | get, list                                       | Needed for describing application and resource relationships.                                                             |
 | UI           | odigos.io         | instrumentationconfigs, instrumentationinstances           | get, list, watch                                | Monitors and retrieves configurations for instrumentation.                                                                |
+| UI           | odigos.io         | sources                                                    | get, list, create, delete                       | Manages sources for instrumentation and monitoring.                                                                       |
 | UI           | actions.odigos.io | \*                                                         | get, list, create, patch, update, delete        | Handles pipeline actions for custom logic.                                                                                |
 
 ---

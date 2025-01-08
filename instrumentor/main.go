@@ -30,6 +30,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	runtimemigration "github.com/odigos-io/odigos/instrumentor/runtimemigration"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
@@ -185,6 +186,30 @@ func main() {
 	err = instrumentationconfig.SetupWithManager(mgr)
 	if err != nil {
 		setupLog.Error(err, "unable to create controller for instrumentation rules")
+		os.Exit(1)
+	}
+
+	err = builder.
+		WebhookManagedBy(mgr).
+		For(&odigosv1.Source{}).
+		WithDefaulter(&SourcesDefaulter{
+			Client: mgr.GetClient(),
+		}).
+		Complete()
+	if err != nil {
+		setupLog.Error(err, "unable to create Sources mutating webhook")
+		os.Exit(1)
+	}
+
+	err = builder.
+		WebhookManagedBy(mgr).
+		For(&odigosv1.Source{}).
+		WithValidator(&SourcesValidator{
+			Client: mgr.GetClient(),
+		}).
+		Complete()
+	if err != nil {
+		setupLog.Error(err, "unable to create Sources validating webhook")
 		os.Exit(1)
 	}
 

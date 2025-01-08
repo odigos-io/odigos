@@ -15,6 +15,10 @@ const (
 	OdigosInstrumentationLabel   = "odigos-instrumentation"
 	InstrumentationEnabled       = "enabled"
 	InstrumentationDisabled      = "disabled"
+	OdigosNamespaceAnnotation    = "odigos.io/workload-namespace"
+	OdigosWorkloadKindAnnotation = "odigos.io/workload-kind"
+	OdigosWorkloadNameAnnotation = "odigos.io/workload-name"
+	OdigosWorkloadExcludedLabel  = "odigos.io/workload-excluded"
 	OdigosReportedNameAnnotation = "odigos.io/reported-name"
 	RolloutTriggerAnnotation     = "rollout-trigger"
 
@@ -27,6 +31,7 @@ const (
 	// or odigos is uninstalled.
 	// Should only be used for environment variables that are modified by odigos.
 	ManifestEnvOriginalValAnnotation = "odigos.io/manifest-env-original-val"
+
 	// Used to label instrumentation instances by the corresponding
 	// instrumented app for better query performance.
 	InstrumentedAppNameLabel = "instrumented-app"
