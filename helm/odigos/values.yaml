@@ -158,6 +158,10 @@ odiglet:
       key: node.kubernetes.io/os
       operator: Equal
       value: windows
+    - effect: NoSchedule
+      key: kubernetes.io/arch 
+      operator: Equal
+      value: arm64
   affinity: {}
 
 cli:

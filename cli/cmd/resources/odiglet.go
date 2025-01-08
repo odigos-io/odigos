@@ -368,6 +368,12 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 							Value:    "windows",
 							Effect:   corev1.TaintEffectNoSchedule,
 						},
+						{
+							Key:      corev1.LabelArchStable,
+							Operator: corev1.TolerationOpEqual,
+							Value:    "arm64",
+							Effect:   corev1.TaintEffectNoSchedule,
+						},
 					},
 					Volumes: append([]corev1.Volume{
 						{
