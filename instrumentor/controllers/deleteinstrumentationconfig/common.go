@@ -25,7 +25,7 @@ func reconcileWorkloadObject(ctx context.Context, kubeClient client.Client, work
 	}
 
 	// Check if a Source object exists for this workload
-	sourceList, err := odigosv1.GetSourceListForWorkload(ctx, kubeClient, workloadObject)
+	sourceList, err := odigosv1.GetWorkloadSources(ctx, kubeClient, workloadObject)
 	if err != nil {
 		return err
 	}

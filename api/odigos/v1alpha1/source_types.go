@@ -78,11 +78,10 @@ type WorkloadSources struct {
 	Namespace *Source
 }
 
-// GetSourceListForWorkload returns a SourceList of all Sources that have matching
-// workload name, namespace, and kind labels for an object. In theory, this should only
-// ever return a list with 0, 1, or 2 items, but due diligence should handle unexpected cases.
-// If a Workload returns >1 Namespace or Workload Source, this function returns an error.
-func GetSourceListForWorkload(ctx context.Context, kubeClient client.Client, obj client.Object) (*WorkloadSources, error) {
+// GetWorkloadSources returns a WorkloadSources listing the Workload and Namespace Source
+// that currently apply to the given object. In theory, this should only ever return at most
+// 1 Namespace and/or 1 Workload Source for an object. If more are found, an error is returned.
+func GetWorkloadSources(ctx context.Context, kubeClient client.Client, obj client.Object) (*WorkloadSources, error) {
 	var err error
 	workloadSources := &WorkloadSources{}
 

@@ -59,7 +59,7 @@ func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind wor
 
 	if !instrumented {
 		// Check if a Source object exists for this workload
-		sourceList, err := odigosv1.GetSourceListForWorkload(ctx, k8sClient, obj)
+		sourceList, err := odigosv1.GetWorkloadSources(ctx, k8sClient, obj)
 		if err != nil {
 			return ctrl.Result{}, err
 		}

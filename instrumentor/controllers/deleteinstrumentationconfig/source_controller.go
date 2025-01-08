@@ -52,7 +52,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// If this is a regular Source that's being deleted, or a workload Exclusion Source
 	// that's being created, try to uninstrument relevant workloads.
 	if source.DeletionTimestamp.IsZero() == v1alpha1.IsWorkloadExcludedSource(source) {
-		logger.Info("Reconciling workload for deleted Source object", "name", req.Name, "namespace", req.Namespace)
+		logger.Info("Reconciling workload for Source object", "name", req.Name, "namespace", req.Namespace)
 
 		if result, err := r.setSourceLabelsIfNecessary(ctx, source); err != nil {
 			return result, err
@@ -65,7 +65,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 
 		if source.Spec.Workload.Kind == "Namespace" {
-			logger.V(2).Info("Uninstrumenting deployments for Namespace Source", "name", req.Name, "namespace", req.Namespace)
+			logger.V(2).Info("Uninstrumenting workloads for Namespace Source", "name", req.Name, "namespace", req.Namespace)
 
 			for _, kind := range []workload.WorkloadKind{
 				workload.WorkloadKindDaemonSet,
@@ -86,7 +86,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 				return ctrl.Result{}, err
 			}
 
-			sourceList, err := v1alpha1.GetSourceListForWorkload(ctx, r.Client, obj)
+			sourceList, err := v1alpha1.GetWorkloadSources(ctx, r.Client, obj)
 			if err != nil {
 				return ctrl.Result{}, err
 			}
@@ -139,13 +139,13 @@ func (r *SourceReconciler) listAndSyncWorkloadList(ctx context.Context,
 	logger := log.FromContext(ctx)
 	logger.V(2).Info("Uninstrumenting workloads for Namespace Source", "name", req.Name, "namespace", req.Namespace, "kind", kind)
 
-	deps := workload.ClientListObjectFromWorkloadKind(kind)
-	err := r.Client.List(ctx, deps, client.InNamespace(req.Name))
-	if client.IgnoreNotFound(err) != nil {
+	workloads := workload.ClientListObjectFromWorkloadKind(kind)
+	err := r.Client.List(ctx, workloads, client.InNamespace(req.Name))
+	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	switch obj := deps.(type) {
+	switch obj := workloads.(type) {
 	case *appsv1.DeploymentList:
 		for _, dep := range obj.Items {
 			err = r.syncWorkloadList(ctx, kind, client.ObjectKey{Namespace: dep.Namespace, Name: dep.Name})

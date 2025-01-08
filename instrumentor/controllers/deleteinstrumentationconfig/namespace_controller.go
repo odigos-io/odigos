@@ -170,7 +170,7 @@ func syncGenericWorkloadListToNs(ctx context.Context, c client.Client, kind work
 // instrumented due to the label on the namespace. These are workloads with the label missing.
 // (they inherit the instrumentation from the namespace this way)
 func isInheritingInstrumentationFromNs(ctx context.Context, c client.Client, obj client.Object) (bool, error) {
-	sourceList, err := v1alpha1.GetSourceListForWorkload(ctx, c, obj)
+	sourceList, err := v1alpha1.GetWorkloadSources(ctx, c, obj)
 	if err != nil {
 		return false, err
 	}
