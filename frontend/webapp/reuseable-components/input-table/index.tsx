@@ -62,7 +62,7 @@ export const InputTable: React.FC<Props> = ({ columns, initialValues = [], value
 
   useEffect(() => {
     if (!rows.length) {
-      const init = {};
+      const init: Row = {};
       columns.forEach(({ keyName }) => (init[keyName] = ''));
       setInitialRow(init);
       setRows([{ ...init }]);
