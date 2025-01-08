@@ -14,8 +14,8 @@ describe('Onboarding', () => {
     cy.visit(ROUTES.CHOOSE_DESTINATION);
     cy.contains('button', BUTTONS.ADD_DESTINATION).click();
     cy.wait('@gql').then(() => {
-      cy.get(DATA_IDS.SELECT_DESTINATION).contains(SELECTED_ENTITIES.DESTINATION).should('exist').click();
-      expect(DATA_IDS.SELECT_DESTINATION_AUTOFILL_FIELD).to.not.be.empty;
+      cy.get(DATA_IDS.SELECT_DESTINATION).contains(SELECTED_ENTITIES.DESTINATION_DISPLAY_NAME).should('exist').click();
+      cy.get(DATA_IDS.SELECT_DESTINATION_AUTOFILL_FIELD).should('have.value', SELECTED_ENTITIES.DESTINATION_AUTOFILL_VALUE);
     });
   });
 
