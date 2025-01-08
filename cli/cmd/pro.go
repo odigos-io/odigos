@@ -66,5 +66,5 @@ func init() {
 
 	proCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")
 	proCmd.MarkFlagRequired("onprem-token")
-	describeCmd.PersistentFlags().BoolVarP(&updateRemoteFlag, "remote", "r", false, "use odigos ui service in the cluster to update the onprem token")
+	proCmd.PersistentFlags().BoolVarP(&updateRemoteFlag, "remote", "r", false, "use odigos ui service in the cluster to update the onprem token")
 }
