@@ -5,7 +5,6 @@ import { PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import { ACTION, BACKEND_BOOLEAN, getSseTargetFromId } from '@/utils';
 import { type PendingItem, useAppStore, useFilterStore, useNotificationStore, usePaginatedStore, usePendingStore } from '@/store';
 import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type PatchSourceRequestInput, NOTIFICATION_TYPE, type K8sActualSource } from '@/types';
-import { send } from 'process';
 
 interface Params {
   onSuccess?: (type: string) => void;
@@ -16,7 +15,7 @@ export const useSourceCRUD = (params?: Params) => {
   const { persistNamespace } = useNamespace();
 
   const filters = useFilterStore();
-  const { sources, updateSource, removeSource } = usePaginatedStore();
+  const { sources, updateSource } = usePaginatedStore();
   const { setConfiguredSources } = useAppStore();
   const { addPendingItems, removePendingItems } = usePendingStore();
   const { addNotification, removeNotifications } = useNotificationStore();
