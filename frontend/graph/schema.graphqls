@@ -61,7 +61,7 @@ type Condition {
 
 type K8sActualNamespace {
   name: String!
-  selected: Boolean
+  selected: Boolean!
   k8sActualSources: [K8sActualSource]!
 }
 

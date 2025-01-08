@@ -8584,11 +8584,14 @@ func (ec *executionContext) _K8sActualNamespace_selected(ctx context.Context, fi
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(bool)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_K8sActualNamespace_selected(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -19480,6 +19483,9 @@ func (ec *executionContext) _K8sActualNamespace(ctx context.Context, sel ast.Sel
 			}
 		case "selected":
 			out.Values[i] = ec._K8sActualNamespace_selected(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "k8sActualSources":
 			field := field
 
