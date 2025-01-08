@@ -97,6 +97,8 @@ export const TextArea: React.FC<TextAreaProps> = ({ errorMessage, title, tooltip
   };
 
   const handleKeyDown: KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
+    // In other form fields, we would do something like this:   if (!['Enter'].includes(e.key)) e.stopPropagation();
+    // But in a textarea, we want to allow the user to press Enter to create a new line
     e.stopPropagation();
   };
 

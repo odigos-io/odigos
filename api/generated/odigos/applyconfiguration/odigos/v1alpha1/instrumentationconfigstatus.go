@@ -17,11 +17,15 @@ limitations under the License.
 
 package v1alpha1
 
+import (
+	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
+)
+
 // InstrumentationConfigStatusApplyConfiguration represents a declarative configuration of the InstrumentationConfigStatus type for use
 // with apply.
 type InstrumentationConfigStatusApplyConfiguration struct {
-	RuntimeDetailsByContainer  []RuntimeDetailsByContainerApplyConfiguration `json:"runtimeDetailsByContainer,omitempty"`
-	ObservedWorkloadGeneration *int64                                        `json:"observedWorkloadGeneration,omitempty"`
+	RuntimeDetailsByContainer []RuntimeDetailsByContainerApplyConfiguration `json:"runtimeDetailsByContainer,omitempty"`
+	Conditions                []v1.ConditionApplyConfiguration              `json:"conditions,omitempty"`
 }
 
 // InstrumentationConfigStatusApplyConfiguration constructs a declarative configuration of the InstrumentationConfigStatus type for use with
@@ -43,10 +47,15 @@ func (b *InstrumentationConfigStatusApplyConfiguration) WithRuntimeDetailsByCont
 	return b
 }
 
-// WithObservedWorkloadGeneration sets the ObservedWorkloadGeneration field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the ObservedWorkloadGeneration field is set to the value of the last call.
-func (b *InstrumentationConfigStatusApplyConfiguration) WithObservedWorkloadGeneration(value int64) *InstrumentationConfigStatusApplyConfiguration {
-	b.ObservedWorkloadGeneration = &value
+// WithConditions adds the given value to the Conditions field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the Conditions field.
+func (b *InstrumentationConfigStatusApplyConfiguration) WithConditions(values ...*v1.ConditionApplyConfiguration) *InstrumentationConfigStatusApplyConfiguration {
+	for i := range values {
+		if values[i] == nil {
+			panic("nil value passed to WithConditions")
+		}
+		b.Conditions = append(b.Conditions, *values[i])
+	}
 	return b
 }

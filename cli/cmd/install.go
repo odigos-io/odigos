@@ -35,6 +35,7 @@ var (
 	skipWait                   bool
 	telemetryEnabled           bool
 	openshiftEnabled           bool
+	skipWebhookIssuerCreation  bool
 	psp                        bool
 	userInputIgnoredNamespaces []string
 	userInputIgnoredContainers []string
@@ -203,17 +204,18 @@ func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 	}
 
 	return common.OdigosConfiguration{
-		ConfigVersion:     1, // config version starts at 1 and incremented on every config change
-		TelemetryEnabled:  telemetryEnabled,
-		OpenshiftEnabled:  openshiftEnabled,
-		IgnoredNamespaces: fullIgnoredNamespaces,
-		IgnoredContainers: fullIgnoredContainers,
-		Psp:               psp,
-		ImagePrefix:       imagePrefix,
-		OdigletImage:      odigletImage,
-		InstrumentorImage: instrumentorImage,
-		AutoscalerImage:   autoScalerImage,
-		Profiles:          selectedProfiles,
+		ConfigVersion:             1, // config version starts at 1 and incremented on every config change
+		TelemetryEnabled:          telemetryEnabled,
+		OpenshiftEnabled:          openshiftEnabled,
+		IgnoredNamespaces:         fullIgnoredNamespaces,
+		IgnoredContainers:         fullIgnoredContainers,
+		SkipWebhookIssuerCreation: skipWebhookIssuerCreation,
+		Psp:                       psp,
+		ImagePrefix:               imagePrefix,
+		OdigletImage:              odigletImage,
+		InstrumentorImage:         instrumentorImage,
+		AutoscalerImage:           autoScalerImage,
+		Profiles:                  selectedProfiles,
 	}
 }
 
@@ -235,6 +237,7 @@ func init() {
 	installCmd.Flags().BoolVar(&skipWait, "nowait", false, "skip waiting for odigos pods to be ready")
 	installCmd.Flags().BoolVar(&telemetryEnabled, "telemetry", true, "send general telemetry regarding Odigos usage")
 	installCmd.Flags().BoolVar(&openshiftEnabled, "openshift", false, "configure selinux on openshift nodes")
+	installCmd.Flags().BoolVar(&skipWebhookIssuerCreation, "skip-webhook-issuer-creation", false, "Skip creating the Issuer and Certificate for the Instrumentor pod webhook if cert-manager is installed.")
 	installCmd.Flags().StringVar(&odigletImage, "odiglet-image", "", "odiglet container image name")
 	installCmd.Flags().StringVar(&instrumentorImage, "instrumentor-image", "keyval/odigos-instrumentor", "instrumentor container image name")
 	installCmd.Flags().StringVar(&autoScalerImage, "autoscaler-image", "keyval/odigos-autoscaler", "autoscaler container image name")

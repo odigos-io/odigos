@@ -25,9 +25,8 @@ type SourceLanguage struct {
 }
 
 type InstrumentedApplicationDetails struct {
-	Languages              []SourceLanguage                         `json:"languages,omitempty"`
-	Conditions             []metav1.Condition                       `json:"conditions,omitempty"`
-	InstrumentationOptions []v1alpha1.WorkloadInstrumentationConfig `json:"instrumentation_options,omitempty"`
+	Languages  []SourceLanguage   `json:"languages,omitempty"`
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 // this object contains only part of the source fields. It is used to display the sources in the frontend
@@ -54,7 +53,7 @@ func GetSources(c *gin.Context, odigosns string) {
 
 	var (
 		items                    []GetApplicationItem
-		instrumentedApplications *v1alpha1.InstrumentedApplicationList
+		instrumentedApplications *v1alpha1.InstrumentationConfigList
 	)
 
 	g, errCtx := errgroup.WithContext(reqCtx)
@@ -76,7 +75,7 @@ func GetSources(c *gin.Context, odigosns string) {
 
 	g.Go(func() error {
 		var err error
-		instrumentedApplications, err = kube.DefaultClient.OdigosClient.InstrumentedApplications("").List(errCtx, metav1.ListOptions{})
+		instrumentedApplications, err = kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(errCtx, metav1.ListOptions{})
 		return err
 	})
 
@@ -148,7 +147,7 @@ func GetSource(c *gin.Context) {
 		NumberOfRunningInstances: numberOfRunningInstances,
 	}
 
-	instrumentedApplication, err := kube.DefaultClient.OdigosClient.InstrumentedApplications(ns).Get(c, k8sObjectName, metav1.GetOptions{})
+	instrumentedApplication, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs(ns).Get(c, k8sObjectName, metav1.GetOptions{})
 
 	if err == nil {
 		// valid instrumented application, grab the runtime details
@@ -354,7 +353,7 @@ func handleInstrumentationConfigRequest(c *gin.Context, ns, kind, name string, c
 	return err
 }
 
-func k8sInstrumentedAppToThinSource(app *v1alpha1.InstrumentedApplication) ThinSource {
+func k8sInstrumentedAppToThinSource(app *v1alpha1.InstrumentationConfig) ThinSource {
 	var source ThinSource
 	source.Name = app.OwnerReferences[0].Name
 	source.Kind = workload.WorkloadKind(app.OwnerReferences[0].Kind)
@@ -369,31 +368,12 @@ func k8sInstrumentedAppToThinSource(app *v1alpha1.InstrumentedApplication) ThinS
 		})
 	}
 
-	var instrumentationOptions []v1alpha1.WorkloadInstrumentationConfig
-
-	for _, option := range app.Spec.Options {
-		for _, libOptions := range option.InstrumentationLibraries {
-			for _, configOption := range libOptions.Options {
-				instrumentationOptions = append(instrumentationOptions, v1alpha1.WorkloadInstrumentationConfig{
-					OptionKey: configOption.OptionKey,
-					SpanKind:  configOption.SpanKind,
-					InstrumentationLibraries: []v1alpha1.InstrumentationLibrary{
-						{
-							InstrumentationLibraryName: libOptions.LibraryName,
-						},
-					},
-				})
-			}
-		}
-	}
-
 	source.IaDetails = &InstrumentedApplicationDetails{
-		Languages:              []SourceLanguage{},
-		Conditions:             conditions,
-		InstrumentationOptions: instrumentationOptions,
+		Languages:  []SourceLanguage{},
+		Conditions: conditions,
 	}
 
-	for _, language := range app.Spec.RuntimeDetails {
+	for _, language := range app.Status.RuntimeDetailsByContainer {
 		sourceLanguage := SourceLanguage{
 			ContainerName:  language.ContainerName,
 			Language:       string(language.Language),
@@ -406,9 +386,9 @@ func k8sInstrumentedAppToThinSource(app *v1alpha1.InstrumentedApplication) ThinS
 	return source
 }
 
-func addHealthyInstrumentationInstancesCondition(ctx context.Context, app *v1alpha1.InstrumentedApplication, source *ThinSource) error {
-	labelSelector := fmt.Sprintf("%s=%s", consts.InstrumentedAppNameLabel, app.Name)
-	instancesList, err := kube.DefaultClient.OdigosClient.InstrumentationInstances(app.Namespace).List(ctx, metav1.ListOptions{
+func addHealthyInstrumentationInstancesCondition(ctx context.Context, instConfig *v1alpha1.InstrumentationConfig, source *ThinSource) error {
+	labelSelector := fmt.Sprintf("%s=%s", consts.InstrumentedAppNameLabel, instConfig.Name)
+	instancesList, err := kube.DefaultClient.OdigosClient.InstrumentationInstances(instConfig.Namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
 

@@ -51,33 +51,17 @@ type SourceContainerRuntimeDetails {
   otherAgent: String
 }
 
-type InstrumentationOption {
-  optionKey: String!
-  spanKind: SpanKind!
-}
-
-type InstrumentationLibrary {
-  libraryName: String!
-  options: [InstrumentationOption!]!
-}
-
-type InstrumentedApplicationDetails {
-  containers: [SourceContainerRuntimeDetails!]
-  conditions: [Condition!]
-  instrumentationOptions: [InstrumentationLibrary!]!
-}
-
 type Condition {
-  type: String!
   status: ConditionStatus!
-  lastTransitionTime: String
+  type: String!
   reason: String
   message: String
+  lastTransitionTime: String
 }
 
 type K8sActualNamespace {
   name: String!
-  instrumentationLabelEnabled: Boolean
+  selected: Boolean
   k8sActualSources(instrumentationLabeled: Boolean): [K8sActualSource]!
 }
 
@@ -91,14 +75,18 @@ input K8sNamespaceId {
 
 type K8sActualSource {
   namespace: String!
-  kind: K8sResourceKind!
   name: String!
-  serviceName: String
+  kind: K8sResourceKind!
   numberOfInstances: Int
+  selected: Boolean
   reportedName: String
-  autoInstrumented: Boolean!
-  autoInstrumentedDecision: String!
-  instrumentedApplicationDetails: InstrumentedApplicationDetails
+  containers: [SourceContainerRuntimeDetails!]
+  conditions: [Condition!]
+}
+
+type PaginatedSources {
+  nextPage: String!
+  items: [K8sActualSource]!
 }
 
 input K8sDesiredSourceInput {
@@ -108,8 +96,8 @@ input K8sDesiredSourceInput {
 
 type PodWorkload {
   namespace: String!
-  kind: K8sResourceKind!
   name: String!
+  kind: K8sResourceKind!
 }
 
 input PodWorkloadInput {
@@ -203,16 +191,11 @@ input MessagingPayloadCollectionInput {
 
 type ComputePlatform {
   computePlatformType: ComputePlatformType!
-  k8sActualNamespace(name: String!): K8sActualNamespace
   k8sActualNamespaces: [K8sActualNamespace]!
-  k8sActualSource(
-    name: String
-    namespace: String
-    kind: String
-  ): K8sActualSource
-  k8sActualSources: [K8sActualSource]!
+  k8sActualNamespace(name: String!): K8sActualNamespace
+  sources(nextPage: String!): PaginatedSources!
   destinations: [Destination!]!
-  actions: [IcaInstanceResponse!]!
+  actions: [PipelineAction!]!
   instrumentationRules: [InstrumentationRule!]!
 }
 
@@ -263,14 +246,22 @@ type GetConfigResponse {
   installation: InstallationStatus!
 }
 
+type CustomReadDataLabel {
+  condition: String!
+  title: String!
+  value: String!
+}
+
 type Field {
   name: String!
   displayName: String!
   componentType: String!
   componentProperties: String! # Using String to store JSON data as a string
-  videoUrl: String
-  thumbnailURL: String
-  initialValue: String
+  secret: Boolean!
+  initialValue: String!
+  renderCondition: [String!]!
+  hideFromReadData: [String!]!
+  customReadDataLabels: [CustomReadDataLabel!]!
 }
 
 type GetDestinationDetailsResponse {
@@ -297,13 +288,13 @@ input ExportedSignalsInput {
 
 input PersistNamespaceItemInput {
   name: String!
-  futureSelected: Boolean
+  futureSelected: Boolean!
 }
 
 input PersistNamespaceSourceInput {
   name: String!
   kind: K8sResourceKind!
-  selected: Boolean
+  selected: Boolean!
 }
 
 type TestConnectionResponse {
@@ -320,10 +311,11 @@ type DestinationDetails {
   fields: String!
 }
 
-type IcaInstanceResponse {
+type PipelineAction {
   id: String!
   type: String!
   spec: String!
+  conditions: [Condition!]
 }
 
 input PatchSourceRequestInput {
@@ -461,11 +453,6 @@ type InstrumentationLabelsAnalyze {
   instrumentedText: EntityProperty
 }
 
-type InstrumentationConfigAnalyze {
-  created: EntityProperty!
-  createTime: EntityProperty
-}
-
 type ContainerRuntimeInfoAnalyze {
   containerName: EntityProperty!
   language: EntityProperty!
@@ -473,14 +460,14 @@ type ContainerRuntimeInfoAnalyze {
   envVars: [EntityProperty!]!
 }
 
-type RuntimeInfoAnalyze {
-  generation: EntityProperty!
+type InstrumentationConfigAnalyze {
+  created: EntityProperty!
+  createTime: EntityProperty
   containers: [ContainerRuntimeInfoAnalyze!]!
 }
 
-type InstrumentedApplicationAnalyze {
-  created: EntityProperty!
-  createTime: EntityProperty
+type RuntimeInfoAnalyze {
+  generation: EntityProperty!
   containers: [ContainerRuntimeInfoAnalyze!]!
 }
 
@@ -520,9 +507,8 @@ type SourceAnalyze {
   namespace: EntityProperty!
   labels: InstrumentationLabelsAnalyze!
 
+  runtimeInfo: RuntimeInfoAnalyze!
   instrumentationConfig: InstrumentationConfigAnalyze!
-  runtimeInfo: RuntimeInfoAnalyze
-  instrumentedApplication: InstrumentedApplicationAnalyze!
   instrumentationDevice: InstrumentationDeviceAnalyze!
 
   totalPods: Int!
@@ -574,39 +560,22 @@ type Query {
   potentialDestinations: [DestinationDetails!]!
   getOverviewMetrics: OverviewMetricsResponse!
   describeOdigos: OdigosAnalyze!
-  describeSource(
-    namespace: String!
-    kind: String!
-    name: String!
-  ): SourceAnalyze!
+  describeSource(namespace: String!, kind: String!, name: String!): SourceAnalyze!
 }
 
 type Mutation {
   createNewDestination(destination: DestinationInput!): Destination!
   persistK8sNamespace(namespace: PersistNamespaceItemInput!): Boolean!
-  persistK8sSources(
-    namespace: String!
-    sources: [PersistNamespaceSourceInput!]!
-  ): Boolean!
-  testConnectionForDestination(
-    destination: DestinationInput!
-  ): TestConnectionResponse!
-  updateK8sActualSource(
-    sourceId: K8sSourceId!
-    patchSourceRequest: PatchSourceRequestInput!
-  ): Boolean!
+  persistK8sSources(namespace: String!, sources: [PersistNamespaceSourceInput!]!): Boolean!
+  testConnectionForDestination(destination: DestinationInput!): TestConnectionResponse!
+  updateK8sActualSource(sourceId: K8sSourceId!, patchSourceRequest: PatchSourceRequestInput!): Boolean!
   updateDestination(id: ID!, destination: DestinationInput!): Destination!
   deleteDestination(id: ID!): Boolean!
   createAction(action: ActionInput!): Action!
   updateAction(id: ID!, action: ActionInput!): Action!
   deleteAction(id: ID!, actionType: String!): Boolean!
 
-  createInstrumentationRule(
-    instrumentationRule: InstrumentationRuleInput!
-  ): InstrumentationRule!
-  updateInstrumentationRule(
-    ruleId: ID!
-    instrumentationRule: InstrumentationRuleInput!
-  ): InstrumentationRule!
+  createInstrumentationRule(instrumentationRule: InstrumentationRuleInput!): InstrumentationRule!
+  updateInstrumentationRule(ruleId: ID!, instrumentationRule: InstrumentationRuleInput!): InstrumentationRule!
   deleteInstrumentationRule(ruleId: ID!): Boolean!
 }

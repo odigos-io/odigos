@@ -29,6 +29,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
+	runtimemigration "github.com/odigos-io/odigos/instrumentor/runtimemigration"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
@@ -42,7 +43,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 
-	"github.com/odigos-io/odigos/instrumentor/controllers/deleteinstrumentedapplication"
+	"github.com/odigos-io/odigos/instrumentor/controllers/deleteinstrumentationconfig"
 	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentationdevice"
 	"github.com/odigos-io/odigos/instrumentor/report"
 
@@ -152,6 +153,10 @@ func main() {
 
 	ctx := signals.SetupSignalHandler()
 
+	// This temporary migration step ensures the runtimeDetails migration in the instrumentationConfig is performed.
+	// This code can be removed once the migration is confirmed to be successful.
+	mgr.Add(&runtimemigration.MigrationRunnable{KubeClient: mgr.GetClient(), Logger: setupLog})
+
 	err = sdks.SetDefaultSDKs(ctx)
 
 	if err != nil {
@@ -165,7 +170,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = deleteinstrumentedapplication.SetupWithManager(mgr)
+	err = deleteinstrumentationconfig.SetupWithManager(mgr)
 	if err != nil {
 		setupLog.Error(err, "unable to create controller")
 		os.Exit(1)

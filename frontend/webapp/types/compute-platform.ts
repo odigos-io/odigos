@@ -5,18 +5,24 @@ import type { InstrumentationRuleSpec, InstrumentationRuleSpecMapped } from './i
 
 export type K8sActualNamespace = {
   name: string;
+  selected: boolean;
   k8sActualSources?: K8sActualSource[];
 };
+
+interface PaginatedSources {
+  nextPage: string;
+  items: K8sActualSource[];
+}
 
 interface ComputePlatformData {
   id: string;
   name: string;
   computePlatformType: string;
-  k8sActualNamespace?: K8sActualNamespace;
   k8sActualNamespaces: K8sActualNamespace[];
-  actions: ActionData[];
-  k8sActualSources: K8sActualSource[];
+  k8sActualNamespace: K8sActualNamespace;
+  sources?: PaginatedSources;
   destinations: ActualDestination[];
+  actions: ActionData[];
   instrumentationRules: InstrumentationRuleSpec[];
 }
 
@@ -27,6 +33,7 @@ export type ComputePlatform = {
 interface ComputePlatformDataMapped extends ComputePlatformData {
   actions: ActionDataParsed[];
   instrumentationRules: InstrumentationRuleSpecMapped[];
+  sources: undefined;
 }
 
 export type ComputePlatformMapped = {

@@ -3,25 +3,9 @@ import { gql } from '@apollo/client';
 export const GET_COMPUTE_PLATFORM = gql`
   query GetComputePlatform {
     computePlatform {
-      k8sActualSources {
+      k8sActualNamespaces {
         name
-        kind
-        namespace
-        numberOfInstances
-        reportedName
-        instrumentedApplicationDetails {
-          containers {
-            containerName
-            language
-            runtimeVersion
-            otherAgent
-          }
-          conditions {
-            type
-            status
-            message
-          }
-        }
+        selected
       }
       destinations {
         id
@@ -58,6 +42,13 @@ export const GET_COMPUTE_PLATFORM = gql`
         id
         type
         spec
+        conditions {
+          status
+          type
+          reason
+          message
+          lastTransitionTime
+        }
       }
       instrumentationRules {
         ruleId
@@ -87,9 +78,6 @@ export const GET_COMPUTE_PLATFORM = gql`
           }
         }
       }
-      k8sActualNamespaces {
-        name
-      }
     }
   }
 `;
@@ -99,11 +87,42 @@ export const GET_NAMESPACES = gql`
     computePlatform {
       k8sActualNamespace(name: $namespaceName) {
         name
-        instrumentationLabelEnabled
+        selected
         k8sActualSources(instrumentationLabeled: $instrumentationLabeled) {
           kind
           name
           numberOfInstances
+          selected
+        }
+      }
+    }
+  }
+`;
+
+export const GET_SOURCES = gql`
+  query GetSources($nextPage: String!) {
+    computePlatform {
+      sources(nextPage: $nextPage) {
+        nextPage
+        items {
+          namespace
+          name
+          kind
+          selected
+          reportedName
+          containers {
+            containerName
+            language
+            runtimeVersion
+            otherAgent
+          }
+          conditions {
+            status
+            type
+            reason
+            message
+            lastTransitionTime
+          }
         }
       }
     }

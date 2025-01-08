@@ -70,11 +70,7 @@
         },
         {
           "group": "Architecture",
-          "pages": [
-            "architecture/components",
-            "architecture/sources",
-            "architecture/troubleshooting"
-          ]
+          "pages": ["architecture/components", "architecture/sources", "architecture/troubleshooting"]
         },
         {
           "group": "CLI Reference",
@@ -99,38 +95,23 @@
         "instrumentations/overview",
         {
           "group": "Go",
-          "pages": [
-            "instrumentations/golang/golang",
-            "instrumentations/golang/enrichment"
-          ]
+          "pages": ["instrumentations/golang/golang", "instrumentations/golang/enrichment"]
         },
         {
           "group": "Node.js",
-          "pages": [
-            "instrumentations/nodejs/nodejs",
-            "instrumentations/nodejs/enrichment",
-            "instrumentations/nodejs/ebpf"
-          ]
+          "pages": ["instrumentations/nodejs/nodejs", "instrumentations/nodejs/enrichment", "instrumentations/nodejs/ebpf"]
         },
         {
           "group": "Python",
-          "pages": [
-            "instrumentations/python/python",
-            "instrumentations/python/enrichment"
-          ]
+          "pages": ["instrumentations/python/python", "instrumentations/python/enrichment"]
         },
         {
           "group": "Java",
-          "pages": [
-            "instrumentations/java/java",
-            "instrumentations/java/ebpf"
-          ]
+          "pages": ["instrumentations/java/java", "instrumentations/java/ebpf"]
         },
         {
           "group": ".NET",
-            "pages": [
-                "instrumentations/dotnet/dotnet"
-            ]
+          "pages": ["instrumentations/dotnet/dotnet"]
         }
       ]
     },
@@ -150,10 +131,7 @@
         },
         {
           "group": "Instrumentation Rules",
-          "pages": [
-            "pipeline/rules/overview",
-            "pipeline/rules/payloadcollection"
-          ]
+          "pages": ["pipeline/rules/overview", "pipeline/rules/payloadcollection"]
         },
         {
           "group": "Actions",
@@ -189,14 +167,7 @@
       "pages": [
         {
           "group": "Enrich with OpenTelemetry APIs",
-          "pages": [
-            "data/otel-apis",
-            "data/java",
-            "data/python",
-            "data/javascript",
-            "data/golang",
-            "data/dotnet"
-          ]
+          "pages": ["data/otel-apis", "data/java", "data/python", "data/javascript", "data/golang", "data/dotnet"]
         }
       ]
     },
@@ -211,10 +182,12 @@
             "backends/s3",
             "backends/axiom",
             "backends/azureblob",
+            "backends/betterstack",
             "backends/causely",
             "backends/chronosphere",
             "backends/clickhouse",
             "backends/coralogix",
+            "backends/dash0",
             "backends/datadog",
             "backends/dynatrace",
             "backends/elasticsearch",
@@ -224,12 +197,16 @@
             "backends/grafanacloudloki",
             "backends/grafanacloudprometheus",
             "backends/grafanacloudtempo",
+            "backends/groundcover",
             "backends/honeycomb",
+            "backends/hyperdx",
             "backends/jaeger",
+            "backends/kloudmate",
             "backends/last9",
             "backends/lightstep",
             "backends/logzio",
             "backends/loki",
+            "backends/lumigo",
             "backends/newrelic",
             "backends/opsverse",
             "backends/otlp",
@@ -248,13 +225,7 @@
     },
     {
       "group": "Concepts",
-      "pages": [
-        "telemetry-types",
-        "custom-resources",
-        "uninstall",
-        "usage-reports",
-        "benchmarks"
-      ]
+      "pages": ["telemetry-types", "custom-resources", "uninstall", "usage-reports", "benchmarks"]
     },
     {
       "group": "Contibution Guidelines",
@@ -282,20 +253,14 @@
             "vmagent/setup/installation",
             {
               "group": "Configuration",
-              "pages": [
-                "vmagent/setup/configuration/service",
-                "vmagent/setup/configuration/agent"
-              ]
+              "pages": ["vmagent/setup/configuration/service", "vmagent/setup/configuration/agent"]
             },
             "vmagent/setup/uninstall"
           ]
         },
         {
           "group": "Configuration",
-          "pages": [
-            "vmagent/configuration/reference",
-            "vmagent/configuration/updating"
-          ]
+          "pages": ["vmagent/configuration/reference", "vmagent/configuration/updating"]
         }
       ]
     }

@@ -36,6 +36,20 @@ kubectl label namespace odigos-system odigos.io/system-object="true"
 - **Openshift Clusters** - Make sure to set `openshift.enabled=true` in the values file or pass it as a flag while installing the chart.
 - **GKE Clusters** - Make sure to set `gke.enabled=true` in the values file or pass it as a flag while installing the chart.
 
+#### Using a Custom Docker Registry
+
+By default, images are pulled from Docker Hub. To use a custom Docker registry instead, set the `imagePrefix` value during installation:
+
+```sh
+helm upgrade --install odigos odigos/odigos \
+  --namespace odigos-system \
+  --create-namespace \
+  --set imagePrefix=$CUSTOM_DOCKER_REGISTRY
+```
+Make sure to replace `$CUSTOM_DOCKER_REGISTRY` with the URL of your Docker registry.
+
+For more details on configuring a custom Docker registry, refer to the [Docker Registry Setup Documentation](https://docs.odigos.io/setup/docker-registry).
+
 ### Uninstall Odigos
 
 ```sh

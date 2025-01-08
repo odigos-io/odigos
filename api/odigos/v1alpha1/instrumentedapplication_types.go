@@ -33,25 +33,13 @@ type InstrumentationLibraryOptions struct {
 	Options     []ConfigOption `json:"options"`
 }
 
-// +kubebuilder:object:generate=true
-type EnvVar struct {
-	Name  string `json:"name"`
-	Value string `json:"value"`
-}
+type ProcessingState string
 
-type OtherAgent struct {
-	Name string `json:"name,omitempty"`
-}
-
-// +kubebuilder:object:generate=true
-type RuntimeDetailsByContainer struct {
-	ContainerName  string                     `json:"containerName"`
-	Language       common.ProgrammingLanguage `json:"language"`
-	RuntimeVersion string                     `json:"runtimeVersion,omitempty"`
-	EnvVars        []EnvVar                   `json:"envVars,omitempty"`
-	OtherAgent     *OtherAgent                `json:"otherAgent,omitempty"`
-	LibCType       *common.LibCType           `json:"libCType,omitempty"`
-}
+const (
+	ProcessingStateFailed    ProcessingState = "Failed"    // Used when CRI fails to detect the runtime envs
+	ProcessingStateSucceeded ProcessingState = "Succeeded" // Indicates that CRI successfully processed the runtime environments, even if no environments were detected.
+	ProcessingStateSkipped   ProcessingState = "Skipped"   // Used when env originally come from manifest
+)
 
 // +kubebuilder:object:generate=true
 type OptionByContainer struct {

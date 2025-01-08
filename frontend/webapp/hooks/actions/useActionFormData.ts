@@ -1,7 +1,7 @@
-import { DrawerItem, useNotificationStore } from '@/store';
-import { FORM_ALERTS } from '@/utils';
 import { useGenericForm } from '@/hooks';
-import { NOTIFICATION_TYPE, type ActionDataParsed, type ActionInput } from '@/types';
+import { FORM_ALERTS, safeJsonParse } from '@/utils';
+import { DrawerItem, useNotificationStore } from '@/store';
+import { ActionsType, LatencySamplerSpec, NOTIFICATION_TYPE, type ActionDataParsed, type ActionInput } from '@/types';
 
 const INITIAL: ActionInput = {
   // @ts-ignore (TS complains about empty string because we expect an "ActionsType", but it's fine)
@@ -25,10 +25,21 @@ export function useActionFormData() {
       switch (k) {
         case 'type':
         case 'signals':
+          if (Array.isArray(v) ? !v.length : !v) {
+            errors[k] = FORM_ALERTS.FIELD_IS_REQUIRED;
+          }
+          break;
+
         case 'details':
           if (Array.isArray(v) ? !v.length : !v) {
-            ok = false;
             errors[k] = FORM_ALERTS.FIELD_IS_REQUIRED;
+          }
+          if (formData.type === ActionsType.LATENCY_SAMPLER) {
+            (safeJsonParse(v as string, { endpoints_filters: [] }) as LatencySamplerSpec).endpoints_filters.forEach((endpoint) => {
+              if (endpoint.http_route.charAt(0) !== '/') {
+                errors[k] = FORM_ALERTS.LATENCY_HTTP_ROUTE;
+              }
+            });
           }
           break;
 
@@ -37,11 +48,14 @@ export function useActionFormData() {
       }
     });
 
+    ok = !Object.values(errors).length;
+
     if (!ok && params?.withAlert) {
       addNotification({
         type: NOTIFICATION_TYPE.WARNING,
         title: params.alertTitle,
         message: FORM_ALERTS.REQUIRED_FIELDS,
+        hideFromHistory: true,
       });
     }
 

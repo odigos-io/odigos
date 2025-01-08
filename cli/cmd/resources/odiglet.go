@@ -8,6 +8,7 @@ import (
 
 	"github.com/odigos-io/odigos/cli/pkg/autodetect"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
+	"github.com/odigos-io/odigos/common/consts"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
@@ -24,12 +25,16 @@ import (
 )
 
 const (
-	OdigletServiceName         = "odiglet"
-	OdigletDaemonSetName       = "odiglet"
-	OdigletAppLabelValue       = "odiglet"
-	OdigletContainerName       = "odiglet"
-	OdigletImageName           = "keyval/odigos-odiglet"
-	OdigletEnterpriseImageName = "keyval/odigos-enterprise-odiglet"
+	OdigletDaemonSetName          = "odiglet"
+	OdigletAppLabelValue          = OdigletDaemonSetName
+	OdigletServiceAccountName     = OdigletDaemonSetName
+	OdigletRoleName               = OdigletDaemonSetName
+	OdigletRoleBindingName        = OdigletDaemonSetName
+	OdigletClusterRoleName        = OdigletDaemonSetName
+	OdigletClusterRoleBindingName = OdigletDaemonSetName
+	OdigletContainerName          = "odiglet"
+	OdigletImageName              = "keyval/odigos-odiglet"
+	OdigletEnterpriseImageName    = "keyval/odigos-enterprise-odiglet"
 )
 
 func NewOdigletServiceAccount(ns string) *corev1.ServiceAccount {
@@ -39,8 +44,61 @@ func NewOdigletServiceAccount(ns string) *corev1.ServiceAccount {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "odiglet",
+			Name:      OdigletServiceAccountName,
 			Namespace: ns,
+		},
+	}
+}
+
+func NewOdigletRole(ns string) *rbacv1.Role {
+	return &rbacv1.Role{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Role",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      OdigletRoleName,
+			Namespace: ns,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				// Needed for reading the enabled signals for each source
+				// TODO: rely on inctr. config instead of collectorsgroups, then remove this
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"collectorsgroups", "collectorsgroups/status"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{ // Needed to read the odigos_config for ignored containers
+				APIGroups:     []string{""},
+				Resources:     []string{"configmaps"},
+				ResourceNames: []string{consts.OdigosConfigurationName},
+				Verbs:         []string{"get", "list", "watch"},
+			},
+		},
+	}
+}
+
+func NewOdigletRoleBinding(ns string) *rbacv1.RoleBinding {
+	return &rbacv1.RoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "RoleBinding",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      OdigletRoleBindingName,
+			Namespace: ns,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      OdigletServiceAccountName,
+				Namespace: ns,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "Role",
+			Name:     OdigletRoleName,
 		},
 	}
 }
@@ -52,260 +110,72 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odiglet",
+			Name: OdigletClusterRoleName,
 		},
 		Rules: []rbacv1.PolicyRule{
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
+			{ // Needed for language detection
+				APIGroups: []string{""},
+				Resources: []string{"pods"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{ // Needed for language detection
+				APIGroups: []string{""},
+				Resources: []string{"pods/status"},
+				Verbs:     []string{"get"},
+			},
+			{ // Needed for language detection
+				// TODO: remove this once Tamir/PR is read for new language detection
+				APIGroups: []string{"apps"},
+				Resources: []string{"deployments", "daemonsets", "statefulsets"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{ // Needed for language detection
+				// TODO: remove this once Tamir/PR is read for new language detection
+				APIGroups: []string{"apps"},
+				Resources: []string{"deployments/status", "daemonsets/status", "statefulsets/status"},
+				Verbs:     []string{"get"},
+			},
+			{ // Needed for language detection
+				// TODO: remove this once Tamir/PR is read for new language detection
+				APIGroups: []string{"apps"},
+				Resources: []string{"replicasets"},
+				Verbs:     []string{"get"},
+			},
+			{ // Needed for virtual device registration
+				APIGroups: []string{""},
+				Resources: []string{"nodes"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{ // Needed for storage of the process instrumentation state
 				APIGroups: []string{"odigos.io"},
-				Resources: []string{"odigosconfigurations", "collectorsgroups", "collectorsgroups/status"},
+				Resources: []string{"instrumentationinstances"},
+				Verbs:     []string{"create", "get", "list", "patch", "update", "watch", "delete"},
 			},
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
-				APIGroups: []string{""},
-				Resources: []string{"configmaps"},
-			},
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
-				APIGroups: []string{""},
-				Resources: []string{
-					"pods",
-				},
-			},
-			{
-				Verbs: []string{
-					"get",
-				},
-				APIGroups: []string{""},
-				Resources: []string{
-					"pods/status",
-				},
-			},
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
-				APIGroups: []string{""},
-				Resources: []string{
-					"nodes",
-				},
-			},
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
-				APIGroups: []string{"apps"},
-				Resources: []string{"deployments"},
-			},
-			{
-				Verbs: []string{
-					"get",
-				},
-				APIGroups: []string{"apps"},
-				Resources: []string{
-					"deployments/status",
-				},
-			},
-			{
-				Verbs: []string{
-					"get",
-				},
-				APIGroups: []string{"apps"},
-				Resources: []string{
-					"deployments/finalizers",
-				},
-			},
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
-				APIGroups: []string{"apps"},
-				Resources: []string{"statefulsets"},
-			},
-			{
-				Verbs: []string{
-					"get",
-				},
-				APIGroups: []string{"apps"},
-				Resources: []string{
-					"statefulsets/status",
-				},
-			},
-			{
-				Verbs: []string{
-					"get",
-				},
-				APIGroups: []string{"apps"},
-				Resources: []string{
-					"statefulsets/finalizers",
-				},
-			},
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
-				APIGroups: []string{"apps"},
-				Resources: []string{"daemonsets"},
-			},
-			{
-				Verbs: []string{
-					"get",
-				},
-				APIGroups: []string{"apps"},
-				Resources: []string{
-					"daemonsets/status",
-				},
-			},
-			{
-				Verbs: []string{
-					"get",
-				},
-				APIGroups: []string{"apps"},
-				Resources: []string{
-					"daemonsets/finalizers",
-				},
-			},
-			{
-				Verbs: []string{
-					"get",
-				},
-				APIGroups: []string{"apps"},
-				Resources: []string{
-					"replicasets",
-				},
-			},
-			{
-				Verbs: []string{
-					"create",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"instrumentedapplications",
-				},
-			},
-			{
-				Verbs: []string{
-					"get",
-					"patch",
-					"update",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"instrumentedapplications/status",
-				},
-			},
-			{
-				Verbs: []string{
-					"create",
-					"get",
-					"list",
-					"patch",
-					"update",
-					"watch",
-					"delete",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"instrumentationinstances",
-				},
-			},
-			{
-				Verbs: []string{
-					"get",
-					"patch",
-					"update",
-				},
-				APIGroups: []string{
-					"odigos.io",
-				},
-				Resources: []string{
-					"instrumentationinstances/status",
-				},
-			},
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
-				APIGroups: []string{""},
-				Resources: []string{
-					"namespaces",
-				},
-			},
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-					"patch",
-					"update",
-				},
+			{ // Needed for storage of the process instrumentation state
 				APIGroups: []string{"odigos.io"},
-				Resources: []string{
-					"instrumentationconfigs",
-				},
+				Resources: []string{"instrumentationinstances/status"},
+				Verbs:     []string{"get", "patch", "update"},
 			},
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-					"patch",
-				},
+			{ // Need for storage of runtime details / language detection (future update)
 				APIGroups: []string{"odigos.io"},
-				Resources: []string{
-					"instrumentationconfigs/status",
-				},
+				Resources: []string{"instrumentationconfigs"},
+				Verbs:     []string{"get", "list", "watch", "patch", "update"},
+			},
+			{ // Need for storage of runtime details / language detection (future update)
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"instrumentationconfigs/status"},
+				Verbs:     []string{"get", "patch", "update"},
 			},
 		},
 	}
 
 	if psp {
 		clusterrole.Rules = append(clusterrole.Rules, rbacv1.PolicyRule{
-			Verbs: []string{
-				"use",
-			},
-			APIGroups: []string{
-				"policy",
-			},
-			Resources: []string{
-				"podsecuritypolicies",
-			},
-			ResourceNames: []string{
-				"privileged",
-			},
+			// Needed for clients who enable pod security policies
+			APIGroups:     []string{"policy"},
+			Resources:     []string{"podsecuritypolicies"},
+			ResourceNames: []string{"privileged"},
+			Verbs:         []string{"use"},
 		})
 	}
 
@@ -319,19 +189,19 @@ func NewOdigletClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odiglet",
+			Name: OdigletClusterRoleBindingName,
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      "odiglet",
+				Name:      OdigletServiceAccountName,
 				Namespace: ns,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "ClusterRole",
-			Name:     "odiglet",
+			Name:     OdigletClusterRoleName,
 		},
 	}
 }
@@ -349,7 +219,7 @@ func NewSCCRoleBinding(ns string) *rbacv1.RoleBinding {
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      "odiglet",
+				Name:      OdigletServiceAccountName,
 				Namespace: ns,
 			},
 			{
@@ -641,7 +511,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 						},
 					},
 					DNSPolicy:          "ClusterFirstWithHostNet",
-					ServiceAccountName: "odiglet",
+					ServiceAccountName: OdigletServiceAccountName,
 					HostNetwork:        true,
 					HostPID:            true,
 					PriorityClassName:  "system-node-critical",
@@ -723,6 +593,8 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 
 	resources := []kube.Object{
 		NewOdigletServiceAccount(a.ns),
+		NewOdigletRole(a.ns),
+		NewOdigletRoleBinding(a.ns),
 		NewOdigletClusterRole(a.config.Psp),
 		NewOdigletClusterRoleBinding(a.ns),
 	}

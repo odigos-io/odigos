@@ -1,5 +1,5 @@
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   name: deployment-nodejs-unsupported-version
   namespace: default
@@ -9,14 +9,14 @@ metadata:
       controller: true
       kind: Deployment
       name: nodejs-unsupported-version
-spec:
-  runtimeDetails:
+status:
+  runtimeDetailsByContainer:
     - containerName: nodejs-unsupported-version
       language: javascript
       runtimeVersion: 8.17.0
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   name: deployment-nodejs-very-old-version
   namespace: default
@@ -26,14 +26,14 @@ metadata:
       controller: true
       kind: Deployment
       name: nodejs-very-old-version
-spec:
-  runtimeDetails:
+status:
+  runtimeDetailsByContainer:
     - containerName: nodejs-very-old-version
       language: javascript
       (runtimeVersion == null): true
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   name: deployment-nodejs-minimum-version
   namespace: default
@@ -43,14 +43,14 @@ metadata:
       controller: true
       kind: Deployment
       name: nodejs-minimum-version
-spec:
-  runtimeDetails:
+status:
+  runtimeDetailsByContainer:
     - containerName: nodejs-minimum-version
       language: javascript
       runtimeVersion: 14.0.0
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   name: deployment-nodejs-latest-version
   namespace: default
@@ -60,14 +60,14 @@ metadata:
       controller: true
       kind: Deployment
       name: nodejs-latest-version
-spec:
-  runtimeDetails:
+status:
+  runtimeDetailsByContainer:
     - containerName: nodejs-latest-version
       language: javascript
       (runtimeVersion != null): true
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   name: deployment-nodejs-dockerfile-env
   namespace: default
@@ -77,8 +77,8 @@ metadata:
       controller: true
       kind: Deployment
       name: nodejs-dockerfile-env
-spec:
-  runtimeDetails:
+status:
+  runtimeDetailsByContainer:
     - containerName: nodejs-dockerfile-env
       envVars:
       - name: NODE_OPTIONS
@@ -87,7 +87,7 @@ spec:
       runtimeVersion: 20.17.0
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   name: deployment-nodejs-manifest-env
   namespace: default
@@ -97,8 +97,8 @@ metadata:
       controller: true
       kind: Deployment
       name: nodejs-manifest-env
-spec:
-  runtimeDetails:
+status:
+  runtimeDetailsByContainer:
     - containerName: nodejs-manifest-env
       envVars:
       - name: NODE_OPTIONS
@@ -107,7 +107,7 @@ spec:
       runtimeVersion: 20.17.0
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   name: deployment-cpp-http-server
   namespace: default
@@ -117,33 +117,13 @@ metadata:
       controller: true
       kind: Deployment
       name: cpp-http-server
-spec:
-  runtimeDetails:
+status:
+  runtimeDetailsByContainer:
     - containerName: cpp-http-server
       language: unknown
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
-metadata:
-  name: deployment-language-change
-  namespace: default
-  ownerReferences:
-    - apiVersion: apps/v1
-      blockOwnerDeletion: true
-      controller: true
-      kind: Deployment
-      name: language-change
-spec:
-  runtimeDetails:
-    - containerName: language-change
-      envVars:
-      - name: NODE_OPTIONS
-        value: "--require /app/execute_before.js --max-old-space-size=256"
-      language: javascript
-      runtimeVersion: 20.17.0
----
-apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   name: deployment-java-supported-version
   namespace: default
@@ -153,14 +133,14 @@ metadata:
       controller: true
       kind: Deployment
       name: java-supported-version
-spec:
-  runtimeDetails:
+status:
+  runtimeDetailsByContainer:
     - containerName: java-supported-version
       language: java
       runtimeVersion: 17.0.12+7
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   name: deployment-java-azul
   namespace: default
@@ -170,13 +150,13 @@ metadata:
       controller: true
       kind: Deployment
       name: java-azul
-spec:
-  runtimeDetails:
+status:
+  runtimeDetailsByContainer:
     - containerName: java-azul
       language: java
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   name: deployment-java-supported-docker-env
   namespace: default
@@ -186,8 +166,8 @@ metadata:
       controller: true
       kind: Deployment
       name: java-supported-docker-env
-spec:
-  runtimeDetails:
+status:
+  runtimeDetailsByContainer:
     - containerName: java-supported-docker-env
       language: java
       envVars:
@@ -197,7 +177,7 @@ spec:
 
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   name: deployment-java-supported-manifest-env
   namespace: default
@@ -207,8 +187,8 @@ metadata:
       controller: true
       kind: Deployment
       name: java-supported-manifest-env
-spec:
-  runtimeDetails:
+status:
+  runtimeDetailsByContainer:
     - containerName: java-supported-manifest-env
       language: java
       envVars:
@@ -218,7 +198,7 @@ spec:
 
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   name: deployment-java-latest-version
   namespace: default
@@ -228,13 +208,13 @@ metadata:
       controller: true
       kind: Deployment
       name: java-latest-version
-spec:
-  runtimeDetails:
+status:
+  runtimeDetailsByContainer:
     - containerName: java-latest-version
       language: java
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   name: deployment-java-old-version
   namespace: default
@@ -244,14 +224,14 @@ metadata:
       controller: true
       kind: Deployment
       name: java-old-version
-spec:
-  runtimeDetails:
+status:
+  runtimeDetailsByContainer:
     - containerName: java-old-version
       language: java
 ---
 ## Python
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   name: deployment-python-alpine
   namespace: default
@@ -261,8 +241,8 @@ metadata:
       controller: true
       kind: Deployment
       name: python-alpine
-spec:
-  runtimeDetails:
+status:
+  runtimeDetailsByContainer:
     - containerName: python-alpine
       envVars:
       - name: PYTHONPATH
@@ -271,7 +251,7 @@ spec:
       runtimeVersion: 3.10.15
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   name: deployment-python-latest-version
   namespace: default
@@ -281,14 +261,33 @@ metadata:
       controller: true
       kind: Deployment
       name: python-latest-version
-spec:
-  runtimeDetails:
+status:
+  runtimeDetailsByContainer:
     - containerName: python-latest-version        
       language: python
       (runtimeVersion != null): true
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
+metadata:
+  name: deployment-python-other-agent
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: python-other-agent
+status:
+  runtimeDetailsByContainer:
+    - containerName: python-other-agent        
+      language: python
+      otherAgent:
+        name: New Relic Agent
+      (runtimeVersion != null): true
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
 metadata:
   name: deployment-python-min-version
   namespace: default
@@ -298,14 +297,14 @@ metadata:
       controller: true
       kind: Deployment
       name: python-min-version
-spec:
-  runtimeDetails:
+status:
+  runtimeDetailsByContainer:
     - containerName: python-min-version
       language: python
       runtimeVersion: 3.8.0
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   name: deployment-python-not-supported
   namespace: default
@@ -315,25 +314,76 @@ metadata:
       controller: true
       kind: Deployment
       name: python-not-supported
-spec:
-  runtimeDetails:
+status:
+  runtimeDetailsByContainer:
     - containerName: python-not-supported
       language: python
       runtimeVersion: 3.6.15
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
-  name: deployment-dotnet-musl
+  name: deployment-dotnet8-musl
   namespace: default
   ownerReferences:
     - apiVersion: apps/v1
       blockOwnerDeletion: true
       controller: true
       kind: Deployment
-      name: dotnet-musl
-spec:
-  runtimeDetails:
-    - containerName: dotnet-musl
+      name: dotnet8-musl
+status:
+  runtimeDetailsByContainer:
+    - containerName: dotnet8-musl
       language: dotnet
       libCType: musl
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-dotnet6-musl
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: dotnet6-musl
+status:
+  runtimeDetailsByContainer:
+    - containerName: dotnet6-musl
+      language: dotnet
+      libCType: musl
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-dotnet8-glibc
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: dotnet8-glibc
+status:
+  runtimeDetailsByContainer:
+    - containerName: dotnet8-glibc
+      language: dotnet
+      libCType: glibc
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-dotnet6-glibc
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: dotnet6-glibc
+status:
+  runtimeDetailsByContainer:
+    - containerName: dotnet6-glibc
+      language: dotnet
+      libCType: glibc
