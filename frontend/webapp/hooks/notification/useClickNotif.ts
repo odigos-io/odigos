@@ -2,7 +2,7 @@ import { useSourceCRUD } from '../sources';
 import { useActionCRUD } from '../actions';
 import { getIdFromSseTarget } from '@/utils';
 import { useDestinationCRUD } from '../destinations';
-import { type Notification, OVERVIEW_ENTITY_TYPES } from '@/types';
+import { type Notification, OVERVIEW_ENTITY_TYPES, WorkloadId } from '@/types';
 import { useInstrumentationRuleCRUD } from '../instrumentation-rules';
 import { DrawerItem, useDrawerStore, useNotificationStore } from '@/store';
 
@@ -33,7 +33,10 @@ export const useClickNotif = () => {
         case 'InstrumentationInstance':
           drawerItem['type'] = OVERVIEW_ENTITY_TYPES.SOURCE;
           drawerItem['id'] = getIdFromSseTarget(target, OVERVIEW_ENTITY_TYPES.SOURCE);
-          drawerItem['item'] = sources.find((item) => item.kind === drawerItem['id']?.['kind'] && item.name === drawerItem['id']?.['name'] && item.namespace === drawerItem['id']?.['namespace']);
+          drawerItem['item'] = sources.find(
+            (item) => item.kind === (drawerItem['id'] as WorkloadId).kind && item.name === (drawerItem['id'] as WorkloadId).name && item.namespace === (drawerItem['id'] as WorkloadId).namespace,
+          );
+
           break;
 
         case OVERVIEW_ENTITY_TYPES.ACTION:

@@ -156,7 +156,7 @@ export function useDestinationFormData(params?: { destinationType?: string; supp
   }, [supportedSignals]);
 
   const validateForm = (params?: { withAlert?: boolean; alertTitle?: string }) => {
-    const errors = {};
+    const errors: Record<DynamicField['name'], string> = {};
     let ok = true;
 
     dynamicFields.forEach(({ name, value, required }) => {
