@@ -363,16 +363,10 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 					},
 					Tolerations: []corev1.Toleration{
 						{
-							Key:      "node.kubernetes.io/os",
-							Operator: corev1.TolerationOpEqual,
-							Value:    "windows",
-							Effect:   corev1.TaintEffectNoSchedule,
-						},
-						{
-							Key:      corev1.LabelArchStable,
-							Operator: corev1.TolerationOpEqual,
-							Value:    "arm64",
-							Effect:   corev1.TaintEffectNoSchedule,
+							// This toleration with 'Exists' operator and no key/effect specified
+							// will match ALL taints, allowing pods to be scheduled on any node
+							// regardless of its taints (including master/control-plane nodes)
+							Operator: corev1.TolerationOpExists,
 						},
 					},
 					Volumes: append([]corev1.Volume{
