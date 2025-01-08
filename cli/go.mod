@@ -3,7 +3,6 @@ module github.com/odigos-io/odigos/cli
 go 1.23.0
 
 require (
-	github.com/cert-manager/cert-manager v1.16.2
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-version v1.7.0
 	github.com/odigos-io/odigos/api v0.0.0
@@ -32,7 +31,6 @@ require (
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	sigs.k8s.io/controller-runtime v0.19.0 // indirect
-	sigs.k8s.io/gateway-api v1.1.0 // indirect
 )
 
 require (

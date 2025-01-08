@@ -43,6 +43,10 @@ const (
 )
 
 const (
+	OdigosProSecretName = "odigos-pro"
+)
+
+const (
 	OdigosEnvVarNamespace     = "ODIGOS_WORKLOAD_NAMESPACE"
 	OdigosEnvVarContainerName = "ODIGOS_CONTAINER_NAME"
 	OdigosEnvVarPodName       = "ODIGOS_POD_NAME"
@@ -70,4 +74,7 @@ const (
 	WorkloadNameLabel      = "odigos.io/workload-name"
 	WorkloadNamespaceLabel = "odigos.io/workload-namespace"
 	WorkloadKindLabel      = "odigos.io/workload-kind"
+
+	OdigosCloudApiKeySecretKey = "odigos-cloud-api-key"
+	OdigosOnpremTokenSecretKey = "odigos-onprem-token"
 )
