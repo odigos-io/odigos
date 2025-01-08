@@ -23,10 +23,10 @@ import (
 
 	"github.com/gin-contrib/cors"
 
-	collectormetrics "github.com/odigos-io/odigos/frontend/endpoints/collector_metrics"
-	"github.com/odigos-io/odigos/frontend/endpoints/sse"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/kube/watchers"
+	collectormetrics "github.com/odigos-io/odigos/frontend/services/collector_metrics"
+	"github.com/odigos-io/odigos/frontend/services/sse"
 	"github.com/odigos-io/odigos/frontend/version"
 
 	"github.com/gin-gonic/gin"
