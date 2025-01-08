@@ -11,7 +11,7 @@ const crdName = CRD_NAMES.DESTINATION;
 describe('Destinations CRUD', () => {
   beforeEach(() => cy.intercept('/graphql').as('gql'));
 
-  it('Should create a CRD in the cluster', () => {
+  it('Should create a CRD in the cluster, and notify with SSE', () => {
     cy.visit(ROUTES.OVERVIEW);
 
     getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 }, () => {
@@ -30,7 +30,7 @@ describe('Destinations CRUD', () => {
     });
   });
 
-  it('Should update the CRD in the cluster', () => {
+  it('Should update the CRD in the cluster, and notify with SSE', () => {
     cy.visit(ROUTES.OVERVIEW);
 
     getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 }, () => {
@@ -56,7 +56,7 @@ describe('Destinations CRUD', () => {
     });
   });
 
-  it('Should delete the CRD from the cluster', () => {
+  it('Should delete the CRD from the cluster, and notify with SSE', () => {
     cy.visit(ROUTES.OVERVIEW);
 
     getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 }, () => {
