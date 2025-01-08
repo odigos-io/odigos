@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { safeJsonParse } from '@/utils';
 import { useQuery } from '@apollo/client';
-import { GetDestinationTypesResponse } from '@/types';
+import { DestinationTypeItem, GetDestinationTypesResponse } from '@/types';
 import { GET_DESTINATION_TYPE, GET_POTENTIAL_DESTINATIONS } from '@/graphql';
 
 interface DestinationDetails {
@@ -14,26 +14,19 @@ interface GetPotentialDestinationsData {
 }
 
 export const usePotentialDestinations = () => {
-  const { data: destinationTypesData } =
-    useQuery<GetDestinationTypesResponse>(GET_DESTINATION_TYPE);
-  const { loading, error, data } = useQuery<GetPotentialDestinationsData>(
-    GET_POTENTIAL_DESTINATIONS
-  );
+  const { data: destinationTypesData } = useQuery<GetDestinationTypesResponse>(GET_DESTINATION_TYPE);
+  const { loading, error, data } = useQuery<GetPotentialDestinationsData>(GET_POTENTIAL_DESTINATIONS);
 
   const mappedPotentialDestinations = useMemo(() => {
     if (!destinationTypesData || !data) return [];
 
     // Create a deep copy of destination types to manipulate
-    const destinationTypesCopy = JSON.parse(
-      JSON.stringify(destinationTypesData.destinationTypes.categories)
-    );
+    const destinationTypesCopy = JSON.parse(JSON.stringify(destinationTypesData.destinationTypes.categories));
 
     // Map over the potential destinations
     return data.potentialDestinations.map((destination) => {
       for (const category of destinationTypesCopy) {
-        const index = category.items.findIndex(
-          (item) => item.type === destination.type
-        );
+        const index = category.items.findIndex((item: DestinationTypeItem) => item.type === destination.type);
         if (index !== -1) {
           // Spread the matched destination type data into the potential destination
           const matchedType = category.items[index];
@@ -41,10 +34,7 @@ export const usePotentialDestinations = () => {
           return {
             ...destination,
             ...matchedType,
-            fields: safeJsonParse<{ [key: string]: string }>(
-              destination.fields,
-              {}
-            ),
+            fields: safeJsonParse<{ [key: string]: string }>(destination.fields, {}),
           };
         }
       }
