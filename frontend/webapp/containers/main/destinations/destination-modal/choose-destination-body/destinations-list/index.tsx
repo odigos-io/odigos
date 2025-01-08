@@ -48,16 +48,16 @@ export const DestinationsList: React.FC<DestinationsListProps> = ({ items, setSe
       return (
         <ListsWrapper key={`category-${categoryItem.name}`}>
           <SectionTitle size='small' title={capitalizeFirstLetter(categoryItem.name)} description={categoryItem.description} />
-          {categoryItem.items.map((destinationItem) => (
+          {categoryItem.items.map((item, idx) => (
             <DataTab
-              key={`destination-${destinationItem.type}`}
-              data-id={`destination-${destinationItem.displayName}`}
-              title={destinationItem.displayName}
-              iconSrc={destinationItem.imageUrl}
+              key={`select-destination-${item.type}-${idx}`}
+              data-id={`select-destination-${item.type}`}
+              title={item.displayName}
+              iconSrc={item.imageUrl}
               hoverText='Select'
-              monitors={Object.keys(destinationItem.supportedSignals || {}).filter((signal) => destinationItem.supportedSignals[signal].supported)}
+              monitors={Object.keys(item.supportedSignals).filter((signal) => item.supportedSignals[signal].supported)}
               monitorsWithLabels
-              onClick={() => setSelectedItems(destinationItem)}
+              onClick={() => setSelectedItems(item)}
             />
           ))}
         </ListsWrapper>
