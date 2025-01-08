@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
@@ -49,9 +50,7 @@ var proCmd = &cobra.Command{
 }
 
 func executeRemoteUpdateToken(ctx context.Context, client *kube.Client, namespace string) error {
-	uiServiceName := "ui"
-	uiServicePort := 3000
-	uiSvcProxyEndpoint := fmt.Sprintf("/api/v1/namespaces/%s/services/%s:%d/proxy/api/pro/source/namespace/%s/kind/%s/name/%s", namespace, uiServiceName, uiServicePort)
+	uiSvcProxyEndpoint := fmt.Sprintf("/api/v1/namespaces/%s/services/%s:%d/proxy/api/pro/source/namespace/%s/kind/%s/name/%s", namespace, k8sconsts.OdigosUiServiceName, k8sconsts.OdigosUiServicePort)
 	request := client.Clientset.RESTClient().Get().AbsPath(uiSvcProxyEndpoint).Do(ctx)
 	_, err := request.Raw()
 	if err != nil {
