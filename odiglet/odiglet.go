@@ -112,10 +112,11 @@ func (o *Odiglet) Run(ctx context.Context) {
 	// We run it outside of the error group to avoid blocking on Wait() in case of a fatal error.
 	go func()  {
 		err := runDeviceManager(o.clientset, o.deviceInjectionCallbacks)
-		log.Logger.V(0).Info("Device manager exited")
 		if err != nil {
 			log.Logger.Error(err, "Device manager exited with error")
 			cancel()
+		} else {
+			log.Logger.V(0).Info("Device manager exited")
 		}
 	} ()
 
