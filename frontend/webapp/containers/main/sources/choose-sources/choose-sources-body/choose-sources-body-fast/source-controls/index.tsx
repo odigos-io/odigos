@@ -20,7 +20,7 @@ const SearchWrapper = styled.div`
 `;
 
 export const SourceControls: React.FC<Props> = ({ selectedSources, searchText, setSearchText, showSelectedOnly, setShowSelectedOnly }) => {
-  const selectedAppsCount = Object.values(selectedSources).reduce((prev, curr) => prev + curr.length, 0);
+  const selectedAppsCount = Object.values(selectedSources).reduce((prev, curr) => prev + curr.filter((s) => s.selected).length, 0);
 
   return (
     <>

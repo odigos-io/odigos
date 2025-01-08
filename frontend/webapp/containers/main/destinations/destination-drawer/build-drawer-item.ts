@@ -4,9 +4,12 @@ const buildDrawerItem = (id: string, formData: DestinationInput, drawerItem: Act
   const { name, exportedSignals, fields } = formData;
   const { destinationType, conditions } = drawerItem || {};
 
-  let fieldsStringified: string | Record<string, any> = {};
-  fields.forEach(({ key, value }) => (fieldsStringified[key] = value));
-  fieldsStringified = JSON.stringify(fieldsStringified);
+  const fieldsObject: Record<string, any> = {};
+  fields.forEach(({ key, value }) => {
+    fieldsObject[key] = value;
+  });
+
+  const fieldsStringified = JSON.stringify(fieldsObject);
 
   return {
     id,
