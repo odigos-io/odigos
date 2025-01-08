@@ -99,20 +99,8 @@ This command will install k8s components that will auto-instrument your applicat
 			odigosProToken = odigosOnPremToken
 		}
 
-		availableProfiles := resources.GetAvailableProfilesForTier(odigosTier)
-
-		profileMap := make(map[string]struct{})
-		for _, profile := range availableProfiles {
-			profileMap[string(profile.ProfileName)] = struct{}{}
-		}
-
-		// Check each user input profile against the map
-		for _, input := range userInputInstallProfiles {
-			if _, exists := profileMap[input]; !exists {
-				fmt.Printf("\033[31mERROR\033[0m Profile '%s' not available.\n", input)
-				os.Exit(1)
-			}
-		}
+		// validate user input profiles against available profiles
+		validateUserInputProfiles(odigosTier)
 
 		config := createOdigosConfig(odigosTier)
 
@@ -195,6 +183,25 @@ func createNamespace(ctx context.Context, cmd *cobra.Command, client *kube.Clien
 	}
 
 	return nil
+}
+
+func validateUserInputProfiles(tier common.OdigosTier) {
+	// Fetch available profiles for the given tier
+	availableProfiles := resources.GetAvailableProfilesForTier(tier)
+
+	// Create a map for fast lookups of valid profile names
+	profileMap := make(map[string]struct{})
+	for _, profile := range availableProfiles {
+		profileMap[string(profile.ProfileName)] = struct{}{}
+	}
+
+	// Check each user input profile against the map
+	for _, input := range userInputInstallProfiles {
+		if _, exists := profileMap[input]; !exists {
+			fmt.Printf("\033[31mERROR\033[0m Profile '%s' not available.\n", input)
+			os.Exit(1)
+		}
+	}
 }
 
 func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration {
