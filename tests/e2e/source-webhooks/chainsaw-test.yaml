@@ -1,0 +1,168 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: source
+spec:
+  description: This e2e test runs a multi-apps scenario with Source instrumentation
+  skipDelete: true
+  steps:
+    - name: Install Odigos
+      try:
+        - script:
+            content: |
+              if [ "$MODE" = "cross-cloud-tests" ]; then
+                ../../../cli/odigos install --namespace odigos-test --version "$COMMIT_HASH" --image-prefix=public.ecr.aws/y2v0v6s7
+              else
+                ../../../cli/odigos install --namespace odigos-test --version e2e-test
+              fi
+            timeout: 60s
+        - assert:
+            file: ../../common/assert/odigos-installed.yaml
+    - name: "[Defaulting] - Source without labels has labels added"
+      try:
+        - apply:
+            file: 01-source-without-labels.yaml
+        - assert:
+            timeout: 2m
+            file: 01-assert-source-without-labels.yaml
+    - name: "[Defaulting] - Source with correct labels is unaffected"
+      try:
+        - apply:
+            file: 02-source-with-labels.yaml
+        - assert:
+            timeout: 2m
+            file: 02-assert-source-with-labels.yaml
+    - name: "[Defaulting/Validating] - Source with incorrect labels is rejected (not modified to be correct)"
+      try:
+        - apply:
+            file: 03-source-with-incorrect-labels.yaml
+            expect:
+              - check:
+                  ($error != null): true
+    - name: "[Defaulting] - Normal Source has deleteinstrumentationconfig finalizer added"
+      try:
+        - apply:
+            file: 04-deleteinstrumentationconfig-finalizer.yaml
+        - assert:
+            timeout: 2m
+            file: 04-assert-deleteinstrumentationconfig-finalizer.yaml
+    - name: "[Defaulting] - Finalizer does not block normal Source from being deleted"
+      try:
+        - script:
+            timeout: 70s
+            content: kubectl delete source 04-deleteinstrumentationconfig-finalizer
+            check:
+              ($error == null): true
+    - name: "[Defaulting] - Workload excluded Source has startlangdetection finalizer added"
+      try:
+        - apply:
+            file: 05-startlangdetection-finalizer.yaml
+        - assert:
+            timeout: 2m
+            file: 05-assert-startlangdetection-finalizer.yaml
+    - name: "[Defaulting] - Finalizer does not block exclusion Source from being deleted"
+      try:
+        - script:
+            timeout: 70s
+            content: kubectl delete source 05-startlangdetection-finalizer
+            check:
+              ($error == null): true
+    - name: "[Validating] - Normal Source passes validation"
+      try:
+        - apply:
+            file: 06-normal-source.yaml
+    - name: "[Validating] - Workload excluded Source passes validation"
+      try:
+        - apply:
+            file: 07-excluded-source.yaml
+    - name: "[Validating] - Namespace Source passes validation + Namespace Source with existing workload Source is not a duplicate (valid)"
+      try:
+        - apply:
+            file: 08-namespace-source.yaml
+    - name: "[Validating] - Duplicate normal Source does not pass validation"
+      try:
+        - apply:
+            file: 09-duplicate-normal-source.yaml
+            expect:
+              - check:
+                  ($error != null): true
+    - name: "[Validating] - Duplicate workload excluded Source does not pass validation"
+      try:
+        - apply:
+            file: 10-duplicate-excluded-source.yaml
+            expect:
+              - check:
+                  ($error != null): true
+    - name: "[Validating] - Duplicate namespace Source does not pass validation"
+      try:
+        - apply:
+            file: 11-duplicate-namespace-source.yaml
+            expect:
+              - check:
+                  ($error != null): true
+    - name: "[Validating] - Workload Source with existing namespace Source is not a duplicate (valid)"
+      try:
+        - apply:
+            file: 12-valid-workload-existing-ns-source.yaml
+    - name: "[Validating] - Namespace Source with name!=namespace does not pass validation"
+      try:
+        - apply:
+            file: 13-invalid-namespace-name-source.yaml
+            expect:
+              - check:
+                  ($error != null): true
+    - name: "[Validating] - Source with invalid kind does not pass validation"
+      try:
+        - apply:
+            file: 14-invalid-workload-kind-source.yaml
+            expect:
+              - check:
+                  ($error != null): true
+    - name: "[Validating] - Source workload-kind label is immutable"
+      try:
+        - script:
+            timeout: 70s
+            content: kubectl label --overwrite source/06-normal-source odigos.io/workload-kind="Namespace"
+            check:
+              ($error != null): true
+              (contains($stderr, 'Invalid value')): true
+    - name: "[Validating] - Source workload-name label is immutable"
+      try:
+        - script:
+            timeout: 70s
+            content: kubectl label --overwrite source/06-normal-source odigos.io/workload-name="06-normal-source-patched"
+            check:
+              ($error != null): true
+              (contains($stderr, 'Invalid value')): true
+    - name: "[Validating] - Source workload-namespace label is immutable"
+      try:
+        - script:
+            timeout: 70s
+            content: kubectl label --overwrite source/06-normal-source odigos.io/workload-namespace="kube-system"
+            check:
+              ($error != null): true
+              (contains($stderr, 'Invalid value')): true
+    - name: "[Validating] - Source workload.name is immutable"
+      try:
+        - script:
+            timeout: 70s
+            content: kubectl patch source/06-normal-source --type=merge -p '{"spec":{"workload":{"name":"06-normal-source-patched"}}}'
+            check:
+              ($error != null): true
+              (contains($stderr, 'Invalid value')): true
+    - name: "[Validating] - Source workload.namespace is immutable"
+      try:
+        - script:
+            timeout: 70s
+            content: kubectl patch source/06-normal-source --type=merge -p '{"spec":{"workload":{"namespace":"kube-system"}}}'
+            check:
+              ($error != null): true
+              (contains($stderr, 'Invalid value')): true
+    - name: "[Validating] - Source workload.kind is immutable"
+      try:
+        - script:
+            timeout: 70s
+            content: kubectl patch source/06-normal-source --type=merge -p '{"spec":{"workload":{"kind":"DaemonSet"}}}'
+            check:
+              ($error != null): true
+              (contains($stderr, 'Invalid value')): true

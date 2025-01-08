@@ -2,6 +2,7 @@ package startlangdetection
 
 import (
 	"context"
+	"errors"
 
 	v1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -34,16 +35,6 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// If this is a regular Source that is being created, or an Exclusion Source that is being deleted,
 	// Attempt to reconcile the workloads for instrumentation.
 	if source.DeletionTimestamp.IsZero() != v1alpha1.IsWorkloadExcludedSource(source) {
-		if result, err := r.setSourceLabelsIfNecessary(ctx, source); err != nil {
-			return result, err
-		}
-		if !v1alpha1.IsWorkloadExcludedSource(source) && !controllerutil.ContainsFinalizer(source, consts.DeleteInstrumentationConfigFinalizer) {
-			controllerutil.AddFinalizer(source, consts.DeleteInstrumentationConfigFinalizer)
-			if err := r.Update(ctx, source); err != nil {
-				return k8sutils.K8SUpdateErrorHandler(err)
-			}
-		}
-
 		if source.Spec.Workload.Kind == "Namespace" {
 			// pre-process existing Sources for specific workloads so we don't have to make a bunch of API calls
 			// This is used to check if a workload already has an explicit Source, so we don't overwrite its InstrumentationConfig
@@ -66,13 +57,10 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 				workload.WorkloadKindDeployment,
 				workload.WorkloadKindStatefulSet,
 			} {
-				result, err := r.listAndReconcileWorkloadList(ctx, source, kind, namespaceKindSources)
-				if err != nil {
-					return result, err
-				}
+				err = errors.Join(err, r.listAndReconcileWorkloadList(ctx, source, kind, namespaceKindSources))
 			}
 		} else {
-			_, err = reconcileWorkload(ctx,
+			_, reconcileErr := reconcileWorkload(ctx,
 				r.Client,
 				source.Spec.Workload.Kind,
 				ctrl.Request{
@@ -82,12 +70,14 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 					},
 				},
 				r.Scheme)
-			if err != nil {
-				return ctrl.Result{}, err
+			if reconcileErr != nil {
+				err = errors.Join(err, reconcileErr)
 			}
 		}
 
-		if v1alpha1.IsWorkloadExcludedSource(source) && controllerutil.ContainsFinalizer(source, consts.StartLangDetectionFinalizer) {
+		if v1alpha1.IsWorkloadExcludedSource(source) &&
+			!source.DeletionTimestamp.IsZero() &&
+			controllerutil.ContainsFinalizer(source, consts.StartLangDetectionFinalizer) {
 			controllerutil.RemoveFinalizer(source, consts.StartLangDetectionFinalizer)
 			if err := r.Update(ctx, source); err != nil {
 				return k8sutils.K8SUpdateErrorHandler(err)
@@ -95,39 +85,18 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 
-	return ctrl.Result{}, err
-}
-
-// TODO: Move to mutating webhook
-func (r *SourceReconciler) setSourceLabelsIfNecessary(ctx context.Context, source *v1alpha1.Source) (ctrl.Result, error) {
-	if source.Labels == nil {
-		source.Labels = make(map[string]string)
-	}
-
-	if source.Labels[consts.WorkloadNameLabel] != source.Spec.Workload.Name ||
-		source.Labels[consts.WorkloadNamespaceLabel] != source.Spec.Workload.Namespace ||
-		source.Labels[consts.WorkloadKindLabel] != string(source.Spec.Workload.Kind) {
-
-		source.Labels[consts.WorkloadNameLabel] = source.Spec.Workload.Name
-		source.Labels[consts.WorkloadNamespaceLabel] = source.Spec.Workload.Namespace
-		source.Labels[consts.WorkloadKindLabel] = string(source.Spec.Workload.Kind)
-
-		if err := r.Update(ctx, source); err != nil {
-			return k8sutils.K8SUpdateErrorHandler(err)
-		}
-	}
-	return ctrl.Result{}, nil
+	return ctrl.Result{}, client.IgnoreNotFound(err)
 }
 
 func (r *SourceReconciler) listAndReconcileWorkloadList(ctx context.Context,
 	source *v1alpha1.Source,
 	kind workload.WorkloadKind,
-	namespaceKindSources map[workload.WorkloadKind]map[string]struct{}) (ctrl.Result, error) {
+	namespaceKindSources map[workload.WorkloadKind]map[string]struct{}) error {
 
 	deps := workload.ClientListObjectFromWorkloadKind(kind)
 	err := r.Client.List(ctx, deps, client.InNamespace(source.Spec.Workload.Name))
 	if client.IgnoreNotFound(err) != nil {
-		return ctrl.Result{}, err
+		return err
 	}
 
 	switch obj := deps.(type) {
@@ -135,25 +104,25 @@ func (r *SourceReconciler) listAndReconcileWorkloadList(ctx context.Context,
 		for _, dep := range obj.Items {
 			err = r.reconcileWorkloadList(ctx, ctrl.Request{NamespacedName: client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace}}, kind, namespaceKindSources)
 			if err != nil {
-				return ctrl.Result{}, err
+				return err
 			}
 		}
 	case *v1.DaemonSetList:
 		for _, dep := range obj.Items {
 			err = r.reconcileWorkloadList(ctx, ctrl.Request{NamespacedName: client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace}}, kind, namespaceKindSources)
 			if err != nil {
-				return ctrl.Result{}, err
+				return err
 			}
 		}
 	case *v1.StatefulSetList:
 		for _, dep := range obj.Items {
 			err = r.reconcileWorkloadList(ctx, ctrl.Request{NamespacedName: client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace}}, kind, namespaceKindSources)
 			if err != nil {
-				return ctrl.Result{}, err
+				return err
 			}
 		}
 	}
-	return ctrl.Result{}, nil
+	return nil
 }
 
 func (r *SourceReconciler) reconcileWorkloadList(ctx context.Context,
