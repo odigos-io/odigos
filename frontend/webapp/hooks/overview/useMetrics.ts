@@ -1,11 +1,15 @@
 import { useQuery } from '@apollo/client';
-import { GET_METRICS } from '@/graphql/mutations/metrics';
+import { useSourceCRUD } from '../sources';
+import { useDestinationCRUD } from '../destinations';
 import type { OverviewMetricsResponse } from '@/types';
+import { GET_METRICS } from '@/graphql/mutations/metrics';
 
 export const useMetrics = () => {
-  // TODO: don't fetch until we have sources and/or destinations
+  const { sources } = useSourceCRUD();
+  const { destinations } = useDestinationCRUD();
+
   const { data } = useQuery<OverviewMetricsResponse>(GET_METRICS, {
-    skip: false,
+    skip: !!sources.length || !!destinations.length,
     pollInterval: 3000,
   });
 
