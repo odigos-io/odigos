@@ -8,4 +8,4 @@ query: |
   { resource.service.name = "coupon" } &&
   { resource.service.name = "membership" }
 expected:
-  count: 1
+  minimum: 1

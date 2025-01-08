@@ -2,7 +2,6 @@ package deleteinstrumentationconfig
 
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -81,7 +80,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 	err = builder.
 		ControllerManagedBy(mgr).
 		Named("deleteinstrumentationconfig-source").
-		WithEventFilter(&k8sutils.OnlyUpdatesPredicate{}).
+		WithEventFilter(predicate.Or(&odigospredicate.CreationPredicate{}, &odigospredicate.OnlyUpdatesPredicate{})).
 		For(&odigosv1.Source{}).
 		Complete(&SourceReconciler{
 			Client: mgr.GetClient(),

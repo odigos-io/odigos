@@ -76,7 +76,7 @@ type ComputePlatform struct {
 	ComputePlatformType  ComputePlatformType    `json:"computePlatformType"`
 	K8sActualNamespaces  []*K8sActualNamespace  `json:"k8sActualNamespaces"`
 	K8sActualNamespace   *K8sActualNamespace    `json:"k8sActualNamespace,omitempty"`
-	K8sActualSources     []*K8sActualSource     `json:"k8sActualSources"`
+	Sources              *PaginatedSources      `json:"sources"`
 	Destinations         []*Destination         `json:"destinations"`
 	Actions              []*PipelineAction      `json:"actions"`
 	InstrumentationRules []*InstrumentationRule `json:"instrumentationRules"`
@@ -397,6 +397,11 @@ type OdigosAnalyze struct {
 type OverviewMetricsResponse struct {
 	Sources      []*SingleSourceMetricsResponse      `json:"sources"`
 	Destinations []*SingleDestinationMetricsResponse `json:"destinations"`
+}
+
+type PaginatedSources struct {
+	NextPage string             `json:"nextPage"`
+	Items    []*K8sActualSource `json:"items"`
 }
 
 type PatchSourceRequestInput struct {

@@ -3,7 +3,7 @@ package startlangdetection
 import (
 	"context"
 
-	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -31,71 +31,48 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if source.DeletionTimestamp.IsZero() {
-		if !controllerutil.ContainsFinalizer(source, consts.SourceFinalizer) {
-			controllerutil.AddFinalizer(source, consts.SourceFinalizer)
-			// Removed by deleteinstrumentationconfig controller
-			controllerutil.AddFinalizer(source, consts.InstrumentedApplicationFinalizer)
+	// If this is a regular Source that is being created, or an Exclusion Source that is being deleted,
+	// Attempt to reconcile the workloads for instrumentation.
+	if source.DeletionTimestamp.IsZero() != v1alpha1.IsWorkloadExcludedSource(source) {
+		if result, err := r.setSourceLabelsIfNecessary(ctx, source); err != nil {
+			return result, err
 		}
-		if source.Labels == nil {
-			source.Labels = make(map[string]string)
-		}
-
-		source.Labels[consts.WorkloadNameLabel] = source.Spec.Workload.Name
-		source.Labels[consts.WorkloadNamespaceLabel] = source.Spec.Workload.Namespace
-		source.Labels[consts.WorkloadKindLabel] = string(source.Spec.Workload.Kind)
-
-		if err := r.Update(ctx, source); err != nil {
-			return k8sutils.K8SUpdateErrorHandler(err)
+		if !v1alpha1.IsWorkloadExcludedSource(source) && !controllerutil.ContainsFinalizer(source, consts.DeleteInstrumentationConfigFinalizer) {
+			controllerutil.AddFinalizer(source, consts.DeleteInstrumentationConfigFinalizer)
+			if err := r.Update(ctx, source); err != nil {
+				return k8sutils.K8SUpdateErrorHandler(err)
+			}
 		}
 
 		if source.Spec.Workload.Kind == "Namespace" {
-			var deps appsv1.DeploymentList
-			err = r.Client.List(ctx, &deps, client.InNamespace(source.Spec.Workload.Name))
-			if client.IgnoreNotFound(err) != nil {
-				logger.Error(err, "error fetching deployments")
+			// pre-process existing Sources for specific workloads so we don't have to make a bunch of API calls
+			// This is used to check if a workload already has an explicit Source, so we don't overwrite its InstrumentationConfig
+			sourceList := v1alpha1.SourceList{}
+			err := r.Client.List(ctx, &sourceList, client.InNamespace(source.Spec.Workload.Name))
+			if err != nil {
 				return ctrl.Result{}, err
 			}
-
-			for _, dep := range deps.Items {
-				request := ctrl.Request{NamespacedName: client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace}}
-				_, err = reconcileWorkload(ctx, r.Client, workload.WorkloadKindDeployment, request, r.Scheme)
-				if err != nil {
-					logger.Error(err, "error requesting runtime details from odiglets", "name", dep.Name, "namespace", dep.Namespace)
+			namespaceKindSources := make(map[workload.WorkloadKind]map[string]struct{})
+			for _, source := range sourceList.Items {
+				if _, exists := namespaceKindSources[source.Spec.Workload.Kind]; !exists {
+					namespaceKindSources[source.Spec.Workload.Kind] = make(map[string]struct{})
 				}
+				// ex: map["Deployment"]["my-app"] = ...
+				namespaceKindSources[source.Spec.Workload.Kind][source.Spec.Workload.Name] = struct{}{}
 			}
 
-			var sts appsv1.StatefulSetList
-			err = r.Client.List(ctx, &sts, client.InNamespace(source.Spec.Workload.Name))
-			if client.IgnoreNotFound(err) != nil {
-				logger.Error(err, "error fetching statefulsets")
-				return ctrl.Result{}, err
-			}
-
-			for _, st := range sts.Items {
-				request := ctrl.Request{NamespacedName: client.ObjectKey{Name: st.Name, Namespace: st.Namespace}}
-				_, err = reconcileWorkload(ctx, r.Client, workload.WorkloadKindStatefulSet, request, r.Scheme)
+			for _, kind := range []workload.WorkloadKind{
+				workload.WorkloadKindDaemonSet,
+				workload.WorkloadKindDeployment,
+				workload.WorkloadKindStatefulSet,
+			} {
+				result, err := r.listAndReconcileWorkloadList(ctx, source, kind, namespaceKindSources)
 				if err != nil {
-					logger.Error(err, "error requesting runtime details from odiglets", "name", st.Name, "namespace", st.Namespace)
-				}
-			}
-
-			var dss appsv1.DaemonSetList
-			err = r.Client.List(ctx, &dss, client.InNamespace(source.Spec.Workload.Name))
-			if client.IgnoreNotFound(err) != nil {
-				logger.Error(err, "error fetching daemonsets")
-				return ctrl.Result{}, err
-			}
-
-			for _, ds := range dss.Items {
-				request := ctrl.Request{NamespacedName: client.ObjectKey{Name: ds.Name, Namespace: ds.Namespace}}
-				_, err = reconcileWorkload(ctx, r.Client, workload.WorkloadKindDaemonSet, request, r.Scheme)
-				if err != nil {
-					logger.Error(err, "error requesting runtime details from odiglets", "name", ds.Name, "namespace", ds.Namespace)
+					return result, err
 				}
 			}
 		} else {
-			return reconcileWorkload(ctx,
+			_, err = reconcileWorkload(ctx,
 				r.Client,
 				source.Spec.Workload.Kind,
 				ctrl.Request{
@@ -105,8 +82,90 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 					},
 				},
 				r.Scheme)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+
+		if v1alpha1.IsWorkloadExcludedSource(source) && controllerutil.ContainsFinalizer(source, consts.StartLangDetectionFinalizer) {
+			controllerutil.RemoveFinalizer(source, consts.StartLangDetectionFinalizer)
+			if err := r.Update(ctx, source); err != nil {
+				return k8sutils.K8SUpdateErrorHandler(err)
+			}
 		}
 	}
 
 	return ctrl.Result{}, err
+}
+
+// TODO: Move to mutating webhook
+func (r *SourceReconciler) setSourceLabelsIfNecessary(ctx context.Context, source *v1alpha1.Source) (ctrl.Result, error) {
+	if source.Labels == nil {
+		source.Labels = make(map[string]string)
+	}
+
+	if source.Labels[consts.WorkloadNameLabel] != source.Spec.Workload.Name ||
+		source.Labels[consts.WorkloadNamespaceLabel] != source.Spec.Workload.Namespace ||
+		source.Labels[consts.WorkloadKindLabel] != string(source.Spec.Workload.Kind) {
+
+		source.Labels[consts.WorkloadNameLabel] = source.Spec.Workload.Name
+		source.Labels[consts.WorkloadNamespaceLabel] = source.Spec.Workload.Namespace
+		source.Labels[consts.WorkloadKindLabel] = string(source.Spec.Workload.Kind)
+
+		if err := r.Update(ctx, source); err != nil {
+			return k8sutils.K8SUpdateErrorHandler(err)
+		}
+	}
+	return ctrl.Result{}, nil
+}
+
+func (r *SourceReconciler) listAndReconcileWorkloadList(ctx context.Context,
+	source *v1alpha1.Source,
+	kind workload.WorkloadKind,
+	namespaceKindSources map[workload.WorkloadKind]map[string]struct{}) (ctrl.Result, error) {
+
+	deps := workload.ClientListObjectFromWorkloadKind(kind)
+	err := r.Client.List(ctx, deps, client.InNamespace(source.Spec.Workload.Name))
+	if client.IgnoreNotFound(err) != nil {
+		return ctrl.Result{}, err
+	}
+
+	switch obj := deps.(type) {
+	case *v1.DeploymentList:
+		for _, dep := range obj.Items {
+			err = r.reconcileWorkloadList(ctx, ctrl.Request{NamespacedName: client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace}}, kind, namespaceKindSources)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+	case *v1.DaemonSetList:
+		for _, dep := range obj.Items {
+			err = r.reconcileWorkloadList(ctx, ctrl.Request{NamespacedName: client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace}}, kind, namespaceKindSources)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+	case *v1.StatefulSetList:
+		for _, dep := range obj.Items {
+			err = r.reconcileWorkloadList(ctx, ctrl.Request{NamespacedName: client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace}}, kind, namespaceKindSources)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+	}
+	return ctrl.Result{}, nil
+}
+
+func (r *SourceReconciler) reconcileWorkloadList(ctx context.Context,
+	req ctrl.Request,
+	kind workload.WorkloadKind,
+	namespaceKindSources map[workload.WorkloadKind]map[string]struct{}) error {
+	logger := log.FromContext(ctx)
+	if _, exists := namespaceKindSources[kind][req.Name]; !exists {
+		_, err := reconcileWorkload(ctx, r.Client, kind, req, r.Scheme)
+		if err != nil {
+			logger.Error(err, "error requesting runtime details from odiglets", "name", req.Name, "namespace", req.Namespace, "kind", kind)
+		}
+	}
+	return nil
 }

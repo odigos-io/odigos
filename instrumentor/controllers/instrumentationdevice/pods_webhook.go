@@ -14,6 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -61,6 +62,13 @@ func (p *PodsWebhook) getServiceNameForEnv(ctx context.Context, pod *corev1.Pod)
 		logger.Error(err, "failed to extract pod workload details from pod. skipping OTEL_SERVICE_NAME injection")
 		return nil, nil
 	}
+
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		logger.Error(err, "failed to get admission request from context")
+		return nil, nil
+	}
+	podWorkload.Namespace = req.Namespace
 
 	workloadObj, err := workload.GetWorkloadObject(ctx, client.ObjectKey{Namespace: podWorkload.Namespace, Name: podWorkload.Name}, podWorkload.Kind, p.Client)
 	if err != nil {
