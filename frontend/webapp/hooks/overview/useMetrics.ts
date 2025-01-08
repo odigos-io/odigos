@@ -9,7 +9,7 @@ export const useMetrics = () => {
   const { destinations } = useDestinationCRUD();
 
   const { data } = useQuery<OverviewMetricsResponse>(GET_METRICS, {
-    skip: !!sources.length || !!destinations.length,
+    skip: !sources.length && !destinations.length,
     pollInterval: 3000,
   });
 
