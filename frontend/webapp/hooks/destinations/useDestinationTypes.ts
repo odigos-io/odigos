@@ -21,7 +21,7 @@ export function useDestinationTypes() {
       setDestinations(
         data.destinationTypes.categories.map((category) => ({
           name: category.name,
-          description: CATEGORIES_DESCRIPTION[category.name],
+          description: CATEGORIES_DESCRIPTION[category.name as keyof typeof CATEGORIES_DESCRIPTION],
           items: category.items,
         })),
       );

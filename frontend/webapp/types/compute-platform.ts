@@ -9,13 +9,18 @@ export type K8sActualNamespace = {
   k8sActualSources?: K8sActualSource[];
 };
 
+interface PaginatedSources {
+  nextPage: string;
+  items: K8sActualSource[];
+}
+
 interface ComputePlatformData {
   id: string;
   name: string;
   computePlatformType: string;
   k8sActualNamespaces: K8sActualNamespace[];
   k8sActualNamespace: K8sActualNamespace;
-  k8sActualSources: K8sActualSource[];
+  sources?: PaginatedSources;
   destinations: ActualDestination[];
   actions: ActionData[];
   instrumentationRules: InstrumentationRuleSpec[];
@@ -28,6 +33,7 @@ export type ComputePlatform = {
 interface ComputePlatformDataMapped extends ComputePlatformData {
   actions: ActionDataParsed[];
   instrumentationRules: InstrumentationRuleSpecMapped[];
+  sources: undefined;
 }
 
 export type ComputePlatformMapped = {

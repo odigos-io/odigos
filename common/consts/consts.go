@@ -19,6 +19,7 @@ const (
 	OdigosWorkloadKindAnnotation = "odigos.io/workload-kind"
 	OdigosWorkloadNameAnnotation = "odigos.io/workload-name"
 	OdigosReportedNameAnnotation = "odigos.io/reported-name"
+	RolloutTriggerAnnotation     = "rollout-trigger"
 
 	// GatewayMaxConnectionAge and GatewayMaxConnectionAgeGrace are the default values for the gateway collector.
 	GatewayMaxConnectionAge      = "15s"

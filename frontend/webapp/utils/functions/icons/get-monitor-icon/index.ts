@@ -8,5 +8,5 @@ export const getMonitorIcon = (type: string) => {
     ['TRACES']: TracesIcon,
   };
 
-  return LOGOS[type.toUpperCase()];
+  return LOGOS[type.toUpperCase() as SignalUppercase];
 };

@@ -61,24 +61,30 @@ func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *m
 	}, nil
 }
 
-// K8sActualSources is the resolver for the k8sActualSources field.
-func (r *computePlatformResolver) K8sActualSources(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualSource, error) {
-	// Initialize an empty list of K8sActualSource
-	var actualSources []*model.K8sActualSource
+// Sources is the resolver for the sources field.
+func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.ComputePlatform, nextPage string) (*model.PaginatedSources, error) {
+	list, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{
+		Limit:    int64(10),
+		Continue: nextPage,
+	})
 
-	instrumentationConfigs, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	// Convert each instrumented application to the K8sActualSource type
-	for _, instruConfig := range instrumentationConfigs.Items {
-		actualSource := instrumentationConfigToActualSource(instruConfig)
-		services.AddHealthyInstrumentationInstancesCondition(ctx, &instruConfig, actualSource)
-		actualSources = append(actualSources, actualSource)
+	var actualSources []*model.K8sActualSource
+
+	// Convert each InstrumentationConfig to the K8sActualSource type
+	for _, ic := range list.Items {
+		src := instrumentationConfigToActualSource(ic)
+		services.AddHealthyInstrumentationInstancesCondition(ctx, &ic, src)
+		actualSources = append(actualSources, src)
 	}
 
-	return actualSources, nil
+	return &model.PaginatedSources{
+		NextPage: list.GetContinue(),
+		Items:    actualSources,
+	}, nil
 }
 
 // Destinations is the resolver for the destinations field.
