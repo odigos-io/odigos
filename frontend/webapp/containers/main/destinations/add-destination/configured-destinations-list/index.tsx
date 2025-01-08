@@ -19,7 +19,7 @@ const Container = styled.div`
   overflow-y: scroll;
 `;
 
-const ListItem: React.FC<{ item: ConfiguredDestination; isLastItem: boolean }> = ({ item, isLastItem }) => {
+const ListItem: React.FC<{ item: ConfiguredDestination; isLastItem: boolean }> = ({ item, isLastItem, ...props }) => {
   const { removeConfiguredDestination } = useAppStore((state) => state);
   const [deleteWarning, setDeleteWarning] = useState(false);
 
@@ -37,6 +37,7 @@ const ListItem: React.FC<{ item: ConfiguredDestination; isLastItem: boolean }> =
             <TrashIcon />
           </IconButton>
         )}
+        {...props}
       />
 
       <DeleteWarning
@@ -54,8 +55,8 @@ const ListItem: React.FC<{ item: ConfiguredDestination; isLastItem: boolean }> =
 export const ConfiguredDestinationsList: React.FC<{ data: IAppState['configuredDestinations'] }> = ({ data }) => {
   return (
     <Container>
-      {data.map(({ stored }) => (
-        <ListItem key={stored.displayName} item={stored} isLastItem={data.length === 1} />
+      {data.map(({ stored }, idx) => (
+        <ListItem key={`selected-destination-${stored.type}-${idx}`} data-id={`selected-destination-${stored.type}`} item={stored} isLastItem={data.length === 1} />
       ))}
     </Container>
   );
