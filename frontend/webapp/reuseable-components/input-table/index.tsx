@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, type KeyboardEventHandler 
 import styled from 'styled-components';
 import { PlusIcon, TrashIcon } from '@/assets';
 import { Button, FieldError, FieldLabel, Input, Text } from '@/reuseable-components';
+import { isEmpty } from '@/utils';
 
 type Row = {
   [key: string]: any;
@@ -70,7 +71,7 @@ export const InputTable: React.FC<Props> = ({ columns, initialValues = [], value
   }, []);
 
   // Filter out rows where either key or value is empty
-  const validRows = useMemo(() => rows.filter((row) => !Object.values(row).filter((val) => !val).length), [rows]);
+  const validRows = useMemo(() => rows.filter((row) => !Object.values(row).filter((val) => isEmpty(val)).length), [rows]);
   const recordedRows = useRef(JSON.stringify(validRows));
 
   useEffect(() => {
@@ -140,9 +141,9 @@ export const InputTable: React.FC<Props> = ({ columns, initialValues = [], value
                       placeholder={placeholder}
                       value={value}
                       onChange={({ target: { value: val } }) => handleChange(keyName, type === 'number' ? Number(val) : val, idx)}
-                      autoFocus={!value && rows.length > 1 && idx === rows.length - 1 && innerIdx === 0}
+                      autoFocus={isEmpty(value) && rows.length > 1 && idx === rows.length - 1 && innerIdx === 0}
                       style={{ maxWidth, paddingLeft: 10 }}
-                      hasError={!!errorMessage && (!required || (required && !value))}
+                      hasError={!!errorMessage && (!required || (required && isEmpty(value)))}
                     />
                   </td>
                 );

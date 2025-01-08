@@ -1,6 +1,6 @@
 import { useGenericForm } from '@/hooks';
-import { FORM_ALERTS, safeJsonParse } from '@/utils';
 import { DrawerItem, useNotificationStore } from '@/store';
+import { FORM_ALERTS, isEmpty, safeJsonParse } from '@/utils';
 import { ActionsType, LatencySamplerSpec, NOTIFICATION_TYPE, type ActionDataParsed, type ActionInput } from '@/types';
 
 const INITIAL: ActionInput = {
@@ -25,15 +25,11 @@ export function useActionFormData() {
       switch (k) {
         case 'type':
         case 'signals':
-          if (Array.isArray(v) ? !v.length : !v) {
-            errors[k] = FORM_ALERTS.FIELD_IS_REQUIRED;
-          }
+          if (isEmpty(v)) errors[k] = FORM_ALERTS.FIELD_IS_REQUIRED;
           break;
 
         case 'details':
-          if (Array.isArray(v) ? !v.length : !v) {
-            errors[k] = FORM_ALERTS.FIELD_IS_REQUIRED;
-          }
+          if (isEmpty(v)) errors[k] = FORM_ALERTS.FIELD_IS_REQUIRED;
           if (formData.type === ActionsType.LATENCY_SAMPLER) {
             (safeJsonParse(v as string, { endpoints_filters: [] }) as LatencySamplerSpec).endpoints_filters.forEach((endpoint) => {
               if (endpoint.http_route.charAt(0) !== '/') {
