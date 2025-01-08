@@ -72,7 +72,7 @@ spec:
       volumes:
         - name: webhook-cert
           secret:
-            secretName: instrumentor-webhook-cert
+            secretName: webhook-cert
             defaultMode: 420
       terminationGracePeriodSeconds: 10
 {{- if .Values.imagePullSecrets }}
