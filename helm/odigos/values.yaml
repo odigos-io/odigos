@@ -154,6 +154,9 @@ odiglet:
   nodeSelector:
     kubernetes.io/os: linux
   tolerations:
+    ## This toleration with 'Exists' operator and no key/effect specified 
+    ## will match ALL taints, allowing pods to be scheduled on any node 
+    ## regardless of its taints (including master/control-plane nodes)
     - operator: Exists
   affinity: {}
 
