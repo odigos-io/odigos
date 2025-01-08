@@ -31,10 +31,10 @@ export const PotentialDestinationsList: React.FC<Props> = ({ setSelectedItems })
       {loading ? (
         <SkeletonLoader size={1} />
       ) : (
-        data.map((item) => (
+        data.map((item, idx) => (
           <DataTab
-            key={`destination-${item.type}`}
-            data-id={`destination-${item.displayName}`}
+            key={`select-potential-destination-${item.type}-${idx}`}
+            data-id={`select-potential-destination-${item.type}`}
             title={item.displayName}
             iconSrc={item.imageUrl}
             hoverText='Select'

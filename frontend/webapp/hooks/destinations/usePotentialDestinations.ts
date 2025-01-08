@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { safeJsonParse } from '@/utils';
 import { useQuery } from '@apollo/client';
+import { IAppState, useAppStore } from '@/store';
 import { GetDestinationTypesResponse } from '@/types';
 import { GET_DESTINATION_TYPE, GET_POTENTIAL_DESTINATIONS } from '@/graphql';
 
@@ -13,40 +14,61 @@ interface GetPotentialDestinationsData {
   potentialDestinations: PotentialDestination[];
 }
 
+const checkIfConfigured = (configuredDest: IAppState['configuredDestinations'][0], potentialDest: PotentialDestination, autoFilledFields: Record<string, any>) => {
+  const typesMatch = configuredDest.stored.type === potentialDest.type;
+  if (!typesMatch) return false;
+
+  let fieldsMatch = false;
+
+  for (const { key, value } of configuredDest.form.fields) {
+    if (Object.hasOwn(autoFilledFields, key)) {
+      if (autoFilledFields[key] === value) {
+        fieldsMatch = true;
+      } else {
+        fieldsMatch = false;
+        break;
+      }
+    }
+  }
+
+  return fieldsMatch;
+};
+
 export const usePotentialDestinations = () => {
-  const { data: destinationTypesData } = useQuery<GetDestinationTypesResponse>(GET_DESTINATION_TYPE);
-  const { loading, error, data } = useQuery<GetPotentialDestinationsData>(GET_POTENTIAL_DESTINATIONS);
+  const { configuredDestinations } = useAppStore();
+  const { data: { destinationTypes } = {} } = useQuery<GetDestinationTypesResponse>(GET_DESTINATION_TYPE);
+  const { loading, error, data: { potentialDestinations } = {} } = useQuery<GetPotentialDestinationsData>(GET_POTENTIAL_DESTINATIONS);
 
   const mappedPotentialDestinations = useMemo(() => {
-    if (!destinationTypesData || !data) return [];
+    if (!destinationTypes || !potentialDestinations) return [];
 
     // Create a deep copy of destination types to manipulate
-    const categories: GetDestinationTypesResponse['destinationTypes']['categories'] = JSON.parse(JSON.stringify(destinationTypesData.destinationTypes.categories));
+    const categories: GetDestinationTypesResponse['destinationTypes']['categories'] = JSON.parse(JSON.stringify(destinationTypes.categories));
 
     // Map over the potential destinations
-    return data.potentialDestinations
+    return potentialDestinations
       .map((pd) => {
         for (const category of categories) {
-          const index = category.items.findIndex((item) => item.type === pd.type);
+          const autoFilledFields = safeJsonParse<{ [key: string]: string }>(pd.fields, {});
+          const alreadyConfigured = !!configuredDestinations.find((cd) => checkIfConfigured(cd, pd, autoFilledFields));
 
-          if (index !== -1) {
-            // Spread the matched destination type data into the potential destination
-            const matchedType = { ...category.items[index] };
+          if (!alreadyConfigured) {
+            const idx = category.items.findIndex((item) => item.type === pd.type);
 
-            // Remove the matched item from destination types
-            category.items.splice(index, 1);
-
-            return {
-              ...matchedType,
-              fields: safeJsonParse<{ [key: string]: string }>(pd.fields, {}),
-            };
+            if (idx !== -1) {
+              return {
+                // Spread the matched destination type data into the potential destination
+                ...category.items[idx],
+                fields: autoFilledFields,
+              };
+            }
           }
         }
 
         return null;
       })
       .filter((pd) => !!pd);
-  }, [destinationTypesData, data]);
+  }, [configuredDestinations, destinationTypes, potentialDestinations]);
 
   return {
     loading,
