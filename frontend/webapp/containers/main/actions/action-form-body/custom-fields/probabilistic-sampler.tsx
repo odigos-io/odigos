@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
-import { safeJsonParse } from '@/utils';
+import React, { useEffect, useMemo } from 'react';
 import { Input } from '@/reuseable-components';
+import { isEmpty, safeJsonParse } from '@/utils';
 import type { ProbabilisticSamplerSpec } from '@/types';
 
 type Props = {
@@ -24,10 +24,14 @@ const ProbabilisticSampler: React.FC<Props> = ({ value, setValue, errorMessage }
       sampling_percentage: String(num),
     };
 
-    const str = !!payload.sampling_percentage ? JSON.stringify(payload) : '';
+    const str = isEmpty(payload.sampling_percentage) ? '' : JSON.stringify(payload);
 
     setValue(str);
   };
+
+  useEffect(() => {
+    if (isEmpty(safeJsonParse(value, {}))) handleChange('0');
+  }, [value]);
 
   return <Input title='Sampling percentage' required type='number' min={MIN} max={MAX} value={mappedValue} onChange={({ target: { value: v } }) => handleChange(v)} errorMessage={errorMessage} />;
 };
