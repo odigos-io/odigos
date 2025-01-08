@@ -84,6 +84,7 @@ func New(deviceInjectionCallbacks instrumentation.OtelSdksLsf, factories map[com
 
 // Run starts the Odiglet components and blocks until the context is cancelled, or a critical error occurs.
 func (o *Odiglet) Run(ctx context.Context) {
+	ctx, cancel := context.WithCancel(ctx)
 	g, groupCtx := errgroup.WithContext(ctx)
 
 	if err := o.criClient.Connect(ctx); err != nil {
@@ -108,11 +109,15 @@ func (o *Odiglet) Run(ctx context.Context) {
 	// Start device manager
 	// the device manager library doesn't support passing a context,
 	// however, internally it uses a context to cancel the device manager once SIGTERM or SIGINT is received.
-	g.Go(func() error {
+	// We run it outside of the error group to avoid blocking on Wait() in case of a fatal error.
+	go func()  {
 		err := runDeviceManager(o.clientset, o.deviceInjectionCallbacks)
 		log.Logger.V(0).Info("Device manager exited")
-		return err
-	})
+		if err != nil {
+			log.Logger.Error(err, "Device manager exited with error")
+			cancel()
+		}
+	} ()
 
 	g.Go(func() error {
 		err := o.ebpfManager.Run(groupCtx)
