@@ -1,8 +1,8 @@
-import { InstrumentationRuleSpec, K8sActualSource, ActionDataParsed, ActualDestination } from '@/types';
+import { InstrumentationRuleSpec, K8sActualSource, ActionDataParsed, ActualDestination, WorkloadId } from '@/types';
 
 type Item = InstrumentationRuleSpec | K8sActualSource | ActionDataParsed | ActualDestination;
 
-export const getEntityItemId = (item: Item): string | { kind: string; name: string; namespace: string } | undefined => {
+export const getEntityItemId = (item: Item): string | WorkloadId | undefined => {
   if ('ruleId' in item) {
     // InstrumentationRuleSpec
     return item.ruleId;
