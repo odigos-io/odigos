@@ -17,8 +17,6 @@ export function useActionFormData() {
   const { addNotification } = useNotificationStore();
   const { formData, formErrors, handleFormChange, handleErrorChange, resetFormData } = useGenericForm<ActionInput>(INITIAL);
 
-  console.log('formData', formData);
-
   const validateForm = (params?: { withAlert?: boolean; alertTitle?: string }) => {
     const errors = {};
     let ok = true;
