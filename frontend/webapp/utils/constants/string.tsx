@@ -64,6 +64,7 @@ export const DATA_CARDS = {
   DETECTED_CONTAINERS_DESCRIPTION: 'The system automatically instruments the containers it detects with a supported programming language.',
   DESCRIBE_SOURCE: 'Describe Source',
   DESCRIBE_ODIGOS: 'Describe Odigos',
+  API_TOKENS: 'API Tokens',
 };
 
 export const DISPLAY_TITLES = {
