@@ -40,7 +40,6 @@ import (
 
 const (
 	defaultPort = 3000
-	legacyPort  = 3001
 )
 
 type Flags struct {
@@ -55,9 +54,6 @@ type Flags struct {
 
 //go:embed all:webapp/out/*
 var uiFS embed.FS
-
-//go:embed all:webapp/dep-out/*
-var depUIFS embed.FS
 
 func parseFlags() Flags {
 	defaultKubeConfig := env.GetDefaultKubeConfigPath()
