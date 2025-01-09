@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/frontend/endpoints/common"
 	"github.com/odigos-io/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/frontend/services/common"
 	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	commonutils "github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"

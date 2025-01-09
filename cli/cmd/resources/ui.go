@@ -297,10 +297,6 @@ func NewUIService(ns string) *corev1.Service {
 					Port: 3000,
 				},
 				{
-					Name: "legacy-ui",
-					Port: 3001,
-				},
-				{
 					Name: "otlp",
 					Port: consts.OTLPPort,
 				},
