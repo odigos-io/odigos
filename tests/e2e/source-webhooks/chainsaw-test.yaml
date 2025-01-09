@@ -21,31 +21,39 @@ spec:
     - name: "[Defaulting] - Source without labels has labels added"
       try:
         - apply:
-            file: 01-source-without-labels.yaml
+            file: defaulting-01-source-without-labels.yaml
         - assert:
             timeout: 2m
-            file: 01-assert-source-without-labels.yaml
+            file: defaulting-01-assert-source-without-labels.yaml
     - name: "[Defaulting] - Source with correct labels is unaffected"
       try:
         - apply:
-            file: 02-source-with-labels.yaml
+            file: defaulting-02-source-with-labels.yaml
         - assert:
             timeout: 2m
-            file: 02-source-with-labels.yaml
+            file: defaulting-02-source-with-labels.yaml
     - name: "[Defaulting/Validating] - Source with incorrect labels is rejected (not modified to be correct)"
       try:
         - apply:
-            file: 03-source-with-incorrect-labels.yaml
+            file: defaulting-03-source-with-incorrect-labels.yaml
             expect:
               - check:
                   ($error != null): true
     - name: "[Defaulting] - Normal Source has deleteinstrumentationconfig finalizer added"
       try:
         - apply:
-            file: 04-deleteinstrumentationconfig-finalizer.yaml
+            file: defaulting-04-deleteinstrumentationconfig-finalizer.yaml
         - assert:
             timeout: 2m
-            file: 04-assert-deleteinstrumentationconfig-finalizer.yaml
+            file: defaulting-04-assert-deleteinstrumentationconfig-finalizer.yaml
+    - name: "[Defaulting] - Normal Source updated to instrumentationDisabled=true has deleteinstrumentationconfig finalizer removed and startlangdetection finalizer added"
+      try:
+        - script:
+            timeout: 70s
+            content: kubectl patch source/04-deleteinstrumentationconfig-finalizer --type=merge -p '{"spec":{"instrumentationDisabled":true}}'
+        - assert:
+            timeout: 2m
+            file: defaulting-04-assert-delete-to-startlang-finalizer.yaml
     - name: "[Defaulting] - Finalizer does not block normal Source from being deleted"
       try:
         - script:
@@ -56,10 +64,18 @@ spec:
     - name: "[Defaulting] - Workload excluded Source has startlangdetection finalizer added"
       try:
         - apply:
-            file: 05-startlangdetection-finalizer.yaml
+            file: defaulting-05-startlangdetection-finalizer.yaml
         - assert:
             timeout: 2m
-            file: 05-assert-startlangdetection-finalizer.yaml
+            file: defaulting-05-assert-startlangdetection-finalizer.yaml
+    - name: "[Defaulting] - Workload excluded Source updated to instrumentationDisabled=false has deleteinstrumentationconfig finalizer added and startlangdetection finalizer removed"
+      try:
+        - script:
+            timeout: 70s
+            content: kubectl patch source/05-startlangdetection-finalizer --type=merge -p '{"spec":{"instrumentationDisabled":false}}'
+        - assert:
+            timeout: 2m
+            file: defaulting-05-assert-startlang-to-delete-finalizer.yaml
     - name: "[Defaulting] - Finalizer does not block exclusion Source from being deleted"
       try:
         - script:
@@ -70,51 +86,51 @@ spec:
     - name: "[Validating] - Normal Source passes validation"
       try:
         - apply:
-            file: 06-normal-source.yaml
+            file: validating-01-normal-source.yaml
     - name: "[Validating] - Workload excluded Source passes validation"
       try:
         - apply:
-            file: 07-excluded-source.yaml
+            file: validating-02-excluded-source.yaml
     - name: "[Validating] - Namespace Source passes validation + Namespace Source with existing workload Source is not a duplicate (valid)"
       try:
         - apply:
-            file: 08-namespace-source.yaml
+            file: validating-03-namespace-source.yaml
     - name: "[Validating] - Duplicate normal Source does not pass validation"
       try:
         - apply:
-            file: 09-duplicate-normal-source.yaml
+            file: validating-04-duplicate-normal-source.yaml
             expect:
               - check:
                   ($error != null): true
     - name: "[Validating] - Duplicate workload excluded Source does not pass validation"
       try:
         - apply:
-            file: 10-duplicate-excluded-source.yaml
+            file: validating-05-duplicate-excluded-source.yaml
             expect:
               - check:
                   ($error != null): true
     - name: "[Validating] - Duplicate namespace Source does not pass validation"
       try:
         - apply:
-            file: 11-duplicate-namespace-source.yaml
+            file: validating-06-duplicate-namespace-source.yaml
             expect:
               - check:
                   ($error != null): true
     - name: "[Validating] - Workload Source with existing namespace Source is not a duplicate (valid)"
       try:
         - apply:
-            file: 12-valid-workload-existing-ns-source.yaml
+            file: validating-07-valid-workload-existing-ns-source.yaml
     - name: "[Validating] - Namespace Source with name!=namespace does not pass validation"
       try:
         - apply:
-            file: 13-invalid-namespace-name-source.yaml
+            file: validating-08-invalid-namespace-name-source.yaml
             expect:
               - check:
                   ($error != null): true
     - name: "[Validating] - Source with invalid kind does not pass validation"
       try:
         - apply:
-            file: 14-invalid-workload-kind-source.yaml
+            file: validating-09-invalid-workload-kind-source.yaml
             expect:
               - check:
                   ($error != null): true
@@ -169,7 +185,7 @@ spec:
     - name: "[Validating] - Source namespace must match source.spec.workload.namespace"
       try:
         - apply:
-            file: 15-namespace-workload-namespace-source.yaml
+            file: validating-10-namespace-workload-namespace-source.yaml
             expect:
               - check:
                   ($error != null): true

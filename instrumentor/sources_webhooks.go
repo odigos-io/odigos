@@ -63,15 +63,26 @@ func (s *SourcesDefaulter) Default(ctx context.Context, obj runtime.Object) erro
 		source.Labels[consts.WorkloadKindLabel] = string(source.Spec.Workload.Kind)
 	}
 
-	if !v1alpha1.IsWorkloadExcludedSource(source) &&
-		!k8sutils.IsTerminating(source) &&
-		!controllerutil.ContainsFinalizer(source, consts.DeleteInstrumentationConfigFinalizer) {
-		controllerutil.AddFinalizer(source, consts.DeleteInstrumentationConfigFinalizer)
+	// Make sure the Source has the right finalizer, so the right controller handles it for deletion.
+	// If a normal source has `spec.instrumentationDisabled` updated to `true`, it is now an excluded Source.
+	// Vice versa for an excluded Source that has `spec.instrumentationDisabled` removed.
+	// These checks make sure that the right type of Source has the right type of finalizer
+	// by toggling what finalizer is set.
+	if !v1alpha1.IsWorkloadExcludedSource(source) {
+		if !controllerutil.ContainsFinalizer(source, consts.DeleteInstrumentationConfigFinalizer) && !k8sutils.IsTerminating(source) {
+			controllerutil.AddFinalizer(source, consts.DeleteInstrumentationConfigFinalizer)
+		}
+		if controllerutil.ContainsFinalizer(source, consts.StartLangDetectionFinalizer) {
+			controllerutil.RemoveFinalizer(source, consts.StartLangDetectionFinalizer)
+		}
 	}
-	if v1alpha1.IsWorkloadExcludedSource(source) &&
-		!k8sutils.IsTerminating(source) &&
-		!controllerutil.ContainsFinalizer(source, consts.StartLangDetectionFinalizer) {
-		controllerutil.AddFinalizer(source, consts.StartLangDetectionFinalizer)
+	if v1alpha1.IsWorkloadExcludedSource(source) {
+		if controllerutil.ContainsFinalizer(source, consts.DeleteInstrumentationConfigFinalizer) {
+			controllerutil.RemoveFinalizer(source, consts.DeleteInstrumentationConfigFinalizer)
+		}
+		if !controllerutil.ContainsFinalizer(source, consts.StartLangDetectionFinalizer) && !k8sutils.IsTerminating(source) {
+			controllerutil.AddFinalizer(source, consts.StartLangDetectionFinalizer)
+		}
 	}
 
 	return nil
@@ -180,6 +191,15 @@ func (s *SourcesValidator) ValidateDelete(ctx context.Context, obj runtime.Objec
 
 func (s *SourcesValidator) validateSourceFields(ctx context.Context, source *v1alpha1.Source) field.ErrorList {
 	allErrs := make([]*field.Error, 0)
+
+	if controllerutil.ContainsFinalizer(source, consts.DeleteInstrumentationConfigFinalizer) &&
+		controllerutil.ContainsFinalizer(source, consts.StartLangDetectionFinalizer) {
+		allErrs = append(allErrs, field.Invalid(
+			field.NewPath("metadata").Child("finalizers"),
+			source.Finalizers,
+			"Source may only have one finalizer",
+		))
+	}
 
 	if source.Labels[consts.WorkloadNameLabel] != source.Spec.Workload.Name {
 		allErrs = append(allErrs, field.Invalid(

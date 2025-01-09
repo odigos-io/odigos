@@ -453,4 +453,47 @@ spec:
             content: kubectl get instrumentationconfigs/deployment-membership
             check:
               ($error != null): true
-
+    - name: Set instrumentationDisabled=false on excluded Source
+      try:
+        - script:
+            timeout: 70s
+            content: kubectl patch source/membership-excluded --type=merge -p '{"spec":{"instrumentationDisabled":false}}'
+    - name: Wait for updated source to roll out new revisions
+      try:
+        - script:
+            timeout: 70s
+            content: |
+              kubectl rollout status deployment -l app=coupon
+              kubectl rollout status deployment -l app=frontend
+              kubectl rollout status deployment -l app=inventory
+              kubectl rollout status deployment -l app=pricing
+              kubectl rollout status deployment -l app=membership
+    - name: Assert runtime detected for no-longer-excluded workload
+      try:
+        - assert:
+            timeout: 2m
+            file: ../../common/assert/simple-demo-runtime-detected.yaml
+        - assert:
+            timeout: 2m
+            file: 10-workloads.yaml
+    - name: Set instrumentationDisabled=true on previously-excluded Source
+      try:
+        - script:
+            timeout: 70s
+            content: kubectl patch source/membership-excluded --type=merge -p '{"spec":{"instrumentationDisabled":true}}'
+    - name: Wait for updated source to roll out new revisions
+      try:
+        - script:
+            timeout: 70s
+            content: |
+              kubectl rollout status deployment -l app=coupon
+              kubectl rollout status deployment -l app=frontend
+              kubectl rollout status deployment -l app=inventory
+              kubectl rollout status deployment -l app=pricing
+              kubectl rollout status deployment -l app=membership
+    - name: Assert runtime not detected for re-excluded (membership)
+      try:
+        - script:
+            content: kubectl get instrumentationconfigs/deployment-membership
+            check:
+              ($error != null): true
