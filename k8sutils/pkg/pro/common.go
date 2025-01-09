@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/odigos-io/odigos/cli/pkg/kube"
 	odigosconsts "github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
-func UpdateOdigosToken(ctx context.Context, client *kube.Client, namespace string, onPremToken string) error {
+func UpdateOdigosToken(ctx context.Context, client kubernetes.Interface, namespace string, onPremToken string) error {
 	if err := updateSecretToken(ctx, client, namespace, onPremToken); err != nil {
 		return fmt.Errorf("failed to update secret token: %w", err)
 	}
@@ -22,11 +22,11 @@ func UpdateOdigosToken(ctx context.Context, client *kube.Client, namespace strin
 	return nil
 }
 
-func updateSecretToken(ctx context.Context, client *kube.Client, namespace string, onPremToken string) error {
+func updateSecretToken(ctx context.Context, client kubernetes.Interface, namespace string, onPremToken string) error {
 	secret, err := client.CoreV1().Secrets(namespace).Get(ctx, consts.OdigosProSecretName, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			return fmt.Errorf("Tokens are not available in the open-source version of Odigos. Please contact Odigos team to inquire about pro version.")
+			return fmt.Errorf("tokens are not available in the open-source version of Odigos. Please contact Odigos team to inquire about pro version")
 		}
 		return err
 	}
@@ -40,10 +40,10 @@ func updateSecretToken(ctx context.Context, client *kube.Client, namespace strin
 	return nil
 }
 
-func odigletRolloutTrigger(ctx context.Context, client *kube.Client, namespace string) error {
+func odigletRolloutTrigger(ctx context.Context, client kubernetes.Interface, namespace string) error {
 	daemonSet, err := client.AppsV1().DaemonSets(namespace).Get(ctx, "odiglet", metav1.GetOptions{})
 	if err != nil {
-		fmt.Errorf("\033[31mERROR\033[0m failed to get odiglet DaemonSet in namespace %s: %v\n", namespace, err)
+		return fmt.Errorf("\033[31mERROR\033[0m failed to get odiglet DaemonSet in namespace %s: %v", namespace, err)
 	}
 
 	// Modify the DaemonSet spec.template to trigger a rollout
