@@ -78,7 +78,6 @@ const (
 	WorkloadNameLabel           = "odigos.io/workload-name"
 	WorkloadNamespaceLabel      = "odigos.io/workload-namespace"
 	WorkloadKindLabel           = "odigos.io/workload-kind"
-	OdigosWorkloadExcludedLabel = "odigos.io/workload-excluded"
 
 	OdigosCloudApiKeySecretKey = "odigos-cloud-api-key"
 	OdigosOnpremTokenSecretKey = "odigos-onprem-token"

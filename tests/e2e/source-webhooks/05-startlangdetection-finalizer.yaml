@@ -3,9 +3,8 @@ kind: Source
 metadata:
   name: 05-startlangdetection-finalizer
   namespace: default
-  labels:
-    odigos.io/workload-excluded: "true"
 spec:
+  instrumentationDisabled: true
   workload:
     name: startlangdetection-finalizer
     namespace: default
