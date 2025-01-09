@@ -28,7 +28,7 @@ func updateSecretToken(ctx context.Context, client kubernetes.Interface, namespa
 		if apierrors.IsNotFound(err) {
 			return fmt.Errorf("tokens are not available in the open-source version of Odigos. Please contact Odigos team to inquire about pro version")
 		}
-		return err
+		return err 
 	}
 	secret.Data[consts.OdigosOnpremTokenSecretKey] = []byte(onPremToken)
 
