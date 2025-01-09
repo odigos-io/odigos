@@ -9,8 +9,6 @@ spec:
   ports:
     - name: ui
       port: 3000
-    - name: 'legacy-ui'
-      port: 3001
     - name: otlp
       port: 4317
   selector:

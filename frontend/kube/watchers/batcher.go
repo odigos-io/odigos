@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/odigos-io/odigos/frontend/endpoints/sse"
+	"github.com/odigos-io/odigos/frontend/services/sse"
 )
 
 var (

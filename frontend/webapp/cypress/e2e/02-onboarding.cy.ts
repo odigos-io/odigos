@@ -3,10 +3,13 @@ import { BUTTONS, DATA_IDS, ROUTES, SELECTED_ENTITIES } from '../constants';
 describe('Onboarding', () => {
   beforeEach(() => cy.intercept('/graphql').as('gql'));
 
-  it('Should contain a "default" namespace', () => {
+  it('Should contain a "default" namespace, and it should have 5 sources', () => {
     cy.visit(ROUTES.CHOOSE_SOURCES);
     cy.wait('@gql').then(() => {
-      cy.get(DATA_IDS.SELECT_NAMESPACE).contains(SELECTED_ENTITIES.NAMESPACE).should('exist');
+      cy.get(DATA_IDS.SELECT_NAMESPACE).contains(SELECTED_ENTITIES.NAMESPACE).should('exist').click();
+      SELECTED_ENTITIES.NAMESPACE_SOURCES.forEach((sourceName) => {
+        cy.get(DATA_IDS.SELECT_NAMESPACE).get(DATA_IDS.SELECT_SOURCE(sourceName)).contains(sourceName).should('exist');
+      });
     });
   });
 
