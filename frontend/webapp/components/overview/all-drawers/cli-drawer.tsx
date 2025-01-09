@@ -8,6 +8,7 @@ import { CodeBracketsIcon, CodeIcon, CopyIcon, EditIcon, KeyIcon, ListIcon, Tras
 import { DataCard, DataCardFieldTypes, Divider, IconButton, Segment } from '@/reuseable-components';
 import { useApiTokens } from '@/hooks/compute-platform/useApiTokens';
 import { NOTIFICATION_TYPE } from '@/types';
+import { useNotificationStore } from '@/store';
 
 interface Props {}
 
@@ -20,6 +21,7 @@ const DataContainer = styled.div`
 export const CliDrawer: React.FC<Props> = () => {
   const { data: tokens } = useApiTokens();
   const { data: describe, restructureForPrettyMode } = useDescribeOdigos();
+  const { addNotification } = useNotificationStore(); // temporary until we have edit & delete for tokens
 
   const [isTokenCopied, setIsTokenCopied] = useState(false);
   const [isPrettyMode, setIsPrettyMode] = useState(true);
@@ -68,13 +70,13 @@ export const CliDrawer: React.FC<Props> = () => {
 
                           <Divider orientation='vertical' length='12px' />
 
-                          <IconButton size={32}>
+                          <IconButton size={32} onClick={() => addNotification({ type: NOTIFICATION_TYPE.WARNING, message: 'Coming soon!' })}>
                             <EditIcon />
                           </IconButton>
 
                           <Divider orientation='vertical' length='12px' />
 
-                          <IconButton size={32}>
+                          <IconButton size={32} onClick={() => addNotification({ type: NOTIFICATION_TYPE.WARNING, message: 'Coming soon!' })}>
                             <TrashIcon />
                           </IconButton>
                         </FlexRow>
