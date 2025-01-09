@@ -1,6 +1,10 @@
 package graph
 
 import (
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -114,4 +118,26 @@ func convertConditions(conditions []v1.Condition) []*model.Condition {
 		})
 	}
 	return result
+}
+
+func extractJWTPayload(token string) (map[string]interface{}, error) {
+	parts := strings.Split(token, ".")
+	if len(parts) != 3 {
+		return nil, fmt.Errorf("invalid JWT token format")
+	}
+
+	// Decode the payload (second part of the JWT)
+	payloadBytes, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode JWT payload: %w", err)
+	}
+
+	// Parse the payload as JSON
+	var payload map[string]interface{}
+	err = json.Unmarshal(payloadBytes, &payload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal JWT payload: %w", err)
+	}
+
+	return payload, nil
 }

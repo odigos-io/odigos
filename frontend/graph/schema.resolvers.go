@@ -19,7 +19,9 @@ import (
 	"github.com/odigos-io/odigos/frontend/services/describe/odigos_describe"
 	"github.com/odigos-io/odigos/frontend/services/describe/source_describe"
 	testconnection "github.com/odigos-io/odigos/frontend/services/test_connection"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -795,6 +797,45 @@ func (r *queryResolver) DescribeOdigos(ctx context.Context) (*model.OdigosAnalyz
 // DescribeSource is the resolver for the describeSource field.
 func (r *queryResolver) DescribeSource(ctx context.Context, namespace string, kind string, name string) (*model.SourceAnalyze, error) {
 	return source_describe.GetSourceDescription(ctx, namespace, kind, name)
+}
+
+// GetAPITokens is the resolver for the getApiTokens field.
+func (r *queryResolver) GetAPITokens(ctx context.Context) ([]*model.APIToken, error) {
+	// The result should always be 0 or 1:
+	// If it's 0, it means this is the OSS version.
+	// If it's 1, it means this is the Enterprise version.
+	secret, err := kube.DefaultClient.CoreV1().Secrets(services.OdigosSystemNamespace).Get(ctx, k8sconsts.OdigosProSecretName, metav1.GetOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return make([]*model.APIToken, 0), nil
+		}
+		return nil, err
+	}
+
+	token := string(secret.Data[k8sconsts.OdigosOnpremTokenSecretKey])
+
+	// Extract the payload from the JWT
+	tokenPayload, err := extractJWTPayload(token)
+	if err != nil {
+		return nil, fmt.Errorf("failed to extract JWT payload: %w", err)
+	}
+
+	// Extract values from the token payload
+	aud, _ := tokenPayload["aud"].(string)
+	iat, _ := tokenPayload["iat"].(float64)
+	exp, _ := tokenPayload["exp"].(float64)
+
+	// We need to return an array (even if it's just 1 token), because in the future we will have to support multiple platforms.
+	secrets := []*model.APIToken{
+		{
+			Token: token,
+			Aud:   aud,
+			Iat:   int(iat) * 1000, // Convert to milliseconds
+			Exp:   int(exp) * 1000, // Convert to milliseconds
+		},
+	}
+
+	return secrets, nil
 }
 
 // ComputePlatform returns ComputePlatformResolver implementation.

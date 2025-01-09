@@ -54,6 +54,13 @@ func (this AddClusterInfoAction) GetSignals() []SignalType {
 	return interfaceSlice
 }
 
+type APIToken struct {
+	Token string `json:"token"`
+	Aud   string `json:"aud"`
+	Iat   int    `json:"iat"`
+	Exp   int    `json:"exp"`
+}
+
 type ClusterCollectorAnalyze struct {
 	Enabled              *EntityProperty `json:"enabled"`
 	CollectorGroup       *EntityProperty `json:"collectorGroup"`

@@ -552,6 +552,13 @@ type OdigosAnalyze {
   hasErrors: Boolean!
 }
 
+type ApiToken {
+  token: String! # raw token
+  aud: String! # name of customer
+  iat: Int! # timestamp: issued at
+  exp: Int! # timestamp: expires at
+}
+
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
@@ -561,6 +568,7 @@ type Query {
   getOverviewMetrics: OverviewMetricsResponse!
   describeOdigos: OdigosAnalyze!
   describeSource(namespace: String!, kind: String!, name: String!): SourceAnalyze!
+  getApiTokens: [ApiToken]!
 }
 
 type Mutation {
