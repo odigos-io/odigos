@@ -25,6 +25,7 @@ import (
 
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/kube/watchers"
+	"github.com/odigos-io/odigos/frontend/services"
 	collectormetrics "github.com/odigos-io/odigos/frontend/services/collector_metrics"
 	"github.com/odigos-io/odigos/frontend/services/sse"
 	"github.com/odigos-io/odigos/frontend/version"
@@ -196,8 +197,13 @@ func main() {
 	}
 
 	r.GET("/api/events", sse.HandleSSEConnections)
+	r.GET("/describe/odigos", func(c *gin.Context) {
+		services.DescribeOdigos(c)
+	})
+	r.GET("/describe/source/namespace/:namespace/kind/:kind/name/:name", func(c *gin.Context) {
+		services.DescribeSource(c, c.Param("namespace"), c.Param("kind"), c.Param("name"))
+	})
 	log.Printf("Odigos UI is available at: http://%s:%d", flags.Address, flags.Port)
-
 	go func() {
 		err = r.Run(fmt.Sprintf("%s:%d", flags.Address, flags.Port))
 		if err != nil {
