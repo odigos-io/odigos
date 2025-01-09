@@ -23,6 +23,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -63,12 +64,12 @@ func (s *SourcesDefaulter) Default(ctx context.Context, obj runtime.Object) erro
 	}
 
 	if !v1alpha1.IsWorkloadExcludedSource(source) &&
-		source.DeletionTimestamp.IsZero() &&
+		!k8sutils.IsTerminating(source) &&
 		!controllerutil.ContainsFinalizer(source, consts.DeleteInstrumentationConfigFinalizer) {
 		controllerutil.AddFinalizer(source, consts.DeleteInstrumentationConfigFinalizer)
 	}
 	if v1alpha1.IsWorkloadExcludedSource(source) &&
-		source.DeletionTimestamp.IsZero() &&
+		!k8sutils.IsTerminating(source) &&
 		!controllerutil.ContainsFinalizer(source, consts.StartLangDetectionFinalizer) {
 		controllerutil.AddFinalizer(source, consts.StartLangDetectionFinalizer)
 	}
@@ -107,11 +108,11 @@ func (s *SourcesValidator) ValidateUpdate(ctx context.Context, oldObj, newObj ru
 	var allErrs field.ErrorList
 	old, ok := oldObj.(*v1alpha1.Source)
 	if !ok {
-		return nil, fmt.Errorf("expected a Source but got a %T", old)
+		return nil, fmt.Errorf("expected old Source but got a %T", old)
 	}
 	new, ok := newObj.(*v1alpha1.Source)
 	if !ok {
-		return nil, fmt.Errorf("expected a Source but got a %T", new)
+		return nil, fmt.Errorf("expected new Source but got a %T", new)
 	}
 
 	if new.GetName() != old.GetName() {
@@ -222,12 +223,20 @@ func (s *SourcesValidator) validateSourceFields(ctx context.Context, source *v1a
 		))
 	}
 
-	workloadKind := workload.WorkloadKindFromString(string(source.Spec.Workload.Kind))
-	if workloadKind == "" && source.Spec.Workload.Kind != "Namespace" {
+	validKind := workload.IsValidWorkloadKind(source.Spec.Workload.Kind)
+	if !validKind && source.Spec.Workload.Kind != "Namespace" {
 		allErrs = append(allErrs, field.Invalid(
 			field.NewPath("spec").Child("workload").Child("kind"),
 			source.Spec.Workload.Kind,
 			"workload kind must be one of (Deployment, DaemonSet, StatefulSet, Namespace)",
+		))
+	}
+
+	if source.Spec.Workload.Namespace != source.GetNamespace() {
+		allErrs = append(allErrs, field.Invalid(
+			field.NewPath("spec").Child("workload").Child("namespace"),
+			source.Spec.Workload.Namespace,
+			"Source namespace must match spec.workload.namespace",
 		))
 	}
 

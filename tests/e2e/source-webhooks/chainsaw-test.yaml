@@ -31,7 +31,7 @@ spec:
             file: 02-source-with-labels.yaml
         - assert:
             timeout: 2m
-            file: 02-assert-source-with-labels.yaml
+            file: 02-source-with-labels.yaml
     - name: "[Defaulting/Validating] - Source with incorrect labels is rejected (not modified to be correct)"
       try:
         - apply:
@@ -166,3 +166,10 @@ spec:
             check:
               ($error != null): true
               (contains($stderr, 'Invalid value')): true
+    - name: "[Validating] - Source namespace must match source.spec.workload.namespace"
+      try:
+        - apply:
+            file: 15-namespace-workload-namespace-source.yaml
+            expect:
+              - check:
+                  ($error != null): true
