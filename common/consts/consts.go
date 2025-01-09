@@ -18,7 +18,6 @@ const (
 	OdigosNamespaceAnnotation    = "odigos.io/workload-namespace"
 	OdigosWorkloadKindAnnotation = "odigos.io/workload-kind"
 	OdigosWorkloadNameAnnotation = "odigos.io/workload-name"
-	OdigosWorkloadExcludedLabel  = "odigos.io/workload-excluded"
 	OdigosReportedNameAnnotation = "odigos.io/reported-name"
 	RolloutTriggerAnnotation     = "rollout-trigger"
 

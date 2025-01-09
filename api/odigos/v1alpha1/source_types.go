@@ -24,7 +24,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	commonconsts "github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
@@ -78,10 +77,10 @@ type WorkloadSources struct {
 	Namespace *Source
 }
 
-// GetWorkloadSources returns a WorkloadSources listing the Workload and Namespace Source
+// GetSources returns a WorkloadSources listing the Workload and Namespace Source
 // that currently apply to the given object. In theory, this should only ever return at most
 // 1 Namespace and/or 1 Workload Source for an object. If more are found, an error is returned.
-func GetWorkloadSources(ctx context.Context, kubeClient client.Client, obj client.Object) (*WorkloadSources, error) {
+func GetSources(ctx context.Context, kubeClient client.Client, obj client.Object) (*WorkloadSources, error) {
 	var err error
 	workloadSources := &WorkloadSources{}
 
@@ -127,7 +126,7 @@ func GetWorkloadSources(ctx context.Context, kubeClient client.Client, obj clien
 // IsWorkloadExcludedSource returns true if the Source is used to exclude a workload.
 // Otherwise, it returns false.
 func IsWorkloadExcludedSource(source *Source) bool {
-	if val, exists := source.Labels[commonconsts.OdigosWorkloadExcludedLabel]; exists && val == "true" {
+	if val, exists := source.Labels[consts.OdigosWorkloadExcludedLabel]; exists && val == "true" {
 		return true
 	}
 	return false

@@ -22,6 +22,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -165,22 +166,24 @@ func syncGenericWorkloadListToNs(ctx context.Context, c client.Client, kind work
 	return err
 }
 
-// this function indicates that the odigos instrumentation label is missing from the workload object manifest.
-// when reconciling the namespace, the usecase is to delete instrumentation for workloads that were only
-// instrumented due to the label on the namespace. These are workloads with the label missing.
-// (they inherit the instrumentation from the namespace this way)
+// this function checks whether a workload is instrumented via inheriting from namespace, or whether it has its own instrumentation.
+// It checks:
+// 1. Does a Workload Source exist for the workload
+// 2. Does a Namespace Source exist for the workload
+// 3. Is the workload labeled for instrumentation
+// This is used to decide whether to uninstrument the workload.
 func isInheritingInstrumentationFromNs(ctx context.Context, c client.Client, obj client.Object) (bool, error) {
-	sourceList, err := v1alpha1.GetWorkloadSources(ctx, c, obj)
+	sourceList, err := v1alpha1.GetSources(ctx, c, obj)
 	if err != nil {
 		return false, err
 	}
 
-	if sourceList.Namespace != nil && sourceList.Namespace.DeletionTimestamp.IsZero() {
-		return true, nil
+	if sourceList.Workload != nil && !k8sutils.IsTerminating(sourceList.Workload) {
+		return false, nil
 	}
 
-	if sourceList.Workload != nil && sourceList.Workload.DeletionTimestamp.IsZero() {
-		return false, nil
+	if sourceList.Namespace != nil && !k8sutils.IsTerminating(sourceList.Namespace) {
+		return true, nil
 	}
 
 	labels := obj.GetLabels()

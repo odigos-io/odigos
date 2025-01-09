@@ -25,7 +25,7 @@ func reconcileWorkloadObject(ctx context.Context, kubeClient client.Client, work
 	}
 
 	// Check if a Source object exists for this workload
-	sourceList, err := odigosv1.GetWorkloadSources(ctx, kubeClient, workloadObject)
+	sourceList, err := odigosv1.GetSources(ctx, kubeClient, workloadObject)
 	if err != nil {
 		return err
 	}
@@ -54,7 +54,7 @@ func deleteWorkloadInstrumentationConfig(ctx context.Context, kubeClient client.
 	name := workloadObject.GetName()
 	kind := workload.WorkloadKindFromClientObject(workloadObject)
 	instrumentationConfigName := workload.CalculateWorkloadRuntimeObjectName(name, kind)
-	logger.V(1).Info("deleting instrumentationconfig", "name", instrumentationConfigName, "kind", kind)
+	logger.V(1).Info("deleting instrumentationconfig", "name", instrumentationConfigName, "namespace", ns)
 
 	instConfigErr := kubeClient.Delete(ctx, &odigosv1.InstrumentationConfig{
 		ObjectMeta: metav1.ObjectMeta{
@@ -67,7 +67,6 @@ func deleteWorkloadInstrumentationConfig(ctx context.Context, kubeClient client.
 		return client.IgnoreNotFound(instConfigErr)
 	}
 
-	logger.V(1).Info("instrumentationconfig deleted", "namespace", ns, "name", name, "kind", kind)
 	return nil
 }
 
