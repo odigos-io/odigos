@@ -14,15 +14,15 @@ const DataContainer = styled.div`
   gap: 12px;
 `;
 
-export const DescribeDrawer: React.FC<Props> = () => {
+export const CliDrawer: React.FC<Props> = () => {
   const { data: describe, restructureForPrettyMode } = useDescribeOdigos();
   const [isPrettyMode, setIsPrettyMode] = useState(true);
 
   return (
-    <OverviewDrawer title={DATA_CARDS.DESCRIBE_ODIGOS} icon={CodeBracketsIcon}>
+    <OverviewDrawer title='Odigos CLI' icon={CodeBracketsIcon}>
       <DataContainer>
         <DataCard
-          title=''
+          title={DATA_CARDS.DESCRIBE_ODIGOS}
           action={
             <Segment
               options={[
