@@ -114,8 +114,12 @@ func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32) error {
 func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme) ([]odigoscommon.ObservabilitySignal, error) {
 	logger := log.FromContext(ctx)
 	memoryLimiterConfiguration := common.GetMemoryLimiterConfig(gateway.Spec.ResourcesSettings)
-	common.AddFilterProcessors(ctx, c, allProcessors, dests)
+
+	routingProcessors := common.GenerateRoutingProcessors(ctx, c, dests)
 	processors := common.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleClusterGateway)
+
+	logger.V(0).Info("Calculating config")
+	logger.V(0).Info("routingProcessors", "routingProcessors", routingProcessors)
 
 	desiredData, err, status, signals := config.Calculate(
 		common.ToExporterConfigurerArray(dests),
@@ -124,7 +128,9 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 		func(c *config.Config) error {
 			return addSelfTelemetryPipeline(c, gateway.Spec.CollectorOwnMetricsPort)
 		},
+		routingProcessors,
 	)
+
 	if err != nil {
 		logger.Error(err, "Failed to calculate config")
 		return nil, err

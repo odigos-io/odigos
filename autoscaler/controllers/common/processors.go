@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/utils"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/config"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -84,10 +86,16 @@ type MatchCondition struct {
 	Kind      string `mapstructure:"kind"`
 }
 
-func AddFilterProcessors(ctx context.Context, kubeClient client.Client, allProcessors *odigosv1.ProcessorList, dests *odigosv1.DestinationList) {
+func GenerateRoutingProcessors(
+	ctx context.Context,
+	kubeClient client.Client,
+	dests *odigosv1.DestinationList,
+) map[string]config.GenericMap {
+	logger := log.FromContext(ctx)
+	routingProcessors := make(map[string]config.GenericMap)
+
 	for _, dest := range dests.Items {
-		logger := log.Log.WithValues("destination", dest.Name)
-		logger.Info("Processing destination for filter processor")
+		logger.Info("Processing destination for routing processor", "destination", dest.Name)
 
 		if dest.Spec.SourceSelector == nil || utils.Contains(dest.Spec.SourceSelector.Modes, "all") {
 			continue
@@ -103,32 +111,21 @@ func AddFilterProcessors(ctx context.Context, kubeClient client.Client, allProce
 
 		matchConditions := make(map[string]bool)
 		for _, source := range matchedSources {
-			logger.Info("Adding match condition for source", "sourceName", source.Spec.Workload.Name, "namespace", source.Spec.Workload.Namespace, "kind", source.Spec.Workload.Kind)
-
+			//TODO: cahnge the key
 			key := fmt.Sprintf("%s/%s/%s", source.Spec.Workload.Namespace, source.Spec.Workload.Name, source.Spec.Workload.Kind)
 			matchConditions[key] = true
 		}
 
-		filterConfig := map[string]interface{}{
+		sanitizedProcessorName := strings.ReplaceAll(dest.GetID(), ".", "-")
+		processorName := fmt.Sprintf("odigosroutingfilterprocessor/%s", sanitizedProcessorName)
+		fmt.Println("dest.GetID() sanitizedProcessorName: ", sanitizedProcessorName)
+		fmt.Println("processorName: ", processorName)
+		routingProcessors[processorName] = config.GenericMap{
 			"match_conditions": matchConditions,
 		}
-
-		allProcessors.Items = append(allProcessors.Items, odigosv1.Processor{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: fmt.Sprintf("odigosroutingfilterprocessor-%s", dest.Name),
-			},
-			Spec: odigosv1.ProcessorSpec{
-				Type:            "odigosroutingfilterprocessor",
-				ProcessorConfig: runtime.RawExtension{Raw: utils.MarshalConfig(filterConfig, logger)},
-				CollectorRoles: []odigosv1.CollectorsGroupRole{
-					odigosv1.CollectorsGroupRoleClusterGateway,
-				},
-				OrderHint: len(allProcessors.Items) + 1,
-				Signals:   dest.Spec.Signals,
-			},
-		})
-
 	}
+
+	return routingProcessors
 }
 
 func fetchSourcesByNamespaces(ctx context.Context, kubeClient client.Client, namespaces []string, logger logr.Logger) []odigosv1.Source {
