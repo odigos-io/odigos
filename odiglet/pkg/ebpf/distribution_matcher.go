@@ -22,7 +22,7 @@ func (dm *podDeviceDistributionMatcher) Distribution(ctx context.Context, e K8sP
 	// verify the language of the process event
 	if ok := inspectors.VerifyLanguage(process.Details{
 		ProcessID: e.procEvent.PID,
-		ExeName:   e.procEvent.ExecDetails.ExeName,
+		ExeName:   e.procEvent.ExecDetails.ExePath,
 		CmdLine:   e.procEvent.ExecDetails.CmdLine,
 		Environments: process.ProcessEnvs{
 			DetailedEnvs:  e.procEvent.ExecDetails.Environments,
@@ -32,5 +32,5 @@ func (dm *podDeviceDistributionMatcher) Distribution(ctx context.Context, e K8sP
 	}
 
 	return instrumentation.OtelDistribution{},
-	 	fmt.Errorf("process language does not match the detected language (%s) for container: %s. exe name: %s", lang, e.containerName, e.procEvent.ExecDetails.ExeName)
+	 	fmt.Errorf("process language does not match the detected language (%s) for container: %s. exe name: %s", lang, e.containerName, e.procEvent.ExecDetails.ExePath)
 }
