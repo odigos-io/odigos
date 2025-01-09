@@ -76,7 +76,7 @@ type ComputePlatform struct {
 	ComputePlatformType  ComputePlatformType    `json:"computePlatformType"`
 	K8sActualNamespaces  []*K8sActualNamespace  `json:"k8sActualNamespaces"`
 	K8sActualNamespace   *K8sActualNamespace    `json:"k8sActualNamespace,omitempty"`
-	K8sActualSources     []*K8sActualSource     `json:"k8sActualSources"`
+	Sources              *PaginatedSources      `json:"sources"`
 	Destinations         []*Destination         `json:"destinations"`
 	Actions              []*PipelineAction      `json:"actions"`
 	InstrumentationRules []*InstrumentationRule `json:"instrumentationRules"`
@@ -297,6 +297,7 @@ type InstrumentationRuleInput struct {
 
 type K8sActualNamespace struct {
 	Name             string             `json:"name"`
+	Selected         bool               `json:"selected"`
 	K8sActualSources []*K8sActualSource `json:"k8sActualSources"`
 }
 
@@ -398,6 +399,11 @@ type OverviewMetricsResponse struct {
 	Destinations []*SingleDestinationMetricsResponse `json:"destinations"`
 }
 
+type PaginatedSources struct {
+	NextPage string             `json:"nextPage"`
+	Items    []*K8sActualSource `json:"items"`
+}
+
 type PatchSourceRequestInput struct {
 	ReportedName *string `json:"reportedName,omitempty"`
 }
@@ -418,13 +424,13 @@ type PayloadCollectionInput struct {
 
 type PersistNamespaceItemInput struct {
 	Name           string `json:"name"`
-	FutureSelected *bool  `json:"futureSelected,omitempty"`
+	FutureSelected bool   `json:"futureSelected"`
 }
 
 type PersistNamespaceSourceInput struct {
 	Name     string          `json:"name"`
 	Kind     K8sResourceKind `json:"kind"`
-	Selected *bool           `json:"selected,omitempty"`
+	Selected bool            `json:"selected"`
 }
 
 type PiiMaskingAction struct {

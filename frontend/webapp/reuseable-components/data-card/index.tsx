@@ -2,6 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { Badge, Text } from '@/reuseable-components';
 import { DataCardFields, type DataCardRow, DataCardFieldTypes } from './data-card-fields';
+import { FlexRow } from '@/styles';
 export { DataCardFields, type DataCardRow, DataCardFieldTypes };
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
   titleBadge?: string | number;
   description?: string;
   data: DataCardRow[];
+  action?: React.ReactNode;
 }
 
 const CardContainer = styled.div`
@@ -23,12 +25,14 @@ const CardContainer = styled.div`
 `;
 
 const Header = styled.div`
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 4px;
 `;
 
 const Title = styled(Text)`
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -40,16 +44,21 @@ const Description = styled(Text)`
   color: ${({ theme }) => theme.text.grey};
 `;
 
-export const DataCard: React.FC<Props> = ({ title = 'Details', titleBadge, description, data }) => {
+const ActionWrapper = styled.div`
+  margin-left: auto;
+`;
+
+export const DataCard: React.FC<Props> = ({ title = 'Details', titleBadge, description, data, action }) => {
   return (
     <CardContainer>
-      {!!title || !!description ? (
+      {!!title || !!description || !!action ? (
         <Header>
-          {!!title && (
+          {(!!title || !!action) && (
             <Title>
               {title}
               {/* NOT undefined, because we should allow zero (0) values */}
               {titleBadge !== undefined && <Badge label={titleBadge} />}
+              <ActionWrapper>{action}</ActionWrapper>
             </Title>
           )}
 

@@ -89,24 +89,35 @@ spec:
       try:
         - assert:
             file: ../../common/assert/simple-demo-instrumented.yaml
+        - assert:
+            timeout: 2m
+            file: 01-workloads.yaml
+        - script:
+            timeout: 70s
+            content: |
+              kubectl rollout status deployment -l app=coupon
+              kubectl rollout status deployment -l app=frontend
+              kubectl rollout status deployment -l app=inventory
+              kubectl rollout status deployment -l app=pricing
+              kubectl rollout status deployment -l app=membership
     - name: Generate Traffic
       try:
         - script:
-            timeout: 300s
+            timeout: 500s
             content: |
-              # Apply the job
-              kubectl apply -f ../../common/apply/generate-traffic-job.yaml
-
-              # Wait for the job to complete
-              job_name=$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
-              kubectl wait --for=condition=complete job/$job_name
-
-              # Delete the job        
-              kubectl delete -f ../../common/apply/generate-traffic-job.yaml
-
               while true; do
                 # wait for traces to be available
                 sleep 8
+
+                # Apply the job
+                kubectl apply -f ../../common/apply/generate-traffic-job.yaml
+
+                # Wait for the job to complete
+                job_name=$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
+                kubectl wait --for=condition=complete job/$job_name
+
+                # Delete the job        
+                kubectl delete -f ../../common/apply/generate-traffic-job.yaml
 
                 # Run the wait-for-trace script
                 echo "Running TraceQL test at $(date)"
@@ -148,3 +159,298 @@ spec:
         - podLogs:
             name: odiglet
             namespace: odigos-system
+    - name: Uninstrument individual deployments
+      try:
+        - script:
+            timeout: 60s
+            content: |
+              kubectl delete sources --all
+              while true; do
+                ic_count=$(kubectl get instrumentationconfigs --output name | wc -l)
+                if [ $ic_count -eq "0" ]; then
+                  break
+                fi
+                sleep 5
+              done
+    - name: Assert workloads updated after uninstrumentation
+      try:
+        - assert:
+            timeout: 2m
+            file: 02-workloads.yaml
+    - name: Update reported service name for second phase of test
+      try:
+        - script:
+            timeout: 70s
+            content: |
+              kubectl annotate deployment coupon odigos.io/reported-name=coupon-2
+              kubectl annotate deployment frontend odigos.io/reported-name=frontend-2
+              kubectl annotate deployment inventory odigos.io/reported-name=inventory-2
+              kubectl annotate deployment pricing odigos.io/reported-name=pricing-2
+              kubectl annotate deployment membership odigos.io/reported-name=membership-2
+        - script:
+            timeout: 70s
+            content: |
+              kubectl rollout status deployment -l app=coupon
+              kubectl rollout status deployment -l app=frontend
+              kubectl rollout status deployment -l app=inventory
+              kubectl rollout status deployment -l app=pricing
+              kubectl rollout status deployment -l app=membership
+    - name: Instrument Namespace
+      try:
+        - apply:
+            file: 02-source-ns.yaml
+    - name: Assert Runtime Detected
+      try:
+        - assert:
+            timeout: 2m
+            file: ../../common/assert/simple-demo-runtime-detected.yaml
+        - assert:
+            timeout: 2m
+            file: 03-workloads.yaml
+    - name: Simple demo instrumented after runtime detection
+      try:
+        - assert:
+            file: ../../common/assert/simple-demo-instrumented.yaml
+        - script:
+            timeout: 70s
+            content: |
+              kubectl rollout status deployment -l app=coupon
+              kubectl rollout status deployment -l app=frontend
+              kubectl rollout status deployment -l app=inventory
+              kubectl rollout status deployment -l app=pricing
+              kubectl rollout status deployment -l app=membership
+    - name: Generate Traffic
+      try:
+        - script:
+            timeout: 500s
+            content: |
+              while true; do
+                # wait for traces to be available
+                sleep 8
+
+                # Apply the job
+                kubectl apply -f ../../common/apply/generate-traffic-job.yaml
+
+                # Wait for the job to complete
+                job_name=$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
+                kubectl wait --for=condition=complete job/$job_name
+
+                # Delete the job        
+                kubectl delete -f ../../common/apply/generate-traffic-job.yaml
+
+                # Run the wait-for-trace script
+                echo "Running TraceQL test at $(date)"
+                ../../common/traceql_runner.sh tracesql/wait-for-trace-2.yaml
+                
+                if [ $? -eq 0 ]; then
+                  break
+                else
+                  ../../common/flush_traces.sh
+                  sleep 5
+                fi
+              done
+    - name: Verify Trace - Context Propagation
+      try:
+        - script:
+            timeout: 30s
+            content: |
+              ../../common/traceql_runner.sh tracesql/context-propagation-2.yaml
+      catch:
+        - podLogs:
+            name: odiglet
+            namespace: odigos-system
+    - name: Verify Trace - Resource Attributes
+      try:
+        - script:
+            content: |
+              ../../common/traceql_runner.sh tracesql/resource-attributes.yaml
+      catch:
+        - podLogs:
+            name: odiglet
+            namespace: odigos-system
+    - name: Verify Trace - Span Attributes
+      try:
+        - script:
+            timeout: 60s
+            content: |
+              ../../common/traceql_runner.sh tracesql/span-attributes-2.yaml
+      catch:
+        - podLogs:
+            name: odiglet
+            namespace: odigos-system
+    - name: Uninstrument namespace
+      try:
+        - script:
+            timeout: 60s
+            content: |
+              kubectl delete sources --all
+              while true; do
+                ic_count=$(kubectl get instrumentationconfigs --output name | wc -l)
+                if [ $ic_count -eq "0" ]; then
+                  break
+                fi
+                sleep 5
+              done
+    - name: Assert workloads updated after uninstrumentation
+      try:
+        - assert:
+            timeout: 2m
+            file: 04-workloads.yaml
+        - script:
+            timeout: 70s
+            content: |
+              kubectl rollout status deployment -l app=coupon
+              kubectl rollout status deployment -l app=frontend
+              kubectl rollout status deployment -l app=inventory
+              kubectl rollout status deployment -l app=pricing
+              kubectl rollout status deployment -l app=membership
+    - name: Instrument frontend workload specifically
+      try:
+        - apply:
+            file: 05-source.yaml
+    - name: Assert Runtime Detected for single workload
+      try:
+        - assert:
+            timeout: 2m
+            file: 05-assert-runtime-detected.yaml
+        - assert:
+            timeout: 2m
+            file: 05-workloads.yaml
+    - name: Single workload instrumented after runtime detection
+      try:
+        - script:
+            timeout: 70s
+            content: |
+              kubectl rollout status deployment -l app=coupon
+              kubectl rollout status deployment -l app=frontend
+              kubectl rollout status deployment -l app=inventory
+              kubectl rollout status deployment -l app=pricing
+              kubectl rollout status deployment -l app=membership
+    - name: Instrument rest of Namespace
+      try:
+        - apply:
+            file: 02-source-ns.yaml
+    - name: Assert Runtime Detected for all workloads
+      try:
+        - assert:
+            timeout: 2m
+            file: ../../common/assert/simple-demo-runtime-detected.yaml
+        - assert:
+            timeout: 2m
+            file: 06-workloads.yaml
+    - name: Uninstrument namespace
+      try:
+        - script:
+            timeout: 60s
+            content: |
+              kubectl delete sources/default
+              while true; do
+                ic_count=$(kubectl get instrumentationconfigs --output name | wc -l)
+                if [ $ic_count -eq "1" ]; then
+                  break
+                fi
+                sleep 5
+              done
+    - name: Wait for deleted sources to roll out new revisions
+      try:
+        - script:
+            timeout: 70s
+            content: |
+              kubectl rollout status deployment -l app=coupon
+              kubectl rollout status deployment -l app=frontend
+              kubectl rollout status deployment -l app=inventory
+              kubectl rollout status deployment -l app=pricing
+              kubectl rollout status deployment -l app=membership
+    - name: Assert Runtime still Detected for single workload
+      try:
+        - assert:
+            timeout: 2m
+            file: 05-assert-runtime-detected.yaml
+        - assert:
+            timeout: 2m
+            file: 07-workloads.yaml
+    - name: Create Workload exclusion Source for single workload
+      try:
+        - apply:
+            file: 08-source.yaml
+    - name: Instrument rest of Namespace
+      try:
+        - apply:
+            file: 02-source-ns.yaml
+    - name: Wait for created source to roll out new revisions
+      try:
+        - script:
+            timeout: 70s
+            content: |
+              kubectl rollout status deployment -l app=coupon
+              kubectl rollout status deployment -l app=frontend
+              kubectl rollout status deployment -l app=inventory
+              kubectl rollout status deployment -l app=pricing
+              kubectl rollout status deployment -l app=membership
+    - name: Assert runtime detected for all workloads except excluded (coupon)
+      try:
+        - assert:
+            timeout: 2m
+            file: 08-assert-runtime-detected.yaml
+        - assert:
+            timeout: 2m
+            file: 08-workloads.yaml
+    - name: Assert runtime not detected for excluded (coupon)
+      try:
+        - script:
+            content: kubectl get instrumentationconfigs/deployment-coupon
+            check:
+              ($error != null): true
+    - name: Delete excluded workload Source
+      try:
+        - script:
+            content: kubectl delete sources -l odigos.io/e2e=source-excluded
+            check:
+              ($error == null): true
+    - name: Wait for deleted exclusion source to roll out new revisions
+      try:
+        - script:
+            timeout: 70s
+            content: |
+              kubectl rollout status deployment -l app=coupon
+              kubectl rollout status deployment -l app=frontend
+              kubectl rollout status deployment -l app=inventory
+              kubectl rollout status deployment -l app=pricing
+              kubectl rollout status deployment -l app=membership
+    - name: Assert runtime detected for no-longer-excluded workload
+      try:
+        - assert:
+            timeout: 2m
+            file: ../../common/assert/simple-demo-runtime-detected.yaml
+        - assert:
+            timeout: 2m
+            file: 08-workloads-2.yaml
+    - name: Create excluded workload Source while namespace is instrumented
+      try:
+        - apply:
+            file: 09-source.yaml
+    - name: Wait for created source to roll out new revisions
+      try:
+        - script:
+            timeout: 70s
+            content: |
+              kubectl rollout status deployment -l app=coupon
+              kubectl rollout status deployment -l app=frontend
+              kubectl rollout status deployment -l app=inventory
+              kubectl rollout status deployment -l app=pricing
+              kubectl rollout status deployment -l app=membership
+    - name: Assert runtime detected for all workloads except newly excluded (membership)
+      try:
+        - assert:
+            timeout: 2m
+            file: 09-assert-runtime-detected.yaml
+        - assert:
+            timeout: 2m
+            file: 09-workloads.yaml
+    - name: Assert runtime not detected for newly excluded (membership)
+      try:
+        - script:
+            content: kubectl get instrumentationconfigs/deployment-membership
+            check:
+              ($error != null): true
+

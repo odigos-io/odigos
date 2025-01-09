@@ -1,0 +1,52 @@
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-frontend
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: frontend
+status:
+  runtimeDetailsByContainer:
+    - containerName: frontend
+      language: java
+      runtimeVersion: 17.0.11+9
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-inventory
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: inventory
+status:
+  runtimeDetailsByContainer:
+    - containerName: inventory
+      envVars:
+      - name: PYTHONPATH
+        value: /bar # this env exists in the test image
+      language: python
+      runtimeVersion: 3.11.9
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-pricing
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: pricing
+status:
+  runtimeDetailsByContainer:
+    - containerName: pricing
+      language: dotnet

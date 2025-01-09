@@ -5,27 +5,7 @@ export const GET_COMPUTE_PLATFORM = gql`
     computePlatform {
       k8sActualNamespaces {
         name
-      }
-      k8sActualSources {
-        namespace
-        name
-        kind
-        numberOfInstances
         selected
-        reportedName
-        containers {
-          containerName
-          language
-          runtimeVersion
-          otherAgent
-        }
-        conditions {
-          status
-          type
-          reason
-          message
-          lastTransitionTime
-        }
       }
       destinations {
         id
@@ -107,11 +87,42 @@ export const GET_NAMESPACES = gql`
     computePlatform {
       k8sActualNamespace(name: $namespaceName) {
         name
+        selected
         k8sActualSources {
           kind
           name
           numberOfInstances
           selected
+        }
+      }
+    }
+  }
+`;
+
+export const GET_SOURCES = gql`
+  query GetSources($nextPage: String!) {
+    computePlatform {
+      sources(nextPage: $nextPage) {
+        nextPage
+        items {
+          namespace
+          name
+          kind
+          selected
+          reportedName
+          containers {
+            containerName
+            language
+            runtimeVersion
+            otherAgent
+          }
+          conditions {
+            status
+            type
+            reason
+            message
+            lastTransitionTime
+          }
         }
       }
     }

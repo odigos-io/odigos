@@ -2,7 +2,9 @@ package startlangdetection
 
 import (
 	"context"
+	"errors"
 
+	v1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -30,56 +32,109 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	obj := workload.ClientObjectFromWorkloadKind(source.Spec.Workload.Kind)
-	err = r.Client.Get(ctx, types.NamespacedName{Name: source.Spec.Workload.Name, Namespace: source.Spec.Workload.Namespace}, obj)
-	if err != nil {
-		// TODO: Deleted objects should be filtered in the event filter
-		return ctrl.Result{}, err
-	}
-	instConfigName := workload.CalculateWorkloadRuntimeObjectName(source.Spec.Workload.Name, source.Spec.Workload.Kind)
-
-	if source.DeletionTimestamp.IsZero() {
-		if !controllerutil.ContainsFinalizer(source, consts.SourceFinalizer) {
-			controllerutil.AddFinalizer(source, consts.SourceFinalizer)
-			// Removed by deleteinstrumentedapplication controller
-			controllerutil.AddFinalizer(source, consts.InstrumentedApplicationFinalizer)
-
-			if source.Labels == nil {
-				source.Labels = make(map[string]string)
+	// If this is a regular Source that is being created, or an Exclusion Source that is being deleted,
+	// Attempt to reconcile the workloads for instrumentation.
+	if source.DeletionTimestamp.IsZero() != v1alpha1.IsWorkloadExcludedSource(source) {
+		if source.Spec.Workload.Kind == "Namespace" {
+			// pre-process existing Sources for specific workloads so we don't have to make a bunch of API calls
+			// This is used to check if a workload already has an explicit Source, so we don't overwrite its InstrumentationConfig
+			sourceList := v1alpha1.SourceList{}
+			err := r.Client.List(ctx, &sourceList, client.InNamespace(source.Spec.Workload.Name))
+			if err != nil {
+				return ctrl.Result{}, err
 			}
-			source.Labels[consts.WorkloadNameLabel] = source.Spec.Workload.Name
-			source.Labels[consts.WorkloadNamespaceLabel] = source.Spec.Workload.Namespace
-			source.Labels[consts.WorkloadKindLabel] = string(source.Spec.Workload.Kind)
+			namespaceKindSources := make(map[workload.WorkloadKind]map[string]struct{})
+			for _, source := range sourceList.Items {
+				if _, exists := namespaceKindSources[source.Spec.Workload.Kind]; !exists {
+					namespaceKindSources[source.Spec.Workload.Kind] = make(map[string]struct{})
+				}
+				// ex: map["Deployment"]["my-app"] = ...
+				namespaceKindSources[source.Spec.Workload.Kind][source.Spec.Workload.Name] = struct{}{}
+			}
 
+			for _, kind := range []workload.WorkloadKind{
+				workload.WorkloadKindDaemonSet,
+				workload.WorkloadKindDeployment,
+				workload.WorkloadKindStatefulSet,
+			} {
+				err = errors.Join(err, r.listAndReconcileWorkloadList(ctx, source, kind, namespaceKindSources))
+			}
+		} else {
+			_, reconcileErr := reconcileWorkload(ctx,
+				r.Client,
+				source.Spec.Workload.Kind,
+				ctrl.Request{
+					NamespacedName: types.NamespacedName{
+						Namespace: source.Spec.Workload.Namespace,
+						Name:      source.Spec.Workload.Name,
+					},
+				},
+				r.Scheme)
+			if reconcileErr != nil {
+				err = errors.Join(err, reconcileErr)
+			}
+		}
+
+		if v1alpha1.IsWorkloadExcludedSource(source) &&
+			!source.DeletionTimestamp.IsZero() &&
+			controllerutil.ContainsFinalizer(source, consts.StartLangDetectionFinalizer) {
+			controllerutil.RemoveFinalizer(source, consts.StartLangDetectionFinalizer)
 			if err := r.Update(ctx, source); err != nil {
 				return k8sutils.K8SUpdateErrorHandler(err)
 			}
-
-			err = requestOdigletsToCalculateRuntimeDetails(ctx, r.Client, instConfigName, req.Namespace, obj, r.Scheme)
-			return ctrl.Result{}, err
-		}
-	} else {
-		// Source is being deleted
-		if controllerutil.ContainsFinalizer(source, consts.SourceFinalizer) {
-			// Remove the finalizer first, because if the InstrumentationConfig is not found we
-			// will deadlock on the finalizer never getting removed.
-			// On the other hand, this could end up deleting a Source with an orphaned InstrumentationConfig.
-			controllerutil.RemoveFinalizer(source, consts.SourceFinalizer)
-			if err := r.Update(ctx, source); err != nil {
-				return ctrl.Result{}, err
-			}
-
-			instConfig := &v1alpha1.InstrumentationConfig{}
-			err = r.Client.Get(ctx, types.NamespacedName{Name: instConfigName, Namespace: req.Namespace}, instConfig)
-			if err != nil {
-				return ctrl.Result{}, client.IgnoreNotFound(err)
-			}
-			err = r.Client.Delete(ctx, instConfig)
-			if err != nil {
-				return ctrl.Result{}, client.IgnoreNotFound(err)
-			}
 		}
 	}
 
-	return ctrl.Result{}, err
+	return ctrl.Result{}, client.IgnoreNotFound(err)
+}
+
+func (r *SourceReconciler) listAndReconcileWorkloadList(ctx context.Context,
+	source *v1alpha1.Source,
+	kind workload.WorkloadKind,
+	namespaceKindSources map[workload.WorkloadKind]map[string]struct{}) error {
+
+	deps := workload.ClientListObjectFromWorkloadKind(kind)
+	err := r.Client.List(ctx, deps, client.InNamespace(source.Spec.Workload.Name))
+	if client.IgnoreNotFound(err) != nil {
+		return err
+	}
+
+	switch obj := deps.(type) {
+	case *v1.DeploymentList:
+		for _, dep := range obj.Items {
+			err = r.reconcileWorkloadList(ctx, ctrl.Request{NamespacedName: client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace}}, kind, namespaceKindSources)
+			if err != nil {
+				return err
+			}
+		}
+	case *v1.DaemonSetList:
+		for _, dep := range obj.Items {
+			err = r.reconcileWorkloadList(ctx, ctrl.Request{NamespacedName: client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace}}, kind, namespaceKindSources)
+			if err != nil {
+				return err
+			}
+		}
+	case *v1.StatefulSetList:
+		for _, dep := range obj.Items {
+			err = r.reconcileWorkloadList(ctx, ctrl.Request{NamespacedName: client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace}}, kind, namespaceKindSources)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (r *SourceReconciler) reconcileWorkloadList(ctx context.Context,
+	req ctrl.Request,
+	kind workload.WorkloadKind,
+	namespaceKindSources map[workload.WorkloadKind]map[string]struct{}) error {
+	logger := log.FromContext(ctx)
+	if _, exists := namespaceKindSources[kind][req.Name]; !exists {
+		_, err := reconcileWorkload(ctx, r.Client, kind, req, r.Scheme)
+		if err != nil {
+			logger.Error(err, "error requesting runtime details from odiglets", "name", req.Name, "namespace", req.Namespace, "kind", kind)
+		}
+	}
+	return nil
 }

@@ -16,9 +16,9 @@ export const AddSourceModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const { persistSources } = useSourceCRUD({ onSuccess: onClose });
 
   const handleSubmit = async () => {
-    const { getApiPaylod, selectedFutureApps } = menuState;
+    const { getApiSourcesPayload, getApiFutureAppsPayload } = menuState;
 
-    // Type of "getApiPaylod()" is actually:
+    // Type of "getApiSourcesPayload()" is actually:
     // { [namespace: string]: Pick<K8sActualSource, 'name' | 'kind' | 'selected' | 'numberOfInstances'>[] };
     //
     // But we will force it as type:
@@ -27,7 +27,7 @@ export const AddSourceModal: React.FC<Props> = ({ isOpen, onClose }) => {
     // This forced type is to satisfy TypeScript,
     // while knowing that this doesn't break the onboarding flow in any-way...
 
-    await persistSources(getApiPaylod() as IAppState['configuredSources'], selectedFutureApps);
+    await persistSources(getApiSourcesPayload() as IAppState['configuredSources'], getApiFutureAppsPayload());
   };
 
   return (

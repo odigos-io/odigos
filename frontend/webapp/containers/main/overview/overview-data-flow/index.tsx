@@ -6,7 +6,7 @@ import { NodeDataFlow } from '@/reuseable-components';
 import { MultiSourceControl } from '../multi-source-control';
 import { OverviewActionsMenu } from '../overview-actions-menu';
 import { type Edge, useEdgesState, useNodesState, type Node, applyNodeChanges } from '@xyflow/react';
-import { useComputePlatform, useContainerSize, useMetrics, useNodeDataFlowHandlers } from '@/hooks';
+import { useComputePlatform, useContainerSize, useMetrics, useNodeDataFlowHandlers, useSourceCRUD } from '@/hooks';
 
 import { buildEdges } from './build-edges';
 import { getEntityCounts } from './get-entity-counts';
@@ -35,8 +35,19 @@ export default function OverviewDataFlowContainer() {
   const positions = useMemo(() => getNodePositions({ containerWidth }), [containerWidth]);
 
   const { metrics } = useMetrics();
-  const { data, filteredData, loading } = useComputePlatform();
-  const unfilteredCounts = useMemo(() => getEntityCounts({ computePlatform: data?.computePlatform }), [data]);
+  const { sources, filteredSources } = useSourceCRUD();
+  const { data, filteredData, loading } = useComputePlatform(); // TODO: remove this in favor of CRUD hooks
+
+  const unfilteredCounts = useMemo(
+    () =>
+      getEntityCounts({
+        sources,
+        destinations: data?.computePlatform.destinations,
+        actions: data?.computePlatform.actions,
+        instrumentationRules: data?.computePlatform.instrumentationRules,
+      }),
+    [sources, data],
+  );
 
   const ruleNodes = useMemo(
     () =>
@@ -46,7 +57,7 @@ export default function OverviewDataFlowContainer() {
         positions,
         unfilteredCounts,
       }),
-    [loading, filteredData?.computePlatform.instrumentationRules, positions, unfilteredCounts],
+    [loading, filteredData?.computePlatform.instrumentationRules, positions, unfilteredCounts.rule],
   );
   const actionNodes = useMemo(
     () =>
@@ -56,7 +67,7 @@ export default function OverviewDataFlowContainer() {
         positions,
         unfilteredCounts,
       }),
-    [loading, filteredData?.computePlatform.actions, positions, unfilteredCounts],
+    [loading, filteredData?.computePlatform.actions, positions, unfilteredCounts.action],
   );
   const destinationNodes = useMemo(
     () =>
@@ -66,19 +77,19 @@ export default function OverviewDataFlowContainer() {
         positions,
         unfilteredCounts,
       }),
-    [loading, filteredData?.computePlatform.destinations, positions, unfilteredCounts],
+    [loading, filteredData?.computePlatform.destinations, positions, unfilteredCounts.destination],
   );
   const sourceNodes = useMemo(
     () =>
       buildSourceNodes({
         loading,
-        entities: filteredData?.computePlatform.k8sActualSources || [],
+        entities: filteredSources,
         positions,
         unfilteredCounts,
         containerHeight,
         onScroll: ({ scrollTop }) => setScrollYOffset(scrollTop),
       }),
-    [loading, filteredData?.computePlatform.k8sActualSources, positions, unfilteredCounts, containerHeight],
+    [loading, filteredSources, positions, unfilteredCounts.source, containerHeight],
   );
 
   const [nodes, setNodes, onNodesChange] = useNodesState(([] as Node[]).concat(actionNodes, ruleNodes, sourceNodes, destinationNodes));

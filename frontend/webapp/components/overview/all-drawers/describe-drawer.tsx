@@ -1,10 +1,10 @@
-import React from 'react';
-import { CodeIcon } from '@/assets';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useDescribeOdigos } from '@/hooks';
 import { DATA_CARDS, safeJsonStringify } from '@/utils';
-import { DataCard, DataCardFieldTypes } from '@/reuseable-components';
+import { CodeBracketsIcon, CodeIcon, ListIcon } from '@/assets';
 import OverviewDrawer from '@/containers/main/overview/overview-drawer';
+import { DataCard, DataCardFieldTypes, Segment } from '@/reuseable-components';
 
 interface Props {}
 
@@ -15,18 +15,33 @@ const DataContainer = styled.div`
 `;
 
 export const DescribeDrawer: React.FC<Props> = () => {
-  const { data: describe } = useDescribeOdigos();
+  const { data: describe, restructureForPrettyMode } = useDescribeOdigos();
+  const [isPrettyMode, setIsPrettyMode] = useState(true);
 
   return (
-    <OverviewDrawer title={DATA_CARDS.DESCRIBE_ODIGOS} icon={CodeIcon}>
+    <OverviewDrawer title={DATA_CARDS.DESCRIBE_ODIGOS} icon={CodeBracketsIcon}>
       <DataContainer>
         <DataCard
           title=''
+          action={
+            <Segment
+              options={[
+                { icon: ListIcon, value: true },
+                { icon: CodeIcon, value: false },
+              ]}
+              selected={isPrettyMode}
+              setSelected={setIsPrettyMode}
+            />
+          }
           data={[
             {
               type: DataCardFieldTypes.CODE,
+              value: JSON.stringify({
+                language: 'json',
+                code: safeJsonStringify(isPrettyMode ? restructureForPrettyMode(describe) : describe),
+                pretty: isPrettyMode,
+              }),
               width: 'inherit',
-              value: JSON.stringify({ language: 'json', code: safeJsonStringify(describe) }),
             },
           ]}
         />

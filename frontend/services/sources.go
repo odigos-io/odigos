@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -23,6 +24,7 @@ import (
 type WorkloadKind string
 
 const (
+	WorkloadKindNamespace   WorkloadKind = "Namespace"
 	WorkloadKindDeployment  WorkloadKind = "Deployment"
 	WorkloadKindStatefulSet WorkloadKind = "StatefulSet"
 	WorkloadKindDaemonSet   WorkloadKind = "DaemonSet"
@@ -265,36 +267,43 @@ func updateAnnotations(annotations map[string]string, reportedName string) map[s
 }
 
 func GetSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) (*v1alpha1.Source, error) {
-	source, err := kube.DefaultClient.OdigosClient.Sources(nsName).List(ctx, metav1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set{
-		consts.OdigosNamespaceAnnotation:    nsName,
-		consts.OdigosWorkloadNameAnnotation: workloadName,
-		consts.OdigosWorkloadKindAnnotation: string(workloadKind),
-	}).String()})
+	list, err := kube.DefaultClient.OdigosClient.Sources(nsName).List(ctx, metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(labels.Set{
+			consts.OdigosNamespaceAnnotation:    nsName,
+			consts.OdigosWorkloadNameAnnotation: workloadName,
+			consts.OdigosWorkloadKindAnnotation: string(workloadKind),
+		}).String(),
+	})
 
 	if err != nil {
 		return nil, err
 	}
-	if len(source.Items) == 0 {
+	if len(list.Items) == 0 {
 		return nil, fmt.Errorf(`source "%s" not found`, workloadName)
 	}
-	if len(source.Items) > 1 {
-		return nil, fmt.Errorf(`expected to get 1 source "%s", got %d`, workloadName, len(source.Items))
+	if len(list.Items) > 1 {
+		return nil, fmt.Errorf(`expected to get 1 source "%s", got %d`, workloadName, len(list.Items))
 	}
 
-	crdName := source.Items[0].Name
+	crdName := list.Items[0].Name
 	crd, err := kube.DefaultClient.OdigosClient.Sources(nsName).Get(ctx, crdName, metav1.GetOptions{})
 
 	return crd, err
 }
 
 func createSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) error {
-	err := CheckWorkloadKind(workloadKind)
+	err := CheckWorkloadKindForSourceCRD(workloadKind)
 	if err != nil {
 		return err
 	}
 
 	source, err := GetSourceCRD(ctx, nsName, workloadName, workloadKind)
-	if source != nil && err == nil {
+	if source != nil {
+		// source already exists, do not create a new one
+		return nil
+	}
+	if err != nil && !strings.Contains(err.Error(), "not found") {
+		// error occurred while trying to get the source
 		return err
 	}
 
@@ -316,7 +325,7 @@ func createSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 }
 
 func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) error {
-	err := CheckWorkloadKind(workloadKind)
+	err := CheckWorkloadKindForSourceCRD(workloadKind)
 	if err != nil {
 		return err
 	}
@@ -330,12 +339,8 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 	return err
 }
 
-func ToggleSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind, enabled *bool) error {
-	if enabled == nil {
-		return fmt.Errorf("enabled must be provided")
-	}
-
-	if *enabled {
+func ToggleSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind, enabled bool) error {
+	if enabled {
 		return createSourceCRD(ctx, nsName, workloadName, workloadKind)
 	} else {
 		return deleteSourceCRD(ctx, nsName, workloadName, workloadKind)

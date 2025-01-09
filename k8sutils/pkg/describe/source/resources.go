@@ -17,7 +17,6 @@ import (
 type OdigosSourceResources struct {
 	Namespace                *corev1.Namespace
 	InstrumentationConfig    *odigosv1.InstrumentationConfig
-	InstrumentedApplication  *odigosv1.InstrumentedApplication
 	InstrumentationInstances *odigosv1.InstrumentationInstanceList
 	Pods                     *corev1.PodList
 }

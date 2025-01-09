@@ -146,18 +146,6 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 				Resources: []string{"nodes"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
-			{ // Needed for storage of runtime details / language detection (almost deprecated)
-				// TODO: remove this once Tamir/PR is read for instrumentation app ---> instrumentation config migration
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentedapplications"},
-				Verbs:     []string{"get", "list", "watch", "create", "patch", "update"},
-			},
-			{ // Needed for storage of runtime details / language detection (almost deprecated)
-				// TODO: remove this once Tamir/PR is read for instrumentation app ---> instrumentation config migration
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentedapplications/status"},
-				Verbs:     []string{"get", "patch", "update"},
-			},
 			{ // Needed for storage of the process instrumentation state
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"instrumentationinstances"},
@@ -375,10 +363,10 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 					},
 					Tolerations: []corev1.Toleration{
 						{
-							Key:      "node.kubernetes.io/os",
-							Operator: corev1.TolerationOpEqual,
-							Value:    "windows",
-							Effect:   corev1.TaintEffectNoSchedule,
+							// This toleration with 'Exists' operator and no key/effect specified
+							// will match ALL taints, allowing pods to be scheduled on any node
+							// regardless of its taints (including master/control-plane nodes)
+							Operator: corev1.TolerationOpExists,
 						},
 					},
 					Volumes: append([]corev1.Volume{

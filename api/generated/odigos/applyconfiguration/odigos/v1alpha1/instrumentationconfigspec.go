@@ -20,10 +20,9 @@ package v1alpha1
 // InstrumentationConfigSpecApplyConfiguration represents a declarative configuration of the InstrumentationConfigSpec type for use
 // with apply.
 type InstrumentationConfigSpecApplyConfiguration struct {
-	ServiceName               *string                                           `json:"serviceName,omitempty"`
-	RuntimeDetailsInvalidated *bool                                             `json:"runtimeDetailsInvalidated,omitempty"`
-	Config                    []WorkloadInstrumentationConfigApplyConfiguration `json:"config,omitempty"`
-	SdkConfigs                []SdkConfigApplyConfiguration                     `json:"sdkConfigs,omitempty"`
+	ServiceName *string                                           `json:"serviceName,omitempty"`
+	Config      []WorkloadInstrumentationConfigApplyConfiguration `json:"config,omitempty"`
+	SdkConfigs  []SdkConfigApplyConfiguration                     `json:"sdkConfigs,omitempty"`
 }
 
 // InstrumentationConfigSpecApplyConfiguration constructs a declarative configuration of the InstrumentationConfigSpec type for use with
@@ -37,14 +36,6 @@ func InstrumentationConfigSpec() *InstrumentationConfigSpecApplyConfiguration {
 // If called multiple times, the ServiceName field is set to the value of the last call.
 func (b *InstrumentationConfigSpecApplyConfiguration) WithServiceName(value string) *InstrumentationConfigSpecApplyConfiguration {
 	b.ServiceName = &value
-	return b
-}
-
-// WithRuntimeDetailsInvalidated sets the RuntimeDetailsInvalidated field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the RuntimeDetailsInvalidated field is set to the value of the last call.
-func (b *InstrumentationConfigSpecApplyConfiguration) WithRuntimeDetailsInvalidated(value bool) *InstrumentationConfigSpecApplyConfiguration {
-	b.RuntimeDetailsInvalidated = &value
 	return b
 }
 

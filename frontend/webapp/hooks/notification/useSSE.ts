@@ -1,11 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { API } from '@/utils';
 import { NOTIFICATION_TYPE } from '@/types';
-import { useComputePlatform } from '../compute-platform';
+import { useComputePlatform, usePaginatedSources } from '../compute-platform';
 import { type NotifyPayload, useConnectionStore, useNotificationStore, usePendingStore } from '@/store';
 
 export const useSSE = () => {
   const { setPendingItems } = usePendingStore();
+  const { fetchSources } = usePaginatedSources();
   const { addNotification } = useNotificationStore();
   const { setConnectionStore } = useConnectionStore();
   const { refetch: refetchComputePlatform } = useComputePlatform();
@@ -30,7 +31,18 @@ export const useSSE = () => {
         };
 
         addNotification(notification);
-        refetchComputePlatform();
+
+        if (notification.crdType === 'InstrumentationConfig') {
+          // We handle update in CRUD hook, refetch only on create
+          if (['Added', 'Deleted'].includes(notification.title || '')) fetchSources(true);
+        } else {
+          refetchComputePlatform();
+        }
+
+        // This works for now,
+        // but in the future we might have to change this to "removePendingItems",
+        // and remove the specific pending items based on their entityType and entityId
+        setPendingItems([]);
 
         // This works for now,
         // but in the future we might have to change this to "removePendingItems",

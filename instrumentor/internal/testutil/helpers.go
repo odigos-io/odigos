@@ -1,8 +1,6 @@
 package testutil
 
 import (
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -30,20 +28,6 @@ func DeleteOdigosInstrumentationLabel[W client.Object](obj W) W {
 func SetReportedNameAnnotation[W client.Object](obj W, reportedName string) W {
 	copy := obj.DeepCopyObject().(W)
 	copy.SetAnnotations(map[string]string{consts.OdigosReportedNameAnnotation: reportedName})
-	return copy
-}
-
-func SetInstrumentedApplicationContainer(obj *odigosv1.InstrumentedApplication, envName *string, envValue *string, language common.ProgrammingLanguage) *odigosv1.InstrumentedApplication {
-	copy := obj.DeepCopy()
-	copy.Spec.RuntimeDetails[0] = odigosv1.RuntimeDetailsByContainer{
-		ContainerName: copy.Spec.RuntimeDetails[0].ContainerName,
-		Language:      language,
-	}
-
-	if envName != nil && envValue != nil {
-		copy.Spec.RuntimeDetails[0].EnvVars = []odigosv1.EnvVar{{Name: *envName, Value: *envValue}}
-	}
-
 	return copy
 }
 
