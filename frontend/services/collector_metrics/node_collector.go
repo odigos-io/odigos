@@ -4,7 +4,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/odigos-io/odigos/frontend/endpoints/common"
+	"github.com/odigos-io/odigos/frontend/services/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
