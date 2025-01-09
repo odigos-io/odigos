@@ -50,7 +50,7 @@ var proCmd = &cobra.Command{
 }
 
 func executeRemoteUpdateToken(ctx context.Context, client *kube.Client, namespace string) error {
-	uiSvcProxyEndpoint := fmt.Sprintf("/api/v1/namespaces/%s/services/%s:%d/proxy/api/pro/source/namespace/%s/kind/%s/name/%s", namespace, k8sconsts.OdigosUiServiceName, k8sconsts.OdigosUiServicePort)
+	uiSvcProxyEndpoint := fmt.Sprintf("/api/v1/namespaces/%s/services/%s:%d/proxy/api/token/update", namespace, k8sconsts.OdigosUiServiceName, k8sconsts.OdigosUiServicePort)
 	request := client.Clientset.RESTClient().Get().AbsPath(uiSvcProxyEndpoint).Do(ctx)
 	_, err := request.Raw()
 	if err != nil {
