@@ -72,6 +72,10 @@ var (
 		ShortDescription: "Populate the spans resource `host.name` attribute with value of `k8s.pod.name`",
 		KubeObject:       &odigosv1alpha1.Processor{},
 	}
+	JavaNativeInstrumentationsProfile = Profile{
+		ProfileName:      common.ProfileName("java-native-instrumentations"),
+		ShortDescription: "Deprecated, native instrumentations are now enabled by default",
+	}
 	JavaEbpfInstrumentationsProfile = Profile{
 		ProfileName:      common.ProfileName("java-ebpf-instrumentations"),
 		ShortDescription: "Instrument Java applications using eBPF instrumentation and eBPF enterprise processing",
@@ -96,21 +100,22 @@ var (
 		Dependencies:     []common.ProfileName{"db-payload-collection", "semconv", "category-attributes", "copy-scope", "hostname-as-podname", "code-attributes", "query-operation-detector", "disableNameProcessorProfile", "small-batches", "size_m", "allow_concurrent_agents"},
 	}
 	ProfilesMap = map[common.ProfileName]Profile{
-		SizeSProfile.ProfileName:                    SizeSProfile,
-		SizeMProfile.ProfileName:                    SizeMProfile,
-		SizeLProfile.ProfileName:                    SizeLProfile,
-		FullPayloadCollectionProfile.ProfileName:    FullPayloadCollectionProfile,
-		DbPayloadCollectionProfile.ProfileName:      DbPayloadCollectionProfile,
-		QueryOperationDetector.ProfileName:          QueryOperationDetector,
-		SemconvUpgraderProfile.ProfileName:          SemconvUpgraderProfile,
-		CategoryAttributesProfile.ProfileName:       CategoryAttributesProfile,
-		CopyScopeProfile.ProfileName:                CopyScopeProfile,
-		HostnameAsPodNameProfile.ProfileName:        HostnameAsPodNameProfile,
-		JavaEbpfInstrumentationsProfile.ProfileName: JavaEbpfInstrumentationsProfile,
-		CodeAttributesProfile.ProfileName:           CodeAttributesProfile,
-		DisableNameProcessorProfile.ProfileName:     DisableNameProcessorProfile,
-		SmallBatchesProfile.ProfileName:             SmallBatchesProfile,
-		KratosProfile.ProfileName:                   KratosProfile,
-		AllowConcurrentAgents.ProfileName:           AllowConcurrentAgents,
+		SizeSProfile.ProfileName:                      SizeSProfile,
+		SizeMProfile.ProfileName:                      SizeMProfile,
+		SizeLProfile.ProfileName:                      SizeLProfile,
+		FullPayloadCollectionProfile.ProfileName:      FullPayloadCollectionProfile,
+		DbPayloadCollectionProfile.ProfileName:        DbPayloadCollectionProfile,
+		QueryOperationDetector.ProfileName:            QueryOperationDetector,
+		SemconvUpgraderProfile.ProfileName:            SemconvUpgraderProfile,
+		CategoryAttributesProfile.ProfileName:         CategoryAttributesProfile,
+		CopyScopeProfile.ProfileName:                  CopyScopeProfile,
+		HostnameAsPodNameProfile.ProfileName:          HostnameAsPodNameProfile,
+		JavaNativeInstrumentationsProfile.ProfileName: JavaNativeInstrumentationsProfile,
+		JavaEbpfInstrumentationsProfile.ProfileName:   JavaEbpfInstrumentationsProfile,
+		CodeAttributesProfile.ProfileName:             CodeAttributesProfile,
+		DisableNameProcessorProfile.ProfileName:       DisableNameProcessorProfile,
+		SmallBatchesProfile.ProfileName:               SmallBatchesProfile,
+		KratosProfile.ProfileName:                     KratosProfile,
+		AllowConcurrentAgents.ProfileName:             AllowConcurrentAgents,
 	}
 )

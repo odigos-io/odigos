@@ -19,7 +19,7 @@ func GetAvailableCommunityProfiles() []k8sprofiles.Profile {
 
 func GetAvailableOnPremProfiles() []k8sprofiles.Profile {
 	return append([]k8sprofiles.Profile{k8sprofiles.FullPayloadCollectionProfile, k8sprofiles.DbPayloadCollectionProfile, k8sprofiles.CategoryAttributesProfile,
-		k8sprofiles.HostnameAsPodNameProfile, k8sprofiles.JavaEbpfInstrumentationsProfile, k8sprofiles.KratosProfile, k8sprofiles.QueryOperationDetector,
+		k8sprofiles.HostnameAsPodNameProfile, k8sprofiles.JavaNativeInstrumentationsProfile, k8sprofiles.JavaEbpfInstrumentationsProfile, k8sprofiles.KratosProfile, k8sprofiles.QueryOperationDetector,
 		k8sprofiles.SmallBatchesProfile},
 		GetAvailableCommunityProfiles()...)
 }
