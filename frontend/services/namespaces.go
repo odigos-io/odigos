@@ -86,7 +86,7 @@ func getRelevantNameSpaces(ctx context.Context, odigosns string) ([]v1.Namespace
 	g, ctx := errgroup.WithContext(ctx)
 	g.Go(func() error {
 		var err error
-		configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(odigosns).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
+		configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(odigosns).Get(ctx, consts.OdigosEffectiveConfigName, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}

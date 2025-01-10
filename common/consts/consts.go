@@ -8,6 +8,7 @@ const (
 	CurrentNamespaceEnvVar       = "CURRENT_NS"
 	DefaultOdigosNamespace       = "odigos-system"
 	OdigosConfigurationName      = "odigos-config"
+	OdigosEffectiveConfigName    = "effective-config"
 	OdigosConfigurationFileName  = "config.yaml"
 	OTLPPort                     = 4317
 	OTLPHttpPort                 = 4318
