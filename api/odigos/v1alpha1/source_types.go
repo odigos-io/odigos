@@ -94,7 +94,7 @@ func GetSources(ctx context.Context, kubeClient client.Client, obj client.Object
 			consts.WorkloadNamespaceLabel: obj.GetNamespace(),
 			consts.WorkloadKindLabel:      obj.GetObjectKind().GroupVersionKind().Kind,
 		})
-		err := kubeClient.List(ctx, &sourceList, &client.ListOptions{LabelSelector: selector})
+		err := kubeClient.List(ctx, &sourceList, &client.ListOptions{LabelSelector: selector}, client.InNamespace(obj.GetNamespace()))
 		if err != nil {
 			return nil, err
 		}
@@ -112,7 +112,7 @@ func GetSources(ctx context.Context, kubeClient client.Client, obj client.Object
 		consts.WorkloadNamespaceLabel: obj.GetNamespace(),
 		consts.WorkloadKindLabel:      "Namespace",
 	})
-	err = kubeClient.List(ctx, &namespaceSourceList, &client.ListOptions{LabelSelector: namespaceSelector})
+	err = kubeClient.List(ctx, &namespaceSourceList, &client.ListOptions{LabelSelector: namespaceSelector}, client.InNamespace(obj.GetNamespace()))
 	if err != nil {
 		return nil, err
 	}
