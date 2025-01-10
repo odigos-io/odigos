@@ -6,6 +6,7 @@ import (
 
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/client"
+	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"sigs.k8s.io/yaml"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -13,7 +14,6 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/common/utils"
 
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
