@@ -22,7 +22,7 @@ type odigosConfigController struct {
 
 func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
 
-	odigosConfig, err := r.getOdigosConfig(ctx)
+	odigosConfig, err := r.getOdigosConfigUserObject(ctx)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -35,7 +35,7 @@ func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) 
 	return ctrl.Result{}, nil
 }
 
-func (r *odigosConfigController) getOdigosConfig(ctx context.Context) (*common.OdigosConfiguration, error) {
+func (r *odigosConfigController) getOdigosConfigUserObject(ctx context.Context) (*common.OdigosConfiguration, error) {
 	var configMap corev1.ConfigMap
 	var odigosConfig common.OdigosConfiguration
 	odigosNs := env.GetCurrentNamespace()

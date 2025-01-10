@@ -6,8 +6,6 @@ metadata:
 rules:
   - apiGroups:
       - ''
-    resourceNames:
-      - odigos-config
     resources:
       - configmaps
     verbs:
@@ -21,9 +19,6 @@ rules:
     resourceNames:
       - effective-config
     verbs:
-      - get
-      - list
-      - watch
       - patch
   - apiGroups:
       - odigos.io
