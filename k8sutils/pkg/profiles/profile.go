@@ -10,8 +10,9 @@ import (
 type Profile struct {
 	ProfileName      common.ProfileName
 	ShortDescription string
-	KubeObject       Object               // used to read it from the embedded YAML file
-	Dependencies     []common.ProfileName // other profiles that are applied by the current profile
+	KubeObject       Object                            // used to read it from the embedded YAML file
+	Dependencies     []common.ProfileName              // other profiles that are applied by the current profile
+	ModifyConfigFunc func(*common.OdigosConfiguration) // function to update the configuration based on the profile
 }
 
 type Object interface {
@@ -36,6 +37,12 @@ var (
 	AllowConcurrentAgents = Profile{
 		ProfileName:      common.ProfileName("allow_concurrent_agents"),
 		ShortDescription: "This profile allows Odigos to run concurrently with other agents",
+		ModifyConfigFunc: func(c *common.OdigosConfiguration) {
+			if c.AllowConcurrentAgents == nil {
+				allowConcurrentAgents := true
+				c.AllowConcurrentAgents = &allowConcurrentAgents
+			}
+		},
 	}
 	FullPayloadCollectionProfile = Profile{
 		ProfileName:      common.ProfileName("full-payload-collection"),
