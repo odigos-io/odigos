@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/odigos-io/odigos/cli/pkg/autodetect"
+	"github.com/odigos-io/odigos/common/consts"
 
 	"github.com/odigos-io/odigos/cli/pkg/labels"
 
@@ -17,8 +18,6 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/cli/pkg/log"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/common/utils"
 	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 
 	"github.com/spf13/cobra"
@@ -205,10 +204,8 @@ func validateUserInputProfiles(tier common.OdigosTier) {
 }
 
 func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration {
-	fullIgnoredContainers := utils.MergeDefaultIgnoreWithUserInput(userInputIgnoredContainers, consts.IgnoredContainers)
 
 	selectedProfiles := []common.ProfileName{}
-
 	for _, profile := range userInputInstallProfiles {
 		selectedProfiles = append(selectedProfiles, common.ProfileName(profile))
 	}
@@ -218,7 +215,7 @@ func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 		TelemetryEnabled:          telemetryEnabled,
 		OpenshiftEnabled:          openshiftEnabled,
 		IgnoredNamespaces:         userInputIgnoredNamespaces,
-		IgnoredContainers:         fullIgnoredContainers,
+		IgnoredContainers:         userInputIgnoredContainers,
 		SkipWebhookIssuerCreation: skipWebhookIssuerCreation,
 		Psp:                       psp,
 		ImagePrefix:               imagePrefix,
@@ -253,8 +250,8 @@ func init() {
 	installCmd.Flags().StringVar(&autoScalerImage, "autoscaler-image", "keyval/odigos-autoscaler", "autoscaler container image name")
 	installCmd.Flags().StringVar(&imagePrefix, "image-prefix", "", "prefix for all container images. used when your cluster doesn't have access to docker hub")
 	installCmd.Flags().BoolVar(&psp, "psp", false, "enable pod security policy")
-	installCmd.Flags().StringSliceVar(&userInputIgnoredNamespaces, "ignore-namespace", consts.DefaultIgnoredNamespaces, "namespaces not to show in odigos ui")
-	installCmd.Flags().StringSliceVar(&userInputIgnoredContainers, "ignore-container", consts.IgnoredContainers, "container names to exclude from instrumentation (useful for sidecar container)")
+	installCmd.Flags().StringSliceVar(&userInputIgnoredNamespaces, "ignore-namespace", k8sconsts.DefaultIgnoredNamespaces, "namespaces not to show in odigos ui")
+	installCmd.Flags().StringSliceVar(&userInputIgnoredContainers, "ignore-container", k8sconsts.DefaultIgnoredContainers, "container names to exclude from instrumentation (useful for sidecar container)")
 	installCmd.Flags().StringSliceVar(&userInputInstallProfiles, "profile", []string{}, "install preset profiles with a specific configuration")
 
 	if OdigosVersion != "" {

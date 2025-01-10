@@ -41,8 +41,3 @@ const (
 var (
 	ErrorPodsNotFound = errors.New("could not find a ready pod")
 )
-
-var (
-	DefaultIgnoredNamespaces = []string{"kube-system", "local-path-storage", "istio-system", "linkerd", "kube-node-lease"}
-	IgnoredContainers        = []string{"istio-proxy", "vault-agent", "filebeat", "linkerd-proxy", "fluentd", "akeyless-init"}
-)
