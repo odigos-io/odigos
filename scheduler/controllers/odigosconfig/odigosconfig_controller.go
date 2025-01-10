@@ -6,6 +6,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"github.com/odigos-io/odigos/k8sutils/pkg/profiles"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -26,6 +27,8 @@ func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) 
 	if err != nil {
 		return ctrl.Result{}, err
 	}
+
+	applyProfilesToOdigosConfig(odigosConfig)
 
 	err = r.persistEffectiveConfig(ctx, odigosConfig)
 	if err != nil {
@@ -93,4 +96,25 @@ func (r *odigosConfigController) persistEffectiveConfig(ctx context.Context, eff
 	logger.Info("Successfully persisted effective configuration")
 
 	return nil
+}
+
+func applySingleProfile(profile common.ProfileName, odigosConfig *common.OdigosConfiguration) {
+	profileConfig, found := profiles.ProfilesMap[profile]
+	if !found {
+		return
+	}
+
+	if profileConfig.ModifyConfigFunc != nil {
+		profileConfig.ModifyConfigFunc(odigosConfig)
+	}
+
+	for _, dependency := range profileConfig.Dependencies {
+		applySingleProfile(dependency, odigosConfig)
+	}
+}
+
+func applyProfilesToOdigosConfig(odigosConfig *common.OdigosConfiguration) {
+	for _, profile := range odigosConfig.Profiles {
+		applySingleProfile(profile, odigosConfig)
+	}
 }
