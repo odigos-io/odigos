@@ -65,7 +65,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("startlangdetection-configmaps").
 		For(&corev1.ConfigMap{}).
-		WithEventFilter(predicate.And(odigospredicate.OdigosConfigMapPredicate, odigospredicate.ConfigMapDataChangedPredicate{})).
+		WithEventFilter(predicate.And(odigospredicate.OdigosEffectiveConfigMapPredicate, odigospredicate.ConfigMapDataChangedPredicate{})).
 		Complete(&OdigosConfigReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),

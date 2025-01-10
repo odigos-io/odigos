@@ -71,7 +71,7 @@ func NewOdigletRole(ns string) *rbacv1.Role {
 			{ // Needed to read the odigos_config for ignored containers
 				APIGroups:     []string{""},
 				Resources:     []string{"configmaps"},
-				ResourceNames: []string{consts.OdigosConfigurationName},
+				ResourceNames: []string{consts.OdigosEffectiveConfigName},
 				Verbs:         []string{"get", "list", "watch"},
 			},
 		},
