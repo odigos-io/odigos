@@ -286,10 +286,7 @@ func GetSourceCRD(ctx context.Context, nsName string, workloadName string, workl
 		return nil, fmt.Errorf(`expected to get 1 source "%s", got %d`, workloadName, len(list.Items))
 	}
 
-	crdName := list.Items[0].Name
-	crd, err := kube.DefaultClient.OdigosClient.Sources(nsName).Get(ctx, crdName, metav1.GetOptions{})
-
-	return crd, err
+	return &list.Items[0], err
 }
 
 func createSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) error {
