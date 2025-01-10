@@ -382,6 +382,17 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 		procs := append(commonProcessors, tracesProcessors...)
 		// Special handling for traces: remove wrong container.id and add more k8s attributes
 		procs = append(procs, "resource/remove-container-id", "k8sattributes")
+
+		// Move odigostrafficmetrics processor to the end of the pipeline
+		// to ensure that the metrics are calculated after the k8s attributes are added
+		for i, p := range procs {
+			if p == "odigostrafficmetrics" {
+				procs = append(procs[:i], procs[i+1:]...)
+				procs = append(procs, "odigostrafficmetrics")
+				break
+			}
+		}
+
 		cfg.Service.Pipelines["traces"] = config.Pipeline{
 			Receivers:  []string{"otlp"},
 			Processors: procs,
