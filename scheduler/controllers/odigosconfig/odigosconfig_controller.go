@@ -98,15 +98,23 @@ func (r *odigosConfigController) persistEffectiveConfig(ctx context.Context, eff
 	return nil
 }
 
+func applySingleProfile(profile common.ProfileName, odigosConfig *common.OdigosConfiguration) {
+	profileConfig, found := profiles.ProfilesMap[profile]
+	if !found {
+		return
+	}
+
+	if profileConfig.ModifyConfigFunc != nil {
+		profileConfig.ModifyConfigFunc(odigosConfig)
+	}
+
+	for _, dependency := range profileConfig.Dependencies {
+		applySingleProfile(dependency, odigosConfig)
+	}
+}
+
 func applyProfilesToOdigosConfig(odigosConfig *common.OdigosConfiguration) {
 	for _, profile := range odigosConfig.Profiles {
-		profileConfig, found := profiles.ProfilesMap[profile]
-		if !found {
-			// TODO: log error here? write a status condition?
-			continue
-		}
-		if profileConfig.ModifyConfigFunc != nil {
-			profileConfig.ModifyConfigFunc(odigosConfig)
-		}
+		applySingleProfile(profile, odigosConfig)
 	}
 }
