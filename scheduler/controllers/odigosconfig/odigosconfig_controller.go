@@ -27,6 +27,10 @@ func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) 
 		return ctrl.Result{}, err
 	}
 
+	// make sure the default ignored namespaces are always present
+	odigosConfig.IgnoredNamespaces = mergeIgnoredItemLists(odigosConfig.IgnoredNamespaces, consts.DefaultIgnoredNamespaces)
+	odigosConfig.IgnoredNamespaces = append(odigosConfig.IgnoredNamespaces, env.GetCurrentNamespace())
+
 	err = r.persistEffectiveConfig(ctx, odigosConfig)
 	if err != nil {
 		return ctrl.Result{}, err

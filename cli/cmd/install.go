@@ -205,7 +205,6 @@ func validateUserInputProfiles(tier common.OdigosTier) {
 }
 
 func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration {
-	fullIgnoredNamespaces := utils.MergeDefaultIgnoreWithUserInput(userInputIgnoredNamespaces, consts.SystemNamespaces)
 	fullIgnoredContainers := utils.MergeDefaultIgnoreWithUserInput(userInputIgnoredContainers, consts.IgnoredContainers)
 
 	selectedProfiles := []common.ProfileName{}
@@ -218,7 +217,7 @@ func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 		ConfigVersion:             1, // config version starts at 1 and incremented on every config change
 		TelemetryEnabled:          telemetryEnabled,
 		OpenshiftEnabled:          openshiftEnabled,
-		IgnoredNamespaces:         fullIgnoredNamespaces,
+		IgnoredNamespaces:         userInputIgnoredNamespaces,
 		IgnoredContainers:         fullIgnoredContainers,
 		SkipWebhookIssuerCreation: skipWebhookIssuerCreation,
 		Psp:                       psp,
@@ -254,7 +253,7 @@ func init() {
 	installCmd.Flags().StringVar(&autoScalerImage, "autoscaler-image", "keyval/odigos-autoscaler", "autoscaler container image name")
 	installCmd.Flags().StringVar(&imagePrefix, "image-prefix", "", "prefix for all container images. used when your cluster doesn't have access to docker hub")
 	installCmd.Flags().BoolVar(&psp, "psp", false, "enable pod security policy")
-	installCmd.Flags().StringSliceVar(&userInputIgnoredNamespaces, "ignore-namespace", consts.SystemNamespaces, "namespaces not to show in odigos ui")
+	installCmd.Flags().StringSliceVar(&userInputIgnoredNamespaces, "ignore-namespace", consts.DefaultIgnoredNamespaces, "namespaces not to show in odigos ui")
 	installCmd.Flags().StringSliceVar(&userInputIgnoredContainers, "ignore-container", consts.IgnoredContainers, "container names to exclude from instrumentation (useful for sidecar container)")
 	installCmd.Flags().StringSliceVar(&userInputInstallProfiles, "profile", []string{}, "install preset profiles with a specific configuration")
 

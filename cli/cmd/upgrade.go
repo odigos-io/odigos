@@ -12,8 +12,6 @@ import (
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/confirm"
-	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/common/utils"
 	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -106,9 +104,6 @@ and apply any required migrations and adaptations.`,
 
 		// update the config on upgrade
 		config.ConfigVersion += 1
-
-		// make sure the current system namespaces is in the ignored in config
-		config.IgnoredNamespaces = utils.MergeDefaultIgnoreWithUserInput(config.IgnoredNamespaces, consts.SystemNamespaces)
 
 		currentTier, err := odigospro.GetCurrentOdigosTier(ctx, client, ns)
 		if err != nil {
