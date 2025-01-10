@@ -92,10 +92,6 @@ spec:
       port: 3000
       protocol: TCP
       targetPort: 3000
-    - name: legacy-ui
-      port: 3001
-      protocol: TCP
-      targetPort: 3001
     - name: otlp
       port: 4317
       protocol: TCP
