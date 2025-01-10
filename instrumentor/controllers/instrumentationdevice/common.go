@@ -12,7 +12,6 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
 	odigosk8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	k8sprofiles "github.com/odigos-io/odigos/k8sutils/pkg/profiles"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
@@ -126,8 +125,8 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 			return err
 		}
 
-		// User input <odigosConfiguration.AllowConcurrentAgents> prefered over the profile configuration
-		agentsCanRunConcurrently := k8sprofiles.AgentsCanRunConcurrently(odigosConfiguration.Profiles)
+		// allowConcurrentAgents is false by default unless explicitly set to true in the OdigosConfiguration
+		agentsCanRunConcurrently := false
 		if odigosConfiguration.AllowConcurrentAgents != nil {
 			agentsCanRunConcurrently = *odigosConfiguration.AllowConcurrentAgents
 		}
