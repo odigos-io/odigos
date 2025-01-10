@@ -2,6 +2,11 @@ package consts
 
 import "k8s.io/apimachinery/pkg/util/version"
 
+var (
+	DefaultIgnoredNamespaces = []string{"kube-system", "local-path-storage", "istio-system", "linkerd", "kube-node-lease"}
+	DefaultIgnoredContainers = []string{"istio-proxy", "vault-agent", "filebeat", "linkerd-proxy", "fluentd", "akeyless-init"}
+)
+
 type CollectorRole string
 
 const (
