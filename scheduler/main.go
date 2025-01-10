@@ -44,6 +44,7 @@ import (
 
 	"github.com/odigos-io/odigos/scheduler/controllers/clustercollectorsgroup"
 	"github.com/odigos-io/odigos/scheduler/controllers/nodecollectorsgroup"
+	"github.com/odigos-io/odigos/scheduler/controllers/odigosconfig"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -119,6 +120,11 @@ func main() {
 	err = nodecollectorsgroup.SetupWithManager(mgr)
 	if err != nil {
 		setupLog.Error(err, "unable to create controllers for node collectors group")
+		os.Exit(1)
+	}
+	err = odigosconfig.SetupWithManager(mgr)
+	if err != nil {
+		setupLog.Error(err, "unable to create controllers for odigos config")
 		os.Exit(1)
 	}
 
