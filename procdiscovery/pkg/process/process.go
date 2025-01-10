@@ -33,7 +33,7 @@ var OtherAgentCmdSubString = map[string]string{
 
 type Details struct {
 	ProcessID    int
-	ExeName      string
+	ExePath      string
 	CmdLine      string
 	Environments ProcessEnvs
 }
@@ -91,13 +91,13 @@ func FindAllProcesses(predicate func(string) bool) ([]Details, error) {
 }
 
 func GetPidDetails(pid int) Details {
-	exeName := getExecName(pid)
+	exePath := getExePath(pid)
 	cmdLine := getCommandLine(pid)
 	envVars := getRelevantEnvVars(pid)
 
 	return Details{
 		ProcessID:    pid,
-		ExeName:      exeName,
+		ExePath:      exePath,
 		CmdLine:      cmdLine,
 		Environments: envVars,
 	}
@@ -108,14 +108,14 @@ func GetPidDetails(pid int) Details {
 // file that was used to start the process.
 // For instance, if a process was started from /usr/bin/python,
 // the exe symbolic link in that process's /proc directory will point to /usr/bin/python.
-func getExecName(pid int) string {
+func getExePath(pid int) string {
 	exeFileName := fmt.Sprintf("/proc/%d/exe", pid)
-	exeName, err := os.Readlink(exeFileName)
+	exePath, err := os.Readlink(exeFileName)
 	if err != nil {
 		// Read link may fail if target process runs not as root
 		return ""
 	}
-	return exeName
+	return exePath
 }
 
 // reads the command line arguments of a Linux process from

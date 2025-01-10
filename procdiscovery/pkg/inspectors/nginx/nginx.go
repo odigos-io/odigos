@@ -1,10 +1,11 @@
 package nginx
 
 import (
-	"github.com/hashicorp/go-version"
 	"net/http"
 	"regexp"
 	"strings"
+
+	"github.com/hashicorp/go-version"
 
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
@@ -22,7 +23,7 @@ const (
 var re = regexp.MustCompile(NginxVersionRegex)
 
 func (j *NginxInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
-	if strings.Contains(p.CmdLine, NginxProcessName) || strings.Contains(p.ExeName, NginxProcessName) {
+	if strings.Contains(p.CmdLine, NginxProcessName) || strings.Contains(p.ExePath, NginxProcessName) {
 		return common.NginxProgrammingLanguage, true
 	}
 
