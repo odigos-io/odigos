@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import { FlexRow } from '@/styles';
 import styled from 'styled-components';
-import { useDescribeOdigos } from '@/hooks';
-import { DATA_CARDS, getStatusIcon, safeJsonStringify } from '@/utils';
-import OverviewDrawer from '@/containers/main/overview/overview-drawer';
-import { CodeBracketsIcon, CodeIcon, CopyIcon, EditIcon, KeyIcon, ListIcon, TrashIcon } from '@/assets';
-import { DataCard, DataCardFieldTypes, Divider, IconButton, Segment } from '@/reuseable-components';
-import { useApiTokens } from '@/hooks/compute-platform/useApiTokens';
 import { NOTIFICATION_TYPE } from '@/types';
 import { useNotificationStore } from '@/store';
+import { useApiTokens, useCopy, useDescribeOdigos } from '@/hooks';
+import { DATA_CARDS, getStatusIcon, safeJsonStringify } from '@/utils';
+import OverviewDrawer from '@/containers/main/overview/overview-drawer';
+import { DataCard, DataCardFieldTypes, Divider, IconButton, Segment } from '@/reuseable-components';
+import { CodeBracketsIcon, CodeIcon, CopyIcon, EditIcon, KeyIcon, ListIcon, TrashIcon } from '@/assets';
 
 interface Props {}
 
@@ -20,20 +19,13 @@ const DataContainer = styled.div`
 
 export const CliDrawer: React.FC<Props> = () => {
   const { data: tokens } = useApiTokens();
+  const { isCopied, copiedIndex, clickCopy } = useCopy();
   const { data: describe, restructureForPrettyMode } = useDescribeOdigos();
-  const { addNotification } = useNotificationStore(); // temporary until we have edit & delete for tokens
 
-  const [isTokenCopied, setIsTokenCopied] = useState(false);
   const [isPrettyMode, setIsPrettyMode] = useState(true);
 
-  const clickCopyToken = (str: string) => {
-    if (!isTokenCopied) {
-      setIsTokenCopied(true);
-      navigator.clipboard.writeText(str);
-
-      setTimeout(() => setIsTokenCopied(false), 1000);
-    }
-  };
+  // temporary until we have edit & delete for tokens
+  const { addNotification } = useNotificationStore();
 
   return (
     <OverviewDrawer title='Odigos CLI' icon={CodeBracketsIcon}>
@@ -54,7 +46,7 @@ export const CliDrawer: React.FC<Props> = () => {
                     { key: 'token', title: 'Token' },
                     { key: 'actions', title: '' },
                   ],
-                  rows: tokens.map(({ token, aud, iat, exp }) => [
+                  rows: tokens.map(({ token, aud, iat, exp }, idx) => [
                     { columnKey: 'icon', icon: KeyIcon },
                     { columnKey: 'name', value: aud },
                     { columnKey: 'created_at', value: new Date(iat).toLocaleDateString('en-US') },
@@ -64,8 +56,8 @@ export const CliDrawer: React.FC<Props> = () => {
                       columnKey: 'actions',
                       component: () => (
                         <FlexRow $gap={0}>
-                          <IconButton size={32} onClick={() => clickCopyToken(token)}>
-                            {isTokenCopied ? getStatusIcon(NOTIFICATION_TYPE.SUCCESS)({}) : <CopyIcon />}
+                          <IconButton size={32} onClick={() => clickCopy(token, idx)}>
+                            {isCopied && copiedIndex === idx ? getStatusIcon(NOTIFICATION_TYPE.SUCCESS)({}) : <CopyIcon />}
                           </IconButton>
 
                           <Divider orientation='vertical' length='12px' />
