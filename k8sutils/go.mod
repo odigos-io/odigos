@@ -7,7 +7,7 @@ require (
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/tj/assert v0.0.3
 	k8s.io/api v0.31.0
-	k8s.io/apimachinery v0.32.0
+	k8s.io/apimachinery v0.31.0
 	k8s.io/client-go v0.31.0
 	sigs.k8s.io/yaml v1.4.0
 )

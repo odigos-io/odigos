@@ -5,7 +5,7 @@ go 1.23.0
 require (
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
-	k8s.io/apimachinery v0.32.0
+	k8s.io/apimachinery v0.31.0
 )
 
 require (
