@@ -38,6 +38,10 @@ func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) 
 
 	applyProfilesToOdigosConfig(odigosConfig)
 
+	// if none of the profiles set sizing for collectors, use size_s as default, so the values are never nil
+	// if the values were already set (by user or profile) this is a no-op
+	profiles.SizeSProfile.ModifyConfigFunc(odigosConfig)
+
 	err = r.persistEffectiveConfig(ctx, odigosConfig)
 	if err != nil {
 		return ctrl.Result{}, err
