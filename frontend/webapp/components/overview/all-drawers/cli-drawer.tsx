@@ -2,12 +2,11 @@ import React, { useState } from 'react';
 import { FlexRow } from '@/styles';
 import styled from 'styled-components';
 import { NOTIFICATION_TYPE } from '@/types';
-import { useNotificationStore } from '@/store';
-import { useApiTokens, useCopy, useDescribeOdigos } from '@/hooks';
 import { DATA_CARDS, getStatusIcon, safeJsonStringify } from '@/utils';
 import OverviewDrawer from '@/containers/main/overview/overview-drawer';
-import { DataCard, DataCardFieldTypes, Divider, IconButton, Segment } from '@/reuseable-components';
-import { CodeBracketsIcon, CodeIcon, CopyIcon, EditIcon, KeyIcon, ListIcon, TrashIcon } from '@/assets';
+import { useApiTokens, useCopy, useDescribeOdigos, useTimeAgo } from '@/hooks';
+import { CodeBracketsIcon, CodeIcon, CopyIcon, KeyIcon, ListIcon } from '@/assets';
+import { DataCard, DataCardFieldTypes, IconButton, Segment } from '@/reuseable-components';
 
 interface Props {}
 
@@ -18,14 +17,12 @@ const DataContainer = styled.div`
 `;
 
 export const CliDrawer: React.FC<Props> = () => {
+  const timeAgo = useTimeAgo();
   const { data: tokens } = useApiTokens();
   const { isCopied, copiedIndex, clickCopy } = useCopy();
   const { data: describe, restructureForPrettyMode } = useDescribeOdigos();
 
   const [isPrettyMode, setIsPrettyMode] = useState(true);
-
-  // temporary until we have edit & delete for tokens
-  const { addNotification } = useNotificationStore();
 
   return (
     <OverviewDrawer title='Odigos CLI' icon={CodeBracketsIcon}>
@@ -41,7 +38,6 @@ export const CliDrawer: React.FC<Props> = () => {
                   columns: [
                     { key: 'icon', title: '' },
                     { key: 'name', title: 'Name' },
-                    { key: 'created_at', title: 'Created' },
                     { key: 'expires_at', title: 'Expires' },
                     { key: 'token', title: 'Token' },
                     { key: 'actions', title: '' },
@@ -49,8 +45,7 @@ export const CliDrawer: React.FC<Props> = () => {
                   rows: tokens.map(({ token, aud, iat, exp }, idx) => [
                     { columnKey: 'icon', icon: KeyIcon },
                     { columnKey: 'name', value: aud },
-                    { columnKey: 'created_at', value: new Date(iat).toLocaleDateString('en-US') },
-                    { columnKey: 'expires_at', value: new Date(exp).toLocaleDateString('en-US') },
+                    { columnKey: 'expires_at', value: `${timeAgo.format(exp)} (${new Date(exp).toDateString().split(' ').slice(1).join(' ')})` },
                     { columnKey: 'token', value: `${new Array(15).fill('•').join('')}` },
                     {
                       columnKey: 'actions',
@@ -60,17 +55,17 @@ export const CliDrawer: React.FC<Props> = () => {
                             {isCopied && copiedIndex === idx ? getStatusIcon(NOTIFICATION_TYPE.SUCCESS)({}) : <CopyIcon />}
                           </IconButton>
 
-                          <Divider orientation='vertical' length='12px' />
+                          {/* <Divider orientation='vertical' length='12px' />
 
-                          <IconButton size={32} onClick={() => addNotification({ type: NOTIFICATION_TYPE.WARNING, message: 'Coming soon!' })}>
+                          <IconButton size={32} onClick={() => {}}>
                             <EditIcon />
-                          </IconButton>
+                          </IconButton> */}
 
-                          <Divider orientation='vertical' length='12px' />
+                          {/* <Divider orientation='vertical' length='12px' />
 
-                          <IconButton size={32} onClick={() => addNotification({ type: NOTIFICATION_TYPE.WARNING, message: 'Coming soon!' })}>
+                          <IconButton size={32} onClick={() => {}}>
                             <TrashIcon />
-                          </IconButton>
+                          </IconButton> */}
                         </FlexRow>
                       ),
                     },
