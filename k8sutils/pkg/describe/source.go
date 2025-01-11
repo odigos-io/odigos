@@ -133,7 +133,8 @@ func DescribeSourceToText(analyze *source.SourceAnalyze) string {
 	return sb.String()
 }
 
-func DescribeSource(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, workloadObj *source.K8sSourceObject) (*source.SourceAnalyze, error) {
+func DescribeSource(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface,
+	workloadObj *source.K8sSourceObject) (*source.SourceAnalyze, error) {
 	resources, err := source.GetRelevantSourceResources(ctx, kubeClient, odigosClient, workloadObj)
 	if err != nil {
 		return nil, err
@@ -142,7 +143,8 @@ func DescribeSource(ctx context.Context, kubeClient kubernetes.Interface, odigos
 	return analyze, nil
 }
 
-func DescribeDeployment(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, ns string, name string) (*source.SourceAnalyze, error) {
+func DescribeDeployment(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface,
+	ns string, name string) (*source.SourceAnalyze, error) {
 	deployment, err := kubeClient.AppsV1().Deployments(ns).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
@@ -156,7 +158,8 @@ func DescribeDeployment(ctx context.Context, kubeClient kubernetes.Interface, od
 	return DescribeSource(ctx, kubeClient, odigosClient, workloadObj)
 }
 
-func DescribeDaemonSet(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, ns string, name string) (*source.SourceAnalyze, error) {
+func DescribeDaemonSet(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface,
+	ns string, name string) (*source.SourceAnalyze, error) {
 	ds, err := kubeClient.AppsV1().DaemonSets(ns).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
@@ -170,7 +173,8 @@ func DescribeDaemonSet(ctx context.Context, kubeClient kubernetes.Interface, odi
 	return DescribeSource(ctx, kubeClient, odigosClient, workloadObj)
 }
 
-func DescribeStatefulSet(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, ns string, name string) (*source.SourceAnalyze, error) {
+func DescribeStatefulSet(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface,
+	ns string, name string) (*source.SourceAnalyze, error) {
 	ss, err := kubeClient.AppsV1().StatefulSets(ns).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err

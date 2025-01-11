@@ -15,7 +15,8 @@ var (
 )
 
 func LanguageSdkFromPodContainer(pod *v1.Pod, containerName string) (common.ProgrammingLanguage, common.OtelSdk, error) {
-	for _, container := range pod.Spec.Containers {
+	for i := range pod.Spec.Containers {
+		container := pod.Spec.Containers[i]
 		if container.Name == containerName {
 			language, sdk, found := GetLanguageAndOtelSdk(&container)
 			if !found {
@@ -67,7 +68,8 @@ func AllContainersReady(pod *v1.Pod) bool {
 	// Return false if any container is:
 	// 1. Not Ready
 	// 2. Started is nil or false
-	for _, containerStatus := range pod.Status.ContainerStatuses {
+	for i := range pod.Status.ContainerStatuses {
+		containerStatus := &pod.Status.ContainerStatuses[i]
 		if !containerStatus.Ready || containerStatus.Started == nil || !*containerStatus.Started {
 			return false
 		}

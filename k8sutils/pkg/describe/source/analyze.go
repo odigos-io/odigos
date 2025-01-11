@@ -91,12 +91,14 @@ func analyzeInstrumentationLabels(resource *OdigosSourceResources, workloadObj *
 	workloadLabel, workloadFound := workloadObj.GetLabels()[consts.OdigosInstrumentationLabel]
 	nsLabel, nsFound := resource.Namespace.GetLabels()[consts.OdigosInstrumentationLabel]
 
-	workload := &properties.EntityProperty{Name: "Workload", Value: "unset", Explain: "the value of the odigos-instrumentation label on the workload object in k8s"}
+	workload := &properties.EntityProperty{Name: "Workload", Value: "unset",
+		Explain: "the value of the odigos-instrumentation label on the workload object in k8s"}
 	if workloadFound {
 		workload.Value = fmt.Sprintf("%s=%s", consts.OdigosInstrumentationLabel, workloadLabel)
 	}
 
-	ns := &properties.EntityProperty{Name: "Namespace", Value: "unset", Explain: "the value of the odigos-instrumentation label on the namespace object in k8s"}
+	ns := &properties.EntityProperty{Name: "Namespace", Value: "unset",
+		Explain: "the value of the odigos-instrumentation label on the namespace object in k8s"}
 	if nsFound {
 		ns.Value = fmt.Sprintf("%s=%s", consts.OdigosInstrumentationLabel, nsLabel)
 	}
@@ -107,19 +109,24 @@ func analyzeInstrumentationLabels(resource *OdigosSourceResources, workloadObj *
 	if workloadFound {
 		instrumented = workloadLabel == consts.InstrumentationEnabled
 		if instrumented {
-			decisionText = "Workload is instrumented because the " + workloadObj.Kind + " contains the label '" + consts.OdigosInstrumentationLabel + "=" + workloadLabel + "'"
+			decisionText = "Workload is instrumented because the " + workloadObj.Kind + " contains the label '" +
+				consts.OdigosInstrumentationLabel + "=" + workloadLabel + "'"
 		} else {
-			decisionText = "Workload is NOT instrumented because the " + workloadObj.Kind + " contains the label '" + consts.OdigosInstrumentationLabel + "=" + workloadLabel + "'"
+			decisionText = "Workload is NOT instrumented because the " + workloadObj.Kind + " contains the label '" +
+				consts.OdigosInstrumentationLabel + "=" + workloadLabel + "'"
 		}
 	} else {
 		instrumented = nsLabel == consts.InstrumentationEnabled
 		if instrumented {
-			decisionText = "Workload is instrumented because the " + workloadObj.Kind + " is not labeled, and the namespace is labeled with '" + consts.OdigosInstrumentationLabel + "=" + nsLabel + "'"
+			decisionText = "Workload is instrumented because the " + workloadObj.Kind +
+				" is not labeled, and the namespace is labeled with '" + consts.OdigosInstrumentationLabel + "=" + nsLabel + "'"
 		} else {
 			if nsFound {
-				decisionText = "Workload is NOT instrumented because the " + workloadObj.Kind + " is not labeled, and the namespace is labeled with '" + consts.OdigosInstrumentationLabel + "=" + nsLabel + "'"
+				decisionText = "Workload is NOT instrumented because the " + workloadObj.Kind +
+					" is not labeled, and the namespace is labeled with '" + consts.OdigosInstrumentationLabel + "=" + nsLabel + "'"
 			} else {
-				decisionText = "Workload is NOT instrumented because neither the workload nor the namespace has the '" + consts.OdigosInstrumentationLabel + "' label set"
+				decisionText = "Workload is NOT instrumented because neither the workload nor the namespace has the '" +
+					consts.OdigosInstrumentationLabel + "' label set"
 			}
 		}
 	}
@@ -147,10 +154,11 @@ func analyzeInstrumentationConfig(resources *OdigosSourceResources, instrumented
 	instrumentationConfigCreated := resources.InstrumentationConfig != nil
 
 	created := properties.EntityProperty{
-		Name:    "Created",
-		Value:   properties.GetTextCreated(instrumentationConfigCreated),
-		Status:  properties.GetSuccessOrTransitioning(instrumentationConfigCreated == instrumented),
-		Explain: "whether the instrumentation config object exists in the cluster. When a workload is labeled for instrumentation, an instrumentation config object is created",
+		Name:   "Created",
+		Value:  properties.GetTextCreated(instrumentationConfigCreated),
+		Status: properties.GetSuccessOrTransitioning(instrumentationConfigCreated == instrumented),
+		Explain: "whether the instrumentation config object exists in the cluster. When a workload is labeled for instrumentation," +
+			" an instrumentation config object is created",
 	}
 
 	var createdTime *properties.EntityProperty
@@ -465,7 +473,8 @@ func analyzePods(resources *OdigosSourceResources, expectedDevices Instrumentati
 
 			// find the instrumentation instances for this pod
 			thisPodInstrumentationInstances := make([]InstrumentationInstanceAnalyze, 0)
-			for _, instance := range resources.InstrumentationInstances.Items {
+			for i := range resources.InstrumentationInstances.Items {
+				instance := resources.InstrumentationInstances.Items[i]
 				if len(instance.OwnerReferences) != 1 || instance.OwnerReferences[0].Kind != "Pod" {
 					continue
 				}
@@ -511,10 +520,13 @@ func AnalyzeSource(resources *OdigosSourceResources, workloadObj *K8sSourceObjec
 	pods, podsText := analyzePods(resources, device)
 
 	return &SourceAnalyze{
-		Name:      properties.EntityProperty{Name: "Name", Value: workloadObj.GetName(), Explain: "the name of the k8s workload object that this source describes"},
-		Kind:      properties.EntityProperty{Name: "Kind", Value: workloadObj.Kind, Explain: "the kind of the k8s workload object that this source describes (deployment/daemonset/statefulset)"},
-		Namespace: properties.EntityProperty{Name: "Namespace", Value: workloadObj.GetNamespace(), Explain: "the namespace of the k8s workload object that this source describes"},
-		Labels:    labelsAnalysis,
+		Name: properties.EntityProperty{Name: "Name", Value: workloadObj.GetName(),
+			Explain: "the name of the k8s workload object that this source describes"},
+		Kind: properties.EntityProperty{Name: "Kind", Value: workloadObj.Kind,
+			Explain: "the kind of the k8s workload object that this source describes (deployment/daemonset/statefulset)"},
+		Namespace: properties.EntityProperty{Name: "Namespace", Value: workloadObj.GetNamespace(),
+			Explain: "the namespace of the k8s workload object that this source describes"},
+		Labels: labelsAnalysis,
 
 		RuntimeInfo:           runtimeAnalysis,
 		InstrumentationConfig: icAnalysis,

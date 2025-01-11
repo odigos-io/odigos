@@ -22,7 +22,8 @@ type OdigosSourceResources struct {
 	Pods                     *corev1.PodList
 }
 
-func GetRelevantSourceResources(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, workloadObj *K8sSourceObject) (*OdigosSourceResources, error) {
+func GetRelevantSourceResources(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface,
+	workloadObj *K8sSourceObject) (*OdigosSourceResources, error) {
 	sourceResources := OdigosSourceResources{}
 
 	workloadNs := workloadObj.GetNamespace()

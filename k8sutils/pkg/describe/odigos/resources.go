@@ -33,7 +33,8 @@ type OdigosResources struct {
 	InstrumentationConfigs *odigosv1.InstrumentationConfigList
 }
 
-func getClusterCollectorResources(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, odigosNs string) (*ClusterCollectorResources, error) {
+func getClusterCollectorResources(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface,
+	odigosNs string) (*ClusterCollectorResources, error) {
 	clusterCollector := ClusterCollectorResources{}
 
 	cg, err := odigosClient.CollectorsGroups(odigosNs).Get(ctx, k8sconsts.OdigosClusterCollectorCollectorGroupName, metav1.GetOptions{})
@@ -90,7 +91,8 @@ func getClusterCollectorResources(ctx context.Context, kubeClient kubernetes.Int
 	return &clusterCollector, nil
 }
 
-func getNodeCollectorResources(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, odigosNs string) (*NodeCollectorResources, error) {
+func getNodeCollectorResources(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface,
+	odigosNs string) (*NodeCollectorResources, error) {
 	nodeCollector := NodeCollectorResources{}
 
 	cg, err := odigosClient.CollectorsGroups(odigosNs).Get(ctx, k8sconsts.OdigosNodeCollectorCollectorGroupName, metav1.GetOptions{})
@@ -110,7 +112,8 @@ func getNodeCollectorResources(ctx context.Context, kubeClient kubernetes.Interf
 	return &nodeCollector, nil
 }
 
-func GetRelevantOdigosResources(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, odigosNs string) (*OdigosResources, error) {
+func GetRelevantOdigosResources(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface,
+	odigosNs string) (*OdigosResources, error) {
 	odigos := OdigosResources{}
 
 	odigosDeployment, err := kubeClient.CoreV1().ConfigMaps(odigosNs).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})

@@ -140,19 +140,24 @@ func GetInstrumentationLabelTexts(workloadLabels map[string]string, workloadKind
 	if workloadFound {
 		sourceInstrumented = workloadLabel == consts.InstrumentationEnabled
 		if sourceInstrumented {
-			decisionText = "Workload is instrumented because the " + workloadKind + " contains the label '" + consts.OdigosInstrumentationLabel + "=" + workloadLabel + "'"
+			decisionText = "Workload is instrumented because the " + workloadKind + " contains the label '" +
+				consts.OdigosInstrumentationLabel + "=" + workloadLabel + "'"
 		} else {
-			decisionText = "Workload is NOT instrumented because the " + workloadKind + " contains the label '" + consts.OdigosInstrumentationLabel + "=" + workloadLabel + "'"
+			decisionText = "Workload is NOT instrumented because the " + workloadKind + " contains the label '" +
+				consts.OdigosInstrumentationLabel + "=" + workloadLabel + "'"
 		}
 	} else {
 		sourceInstrumented = nsLabel == consts.InstrumentationEnabled
 		if sourceInstrumented {
-			decisionText = "Workload is instrumented because the " + workloadKind + " is not labeled, and the namespace is labeled with '" + consts.OdigosInstrumentationLabel + "=" + nsLabel + "'"
+			decisionText = "Workload is instrumented because the " + workloadKind + " is not labeled, and the namespace is labeled with '" +
+				consts.OdigosInstrumentationLabel + "=" + nsLabel + "'"
 		} else {
 			if nsFound {
-				decisionText = "Workload is NOT instrumented because the " + workloadKind + " is not labeled, and the namespace is labeled with '" + consts.OdigosInstrumentationLabel + "=" + nsLabel + "'"
+				decisionText = "Workload is NOT instrumented because the " + workloadKind + " is not labeled, and the namespace is labeled with '" +
+					consts.OdigosInstrumentationLabel + "=" + nsLabel + "'"
 			} else {
-				decisionText = "Workload is NOT instrumented because neither the workload nor the namespace has the '" + consts.OdigosInstrumentationLabel + "' label set"
+				decisionText = "Workload is NOT instrumented because neither the workload nor the namespace has the '" + consts.OdigosInstrumentationLabel +
+					"' label set"
 			}
 		}
 	}
