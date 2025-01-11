@@ -400,19 +400,23 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 										},
 									},
 								},
+								{
+									Name: "ODIGOS_TIER",
+									ValueFrom: &corev1.EnvVarSource{
+										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: k8sutilsconsts.OdigosDeploymentConfigMapName,
+											},
+											Key: "ODIGOS_TIER",
+										},
+									},
+								},
 							},
 							EnvFrom: []corev1.EnvFromSource{
 								{
 									ConfigMapRef: &corev1.ConfigMapEnvSource{
 										LocalObjectReference: corev1.LocalObjectReference{
 											Name: ownTelemetryOtelConfig,
-										},
-									},
-								},
-								{
-									ConfigMapRef: &corev1.ConfigMapEnvSource{
-										LocalObjectReference: corev1.LocalObjectReference{
-											Name: k8sutilsconsts.OdigosDeploymentConfigMapName,
 										},
 									},
 								},
