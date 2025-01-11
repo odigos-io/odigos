@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useMemo, type KeyboardEventHandler } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { isEmpty } from '@/utils';
 import theme from '@/styles/theme';
 import styled from 'styled-components';
 import { ArrowIcon, PlusIcon, TrashIcon } from '@/assets';
@@ -77,7 +78,7 @@ export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({ initialK
   }, []);
 
   // Filter out rows where either key or value is empty
-  const validRows = useMemo(() => rows.filter(({ key, value }) => !!key.trim() && !!value.trim()), [rows]);
+  const validRows = useMemo(() => rows.filter(({ key, value }) => !isEmpty(key.trim()) && !isEmpty(value.trim())), [rows]);
   const recordedRows = useRef(JSON.stringify(validRows));
 
   useEffect(() => {
@@ -112,8 +113,9 @@ export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({ initialK
   };
 
   // Check if any key or value field is empty
+  const isMinRows = rows.length <= 1;
   const isAddButtonDisabled = rows.some(({ key, value }) => key.trim() === '' || value.trim() === '');
-  const isDelButtonDisabled = rows.length <= 1;
+  const isDelButtonDisabled = isMinRows && isAddButtonDisabled;
 
   return (
     <Container>
@@ -127,7 +129,7 @@ export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({ initialK
               value={key}
               onChange={(e) => handleChange('key', e.target.value, idx)}
               hasError={!!errorMessage && (!required || (required && !key))}
-              autoFocus={!value && rows.length > 1 && idx === rows.length - 1}
+              autoFocus={isEmpty(value) && !isMinRows && idx === rows.length - 1}
             />
             <div>
               <ArrowIcon rotate={180} fill={theme.text.darker_grey} />
@@ -136,10 +138,20 @@ export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({ initialK
               placeholder='Attribute value'
               value={value}
               onChange={(e) => handleChange('value', e.target.value, idx)}
-              hasError={!!errorMessage && (!required || (required && !value))}
+              hasError={!!errorMessage && (!required || (required && isEmpty(value)))}
               autoFocus={false}
             />
-            <DeleteButton disabled={isDelButtonDisabled} onClick={() => handleDeleteRow(idx)}>
+            <DeleteButton
+              disabled={isDelButtonDisabled}
+              onClick={() => {
+                if (isMinRows) {
+                  handleChange('key', '', idx);
+                  handleChange('value', '', idx);
+                } else {
+                  handleDeleteRow(idx);
+                }
+              }}
+            >
               <TrashIcon />
             </DeleteButton>
           </RowWrapper>
