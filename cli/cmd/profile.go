@@ -9,7 +9,7 @@ import (
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/getters"
-	k8sprofiles "github.com/odigos-io/odigos/k8sutils/pkg/profiles"
+	k8sprofiles "github.com/odigos-io/odigos/profiles"
 	"github.com/spf13/cobra"
 )
 

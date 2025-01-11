@@ -9,16 +9,17 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	k8sprofiles "github.com/odigos-io/odigos/k8sutils/pkg/profiles"
+	commonprofiles "github.com/odigos-io/odigos/profiles"
 )
 
-func GetAvailableCommunityProfiles() []k8sprofiles.Profile {
-	return []k8sprofiles.Profile{k8sprofiles.SemconvUpgraderProfile, k8sprofiles.CopyScopeProfile, k8sprofiles.DisableNameProcessorProfile,
+func GetAvailableCommunityProfiles() []commonprofiles.Profile {
+	return []commonprofiles.Profile{k8sprofiles.SemconvUpgraderProfile, k8sprofiles.CopyScopeProfile, k8sprofiles.DisableNameProcessorProfile,
 		k8sprofiles.SizeSProfile, k8sprofiles.SizeMProfile,
 		k8sprofiles.SizeLProfile, k8sprofiles.AllowConcurrentAgents}
 }
 
-func GetAvailableOnPremProfiles() []k8sprofiles.Profile {
-	return append([]k8sprofiles.Profile{k8sprofiles.FullPayloadCollectionProfile, k8sprofiles.DbPayloadCollectionProfile, k8sprofiles.CategoryAttributesProfile,
+func GetAvailableOnPremProfiles() []commonprofiles.Profile {
+	return append([]commonprofiles.Profile{k8sprofiles.FullPayloadCollectionProfile, k8sprofiles.DbPayloadCollectionProfile, k8sprofiles.CategoryAttributesProfile,
 		k8sprofiles.HostnameAsPodNameProfile, k8sprofiles.JavaNativeInstrumentationsProfile, k8sprofiles.JavaEbpfInstrumentationsProfile, k8sprofiles.KratosProfile, k8sprofiles.QueryOperationDetector,
 		k8sprofiles.SmallBatchesProfile},
 		GetAvailableCommunityProfiles()...)
@@ -50,14 +51,14 @@ func GetResourcesForProfileName(profileName common.ProfileName, tier common.Odig
 	return nil, nil
 }
 
-func GetAvailableProfilesForTier(odigosTier common.OdigosTier) []k8sprofiles.Profile {
+func GetAvailableProfilesForTier(odigosTier common.OdigosTier) []commonprofiles.Profile {
 	switch odigosTier {
 	case common.CommunityOdigosTier:
 		return GetAvailableCommunityProfiles()
 	case common.OnPremOdigosTier:
 		return GetAvailableOnPremProfiles()
 	default:
-		return []k8sprofiles.Profile{}
+		return []commonprofiles.Profile{}
 	}
 }
 
