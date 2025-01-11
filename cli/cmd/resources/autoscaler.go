@@ -8,7 +8,8 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/containers"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
+	"github.com/odigos-io/odigos/common/consts"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -291,13 +292,13 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 									},
 								},
 								{
-									Name: "ODIGOS_VERSION",
+									Name: consts.OdigosVersionEnvVarName,
 									ValueFrom: &corev1.EnvVarSource{
 										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 											LocalObjectReference: corev1.LocalObjectReference{
-												Name: consts.OdigosDeploymentConfigMapName,
+												Name: k8sconsts.OdigosDeploymentConfigMapName,
 											},
-											Key: "ODIGOS_VERSION",
+											Key: k8sconsts.OdigosDeploymentConfigMapVersionKey,
 										},
 									},
 								},

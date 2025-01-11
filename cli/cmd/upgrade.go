@@ -48,7 +48,7 @@ and apply any required migrations and adaptations.`,
 				os.Exit(1)
 			}
 
-			currOdigosVersion := cm.Data["ODIGOS_VERSION"]
+			currOdigosVersion := cm.Data[k8sconsts.OdigosDeploymentConfigMapVersionKey]
 			if currOdigosVersion == "" {
 				fmt.Println("Odigos upgrade failed - unable to read the current Odigos version for migration")
 				os.Exit(1)

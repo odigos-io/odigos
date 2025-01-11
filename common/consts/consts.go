@@ -6,6 +6,8 @@ import (
 
 const (
 	CurrentNamespaceEnvVar       = "CURRENT_NS"
+	OdigosVersionEnvVarName      = "ODIGOS_VERSION"
+	OdigosTierEnvVarName         = "ODIGOS_TIER"
 	DefaultOdigosNamespace       = "odigos-system"
 	OdigosConfigurationName      = "odigos-config"
 	OdigosEffectiveConfigName    = "effective-config"
