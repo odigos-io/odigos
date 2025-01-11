@@ -7,7 +7,7 @@ import (
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,12 +21,12 @@ func NewOdigosDeploymentConfigMap(ns string, odigosVersion string, odigosTier st
 			APIVersion: "v1",
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name:      consts.OdigosDeploymentConfigMapName,
+			Name:      k8sconsts.OdigosDeploymentConfigMapName,
 			Namespace: ns,
 		},
 		Data: map[string]string{
-			"ODIGOS_VERSION": odigosVersion,
-			"ODIGOS_TIER":    odigosTier,
+			k8sconsts.OdigosDeploymentConfigMapVersionKey: odigosVersion,
+			k8sconsts.OdigosDeploymentConfigMapTierKey:    odigosTier,
 		},
 	}
 }

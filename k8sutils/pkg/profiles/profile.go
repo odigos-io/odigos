@@ -10,8 +10,9 @@ import (
 type Profile struct {
 	ProfileName      common.ProfileName
 	ShortDescription string
-	KubeObject       Object               // used to read it from the embedded YAML file
-	Dependencies     []common.ProfileName // other profiles that are applied by the current profile
+	KubeObject       Object                            // used to read it from the embedded YAML file
+	Dependencies     []common.ProfileName              // other profiles that are applied by the current profile
+	ModifyConfigFunc func(*common.OdigosConfiguration) // function to update the configuration based on the profile
 }
 
 type Object interface {
@@ -24,18 +25,75 @@ var (
 	SizeSProfile = Profile{
 		ProfileName:      common.ProfileName("size_s"),
 		ShortDescription: "Small size deployment profile",
+		ModifyConfigFunc: func(c *common.OdigosConfiguration) {
+			modifySizingConfig(c,
+				common.CollectorGatewayConfiguration{
+					MinReplicas:      1,
+					MaxReplicas:      5,
+					RequestCPUm:      150,
+					LimitCPUm:        300,
+					RequestMemoryMiB: 300,
+					LimitMemoryMiB:   300,
+				},
+				common.CollectorNodeConfiguration{
+					RequestMemoryMiB: 150,
+					LimitMemoryMiB:   300,
+					RequestCPUm:      150,
+					LimitCPUm:        300,
+				})
+		},
 	}
 	SizeMProfile = Profile{
 		ProfileName:      common.ProfileName("size_m"),
 		ShortDescription: "Medium size deployment profile",
+		ModifyConfigFunc: func(c *common.OdigosConfiguration) {
+			modifySizingConfig(c,
+				common.CollectorGatewayConfiguration{
+					MinReplicas:      2,
+					MaxReplicas:      8,
+					RequestCPUm:      500,
+					LimitCPUm:        1000,
+					RequestMemoryMiB: 500,
+					LimitMemoryMiB:   600,
+				},
+				common.CollectorNodeConfiguration{
+					RequestMemoryMiB: 250,
+					LimitMemoryMiB:   500,
+					RequestCPUm:      250,
+					LimitCPUm:        500,
+				})
+		},
 	}
 	SizeLProfile = Profile{
 		ProfileName:      common.ProfileName("size_l"),
 		ShortDescription: "Large size deployment profile",
+		ModifyConfigFunc: func(c *common.OdigosConfiguration) {
+			modifySizingConfig(c,
+				common.CollectorGatewayConfiguration{
+					MinReplicas:      3,
+					MaxReplicas:      12,
+					RequestCPUm:      750,
+					LimitCPUm:        1250,
+					RequestMemoryMiB: 750,
+					LimitMemoryMiB:   850,
+				},
+				common.CollectorNodeConfiguration{
+					RequestMemoryMiB: 500,
+					LimitMemoryMiB:   750,
+					RequestCPUm:      500,
+					LimitCPUm:        750,
+				})
+		},
 	}
 	AllowConcurrentAgents = Profile{
 		ProfileName:      common.ProfileName("allow_concurrent_agents"),
 		ShortDescription: "This profile allows Odigos to run concurrently with other agents",
+		ModifyConfigFunc: func(c *common.OdigosConfiguration) {
+			if c.AllowConcurrentAgents == nil {
+				allowConcurrentAgents := true
+				c.AllowConcurrentAgents = &allowConcurrentAgents
+			}
+		},
 	}
 	FullPayloadCollectionProfile = Profile{
 		ProfileName:      common.ProfileName("full-payload-collection"),
@@ -74,7 +132,11 @@ var (
 	}
 	JavaNativeInstrumentationsProfile = Profile{
 		ProfileName:      common.ProfileName("java-native-instrumentations"),
-		ShortDescription: "Instrument Java applications using native instrumentation and eBPF enterprise processing",
+		ShortDescription: "Deprecated, native instrumentations are now enabled by default",
+	}
+	JavaEbpfInstrumentationsProfile = Profile{
+		ProfileName:      common.ProfileName("java-ebpf-instrumentations"),
+		ShortDescription: "Instrument Java applications using eBPF instrumentation and eBPF enterprise processing",
 		KubeObject:       &odigosv1alpha1.InstrumentationRule{},
 	}
 	CodeAttributesProfile = Profile{
@@ -92,8 +154,8 @@ var (
 	}
 	KratosProfile = Profile{
 		ProfileName:      common.ProfileName("kratos"),
-		ShortDescription: "Bundle profile that includes db-payload-collection, semconv, category-attributes, copy-scope, hostname-as-podname, java-native-instrumentations, code-attributes, query-operation-detector, disableNameProcessorProfile, small-batches, size_m, allow_concurrent_agents",
-		Dependencies:     []common.ProfileName{"db-payload-collection", "semconv", "category-attributes", "copy-scope", "hostname-as-podname", "java-native-instrumentations", "code-attributes", "query-operation-detector", "disableNameProcessorProfile", "small-batches", "size_m", "allow_concurrent_agents"},
+		ShortDescription: "Bundle profile that includes db-payload-collection, semconv, category-attributes, copy-scope, hostname-as-podname, code-attributes, query-operation-detector, disableNameProcessorProfile, small-batches, size_m, allow_concurrent_agents",
+		Dependencies:     []common.ProfileName{"db-payload-collection", "semconv", "category-attributes", "copy-scope", "hostname-as-podname", "code-attributes", "query-operation-detector", "disableNameProcessorProfile", "small-batches", "size_m", "allow_concurrent_agents"},
 	}
 	ProfilesMap = map[common.ProfileName]Profile{
 		SizeSProfile.ProfileName:                      SizeSProfile,
@@ -107,6 +169,7 @@ var (
 		CopyScopeProfile.ProfileName:                  CopyScopeProfile,
 		HostnameAsPodNameProfile.ProfileName:          HostnameAsPodNameProfile,
 		JavaNativeInstrumentationsProfile.ProfileName: JavaNativeInstrumentationsProfile,
+		JavaEbpfInstrumentationsProfile.ProfileName:   JavaEbpfInstrumentationsProfile,
 		CodeAttributesProfile.ProfileName:             CodeAttributesProfile,
 		DisableNameProcessorProfile.ProfileName:       DisableNameProcessorProfile,
 		SmallBatchesProfile.ProfileName:               SmallBatchesProfile,

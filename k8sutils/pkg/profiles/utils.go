@@ -2,39 +2,22 @@ package profiles
 
 import "github.com/odigos-io/odigos/common"
 
-func AgentsCanRunConcurrently(profiles []common.ProfileName) bool {
-	for _, profile := range profiles {
-		if profile == AllowConcurrentAgents.ProfileName {
-			return true
-		}
-
-		profileDependencies := ProfilesMap[profile].Dependencies
-		for _, dependencyProfile := range profileDependencies {
-			if dependencyProfile == AllowConcurrentAgents.ProfileName {
-				return true
-			}
-		}
+func modifySizingConfig(c *common.OdigosConfiguration, clusterCollectorConfig common.CollectorGatewayConfiguration, nodeCollectorConfig common.CollectorNodeConfiguration) {
+	// do not modify the configuration if any of the values if they are already set
+	if c.CollectorGateway != nil {
+		return
 	}
-	return false
-}
-
-func FilterSizeProfiles(profiles []common.ProfileName) common.ProfileName {
-	// In case multiple size profiles are provided, the first one will be used.
-	for _, profile := range profiles {
-		// Check if the profile is a size profile.
-		switch profile {
-		case SizeSProfile.ProfileName, SizeMProfile.ProfileName, SizeLProfile.ProfileName:
-			return profile
-		}
-
-		// Check if the profile has a dependency which is a size profile.
-		profileDependencies := ProfilesMap[profile].Dependencies
-		for _, dependencyProfile := range profileDependencies {
-			switch dependencyProfile {
-			case SizeSProfile.ProfileName, SizeMProfile.ProfileName, SizeLProfile.ProfileName:
-				return dependencyProfile
-			}
-		}
+	// the following is not very elegant.
+	// we only care if the sizing parameters are set, if the port is set, we apply it nevertheless
+	if c.CollectorNode != nil && (c.CollectorNode.RequestMemoryMiB != 0 || c.CollectorNode.LimitMemoryMiB != 0 || c.CollectorNode.RequestCPUm != 0 || c.CollectorNode.LimitCPUm != 0) {
+		return
 	}
-	return ""
+
+	c.CollectorGateway = &clusterCollectorConfig
+	collectorNodeConfig := nodeCollectorConfig
+	if c.CollectorNode != nil {
+		// make sure we keep the port which is unrelated to the sizing
+		collectorNodeConfig.CollectorOwnMetricsPort = c.CollectorNode.CollectorOwnMetricsPort
+	}
+	c.CollectorNode = &collectorNodeConfig
 }

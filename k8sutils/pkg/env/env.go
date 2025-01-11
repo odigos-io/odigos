@@ -52,7 +52,7 @@ func GetSyncDaemonSetDelay() int {
 }
 
 func GetOdigosTierFromEnv() common.OdigosTier {
-	odigosTierStr := os.Getenv("ODIGOS_TIER")
+	odigosTierStr := os.Getenv(consts.OdigosTierEnvVarName)
 
 	switch odigosTierStr {
 	case string(common.CommunityOdigosTier):
