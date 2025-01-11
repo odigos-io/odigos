@@ -22,7 +22,6 @@ func (l *Loki) DestType() common.DestinationType {
 }
 
 func (l *Loki) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
-
 	rawUrl, exists := dest.GetConfig()[lokiUrlKey]
 	if !exists {
 		return errors.New("Loki endpoint not specified, gateway will not be configured for Loki")
@@ -60,7 +59,6 @@ func (l *Loki) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) erro
 }
 
 func lokiUrlFromInput(rawUrl string) (string, error) {
-
 	rawUrl = strings.TrimSpace(rawUrl)
 	urlWithScheme := rawUrl
 
@@ -98,7 +96,6 @@ func lokiUrlFromInput(rawUrl string) (string, error) {
 // loki architecture works with labels, where each combination of labels values is a stream.
 // This function creates processors to convert otel attributes to loki labels based on the user configuration.
 func lokiLabelsProcessors(rawLabels string, exists bool, destName string) (GenericMap, error) {
-
 	// backwards compatibility, if the user labels are not provided, we use the default
 	if !exists {
 		processorName := "attributes/loki-" + destName

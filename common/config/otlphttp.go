@@ -22,7 +22,6 @@ func (g *OTLPHttp) DestType() common.DestinationType {
 }
 
 func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
-
 	url, exists := dest.GetConfig()[otlpHttpEndpointKey]
 	if !exists {
 		return errors.New("OTLP http endpoint not specified, gateway will not be configured for otlp http")
@@ -94,7 +93,6 @@ func parseOtlpHttpEndpoint(rawUrl string) (string, error) {
 }
 
 func applyBasicAuth(dest ExporterConfigurer) (extensionName string, extensionConf *GenericMap, err error) {
-
 	username := dest.GetConfig()[otlpHttpBasicAuthUsernameKey]
 	if username == "" {
 		return "", nil, nil

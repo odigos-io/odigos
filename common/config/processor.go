@@ -34,5 +34,5 @@ func GetCrdProcessorsConfigMap(processors []ProcessorConfigurer) (cfg GenericMap
 	if len(errs) == 0 {
 		return cfg, tracesProcessors, metricsProcessors, logsProcessors, nil
 	}
-	return
+	return cfg, tracesProcessors, metricsProcessors, logsProcessors, errs
 }

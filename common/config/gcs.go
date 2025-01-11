@@ -18,7 +18,6 @@ func (g *GoogleCloudStorage) DestType() common.DestinationType {
 }
 
 func (g *GoogleCloudStorage) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
-
 	if !isTracingEnabled(dest) && !isLoggingEnabled(dest) {
 		return errors.New("GoogleCloudStorage is not enabled for any supported signals, skipping")
 	}

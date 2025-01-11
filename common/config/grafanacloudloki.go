@@ -22,7 +22,6 @@ func (g *GrafanaCloudLoki) DestType() common.DestinationType {
 }
 
 func (g *GrafanaCloudLoki) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
-
 	if !isLoggingEnabled(dest) {
 		return errors.New("Logging not enabled, gateway will not be configured for grafana cloud Loki")
 	}
@@ -94,7 +93,6 @@ func (g *GrafanaCloudLoki) ModifyConfig(dest ExporterConfigurer, currentConfig *
 // this function will attempt to parse and prepare the url for use with the
 // otelcol loki exporter
 func grafanaLokiUrlFromInput(rawUrl string) (string, error) {
-
 	rawUrl = strings.TrimSpace(rawUrl)
 	urlWithScheme := rawUrl
 

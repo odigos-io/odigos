@@ -35,7 +35,7 @@ func (e *Elasticsearch) ModifyConfig(dest ExporterConfigurer, currentConfig *Con
 
 	parsedURL, err := e.SanitizeURL(rawURL)
 	if err != nil {
-		return errors.Join(err, errors.New(fmt.Sprintf("failed to sanitize URL. elasticsearch-url: %s", rawURL)))
+		return errors.Join(err, fmt.Errorf("failed to sanitize URL. elasticsearch-url: %s", rawURL))
 	}
 
 	traceIndexVal, exists := dest.GetConfig()[esTracesIndexKey]

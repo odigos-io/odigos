@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/go-logr/logr"
+
 	"github.com/odigos-io/odigos/common/consts"
 )
 
