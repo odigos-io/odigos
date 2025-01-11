@@ -1,6 +1,7 @@
 # TODO(edenfed): Commented out linters are good and we should enable them in the future.
 # Let's enable them one by one and fix the issues they find.
 run:
+  concurrency: 4
   timeout: 2m
   tests: false
 
@@ -59,8 +60,8 @@ linters-settings:
     disabled-checks:
       - ifElseChain
   funlen:
-    lines: 100
-    statements: 50
+    lines: 110
+    statements: 60
   whitespace:
     multi-if: false
     multi-func: false

@@ -1,12 +1,12 @@
 package odigos
 
 import (
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
-	"github.com/odigos-io/odigos/k8sutils/pkg/describe/properties"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/k8sutils/pkg/describe/properties"
 )
 
 type ClusterCollectorAnalyze struct {
@@ -202,7 +202,8 @@ func analyzePodsHealth(pods *corev1.PodList, expectedReplicas int) (*properties.
 	runningReplicas := 0
 	failureReplicas := 0
 	var failureText string
-	for _, pod := range pods.Items {
+	for j := range pods.Items {
+		pod := &pods.Items[j]
 		var condition *corev1.PodCondition
 		for i := range pod.Status.Conditions {
 			c := pod.Status.Conditions[i]
@@ -248,7 +249,6 @@ func analyzePodsHealth(pods *corev1.PodList, expectedReplicas int) (*properties.
 }
 
 func analyzeClusterCollector(resources *OdigosResources) ClusterCollectorAnalyze {
-
 	isEnabled := len(resources.Destinations.Items) > 0
 
 	enabled := properties.EntityProperty{
@@ -285,7 +285,6 @@ func analyzeClusterCollector(resources *OdigosResources) ClusterCollectorAnalyze
 }
 
 func analyzeNodeCollector(resources *OdigosResources) NodeCollectorAnalyze {
-
 	hasClusterCollector := resources.ClusterCollector.CollectorsGroup != nil
 	isClusterCollectorReady := hasClusterCollector && resources.ClusterCollector.CollectorsGroup.Status.Ready
 	hasInstrumentedSources := len(resources.InstrumentationConfigs.Items) > 0

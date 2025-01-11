@@ -4,14 +4,14 @@ import (
 	"context"
 	"fmt"
 
-	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+
+	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 )
 
 type ClusterCollectorResources struct {
@@ -34,7 +34,6 @@ type OdigosResources struct {
 }
 
 func getClusterCollectorResources(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, odigosNs string) (*ClusterCollectorResources, error) {
-
 	clusterCollector := ClusterCollectorResources{}
 
 	cg, err := odigosClient.CollectorsGroups(odigosNs).Get(ctx, k8sconsts.OdigosClusterCollectorCollectorGroupName, metav1.GetOptions{})
@@ -92,7 +91,6 @@ func getClusterCollectorResources(ctx context.Context, kubeClient kubernetes.Int
 }
 
 func getNodeCollectorResources(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, odigosNs string) (*NodeCollectorResources, error) {
-
 	nodeCollector := NodeCollectorResources{}
 
 	cg, err := odigosClient.CollectorsGroups(odigosNs).Get(ctx, k8sconsts.OdigosNodeCollectorCollectorGroupName, metav1.GetOptions{})
@@ -113,7 +111,6 @@ func getNodeCollectorResources(ctx context.Context, kubeClient kubernetes.Interf
 }
 
 func GetRelevantOdigosResources(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, odigosNs string) (*OdigosResources, error) {
-
 	odigos := OdigosResources{}
 
 	odigosDeployment, err := kubeClient.CoreV1().ConfigMaps(odigosNs).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})

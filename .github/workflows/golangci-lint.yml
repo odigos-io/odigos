@@ -13,7 +13,7 @@ jobs:
   golangci:
     strategy:
       matrix:
-        modules: [common]
+        modules: [common, k8sutils]
     name: lint
     runs-on: ubuntu-latest
     steps:

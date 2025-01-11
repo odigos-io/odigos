@@ -4,8 +4,9 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/odigos-io/odigos/common"
 	v1 "k8s.io/api/core/v1"
+
+	"github.com/odigos-io/odigos/common"
 )
 
 var (

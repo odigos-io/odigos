@@ -111,9 +111,9 @@ func grafanaLokiUrlFromInput(rawUrl string) (string, error) {
 	}
 
 	if parsedUrl.Path == "" {
-		parsedUrl.Path = "/loki/api/v1/push"
+		parsedUrl.Path = lokiApiPath
 	}
-	if parsedUrl.Path != "/loki/api/v1/push" {
+	if parsedUrl.Path != lokiApiPath {
 		return "", fmt.Errorf("unexpected path for loki endpoint %s", parsedUrl.Path)
 	}
 

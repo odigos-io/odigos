@@ -10,8 +10,10 @@ import (
 // and not to it's content or status changes.
 //
 // Notice these 2 things when using this predicate:
-// 1. The event filter will allow events for each object on startup, as all the objects are "created" in the cache.
-// 2. If you have important task to do on delete events, make sure it is applied if the event is missed and the controller restarts, since the delete event will not be triggered on controller restart as the object is no longer in k8s.
+//  1. The event filter will allow events for each object on startup, as all the objects are "created" in the cache.
+//  2. If you have important task to do on delete events, make sure it is applied if
+//     the event is missed and the controller restarts, since the delete event will not be triggered on
+//     controller restart as the object is no longer in k8s.
 type ExistencePredicate struct{}
 
 func (o ExistencePredicate) Create(e event.CreateEvent) bool {

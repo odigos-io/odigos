@@ -13,6 +13,7 @@ import (
 const (
 	lokiUrlKey    = "LOKI_URL"
 	lokiLabelsKey = "LOKI_LABELS"
+	lokiApiPath   = "/loki/api/v1/push"
 )
 
 type Loki struct{}
@@ -78,7 +79,7 @@ func lokiUrlFromInput(rawUrl string) (string, error) {
 
 	// we allow the user to specify the path, but will fallback to the default loki path if not provided
 	if parsedUrl.Path == "" {
-		parsedUrl.Path = "/loki/api/v1/push"
+		parsedUrl.Path = lokiApiPath
 	}
 
 	// we allow the user to specify the port, but will fallback to the default loki port if not provided

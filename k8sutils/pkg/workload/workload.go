@@ -120,7 +120,8 @@ func GetInstrumentationLabelValue(labels map[string]string) *bool {
 	return nil
 }
 
-func GetInstrumentationLabelTexts(workloadLabels map[string]string, workloadKind string, nsLabels map[string]string) (workloadText, nsText, decisionText string, sourceInstrumented bool) {
+func GetInstrumentationLabelTexts(workloadLabels map[string]string, workloadKind string,
+	nsLabels map[string]string) (workloadText, nsText, decisionText string, sourceInstrumented bool) {
 	workloadLabel, workloadFound := workloadLabels[consts.OdigosInstrumentationLabel]
 	nsLabel, nsFound := nsLabels[consts.OdigosInstrumentationLabel]
 
@@ -156,7 +157,7 @@ func GetInstrumentationLabelTexts(workloadLabels map[string]string, workloadKind
 		}
 	}
 
-	return
+	return workloadText, nsText, decisionText, sourceInstrumented
 }
 
 func GetWorkloadObject(ctx context.Context, objectKey client.ObjectKey, kind WorkloadKind, kubeClient client.Client) (metav1.Object, error) {

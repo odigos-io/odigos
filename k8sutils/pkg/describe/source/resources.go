@@ -4,14 +4,15 @@ import (
 	"context"
 	"fmt"
 
-	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
+
+	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
 type OdigosSourceResources struct {
@@ -22,7 +23,6 @@ type OdigosSourceResources struct {
 }
 
 func GetRelevantSourceResources(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, workloadObj *K8sSourceObject) (*OdigosSourceResources, error) {
-
 	sourceResources := OdigosSourceResources{}
 
 	workloadNs := workloadObj.GetNamespace()
@@ -79,7 +79,6 @@ func getSourcePods(ctx context.Context, kubeClient kubernetes.Interface, workloa
 			// Check if this ReplicaSet is owned by the deployment
 			for _, ownerRef := range rs.OwnerReferences {
 				if string(ownerRef.UID) == string(workloadObj.UID) && ownerRef.Kind == "Deployment" {
-
 					// List pods for this specific ReplicaSet
 					podList, err := kubeClient.CoreV1().Pods(workloadObj.Namespace).List(ctx, metav1.ListOptions{
 						LabelSelector: metav1.FormatLabelSelector(rs.Spec.Selector),

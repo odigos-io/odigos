@@ -5,13 +5,14 @@ import (
 	"reflect"
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/describe/properties"
 	"github.com/odigos-io/odigos/k8sutils/pkg/envoverwrite"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type InstrumentationLabelsAnalyze struct {
@@ -87,7 +88,6 @@ type SourceAnalyze struct {
 }
 
 func analyzeInstrumentationLabels(resource *OdigosSourceResources, workloadObj *K8sSourceObject) (InstrumentationLabelsAnalyze, bool) {
-
 	workloadLabel, workloadFound := workloadObj.GetLabels()[consts.OdigosInstrumentationLabel]
 	nsLabel, nsFound := resource.Namespace.GetLabels()[consts.OdigosInstrumentationLabel]
 
@@ -144,7 +144,6 @@ func analyzeInstrumentationLabels(resource *OdigosSourceResources, workloadObj *
 }
 
 func analyzeInstrumentationConfig(resources *OdigosSourceResources, instrumented bool) InstrumentationConfigAnalyze {
-
 	instrumentationConfigCreated := resources.InstrumentationConfig != nil
 
 	created := properties.EntityProperty{
@@ -179,7 +178,6 @@ func analyzeRuntimeDetails(runtimeDetailsByContainer []odigosv1.RuntimeDetailsBy
 	containers := make([]ContainerRuntimeInfoAnalyze, 0, len(runtimeDetailsByContainer))
 
 	for _, container := range runtimeDetailsByContainer {
-
 		containerName := properties.EntityProperty{
 			Name:    "Container Name",
 			Value:   container.ContainerName,
@@ -209,7 +207,6 @@ func analyzeRuntimeDetails(runtimeDetailsByContainer []odigosv1.RuntimeDetailsBy
 		if container.CriErrorMessage != nil {
 			criError.Value = *container.CriErrorMessage
 			criError.Status = properties.PropertyStatusError
-
 		} else {
 			criError.Value = "No CRI error observed"
 		}
@@ -253,7 +250,6 @@ func analyzeRuntimeInfo(resources *OdigosSourceResources) *RuntimeInfoAnalyze {
 }
 
 func analyzeInstrumentationDevice(resources *OdigosSourceResources, workloadObj *K8sSourceObject, instrumented bool) InstrumentationDeviceAnalyze {
-
 	instrumentationConfig := resources.InstrumentationConfig
 
 	appliedInstrumentationDeviceStatusMessage := "Unknown"
@@ -295,7 +291,6 @@ func analyzeInstrumentationDevice(resources *OdigosSourceResources, workloadObj 
 	templateContainers := workloadObj.PodTemplateSpec.Spec.Containers
 	containers := make([]ContainerWorkloadManifestAnalyze, 0, len(templateContainers))
 	for _, container := range templateContainers {
-
 		containerName := properties.EntityProperty{
 			Name:    "Container Name",
 			Value:   container.Name,
@@ -348,7 +343,6 @@ func analyzeInstrumentationDevice(resources *OdigosSourceResources, workloadObj 
 }
 
 func analyzeInstrumentationInstance(instrumentationInstance *odigosv1.InstrumentationInstance) InstrumentationInstanceAnalyze {
-
 	var healthy properties.EntityProperty
 	if instrumentationInstance.Status.Healthy == nil {
 		healthy = properties.EntityProperty{
@@ -510,7 +504,6 @@ func analyzePods(resources *OdigosSourceResources, expectedDevices Instrumentati
 }
 
 func AnalyzeSource(resources *OdigosSourceResources, workloadObj *K8sSourceObject) *SourceAnalyze {
-
 	labelsAnalysis, instrumented := analyzeInstrumentationLabels(resources, workloadObj)
 	runtimeAnalysis := analyzeRuntimeInfo(resources)
 	icAnalysis := analyzeInstrumentationConfig(resources, instrumented)
