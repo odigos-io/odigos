@@ -47,7 +47,7 @@ func InstrumentationInstance(name, namespace string) *InstrumentationInstanceApp
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Kind field is set to the value of the last call.
 func (b *InstrumentationInstanceApplyConfiguration) WithKind(value string) *InstrumentationInstanceApplyConfiguration {
-	b.Kind = &value
+	b.TypeMetaApplyConfiguration.Kind = &value
 	return b
 }
 
@@ -55,7 +55,7 @@ func (b *InstrumentationInstanceApplyConfiguration) WithKind(value string) *Inst
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the APIVersion field is set to the value of the last call.
 func (b *InstrumentationInstanceApplyConfiguration) WithAPIVersion(value string) *InstrumentationInstanceApplyConfiguration {
-	b.APIVersion = &value
+	b.TypeMetaApplyConfiguration.APIVersion = &value
 	return b
 }
 
@@ -64,7 +64,7 @@ func (b *InstrumentationInstanceApplyConfiguration) WithAPIVersion(value string)
 // If called multiple times, the Name field is set to the value of the last call.
 func (b *InstrumentationInstanceApplyConfiguration) WithName(value string) *InstrumentationInstanceApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	b.Name = &value
+	b.ObjectMetaApplyConfiguration.Name = &value
 	return b
 }
 
@@ -73,7 +73,7 @@ func (b *InstrumentationInstanceApplyConfiguration) WithName(value string) *Inst
 // If called multiple times, the GenerateName field is set to the value of the last call.
 func (b *InstrumentationInstanceApplyConfiguration) WithGenerateName(value string) *InstrumentationInstanceApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	b.GenerateName = &value
+	b.ObjectMetaApplyConfiguration.GenerateName = &value
 	return b
 }
 
@@ -82,7 +82,7 @@ func (b *InstrumentationInstanceApplyConfiguration) WithGenerateName(value strin
 // If called multiple times, the Namespace field is set to the value of the last call.
 func (b *InstrumentationInstanceApplyConfiguration) WithNamespace(value string) *InstrumentationInstanceApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	b.Namespace = &value
+	b.ObjectMetaApplyConfiguration.Namespace = &value
 	return b
 }
 
@@ -91,7 +91,7 @@ func (b *InstrumentationInstanceApplyConfiguration) WithNamespace(value string) 
 // If called multiple times, the UID field is set to the value of the last call.
 func (b *InstrumentationInstanceApplyConfiguration) WithUID(value types.UID) *InstrumentationInstanceApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	b.UID = &value
+	b.ObjectMetaApplyConfiguration.UID = &value
 	return b
 }
 
@@ -100,7 +100,7 @@ func (b *InstrumentationInstanceApplyConfiguration) WithUID(value types.UID) *In
 // If called multiple times, the ResourceVersion field is set to the value of the last call.
 func (b *InstrumentationInstanceApplyConfiguration) WithResourceVersion(value string) *InstrumentationInstanceApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	b.ResourceVersion = &value
+	b.ObjectMetaApplyConfiguration.ResourceVersion = &value
 	return b
 }
 
@@ -109,7 +109,7 @@ func (b *InstrumentationInstanceApplyConfiguration) WithResourceVersion(value st
 // If called multiple times, the Generation field is set to the value of the last call.
 func (b *InstrumentationInstanceApplyConfiguration) WithGeneration(value int64) *InstrumentationInstanceApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	b.Generation = &value
+	b.ObjectMetaApplyConfiguration.Generation = &value
 	return b
 }
 
@@ -118,7 +118,7 @@ func (b *InstrumentationInstanceApplyConfiguration) WithGeneration(value int64) 
 // If called multiple times, the CreationTimestamp field is set to the value of the last call.
 func (b *InstrumentationInstanceApplyConfiguration) WithCreationTimestamp(value metav1.Time) *InstrumentationInstanceApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	b.CreationTimestamp = &value
+	b.ObjectMetaApplyConfiguration.CreationTimestamp = &value
 	return b
 }
 
@@ -127,7 +127,7 @@ func (b *InstrumentationInstanceApplyConfiguration) WithCreationTimestamp(value 
 // If called multiple times, the DeletionTimestamp field is set to the value of the last call.
 func (b *InstrumentationInstanceApplyConfiguration) WithDeletionTimestamp(value metav1.Time) *InstrumentationInstanceApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	b.DeletionTimestamp = &value
+	b.ObjectMetaApplyConfiguration.DeletionTimestamp = &value
 	return b
 }
 
@@ -136,7 +136,7 @@ func (b *InstrumentationInstanceApplyConfiguration) WithDeletionTimestamp(value 
 // If called multiple times, the DeletionGracePeriodSeconds field is set to the value of the last call.
 func (b *InstrumentationInstanceApplyConfiguration) WithDeletionGracePeriodSeconds(value int64) *InstrumentationInstanceApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	b.DeletionGracePeriodSeconds = &value
+	b.ObjectMetaApplyConfiguration.DeletionGracePeriodSeconds = &value
 	return b
 }
 
@@ -146,11 +146,11 @@ func (b *InstrumentationInstanceApplyConfiguration) WithDeletionGracePeriodSecon
 // overwriting an existing map entries in Labels field with the same key.
 func (b *InstrumentationInstanceApplyConfiguration) WithLabels(entries map[string]string) *InstrumentationInstanceApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	if b.Labels == nil && len(entries) > 0 {
-		b.Labels = make(map[string]string, len(entries))
+	if b.ObjectMetaApplyConfiguration.Labels == nil && len(entries) > 0 {
+		b.ObjectMetaApplyConfiguration.Labels = make(map[string]string, len(entries))
 	}
 	for k, v := range entries {
-		b.Labels[k] = v
+		b.ObjectMetaApplyConfiguration.Labels[k] = v
 	}
 	return b
 }
@@ -161,11 +161,11 @@ func (b *InstrumentationInstanceApplyConfiguration) WithLabels(entries map[strin
 // overwriting an existing map entries in Annotations field with the same key.
 func (b *InstrumentationInstanceApplyConfiguration) WithAnnotations(entries map[string]string) *InstrumentationInstanceApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	if b.Annotations == nil && len(entries) > 0 {
-		b.Annotations = make(map[string]string, len(entries))
+	if b.ObjectMetaApplyConfiguration.Annotations == nil && len(entries) > 0 {
+		b.ObjectMetaApplyConfiguration.Annotations = make(map[string]string, len(entries))
 	}
 	for k, v := range entries {
-		b.Annotations[k] = v
+		b.ObjectMetaApplyConfiguration.Annotations[k] = v
 	}
 	return b
 }
@@ -179,7 +179,7 @@ func (b *InstrumentationInstanceApplyConfiguration) WithOwnerReferences(values .
 		if values[i] == nil {
 			panic("nil value passed to WithOwnerReferences")
 		}
-		b.OwnerReferences = append(b.OwnerReferences, *values[i])
+		b.ObjectMetaApplyConfiguration.OwnerReferences = append(b.ObjectMetaApplyConfiguration.OwnerReferences, *values[i])
 	}
 	return b
 }
@@ -190,7 +190,7 @@ func (b *InstrumentationInstanceApplyConfiguration) WithOwnerReferences(values .
 func (b *InstrumentationInstanceApplyConfiguration) WithFinalizers(values ...string) *InstrumentationInstanceApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	for i := range values {
-		b.Finalizers = append(b.Finalizers, values[i])
+		b.ObjectMetaApplyConfiguration.Finalizers = append(b.ObjectMetaApplyConfiguration.Finalizers, values[i])
 	}
 	return b
 }
@@ -220,5 +220,5 @@ func (b *InstrumentationInstanceApplyConfiguration) WithStatus(value *Instrument
 // GetName retrieves the value of the Name field in the declarative configuration.
 func (b *InstrumentationInstanceApplyConfiguration) GetName() *string {
 	b.ensureObjectMetaApplyConfigurationExists()
-	return b.Name
+	return b.ObjectMetaApplyConfiguration.Name
 }

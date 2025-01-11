@@ -28,31 +28,31 @@ type FakeActionsV1alpha1 struct {
 }
 
 func (c *FakeActionsV1alpha1) AddClusterInfos(namespace string) v1alpha1.AddClusterInfoInterface {
-	return &FakeAddClusterInfos{c, namespace}
+	return newFakeAddClusterInfos(c, namespace)
 }
 
 func (c *FakeActionsV1alpha1) DeleteAttributes(namespace string) v1alpha1.DeleteAttributeInterface {
-	return &FakeDeleteAttributes{c, namespace}
+	return newFakeDeleteAttributes(c, namespace)
 }
 
 func (c *FakeActionsV1alpha1) ErrorSamplers(namespace string) v1alpha1.ErrorSamplerInterface {
-	return &FakeErrorSamplers{c, namespace}
+	return newFakeErrorSamplers(c, namespace)
 }
 
 func (c *FakeActionsV1alpha1) LatencySamplers(namespace string) v1alpha1.LatencySamplerInterface {
-	return &FakeLatencySamplers{c, namespace}
+	return newFakeLatencySamplers(c, namespace)
 }
 
 func (c *FakeActionsV1alpha1) PiiMaskings(namespace string) v1alpha1.PiiMaskingInterface {
-	return &FakePiiMaskings{c, namespace}
+	return newFakePiiMaskings(c, namespace)
 }
 
 func (c *FakeActionsV1alpha1) ProbabilisticSamplers(namespace string) v1alpha1.ProbabilisticSamplerInterface {
-	return &FakeProbabilisticSamplers{c, namespace}
+	return newFakeProbabilisticSamplers(c, namespace)
 }
 
 func (c *FakeActionsV1alpha1) RenameAttributes(namespace string) v1alpha1.RenameAttributeInterface {
-	return &FakeRenameAttributes{c, namespace}
+	return newFakeRenameAttributes(c, namespace)
 }
 
 // RESTClient returns a RESTClient that is used to communicate
