@@ -8,6 +8,7 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,8 +26,9 @@ func NewOdigosDeploymentConfigMap(ns string, odigosVersion string, odigosTier st
 			Namespace: ns,
 		},
 		Data: map[string]string{
-			k8sconsts.OdigosDeploymentConfigMapVersionKey: odigosVersion,
-			k8sconsts.OdigosDeploymentConfigMapTierKey:    odigosTier,
+			k8sconsts.OdigosDeploymentConfigMapVersionKey:            odigosVersion,
+			k8sconsts.OdigosDeploymentConfigMapTierKey:               odigosTier,
+			k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey: string(installationmethod.K8sInstallationMethodOdigosCli),
 		},
 	}
 }
