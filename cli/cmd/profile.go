@@ -9,7 +9,7 @@ import (
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/getters"
-	k8sprofiles "github.com/odigos-io/odigos/profiles"
+	"github.com/odigos-io/odigos/profiles/profile"
 	"github.com/spf13/cobra"
 )
 
@@ -103,7 +103,7 @@ var addProfileCmd = &cobra.Command{
 
 		// Fetch the available profiles for the current tier
 		profiles := resources.GetAvailableProfilesForTier(currentTier)
-		var selectedProfile *k8sprofiles.Profile
+		var selectedProfile *profile.Profile
 
 		// Search for the specified profile in the available profiles
 		for _, profile := range profiles {

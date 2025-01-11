@@ -5,7 +5,6 @@ go 1.23.0
 require (
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
-	github.com/odigos-io/odigos/profiles v0.0.0
 	github.com/tj/assert v0.0.3
 	k8s.io/api v0.31.0
 	k8s.io/apimachinery v0.32.0
@@ -74,5 +73,4 @@ require (
 replace (
 	github.com/odigos-io/odigos/api => ../api
 	github.com/odigos-io/odigos/common => ../common
-	github.com/odigos-io/odigos/profiles => ../profiles
 )
