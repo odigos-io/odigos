@@ -1,6 +1,9 @@
 package consts
 
-import "k8s.io/apimachinery/pkg/util/version"
+import (
+	commonconsts "github.com/odigos-io/odigos/common/consts"
+	"k8s.io/apimachinery/pkg/util/version"
+)
 
 var (
 	DefaultIgnoredNamespaces = []string{"kube-system", "local-path-storage", "istio-system", "linkerd", "kube-node-lease"}
@@ -22,7 +25,9 @@ const (
 )
 
 const (
-	OdigosDeploymentConfigMapName = "odigos-deployment"
+	OdigosDeploymentConfigMapName       = "odigos-deployment"
+	OdigosDeploymentConfigMapVersionKey = commonconsts.OdigosVersionEnvVarName
+	OdigosDeploymentConfigMapTierKey    = commonconsts.OdigosTierEnvVarName
 )
 
 const (
