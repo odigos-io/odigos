@@ -33,21 +33,6 @@ const buildFormDynamicFields = (fields: DestinationDetailsField[]): DynamicField
       const { name, componentType, componentProperties, displayName, initialValue, renderCondition } = field;
 
       switch (componentType) {
-        case INPUT_TYPES.MULTI_INPUT: {
-          const componentPropertiesJson = safeJsonParse<{ [key: string]: string }>(componentProperties, {});
-          const initialValuesJson = safeJsonParse<string[]>(initialValue, []);
-
-          return {
-            name,
-            componentType,
-            title: displayName,
-            value: initialValuesJson,
-            initialValues: initialValuesJson,
-            renderCondition,
-            ...componentPropertiesJson,
-          };
-        }
-
         case INPUT_TYPES.DROPDOWN: {
           const componentPropertiesJson = safeJsonParse<{ [key: string]: string }>(componentProperties, {});
           const options = Array.isArray(componentPropertiesJson.values)
@@ -118,6 +103,8 @@ export function useDestinationFormData(params?: { destinationType?: string; supp
           // (this can be from an odigos-detected-destination during create, or from an existing destination during edit/update)
           if (!!preLoadedFields) {
             const parsedFields = typeof preLoadedFields === 'string' ? safeJsonParse<Record<string, string>>(preLoadedFields, {}) : preLoadedFields;
+
+            console.log('parsedFields', parsedFields);
 
             if (field.name in parsedFields) {
               return {
