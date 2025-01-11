@@ -25,9 +25,10 @@ const (
 )
 
 const (
-	OdigosDeploymentConfigMapName       = "odigos-deployment"
-	OdigosDeploymentConfigMapVersionKey = commonconsts.OdigosVersionEnvVarName
-	OdigosDeploymentConfigMapTierKey    = commonconsts.OdigosTierEnvVarName
+	OdigosDeploymentConfigMapName                  = "odigos-deployment"
+	OdigosDeploymentConfigMapVersionKey            = commonconsts.OdigosVersionEnvVarName
+	OdigosDeploymentConfigMapTierKey               = commonconsts.OdigosTierEnvVarName
+	OdigosDeploymentConfigMapInstallationMethodKey = "installation-method"
 )
 
 const (

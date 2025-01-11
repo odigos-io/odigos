@@ -36,6 +36,8 @@ type NodeCollectorAnalyze struct {
 
 type OdigosAnalyze struct {
 	OdigosVersion        properties.EntityProperty `json:"odigosVersion"`
+	OdigosTier           properties.EntityProperty `json:"odigosTier"`
+	InstallationMethod   properties.EntityProperty `json:"installationMethod"`
 	NumberOfDestinations int                       `json:"numberOfDestinations"`
 	NumberOfSources      int                       `json:"numberOfSources"`
 	ClusterCollector     ClusterCollectorAnalyze   `json:"clusterCollector"`
