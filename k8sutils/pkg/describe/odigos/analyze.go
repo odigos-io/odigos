@@ -2,6 +2,7 @@ package odigos
 
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/describe/properties"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -36,7 +37,7 @@ type NodeCollectorAnalyze struct {
 
 type OdigosAnalyze struct {
 	OdigosVersion        properties.EntityProperty `json:"odigosVersion"`
-	OdigosTier           properties.EntityProperty `json:"odigosTier"`
+	Tier                 properties.EntityProperty `json:"tier"`
 	InstallationMethod   properties.EntityProperty `json:"installationMethod"`
 	NumberOfDestinations int                       `json:"numberOfDestinations"`
 	NumberOfSources      int                       `json:"numberOfSources"`
@@ -370,13 +371,33 @@ func AnalyzeOdigos(resources *OdigosResources) *OdigosAnalyze {
 	clusterCollector := analyzeClusterCollector(resources)
 	nodeCollector := analyzeNodeCollector(resources)
 	isSettled, hasErrors := summarizeStatus(clusterCollector, nodeCollector)
-	odigosVersion := properties.EntityProperty{
-		Name:  "Odigos Version",
-		Value: resources.OdigosVersion,
+
+	odigosVersion := resources.OdigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapVersionKey]
+	tier := resources.OdigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapTierKey]
+	installationMethod := resources.OdigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey]
+
+	odigosVersionProperty := properties.EntityProperty{
+		Name:    "Odigos Version",
+		Value:   odigosVersion,
+		Explain: "the version of odigos deployment currently installed in the cluster",
+	}
+
+	odigosTierProperty := properties.EntityProperty{
+		Name:    "Tier",
+		Value:   tier,
+		Explain: "the tier of odigos deployment (community, enterprise, cloud)",
+	}
+
+	installationMethodProperty := properties.EntityProperty{
+		Name:    "Installation Method",
+		Value:   installationMethod,
+		Explain: "the method used to deploy odigos in the cluster (helm or odigos cli)",
 	}
 
 	return &OdigosAnalyze{
-		OdigosVersion:        odigosVersion,
+		OdigosVersion:        odigosVersionProperty,
+		Tier:                 odigosTierProperty,
+		InstallationMethod:   installationMethodProperty,
 		NumberOfDestinations: len(resources.Destinations.Items),
 		NumberOfSources:      len(resources.InstrumentationConfigs.Items),
 		ClusterCollector:     clusterCollector,
