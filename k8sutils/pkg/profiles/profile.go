@@ -25,14 +25,65 @@ var (
 	SizeSProfile = Profile{
 		ProfileName:      common.ProfileName("size_s"),
 		ShortDescription: "Small size deployment profile",
+		ModifyConfigFunc: func(c *common.OdigosConfiguration) {
+			modifySizingConfig(c,
+				common.CollectorGatewayConfiguration{
+					MinReplicas:      1,
+					MaxReplicas:      5,
+					RequestCPUm:      150,
+					LimitCPUm:        300,
+					RequestMemoryMiB: 300,
+					LimitMemoryMiB:   300,
+				},
+				common.CollectorNodeConfiguration{
+					RequestMemoryMiB: 150,
+					LimitMemoryMiB:   300,
+					RequestCPUm:      150,
+					LimitCPUm:        300,
+				})
+		},
 	}
 	SizeMProfile = Profile{
 		ProfileName:      common.ProfileName("size_m"),
 		ShortDescription: "Medium size deployment profile",
+		ModifyConfigFunc: func(c *common.OdigosConfiguration) {
+			modifySizingConfig(c,
+				common.CollectorGatewayConfiguration{
+					MinReplicas:      2,
+					MaxReplicas:      8,
+					RequestCPUm:      500,
+					LimitCPUm:        1000,
+					RequestMemoryMiB: 500,
+					LimitMemoryMiB:   600,
+				},
+				common.CollectorNodeConfiguration{
+					RequestMemoryMiB: 250,
+					LimitMemoryMiB:   500,
+					RequestCPUm:      250,
+					LimitCPUm:        500,
+				})
+		},
 	}
 	SizeLProfile = Profile{
 		ProfileName:      common.ProfileName("size_l"),
 		ShortDescription: "Large size deployment profile",
+		ModifyConfigFunc: func(c *common.OdigosConfiguration) {
+			modifySizingConfig(c,
+				common.CollectorGatewayConfiguration{
+					MinReplicas:      3,
+					MaxReplicas:      12,
+					RequestCPUm:      750,
+					LimitCPUm:        1250,
+					RequestMemoryMiB: 750,
+					LimitMemoryMiB:   850,
+				},
+				common.CollectorNodeConfiguration{
+					RequestMemoryMiB: 500,
+					LimitMemoryMiB:   750,
+					RequestCPUm:      500,
+					LimitCPUm:        750,
+				})
+		},
 	}
 	AllowConcurrentAgents = Profile{
 		ProfileName:      common.ProfileName("allow_concurrent_agents"),
