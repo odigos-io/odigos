@@ -1,0 +1,80 @@
+# TODO(edenfed): Commented out linters are good and we should enable them in the future.
+# Let's enable them one by one and fix the issues they find.
+run:
+  timeout: 2m
+  tests: false
+
+linters:
+  disable-all: true
+  enable:
+    - nilerr
+    - nilnesserr
+    - nilnil
+    - bodyclose
+    - dogsled
+    - dupl
+    - noctx
+    - errcheck
+    - funlen
+    - goconst
+    - gocritic
+    - gocyclo
+    - gofmt
+    - goimports
+    # - revive
+    # - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - lll
+    - misspell
+    - nakedret
+    - staticcheck
+    # - stylecheck
+    - typecheck
+    - unconvert
+    - unparam
+    - whitespace
+    - unused
+
+linters-settings:
+  dupl:
+    threshold: 200
+  goconst:
+    min-len: 6
+    min-occurrences: 3
+  misspell:
+    locale: US
+  lll:
+    line-length: 150
+  goimports:
+    local-prefixes: github.com/odigos-io
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+    disabled-checks:
+      - ifElseChain
+  funlen:
+    lines: 100
+    statements: 50
+  whitespace:
+    multi-if: false
+    multi-func: false
+  gosec:
+    includes:
+      - G401
+      - G306
+      - G101
+    excludes:
+      - G204
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - unparam
+        - funlen
