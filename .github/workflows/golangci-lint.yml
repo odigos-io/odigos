@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - main
-      - greatwall
   pull_request:
 
 permissions:
