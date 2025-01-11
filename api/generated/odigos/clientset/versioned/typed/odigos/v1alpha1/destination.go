@@ -18,11 +18,11 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/applyconfiguration/odigos/v1alpha1"
+	applyconfigurationodigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/applyconfiguration/odigos/v1alpha1"
 	scheme "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/scheme"
-	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -37,36 +37,37 @@ type DestinationsGetter interface {
 
 // DestinationInterface has methods to work with Destination resources.
 type DestinationInterface interface {
-	Create(ctx context.Context, destination *v1alpha1.Destination, opts v1.CreateOptions) (*v1alpha1.Destination, error)
-	Update(ctx context.Context, destination *v1alpha1.Destination, opts v1.UpdateOptions) (*v1alpha1.Destination, error)
+	Create(ctx context.Context, destination *odigosv1alpha1.Destination, opts v1.CreateOptions) (*odigosv1alpha1.Destination, error)
+	Update(ctx context.Context, destination *odigosv1alpha1.Destination, opts v1.UpdateOptions) (*odigosv1alpha1.Destination, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, destination *v1alpha1.Destination, opts v1.UpdateOptions) (*v1alpha1.Destination, error)
+	UpdateStatus(ctx context.Context, destination *odigosv1alpha1.Destination, opts v1.UpdateOptions) (*odigosv1alpha1.Destination, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.Destination, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.DestinationList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*odigosv1alpha1.Destination, error)
+	List(ctx context.Context, opts v1.ListOptions) (*odigosv1alpha1.DestinationList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Destination, err error)
-	Apply(ctx context.Context, destination *odigosv1alpha1.DestinationApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.Destination, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *odigosv1alpha1.Destination, err error)
+	Apply(ctx context.Context, destination *applyconfigurationodigosv1alpha1.DestinationApplyConfiguration, opts v1.ApplyOptions) (result *odigosv1alpha1.Destination, err error)
 	// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-	ApplyStatus(ctx context.Context, destination *odigosv1alpha1.DestinationApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.Destination, err error)
+	ApplyStatus(ctx context.Context, destination *applyconfigurationodigosv1alpha1.DestinationApplyConfiguration, opts v1.ApplyOptions) (result *odigosv1alpha1.Destination, err error)
 	DestinationExpansion
 }
 
 // destinations implements DestinationInterface
 type destinations struct {
-	*gentype.ClientWithListAndApply[*v1alpha1.Destination, *v1alpha1.DestinationList, *odigosv1alpha1.DestinationApplyConfiguration]
+	*gentype.ClientWithListAndApply[*odigosv1alpha1.Destination, *odigosv1alpha1.DestinationList, *applyconfigurationodigosv1alpha1.DestinationApplyConfiguration]
 }
 
 // newDestinations returns a Destinations
 func newDestinations(c *OdigosV1alpha1Client, namespace string) *destinations {
 	return &destinations{
-		gentype.NewClientWithListAndApply[*v1alpha1.Destination, *v1alpha1.DestinationList, *odigosv1alpha1.DestinationApplyConfiguration](
+		gentype.NewClientWithListAndApply[*odigosv1alpha1.Destination, *odigosv1alpha1.DestinationList, *applyconfigurationodigosv1alpha1.DestinationApplyConfiguration](
 			"destinations",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.Destination { return &v1alpha1.Destination{} },
-			func() *v1alpha1.DestinationList { return &v1alpha1.DestinationList{} }),
+			func() *odigosv1alpha1.Destination { return &odigosv1alpha1.Destination{} },
+			func() *odigosv1alpha1.DestinationList { return &odigosv1alpha1.DestinationList{} },
+		),
 	}
 }
