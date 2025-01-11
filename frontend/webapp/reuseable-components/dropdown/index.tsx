@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useOnClickOutside } from '@/hooks';
 import type { DropdownOption } from '@/types';
 import styled, { css } from 'styled-components';
@@ -70,10 +70,23 @@ const IconWrapper = styled.div`
 
 export const Dropdown: React.FC<DropdownProps> = ({ options, value, onSelect, onDeselect, title, tooltip, placeholder, isMulti = false, showSearch = false, required = false, errorMessage }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const toggleOpen = () => setIsOpen((prev) => !prev);
+  const [openUpwards, setOpenUpwards] = useState(false);
 
   const ref = useRef<HTMLDivElement>(null);
   useOnClickOutside(ref, () => setIsOpen(false));
+
+  const handleDirection = () => {
+    if (ref.current) {
+      const rect = ref.current.getBoundingClientRect();
+      const isNearBottom = rect.bottom + 300 > window.innerHeight;
+      setOpenUpwards(isNearBottom);
+    }
+  };
+
+  const toggleOpen = () => {
+    handleDirection();
+    setIsOpen((prev) => !prev);
+  };
 
   const arrLen = Array.isArray(value) ? value.length : 0;
 
@@ -92,6 +105,7 @@ export const Dropdown: React.FC<DropdownProps> = ({ options, value, onSelect, on
 
         {isOpen && (
           <DropdownList
+            openUpwards={openUpwards}
             options={options}
             value={value}
             onSelect={(option) => {
@@ -173,11 +187,10 @@ const DropdownPlaceholder: React.FC<{
   );
 };
 
-const AbsoluteContainer = styled.div`
+const AbsoluteContainer = styled.div<{ $openUpwards: boolean }>`
   position: absolute;
-  top: calc(100% + 8px);
+  ${({ $openUpwards }) => ($openUpwards ? 'bottom' : 'top')}: calc(100% + 8px);
   left: 0;
-  z-index: 1;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -197,18 +210,19 @@ const SearchInputContainer = styled.div`
 `;
 
 const DropdownList: React.FC<{
+  openUpwards: boolean;
   options: DropdownProps['options'];
   value: DropdownProps['value'];
   onSelect: DropdownProps['onSelect'];
   onDeselect: DropdownProps['onDeselect'];
   isMulti: DropdownProps['isMulti'];
   showSearch: DropdownProps['showSearch'];
-}> = ({ options, value, onSelect, onDeselect, isMulti, showSearch }) => {
+}> = ({ openUpwards, options, value, onSelect, onDeselect, isMulti, showSearch }) => {
   const [searchText, setSearchText] = useState('');
   const filteredOptions = options.filter((option) => option.value.toLowerCase().includes(searchText));
 
   return (
-    <AbsoluteContainer>
+    <AbsoluteContainer $openUpwards={openUpwards}>
       {showSearch && (
         <SearchInputContainer>
           <Input placeholder='Search...' icon={SearchIcon} value={searchText} onChange={(e) => setSearchText(e.target.value.toLowerCase())} />
