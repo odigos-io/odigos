@@ -42,7 +42,7 @@ export const CliDrawer: React.FC<Props> = () => {
                     { key: 'token', title: 'Token' },
                     { key: 'actions', title: '' },
                   ],
-                  rows: tokens.map(({ token, aud, iat, exp }, idx) => [
+                  rows: tokens.map(({ token, aud, exp }, idx) => [
                     { columnKey: 'icon', icon: KeyIcon },
                     { columnKey: 'name', value: aud },
                     { columnKey: 'expires_at', value: `${timeAgo.format(exp)} (${new Date(exp).toDateString().split(' ').slice(1).join(' ')})` },
