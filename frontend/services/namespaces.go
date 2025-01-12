@@ -143,7 +143,7 @@ func CountAppsPerNamespace(ctx context.Context) (map[string]int, error) {
 			Group:    "apps",
 			Version:  "v1",
 			Resource: resourceType,
-		}).List, ctx, metav1.ListOptions{}, func(list *metav1.PartialObjectMetadataList) error {
+		}).List, ctx, &metav1.ListOptions{}, func(list *metav1.PartialObjectMetadataList) error {
 			for _, item := range list.Items {
 				namespaceToAppsCount[item.Namespace]++
 			}

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/goccy/go-yaml"
+
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 )
@@ -74,12 +75,15 @@ type ResourceStatuses struct {
 	Processor   map[string]error
 }
 
-func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, memoryLimiterConfig GenericMap, applySelfTelemetry func(c *Config) error) (string, error, *ResourceStatuses, []common.ObservabilitySignal) {
+func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, memoryLimiterConfig GenericMap,
+	applySelfTelemetry func(c *Config) error) (string, error, *ResourceStatuses, []common.ObservabilitySignal) {
 	currentConfig, prefixProcessors := getBasicConfig(memoryLimiterConfig)
 	return CalculateWithBase(currentConfig, prefixProcessors, dests, processors, applySelfTelemetry)
 }
 
-func CalculateWithBase(currentConfig *Config, prefixProcessors []string, dests []ExporterConfigurer, processors []ProcessorConfigurer, applySelfTelemetry func(c *Config) error) (string, error, *ResourceStatuses, []common.ObservabilitySignal) {
+func CalculateWithBase(currentConfig *Config, prefixProcessors []string, dests []ExporterConfigurer,
+	processors []ProcessorConfigurer, applySelfTelemetry func(c *Config) error) (string, error, *ResourceStatuses,
+	[]common.ObservabilitySignal) {
 	configers, err := LoadConfigers()
 	if err != nil {
 		return "", err, nil, nil
@@ -193,7 +197,9 @@ func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {
 							// setting it to a large value to avoid dropping batches.
 							"max_recv_msg_size_mib": 128,
 							"endpoint":              "0.0.0.0:4317",
-							// The Node Collector opens a gRPC stream to send data. This ensures that the Node Collector establishes a new connection when the Gateway scales up to include additional instances.
+							// The Node Collector opens a gRPC stream to send data.
+							// This ensures that the Node Collector establishes a new connection when the Gateway scales up
+							// to include additional instances.
 							"keepalive": GenericMap{
 								"server_parameters": GenericMap{
 									"max_connection_age":       consts.GatewayMaxConnectionAge,
