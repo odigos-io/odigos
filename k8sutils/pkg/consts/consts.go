@@ -1,8 +1,9 @@
 package consts
 
 import (
-	commonconsts "github.com/odigos-io/odigos/common/consts"
 	"k8s.io/apimachinery/pkg/util/version"
+
+	commonconsts "github.com/odigos-io/odigos/common/consts"
 )
 
 var (
