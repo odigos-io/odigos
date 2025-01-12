@@ -54,9 +54,7 @@ func odigletRolloutTrigger(ctx context.Context, client kubernetes.Interface, nam
 
 	_, err = client.AppsV1().DaemonSets(namespace).Update(ctx, daemonSet, metav1.UpdateOptions{})
 	if err != nil {
-		fmt.Printf("Failed to restart Odiglets. Reason: %s\n", err)
-		fmt.Printf("To trigger a restart manually, run the following command:\n")
-		fmt.Printf("kubectl rollout restart daemonset odiglet -n %s\n", daemonSet.Namespace)
+		return fmt.Errorf("failed to restart Odiglets: %w. To trigger a restart manually, run the following command: kubectl rollout restart daemonset odiglet -n %s", err, daemonSet.Namespace)
 	}
 	return nil
 }
