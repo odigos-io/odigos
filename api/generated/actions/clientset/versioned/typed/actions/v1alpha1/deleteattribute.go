@@ -18,10 +18,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
-	actionsv1alpha1 "github.com/odigos-io/odigos/api/generated/actions/applyconfiguration/actions/v1alpha1"
+	actionsv1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
+	applyconfigurationactionsv1alpha1 "github.com/odigos-io/odigos/api/generated/actions/applyconfiguration/actions/v1alpha1"
 	scheme "github.com/odigos-io/odigos/api/generated/actions/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -37,36 +37,37 @@ type DeleteAttributesGetter interface {
 
 // DeleteAttributeInterface has methods to work with DeleteAttribute resources.
 type DeleteAttributeInterface interface {
-	Create(ctx context.Context, deleteAttribute *v1alpha1.DeleteAttribute, opts v1.CreateOptions) (*v1alpha1.DeleteAttribute, error)
-	Update(ctx context.Context, deleteAttribute *v1alpha1.DeleteAttribute, opts v1.UpdateOptions) (*v1alpha1.DeleteAttribute, error)
+	Create(ctx context.Context, deleteAttribute *actionsv1alpha1.DeleteAttribute, opts v1.CreateOptions) (*actionsv1alpha1.DeleteAttribute, error)
+	Update(ctx context.Context, deleteAttribute *actionsv1alpha1.DeleteAttribute, opts v1.UpdateOptions) (*actionsv1alpha1.DeleteAttribute, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, deleteAttribute *v1alpha1.DeleteAttribute, opts v1.UpdateOptions) (*v1alpha1.DeleteAttribute, error)
+	UpdateStatus(ctx context.Context, deleteAttribute *actionsv1alpha1.DeleteAttribute, opts v1.UpdateOptions) (*actionsv1alpha1.DeleteAttribute, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.DeleteAttribute, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.DeleteAttributeList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*actionsv1alpha1.DeleteAttribute, error)
+	List(ctx context.Context, opts v1.ListOptions) (*actionsv1alpha1.DeleteAttributeList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.DeleteAttribute, err error)
-	Apply(ctx context.Context, deleteAttribute *actionsv1alpha1.DeleteAttributeApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.DeleteAttribute, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *actionsv1alpha1.DeleteAttribute, err error)
+	Apply(ctx context.Context, deleteAttribute *applyconfigurationactionsv1alpha1.DeleteAttributeApplyConfiguration, opts v1.ApplyOptions) (result *actionsv1alpha1.DeleteAttribute, err error)
 	// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-	ApplyStatus(ctx context.Context, deleteAttribute *actionsv1alpha1.DeleteAttributeApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.DeleteAttribute, err error)
+	ApplyStatus(ctx context.Context, deleteAttribute *applyconfigurationactionsv1alpha1.DeleteAttributeApplyConfiguration, opts v1.ApplyOptions) (result *actionsv1alpha1.DeleteAttribute, err error)
 	DeleteAttributeExpansion
 }
 
 // deleteAttributes implements DeleteAttributeInterface
 type deleteAttributes struct {
-	*gentype.ClientWithListAndApply[*v1alpha1.DeleteAttribute, *v1alpha1.DeleteAttributeList, *actionsv1alpha1.DeleteAttributeApplyConfiguration]
+	*gentype.ClientWithListAndApply[*actionsv1alpha1.DeleteAttribute, *actionsv1alpha1.DeleteAttributeList, *applyconfigurationactionsv1alpha1.DeleteAttributeApplyConfiguration]
 }
 
 // newDeleteAttributes returns a DeleteAttributes
 func newDeleteAttributes(c *ActionsV1alpha1Client, namespace string) *deleteAttributes {
 	return &deleteAttributes{
-		gentype.NewClientWithListAndApply[*v1alpha1.DeleteAttribute, *v1alpha1.DeleteAttributeList, *actionsv1alpha1.DeleteAttributeApplyConfiguration](
+		gentype.NewClientWithListAndApply[*actionsv1alpha1.DeleteAttribute, *actionsv1alpha1.DeleteAttributeList, *applyconfigurationactionsv1alpha1.DeleteAttributeApplyConfiguration](
 			"deleteattributes",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.DeleteAttribute { return &v1alpha1.DeleteAttribute{} },
-			func() *v1alpha1.DeleteAttributeList { return &v1alpha1.DeleteAttributeList{} }),
+			func() *actionsv1alpha1.DeleteAttribute { return &actionsv1alpha1.DeleteAttribute{} },
+			func() *actionsv1alpha1.DeleteAttributeList { return &actionsv1alpha1.DeleteAttributeList{} },
+		),
 	}
 }
