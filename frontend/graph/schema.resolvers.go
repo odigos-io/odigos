@@ -29,7 +29,7 @@ func (r *computePlatformResolver) APITokens(ctx context.Context, obj *model.Comp
 	// The result should always be 0 or 1:
 	// If it's 0, it means this is the OSS version.
 	// If it's 1, it means this is the Enterprise version.
-	secret, err := kube.DefaultClient.CoreV1().Secrets(services.OdigosSystemNamespace).Get(ctx, k8sconsts.OdigosProSecretName, metav1.GetOptions{})
+	secret, err := kube.DefaultClient.CoreV1().Secrets(consts.DefaultOdigosNamespace).Get(ctx, k8sconsts.OdigosProSecretName, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return make([]*model.APIToken, 0), nil
