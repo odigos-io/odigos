@@ -22,7 +22,14 @@ const Table = styled.table`
 
 const TableBody = styled.tbody``;
 
-const TableRow = styled.tr``;
+const TableRow = styled.tr`
+  td:first-child {
+    padding-left: 0 !important;
+  }
+  td:last-child {
+    padding-right: 0 !important;
+  }
+`;
 
 const TableData = styled.td`
   vertical-align: top;
