@@ -8,6 +8,7 @@ import (
 	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/profiles"
+	"github.com/odigos-io/odigos/profiles/profile"
 	"github.com/odigos-io/odigos/profiles/sizing"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,6 +22,7 @@ import (
 type odigosConfigController struct {
 	client.Client
 	Scheme *runtime.Scheme
+	Tier   common.OdigosTier
 }
 
 func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
@@ -38,7 +40,8 @@ func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) 
 	odigosConfig.IgnoredContainers = mergeIgnoredItemLists(odigosConfig.IgnoredContainers, k8sconsts.DefaultIgnoredContainers)
 
 	// effective profiles are what is actually used in the cluster
-	effectiveProfiles := calculateEffectiveProfiles(odigosConfig.Profiles)
+	availableProfiles := profiles.GetAvailableProfilesForTier(r.Tier)
+	effectiveProfiles := calculateEffectiveProfiles(odigosConfig.Profiles, availableProfiles)
 	odigosConfig.Profiles = effectiveProfiles
 	modifyConfigWithEffectiveProfiles(effectiveProfiles, odigosConfig)
 
@@ -126,22 +129,33 @@ func modifyConfigWithEffectiveProfiles(effectiveProfiles []common.ProfileName, o
 // from the list of input profiles, calculate the effective profiles:
 // - check the dependencies of each profile and add them to the list
 // - remove profiles which are not present in the profiles list
-func calculateEffectiveProfiles(configProfiles []common.ProfileName) []common.ProfileName {
-	effectiveProfiles := []common.ProfileName{}
-	for _, profile := range configProfiles {
+func calculateEffectiveProfiles(configProfiles []common.ProfileName, availableProfiles []profile.Profile) []common.ProfileName {
 
-		// ignore missing profiles
-		p, found := profiles.ProfilesByName[profile]
+	effectiveProfiles := []common.ProfileName{}
+	for _, profileName := range configProfiles {
+
+		// ignored missing profiles (either not available for tier or typos)
+		p, found := findProfileNameInAvailableList(profileName, availableProfiles)
 		if !found {
 			continue
 		}
 
-		effectiveProfiles = append(effectiveProfiles, profile)
+		effectiveProfiles = append(effectiveProfiles, profileName)
 
 		// if this profile has dependencies, add them to the list
 		if p.Dependencies != nil {
-			effectiveProfiles = append(effectiveProfiles, calculateEffectiveProfiles(p.Dependencies)...)
+			effectiveProfiles = append(effectiveProfiles, calculateEffectiveProfiles(p.Dependencies, availableProfiles)...)
 		}
 	}
 	return effectiveProfiles
+}
+
+func findProfileNameInAvailableList(profileName common.ProfileName, availableProfiles []profile.Profile) (profile.Profile, bool) {
+	// there aren't many profiles, so a linear search is fine
+	for _, p := range availableProfiles {
+		if p.ProfileName == profileName {
+			return p, true
+		}
+	}
+	return profile.Profile{}, false
 }
