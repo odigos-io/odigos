@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/go-logr/logr"
 
@@ -16,7 +17,8 @@ func StartPprofServer(ctx context.Context, logger logr.Logger) error {
 	logger.Info("Starting pprof server")
 	addr := fmt.Sprintf(":%d", consts.PprofOdigosPort)
 
-	server := &http.Server{Addr: addr, Handler: nil}
+	server := &http.Server{Addr: addr, Handler: nil,
+		ReadHeaderTimeout: time.Second * 5}
 	done := make(chan struct{})
 	errChan := make(chan error, 1)
 

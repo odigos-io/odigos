@@ -87,7 +87,7 @@ func lokiUrlFromInput(rawUrl string) (string, error) {
 		if parsedUrl.Host == "" {
 			return "", fmt.Errorf("loki endpoint host is required")
 		}
-		parsedUrl.Host = parsedUrl.Host + ":3100"
+		parsedUrl.Host += ":3100"
 	}
 
 	return parsedUrl.String(), nil
