@@ -18,10 +18,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // ProcessorLister helps list Processors.
@@ -29,7 +29,7 @@ import (
 type ProcessorLister interface {
 	// List lists all Processors in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.Processor, err error)
+	List(selector labels.Selector) (ret []*odigosv1alpha1.Processor, err error)
 	// Processors returns an object that can list and get Processors.
 	Processors(namespace string) ProcessorNamespaceLister
 	ProcessorListerExpansion
@@ -37,17 +37,17 @@ type ProcessorLister interface {
 
 // processorLister implements the ProcessorLister interface.
 type processorLister struct {
-	listers.ResourceIndexer[*v1alpha1.Processor]
+	listers.ResourceIndexer[*odigosv1alpha1.Processor]
 }
 
 // NewProcessorLister returns a new ProcessorLister.
 func NewProcessorLister(indexer cache.Indexer) ProcessorLister {
-	return &processorLister{listers.New[*v1alpha1.Processor](indexer, v1alpha1.Resource("processor"))}
+	return &processorLister{listers.New[*odigosv1alpha1.Processor](indexer, odigosv1alpha1.Resource("processor"))}
 }
 
 // Processors returns an object that can list and get Processors.
 func (s *processorLister) Processors(namespace string) ProcessorNamespaceLister {
-	return processorNamespaceLister{listers.NewNamespaced[*v1alpha1.Processor](s.ResourceIndexer, namespace)}
+	return processorNamespaceLister{listers.NewNamespaced[*odigosv1alpha1.Processor](s.ResourceIndexer, namespace)}
 }
 
 // ProcessorNamespaceLister helps list and get Processors.
@@ -55,15 +55,15 @@ func (s *processorLister) Processors(namespace string) ProcessorNamespaceLister 
 type ProcessorNamespaceLister interface {
 	// List lists all Processors in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.Processor, err error)
+	List(selector labels.Selector) (ret []*odigosv1alpha1.Processor, err error)
 	// Get retrieves the Processor from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.Processor, error)
+	Get(name string) (*odigosv1alpha1.Processor, error)
 	ProcessorNamespaceListerExpansion
 }
 
 // processorNamespaceLister implements the ProcessorNamespaceLister
 // interface.
 type processorNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.Processor]
+	listers.ResourceIndexer[*odigosv1alpha1.Processor]
 }

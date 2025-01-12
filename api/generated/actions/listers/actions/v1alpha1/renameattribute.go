@@ -18,10 +18,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	actionsv1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // RenameAttributeLister helps list RenameAttributes.
@@ -29,7 +29,7 @@ import (
 type RenameAttributeLister interface {
 	// List lists all RenameAttributes in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.RenameAttribute, err error)
+	List(selector labels.Selector) (ret []*actionsv1alpha1.RenameAttribute, err error)
 	// RenameAttributes returns an object that can list and get RenameAttributes.
 	RenameAttributes(namespace string) RenameAttributeNamespaceLister
 	RenameAttributeListerExpansion
@@ -37,17 +37,17 @@ type RenameAttributeLister interface {
 
 // renameAttributeLister implements the RenameAttributeLister interface.
 type renameAttributeLister struct {
-	listers.ResourceIndexer[*v1alpha1.RenameAttribute]
+	listers.ResourceIndexer[*actionsv1alpha1.RenameAttribute]
 }
 
 // NewRenameAttributeLister returns a new RenameAttributeLister.
 func NewRenameAttributeLister(indexer cache.Indexer) RenameAttributeLister {
-	return &renameAttributeLister{listers.New[*v1alpha1.RenameAttribute](indexer, v1alpha1.Resource("renameattribute"))}
+	return &renameAttributeLister{listers.New[*actionsv1alpha1.RenameAttribute](indexer, actionsv1alpha1.Resource("renameattribute"))}
 }
 
 // RenameAttributes returns an object that can list and get RenameAttributes.
 func (s *renameAttributeLister) RenameAttributes(namespace string) RenameAttributeNamespaceLister {
-	return renameAttributeNamespaceLister{listers.NewNamespaced[*v1alpha1.RenameAttribute](s.ResourceIndexer, namespace)}
+	return renameAttributeNamespaceLister{listers.NewNamespaced[*actionsv1alpha1.RenameAttribute](s.ResourceIndexer, namespace)}
 }
 
 // RenameAttributeNamespaceLister helps list and get RenameAttributes.
@@ -55,15 +55,15 @@ func (s *renameAttributeLister) RenameAttributes(namespace string) RenameAttribu
 type RenameAttributeNamespaceLister interface {
 	// List lists all RenameAttributes in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.RenameAttribute, err error)
+	List(selector labels.Selector) (ret []*actionsv1alpha1.RenameAttribute, err error)
 	// Get retrieves the RenameAttribute from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.RenameAttribute, error)
+	Get(name string) (*actionsv1alpha1.RenameAttribute, error)
 	RenameAttributeNamespaceListerExpansion
 }
 
 // renameAttributeNamespaceLister implements the RenameAttributeNamespaceLister
 // interface.
 type renameAttributeNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.RenameAttribute]
+	listers.ResourceIndexer[*actionsv1alpha1.RenameAttribute]
 }

@@ -8,6 +8,7 @@ require (
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/odigos/k8sutils v0.0.0
+	github.com/odigos-io/odigos/profiles v0.0.0
 	github.com/spf13/cobra v1.8.1
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.32.0
@@ -78,4 +79,5 @@ replace (
 	github.com/odigos-io/odigos/autoscaler => ../autoscaler
 	github.com/odigos-io/odigos/common => ../common
 	github.com/odigos-io/odigos/k8sutils => ../k8sutils
+	github.com/odigos-io/odigos/profiles => ../profiles
 )
