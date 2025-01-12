@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
-import { FlexRow } from '@/styles';
+import React, { useRef, useState } from 'react';
+import theme from '@/styles/theme';
 import styled from 'styled-components';
 import { NOTIFICATION_TYPE } from '@/types';
+import { FlexColumn, FlexRow } from '@/styles';
 import { DATA_CARDS, getStatusIcon, safeJsonStringify } from '@/utils';
 import OverviewDrawer from '@/containers/main/overview/overview-drawer';
-import { CodeBracketsIcon, CodeIcon, CopyIcon, KeyIcon, ListIcon } from '@/assets';
-import { useComputePlatform, useCopy, useDescribeOdigos, useTimeAgo } from '@/hooks';
-import { DataCard, DataCardFieldTypes, IconButton, Segment } from '@/reuseable-components';
+import { CheckIcon, CodeBracketsIcon, CodeIcon, CopyIcon, CrossIcon, EditIcon, KeyIcon, ListIcon } from '@/assets';
+import { useComputePlatform, useCopy, useDescribeOdigos, useKeyDown, useOnClickOutside, useTimeAgo } from '@/hooks';
+import { Button, DataCard, DataCardFieldTypes, Divider, IconButton, Input, Segment, Text, Tooltip } from '@/reuseable-components';
 
 interface Props {}
 
@@ -16,13 +17,50 @@ const DataContainer = styled.div`
   gap: 12px;
 `;
 
+const Relative = styled.div`
+  position: relative;
+`;
+
+const TokenPopover = styled(FlexColumn)`
+  position: absolute;
+  top: 32px;
+  right: 0;
+  z-index: 1;
+  gap: 8px;
+  padding: 24px;
+  background-color: ${({ theme }) => theme.colors.info};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 24px;
+`;
+
+const PopoverFormWrapper = styled(FlexRow)`
+  width: 100%;
+`;
+
+const PopoverFormButton = styled(Button)`
+  width: 36px;
+  padding-left: 0;
+  padding-right: 0;
+`;
+
 export const CliDrawer: React.FC<Props> = () => {
   const timeAgo = useTimeAgo();
-  const { data: cp } = useComputePlatform();
   const { isCopied, copiedIndex, clickCopy } = useCopy();
+  const { data: cp, loading, updateToken } = useComputePlatform();
   const { data: describe, restructureForPrettyMode } = useDescribeOdigos();
 
   const [isPrettyMode, setIsPrettyMode] = useState(true);
+  const [editTokenIndex, setEditTokenIndex] = useState(-1);
+
+  const tokenPopoverRef = useRef<HTMLDivElement>(null);
+  const tokenInputRef = useRef<HTMLInputElement>(null);
+  useOnClickOutside(tokenPopoverRef, () => setEditTokenIndex(-1));
+  useKeyDown({ key: 'Enter', active: editTokenIndex !== -1 }, saveToken);
+
+  function saveToken() {
+    const token = tokenInputRef.current?.value;
+    if (token) updateToken(token).then(() => setEditTokenIndex(-1));
+  }
 
   const tokens = cp?.computePlatform.apiTokens || [];
 
@@ -59,12 +97,32 @@ export const CliDrawer: React.FC<Props> = () => {
                             <IconButton size={32} onClick={() => clickCopy(token, idx)}>
                               {isCopied && copiedIndex === idx ? <SuccessIcon /> : <CopyIcon />}
                             </IconButton>
+                            <Divider orientation='vertical' length='12px' />
 
-                            {/* <Divider orientation='vertical' length='12px' />
+                            <Relative>
+                              <IconButton size={32} onClick={() => setEditTokenIndex(idx)}>
+                                <EditIcon />
+                              </IconButton>
 
-                            <IconButton size={32} onClick={() => {}}>
-                              <EditIcon />
-                            </IconButton> */}
+                              {editTokenIndex === idx && (
+                                <TokenPopover ref={tokenPopoverRef}>
+                                  <Tooltip text='Contact us to generate a new one' withIcon>
+                                    <Text size={14} style={{ lineHeight: '20px', display: 'flex' }}>
+                                      Enter a new API Token:
+                                    </Text>
+                                  </Tooltip>
+                                  <PopoverFormWrapper>
+                                    <Input ref={tokenInputRef} placeholder='API Token' autoFocus />
+                                    <PopoverFormButton variant='primary' disabled={loading} onClick={saveToken}>
+                                      <CheckIcon fill={theme.text.primary} />
+                                    </PopoverFormButton>
+                                    <PopoverFormButton variant='secondary' disabled={loading} onClick={() => setEditTokenIndex(-1)}>
+                                      <CrossIcon />
+                                    </PopoverFormButton>
+                                  </PopoverFormWrapper>
+                                </TokenPopover>
+                              )}
+                            </Relative>
                           </FlexRow>
                         );
                       },

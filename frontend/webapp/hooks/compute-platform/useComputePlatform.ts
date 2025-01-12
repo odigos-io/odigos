@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
-import { useQuery } from '@apollo/client';
 import { useNotificationStore } from '@/store';
-import { GET_COMPUTE_PLATFORM } from '@/graphql';
 import { useFilterStore } from '@/store/useFilterStore';
+import { GET_COMPUTE_PLATFORM, UPDATE_API_TOKEN } from '@/graphql';
+import { FetchResult, useMutation, useQuery } from '@apollo/client';
 import { ACTION, deriveTypeFromRule, safeJsonParse } from '@/utils';
 import { NOTIFICATION_TYPE, SupportedSignals, type ActionItem, type ComputePlatform, type ComputePlatformMapped } from '@/types';
 
@@ -12,6 +12,7 @@ type UseComputePlatformHook = {
   loading: boolean;
   error?: Error;
   refetch: () => void;
+  updateToken: (token: string) => Promise<FetchResult<{ updateApiToken: boolean }>>;
 };
 
 export const useComputePlatform = (): UseComputePlatformHook => {
@@ -27,6 +28,24 @@ export const useComputePlatform = (): UseComputePlatformHook => {
         title: error.name || ACTION.FETCH,
         message: error.cause?.message || error.message,
       }),
+  });
+
+  const [updateTokenMutation, { loading: updateTokenLoading }] = useMutation<{ updateApiToken: boolean }>(UPDATE_API_TOKEN, {
+    onError: (error) => {
+      addNotification({
+        type: NOTIFICATION_TYPE.ERROR,
+        title: error.name || ACTION.UPDATE,
+        message: error.cause?.message || error.message,
+      });
+    },
+    onCompleted: () => {
+      addNotification({
+        type: NOTIFICATION_TYPE.SUCCESS,
+        title: ACTION.UPDATE,
+        message: 'API Token updated',
+      });
+      refetch();
+    },
   });
 
   const mappedCP = useMemo(() => {
@@ -100,8 +119,9 @@ export const useComputePlatform = (): UseComputePlatformHook => {
   return {
     data: mappedCP,
     filteredData: filteredCP,
-    loading,
+    loading: loading || updateTokenLoading,
     error,
     refetch,
+    updateToken: async (token: string) => await updateTokenMutation({ variables: { token } }),
   };
 };
