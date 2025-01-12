@@ -18,13 +18,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
 	versioned "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned"
 	internalinterfaces "github.com/odigos-io/odigos/api/generated/odigos/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/listers/odigos/v1alpha1"
-	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/listers/odigos/v1alpha1"
+	apiodigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -35,7 +35,7 @@ import (
 // Processors.
 type ProcessorInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.ProcessorLister
+	Lister() odigosv1alpha1.ProcessorLister
 }
 
 type processorInformer struct {
@@ -70,7 +70,7 @@ func NewFilteredProcessorInformer(client versioned.Interface, namespace string, 
 				return client.OdigosV1alpha1().Processors(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&odigosv1alpha1.Processor{},
+		&apiodigosv1alpha1.Processor{},
 		resyncPeriod,
 		indexers,
 	)
@@ -81,9 +81,9 @@ func (f *processorInformer) defaultInformer(client versioned.Interface, resyncPe
 }
 
 func (f *processorInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&odigosv1alpha1.Processor{}, f.defaultInformer)
+	return f.factory.InformerFor(&apiodigosv1alpha1.Processor{}, f.defaultInformer)
 }
 
-func (f *processorInformer) Lister() v1alpha1.ProcessorLister {
-	return v1alpha1.NewProcessorLister(f.Informer().GetIndexer())
+func (f *processorInformer) Lister() odigosv1alpha1.ProcessorLister {
+	return odigosv1alpha1.NewProcessorLister(f.Informer().GetIndexer())
 }

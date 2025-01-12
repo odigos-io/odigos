@@ -1,19 +1,19 @@
-package profiles
+package manifests
 
 import (
 	"embed"
 	"fmt"
 	"reflect"
 
-	"github.com/odigos-io/odigos/cli/pkg/kube"
+	"github.com/odigos-io/odigos/profiles/profile"
 	"sigs.k8s.io/yaml"
 )
 
 //go:embed *.yaml
 var embeddedFiles embed.FS
 
-// GetEmbeddedYAMLFileAsObjects is a generic function to read embedded YAML files and convert them into runtime.Object
-func GetEmbeddedYAMLFileAsObjects(filename string, obj kube.Object) ([]kube.Object, error) {
+// GetEmbeddedResourceManifestsAsObjects is a generic function to read embedded YAML files and convert them into runtime.Object
+func GetEmbeddedResourceManifestsAsObjects(filename string, obj profile.K8sObject) ([]profile.K8sObject, error) {
 
 	// Read the embedded YAML file content
 	yamlBytes, err := embeddedFiles.ReadFile(filename)
@@ -31,6 +31,11 @@ func GetEmbeddedYAMLFileAsObjects(filename string, obj kube.Object) ([]kube.Obje
 		return nil, fmt.Errorf("failed to unmarshal YAML: %v", err)
 	}
 
+	k8sObj, ok := newObj.(profile.K8sObject)
+	if !ok {
+		return nil, fmt.Errorf("unmarshaled object is not a k8s object")
+	}
+
 	// Return the object wrapped in a slice
-	return []kube.Object{newObj.(kube.Object)}, nil
+	return []profile.K8sObject{k8sObj}, nil
 }

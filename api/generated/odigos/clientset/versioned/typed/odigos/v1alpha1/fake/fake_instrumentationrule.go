@@ -18,179 +18,35 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-	json "encoding/json"
-	"fmt"
-
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/applyconfiguration/odigos/v1alpha1"
+	typedodigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
 	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakeInstrumentationRules implements InstrumentationRuleInterface
-type FakeInstrumentationRules struct {
+// fakeInstrumentationRules implements InstrumentationRuleInterface
+type fakeInstrumentationRules struct {
+	*gentype.FakeClientWithListAndApply[*v1alpha1.InstrumentationRule, *v1alpha1.InstrumentationRuleList, *odigosv1alpha1.InstrumentationRuleApplyConfiguration]
 	Fake *FakeOdigosV1alpha1
-	ns   string
 }
 
-var instrumentationrulesResource = v1alpha1.SchemeGroupVersion.WithResource("instrumentationrules")
-
-var instrumentationrulesKind = v1alpha1.SchemeGroupVersion.WithKind("InstrumentationRule")
-
-// Get takes name of the instrumentationRule, and returns the corresponding instrumentationRule object, and an error if there is any.
-func (c *FakeInstrumentationRules) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.InstrumentationRule, err error) {
-	emptyResult := &v1alpha1.InstrumentationRule{}
-	obj, err := c.Fake.
-		Invokes(testing.NewGetActionWithOptions(instrumentationrulesResource, c.ns, name, options), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
+func newFakeInstrumentationRules(fake *FakeOdigosV1alpha1, namespace string) typedodigosv1alpha1.InstrumentationRuleInterface {
+	return &fakeInstrumentationRules{
+		gentype.NewFakeClientWithListAndApply[*v1alpha1.InstrumentationRule, *v1alpha1.InstrumentationRuleList, *odigosv1alpha1.InstrumentationRuleApplyConfiguration](
+			fake.Fake,
+			namespace,
+			v1alpha1.SchemeGroupVersion.WithResource("instrumentationrules"),
+			v1alpha1.SchemeGroupVersion.WithKind("InstrumentationRule"),
+			func() *v1alpha1.InstrumentationRule { return &v1alpha1.InstrumentationRule{} },
+			func() *v1alpha1.InstrumentationRuleList { return &v1alpha1.InstrumentationRuleList{} },
+			func(dst, src *v1alpha1.InstrumentationRuleList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.InstrumentationRuleList) []*v1alpha1.InstrumentationRule {
+				return gentype.ToPointerSlice(list.Items)
+			},
+			func(list *v1alpha1.InstrumentationRuleList, items []*v1alpha1.InstrumentationRule) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.InstrumentationRule), err
-}
-
-// List takes label and field selectors, and returns the list of InstrumentationRules that match those selectors.
-func (c *FakeInstrumentationRules) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.InstrumentationRuleList, err error) {
-	emptyResult := &v1alpha1.InstrumentationRuleList{}
-	obj, err := c.Fake.
-		Invokes(testing.NewListActionWithOptions(instrumentationrulesResource, instrumentationrulesKind, c.ns, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.InstrumentationRuleList{ListMeta: obj.(*v1alpha1.InstrumentationRuleList).ListMeta}
-	for _, item := range obj.(*v1alpha1.InstrumentationRuleList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested instrumentationRules.
-func (c *FakeInstrumentationRules) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewWatchActionWithOptions(instrumentationrulesResource, c.ns, opts))
-
-}
-
-// Create takes the representation of a instrumentationRule and creates it.  Returns the server's representation of the instrumentationRule, and an error, if there is any.
-func (c *FakeInstrumentationRules) Create(ctx context.Context, instrumentationRule *v1alpha1.InstrumentationRule, opts v1.CreateOptions) (result *v1alpha1.InstrumentationRule, err error) {
-	emptyResult := &v1alpha1.InstrumentationRule{}
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateActionWithOptions(instrumentationrulesResource, c.ns, instrumentationRule, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.InstrumentationRule), err
-}
-
-// Update takes the representation of a instrumentationRule and updates it. Returns the server's representation of the instrumentationRule, and an error, if there is any.
-func (c *FakeInstrumentationRules) Update(ctx context.Context, instrumentationRule *v1alpha1.InstrumentationRule, opts v1.UpdateOptions) (result *v1alpha1.InstrumentationRule, err error) {
-	emptyResult := &v1alpha1.InstrumentationRule{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateActionWithOptions(instrumentationrulesResource, c.ns, instrumentationRule, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.InstrumentationRule), err
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeInstrumentationRules) UpdateStatus(ctx context.Context, instrumentationRule *v1alpha1.InstrumentationRule, opts v1.UpdateOptions) (result *v1alpha1.InstrumentationRule, err error) {
-	emptyResult := &v1alpha1.InstrumentationRule{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceActionWithOptions(instrumentationrulesResource, "status", c.ns, instrumentationRule, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.InstrumentationRule), err
-}
-
-// Delete takes name of the instrumentationRule and deletes it. Returns an error if one occurs.
-func (c *FakeInstrumentationRules) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(instrumentationrulesResource, c.ns, name, opts), &v1alpha1.InstrumentationRule{})
-
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakeInstrumentationRules) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionActionWithOptions(instrumentationrulesResource, c.ns, opts, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.InstrumentationRuleList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched instrumentationRule.
-func (c *FakeInstrumentationRules) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.InstrumentationRule, err error) {
-	emptyResult := &v1alpha1.InstrumentationRule{}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceActionWithOptions(instrumentationrulesResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.InstrumentationRule), err
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied instrumentationRule.
-func (c *FakeInstrumentationRules) Apply(ctx context.Context, instrumentationRule *odigosv1alpha1.InstrumentationRuleApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.InstrumentationRule, err error) {
-	if instrumentationRule == nil {
-		return nil, fmt.Errorf("instrumentationRule provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(instrumentationRule)
-	if err != nil {
-		return nil, err
-	}
-	name := instrumentationRule.Name
-	if name == nil {
-		return nil, fmt.Errorf("instrumentationRule.Name must be provided to Apply")
-	}
-	emptyResult := &v1alpha1.InstrumentationRule{}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceActionWithOptions(instrumentationrulesResource, c.ns, *name, types.ApplyPatchType, data, opts.ToPatchOptions()), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.InstrumentationRule), err
-}
-
-// ApplyStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-func (c *FakeInstrumentationRules) ApplyStatus(ctx context.Context, instrumentationRule *odigosv1alpha1.InstrumentationRuleApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.InstrumentationRule, err error) {
-	if instrumentationRule == nil {
-		return nil, fmt.Errorf("instrumentationRule provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(instrumentationRule)
-	if err != nil {
-		return nil, err
-	}
-	name := instrumentationRule.Name
-	if name == nil {
-		return nil, fmt.Errorf("instrumentationRule.Name must be provided to Apply")
-	}
-	emptyResult := &v1alpha1.InstrumentationRule{}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceActionWithOptions(instrumentationrulesResource, c.ns, *name, types.ApplyPatchType, data, opts.ToPatchOptions(), "status"), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.InstrumentationRule), err
 }
