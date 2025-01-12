@@ -104,8 +104,6 @@ export function useDestinationFormData(params?: { destinationType?: string; supp
           if (!!preLoadedFields) {
             const parsedFields = typeof preLoadedFields === 'string' ? safeJsonParse<Record<string, string>>(preLoadedFields, {}) : preLoadedFields;
 
-            console.log('parsedFields', parsedFields);
-
             if (field.name in parsedFields) {
               return {
                 ...field,
