@@ -16,7 +16,7 @@ import (
 //     controller restart as the object is no longer in k8s.
 type ExistencePredicate struct{}
 
-func (o ExistencePredicate) Create(e event.CreateEvent) bool {
+func (i ExistencePredicate) Create(e event.CreateEvent) bool {
 	return true
 }
 

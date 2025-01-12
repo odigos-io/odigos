@@ -58,7 +58,8 @@ func DescribeOdigosToText(analyze *odigos.OdigosAnalyze) string {
 	return sb.String()
 }
 
-func DescribeOdigos(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, odigosNs string) (*odigos.OdigosAnalyze, error) {
+func DescribeOdigos(ctx context.Context, kubeClient kubernetes.Interface,
+	odigosClient odigosclientset.OdigosV1alpha1Interface, odigosNs string) (*odigos.OdigosAnalyze, error) {
 	odigosResources, err := odigos.GetRelevantOdigosResources(ctx, kubeClient, odigosClient, odigosNs)
 	if err != nil {
 		return nil, err

@@ -185,7 +185,8 @@ func analyzeInstrumentationConfig(resources *OdigosSourceResources, instrumented
 func analyzeRuntimeDetails(runtimeDetailsByContainer []odigosv1.RuntimeDetailsByContainer) []ContainerRuntimeInfoAnalyze {
 	containers := make([]ContainerRuntimeInfoAnalyze, 0, len(runtimeDetailsByContainer))
 
-	for _, container := range runtimeDetailsByContainer {
+	for i := range runtimeDetailsByContainer {
+		container := runtimeDetailsByContainer[i]
 		containerName := properties.EntityProperty{
 			Name:    "Container Name",
 			Value:   container.ContainerName,
@@ -298,7 +299,8 @@ func analyzeInstrumentationDevice(resources *OdigosSourceResources, workloadObj 
 
 	templateContainers := workloadObj.PodTemplateSpec.Spec.Containers
 	containers := make([]ContainerWorkloadManifestAnalyze, 0, len(templateContainers))
-	for _, container := range templateContainers {
+	for i := range templateContainers {
+		container := templateContainers[i]
 		containerName := properties.EntityProperty{
 			Name:    "Container Name",
 			Value:   container.Name,
@@ -408,7 +410,8 @@ func podPhaseToStatus(phase corev1.PodPhase) properties.PropertyStatus {
 func analyzePods(resources *OdigosSourceResources, expectedDevices InstrumentationDeviceAnalyze) ([]PodAnalyze, string) {
 	pods := make([]PodAnalyze, 0, len(resources.Pods.Items))
 	podsStatuses := make(map[corev1.PodPhase]int)
-	for _, pod := range resources.Pods.Items {
+	for i := range resources.Pods.Items {
+		pod := resources.Pods.Items[i]
 		podsStatuses[pod.Status.Phase]++
 
 		name := properties.EntityProperty{
@@ -441,7 +444,8 @@ func analyzePods(resources *OdigosSourceResources, expectedDevices Instrumentati
 		}
 
 		containers := make([]PodContainerAnalyze, 0, len(pod.Spec.Containers))
-		for _, container := range pod.Spec.Containers {
+		for i := range pod.Spec.Containers {
+			container := pod.Spec.Containers[i]
 			containerName := properties.EntityProperty{
 				Name:    "Container Name",
 				Value:   container.Name,
@@ -457,7 +461,8 @@ func analyzePods(resources *OdigosSourceResources, expectedDevices Instrumentati
 			}
 
 			var expectedContainer *ContainerWorkloadManifestAnalyze
-			for _, c := range expectedDevices.Containers {
+			for i := range expectedDevices.Containers {
+				c := expectedDevices.Containers[i]
 				if c.ContainerName.Value == container.Name {
 					expectedContainer = &c
 					break

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"

@@ -76,7 +76,8 @@ func getSourcePods(ctx context.Context, kubeClient kubernetes.Interface, workloa
 
 		pods := &corev1.PodList{}
 
-		for _, rs := range replicaSets.Items {
+		for i := range replicaSets.Items {
+			rs := &replicaSets.Items[i]
 			// Check if this ReplicaSet is owned by the deployment
 			for _, ownerRef := range rs.OwnerReferences {
 				if string(ownerRef.UID) == string(workloadObj.UID) && ownerRef.Kind == "Deployment" {

@@ -10,7 +10,7 @@ linters:
   enable:
     - nilerr
     - nilnesserr
-    - nilnil
+    # - nilnil
     - bodyclose
     - dogsled
     - dupl
@@ -22,8 +22,8 @@ linters:
     - gocyclo
     - gofmt
     - goimports
-    # - revive
-    # - gosec
+#    - revive
+    - gosec
     - gosimple
     - govet
     - ineffassign
@@ -51,6 +51,9 @@ linters-settings:
   goimports:
     local-prefixes: github.com/odigos-io
   gocritic:
+    settings:
+      hugeParam:
+        sizeThreshold: 100
     enabled-tags:
       - diagnostic
       - experimental
@@ -71,9 +74,13 @@ linters-settings:
     includes:
       - G401
       - G306
-      - G101
+      - G110
+      - G111
+      - G114
+      - G112
     excludes:
       - G204
+      - G101
 
 issues:
   exclude-rules:
