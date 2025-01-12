@@ -103,6 +103,8 @@ interface NodeCollectorAnalyze {
 
 interface OdigosAnalyze {
   odigosVersion: EntityProperty;
+  tier: EntityProperty;
+  installationMethod: EntityProperty;
   numberOfDestinations: number;
   numberOfSources: number;
   clusterCollector: ClusterCollectorAnalyze;

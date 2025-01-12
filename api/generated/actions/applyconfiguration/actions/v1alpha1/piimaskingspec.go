@@ -18,18 +18,18 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
+	actionsv1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	common "github.com/odigos-io/odigos/common"
 )
 
 // PiiMaskingSpecApplyConfiguration represents a declarative configuration of the PiiMaskingSpec type for use
 // with apply.
 type PiiMaskingSpecApplyConfiguration struct {
-	ActionName    *string                      `json:"actionName,omitempty"`
-	Notes         *string                      `json:"notes,omitempty"`
-	Disabled      *bool                        `json:"disabled,omitempty"`
-	Signals       []common.ObservabilitySignal `json:"signals,omitempty"`
-	PiiCategories []v1alpha1.PiiCategory       `json:"piiCategories,omitempty"`
+	ActionName    *string                       `json:"actionName,omitempty"`
+	Notes         *string                       `json:"notes,omitempty"`
+	Disabled      *bool                         `json:"disabled,omitempty"`
+	Signals       []common.ObservabilitySignal  `json:"signals,omitempty"`
+	PiiCategories []actionsv1alpha1.PiiCategory `json:"piiCategories,omitempty"`
 }
 
 // PiiMaskingSpecApplyConfiguration constructs a declarative configuration of the PiiMaskingSpec type for use with
@@ -75,7 +75,7 @@ func (b *PiiMaskingSpecApplyConfiguration) WithSignals(values ...common.Observab
 // WithPiiCategories adds the given value to the PiiCategories field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the PiiCategories field.
-func (b *PiiMaskingSpecApplyConfiguration) WithPiiCategories(values ...v1alpha1.PiiCategory) *PiiMaskingSpecApplyConfiguration {
+func (b *PiiMaskingSpecApplyConfiguration) WithPiiCategories(values ...actionsv1alpha1.PiiCategory) *PiiMaskingSpecApplyConfiguration {
 	for i := range values {
 		b.PiiCategories = append(b.PiiCategories, values[i])
 	}

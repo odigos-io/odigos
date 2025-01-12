@@ -232,7 +232,7 @@ If the Mutating Webhook is enabled, follow these steps:
    Create a local directory and extract the certificate and key by running the following command:
 
 ```
-mkdir -p serving-certs && kubectl get secret instrumentor-webhook-cert -n odigos-system -o jsonpath='{.data.tls\.crt}' | base64 -d > serving-certs/tls.crt && kubectl get secret instrumentor-webhook-cert -n odigos-system -o jsonpath='{.data.tls\.key}' | base64 -d > serving-certs/tls.key
+mkdir -p serving-certs && kubectl get secret webhook-cert -n odigos-system -o jsonpath='{.data.tls\.crt}' | base64 -d > serving-certs/tls.crt && kubectl get secret webhook-cert -n odigos-system -o jsonpath='{.data.tls\.key}' | base64 -d > serving-certs/tls.key
 ```
 
 2. Apply this service to the cluster, it will replace the existing `odigos-instrumentor` service:

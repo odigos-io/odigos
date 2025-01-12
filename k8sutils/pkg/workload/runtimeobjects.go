@@ -22,7 +22,7 @@ func ExtractWorkloadInfoFromRuntimeObjectName(runtimeObjectName string) (workloa
 		return
 	}
 
-	//convert the lowercase kind to pascal case and validate it
+	// convert the lowercase kind to pascal case and validate it
 	workloadKindLowerCase := WorkloadKindLowerCase(parts[0])
 	workloadKind = WorkloadKindFromLowerCase(workloadKindLowerCase)
 	if workloadKind == "" {

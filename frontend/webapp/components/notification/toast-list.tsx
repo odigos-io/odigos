@@ -36,7 +36,7 @@ const Toast: React.FC<Notification> = (props) => {
   const { markAsDismissed, markAsSeen } = useNotificationStore();
   const clickNotif = useClickNotif();
 
-  const onClose = ({ asSeen }) => {
+  const onClose = ({ asSeen }: { asSeen: boolean }) => {
     markAsDismissed(id);
     if (asSeen) markAsSeen(id);
   };

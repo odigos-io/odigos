@@ -4,15 +4,16 @@ import (
 	"context"
 	"fmt"
 
-	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
-	"github.com/odigos-io/odigos/k8sutils/pkg/getters"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+
+	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 )
 
 type ClusterCollectorResources struct {
@@ -27,25 +28,25 @@ type NodeCollectorResources struct {
 }
 
 type OdigosResources struct {
-	OdigosVersion          string
+	OdigosDeployment       *corev1.ConfigMap // guaranteed to exist
 	ClusterCollector       ClusterCollectorResources
 	NodeCollector          NodeCollectorResources
 	Destinations           *odigosv1.DestinationList
 	InstrumentationConfigs *odigosv1.InstrumentationConfigList
 }
 
-func getClusterCollectorResources(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, odigosNs string) (*ClusterCollectorResources, error) {
-
+func getClusterCollectorResources(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface,
+	odigosNs string) (*ClusterCollectorResources, error) {
 	clusterCollector := ClusterCollectorResources{}
 
-	cg, err := odigosClient.CollectorsGroups(odigosNs).Get(ctx, consts.OdigosClusterCollectorCollectorGroupName, metav1.GetOptions{})
+	cg, err := odigosClient.CollectorsGroups(odigosNs).Get(ctx, k8sconsts.OdigosClusterCollectorCollectorGroupName, metav1.GetOptions{})
 	if err == nil {
 		clusterCollector.CollectorsGroup = cg
 	} else if !apierrors.IsNotFound(err) {
 		return nil, err
 	}
 
-	dep, err := kubeClient.AppsV1().Deployments(odigosNs).Get(ctx, consts.OdigosClusterCollectorDeploymentName, metav1.GetOptions{})
+	dep, err := kubeClient.AppsV1().Deployments(odigosNs).Get(ctx, k8sconsts.OdigosClusterCollectorDeploymentName, metav1.GetOptions{})
 	if err == nil {
 		clusterCollector.Deployment = dep
 	} else if !apierrors.IsNotFound(err) {
@@ -92,18 +93,18 @@ func getClusterCollectorResources(ctx context.Context, kubeClient kubernetes.Int
 	return &clusterCollector, nil
 }
 
-func getNodeCollectorResources(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, odigosNs string) (*NodeCollectorResources, error) {
-
+func getNodeCollectorResources(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface,
+	odigosNs string) (*NodeCollectorResources, error) {
 	nodeCollector := NodeCollectorResources{}
 
-	cg, err := odigosClient.CollectorsGroups(odigosNs).Get(ctx, consts.OdigosNodeCollectorCollectorGroupName, metav1.GetOptions{})
+	cg, err := odigosClient.CollectorsGroups(odigosNs).Get(ctx, k8sconsts.OdigosNodeCollectorCollectorGroupName, metav1.GetOptions{})
 	if err == nil {
 		nodeCollector.CollectorsGroup = cg
 	} else if !apierrors.IsNotFound(err) {
 		return nil, err
 	}
 
-	ds, err := kubeClient.AppsV1().DaemonSets(odigosNs).Get(ctx, consts.OdigosNodeCollectorDaemonSetName, metav1.GetOptions{})
+	ds, err := kubeClient.AppsV1().DaemonSets(odigosNs).Get(ctx, k8sconsts.OdigosNodeCollectorDaemonSetName, metav1.GetOptions{})
 	if err == nil {
 		nodeCollector.DaemonSet = ds
 	} else if !apierrors.IsNotFound(err) {
@@ -113,15 +114,15 @@ func getNodeCollectorResources(ctx context.Context, kubeClient kubernetes.Interf
 	return &nodeCollector, nil
 }
 
-func GetRelevantOdigosResources(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, odigosNs string) (*OdigosResources, error) {
-
+func GetRelevantOdigosResources(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface,
+	odigosNs string) (*OdigosResources, error) {
 	odigos := OdigosResources{}
 
-	odigosVersion, err := getters.GetOdigosVersionInClusterFromConfigMap(ctx, kubeClient, odigosNs)
+	odigosDeployment, err := kubeClient.CoreV1().ConfigMaps(odigosNs).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
-	odigos.OdigosVersion = odigosVersion
+	odigos.OdigosDeployment = odigosDeployment
 
 	cc, err := getClusterCollectorResources(ctx, kubeClient, odigosClient, odigosNs)
 	if err != nil {

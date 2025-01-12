@@ -11,7 +11,7 @@ export const getIdFromSseTarget = (target: string, type: OVERVIEW_ENTITY_TYPES) 
 
       target.split('&').forEach((str) => {
         const [key, value] = str.split('=');
-        id[key] = value;
+        id[key as keyof WorkloadId] = value;
       });
 
       return id;

@@ -28,39 +28,39 @@ type FakeOdigosV1alpha1 struct {
 }
 
 func (c *FakeOdigosV1alpha1) CollectorsGroups(namespace string) v1alpha1.CollectorsGroupInterface {
-	return &FakeCollectorsGroups{c, namespace}
+	return newFakeCollectorsGroups(c, namespace)
 }
 
 func (c *FakeOdigosV1alpha1) Destinations(namespace string) v1alpha1.DestinationInterface {
-	return &FakeDestinations{c, namespace}
+	return newFakeDestinations(c, namespace)
 }
 
 func (c *FakeOdigosV1alpha1) InstrumentationConfigs(namespace string) v1alpha1.InstrumentationConfigInterface {
-	return &FakeInstrumentationConfigs{c, namespace}
+	return newFakeInstrumentationConfigs(c, namespace)
 }
 
 func (c *FakeOdigosV1alpha1) InstrumentationInstances(namespace string) v1alpha1.InstrumentationInstanceInterface {
-	return &FakeInstrumentationInstances{c, namespace}
+	return newFakeInstrumentationInstances(c, namespace)
 }
 
 func (c *FakeOdigosV1alpha1) InstrumentationRules(namespace string) v1alpha1.InstrumentationRuleInterface {
-	return &FakeInstrumentationRules{c, namespace}
+	return newFakeInstrumentationRules(c, namespace)
 }
 
 func (c *FakeOdigosV1alpha1) InstrumentedApplications(namespace string) v1alpha1.InstrumentedApplicationInterface {
-	return &FakeInstrumentedApplications{c, namespace}
+	return newFakeInstrumentedApplications(c, namespace)
 }
 
 func (c *FakeOdigosV1alpha1) OdigosConfigurations(namespace string) v1alpha1.OdigosConfigurationInterface {
-	return &FakeOdigosConfigurations{c, namespace}
+	return newFakeOdigosConfigurations(c, namespace)
 }
 
 func (c *FakeOdigosV1alpha1) Processors(namespace string) v1alpha1.ProcessorInterface {
-	return &FakeProcessors{c, namespace}
+	return newFakeProcessors(c, namespace)
 }
 
 func (c *FakeOdigosV1alpha1) Sources(namespace string) v1alpha1.SourceInterface {
-	return &FakeSources{c, namespace}
+	return newFakeSources(c, namespace)
 }
 
 // RESTClient returns a RESTClient that is used to communicate
