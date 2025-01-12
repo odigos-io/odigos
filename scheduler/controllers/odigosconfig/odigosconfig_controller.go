@@ -7,7 +7,8 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	"github.com/odigos-io/odigos/k8sutils/pkg/profiles"
+	"github.com/odigos-io/odigos/profiles"
+	"github.com/odigos-io/odigos/profiles/sizing"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -40,7 +41,7 @@ func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) 
 
 	// if none of the profiles set sizing for collectors, use size_s as default, so the values are never nil
 	// if the values were already set (by user or profile) this is a no-op
-	profiles.SizeSProfile.ModifyConfigFunc(odigosConfig)
+	sizing.SizeSProfile.ModifyConfigFunc(odigosConfig)
 
 	err = r.persistEffectiveConfig(ctx, odigosConfig)
 	if err != nil {
@@ -111,7 +112,7 @@ func (r *odigosConfigController) persistEffectiveConfig(ctx context.Context, eff
 }
 
 func applySingleProfile(profile common.ProfileName, odigosConfig *common.OdigosConfiguration) {
-	profileConfig, found := profiles.ProfilesMap[profile]
+	profileConfig, found := profiles.ProfilesByName[profile]
 	if !found {
 		return
 	}

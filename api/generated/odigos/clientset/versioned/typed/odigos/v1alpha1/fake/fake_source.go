@@ -18,179 +18,33 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-	json "encoding/json"
-	"fmt"
-
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/applyconfiguration/odigos/v1alpha1"
+	typedodigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
 	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakeSources implements SourceInterface
-type FakeSources struct {
+// fakeSources implements SourceInterface
+type fakeSources struct {
+	*gentype.FakeClientWithListAndApply[*v1alpha1.Source, *v1alpha1.SourceList, *odigosv1alpha1.SourceApplyConfiguration]
 	Fake *FakeOdigosV1alpha1
-	ns   string
 }
 
-var sourcesResource = v1alpha1.SchemeGroupVersion.WithResource("sources")
-
-var sourcesKind = v1alpha1.SchemeGroupVersion.WithKind("Source")
-
-// Get takes name of the source, and returns the corresponding source object, and an error if there is any.
-func (c *FakeSources) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Source, err error) {
-	emptyResult := &v1alpha1.Source{}
-	obj, err := c.Fake.
-		Invokes(testing.NewGetActionWithOptions(sourcesResource, c.ns, name, options), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
+func newFakeSources(fake *FakeOdigosV1alpha1, namespace string) typedodigosv1alpha1.SourceInterface {
+	return &fakeSources{
+		gentype.NewFakeClientWithListAndApply[*v1alpha1.Source, *v1alpha1.SourceList, *odigosv1alpha1.SourceApplyConfiguration](
+			fake.Fake,
+			namespace,
+			v1alpha1.SchemeGroupVersion.WithResource("sources"),
+			v1alpha1.SchemeGroupVersion.WithKind("Source"),
+			func() *v1alpha1.Source { return &v1alpha1.Source{} },
+			func() *v1alpha1.SourceList { return &v1alpha1.SourceList{} },
+			func(dst, src *v1alpha1.SourceList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.SourceList) []*v1alpha1.Source { return gentype.ToPointerSlice(list.Items) },
+			func(list *v1alpha1.SourceList, items []*v1alpha1.Source) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.Source), err
-}
-
-// List takes label and field selectors, and returns the list of Sources that match those selectors.
-func (c *FakeSources) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.SourceList, err error) {
-	emptyResult := &v1alpha1.SourceList{}
-	obj, err := c.Fake.
-		Invokes(testing.NewListActionWithOptions(sourcesResource, sourcesKind, c.ns, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.SourceList{ListMeta: obj.(*v1alpha1.SourceList).ListMeta}
-	for _, item := range obj.(*v1alpha1.SourceList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested sources.
-func (c *FakeSources) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewWatchActionWithOptions(sourcesResource, c.ns, opts))
-
-}
-
-// Create takes the representation of a source and creates it.  Returns the server's representation of the source, and an error, if there is any.
-func (c *FakeSources) Create(ctx context.Context, source *v1alpha1.Source, opts v1.CreateOptions) (result *v1alpha1.Source, err error) {
-	emptyResult := &v1alpha1.Source{}
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateActionWithOptions(sourcesResource, c.ns, source, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.Source), err
-}
-
-// Update takes the representation of a source and updates it. Returns the server's representation of the source, and an error, if there is any.
-func (c *FakeSources) Update(ctx context.Context, source *v1alpha1.Source, opts v1.UpdateOptions) (result *v1alpha1.Source, err error) {
-	emptyResult := &v1alpha1.Source{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateActionWithOptions(sourcesResource, c.ns, source, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.Source), err
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeSources) UpdateStatus(ctx context.Context, source *v1alpha1.Source, opts v1.UpdateOptions) (result *v1alpha1.Source, err error) {
-	emptyResult := &v1alpha1.Source{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceActionWithOptions(sourcesResource, "status", c.ns, source, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.Source), err
-}
-
-// Delete takes name of the source and deletes it. Returns an error if one occurs.
-func (c *FakeSources) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(sourcesResource, c.ns, name, opts), &v1alpha1.Source{})
-
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakeSources) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionActionWithOptions(sourcesResource, c.ns, opts, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.SourceList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched source.
-func (c *FakeSources) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Source, err error) {
-	emptyResult := &v1alpha1.Source{}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceActionWithOptions(sourcesResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.Source), err
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied source.
-func (c *FakeSources) Apply(ctx context.Context, source *odigosv1alpha1.SourceApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.Source, err error) {
-	if source == nil {
-		return nil, fmt.Errorf("source provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(source)
-	if err != nil {
-		return nil, err
-	}
-	name := source.Name
-	if name == nil {
-		return nil, fmt.Errorf("source.Name must be provided to Apply")
-	}
-	emptyResult := &v1alpha1.Source{}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceActionWithOptions(sourcesResource, c.ns, *name, types.ApplyPatchType, data, opts.ToPatchOptions()), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.Source), err
-}
-
-// ApplyStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-func (c *FakeSources) ApplyStatus(ctx context.Context, source *odigosv1alpha1.SourceApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.Source, err error) {
-	if source == nil {
-		return nil, fmt.Errorf("source provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(source)
-	if err != nil {
-		return nil, err
-	}
-	name := source.Name
-	if name == nil {
-		return nil, fmt.Errorf("source.Name must be provided to Apply")
-	}
-	emptyResult := &v1alpha1.Source{}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceActionWithOptions(sourcesResource, c.ns, *name, types.ApplyPatchType, data, opts.ToPatchOptions(), "status"), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.Source), err
 }
