@@ -18,10 +18,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // OdigosConfigurationLister helps list OdigosConfigurations.
@@ -29,7 +29,7 @@ import (
 type OdigosConfigurationLister interface {
 	// List lists all OdigosConfigurations in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.OdigosConfiguration, err error)
+	List(selector labels.Selector) (ret []*odigosv1alpha1.OdigosConfiguration, err error)
 	// OdigosConfigurations returns an object that can list and get OdigosConfigurations.
 	OdigosConfigurations(namespace string) OdigosConfigurationNamespaceLister
 	OdigosConfigurationListerExpansion
@@ -37,17 +37,17 @@ type OdigosConfigurationLister interface {
 
 // odigosConfigurationLister implements the OdigosConfigurationLister interface.
 type odigosConfigurationLister struct {
-	listers.ResourceIndexer[*v1alpha1.OdigosConfiguration]
+	listers.ResourceIndexer[*odigosv1alpha1.OdigosConfiguration]
 }
 
 // NewOdigosConfigurationLister returns a new OdigosConfigurationLister.
 func NewOdigosConfigurationLister(indexer cache.Indexer) OdigosConfigurationLister {
-	return &odigosConfigurationLister{listers.New[*v1alpha1.OdigosConfiguration](indexer, v1alpha1.Resource("odigosconfiguration"))}
+	return &odigosConfigurationLister{listers.New[*odigosv1alpha1.OdigosConfiguration](indexer, odigosv1alpha1.Resource("odigosconfiguration"))}
 }
 
 // OdigosConfigurations returns an object that can list and get OdigosConfigurations.
 func (s *odigosConfigurationLister) OdigosConfigurations(namespace string) OdigosConfigurationNamespaceLister {
-	return odigosConfigurationNamespaceLister{listers.NewNamespaced[*v1alpha1.OdigosConfiguration](s.ResourceIndexer, namespace)}
+	return odigosConfigurationNamespaceLister{listers.NewNamespaced[*odigosv1alpha1.OdigosConfiguration](s.ResourceIndexer, namespace)}
 }
 
 // OdigosConfigurationNamespaceLister helps list and get OdigosConfigurations.
@@ -55,15 +55,15 @@ func (s *odigosConfigurationLister) OdigosConfigurations(namespace string) Odigo
 type OdigosConfigurationNamespaceLister interface {
 	// List lists all OdigosConfigurations in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.OdigosConfiguration, err error)
+	List(selector labels.Selector) (ret []*odigosv1alpha1.OdigosConfiguration, err error)
 	// Get retrieves the OdigosConfiguration from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.OdigosConfiguration, error)
+	Get(name string) (*odigosv1alpha1.OdigosConfiguration, error)
 	OdigosConfigurationNamespaceListerExpansion
 }
 
 // odigosConfigurationNamespaceLister implements the OdigosConfigurationNamespaceLister
 // interface.
 type odigosConfigurationNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.OdigosConfiguration]
+	listers.ResourceIndexer[*odigosv1alpha1.OdigosConfiguration]
 }
