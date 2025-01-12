@@ -19,10 +19,51 @@ import (
 	"github.com/odigos-io/odigos/frontend/services/describe/odigos_describe"
 	"github.com/odigos-io/odigos/frontend/services/describe/source_describe"
 	testconnection "github.com/odigos-io/odigos/frontend/services/test_connection"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
+
+// APITokens is the resolver for the apiTokens field.
+func (r *computePlatformResolver) APITokens(ctx context.Context, obj *model.ComputePlatform) ([]*model.APIToken, error) {
+	// The result should always be 0 or 1:
+	// If it's 0, it means this is the OSS version.
+	// If it's 1, it means this is the Enterprise version.
+	secret, err := kube.DefaultClient.CoreV1().Secrets(services.OdigosSystemNamespace).Get(ctx, k8sconsts.OdigosProSecretName, metav1.GetOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return make([]*model.APIToken, 0), nil
+		}
+		return nil, err
+	}
+
+	token := string(secret.Data[k8sconsts.OdigosOnpremTokenSecretKey])
+
+	// Extract the payload from the JWT
+	tokenPayload, err := extractJWTPayload(token)
+	if err != nil {
+		return nil, fmt.Errorf("failed to extract JWT payload: %w", err)
+	}
+
+	// Extract values from the token payload
+	aud, _ := tokenPayload["aud"].(string)
+	iat, _ := tokenPayload["iat"].(float64)
+	exp, _ := tokenPayload["exp"].(float64)
+
+	// We need to return an array (even if it's just 1 token), because in the future we will have to support multiple platforms.
+	secrets := []*model.APIToken{
+		{
+			Token:     token,
+			Name:      aud,
+			IssuedAt:  int(iat) * 1000, // Convert to milliseconds
+			ExpiresAt: int(exp) * 1000, // Convert to milliseconds
+		},
+	}
+
+	return secrets, nil
+}
 
 // K8sActualNamespaces is the resolver for the k8sActualNamespaces field.
 func (r *computePlatformResolver) K8sActualNamespaces(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualNamespace, error) {
@@ -74,24 +115,30 @@ func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *m
 	}, nil
 }
 
-// K8sActualSources is the resolver for the k8sActualSources field.
-func (r *computePlatformResolver) K8sActualSources(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualSource, error) {
-	// Initialize an empty list of K8sActualSource
-	var actualSources []*model.K8sActualSource
+// Sources is the resolver for the sources field.
+func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.ComputePlatform, nextPage string) (*model.PaginatedSources, error) {
+	list, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{
+		Limit:    int64(10),
+		Continue: nextPage,
+	})
 
-	instrumentationConfigs, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	// Convert each instrumented application to the K8sActualSource type
-	for _, instruConfig := range instrumentationConfigs.Items {
-		actualSource := instrumentationConfigToActualSource(instruConfig)
-		services.AddHealthyInstrumentationInstancesCondition(ctx, &instruConfig, actualSource)
-		actualSources = append(actualSources, actualSource)
+	var actualSources []*model.K8sActualSource
+
+	// Convert each InstrumentationConfig to the K8sActualSource type
+	for _, ic := range list.Items {
+		src := instrumentationConfigToActualSource(ic)
+		services.AddHealthyInstrumentationInstancesCondition(ctx, &ic, src)
+		actualSources = append(actualSources, src)
 	}
 
-	return actualSources, nil
+	return &model.PaginatedSources{
+		NextPage: list.GetContinue(),
+		Items:    actualSources,
+	}, nil
 }
 
 // Destinations is the resolver for the destinations field.

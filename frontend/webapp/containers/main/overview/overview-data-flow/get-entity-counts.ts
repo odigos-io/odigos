@@ -1,17 +1,20 @@
-import { type ComputePlatformMapped, OVERVIEW_ENTITY_TYPES } from '@/types';
+import { OVERVIEW_ENTITY_TYPES } from '@/types';
 
 interface Params {
-  computePlatform?: ComputePlatformMapped['computePlatform'];
+  sources?: any[];
+  destinations?: any[];
+  actions?: any[];
+  instrumentationRules?: any[];
 }
 
 export type EntityCounts = Record<OVERVIEW_ENTITY_TYPES, number>;
 
-export const getEntityCounts = ({ computePlatform }: Params) => {
+export const getEntityCounts = ({ sources, destinations, actions, instrumentationRules }: Params) => {
   const unfilteredCounts: EntityCounts = {
-    [OVERVIEW_ENTITY_TYPES.RULE]: computePlatform?.instrumentationRules.length || 0,
-    [OVERVIEW_ENTITY_TYPES.SOURCE]: computePlatform?.k8sActualSources.length || 0,
-    [OVERVIEW_ENTITY_TYPES.ACTION]: computePlatform?.actions.length || 0,
-    [OVERVIEW_ENTITY_TYPES.DESTINATION]: computePlatform?.destinations.length || 0,
+    [OVERVIEW_ENTITY_TYPES.SOURCE]: sources?.length || 0,
+    [OVERVIEW_ENTITY_TYPES.DESTINATION]: destinations?.length || 0,
+    [OVERVIEW_ENTITY_TYPES.ACTION]: actions?.length || 0,
+    [OVERVIEW_ENTITY_TYPES.RULE]: instrumentationRules?.length || 0,
   };
 
   return unfilteredCounts;

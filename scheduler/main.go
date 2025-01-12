@@ -31,10 +31,8 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -44,6 +42,7 @@ import (
 
 	"github.com/odigos-io/odigos/scheduler/controllers/clustercollectorsgroup"
 	"github.com/odigos-io/odigos/scheduler/controllers/nodecollectorsgroup"
+	"github.com/odigos-io/odigos/scheduler/controllers/odigosconfig"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -80,8 +79,6 @@ func main() {
 
 	odigosNs := env.GetCurrentNamespace()
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
-	nameSelector := fields.OneTermEqualSelector("metadata.name", consts.OdigosConfigurationName)
-	odigosConfigSelector := fields.AndSelectors(nsSelector, nameSelector)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
@@ -92,7 +89,7 @@ func main() {
 			DefaultTransform: cache.TransformStripManagedFields(),
 			ByObject: map[client.Object]cache.ByObject{
 				&corev1.ConfigMap{}: {
-					Field: odigosConfigSelector,
+					Field: nsSelector,
 				},
 				&odigosv1.CollectorsGroup{}: {
 					Field: nsSelector,
@@ -119,6 +116,11 @@ func main() {
 	err = nodecollectorsgroup.SetupWithManager(mgr)
 	if err != nil {
 		setupLog.Error(err, "unable to create controllers for node collectors group")
+		os.Exit(1)
+	}
+	err = odigosconfig.SetupWithManager(mgr)
+	if err != nil {
+		setupLog.Error(err, "unable to create controllers for odigos config")
 		os.Exit(1)
 	}
 

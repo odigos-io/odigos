@@ -1,7 +1,7 @@
 package watchers
 
 import (
-	"github.com/odigos-io/odigos/frontend/endpoints/sse"
+	"github.com/odigos-io/odigos/frontend/services/sse"
 )
 
 func genericErrorMessage(event sse.MessageEvent, crd string, data string) {

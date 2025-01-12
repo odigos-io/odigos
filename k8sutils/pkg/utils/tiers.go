@@ -3,21 +3,21 @@ package utils
 import (
 	"context"
 
-	"github.com/odigos-io/odigos/common"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+
+	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 )
 
 const (
 	odigosCloudApiKeySecretKey = "odigos-cloud-api-key"
 	odigosOnpremTokenSecretKey = "odigos-onprem-token"
-	odigosProSecretName        = "odigos-pro"
 )
 
 func GetCurrentOdigosTier(ctx context.Context, namespaces string, client *kubernetes.Clientset) (common.OdigosTier, error) {
-
 	sec, err := getCurrentOdigosProSecret(ctx, namespaces, client)
 
 	if err != nil {
@@ -37,8 +37,7 @@ func GetCurrentOdigosTier(ctx context.Context, namespaces string, client *kubern
 }
 
 func getCurrentOdigosProSecret(ctx context.Context, namespace string, client *kubernetes.Clientset) (*corev1.Secret, error) {
-
-	secret, err := client.CoreV1().Secrets(namespace).Get(ctx, odigosProSecretName, metav1.GetOptions{})
+	secret, err := client.CoreV1().Secrets(namespace).Get(ctx, consts.OdigosProSecretName, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil, nil
 	}

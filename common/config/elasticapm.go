@@ -19,17 +19,14 @@ func (e *ElasticAPM) DestType() common.DestinationType {
 }
 
 func (e *ElasticAPM) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
-	var isTlsDisabled = false
+	isTlsDisabled := false
 	if !e.requiredVarsExists(dest) {
 		return errors.New("ElasticAPM config is missing required variables")
 	}
 
 	isTlsDisabled = strings.Contains(dest.GetConfig()[elasticApmServerEndpoint], "http://")
 
-	elasticApmEndpoint, err := e.parseEndpoint(dest.GetConfig()[elasticApmServerEndpoint])
-	if err != nil {
-		return errors.Join(err, errors.New("ElasticAPM endpoint is not a valid"))
-	}
+	elasticApmEndpoint := e.parseEndpoint(dest.GetConfig()[elasticApmServerEndpoint])
 
 	exporterName := "otlp/elastic-" + dest.GetID()
 	currentConfig.Exporters[exporterName] = GenericMap{
@@ -74,14 +71,14 @@ func (e *ElasticAPM) requiredVarsExists(dest ExporterConfigurer) bool {
 	return true
 }
 
-func (e *ElasticAPM) parseEndpoint(endpoint string) (string, error) {
+func (e *ElasticAPM) parseEndpoint(endpoint string) string {
 	var port = "8200"
-	endpoint = strings.Trim(endpoint, "http://")
-	endpoint = strings.Trim(endpoint, "https://")
+	endpoint = strings.TrimPrefix(endpoint, "http://")
+	endpoint = strings.TrimPrefix(endpoint, "https://")
 	endpointDetails := strings.Split(endpoint, ":")
 	host := endpointDetails[0]
 	if len(endpointDetails) > 1 {
 		port = endpointDetails[1]
 	}
-	return fmt.Sprintf("%s:%s", host, port), nil
+	return fmt.Sprintf("%s:%s", host, port)
 }

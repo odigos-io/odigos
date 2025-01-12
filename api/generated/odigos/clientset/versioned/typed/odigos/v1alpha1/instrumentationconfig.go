@@ -18,11 +18,11 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/applyconfiguration/odigos/v1alpha1"
+	applyconfigurationodigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/applyconfiguration/odigos/v1alpha1"
 	scheme "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/scheme"
-	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -37,36 +37,37 @@ type InstrumentationConfigsGetter interface {
 
 // InstrumentationConfigInterface has methods to work with InstrumentationConfig resources.
 type InstrumentationConfigInterface interface {
-	Create(ctx context.Context, instrumentationConfig *v1alpha1.InstrumentationConfig, opts v1.CreateOptions) (*v1alpha1.InstrumentationConfig, error)
-	Update(ctx context.Context, instrumentationConfig *v1alpha1.InstrumentationConfig, opts v1.UpdateOptions) (*v1alpha1.InstrumentationConfig, error)
+	Create(ctx context.Context, instrumentationConfig *odigosv1alpha1.InstrumentationConfig, opts v1.CreateOptions) (*odigosv1alpha1.InstrumentationConfig, error)
+	Update(ctx context.Context, instrumentationConfig *odigosv1alpha1.InstrumentationConfig, opts v1.UpdateOptions) (*odigosv1alpha1.InstrumentationConfig, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, instrumentationConfig *v1alpha1.InstrumentationConfig, opts v1.UpdateOptions) (*v1alpha1.InstrumentationConfig, error)
+	UpdateStatus(ctx context.Context, instrumentationConfig *odigosv1alpha1.InstrumentationConfig, opts v1.UpdateOptions) (*odigosv1alpha1.InstrumentationConfig, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.InstrumentationConfig, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.InstrumentationConfigList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*odigosv1alpha1.InstrumentationConfig, error)
+	List(ctx context.Context, opts v1.ListOptions) (*odigosv1alpha1.InstrumentationConfigList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.InstrumentationConfig, err error)
-	Apply(ctx context.Context, instrumentationConfig *odigosv1alpha1.InstrumentationConfigApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.InstrumentationConfig, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *odigosv1alpha1.InstrumentationConfig, err error)
+	Apply(ctx context.Context, instrumentationConfig *applyconfigurationodigosv1alpha1.InstrumentationConfigApplyConfiguration, opts v1.ApplyOptions) (result *odigosv1alpha1.InstrumentationConfig, err error)
 	// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-	ApplyStatus(ctx context.Context, instrumentationConfig *odigosv1alpha1.InstrumentationConfigApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.InstrumentationConfig, err error)
+	ApplyStatus(ctx context.Context, instrumentationConfig *applyconfigurationodigosv1alpha1.InstrumentationConfigApplyConfiguration, opts v1.ApplyOptions) (result *odigosv1alpha1.InstrumentationConfig, err error)
 	InstrumentationConfigExpansion
 }
 
 // instrumentationConfigs implements InstrumentationConfigInterface
 type instrumentationConfigs struct {
-	*gentype.ClientWithListAndApply[*v1alpha1.InstrumentationConfig, *v1alpha1.InstrumentationConfigList, *odigosv1alpha1.InstrumentationConfigApplyConfiguration]
+	*gentype.ClientWithListAndApply[*odigosv1alpha1.InstrumentationConfig, *odigosv1alpha1.InstrumentationConfigList, *applyconfigurationodigosv1alpha1.InstrumentationConfigApplyConfiguration]
 }
 
 // newInstrumentationConfigs returns a InstrumentationConfigs
 func newInstrumentationConfigs(c *OdigosV1alpha1Client, namespace string) *instrumentationConfigs {
 	return &instrumentationConfigs{
-		gentype.NewClientWithListAndApply[*v1alpha1.InstrumentationConfig, *v1alpha1.InstrumentationConfigList, *odigosv1alpha1.InstrumentationConfigApplyConfiguration](
+		gentype.NewClientWithListAndApply[*odigosv1alpha1.InstrumentationConfig, *odigosv1alpha1.InstrumentationConfigList, *applyconfigurationodigosv1alpha1.InstrumentationConfigApplyConfiguration](
 			"instrumentationconfigs",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.InstrumentationConfig { return &v1alpha1.InstrumentationConfig{} },
-			func() *v1alpha1.InstrumentationConfigList { return &v1alpha1.InstrumentationConfigList{} }),
+			func() *odigosv1alpha1.InstrumentationConfig { return &odigosv1alpha1.InstrumentationConfig{} },
+			func() *odigosv1alpha1.InstrumentationConfigList { return &odigosv1alpha1.InstrumentationConfigList{} },
+		),
 	}
 }
