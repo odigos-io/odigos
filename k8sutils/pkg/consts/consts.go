@@ -81,3 +81,8 @@ const (
 	OdigosCloudApiKeySecretKey = "odigos-cloud-api-key"
 	OdigosOnpremTokenSecretKey = "odigos-onprem-token"
 )
+
+const (
+	OdigosUiServiceName = "ui"
+	OdigosUiServicePort = 3000
+)
