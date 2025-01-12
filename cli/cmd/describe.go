@@ -142,7 +142,7 @@ var describeSourceStatefulSetCmd = &cobra.Command{
 }
 
 func executeRemoteOdigosDescribe(ctx context.Context, client *kube.Client, odigosNs string) string {
-	uiSvcProxyEndpoint := getUiServiceOdigosEndpoint(ctx, client, odigosNs)
+	uiSvcProxyEndpoint := fmt.Sprintf("/api/v1/namespaces/%s/services/%s:%d/proxy/api/describe/odigos", odigosNs, k8sconsts.OdigosUiServiceName, k8sconsts.OdigosUiServicePort)
 	request := client.Clientset.RESTClient().Get().AbsPath(uiSvcProxyEndpoint).Do(ctx)
 	response, err := request.Raw()
 	if err != nil {
@@ -161,13 +161,6 @@ func executeRemoteSourceDescribe(ctx context.Context, client *kube.Client, workl
 	} else {
 		return string(response)
 	}
-}
-
-func getUiServiceOdigosEndpoint(ctx context.Context, client *kube.Client, odigosNs string) string {
-	uiServiceName := k8sconsts.OdigosUiServiceName
-	uiServicePort := k8sconsts.OdigosUiServicePort
-
-	return fmt.Sprintf("/api/v1/namespaces/%s/services/%s:%d/proxy/api/describe/odigos", odigosNs, uiServiceName, uiServicePort)
 }
 
 func getUiServiceSourceEndpoint(ctx context.Context, client *kube.Client, workloadKind string, workloadNs string, workloadName string) string {
