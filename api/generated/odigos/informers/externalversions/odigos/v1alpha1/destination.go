@@ -18,13 +18,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
 	versioned "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned"
 	internalinterfaces "github.com/odigos-io/odigos/api/generated/odigos/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/listers/odigos/v1alpha1"
-	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/listers/odigos/v1alpha1"
+	apiodigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -35,7 +35,7 @@ import (
 // Destinations.
 type DestinationInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.DestinationLister
+	Lister() odigosv1alpha1.DestinationLister
 }
 
 type destinationInformer struct {
@@ -70,7 +70,7 @@ func NewFilteredDestinationInformer(client versioned.Interface, namespace string
 				return client.OdigosV1alpha1().Destinations(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&odigosv1alpha1.Destination{},
+		&apiodigosv1alpha1.Destination{},
 		resyncPeriod,
 		indexers,
 	)
@@ -81,9 +81,9 @@ func (f *destinationInformer) defaultInformer(client versioned.Interface, resync
 }
 
 func (f *destinationInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&odigosv1alpha1.Destination{}, f.defaultInformer)
+	return f.factory.InformerFor(&apiodigosv1alpha1.Destination{}, f.defaultInformer)
 }
 
-func (f *destinationInformer) Lister() v1alpha1.DestinationLister {
-	return v1alpha1.NewDestinationLister(f.Informer().GetIndexer())
+func (f *destinationInformer) Lister() odigosv1alpha1.DestinationLister {
+	return odigosv1alpha1.NewDestinationLister(f.Informer().GetIndexer())
 }

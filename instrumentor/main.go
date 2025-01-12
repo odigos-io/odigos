@@ -103,7 +103,7 @@ func main() {
 
 	odigosNs := env.GetCurrentNamespace()
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
-	odigosConfigNameSelector := fields.OneTermEqualSelector("metadata.name", consts.OdigosConfigurationName)
+	odigosConfigNameSelector := fields.OneTermEqualSelector("metadata.name", consts.OdigosEffectiveConfigName)
 	odigosConfigSelector := fields.AndSelectors(nsSelector, odigosConfigNameSelector)
 
 	mgrOptions := ctrl.Options{

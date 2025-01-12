@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styled, { css } from 'styled-components';
 import { Checkbox, FieldError, FieldLabel } from '@/reuseable-components';
-import { MONITORING_OPTIONS, SignalLowercase, SignalUppercase } from '@/utils';
+import { MONITORS_OPTIONS, SignalLowercase, SignalUppercase } from '@/utils';
 
 interface Props {
   isVertical?: boolean;
@@ -26,7 +26,7 @@ const ListContainer = styled.div<{ $isVertical?: Props['isVertical']; $hasError:
     `}
 `;
 
-const monitors = MONITORING_OPTIONS;
+const monitors = MONITORS_OPTIONS;
 
 const isAllowed = (type: SignalLowercase, allowedSignals: Props['allowedSignals']) => {
   return !allowedSignals?.length || !!allowedSignals?.find((str) => str === type.toUpperCase());
@@ -44,9 +44,9 @@ export const MonitoringCheckboxes: React.FC<Props> = ({ isVertical, title = 'Mon
     const payload: SignalUppercase[] = selectedSignals;
 
     if (!payload.length) {
-      monitors.forEach(({ type }) => {
-        if (isAllowed(type, allowedSignals)) {
-          payload.push(type.toUpperCase() as SignalUppercase);
+      monitors.forEach(({ id }) => {
+        if (isAllowed(id, allowedSignals)) {
+          payload.push(id.toUpperCase() as SignalUppercase);
         }
       });
     }
@@ -79,12 +79,12 @@ export const MonitoringCheckboxes: React.FC<Props> = ({ isVertical, title = 'Mon
 
       <ListContainer $isVertical={isVertical} $hasError={!!errorMessage}>
         {monitors.map((monitor) => {
-          const allowed = isAllowed(monitor.type, allowedSignals);
-          const selected = isSelected(monitor.type, selectedSignals);
+          const allowed = isAllowed(monitor.id, allowedSignals);
+          const selected = isSelected(monitor.id, selectedSignals);
 
           if (!allowed) return null;
 
-          return <Checkbox key={monitor.id} title={monitor.title} disabled={!allowed || (isLastSelection && selected)} value={selected} onChange={(value) => handleChange(monitor.type, value)} />;
+          return <Checkbox key={monitor.id} title={monitor.value} disabled={!allowed || (isLastSelection && selected)} value={selected} onChange={(value) => handleChange(monitor.id, value)} />;
         })}
       </ListContainer>
 

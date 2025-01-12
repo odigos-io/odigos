@@ -9,7 +9,8 @@ import (
 	"errors"
 
 	"github.com/odigos-io/odigos/autoscaler/utils"
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
+	"github.com/odigos-io/odigos/common/consts"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
@@ -105,7 +106,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 
 	desiredDeployment := &appsv1.Deployment{
 		ObjectMeta: v1.ObjectMeta{
-			Name:      consts.OdigosClusterCollectorDeploymentName,
+			Name:      k8sconsts.OdigosClusterCollectorDeploymentName,
 			Namespace: gateway.Namespace,
 			Labels:    ClusterCollectorGateway,
 		},
@@ -124,7 +125,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: consts.OdigosClusterCollectorConfigMapKey,
+							Name: k8sconsts.OdigosClusterCollectorConfigMapKey,
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
@@ -132,8 +133,8 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 									},
 									Items: []corev1.KeyToPath{
 										{
-											Key:  consts.OdigosClusterCollectorConfigMapKey,
-											Path: fmt.Sprintf("%s.yaml", consts.OdigosClusterCollectorConfigMapKey),
+											Key:  k8sconsts.OdigosClusterCollectorConfigMapKey,
+											Path: fmt.Sprintf("%s.yaml", k8sconsts.OdigosClusterCollectorConfigMapKey),
 										},
 									},
 								},
@@ -144,18 +145,18 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 						{
 							Name:    containerName,
 							Image:   utils.GetCollectorContainerImage(containerImage, odigosVersion),
-							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, consts.OdigosClusterCollectorConfigMapKey)},
+							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, k8sconsts.OdigosClusterCollectorConfigMapKey)},
 							EnvFrom: getSecretsFromDests(dests),
 							// Add the ODIGOS_VERSION environment variable from the ConfigMap
 							Env: []corev1.EnvVar{
 								{
-									Name: "ODIGOS_VERSION",
+									Name: consts.OdigosVersionEnvVarName,
 									ValueFrom: &corev1.EnvVarSource{
 										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "odigos-deployment",
+												Name: k8sconsts.OdigosDeploymentConfigMapName,
 											},
-											Key: "ODIGOS_VERSION",
+											Key: k8sconsts.OdigosDeploymentConfigMapVersionKey,
 										},
 									},
 								},
@@ -190,7 +191,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      consts.OdigosClusterCollectorConfigMapKey,
+									Name:      k8sconsts.OdigosClusterCollectorConfigMapKey,
 									MountPath: confDir,
 								},
 							},

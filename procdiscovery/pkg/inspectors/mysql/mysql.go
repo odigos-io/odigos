@@ -14,7 +14,7 @@ type MySQLInspector struct{}
 const MySQLProcessName = "mysqld"
 
 func (j *MySQLInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
-	if strings.HasSuffix(p.ExeName, MySQLProcessName) || strings.HasSuffix(p.CmdLine, MySQLProcessName) {
+	if strings.HasSuffix(p.ExePath, MySQLProcessName) || strings.HasSuffix(p.CmdLine, MySQLProcessName) {
 		return common.MySQLProgrammingLanguage, true
 	}
 

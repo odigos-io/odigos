@@ -9,10 +9,11 @@ import (
 
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/common/utils"
+
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/client"
+	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -61,7 +62,7 @@ func getRelevantNameSpaces(ctx context.Context, odigosns string) ([]v1.Namespace
 	g, ctx := errgroup.WithContext(ctx)
 	g.Go(func() error {
 		var err error
-		configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(odigosns).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
+		configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(odigosns).Get(ctx, consts.OdigosEffectiveConfigName, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
@@ -104,7 +105,7 @@ func CountAppsPerNamespace(ctx context.Context) (map[string]int, error) {
 			Group:    "apps",
 			Version:  "v1",
 			Resource: resourceType,
-		}).List, ctx, metav1.ListOptions{}, func(list *metav1.PartialObjectMetadataList) error {
+		}).List, ctx, &metav1.ListOptions{}, func(list *metav1.PartialObjectMetadataList) error {
 			for _, item := range list.Items {
 				namespaceToAppsCount[item.Namespace]++
 			}

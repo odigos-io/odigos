@@ -1,10 +1,11 @@
 package predicate
 
 import (
-	"github.com/odigos-io/odigos/common/consts"
-	odigosk8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	cr_predicate "sigs.k8s.io/controller-runtime/pkg/predicate"
+
+	"github.com/odigos-io/odigos/common/consts"
+	odigosk8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 )
 
 type ObjectNamePredicate struct {
@@ -53,6 +54,10 @@ var _ cr_predicate.Predicate = &ObjectNamePredicate{}
 //		Complete(r)
 var OdigosConfigMapPredicate = ObjectNamePredicate{
 	AllowedObjectName: consts.OdigosConfigurationName,
+}
+
+var OdigosEffectiveConfigMapPredicate = ObjectNamePredicate{
+	AllowedObjectName: consts.OdigosEffectiveConfigName,
 }
 
 // use this event filter to reconcile only collectors group events for node collectors group objects

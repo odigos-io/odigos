@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/goccy/go-yaml"
+
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 )
@@ -207,7 +208,9 @@ func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {
 							// setting it to a large value to avoid dropping batches.
 							"max_recv_msg_size_mib": 128,
 							"endpoint":              "0.0.0.0:4317",
-							// The Node Collector opens a gRPC stream to send data. This ensures that the Node Collector establishes a new connection when the Gateway scales up to include additional instances.
+							// The Node Collector opens a gRPC stream to send data.
+							// This ensures that the Node Collector establishes a new connection when the Gateway scales up
+							// to include additional instances.
 							"keepalive": GenericMap{
 								"server_parameters": GenericMap{
 									"max_connection_age":       consts.GatewayMaxConnectionAge,

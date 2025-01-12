@@ -3,6 +3,12 @@ import { gql } from '@apollo/client';
 export const GET_COMPUTE_PLATFORM = gql`
   query GetComputePlatform {
     computePlatform {
+      apiTokens {
+        token
+        name
+        issuedAt
+        expiresAt
+      }
       k8sActualNamespaces {
         name
         selected

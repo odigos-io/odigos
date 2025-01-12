@@ -1,11 +1,12 @@
 import React from 'react';
+import theme from '@/styles/theme';
 import { FlexRow } from '@/styles';
 import { SLACK_LINK } from '@/utils';
 import styled from 'styled-components';
 import { PlatformTypes } from '@/types';
 import { PlatformTitle } from './cp-title';
 import { NotificationManager } from '@/components';
-import { OdigosLogo, OdigosLogoText, SlackLogo } from '@/assets';
+import { OdigosLogoText, SlackLogo, TerminalIcon } from '@/assets';
 import { ConnectionStatus, IconButton } from '@/reuseable-components';
 import { DRAWER_OTHER_TYPES, useConnectionStore, useDrawerStore } from '@/store';
 
@@ -34,7 +35,7 @@ export const MainHeader: React.FC<MainHeaderProps> = () => {
   const { setSelectedItem } = useDrawerStore();
   const { connecting, active, title, message } = useConnectionStore();
 
-  const handleClickDescribe = () => setSelectedItem({ type: DRAWER_OTHER_TYPES.DESCRIBE_ODIGOS, id: DRAWER_OTHER_TYPES.DESCRIBE_ODIGOS });
+  const handleClickCli = () => setSelectedItem({ type: DRAWER_OTHER_TYPES.ODIGOS_CLI, id: DRAWER_OTHER_TYPES.ODIGOS_CLI });
   const handleClickSlack = () => window.open(SLACK_LINK, '_blank', 'noopener noreferrer');
 
   return (
@@ -46,10 +47,12 @@ export const MainHeader: React.FC<MainHeaderProps> = () => {
       </AlignLeft>
 
       <AlignRight>
-        <NotificationManager />
-        <IconButton onClick={handleClickDescribe} tooltip='Describe Odigos'>
-          <OdigosLogo />
+        <IconButton onClick={handleClickCli} tooltip='Odigos CLI' withPing pingColor={theme.colors.majestic_blue}>
+          <TerminalIcon size={18} />
         </IconButton>
+
+        <NotificationManager />
+
         <IconButton onClick={handleClickSlack} tooltip='Join our Slack community'>
           <SlackLogo />
         </IconButton>
