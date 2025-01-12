@@ -4,8 +4,8 @@ import styled from 'styled-components';
 import { NOTIFICATION_TYPE } from '@/types';
 import { DATA_CARDS, getStatusIcon, safeJsonStringify } from '@/utils';
 import OverviewDrawer from '@/containers/main/overview/overview-drawer';
-import { useApiTokens, useCopy, useDescribeOdigos, useTimeAgo } from '@/hooks';
 import { CodeBracketsIcon, CodeIcon, CopyIcon, KeyIcon, ListIcon } from '@/assets';
+import { useComputePlatform, useCopy, useDescribeOdigos, useTimeAgo } from '@/hooks';
 import { DataCard, DataCardFieldTypes, IconButton, Segment } from '@/reuseable-components';
 
 interface Props {}
@@ -18,11 +18,13 @@ const DataContainer = styled.div`
 
 export const CliDrawer: React.FC<Props> = () => {
   const timeAgo = useTimeAgo();
-  const { data: tokens } = useApiTokens();
+  const { data: cp } = useComputePlatform();
   const { isCopied, copiedIndex, clickCopy } = useCopy();
   const { data: describe, restructureForPrettyMode } = useDescribeOdigos();
 
   const [isPrettyMode, setIsPrettyMode] = useState(true);
+
+  const tokens = cp?.computePlatform.apiTokens || [];
 
   return (
     <OverviewDrawer title='Odigos CLI' icon={CodeBracketsIcon}>
@@ -42,10 +44,10 @@ export const CliDrawer: React.FC<Props> = () => {
                     { key: 'token', title: 'Token' },
                     { key: 'actions', title: '' },
                   ],
-                  rows: tokens.map(({ token, aud, exp }, idx) => [
+                  rows: tokens.map(({ token, name, expiresAt }, idx) => [
                     { columnKey: 'icon', icon: KeyIcon },
-                    { columnKey: 'name', value: aud },
-                    { columnKey: 'expires_at', value: `${timeAgo.format(exp)} (${new Date(exp).toDateString().split(' ').slice(1).join(' ')})` },
+                    { columnKey: 'name', value: name },
+                    { columnKey: 'expires_at', value: `${timeAgo.format(expiresAt)} (${new Date(expiresAt).toDateString().split(' ').slice(1).join(' ')})` },
                     { columnKey: 'token', value: `${new Array(15).fill('•').join('')}` },
                     {
                       columnKey: 'actions',

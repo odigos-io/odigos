@@ -189,8 +189,16 @@ input MessagingPayloadCollectionInput {
   dropPartialPayloads: Boolean
 }
 
+type ApiToken {
+  token: String!
+  name: String!
+  issuedAt: Int!
+  expiresAt: Int!
+}
+
 type ComputePlatform {
   computePlatformType: ComputePlatformType!
+  apiTokens: [ApiToken]!
   k8sActualNamespaces: [K8sActualNamespace]!
   k8sActualNamespace(name: String!): K8sActualNamespace
   sources(nextPage: String!): PaginatedSources!
@@ -552,13 +560,6 @@ type OdigosAnalyze {
   hasErrors: Boolean!
 }
 
-type ApiToken {
-  token: String! # raw token
-  aud: String! # name of customer
-  iat: Int! # timestamp: issued at
-  exp: Int! # timestamp: expires at
-}
-
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
@@ -568,7 +569,6 @@ type Query {
   getOverviewMetrics: OverviewMetricsResponse!
   describeOdigos: OdigosAnalyze!
   describeSource(namespace: String!, kind: String!, name: String!): SourceAnalyze!
-  getApiTokens: [ApiToken]!
 }
 
 type Mutation {

@@ -61,10 +61,10 @@ type ComplexityRoot struct {
 	}
 
 	ApiToken struct {
-		Aud   func(childComplexity int) int
-		Exp   func(childComplexity int) int
-		Iat   func(childComplexity int) int
-		Token func(childComplexity int) int
+		ExpiresAt func(childComplexity int) int
+		IssuedAt  func(childComplexity int) int
+		Name      func(childComplexity int) int
+		Token     func(childComplexity int) int
 	}
 
 	ClusterCollectorAnalyze struct {
@@ -86,6 +86,7 @@ type ComplexityRoot struct {
 	}
 
 	ComputePlatform struct {
+		APITokens            func(childComplexity int) int
 		Actions              func(childComplexity int) int
 		ComputePlatformType  func(childComplexity int) int
 		Destinations         func(childComplexity int) int
@@ -408,7 +409,6 @@ type ComplexityRoot struct {
 		DescribeSource         func(childComplexity int, namespace string, kind string, name string) int
 		DestinationTypeDetails func(childComplexity int, typeArg string) int
 		DestinationTypes       func(childComplexity int) int
-		GetAPITokens           func(childComplexity int) int
 		GetOverviewMetrics     func(childComplexity int) int
 		PotentialDestinations  func(childComplexity int) int
 	}
@@ -478,6 +478,7 @@ type ComplexityRoot struct {
 }
 
 type ComputePlatformResolver interface {
+	APITokens(ctx context.Context, obj *model.ComputePlatform) ([]*model.APIToken, error)
 	K8sActualNamespaces(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualNamespace, error)
 	K8sActualNamespace(ctx context.Context, obj *model.ComputePlatform, name string) (*model.K8sActualNamespace, error)
 	Sources(ctx context.Context, obj *model.ComputePlatform, nextPage string) (*model.PaginatedSources, error)
@@ -517,7 +518,6 @@ type QueryResolver interface {
 	GetOverviewMetrics(ctx context.Context) (*model.OverviewMetricsResponse, error)
 	DescribeOdigos(ctx context.Context) (*model.OdigosAnalyze, error)
 	DescribeSource(ctx context.Context, namespace string, kind string, name string) (*model.SourceAnalyze, error)
-	GetAPITokens(ctx context.Context) ([]*model.APIToken, error)
 }
 
 type executableSchema struct {
@@ -588,26 +588,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.AddClusterInfoAction.Type(childComplexity), true
 
-	case "ApiToken.aud":
-		if e.complexity.ApiToken.Aud == nil {
+	case "ApiToken.expiresAt":
+		if e.complexity.ApiToken.ExpiresAt == nil {
 			break
 		}
 
-		return e.complexity.ApiToken.Aud(childComplexity), true
+		return e.complexity.ApiToken.ExpiresAt(childComplexity), true
 
-	case "ApiToken.exp":
-		if e.complexity.ApiToken.Exp == nil {
+	case "ApiToken.issuedAt":
+		if e.complexity.ApiToken.IssuedAt == nil {
 			break
 		}
 
-		return e.complexity.ApiToken.Exp(childComplexity), true
+		return e.complexity.ApiToken.IssuedAt(childComplexity), true
 
-	case "ApiToken.iat":
-		if e.complexity.ApiToken.Iat == nil {
+	case "ApiToken.name":
+		if e.complexity.ApiToken.Name == nil {
 			break
 		}
 
-		return e.complexity.ApiToken.Iat(childComplexity), true
+		return e.complexity.ApiToken.Name(childComplexity), true
 
 	case "ApiToken.token":
 		if e.complexity.ApiToken.Token == nil {
@@ -699,6 +699,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ClusterInfo.AttributeStringValue(childComplexity), true
+
+	case "ComputePlatform.apiTokens":
+		if e.complexity.ComputePlatform.APITokens == nil {
+			break
+		}
+
+		return e.complexity.ComputePlatform.APITokens(childComplexity), true
 
 	case "ComputePlatform.actions":
 		if e.complexity.ComputePlatform.Actions == nil {
@@ -2141,13 +2148,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.DestinationTypes(childComplexity), true
 
-	case "Query.getApiTokens":
-		if e.complexity.Query.GetAPITokens == nil {
-			break
-		}
-
-		return e.complexity.Query.GetAPITokens(childComplexity), true
-
 	case "Query.getOverviewMetrics":
 		if e.complexity.Query.GetOverviewMetrics == nil {
 			break
@@ -3324,8 +3324,8 @@ func (ec *executionContext) fieldContext_ApiToken_token(_ context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _ApiToken_aud(ctx context.Context, field graphql.CollectedField, obj *model.APIToken) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ApiToken_aud(ctx, field)
+func (ec *executionContext) _ApiToken_name(ctx context.Context, field graphql.CollectedField, obj *model.APIToken) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ApiToken_name(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -3338,7 +3338,7 @@ func (ec *executionContext) _ApiToken_aud(ctx context.Context, field graphql.Col
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Aud, nil
+		return obj.Name, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3355,7 +3355,7 @@ func (ec *executionContext) _ApiToken_aud(ctx context.Context, field graphql.Col
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_ApiToken_aud(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ApiToken_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ApiToken",
 		Field:      field,
@@ -3368,8 +3368,8 @@ func (ec *executionContext) fieldContext_ApiToken_aud(_ context.Context, field g
 	return fc, nil
 }
 
-func (ec *executionContext) _ApiToken_iat(ctx context.Context, field graphql.CollectedField, obj *model.APIToken) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ApiToken_iat(ctx, field)
+func (ec *executionContext) _ApiToken_issuedAt(ctx context.Context, field graphql.CollectedField, obj *model.APIToken) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ApiToken_issuedAt(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -3382,7 +3382,7 @@ func (ec *executionContext) _ApiToken_iat(ctx context.Context, field graphql.Col
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Iat, nil
+		return obj.IssuedAt, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3399,7 +3399,7 @@ func (ec *executionContext) _ApiToken_iat(ctx context.Context, field graphql.Col
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_ApiToken_iat(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ApiToken_issuedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ApiToken",
 		Field:      field,
@@ -3412,8 +3412,8 @@ func (ec *executionContext) fieldContext_ApiToken_iat(_ context.Context, field g
 	return fc, nil
 }
 
-func (ec *executionContext) _ApiToken_exp(ctx context.Context, field graphql.CollectedField, obj *model.APIToken) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ApiToken_exp(ctx, field)
+func (ec *executionContext) _ApiToken_expiresAt(ctx context.Context, field graphql.CollectedField, obj *model.APIToken) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ApiToken_expiresAt(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -3426,7 +3426,7 @@ func (ec *executionContext) _ApiToken_exp(ctx context.Context, field graphql.Col
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Exp, nil
+		return obj.ExpiresAt, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3443,7 +3443,7 @@ func (ec *executionContext) _ApiToken_exp(ctx context.Context, field graphql.Col
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_ApiToken_exp(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ApiToken_expiresAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ApiToken",
 		Field:      field,
@@ -4099,6 +4099,60 @@ func (ec *executionContext) fieldContext_ComputePlatform_computePlatformType(_ c
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type ComputePlatformType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ComputePlatform_apiTokens(ctx context.Context, field graphql.CollectedField, obj *model.ComputePlatform) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ComputePlatform_apiTokens(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ComputePlatform().APITokens(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.APIToken)
+	fc.Result = res
+	return ec.marshalNApiToken2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐAPIToken(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ComputePlatform_apiTokens(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ComputePlatform",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "token":
+				return ec.fieldContext_ApiToken_token(ctx, field)
+			case "name":
+				return ec.fieldContext_ApiToken_name(ctx, field)
+			case "issuedAt":
+				return ec.fieldContext_ApiToken_issuedAt(ctx, field)
+			case "expiresAt":
+				return ec.fieldContext_ApiToken_expiresAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ApiToken", field.Name)
 		},
 	}
 	return fc, nil
@@ -13112,6 +13166,8 @@ func (ec *executionContext) fieldContext_Query_computePlatform(_ context.Context
 			switch field.Name {
 			case "computePlatformType":
 				return ec.fieldContext_ComputePlatform_computePlatformType(ctx, field)
+			case "apiTokens":
+				return ec.fieldContext_ComputePlatform_apiTokens(ctx, field)
 			case "k8sActualNamespaces":
 				return ec.fieldContext_ComputePlatform_k8sActualNamespaces(ctx, field)
 			case "k8sActualNamespace":
@@ -13512,60 +13568,6 @@ func (ec *executionContext) fieldContext_Query_describeSource(ctx context.Contex
 	if fc.Args, err = ec.field_Query_describeSource_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_getApiTokens(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_getApiTokens(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetAPITokens(rctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*model.APIToken)
-	fc.Result = res
-	return ec.marshalNApiToken2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐAPIToken(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_getApiTokens(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "token":
-				return ec.fieldContext_ApiToken_token(ctx, field)
-			case "aud":
-				return ec.fieldContext_ApiToken_aud(ctx, field)
-			case "iat":
-				return ec.fieldContext_ApiToken_iat(ctx, field)
-			case "exp":
-				return ec.fieldContext_ApiToken_exp(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type ApiToken", field.Name)
-		},
 	}
 	return fc, nil
 }
@@ -18134,18 +18136,18 @@ func (ec *executionContext) _ApiToken(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "aud":
-			out.Values[i] = ec._ApiToken_aud(ctx, field, obj)
+		case "name":
+			out.Values[i] = ec._ApiToken_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "iat":
-			out.Values[i] = ec._ApiToken_iat(ctx, field, obj)
+		case "issuedAt":
+			out.Values[i] = ec._ApiToken_issuedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "exp":
-			out.Values[i] = ec._ApiToken_exp(ctx, field, obj)
+		case "expiresAt":
+			out.Values[i] = ec._ApiToken_expiresAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -18292,6 +18294,42 @@ func (ec *executionContext) _ComputePlatform(ctx context.Context, sel ast.Select
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "apiTokens":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ComputePlatform_apiTokens(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "k8sActualNamespaces":
 			field := field
 
@@ -20989,28 +21027,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_describeSource(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "getApiTokens":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_getApiTokens(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
