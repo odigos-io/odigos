@@ -189,8 +189,16 @@ input MessagingPayloadCollectionInput {
   dropPartialPayloads: Boolean
 }
 
+type ApiToken {
+  token: String!
+  name: String!
+  issuedAt: Int!
+  expiresAt: Int!
+}
+
 type ComputePlatform {
   computePlatformType: ComputePlatformType!
+  apiTokens: [ApiToken]!
   k8sActualNamespaces: [K8sActualNamespace]!
   k8sActualNamespace(name: String!): K8sActualNamespace
   sources(nextPage: String!): PaginatedSources!
@@ -544,6 +552,8 @@ type NodeCollectorAnalyze {
 
 type OdigosAnalyze {
   odigosVersion: EntityProperty!
+  tier: EntityProperty!
+  installationMethod: EntityProperty!
   numberOfDestinations: Int!
   numberOfSources: Int!
   clusterCollector: ClusterCollectorAnalyze!

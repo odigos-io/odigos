@@ -1,7 +1,7 @@
 version: 2
 updates:
   # Maintain dependencies for GitHub Actions
-  - package-ecosystem: "github-actions"
+  - package-ecosystem: 'github-actions'
     directory: /
     schedule:
       day: sunday
@@ -23,9 +23,9 @@ updates:
     groups:
       otel-dependencies:
         patterns:
-          - "go.opentelemetry.io*"
+          - 'go.opentelemetry.io*'
         exclude-patterns: # go auto instrumentations update is manually
-          - "go.opentelemetry.io/auto"
+          - 'go.opentelemetry.io/auto'
   - package-ecosystem: gomod
     directory: /odiglet
     schedule:
@@ -34,7 +34,7 @@ updates:
     groups:
       go-auto-instrumentations:
         patterns:
-          - "go.opentelemetry.io/auto"
+          - 'go.opentelemetry.io/auto'
   - package-ecosystem: gomod
     directory: /autoscaler
     schedule:
@@ -43,8 +43,8 @@ updates:
     groups:
       k8s-dependencies:
         patterns:
-          - "k8s.io*"
-          - "sigs.k8s.io*"
+          - 'k8s.io*'
+          - 'sigs.k8s.io*'
   - package-ecosystem: gomod
     directory: /odiglet
     schedule:
@@ -53,8 +53,8 @@ updates:
     groups:
       k8s-dependencies:
         patterns:
-          - "k8s.io*"
-          - "sigs.k8s.io*"
+          - 'k8s.io*'
+          - 'sigs.k8s.io*'
   - package-ecosystem: gomod
     directory: /scheduler
     schedule:
@@ -63,8 +63,8 @@ updates:
     groups:
       k8s-dependencies:
         patterns:
-          - "k8s.io*"
-          - "sigs.k8s.io*"
+          - 'k8s.io*'
+          - 'sigs.k8s.io*'
   - package-ecosystem: gomod
     directory: /cli
     schedule:
@@ -73,8 +73,8 @@ updates:
     groups:
       k8s-dependencies:
         patterns:
-          - "k8s.io*"
-          - "sigs.k8s.io*"
+          - 'k8s.io*'
+          - 'sigs.k8s.io*'
   - package-ecosystem: gomod
     directory: /instrumentor
     schedule:
@@ -83,8 +83,8 @@ updates:
     groups:
       k8s-dependencies:
         patterns:
-          - "k8s.io*"
-          - "sigs.k8s.io*"
+          - 'k8s.io*'
+          - 'sigs.k8s.io*'
   - package-ecosystem: pip
     directory: /odiglet/agents/python
     schedule:
@@ -93,4 +93,17 @@ updates:
     groups:
       otel-dependencies:
         patterns:
-          - "opentelemetry*"
+          - 'opentelemetry*'
+  - package-ecosystem: yarn
+    directories:
+      - /frontend/webapp
+      - /docs
+      - /agents/nodejs-native-community
+      - /tests/e2e/workload-lifecycle/services/nodejs-http-server
+    schedule:
+      day: sunday
+      interval: weekly
+    groups:
+      otel-dependencies:
+        patterns:
+          - 'opentelemetry*'
