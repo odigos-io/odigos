@@ -16,8 +16,8 @@ interface Props {
   isError?: boolean;
   withExtend?: boolean;
   isExtended?: boolean;
-  renderExtended?: () => JSX.Element;
-  renderActions?: () => JSX.Element;
+  renderExtended?: () => React.ReactNode;
+  renderActions?: () => React.ReactNode;
   onClick?: () => void;
 }
 
