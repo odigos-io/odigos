@@ -5,8 +5,8 @@ import { NOTIFICATION_TYPE } from '@/types';
 import { FlexColumn, FlexRow } from '@/styles';
 import { DATA_CARDS, getStatusIcon, safeJsonStringify } from '@/utils';
 import OverviewDrawer from '@/containers/main/overview/overview-drawer';
+import { useCopy, useDescribeOdigos, useKeyDown, useOnClickOutside, useTimeAgo, useTokenCRUD } from '@/hooks';
 import { CheckIcon, CodeBracketsIcon, CodeIcon, CopyIcon, CrossIcon, EditIcon, KeyIcon, ListIcon } from '@/assets';
-import { useComputePlatform, useCopy, useDescribeOdigos, useKeyDown, useOnClickOutside, useTimeAgo } from '@/hooks';
 import { Button, DataCard, DataCardFieldTypes, Divider, IconButton, Input, Segment, Text, Tooltip } from '@/reuseable-components';
 
 interface Props {}
@@ -46,7 +46,7 @@ const PopoverFormButton = styled(Button)`
 export const CliDrawer: React.FC<Props> = () => {
   const timeAgo = useTimeAgo();
   const { isCopied, copiedIndex, clickCopy } = useCopy();
-  const { data: cp, loading, updateToken } = useComputePlatform();
+  const { tokens, loading, updateToken } = useTokenCRUD();
   const { data: describe, restructureForPrettyMode } = useDescribeOdigos();
 
   const [isPrettyMode, setIsPrettyMode] = useState(true);
@@ -61,8 +61,6 @@ export const CliDrawer: React.FC<Props> = () => {
     const token = tokenInputRef.current?.value;
     if (token) updateToken(token).then(() => setEditTokenIndex(-1));
   }
-
-  const tokens = cp?.computePlatform.apiTokens || [];
 
   return (
     <OverviewDrawer title='Odigos CLI' icon={CodeBracketsIcon}>
