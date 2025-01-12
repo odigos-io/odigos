@@ -552,6 +552,8 @@ type NodeCollectorAnalyze {
 
 type OdigosAnalyze {
   odigosVersion: EntityProperty!
+  tier: EntityProperty!
+  installationMethod: EntityProperty!
   numberOfDestinations: Int!
   numberOfSources: Int!
   clusterCollector: ClusterCollectorAnalyze!
