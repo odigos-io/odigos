@@ -6,6 +6,7 @@ import (
 
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/client"
+	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"sigs.k8s.io/yaml"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -13,7 +14,6 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/common/utils"
 
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
@@ -86,7 +86,7 @@ func getRelevantNameSpaces(ctx context.Context, odigosns string) ([]v1.Namespace
 	g, ctx := errgroup.WithContext(ctx)
 	g.Go(func() error {
 		var err error
-		configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(odigosns).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
+		configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(odigosns).Get(ctx, consts.OdigosEffectiveConfigName, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}

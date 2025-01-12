@@ -9,8 +9,10 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/crypto"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
+	k8sutilsconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -88,7 +90,7 @@ func NewInstrumentorRole(ns string) *rbacv1.Role {
 			{
 				APIGroups:     []string{""},
 				Resources:     []string{"configmaps"},
-				ResourceNames: []string{"odigos-config"},
+				ResourceNames: []string{consts.OdigosEffectiveConfigName},
 				Verbs:         []string{"get", "list", "watch"},
 			},
 			{
@@ -289,7 +291,7 @@ func NewMutatingWebhookConfiguration(ns string, caBundle []byte) *admissionregis
 				TimeoutSeconds:     intPtr(10),
 				ObjectSelector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						consts.OdigosInjectInstrumentationLabel: "true",
+						k8sutilsconsts.OdigosInjectInstrumentationLabel: "true",
 					},
 				},
 				AdmissionReviewVersions: []string{
@@ -399,19 +401,23 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 										},
 									},
 								},
+								{
+									Name: consts.OdigosTierEnvVarName,
+									ValueFrom: &corev1.EnvVarSource{
+										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: k8sutilsconsts.OdigosDeploymentConfigMapName,
+											},
+											Key: k8sconsts.OdigosDeploymentConfigMapTierKey,
+										},
+									},
+								},
 							},
 							EnvFrom: []corev1.EnvFromSource{
 								{
 									ConfigMapRef: &corev1.ConfigMapEnvSource{
 										LocalObjectReference: corev1.LocalObjectReference{
 											Name: ownTelemetryOtelConfig,
-										},
-									},
-								},
-								{
-									ConfigMapRef: &corev1.ConfigMapEnvSource{
-										LocalObjectReference: corev1.LocalObjectReference{
-											Name: consts.OdigosDeploymentConfigMapName,
 										},
 									},
 								},

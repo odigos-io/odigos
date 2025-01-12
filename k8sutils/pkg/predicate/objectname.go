@@ -55,6 +55,10 @@ var OdigosConfigMapPredicate = ObjectNamePredicate{
 	AllowedObjectName: consts.OdigosConfigurationName,
 }
 
+var OdigosEffectiveConfigMapPredicate = ObjectNamePredicate{
+	AllowedObjectName: consts.OdigosEffectiveConfigName,
+}
+
 // use this event filter to reconcile only collectors group events for node collectors group objects
 // this is useful if you reconcile only depends on changes from the node collectors group and should not react to cluster collectors group changes
 // example usage:
