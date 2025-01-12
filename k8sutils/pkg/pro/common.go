@@ -28,7 +28,7 @@ func updateSecretToken(ctx context.Context, client kubernetes.Interface, namespa
 		if apierrors.IsNotFound(err) {
 			return fmt.Errorf("tokens are not available in the open-source version of Odigos. Please contact Odigos team to inquire about pro version")
 		}
-		return err 
+		return err
 	}
 	secret.Data[consts.OdigosOnpremTokenSecretKey] = []byte(onPremToken)
 
@@ -54,7 +54,8 @@ func odigletRolloutTrigger(ctx context.Context, client kubernetes.Interface, nam
 
 	_, err = client.AppsV1().DaemonSets(namespace).Update(ctx, daemonSet, metav1.UpdateOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to restart Odiglets: %w. To trigger a restart manually, run the following command: kubectl rollout restart daemonset odiglet -n %s", err, daemonSet.Namespace)
+		command := fmt.Sprintf("kubectl rollout restart daemonset odiglet -n %s", daemonSet.Namespace)
+		return fmt.Errorf("failed to restart Odiglets: %w. To trigger a restart manually, run the following command: %s", err, command)
 	}
 	return nil
 }
