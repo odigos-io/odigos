@@ -51,25 +51,23 @@ export const CliDrawer: React.FC<Props> = () => {
                     { columnKey: 'token', value: `${new Array(15).fill('•').join('')}` },
                     {
                       columnKey: 'actions',
-                      component: () => (
-                        <FlexRow $gap={0}>
-                          <IconButton size={32} onClick={() => clickCopy(token, idx)}>
-                            {isCopied && copiedIndex === idx ? getStatusIcon(NOTIFICATION_TYPE.SUCCESS)({}) : <CopyIcon />}
-                          </IconButton>
+                      component: () => {
+                        const SuccessIcon = getStatusIcon(NOTIFICATION_TYPE.SUCCESS);
 
-                          {/* <Divider orientation='vertical' length='12px' />
+                        return (
+                          <FlexRow $gap={0}>
+                            <IconButton size={32} onClick={() => clickCopy(token, idx)}>
+                              {isCopied && copiedIndex === idx ? <SuccessIcon /> : <CopyIcon />}
+                            </IconButton>
 
-                          <IconButton size={32} onClick={() => {}}>
-                            <EditIcon />
-                          </IconButton> */}
+                            {/* <Divider orientation='vertical' length='12px' />
 
-                          {/* <Divider orientation='vertical' length='12px' />
-
-                          <IconButton size={32} onClick={() => {}}>
-                            <TrashIcon />
-                          </IconButton> */}
-                        </FlexRow>
-                      ),
+                            <IconButton size={32} onClick={() => {}}>
+                              <EditIcon />
+                            </IconButton> */}
+                          </FlexRow>
+                        );
+                      },
                     },
                   ]),
                 },

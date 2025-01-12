@@ -13,7 +13,7 @@ interface RowCell {
   columnKey: string; // used to bind the row cell to the column
   icon?: SVG;
   value?: string;
-  component?: () => JSX.Element;
+  component?: () => React.ReactNode;
 }
 
 interface Props {
