@@ -342,7 +342,7 @@ func (r *k8sActualNamespaceResolver) K8sActualSources(ctx context.Context, obj *
 
 // UpdateAPIToken is the resolver for the updateApiToken field.
 func (r *mutationResolver) UpdateAPIToken(ctx context.Context, token string) (bool, error) {
-	err := pro.UpdateOdigosToken(ctx, kube.DefaultClient, services.OdigosSystemNamespace, token)
+	err := pro.UpdateOdigosToken(ctx, kube.DefaultClient, consts.DefaultOdigosNamespace, token)
 	return err == nil, nil
 }
 
