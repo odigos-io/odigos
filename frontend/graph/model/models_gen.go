@@ -54,6 +54,13 @@ func (this AddClusterInfoAction) GetSignals() []SignalType {
 	return interfaceSlice
 }
 
+type APIToken struct {
+	Token     string `json:"token"`
+	Name      string `json:"name"`
+	IssuedAt  int    `json:"issuedAt"`
+	ExpiresAt int    `json:"expiresAt"`
+}
+
 type ClusterCollectorAnalyze struct {
 	Enabled              *EntityProperty `json:"enabled"`
 	CollectorGroup       *EntityProperty `json:"collectorGroup"`
@@ -74,6 +81,7 @@ type ClusterInfo struct {
 
 type ComputePlatform struct {
 	ComputePlatformType  ComputePlatformType    `json:"computePlatformType"`
+	APITokens            []*APIToken            `json:"apiTokens"`
 	K8sActualNamespaces  []*K8sActualNamespace  `json:"k8sActualNamespaces"`
 	K8sActualNamespace   *K8sActualNamespace    `json:"k8sActualNamespace,omitempty"`
 	Sources              *PaginatedSources      `json:"sources"`
