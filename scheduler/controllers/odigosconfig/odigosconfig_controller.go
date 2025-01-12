@@ -37,7 +37,10 @@ func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) 
 	// make sure the default ignored containers are always present
 	odigosConfig.IgnoredContainers = mergeIgnoredItemLists(odigosConfig.IgnoredContainers, k8sconsts.DefaultIgnoredContainers)
 
-	applyProfilesToOdigosConfig(odigosConfig)
+	// effective profiles are what is actually used in the cluster
+	effectiveProfiles := calculateEffectiveProfiles(odigosConfig.Profiles)
+	odigosConfig.Profiles = effectiveProfiles
+	modifyConfigWithEffectiveProfiles(effectiveProfiles, odigosConfig)
 
 	// if none of the profiles set sizing for collectors, use size_s as default, so the values are never nil
 	// if the values were already set (by user or profile) this is a no-op
@@ -111,23 +114,34 @@ func (r *odigosConfigController) persistEffectiveConfig(ctx context.Context, eff
 	return nil
 }
 
-func applySingleProfile(profile common.ProfileName, odigosConfig *common.OdigosConfiguration) {
-	profileConfig, found := profiles.ProfilesByName[profile]
-	if !found {
-		return
-	}
-
-	if profileConfig.ModifyConfigFunc != nil {
-		profileConfig.ModifyConfigFunc(odigosConfig)
-	}
-
-	for _, dependency := range profileConfig.Dependencies {
-		applySingleProfile(dependency, odigosConfig)
+func modifyConfigWithEffectiveProfiles(effectiveProfiles []common.ProfileName, odigosConfig *common.OdigosConfiguration) {
+	for _, profileName := range effectiveProfiles {
+		p := profiles.ProfilesByName[profileName]
+		if p.ModifyConfigFunc != nil {
+			p.ModifyConfigFunc(odigosConfig)
+		}
 	}
 }
 
-func applyProfilesToOdigosConfig(odigosConfig *common.OdigosConfiguration) {
-	for _, profile := range odigosConfig.Profiles {
-		applySingleProfile(profile, odigosConfig)
+// from the list of input profiles, calculate the effective profiles:
+// - check the dependencies of each profile and add them to the list
+// - remove profiles which are not present in the profiles list
+func calculateEffectiveProfiles(configProfiles []common.ProfileName) []common.ProfileName {
+	effectiveProfiles := []common.ProfileName{}
+	for _, profile := range configProfiles {
+
+		// ignore missing profiles
+		p, found := profiles.ProfilesByName[profile]
+		if !found {
+			continue
+		}
+
+		effectiveProfiles = append(effectiveProfiles, profile)
+
+		// if this profile has dependencies, add them to the list
+		if p.Dependencies != nil {
+			effectiveProfiles = append(effectiveProfiles, calculateEffectiveProfiles(p.Dependencies)...)
+		}
 	}
+	return effectiveProfiles
 }
