@@ -4,24 +4,24 @@ import (
 	"context"
 	"fmt"
 
-	cliprofiles "github.com/odigos-io/odigos/cli/cmd/resources/profiles"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/profiles"
+	"github.com/odigos-io/odigos/profiles/manifests"
 	"github.com/odigos-io/odigos/profiles/profile"
 )
 
-func GetResourcesForProfileName(profileName common.ProfileName, tier common.OdigosTier) ([]kube.Object, error) {
+func GetResourcesForProfileName(profileName common.ProfileName, tier common.OdigosTier) ([]profile.K8sObject, error) {
 	allAvailableProfiles := GetAvailableProfilesForTier(tier)
 	for _, p := range allAvailableProfiles {
 		if p.ProfileName == common.ProfileName(profileName) {
 			if p.KubeObject != nil {
 				filename := fmt.Sprintf("%s.yaml", profileName)
-				return cliprofiles.GetEmbeddedYAMLFileAsObjects(filename, p.KubeObject)
+				return manifests.GetEmbeddedResourceManifestsAsObjects(filename, p.KubeObject)
 			}
 			if len(p.Dependencies) > 0 {
-				allResources := []kube.Object{}
+				allResources := []profile.K8sObject{}
 				for _, dep := range p.Dependencies {
 					resources, err := GetResourcesForProfileName(dep, tier)
 					if err != nil {
@@ -71,8 +71,8 @@ func (a *profilesResourceManager) InstallFromScratch(ctx context.Context) error 
 		}
 		for _, r := range profileResources {
 			r.SetNamespace(a.ns)
+			allResources = append(allResources, r)
 		}
-		allResources = append(allResources, profileResources...)
 	}
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, allResources)
 }

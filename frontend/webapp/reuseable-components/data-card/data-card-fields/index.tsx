@@ -1,9 +1,9 @@
 import React from 'react';
+import theme from '@/styles/theme';
 import styled from 'styled-components';
 import { NOTIFICATION_TYPE } from '@/types';
-import { ActiveStatus, Code, DataTab, Divider, InstrumentStatus, MonitorsIcons, NotificationNote, Text, Tooltip } from '@/reuseable-components';
 import { capitalizeFirstLetter, getProgrammingLanguageIcon, parseJsonStringToPrettyString, safeJsonParse, WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils';
-import theme from '@/styles/theme';
+import { ActiveStatus, Code, DataTab, Divider, InstrumentStatus, InteractiveTable, MonitorsIcons, NotificationNote, Text, Tooltip } from '@/reuseable-components';
 
 export enum DataCardFieldTypes {
   DIVIDER = 'divider',
@@ -11,13 +11,14 @@ export enum DataCardFieldTypes {
   ACTIVE_STATUS = 'active-status',
   SOURCE_CONTAINER = 'source-container',
   CODE = 'code',
+  TABLE = 'table',
 }
 
 export interface DataCardRow {
   type?: DataCardFieldTypes;
   title?: string;
   tooltip?: string;
-  value?: string;
+  value?: string | Record<string, any>;
   width?: string;
 }
 
@@ -78,6 +79,18 @@ const renderValue = (type: DataCardRow['type'], value: DataCardRow['value']) => 
     case DataCardFieldTypes.ACTIVE_STATUS:
       return <ActiveStatus isActive={value == 'true'} size={10} withIcon withBorder />;
 
+    case DataCardFieldTypes.CODE: {
+      const params = safeJsonParse(value, { language: '', code: '' });
+
+      return <Code {...params} />;
+    }
+
+    case DataCardFieldTypes.TABLE: {
+      const params = safeJsonParse(value, { columns: [], rows: [] });
+
+      return <InteractiveTable {...params} />;
+    }
+
     case DataCardFieldTypes.SOURCE_CONTAINER: {
       const { containerName, language, runtimeVersion, otherAgent, hasPresenceOfOtherAgent } = safeJsonParse(value, {
         containerName: '-',
@@ -113,14 +126,8 @@ const renderValue = (type: DataCardRow['type'], value: DataCardRow['value']) => 
       );
     }
 
-    case DataCardFieldTypes.CODE: {
-      const params = safeJsonParse(value, { language: '', code: '' });
-
-      return <Code {...params} />;
-    }
-
     default: {
-      return <PreWrap>{parseJsonStringToPrettyString(value || '-')}</PreWrap>;
+      return <PreWrap>{parseJsonStringToPrettyString(typeof value === 'string' ? value || '-' : '-')}</PreWrap>;
     }
   }
 };
