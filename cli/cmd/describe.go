@@ -173,10 +173,7 @@ func getUiServiceSourceEndpoint(ctx context.Context, client *kube.Client, worklo
 		os.Exit(1)
 	}
 
-	uiServiceName := "ui"
-	uiServicePort := 3000
-
-	return fmt.Sprintf("/api/v1/namespaces/%s/services/%s:%d/proxy/api/describe/source/namespace/%s/kind/%s/name/%s", ns, uiServiceName, uiServicePort, workloadNs, workloadKind, workloadName)
+	return fmt.Sprintf("/api/v1/namespaces/%s/services/%s:%d/proxy/api/describe/source/namespace/%s/kind/%s/name/%s", ns, k8sconsts.OdigosUiServiceName, k8sconsts.OdigosUiServicePort, workloadNs, workloadKind, workloadName)
 }
 
 func init() {
