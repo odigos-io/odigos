@@ -41,7 +41,6 @@ type SourceReconciler struct {
 
 func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	logger.Info("Reconciling Source object", "name", req.Name, "namespace", req.Namespace)
 
 	source := &v1alpha1.Source{}
 	err := r.Get(ctx, req.NamespacedName, source)
@@ -51,12 +50,16 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	// If this is a regular Source that's being deleted, or a workload Exclusion Source
 	// that's being created, try to uninstrument relevant workloads.
-	if source.DeletionTimestamp.IsZero() == v1alpha1.IsWorkloadExcludedSource(source) {
-		logger.Info("Reconciling workload for Source object", "name", req.Name, "namespace", req.Namespace)
+	// if (terminating && !exclude) || (!terminating && exclude)
+	if k8sutils.IsTerminating(source) != v1alpha1.IsWorkloadExcludedSource(source) {
+		logger.Info("Reconciling workload for Source object",
+			"name", req.Name,
+			"namespace", req.Namespace,
+			"kind", source.Spec.Workload.Kind,
+			"excluded", v1alpha1.IsWorkloadExcludedSource(source),
+			"terminating", k8sutils.IsTerminating(source))
 
 		if source.Spec.Workload.Kind == "Namespace" {
-			logger.V(2).Info("Uninstrumenting workloads for Namespace Source", "name", req.Name, "namespace", req.Namespace)
-
 			for _, kind := range []workload.WorkloadKind{
 				workload.WorkloadKindDaemonSet,
 				workload.WorkloadKindDeployment,
@@ -70,7 +73,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 
 		if !v1alpha1.IsWorkloadExcludedSource(source) &&
-			!source.DeletionTimestamp.IsZero() &&
+			k8sutils.IsTerminating(source) &&
 			controllerutil.ContainsFinalizer(source, consts.DeleteInstrumentationConfigFinalizer) {
 			controllerutil.RemoveFinalizer(source, consts.DeleteInstrumentationConfigFinalizer)
 			if err := r.Update(ctx, source); err != nil {
@@ -91,13 +94,13 @@ func (r *SourceReconciler) syncWorkload(ctx context.Context, source *v1alpha1.So
 		return err
 	}
 
-	sourceList, err := v1alpha1.GetWorkloadSources(ctx, r.Client, obj)
+	sources, err := v1alpha1.GetSources(ctx, r.Client, obj)
 	if err != nil {
 		return err
 	}
-	if sourceList.Namespace == nil ||
-		(sourceList.Namespace != nil && !sourceList.Namespace.DeletionTimestamp.IsZero()) ||
-		(sourceList.Workload != nil && sourceList.Workload.DeletionTimestamp.IsZero() && v1alpha1.IsWorkloadExcludedSource(source)) {
+	if sources.Namespace == nil ||
+		(sources.Namespace != nil && k8sutils.IsTerminating(sources.Namespace)) ||
+		(sources.Workload != nil && !k8sutils.IsTerminating(sources.Workload) && v1alpha1.IsWorkloadExcludedSource(source)) {
 		// if this workload doesn't have a live Namespace instrumentation, or it has a live exclusion source, uninstrument it
 		err = errors.Join(err, deleteWorkloadInstrumentationConfig(ctx, r.Client, obj))
 		err = errors.Join(err, removeReportedNameAnnotation(ctx, r.Client, obj))

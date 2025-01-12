@@ -92,7 +92,7 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 
 	if !instEffectiveEnabled {
 		// Check if a Source object exists for this workload
-		sourceList, err := v1alpha1.GetWorkloadSources(ctx, r.Client, workloadObject)
+		sourceList, err := v1alpha1.GetSources(ctx, r.Client, workloadObject)
 		if err != nil {
 			return ctrl.Result{}, err
 		}

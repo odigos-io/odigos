@@ -44,6 +44,14 @@ func IgnoreErrorKindNotSupported(err error) error {
 	return err
 }
 
+func IsValidWorkloadKind(kind WorkloadKind) bool {
+	switch kind {
+	case WorkloadKindDeployment, WorkloadKindDaemonSet, WorkloadKindStatefulSet:
+		return true
+	}
+	return false
+}
+
 func WorkloadKindLowerCaseFromKind(pascalCase WorkloadKind) WorkloadKindLowerCase {
 	switch pascalCase {
 	case WorkloadKindDeployment:

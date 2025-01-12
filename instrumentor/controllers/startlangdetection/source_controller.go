@@ -34,7 +34,8 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	// If this is a regular Source that is being created, or an Exclusion Source that is being deleted,
 	// Attempt to reconcile the workloads for instrumentation.
-	if source.DeletionTimestamp.IsZero() != v1alpha1.IsWorkloadExcludedSource(source) {
+	// if (terminating && exclude) || (!terminating && !exclude)
+	if k8sutils.IsTerminating(source) == v1alpha1.IsWorkloadExcludedSource(source) {
 		if source.Spec.Workload.Kind == "Namespace" {
 			// pre-process existing Sources for specific workloads so we don't have to make a bunch of API calls
 			// This is used to check if a workload already has an explicit Source, so we don't overwrite its InstrumentationConfig
@@ -44,12 +45,12 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 				return ctrl.Result{}, err
 			}
 			namespaceKindSources := make(map[workload.WorkloadKind]map[string]struct{})
-			for _, source := range sourceList.Items {
-				if _, exists := namespaceKindSources[source.Spec.Workload.Kind]; !exists {
-					namespaceKindSources[source.Spec.Workload.Kind] = make(map[string]struct{})
+			for _, s := range sourceList.Items {
+				if _, exists := namespaceKindSources[s.Spec.Workload.Kind]; !exists {
+					namespaceKindSources[s.Spec.Workload.Kind] = make(map[string]struct{})
 				}
 				// ex: map["Deployment"]["my-app"] = ...
-				namespaceKindSources[source.Spec.Workload.Kind][source.Spec.Workload.Name] = struct{}{}
+				namespaceKindSources[s.Spec.Workload.Kind][s.Spec.Workload.Name] = struct{}{}
 			}
 
 			for _, kind := range []workload.WorkloadKind{
@@ -76,7 +77,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 
 		if v1alpha1.IsWorkloadExcludedSource(source) &&
-			!source.DeletionTimestamp.IsZero() &&
+			k8sutils.IsTerminating(source) &&
 			controllerutil.ContainsFinalizer(source, consts.StartLangDetectionFinalizer) {
 			controllerutil.RemoveFinalizer(source, consts.StartLangDetectionFinalizer)
 			if err := r.Update(ctx, source); err != nil {

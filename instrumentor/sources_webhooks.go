@@ -23,6 +23,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -62,15 +63,26 @@ func (s *SourcesDefaulter) Default(ctx context.Context, obj runtime.Object) erro
 		source.Labels[consts.WorkloadKindLabel] = string(source.Spec.Workload.Kind)
 	}
 
-	if !v1alpha1.IsWorkloadExcludedSource(source) &&
-		source.DeletionTimestamp.IsZero() &&
-		!controllerutil.ContainsFinalizer(source, consts.DeleteInstrumentationConfigFinalizer) {
-		controllerutil.AddFinalizer(source, consts.DeleteInstrumentationConfigFinalizer)
+	// Make sure the Source has the right finalizer, so the right controller handles it for deletion.
+	// If a normal source has `spec.instrumentationDisabled` updated to `true`, it is now an excluded Source.
+	// Vice versa for an excluded Source that has `spec.instrumentationDisabled` removed.
+	// These checks make sure that the right type of Source has the right type of finalizer
+	// by toggling what finalizer is set.
+	if !v1alpha1.IsWorkloadExcludedSource(source) {
+		if !controllerutil.ContainsFinalizer(source, consts.DeleteInstrumentationConfigFinalizer) && !k8sutils.IsTerminating(source) {
+			controllerutil.AddFinalizer(source, consts.DeleteInstrumentationConfigFinalizer)
+		}
+		if controllerutil.ContainsFinalizer(source, consts.StartLangDetectionFinalizer) {
+			controllerutil.RemoveFinalizer(source, consts.StartLangDetectionFinalizer)
+		}
 	}
-	if v1alpha1.IsWorkloadExcludedSource(source) &&
-		source.DeletionTimestamp.IsZero() &&
-		!controllerutil.ContainsFinalizer(source, consts.StartLangDetectionFinalizer) {
-		controllerutil.AddFinalizer(source, consts.StartLangDetectionFinalizer)
+	if v1alpha1.IsWorkloadExcludedSource(source) {
+		if controllerutil.ContainsFinalizer(source, consts.DeleteInstrumentationConfigFinalizer) {
+			controllerutil.RemoveFinalizer(source, consts.DeleteInstrumentationConfigFinalizer)
+		}
+		if !controllerutil.ContainsFinalizer(source, consts.StartLangDetectionFinalizer) && !k8sutils.IsTerminating(source) {
+			controllerutil.AddFinalizer(source, consts.StartLangDetectionFinalizer)
+		}
 	}
 
 	return nil
@@ -107,11 +119,11 @@ func (s *SourcesValidator) ValidateUpdate(ctx context.Context, oldObj, newObj ru
 	var allErrs field.ErrorList
 	old, ok := oldObj.(*v1alpha1.Source)
 	if !ok {
-		return nil, fmt.Errorf("expected a Source but got a %T", old)
+		return nil, fmt.Errorf("expected old Source but got a %T", old)
 	}
 	new, ok := newObj.(*v1alpha1.Source)
 	if !ok {
-		return nil, fmt.Errorf("expected a Source but got a %T", new)
+		return nil, fmt.Errorf("expected new Source but got a %T", new)
 	}
 
 	if new.GetName() != old.GetName() {
@@ -180,6 +192,15 @@ func (s *SourcesValidator) ValidateDelete(ctx context.Context, obj runtime.Objec
 func (s *SourcesValidator) validateSourceFields(ctx context.Context, source *v1alpha1.Source) field.ErrorList {
 	allErrs := make([]*field.Error, 0)
 
+	if controllerutil.ContainsFinalizer(source, consts.DeleteInstrumentationConfigFinalizer) &&
+		controllerutil.ContainsFinalizer(source, consts.StartLangDetectionFinalizer) {
+		allErrs = append(allErrs, field.Invalid(
+			field.NewPath("metadata").Child("finalizers"),
+			source.Finalizers,
+			"Source may only have one finalizer",
+		))
+	}
+
 	if source.Labels[consts.WorkloadNameLabel] != source.Spec.Workload.Name {
 		allErrs = append(allErrs, field.Invalid(
 			field.NewPath("metadata").Child("labels"),
@@ -222,12 +243,20 @@ func (s *SourcesValidator) validateSourceFields(ctx context.Context, source *v1a
 		))
 	}
 
-	workloadKind := workload.WorkloadKindFromString(string(source.Spec.Workload.Kind))
-	if workloadKind == "" && source.Spec.Workload.Kind != "Namespace" {
+	validKind := workload.IsValidWorkloadKind(source.Spec.Workload.Kind)
+	if !validKind && source.Spec.Workload.Kind != "Namespace" {
 		allErrs = append(allErrs, field.Invalid(
 			field.NewPath("spec").Child("workload").Child("kind"),
 			source.Spec.Workload.Kind,
 			"workload kind must be one of (Deployment, DaemonSet, StatefulSet, Namespace)",
+		))
+	}
+
+	if source.Spec.Workload.Namespace != source.GetNamespace() {
+		allErrs = append(allErrs, field.Invalid(
+			field.NewPath("spec").Child("workload").Child("namespace"),
+			source.Spec.Workload.Namespace,
+			"Source namespace must match spec.workload.namespace",
 		))
 	}
 

@@ -3,9 +3,8 @@ kind: Source
 metadata:
   name: 10-duplicate-excluded-source
   namespace: default
-  labels:
-    odigos.io/workload-excluded: "true"
 spec:
+  instrumentationDisabled: true
   workload:
     name: 07-excluded-source
     namespace: default

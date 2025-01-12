@@ -5,8 +5,8 @@ metadata:
   namespace: default
   labels:
     odigos.io/e2e: source-excluded
-    odigos.io/workload-excluded: "true"
 spec:
+  instrumentationDisabled: true
   workload:
     name: membership
     namespace: default

@@ -3,10 +3,8 @@ kind: Source
 metadata:
   name: 05-startlangdetection-finalizer
   namespace: default
-  labels:
-    odigos.io/workload-excluded: "true"
   finalizers:
-  - odigos.io/source-startlangdetection-finalizer
+  - odigos.io/source-deleteinstrumentationconfig-finalizer
 spec:
   workload:
     name: startlangdetection-finalizer

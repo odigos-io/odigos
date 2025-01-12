@@ -11,6 +11,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/client"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -269,9 +270,9 @@ func updateAnnotations(annotations map[string]string, reportedName string) map[s
 func GetSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) (*v1alpha1.Source, error) {
 	list, err := kube.DefaultClient.OdigosClient.Sources(nsName).List(ctx, metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(labels.Set{
-			consts.OdigosNamespaceAnnotation:    nsName,
-			consts.OdigosWorkloadNameAnnotation: workloadName,
-			consts.OdigosWorkloadKindAnnotation: string(workloadKind),
+			k8sconsts.WorkloadNamespaceLabel: nsName,
+			k8sconsts.WorkloadNameLabel:      workloadName,
+			k8sconsts.WorkloadKindLabel:      string(workloadKind),
 		}).String(),
 	})
 
@@ -285,10 +286,7 @@ func GetSourceCRD(ctx context.Context, nsName string, workloadName string, workl
 		return nil, fmt.Errorf(`expected to get 1 source "%s", got %d`, workloadName, len(list.Items))
 	}
 
-	crdName := list.Items[0].Name
-	crd, err := kube.DefaultClient.OdigosClient.Sources(nsName).Get(ctx, crdName, metav1.GetOptions{})
-
-	return crd, err
+	return &list.Items[0], err
 }
 
 func createSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) error {

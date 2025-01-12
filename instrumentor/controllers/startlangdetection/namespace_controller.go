@@ -30,11 +30,11 @@ func (n *NamespacesReconciler) Reconcile(ctx context.Context, request ctrl.Reque
 	}
 
 	if !k8sutils.IsObjectLabeledForInstrumentation(&ns) {
-		sourceList, err := v1alpha1.GetWorkloadSources(ctx, n.Client, &ns)
+		sources, err := v1alpha1.GetSources(ctx, n.Client, &ns)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
-		if sourceList.Namespace == nil {
+		if sources.Namespace == nil {
 			return ctrl.Result{}, nil
 		}
 	}
