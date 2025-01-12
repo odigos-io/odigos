@@ -13,7 +13,9 @@ export const useDescribeOdigos = () => {
     if (!code) return {};
 
     const payload: Record<string, any> = {
-      [code.odigosVersion.name]: code.odigosVersion.value,
+      [`${code.odigosVersion.name}@tooltip=${code.odigosVersion.explain}`]: code.odigosVersion.value,
+      [`${code.tier.name}@tooltip=${code.tier.explain}`]: code.tier.value,
+      [`${code.installationMethod.name}@tooltip=${code.installationMethod.explain}`]: code.installationMethod.value,
       'Number Of Sources': code.numberOfSources,
       'Number Of Destinations': code.numberOfDestinations,
     };
