@@ -16,7 +16,7 @@ const (
 	SYNC_DAEMONSET_DELAY_IN_SECONDS = "SYNC_DAEMONSET_DELAY_IN_SECONDS"
 )
 
-func getEnvVarOrDefault(envKey string, defaultVal string) string {
+func getEnvVarOrDefault(envKey, defaultVal string) string {
 	val, exists := os.LookupEnv(envKey)
 	if exists {
 		return val

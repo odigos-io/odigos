@@ -3,10 +3,11 @@ package utils
 import (
 	"context"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 )
 
 func ApplyCollectorGroup(ctx context.Context, c client.Client, collectorGroup *odigosv1.CollectorsGroup) error {

@@ -26,7 +26,6 @@ func (s *AWSS3) DestType() common.DestinationType {
 }
 
 func (s *AWSS3) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
-
 	if !isLoggingEnabled(dest) && !isTracingEnabled(dest) && !isMetricsEnabled(dest) {
 		return errors.New("No metrics, logs or traces enabled, gateway will not be configured for AWS S3")
 	}
