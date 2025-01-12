@@ -8,6 +8,7 @@ import (
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/describe"
 	"github.com/spf13/cobra"
 )
@@ -163,8 +164,8 @@ func executeRemoteSourceDescribe(ctx context.Context, client *kube.Client, workl
 }
 
 func getUiServiceOdigosEndpoint(ctx context.Context, client *kube.Client, odigosNs string) string {
-	uiServiceName := "ui"
-	uiServicePort := 3000
+	uiServiceName := k8sconsts.OdigosUiServiceName
+	uiServicePort := k8sconsts.OdigosUiServicePort
 
 	return fmt.Sprintf("/api/v1/namespaces/%s/services/%s:%d/proxy/api/describe/odigos", odigosNs, uiServiceName, uiServicePort)
 }
