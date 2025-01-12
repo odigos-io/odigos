@@ -4,16 +4,17 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
-	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
+
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 	"github.com/spf13/cobra"
 )
 
 var (
-	updateRemoteFlag    bool
+	updateRemoteFlag bool
 )
 
 var proCmd = &cobra.Command{
@@ -32,8 +33,8 @@ var proCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		onPremToken := cmd.Flag("onprem-token").Value.String()
-		if updateRemoteFlag{
-			err = executeRemoteUpdateToken(ctx, client, ns)
+		if updateRemoteFlag {
+			err = executeRemoteUpdateToken(ctx, client, ns, onPremToken)
 		} else {
 			err = pro.UpdateOdigosToken(ctx, client, ns, onPremToken)
 		}
@@ -49,8 +50,8 @@ var proCmd = &cobra.Command{
 	},
 }
 
-func executeRemoteUpdateToken(ctx context.Context, client *kube.Client, namespace string) error {
-	uiSvcProxyEndpoint := fmt.Sprintf("/api/v1/namespaces/%s/services/%s:%d/proxy/api/token/update", namespace, k8sconsts.OdigosUiServiceName, k8sconsts.OdigosUiServicePort)
+func executeRemoteUpdateToken(ctx context.Context, client *kube.Client, namespace string, onPremToken string) error {
+	uiSvcProxyEndpoint := fmt.Sprintf("/api/v1/namespaces/%s/services/%s:%d/proxy/api/token/update/%s", namespace, k8sconsts.OdigosUiServiceName, k8sconsts.OdigosUiServicePort, onPremToken)
 	request := client.Clientset.RESTClient().Get().AbsPath(uiSvcProxyEndpoint).Do(ctx)
 	_, err := request.Raw()
 	if err != nil {

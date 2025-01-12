@@ -39,6 +39,11 @@ else
 	done
 endif
 
+.PHONY: lint-fix
+lint-fix:
+	MODULE=common make lint FIX_LINT=true
+	MODULE=k8sutils make lint FIX_LINT=true
+
 .PHONY: build-odiglet
 build-odiglet:
 	docker build -t $(ORG)/odigos-odiglet:$(TAG) . -f odiglet/Dockerfile --build-arg ODIGOS_VERSION=$(TAG)

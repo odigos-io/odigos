@@ -34,8 +34,13 @@ func DescribeOdigos(c *gin.Context) {
 	}
 }
 
-func DescribeSource(c *gin.Context, ns string, kind string, name string) {
+func DescribeSource(c *gin.Context) {
 	ctx := c.Request.Context()
+
+	ns := c.Param("namespace")
+	name := c.Param("name")
+	kind := c.Param("kind")
+
 	var desc *source.SourceAnalyze
 	var err error
 	switch kind {
