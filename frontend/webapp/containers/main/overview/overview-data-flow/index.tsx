@@ -111,7 +111,13 @@ export default function OverviewDataFlowContainer() {
     <Container ref={containerRef}>
       <OverviewActionsMenu />
       <MultiSourceControl />
-      <NodeDataFlow nodes={nodes} edges={edges} onNodeClick={handleNodeClick} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} />
+      <NodeDataFlow
+        nodes={nodes}
+        edges={edges}
+        onNodeClick={handleNodeClick}
+        onNodesChange={(changes) => setTimeout(() => onNodesChange(changes))} // Timeout is needed to fix this error: "ResizeObserver loop completed with undelivered notifications."
+        onEdgesChange={(changes) => setTimeout(() => onEdgesChange(changes))} // Timeout is needed to fix this error: "ResizeObserver loop completed with undelivered notifications."
+      />
     </Container>
   );
 }
