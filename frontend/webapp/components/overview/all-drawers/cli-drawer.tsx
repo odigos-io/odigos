@@ -3,8 +3,8 @@ import theme from '@/styles/theme';
 import styled from 'styled-components';
 import { NOTIFICATION_TYPE } from '@/types';
 import { FlexColumn, FlexRow } from '@/styles';
-import { DATA_CARDS, getStatusIcon, safeJsonStringify } from '@/utils';
 import OverviewDrawer from '@/containers/main/overview/overview-drawer';
+import { DATA_CARDS, getStatusIcon, isOverTime, safeJsonStringify, SEVEN_DAYS_IN_MS } from '@/utils';
 import { useCopy, useDescribeOdigos, useKeyDown, useOnClickOutside, useTimeAgo, useTokenCRUD } from '@/hooks';
 import { CheckIcon, CodeBracketsIcon, CodeIcon, CopyIcon, CrossIcon, EditIcon, KeyIcon, ListIcon } from '@/assets';
 import { Button, DataCard, DataCardFieldTypes, Divider, IconButton, Input, Segment, Text, Tooltip } from '@/reuseable-components';
@@ -83,8 +83,17 @@ export const CliDrawer: React.FC<Props> = () => {
                   rows: tokens.map(({ token, name, expiresAt }, idx) => [
                     { columnKey: 'icon', icon: KeyIcon },
                     { columnKey: 'name', value: name },
-                    { columnKey: 'expires_at', value: `${timeAgo.format(expiresAt)} (${new Date(expiresAt).toDateString().split(' ').slice(1).join(' ')})` },
                     { columnKey: 'token', value: `${new Array(15).fill('•').join('')}` },
+                    {
+                      columnKey: 'expires_at',
+                      component: () => {
+                        return (
+                          <Text size={14} color={isOverTime(expiresAt, SEVEN_DAYS_IN_MS) ? theme.text.error : theme.text.success}>
+                            {timeAgo.format(expiresAt)} ({new Date(expiresAt).toDateString().split(' ').slice(1).join(' ')})
+                          </Text>
+                        );
+                      },
+                    },
                     {
                       columnKey: 'actions',
                       component: () => {
