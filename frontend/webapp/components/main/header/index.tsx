@@ -3,12 +3,12 @@ import theme from '@/styles/theme';
 import { FlexRow } from '@/styles';
 import { SLACK_LINK } from '@/utils';
 import styled from 'styled-components';
-import { NOTIFICATION_TYPE, PlatformTypes } from '@/types';
 import { PlatformTitle } from './cp-title';
 import { NotificationManager } from '@/components';
-import { OdigosLogoText, SlackLogo, TerminalIcon } from '@/assets';
+import { NOTIFICATION_TYPE, PlatformTypes } from '@/types';
 import { ConnectionStatus, IconButton } from '@/reuseable-components';
-import { DRAWER_OTHER_TYPES, useConnectionStore, useDrawerStore } from '@/store';
+import { LightOffIcon, LightOnIcon, OdigosLogoText, SlackLogo, TerminalIcon } from '@/assets';
+import { DRAWER_OTHER_TYPES, useConnectionStore, useDarkModeStore, useDrawerStore } from '@/store';
 
 interface MainHeaderProps {}
 
@@ -33,6 +33,7 @@ const AlignRight = styled(FlexRow)`
 
 export const MainHeader: React.FC<MainHeaderProps> = () => {
   const { setSelectedItem } = useDrawerStore();
+  const { darkMode, setDarkMode } = useDarkModeStore();
   const { title, message, sseConnecting, sseStatus, tokenExpired, tokenExpiring } = useConnectionStore();
 
   const handleClickCli = () => setSelectedItem({ type: DRAWER_OTHER_TYPES.ODIGOS_CLI, id: DRAWER_OTHER_TYPES.ODIGOS_CLI });
@@ -52,6 +53,10 @@ export const MainHeader: React.FC<MainHeaderProps> = () => {
         </IconButton>
 
         <NotificationManager />
+
+        <IconButton onClick={() => setDarkMode(!darkMode)} tooltip={darkMode ? 'Light Mode' : 'Dark Mode'}>
+          {darkMode ? <LightOffIcon size={18} /> : <LightOnIcon size={18} />}
+        </IconButton>
 
         <IconButton onClick={handleClickSlack} tooltip='Join our Slack community'>
           <SlackLogo />
