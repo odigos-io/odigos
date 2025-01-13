@@ -164,14 +164,19 @@ func (c *ConnectionHandlers) UpdateInstrumentationInstanceStatus(ctx context.Con
 
 	isAgentDisconnect := message.AgentDisconnect != nil
 	hasHealth := message.Health != nil
-	// when agent disconnects, it need to report that it is unhealthy and disconnected
+	// When agent disconnects, it need to report that it's health and disconnected
+	// 1. In case disconnect with healthy status, we will delete the instrumentationInstnace CR
+	// 2. Otherwise, we will keep the CR in unhealthy state so it can be used for troubleshooting
 	if isAgentDisconnect {
 		if !hasHealth {
 			return fmt.Errorf("missing health in agent disconnect message")
 		}
+		// [1] - agent disconnects with healthy status, delete the instrumentation instance CR
 		if message.Health.Healthy {
-			return fmt.Errorf("agent disconnect message with healthy status")
+			c.logger.Info("Agent disconnected with healthy status, deleting instrumentation instance", "workloadNamespace", connectionInfo.Workload.Namespace, "workloadName", connectionInfo.Workload.Name, "workloadKind", connectionInfo.Workload.Kind)
+			return instrumentation_instance.DeleteInstrumentationInstance(ctx, connectionInfo.Pod, connectionInfo.ContainerName, c.kubeclient, int(connectionInfo.Pid))
 		}
+
 		if message.Health.LastError == "" {
 			return fmt.Errorf("missing last error in unhealthy message")
 		}
