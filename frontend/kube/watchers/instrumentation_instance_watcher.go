@@ -7,8 +7,8 @@ import (
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/frontend/endpoints/sse"
 	"github.com/odigos-io/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/frontend/services/sse"
 	commonutils "github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -20,7 +20,7 @@ func StartInstrumentationInstanceWatcher(ctx context.Context, namespace string) 
 	instrumentationInstanceModifiedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			MinBatchSize: 1,
-			Duration:     10 * time.Second,
+			Duration:     5 * time.Second,
 			MessageType:  sse.MessageTypeError,
 			Event:        sse.MessageEventModified,
 			CRDType:      consts.InstrumentationInstance,

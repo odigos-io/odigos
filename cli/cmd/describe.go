@@ -8,6 +8,7 @@ import (
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/describe"
 	"github.com/spf13/cobra"
 )
@@ -141,7 +142,7 @@ var describeSourceStatefulSetCmd = &cobra.Command{
 }
 
 func executeRemoteOdigosDescribe(ctx context.Context, client *kube.Client, odigosNs string) string {
-	uiSvcProxyEndpoint := getUiServiceOdigosEndpoint(ctx, client, odigosNs)
+	uiSvcProxyEndpoint := fmt.Sprintf("/api/v1/namespaces/%s/services/%s:%d/proxy/api/describe/odigos", odigosNs, k8sconsts.OdigosUiServiceName, k8sconsts.OdigosUiServicePort)
 	request := client.Clientset.RESTClient().Get().AbsPath(uiSvcProxyEndpoint).Do(ctx)
 	response, err := request.Raw()
 	if err != nil {
@@ -162,13 +163,6 @@ func executeRemoteSourceDescribe(ctx context.Context, client *kube.Client, workl
 	}
 }
 
-func getUiServiceOdigosEndpoint(ctx context.Context, client *kube.Client, odigosNs string) string {
-	uiServiceName := "ui"
-	uiServicePort := 3000
-
-	return fmt.Sprintf("/api/v1/namespaces/%s/services/%s:%d/proxy/api/describe/odigos", odigosNs, uiServiceName, uiServicePort)
-}
-
 func getUiServiceSourceEndpoint(ctx context.Context, client *kube.Client, workloadKind string, workloadNs string, workloadName string) string {
 	ns, err := resources.GetOdigosNamespace(client, ctx)
 	if resources.IsErrNoOdigosNamespaceFound(err) {
@@ -179,10 +173,7 @@ func getUiServiceSourceEndpoint(ctx context.Context, client *kube.Client, worklo
 		os.Exit(1)
 	}
 
-	uiServiceName := "ui"
-	uiServicePort := 3000
-
-	return fmt.Sprintf("/api/v1/namespaces/%s/services/%s:%d/proxy/api/describe/source/namespace/%s/kind/%s/name/%s", ns, uiServiceName, uiServicePort, workloadNs, workloadKind, workloadName)
+	return fmt.Sprintf("/api/v1/namespaces/%s/services/%s:%d/proxy/api/describe/source/namespace/%s/kind/%s/name/%s", ns, k8sconsts.OdigosUiServiceName, k8sconsts.OdigosUiServicePort, workloadNs, workloadKind, workloadName)
 }
 
 func init() {

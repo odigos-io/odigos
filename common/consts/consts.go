@@ -6,8 +6,11 @@ import (
 
 const (
 	CurrentNamespaceEnvVar       = "CURRENT_NS"
+	OdigosVersionEnvVarName      = "ODIGOS_VERSION"
+	OdigosTierEnvVarName         = "ODIGOS_TIER"
 	DefaultOdigosNamespace       = "odigos-system"
 	OdigosConfigurationName      = "odigos-config"
+	OdigosEffectiveConfigName    = "effective-config"
 	OdigosConfigurationFileName  = "config.yaml"
 	OTLPPort                     = 4317
 	OTLPHttpPort                 = 4318
@@ -16,6 +19,7 @@ const (
 	InstrumentationEnabled       = "enabled"
 	InstrumentationDisabled      = "disabled"
 	OdigosReportedNameAnnotation = "odigos.io/reported-name"
+	RolloutTriggerAnnotation     = "rollout-trigger"
 
 	// GatewayMaxConnectionAge and GatewayMaxConnectionAgeGrace are the default values for the gateway collector.
 	GatewayMaxConnectionAge      = "15s"
@@ -38,9 +42,4 @@ const (
 
 var (
 	ErrorPodsNotFound = errors.New("could not find a ready pod")
-)
-
-var (
-	SystemNamespaces  = []string{DefaultOdigosNamespace, "kube-system", "local-path-storage", "istio-system", "linkerd", "kube-node-lease"}
-	IgnoredContainers = []string{"istio-proxy", "vault-agent", "filebeat", "linkerd-proxy", "fluentd", "akeyless-init"}
 )

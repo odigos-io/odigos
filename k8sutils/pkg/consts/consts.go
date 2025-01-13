@@ -1,6 +1,15 @@
 package consts
 
-import "k8s.io/apimachinery/pkg/util/version"
+import (
+	"k8s.io/apimachinery/pkg/util/version"
+
+	commonconsts "github.com/odigos-io/odigos/common/consts"
+)
+
+var (
+	DefaultIgnoredNamespaces = []string{"kube-system", "local-path-storage", "istio-system", "linkerd", "kube-node-lease"}
+	DefaultIgnoredContainers = []string{"istio-proxy", "vault-agent", "filebeat", "linkerd-proxy", "fluentd", "akeyless-init"}
+)
 
 type CollectorRole string
 
@@ -17,7 +26,10 @@ const (
 )
 
 const (
-	OdigosDeploymentConfigMapName = "odigos-deployment"
+	OdigosDeploymentConfigMapName                  = "odigos-deployment"
+	OdigosDeploymentConfigMapVersionKey            = commonconsts.OdigosVersionEnvVarName
+	OdigosDeploymentConfigMapTierKey               = commonconsts.OdigosTierEnvVarName
+	OdigosDeploymentConfigMapInstallationMethodKey = "installation-method"
 )
 
 const (
@@ -43,6 +55,10 @@ const (
 )
 
 const (
+	OdigosProSecretName = "odigos-pro"
+)
+
+const (
 	OdigosEnvVarNamespace     = "ODIGOS_WORKLOAD_NAMESPACE"
 	OdigosEnvVarContainerName = "ODIGOS_CONTAINER_NAME"
 	OdigosEnvVarPodName       = "ODIGOS_POD_NAME"
@@ -60,4 +76,14 @@ var (
 	// MinK8SVersionForInstallation is the minimum Kubernetes version required for Odigos installation
 	// this value must be in sync with the one defined in the kubeVersion field in Chart.yaml
 	MinK8SVersionForInstallation = version.MustParse("v1.20.15-0")
+)
+
+const (
+	OdigosCloudApiKeySecretKey = "odigos-cloud-api-key"
+	OdigosOnpremTokenSecretKey = "odigos-onprem-token"
+)
+
+const (
+	OdigosUiServiceName = "ui"
+	OdigosUiServicePort = 3000
 )

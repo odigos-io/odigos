@@ -10,10 +10,11 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	criapi "k8s.io/cri-api/pkg/apis/runtime/v1"
+
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 )
 
 var (
@@ -79,7 +80,6 @@ func (rc *CriClient) Connect(ctx context.Context) error {
 
 	rc.Logger.Info("Successfully connected to CRI runtime", "endpoint", endpoint)
 	return nil
-
 }
 
 // GetContainerInfo retrieves the "info" field of the specified container.

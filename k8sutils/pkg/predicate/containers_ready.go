@@ -3,13 +3,15 @@ package predicate
 import (
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/event"
+
 	k8scontainer "github.com/odigos-io/odigos/k8sutils/pkg/container"
 )
 
 // AllContainersReadyPredicate is a predicate that checks if all containers in a pod are ready or becoming ready.
 //
 // For Create events, it returns true if the pod is in Running phase and all containers are ready.
-// For Update events, it returns true if the new pod has all containers ready and started, and the old pod had at least one container not ready or not started.
+// For Update events, it returns true if the new pod has all containers ready and started,
+// and the old pod had at least one container not ready or not started.
 // For Delete events, it returns false.
 type AllContainersReadyPredicate struct{}
 

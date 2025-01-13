@@ -18,13 +18,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
 	versioned "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned"
 	internalinterfaces "github.com/odigos-io/odigos/api/generated/odigos/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/listers/odigos/v1alpha1"
-	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/listers/odigos/v1alpha1"
+	apiodigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -35,7 +35,7 @@ import (
 // OdigosConfigurations.
 type OdigosConfigurationInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.OdigosConfigurationLister
+	Lister() odigosv1alpha1.OdigosConfigurationLister
 }
 
 type odigosConfigurationInformer struct {
@@ -70,7 +70,7 @@ func NewFilteredOdigosConfigurationInformer(client versioned.Interface, namespac
 				return client.OdigosV1alpha1().OdigosConfigurations(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&odigosv1alpha1.OdigosConfiguration{},
+		&apiodigosv1alpha1.OdigosConfiguration{},
 		resyncPeriod,
 		indexers,
 	)
@@ -81,9 +81,9 @@ func (f *odigosConfigurationInformer) defaultInformer(client versioned.Interface
 }
 
 func (f *odigosConfigurationInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&odigosv1alpha1.OdigosConfiguration{}, f.defaultInformer)
+	return f.factory.InformerFor(&apiodigosv1alpha1.OdigosConfiguration{}, f.defaultInformer)
 }
 
-func (f *odigosConfigurationInformer) Lister() v1alpha1.OdigosConfigurationLister {
-	return v1alpha1.NewOdigosConfigurationLister(f.Informer().GetIndexer())
+func (f *odigosConfigurationInformer) Lister() odigosv1alpha1.OdigosConfigurationLister {
+	return odigosv1alpha1.NewOdigosConfigurationLister(f.Informer().GetIndexer())
 }
