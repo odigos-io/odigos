@@ -20,7 +20,7 @@ kubectl port-forward pod/<pod-name> -n odigos-system 1777:1777
    ``` bash
     curl -o cpu_profile.prof http://localhost:1777/debug/pprof/profile?seconds=30 
    ```
-
+ 
 - **Heap Memory Profile**  
    Captures a snapshot of memory currently in use by your application after the latest garbage collection. Use this profile to identify memory leaks, track high memory usage, and analyze memory consumption by specific parts of the code.  
    ``` bash
