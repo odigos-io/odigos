@@ -38,6 +38,6 @@ func printProperty(sb *strings.Builder, indent int, property *properties.EntityP
 	case properties.PropertyStatusTransitioning:
 		text = wrapTextInYellow(text)
 	}
-
+ 
 	describeText(sb, indent, text)
 }
