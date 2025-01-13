@@ -1,7 +1,6 @@
 {
   "version": "0.2.0",
   "configurations": [
-
     {
       "name": "Remote Odiglet",
       "type": "go",
@@ -54,7 +53,11 @@
       "request": "launch",
       "mode": "debug",
       "program": "${workspaceFolder}/scheduler",
-      "cwd": "${workspaceFolder}/scheduler"
+      "cwd": "${workspaceFolder}/scheduler",
+      "env": {
+        "ODIGOS_VERSION": "v1.0.142",
+        "ODIGOS_TIER": "onprem"
+      }
     },
     {
       "name": "cli uninstall",

@@ -2,18 +2,25 @@ package odigosconfig
 
 import (
 	"context"
+	"strings"
 
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/profiles"
-	"github.com/odigos-io/odigos/profiles/profile"
+	"github.com/odigos-io/odigos/profiles/manifests"
 	"github.com/odigos-io/odigos/profiles/sizing"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/dynamic"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
@@ -21,13 +28,25 @@ import (
 
 type odigosConfigController struct {
 	client.Client
-	Scheme *runtime.Scheme
-	Tier   common.OdigosTier
+	Scheme        *runtime.Scheme
+	Tier          common.OdigosTier
+	OdigosVersion string
+	DynamicClient *dynamic.DynamicClient
 }
 
 func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
 
 	odigosConfig, err := r.getOdigosConfigUserObject(ctx)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	// effective profiles are what is actually used in the cluster (minus non existing profiles and plus dependencies)
+	availableProfiles := profiles.GetAvailableProfilesForTier(r.Tier)
+	effectiveProfiles := calculateEffectiveProfiles(odigosConfig.Profiles, availableProfiles)
+
+	// apply the current profiles list to the cluster
+	err = r.applyProfileManifests(ctx, effectiveProfiles)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -39,11 +58,8 @@ func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) 
 	// make sure the default ignored containers are always present
 	odigosConfig.IgnoredContainers = mergeIgnoredItemLists(odigosConfig.IgnoredContainers, k8sconsts.DefaultIgnoredContainers)
 
-	// effective profiles are what is actually used in the cluster
-	availableProfiles := profiles.GetAvailableProfilesForTier(r.Tier)
-	effectiveProfiles := calculateEffectiveProfiles(odigosConfig.Profiles, availableProfiles)
-	odigosConfig.Profiles = effectiveProfiles
 	modifyConfigWithEffectiveProfiles(effectiveProfiles, odigosConfig)
+	odigosConfig.Profiles = effectiveProfiles
 
 	// if none of the profiles set sizing for collectors, use size_s as default, so the values are never nil
 	// if the values were already set (by user or profile) this is a no-op
@@ -117,6 +133,100 @@ func (r *odigosConfigController) persistEffectiveConfig(ctx context.Context, eff
 	return nil
 }
 
+func (r *odigosConfigController) applyProfileManifests(ctx context.Context, effectiveProfiles []common.ProfileName) error {
+
+	profileDeploymentHash := calculateProfilesDeploymentHash(effectiveProfiles, r.OdigosVersion)
+
+	for _, profileName := range effectiveProfiles {
+
+		yamls, err := manifests.ReadProfileYamlManifests(profileName)
+		if err != nil {
+			return err
+		}
+
+		for _, yamlBytes := range yamls {
+			err = r.applySingleProfileManifest(ctx, profileName, yamlBytes, profileDeploymentHash)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	// after we applied all the current profiles, we need to deleted resources
+	// which did not participate in the current deployment.
+	// we will delete any resource with the "odigos.io/profiles-hash" label which is not the current hash.
+	differentHashSelector, _ := labels.NewRequirement(k8sconsts.OdigosProfilesHashLabel, selection.NotEquals, []string{profileDeploymentHash})
+	differentHashLabelSelector := labels.NewSelector().Add(*differentHashSelector)
+	listOptions := &client.ListOptions{LabelSelector: differentHashLabelSelector, Namespace: env.GetCurrentNamespace()}
+
+	processesList := odigosv1alpha1.ProcessorList{}
+	err := r.Client.List(ctx, &processesList, listOptions)
+	if err != nil {
+		return err
+	}
+	// TODO: migrate to DeleteAllOf once we drop support for old k8s versions
+	for i := range processesList.Items {
+		err = r.Client.Delete(ctx, &processesList.Items[i])
+		if err != nil {
+			return err
+		}
+	}
+
+	instrumentationRulesList := odigosv1alpha1.InstrumentationRuleList{}
+	err = r.Client.List(ctx, &instrumentationRulesList, listOptions)
+	if err != nil {
+		return err
+	}
+	for i := range instrumentationRulesList.Items {
+		err = r.Client.Delete(ctx, &instrumentationRulesList.Items[i])
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (r *odigosConfigController) applySingleProfileManifest(ctx context.Context, profileName common.ProfileName, yamlBytes []byte, profileDeploymentHash string) error {
+
+	obj := &unstructured.Unstructured{}
+	err := yaml.Unmarshal(yamlBytes, obj)
+	if err != nil {
+		return err
+	}
+
+	labels := obj.GetLabels()
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+	labels[k8sconsts.OdigosProfilesHashLabel] = profileDeploymentHash
+	obj.SetLabels(labels)
+
+	annotations := obj.GetAnnotations()
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+	annotations[k8sconsts.OdigosProfileAnnotation] = string(profileName)
+	obj.SetAnnotations(annotations)
+
+	gvk := obj.GroupVersionKind()
+	gvr := schema.GroupVersionResource{
+		Group:    gvk.Group,
+		Version:  gvk.Version,
+		Resource: strings.ToLower(gvk.Kind) + "s", // TODO: this is a hack, might not always work
+	}
+
+	resourceClient := r.DynamicClient.Resource(gvr).Namespace(env.GetCurrentNamespace())
+	_, err = resourceClient.Apply(ctx, obj.GetName(), obj, metav1.ApplyOptions{
+		FieldManager: "scheduler-odigosconfig",
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func modifyConfigWithEffectiveProfiles(effectiveProfiles []common.ProfileName, odigosConfig *common.OdigosConfiguration) {
 	for _, profileName := range effectiveProfiles {
 		p := profiles.ProfilesByName[profileName]
@@ -124,38 +234,4 @@ func modifyConfigWithEffectiveProfiles(effectiveProfiles []common.ProfileName, o
 			p.ModifyConfigFunc(odigosConfig)
 		}
 	}
-}
-
-// from the list of input profiles, calculate the effective profiles:
-// - check the dependencies of each profile and add them to the list
-// - remove profiles which are not present in the profiles list
-func calculateEffectiveProfiles(configProfiles []common.ProfileName, availableProfiles []profile.Profile) []common.ProfileName {
-
-	effectiveProfiles := []common.ProfileName{}
-	for _, profileName := range configProfiles {
-
-		// ignored missing profiles (either not available for tier or typos)
-		p, found := findProfileNameInAvailableList(profileName, availableProfiles)
-		if !found {
-			continue
-		}
-
-		effectiveProfiles = append(effectiveProfiles, profileName)
-
-		// if this profile has dependencies, add them to the list
-		if p.Dependencies != nil {
-			effectiveProfiles = append(effectiveProfiles, calculateEffectiveProfiles(p.Dependencies, availableProfiles)...)
-		}
-	}
-	return effectiveProfiles
-}
-
-func findProfileNameInAvailableList(profileName common.ProfileName, availableProfiles []profile.Profile) (profile.Profile, bool) {
-	// there aren't many profiles, so a linear search is fine
-	for _, p := range availableProfiles {
-		if p.ProfileName == profileName {
-			return p, true
-		}
-	}
-	return profile.Profile{}, false
 }
