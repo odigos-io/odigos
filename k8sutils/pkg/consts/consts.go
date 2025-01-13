@@ -87,9 +87,9 @@ const (
 	// is deleted, we want to go to the deleteinstrumentationconfig controller to un-instrument the workload/namespace.
 	DeleteInstrumentationConfigFinalizer = "odigos.io/source-deleteinstrumentationconfig-finalizer"
 
-	WorkloadNameLabel           = "odigos.io/workload-name"
-	WorkloadNamespaceLabel      = "odigos.io/workload-namespace"
-	WorkloadKindLabel           = "odigos.io/workload-kind"
+	WorkloadNameLabel      = "odigos.io/workload-name"
+	WorkloadNamespaceLabel = "odigos.io/workload-namespace"
+	WorkloadKindLabel      = "odigos.io/workload-kind"
 
 	OdigosCloudApiKeySecretKey = "odigos-cloud-api-key"
 	OdigosOnpremTokenSecretKey = "odigos-onprem-token"
