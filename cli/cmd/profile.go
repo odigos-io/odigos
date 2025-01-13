@@ -102,17 +102,8 @@ var addProfileCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		// Fetch the available profiles for the current tier
 		profiles := profiles.GetAvailableProfilesForTier(currentTier)
-		var selectedProfile *profile.Profile
-
-		// Search for the specified profile in the available profiles
-		for _, profile := range profiles {
-			if string(profile.ProfileName) == profileName {
-				selectedProfile = &profile
-				break
-			}
-		}
+		selectedProfile := profile.FindProfileByName(common.ProfileName(profileName), profiles)
 
 		if selectedProfile == nil {
 			fmt.Printf("\033[31mERROR\033[0m Profile '%s' not available.\n", profileName)

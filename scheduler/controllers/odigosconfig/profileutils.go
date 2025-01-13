@@ -40,8 +40,8 @@ func calculateEffectiveProfiles(configProfiles []common.ProfileName, availablePr
 	for _, profileName := range configProfiles {
 
 		// ignored missing profiles (either not available for tier or typos)
-		p, found := findProfileNameInAvailableList(profileName, availableProfiles)
-		if !found {
+		p := profile.FindProfileByName(profileName, availableProfiles)
+		if p == nil {
 			continue
 		}
 
@@ -53,14 +53,4 @@ func calculateEffectiveProfiles(configProfiles []common.ProfileName, availablePr
 		}
 	}
 	return effectiveProfiles
-}
-
-func findProfileNameInAvailableList(profileName common.ProfileName, availableProfiles []profile.Profile) (profile.Profile, bool) {
-	// there aren't many profiles, so a linear search is fine
-	for _, p := range availableProfiles {
-		if p.ProfileName == profileName {
-			return p, true
-		}
-	}
-	return profile.Profile{}, false
 }
