@@ -1,8 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@apollo/client';
-import { useNotificationStore } from '@/store';
 import { GET_COMPUTE_PLATFORM } from '@/graphql';
-import { useFilterStore } from '@/store/useFilterStore';
+import { useFilterStore, useNotificationStore } from '@/store';
 import { ACTION, deriveTypeFromRule, safeJsonParse } from '@/utils';
 import { NOTIFICATION_TYPE, SupportedSignals, type ActionItem, type ComputePlatform, type ComputePlatformMapped } from '@/types';
 

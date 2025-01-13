@@ -235,11 +235,15 @@ const text = {
   dark_button: '#0A1824',
 
   warning: '#E9CF35',
+  warning_secondary: '#FFA349',
   error: '#EF7676',
   error_secondary: '#DB5151',
   success: '#81AF65',
+  success_secondary: '#51DB51',
   info: '#B8B8B8',
+  info_secondary: '#CCDDDD',
   default: '#AABEF7',
+  default_secondary: '#8CBEFF',
 };
 
 const font_family = {
