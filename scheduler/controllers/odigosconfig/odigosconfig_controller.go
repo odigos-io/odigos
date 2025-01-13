@@ -8,6 +8,7 @@ import (
 	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/profiles"
+	"github.com/odigos-io/odigos/profiles/profile"
 	"github.com/odigos-io/odigos/profiles/sizing"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,6 +22,7 @@ import (
 type odigosConfigController struct {
 	client.Client
 	Scheme *runtime.Scheme
+	Tier   common.OdigosTier
 }
 
 func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
@@ -37,7 +39,11 @@ func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) 
 	// make sure the default ignored containers are always present
 	odigosConfig.IgnoredContainers = mergeIgnoredItemLists(odigosConfig.IgnoredContainers, k8sconsts.DefaultIgnoredContainers)
 
-	applyProfilesToOdigosConfig(odigosConfig)
+	// effective profiles are what is actually used in the cluster
+	availableProfiles := profiles.GetAvailableProfilesForTier(r.Tier)
+	effectiveProfiles := calculateEffectiveProfiles(odigosConfig.Profiles, availableProfiles)
+	odigosConfig.Profiles = effectiveProfiles
+	modifyConfigWithEffectiveProfiles(effectiveProfiles, odigosConfig)
 
 	// if none of the profiles set sizing for collectors, use size_s as default, so the values are never nil
 	// if the values were already set (by user or profile) this is a no-op
@@ -111,23 +117,45 @@ func (r *odigosConfigController) persistEffectiveConfig(ctx context.Context, eff
 	return nil
 }
 
-func applySingleProfile(profile common.ProfileName, odigosConfig *common.OdigosConfiguration) {
-	profileConfig, found := profiles.ProfilesByName[profile]
-	if !found {
-		return
-	}
-
-	if profileConfig.ModifyConfigFunc != nil {
-		profileConfig.ModifyConfigFunc(odigosConfig)
-	}
-
-	for _, dependency := range profileConfig.Dependencies {
-		applySingleProfile(dependency, odigosConfig)
+func modifyConfigWithEffectiveProfiles(effectiveProfiles []common.ProfileName, odigosConfig *common.OdigosConfiguration) {
+	for _, profileName := range effectiveProfiles {
+		p := profiles.ProfilesByName[profileName]
+		if p.ModifyConfigFunc != nil {
+			p.ModifyConfigFunc(odigosConfig)
+		}
 	}
 }
 
-func applyProfilesToOdigosConfig(odigosConfig *common.OdigosConfiguration) {
-	for _, profile := range odigosConfig.Profiles {
-		applySingleProfile(profile, odigosConfig)
+// from the list of input profiles, calculate the effective profiles:
+// - check the dependencies of each profile and add them to the list
+// - remove profiles which are not present in the profiles list
+func calculateEffectiveProfiles(configProfiles []common.ProfileName, availableProfiles []profile.Profile) []common.ProfileName {
+
+	effectiveProfiles := []common.ProfileName{}
+	for _, profileName := range configProfiles {
+
+		// ignored missing profiles (either not available for tier or typos)
+		p, found := findProfileNameInAvailableList(profileName, availableProfiles)
+		if !found {
+			continue
+		}
+
+		effectiveProfiles = append(effectiveProfiles, profileName)
+
+		// if this profile has dependencies, add them to the list
+		if p.Dependencies != nil {
+			effectiveProfiles = append(effectiveProfiles, calculateEffectiveProfiles(p.Dependencies, availableProfiles)...)
+		}
 	}
+	return effectiveProfiles
+}
+
+func findProfileNameInAvailableList(profileName common.ProfileName, availableProfiles []profile.Profile) (profile.Profile, bool) {
+	// there aren't many profiles, so a linear search is fine
+	for _, p := range availableProfiles {
+		if p.ProfileName == profileName {
+			return p, true
+		}
+	}
+	return profile.Profile{}, false
 }

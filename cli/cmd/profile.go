@@ -9,6 +9,7 @@ import (
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/getters"
+	"github.com/odigos-io/odigos/profiles"
 	"github.com/odigos-io/odigos/profiles/profile"
 	"github.com/spf13/cobra"
 )
@@ -44,7 +45,7 @@ var profileCmd = &cobra.Command{
 
 		if availableFlag {
 			fmt.Println("Listing available profiles for", currentTier, "tier:")
-			profiles := resources.GetAvailableProfilesForTier(currentTier)
+			profiles := profiles.GetAvailableProfilesForTier(currentTier)
 			if len(profiles) == 0 {
 				fmt.Println("No profiles are available for the current tier")
 				os.Exit(0)
@@ -102,7 +103,7 @@ var addProfileCmd = &cobra.Command{
 		}
 
 		// Fetch the available profiles for the current tier
-		profiles := resources.GetAvailableProfilesForTier(currentTier)
+		profiles := profiles.GetAvailableProfilesForTier(currentTier)
 		var selectedProfile *profile.Profile
 
 		// Search for the specified profile in the available profiles

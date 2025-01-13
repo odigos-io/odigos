@@ -53,3 +53,14 @@ func init() {
 		}
 	}
 }
+
+func GetAvailableProfilesForTier(odigosTier common.OdigosTier) []profile.Profile {
+	switch odigosTier {
+	case common.CommunityOdigosTier:
+		return CommunityProfiles
+	case common.OnPremOdigosTier:
+		return OnPremProfiles
+	default:
+		return []profile.Profile{}
+	}
+}

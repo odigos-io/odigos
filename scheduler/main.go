@@ -77,6 +77,7 @@ func main() {
 	logger := zapr.NewLogger(zapLogger)
 	ctrl.SetLogger(logger)
 
+	tier := env.GetOdigosTierFromEnv()
 	odigosNs := env.GetCurrentNamespace()
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
 
@@ -118,7 +119,7 @@ func main() {
 		setupLog.Error(err, "unable to create controllers for node collectors group")
 		os.Exit(1)
 	}
-	err = odigosconfig.SetupWithManager(mgr)
+	err = odigosconfig.SetupWithManager(mgr, tier)
 	if err != nil {
 		setupLog.Error(err, "unable to create controllers for odigos config")
 		os.Exit(1)
