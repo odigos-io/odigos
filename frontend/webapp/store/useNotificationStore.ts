@@ -12,25 +12,28 @@ interface StoreState {
   removeNotifications: (target: string) => void;
 }
 
-export const useNotificationStore = create<StoreState>((set) => ({
+export const useNotificationStore = create<StoreState>((set, get) => ({
   notifications: [],
 
   addNotification: (notif) => {
     const date = new Date();
     const id = `${date.getTime().toString()}${!!notif.target ? `#${notif.target}` : ''}`;
+    const foundThisNotif = !!get().notifications.find((n) => n.type === notif.type && n.title === notif.title && n.message === notif.message && date.getTime() - new Date(n.time).getTime() <= 10000); // 10 seconds
 
-    set((state) => ({
-      notifications: [
-        {
-          ...notif,
-          id,
-          time: date.toISOString(),
-          dismissed: false,
-          seen: false,
-        },
-        ...state.notifications,
-      ],
-    }));
+    if (!foundThisNotif) {
+      set((state) => ({
+        notifications: [
+          {
+            ...notif,
+            id,
+            time: date.toISOString(),
+            dismissed: false,
+            seen: false,
+          },
+          ...state.notifications,
+        ],
+      }));
+    }
   },
 
   markAsDismissed: (id) => {
