@@ -12,7 +12,6 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 
 	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
-	k8sutilsconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -291,7 +290,7 @@ func NewMutatingWebhookConfiguration(ns string, caBundle []byte) *admissionregis
 				TimeoutSeconds:     intPtr(10),
 				ObjectSelector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						k8sutilsconsts.OdigosInjectInstrumentationLabel: "true",
+						k8sconsts.OdigosInjectInstrumentationLabel: "true",
 					},
 				},
 				AdmissionReviewVersions: []string{
@@ -406,7 +405,7 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 									ValueFrom: &corev1.EnvVarSource{
 										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 											LocalObjectReference: corev1.LocalObjectReference{
-												Name: k8sutilsconsts.OdigosDeploymentConfigMapName,
+												Name: k8sconsts.OdigosDeploymentConfigMapName,
 											},
 											Key: k8sconsts.OdigosDeploymentConfigMapTierKey,
 										},

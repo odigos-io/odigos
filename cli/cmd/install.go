@@ -8,6 +8,7 @@ import (
 
 	"github.com/odigos-io/odigos/cli/pkg/autodetect"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/profiles"
 
 	"github.com/odigos-io/odigos/cli/pkg/labels"
 
@@ -186,7 +187,7 @@ func createNamespace(ctx context.Context, cmd *cobra.Command, client *kube.Clien
 
 func validateUserInputProfiles(tier common.OdigosTier) {
 	// Fetch available profiles for the given tier
-	availableProfiles := resources.GetAvailableProfilesForTier(tier)
+	availableProfiles := profiles.GetAvailableProfilesForTier(tier)
 
 	// Create a map for fast lookups of valid profile names
 	profileMap := make(map[string]struct{})

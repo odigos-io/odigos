@@ -13,7 +13,7 @@ import (
 )
 
 func GetResourcesForProfileName(profileName common.ProfileName, tier common.OdigosTier) ([]profile.K8sObject, error) {
-	allAvailableProfiles := GetAvailableProfilesForTier(tier)
+	allAvailableProfiles := profiles.GetAvailableProfilesForTier(tier)
 	for _, p := range allAvailableProfiles {
 		if p.ProfileName == common.ProfileName(profileName) {
 			if p.KubeObject != nil {
@@ -36,17 +36,6 @@ func GetResourcesForProfileName(profileName common.ProfileName, tier common.Odig
 	}
 
 	return nil, nil
-}
-
-func GetAvailableProfilesForTier(odigosTier common.OdigosTier) []profile.Profile {
-	switch odigosTier {
-	case common.CommunityOdigosTier:
-		return profiles.CommunityProfiles
-	case common.OnPremOdigosTier:
-		return profiles.OnPremProfiles
-	default:
-		return []profile.Profile{}
-	}
 }
 
 type profilesResourceManager struct {

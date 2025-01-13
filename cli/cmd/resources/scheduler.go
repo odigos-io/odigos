@@ -8,6 +8,7 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -227,6 +228,17 @@ func NewSchedulerDeployment(ns string, version string, imagePrefix string) *apps
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
 											FieldPath: "metadata.namespace",
+										},
+									},
+								},
+								{
+									Name: consts.OdigosTierEnvVarName,
+									ValueFrom: &corev1.EnvVarSource{
+										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: k8sconsts.OdigosDeploymentConfigMapName,
+											},
+											Key: k8sconsts.OdigosDeploymentConfigMapTierKey,
 										},
 									},
 								},
