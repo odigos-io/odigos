@@ -4,3 +4,4 @@ export * from './string';
 export * from './urls';
 export * from './programming-languages';
 export * from './monitors';
+export * from './numbers';
