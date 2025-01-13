@@ -93,7 +93,7 @@ var describeSourceDaemonSetCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
- 
+
 		name := args[0]
 		ns := cmd.Flag("namespace").Value.String()
 
