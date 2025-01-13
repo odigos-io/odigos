@@ -15,8 +15,8 @@ export const useSourceCRUD = (params?: Params) => {
   const { persistNamespace } = useNamespace();
 
   const filters = useFilterStore();
-  const { sources, updateSource, removeSource } = usePaginatedStore();
   const { setConfiguredSources } = useAppStore();
+  const { sources, updateSource } = usePaginatedStore();
   const { addPendingItems, removePendingItems } = usePendingStore();
   const { addNotification, removeNotifications } = useNotificationStore();
 

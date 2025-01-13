@@ -1,6 +1,5 @@
 import { type Node } from '@xyflow/react';
 import nodeConfig from './node-config.json';
-import { type EntityCounts } from './get-entity-counts';
 import { type NodePositions } from './get-node-positions';
 import { getActionIcon, getEntityIcon, getEntityLabel } from '@/utils';
 import { NODE_TYPES, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type ComputePlatformMapped } from '@/types';
@@ -9,7 +8,7 @@ interface Params {
   loading: boolean;
   entities: ComputePlatformMapped['computePlatform']['actions'];
   positions: NodePositions;
-  unfilteredCounts: EntityCounts;
+  unfilteredCount: number;
 }
 
 const { nodeWidth, nodeHeight, framePadding } = nodeConfig;
@@ -29,10 +28,9 @@ const mapToNodeData = (entity: Params['entities'][0]) => {
   };
 };
 
-export const buildActionNodes = ({ loading, entities, positions, unfilteredCounts }: Params) => {
+export const buildActionNodes = ({ loading, entities, positions, unfilteredCount }: Params) => {
   const nodes: Node[] = [];
   const position = positions[OVERVIEW_ENTITY_TYPES.ACTION];
-  const unfilteredCount = unfilteredCounts[OVERVIEW_ENTITY_TYPES.ACTION];
 
   nodes.push({
     id: 'action-header',
@@ -45,7 +43,7 @@ export const buildActionNodes = ({ loading, entities, positions, unfilteredCount
       nodeWidth,
       title: 'Actions',
       icon: getEntityIcon(OVERVIEW_ENTITY_TYPES.ACTION),
-      tagValue: unfilteredCounts[OVERVIEW_ENTITY_TYPES.ACTION],
+      tagValue: unfilteredCount,
     },
   });
 

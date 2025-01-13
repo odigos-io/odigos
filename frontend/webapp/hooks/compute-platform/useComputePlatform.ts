@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import { useQuery } from '@apollo/client';
+import { useNotificationStore } from '@/store';
 import { GET_COMPUTE_PLATFORM } from '@/graphql';
-import { useFilterStore, useNotificationStore } from '@/store';
 import { ACTION, deriveTypeFromRule, safeJsonParse } from '@/utils';
-import { NOTIFICATION_TYPE, SupportedSignals, type ActionItem, type ComputePlatform, type ComputePlatformMapped } from '@/types';
+import { NOTIFICATION_TYPE, type ActionItem, type ComputePlatform, type ComputePlatformMapped } from '@/types';
 
 type UseComputePlatformHook = {
   data?: ComputePlatformMapped;
@@ -15,9 +15,6 @@ type UseComputePlatformHook = {
 
 export const useComputePlatform = (): UseComputePlatformHook => {
   const { addNotification } = useNotificationStore();
-
-  // TODO: move filters to CRUD hooks
-  const filters = useFilterStore();
 
   const { data, loading, error, refetch } = useQuery<ComputePlatform>(GET_COMPUTE_PLATFORM, {
     onError: (error) =>
@@ -75,30 +72,8 @@ export const useComputePlatform = (): UseComputePlatformHook => {
     };
   }, [data]);
 
-  // TODO: move filters to CRUD hooks
-  const filteredCP = useMemo(() => {
-    if (!mappedCP) return undefined;
-
-    let destinations = [...mappedCP.computePlatform.destinations];
-    let actions = [...mappedCP.computePlatform.actions];
-
-    if (!!filters.monitors.length) {
-      destinations = destinations.filter((destination) => !!filters.monitors.find((metric) => destination.exportedSignals[metric.id as keyof SupportedSignals]));
-      actions = actions.filter((action) => !!filters.monitors.find((metric) => action.spec.signals.find((str) => str.toLowerCase() === metric.id)));
-    }
-
-    return {
-      computePlatform: {
-        ...mappedCP.computePlatform,
-        destinations,
-        actions,
-      },
-    };
-  }, [mappedCP, filters]);
-
   return {
     data: mappedCP,
-    filteredData: filteredCP,
     loading,
     error,
     refetch,

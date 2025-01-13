@@ -11,8 +11,10 @@ interface Params {
 }
 
 export const useInstrumentationRuleCRUD = (params?: Params) => {
-  const { data, refetch } = useComputePlatform();
+  const { data, loading, refetch } = useComputePlatform();
   const { addNotification, removeNotifications } = useNotificationStore();
+
+  const instrumentationRules = data?.computePlatform?.instrumentationRules || [];
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
     addNotification({
@@ -60,8 +62,9 @@ export const useInstrumentationRuleCRUD = (params?: Params) => {
   });
 
   return {
-    loading: cState.loading || uState.loading || dState.loading,
-    instrumentationRules: data?.computePlatform?.instrumentationRules || [],
+    loading: loading || cState.loading || uState.loading || dState.loading,
+    instrumentationRules,
+    filteredInstrumentationRules: instrumentationRules,
 
     createInstrumentationRule: (instrumentationRule: InstrumentationRuleInput) => {
       createInstrumentationRule({ variables: { instrumentationRule } });

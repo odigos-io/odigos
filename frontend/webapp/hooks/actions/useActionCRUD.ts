@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
 import { useMutation } from '@apollo/client';
-import { useNotificationStore } from '@/store';
 import { ACTION, getSseTargetFromId } from '@/utils';
 import { useComputePlatform } from '../compute-platform';
+import { useFilterStore, useNotificationStore } from '@/store';
 import { CREATE_ACTION, DELETE_ACTION, UPDATE_ACTION } from '@/graphql/mutations';
 import { NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES, type ActionInput, type ActionsType } from '@/types';
 
@@ -11,8 +12,11 @@ interface UseActionCrudParams {
 }
 
 export const useActionCRUD = (params?: UseActionCrudParams) => {
-  const { data, refetch } = useComputePlatform();
+  const filters = useFilterStore();
+  const { data, loading, refetch } = useComputePlatform();
   const { addNotification, removeNotifications } = useNotificationStore();
+
+  const actions = data?.computePlatform?.actions || [];
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
     addNotification({
@@ -59,9 +63,18 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
     },
   });
 
+  const filtered = useMemo(() => {
+    let arr = [...actions];
+
+    if (!!filters.monitors.length) arr = arr.filter((action) => !!filters.monitors.find((metric) => action.spec.signals.find((str) => str.toLowerCase() === metric.id)));
+
+    return arr;
+  }, [actions, filters]);
+
   return {
-    loading: cState.loading || uState.loading || dState.loading,
-    actions: data?.computePlatform?.actions || [],
+    loading: loading || cState.loading || uState.loading || dState.loading,
+    actions,
+    filteredActions: filtered,
 
     createAction: (action: ActionInput) => {
       createAction({ variables: { action } });

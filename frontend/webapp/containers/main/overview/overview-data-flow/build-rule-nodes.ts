@@ -1,6 +1,5 @@
 import { type Node } from '@xyflow/react';
 import nodeConfig from './node-config.json';
-import { type EntityCounts } from './get-entity-counts';
 import { type NodePositions } from './get-node-positions';
 import { getEntityIcon, getEntityLabel, getRuleIcon } from '@/utils';
 import { NODE_TYPES, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type ComputePlatformMapped } from '@/types';
@@ -9,7 +8,7 @@ interface Params {
   loading: boolean;
   entities: ComputePlatformMapped['computePlatform']['instrumentationRules'];
   positions: NodePositions;
-  unfilteredCounts: EntityCounts;
+  unfilteredCount: number;
 }
 
 const { nodeWidth } = nodeConfig;
@@ -28,10 +27,9 @@ const mapToNodeData = (entity: Params['entities'][0]) => {
   };
 };
 
-export const buildRuleNodes = ({ loading, entities, positions, unfilteredCounts }: Params) => {
+export const buildRuleNodes = ({ loading, entities, positions, unfilteredCount }: Params) => {
   const nodes: Node[] = [];
   const position = positions[OVERVIEW_ENTITY_TYPES.RULE];
-  const unfilteredCount = unfilteredCounts[OVERVIEW_ENTITY_TYPES.RULE];
 
   nodes.push({
     id: 'rule-header',
@@ -44,7 +42,7 @@ export const buildRuleNodes = ({ loading, entities, positions, unfilteredCounts 
       nodeWidth,
       title: 'Instrumentation Rules',
       icon: getEntityIcon(OVERVIEW_ENTITY_TYPES.RULE),
-      tagValue: unfilteredCounts[OVERVIEW_ENTITY_TYPES.RULE],
+      tagValue: unfilteredCount,
     },
   });
 

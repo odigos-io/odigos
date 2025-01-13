@@ -1,9 +1,10 @@
+import { useMemo } from 'react';
 import { useMutation } from '@apollo/client';
 import { ACTION, getSseTargetFromId } from '@/utils';
 import { useComputePlatform } from '../compute-platform';
-import { useNotificationStore, usePendingStore } from '@/store';
-import { NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES, type DestinationInput } from '@/types';
+import { useFilterStore, useNotificationStore, usePendingStore } from '@/store';
 import { CREATE_DESTINATION, DELETE_DESTINATION, UPDATE_DESTINATION } from '@/graphql/mutations';
+import { NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES, type SupportedSignals, type DestinationInput } from '@/types';
 
 interface Params {
   onSuccess?: (type: string) => void;
@@ -11,9 +12,12 @@ interface Params {
 }
 
 export const useDestinationCRUD = (params?: Params) => {
-  const { data } = useComputePlatform();
+  const filters = useFilterStore();
   const { addPendingItems } = usePendingStore();
+  const { data, loading } = useComputePlatform();
   const { addNotification, removeNotifications } = useNotificationStore();
+
+  const destinations = data?.computePlatform?.destinations || [];
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
     addNotification({
@@ -52,9 +56,18 @@ export const useDestinationCRUD = (params?: Params) => {
     },
   });
 
+  const filtered = useMemo(() => {
+    let arr = [...destinations];
+
+    if (!!filters.monitors.length) arr = arr.filter((destination) => !!filters.monitors.find((metric) => destination.exportedSignals[metric.id as keyof SupportedSignals]));
+
+    return arr;
+  }, [destinations, filters]);
+
   return {
-    loading: cState.loading || uState.loading || dState.loading,
-    destinations: data?.computePlatform?.destinations || [],
+    loading: loading || cState.loading || uState.loading || dState.loading,
+    destinations,
+    filteredDestinations: filtered,
 
     createDestination: (destination: DestinationInput) => {
       notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Creating destination...', undefined, true);
