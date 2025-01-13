@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
 import dynamic from 'next/dynamic';
-import { useSSE } from '@/hooks';
+import { usePaginatedSources, useSSE } from '@/hooks';
 
 const ToastList = dynamic(() => import('@/components/notification/toast-list'), { ssr: false });
 const AllDrawers = dynamic(() => import('@/components/overview/all-drawers'), { ssr: false });
@@ -10,6 +10,10 @@ const OverviewDataFlowContainer = dynamic(() => import('@/containers/main/overvi
 
 export default function MainPage() {
   useSSE();
+
+  // "usePaginatedSources" is here to fetch sources just once
+  // (hooks run on every mount, we don't want that for pagination)
+  usePaginatedSources();
 
   return (
     <>

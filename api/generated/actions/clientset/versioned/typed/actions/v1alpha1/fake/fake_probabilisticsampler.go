@@ -18,179 +18,35 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-	json "encoding/json"
-	"fmt"
-
 	v1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	actionsv1alpha1 "github.com/odigos-io/odigos/api/generated/actions/applyconfiguration/actions/v1alpha1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	typedactionsv1alpha1 "github.com/odigos-io/odigos/api/generated/actions/clientset/versioned/typed/actions/v1alpha1"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakeProbabilisticSamplers implements ProbabilisticSamplerInterface
-type FakeProbabilisticSamplers struct {
+// fakeProbabilisticSamplers implements ProbabilisticSamplerInterface
+type fakeProbabilisticSamplers struct {
+	*gentype.FakeClientWithListAndApply[*v1alpha1.ProbabilisticSampler, *v1alpha1.ProbabilisticSamplerList, *actionsv1alpha1.ProbabilisticSamplerApplyConfiguration]
 	Fake *FakeActionsV1alpha1
-	ns   string
 }
 
-var probabilisticsamplersResource = v1alpha1.SchemeGroupVersion.WithResource("probabilisticsamplers")
-
-var probabilisticsamplersKind = v1alpha1.SchemeGroupVersion.WithKind("ProbabilisticSampler")
-
-// Get takes name of the probabilisticSampler, and returns the corresponding probabilisticSampler object, and an error if there is any.
-func (c *FakeProbabilisticSamplers) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.ProbabilisticSampler, err error) {
-	emptyResult := &v1alpha1.ProbabilisticSampler{}
-	obj, err := c.Fake.
-		Invokes(testing.NewGetActionWithOptions(probabilisticsamplersResource, c.ns, name, options), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
+func newFakeProbabilisticSamplers(fake *FakeActionsV1alpha1, namespace string) typedactionsv1alpha1.ProbabilisticSamplerInterface {
+	return &fakeProbabilisticSamplers{
+		gentype.NewFakeClientWithListAndApply[*v1alpha1.ProbabilisticSampler, *v1alpha1.ProbabilisticSamplerList, *actionsv1alpha1.ProbabilisticSamplerApplyConfiguration](
+			fake.Fake,
+			namespace,
+			v1alpha1.SchemeGroupVersion.WithResource("probabilisticsamplers"),
+			v1alpha1.SchemeGroupVersion.WithKind("ProbabilisticSampler"),
+			func() *v1alpha1.ProbabilisticSampler { return &v1alpha1.ProbabilisticSampler{} },
+			func() *v1alpha1.ProbabilisticSamplerList { return &v1alpha1.ProbabilisticSamplerList{} },
+			func(dst, src *v1alpha1.ProbabilisticSamplerList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.ProbabilisticSamplerList) []*v1alpha1.ProbabilisticSampler {
+				return gentype.ToPointerSlice(list.Items)
+			},
+			func(list *v1alpha1.ProbabilisticSamplerList, items []*v1alpha1.ProbabilisticSampler) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.ProbabilisticSampler), err
-}
-
-// List takes label and field selectors, and returns the list of ProbabilisticSamplers that match those selectors.
-func (c *FakeProbabilisticSamplers) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.ProbabilisticSamplerList, err error) {
-	emptyResult := &v1alpha1.ProbabilisticSamplerList{}
-	obj, err := c.Fake.
-		Invokes(testing.NewListActionWithOptions(probabilisticsamplersResource, probabilisticsamplersKind, c.ns, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.ProbabilisticSamplerList{ListMeta: obj.(*v1alpha1.ProbabilisticSamplerList).ListMeta}
-	for _, item := range obj.(*v1alpha1.ProbabilisticSamplerList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested probabilisticSamplers.
-func (c *FakeProbabilisticSamplers) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewWatchActionWithOptions(probabilisticsamplersResource, c.ns, opts))
-
-}
-
-// Create takes the representation of a probabilisticSampler and creates it.  Returns the server's representation of the probabilisticSampler, and an error, if there is any.
-func (c *FakeProbabilisticSamplers) Create(ctx context.Context, probabilisticSampler *v1alpha1.ProbabilisticSampler, opts v1.CreateOptions) (result *v1alpha1.ProbabilisticSampler, err error) {
-	emptyResult := &v1alpha1.ProbabilisticSampler{}
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateActionWithOptions(probabilisticsamplersResource, c.ns, probabilisticSampler, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.ProbabilisticSampler), err
-}
-
-// Update takes the representation of a probabilisticSampler and updates it. Returns the server's representation of the probabilisticSampler, and an error, if there is any.
-func (c *FakeProbabilisticSamplers) Update(ctx context.Context, probabilisticSampler *v1alpha1.ProbabilisticSampler, opts v1.UpdateOptions) (result *v1alpha1.ProbabilisticSampler, err error) {
-	emptyResult := &v1alpha1.ProbabilisticSampler{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateActionWithOptions(probabilisticsamplersResource, c.ns, probabilisticSampler, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.ProbabilisticSampler), err
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeProbabilisticSamplers) UpdateStatus(ctx context.Context, probabilisticSampler *v1alpha1.ProbabilisticSampler, opts v1.UpdateOptions) (result *v1alpha1.ProbabilisticSampler, err error) {
-	emptyResult := &v1alpha1.ProbabilisticSampler{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceActionWithOptions(probabilisticsamplersResource, "status", c.ns, probabilisticSampler, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.ProbabilisticSampler), err
-}
-
-// Delete takes name of the probabilisticSampler and deletes it. Returns an error if one occurs.
-func (c *FakeProbabilisticSamplers) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(probabilisticsamplersResource, c.ns, name, opts), &v1alpha1.ProbabilisticSampler{})
-
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakeProbabilisticSamplers) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionActionWithOptions(probabilisticsamplersResource, c.ns, opts, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.ProbabilisticSamplerList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched probabilisticSampler.
-func (c *FakeProbabilisticSamplers) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.ProbabilisticSampler, err error) {
-	emptyResult := &v1alpha1.ProbabilisticSampler{}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceActionWithOptions(probabilisticsamplersResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.ProbabilisticSampler), err
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied probabilisticSampler.
-func (c *FakeProbabilisticSamplers) Apply(ctx context.Context, probabilisticSampler *actionsv1alpha1.ProbabilisticSamplerApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.ProbabilisticSampler, err error) {
-	if probabilisticSampler == nil {
-		return nil, fmt.Errorf("probabilisticSampler provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(probabilisticSampler)
-	if err != nil {
-		return nil, err
-	}
-	name := probabilisticSampler.Name
-	if name == nil {
-		return nil, fmt.Errorf("probabilisticSampler.Name must be provided to Apply")
-	}
-	emptyResult := &v1alpha1.ProbabilisticSampler{}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceActionWithOptions(probabilisticsamplersResource, c.ns, *name, types.ApplyPatchType, data, opts.ToPatchOptions()), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.ProbabilisticSampler), err
-}
-
-// ApplyStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-func (c *FakeProbabilisticSamplers) ApplyStatus(ctx context.Context, probabilisticSampler *actionsv1alpha1.ProbabilisticSamplerApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.ProbabilisticSampler, err error) {
-	if probabilisticSampler == nil {
-		return nil, fmt.Errorf("probabilisticSampler provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(probabilisticSampler)
-	if err != nil {
-		return nil, err
-	}
-	name := probabilisticSampler.Name
-	if name == nil {
-		return nil, fmt.Errorf("probabilisticSampler.Name must be provided to Apply")
-	}
-	emptyResult := &v1alpha1.ProbabilisticSampler{}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceActionWithOptions(probabilisticsamplersResource, c.ns, *name, types.ApplyPatchType, data, opts.ToPatchOptions(), "status"), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.ProbabilisticSampler), err
 }

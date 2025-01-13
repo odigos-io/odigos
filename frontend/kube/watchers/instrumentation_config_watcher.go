@@ -7,8 +7,8 @@ import (
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/frontend/endpoints/sse"
 	"github.com/odigos-io/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/frontend/services/sse"
 	commonutils "github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -21,7 +21,7 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 	instrumentationConfigAddedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			MinBatchSize: 1,
-			Duration:     10 * time.Second,
+			Duration:     5 * time.Second,
 			Event:        sse.MessageEventAdded,
 			CRDType:      consts.InstrumentationConfig,
 			SuccessBatchMessageFunc: func(count int, crdType string) string {
@@ -36,7 +36,7 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 	instrumentationConfigDeletedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			MinBatchSize: 1,
-			Duration:     10 * time.Second,
+			Duration:     5 * time.Second,
 			Event:        sse.MessageEventDeleted,
 			CRDType:      consts.InstrumentationConfig,
 			SuccessBatchMessageFunc: func(count int, crdType string) string {
