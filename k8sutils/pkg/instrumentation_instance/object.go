@@ -3,9 +3,10 @@ package instrumentation_instance
 import (
 	"context"
 
-	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 )
 
 func DeleteInstrumentationInstance(ctx context.Context, owner client.Object, containerName string, kubeClient client.Client, pid int) error {
