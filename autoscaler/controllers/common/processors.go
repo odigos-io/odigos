@@ -9,7 +9,6 @@ import (
 
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/autoscaler/utils"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -96,19 +95,18 @@ func GenerateRoutingProcessors(
 
 	for _, dest := range dests.Items {
 
-		if dest.Spec.SourceSelector == nil || utils.Contains(dest.Spec.SourceSelector.Modes, "all") {
+		if dest.Spec.SourceSelector == nil {
 			continue
 		}
 
-		var matchedSources []odigosv1.Source
 		matchConditions := make(map[string]bool)
-		if utils.Contains(dest.Spec.SourceSelector.Modes, "namespaces") {
+		if len(dest.Spec.SourceSelector.Namespaces) > 0 {
 			for _, namespace := range dest.Spec.SourceSelector.Namespaces {
-				matchConditions[namespace] = true
+				matchConditions[fmt.Sprintf("%s/*/*", namespace)] = true
 			}
 		}
-		if utils.Contains(dest.Spec.SourceSelector.Modes, "groups") {
-			matchedSources = append(matchedSources, fetchSourcesByGroups(ctx, kubeClient, dest.Spec.SourceSelector.Groups, logger)...)
+		if len(dest.Spec.SourceSelector.Groups) > 0 {
+			matchedSources := fetchSourcesByGroups(ctx, kubeClient, dest.Spec.SourceSelector.Groups, logger)
 			for _, source := range matchedSources {
 				key := fmt.Sprintf("%s/%s/%s", source.Spec.Workload.Namespace, source.Spec.Workload.Name, source.Spec.Workload.Kind)
 				matchConditions[key] = true

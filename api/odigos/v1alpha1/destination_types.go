@@ -38,14 +38,8 @@ type DestinationSpec struct {
 }
 
 type SourceSelector struct {
-	// Modes can contain a combination of "all", "namespaces", or "groups".
-	// Determines how sources are selected for this destination.
-	// +kubebuilder:validation:Items=enum=all;namespaces;groups
-	Modes []string `json:"modes,omitempty"`
-
 	// +optional
 	Namespaces []string `json:"namespaces,omitempty"`
-
 	// +optional
 	Groups []string `json:"groups,omitempty"`
 }

@@ -97,7 +97,7 @@ func (fp *filterProcessor) matches(name, namespace, kind string) bool {
 		return false
 	}
 
-	if fp.config.MatchConditions[namespace] {
+	if fp.config.MatchConditions[fmt.Sprintf("%s/*/*", namespace)] {
 		return true
 	}
 
