@@ -46,11 +46,11 @@ spec:
         - assert:
             timeout: 2m
             file: defaulting-04-assert-deleteinstrumentationconfig-finalizer.yaml
-    - name: "[Defaulting] - Normal Source updated to instrumentationDisabled=true has deleteinstrumentationconfig finalizer removed and startlangdetection finalizer added"
+    - name: "[Defaulting] - Normal Source updated to disableInstrumentation=true has deleteinstrumentationconfig finalizer removed and startlangdetection finalizer added"
       try:
         - script:
             timeout: 70s
-            content: kubectl patch source/04-deleteinstrumentationconfig-finalizer --type=merge -p '{"spec":{"instrumentationDisabled":true}}'
+            content: kubectl patch source/04-deleteinstrumentationconfig-finalizer --type=merge -p '{"spec":{"disableInstrumentation":true}}'
         - assert:
             timeout: 2m
             file: defaulting-04-assert-delete-to-startlang-finalizer.yaml
@@ -68,11 +68,11 @@ spec:
         - assert:
             timeout: 2m
             file: defaulting-05-assert-startlangdetection-finalizer.yaml
-    - name: "[Defaulting] - Workload excluded Source updated to instrumentationDisabled=false has deleteinstrumentationconfig finalizer added and startlangdetection finalizer removed"
+    - name: "[Defaulting] - Workload excluded Source updated to disableInstrumentation=false has deleteinstrumentationconfig finalizer added and startlangdetection finalizer removed"
       try:
         - script:
             timeout: 70s
-            content: kubectl patch source/05-startlangdetection-finalizer --type=merge -p '{"spec":{"instrumentationDisabled":false}}'
+            content: kubectl patch source/05-startlangdetection-finalizer --type=merge -p '{"spec":{"disableInstrumentation":false}}'
         - assert:
             timeout: 2m
             file: defaulting-05-assert-startlang-to-delete-finalizer.yaml

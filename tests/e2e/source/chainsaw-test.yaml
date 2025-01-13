@@ -453,11 +453,11 @@ spec:
             content: kubectl get instrumentationconfigs/deployment-membership
             check:
               ($error != null): true
-    - name: Set instrumentationDisabled=false on excluded Source
+    - name: Set disableInstrumentation=false on excluded Source
       try:
         - script:
             timeout: 70s
-            content: kubectl patch source/membership-excluded --type=merge -p '{"spec":{"instrumentationDisabled":false}}'
+            content: kubectl patch source/membership-excluded --type=merge -p '{"spec":{"disableInstrumentation":false}}'
     - name: Wait for updated source to roll out new revisions
       try:
         - script:
@@ -476,11 +476,11 @@ spec:
         - assert:
             timeout: 2m
             file: 10-workloads.yaml
-    - name: Set instrumentationDisabled=true on previously-excluded Source
+    - name: Set disableInstrumentation=true on previously-excluded Source
       try:
         - script:
             timeout: 70s
-            content: kubectl patch source/membership-excluded --type=merge -p '{"spec":{"instrumentationDisabled":true}}'
+            content: kubectl patch source/membership-excluded --type=merge -p '{"spec":{"disableInstrumentation":true}}'
     - name: Wait for updated source to roll out new revisions
       try:
         - script:

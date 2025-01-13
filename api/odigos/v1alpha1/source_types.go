@@ -50,9 +50,9 @@ type SourceSpec struct {
 	// This field is required upon creation and cannot be modified.
 	// +kubebuilder:validation:Required
 	Workload workload.PodWorkload `json:"workload"`
-	// InstrumentationDisabled excludes this workload from auto-instrumentation.
+	// DisableInstrumentation excludes this workload from auto-instrumentation.
 	// +kubebuilder:validation:Optional
-	InstrumentationDisabled bool `json:"instrumentationDisabled,omitempty"`
+	DisableInstrumentation bool `json:"disableInstrumentation,omitempty"`
 }
 
 type SourceStatus struct {
@@ -128,7 +128,7 @@ func GetSources(ctx context.Context, kubeClient client.Client, obj client.Object
 
 // IsExcludedSource returns true if the Source is disabling instrumentation.
 func IsExcludedSource(source *Source) bool {
-	return source.Spec.InstrumentationDisabled
+	return source.Spec.DisableInstrumentation
 }
 
 func init() {

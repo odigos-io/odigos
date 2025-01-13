@@ -48,8 +48,8 @@ spec:
             type: object
           spec:
             properties:
-              instrumentationDisabled:
-                description: InstrumentationDisabled excludes this workload from auto-instrumentation.
+              disableInstrumentation:
+                description: DisableInstrumentation excludes this workload from auto-instrumentation.
                 type: boolean
               workload:
                 description: |-

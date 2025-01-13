@@ -41,8 +41,8 @@ It has the following phases:
 9. **Workload exclusion (2)** - Create an Excluded Source in an already-instrumented namespace. Verify:
   9.1 Only the newly excluded workload rolls out a new revision.
   9.2 InstrumentationConfigs exist for all workloads except newly excluded workload.
-  9.3 Setting instrumentationDisabled=false on excluded workload includes it
-  9.4 Setting instrumentationDisabled=true on included workload excludes it
+  9.3 Setting disableInstrumentation=false on excluded workload includes it
+  9.4 Setting disableInstrumentation=true on included workload excludes it
 
 ## Workload generations and revisions
 

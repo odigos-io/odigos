@@ -4,7 +4,7 @@ metadata:
   name: 07-excluded-source
   namespace: default
 spec:
-  instrumentationDisabled: true
+  disableInstrumentation: true
   workload:
     name: 07-excluded-source
     namespace: default

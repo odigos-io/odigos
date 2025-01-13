@@ -6,7 +6,7 @@ metadata:
   finalizers:
   - odigos.io/source-startlangdetection-finalizer
 spec:
-  instrumentationDisabled: true
+  disableInstrumentation: true
   workload:
     name: startlangdetection-finalizer
     namespace: default
