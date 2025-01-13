@@ -11,6 +11,16 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	k8sNamespaceNameAttr   = "k8s.namespace.name"
+	k8sDeploymentNameAttr  = "k8s.deployment.name"
+	k8sStatefulSetNameAttr = "k8s.statefulset.name"
+	k8sDaemonSetNameAttr   = "k8s.daemonset.name"
+	kindDeployment         = "Deployment"
+	kindStatefulSet        = "StatefulSet"
+	kindDaemonSet          = "DaemonSet"
+)
+
 type filterProcessor struct {
 	logger *zap.Logger
 	config *Config
@@ -83,16 +93,24 @@ func (fp *filterProcessor) processLogs(ctx context.Context, ld plog.Logs) (plog.
 }
 
 func (fp *filterProcessor) matches(name, namespace, kind string) bool {
-	if name == "" || namespace == "" || kind == "" {
+	if namespace == "" {
 		return false
 	}
 
-	key := fmt.Sprintf("%s/%s/%s", namespace, name, kind)
-	return fp.config.MatchConditions[key]
+	if fp.config.MatchConditions[namespace] {
+		return true
+	}
+
+	if name != "" && kind != "" {
+		key := fmt.Sprintf("%s/%s/%s", namespace, name, kind)
+		return fp.config.MatchConditions[key]
+	}
+
+	return false
 }
 
 func extractResourceDetails(attributes pcommon.Map) (namespace, name, kind string) {
-	namespace = getAttribute(attributes, "k8s.namespace.name")
+	namespace = getAttribute(attributes, k8sNamespaceNameAttr)
 	if namespace == "" {
 		return "", "", ""
 	}
@@ -110,9 +128,9 @@ func getDynamicNameAndKind(attributes pcommon.Map) (name string, kind string) {
 		kind string
 		key  string
 	}{
-		{"Deployment", "k8s.deployment.name"},
-		{"StatefulSet", "k8s.statefulset.name"},
-		{"DaemonSet", "k8s.daemonset.name"},
+		{kindDeployment, k8sDeploymentNameAttr},
+		{kindStatefulSet, k8sStatefulSetNameAttr},
+		{kindDaemonSet, k8sDaemonSetNameAttr},
 	}
 
 	for _, resourceType := range resourceTypes {

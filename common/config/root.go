@@ -102,10 +102,6 @@ func CalculateWithBase(currentConfig *Config, prefixProcessors []string, dests [
 		return "", fmt.Errorf("missing required receiver 'otlp' on config"), status, nil
 	}
 
-	// for processorKey, processorCfg := range routingProcessors {
-	// 	currentConfig.Processors[processorKey] = processorCfg
-	// }
-	fmt.Println("dests: ", dests)
 	for _, dest := range dests {
 		configer, exists := configers[dest.GetType()]
 		if !exists {

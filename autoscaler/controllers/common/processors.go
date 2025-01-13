@@ -95,31 +95,29 @@ func GenerateRoutingProcessors(
 	routingProcessors := make(map[string]config.GenericMap)
 
 	for _, dest := range dests.Items {
-		logger.Info("Processing destination for routing processor", "destination", dest.Name)
 
 		if dest.Spec.SourceSelector == nil || utils.Contains(dest.Spec.SourceSelector.Modes, "all") {
 			continue
 		}
 
 		var matchedSources []odigosv1.Source
+		matchConditions := make(map[string]bool)
 		if utils.Contains(dest.Spec.SourceSelector.Modes, "namespaces") {
-			matchedSources = append(matchedSources, fetchSourcesByNamespaces(ctx, kubeClient, dest.Spec.SourceSelector.Namespaces, logger)...)
+			for _, namespace := range dest.Spec.SourceSelector.Namespaces {
+				matchConditions[namespace] = true
+			}
 		}
 		if utils.Contains(dest.Spec.SourceSelector.Modes, "groups") {
 			matchedSources = append(matchedSources, fetchSourcesByGroups(ctx, kubeClient, dest.Spec.SourceSelector.Groups, logger)...)
-		}
-
-		matchConditions := make(map[string]bool)
-		for _, source := range matchedSources {
-			//TODO: cahnge the key
-			key := fmt.Sprintf("%s/%s/%s", source.Spec.Workload.Namespace, source.Spec.Workload.Name, source.Spec.Workload.Kind)
-			matchConditions[key] = true
+			for _, source := range matchedSources {
+				key := fmt.Sprintf("%s/%s/%s", source.Spec.Workload.Namespace, source.Spec.Workload.Name, source.Spec.Workload.Kind)
+				matchConditions[key] = true
+			}
 		}
 
 		sanitizedProcessorName := strings.ReplaceAll(dest.GetID(), ".", "-")
 		processorName := fmt.Sprintf("odigosroutingfilterprocessor/%s", sanitizedProcessorName)
-		fmt.Println("dest.GetID() sanitizedProcessorName: ", sanitizedProcessorName)
-		fmt.Println("processorName: ", processorName)
+
 		routingProcessors[processorName] = config.GenericMap{
 			"match_conditions": matchConditions,
 		}

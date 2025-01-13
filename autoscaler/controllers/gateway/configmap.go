@@ -118,9 +118,6 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 	routingProcessors := common.GenerateRoutingProcessors(ctx, c, dests)
 	processors := common.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleClusterGateway)
 
-	logger.V(0).Info("Calculating config")
-	logger.V(0).Info("routingProcessors", "routingProcessors", routingProcessors)
-
 	desiredData, err, status, signals := config.Calculate(
 		common.ToExporterConfigurerArray(dests),
 		common.ToProcessorConfigurerArray(processors),
