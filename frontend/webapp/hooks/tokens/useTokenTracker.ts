@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { useTokenCRUD } from '.';
-import { isOverTime } from '@/utils';
 import { useTimeAgo } from '../common';
 import { NOTIFICATION_TYPE } from '@/types';
+import { isOverTime, SEVEN_DAYS_IN_MS } from '@/utils';
 import { useConnectionStore, useNotificationStore } from '@/store';
 
 // This hook is responsible for tracking the tokens and their expiration times.
@@ -30,9 +30,7 @@ export const useTokenTracker = () => {
           title: notif.title,
           message: notif.message,
         });
-      } else if (isOverTime(expiresAt, 604800000)) {
-        // 604800000 ms = 7 days
-
+      } else if (isOverTime(expiresAt, SEVEN_DAYS_IN_MS)) {
         const notif = {
           type: NOTIFICATION_TYPE.WARNING,
           title: 'API Token',
