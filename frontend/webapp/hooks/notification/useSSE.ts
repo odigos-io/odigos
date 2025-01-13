@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { API } from '@/utils';
 import { NOTIFICATION_TYPE } from '@/types';
-import { useComputePlatform, usePaginatedSources } from '../compute-platform';
+import { useDestinationCRUD } from '../destinations';
+import { usePaginatedSources } from '../compute-platform';
 import { type NotifyPayload, useConnectionStore, useNotificationStore, usePendingStore } from '@/store';
 
 export const useSSE = () => {
@@ -9,7 +10,7 @@ export const useSSE = () => {
   const { setPendingItems } = usePendingStore();
   const { fetchSources } = usePaginatedSources();
   const { addNotification } = useNotificationStore();
-  const { refetch: refetchComputePlatform } = useComputePlatform();
+  const { refetchDestinations } = useDestinationCRUD();
 
   const retryCount = useRef(0);
   const maxRetries = 10;
@@ -32,10 +33,13 @@ export const useSSE = () => {
 
         addNotification(notification);
 
-        if (['InstrumentationConfig', 'InstrumentationInstance'].includes(notification.crdType || '')) {
+        const crdType = notification.crdType || '';
+        if (['InstrumentationConfig', 'InstrumentationInstance'].includes(crdType)) {
           fetchSources(true);
+        } else if (['Destination'].includes(crdType)) {
+          refetchDestinations();
         } else {
-          refetchComputePlatform();
+          console.warn('Unhandled SSE for CRD type:', crdType);
         }
 
         // This works for now,
