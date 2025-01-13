@@ -18,10 +18,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	actionsv1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // DeleteAttributeLister helps list DeleteAttributes.
@@ -29,7 +29,7 @@ import (
 type DeleteAttributeLister interface {
 	// List lists all DeleteAttributes in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.DeleteAttribute, err error)
+	List(selector labels.Selector) (ret []*actionsv1alpha1.DeleteAttribute, err error)
 	// DeleteAttributes returns an object that can list and get DeleteAttributes.
 	DeleteAttributes(namespace string) DeleteAttributeNamespaceLister
 	DeleteAttributeListerExpansion
@@ -37,17 +37,17 @@ type DeleteAttributeLister interface {
 
 // deleteAttributeLister implements the DeleteAttributeLister interface.
 type deleteAttributeLister struct {
-	listers.ResourceIndexer[*v1alpha1.DeleteAttribute]
+	listers.ResourceIndexer[*actionsv1alpha1.DeleteAttribute]
 }
 
 // NewDeleteAttributeLister returns a new DeleteAttributeLister.
 func NewDeleteAttributeLister(indexer cache.Indexer) DeleteAttributeLister {
-	return &deleteAttributeLister{listers.New[*v1alpha1.DeleteAttribute](indexer, v1alpha1.Resource("deleteattribute"))}
+	return &deleteAttributeLister{listers.New[*actionsv1alpha1.DeleteAttribute](indexer, actionsv1alpha1.Resource("deleteattribute"))}
 }
 
 // DeleteAttributes returns an object that can list and get DeleteAttributes.
 func (s *deleteAttributeLister) DeleteAttributes(namespace string) DeleteAttributeNamespaceLister {
-	return deleteAttributeNamespaceLister{listers.NewNamespaced[*v1alpha1.DeleteAttribute](s.ResourceIndexer, namespace)}
+	return deleteAttributeNamespaceLister{listers.NewNamespaced[*actionsv1alpha1.DeleteAttribute](s.ResourceIndexer, namespace)}
 }
 
 // DeleteAttributeNamespaceLister helps list and get DeleteAttributes.
@@ -55,15 +55,15 @@ func (s *deleteAttributeLister) DeleteAttributes(namespace string) DeleteAttribu
 type DeleteAttributeNamespaceLister interface {
 	// List lists all DeleteAttributes in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.DeleteAttribute, err error)
+	List(selector labels.Selector) (ret []*actionsv1alpha1.DeleteAttribute, err error)
 	// Get retrieves the DeleteAttribute from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.DeleteAttribute, error)
+	Get(name string) (*actionsv1alpha1.DeleteAttribute, error)
 	DeleteAttributeNamespaceListerExpansion
 }
 
 // deleteAttributeNamespaceLister implements the DeleteAttributeNamespaceLister
 // interface.
 type deleteAttributeNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.DeleteAttribute]
+	listers.ResourceIndexer[*actionsv1alpha1.DeleteAttribute]
 }

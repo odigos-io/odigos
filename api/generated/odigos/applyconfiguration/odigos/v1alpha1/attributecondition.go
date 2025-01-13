@@ -18,16 +18,16 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	attribute "go.opentelemetry.io/otel/attribute"
 )
 
 // AttributeConditionApplyConfiguration represents a declarative configuration of the AttributeCondition type for use
 // with apply.
 type AttributeConditionApplyConfiguration struct {
-	Key      *attribute.Key     `json:"key,omitempty"`
-	Val      *string            `json:"val,omitempty"`
-	Operator *v1alpha1.Operator `json:"operator,omitempty"`
+	Key      *attribute.Key           `json:"key,omitempty"`
+	Val      *string                  `json:"val,omitempty"`
+	Operator *odigosv1alpha1.Operator `json:"operator,omitempty"`
 }
 
 // AttributeConditionApplyConfiguration constructs a declarative configuration of the AttributeCondition type for use with
@@ -55,7 +55,7 @@ func (b *AttributeConditionApplyConfiguration) WithVal(value string) *AttributeC
 // WithOperator sets the Operator field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Operator field is set to the value of the last call.
-func (b *AttributeConditionApplyConfiguration) WithOperator(value v1alpha1.Operator) *AttributeConditionApplyConfiguration {
+func (b *AttributeConditionApplyConfiguration) WithOperator(value odigosv1alpha1.Operator) *AttributeConditionApplyConfiguration {
 	b.Operator = &value
 	return b
 }

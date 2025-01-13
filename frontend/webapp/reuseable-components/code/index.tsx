@@ -22,7 +22,14 @@ const Table = styled.table`
 
 const TableBody = styled.tbody``;
 
-const TableRow = styled.tr``;
+const TableRow = styled.tr`
+  td:first-child {
+    padding-left: 0 !important;
+  }
+  td:last-child {
+    padding-right: 0 !important;
+  }
+`;
 
 const TableData = styled.td`
   vertical-align: top;
@@ -123,7 +130,7 @@ const getComponentsFromPropertyString = (propertyString: string) => {
 
 const PrettyJsonCode: React.FC<{ str: string }> = ({ str }) => {
   const renderEmptyRows = (count: number = 2) => {
-    const rows = new Array(count).fill((props) => (
+    const rows = new Array(count).fill((props: React.HTMLAttributes<HTMLTableRowElement>) => (
       <TableRow {...props}>
         <TableData />
         <TableData />
@@ -169,7 +176,7 @@ const PrettyJsonCode: React.FC<{ str: string }> = ({ str }) => {
 
                       return (
                         <TableData key={`line-${i}-token-${ii}`}>
-                          <FlexRow style={{ alignItems: 'flex-start' }}>
+                          <FlexRow>
                             <FlexRow>{...components}</FlexRow>
                             <CodeLineToken $noWrap={isRowTitle}>{text}</CodeLineToken>
                           </FlexRow>

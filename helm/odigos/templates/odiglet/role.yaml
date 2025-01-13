@@ -16,7 +16,7 @@ rules:
   - apiGroups:
       - ''
     resourceNames:
-      - odigos-config
+      - effective-config
     resources:
       - configmaps
     verbs:

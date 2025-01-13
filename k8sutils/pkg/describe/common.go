@@ -22,7 +22,7 @@ func wrapTextInYellow(text string) string {
 func describeText(sb *strings.Builder, indent int, printftext string, args ...interface{}) {
 	indentText := strings.Repeat("  ", indent)
 	lineText := fmt.Sprintf(printftext, args...)
-	sb.WriteString(fmt.Sprintf("%s%s\n", indentText, lineText))
+	fmt.Fprintf(sb, "%s%s\n", indentText, lineText)
 }
 
 func printProperty(sb *strings.Builder, indent int, property *properties.EntityProperty) {
@@ -38,6 +38,6 @@ func printProperty(sb *strings.Builder, indent int, property *properties.EntityP
 	case properties.PropertyStatusTransitioning:
 		text = wrapTextInYellow(text)
 	}
- 
-	describeText(sb, indent, text)
+
+	describeText(sb, indent, "%s", text)
 }

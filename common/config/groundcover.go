@@ -12,8 +12,10 @@ const (
 )
 
 var (
-	ErrorGroundcoverEndpointMissing = errors.New("Groundcover is missing a required field (\"GROUNDCOVER_ENDPOINT\"), Groundcover will not be configured")
-	ErrorGroundcoverApiKeyMissing   = errors.New("Groundcover is missing a required field (\"GROUNDCOVER_API_KEY\"), Groundcover will not be configured")
+	ErrorGroundcoverEndpointMissing = errors.New("Groundcover is missing a required field " +
+		"(\"GROUNDCOVER_ENDPOINT\"), Groundcover will not be configured")
+	ErrorGroundcoverApiKeyMissing = errors.New("Groundcover is missing a required field " +
+		"(\"GROUNDCOVER_API_KEY\"), Groundcover will not be configured")
 )
 
 type Groundcover struct{}

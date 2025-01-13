@@ -18,11 +18,11 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/applyconfiguration/odigos/v1alpha1"
+	applyconfigurationodigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/applyconfiguration/odigos/v1alpha1"
 	scheme "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/scheme"
-	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -37,36 +37,37 @@ type ProcessorsGetter interface {
 
 // ProcessorInterface has methods to work with Processor resources.
 type ProcessorInterface interface {
-	Create(ctx context.Context, processor *v1alpha1.Processor, opts v1.CreateOptions) (*v1alpha1.Processor, error)
-	Update(ctx context.Context, processor *v1alpha1.Processor, opts v1.UpdateOptions) (*v1alpha1.Processor, error)
+	Create(ctx context.Context, processor *odigosv1alpha1.Processor, opts v1.CreateOptions) (*odigosv1alpha1.Processor, error)
+	Update(ctx context.Context, processor *odigosv1alpha1.Processor, opts v1.UpdateOptions) (*odigosv1alpha1.Processor, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, processor *v1alpha1.Processor, opts v1.UpdateOptions) (*v1alpha1.Processor, error)
+	UpdateStatus(ctx context.Context, processor *odigosv1alpha1.Processor, opts v1.UpdateOptions) (*odigosv1alpha1.Processor, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.Processor, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.ProcessorList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*odigosv1alpha1.Processor, error)
+	List(ctx context.Context, opts v1.ListOptions) (*odigosv1alpha1.ProcessorList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Processor, err error)
-	Apply(ctx context.Context, processor *odigosv1alpha1.ProcessorApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.Processor, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *odigosv1alpha1.Processor, err error)
+	Apply(ctx context.Context, processor *applyconfigurationodigosv1alpha1.ProcessorApplyConfiguration, opts v1.ApplyOptions) (result *odigosv1alpha1.Processor, err error)
 	// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-	ApplyStatus(ctx context.Context, processor *odigosv1alpha1.ProcessorApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.Processor, err error)
+	ApplyStatus(ctx context.Context, processor *applyconfigurationodigosv1alpha1.ProcessorApplyConfiguration, opts v1.ApplyOptions) (result *odigosv1alpha1.Processor, err error)
 	ProcessorExpansion
 }
 
 // processors implements ProcessorInterface
 type processors struct {
-	*gentype.ClientWithListAndApply[*v1alpha1.Processor, *v1alpha1.ProcessorList, *odigosv1alpha1.ProcessorApplyConfiguration]
+	*gentype.ClientWithListAndApply[*odigosv1alpha1.Processor, *odigosv1alpha1.ProcessorList, *applyconfigurationodigosv1alpha1.ProcessorApplyConfiguration]
 }
 
 // newProcessors returns a Processors
 func newProcessors(c *OdigosV1alpha1Client, namespace string) *processors {
 	return &processors{
-		gentype.NewClientWithListAndApply[*v1alpha1.Processor, *v1alpha1.ProcessorList, *odigosv1alpha1.ProcessorApplyConfiguration](
+		gentype.NewClientWithListAndApply[*odigosv1alpha1.Processor, *odigosv1alpha1.ProcessorList, *applyconfigurationodigosv1alpha1.ProcessorApplyConfiguration](
 			"processors",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.Processor { return &v1alpha1.Processor{} },
-			func() *v1alpha1.ProcessorList { return &v1alpha1.ProcessorList{} }),
+			func() *odigosv1alpha1.Processor { return &odigosv1alpha1.Processor{} },
+			func() *odigosv1alpha1.ProcessorList { return &odigosv1alpha1.ProcessorList{} },
+		),
 	}
 }
