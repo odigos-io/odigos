@@ -4,9 +4,10 @@ import (
 	"context"
 	"strings"
 
+	"k8s.io/client-go/kubernetes"
+
 	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
 	odigos "github.com/odigos-io/odigos/k8sutils/pkg/describe/odigos"
-	"k8s.io/client-go/kubernetes"
 )
 
 func printClusterCollectorStatus(analyze *odigos.OdigosAnalyze, sb *strings.Builder) {
@@ -49,14 +50,16 @@ func DescribeOdigosToText(analyze *odigos.OdigosAnalyze) string {
 	var sb strings.Builder
 
 	printProperty(&sb, 0, &analyze.OdigosVersion)
+	printProperty(&sb, 0, &analyze.Tier)
+	printProperty(&sb, 0, &analyze.InstallationMethod)
 	sb.WriteString("\n")
 	printOdigosPipeline(analyze, &sb)
 
 	return sb.String()
 }
 
-func DescribeOdigos(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, odigosNs string) (*odigos.OdigosAnalyze, error) {
-
+func DescribeOdigos(ctx context.Context, kubeClient kubernetes.Interface,
+	odigosClient odigosclientset.OdigosV1alpha1Interface, odigosNs string) (*odigos.OdigosAnalyze, error) {
 	odigosResources, err := odigos.GetRelevantOdigosResources(ctx, kubeClient, odigosClient, odigosNs)
 	if err != nil {
 		return nil, err

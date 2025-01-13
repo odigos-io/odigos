@@ -1,7 +1,7 @@
 package graph
 
 import (
-	collectormetrics "github.com/odigos-io/odigos/frontend/endpoints/collector_metrics"
+	collectormetrics "github.com/odigos-io/odigos/frontend/services/collector_metrics"
 )
 
 // This file will not be regenerated automatically.

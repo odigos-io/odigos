@@ -1,4 +1,4 @@
-import { deleteEntity, getCrdById, getCrdIds, updateEntity } from '../functions';
+import { awaitToast, deleteEntity, getCrdById, getCrdIds, updateEntity } from '../functions';
 import { BUTTONS, CRD_NAMES, DATA_IDS, INPUTS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
 
 // The number of CRDs that exist in the cluster before running any tests should be 0.
@@ -23,7 +23,10 @@ describe('Actions CRUD', () => {
       cy.get('button').contains(BUTTONS.DONE).click();
 
       cy.wait('@gql').then(() => {
-        getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 });
+        getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 }, (crdIds) => {
+          const crdId = crdIds[0];
+          awaitToast({ withSSE: false, message: TEXTS.NOTIF_ACTION_CREATED(crdId) });
+        });
       });
     });
   });
@@ -43,7 +46,9 @@ describe('Actions CRUD', () => {
           cy.wait('@gql').then(() => {
             getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 }, (crdIds) => {
               const crdId = crdIds[0];
-              getCrdById({ namespace, crdName, crdId, expectedError: '', expectedKey: 'actionName', expectedValue: TEXTS.UPDATED_NAME });
+              awaitToast({ withSSE: false, message: TEXTS.NOTIF_ACTION_UPDATED(crdId) }, () => {
+                getCrdById({ namespace, crdName, crdId, expectedError: '', expectedKey: 'actionName', expectedValue: TEXTS.UPDATED_NAME });
+              });
             });
           });
         },
@@ -54,7 +59,8 @@ describe('Actions CRUD', () => {
   it('Should delete the CRD from the cluster', () => {
     cy.visit(ROUTES.OVERVIEW);
 
-    getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 }, () => {
+    getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 }, (crdIds) => {
+      const crdId = crdIds[0];
       deleteEntity(
         {
           nodeId: DATA_IDS.ACTION_NODE,
@@ -63,7 +69,9 @@ describe('Actions CRUD', () => {
         },
         () => {
           cy.wait('@gql').then(() => {
-            getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
+            awaitToast({ withSSE: false, message: TEXTS.NOTIF_ACTION_DELETED(crdId) }, () => {
+              getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
+            });
           });
         },
       );
