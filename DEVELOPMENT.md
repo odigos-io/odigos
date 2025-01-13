@@ -12,7 +12,7 @@ Forward the relevant pod to your local machine to enable profiling access:
 ```bash
 kubectl port-forward pod/<pod-name> -n odigos-system 1777:1777
 ```
-
+ 
 ### Step 2: Collect Profiling Data
 
 - **CPU Profile**  
