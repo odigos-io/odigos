@@ -14,29 +14,24 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/go-logr/logr"
+	_ "net/http/pprof"
 
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
+	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/destinations"
-	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-
-	"github.com/gin-contrib/cors"
-
+	"github.com/odigos-io/odigos/frontend/graph"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/kube/watchers"
 	"github.com/odigos-io/odigos/frontend/services"
 	collectormetrics "github.com/odigos-io/odigos/frontend/services/collector_metrics"
 	"github.com/odigos-io/odigos/frontend/services/sse"
 	"github.com/odigos-io/odigos/frontend/version"
-
-	"github.com/gin-gonic/gin"
-
-	_ "net/http/pprof"
-
-	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/playground"
-	"github.com/odigos-io/odigos/frontend/graph"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 )
 
 const (
@@ -109,17 +104,23 @@ func startHTTPServer(flags *Flags, odigosMetrics *collectormetrics.OdigosMetrics
 			MetricsConsumer: odigosMetrics,
 		},
 	}))
-
 	r.POST("/graphql", func(c *gin.Context) {
 		gqlHandler.ServeHTTP(c.Writer, c.Request)
 	})
 	r.GET("/playground", gin.WrapH(playground.Handler("GraphQL Playground", "/graphql")))
 
+	// SSE handler
+	r.GET("/api/events", sse.HandleSSEConnections)
+
+	// Remote CLI handlers
+	r.GET("/token/update/:onPremToken", services.UpdateToken)
+	r.GET("/describe/odigos", services.DescribeOdigos)
+	r.GET("/describe/source/namespace/:namespace/kind/:kind/name/:name", services.DescribeSource)
+
 	return r, nil
 }
 
 func httpFileServerWith404(fs http.FileSystem) http.Handler {
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, err := fs.Open(r.URL.Path)
 		if err != nil {
@@ -133,6 +134,25 @@ func httpFileServerWith404(fs http.FileSystem) http.Handler {
 		}
 		http.FileServer(fs).ServeHTTP(w, r)
 	})
+}
+
+func startWatchers(ctx context.Context, flags *Flags) error {
+	err := watchers.StartInstrumentationConfigWatcher(ctx, "")
+	if err != nil {
+		return fmt.Errorf("error starting InstrumentationConfig watcher: %v", err)
+	}
+
+	err = watchers.StartDestinationWatcher(ctx, flags.Namespace)
+	if err != nil {
+		return fmt.Errorf("error starting Destination watcher: %v", err)
+	}
+
+	err = watchers.StartInstrumentationInstanceWatcher(ctx, "")
+	if err != nil {
+		return fmt.Errorf("error starting InstrumentationInstance watcher: %v", err)
+	}
+
+	return nil
 }
 
 func main() {
@@ -181,28 +201,11 @@ func main() {
 	}
 
 	// Start watchers
-	err = watchers.StartInstrumentationConfigWatcher(ctx, "")
+	err = startWatchers(ctx, &flags)
 	if err != nil {
-		log.Printf("Error starting InstrumentationConfig watcher: %v", err)
+		log.Fatalf("Error starting watchers: %s", err)
 	}
 
-	err = watchers.StartDestinationWatcher(ctx, flags.Namespace)
-	if err != nil {
-		log.Printf("Error starting Destination watcher: %v", err)
-	}
-
-	err = watchers.StartInstrumentationInstanceWatcher(ctx, "")
-	if err != nil {
-		log.Printf("Error starting InstrumentationInstance watcher: %v", err)
-	}
-
-	r.GET("/api/events", sse.HandleSSEConnections)
-	r.GET("/describe/odigos", func(c *gin.Context) {
-		services.DescribeOdigos(c)
-	})
-	r.GET("/describe/source/namespace/:namespace/kind/:kind/name/:name", func(c *gin.Context) {
-		services.DescribeSource(c, c.Param("namespace"), c.Param("kind"), c.Param("name"))
-	})
 	log.Printf("Odigos UI is available at: http://%s:%d", flags.Address, flags.Port)
 	go func() {
 		err = r.Run(fmt.Sprintf("%s:%d", flags.Address, flags.Port))

@@ -574,13 +574,18 @@ type Query {
 }
 
 type Mutation {
-  createNewDestination(destination: DestinationInput!): Destination!
+  updateApiToken(token: String!): Boolean!
+
   persistK8sNamespace(namespace: PersistNamespaceItemInput!): Boolean!
+
   persistK8sSources(namespace: String!, sources: [PersistNamespaceSourceInput!]!): Boolean!
-  testConnectionForDestination(destination: DestinationInput!): TestConnectionResponse!
   updateK8sActualSource(sourceId: K8sSourceId!, patchSourceRequest: PatchSourceRequestInput!): Boolean!
+
+  createNewDestination(destination: DestinationInput!): Destination!
   updateDestination(id: ID!, destination: DestinationInput!): Destination!
   deleteDestination(id: ID!): Boolean!
+  testConnectionForDestination(destination: DestinationInput!): TestConnectionResponse!
+
   createAction(action: ActionInput!): Action!
   updateAction(id: ID!, action: ActionInput!): Action!
   deleteAction(id: ID!, actionType: String!): Boolean!
