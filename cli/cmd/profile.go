@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"slices"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
@@ -118,11 +119,9 @@ var addProfileCmd = &cobra.Command{
 		config.ConfigVersion += 1
 
 		// Check if the profile is already applied
-		for _, appliedProfile := range config.Profiles {
-			if string(appliedProfile) == profileName {
-				fmt.Println("\033[34mINFO\033[0m Profile", profileName, "is already applied.")
-				os.Exit(0)
-			}
+		if slices.Contains(config.Profiles, selectedProfile.ProfileName) {
+			fmt.Println("\033[34mINFO\033[0m Profile", profileName, "is already applied.")
+			os.Exit(0)
 		}
 
 		// Add the profile to the current configuration
