@@ -12,6 +12,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
@@ -288,12 +289,8 @@ func NewUIService(ns string) *corev1.Service {
 			},
 			Ports: []corev1.ServicePort{
 				{
-					Name: "ui",
-					Port: 3000,
-				},
-				{
-					Name: "legacy-ui",
-					Port: 3001,
+					Name: k8sconsts.OdigosUiServiceName,
+					Port: k8sconsts.OdigosUiServicePort,
 				},
 				{
 					Name: "otlp",

@@ -18,10 +18,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // InstrumentationConfigLister helps list InstrumentationConfigs.
@@ -29,7 +29,7 @@ import (
 type InstrumentationConfigLister interface {
 	// List lists all InstrumentationConfigs in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.InstrumentationConfig, err error)
+	List(selector labels.Selector) (ret []*odigosv1alpha1.InstrumentationConfig, err error)
 	// InstrumentationConfigs returns an object that can list and get InstrumentationConfigs.
 	InstrumentationConfigs(namespace string) InstrumentationConfigNamespaceLister
 	InstrumentationConfigListerExpansion
@@ -37,17 +37,17 @@ type InstrumentationConfigLister interface {
 
 // instrumentationConfigLister implements the InstrumentationConfigLister interface.
 type instrumentationConfigLister struct {
-	listers.ResourceIndexer[*v1alpha1.InstrumentationConfig]
+	listers.ResourceIndexer[*odigosv1alpha1.InstrumentationConfig]
 }
 
 // NewInstrumentationConfigLister returns a new InstrumentationConfigLister.
 func NewInstrumentationConfigLister(indexer cache.Indexer) InstrumentationConfigLister {
-	return &instrumentationConfigLister{listers.New[*v1alpha1.InstrumentationConfig](indexer, v1alpha1.Resource("instrumentationconfig"))}
+	return &instrumentationConfigLister{listers.New[*odigosv1alpha1.InstrumentationConfig](indexer, odigosv1alpha1.Resource("instrumentationconfig"))}
 }
 
 // InstrumentationConfigs returns an object that can list and get InstrumentationConfigs.
 func (s *instrumentationConfigLister) InstrumentationConfigs(namespace string) InstrumentationConfigNamespaceLister {
-	return instrumentationConfigNamespaceLister{listers.NewNamespaced[*v1alpha1.InstrumentationConfig](s.ResourceIndexer, namespace)}
+	return instrumentationConfigNamespaceLister{listers.NewNamespaced[*odigosv1alpha1.InstrumentationConfig](s.ResourceIndexer, namespace)}
 }
 
 // InstrumentationConfigNamespaceLister helps list and get InstrumentationConfigs.
@@ -55,15 +55,15 @@ func (s *instrumentationConfigLister) InstrumentationConfigs(namespace string) I
 type InstrumentationConfigNamespaceLister interface {
 	// List lists all InstrumentationConfigs in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.InstrumentationConfig, err error)
+	List(selector labels.Selector) (ret []*odigosv1alpha1.InstrumentationConfig, err error)
 	// Get retrieves the InstrumentationConfig from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.InstrumentationConfig, error)
+	Get(name string) (*odigosv1alpha1.InstrumentationConfig, error)
 	InstrumentationConfigNamespaceListerExpansion
 }
 
 // instrumentationConfigNamespaceLister implements the InstrumentationConfigNamespaceLister
 // interface.
 type instrumentationConfigNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.InstrumentationConfig]
+	listers.ResourceIndexer[*odigosv1alpha1.InstrumentationConfig]
 }

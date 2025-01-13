@@ -17,7 +17,6 @@ func (g *GenericOTLP) DestType() common.DestinationType {
 }
 
 func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
-
 	url, exists := dest.GetConfig()[genericOtlpUrlKey]
 	if !exists {
 		return errors.New("Generic OTLP gRPC endpoint not specified, gateway will not be configured for otlp")

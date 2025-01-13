@@ -170,11 +170,7 @@ func (m *manager[ProcessDetails, ConfigGroup]) runEventLoop(ctx context.Context)
 			case detector.ProcessExecEvent:
 				m.logger.V(1).Info("detected new process", "pid", e.PID, "cmd", e.ExecDetails.CmdLine)
 				err := m.handleProcessExecEvent(ctx, e)
-				// ignore the error if no instrumentation factory is found,
-				// as this is expected for some language and sdk combinations
-				if err != nil && !errors.Is(err, errNoInstrumentationFactory) {
-					m.logger.Error(err, "failed to handle process exec event")
-				}
+				m.handleProcessExecEventError(err)
 			case detector.ProcessExitEvent:
 				m.cleanInstrumentation(ctx, e.PID)
 			}
@@ -186,6 +182,27 @@ func (m *manager[ProcessDetails, ConfigGroup]) runEventLoop(ctx context.Context)
 				}
 			}
 		}
+	}
+}
+
+func (m *manager[ProcessDetails, ConfigGroup]) handleProcessExecEventError(err error) {
+	// ignore the error if no instrumentation factory is found,
+	// as this is expected for some language and sdk combinations which don't have ebpf support.
+	if errors.Is(err, errNoInstrumentationFactory) {
+		return
+	}
+
+	// we might fail to get the distribution for the process details,
+	// in cases where we detected a certain language for a container, but multiple processes are running in it,
+	// only one or some of them are in the language we detected. 
+	if errors.Is(err, errFailedToGetDistribution) {
+		m.logger.Info("failed to get otel distribution for process", "error", err)
+		return
+	}
+
+	// fallback to log an error
+	if err != nil {
+		m.logger.Error(err, "failed to handle process exec event")
 	}
 }
 
@@ -273,17 +290,23 @@ func (m *manager[ProcessDetails, ConfigGroup]) handleProcessExecEvent(ctx contex
 		// return nil
 	}
 
-	inst, err := factory.CreateInstrumentation(ctx, e.PID, settings)
-	if err != nil {
+	inst, initErr := factory.CreateInstrumentation(ctx, e.PID, settings)
+	reporterErr := m.handler.Reporter.OnInit(ctx, e.PID, err, pd)
+	if reporterErr != nil {
+		m.logger.Error(reporterErr, "failed to report instrumentation init", "initialized", initErr == nil, "pid", e.PID, "process group details", pd)
+	}
+	if initErr != nil {
+		// we need to track the instrumentation even if the initialization failed.
+		// consider a reporter which writes a persistent record for a failed/successful init
+		// we need to notify the reporter once that PID exits to clean up the resources - hence we track it.
+		m.startTrackInstrumentation(e.PID, nil, pd, configGroup)
 		m.logger.Error(err, "failed to initialize instrumentation", "language", otelDisto.Language, "sdk", otelDisto.OtelSdk)
-		err = m.handler.Reporter.OnInit(ctx, e.PID, err, pd)
 		// TODO: should we return here the initialize error? or the handler error? or both?
-		return err
+		return initErr
 	}
 
 	loadErr := inst.Load(ctx)
-
-	reporterErr := m.handler.Reporter.OnLoad(ctx, e.PID, loadErr, pd)
+	reporterErr = m.handler.Reporter.OnLoad(ctx, e.PID, loadErr, pd)
 	if reporterErr != nil {
 		m.logger.Error(reporterErr, "failed to report instrumentation load", "loaded", loadErr == nil, "pid", e.PID, "process group details", pd)
 	}
@@ -295,7 +318,7 @@ func (m *manager[ProcessDetails, ConfigGroup]) handleProcessExecEvent(ctx contex
 		m.startTrackInstrumentation(e.PID, nil, pd, configGroup)
 		m.logger.Error(err, "failed to load instrumentation", "language", otelDisto.Language, "sdk", otelDisto.OtelSdk)
 		// TODO: should we return here the load error? or the instance write error? or both?
-		return err
+		return loadErr
 	}
 
 	m.startTrackInstrumentation(e.PID, inst, pd, configGroup)

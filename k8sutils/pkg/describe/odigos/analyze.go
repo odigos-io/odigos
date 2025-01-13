@@ -1,11 +1,14 @@
 package odigos
 
 import (
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/k8sutils/pkg/describe/properties"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
+
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/k8sutils/pkg/describe/properties"
 )
 
 type ClusterCollectorAnalyze struct {
@@ -36,6 +39,8 @@ type NodeCollectorAnalyze struct {
 
 type OdigosAnalyze struct {
 	OdigosVersion        properties.EntityProperty `json:"odigosVersion"`
+	Tier                 properties.EntityProperty `json:"tier"`
+	InstallationMethod   properties.EntityProperty `json:"installationMethod"`
 	NumberOfDestinations int                       `json:"numberOfDestinations"`
 	NumberOfSources      int                       `json:"numberOfSources"`
 	ClusterCollector     ClusterCollectorAnalyze   `json:"clusterCollector"`
@@ -61,10 +66,11 @@ func analyzeDeployed(cg *odigosv1.CollectorsGroup) (*properties.EntityProperty, 
 	if deployedCondition == nil {
 		// scheduler created the cg but autoscaler did not reconcile it yet
 		return &properties.EntityProperty{
-				Name:    "Deployed",
-				Value:   false,
-				Status:  properties.PropertyStatusTransitioning,
-				Explain: "deployed means the relevant k8s objects (deployment, configmap, secret, daemonset, etc) were created successfully and are expected to start. It does not mean the relevant pods were actually created, started, or are healthy.",
+				Name:   "Deployed",
+				Value:  false,
+				Status: properties.PropertyStatusTransitioning,
+				Explain: "deployed means the relevant k8s objects (deployment, configmap, secret, daemonset, etc) were " +
+					"created successfully and are expected to start. It does not mean the relevant pods were actually created, started, or are healthy.",
 			}, &properties.EntityProperty{
 				Name:    "Deployed Error",
 				Value:   "waiting for reconciliation",
@@ -76,18 +82,20 @@ func analyzeDeployed(cg *odigosv1.CollectorsGroup) (*properties.EntityProperty, 
 	if deployedCondition.Status == metav1.ConditionTrue {
 		// successfully reconciled to collectors deployment
 		return &properties.EntityProperty{
-			Name:    "Deployed",
-			Value:   true,
-			Status:  properties.PropertyStatusSuccess,
-			Explain: "deployed means the relevant k8s objects (deployment, configmap, secret, daemonset, etc) were created successfully and are expected to start. It does not mean the relevant pods were actually created, started, or are healthy.",
+			Name:   "Deployed",
+			Value:  true,
+			Status: properties.PropertyStatusSuccess,
+			Explain: "deployed means the relevant k8s objects (deployment, configmap, secret, daemonset, etc) were created" +
+				" successfully and are expected to start. It does not mean the relevant pods were actually created, started, or are healthy.",
 		}, nil
 	} else {
 		// had an error during reconciliation to k8s deployment objects
 		return &properties.EntityProperty{
-				Name:    "Deployed",
-				Value:   false,
-				Status:  properties.PropertyStatusError,
-				Explain: "deployed means the relevant k8s objects (deployment, configmap, secret, daemonset, etc) were created successfully and are expected to start. It does not mean the relevant pods were actually created, started, or are healthy.",
+				Name:   "Deployed",
+				Value:  false,
+				Status: properties.PropertyStatusError,
+				Explain: "deployed means the relevant k8s objects (deployment, configmap, secret, daemonset, etc) were created" +
+					" successfully and are expected to start. It does not mean the relevant pods were actually created, started, or are healthy.",
 			}, &properties.EntityProperty{
 				Name:    "Deployed Error",
 				Value:   deployedCondition.Message,
@@ -144,7 +152,8 @@ func analyzeDaemonSet(ds *appsv1.DaemonSet, enabled bool) properties.EntityPrope
 	}
 }
 
-func analyzeDsReplicas(ds *appsv1.DaemonSet) (*properties.EntityProperty, *properties.EntityProperty, *properties.EntityProperty, *properties.EntityProperty) {
+func analyzeDsReplicas(ds *appsv1.DaemonSet) (*properties.EntityProperty, *properties.EntityProperty,
+	*properties.EntityProperty, *properties.EntityProperty) {
 	if ds == nil {
 		return nil, nil, nil, nil
 	}
@@ -166,32 +175,36 @@ func analyzeDsReplicas(ds *appsv1.DaemonSet) (*properties.EntityProperty, *prope
 			// if this number is less than the desired number, the daemonset is not fully scheduled.
 			// it can be due to an active rollout (which is ok), or due to a problem with the nodes / pods
 			// this prevents the daemonset pod from being scheduled.
-			Name:    "Current Nodes",
-			Value:   currentReplicas,
-			Status:  properties.GetSuccessOrTransitioning(currentReplicas == desiredNodes),
-			Explain: "the number of k8s nodes that have at least one pod of the node collector daemonset. this number counts the pod objects that were created on this node, regardless of the pod status or revision.",
+			Name:   "Current Nodes",
+			Value:  currentReplicas,
+			Status: properties.GetSuccessOrTransitioning(currentReplicas == desiredNodes),
+			Explain: "the number of k8s nodes that have at least one pod of the node collector daemonset. this number counts " +
+				"the pod objects that were created on this node, regardless of the pod status or revision.",
 		}, &properties.EntityProperty{
 			// The number of nodes that are running pods from the latest version of the daemonset and do not have old pods from previous versions.
 			// if this number is less than the desired number, the daemonset is not fully updated.
 			// it can be due to an active rollout (which is ok), or due to a problem with the nodes / pods
 			// this prevents the daemonset pod from being updated.
 			// this number does not indicate if the pods are indeed running and healthy, only that the only pods scheduled to them is only the latest.
-			Name:    "Updated Nodes",
-			Value:   updatedReplicas,
-			Status:  properties.GetSuccessOrTransitioning(updatedReplicas == desiredNodes),
-			Explain: "the number of k8s nodes that have only the latest version of the node collector daemonset pods. this number counts the pod objects that were created on this node with the latest revision, regardless of the pod status or readiness",
+			Name:   "Updated Nodes",
+			Value:  updatedReplicas,
+			Status: properties.GetSuccessOrTransitioning(updatedReplicas == desiredNodes),
+			Explain: "the number of k8s nodes that have only the latest version of the node collector daemonset pods. this " +
+				"number counts the pod objects that were created on this node with the latest revision, regardless of the pod status or readiness",
 		}, &properties.EntityProperty{
 			// available nodes are the nodes for which the oldest pod is ready and available.
 			// it can count nodes that are running an old version of the daemonset,
 			// so it alone cannot be used to determine if the daemonset is updated and healthy.
-			Name:    "Available Nodes",
-			Value:   availableNodes,
-			Status:  properties.GetSuccessOrTransitioning(availableNodes == desiredNodes),
-			Explain: "the number of k8s nodes that have at least one pod of the node collector daemonset that is ready and available. this number counts the pod objects that were created on this node, regardless of the pod status or revision.",
+			Name:   "Available Nodes",
+			Value:  availableNodes,
+			Status: properties.GetSuccessOrTransitioning(availableNodes == desiredNodes),
+			Explain: "the number of k8s nodes that have at least one pod of the node collector daemonset that is ready and " +
+				"available. this number counts the pod objects that were created on this node, regardless of the pod status or revision.",
 		}
 }
 
-func analyzePodsHealth(pods *corev1.PodList, expectedReplicas int) (*properties.EntityProperty, *properties.EntityProperty, *properties.EntityProperty) {
+func analyzePodsHealth(pods *corev1.PodList, expectedReplicas int) (*properties.EntityProperty,
+	*properties.EntityProperty, *properties.EntityProperty) {
 	if pods == nil { // should not happen, but check just in case
 		return nil, nil, nil
 	}
@@ -199,7 +212,8 @@ func analyzePodsHealth(pods *corev1.PodList, expectedReplicas int) (*properties.
 	runningReplicas := 0
 	failureReplicas := 0
 	var failureText string
-	for _, pod := range pods.Items {
+	for j := range pods.Items {
+		pod := &pods.Items[j]
 		var condition *corev1.PodCondition
 		for i := range pod.Status.Conditions {
 			c := pod.Status.Conditions[i]
@@ -245,7 +259,6 @@ func analyzePodsHealth(pods *corev1.PodList, expectedReplicas int) (*properties.
 }
 
 func analyzeClusterCollector(resources *OdigosResources) ClusterCollectorAnalyze {
-
 	isEnabled := len(resources.Destinations.Items) > 0
 
 	enabled := properties.EntityProperty{
@@ -282,7 +295,6 @@ func analyzeClusterCollector(resources *OdigosResources) ClusterCollectorAnalyze
 }
 
 func analyzeNodeCollector(resources *OdigosResources) NodeCollectorAnalyze {
-
 	hasClusterCollector := resources.ClusterCollector.CollectorsGroup != nil
 	isClusterCollectorReady := hasClusterCollector && resources.ClusterCollector.CollectorsGroup.Status.Ready
 	hasInstrumentedSources := len(resources.InstrumentationConfigs.Items) > 0
@@ -322,7 +334,7 @@ func analyzeNodeCollector(resources *OdigosResources) NodeCollectorAnalyze {
 	}
 }
 
-func summarizeStatus(clusterCollector ClusterCollectorAnalyze, nodeCollector NodeCollectorAnalyze) (bool, bool) {
+func summarizeStatus(clusterCollector *ClusterCollectorAnalyze, nodeCollector *NodeCollectorAnalyze) (bool, bool) {
 	isSettled := true  // everything is settled, unless we find property with status transitioning
 	hasErrors := false // there is no error, unless we find property with status error
 
@@ -367,14 +379,34 @@ func summarizeStatus(clusterCollector ClusterCollectorAnalyze, nodeCollector Nod
 func AnalyzeOdigos(resources *OdigosResources) *OdigosAnalyze {
 	clusterCollector := analyzeClusterCollector(resources)
 	nodeCollector := analyzeNodeCollector(resources)
-	isSettled, hasErrors := summarizeStatus(clusterCollector, nodeCollector)
-	odigosVersion := properties.EntityProperty{
-		Name:  "Odigos Version",
-		Value: resources.OdigosVersion,
+	isSettled, hasErrors := summarizeStatus(&clusterCollector, &nodeCollector)
+
+	odigosVersion := resources.OdigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapVersionKey]
+	tier := resources.OdigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapTierKey]
+	installationMethod := resources.OdigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey]
+
+	odigosVersionProperty := properties.EntityProperty{
+		Name:    "Odigos Version",
+		Value:   odigosVersion,
+		Explain: "the version of odigos deployment currently installed in the cluster",
+	}
+
+	odigosTierProperty := properties.EntityProperty{
+		Name:    "Tier",
+		Value:   tier,
+		Explain: "the tier of odigos deployment (community, enterprise, cloud)",
+	}
+
+	installationMethodProperty := properties.EntityProperty{
+		Name:    "Installation Method",
+		Value:   installationMethod,
+		Explain: "the method used to deploy odigos in the cluster (helm or odigos cli)",
 	}
 
 	return &OdigosAnalyze{
-		OdigosVersion:        odigosVersion,
+		OdigosVersion:        odigosVersionProperty,
+		Tier:                 odigosTierProperty,
+		InstallationMethod:   installationMethodProperty,
 		NumberOfDestinations: len(resources.Destinations.Items),
 		NumberOfSources:      len(resources.InstrumentationConfigs.Items),
 		ClusterCollector:     clusterCollector,

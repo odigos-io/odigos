@@ -4,7 +4,7 @@ import type { ActualDestination, DestinationDetailsResponse, ExportedSignals } f
 
 const buildMonitorsList = (exportedSignals: ExportedSignals): string =>
   Object.keys(exportedSignals)
-    .filter((key) => exportedSignals[key])
+    .filter((key) => exportedSignals[key as keyof ExportedSignals])
     .join(', ');
 
 const buildCard = (destination: ActualDestination, destinationTypeDetails?: DestinationDetailsResponse['destinationTypeDetails']) => {

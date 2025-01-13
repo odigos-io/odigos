@@ -47,7 +47,7 @@ export const useSourceCRUD = (params?: Params) => {
       const namespace = req?.variables?.namespace;
       const count = req?.variables?.sources.length;
 
-      req?.variables?.sources.forEach(({ name, kind, selected }) => {
+      req?.variables?.sources.forEach(({ name, kind, selected }: { name: string; kind: string; selected: boolean }) => {
         if (!selected) removeNotifications(getSseTargetFromId({ namespace, name, kind }, OVERVIEW_ENTITY_TYPES.SOURCE));
       });
 
