@@ -69,7 +69,7 @@ func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind wor
 		}
 		// if this is explicitly excluded (and the excluded Source isn't being deleted), skip
 		if sourceList.Workload != nil {
-			if odigosv1.IsWorkloadExcludedSource(sourceList.Workload) && !k8sutils.IsTerminating(sourceList.Workload) {
+			if odigosv1.IsExcludedSource(sourceList.Workload) && !k8sutils.IsTerminating(sourceList.Workload) {
 				return ctrl.Result{}, nil
 			}
 		}
