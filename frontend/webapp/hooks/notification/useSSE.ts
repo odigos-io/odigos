@@ -35,7 +35,7 @@ export const useSSE = () => {
 
         const crdType = notification.crdType || '';
         if (['InstrumentationConfig', 'InstrumentationInstance'].includes(crdType)) {
-          fetchSources(true);
+          fetchSources();
         } else if (['Destination'].includes(crdType)) {
           refetchDestinations();
         } else {
