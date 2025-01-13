@@ -19,8 +19,59 @@ import (
 	"github.com/odigos-io/odigos/frontend/services/describe/odigos_describe"
 	"github.com/odigos-io/odigos/frontend/services/describe/source_describe"
 	testconnection "github.com/odigos-io/odigos/frontend/services/test_connection"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+// APITokens is the resolver for the apiTokens field.
+func (r *computePlatformResolver) APITokens(ctx context.Context, obj *model.ComputePlatform) ([]*model.APIToken, error) {
+	// The result should always be 0 or 1:
+	// If it's 0, it means this is the OSS version.
+	// If it's 1, it means this is the Enterprise version.
+	secret, err := kube.DefaultClient.CoreV1().Secrets(consts.DefaultOdigosNamespace).Get(ctx, k8sconsts.OdigosProSecretName, metav1.GetOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return make([]*model.APIToken, 0), nil
+		}
+		return nil, err
+	}
+
+	token := string(secret.Data[k8sconsts.OdigosOnpremTokenSecretKey])
+
+	// Extract the payload from the JWT
+	tokenPayload, err := extractJWTPayload(token)
+	if err != nil {
+		// We don't want to return an error here, because the user may have provided a bad token.
+		// Throwing this will prevent the entire CP from being fetched, and prevent the user from being able to update the token...
+		// return nil, fmt.Errorf("failed to extract JWT payload: %w", err)
+
+		return []*model.APIToken{
+			{
+				Token:     token,
+				Name:      "ERROR",
+				IssuedAt:  0,
+				ExpiresAt: 0,
+			},
+		}, nil
+	}
+
+	// Extract values from the token payload
+	aud, _ := tokenPayload["aud"].(string)
+	iat, _ := tokenPayload["iat"].(float64)
+	exp, _ := tokenPayload["exp"].(float64)
+
+	// We need to return an array (even if it's just 1 token), because in the future we will have to support multiple platforms.
+	return []*model.APIToken{
+		{
+			Token:     token,
+			Name:      aud,
+			IssuedAt:  int(iat) * 1000, // Convert to milliseconds
+			ExpiresAt: int(exp) * 1000, // Convert to milliseconds
+		},
+	}, nil
+}
 
 // K8sActualNamespaces is the resolver for the k8sActualNamespaces field.
 func (r *computePlatformResolver) K8sActualNamespaces(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualNamespace, error) {
@@ -284,6 +335,66 @@ func (r *k8sActualNamespaceResolver) K8sActualSources(ctx context.Context, obj *
 	return namespaceActualSourcesPointers, nil
 }
 
+// UpdateAPIToken is the resolver for the updateApiToken field.
+func (r *mutationResolver) UpdateAPIToken(ctx context.Context, token string) (bool, error) {
+	err := pro.UpdateOdigosToken(ctx, kube.DefaultClient, consts.DefaultOdigosNamespace, token)
+	return err == nil, nil
+}
+
+// PersistK8sNamespace is the resolver for the persistK8sNamespace field.
+func (r *mutationResolver) PersistK8sNamespace(ctx context.Context, namespace model.PersistNamespaceItemInput) (bool, error) {
+	persistObjects := []model.PersistNamespaceSourceInput{}
+	persistObjects = append(persistObjects, model.PersistNamespaceSourceInput{
+		Name:     namespace.Name,
+		Kind:     model.K8sResourceKind(services.WorkloadKindNamespace),
+		Selected: namespace.FutureSelected,
+	})
+
+	err := services.SyncWorkloadsInNamespace(ctx, namespace.Name, persistObjects)
+	if err != nil {
+		return false, fmt.Errorf("failed to sync workloads: %v", err)
+	}
+
+	return true, nil
+}
+
+// PersistK8sSources is the resolver for the persistK8sSources field.
+func (r *mutationResolver) PersistK8sSources(ctx context.Context, namespace string, sources []*model.PersistNamespaceSourceInput) (bool, error) {
+	var persistObjects []model.PersistNamespaceSourceInput
+	for _, source := range sources {
+		persistObjects = append(persistObjects, model.PersistNamespaceSourceInput{
+			Name:     source.Name,
+			Kind:     source.Kind,
+			Selected: source.Selected,
+		})
+	}
+
+	err := services.SyncWorkloadsInNamespace(ctx, namespace, persistObjects)
+	if err != nil {
+		return false, fmt.Errorf("failed to sync workloads: %v", err)
+	}
+
+	return true, nil
+}
+
+// UpdateK8sActualSource is the resolver for the updateK8sActualSource field.
+func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID model.K8sSourceID, patchSourceRequest model.PatchSourceRequestInput) (bool, error) {
+	ns := sourceID.Namespace
+	kind := string(sourceID.Kind)
+	name := sourceID.Name
+
+	request := patchSourceRequest
+
+	// Handle ReportedName update
+	if request.ReportedName != nil {
+		if err := services.UpdateReportedName(ctx, ns, kind, name, *request.ReportedName); err != nil {
+			return false, err
+		}
+	}
+
+	return true, nil
+}
+
 // CreateNewDestination is the resolver for the createNewDestination field.
 func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination model.DestinationInput) (*model.Destination, error) {
 	odigosns := consts.DefaultOdigosNamespace
@@ -353,96 +464,6 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 
 	endpointDest := services.K8sDestinationToEndpointFormat(*dest, secretFieldsMap)
 	return &endpointDest, nil
-}
-
-// PersistK8sNamespace is the resolver for the persistK8sNamespace field.
-func (r *mutationResolver) PersistK8sNamespace(ctx context.Context, namespace model.PersistNamespaceItemInput) (bool, error) {
-	persistObjects := []model.PersistNamespaceSourceInput{}
-	persistObjects = append(persistObjects, model.PersistNamespaceSourceInput{
-		Name:     namespace.Name,
-		Kind:     model.K8sResourceKind(services.WorkloadKindNamespace),
-		Selected: namespace.FutureSelected,
-	})
-
-	err := services.SyncWorkloadsInNamespace(ctx, namespace.Name, persistObjects)
-	if err != nil {
-		return false, fmt.Errorf("failed to sync workloads: %v", err)
-	}
-
-	return true, nil
-}
-
-// PersistK8sSources is the resolver for the persistK8sSources field.
-func (r *mutationResolver) PersistK8sSources(ctx context.Context, namespace string, sources []*model.PersistNamespaceSourceInput) (bool, error) {
-	var persistObjects []model.PersistNamespaceSourceInput
-	for _, source := range sources {
-		persistObjects = append(persistObjects, model.PersistNamespaceSourceInput{
-			Name:     source.Name,
-			Kind:     source.Kind,
-			Selected: source.Selected,
-		})
-	}
-
-	err := services.SyncWorkloadsInNamespace(ctx, namespace, persistObjects)
-	if err != nil {
-		return false, fmt.Errorf("failed to sync workloads: %v", err)
-	}
-
-	return true, nil
-}
-
-// TestConnectionForDestination is the resolver for the testConnectionForDestination field.
-func (r *mutationResolver) TestConnectionForDestination(ctx context.Context, destination model.DestinationInput) (*model.TestConnectionResponse, error) {
-	destType := common.DestinationType(destination.Type)
-
-	destConfig, err := services.GetDestinationTypeConfig(destType)
-	if err != nil {
-		return nil, err
-	}
-
-	if !destConfig.Spec.TestConnectionSupported {
-		return nil, fmt.Errorf("destination type %s does not support test connection", destination.Type)
-	}
-
-	configurer, err := testconnection.ConvertDestinationToConfigurer(destination)
-	if err != nil {
-		return nil, err
-	}
-
-	res := testconnection.TestConnection(ctx, configurer)
-	if !res.Succeeded {
-		return &model.TestConnectionResponse{
-			Succeeded:       false,
-			StatusCode:      res.StatusCode,
-			DestinationType: (*string)(&res.DestinationType),
-			Message:         &res.Message,
-			Reason:          (*string)(&res.Reason),
-		}, nil
-	}
-
-	return &model.TestConnectionResponse{
-		Succeeded:       true,
-		StatusCode:      200,
-		DestinationType: (*string)(&res.DestinationType),
-	}, nil
-}
-
-// UpdateK8sActualSource is the resolver for the updateK8sActualSource field.
-func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID model.K8sSourceID, patchSourceRequest model.PatchSourceRequestInput) (bool, error) {
-	ns := sourceID.Namespace
-	kind := string(sourceID.Kind)
-	name := sourceID.Name
-
-	request := patchSourceRequest
-
-	// Handle ReportedName update
-	if request.ReportedName != nil {
-		if err := services.UpdateReportedName(ctx, ns, kind, name, *request.ReportedName); err != nil {
-			return false, err
-		}
-	}
-
-	return true, nil
 }
 
 // UpdateDestination is the resolver for the updateDestination field.
@@ -560,6 +581,42 @@ func (r *mutationResolver) DeleteDestination(ctx context.Context, id string) (bo
 	}
 
 	return true, nil
+}
+
+// TestConnectionForDestination is the resolver for the testConnectionForDestination field.
+func (r *mutationResolver) TestConnectionForDestination(ctx context.Context, destination model.DestinationInput) (*model.TestConnectionResponse, error) {
+	destType := common.DestinationType(destination.Type)
+
+	destConfig, err := services.GetDestinationTypeConfig(destType)
+	if err != nil {
+		return nil, err
+	}
+
+	if !destConfig.Spec.TestConnectionSupported {
+		return nil, fmt.Errorf("destination type %s does not support test connection", destination.Type)
+	}
+
+	configurer, err := testconnection.ConvertDestinationToConfigurer(destination)
+	if err != nil {
+		return nil, err
+	}
+
+	res := testconnection.TestConnection(ctx, configurer)
+	if !res.Succeeded {
+		return &model.TestConnectionResponse{
+			Succeeded:       false,
+			StatusCode:      res.StatusCode,
+			DestinationType: (*string)(&res.DestinationType),
+			Message:         &res.Message,
+			Reason:          (*string)(&res.Reason),
+		}, nil
+	}
+
+	return &model.TestConnectionResponse{
+		Succeeded:       true,
+		StatusCode:      200,
+		DestinationType: (*string)(&res.DestinationType),
+	}, nil
 }
 
 // CreateAction is the resolver for the createAction field.

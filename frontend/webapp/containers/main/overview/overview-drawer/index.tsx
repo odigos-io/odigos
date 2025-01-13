@@ -41,7 +41,7 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, 
   const { addNotification } = useNotificationStore();
   const { selectedItem, setSelectedItem } = useDrawerStore();
 
-  useKeyDown({ key: 'Enter', active: !!selectedItem }, () => (isEdit ? clickSave() : closeDrawer()));
+  useKeyDown({ key: 'Enter', active: !!selectedItem?.item }, () => (isEdit ? clickSave() : closeDrawer()));
 
   const { sources } = useSourceCRUD();
   const { destinations } = useDestinationCRUD();

@@ -1,29 +1,36 @@
+import { NOTIFICATION_TYPE } from '@/types';
 import { create } from 'zustand';
 
-interface StoreStateValues {
-  connecting: boolean;
-  active: boolean;
+interface StateValues {
   title: string;
   message: string;
 }
 
-interface StoreStateSetters {
-  setConnectionStore: (state: StoreStateValues) => void;
-  setConnecting: (bool: boolean) => void;
-  setActive: (bool: boolean) => void;
-  setTitle: (str: string) => void;
-  setMessage: (str: string) => void;
+interface SseStateValues extends StateValues {
+  sseConnecting: boolean;
+  sseStatus: NOTIFICATION_TYPE;
 }
 
-export const useConnectionStore = create<StoreStateValues & StoreStateSetters>((set) => ({
-  connecting: true,
-  active: false,
+interface TokenStateValues extends StateValues {
+  tokenExpired: boolean;
+  tokenExpiring: boolean;
+}
+
+interface StoreStateSetters {
+  setSseStatus: (state: SseStateValues) => void;
+  setTokenStatus: (state: TokenStateValues) => void;
+}
+
+export const useConnectionStore = create<SseStateValues & TokenStateValues & StoreStateSetters>((set) => ({
   title: '',
   message: '',
 
-  setConnectionStore: (state) => set(state),
-  setConnecting: (bool) => set({ connecting: bool }),
-  setActive: (bool) => set({ active: bool }),
-  setTitle: (str) => set({ title: str }),
-  setMessage: (str) => set({ message: str }),
+  sseConnecting: true,
+  sseStatus: NOTIFICATION_TYPE.DEFAULT,
+
+  tokenExpired: false,
+  tokenExpiring: false,
+
+  setSseStatus: (state) => set(state),
+  setTokenStatus: (state) => set(state),
 }));

@@ -1,4 +1,5 @@
-import React, { type KeyboardEventHandler, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { isEmpty } from '@/utils';
 import styled from 'styled-components';
 import { PlusIcon, TrashIcon } from '@/assets';
 import { Button, FieldError, FieldLabel, Input, Text } from '@/reuseable-components';
@@ -104,8 +105,9 @@ const InputList: React.FC<InputListProps> = ({ initialValues = [], value, onChan
   };
 
   // Check if any input field is empty
+  const isMinRows = rows.length <= 1;
   const isAddButtonDisabled = rows.some((input) => input.trim() === '');
-  const isDelButtonDisabled = rows.length <= 1;
+  const isDelButtonDisabled = isMinRows && isAddButtonDisabled;
 
   return (
     <Container>
@@ -114,8 +116,17 @@ const InputList: React.FC<InputListProps> = ({ initialValues = [], value, onChan
       <ListContainer>
         {rows.map((val, idx) => (
           <RowWrapper key={`input-list-${idx}`}>
-            <Input value={val} onChange={(e) => handleInputChange(e.target.value, idx)} hasError={!!errorMessage} autoFocus={!val && rows.length > 1 && idx === rows.length - 1} />
-            <DeleteButton disabled={isDelButtonDisabled} onClick={() => handleDeleteInput(idx)}>
+            <Input value={val} onChange={(e) => handleInputChange(e.target.value, idx)} hasError={!!errorMessage} autoFocus={isEmpty(val) && !isMinRows && idx === rows.length - 1} />
+            <DeleteButton
+              disabled={isDelButtonDisabled}
+              onClick={() => {
+                if (isMinRows) {
+                  handleInputChange('', idx);
+                } else {
+                  handleDeleteInput(idx);
+                }
+              }}
+            >
               <TrashIcon />
             </DeleteButton>
           </RowWrapper>

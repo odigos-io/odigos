@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"strings"
 
-	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/k8sutils/pkg/describe/source"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+
+	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/k8sutils/pkg/describe/source"
 )
 
 func printWorkloadManifestInfo(analyze *source.SourceAnalyze, sb *strings.Builder) {
@@ -32,14 +33,15 @@ func printRuntimeDetails(analyze *source.SourceAnalyze, sb *strings.Builder) {
 	}
 
 	describeText(sb, 1, "Detected Containers:")
-	for _, container := range analyze.RuntimeInfo.Containers {
+	for i := range analyze.RuntimeInfo.Containers {
+		container := analyze.RuntimeInfo.Containers[i]
 		printProperty(sb, 2, &container.ContainerName)
 		printProperty(sb, 3, &container.Language)
 		printProperty(sb, 3, &container.RuntimeVersion)
 		if len(container.EnvVars) > 0 {
 			describeText(sb, 3, "Relevant Environment Variables:")
 			for _, envVar := range container.EnvVars {
-				describeText(sb, 4, fmt.Sprintf("%s: %s", envVar.Name, envVar.Value))
+				describeText(sb, 4, "%s", fmt.Sprintf("%s: %s", envVar.Name, envVar.Value))
 			}
 		}
 	}
@@ -51,7 +53,8 @@ func printInstrumentationConfigInfo(analyze *source.SourceAnalyze, sb *strings.B
 	printProperty(sb, 1, analyze.InstrumentationConfig.CreateTime)
 
 	describeText(sb, 1, "Detected Containers:")
-	for _, container := range analyze.InstrumentationConfig.Containers {
+	for i := range analyze.InstrumentationConfig.Containers {
+		container := analyze.InstrumentationConfig.Containers[i]
 		printProperty(sb, 2, &container.ContainerName)
 		printProperty(sb, 3, &container.Language)
 		printProperty(sb, 3, &container.RuntimeVersion)
@@ -59,24 +62,24 @@ func printInstrumentationConfigInfo(analyze *source.SourceAnalyze, sb *strings.B
 		if len(container.EnvVars) > 0 {
 			describeText(sb, 3, "Relevant Environment Variables:")
 			for _, envVar := range container.EnvVars {
-				describeText(sb, 4, fmt.Sprintf("%s: %s", envVar.Name, envVar.Value))
+				describeText(sb, 4, "%s", fmt.Sprintf("%s: %s", envVar.Name, envVar.Value))
 			}
 		}
 		if len(container.ContainerRuntimeEnvs) > 0 {
 			describeText(sb, 3, "Relevant Container Runtime Environment Variables:")
 			for _, containerRuntimeEnvVar := range container.ContainerRuntimeEnvs {
-				describeText(sb, 4, fmt.Sprintf("%s: %s", containerRuntimeEnvVar.Name, containerRuntimeEnvVar.Value))
+				describeText(sb, 4, "%s", fmt.Sprintf("%s: %s", containerRuntimeEnvVar.Name, containerRuntimeEnvVar.Value))
 			}
 		}
 	}
 }
 
 func printAppliedInstrumentationDeviceInfo(analyze *source.SourceAnalyze, sb *strings.Builder) {
-
 	describeText(sb, 0, "\nInstrumentation Device:")
 	printProperty(sb, 1, &analyze.InstrumentationDevice.StatusText)
 	describeText(sb, 1, "Containers:")
-	for _, container := range analyze.InstrumentationDevice.Containers {
+	for i := range analyze.InstrumentationDevice.Containers {
+		container := analyze.InstrumentationDevice.Containers[i]
 		printProperty(sb, 2, &container.ContainerName)
 		printProperty(sb, 3, &container.Devices)
 		if len(container.OriginalEnv) > 0 {
@@ -89,16 +92,17 @@ func printAppliedInstrumentationDeviceInfo(analyze *source.SourceAnalyze, sb *st
 }
 
 func printPodsInfo(analyze *source.SourceAnalyze, sb *strings.Builder) {
-
 	describeText(sb, 0, "\nPods (Total %d, %s):", analyze.TotalPods, analyze.PodsPhasesCount)
 
-	for _, pod := range analyze.Pods {
+	for i := range analyze.Pods {
+		pod := analyze.Pods[i]
 		describeText(sb, 0, "")
 		printProperty(sb, 1, &pod.PodName)
 		printProperty(sb, 1, &pod.NodeName)
 		printProperty(sb, 1, &pod.Phase)
 		describeText(sb, 1, "Containers:")
-		for _, container := range pod.Containers {
+		for i := range pod.Containers {
+			container := pod.Containers[i]
 			printProperty(sb, 2, &container.ContainerName)
 			printProperty(sb, 3, &container.ActualDevices)
 			describeText(sb, 3, "")
@@ -129,7 +133,8 @@ func DescribeSourceToText(analyze *source.SourceAnalyze) string {
 	return sb.String()
 }
 
-func DescribeSource(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, workloadObj *source.K8sSourceObject) (*source.SourceAnalyze, error) {
+func DescribeSource(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface,
+	workloadObj *source.K8sSourceObject) (*source.SourceAnalyze, error) {
 	resources, err := source.GetRelevantSourceResources(ctx, kubeClient, odigosClient, workloadObj)
 	if err != nil {
 		return nil, err
@@ -138,7 +143,8 @@ func DescribeSource(ctx context.Context, kubeClient kubernetes.Interface, odigos
 	return analyze, nil
 }
 
-func DescribeDeployment(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, ns string, name string) (*source.SourceAnalyze, error) {
+func DescribeDeployment(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface,
+	ns string, name string) (*source.SourceAnalyze, error) {
 	deployment, err := kubeClient.AppsV1().Deployments(ns).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
@@ -152,7 +158,8 @@ func DescribeDeployment(ctx context.Context, kubeClient kubernetes.Interface, od
 	return DescribeSource(ctx, kubeClient, odigosClient, workloadObj)
 }
 
-func DescribeDaemonSet(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, ns string, name string) (*source.SourceAnalyze, error) {
+func DescribeDaemonSet(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface,
+	ns string, name string) (*source.SourceAnalyze, error) {
 	ds, err := kubeClient.AppsV1().DaemonSets(ns).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
@@ -166,7 +173,8 @@ func DescribeDaemonSet(ctx context.Context, kubeClient kubernetes.Interface, odi
 	return DescribeSource(ctx, kubeClient, odigosClient, workloadObj)
 }
 
-func DescribeStatefulSet(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface, ns string, name string) (*source.SourceAnalyze, error) {
+func DescribeStatefulSet(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface,
+	ns string, name string) (*source.SourceAnalyze, error) {
 	ss, err := kubeClient.AppsV1().StatefulSets(ns).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err

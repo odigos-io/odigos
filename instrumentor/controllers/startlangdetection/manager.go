@@ -65,19 +65,6 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
-		Named("startlangdetection-configmaps").
-		For(&corev1.ConfigMap{}).
-		WithEventFilter(predicate.And(odigospredicate.OdigosConfigMapPredicate, odigospredicate.ConfigMapDataChangedPredicate{})).
-		Complete(&OdigosConfigReconciler{
-			Client: mgr.GetClient(),
-			Scheme: mgr.GetScheme(),
-		})
-	if err != nil {
-		return err
-	}
-
-	err = builder.
-		ControllerManagedBy(mgr).
 		Named("startlangdetection-source").
 		For(&v1alpha1.Source{}).
 		WithEventFilter(predicate.Or(&odigospredicate.CreationPredicate{}, &odigospredicate.OnlyUpdatesPredicate{})).

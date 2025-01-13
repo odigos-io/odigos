@@ -1,6 +1,6 @@
 import React from 'react';
 import type { DynamicField } from '@/types';
-import { compareCondition, INPUT_TYPES } from '@/utils';
+import { compareCondition, INPUT_TYPES, safeJsonParse } from '@/utils';
 import { Dropdown, Input, TextArea, InputList, KeyValueInputsList, Checkbox } from '@/reuseable-components';
 
 interface Props {
@@ -31,9 +31,25 @@ export const DestinationDynamicFields: React.FC<Props> = ({ fields, onChange, fo
           />
         );
       case INPUT_TYPES.MULTI_INPUT:
-        return <InputList key={field.name} {...rest} onChange={(value: string[]) => onChange(field.name, JSON.stringify(value))} errorMessage={formErrors[field.name]} />;
+        return (
+          <InputList
+            key={field.name}
+            {...rest}
+            value={typeof rest.value === 'string' ? safeJsonParse(rest.value, []) : rest.value}
+            onChange={(value) => onChange(field.name, JSON.stringify(value))}
+            errorMessage={formErrors[field.name]}
+          />
+        );
       case INPUT_TYPES.KEY_VALUE_PAIR:
-        return <KeyValueInputsList key={field.name} {...rest} onChange={(value) => onChange(field.name, JSON.stringify(value))} errorMessage={formErrors[field.name]} />;
+        return (
+          <KeyValueInputsList
+            key={field.name}
+            {...rest}
+            value={typeof rest.value === 'string' ? safeJsonParse(rest.value, []) : rest.value}
+            onChange={(value) => onChange(field.name, JSON.stringify(value))}
+            errorMessage={formErrors[field.name]}
+          />
+        );
       case INPUT_TYPES.TEXTAREA:
         return <TextArea key={field.name} {...rest} onChange={(e) => onChange(field.name, e.target.value)} errorMessage={formErrors[field.name]} />;
       case INPUT_TYPES.CHECKBOX:
