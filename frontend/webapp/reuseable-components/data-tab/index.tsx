@@ -1,8 +1,8 @@
-import React, { Fragment, useCallback, useState } from 'react';
+import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { SVG } from '@/assets';
 import { FlexColumn, FlexRow } from '@/styles';
 import styled, { css } from 'styled-components';
-import { ActiveStatus, Divider, ExtendIcon, IconButton, IconWrapped, MonitorsIcons, Text } from '@/reuseable-components';
+import { ActiveStatus, Divider, ExtendIcon, IconButton, IconWrapped, MonitorsIcons, Text, Tooltip } from '@/reuseable-components';
 
 interface Props {
   title: string;
@@ -20,6 +20,8 @@ interface Props {
   renderActions?: () => React.ReactNode;
   onClick?: () => void;
 }
+
+const MAX_TITLE_WIDTH = 160;
 
 const ControlledVisibility = styled.div`
   visibility: hidden;
@@ -54,11 +56,16 @@ const Container = styled.div<{ $withClick: boolean; $isError: Props['isError'] }
 `;
 
 const Title = styled(Text)`
-  max-width: 150px;
+  max-width: ${MAX_TITLE_WIDTH}px;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
   font-size: 14px;
+  &::after {
+    // This is to prevent the browser "default tooltip" from appearing when the title is too long
+    content: '';
+    display: block;
+  }
 `;
 
 const SubTitleWrapper = styled.div`
@@ -101,6 +108,20 @@ export const DataTab: React.FC<Props> = ({
   ...props
 }) => {
   const [extend, setExtend] = useState(isExtended || false);
+  const [isTitleOverflowed, setIsTitleOverflowed] = useState(false);
+  const titleRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const { current } = titleRef;
+
+    if (current) {
+      const { clientWidth } = current;
+      const marginUp = MAX_TITLE_WIDTH * 1.05; // add 5%
+      const marginDown = MAX_TITLE_WIDTH * 0.95; // subtract 5%
+
+      setIsTitleOverflowed(clientWidth < marginUp && clientWidth > marginDown);
+    }
+  }, [title]);
 
   const renderMonitors = useCallback(
     (withSeperator: boolean) => {
@@ -136,7 +157,13 @@ export const DataTab: React.FC<Props> = ({
         <IconWrapped icon={icon} src={iconSrc} isError={isError} />
 
         <FlexColumn $gap={4}>
-          <Title>{title}</Title>
+          {isTitleOverflowed ? (
+            <Tooltip text={title} withIcon={false}>
+              <Title ref={titleRef}>{title}</Title>
+            </Tooltip>
+          ) : (
+            <Title ref={titleRef}>{title}</Title>
+          )}
           <SubTitleWrapper>
             {subTitle && <SubTitle>{subTitle}</SubTitle>}
             {renderMonitors(!!subTitle)}
