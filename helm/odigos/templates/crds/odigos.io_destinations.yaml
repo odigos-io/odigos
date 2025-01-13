@@ -78,20 +78,10 @@ spec:
                   If not specified, defaults to "all".
                 properties:
                   groups:
-                    description: Groups specifies the groups for "groups" mode.
-                    items:
-                      type: string
-                    type: array
-                  modes:
-                    description: |-
-                      Modes can contain a combination of "all", "namespaces", or "groups".
-                      Determines how sources are selected for this destination.
                     items:
                       type: string
                     type: array
                   namespaces:
-                    description: Namespaces specifies the namespaces for "namespaces"
-                      mode.
                     items:
                       type: string
                     type: array

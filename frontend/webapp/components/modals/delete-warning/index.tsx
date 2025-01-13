@@ -26,7 +26,7 @@ const DeleteWarning: React.FC<Props> = ({ isOpen, noOverlay, name, type, isLastI
           ? {
               type: NOTIFICATION_TYPE.WARNING,
               title: `You're about to ${actionText} the last ${type}`,
-              message: 'This will break your pipeline!',
+              message: '',
             }
           : undefined
       }

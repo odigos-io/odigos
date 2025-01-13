@@ -20,7 +20,6 @@ package v1alpha1
 // SourceSelectorApplyConfiguration represents a declarative configuration of the SourceSelector type for use
 // with apply.
 type SourceSelectorApplyConfiguration struct {
-	Modes      []string `json:"modes,omitempty"`
 	Namespaces []string `json:"namespaces,omitempty"`
 	Groups     []string `json:"groups,omitempty"`
 }
@@ -29,16 +28,6 @@ type SourceSelectorApplyConfiguration struct {
 // apply.
 func SourceSelector() *SourceSelectorApplyConfiguration {
 	return &SourceSelectorApplyConfiguration{}
-}
-
-// WithModes adds the given value to the Modes field in the declarative configuration
-// and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the Modes field.
-func (b *SourceSelectorApplyConfiguration) WithModes(values ...string) *SourceSelectorApplyConfiguration {
-	for i := range values {
-		b.Modes = append(b.Modes, values[i])
-	}
-	return b
 }
 
 // WithNamespaces adds the given value to the Namespaces field in the declarative configuration
