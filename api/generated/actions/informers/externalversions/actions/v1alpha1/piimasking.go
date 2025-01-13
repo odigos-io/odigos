@@ -18,13 +18,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	actionsv1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
+	apiactionsv1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	versioned "github.com/odigos-io/odigos/api/generated/actions/clientset/versioned"
 	internalinterfaces "github.com/odigos-io/odigos/api/generated/actions/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/odigos-io/odigos/api/generated/actions/listers/actions/v1alpha1"
+	actionsv1alpha1 "github.com/odigos-io/odigos/api/generated/actions/listers/actions/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -35,7 +35,7 @@ import (
 // PiiMaskings.
 type PiiMaskingInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.PiiMaskingLister
+	Lister() actionsv1alpha1.PiiMaskingLister
 }
 
 type piiMaskingInformer struct {
@@ -70,7 +70,7 @@ func NewFilteredPiiMaskingInformer(client versioned.Interface, namespace string,
 				return client.ActionsV1alpha1().PiiMaskings(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&actionsv1alpha1.PiiMasking{},
+		&apiactionsv1alpha1.PiiMasking{},
 		resyncPeriod,
 		indexers,
 	)
@@ -81,9 +81,9 @@ func (f *piiMaskingInformer) defaultInformer(client versioned.Interface, resyncP
 }
 
 func (f *piiMaskingInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&actionsv1alpha1.PiiMasking{}, f.defaultInformer)
+	return f.factory.InformerFor(&apiactionsv1alpha1.PiiMasking{}, f.defaultInformer)
 }
 
-func (f *piiMaskingInformer) Lister() v1alpha1.PiiMaskingLister {
-	return v1alpha1.NewPiiMaskingLister(f.Informer().GetIndexer())
+func (f *piiMaskingInformer) Lister() actionsv1alpha1.PiiMaskingLister {
+	return actionsv1alpha1.NewPiiMaskingLister(f.Informer().GetIndexer())
 }

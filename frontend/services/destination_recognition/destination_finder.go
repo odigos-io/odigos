@@ -27,7 +27,7 @@ func GetAllPotentialDestinationDetails(ctx context.Context, namespaces []k8s.Nam
 	var destinationDetails []DestinationDetails
 
 	for _, ns := range namespaces {
-		err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.CoreV1().Services(ns.Name).List, ctx, metav1.ListOptions{},
+		err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.CoreV1().Services(ns.Name).List, ctx, &metav1.ListOptions{},
 			func(svc *k8s.ServiceList) error {
 				for _, service := range svc.Items {
 					df := getDestinationFinder(service.Name)

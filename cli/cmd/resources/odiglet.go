@@ -71,7 +71,7 @@ func NewOdigletRole(ns string) *rbacv1.Role {
 			{ // Needed to read the odigos_config for ignored containers
 				APIGroups:     []string{""},
 				Resources:     []string{"configmaps"},
-				ResourceNames: []string{consts.OdigosConfigurationName},
+				ResourceNames: []string{consts.OdigosEffectiveConfigName},
 				Verbs:         []string{"get", "list", "watch"},
 			},
 		},
@@ -133,12 +133,6 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 				// TODO: remove this once Tamir/PR is read for new language detection
 				APIGroups: []string{"apps"},
 				Resources: []string{"deployments/status", "daemonsets/status", "statefulsets/status"},
-				Verbs:     []string{"get"},
-			},
-			{ // Needed for language detection
-				// TODO: remove this once Tamir/PR is read for new language detection
-				APIGroups: []string{"apps"},
-				Resources: []string{"replicasets"},
 				Verbs:     []string{"get"},
 			},
 			{ // Needed for virtual device registration
