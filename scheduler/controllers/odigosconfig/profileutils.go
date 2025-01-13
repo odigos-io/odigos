@@ -10,6 +10,11 @@ import (
 	"github.com/odigos-io/odigos/profiles/profile"
 )
 
+var supportedKindToResource = map[string]string{
+	"Processor":           "processors",
+	"InstrumentationRule": "instrumentationrules",
+}
+
 // when applying the manifests, we need to mark the new resources so we know to cleanup
 // previous resources which are not relevant after the new profiles are applied.
 // this hash is used to mark the resources.

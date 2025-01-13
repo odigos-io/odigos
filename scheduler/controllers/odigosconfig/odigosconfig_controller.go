@@ -2,7 +2,7 @@ package odigosconfig
 
 import (
 	"context"
-	"strings"
+	"fmt"
 
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -210,10 +210,14 @@ func (r *odigosConfigController) applySingleProfileManifest(ctx context.Context,
 	obj.SetAnnotations(annotations)
 
 	gvk := obj.GroupVersionKind()
+	resource, found := supportedKindToResource[gvk.Kind]
+	if !found {
+		return fmt.Errorf("unsupported kind for profile manifest %s", gvk.Kind)
+	}
 	gvr := schema.GroupVersionResource{
 		Group:    gvk.Group,
 		Version:  gvk.Version,
-		Resource: strings.ToLower(gvk.Kind) + "s", // TODO: this is a hack, might not always work
+		Resource: resource,
 	}
 
 	resourceClient := r.DynamicClient.Resource(gvr).Namespace(env.GetCurrentNamespace())
