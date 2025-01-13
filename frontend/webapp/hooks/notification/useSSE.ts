@@ -32,9 +32,8 @@ export const useSSE = () => {
 
         addNotification(notification);
 
-        if (notification.crdType === 'InstrumentationConfig') {
-          // We handle update in CRUD hook, refetch only on create
-          if (['Added', 'Deleted'].includes(notification.title || '')) fetchSources(true);
+        if (['InstrumentationConfig', 'InstrumentationInstance'].includes(notification.crdType || '')) {
+          fetchSources(true);
         } else {
           refetchComputePlatform();
         }
