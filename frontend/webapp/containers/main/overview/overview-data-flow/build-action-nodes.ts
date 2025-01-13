@@ -2,11 +2,11 @@ import { type Node } from '@xyflow/react';
 import nodeConfig from './node-config.json';
 import { type NodePositions } from './get-node-positions';
 import { getActionIcon, getEntityIcon, getEntityLabel } from '@/utils';
-import { NODE_TYPES, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type ComputePlatformMapped } from '@/types';
+import { type ActionDataParsed, NODE_TYPES, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES } from '@/types';
 
 interface Params {
   loading: boolean;
-  entities: ComputePlatformMapped['computePlatform']['actions'];
+  entities: ActionDataParsed[];
   positions: NodePositions;
   unfilteredCount: number;
 }

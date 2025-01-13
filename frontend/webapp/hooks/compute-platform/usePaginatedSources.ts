@@ -23,7 +23,7 @@ export const usePaginatedSources = () => {
     setSourcesFetching(true);
     const { data } = await getSources({ variables: { nextPage } });
 
-    if (!!data?.computePlatform.sources) {
+    if (!!data?.computePlatform?.sources) {
       const { nextPage, items } = data.computePlatform.sources;
 
       addSources(items);

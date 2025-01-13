@@ -41,6 +41,18 @@ export const useSourceCRUD = (params?: Params) => {
     params?.onSuccess?.(actionType);
   };
 
+  const filtered = useMemo(() => {
+    let arr = [...sources];
+
+    if (!!filters.namespace) arr = arr.filter((source) => filters.namespace?.id === source.namespace);
+    if (!!filters.types.length) arr = arr.filter((source) => !!filters.types.find((type) => type.id === source.kind));
+    if (!!filters.onlyErrors) arr = arr.filter((source) => !!source.conditions?.find((cond) => cond.status === BACKEND_BOOLEAN.FALSE));
+    if (!!filters.errors.length) arr = arr.filter((source) => !!filters.errors.find((error) => !!source.conditions?.find((cond) => cond.message === error.id)));
+    if (!!filters.languages.length) arr = arr.filter((source) => !!filters.languages.find((language) => !!source.containers?.find((cont) => cont.language === language.id)));
+
+    return arr;
+  }, [sources, filters]);
+
   const [persistSources, cdState] = useMutation<{ persistK8sSources: boolean }>(PERSIST_SOURCE, {
     onError: (error) => handleError('', error.message),
     onCompleted: (res, req) => {
@@ -79,18 +91,6 @@ export const useSourceCRUD = (params?: Params) => {
       }, 2000);
     },
   });
-
-  const filtered = useMemo(() => {
-    let arr = [...sources];
-
-    if (!!filters.namespace) arr = arr.filter((source) => filters.namespace?.id === source.namespace);
-    if (!!filters.types.length) arr = arr.filter((source) => !!filters.types.find((type) => type.id === source.kind));
-    if (!!filters.onlyErrors) arr = arr.filter((source) => !!source.conditions?.find((cond) => cond.status === BACKEND_BOOLEAN.FALSE));
-    if (!!filters.errors.length) arr = arr.filter((source) => !!filters.errors.find((error) => !!source.conditions?.find((cond) => cond.message === error.id)));
-    if (!!filters.languages.length) arr = arr.filter((source) => !!filters.languages.find((language) => !!source.containers?.find((cont) => cont.language === language.id)));
-
-    return arr;
-  }, [sources, filters]);
 
   return {
     loading: cdState.loading || uState.loading,

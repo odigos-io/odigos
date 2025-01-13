@@ -2,11 +2,11 @@ import { type Node } from '@xyflow/react';
 import nodeConfig from './node-config.json';
 import { type NodePositions } from './get-node-positions';
 import { extractMonitors, getEntityIcon, getEntityLabel, getHealthStatus } from '@/utils';
-import { NODE_TYPES, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type ComputePlatformMapped } from '@/types';
+import { type ActualDestination, NODE_TYPES, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES } from '@/types';
 
 interface Params {
   loading: boolean;
-  entities: ComputePlatformMapped['computePlatform']['destinations'];
+  entities: ActualDestination[];
   positions: NodePositions;
   unfilteredCount: number;
 }
