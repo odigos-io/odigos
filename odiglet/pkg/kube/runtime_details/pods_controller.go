@@ -58,7 +58,7 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request reconcile.Reques
 
 	odigosConfig, err := k8sutils.GetCurrentOdigosConfig(ctx, p.Client)
 	if err != nil {
-		return reconcile.Result{}, err
+		return k8sutils.K8SNoEffectiveConfigErrorHandler(err)
 	}
 
 	// Perform runtime inspection once we know the pod is newer that the latest runtime inspection performed and saved.
