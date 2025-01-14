@@ -270,7 +270,7 @@ func (s *SourcesValidator) validateSourceUniqueness(ctx context.Context, source 
 		consts.WorkloadNamespaceLabel: source.Labels[consts.WorkloadNamespaceLabel],
 		consts.WorkloadKindLabel:      source.Labels[consts.WorkloadKindLabel],
 	})
-	err := s.Client.List(ctx, sourceList, &client.ListOptions{LabelSelector: selector})
+	err := s.Client.List(ctx, sourceList, &client.ListOptions{LabelSelector: selector}, client.InNamespace(source.GetNamespace()))
 	if err != nil {
 		return err
 	}
@@ -279,7 +279,7 @@ func (s *SourcesValidator) validateSourceUniqueness(ctx context.Context, source 
 		// In theory, there should only ever be at most 1 duplicate. But loop through all to be thorough
 		for _, dupe := range sourceList.Items {
 			// during an update, this source will show up as existing already
-			if dupe.GetName() != source.GetName() || dupe.GetNamespace() != source.GetNamespace() {
+			if dupe.GetName() != source.GetName() {
 				duplicates = append(duplicates, dupe.GetName())
 			}
 		}

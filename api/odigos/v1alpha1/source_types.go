@@ -87,14 +87,19 @@ func GetSources(ctx context.Context, kubeClient client.Client, obj client.Object
 	var err error
 	workloadSources := &WorkloadSources{}
 
+	namespace := obj.GetNamespace()
+	if len(namespace) == 0 && obj.GetObjectKind().GroupVersionKind().Kind == "Namespace" {
+		namespace = obj.GetName()
+	}
+
 	if obj.GetObjectKind().GroupVersionKind().Kind != "Namespace" {
 		sourceList := SourceList{}
 		selector := labels.SelectorFromSet(labels.Set{
 			consts.WorkloadNameLabel:      obj.GetName(),
-			consts.WorkloadNamespaceLabel: obj.GetNamespace(),
+			consts.WorkloadNamespaceLabel: namespace,
 			consts.WorkloadKindLabel:      obj.GetObjectKind().GroupVersionKind().Kind,
 		})
-		err := kubeClient.List(ctx, &sourceList, &client.ListOptions{LabelSelector: selector}, client.InNamespace(obj.GetNamespace()))
+		err := kubeClient.List(ctx, &sourceList, &client.ListOptions{LabelSelector: selector}, client.InNamespace(namespace))
 		if err != nil {
 			return nil, err
 		}
@@ -108,11 +113,11 @@ func GetSources(ctx context.Context, kubeClient client.Client, obj client.Object
 
 	namespaceSourceList := SourceList{}
 	namespaceSelector := labels.SelectorFromSet(labels.Set{
-		consts.WorkloadNameLabel:      obj.GetNamespace(),
-		consts.WorkloadNamespaceLabel: obj.GetNamespace(),
+		consts.WorkloadNameLabel:      namespace,
+		consts.WorkloadNamespaceLabel: namespace,
 		consts.WorkloadKindLabel:      "Namespace",
 	})
-	err = kubeClient.List(ctx, &namespaceSourceList, &client.ListOptions{LabelSelector: namespaceSelector}, client.InNamespace(obj.GetNamespace()))
+	err = kubeClient.List(ctx, &namespaceSourceList, &client.ListOptions{LabelSelector: namespaceSelector}, client.InNamespace(namespace))
 	if err != nil {
 		return nil, err
 	}
