@@ -20,6 +20,8 @@ var _ = Describe("DeleteInstrumentationConfig Namespace controller", func() {
 	var daemonSet *appsv1.DaemonSet
 	var statefulSet *appsv1.StatefulSet
 
+	var sourceDeployment, sourceDaemonSet, sourceStatefulSet *odigosv1.Source
+
 	var instrumentationConfigDeployment *odigosv1.InstrumentationConfig
 	var instrumentationConfigDaemonSet *odigosv1.InstrumentationConfig
 	var instrumentationConfigStatefulSet *odigosv1.InstrumentationConfig
@@ -80,6 +82,13 @@ var _ = Describe("DeleteInstrumentationConfig Namespace controller", func() {
 				Expect(k8sClient.Create(ctx, daemonSet)).Should(Succeed())
 				statefulSet = testutil.SetOdigosInstrumentationEnabled(testutil.NewMockTestStatefulSet(namespace))
 				Expect(k8sClient.Create(ctx, statefulSet)).Should(Succeed())
+
+				sourceDeployment = testutil.NewMockSource(deployment)
+				Expect(k8sClient.Create(ctx, sourceDeployment)).Should(Succeed())
+				sourceDaemonSet = testutil.NewMockSource(daemonSet)
+				Expect(k8sClient.Create(ctx, sourceDaemonSet)).Should(Succeed())
+				sourceStatefulSet = testutil.NewMockSource(statefulSet)
+				Expect(k8sClient.Create(ctx, sourceStatefulSet)).Should(Succeed())
 
 				// these workloads has instrumentation application because the namespace has instrumentation enabled
 				instrumentationConfigDeployment = testutil.NewMockInstrumentationConfig(deployment)

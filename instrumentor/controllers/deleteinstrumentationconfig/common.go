@@ -3,35 +3,29 @@ package deleteinstrumentationconfig
 import (
 	"context"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common/consts"
+	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
 func reconcileWorkloadObject(ctx context.Context, kubeClient client.Client, workloadObject client.Object) error {
 	logger := log.FromContext(ctx)
-	instEffectiveEnabled, err := workload.IsWorkloadInstrumentationEffectiveEnabled(ctx, kubeClient, workloadObject)
-	if err != nil {
-		logger.Error(err, "error checking if instrumentation is effective")
+
+	if err := sourceutils.MigrateInstrumentationLabelToDisabledSource(ctx, kubeClient, workloadObject, workload.WorkloadKindFromClientObject(workloadObject)); err != nil {
 		return err
 	}
 
-	if instEffectiveEnabled {
-		return nil
-	}
-
-	// Check if a Source object exists for this workload
-	sourceList, err := odigosv1.GetSources(ctx, kubeClient, workloadObject)
+	instrumented, err := sourceutils.IsObjectInstrumentedBySource(ctx, kubeClient, workloadObject)
 	if err != nil {
 		return err
 	}
-	if sourceList.Workload != nil || sourceList.Namespace != nil {
-		// Note that if a Source is being deleted, but still has the finalizer, it will still show up in this List
-		// So we can't use this check to trigger un-instrumentation via Source deletion
+	if instrumented {
 		return nil
 	}
 

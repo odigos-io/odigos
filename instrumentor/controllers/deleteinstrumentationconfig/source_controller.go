@@ -26,6 +26,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
 	appsv1 "k8s.io/api/apps/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -60,13 +61,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			"terminating", k8sutils.IsTerminating(source))
 
 		if source.Spec.Workload.Kind == "Namespace" {
-			for _, kind := range []workload.WorkloadKind{
-				workload.WorkloadKindDaemonSet,
-				workload.WorkloadKindDeployment,
-				workload.WorkloadKindStatefulSet,
-			} {
-				err = errors.Join(err, r.listAndSyncWorkloadList(ctx, req, kind))
-			}
+			err = errors.Join(err, syncNamespaceWorkloads(ctx, r.Client, req))
 		} else {
 			// This is a Source for a specific workload, not an entire namespace
 			err = errors.Join(err, r.syncWorkload(ctx, source))
@@ -107,14 +102,27 @@ func (r *SourceReconciler) syncWorkload(ctx context.Context, source *v1alpha1.So
 	return err
 }
 
-func (r *SourceReconciler) listAndSyncWorkloadList(ctx context.Context,
+func syncNamespaceWorkloads(ctx context.Context, k8sClient client.Client, req ctrl.Request) error {
+	var err error
+	for _, kind := range []workload.WorkloadKind{
+		workload.WorkloadKindDaemonSet,
+		workload.WorkloadKindDeployment,
+		workload.WorkloadKindStatefulSet,
+	} {
+		err = errors.Join(err, listAndSyncWorkloadList(ctx, k8sClient, req, kind))
+	}
+	return err
+}
+
+func listAndSyncWorkloadList(ctx context.Context,
+	k8sClient client.Client,
 	req ctrl.Request,
 	kind workload.WorkloadKind) error {
 	logger := log.FromContext(ctx)
 	logger.V(2).Info("Uninstrumenting workloads for Namespace Source", "name", req.Name, "namespace", req.Namespace, "kind", kind)
 
 	workloads := workload.ClientListObjectFromWorkloadKind(kind)
-	err := r.Client.List(ctx, workloads, client.InNamespace(req.Name))
+	err := k8sClient.List(ctx, workloads, client.InNamespace(req.Name))
 	if client.IgnoreNotFound(err) != nil {
 		return err
 	}
@@ -122,21 +130,21 @@ func (r *SourceReconciler) listAndSyncWorkloadList(ctx context.Context,
 	switch obj := workloads.(type) {
 	case *appsv1.DeploymentList:
 		for _, dep := range obj.Items {
-			err = r.syncWorkloadList(ctx, kind, client.ObjectKey{Namespace: dep.Namespace, Name: dep.Name})
+			err = syncGenericWorkloadListToNs(ctx, k8sClient, kind, client.ObjectKey{Namespace: dep.Namespace, Name: dep.Name})
 			if err != nil {
 				return err
 			}
 		}
 	case *appsv1.DaemonSetList:
 		for _, dep := range obj.Items {
-			err = r.syncWorkloadList(ctx, kind, client.ObjectKey{Namespace: dep.Namespace, Name: dep.Name})
+			err = syncGenericWorkloadListToNs(ctx, k8sClient, kind, client.ObjectKey{Namespace: dep.Namespace, Name: dep.Name})
 			if err != nil {
 				return err
 			}
 		}
 	case *appsv1.StatefulSetList:
 		for _, dep := range obj.Items {
-			err = r.syncWorkloadList(ctx, kind, client.ObjectKey{Namespace: dep.Namespace, Name: dep.Name})
+			err = syncGenericWorkloadListToNs(ctx, k8sClient, kind, client.ObjectKey{Namespace: dep.Namespace, Name: dep.Name})
 			if err != nil {
 				return err
 			}
@@ -145,8 +153,50 @@ func (r *SourceReconciler) listAndSyncWorkloadList(ctx context.Context,
 	return err
 }
 
-func (r *SourceReconciler) syncWorkloadList(ctx context.Context,
-	kind workload.WorkloadKind,
-	key client.ObjectKey) error {
-	return syncGenericWorkloadListToNs(ctx, r.Client, kind, key)
+func syncGenericWorkloadListToNs(ctx context.Context, c client.Client, kind workload.WorkloadKind, key client.ObjectKey) error {
+	// it is very important that we make the changes based on a fresh copy of the workload object
+	// if a list operation pulled in state and is now slowly iterating over it, we might be working with stale data
+	freshWorkloadCopy := workload.ClientObjectFromWorkloadKind(kind)
+	workloadGetErr := c.Get(ctx, key, freshWorkloadCopy)
+	if workloadGetErr != nil {
+		if apierrors.IsNotFound(workloadGetErr) {
+			// if the workload been deleted, we don't need to do anything
+			return nil
+		} else {
+			return workloadGetErr
+		}
+	}
+
+	var err error
+	uninstrument, err := shouldUninstrumentWorkload(ctx, c, freshWorkloadCopy)
+	if err != nil {
+		return err
+	}
+	if !uninstrument {
+		return nil
+	}
+
+	err = errors.Join(err, deleteWorkloadInstrumentationConfig(ctx, c, freshWorkloadCopy))
+	err = errors.Join(err, removeReportedNameAnnotation(ctx, c, freshWorkloadCopy))
+	return err
+}
+
+// This function checks if the workload should be uninstrumented based on the presence of an active Source for it.
+// If there is an active (non-terminating) workload or namespace Source, it should not be uninstrumented.
+// Otherwise, it should be uninstrumented.
+func shouldUninstrumentWorkload(ctx context.Context, c client.Client, obj client.Object) (bool, error) {
+	sourceList, err := v1alpha1.GetSources(ctx, c, obj)
+	if err != nil {
+		return false, err
+	}
+
+	if sourceList.Workload != nil && !k8sutils.IsTerminating(sourceList.Workload) && !v1alpha1.IsExcludedSource(sourceList.Namespace) {
+		return false, nil
+	}
+
+	if sourceList.Namespace != nil && !k8sutils.IsTerminating(sourceList.Namespace) && !v1alpha1.IsExcludedSource(sourceList.Namespace) {
+		return false, nil
+	}
+
+	return true, nil
 }

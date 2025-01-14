@@ -55,7 +55,6 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("deleteinstrumentationconfig-namespace").
 		For(&corev1.Namespace{}).
-		WithEventFilter(&NsLabelBecameDisabledPredicate{}).
 		Complete(&NamespaceReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
