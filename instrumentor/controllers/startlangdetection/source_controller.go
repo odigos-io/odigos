@@ -37,29 +37,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// if (terminating && exclude) || (!terminating && !exclude)
 	if k8sutils.IsTerminating(source) == v1alpha1.IsExcludedSource(source) {
 		if source.Spec.Workload.Kind == "Namespace" {
-			// pre-process existing Sources for specific workloads so we don't have to make a bunch of API calls
-			// This is used to check if a workload already has an explicit Source, so we don't overwrite its InstrumentationConfig
-			sourceList := v1alpha1.SourceList{}
-			err := r.Client.List(ctx, &sourceList, client.InNamespace(source.Spec.Workload.Name))
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-			namespaceKindSources := make(map[workload.WorkloadKind]map[string]struct{})
-			for _, s := range sourceList.Items {
-				if _, exists := namespaceKindSources[s.Spec.Workload.Kind]; !exists {
-					namespaceKindSources[s.Spec.Workload.Kind] = make(map[string]struct{})
-				}
-				// ex: map["Deployment"]["my-app"] = ...
-				namespaceKindSources[s.Spec.Workload.Kind][s.Spec.Workload.Name] = struct{}{}
-			}
-
-			for _, kind := range []workload.WorkloadKind{
-				workload.WorkloadKindDaemonSet,
-				workload.WorkloadKindDeployment,
-				workload.WorkloadKindStatefulSet,
-			} {
-				err = errors.Join(err, r.listAndReconcileWorkloadList(ctx, source, kind, namespaceKindSources))
-			}
+			err = errors.Join(err, syncNamespaceWorkloads(ctx, r.Client, r.Scheme, source.Spec.Workload.Name))
 		} else {
 			_, reconcileErr := reconcileWorkload(ctx,
 				r.Client,
@@ -89,13 +67,42 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	return ctrl.Result{}, client.IgnoreNotFound(err)
 }
 
-func (r *SourceReconciler) listAndReconcileWorkloadList(ctx context.Context,
-	source *v1alpha1.Source,
-	kind workload.WorkloadKind,
-	namespaceKindSources map[workload.WorkloadKind]map[string]struct{}) error {
+func syncNamespaceWorkloads(ctx context.Context, k8sClient client.Client, runtimeScheme *runtime.Scheme, namespace string) error {
+	var err error
+	for _, kind := range []workload.WorkloadKind{
+		workload.WorkloadKindDaemonSet,
+		workload.WorkloadKindDeployment,
+		workload.WorkloadKindStatefulSet,
+	} {
+		err = errors.Join(err, listAndReconcileWorkloadList(ctx, k8sClient, runtimeScheme, namespace, kind))
+	}
+	return err
+}
+
+func listAndReconcileWorkloadList(ctx context.Context,
+	k8sClient client.Client,
+	runtimeScheme *runtime.Scheme,
+	namespace string,
+	kind workload.WorkloadKind) error {
+
+	// pre-process existing Sources for specific workloads so we don't have to make a bunch of API calls
+	// This is used to check if a workload already has an explicit Source, so we don't overwrite its InstrumentationConfig
+	sourceList := v1alpha1.SourceList{}
+	err := k8sClient.List(ctx, &sourceList, client.InNamespace(namespace))
+	if err != nil {
+		return err
+	}
+	namespaceKindSources := make(map[workload.WorkloadKind]map[string]struct{})
+	for _, s := range sourceList.Items {
+		if _, exists := namespaceKindSources[s.Spec.Workload.Kind]; !exists {
+			namespaceKindSources[s.Spec.Workload.Kind] = make(map[string]struct{})
+		}
+		// ex: map["Deployment"]["my-app"] = ...
+		namespaceKindSources[s.Spec.Workload.Kind][s.Spec.Workload.Name] = struct{}{}
+	}
 
 	deps := workload.ClientListObjectFromWorkloadKind(kind)
-	err := r.Client.List(ctx, deps, client.InNamespace(source.Spec.Workload.Name))
+	err = k8sClient.List(ctx, deps, client.InNamespace(namespace))
 	if client.IgnoreNotFound(err) != nil {
 		return err
 	}
@@ -103,21 +110,21 @@ func (r *SourceReconciler) listAndReconcileWorkloadList(ctx context.Context,
 	switch obj := deps.(type) {
 	case *v1.DeploymentList:
 		for _, dep := range obj.Items {
-			err = r.reconcileWorkloadList(ctx, ctrl.Request{NamespacedName: client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace}}, kind, namespaceKindSources)
+			err = reconcileWorkloadList(ctx, k8sClient, runtimeScheme, ctrl.Request{NamespacedName: client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace}}, kind, namespaceKindSources)
 			if err != nil {
 				return err
 			}
 		}
 	case *v1.DaemonSetList:
 		for _, dep := range obj.Items {
-			err = r.reconcileWorkloadList(ctx, ctrl.Request{NamespacedName: client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace}}, kind, namespaceKindSources)
+			err = reconcileWorkloadList(ctx, k8sClient, runtimeScheme, ctrl.Request{NamespacedName: client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace}}, kind, namespaceKindSources)
 			if err != nil {
 				return err
 			}
 		}
 	case *v1.StatefulSetList:
 		for _, dep := range obj.Items {
-			err = r.reconcileWorkloadList(ctx, ctrl.Request{NamespacedName: client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace}}, kind, namespaceKindSources)
+			err = reconcileWorkloadList(ctx, k8sClient, runtimeScheme, ctrl.Request{NamespacedName: client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace}}, kind, namespaceKindSources)
 			if err != nil {
 				return err
 			}
@@ -126,13 +133,15 @@ func (r *SourceReconciler) listAndReconcileWorkloadList(ctx context.Context,
 	return nil
 }
 
-func (r *SourceReconciler) reconcileWorkloadList(ctx context.Context,
+func reconcileWorkloadList(ctx context.Context,
+	k8sClient client.Client,
+	runtimeScheme *runtime.Scheme,
 	req ctrl.Request,
 	kind workload.WorkloadKind,
 	namespaceKindSources map[workload.WorkloadKind]map[string]struct{}) error {
 	logger := log.FromContext(ctx)
 	if _, exists := namespaceKindSources[kind][req.Name]; !exists {
-		_, err := reconcileWorkload(ctx, r.Client, kind, req, r.Scheme)
+		_, err := reconcileWorkload(ctx, k8sClient, kind, req, runtimeScheme)
 		if err != nil {
 			logger.Error(err, "error requesting runtime details from odiglets", "name", req.Name, "namespace", req.Namespace, "kind", kind)
 		}

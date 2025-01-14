@@ -4,17 +4,15 @@ import (
 	"context"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"k8s.io/apimachinery/pkg/runtime"
-
-	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
+
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
 type DeploymentReconciler struct {
@@ -53,27 +51,19 @@ func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind wor
 		return ctrl.Result{}, err
 	}
 
-	instrumented, err := workload.IsWorkloadInstrumentationEffectiveEnabled(ctx, k8sClient, obj)
+	err = sourceutils.MigrateInstrumentationLabelToSource(ctx, k8sClient, obj, objKind)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	if !instrumented {
-		// Check if a Source object exists for this workload
-		sourceList, err := odigosv1.GetSources(ctx, k8sClient, obj)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-		if sourceList.Workload == nil && sourceList.Namespace == nil {
-			return ctrl.Result{}, nil
-		}
-		// if this is explicitly excluded (and the excluded Source isn't being deleted), skip
-		if sourceList.Workload != nil {
-			if odigosv1.IsExcludedSource(sourceList.Workload) && !k8sutils.IsTerminating(sourceList.Workload) {
-				return ctrl.Result{}, nil
-			}
-		}
+	enabled, err := sourceutils.IsObjectInstrumentedBySource(ctx, k8sClient, obj)
+	if err != nil {
+		return ctrl.Result{}, err
 	}
+	if !enabled {
+		return ctrl.Result{}, nil
+	}
+
 	err = requestOdigletsToCalculateRuntimeDetails(ctx, k8sClient, instConfigName, req.Namespace, obj, scheme)
 	return ctrl.Result{}, err
 }
