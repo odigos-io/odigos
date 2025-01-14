@@ -248,13 +248,17 @@ func mergeMessagingPayloadCollectionRules(rule1 *instrumentationrules.MessagingP
 	return &mergedRules
 }
 
-func merge2Booleans(rule1 *bool, rule2 *bool) *bool {
-	if rule1 == nil {
-		return rule2
-	} else if rule2 == nil {
-		return rule1
+// will merge 2 optional boolean fields from 2 instrumentation rules.
+// if any of them is true, the result is true.
+// if none of them is true, but one is false, the result is false.
+// if both are nil, the result is nil
+func merge2RuleBooleans(value1 *bool, value2 *bool) *bool {
+	if value1 == nil {
+		return value2
+	} else if value2 == nil {
+		return value1
 	}
-	return boolPtr(*rule1 || *rule2)
+	return boolPtr(*value1 || *value2)
 }
 
 func mergeCodeAttributesRules(rule1 *instrumentationrules.CodeAttributes, rule2 *instrumentationrules.CodeAttributes) *instrumentationrules.CodeAttributes {
@@ -265,12 +269,12 @@ func mergeCodeAttributesRules(rule1 *instrumentationrules.CodeAttributes, rule2 
 	}
 
 	mergedRules := instrumentationrules.CodeAttributes{}
-	mergedRules.Column = merge2Booleans(rule1.Column, rule2.Column)
-	mergedRules.FilePath = merge2Booleans(rule1.FilePath, rule2.FilePath)
-	mergedRules.Function = merge2Booleans(rule1.Function, rule2.Function)
-	mergedRules.LineNumber = merge2Booleans(rule1.LineNumber, rule2.LineNumber)
-	mergedRules.Namespace = merge2Booleans(rule1.Namespace, rule2.Namespace)
-	mergedRules.Stacktrace = merge2Booleans(rule1.Stacktrace, rule2.Stacktrace)
+	mergedRules.Column = merge2RuleBooleans(rule1.Column, rule2.Column)
+	mergedRules.FilePath = merge2RuleBooleans(rule1.FilePath, rule2.FilePath)
+	mergedRules.Function = merge2RuleBooleans(rule1.Function, rule2.Function)
+	mergedRules.LineNumber = merge2RuleBooleans(rule1.LineNumber, rule2.LineNumber)
+	mergedRules.Namespace = merge2RuleBooleans(rule1.Namespace, rule2.Namespace)
+	mergedRules.Stacktrace = merge2RuleBooleans(rule1.Stacktrace, rule2.Stacktrace)
 
 	return &mergedRules
 }
