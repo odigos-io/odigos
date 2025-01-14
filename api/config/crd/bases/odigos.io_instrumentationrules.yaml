@@ -40,6 +40,29 @@ spec:
             type: object
           spec:
             properties:
+              codeAttributes:
+                description: Configure which code attributes should be recorded as
+                  span attributes.
+                properties:
+                  column:
+                    description: Should record the `code.column` attribute.
+                    type: boolean
+                  filePath:
+                    description: Should record the `code.filepath` attribute.
+                    type: boolean
+                  function:
+                    description: Should record the `code.function` attribute.
+                    type: boolean
+                  lineNumber:
+                    description: Should record the `code.lineno` attribute.
+                    type: boolean
+                  namespace:
+                    description: Should record the `code.namespace` attribute.
+                    type: boolean
+                  stackTrace:
+                    description: Should record the `code.stacktrace` attribute.
+                    type: boolean
+                type: object
               disabled:
                 description: A boolean field allowing to temporarily disable the rule,
                   but keep it around for future use
