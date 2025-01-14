@@ -177,6 +177,10 @@ func (m *MigrationRunnable) fetchAndProcessStatefulSets(ctx context.Context, kub
 				}
 
 				workloadInstrumentationConfigReference := workloadNames[sts.Name]
+				if workloadInstrumentationConfigReference == nil {
+					m.Logger.Error(err, "Failed to get InstrumentationConfig reference")
+					continue
+				}
 
 				// Fetching the latest state of the InstrumentationConfig resource from the Kubernetes API.
 				// This is necessary to ensure we work with the most up-to-date version of the resource, as it may
@@ -205,9 +209,6 @@ func (m *MigrationRunnable) fetchAndProcessStatefulSets(ctx context.Context, kub
 						return fmt.Errorf("failed to process container %s in statefulset %s: %v", containerObject.Name, sts.Name, err)
 					}
 				}
-
-				// Update runtimeDetailsByContainer in workloadInstrumentationConfigReference
-				workloadInstrumentationConfigReference.Status.RuntimeDetailsByContainer = runtimeDetailsByContainer
 
 				// Update the InstrumentationConfig status
 				err = kubeClient.Status().Update(
@@ -242,6 +243,10 @@ func (m *MigrationRunnable) fetchAndProcessDaemonSets(ctx context.Context, kubeC
 					continue
 				}
 				workloadInstrumentationConfigReference := workloadNames[ds.Name]
+				if workloadInstrumentationConfigReference == nil {
+					m.Logger.Error(err, "Failed to get InstrumentationConfig reference")
+					continue
+				}
 
 				// Fetching the latest state of the InstrumentationConfig resource from the Kubernetes API.
 				// This is necessary to ensure we work with the most up-to-date version of the resource, as it may
@@ -268,9 +273,6 @@ func (m *MigrationRunnable) fetchAndProcessDaemonSets(ctx context.Context, kubeC
 						return fmt.Errorf("failed to process container %s in daemonset %s: %v", containerObject.Name, ds.Name, err)
 					}
 				}
-
-				// Update runtimeDetailsByContainer in workloadInstrumentationConfigReference
-				workloadInstrumentationConfigReference.Status.RuntimeDetailsByContainer = runtimeDetailsByContainer
 
 				// Update the InstrumentationConfig status
 				err = kubeClient.Status().Update(
@@ -300,6 +302,22 @@ func handleContainerRuntimeDetailsUpdate(
 		}
 		// Skip if the container has already been processed
 		if containerRuntimeDetails.RuntimeUpdateState != nil {
+
+			// Determine if cleanup of Odigos values is needed in EnvFromContainerRuntime.
+			// This addresses a bug in the runtime inspection for environment variables originating from the device.
+			if *containerRuntimeDetails.RuntimeUpdateState == v1alpha1.ProcessingStateSucceeded {
+				filteredEnvVars := []v1alpha1.EnvVar{}
+
+				for _, envVar := range containerRuntimeDetails.EnvFromContainerRuntime {
+					if strings.Contains(envVar.Value, "/var/odigos") {
+						// Skip the entry
+						continue
+					}
+					// Keep the entry
+					filteredEnvVars = append(filteredEnvVars, envVar)
+				}
+				containerRuntimeDetails.EnvFromContainerRuntime = filteredEnvVars
+			}
 			return nil
 		}
 
