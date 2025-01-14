@@ -3,6 +3,7 @@ package startlangdetection
 import (
 	"context"
 
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
 
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -29,7 +30,13 @@ func (n *NamespacesReconciler) Reconcile(ctx context.Context, request ctrl.Reque
 	}
 
 	if !k8sutils.IsObjectLabeledForInstrumentation(&ns) {
-		return ctrl.Result{}, nil
+		sources, err := v1alpha1.GetSources(ctx, n.Client, &ns)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		if sources.Namespace == nil {
+			return ctrl.Result{}, nil
+		}
 	}
 
 	logger.V(0).Info("Namespace labeled for instrumentation, recalculating runtime details of relevant workloads")

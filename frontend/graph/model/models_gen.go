@@ -305,7 +305,7 @@ type InstrumentationRuleInput struct {
 
 type K8sActualNamespace struct {
 	Name             string             `json:"name"`
-	Selected         *bool              `json:"selected,omitempty"`
+	Selected         bool               `json:"selected"`
 	K8sActualSources []*K8sActualSource `json:"k8sActualSources"`
 }
 

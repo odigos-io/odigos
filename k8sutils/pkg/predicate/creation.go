@@ -8,7 +8,7 @@ import (
 // CreationPredicate only allows create events.
 type CreationPredicate struct{}
 
-func (o CreationPredicate) Create(e event.CreateEvent) bool {
+func (i CreationPredicate) Create(e event.CreateEvent) bool {
 	return true
 }
 
