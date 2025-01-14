@@ -116,6 +116,29 @@ spec:
                   The SDKs are identified by the programming language they are written in.
                 items:
                   properties:
+                    codeAttributes:
+                      description: default configuration for collecting code attributes,
+                        in case the instrumentation library does not provide a configuration.
+                      properties:
+                        column:
+                          description: Should record the `code.column` attribute.
+                          type: boolean
+                        filePath:
+                          description: Should record the `code.filepath` attribute.
+                          type: boolean
+                        function:
+                          description: Should record the `code.function` attribute.
+                          type: boolean
+                        lineNumber:
+                          description: Should record the `code.lineno` attribute.
+                          type: boolean
+                        namespace:
+                          description: Should record the `code.namespace` attribute.
+                          type: boolean
+                        stackTrace:
+                          description: Should record the `code.stacktrace` attribute.
+                          type: boolean
+                      type: object
                     headSamplerConfig:
                       description: |-
                         HeadSamplingConfig is a set sampling rules.
@@ -189,6 +212,27 @@ spec:
                         the the SDK should use
                       items:
                         properties:
+                          codeAttributes:
+                            properties:
+                              column:
+                                description: Should record the `code.column` attribute.
+                                type: boolean
+                              filePath:
+                                description: Should record the `code.filepath` attribute.
+                                type: boolean
+                              function:
+                                description: Should record the `code.function` attribute.
+                                type: boolean
+                              lineNumber:
+                                description: Should record the `code.lineno` attribute.
+                                type: boolean
+                              namespace:
+                                description: Should record the `code.namespace` attribute.
+                                type: boolean
+                              stackTrace:
+                                description: Should record the `code.stacktrace` attribute.
+                                type: boolean
+                            type: object
                           libraryId:
                             properties:
                               libraryName:
@@ -408,6 +452,7 @@ spec:
                           type: object
                       type: object
                   required:
+                  - codeAttributes
                   - language
                   - payloadCollection
                   type: object

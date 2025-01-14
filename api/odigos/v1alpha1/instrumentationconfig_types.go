@@ -87,6 +87,9 @@ type SdkConfig struct {
 	HeadSamplingConfig *HeadSamplingConfig `json:"headSamplerConfig,omitempty"`
 
 	DefaultPayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection"`
+
+	// default configuration for collecting code attributes, in case the instrumentation library does not provide a configuration.
+	DefaultCodeAttributes *instrumentationrules.CodeAttributes `json:"codeAttributes"`
 }
 
 // 'Operand' represents the attributes and values that an operator acts upon in an expression
@@ -147,6 +150,8 @@ type InstrumentationLibraryConfig struct {
 	TraceConfig *InstrumentationLibraryConfigTraces `json:"traceConfig,omitempty"`
 
 	PayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection,omitempty"`
+
+	CodeAttributes *instrumentationrules.CodeAttributes `json:"codeAttributes,omitempty"`
 }
 
 type InstrumentationLibraryId struct {
