@@ -6,7 +6,7 @@ metadata:
   name: odigos-instrumentor
   namespace: {{ .Release.Namespace }}
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app.kubernetes.io/name: odigos-instrumentor

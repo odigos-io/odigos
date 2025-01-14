@@ -500,7 +500,7 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: ptrint32(1),
+			Replicas: ptrint32(2),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app.kubernetes.io/name": InstrumentorAppLabelValue,
