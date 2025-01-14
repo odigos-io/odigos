@@ -1,9 +1,7 @@
 import React, { useEffect } from 'react';
-import Image from 'next/image';
-import theme from '@/styles/theme';
 import { getStatusIcon } from '@/utils';
 import { useTestConnection } from '@/hooks';
-import styled, { css } from 'styled-components';
+import styled, { css, useTheme } from 'styled-components';
 import { Button, FadeLoader, Text } from '@/reuseable-components';
 import { type DestinationInput, NOTIFICATION_TYPE } from '@/types';
 
@@ -40,6 +38,7 @@ const ActionButton = styled(Button)<{ $status?: ConnectionStatus }>`
 `;
 
 export const TestConnection: React.FC<Props> = ({ destination, disabled, status, onError, onSuccess, validateForm }) => {
+  const theme = useTheme();
   const { testConnection, loading, data } = useTestConnection();
 
   useEffect(() => {

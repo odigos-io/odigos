@@ -1,8 +1,11 @@
 import React from 'react';
 import { SVG } from '@/assets';
-import theme from '@/styles/theme';
+import { useTheme } from 'styled-components';
 
-export const CheckCircledIcon: SVG = ({ size = 16, fill = theme.text.secondary, rotate = 0, onClick }) => {
+export const CheckCircledIcon: SVG = ({ size = 16, fill: f, rotate = 0, onClick }) => {
+  const theme = useTheme();
+  const fill = f || theme.text.secondary;
+
   return (
     <svg width={size} height={size * (16 / 17)} viewBox='0 0 17 16' xmlns='http://www.w3.org/2000/svg' fill='none' style={{ transform: `rotate(${rotate}deg)` }} onClick={onClick}>
       <path

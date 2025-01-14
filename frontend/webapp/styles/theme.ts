@@ -1,5 +1,3 @@
-import { DefaultTheme } from 'styled-components';
-
 export const hexPercentValues = {
   '100': 'FF',
   '099': 'FC',
@@ -104,167 +102,128 @@ export const hexPercentValues = {
   '000': '00',
 };
 
-// Define your color palette
-const colors = {
-  primary: '#111111',
-  secondary: '#F9F9F9',
-  dark_grey: '#151515',
-  text: '#F9F9F9',
-  border: '#525252',
-  translucent_bg: '#1A1A1A',
-  majestic_blue: '#444AD9',
-  card: '#F9F9F9' + hexPercentValues['004'],
-  dropdown_bg: '#242424',
-  dropdown_bg_2: '#333333',
-  blank_background: '#111111' + hexPercentValues['000'],
-
-  orange_og: '#FE9239',
-  orange_soft: '#FFB160',
-  dark_red: '#802828',
-  darker_red: '#611F1F',
-  darkest_red: '#281515',
-  dark_green: '#2D4323',
-
-  warning: '#472300',
-  error: '#431919',
-  success: '#172013',
-  info: '#242424',
-  default: '#181944',
-
-  white_opacity: {
-    '004': 'rgba(249, 249, 249, 0.04)',
-    '008': 'rgba(249, 249, 249, 0.08)',
-    '10': 'rgba(255, 255, 255, 0.1)',
-    '20': 'rgba(255, 255, 255, 0.2)',
-    '30': 'rgba(255, 255, 255, 0.3)',
-    '40': 'rgba(255, 255, 255, 0.4)',
-    '50': 'rgba(255, 255, 255, 0.5)',
-    '60': 'rgba(255, 255, 255, 0.6)',
-    '70': 'rgba(255, 255, 255, 0.7)',
-    '80': 'rgba(255, 255, 255, 0.8)',
-    '90': 'rgba(255, 255, 255, 0.9)',
+const baseTheme = {
+  colors: {
+    // Notification Colors
+    warning: '#472300',
+    error: '#431919',
+    success: '#172013',
+    info: '#242424',
+    default: '#181944',
+    // Custom Colors
+    majestic_blue: '#444AD9',
+    orange_og: '#FE9239',
+    orange_soft: '#FFB160',
+    dark_red: '#802828',
+    darker_red: '#611F1F',
+    darkest_red: '#281515',
+    dark_green: '#2D4323',
   },
-  gray: {
-    '50': '#F7F7F8',
-    '100': '#EBEBEF',
-    '200': '#D1D1D8',
-    '300': '#A9A9BC',
-    '400': '#8A8AA3',
-    '500': '#6C6C89',
-    '600': '#55555D',
-    '700': '#3F3F50',
-    '800': '#282833',
-    '900': '#121217',
-    '950': '#121217',
+  text: {
+    // Notification Colors
+    warning: '#E9CF35',
+    warning_secondary: '#FFA349',
+    error: '#EF7676',
+    error_secondary: '#DB5151',
+    success: '#81AF65',
+    success_secondary: '#51DB51',
+    info: '#B8B8B8',
+    info_secondary: '#CCDDDD',
+    default: '#AABEF7',
+    default_secondary: '#8CBEFF',
   },
-  blue: {
-    '50': '#F4F1FD',
-    '100': '#E2DAFB',
-    '200': '#C6B6F7',
-    '300': '#A99F3F3',
-    '400': '#80C8EF',
-    '500': '#7047EB',
-    '600': '#543E7',
-    '700': '#4316CA',
-    '800': '#3712A5',
-    '900': '#280E81',
-    '950': '#280E81',
-  },
-  green: {
-    '50': '#EEFBF4',
-    '100': '#DFEBEA',
-    '200': '#B2EECC',
-    '300': '#84E4AE',
-    '400': '#5BD990',
-    '500': '#2DCA72',
-    '600': '#26A95F',
-    '700': '#4DDBAC',
-    '800': '#17663A',
-    '900': '#0F4527',
-    '950': '#0F4527',
-  },
-  red: {
-    '50': '#FEF0F4',
-    '100': '#FDD8E1',
-    '200': '#FBB1C4',
-    '300': '#F98BA6',
-    '400': '#F76489',
-    '500': '#F53D6B',
-    '600': '#F3164E',
-    '700': '#D5083E',
-    '800': '#AF0932',
-    '900': '#880727',
-    '950': '#880727',
-  },
-  orange: {
-    '50': '#FFF2EE',
-    '100': '#FFEBE1',
-    '200': '#FFDCBD',
-    '300': '#FFB399',
-    '400': '#FF9876',
-    '500': '#FF7D52',
-    '600': '#FF571F',
-    '700': '#EB3A00',
-    '800': '#B82200',
-    '900': '#852100',
-    '950': '#852100',
-  },
-  yellow: {
-    '50': '#FFF9EB',
-    '100': '#FFF3D6',
-    '200': '#FFEFAD',
-    '300': '#FFDAB5',
-    '400': '#FFEC5C',
-    '500': '#FFC233',
-    '600': '#AFAF00',
-    '700': '#C28800',
-    '800': '#8A6100',
-    '900': '#523900',
-    '950': '#523900',
+  font_family: {
+    primary: 'Inter, sans-serif',
+    secondary: 'Kode Mono, sans-serif',
+    code: 'IBM Plex Mono, monospace',
   },
 };
 
-const text = {
-  primary: '#111111',
-  secondary: '#F9F9F9',
-  white: '#FFFFFF',
-  grey: '#B8B8B8',
-  dark_grey: '#8F8F8F',
-  darker_grey: '#7A7A7A',
-  light_grey: '#CCD0D2',
-  dark_button: '#0A1824',
+const darkModeTheme = {
+  colors: {
+    ...baseTheme.colors,
 
-  warning: '#E9CF35',
-  warning_secondary: '#FFA349',
-  error: '#EF7676',
-  error_secondary: '#DB5151',
-  success: '#81AF65',
-  success_secondary: '#51DB51',
-  info: '#B8B8B8',
-  info_secondary: '#CCDDDD',
-  default: '#AABEF7',
-  default_secondary: '#8CBEFF',
+    primary: '#111111',
+    secondary: '#F9F9F9',
+    dark_grey: '#151515',
+    text: '#F9F9F9',
+    border: '#525252',
+    translucent_bg: '#1A1A1A',
+    card: '#F9F9F9' + hexPercentValues['004'],
+    dropdown_bg: '#242424',
+    dropdown_bg_2: '#333333',
+    blank_background: '#111111' + hexPercentValues['000'],
+    white_opacity: {
+      '004': 'rgba(249, 249, 249, 0.04)',
+      '008': 'rgba(249, 249, 249, 0.08)',
+      '10': 'rgba(255, 255, 255, 0.1)',
+      '20': 'rgba(255, 255, 255, 0.2)',
+      '30': 'rgba(255, 255, 255, 0.3)',
+      '40': 'rgba(255, 255, 255, 0.4)',
+      '50': 'rgba(255, 255, 255, 0.5)',
+      '60': 'rgba(255, 255, 255, 0.6)',
+      '70': 'rgba(255, 255, 255, 0.7)',
+      '80': 'rgba(255, 255, 255, 0.8)',
+      '90': 'rgba(255, 255, 255, 0.9)',
+    },
+  },
+  text: {
+    ...baseTheme.text,
+
+    primary: '#111111',
+    secondary: '#F9F9F9',
+    white: '#FFFFFF',
+    grey: '#B8B8B8',
+    dark_grey: '#8F8F8F',
+    darker_grey: '#7A7A7A',
+    light_grey: '#CCD0D2',
+    dark_button: '#0A1824',
+  },
+  font_family: baseTheme.font_family,
 };
 
-const font_family = {
-  primary: 'Inter, sans-serif',
-  secondary: 'Kode Mono, sans-serif',
-  code: 'IBM Plex Mono, monospace',
+const lightModeTheme = {
+  colors: {
+    ...baseTheme.colors,
+
+    primary: '#EEEEEE',
+    secondary: '#060606',
+    dark_grey: '#EAEAEA',
+    text: '#060606',
+    border: '#ADADAD',
+    translucent_bg: '#E5E5E5',
+    card: '#060606' + hexPercentValues['004'],
+    dropdown_bg: '#DBDBDB',
+    dropdown_bg_2: '#CCCCCC',
+    blank_background: '#EEEEEE' + hexPercentValues['000'],
+    white_opacity: {
+      '004': 'rgba(6, 6, 6, 0.96)',
+      '008': 'rgba(6, 6, 6, 0.92)',
+      '10': 'rgba(0, 0, 0, 0.9)',
+      '20': 'rgba(0, 0, 0, 0.8)',
+      '30': 'rgba(0, 0, 0, 0.7)',
+      '40': 'rgba(0, 0, 0, 0.6)',
+      '50': 'rgba(0, 0, 0, 0.5)',
+      '60': 'rgba(0, 0, 0, 0.4)',
+      '70': 'rgba(0, 0, 0, 0.3)',
+      '80': 'rgba(0, 0, 0, 0.2)',
+      '90': 'rgba(0, 0, 0, 0.1)',
+    },
+  },
+  text: {
+    ...baseTheme.text,
+
+    primary: '#EEEEEE',
+    secondary: '#060606',
+    white: '#000000',
+    grey: '#474747',
+    dark_grey: '#707070',
+    darker_grey: '#858585',
+    light_grey: '#332F2D',
+    dark_button: '#F5E7DB',
+  },
+  font_family: baseTheme.font_family,
 };
 
-// Define the theme interface
-interface ThemeInterface extends DefaultTheme {
-  colors: typeof colors;
-  text: typeof text;
-  font_family: typeof font_family;
-}
-
-// Create your theme object
-const theme: ThemeInterface = {
-  colors,
-  text,
-  font_family,
-};
-
-// Export the theme
-export default theme;
+export type ITheme = typeof darkModeTheme & typeof lightModeTheme;
+export const getTheme = (darkMode: boolean): ITheme => (darkMode ? darkModeTheme : lightModeTheme);

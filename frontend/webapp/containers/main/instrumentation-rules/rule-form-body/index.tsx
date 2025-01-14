@@ -1,7 +1,6 @@
 import React from 'react';
-import theme from '@/styles/theme';
-import styled from 'styled-components';
 import RuleCustomFields from './custom-fields';
+import styled, { useTheme } from 'styled-components';
 import type { InstrumentationRuleInput } from '@/types';
 import type { RuleOption } from '../rule-modal/rule-options';
 import { CheckCircledIcon, CrossCircledIcon } from '@/assets';
@@ -27,6 +26,8 @@ const FieldTitle = styled(Text)`
 `;
 
 export const RuleFormBody: React.FC<Props> = ({ isUpdate, rule, formData, formErrors, handleFormChange }) => {
+  const theme = useTheme();
+
   return (
     <Container>
       {isUpdate && (

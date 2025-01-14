@@ -1,8 +1,10 @@
 import React from 'react';
 import { SVG } from '@/assets';
-import theme from '@/styles/theme';
+import { useTheme } from 'styled-components';
 
 export const K8sLogo: SVG = ({ size = 16, rotate = 0, onClick }) => {
+  const theme = useTheme();
+
   return (
     <svg width={size} height={size} viewBox='0 0 28 28' xmlns='http://www.w3.org/2000/svg' fill='none' style={{ transform: `rotate(${rotate}deg)` }} onClick={onClick}>
       <path fill={theme.colors.info} d='M0 14C0 6.26801 6.26801 0 14 0C21.732 0 28 6.26801 28 14C28 21.732 21.732 28 14 28C6.26801 28 0 21.732 0 14Z' />

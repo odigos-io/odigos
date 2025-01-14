@@ -1,6 +1,5 @@
 import React, { useEffect, useState, forwardRef, useImperativeHandle } from 'react';
-import theme from '@/styles/theme';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 import { EditIcon, SVG, TrashIcon, XIcon } from '@/assets';
 import { Button, IconWrapped, Input, Text, Tooltip } from '@/reuseable-components';
 
@@ -66,6 +65,7 @@ interface DrawerHeaderProps {
 }
 
 const DrawerHeader = forwardRef<DrawerHeaderRef, DrawerHeaderProps>(({ title, titleTooltip, icon, iconSrc, isEdit, onEdit, onClose, onDelete, deleteLabel = 'Delete' }, ref) => {
+  const theme = useTheme();
   const [inputValue, setInputValue] = useState(title);
 
   useEffect(() => {

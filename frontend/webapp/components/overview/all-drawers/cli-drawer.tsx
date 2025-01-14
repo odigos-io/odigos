@@ -1,8 +1,7 @@
 import React, { useRef, useState } from 'react';
-import theme from '@/styles/theme';
-import styled from 'styled-components';
 import { NOTIFICATION_TYPE } from '@/types';
 import { FlexColumn, FlexRow } from '@/styles';
+import styled, { useTheme } from 'styled-components';
 import OverviewDrawer from '@/containers/main/overview/overview-drawer';
 import { DATA_CARDS, getStatusIcon, isOverTime, safeJsonStringify, SEVEN_DAYS_IN_MS } from '@/utils';
 import { useCopy, useDescribeOdigos, useKeyDown, useOnClickOutside, useTimeAgo, useTokenCRUD } from '@/hooks';
@@ -44,6 +43,7 @@ const PopoverFormButton = styled(Button)`
 `;
 
 export const CliDrawer: React.FC<Props> = () => {
+  const theme = useTheme();
   const timeAgo = useTimeAgo();
   const { isCopied, copiedIndex, clickCopy } = useCopy();
   const { tokens, loading, updateToken } = useTokenCRUD();

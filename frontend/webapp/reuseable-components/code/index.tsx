@@ -1,12 +1,11 @@
 import React, { Fragment, useId, useMemo } from 'react';
 import { Text } from '../text';
 import { FlexRow } from '@/styles';
-import theme from '@/styles/theme';
 import { Tooltip } from '../tooltip';
-import styled from 'styled-components';
+import { NOTIFICATION_TYPE } from '@/types';
+import styled, { useTheme } from 'styled-components';
 import { Highlight, themes as prismThemes, type Token } from 'prism-react-renderer';
 import { flattenObjectKeys, getStatusIcon, removeEmptyValuesFromObject, safeJsonParse, safeJsonStringify } from '@/utils';
-import { NOTIFICATION_TYPE } from '@/types';
 
 interface Props {
   language: string;
@@ -129,6 +128,8 @@ const getComponentsFromPropertyString = (propertyString: string) => {
 };
 
 const PrettyJsonCode: React.FC<{ str: string }> = ({ str }) => {
+  const theme = useTheme();
+
   const renderEmptyRows = (count: number = 2) => {
     const rows = new Array(count).fill((props: React.HTMLAttributes<HTMLTableRowElement>) => (
       <TableRow {...props}>

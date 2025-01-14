@@ -2,8 +2,8 @@ import React from 'react';
 import styled from 'styled-components';
 import { getStatusIcon } from '@/utils';
 import { NOTIFICATION_TYPE } from '@/types';
+import { hexPercentValues } from '@/styles/theme';
 import { Divider, Text } from '@/reuseable-components';
-import theme, { hexPercentValues } from '@/styles/theme';
 import { CheckCircledIcon, CrossCircledIcon } from '@/assets';
 
 export * from './active-status';
@@ -72,7 +72,7 @@ const SubTitle = styled(Text)<{
   $isPale: StatusProps['isPale'];
   $status: StatusProps['status'];
 }>`
-  color: ${({ $isPale, $status = NOTIFICATION_TYPE.DEFAULT }) => ($isPale ? theme.text.grey : theme.text[`${$status}_secondary`])};
+  color: ${({ $isPale, $status = NOTIFICATION_TYPE.DEFAULT, theme }) => ($isPale ? theme.text.grey : theme.text[`${$status}_secondary`])};
 `;
 
 export const Status: React.FC<StatusProps> = ({ title, subtitle, size = 12, family = 'secondary', status, isActive: oldStatus, isPale, withIcon, withBorder, withBackground }) => {

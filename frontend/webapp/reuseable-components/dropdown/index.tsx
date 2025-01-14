@@ -1,8 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { useOnClickOutside } from '@/hooks';
 import type { DropdownOption } from '@/types';
-import styled, { css } from 'styled-components';
-import theme, { hexPercentValues } from '@/styles/theme';
+import { hexPercentValues } from '@/styles/theme';
+import styled, { css, useTheme } from 'styled-components';
 import { CheckIcon, CrossIcon, SearchIcon } from '@/assets';
 import { Badge, Checkbox, Divider, ExtendIcon, FieldError, FieldLabel, Input, NoDataFound, Text } from '@/reuseable-components';
 
@@ -156,6 +156,8 @@ const DropdownPlaceholder: React.FC<{
   placeholder: DropdownProps['placeholder'];
   onDeselect: DropdownProps['onDeselect'];
 }> = ({ value, placeholder, onDeselect }) => {
+  const theme = useTheme();
+
   if (Array.isArray(value)) {
     return !!value.length ? (
       <MultiLabelWrapper>
@@ -259,6 +261,7 @@ const DropdownListItem: React.FC<{
   onSelect: DropdownProps['onSelect'];
   onDeselect: DropdownProps['onDeselect'];
 }> = ({ option, value, isMulti, onSelect, onDeselect }) => {
+  const theme = useTheme();
   const isSelected = Array.isArray(value) ? !!value?.find((s) => s.id === option.id) : value?.id === option.id;
 
   if (isMulti) {

@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import theme from '@/styles/theme';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 import { BACKEND_BOOLEAN, getStatusIcon } from '@/utils';
 import { NOTIFICATION_TYPE, type Condition } from '@/types';
 import { ExtendIcon, FadeLoader, Text } from '@/reuseable-components';
@@ -40,6 +39,7 @@ const Row = styled.div`
 `;
 
 export const ConditionDetails: React.FC<Props> = ({ conditions = [] }) => {
+  const theme = useTheme();
   const [extend, setExtend] = useState(false);
 
   const loading = useMemo(() => !conditions.length, [conditions]);

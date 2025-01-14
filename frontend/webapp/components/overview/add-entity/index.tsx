@@ -1,9 +1,8 @@
 import React, { useState, useRef } from 'react';
-import theme from '@/styles/theme';
 import { PlusIcon } from '@/assets';
 import { useModalStore } from '@/store';
 import { getEntityIcon } from '@/utils';
-import styled, { css } from 'styled-components';
+import styled, { css, useTheme } from 'styled-components';
 import { useComputePlatform, useOnClickOutside } from '@/hooks';
 import { Button, FadeLoader, Text } from '@/reuseable-components';
 import { type DropdownOption, OVERVIEW_ENTITY_TYPES } from '@/types';
@@ -72,6 +71,7 @@ interface Props {
 }
 
 export const AddEntity: React.FC<Props> = ({ options = DEFAULT_OPTIONS, placeholder = 'ADD...' }) => {
+  const theme = useTheme();
   const { loading } = useComputePlatform();
   const { currentModal, setCurrentModal } = useModalStore();
 

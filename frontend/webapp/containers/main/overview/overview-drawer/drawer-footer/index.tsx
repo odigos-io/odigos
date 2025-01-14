@@ -1,9 +1,8 @@
 import React from 'react';
-import { FlexRow, slide } from '@/styles';
-import theme from '@/styles/theme';
 import { TrashIcon } from '@/assets';
-import styled from 'styled-components';
 import { useTransition } from '@/hooks';
+import { FlexRow, slide } from '@/styles';
+import styled, { useTheme } from 'styled-components';
 import { Button, Text } from '@/reuseable-components';
 
 interface Props {
@@ -36,6 +35,7 @@ const FooterButton = styled(Button)`
 `;
 
 const DrawerFooter: React.FC<Props> = ({ isOpen, onSave, saveLabel = 'Save', onCancel, cancelLabel = 'Cancel', onDelete, deleteLabel = 'Delete' }) => {
+  const theme = useTheme();
   const Transition = useTransition({
     container: FooterContainer,
     animateIn: slide.in['bottom'],

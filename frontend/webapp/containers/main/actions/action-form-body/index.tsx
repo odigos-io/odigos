@@ -1,8 +1,7 @@
 import React from 'react';
-import theme from '@/styles/theme';
-import styled from 'styled-components';
 import { type ActionInput } from '@/types';
 import ActionCustomFields from './custom-fields';
+import styled, { useTheme } from 'styled-components';
 import { CheckCircledIcon, CrossCircledIcon } from '@/assets';
 import { type ActionOption } from '../action-modal/action-options';
 import { DocsButton, Input, Text, TextArea, MonitoringCheckboxes, SectionTitle, Segment } from '@/reuseable-components';
@@ -27,6 +26,8 @@ const FieldTitle = styled(Text)`
 `;
 
 export const ActionFormBody: React.FC<Props> = ({ isUpdate, action, formData, formErrors, handleFormChange }) => {
+  const theme = useTheme();
+
   return (
     <Container>
       {isUpdate && (

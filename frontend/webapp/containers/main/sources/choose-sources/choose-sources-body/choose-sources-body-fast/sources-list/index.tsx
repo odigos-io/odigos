@@ -1,6 +1,5 @@
 import React from 'react';
-import theme from '@/styles/theme';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 import { type UseSourceFormDataResponse } from '@/hooks';
 import { Checkbox, Divider, ExtendIcon, FadeLoader, NoDataFound, Text, Toggle } from '@/reuseable-components';
 
@@ -92,6 +91,7 @@ export const SourcesList: React.FC<Props> = ({
   selectAllForNamespace,
   onSelectAll,
 }) => {
+  const theme = useTheme();
   const namespaces = filterNamespaces();
 
   if (!namespaces.length) {

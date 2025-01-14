@@ -1,5 +1,5 @@
-import theme from '@/styles/theme';
 import { formatBytes } from '@/utils';
+import { useTheme } from 'styled-components';
 import { type Edge, type Node } from '@xyflow/react';
 import { EDGE_TYPES, NODE_TYPES, OVERVIEW_ENTITY_TYPES, STATUSES, WorkloadId, type OverviewMetricsResponse } from '@/types';
 import nodeConfig from './node-config.json';
@@ -13,6 +13,8 @@ interface Params {
 const { nodeHeight, framePadding } = nodeConfig;
 
 const createEdge = (edgeId: string, params?: { label?: string; isMultiTarget?: boolean; isError?: boolean; animated?: boolean }): Edge => {
+  const theme = useTheme();
+
   const { label, isMultiTarget, isError, animated } = params || {};
   const [sourceNodeId, targetNodeId] = edgeId.split('-to-');
 

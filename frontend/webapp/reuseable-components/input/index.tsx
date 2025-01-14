@@ -1,6 +1,5 @@
 import React, { useState, forwardRef, type ChangeEvent, type KeyboardEventHandler, type InputHTMLAttributes } from 'react';
-import theme from '@/styles/theme';
-import styled, { css } from 'styled-components';
+import styled, { css, useTheme } from 'styled-components';
 import { EyeClosedIcon, EyeOpenIcon, SVG } from '@/assets';
 import { FieldError, FieldLabel } from '@/reuseable-components';
 
@@ -116,6 +115,8 @@ const Button = styled.button`
 
 // Wrap Input with forwardRef to handle the ref prop
 const Input = forwardRef<HTMLInputElement, InputProps>(({ icon: Icon, buttonLabel, onButtonClick, hasError, errorMessage, title, tooltip, required, onChange, type = 'text', name, ...props }, ref) => {
+  const theme = useTheme();
+
   const isSecret = type === 'password';
   const [revealSecret, setRevealSecret] = useState(false);
 

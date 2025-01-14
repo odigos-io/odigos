@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Text } from '../text';
-import theme from '@/styles/theme';
 import { CheckIcon } from '@/assets';
 import { Tooltip } from '../tooltip';
-import styled from 'styled-components';
 import { FlexColumn } from '@/styles';
 import { FieldError } from '../field-error';
+import styled, { useTheme } from 'styled-components';
 
 interface CheckboxProps {
   title?: string;
@@ -41,6 +40,8 @@ const CheckboxWrapper = styled.div<{ $isChecked: boolean; $disabled?: CheckboxPr
 `;
 
 export const Checkbox: React.FC<CheckboxProps> = ({ title, titleColor, tooltip, value = false, onChange, disabled, style, errorMessage, allowPropagation = false }) => {
+  const theme = useTheme();
+
   const [isChecked, setIsChecked] = useState(value);
   useEffect(() => setIsChecked(value), [value]);
 

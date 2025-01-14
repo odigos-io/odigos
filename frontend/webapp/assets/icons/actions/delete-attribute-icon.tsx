@@ -1,8 +1,11 @@
 import React from 'react';
 import { SVG } from '@/assets';
-import theme from '@/styles/theme';
+import { useTheme } from 'styled-components';
 
-export const DeleteAttributeIcon: SVG = ({ size = 16, fill = theme.text.info, rotate = 0, onClick }) => {
+export const DeleteAttributeIcon: SVG = ({ size = 16, fill: f, rotate = 0, onClick }) => {
+  const theme = useTheme();
+  const fill = f || theme.text.info;
+
   return (
     <svg width={size} height={size} viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg' fill='none' style={{ transform: `rotate(${rotate}deg)` }} onClick={onClick}>
       <path

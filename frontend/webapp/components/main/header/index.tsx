@@ -1,10 +1,9 @@
 import React from 'react';
-import theme from '@/styles/theme';
 import { FlexRow } from '@/styles';
 import { SLACK_LINK } from '@/utils';
-import styled from 'styled-components';
 import { PlatformTitle } from './cp-title';
 import { NotificationManager } from '@/components';
+import styled, { useTheme } from 'styled-components';
 import { NOTIFICATION_TYPE, PlatformTypes } from '@/types';
 import { ConnectionStatus, IconButton } from '@/reuseable-components';
 import { LightOffIcon, LightOnIcon, OdigosLogoText, SlackLogo, TerminalIcon } from '@/assets';
@@ -32,6 +31,7 @@ const AlignRight = styled(FlexRow)`
 `;
 
 export const MainHeader: React.FC<MainHeaderProps> = () => {
+  const theme = useTheme();
   const { setSelectedItem } = useDrawerStore();
   const { darkMode, setDarkMode } = useDarkModeStore();
   const { title, message, sseConnecting, sseStatus, tokenExpired, tokenExpiring } = useConnectionStore();

@@ -1,14 +1,14 @@
-import React, { ReactNode } from 'react';
-import StyledComponentsRegistry from './registry';
+import React, { type PropsWithChildren } from 'react';
+import { getTheme } from '../theme';
+import { useDarkModeStore } from '@/store';
 import { ThemeProvider } from 'styled-components';
-import theme from '../theme';
-interface ThemeProviderWrapperProps {
-  children: ReactNode; // Add children prop with ReactNode type
-}
+import StyledComponentsRegistry from './registry';
 
-export const ThemeProviderWrapper: React.FC<ThemeProviderWrapperProps> = ({ children }) => {
+export const ThemeProviderWrapper: React.FC<PropsWithChildren> = ({ children }) => {
+  const { darkMode } = useDarkModeStore();
+
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={getTheme(darkMode)}>
       <StyledComponentsRegistry>{children}</StyledComponentsRegistry>
     </ThemeProvider>
   );

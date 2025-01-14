@@ -1,11 +1,11 @@
 import React, { useMemo, useRef, useState } from 'react';
-import styled from 'styled-components';
 import { useClickNotif } from '@/hooks';
 import { useNotificationStore } from '@/store';
 import { ACTION, getStatusIcon } from '@/utils';
+import { hexPercentValues } from '@/styles/theme';
+import styled, { useTheme } from 'styled-components';
 import { NotificationIcon, TrashIcon } from '@/assets';
 import { useOnClickOutside, useTimeAgo } from '@/hooks';
-import theme, { hexPercentValues } from '@/styles/theme';
 import { NOTIFICATION_TYPE, type Notification } from '@/types';
 import { IconButton, NoDataFound, Text } from '@/reuseable-components';
 
@@ -64,6 +64,8 @@ const NewCount = styled(Text)`
 `;
 
 export const NotificationManager = () => {
+  const theme = useTheme();
+
   const { notifications: n, markAsSeen } = useNotificationStore();
   const notifications = n.filter(({ hideFromHistory }) => !hideFromHistory);
   const unseen = notifications.filter(({ seen }) => !seen);
@@ -152,6 +154,8 @@ const NotifFooterTextWrap = styled.div`
 `;
 
 const NotificationListItem: React.FC<Notification & { onClick: () => void }> = ({ onClick, ...props }) => {
+  const theme = useTheme();
+
   const { id, seen, type, title, message, time, crdType, target } = props;
   const canClick = !!crdType && !!target;
 

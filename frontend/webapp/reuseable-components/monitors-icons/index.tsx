@@ -1,6 +1,6 @@
 import React from 'react';
-import theme from '@/styles/theme';
 import { FlexRow } from '@/styles';
+import { useTheme } from 'styled-components';
 import { Text, Tooltip } from '@/reuseable-components';
 import { capitalizeFirstLetter, getMonitorIcon, MONITORS_OPTIONS } from '@/utils';
 
@@ -14,7 +14,10 @@ interface Props {
 
 const defaultMonitors = MONITORS_OPTIONS.map(({ id }) => id);
 
-export const MonitorsIcons: React.FC<Props> = ({ monitors = defaultMonitors, withTooltips, withLabels, size = 12, color = theme.text.grey }) => {
+export const MonitorsIcons: React.FC<Props> = ({ monitors = defaultMonitors, withTooltips, withLabels, size = 12, color: clr }) => {
+  const theme = useTheme();
+  const color = clr || theme.text.grey;
+
   return (
     <FlexRow $gap={withLabels ? size : size / 2}>
       {monitors.map((str) => {

@@ -1,8 +1,7 @@
 import React from 'react';
 import { Text } from '../text';
-import theme from '@/styles/theme';
 import { NoDataIcon } from '@/assets';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 
 interface Props {
   title?: string;
@@ -34,6 +33,8 @@ const Container = styled.div`
 `;
 
 export const NoDataFound: React.FC<Props> = ({ title = 'No data found', subTitle = 'Check your search phrase and try one more time' }) => {
+  const theme = useTheme();
+
   return (
     <Container>
       <TitleWrapper>

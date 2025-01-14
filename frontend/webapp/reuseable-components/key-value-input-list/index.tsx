@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { isEmpty } from '@/utils';
-import theme from '@/styles/theme';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 import { ArrowIcon, PlusIcon, TrashIcon } from '@/assets';
 import { Button, FieldError, FieldLabel, Input, Text } from '@/reuseable-components';
 
@@ -71,6 +70,7 @@ const INITIAL_ROW: Row = {
 };
 
 export const KeyValueInputsList: React.FC<KeyValueInputsListProps> = ({ initialKeyValuePairs = [], value, onChange, title, tooltip, required, errorMessage }) => {
+  const theme = useTheme();
   const [rows, setRows] = useState<Row[]>(value || initialKeyValuePairs);
 
   useEffect(() => {

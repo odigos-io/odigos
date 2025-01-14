@@ -1,8 +1,10 @@
 import { CheckCircledIcon, ErrorTriangleIcon, InfoIcon, OdigosLogo, SVG, WarningTriangleIcon } from '@/assets';
-import theme from '@/styles/theme';
 import { NOTIFICATION_TYPE } from '@/types';
+import { useTheme } from 'styled-components';
 
 export const getStatusIcon = (type: NOTIFICATION_TYPE) => {
+  const theme = useTheme();
+
   const LOGOS: Record<NOTIFICATION_TYPE, SVG> = {
     [NOTIFICATION_TYPE.SUCCESS]: () => CheckCircledIcon({ fill: theme.text.success }),
     [NOTIFICATION_TYPE.ERROR]: ErrorTriangleIcon,
