@@ -86,10 +86,10 @@ type SdkConfig struct {
 	// In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)
 	HeadSamplingConfig *HeadSamplingConfig `json:"headSamplerConfig,omitempty"`
 
-	DefaultPayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection"`
+	DefaultPayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection,omitempty"`
 
 	// default configuration for collecting code attributes, in case the instrumentation library does not provide a configuration.
-	DefaultCodeAttributes *instrumentationrules.CodeAttributes `json:"codeAttributes"`
+	DefaultCodeAttributes *instrumentationrules.CodeAttributes `json:"codeAttributes,omitempty"`
 }
 
 // 'Operand' represents the attributes and values that an operator acts upon in an expression

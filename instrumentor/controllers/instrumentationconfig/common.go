@@ -57,6 +57,9 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 					sdkConfigs[i].DefaultPayloadCollection.DbQuery = mergeDbPayloadCollectionRules(sdkConfigs[i].DefaultPayloadCollection.DbQuery, rule.Spec.PayloadCollection.DbQuery)
 					sdkConfigs[i].DefaultPayloadCollection.Messaging = mergeMessagingPayloadCollectionRules(sdkConfigs[i].DefaultPayloadCollection.Messaging, rule.Spec.PayloadCollection.Messaging)
 				}
+				if rule.Spec.CodeAttributes != nil {
+					sdkConfigs[i].DefaultCodeAttributes = mergeCodeAttributesRules(sdkConfigs[i].DefaultCodeAttributes, rule.Spec.CodeAttributes)
+				}
 			} else {
 				for _, library := range *rule.Spec.InstrumentationLibraries {
 					libraryConfig := findOrCreateSdkLibraryConfig(&sdkConfigs[i], library)
@@ -69,6 +72,9 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 						libraryConfig.PayloadCollection.HttpResponse = mergeHttpPayloadCollectionRules(libraryConfig.PayloadCollection.HttpResponse, rule.Spec.PayloadCollection.HttpResponse)
 						libraryConfig.PayloadCollection.DbQuery = mergeDbPayloadCollectionRules(libraryConfig.PayloadCollection.DbQuery, rule.Spec.PayloadCollection.DbQuery)
 						libraryConfig.PayloadCollection.Messaging = mergeMessagingPayloadCollectionRules(libraryConfig.PayloadCollection.Messaging, rule.Spec.PayloadCollection.Messaging)
+					}
+					if rule.Spec.CodeAttributes != nil {
+						libraryConfig.CodeAttributes = mergeCodeAttributesRules(libraryConfig.CodeAttributes, rule.Spec.CodeAttributes)
 					}
 				}
 			}
@@ -238,6 +244,33 @@ func mergeMessagingPayloadCollectionRules(rule1 *instrumentationrules.MessagingP
 	} else {
 		mergedRules.DropPartialPayloads = boolPtr(*rule1.DropPartialPayloads || *rule2.DropPartialPayloads)
 	}
+
+	return &mergedRules
+}
+
+func merge2Booleans(rule1 *bool, rule2 *bool) *bool {
+	if rule1 == nil {
+		return rule2
+	} else if rule2 == nil {
+		return rule1
+	}
+	return boolPtr(*rule1 || *rule2)
+}
+
+func mergeCodeAttributesRules(rule1 *instrumentationrules.CodeAttributes, rule2 *instrumentationrules.CodeAttributes) *instrumentationrules.CodeAttributes {
+	if rule1 == nil {
+		return rule2
+	} else if rule2 == nil {
+		return rule1
+	}
+
+	mergedRules := instrumentationrules.CodeAttributes{}
+	mergedRules.Column = merge2Booleans(rule1.Column, rule2.Column)
+	mergedRules.FilePath = merge2Booleans(rule1.FilePath, rule2.FilePath)
+	mergedRules.Function = merge2Booleans(rule1.Function, rule2.Function)
+	mergedRules.LineNumber = merge2Booleans(rule1.LineNumber, rule2.LineNumber)
+	mergedRules.Namespace = merge2Booleans(rule1.Namespace, rule2.Namespace)
+	mergedRules.Stacktrace = merge2Booleans(rule1.Stacktrace, rule2.Stacktrace)
 
 	return &mergedRules
 }

@@ -452,9 +452,7 @@ spec:
                           type: object
                       type: object
                   required:
-                  - codeAttributes
                   - language
-                  - payloadCollection
                   type: object
                 type: array
               serviceName:
