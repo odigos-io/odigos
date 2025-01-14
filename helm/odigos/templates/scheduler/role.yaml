@@ -46,3 +46,15 @@ rules:
       - get
       - list
       - watch
+  - apiGroups:
+      - odigos.io
+    resources:
+      - instrumentationrules
+      - processors
+    verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - delete
+      - create
