@@ -81,7 +81,7 @@ func isReportedNameDeleted(obj client.Object, err error) bool {
 		return false
 	}
 	_, found := obj.GetAnnotations()[consts.OdigosReportedNameAnnotation]
-	return found
+	return !found
 }
 
 func AssertDepContainerEnvRemainEmpty(ctx context.Context, k8sClient client.Client, dep *appsv1.Deployment) {

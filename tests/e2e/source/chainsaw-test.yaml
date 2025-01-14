@@ -497,3 +497,11 @@ spec:
             content: kubectl get instrumentationconfigs/deployment-membership
             check:
               ($error != null): true
+    - name: Irrelevant Namespace update does not trigger uninstrumentation
+      try:
+        - script:
+            timeout: 70s
+            content: kubectl label namespaces default odigos.io/irrelevant-update=foo
+        - assert:
+            timeout: 2m
+            file: 09-assert-runtime-detected.yaml

@@ -135,6 +135,33 @@ func NewMockTestStatefulSet(ns *corev1.Namespace) *appsv1.StatefulSet {
 	}
 }
 
+// NewMockSource returns a single source for a workload (deployment, daemonset, statefulset)
+func NewMockSource(workloadObject client.Object) *odigosv1.Source {
+	gvk, _ := apiutil.GVKForObject(workloadObject, scheme.Scheme)
+	namespace := workloadObject.GetNamespace()
+	if gvk.Kind == "Namespace" && len(namespace) == 0 {
+		namespace = workloadObject.GetName()
+	}
+	return &odigosv1.Source{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      workload.CalculateWorkloadRuntimeObjectName(workloadObject.GetName(), gvk.Kind),
+			Namespace: namespace,
+			Labels: map[string]string{
+				k8sconsts.WorkloadNameLabel:      workloadObject.GetName(),
+				k8sconsts.WorkloadNamespaceLabel: namespace,
+				k8sconsts.WorkloadKindLabel:      gvk.Kind,
+			},
+		},
+		Spec: odigosv1.SourceSpec{
+			Workload: workload.PodWorkload{
+				Name:      workloadObject.GetName(),
+				Namespace: namespace,
+				Kind:      workload.WorkloadKind(gvk.Kind),
+			},
+		},
+	}
+}
+
 // givin a workload object (deployment, daemonset, statefulset) return a mock instrumented application
 // with a single container with the GoProgrammingLanguage
 func NewMockInstrumentationConfig(workloadObject client.Object) *odigosv1.InstrumentationConfig {
