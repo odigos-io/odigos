@@ -34,7 +34,7 @@ const Container = styled.div<{ $withClick: boolean; $isError: Props['isError'] }
   padding: 16px;
   width: calc(100% - 32px);
   border-radius: 16px;
-  background-color: ${({ $isError, theme }) => ($isError ? theme.colors.darkest_red : theme.colors.dropdown_bg + hexPercentValues['080'])};
+  background-color: ${({ $isError, theme }) => ($isError ? theme.colors.darkest_red : theme.colors.dropdown_bg_2 + hexPercentValues['040'])};
 
   ${({ $withClick, $isError, theme }) =>
     $withClick &&
