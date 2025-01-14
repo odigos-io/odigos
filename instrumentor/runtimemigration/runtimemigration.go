@@ -302,6 +302,22 @@ func handleContainerRuntimeDetailsUpdate(
 		}
 		// Skip if the container has already been processed
 		if containerRuntimeDetails.RuntimeUpdateState != nil {
+
+			// Determine if cleanup of Odigos values is needed in EnvFromContainerRuntime.
+			// This addresses a bug in the runtime inspection for environment variables originating from the device.
+			if *containerRuntimeDetails.RuntimeUpdateState == v1alpha1.ProcessingStateSucceeded {
+				filteredEnvVars := []v1alpha1.EnvVar{}
+
+				for _, envVar := range containerRuntimeDetails.EnvFromContainerRuntime {
+					if strings.Contains(envVar.Value, "/var/odigos") {
+						// Skip the entry
+						continue
+					}
+					// Keep the entry
+					filteredEnvVars = append(filteredEnvVars, envVar)
+				}
+				containerRuntimeDetails.EnvFromContainerRuntime = filteredEnvVars
+			}
 			return nil
 		}
 
