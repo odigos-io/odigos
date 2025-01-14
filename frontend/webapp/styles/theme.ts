@@ -15,6 +15,7 @@ const baseTheme = {
     dark_red: '#802828',
     darker_red: '#611F1F',
     darkest_red: '#281515',
+    darkest_red_hover: '#351515',
     dark_green: '#2D4323',
   },
   text: {

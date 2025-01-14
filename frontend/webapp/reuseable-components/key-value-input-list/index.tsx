@@ -46,7 +46,7 @@ const DeleteButton = styled.button`
 `;
 
 const AddButton = styled(Button)`
-  color: white;
+  color: ${({ theme }) => theme.text.white};
   background: transparent;
   display: flex;
   gap: 8px;

@@ -9,12 +9,12 @@ interface Props {
 }
 
 const Title = styled(Text)`
-  color: #7a7a7a;
+  color: ${({ theme }) => theme.text.darker_grey};
   line-height: 24px;
 `;
 
 const SubTitle = styled(Text)`
-  color: #525252;
+  color: ${({ theme }) => theme.colors.border};
   font-size: 14px;
   font-weight: 200;
   line-height: 20px;

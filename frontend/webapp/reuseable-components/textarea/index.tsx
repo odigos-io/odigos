@@ -17,18 +17,16 @@ const Container = styled.div`
 
 const InputWrapper = styled.div<{ $disabled?: boolean; $hasError?: boolean; $isActive?: boolean }>`
   width: 100%;
-
   display: flex;
   align-items: center;
   gap: 12px;
-
   transition: border-color 0.3s;
   border-radius: 24px;
-  border: 1px solid rgba(249, 249, 249, 0.24);
+  border: 1px solid ${({ theme }) => theme.colors.border};
   ${({ $disabled }) =>
     $disabled &&
     css`
-      background-color: #555;
+      background-color: ${({ theme }) => theme.colors.border};
       cursor: not-allowed;
       opacity: 0.6;
     `}
@@ -74,7 +72,7 @@ const StyledTextArea = styled.textarea`
   }
 
   &:disabled {
-    background-color: #555;
+    background-color: ${({ theme }) => theme.colors.border};
     cursor: not-allowed;
   }
 `;
