@@ -14,7 +14,5 @@ require (
 )
 
 replace (
-	github.com/odigos-io/odigos/api => ../api
 	github.com/odigos-io/odigos/common => ../common
-	github.com/odigos-io/odigos/k8sutils => ../k8sutils
 )
