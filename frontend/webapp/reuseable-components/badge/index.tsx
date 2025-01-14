@@ -14,7 +14,7 @@ const Styled = styled.span<{ $filled: Props['filled'] }>`
   justify-content: center;
   border-radius: 100%;
   border: 1px solid ${({ theme, $filled }) => ($filled ? theme.colors.majestic_blue : theme.colors.border)};
-  background-color: ${({ theme, $filled }) => ($filled ? theme.colors.majestic_blue : theme.colors.blank_background)};
+  background-color: ${({ theme, $filled }) => ($filled ? theme.colors.majestic_blue : 'transparent')};
   color: ${({ theme, $filled }) => ($filled ? theme.colors.secondary : theme.text.grey)};
   font-family: ${({ theme }) => theme.font_family.secondary};
   font-size: 12px;

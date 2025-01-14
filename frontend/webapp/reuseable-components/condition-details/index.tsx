@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { hexPercentValues } from '@/styles';
 import styled, { useTheme } from 'styled-components';
 import { BACKEND_BOOLEAN, getStatusIcon } from '@/utils';
 import { NOTIFICATION_TYPE, type Condition } from '@/types';
@@ -10,10 +11,10 @@ interface Props {
 
 const Container = styled.div<{ $hasErrors: boolean }>`
   border-radius: 24px;
-  background-color: ${({ theme, $hasErrors }) => ($hasErrors ? theme.colors.darkest_red : theme.colors.white_opacity['004'])};
+  background-color: ${({ theme, $hasErrors }) => ($hasErrors ? theme.colors.darkest_red : theme.colors.dropdown_bg_2 + hexPercentValues['040'])};
   cursor: pointer;
   &:hover {
-    background-color: ${({ theme, $hasErrors }) => ($hasErrors ? theme.colors.error : theme.colors.white_opacity['008'])};
+    background-color: ${({ theme, $hasErrors }) => ($hasErrors ? theme.colors.error : theme.colors.dropdown_bg_2)};
   }
   transition: background 0.3s;
 `;

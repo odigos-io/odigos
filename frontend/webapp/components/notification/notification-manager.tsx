@@ -119,12 +119,12 @@ const NotifCard = styled.div`
   gap: 12px;
   padding: 16px;
   border-radius: 16px;
-  background-color: ${({ theme }) => theme.colors.white_opacity['004']};
+  background-color: ${({ theme }) => theme.colors.dropdown_bg_2 + hexPercentValues['080']};
   cursor: not-allowed;
   &.click-enabled {
     cursor: pointer;
     &:hover {
-      background-color: ${({ theme }) => theme.colors.white_opacity['008']};
+      background-color: ${({ theme }) => theme.colors.dropdown_bg_2};
     }
   }
 `;

@@ -1,6 +1,6 @@
 import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { SVG } from '@/assets';
-import { FlexColumn, FlexRow } from '@/styles';
+import { FlexColumn, FlexRow, hexPercentValues } from '@/styles';
 import styled, { css } from 'styled-components';
 import { ActiveStatus, Divider, ExtendIcon, IconButton, IconWrapped, MonitorsIcons, Text, Tooltip } from '@/reuseable-components';
 
@@ -34,14 +34,14 @@ const Container = styled.div<{ $withClick: boolean; $isError: Props['isError'] }
   padding: 16px;
   width: calc(100% - 32px);
   border-radius: 16px;
-  background-color: ${({ $isError, theme }) => ($isError ? theme.colors.darkest_red : theme.colors.white_opacity['004'])};
+  background-color: ${({ $isError, theme }) => ($isError ? theme.colors.darkest_red : theme.colors.dropdown_bg + hexPercentValues['080'])};
 
   ${({ $withClick, $isError, theme }) =>
     $withClick &&
     css`
       &:hover {
         cursor: pointer;
-        background-color: ${$isError ? theme.colors.darkest_red_hover : theme.colors.white_opacity['008']};
+        background-color: ${$isError ? theme.colors.darkest_red_hover : theme.colors.dropdown_bg_2 + hexPercentValues['080']};
         ${ControlledVisibility} {
           visibility: visible;
         }

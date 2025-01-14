@@ -26,9 +26,9 @@ const StyledButton = styled(Button)<{ $withBorder: Props['withBorder']; $color: 
   text-decoration: none;
   border: ${({ theme, $withBorder }) => `1px solid ${$withBorder ? theme.colors.border : 'transparent'}`};
   &.not-selected {
-    background-color: ${({ theme, $color }) => $color || theme.colors.white_opacity['004']};
+    background-color: ${({ theme, $color }) => $color || theme.colors.dropdown_bg_2 + hexPercentValues['060']};
     &:hover {
-      background-color: ${({ theme, $hoverColor }) => $hoverColor || theme.colors.white_opacity['008']};
+      background-color: ${({ theme, $hoverColor }) => $hoverColor || theme.colors.dropdown_bg_2};
     }
   }
   &.selected {

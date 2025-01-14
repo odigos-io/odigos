@@ -66,7 +66,7 @@ const PopupContainer = styled.div<{ $top: number; $left: number }>`
   max-width: 270px;
   padding: 8px 12px;
   border-radius: 16px;
-  border: 1px solid ${({ theme }) => theme.colors.white_opacity['008']};
+  border: 1px solid ${({ theme }) => theme.colors.dropdown_bg_2};
   background-color: ${({ theme }) => theme.colors.info};
   color: ${({ theme }) => theme.text.primary};
 

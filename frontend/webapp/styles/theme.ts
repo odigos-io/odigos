@@ -1,5 +1,3 @@
-import { hexPercentValues } from './opacity';
-
 const baseTheme = {
   colors: {
     // Notification Colors
@@ -41,36 +39,17 @@ const baseTheme = {
 const darkModeTheme = {
   colors: {
     ...baseTheme.colors,
-
     primary: '#111111',
     secondary: '#F9F9F9',
     dark_grey: '#151515',
     text: '#F9F9F9',
     border: '#525252',
     translucent_bg: '#1A1A1A',
-    card: '#F9F9F9' + hexPercentValues['004'],
     dropdown_bg: '#242424',
     dropdown_bg_2: '#333333',
-    blank_background: '#111111' + hexPercentValues['000'],
-    white_opacity: {
-      '002': 'rgba(249, 249, 249, 0.02)',
-      '004': 'rgba(249, 249, 249, 0.04)',
-      '006': 'rgba(249, 249, 249, 0.06)',
-      '008': 'rgba(249, 249, 249, 0.08)',
-      '10': 'rgba(255, 255, 255, 0.1)',
-      '20': 'rgba(255, 255, 255, 0.2)',
-      '30': 'rgba(255, 255, 255, 0.3)',
-      '40': 'rgba(255, 255, 255, 0.4)',
-      '50': 'rgba(255, 255, 255, 0.5)',
-      '60': 'rgba(255, 255, 255, 0.6)',
-      '70': 'rgba(255, 255, 255, 0.7)',
-      '80': 'rgba(255, 255, 255, 0.8)',
-      '90': 'rgba(255, 255, 255, 0.9)',
-    },
   },
   text: {
     ...baseTheme.text,
-
     primary: '#111111',
     secondary: '#F9F9F9',
     white: '#FFFFFF',
@@ -86,36 +65,17 @@ const darkModeTheme = {
 const lightModeTheme = {
   colors: {
     ...baseTheme.colors,
-
     primary: '#EEEEEE',
     secondary: '#060606',
     dark_grey: '#EAEAEA',
     text: '#060606',
     border: '#ADADAD',
     translucent_bg: '#E5E5E5',
-    card: '#060606' + hexPercentValues['004'],
     dropdown_bg: '#DBDBDB',
     dropdown_bg_2: '#CCCCCC',
-    blank_background: '#EEEEEE' + hexPercentValues['000'],
-    white_opacity: {
-      '002': 'rgba(6, 6, 6, 0.98)',
-      '004': 'rgba(6, 6, 6, 0.96)',
-      '006': 'rgba(6, 6, 6, 0.94)',
-      '008': 'rgba(6, 6, 6, 0.92)',
-      '10': 'rgba(0, 0, 0, 0.9)',
-      '20': 'rgba(0, 0, 0, 0.8)',
-      '30': 'rgba(0, 0, 0, 0.7)',
-      '40': 'rgba(0, 0, 0, 0.6)',
-      '50': 'rgba(0, 0, 0, 0.5)',
-      '60': 'rgba(0, 0, 0, 0.4)',
-      '70': 'rgba(0, 0, 0, 0.3)',
-      '80': 'rgba(0, 0, 0, 0.2)',
-      '90': 'rgba(0, 0, 0, 0.1)',
-    },
   },
   text: {
     ...baseTheme.text,
-
     primary: '#EEEEEE',
     secondary: '#060606',
     white: '#000000',

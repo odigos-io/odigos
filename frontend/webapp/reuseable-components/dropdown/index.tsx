@@ -43,8 +43,8 @@ const DropdownHeader = styled.div<{ $isOpen: boolean; $isMulti?: boolean; $hasSe
   ${({ $isOpen, $isMulti, theme }) =>
     $isOpen && !$isMulti
       ? css`
-          border: 1px solid ${theme.colors.white_opacity['40']};
-          background: ${theme.colors.white_opacity['008']};
+          border: 1px solid ${theme.text.grey};
+          background: ${theme.colors.dropdown_bg_2};
         `
       : css`
           border: 1px solid ${theme.colors.border};
@@ -137,7 +137,7 @@ const MultiLabel = styled(Text)`
   align-items: center;
   gap: 2px;
   padding: 4px 12px;
-  background: ${({ theme }) => theme.colors.white_opacity['008']};
+  background: ${({ theme }) => theme.colors.dropdown_bg_2};
   border-radius: 360px;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -193,6 +193,7 @@ const AbsoluteContainer = styled.div<{ $openUpwards: boolean }>`
   position: absolute;
   ${({ $openUpwards }) => ($openUpwards ? 'bottom' : 'top')}: calc(100% + 8px);
   left: 0;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   overflow-y: auto;

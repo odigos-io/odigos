@@ -43,7 +43,7 @@ const DropdownItem = styled.div<{ $selected: boolean }>`
   display: flex;
   align-items: center;
   &:hover {
-    background: ${({ theme }) => theme.colors.white_opacity['008']};
+    background: ${({ theme }) => theme.colors.dropdown_bg_2};
   }
   ${({ $selected, theme }) =>
     $selected &&

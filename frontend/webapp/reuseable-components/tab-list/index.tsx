@@ -3,7 +3,7 @@ import { Text } from '../text';
 import { Tooltip } from '../tooltip';
 import styled from 'styled-components';
 import { hexPercentValues } from '@/styles';
-import { OverviewIcon, SVG } from '@/assets';
+import { OverviewIcon, type SVG } from '@/assets';
 
 // Define types for the Tab component props
 interface TabProps {
@@ -27,7 +27,8 @@ const TabContainer = styled.div<{ $selected: TabProps['selected']; $disabled: Ta
   padding: 10px 12px;
   border-radius: 32px;
   cursor: ${({ $noClick, $disabled }) => ($noClick ? 'unset' : $disabled ? 'not-allowed' : 'pointer')};
-  background-color: ${({ $noClick, $selected, theme }) => ($noClick ? 'transparent' : $selected ? theme.colors.majestic_blue + hexPercentValues['024'] : theme.colors.card)};
+  background-color: ${({ $noClick, $selected, theme }) =>
+    $noClick ? 'transparent' : $selected ? theme.colors.majestic_blue + hexPercentValues['024'] : theme.colors.secondary + hexPercentValues['004']};
   opacity: ${({ $disabled }) => ($disabled ? 0.5 : 1)};
   transition: background-color 0.3s, color 0.3s;
 

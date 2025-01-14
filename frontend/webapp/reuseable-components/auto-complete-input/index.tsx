@@ -225,7 +225,7 @@ const OptionItemContainer = styled.li<{ $isList: OptionItemContainerProps['isLis
   align-items: ${({ $isList }) => ($isList ? 'flex-start' : 'center')};
   background: transparent;
   &:hover {
-    background: ${({ theme, $isList }) => !$isList && theme.colors.white_opacity['008']};
+    background: ${({ theme, $isList }) => !$isList && theme.colors.dropdown_bg_2};
   }
 `;
 
@@ -241,7 +241,7 @@ const SubOptionContainer = styled.div`
 const VerticalLine = styled.div`
   width: 1px;
   height: 52px;
-  background-color: ${({ theme }) => theme.colors.white_opacity['008']};
+  background-color: ${({ theme }) => theme.colors.dropdown_bg_2};
   position: absolute;
   left: 33px;
 `;
