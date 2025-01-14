@@ -64,7 +64,7 @@ func isDataCollectionReady(ctx context.Context, c client.Client) bool {
 	return nodeCollectorsGroup.Status.Ready
 }
 
-func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.Client, instConfig *odigosv1.InstrumentationConfig, agentsCanRunConcurrently bool) (error, bool) {
+func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.Client, instConfig *odigosv1.InstrumentationConfig) (error, bool) {
 	// devicePartiallyApplied is used to indicate that the instrumentation device was partially applied for some of the containers.
 	devicePartiallyApplied := false
 	deviceNotAppliedDueToPresenceOfAnotherAgent := false
@@ -116,6 +116,19 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 		podSpec, err := getPodSpecFromObject(obj)
 		if err != nil {
 			return err
+		}
+
+		// get the odigos configuration to check if agents can run concurrently
+		// if the configuration is not found, we assume that agents can't run concurrently [default behavior]
+		odigosConfiguration, err := k8sutils.GetCurrentOdigosConfig(ctx, kubeClient)
+		if err != nil {
+			return err
+		}
+
+		// allowConcurrentAgents is false by default unless explicitly set to true in the OdigosConfiguration
+		agentsCanRunConcurrently := false
+		if odigosConfiguration.AllowConcurrentAgents != nil {
+			agentsCanRunConcurrently = *odigosConfiguration.AllowConcurrentAgents
 		}
 
 		err, deviceApplied, deviceSkippedDueToOtherAgent := instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, instConfig.Status.RuntimeDetailsByContainer, otelSdkToUse, obj, logger, agentsCanRunConcurrently)
@@ -269,17 +282,7 @@ func reconcileSingleWorkload(ctx context.Context, kubeClient client.Client, inst
 		return nil
 	}
 
-	odigosConfiguration, err := k8sutils.GetCurrentOdigosConfig(ctx, kubeClient)
-	if err != nil {
-		return err
-	}
-	// allowConcurrentAgents is false by default unless explicitly set to true in the OdigosConfiguration
-	agentsCanRunConcurrently := false
-	if odigosConfiguration.AllowConcurrentAgents != nil {
-		agentsCanRunConcurrently = *odigosConfiguration.AllowConcurrentAgents
-	}
-
-	err, devicePartiallyApplied := addInstrumentationDeviceToWorkload(ctx, kubeClient, instrumentationConfig, agentsCanRunConcurrently)
+	err, devicePartiallyApplied := addInstrumentationDeviceToWorkload(ctx, kubeClient, instrumentationConfig)
 	if err == nil {
 		var successMessage string
 		if devicePartiallyApplied {
