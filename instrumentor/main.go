@@ -122,10 +122,12 @@ func main() {
 			- Maximum time a pod can remain the leader after its last successful renewal.
 			- If the leader pod dies, failover can take up to the LeaseDuration from the last renewal.
 			  The actual failover time depends on how recently the leader renewed the lease.
+			- Controls when the lease is fully expired and failover can occur.
 
 			RenewDeadline (4s):
 			- The maximum time the leader pod has to successfully renew its lease before it is
 			  considered unhealthy. Relevant only while the leader is alive and renewing.
+			- Controls how long the current leader will keep retrying to refresh the lease.
 
 			RetryPeriod (1s):
 			- How often non-leader pods check and attempt to acquire leadership when the lease is available.
