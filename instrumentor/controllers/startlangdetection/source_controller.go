@@ -10,10 +10,13 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
+	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
@@ -21,6 +24,33 @@ import (
 type SourceReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+}
+
+// SourcePredicates returns true if the Source object is relevant to starting language detection.
+// This means that the Source must be either:
+// 1) A normal (non-excluding) Source AND NOT terminating, or
+// 2) An excluding Source AND terminating
+// In either of these cases, we want to check if workloads should start to be instrumented.
+var SourcePredicates = predicate.Funcs{
+	UpdateFunc: func(e event.UpdateEvent) bool {
+		source := e.ObjectNew.(*v1alpha1.Source)
+		return sourceutils.IsActiveSource(source)
+	},
+
+	CreateFunc: func(e event.CreateEvent) bool {
+		source := e.Object.(*v1alpha1.Source)
+		return sourceutils.IsActiveSource(source)
+	},
+
+	DeleteFunc: func(e event.DeleteEvent) bool {
+		return false
+	},
+
+	// Allow generic events (e.g., external triggers)
+	GenericFunc: func(e event.GenericEvent) bool {
+		source := e.Object.(*v1alpha1.Source)
+		return sourceutils.IsActiveSource(source)
+	},
 }
 
 func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -35,7 +65,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// If this is a regular Source that is being created, or an Exclusion Source that is being deleted,
 	// Attempt to reconcile the workloads for instrumentation.
 	// if (terminating && exclude) || (!terminating && !exclude)
-	if k8sutils.IsTerminating(source) == v1alpha1.IsExcludedSource(source) {
+	if sourceutils.IsActiveSource(source) {
 		if source.Spec.Workload.Kind == "Namespace" {
 			err = errors.Join(err, syncNamespaceWorkloads(ctx, r.Client, r.Scheme, source.Spec.Workload.Name))
 		} else {

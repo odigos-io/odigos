@@ -79,7 +79,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 	err = builder.
 		ControllerManagedBy(mgr).
 		Named("deleteinstrumentationconfig-source").
-		WithEventFilter(predicate.Or(&odigospredicate.CreationPredicate{}, &odigospredicate.OnlyUpdatesPredicate{})).
+		WithEventFilter(SourcePredicates).
 		For(&odigosv1.Source{}).
 		Complete(&SourceReconciler{
 			Client: mgr.GetClient(),

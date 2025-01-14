@@ -15,6 +15,10 @@ import (
 )
 
 // IsObjectInstrumentedBySource returns true if the given object has an active, non-excluding Source.
+// 1) Is the object actively included by a workload Source: true
+// 2) Is the object active excluded by a workload Source (overrides namespace instrumentation): false
+// 3) Is the object actively included by a namespace Source: true
+// 4) False
 func IsObjectInstrumentedBySource(ctx context.Context, k8sClient client.Client, obj client.Object) (bool, error) {
 	// Check if a Source object exists for this object
 	sources, err := v1alpha1.GetSources(ctx, k8sClient, obj)
@@ -22,24 +26,28 @@ func IsObjectInstrumentedBySource(ctx context.Context, k8sClient client.Client, 
 		return false, err
 	}
 
-	if sources.Workload == nil && sources.Namespace == nil {
-		return false, nil
-	}
-
-	// if this is explicitly excluded (and the excluded Source isn't being deleted), skip
 	if sources.Workload != nil {
+		if IsActiveSource(sources.Workload) {
+			return true, nil
+		}
 		if v1alpha1.IsExcludedSource(sources.Workload) && !k8sutils.IsTerminating(sources.Workload) {
 			return false, nil
 		}
 	}
 
-	if sources.Namespace != nil {
-		if v1alpha1.IsExcludedSource(sources.Namespace) && !k8sutils.IsTerminating(sources.Namespace) {
-			return false, nil
-		}
+	if sources.Namespace != nil && IsActiveSource(sources.Namespace) {
+		return true, nil
 	}
 
-	return true, nil
+	return false, nil
+}
+
+// IsActiveSource returns true if the Source enables instrumentation.
+// Specifically, the Source must be either:
+// 1) Inclusive AND NOT terminating, or
+// 2) Exclusive AND terminating
+func IsActiveSource(source *v1alpha1.Source) bool {
+	return v1alpha1.IsExcludedSource(source) == k8sutils.IsTerminating(source)
 }
 
 // CreateOrUpdateSourceForObject creates a Source for an object if one does not exist and

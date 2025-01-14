@@ -25,6 +25,7 @@ import (
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
+	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -32,12 +33,41 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 type SourceReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+}
+
+// isDeleteInstrumentationConfigSource returns true if the Source object is relevant to starting language detection.
+// This means that the Source must be either:
+// 1) A normal (non-excluding) Source AND terminating, or
+// 2) An excluding Source AND NOT terminating
+// In either of these cases, we want to check if workloads should start to be instrumented.
+var SourcePredicates = predicate.Funcs{
+	UpdateFunc: func(e event.UpdateEvent) bool {
+		source := e.ObjectNew.(*v1alpha1.Source)
+		return !sourceutils.IsActiveSource(source)
+	},
+
+	CreateFunc: func(e event.CreateEvent) bool {
+		source := e.Object.(*v1alpha1.Source)
+		return !sourceutils.IsActiveSource(source)
+	},
+
+	DeleteFunc: func(e event.DeleteEvent) bool {
+		return false
+	},
+
+	// Allow generic events (e.g., external triggers)
+	GenericFunc: func(e event.GenericEvent) bool {
+		source := e.Object.(*v1alpha1.Source)
+		return !sourceutils.IsActiveSource(source)
+	},
 }
 
 func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -52,7 +82,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// If this is a regular Source that's being deleted, or a workload Exclusion Source
 	// that's being created, try to uninstrument relevant workloads.
 	// if (terminating && !exclude) || (!terminating && exclude)
-	if k8sutils.IsTerminating(source) != v1alpha1.IsExcludedSource(source) {
+	if !sourceutils.IsActiveSource(source) {
 		logger.Info("Reconciling workload for Source object",
 			"name", req.Name,
 			"namespace", req.Namespace,

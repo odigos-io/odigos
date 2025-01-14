@@ -5,10 +5,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 )
 
 func SetupWithManager(mgr ctrl.Manager) error {
@@ -67,7 +65,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("startlangdetection-source").
 		For(&v1alpha1.Source{}).
-		WithEventFilter(predicate.Or(&odigospredicate.CreationPredicate{}, &odigospredicate.OnlyUpdatesPredicate{})).
+		WithEventFilter(SourcePredicates).
 		Complete(&SourceReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
