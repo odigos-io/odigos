@@ -38,36 +38,16 @@ jobs:
         run: |
           curl -X POST -H 'Content-type: application/json' --data '{"description":"Tagging odigos modules so they can be consumed as libraries", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
 
-      - name: tag api
+      - name: tag modules
         run: |
           git tag api/${{ steps.extract_tag.outputs.tag }}
-
-      - name: tag common
-        run: |
+          git tag profiles/${{ steps.extract_tag.outputs.tag }}
           git tag common/${{ steps.extract_tag.outputs.tag }}
-
-      - name: tag k8sutils
-        run: |
           git tag k8sutils/${{ steps.extract_tag.outputs.tag }}
-
-      - name: tag procdiscovery
-        run: |
           git tag procdiscovery/${{ steps.extract_tag.outputs.tag }}
-
-      - name: tag odiglet
-        run: |
           git tag odiglet/${{ steps.extract_tag.outputs.tag }}
-
-      - name: tag opampserver
-        run: |
           git tag opampserver/${{ steps.extract_tag.outputs.tag }}
-
-      - name: tag instrumentation
-        run: |
           git tag instrumentation/${{ steps.extract_tag.outputs.tag }}
-
-      - name: Push Module Tags
-        run: |
           git push origin --tags
 
       - name: Trigger Release PR in Odigos Enterprise
