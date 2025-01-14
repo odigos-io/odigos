@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
@@ -13,7 +12,6 @@ import (
 	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -88,16 +86,7 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request
 
 	odigosConfig, err := k8sutils.GetCurrentOdigosConfig(ctx, r.Client)
 	if err != nil {
-		if apierrors.IsNotFound(err) {
-			logger.Info("Odigos effective config not yet ready, requeueing to retry in 5 seconds")
-			// effective config is reconciled in odiglet, and might not be available yet
-			return reconcile.Result{
-				Requeue:      true,
-				RequeueAfter: 5 * time.Second,
-			}, nil
-		} else {
-			return reconcile.Result{}, err
-		}
+		return k8sutils.K8SNoEffectiveConfigErrorHandler(err)
 	}
 
 	var selectedPods []corev1.Pod
