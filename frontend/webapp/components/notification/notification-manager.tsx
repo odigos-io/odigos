@@ -1,8 +1,8 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { useClickNotif } from '@/hooks';
+import { hexPercentValues } from '@/styles';
 import { useNotificationStore } from '@/store';
 import { ACTION, getStatusIcon } from '@/utils';
-import { hexPercentValues } from '@/styles/theme';
 import styled, { useTheme } from 'styled-components';
 import { NotificationIcon, TrashIcon } from '@/assets';
 import { useOnClickOutside, useTimeAgo } from '@/hooks';

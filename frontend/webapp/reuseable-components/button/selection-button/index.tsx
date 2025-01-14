@@ -3,7 +3,7 @@ import { Button } from '..';
 import { SVG } from '@/assets';
 import Image from 'next/image';
 import styled from 'styled-components';
-import { hexPercentValues } from '@/styles/theme';
+import { hexPercentValues } from '@/styles';
 import { Badge, Text } from '@/reuseable-components';
 
 interface Props {

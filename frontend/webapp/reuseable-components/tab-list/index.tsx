@@ -2,8 +2,8 @@ import React from 'react';
 import { Text } from '../text';
 import { Tooltip } from '../tooltip';
 import styled from 'styled-components';
+import { hexPercentValues } from '@/styles';
 import { OverviewIcon, SVG } from '@/assets';
-import { hexPercentValues } from '@/styles/theme';
 
 // Define types for the Tab component props
 interface TabProps {

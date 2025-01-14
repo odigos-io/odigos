@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useOnClickOutside } from '@/hooks';
+import { hexPercentValues } from '@/styles';
 import type { DropdownOption } from '@/types';
-import { hexPercentValues } from '@/styles/theme';
 import styled, { css, useTheme } from 'styled-components';
 import { CheckIcon, CrossIcon, SearchIcon } from '@/assets';
 import { Badge, Checkbox, Divider, ExtendIcon, FieldError, FieldLabel, Input, NoDataFound, Text } from '@/reuseable-components';

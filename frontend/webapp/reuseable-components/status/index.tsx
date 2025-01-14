@@ -1,8 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
 import { getStatusIcon } from '@/utils';
+import { hexPercentValues } from '@/styles';
 import { NOTIFICATION_TYPE } from '@/types';
-import { hexPercentValues } from '@/styles/theme';
 import { Divider, Text } from '@/reuseable-components';
 import { CheckCircledIcon, CrossCircledIcon } from '@/assets';
 
