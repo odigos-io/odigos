@@ -105,6 +105,11 @@ func NewSchedulerRole(ns string) *rbacv1.Role {
 				Resources: []string{"destinations"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
+			{ // apply profiles
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"processors", "instrumentationrules"},
+				Verbs:     []string{"get", "list", "watch", "patch", "delete", "create"},
+			},
 		},
 	}
 }
@@ -239,6 +244,17 @@ func NewSchedulerDeployment(ns string, version string, imagePrefix string) *apps
 												Name: k8sconsts.OdigosDeploymentConfigMapName,
 											},
 											Key: k8sconsts.OdigosDeploymentConfigMapTierKey,
+										},
+									},
+								},
+								{
+									Name: consts.OdigosVersionEnvVarName,
+									ValueFrom: &corev1.EnvVarSource{
+										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: k8sconsts.OdigosDeploymentConfigMapName,
+											},
+											Key: k8sconsts.OdigosDeploymentConfigMapVersionKey,
 										},
 									},
 								},
