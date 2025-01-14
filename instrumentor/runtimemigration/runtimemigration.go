@@ -177,6 +177,10 @@ func (m *MigrationRunnable) fetchAndProcessStatefulSets(ctx context.Context, kub
 				}
 
 				workloadInstrumentationConfigReference := workloadNames[sts.Name]
+				if workloadInstrumentationConfigReference == nil {
+					m.Logger.Error(err, "Failed to get InstrumentationConfig reference")
+					continue
+				}
 
 				// Fetching the latest state of the InstrumentationConfig resource from the Kubernetes API.
 				// This is necessary to ensure we work with the most up-to-date version of the resource, as it may
@@ -205,9 +209,6 @@ func (m *MigrationRunnable) fetchAndProcessStatefulSets(ctx context.Context, kub
 						return fmt.Errorf("failed to process container %s in statefulset %s: %v", containerObject.Name, sts.Name, err)
 					}
 				}
-
-				// Update runtimeDetailsByContainer in workloadInstrumentationConfigReference
-				workloadInstrumentationConfigReference.Status.RuntimeDetailsByContainer = runtimeDetailsByContainer
 
 				// Update the InstrumentationConfig status
 				err = kubeClient.Status().Update(
@@ -242,6 +243,10 @@ func (m *MigrationRunnable) fetchAndProcessDaemonSets(ctx context.Context, kubeC
 					continue
 				}
 				workloadInstrumentationConfigReference := workloadNames[ds.Name]
+				if workloadInstrumentationConfigReference == nil {
+					m.Logger.Error(err, "Failed to get InstrumentationConfig reference")
+					continue
+				}
 
 				// Fetching the latest state of the InstrumentationConfig resource from the Kubernetes API.
 				// This is necessary to ensure we work with the most up-to-date version of the resource, as it may
@@ -268,9 +273,6 @@ func (m *MigrationRunnable) fetchAndProcessDaemonSets(ctx context.Context, kubeC
 						return fmt.Errorf("failed to process container %s in daemonset %s: %v", containerObject.Name, ds.Name, err)
 					}
 				}
-
-				// Update runtimeDetailsByContainer in workloadInstrumentationConfigReference
-				workloadInstrumentationConfigReference.Status.RuntimeDetailsByContainer = runtimeDetailsByContainer
 
 				// Update the InstrumentationConfig status
 				err = kubeClient.Status().Update(
