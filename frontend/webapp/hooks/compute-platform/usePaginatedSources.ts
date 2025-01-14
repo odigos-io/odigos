@@ -18,12 +18,12 @@ export const usePaginatedSources = () => {
       }),
   });
 
-  const fetchSources = async (getAll: boolean = false, nextPage: string = '') => {
+  const fetchSources = async (getAll: boolean = true, nextPage: string = '') => {
     if (nextPage === '') setSources([]);
     setSourcesFetching(true);
     const { data } = await getSources({ variables: { nextPage } });
 
-    if (!!data?.computePlatform.sources) {
+    if (!!data?.computePlatform?.sources) {
       const { nextPage, items } = data.computePlatform.sources;
 
       addSources(items);
@@ -45,7 +45,7 @@ export const usePaginatedSources = () => {
 
   // Fetch 1 batch on initial mount
   useEffect(() => {
-    if (!sources.length && !loading && !sourcesFetching) fetchSources(true);
+    if (!sources.length && !loading && !sourcesFetching) fetchSources();
   }, []);
 
   return {
