@@ -18,11 +18,11 @@ const Container = styled.div`
 const Title = styled(Text)`
   font-size: 14px;
   margin-right: 10px;
-  color: ${({ theme }) => theme.colors.white};
+  color: ${({ theme }) => theme.text.secondary};
 `;
 
 export const PlatformTitle: React.FC<Props> = ({ type }) => {
-  if (PlatformTypes.K8S) {
+  if (type === PlatformTypes.K8S) {
     return (
       <Container>
         <K8sLogo size={28} />

@@ -1,10 +1,11 @@
+import { ITheme } from '@/styles';
 import { formatBytes } from '@/utils';
-import { useTheme } from 'styled-components';
 import { type Edge, type Node } from '@xyflow/react';
 import { EDGE_TYPES, NODE_TYPES, OVERVIEW_ENTITY_TYPES, STATUSES, WorkloadId, type OverviewMetricsResponse } from '@/types';
 import nodeConfig from './node-config.json';
 
 interface Params {
+  theme: ITheme;
   nodes: Node[];
   metrics?: OverviewMetricsResponse;
   containerHeight: number;
@@ -12,10 +13,8 @@ interface Params {
 
 const { nodeHeight, framePadding } = nodeConfig;
 
-const createEdge = (edgeId: string, params?: { label?: string; isMultiTarget?: boolean; isError?: boolean; animated?: boolean }): Edge => {
-  const theme = useTheme();
-
-  const { label, isMultiTarget, isError, animated } = params || {};
+const createEdge = (edgeId: string, params?: { theme: Params['theme']; label?: string; isMultiTarget?: boolean; isError?: boolean; animated?: boolean }): Edge => {
+  const { theme, label, isMultiTarget, isError, animated } = params || {};
   const [sourceNodeId, targetNodeId] = edgeId.split('-to-');
 
   return {
@@ -25,11 +24,11 @@ const createEdge = (edgeId: string, params?: { label?: string; isMultiTarget?: b
     target: targetNodeId,
     animated,
     data: { label, isMultiTarget, isError },
-    style: { stroke: isError ? theme.colors.dark_red : theme.colors.border },
+    style: { stroke: isError ? theme?.colors.dark_red : theme?.colors.border },
   };
 };
 
-export const buildEdges = ({ nodes, metrics, containerHeight }: Params) => {
+export const buildEdges = ({ theme, nodes, metrics, containerHeight }: Params) => {
   const edges: Edge[] = [];
   const actionNodeId = nodes.find(({ id: nodeId }) => ['action-frame', 'action-add'].includes(nodeId))?.id;
 
@@ -44,6 +43,7 @@ export const buildEdges = ({ nodes, metrics, containerHeight }: Params) => {
       if (position.y >= topLimit && position.y <= bottomLimit) {
         edges.push(
           createEdge(`${nodeId}-to-${actionNodeId}`, {
+            theme,
             animated: false,
             isMultiTarget: false,
             label: formatBytes(metric?.throughput),
@@ -58,6 +58,7 @@ export const buildEdges = ({ nodes, metrics, containerHeight }: Params) => {
 
       edges.push(
         createEdge(`${actionNodeId}-to-${nodeId}`, {
+          theme,
           animated: false,
           isMultiTarget: true,
           label: formatBytes(metric?.throughput),
