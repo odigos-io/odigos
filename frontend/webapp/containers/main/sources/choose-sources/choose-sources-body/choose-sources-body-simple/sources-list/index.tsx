@@ -3,6 +3,7 @@ import { FolderIcon } from '@/assets';
 import styled from 'styled-components';
 import { type UseSourceFormDataResponse } from '@/hooks';
 import { Checkbox, FadeLoader, NoDataFound, Text } from '@/reuseable-components';
+import { hexPercentValues } from '@/styles';
 
 interface Props extends UseSourceFormDataResponse {
   isModal?: boolean;
@@ -27,9 +28,9 @@ const ListItem = styled.div<{ $selected: boolean }>`
   transition: background 0.3s;
   border-radius: 16px;
   cursor: pointer;
-  background: ${({ $selected }) => ($selected ? 'rgba(68, 74, 217, 0.24)' : 'rgba(249, 249, 249, 0.04)')};
+  background: ${({ $selected, theme }) => ($selected ? theme.colors.majestic_blue + hexPercentValues['024'] : theme.colors.white_opacity['004'])};
   &:hover {
-    background: ${({ $selected }) => ($selected ? 'rgba(68, 74, 217, 0.40)' : 'rgba(249, 249, 249, 0.08)')};
+    background: ${({ $selected, theme }) => ($selected ? theme.colors.majestic_blue + hexPercentValues['040'] : theme.colors.white_opacity['008'])};
   }
 `;
 
@@ -47,7 +48,7 @@ const SourceIconWrapper = styled.div`
   align-items: center;
   gap: 8px;
   border-radius: 8px;
-  background: linear-gradient(180deg, rgba(249, 249, 249, 0.06) 0%, rgba(249, 249, 249, 0.02) 100%);
+  background: ${({ theme }) => `linear-gradient(180deg, ${theme.colors.white_opacity['006']} 0%, ${theme.colors.white_opacity['002']} 100%)`};
 `;
 
 const TextWrapper = styled.div`

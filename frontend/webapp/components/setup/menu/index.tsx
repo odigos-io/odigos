@@ -52,7 +52,7 @@ const IconWrapper = styled.div<{ $state: 'finish' | 'active' | 'disabled' }>`
         `
       : $state === 'disabled' &&
         css`
-          border: 1px dashed rgba(249, 249, 249, 0.4);
+          border: 1px dashed ${({ theme }) => theme.colors.white_opacity['40']};
         `}
 `;
 

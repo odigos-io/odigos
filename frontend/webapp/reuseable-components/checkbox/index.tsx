@@ -30,7 +30,7 @@ const CheckboxWrapper = styled.div<{ $isChecked: boolean; $disabled?: CheckboxPr
   width: 18px;
   height: 18px;
   border-radius: 6px;
-  border: ${({ $isChecked }) => ($isChecked ? '1px dashed transparent' : '1px dashed rgba(249, 249, 249, 0.4)')};
+  border: 1px dashed ${({ $isChecked, theme }) => ($isChecked ? 'transparent' : theme.colors.border)};
   display: flex;
   align-items: center;
   justify-content: center;

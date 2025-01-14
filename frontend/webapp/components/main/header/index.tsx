@@ -1,9 +1,9 @@
 import React from 'react';
-import { FlexRow } from '@/styles';
 import { SLACK_LINK } from '@/utils';
 import { PlatformTitle } from './cp-title';
 import { NotificationManager } from '@/components';
 import styled, { useTheme } from 'styled-components';
+import { FlexRow, hexPercentValues } from '@/styles';
 import { NOTIFICATION_TYPE, PlatformTypes } from '@/types';
 import { ConnectionStatus, IconButton } from '@/reuseable-components';
 import { LightOffIcon, LightOnIcon, OdigosLogoText, SlackLogo, TerminalIcon } from '@/assets';
@@ -15,7 +15,7 @@ const HeaderContainer = styled(FlexRow)`
   width: 100%;
   padding: 12px 0;
   background-color: ${({ theme }) => theme.colors.dark_grey};
-  border-bottom: 1px solid rgba(249, 249, 249, 0.16);
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border + hexPercentValues['050']};
 `;
 
 const AlignLeft = styled(FlexRow)`

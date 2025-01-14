@@ -51,7 +51,7 @@ const PopupShadow = styled.div`
   width: 100%;
   height: 45px;
   border-radius: 0 0 24px 24px;
-  background: linear-gradient(0deg, #242424 0%, rgba(36, 36, 36, 0.64) 50%, rgba(36, 36, 36, 0) 100%);
+  background: ${({ theme }) => `linear-gradient(0deg, ${theme.colors.dropdown_bg} 0%, ${theme.colors.dropdown_bg + hexPercentValues['064']} 50%, ${theme.colors.dropdown_bg} 100%)`};
   pointer-events: none;
 `;
 

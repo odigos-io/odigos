@@ -53,7 +53,9 @@ const darkModeTheme = {
     dropdown_bg_2: '#333333',
     blank_background: '#111111' + hexPercentValues['000'],
     white_opacity: {
+      '002': 'rgba(249, 249, 249, 0.02)',
       '004': 'rgba(249, 249, 249, 0.04)',
+      '006': 'rgba(249, 249, 249, 0.06)',
       '008': 'rgba(249, 249, 249, 0.08)',
       '10': 'rgba(255, 255, 255, 0.1)',
       '20': 'rgba(255, 255, 255, 0.2)',
@@ -96,7 +98,9 @@ const lightModeTheme = {
     dropdown_bg_2: '#CCCCCC',
     blank_background: '#EEEEEE' + hexPercentValues['000'],
     white_opacity: {
+      '002': 'rgba(6, 6, 6, 0.98)',
       '004': 'rgba(6, 6, 6, 0.96)',
+      '006': 'rgba(6, 6, 6, 0.94)',
       '008': 'rgba(6, 6, 6, 0.92)',
       '10': 'rgba(0, 0, 0, 0.9)',
       '20': 'rgba(0, 0, 0, 0.8)',

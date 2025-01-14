@@ -106,7 +106,7 @@ export const AutocompleteInput: FC<Props> = ({ placeholder = 'Type to search...'
       {showOptions && (
         <OptionsList>
           {filteredOptions.map((option, index) => (
-            <OptionItem key={option.id} option={option} isActive={index === activeIndex} onClick={handleOptionClick} />
+            <OptionItem key={option.id} option={option} onClick={handleOptionClick} />
           ))}
         </OptionsList>
       )}
@@ -116,17 +116,16 @@ export const AutocompleteInput: FC<Props> = ({ placeholder = 'Type to search...'
 
 interface OptionItemProps {
   option: Option;
-  isActive: boolean;
   renderIcon?: boolean;
   onClick: (option: Option) => void;
 }
 
-const OptionItem: FC<OptionItemProps> = ({ option, isActive, renderIcon = true, onClick }) => {
+const OptionItem: FC<OptionItemProps> = ({ option, renderIcon = true, onClick }) => {
   const hasSubItems = !!option.items && option.items.length > 0;
   const Icon = option.icon;
 
   return (
-    <OptionItemContainer data-id={`option-${option.id}`} $isActive={isActive} $isList={hasSubItems} onMouseDown={() => (hasSubItems ? null : onClick(option))}>
+    <OptionItemContainer data-id={`option-${option.id}`} $isList={hasSubItems} onMouseDown={() => (hasSubItems ? null : onClick(option))}>
       {Icon && renderIcon && <Icon />}
 
       <OptionContent>
@@ -140,7 +139,7 @@ const OptionItem: FC<OptionItemProps> = ({ option, isActive, renderIcon = true, 
             {option.items?.map((subOption) => (
               <SubOptionContainer key={subOption.id}>
                 <VerticalLine />
-                <OptionItem option={subOption} renderIcon={false} isActive={false} onClick={onClick} />
+                <OptionItem option={subOption} renderIcon={false} onClick={onClick} />
               </SubOptionContainer>
             ))}
           </SubOptionsList>
@@ -165,7 +164,7 @@ const InputWrapper = styled.div`
   padding-left: 12px;
   transition: border-color 0.3s;
   border-radius: 32px;
-  border: 1px solid rgba(249, 249, 249, 0.24);
+  border: 1px solid ${({ theme }) => theme.colors.border};
 
   &:hover {
     border-color: ${({ theme }) => theme.colors.secondary};
@@ -216,7 +215,7 @@ interface OptionItemContainerProps {
   isList: boolean;
 }
 
-const OptionItemContainer = styled.li<{ $isActive: OptionItemContainerProps['isActive']; $isList: OptionItemContainerProps['isList'] }>`
+const OptionItemContainer = styled.li<{ $isList: OptionItemContainerProps['isList'] }>`
   width: calc(100% - 24px);
   padding: 8px 12px;
   cursor: ${({ $isList }) => ($isList ? 'default' : 'pointer')};
@@ -224,7 +223,7 @@ const OptionItemContainer = styled.li<{ $isActive: OptionItemContainerProps['isA
   gap: 8px;
   display: flex;
   align-items: ${({ $isList }) => ($isList ? 'flex-start' : 'center')};
-  background: ${({ $isActive, theme }) => ($isActive ? theme.colors.activeBackground : 'transparent')};
+  background: transparent;
   &:hover {
     background: ${({ theme, $isList }) => !$isList && theme.colors.white_opacity['008']};
   }

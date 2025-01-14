@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { PlusIcon } from '@/assets';
 import { useModalStore } from '@/store';
 import { getEntityIcon } from '@/utils';
+import { hexPercentValues } from '@/styles';
 import styled, { css, useTheme } from 'styled-components';
 import { useComputePlatform, useOnClickOutside } from '@/hooks';
 import { Button, FadeLoader, Text } from '@/reuseable-components';
@@ -44,10 +45,10 @@ const DropdownItem = styled.div<{ $selected: boolean }>`
   &:hover {
     background: ${({ theme }) => theme.colors.white_opacity['008']};
   }
-  ${({ $selected }) =>
+  ${({ $selected, theme }) =>
     $selected &&
     css`
-      background: rgba(68, 74, 217, 0.24);
+      background: ${theme.colors.majestic_blue + hexPercentValues['024']};
     `}
 `;
 
@@ -86,7 +87,7 @@ export const AddEntity: React.FC<Props> = ({ options = DEFAULT_OPTIONS, placehol
 
   const handleSelect = (option: DropdownOption) => {
     setCurrentModal(option.id);
-    setIsDropdownOpen(false);
+    setIsDropdownOpen(false); // ??? maybe remove this line (for fast-toggle between modals)
   };
 
   return (

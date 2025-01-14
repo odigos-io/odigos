@@ -1,6 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { OdigosLogoText } from '@/assets';
+import { hexPercentValues } from '@/styles';
 import { NavigationButtonProps, NavigationButtons, Text } from '@/reuseable-components';
 
 interface Props {
@@ -10,11 +11,11 @@ interface Props {
 const Container = styled.div`
   display: flex;
   justify-content: space-between;
-  padding: 0 24px 0 32px;
   align-items: center;
-  background-color: ${({ theme }) => theme.colors.dark_grey};
-  border-bottom: 1px solid rgba(249, 249, 249, 0.16);
   height: 80px;
+  padding: 0 24px 0 32px;
+  background-color: ${({ theme }) => theme.colors.dark_grey};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border + hexPercentValues['050']};
 `;
 
 const Title = styled(Text)`

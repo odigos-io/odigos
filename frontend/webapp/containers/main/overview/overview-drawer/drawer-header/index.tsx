@@ -10,7 +10,7 @@ const HeaderContainer = styled.section`
   justify-content: space-between;
   flex-shrink: 0;
   align-self: stretch;
-  border-bottom: 1px solid rgba(249, 249, 249, 0.24);
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
 const SectionItemsWrapper = styled.div<{ $gap?: number }>`
