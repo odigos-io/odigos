@@ -22,20 +22,22 @@ import (
 )
 
 const (
-	InstrumentorOtelServiceName        = "instrumentor"
-	InstrumentorDeploymentName         = "odigos-instrumentor"
-	InstrumentorAppLabelValue          = InstrumentorDeploymentName
-	InstrumentorServiceName            = InstrumentorDeploymentName
-	InstrumentorServiceAccountName     = InstrumentorDeploymentName
-	InstrumentorRoleName               = InstrumentorDeploymentName
-	InstrumentorRoleBindingName        = InstrumentorDeploymentName
-	InstrumentorClusterRoleName        = InstrumentorDeploymentName
-	InstrumentorClusterRoleBindingName = InstrumentorDeploymentName
-	InstrumentorCertificateName        = InstrumentorDeploymentName
-	InstrumentorMutatingWebhookName    = "mutating-webhook-configuration"
-	InstrumentorContainerName          = "manager"
-	InstrumentorWebhookSecretName      = "webhook-cert"
-	InstrumentorWebhookVolumeName      = "webhook-cert"
+	InstrumentorOtelServiceName             = "instrumentor"
+	InstrumentorDeploymentName              = "odigos-instrumentor"
+	InstrumentorAppLabelValue               = InstrumentorDeploymentName
+	InstrumentorServiceName                 = InstrumentorDeploymentName
+	InstrumentorServiceAccountName          = InstrumentorDeploymentName
+	InstrumentorRoleName                    = InstrumentorDeploymentName
+	InstrumentorRoleBindingName             = InstrumentorDeploymentName
+	InstrumentorClusterRoleName             = InstrumentorDeploymentName
+	InstrumentorClusterRoleBindingName      = InstrumentorDeploymentName
+	InstrumentorCertificateName             = InstrumentorDeploymentName
+	InstrumentorMutatingWebhookName         = "mutating-webhook-configuration"
+	InstrumentorSourceMutatingWebhookName   = "source-mutating-webhook-configuration"
+	InstrumentorSourceValidatingWebhookName = "source-validating-webhook-configuration"
+	InstrumentorContainerName               = "manager"
+	InstrumentorWebhookSecretName           = "webhook-cert"
+	InstrumentorWebhookVolumeName           = "webhook-cert"
 )
 
 func NewInstrumentorServiceAccount(ns string) *corev1.ServiceAccount {
@@ -190,6 +192,16 @@ func NewInstrumentorClusterRole() *rbacv1.ClusterRole {
 				Resources: []string{"instrumentationconfigs"},
 				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
 			},
+			{
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"sources"},
+				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
+			},
+			{
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"sources/finalizers"},
+				Verbs:     []string{"update"},
+			},
 		},
 	}
 }
@@ -243,7 +255,132 @@ func NewInstrumentorService(ns string) *corev1.Service {
 	}
 }
 
-func NewMutatingWebhookConfiguration(ns string, caBundle []byte) *admissionregistrationv1.MutatingWebhookConfiguration {
+func NewSourceValidatingWebhookConfiguration(ns string, caBundle []byte) *admissionregistrationv1.ValidatingWebhookConfiguration {
+	webhook := &admissionregistrationv1.ValidatingWebhookConfiguration{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ValidatingWebhookConfiguration",
+			APIVersion: "admissionregistration.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: InstrumentorSourceValidatingWebhookName,
+			Labels: map[string]string{
+				"app.kubernetes.io/name":       "source-validating-webhook",
+				"app.kubernetes.io/instance":   InstrumentorSourceValidatingWebhookName,
+				"app.kubernetes.io/component":  "webhook",
+				"app.kubernetes.io/created-by": "instrumentor",
+				"app.kubernetes.io/part-of":    "odigos",
+			},
+		},
+		Webhooks: []admissionregistrationv1.ValidatingWebhook{
+			{
+				Name: "source-validating-webhook.odigos.io",
+				ClientConfig: admissionregistrationv1.WebhookClientConfig{
+					Service: &admissionregistrationv1.ServiceReference{
+						Name:      InstrumentorServiceName,
+						Namespace: ns,
+						Path:      ptrString("/validate-odigos-io-v1alpha1-source"),
+						Port:      intPtr(9443),
+					},
+				},
+				Rules: []admissionregistrationv1.RuleWithOperations{
+					{
+						Operations: []admissionregistrationv1.OperationType{
+							admissionregistrationv1.Create,
+							admissionregistrationv1.Update,
+						},
+						Rule: admissionregistrationv1.Rule{
+							APIGroups:   []string{"odigos.io"},
+							APIVersions: []string{"v1alpha1"},
+							Resources:   []string{"sources"},
+							Scope:       ptrGeneric(admissionregistrationv1.NamespacedScope),
+						},
+					},
+				},
+				FailurePolicy:  ptrGeneric(admissionregistrationv1.Ignore),
+				SideEffects:    ptrGeneric(admissionregistrationv1.SideEffectClassNone),
+				TimeoutSeconds: intPtr(10),
+				AdmissionReviewVersions: []string{
+					"v1",
+				},
+			},
+		},
+	}
+
+	if caBundle == nil {
+		webhook.Annotations = map[string]string{
+			"cert-manager.io/inject-ca-from": fmt.Sprintf("%s/serving-cert", ns),
+		}
+	} else {
+		webhook.Webhooks[0].ClientConfig.CABundle = caBundle
+	}
+
+	return webhook
+}
+
+func NewSourceMutatingWebhookConfiguration(ns string, caBundle []byte) *admissionregistrationv1.MutatingWebhookConfiguration {
+	webhook := &admissionregistrationv1.MutatingWebhookConfiguration{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "MutatingWebhookConfiguration",
+			APIVersion: "admissionregistration.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: InstrumentorSourceMutatingWebhookName,
+			Labels: map[string]string{
+				"app.kubernetes.io/name":       "source-mutating-webhook",
+				"app.kubernetes.io/instance":   InstrumentorSourceMutatingWebhookName,
+				"app.kubernetes.io/component":  "webhook",
+				"app.kubernetes.io/created-by": "instrumentor",
+				"app.kubernetes.io/part-of":    "odigos",
+			},
+		},
+		Webhooks: []admissionregistrationv1.MutatingWebhook{
+			{
+				Name: "source-mutating-webhook.odigos.io",
+				ClientConfig: admissionregistrationv1.WebhookClientConfig{
+					Service: &admissionregistrationv1.ServiceReference{
+						Name:      InstrumentorServiceName,
+						Namespace: ns,
+						Path:      ptrString("/mutate-odigos-io-v1alpha1-source"),
+						Port:      intPtr(9443),
+					},
+				},
+				Rules: []admissionregistrationv1.RuleWithOperations{
+					{
+						Operations: []admissionregistrationv1.OperationType{
+							admissionregistrationv1.Create,
+							admissionregistrationv1.Update,
+						},
+						Rule: admissionregistrationv1.Rule{
+							APIGroups:   []string{"odigos.io"},
+							APIVersions: []string{"v1alpha1"},
+							Resources:   []string{"sources"},
+							Scope:       ptrGeneric(admissionregistrationv1.NamespacedScope),
+						},
+					},
+				},
+				FailurePolicy:      ptrGeneric(admissionregistrationv1.Ignore),
+				ReinvocationPolicy: ptrGeneric(admissionregistrationv1.IfNeededReinvocationPolicy),
+				SideEffects:        ptrGeneric(admissionregistrationv1.SideEffectClassNone),
+				TimeoutSeconds:     intPtr(10),
+				AdmissionReviewVersions: []string{
+					"v1",
+				},
+			},
+		},
+	}
+
+	if caBundle == nil {
+		webhook.Annotations = map[string]string{
+			"cert-manager.io/inject-ca-from": fmt.Sprintf("%s/serving-cert", ns),
+		}
+	} else {
+		webhook.Webhooks[0].ClientConfig.CABundle = caBundle
+	}
+
+	return webhook
+}
+
+func NewPodMutatingWebhookConfiguration(ns string, caBundle []byte) *admissionregistrationv1.MutatingWebhookConfiguration {
 	webhook := &admissionregistrationv1.MutatingWebhookConfiguration{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "MutatingWebhookConfiguration",
@@ -549,7 +686,9 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 	}
 
 	resources = append([]kube.Object{NewInstrumentorTLSSecret(a.ns, &cert),
-		NewMutatingWebhookConfiguration(a.ns, []byte(cert.Cert)),
+		NewPodMutatingWebhookConfiguration(a.ns, []byte(cert.Cert)),
+		NewSourceMutatingWebhookConfiguration(a.ns, []byte(cert.Cert)),
+		NewSourceValidatingWebhookConfiguration(a.ns, []byte(cert.Cert)),
 	},
 		resources...)
 

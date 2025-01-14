@@ -1,0 +1,10 @@
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: 15-namespace-workload-namespace
+  namespace: default
+spec:
+  workload:
+    name: 15-namespace-workload-namespace
+    namespace: kube-system
+    kind: Deployment

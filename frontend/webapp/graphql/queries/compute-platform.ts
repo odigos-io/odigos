@@ -19,12 +19,12 @@ export const GET_COMPUTE_PLATFORM = gql`
 `;
 
 export const GET_NAMESPACE = gql`
-  query GetNamespace($namespaceName: String!, $instrumentationLabeled: Boolean) {
+  query GetNamespace($namespaceName: String!) {
     computePlatform {
       k8sActualNamespace(name: $namespaceName) {
         name
         selected
-        k8sActualSources(instrumentationLabeled: $instrumentationLabeled) {
+        k8sActualSources {
           kind
           name
           numberOfInstances

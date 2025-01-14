@@ -20,7 +20,9 @@ import (
 	"context"
 	"errors"
 
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -137,7 +139,6 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 }
 
 func syncGenericWorkloadListToNs(ctx context.Context, c client.Client, kind workload.WorkloadKind, key client.ObjectKey) error {
-
 	// it is very important that we make the changes based on a fresh copy of the workload object
 	// if a list operation pulled in state and is now slowly iterating over it, we might be working with stale data
 	freshWorkloadCopy := workload.ClientObjectFromWorkloadKind(kind)
@@ -151,25 +152,44 @@ func syncGenericWorkloadListToNs(ctx context.Context, c client.Client, kind work
 		}
 	}
 
-	if !isInheritingInstrumentationFromNs(freshWorkloadCopy) {
+	var err error
+	inheriting, err := isInheritingInstrumentationFromNs(ctx, c, freshWorkloadCopy)
+	if err != nil {
+		return err
+	}
+	if !inheriting {
 		return nil
 	}
 
-	var err error
 	err = errors.Join(err, deleteWorkloadInstrumentationConfig(ctx, c, freshWorkloadCopy))
 	err = errors.Join(err, removeReportedNameAnnotation(ctx, c, freshWorkloadCopy))
 	return err
 }
 
-// this function indicates that the odigos instrumentation label is missing from the workload object manifest.
-// when reconciling the namespace, the usecase is to delete instrumentation for workloads that were only
-// instrumented due to the label on the namespace. These are workloads with the label missing.
-// (they inherit the instrumentation from the namespace this way)
-func isInheritingInstrumentationFromNs(obj client.Object) bool {
+// this function checks whether a workload is instrumented via inheriting from namespace, or whether it has its own instrumentation.
+// It checks:
+// 1. Does a Workload Source exist for the workload
+// 2. Does a Namespace Source exist for the workload
+// 3. Is the workload labeled for instrumentation
+// This is used to decide whether to uninstrument the workload.
+func isInheritingInstrumentationFromNs(ctx context.Context, c client.Client, obj client.Object) (bool, error) {
+	sourceList, err := v1alpha1.GetSources(ctx, c, obj)
+	if err != nil {
+		return false, err
+	}
+
+	if sourceList.Workload != nil && !k8sutils.IsTerminating(sourceList.Workload) {
+		return false, nil
+	}
+
+	if sourceList.Namespace != nil && !k8sutils.IsTerminating(sourceList.Namespace) {
+		return true, nil
+	}
+
 	labels := obj.GetLabels()
 	if labels == nil {
-		return true
+		return true, nil
 	}
 	_, exists := labels[consts.OdigosInstrumentationLabel]
-	return !exists
+	return !exists, nil
 }

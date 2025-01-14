@@ -10,6 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -58,9 +59,21 @@ func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind wor
 	}
 
 	if !instrumented {
-		return ctrl.Result{}, nil
+		// Check if a Source object exists for this workload
+		sourceList, err := odigosv1.GetSources(ctx, k8sClient, obj)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		if sourceList.Workload == nil && sourceList.Namespace == nil {
+			return ctrl.Result{}, nil
+		}
+		// if this is explicitly excluded (and the excluded Source isn't being deleted), skip
+		if sourceList.Workload != nil {
+			if odigosv1.IsExcludedSource(sourceList.Workload) && !k8sutils.IsTerminating(sourceList.Workload) {
+				return ctrl.Result{}, nil
+			}
+		}
 	}
-
 	err = requestOdigletsToCalculateRuntimeDetails(ctx, k8sClient, instConfigName, req.Namespace, obj, scheme)
 	return ctrl.Result{}, err
 }

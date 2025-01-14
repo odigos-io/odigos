@@ -101,6 +101,9 @@ var uninstallCmd = &cobra.Command{
 		createKubeResourceWithLogging(ctx, "Uninstalling Odigos MutatingWebhookConfigurations",
 			client, cmd, ns, uninstallMutatingWebhookConfigs)
 
+		createKubeResourceWithLogging(ctx, "Uninstalling Odigos ValidatingWebhookConfigurations",
+			client, cmd, ns, uninstallValidatingWebhookConfigs)
+
 		fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos uninstalled.\n")
 	},
 }
@@ -378,6 +381,20 @@ func uninstallConfigMaps(ctx context.Context, cmd *cobra.Command, client *kube.C
 }
 
 func uninstallCRDs(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+	// Clear finalizers from Source objects so they can be uninstalled
+	sources, err := client.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
+	for _, i := range sources.Items {
+		source, err := client.OdigosClient.Sources(i.Namespace).Get(ctx, i.Name, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		source.SetFinalizers([]string{})
+		_, err = client.OdigosClient.Sources(i.Namespace).Update(ctx, source, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
 	list, err := client.ApiExtensions.ApiextensionsV1().CustomResourceDefinitions().List(ctx, metav1.ListOptions{
 		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
 			MatchLabels: labels.OdigosSystem,
@@ -409,6 +426,26 @@ func uninstallMutatingWebhookConfigs(ctx context.Context, cmd *cobra.Command, cl
 
 	for _, webhook := range list.Items {
 		err = client.AdmissionregistrationV1().MutatingWebhookConfigurations().Delete(ctx, webhook.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func uninstallValidatingWebhookConfigs(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+	list, err := client.AdmissionregistrationV1().ValidatingWebhookConfigurations().List(ctx, metav1.ListOptions{
+		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
+			MatchLabels: labels.OdigosSystem,
+		}),
+	})
+	if err != nil {
+		return err
+	}
+
+	for _, webhook := range list.Items {
+		err = client.AdmissionregistrationV1().ValidatingWebhookConfigurations().Delete(ctx, webhook.Name, metav1.DeleteOptions{})
 		if err != nil {
 			return err
 		}
