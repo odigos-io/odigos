@@ -2,6 +2,7 @@ package runtime_details
 
 import (
 	"context"
+	"time"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -9,6 +10,7 @@ import (
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -58,7 +60,15 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request reconcile.Reques
 
 	odigosConfig, err := k8sutils.GetCurrentOdigosConfig(ctx, p.Client)
 	if err != nil {
-		return reconcile.Result{}, err
+		if apierrors.IsNotFound(err) {
+			logger.Info("Odigos effective config not yet ready, requeueing to retry in 5 seconds")
+			return reconcile.Result{
+				Requeue:      true,
+				RequeueAfter: 5 * time.Second,
+			}, nil
+		} else {
+			return reconcile.Result{}, err
+		}
 	}
 
 	// Perform runtime inspection once we know the pod is newer that the latest runtime inspection performed and saved.
