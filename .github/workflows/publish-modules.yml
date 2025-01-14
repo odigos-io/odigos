@@ -41,13 +41,13 @@ jobs:
       - name: tag modules
         run: |
           git tag api/${{ steps.extract_tag.outputs.tag }}
-          git tag profiles/${{ steps.extract_tag.outputs.tag }}
           git tag common/${{ steps.extract_tag.outputs.tag }}
+          git tag instrumentation/${{ steps.extract_tag.outputs.tag }}
           git tag k8sutils/${{ steps.extract_tag.outputs.tag }}
-          git tag procdiscovery/${{ steps.extract_tag.outputs.tag }}
           git tag odiglet/${{ steps.extract_tag.outputs.tag }}
           git tag opampserver/${{ steps.extract_tag.outputs.tag }}
-          git tag instrumentation/${{ steps.extract_tag.outputs.tag }}
+          git tag procdiscovery/${{ steps.extract_tag.outputs.tag }}
+          git tag profiles/${{ steps.extract_tag.outputs.tag }}
           git push origin --tags
 
       - name: Trigger Release PR in Odigos Enterprise
