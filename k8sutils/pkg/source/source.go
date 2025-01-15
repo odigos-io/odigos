@@ -28,7 +28,7 @@ func IsObjectInstrumentedBySource(ctx context.Context, k8sClient client.Client, 
 	}
 
 	if sources.Workload != nil {
-		if IsActiveSource(sources.Workload) {
+		if !v1alpha1.IsExcludedSource(sources.Workload) && !k8sutils.IsTerminating(sources.Workload) {
 			return true, nil
 		}
 		if v1alpha1.IsExcludedSource(sources.Workload) && !k8sutils.IsTerminating(sources.Workload) {
@@ -36,7 +36,7 @@ func IsObjectInstrumentedBySource(ctx context.Context, k8sClient client.Client, 
 		}
 	}
 
-	if sources.Namespace != nil && IsActiveSource(sources.Namespace) {
+	if sources.Namespace != nil && !v1alpha1.IsExcludedSource(sources.Namespace) && !k8sutils.IsTerminating(sources.Namespace) {
 		return true, nil
 	}
 
