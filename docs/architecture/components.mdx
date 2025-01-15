@@ -123,7 +123,7 @@ The Node Collector is also responsible for recording some k8s metrics, and colle
 **Role**: Node collector (in the context of instrumentation) is responsible for scraping Kubernetes metrics, and collect logs from the node filesystem.
 
 - When a destination for metrics exists, the node collector will use the OpenTelemetry-Collector ["kubeletstats receiver"](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver) to scrape k8s related metrics from the kubelet and export them as otel metrics to the cluster collector.
-- When a destination for logs exists, the node collector will use the OpenTelemetry-Collector ["filelog receiver"](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/filelogreceiver) to read the relevant pod logs from the node filesystem and export them as otel logs to the cluster collector.
+- When a logs destination exists, the node collector will use the OpenTelemetry Collector ["filelog receiver"](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/filelogreceiver) to read the relevant pod logs from the node filesystem and export them as OpenTelemetry logs to the cluster collector.
 
 ## Odigos
 
