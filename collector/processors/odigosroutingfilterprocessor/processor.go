@@ -97,13 +97,15 @@ func (fp *filterProcessor) matches(name, namespace, kind string) bool {
 		return false
 	}
 
-	if fp.config.MatchConditions[fmt.Sprintf("%s/*/*", namespace)] {
+	if _, exists := fp.config.MatchMap[fmt.Sprintf("%s/*/*", namespace)]; exists {
 		return true
 	}
 
 	if name != "" && kind != "" {
 		key := fmt.Sprintf("%s/%s/%s", namespace, name, kind)
-		return fp.config.MatchConditions[key]
+		if _, exists := fp.config.MatchMap[key]; exists {
+			return true
+		}
 	}
 
 	return false

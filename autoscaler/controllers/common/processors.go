@@ -99,17 +99,17 @@ func GenerateRoutingProcessors(
 			continue
 		}
 
-		matchConditions := make(map[string]bool)
+		matchConditions := []string{}
 		if len(dest.Spec.SourceSelector.Namespaces) > 0 {
 			for _, namespace := range dest.Spec.SourceSelector.Namespaces {
-				matchConditions[fmt.Sprintf("%s/*/*", namespace)] = true
+				matchConditions = append(matchConditions, fmt.Sprintf("%s/*/*", namespace))
 			}
 		}
 		if len(dest.Spec.SourceSelector.Groups) > 0 {
 			matchedSources := fetchSourcesByGroups(ctx, kubeClient, dest.Spec.SourceSelector.Groups, logger)
 			for _, source := range matchedSources {
 				key := fmt.Sprintf("%s/%s/%s", source.Spec.Workload.Namespace, source.Spec.Workload.Name, source.Spec.Workload.Kind)
-				matchConditions[key] = true
+				matchConditions = append(matchConditions, key)
 			}
 		}
 

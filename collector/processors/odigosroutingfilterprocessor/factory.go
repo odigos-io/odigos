@@ -21,7 +21,7 @@ func NewFactory() processor.Factory {
 
 func createDefaultConfig() component.Config {
 	return &Config{
-		MatchConditions: map[string]bool{},
+		MatchConditions: []string{},
 	}
 }
 
@@ -30,6 +30,9 @@ func createTracesProcessor(
 	set processor.Settings,
 	cfg component.Config,
 	nextConsumer consumer.Traces) (processor.Traces, error) {
+
+	config := cfg.(*Config)
+	config.InitMatchMap()
 
 	filterProc := &filterProcessor{
 		logger: set.Logger,
@@ -52,6 +55,9 @@ func createLogsProcessor(
 	cfg component.Config,
 	nextConsumer consumer.Logs) (processor.Logs, error) {
 
+	config := cfg.(*Config)
+	config.InitMatchMap()
+
 	filterProc := &filterProcessor{
 		logger: set.Logger,
 		config: cfg.(*Config),
@@ -72,6 +78,9 @@ func createMetricsProcessor(
 	set processor.Settings,
 	cfg component.Config,
 	nextConsumer consumer.Metrics) (processor.Metrics, error) {
+
+	config := cfg.(*Config)
+	config.InitMatchMap()
 
 	filterProc := &filterProcessor{
 		logger: set.Logger,
