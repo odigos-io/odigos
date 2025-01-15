@@ -117,6 +117,8 @@ type InstrumentationRule {
   ruleName: String
   notes: String
   disabled: Boolean
+  mutable: Boolean!
+  profileName: String!
   workloads: [PodWorkload!]
   instrumentationLibraries: [InstrumentationLibraryGlobalId!]
   payloadCollection: PayloadCollection

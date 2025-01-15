@@ -10,6 +10,7 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,12 +26,17 @@ func ListInstrumentationRules(ctx context.Context) ([]*model.InstrumentationRule
 
 	var gqlRules []*model.InstrumentationRule
 	for _, rule := range instrumentationRules.Items {
+		annotations := rule.GetAnnotations()
+		profileName := annotations[k8sconsts.OdigosProfileAnnotation]
+		mutable := profileName == ""
 
 		gqlRules = append(gqlRules, &model.InstrumentationRule{
 			RuleID:                   rule.Name,
 			RuleName:                 &rule.Spec.RuleName,
 			Notes:                    &rule.Spec.Notes,
 			Disabled:                 &rule.Spec.Disabled,
+			Mutable:                  mutable,
+			ProfileName:              profileName,
 			Workloads:                convertWorkloads(rule.Spec.Workloads),
 			InstrumentationLibraries: convertInstrumentationLibraries(rule.Spec.InstrumentationLibraries),
 			PayloadCollection:        convertPayloadCollection(rule.Spec.PayloadCollection),

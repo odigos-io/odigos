@@ -77,6 +77,8 @@ export interface InstrumentationRuleSpec {
   type?: InstrumentationRuleType; // does not come from backend, it's derived during GET
   notes: string;
   disabled: boolean;
+  mutable: boolean;
+  profileName: string;
   workloads?: PodWorkload[];
   instrumentationLibraries?: InstrumentationLibraryGlobalId[];
   payloadCollection?: PayloadCollection;
