@@ -8,7 +8,7 @@ description: |
 query: |
     { resource.odigos.version !~ ".*" ||
       resource.k8s.deployment.name !~ ".*" ||
-      resource.k8s.node.name !~ "(kind-control-plane|aks-.*)" ||
+      resource.k8s.node.name !~ "(kind-*|aks-.*)" ||
       resource.k8s.pod.name !~ ".*" }
 expected:
   count: 0
