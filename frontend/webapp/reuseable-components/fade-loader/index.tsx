@@ -33,7 +33,7 @@ export const FadeLoader = ({
   ...additionalprops
 }: LoaderHeightWidthRadiusProps) => {
   const theme = useTheme();
-  const color = clr || theme.colors.text;
+  const color = clr || theme.text.secondary;
 
   const { value } = parseLengthAndUnit(margin);
   const radiusValue = value + 4.2;

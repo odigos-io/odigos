@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useClickNotif } from '@/hooks';
 import { hexPercentValues } from '@/styles';
 import { useNotificationStore } from '@/store';
@@ -51,7 +51,7 @@ const PopupShadow = styled.div`
   width: 100%;
   height: 45px;
   border-radius: 0 0 24px 24px;
-  background: ${({ theme }) => `linear-gradient(0deg, ${theme.colors.dropdown_bg} 0%, ${theme.colors.dropdown_bg + hexPercentValues['064']} 50%, ${theme.colors.dropdown_bg} 100%)`};
+  background: ${({ theme }) => `linear-gradient(to top, ${theme.colors.dropdown_bg}, transparent)`};
   pointer-events: none;
 `;
 
@@ -130,7 +130,7 @@ const NotifCard = styled.div`
 `;
 
 const StatusIcon = styled.div<{ $type: NOTIFICATION_TYPE }>`
-  background-color: ${({ $type, theme }) => theme.text[$type] + hexPercentValues['012']};
+  background-color: ${({ $type, theme }) => theme.text[$type] + hexPercentValues['015']};
   border-radius: 8px;
   width: 36px;
   height: 36px;
@@ -159,13 +159,7 @@ const NotificationListItem: React.FC<Notification & { onClick: () => void }> = (
   const { id, seen, type, title, message, time, crdType, target } = props;
   const canClick = !!crdType && !!target;
 
-  const isDeleted = useMemo(() => {
-    const deleteAction = ACTION.DELETE.toLowerCase();
-    const titleIncludes = title?.toLowerCase().includes(deleteAction);
-
-    return titleIncludes || false;
-  }, [title, message]);
-
+  const isDeleted = title?.toLowerCase().includes(ACTION.DELETE.toLowerCase()) || false;
   const Icon = getStatusIcon(type);
   const timeAgo = useTimeAgo();
   const clickNotif = useClickNotif();

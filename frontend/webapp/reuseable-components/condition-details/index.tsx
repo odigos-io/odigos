@@ -11,10 +11,10 @@ interface Props {
 
 const Container = styled.div<{ $hasErrors: boolean }>`
   border-radius: 24px;
-  background-color: ${({ theme, $hasErrors }) => ($hasErrors ? theme.colors.darkest_red : theme.colors.dropdown_bg_2 + hexPercentValues['040'])};
+  background-color: ${({ theme, $hasErrors }) => ($hasErrors ? theme.text.error + hexPercentValues['010'] : theme.colors.secondary + hexPercentValues['005'])};
   cursor: pointer;
   &:hover {
-    background-color: ${({ theme, $hasErrors }) => ($hasErrors ? theme.colors.error : theme.colors.dropdown_bg_2)};
+    background-color: ${({ theme, $hasErrors }) => ($hasErrors ? theme.text.error + hexPercentValues['020'] : theme.colors.secondary + hexPercentValues['010'])};
   }
   transition: background 0.3s;
 `;

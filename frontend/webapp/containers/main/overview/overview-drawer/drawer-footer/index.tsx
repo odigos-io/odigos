@@ -1,7 +1,7 @@
 import React from 'react';
+import { slide } from '@/styles';
 import { TrashIcon } from '@/assets';
 import { useTransition } from '@/hooks';
-import { FlexRow, slide } from '@/styles';
 import styled, { useTheme } from 'styled-components';
 import { Button, Text } from '@/reuseable-components';
 
@@ -30,7 +30,7 @@ const AlignRight = styled.div`
 `;
 
 const FooterButton = styled(Button)`
-  width: 140px;
+  min-width: 140px;
   font-size: 14px;
 `;
 
@@ -53,10 +53,8 @@ const DrawerFooter: React.FC<Props> = ({ isOpen, onSave, saveLabel = 'Save', onC
 
       <AlignRight>
         <FooterButton data-id='drawer-delete' variant='tertiary' onClick={onDelete}>
-          <FlexRow>
-            <TrashIcon />
-          </FlexRow>
-          <Text color={theme.text.error} size={14} family='secondary'>
+          <TrashIcon />
+          <Text size={14} color={theme.text.error} family='secondary' decoration='underline'>
             {deleteLabel}
           </Text>
         </FooterButton>

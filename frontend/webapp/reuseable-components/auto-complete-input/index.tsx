@@ -179,12 +179,12 @@ const StyledInput = styled.input`
   border: none;
   outline: none;
   background: none;
-  color: ${({ theme }) => theme.colors.text};
+  color: ${({ theme }) => theme.text.secondary};
   font-size: 14px;
   font-family: ${({ theme }) => theme.font_family.primary};
   font-weight: 300;
   &::placeholder {
-    color: ${({ theme }) => theme.colors.text};
+    color: ${({ theme }) => theme.text.secondary};
     font-family: ${({ theme }) => theme.font_family.primary};
     opacity: 0.4;
     font-size: 14px;

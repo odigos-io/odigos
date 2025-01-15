@@ -35,8 +35,8 @@ export const ActionFormBody: React.FC<Props> = ({ isUpdate, action, formData, fo
           <FieldTitle>Status</FieldTitle>
           <Segment
             options={[
-              { icon: CheckCircledIcon, label: 'active', value: false, selectedBgColor: theme.colors.dark_green },
-              { icon: CrossCircledIcon, label: 'inactive', value: true, selectedBgColor: theme.colors.darker_red },
+              { icon: CheckCircledIcon, label: 'active', value: false, selectedBgColor: theme.text.success },
+              { icon: CrossCircledIcon, label: 'inactive', value: true, selectedBgColor: theme.text.error },
             ]}
             selected={formData.disable}
             setSelected={(bool) => handleFormChange('disable', bool)}

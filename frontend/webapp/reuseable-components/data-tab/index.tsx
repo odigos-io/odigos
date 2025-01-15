@@ -34,14 +34,14 @@ const Container = styled.div<{ $withClick: boolean; $isError: Props['isError'] }
   padding: 16px;
   width: calc(100% - 32px);
   border-radius: 16px;
-  background-color: ${({ $isError, theme }) => ($isError ? theme.colors.darkest_red : theme.colors.dropdown_bg_2 + hexPercentValues['040'])};
+  background-color: ${({ $isError, theme }) => ($isError ? theme.text.error + hexPercentValues['010'] : theme.colors.secondary + hexPercentValues['005'])};
 
   ${({ $withClick, $isError, theme }) =>
     $withClick &&
     css`
       &:hover {
         cursor: pointer;
-        background-color: ${$isError ? theme.colors.darkest_red_hover : theme.colors.dropdown_bg_2 + hexPercentValues['080']};
+        background-color: ${$isError ? theme.text.error + hexPercentValues['020'] : theme.colors.secondary + hexPercentValues['010']};
         ${ControlledVisibility} {
           visibility: visible;
         }

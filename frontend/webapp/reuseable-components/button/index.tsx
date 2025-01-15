@@ -10,24 +10,25 @@ const variantStyles = {
   primary: css`
     border: 1px solid ${({ theme }) => theme.text.secondary + hexPercentValues['024']};
     background: ${({ theme }) => theme.colors.secondary};
+    color: ${({ theme }) => theme.colors.primary};
     &:hover {
-      background: #e0e0e0;
+      background: ${({ theme }) => theme.colors.secondary + hexPercentValues['080']};
     }
     &:active {
-      background: ${({ theme }) => theme.text.grey};
+      background: ${({ theme }) => theme.text.secondary + hexPercentValues['060']};
     }
   `,
   secondary: css`
     border: 1px solid ${({ theme }) => theme.colors.border};
-    background: transparent;
+    background: ${({ theme }) => theme.colors.primary};
     color: ${({ theme }) => theme.colors.secondary};
     &:hover {
       border: 1px solid ${({ theme }) => theme.text.darker_grey};
-      background: ${({ theme }) => theme.colors.dropdown_bg_2 + hexPercentValues['040']};
+      background: ${({ theme }) => theme.colors.primary + hexPercentValues['080']};
     }
     &:active {
       border: 1px solid ${({ theme }) => theme.text.dark_grey};
-      background: ${({ theme }) => theme.colors.dropdown_bg_2};
+      background: ${({ theme }) => theme.colors.primary + hexPercentValues['060']};
     }
   `,
   tertiary: css`

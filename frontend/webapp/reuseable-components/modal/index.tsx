@@ -28,7 +28,7 @@ const Container = styled.div`
   border: ${({ theme }) => `1px solid ${theme.colors.border}`};
   border-radius: 40px;
   box-shadow: ${({ theme }) => {
-    const color = theme.colors.primary + hexPercentValues['030'];
+    const color = theme.colors.primary + hexPercentValues['010'];
     return `0px 1px 1px 0px ${color}, 0px 2px 2px 0px ${color}, 0px 5px 5px 0px ${color}, 0px 10px 10px 0px ${color}, 0px 0px 8px 0px ${color}`;
   }};
 `;

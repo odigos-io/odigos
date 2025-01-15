@@ -24,7 +24,7 @@ const Container = styled.div<{
   z-index: 1000;
   width: ${({ $width }) => $width};
   background: ${({ theme }) => theme.colors.translucent_bg};
-  box-shadow: 0 2px 10px ${({ theme }) => theme.colors.primary + hexPercentValues['030']};
+  box-shadow: 0 2px 10px ${({ theme }) => theme.colors.primary + hexPercentValues['010']};
   overflow-y: auto;
 `;
 

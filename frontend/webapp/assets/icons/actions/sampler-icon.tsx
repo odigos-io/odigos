@@ -4,7 +4,7 @@ import { useTheme } from 'styled-components';
 
 export const SamplerIcon: SVG = ({ size = 16, fill: f, rotate = 0, onClick }) => {
   const theme = useTheme();
-  const fill = f || theme.text.info;
+  const fill = f || theme.text.secondary;
 
   return (
     <svg width={size} height={size} viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg' fill='none' style={{ transform: `rotate(${rotate}deg)` }} onClick={onClick}>

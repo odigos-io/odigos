@@ -39,17 +39,18 @@ const baseTheme = {
 const darkModeTheme = {
   colors: {
     ...baseTheme.colors,
+    // Base Colors
     primary: '#111111',
     secondary: '#F9F9F9',
-    dark_grey: '#151515',
-    text: '#F9F9F9',
     border: '#525252',
+    dark_grey: '#151515',
     translucent_bg: '#1A1A1A',
     dropdown_bg: '#242424',
     dropdown_bg_2: '#333333',
   },
   text: {
     ...baseTheme.text,
+    // Base Colors
     primary: '#111111',
     secondary: '#F9F9F9',
     white: '#FFFFFF',
@@ -65,17 +66,18 @@ const darkModeTheme = {
 const lightModeTheme = {
   colors: {
     ...baseTheme.colors,
+    // Base Colors
     primary: '#EEEEEE',
     secondary: '#060606',
-    dark_grey: '#EAEAEA',
-    text: '#060606',
     border: '#ADADAD',
+    dark_grey: '#EAEAEA',
     translucent_bg: '#E5E5E5',
     dropdown_bg: '#DBDBDB',
     dropdown_bg_2: '#CCCCCC',
   },
   text: {
     ...baseTheme.text,
+    // Base Colors
     primary: '#EEEEEE',
     secondary: '#060606',
     white: '#000000',

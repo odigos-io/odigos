@@ -56,14 +56,14 @@ const StyledTextArea = styled.textarea`
   border: none;
   outline: none;
   background: none;
-  color: ${({ theme }) => theme.colors.text};
+  color: ${({ theme }) => theme.text.secondary};
   font-size: 14px;
   padding: 12px 20px 0;
   font-family: ${({ theme }) => theme.font_family.primary};
   font-weight: 300;
   line-height: 22px;
   &::placeholder {
-    color: ${({ theme }) => theme.colors.text};
+    color: ${({ theme }) => theme.text.secondary};
     font-family: ${({ theme }) => theme.font_family.primary};
     opacity: 0.4;
     font-size: 14px;

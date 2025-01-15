@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Text } from '../text';
 import { CheckIcon } from '@/assets';
 import { Tooltip } from '../tooltip';
-import { FlexColumn } from '@/styles';
+import { FlexColumn, hexPercentValues } from '@/styles';
 import { FieldError } from '../field-error';
 import styled, { useTheme } from 'styled-components';
 
@@ -57,7 +57,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({ title, titleColor, tooltip, 
     <FlexColumn>
       <Container data-id={`checkbox${!!title ? `-${title}` : ''}`} $disabled={disabled} onClick={handleToggle} style={style}>
         <CheckboxWrapper $isChecked={isChecked} $disabled={disabled}>
-          {isChecked && <CheckIcon />}
+          {isChecked && <CheckIcon fill={theme.text.info_secondary} />}
         </CheckboxWrapper>
 
         {title && (
