@@ -82,7 +82,7 @@ Odigos is divided into three main segments:
 
 - Receive telemetry data from agents running on the node (Odiglet for eBPF based agents, and instrumentation processes for native OpenTelemetry agents).
 - Add node-level attributes to the telemetry data (`k8s.node.name`, cloud attributes, etc).
-- Batches and sends the telemetry data to the cluster collector, offloading any network overhead from the instrumented application runtime.
+- Batch and send telemetry data to the Cluster Collector, offloading any network overhead from the instrumented application runtime.
 
 <Info>
 The Node Collector is also responsible for recording some k8s metrics, and collecting the generated logs from the node fs. Read more Under the [Instrumentation](#node-collector-2) section.
