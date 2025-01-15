@@ -29,6 +29,7 @@ type SdkConfigApplyConfiguration struct {
 	InstrumentationLibraryConfigs []InstrumentationLibraryConfigApplyConfiguration `json:"instrumentationLibraryConfigs,omitempty"`
 	HeadSamplingConfig            *HeadSamplingConfigApplyConfiguration            `json:"headSamplerConfig,omitempty"`
 	DefaultPayloadCollection      *instrumentationrules.PayloadCollection          `json:"payloadCollection,omitempty"`
+	DefaultCodeAttributes         *instrumentationrules.CodeAttributes             `json:"codeAttributes,omitempty"`
 }
 
 // SdkConfigApplyConfiguration constructs a declarative configuration of the SdkConfig type for use with
@@ -71,5 +72,13 @@ func (b *SdkConfigApplyConfiguration) WithHeadSamplingConfig(value *HeadSampling
 // If called multiple times, the DefaultPayloadCollection field is set to the value of the last call.
 func (b *SdkConfigApplyConfiguration) WithDefaultPayloadCollection(value instrumentationrules.PayloadCollection) *SdkConfigApplyConfiguration {
 	b.DefaultPayloadCollection = &value
+	return b
+}
+
+// WithDefaultCodeAttributes sets the DefaultCodeAttributes field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the DefaultCodeAttributes field is set to the value of the last call.
+func (b *SdkConfigApplyConfiguration) WithDefaultCodeAttributes(value instrumentationrules.CodeAttributes) *SdkConfigApplyConfiguration {
+	b.DefaultCodeAttributes = &value
 	return b
 }
