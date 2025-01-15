@@ -113,14 +113,11 @@ func (r *SourceReconciler) syncWorkload(ctx context.Context, source *v1alpha1.So
 		return err
 	}
 
-	sources, err := v1alpha1.GetSources(ctx, r.Client, obj)
+	instrumented, err := sourceutils.IsObjectInstrumentedBySource(ctx, r.Client, obj)
 	if err != nil {
 		return err
 	}
-	if sources.Namespace == nil ||
-		(sources.Namespace != nil && k8sutils.IsTerminating(sources.Namespace)) ||
-		(sources.Workload != nil && !k8sutils.IsTerminating(sources.Workload) && v1alpha1.IsExcludedSource(source)) {
-		// if this workload doesn't have a live Namespace instrumentation, or it has a live exclusion source, uninstrument it
+	if !instrumented {
 		err = errors.Join(err, deleteWorkloadInstrumentationConfig(ctx, r.Client, obj))
 		err = errors.Join(err, removeReportedNameAnnotation(ctx, r.Client, obj))
 	}
@@ -192,36 +189,15 @@ func syncGenericWorkloadListToNs(ctx context.Context, c client.Client, kind work
 		}
 	}
 
-	var err error
-	uninstrument, err := shouldUninstrumentWorkload(ctx, c, freshWorkloadCopy)
+	instrumented, err := sourceutils.IsObjectInstrumentedBySource(ctx, c, freshWorkloadCopy)
 	if err != nil {
 		return err
 	}
-	if !uninstrument {
+	if instrumented {
 		return nil
 	}
 
 	err = errors.Join(err, deleteWorkloadInstrumentationConfig(ctx, c, freshWorkloadCopy))
 	err = errors.Join(err, removeReportedNameAnnotation(ctx, c, freshWorkloadCopy))
 	return err
-}
-
-// This function checks if the workload should be uninstrumented based on the presence of an active Source for it.
-// If there is an active (non-terminating) workload or namespace Source, it should not be uninstrumented.
-// Otherwise, it should be uninstrumented.
-func shouldUninstrumentWorkload(ctx context.Context, c client.Client, obj client.Object) (bool, error) {
-	sourceList, err := v1alpha1.GetSources(ctx, c, obj)
-	if err != nil {
-		return false, err
-	}
-
-	if sourceList.Workload != nil && !k8sutils.IsTerminating(sourceList.Workload) && !v1alpha1.IsExcludedSource(sourceList.Namespace) {
-		return false, nil
-	}
-
-	if sourceList.Namespace != nil && !k8sutils.IsTerminating(sourceList.Namespace) && !v1alpha1.IsExcludedSource(sourceList.Namespace) {
-		return false, nil
-	}
-
-	return true, nil
 }
