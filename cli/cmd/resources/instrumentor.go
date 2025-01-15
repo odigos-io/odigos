@@ -91,7 +91,7 @@ func NewInstrumentorRole(ns string) *rbacv1.Role {
 			{
 				APIGroups:     []string{""},
 				Resources:     []string{"configmaps"},
-				ResourceNames: []string{consts.OdigosEffectiveConfigName},
+				ResourceNames: []string{consts.OdigosEffectiveConfigName, consts.OdigosConfigurationName},
 				Verbs:         []string{"get", "list", "watch"},
 			},
 			{

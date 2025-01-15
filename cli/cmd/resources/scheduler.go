@@ -88,7 +88,7 @@ func NewSchedulerRole(ns string) *rbacv1.Role {
 				APIGroups:     []string{""},
 				Resources:     []string{"configmaps"},
 				ResourceNames: []string{consts.OdigosEffectiveConfigName},
-				Verbs:         []string{"patch"},
+				Verbs:         []string{"patch", "create"},
 			},
 			{ // Needed because the scheduler is managing the collectorsgroups
 				APIGroups: []string{"odigos.io"},

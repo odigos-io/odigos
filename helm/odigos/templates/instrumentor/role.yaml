@@ -8,6 +8,7 @@ rules:
       - ''
     resourceNames:
       - effective-config
+      - odigos-config
     resources:
       - configmaps
     verbs:
