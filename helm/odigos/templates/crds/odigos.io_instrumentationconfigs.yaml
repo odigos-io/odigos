@@ -121,22 +121,34 @@ spec:
                         in case the instrumentation library does not provide a configuration.
                       properties:
                         column:
-                          description: Should record the `code.column` attribute.
+                          description: |-
+                            Should record the `code.column` attribute.
+                            if unset, the value will resolve from other relevant rules, or fallback to false
                           type: boolean
                         filePath:
-                          description: Should record the `code.filepath` attribute.
+                          description: |-
+                            Should record the `code.filepath` attribute.
+                            if unset, the value will resolve from other relevant rules, or fallback to false
                           type: boolean
                         function:
-                          description: Should record the `code.function` attribute.
+                          description: |-
+                            Should record the `code.function` attribute.
+                            if unset, the value will resolve from other relevant rules, or fallback to false
                           type: boolean
                         lineNumber:
-                          description: Should record the `code.lineno` attribute.
+                          description: |-
+                            Should record the `code.lineno` attribute.
+                            if unset, the value will resolve from other relevant rules, or fallback to false
                           type: boolean
                         namespace:
-                          description: Should record the `code.namespace` attribute.
+                          description: |-
+                            Should record the `code.namespace` attribute.
+                            if unset, the value will resolve from other relevant rules, or fallback to false
                           type: boolean
                         stackTrace:
-                          description: Should record the `code.stacktrace` attribute.
+                          description: |-
+                            Should record the `code.stacktrace` attribute.
+                            if unset, the value will resolve from other relevant rules, or fallback to false
                           type: boolean
                       type: object
                     headSamplerConfig:
@@ -213,24 +225,40 @@ spec:
                       items:
                         properties:
                           codeAttributes:
+                            description: |-
+                              code attributes configuration for a specific library.
+                              if not set, the default code attributes configuration for the workload will be used.
+                              if set, but internal fields are empty, those fields will be used from the default configuration.
                             properties:
                               column:
-                                description: Should record the `code.column` attribute.
+                                description: |-
+                                  Should record the `code.column` attribute.
+                                  if unset, the value will resolve from other relevant rules, or fallback to false
                                 type: boolean
                               filePath:
-                                description: Should record the `code.filepath` attribute.
+                                description: |-
+                                  Should record the `code.filepath` attribute.
+                                  if unset, the value will resolve from other relevant rules, or fallback to false
                                 type: boolean
                               function:
-                                description: Should record the `code.function` attribute.
+                                description: |-
+                                  Should record the `code.function` attribute.
+                                  if unset, the value will resolve from other relevant rules, or fallback to false
                                 type: boolean
                               lineNumber:
-                                description: Should record the `code.lineno` attribute.
+                                description: |-
+                                  Should record the `code.lineno` attribute.
+                                  if unset, the value will resolve from other relevant rules, or fallback to false
                                 type: boolean
                               namespace:
-                                description: Should record the `code.namespace` attribute.
+                                description: |-
+                                  Should record the `code.namespace` attribute.
+                                  if unset, the value will resolve from other relevant rules, or fallback to false
                                 type: boolean
                               stackTrace:
-                                description: Should record the `code.stacktrace` attribute.
+                                description: |-
+                                  Should record the `code.stacktrace` attribute.
+                                  if unset, the value will resolve from other relevant rules, or fallback to false
                                 type: boolean
                             type: object
                           libraryId:
