@@ -12,6 +12,7 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
@@ -53,7 +54,7 @@ func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind wor
 
 	err = sourceutils.MigrateInstrumentationLabelToSource(ctx, k8sClient, obj, objKind)
 	if err != nil {
-		return ctrl.Result{}, err
+		return k8sutils.K8SUpdateErrorHandler(err)
 	}
 
 	enabled, err := sourceutils.IsObjectInstrumentedBySource(ctx, k8sClient, obj)

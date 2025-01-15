@@ -19,6 +19,7 @@ package deleteinstrumentationconfig
 import (
 	"context"
 
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -48,5 +49,5 @@ func (r *StatefulSetReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	}
 
 	err = reconcileWorkloadObject(ctx, r.Client, &ss)
-	return ctrl.Result{}, err
+	return k8sutils.K8SUpdateErrorHandler(err)
 }

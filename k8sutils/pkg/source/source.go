@@ -3,7 +3,6 @@ package source
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -90,7 +89,7 @@ func CreateOrUpdateSourceForObject(ctx context.Context,
 		create = true
 		source = &v1alpha1.Source{
 			ObjectMeta: metav1.ObjectMeta{
-				GenerateName: fmt.Sprintf("source-%s-%s-", strings.ToLower(string(kind)), strings.ToLower(obj.GetName())),
+				GenerateName: workload.CalculateWorkloadRuntimeObjectName(obj.GetName(), kind),
 				Namespace:    namespace,
 			},
 			Spec: v1alpha1.SourceSpec{

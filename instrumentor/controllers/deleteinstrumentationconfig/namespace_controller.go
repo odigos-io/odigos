@@ -20,6 +20,7 @@ import (
 	"context"
 
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
 	corev1 "k8s.io/api/core/v1"
@@ -46,7 +47,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	if err := sourceutils.MigrateInstrumentationLabelToDisabledSource(ctx, r.Client, &ns, workload.WorkloadKindNamespace); err != nil {
-		return ctrl.Result{}, err
+		return k8sutils.K8SUpdateErrorHandler(err)
 	}
 
 	enabled, err := sourceutils.IsObjectInstrumentedBySource(ctx, r.Client, &ns)

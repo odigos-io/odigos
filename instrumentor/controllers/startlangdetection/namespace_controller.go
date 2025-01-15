@@ -10,6 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
@@ -27,7 +28,7 @@ func (n *NamespacesReconciler) Reconcile(ctx context.Context, request ctrl.Reque
 	}
 
 	if err := sourceutils.MigrateInstrumentationLabelToSource(ctx, n.Client, &ns, workload.WorkloadKindNamespace); err != nil {
-		return ctrl.Result{}, err
+		return k8sutils.K8SUpdateErrorHandler(err)
 	}
 
 	enabled, err := sourceutils.IsObjectInstrumentedBySource(ctx, n.Client, &ns)
