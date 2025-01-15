@@ -195,21 +195,12 @@ func main() {
 		WithDefaulter(&SourcesDefaulter{
 			Client: mgr.GetClient(),
 		}).
-		Complete()
-	if err != nil {
-		setupLog.Error(err, "unable to create Sources mutating webhook")
-		os.Exit(1)
-	}
-
-	err = builder.
-		WebhookManagedBy(mgr).
-		For(&odigosv1.Source{}).
 		WithValidator(&SourcesValidator{
 			Client: mgr.GetClient(),
 		}).
 		Complete()
 	if err != nil {
-		setupLog.Error(err, "unable to create Sources validating webhook")
+		setupLog.Error(err, "unable to create Sources webhooks")
 		os.Exit(1)
 	}
 

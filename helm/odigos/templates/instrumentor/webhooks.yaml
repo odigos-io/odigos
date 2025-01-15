@@ -4,6 +4,42 @@
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
+  name: mutating-webhook-configuration
+  labels:
+    app.kubernetes.io/name: pod-mutating-webhook
+    app.kubernetes.io/instance: mutating-webhook-configuration
+    app.kubernetes.io/component: webhook
+    app.kubernetes.io/created-by: instrumentor
+    app.kubernetes.io/part-of: odigos
+webhooks:
+  - name: pod-mutating-webhook.odigos.io
+    clientConfig:
+      caBundle: {{ $ca.Cert | b64enc }}
+      service:
+        name: odigos-instrumentor
+        namespace: {{ .Release.Namespace }}
+        path: /mutate--v1-pod
+        port: 9443
+    rules:
+      - operations:
+          - CREATE
+          - UPDATE
+        apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["pods"]
+        scope: Namespaced
+    failurePolicy: Ignore
+    reinvocationPolicy: IfNeeded
+    sideEffects: None
+    objectSelector:
+      matchLabels:
+        odigos.io/inject-instrumentation: "true"
+    timeoutSeconds: 10
+    admissionReviewVersions: ["v1"]
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
   name: source-mutating-webhook-configuration
   labels:
     app.kubernetes.io/name: source-mutating-webhook
@@ -65,3 +101,22 @@ webhooks:
     sideEffects: None
     timeoutSeconds: 10
     admissionReviewVersions: ["v1"]
+---
+apiVersion: v1
+kind: Secret
+type: kubernetes.io/tls
+metadata:
+  name: webhook-cert
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: instrumentor-cert
+    app.kubernetes.io/instance: instrumentor-cert
+    app.kubernetes.io/component: certificate
+    app.kubernetes.io/created-by: instrumentor
+    app.kubernetes.io/part-of: odigos
+  annotations:
+    "helm.sh/hook": "pre-install,pre-upgrade"
+    "helm.sh/hook-delete-policy": "before-hook-creation"
+data:
+  tls.crt: {{ $cert.Cert | b64enc }}
+  tls.key: {{ $cert.Key | b64enc }}
