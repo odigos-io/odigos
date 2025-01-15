@@ -4,7 +4,7 @@ metadata:
   name: 05-startlangdetection-finalizer
   namespace: default
 spec:
-  instrumentationDisabled: true
+  disableInstrumentation: true
   workload:
     name: startlangdetection-finalizer
     namespace: default

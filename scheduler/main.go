@@ -31,10 +31,12 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/dynamic"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -78,6 +80,9 @@ func main() {
 	ctrl.SetLogger(logger)
 
 	odigosNs := env.GetCurrentNamespace()
+	tier := env.GetOdigosTierFromEnv()
+	odigosVersion := os.Getenv(consts.OdigosVersionEnvVarName)
+
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
@@ -97,6 +102,12 @@ func main() {
 				&odigosv1.Destination{}: {
 					Field: nsSelector,
 				},
+				&odigosv1.Processor{}: {
+					Field: nsSelector,
+				},
+				&odigosv1.InstrumentationRule{}: {
+					Field: nsSelector,
+				},
 			},
 		},
 		HealthProbeBindAddress: probeAddr,
@@ -105,6 +116,13 @@ func main() {
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
+		os.Exit(1)
+	}
+
+	// create dynamic k8s client to apply profile manifests
+	dyanmicClient, err := dynamic.NewForConfig(mgr.GetConfig())
+	if err != nil {
+		setupLog.Error(err, "unable to create dynamic client")
 		os.Exit(1)
 	}
 
@@ -118,7 +136,7 @@ func main() {
 		setupLog.Error(err, "unable to create controllers for node collectors group")
 		os.Exit(1)
 	}
-	err = odigosconfig.SetupWithManager(mgr)
+	err = odigosconfig.SetupWithManager(mgr, tier, odigosVersion, dyanmicClient)
 	if err != nil {
 		setupLog.Error(err, "unable to create controllers for odigos config")
 		os.Exit(1)

@@ -35,7 +35,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// If this is a regular Source that is being created, or an Exclusion Source that is being deleted,
 	// Attempt to reconcile the workloads for instrumentation.
 	// if (terminating && exclude) || (!terminating && !exclude)
-	if k8sutils.IsTerminating(source) == v1alpha1.IsWorkloadExcludedSource(source) {
+	if k8sutils.IsTerminating(source) == v1alpha1.IsExcludedSource(source) {
 		if source.Spec.Workload.Kind == "Namespace" {
 			// pre-process existing Sources for specific workloads so we don't have to make a bunch of API calls
 			// This is used to check if a workload already has an explicit Source, so we don't overwrite its InstrumentationConfig
@@ -76,7 +76,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			}
 		}
 
-		if v1alpha1.IsWorkloadExcludedSource(source) &&
+		if v1alpha1.IsExcludedSource(source) &&
 			k8sutils.IsTerminating(source) &&
 			controllerutil.ContainsFinalizer(source, consts.StartLangDetectionFinalizer) {
 			controllerutil.RemoveFinalizer(source, consts.StartLangDetectionFinalizer)

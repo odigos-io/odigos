@@ -6,7 +6,7 @@ metadata:
   labels:
     odigos.io/e2e: source-excluded
 spec:
-  instrumentationDisabled: true
+  disableInstrumentation: true
   workload:
     name: membership
     namespace: default

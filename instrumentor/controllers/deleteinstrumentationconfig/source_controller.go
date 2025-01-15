@@ -51,12 +51,12 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// If this is a regular Source that's being deleted, or a workload Exclusion Source
 	// that's being created, try to uninstrument relevant workloads.
 	// if (terminating && !exclude) || (!terminating && exclude)
-	if k8sutils.IsTerminating(source) != v1alpha1.IsWorkloadExcludedSource(source) {
+	if k8sutils.IsTerminating(source) != v1alpha1.IsExcludedSource(source) {
 		logger.Info("Reconciling workload for Source object",
 			"name", req.Name,
 			"namespace", req.Namespace,
 			"kind", source.Spec.Workload.Kind,
-			"excluded", v1alpha1.IsWorkloadExcludedSource(source),
+			"excluded", v1alpha1.IsExcludedSource(source),
 			"terminating", k8sutils.IsTerminating(source))
 
 		if source.Spec.Workload.Kind == "Namespace" {
@@ -72,7 +72,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			err = errors.Join(err, r.syncWorkload(ctx, source))
 		}
 
-		if !v1alpha1.IsWorkloadExcludedSource(source) &&
+		if !v1alpha1.IsExcludedSource(source) &&
 			k8sutils.IsTerminating(source) &&
 			controllerutil.ContainsFinalizer(source, consts.DeleteInstrumentationConfigFinalizer) {
 			controllerutil.RemoveFinalizer(source, consts.DeleteInstrumentationConfigFinalizer)
@@ -90,7 +90,6 @@ func (r *SourceReconciler) syncWorkload(ctx context.Context, source *v1alpha1.So
 	obj := workload.ClientObjectFromWorkloadKind(source.Spec.Workload.Kind)
 	err := r.Client.Get(ctx, types.NamespacedName{Name: source.Spec.Workload.Name, Namespace: source.Spec.Workload.Namespace}, obj)
 	if err != nil {
-		// TODO: Deleted objects should be filtered in the event filter
 		return err
 	}
 
@@ -100,7 +99,7 @@ func (r *SourceReconciler) syncWorkload(ctx context.Context, source *v1alpha1.So
 	}
 	if sources.Namespace == nil ||
 		(sources.Namespace != nil && k8sutils.IsTerminating(sources.Namespace)) ||
-		(sources.Workload != nil && !k8sutils.IsTerminating(sources.Workload) && v1alpha1.IsWorkloadExcludedSource(source)) {
+		(sources.Workload != nil && !k8sutils.IsTerminating(sources.Workload) && v1alpha1.IsExcludedSource(source)) {
 		// if this workload doesn't have a live Namespace instrumentation, or it has a live exclusion source, uninstrument it
 		err = errors.Join(err, deleteWorkloadInstrumentationConfig(ctx, r.Client, obj))
 		err = errors.Join(err, removeReportedNameAnnotation(ctx, r.Client, obj))

@@ -154,6 +154,12 @@ func (rc *CriClient) GetContainerEnvVarsList(ctx context.Context, envVarKeys []s
 	result := make([]odigosv1.EnvVar, 0, len(envVarKeys))
 	for _, key := range envVarKeys {
 		if value, exists := envVars[key]; exists {
+			// If the environment variable originates from the device, it will still be observed in the CRI.
+			// In this case, it should not be set as envFromContainerRuntime.
+			// We can be certain that it is not coming from the manifest, as CRI is only queried when the variable is not found in the manifest.
+			if strings.Contains(value, "/var/odigos") {
+				continue
+			}
 			result = append(result, odigosv1.EnvVar{Name: key, Value: value})
 		}
 	}

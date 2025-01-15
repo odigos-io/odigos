@@ -1,15 +1,16 @@
 import { useEffect, useRef } from 'react';
 import { API } from '@/utils';
 import { NOTIFICATION_TYPE } from '@/types';
-import { useComputePlatform, usePaginatedSources } from '../compute-platform';
+import { useDestinationCRUD } from '../destinations';
+import { usePaginatedSources } from '../compute-platform';
 import { type NotifyPayload, useConnectionStore, useNotificationStore, usePendingStore } from '@/store';
 
 export const useSSE = () => {
+  const { setSseStatus } = useConnectionStore();
   const { setPendingItems } = usePendingStore();
   const { fetchSources } = usePaginatedSources();
   const { addNotification } = useNotificationStore();
-  const { setConnectionStore } = useConnectionStore();
-  const { refetch: refetchComputePlatform } = useComputePlatform();
+  const { refetchDestinations } = useDestinationCRUD();
 
   const retryCount = useRef(0);
   const maxRetries = 10;
@@ -32,11 +33,13 @@ export const useSSE = () => {
 
         addNotification(notification);
 
-        if (notification.crdType === 'InstrumentationConfig') {
-          // We handle update in CRUD hook, refetch only on create
-          if (['Added', 'Deleted'].includes(notification.title || '')) fetchSources(true);
+        const crdType = notification.crdType || '';
+        if (['InstrumentationConfig', 'InstrumentationInstance'].includes(crdType)) {
+          fetchSources();
+        } else if (['Destination'].includes(crdType)) {
+          refetchDestinations();
         } else {
-          refetchComputePlatform();
+          console.warn('Unhandled SSE for CRD type:', crdType);
         }
 
         // This works for now,
@@ -66,9 +69,9 @@ export const useSSE = () => {
         } else {
           console.error('Max retries reached. Could not reconnect to EventSource.');
 
-          setConnectionStore({
-            connecting: false,
-            active: false,
+          setSseStatus({
+            sseConnecting: false,
+            sseStatus: NOTIFICATION_TYPE.ERROR,
             title: `Connection lost on ${new Date().toLocaleString()}`,
             message: 'Please reboot the application',
           });
@@ -80,9 +83,9 @@ export const useSSE = () => {
         }
       };
 
-      setConnectionStore({
-        connecting: false,
-        active: true,
+      setSseStatus({
+        sseConnecting: false,
+        sseStatus: NOTIFICATION_TYPE.SUCCESS,
         title: 'Connection Alive',
         message: '',
       });

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { isWithinTime } from '@/utils';
 import type { Notification } from '@/types';
 
 export type NotifyPayload = Omit<Notification, 'id' | 'dismissed' | 'seen' | 'time'>;
@@ -18,7 +19,10 @@ export const useNotificationStore = create<StoreState>((set, get) => ({
   addNotification: (notif) => {
     const date = new Date();
     const id = `${date.getTime().toString()}${!!notif.target ? `#${notif.target}` : ''}`;
-    const foundThisNotif = !!get().notifications.find((n) => n.type === notif.type && n.title === notif.title && n.message === notif.message && date.getTime() - new Date(n.time).getTime() <= 10000); // 10 seconds
+
+    // This is to prevent duplicate notifications within a 10 second time-frame.
+    // This is useful for notifications that are triggered multiple times in a short period, like failed API queries...
+    const foundThisNotif = !!get().notifications.find((n) => n.type === notif.type && n.title === notif.title && n.message === notif.message && isWithinTime(n.time, 10000)); // 10 seconds
 
     if (!foundThisNotif) {
       set((state) => ({
