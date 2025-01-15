@@ -21,8 +21,6 @@ type ErrorSamplerDetails struct {
 
 // CreateErrorSampler creates a new ErrorSampler action in Kubernetes
 func CreateErrorSampler(ctx context.Context, action model.ActionInput) (model.Action, error) {
-	ns := env.GetCurrentNamespace()
-
 	var details ErrorSamplerDetails
 	err := json.Unmarshal([]byte(action.Details), &details)
 	if err != nil {
@@ -47,10 +45,13 @@ func CreateErrorSampler(ctx context.Context, action model.ActionInput) (model.Ac
 		},
 	}
 
+	ns := env.GetCurrentNamespace()
+
 	generatedAction, err := kube.DefaultClient.ActionsClient.ErrorSamplers(ns).Create(ctx, errorSamplerAction, metav1.CreateOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ErrorSampler: %v", err)
 	}
+
 	detailsString := strconv.FormatFloat(details.FallbackSamplingRatio, 'f', -1, 64)
 	response := &model.ErrorSamplerAction{
 		ID:      generatedAction.Name,

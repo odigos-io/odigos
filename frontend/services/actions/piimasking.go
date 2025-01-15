@@ -20,8 +20,6 @@ type PiiMaskingDetails struct {
 
 // CreatePiiMasking creates a new PiiMasking action in Kubernetes
 func CreatePiiMasking(ctx context.Context, action model.ActionInput) (model.Action, error) {
-	ns := env.GetCurrentNamespace()
-
 	var details PiiMaskingDetails
 	err := json.Unmarshal([]byte(action.Details), &details)
 	if err != nil {
@@ -45,6 +43,8 @@ func CreatePiiMasking(ctx context.Context, action model.ActionInput) (model.Acti
 			PiiCategories: details.PiiCategories,
 		},
 	}
+
+	ns := env.GetCurrentNamespace()
 
 	generatedAction, err := kube.DefaultClient.ActionsClient.PiiMaskings(ns).Create(ctx, piiMaskingAction, metav1.CreateOptions{})
 	if err != nil {

@@ -20,8 +20,6 @@ type ProbabilisticSamplerDetails struct {
 
 // CreateProbabilisticSampler creates a new ProbabilisticSampler action in Kubernetes
 func CreateProbabilisticSampler(ctx context.Context, action model.ActionInput) (model.Action, error) {
-	ns := env.GetCurrentNamespace()
-
 	var details ProbabilisticSamplerDetails
 	err := json.Unmarshal([]byte(action.Details), &details)
 	if err != nil {
@@ -45,6 +43,8 @@ func CreateProbabilisticSampler(ctx context.Context, action model.ActionInput) (
 			SamplingPercentage: details.SamplingPercentage,
 		},
 	}
+
+	ns := env.GetCurrentNamespace()
 
 	generatedAction, err := kube.DefaultClient.ActionsClient.ProbabilisticSamplers(ns).Create(ctx, probabilisticSamplerAction, metav1.CreateOptions{})
 	if err != nil {

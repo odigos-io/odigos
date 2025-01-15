@@ -20,8 +20,6 @@ type RenameAttributeDetails struct {
 
 // CreateRenameAttribute creates a new RenameAttribute action in Kubernetes
 func CreateRenameAttribute(ctx context.Context, action model.ActionInput) (model.Action, error) {
-	ns := env.GetCurrentNamespace()
-
 	var details RenameAttributeDetails
 	err := json.Unmarshal([]byte(action.Details), &details)
 	if err != nil {
@@ -45,6 +43,8 @@ func CreateRenameAttribute(ctx context.Context, action model.ActionInput) (model
 			Renames:    details.Renames,
 		},
 	}
+
+	ns := env.GetCurrentNamespace()
 
 	generatedAction, err := kube.DefaultClient.ActionsClient.RenameAttributes(ns).Create(ctx, renameAttributeAction, metav1.CreateOptions{})
 	if err != nil {

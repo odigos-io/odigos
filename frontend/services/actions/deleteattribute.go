@@ -20,8 +20,6 @@ type DeleteAttributeDetails struct {
 
 // CreateDeleteAttribute creates a new DeleteAttribute action in Kubernetes
 func CreateDeleteAttribute(ctx context.Context, action model.ActionInput) (model.Action, error) {
-	ns := env.GetCurrentNamespace()
-
 	var details DeleteAttributeDetails
 	err := json.Unmarshal([]byte(action.Details), &details)
 	if err != nil {
@@ -45,6 +43,8 @@ func CreateDeleteAttribute(ctx context.Context, action model.ActionInput) (model
 			AttributeNamesToDelete: details.AttributeNamesToDelete,
 		},
 	}
+
+	ns := env.GetCurrentNamespace()
 
 	generatedAction, err := kube.DefaultClient.ActionsClient.DeleteAttributes(ns).Create(ctx, deleteAttributeAction, metav1.CreateOptions{})
 	if err != nil {

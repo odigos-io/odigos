@@ -19,8 +19,6 @@ type AddClusterInfoDetails struct {
 }
 
 func CreateAddClusterInfo(ctx context.Context, action model.ActionInput) (model.Action, error) {
-	ns := env.GetCurrentNamespace()
-
 	var details AddClusterInfoDetails
 	err := json.Unmarshal([]byte(action.Details), &details)
 	if err != nil {
@@ -52,6 +50,8 @@ func CreateAddClusterInfo(ctx context.Context, action model.ActionInput) (model.
 			ClusterAttributes: clusterAttributes,
 		},
 	}
+
+	ns := env.GetCurrentNamespace()
 
 	generatedAction, err := kube.DefaultClient.ActionsClient.AddClusterInfos(ns).Create(ctx, addClusterInfoAction, metav1.CreateOptions{})
 	if err != nil {

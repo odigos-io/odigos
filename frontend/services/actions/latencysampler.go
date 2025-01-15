@@ -20,8 +20,6 @@ type LatencySamplerDetails struct {
 
 // CreateLatencySampler creates a new LatencySampler action in Kubernetes
 func CreateLatencySampler(ctx context.Context, action model.ActionInput) (model.Action, error) {
-	ns := env.GetCurrentNamespace()
-
 	var details LatencySamplerDetails
 	err := json.Unmarshal([]byte(action.Details), &details)
 	if err != nil {
@@ -45,6 +43,8 @@ func CreateLatencySampler(ctx context.Context, action model.ActionInput) (model.
 			EndpointsFilters: details.EndpointsFilters,
 		},
 	}
+
+	ns := env.GetCurrentNamespace()
 
 	generatedAction, err := kube.DefaultClient.ActionsClient.LatencySamplers(ns).Create(ctx, latencySamplerAction, metav1.CreateOptions{})
 	if err != nil {

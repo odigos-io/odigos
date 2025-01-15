@@ -280,7 +280,7 @@ func AddDestinationOwnerReferenceToSecret(ctx context.Context, ns string, dest *
 func PotentialDestinations(ctx context.Context) []destination_recognition.DestinationDetails {
 	ns := env.GetCurrentNamespace()
 
-	relevantNamespaces, err := getRelevantNameSpaces(ctx, env.GetCurrentNamespace())
+	relevantNamespaces, err := getRelevantNameSpaces(ctx, ns)
 	if err != nil {
 		return nil
 	}
