@@ -62,35 +62,30 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// If this is a regular Source that is being created, or an Exclusion Source that is being deleted,
-	// Attempt to reconcile the workloads for instrumentation.
-	// if (terminating && exclude) || (!terminating && !exclude)
-	if sourceutils.IsActiveSource(source) {
-		if source.Spec.Workload.Kind == workload.WorkloadKindNamespace {
-			err = errors.Join(err, syncNamespaceWorkloads(ctx, r.Client, r.Scheme, source.Spec.Workload.Name))
-		} else {
-			_, reconcileErr := reconcileWorkload(ctx,
-				r.Client,
-				source.Spec.Workload.Kind,
-				ctrl.Request{
-					NamespacedName: types.NamespacedName{
-						Namespace: source.Spec.Workload.Namespace,
-						Name:      source.Spec.Workload.Name,
-					},
+	if source.Spec.Workload.Kind == workload.WorkloadKindNamespace {
+		err = errors.Join(err, syncNamespaceWorkloads(ctx, r.Client, r.Scheme, source.Spec.Workload.Name))
+	} else {
+		_, reconcileErr := reconcileWorkload(ctx,
+			r.Client,
+			source.Spec.Workload.Kind,
+			ctrl.Request{
+				NamespacedName: types.NamespacedName{
+					Namespace: source.Spec.Workload.Namespace,
+					Name:      source.Spec.Workload.Name,
 				},
-				r.Scheme)
-			if reconcileErr != nil {
-				err = errors.Join(err, reconcileErr)
-			}
+			},
+			r.Scheme)
+		if reconcileErr != nil {
+			err = errors.Join(err, reconcileErr)
 		}
+	}
 
-		if v1alpha1.IsExcludedSource(source) &&
-			k8sutils.IsTerminating(source) &&
-			controllerutil.ContainsFinalizer(source, consts.StartLangDetectionFinalizer) {
-			controllerutil.RemoveFinalizer(source, consts.StartLangDetectionFinalizer)
-			if err := r.Update(ctx, source); err != nil {
-				return k8sutils.K8SUpdateErrorHandler(err)
-			}
+	if v1alpha1.IsExcludedSource(source) &&
+		k8sutils.IsTerminating(source) &&
+		controllerutil.ContainsFinalizer(source, consts.StartLangDetectionFinalizer) {
+		controllerutil.RemoveFinalizer(source, consts.StartLangDetectionFinalizer)
+		if err := r.Update(ctx, source); err != nil {
+			return k8sutils.K8SUpdateErrorHandler(err)
 		}
 	}
 

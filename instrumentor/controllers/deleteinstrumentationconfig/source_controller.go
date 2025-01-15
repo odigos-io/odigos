@@ -43,7 +43,7 @@ type SourceReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// isDeleteInstrumentationConfigSource returns true if the Source object is relevant to starting language detection.
+// SourcePredicates returns true if the Source object is relevant to starting language detection.
 // This means that the Source must be either:
 // 1) A normal (non-excluding) Source AND terminating, or
 // 2) An excluding Source AND NOT terminating
@@ -79,31 +79,26 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// If this is a regular Source that's being deleted, or a workload Exclusion Source
-	// that's being created, try to uninstrument relevant workloads.
-	// if (terminating && !exclude) || (!terminating && exclude)
-	if !sourceutils.IsActiveSource(source) {
-		logger.Info("Reconciling workload for Source object",
-			"name", req.Name,
-			"namespace", req.Namespace,
-			"kind", source.Spec.Workload.Kind,
-			"excluded", v1alpha1.IsExcludedSource(source),
-			"terminating", k8sutils.IsTerminating(source))
+	logger.Info("Reconciling workload for Source object",
+		"name", req.Name,
+		"namespace", req.Namespace,
+		"kind", source.Spec.Workload.Kind,
+		"excluded", v1alpha1.IsExcludedSource(source),
+		"terminating", k8sutils.IsTerminating(source))
 
-		if source.Spec.Workload.Kind == workload.WorkloadKindNamespace {
-			err = errors.Join(err, syncNamespaceWorkloads(ctx, r.Client, req))
-		} else {
-			// This is a Source for a specific workload, not an entire namespace
-			err = errors.Join(err, r.syncWorkload(ctx, source))
-		}
+	if source.Spec.Workload.Kind == workload.WorkloadKindNamespace {
+		err = errors.Join(err, syncNamespaceWorkloads(ctx, r.Client, req))
+	} else {
+		// This is a Source for a specific workload, not an entire namespace
+		err = errors.Join(err, r.syncWorkload(ctx, source))
+	}
 
-		if !v1alpha1.IsExcludedSource(source) &&
-			k8sutils.IsTerminating(source) &&
-			controllerutil.ContainsFinalizer(source, consts.DeleteInstrumentationConfigFinalizer) {
-			controllerutil.RemoveFinalizer(source, consts.DeleteInstrumentationConfigFinalizer)
-			if err := r.Update(ctx, source); err != nil {
-				return k8sutils.K8SUpdateErrorHandler(err)
-			}
+	if !v1alpha1.IsExcludedSource(source) &&
+		k8sutils.IsTerminating(source) &&
+		controllerutil.ContainsFinalizer(source, consts.DeleteInstrumentationConfigFinalizer) {
+		controllerutil.RemoveFinalizer(source, consts.DeleteInstrumentationConfigFinalizer)
+		if err := r.Update(ctx, source); err != nil {
+			return k8sutils.K8SUpdateErrorHandler(err)
 		}
 	}
 
