@@ -113,17 +113,19 @@ func CalculateWithBase(currentConfig *Config, prefixProcessors []string, dests [
 		pipelineNames, err := configer.ModifyConfig(dest, currentConfig)
 		status.Destination[dest.GetID()] = err
 
+		if len(dest.GetSignals()) == 0 && err == nil {
+			status.Destination[dest.GetID()] = fmt.Errorf("no signals enabled for %s(%s)", dest.GetID(), dest.GetType())
+		}
+
 		for _, pipelineName := range pipelineNames {
 			if pipeline, ok := currentConfig.Service.Pipelines[pipelineName]; ok {
-				// Add routing processor only if it exists
+
 				if routingProcessor, ok := routingProcessors[sanitizedProcessorName]; ok {
 					currentConfig.Processors[sanitizedProcessorName] = routingProcessor
 					pipeline.Processors = append(pipeline.Processors, sanitizedProcessorName)
 				}
 
 				currentConfig.Service.Pipelines[pipelineName] = pipeline
-			} else {
-				status.Destination[dest.GetID()] = fmt.Errorf("pipeline %s not found", pipelineName)
 			}
 		}
 	}
