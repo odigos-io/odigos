@@ -12,7 +12,7 @@ interface StoreSetters {
 }
 
 export const useStatusStore = create<StoreValues & StoreSetters>((set) => ({
-  status: NOTIFICATION_TYPE.INFO,
+  status: NOTIFICATION_TYPE.DEFAULT,
   title: 'Connecting...',
   message: '',
 

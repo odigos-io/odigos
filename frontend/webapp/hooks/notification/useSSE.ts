@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { API, DISPLAY_TITLES } from '@/utils';
+import { API, DISPLAY_TITLES, NOTIF_CRD_TYPES } from '@/utils';
 import { NOTIFICATION_TYPE } from '@/types';
 import { useDestinationCRUD } from '../destinations';
 import { usePaginatedSources } from '../compute-platform';
@@ -20,27 +20,29 @@ export const useSSE = () => {
       const es = new EventSource(API.EVENTS);
 
       es.onmessage = (event) => {
-        const key = event.data;
-        const data = JSON.parse(key);
-
+        const data = JSON.parse(event.data);
+        const crdType = data.crdType || '';
         const notification: NotifyPayload = {
           type: data.type,
-          title: data.event,
-          message: data.data,
-          crdType: data.crdType,
+          title: data.event || '',
+          message: data.data || '',
+          crdType,
           target: data.target,
         };
 
-        addNotification(notification);
+        // SSE toast notification
+        if (crdType !== NOTIF_CRD_TYPES.CONNECTED) addNotification(notification);
 
-        const crdType = notification.crdType || '';
-        if (['InstrumentationConfig', 'InstrumentationInstance'].includes(crdType)) {
+        // Handle specific CRD types
+        if ([NOTIF_CRD_TYPES.CONNECTED].includes(crdType)) {
+          if (title !== DISPLAY_TITLES.API_TOKEN) {
+            setStatusStore({ status: NOTIFICATION_TYPE.SUCCESS, title: notification.title as string, message: notification.message as string });
+          }
+        } else if ([NOTIF_CRD_TYPES.INSTRUMENTATION_CONFIG, NOTIF_CRD_TYPES.INSTRUMENTATION_INSTANCE].includes(crdType)) {
           fetchSources();
-        } else if (['Destination'].includes(crdType)) {
+        } else if ([NOTIF_CRD_TYPES.DESTINATION].includes(crdType)) {
           refetchDestinations();
-        } else {
-          console.warn('Unhandled SSE for CRD type:', crdType);
-        }
+        } else console.warn('Unhandled SSE for CRD type:', crdType);
 
         // This works for now,
         // but in the future we might have to change this to "removePendingItems",
@@ -54,14 +56,6 @@ export const useSSE = () => {
 
         // Reset retry count on successful connection
         retryCount.current = 0;
-
-        if (title !== DISPLAY_TITLES.API_TOKEN) {
-          setStatusStore({
-            status: NOTIFICATION_TYPE.SUCCESS,
-            title: 'Connection Alive',
-            message: '',
-          });
-        }
       };
 
       es.onerror = (event) => {
@@ -72,6 +66,12 @@ export const useSSE = () => {
         if (retryCount.current < maxRetries) {
           retryCount.current += 1;
           const retryTimeout = Math.min(10000, 1000 * Math.pow(2, retryCount.current));
+
+          setStatusStore({
+            status: NOTIFICATION_TYPE.WARNING,
+            title: 'Disconnected',
+            message: `Disconnected from the server. Retrying connection (${retryCount.current})`,
+          });
 
           setTimeout(() => connect(), retryTimeout);
         } else {
