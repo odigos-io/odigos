@@ -151,6 +151,9 @@ type InstrumentationLibraryConfig struct {
 
 	PayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection,omitempty"`
 
+	// code attributes configuration for a specific library.
+	// if not set, the default code attributes configuration for the workload will be used.
+	// if set, but internal fields are empty, those fields will be used from the default configuration.
 	CodeAttributes *instrumentationrules.CodeAttributes `json:"codeAttributes,omitempty"`
 }
 
