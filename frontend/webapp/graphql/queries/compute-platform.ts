@@ -130,6 +130,8 @@ export const GET_INSTRUMENTATION_RULES = gql`
         ruleName
         notes
         disabled
+        mutable
+        profileName
         # workloads {}
         # instrumentationLibraries {}
         payloadCollection {
