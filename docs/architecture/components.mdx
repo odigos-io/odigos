@@ -63,7 +63,7 @@ Odigos is divided into three main segments:
 
 **K8s Resource**: `kubectl get deployments -n odigos-system odigos-gateway`
 
-**Role**: The cluster collector receives all the telemetry collected in the cluster, process it (to apply any actions), and export it to the configured destinations.
+**Role**: The cluster collector receives and processes all telemetry collected in the cluster, applies Actions, and exports data to the configured destinations.
 
 - Batch telemetry items for better performance, and export them reliably to the configured destinations (retries, backoff, etc).
 - Modify the telemetry data based on the Odigos actions (add/remove/modify/rename attributes, etc).
