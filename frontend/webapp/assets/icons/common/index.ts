@@ -17,6 +17,8 @@ export * from './filter-icon';
 export * from './folder-icon';
 export * from './info-icon';
 export * from './key-icon';
+export * from './light-off-icon';
+export * from './light-on-icon';
 export * from './list-icon';
 export * from './no-data-icon';
 export * from './notebook-icon';

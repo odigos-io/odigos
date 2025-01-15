@@ -1,9 +1,9 @@
 import React from 'react';
 import styled from 'styled-components';
 import { getStatusIcon } from '@/utils';
+import { hexPercentValues } from '@/styles';
 import { NOTIFICATION_TYPE } from '@/types';
 import { Divider, Text } from '@/reuseable-components';
-import theme, { hexPercentValues } from '@/styles/theme';
 import { CheckCircledIcon, CrossCircledIcon } from '@/assets';
 
 export * from './active-status';
@@ -26,7 +26,7 @@ export interface StatusProps {
 const StatusWrapper = styled.div<{
   $size: number;
   $isPale: StatusProps['isPale'];
-  $status: StatusProps['status'];
+  $status: NOTIFICATION_TYPE;
   $withIcon?: StatusProps['withIcon'];
   $withBorder?: StatusProps['withBorder'];
   $withBackground?: StatusProps['withBackground'];
@@ -37,18 +37,9 @@ const StatusWrapper = styled.div<{
   padding: ${({ $size, $withBorder, $withBackground }) => ($withBorder || $withBackground ? `${$size / ($withBorder ? 3 : 2)}px ${$size / ($withBorder ? 1.5 : 1)}px` : '0')};
   width: fit-content;
   border-radius: 360px;
-  border: ${({ $withBorder, $isPale, $status, theme }) =>
-    $withBorder
-      ? `1px solid ${
-          $isPale ? theme.colors.border : $status === NOTIFICATION_TYPE.SUCCESS ? theme.colors.dark_green : $status === NOTIFICATION_TYPE.ERROR ? theme.colors.dark_red : theme.colors.border
-        }`
-      : 'none'};
-  background: ${({ $withBackground, $isPale, $status = NOTIFICATION_TYPE.DEFAULT, theme }) =>
-    $withBackground
-      ? $isPale
-        ? `linear-gradient(90deg, transparent 0%, ${theme.colors.info + hexPercentValues['080']} 50%, ${theme.colors.info} 100%)`
-        : `linear-gradient(90deg, transparent 0%, ${theme.colors[$status] + hexPercentValues['080']} 50%, ${theme.colors[$status]} 100%)`
-      : 'transparent'};
+  border: ${({ $withBorder, $isPale, $status, theme }) => ($withBorder ? `1px solid ${$isPale ? theme.colors.border : theme.text[$status] + hexPercentValues['050']}` : 'none')};
+  background: ${({ $withBackground, $isPale, $status, theme }) =>
+    $withBackground ? `linear-gradient(90deg, ${($isPale ? theme.text.info : theme.text[$status]) + hexPercentValues['030']} 0%, transparent 100%)` : 'transparent'};
 `;
 
 const IconWrapper = styled.div`
@@ -63,20 +54,20 @@ const TextWrapper = styled.div`
 
 const Title = styled(Text)<{
   $isPale: StatusProps['isPale'];
-  $status: StatusProps['status'];
+  $status: NOTIFICATION_TYPE;
 }>`
-  color: ${({ $isPale, $status = NOTIFICATION_TYPE.DEFAULT, theme }) => ($isPale ? theme.text.secondary : theme.text[$status])};
+  color: ${({ $isPale, $status, theme }) => ($isPale ? theme.text.secondary : theme.text[$status])};
 `;
 
 const SubTitle = styled(Text)<{
   $isPale: StatusProps['isPale'];
-  $status: StatusProps['status'];
+  $status: NOTIFICATION_TYPE;
 }>`
-  color: ${({ $isPale, $status = NOTIFICATION_TYPE.DEFAULT }) => ($isPale ? theme.text.grey : theme.text[`${$status}_secondary`])};
+  color: ${({ $isPale, $status, theme }) => ($isPale ? theme.text.grey : theme.text[`${$status}_secondary`])};
 `;
 
 export const Status: React.FC<StatusProps> = ({ title, subtitle, size = 12, family = 'secondary', status, isActive: oldStatus, isPale, withIcon, withBorder, withBackground }) => {
-  const statusType = status || (oldStatus ? NOTIFICATION_TYPE.SUCCESS : NOTIFICATION_TYPE.ERROR);
+  const statusType = typeof oldStatus === 'boolean' ? (oldStatus ? NOTIFICATION_TYPE.SUCCESS : NOTIFICATION_TYPE.ERROR) : status || NOTIFICATION_TYPE.DEFAULT;
   const StatusIcon = getStatusIcon(statusType);
 
   return (

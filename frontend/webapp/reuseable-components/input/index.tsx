@@ -1,6 +1,5 @@
 import React, { useState, forwardRef, type ChangeEvent, type KeyboardEventHandler, type InputHTMLAttributes } from 'react';
-import theme from '@/styles/theme';
-import styled, { css } from 'styled-components';
+import styled, { css, useTheme } from 'styled-components';
 import { EyeClosedIcon, EyeOpenIcon, SVG } from '@/assets';
 import { FieldError, FieldLabel } from '@/reuseable-components';
 
@@ -32,11 +31,11 @@ const InputWrapper = styled.div<{ $disabled?: InputProps['disabled']; $hasError?
   gap: 12px;
   transition: border-color 0.3s;
   border-radius: 32px;
-  border: 1px solid rgba(249, 249, 249, 0.24);
+  border: 1px solid ${({ theme }) => theme.colors.border};
   ${({ $disabled }) =>
     $disabled &&
     css`
-      background-color: #555;
+      background-color: ${({ theme }) => theme.colors.border};
       cursor: not-allowed;
       opacity: 0.6;
     `}
@@ -64,12 +63,12 @@ const StyledInput = styled.input<{ $hasIcon: boolean }>`
   border: none;
   outline: none;
   background: none;
-  color: ${({ theme }) => theme.colors.text};
+  color: ${({ theme }) => theme.text.secondary};
   font-size: 14px;
   font-family: ${({ theme }) => theme.font_family.primary};
   font-weight: 300;
   &::placeholder {
-    color: ${({ theme }) => theme.colors.text};
+    color: ${({ theme }) => theme.text.secondary};
     font-family: ${({ theme }) => theme.font_family.primary};
     opacity: 0.4;
     font-size: 14px;
@@ -77,7 +76,7 @@ const StyledInput = styled.input<{ $hasIcon: boolean }>`
     line-height: 22px; /* 157.143% */
   }
   &:disabled {
-    background-color: #555;
+    background-color: ${({ theme }) => theme.colors.border};
     cursor: not-allowed;
   }
   &::-webkit-inner-spin-button,
@@ -100,7 +99,7 @@ const IconWrapperClickable = styled(IconWrapper)`
 const Button = styled.button`
   background-color: ${({ theme }) => theme.colors.primary};
   border: none;
-  color: #fff;
+  color: ${({ theme }) => theme.text.white};
   padding: 8px 16px;
   border-radius: 20px;
   cursor: pointer;
@@ -109,13 +108,15 @@ const Button = styled.button`
     background-color: ${({ theme }) => theme.colors.secondary};
   }
   &:disabled {
-    background-color: #555;
+    background-color: ${({ theme }) => theme.colors.border};
     cursor: not-allowed;
   }
 `;
 
 // Wrap Input with forwardRef to handle the ref prop
 const Input = forwardRef<HTMLInputElement, InputProps>(({ icon: Icon, buttonLabel, onButtonClick, hasError, errorMessage, title, tooltip, required, onChange, type = 'text', name, ...props }, ref) => {
+  const theme = useTheme();
+
   const isSecret = type === 'password';
   const [revealSecret, setRevealSecret] = useState(false);
 

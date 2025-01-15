@@ -1,8 +1,7 @@
 import React, { CSSProperties, DetailedHTMLProps, HTMLAttributes } from 'react';
-
-import { cssValue, parseLengthAndUnit } from './helpers/unitConverter';
+import { useTheme } from 'styled-components';
 import { createAnimation } from './helpers/animation';
-import theme from '@/styles/theme';
+import { cssValue, parseLengthAndUnit } from './helpers/unitConverter';
 
 export type LengthType = number | string;
 
@@ -22,9 +21,9 @@ interface LoaderHeightWidthRadiusProps extends CommonProps {
 
 const fade = createAnimation('FadeLoader', '50% {opacity: 0.3} 100% {opacity: 1}', 'fade');
 
-function FadeLoader({
+export const FadeLoader = ({
   loading = true,
-  color = theme.colors.text,
+  color: clr,
   speedMultiplier = 1,
   cssOverride = {},
   height = 4,
@@ -32,7 +31,10 @@ function FadeLoader({
   radius = 2,
   margin = 2,
   ...additionalprops
-}: LoaderHeightWidthRadiusProps): React.ReactNode | null {
+}: LoaderHeightWidthRadiusProps) => {
+  const theme = useTheme();
+  const color = clr || theme.text.secondary;
+
   const { value } = parseLengthAndUnit(margin);
   const radiusValue = value + 4.2;
   const quarter = radiusValue / 2 + radiusValue / 5.5;
@@ -125,6 +127,4 @@ function FadeLoader({
       <span style={h} />
     </span>
   );
-}
-
-export { FadeLoader };
+};

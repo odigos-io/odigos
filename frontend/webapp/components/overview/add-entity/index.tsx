@@ -1,11 +1,11 @@
 import React, { useState, useRef } from 'react';
-import theme from '@/styles/theme';
 import { PlusIcon } from '@/assets';
 import { useModalStore } from '@/store';
 import { getEntityIcon } from '@/utils';
 import { useOnClickOutside } from '@/hooks';
-import styled, { css } from 'styled-components';
+import { hexPercentValues } from '@/styles';
 import { Button, Text } from '@/reuseable-components';
+import styled, { css, useTheme } from 'styled-components';
 import { type DropdownOption, OVERVIEW_ENTITY_TYPES } from '@/types';
 
 // Styled components for the dropdown UI
@@ -43,12 +43,12 @@ const DropdownItem = styled.div<{ $selected: boolean }>`
   display: flex;
   align-items: center;
   &:hover {
-    background: ${({ theme }) => theme.colors.white_opacity['008']};
+    background: ${({ theme }) => theme.colors.dropdown_bg_2};
   }
-  ${({ $selected }) =>
+  ${({ $selected, theme }) =>
     $selected &&
     css`
-      background: rgba(68, 74, 217, 0.24);
+      background: ${theme.colors.majestic_blue + hexPercentValues['024']};
     `}
 `;
 
@@ -72,6 +72,7 @@ interface Props {
 }
 
 export const AddEntity: React.FC<Props> = ({ options = DEFAULT_OPTIONS, placeholder = 'ADD...' }) => {
+  const theme = useTheme();
   const { currentModal, setCurrentModal } = useModalStore();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -85,7 +86,7 @@ export const AddEntity: React.FC<Props> = ({ options = DEFAULT_OPTIONS, placehol
 
   const handleSelect = (option: DropdownOption) => {
     setCurrentModal(option.id);
-    setIsDropdownOpen(false);
+    setIsDropdownOpen(false); // ??? maybe remove this line (for fast-toggle between modals)
   };
 
   return (

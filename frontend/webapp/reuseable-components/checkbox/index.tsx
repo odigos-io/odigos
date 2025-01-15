@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Text } from '../text';
-import theme from '@/styles/theme';
 import { CheckIcon } from '@/assets';
 import { Tooltip } from '../tooltip';
-import styled from 'styled-components';
-import { FlexColumn } from '@/styles';
+import { FlexColumn, hexPercentValues } from '@/styles';
 import { FieldError } from '../field-error';
+import styled, { useTheme } from 'styled-components';
 
 interface CheckboxProps {
   title?: string;
@@ -31,7 +30,7 @@ const CheckboxWrapper = styled.div<{ $isChecked: boolean; $disabled?: CheckboxPr
   width: 18px;
   height: 18px;
   border-radius: 6px;
-  border: ${({ $isChecked }) => ($isChecked ? '1px dashed transparent' : '1px dashed rgba(249, 249, 249, 0.4)')};
+  border: 1px dashed ${({ $isChecked, theme }) => ($isChecked ? 'transparent' : theme.colors.border)};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -41,6 +40,8 @@ const CheckboxWrapper = styled.div<{ $isChecked: boolean; $disabled?: CheckboxPr
 `;
 
 export const Checkbox: React.FC<CheckboxProps> = ({ title, titleColor, tooltip, value = false, onChange, disabled, style, errorMessage, allowPropagation = false }) => {
+  const theme = useTheme();
+
   const [isChecked, setIsChecked] = useState(value);
   useEffect(() => setIsChecked(value), [value]);
 
@@ -56,7 +57,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({ title, titleColor, tooltip, 
     <FlexColumn>
       <Container data-id={`checkbox${!!title ? `-${title}` : ''}`} $disabled={disabled} onClick={handleToggle} style={style}>
         <CheckboxWrapper $isChecked={isChecked} $disabled={disabled}>
-          {isChecked && <CheckIcon />}
+          {isChecked && <CheckIcon fill={theme.text.info_secondary} />}
         </CheckboxWrapper>
 
         {title && (

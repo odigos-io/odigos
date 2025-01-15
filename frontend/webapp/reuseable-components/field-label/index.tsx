@@ -28,11 +28,11 @@ const Title = styled(Text)`
 
 const OptionalText = styled(Text)`
   font-size: 12px;
-  color: #7a7a7a;
+  color: ${({ theme }) => theme.text.darker_grey};
   opacity: 0.8;
 `;
 
-const FieldLabel: React.FC<Props> = ({ title, required, tooltip, style }) => {
+export const FieldLabel: React.FC<Props> = ({ title, required, tooltip, style }) => {
   if (!title) return null;
 
   return (
@@ -44,5 +44,3 @@ const FieldLabel: React.FC<Props> = ({ title, required, tooltip, style }) => {
     </Wrapper>
   );
 };
-
-export { FieldLabel };

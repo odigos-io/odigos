@@ -1,8 +1,9 @@
 import React from 'react';
 import { FolderIcon } from '@/assets';
 import styled from 'styled-components';
+import { hexPercentValues } from '@/styles';
 import { type UseSourceFormDataResponse } from '@/hooks';
-import { Checkbox, FadeLoader, NoDataFound, Text } from '@/reuseable-components';
+import { Checkbox, FadeLoader, IconWrapped, NoDataFound, Text } from '@/reuseable-components';
 
 interface Props extends UseSourceFormDataResponse {
   isModal?: boolean;
@@ -27,9 +28,9 @@ const ListItem = styled.div<{ $selected: boolean }>`
   transition: background 0.3s;
   border-radius: 16px;
   cursor: pointer;
-  background: ${({ $selected }) => ($selected ? 'rgba(68, 74, 217, 0.24)' : 'rgba(249, 249, 249, 0.04)')};
+  background: ${({ $selected, theme }) => ($selected ? theme.colors.majestic_blue + hexPercentValues['024'] : theme.colors.dropdown_bg_2 + hexPercentValues['040'])};
   &:hover {
-    background: ${({ $selected }) => ($selected ? 'rgba(68, 74, 217, 0.40)' : 'rgba(249, 249, 249, 0.08)')};
+    background: ${({ $selected, theme }) => ($selected ? theme.colors.majestic_blue + hexPercentValues['040'] : theme.colors.dropdown_bg_2 + hexPercentValues['080'])};
   }
 `;
 
@@ -37,17 +38,6 @@ const ListItemContent = styled.div`
   margin-left: 16px;
   display: flex;
   gap: 12px;
-`;
-
-const SourceIconWrapper = styled.div`
-  display: flex;
-  width: 36px;
-  height: 36px;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  border-radius: 8px;
-  background: linear-gradient(180deg, rgba(249, 249, 249, 0.06) 0%, rgba(249, 249, 249, 0.02) 100%);
 `;
 
 const TextWrapper = styled.div`
@@ -96,10 +86,7 @@ export const SourcesList: React.FC<Props> = ({
         return (
           <ListItem key={`source-${source.name}`} $selected={isSelected} onClick={() => onSelectSource(source)}>
             <ListItemContent>
-              <SourceIconWrapper>
-                <FolderIcon size={20} />
-              </SourceIconWrapper>
-
+              <IconWrapped icon={FolderIcon} />
               <TextWrapper>
                 <Text>{source.name}</Text>
                 <Text opacity={0.8} size={10}>

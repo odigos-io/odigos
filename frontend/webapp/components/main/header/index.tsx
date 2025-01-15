@@ -1,12 +1,11 @@
 import React from 'react';
-import theme from '@/styles/theme';
-import { FlexRow } from '@/styles';
 import { SLACK_LINK } from '@/utils';
-import styled from 'styled-components';
-import { NOTIFICATION_TYPE, PlatformTypes } from '@/types';
 import { PlatformTitle } from './cp-title';
-import { NotificationManager } from '@/components';
+import styled, { useTheme } from 'styled-components';
+import { FlexRow, hexPercentValues } from '@/styles';
+import { NOTIFICATION_TYPE, PlatformTypes } from '@/types';
 import { OdigosLogoText, SlackLogo, TerminalIcon } from '@/assets';
+import { NotificationManager, ToggleDarkMode } from '@/components';
 import { ConnectionStatus, IconButton } from '@/reuseable-components';
 import { DRAWER_OTHER_TYPES, useConnectionStore, useDrawerStore } from '@/store';
 
@@ -16,7 +15,7 @@ const HeaderContainer = styled(FlexRow)`
   width: 100%;
   padding: 12px 0;
   background-color: ${({ theme }) => theme.colors.dark_grey};
-  border-bottom: 1px solid rgba(249, 249, 249, 0.16);
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border + hexPercentValues['050']};
 `;
 
 const AlignLeft = styled(FlexRow)`
@@ -32,6 +31,7 @@ const AlignRight = styled(FlexRow)`
 `;
 
 export const MainHeader: React.FC<MainHeaderProps> = () => {
+  const theme = useTheme();
   const { setSelectedItem } = useDrawerStore();
   const { title, message, sseConnecting, sseStatus, tokenExpired, tokenExpiring } = useConnectionStore();
 
@@ -52,6 +52,7 @@ export const MainHeader: React.FC<MainHeaderProps> = () => {
         </IconButton>
 
         <NotificationManager />
+        <ToggleDarkMode />
 
         <IconButton onClick={handleClickSlack} tooltip='Join our Slack community'>
           <SlackLogo />

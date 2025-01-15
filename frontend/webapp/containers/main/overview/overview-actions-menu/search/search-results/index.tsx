@@ -1,11 +1,10 @@
 import React, { Fragment, useMemo, useState } from 'react';
-import theme from '@/styles/theme';
-import styled from 'styled-components';
-import { OVERVIEW_ENTITY_TYPES, WorkloadId } from '@/types';
+import { OVERVIEW_ENTITY_TYPES } from '@/types';
 import { AbsoluteContainer } from '../../styled';
-import { getEntityIcon, getEntityItemId, getEntityLabel } from '@/utils';
+import styled, { useTheme } from 'styled-components';
 import { buildSearchResults, type Category } from './builder';
 import { Divider, SelectionButton, Text } from '@/reuseable-components';
+import { getEntityIcon, getEntityItemId, getEntityLabel } from '@/utils';
 import { useActionCRUD, useDestinationCRUD, useInstrumentationRuleCRUD, useNodeDataFlowHandlers, useSourceCRUD } from '@/hooks';
 
 interface Props {
@@ -29,13 +28,14 @@ const VerticalScroll = styled.div`
 `;
 
 export const SearchResults = ({ searchText, onClose }: Props) => {
-  const [selectedCategory, setSelectedCategory] = useState<Category>('all');
-
+  const theme = useTheme();
   const { sources } = useSourceCRUD();
   const { actions } = useActionCRUD();
   const { destinations } = useDestinationCRUD();
   const { instrumentationRules } = useInstrumentationRuleCRUD();
   const { handleNodeClick } = useNodeDataFlowHandlers();
+
+  const [selectedCategory, setSelectedCategory] = useState<Category>('all');
 
   const { categories, searchResults } = useMemo(
     () =>

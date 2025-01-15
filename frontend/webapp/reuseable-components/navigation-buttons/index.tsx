@@ -2,8 +2,7 @@ import React from 'react';
 import Image from 'next/image';
 import { SVG } from '@/assets';
 import { Button } from '../button';
-import styled from 'styled-components';
-import theme from '@/styles/theme';
+import styled, { useTheme } from 'styled-components';
 
 export interface NavigationButtonProps {
   label: string;
@@ -33,6 +32,8 @@ const StyledButton = styled(Button)`
 `;
 
 export const NavigationButtons: React.FC<Props> = ({ buttons }) => {
+  const theme = useTheme();
+
   const shouldRenderBackButton = ({ button, index }: { button: NavigationButtonProps; index: number }) => {
     return buttons.length > 1 && index === 0 && (button.icon || button.iconSrc);
   };

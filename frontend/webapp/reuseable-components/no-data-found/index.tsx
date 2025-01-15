@@ -1,8 +1,7 @@
 import React from 'react';
 import { Text } from '../text';
-import theme from '@/styles/theme';
 import { NoDataIcon } from '@/assets';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 
 interface Props {
   title?: string;
@@ -10,12 +9,12 @@ interface Props {
 }
 
 const Title = styled(Text)`
-  color: #7a7a7a;
+  color: ${({ theme }) => theme.text.darker_grey};
   line-height: 24px;
 `;
 
 const SubTitle = styled(Text)`
-  color: #525252;
+  color: ${({ theme }) => theme.colors.border};
   font-size: 14px;
   font-weight: 200;
   line-height: 20px;
@@ -34,6 +33,8 @@ const Container = styled.div`
 `;
 
 export const NoDataFound: React.FC<Props> = ({ title = 'No data found', subTitle = 'Check your search phrase and try one more time' }) => {
+  const theme = useTheme();
+
   return (
     <Container>
       <TitleWrapper>

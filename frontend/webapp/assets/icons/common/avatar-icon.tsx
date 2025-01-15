@@ -1,8 +1,10 @@
 import React from 'react';
 import { SVG } from '@/assets';
-import theme from '@/styles/theme';
+import { useTheme } from 'styled-components';
 
 export const AvatarIcon: SVG = ({ size = 16, rotate = 0, onClick }) => {
+  const theme = useTheme();
+
   return (
     <svg width={size * (28 / 29)} height={size} viewBox='0 0 28 29' xmlns='http://www.w3.org/2000/svg' fill='none' style={{ transform: `rotate(${rotate}deg)` }} onClick={onClick}>
       <path

@@ -1,11 +1,11 @@
-import React, { useMemo, useRef, useState } from 'react';
-import styled from 'styled-components';
+import React, { useRef, useState } from 'react';
 import { useClickNotif } from '@/hooks';
+import { hexPercentValues } from '@/styles';
 import { useNotificationStore } from '@/store';
 import { ACTION, getStatusIcon } from '@/utils';
+import styled, { useTheme } from 'styled-components';
 import { NotificationIcon, TrashIcon } from '@/assets';
 import { useOnClickOutside, useTimeAgo } from '@/hooks';
-import theme, { hexPercentValues } from '@/styles/theme';
 import { NOTIFICATION_TYPE, type Notification } from '@/types';
 import { IconButton, NoDataFound, Text } from '@/reuseable-components';
 
@@ -51,7 +51,7 @@ const PopupShadow = styled.div`
   width: 100%;
   height: 45px;
   border-radius: 0 0 24px 24px;
-  background: linear-gradient(0deg, #242424 0%, rgba(36, 36, 36, 0.64) 50%, rgba(36, 36, 36, 0) 100%);
+  background: ${({ theme }) => `linear-gradient(to top, ${theme.colors.dropdown_bg}, transparent)`};
   pointer-events: none;
 `;
 
@@ -64,6 +64,8 @@ const NewCount = styled(Text)`
 `;
 
 export const NotificationManager = () => {
+  const theme = useTheme();
+
   const { notifications: n, markAsSeen } = useNotificationStore();
   const notifications = n.filter(({ hideFromHistory }) => !hideFromHistory);
   const unseen = notifications.filter(({ seen }) => !seen);
@@ -117,18 +119,18 @@ const NotifCard = styled.div`
   gap: 12px;
   padding: 16px;
   border-radius: 16px;
-  background-color: ${({ theme }) => theme.colors.white_opacity['004']};
+  background-color: ${({ theme }) => theme.colors.dropdown_bg_2 + hexPercentValues['080']};
   cursor: not-allowed;
   &.click-enabled {
     cursor: pointer;
     &:hover {
-      background-color: ${({ theme }) => theme.colors.white_opacity['008']};
+      background-color: ${({ theme }) => theme.colors.dropdown_bg_2};
     }
   }
 `;
 
 const StatusIcon = styled.div<{ $type: NOTIFICATION_TYPE }>`
-  background-color: ${({ $type, theme }) => theme.text[$type] + hexPercentValues['012']};
+  background-color: ${({ $type, theme }) => theme.text[$type] + hexPercentValues['015']};
   border-radius: 8px;
   width: 36px;
   height: 36px;
@@ -152,16 +154,12 @@ const NotifFooterTextWrap = styled.div`
 `;
 
 const NotificationListItem: React.FC<Notification & { onClick: () => void }> = ({ onClick, ...props }) => {
+  const theme = useTheme();
+
   const { id, seen, type, title, message, time, crdType, target } = props;
   const canClick = !!crdType && !!target;
 
-  const isDeleted = useMemo(() => {
-    const deleteAction = ACTION.DELETE.toLowerCase();
-    const titleIncludes = title?.toLowerCase().includes(deleteAction);
-
-    return titleIncludes || false;
-  }, [title, message]);
-
+  const isDeleted = title?.toLowerCase().includes(ACTION.DELETE.toLowerCase()) || false;
   const Icon = getStatusIcon(type);
   const timeAgo = useTimeAgo();
   const clickNotif = useClickNotif();

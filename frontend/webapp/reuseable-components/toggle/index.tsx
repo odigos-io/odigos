@@ -23,7 +23,7 @@ const Container = styled.div<{ $disabled?: ToggleProps['disabled'] }>`
 const ToggleSwitch = styled.div<{ $isActive: boolean; $disabled?: ToggleProps['disabled'] }>`
   width: 24px;
   height: 12px;
-  border: 1px ${({ $isActive, theme }) => ($isActive ? `solid ${theme.colors.majestic_blue}` : 'dashed #aaa')};
+  border: 1px ${({ $isActive, theme }) => ($isActive ? `solid ${theme.colors.majestic_blue}` : `dashed ${theme.text.grey}`)};
   border-radius: 20px;
   display: flex;
   align-items: center;
