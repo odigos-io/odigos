@@ -1,7 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
 import { OdigosLogoText } from '@/assets';
-import { hexPercentValues } from '@/styles';
+import { FlexRow, hexPercentValues } from '@/styles';
+import { ToggleDarkMode } from '@/components/common';
 import { NavigationButtonProps, NavigationButtons, Text } from '@/reuseable-components';
 
 interface Props {
@@ -28,8 +29,13 @@ export const SetupHeader: React.FC<Props> = ({ navigationButtons }) => {
   return (
     <Container>
       <OdigosLogoText size={80} />
+
       <Title family='secondary'>START WITH ODIGOS</Title>
-      <NavigationButtons buttons={navigationButtons} />
+
+      <FlexRow>
+        <ToggleDarkMode />
+        <NavigationButtons buttons={navigationButtons} />
+      </FlexRow>
     </Container>
   );
 };
