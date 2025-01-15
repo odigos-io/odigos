@@ -111,7 +111,7 @@ The Node Collector is also responsible for recording some k8s metrics, and colle
 
 **K8s Resource**: `kubectl get daemonsets -n odigos-system odiglet`
 
-**Role**: The odiglet component sets up the k8s node environment to run the telemetry-collection agents.
+**Role**: Odiglet sets up the node environment to run telemetry collection agents.
 
 - Inspect container runtime details of instrumented sources (to determine programming language, relevant environment variables, runtime versions, etc).
 - Implement the Kubernetes virtual instrumentation devices. In the presence of a supported devices on the pod, odiglet will mount the agent code from fily-system to the pod, and add the relevant environment variables to initiate instrumentation.
