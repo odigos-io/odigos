@@ -88,4 +88,5 @@ export const DISPLAY_TITLES = {
   LANGUAGE: 'Language',
   MONITORS: 'Monitors',
   SIGNALS_FOR_PROCESSING: 'Signals for Processing',
+  MANAGED_BY_PROFILE: 'Managed by Profile',
 };
