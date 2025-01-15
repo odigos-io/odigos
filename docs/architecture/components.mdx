@@ -115,7 +115,7 @@ The Node Collector is also responsible for recording some k8s metrics, and colle
 
 - Inspect container runtime details of instrumented sources (to determine programming language, relevant environment variables, runtime versions, etc).
 - Implement the Kubernetes virtual instrumentation devices. In the presence of a supported devices on the pod, odiglet will mount the agent code from fily-system to the pod, and add the relevant environment variables to initiate instrumentation.
-- For eBPF based instrumentation, odiglet will inject the eBPF code into the pod, pick up the telemetry items from the eBPF queues and push it downstream to node collector component.
+- For eBPF-based instrumentation, Odiglet will inject the eBPF code into the pod, pick up telemetry from eBPF, and push it downstream to the Node Collector.
 - Monitor changes to instrumentations config, and apply to the relevant agents accordingly at runtime.
 
 ### Node Collector
