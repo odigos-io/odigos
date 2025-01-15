@@ -5,8 +5,8 @@ sidebarTitle: "Sources"
 
 Odigos Instrumentation Flow:
 
-1. User selects a workload (Deployment, StatefulSet, or DaemonSet) to auto instrument by setting the `odigos-instrumentation` label on the workload or the namespace.
-2. Odigos `instrumentor` controller watches for the `odigos-instrumentation` label on the workload or the namespace and create an `instrumentationconfig.odigos.io` object per workload.
+1. User selects a workload (Deployment, StatefulSet, or DaemonSet) to auto instrument by creating a Source object for the workload or the namespace.
+2. Odigos `instrumentor` controller watches for Source objects for the workload or the namespace and create an `instrumentationconfig.odigos.io` object per workload.
 3. Odigos `odiglet` controller watches for the `instrumentationconfig.odigos.io` object and runs a runtime inspection on running pods to detect the programming language per container. The result is written into the `instrumentedapplication.odigos.io` object per workload.
 4. Odigos `instrumentor` controller watches for the `instrumentedapplication.odigos.io` object and adds a resource request into each pod spec of all relevant containers in the workload manifest. These resource requests are called "instrumentation devices".
 5. Kubernetes detects the change in the manifest and rollout restart the pods with the new instrumentation devices.

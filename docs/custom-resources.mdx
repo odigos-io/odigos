@@ -13,6 +13,26 @@ Kubernetes API server.
 
 Odigos adds the following custom resources to the Kubernetes API server:
 
+## Source
+
+This resource defines namespaces and workloads to instrument. It has the following `spec` fields:
+
+|Field|Description|Type|Default|Required|
+|----|------|-----|-----|----|
+|`disableInstrumentation`|Excludes the specified workload from instrumentation.|`bool`|`false`|Optional|
+|`workload.name`|Name of the workload for this Source.|`string`|n/a|Required|
+|`workload.namespace`|Namespace of the workload for this Source.|`string`|n/a|Required|
+|`workload.kind`|Kind of the workload for this Source.|`WorkloadKind`|n/a|Required|
+
+Valid values for `WorkloadKind` are:
+
+* `Deployment`
+* `DaemonSet`
+* `StatefulSet`
+* `Namespace`
+
+These values are case-sensitive.
+
 ## Destination
 
 This custom resource is used to define the backend destinations for the
