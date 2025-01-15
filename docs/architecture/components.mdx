@@ -98,7 +98,7 @@ The Node Collector is also responsible for recording some k8s metrics, and colle
 
 **Role**: The instrumentor is responsible for managing the auto instrumentation agents which collect the telemetry data from the Odigos sources.
 
-- Create and manage the `instrumentationconfig.odigos.io` objects
+- Create and manage `instrumentationconfig.odigos.io` objects
   - Triggers `odiglet` to inspect runtime information of the workload.
   - Triggers the scheduler to deploy the Odigos pipeline.
   - Merge the Odigos instrumentation rules and odigos config to a workload scope configuration to be used by the agent.
