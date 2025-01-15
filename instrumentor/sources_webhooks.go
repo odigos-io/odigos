@@ -234,7 +234,7 @@ func (s *SourcesValidator) validateSourceFields(ctx context.Context, source *v1a
 		))
 	}
 
-	if source.Spec.Workload.Kind == "Namespace" &&
+	if source.Spec.Workload.Kind == workload.WorkloadKindNamespace &&
 		(source.Spec.Workload.Name != source.Spec.Workload.Namespace) {
 		allErrs = append(allErrs, field.Invalid(
 			field.NewPath("spec").Child("workload").Child("namespace"),
@@ -244,7 +244,7 @@ func (s *SourcesValidator) validateSourceFields(ctx context.Context, source *v1a
 	}
 
 	validKind := workload.IsValidWorkloadKind(source.Spec.Workload.Kind)
-	if !validKind && source.Spec.Workload.Kind != "Namespace" {
+	if !validKind {
 		allErrs = append(allErrs, field.Invalid(
 			field.NewPath("spec").Child("workload").Child("kind"),
 			source.Spec.Workload.Kind,

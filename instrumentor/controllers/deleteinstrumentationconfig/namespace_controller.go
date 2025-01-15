@@ -20,6 +20,7 @@ import (
 	"context"
 
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -44,7 +45,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
-	if err := sourceutils.MigrateInstrumentationLabelToDisabledSource(ctx, r.Client, &ns, "Namespace"); err != nil {
+	if err := sourceutils.MigrateInstrumentationLabelToDisabledSource(ctx, r.Client, &ns, workload.WorkloadKindNamespace); err != nil {
 		return ctrl.Result{}, err
 	}
 

@@ -10,6 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
 type NamespacesReconciler struct {
@@ -25,7 +26,7 @@ func (n *NamespacesReconciler) Reconcile(ctx context.Context, request ctrl.Reque
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if err := sourceutils.MigrateInstrumentationLabelToSource(ctx, n.Client, &ns, "Namespace"); err != nil {
+	if err := sourceutils.MigrateInstrumentationLabelToSource(ctx, n.Client, &ns, workload.WorkloadKindNamespace); err != nil {
 		return ctrl.Result{}, err
 	}
 

@@ -5,13 +5,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // IsObjectInstrumentedBySource returns true if the given object has an active, non-excluding Source.
@@ -53,13 +55,17 @@ func IsActiveSource(source *v1alpha1.Source) bool {
 // CreateOrUpdateSourceForObject creates a Source for an object if one does not exist and
 // applies a label to the object referencing the new Source.
 // The created Source will have a randomly generated name and be in the object's Namespace.
-func CreateOrUpdateSourceForObject(ctx context.Context, k8sClient client.Client, obj client.Object, kind workload.WorkloadKind, disableInstrumentation bool) error {
-	if !workload.IsValidWorkloadKind(kind) && kind != "Namespace" {
+func CreateOrUpdateSourceForObject(ctx context.Context,
+	k8sClient client.Client,
+	obj client.Object,
+	kind workload.WorkloadKind,
+	disableInstrumentation bool) error {
+	if !workload.IsValidWorkloadKind(kind) {
 		return fmt.Errorf("invalid workload kind %s", kind)
 	}
 
 	namespace := obj.GetNamespace()
-	if len(namespace) == 0 && kind == "Namespace" {
+	if namespace == "" && kind == workload.WorkloadKindNamespace {
 		namespace = obj.GetName()
 	}
 
@@ -69,7 +75,7 @@ func CreateOrUpdateSourceForObject(ctx context.Context, k8sClient client.Client,
 	}
 	var source *v1alpha1.Source
 
-	if kind == "Namespace" {
+	if kind == workload.WorkloadKindNamespace {
 		if sources.Namespace != nil {
 			source = sources.Namespace
 		}
@@ -112,7 +118,10 @@ func MigrateInstrumentationLabelToSource(ctx context.Context, k8sClient client.C
 	logger := log.FromContext(ctx)
 
 	if workload.IsObjectLabeledForInstrumentation(obj) {
-		logger.Info("legacy instrumentation label is deprecated; creating source for workload", "name", obj.GetName(), "namespace", obj.GetNamespace(), "kind", kind)
+		logger.Info("legacy instrumentation label is deprecated; creating source for workload",
+			"name", obj.GetName(),
+			"namespace", obj.GetNamespace(),
+			"kind", kind)
 		err := CreateOrUpdateSourceForObject(ctx, k8sClient, obj, kind, false)
 		if err != nil {
 			return err
@@ -128,7 +137,10 @@ func MigrateInstrumentationLabelToDisabledSource(ctx context.Context, k8sClient 
 	logger := log.FromContext(ctx)
 
 	if workload.IsInstrumentationDisabledExplicitly(obj) {
-		logger.Info("legacy instrumentation label is deprecated; excluding source for workload", "name", obj.GetName(), "namespace", obj.GetNamespace(), "kind", kind)
+		logger.Info("legacy instrumentation label is deprecated; excluding source for workload",
+			"name", obj.GetName(),
+			"namespace", obj.GetNamespace(),
+			"kind", kind)
 		err := CreateOrUpdateSourceForObject(ctx, k8sClient, obj, kind, true)
 		if err != nil {
 			return err

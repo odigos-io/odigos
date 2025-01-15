@@ -66,7 +66,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// Attempt to reconcile the workloads for instrumentation.
 	// if (terminating && exclude) || (!terminating && !exclude)
 	if sourceutils.IsActiveSource(source) {
-		if source.Spec.Workload.Kind == "Namespace" {
+		if source.Spec.Workload.Kind == workload.WorkloadKindNamespace {
 			err = errors.Join(err, syncNamespaceWorkloads(ctx, r.Client, r.Scheme, source.Spec.Workload.Name))
 		} else {
 			_, reconcileErr := reconcileWorkload(ctx,
