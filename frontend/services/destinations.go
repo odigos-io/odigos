@@ -7,7 +7,6 @@ import (
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
@@ -230,7 +229,7 @@ func ExportedSignalsObjectToSlice(signals *model.ExportedSignalsInput) []common.
 	return resp
 }
 
-func CreateDestinationSecret(ctx context.Context, destType common.DestinationType, secretFields map[string]string, odigosns string) (*k8s.LocalObjectReference, error) {
+func CreateDestinationSecret(ctx context.Context, destType common.DestinationType, secretFields map[string]string, ns string) (*k8s.LocalObjectReference, error) {
 	generateNamePrefix := "odigos.io.dest." + string(destType) + "-"
 	secret := k8s.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -238,7 +237,7 @@ func CreateDestinationSecret(ctx context.Context, destType common.DestinationTyp
 		},
 		StringData: secretFields,
 	}
-	newSecret, err := kube.DefaultClient.CoreV1().Secrets(odigosns).Create(ctx, &secret, metav1.CreateOptions{})
+	newSecret, err := kube.DefaultClient.CoreV1().Secrets(ns).Create(ctx, &secret, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -247,7 +246,7 @@ func CreateDestinationSecret(ctx context.Context, destType common.DestinationTyp
 	}, nil
 }
 
-func AddDestinationOwnerReferenceToSecret(ctx context.Context, odigosns string, dest *v1alpha1.Destination) error {
+func AddDestinationOwnerReferenceToSecret(ctx context.Context, ns string, dest *v1alpha1.Destination) error {
 	destOwnerRef := metav1.OwnerReference{
 		APIVersion: "odigos.io/v1alpha1",
 		Kind:       "Destination",
@@ -271,7 +270,7 @@ func AddDestinationOwnerReferenceToSecret(ctx context.Context, odigosns string, 
 		return err
 	}
 
-	_, err = kube.DefaultClient.CoreV1().Secrets(odigosns).Patch(ctx, dest.Spec.SecretRef.Name, types.JSONPatchType, secretPatchBytes, metav1.PatchOptions{})
+	_, err = kube.DefaultClient.CoreV1().Secrets(ns).Patch(ctx, dest.Spec.SecretRef.Name, types.JSONPatchType, secretPatchBytes, metav1.PatchOptions{})
 	if err != nil {
 		return err
 	}
@@ -279,14 +278,15 @@ func AddDestinationOwnerReferenceToSecret(ctx context.Context, odigosns string, 
 }
 
 func PotentialDestinations(ctx context.Context) []destination_recognition.DestinationDetails {
-	odigosns := consts.DefaultOdigosNamespace
+	ns := env.GetCurrentNamespace()
+
 	relevantNamespaces, err := getRelevantNameSpaces(ctx, env.GetCurrentNamespace())
 	if err != nil {
 		return nil
 	}
 
 	// Existing Destinations
-	existingDestination, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).List(ctx, metav1.ListOptions{})
+	existingDestination, err := kube.DefaultClient.OdigosClient.Destinations(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil
 	}

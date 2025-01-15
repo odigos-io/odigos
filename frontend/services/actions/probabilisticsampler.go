@@ -6,10 +6,10 @@ import (
 	"fmt"
 
 	"github.com/odigos-io/odigos/api/actions/v1alpha1"
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -20,7 +20,7 @@ type ProbabilisticSamplerDetails struct {
 
 // CreateProbabilisticSampler creates a new ProbabilisticSampler action in Kubernetes
 func CreateProbabilisticSampler(ctx context.Context, action model.ActionInput) (model.Action, error) {
-	odigosns := consts.DefaultOdigosNamespace
+	ns := env.GetCurrentNamespace()
 
 	var details ProbabilisticSamplerDetails
 	err := json.Unmarshal([]byte(action.Details), &details)
@@ -46,7 +46,7 @@ func CreateProbabilisticSampler(ctx context.Context, action model.ActionInput) (
 		},
 	}
 
-	generatedAction, err := kube.DefaultClient.ActionsClient.ProbabilisticSamplers(odigosns).Create(ctx, probabilisticSamplerAction, metav1.CreateOptions{})
+	generatedAction, err := kube.DefaultClient.ActionsClient.ProbabilisticSamplers(ns).Create(ctx, probabilisticSamplerAction, metav1.CreateOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ProbabilisticSampler: %v", err)
 	}
@@ -73,9 +73,9 @@ func CreateProbabilisticSampler(ctx context.Context, action model.ActionInput) (
 
 // UpdateProbabilisticSampler updates an existing ProbabilisticSampler action in Kubernetes
 func UpdateProbabilisticSampler(ctx context.Context, id string, action model.ActionInput) (model.Action, error) {
-	odigosns := consts.DefaultOdigosNamespace
+	ns := env.GetCurrentNamespace()
 
-	existingAction, err := kube.DefaultClient.ActionsClient.ProbabilisticSamplers(odigosns).Get(ctx, id, metav1.GetOptions{})
+	existingAction, err := kube.DefaultClient.ActionsClient.ProbabilisticSamplers(ns).Get(ctx, id, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch ProbabilisticSampler: %v", err)
 	}
@@ -98,7 +98,7 @@ func UpdateProbabilisticSampler(ctx context.Context, id string, action model.Act
 	existingAction.Spec.Signals = signals
 	existingAction.Spec.SamplingPercentage = details.SamplingPercentage
 
-	updatedAction, err := kube.DefaultClient.ActionsClient.ProbabilisticSamplers(odigosns).Update(ctx, existingAction, metav1.UpdateOptions{})
+	updatedAction, err := kube.DefaultClient.ActionsClient.ProbabilisticSamplers(ns).Update(ctx, existingAction, metav1.UpdateOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to update ProbabilisticSampler: %v", err)
 	}
@@ -125,9 +125,9 @@ func UpdateProbabilisticSampler(ctx context.Context, id string, action model.Act
 
 // DeleteProbabilisticSampler deletes an existing ProbabilisticSampler action from Kubernetes
 func DeleteProbabilisticSampler(ctx context.Context, id string) error {
-	odigosns := consts.DefaultOdigosNamespace
+	ns := env.GetCurrentNamespace()
 
-	err := kube.DefaultClient.ActionsClient.ProbabilisticSamplers(odigosns).Delete(ctx, id, metav1.DeleteOptions{})
+	err := kube.DefaultClient.ActionsClient.ProbabilisticSamplers(ns).Delete(ctx, id, metav1.DeleteOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return fmt.Errorf("ProbabilisticSampler action with ID %s not found", id)

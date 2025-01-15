@@ -7,10 +7,10 @@ import (
 	"strconv"
 
 	"github.com/odigos-io/odigos/api/actions/v1alpha1"
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -21,7 +21,7 @@ type ErrorSamplerDetails struct {
 
 // CreateErrorSampler creates a new ErrorSampler action in Kubernetes
 func CreateErrorSampler(ctx context.Context, action model.ActionInput) (model.Action, error) {
-	odigosns := consts.DefaultOdigosNamespace
+	ns := env.GetCurrentNamespace()
 
 	var details ErrorSamplerDetails
 	err := json.Unmarshal([]byte(action.Details), &details)
@@ -47,7 +47,7 @@ func CreateErrorSampler(ctx context.Context, action model.ActionInput) (model.Ac
 		},
 	}
 
-	generatedAction, err := kube.DefaultClient.ActionsClient.ErrorSamplers(odigosns).Create(ctx, errorSamplerAction, metav1.CreateOptions{})
+	generatedAction, err := kube.DefaultClient.ActionsClient.ErrorSamplers(ns).Create(ctx, errorSamplerAction, metav1.CreateOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ErrorSampler: %v", err)
 	}
@@ -67,9 +67,9 @@ func CreateErrorSampler(ctx context.Context, action model.ActionInput) (model.Ac
 
 // UpdateErrorSampler updates an existing ErrorSampler action in Kubernetes
 func UpdateErrorSampler(ctx context.Context, id string, action model.ActionInput) (model.Action, error) {
-	odigosns := consts.DefaultOdigosNamespace
+	ns := env.GetCurrentNamespace()
 
-	existingAction, err := kube.DefaultClient.ActionsClient.ErrorSamplers(odigosns).Get(ctx, id, metav1.GetOptions{})
+	existingAction, err := kube.DefaultClient.ActionsClient.ErrorSamplers(ns).Get(ctx, id, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch ErrorSampler: %v", err)
 	}
@@ -91,7 +91,7 @@ func UpdateErrorSampler(ctx context.Context, id string, action model.ActionInput
 	existingAction.Spec.Signals = signals
 	existingAction.Spec.FallbackSamplingRatio = details.FallbackSamplingRatio
 
-	updatedAction, err := kube.DefaultClient.ActionsClient.ErrorSamplers(odigosns).Update(ctx, existingAction, metav1.UpdateOptions{})
+	updatedAction, err := kube.DefaultClient.ActionsClient.ErrorSamplers(ns).Update(ctx, existingAction, metav1.UpdateOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to update ErrorSampler: %v", err)
 	}
@@ -111,9 +111,9 @@ func UpdateErrorSampler(ctx context.Context, id string, action model.ActionInput
 
 // DeleteErrorSampler deletes an existing ErrorSampler action from Kubernetes
 func DeleteErrorSampler(ctx context.Context, id string) error {
-	odigosns := consts.DefaultOdigosNamespace
+	ns := env.GetCurrentNamespace()
 
-	err := kube.DefaultClient.ActionsClient.ErrorSamplers(odigosns).Delete(ctx, id, metav1.DeleteOptions{})
+	err := kube.DefaultClient.ActionsClient.ErrorSamplers(ns).Delete(ctx, id, metav1.DeleteOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return fmt.Errorf("ErrorSampler action with ID %s not found", id)

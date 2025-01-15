@@ -6,10 +6,10 @@ import (
 	"fmt"
 
 	"github.com/odigos-io/odigos/api/actions/v1alpha1"
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -20,7 +20,7 @@ type LatencySamplerDetails struct {
 
 // CreateLatencySampler creates a new LatencySampler action in Kubernetes
 func CreateLatencySampler(ctx context.Context, action model.ActionInput) (model.Action, error) {
-	odigosns := consts.DefaultOdigosNamespace
+	ns := env.GetCurrentNamespace()
 
 	var details LatencySamplerDetails
 	err := json.Unmarshal([]byte(action.Details), &details)
@@ -46,7 +46,7 @@ func CreateLatencySampler(ctx context.Context, action model.ActionInput) (model.
 		},
 	}
 
-	generatedAction, err := kube.DefaultClient.ActionsClient.LatencySamplers(odigosns).Create(ctx, latencySamplerAction, metav1.CreateOptions{})
+	generatedAction, err := kube.DefaultClient.ActionsClient.LatencySamplers(ns).Create(ctx, latencySamplerAction, metav1.CreateOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create LatencySampler: %v", err)
 	}
@@ -73,9 +73,9 @@ func CreateLatencySampler(ctx context.Context, action model.ActionInput) (model.
 
 // UpdateLatencySampler updates an existing LatencySampler action in Kubernetes
 func UpdateLatencySampler(ctx context.Context, id string, action model.ActionInput) (model.Action, error) {
-	odigosns := consts.DefaultOdigosNamespace
+	ns := env.GetCurrentNamespace()
 
-	existingAction, err := kube.DefaultClient.ActionsClient.LatencySamplers(odigosns).Get(ctx, id, metav1.GetOptions{})
+	existingAction, err := kube.DefaultClient.ActionsClient.LatencySamplers(ns).Get(ctx, id, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch LatencySampler: %v", err)
 	}
@@ -98,7 +98,7 @@ func UpdateLatencySampler(ctx context.Context, id string, action model.ActionInp
 	existingAction.Spec.Signals = signals
 	existingAction.Spec.EndpointsFilters = details.EndpointsFilters
 
-	updatedAction, err := kube.DefaultClient.ActionsClient.LatencySamplers(odigosns).Update(ctx, existingAction, metav1.UpdateOptions{})
+	updatedAction, err := kube.DefaultClient.ActionsClient.LatencySamplers(ns).Update(ctx, existingAction, metav1.UpdateOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to update LatencySampler: %v", err)
 	}
@@ -125,9 +125,9 @@ func UpdateLatencySampler(ctx context.Context, id string, action model.ActionInp
 
 // DeleteLatencySampler deletes an existing LatencySampler action from Kubernetes
 func DeleteLatencySampler(ctx context.Context, id string) error {
-	odigosns := consts.DefaultOdigosNamespace
+	ns := env.GetCurrentNamespace()
 
-	err := kube.DefaultClient.ActionsClient.LatencySamplers(odigosns).Delete(ctx, id, metav1.DeleteOptions{})
+	err := kube.DefaultClient.ActionsClient.LatencySamplers(ns).Delete(ctx, id, metav1.DeleteOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return fmt.Errorf("LatencySampler action with ID %s not found", id)
