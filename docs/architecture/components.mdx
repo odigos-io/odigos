@@ -80,7 +80,7 @@ Odigos is divided into three main segments:
 
 **Role**: The Node Collector (in the context of Pipeline component) receives telemetry data from agents running on the node, enriches it with node-level attributes, and forward it efficiently and reliably to the cluster collector.
 
-- Receives the telemetry data collected from agents running on the node (odiglet for eBPF based agents, and instrumentation process for native OpenTelemetry agents).
+- Receive telemetry data from agents running on the node (Odiglet for eBPF based agents, and instrumentation processes for native OpenTelemetry agents).
 - Add node-level attributes to the telemetry data (`k8s.node.name`, cloud attributes, etc).
 - Batches and sends the telemetry data to the cluster collector, offloading any network overhead from the instrumented application runtime.
 
