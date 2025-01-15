@@ -1,14 +1,14 @@
 import { useEffect, useRef } from 'react';
-import { API } from '@/utils';
+import { API, DISPLAY_TITLES } from '@/utils';
 import { NOTIFICATION_TYPE } from '@/types';
 import { useDestinationCRUD } from '../destinations';
 import { usePaginatedSources } from '../compute-platform';
-import { type NotifyPayload, useConnectionStore, useNotificationStore, usePendingStore } from '@/store';
+import { type NotifyPayload, useNotificationStore, usePendingStore, useStatusStore } from '@/store';
 
 export const useSSE = () => {
-  const { setSseStatus } = useConnectionStore();
   const { setPendingItems } = usePendingStore();
   const { fetchSources } = usePaginatedSources();
+  const { title, setStatusStore } = useStatusStore();
   const { addNotification } = useNotificationStore();
   const { refetchDestinations } = useDestinationCRUD();
 
@@ -17,9 +17,9 @@ export const useSSE = () => {
 
   useEffect(() => {
     const connect = () => {
-      const eventSource = new EventSource(API.EVENTS);
+      const es = new EventSource(API.EVENTS);
 
-      eventSource.onmessage = (event) => {
+      es.onmessage = (event) => {
         const key = event.data;
         const data = JSON.parse(key);
 
@@ -54,11 +54,19 @@ export const useSSE = () => {
 
         // Reset retry count on successful connection
         retryCount.current = 0;
+
+        if (title !== DISPLAY_TITLES.API_TOKEN) {
+          setStatusStore({
+            status: NOTIFICATION_TYPE.SUCCESS,
+            title: 'Connection Alive',
+            message: '',
+          });
+        }
       };
 
-      eventSource.onerror = (event) => {
+      es.onerror = (event) => {
         console.error('EventSource failed:', event);
-        eventSource.close();
+        es.close();
 
         // Retry connection with exponential backoff if below max retries
         if (retryCount.current < maxRetries) {
@@ -69,9 +77,8 @@ export const useSSE = () => {
         } else {
           console.error('Max retries reached. Could not reconnect to EventSource.');
 
-          setSseStatus({
-            sseConnecting: false,
-            sseStatus: NOTIFICATION_TYPE.ERROR,
+          setStatusStore({
+            status: NOTIFICATION_TYPE.ERROR,
             title: `Connection lost on ${new Date().toLocaleString()}`,
             message: 'Please reboot the application',
           });
@@ -83,21 +90,14 @@ export const useSSE = () => {
         }
       };
 
-      setSseStatus({
-        sseConnecting: false,
-        sseStatus: NOTIFICATION_TYPE.SUCCESS,
-        title: 'Connection Alive',
-        message: '',
-      });
-
-      return eventSource;
+      return es;
     };
 
-    const eventSource = connect();
+    const es = connect();
 
     // Clean up event source on component unmount
     return () => {
-      eventSource.close();
+      es.close();
     };
-  }, []);
+  }, [title]);
 };

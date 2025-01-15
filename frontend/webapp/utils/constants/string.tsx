@@ -89,4 +89,6 @@ export const DISPLAY_TITLES = {
   MONITORS: 'Monitors',
   SIGNALS_FOR_PROCESSING: 'Signals for Processing',
   MANAGED_BY_PROFILE: 'Managed by Profile',
+
+  API_TOKEN: 'API Token',
 };
