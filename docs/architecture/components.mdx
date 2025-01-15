@@ -101,7 +101,7 @@ The Node Collector is also responsible for recording some k8s metrics, and colle
 - Create and manage `instrumentationconfig.odigos.io` objects
   - Trigger Odiglet to inspect runtime information of workloads.
   - Trigger Scheduler to deploy the Odigos pipeline.
-  - Merge the Odigos instrumentation rules and odigos config to a workload scope configuration to be used by the agent.
+  - Merge Odigos instrumentation rules and config to a workload scope configuration for the agent.
 - Inject the instrumentation device into the workload manifest resource as virtual device.
 - Monitor the `source.odigos.io` CRD and cleanup any instrumentation related resources when a source is removed.
 
