@@ -15,7 +15,7 @@ jobs:
 
       - name: Generate docs
         run: |
-          make docgen
+          cd api && make docgen
 
       - name: Check for changes
         run: |

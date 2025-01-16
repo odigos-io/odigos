@@ -9,8 +9,6 @@ ifdef FIX_LINT
     LINT_CMD += --fix
 endif
 
-TOOLS := $(PWD)/.tools
-
 .PHONY: install-golangci-lint
 install-golangci-lint:
 	@if ! which golangci-lint >/dev/null || [ "$$(golangci-lint version 2>&1 | head -n 1 | awk '{print "v"$$4}')" != "$(GOLANGCI_LINT_VERSION)" ]; then \
@@ -45,24 +43,6 @@ endif
 lint-fix:
 	MODULE=common make lint FIX_LINT=true
 	MODULE=k8sutils make lint FIX_LINT=true
-
-.PHONY: tools
-tools:
-	@if [ ! -d "$(TOOLS)" ]; then \
-		mkdir $(TOOLS); \
-	fi
-
-.PHONY: genref
-genref: tools
-	GOBIN=$(TOOLS) go install github.com/kubernetes-sigs/reference-docs/genref@v0.28.0
-
-.PHONY: docgen
-docgen: genref
-	rm -rf docs/api/*
-	$(TOOLS)/genref -c genref-config.yaml -f markdown -o docs/api
-	for file in $(PWD)/docs/api/*; do \
-		mv $${file} $${file%.md}.mdx; \
-	done
 
 .PHONY: build-odiglet
 build-odiglet:
