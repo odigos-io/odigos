@@ -110,6 +110,7 @@ jobs:
           node_image: ${{ matrix.kind-image }}
           version: 'v0.25.0'
           cluster_name: kind
+          config: tests/common/apply/kind-config.yaml
 
       - name: Download and Load Docker Images to Kind
         uses: actions/download-artifact@v4
