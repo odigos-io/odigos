@@ -1,0 +1,35 @@
+FROM --platform=$BUILDPLATFORM node:20.9.0 AS deps
+WORKDIR /app
+COPY frontend/webapp/package.json frontend/webapp/yarn.lock ./
+RUN yarn install 
+
+FROM --platform=$BUILDPLATFORM node:20.9.0 AS builder
+WORKDIR /webapp
+COPY --from=deps /app/node_modules ./node_modules
+COPY frontend/webapp .
+RUN yarn build
+
+FROM --platform=$BUILDPLATFORM golang:1.23 AS backend
+WORKDIR /app
+COPY . .
+COPY --from=builder /webapp/out frontend/webapp/out
+WORKDIR /app/frontend
+ARG TARGETARCH
+RUN CGO_ENABLED=0 GOARCH=$TARGETARCH go build -o odigos-ui
+
+FROM registry.access.redhat.com/ubi9:9.5-1736404036
+ARG VERSION
+ARG RELEASE
+ARG SUMMARY
+ARG DESCRIPTION
+LABEL "name"="frontend"
+LABEL "vendor"="Odigos"
+LABEL "maintainer"="Odigos"
+LABEL "version"=$VERSION
+LABEL "release"=$RELEASE
+LABEL "summary"=$SUMMARY
+LABEL "description"=$DESCRIPTION
+WORKDIR /app
+COPY --from=backend /app/frontend/odigos-ui .
+USER 65532:65532
+ENTRYPOINT ["/app/odigos-ui", "--address", "0.0.0.0"]
