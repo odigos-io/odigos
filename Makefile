@@ -9,6 +9,23 @@ ifdef FIX_LINT
     LINT_CMD += --fix
 endif
 
+TOOLS := $(PWD)/.tools
+
+.PHONY: tools
+tools:
+	@if [ ! -d "$(TOOLS)" ]; then \
+		mkdir $(TOOLS); \
+	fi
+
+.PHONY: go-licenses
+go-licenses: tools
+	GOBIN=$(TOOLS) go install github.com/google/go-licenses@latest
+
+.PHONY: licenses
+licenses: go-licenses
+	rm -rf $(PWD)/LICENSES
+	$(TOOLS)/go-licenses save ./autoscaler/ ./cli/ ./collector/odigosotelcol/ ./frontend/ ./instrumentor/ ./odiglet/ ./scheduler/ --save_path=LICENSES
+
 .PHONY: install-golangci-lint
 install-golangci-lint:
 	@if ! which golangci-lint >/dev/null || [ "$$(golangci-lint version 2>&1 | head -n 1 | awk '{print "v"$$4}')" != "$(GOLANGCI_LINT_VERSION)" ]; then \
