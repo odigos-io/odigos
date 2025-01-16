@@ -20,6 +20,7 @@ rules:
       - effective-config
     verbs:
       - patch
+      - create
   - apiGroups:
       - odigos.io
     resources:

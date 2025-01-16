@@ -500,7 +500,7 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: ptrint32(1),
+			Replicas: ptrint32(2),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app.kubernetes.io/name": InstrumentorAppLabelValue,
@@ -516,6 +516,23 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 					},
 				},
 				Spec: corev1.PodSpec{
+					Affinity: &corev1.Affinity{
+						PodAntiAffinity: &corev1.PodAntiAffinity{
+							PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+								{
+									Weight: 100,
+									PodAffinityTerm: corev1.PodAffinityTerm{
+										LabelSelector: &metav1.LabelSelector{
+											MatchLabels: map[string]string{
+												"app.kubernetes.io/name": InstrumentorAppLabelValue,
+											},
+										},
+										TopologyKey: "kubernetes.io/hostname",
+									},
+								},
+							},
+						},
+					},
 					Containers: []corev1.Container{
 						{
 							Name:  InstrumentorContainerName,
@@ -558,7 +575,6 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 									},
 								},
 							},
-
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "webhook-server",
