@@ -53,9 +53,9 @@ genref: tools
 
 .PHONY: docgen
 docgen: genref
-	rm -rf $(PWD)/../docs/api/*
-	$(TOOLS)/genref -c genref-config.yaml -f markdown -o $(PWD)/../docs/api
-	for file in $(PWD)/../docs/api/*; do \
+	rm -rf $(PWD)/../docs/api-reference/*
+	$(TOOLS)/genref -c genref-config.yaml -f markdown -o $(PWD)/../docs/api-reference
+	for file in $(PWD)/../docs/api-reference/*; do \
 		mv $${file} $${file%.md}.mdx; \
 	done
 
