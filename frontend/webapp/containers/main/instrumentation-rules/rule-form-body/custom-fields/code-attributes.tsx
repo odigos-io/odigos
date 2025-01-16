@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import styled, { css } from 'styled-components';
-import { Checkbox, FieldError, FieldLabel } from '@/reuseable-components';
+import { Checkbox, FieldError, FieldLabel, Tooltip } from '@/reuseable-components';
 import { CodeAttributesType, type InstrumentationRuleInput } from '@/types';
 
 type Props = {
@@ -25,30 +25,39 @@ const ListContainer = styled.div<{ $hasError: boolean }>`
     `}
 `;
 
-const strictPicklist = [
-  {
-    id: CodeAttributesType.COLUMN,
-    label: 'Collect code.column',
-  },
+const recommendedList = [
   {
     id: CodeAttributesType.FILE_PATH,
-    label: 'Collect code.filepath',
+    label: 'Collect File Path',
+    tooltip: 'Indicates whether to record the `code.filepath` attribute.',
   },
   {
     id: CodeAttributesType.FUNCTION,
-    label: 'Collect code.function',
+    label: 'Collect Function',
+    tooltip: 'Indicates whether to record the `code.function` attribute.',
   },
   {
     id: CodeAttributesType.LINE_NUMBER,
-    label: 'Collect code.lineno',
+    label: 'Collect Line Number',
+    tooltip: 'Indicates whether to record the `code.lineno` attribute.',
+  },
+];
+
+const verboseList = [
+  {
+    id: CodeAttributesType.COLUMN,
+    label: 'Collect Column',
+    tooltip: 'Indicates whether to record the `code.column` attribute.',
   },
   {
     id: CodeAttributesType.NAMESPACE,
-    label: 'Collect code.namespace',
+    label: 'Collect Namespace',
+    tooltip: 'Indicates whether to record the `code.namespace` attribute.',
   },
   {
     id: CodeAttributesType.STACKTRACE,
-    label: 'Collect code.stacktrace',
+    label: 'Collect Stacktrace',
+    tooltip: 'Indicates whether to record the `code.stacktrace` attribute.',
   },
 ];
 
@@ -68,12 +77,12 @@ const CodeAttributes: React.FC<Props> = ({ value, setValue, formErrors }) => {
   useEffect(() => {
     if (!mappedValue.length) {
       const payload: Parsed = {
-        [CodeAttributesType.COLUMN]: true,
+        [CodeAttributesType.COLUMN]: null,
         [CodeAttributesType.FILE_PATH]: true,
         [CodeAttributesType.FUNCTION]: true,
         [CodeAttributesType.LINE_NUMBER]: true,
-        [CodeAttributesType.NAMESPACE]: true,
-        [CodeAttributesType.STACKTRACE]: true,
+        [CodeAttributesType.NAMESPACE]: null,
+        [CodeAttributesType.STACKTRACE]: null,
       };
 
       setValue('codeAttributes', payload);
@@ -99,15 +108,31 @@ const CodeAttributes: React.FC<Props> = ({ value, setValue, formErrors }) => {
   };
 
   return (
-    <div>
-      <FieldLabel title='Type of data to collect' required />
-      <ListContainer $hasError={!!errorMessage}>
-        {strictPicklist.map(({ id, label }) => (
-          <Checkbox key={id} title={label} disabled={isLastSelection && mappedValue.includes(id)} value={mappedValue.includes(id)} onChange={(bool) => handleChange(id, bool)} />
-        ))}
-      </ListContainer>
-      {!!errorMessage && <FieldError>{errorMessage}</FieldError>}
-    </div>
+    <>
+      <div>
+        <FieldLabel title='Recommended data to collect' required />
+        <ListContainer $hasError={!!errorMessage}>
+          {recommendedList.map(({ id, label, tooltip }) => (
+            <Tooltip key={id} text={tooltip} withIcon>
+              <Checkbox title={label} disabled={isLastSelection && mappedValue.includes(id)} value={mappedValue.includes(id)} onChange={(bool) => handleChange(id, bool)} />
+            </Tooltip>
+          ))}
+        </ListContainer>
+        {!!errorMessage && <FieldError>{errorMessage}</FieldError>}
+      </div>
+
+      <div>
+        <FieldLabel title='Verbose data to collect' required />
+        <ListContainer $hasError={!!errorMessage}>
+          {verboseList.map(({ id, label, tooltip }) => (
+            <Tooltip key={id} text={tooltip} withIcon>
+              <Checkbox title={label} disabled={isLastSelection && mappedValue.includes(id)} value={mappedValue.includes(id)} onChange={(bool) => handleChange(id, bool)} />
+            </Tooltip>
+          ))}
+        </ListContainer>
+        {!!errorMessage && <FieldError>{errorMessage}</FieldError>}
+      </div>
+    </>
   );
 };
 
