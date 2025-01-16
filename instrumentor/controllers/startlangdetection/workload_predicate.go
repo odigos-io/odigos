@@ -7,12 +7,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-// this predicate is used for workload reconciler, and will only pass events
-// where the workload is changed to odigos instrumentation enabled.
-// This way, we don't need to run language detection downstream when unnecessary.
-// This also helps in managing race conditions, where we might re-add runtime details
-// which were just deleted by instrumentor controller and generate unnecessary noise
-// in the k8s eventual consistency model.
+// this predicate is used for workload reconciler to only pass events
+// where the workload has replicas available to instrument.
 type WorkloadAvailablePredicate struct {
 	predicate.Funcs
 }

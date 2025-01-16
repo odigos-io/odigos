@@ -43,20 +43,20 @@ type SourceReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// SourcePredicates returns true if the Source object is relevant to starting language detection.
+// DeleteInstrumentationSourcePredicate returns true if the Source object is relevant to deleting instrumentation.
 // This means that the Source must be either:
 // 1) A normal (non-excluding) Source AND terminating, or
 // 2) An excluding Source AND NOT terminating
 // In either of these cases, we want to check if workloads should start to be instrumented.
-var SourcePredicates = predicate.Funcs{
+var DeleteInstrumentationSourcePredicate = predicate.Funcs{
 	UpdateFunc: func(e event.UpdateEvent) bool {
 		source := e.ObjectNew.(*v1alpha1.Source)
-		return !sourceutils.IsActiveSource(source)
+		return !sourceutils.IsSourceRelevant(source)
 	},
 
 	CreateFunc: func(e event.CreateEvent) bool {
 		source := e.Object.(*v1alpha1.Source)
-		return !sourceutils.IsActiveSource(source)
+		return !sourceutils.IsSourceRelevant(source)
 	},
 
 	DeleteFunc: func(e event.DeleteEvent) bool {
@@ -66,7 +66,7 @@ var SourcePredicates = predicate.Funcs{
 	// Allow generic events (e.g., external triggers)
 	GenericFunc: func(e event.GenericEvent) bool {
 		source := e.Object.(*v1alpha1.Source)
-		return !sourceutils.IsActiveSource(source)
+		return !sourceutils.IsSourceRelevant(source)
 	},
 }
 
@@ -91,6 +91,10 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	} else {
 		// This is a Source for a specific workload, not an entire namespace
 		err = errors.Join(err, r.syncWorkload(ctx, source))
+	}
+
+	if err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	if !v1alpha1.IsExcludedSource(source) &&

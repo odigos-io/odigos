@@ -65,7 +65,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("startlangdetection-source").
 		For(&v1alpha1.Source{}).
-		WithEventFilter(SourcePredicates).
+		WithEventFilter(StartLangDetectionSourcePredicate).
 		Complete(&SourceReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),

@@ -43,11 +43,12 @@ func IsObjectInstrumentedBySource(ctx context.Context, k8sClient client.Client, 
 	return false, nil
 }
 
-// IsActiveSource returns true if the Source enables instrumentation.
+// IsSourceRelevant returns true if the Source may require action from a controller.
 // Specifically, the Source must be either:
 // 1) Inclusive AND NOT terminating, or
 // 2) Exclusive AND terminating
-func IsActiveSource(source *v1alpha1.Source) bool {
+// This function alone should not be used to determine any instrumentation changes.
+func IsSourceRelevant(source *v1alpha1.Source) bool {
 	return v1alpha1.IsExcludedSource(source) == k8sutils.IsTerminating(source)
 }
 

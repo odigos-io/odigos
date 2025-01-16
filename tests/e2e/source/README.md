@@ -43,6 +43,8 @@ It has the following phases:
   9.2 InstrumentationConfigs exist for all workloads except newly excluded workload.
   9.3 Setting disableInstrumentation=false on excluded workload includes it
   9.4 Setting disableInstrumentation=true on included workload excludes it
+  9.5 Triggering an irrelevant namespace update event does not trigger instrumentation
+  9.6 Deleting an excluded Source in a non-instrumented namespace does not have any effect
 
 ## Workload generations and revisions
 
