@@ -7,36 +7,33 @@ export enum K8sResourceKind {
   StatefulSet = 'StatefulSet',
 }
 
-export type WorkloadId = {
+export interface WorkloadId {
   namespace: string;
   name: string;
-  kind: K8sResourceKind;
-};
+  kind: string; // TODO: replace with "K8sResourceKind" and fix all TS errors;
+}
 
-export type SourceContainer = {
+export interface SourceContainer {
   containerName: string;
   language: WORKLOAD_PROGRAMMING_LANGUAGES;
   runtimeVersion: string;
   otherAgent: string | null;
-};
+}
 
-export type K8sActualSource = {
-  namespace: string;
-  name: string;
-  kind: string;
+export interface K8sActualSource extends WorkloadId {
   numberOfInstances: number;
   selected: boolean;
   reportedName: string;
   containers: Array<SourceContainer>;
   conditions: Array<Condition>;
-};
+}
 
 export interface PatchSourceRequestInput {
   reportedName?: string;
 }
 
-export type PersistSourcesArray = {
+export interface PersistSourcesArray {
   kind: string;
   name: string;
   selected: boolean;
-};
+}
