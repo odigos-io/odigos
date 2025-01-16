@@ -25,6 +25,17 @@ externalPackages:
   - match: ^k8s\.io/(api|apimachinery/pkg/apis)/
     target: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#{{- lower .TypeIdentifier -}}-{{- arrIndex .PackageSegments -1 -}}-{{- arrIndex .PackageSegments -2 -}}
 
+  - match: ^go\.opentelemetry\.io/otel/attribute\.Key$
+    target: https://pkg.go.dev/go.opentelemetry.io/otel/attribute#Key
+
+  - match: ^github\.com/odigos-io/odigos/k8sutils/pkg/workload\.PodWorkload$
+    target: https://pkg.go.dev/github.com/odigos-io/odigos/k8sutils/pkg/workload#PodWorkload
+
+  - match: ^github\.com/odigos-io/odigos/common.(.*)$
+    target: https://pkg.go.dev/github.com/odigos-io/odigos/common#{{- .TypeIdentifier -}}
+  - match: ^github\.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules.(.*)$
+    target: https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#{{- .TypeIdentifier -}}
+
 hideTypePatterns:
   - "ParseError$"
   # - "List$"
@@ -37,6 +48,10 @@ stripPrefix:
   - github.com/tengqm/kubeconfig/config/kubeadm/v1beta3.
   - github.com/tengqm/kubeconfig/config/kubeadm/v1beta4.
   - github.com/tengqm/kubeconfig/config/bootstraptoken/v1.
+  - github.com/odigos-io/odigos/k8sutils/pkg/
+  - github.com/odigos-io/odigos/api/odigos/v1alpha1/
+  - github.com/odigos-io/odigos/api/actions/v1alpha1/
+  - github.com/odigos-io/odigos/api/
   - github.com/odigos-io/odigos/
 
 apis:
@@ -49,4 +64,3 @@ apis:
     title: actions.odigos.io/v1alpha1
     package: github.com/odigos-io/odigos
     path: api/actions/v1alpha1
-    
