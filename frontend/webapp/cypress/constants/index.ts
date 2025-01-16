@@ -73,6 +73,7 @@ export const DATA_IDS = {
   INSTRUMENTATION_RULE_NODE: '[data-id=rule-0]',
 
   ACTION_DROPDOWN_OPTION: '[data-id=option-pii-masking]',
+  RULE_DROPDOWN_OPTION: '[data-id=option-payload_collection]',
   MULTI_SOURCE_CONTROL: '[data-id=multi-source-control]',
 
   TITLE: '[data-id=title]',
@@ -92,6 +93,7 @@ export const BUTTONS = {
 
 export const INPUTS = {
   ACTION_DROPDOWN: 'Type to search...',
+  RULE_DROPDOWN: 'Type to search...',
 };
 
 const CYPRESS_TEST = 'Cypress Test';

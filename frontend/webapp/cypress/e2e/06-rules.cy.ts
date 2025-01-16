@@ -1,5 +1,5 @@
 import { awaitToast, deleteEntity, getCrdById, getCrdIds, updateEntity } from '../functions';
-import { BUTTONS, CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
+import { BUTTONS, CRD_NAMES, DATA_IDS, INPUTS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
 
 // The number of CRDs that exist in the cluster before running any tests should be 0.
 // Tests will fail if you have existing CRDs in the cluster.
@@ -18,6 +18,8 @@ describe('Instrumentation Rules CRUD', () => {
       cy.get(DATA_IDS.ADD_ENTITY).click();
       cy.get(DATA_IDS.ADD_INSTRUMENTATION_RULE).click();
       cy.get(DATA_IDS.MODAL_ADD_INSTRUMENTATION_RULE).should('exist');
+      cy.get(DATA_IDS.MODAL_ADD_INSTRUMENTATION_RULE).find('input').should('have.attr', 'placeholder', INPUTS.RULE_DROPDOWN).click();
+      cy.get(DATA_IDS.RULE_DROPDOWN_OPTION).click();
       cy.get('button').contains(BUTTONS.DONE).click();
 
       cy.wait('@gql').then(() => {
