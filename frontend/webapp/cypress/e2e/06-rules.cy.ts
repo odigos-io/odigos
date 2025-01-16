@@ -1,5 +1,5 @@
-import { awaitToast, deleteEntity, getCrdById, getCrdIds, updateEntity } from '../functions';
-import { BUTTONS, CRD_NAMES, DATA_IDS, INPUTS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
+import { aliasMutation, awaitToast, deleteEntity, getCrdById, getCrdIds, hasOperationName, updateEntity } from '../functions';
+import { BUTTONS, CRD_NAMES, DATA_IDS, INPUTS, MOCKED_DESCRIBE, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
 
 // The number of CRDs that exist in the cluster before running any tests should be 0.
 // Tests will fail if you have existing CRDs in the cluster.
@@ -9,7 +9,21 @@ const namespace = NAMESPACES.ODIGOS_SYSTEM;
 const crdName = CRD_NAMES.INSTRUMENTATION_RULE;
 
 describe('Instrumentation Rules CRUD', () => {
-  beforeEach(() => cy.intercept('/graphql').as('gql'));
+  beforeEach(() =>
+    cy
+      .intercept('/graphql', (req) => {
+        aliasMutation(req, 'DescribeOdigos');
+
+        if (hasOperationName(req, 'DescribeOdigos')) {
+          req.alias = 'describeOdigos';
+          req.reply((res) => {
+            // This is to make the test think this is enterprise/onprem - which will allow us to create rules
+            res.body.data = MOCKED_DESCRIBE;
+          });
+        }
+      })
+      .as('gql'),
+  );
 
   it('Should create a CRD in the cluster', () => {
     cy.visit(ROUTES.OVERVIEW);
