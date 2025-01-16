@@ -37,6 +37,7 @@ stripPrefix:
   - github.com/tengqm/kubeconfig/config/kubeadm/v1beta3.
   - github.com/tengqm/kubeconfig/config/kubeadm/v1beta4.
   - github.com/tengqm/kubeconfig/config/bootstraptoken/v1.
+  - github.com/odigos-io/odigos/
 
 apis:
   - name: odigos.io

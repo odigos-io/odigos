@@ -967,7 +967,7 @@ these settings are used to protect the collectors instances from:</p>
 <code>receiverSignals</code> <B>[Required]</B>
 </td>
 <td>
-<code>[]github.com/odigos-io/odigos/common.ObservabilitySignal</code>
+<code>[]common.ObservabilitySignal</code>
 </td>
 <td>
    <p>Receiver Signals are the signals (trace, metrics, logs) that the collector has setup
@@ -1021,7 +1021,7 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 <code>spanKind</code> <B>[Required]</B>
 </td>
 <td>
-<code>github.com/odigos-io/odigos/common.SpanKind</code>
+<code>common.SpanKind</code>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -1051,7 +1051,7 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 <code>type</code> <B>[Required]</B>
 </td>
 <td>
-<code>github.com/odigos-io/odigos/common.DestinationType</code>
+<code>common.DestinationType</code>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -1095,7 +1095,7 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 <code>signals</code> <B>[Required]</B>
 </td>
 <td>
-<code>[]github.com/odigos-io/odigos/common.ObservabilitySignal</code>
+<code>[]common.ObservabilitySignal</code>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -1468,7 +1468,7 @@ and whether the values are considered a guaranteed API.</p>
 <code>language</code> <B>[Required]</B>
 </td>
 <td>
-<code>github.com/odigos-io/odigos/common.ProgrammingLanguage</code>
+<code>common.ProgrammingLanguage</code>
 </td>
 <td>
    <p>Language is the programming language of the library</p>
@@ -1529,7 +1529,7 @@ and whether the values are considered a guaranteed API.</p>
 <code>payloadCollection</code> <B>[Required]</B>
 </td>
 <td>
-<code>github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules.PayloadCollection</code>
+<code>api/odigos/v1alpha1/instrumentationrules.PayloadCollection</code>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -1540,7 +1540,7 @@ and whether the values are considered a guaranteed API.</p>
 <code>codeAttributes</code> <B>[Required]</B>
 </td>
 <td>
-<code>github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules.CodeAttributes</code>
+<code>api/odigos/v1alpha1/instrumentationrules.CodeAttributes</code>
 </td>
 <td>
    <p>code attributes configuration for a specific library.
@@ -1615,7 +1615,7 @@ If not specified, the default value for this signal should be used (whether to e
 <code>spanKind</code> <B>[Required]</B>
 </td>
 <td>
-<code>github.com/odigos-io/odigos/common.SpanKind</code>
+<code>common.SpanKind</code>
 </td>
 <td>
    <p>SpanKind is only supported by Golang and will be ignored for any other SDK language.
@@ -1866,7 +1866,7 @@ If empty, no instrumentation libraries will be used.</p>
 <code>payloadCollection</code> <B>[Required]</B>
 </td>
 <td>
-<code>github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules.PayloadCollection</code>
+<code>api/odigos/v1alpha1/instrumentationrules.PayloadCollection</code>
 </td>
 <td>
    <p>Allows to configure payload collection aspects for different types of payloads.</p>
@@ -1877,7 +1877,7 @@ If empty, no instrumentation libraries will be used.</p>
 <code>otelSdks</code> <B>[Required]</B>
 </td>
 <td>
-<code>github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules.OtelSdks</code>
+<code>api/odigos/v1alpha1/instrumentationrules.OtelSdks</code>
 </td>
 <td>
    <p>Set the OtelSdk to use for the workloads in this rule.
@@ -1890,7 +1890,7 @@ the rule will be used only for languages which are specified, and ignored otherw
 <code>codeAttributes</code> <B>[Required]</B>
 </td>
 <td>
-<code>github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules.CodeAttributes</code>
+<code>api/odigos/v1alpha1/instrumentationrules.CodeAttributes</code>
 </td>
 <td>
    <p>Configure which code attributes should be recorded as span attributes.</p>
@@ -2324,7 +2324,7 @@ this allows the user to keep the processor configuration in the CR, but disable 
 <code>signals</code> <B>[Required]</B>
 </td>
 <td>
-<code>[]github.com/odigos-io/odigos/common.ObservabilitySignal</code>
+<code>[]common.ObservabilitySignal</code>
 </td>
 <td>
    <p>signals can be used to control which observability signals are processed by the processor.</p>
@@ -2414,7 +2414,7 @@ if the value is missing (or 0) the processor can be placed anywhere in the pipel
 <code>language</code> <B>[Required]</B>
 </td>
 <td>
-<code>github.com/odigos-io/odigos/common.ProgrammingLanguage</code>
+<code>common.ProgrammingLanguage</code>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -2458,7 +2458,7 @@ if the value is missing (or 0) the processor can be placed anywhere in the pipel
 <code>libCType</code> <B>[Required]</B>
 </td>
 <td>
-<code>github.com/odigos-io/odigos/common.LibCType</code>
+<code>common.LibCType</code>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -2519,7 +2519,7 @@ if the value is missing (or 0) the processor can be placed anywhere in the pipel
 <code>language</code> <B>[Required]</B>
 </td>
 <td>
-<code>github.com/odigos-io/odigos/common.ProgrammingLanguage</code>
+<code>common.ProgrammingLanguage</code>
 </td>
 <td>
    <p>The language of the SDK being configured</p>
@@ -2554,7 +2554,7 @@ In the Future we might add another level of configuration base on the parent spa
 <code>payloadCollection</code> <B>[Required]</B>
 </td>
 <td>
-<code>github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules.PayloadCollection</code>
+<code>api/odigos/v1alpha1/instrumentationrules.PayloadCollection</code>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -2565,7 +2565,7 @@ In the Future we might add another level of configuration base on the parent spa
 <code>codeAttributes</code> <B>[Required]</B>
 </td>
 <td>
-<code>github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules.CodeAttributes</code>
+<code>api/odigos/v1alpha1/instrumentationrules.CodeAttributes</code>
 </td>
 <td>
    <p>default configuration for collecting code attributes, in case the instrumentation library does not provide a configuration.</p>
@@ -2593,7 +2593,7 @@ In the Future we might add another level of configuration base on the parent spa
 <code>workload</code> <B>[Required]</B>
 </td>
 <td>
-<code>github.com/odigos-io/odigos/k8sutils/pkg/workload.PodWorkload</code>
+<code>k8sutils/pkg/workload.PodWorkload</code>
 </td>
 <td>
    <p>Workload represents the workload or namespace to be instrumented.
@@ -2677,7 +2677,7 @@ This value is transparent to the CRD and is passed as-is to the SDK.</p>
 <code>spanKind</code> <B>[Required]</B>
 </td>
 <td>
-<code>github.com/odigos-io/odigos/common.SpanKind</code>
+<code>common.SpanKind</code>
 </td>
 <td>
    <p>This option allow to specify the config option for a specific span kind
