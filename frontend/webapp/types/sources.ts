@@ -1,6 +1,18 @@
 import { type Condition } from './common';
 import { WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils';
 
+export enum K8sResourceKind {
+  Deployment = 'Deployment',
+  DaemonSet = 'DaemonSet',
+  StatefulSet = 'StatefulSet',
+}
+
+export type WorkloadId = {
+  namespace: string;
+  name: string;
+  kind: K8sResourceKind;
+};
+
 export type SourceContainer = {
   containerName: string;
   language: WORKLOAD_PROGRAMMING_LANGUAGES;
@@ -17,12 +29,6 @@ export type K8sActualSource = {
   reportedName: string;
   containers: Array<SourceContainer>;
   conditions: Array<Condition>;
-};
-
-export type WorkloadId = {
-  kind: string;
-  name: string;
-  namespace: string;
 };
 
 export interface PatchSourceRequestInput {
