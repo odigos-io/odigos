@@ -86,6 +86,13 @@
             "cli/odigos_upgrade",
             "cli/odigos_version"
           ]
+        },
+        {
+          "group": "API Reference",
+          "pages": [
+            "api/odigos.io.v1alpha1",
+            "api/actions.odigos.io.v1alpha1"
+          ]
         }
       ]
     },
