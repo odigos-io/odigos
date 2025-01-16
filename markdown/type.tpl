@@ -1,6 +1,6 @@
 {{ define "type" }}
 
-## [`{{ .Name.Name }}`](#{{ .Anchor }})
+## `{{ .Name.Name }}` <a id="{{ .Anchor }}"></a>
     
 {{ if eq .Kind "Alias" -}}
 (Alias of `{{ .Underlying }}`)
