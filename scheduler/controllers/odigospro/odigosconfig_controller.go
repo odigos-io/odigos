@@ -62,7 +62,7 @@ func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) 
 			Profiles: toStringSlice(claims["profiles"]),
 		}
 	} else {
-		// TODO: what do here
+		// TODO: is there anything to do in case of jwt parsing error?
 	}
 
 	err = r.Client.Get(ctx, types.NamespacedName{Namespace: odigosNs, Name: k8sconsts.OdigosDeploymentConfigMapName}, odigosDeploymentConfig)
