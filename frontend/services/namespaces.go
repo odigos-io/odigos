@@ -44,10 +44,10 @@ func GetK8SNamespaces(ctx context.Context) (GetNamespacesResponse, error) {
 			return GetNamespacesResponse{}, err
 		}
 
-		selected := source != nil
+		instrumented := source != nil && !source.Spec.DisableInstrumentation
 		response.Namespaces = append(response.Namespaces, model.K8sActualNamespace{
 			Name:     nsName,
-			Selected: selected,
+			Selected: instrumented,
 		})
 	}
 
