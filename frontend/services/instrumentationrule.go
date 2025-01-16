@@ -7,9 +7,10 @@ import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	instrumentationrules "github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,20 +18,26 @@ import (
 
 // ListInstrumentationRules fetches all instrumentation rules
 func ListInstrumentationRules(ctx context.Context) ([]*model.InstrumentationRule, error) {
-	odigosns := consts.DefaultOdigosNamespace
-	instrumentationRules, err := kube.DefaultClient.OdigosClient.InstrumentationRules(odigosns).List(ctx, metav1.ListOptions{})
+	ns := env.GetCurrentNamespace()
+
+	instrumentationRules, err := kube.DefaultClient.OdigosClient.InstrumentationRules(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("error getting instrumentation rules: %w", err)
 	}
 
 	var gqlRules []*model.InstrumentationRule
 	for _, rule := range instrumentationRules.Items {
+		annotations := rule.GetAnnotations()
+		profileName := annotations[k8sconsts.OdigosProfileAnnotation]
+		mutable := profileName == ""
 
 		gqlRules = append(gqlRules, &model.InstrumentationRule{
 			RuleID:                   rule.Name,
 			RuleName:                 &rule.Spec.RuleName,
 			Notes:                    &rule.Spec.Notes,
 			Disabled:                 &rule.Spec.Disabled,
+			Mutable:                  mutable,
+			ProfileName:              profileName,
 			Workloads:                convertWorkloads(rule.Spec.Workloads),
 			InstrumentationLibraries: convertInstrumentationLibraries(rule.Spec.InstrumentationLibraries),
 			PayloadCollection:        convertPayloadCollection(rule.Spec.PayloadCollection),
@@ -40,9 +47,9 @@ func ListInstrumentationRules(ctx context.Context) ([]*model.InstrumentationRule
 }
 
 func GetInstrumentationRule(ctx context.Context, id string) (*model.InstrumentationRule, error) {
-	odigosns := consts.DefaultOdigosNamespace
+	ns := env.GetCurrentNamespace()
 
-	rule, err := kube.DefaultClient.OdigosClient.InstrumentationRules(odigosns).Get(ctx, id, metav1.GetOptions{})
+	rule, err := kube.DefaultClient.OdigosClient.InstrumentationRules(ns).Get(ctx, id, metav1.GetOptions{})
 	if err != nil {
 		return nil, handleNotFoundError(err, id, "instrumentation rule")
 	}
@@ -59,10 +66,10 @@ func GetInstrumentationRule(ctx context.Context, id string) (*model.Instrumentat
 }
 
 func UpdateInstrumentationRule(ctx context.Context, id string, input model.InstrumentationRuleInput) (*model.InstrumentationRule, error) {
-	odigosns := consts.DefaultOdigosNamespace
+	ns := env.GetCurrentNamespace()
 
 	// Retrieve existing rule
-	existingRule, err := kube.DefaultClient.OdigosClient.InstrumentationRules(odigosns).Get(ctx, id, metav1.GetOptions{})
+	existingRule, err := kube.DefaultClient.OdigosClient.InstrumentationRules(ns).Get(ctx, id, metav1.GetOptions{})
 	if err != nil {
 		return nil, handleNotFoundError(err, id, "instrumentation rule")
 	}
@@ -123,7 +130,7 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 	}
 
 	// Update rule in Kubernetes
-	updatedRule, err := kube.DefaultClient.OdigosClient.InstrumentationRules(odigosns).Update(ctx, existingRule, metav1.UpdateOptions{})
+	updatedRule, err := kube.DefaultClient.OdigosClient.InstrumentationRules(ns).Update(ctx, existingRule, metav1.UpdateOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("error updating instrumentation rule: %w", err)
 	}
@@ -140,9 +147,9 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 }
 
 func DeleteInstrumentationRule(ctx context.Context, id string) (bool, error) {
-	odigosns := consts.DefaultOdigosNamespace
+	ns := env.GetCurrentNamespace()
 
-	err := kube.DefaultClient.OdigosClient.InstrumentationRules(odigosns).Delete(ctx, id, metav1.DeleteOptions{})
+	err := kube.DefaultClient.OdigosClient.InstrumentationRules(ns).Delete(ctx, id, metav1.DeleteOptions{})
 	if err != nil {
 		return false, handleNotFoundError(err, id, "instrumentation rule")
 	}
@@ -151,7 +158,7 @@ func DeleteInstrumentationRule(ctx context.Context, id string) (bool, error) {
 }
 
 func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationRuleInput) (*model.InstrumentationRule, error) {
-	odigosns := consts.DefaultOdigosNamespace
+	ns := env.GetCurrentNamespace()
 
 	ruleName := *input.RuleName
 	notes := *input.Notes
@@ -219,7 +226,7 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 	}
 
 	// Create the rule in Kubernetes
-	createdRule, err := kube.DefaultClient.OdigosClient.InstrumentationRules(odigosns).Create(ctx, newRule, metav1.CreateOptions{})
+	createdRule, err := kube.DefaultClient.OdigosClient.InstrumentationRules(ns).Create(ctx, newRule, metav1.CreateOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("error creating instrumentation rule: %w", err)
 	}

@@ -3,7 +3,7 @@ import { type InstrumentationRuleSpec, type InstrumentationRuleInput, PayloadCol
 
 const buildDrawerItem = (id: string, formData: InstrumentationRuleInput, drawerItem: InstrumentationRuleSpec): InstrumentationRuleSpec => {
   const { ruleName, notes, disabled, payloadCollection } = formData;
-  const { workloads, instrumentationLibraries } = drawerItem;
+  const { mutable, profileName, workloads, instrumentationLibraries } = drawerItem;
 
   return {
     ruleId: id,
@@ -11,6 +11,8 @@ const buildDrawerItem = (id: string, formData: InstrumentationRuleInput, drawerI
     type: deriveTypeFromRule(formData),
     notes,
     disabled,
+    mutable,
+    profileName,
     payloadCollection: {
       [PayloadCollectionType.HTTP_REQUEST]: payloadCollection[PayloadCollectionType.HTTP_REQUEST] || undefined,
       [PayloadCollectionType.HTTP_RESPONSE]: payloadCollection[PayloadCollectionType.HTTP_RESPONSE] || undefined,
