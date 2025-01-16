@@ -62,6 +62,15 @@ func HandleSSEConnections(c *gin.Context) {
 		close(messageChan)
 	}()
 
+	// Send a message to the client when they connect
+	SendMessageToClient(SSEMessage{
+		Type:    "success",
+		Event:   "Connected",
+		Data:    "Connected to the server",
+		CRDType: "CONNECTED",
+		Target:  "CONNECTED",
+	})
+
 	// Continuously send SSE messages to the client
 	for {
 		select {
