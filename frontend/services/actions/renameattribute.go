@@ -6,10 +6,10 @@ import (
 	"fmt"
 
 	"github.com/odigos-io/odigos/api/actions/v1alpha1"
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -20,8 +20,6 @@ type RenameAttributeDetails struct {
 
 // CreateRenameAttribute creates a new RenameAttribute action in Kubernetes
 func CreateRenameAttribute(ctx context.Context, action model.ActionInput) (model.Action, error) {
-	odigosns := consts.DefaultOdigosNamespace
-
 	var details RenameAttributeDetails
 	err := json.Unmarshal([]byte(action.Details), &details)
 	if err != nil {
@@ -46,7 +44,9 @@ func CreateRenameAttribute(ctx context.Context, action model.ActionInput) (model
 		},
 	}
 
-	generatedAction, err := kube.DefaultClient.ActionsClient.RenameAttributes(odigosns).Create(ctx, renameAttributeAction, metav1.CreateOptions{})
+	ns := env.GetCurrentNamespace()
+
+	generatedAction, err := kube.DefaultClient.ActionsClient.RenameAttributes(ns).Create(ctx, renameAttributeAction, metav1.CreateOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create RenameAttribute: %v", err)
 	}
@@ -73,9 +73,9 @@ func CreateRenameAttribute(ctx context.Context, action model.ActionInput) (model
 
 // UpdateRenameAttribute updates an existing RenameAttribute action in Kubernetes
 func UpdateRenameAttribute(ctx context.Context, id string, action model.ActionInput) (model.Action, error) {
-	odigosns := consts.DefaultOdigosNamespace
+	ns := env.GetCurrentNamespace()
 
-	existingAction, err := kube.DefaultClient.ActionsClient.RenameAttributes(odigosns).Get(ctx, id, metav1.GetOptions{})
+	existingAction, err := kube.DefaultClient.ActionsClient.RenameAttributes(ns).Get(ctx, id, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch RenameAttribute: %v", err)
 	}
@@ -98,7 +98,7 @@ func UpdateRenameAttribute(ctx context.Context, id string, action model.ActionIn
 	existingAction.Spec.Signals = signals
 	existingAction.Spec.Renames = details.Renames
 
-	updatedAction, err := kube.DefaultClient.ActionsClient.RenameAttributes(odigosns).Update(ctx, existingAction, metav1.UpdateOptions{})
+	updatedAction, err := kube.DefaultClient.ActionsClient.RenameAttributes(ns).Update(ctx, existingAction, metav1.UpdateOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to update RenameAttribute: %v", err)
 	}
@@ -124,9 +124,9 @@ func UpdateRenameAttribute(ctx context.Context, id string, action model.ActionIn
 }
 
 func DeleteRenameAttribute(ctx context.Context, id string) error {
-	odigosns := consts.DefaultOdigosNamespace
+	ns := env.GetCurrentNamespace()
 
-	err := kube.DefaultClient.ActionsClient.RenameAttributes(odigosns).Delete(ctx, id, metav1.DeleteOptions{})
+	err := kube.DefaultClient.ActionsClient.RenameAttributes(ns).Delete(ctx, id, metav1.DeleteOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return fmt.Errorf("RenameAttribute action with ID %s not found", id)

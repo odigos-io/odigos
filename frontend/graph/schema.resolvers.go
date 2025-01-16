@@ -11,7 +11,6 @@ import (
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
@@ -20,6 +19,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/services/describe/source_describe"
 	testconnection "github.com/odigos-io/odigos/frontend/services/test_connection"
 	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,10 +27,13 @@ import (
 
 // APITokens is the resolver for the apiTokens field.
 func (r *computePlatformResolver) APITokens(ctx context.Context, obj *model.ComputePlatform) ([]*model.APIToken, error) {
+	ns := env.GetCurrentNamespace()
+
 	// The result should always be 0 or 1:
 	// If it's 0, it means this is the OSS version.
 	// If it's 1, it means this is the Enterprise version.
-	secret, err := kube.DefaultClient.CoreV1().Secrets(consts.DefaultOdigosNamespace).Get(ctx, k8sconsts.OdigosProSecretName, metav1.GetOptions{})
+
+	secret, err := kube.DefaultClient.CoreV1().Secrets(ns).Get(ctx, k8sconsts.OdigosProSecretName, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return make([]*model.APIToken, 0), nil
@@ -140,15 +143,16 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 
 // Destinations is the resolver for the destinations field.
 func (r *computePlatformResolver) Destinations(ctx context.Context, obj *model.ComputePlatform) ([]*model.Destination, error) {
-	odigosns := consts.DefaultOdigosNamespace
-	dests, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).List(ctx, metav1.ListOptions{})
+	ns := env.GetCurrentNamespace()
+
+	dests, err := kube.DefaultClient.OdigosClient.Destinations(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	var destinations []*model.Destination
 	for _, dest := range dests.Items {
-		secretFields, err := services.GetDestinationSecretFields(ctx, odigosns, &dest)
+		secretFields, err := services.GetDestinationSecretFields(ctx, ns, &dest)
 		if err != nil {
 			return nil, err
 		}
@@ -164,10 +168,10 @@ func (r *computePlatformResolver) Destinations(ctx context.Context, obj *model.C
 // Actions is the resolver for the actions field.
 func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.ComputePlatform) ([]*model.PipelineAction, error) {
 	var response []*model.PipelineAction
-	odigosns := consts.DefaultOdigosNamespace
+	ns := env.GetCurrentNamespace()
 
 	// AddClusterInfos actions
-	icaActions, err := kube.DefaultClient.ActionsClient.AddClusterInfos(odigosns).List(ctx, metav1.ListOptions{})
+	icaActions, err := kube.DefaultClient.ActionsClient.AddClusterInfos(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +189,7 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 	}
 
 	// DeleteAttributes actions
-	daActions, err := kube.DefaultClient.ActionsClient.DeleteAttributes(odigosns).List(ctx, metav1.ListOptions{})
+	daActions, err := kube.DefaultClient.ActionsClient.DeleteAttributes(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +207,7 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 	}
 
 	// RenameAttributes actions
-	raActions, err := kube.DefaultClient.ActionsClient.RenameAttributes(odigosns).List(ctx, metav1.ListOptions{})
+	raActions, err := kube.DefaultClient.ActionsClient.RenameAttributes(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +225,7 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 	}
 
 	// ErrorSamplers actions
-	esActions, err := kube.DefaultClient.ActionsClient.ErrorSamplers(odigosns).List(ctx, metav1.ListOptions{})
+	esActions, err := kube.DefaultClient.ActionsClient.ErrorSamplers(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +243,7 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 	}
 
 	// LatencySamplers actions
-	lsActions, err := kube.DefaultClient.ActionsClient.LatencySamplers(odigosns).List(ctx, metav1.ListOptions{})
+	lsActions, err := kube.DefaultClient.ActionsClient.LatencySamplers(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -257,7 +261,7 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 	}
 
 	// ProbabilisticSamplers actions
-	psActions, err := kube.DefaultClient.ActionsClient.ProbabilisticSamplers(odigosns).List(ctx, metav1.ListOptions{})
+	psActions, err := kube.DefaultClient.ActionsClient.ProbabilisticSamplers(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -275,7 +279,7 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 	}
 
 	// PiiMaskings actions
-	piActions, err := kube.DefaultClient.ActionsClient.PiiMaskings(odigosns).List(ctx, metav1.ListOptions{})
+	piActions, err := kube.DefaultClient.ActionsClient.PiiMaskings(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -337,7 +341,8 @@ func (r *k8sActualNamespaceResolver) K8sActualSources(ctx context.Context, obj *
 
 // UpdateAPIToken is the resolver for the updateApiToken field.
 func (r *mutationResolver) UpdateAPIToken(ctx context.Context, token string) (bool, error) {
-	err := pro.UpdateOdigosToken(ctx, kube.DefaultClient, consts.DefaultOdigosNamespace, token)
+	ns := env.GetCurrentNamespace()
+	err := pro.UpdateOdigosToken(ctx, kube.DefaultClient, ns, token)
 	return err == nil, nil
 }
 
@@ -397,8 +402,7 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 
 // CreateNewDestination is the resolver for the createNewDestination field.
 func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination model.DestinationInput) (*model.Destination, error) {
-	odigosns := consts.DefaultOdigosNamespace
-
+	ns := env.GetCurrentNamespace()
 	destType := common.DestinationType(destination.Type)
 	destName := destination.Name
 
@@ -435,29 +439,29 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 
 	createSecret := len(secretFields) > 0
 	if createSecret {
-		secretRef, err := services.CreateDestinationSecret(ctx, destType, secretFields, odigosns)
+		secretRef, err := services.CreateDestinationSecret(ctx, destType, secretFields, ns)
 		if err != nil {
 			return nil, err
 		}
 		k8sDestination.Spec.SecretRef = secretRef
 	}
 
-	dest, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).Create(ctx, &k8sDestination, metav1.CreateOptions{})
+	dest, err := kube.DefaultClient.OdigosClient.Destinations(ns).Create(ctx, &k8sDestination, metav1.CreateOptions{})
 	if err != nil {
 		if createSecret {
-			kube.DefaultClient.CoreV1().Secrets(odigosns).Delete(ctx, destName, metav1.DeleteOptions{})
+			kube.DefaultClient.CoreV1().Secrets(ns).Delete(ctx, destName, metav1.DeleteOptions{})
 		}
 		return nil, err
 	}
 
 	if dest.Spec.SecretRef != nil {
-		err = services.AddDestinationOwnerReferenceToSecret(ctx, odigosns, dest)
+		err = services.AddDestinationOwnerReferenceToSecret(ctx, ns, dest)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	secretFieldsMap, err := services.GetDestinationSecretFields(ctx, odigosns, dest)
+	secretFieldsMap, err := services.GetDestinationSecretFields(ctx, ns, dest)
 	if err != nil {
 		return nil, err
 	}
@@ -468,8 +472,7 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 
 // UpdateDestination is the resolver for the updateDestination field.
 func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, destination model.DestinationInput) (*model.Destination, error) {
-	odigosns := consts.DefaultOdigosNamespace
-
+	ns := env.GetCurrentNamespace()
 	destType := common.DestinationType(destination.Type)
 	destName := destination.Name
 
@@ -499,7 +502,7 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, des
 	dataFields, secretFields := services.TransformFieldsToDataAndSecrets(destTypeConfig, fields)
 
 	// Retrieve the existing destination
-	dest, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).Get(ctx, id, metav1.GetOptions{})
+	dest, err := kube.DefaultClient.OdigosClient.Destinations(ns).Get(ctx, id, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get destination: %v", err)
 	}
@@ -510,36 +513,36 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, des
 
 	if !destUpdateHasSecrets && destCurrentlyHasSecrets {
 		// Delete the secret if it's not needed anymore
-		err := kube.DefaultClient.CoreV1().Secrets(odigosns).Delete(ctx, dest.Spec.SecretRef.Name, metav1.DeleteOptions{})
+		err := kube.DefaultClient.CoreV1().Secrets(ns).Delete(ctx, dest.Spec.SecretRef.Name, metav1.DeleteOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("failed to delete secret: %v", err)
 		}
 		dest.Spec.SecretRef = nil
 	} else if destUpdateHasSecrets && !destCurrentlyHasSecrets {
 		// Create the secret if it was added in this update
-		secretRef, err := services.CreateDestinationSecret(ctx, destType, secretFields, odigosns)
+		secretRef, err := services.CreateDestinationSecret(ctx, destType, secretFields, ns)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create secret: %v", err)
 		}
 		dest.Spec.SecretRef = secretRef
 		// Add owner reference to the secret
-		err = services.AddDestinationOwnerReferenceToSecret(ctx, odigosns, dest)
+		err = services.AddDestinationOwnerReferenceToSecret(ctx, ns, dest)
 		if err != nil {
 			return nil, fmt.Errorf("failed to add owner reference to secret: %v", err)
 		}
 	} else if destUpdateHasSecrets && destCurrentlyHasSecrets {
 		// Update the secret in case it is modified
-		secret, err := kube.DefaultClient.CoreV1().Secrets(odigosns).Get(ctx, dest.Spec.SecretRef.Name, metav1.GetOptions{})
+		secret, err := kube.DefaultClient.CoreV1().Secrets(ns).Get(ctx, dest.Spec.SecretRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("failed to get secret: %v", err)
 		}
 		origSecret := secret.DeepCopy()
 
 		secret.StringData = secretFields
-		_, err = kube.DefaultClient.CoreV1().Secrets(odigosns).Update(ctx, secret, metav1.UpdateOptions{})
+		_, err = kube.DefaultClient.CoreV1().Secrets(ns).Update(ctx, secret, metav1.UpdateOptions{})
 		if err != nil {
 			// Rollback secret if needed
-			_, rollbackErr := kube.DefaultClient.CoreV1().Secrets(odigosns).Update(ctx, origSecret, metav1.UpdateOptions{})
+			_, rollbackErr := kube.DefaultClient.CoreV1().Secrets(ns).Update(ctx, origSecret, metav1.UpdateOptions{})
 			if rollbackErr != nil {
 				fmt.Printf("Failed to rollback secret: %v\n", rollbackErr)
 			}
@@ -554,13 +557,13 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, des
 	dest.Spec.Signals = services.ExportedSignalsObjectToSlice(destination.ExportedSignals)
 
 	// Update the destination in Kubernetes
-	updatedDest, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).Update(ctx, dest, metav1.UpdateOptions{})
+	updatedDest, err := kube.DefaultClient.OdigosClient.Destinations(ns).Update(ctx, dest, metav1.UpdateOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to update destination: %v", err)
 	}
 
 	// Get the secret fields for the updated destination
-	secretFields, err = services.GetDestinationSecretFields(ctx, odigosns, updatedDest)
+	secretFields, err = services.GetDestinationSecretFields(ctx, ns, updatedDest)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get secret fields: %v", err)
 	}
@@ -573,8 +576,8 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, des
 
 // DeleteDestination is the resolver for the deleteDestination field.
 func (r *mutationResolver) DeleteDestination(ctx context.Context, id string) (bool, error) {
-	odigosns := consts.DefaultOdigosNamespace
-	err := kube.DefaultClient.OdigosClient.Destinations(odigosns).Delete(ctx, id, metav1.DeleteOptions{})
+	ns := env.GetCurrentNamespace()
+	err := kube.DefaultClient.OdigosClient.Destinations(ns).Delete(ctx, id, metav1.DeleteOptions{})
 
 	if err != nil {
 		return false, fmt.Errorf("failed to delete destination: %w", err)

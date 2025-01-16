@@ -71,7 +71,7 @@ export const RuleDrawer: React.FC<Props> = () => {
   const { id, item } = selectedItem as { id: string; item: InstrumentationRuleSpecMapped };
 
   const handleEdit = (bool?: boolean) => {
-    if (item.type === InstrumentationRuleType.UNKNOWN_TYPE && (bool || bool === undefined)) {
+    if (!item.mutable && (bool || bool === undefined)) {
       addNotification({
         type: NOTIFICATION_TYPE.WARNING,
         title: FORM_ALERTS.FORBIDDEN,
@@ -91,7 +91,18 @@ export const RuleDrawer: React.FC<Props> = () => {
   };
 
   const handleDelete = async () => {
-    await deleteInstrumentationRule(id);
+    if (!item.mutable) {
+      addNotification({
+        type: NOTIFICATION_TYPE.WARNING,
+        title: FORM_ALERTS.FORBIDDEN,
+        message: FORM_ALERTS.CANNOT_DELETE_RULE,
+        crdType: OVERVIEW_ENTITY_TYPES.RULE,
+        target: id,
+        hideFromHistory: true,
+      });
+    } else {
+      await deleteInstrumentationRule(id);
+    }
   };
 
   const handleSave = async (newTitle: string) => {
