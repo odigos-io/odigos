@@ -103,7 +103,8 @@ export const useSourceCRUD = (params?: Params) => {
       // this is to handle "on success" callback if there are no sources to persist,
       // and to notify use if there are source to persist
       let hasSources = false;
-      let alreadyNotified = false;
+      let alreadyNotifiedSources = false;
+      let alreadyNotifiedNamespaces = false;
 
       for (const [namespace, sources] of entries) {
         const addToPendingStore: PendingItem[] = [];
@@ -116,8 +117,8 @@ export const useSourceCRUD = (params?: Params) => {
 
         if (!!sendToGql.length) {
           hasSources = true;
-          if (!alreadyNotified) {
-            alreadyNotified = true;
+          if (!alreadyNotifiedSources) {
+            alreadyNotifiedSources = true;
             notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Persisting sources...', undefined, true);
           }
         }
@@ -127,6 +128,11 @@ export const useSourceCRUD = (params?: Params) => {
       }
 
       for (const [namespace, futureSelected] of Object.entries(futureSelectAppsList)) {
+        if (!alreadyNotifiedSources && !alreadyNotifiedNamespaces) {
+          alreadyNotifiedNamespaces = true;
+          notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Persisting namespaces...', undefined, true);
+        }
+
         await persistNamespace({ name: namespace, futureSelected });
       }
 
