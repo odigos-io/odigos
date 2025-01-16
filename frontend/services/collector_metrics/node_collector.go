@@ -29,20 +29,6 @@ func newSourcesMetrics() sourcesMetrics {
 	}
 }
 
-// newSourceMetric creates a new singleSourceMetrics object with initial traffic metrics based on the data point received
-// The sourceMetrics map initialized with the node collector ID and the traffic metrics
-func newSourceMetric(dp pmetric.NumberDataPoint, metricName string, nodeCollectorID string) *singleSourceMetrics {
-	tm := newTrafficMetrics(metricName, dp)
-
-	sm := &singleSourceMetrics{
-		nodeCollectorsTraffic: map[string]*trafficMetrics{
-			nodeCollectorID: tm,
-		},
-	}
-
-	return sm
-}
-
 func (sm *sourcesMetrics) updateSourceMetrics(dp pmetric.NumberDataPoint, metricName string, nodeCollectorID string) {
 	sID, err := metricAttributesToSourceID(dp.Attributes())
 	if err != nil {
@@ -53,8 +39,10 @@ func (sm *sourcesMetrics) updateSourceMetrics(dp pmetric.NumberDataPoint, metric
 	defer sm.sourcesMu.Unlock()
 	currentVal, ok := sm.sourcesMap[sID]
 	if !ok {
-		// first time we receive data for this source, create an entry for it with hte given nodeCollectorID
-		sm.sourcesMap[sID] = newSourceMetric(dp, metricName, nodeCollectorID)
+		// this source is not tracked, this can happen if:
+		// 1) a source has been deleted, and the collectors keep reporting its metrics (those metrics refer to the old deleted source and won't update)
+		// or
+		// 2) this is a new source and we didn't receive the watch event for it's creation yet
 		return
 	}
 
@@ -132,6 +120,15 @@ func (sourceMetrics *sourcesMetrics) removeSource(sID common.SourceID) {
 	sourceMetrics.sourcesMu.Lock()
 	delete(sourceMetrics.sourcesMap, sID)
 	sourceMetrics.sourcesMu.Unlock()
+}
+
+func (sourcesMetrics *sourcesMetrics) addSource(sID common.SourceID) {
+	sourcesMetrics.sourcesMu.Lock()
+	defer sourcesMetrics.sourcesMu.Unlock()
+
+	sourcesMetrics.sourcesMap[sID] = &singleSourceMetrics{
+		nodeCollectorsTraffic: make(map[string]*trafficMetrics),
+	}
 }
 
 func (sourceMetrics *sourcesMetrics) metricsByID(sID common.SourceID) (trafficMetrics, bool) {

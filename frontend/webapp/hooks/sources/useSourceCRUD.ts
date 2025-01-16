@@ -98,12 +98,15 @@ export const useSourceCRUD = (params?: Params) => {
     filteredSources: filtered,
 
     persistSources: async (selectAppsList: { [key: string]: K8sActualSource[] }, futureSelectAppsList: { [key: string]: boolean }) => {
-      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Persisting sources...', undefined, true);
+      const entries = Object.entries(selectAppsList);
 
-      // this is to handle "on success" callback if there are no sources to persist
+      // this is to handle "on success" callback if there are no sources to persist,
+      // and to notify use if there are source to persist
       let hasSources = false;
+      let alreadyNotifiedSources = false;
+      let alreadyNotifiedNamespaces = false;
 
-      for (const [namespace, sources] of Object.entries(selectAppsList)) {
+      for (const [namespace, sources] of entries) {
         const addToPendingStore: PendingItem[] = [];
         const sendToGql: Pick<K8sActualSource, 'name' | 'kind' | 'selected'>[] = [];
 
@@ -112,13 +115,24 @@ export const useSourceCRUD = (params?: Params) => {
           sendToGql.push({ name, kind, selected });
         });
 
-        if (!!sendToGql.length) hasSources = true;
+        if (!!sendToGql.length) {
+          hasSources = true;
+          if (!alreadyNotifiedSources) {
+            alreadyNotifiedSources = true;
+            notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Persisting sources...', undefined, true);
+          }
+        }
 
         addPendingItems(addToPendingStore);
         await persistSources({ variables: { namespace, sources: sendToGql } });
       }
 
       for (const [namespace, futureSelected] of Object.entries(futureSelectAppsList)) {
+        if (!alreadyNotifiedSources && !alreadyNotifiedNamespaces) {
+          alreadyNotifiedNamespaces = true;
+          notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Persisting namespaces...', undefined, true);
+        }
+
         await persistNamespace({ name: namespace, futureSelected });
       }
 
