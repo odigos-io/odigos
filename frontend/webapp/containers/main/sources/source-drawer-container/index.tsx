@@ -4,7 +4,6 @@ import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
 import { CodeIcon, ListIcon } from '@/assets';
 import buildDrawerItem from './build-drawer-item';
-import { ToggleCodeComponent } from '@/components';
 import { UpdateSourceBody } from '../update-source-body';
 import { useDescribeSource, useSourceCRUD } from '@/hooks';
 import OverviewDrawer from '../../overview/overview-drawer';
@@ -34,22 +33,33 @@ const DataContainer = styled.div`
 
 export const SourceDrawer: React.FC<Props> = () => {
   const { selectedItem, setSelectedItem } = useDrawerStore();
-
-  const { persistSources, updateSource } = useSourceCRUD({
+  const { sources, persistSources, updateSource } = useSourceCRUD({
     onSuccess: (type) => {
       setIsEditing(false);
       setIsFormDirty(false);
 
-      if (type === ACTION.DELETE) {
-        setSelectedItem(null);
-      } else {
-        const { item } = selectedItem as { item: K8sActualSource };
-        const { namespace, name, kind } = item;
-        const id = { namespace, name, kind };
-        setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.SOURCE, item: buildDrawerItem(id, formData, item) });
-      }
+      if (type === ACTION.DELETE) setSelectedItem(null);
+      else reSelectItem();
     },
   });
+
+  const reSelectItem = (fetchedItems?: typeof sources) => {
+    const { item } = selectedItem as { item: K8sActualSource };
+    const { namespace, name, kind } = item;
+    const id = { namespace, name, kind };
+
+    if (!!fetchedItems?.length) {
+      const found = fetchedItems.find((x) => x.namespace === namespace && x.name === name && x.kind === kind);
+      if (!!found) {
+        return setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.SOURCE, item: found });
+      }
+    }
+
+    setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.SOURCE, item: buildDrawerItem(id, formData, item) });
+  };
+
+  // This should keep the drawer up-to-date with the latest data
+  useEffect(() => reSelectItem(sources), [sources]);
 
   const [isPrettyMode, setIsPrettyMode] = useState(true); // for "describe source"
   const [isEditing, setIsEditing] = useState(false);
