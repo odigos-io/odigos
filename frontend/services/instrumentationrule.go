@@ -111,15 +111,12 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 		if input.PayloadCollection.HTTPRequest != nil {
 			payloadCollection.HttpRequest = &instrumentationrules.HttpPayloadCollection{}
 		}
-
 		if input.PayloadCollection.HTTPResponse != nil {
 			payloadCollection.HttpResponse = &instrumentationrules.HttpPayloadCollection{}
 		}
-
 		if input.PayloadCollection.DbQuery != nil {
 			payloadCollection.DbQuery = &instrumentationrules.DbQueryPayloadCollection{}
 		}
-
 		if input.PayloadCollection.Messaging != nil {
 			payloadCollection.Messaging = &instrumentationrules.MessagingPayloadCollection{}
 		}
@@ -127,6 +124,34 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 		existingRule.Spec.PayloadCollection = payloadCollection
 	} else {
 		existingRule.Spec.PayloadCollection = nil
+	}
+
+	var codeAttributes *instrumentationrules.CodeAttributes
+	if input.CodeAttributes != nil {
+		codeAttributes = &instrumentationrules.CodeAttributes{}
+
+		if input.CodeAttributes.Column != nil {
+			codeAttributes.Column = input.CodeAttributes.Column
+		}
+		if input.CodeAttributes.FilePath != nil {
+			codeAttributes.FilePath = input.CodeAttributes.FilePath
+		}
+		if input.CodeAttributes.Function != nil {
+			codeAttributes.Function = input.CodeAttributes.Function
+		}
+		if input.CodeAttributes.LineNumber != nil {
+			codeAttributes.LineNumber = input.CodeAttributes.LineNumber
+		}
+		if input.CodeAttributes.Namespace != nil {
+			codeAttributes.Namespace = input.CodeAttributes.Namespace
+		}
+		if input.CodeAttributes.Stacktrace != nil {
+			codeAttributes.Stacktrace = input.CodeAttributes.Stacktrace
+		}
+
+		existingRule.Spec.CodeAttributes = codeAttributes
+	} else {
+		existingRule.Spec.CodeAttributes = nil
 	}
 
 	// Update rule in Kubernetes
@@ -143,6 +168,7 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 		Workloads:                convertWorkloads(updatedRule.Spec.Workloads),
 		InstrumentationLibraries: convertInstrumentationLibraries(updatedRule.Spec.InstrumentationLibraries),
 		PayloadCollection:        convertPayloadCollection(updatedRule.Spec.PayloadCollection),
+		CodeAttributes:           (*model.CodeAttributes)(updatedRule.Spec.CodeAttributes),
 	}, nil
 }
 
@@ -196,17 +222,38 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 		if input.PayloadCollection.HTTPRequest != nil {
 			payloadCollection.HttpRequest = &instrumentationrules.HttpPayloadCollection{}
 		}
-
 		if input.PayloadCollection.HTTPResponse != nil {
 			payloadCollection.HttpResponse = &instrumentationrules.HttpPayloadCollection{}
 		}
-
 		if input.PayloadCollection.DbQuery != nil {
 			payloadCollection.DbQuery = &instrumentationrules.DbQueryPayloadCollection{}
 		}
-
 		if input.PayloadCollection.Messaging != nil {
 			payloadCollection.Messaging = &instrumentationrules.MessagingPayloadCollection{}
+		}
+	}
+
+	var codeAttributes *instrumentationrules.CodeAttributes
+	if input.CodeAttributes != nil {
+		codeAttributes = &instrumentationrules.CodeAttributes{}
+
+		if input.CodeAttributes.Column != nil {
+			codeAttributes.Column = input.CodeAttributes.Column
+		}
+		if input.CodeAttributes.FilePath != nil {
+			codeAttributes.FilePath = input.CodeAttributes.FilePath
+		}
+		if input.CodeAttributes.Function != nil {
+			codeAttributes.Function = input.CodeAttributes.Function
+		}
+		if input.CodeAttributes.LineNumber != nil {
+			codeAttributes.LineNumber = input.CodeAttributes.LineNumber
+		}
+		if input.CodeAttributes.Namespace != nil {
+			codeAttributes.Namespace = input.CodeAttributes.Namespace
+		}
+		if input.CodeAttributes.Stacktrace != nil {
+			codeAttributes.Stacktrace = input.CodeAttributes.Stacktrace
 		}
 	}
 
@@ -222,6 +269,7 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 			Workloads:                workloads,
 			InstrumentationLibraries: instrumentationLibraries,
 			PayloadCollection:        payloadCollection,
+			CodeAttributes:           codeAttributes,
 		},
 	}
 
