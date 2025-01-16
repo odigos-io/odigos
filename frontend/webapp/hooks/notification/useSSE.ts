@@ -1,14 +1,14 @@
 import { useEffect, useRef } from 'react';
-import { API } from '@/utils';
 import { NOTIFICATION_TYPE } from '@/types';
 import { useDestinationCRUD } from '../destinations';
 import { usePaginatedSources } from '../compute-platform';
-import { type NotifyPayload, useConnectionStore, useNotificationStore, usePendingStore } from '@/store';
+import { API, DISPLAY_TITLES, NOTIF_CRD_TYPES } from '@/utils';
+import { type NotifyPayload, useNotificationStore, usePendingStore, useStatusStore } from '@/store';
 
 export const useSSE = () => {
-  const { setSseStatus } = useConnectionStore();
   const { setPendingItems } = usePendingStore();
   const { fetchSources } = usePaginatedSources();
+  const { title, setStatusStore } = useStatusStore();
   const { addNotification } = useNotificationStore();
   const { refetchDestinations } = useDestinationCRUD();
 
@@ -17,30 +17,32 @@ export const useSSE = () => {
 
   useEffect(() => {
     const connect = () => {
-      const eventSource = new EventSource(API.EVENTS);
+      const es = new EventSource(API.EVENTS);
 
-      eventSource.onmessage = (event) => {
-        const key = event.data;
-        const data = JSON.parse(key);
-
+      es.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        const crdType = data.crdType || '';
         const notification: NotifyPayload = {
           type: data.type,
-          title: data.event,
-          message: data.data,
-          crdType: data.crdType,
+          title: data.event || '',
+          message: data.data || '',
+          crdType,
           target: data.target,
         };
 
-        addNotification(notification);
+        // SSE toast notification
+        if (crdType !== NOTIF_CRD_TYPES.CONNECTED) addNotification(notification);
 
-        const crdType = notification.crdType || '';
-        if (['InstrumentationConfig', 'InstrumentationInstance'].includes(crdType)) {
+        // Handle specific CRD types
+        if ([NOTIF_CRD_TYPES.CONNECTED].includes(crdType)) {
+          if (title !== DISPLAY_TITLES.API_TOKEN) {
+            setStatusStore({ status: NOTIFICATION_TYPE.SUCCESS, title: notification.title as string, message: notification.message as string });
+          }
+        } else if ([NOTIF_CRD_TYPES.INSTRUMENTATION_CONFIG, NOTIF_CRD_TYPES.INSTRUMENTATION_INSTANCE].includes(crdType)) {
           fetchSources();
-        } else if (['Destination'].includes(crdType)) {
+        } else if ([NOTIF_CRD_TYPES.DESTINATION].includes(crdType)) {
           refetchDestinations();
-        } else {
-          console.warn('Unhandled SSE for CRD type:', crdType);
-        }
+        } else console.warn('Unhandled SSE for CRD type:', crdType);
 
         // This works for now,
         // but in the future we might have to change this to "removePendingItems",
@@ -56,22 +58,22 @@ export const useSSE = () => {
         retryCount.current = 0;
       };
 
-      eventSource.onerror = (event) => {
-        console.error('EventSource failed:', event);
-        eventSource.close();
+      es.onerror = () => {
+        es.close();
 
-        // Retry connection with exponential backoff if below max retries
         if (retryCount.current < maxRetries) {
           retryCount.current += 1;
-          const retryTimeout = Math.min(10000, 1000 * Math.pow(2, retryCount.current));
+          setStatusStore({
+            status: NOTIFICATION_TYPE.WARNING,
+            title: 'Disconnected',
+            message: `Disconnected from the server. Retrying connection (${retryCount.current})`,
+          });
 
-          setTimeout(() => connect(), retryTimeout);
+          // Retry connection with exponential backoff if below max retries
+          setTimeout(() => connect(), Math.min(10000, 1000 * Math.pow(2, retryCount.current)));
         } else {
-          console.error('Max retries reached. Could not reconnect to EventSource.');
-
-          setSseStatus({
-            sseConnecting: false,
-            sseStatus: NOTIFICATION_TYPE.ERROR,
+          setStatusStore({
+            status: NOTIFICATION_TYPE.ERROR,
             title: `Connection lost on ${new Date().toLocaleString()}`,
             message: 'Please reboot the application',
           });
@@ -83,21 +85,12 @@ export const useSSE = () => {
         }
       };
 
-      setSseStatus({
-        sseConnecting: false,
-        sseStatus: NOTIFICATION_TYPE.SUCCESS,
-        title: 'Connection Alive',
-        message: '',
-      });
-
-      return eventSource;
+      return es;
     };
 
-    const eventSource = connect();
-
+    // Initialize event source connection
+    const es = connect();
     // Clean up event source on component unmount
-    return () => {
-      eventSource.close();
-    };
-  }, []);
+    return () => es.close();
+  }, [title]);
 };
