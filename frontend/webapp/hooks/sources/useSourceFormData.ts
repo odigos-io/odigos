@@ -91,7 +91,7 @@ export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFo
         // When clicking "select all" on a namespace
 
         if (!isFromInterval && bool) {
-          onSelectNamespace(namespace);
+          setSelectedNamespace(namespace);
           setSelectAllForNamespace(namespace);
         } else {
           setSelectedSources((prev) => ({ ...prev, [namespace]: selectedSources[namespace].map((source) => ({ ...source, selected: bool })) }));

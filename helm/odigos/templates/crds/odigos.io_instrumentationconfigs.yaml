@@ -116,6 +116,41 @@ spec:
                   The SDKs are identified by the programming language they are written in.
                 items:
                   properties:
+                    codeAttributes:
+                      description: default configuration for collecting code attributes,
+                        in case the instrumentation library does not provide a configuration.
+                      properties:
+                        column:
+                          description: |-
+                            Should record the `code.column` attribute.
+                            if unset, the value will resolve from other relevant rules, or fallback to false
+                          type: boolean
+                        filePath:
+                          description: |-
+                            Should record the `code.filepath` attribute.
+                            if unset, the value will resolve from other relevant rules, or fallback to false
+                          type: boolean
+                        function:
+                          description: |-
+                            Should record the `code.function` attribute.
+                            if unset, the value will resolve from other relevant rules, or fallback to false
+                          type: boolean
+                        lineNumber:
+                          description: |-
+                            Should record the `code.lineno` attribute.
+                            if unset, the value will resolve from other relevant rules, or fallback to false
+                          type: boolean
+                        namespace:
+                          description: |-
+                            Should record the `code.namespace` attribute.
+                            if unset, the value will resolve from other relevant rules, or fallback to false
+                          type: boolean
+                        stackTrace:
+                          description: |-
+                            Should record the `code.stacktrace` attribute.
+                            if unset, the value will resolve from other relevant rules, or fallback to false
+                          type: boolean
+                      type: object
                     headSamplerConfig:
                       description: |-
                         HeadSamplingConfig is a set sampling rules.
@@ -189,6 +224,43 @@ spec:
                         the the SDK should use
                       items:
                         properties:
+                          codeAttributes:
+                            description: |-
+                              code attributes configuration for a specific library.
+                              if not set, the default code attributes configuration for the workload will be used.
+                              if set, but internal fields are empty, those fields will be used from the default configuration.
+                            properties:
+                              column:
+                                description: |-
+                                  Should record the `code.column` attribute.
+                                  if unset, the value will resolve from other relevant rules, or fallback to false
+                                type: boolean
+                              filePath:
+                                description: |-
+                                  Should record the `code.filepath` attribute.
+                                  if unset, the value will resolve from other relevant rules, or fallback to false
+                                type: boolean
+                              function:
+                                description: |-
+                                  Should record the `code.function` attribute.
+                                  if unset, the value will resolve from other relevant rules, or fallback to false
+                                type: boolean
+                              lineNumber:
+                                description: |-
+                                  Should record the `code.lineno` attribute.
+                                  if unset, the value will resolve from other relevant rules, or fallback to false
+                                type: boolean
+                              namespace:
+                                description: |-
+                                  Should record the `code.namespace` attribute.
+                                  if unset, the value will resolve from other relevant rules, or fallback to false
+                                type: boolean
+                              stackTrace:
+                                description: |-
+                                  Should record the `code.stacktrace` attribute.
+                                  if unset, the value will resolve from other relevant rules, or fallback to false
+                                type: boolean
+                            type: object
                           libraryId:
                             properties:
                               libraryName:
@@ -409,7 +481,6 @@ spec:
                       type: object
                   required:
                   - language
-                  - payloadCollection
                   type: object
                 type: array
               serviceName:
