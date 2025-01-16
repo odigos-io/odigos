@@ -6,14 +6,21 @@
 (Alias of `{{ .Underlying }}`)
 {{ end }}
 
+{{- $hasReferences := false -}}
 {{- with .References }}
-**Appears in:**
-{{ range . }}
-{{ if or .Referenced .IsExported -}}
-- [{{ .DisplayName }}]({{ .Link }})
-{{ end -}}
+{{- range . }}
+  {{- if or .Referenced .IsExported -}}
+    {{- $hasReferences = true -}}
+  {{- end -}}
 {{- end -}}
-{{- end }}
+{{- if $hasReferences }}
+**Appears in:**
+{{- range . }}
+  {{- if or .Referenced .IsExported -}}
+  - [{{ .DisplayName }}]({{ .Link }})
+  {{- end -}}
+{{- end -}}
+{{- end -}}
 
 {{ if .GetComment -}}
 {{ .GetComment }}
