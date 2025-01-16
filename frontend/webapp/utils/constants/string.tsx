@@ -90,4 +90,13 @@ export const DISPLAY_TITLES = {
   MONITORS: 'Monitors',
   SIGNALS_FOR_PROCESSING: 'Signals for Processing',
   MANAGED_BY_PROFILE: 'Managed by Profile',
+
+  API_TOKEN: 'API Token',
+};
+
+export const NOTIF_CRD_TYPES = {
+  CONNECTED: 'CONNECTED',
+  INSTRUMENTATION_CONFIG: 'InstrumentationConfig',
+  INSTRUMENTATION_INSTANCE: 'InstrumentationInstance',
+  DESTINATION: 'Destination',
 };
