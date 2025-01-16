@@ -101,6 +101,7 @@ ARG TARGETARCH
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
     GOOS=linux GOARCH=$TARGETARCH make build-odiglet
+RUN make licenses
 
 WORKDIR /instrumentations
 
@@ -131,6 +132,7 @@ LABEL "release"=$RELEASE
 LABEL "summary"=$SUMMARY
 LABEL "description"=$DESCRIPTION
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
+COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/LICENSES /LICENSES
 WORKDIR /instrumentations/
 COPY --from=builder /instrumentations/ .
 CMD ["/root/odiglet"]

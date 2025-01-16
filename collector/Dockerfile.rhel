@@ -4,6 +4,7 @@ WORKDIR /go/src/
 
 ARG TARGETARCH
 RUN GOOS=linux GOARCH=$TARGETARCH make build-odigoscol
+RUN make licenses
 
 FROM registry.access.redhat.com/ubi9:9.5-1736404036
 ARG VERSION
@@ -18,4 +19,6 @@ LABEL "release"=$RELEASE
 LABEL "summary"=$SUMMARY
 LABEL "description"=$DESCRIPTION
 COPY --from=builder /go/src/odigosotelcol/odigosotelcol /odigosotelcol
+COPY --from=builder /go/src/odigosotelcol/LICENSES /LICENSES
+USER 65532:65532
 CMD ["/odigosotelcol"]

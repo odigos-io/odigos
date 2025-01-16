@@ -16,6 +16,7 @@ COPY --from=builder /webapp/out frontend/webapp/out
 WORKDIR /app/frontend
 ARG TARGETARCH
 RUN CGO_ENABLED=0 GOARCH=$TARGETARCH go build -o odigos-ui
+RUN make licenses
 
 FROM registry.access.redhat.com/ubi9:9.5-1736404036
 ARG VERSION
@@ -31,5 +32,6 @@ LABEL "summary"=$SUMMARY
 LABEL "description"=$DESCRIPTION
 WORKDIR /app
 COPY --from=backend /app/frontend/odigos-ui .
+COPY --from=backend /app/frontend/LICENSES /LICENSES
 USER 65532:65532
 ENTRYPOINT ["/app/odigos-ui", "--address", "0.0.0.0"]

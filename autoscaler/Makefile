@@ -1,4 +1,3 @@
-
 # Image URL to use all building/pushing image targets
 IMG ?= controller:latest
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
@@ -131,3 +130,13 @@ $(CONTROLLER_GEN): $(LOCALBIN)
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
 	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+
+.PHONY: go-licenses
+go-licenses: $(LOCALBIN)
+	GOBIN=$(LOCALBIN) go install github.com/google/go-licenses@latest
+
+# collector/odigosotelcol has to be run separately due to current ambiguous import upstream
+.PHONY: licenses
+licenses: go-licenses
+	rm -rf $(PWD)/LICENSES
+	$(LOCALBIN)/go-licenses save . --save_path=LICENSES

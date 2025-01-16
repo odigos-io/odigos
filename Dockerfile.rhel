@@ -23,6 +23,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
     CGO_ENABLED=0 GOARCH=$TARGETARCH \
     go build -a -o /workspace/build/$SERVICE_NAME .
+RUN make licenses
 
 FROM registry.access.redhat.com/ubi9:9.5-1736404036
 ARG SERVICE_NAME
@@ -40,6 +41,7 @@ LABEL "description"=$DESCRIPTION
 
 WORKDIR /
 COPY --from=builder /workspace/build/$SERVICE_NAME ./app
+COPY --from=builder /workspace/$SERVICE_NAME/LICENSES ./LICENSES
 USER 65532:65532
 # TODO: calling the binary by SERVICE_NAME should be better for us in debugging
 # but it does not work in distroless image

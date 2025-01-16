@@ -3,7 +3,7 @@ ODIGOS_CLI_VERSION ?= $(shell odigos version --cli)
 ORG ?= keyval
 GOLANGCI_LINT_VERSION ?= v1.63.4
 GOLANGCI_LINT := $(shell go env GOPATH)/bin/golangci-lint
-GO_MODULES := $(shell find . -type f -name "go.mod" -not -path "*/vendor/*" -exec dirname {} \;)
+GO_MODULES := $(shell find . -type f -name "go.mod" -not -path "*/vendor/*" -exec dirname {} \; | grep -v "LICENSES")
 LINT_CMD = golangci-lint run -c ../.golangci.yml
 ifdef FIX_LINT
     LINT_CMD += --fix
@@ -205,7 +205,7 @@ debug-odiglet:
 e2e-test:
 	./e2e-test.sh
 
-ALL_GO_MOD_DIRS := $(shell find . -type f -name 'go.mod' -exec dirname {} \; | sort)
+ALL_GO_MOD_DIRS := $(shell find . -type f -name 'go.mod' -exec dirname {} \; | sort | grep -v "LICENSES")
 
 .PHONY: go-mod-tidy
 go-mod-tidy: $(ALL_GO_MOD_DIRS:%=go-mod-tidy/%)
