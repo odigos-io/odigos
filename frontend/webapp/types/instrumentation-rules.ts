@@ -111,10 +111,10 @@ interface CodeAttributesInput {
   [CodeAttributesType.STACKTRACE]: boolean | null;
 }
 interface CodeAttributes {
-  [CodeAttributesType.COLUMN]: boolean;
-  [CodeAttributesType.FILE_PATH]: boolean;
-  [CodeAttributesType.FUNCTION]: boolean;
-  [CodeAttributesType.LINE_NUMBER]: boolean;
-  [CodeAttributesType.NAMESPACE]: boolean;
-  [CodeAttributesType.STACKTRACE]: boolean;
+  [CodeAttributesType.COLUMN]?: boolean;
+  [CodeAttributesType.FILE_PATH]?: boolean;
+  [CodeAttributesType.FUNCTION]?: boolean;
+  [CodeAttributesType.LINE_NUMBER]?: boolean;
+  [CodeAttributesType.NAMESPACE]?: boolean;
+  [CodeAttributesType.STACKTRACE]?: boolean;
 }

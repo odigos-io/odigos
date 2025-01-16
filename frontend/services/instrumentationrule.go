@@ -41,6 +41,7 @@ func ListInstrumentationRules(ctx context.Context) ([]*model.InstrumentationRule
 			Workloads:                convertWorkloads(rule.Spec.Workloads),
 			InstrumentationLibraries: convertInstrumentationLibraries(rule.Spec.InstrumentationLibraries),
 			PayloadCollection:        convertPayloadCollection(rule.Spec.PayloadCollection),
+			CodeAttributes:           (*model.CodeAttributes)(rule.Spec.CodeAttributes),
 		})
 	}
 	return gqlRules, nil

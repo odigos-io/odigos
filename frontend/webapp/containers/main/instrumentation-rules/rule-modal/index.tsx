@@ -18,7 +18,7 @@ export const RuleModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const { createInstrumentationRule, loading } = useInstrumentationRuleCRUD({ onSuccess: handleClose });
   const { formData, formErrors, handleFormChange, resetFormData, validateForm } = useInstrumentationRuleFormData();
 
-  const [selectedItem, setSelectedItem] = useState<RuleOption | undefined>(RULE_OPTIONS[0]);
+  const [selectedItem, setSelectedItem] = useState<RuleOption | undefined>(undefined);
 
   function handleClose() {
     resetFormData();
@@ -58,9 +58,8 @@ export const RuleModal: React.FC<Props> = ({ isOpen, onClose }) => {
       }
     >
       <ModalBody>
-        <SectionTitle title='Define Instrumentation Rule' description='Define how telemetry is recorded from your application. Choose a rule type and configure the details.' />
-        <NotificationNote type={NOTIFICATION_TYPE.INFO} message='We currently support one rule. We’ll be adding new rule types in the near future.' style={{ marginTop: '24px' }} />
-        <AutocompleteInput disabled options={RULE_OPTIONS} selectedOption={selectedItem} onOptionSelect={handleSelect} style={{ marginTop: '12px' }} />
+        <SectionTitle title='Select Instrumentation Rule' description='Define how telemetry is recorded from your application. Choose a rule type and configure the details.' />
+        <AutocompleteInput options={RULE_OPTIONS} selectedOption={selectedItem} onOptionSelect={handleSelect} style={{ marginTop: '24px' }} autoFocus={!selectedItem?.type} />
 
         {!!selectedItem?.type ? (
           <div>
