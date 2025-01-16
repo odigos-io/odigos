@@ -337,32 +337,35 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		return err
 	}
 
-	// Check for namespace source first
-	nsSource, err := GetSourceCRD(ctx, nsName, nsName, WorkloadKindNamespace)
-	if err != nil && !strings.Contains(err.Error(), "not found") {
-		return err
-	}
-
-	if nsSource != nil {
-		// namespace source exists, we need to add "DisableInstrumentation" to the workload source
-		// note: create will return an existing crd without throwing an error
-		source, err := createSourceCRD(ctx, nsName, workloadName, workloadKind)
-		if err != nil {
+	if workloadKind != WorkloadKindNamespace {
+		// Check for namespace source first
+		nsSource, err := GetSourceCRD(ctx, nsName, nsName, WorkloadKindNamespace)
+		if err != nil && !strings.Contains(err.Error(), "not found") {
 			return err
 		}
 
-		_, err = updateSourceCRD(ctx, nsName, source.Name, true)
-		return err
-	} else {
-		// namespace source does not exist, we need to delete the workload source
-		source, err := GetSourceCRD(ctx, nsName, workloadName, workloadKind)
-		if err != nil {
+		if nsSource != nil {
+			// namespace source exists, we need to add "DisableInstrumentation" to the workload source
+			// note: create will return an existing crd without throwing an error
+			source, err := createSourceCRD(ctx, nsName, workloadName, workloadKind)
+			if err != nil {
+				return err
+			}
+
+			_, err = updateSourceCRD(ctx, nsName, source.Name, true)
 			return err
 		}
+	}
 
-		err = kube.DefaultClient.OdigosClient.Sources(nsName).Delete(ctx, source.Name, metav1.DeleteOptions{})
+	// namespace source does not exist, we need to delete the workload source
+	source, err := GetSourceCRD(ctx, nsName, workloadName, workloadKind)
+	if err != nil {
 		return err
 	}
+
+	err = kube.DefaultClient.OdigosClient.Sources(nsName).Delete(ctx, source.Name, metav1.DeleteOptions{})
+	return err
+
 }
 
 func ToggleSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind, enabled bool) error {
