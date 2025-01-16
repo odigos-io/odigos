@@ -298,8 +298,9 @@ func createSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 
 	source, err := GetSourceCRD(ctx, nsName, workloadName, workloadKind)
 	if source != nil {
-		// source already exists, do not create a new one
-		return nil, nil
+		// source already exists, do not create a new one, instead update so it's not disabled anymore
+		source, err = updateSourceCRD(ctx, nsName, source.Name, false)
+		return source, err
 	}
 	if err != nil && !strings.Contains(err.Error(), "not found") {
 		// error occurred while trying to get the source
@@ -344,25 +345,13 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 
 	if nsSource != nil {
 		// namespace source exists, we need to add "DisableInstrumentation" to the workload source
-		source, err := GetSourceCRD(ctx, nsName, workloadName, workloadKind)
-		crdName := ""
-
+		// note: create will return an existing crd without throwing an error
+		source, err := createSourceCRD(ctx, nsName, workloadName, workloadKind)
 		if err != nil {
-			if !strings.Contains(err.Error(), "not found") {
-				return err
-			} else {
-				source, err = createSourceCRD(ctx, nsName, workloadName, workloadKind)
-				if err != nil {
-					return err
-				}
-
-				crdName = source.Name
-			}
-		} else {
-			crdName = source.Name
+			return err
 		}
 
-		_, err = updateSourceCRD(ctx, nsName, crdName, true)
+		_, err = updateSourceCRD(ctx, nsName, source.Name, true)
 		return err
 	} else {
 		// namespace source does not exist, we need to delete the workload source
