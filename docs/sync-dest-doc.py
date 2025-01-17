@@ -246,9 +246,12 @@ def generate_kubectl_apply(yaml_content):
 # (gets generated content for MDX files)
 
 
-def get_logo(yaml_content):
+def get_logo(yaml_content, img_tag=False):
     dest_type = yaml_content.get("metadata", {}).get("type", "")
     dest_image = yaml_content.get("spec", {}).get("image", "")
+
+    if img_tag:
+        return f"<img src='https://d15jtxgb40qetw.cloudfront.net/{dest_image}' alt='{dest_type}' width=\"18\" height=\"18\" className=\"not-prose\" />"
 
     return f"[![logo with clickable link](https://d15jtxgb40qetw.cloudfront.net/{dest_image})](https://www.google.com/search?q={dest_type})"
 
@@ -320,7 +323,6 @@ def get_add_dest_section(yaml_content):
     starting_block = "### Adding Destination to Odigos"
     content_block = (
         f"{starting_block}"
-        + "\n\nOdigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination."
         + "\n\nThere are two primary methods for configuring destinations in Odigos:"
         + "\n\n##### **Using the UI**"
         + "\n\n1. Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI"
@@ -396,11 +398,11 @@ def create_mdx(mdx_path, yaml_content):
 # Root
 
 
-def process_files(docs_dir, backends_dir):
+def process_files(backend_mdx_dir, backend_yaml_dir):
     """
     Main function to process the .yaml files, and create/update relative .mdx files.
     """
-    for root, _, files in os.walk(backends_dir):
+    for root, _, files in os.walk(backend_yaml_dir):
         for file in files:
             if file.endswith('.yaml'):
                 # Read the YAML file
@@ -410,7 +412,7 @@ def process_files(docs_dir, backends_dir):
 
                 # Generate or update the MDX file
                 mdx_path = os.path.join(
-                    docs_dir, file.replace('.yaml', '.mdx')
+                    backend_mdx_dir, file.replace('.yaml', '.mdx')
                 )
                 if os.path.exists(mdx_path):
                     update_mdx(mdx_path, yaml_content)
@@ -418,11 +420,64 @@ def process_files(docs_dir, backends_dir):
                     create_mdx(mdx_path, yaml_content)
 
 
-def update_mint_json(docs_dir, mint_dir):
+def process_overview(backend_yaml_dir, docs_dir):
+    """
+    This function will generate the overview.md file with the destinations.
+    """
+    overview_path = os.path.join(docs_dir, "backends-overview.mdx")
+
+    rows = []
+    for root, _, files in os.walk(backend_yaml_dir):
+        for file in sorted(files):
+            if file.endswith('.yaml'):
+                # Read the YAML file
+                yaml_path = os.path.join(root, file)
+                with open(yaml_path, 'r') as yaml_file:
+                    yaml_content = yaml.safe_load(yaml_file)
+                    meta = yaml_content.get("metadata", {})
+                    type = meta.get("type", "")
+                    name = meta.get("displayName", "")
+                    category = meta.get("category", "")
+                    signals = yaml_content.get("spec", {}).get("signals", {})
+
+                    rows.append(f"{
+                        get_logo(yaml_content, True)
+                    } | [{name}](/backends/{type}) | {
+                        "Managed" if category == "managed" else "Self-Hosted"
+                    } | {
+                        '✅' if signals.get("traces", {}).get(
+                            "supported", False) else ''
+                    } | {
+                        '✅' if signals.get("metrics", {}).get(
+                            "supported", False) else ''
+                    } | {
+                        '✅' if signals.get("logs", {}).get(
+                            "supported", False) else ''
+                    } |"
+                    )
+
+    content = (
+        "---"
+        + "\ntitle: 'Overview'"
+        + "\n---"
+        + "\n\nOdigos makes it simple to add and configure destinations, allowing you to select the specific signals (`traces`,`metrics`,`logs`) that you want to send to each destination."
+        + "\n\nOdigos has destinations for many observability backends."
+        + "\n\n| Logo | Destination | Category | Traces | Metrics | Logs |"
+        + "\n|---|---|---|:---:|:---:|:---:|"
+        + "\n"
+        + "\n".join(rows)
+        + "\n\nCan't find the destination you need? Help us by following our quick [adding new destination](/adding-new-dest) guide and submit a PR."
+    )
+
+    with open(overview_path, 'w') as file:
+        file.write(content)
+
+
+def process_mint(backend_mdx_dir, docs_dir):
     """
     This function will update the mint.json file with the new backends.
     """
-    mint_path = os.path.join(mint_dir, "mint.json")
+    mint_path = os.path.join(docs_dir, "mint.json")
 
     # Load the JSON file
     with open(mint_path, 'r') as file:
@@ -442,7 +497,7 @@ def update_mint_json(docs_dir, mint_dir):
 
     # Replace the "pages" array with new backend paths
     mint_pages = []
-    for _, _, files in os.walk(docs_dir):
+    for _, _, files in os.walk(backend_mdx_dir):
         for file in files:
             if file.endswith('.mdx'):
                 mint_pages.append(f"backends/{file.replace('.mdx', '')}")
@@ -454,9 +509,10 @@ def update_mint_json(docs_dir, mint_dir):
 
 
 if __name__ == "__main__":
-    docs_dir = "./backends"
-    backends_dir = "../destinations/data"
-    mint_dir = "."
+    backend_mdx_dir = "./backends"
+    backend_yaml_dir = "../destinations/data"
+    docs_dir = "."
 
-    process_files(docs_dir, backends_dir)
-    update_mint_json(docs_dir, mint_dir)
+    process_files(backend_mdx_dir, backend_yaml_dir)
+    process_overview(backend_yaml_dir, docs_dir)
+    process_mint(backend_mdx_dir, docs_dir)
