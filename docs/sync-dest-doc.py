@@ -274,13 +274,17 @@ def get_header(yaml_content):
     Function to get the header of the MDX file.
     Variables 'starting_block' and 'closing_block' will be used to dynamically identify the start-to-end of the block, in case of an update.
     """
-    dest_name = yaml_content.get("metadata", {}).get("displayName", "")
+    meta = yaml_content.get("metadata", {})
+    dest_name = meta.get("displayName", "")
+    category = "Managed" if meta.get(
+        "category", ""
+    ) == "managed" else "Self-Hosted"
 
     starting_block = "---"
     content_block = (
         f"{starting_block}"
         + f"\ntitle: '{dest_name}'"
-        + f"\ndescription: 'Configuring the {dest_name} Backend'"
+        + f"\ndescription: 'Configuring the {dest_name} backend ({category})'"
         + f"\nsidebarTitle: '{dest_name}'"
         + "\nicon: 'signal-stream'"
         + "\n---"
@@ -307,6 +311,8 @@ def get_config_fields_section(yaml_content):
     Function to get the 'Configuring Destination Fields' section.
     Variables 'starting_block' and 'closing_block' will be used to dynamically identify the start-to-end of the block, in case of an update.
     """
+    signals = yaml_content.get("spec", {}).get("signals", {})
+
     starting_block = (
         "{/*"
         + "\n    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!"
@@ -316,6 +322,14 @@ def get_config_fields_section(yaml_content):
     content_block = (
         f"{starting_block}"
         + "\n\n### Configuring Destination Fields"
+        + "\n\n<Accordion title=\"Supported Signals:\">"
+        + f"\n  {'✅' if signals.get("traces", {}
+                                    ).get("supported", False) else '❌'} Traces"
+        + f"\n  {'✅' if signals.get("metrics", {}
+                                    ).get("supported", False) else '❌'} Metrics"
+        + f"\n  {'✅' if signals.get("logs", {}
+                                    ).get("supported", False) else '❌'} Logs"
+        + "\n</Accordion>"
         + f"\n\n{generate_fields(yaml_content)}"
     )
     # The limit is `starting_block` from `get_add_dest_section`, we must ensure to not replace this closing block.
@@ -338,23 +352,32 @@ def get_add_dest_section(yaml_content):
         f"{starting_block}"
         + "\n\nThere are two primary methods for configuring destinations in Odigos:"
         + "\n\n##### **Using the UI**"
-        + "\n\n1. Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI"
-        + "\n\n  ```bash"
-        + "\n  odigos ui"
-        + "\n  ```"
-        + "\n\n2. Click on `Add Destination`"
-        + "\n3. Select "
-        + f"`{dest_name}`"
-        + " and follow the on-screen instructions"
+        + "\n\n<Steps>"
+        + "\n  <Step>"
+        + "\n    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI"
+        + "\n    ```bash"
+        + "\n    odigos ui"
+        + "\n    ```"
+        + "\n  </Step>"
+        + "\n  <Step>"
+        + "\n    Click on `Add Destination`"
+        + f", select `{dest_name}` and follow the on-screen instructions"
+        + "\n  </Step>"
+        + "\n</Steps>"
         + "\n\n##### **Using Kubernetes manifests**"
-        + f"\n\n1. Save the YAML below to a file (e.g. `{dest_type}.yaml`)"
-        + f"\n\n{indent_lines(generate_kubectl_apply(yaml_content), 2)}"
-        + "\n\n2. Apply the YAML using `kubectl`:"
-        + "\n\n  ```bash"
-        + f"\n  kubectl apply -f {dest_type}.yaml"
-        + "\n  ```"
+        + "\n\n<Steps>"
+        + "\n  <Step>"
+        + f"\n    Save the YAML below to a file (e.g. `{dest_type}.yaml`)"
+        + f"\n{indent_lines(generate_kubectl_apply(yaml_content), 4)}"
+        + "\n  </Step>"
+        + "\n  <Step>"
+        + "\n    Apply the YAML using `kubectl`"
+        + "\n    ```bash"
+        + f"\n    kubectl apply -f {dest_type}.yaml"
+        + "\n    ```"
+        + "\n  </Step>"
+        + "\n</Steps>"
     )
-    # 50 is the limit, any further and we might overlap dynamically changing values, and that cannot be used as a closing block reference.
     closing_block = content_block[-50:]
 
     return starting_block, closing_block, content_block
@@ -390,8 +413,6 @@ def create_mdx(mdx_path, yaml_content):
     """
     Function to create the MDX file by appending the newly generated content.
     """
-    dest_name = yaml_content.get("metadata", {}).get("displayName", "")
-
     _, _, header = get_header(yaml_content)
     _, _, config_dest = get_config_fields_section(yaml_content)
     _, _, add_dest = get_add_dest_section(yaml_content)
@@ -472,6 +493,8 @@ def process_overview(backend_yaml_dir, docs_dir):
     content = (
         "---"
         + "\ntitle: 'Overview'"
+        + "\nsidebarTitle: 'Overview'"
+        + "\nicon: 'house'"
         + "\n---"
         + "\n\nOdigos makes it simple to add and configure destinations, allowing you to select the specific signals (`traces`,`metrics`,`logs`) that you want to send to each destination."
         + "\n\nOdigos has destinations for many observability backends."
