@@ -93,8 +93,8 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		err = errors.Join(err, r.syncWorkload(ctx, source))
 	}
 
-	if err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+	if client.IgnoreNotFound(err) != nil {
+		return ctrl.Result{}, err
 	}
 
 	if !v1alpha1.IsExcludedSource(source) &&
