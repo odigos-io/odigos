@@ -71,23 +71,20 @@ def generate_fields(yaml_content):
         id = f.get("name", "")
         fcp = f.get("componentProps", {})
         display_name = f.get("displayName", "")
-        is_secret = f.get("secret", False)
         is_required = fcp.get("required", False)
         tooltip = fcp.get("tooltip", "")
         placeholder = fcp.get("placeholder", "")
         initial_value = f.get("initialValue", {})
 
         # !! skipped fields:
-        # componentType, componentProps.type, customReadDataLabels, renderCondition, hideFromReadData,
+        # secret, componentType, componentProps.type, customReadDataLabels, renderCondition, hideFromReadData,
 
         field = (
-            f"- **{id}** - {display_name}"
-            + (f", {tooltip}" if tooltip else "")
-            + "."
+            f"- **{id}** - {display_name}."
+            + (f" {tooltip}." if tooltip else "")
             + f"\n  - This field is {'required' if is_required else 'optional'}"
             + (f" and defaults to `{initial_value}`" if initial_value else "")
             + (f"\n  - Example: `{placeholder}`" if placeholder else "")
-            + (f"\n  - Secured Secret 🔑" if is_secret else "")
         )
 
         if fields:
