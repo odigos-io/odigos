@@ -14,7 +14,9 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("startlangdetection-deployment").
 		For(&appsv1.Deployment{}).
-		WithEventFilter(&WorkloadAvailablePredicate{}).
+		WithEventFilter(&WorkloadAvailablePredicate{
+			Client: mgr.GetClient(),
+		}).
 		Complete(&DeploymentReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
@@ -27,7 +29,9 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("startlangdetection-daemonset").
 		For(&appsv1.DaemonSet{}).
-		WithEventFilter(&WorkloadAvailablePredicate{}).
+		WithEventFilter(&WorkloadAvailablePredicate{
+			Client: mgr.GetClient(),
+		}).
 		Complete(&DaemonSetReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
@@ -40,7 +44,9 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("startlangdetection-statefulset").
 		For(&appsv1.StatefulSet{}).
-		WithEventFilter(&WorkloadAvailablePredicate{}).
+		WithEventFilter(&WorkloadAvailablePredicate{
+			Client: mgr.GetClient(),
+		}).
 		Complete(&StatefulSetReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),

@@ -1,16 +1,22 @@
 package startlangdetection
 
 import (
+	"context"
+
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
+	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 )
 
 // this predicate is used for workload reconciler to only pass events
 // where the workload has replicas available to instrument.
 type WorkloadAvailablePredicate struct {
 	predicate.Funcs
+	Client client.Client
 }
 
 func (i *WorkloadAvailablePredicate) Create(e event.CreateEvent) bool {
@@ -18,6 +24,12 @@ func (i *WorkloadAvailablePredicate) Create(e event.CreateEvent) bool {
 	if err != nil {
 		return false
 	}
+
+	instrumented, _ := sourceutils.IsObjectInstrumentedBySource(context.Background(), i.Client, e.Object)
+	if !instrumented || !workload.IsObjectLabeledForInstrumentation(e.Object) {
+		return false
+	}
+
 	return w.AvailableReplicas() > 0
 }
 
@@ -40,6 +52,11 @@ func (i *WorkloadAvailablePredicate) Update(e event.UpdateEvent) bool {
 
 	wNew, err := workload.ObjectToWorkload(e.ObjectNew)
 	if err != nil {
+		return false
+	}
+
+	instrumented, _ := sourceutils.IsObjectInstrumentedBySource(context.Background(), i.Client, e.ObjectNew)
+	if !instrumented || !workload.IsObjectLabeledForInstrumentation(e.ObjectNew) {
 		return false
 	}
 
