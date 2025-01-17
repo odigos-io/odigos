@@ -68,21 +68,37 @@ def generate_fields(yaml_content):
     fields = ""
 
     for f in yaml_fields:
-        id = f.get("name", "")
-        fcp = f.get("componentProps", {})
-        display_name = f.get("displayName", "")
-        is_required = fcp.get("required", False)
-        tooltip = fcp.get("tooltip", "")
-        placeholder = fcp.get("placeholder", "")
-        initial_value = f.get("initialValue", {})
+        # !! skipped fields: secret, customReadDataLabels, renderCondition, hideFromReadData,
 
-        # !! skipped fields:
-        # secret, componentType, componentProps.type, customReadDataLabels, renderCondition, hideFromReadData,
+        id = f.get("name", "")
+        initial_value = f.get("initialValue", {})
+        component_props = f.get("componentProps", {})
+        tooltip = component_props.get("tooltip", "")
+        placeholder = component_props.get("placeholder", "")
+
+        type = "unknown"
+        component_type = f.get("componentType", {})
+        if component_type == "checkbox":
+            type = "boolean"
+        elif component_type == "dropdown" or component_type == "multiInput":
+            type = "string[]"
+        elif component_type == "keyValuePairs":
+            type = "{ key: string; value: string; }[]"
+        elif component_type == "input" or component_type == "textarea":
+            input_type = component_props.get("type", False)
+            if input_type == "number":
+                type = "number"
+            elif input_type == "password":
+                type = "string"
+            else:
+                type = "string"
 
         field = (
-            f"- **{id}** - {display_name}."
+            f"- **{id}** `{type}` : {f.get("displayName", "")}."
             + (f" {tooltip}." if tooltip else "")
-            + f"\n  - This field is {'required' if is_required else 'optional'}"
+            + f"\n  - This field is {'required' if component_props.get(
+                "required", False
+            ) else 'optional'}"
             + (f" and defaults to `{initial_value}`" if initial_value else "")
             + (f"\n  - Example: `{placeholder}`" if placeholder else "")
         )
@@ -243,12 +259,12 @@ def generate_kubectl_apply(yaml_content):
 # (gets generated content for MDX files)
 
 
-def get_logo(yaml_content, img_tag=False):
+def get_logo(yaml_content, img_tag=False, img_size=16):
     dest_type = yaml_content.get("metadata", {}).get("type", "")
     dest_image = yaml_content.get("spec", {}).get("image", "")
 
     if img_tag:
-        return f"<img src='https://d15jtxgb40qetw.cloudfront.net/{dest_image}' alt='{dest_type}' width=\"18\" height=\"18\" className=\"not-prose\" />"
+        return f"<img src='https://d15jtxgb40qetw.cloudfront.net/{dest_image}' alt='{dest_type}' width=\"{img_size}\" height=\"{img_size}\" className=\"not-prose\" />"
 
     return f"[![logo with clickable link](https://d15jtxgb40qetw.cloudfront.net/{dest_image})](https://www.google.com/search?q={dest_type})"
 
@@ -383,7 +399,7 @@ def create_mdx(mdx_path, yaml_content):
     mdx_content = (
         f"{header}"
         # Logo only on-create
-        + f"\n\n{get_logo(yaml_content)}"
+        + f"\n\n{get_logo(yaml_content, True, 100)}"
         + f"\n\n{config_dest}"
         + f"\n\n{add_dest}"
     )
