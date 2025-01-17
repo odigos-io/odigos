@@ -7,25 +7,26 @@
 {{ end }}
 
 {{- $hasReferences := false -}}
-{{- with .References }}
-{{- range . }}
+{{- with .References -}}
+{{- range . -}}
   {{- if or .Referenced .IsExported -}}
     {{- $hasReferences = true -}}
   {{- end -}}
 {{- end -}}
 {{- if $hasReferences }}
 **Appears in:**
-{{- range . }}
-  {{- if or .Referenced .IsExported -}}
+
+{{ range . }}
+{{- if or .Referenced .IsExported -}}
   - [{{ .DisplayName }}]({{ .Link }})
-  {{- end -}}
-{{- end -}}
-{{- end -}}
+{{ end -}}
+{{ end }}
+{{ end -}}
 {{- end -}}
 
 {{ if .GetComment -}}
 {{ .GetComment }}
-{{ end }}
+{{ end -}}
 {{ if .GetMembers -}}
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
