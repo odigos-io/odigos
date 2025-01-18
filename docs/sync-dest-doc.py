@@ -6,8 +6,17 @@ import re
 
 # Helper functions
 
-
 def indent_lines(str="", spaces=0):
+    """
+    Indent each line in a string by the specified number of spaces.
+
+    Args:
+        str (str): Input string to indent.
+        spaces (int): Number of spaces to indent each line.
+
+    Returns:
+        str: Indented string.
+    """
     indented = "\n".join(
         f"{" " * spaces}{line}" if line.strip() else line for line in str.splitlines()
     )
@@ -15,7 +24,7 @@ def indent_lines(str="", spaces=0):
     return indented
 
 
-def replace_section(mdx_content, start_block, end_block, new_content, default_append_to_end, replace_end_block):
+def replace_section(mdx_content, start_block, end_block, new_content, default_append_to_end):
     """
     Replace or update a section in the content between start_block and end_block.
 
@@ -25,7 +34,6 @@ def replace_section(mdx_content, start_block, end_block, new_content, default_ap
         end_block (str): End marker for the block.
         new_content (str): New content to insert.
         default_append_to_end (bool): If true, append to the end; otherwise append to start.
-        replace_end_block (bool): If true, replace the end block; otherwise exclude it.
 
     Returns:
         str: Modified content.
@@ -38,20 +46,13 @@ def replace_section(mdx_content, start_block, end_block, new_content, default_ap
     )
 
     if section_pattern.search(mdx_content):
-        # If the section is found, determine replacement logic
-        if replace_end_block:
-            # Replace including the end block
-            mdx_content = section_pattern.sub(new_content, mdx_content)
-        else:
-            # Replace the content excluding the end block
-            mdx_content = section_pattern.sub(
-                lambda m: f"{new_content}{m.group(2)}", mdx_content
-            )
+        # If the section is found, replace including the end block
+        mdx_content = section_pattern.sub(new_content, mdx_content)
     else:
         # If the section is not found, append the entire section
         if default_append_to_end:
             # Append to the end
-            mdx_content += f"\n\n{new_content}"
+            mdx_content += f"{new_content}"
         else:
             # Append to the start
             mdx_content = f"{new_content}{mdx_content}"
@@ -62,8 +63,86 @@ def replace_section(mdx_content, start_block, end_block, new_content, default_ap
 # Generate functions
 # (generate content from within YAML files)
 
+def generate_logo(yaml_content, img_tag=False, img_size=16):
+    """
+    Function to generate the logo for the destination.
+
+    Args:
+        yaml_content (dict): Destination YAML content.
+        img_tag (bool): If True, return the image tag; otherwise, return the markdown link.
+        img_size (int): Size of the image.
+
+    Returns:
+        str: Logo content.
+    """
+    dest_type = yaml_content.get("metadata", {}).get("type", "")
+    dest_image = yaml_content.get("spec", {}).get("image", "")
+
+    if img_tag:
+        return f"<img src='https://d15jtxgb40qetw.cloudfront.net/{dest_image}' alt='{dest_type}' width=\"{img_size}\" height=\"{img_size}\" className=\"not-prose\" />"
+
+    return f"[![logo with clickable link](https://d15jtxgb40qetw.cloudfront.net/{dest_image})](https://www.google.com/search?q={dest_type})"
+
+
+def generate_signals(yaml_content):
+    """
+    Function to generate the 'Supported Signals' section.
+    It will generate a list of signals supported by the destination.
+
+    Args:
+        yaml_content (dict): Destination YAML content.
+
+    Returns:
+        str: Signals content.
+    """
+    signals = yaml_content.get("spec", {}).get("signals", {})
+    with_traces = signals.get("traces", {}).get("supported", False)
+    with_metrics = signals.get("metrics", {}).get("supported", False)
+    with_logs = signals.get("logs", {}).get("supported", False)
+
+    content = (
+        "<Accordion title=\"Supported Signals:\">"
+        + f"\n{indent_lines('✅' if with_traces else '❌', 2)} Traces"
+        + f"\n{indent_lines('✅' if with_metrics else '❌', 2)} Metrics"
+        + f"\n{indent_lines('✅' if with_logs else '❌', 2)} Logs"
+        + "\n</Accordion>"
+    )
+
+    return content
+
+
+def generate_note(yaml_content):
+    """
+    Function to generate the 'Check' note section.
+    It will generate a note for the destination.
+
+    Args:
+        yaml_content (dict): Destination YAML content.
+
+    Returns:
+        str: Note content.
+    """
+    note = yaml_content.get("spec", {}).get("note", [])
+
+    if note:
+        note = f"<Check>\n{indent_lines(note, 2)}\n</Check>"
+    else:
+        note = ""
+
+    return note
+
 
 def generate_fields(yaml_content):
+    """
+    Function to generate the 'Configuring Destination Fields' section.
+    It will generate a list of fields with their types and descriptions.
+
+    Args:
+        yaml_content (dict): Destination YAML content.
+
+    Returns:
+        str: Fields content.
+    """
     yaml_fields = yaml_content.get("spec", {}).get("fields", [])
     fields = ""
 
@@ -72,10 +151,12 @@ def generate_fields(yaml_content):
         # secret, componentProps.values , customReadDataLabels, renderCondition, hideFromReadData,
 
         id = f.get("name", "")
+        name = f.get("displayName", "")
         initial_value = f.get("initialValue", {})
         component_props = f.get("componentProps", {})
         tooltip = component_props.get("tooltip", "")
         placeholder = component_props.get("placeholder", "")
+        is_required = component_props.get("required", False)
 
         type = "unknown"
         component_type = f.get("componentType", {})
@@ -95,11 +176,9 @@ def generate_fields(yaml_content):
                 type = "string"
 
         field = (
-            f"- **{id}** `{type}` : {f.get("displayName", "")}."
+            f"- **{id}** `{type}` : {name}."
             + (f" {tooltip}" if tooltip else "")
-            + f"\n  - This field is {'required' if component_props.get(
-                "required", False
-            ) else 'optional'}"
+            + f"\n  - This field is {'required' if is_required else 'optional'}"
             + (f" and defaults to `{initial_value}`" if initial_value else "")
             + (f"\n  - Example: `{placeholder}`" if placeholder else "")
         )
@@ -113,9 +192,14 @@ def generate_fields(yaml_content):
 
 def generate_kubectl_apply(yaml_content):
     """
-    Function to create the 'Using Kubernetes manifests' section.
-    It will generate and include the destination YAML in a code-block.
-    It will also generate a secret YAML and include it in the same code-block.
+    Function to generate the `kubectl apply` command for the destination.
+    It will generate the YAML content for the destination and the secret (if required).
+
+    Args:
+        yaml_content (dict): Destination YAML content.
+
+    Returns:
+        str: `kubectl apply` command content.
     """
     destination_type = yaml_content.get("metadata", {}).get("type", "").lower()
 
@@ -259,38 +343,35 @@ def generate_kubectl_apply(yaml_content):
 # Get functions
 # (gets generated content for MDX files)
 
-
-def get_logo(yaml_content, img_tag=False, img_size=16):
-    dest_type = yaml_content.get("metadata", {}).get("type", "")
-    dest_image = yaml_content.get("spec", {}).get("image", "")
-
-    if img_tag:
-        return f"<img src='https://d15jtxgb40qetw.cloudfront.net/{dest_image}' alt='{dest_type}' width=\"{img_size}\" height=\"{img_size}\" className=\"not-prose\" />"
-
-    return f"[![logo with clickable link](https://d15jtxgb40qetw.cloudfront.net/{dest_image})](https://www.google.com/search?q={dest_type})"
-
-
-def get_header(yaml_content):
+def get_documenation(yaml_content):
     """
-    Function to get the header of the MDX file.
-    Variables 'starting_block' and 'closing_block' will be used to dynamically identify the start-to-end of the block, in case of an update.
+    Function to get the documentation content for the destination.
+
+    Args:
+        yaml_content (dict): Destination YAML content.
+
+    Returns:
+        dict: Documentation content
     """
     meta = yaml_content.get("metadata", {})
-    dest_name = meta.get("displayName", "")
-    category = "Managed" if meta.get(
-        "category", ""
-    ) == "managed" else "Self-Hosted"
+    type = meta.get("type", "")
+    name = meta.get("displayName", "")
+    category = meta.get("category", "")
+    category = "Managed" if category == "managed" else "Self-Hosted"
 
-    starting_block = "---"
-    content_block = (
-        f"{starting_block}"
-        + f"\ntitle: '{dest_name}'"
-        + f"\ndescription: 'Configuring the {dest_name} backend ({category})'"
-        + f"\nsidebarTitle: '{dest_name}'"
+    signals = generate_signals(yaml_content)
+    fields = generate_fields(yaml_content)
+    note = generate_note(yaml_content)
+
+    start_before_custom = "---"
+    content_before_custom = (
+        f"{start_before_custom}"
+        + f"\ntitle: '{name}'"
+        + f"\ndescription: 'Configuring the {name} backend ({category})'"
+        + f"\nsidebarTitle: '{name}'"
         + "\nicon: 'signal-stream'"
         + "\n---"
         + "\n\n### Getting Started"
-        # Just to get started somewhere, this row needs to be edited manually after 1st-time-creation
         + "\n\n{/*"
         + "\n    Add custom content here (under this comment)..."
         + "\n"
@@ -301,64 +382,21 @@ def get_header(yaml_content):
         + "\n    !! START CUSTOM EDIT !!"
         + "\n*/}"
     )
-    closing_block = content_block[-100:]
+    end_before_custom = content_before_custom[-100:]
 
-    return starting_block, closing_block, content_block
-
-
-def get_config_fields_section(yaml_content):
-    """
-    Function to get the 'Configuring Destination Fields' section.
-    Variables 'starting_block' and 'closing_block' will be used to dynamically identify the start-to-end of the block, in case of an update.
-    """
-    signals = yaml_content.get("spec", {}).get("signals", {})
-
-    starting_block = (
+    start_after_custom = (
         "{/*"
         + "\n    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!"
         + "\n    !! END CUSTOM EDIT !!"
         + "\n*/}"
     )
-    content_block = (
-        f"{starting_block}"
+    content_after_custom = (
+        f"{start_after_custom}"
         + "\n\n### Configuring Destination Fields"
-        + "\n\n<Accordion title=\"Supported Signals:\">"
-        + f"\n  {'✅' if signals.get(
-            "traces", {}
-        ).get("supported", False) else '❌'} Traces"
-        + f"\n  {'✅' if signals.get(
-            "metrics", {}
-        ).get("supported", False) else '❌'} Metrics"
-        + f"\n  {'✅' if signals.get(
-            "logs", {}
-        ).get("supported", False) else '❌'} Logs"
-        + "\n</Accordion>"
-        + f"\n\n{generate_fields(yaml_content)}"
-    )
-
-    note = yaml_content.get("spec", {}).get("note", [])
-    if note:
-        note_content = f"\n\n<Check>\n{indent_lines(note, 2)}\n</Check>"
-        content_block += note_content
-
-    # The limit is `starting_block` from `get_add_dest_section`, we must ensure to not replace this closing block.
-    closing_block = "\n\n### Adding Destination to Odigos"
-
-    return starting_block, closing_block, content_block
-
-
-def get_add_dest_section(yaml_content):
-    """
-    Function to get the 'Adding Destination' section.
-    Variables 'starting_block' and 'closing_block' will be used to dynamically identify the start-to-end of the block, in case of an update.
-    """
-    yaml_meta = yaml_content.get("metadata", {})
-    dest_type = yaml_meta.get("type", "")
-    dest_name = yaml_meta.get("displayName", "")
-
-    starting_block = "### Adding Destination to Odigos"
-    content_block = (
-        f"{starting_block}"
+        + f"{f"\n\n{signals}" if signals else ""}"
+        + f"{f"\n\n{fields}" if fields else ""}"
+        + f"{f"\n\n{note}" if note else ""}"
+        + "\n\n### Adding Destination to Odigos"
         + "\n\nThere are two primary methods for configuring destinations in Odigos:"
         + "\n\n##### **Using the UI**"
         + "\n\n<Steps>"
@@ -370,48 +408,67 @@ def get_add_dest_section(yaml_content):
         + "\n  </Step>"
         + "\n  <Step>"
         + "\n    Click on `Add Destination`"
-        + f", select `{dest_name}` and follow the on-screen instructions"
+        + f", select `{name}` and follow the on-screen instructions"
         + "\n  </Step>"
         + "\n</Steps>"
         + "\n\n##### **Using Kubernetes manifests**"
         + "\n\n<Steps>"
         + "\n  <Step>"
-        + f"\n    Save the YAML below to a file (e.g. `{dest_type}.yaml`)"
+        + f"\n    Save the YAML below to a file (e.g. `{type}.yaml`)"
         + f"\n{indent_lines(generate_kubectl_apply(yaml_content), 4)}"
         + "\n  </Step>"
         + "\n  <Step>"
         + "\n    Apply the YAML using `kubectl`"
         + "\n    ```bash"
-        + f"\n    kubectl apply -f {dest_type}.yaml"
+        + f"\n    kubectl apply -f {type}.yaml"
         + "\n    ```"
         + "\n  </Step>"
         + "\n</Steps>"
     )
-    closing_block = content_block[-50:]
+    end_after_custom = content_after_custom[-50:]
 
-    return starting_block, closing_block, content_block
+    return {
+        "start_before_custom": start_before_custom,
+        "content_before_custom": content_before_custom,
+        "end_before_custom": end_before_custom,
+        "start_after_custom": start_after_custom,
+        "content_after_custom": content_after_custom,
+        "end_after_custom": end_after_custom,
+    }
 
 
 # CRUD functions
 # (apply generated content in MDX files)
 
-
 def update_mdx(mdx_path, yaml_content):
     """
-    Function to update the MDX file by replacing the existing section with the updated content.
-    Note: we do not update the 'Getting Started' section. This is meant to be created only once, and give the developer a starting point for typing-out custom guidelines.
+    Function to update the MDX file by replacing the existing content.
+
+    Args:
+        mdx_path (str): Path to the MDX file.
+        yaml_content (dict): Destination YAML content.
+
+    Returns:
+        None
     """
+    documenation = get_documenation(yaml_content)
+
     with open(mdx_path, 'r') as mdx_file:
         mdx_content = mdx_file.read()
 
     mdx_content = replace_section(
-        mdx_content, *get_header(yaml_content), False, True
+        mdx_content,
+        documenation.get("start_before_custom"),
+        documenation.get("end_before_custom"),
+        documenation.get("content_before_custom"),
+        False
     )
     mdx_content = replace_section(
-        mdx_content, *get_config_fields_section(yaml_content), True, False
-    )
-    mdx_content = replace_section(
-        mdx_content, *get_add_dest_section(yaml_content), True, True
+        mdx_content,
+        documenation.get("start_after_custom"),
+        documenation.get("end_after_custom"),
+        documenation.get("content_after_custom"),
+        True
     )
 
     with open(mdx_path, 'w') as mdx_file:
@@ -420,18 +477,22 @@ def update_mdx(mdx_path, yaml_content):
 
 def create_mdx(mdx_path, yaml_content):
     """
-    Function to create the MDX file by appending the newly generated content.
+    Function to create a new MDX file with the generated content.
+
+    Args:
+        mdx_path (str): Path to the MDX file.
+        yaml_content (dict): Destination YAML content.
+
+    Returns:
+        None
     """
-    _, _, header = get_header(yaml_content)
-    _, _, config_dest = get_config_fields_section(yaml_content)
-    _, _, add_dest = get_add_dest_section(yaml_content)
+    documenation = get_documenation(yaml_content)
 
     mdx_content = (
-        f"{header}"
+        f"{documenation.get("content_before_custom")}"
         # Logo only on-create
-        + f"\n\n{get_logo(yaml_content, True, 100)}"
-        + f"\n\n{config_dest}"
-        + f"\n\n{add_dest}"
+        + f"\n\n{generate_logo(yaml_content, True, 100)}"
+        + f"\n\n{documenation.get("content_after_custom")}"
     )
 
     with open(mdx_path, 'w') as mdx_file:
@@ -443,7 +504,14 @@ def create_mdx(mdx_path, yaml_content):
 
 def process_files(backend_mdx_dir, backend_yaml_dir):
     """
-    Main function to process the .yaml files, and create/update relative .mdx files.
+    This function will generate or update the MDX files for each destination YAML.
+
+    Args:
+        backend_mdx_dir (str): Path to the MDX files directory.
+        backend_yaml_dir (str): Path to the YAML files directory.
+
+    Returns:
+        None
     """
     for root, _, files in os.walk(backend_yaml_dir):
         for file in files:
@@ -465,7 +533,14 @@ def process_files(backend_mdx_dir, backend_yaml_dir):
 
 def process_overview(backend_yaml_dir, docs_dir):
     """
-    This function will generate the overview.md file with the destinations.
+    This function will generate the overview page with the list of backends.
+
+    Args:
+        backend_yaml_dir (str): Path to the YAML files directory.
+        docs_dir (str): Path to the docs directory.
+
+    Returns:
+        None
     """
     overview_path = os.path.join(docs_dir, "backends-overview.mdx")
 
@@ -483,7 +558,7 @@ def process_overview(backend_yaml_dir, docs_dir):
                     signals = yaml_content.get("spec", {}).get("signals", {})
 
                     rows.append(f"{
-                        get_logo(yaml_content, True)
+                        generate_logo(yaml_content, True)
                     } | [{name}](/backends/{file.replace('.yaml', '')}) | {
                         "Managed" if category == "managed" else "Self-Hosted"
                     } | {
@@ -522,7 +597,14 @@ def process_overview(backend_yaml_dir, docs_dir):
 
 def process_mint(backend_mdx_dir, docs_dir):
     """
-    This function will update the mint.json file with the new backends.
+    This function will update the Mint navigation to include the new backends.
+
+    Args:
+        backend_mdx_dir (str): Path to the MDX files directory.
+        docs_dir (str): Path to the docs directory.
+
+    Returns:
+        None
     """
     mint_path = os.path.join(docs_dir, "mint.json")
 
