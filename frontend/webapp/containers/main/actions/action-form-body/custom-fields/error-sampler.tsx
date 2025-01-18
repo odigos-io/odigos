@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
-import { safeJsonParse } from '@/utils';
+import React, { useEffect, useMemo } from 'react';
 import { Input } from '@/reuseable-components';
+import { isEmpty, safeJsonParse } from '@/utils';
 import type { ErrorSamplerSpec } from '@/types';
 
 type Props = {
@@ -24,10 +24,14 @@ const ErrorSampler: React.FC<Props> = ({ value, setValue, errorMessage }) => {
       fallback_sampling_ratio: num,
     };
 
-    const str = !!payload.fallback_sampling_ratio ? JSON.stringify(payload) : '';
+    const str = isEmpty(payload.fallback_sampling_ratio) ? '' : JSON.stringify(payload);
 
     setValue(str);
   };
+
+  useEffect(() => {
+    if (isEmpty(safeJsonParse(value, {}))) handleChange('0');
+  }, [value]);
 
   return <Input title='Fallback sampling ratio' required type='number' min={MIN} max={MAX} value={mappedValue} onChange={({ target: { value: v } }) => handleChange(v)} errorMessage={errorMessage} />;
 };

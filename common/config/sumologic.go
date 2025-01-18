@@ -11,7 +11,6 @@ func (s *SumoLogic) DestType() common.DestinationType {
 }
 
 func (s *SumoLogic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
-
 	exporterName := "otlphttp/sumologic-" + dest.GetID()
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": "${SUMOLOGIC_COLLECTION_URL}",

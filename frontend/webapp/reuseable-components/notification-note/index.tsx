@@ -146,7 +146,7 @@ export const NotificationNote: React.FC<Props> = ({ type, title, message, action
 
   return (
     <Container className={onClose ? 'animated' : ''} $isLeaving={isLeaving} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-      <Content $type={type} style={style}>
+      <Content data-id='toast' $type={type} style={style}>
         <StatusIcon />
 
         <TextWrapper $withAction={!!action}>
@@ -157,9 +157,13 @@ export const NotificationNote: React.FC<Props> = ({ type, title, message, action
 
         {(!!action || !!onClose) && (
           <ButtonsWrapper>
-            {action && <ActionButton onClick={action.onClick}>{action.label}</ActionButton>}
+            {action && (
+              <ActionButton data-id='toast-action' onClick={action.onClick}>
+                {action.label}
+              </ActionButton>
+            )}
             {onClose && (
-              <IconButton onClick={() => closeToast({ asSeen: true })}>
+              <IconButton data-id='toast-close' onClick={() => closeToast({ asSeen: true })}>
                 <XIcon size={12} />
               </IconButton>
             )}

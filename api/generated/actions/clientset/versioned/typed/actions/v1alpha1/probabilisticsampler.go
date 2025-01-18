@@ -18,10 +18,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
-	actionsv1alpha1 "github.com/odigos-io/odigos/api/generated/actions/applyconfiguration/actions/v1alpha1"
+	actionsv1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
+	applyconfigurationactionsv1alpha1 "github.com/odigos-io/odigos/api/generated/actions/applyconfiguration/actions/v1alpha1"
 	scheme "github.com/odigos-io/odigos/api/generated/actions/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -37,36 +37,37 @@ type ProbabilisticSamplersGetter interface {
 
 // ProbabilisticSamplerInterface has methods to work with ProbabilisticSampler resources.
 type ProbabilisticSamplerInterface interface {
-	Create(ctx context.Context, probabilisticSampler *v1alpha1.ProbabilisticSampler, opts v1.CreateOptions) (*v1alpha1.ProbabilisticSampler, error)
-	Update(ctx context.Context, probabilisticSampler *v1alpha1.ProbabilisticSampler, opts v1.UpdateOptions) (*v1alpha1.ProbabilisticSampler, error)
+	Create(ctx context.Context, probabilisticSampler *actionsv1alpha1.ProbabilisticSampler, opts v1.CreateOptions) (*actionsv1alpha1.ProbabilisticSampler, error)
+	Update(ctx context.Context, probabilisticSampler *actionsv1alpha1.ProbabilisticSampler, opts v1.UpdateOptions) (*actionsv1alpha1.ProbabilisticSampler, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, probabilisticSampler *v1alpha1.ProbabilisticSampler, opts v1.UpdateOptions) (*v1alpha1.ProbabilisticSampler, error)
+	UpdateStatus(ctx context.Context, probabilisticSampler *actionsv1alpha1.ProbabilisticSampler, opts v1.UpdateOptions) (*actionsv1alpha1.ProbabilisticSampler, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.ProbabilisticSampler, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.ProbabilisticSamplerList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*actionsv1alpha1.ProbabilisticSampler, error)
+	List(ctx context.Context, opts v1.ListOptions) (*actionsv1alpha1.ProbabilisticSamplerList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.ProbabilisticSampler, err error)
-	Apply(ctx context.Context, probabilisticSampler *actionsv1alpha1.ProbabilisticSamplerApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.ProbabilisticSampler, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *actionsv1alpha1.ProbabilisticSampler, err error)
+	Apply(ctx context.Context, probabilisticSampler *applyconfigurationactionsv1alpha1.ProbabilisticSamplerApplyConfiguration, opts v1.ApplyOptions) (result *actionsv1alpha1.ProbabilisticSampler, err error)
 	// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-	ApplyStatus(ctx context.Context, probabilisticSampler *actionsv1alpha1.ProbabilisticSamplerApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.ProbabilisticSampler, err error)
+	ApplyStatus(ctx context.Context, probabilisticSampler *applyconfigurationactionsv1alpha1.ProbabilisticSamplerApplyConfiguration, opts v1.ApplyOptions) (result *actionsv1alpha1.ProbabilisticSampler, err error)
 	ProbabilisticSamplerExpansion
 }
 
 // probabilisticSamplers implements ProbabilisticSamplerInterface
 type probabilisticSamplers struct {
-	*gentype.ClientWithListAndApply[*v1alpha1.ProbabilisticSampler, *v1alpha1.ProbabilisticSamplerList, *actionsv1alpha1.ProbabilisticSamplerApplyConfiguration]
+	*gentype.ClientWithListAndApply[*actionsv1alpha1.ProbabilisticSampler, *actionsv1alpha1.ProbabilisticSamplerList, *applyconfigurationactionsv1alpha1.ProbabilisticSamplerApplyConfiguration]
 }
 
 // newProbabilisticSamplers returns a ProbabilisticSamplers
 func newProbabilisticSamplers(c *ActionsV1alpha1Client, namespace string) *probabilisticSamplers {
 	return &probabilisticSamplers{
-		gentype.NewClientWithListAndApply[*v1alpha1.ProbabilisticSampler, *v1alpha1.ProbabilisticSamplerList, *actionsv1alpha1.ProbabilisticSamplerApplyConfiguration](
+		gentype.NewClientWithListAndApply[*actionsv1alpha1.ProbabilisticSampler, *actionsv1alpha1.ProbabilisticSamplerList, *applyconfigurationactionsv1alpha1.ProbabilisticSamplerApplyConfiguration](
 			"probabilisticsamplers",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.ProbabilisticSampler { return &v1alpha1.ProbabilisticSampler{} },
-			func() *v1alpha1.ProbabilisticSamplerList { return &v1alpha1.ProbabilisticSamplerList{} }),
+			func() *actionsv1alpha1.ProbabilisticSampler { return &actionsv1alpha1.ProbabilisticSampler{} },
+			func() *actionsv1alpha1.ProbabilisticSamplerList { return &actionsv1alpha1.ProbabilisticSamplerList{} },
+		),
 	}
 }

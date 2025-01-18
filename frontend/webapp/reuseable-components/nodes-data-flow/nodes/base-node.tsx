@@ -1,10 +1,10 @@
 import React from 'react';
-import { useAppStore } from '@/store';
 import styled from 'styled-components';
 import { ErrorTriangleIcon, SVG } from '@/assets';
-import { Checkbox, DataTab } from '@/reuseable-components';
+import { useAppStore, usePendingStore } from '@/store';
+import { Checkbox, DataTab, FadeLoader } from '@/reuseable-components';
 import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';
-import { type ActionDataParsed, type ActualDestination, type InstrumentationRuleSpec, type K8sActualSource, NODE_TYPES, NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES, STATUSES, WorkloadId } from '@/types';
+import { type ActionDataParsed, type ActualDestination, type InstrumentationRuleSpec, type K8sActualSource, NODE_TYPES, OVERVIEW_ENTITY_TYPES, STATUSES, WorkloadId } from '@/types';
 
 interface Props
   extends NodeProps<
@@ -31,42 +31,35 @@ const Container = styled.div<{ $nodeWidth: Props['data']['nodeWidth'] }>`
 `;
 
 const BaseNode: React.FC<Props> = ({ id: nodeId, data }) => {
-  const { nodeWidth, type, status, title, subTitle, icon, iconSrc, monitors, isActive, raw } = data;
+  const { nodeWidth, id: entityId, type: entityType, status, title, subTitle, icon, iconSrc, monitors, isActive, raw } = data;
   const isError = status === STATUSES.UNHEALTHY;
 
-  const { configuredSources, setConfiguredSources } = useAppStore((state) => state);
+  const { configuredSources, setConfiguredSources } = useAppStore();
+  const { isThisPending } = usePendingStore();
+  const isPending = isThisPending({ entityType, entityId });
 
   const renderActions = () => {
-    const getSourceLocation = () => {
-      const { namespace, name, kind } = raw as K8sActualSource;
-      const selected = { ...configuredSources };
-      if (!selected[namespace]) selected[namespace] = [];
+    const { namespace, name, kind } = raw as K8sActualSource;
+    const sources = { ...configuredSources };
+    if (!sources[namespace]) sources[namespace] = [];
 
-      const index = selected[namespace].findIndex((x) => x.name === name && x.kind === kind);
-      return { index, namespace, selected };
-    };
+    const index = sources[namespace].findIndex((x) => x.name === name && x.kind === kind);
 
     const onSelectSource = () => {
-      const { index, namespace, selected } = getSourceLocation();
-
       if (index === -1) {
-        selected[namespace].push(raw as K8sActualSource);
+        sources[namespace].push(raw as K8sActualSource);
       } else {
-        selected[namespace].splice(index, 1);
+        sources[namespace].splice(index, 1);
       }
 
-      setConfiguredSources(selected);
+      setConfiguredSources(sources);
     };
 
     return (
       <>
-        {/* TODO: handle instrumentation rules for sources */}
-        {isError ? (
-          <ErrorTriangleIcon size={20} />
-        ) : // : type === 'source' && SOME_INDICATOR_THAT_THIS_IS_INSTRUMENTED ? ( <Image src={getEntityIcon(OVERVIEW_ENTITY_TYPES.RULE)} alt='' width={18} height={18} /> )
-        null}
-
-        {type === 'source' ? <Checkbox value={getSourceLocation().index !== -1} onChange={onSelectSource} /> : null}
+        {/* TODO: handle action/icon to apply instrumentation-rules for individual sources (@Notion GEN-1650) */}
+        {isPending ? <FadeLoader /> : isError ? <ErrorTriangleIcon size={20} /> : null}
+        {entityType === 'source' ? <Checkbox value={index !== -1} onChange={onSelectSource} disabled={isPending} /> : null}
       </>
     );
   };

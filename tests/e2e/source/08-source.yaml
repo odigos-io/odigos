@@ -1,0 +1,13 @@
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: coupon-excluded
+  namespace: default
+  labels:
+    odigos.io/e2e: source-excluded
+spec:
+  disableInstrumentation: true
+  workload:
+    name: coupon
+    namespace: default
+    kind: Deployment

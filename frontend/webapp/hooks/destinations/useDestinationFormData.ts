@@ -33,21 +33,6 @@ const buildFormDynamicFields = (fields: DestinationDetailsField[]): DynamicField
       const { name, componentType, componentProperties, displayName, initialValue, renderCondition } = field;
 
       switch (componentType) {
-        case INPUT_TYPES.MULTI_INPUT: {
-          const componentPropertiesJson = safeJsonParse<{ [key: string]: string }>(componentProperties, {});
-          const initialValuesJson = safeJsonParse<string[]>(initialValue, []);
-
-          return {
-            name,
-            componentType,
-            title: displayName,
-            value: initialValuesJson,
-            initialValues: initialValuesJson,
-            renderCondition,
-            ...componentPropertiesJson,
-          };
-        }
-
         case INPUT_TYPES.DROPDOWN: {
           const componentPropertiesJson = safeJsonParse<{ [key: string]: string }>(componentProperties, {});
           const options = Array.isArray(componentPropertiesJson.values)
@@ -104,8 +89,8 @@ export function useDestinationFormData(params?: { destinationType?: string; supp
     onError: (error) =>
       addNotification({
         type: NOTIFICATION_TYPE.ERROR,
-        title: ACTION.FETCH,
-        message: error.message,
+        title: error.name || ACTION.FETCH,
+        message: error.cause?.message || error.message,
         crdType: OVERVIEW_ENTITY_TYPES.DESTINATION,
       }),
   });
@@ -156,7 +141,7 @@ export function useDestinationFormData(params?: { destinationType?: string; supp
   }, [supportedSignals]);
 
   const validateForm = (params?: { withAlert?: boolean; alertTitle?: string }) => {
-    const errors = {};
+    const errors: Record<DynamicField['name'], string> = {};
     let ok = true;
 
     dynamicFields.forEach(({ name, value, required }) => {
@@ -171,6 +156,7 @@ export function useDestinationFormData(params?: { destinationType?: string; supp
         type: NOTIFICATION_TYPE.WARNING,
         title: params.alertTitle,
         message: FORM_ALERTS.REQUIRED_FIELDS,
+        hideFromHistory: true,
       });
     }
 

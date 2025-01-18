@@ -18,11 +18,11 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/applyconfiguration/odigos/v1alpha1"
+	applyconfigurationodigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/applyconfiguration/odigos/v1alpha1"
 	scheme "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/scheme"
-	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -37,36 +37,39 @@ type InstrumentedApplicationsGetter interface {
 
 // InstrumentedApplicationInterface has methods to work with InstrumentedApplication resources.
 type InstrumentedApplicationInterface interface {
-	Create(ctx context.Context, instrumentedApplication *v1alpha1.InstrumentedApplication, opts v1.CreateOptions) (*v1alpha1.InstrumentedApplication, error)
-	Update(ctx context.Context, instrumentedApplication *v1alpha1.InstrumentedApplication, opts v1.UpdateOptions) (*v1alpha1.InstrumentedApplication, error)
+	Create(ctx context.Context, instrumentedApplication *odigosv1alpha1.InstrumentedApplication, opts v1.CreateOptions) (*odigosv1alpha1.InstrumentedApplication, error)
+	Update(ctx context.Context, instrumentedApplication *odigosv1alpha1.InstrumentedApplication, opts v1.UpdateOptions) (*odigosv1alpha1.InstrumentedApplication, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, instrumentedApplication *v1alpha1.InstrumentedApplication, opts v1.UpdateOptions) (*v1alpha1.InstrumentedApplication, error)
+	UpdateStatus(ctx context.Context, instrumentedApplication *odigosv1alpha1.InstrumentedApplication, opts v1.UpdateOptions) (*odigosv1alpha1.InstrumentedApplication, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.InstrumentedApplication, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.InstrumentedApplicationList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*odigosv1alpha1.InstrumentedApplication, error)
+	List(ctx context.Context, opts v1.ListOptions) (*odigosv1alpha1.InstrumentedApplicationList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.InstrumentedApplication, err error)
-	Apply(ctx context.Context, instrumentedApplication *odigosv1alpha1.InstrumentedApplicationApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.InstrumentedApplication, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *odigosv1alpha1.InstrumentedApplication, err error)
+	Apply(ctx context.Context, instrumentedApplication *applyconfigurationodigosv1alpha1.InstrumentedApplicationApplyConfiguration, opts v1.ApplyOptions) (result *odigosv1alpha1.InstrumentedApplication, err error)
 	// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-	ApplyStatus(ctx context.Context, instrumentedApplication *odigosv1alpha1.InstrumentedApplicationApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.InstrumentedApplication, err error)
+	ApplyStatus(ctx context.Context, instrumentedApplication *applyconfigurationodigosv1alpha1.InstrumentedApplicationApplyConfiguration, opts v1.ApplyOptions) (result *odigosv1alpha1.InstrumentedApplication, err error)
 	InstrumentedApplicationExpansion
 }
 
 // instrumentedApplications implements InstrumentedApplicationInterface
 type instrumentedApplications struct {
-	*gentype.ClientWithListAndApply[*v1alpha1.InstrumentedApplication, *v1alpha1.InstrumentedApplicationList, *odigosv1alpha1.InstrumentedApplicationApplyConfiguration]
+	*gentype.ClientWithListAndApply[*odigosv1alpha1.InstrumentedApplication, *odigosv1alpha1.InstrumentedApplicationList, *applyconfigurationodigosv1alpha1.InstrumentedApplicationApplyConfiguration]
 }
 
 // newInstrumentedApplications returns a InstrumentedApplications
 func newInstrumentedApplications(c *OdigosV1alpha1Client, namespace string) *instrumentedApplications {
 	return &instrumentedApplications{
-		gentype.NewClientWithListAndApply[*v1alpha1.InstrumentedApplication, *v1alpha1.InstrumentedApplicationList, *odigosv1alpha1.InstrumentedApplicationApplyConfiguration](
+		gentype.NewClientWithListAndApply[*odigosv1alpha1.InstrumentedApplication, *odigosv1alpha1.InstrumentedApplicationList, *applyconfigurationodigosv1alpha1.InstrumentedApplicationApplyConfiguration](
 			"instrumentedapplications",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.InstrumentedApplication { return &v1alpha1.InstrumentedApplication{} },
-			func() *v1alpha1.InstrumentedApplicationList { return &v1alpha1.InstrumentedApplicationList{} }),
+			func() *odigosv1alpha1.InstrumentedApplication { return &odigosv1alpha1.InstrumentedApplication{} },
+			func() *odigosv1alpha1.InstrumentedApplicationList {
+				return &odigosv1alpha1.InstrumentedApplicationList{}
+			},
+		),
 	}
 }

@@ -14,18 +14,6 @@ import (
 func SetupWithManager(mgr ctrl.Manager, clientset *kubernetes.Clientset, criClient *criwrapper.CriClient) error {
 	err := builder.
 		ControllerManagedBy(mgr).
-		For(&odigosv1.InstrumentationConfig{}).
-		Owns(&odigosv1.InstrumentedApplication{}).
-		Complete(&DeprecatedInstrumentationConfigReconciler{
-			Client: mgr.GetClient(),
-			Scheme: mgr.GetScheme(),
-		})
-	if err != nil {
-		return err
-	}
-
-	err = builder.
-		ControllerManagedBy(mgr).
 		Named("Odiglet-RuntimeDetails-Pods").
 		For(&corev1.Pod{}).
 		WithEventFilter(&odigospredicate.AllContainersReadyPredicate{}).

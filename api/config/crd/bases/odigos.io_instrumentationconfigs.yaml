@@ -110,16 +110,47 @@ spec:
                   - optionKey
                   type: object
                 type: array
-              runtimeDetailsInvalidated:
-                description: true when the runtime details are invalidated and should
-                  be recalculated
-                type: boolean
               sdkConfigs:
                 description: |-
                   Configuration for the OpenTelemetry SDKs that this workload should use.
                   The SDKs are identified by the programming language they are written in.
                 items:
                   properties:
+                    codeAttributes:
+                      description: default configuration for collecting code attributes,
+                        in case the instrumentation library does not provide a configuration.
+                      properties:
+                        column:
+                          description: |-
+                            Should record the `code.column` attribute.
+                            if unset, the value will resolve from other relevant rules, or fallback to false
+                          type: boolean
+                        filePath:
+                          description: |-
+                            Should record the `code.filepath` attribute.
+                            if unset, the value will resolve from other relevant rules, or fallback to false
+                          type: boolean
+                        function:
+                          description: |-
+                            Should record the `code.function` attribute.
+                            if unset, the value will resolve from other relevant rules, or fallback to false
+                          type: boolean
+                        lineNumber:
+                          description: |-
+                            Should record the `code.lineno` attribute.
+                            if unset, the value will resolve from other relevant rules, or fallback to false
+                          type: boolean
+                        namespace:
+                          description: |-
+                            Should record the `code.namespace` attribute.
+                            if unset, the value will resolve from other relevant rules, or fallback to false
+                          type: boolean
+                        stackTrace:
+                          description: |-
+                            Should record the `code.stacktrace` attribute.
+                            if unset, the value will resolve from other relevant rules, or fallback to false
+                          type: boolean
+                      type: object
                     headSamplerConfig:
                       description: |-
                         HeadSamplingConfig is a set sampling rules.
@@ -193,6 +224,43 @@ spec:
                         the the SDK should use
                       items:
                         properties:
+                          codeAttributes:
+                            description: |-
+                              code attributes configuration for a specific library.
+                              if not set, the default code attributes configuration for the workload will be used.
+                              if set, but internal fields are empty, those fields will be used from the default configuration.
+                            properties:
+                              column:
+                                description: |-
+                                  Should record the `code.column` attribute.
+                                  if unset, the value will resolve from other relevant rules, or fallback to false
+                                type: boolean
+                              filePath:
+                                description: |-
+                                  Should record the `code.filepath` attribute.
+                                  if unset, the value will resolve from other relevant rules, or fallback to false
+                                type: boolean
+                              function:
+                                description: |-
+                                  Should record the `code.function` attribute.
+                                  if unset, the value will resolve from other relevant rules, or fallback to false
+                                type: boolean
+                              lineNumber:
+                                description: |-
+                                  Should record the `code.lineno` attribute.
+                                  if unset, the value will resolve from other relevant rules, or fallback to false
+                                type: boolean
+                              namespace:
+                                description: |-
+                                  Should record the `code.namespace` attribute.
+                                  if unset, the value will resolve from other relevant rules, or fallback to false
+                                type: boolean
+                              stackTrace:
+                                description: |-
+                                  Should record the `code.stacktrace` attribute.
+                                  if unset, the value will resolve from other relevant rules, or fallback to false
+                                type: boolean
+                            type: object
                           libraryId:
                             properties:
                               libraryName:
@@ -413,7 +481,6 @@ spec:
                       type: object
                   required:
                   - language
-                  - payloadCollection
                   type: object
                 type: array
               serviceName:
@@ -423,6 +490,64 @@ spec:
             type: object
           status:
             properties:
+              conditions:
+                description: Represents the observations of a InstrumentationConfig's
+                  current state.
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
               runtimeDetailsByContainer:
                 description: Capture Runtime Details for the workloads that this CR
                   applies to.

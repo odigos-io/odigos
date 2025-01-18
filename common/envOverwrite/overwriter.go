@@ -78,7 +78,7 @@ func GetRelevantEnvVarsKeys() []string {
 // the are 2 parts to the environment value: odigos part and user part.
 // either one can be set or empty.
 // so we have 4 cases to handle:
-func GetPatchedEnvValue(envName string, observedValue string, currentSdk *common.OtelSdk, language common.ProgrammingLanguage) *string {
+func GetPatchedEnvValue(envName, observedValue string, currentSdk *common.OtelSdk, language common.ProgrammingLanguage) *string {
 	envMetadata, ok := EnvValuesMap[envName]
 	if !ok {
 		// Odigos does not manipulate this environment variable, so ignore it
@@ -180,4 +180,8 @@ func ValToAppend(envName string, sdk common.OtelSdk) (string, bool) {
 	}
 
 	return valToAppend, true
+}
+
+func GetPossibleValuesPerEnv(env string) map[common.OtelSdk]string {
+	return EnvValuesMap[env].values
 }

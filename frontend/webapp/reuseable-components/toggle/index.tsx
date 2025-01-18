@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import { Text } from '../text';
 import { Tooltip } from '../tooltip';
 import styled from 'styled-components';
@@ -10,6 +9,7 @@ interface ToggleProps {
   initialValue?: boolean;
   onChange?: (value: boolean) => void;
   disabled?: boolean;
+  allowPropagation?: boolean;
 }
 
 const Container = styled.div<{ $disabled?: ToggleProps['disabled'] }>`
@@ -44,20 +44,22 @@ const ToggleSwitch = styled.div<{ $isActive: boolean; $disabled?: ToggleProps['d
   }
 `;
 
-const Toggle: React.FC<ToggleProps> = ({ title, tooltip, initialValue = false, onChange, disabled }) => {
+const Toggle: React.FC<ToggleProps> = ({ title, tooltip, initialValue = false, onChange, disabled, allowPropagation = false }) => {
   const [isActive, setIsActive] = useState(initialValue);
   useEffect(() => setIsActive(initialValue), [initialValue]);
 
   const handleToggle: React.MouseEventHandler<HTMLDivElement> = (e) => {
     if (disabled) return;
-
-    e.stopPropagation();
+    if (!allowPropagation) e.stopPropagation();
 
     setIsActive((prev) => {
       const newValue = !prev;
       if (onChange) onChange(newValue);
       return newValue;
     });
+
+    if (onChange) onChange(!isActive);
+    else setIsActive((prev) => !prev);
   };
 
   return (

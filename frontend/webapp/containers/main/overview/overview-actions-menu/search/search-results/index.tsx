@@ -3,7 +3,7 @@ import theme from '@/styles/theme';
 import styled from 'styled-components';
 import { OVERVIEW_ENTITY_TYPES, WorkloadId } from '@/types';
 import { AbsoluteContainer } from '../../styled';
-import { getEntityIcon, getEntityLabel } from '@/utils';
+import { getEntityIcon, getEntityItemId, getEntityLabel } from '@/utils';
 import { buildSearchResults, type Category } from './builder';
 import { Divider, SelectionButton, Text } from '@/reuseable-components';
 import { useActionCRUD, useDestinationCRUD, useInstrumentationRuleCRUD, useNodeDataFlowHandlers, useSourceCRUD } from '@/hooks';
@@ -71,7 +71,7 @@ export const SearchResults = ({ searchText, onClose }: Props) => {
                 icon={getEntityIcon(category as OVERVIEW_ENTITY_TYPES)}
                 label={getEntityLabel(item, category as OVERVIEW_ENTITY_TYPES, { extended: true })}
                 onClick={() => {
-                  const id = item.id || item.ruleId || { kind: item.kind, name: item.name, namespace: item.namespace };
+                  const id = getEntityItemId(item);
                   // @ts-ignore
                   handleNodeClick(null, { data: { type: category, id } });
                   onClose();

@@ -1,0 +1,23 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: kloudmate
+  displayName: KloudMate
+  category: managed
+spec:
+  image: kloudmate.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+  fields:
+    - name: KLOUDMATE_API_KEY
+      displayName: KloudMate API Key
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: true

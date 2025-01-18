@@ -18,13 +18,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	actionsv1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
+	apiactionsv1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	versioned "github.com/odigos-io/odigos/api/generated/actions/clientset/versioned"
 	internalinterfaces "github.com/odigos-io/odigos/api/generated/actions/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/odigos-io/odigos/api/generated/actions/listers/actions/v1alpha1"
+	actionsv1alpha1 "github.com/odigos-io/odigos/api/generated/actions/listers/actions/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -35,7 +35,7 @@ import (
 // AddClusterInfos.
 type AddClusterInfoInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.AddClusterInfoLister
+	Lister() actionsv1alpha1.AddClusterInfoLister
 }
 
 type addClusterInfoInformer struct {
@@ -70,7 +70,7 @@ func NewFilteredAddClusterInfoInformer(client versioned.Interface, namespace str
 				return client.ActionsV1alpha1().AddClusterInfos(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&actionsv1alpha1.AddClusterInfo{},
+		&apiactionsv1alpha1.AddClusterInfo{},
 		resyncPeriod,
 		indexers,
 	)
@@ -81,9 +81,9 @@ func (f *addClusterInfoInformer) defaultInformer(client versioned.Interface, res
 }
 
 func (f *addClusterInfoInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&actionsv1alpha1.AddClusterInfo{}, f.defaultInformer)
+	return f.factory.InformerFor(&apiactionsv1alpha1.AddClusterInfo{}, f.defaultInformer)
 }
 
-func (f *addClusterInfoInformer) Lister() v1alpha1.AddClusterInfoLister {
-	return v1alpha1.NewAddClusterInfoLister(f.Informer().GetIndexer())
+func (f *addClusterInfoInformer) Lister() actionsv1alpha1.AddClusterInfoLister {
+	return actionsv1alpha1.NewAddClusterInfoLister(f.Informer().GetIndexer())
 }

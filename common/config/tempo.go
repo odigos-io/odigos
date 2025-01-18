@@ -22,7 +22,6 @@ func (t *Tempo) DestType() common.DestinationType {
 }
 
 func (t *Tempo) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
-
 	url, exists := dest.GetConfig()[tempoUrlKey]
 	if !exists {
 		return errors.New("Tempo url not specified, gateway will not be configured for Tempo")

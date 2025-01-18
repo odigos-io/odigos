@@ -2,7 +2,7 @@ import React from 'react';
 import { FolderIcon } from '@/assets';
 import styled from 'styled-components';
 import { type UseSourceFormDataResponse } from '@/hooks';
-import { Checkbox, NoDataFound, Text } from '@/reuseable-components';
+import { Checkbox, FadeLoader, NoDataFound, Text } from '@/reuseable-components';
 
 interface Props extends UseSourceFormDataResponse {
   isModal?: boolean;
@@ -74,28 +74,24 @@ const NoDataFoundWrapper = styled.div`
 
 export const SourcesList: React.FC<Props> = ({
   isModal = false,
+  namespacesLoading,
 
   selectedNamespace,
-  availableSources,
   selectedSources,
   onSelectSource,
 
   filterSources,
 }) => {
-  const sources = availableSources[selectedNamespace] || [];
+  const sources = selectedSources[selectedNamespace] || [];
 
   if (!sources.length) {
-    return (
-      <NoDataFoundWrapper>
-        <NoDataFound title='No sources found' />
-      </NoDataFoundWrapper>
-    );
+    return <NoDataFoundWrapper>{namespacesLoading ? <FadeLoader style={{ transform: 'scale(2)' }} /> : <NoDataFound title='No sources found' />}</NoDataFoundWrapper>;
   }
 
   return (
     <SourcesListWrapper $isModal={isModal}>
       {filterSources().map((source) => {
-        const isSelected = !!selectedSources[selectedNamespace].find(({ name }) => name === source.name);
+        const isSelected = selectedSources[selectedNamespace].find(({ name }) => name === source.name)?.selected || false;
 
         return (
           <ListItem key={`source-${source.name}`} $selected={isSelected} onClick={() => onSelectSource(source)}>
@@ -114,7 +110,7 @@ export const SourcesList: React.FC<Props> = ({
 
             {isSelected && (
               <SelectedTextWrapper>
-                <Checkbox value={true} />
+                <Checkbox value={true} allowPropagation />
               </SelectedTextWrapper>
             )}
           </ListItem>

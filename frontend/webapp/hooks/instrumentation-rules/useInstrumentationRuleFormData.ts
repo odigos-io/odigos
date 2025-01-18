@@ -22,7 +22,7 @@ export function useInstrumentationRuleFormData() {
   const { formData, formErrors, handleFormChange, handleErrorChange, resetFormData } = useGenericForm<InstrumentationRuleInput>(INITIAL);
 
   const validateForm = (params?: { withAlert?: boolean; alertTitle?: string }) => {
-    const errors = {};
+    const errors: Partial<Record<keyof InstrumentationRuleInput, string>> = {};
     let ok = true;
 
     Object.entries(formData).forEach(([k, v]) => {
@@ -45,6 +45,7 @@ export function useInstrumentationRuleFormData() {
         type: NOTIFICATION_TYPE.WARNING,
         title: params.alertTitle,
         message: FORM_ALERTS.REQUIRED_FIELDS,
+        hideFromHistory: true,
       });
     }
 

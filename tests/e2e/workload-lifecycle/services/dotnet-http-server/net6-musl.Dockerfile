@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:6.0-alpine AS build
 WORKDIR /src
 COPY . .
-ENV USE_DOTNET6 true
+ENV USE_DOTNET6=true
 RUN dotnet restore
 RUN dotnet publish -c Release -o /app
 

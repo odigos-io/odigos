@@ -1,0 +1,30 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: groundcover
+  displayName: Groundcover inCloud
+  category: managed
+spec:
+  image: groundcover.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+  fields:
+    - name: GROUNDCOVER_ENDPOINT
+      displayName: Groundcover inCloud Site
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+        tooltip: 'Your inCloud Site is part of the configuration provided to you by groundcover when setting up the managed inCloud backend.'
+    - name: GROUNDCOVER_API_KEY
+      displayName: Groundcover API Key
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: true

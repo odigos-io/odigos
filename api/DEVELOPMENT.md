@@ -8,7 +8,7 @@
 4. Run `make generate-client` to update the auto generated files under `api/generated`.
 5. Run `make sync-helm-crd` to sync the CRD yaml files to the helm chart.
 
-you can run `make all` to combine steps 2-5 instead of running them individually.
+you can run `make all` to combine steps 2-5 instead of running them individually. 
 
 ## CRD versioning
 

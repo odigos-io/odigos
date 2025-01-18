@@ -15,6 +15,12 @@ export const INPUT_TYPES = {
   CHECKBOX: 'checkbox',
 };
 
+export enum CRUD {
+  CREATE = 'Create',
+  UPDATE = 'Update',
+  DELETE = 'Delete',
+}
+
 export const ACTION = {
   SAVE: 'Save',
   CONTACT_US: 'Contact Us',
@@ -24,18 +30,19 @@ export const ACTION = {
   DISABLE: 'Disable',
   RUNNING: 'Running',
   APPLIED: 'Applied',
-  DELETE_ALL: 'Delete All',
-  CREATE: 'Create',
-  UPDATE: 'Update',
-  DELETE: 'Delete',
   FETCH: 'Fetch',
+  CREATE: CRUD.CREATE,
+  UPDATE: CRUD.UPDATE,
+  DELETE: CRUD.DELETE,
+  DELETE_ALL: 'Delete All',
 };
 
 export const FORM_ALERTS = {
   REQUIRED_FIELDS: 'Required fields are missing',
   FIELD_IS_REQUIRED: 'This field is required',
   FORBIDDEN: 'Forbidden',
-  CANNOT_EDIT_RULE: 'Cannot edit instrumentation rule of this type',
+  CANNOT_EDIT_RULE: 'Cannot edit a system-managed instrumentation rule',
+  CANNOT_DELETE_RULE: 'Cannot delete a system-managed instrumentation rule',
   LATENCY_HTTP_ROUTE: 'HTTP route must start with a forward slash "/"',
 };
 
@@ -58,6 +65,7 @@ export const DATA_CARDS = {
   DETECTED_CONTAINERS_DESCRIPTION: 'The system automatically instruments the containers it detects with a supported programming language.',
   DESCRIBE_SOURCE: 'Describe Source',
   DESCRIBE_ODIGOS: 'Describe Odigos',
+  API_TOKENS: 'API Tokens',
 };
 
 export const DISPLAY_TITLES = {
@@ -80,4 +88,14 @@ export const DISPLAY_TITLES = {
   LANGUAGE: 'Language',
   MONITORS: 'Monitors',
   SIGNALS_FOR_PROCESSING: 'Signals for Processing',
+  MANAGED_BY_PROFILE: 'Managed by Profile',
+
+  API_TOKEN: 'API Token',
+};
+
+export const NOTIF_CRD_TYPES = {
+  CONNECTED: 'CONNECTED',
+  INSTRUMENTATION_CONFIG: 'InstrumentationConfig',
+  INSTRUMENTATION_INSTANCE: 'InstrumentationInstance',
+  DESTINATION: 'Destination',
 };

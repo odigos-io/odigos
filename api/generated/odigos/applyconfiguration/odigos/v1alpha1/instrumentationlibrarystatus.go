@@ -18,21 +18,21 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // InstrumentationLibraryStatusApplyConfiguration represents a declarative configuration of the InstrumentationLibraryStatus type for use
 // with apply.
 type InstrumentationLibraryStatusApplyConfiguration struct {
-	Name                     *string                              `json:"name,omitempty"`
-	Type                     *v1alpha1.InstrumentationLibraryType `json:"type,omitempty"`
-	IdentifyingAttributes    []AttributeApplyConfiguration        `json:"identifyingAttributes,omitempty"`
-	NonIdentifyingAttributes []AttributeApplyConfiguration        `json:"nonIdentifyingAttributes,omitempty"`
-	Healthy                  *bool                                `json:"healthy,omitempty"`
-	Message                  *string                              `json:"message,omitempty"`
-	Reason                   *string                              `json:"reason,omitempty"`
-	LastStatusTime           *v1.Time                             `json:"lastStatusTime,omitempty"`
+	Name                     *string                                    `json:"name,omitempty"`
+	Type                     *odigosv1alpha1.InstrumentationLibraryType `json:"type,omitempty"`
+	IdentifyingAttributes    []AttributeApplyConfiguration              `json:"identifyingAttributes,omitempty"`
+	NonIdentifyingAttributes []AttributeApplyConfiguration              `json:"nonIdentifyingAttributes,omitempty"`
+	Healthy                  *bool                                      `json:"healthy,omitempty"`
+	Message                  *string                                    `json:"message,omitempty"`
+	Reason                   *string                                    `json:"reason,omitempty"`
+	LastStatusTime           *v1.Time                                   `json:"lastStatusTime,omitempty"`
 }
 
 // InstrumentationLibraryStatusApplyConfiguration constructs a declarative configuration of the InstrumentationLibraryStatus type for use with
@@ -52,7 +52,7 @@ func (b *InstrumentationLibraryStatusApplyConfiguration) WithName(value string) 
 // WithType sets the Type field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Type field is set to the value of the last call.
-func (b *InstrumentationLibraryStatusApplyConfiguration) WithType(value v1alpha1.InstrumentationLibraryType) *InstrumentationLibraryStatusApplyConfiguration {
+func (b *InstrumentationLibraryStatusApplyConfiguration) WithType(value odigosv1alpha1.InstrumentationLibraryType) *InstrumentationLibraryStatusApplyConfiguration {
 	b.Type = &value
 	return b
 }

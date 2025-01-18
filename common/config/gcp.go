@@ -11,7 +11,6 @@ func (g *GoogleCloud) DestType() common.DestinationType {
 }
 
 func (g *GoogleCloud) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
-
 	if isTracingEnabled(dest) {
 		exporterName := "googlecloud/" + dest.GetID()
 		currentConfig.Exporters[exporterName] = struct{}{}

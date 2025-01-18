@@ -46,7 +46,7 @@ func OdigosConfiguration(name, namespace string) *OdigosConfigurationApplyConfig
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Kind field is set to the value of the last call.
 func (b *OdigosConfigurationApplyConfiguration) WithKind(value string) *OdigosConfigurationApplyConfiguration {
-	b.Kind = &value
+	b.TypeMetaApplyConfiguration.Kind = &value
 	return b
 }
 
@@ -54,7 +54,7 @@ func (b *OdigosConfigurationApplyConfiguration) WithKind(value string) *OdigosCo
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the APIVersion field is set to the value of the last call.
 func (b *OdigosConfigurationApplyConfiguration) WithAPIVersion(value string) *OdigosConfigurationApplyConfiguration {
-	b.APIVersion = &value
+	b.TypeMetaApplyConfiguration.APIVersion = &value
 	return b
 }
 
@@ -63,7 +63,7 @@ func (b *OdigosConfigurationApplyConfiguration) WithAPIVersion(value string) *Od
 // If called multiple times, the Name field is set to the value of the last call.
 func (b *OdigosConfigurationApplyConfiguration) WithName(value string) *OdigosConfigurationApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	b.Name = &value
+	b.ObjectMetaApplyConfiguration.Name = &value
 	return b
 }
 
@@ -72,7 +72,7 @@ func (b *OdigosConfigurationApplyConfiguration) WithName(value string) *OdigosCo
 // If called multiple times, the GenerateName field is set to the value of the last call.
 func (b *OdigosConfigurationApplyConfiguration) WithGenerateName(value string) *OdigosConfigurationApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	b.GenerateName = &value
+	b.ObjectMetaApplyConfiguration.GenerateName = &value
 	return b
 }
 
@@ -81,7 +81,7 @@ func (b *OdigosConfigurationApplyConfiguration) WithGenerateName(value string) *
 // If called multiple times, the Namespace field is set to the value of the last call.
 func (b *OdigosConfigurationApplyConfiguration) WithNamespace(value string) *OdigosConfigurationApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	b.Namespace = &value
+	b.ObjectMetaApplyConfiguration.Namespace = &value
 	return b
 }
 
@@ -90,7 +90,7 @@ func (b *OdigosConfigurationApplyConfiguration) WithNamespace(value string) *Odi
 // If called multiple times, the UID field is set to the value of the last call.
 func (b *OdigosConfigurationApplyConfiguration) WithUID(value types.UID) *OdigosConfigurationApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	b.UID = &value
+	b.ObjectMetaApplyConfiguration.UID = &value
 	return b
 }
 
@@ -99,7 +99,7 @@ func (b *OdigosConfigurationApplyConfiguration) WithUID(value types.UID) *Odigos
 // If called multiple times, the ResourceVersion field is set to the value of the last call.
 func (b *OdigosConfigurationApplyConfiguration) WithResourceVersion(value string) *OdigosConfigurationApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	b.ResourceVersion = &value
+	b.ObjectMetaApplyConfiguration.ResourceVersion = &value
 	return b
 }
 
@@ -108,7 +108,7 @@ func (b *OdigosConfigurationApplyConfiguration) WithResourceVersion(value string
 // If called multiple times, the Generation field is set to the value of the last call.
 func (b *OdigosConfigurationApplyConfiguration) WithGeneration(value int64) *OdigosConfigurationApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	b.Generation = &value
+	b.ObjectMetaApplyConfiguration.Generation = &value
 	return b
 }
 
@@ -117,7 +117,7 @@ func (b *OdigosConfigurationApplyConfiguration) WithGeneration(value int64) *Odi
 // If called multiple times, the CreationTimestamp field is set to the value of the last call.
 func (b *OdigosConfigurationApplyConfiguration) WithCreationTimestamp(value metav1.Time) *OdigosConfigurationApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	b.CreationTimestamp = &value
+	b.ObjectMetaApplyConfiguration.CreationTimestamp = &value
 	return b
 }
 
@@ -126,7 +126,7 @@ func (b *OdigosConfigurationApplyConfiguration) WithCreationTimestamp(value meta
 // If called multiple times, the DeletionTimestamp field is set to the value of the last call.
 func (b *OdigosConfigurationApplyConfiguration) WithDeletionTimestamp(value metav1.Time) *OdigosConfigurationApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	b.DeletionTimestamp = &value
+	b.ObjectMetaApplyConfiguration.DeletionTimestamp = &value
 	return b
 }
 
@@ -135,7 +135,7 @@ func (b *OdigosConfigurationApplyConfiguration) WithDeletionTimestamp(value meta
 // If called multiple times, the DeletionGracePeriodSeconds field is set to the value of the last call.
 func (b *OdigosConfigurationApplyConfiguration) WithDeletionGracePeriodSeconds(value int64) *OdigosConfigurationApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	b.DeletionGracePeriodSeconds = &value
+	b.ObjectMetaApplyConfiguration.DeletionGracePeriodSeconds = &value
 	return b
 }
 
@@ -145,11 +145,11 @@ func (b *OdigosConfigurationApplyConfiguration) WithDeletionGracePeriodSeconds(v
 // overwriting an existing map entries in Labels field with the same key.
 func (b *OdigosConfigurationApplyConfiguration) WithLabels(entries map[string]string) *OdigosConfigurationApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	if b.Labels == nil && len(entries) > 0 {
-		b.Labels = make(map[string]string, len(entries))
+	if b.ObjectMetaApplyConfiguration.Labels == nil && len(entries) > 0 {
+		b.ObjectMetaApplyConfiguration.Labels = make(map[string]string, len(entries))
 	}
 	for k, v := range entries {
-		b.Labels[k] = v
+		b.ObjectMetaApplyConfiguration.Labels[k] = v
 	}
 	return b
 }
@@ -160,11 +160,11 @@ func (b *OdigosConfigurationApplyConfiguration) WithLabels(entries map[string]st
 // overwriting an existing map entries in Annotations field with the same key.
 func (b *OdigosConfigurationApplyConfiguration) WithAnnotations(entries map[string]string) *OdigosConfigurationApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	if b.Annotations == nil && len(entries) > 0 {
-		b.Annotations = make(map[string]string, len(entries))
+	if b.ObjectMetaApplyConfiguration.Annotations == nil && len(entries) > 0 {
+		b.ObjectMetaApplyConfiguration.Annotations = make(map[string]string, len(entries))
 	}
 	for k, v := range entries {
-		b.Annotations[k] = v
+		b.ObjectMetaApplyConfiguration.Annotations[k] = v
 	}
 	return b
 }
@@ -178,7 +178,7 @@ func (b *OdigosConfigurationApplyConfiguration) WithOwnerReferences(values ...*v
 		if values[i] == nil {
 			panic("nil value passed to WithOwnerReferences")
 		}
-		b.OwnerReferences = append(b.OwnerReferences, *values[i])
+		b.ObjectMetaApplyConfiguration.OwnerReferences = append(b.ObjectMetaApplyConfiguration.OwnerReferences, *values[i])
 	}
 	return b
 }
@@ -189,7 +189,7 @@ func (b *OdigosConfigurationApplyConfiguration) WithOwnerReferences(values ...*v
 func (b *OdigosConfigurationApplyConfiguration) WithFinalizers(values ...string) *OdigosConfigurationApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	for i := range values {
-		b.Finalizers = append(b.Finalizers, values[i])
+		b.ObjectMetaApplyConfiguration.Finalizers = append(b.ObjectMetaApplyConfiguration.Finalizers, values[i])
 	}
 	return b
 }
@@ -211,5 +211,5 @@ func (b *OdigosConfigurationApplyConfiguration) WithSpec(value *OdigosConfigurat
 // GetName retrieves the value of the Name field in the declarative configuration.
 func (b *OdigosConfigurationApplyConfiguration) GetName() *string {
 	b.ensureObjectMetaApplyConfigurationExists()
-	return b.Name
+	return b.ObjectMetaApplyConfiguration.Name
 }

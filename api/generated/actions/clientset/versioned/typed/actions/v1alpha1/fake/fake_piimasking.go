@@ -18,179 +18,33 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-	json "encoding/json"
-	"fmt"
-
 	v1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	actionsv1alpha1 "github.com/odigos-io/odigos/api/generated/actions/applyconfiguration/actions/v1alpha1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	typedactionsv1alpha1 "github.com/odigos-io/odigos/api/generated/actions/clientset/versioned/typed/actions/v1alpha1"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakePiiMaskings implements PiiMaskingInterface
-type FakePiiMaskings struct {
+// fakePiiMaskings implements PiiMaskingInterface
+type fakePiiMaskings struct {
+	*gentype.FakeClientWithListAndApply[*v1alpha1.PiiMasking, *v1alpha1.PiiMaskingList, *actionsv1alpha1.PiiMaskingApplyConfiguration]
 	Fake *FakeActionsV1alpha1
-	ns   string
 }
 
-var piimaskingsResource = v1alpha1.SchemeGroupVersion.WithResource("piimaskings")
-
-var piimaskingsKind = v1alpha1.SchemeGroupVersion.WithKind("PiiMasking")
-
-// Get takes name of the piiMasking, and returns the corresponding piiMasking object, and an error if there is any.
-func (c *FakePiiMaskings) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.PiiMasking, err error) {
-	emptyResult := &v1alpha1.PiiMasking{}
-	obj, err := c.Fake.
-		Invokes(testing.NewGetActionWithOptions(piimaskingsResource, c.ns, name, options), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
+func newFakePiiMaskings(fake *FakeActionsV1alpha1, namespace string) typedactionsv1alpha1.PiiMaskingInterface {
+	return &fakePiiMaskings{
+		gentype.NewFakeClientWithListAndApply[*v1alpha1.PiiMasking, *v1alpha1.PiiMaskingList, *actionsv1alpha1.PiiMaskingApplyConfiguration](
+			fake.Fake,
+			namespace,
+			v1alpha1.SchemeGroupVersion.WithResource("piimaskings"),
+			v1alpha1.SchemeGroupVersion.WithKind("PiiMasking"),
+			func() *v1alpha1.PiiMasking { return &v1alpha1.PiiMasking{} },
+			func() *v1alpha1.PiiMaskingList { return &v1alpha1.PiiMaskingList{} },
+			func(dst, src *v1alpha1.PiiMaskingList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.PiiMaskingList) []*v1alpha1.PiiMasking { return gentype.ToPointerSlice(list.Items) },
+			func(list *v1alpha1.PiiMaskingList, items []*v1alpha1.PiiMasking) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.PiiMasking), err
-}
-
-// List takes label and field selectors, and returns the list of PiiMaskings that match those selectors.
-func (c *FakePiiMaskings) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.PiiMaskingList, err error) {
-	emptyResult := &v1alpha1.PiiMaskingList{}
-	obj, err := c.Fake.
-		Invokes(testing.NewListActionWithOptions(piimaskingsResource, piimaskingsKind, c.ns, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.PiiMaskingList{ListMeta: obj.(*v1alpha1.PiiMaskingList).ListMeta}
-	for _, item := range obj.(*v1alpha1.PiiMaskingList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested piiMaskings.
-func (c *FakePiiMaskings) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewWatchActionWithOptions(piimaskingsResource, c.ns, opts))
-
-}
-
-// Create takes the representation of a piiMasking and creates it.  Returns the server's representation of the piiMasking, and an error, if there is any.
-func (c *FakePiiMaskings) Create(ctx context.Context, piiMasking *v1alpha1.PiiMasking, opts v1.CreateOptions) (result *v1alpha1.PiiMasking, err error) {
-	emptyResult := &v1alpha1.PiiMasking{}
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateActionWithOptions(piimaskingsResource, c.ns, piiMasking, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.PiiMasking), err
-}
-
-// Update takes the representation of a piiMasking and updates it. Returns the server's representation of the piiMasking, and an error, if there is any.
-func (c *FakePiiMaskings) Update(ctx context.Context, piiMasking *v1alpha1.PiiMasking, opts v1.UpdateOptions) (result *v1alpha1.PiiMasking, err error) {
-	emptyResult := &v1alpha1.PiiMasking{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateActionWithOptions(piimaskingsResource, c.ns, piiMasking, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.PiiMasking), err
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakePiiMaskings) UpdateStatus(ctx context.Context, piiMasking *v1alpha1.PiiMasking, opts v1.UpdateOptions) (result *v1alpha1.PiiMasking, err error) {
-	emptyResult := &v1alpha1.PiiMasking{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceActionWithOptions(piimaskingsResource, "status", c.ns, piiMasking, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.PiiMasking), err
-}
-
-// Delete takes name of the piiMasking and deletes it. Returns an error if one occurs.
-func (c *FakePiiMaskings) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(piimaskingsResource, c.ns, name, opts), &v1alpha1.PiiMasking{})
-
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakePiiMaskings) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionActionWithOptions(piimaskingsResource, c.ns, opts, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.PiiMaskingList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched piiMasking.
-func (c *FakePiiMaskings) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.PiiMasking, err error) {
-	emptyResult := &v1alpha1.PiiMasking{}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceActionWithOptions(piimaskingsResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.PiiMasking), err
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied piiMasking.
-func (c *FakePiiMaskings) Apply(ctx context.Context, piiMasking *actionsv1alpha1.PiiMaskingApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.PiiMasking, err error) {
-	if piiMasking == nil {
-		return nil, fmt.Errorf("piiMasking provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(piiMasking)
-	if err != nil {
-		return nil, err
-	}
-	name := piiMasking.Name
-	if name == nil {
-		return nil, fmt.Errorf("piiMasking.Name must be provided to Apply")
-	}
-	emptyResult := &v1alpha1.PiiMasking{}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceActionWithOptions(piimaskingsResource, c.ns, *name, types.ApplyPatchType, data, opts.ToPatchOptions()), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.PiiMasking), err
-}
-
-// ApplyStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-func (c *FakePiiMaskings) ApplyStatus(ctx context.Context, piiMasking *actionsv1alpha1.PiiMaskingApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.PiiMasking, err error) {
-	if piiMasking == nil {
-		return nil, fmt.Errorf("piiMasking provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(piiMasking)
-	if err != nil {
-		return nil, err
-	}
-	name := piiMasking.Name
-	if name == nil {
-		return nil, fmt.Errorf("piiMasking.Name must be provided to Apply")
-	}
-	emptyResult := &v1alpha1.PiiMasking{}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceActionWithOptions(piimaskingsResource, c.ns, *name, types.ApplyPatchType, data, opts.ToPatchOptions(), "status"), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.PiiMasking), err
 }

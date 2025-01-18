@@ -1,0 +1,60 @@
+---
+title: 'Better Stack'
+---
+
+## Configuring Backend
+
+- **BETTERSTACK_TOKEN** - Source Token, generated from Better Stack UI.
+
+**Note:**
+We handle the endpoint internally, so you don't need to provide it.
+- The endpoint for metrics is `https://in-otel.logs.betterstack.com/metrics`.
+- The endpoint for logs is `https://in-otel.logs.betterstack.com:443`.
+
+## Adding a Destination to Odigos
+
+Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+
+1. **Using the UI**
+
+Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI:
+
+```bash
+odigos ui
+```
+
+2. **Using kubernetes manifests**
+
+Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
+
+```bash
+kubectl apply -f destination.yaml
+```
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: betterstack-example
+  namespace: odigos-system
+spec:
+  data: {}
+  destinationName: betterstack
+  secretRef:
+    name: betterstack-secret
+  signals:
+  - METRICS
+  - LOGS
+  type: betterstack
+
+---
+apiVersion: v1
+data:
+  BETTERSTACK_TOKEN: <base64 Better Stack Source Token>
+kind: Secret
+metadata:
+  name: betterstack-secret
+  namespace: odigos-system
+type: Opaque
+```

@@ -42,10 +42,10 @@ func k8sLastTransitionTimeToGql(t v1.Time) *string {
 	return &str
 }
 
-func instrumentedApplicationToActualSource(instrumentedApp v1alpha1.InstrumentedApplication) *model.K8sActualSource {
-	// Map the container runtime details
+func instrumentationConfigToActualSource(instruConfig v1alpha1.InstrumentationConfig) *model.K8sActualSource {
+	// Map the containers runtime details
 	var containers []*model.SourceContainerRuntimeDetails
-	for _, container := range instrumentedApp.Spec.RuntimeDetails {
+	for _, container := range instruConfig.Status.RuntimeDetailsByContainer {
 		var otherAgentName *string
 		if container.OtherAgent != nil {
 			otherAgentName = &container.OtherAgent.Name
@@ -59,30 +59,27 @@ func instrumentedApplicationToActualSource(instrumentedApp v1alpha1.Instrumented
 		})
 	}
 
-	// Map the conditions of the application
+	// Map the conditions
 	var conditions []*model.Condition
-	for _, condition := range instrumentedApp.Status.Conditions {
+	for _, condition := range instruConfig.Status.Conditions {
 		conditions = append(conditions, &model.Condition{
-			Type:               condition.Type,
 			Status:             k8sConditionStatusToGql(condition.Status),
+			Type:               condition.Type,
 			Reason:             &condition.Reason,
-			LastTransitionTime: k8sLastTransitionTimeToGql(condition.LastTransitionTime),
 			Message:            &condition.Message,
+			LastTransitionTime: k8sLastTransitionTimeToGql(condition.LastTransitionTime),
 		})
 	}
 
 	// Return the converted K8sActualSource object
 	return &model.K8sActualSource{
-		Namespace:         instrumentedApp.Namespace,
-		Kind:              k8sKindToGql(instrumentedApp.OwnerReferences[0].Kind),
-		Name:              instrumentedApp.OwnerReferences[0].Name,
-		ServiceName:       &instrumentedApp.Name,
+		Namespace:         instruConfig.Namespace,
+		Kind:              k8sKindToGql(instruConfig.OwnerReferences[0].Kind),
+		Name:              instruConfig.OwnerReferences[0].Name,
 		NumberOfInstances: nil,
-		AutoInstrumented:  instrumentedApp.Spec.Options != nil,
-		InstrumentedApplicationDetails: &model.InstrumentedApplicationDetails{
-			Containers: containers,
-			Conditions: conditions,
-		},
+		ReportedName:      &instruConfig.Spec.ServiceName,
+		Containers:        containers,
+		Conditions:        conditions,
 	}
 }
 

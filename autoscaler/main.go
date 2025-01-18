@@ -22,6 +22,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	odigosver "github.com/odigos-io/odigos/k8sutils/pkg/version"
 
@@ -93,7 +94,7 @@ func main() {
 		"The image pull secrets to use for the collectors created by autoscaler")
 	flag.StringVar(&nameutils.ImagePrefix, "image-prefix", "", "The image prefix to use for the collectors created by autoscaler")
 
-	odigosVersion := os.Getenv("ODIGOS_VERSION")
+	odigosVersion := os.Getenv(consts.OdigosVersionEnvVarName)
 	if odigosVersion == "" {
 		flag.StringVar(&odigosVersion, "version", "", "for development purposes only")
 	}

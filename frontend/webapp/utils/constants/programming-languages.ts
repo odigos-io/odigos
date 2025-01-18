@@ -19,31 +19,24 @@ export enum WORKLOAD_PROGRAMMING_LANGUAGES {
 }
 
 export const getMainContainerLanguage = (source: K8sActualSource): WORKLOAD_PROGRAMMING_LANGUAGES => {
-  const ia = source?.instrumentedApplicationDetails;
+  const { numberOfInstances, containers } = source;
 
-  if (!ia) {
-    if (source?.numberOfInstances > 0) {
+  if (!containers) {
+    if (numberOfInstances > 0) {
       return WORKLOAD_PROGRAMMING_LANGUAGES.PROCESSING;
     } else {
       return WORKLOAD_PROGRAMMING_LANGUAGES.NO_RUNNING_PODS;
     }
   }
 
-  const containers = ia.containers;
-  if (!containers) {
-    return WORKLOAD_PROGRAMMING_LANGUAGES.PROCESSING;
-  }
-
   // we will filter out the ignored languages as we don't want to account them in the main language
-  const noneIgnoredLanguages = containers.filter((container) => container.language !== 'ignored');
-  if (noneIgnoredLanguages.length === 0) {
-    return WORKLOAD_PROGRAMMING_LANGUAGES.NO_CONTAINERS;
-  }
+  const noneIgnoredLanguages = containers.filter((container) => container.language !== WORKLOAD_PROGRAMMING_LANGUAGES.IGNORED);
+  if (!noneIgnoredLanguages.length) return WORKLOAD_PROGRAMMING_LANGUAGES.NO_CONTAINERS;
 
   // find the first container with valid language
-  const mainContainer = noneIgnoredLanguages.find((container) => container.language !== 'unknown');
-  if (!mainContainer) {
-    return WORKLOAD_PROGRAMMING_LANGUAGES.UNKNOWN; // no valid language found, return the first one
-  }
-  return mainContainer.language as WORKLOAD_PROGRAMMING_LANGUAGES;
+  const mainContainer = noneIgnoredLanguages.find((container) => container.language !== WORKLOAD_PROGRAMMING_LANGUAGES.UNKNOWN);
+  // no valid language found, return the first one
+  if (!mainContainer) return WORKLOAD_PROGRAMMING_LANGUAGES.UNKNOWN;
+
+  return mainContainer.language;
 };

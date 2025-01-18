@@ -1,18 +1,19 @@
 import React, { CSSProperties, PropsWithChildren } from 'react';
-import styled, { keyframes } from 'styled-components';
 import { Tooltip } from '../tooltip';
+import styled, { keyframes } from 'styled-components';
 
 interface Props extends PropsWithChildren {
   onClick?: () => void;
   tooltip?: string;
+  size?: number;
   withPing?: boolean;
   pingColor?: CSSProperties['backgroundColor'];
 }
 
-const Button = styled.button`
+const Button = styled.button<{ $size: number }>`
   position: relative;
-  width: 36px;
-  height: 36px;
+  width: ${({ $size }) => $size}px;
+  height: ${({ $size }) => $size}px;
   border: none;
   border-radius: 100%;
   background-color: transparent;
@@ -36,10 +37,10 @@ const pingAnimation = keyframes`
   }
 `;
 
-const Ping = styled.div<{ $color: Props['pingColor'] }>`
+const Ping = styled.div<{ $size: number; $color: Props['pingColor'] }>`
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: ${({ $size }) => $size / 5}px;
+  right: ${({ $size }) => $size / 5}px;
   width: 6px;
   height: 6px;
   border-radius: 100%;
@@ -55,11 +56,11 @@ const Ping = styled.div<{ $color: Props['pingColor'] }>`
   }
 `;
 
-export const IconButton: React.FC<Props> = ({ children, onClick, tooltip, withPing, pingColor, ...props }) => {
+export const IconButton: React.FC<Props> = ({ children, onClick, tooltip, size = 36, withPing, pingColor, ...props }) => {
   return (
     <Tooltip text={tooltip}>
-      <Button onClick={onClick} {...props}>
-        {withPing && <Ping $color={pingColor} />}
+      <Button $size={size} onClick={onClick} {...props}>
+        {withPing && <Ping $size={size} $color={pingColor} />}
         {children}
       </Button>
     </Tooltip>

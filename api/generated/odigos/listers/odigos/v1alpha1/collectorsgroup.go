@@ -18,10 +18,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // CollectorsGroupLister helps list CollectorsGroups.
@@ -29,7 +29,7 @@ import (
 type CollectorsGroupLister interface {
 	// List lists all CollectorsGroups in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.CollectorsGroup, err error)
+	List(selector labels.Selector) (ret []*odigosv1alpha1.CollectorsGroup, err error)
 	// CollectorsGroups returns an object that can list and get CollectorsGroups.
 	CollectorsGroups(namespace string) CollectorsGroupNamespaceLister
 	CollectorsGroupListerExpansion
@@ -37,17 +37,17 @@ type CollectorsGroupLister interface {
 
 // collectorsGroupLister implements the CollectorsGroupLister interface.
 type collectorsGroupLister struct {
-	listers.ResourceIndexer[*v1alpha1.CollectorsGroup]
+	listers.ResourceIndexer[*odigosv1alpha1.CollectorsGroup]
 }
 
 // NewCollectorsGroupLister returns a new CollectorsGroupLister.
 func NewCollectorsGroupLister(indexer cache.Indexer) CollectorsGroupLister {
-	return &collectorsGroupLister{listers.New[*v1alpha1.CollectorsGroup](indexer, v1alpha1.Resource("collectorsgroup"))}
+	return &collectorsGroupLister{listers.New[*odigosv1alpha1.CollectorsGroup](indexer, odigosv1alpha1.Resource("collectorsgroup"))}
 }
 
 // CollectorsGroups returns an object that can list and get CollectorsGroups.
 func (s *collectorsGroupLister) CollectorsGroups(namespace string) CollectorsGroupNamespaceLister {
-	return collectorsGroupNamespaceLister{listers.NewNamespaced[*v1alpha1.CollectorsGroup](s.ResourceIndexer, namespace)}
+	return collectorsGroupNamespaceLister{listers.NewNamespaced[*odigosv1alpha1.CollectorsGroup](s.ResourceIndexer, namespace)}
 }
 
 // CollectorsGroupNamespaceLister helps list and get CollectorsGroups.
@@ -55,15 +55,15 @@ func (s *collectorsGroupLister) CollectorsGroups(namespace string) CollectorsGro
 type CollectorsGroupNamespaceLister interface {
 	// List lists all CollectorsGroups in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.CollectorsGroup, err error)
+	List(selector labels.Selector) (ret []*odigosv1alpha1.CollectorsGroup, err error)
 	// Get retrieves the CollectorsGroup from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.CollectorsGroup, error)
+	Get(name string) (*odigosv1alpha1.CollectorsGroup, error)
 	CollectorsGroupNamespaceListerExpansion
 }
 
 // collectorsGroupNamespaceLister implements the CollectorsGroupNamespaceLister
 // interface.
 type collectorsGroupNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.CollectorsGroup]
+	listers.ResourceIndexer[*odigosv1alpha1.CollectorsGroup]
 }

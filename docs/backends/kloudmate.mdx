@@ -1,0 +1,60 @@
+---
+title: 'KloudMate'
+---
+
+## Configuring Backend
+
+- **KLOUDMATE_API_KEY** - KloudMate API Key, required.
+
+**Note:**
+We handle the endpoint internally, so you don't need to provide it.
+- The endpoint is `https://otel.kloudmate.com:4318`.
+
+## Adding a Destination to Odigos
+
+Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+
+1. **Using the UI**
+
+Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI:
+
+```bash
+odigos ui
+```
+
+2. **Using kubernetes manifests**
+
+Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
+
+```bash
+kubectl apply -f destination.yaml
+```
+
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: kloudmate-example
+  namespace: odigos-system
+spec:
+  data: {}
+  destinationName: kloudmate
+  secretRef:
+    name: kloudmate-secret
+  signals:
+  - TRACES
+  - METRICS
+  - LOGS
+  type: kloudmate
+
+---
+apiVersion: v1
+data:
+  KLOUDMATE_API_KEY: <base64 KloudMate API Key>
+kind: Secret
+metadata:
+  name: kloudmate-secret
+  namespace: odigos-system
+type: Opaque
+```

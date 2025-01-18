@@ -12,24 +12,24 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationConfig, ia *odigosv1alpha1.InstrumentedApplication, rules *odigosv1alpha1.InstrumentationRuleList, serviceName string) error {
+func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationConfig, rules *odigosv1alpha1.InstrumentationRuleList, serviceName string) error {
 
-	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(ia.Name)
+	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(ic.Name)
 	if err != nil {
 		return err
 	}
 	workload := workload.PodWorkload{
 		Name:      workloadName,
-		Namespace: ia.Namespace,
+		Namespace: ic.Namespace,
 		Kind:      workloadKind,
 	}
 
 	ic.Spec.ServiceName = serviceName
 
-	sdkConfigs := make([]odigosv1alpha1.SdkConfig, 0, len(ia.Spec.RuntimeDetails))
+	sdkConfigs := make([]odigosv1alpha1.SdkConfig, 0, len(ic.Status.RuntimeDetailsByContainer))
 
 	// create an empty sdk config for each detected programming language
-	for _, container := range ia.Spec.RuntimeDetails {
+	for _, container := range ic.Status.RuntimeDetailsByContainer {
 		containerLanguage := container.Language
 		if containerLanguage == common.IgnoredProgrammingLanguage || containerLanguage == common.UnknownProgrammingLanguage {
 			continue
@@ -57,6 +57,9 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 					sdkConfigs[i].DefaultPayloadCollection.DbQuery = mergeDbPayloadCollectionRules(sdkConfigs[i].DefaultPayloadCollection.DbQuery, rule.Spec.PayloadCollection.DbQuery)
 					sdkConfigs[i].DefaultPayloadCollection.Messaging = mergeMessagingPayloadCollectionRules(sdkConfigs[i].DefaultPayloadCollection.Messaging, rule.Spec.PayloadCollection.Messaging)
 				}
+				if rule.Spec.CodeAttributes != nil {
+					sdkConfigs[i].DefaultCodeAttributes = mergeCodeAttributesRules(sdkConfigs[i].DefaultCodeAttributes, rule.Spec.CodeAttributes)
+				}
 			} else {
 				for _, library := range *rule.Spec.InstrumentationLibraries {
 					libraryConfig := findOrCreateSdkLibraryConfig(&sdkConfigs[i], library)
@@ -69,6 +72,9 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 						libraryConfig.PayloadCollection.HttpResponse = mergeHttpPayloadCollectionRules(libraryConfig.PayloadCollection.HttpResponse, rule.Spec.PayloadCollection.HttpResponse)
 						libraryConfig.PayloadCollection.DbQuery = mergeDbPayloadCollectionRules(libraryConfig.PayloadCollection.DbQuery, rule.Spec.PayloadCollection.DbQuery)
 						libraryConfig.PayloadCollection.Messaging = mergeMessagingPayloadCollectionRules(libraryConfig.PayloadCollection.Messaging, rule.Spec.PayloadCollection.Messaging)
+					}
+					if rule.Spec.CodeAttributes != nil {
+						libraryConfig.CodeAttributes = mergeCodeAttributesRules(libraryConfig.CodeAttributes, rule.Spec.CodeAttributes)
 					}
 				}
 			}
@@ -238,6 +244,37 @@ func mergeMessagingPayloadCollectionRules(rule1 *instrumentationrules.MessagingP
 	} else {
 		mergedRules.DropPartialPayloads = boolPtr(*rule1.DropPartialPayloads || *rule2.DropPartialPayloads)
 	}
+
+	return &mergedRules
+}
+
+// will merge 2 optional boolean fields from 2 instrumentation rules.
+// if any of them is true, the result is true.
+// if none of them is true, but one is false, the result is false.
+// if both are nil, the result is nil
+func merge2RuleBooleans(value1 *bool, value2 *bool) *bool {
+	if value1 == nil {
+		return value2
+	} else if value2 == nil {
+		return value1
+	}
+	return boolPtr(*value1 || *value2)
+}
+
+func mergeCodeAttributesRules(rule1 *instrumentationrules.CodeAttributes, rule2 *instrumentationrules.CodeAttributes) *instrumentationrules.CodeAttributes {
+	if rule1 == nil {
+		return rule2
+	} else if rule2 == nil {
+		return rule1
+	}
+
+	mergedRules := instrumentationrules.CodeAttributes{}
+	mergedRules.Column = merge2RuleBooleans(rule1.Column, rule2.Column)
+	mergedRules.FilePath = merge2RuleBooleans(rule1.FilePath, rule2.FilePath)
+	mergedRules.Function = merge2RuleBooleans(rule1.Function, rule2.Function)
+	mergedRules.LineNumber = merge2RuleBooleans(rule1.LineNumber, rule2.LineNumber)
+	mergedRules.Namespace = merge2RuleBooleans(rule1.Namespace, rule2.Namespace)
+	mergedRules.Stacktrace = merge2RuleBooleans(rule1.Stacktrace, rule2.Stacktrace)
 
 	return &mergedRules
 }

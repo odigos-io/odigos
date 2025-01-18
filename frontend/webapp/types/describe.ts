@@ -12,11 +12,6 @@ interface InstrumentationLabelsAnalyze {
   instrumentedText?: EntityProperty;
 }
 
-interface InstrumentationConfigAnalyze {
-  created: EntityProperty;
-  createTime?: EntityProperty;
-}
-
 interface ContainerRuntimeInfoAnalyze {
   containerName: EntityProperty;
   language: EntityProperty;
@@ -29,7 +24,7 @@ interface RuntimeInfoAnalyze {
   containers: ContainerRuntimeInfoAnalyze[];
 }
 
-interface InstrumentedApplicationAnalyze {
+interface InstrumentationConfigAnalyze {
   created: EntityProperty;
   createTime?: EntityProperty;
   containers: ContainerRuntimeInfoAnalyze[];
@@ -71,9 +66,8 @@ interface SourceAnalyze {
   namespace: EntityProperty;
   labels: InstrumentationLabelsAnalyze;
 
-  instrumentationConfig: InstrumentationConfigAnalyze;
   runtimeInfo?: RuntimeInfoAnalyze;
-  instrumentedApplication: InstrumentedApplicationAnalyze;
+  instrumentationConfig: InstrumentationConfigAnalyze;
   instrumentationDevice: InstrumentationDeviceAnalyze;
 
   totalPods: number;
@@ -109,6 +103,8 @@ interface NodeCollectorAnalyze {
 
 interface OdigosAnalyze {
   odigosVersion: EntityProperty;
+  tier: EntityProperty;
+  installationMethod: EntityProperty;
   numberOfDestinations: number;
   numberOfSources: number;
   clusterCollector: ClusterCollectorAnalyze;

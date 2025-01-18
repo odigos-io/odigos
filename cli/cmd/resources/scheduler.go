@@ -8,6 +8,7 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -78,11 +79,16 @@ func NewSchedulerRole(ns string) *rbacv1.Role {
 			Namespace: ns,
 		},
 		Rules: []rbacv1.PolicyRule{
-			{ // Needed to extract the configmap of odigos-config
+			{ // Needed to react and reconcile odigos-config changes to effective config
+				APIGroups: []string{""},
+				Resources: []string{"configmaps"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{ // Needed to apply effective config after reconciling (defaulting and profile applying) and react to it
 				APIGroups:     []string{""},
 				Resources:     []string{"configmaps"},
-				ResourceNames: []string{consts.OdigosConfigurationName},
-				Verbs:         []string{"get", "list", "watch"},
+				ResourceNames: []string{consts.OdigosEffectiveConfigName},
+				Verbs:         []string{"patch", "create"},
 			},
 			{ // Needed because the scheduler is managing the collectorsgroups
 				APIGroups: []string{"odigos.io"},
@@ -98,6 +104,11 @@ func NewSchedulerRole(ns string) *rbacv1.Role {
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"destinations"},
 				Verbs:     []string{"get", "list", "watch"},
+			},
+			{ // apply profiles
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"processors", "instrumentationrules"},
+				Verbs:     []string{"get", "list", "watch", "patch", "delete", "create"},
 			},
 		},
 	}
@@ -222,6 +233,28 @@ func NewSchedulerDeployment(ns string, version string, imagePrefix string) *apps
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
 											FieldPath: "metadata.namespace",
+										},
+									},
+								},
+								{
+									Name: consts.OdigosTierEnvVarName,
+									ValueFrom: &corev1.EnvVarSource{
+										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: k8sconsts.OdigosDeploymentConfigMapName,
+											},
+											Key: k8sconsts.OdigosDeploymentConfigMapTierKey,
+										},
+									},
+								},
+								{
+									Name: consts.OdigosVersionEnvVarName,
+									ValueFrom: &corev1.EnvVarSource{
+										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: k8sconsts.OdigosDeploymentConfigMapName,
+											},
+											Key: k8sconsts.OdigosDeploymentConfigMapVersionKey,
 										},
 									},
 								},

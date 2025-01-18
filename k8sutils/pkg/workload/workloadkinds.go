@@ -44,6 +44,14 @@ func IgnoreErrorKindNotSupported(err error) error {
 	return err
 }
 
+func IsValidWorkloadKind(kind WorkloadKind) bool {
+	switch kind {
+	case WorkloadKindDeployment, WorkloadKindDaemonSet, WorkloadKindStatefulSet:
+		return true
+	}
+	return false
+}
+
 func WorkloadKindLowerCaseFromKind(pascalCase WorkloadKind) WorkloadKindLowerCase {
 	switch pascalCase {
 	case WorkloadKindDeployment:
@@ -104,6 +112,19 @@ func ClientObjectFromWorkloadKind(kind WorkloadKind) client.Object {
 		return &v1.DaemonSet{}
 	case WorkloadKindStatefulSet:
 		return &v1.StatefulSet{}
+	default:
+		return nil
+	}
+}
+
+func ClientListObjectFromWorkloadKind(kind WorkloadKind) client.ObjectList {
+	switch kind {
+	case WorkloadKindDeployment:
+		return &v1.DeploymentList{}
+	case WorkloadKindDaemonSet:
+		return &v1.DaemonSetList{}
+	case WorkloadKindStatefulSet:
+		return &v1.StatefulSetList{}
 	default:
 		return nil
 	}

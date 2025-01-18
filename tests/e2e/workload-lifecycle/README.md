@@ -106,17 +106,6 @@ This e2e test verify various scenarios related to the lifecycle of workloads in 
 - Workload with a language odigos does not support.
 - Should not be instrumented or restarted.
 
-## Multi Language Workloads
-
-### language-change
-
-A workload that starts as nodejs in step 1 and changes to cpp (unknown in odigos) in step 2.
-This is not very realistic, but it's a way to test if odigos can handle a change in the workload language.
-Since the runtime detection mechanism is not bullet-proof, we can't guarantee that the detected language will not modify from known to unknown and vice-versa.
-In case we run into this scenario, we should be able to handle it gracefully.
-
-It would be best to simulate a more realistic scenario where the workload still runs nodejs but it is not detected. however, this is more complex and is left for future improvements.
-
 ## Steps
 
 ## Step 01 - Deploy Initial Workloads and Instrumentation
@@ -155,11 +144,6 @@ Verify the expected state for each workload according to it's caracteristics.
 - cpp-http-server
   - should NOT detect the runtime language and report it as `unknown`
   - should NOT add instrumentation device
-- language-change
-  - should detect the runtime version
-  - should add instrumentation device
-  - should report health in the instrumented instance CR
-  - agent should load and report traces
 
 ## Step 02 - Update Workload Manifest
 
@@ -190,7 +174,3 @@ This steps will make a change in the workload manifests and make sure that after
 - cpp-http-server
   - deployment manifest should be patched by odigos
   - workload should not restart and agent should not load
-- language-change
-  - deployment should revert the instrumentation device
-  - deployment should revert the injected env vars
-  - deployment should remove the env override annotation

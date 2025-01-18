@@ -9,6 +9,18 @@ export const DESCRIBE_ODIGOS = gql`
         status
         explain
       }
+      tier {
+        name
+        value
+        status
+        explain
+      }
+      installationMethod {
+        name
+        value
+        status
+        explain
+      }
       numberOfDestinations
       numberOfSources
       clusterCollector {
@@ -188,27 +200,7 @@ export const DESCRIBE_SOURCE = gql`
           explain
         }
       }
-      instrumentationConfig {
-        created {
-          name
-          value
-          status
-          explain
-        }
-        createTime {
-          name
-          value
-          status
-          explain
-        }
-      }
       runtimeInfo {
-        generation {
-          name
-          value
-          status
-          explain
-        }
         containers {
           containerName {
             name
@@ -236,7 +228,7 @@ export const DESCRIBE_SOURCE = gql`
           }
         }
       }
-      instrumentedApplication {
+      instrumentationConfig {
         created {
           name
           value

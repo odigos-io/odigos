@@ -141,7 +141,8 @@ helm install -n traces grafana grafana/grafana \
   --set "datasources.datasources\.yaml.datasources[0].type=tempo" \
   --set "datasources.datasources\.yaml.datasources[0].url=http://e2e-tests-tempo:3100" \
   --set "datasources.datasources\.yaml.datasources[0].access=proxy" \
-  --set "datasources.datasources\.yaml.datasources[0].isDefault=true"```
+  --set "datasources.datasources\.yaml.datasources[0].isDefault=true"
+```
 
 - Port forward to the grafana service:
 

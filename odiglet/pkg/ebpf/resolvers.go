@@ -36,6 +36,7 @@ func (dr *k8sDetailsResolver) Resolve(ctx context.Context, event detector.Proces
 		pod:           pod,
 		containerName: containerName,
 		pw:            podWorkload,
+		procEvent:     event,
 	}, nil
 }
 

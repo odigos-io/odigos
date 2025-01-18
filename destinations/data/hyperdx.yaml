@@ -1,0 +1,23 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: hyperdx
+  displayName: HyperDX
+  category: managed
+spec:
+  image: hyperdx.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+  fields:
+    - name: HYPERDX_API_KEY
+      displayName: HyperDX API Key
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: true

@@ -4,7 +4,8 @@ import (
 	"fmt"
 )
 
-func GetCrdProcessorsConfigMap(processors []ProcessorConfigurer) (cfg GenericMap, tracesProcessors []string, metricsProcessors []string, logsProcessors []string, errs map[string]error) {
+func GetCrdProcessorsConfigMap(processors []ProcessorConfigurer) (cfg GenericMap,
+	tracesProcessors []string, metricsProcessors []string, logsProcessors []string, errs map[string]error) {
 	errs = make(map[string]error)
 	cfg = GenericMap{}
 	for _, processor := range processors {
@@ -34,5 +35,5 @@ func GetCrdProcessorsConfigMap(processors []ProcessorConfigurer) (cfg GenericMap
 	if len(errs) == 0 {
 		return cfg, tracesProcessors, metricsProcessors, logsProcessors, nil
 	}
-	return
+	return cfg, tracesProcessors, metricsProcessors, logsProcessors, errs
 }

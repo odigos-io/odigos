@@ -3,9 +3,10 @@ package config
 import (
 	"errors"
 	"fmt"
-	"github.com/odigos-io/odigos/common"
 	"net/url"
 	"strings"
+
+	"github.com/odigos-io/odigos/common"
 )
 
 const (
