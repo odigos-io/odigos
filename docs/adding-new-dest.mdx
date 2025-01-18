@@ -104,9 +104,6 @@ Now that our new vendor can be persisted/loaded in the Kubernetes data store, we
   </Step>
   <Step title="Add a Collector Config">
     Go to [`common/config`](https://github.com/odigos-io/odigos/tree/main/common/config) directory and create a new GO file.
-    - The method `DestType` returns the enum value of the destination added earlier.
-    - The method `ModifyConfig` is called with the `dest` object which holds the data received from the UI and the `currentConfig` object. The `currentConfig` object contains the current configuration of the gateway collector. Modify this object to include the [OpenTelemetry configuration](https://opentelemetry.io/docs/collector/configuration/) needed by your destination. Make sure to give any exporter or pipeline a unique name in order to avoid conflicts (use the convention `traces/<dest-name>-<dest.GetID()>` for traces pipelines and `otlp/<dest-name>-<dest.GetID()>` for OpenTelemetry exporters). You can assume a basic configuration is already provided in the `currentConfig` object, for details see `getBasicConfig` method in `common/config/root.go` file.
-    - You can use the utility methods `isTracingEnabled`, `isMetricsEnabled` and `isLoggingEnabled` to determine which signals are selected by the user for the destination and configure the collector accordingly.
     - Example: `mydest.go`
 
     ```go mydest.go
@@ -176,6 +173,10 @@ Now that our new vendor can be persisted/loaded in the Kubernetes data store, we
       return nil
     }
     ```
+
+    - The method `DestType` returns the enum value of the destination added earlier.
+    - The method `ModifyConfig` is called with the `dest` object which holds the data received from the UI and the `currentConfig` object. The `currentConfig` object contains the current configuration of the gateway collector. Modify this object to include the [OpenTelemetry configuration](https://opentelemetry.io/docs/collector/configuration/) needed by your destination. Make sure to give any exporter or pipeline a unique name in order to avoid conflicts (use the convention `traces/<dest-name>-<dest.GetID()>` for traces pipelines and `otlp/<dest-name>-<dest.GetID()>` for OpenTelemetry exporters). You can assume a basic configuration is already provided in the `currentConfig` object, for details see `getBasicConfig` method in `common/config/root.go` file.
+    - You can use the utility methods `isTracingEnabled`, `isMetricsEnabled` and `isLoggingEnabled` to determine which signals are selected by the user for the destination and configure the collector accordingly.
   </Step>
   <Step title="Add an Available Config">
     Go to [`common/config/root.go`](https://github.com/odigos-io/odigos/tree/main/common/config/root.go) and add the new destination to the `availableConfigers` list.
@@ -196,7 +197,7 @@ Now that our new vendor can be persisted/loaded in the Kubernetes data store, we
   <Step title="Install Python">
     Make sure you have [Python installed](https://www.python.org/downloads/) on your system.
   </Step>
-  <Step title="Run Script">
+  <Step title="Generate Documentation">
     Go to [`docs`](https://github.com/odigos-io/odigos/tree/main/docs) directory, and run:
 
     ```bash
@@ -205,23 +206,23 @@ Now that our new vendor can be persisted/loaded in the Kubernetes data store, we
     python3 sync-dest-doc.py
     ```
   </Step>
-  <Step>
+  <Step title="Edit Documentation">
     The documentation has been generated in the [`docs/backends`](https://github.com/odigos-io/odigos/tree/main/docs/backends) directory. Feel free to add any additional content to the generated file.
     - Edit only between the `!! START CUSTOM EDIT !!` and `!! END CUSTOM EDIT !!` comments
     - Example: `mydest.mdx`
 
     ```mdx mydest.mdx
     {/*
-        Add custom content here (under this comment)...   
+        Add custom content here (under this comment)...
 
         e.g:
-        [🔗 website](https://odigos.io)   
+        [🔗 website](https://odigos.io)
 
         !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
         !! START CUSTOM EDIT !!
-    */}   
+    */}
 
-    <img src='/mydest.svg' alt='mydest' width="100" height="100" className="not-prose" />   
+    <img src='/mydest.svg' alt='mydest' width="100" height="100" className="not-prose" />
 
     {/*
         !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
@@ -229,8 +230,11 @@ Now that our new vendor can be persisted/loaded in the Kubernetes data store, we
     */}
     ```
   </Step>
+  <Step title="Update README.md">
+    Go to [`README.md`](https://github.com/odigos-io/odigos/tree/main/README.md) and add your new destination to the list of destinations.
+  </Step>
 </Steps>
 
-### That’s it! Now you can use your new destination in the UI and send data to it.
+#### That's it! Now you can use your new destination in the UI and send data to it.
 
 **Please submit a PR to the [odigos git repository](https://github.com/odigos-io/odigos).**
