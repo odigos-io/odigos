@@ -17,7 +17,7 @@ Creating a new destination involves these steps:
 For our new destination to be visible in the UI, we need to define the destination metadata and fields in YAML format:
 
 <Steps>
-  <Step title="Add a Logo">
+  <Step title="Add Logo">
     Go to [`destinations/logos/`](https://github.com/odigos-io/odigos/tree/main/destinations/logos) directory and add your logo.
     - Must be in SVG format
     - Example: `mydest.svg`
@@ -98,11 +98,11 @@ For our new destination to be visible in the UI, we need to define the destinati
 Now that our new vendor can be persisted/loaded in the Kubernetes data store, we need to implement the collector configuration.
 
 <Steps>
-  <Step title="Add a Destination Type">
+  <Step title="Add Destination Type">
     Go to [`common/dests.go`](https://github.com/odigos-io/odigos/tree/main/common/dests.go) and add your new destination to the `DestinationType` enum.
     - Make sure the value is the same as the `type` property in `mydest.yaml`
   </Step>
-  <Step title="Add a Collector Config">
+  <Step title="Add Collector Config">
     Go to [`common/config`](https://github.com/odigos-io/odigos/tree/main/common/config) directory and create a new GO file.
     - Example: `mydest.go`
 
@@ -178,7 +178,7 @@ Now that our new vendor can be persisted/loaded in the Kubernetes data store, we
     - The method `ModifyConfig` is called with the `dest` object which holds the data received from the UI and the `currentConfig` object. The `currentConfig` object contains the current configuration of the gateway collector. Modify this object to include the [OpenTelemetry configuration](https://opentelemetry.io/docs/collector/configuration/) needed by your destination. Make sure to give any exporter or pipeline a unique name in order to avoid conflicts (use the convention `traces/<dest-name>-<dest.GetID()>` for traces pipelines and `otlp/<dest-name>-<dest.GetID()>` for OpenTelemetry exporters). You can assume a basic configuration is already provided in the `currentConfig` object, for details see `getBasicConfig` method in `common/config/root.go` file.
     - You can use the utility methods `isTracingEnabled`, `isMetricsEnabled` and `isLoggingEnabled` to determine which signals are selected by the user for the destination and configure the collector accordingly.
   </Step>
-  <Step title="Add an Available Config">
+  <Step title="Add Available Config">
     Go to [`common/config/root.go`](https://github.com/odigos-io/odigos/tree/main/common/config/root.go) and add the new destination to the `availableConfigers` list.
     - Example: `&MyDest{}`
 
