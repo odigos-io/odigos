@@ -510,11 +510,10 @@ def process_overview(backend_yaml_dir, docs_dir):
         + "\n  Can't find your backend in Odigos? Please tell us! We are constantly adding new integrations.<br />"
         + "\n  You can also follow our quick [add new destination](/adding-new-dest) guide and submit a PR."
         + "\n</Tip>"
-        + "\n\n| Logo | Destination | Category | Traces | Metrics | Logs |"
+        + "\n\n| | | | Traces | Metrics | Logs |"
         + "\n|---|---|---|:---:|:---:|:---:|"
         + "\n"
         + "\n".join(rows)
-        + "\n\nCan't find the destination you need? Help us by following our quick [adding new destination](/adding-new-dest) guide and submit a PR."
     )
 
     with open(overview_path, 'w') as file:
