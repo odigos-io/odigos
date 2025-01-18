@@ -93,6 +93,9 @@ There are two primary methods for configuring destinations in Odigos:
         # Note: The commented fields below are optional.
         # OTLP_HTTP_BASIC_AUTH_USERNAME: <Basic Auth Username>
       destinationName: otlphttp
+      # Uncomment the 'secretRef' below if you are using the optional Secret.
+      # secretRef:
+      #   name: otlphttp-secret
       signals:
       - TRACES
       - METRICS

@@ -91,6 +91,9 @@ There are two primary methods for configuring destinations in Odigos:
         # ELASTICSEARCH_TLS_ENABLED: <Enable TLS>
         # ELASTICSEARCH_CA_PEM: <CA Certificate>
       destinationName: elasticsearch
+      # Uncomment the 'secretRef' below if you are using the optional Secret.
+      # secretRef:
+      #   name: elasticsearch-secret
       signals:
       - TRACES
       - LOGS

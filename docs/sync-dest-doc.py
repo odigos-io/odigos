@@ -293,12 +293,15 @@ def generate_kubectl_apply(yaml_content):
         secret_name = secret_yaml["metadata"]["name"]
         # Convert the YAML to a string
         secret_yaml = yaml.dump(secret_yaml, default_flow_style=False)
+        # Between the 'destinationName' and the 'signals' blocks
+        pointer_between = r"(\b(?:destinationName: .+))(?=\n\s*signals:)"
+        # The existing 'secretRef' section
+        pointer_is = r"\bsecretRef:\s*\n(.*?)(?=\n\s*\w+:|\n\s*signals:)"
 
         if secret_optional:
-            # Inject optional 'secretRef' section right after 'destinationName'
+            # Inject optional 'secretRef' section between the 'destinationName' and the 'signals' blocks
             destination_yaml = re.sub(
-                # Match the entire destinationName line
-                r"^(destinationName: [^\n]+)$",
+                pointer_between,
                 lambda match: f"{match.group(1)}"
                 f"\n  # Uncomment the 'secretRef' below if you are using the optional Secret."
                 f"\n  # secretRef:\n  #   name: {secret_name}",
@@ -307,35 +310,24 @@ def generate_kubectl_apply(yaml_content):
             )
             # Comment out the entire secret if it's optional
             secret_yaml = f"# The following Secret is optional. Uncomment the entire block if you need to use it.\n" + \
-                re.sub(
-                    r"^(.)", r"# \1", secret_yaml, flags=re.MULTILINE
-                )
+                re.sub(r"^(.)", r"# \1", secret_yaml, flags=re.MULTILINE)
+
         elif "secretRef:" in destination_yaml:
             # Inject required 'secretRef' by updating the existing 'secretRef' section
-            destination_yaml = re.compile(
-                r"\bsecretRef:\s*\n(.*?)(?=\n\s*\w+:|\n\s*signals:)", re.DOTALL
-            ).sub(
+            destination_yaml = re.compile(pointer_is, re.DOTALL).sub(
                 f"  secretRef:\n    name: {secret_name}", destination_yaml
             )
         else:
             # Inject required 'secretRef' section between the 'destinationName' and the 'signals' blocks
-            destination_yaml = re.compile(
-                r"(\b(?:destinationName: .+))(?=\n\s*signals:)", re.DOTALL
-            ).sub(
+            destination_yaml = re.compile(pointer_between, re.DOTALL).sub(
                 r"\1\n  secretRef:\n    name: " + secret_name, destination_yaml
             )
 
         # Wrap the combined (destination + secret) YAML content in a single code-block
-        code_block = f"```yaml\n{
-            destination_yaml
-        }\n---\n\n{
-            secret_yaml
-        }```"
+        code_block = f"```yaml\n{destination_yaml}\n---\n\n{secret_yaml}```"
     else:
         # Wrap the destination YAML content in a single code-block
-        code_block = f"```yaml\n{
-            destination_yaml
-        }```"
+        code_block = f"```yaml\n{destination_yaml}```"
 
     return code_block
 

@@ -87,6 +87,9 @@ There are two primary methods for configuring destinations in Odigos:
         LOGZIO_REGION: <Region [listener.logz.io, listener-au.logz.io, listener-ca.logz.io,
           listener-eu.logz.io, listener-nl.logz.io, listener-uk.logz.io, listener-wa.logz.io]>
       destinationName: logzio
+      # Uncomment the 'secretRef' below if you are using the optional Secret.
+      # secretRef:
+      #   name: logzio-secret
       signals:
       - TRACES
       - METRICS

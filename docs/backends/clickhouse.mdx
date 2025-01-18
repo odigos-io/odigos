@@ -164,6 +164,9 @@ There are two primary methods for configuring destinations in Odigos:
         # Note: The commented fields below are optional.
         # CLICKHOUSE_USERNAME: <Username>
       destinationName: clickhouse
+      # Uncomment the 'secretRef' below if you are using the optional Secret.
+      # secretRef:
+      #   name: clickhouse-secret
       signals:
       - TRACES
       - METRICS
