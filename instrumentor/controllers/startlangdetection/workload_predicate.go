@@ -25,8 +25,10 @@ func (i *WorkloadAvailablePredicate) Create(e event.CreateEvent) bool {
 		return false
 	}
 
-	instrumented, _ := sourceutils.IsObjectInstrumentedBySource(context.Background(), i.Client, e.Object)
-	if !instrumented || !workload.IsObjectLabeledForInstrumentation(e.Object) {
+	instrumented, err := sourceutils.IsObjectInstrumentedBySource(context.Background(), i.Client, e.Object)
+	if (!instrumented || !workload.IsObjectLabeledForInstrumentation(e.Object)) && err == nil {
+		// IsObjectInstrumentedBySource returns false by default if it encounters an error
+		// Since we can't log/retry errors here, pass the event onto the Reconciler in case it is recoverable
 		return false
 	}
 
@@ -55,8 +57,10 @@ func (i *WorkloadAvailablePredicate) Update(e event.UpdateEvent) bool {
 		return false
 	}
 
-	instrumented, _ := sourceutils.IsObjectInstrumentedBySource(context.Background(), i.Client, e.ObjectNew)
-	if !instrumented || !workload.IsObjectLabeledForInstrumentation(e.ObjectNew) {
+	instrumented, err := sourceutils.IsObjectInstrumentedBySource(context.Background(), i.Client, e.ObjectNew)
+	if (!instrumented || !workload.IsObjectLabeledForInstrumentation(e.ObjectNew)) && err == nil {
+		// IsObjectInstrumentedBySource returns false by default if it encounters an error
+		// Since we can't log/retry errors here, pass the event onto the Reconciler in case it is recoverable
 		return false
 	}
 
