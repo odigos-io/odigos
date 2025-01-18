@@ -1,53 +1,93 @@
 ---
 title: 'Jaeger'
+description: 'Configuring the Jaeger backend (Self-Hosted)'
+sidebarTitle: 'Jaeger'
+icon: 'signal-stream'
 ---
 
-## Configuring Jaeger Backend
+### Getting Started
 
-Version v1.35 of Jaeger introduced the ability to receive OpenTelemetry trace data via the OpenTelemetry Protocol (OTLP).
-This allows to create a new Jaeger backend by simply specifying the Jaeger OTLP gRPC unencrypted URL.
+{/*
+    Add custom content here (under this comment)...
 
-- **JAEGER_URL** - Endpoint, the format is `host:port`.
-  - host is required
-  - port is optional and defaults to the default OTLP gRPC port `4317`.
-- **JAEGER_TLS_ENABLED** - Enable TLS (secure connection). This is optional and defaults to `false`.
-- **JAEGER_CA_PEM** - Certificate Authority in PEM format. When using TLS, provide the CA certificate to verify the server. If empty uses system root CA
+    e.g:
+    [🔗 website](https://odigos.io)
+    [![logo with clickable link](https://d15jtxgb40qetw.cloudfront.net/jaeger.svg)](https://www.google.com/search?q=jaeger)
 
-## Adding a Destination to Odigos
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
 
-Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+<img src='https://d15jtxgb40qetw.cloudfront.net/jaeger.svg' alt='jaeger' width="100" height="100" className="not-prose" />
 
-1. **Using the UI**
+Version v1.35 of Jaeger introduced the ability to receive OpenTelemetry trace data via the OpenTelemetry Protocol (OTLP). This allows to create a new Jaeger backend by simply specifying the Jaeger OTLP gRPC unencrypted URL.
 
-Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI:
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
 
-```bash
-odigos ui
-```
+### Configuring Destination Fields
 
-2. **Using kubernetes manifests**
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ❌ Metrics
+  ❌ Logs
+</Accordion>
 
-Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
+- **JAEGER_URL** `string` : Jaeger OTLP gRPC Endpoint. The format is `host:port`, host is required, port is optional and defaults to the default OTLP gRPC port `4317`
+  - This field is required
+- **JAEGER_TLS_ENABLED** `boolean` : Enable TLS. Secure connection
+  - This field is optional
+- **JAEGER_CA_PEM** `string` : Certificate Authority. When using TLS, provide the CA certificate in PEM format to verify the server. If empty uses system root CA
+  - This field is optional
+  - Example: `-----BEGIN CERTIFICATE-----`
 
-```bash
-kubectl apply -f destination.yaml
-```
+### Adding Destination to Odigos
 
+There are two primary methods for configuring destinations in Odigos:
 
-```yaml
-apiVersion: odigos.io/v1alpha1
-kind: Destination
-metadata:
-  name: jaeger-example
-  namespace: odigos-system
-spec:
-  data:
-    JAEGER_URL: <Jaeger OTLP gRPC Endpoint>
-    # JAEGER_TLS_ENABLED: <Enable TLS>
-    # JAEGER_CA_PEM: <Certificate Authority>
-    # Note: The commented fields above are optional.
-  destinationName: jaeger
-  signals:
-  - TRACES
-  type: jaeger
-```
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Jaeger` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `jaeger.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: jaeger-example
+      namespace: odigos-system
+    spec:
+      data:
+        JAEGER_URL: <Jaeger OTLP gRPC Endpoint>
+        # Note: The commented fields below are optional.
+        # JAEGER_TLS_ENABLED: <Enable TLS>
+        # JAEGER_CA_PEM: <Certificate Authority>
+      destinationName: jaeger
+      signals:
+      - TRACES
+      type: jaeger
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f jaeger.yaml
+    ```
+  </Step>
+</Steps>

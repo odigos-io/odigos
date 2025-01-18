@@ -1,73 +1,109 @@
 ---
-title: "OpsVerse"
+title: 'OpsVerse'
+description: 'Configuring the OpsVerse backend (Managed)'
+sidebarTitle: 'OpsVerse'
+icon: 'signal-stream'
 ---
 
-## Configuring OpsVerse Backend
+### Getting Started
 
-Create a new OpsVerse backend with the following details:
+{/*
+    Add custom content here (under this comment)...
 
-- **User**
-- **Password**
-- **Logs Endpoint** (if logs selected)
-- **Metrics Endpoint** (if metrics selected)
-- **Traces (OTLP) Endpoint** (if traces selected)
+    e.g:
+    [🔗 website](https://odigos.io)
+    [![logo with clickable link](https://d15jtxgb40qetw.cloudfront.net/opsverse.svg)](https://www.google.com/search?q=opsverse)
 
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
 
-## Adding a Destination to Odigos
+<img src='https://d15jtxgb40qetw.cloudfront.net/opsverse.svg' alt='opsverse' width="100" height="100" className="not-prose" />
 
-Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
 
-1. **Using the UI**  
-   To add a destination via the UI, follow these steps:
-   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
-   ```bash
-   odigos ui
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ✅ Metrics
+  ✅ Logs
+</Accordion>
+
+- **OPSVERSE_USERNAME** `string` : User.
+  - This field is required
+- **OPSVERSE_PASSWORD** `string` : Password.
+  - This field is required
+- **OPSVERSE_LOGS_URL** `string` : Logs Endpoint.
+  - This field is required
+- **OPSVERSE_METRICS_URL** `string` : Metrics Endpoint.
+  - This field is required
+- **OPSVERSE_TRACES_URL** `string` : Traces Endpoint.
+  - This field is required
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
     ```
-- In the left sidebar, navigate to the `Destination` page.
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `OpsVerse` and follow the on-screen instructions
+  </Step>
+</Steps>
 
-- Click `Add New Destination`
+##### **Using Kubernetes manifests**
 
-- Select `OpsVerse` and follow the on-screen instructions.
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `opsverse.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: opsverse-example
+      namespace: odigos-system
+    spec:
+      data:
+        OPSVERSE_LOGS_URL: <Logs Endpoint>
+        OPSVERSE_METRICS_URL: <Metrics Endpoint>
+        OPSVERSE_TRACES_URL: <Traces Endpoint>
+        OPSVERSE_USERNAME: <User>
+      destinationName: opsverse
+      secretRef:
+        name: opsverse-secret
+      signals:
+      - TRACES
+      - METRICS
+      - LOGS
+      type: opsverse
 
+    ---
 
-
-2. **Using kubernetes manifests**
-
-Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
-
-```bash
-kubectl apply -f destination.yaml
-```
-
-
-```yaml
-apiVersion: odigos.io/v1alpha1
-kind: Destination
-metadata:
-  name: opsverse-example
-  namespace: odigos-system
-spec:
-  data:
-    OPSVERSE_LOGS_URL: <Logs Endpoint>
-    OPSVERSE_METRICS_URL: <Metrics Endpoint>
-    OPSVERSE_TRACES_URL: <Traces Endpoint>
-    OPSVERSE_USERNAME: <User>
-  destinationName: opsverse
-  secretRef:
-    name: opsverse-secret
-  signals:
-  - TRACES
-  - METRICS
-  - LOGS
-  type: opsverse
-
----
-apiVersion: v1
-data:
-  OPSVERSE_PASSWORD: <base64 Password>
-kind: Secret
-metadata:
-  name: opsverse-secret
-  namespace: odigos-system
-type: Opaque
-```
+    apiVersion: v1
+    data:
+      OPSVERSE_PASSWORD: <Base64 Password>
+    kind: Secret
+    metadata:
+      name: opsverse-secret
+      namespace: odigos-system
+    type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f opsverse.yaml
+    ```
+  </Step>
+</Steps>

@@ -15,21 +15,26 @@ spec:
       supported: false
   fields:
     - name: GRAFANA_CLOUD_TEMPO_ENDPOINT
-      displayName: Endpoint (host:port)
+      displayName: Endpoint
       componentType: input
       componentProps:
         type: text
         required: true
+        tooltip: This is the URL of the Tempo service, in the form of `host:port`. You can find the endpoint under the "Sending data to Tempo" section.
+        placeholder: tempo-us-central1.grafana.net:443
     - name: GRAFANA_CLOUD_TEMPO_USERNAME
       displayName: Username
       componentType: input
       componentProps:
         type: text
         required: true
+        tooltip: You can find the username in the "Sending data to Tempo" section under the "basic_auth" yaml field. The username is a number.
     - name: GRAFANA_CLOUD_TEMPO_PASSWORD
       displayName: Password (Api Token)
+      secret: true
       componentType: input
       componentProps:
         type: password
         required: true
-      secret: true
+        tooltip: This field is refered to as "password" or "Grafana.com API Token" in the Grafana Cloud UI. You can manage tokens in your "Account Settings" page under the "SECURITY" section in the "Access Policies" page. Make sure your token scope includes `traces:write` scope.
+        placeholder: 'glc_eyJvIj...'

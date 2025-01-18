@@ -1,93 +1,119 @@
 ---
-title: "Elasticsearch"
+title: 'Elasticsearch'
+description: 'Configuring the Elasticsearch backend (Self-Hosted)'
+sidebarTitle: 'Elasticsearch'
+icon: 'signal-stream'
 ---
 
-## Configuring Elasticsearch Backend
+### Getting Started
 
-The only required field is the Elasticsearch endpoint. This endpoint must be a valid URL for your Elasticsearch cluster.
+{/*
+    Add custom content here (under this comment)...
 
-- Scheme can be `http` or `https`. If `https` is used
-- If port is not specified, it defaults to 9200.
+    e.g:
+    [🔗 website](https://odigos.io)
+    [![logo with clickable link](https://d15jtxgb40qetw.cloudfront.net/elasticsearch.svg)](https://www.google.com/search?q=elasticsearch)
 
-The following fields are optional:
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
 
-- **Traces Index** - The name of the index where traces will be stored. Defaults to `trace_index`.
-- **Logs Index** - The name of the index where logs will be stored. Defaults to `log_index`.
+<img src='https://d15jtxgb40qetw.cloudfront.net/elasticsearch.svg' alt='elasticsearch' width="100" height="100" className="not-prose" />
 
-## https
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
 
-If your Elasticsearch cluster uses `https`, you can provide the certificate authority (CA) to validate the server certificate.
+### Configuring Destination Fields
 
-The content should be the certificate in PEM format (starts with `-----BEGIN CERTIFICATE-----` and ends with `-----END CERTIFICATE-----`).
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ❌ Metrics
+  ✅ Logs
+</Accordion>
 
-If empty, the system root CA will be used to validate the server certificate.
+- **ELASTICSEARCH_URL** `string` : Elasticsearch URL. Elasticsearch endpoint. Port defaults to `9200` if not specified
+  - This field is required
+  - Example: `http://host:port`
+- **ES_TRACES_INDEX** `string` : Traces Index. The name of the index where traces will be stored
+  - This field is optional and defaults to `trace_index`
+- **ES_LOGS_INDEX** `string` : Logs Index. The name of the index where logs will be stored.
+  - This field is optional and defaults to `log_index`
+- **ELASTICSEARCH_BASIC_AUTH_ENABLED** `boolean` : Enable HTTP Basic Authentication.
+  - This field is optional
+- **ELASTICSEARCH_USERNAME** `string` : Username. Username used for HTTP Basic Authentication
+  - This field is optional
+- **ELASTICSEARCH_PASSWORD** `string` : Password. Password used for HTTP Basic Authentication
+  - This field is optional
+- **ELASTICSEARCH_TLS_ENABLED** `boolean` : Enable TLS. Secure connection (Transport Layer Security)
+  - This field is optional
+- **ELASTICSEARCH_CA_PEM** `string` : CA Certificate. When using TLS, provide the CA certificate to verify the server. If empty uses system root CA
+  - This field is optional
+  - Example: `-----BEGIN CERTIFICATE-----`
 
-## Authentication
+### Adding Destination to Odigos
 
-If your Elasticsearch cluster requires authentication, you can provide the username and password.
+There are two primary methods for configuring destinations in Odigos:
 
+##### **Using the UI**
 
-## Adding a Destination to Odigos
-
-Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
-
-1. **Using the UI**  
-   To add a destination via the UI, follow these steps:
-   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
-   ```bash
-   odigos ui
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
     ```
-- In the left sidebar, navigate to the `Destination` page.
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Elasticsearch` and follow the on-screen instructions
+  </Step>
+</Steps>
 
-- Click `Add New Destination`
+##### **Using Kubernetes manifests**
 
-- Select `Elasticseach` and follow the on-screen instructions.
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `elasticsearch.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: elasticsearch-example
+      namespace: odigos-system
+    spec:
+      data:
+        ELASTICSEARCH_URL: <Elasticsearch URL>
+        # Note: The commented fields below are optional.
+        # ES_TRACES_INDEX: <Traces Index>
+        # ES_LOGS_INDEX: <Logs Index>
+        # ELASTICSEARCH_BASIC_AUTH_ENABLED: <Enable HTTP Basic Authentication>
+        # ELASTICSEARCH_USERNAME: <Username>
+        # ELASTICSEARCH_TLS_ENABLED: <Enable TLS>
+        # ELASTICSEARCH_CA_PEM: <CA Certificate>
+      destinationName: elasticsearch
+      signals:
+      - TRACES
+      - LOGS
+      type: elasticsearch
 
+    ---
 
-
-2. **Using kubernetes manifests**
-
-Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
-
-```bash
-kubectl apply -f destination.yaml
-```
-
-
-```yaml
-apiVersion: odigos.io/v1alpha1
-kind: Destination
-metadata:
-  name: elasticsearch-example
-  namespace: odigos-system
-spec:
-  data:
-    ELASTICSEARCH_URL: <Elasticsearch URL>
-    # ES_TRACES_INDEX: <Traces Index>
-    # ES_LOGS_INDEX: <Logs Index>
-    # ELASTICSEARCH_BASIC_AUTH_ENABLED: <Enable HTTP Basic Authentication>
-    # ELASTICSEARCH_USERNAME: <Username>
-    # ELASTICSEARCH_TLS_ENABLED: <Enable TLS>
-    # ELASTICSEARCH_CA_PEM: <CA Certificate>
-    # Note: The commented fields above are optional.
-  destinationName: elasticsearch
-  # Uncomment the secretRef below if you are using the optional Secret.
-  # secretRef:
-  #   name: elasticsearch-secret
-
-  signals:
-  - TRACES
-  - LOGS
-  type: elasticsearch
-
----
-# The following Secret is optional. Uncomment the entire block if you need to use it.
-# apiVersion: v1
-# data:
-#   ELASTICSEARCH_PASSWORD: <base64 Password>
-# kind: Secret
-# metadata:
-#   name: elasticsearch-secret
-#   namespace: odigos-system
-# type: Opaque
-```
+    # The following Secret is optional. Uncomment the entire block if you need to use it.
+    # apiVersion: v1
+    # data:
+    #   ELASTICSEARCH_PASSWORD: <Base64 Password>
+    # kind: Secret
+    # metadata:
+    #   name: elasticsearch-secret
+    #   namespace: odigos-system
+    # type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f elasticsearch.yaml
+    ```
+  </Step>
+</Steps>

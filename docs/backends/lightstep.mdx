@@ -1,65 +1,99 @@
 ---
-title: "Lightstep"
+title: 'Lightstep'
+description: 'Configuring the Lightstep backend (Managed)'
+sidebarTitle: 'Lightstep'
+icon: 'signal-stream'
 ---
 
-## Obtaining Lightstep Access Token
+### Getting Started
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g:
+    [🔗 website](https://odigos.io)
+    [![logo with clickable link](https://d15jtxgb40qetw.cloudfront.net/lightstep.svg)](https://www.google.com/search?q=lightstep)
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+<img src='https://d15jtxgb40qetw.cloudfront.net/lightstep.svg' alt='lightstep' width="100" height="100" className="not-prose" />
+
+#### Obtaining Lightstep Access Token
 
 Go to **⚙️ > Access Tokens** and click **Create New**
 
-## Configuring Lightstep Backend
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
 
-Add a new backend with the access token you just created.
+### Configuring Destination Fields
 
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ❌ Metrics
+  ❌ Logs
+</Accordion>
 
-## Adding a Destination to Odigos
+- **LIGHTSTEP_ACCESS_TOKEN** `string` : Access Token.
+  - This field is required
 
-Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+### Adding Destination to Odigos
 
-1. **Using the UI**  
-   To add a destination via the UI, follow these steps:
-   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
-   ```bash
-   odigos ui
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
     ```
-- In the left sidebar, navigate to the `Destination` page.
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Lightstep` and follow the on-screen instructions
+  </Step>
+</Steps>
 
-- Click `Add New Destination`
+##### **Using Kubernetes manifests**
 
-- Select `Lightstep` and follow the on-screen instructions.
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `lightstep.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: lightstep-example
+      namespace: odigos-system
+    spec:
+      data: {}
+      destinationName: lightstep
+      secretRef:
+        name: lightstep-secret
+      signals:
+      - TRACES
+      type: lightstep
 
+    ---
 
-
-2. **Using kubernetes manifests**
-
-Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
-
-```bash
-kubectl apply -f destination.yaml
-```
-
-
-```yaml
-apiVersion: odigos.io/v1alpha1
-kind: Destination
-metadata:
-  name: lightstep-example
-  namespace: odigos-system
-spec:
-  data: {}
-  destinationName: lightstep
-  secretRef:
-    name: lightstep-secret
-  signals:
-  - TRACES
-  type: lightstep
-
----
-apiVersion: v1
-data:
-  LIGHTSTEP_ACCESS_TOKEN: <base64 Access Token>
-kind: Secret
-metadata:
-  name: lightstep-secret
-  namespace: odigos-system
-type: Opaque
-```
+    apiVersion: v1
+    data:
+      LIGHTSTEP_ACCESS_TOKEN: <Base64 Access Token>
+    kind: Secret
+    metadata:
+      name: lightstep-secret
+      namespace: odigos-system
+    type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f lightstep.yaml
+    ```
+  </Step>
+</Steps>

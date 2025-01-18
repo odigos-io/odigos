@@ -1,6 +1,24 @@
 ---
-title: "OTLP http"
+title: 'OTLP http'
+description: 'Configuring the OTLP http backend (Self-Hosted)'
+sidebarTitle: 'OTLP http'
+icon: 'signal-stream'
 ---
+
+### Getting Started
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g:
+    [🔗 website](https://odigos.io)
+    [![logo with clickable link](https://d15jtxgb40qetw.cloudfront.net/opentelemetry.svg)](https://www.google.com/search?q=otlphttp)
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+<img src='https://d15jtxgb40qetw.cloudfront.net/opentelemetry.svg' alt='otlphttp' width="100" height="100" className="not-prose" />
 
 For advanced users trying to implement complex observability pipelines, Odigos support sending data to any OTLP http endpoint.
 
@@ -12,78 +30,93 @@ For advanced users trying to implement complex observability pipelines, Odigos s
   adding new integrations.
 </Tip>
 
-## Configuration
-
-The only required configuration is the endpoint of the OTLP gRPC server.
-
-The endpoint format is `http://host:port`.
-- host is required
-- port is optional and defaults to the port of the scheme (`80` / `443`). OTLP/HTTP sometimes uses port `4318`, in which case it should be specified.
-- the signal path (e.g. `/v1/traces` / `/v1/metrics` / `/v1/logs`) is added automatically and should not be included in the endpoint.
-
-### Using Basic Authentication
+#### Using Basic Authentication
 
 This section is relevant if your OTLP http endpoint requires [basic authentication](https://en.wikipedia.org/wiki/Basic_access_authentication) (username and password).
 
 To configure basic authentication, use the optional config options `Basic Auth Username` and `Basic Auth Password`.
 
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
 
-## Adding a Destination to Odigos
+### Configuring Destination Fields
 
-Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ✅ Metrics
+  ✅ Logs
+</Accordion>
 
-1. **Using the UI**  
-   To add a destination via the UI, follow these steps:
-   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
-   ```bash
-   odigos ui
+- **OTLP_HTTP_ENDPOINT** `string` : OTLP http Endpoint. The format is `host:port`, host is required, port is optional and defaults to the default OTLP gRPC port `4317`.
+  - This field is required
+  - Example: `http://host:port`
+- **OTLP_HTTP_BASIC_AUTH_USERNAME** `string` : Basic Auth Username. in case the otlp receiver requires basic auth, this is the username
+  - This field is optional
+  - Example: `username`
+- **OTLP_HTTP_BASIC_AUTH_PASSWORD** `string` : Basic Auth Password. in case the otlp receiver requires basic auth, this is the password
+  - This field is optional
+  - Example: `password`
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
     ```
-- In the left sidebar, navigate to the `Destination` page.
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `OTLP http` and follow the on-screen instructions
+  </Step>
+</Steps>
 
-- Click `Add New Destination`
+##### **Using Kubernetes manifests**
 
-- Select `OTLP http` and follow the on-screen instructions.
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `otlphttp.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: otlphttp-example
+      namespace: odigos-system
+    spec:
+      data:
+        OTLP_HTTP_ENDPOINT: <OTLP http Endpoint>
+        # Note: The commented fields below are optional.
+        # OTLP_HTTP_BASIC_AUTH_USERNAME: <Basic Auth Username>
+      destinationName: otlphttp
+      signals:
+      - TRACES
+      - METRICS
+      - LOGS
+      type: otlphttp
 
+    ---
 
-2. **Using kubernetes manifests**
-
-Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
-
-```bash
-kubectl apply -f destination.yaml
-```
-
-
-```yaml
-apiVersion: odigos.io/v1alpha1
-kind: Destination
-metadata:
-  name: otlphttp-example
-  namespace: odigos-system
-spec:
-  data:
-    OTLP_HTTP_ENDPOINT: <OTLP http Endpoint>
-    # OTLP_HTTP_BASIC_AUTH_USERNAME: <Basic Auth Username>
-    # Note: The commented fields above are optional.
-  destinationName: otlphttp
-  # Uncomment the secretRef below if you are using the optional Secret.
-  # secretRef:
-  #   name: otlphttp-secret
-
-  signals:
-  - TRACES
-  - METRICS
-  - LOGS
-  type: otlphttp
-
----
-# The following Secret is optional. Uncomment the entire block if you need to use it.
-# apiVersion: v1
-# data:
-#   OTLP_HTTP_BASIC_AUTH_PASSWORD: <base64 Basic Auth Password>
-# kind: Secret
-# metadata:
-#   name: otlphttp-secret
-#   namespace: odigos-system
-# type: Opaque
-```
+    # The following Secret is optional. Uncomment the entire block if you need to use it.
+    # apiVersion: v1
+    # data:
+    #   OTLP_HTTP_BASIC_AUTH_PASSWORD: <Base64 Basic Auth Password>
+    # kind: Secret
+    # metadata:
+    #   name: otlphttp-secret
+    #   namespace: odigos-system
+    # type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f otlphttp.yaml
+    ```
+  </Step>
+</Steps>

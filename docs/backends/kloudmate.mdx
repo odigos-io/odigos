@@ -1,60 +1,102 @@
 ---
 title: 'KloudMate'
+description: 'Configuring the KloudMate backend (Managed)'
+sidebarTitle: 'KloudMate'
+icon: 'signal-stream'
 ---
 
-## Configuring Backend
+### Getting Started
 
-- **KLOUDMATE_API_KEY** - KloudMate API Key, required.
+{/*
+    Add custom content here (under this comment)...
 
-**Note:**
-We handle the endpoint internally, so you don't need to provide it.
-- The endpoint is `https://otel.kloudmate.com:4318`.
+    e.g:
+    [🔗 website](https://odigos.io)
+    [![logo with clickable link](https://d15jtxgb40qetw.cloudfront.net/kloudmate.svg)](https://www.google.com/search?q=kloudmate)
 
-## Adding a Destination to Odigos
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
 
-Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+<img src='https://d15jtxgb40qetw.cloudfront.net/kloudmate.svg' alt='kloudmate' width="100" height="100" className="not-prose" />
 
-1. **Using the UI**
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
 
-Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI:
+### Configuring Destination Fields
 
-```bash
-odigos ui
-```
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ✅ Metrics
+  ✅ Logs
+</Accordion>
 
-2. **Using kubernetes manifests**
+- **KLOUDMATE_API_KEY** `string` : KloudMate API Key.
+  - This field is required
 
-Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
+<Note>
+  We handle the endpoint internally, so you don't need to provide it.
+  - The endpoint is `https://otel.kloudmate.com:4318`
+</Note>
 
-```bash
-kubectl apply -f destination.yaml
-```
+### Adding Destination to Odigos
 
+There are two primary methods for configuring destinations in Odigos:
 
-```yaml
-apiVersion: odigos.io/v1alpha1
-kind: Destination
-metadata:
-  name: kloudmate-example
-  namespace: odigos-system
-spec:
-  data: {}
-  destinationName: kloudmate
-  secretRef:
-    name: kloudmate-secret
-  signals:
-  - TRACES
-  - METRICS
-  - LOGS
-  type: kloudmate
+##### **Using the UI**
 
----
-apiVersion: v1
-data:
-  KLOUDMATE_API_KEY: <base64 KloudMate API Key>
-kind: Secret
-metadata:
-  name: kloudmate-secret
-  namespace: odigos-system
-type: Opaque
-```
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `KloudMate` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `kloudmate.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: kloudmate-example
+      namespace: odigos-system
+    spec:
+      data: {}
+      destinationName: kloudmate
+      secretRef:
+        name: kloudmate-secret
+      signals:
+      - TRACES
+      - METRICS
+      - LOGS
+      type: kloudmate
+
+    ---
+
+    apiVersion: v1
+    data:
+      KLOUDMATE_API_KEY: <Base64 KloudMate API Key>
+    kind: Secret
+    metadata:
+      name: kloudmate-secret
+      namespace: odigos-system
+    type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f kloudmate.yaml
+    ```
+  </Step>
+</Steps>

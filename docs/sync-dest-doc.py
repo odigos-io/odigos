@@ -80,11 +80,11 @@ def generate_fields(yaml_content):
         component_type = f.get("componentType", {})
         if component_type == "checkbox":
             type = "boolean"
-        elif component_type == "dropdown" or component_type == "multiInput":
+        elif component_type == "multiInput":
             type = "string[]"
         elif component_type == "keyValuePairs":
             type = "{ key: string; value: string; }[]"
-        elif component_type == "input" or component_type == "textarea":
+        elif component_type == "input" or component_type == "textarea" or component_type == "dropdown":
             input_type = component_props.get("type", False)
             if input_type == "number":
                 type = "number"
@@ -95,7 +95,7 @@ def generate_fields(yaml_content):
 
         field = (
             f"- **{id}** `{type}` : {f.get("displayName", "")}."
-            + (f" {tooltip}." if tooltip else "")
+            + (f" {tooltip}" if tooltip else "")
             + f"\n  - This field is {'required' if component_props.get(
                 "required", False
             ) else 'optional'}"
@@ -323,15 +323,24 @@ def get_config_fields_section(yaml_content):
         f"{starting_block}"
         + "\n\n### Configuring Destination Fields"
         + "\n\n<Accordion title=\"Supported Signals:\">"
-        + f"\n  {'✅' if signals.get("traces", {}
-                                    ).get("supported", False) else '❌'} Traces"
-        + f"\n  {'✅' if signals.get("metrics", {}
-                                    ).get("supported", False) else '❌'} Metrics"
-        + f"\n  {'✅' if signals.get("logs", {}
-                                    ).get("supported", False) else '❌'} Logs"
+        + f"\n  {'✅' if signals.get(
+            "traces", {}
+        ).get("supported", False) else '❌'} Traces"
+        + f"\n  {'✅' if signals.get(
+            "metrics", {}
+        ).get("supported", False) else '❌'} Metrics"
+        + f"\n  {'✅' if signals.get(
+            "logs", {}
+        ).get("supported", False) else '❌'} Logs"
         + "\n</Accordion>"
         + f"\n\n{generate_fields(yaml_content)}"
     )
+
+    note = yaml_content.get("spec", {}).get("note", [])
+    if note:
+        note_content = f"\n\n<Note>\n{indent_lines(note, 2)}\n</Note>"
+        content_block += note_content
+
     # The limit is `starting_block` from `get_add_dest_section`, we must ensure to not replace this closing block.
     closing_block = "\n\n### Adding Destination to Odigos"
 
@@ -469,14 +478,13 @@ def process_overview(backend_yaml_dir, docs_dir):
                 with open(yaml_path, 'r') as yaml_file:
                     yaml_content = yaml.safe_load(yaml_file)
                     meta = yaml_content.get("metadata", {})
-                    type = meta.get("type", "")
                     name = meta.get("displayName", "")
                     category = meta.get("category", "")
                     signals = yaml_content.get("spec", {}).get("signals", {})
 
                     rows.append(f"{
                         get_logo(yaml_content, True)
-                    } | [{name}](/backends/{type}) | {
+                    } | [{name}](/backends/{file.replace('.yaml', '')}) | {
                         "Managed" if category == "managed" else "Self-Hosted"
                     } | {
                         '✅' if signals.get("traces", {}).get(

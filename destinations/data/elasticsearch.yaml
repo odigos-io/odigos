@@ -21,21 +21,21 @@ spec:
         type: text
         required: true
         placeholder: 'http://host:port'
-        tooltip: 'Elasticsearch endpoint. port defaults to 9200 if not specified'
+        tooltip: 'Elasticsearch endpoint. Port defaults to `9200` if not specified'
     - name: ES_TRACES_INDEX
       displayName: Traces Index
       componentType: input
+      initialValue: 'trace_index'
       componentProps:
         type: text
-        placeholder: 'trace_index'
-        tooltip: 'The name of the index where traces will be stored. Defaults to trace_index'
+        tooltip: 'The name of the index where traces will be stored'
     - name: ES_LOGS_INDEX
       displayName: Logs Index
       componentType: input
+      initialValue: 'log_index'
       componentProps:
         type: text
-        placeholder: 'log_index'
-        tooltip: 'The name of the index where logs will be stored. Defaults to log_index'
+        tooltip: 'The name of the index where logs will be stored.'
     - name: ELASTICSEARCH_BASIC_AUTH_ENABLED
       displayName: Enable HTTP Basic Authentication
       componentType: checkbox

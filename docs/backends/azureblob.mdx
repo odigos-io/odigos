@@ -1,57 +1,90 @@
 ---
-title: "Azure Blob Storage"
+title: 'Azure Blob Storage'
+description: 'Configuring the Azure Blob Storage backend (Managed)'
+sidebarTitle: 'Azure Blob Storage'
+icon: 'signal-stream'
 ---
+
+### Getting Started
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g:
+    [🔗 website](https://odigos.io)
+    [![logo with clickable link](https://d15jtxgb40qetw.cloudfront.net/blobstorage.svg)](https://www.google.com/search?q=azureblob)
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+<img src='https://d15jtxgb40qetw.cloudfront.net/blobstorage.svg' alt='azureblob' width="100" height="100" className="not-prose" />
 
 Odigos exports data to Azure Blob Storage in [OTLP format](https://opentelemetry.io/docs/specs/otlp/).
 Data can be exported either in JSON format or in binary format (protobuf).
 
-# Configuring Azure Blob Storage Backend
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
 
-There are two required fields to configure Azure Blob Storage backend:
+### Configuring Destination Fields
 
-- **Account name**: Azure Storage account name
-- **Container name**: Azure Storage container name
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ❌ Metrics
+  ✅ Logs
+</Accordion>
 
+- **AZURE_BLOB_ACCOUNT_NAME** `string` : Account Name.
+  - This field is required
+- **AZURE_BLOB_CONTAINER_NAME** `string` : Container Name.
+  - This field is required
 
-## Adding a Destination to Odigos
+### Adding Destination to Odigos
 
-Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+There are two primary methods for configuring destinations in Odigos:
 
-1. **Using the UI**  
-   To add a destination via the UI, follow these steps:
-   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
-   ```bash
-   odigos ui
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
     ```
-- In the left sidebar, navigate to the `Destination` page.
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Azure Blob Storage` and follow the on-screen instructions
+  </Step>
+</Steps>
 
-- Click `Add New Destination`
+##### **Using Kubernetes manifests**
 
-- Select `Azure Blob Storage` and follow the on-screen instructions.
-
-
-2. **Using kubernetes manifests**
-
-Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
-
-```bash
-kubectl apply -f destination.yaml
-```
-
-
-```yaml
-apiVersion: odigos.io/v1alpha1
-kind: Destination
-metadata:
-  name: azureblob-example
-  namespace: odigos-system
-spec:
-  data:
-    AZURE_BLOB_ACCOUNT_NAME: <Account Name>
-    AZURE_BLOB_CONTAINER_NAME: <Container Name>
-  destinationName: azureblob
-  signals:
-  - TRACES
-  - LOGS
-  type: azureblob
-```
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `azureblob.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: azureblob-example
+      namespace: odigos-system
+    spec:
+      data:
+        AZURE_BLOB_ACCOUNT_NAME: <Account Name>
+        AZURE_BLOB_CONTAINER_NAME: <Container Name>
+      destinationName: azureblob
+      signals:
+      - TRACES
+      - LOGS
+      type: azureblob
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f azureblob.yaml
+    ```
+  </Step>
+</Steps>

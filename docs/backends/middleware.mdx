@@ -1,7 +1,7 @@
 ---
-title: 'Dash0'
-description: 'Configuring the Dash0 backend (Managed)'
-sidebarTitle: 'Dash0'
+title: 'Middleware'
+description: 'Configuring the Middleware backend (Managed)'
+sidebarTitle: 'Middleware'
 icon: 'signal-stream'
 ---
 
@@ -12,13 +12,13 @@ icon: 'signal-stream'
 
     e.g:
     [🔗 website](https://odigos.io)
-    [![logo with clickable link](https://d15jtxgb40qetw.cloudfront.net/dash0.svg)](https://www.google.com/search?q=dash0)
+    [![logo with clickable link](https://d15jtxgb40qetw.cloudfront.net/middleware.svg)](https://www.google.com/search?q=middleware)
 
     !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
     !! START CUSTOM EDIT !!
 */}
 
-<img src='https://d15jtxgb40qetw.cloudfront.net/dash0.svg' alt='dash0' width="100" height="100" className="not-prose" />
+<img src='https://d15jtxgb40qetw.cloudfront.net/middleware.svg' alt='middleware' width="100" height="100" className="not-prose" />
 
 {/*
     !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
@@ -33,9 +33,9 @@ icon: 'signal-stream'
   ✅ Logs
 </Accordion>
 
-- **DASH0_ENDPOINT** `string` : Dash0 OTLP gRPC Endpoint. The format is `host:port`. Host is required, located in Dash0 UI (OpenTelemetry Collector). Port is optional and defaults to the default OTLP gRPC port `4317`.
+- **MW_TARGET** `string` : Endpoint.
   - This field is required
-- **DASH0_TOKEN** `string` : Dash0 Bearer Token. Located in Dash0 UI (OpenTelemetry Collector).
+- **MW_API_KEY** `string` : API Key.
   - This field is required
 
 ### Adding Destination to Odigos
@@ -52,7 +52,7 @@ There are two primary methods for configuring destinations in Odigos:
     ```
   </Step>
   <Step>
-    Click on `Add Destination`, select `Dash0` and follow the on-screen instructions
+    Click on `Add Destination`, select `Middleware` and follow the on-screen instructions
   </Step>
 </Steps>
 
@@ -60,33 +60,33 @@ There are two primary methods for configuring destinations in Odigos:
 
 <Steps>
   <Step>
-    Save the YAML below to a file (e.g. `dash0.yaml`)
+    Save the YAML below to a file (e.g. `middleware.yaml`)
     ```yaml
     apiVersion: odigos.io/v1alpha1
     kind: Destination
     metadata:
-      name: dash0-example
+      name: middleware-example
       namespace: odigos-system
     spec:
       data:
-        DASH0_ENDPOINT: <Dash0 OTLP gRPC Endpoint>
-      destinationName: dash0
+        MW_TARGET: <Endpoint>
+      destinationName: middleware
       secretRef:
-        name: dash0-secret
+        name: middleware-secret
       signals:
       - TRACES
       - METRICS
       - LOGS
-      type: dash0
+      type: middleware
 
     ---
 
     apiVersion: v1
     data:
-      DASH0_TOKEN: <Base64 Dash0 Bearer Token>
+      MW_API_KEY: <Base64 API Key>
     kind: Secret
     metadata:
-      name: dash0-secret
+      name: middleware-secret
       namespace: odigos-system
     type: Opaque
     ```
@@ -94,7 +94,7 @@ There are two primary methods for configuring destinations in Odigos:
   <Step>
     Apply the YAML using `kubectl`
     ```bash
-    kubectl apply -f dash0.yaml
+    kubectl apply -f middleware.yaml
     ```
   </Step>
 </Steps>

@@ -1,72 +1,103 @@
 ---
-title: "Last9"
+title: 'Last9'
+description: 'Configuring the Last9 backend (Managed)'
+sidebarTitle: 'Last9'
+icon: 'signal-stream'
 ---
 
-## Obtaining Last9 OpenTelemetry Endpoint and Basic Auth Header
+### Getting Started
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g:
+    [🔗 website](https://odigos.io)
+    [![logo with clickable link](https://d15jtxgb40qetw.cloudfront.net/last9.svg)](https://www.google.com/search?q=last9)
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+<img src='https://d15jtxgb40qetw.cloudfront.net/last9.svg' alt='last9' width="100" height="100" className="not-prose" />
 
 [Click here](https://app.last9.io/integrations?category=all&integration=OpenTelemetry) to visit the Last9 OpenTelemetry integration page.
 
-<Frame>
-    <img src="/backends/images/last9.png" alt="OpenTelemetry integration in Last9" />
-</Frame>
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
 
-## Configuring Last9 Backend
+### Configuring Destination Fields
 
-- **Endpoint** - Last9 OpenTelemetry Endpoint obtained in above step.
-- **Authorization Header**: Last9 OpenTelemetry Basic Auth Header obtained in above step.
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ✅ Metrics
+  ✅ Logs
+</Accordion>
 
-## Adding a Destination to Odigos
+- **LAST9_OTLP_ENDPOINT** `string` : Last9 OpenTelemetry Endpoint.
+  - This field is required
+- **LAST9_OTLP_BASIC_AUTH_HEADER** `string` : Basic Auth Header.
+  - This field is required
+  - Example: `Basic ...`
 
-Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+### Adding Destination to Odigos
 
-1. **Using the UI**
-   To add a destination via the UI, follow these steps:
-   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
-   ```bash
-   odigos ui
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
     ```
-- In the left sidebar, navigate to the `Destination` page.
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Last9` and follow the on-screen instructions
+  </Step>
+</Steps>
 
-- Click `Add New Destination`
+##### **Using Kubernetes manifests**
 
-- Select `Last9` and follow the on-screen instructions.
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `last9.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: last9-example
+      namespace: odigos-system
+    spec:
+      data:
+        LAST9_OTLP_ENDPOINT: <Last9 OpenTelemetry Endpoint>
+      destinationName: last9
+      secretRef:
+        name: last9-secret
+      signals:
+      - TRACES
+      - METRICS
+      - LOGS
+      type: last9
 
+    ---
 
-
-2. **Using kubernetes manifests**
-
-Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
-
-```bash
-kubectl apply -f destination.yaml
-```
-
-
-```yaml
-apiVersion: odigos.io/v1alpha1
-kind: Destination
-metadata:
-  name: last9-example
-  namespace: odigos-system
-spec:
-  data:
-    LAST9_OTLP_ENDPOINT: <Last9 OpenTelemetry Endpoint>
-  destinationName: last9
-  secretRef:
-    name: last9-secret
-  signals:
-  - TRACES
-  - METRICS
-  - LOGS
-  type: last9
-
----
-apiVersion: v1
-data:
-  LAST9_OTLP_BASIC_AUTH_HEADER: <base64 Basic Auth Header>
-kind: Secret
-metadata:
-  name: last9-secret
-  namespace: odigos-system
-type: Opaque
-```
+    apiVersion: v1
+    data:
+      LAST9_OTLP_BASIC_AUTH_HEADER: <Base64 Basic Auth Header>
+    kind: Secret
+    metadata:
+      name: last9-secret
+      namespace: odigos-system
+    type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f last9.yaml
+    ```
+  </Step>
+</Steps>

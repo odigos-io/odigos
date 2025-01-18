@@ -1,12 +1,28 @@
 ---
-title: "Grafana Cloud Prometheus"
+title: 'Grafana Cloud Prometheus'
+description: 'Configuring the Grafana Cloud Prometheus backend (Managed)'
+sidebarTitle: 'Grafana Cloud Prometheus'
+icon: 'signal-stream'
 ---
 
-You can use Grafana Cloud managed service as a backend for Odigos to store your logs, metrics, and traces. 
-This page describes how to configure Odigos to use Grafana Cloud Prometheus as a **metrics** backend.
+### Getting Started
 
-Notice: these instructions are for the Grafan cloud **managed** Prometheus service. 
-If you run a self hosted Prometheus instance, please follow the instructions in the [Prometheus](/backends/prometheus) page.
+{/*
+    Add custom content here (under this comment)...
+
+    e.g:
+    [🔗 website](https://odigos.io)
+    [![logo with clickable link](https://d15jtxgb40qetw.cloudfront.net/grafana.svg)](https://www.google.com/search?q=grafanacloudprometheus)
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+<img src='https://d15jtxgb40qetw.cloudfront.net/grafana.svg' alt='grafanacloudprometheus' width="100" height="100" className="not-prose" />
+
+You can use Grafana Cloud managed service as a backend for Odigos to store your logs, metrics, and traces. This page describes how to configure Odigos to use Grafana Cloud Prometheus as a **metrics** backend.
+
+Notice: these instructions are for the Grafana cloud **managed** Prometheus service. If you run a self hosted Prometheus instance, please follow the instructions in the [Prometheus](/backends/prometheus) page.
 
 All the connection details can be found at [grafana.com](https://grafana.com) under **My Account**
 
@@ -20,84 +36,100 @@ Then, under the "GRAFANA CLOUD" title, select your Grafana Stuck, browser to the
     <img src="/backends/images/grafanacloud3.png" alt="Prometheus managed service configuration" />
 </Frame>
 
-### Connection Settings
+#### Resource Attributes as Metrics Labels
 
-To send metrics to Grafana Cloud Prometheus, you need to configure the following settings:
+To use [resource attributes as labels in your data points](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/prometheusremotewriteexporter#setting-resource-attributes-as-metric-labels), you can set the resource attribute names in the `Resource Attributes as Labels` multi-input config option in the destination page in the Odigos UI.
 
-- **Prometheus Remote Write Endpoint** - This is the URL of the Prometheus service. 
-From the grafana cloud UI, Prometheus page, make sure you copy the URL from "Remote Write Endpoint" section,
-and not the first Endpoint which is used for queries.
-This url should look like: `https://{hostname}.grafana.net/api/prom/push` (path should be `/api/prom/push`)
-- **Username / Instance ID** - You can find the prometheus page.
-The username is a number.
-- **Password** - This field is refered to as "password" or "Grafana.com API Token" in the Grafana Cloud UI. 
-You can manage tokens in your "Account Settings" page under the "SECURITY" section in the "Access Policies" page.
-Make sure your token scope includes "metrics:write" scope.
-
-### Resource Attributes as Metrics Labels
-
-To use [resource attributes as labels in your data points](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/prometheusremotewriteexporter#setting-resource-attributes-as-metric-labels),
-you can set the resource attribute names in the `Resource Attributes as Labels` multi-input config option in the destination page in the Odigos UI. 
-
-### Cluster Static Labels
+#### Cluster Static Labels
 
 You can set static labels for each metric data pointsent exported to Grafana Cloud Prometheus from the cluster by setting the `External Labels` configuration with lable keys and values.
 
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
 
-## Adding a Destination to Odigos
+### Configuring Destination Fields
 
-Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+<Accordion title="Supported Signals:">
+  ❌ Traces
+  ✅ Metrics
+  ❌ Logs
+</Accordion>
 
-1. **Using the UI**  
-   To add a destination via the UI, follow these steps:
-   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
-   ```bash
-   odigos ui
+- **GRAFANA_CLOUD_PROMETHEUS_RW_ENDPOINT** `string` : Prometheus Remote Write Endpoint. This is the URL of the Prometheus service. From the grafana cloud UI, Prometheus page, make sure you copy the URL from “Remote Write Endpoint” section, and not the first Endpoint which is used for queries
+  - This field is required
+  - Example: `https://{hostname}.grafana.net/api/prom/push`
+- **GRAFANA_CLOUD_PROMETHEUS_USERNAME** `string` : Username / Instance ID. You can find the Username / Instance ID on the Prometheus page. Value is a number.
+  - This field is required
+  - Example: `12345678`
+- **GRAFANA_CLOUD_PROMETHEUS_PASSWORD** `string` : Password / Api Token. This field is refered to as "password" or "Grafana.com API Token" in the Grafana Cloud UI. You can manage tokens in your "Account Settings" page under the "SECURITY" section in the "Access Policies" page. Make sure your token scope includes `metrics:write` scope.
+  - This field is required
+  - Example: `glc_eyJvIj...`
+- **PROMETHEUS_RESOURCE_ATTRIBUTES_LABELS** `string[]` : Resource Attributes Labels. use these OpenTelemetry resource attributes as prometheus labels for each metric data point
+  - This field is optional and defaults to `["k8s.container.name", "k8s.pod.name", "k8s.namespace.name"]`
+- **PROMETHEUS_RESOURCE_EXTERNAL_LABELS** `{ key: string; value: string; }[]` : External Labels. map of labels names and values to be attached to each metric data point
+  - This field is optional
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
     ```
-- In the left sidebar, navigate to the `Destination` page.
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Grafana Cloud Prometheus` and follow the on-screen instructions
+  </Step>
+</Steps>
 
-- Click `Add New Destination`
+##### **Using Kubernetes manifests**
 
-- Select `Grafana Cloud Prometheus` and follow the on-screen instructions.
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `grafanacloudprometheus.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: grafanacloudprometheus-example
+      namespace: odigos-system
+    spec:
+      data:
+        GRAFANA_CLOUD_PROMETHEUS_RW_ENDPOINT: <Prometheus Remote Write Endpoint>
+        GRAFANA_CLOUD_PROMETHEUS_USERNAME: <Username / Instance ID>
+        # Note: The commented fields below are optional.
+        # PROMETHEUS_RESOURCE_ATTRIBUTES_LABELS: <Resource Attributes Labels>
+        # PROMETHEUS_RESOURCE_EXTERNAL_LABELS: <External Labels>
+      destinationName: grafanacloudprometheus
+      secretRef:
+        name: grafanacloudprometheus-secret
+      signals:
+      - METRICS
+      type: grafanacloudprometheus
 
+    ---
 
-
-2. **Using kubernetes manifests**
-
-Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
-
-```bash
-kubectl apply -f destination.yaml
-```
-
-
-```yaml
-apiVersion: odigos.io/v1alpha1
-kind: Destination
-metadata:
-  name: grafanacloudprometheus-example
-  namespace: odigos-system
-spec:
-  data:
-    GRAFANA_CLOUD_PROMETHEUS_RW_ENDPOINT: <Prometheus Remote Write Endpoint>
-    # PROMETHEUS_RESOURCE_ATTRIBUTES_LABELS: <Resource Attributes Labels>
-    # PROMETHEUS_RESOURCE_EXTERNAL_LABELS: <External Labels>
-    # Note: The commented fields above are optional.
-    GRAFANA_CLOUD_PROMETHEUS_USERNAME: <Username / Instance ID>
-  destinationName: grafanacloudprometheus
-  secretRef:
-    name: grafanacloudprometheus-secret
-  signals:
-  - METRICS
-  type: grafanacloudprometheus
-
----
-apiVersion: v1
-data:
-  GRAFANA_CLOUD_PROMETHEUS_PASSWORD: <base64 Password / Api Token>
-kind: Secret
-metadata:
-  name: grafanacloudprometheus-secret
-  namespace: odigos-system
-type: Opaque
-```
+    apiVersion: v1
+    data:
+      GRAFANA_CLOUD_PROMETHEUS_PASSWORD: <Base64 Password / Api Token>
+    kind: Secret
+    metadata:
+      name: grafanacloudprometheus-secret
+      namespace: odigos-system
+    type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f grafanacloudprometheus.yaml
+    ```
+  </Step>
+</Steps>
