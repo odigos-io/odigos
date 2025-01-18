@@ -103,6 +103,7 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 | Google Cloud Storage    |   ✅   |         |  ✅  |
 | Grafana Cloud           |   ✅   |   ✅    |  ✅  |
 | Groundcover inCloud     |   ✅   |   ✅    |  ✅  |
+| Highlight               |   ✅   |         |  ✅  |
 | Honeycomb               |   ✅   |   ✅    |  ✅  |
 | HyperDX                 |   ✅   |   ✅    |  ✅  |
 | KloudMate               |   ✅   |   ✅    |  ✅  |
