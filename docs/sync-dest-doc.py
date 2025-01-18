@@ -338,7 +338,7 @@ def get_config_fields_section(yaml_content):
 
     note = yaml_content.get("spec", {}).get("note", [])
     if note:
-        note_content = f"\n\n<Note>\n{indent_lines(note, 2)}\n</Note>"
+        note_content = f"\n\n<Check>\n{indent_lines(note, 2)}\n</Check>"
         content_block += note_content
 
     # The limit is `starting_block` from `get_add_dest_section`, we must ensure to not replace this closing block.
@@ -506,6 +506,10 @@ def process_overview(backend_yaml_dir, docs_dir):
         + "\n---"
         + "\n\nOdigos makes it simple to add and configure destinations, allowing you to select the specific signals (`traces`,`metrics`,`logs`) that you want to send to each destination."
         + "\n\nOdigos has destinations for many observability backends."
+        + "\n\n<Tip>"
+        + "\n  Can't find your backend in Odigos? Please tell us! We are constantly adding new integrations.<br />"
+        + "\n  You can also follow our quick [add new destination](/adding-new-dest) guide and submit a PR."
+        + "\n</Tip>"
         + "\n\n| Logo | Destination | Category | Traces | Metrics | Logs |"
         + "\n|---|---|---|:---:|:---:|:---:|"
         + "\n"

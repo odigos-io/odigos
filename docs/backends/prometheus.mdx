@@ -20,8 +20,11 @@ icon: 'signal-stream'
 
 <img src='https://d15jtxgb40qetw.cloudfront.net/prometheus.svg' alt='prometheus' width="100" height="100" className="not-prose" />
 
-#### Enabling Remote Write in Prometheus
+<Note>
+  These instructions are for the **self hosted** Prometheus instance. If you need a managed service, please follow the instructions on the [Grafana Cloud Prometheus](/backends/grafanacloudprometheus) page.
+</Note>
 
+**Enabling Remote Write in Prometheus**<br />
 Currently, Odigos supports Prometheus via the Remote Write API. In order to enable remote write in Prometheus, set [the following feature flag](https://prometheus.io/docs/prometheus/latest/feature_flags/#remote-write-receiver).
 
 {/*

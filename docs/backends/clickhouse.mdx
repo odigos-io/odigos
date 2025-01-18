@@ -22,21 +22,21 @@ icon: 'signal-stream'
 
 ClickHouse is very popular database for storing telemetry data and running efficient queries on it.
 
-#### Use Cases
+**Use Cases**
 
 - Clickhouse can handle all 3 signals (metrics, logs, traces) in one single database. less overhead to manage multiple databases.
 - Clickhouse is a columnar database, which is optimized for time-series immutable data like OpenTelemetry telemetry data.
 - Clickhouse is a distributed database, which can scale horizontally and handle large amounts of data with efficient storage and query performance.
 - Clickhouse is open-source and has a large community.
 
-#### Prerequisites
+**Prerequisites**
 
 - To use ClickHouse as a destination in Odigos, you need to have a ClickHouse deployment running somewhere and accessible from cluster where Odigos is running.
 - You should know the service endpoint where ClickHouse listens for incoming client connections.
 - If you haven't already, create a database in ClickHouse where you want to store the telemetry data. the default database name is `otel` (configurable). To create it, run the following SQL command: `CREATE DATABASE otel;`
 - Understanding of how to maintain, scale, and optimize your self-hosted ClickHouse deployment, as well as how to fine tune setting based on your queries and use case.
 
-#### Schema
+**Schema**
 
 When using the ClickHouse destination with Odigos, logs metrics and traces are going to be "INSERT INTO" the ClickHouse database.
 
