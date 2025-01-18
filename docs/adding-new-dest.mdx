@@ -69,6 +69,14 @@ spec:
       secret: true
 ```
 
+Allowed properties for `mydest.yaml`:
+
+| Property | Description                           |
+| -------- | ------------------------------------- |
+| Name     | Full name of user                     |
+| Age      | Reported age                          |
+| Joined   | Whether the user joined the community |
+
 ### Collector Configuration
 
 Now that our new vendor can be persisted/loaded in the Kubernetes data store, we need to implement the collector configuration.
@@ -170,7 +178,7 @@ python sync-dest-doc.py
 python3 sync-dest-doc.py
 ```
 
-3. This will generate the documentation for the new destination in the [`docs/destinations`](https://github.com/odigos-io/odigos/tree/main/docs/destinations) directory.
+3. This will generate the documentation for the new destination in the [`docs/backends`](https://github.com/odigos-io/odigos/tree/main/docs/backends) directory.
     - Feel free to add any additional content to the generated file, only between the `!! START CUSTOM EDIT !!` and `!! END CUSTOM EDIT !!` comments.
     - Example: `mydest.mdx`
 
