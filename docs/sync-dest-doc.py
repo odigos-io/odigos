@@ -68,7 +68,8 @@ def generate_fields(yaml_content):
     fields = ""
 
     for f in yaml_fields:
-        # !! skipped fields: secret, customReadDataLabels, renderCondition, hideFromReadData,
+        # !! Skipped field-values: Check "Allowed properties for Destination Fields" in "docs/adding-new-dest.mdx" for more details
+        # secret, componentProps.values , customReadDataLabels, renderCondition, hideFromReadData,
 
         id = f.get("name", "")
         initial_value = f.get("initialValue", {})
