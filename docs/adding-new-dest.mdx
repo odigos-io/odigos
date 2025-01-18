@@ -1,27 +1,37 @@
 ---
 title: "Adding New Observability Destination"
+description: "There are tens if not hundreds of different observability destinations. Odigos's goal is to provide a seamless and easy way to ship observability data to any one of them."
 ---
 
-There are tens if not hundreds of different observability destinations. Odigos
-goal is to provide a seamless and easy way to ship observability data to any one
-of them.
+In this guide, you will learn how to contribute a new destination to Odigos. We will create a new dummy destination called `mydest`.
 
-In this guide, you will learn how to contribute a new destination to Odigos. We
-will create a new dummy destination called `mydest`. Creating a new destination
-involves two steps:
+Creating a new destination involves these steps:
 
 1. Extending the UI for the new destination
 2. Adding the collector configuration for the new destination
+3. Generating the documentation for the new destination
 
-## User Interface
+### User Interface
 
-For our new destination to be visible in the UI, we need to make several changes
-to the UI code:
+For our new destination to be visible in the UI, we need to define the destination metadata and fields in YAML format:
 
-1. Go to `destinations/logos/` directory and add your logo file, for example
-   `mydest.svg`. Please use svg format for the logo.
-2. Go to `destinations/data/` directory and create a new file called `mydest.yaml` by duplicating one of the others.
-  That file makes setup page for set destination available and is quite self-explanatory to use:
+1. Go to [`destinations/logos/`](https://github.com/odigos-io/odigos/tree/main/destinations/logos) directory and add your logo.
+    - Must be in SVG format
+    - Example: `mydest.svg`
+
+```svg mydest.svg
+<svg fill="#F5F5F5" width="16" height="12" viewBox="0 0 16 12" xmlns="http://www.w3.org/2000/svg">
+  <title>My Destination</title>
+  <g>
+    <path d="M5.17215 9.01884L2.18377 7.69813C1.48159 7.38732 1.0448 6.73677 1.0448 5.99948C1.0448 5.2622 1.48056 4.61165 2.18377 4.30083L6.36172 2.45349L6.45156 2.41425V0H1.66127C1.0417 0 0.538818 0.4781 0.538818 1.06772V10.9312C0.538818 11.5209 1.0417 11.999 1.66127 11.999H5.83303H6.45259V9.5682L5.17319 9.01781H5.17215V9.01884Z"/>
+    <path d="M14.3397 0H9.5484V2.4411L10.8041 2.98115L10.801 2.9698L13.8162 4.3029C14.5184 4.61372 14.9552 5.26426 14.9552 6.00155C14.9552 6.73883 14.5194 7.38938 13.8162 7.7002L10.1649 9.31417L9.54736 9.57646V12H14.3387C14.9583 12 15.4611 11.5219 15.4611 10.9323V1.06772C15.4611 0.4781 14.9583 0 14.3387 0H14.3397Z"/>
+    <path d="M8.00048 8.47972C9.36972 8.47972 10.4808 7.36966 10.4808 5.99938C10.4808 4.6291 9.37076 3.51904 8.00048 3.51904C6.6302 3.51904 5.52014 4.6291 5.52014 5.99938C5.52014 7.36966 6.6302 8.47972 8.00048 8.47972Z"/>
+  </g>
+</svg>
+```
+
+2. Go to [`destinations/data/`](https://github.com/odigos-io/odigos/tree/main/destinations/data) directory and create a new YAML file.
+    - Example: `mydest.yaml`
 
 ```yaml mydest.yaml
 apiVersion: internal.odigos.io/v1beta1
@@ -59,16 +69,17 @@ spec:
       secret: true
 ```
 
-## Collector Configuration
+### Collector Configuration
 
-Now that our new vendor can be persisted/loaded in the Kubernetes data store, we
-need to implement the collector configuration.
+Now that our new vendor can be persisted/loaded in the Kubernetes data store, we need to implement the collector configuration.
 
-1. Go to `common/dests.go` and add your new destination to the `DestinationType`
-   enum. Make sure the value is the same as the `type` property of the
-   destination UI class - `mydest` in the current case.
-2. Go to `autoscaler/controllers/gateway/config` directory and create a new file
-   called `mydest.go` with the following content:
+1. Go to [`common/dests.go`](https://github.com/odigos-io/odigos/tree/main/common/dests.go) and add your new destination to the `DestinationType` enum.
+    - Make sure the value is the same as the `type` property in `mydest.yaml`
+2. Go to [`common/config`](https://github.com/odigos-io/odigos/tree/main/common/config) directory and create a new GO file.
+    - The method `DestType` returns the enum value of the destination added earlier.
+    - The method `ModifyConfig` is called with the `dest` object which holds the data received from the UI and the `currentConfig` object. The `currentConfig` object contains the current configuration of the gateway collector. Modify this object to include the [OpenTelemetry configuration](https://opentelemetry.io/docs/collector/configuration/) needed by your destination. Make sure to give any exporter or pipeline a unique name in order to avoid conflicts (use the convention `traces/<dest-name>-<dest.GetID()>` for traces pipelines and `otlp/<dest-name>-<dest.GetID()>` for OpenTelemetry exporters). You can assume a basic configuration is already provided in the `currentConfig` object, for details see `getBasicConfig` method in `common/config/root.go` file.
+    - You can use the utility methods `isTracingEnabled`, `isMetricsEnabled` and `isLoggingEnabled` to determine which signals are selected by the user for the destination and configure the collector accordingly.
+    - Example: `mydest.go`
 
 ```go mydest.go
 package config
@@ -138,30 +149,50 @@ func (m *MyDest) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) er
 }
 ```
 
-- The method `DestType` returns the enum value of the destination added earlier.
-- The method `ModifyConfig` is called with the `dest` object which holds the
-  data received from the UI and the `currentConfig` object. The `currentConfig`
-  object contains the current configuration of the gateway collector. Modify
-  this object to include the
-  [OpenTelemetry configuration](https://opentelemetry.io/docs/collector/configuration/)
-  needed by your destination. Make sure to give any exporter or pipeline a
-  unique name in order to avoid conflicts (use the convention
-  `traces/<dest-name>-<dest.GetID()>` for traces pipelines and `otlp/<dest-name>-<dest.GetID()>` for
-  OpenTelemetry exporters). You can assume a basic configuration is already
-  provided in the `currentConfig` object, for details see `getBasicConfig`
-  method in `common/config/root.go` file.
-- You can use the utility methods `isTracingEnabled`, `isMetricsEnabled` and
-  `isLoggingEnabled` to determine which signals are selected by the user for the
-  destination and configure the collector accordingly.
-- The last step is to register the new destination struct in the
-  `common/config/root.go` file:
+3. Go to [`common/config/root.go`](https://github.com/odigos-io/odigos/tree/main/common/config/root.go) and add the new destination to the `availableConfigers` list.
+    - Example: `&MyDest{}`
 
-```go
-var availableConfigers = []Configer{/* List of existing destinations  */, &MyDest{}}
+```go common/config/root.go
+var availableConfigers = []Configer{
+  &MyDest{},
+  /* List of existing destinations...  */
+}
 ```
 
-That’s it! Now you can use your new destination in the UI and send data to it.
+### Generating Documentation
 
-**Please submit a PR to the
-[odigos git repository](https://github.com/odigos-io/odigos), we are happy to
-accept new destinations.**
+1. Make sure you have [Python installed](https://www.python.org/downloads/) on your system.
+2. Go to [`docs`](https://github.com/odigos-io/odigos/tree/main/docs) directory, and run:
+
+```bash
+python sync-dest-doc.py
+# OR
+python3 sync-dest-doc.py
+```
+
+3. This will generate the documentation for the new destination in the [`docs/destinations`](https://github.com/odigos-io/odigos/tree/main/docs/destinations) directory.
+    - Feel free to add any additional content to the generated file, only between the `!! START CUSTOM EDIT !!` and `!! END CUSTOM EDIT !!` comments.
+    - Example: `mydest.mdx`
+
+```mdx mydest.mdx
+{/*
+    Add custom content here (under this comment)...
+
+    e.g:
+    [🔗 website](https://odigos.io)
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+<img src='/mydest.svg' alt='mydest' width="100" height="100" className="not-prose" />
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+```
+
+### That’s it! Now you can use your new destination in the UI and send data to it.
+
+**Please submit a PR to the [odigos git repository](https://github.com/odigos-io/odigos).**
