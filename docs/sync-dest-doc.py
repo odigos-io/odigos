@@ -295,7 +295,6 @@ def get_header(yaml_content):
         + "\n"
         + "\n    e.g:"
         + "\n    [🔗 website](https://odigos.io)"
-        + f"\n    {get_logo(yaml_content)}"
         + "\n"
         + "\n    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!"
         + "\n    !! START CUSTOM EDIT !!"
