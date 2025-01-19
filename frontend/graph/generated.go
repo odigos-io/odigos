@@ -257,15 +257,17 @@ type ComplexityRoot struct {
 	InstrumentationRule struct {
 		Disabled                 func(childComplexity int) int
 		InstrumentationLibraries func(childComplexity int) int
+		Mutable                  func(childComplexity int) int
 		Notes                    func(childComplexity int) int
 		PayloadCollection        func(childComplexity int) int
+		ProfileName              func(childComplexity int) int
 		RuleID                   func(childComplexity int) int
 		RuleName                 func(childComplexity int) int
 		Workloads                func(childComplexity int) int
 	}
 
 	K8sActualNamespace struct {
-		K8sActualSources func(childComplexity int, instrumentationLabeled *bool) int
+		K8sActualSources func(childComplexity int) int
 		Name             func(childComplexity int) int
 		Selected         func(childComplexity int) int
 	}
@@ -495,7 +497,7 @@ type DestinationResolver interface {
 	Conditions(ctx context.Context, obj *model.Destination) ([]*model.Condition, error)
 }
 type K8sActualNamespaceResolver interface {
-	K8sActualSources(ctx context.Context, obj *model.K8sActualNamespace, instrumentationLabeled *bool) ([]*model.K8sActualSource, error)
+	K8sActualSources(ctx context.Context, obj *model.K8sActualNamespace) ([]*model.K8sActualSource, error)
 }
 type MutationResolver interface {
 	UpdateAPIToken(ctx context.Context, token string) (bool, error)
@@ -1386,6 +1388,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InstrumentationRule.InstrumentationLibraries(childComplexity), true
 
+	case "InstrumentationRule.mutable":
+		if e.complexity.InstrumentationRule.Mutable == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationRule.Mutable(childComplexity), true
+
 	case "InstrumentationRule.notes":
 		if e.complexity.InstrumentationRule.Notes == nil {
 			break
@@ -1399,6 +1408,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InstrumentationRule.PayloadCollection(childComplexity), true
+
+	case "InstrumentationRule.profileName":
+		if e.complexity.InstrumentationRule.ProfileName == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationRule.ProfileName(childComplexity), true
 
 	case "InstrumentationRule.ruleId":
 		if e.complexity.InstrumentationRule.RuleID == nil {
@@ -1426,12 +1442,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_K8sActualNamespace_k8sActualSources_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.K8sActualNamespace.K8sActualSources(childComplexity, args["instrumentationLabeled"].(*bool)), true
+		return e.complexity.K8sActualNamespace.K8sActualSources(childComplexity), true
 
 	case "K8sActualNamespace.name":
 		if e.complexity.K8sActualNamespace.Name == nil {
@@ -2634,21 +2645,6 @@ func (ec *executionContext) field_ComputePlatform_sources_args(ctx context.Conte
 		}
 	}
 	args["nextPage"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_K8sActualNamespace_k8sActualSources_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *bool
-	if tmp, ok := rawArgs["instrumentationLabeled"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("instrumentationLabeled"))
-		arg0, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["instrumentationLabeled"] = arg0
 	return args, nil
 }
 
@@ -4537,6 +4533,10 @@ func (ec *executionContext) fieldContext_ComputePlatform_instrumentationRules(_ 
 				return ec.fieldContext_InstrumentationRule_notes(ctx, field)
 			case "disabled":
 				return ec.fieldContext_InstrumentationRule_disabled(ctx, field)
+			case "mutable":
+				return ec.fieldContext_InstrumentationRule_mutable(ctx, field)
+			case "profileName":
+				return ec.fieldContext_InstrumentationRule_profileName(ctx, field)
 			case "workloads":
 				return ec.fieldContext_InstrumentationRule_workloads(ctx, field)
 			case "instrumentationLibraries":
@@ -8709,6 +8709,94 @@ func (ec *executionContext) fieldContext_InstrumentationRule_disabled(_ context.
 	return fc, nil
 }
 
+func (ec *executionContext) _InstrumentationRule_mutable(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationRule_mutable(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Mutable, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationRule_mutable(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InstrumentationRule_profileName(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationRule_profileName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProfileName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationRule_profileName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _InstrumentationRule_workloads(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRule) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InstrumentationRule_workloads(ctx, field)
 	if err != nil {
@@ -8923,11 +9011,14 @@ func (ec *executionContext) _K8sActualNamespace_selected(ctx context.Context, fi
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(bool)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_K8sActualNamespace_selected(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8957,7 +9048,7 @@ func (ec *executionContext) _K8sActualNamespace_k8sActualSources(ctx context.Con
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.K8sActualNamespace().K8sActualSources(rctx, obj, fc.Args["instrumentationLabeled"].(*bool))
+		return ec.resolvers.K8sActualNamespace().K8sActualSources(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8974,7 +9065,7 @@ func (ec *executionContext) _K8sActualNamespace_k8sActualSources(ctx context.Con
 	return ec.marshalNK8sActualSource2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sActualSource(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_K8sActualNamespace_k8sActualSources(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_K8sActualNamespace_k8sActualSources(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "K8sActualNamespace",
 		Field:      field,
@@ -9001,17 +9092,6 @@ func (ec *executionContext) fieldContext_K8sActualNamespace_k8sActualSources(ctx
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sActualSource", field.Name)
 		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_K8sActualNamespace_k8sActualSources_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
 	}
 	return fc, nil
 }
@@ -10455,6 +10535,10 @@ func (ec *executionContext) fieldContext_Mutation_createInstrumentationRule(ctx 
 				return ec.fieldContext_InstrumentationRule_notes(ctx, field)
 			case "disabled":
 				return ec.fieldContext_InstrumentationRule_disabled(ctx, field)
+			case "mutable":
+				return ec.fieldContext_InstrumentationRule_mutable(ctx, field)
+			case "profileName":
+				return ec.fieldContext_InstrumentationRule_profileName(ctx, field)
 			case "workloads":
 				return ec.fieldContext_InstrumentationRule_workloads(ctx, field)
 			case "instrumentationLibraries":
@@ -10526,6 +10610,10 @@ func (ec *executionContext) fieldContext_Mutation_updateInstrumentationRule(ctx 
 				return ec.fieldContext_InstrumentationRule_notes(ctx, field)
 			case "disabled":
 				return ec.fieldContext_InstrumentationRule_disabled(ctx, field)
+			case "mutable":
+				return ec.fieldContext_InstrumentationRule_mutable(ctx, field)
+			case "profileName":
+				return ec.fieldContext_InstrumentationRule_profileName(ctx, field)
 			case "workloads":
 				return ec.fieldContext_InstrumentationRule_workloads(ctx, field)
 			case "instrumentationLibraries":
@@ -20042,6 +20130,16 @@ func (ec *executionContext) _InstrumentationRule(ctx context.Context, sel ast.Se
 			out.Values[i] = ec._InstrumentationRule_notes(ctx, field, obj)
 		case "disabled":
 			out.Values[i] = ec._InstrumentationRule_disabled(ctx, field, obj)
+		case "mutable":
+			out.Values[i] = ec._InstrumentationRule_mutable(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "profileName":
+			out.Values[i] = ec._InstrumentationRule_profileName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "workloads":
 			out.Values[i] = ec._InstrumentationRule_workloads(ctx, field, obj)
 		case "instrumentationLibraries":
@@ -20089,6 +20187,9 @@ func (ec *executionContext) _K8sActualNamespace(ctx context.Context, sel ast.Sel
 			}
 		case "selected":
 			out.Values[i] = ec._K8sActualNamespace_selected(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "k8sActualSources":
 			field := field
 

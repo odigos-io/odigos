@@ -6,10 +6,9 @@ import { NodeDataFlow } from '@/reuseable-components';
 import { MultiSourceControl } from '../multi-source-control';
 import { OverviewActionsMenu } from '../overview-actions-menu';
 import { type Edge, useEdgesState, useNodesState, type Node, applyNodeChanges } from '@xyflow/react';
-import { useComputePlatform, useContainerSize, useMetrics, useNodeDataFlowHandlers, useSourceCRUD } from '@/hooks';
+import { useActionCRUD, useContainerSize, useDestinationCRUD, useInstrumentationRuleCRUD, useMetrics, useNodeDataFlowHandlers, useSourceCRUD } from '@/hooks';
 
 import { buildEdges } from './build-edges';
-import { getEntityCounts } from './get-entity-counts';
 import { getNodePositions } from './get-node-positions';
 import { buildRuleNodes } from './build-rule-nodes';
 import { buildActionNodes } from './build-action-nodes';
@@ -17,7 +16,6 @@ import { buildDestinationNodes } from './build-destination-nodes';
 import { buildSourceNodes } from './build-source-nodes';
 import nodeConfig from './node-config.json';
 
-export * from './get-entity-counts';
 export * from './get-node-positions';
 export { nodeConfig };
 
@@ -35,61 +33,52 @@ export default function OverviewDataFlowContainer() {
   const positions = useMemo(() => getNodePositions({ containerWidth }), [containerWidth]);
 
   const { metrics } = useMetrics();
-  const { sources, filteredSources } = useSourceCRUD();
-  const { data, filteredData, loading } = useComputePlatform(); // TODO: remove this in favor of CRUD hooks
-
-  const unfilteredCounts = useMemo(
-    () =>
-      getEntityCounts({
-        sources,
-        destinations: data?.computePlatform.destinations,
-        actions: data?.computePlatform.actions,
-        instrumentationRules: data?.computePlatform.instrumentationRules,
-      }),
-    [sources, data],
-  );
+  const { actions, filteredActions, loading: actLoad } = useActionCRUD();
+  const { sources, filteredSources, loading: srcLoad } = useSourceCRUD();
+  const { destinations, filteredDestinations, loading: destLoad } = useDestinationCRUD();
+  const { instrumentationRules, filteredInstrumentationRules, loading: ruleLoad } = useInstrumentationRuleCRUD();
 
   const ruleNodes = useMemo(
     () =>
       buildRuleNodes({
-        loading,
-        entities: filteredData?.computePlatform.instrumentationRules || [],
+        loading: ruleLoad,
+        entities: filteredInstrumentationRules,
+        unfilteredCount: instrumentationRules.length,
         positions,
-        unfilteredCounts,
       }),
-    [loading, filteredData?.computePlatform.instrumentationRules, positions, unfilteredCounts.rule],
+    [ruleLoad, instrumentationRules, filteredInstrumentationRules, positions],
   );
   const actionNodes = useMemo(
     () =>
       buildActionNodes({
-        loading,
-        entities: filteredData?.computePlatform.actions || [],
+        loading: actLoad,
+        entities: filteredActions,
+        unfilteredCount: actions.length,
         positions,
-        unfilteredCounts,
       }),
-    [loading, filteredData?.computePlatform.actions, positions, unfilteredCounts.action],
+    [actLoad, actions, filteredActions, positions],
   );
   const destinationNodes = useMemo(
     () =>
       buildDestinationNodes({
-        loading,
-        entities: filteredData?.computePlatform.destinations || [],
+        loading: destLoad,
+        entities: filteredDestinations,
+        unfilteredCount: destinations.length,
         positions,
-        unfilteredCounts,
       }),
-    [loading, filteredData?.computePlatform.destinations, positions, unfilteredCounts.destination],
+    [destLoad, destinations, filteredDestinations, positions],
   );
   const sourceNodes = useMemo(
     () =>
       buildSourceNodes({
-        loading,
+        loading: srcLoad,
         entities: filteredSources,
+        unfilteredCount: sources.length,
         positions,
-        unfilteredCounts,
         containerHeight,
         onScroll: ({ scrollTop }) => setScrollYOffset(scrollTop),
       }),
-    [loading, filteredSources, positions, unfilteredCounts.source, containerHeight],
+    [srcLoad, sources, filteredSources, positions, containerHeight],
   );
 
   const [nodes, setNodes, onNodesChange] = useNodesState(([] as Node[]).concat(actionNodes, ruleNodes, sourceNodes, destinationNodes));
@@ -122,7 +111,13 @@ export default function OverviewDataFlowContainer() {
     <Container ref={containerRef}>
       <OverviewActionsMenu />
       <MultiSourceControl />
-      <NodeDataFlow nodes={nodes} edges={edges} onNodeClick={handleNodeClick} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} />
+      <NodeDataFlow
+        nodes={nodes}
+        edges={edges}
+        onNodeClick={handleNodeClick}
+        onNodesChange={(changes) => setTimeout(() => onNodesChange(changes))} // Timeout is needed to fix this error: "ResizeObserver loop completed with undelivered notifications."
+        onEdgesChange={(changes) => setTimeout(() => onEdgesChange(changes))} // Timeout is needed to fix this error: "ResizeObserver loop completed with undelivered notifications."
+      />
     </Container>
   );
 }

@@ -3,9 +3,9 @@ import theme from '@/styles/theme';
 import { PlusIcon } from '@/assets';
 import { useModalStore } from '@/store';
 import { getEntityIcon } from '@/utils';
+import { useOnClickOutside } from '@/hooks';
 import styled, { css } from 'styled-components';
-import { useComputePlatform, useOnClickOutside } from '@/hooks';
-import { Button, FadeLoader, Text } from '@/reuseable-components';
+import { Button, Text } from '@/reuseable-components';
 import { type DropdownOption, OVERVIEW_ENTITY_TYPES } from '@/types';
 
 // Styled components for the dropdown UI
@@ -72,7 +72,6 @@ interface Props {
 }
 
 export const AddEntity: React.FC<Props> = ({ options = DEFAULT_OPTIONS, placeholder = 'ADD...' }) => {
-  const { loading } = useComputePlatform();
   const { currentModal, setCurrentModal } = useModalStore();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -92,7 +91,7 @@ export const AddEntity: React.FC<Props> = ({ options = DEFAULT_OPTIONS, placehol
   return (
     <Container ref={dropdownRef}>
       <StyledButton data-id='add-entity' onClick={handleToggle}>
-        {loading ? <FadeLoader color={theme.colors.primary} /> : <PlusIcon fill={theme.colors.primary} />}
+        <PlusIcon fill={theme.colors.primary} />
         <ButtonText size={14}>{placeholder}</ButtonText>
       </StyledButton>
 

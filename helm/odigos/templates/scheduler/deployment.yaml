@@ -41,6 +41,11 @@ spec:
               configMapKeyRef:
                 key: ODIGOS_TIER
                 name: odigos-deployment
+          - name: ODIGOS_VERSION
+            valueFrom:
+              configMapKeyRef:
+                key: ODIGOS_VERSION
+                name: odigos-deployment
         envFrom:
           - configMapRef:
               name: odigos-own-telemetry-otel-config

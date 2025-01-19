@@ -1,0 +1,64 @@
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: frontend
+  namespace: default
+  labels:
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: frontend
+    namespace: default
+    kind: Deployment
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: coupon
+  namespace: default
+  labels:
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: coupon
+    namespace: default
+    kind: Deployment
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: inventory
+  namespace: default
+  labels:
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: inventory
+    namespace: default
+    kind: Deployment
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: pricing
+  namespace: default
+  labels:
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: pricing
+    namespace: default
+    kind: Deployment
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: membership
+  namespace: default
+  labels:
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: membership
+    namespace: default
+    kind: Deployment

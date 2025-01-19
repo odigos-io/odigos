@@ -88,7 +88,7 @@ func NewSchedulerRole(ns string) *rbacv1.Role {
 				APIGroups:     []string{""},
 				Resources:     []string{"configmaps"},
 				ResourceNames: []string{consts.OdigosEffectiveConfigName},
-				Verbs:         []string{"patch"},
+				Verbs:         []string{"patch", "create"},
 			},
 			{ // Needed because the scheduler is managing the collectorsgroups
 				APIGroups: []string{"odigos.io"},
@@ -104,6 +104,11 @@ func NewSchedulerRole(ns string) *rbacv1.Role {
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"destinations"},
 				Verbs:     []string{"get", "list", "watch"},
+			},
+			{ // apply profiles
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"processors", "instrumentationrules"},
+				Verbs:     []string{"get", "list", "watch", "patch", "delete", "create"},
 			},
 		},
 	}
@@ -239,6 +244,17 @@ func NewSchedulerDeployment(ns string, version string, imagePrefix string) *apps
 												Name: k8sconsts.OdigosDeploymentConfigMapName,
 											},
 											Key: k8sconsts.OdigosDeploymentConfigMapTierKey,
+										},
+									},
+								},
+								{
+									Name: consts.OdigosVersionEnvVarName,
+									ValueFrom: &corev1.EnvVarSource{
+										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: k8sconsts.OdigosDeploymentConfigMapName,
+											},
+											Key: k8sconsts.OdigosDeploymentConfigMapVersionKey,
 										},
 									},
 								},
