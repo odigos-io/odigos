@@ -41,7 +41,7 @@ export const FORM_ALERTS = {
   REQUIRED_FIELDS: 'Required fields are missing',
   FIELD_IS_REQUIRED: 'This field is required',
   FORBIDDEN: 'Forbidden',
-  PRO_ONLY: 'This is a pro feature. Please upgrade to enterprise.',
+  ENTERPRISE_ONLY: (str: string = 'This') => `${str} is an Enterprise feature. Please upgrade your plan.`,
   CANNOT_EDIT_RULE: 'Cannot edit a system-managed instrumentation rule',
   CANNOT_DELETE_RULE: 'Cannot delete a system-managed instrumentation rule',
   LATENCY_HTTP_ROUTE: 'HTTP route must start with a forward slash "/"',

@@ -36,15 +36,6 @@ export const RuleModal: React.FC<Props> = ({ isOpen, onClose }) => {
   };
 
   const handleSubmit = async () => {
-    if (!isPro) {
-      return addNotification({
-        type: NOTIFICATION_TYPE.WARNING,
-        title: FORM_ALERTS.FORBIDDEN,
-        message: FORM_ALERTS.PRO_ONLY,
-        hideFromHistory: true,
-      });
-    }
-
     const isFormOk = validateForm({ withAlert: true, alertTitle: ACTION.CREATE });
     if (!isFormOk) return null;
 
@@ -64,7 +55,8 @@ export const RuleModal: React.FC<Props> = ({ isOpen, onClose }) => {
               variant: 'primary',
               label: 'DONE',
               onClick: handleSubmit,
-              disabled: !selectedItem || loading,
+              disabled: !isPro || !selectedItem || loading,
+              tooltip: !isPro ? FORM_ALERTS.ENTERPRISE_ONLY('Instrumentation Rules') : '',
             },
           ]}
         />
@@ -72,7 +64,7 @@ export const RuleModal: React.FC<Props> = ({ isOpen, onClose }) => {
     >
       <ModalBody>
         <SectionTitle title='Select Instrumentation Rule' description='Define how telemetry is recorded from your application. Choose a rule type and configure the details.' />
-        {!isPro && <NotificationNote type={NOTIFICATION_TYPE.DEFAULT} message='Instrumentation Rules is a pro feature. Please upgrade to enterprise.' style={{ marginTop: '24px' }} />}
+        {!isPro && <NotificationNote type={NOTIFICATION_TYPE.DEFAULT} message={FORM_ALERTS.ENTERPRISE_ONLY('Instrumentation Rules')} style={{ marginTop: '24px' }} />}
         <AutocompleteInput options={RULE_OPTIONS} selectedOption={selectedItem} onOptionSelect={handleSelect} style={{ marginTop: isPro ? '24px' : '12px' }} autoFocus={!selectedItem?.type} />
 
         {!!selectedItem?.type ? (
