@@ -30,6 +30,7 @@ const (
 	OdigosDeploymentConfigMapVersionKey            = commonconsts.OdigosVersionEnvVarName
 	OdigosDeploymentConfigMapTierKey               = commonconsts.OdigosTierEnvVarName
 	OdigosDeploymentConfigMapInstallationMethodKey = "installation-method"
+	OdigosProSecretTokenName                       = "odigos-onprem-token"
 )
 
 const (
