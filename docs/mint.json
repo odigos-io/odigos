@@ -98,10 +98,7 @@
         },
         {
           "group": "API Reference",
-          "pages": [
-            "api-reference/odigos.io.v1alpha1",
-            "api-reference/actions.odigos.io.v1alpha1"
-          ]
+          "pages": ["api-reference/odigos.io.v1alpha1", "api-reference/actions.odigos.io.v1alpha1"]
         }
       ]
     },
@@ -273,7 +270,6 @@
       "pages": [
         "telemetry-types",
         "custom-resources",
-        "uninstall",
         "usage-reports",
         "benchmarks"
       ]
