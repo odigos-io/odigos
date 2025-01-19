@@ -109,7 +109,9 @@ func CalculateWithBase(currentConfig *Config, prefixProcessors []string, dests [
 			continue
 		}
 		sanitizedProcessorName := fmt.Sprintf("odigosroutingfilterprocessor/%s", strings.ReplaceAll(dest.GetID(), ".", "-"))
-
+		if routingProcessor, ok := routingProcessors[sanitizedProcessorName]; ok {
+			currentConfig.Processors[sanitizedProcessorName] = routingProcessor
+		}
 		pipelineNames, err := configer.ModifyConfig(dest, currentConfig)
 		status.Destination[dest.GetID()] = err
 
@@ -119,12 +121,7 @@ func CalculateWithBase(currentConfig *Config, prefixProcessors []string, dests [
 
 		for _, pipelineName := range pipelineNames {
 			if pipeline, ok := currentConfig.Service.Pipelines[pipelineName]; ok {
-
-				if routingProcessor, ok := routingProcessors[sanitizedProcessorName]; ok {
-					currentConfig.Processors[sanitizedProcessorName] = routingProcessor
-					pipeline.Processors = append(pipeline.Processors, sanitizedProcessorName)
-				}
-
+				pipeline.Processors = append([]string{sanitizedProcessorName}, pipeline.Processors...)
 				currentConfig.Service.Pipelines[pipelineName] = pipeline
 			}
 		}
