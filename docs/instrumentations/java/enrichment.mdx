@@ -1,9 +1,14 @@
 ---
-title: "Java"
-sidebarTitle: "Java"
+title: 'Enrich with OpenTelemetry API'
+sidebarTitle: 'Enrichment'
+icon: 'telescope'
 ---
 
-## Required dependencies
+import EnrichmentIntro from '/snippets/enrichment-intro.mdx'
+
+<EnrichmentIntro language='Java' />
+
+## Required Dependencies
 
 Add the following dependencies to your project:
 
@@ -34,16 +39,17 @@ Add the following dependencies to your project:
 <Tab title="Gradle">
 ```groovy
 dependencyManagement {
-  imports {
-    mavenBom("io.opentelemetry:opentelemetry-bom:1.35.0")
-  }
+    imports {
+        mavenBom("io.opentelemetry:opentelemetry-bom:1.35.0")
+    }
 }
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-web");
-    implementation("io.opentelemetry:opentelemetry-api");
+implementation("org.springframework.boot:spring-boot-starter-web");
+implementation("io.opentelemetry:opentelemetry-api");
 }
-```
+
+````
 
 If you are not using Spring and its `io.spring.dependency-management` dependency management plugin, install the OpenTelemetry BOM and API using Gradle dependencies only.
 
@@ -52,7 +58,8 @@ dependencies {
     implementation(platform("io.opentelemetry:opentelemetry-bom:1.35.0"));
     implementation("io.opentelemetry:opentelemetry-api");
 }
-```
+````
+
 </Tab>
 </Tabs>
 
@@ -71,6 +78,7 @@ Now you can create a span using the `Tracer` instance:
 
 ```java
 Span span = tracer.spanBuilder("span-name").startSpan();
+
 try (Scope scope = span.makeCurrent()) {
     // Your code goes here.
 } finally {
@@ -78,5 +86,6 @@ try (Scope scope = span.makeCurrent()) {
 }
 ```
 
-### Additional information
+## Additional Information
+
 For more use cases, see the [OpenTelemetry Java API documentation](https://opentelemetry.io/docs/languages/java/instrumentation/#create-spans).

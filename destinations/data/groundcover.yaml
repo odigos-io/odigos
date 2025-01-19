@@ -20,7 +20,7 @@ spec:
       componentProps:
         type: text
         required: true
-        tooltip: 'Your inCloud Site is part of the configuration provided to you by groundcover when setting up the managed inCloud backend.'
+        tooltip: The format is `host:port`. Host is required, also known as your `inCloud_Site`, it is part of the configuration provided to you by Groundcover when setting up inCloud Managed. Port is optional, and defaults to the default OpenTelemetry gRPC port `4317`.
     - name: GROUNDCOVER_API_KEY
       displayName: Groundcover API Key
       componentType: input
