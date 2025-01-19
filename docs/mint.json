@@ -98,7 +98,10 @@
         },
         {
           "group": "API Reference",
-          "pages": ["api-reference/odigos.io.v1alpha1", "api-reference/actions.odigos.io.v1alpha1"]
+          "pages": [
+            "api-reference/odigos.io.v1alpha1",
+            "api-reference/actions.odigos.io.v1alpha1"
+          ]
         }
       ]
     },
@@ -108,37 +111,44 @@
         "instrumentations/overview",
         {
           "group": "Go",
+          "icon": "golang",
           "pages": [
-            "instrumentations/golang/golang",
+            "instrumentations/golang/ebpf",
             "instrumentations/golang/enrichment"
           ]
         },
         {
           "group": "Node.js",
+          "icon": "node-js",
           "pages": [
-            "instrumentations/nodejs/nodejs",
-            "instrumentations/nodejs/enrichment",
-            "instrumentations/nodejs/ebpf"
+            "instrumentations/nodejs/native",
+            "instrumentations/nodejs/ebpf",
+            "instrumentations/nodejs/enrichment"
           ]
         },
         {
           "group": "Python",
+          "icon": "python",
           "pages": [
-            "instrumentations/python/python",
+            "instrumentations/python/native",
             "instrumentations/python/enrichment"
           ]
         },
         {
           "group": "Java",
+          "icon": "java",
           "pages": [
-            "instrumentations/java/java",
-            "instrumentations/java/ebpf"
+            "instrumentations/java/native",
+            "instrumentations/java/ebpf",
+            "instrumentations/java/enrichment"
           ]
         },
         {
           "group": ".NET",
+          "icon": "code",
           "pages": [
-            "instrumentations/dotnet/dotnet"
+            "instrumentations/dotnet/native",
+            "instrumentations/dotnet/enrichment"
           ]
         }
       ]
@@ -189,22 +199,6 @@
             },
             "pipeline/actions/crd",
             "pipeline/actions/troubleshooting"
-          ]
-        }
-      ]
-    },
-    {
-      "group": "Generated Data",
-      "pages": [
-        {
-          "group": "Enrich with OpenTelemetry APIs",
-          "pages": [
-            "data/otel-apis",
-            "data/java",
-            "data/python",
-            "data/javascript",
-            "data/golang",
-            "data/dotnet"
           ]
         }
       ]
