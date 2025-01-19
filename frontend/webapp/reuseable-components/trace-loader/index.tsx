@@ -13,7 +13,7 @@ const Container = styled.div<{ $width: number }>`
   transform: rotate(-90deg);
 `;
 
-export const TraceLoader: React.FC<Props> = ({ width = 420 }) => {
+export const TraceLoader: React.FC<Props> = ({ width = 620 }) => {
   return (
     <Container $width={width}>
       <Lottie
