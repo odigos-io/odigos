@@ -1,17 +1,50 @@
 ---
-title: "Instrumentations Overview"
+title: "Overview"
+description: "Odigos will automatically apply instrumentation to your selected workloads to record observability signals from your services such as collecting traces, metrics, and logs without any code changes."
 sidebarTitle: "Overview"
+icon: 'house'
 ---
 
-Instrumentations in Odigos is the code that is used to record observability signals from your services.
-Odigos will automatically apply instrumentation to your selected workloads to collect traces, metrics, and logs without any code changes.
+import { LanguagesCard } from '/snippets/languages-card.mdx';
 
 ## Supported Runtimes
 
-Odigos provides automatic instrumentations in kubernetes for the following runtimes:
+Odigos provides automatic instrumentations for the following runtimes:
 
-- [Go](/instrumentations/golang/golang) versions >= 1.17
-- [Java](/instrumentations/java/java) versions >= 8
-- [Node.js](/instrumentations/nodejs/nodejs) versions >= 14
-- [Python](/instrumentations/python/python) versions >= 3.8
-- .NET
+<LanguagesCard
+  golangUrl="/instrumentations/golang/native"
+  golangDescription="Versions 1.17 and above are supported"
+  javascriptUrl="/instrumentations/nodejs/native"
+  javascriptDescription="Versions 14 and above are supported"
+  pythonUrl="/instrumentations/python/native"
+  pythonDescription="Versions 3.8 and above are supported"
+  javaUrl="/instrumentations/java/native"
+  javaDescription="Versions 8 and above are supported"
+  dotnetUrl="/instrumentations/dotnet/native"
+  dotnetDescription="Versions ?? and above are supported"
+/>
+
+## Enrich with OpenTelemetry APIs
+
+Odigos automatically generates data for open-source libraries and frameworks.
+Additional trace spans, metrics datapoints and log records can be added using the OpenTelemetry APIs.
+Odigos will automatically capture this data and deliver it to the chosen [destination](/backends-overview) alongside the automatically generated data.
+
+<Note>
+  No need to configure the OpenTelemetry SDK, Odigos will automatically configure it for you.
+</Note>
+
+Select a language to learn how to enrich your data with OpenTelemetry APIs:
+
+<LanguagesCard
+  golangUrl="/instrumentations/golang/enrichment"
+  golangDescription="For applications written in Go"
+  javascriptUrl="/instrumentations/nodejs/enrichment"
+  javascriptDescription=" For applications written in JavaScript or Node.js"
+  pythonUrl="/instrumentations/python/enrichment"
+  pythonDescription="For applications written in Python"
+  javaUrl="/instrumentations/java/enrichment"
+  javaDescription="For applications written in Java or JVM-based languages"
+  dotnetUrl="/instrumentations/dotnet/enrichment"
+  dotnetDescription="For applications written in C# or .NET"
+/>

@@ -1,28 +1,34 @@
 ---
-title: "eBPF-Based Java Instrumentation"
-sidebarTitle: "eBPF-Based"
+title: 'eBPF-Based Instrumentation'
+sidebarTitle: 'eBPF'
+icon: 'bee'
 ---
 
-<Info> eBPF-Based Java Instrumentation is currently available with the Odigos Enterprise plan. Contact us for more information.</Info>
+import EbpfKernelVersionNote from '/snippets/ebpf-kernel-version-note.mdx'
+
+<Info>
+  eBPF-Based Instrumentation is currently available with the Odigos **Enterprise** plan.<br />
+  [Contact us](https://odigos.io/) for more information.
+
+  For Native Instrumentation [click here](/instrumentations/java/native).
+</Info>
 
 ## JVM Runtime Requirements
 
 Odigos eBPF-Based Java Instrumentation requires a Java Virtual Machine runtime version of **8** and above.
 
+<EbpfKernelVersionNote />
+
 The following JVM runtimes are continuously tested and verified:
 
 | JVM Runtime | Version |
-|-------------|---------|
+| ----------- | ------- |
 | OpenJDK     | 8       |
 | OpenJDK     | 11      |
 | OpenJDK     | 17      |
 | Azul Zulu   | 8       |
 | Azul Zulu   | 11      |
 | Azul Zulu   | 17      |
-
-<Info>
-  Odigos enterprise data collection is done using eBPF, so Odigos requires, at minimum, platforms that have underlying Linux kernel versions of 5.4.0.
-</Info>
 
 ## Instrumentation Libraries
 
