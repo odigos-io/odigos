@@ -1,7 +1,16 @@
 ---
-title: "Go Automatic Instrumentation"
-sidebarTitle: "Go"
+title: 'Automatic Instrumentation'
+sidebarTitle: 'eBPF'
+icon: 'bee'
 ---
+
+import EbpfKernelVersionNote from '/snippets/ebpf-kernel-version-note.mdx';
+
+<Info>
+  eBPF-Based Instrumentation is currently the default setting of Odigos **Open-Source** version, and is also available with the Odigos **Enterprise** plan.
+
+  Native Instrumentation is currently not supported for this language.
+</Info>
 
 ## Supported Versions
 
@@ -9,9 +18,7 @@ Odigos uses the official [opentelemetry-go-instrumentation](https://github.com/o
 
 - Go runtime versions **1.17** and above are supported.
 
-<Info>
-  Odigos enterprise data collection is done using eBPF, so Odigos requires, at minimum, platforms that have underlying Linux kernel versions of 5.4.0.
-</Info>
+<EbpfKernelVersionNote />
 
 ## Traces
 
@@ -25,9 +32,11 @@ The following go modules will be auto instrumented by Odigos:
 
 - [`github.com/gin-gonic/gin`](https://pkg.go.dev/github.com/gin-gonic/gin) HTTP web framework ⭐️
 - [`net/http`](https://pkg.go.dev/net/http) go standard library for http server and client
-<Info>Please note that in order for the `http.route` parameter to be properly extracted by Go auto instrumentation, 
-you should use Go 1.22 or above and declare a template handler as described in [this article](https://go.dev/blog/routing-enhancements).</Info>
 
+<Info>
+  Please note that in order for the `http.route` parameter to be properly extracted by Go auto instrumentation, you should use Go 1.22 or above and
+  declare a template handler as described in [this article](https://go.dev/blog/routing-enhancements).
+</Info>
 
 ### HTTP Clients
 
