@@ -127,7 +127,7 @@ func GenerateRoutingProcessors(
 func fetchSourcesByGroups(ctx context.Context, kubeClient client.Client, groups []string, logger logr.Logger) ([]odigosv1.Source, error) {
 	sourceMap := make(map[string]odigosv1.Source)
 	for _, group := range groups {
-		labelSelector := labels.Set{fmt.Sprintf("odigos.io/group-%s", group): "true"}.AsSelector()
+		labelSelector := labels.Set{fmt.Sprintf("odigos.io/source-group"): group}.AsSelector()
 
 		sourceList := &odigosv1.SourceList{}
 		err := kubeClient.List(ctx, sourceList, &client.ListOptions{
