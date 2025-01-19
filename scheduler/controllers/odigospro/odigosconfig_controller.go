@@ -11,89 +11,93 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-type odigosConfigController struct {
+type odigossecretController struct {
 	client.Client
-	Scheme *runtime.Scheme
 }
 
-type ClientProConfig struct {
+type proConfig struct {
 	Audience string   `json:"aud"`
 	Expiry   string   `json:"exp"` // Use int64 for UNIX timestamp
 	Profiles []string `json:"profiles,omitempty"`
 }
 
 // TODO: logger
-func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
+func (r *odigossecretController) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	logger.V(0).Info("Reconciling OdigosProConfig")
+	logger.V(0).Info("Reconciling OdigosProSecret")
 
-	proSecret := &corev1.Secret{}
-	odigosDeploymentConfig := &corev1.ConfigMap{}
 	odigosNs := env.GetCurrentNamespace()
-	clientTokenConfig := &ClientProConfig{}
-
+	proSecret := &corev1.Secret{}
 	err := r.Client.Get(ctx, client.ObjectKey{Namespace: odigosNs, Name: k8sconsts.OdigosProSecretName}, proSecret)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			return r.handleSecretDeletion(ctx, r.Client, odigosDeploymentConfig)
+			err = r.handleSecretDeletion(ctx)
 		}
-		return ctrl.Result{}, nil
+		return ctrl.Result{}, err
 	}
 
-	tokenString := proSecret.Data["odigos-onprem-token"]
-	// TODO: what if not found?
+	tokenString := proSecret.Data[k8sconsts.OdigosProSecretTokenKeyName]
+	if tokenString == nil {
+		return ctrl.Result{}, reconcile.TerminalError(fmt.Errorf("error: token not found in secret %s/%s", odigosNs, k8sconsts.OdigosProSecretName))
+	}
 
 	token, _, err := jwt.NewParser().ParseUnverified(string(tokenString), jwt.MapClaims{})
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to parse JWT token: %w", err)
-	}
-	if claims, ok := token.Claims.(jwt.MapClaims); ok {
-		*clientTokenConfig = ClientProConfig{
-			Audience: claims["aud"].(string),
-			// TODO: what time format should be used?
-			Expiry:   time.Unix(int64(claims["exp"].(float64)), 0).UTC().Format("02/01/2006 03:04:05 PM"),
-			Profiles: toStringSlice(claims["profiles"]),
-		}
-	} else {
-		// TODO: is there anything to do in case of jwt parsing error?
+		return ctrl.Result{}, reconcile.TerminalError(fmt.Errorf("error: failed to parse JWT token: %w", err))
 	}
 
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return ctrl.Result{}, reconcile.TerminalError(fmt.Errorf("error: failed to parse JWT token claims"))
+	}
+	proConfig := proConfig{
+		Audience: claims["aud"].(string),
+		// TODO: what time format should be used?
+		Expiry:   time.Unix(int64(claims["exp"].(float64)), 0).UTC().Format("02/01/2006 03:04:05 PM"),
+		Profiles: toStringSlice(claims["profiles"]),
+	}
+
+	odigosDeploymentConfig := &corev1.ConfigMap{}
 	err = r.Client.Get(ctx, types.NamespacedName{Namespace: odigosNs, Name: k8sconsts.OdigosDeploymentConfigMapName}, odigosDeploymentConfig)
 	if err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{}, reconcile.TerminalError(err)
 	}
 
-	r.updateOdigosDeploymentConfigMap(clientTokenConfig, odigosDeploymentConfig)
+	err = r.updateOdigosDeploymentConfigMap(ctx, proConfig, odigosDeploymentConfig)
+	if err != nil {
+		return ctrl.Result{}, reconcile.TerminalError(err)
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *odigossecretController) handleSecretDeletion(ctx context.Context) error {
+	odigosDeploymentConfig := &corev1.ConfigMap{}
+	err := r.Client.Get(ctx, types.NamespacedName{Namespace: env.GetCurrentNamespace(), Name: k8sconsts.OdigosDeploymentConfigMapName}, odigosDeploymentConfig)
+	if err != nil {
+		return reconcile.TerminalError(err)
+	}
+	for key := range odigosDeploymentConfig.Data {
+		if strings.HasPrefix(key, "onprem_token") {
+			delete(odigosDeploymentConfig.Data, key)
+		}
+	}
 
 	err = r.Client.Update(ctx, odigosDeploymentConfig)
 	if err != nil {
-		return ctrl.Result{}, err
+		return reconcile.TerminalError(err)
 	}
-
-	return ctrl.Result{}, nil
+	return nil
 }
 
-func (r *odigosConfigController) handleSecretDeletion(ctx context.Context, client client.Client, odigosDeploymentConfig *corev1.ConfigMap) (ctrl.Result, error) {
-	client.Get(ctx, types.NamespacedName{Namespace: env.GetCurrentNamespace(), Name: k8sconsts.OdigosDeploymentConfigMapName}, odigosDeploymentConfig)
-
-	delete(odigosDeploymentConfig.Data, "audience")
-	delete(odigosDeploymentConfig.Data, "expiry")
-	delete(odigosDeploymentConfig.Data, "profiles")
-
-	err := client.Update(ctx, odigosDeploymentConfig)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	return ctrl.Result{}, nil
-}
-
+// convert []interface{} to []string
 func toStringSlice(input interface{}) []string {
 	if items, ok := input.([]interface{}); ok {
 		result := make([]string, len(items))
@@ -105,11 +109,19 @@ func toStringSlice(input interface{}) []string {
 	return nil
 }
 
-func (r *odigosConfigController) updateOdigosDeploymentConfigMap(clientConfig *ClientProConfig, odigosDeploymentConfig *corev1.ConfigMap) {
+func (r *odigossecretController) updateOdigosDeploymentConfigMap(ctx context.Context, clientConfig proConfig, odigosDeploymentConfig *corev1.ConfigMap) error {
 	odigosDeploymentConfig.Data["audience"] = clientConfig.Audience
 	odigosDeploymentConfig.Data["expiry"] = clientConfig.Expiry
 
 	if len(clientConfig.Profiles) > 0 {
-		odigosDeploymentConfig.Data["profiles"] = strings.Join(clientConfig.Profiles, ",")
+		odigosDeploymentConfig.Data["onprem_token_profiles"] = strings.Join(clientConfig.Profiles, ",")
 	}
+
+	err := r.Client.Update(ctx, odigosDeploymentConfig)
+	if err != nil {
+		//TODO: is it suite to return `ctrl.Result{RequeueAfter: time.Minute}, nil`?
+		return err
+	}
+
+	return nil
 }
