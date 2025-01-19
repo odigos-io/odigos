@@ -75,12 +75,12 @@ type ResourceStatuses struct {
 	Processor   map[string]error
 }
 
-func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, memoryLimiterConfig GenericMap, applySelfTelemetry func(c *Config) error, routingProcessors map[string]GenericMap) (string, error, *ResourceStatuses, []common.ObservabilitySignal) {
+func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, memoryLimiterConfig GenericMap, applySelfTelemetry func(c *Config) error, sourcesFilterProcessors map[string]GenericMap) (string, error, *ResourceStatuses, []common.ObservabilitySignal) {
 	currentConfig, prefixProcessors := getBasicConfig(memoryLimiterConfig)
-	return CalculateWithBase(currentConfig, prefixProcessors, dests, processors, applySelfTelemetry, routingProcessors)
+	return CalculateWithBase(currentConfig, prefixProcessors, dests, processors, applySelfTelemetry, sourcesFilterProcessors)
 }
 
-func CalculateWithBase(currentConfig *Config, prefixProcessors []string, dests []ExporterConfigurer, processors []ProcessorConfigurer, applySelfTelemetry func(c *Config) error, routingProcessors map[string]GenericMap) (string, error, *ResourceStatuses, []common.ObservabilitySignal) {
+func CalculateWithBase(currentConfig *Config, prefixProcessors []string, dests []ExporterConfigurer, processors []ProcessorConfigurer, applySelfTelemetry func(c *Config) error, sourcesFilterProcessors map[string]GenericMap) (string, error, *ResourceStatuses, []common.ObservabilitySignal) {
 	configers, err := LoadConfigers()
 	if err != nil {
 		return "", err, nil, nil
@@ -108,8 +108,8 @@ func CalculateWithBase(currentConfig *Config, prefixProcessors []string, dests [
 			status.Destination[dest.GetID()] = fmt.Errorf("no configer for %s", dest.GetType())
 			continue
 		}
-		sanitizedProcessorName := fmt.Sprintf("odigosroutingfilterprocessor/%s", strings.ReplaceAll(dest.GetID(), ".", "-"))
-		if routingProcessor, ok := routingProcessors[sanitizedProcessorName]; ok {
+		sanitizedProcessorName := fmt.Sprintf("odigossourcesfilter/%s", strings.ReplaceAll(dest.GetID(), ".", "-"))
+		if routingProcessor, ok := sourcesFilterProcessors[sanitizedProcessorName]; ok {
 			currentConfig.Processors[sanitizedProcessorName] = routingProcessor
 		}
 		pipelineNames, err := configer.ModifyConfig(dest, currentConfig)

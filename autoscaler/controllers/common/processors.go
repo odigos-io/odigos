@@ -79,13 +79,13 @@ func GetGenericBatchProcessor() odigosv1.Processor {
 	}
 }
 
-func GenerateRoutingProcessors(
+func GenerateSourcesFilterProcessors(
 	ctx context.Context,
 	kubeClient client.Client,
 	dests *odigosv1.DestinationList,
 ) (map[string]config.GenericMap, error) {
 	logger := log.FromContext(ctx)
-	routingProcessors := make(map[string]config.GenericMap)
+	sourcesFilterProcessors := make(map[string]config.GenericMap)
 
 	for _, dest := range dests.Items {
 
@@ -114,14 +114,14 @@ func GenerateRoutingProcessors(
 		}
 
 		sanitizedProcessorName := strings.ReplaceAll(dest.GetID(), ".", "-")
-		processorName := fmt.Sprintf("odigosroutingfilterprocessor/%s", sanitizedProcessorName)
+		processorName := fmt.Sprintf("odigossourcesfilter/%s", sanitizedProcessorName)
 
-		routingProcessors[processorName] = config.GenericMap{
+		sourcesFilterProcessors[processorName] = config.GenericMap{
 			"match_conditions": matchConditions,
 		}
 	}
 
-	return routingProcessors, nil
+	return sourcesFilterProcessors, nil
 }
 
 func fetchSourcesByGroups(ctx context.Context, kubeClient client.Client, groups []string, logger logr.Logger) ([]odigosv1.Source, error) {

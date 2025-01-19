@@ -115,9 +115,9 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 	logger := log.FromContext(ctx)
 	memoryLimiterConfiguration := common.GetMemoryLimiterConfig(gateway.Spec.ResourcesSettings)
 
-	routingProcessors, err := common.GenerateRoutingProcessors(ctx, c, dests)
+	sourcesFilterProcessors, err := common.GenerateSourcesFilterProcessors(ctx, c, dests)
 	if err != nil {
-		logger.Error(err, "Failed to generate routing processors")
+		logger.Error(err, "Failed to generate sources filter processors")
 		return nil, err
 	}
 
@@ -130,7 +130,7 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 		func(c *config.Config) error {
 			return addSelfTelemetryPipeline(c, gateway.Spec.CollectorOwnMetricsPort)
 		},
-		routingProcessors,
+		sourcesFilterProcessors,
 	)
 
 	if err != nil {
