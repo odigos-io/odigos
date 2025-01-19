@@ -22,28 +22,38 @@ const (
 )
 
 type filterProcessor struct {
-	logger *zap.Logger
-	config *Config
+	logger   *zap.Logger
+	config   *Config
+	matchMap map[string]struct{}
+}
+
+func newFilterProcessor(logger *zap.Logger, cfg *Config) *filterProcessor {
+	return &filterProcessor{
+		logger:   logger,
+		config:   cfg,
+		matchMap: initMatchMap(cfg.MatchConditions),
+	}
+}
+
+func initMatchMap(conditions []string) map[string]struct{} {
+	matchMap := make(map[string]struct{}, len(conditions))
+	for _, condition := range conditions {
+		matchMap[condition] = struct{}{}
+	}
+	return matchMap
 }
 
 func (fp *filterProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
 	rspans := td.ResourceSpans()
 
-	for i := 0; i < rspans.Len(); i++ {
-		resourceSpan := rspans.At(i)
+	rspans.RemoveIf(func(resourceSpan ptrace.ResourceSpans) bool {
 		resourceAttributes := resourceSpan.Resource().Attributes()
-		ilSpans := resourceSpan.ScopeSpans()
-
-		for j := 0; j < ilSpans.Len(); j++ {
-			scopeSpan := ilSpans.At(j)
-			spans := scopeSpan.Spans()
-
-			spans.RemoveIf(func(span ptrace.Span) bool {
-				namespace, name, kind := extractResourceDetails(resourceAttributes)
-				return !fp.matches(name, namespace, kind)
-			})
+		namespace, name, kind, found := extractResourceDetails(resourceAttributes)
+		if found {
+			return !fp.matches(name, namespace, kind)
 		}
-	}
+		return false
+	})
 
 	return td, nil
 }
@@ -51,21 +61,14 @@ func (fp *filterProcessor) processTraces(ctx context.Context, td ptrace.Traces) 
 func (fp *filterProcessor) processMetrics(ctx context.Context, md pmetric.Metrics) (pmetric.Metrics, error) {
 	rMetrics := md.ResourceMetrics()
 
-	for i := 0; i < rMetrics.Len(); i++ {
-		resourceMetric := rMetrics.At(i)
+	rMetrics.RemoveIf(func(resourceMetric pmetric.ResourceMetrics) bool {
 		resourceAttributes := resourceMetric.Resource().Attributes()
-		ilMetrics := resourceMetric.ScopeMetrics()
-
-		for j := 0; j < ilMetrics.Len(); j++ {
-			scopeMetric := ilMetrics.At(j)
-			metrics := scopeMetric.Metrics()
-
-			metrics.RemoveIf(func(metric pmetric.Metric) bool {
-				namespace, name, kind := extractResourceDetails(resourceAttributes)
-				return !fp.matches(name, namespace, kind)
-			})
+		namespace, name, kind, found := extractResourceDetails(resourceAttributes)
+		if found {
+			return !fp.matches(name, namespace, kind)
 		}
-	}
+		return false
+	})
 
 	return md, nil
 }
@@ -73,21 +76,14 @@ func (fp *filterProcessor) processMetrics(ctx context.Context, md pmetric.Metric
 func (fp *filterProcessor) processLogs(ctx context.Context, ld plog.Logs) (plog.Logs, error) {
 	rLogs := ld.ResourceLogs()
 
-	for i := 0; i < rLogs.Len(); i++ {
-		resourceLog := rLogs.At(i)
+	rLogs.RemoveIf(func(resourceLog plog.ResourceLogs) bool {
 		resourceAttributes := resourceLog.Resource().Attributes()
-		ilLogs := resourceLog.ScopeLogs()
-
-		for j := 0; j < ilLogs.Len(); j++ {
-			scopeLog := ilLogs.At(j)
-			logRecords := scopeLog.LogRecords()
-
-			logRecords.RemoveIf(func(log plog.LogRecord) bool {
-				namespace, name, kind := extractResourceDetails(resourceAttributes)
-				return !fp.matches(name, namespace, kind)
-			})
+		namespace, name, kind, found := extractResourceDetails(resourceAttributes)
+		if found {
+			return !fp.matches(name, namespace, kind)
 		}
-	}
+		return false
+	})
 
 	return ld, nil
 }
@@ -98,13 +94,13 @@ func (fp *filterProcessor) matches(name, namespace, kind string) bool {
 	}
 
 	namespaceSelectorKey := fmt.Sprintf("%s/*/*", namespace)
-	if _, exists := fp.config.MatchMap[namespaceSelectorKey]; exists {
+	if _, exists := fp.matchMap[namespaceSelectorKey]; exists {
 		return true
 	}
 
 	if name != "" && kind != "" {
 		key := fmt.Sprintf("%s/%s/%s", namespace, kind, name)
-		if _, exists := fp.config.MatchMap[key]; exists {
+		if _, exists := fp.matchMap[key]; exists {
 			return true
 		}
 	}
@@ -112,21 +108,19 @@ func (fp *filterProcessor) matches(name, namespace, kind string) bool {
 	return false
 }
 
-func extractResourceDetails(attributes pcommon.Map) (namespace, name, kind string) {
-	namespace = getAttribute(attributes, k8sNamespaceNameAttr)
-	if namespace == "" {
-		return "", "", ""
+func extractResourceDetails(attributes pcommon.Map) (namespace, name, kind string, found bool) {
+	if namespace, found = getAttribute(attributes, k8sNamespaceNameAttr); !found {
+		return "", "", "", false
 	}
 
-	name, kind = getDynamicNameAndKind(attributes)
-	if name == "" || kind == "" {
-		return "", "", ""
+	if name, kind, found := getDynamicNameAndKind(attributes); found {
+		return namespace, name, kind, true
 	}
 
-	return namespace, name, kind
+	return namespace, name, kind, true
 }
 
-func getDynamicNameAndKind(attributes pcommon.Map) (name string, kind string) {
+func getDynamicNameAndKind(attributes pcommon.Map) (name string, kind string, found bool) {
 	resourceTypes := []struct {
 		kind string
 		key  string
@@ -138,16 +132,16 @@ func getDynamicNameAndKind(attributes pcommon.Map) (name string, kind string) {
 
 	for _, resourceType := range resourceTypes {
 		if value, exists := attributes.Get(resourceType.key); exists {
-			return value.AsString(), resourceType.kind
+			return value.AsString(), resourceType.kind, true
 		}
 	}
 
-	return "", ""
+	return "", "", false
 }
 
-func getAttribute(attributes pcommon.Map, key string) string {
+func getAttribute(attributes pcommon.Map, key string) (string, bool) {
 	if value, exists := attributes.Get(key); exists {
-		return value.AsString()
+		return value.AsString(), true
 	}
-	return ""
+	return "", false
 }
