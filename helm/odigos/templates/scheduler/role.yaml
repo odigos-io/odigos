@@ -20,6 +20,7 @@ rules:
       - effective-config
     verbs:
       - patch
+      - create
   - apiGroups:
       - odigos.io
     resources:
@@ -46,3 +47,15 @@ rules:
       - get
       - list
       - watch
+  - apiGroups:
+      - odigos.io
+    resources:
+      - instrumentationrules
+      - processors
+    verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - delete
+      - create

@@ -191,6 +191,7 @@ const AbsoluteContainer = styled.div<{ $openUpwards: boolean }>`
   position: absolute;
   ${({ $openUpwards }) => ($openUpwards ? 'bottom' : 'top')}: calc(100% + 8px);
   left: 0;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   overflow-y: auto;

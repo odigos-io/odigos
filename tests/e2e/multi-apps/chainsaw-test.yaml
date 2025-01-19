@@ -128,7 +128,7 @@ spec:
       catch:
         - podLogs:
             name: odiglet
-            namespace: odigos-system
+            namespace: odigos-test
     - name: Verify Trace - Resource Attributes
       try:
         - script:
@@ -137,7 +137,7 @@ spec:
       catch:
         - podLogs:
             name: odiglet
-            namespace: odigos-system
+            namespace: odigos-test
     - name: Verify Trace - Span Attributes
       try:
         - script:
@@ -147,4 +147,4 @@ spec:
       catch:
         - podLogs:
             name: odiglet
-            namespace: odigos-system
+            namespace: odigos-test

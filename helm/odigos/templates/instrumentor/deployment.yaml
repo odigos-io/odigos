@@ -6,7 +6,7 @@ metadata:
   name: odigos-instrumentor
   namespace: {{ .Release.Namespace }}
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app.kubernetes.io/name: odigos-instrumentor
@@ -17,6 +17,15 @@ spec:
       labels:
         app.kubernetes.io/name: odigos-instrumentor
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: odigos-instrumentor
+                topologyKey: "kubernetes.io/hostname"
       containers:
       - args:
           - --health-probe-bind-address=:8081

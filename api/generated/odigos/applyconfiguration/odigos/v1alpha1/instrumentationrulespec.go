@@ -32,6 +32,7 @@ type InstrumentationRuleSpecApplyConfiguration struct {
 	InstrumentationLibraries *[]InstrumentationLibraryGlobalIdApplyConfiguration `json:"instrumentationLibraries,omitempty"`
 	PayloadCollection        *instrumentationrules.PayloadCollection             `json:"payloadCollection,omitempty"`
 	OtelSdks                 *instrumentationrules.OtelSdks                      `json:"otelSdks,omitempty"`
+	CodeAttributes           *instrumentationrules.CodeAttributes                `json:"codeAttributes,omitempty"`
 }
 
 // InstrumentationRuleSpecApplyConfiguration constructs a declarative configuration of the InstrumentationRuleSpec type for use with
@@ -105,5 +106,13 @@ func (b *InstrumentationRuleSpecApplyConfiguration) WithPayloadCollection(value 
 // If called multiple times, the OtelSdks field is set to the value of the last call.
 func (b *InstrumentationRuleSpecApplyConfiguration) WithOtelSdks(value instrumentationrules.OtelSdks) *InstrumentationRuleSpecApplyConfiguration {
 	b.OtelSdks = &value
+	return b
+}
+
+// WithCodeAttributes sets the CodeAttributes field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the CodeAttributes field is set to the value of the last call.
+func (b *InstrumentationRuleSpecApplyConfiguration) WithCodeAttributes(value instrumentationrules.CodeAttributes) *InstrumentationRuleSpecApplyConfiguration {
+	b.CodeAttributes = &value
 	return b
 }

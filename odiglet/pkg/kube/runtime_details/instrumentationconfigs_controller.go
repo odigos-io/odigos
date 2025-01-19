@@ -5,13 +5,13 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
-	corev1 "k8s.io/api/core/v1"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -86,7 +86,7 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request
 
 	odigosConfig, err := k8sutils.GetCurrentOdigosConfig(ctx, r.Client)
 	if err != nil {
-		return reconcile.Result{}, err
+		return k8sutils.K8SNoEffectiveConfigErrorHandler(err)
 	}
 
 	var selectedPods []corev1.Pod
@@ -144,4 +144,3 @@ func getWorkloadAndLabelsfromOwner(ctx context.Context, k8sClient client.Client,
 
 	return nil, nil, errors.New("workload kind not supported")
 }
-

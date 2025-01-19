@@ -38,10 +38,7 @@ export const useTokenCRUD = (params?: UseTokenCrudParams) => {
 
   const [updateToken, uState] = useMutation<{ updateApiToken: boolean }>(UPDATE_API_TOKEN, {
     onError: (error) => handleError(error.name || ACTION.UPDATE, error.cause?.message || error.message),
-    onCompleted: () => {
-      handleComplete(ACTION.UPDATE, 'API Token updated');
-      refetch();
-    },
+    onCompleted: () => handleComplete(ACTION.UPDATE, 'API Token updated'),
   });
 
   return {

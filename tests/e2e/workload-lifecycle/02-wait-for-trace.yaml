@@ -2,18 +2,19 @@ apiVersion: e2e.tests.odigos.io/v1
 kind: TraceTest
 description: This test waits for a trace that is generated from the successful instrumented services.
 query: |
-  { resource.service.name = "nodejs-minimum-version" } ||
-  { resource.service.name = "nodejs-latest-version" } ||
-  { resource.service.name = "nodejs-dockerfile-env" } ||
-  { resource.service.name = "nodejs-manifest-env" } ||
-  { resource.service.name = "java-supported-version" } ||   
-  { resource.service.name = "java-latest-version" } ||
-  { resource.service.name = "java-old-version" } ||
-  { resource.service.name = "java-supported-docker-env" } ||
-  { resource.service.name = "java-supported-manifest-env" } ||
-  { resource.service.name = "java-azul" } ||
-  { resource.service.name = "python-latest-version" && span.http.route = "insert-random/" } ||
-  { resource.service.name = "python-alpine" && span.http.route = "insert-random/" } ||
-  { resource.service.name = "python-min-version" && span.http.route = "insert-random/" }
+  { resource.service.name = "nodejs-minimum-version-reported" } ||
+  { resource.service.name = "nodejs-latest-version-reported" } ||
+  { resource.service.name = "nodejs-dockerfile-env-reported" } ||
+  { resource.service.name = "nodejs-manifest-env-reported" } ||
+  { resource.service.name = "java-supported-version-reported" } ||
+  { resource.service.name = "java-latest-version-reported" } ||
+  { resource.service.name = "java-old-version-reported" } ||
+  { resource.service.name = "java-supported-docker-env-reported" } ||
+  { resource.service.name = "java-supported-manifest-env-reported" } ||
+  { resource.service.name = "java-azul-reported" } ||
+  { resource.service.name = "python-latest-version-reported" && span.http.route = "insert-random/" } ||
+  { resource.service.name = "python-alpine-reported" && span.http.route = "insert-random/" } ||
+  { resource.service.name = "python-not-supported-reported" && span.http.route = "insert-random/" } ||
+  { resource.service.name = "python-min-version-reported" && span.http.route = "insert-random/" }
 expected:
-  count: 26 # 13 before +13 new ones
+  count: 13

@@ -289,6 +289,8 @@ type InstrumentationRule struct {
 	RuleName                 *string                           `json:"ruleName,omitempty"`
 	Notes                    *string                           `json:"notes,omitempty"`
 	Disabled                 *bool                             `json:"disabled,omitempty"`
+	Mutable                  bool                              `json:"mutable"`
+	ProfileName              string                            `json:"profileName"`
 	Workloads                []*PodWorkload                    `json:"workloads,omitempty"`
 	InstrumentationLibraries []*InstrumentationLibraryGlobalID `json:"instrumentationLibraries,omitempty"`
 	PayloadCollection        *PayloadCollection                `json:"payloadCollection,omitempty"`
@@ -305,7 +307,7 @@ type InstrumentationRuleInput struct {
 
 type K8sActualNamespace struct {
 	Name             string             `json:"name"`
-	Selected         *bool              `json:"selected,omitempty"`
+	Selected         bool               `json:"selected"`
 	K8sActualSources []*K8sActualSource `json:"k8sActualSources"`
 }
 

@@ -1,0 +1,14 @@
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: 03-source-with-incorrect-labels
+  namespace: default
+  labels:
+    odigos.io/workload-kind: StatefulSet
+    odigos.io/workload-namespace: kube-system
+    odigos.io/workload-name: foo
+spec:
+  workload:
+    name: source-with-incorrect-labels
+    namespace: default
+    kind: Deployment

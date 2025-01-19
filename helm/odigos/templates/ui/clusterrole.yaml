@@ -53,3 +53,12 @@ rules:
       - get
       - list
       - watch
+  - apiGroups:
+      - odigos.io
+    resources:
+      - sources
+    verbs:
+      - get
+      - list
+      - create
+      - delete

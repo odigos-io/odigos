@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { type DetailedHTMLProps, forwardRef, type HTMLAttributes, type ReactNode } from 'react';
 import styled from 'styled-components';
 
-interface TextProps extends React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement> {
-  children: React.ReactNode;
+interface TextProps extends DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement> {
+  children: ReactNode;
   color?: string;
   size?: number;
   weight?: number;
@@ -31,12 +31,10 @@ const TextWrapper = styled.div<{
   font-family: ${({ theme, $family = 'primary' }) => theme.font_family[$family]};
 `;
 
-const Text: React.FC<TextProps> = ({ children, color, size, weight, align, family, opacity, decoration, ...props }) => {
+export const Text = forwardRef<HTMLDivElement, TextProps>(({ children, color, size, weight, align, family, opacity, decoration, ...props }, ref) => {
   return (
-    <TextWrapper $color={color} $size={size} $weight={weight} $align={align} $family={family} $opacity={opacity} $decoration={decoration} {...props}>
+    <TextWrapper ref={ref} $color={color} $size={size} $weight={weight} $align={align} $family={family} $opacity={opacity} $decoration={decoration} {...props}>
       {children}
     </TextWrapper>
   );
-};
-
-export { Text };
+});
