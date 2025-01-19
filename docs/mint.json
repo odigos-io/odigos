@@ -100,7 +100,7 @@
         {
           "group": "Go",
           "icon": "golang",
-          "pages": ["instrumentations/golang/native", "instrumentations/golang/enrichment"]
+          "pages": ["instrumentations/golang/ebpf", "instrumentations/golang/enrichment"]
         },
         {
           "group": "Node.js",
