@@ -99,23 +99,28 @@
         "instrumentations/overview",
         {
           "group": "Go",
-          "pages": ["instrumentations/golang/golang", "instrumentations/golang/enrichment"]
+          "icon": "golang",
+          "pages": ["instrumentations/golang/ebpf", "instrumentations/golang/enrichment"]
         },
         {
           "group": "Node.js",
-          "pages": ["instrumentations/nodejs/nodejs", "instrumentations/nodejs/enrichment", "instrumentations/nodejs/ebpf"]
+          "icon": "node-js",
+          "pages": ["instrumentations/nodejs/native", "instrumentations/nodejs/ebpf", "instrumentations/nodejs/enrichment"]
         },
         {
           "group": "Python",
-          "pages": ["instrumentations/python/python", "instrumentations/python/enrichment"]
+          "icon": "python",
+          "pages": ["instrumentations/python/native", "instrumentations/python/enrichment"]
         },
         {
           "group": "Java",
-          "pages": ["instrumentations/java/java", "instrumentations/java/ebpf"]
+          "icon": "java",
+          "pages": ["instrumentations/java/native", "instrumentations/java/ebpf", "instrumentations/java/enrichment"]
         },
         {
           "group": ".NET",
-          "pages": ["instrumentations/dotnet/dotnet"]
+          "icon": "code",
+          "pages": ["instrumentations/dotnet/native", "instrumentations/dotnet/enrichment"]
         }
       ]
     },
@@ -163,15 +168,6 @@
             "pipeline/actions/crd",
             "pipeline/actions/troubleshooting"
           ]
-        }
-      ]
-    },
-    {
-      "group": "Generated Data",
-      "pages": [
-        {
-          "group": "Enrich with OpenTelemetry APIs",
-          "pages": ["data/otel-apis", "data/java", "data/python", "data/javascript", "data/golang", "data/dotnet"]
         }
       ]
     },
