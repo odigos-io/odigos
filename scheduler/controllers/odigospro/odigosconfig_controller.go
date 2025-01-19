@@ -60,7 +60,7 @@ func (r *odigossecretController) Reconcile(ctx context.Context, _ ctrl.Request) 
 	proConfig := proConfig{
 		Audience: claims["aud"].(string),
 		// TODO: what time format should be used?
-		Expiry:   time.Unix(int64(claims["exp"].(float64)), 0).UTC().Format("02/01/2006 03:04:05 PM"),
+		Expiry:   time.Unix(int64(claims["exp"].(float64)), 0).UTC().Format("02 January 2006 03:04:05 PM"),
 		Profiles: toStringSlice(claims["profiles"]),
 	}
 
@@ -110,11 +110,11 @@ func toStringSlice(input interface{}) []string {
 }
 
 func (r *odigossecretController) updateOdigosDeploymentConfigMap(ctx context.Context, clientConfig proConfig, odigosDeploymentConfig *corev1.ConfigMap) error {
-	odigosDeploymentConfig.Data["audience"] = clientConfig.Audience
-	odigosDeploymentConfig.Data["expiry"] = clientConfig.Expiry
+	odigosDeploymentConfig.Data["ONPREM_TOKEN_AUDIANCE"] = clientConfig.Audience
+	odigosDeploymentConfig.Data["ONPREM_TOKEN_EXPIRY"] = clientConfig.Expiry
 
 	if len(clientConfig.Profiles) > 0 {
-		odigosDeploymentConfig.Data["onprem_token_profiles"] = strings.Join(clientConfig.Profiles, ",")
+		odigosDeploymentConfig.Data["ONPREM_TOKEN_PROFILES"] = strings.Join(clientConfig.Profiles, ",")
 	}
 
 	err := r.Client.Update(ctx, odigosDeploymentConfig)
