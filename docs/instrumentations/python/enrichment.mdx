@@ -8,7 +8,7 @@ import EnrichmentIntro from '/snippets/enrichment-intro.mdx';
 
 <EnrichmentIntro language="Python" />
 
-## Required dependencies
+## Required Dependencies
 
 Install the API from PyPI using pip:
 
@@ -70,7 +70,7 @@ Important Notes:
 4. **Adhere to OpenTelemetry semantic conventions**:
    Prefer using namespaces and attribute names from the OpenTelemetry semantic conventions to enhance data interoperability and make it easier for others to understand.
 
-## Recording Errors
+### Recording Errors
 
 To easily identify and monitor errors in your traces, the Span object includes a status field that can be used to mark the span as an error. This helps in spotting errors in trace viewers, sampling, and setting up alerts.
 
@@ -89,6 +89,6 @@ def my_function():
          span.set_status(trace.Status(trace.StatusCode.ERROR, str(e)))
 ```
 
-## Additional information
+## Additional Information
 
 For more use cases, see the [OpenTelemetry Python API documentation](https://opentelemetry.io/docs/languages/python/instrumentation/#creating-spans).

@@ -8,7 +8,7 @@ import EnrichmentIntro from '/snippets/enrichment-intro.mdx';
 
 <EnrichmentIntro language="Node.js" />
 
-## Required dependencies
+## Required Dependencies
 
 Add the following npm packages to your service by running:
 
@@ -80,6 +80,6 @@ Important Notes:
 5. **Avoid dynamic, high cardinality data in span names**:
    Do not include dynamic data such as IDs in the span name, as this can cause performance issues and make the trace harder to read. Instead, use static, descriptive names for spans and record dynamic information in span attributes. This ensures better performance and readability of the trace.
 
-## Additional information
+## Additional Information
 
 For more use cases, see the [OpenTelemetry JavaScript API documentation](https://opentelemetry.io/docs/languages/js/instrumentation/#create-spans).

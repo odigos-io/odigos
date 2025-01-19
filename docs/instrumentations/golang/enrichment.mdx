@@ -8,7 +8,7 @@ import EnrichmentIntro from '/snippets/enrichment-intro.mdx';
 
 <EnrichmentIntro language="Go" />
 
-## Required dependencies
+## Required Dependencies
 
 Add the following dependencies to your project by running:
 
@@ -37,8 +37,8 @@ It is best practice to use the go module and package name for the tracer name.
 package main
 
 import (
-    "context"
-    "go.opentelemetry.io/otel"
+   "context"
+   "go.opentelemetry.io/otel"
 )
 
 var tracer = otel.Tracer("github.com/<yourusername>/<reponame>/<packagename>")
@@ -135,6 +135,6 @@ func my_function(ctx context.Context, userId string) {
 }
 ```
 
-## Additional information
+## Additional Information
 
 For more use cases, see the [OpenTelemetry Go API documentation](https://opentelemetry.io/docs/languages/go/instrumentation/#creating-spans).
