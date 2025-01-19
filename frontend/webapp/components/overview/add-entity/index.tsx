@@ -105,7 +105,7 @@ export const AddEntity: React.FC<Props> = ({ options = DEFAULT_OPTIONS, placehol
 
   return (
     <Container ref={dropdownRef}>
-      <StyledButton data-id='add-entity' onClick={() => {}}>
+      <StyledButton data-id='add-entity'>
         <PlusIcon fill={theme.colors.primary} />
         <ButtonText size={14}>{placeholder}</ButtonText>
       </StyledButton>
