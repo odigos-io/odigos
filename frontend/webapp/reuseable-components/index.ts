@@ -40,3 +40,4 @@ export * from './icon-button';
 export * from './icon-wrapped';
 export * from './segment';
 export * from './interactive-table';
+export * from './trace-loader';
