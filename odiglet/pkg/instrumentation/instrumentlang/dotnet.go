@@ -15,7 +15,7 @@ const (
 	profilerEndVar        = "CORECLR_PROFILER"
 	profilerId            = "{918728DD-259F-4A6A-AC2B-B85E1B658318}"
 	profilerPathEnv       = "CORECLR_PROFILER_PATH"
-	profilerPath          = "/var/odigos/dotnet/linux-glibc-%s/OpenTelemetry.AutoInstrumentation.Native.so"
+	profilerPath          = "/var/odigos/dotnet/OpenTelemetry.AutoInstrumentation.ClrProfiler.Native.so"
 	serviceNameEnv        = "OTEL_SERVICE_NAME"
 	collectorUrlEnv       = "OTEL_EXPORTER_OTLP_ENDPOINT"
 	tracerHomeEnv         = "OTEL_DOTNET_AUTO_HOME"
@@ -23,7 +23,7 @@ const (
 	tracerHome            = "/var/odigos/dotnet"
 	resourceAttrEnv       = "OTEL_RESOURCE_ATTRIBUTES"
 	startupHookEnv        = "DOTNET_STARTUP_HOOKS"
-	startupHook           = "/var/odigos/dotnet/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
+	startupHook           = "/var/odigos/dotnet/netcoreapp3.1/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
 	additonalDepsEnv      = "DOTNET_ADDITIONAL_DEPS"
 	additonalDeps         = "/var/odigos/dotnet/AdditionalDeps"
 	sharedStoreEnv        = "DOTNET_SHARED_STORE"
@@ -35,7 +35,7 @@ func DotNet(deviceId string, uniqueDestinationSignals map[common.ObservabilitySi
 		Envs: map[string]string{
 			enableProfilingEnvVar: "1",
 			profilerEndVar:        profilerId,
-			profilerPathEnv:       fmt.Sprintf(profilerPath, getArch()),
+			profilerPathEnv:       profilerPath,
 			tracerHomeEnv:         tracerHome,
 			collectorUrlEnv:       fmt.Sprintf("http://%s:%d", env.Current.NodeIP, consts.OTLPHttpPort),
 			serviceNameEnv:        deviceId,
