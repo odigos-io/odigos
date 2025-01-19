@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from 'react';
-import buildCard from './build-card';
+import React, { useEffect, useMemo, useState } from 'react';
 import { RuleFormBody } from '../';
+import buildCard from './build-card';
 import styled from 'styled-components';
 import { DataCard } from '@/reuseable-components';
 import buildDrawerItem from './build-drawer-item';
@@ -9,7 +9,7 @@ import OverviewDrawer from '../../overview/overview-drawer';
 import { useDrawerStore, useNotificationStore } from '@/store';
 import { ACTION, DATA_CARDS, FORM_ALERTS, getRuleIcon } from '@/utils';
 import { useInstrumentationRuleCRUD, useInstrumentationRuleFormData } from '@/hooks';
-import { InstrumentationRuleType, NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES, type InstrumentationRuleSpecMapped } from '@/types';
+import { NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES, type InstrumentationRuleSpecMapped } from '@/types';
 
 interface Props {}
 
@@ -25,21 +25,32 @@ export const RuleDrawer: React.FC<Props> = () => {
   const { addNotification } = useNotificationStore();
   const { selectedItem, setSelectedItem } = useDrawerStore();
   const { formData, formErrors, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem } = useInstrumentationRuleFormData();
-
-  const { updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD({
+  const { instrumentationRules, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD({
     onSuccess: (type) => {
       setIsEditing(false);
       setIsFormDirty(false);
 
-      if (type === ACTION.DELETE) {
-        setSelectedItem(null);
-      } else {
-        const { item } = selectedItem as { item: InstrumentationRuleSpecMapped };
-        const { ruleId: id } = item;
-        setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.RULE, item: buildDrawerItem(id, formData, item) });
-      }
+      if (type === ACTION.DELETE) setSelectedItem(null);
+      else reSelectItem();
     },
   });
+
+  const reSelectItem = (fetchedItems?: typeof instrumentationRules) => {
+    const { item } = selectedItem as { item: InstrumentationRuleSpecMapped };
+    const { ruleId: id } = item;
+
+    if (!!fetchedItems?.length) {
+      const found = fetchedItems.find((x) => x.ruleId === id);
+      if (!!found) {
+        return setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.RULE, item: found });
+      }
+    }
+
+    setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.RULE, item: buildDrawerItem(id, formData, item) });
+  };
+
+  // This should keep the drawer up-to-date with the latest data
+  useEffect(() => reSelectItem(instrumentationRules), [instrumentationRules]);
 
   const [isEditing, setIsEditing] = useState(false);
   const [isFormDirty, setIsFormDirty] = useState(false);

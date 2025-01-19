@@ -86,6 +86,10 @@
             "cli/odigos_upgrade",
             "cli/odigos_version"
           ]
+        },
+        {
+          "group": "API Reference",
+          "pages": ["api-reference/odigos.io.v1alpha1", "api-reference/actions.odigos.io.v1alpha1"]
         }
       ]
     },
@@ -225,7 +229,7 @@
     },
     {
       "group": "Concepts",
-      "pages": ["telemetry-types", "custom-resources", "uninstall", "usage-reports", "benchmarks"]
+      "pages": ["telemetry-types", "custom-resources", "usage-reports", "benchmarks"]
     },
     {
       "group": "Contibution Guidelines",

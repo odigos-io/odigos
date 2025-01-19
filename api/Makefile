@@ -17,6 +17,8 @@ endif
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
+TOOLS := $(PWD)/../.tools
+
 .PHONY: all
 all: generate manifests generate-client sync-helm-crd
 
@@ -38,6 +40,24 @@ help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 ##@ Development
+
+.PHONY: tools
+tools:
+	@if [ ! -d "$(TOOLS)" ]; then \
+		mkdir $(TOOLS); \
+	fi
+
+.PHONY: genref
+genref: tools
+	GOBIN=$(TOOLS) go install github.com/kubernetes-sigs/reference-docs/genref@v0.28.0
+
+.PHONY: docgen
+docgen: genref
+	rm -rf $(PWD)/../docs/api-reference/*
+	$(TOOLS)/genref -c genref-config.yaml -f markdown -o $(PWD)/../docs/api-reference
+	for file in $(PWD)/../docs/api-reference/*; do \
+		mv $${file} $${file%.md}.mdx; \
+	done
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
