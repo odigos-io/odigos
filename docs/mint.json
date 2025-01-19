@@ -62,7 +62,12 @@
             "setup/system-requirements",
             {
               "group": "Installation",
-              "pages": ["setup/installation", "setup/installation-options", "setup/docker-registry", "setup/odigos-with-argocd"]
+              "pages": [
+                "setup/installation",
+                "setup/installation-options",
+                "setup/docker-registry",
+                "setup/odigos-with-argocd"
+              ]
             },
             "setup/upgrade",
             "setup/uninstall"
@@ -70,7 +75,11 @@
         },
         {
           "group": "Architecture",
-          "pages": ["architecture/components", "architecture/sources", "architecture/troubleshooting"]
+          "pages": [
+            "architecture/components",
+            "architecture/sources",
+            "architecture/troubleshooting"
+          ]
         },
         {
           "group": "CLI Reference",
@@ -89,7 +98,10 @@
         },
         {
           "group": "API Reference",
-          "pages": ["api-reference/odigos.io.v1alpha1", "api-reference/actions.odigos.io.v1alpha1"]
+          "pages": [
+            "api-reference/odigos.io.v1alpha1",
+            "api-reference/actions.odigos.io.v1alpha1"
+          ]
         }
       ]
     },
@@ -100,27 +112,44 @@
         {
           "group": "Go",
           "icon": "golang",
-          "pages": ["instrumentations/golang/ebpf", "instrumentations/golang/enrichment"]
+          "pages": [
+            "instrumentations/golang/ebpf",
+            "instrumentations/golang/enrichment"
+          ]
         },
         {
           "group": "Node.js",
           "icon": "node-js",
-          "pages": ["instrumentations/nodejs/native", "instrumentations/nodejs/ebpf", "instrumentations/nodejs/enrichment"]
+          "pages": [
+            "instrumentations/nodejs/native",
+            "instrumentations/nodejs/ebpf",
+            "instrumentations/nodejs/enrichment"
+          ]
         },
         {
           "group": "Python",
           "icon": "python",
-          "pages": ["instrumentations/python/native", "instrumentations/python/enrichment"]
+          "pages": [
+            "instrumentations/python/native",
+            "instrumentations/python/enrichment"
+          ]
         },
         {
           "group": "Java",
           "icon": "java",
-          "pages": ["instrumentations/java/native", "instrumentations/java/ebpf", "instrumentations/java/enrichment"]
+          "pages": [
+            "instrumentations/java/native",
+            "instrumentations/java/ebpf",
+            "instrumentations/java/enrichment"
+          ]
         },
         {
           "group": ".NET",
           "icon": "code",
-          "pages": ["instrumentations/dotnet/native", "instrumentations/dotnet/enrichment"]
+          "pages": [
+            "instrumentations/dotnet/native",
+            "instrumentations/dotnet/enrichment"
+          ]
         }
       ]
     },
@@ -140,7 +169,10 @@
         },
         {
           "group": "Instrumentation Rules",
-          "pages": ["pipeline/rules/overview", "pipeline/rules/payloadcollection"]
+          "pages": [
+            "pipeline/rules/overview",
+            "pipeline/rules/payloadcollection"
+          ]
         },
         {
           "group": "Actions",
@@ -177,9 +209,10 @@
         "backends-overview",
         {
           "group": "Supported Backends",
+          "icon": "folder-tree",
           "pages": [
             "backends/appdynamics",
-            "backends/s3",
+            "backends/awss3",
             "backends/axiom",
             "backends/azureblob",
             "backends/betterstack",
@@ -190,10 +223,11 @@
             "backends/dash0",
             "backends/datadog",
             "backends/dynatrace",
+            "backends/elasticapm",
             "backends/elasticsearch",
-            "backends/gcs",
             "backends/gigapipe",
-            "backends/googlecloud",
+            "backends/googlecloudmonitoring",
+            "backends/googlecloudstorage",
             "backends/grafanacloudloki",
             "backends/grafanacloudprometheus",
             "backends/grafanacloudtempo",
@@ -207,6 +241,7 @@
             "backends/logzio",
             "backends/loki",
             "backends/lumigo",
+            "backends/middleware",
             "backends/newrelic",
             "backends/opsverse",
             "backends/otlp",
@@ -218,18 +253,27 @@
             "backends/signoz",
             "backends/splunk",
             "backends/sumologic",
-            "backends/tempo"
+            "backends/tempo",
+            "backends/uptrace"
           ]
         }
       ]
     },
     {
       "group": "Concepts",
-      "pages": ["telemetry-types", "custom-resources", "usage-reports", "benchmarks"]
+      "pages": [
+        "telemetry-types",
+        "custom-resources",
+        "usage-reports",
+        "benchmarks"
+      ]
     },
     {
       "group": "Contibution Guidelines",
-      "pages": ["adding-new-dest", "debugging"]
+      "pages": [
+        "adding-new-dest",
+        "debugging"
+      ]
     },
     {
       "group": "VM Agent",
@@ -253,14 +297,20 @@
             "vmagent/setup/installation",
             {
               "group": "Configuration",
-              "pages": ["vmagent/setup/configuration/service", "vmagent/setup/configuration/agent"]
+              "pages": [
+                "vmagent/setup/configuration/service",
+                "vmagent/setup/configuration/agent"
+              ]
             },
             "vmagent/setup/uninstall"
           ]
         },
         {
           "group": "Configuration",
-          "pages": ["vmagent/configuration/reference", "vmagent/configuration/updating"]
+          "pages": [
+            "vmagent/configuration/reference",
+            "vmagent/configuration/updating"
+          ]
         }
       ]
     }

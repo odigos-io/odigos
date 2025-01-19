@@ -1,78 +1,112 @@
 ---
-title: "New Relic"
+title: 'New Relic'
+description: 'Configuring the New Relic backend (Managed)'
+sidebarTitle: 'New Relic'
+icon: 'signal-stream'
 ---
 
-## Obtaining License Key
+### Getting Started
 
+{/*
+    Add custom content here (under this comment)...
+
+    e.g:
+    [🔗 website](https://odigos.io)
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+<img src='https://d15jtxgb40qetw.cloudfront.net/newrelic.svg' alt='newrelic' width="100" height="100" className="not-prose" />
+
+**Obtaining a License Key**<br/>
 On the left sidebar, click on your account name and select **API Keys** and then click on **Create a key**.
 
 <Frame>
-    <img src="/backends/images/newrelic1.png" alt="New Relic API keys" />
+  <img src="/backends/images/newrelic1.png" alt="New Relic API keys" />
 </Frame>
 
 For key type select **Ingest - License**, give a name to your key and press **Create a key**.
 
 <Frame>
-    <img src="/backends/images/newrelic2.png" alt="Create an API key screen in New Relic" />
+  <img src="/backends/images/newrelic2.png" alt="Create an API key screen in New Relic" />
 </Frame>
 
-## Configuring New Relic Backend
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
 
-In the New Relic backend configuration page, enter the **License Key** from previous step and name the backend.
+### Configuring Destination Fields
 
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ✅ Metrics
+  ✅ Logs
+</Accordion>
 
-## Adding a Destination to Odigos
+- **NEWRELIC_API_KEY** `string` : License Key.
+  - This field is required
+- **NEWRELIC_ENDPOINT** `string` : Endpoint.
+  - This field is required
 
-Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+### Adding Destination to Odigos
 
-1. **Using the UI**  
-   To add a destination via the UI, follow these steps:
-   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
-   ```bash
-   odigos ui
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
     ```
-- In the left sidebar, navigate to the `Destination` page.
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `New Relic` and follow the on-screen instructions
+  </Step>
+</Steps>
 
-- Click `Add New Destination`
+##### **Using Kubernetes manifests**
 
-- Select `New Relic` and follow the on-screen instructions.
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `newrelic.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: newrelic-example
+      namespace: odigos-system
+    spec:
+      data:
+        NEWRELIC_ENDPOINT: <Endpoint [https://otlp.nr-data.net, https://otlp.eu01.nr-data.net]>
+      destinationName: newrelic
+      secretRef:
+        name: newrelic-secret
+      signals:
+      - TRACES
+      - METRICS
+      - LOGS
+      type: newrelic
 
+    ---
 
-
-2. **Using kubernetes manifests**
-
-Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
-
-```bash
-kubectl apply -f destination.yaml
-```
-
-
-```yaml
-apiVersion: odigos.io/v1alpha1
-kind: Destination
-metadata:
-  name: newrelic-example
-  namespace: odigos-system
-spec:
-  data:
-    NEWRELIC_ENDPOINT: <Endpoint [https://otlp.nr-data.net, https://otlp.eu01.nr-data.net]>
-  destinationName: newrelic
-  secretRef:
-    name: newrelic-secret
-  signals:
-  - TRACES
-  - METRICS
-  - LOGS
-  type: newrelic
-
----
-apiVersion: v1
-data:
-  NEWRELIC_API_KEY: <base64 License Key>
-kind: Secret
-metadata:
-  name: newrelic-secret
-  namespace: odigos-system
-type: Opaque
-```
+    apiVersion: v1
+    data:
+      NEWRELIC_API_KEY: <Base64 License Key>
+    kind: Secret
+    metadata:
+      name: newrelic-secret
+      namespace: odigos-system
+    type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f newrelic.yaml
+    ```
+  </Step>
+</Steps>

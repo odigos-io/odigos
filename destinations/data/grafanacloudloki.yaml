@@ -20,8 +20,8 @@ spec:
       componentProps:
         type: text
         required: true
-        placeholder: https://logs-prod-012.grafana.net
         tooltip: The endpoint of your Grafana Cloud Loki instance
+        placeholder: https://logs-prod-{REGION/SHARD}.grafana.net/loki/api/v1/push
     - name: GRAFANA_CLOUD_LOKI_USERNAME
       displayName: Username
       componentType: input
@@ -29,16 +29,16 @@ spec:
         type: text
         required: true
         placeholder: 1234567
-        tooltip: The user of your Grafana Cloud Loki instance
+        tooltip: You can find the loki username in the "Grafana Data Source settings" section as "User" value. The username is a number.
     - name: GRAFANA_CLOUD_LOKI_PASSWORD
       displayName: Password (Api Token)
+      secret: true
       componentType: input
       componentProps:
         type: password
         required: true
+        tooltip: This field is refered to as "password" or "Grafana.com API Token" in the Grafana Cloud UI. You can manage tokens in your "Account Settings" page under the "SECURITY" section in the "Access Policies" page. Make sure your token scope includes `logs:write` scope
         placeholder: glc_eyJvIj...
-        tooltip: Grafana Cloud API Token with 'logs:write' permission
-      secret: true
     - name: GRAFANA_CLOUD_LOKI_LABELS
       displayName: Labels
       componentType: multiInput

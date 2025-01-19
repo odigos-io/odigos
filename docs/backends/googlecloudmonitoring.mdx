@@ -1,7 +1,7 @@
 ---
-title: 'Tempo'
-description: 'Configuring the Tempo backend (Self-Hosted)'
-sidebarTitle: 'Tempo'
+title: 'Google Cloud Monitoring'
+description: 'Configuring the Google Cloud Monitoring backend (Managed)'
+sidebarTitle: 'Google Cloud Monitoring'
 icon: 'signal-stream'
 ---
 
@@ -17,11 +17,9 @@ icon: 'signal-stream'
     !! START CUSTOM EDIT !!
 */}
 
-<img src='https://d15jtxgb40qetw.cloudfront.net/tempo.svg' alt='tempo' width="100" height="100" className="not-prose" />
+<img src='https://d15jtxgb40qetw.cloudfront.net/gcp.svg' alt='googlecloud' width="100" height="100" className="not-prose" />
 
-<Note>
-  These instructions are for the **self hosted** Tempo instance. If you need a managed service, please follow the instructions on the [Grafana Cloud Tempo](/backends/grafanacloudtempo) page.
-</Note>
+Odigos currently supports Standard (non-Autopilot) GKE clusters. Exporting into Google Cloud does not require credentials as the Kubernetes nodes are permissioned to access the Google Cloud Monitoring APIs by default.
 
 {/*
     !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
@@ -33,11 +31,8 @@ icon: 'signal-stream'
 <Accordion title="Supported Signals:">
   ✅ Traces
   ❌ Metrics
-  ❌ Logs
+  ✅ Logs
 </Accordion>
-
-- **TEMPO_URL** `string` : Endpoint.
-  - This field is required
 
 ### Adding Destination to Odigos
 
@@ -53,7 +48,7 @@ There are two primary methods for configuring destinations in Odigos:
     ```
   </Step>
   <Step>
-    Click on `Add Destination`, select `Tempo` and follow the on-screen instructions
+    Click on `Add Destination`, select `Google Cloud Monitoring` and follow the on-screen instructions
   </Step>
 </Steps>
 
@@ -61,26 +56,26 @@ There are two primary methods for configuring destinations in Odigos:
 
 <Steps>
   <Step>
-    Save the YAML below to a file (e.g. `tempo.yaml`)
+    Save the YAML below to a file (e.g. `googlecloud.yaml`)
     ```yaml
     apiVersion: odigos.io/v1alpha1
     kind: Destination
     metadata:
-      name: tempo-example
+      name: googlecloud-example
       namespace: odigos-system
     spec:
-      data:
-        TEMPO_URL: <Endpoint>
-      destinationName: tempo
+      data: {}
+      destinationName: googlecloud
       signals:
       - TRACES
-      type: tempo
+      - LOGS
+      type: googlecloud
     ```
   </Step>
   <Step>
     Apply the YAML using `kubectl`
     ```bash
-    kubectl apply -f tempo.yaml
+    kubectl apply -f googlecloud.yaml
     ```
   </Step>
 </Steps>
