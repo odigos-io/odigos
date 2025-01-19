@@ -1,4 +1,4 @@
-type: odigosroutingfilterprocessor
+type: odigossourcesfilter
 
 status:
   class: processor

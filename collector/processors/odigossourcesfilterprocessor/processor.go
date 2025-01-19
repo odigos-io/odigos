@@ -1,4 +1,4 @@
-package odigosroutingfilterprocessor
+package odigossourcesfilter
 
 import (
 	"context"
