@@ -89,7 +89,7 @@ func GenerateRoutingProcessors(
 	ctx context.Context,
 	kubeClient client.Client,
 	dests *odigosv1.DestinationList,
-) map[string]config.GenericMap {
+) (map[string]config.GenericMap, error) {
 	logger := log.FromContext(ctx)
 	routingProcessors := make(map[string]config.GenericMap)
 
@@ -106,7 +106,12 @@ func GenerateRoutingProcessors(
 			}
 		}
 		if len(dest.Spec.SourceSelector.Groups) > 0 {
-			matchedSources := fetchSourcesByGroups(ctx, kubeClient, dest.Spec.SourceSelector.Groups, logger)
+			matchedSources, err := fetchSourcesByGroups(ctx, kubeClient, dest.Spec.SourceSelector.Groups, logger)
+
+			if err != nil {
+				return nil, err
+			}
+
 			for _, source := range matchedSources {
 				key := fmt.Sprintf("%s/%s/%s", source.Spec.Workload.Namespace, source.Spec.Workload.Name, source.Spec.Workload.Kind)
 				matchConditions = append(matchConditions, key)
@@ -121,7 +126,7 @@ func GenerateRoutingProcessors(
 		}
 	}
 
-	return routingProcessors
+	return routingProcessors, nil
 }
 
 func fetchSourcesByNamespaces(ctx context.Context, kubeClient client.Client, namespaces []string, logger logr.Logger) []odigosv1.Source {
@@ -138,7 +143,7 @@ func fetchSourcesByNamespaces(ctx context.Context, kubeClient client.Client, nam
 	return sources
 }
 
-func fetchSourcesByGroups(ctx context.Context, kubeClient client.Client, groups []string, logger logr.Logger) []odigosv1.Source {
+func fetchSourcesByGroups(ctx context.Context, kubeClient client.Client, groups []string, logger logr.Logger) ([]odigosv1.Source, error) {
 	sourceMap := make(map[string]odigosv1.Source)
 	for _, group := range groups {
 		labelSelector := labels.Set{fmt.Sprintf("odigos.io/group-%s", group): "true"}.AsSelector()
@@ -149,7 +154,7 @@ func fetchSourcesByGroups(ctx context.Context, kubeClient client.Client, groups 
 		})
 		if err != nil {
 			logger.Error(err, "Failed to fetch sources for group", "group", group)
-			continue
+			return nil, err
 		}
 
 		for _, source := range sourceList.Items {
@@ -163,5 +168,5 @@ func fetchSourcesByGroups(ctx context.Context, kubeClient client.Client, groups 
 	for _, source := range sourceMap {
 		sources = append(sources, source)
 	}
-	return sources
+	return sources, nil
 }

@@ -115,7 +115,12 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 	logger := log.FromContext(ctx)
 	memoryLimiterConfiguration := common.GetMemoryLimiterConfig(gateway.Spec.ResourcesSettings)
 
-	routingProcessors := common.GenerateRoutingProcessors(ctx, c, dests)
+	routingProcessors, err := common.GenerateRoutingProcessors(ctx, c, dests)
+	if err != nil {
+		logger.Error(err, "Failed to generate routing processors")
+		return nil, err
+	}
+
 	processors := common.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleClusterGateway)
 
 	desiredData, err, status, signals := config.Calculate(

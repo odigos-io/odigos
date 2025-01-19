@@ -5,6 +5,7 @@ import (
 
 	controllerconfig "github.com/odigos-io/odigos/autoscaler/controllers/controller_config"
 	"github.com/odigos-io/odigos/autoscaler/controllers/gateway"
+	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -40,9 +41,8 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 func (r *SourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1.Source{}).
-		// Trigger reconciliation on create, delete, or label changes
 		WithEventFilter(predicate.Or(
-			predicate.GenerationChangedPredicate{},
+			odigospredicate.ExistencePredicate{},
 			predicate.LabelChangedPredicate{},
 			predicate.Funcs{
 				DeleteFunc: func(e event.DeleteEvent) bool {
