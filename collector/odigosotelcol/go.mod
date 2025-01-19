@@ -4,7 +4,6 @@ module odigos.io/opentelemetry-collector/cmd/odigosotelcol
 
 go 1.23.0
 
-toolchain go1.23.4
 
 require (
 	github.com/odigos-io/odigos/processor/odigosroutingfilterprocessor v0.106.0

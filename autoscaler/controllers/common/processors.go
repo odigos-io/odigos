@@ -79,12 +79,6 @@ func GetGenericBatchProcessor() odigosv1.Processor {
 	}
 }
 
-type MatchCondition struct {
-	Name      string `mapstructure:"name"`
-	Namespace string `mapstructure:"namespace"`
-	Kind      string `mapstructure:"kind"`
-}
-
 func GenerateRoutingProcessors(
 	ctx context.Context,
 	kubeClient client.Client,
@@ -102,7 +96,8 @@ func GenerateRoutingProcessors(
 		matchConditions := []string{}
 		if len(dest.Spec.SourceSelector.Namespaces) > 0 {
 			for _, namespace := range dest.Spec.SourceSelector.Namespaces {
-				matchConditions = append(matchConditions, fmt.Sprintf("%s/*/*", namespace))
+				namespaceSelectorKey := fmt.Sprintf("%s/*/*", namespace)
+				matchConditions = append(matchConditions, namespaceSelectorKey)
 			}
 		}
 		if len(dest.Spec.SourceSelector.Groups) > 0 {
@@ -113,8 +108,8 @@ func GenerateRoutingProcessors(
 			}
 
 			for _, source := range matchedSources {
-				key := fmt.Sprintf("%s/%s/%s", source.Spec.Workload.Namespace, source.Spec.Workload.Name, source.Spec.Workload.Kind)
-				matchConditions = append(matchConditions, key)
+				sourceSelectorKey := fmt.Sprintf("%s/%s/%s", source.Spec.Workload.Namespace, source.Spec.Workload.Kind, source.Spec.Workload.Name)
+				matchConditions = append(matchConditions, sourceSelectorKey)
 			}
 		}
 
@@ -127,20 +122,6 @@ func GenerateRoutingProcessors(
 	}
 
 	return routingProcessors, nil
-}
-
-func fetchSourcesByNamespaces(ctx context.Context, kubeClient client.Client, namespaces []string, logger logr.Logger) []odigosv1.Source {
-	var sources []odigosv1.Source
-	for _, ns := range namespaces {
-		sourceList := &odigosv1.SourceList{}
-		err := kubeClient.List(ctx, sourceList, &client.ListOptions{Namespace: ns})
-		if err != nil {
-			logger.Error(err, "Failed to fetch sources by namespace", "namespace", ns)
-			continue
-		}
-		sources = append(sources, sourceList.Items...)
-	}
-	return sources
 }
 
 func fetchSourcesByGroups(ctx context.Context, kubeClient client.Client, groups []string, logger logr.Logger) ([]odigosv1.Source, error) {
@@ -158,7 +139,7 @@ func fetchSourcesByGroups(ctx context.Context, kubeClient client.Client, groups 
 		}
 
 		for _, source := range sourceList.Items {
-			key := fmt.Sprintf("%s/%s", source.Namespace, source.Name)
+			key := fmt.Sprintf("%s/%s/%s", source.Spec.Workload.Namespace, source.Spec.Workload.Kind, source.Spec.Workload.Name)
 			if _, exists := sourceMap[key]; !exists {
 				sourceMap[key] = source
 			}

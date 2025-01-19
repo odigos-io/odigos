@@ -103,7 +103,7 @@ func (fp *filterProcessor) matches(name, namespace, kind string) bool {
 	}
 
 	if name != "" && kind != "" {
-		key := fmt.Sprintf("%s/%s/%s", namespace, name, kind)
+		key := fmt.Sprintf("%s/%s/%s", namespace, kind, name)
 		if _, exists := fp.config.MatchMap[key]; exists {
 			return true
 		}
