@@ -10,7 +10,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err := ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Secret{}).
-		Named("procluster-odigossecret").
+		Named("odigospro-odigospro").
 		WithEventFilter(&odigospredicates.OdigosProSecretPredicate).
 		Complete(&odigossecretController{
 			Client: mgr.GetClient(),
