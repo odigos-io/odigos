@@ -37,13 +37,6 @@ type DestinationSpec struct {
 	SourceSelector *SourceSelector `json:"sourceSelector,omitempty"`
 }
 
-type SourceSelector struct {
-	// +optional
-	Namespaces []string `json:"namespaces,omitempty"`
-	// +optional
-	Groups []string `json:"groups,omitempty"`
-}
-
 // DestinationStatus defines the observed state of Destination
 type DestinationStatus struct {
 	// Represents the observations of a destination's current state.

@@ -97,7 +97,8 @@ func (fp *filterProcessor) matches(name, namespace, kind string) bool {
 		return false
 	}
 
-	if _, exists := fp.config.MatchMap[fmt.Sprintf("%s/*/*", namespace)]; exists {
+	namespaceSelectorKey := fmt.Sprintf("%s/*/*", namespace)
+	if _, exists := fp.config.MatchMap[namespaceSelectorKey]; exists {
 		return true
 	}
 
