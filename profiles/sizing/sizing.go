@@ -8,7 +8,7 @@ import (
 var (
 	SizeSProfile = profiles.Profile{
 		ProfileName:      common.ProfileName("size_s"),
-		MinimumTier:      common.OdigosTier(common.CommunityOdigosTier),
+		MinimumTier:      common.CommunityOdigosTier,
 		ShortDescription: "Small size deployment profile",
 		ModifyConfigFunc: func(c *common.OdigosConfiguration) {
 			modifySizingConfig(c,
@@ -30,7 +30,7 @@ var (
 	}
 	SizeMProfile = profiles.Profile{
 		ProfileName:      common.ProfileName("size_m"),
-		MinimumTier:      common.OdigosTier(common.CommunityOdigosTier),
+		MinimumTier:      common.CommunityOdigosTier,
 		ShortDescription: "Medium size deployment profile",
 		ModifyConfigFunc: func(c *common.OdigosConfiguration) {
 			modifySizingConfig(c,
@@ -52,7 +52,7 @@ var (
 	}
 	SizeLProfile = profiles.Profile{
 		ProfileName:      common.ProfileName("size_l"),
-		MinimumTier:      common.OdigosTier(common.CommunityOdigosTier),
+		MinimumTier:      common.CommunityOdigosTier,
 		ShortDescription: "Large size deployment profile",
 		ModifyConfigFunc: func(c *common.OdigosConfiguration) {
 			modifySizingConfig(c,
@@ -74,14 +74,20 @@ var (
 	}
 )
 
-func modifySizingConfig(c *common.OdigosConfiguration, clusterCollectorConfig common.CollectorGatewayConfiguration, nodeCollectorConfig common.CollectorNodeConfiguration) {
+func modifySizingConfig(c *common.OdigosConfiguration,
+	clusterCollectorConfig common.CollectorGatewayConfiguration,
+	nodeCollectorConfig common.CollectorNodeConfiguration) {
 	// do not modify the configuration if any of the values if they are already set
 	if c.CollectorGateway != nil {
 		return
 	}
 	// the following is not very elegant.
 	// we only care if the sizing parameters are set, if the port is set, we apply it nevertheless
-	if c.CollectorNode != nil && (c.CollectorNode.RequestMemoryMiB != 0 || c.CollectorNode.LimitMemoryMiB != 0 || c.CollectorNode.RequestCPUm != 0 || c.CollectorNode.LimitCPUm != 0) {
+	if c.CollectorNode != nil &&
+		(c.CollectorNode.RequestMemoryMiB != 0 ||
+			c.CollectorNode.LimitMemoryMiB != 0 ||
+			c.CollectorNode.RequestCPUm != 0 ||
+			c.CollectorNode.LimitCPUm != 0) {
 		return
 	}
 

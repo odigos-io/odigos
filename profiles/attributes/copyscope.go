@@ -7,6 +7,6 @@ import (
 
 var CopyScopeProfile = profile.Profile{
 	ProfileName:      common.ProfileName("copy-scope"),
-	MinimumTier:      common.OdigosTier(common.CommunityOdigosTier),
+	MinimumTier:      common.CommunityOdigosTier,
 	ShortDescription: "Copy the scope name into a separate attribute for backends that do not support scopes",
 }

@@ -3,10 +3,12 @@ package golang
 import (
 	"debug/buildinfo"
 	"fmt"
+	"regexp"
+
 	"github.com/hashicorp/go-version"
+
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
-	"regexp"
 )
 
 type GolangInspector struct{}
@@ -34,5 +36,4 @@ func (g *GolangInspector) GetRuntimeVersion(p *process.Details, containerURL str
 	match := re.FindStringSubmatch(buildInfo.GoVersion)
 
 	return common.GetVersion(match[1])
-
 }

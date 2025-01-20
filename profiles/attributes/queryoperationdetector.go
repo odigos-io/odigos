@@ -7,6 +7,6 @@ import (
 
 var QueryOperationDetector = profile.Profile{
 	ProfileName:      common.ProfileName("query-operation-detector"),
-	MinimumTier:      common.OdigosTier(common.OnPremOdigosTier),
+	MinimumTier:      common.OnPremOdigosTier,
 	ShortDescription: "Detect the SQL operation name from the query text",
 }
