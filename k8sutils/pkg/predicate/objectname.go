@@ -105,3 +105,6 @@ var ClusterCollectorDeploymentPredicate = ObjectNamePredicate{
 var OdigosProSecretPredicate = ObjectNamePredicate{
 	AllowedObjectName: odigosk8sconsts.OdigosProSecretName,
 }
+var OdigosDeploymentConfigMapPredicate = ObjectNamePredicate{
+	AllowedObjectName: odigosk8sconsts.OdigosDeploymentConfigMapName,
+}
