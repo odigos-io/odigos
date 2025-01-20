@@ -36,9 +36,6 @@ func (r *odigossecretController) Reconcile(ctx context.Context, _ ctrl.Request) 
 
 	proSecret := &corev1.Secret{}
 	err = r.Client.Get(ctx, client.ObjectKey{Namespace: odigosNs, Name: k8sconsts.OdigosProSecretName}, proSecret)
-	if !apierrors.IsNotFound(err) {
-		return ctrl.Result{}, err
-	}
 
 	if apierrors.IsNotFound(err) {
 		deleted := deleteProInfoFromConfigMap(odigosDeploymentConfig)
@@ -91,7 +88,7 @@ func updateProInfoInConfigMap(odigosDeploymentConfig *corev1.ConfigMap, proSecre
 		return fmt.Errorf("error: failed to parse JWT token audience")
 	}
 
-	expiry, ok := claims["exp"].(int64)
+	expiry, ok := claims["exp"].(float64)
 	if !ok {
 		return fmt.Errorf("error: failed to parse JWT token expiry")
 	}
@@ -102,7 +99,7 @@ func updateProInfoInConfigMap(odigosDeploymentConfig *corev1.ConfigMap, proSecre
 	}
 
 	odigosDeploymentConfig.Data[k8sconsts.OdigosDeploymentConfigMapOnPremTokenAudKey] = audience
-	odigosDeploymentConfig.Data[k8sconsts.OdigosDeploymentConfigMapOnPremTokenExpKey] = time.Unix(expiry, 0).UTC().Format("02 January 2006 03:04:05 PM")
+	odigosDeploymentConfig.Data[k8sconsts.OdigosDeploymentConfigMapOnPremTokenExpKey] = time.Unix(int64(expiry), 0).UTC().Format("02 Jan 2006 03:04:05 PM")
 	if profilesExists {
 		odigosDeploymentConfig.Data[k8sconsts.OdigosDeploymentConfigMapOnPremClientProfilesKey] = profilesString
 	} else {
@@ -127,7 +124,7 @@ func getProfilesString(claims jwt.MapClaims) (string, bool, error) {
 		return "", false, nil
 	}
 
-	profileStrings := make([]string, len(profilesSlice))
+	profileStrings := make([]string, 0, len(profilesSlice))
 	for _, profile := range profilesSlice {
 		profileString, ok := profile.(string)
 		if !ok {
