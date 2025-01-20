@@ -38,13 +38,16 @@ type NodeCollectorAnalyze struct {
 }
 
 type OdigosAnalyze struct {
-	OdigosVersion        properties.EntityProperty `json:"odigosVersion"`
-	Tier                 properties.EntityProperty `json:"tier"`
-	InstallationMethod   properties.EntityProperty `json:"installationMethod"`
-	NumberOfDestinations int                       `json:"numberOfDestinations"`
-	NumberOfSources      int                       `json:"numberOfSources"`
-	ClusterCollector     ClusterCollectorAnalyze   `json:"clusterCollector"`
-	NodeCollector        NodeCollectorAnalyze      `json:"nodeCollector"`
+	OdigosVersion         properties.EntityProperty `json:"odigosVersion"`
+	Tier                  properties.EntityProperty `json:"tier"`
+	InstallationMethod    properties.EntityProperty `json:"installationMethod"`
+	NumberOfDestinations  int                       `json:"numberOfDestinations"`
+	NumberOfSources       int                       `json:"numberOfSources"`
+	ClusterCollector      ClusterCollectorAnalyze   `json:"clusterCollector"`
+	NodeCollector         NodeCollectorAnalyze      `json:"nodeCollector"`
+	OnpremTokenAud        string                    `json:"onpremTokenAudience,omitempty"`
+	OnpremTokenExpiration string                    `json:"onpremTokenExpiration,omitempty"`
+	OdigosProfiles        string                    `json:"odigosProfiles,omitempty"`
 
 	// is settled is true if all resources are created and ready
 	IsSettled bool `json:"isSettled"`
@@ -384,6 +387,9 @@ func AnalyzeOdigos(resources *OdigosResources) *OdigosAnalyze {
 	odigosVersion := resources.OdigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapVersionKey]
 	tier := resources.OdigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapTierKey]
 	installationMethod := resources.OdigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey]
+	tokenExpiration := resources.OdigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapOnPremTokenExpKey]
+	tokenAud := resources.OdigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapOnPremTokenAudKey]
+	odigosProfiles := resources.OdigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapOnPremClientProfilesKey]
 
 	odigosVersionProperty := properties.EntityProperty{
 		Name:    "Odigos Version",
