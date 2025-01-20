@@ -45,19 +45,19 @@ export const useNamespace = (namespaceName?: string, params?: Params) => {
     data: data?.computePlatform?.k8sActualNamespace,
     allNamespaces: cp?.computePlatform?.k8sActualNamespaces || [],
 
-    persistNamespace: async (namespace: PersistNamespaceItemInput) => {
-      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', `Persisting "${namespace.name}" namespace...`, true);
+    persistNamespace: async (namespace: PersistNamespaceItemInput, disableNotify?: boolean) => {
+      if (!disableNotify) notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', `Persisting "${namespace.name}" namespace...`, true);
       await persistNamespaceMutation({ variables: { namespace } });
     },
 
-    persistNamespaces: async (selectNamespaceList: { [namespace: string]: boolean }) => {
+    persistNamespaces: async (selectNamespaceList: { [namespace: string]: boolean }, disableNotify?: boolean) => {
       const entries = Object.entries(selectNamespaceList);
 
       // this is to handle "on success" callback if there are no namespaces to persist,
       // and to notify if there are namespace to persist
       let hasNamespaces = !!entries.length;
 
-      if (hasNamespaces) notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Persisting namespaces...', true);
+      if (!disableNotify && hasNamespaces) notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Persisting namespaces...', true);
       for (const [name, futureSelected] of entries) await persistNamespaceMutation({ variables: { namespace: { name, futureSelected } } });
       if (!hasNamespaces) handleComplete('');
     },

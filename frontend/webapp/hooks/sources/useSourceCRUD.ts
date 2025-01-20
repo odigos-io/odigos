@@ -94,7 +94,7 @@ export const useSourceCRUD = (params?: Params) => {
     sources,
     filteredSources: filtered,
 
-    persistSources: async (selectAppsList: { [key: string]: K8sActualSource[] }) => {
+    persistSources: async (selectAppsList: { [key: string]: K8sActualSource[] }, disableNotify?: boolean) => {
       const entries = Object.entries(selectAppsList);
 
       // this is to handle "on success" callback if there are no sources to persist,
@@ -113,7 +113,7 @@ export const useSourceCRUD = (params?: Params) => {
 
         if (!!sendToGql.length) {
           hasSources = true;
-          if (!alreadyNotifiedSources) {
+          if (!disableNotify && !alreadyNotifiedSources) {
             alreadyNotifiedSources = true;
             notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Persisting sources...', undefined, true);
           }
