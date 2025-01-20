@@ -3,7 +3,7 @@ import { useMutation } from '@apollo/client';
 import { PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import { ACTION, BACKEND_BOOLEAN, getSseTargetFromId } from '@/utils';
 import { type PendingItem, useAppStore, useFilterStore, useNotificationStore, usePaginatedStore, usePendingStore } from '@/store';
-import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type PatchSourceRequestInput, NOTIFICATION_TYPE, type K8sActualSource, K8sResourceKind } from '@/types';
+import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type PatchSourceRequestInput, NOTIFICATION_TYPE, type K8sActualSource, K8sResourceKind, type PersistSourcesInput } from '@/types';
 
 interface Params {
   onSuccess?: (type: string) => void;
@@ -13,24 +13,13 @@ interface Params {
 export const useSourceCRUD = (params?: Params) => {
   const filters = useFilterStore();
   const { setConfiguredSources } = useAppStore();
-  const { sources, updateSource } = usePaginatedStore();
   const { addPendingItems, removePendingItems } = usePendingStore();
   const { addNotification, removeNotifications } = useNotificationStore();
+  const { sources, updateSource: updateSourceInStore } = usePaginatedStore();
 
-  const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: WorkloadId, hideFromHistory?: boolean) => {
-    addNotification({
-      type,
-      title,
-      message,
-      crdType: OVERVIEW_ENTITY_TYPES.SOURCE,
-      target: id ? getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.SOURCE) : undefined,
-      hideFromHistory,
-    });
-  };
-
-  const handleError = (actionType: string, message: string) => {
-    notifyUser(NOTIFICATION_TYPE.ERROR, actionType, message);
-    params?.onError?.(actionType);
+  const handleError = (title: string, message: string) => {
+    addNotification({ type: NOTIFICATION_TYPE.ERROR, title, message, crdType: OVERVIEW_ENTITY_TYPES.SOURCE });
+    params?.onError?.(title);
   };
 
   const handleComplete = (actionType: string) => {
@@ -50,8 +39,8 @@ export const useSourceCRUD = (params?: Params) => {
     return arr;
   }, [sources, filters]);
 
-  const [persistSources, cdState] = useMutation<{ persistK8sSources: boolean }>(PERSIST_SOURCE, {
-    onError: (error) => handleError('', error.message),
+  const [persistSources, cdState] = useMutation<{ persistK8sSources: boolean }, PersistSourcesInput>(PERSIST_SOURCE, {
+    onError: (error) => handleError(error.name || ACTION.UPDATE, error.cause?.message || error.message),
     onCompleted: (res, req) => {
       const namespace = req?.variables?.namespace;
       const count = req?.variables?.sources.length;
@@ -69,8 +58,8 @@ export const useSourceCRUD = (params?: Params) => {
     },
   });
 
-  const [updateSourceName, uState] = useMutation<{ updateK8sActualSource: boolean }>(UPDATE_K8S_ACTUAL_SOURCE, {
-    onError: (error) => handleError(ACTION.UPDATE, error.message),
+  const [updateSourceName, uState] = useMutation<{ updateK8sActualSource: boolean }, PatchSourceRequestInput>(UPDATE_K8S_ACTUAL_SOURCE, {
+    onError: (error) => handleError(error.name || ACTION.UPDATE, error.cause?.message || error.message),
     onCompleted: (res, req) => {
       handleComplete(ACTION.UPDATE);
 
@@ -80,11 +69,20 @@ export const useSourceCRUD = (params?: Params) => {
       // Not that there's anything about a watcher that would break the UI, it's just that we would receive unexpected events with ridiculous amounts,
       // (example: instrument 5 apps, update the name of 2, then uninstrument the other 3, we would get an SSE with minimum 10 updated sources, when we expect it to show only 2 due to name change).
       setTimeout(() => {
-        const { sourceId, patchSourceRequest } = req?.variables || {};
+        const sourceId = req?.variables?.sourceId;
+        const patchSourceRequest = req?.variables?.patchSourceRequest;
 
-        updateSource(sourceId, patchSourceRequest);
-        notifyUser(NOTIFICATION_TYPE.SUCCESS, ACTION.UPDATE, 'Successfully updated 1 source', sourceId);
+        updateSourceInStore(sourceId, patchSourceRequest);
         removePendingItems([{ entityType: OVERVIEW_ENTITY_TYPES.SOURCE, entityId: sourceId }]);
+
+        // Notify here, because there is no SSE for UPDATE on sources...
+        addNotification({
+          type: NOTIFICATION_TYPE.SUCCESS,
+          title: ACTION.UPDATE,
+          message: `Successfully updated "${sourceId}" source`,
+          crdType: OVERVIEW_ENTITY_TYPES.SOURCE,
+          target: getSseTargetFromId(sourceId, OVERVIEW_ENTITY_TYPES.SOURCE),
+        });
       }, 2000);
     },
   });
@@ -94,15 +92,11 @@ export const useSourceCRUD = (params?: Params) => {
     sources,
     filteredSources: filtered,
 
-    persistSources: async (selectAppsList: { [key: string]: K8sActualSource[] }, disableNotify?: boolean) => {
-      const entries = Object.entries(selectAppsList);
-
-      // this is to handle "on success" callback if there are no sources to persist,
-      // and to notify use if there are source to persist
+    persistSources: async (payload: { [key: string]: K8sActualSource[] }) => {
+      // this is to handle "on success" callback if there are no sources to persist
       let hasSources = false;
-      let alreadyNotifiedSources = false;
 
-      for (const [namespace, sources] of entries) {
+      for (const [namespace, sources] of Object.entries(payload)) {
         const addToPendingStore: PendingItem[] = [];
         const sendToGql: Pick<K8sActualSource, 'name' | 'kind' | 'selected'>[] = [];
 
@@ -111,25 +105,19 @@ export const useSourceCRUD = (params?: Params) => {
           sendToGql.push({ name, kind, selected });
         });
 
-        if (!!sendToGql.length) {
-          hasSources = true;
-          if (!disableNotify && !alreadyNotifiedSources) {
-            alreadyNotifiedSources = true;
-            notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Persisting sources...', undefined, true);
-          }
-        }
+        if (!!sendToGql.length) hasSources = true;
 
         addPendingItems(addToPendingStore);
         await persistSources({ variables: { namespace, sources: sendToGql } });
       }
 
+      // this is to handle "on success" callback if there are no sources to persist
       if (!hasSources) handleComplete('');
     },
 
-    updateSource: async (sourceId: WorkloadId, patchSourceRequest: PatchSourceRequestInput) => {
-      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Updating source...', undefined, true);
-      addPendingItems([{ entityType: OVERVIEW_ENTITY_TYPES.SOURCE, entityId: sourceId }]);
-      await updateSourceName({ variables: { sourceId, patchSourceRequest } });
+    updateSource: async (id: WorkloadId, payload: PatchSourceRequestInput['patchSourceRequest']) => {
+      addPendingItems([{ entityType: OVERVIEW_ENTITY_TYPES.SOURCE, entityId: id }]);
+      await updateSourceName({ variables: { sourceId: id, patchSourceRequest: payload } });
     },
   };
 };

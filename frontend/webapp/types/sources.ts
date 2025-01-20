@@ -29,11 +29,17 @@ export interface K8sActualSource extends WorkloadId {
 }
 
 export interface PatchSourceRequestInput {
-  reportedName?: string;
+  sourceId: WorkloadId;
+  patchSourceRequest: {
+    reportedName?: string;
+  };
 }
 
-export interface PersistSourcesArray {
-  kind: string;
-  name: string;
-  selected: boolean;
+export interface PersistSourcesInput {
+  namespace: string;
+  sources: {
+    name: WorkloadId['name'];
+    kind: WorkloadId['kind'];
+    selected: boolean;
+  }[];
 }

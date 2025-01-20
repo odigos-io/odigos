@@ -46,9 +46,9 @@ export const AwaitPipelineContainer = () => {
 
   const doPersist = async () => {
     setProgress(0);
-    await persistNamespaces(configuredFutureApps, true);
+    await persistNamespaces(configuredFutureApps);
     setProgress(5);
-    await persistSources(configuredSources, true);
+    await persistSources(configuredSources);
     setProgress(10);
     await Promise.all(configuredDestinations.map(async ({ form }) => await createDestination(form)));
     setProgress(15);

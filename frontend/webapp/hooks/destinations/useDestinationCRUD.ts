@@ -16,20 +16,9 @@ export const useDestinationCRUD = (params?: Params) => {
   const { addPendingItems } = usePendingStore();
   const { addNotification, removeNotifications } = useNotificationStore();
 
-  const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
-    addNotification({
-      type,
-      title,
-      message,
-      crdType: OVERVIEW_ENTITY_TYPES.DESTINATION,
-      target: id ? getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.DESTINATION) : undefined,
-      hideFromHistory,
-    });
-  };
-
-  const handleError = (actionType: string, message: string) => {
-    notifyUser(NOTIFICATION_TYPE.ERROR, actionType, message);
-    params?.onError?.(actionType);
+  const handleError = (title: string, message: string) => {
+    addNotification({ type: NOTIFICATION_TYPE.ERROR, title, message, crdType: OVERVIEW_ENTITY_TYPES.DESTINATION });
+    params?.onError?.(title);
   };
 
   const handleComplete = (actionType: string) => {
@@ -99,17 +88,14 @@ export const useDestinationCRUD = (params?: Params) => {
     refetchDestinations: refetch,
 
     createDestination: (destination: DestinationInput) => {
-      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Creating destination...', undefined, true);
       addPendingItems([{ entityType: OVERVIEW_ENTITY_TYPES.DESTINATION, entityId: undefined }]);
       createDestination({ variables: { destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
     },
     updateDestination: (id: string, destination: DestinationInput) => {
-      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Updating destination...', undefined, true);
       addPendingItems([{ entityType: OVERVIEW_ENTITY_TYPES.DESTINATION, entityId: id }]);
       updateDestination({ variables: { id, destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
     },
     deleteDestination: (id: string) => {
-      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Deleting destination...', undefined, true);
       addPendingItems([{ entityType: OVERVIEW_ENTITY_TYPES.DESTINATION, entityId: id }]);
       deleteDestination({ variables: { id } });
     },
