@@ -25,7 +25,6 @@ auto_generated: true
     
 <p>CollectorsGroup is the Schema for the collectors API</p>
 
-
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
@@ -74,7 +73,6 @@ auto_generated: true
 ## `Destination` <a id="odigos-io-v1alpha1-Destination"></a>
     
 <p>Destination is the Schema for the destinations API</p>
-
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -125,7 +123,6 @@ auto_generated: true
     
 <p>InstrumentationConfig is the Schema for the instrumentationconfig API</p>
 
-
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
@@ -175,7 +172,6 @@ auto_generated: true
     
 <p>InstrumentationInstance is the Schema for the InstrumentationInstances API</p>
 
-
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
@@ -223,7 +219,6 @@ auto_generated: true
 
 ## `InstrumentationRule` <a id="odigos-io-v1alpha1-InstrumentationRule"></a>
     
-
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
@@ -272,7 +267,6 @@ auto_generated: true
 ## `InstrumentedApplication` <a id="odigos-io-v1alpha1-InstrumentedApplication"></a>
     
 <p>InstrumentedApplication is the Schema for the instrumentedapplications API</p>
-
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -324,7 +318,6 @@ auto_generated: true
 <p>OdigosConfiguration is the Schema for the odigos configuration</p>
 <p>Deprecated: Use common.OdigosConfiguration instead</p>
 
-
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
@@ -362,7 +355,6 @@ auto_generated: true
 ## `Processor` <a id="odigos-io-v1alpha1-Processor"></a>
     
 <p>Processor is the Schema for an Opentelemetry Collector Processor that is added to Odigos pipeline</p>
-
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -413,7 +405,6 @@ auto_generated: true
     
 <p>Source configures an application for auto-instrumentation.</p>
 
-
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
@@ -462,8 +453,12 @@ auto_generated: true
 ## `Attribute` <a id="odigos-io-v1alpha1-Attribute"></a>
     
 
-**Appears in:**- [InstrumentationInstanceStatus](#odigos-io-v1alpha1-InstrumentationInstanceStatus)- [InstrumentationLibraryStatus](#odigos-io-v1alpha1-InstrumentationLibraryStatus)<p>Attribute is a key-value pair that describes a component or instrumentation</p>
+**Appears in:**
 
+- [InstrumentationInstanceStatus](#odigos-io-v1alpha1-InstrumentationInstanceStatus)
+- [InstrumentationLibraryStatus](#odigos-io-v1alpha1-InstrumentationLibraryStatus)
+
+<p>Attribute is a key-value pair that describes a component or instrumentation</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -498,8 +493,11 @@ auto_generated: true
 ## `AttributeCondition` <a id="odigos-io-v1alpha1-AttributeCondition"></a>
     
 
-**Appears in:**- [AttributesAndSamplerRule](#odigos-io-v1alpha1-AttributesAndSamplerRule)<p>'Operand' represents the attributes and values that an operator acts upon in an expression</p>
+**Appears in:**
 
+- [AttributesAndSamplerRule](#odigos-io-v1alpha1-AttributesAndSamplerRule)
+
+<p>'Operand' represents the attributes and values that an operator acts upon in an expression</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -545,7 +543,11 @@ auto_generated: true
 ## `AttributesAndSamplerRule` <a id="odigos-io-v1alpha1-AttributesAndSamplerRule"></a>
     
 
-**Appears in:**- [HeadSamplingConfig](#odigos-io-v1alpha1-HeadSamplingConfig)<p>AttributesAndSamplerRule is a set of AttributeCondition that are ANDed together.
+**Appears in:**
+
+- [HeadSamplingConfig](#odigos-io-v1alpha1-HeadSamplingConfig)
+
+<p>AttributesAndSamplerRule is a set of AttributeCondition that are ANDed together.
 If all attribute conditions evaluate to true, the AND sampler evaluates to true,
 and the fraction is used to determine the sampling decision.
 If any of the attribute compare samplers evaluate to false,
@@ -553,7 +555,6 @@ the fraction is not used and the rule is skipped.
 An &quot;empty&quot; AttributesAndSamplerRule with no attribute conditions is considered to always evaluate to true.
 and the fraction is used to determine the sampling decision.
 This entity is refered to a rule in Odigos terminology for head-sampling.</p>
-
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -590,8 +591,11 @@ If the fraction is 1, all spans are sampled.</p>
 ## `CollectorGatewayConfiguration` <a id="odigos-io-v1alpha1-CollectorGatewayConfiguration"></a>
     
 
-**Appears in:**- [OdigosConfigurationSpec](#odigos-io-v1alpha1-OdigosConfigurationSpec)<p>Deprecated: Use common.OdigosConfiguration instead</p>
+**Appears in:**
 
+- [OdigosConfigurationSpec](#odigos-io-v1alpha1-OdigosConfigurationSpec)
+
+<p>Deprecated: Use common.OdigosConfiguration instead</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -656,11 +660,14 @@ if not specified, it will be set to 80% of the hard limit of the memory limiter.
 ## `CollectorsGroupResourcesSettings` <a id="odigos-io-v1alpha1-CollectorsGroupResourcesSettings"></a>
     
 
-**Appears in:**- [CollectorsGroupSpec](#odigos-io-v1alpha1-CollectorsGroupSpec)<p>The raw values to control the collectors group resources and behavior.
+**Appears in:**
+
+- [CollectorsGroupSpec](#odigos-io-v1alpha1-CollectorsGroupSpec)
+
+<p>The raw values to control the collectors group resources and behavior.
 any defaulting, validations and calculations should be done in the controllers
 that create this CR.
 Values will be used as is without any further processing.</p>
-
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -793,14 +800,21 @@ it is recommended to be set to 80% of the hard limit of the memory limiter.</p>
     
 (Alias of `string`)
 
-**Appears in:**- [CollectorsGroupSpec](#odigos-io-v1alpha1-CollectorsGroupSpec)- [ProcessorSpec](#odigos-io-v1alpha1-ProcessorSpec)
+**Appears in:**
+
+- [CollectorsGroupSpec](#odigos-io-v1alpha1-CollectorsGroupSpec)
+- [ProcessorSpec](#odigos-io-v1alpha1-ProcessorSpec)
+
 
 
 ## `CollectorsGroupSpec` <a id="odigos-io-v1alpha1-CollectorsGroupSpec"></a>
     
 
-**Appears in:**- [CollectorsGroup](#odigos-io-v1alpha1-CollectorsGroup)<p>CollectorsGroupSpec defines the desired state of Collector</p>
+**Appears in:**
 
+- [CollectorsGroup](#odigos-io-v1alpha1-CollectorsGroup)
+
+<p>CollectorsGroupSpec defines the desired state of Collector</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -853,8 +867,11 @@ these settings are used to protect the collectors instances from:</p>
 ## `CollectorsGroupStatus` <a id="odigos-io-v1alpha1-CollectorsGroupStatus"></a>
     
 
-**Appears in:**- [CollectorsGroup](#odigos-io-v1alpha1-CollectorsGroup)<p>CollectorsGroupStatus defines the observed state of Collector</p>
+**Appears in:**
 
+- [CollectorsGroup](#odigos-io-v1alpha1-CollectorsGroup)
+
+<p>CollectorsGroupStatus defines the observed state of Collector</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -904,7 +921,10 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 ## `ConfigOption` <a id="odigos-io-v1alpha1-ConfigOption"></a>
     
 
-**Appears in:**- [InstrumentationLibraryOptions](#odigos-io-v1alpha1-InstrumentationLibraryOptions)
+**Appears in:**
+
+- [InstrumentationLibraryOptions](#odigos-io-v1alpha1-InstrumentationLibraryOptions)
+
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
@@ -938,8 +958,11 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 ## `DestinationSpec` <a id="odigos-io-v1alpha1-DestinationSpec"></a>
     
 
-**Appears in:**- [Destination](#odigos-io-v1alpha1-Destination)<p>DestinationSpec defines the desired state of Destination</p>
+**Appears in:**
 
+- [Destination](#odigos-io-v1alpha1-Destination)
+
+<p>DestinationSpec defines the desired state of Destination</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -1007,8 +1030,11 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 ## `DestinationStatus` <a id="odigos-io-v1alpha1-DestinationStatus"></a>
     
 
-**Appears in:**- [Destination](#odigos-io-v1alpha1-Destination)<p>DestinationStatus defines the observed state of Destination</p>
+**Appears in:**
 
+- [Destination](#odigos-io-v1alpha1-Destination)
+
+<p>DestinationStatus defines the observed state of Destination</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -1032,7 +1058,10 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 ## `EnvVar` <a id="odigos-io-v1alpha1-EnvVar"></a>
     
 
-**Appears in:**- [RuntimeDetailsByContainer](#odigos-io-v1alpha1-RuntimeDetailsByContainer)
+**Appears in:**
+
+- [RuntimeDetailsByContainer](#odigos-io-v1alpha1-RuntimeDetailsByContainer)
+
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
@@ -1066,10 +1095,13 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 ## `HeadSamplingConfig` <a id="odigos-io-v1alpha1-HeadSamplingConfig"></a>
     
 
-**Appears in:**- [SdkConfig](#odigos-io-v1alpha1-SdkConfig)<p>HeadSamplingConfig is a set of attribute rules.
+**Appears in:**
+
+- [SdkConfig](#odigos-io-v1alpha1-SdkConfig)
+
+<p>HeadSamplingConfig is a set of attribute rules.
 The first attribute rule that evaluates to true is used to determine the sampling decision based on its fraction.</p>
 <p>If none of the rules evaluate to true, the fallback fraction is used to determine the sampling decision.</p>
-
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -1107,9 +1139,12 @@ a value of 0 means no spans are sampled if none of the rules evaluate to true.</
 ## `InstrumentationConfigSpec` <a id="odigos-io-v1alpha1-InstrumentationConfigSpec"></a>
     
 
-**Appears in:**- [InstrumentationConfig](#odigos-io-v1alpha1-InstrumentationConfig)<p>Config for the OpenTelemeetry SDKs that should be applied to a workload.
-The workload is identified by the owner reference</p>
+**Appears in:**
 
+- [InstrumentationConfig](#odigos-io-v1alpha1-InstrumentationConfig)
+
+<p>Config for the OpenTelemeetry SDKs that should be applied to a workload.
+The workload is identified by the owner reference</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -1125,19 +1160,6 @@ The workload is identified by the owner reference</p>
 </td>
 <td>
    <p>the service.name property is used to populate the <code>service.name</code> resource attribute in the telemetry generated by this workload</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>config</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-WorkloadInstrumentationConfig"><code>[]WorkloadInstrumentationConfig</code></a>
-</td>
-<td>
-   <p>config for this workload.
-the config is a list to allow for multiple config options and values to be applied.
-the list is processed in order, and the first matching config is applied.</p>
 </td>
 </tr>
 <tr>
@@ -1159,7 +1181,10 @@ TODO: consider adding more granular control over the SDKs, such as community/ent
 ## `InstrumentationConfigStatus` <a id="odigos-io-v1alpha1-InstrumentationConfigStatus"></a>
     
 
-**Appears in:**- [InstrumentationConfig](#odigos-io-v1alpha1-InstrumentationConfig)
+**Appears in:**
+
+- [InstrumentationConfig](#odigos-io-v1alpha1-InstrumentationConfig)
+
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
@@ -1193,7 +1218,10 @@ TODO: consider adding more granular control over the SDKs, such as community/ent
 ## `InstrumentationInstanceSpec` <a id="odigos-io-v1alpha1-InstrumentationInstanceSpec"></a>
     
 
-**Appears in:**- [InstrumentationInstance](#odigos-io-v1alpha1-InstrumentationInstance)
+**Appears in:**
+
+- [InstrumentationInstance](#odigos-io-v1alpha1-InstrumentationInstance)
+
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
@@ -1217,9 +1245,12 @@ The pod details can be found as the owner reference on the CR.</p>
 ## `InstrumentationInstanceStatus` <a id="odigos-io-v1alpha1-InstrumentationInstanceStatus"></a>
     
 
-**Appears in:**- [InstrumentationInstance](#odigos-io-v1alpha1-InstrumentationInstance)<p>InstrumentationInstanceStatus defines the observed state of InstrumentationInstance
-If the instrumentation is not active, this CR should be deleted</p>
+**Appears in:**
 
+- [InstrumentationInstance](#odigos-io-v1alpha1-InstrumentationInstance)
+
+<p>InstrumentationInstanceStatus defines the observed state of InstrumentationInstance
+If the instrumentation is not active, this CR should be deleted</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -1312,46 +1343,13 @@ and whether the values are considered a guaranteed API.</p>
 </tbody>
 </table>
 
-## `InstrumentationLibrary` <a id="odigos-io-v1alpha1-InstrumentationLibrary"></a>
-    
-
-**Appears in:**- [WorkloadInstrumentationConfig](#odigos-io-v1alpha1-WorkloadInstrumentationConfig)<p>InstrumentationLibrary represents a library for instrumentation</p>
-
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-    
-  
-<tr>
-<td>
-<code>language</code> <B>[Required]</B>
-</td>
-<td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#ProgrammingLanguage"><code>common.ProgrammingLanguage</code></a>
-</td>
-<td>
-   <p>Language is the programming language of the library</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>instrumentationLibraryName</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <p>InstrumentationLibraryName is the name of the instrumentation library</p>
-</td>
-</tr>
-</tbody>
-</table>
-
 ## `InstrumentationLibraryConfig` <a id="odigos-io-v1alpha1-InstrumentationLibraryConfig"></a>
     
 
-**Appears in:**- [SdkConfig](#odigos-io-v1alpha1-SdkConfig)
+**Appears in:**
+
+- [SdkConfig](#odigos-io-v1alpha1-SdkConfig)
+
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
@@ -1409,7 +1407,10 @@ if set, but internal fields are empty, those fields will be used from the defaul
 ## `InstrumentationLibraryConfigTraces` <a id="odigos-io-v1alpha1-InstrumentationLibraryConfigTraces"></a>
     
 
-**Appears in:**- [InstrumentationLibraryConfig](#odigos-io-v1alpha1-InstrumentationLibraryConfig)
+**Appears in:**
+
+- [InstrumentationLibraryConfig](#odigos-io-v1alpha1-InstrumentationLibraryConfig)
+
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
@@ -1435,7 +1436,10 @@ If not specified, the default value for this signal should be used (whether to e
 ## `InstrumentationLibraryId` <a id="odigos-io-v1alpha1-InstrumentationLibraryId"></a>
     
 
-**Appears in:**- [InstrumentationLibraryConfig](#odigos-io-v1alpha1-InstrumentationLibraryConfig)
+**Appears in:**
+
+- [InstrumentationLibraryConfig](#odigos-io-v1alpha1-InstrumentationLibraryConfig)
+
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
@@ -1473,7 +1477,10 @@ In Go, SpanKind is used because the same instrumentation library can be utilized
 ## `InstrumentationLibraryOptions` <a id="odigos-io-v1alpha1-InstrumentationLibraryOptions"></a>
     
 
-**Appears in:**- [OptionByContainer](#odigos-io-v1alpha1-OptionByContainer)
+**Appears in:**
+
+- [OptionByContainer](#odigos-io-v1alpha1-OptionByContainer)
+
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
@@ -1507,9 +1514,12 @@ In Go, SpanKind is used because the same instrumentation library can be utilized
 ## `InstrumentationLibraryStatus` <a id="odigos-io-v1alpha1-InstrumentationLibraryStatus"></a>
     
 
-**Appears in:**- [InstrumentationInstanceStatus](#odigos-io-v1alpha1-InstrumentationInstanceStatus)<p>InstrumentationLibraryStatus defines the observed state of an InstrumentationLibrary.
-if a library is not active/disable, it should not be included in the status</p>
+**Appears in:**
 
+- [InstrumentationInstanceStatus](#odigos-io-v1alpha1-InstrumentationInstanceStatus)
+
+<p>InstrumentationLibraryStatus defines the observed state of an InstrumentationLibrary.
+if a library is not active/disable, it should not be included in the status</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -1616,13 +1626,19 @@ and whether the values are considered a guaranteed API.</p>
     
 (Alias of `string`)
 
-**Appears in:**- [InstrumentationLibraryStatus](#odigos-io-v1alpha1-InstrumentationLibraryStatus)
+**Appears in:**
+
+- [InstrumentationLibraryStatus](#odigos-io-v1alpha1-InstrumentationLibraryStatus)
+
 
 
 ## `InstrumentationRuleSpec` <a id="odigos-io-v1alpha1-InstrumentationRuleSpec"></a>
     
 
-**Appears in:**- [InstrumentationRule](#odigos-io-v1alpha1-InstrumentationRule)
+**Appears in:**
+
+- [InstrumentationRule](#odigos-io-v1alpha1-InstrumentationRule)
+
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
@@ -1727,7 +1743,10 @@ the rule will be used only for languages which are specified, and ignored otherw
 ## `InstrumentationRuleStatus` <a id="odigos-io-v1alpha1-InstrumentationRuleStatus"></a>
     
 
-**Appears in:**- [InstrumentationRule](#odigos-io-v1alpha1-InstrumentationRule)
+**Appears in:**
+
+- [InstrumentationRule](#odigos-io-v1alpha1-InstrumentationRule)
+
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
@@ -1751,8 +1770,11 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 ## `InstrumentedApplicationSpec` <a id="odigos-io-v1alpha1-InstrumentedApplicationSpec"></a>
     
 
-**Appears in:**- [InstrumentedApplication](#odigos-io-v1alpha1-InstrumentedApplication)<p>InstrumentedApplicationSpec defines the desired state of InstrumentedApplication</p>
+**Appears in:**
 
+- [InstrumentedApplication](#odigos-io-v1alpha1-InstrumentedApplication)
+
+<p>InstrumentedApplicationSpec defines the desired state of InstrumentedApplication</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -1787,8 +1809,11 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 ## `InstrumentedApplicationStatus` <a id="odigos-io-v1alpha1-InstrumentedApplicationStatus"></a>
     
 
-**Appears in:**- [InstrumentedApplication](#odigos-io-v1alpha1-InstrumentedApplication)<p>InstrumentedApplicationStatus defines the observed state of InstrumentedApplication</p>
+**Appears in:**
 
+- [InstrumentedApplication](#odigos-io-v1alpha1-InstrumentedApplication)
+
+<p>InstrumentedApplicationStatus defines the observed state of InstrumentedApplication</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -1812,9 +1837,12 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 ## `OdigosConfigurationSpec` <a id="odigos-io-v1alpha1-OdigosConfigurationSpec"></a>
     
 
-**Appears in:**- [OdigosConfiguration](#odigos-io-v1alpha1-OdigosConfiguration)<p>OdigosConfigurationSpec defines the desired state of OdigosConfiguration</p>
-<p>Deprecated: Use common.OdigosConfiguration instead</p>
+**Appears in:**
 
+- [OdigosConfiguration](#odigos-io-v1alpha1-OdigosConfiguration)
+
+<p>OdigosConfigurationSpec defines the desired state of OdigosConfiguration</p>
+<p>Deprecated: Use common.OdigosConfiguration instead</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -1972,13 +2000,19 @@ used for odigos enterprise</p>
     
 (Alias of `string`)
 
-**Appears in:**- [AttributeCondition](#odigos-io-v1alpha1-AttributeCondition)
+**Appears in:**
+
+- [AttributeCondition](#odigos-io-v1alpha1-AttributeCondition)
+
 
 
 ## `OptionByContainer` <a id="odigos-io-v1alpha1-OptionByContainer"></a>
     
 
-**Appears in:**- [InstrumentedApplicationSpec](#odigos-io-v1alpha1-InstrumentedApplicationSpec)
+**Appears in:**
+
+- [InstrumentedApplicationSpec](#odigos-io-v1alpha1-InstrumentedApplicationSpec)
+
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
@@ -2012,7 +2046,10 @@ used for odigos enterprise</p>
 ## `OtherAgent` <a id="odigos-io-v1alpha1-OtherAgent"></a>
     
 
-**Appears in:**- [RuntimeDetailsByContainer](#odigos-io-v1alpha1-RuntimeDetailsByContainer)
+**Appears in:**
+
+- [RuntimeDetailsByContainer](#odigos-io-v1alpha1-RuntimeDetailsByContainer)
+
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
@@ -2036,14 +2073,20 @@ used for odigos enterprise</p>
     
 (Alias of `string`)
 
-**Appears in:**- [RuntimeDetailsByContainer](#odigos-io-v1alpha1-RuntimeDetailsByContainer)
+**Appears in:**
+
+- [RuntimeDetailsByContainer](#odigos-io-v1alpha1-RuntimeDetailsByContainer)
+
 
 
 ## `ProcessorSpec` <a id="odigos-io-v1alpha1-ProcessorSpec"></a>
     
 
-**Appears in:**- [Processor](#odigos-io-v1alpha1-Processor)<p>ProcessorSpec defines the an OpenTelemetry Collector processor in odigos telemetry pipeline</p>
+**Appears in:**
 
+- [Processor](#odigos-io-v1alpha1-Processor)
+
+<p>ProcessorSpec defines the an OpenTelemetry Collector processor in odigos telemetry pipeline</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -2152,15 +2195,22 @@ if the value is missing (or 0) the processor can be placed anywhere in the pipel
 ## `ProcessorStatus` <a id="odigos-io-v1alpha1-ProcessorStatus"></a>
     
 
-**Appears in:**- [Processor](#odigos-io-v1alpha1-Processor)<p>ProcessorStatus defines the observed state of the processor</p>
+**Appears in:**
 
+- [Processor](#odigos-io-v1alpha1-Processor)
+
+<p>ProcessorStatus defines the observed state of the processor</p>
 
 
 
 ## `RuntimeDetailsByContainer` <a id="odigos-io-v1alpha1-RuntimeDetailsByContainer"></a>
     
 
-**Appears in:**- [InstrumentationConfigStatus](#odigos-io-v1alpha1-InstrumentationConfigStatus)- [InstrumentedApplicationSpec](#odigos-io-v1alpha1-InstrumentedApplicationSpec)
+**Appears in:**
+
+- [InstrumentationConfigStatus](#odigos-io-v1alpha1-InstrumentationConfigStatus)
+- [InstrumentedApplicationSpec](#odigos-io-v1alpha1-InstrumentedApplicationSpec)
+
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
@@ -2271,7 +2321,10 @@ if the value is missing (or 0) the processor can be placed anywhere in the pipel
 ## `SdkConfig` <a id="odigos-io-v1alpha1-SdkConfig"></a>
     
 
-**Appears in:**- [InstrumentationConfigSpec](#odigos-io-v1alpha1-InstrumentationConfigSpec)
+**Appears in:**
+
+- [InstrumentationConfigSpec](#odigos-io-v1alpha1-InstrumentationConfigSpec)
+
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
@@ -2340,7 +2393,10 @@ In the Future we might add another level of configuration base on the parent spa
 ## `SourceSpec` <a id="odigos-io-v1alpha1-SourceSpec"></a>
     
 
-**Appears in:**- [Source](#odigos-io-v1alpha1-Source)
+**Appears in:**
+
+- [Source](#odigos-io-v1alpha1-Source)
+
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
@@ -2375,7 +2431,10 @@ This field is required upon creation and cannot be modified.</p>
 ## `SourceStatus` <a id="odigos-io-v1alpha1-SourceStatus"></a>
     
 
-**Appears in:**- [Source](#odigos-io-v1alpha1-Source)
+**Appears in:**
+
+- [Source](#odigos-io-v1alpha1-Source)
+
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
@@ -2391,70 +2450,6 @@ This field is required upon creation and cannot be modified.</p>
 <td>
    <p>Represents the observations of a source's current state.
 Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot;</p>
-</td>
-</tr>
-</tbody>
-</table>
-
-## `WorkloadInstrumentationConfig` <a id="odigos-io-v1alpha1-WorkloadInstrumentationConfig"></a>
-    
-
-**Appears in:**- [InstrumentationConfigSpec](#odigos-io-v1alpha1-InstrumentationConfigSpec)<p>WorkloadInstrumentationConfig defined a single config option to apply
-on a workload, along with it's value, filters and instrumentation libraries</p>
-
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-    
-  
-<tr>
-<td>
-<code>optionKey</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <p>OptionKey is the name of the option
-This value is transparent to the CRD and is passed as-is to the SDK.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>spanKind</code> <B>[Required]</B>
-</td>
-<td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#SpanKind"><code>common.SpanKind</code></a>
-</td>
-<td>
-   <p>This option allow to specify the config option for a specific span kind
-for example, only to client spans or only to server spans.
-it the span kind is not specified, the option will apply to all spans.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>optionValueBoolean</code> <B>[Required]</B>
-</td>
-<td>
-<code>bool</code>
-</td>
-<td>
-   <p>OptionValueBoolean is the boolean value of the option if it is a boolean</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>instrumentationLibraries</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-InstrumentationLibrary"><code>[]InstrumentationLibrary</code></a>
-</td>
-<td>
-   <p>a list of instrumentation libraries to apply this setting to
-if a library is not in this list, the setting should not apply to it
-and should be cleared.</p>
 </td>
 </tr>
 </tbody>

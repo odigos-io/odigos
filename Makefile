@@ -281,7 +281,7 @@ crd-apply: api-all cli-upgrade
 dev-tests-kind-cluster:
 	@echo "Creating a kind cluster for development"
 	kind delete cluster
-	kind create cluster
+	kind create cluster --config=tests/common/apply/kind-config.yaml
 
 .PHONY: dev-tests-setup
 dev-tests-setup: TAG := e2e-test

@@ -1,60 +1,101 @@
 ---
 title: 'Better Stack'
+description: 'Configuring the Better Stack backend (Managed)'
+sidebarTitle: 'Better Stack'
+icon: 'signal-stream'
 ---
 
-## Configuring Backend
+### Getting Started
 
-- **BETTERSTACK_TOKEN** - Source Token, generated from Better Stack UI.
+{/*
+    Add custom content here (under this comment)...
 
-**Note:**
-We handle the endpoint internally, so you don't need to provide it.
-- The endpoint for metrics is `https://in-otel.logs.betterstack.com/metrics`.
-- The endpoint for logs is `https://in-otel.logs.betterstack.com:443`.
+    e.g:
+    [🔗 website](https://odigos.io)
 
-## Adding a Destination to Odigos
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
 
-Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+<img src='https://d15jtxgb40qetw.cloudfront.net/betterstack.svg' alt='betterstack' width="100" height="100" className="not-prose" />
 
-1. **Using the UI**
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
 
-Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI:
+### Configuring Destination Fields
 
-```bash
-odigos ui
-```
+<Accordion title="Supported Signals:">
+  ❌ Traces
+  ✅ Metrics
+  ✅ Logs
+</Accordion>
 
-2. **Using kubernetes manifests**
+- **BETTERSTACK_TOKEN** `string` : Better Stack Source Token.
+  - This field is required
 
-Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
+<Check>
+  We handle the endpoint internally, so you don't need to provide it.
+  - The endpoint for metrics is `https://in-otel.logs.betterstack.com/metrics`
+  - The endpoint for logs is `https://in-otel.logs.betterstack.com:443`
+</Check>
 
-```bash
-kubectl apply -f destination.yaml
-```
+### Adding Destination to Odigos
 
+There are two primary methods for configuring destinations in Odigos:
 
-```yaml
-apiVersion: odigos.io/v1alpha1
-kind: Destination
-metadata:
-  name: betterstack-example
-  namespace: odigos-system
-spec:
-  data: {}
-  destinationName: betterstack
-  secretRef:
-    name: betterstack-secret
-  signals:
-  - METRICS
-  - LOGS
-  type: betterstack
+##### **Using the UI**
 
----
-apiVersion: v1
-data:
-  BETTERSTACK_TOKEN: <base64 Better Stack Source Token>
-kind: Secret
-metadata:
-  name: betterstack-secret
-  namespace: odigos-system
-type: Opaque
-```
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Better Stack` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `betterstack.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: betterstack-example
+      namespace: odigos-system
+    spec:
+      data: {}
+      destinationName: betterstack
+      secretRef:
+        name: betterstack-secret
+      signals:
+      - METRICS
+      - LOGS
+      type: betterstack
+
+    ---
+
+    apiVersion: v1
+    data:
+      BETTERSTACK_TOKEN: <Base64 Better Stack Source Token>
+    kind: Secret
+    metadata:
+      name: betterstack-secret
+      namespace: odigos-system
+    type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f betterstack.yaml
+    ```
+  </Step>
+</Steps>

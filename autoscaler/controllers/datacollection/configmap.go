@@ -239,7 +239,9 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 			"health_check": config.GenericMap{
 				"endpoint": "0.0.0.0:13133",
 			},
-			"pprof": config.GenericMap{},
+			"pprof": config.GenericMap{
+				"endpoint": "0.0.0.0:1777",
+			},
 		},
 		Service: config.Service{
 			Pipelines: map[string]config.Pipeline{

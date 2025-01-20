@@ -1,9 +1,14 @@
 ---
-title: ".NET"
-sidebarTitle: ".NET"
+title: 'Enrich with OpenTelemetry API'
+sidebarTitle: 'Enrichment'
+icon: 'telescope'
 ---
 
-## Required dependencies
+import EnrichmentIntro from '/snippets/enrichment-intro.mdx'
+
+<EnrichmentIntro language='.NET' />
+
+## Required Dependencies
 
 Add the following dependencies to your project by running:
 
@@ -13,7 +18,7 @@ dotnet add package OpenTelemetry
 
 ## Creating Activity
 
-To create a new `Activity`, use the `ActivitySource` class. 
+To create a new `Activity`, use the `ActivitySource` class.
 
 ```csharp
 using System.Diagnostics;
@@ -34,5 +39,6 @@ public static class Telemetry
 }
 ```
 
-### Additional information
+## Additional Information
+
 For more use cases, see the [OpenTelemetry .NET API documentation](https://opentelemetry.io/docs/languages/net/instrumentation/#creating-activities).
