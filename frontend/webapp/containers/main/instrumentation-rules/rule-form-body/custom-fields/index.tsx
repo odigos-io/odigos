@@ -1,4 +1,5 @@
 import React from 'react';
+import CodeAttributes from './code-attributes';
 import PayloadCollection from './payload-collection';
 import { type InstrumentationRuleInput, InstrumentationRuleType } from '@/types';
 
@@ -19,6 +20,7 @@ type ComponentType = React.FC<ComponentProps> | null;
 
 const componentsMap: Record<InstrumentationRuleType, ComponentType> = {
   [InstrumentationRuleType.PAYLOAD_COLLECTION]: PayloadCollection,
+  [InstrumentationRuleType.CODE_ATTRIBUTES]: CodeAttributes,
   [InstrumentationRuleType.UNKNOWN_TYPE]: null,
 };
 

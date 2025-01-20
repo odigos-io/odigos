@@ -4,7 +4,7 @@ import { useNamespace } from '../compute-platform';
 import { PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import { ACTION, BACKEND_BOOLEAN, getSseTargetFromId } from '@/utils';
 import { type PendingItem, useAppStore, useFilterStore, useNotificationStore, usePaginatedStore, usePendingStore } from '@/store';
-import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type PatchSourceRequestInput, NOTIFICATION_TYPE, type K8sActualSource } from '@/types';
+import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type PatchSourceRequestInput, NOTIFICATION_TYPE, type K8sActualSource, K8sResourceKind } from '@/types';
 
 interface Params {
   onSuccess?: (type: string) => void;
@@ -59,7 +59,7 @@ export const useSourceCRUD = (params?: Params) => {
       const namespace = req?.variables?.namespace;
       const count = req?.variables?.sources.length;
 
-      req?.variables?.sources.forEach(({ name, kind, selected }: { name: string; kind: string; selected: boolean }) => {
+      req?.variables?.sources.forEach(({ name, kind, selected }: { name: string; kind: K8sResourceKind; selected: boolean }) => {
         if (!selected) removeNotifications(getSseTargetFromId({ namespace, name, kind }, OVERVIEW_ENTITY_TYPES.SOURCE));
       });
 
