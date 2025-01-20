@@ -21,6 +21,6 @@ jobs:
         run: |
           if [[ $(git diff --exit-code) ]]; then
             git diff
-            echo "CRD API docs need to be updated. Pleas run `make docgen` and commit the changes."
+            echo "CRD API docs need to be updated. Pleas run "make docgen" and commit the changes."
             exit 1
           fi
