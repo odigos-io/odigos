@@ -113,9 +113,9 @@ func GetSources(ctx context.Context, kubeClient client.Client, obj client.Object
 
 	namespaceSourceList := SourceList{}
 	namespaceSelector := labels.SelectorFromSet(labels.Set{
-		consts.WorkloadNameLabel:      namespace,
-		consts.WorkloadNamespaceLabel: namespace,
-		consts.WorkloadKindLabel:      string(workload.WorkloadKindNamespace),
+		k8sconsts.WorkloadNameLabel:      namespace,
+		k8sconsts.WorkloadNamespaceLabel: namespace,
+		k8sconsts.WorkloadKindLabel:      string(workload.WorkloadKindNamespace),
 	})
 	err = kubeClient.List(ctx, &namespaceSourceList, &client.ListOptions{LabelSelector: namespaceSelector}, client.InNamespace(namespace))
 	if err != nil {
