@@ -10,8 +10,9 @@ func (j *BetterStack) DestType() common.DestinationType {
 	return common.BetterStackDestinationType
 }
 
-func (j *BetterStack) ModifyConfig(dest ExporterConfigurer, cfg *Config) error {
+func (j *BetterStack) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, error) {
 	uniqueUri := "betterstack-" + dest.GetID()
+	pipelineNames := []string{}
 
 	processorName := "attributes/" + uniqueUri
 	cfg.Processors[processorName] = GenericMap{
@@ -35,6 +36,7 @@ func (j *BetterStack) ModifyConfig(dest ExporterConfigurer, cfg *Config) error {
 			Processors: []string{processorName},
 			Exporters:  []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, pipeName)
 	}
 
 	if isLoggingEnabled(dest) {
@@ -48,7 +50,8 @@ func (j *BetterStack) ModifyConfig(dest ExporterConfigurer, cfg *Config) error {
 			Processors: []string{processorName},
 			Exporters:  []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, pipeName)
 	}
 
-	return nil
+	return pipelineNames, nil
 }

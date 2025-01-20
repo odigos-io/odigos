@@ -21,25 +21,25 @@ func (m *AppDynamics) DestType() common.DestinationType {
 	return common.AppDynamicsDestinationType
 }
 
-func (m *AppDynamics) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (m *AppDynamics) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	config := dest.GetConfig()
 	uniqueUri := "appdynamics-" + dest.GetID()
 
 	endpoint, endpointExists := config[APPDYNAMICS_ENDPOINT_URL]
 	if !endpointExists {
-		return errors.New("AppDynamics Endpoint URL (\"APPDYNAMICS_ENDPOINT_URL\") not specified, AppDynamics will not be configured")
+		return nil, errors.New("AppDynamics Endpoint URL (\"APPDYNAMICS_ENDPOINT_URL\") not specified, AppDynamics will not be configured")
 	}
 
 	isHttpEndpoint := strings.HasPrefix(endpoint, "http://")
 	isHttpsEndpoint := strings.HasPrefix(endpoint, "https://")
 
 	if !isHttpEndpoint && !isHttpsEndpoint {
-		return errors.New("AppDynamics Endpoint URL (\"APPDYNAMICS_ENDPOINT_URL\") malformed, HTTP prefix is required, AppDynamics will not be configured")
+		return nil, errors.New("AppDynamics Endpoint URL (\"APPDYNAMICS_ENDPOINT_URL\") malformed, HTTP prefix is required, AppDynamics will not be configured")
 	}
 
 	accountName, accountNameExists := config[APPDYNAMICS_ACCOUNT_NAME]
 	if !accountNameExists {
-		return errors.New("AppDynamics Account Name (\"APPDYNAMICS_ACCOUNT_NAME\") not specified, AppDynamics will not be configured")
+		return nil, errors.New("AppDynamics Account Name (\"APPDYNAMICS_ACCOUNT_NAME\") not specified, AppDynamics will not be configured")
 	}
 
 	applicationName, applicationNameExists := config[APPDYNAMICS_APPLICATION_NAME]
@@ -57,8 +57,6 @@ func (m *AppDynamics) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 	}
 	host := strings.Join(endpointParts, ".")
 
-	// Create config for exporter
-
 	exporterName := "otlphttp/" + uniqueUri
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": endpoint,
@@ -66,8 +64,6 @@ func (m *AppDynamics) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 			"x-api-key": "${APPDYNAMICS_API_KEY}",
 		},
 	}
-
-	// Create config for processor
 
 	processorName := "resource/" + uniqueUri
 	currentConfig.Processors[processorName] = GenericMap{
@@ -97,7 +93,7 @@ func (m *AppDynamics) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		},
 	}
 
-	// Apply configs to serivce
+	var pipelineNames []string
 
 	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/" + uniqueUri
@@ -105,6 +101,7 @@ func (m *AppDynamics) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 			Exporters:  []string{exporterName},
 			Processors: []string{processorName},
 		}
+		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
 	if isMetricsEnabled(dest) {
@@ -113,6 +110,7 @@ func (m *AppDynamics) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 			Exporters:  []string{exporterName},
 			Processors: []string{processorName},
 		}
+		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
 	if isLoggingEnabled(dest) {
@@ -121,7 +119,8 @@ func (m *AppDynamics) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 			Exporters:  []string{exporterName},
 			Processors: []string{processorName},
 		}
+		pipelineNames = append(pipelineNames, logsPipelineName)
 	}
 
-	return nil
+	return pipelineNames, nil
 }
