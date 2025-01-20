@@ -19,8 +19,8 @@ const (
 )
 
 const (
-	OdigletPprofEndpointPort int32 = 6060
-	CollectorsPprofEndpointPort int32 =  1777
+	OdigletPprofEndpointPort    int32 = 6060
+	CollectorsPprofEndpointPort int32 = 1777
 )
 
 const (
