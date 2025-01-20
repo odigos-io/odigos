@@ -59,7 +59,7 @@ export const AwaitPipelineContainer = () => {
     }
 
     resetState();
-    // setTimeout(() => router.push(ROUTES.OVERVIEW), 100);
+    setTimeout(() => router.push(ROUTES.OVERVIEW), 100);
   };
 
   useEffect(() => {

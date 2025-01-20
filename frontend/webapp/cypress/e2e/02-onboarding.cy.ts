@@ -27,6 +27,10 @@ describe('Onboarding', () => {
     cy.contains('button', BUTTONS.NEXT).click();
     cy.location('pathname').should('eq', ROUTES.CHOOSE_DESTINATION);
     cy.contains('button', BUTTONS.DONE).click();
-    cy.location('pathname').should('eq', ROUTES.OVERVIEW);
+    cy.location('pathname').should('eq', ROUTES.AWAIT_PIPELINE);
+    // We wait for the simulation to end
+    cy.wait(5000).then(() => {
+      cy.location('pathname').should('eq', ROUTES.OVERVIEW);
+    });
   });
 });
