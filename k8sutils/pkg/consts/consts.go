@@ -35,10 +35,13 @@ const (
 )
 
 const (
-	OdigosDeploymentConfigMapName                  = "odigos-deployment"
-	OdigosDeploymentConfigMapVersionKey            = commonconsts.OdigosVersionEnvVarName
-	OdigosDeploymentConfigMapTierKey               = commonconsts.OdigosTierEnvVarName
-	OdigosDeploymentConfigMapInstallationMethodKey = "installation-method"
+	OdigosDeploymentConfigMapName                    = "odigos-deployment"
+	OdigosDeploymentConfigMapVersionKey              = commonconsts.OdigosVersionEnvVarName
+	OdigosDeploymentConfigMapTierKey                 = commonconsts.OdigosTierEnvVarName
+	OdigosDeploymentConfigMapInstallationMethodKey   = "installation-method"
+	OdigosDeploymentConfigMapOnPremTokenAudKey       = "onprem-token-audience"
+	OdigosDeploymentConfigMapOnPremTokenExpKey       = "onprem-token-expiration"
+	OdigosDeploymentConfigMapOnPremClientProfilesKey = "onprem-profiles"
 )
 
 const (
