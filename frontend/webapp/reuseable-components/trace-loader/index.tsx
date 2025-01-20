@@ -5,6 +5,8 @@ import dynamic from 'next/dynamic';
 import styled from 'styled-components';
 import animationData from './lottie.json';
 
+// Must use dynamic, because the `react-lottie` package depends on `lottie-web`, and the `lottie-web` library directly interacts with the DOM;
+// It requires browser-specific objects like document or window. This makes it incompatible with SSR.
 const Lottie = dynamic(() => import('react-lottie'), { ssr: false });
 
 interface Props {
