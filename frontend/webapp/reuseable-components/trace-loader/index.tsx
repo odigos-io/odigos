@@ -7,26 +7,35 @@ interface Props {
   width?: number;
 }
 
-const Container = styled.div<{ $width: number }>`
-  width: ${({ $width }) => $width / (620 / 220)}px;
-  height: ${({ $width }) => $width}px;
-  transform: rotate(-90deg);
+const Container = styled.div<{ $width: number; $height: number }>`
+  width: ${({ $width }) => $width}px;
+  height: ${({ $height }) => $height}px;
+  position: relative;
 `;
 
-export const TraceLoader: React.FC<Props> = ({ width = 620 }) => {
+export const TraceLoader: React.FC<Props> = ({ width: w = 620 }) => {
+  const ratio = 620 / 220; // preserve aspect ratio
+  const width = w / ratio;
+  const height = w;
+
   return (
-    <Container $width={width}>
+    // Note: The container width and height are swapped because the animation is rotated
+    <Container $width={height} $height={width}>
       <Lottie
+        width={width}
+        height={height}
+        isClickToPauseDisabled
         options={{
           loop: true,
           autoplay: true,
           animationData: animationData,
-          rendererSettings: {
-            preserveAspectRatio: 'xMidYMid slice',
-          },
         }}
-        height='100%'
-        width='100%'
+        style={{
+          transform: 'rotate(-90deg)',
+          position: 'absolute',
+          top: -(width - width / 10),
+          left: width - width / 10,
+        }}
       />
     </Container>
   );
