@@ -1,7 +1,7 @@
 ---
-title: 'Axiom'
-description: 'Configuring the Axiom backend (Managed)'
-sidebarTitle: 'Axiom'
+title: 'Elastic APM'
+description: 'Configuring the Elastic APM backend (Managed)'
+sidebarTitle: 'Elastic APM'
 icon: 'signal-stream'
 ---
 
@@ -17,11 +17,7 @@ icon: 'signal-stream'
     !! START CUSTOM EDIT !!
 */}
 
-<img src='https://d15jtxgb40qetw.cloudfront.net/axiom.svg' alt='axiom' width="100" height="100" className="not-prose" />
-
-1. [Register](https://app.axiom.co/register)/[Login](https://app.axiom.co/login) to Axiom.
-2. Navigate to the [Axiom Datasets](https://app.axiom.co/settings/datasets) page, create a dataset and copy it's name.
-3. Navigate to the [Axiom API Tokens](https://app.axiom.co/settings/api-tokens) page, and generate a new API Token.
+<img src='https://d15jtxgb40qetw.cloudfront.net/elasticapm.svg' alt='elasticapm' width="100" height="100" className="not-prose" />
 
 {/*
     !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
@@ -32,13 +28,13 @@ icon: 'signal-stream'
 
 <Accordion title="Supported Signals:">
   ✅ Traces
-  ❌ Metrics
+  ✅ Metrics
   ✅ Logs
 </Accordion>
 
-- **AXIOM_DATASET** `string` : Dataset.
+- **ELASTIC_APM_SERVER_ENDPOINT** `string` : elastic APM server endpoint.
   - This field is required
-- **AXIOM_API_TOKEN** `string` : Axiom API token.
+- **ELASTIC_APM_SECRET_TOKEN** `string` : elastic APM server token.
   - This field is required
 
 ### Adding Destination to Odigos
@@ -55,7 +51,7 @@ There are two primary methods for configuring destinations in Odigos:
     ```
   </Step>
   <Step>
-    Click on `Add Destination`, select `Axiom` and follow the on-screen instructions
+    Click on `Add Destination`, select `Elastic APM` and follow the on-screen instructions
   </Step>
 </Steps>
 
@@ -63,32 +59,33 @@ There are two primary methods for configuring destinations in Odigos:
 
 <Steps>
   <Step>
-    Save the YAML below to a file (e.g. `axiom.yaml`)
+    Save the YAML below to a file (e.g. `elasticapm.yaml`)
     ```yaml
     apiVersion: odigos.io/v1alpha1
     kind: Destination
     metadata:
-      name: axiom-example
+      name: elasticapm-example
       namespace: odigos-system
     spec:
       data:
-        AXIOM_DATASET: <Dataset>
-      destinationName: axiom
+        ELASTIC_APM_SERVER_ENDPOINT: <elastic APM server endpoint>
+      destinationName: elasticapm
       secretRef:
-        name: axiom-secret
+        name: elasticapm-secret
       signals:
       - TRACES
+      - METRICS
       - LOGS
-      type: axiom
+      type: elasticapm
 
     ---
 
     apiVersion: v1
     data:
-      AXIOM_API_TOKEN: <Base64 Axiom API token>
+      ELASTIC_APM_SECRET_TOKEN: <Base64 elastic APM server token>
     kind: Secret
     metadata:
-      name: axiom-secret
+      name: elasticapm-secret
       namespace: odigos-system
     type: Opaque
     ```
@@ -96,7 +93,7 @@ There are two primary methods for configuring destinations in Odigos:
   <Step>
     Apply the YAML using `kubectl`
     ```bash
-    kubectl apply -f axiom.yaml
+    kubectl apply -f elasticapm.yaml
     ```
   </Step>
 </Steps>

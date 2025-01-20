@@ -1,60 +1,101 @@
 ---
 title: 'Groundcover inCloud'
+description: 'Configuring the Groundcover inCloud backend (Managed)'
+sidebarTitle: 'Groundcover inCloud'
+icon: 'signal-stream'
 ---
 
-## Configuring Backend
+### Getting Started
 
-- **GROUNDCOVER_ENDPOINT** - Endpoint, the format is `host:port`.
-  - `host` is required, also known as your `inCloud_Site`, it is part of the configuration provided to you by Groundcover when setting up the [inCloud Managed](https://docs.groundcover.com/architecture/incloud-managed) backend.
-  - `port` is optional, and defaults to the default OpenTelemetry gRPC port `4317`.
-- **GROUNDCOVER_API_KEY** - API Key provided by Groundcover, refer to [these docs](https://docs.groundcover.com/architecture/incloud-managed/ingestion-endpoints#fetching-the-api-key) for more info.
+{/*
+    Add custom content here (under this comment)...
 
-## Adding a Destination to Odigos
+    e.g:
+    [🔗 website](https://odigos.io)
 
-Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
 
-1. **Using the UI**
+<img src='https://d15jtxgb40qetw.cloudfront.net/groundcover.svg' alt='groundcover' width="100" height="100" className="not-prose" />
 
-Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI:
+To get an API Key, refer to [these docs](https://docs.groundcover.com/architecture/incloud-managed/ingestion-endpoints#fetching-the-api-key).
 
-```bash
-odigos ui
-```
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
 
-2. **Using kubernetes manifests**
+### Configuring Destination Fields
 
-Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ✅ Metrics
+  ✅ Logs
+</Accordion>
 
-```bash
-kubectl apply -f destination.yaml
-```
+- **GROUNDCOVER_ENDPOINT** `string` : Groundcover inCloud Site. The format is `host:port`. Host is required, also known as your `inCloud_Site`, it is part of the configuration provided to you by Groundcover when setting up inCloud Managed. Port is optional, and defaults to the default OpenTelemetry gRPC port `4317`.
+  - This field is required
+- **GROUNDCOVER_API_KEY** `string` : Groundcover API Key.
+  - This field is required
 
+### Adding Destination to Odigos
 
-```yaml
-apiVersion: odigos.io/v1alpha1
-kind: Destination
-metadata:
-  name: groundcover-example
-  namespace: odigos-system
-spec:
-  data:
-    GROUNDCOVER_ENDPOINT: <Groundcover inCloud Site>
-  destinationName: groundcover
-  secretRef:
-    name: groundcover-secret
-  signals:
-  - TRACES
-  - METRICS
-  - LOGS
-  type: groundcover
+There are two primary methods for configuring destinations in Odigos:
 
----
-apiVersion: v1
-data:
-  GROUNDCOVER_API_KEY: <base64 Groundcover API Key>
-kind: Secret
-metadata:
-  name: groundcover-secret
-  namespace: odigos-system
-type: Opaque
-```
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Groundcover inCloud` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `groundcover.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: groundcover-example
+      namespace: odigos-system
+    spec:
+      data:
+        GROUNDCOVER_ENDPOINT: <Groundcover inCloud Site>
+      destinationName: groundcover
+      secretRef:
+        name: groundcover-secret
+      signals:
+      - TRACES
+      - METRICS
+      - LOGS
+      type: groundcover
+
+    ---
+
+    apiVersion: v1
+    data:
+      GROUNDCOVER_API_KEY: <Base64 Groundcover API Key>
+    kind: Secret
+    metadata:
+      name: groundcover-secret
+      namespace: odigos-system
+    type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f groundcover.yaml
+    ```
+  </Step>
+</Steps>

@@ -1,49 +1,59 @@
 ---
 title: 'Overview'
+sidebarTitle: 'Overview'
+icon: 'house'
 ---
+
+Odigos makes it simple to add and configure destinations, allowing you to select the specific signals (`traces`,`metrics`,`logs`) that you want to send to each destination.
 
 Odigos has destinations for many observability backends.
 
-| Destination             | Category         | Traces | Metrics | Logs |
-|-------------------------|------------------|:------:|:-------:|:----:|
-| AppDynamics             | Managed          |   ✅   |   ✅    |  ✅  |
-| Axiom                   | Managed          |   ✅   |         |  ✅  |
-| AWS S3                  | Managed          |   ✅   |         |  ✅  |
-| Azure Blob Storage      | Managed          |   ✅   |         |  ✅  |
-| Better Stack            | Managed          |        |   ✅    |  ✅  |
-| Causely                 | Managed          |   ✅   |         |      |
-| Chronosphere            | Managed          |   ✅   |   ✅    |      |
-| ClickHouse              | Self-Hosted      |   ✅   |   ✅    |  ✅  |
-| Coralogix               | Managed          |   ✅   |   ✅    |  ✅  |
-| Dash0                   | Managed          |   ✅   |   ✅    |  ✅  |
-| Datadog                 | Managed          |   ✅   |   ✅    |  ✅  |
-| Dynatrace               | Managed          |   ✅   |   ✅    |  ✅  |
-| Elasticsearch           | Self-Hosted      |   ✅   |         |  ✅  |
-| Gigapipe                | Managed          |   ✅   |         |      |
-| Google Cloud Monitoring | Managed          |   ✅   |   ✅    |      |
-| Google Cloud Storage    | Managed          |   ✅   |         |  ✅  |
-| Grafana Cloud           | Managed          |   ✅   |   ✅    |  ✅  |
-| Groundcover inCloud     | Managed          |   ✅   |   ✅    |  ✅  |
-| Honeycomb               | Managed          |   ✅   |   ✅    |  ✅  |
-| HyperDX                 | Managed          |   ✅   |   ✅    |  ✅  |
-| Jaeger                  | Self-Hosted      |   ✅   |         |      |
-| KloudMate               | Managed          |   ✅   |   ✅    |  ✅  |
-| Last9                   | Managed          |   ✅   |   ✅    |      |
-| Lightstep               | Managed          |   ✅   |         |      |
-| Logz.io                 | Managed          |   ✅   |   ✅    |  ✅  |
-| Loki                    | Self-Hosted      |        |         |  ✅  |
-| Lumigo                  | Managed          |   ✅   |   ✅    |  ✅  |
-| New Relic               | Managed          |   ✅   |   ✅    |  ✅  |
-| OpsVerse                | Managed          |   ✅   |   ✅    |  ✅  |
-| OTLP                    | Managed          |   ✅   |   ✅    |  ✅  |
-| OTLP HTTP               | Managed          |   ✅   |   ✅    |  ✅  |
-| Prometheus              | Self-Hosted      |        |   ✅    |      |
-| Quickwit                | Self-Hosted      |   ✅   |         |      |
-| qryn                    | Self-Hosted      |   ✅   |   ✅    |  ✅  |
-| Sentry                  | Managed          |   ✅   |         |      |
-| SigNoz                  | Self-Hosted      |   ✅   |   ✅    |  ✅  |
-| Splunk                  | Managed          |   ✅   |         |      |
-| Sumo Logic              | Managed          |   ✅   |   ✅    |  ✅  |
-| Tempo                   | Self-Hosted      |   ✅   |         |      |
+<Tip>
+  Can't find your backend in Odigos? Please tell us! We are constantly adding new integrations.<br />
+  You can also follow our quick [add new destination](/adding-new-dest) guide and submit a PR.
+</Tip>
 
-Can't find the destination you need? Help us by following our quick [adding new destination](/adding-new-dest) guide and submit a PR.
+| | | | Traces | Metrics | Logs |
+|---|---|---|:---:|:---:|:---:|
+<img src='https://d15jtxgb40qetw.cloudfront.net/appdynamics.svg' alt='appdynamics' width="16" height="16" className="not-prose" /> | [AppDynamics](/backends/appdynamics) | Managed | ✅ | ✅ | ✅ |
+<img src='https://d15jtxgb40qetw.cloudfront.net/s3.svg' alt='s3' width="16" height="16" className="not-prose" /> | [AWS S3](/backends/awss3) | Managed | ✅ | ✅ | ✅ |
+<img src='https://d15jtxgb40qetw.cloudfront.net/axiom.svg' alt='axiom' width="16" height="16" className="not-prose" /> | [Axiom](/backends/axiom) | Managed | ✅ |  | ✅ |
+<img src='https://d15jtxgb40qetw.cloudfront.net/blobstorage.svg' alt='azureblob' width="16" height="16" className="not-prose" /> | [Azure Blob Storage](/backends/azureblob) | Managed | ✅ |  | ✅ |
+<img src='https://d15jtxgb40qetw.cloudfront.net/betterstack.svg' alt='betterstack' width="16" height="16" className="not-prose" /> | [Better Stack](/backends/betterstack) | Managed |  | ✅ | ✅ |
+<img src='https://d15jtxgb40qetw.cloudfront.net/causely.svg' alt='causely' width="16" height="16" className="not-prose" /> | [Causely](/backends/causely) | Managed | ✅ | ✅ |  |
+<img src='https://d15jtxgb40qetw.cloudfront.net/chronosphere.svg' alt='chronosphere' width="16" height="16" className="not-prose" /> | [Chronosphere](/backends/chronosphere) | Managed | ✅ | ✅ |  |
+<img src='https://d15jtxgb40qetw.cloudfront.net/clickhouse.svg' alt='clickhouse' width="16" height="16" className="not-prose" /> | [Clickhouse](/backends/clickhouse) | Self-Hosted | ✅ | ✅ | ✅ |
+<img src='https://d15jtxgb40qetw.cloudfront.net/coralogix.svg' alt='coralogix' width="16" height="16" className="not-prose" /> | [Coralogix](/backends/coralogix) | Managed | ✅ | ✅ | ✅ |
+<img src='https://d15jtxgb40qetw.cloudfront.net/dash0.svg' alt='dash0' width="16" height="16" className="not-prose" /> | [Dash0](/backends/dash0) | Managed | ✅ | ✅ | ✅ |
+<img src='https://d15jtxgb40qetw.cloudfront.net/datadog.svg' alt='datadog' width="16" height="16" className="not-prose" /> | [Datadog](/backends/datadog) | Managed | ✅ | ✅ | ✅ |
+<img src='https://d15jtxgb40qetw.cloudfront.net/dynatrace.svg' alt='dynatrace' width="16" height="16" className="not-prose" /> | [Dynatrace](/backends/dynatrace) | Managed | ✅ | ✅ | ✅ |
+<img src='https://d15jtxgb40qetw.cloudfront.net/elasticapm.svg' alt='elasticapm' width="16" height="16" className="not-prose" /> | [Elastic APM](/backends/elasticapm) | Managed | ✅ | ✅ | ✅ |
+<img src='https://d15jtxgb40qetw.cloudfront.net/elasticsearch.svg' alt='elasticsearch' width="16" height="16" className="not-prose" /> | [Elasticsearch](/backends/elasticsearch) | Self-Hosted | ✅ |  | ✅ |
+<img src='https://d15jtxgb40qetw.cloudfront.net/gigapipe.svg' alt='qryn' width="16" height="16" className="not-prose" /> | [Gigapipe](/backends/gigapipe) | Managed | ✅ | ✅ | ✅ |
+<img src='https://d15jtxgb40qetw.cloudfront.net/gcp.svg' alt='googlecloud' width="16" height="16" className="not-prose" /> | [Google Cloud Monitoring](/backends/googlecloudmonitoring) | Managed | ✅ |  | ✅ |
+<img src='https://d15jtxgb40qetw.cloudfront.net/grafana.svg' alt='grafanacloudloki' width="16" height="16" className="not-prose" /> | [Grafana Cloud Loki](/backends/grafanacloudloki) | Managed |  |  | ✅ |
+<img src='https://d15jtxgb40qetw.cloudfront.net/grafana.svg' alt='grafanacloudprometheus' width="16" height="16" className="not-prose" /> | [Grafana Cloud Prometheus](/backends/grafanacloudprometheus) | Managed |  | ✅ |  |
+<img src='https://d15jtxgb40qetw.cloudfront.net/grafana.svg' alt='grafanacloudtempo' width="16" height="16" className="not-prose" /> | [Grafana Cloud Tempo](/backends/grafanacloudtempo) | Managed | ✅ |  |  |
+<img src='https://d15jtxgb40qetw.cloudfront.net/groundcover.svg' alt='groundcover' width="16" height="16" className="not-prose" /> | [Groundcover inCloud](/backends/groundcover) | Managed | ✅ | ✅ | ✅ |
+<img src='https://d15jtxgb40qetw.cloudfront.net/honeycomb.svg' alt='honeycomb' width="16" height="16" className="not-prose" /> | [Honeycomb](/backends/honeycomb) | Managed | ✅ | ✅ | ✅ |
+<img src='https://d15jtxgb40qetw.cloudfront.net/hyperdx.svg' alt='hyperdx' width="16" height="16" className="not-prose" /> | [HyperDX](/backends/hyperdx) | Managed | ✅ | ✅ | ✅ |
+<img src='https://d15jtxgb40qetw.cloudfront.net/jaeger.svg' alt='jaeger' width="16" height="16" className="not-prose" /> | [Jaeger](/backends/jaeger) | Self-Hosted | ✅ |  |  |
+<img src='https://d15jtxgb40qetw.cloudfront.net/kloudmate.svg' alt='kloudmate' width="16" height="16" className="not-prose" /> | [KloudMate](/backends/kloudmate) | Managed | ✅ | ✅ | ✅ |
+<img src='https://d15jtxgb40qetw.cloudfront.net/last9.svg' alt='last9' width="16" height="16" className="not-prose" /> | [Last9](/backends/last9) | Managed | ✅ | ✅ | ✅ |
+<img src='https://d15jtxgb40qetw.cloudfront.net/lightstep.svg' alt='lightstep' width="16" height="16" className="not-prose" /> | [Lightstep](/backends/lightstep) | Managed | ✅ |  |  |
+<img src='https://d15jtxgb40qetw.cloudfront.net/logzio.svg' alt='logzio' width="16" height="16" className="not-prose" /> | [Logz.io](/backends/logzio) | Managed | ✅ | ✅ | ✅ |
+<img src='https://d15jtxgb40qetw.cloudfront.net/loki.svg' alt='loki' width="16" height="16" className="not-prose" /> | [Loki](/backends/loki) | Self-Hosted |  |  | ✅ |
+<img src='https://d15jtxgb40qetw.cloudfront.net/lumigo.svg' alt='lumigo' width="16" height="16" className="not-prose" /> | [Lumigo](/backends/lumigo) | Managed | ✅ | ✅ | ✅ |
+<img src='https://d15jtxgb40qetw.cloudfront.net/middleware.svg' alt='middleware' width="16" height="16" className="not-prose" /> | [Middleware](/backends/middleware) | Managed | ✅ | ✅ | ✅ |
+<img src='https://d15jtxgb40qetw.cloudfront.net/newrelic.svg' alt='newrelic' width="16" height="16" className="not-prose" /> | [New Relic](/backends/newrelic) | Managed | ✅ | ✅ | ✅ |
+<img src='https://d15jtxgb40qetw.cloudfront.net/opsverse.svg' alt='opsverse' width="16" height="16" className="not-prose" /> | [OpsVerse](/backends/opsverse) | Managed | ✅ | ✅ | ✅ |
+<img src='https://d15jtxgb40qetw.cloudfront.net/opentelemetry.svg' alt='otlp' width="16" height="16" className="not-prose" /> | [OTLP gRPC](/backends/otlp) | Self-Hosted | ✅ | ✅ | ✅ |
+<img src='https://d15jtxgb40qetw.cloudfront.net/opentelemetry.svg' alt='otlphttp' width="16" height="16" className="not-prose" /> | [OTLP http](/backends/otlphttp) | Self-Hosted | ✅ | ✅ | ✅ |
+<img src='https://d15jtxgb40qetw.cloudfront.net/prometheus.svg' alt='prometheus' width="16" height="16" className="not-prose" /> | [Prometheus](/backends/prometheus) | Self-Hosted |  | ✅ |  |
+<img src='https://d15jtxgb40qetw.cloudfront.net/qryn.svg' alt='qryn-oss' width="16" height="16" className="not-prose" /> | [qryn](/backends/qryn) | Self-Hosted | ✅ | ✅ | ✅ |
+<img src='https://d15jtxgb40qetw.cloudfront.net/quickwit.svg' alt='quickwit' width="16" height="16" className="not-prose" /> | [Quickwit](/backends/quickwit) | Self-Hosted | ✅ |  | ✅ |
+<img src='https://d15jtxgb40qetw.cloudfront.net/signoz.svg' alt='signoz' width="16" height="16" className="not-prose" /> | [SigNoz](/backends/signoz) | Self-Hosted | ✅ | ✅ | ✅ |
+<img src='https://d15jtxgb40qetw.cloudfront.net/splunk.svg' alt='splunk' width="16" height="16" className="not-prose" /> | [Splunk](/backends/splunk) | Managed | ✅ |  |  |
+<img src='https://d15jtxgb40qetw.cloudfront.net/sumologic.svg' alt='sumologic' width="16" height="16" className="not-prose" /> | [Sumo Logic](/backends/sumologic) | Managed | ✅ | ✅ | ✅ |
+<img src='https://d15jtxgb40qetw.cloudfront.net/tempo.svg' alt='tempo' width="16" height="16" className="not-prose" /> | [Tempo](/backends/tempo) | Self-Hosted | ✅ |  |  |
+<img src='https://d15jtxgb40qetw.cloudfront.net/uptrace.svg' alt='uptrace' width="16" height="16" className="not-prose" /> | [Uptrace](/backends/uptrace) | Managed | ✅ | ✅ | ✅ |

@@ -20,12 +20,14 @@ spec:
       componentProps:
         type: text
         required: true
+        tooltip: The name of the bucket where the data will be stored
     - name: S3_REGION
       displayName: Bucket Region
       componentType: input
       componentProps:
         type: text
         required: true
+        tooltip: The AWS region where the bucket is located
     - name: S3_PARTITION
       displayName: Time granularity of S3 Bucket
       componentType: dropdown
@@ -34,6 +36,7 @@ spec:
           - minute
           - hour
         required: true
+        tooltip: Wether a new subdirectory should be created every minute or every hour
       initialValue: minute
     - name: S3_MARSHALER
       displayName: Marshaller (Data Format)
@@ -43,4 +46,5 @@ spec:
           - otlp_json
           - otlp_proto
         required: true
+        tooltip: The format in which the data will be encoded. It can be either `otlp_json` or `otlp_proto`. Default is `otlp_json`
       initialValue: otlp_json
