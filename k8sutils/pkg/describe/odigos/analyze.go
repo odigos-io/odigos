@@ -45,9 +45,9 @@ type OdigosAnalyze struct {
 	NumberOfSources       int                       `json:"numberOfSources"`
 	ClusterCollector      ClusterCollectorAnalyze   `json:"clusterCollector"`
 	NodeCollector         NodeCollectorAnalyze      `json:"nodeCollector"`
-	OnpremTokenAud        string                    `json:"onpremTokenAudience,omitempty"`
-	OnpremTokenExpiration string                    `json:"onpremTokenExpiration,omitempty"`
-	OdigosProfiles        string                    `json:"odigosProfiles,omitempty"`
+	OnpremTokenAud        properties.EntityProperty `json:"onpremTokenAudience,omitempty"`
+	OnpremTokenExpiration properties.EntityProperty `json:"onpremTokenExpiration,omitempty"`
+	OdigosProfiles        properties.EntityProperty `json:"odigosProfiles,omitempty"`
 
 	// is settled is true if all resources are created and ready
 	IsSettled bool `json:"isSettled"`
@@ -409,14 +409,35 @@ func AnalyzeOdigos(resources *OdigosResources) *OdigosAnalyze {
 		Explain: "the method used to deploy odigos in the cluster (helm or odigos cli)",
 	}
 
+	tokenExpirationProperty := properties.EntityProperty{
+		Name:    "OnPrem Token Expiration",
+		Value:   tokenExpiration,
+		Explain: "the expiration time of the on-prem token used to authenticate the odigos pro",
+	}
+
+	tokenAudProperty := properties.EntityProperty{
+		Name:    "OnPrem Token Audience",
+		Value:   tokenAud,
+		Explain: "the audience of the on-prem token used to authenticate the odigos pro",
+	}
+
+	odigosProfilesProperty := properties.EntityProperty{
+		Name:    "OnPrem Client Profiles",
+		Value:   odigosProfiles,
+		Explain: "the Odigos profiles that are used to configure the odigos pro",
+	}
+
 	return &OdigosAnalyze{
-		OdigosVersion:        odigosVersionProperty,
-		Tier:                 odigosTierProperty,
-		InstallationMethod:   installationMethodProperty,
-		NumberOfDestinations: len(resources.Destinations.Items),
-		NumberOfSources:      len(resources.InstrumentationConfigs.Items),
-		ClusterCollector:     clusterCollector,
-		NodeCollector:        nodeCollector,
+		OdigosVersion:         odigosVersionProperty,
+		Tier:                  odigosTierProperty,
+		OnpremTokenExpiration: tokenExpirationProperty,
+		OnpremTokenAud:        tokenAudProperty,
+		OdigosProfiles:        odigosProfilesProperty,
+		InstallationMethod:    installationMethodProperty,
+		NumberOfDestinations:  len(resources.Destinations.Items),
+		NumberOfSources:       len(resources.InstrumentationConfigs.Items),
+		ClusterCollector:      clusterCollector,
+		NodeCollector:         nodeCollector,
 
 		IsSettled: isSettled,
 		HasErrors: hasErrors,
