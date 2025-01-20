@@ -73,6 +73,7 @@ export const DATA_IDS = {
   INSTRUMENTATION_RULE_NODE: '[data-id=rule-0]',
 
   ACTION_DROPDOWN_OPTION: '[data-id=option-pii-masking]',
+  RULE_DROPDOWN_OPTION: '[data-id=option-payload_collection]',
   MULTI_SOURCE_CONTROL: '[data-id=multi-source-control]',
 
   TITLE: '[data-id=title]',
@@ -92,6 +93,7 @@ export const BUTTONS = {
 
 export const INPUTS = {
   ACTION_DROPDOWN: 'Type to search...',
+  RULE_DROPDOWN: 'Type to search...',
 };
 
 const CYPRESS_TEST = 'Cypress Test';
@@ -124,4 +126,155 @@ export const TEXTS = {
   NOTIF_INSTRUMENTATION_RULE_CREATED: (crdId: string) => `Rule "${crdId}" created`,
   NOTIF_INSTRUMENTATION_RULE_UPDATED: (crdId: string) => `Rule "${crdId}" updated`,
   NOTIF_INSTRUMENTATION_RULE_DELETED: (crdId: string) => `Rule "${crdId}" delete`,
+};
+
+export const MOCKED_DESCRIBE = {
+  describeOdigos: {
+    isSettled: false,
+    hasErrors: false,
+    numberOfDestinations: 0,
+    numberOfSources: 0,
+    odigosVersion: {
+      name: 'Odigos Version',
+      value: 'e2e-test',
+      status: '',
+      explain: '',
+    },
+    tier: {
+      name: '',
+      value: 'onprem',
+      status: '',
+      explain: '',
+    },
+    installationMethod: {
+      name: '',
+      value: '',
+      status: '',
+      explain: '',
+    },
+    clusterCollector: {
+      enabled: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      collectorGroup: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      deployed: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      deployedError: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      collectorReady: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      deploymentCreated: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      expectedReplicas: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      healthyReplicas: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      failedReplicas: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      failedReplicasReason: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+    },
+    nodeCollector: {
+      enabled: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      collectorGroup: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      deployed: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      deployedError: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      collectorReady: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      daemonSet: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      desiredNodes: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      currentNodes: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      updatedNodes: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      availableNodes: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+    },
+  },
 };

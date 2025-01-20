@@ -1,74 +1,33 @@
-// Enumeration of possible Instrumentation Rule Types
+import { WorkloadId } from './sources';
+
 export enum InstrumentationRuleType {
   UNKNOWN_TYPE = 'UnknownType',
   PAYLOAD_COLLECTION = 'PayloadCollection',
+  CODE_ATTRIBUTES = 'CodeAttributes',
 }
-
-enum SpanKind {
-  Internal = 'Internal',
-  Server = 'Server',
-  Client = 'Client',
-  Producer = 'Producer',
-  Consumer = 'Consumer',
+export enum PayloadCollectionType {
+  HTTP_REQUEST = 'httpRequest',
+  HTTP_RESPONSE = 'httpResponse',
+  DB_QUERY = 'dbQuery',
+  MESSAGING = 'messaging',
 }
-
-enum ProgrammingLanguage {
-  Unspecified = 'Unspecified',
-  Java = 'Java',
-  Go = 'Go',
-  JavaScript = 'JavaScript',
-  Python = 'Python',
-  DotNet = 'DotNet',
-}
-
-enum K8sResourceKind {
-  Deployment = 'Deployment',
-  DaemonSet = 'DaemonSet',
-  StatefulSet = 'StatefulSet',
-}
-
-interface PayloadCollectionInput {
-  httpRequest: {
-    // mimeTypes: string[];
-    // maxPayloadLength: number;
-    // dropPartialPayloads: boolean;
-  } | null;
-  httpResponse: {
-    // mimeTypes: string[];
-    // maxPayloadLength: number;
-    // dropPartialPayloads: boolean;
-  } | null;
-  dbQuery: {
-    // maxPayloadLength: number;
-    // dropPartialPayloads: boolean;
-  } | null;
-  messaging: {
-    // maxPayloadLength: number;
-    // dropPartialPayloads: boolean;
-  } | null;
+export enum CodeAttributesType {
+  COLUMN = 'column',
+  FILE_PATH = 'filePath',
+  FUNCTION = 'function',
+  LINE_NUMBER = 'lineNumber',
+  NAMESPACE = 'namespace',
+  STACKTRACE = 'stacktrace',
 }
 
 export interface InstrumentationRuleInput {
   ruleName: string;
   notes: string;
   disabled: boolean;
-  workloads: PodWorkload[] | null;
+  workloads: WorkloadId[] | null;
   instrumentationLibraries: InstrumentationLibraryInput[] | null;
-  payloadCollection: PayloadCollectionInput;
-}
-
-// delete this ? (used by old-UI)
-export enum RulesType {
-  ADD_METADATA = 'add-metadata',
-  ERROR_SAMPLING = 'error-sampling',
-  PII_MASKING = 'pii-masking',
-  PAYLOAD_COLLECTION = 'payload-collection',
-}
-
-export enum RulesSortType {
-  TYPE = 'type',
-  RULE_NAME = 'ruleName',
-  STATUS = 'status',
+  payloadCollection?: PayloadCollectionInput;
+  codeAttributes?: CodeAttributesInput;
 }
 
 export interface InstrumentationRuleSpec {
@@ -79,79 +38,83 @@ export interface InstrumentationRuleSpec {
   disabled: boolean;
   mutable: boolean;
   profileName: string;
-  workloads?: PodWorkload[];
+  workloads?: WorkloadId[];
   instrumentationLibraries?: InstrumentationLibraryGlobalId[];
   payloadCollection?: PayloadCollection;
+  codeAttributes?: CodeAttributes;
 }
 
 export interface InstrumentationRuleSpecMapped extends InstrumentationRuleSpec {
   type: InstrumentationRuleType; // does not come from backend, it's derived during GET
 }
 
-// Definition of a Pod Workload type
-export interface PodWorkload {
-  name: string;
-  namespace: string;
-  kind: K8sResourceKind;
+// Common types for Instrumentation Rules
+enum SpanKind {
+  Internal = 'Internal',
+  Server = 'Server',
+  Client = 'Client',
+  Producer = 'Producer',
+  Consumer = 'Consumer',
 }
-
-// Definition of Instrumentation Library Global ID
-export interface InstrumentationLibraryGlobalId {
-  language: string;
-  library: string;
+enum ProgrammingLanguage {
+  Unspecified = 'Unspecified',
+  Java = 'Java',
+  Go = 'Go',
+  JavaScript = 'JavaScript',
+  Python = 'Python',
+  DotNet = 'DotNet',
 }
-
-export interface InstrumentationLibraryInput {
+interface InstrumentationLibraryInput {
   name: string;
   spanKind?: SpanKind;
   language?: ProgrammingLanguage;
 }
-
-export enum PayloadCollectionType {
-  HTTP_REQUEST = 'httpRequest',
-  HTTP_RESPONSE = 'httpResponse',
-  DB_QUERY = 'dbQuery',
-  MESSAGING = 'messaging',
+interface InstrumentationLibraryGlobalId {
+  language: string;
+  library: string;
 }
 
-// Payload Collection Interface for Instrumentation Rules
+// Payload Collection for Instrumentation Rules
+interface PayloadCollectionInput {
+  [PayloadCollectionType.HTTP_REQUEST]: {} | null;
+  [PayloadCollectionType.HTTP_RESPONSE]: {} | null;
+  [PayloadCollectionType.DB_QUERY]: {} | null;
+  [PayloadCollectionType.MESSAGING]: {} | null;
+}
 export interface PayloadCollection {
   [PayloadCollectionType.HTTP_REQUEST]?: HttpPayloadCollection;
   [PayloadCollectionType.HTTP_RESPONSE]?: HttpPayloadCollection;
   [PayloadCollectionType.DB_QUERY]?: DbQueryPayloadCollection;
   [PayloadCollectionType.MESSAGING]?: MessagingPayloadCollection;
 }
-
-// Messaging Payload Collection Interface
-export interface MessagingPayloadCollection {
-  maxPayloadLength?: number;
-  dropPartialPayloads?: boolean;
-}
-
-// HTTP Payload Collection Interface
-export interface HttpPayloadCollection {
+interface HttpPayloadCollection {
   mimeTypes?: string[];
   maxPayloadLength?: number;
   dropPartialPayloads?: boolean;
 }
-
-// Database Query Payload Collection Interface
-export interface DbQueryPayloadCollection {
+interface DbQueryPayloadCollection {
+  maxPayloadLength?: number;
+  dropPartialPayloads?: boolean;
+}
+interface MessagingPayloadCollection {
   maxPayloadLength?: number;
   dropPartialPayloads?: boolean;
 }
 
-// Interface for Metadata addition rules
-export interface MetadataAddition {
-  metadata: { [key: string]: string };
+// Code Attributes for Instrumentation Rules
+interface CodeAttributesInput {
+  [CodeAttributesType.COLUMN]: boolean | null;
+  [CodeAttributesType.FILE_PATH]: boolean | null;
+  [CodeAttributesType.FUNCTION]: boolean | null;
+  [CodeAttributesType.LINE_NUMBER]: boolean | null;
+  [CodeAttributesType.NAMESPACE]: boolean | null;
+  [CodeAttributesType.STACKTRACE]: boolean | null;
 }
-
-// Interface for Error Sampling rules
-export interface ErrorSampling {
-  samplingRatio: number;
-}
-
-// Interface for PII Masking rules
-export interface PIIMasking {
-  piiCategories: string[];
+interface CodeAttributes {
+  [CodeAttributesType.COLUMN]?: boolean;
+  [CodeAttributesType.FILE_PATH]?: boolean;
+  [CodeAttributesType.FUNCTION]?: boolean;
+  [CodeAttributesType.LINE_NUMBER]?: boolean;
+  [CodeAttributesType.NAMESPACE]?: boolean;
+  [CodeAttributesType.STACKTRACE]?: boolean;
 }
