@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+
+	"github.com/odigos-io/odigos/api/k8sconsts"
 )
 
 var (
