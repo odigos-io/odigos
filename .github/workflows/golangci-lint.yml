@@ -12,7 +12,7 @@ jobs:
   golangci:
     strategy:
       matrix:
-        modules: [common, k8sutils, profiles, destinations]
+        modules: [common, k8sutils, profiles, destinations, procdiscovery]
     name: lint
     runs-on: ubuntu-latest
     steps:
