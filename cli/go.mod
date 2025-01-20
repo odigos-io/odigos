@@ -3,7 +3,6 @@ module github.com/odigos-io/odigos/cli
 go 1.22.0
 
 require (
-	github.com/cert-manager/cert-manager v1.15.3
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-version v1.7.0
 	github.com/odigos-io/odigos/api v0.0.0
@@ -29,9 +28,10 @@ require (
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
+	go.uber.org/zap v1.27.0 // indirect
+	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	sigs.k8s.io/controller-runtime v0.19.0 // indirect
-	sigs.k8s.io/gateway-api v1.1.0 // indirect
 )
 
 require (

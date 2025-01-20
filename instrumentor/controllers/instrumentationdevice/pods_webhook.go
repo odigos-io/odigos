@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/common"
 	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
@@ -60,6 +62,16 @@ func (p *PodsWebhook) injectOdigosEnvVars(ctx context.Context, logger logr.Logge
 	if err != nil {
 		logger.Error(err, "failed to extract pod workload details from pod. skipping OTEL_SERVICE_NAME injection")
 		return
+	}
+
+	// Get namespace from admission request (needed for kubernetes < 1.24)
+	if podWorkload.Namespace == "" {
+		req, err := admission.RequestFromContext(ctx)
+		if err != nil {
+			logger.Error(err, "failed to extract admission request from context")
+			return
+		}
+		podWorkload.Namespace = req.Namespace
 	}
 
 	var serviceName *string
