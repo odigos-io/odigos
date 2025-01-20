@@ -1,13 +1,13 @@
 import { useCallback } from 'react';
-import { type Node } from '@xyflow/react';
 import { useSourceCRUD } from '../sources';
 import { useActionCRUD } from '../actions';
 import { useDestinationCRUD } from '../destinations';
 import { useDrawerStore, useModalStore } from '@/store';
 import { useInstrumentationRuleCRUD } from '../instrumentation-rules';
 import { OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, WorkloadId } from '@/types';
+import { Node } from '@xyflow/react';
 
-export function useNodeDataFlowHandlers() {
+export const useNodeDataFlowHandlers = () => {
   const { sources } = useSourceCRUD();
   const { actions } = useActionCRUD();
   const { destinations } = useDestinationCRUD();
@@ -24,26 +24,19 @@ export function useNodeDataFlowHandlers() {
           id: string | WorkloadId;
           type: OVERVIEW_ENTITY_TYPES | OVERVIEW_NODE_TYPES;
         },
-        'id'
+        'any-node'
       >,
     ) => {
       const {
         data: { id, type },
       } = object;
 
-      const entities = {
-        sources,
-        actions,
-        destinations,
-        rules: instrumentationRules,
-      };
-
       if (type === OVERVIEW_ENTITY_TYPES.SOURCE) {
         const { kind, name, namespace } = id as WorkloadId;
-        const selectedDrawerItem = entities['sources'].find((item) => item.kind === kind && item.name === name && item.namespace === namespace);
 
+        const selectedDrawerItem = sources.find((item) => item.kind === kind && item.name === name && item.namespace === namespace);
         if (!selectedDrawerItem) {
-          console.warn('Selected item not found', { id, [`${type}sCount`]: entities[`${type}s`].length });
+          console.warn('Selected item not found', { id, sourcesCount: sources.length });
           return;
         }
 
@@ -52,17 +45,40 @@ export function useNodeDataFlowHandlers() {
           type,
           item: selectedDrawerItem,
         });
-      } else if ([OVERVIEW_ENTITY_TYPES.RULE, OVERVIEW_ENTITY_TYPES.ACTION, OVERVIEW_ENTITY_TYPES.DESTINATION].includes(type as OVERVIEW_ENTITY_TYPES)) {
-        const selectedDrawerItem = entities[`${type}s`].find((item) => id && [item.id, item.ruleId].includes(id));
-
+      } else if (type === OVERVIEW_ENTITY_TYPES.ACTION) {
+        const selectedDrawerItem = actions.find((item) => item.id === id);
         if (!selectedDrawerItem) {
-          console.warn('Selected item not found', { id, [`${type}sCount`]: entities[`${type}s`].length });
+          console.warn('Selected item not found', { id, actionsCount: actions.length });
           return;
         }
 
         setSelectedItem({
           id,
-          type: type as OVERVIEW_ENTITY_TYPES,
+          type,
+          item: selectedDrawerItem,
+        });
+      } else if (type === OVERVIEW_ENTITY_TYPES.DESTINATION) {
+        const selectedDrawerItem = destinations.find((item) => item.id === id);
+        if (!selectedDrawerItem) {
+          console.warn('Selected item not found', { id, destinationsCount: destinations.length });
+          return;
+        }
+
+        setSelectedItem({
+          id,
+          type,
+          item: selectedDrawerItem,
+        });
+      } else if (type === OVERVIEW_ENTITY_TYPES.RULE) {
+        const selectedDrawerItem = instrumentationRules.find((item) => item.ruleId === id);
+        if (!selectedDrawerItem) {
+          console.warn('Selected item not found', { id, rulesCount: instrumentationRules.length });
+          return;
+        }
+
+        setSelectedItem({
+          id,
+          type,
           item: selectedDrawerItem,
         });
       } else if (type === OVERVIEW_NODE_TYPES.ADD_RULE) {
@@ -71,7 +87,7 @@ export function useNodeDataFlowHandlers() {
         setCurrentModal(OVERVIEW_ENTITY_TYPES.SOURCE);
       } else if (type === OVERVIEW_NODE_TYPES.ADD_ACTION) {
         setCurrentModal(OVERVIEW_ENTITY_TYPES.ACTION);
-      } else if (type === OVERVIEW_NODE_TYPES.ADD_DESTIONATION) {
+      } else if (type === OVERVIEW_NODE_TYPES.ADD_DESTINATION) {
         setCurrentModal(OVERVIEW_ENTITY_TYPES.DESTINATION);
       } else {
         console.warn('Unhandled node click', object);
@@ -83,4 +99,4 @@ export function useNodeDataFlowHandlers() {
   return {
     handleNodeClick,
   };
-}
+};

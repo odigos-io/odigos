@@ -4,13 +4,13 @@ import (
 	"context"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/yaml"
 
 	"k8s.io/apimachinery/pkg/runtime"
 
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -59,9 +59,21 @@ func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind wor
 	}
 
 	if !instrumented {
-		return ctrl.Result{}, nil
+		// Check if a Source object exists for this workload
+		sourceList, err := odigosv1.GetSources(ctx, k8sClient, obj)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		if sourceList.Workload == nil && sourceList.Namespace == nil {
+			return ctrl.Result{}, nil
+		}
+		// if this is explicitly excluded (and the excluded Source isn't being deleted), skip
+		if sourceList.Workload != nil {
+			if odigosv1.IsExcludedSource(sourceList.Workload) && !k8sutils.IsTerminating(sourceList.Workload) {
+				return ctrl.Result{}, nil
+			}
+		}
 	}
-
 	err = requestOdigletsToCalculateRuntimeDetails(ctx, k8sClient, instConfigName, req.Namespace, obj, scheme)
 	return ctrl.Result{}, err
 }
@@ -81,9 +93,6 @@ func requestOdigletsToCalculateRuntimeDetails(ctx context.Context, k8sClient cli
 			Name:      instConfigName,
 			Namespace: namespace,
 		},
-		Spec: odigosv1.InstrumentationConfigSpec{
-			RuntimeDetailsInvalidated: true,
-		},
 	}
 
 	if err := ctrl.SetControllerReference(obj, instConfig, scheme); err != nil {
@@ -91,14 +100,11 @@ func requestOdigletsToCalculateRuntimeDetails(ctx context.Context, k8sClient cli
 		return err
 	}
 
-	instConfigBytes, _ := yaml.Marshal(instConfig)
-
-	force := true
-	patchOptions := client.PatchOptions{
-		FieldManager: "instrumentor",
-		Force:        &force,
+	err := k8sClient.Create(ctx, instConfig)
+	if err != nil {
+		return client.IgnoreAlreadyExists(err)
 	}
 
 	logger.V(0).Info("Requested calculation of runtime details from odiglets", "name", instConfigName, "namespace", namespace)
-	return k8sClient.Patch(ctx, instConfig, client.RawPatch(types.ApplyPatchType, instConfigBytes), &patchOptions)
+	return nil
 }

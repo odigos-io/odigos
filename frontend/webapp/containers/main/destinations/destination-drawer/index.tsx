@@ -1,8 +1,8 @@
-import React, { useMemo, useState } from 'react';
-import { ACTION, DATA_CARDS } from '@/utils';
+import React, { useEffect, useMemo, useState } from 'react';
 import buildCard from './build-card';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
+import { ACTION, DATA_CARDS } from '@/utils';
 import buildDrawerItem from './build-drawer-item';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { DestinationFormBody } from '../destination-form-body';
@@ -37,20 +37,32 @@ export const DestinationDrawer: React.FC<Props> = () => {
     // currently, the real "supportedSignals" is being used by "destination" passed as prop to "DestinationFormBody"
   });
 
-  const { updateDestination, deleteDestination } = useDestinationCRUD({
+  const { destinations, updateDestination, deleteDestination } = useDestinationCRUD({
     onSuccess: (type) => {
       setIsEditing(false);
       setIsFormDirty(false);
 
-      if (type === ACTION.DELETE) {
-        setSelectedItem(null);
-      } else {
-        const { item } = selectedItem as { item: ActualDestination };
-        const { id } = item;
-        setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.DESTINATION, item: buildDrawerItem(id, formData, item) });
-      }
+      if (type === ACTION.DELETE) setSelectedItem(null);
+      else reSelectItem();
     },
   });
+
+  const reSelectItem = (fetchedItems?: typeof destinations) => {
+    const { item } = selectedItem as { item: ActualDestination };
+    const { id } = item;
+
+    if (!!fetchedItems?.length) {
+      const found = fetchedItems.find((x) => x.id === id);
+      if (!!found) {
+        return setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.DESTINATION, item: found });
+      }
+    }
+
+    setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.DESTINATION, item: buildDrawerItem(id, formData, item) });
+  };
+
+  // This should keep the drawer up-to-date with the latest data
+  useEffect(() => reSelectItem(destinations), [destinations]);
 
   const [isEditing, setIsEditing] = useState(false);
   const [isFormDirty, setIsFormDirty] = useState(false);

@@ -1,11 +1,10 @@
 import React, { useMemo } from 'react';
-import Image from 'next/image';
-import { NODE_TYPES } from '@/types';
-import { useAppStore } from '@/store';
 import styled from 'styled-components';
-import { useSourceCRUD } from '@/hooks';
+import { usePaginatedSources, useSourceCRUD } from '@/hooks';
 import type { Node, NodeProps } from '@xyflow/react';
-import { Badge, Checkbox, Text } from '@/reuseable-components';
+import { useAppStore, usePendingStore } from '@/store';
+import { K8sActualSource, NODE_TYPES, OVERVIEW_ENTITY_TYPES } from '@/types';
+import { Badge, Checkbox, FadeLoader, Text } from '@/reuseable-components';
 
 interface Props
   extends NodeProps<
@@ -42,7 +41,9 @@ const HeaderNode: React.FC<Props> = ({ data }) => {
   const { nodeWidth, title, icon: Icon, tagValue } = data;
   const isSources = title === 'Sources';
 
-  const { configuredSources, setConfiguredSources } = useAppStore((state) => state);
+  const { configuredSources, setConfiguredSources } = useAppStore();
+  const { sourcesFetching } = usePaginatedSources();
+  const { isThisPending } = usePendingStore();
   const { sources } = useSourceCRUD();
 
   const totalSelectedSources = useMemo(() => {
@@ -60,13 +61,18 @@ const HeaderNode: React.FC<Props> = ({ data }) => {
 
     const onSelect = (bool: boolean) => {
       if (bool) {
-        const payload = {};
+        const payload: Record<string, K8sActualSource[]> = {};
 
         sources.forEach((source) => {
-          if (!payload[source.namespace]) {
-            payload[source.namespace] = [source];
-          } else {
-            payload[source.namespace].push(source);
+          const id = { namespace: source.namespace, name: source.name, kind: source.kind };
+          const isPending = isThisPending({ entityType: OVERVIEW_ENTITY_TYPES.SOURCE, entityId: id });
+
+          if (!isPending) {
+            if (!payload[source.namespace]) {
+              payload[source.namespace] = [source];
+            } else {
+              payload[source.namespace].push(source);
+            }
           }
         });
 
@@ -88,6 +94,7 @@ const HeaderNode: React.FC<Props> = ({ data }) => {
       {Icon && <Icon />}
       <Title size={14}>{title}</Title>
       <Badge label={tagValue} />
+      {isSources && sourcesFetching && <FadeLoader />}
 
       {renderActions()}
     </Container>

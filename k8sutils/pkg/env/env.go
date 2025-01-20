@@ -16,7 +16,7 @@ const (
 	SYNC_DAEMONSET_DELAY_IN_SECONDS = "SYNC_DAEMONSET_DELAY_IN_SECONDS"
 )
 
-func getEnvVarOrDefault(envKey string, defaultVal string) string {
+func getEnvVarOrDefault(envKey, defaultVal string) string {
 	val, exists := os.LookupEnv(envKey)
 	if exists {
 		return val
@@ -52,7 +52,7 @@ func GetSyncDaemonSetDelay() int {
 }
 
 func GetOdigosTierFromEnv() common.OdigosTier {
-	odigosTierStr := os.Getenv("ODIGOS_TIER")
+	odigosTierStr := os.Getenv(consts.OdigosTierEnvVarName)
 
 	switch odigosTierStr {
 	case string(common.CommunityOdigosTier):

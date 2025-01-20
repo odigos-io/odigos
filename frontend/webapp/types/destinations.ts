@@ -4,7 +4,7 @@ interface ObservabilitySignalSupport {
   supported: boolean;
 }
 
-interface SupportedSignals {
+export interface SupportedSignals {
   logs: ObservabilitySignalSupport;
   metrics: ObservabilitySignalSupport;
   traces: ObservabilitySignalSupport;

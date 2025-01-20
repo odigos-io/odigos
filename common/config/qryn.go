@@ -70,7 +70,6 @@ func (g *Qryn) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) erro
 			&ppl,
 		)
 		currentConfig.Service.Pipelines[metricsPipelineName] = ppl
-
 	}
 
 	otlpHttpExporterName := ""
@@ -92,7 +91,6 @@ func (g *Qryn) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) erro
 			&ppl,
 		)
 		currentConfig.Service.Pipelines[tracesPipelineName] = ppl
-
 	}
 
 	if isLoggingEnabled(dest) {
@@ -112,7 +110,6 @@ func (g *Qryn) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) erro
 			&ppl,
 		)
 		currentConfig.Service.Pipelines[logsPipelineName] = ppl
-
 	}
 
 	if otlpHttpExporterName != "" {

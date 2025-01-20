@@ -31,14 +31,14 @@ type VersionInspector interface {
 	GetRuntimeVersion(process *process.Details, containerURL string) *version.Version
 }
 
-var inspectorsList = []LanguageInspector{
-	&golang.GolangInspector{},
-	&java.JavaInspector{},
-	&dotnet.DotnetInspector{},
-	&nodejs.NodejsInspector{},
-	&python.PythonInspector{},
-	&mysql.MySQLInspector{},
-	&nginx.NginxInspector{},
+var inspectorsMap = map[common.ProgrammingLanguage]LanguageInspector{
+	common.GoProgrammingLanguage:         &golang.GolangInspector{},
+	common.JavaProgrammingLanguage:       &java.JavaInspector{},
+	common.DotNetProgrammingLanguage:     &dotnet.DotnetInspector{},
+	common.JavascriptProgrammingLanguage: &nodejs.NodejsInspector{},
+	common.PythonProgrammingLanguage:     &python.PythonInspector{},
+	common.MySQLProgrammingLanguage:      &mysql.MySQLInspector{},
+	common.NginxProgrammingLanguage:      &nginx.NginxInspector{},
 }
 
 // DetectLanguage returns the detected language for the process or
@@ -49,7 +49,7 @@ func DetectLanguage(process process.Details, containerURL string) (common.Progra
 		Language: common.UnknownProgrammingLanguage,
 	}
 
-	for _, i := range inspectorsList {
+	for _, i := range inspectorsMap {
 		languageDetected, detected := i.Inspect(&process)
 		if detected {
 			if detectedProgramLanguageDetails.Language == common.UnknownProgrammingLanguage {
@@ -71,4 +71,14 @@ func DetectLanguage(process process.Details, containerURL string) (common.Progra
 	}
 
 	return detectedProgramLanguageDetails, nil
+}
+
+func VerifyLanguage(process process.Details, lang common.ProgrammingLanguage) bool {
+	inspector, ok := inspectorsMap[lang]
+	if !ok {
+		return false
+	}
+
+	_, detected := inspector.Inspect(&process)
+	return detected
 }

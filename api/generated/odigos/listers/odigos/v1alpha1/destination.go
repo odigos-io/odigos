@@ -18,10 +18,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // DestinationLister helps list Destinations.
@@ -29,7 +29,7 @@ import (
 type DestinationLister interface {
 	// List lists all Destinations in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.Destination, err error)
+	List(selector labels.Selector) (ret []*odigosv1alpha1.Destination, err error)
 	// Destinations returns an object that can list and get Destinations.
 	Destinations(namespace string) DestinationNamespaceLister
 	DestinationListerExpansion
@@ -37,17 +37,17 @@ type DestinationLister interface {
 
 // destinationLister implements the DestinationLister interface.
 type destinationLister struct {
-	listers.ResourceIndexer[*v1alpha1.Destination]
+	listers.ResourceIndexer[*odigosv1alpha1.Destination]
 }
 
 // NewDestinationLister returns a new DestinationLister.
 func NewDestinationLister(indexer cache.Indexer) DestinationLister {
-	return &destinationLister{listers.New[*v1alpha1.Destination](indexer, v1alpha1.Resource("destination"))}
+	return &destinationLister{listers.New[*odigosv1alpha1.Destination](indexer, odigosv1alpha1.Resource("destination"))}
 }
 
 // Destinations returns an object that can list and get Destinations.
 func (s *destinationLister) Destinations(namespace string) DestinationNamespaceLister {
-	return destinationNamespaceLister{listers.NewNamespaced[*v1alpha1.Destination](s.ResourceIndexer, namespace)}
+	return destinationNamespaceLister{listers.NewNamespaced[*odigosv1alpha1.Destination](s.ResourceIndexer, namespace)}
 }
 
 // DestinationNamespaceLister helps list and get Destinations.
@@ -55,15 +55,15 @@ func (s *destinationLister) Destinations(namespace string) DestinationNamespaceL
 type DestinationNamespaceLister interface {
 	// List lists all Destinations in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.Destination, err error)
+	List(selector labels.Selector) (ret []*odigosv1alpha1.Destination, err error)
 	// Get retrieves the Destination from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.Destination, error)
+	Get(name string) (*odigosv1alpha1.Destination, error)
 	DestinationNamespaceListerExpansion
 }
 
 // destinationNamespaceLister implements the DestinationNamespaceLister
 // interface.
 type destinationNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.Destination]
+	listers.ResourceIndexer[*odigosv1alpha1.Destination]
 }

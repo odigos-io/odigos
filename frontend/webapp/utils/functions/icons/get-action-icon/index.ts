@@ -19,5 +19,5 @@ export const getActionIcon = (type: ActionsType | 'sampler' | 'attributes') => {
     [ActionsType.LATENCY_SAMPLER]: SamplerIcon,
   };
 
-  return LOGOS[type];
+  return LOGOS[type as ActionsType];
 };

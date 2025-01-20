@@ -22,7 +22,7 @@ var (
 	ErrPatchEnvVars = errors.New("failed to patch env vars")
 )
 
-func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, runtimeDetails *odigosv1.InstrumentedApplication, defaultSdks map[common.ProgrammingLanguage]common.OtelSdk, targetObj client.Object,
+func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, runtimeDetails []odigosv1.RuntimeDetailsByContainer, defaultSdks map[common.ProgrammingLanguage]common.OtelSdk, targetObj client.Object,
 	logger logr.Logger, agentsCanRunConcurrently bool) (error, bool, bool) {
 	// delete any existing instrumentation devices.
 	// this is necessary for example when migrating from community to enterprise,
@@ -154,31 +154,31 @@ func RevertInstrumentationDevices(original *corev1.PodTemplateSpec) bool {
 	return changed
 }
 
-func getLanguageOfContainer(instrumentation *odigosv1.InstrumentedApplication, containerName string) common.ProgrammingLanguage {
-	for _, l := range instrumentation.Spec.RuntimeDetails {
-		if l.ContainerName == containerName {
-			return l.Language
+func getLanguageOfContainer(runtimeDetails []odigosv1.RuntimeDetailsByContainer, containerName string) common.ProgrammingLanguage {
+	for _, rd := range runtimeDetails {
+		if rd.ContainerName == containerName {
+			return rd.Language
 		}
 	}
 
 	return common.UnknownProgrammingLanguage
 }
 
-func getContainerOtherAgents(instrumentation *odigosv1.InstrumentedApplication, containerName string) *odigosv1.OtherAgent {
-	for _, l := range instrumentation.Spec.RuntimeDetails {
-		if l.ContainerName == containerName {
-			if l.OtherAgent != nil && *l.OtherAgent != (odigosv1.OtherAgent{}) {
-				return l.OtherAgent
+func getContainerOtherAgents(runtimeDetails []odigosv1.RuntimeDetailsByContainer, containerName string) *odigosv1.OtherAgent {
+	for _, rd := range runtimeDetails {
+		if rd.ContainerName == containerName {
+			if rd.OtherAgent != nil && *rd.OtherAgent != (odigosv1.OtherAgent{}) {
+				return rd.OtherAgent
 			}
 		}
 	}
 	return nil
 }
 
-func getLibCTypeOfContainer(instrumentation *odigosv1.InstrumentedApplication, containerName string) *common.LibCType {
-	for _, l := range instrumentation.Spec.RuntimeDetails {
-		if l.ContainerName == containerName {
-			return l.LibCType
+func getLibCTypeOfContainer(runtimeDetails []odigosv1.RuntimeDetailsByContainer, containerName string) *common.LibCType {
+	for _, rd := range runtimeDetails {
+		if rd.ContainerName == containerName {
+			return rd.LibCType
 		}
 	}
 
@@ -187,12 +187,12 @@ func getLibCTypeOfContainer(instrumentation *odigosv1.InstrumentedApplication, c
 
 // getEnvVarsOfContainer returns the env vars which are defined for the given container and are used for instrumentation purposes.
 // This function also returns env vars which are declared in the container build.
-func getEnvVarsOfContainer(instrumentation *odigosv1.InstrumentedApplication, containerName string) map[string]string {
+func getEnvVarsOfContainer(runtimeDetails []odigosv1.RuntimeDetailsByContainer, containerName string) map[string]string {
 	envVars := make(map[string]string)
 
-	for _, l := range instrumentation.Spec.RuntimeDetails {
-		if l.ContainerName == containerName {
-			for _, env := range l.EnvVars {
+	for _, rd := range runtimeDetails {
+		if rd.ContainerName == containerName {
+			for _, env := range rd.EnvVars {
 				envVars[env.Name] = env.Value
 			}
 			return envVars
@@ -204,7 +204,7 @@ func getEnvVarsOfContainer(instrumentation *odigosv1.InstrumentedApplication, co
 
 // when otelsdk is nil, it means that the container is not instrumented.
 // this will trigger reverting of any existing env vars which were set by odigos before.
-func patchEnvVarsForContainer(runtimeDetails *odigosv1.InstrumentedApplication, container *corev1.Container, sdk *common.OtelSdk, programmingLanguage common.ProgrammingLanguage, manifestEnvOriginal *envoverwrite.OrigWorkloadEnvValues) error {
+func patchEnvVarsForContainer(runtimeDetails []odigosv1.RuntimeDetailsByContainer, container *corev1.Container, sdk *common.OtelSdk, programmingLanguage common.ProgrammingLanguage, manifestEnvOriginal *envoverwrite.OrigWorkloadEnvValues) error {
 
 	observedEnvs := getEnvVarsOfContainer(runtimeDetails, container.Name)
 

@@ -18,10 +18,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	actionsv1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // ProbabilisticSamplerLister helps list ProbabilisticSamplers.
@@ -29,7 +29,7 @@ import (
 type ProbabilisticSamplerLister interface {
 	// List lists all ProbabilisticSamplers in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.ProbabilisticSampler, err error)
+	List(selector labels.Selector) (ret []*actionsv1alpha1.ProbabilisticSampler, err error)
 	// ProbabilisticSamplers returns an object that can list and get ProbabilisticSamplers.
 	ProbabilisticSamplers(namespace string) ProbabilisticSamplerNamespaceLister
 	ProbabilisticSamplerListerExpansion
@@ -37,17 +37,17 @@ type ProbabilisticSamplerLister interface {
 
 // probabilisticSamplerLister implements the ProbabilisticSamplerLister interface.
 type probabilisticSamplerLister struct {
-	listers.ResourceIndexer[*v1alpha1.ProbabilisticSampler]
+	listers.ResourceIndexer[*actionsv1alpha1.ProbabilisticSampler]
 }
 
 // NewProbabilisticSamplerLister returns a new ProbabilisticSamplerLister.
 func NewProbabilisticSamplerLister(indexer cache.Indexer) ProbabilisticSamplerLister {
-	return &probabilisticSamplerLister{listers.New[*v1alpha1.ProbabilisticSampler](indexer, v1alpha1.Resource("probabilisticsampler"))}
+	return &probabilisticSamplerLister{listers.New[*actionsv1alpha1.ProbabilisticSampler](indexer, actionsv1alpha1.Resource("probabilisticsampler"))}
 }
 
 // ProbabilisticSamplers returns an object that can list and get ProbabilisticSamplers.
 func (s *probabilisticSamplerLister) ProbabilisticSamplers(namespace string) ProbabilisticSamplerNamespaceLister {
-	return probabilisticSamplerNamespaceLister{listers.NewNamespaced[*v1alpha1.ProbabilisticSampler](s.ResourceIndexer, namespace)}
+	return probabilisticSamplerNamespaceLister{listers.NewNamespaced[*actionsv1alpha1.ProbabilisticSampler](s.ResourceIndexer, namespace)}
 }
 
 // ProbabilisticSamplerNamespaceLister helps list and get ProbabilisticSamplers.
@@ -55,15 +55,15 @@ func (s *probabilisticSamplerLister) ProbabilisticSamplers(namespace string) Pro
 type ProbabilisticSamplerNamespaceLister interface {
 	// List lists all ProbabilisticSamplers in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.ProbabilisticSampler, err error)
+	List(selector labels.Selector) (ret []*actionsv1alpha1.ProbabilisticSampler, err error)
 	// Get retrieves the ProbabilisticSampler from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.ProbabilisticSampler, error)
+	Get(name string) (*actionsv1alpha1.ProbabilisticSampler, error)
 	ProbabilisticSamplerNamespaceListerExpansion
 }
 
 // probabilisticSamplerNamespaceLister implements the ProbabilisticSamplerNamespaceLister
 // interface.
 type probabilisticSamplerNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.ProbabilisticSampler]
+	listers.ResourceIndexer[*actionsv1alpha1.ProbabilisticSampler]
 }

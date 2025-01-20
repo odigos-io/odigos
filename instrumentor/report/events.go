@@ -85,7 +85,7 @@ func report(c client.Client, installationId string) error {
 		return err
 	}
 
-	var apps odigosv1.InstrumentedApplicationList
+	var apps odigosv1.InstrumentationConfigList
 	err = c.List(ctx, &apps)
 	if err != nil {
 		return err
@@ -98,7 +98,7 @@ func report(c client.Client, installationId string) error {
 	jsApps := 0
 	unrecognizedApps := 0
 	for _, app := range apps.Items {
-		for _, l := range app.Spec.RuntimeDetails {
+		for _, l := range app.Status.RuntimeDetailsByContainer {
 			switch l.Language {
 			case common.GoProgrammingLanguage:
 				goApps++
@@ -115,7 +115,7 @@ func report(c client.Client, installationId string) error {
 			}
 		}
 
-		if len(app.Spec.RuntimeDetails) == 0 {
+		if len(app.Status.RuntimeDetailsByContainer) == 0 {
 			unrecognizedApps++
 		}
 	}

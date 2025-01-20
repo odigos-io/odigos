@@ -12,11 +12,13 @@ const (
 	ElasticsearchUrlKey = "ELASTICSEARCH_URL"
 	esTracesIndexKey    = "ES_TRACES_INDEX"
 	esLogsIndexKey      = "ES_LOGS_INDEX"
-	esBasicAuthKey      = "ELASTICSEARCH_BASIC_AUTH_ENABLED" // unused in this file, currently UI only (we do not want to break existing setups by requiring this boolean)
-	esUsername          = "ELASTICSEARCH_USERNAME"
-	esPassword          = "ELASTICSEARCH_PASSWORD"
-	esTlsKey            = "ELASTICSEARCH_TLS_ENABLED" // unused in this file, currently UI only (we do not want to break existing setups by requiring this boolean)
-	esCaPem             = "ELASTICSEARCH_CA_PEM"
+	esBasicAuthKey      = "ELASTICSEARCH_BASIC_AUTH_ENABLED" // unused in this file,
+	// currently UI only (we do not want to break existing setups by requiring this boolean)
+	esUsername = "ELASTICSEARCH_USERNAME"
+	esPassword = "ELASTICSEARCH_PASSWORD"
+	esTlsKey   = "ELASTICSEARCH_TLS_ENABLED" // unused in this file,
+	// currently UI only (we do not want to break existing setups by requiring this boolean)
+	esCaPem = "ELASTICSEARCH_CA_PEM"
 )
 
 var _ Configer = (*Elasticsearch)(nil)
@@ -35,7 +37,7 @@ func (e *Elasticsearch) ModifyConfig(dest ExporterConfigurer, currentConfig *Con
 
 	parsedURL, err := e.SanitizeURL(rawURL)
 	if err != nil {
-		return errors.Join(err, errors.New(fmt.Sprintf("failed to sanitize URL. elasticsearch-url: %s", rawURL)))
+		return errors.Join(err, fmt.Errorf("failed to sanitize URL. elasticsearch-url: %s", rawURL))
 	}
 
 	traceIndexVal, exists := dest.GetConfig()[esTracesIndexKey]
@@ -89,8 +91,8 @@ func (e *Elasticsearch) ModifyConfig(dest ExporterConfigurer, currentConfig *Con
 
 // SanitizeURL will check whether URL is correct by utilizing url.ParseRequestURI
 // if the said URL has not defined any port, 9200 will be used in order to keep the backward compatibility with current configuration
-func (e *Elasticsearch) SanitizeURL(URL string) (string, error) {
-	parsedURL, err := url.ParseRequestURI(URL)
+func (e *Elasticsearch) SanitizeURL(link string) (string, error) {
+	parsedURL, err := url.ParseRequestURI(link)
 	if err != nil {
 		return "", err
 	}

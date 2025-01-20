@@ -1,5 +1,5 @@
-import { deleteEntity, getCrdById, getCrdIds, updateEntity } from '../functions';
-import { BUTTONS, CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
+import { aliasMutation, awaitToast, deleteEntity, getCrdById, getCrdIds, hasOperationName, updateEntity } from '../functions';
+import { BUTTONS, CRD_NAMES, DATA_IDS, INPUTS, MOCKED_DESCRIBE, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
 
 // The number of CRDs that exist in the cluster before running any tests should be 0.
 // Tests will fail if you have existing CRDs in the cluster.
@@ -9,7 +9,21 @@ const namespace = NAMESPACES.ODIGOS_SYSTEM;
 const crdName = CRD_NAMES.INSTRUMENTATION_RULE;
 
 describe('Instrumentation Rules CRUD', () => {
-  beforeEach(() => cy.intercept('/graphql').as('gql'));
+  beforeEach(() =>
+    cy
+      .intercept('/graphql', (req) => {
+        aliasMutation(req, 'DescribeOdigos');
+
+        if (hasOperationName(req, 'DescribeOdigos')) {
+          req.alias = 'describeOdigos';
+          req.reply((res) => {
+            // This is to make the test think this is enterprise/onprem - which will allow us to create rules
+            res.body.data = MOCKED_DESCRIBE;
+          });
+        }
+      })
+      .as('gql'),
+  );
 
   it('Should create a CRD in the cluster', () => {
     cy.visit(ROUTES.OVERVIEW);
@@ -18,10 +32,15 @@ describe('Instrumentation Rules CRUD', () => {
       cy.get(DATA_IDS.ADD_ENTITY).click();
       cy.get(DATA_IDS.ADD_INSTRUMENTATION_RULE).click();
       cy.get(DATA_IDS.MODAL_ADD_INSTRUMENTATION_RULE).should('exist');
+      cy.get(DATA_IDS.MODAL_ADD_INSTRUMENTATION_RULE).find('input').should('have.attr', 'placeholder', INPUTS.RULE_DROPDOWN).click();
+      cy.get(DATA_IDS.RULE_DROPDOWN_OPTION).click();
       cy.get('button').contains(BUTTONS.DONE).click();
 
       cy.wait('@gql').then(() => {
-        getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 });
+        getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 }, (crdIds) => {
+          const crdId = crdIds[0];
+          awaitToast({ withSSE: false, message: TEXTS.NOTIF_INSTRUMENTATION_RULE_CREATED(crdId) });
+        });
       });
     });
   });
@@ -41,7 +60,9 @@ describe('Instrumentation Rules CRUD', () => {
           cy.wait('@gql').then(() => {
             getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 }, (crdIds) => {
               const crdId = crdIds[0];
-              getCrdById({ namespace, crdName, crdId, expectedError: '', expectedKey: 'ruleName', expectedValue: TEXTS.UPDATED_NAME });
+              awaitToast({ withSSE: false, message: TEXTS.NOTIF_INSTRUMENTATION_RULE_UPDATED(crdId) }, () => {
+                getCrdById({ namespace, crdName, crdId, expectedError: '', expectedKey: 'ruleName', expectedValue: TEXTS.UPDATED_NAME });
+              });
             });
           });
         },
@@ -52,7 +73,8 @@ describe('Instrumentation Rules CRUD', () => {
   it('Should delete the CRD from the cluster', () => {
     cy.visit(ROUTES.OVERVIEW);
 
-    getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 }, () => {
+    getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 }, (crdIds) => {
+      const crdId = crdIds[0];
       deleteEntity(
         {
           nodeId: DATA_IDS.INSTRUMENTATION_RULE_NODE,
@@ -61,7 +83,9 @@ describe('Instrumentation Rules CRUD', () => {
         },
         () => {
           cy.wait('@gql').then(() => {
-            getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
+            awaitToast({ withSSE: false, message: TEXTS.NOTIF_INSTRUMENTATION_RULE_DELETED(crdId) }, () => {
+              getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
+            });
           });
         },
       );

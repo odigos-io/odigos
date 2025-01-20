@@ -27,7 +27,7 @@ const InputWrapper = styled(SectionItemsWrapper)`
 const Title = styled(Text)`
   font-size: 18px;
   line-height: 26px;
-  max-width: 400px;
+  max-width: 270px;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;

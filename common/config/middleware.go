@@ -17,7 +17,6 @@ func (m *Middleware) DestType() common.DestinationType {
 }
 
 func (m *Middleware) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
-
 	if !isTracingEnabled(dest) && !isMetricsEnabled(dest) && !isLoggingEnabled(dest) {
 		return errors.New("Middleware is not enabled for any supported signals, skipping")
 	}

@@ -1,7 +1,7 @@
 import { FORM_ALERTS } from '@/utils';
 import { useGenericForm } from '@/hooks';
 import { useNotificationStore, type DrawerItem } from '@/store';
-import { NOTIFICATION_TYPE, PayloadCollectionType, type InstrumentationRuleInput, type InstrumentationRuleSpec } from '@/types';
+import { CodeAttributesType, NOTIFICATION_TYPE, PayloadCollectionType, type InstrumentationRuleInput, type InstrumentationRuleSpec } from '@/types';
 
 const INITIAL: InstrumentationRuleInput = {
   ruleName: '',
@@ -15,6 +15,14 @@ const INITIAL: InstrumentationRuleInput = {
     [PayloadCollectionType.DB_QUERY]: null,
     [PayloadCollectionType.MESSAGING]: null,
   },
+  codeAttributes: {
+    [CodeAttributesType.COLUMN]: null,
+    [CodeAttributesType.FILE_PATH]: null,
+    [CodeAttributesType.FUNCTION]: null,
+    [CodeAttributesType.LINE_NUMBER]: null,
+    [CodeAttributesType.NAMESPACE]: null,
+    [CodeAttributesType.STACKTRACE]: null,
+  },
 };
 
 export function useInstrumentationRuleFormData() {
@@ -22,29 +30,17 @@ export function useInstrumentationRuleFormData() {
   const { formData, formErrors, handleFormChange, handleErrorChange, resetFormData } = useGenericForm<InstrumentationRuleInput>(INITIAL);
 
   const validateForm = (params?: { withAlert?: boolean; alertTitle?: string }) => {
-    const errors = {};
+    const errors: Partial<Record<keyof InstrumentationRuleInput, string>> = {};
     let ok = true;
 
-    Object.entries(formData).forEach(([k, v]) => {
-      switch (k) {
-        case 'payloadCollection':
-          const hasNoneSelected = !Object.values(v as InstrumentationRuleInput['payloadCollection']).filter((val) => !!val).length;
-          if (hasNoneSelected) {
-            ok = false;
-            errors[k] = FORM_ALERTS.FIELD_IS_REQUIRED;
-          }
-          break;
-
-        default:
-          break;
-      }
-    });
+    // Instru Rules don't have any specific validations yet, no required fields at this time
 
     if (!ok && params?.withAlert) {
       addNotification({
         type: NOTIFICATION_TYPE.WARNING,
         title: params.alertTitle,
         message: FORM_ALERTS.REQUIRED_FIELDS,
+        hideFromHistory: true,
       });
     }
 
@@ -54,7 +50,7 @@ export function useInstrumentationRuleFormData() {
   };
 
   const loadFormWithDrawerItem = (drawerItem: DrawerItem) => {
-    const { ruleName, notes, disabled, payloadCollection } = drawerItem.item as InstrumentationRuleSpec;
+    const { ruleName, notes, disabled, payloadCollection, codeAttributes } = drawerItem.item as InstrumentationRuleSpec;
 
     const updatedData: InstrumentationRuleInput = {
       ...INITIAL,
@@ -69,6 +65,17 @@ export function useInstrumentationRuleFormData() {
         [PayloadCollectionType.HTTP_RESPONSE]: !!payloadCollection[PayloadCollectionType.HTTP_RESPONSE] ? {} : null,
         [PayloadCollectionType.DB_QUERY]: !!payloadCollection[PayloadCollectionType.DB_QUERY] ? {} : null,
         [PayloadCollectionType.MESSAGING]: !!payloadCollection[PayloadCollectionType.MESSAGING] ? {} : null,
+      };
+    }
+
+    if (codeAttributes) {
+      updatedData['codeAttributes'] = {
+        [CodeAttributesType.COLUMN]: codeAttributes[CodeAttributesType.COLUMN] || null,
+        [CodeAttributesType.FILE_PATH]: codeAttributes[CodeAttributesType.FILE_PATH] || null,
+        [CodeAttributesType.FUNCTION]: codeAttributes[CodeAttributesType.FUNCTION] || null,
+        [CodeAttributesType.LINE_NUMBER]: codeAttributes[CodeAttributesType.LINE_NUMBER] || null,
+        [CodeAttributesType.NAMESPACE]: codeAttributes[CodeAttributesType.NAMESPACE] || null,
+        [CodeAttributesType.STACKTRACE]: codeAttributes[CodeAttributesType.STACKTRACE] || null,
       };
     }
 

@@ -44,17 +44,17 @@ models:
 
   ComputePlatform:
     fields:
+      apiTokens:
+        resolver: true
       k8sActualNamespace:
         resolver: true
       k8sActualNamespaces:
         resolver: true
-      k8sActualSource:
+      sources:
         resolver: true
       destinations:
         resolver: true
       actions:
-        resolver: true
-      k8sActualSources:
         resolver: true
       instrumentationRules:
         resolver: true

@@ -26,16 +26,20 @@ export const NAMESPACES = {
 
 export const SELECTED_ENTITIES = {
   NAMESPACE: NAMESPACES.DEFAULT,
+  NAMESPACE_SOURCES: ['coupon', 'frontend', 'inventory', 'membership', 'pricing'],
   SOURCE: 'frontend',
-  DESTINATION: 'Jaeger',
+  DESTINATION_TYPE: 'jaeger',
+  DESTINATION_DISPLAY_NAME: 'Jaeger',
   DESTINATION_AUTOFILL_FIELD: 'JAEGER_URL',
+  DESTINATION_AUTOFILL_VALUE: 'jaeger.tracing:4317',
   ACTION: 'PiiMasking',
   INSTRUMENTATION_RULE: 'PayloadCollection',
 };
 
 export const DATA_IDS = {
   SELECT_NAMESPACE: `[data-id=namespace-${SELECTED_ENTITIES.NAMESPACE}]`,
-  SELECT_DESTINATION: `[data-id=destination-${SELECTED_ENTITIES.DESTINATION}]`,
+  SELECT_SOURCE: (sourceName: string) => `[data-id=source-${sourceName}]`,
+  SELECT_DESTINATION: `[data-id=select-potential-destination-${SELECTED_ENTITIES.DESTINATION_TYPE}]`,
   SELECT_DESTINATION_AUTOFILL_FIELD: `[data-id=${SELECTED_ENTITIES.DESTINATION_AUTOFILL_FIELD}]`,
 
   ADD_ENTITY: '[data-id=add-entity]',
@@ -58,6 +62,10 @@ export const DATA_IDS = {
   APPROVE: '[data-id=approve]',
   DENY: '[data-id=deny]',
 
+  TOAST: '[data-id=toast]',
+  TOAST_CLOSE: '[data-id=toast-close]',
+  TOAST_ACTION: '[data-id=toast-action]',
+
   SOURCE_NODE_HEADER: '[data-id=source-header]',
   SOURCE_NODE: '[data-id=source-1]',
   DESTINATION_NODE: '[data-id=destination-0]',
@@ -65,6 +73,7 @@ export const DATA_IDS = {
   INSTRUMENTATION_RULE_NODE: '[data-id=rule-0]',
 
   ACTION_DROPDOWN_OPTION: '[data-id=option-pii-masking]',
+  RULE_DROPDOWN_OPTION: '[data-id=option-payload_collection]',
   MULTI_SOURCE_CONTROL: '[data-id=multi-source-control]',
 
   TITLE: '[data-id=title]',
@@ -84,6 +93,7 @@ export const BUTTONS = {
 
 export const INPUTS = {
   ACTION_DROPDOWN: 'Type to search...',
+  RULE_DROPDOWN: 'Type to search...',
 };
 
 const CYPRESS_TEST = 'Cypress Test';
@@ -100,6 +110,171 @@ export const TEXTS = {
   ACTION_WARN_MODAL_TITLE: `Delete action (${CYPRESS_TEST})`,
   INSTRUMENTATION_RULE_WARN_MODAL_TITLE: `Delete rule (${CYPRESS_TEST})`,
 
-  NOTIF_SOURCES_CREATED: 'successfully added 5 sources',
-  NOTIF_SOURCES_DELETED: 'successfully deleted 5 sources',
+  NOTIF_SOURCES_CREATED: (amount: number) => `Successfully created ${amount} sources`,
+  NOTIF_SOURCES_UPDATED: (amount: number) => `Successfully updated ${amount} source`,
+  NOTIF_SOURCES_DELETED: (amount: number) => `Successfully deleted ${amount} sources`,
+
+  NOTIF_DESTINATIONS_CREATED: (amount: number) => `Successfully created ${amount} destinations`,
+  // TODO: this message isn't right, fix in backend
+  NOTIF_DESTINATIONS_UPDATED: (amount: number) => `Successfully transformed ${amount + 1} destinations to otelcol configuration`,
+  NOTIF_DESTINATIONS_DELETED: (amount: number) => `Successfully deleted ${amount} destinations`,
+
+  NOTIF_ACTION_CREATED: (crdId: string) => `Action "${crdId}" created`,
+  NOTIF_ACTION_UPDATED: (crdId: string) => `Action "${crdId}" updated`,
+  NOTIF_ACTION_DELETED: (crdId: string) => `Action "${crdId}" delete`,
+
+  NOTIF_INSTRUMENTATION_RULE_CREATED: (crdId: string) => `Rule "${crdId}" created`,
+  NOTIF_INSTRUMENTATION_RULE_UPDATED: (crdId: string) => `Rule "${crdId}" updated`,
+  NOTIF_INSTRUMENTATION_RULE_DELETED: (crdId: string) => `Rule "${crdId}" delete`,
+};
+
+export const MOCKED_DESCRIBE = {
+  describeOdigos: {
+    isSettled: false,
+    hasErrors: false,
+    numberOfDestinations: 0,
+    numberOfSources: 0,
+    odigosVersion: {
+      name: 'Odigos Version',
+      value: 'e2e-test',
+      status: '',
+      explain: '',
+    },
+    tier: {
+      name: '',
+      value: 'onprem',
+      status: '',
+      explain: '',
+    },
+    installationMethod: {
+      name: '',
+      value: '',
+      status: '',
+      explain: '',
+    },
+    clusterCollector: {
+      enabled: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      collectorGroup: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      deployed: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      deployedError: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      collectorReady: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      deploymentCreated: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      expectedReplicas: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      healthyReplicas: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      failedReplicas: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      failedReplicasReason: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+    },
+    nodeCollector: {
+      enabled: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      collectorGroup: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      deployed: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      deployedError: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      collectorReady: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      daemonSet: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      desiredNodes: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      currentNodes: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      updatedNodes: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+      availableNodes: {
+        name: '',
+        value: '',
+        status: '',
+        explain: '',
+      },
+    },
+  },
 };

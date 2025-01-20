@@ -20,7 +20,6 @@ func (g *GrafanaCloudTempo) DestType() common.DestinationType {
 }
 
 func (g *GrafanaCloudTempo) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
-
 	if !isTracingEnabled(dest) {
 		return errors.New("Tracing not enabled, gateway will not be configured for grafana cloud Tempo")
 	}

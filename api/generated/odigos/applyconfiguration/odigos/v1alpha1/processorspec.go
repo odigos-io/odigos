@@ -18,7 +18,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	common "github.com/odigos-io/odigos/common"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
@@ -26,14 +26,14 @@ import (
 // ProcessorSpecApplyConfiguration represents a declarative configuration of the ProcessorSpec type for use
 // with apply.
 type ProcessorSpecApplyConfiguration struct {
-	Type            *string                        `json:"type,omitempty"`
-	ProcessorName   *string                        `json:"processorName,omitempty"`
-	Notes           *string                        `json:"notes,omitempty"`
-	Disabled        *bool                          `json:"disabled,omitempty"`
-	Signals         []common.ObservabilitySignal   `json:"signals,omitempty"`
-	CollectorRoles  []v1alpha1.CollectorsGroupRole `json:"collectorRoles,omitempty"`
-	OrderHint       *int                           `json:"orderHint,omitempty"`
-	ProcessorConfig *runtime.RawExtension          `json:"processorConfig,omitempty"`
+	Type            *string                              `json:"type,omitempty"`
+	ProcessorName   *string                              `json:"processorName,omitempty"`
+	Notes           *string                              `json:"notes,omitempty"`
+	Disabled        *bool                                `json:"disabled,omitempty"`
+	Signals         []common.ObservabilitySignal         `json:"signals,omitempty"`
+	CollectorRoles  []odigosv1alpha1.CollectorsGroupRole `json:"collectorRoles,omitempty"`
+	OrderHint       *int                                 `json:"orderHint,omitempty"`
+	ProcessorConfig *runtime.RawExtension                `json:"processorConfig,omitempty"`
 }
 
 // ProcessorSpecApplyConfiguration constructs a declarative configuration of the ProcessorSpec type for use with
@@ -87,7 +87,7 @@ func (b *ProcessorSpecApplyConfiguration) WithSignals(values ...common.Observabi
 // WithCollectorRoles adds the given value to the CollectorRoles field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the CollectorRoles field.
-func (b *ProcessorSpecApplyConfiguration) WithCollectorRoles(values ...v1alpha1.CollectorsGroupRole) *ProcessorSpecApplyConfiguration {
+func (b *ProcessorSpecApplyConfiguration) WithCollectorRoles(values ...odigosv1alpha1.CollectorsGroupRole) *ProcessorSpecApplyConfiguration {
 	for i := range values {
 		b.CollectorRoles = append(b.CollectorRoles, values[i])
 	}

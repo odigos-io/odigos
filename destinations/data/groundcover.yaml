@@ -1,0 +1,30 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: groundcover
+  displayName: Groundcover inCloud
+  category: managed
+spec:
+  image: groundcover.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+  fields:
+    - name: GROUNDCOVER_ENDPOINT
+      displayName: Groundcover inCloud Site
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+        tooltip: The format is `host:port`. Host is required, also known as your `inCloud_Site`, it is part of the configuration provided to you by Groundcover when setting up inCloud Managed. Port is optional, and defaults to the default OpenTelemetry gRPC port `4317`.
+    - name: GROUNDCOVER_API_KEY
+      displayName: Groundcover API Key
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: true

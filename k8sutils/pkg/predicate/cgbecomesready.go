@@ -1,13 +1,15 @@
 package predicate
 
 import (
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	cr_predicate "sigs.k8s.io/controller-runtime/pkg/predicate"
+
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 )
 
 // this event filter will only trigger reconciliation when the collectors group was not ready and now it is ready.
-// some controllers in odigos reacts to this specific event, and should not be triggered by other events such as spec updates or status conditions changes.
+// some controllers in odigos reacts to this specific event, and should not be triggered by other events
+// such as spec updates or status conditions changes.
 // for create events, it will only trigger reconciliation if the collectors group is ready.
 type CgBecomesReadyPredicate struct{}
 
@@ -24,7 +26,6 @@ func (i *CgBecomesReadyPredicate) Create(e event.CreateEvent) bool {
 }
 
 func (i *CgBecomesReadyPredicate) Update(e event.UpdateEvent) bool {
-
 	if e.ObjectOld == nil || e.ObjectNew == nil {
 		return false
 	}
