@@ -45,24 +45,26 @@ func InspectType(process *process.Details) (*common.LibCType, error) {
 
 	defer f.Close()
 	for _, prog := range f.Progs {
-		if prog.Type == elf.PT_INTERP {
-			interp := make([]byte, prog.Filesz)
-			_, err := prog.ReadAt(interp, 0)
-			if err != nil {
-				return nil, err
-			}
-
-			// Check the interpreter path
-			interpPath := strings.Trim(string(interp), "\x00")
-			if strings.Contains(interpPath, "musl") {
-				musl := common.Musl
-				return &musl, nil
-			} else if strings.Contains(interpPath, "ld-linux") {
-				glibc := common.Glibc
-				return &glibc, nil
-			}
-			return nil, errors.New("unknown libc type")
+		if prog.Type != elf.PT_INTERP {
+			continue
 		}
+
+		interp := make([]byte, prog.Filesz)
+		_, err := prog.ReadAt(interp, 0)
+		if err != nil {
+			return nil, err
+		}
+
+		// Check the interpreter path
+		interpPath := strings.Trim(string(interp), "\x00")
+		if strings.Contains(interpPath, "musl") {
+			musl := common.Musl
+			return &musl, nil
+		} else if strings.Contains(interpPath, "ld-linux") {
+			glibc := common.Glibc
+			return &glibc, nil
+		}
+		return nil, errors.New("unknown libc type")
 	}
 
 	return nil, errors.New("unknown libc type")

@@ -20,33 +20,91 @@ And then, in the setup page or the sources page, select the Deployments / Daemon
 To include all the workloads in a namespace as sources, enable the `Select All` switch in the UI.
 To automatically add future new workloads in the namespace as sources, check the `Apply for any future apps` checkbox.
 
-## Kuberenets Manifests
+## Kubernetes Manifests
 
-If you prefer to use kubectl or GitOps to manage your kubernetes workloads, you can add a source to Odigos by adding the following label to the kubernetes manifest of the workload:
+If you prefer to use kubectl or GitOps to manage your kubernetes workloads, you can add a source to Odigos by creating a Source object, for example:
 
 ```yaml
-odigos-instrumentation: enabled
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: example-source
+  namespace: default
+spec:
+  workload:
+    name: frontend
+    namespace: default
+    kind: Deployment
 ```
 
-For example to enable instrumentation for a deploymen named `my-app`, you can run this kubectl command:
+The above Source object enables instrumentation for a Deployment named `frontend` in the `default` namespace.
+
+Note that only one Source object may exist for a given workload, except in namespace instrumentation.
+
+To enable instrumentation for all the workloads in a namespace, create a Source object for that namespace:
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: namespace-source
+  namespace: default
+spec:
+  workload:
+    name: default
+    namespace: default
+    kind: Namespace
+```
+
+Namespace Sources must have both `spec.workload.name == spec.workload.namespace` and `spec.workload.kind: Namespace`.
+
+You can have a namespace Source and a workload Source that both technically enable instrumentation for a workload. In this case, if one is deleted, the other will persist instrumentation for the workload. This can also be used to exclude specific workloads from namespace instrumentation by setting `disableInstrumentation: true` on the workload Source. For example:
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: namespace-source
+  namespace: default
+spec:
+  workload:
+    name: default
+    namespace: default
+    kind: Namespace
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: example-source
+  namespace: default
+spec:
+  disableInstrumentation: true
+  workload:
+    name: frontend
+    namespace: default
+    kind: Deployment
+```
+
+In this example, all workloads in the `default` namespace will be instrumented except for the `frontend` Deployment. If `example-source` is deleted (or `disableInstrumentation` is set to `false`), the `frontend` Deployment will be instrumented.
+
+All Sources will automatically have 3 labels applied by a mutating webhook in the Instrumentor:
+
+* `odigos.io/workload-name`
+* `odigos.io/workload-namespace`
+* `odigos.io/workload-kind`
+
+The value of these labels will be validated to always match the corresponding fields in `spec.workload`. They can be used to group and list Sources, for example:
 
 ```shell
-kubectl label deployment my-app odigos-instrumentation=enabled
+kubectl get sources -l odigos.io/workload-kind=Deployment
 ```
 
-To enable instrumentation for all the workloads in a namespace, you can add the label to the namespace manifest:
+This will list all Sources for Deployments.
 
-```yaml
-kubectl label namespace my-namespace odigos-instrumentation=enabled
-```
-
-To exclude a specific workload from telemetry collection, even when it's namespace is labeled for instrumentation, add the following label to the workload:
-
-```yaml
-odigos-instrumentation: disabled
-```
+Even when using the UI to instrument applications, the Odigos control plane will create Sources under the hood.
 
 ## Removing a Source
 
-To remove a source from Odigos, and stop telemetry collection for it, delete the source from Odigos UI, or remove the `odigos-instrumentation` label from the workload or namespace manifest.
-You can always re-enable it later by adding the label back.
+To remove a source from Odigos, and stop telemetry collection for it, delete the source from Odigos UI, or delete the Source object for that workload/namespace.
+
+Sources are persistent and decoupled from the workloads they instrument. If a workload is deleted without deleting the Source, the Source will resume its effects if the workload is re-created later.
