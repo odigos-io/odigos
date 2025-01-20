@@ -131,8 +131,8 @@ func GetSources(ctx context.Context, kubeClient client.Client, obj client.Object
 	return workloadSources, nil
 }
 
-// IsExcludedSource returns true if the Source is disabling instrumentation.
-func IsExcludedSource(source *Source) bool {
+// IsDisabledSource returns true if the Source is disabling instrumentation.
+func IsDisabledSource(source *Source) bool {
 	return source.Spec.DisableInstrumentation
 }
 

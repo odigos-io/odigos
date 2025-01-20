@@ -81,7 +81,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		"name", req.Name,
 		"namespace", req.Namespace,
 		"kind", source.Spec.Workload.Kind,
-		"excluded", v1alpha1.IsExcludedSource(source),
+		"excluded", v1alpha1.IsDisabledSource(source),
 		"terminating", k8sutils.IsTerminating(source))
 
 	if source.Spec.Workload.Kind == workload.WorkloadKindNamespace {
@@ -95,7 +95,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	if !v1alpha1.IsExcludedSource(source) &&
+	if !v1alpha1.IsDisabledSource(source) &&
 		k8sutils.IsTerminating(source) &&
 		controllerutil.ContainsFinalizer(source, consts.DeleteInstrumentationConfigFinalizer) {
 		controllerutil.RemoveFinalizer(source, consts.DeleteInstrumentationConfigFinalizer)

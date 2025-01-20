@@ -22,26 +22,26 @@ func IsObjectInstrumentedBySource(ctx context.Context, k8sClient client.Client, 
 	}
 
 	if sources.Workload != nil {
-		if !v1alpha1.IsExcludedSource(sources.Workload) && !k8sutils.IsTerminating(sources.Workload) {
+		if !v1alpha1.IsDisabledSource(sources.Workload) && !k8sutils.IsTerminating(sources.Workload) {
 			return true, nil
 		}
-		if v1alpha1.IsExcludedSource(sources.Workload) && !k8sutils.IsTerminating(sources.Workload) {
+		if v1alpha1.IsDisabledSource(sources.Workload) && !k8sutils.IsTerminating(sources.Workload) {
 			return false, nil
 		}
 	}
 
-	if sources.Namespace != nil && !v1alpha1.IsExcludedSource(sources.Namespace) && !k8sutils.IsTerminating(sources.Namespace) {
+	if sources.Namespace != nil && !v1alpha1.IsDisabledSource(sources.Namespace) && !k8sutils.IsTerminating(sources.Namespace) {
 		return true, nil
 	}
 
 	return false, nil
 }
 
-// IsSourceRelevant returns true if the Source may require action from a controller.
-// Specifically, the Source must be either:
+// IsSourceRelevant returns true if a Source:
 // 1) Inclusive AND NOT terminating, or
 // 2) Exclusive AND terminating
-// This function alone should not be used to determine any instrumentation changes.
+// This function alone should not be used to determine any instrumentation changes, and is provided
+// for the Instrumentor controllers to filter events.
 func IsSourceRelevant(source *v1alpha1.Source) bool {
-	return v1alpha1.IsExcludedSource(source) == k8sutils.IsTerminating(source)
+	return v1alpha1.IsDisabledSource(source) == k8sutils.IsTerminating(source)
 }

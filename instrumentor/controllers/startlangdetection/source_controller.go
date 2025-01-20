@@ -83,7 +83,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	if v1alpha1.IsExcludedSource(source) &&
+	if v1alpha1.IsDisabledSource(source) &&
 		k8sutils.IsTerminating(source) &&
 		controllerutil.ContainsFinalizer(source, consts.StartLangDetectionFinalizer) {
 		controllerutil.RemoveFinalizer(source, consts.StartLangDetectionFinalizer)

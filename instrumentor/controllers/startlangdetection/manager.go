@@ -10,6 +10,14 @@ import (
 	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 )
 
+// The startlangdetection controller handles instrumenting workloads.
+// It provides a Source controller, which handles most events where instrumentation will occur:
+// either by creating a new Source object, or deleting an old Source object that disabled instrumentation.
+// However, we also have controllers to monitor workload objects and namespaces.
+// Because Sources are decoupled from these resources, a Source event might not immediately trigger
+// instrumentation (for example, if a Source is created before a Deployment, then the Deployment
+// event will trigger instrumentation). This design ensures 2-way reconciliation between
+// Source CRD and workloads.
 func SetupWithManager(mgr ctrl.Manager) error {
 	err := builder.
 		ControllerManagedBy(mgr).

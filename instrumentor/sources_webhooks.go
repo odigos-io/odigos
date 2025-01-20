@@ -68,7 +68,7 @@ func (s *SourcesDefaulter) Default(ctx context.Context, obj runtime.Object) erro
 	// Vice versa for an excluded Source that has `spec.disableInstrumentation` removed.
 	// These checks make sure that the right type of Source has the right type of finalizer
 	// by toggling what finalizer is set.
-	if !v1alpha1.IsExcludedSource(source) {
+	if !v1alpha1.IsDisabledSource(source) {
 		if !controllerutil.ContainsFinalizer(source, consts.DeleteInstrumentationConfigFinalizer) && !k8sutils.IsTerminating(source) {
 			controllerutil.AddFinalizer(source, consts.DeleteInstrumentationConfigFinalizer)
 		}
@@ -76,7 +76,7 @@ func (s *SourcesDefaulter) Default(ctx context.Context, obj runtime.Object) erro
 			controllerutil.RemoveFinalizer(source, consts.StartLangDetectionFinalizer)
 		}
 	}
-	if v1alpha1.IsExcludedSource(source) {
+	if v1alpha1.IsDisabledSource(source) {
 		if controllerutil.ContainsFinalizer(source, consts.DeleteInstrumentationConfigFinalizer) {
 			controllerutil.RemoveFinalizer(source, consts.DeleteInstrumentationConfigFinalizer)
 		}
