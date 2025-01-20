@@ -7,6 +7,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 )
 
 func SetupWithManager(mgr ctrl.Manager) error {
@@ -14,9 +15,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("startlangdetection-deployment").
 		For(&appsv1.Deployment{}).
-		WithEventFilter(&WorkloadAvailablePredicate{
-			Client: mgr.GetClient(),
-		}).
+		WithEventFilter(&odigospredicate.CreationPredicate{}).
 		Complete(&DeploymentReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
@@ -29,9 +28,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("startlangdetection-daemonset").
 		For(&appsv1.DaemonSet{}).
-		WithEventFilter(&WorkloadAvailablePredicate{
-			Client: mgr.GetClient(),
-		}).
+		WithEventFilter(&odigospredicate.CreationPredicate{}).
 		Complete(&DaemonSetReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
@@ -44,9 +41,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("startlangdetection-statefulset").
 		For(&appsv1.StatefulSet{}).
-		WithEventFilter(&WorkloadAvailablePredicate{
-			Client: mgr.GetClient(),
-		}).
+		WithEventFilter(&odigospredicate.CreationPredicate{}).
 		Complete(&StatefulSetReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
