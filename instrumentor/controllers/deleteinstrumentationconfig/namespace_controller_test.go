@@ -3,9 +3,9 @@ package deleteinstrumentationconfig_test
 import (
 	"context"
 
+	k8sconsts "github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/instrumentor/internal/testutil"
-	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

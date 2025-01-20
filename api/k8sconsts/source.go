@@ -1,4 +1,4 @@
-package consts
+package k8sconsts
 
 const (
 	// StartLangDetectionFinalizer is used for Workload exclusion Sources. When a Workload exclusion Source
