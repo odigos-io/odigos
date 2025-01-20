@@ -1,7 +1,11 @@
+'use client';
+
 import React from 'react';
-import Lottie from 'react-lottie';
+import dynamic from 'next/dynamic';
 import styled from 'styled-components';
 import animationData from './lottie.json';
+
+const Lottie = dynamic(() => import('react-lottie'), { ssr: false });
 
 interface Props {
   width?: number;
