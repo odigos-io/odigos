@@ -53,8 +53,10 @@ export const AwaitPipelineContainer = () => {
     await Promise.all(configuredDestinations.map(async ({ form }) => await createDestination(form)));
     setProgress(15);
 
-    // TODO: await pipeline completion
-    setProgress(100);
+    // TODO: await pipeline completion, right now we fake it
+    for (let i = 15; i <= 100; i += 5) {
+      setTimeout(() => setProgress(i), 500);
+    }
 
     resetState();
     setTimeout(() => router.push(ROUTES.OVERVIEW), 100);
