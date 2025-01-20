@@ -7,9 +7,8 @@ interface Props {
 }
 
 const Styled = styled.span<{ $filled: Props['filled'] }>`
-  min-width: 20px;
-  height: 20px;
-  padding: 2px;
+  min-width: 16px;
+  padding: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
