@@ -22,21 +22,50 @@ import (
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
+	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
-	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 type SourceReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+}
+
+// DeleteInstrumentationSourcePredicate returns true if the Source object is relevant to deleting instrumentation.
+// This means that the Source must be either:
+// 1) A normal (non-excluding) Source AND terminating, or
+// 2) An excluding Source AND NOT terminating
+// In either of these cases, we want to check if workloads should start to be instrumented.
+var DeleteInstrumentationSourcePredicate = predicate.Funcs{
+	UpdateFunc: func(e event.UpdateEvent) bool {
+		source := e.ObjectNew.(*v1alpha1.Source)
+		return !sourceutils.IsSourceRelevant(source)
+	},
+
+	CreateFunc: func(e event.CreateEvent) bool {
+		source := e.Object.(*v1alpha1.Source)
+		return !sourceutils.IsSourceRelevant(source)
+	},
+
+	DeleteFunc: func(e event.DeleteEvent) bool {
+		return false
+	},
+
+	// Allow generic events (e.g., external triggers)
+	GenericFunc: func(e event.GenericEvent) bool {
+		source := e.Object.(*v1alpha1.Source)
+		return !sourceutils.IsSourceRelevant(source)
+	},
 }
 
 func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -48,37 +77,30 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// If this is a regular Source that's being deleted, or a workload Exclusion Source
-	// that's being created, try to uninstrument relevant workloads.
-	// if (terminating && !exclude) || (!terminating && exclude)
-	if k8sutils.IsTerminating(source) != v1alpha1.IsExcludedSource(source) {
-		logger.Info("Reconciling workload for Source object",
-			"name", req.Name,
-			"namespace", req.Namespace,
-			"kind", source.Spec.Workload.Kind,
-			"excluded", v1alpha1.IsExcludedSource(source),
-			"terminating", k8sutils.IsTerminating(source))
+	logger.Info("Reconciling workload for Source object",
+		"name", req.Name,
+		"namespace", req.Namespace,
+		"kind", source.Spec.Workload.Kind,
+		"excluded", v1alpha1.IsDisabledSource(source),
+		"terminating", k8sutils.IsTerminating(source))
 
-		if source.Spec.Workload.Kind == "Namespace" {
-			for _, kind := range []workload.WorkloadKind{
-				workload.WorkloadKindDaemonSet,
-				workload.WorkloadKindDeployment,
-				workload.WorkloadKindStatefulSet,
-			} {
-				err = errors.Join(err, r.listAndSyncWorkloadList(ctx, req, kind))
-			}
-		} else {
-			// This is a Source for a specific workload, not an entire namespace
-			err = errors.Join(err, r.syncWorkload(ctx, source))
-		}
+	if source.Spec.Workload.Kind == workload.WorkloadKindNamespace {
+		err = errors.Join(err, syncNamespaceWorkloads(ctx, r.Client, req))
+	} else {
+		// This is a Source for a specific workload, not an entire namespace
+		err = errors.Join(err, r.syncWorkload(ctx, source))
+	}
 
-		if !v1alpha1.IsExcludedSource(source) &&
-			k8sutils.IsTerminating(source) &&
-			controllerutil.ContainsFinalizer(source, consts.DeleteInstrumentationConfigFinalizer) {
-			controllerutil.RemoveFinalizer(source, consts.DeleteInstrumentationConfigFinalizer)
-			if err := r.Update(ctx, source); err != nil {
-				return k8sutils.K8SUpdateErrorHandler(err)
-			}
+	if client.IgnoreNotFound(err) != nil {
+		return ctrl.Result{}, err
+	}
+
+	if !v1alpha1.IsDisabledSource(source) &&
+		k8sutils.IsTerminating(source) &&
+		controllerutil.ContainsFinalizer(source, consts.DeleteInstrumentationConfigFinalizer) {
+		controllerutil.RemoveFinalizer(source, consts.DeleteInstrumentationConfigFinalizer)
+		if err := r.Update(ctx, source); err != nil {
+			return k8sutils.K8SUpdateErrorHandler(err)
 		}
 	}
 
@@ -93,60 +115,13 @@ func (r *SourceReconciler) syncWorkload(ctx context.Context, source *v1alpha1.So
 		return err
 	}
 
-	sources, err := v1alpha1.GetSources(ctx, r.Client, obj)
+	instrumented, err := sourceutils.IsObjectInstrumentedBySource(ctx, r.Client, obj)
 	if err != nil {
 		return err
 	}
-	if sources.Namespace == nil ||
-		(sources.Namespace != nil && k8sutils.IsTerminating(sources.Namespace)) ||
-		(sources.Workload != nil && !k8sutils.IsTerminating(sources.Workload) && v1alpha1.IsExcludedSource(source)) {
-		// if this workload doesn't have a live Namespace instrumentation, or it has a live exclusion source, uninstrument it
+	if !instrumented {
 		err = errors.Join(err, deleteWorkloadInstrumentationConfig(ctx, r.Client, obj))
 		err = errors.Join(err, removeReportedNameAnnotation(ctx, r.Client, obj))
 	}
 	return err
-}
-
-func (r *SourceReconciler) listAndSyncWorkloadList(ctx context.Context,
-	req ctrl.Request,
-	kind workload.WorkloadKind) error {
-	logger := log.FromContext(ctx)
-	logger.V(2).Info("Uninstrumenting workloads for Namespace Source", "name", req.Name, "namespace", req.Namespace, "kind", kind)
-
-	workloads := workload.ClientListObjectFromWorkloadKind(kind)
-	err := r.Client.List(ctx, workloads, client.InNamespace(req.Name))
-	if client.IgnoreNotFound(err) != nil {
-		return err
-	}
-
-	switch obj := workloads.(type) {
-	case *appsv1.DeploymentList:
-		for _, dep := range obj.Items {
-			err = r.syncWorkloadList(ctx, kind, client.ObjectKey{Namespace: dep.Namespace, Name: dep.Name})
-			if err != nil {
-				return err
-			}
-		}
-	case *appsv1.DaemonSetList:
-		for _, dep := range obj.Items {
-			err = r.syncWorkloadList(ctx, kind, client.ObjectKey{Namespace: dep.Namespace, Name: dep.Name})
-			if err != nil {
-				return err
-			}
-		}
-	case *appsv1.StatefulSetList:
-		for _, dep := range obj.Items {
-			err = r.syncWorkloadList(ctx, kind, client.ObjectKey{Namespace: dep.Namespace, Name: dep.Name})
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return err
-}
-
-func (r *SourceReconciler) syncWorkloadList(ctx context.Context,
-	kind workload.WorkloadKind,
-	key client.ObjectKey) error {
-	return syncGenericWorkloadListToNs(ctx, r.Client, kind, key)
 }
