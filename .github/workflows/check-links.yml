@@ -22,5 +22,5 @@ jobs:
             --exclude ".*your-account.*"
             --exclude ".*qryn.local.*"
             # Following is destination logos (logos are uploaded after-merge)
-            --exclude "https://d15jtxgb40qetw.cloudfront.*"
+            --exclude "^https://d15jtxgb40qetw\\.cloudfront\\.net/.*"
           fail: true
