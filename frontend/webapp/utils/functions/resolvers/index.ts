@@ -4,3 +4,4 @@ export * from './is-emtpy';
 export * from './is-enterprise';
 export * from './is-over-time';
 export * from './is-within-time';
+export * from './sleep';

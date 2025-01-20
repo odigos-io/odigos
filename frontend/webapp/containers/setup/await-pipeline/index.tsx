@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { ROUTES } from '@/utils';
 import { useAppStore } from '@/store';
 import styled from 'styled-components';
+import { ROUTES, sleep } from '@/utils';
 import { OdigosLogoText } from '@/assets';
 import { useRouter } from 'next/navigation';
 import { FlexColumn, FlexRow } from '@/styles';
-import { useDestinationCRUD, useNamespace, useSourceCRUD } from '@/hooks';
 import { Badge, Text, TraceLoader } from '@/reuseable-components';
+import { useDestinationCRUD, useNamespace, useSourceCRUD } from '@/hooks';
 
 const Container = styled(FlexColumn)`
   width: 100vw;
@@ -55,7 +55,8 @@ export const AwaitPipelineContainer = () => {
 
     // TODO: await pipeline completion, right now we fake it
     for (let i = 15; i <= 100; i += 5) {
-      setTimeout(() => setProgress(i), 500);
+      await sleep(500);
+      setProgress(i);
     }
 
     resetState();
