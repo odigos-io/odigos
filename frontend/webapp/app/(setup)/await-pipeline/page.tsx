@@ -1,7 +1,6 @@
+'use client';
 import React from 'react';
-import dynamic from 'next/dynamic';
-
-const AwaitPipelineContainer = dynamic(() => import('@/containers/setup/await-pipeline'));
+import { AwaitPipelineContainer } from '@/containers';
 
 export default function AwaitPipelinePage() {
   return (

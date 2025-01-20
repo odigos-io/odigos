@@ -1,8 +1,11 @@
-'use client';
-import React from 'react';
+import React, { useEffect } from 'react';
+import { ROUTES } from '@/utils';
+import { useAppStore } from '@/store';
 import styled from 'styled-components';
 import { OdigosLogoText } from '@/assets';
+import { useRouter } from 'next/navigation';
 import { FlexColumn, FlexRow } from '@/styles';
+import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
 import { Badge, Text, TraceLoader } from '@/reuseable-components';
 
 const Container = styled(FlexColumn)`
@@ -32,7 +35,24 @@ const Description = styled(Text)`
   line-height: 26px;
 `;
 
-const AwaitPipelineContainer = () => {
+export const AwaitPipelineContainer = () => {
+  const router = useRouter();
+  const { persistSources } = useSourceCRUD();
+  const { createDestination } = useDestinationCRUD();
+  const { configuredSources, configuredFutureApps, configuredDestinations, resetState } = useAppStore();
+
+  const doPersist = async () => {
+    await persistSources(configuredSources, configuredFutureApps);
+    await Promise.all(configuredDestinations.map(async ({ form }) => await createDestination(form)));
+
+    resetState();
+    setTimeout(() => router.push(ROUTES.OVERVIEW), 100);
+  };
+
+  useEffect(() => {
+    doPersist();
+  }, []);
+
   return (
     <Container>
       <OdigosLogoText size={100} />
@@ -50,6 +70,3 @@ const AwaitPipelineContainer = () => {
     </Container>
   );
 };
-
-// use "default" so we can import it "dynamically" in /app/(setup)/await-pipeline/page.tsx
-export default AwaitPipelineContainer;
