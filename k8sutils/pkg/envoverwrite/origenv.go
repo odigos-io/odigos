@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // original manifest values for the env vars of a workload
@@ -39,7 +40,7 @@ func (o *OrigWorkloadEnvValues) GetContainerStoredEnvs(containerName string) env
 
 // this function is called when reverting a value back to it's original content.
 // it removes the env, if exists, and returns the original value for the caller to populate back into the manifest.
-func (o *OrigWorkloadEnvValues) RemoveOriginalValue(containerName string, envName string) (*string, bool) {
+func (o *OrigWorkloadEnvValues) RemoveOriginalValue(containerName, envName string) (*string, bool) {
 	if val, ok := o.origManifestValues[containerName][envName]; ok {
 		delete(o.origManifestValues[containerName], envName)
 		if len(o.origManifestValues[containerName]) == 0 {
@@ -51,7 +52,7 @@ func (o *OrigWorkloadEnvValues) RemoveOriginalValue(containerName string, envNam
 	return nil, false
 }
 
-func (o *OrigWorkloadEnvValues) InsertOriginalValue(containerName string, envName string, val *string) {
+func (o *OrigWorkloadEnvValues) InsertOriginalValue(containerName, envName string, val *string) {
 	if _, ok := o.origManifestValues[containerName]; !ok {
 		o.origManifestValues[containerName] = make(envOverwrite.OriginalEnv)
 	}

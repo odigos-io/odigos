@@ -23,7 +23,6 @@ func (c *Chronosphere) DestType() common.DestinationType {
 }
 
 func (c *Chronosphere) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
-
 	url, exists := dest.GetConfig()[chronosphereDomain]
 	if !exists {
 		return ErrorChronosphereMissingURL
@@ -87,7 +86,7 @@ func (c *Chronosphere) getCompanyNameFromURL(url string) string {
 	// Remove trailing slash if present
 	url = strings.TrimSuffix(url, "/")
 
-	// Support the following cases: COMAPNY / COMPANY.chronosphere.io / COMPANY.chronosphere.io:443
+	// Support the following cases: COMPANY / COMPANY.chronosphere.io / COMPANY.chronosphere.io:443
 	url = strings.TrimSuffix(url, ".chronosphere.io:443")
 	url = strings.TrimSuffix(url, ".chronosphere.io")
 	return url

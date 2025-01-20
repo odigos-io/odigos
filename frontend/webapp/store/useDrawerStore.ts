@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { ActionDataParsed, ActualDestination, InstrumentationRuleSpec, K8sActualSource, OVERVIEW_ENTITY_TYPES, WorkloadId } from '@/types';
 
 export enum DRAWER_OTHER_TYPES {
-  DESCRIBE_ODIGOS = 'describe-odigos',
+  ODIGOS_CLI = 'odigos-cli',
 }
 
 export interface DrawerItem {

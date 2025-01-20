@@ -1,11 +1,11 @@
-import React, { useState, useRef } from 'react';
-import theme from '@/styles/theme';
+import React, { useState, useRef, useEffect } from 'react';
 import { PlusIcon } from '@/assets';
 import { useModalStore } from '@/store';
 import { getEntityIcon } from '@/utils';
-import styled, { css } from 'styled-components';
-import { useComputePlatform, useOnClickOutside } from '@/hooks';
-import { Button, FadeLoader, Text } from '@/reuseable-components';
+import { useOnClickOutside } from '@/hooks';
+import { hexPercentValues } from '@/styles';
+import { Button, Text } from '@/reuseable-components';
+import styled, { css, useTheme } from 'styled-components';
 import { type DropdownOption, OVERVIEW_ENTITY_TYPES } from '@/types';
 
 // Styled components for the dropdown UI
@@ -19,17 +19,18 @@ const StyledButton = styled(Button)`
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-width: 100px;
+  min-width: 160px;
+  padding-right: 24px;
 `;
 
 const DropdownListContainer = styled.div`
   position: absolute;
   right: 0;
-  top: 48px;
+  top: 42px;
   border-radius: 24px;
   width: 200px;
   overflow-y: auto;
-  background-color: ${({ theme }) => theme.colors.dropdown_bg};
+  background-color: ${({ theme }) => theme.colors.secondary};
   border: 1px solid ${({ theme }) => theme.colors.border};
   z-index: 9999;
   padding: 12px;
@@ -43,7 +44,7 @@ const DropdownItem = styled.div<{ $selected: boolean }>`
   display: flex;
   align-items: center;
   &:hover {
-    background: ${({ theme }) => theme.colors.white_opacity['008']};
+    background: ${({ theme }) => theme.colors.majestic_blue + hexPercentValues['050']};
   }
   ${({ $selected }) =>
     $selected &&
@@ -71,8 +72,8 @@ interface Props {
   placeholder?: string;
 }
 
-export const AddEntity: React.FC<Props> = ({ options = DEFAULT_OPTIONS, placeholder = 'ADD...' }) => {
-  const { loading } = useComputePlatform();
+export const AddEntity: React.FC<Props> = ({ options = DEFAULT_OPTIONS, placeholder = 'ADD NEW' }) => {
+  const theme = useTheme();
   const { currentModal, setCurrentModal } = useModalStore();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -80,9 +81,22 @@ export const AddEntity: React.FC<Props> = ({ options = DEFAULT_OPTIONS, placehol
 
   useOnClickOutside(dropdownRef, () => setIsDropdownOpen(false));
 
-  const handleToggle = () => {
-    setIsDropdownOpen((prev) => !prev);
-  };
+  useEffect(() => {
+    if (dropdownRef.current) {
+      const { current: c } = dropdownRef;
+
+      const handleOpen = () => setIsDropdownOpen(true);
+      const handleClose = () => setIsDropdownOpen(false);
+
+      c.addEventListener('mouseenter', handleOpen);
+      c.addEventListener('mouseleave', handleClose);
+
+      return () => {
+        c.removeEventListener('mouseenter', handleOpen);
+        c.removeEventListener('mouseleave', handleClose);
+      };
+    }
+  }, []);
 
   const handleSelect = (option: DropdownOption) => {
     setCurrentModal(option.id);
@@ -91,8 +105,8 @@ export const AddEntity: React.FC<Props> = ({ options = DEFAULT_OPTIONS, placehol
 
   return (
     <Container ref={dropdownRef}>
-      <StyledButton data-id='add-entity' onClick={handleToggle}>
-        {loading ? <FadeLoader color={theme.colors.primary} /> : <PlusIcon fill={theme.colors.primary} />}
+      <StyledButton data-id='add-entity'>
+        <PlusIcon fill={theme.colors.primary} />
         <ButtonText size={14}>{placeholder}</ButtonText>
       </StyledButton>
 
@@ -103,8 +117,10 @@ export const AddEntity: React.FC<Props> = ({ options = DEFAULT_OPTIONS, placehol
 
             return (
               <DropdownItem key={option.id} data-id={`add-${option.id}`} $selected={currentModal === option.id} onClick={() => handleSelect(option)}>
-                <Icon />
-                <Text size={14}>{option.value}</Text>
+                <Icon fill={theme.text.primary} />
+                <Text size={14} color={theme.text.primary}>
+                  {option.value}
+                </Text>
               </DropdownItem>
             );
           })}

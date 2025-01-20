@@ -2,9 +2,14 @@ import { create } from 'zustand';
 import type { ConfiguredDestination, DestinationInput, K8sActualSource } from '@/types';
 
 export interface IAppState {
+  // in onboarding this is used to keep state of sources that are available for selection in a namespace, in-case user goes back a page (from destinations to sources)
   availableSources: { [key: string]: K8sActualSource[] };
+  // in onboarding this is used to keep state of added sources, until end of onboarding
+  // in overview this is used to globally select sources for further actions (like uninstrument using multi-source-control component)
   configuredSources: { [key: string]: K8sActualSource[] };
+  // in onboarding this is used to keep state of namespaces with future-apps selected, until end of onboarding
   configuredFutureApps: { [key: string]: boolean };
+  // in onbaording this is used to keep state of added destinations, until end of onboarding
   configuredDestinations: { stored: ConfiguredDestination; form: DestinationInput }[];
 }
 
@@ -20,7 +25,7 @@ interface IAppStateSetters {
   resetState: () => void;
 }
 
-const useAppStore = create<IAppState & IAppStateSetters>((set) => ({
+export const useAppStore = create<IAppState & IAppStateSetters>((set) => ({
   availableSources: {},
   configuredSources: {},
   configuredFutureApps: {},
@@ -36,5 +41,3 @@ const useAppStore = create<IAppState & IAppStateSetters>((set) => ({
 
   resetState: () => set(() => ({ availableSources: {}, configuredSources: {}, configuredFutureApps: {}, configuredDestinations: [] })),
 }));
-
-export { useAppStore };

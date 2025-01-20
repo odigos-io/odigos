@@ -20,8 +20,8 @@ spec:
       componentProps:
         type: text
         required: true
-        placeholder: "http://host:port"
-        tooltip: 'OTLP http endpoint of the receiver'
+        placeholder: 'http://host:port'
+        tooltip: The format is `host:port`, host is required, port is optional and defaults to the default OTLP gRPC port `4317`.
 
     - name: OTLP_HTTP_BASIC_AUTH_USERNAME
       displayName: Basic Auth Username
@@ -29,7 +29,7 @@ spec:
       componentProps:
         type: text
         required: false
-        placeholder: "username"
+        placeholder: 'username'
         tooltip: in case the otlp receiver requires basic auth, this is the username
 
     - name: OTLP_HTTP_BASIC_AUTH_PASSWORD
@@ -38,7 +38,6 @@ spec:
       componentProps:
         type: password
         required: false
-        placeholder: "password"
+        placeholder: 'password'
         tooltip: in case the otlp receiver requires basic auth, this is the password
       secret: true
-

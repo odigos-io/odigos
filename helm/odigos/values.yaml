@@ -2,22 +2,16 @@ image:
   tag: ""
 imagePullSecrets: []
 
-# namespaces not to show in odigos ui
+# namespaces list not to show in odigos ui
+# set by default: odigos-system, kube-system, local-path-storage, istio-system, linkerd, kube-node-lease, odigos-system
+# you can add additional namespaces to ignore by adding them to the list
 ignoredNamespaces:
-  - odigos-system
-  - kube-system
-  - local-path-storage
-  - istio-system
-  - linkerd
-  - kube-node-lease
 
+# container names to never instrument
+# useful for sidecars which are not interesting to be instrumented
+# set by default: istio-proxy, vault-agent, filebeat, linkerd-proxy, fluentd, akeyless-init
+# you can add additional container names to ignore by adding them to the list
 ignoredContainers:
-  - istio-proxy
-  - vault-agent
-  - filebeat
-  - linkerd-proxy
-  - fluentd
-  - akeyless-init
 
 collectorGateway:
   # the memory request for the cluster gateway collector deployment.
@@ -154,10 +148,10 @@ odiglet:
   nodeSelector:
     kubernetes.io/os: linux
   tolerations:
-    - effect: NoSchedule
-      key: node.kubernetes.io/os
-      operator: Equal
-      value: windows
+    ## This toleration with 'Exists' operator and no key/effect specified 
+    ## will match ALL taints, allowing pods to be scheduled on any node 
+    ## regardless of its taints (including master/control-plane nodes)
+    - operator: Exists
   affinity: {}
 
 cli:

@@ -28,7 +28,8 @@
         "name": "next"
       }
     ],
-    "strictNullChecks": true
+    "strictNullChecks": true,
+    "noImplicitAny": true
   },
   "include": [
     "**/*.ts",

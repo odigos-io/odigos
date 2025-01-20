@@ -1,0 +1,12 @@
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: frontend
+  namespace: default
+  labels:
+    odigos.io/e2e: source-single
+spec:
+  workload:
+    name: frontend
+    namespace: default
+    kind: Deployment

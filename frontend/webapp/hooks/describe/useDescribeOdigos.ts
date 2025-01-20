@@ -1,6 +1,7 @@
 import { useQuery } from '@apollo/client';
 import { DESCRIBE_ODIGOS } from '@/graphql';
 import type { DescribeOdigos } from '@/types';
+import { isEnterprise } from '@/utils';
 
 export const useDescribeOdigos = () => {
   const { data, loading, error } = useQuery<DescribeOdigos>(DESCRIBE_ODIGOS, {
@@ -13,7 +14,9 @@ export const useDescribeOdigos = () => {
     if (!code) return {};
 
     const payload: Record<string, any> = {
-      [code.odigosVersion.name]: code.odigosVersion.value,
+      [`${code.odigosVersion.name}@tooltip=${code.odigosVersion.explain}`]: code.odigosVersion.value,
+      [`${code.tier.name}@tooltip=${code.tier.explain}`]: code.tier.value,
+      [`${code.installationMethod.name}@tooltip=${code.installationMethod.explain}`]: code.installationMethod.value,
       'Number Of Sources': code.numberOfSources,
       'Number Of Destinations': code.numberOfDestinations,
     };
@@ -38,10 +41,13 @@ export const useDescribeOdigos = () => {
     return payload;
   };
 
+  const isPro = isEnterprise(data?.describeOdigos.tier.value);
+
   return {
     loading,
     error,
     data: data?.describeOdigos,
+    isPro,
     restructureForPrettyMode,
   };
 };

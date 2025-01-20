@@ -54,6 +54,13 @@ func (this AddClusterInfoAction) GetSignals() []SignalType {
 	return interfaceSlice
 }
 
+type APIToken struct {
+	Token     string `json:"token"`
+	Name      string `json:"name"`
+	IssuedAt  int    `json:"issuedAt"`
+	ExpiresAt int    `json:"expiresAt"`
+}
+
 type ClusterCollectorAnalyze struct {
 	Enabled              *EntityProperty `json:"enabled"`
 	CollectorGroup       *EntityProperty `json:"collectorGroup"`
@@ -72,11 +79,30 @@ type ClusterInfo struct {
 	AttributeStringValue *string `json:"attributeStringValue,omitempty"`
 }
 
+type CodeAttributes struct {
+	Column     *bool `json:"column,omitempty"`
+	FilePath   *bool `json:"filePath,omitempty"`
+	Function   *bool `json:"function,omitempty"`
+	LineNumber *bool `json:"lineNumber,omitempty"`
+	Namespace  *bool `json:"namespace,omitempty"`
+	Stacktrace *bool `json:"stacktrace,omitempty"`
+}
+
+type CodeAttributesInput struct {
+	Column     *bool `json:"column,omitempty"`
+	FilePath   *bool `json:"filePath,omitempty"`
+	Function   *bool `json:"function,omitempty"`
+	LineNumber *bool `json:"lineNumber,omitempty"`
+	Namespace  *bool `json:"namespace,omitempty"`
+	Stacktrace *bool `json:"stacktrace,omitempty"`
+}
+
 type ComputePlatform struct {
 	ComputePlatformType  ComputePlatformType    `json:"computePlatformType"`
+	APITokens            []*APIToken            `json:"apiTokens"`
 	K8sActualNamespaces  []*K8sActualNamespace  `json:"k8sActualNamespaces"`
 	K8sActualNamespace   *K8sActualNamespace    `json:"k8sActualNamespace,omitempty"`
-	K8sActualSources     []*K8sActualSource     `json:"k8sActualSources"`
+	Sources              *PaginatedSources      `json:"sources"`
 	Destinations         []*Destination         `json:"destinations"`
 	Actions              []*PipelineAction      `json:"actions"`
 	InstrumentationRules []*InstrumentationRule `json:"instrumentationRules"`
@@ -281,9 +307,12 @@ type InstrumentationRule struct {
 	RuleName                 *string                           `json:"ruleName,omitempty"`
 	Notes                    *string                           `json:"notes,omitempty"`
 	Disabled                 *bool                             `json:"disabled,omitempty"`
+	Mutable                  bool                              `json:"mutable"`
+	ProfileName              string                            `json:"profileName"`
 	Workloads                []*PodWorkload                    `json:"workloads,omitempty"`
 	InstrumentationLibraries []*InstrumentationLibraryGlobalID `json:"instrumentationLibraries,omitempty"`
 	PayloadCollection        *PayloadCollection                `json:"payloadCollection,omitempty"`
+	CodeAttributes           *CodeAttributes                   `json:"codeAttributes,omitempty"`
 }
 
 type InstrumentationRuleInput struct {
@@ -293,11 +322,12 @@ type InstrumentationRuleInput struct {
 	Workloads                []*PodWorkloadInput                    `json:"workloads,omitempty"`
 	InstrumentationLibraries []*InstrumentationLibraryGlobalIDInput `json:"instrumentationLibraries,omitempty"`
 	PayloadCollection        *PayloadCollectionInput                `json:"payloadCollection,omitempty"`
+	CodeAttributes           *CodeAttributesInput                   `json:"codeAttributes,omitempty"`
 }
 
 type K8sActualNamespace struct {
 	Name             string             `json:"name"`
-	Selected         *bool              `json:"selected,omitempty"`
+	Selected         bool               `json:"selected"`
 	K8sActualSources []*K8sActualSource `json:"k8sActualSources"`
 }
 
@@ -386,6 +416,8 @@ type NodeCollectorAnalyze struct {
 
 type OdigosAnalyze struct {
 	OdigosVersion        *EntityProperty          `json:"odigosVersion"`
+	Tier                 *EntityProperty          `json:"tier"`
+	InstallationMethod   *EntityProperty          `json:"installationMethod"`
 	NumberOfDestinations int                      `json:"numberOfDestinations"`
 	NumberOfSources      int                      `json:"numberOfSources"`
 	ClusterCollector     *ClusterCollectorAnalyze `json:"clusterCollector"`
@@ -397,6 +429,11 @@ type OdigosAnalyze struct {
 type OverviewMetricsResponse struct {
 	Sources      []*SingleSourceMetricsResponse      `json:"sources"`
 	Destinations []*SingleDestinationMetricsResponse `json:"destinations"`
+}
+
+type PaginatedSources struct {
+	NextPage string             `json:"nextPage"`
+	Items    []*K8sActualSource `json:"items"`
 }
 
 type PatchSourceRequestInput struct {

@@ -18,11 +18,11 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/applyconfiguration/odigos/v1alpha1"
+	applyconfigurationodigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/applyconfiguration/odigos/v1alpha1"
 	scheme "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/scheme"
-	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -37,36 +37,37 @@ type SourcesGetter interface {
 
 // SourceInterface has methods to work with Source resources.
 type SourceInterface interface {
-	Create(ctx context.Context, source *v1alpha1.Source, opts v1.CreateOptions) (*v1alpha1.Source, error)
-	Update(ctx context.Context, source *v1alpha1.Source, opts v1.UpdateOptions) (*v1alpha1.Source, error)
+	Create(ctx context.Context, source *odigosv1alpha1.Source, opts v1.CreateOptions) (*odigosv1alpha1.Source, error)
+	Update(ctx context.Context, source *odigosv1alpha1.Source, opts v1.UpdateOptions) (*odigosv1alpha1.Source, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, source *v1alpha1.Source, opts v1.UpdateOptions) (*v1alpha1.Source, error)
+	UpdateStatus(ctx context.Context, source *odigosv1alpha1.Source, opts v1.UpdateOptions) (*odigosv1alpha1.Source, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.Source, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.SourceList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*odigosv1alpha1.Source, error)
+	List(ctx context.Context, opts v1.ListOptions) (*odigosv1alpha1.SourceList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Source, err error)
-	Apply(ctx context.Context, source *odigosv1alpha1.SourceApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.Source, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *odigosv1alpha1.Source, err error)
+	Apply(ctx context.Context, source *applyconfigurationodigosv1alpha1.SourceApplyConfiguration, opts v1.ApplyOptions) (result *odigosv1alpha1.Source, err error)
 	// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-	ApplyStatus(ctx context.Context, source *odigosv1alpha1.SourceApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.Source, err error)
+	ApplyStatus(ctx context.Context, source *applyconfigurationodigosv1alpha1.SourceApplyConfiguration, opts v1.ApplyOptions) (result *odigosv1alpha1.Source, err error)
 	SourceExpansion
 }
 
 // sources implements SourceInterface
 type sources struct {
-	*gentype.ClientWithListAndApply[*v1alpha1.Source, *v1alpha1.SourceList, *odigosv1alpha1.SourceApplyConfiguration]
+	*gentype.ClientWithListAndApply[*odigosv1alpha1.Source, *odigosv1alpha1.SourceList, *applyconfigurationodigosv1alpha1.SourceApplyConfiguration]
 }
 
 // newSources returns a Sources
 func newSources(c *OdigosV1alpha1Client, namespace string) *sources {
 	return &sources{
-		gentype.NewClientWithListAndApply[*v1alpha1.Source, *v1alpha1.SourceList, *odigosv1alpha1.SourceApplyConfiguration](
+		gentype.NewClientWithListAndApply[*odigosv1alpha1.Source, *odigosv1alpha1.SourceList, *applyconfigurationodigosv1alpha1.SourceApplyConfiguration](
 			"sources",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.Source { return &v1alpha1.Source{} },
-			func() *v1alpha1.SourceList { return &v1alpha1.SourceList{} }),
+			func() *odigosv1alpha1.Source { return &odigosv1alpha1.Source{} },
+			func() *odigosv1alpha1.SourceList { return &odigosv1alpha1.SourceList{} },
+		),
 	}
 }

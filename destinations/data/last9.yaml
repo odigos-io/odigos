@@ -20,7 +20,6 @@ spec:
       componentProps:
         type: text
         required: true
-        tooltip: 'Last9 OpenTelemetry Endpoint. Can be found at https://app.last9.io/integrations?category=all&integration=OpenTelemetry'
     - name: LAST9_OTLP_BASIC_AUTH_HEADER
       displayName: Basic Auth Header
       componentType: input
@@ -28,4 +27,4 @@ spec:
       componentProps:
         type: password
         required: true
-        placeholder: "Basic ..."
+        placeholder: 'Basic ...'

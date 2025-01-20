@@ -25,7 +25,6 @@ func (n *Dynatrace) DestType() common.DestinationType {
 }
 
 func (n *Dynatrace) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
-
 	if !n.requiredVarsExists(dest) {
 		return errors.New("Dynatrace config is missing required variables")
 	}

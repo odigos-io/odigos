@@ -1,0 +1,14 @@
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: 01-source-without-labels
+  namespace: default
+  labels:
+    odigos.io/workload-kind: Deployment
+    odigos.io/workload-namespace: default
+    odigos.io/workload-name: source-without-labels
+spec:
+  workload:
+    name: source-without-labels
+    namespace: default
+    kind: Deployment

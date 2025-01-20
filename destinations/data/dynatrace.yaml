@@ -20,6 +20,7 @@ spec:
       componentProps:
         type: text
         required: true
+        placeholder: https://{your-environment-id}.live.dynatrace.com
     - name: DYNATRACE_API_TOKEN
       displayName: API Access Token
       componentType: input

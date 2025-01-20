@@ -1,6 +1,48 @@
 TAG ?= $(shell odigos version --cluster)
 ODIGOS_CLI_VERSION ?= $(shell odigos version --cli)
 ORG ?= keyval
+GOLANGCI_LINT_VERSION ?= v1.63.4
+GOLANGCI_LINT := $(shell go env GOPATH)/bin/golangci-lint
+GO_MODULES := $(shell find . -type f -name "go.mod" -not -path "*/vendor/*" -exec dirname {} \;)
+LINT_CMD = golangci-lint run -c ../.golangci.yml
+ifdef FIX_LINT
+    LINT_CMD += --fix
+endif
+
+.PHONY: install-golangci-lint
+install-golangci-lint:
+	@if ! which golangci-lint >/dev/null || [ "$$(golangci-lint version 2>&1 | head -n 1 | awk '{print "v"$$4}')" != "$(GOLANGCI_LINT_VERSION)" ]; then \
+		echo "Installing golangci-lint $(GOLANGCI_LINT_VERSION)..."; \
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin $(GOLANGCI_LINT_VERSION); \
+	else \
+		echo "golangci-lint $(GOLANGCI_LINT_VERSION) is already installed"; \
+	fi
+
+.PHONY: lint
+lint: install-golangci-lint
+ifdef MODULE
+	@echo "Running lint for module: $(MODULE)"
+	@if [ ! -d "$(MODULE)" ]; then \
+		echo "Error: Directory $(MODULE) does not exist"; \
+		exit 1; \
+	fi
+	@if [ ! -f "$(MODULE)/go.mod" ]; then \
+		echo "Error: $(MODULE) is not a Go module (no go.mod found)"; \
+		exit 1; \
+	fi
+	@cd $(MODULE) && $(LINT_CMD) ./...
+else
+	@echo "No MODULE specified, running lint for all Go modules..."
+	@for module in $(GO_MODULES); do \
+		echo "Running lint for $$module"; \
+		(cd $$module && $(LINT_CMD) ./...) || exit 1; \
+	done
+endif
+
+.PHONY: lint-fix
+lint-fix:
+	MODULE=common make lint FIX_LINT=true
+	MODULE=k8sutils make lint FIX_LINT=true
 
 .PHONY: build-odiglet
 build-odiglet:

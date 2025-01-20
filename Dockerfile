@@ -1,11 +1,12 @@
 FROM --platform=$BUILDPLATFORM golang:1.23 AS builder
 ARG SERVICE_NAME
 
-# Copyy local modules required by the build
+# Copy local modules required by the build
 WORKDIR /workspace
 COPY api/ api/
 COPY common/ common/
 COPY k8sutils/ k8sutils/
+COPY profiles/ profiles/
 
 WORKDIR /workspace/$SERVICE_NAME
 RUN mkdir -p /workspace/build

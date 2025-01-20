@@ -10,10 +10,11 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	criapi "k8s.io/cri-api/pkg/apis/runtime/v1"
+
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 )
 
 var (
@@ -79,7 +80,6 @@ func (rc *CriClient) Connect(ctx context.Context) error {
 
 	rc.Logger.Info("Successfully connected to CRI runtime", "endpoint", endpoint)
 	return nil
-
 }
 
 // GetContainerInfo retrieves the "info" field of the specified container.
@@ -154,6 +154,12 @@ func (rc *CriClient) GetContainerEnvVarsList(ctx context.Context, envVarKeys []s
 	result := make([]odigosv1.EnvVar, 0, len(envVarKeys))
 	for _, key := range envVarKeys {
 		if value, exists := envVars[key]; exists {
+			// If the environment variable originates from the device, it will still be observed in the CRI.
+			// In this case, it should not be set as envFromContainerRuntime.
+			// We can be certain that it is not coming from the manifest, as CRI is only queried when the variable is not found in the manifest.
+			if strings.Contains(value, "/var/odigos") {
+				continue
+			}
 			result = append(result, odigosv1.EnvVar{Name: key, Value: value})
 		}
 	}

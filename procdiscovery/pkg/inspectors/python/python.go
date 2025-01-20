@@ -20,7 +20,7 @@ const (
 )
 
 func (p *PythonInspector) Inspect(proc *process.Details) (common.ProgrammingLanguage, bool) {
-	if strings.Contains(proc.ExeName, pythonProcessName) || strings.Contains(proc.CmdLine, pythonProcessName) {
+	if strings.Contains(proc.ExePath, pythonProcessName) || strings.Contains(proc.CmdLine, pythonProcessName) {
 		return common.PythonProgrammingLanguage, true
 	}
 

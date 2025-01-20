@@ -45,7 +45,7 @@ export const ConditionDetails: React.FC<Props> = ({ conditions = [] }) => {
   const loading = useMemo(() => !conditions.length, [conditions]);
   const errors = useMemo(() => conditions.filter(({ status }) => status === BACKEND_BOOLEAN.FALSE), [conditions]);
   const hasErrors = !!errors.length;
-  const headerText = loading ? 'Loading...' : hasErrors ? 'Operation Failed' : 'Operation Successful';
+  const headerText = loading ? 'Loading...' : hasErrors ? 'Instrumentation Failed' : 'Instrumentation Successful';
   const HeaderIcon = getStatusIcon(hasErrors ? NOTIFICATION_TYPE.ERROR : NOTIFICATION_TYPE.SUCCESS);
 
   return (

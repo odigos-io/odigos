@@ -5,7 +5,7 @@ import { TrashIcon } from '@/assets';
 import { useAppStore } from '@/store';
 import styled from 'styled-components';
 import { DeleteWarning } from '@/components';
-import { OVERVIEW_ENTITY_TYPES } from '@/types';
+import { K8sActualSource, OVERVIEW_ENTITY_TYPES } from '@/types';
 import { useSourceCRUD, useTransition } from '@/hooks';
 import { Badge, Button, Divider, Text } from '@/reuseable-components';
 
@@ -50,10 +50,10 @@ export const MultiSourceControl = () => {
   };
 
   const onDelete = () => {
-    const payload = {};
+    const payload: Record<string, K8sActualSource[]> = {};
 
-    Object.entries(configuredSources).forEach(([namespace, sources]) => {
-      payload[namespace] = sources.map(({ name, kind }) => ({ name, kind, selected: false }));
+    Object.entries(configuredSources).forEach(([namespace, sources]: [string, K8sActualSource[]]) => {
+      payload[namespace] = sources.map((source) => ({ ...source, selected: false }));
     });
 
     persistSources(payload, {});

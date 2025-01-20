@@ -1,4 +1,4 @@
-import { getCrdById, getCrdIds, updateEntity } from '../functions';
+import { awaitToast, getCrdById, getCrdIds, updateEntity } from '../functions';
 import { BUTTONS, CRD_IDS, CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
 
 // The number of CRDs that exist in the cluster before running any tests should be 0.
@@ -20,18 +20,15 @@ describe('Sources CRUD', () => {
       cy.get(DATA_IDS.MODAL_ADD_SOURCE).should('exist');
       cy.get(DATA_IDS.SELECT_NAMESPACE).find(DATA_IDS.CHECKBOX).click();
 
-      // Wait for 3 seconds to allow the namespace & it's resources to be loaded into the UI
-      cy.wait(3000).then(() => {
-        cy.contains('button', BUTTONS.DONE).click();
+      SELECTED_ENTITIES.NAMESPACE_SOURCES.forEach((sourceName) => {
+        cy.get(DATA_IDS.SELECT_NAMESPACE).get(DATA_IDS.SELECT_SOURCE(sourceName)).contains(sourceName).should('exist');
+      });
 
-        cy.wait('@gql').then(() => {
-          getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 5 }, () => {
-            // Wait for 10 seconds to allow the backend to batch an SSE notification
-            cy.wait(10000).then(() => {
-              cy.get(DATA_IDS.NOTIF_MANAGER_BUTTON).click();
-              cy.get(DATA_IDS.NOTIF_MANAGER_CONTENR).contains(TEXTS.NOTIF_SOURCES_CREATED).should('exist');
-            });
-          });
+      cy.contains('button', BUTTONS.DONE).click();
+
+      cy.wait('@gql').then(() => {
+        awaitToast({ withSSE: true, message: TEXTS.NOTIF_SOURCES_CREATED(5) }, () => {
+          getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 5 });
         });
       });
     });
@@ -53,7 +50,9 @@ describe('Sources CRUD', () => {
             getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 5 }, (crdIds) => {
               const crdId = CRD_IDS.SOURCE;
               expect(crdIds).includes(crdId);
-              getCrdById({ namespace, crdName, crdId, expectedError: '', expectedKey: 'serviceName', expectedValue: TEXTS.UPDATED_NAME });
+              awaitToast({ withSSE: false, message: TEXTS.NOTIF_SOURCES_UPDATED(1) }, () => {
+                getCrdById({ namespace, crdName, crdId, expectedError: '', expectedKey: 'serviceName', expectedValue: TEXTS.UPDATED_NAME });
+              });
             });
           });
         },
@@ -72,12 +71,8 @@ describe('Sources CRUD', () => {
       cy.get(DATA_IDS.APPROVE).click();
 
       cy.wait('@gql').then(() => {
-        getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 }, () => {
-          // Wait for 10 seconds to allow the backend to batch an SSE notification
-          cy.wait(10000).then(() => {
-            cy.get(DATA_IDS.NOTIF_MANAGER_BUTTON).click();
-            cy.get(DATA_IDS.NOTIF_MANAGER_CONTENR).contains(TEXTS.NOTIF_SOURCES_DELETED).should('exist');
-          });
+        awaitToast({ withSSE: true, message: TEXTS.NOTIF_SOURCES_DELETED(5) }, () => {
+          getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
         });
       });
     });

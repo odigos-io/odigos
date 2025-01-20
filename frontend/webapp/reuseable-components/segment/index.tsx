@@ -1,4 +1,4 @@
-import React, { CSSProperties, useEffect, useRef, useState } from 'react';
+import React, { CSSProperties, useEffect, useId, useRef, useState } from 'react';
 import { SVG } from '@/assets';
 import { Text } from '../text';
 import { FlexRow } from '@/styles';
@@ -77,6 +77,7 @@ export const Segment: React.FC<Props> = ({ options = [], selected, setSelected }
 
         return (
           <Button
+            key={useId()}
             ref={isSelected ? selectedRef : undefined}
             $isFirstItem={idx === 0}
             $isLastItem={idx === options.length - 1}

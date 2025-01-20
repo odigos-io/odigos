@@ -22,7 +22,6 @@ func (g *OTLPHttp) DestType() common.DestinationType {
 }
 
 func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
-
 	url, exists := dest.GetConfig()[otlpHttpEndpointKey]
 	if !exists {
 		return errors.New("OTLP http endpoint not specified, gateway will not be configured for otlp http")
@@ -33,10 +32,7 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		return errors.Join(err, errors.New("otlp http endpoint invalid, gateway will not be configured for otlp http"))
 	}
 
-	basicAuthExtensionName, basicAuthExtensionConf, err := applyBasicAuth(dest)
-	if err != nil {
-		return errors.Join(err, errors.New("failed to apply basic auth to otlp http exporter"))
-	}
+	basicAuthExtensionName, basicAuthExtensionConf := applyBasicAuth(dest)
 
 	// add authenticator extension
 	if basicAuthExtensionName != "" && basicAuthExtensionConf != nil {
@@ -93,11 +89,10 @@ func parseOtlpHttpEndpoint(rawUrl string) (string, error) {
 	return noWhiteSpaces, nil
 }
 
-func applyBasicAuth(dest ExporterConfigurer) (extensionName string, extensionConf *GenericMap, err error) {
-
+func applyBasicAuth(dest ExporterConfigurer) (extensionName string, extensionConf *GenericMap) {
 	username := dest.GetConfig()[otlpHttpBasicAuthUsernameKey]
 	if username == "" {
-		return "", nil, nil
+		return "", nil
 	}
 
 	extensionName = "basicauth/otlphttp-" + dest.GetID()
@@ -108,5 +103,5 @@ func applyBasicAuth(dest ExporterConfigurer) (extensionName string, extensionCon
 		},
 	}
 
-	return extensionName, extensionConf, nil
+	return extensionName, extensionConf
 }

@@ -1,10 +1,10 @@
 import React, { useMemo } from 'react';
 import styled from 'styled-components';
-import { useSourceCRUD } from '@/hooks';
+import { usePaginatedSources, useSourceCRUD } from '@/hooks';
 import type { Node, NodeProps } from '@xyflow/react';
 import { useAppStore, usePendingStore } from '@/store';
-import { NODE_TYPES, OVERVIEW_ENTITY_TYPES } from '@/types';
-import { Badge, Checkbox, Text } from '@/reuseable-components';
+import { K8sActualSource, NODE_TYPES, OVERVIEW_ENTITY_TYPES } from '@/types';
+import { Badge, Checkbox, FadeLoader, Text } from '@/reuseable-components';
 
 interface Props
   extends NodeProps<
@@ -42,6 +42,7 @@ const HeaderNode: React.FC<Props> = ({ data }) => {
   const isSources = title === 'Sources';
 
   const { configuredSources, setConfiguredSources } = useAppStore();
+  const { sourcesFetching } = usePaginatedSources();
   const { isThisPending } = usePendingStore();
   const { sources } = useSourceCRUD();
 
@@ -60,7 +61,7 @@ const HeaderNode: React.FC<Props> = ({ data }) => {
 
     const onSelect = (bool: boolean) => {
       if (bool) {
-        const payload = {};
+        const payload: Record<string, K8sActualSource[]> = {};
 
         sources.forEach((source) => {
           const id = { namespace: source.namespace, name: source.name, kind: source.kind };
@@ -93,6 +94,7 @@ const HeaderNode: React.FC<Props> = ({ data }) => {
       {Icon && <Icon />}
       <Title size={14}>{title}</Title>
       <Badge label={tagValue} />
+      {isSources && sourcesFetching && <FadeLoader />}
 
       {renderActions()}
     </Container>

@@ -1,0 +1,10 @@
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: 13-invalid-namespace-name
+  namespace: default
+spec:
+  workload:
+    name: default
+    namespace: kube-system
+    kind: Namespace
