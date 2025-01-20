@@ -151,6 +151,7 @@ func NewMockSource(workloadObject client.Object) *odigosv1.Source {
 				k8sconsts.WorkloadNamespaceLabel: namespace,
 				k8sconsts.WorkloadKindLabel:      gvk.Kind,
 			},
+			Finalizers: []string{k8sconsts.DeleteInstrumentationConfigFinalizer},
 		},
 		Spec: odigosv1.SourceSpec{
 			Workload: workload.PodWorkload{

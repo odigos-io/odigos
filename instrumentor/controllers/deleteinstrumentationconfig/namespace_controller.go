@@ -20,8 +20,6 @@ import (
 	"context"
 
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
-	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -46,10 +44,6 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
-	if err := sourceutils.MigrateInstrumentationLabelToDisabledSource(ctx, r.Client, &ns, workload.WorkloadKindNamespace); err != nil {
-		return k8sutils.K8SUpdateErrorHandler(err)
-	}
-
 	enabled, err := sourceutils.IsObjectInstrumentedBySource(ctx, r.Client, &ns)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -57,6 +51,11 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	if enabled {
 		return ctrl.Result{}, err
 	}
+
+	// Request is used by common functions for Namespace and Workload reconciliation
+	// Since Namespace requests don't set a Namespace value (only Name), set it here
+	// So the common functions can rely on req.Namespace.
+	req.Namespace = req.Name
 
 	return ctrl.Result{}, syncNamespaceWorkloads(ctx, r.Client, req)
 }

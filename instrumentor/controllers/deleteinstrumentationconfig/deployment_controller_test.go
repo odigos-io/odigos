@@ -2,7 +2,6 @@ package deleteinstrumentationconfig_test
 
 import (
 	"context"
-	"time"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/instrumentor/internal/testutil"
@@ -17,7 +16,7 @@ var _ = Describe("deleteInstrumentationConfig Deployment controller", func() {
 	ctx := context.Background()
 	var namespace *corev1.Namespace
 	var deployment *appsv1.Deployment
-	var source *odigosv1.Source
+	var source, nsSource, depSource *odigosv1.Source
 	var instrumentationConfig *odigosv1.InstrumentationConfig
 
 	Describe("Delete InstrumentationConfig", func() {
@@ -28,7 +27,7 @@ var _ = Describe("deleteInstrumentationConfig Deployment controller", func() {
 				namespace = testutil.NewMockNamespace()
 				Expect(k8sClient.Create(ctx, namespace)).Should(Succeed())
 
-				deployment = testutil.SetOdigosInstrumentationEnabled(testutil.NewMockTestDeployment(namespace))
+				deployment = testutil.NewMockTestDeployment(namespace)
 				Expect(k8sClient.Create(ctx, deployment)).Should(Succeed())
 
 				source = testutil.NewMockSource(deployment)
@@ -38,15 +37,14 @@ var _ = Describe("deleteInstrumentationConfig Deployment controller", func() {
 				Expect(k8sClient.Create(ctx, instrumentationConfig)).Should(Succeed())
 			})
 
-			It("InstrumentationConfig retained after removing instrumentation label from deployment", func() {
-				deployment = testutil.DeleteOdigosInstrumentationLabel(deployment)
-				Expect(k8sClient.Update(ctx, deployment)).Should(Succeed())
-				testutil.AssertInstrumentationConfigRetained(ctx, k8sClient, instrumentationConfig)
+			It("InstrumentationConfig deleted after removing instrumentation source from deployment", func() {
+				Expect(k8sClient.Delete(ctx, source)).Should(Succeed())
+				testutil.AssertInstrumentationConfigDeleted(ctx, k8sClient, instrumentationConfig)
 			})
 
-			It("InstrumentationConfig deleted after setting instrumentation label to disabled", func() {
-				deployment = testutil.SetOdigosInstrumentationDisabled(deployment)
-				Expect(k8sClient.Update(ctx, deployment)).Should(Succeed())
+			It("InstrumentationConfig deleted after setting instrumentation source to disabled", func() {
+				source.Spec.DisableInstrumentation = true
+				Expect(k8sClient.Update(ctx, source)).Should(Succeed())
 				testutil.AssertInstrumentationConfigDeleted(ctx, k8sClient, instrumentationConfig)
 			})
 
@@ -55,31 +53,30 @@ var _ = Describe("deleteInstrumentationConfig Deployment controller", func() {
 		When("Namespace is instrumented", func() {
 
 			BeforeEach(func() {
-				namespace = testutil.SetOdigosInstrumentationEnabled(testutil.NewMockNamespace())
+				namespace = testutil.NewMockNamespace()
 				Expect(k8sClient.Create(ctx, namespace)).Should(Succeed())
 
-				source = testutil.NewMockSource(namespace)
-				Expect(k8sClient.Create(ctx, source)).Should(Succeed())
+				nsSource = testutil.NewMockSource(namespace)
+				Expect(k8sClient.Create(ctx, nsSource)).Should(Succeed())
 
-				deployment = testutil.SetOdigosInstrumentationEnabled(testutil.NewMockTestDeployment(namespace))
+				deployment = testutil.NewMockTestDeployment(namespace)
 				Expect(k8sClient.Create(ctx, deployment)).Should(Succeed())
 
-				source = testutil.NewMockSource(deployment)
-				Expect(k8sClient.Create(ctx, source)).Should(Succeed())
+				depSource = testutil.NewMockSource(deployment)
+				Expect(k8sClient.Create(ctx, depSource)).Should(Succeed())
 
 				instrumentationConfig = testutil.NewMockInstrumentationConfig(deployment)
 				Expect(k8sClient.Create(ctx, instrumentationConfig)).Should(Succeed())
 			})
 
-			It("InstrumentationConfig retain when removing instrumentation label from deployment", func() {
-				deployment = testutil.DeleteOdigosInstrumentationLabel(deployment)
-				Expect(k8sClient.Update(ctx, deployment)).Should(Succeed())
+			It("InstrumentationConfig retain when removing instrumentation source from deployment", func() {
+				Expect(k8sClient.Delete(ctx, depSource)).Should(Succeed())
 				testutil.AssertInstrumentationConfigRetained(ctx, k8sClient, instrumentationConfig)
 			})
 
-			It("InstrumentationConfig deleted after setting instrumentation label to disabled", func() {
-				deployment = testutil.SetOdigosInstrumentationDisabled(deployment)
-				Expect(k8sClient.Update(ctx, deployment)).Should(Succeed())
+			It("InstrumentationConfig deleted after setting instrumentation source to disabled", func() {
+				depSource.Spec.DisableInstrumentation = true
+				Expect(k8sClient.Update(ctx, depSource)).Should(Succeed())
 				testutil.AssertInstrumentationConfigDeleted(ctx, k8sClient, instrumentationConfig)
 			})
 		})
@@ -91,7 +88,7 @@ var _ = Describe("deleteInstrumentationConfig Deployment controller", func() {
 			namespace = testutil.NewMockNamespace()
 			Expect(k8sClient.Create(ctx, namespace)).Should(Succeed())
 
-			deployment = testutil.SetOdigosInstrumentationEnabled(testutil.NewMockTestDeployment(namespace))
+			deployment = testutil.NewMockTestDeployment(namespace)
 			deployment = testutil.SetReportedNameAnnotation(deployment, "test")
 			Expect(k8sClient.Create(ctx, deployment)).Should(Succeed())
 
@@ -102,17 +99,14 @@ var _ = Describe("deleteInstrumentationConfig Deployment controller", func() {
 			Expect(k8sClient.Create(ctx, instrumentationConfig)).Should(Succeed())
 		})
 
-		It("should delete the reported name annotation on instrumentation label disabled", func() {
+		It("should delete the reported name annotation on instrumentation source disabled", func() {
 
-			Eventually(func() error {
-				k8sClient.Get(ctx, client.ObjectKey{Namespace: deployment.GetNamespace(), Name: deployment.GetName()}, deployment)
-				deployment = testutil.SetOdigosInstrumentationDisabled(deployment)
-				return k8sClient.Update(ctx, deployment)
-			}, time.Second*2, time.Millisecond*250).Should(Succeed())
+			source.Spec.DisableInstrumentation = true
+			Expect(k8sClient.Update(ctx, source)).Should(Succeed())
 			testutil.AssertReportedNameAnnotationDeletedDeployment(ctx, k8sClient, deployment)
 		})
 
-		It("should retain other annotations on instrumentation label deleted", func() {
+		It("should retain other annotations on instrumentation source deleted", func() {
 
 			annotationKey := "test"
 			annotationValue := "test"
@@ -124,8 +118,7 @@ var _ = Describe("deleteInstrumentationConfig Deployment controller", func() {
 			deployment.Annotations[annotationKey] = annotationValue
 			Expect(k8sClient.Update(ctx, deployment)).Should(Succeed())
 
-			deployment = testutil.SetOdigosInstrumentationDisabled(deployment)
-			Expect(k8sClient.Update(ctx, deployment)).Should(Succeed())
+			Expect(k8sClient.Delete(ctx, source)).Should(Succeed())
 
 			testutil.AssertDeploymentAnnotationRetained(ctx, k8sClient, deployment, annotationKey, annotationValue)
 		})

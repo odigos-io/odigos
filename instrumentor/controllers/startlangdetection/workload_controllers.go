@@ -12,7 +12,6 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
-	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
@@ -45,16 +44,10 @@ func (r *StatefulSetReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind workload.WorkloadKind, req ctrl.Request, scheme *runtime.Scheme) (ctrl.Result, error) {
 	obj := workload.ClientObjectFromWorkloadKind(objKind)
-	instConfigName := workload.CalculateWorkloadRuntimeObjectName(req.Name, objKind)
 	err := getWorkloadObject(ctx, k8sClient, req, obj)
 	if err != nil {
 		// Deleted objects should be filtered in the event filter
 		return ctrl.Result{}, err
-	}
-
-	err = sourceutils.MigrateInstrumentationLabelToSource(ctx, k8sClient, obj, objKind)
-	if err != nil {
-		return k8sutils.K8SUpdateErrorHandler(err)
 	}
 
 	enabled, err := sourceutils.IsObjectInstrumentedBySource(ctx, k8sClient, obj)
@@ -65,6 +58,7 @@ func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind wor
 		return ctrl.Result{}, nil
 	}
 
+	instConfigName := workload.CalculateWorkloadRuntimeObjectName(req.Name, objKind)
 	err = requestOdigletsToCalculateRuntimeDetails(ctx, k8sClient, instConfigName, req.Namespace, obj, scheme)
 	return ctrl.Result{}, err
 }

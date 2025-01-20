@@ -21,10 +21,6 @@ import (
 func reconcileWorkloadObject(ctx context.Context, kubeClient client.Client, workloadObject client.Object) error {
 	logger := log.FromContext(ctx)
 
-	if err := sourceutils.MigrateInstrumentationLabelToDisabledSource(ctx, kubeClient, workloadObject, workload.WorkloadKindFromClientObject(workloadObject)); err != nil {
-		return err
-	}
-
 	instrumented, err := sourceutils.IsObjectInstrumentedBySource(ctx, kubeClient, workloadObject)
 	if err != nil {
 		return err
@@ -96,7 +92,7 @@ func listAndSyncWorkloadList(ctx context.Context,
 	logger.V(2).Info("Uninstrumenting workloads for Namespace Source", "name", req.Name, "namespace", req.Namespace, "kind", kind)
 
 	workloads := workload.ClientListObjectFromWorkloadKind(kind)
-	err := k8sClient.List(ctx, workloads, client.InNamespace(req.Name))
+	err := k8sClient.List(ctx, workloads, client.InNamespace(req.Namespace))
 	if client.IgnoreNotFound(err) != nil {
 		return err
 	}

@@ -25,6 +25,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 
 	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentationconfig"
+	"github.com/odigos-io/odigos/instrumentor/controllers/labelmigration"
 	"github.com/odigos-io/odigos/instrumentor/controllers/startlangdetection"
 	"github.com/odigos-io/odigos/instrumentor/sdks"
 
@@ -212,6 +213,12 @@ func main() {
 	err = instrumentationconfig.SetupWithManager(mgr)
 	if err != nil {
 		setupLog.Error(err, "unable to create controller for instrumentation rules")
+		os.Exit(1)
+	}
+
+	err = labelmigration.SetupWithManager(mgr)
+	if err != nil {
+		setupLog.Error(err, "unable to create controller for instrumentation label migration")
 		os.Exit(1)
 	}
 
