@@ -7,6 +7,6 @@ import (
 
 var DisableNameProcessorProfile = profile.Profile{
 	ProfileName:      common.ProfileName("disable-name-processor"),
-	MinimumTier:      common.OdigosTier(common.CommunityOdigosTier),
+	MinimumTier:      common.CommunityOdigosTier,
 	ShortDescription: "If not using dotnet or java native instrumentations, disable the name processor which is not needed",
 }
