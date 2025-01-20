@@ -34,12 +34,6 @@ export function useInstrumentationRuleFormData() {
     let ok = true;
 
     // Instru Rules don't have any specific validations yet, no required fields at this time
-    // Object.entries(formData).forEach(([k, v]) => {
-    //   switch (k) {
-    //     default:
-    //       break;
-    //   }
-    // });
 
     if (!ok && params?.withAlert) {
       addNotification({

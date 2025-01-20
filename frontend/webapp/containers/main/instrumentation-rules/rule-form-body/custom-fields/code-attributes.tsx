@@ -94,14 +94,11 @@ const CodeAttributes: React.FC<Props> = ({ value, setValue, formErrors }) => {
   const handleChange = (id: string, isAdd: boolean) => {
     const arr = isAdd ? [...mappedValue, id] : mappedValue.filter((str) => str !== id);
 
-    const payload: Parsed = {
-      [CodeAttributesType.COLUMN]: arr.includes(CodeAttributesType.COLUMN) ? true : null,
-      [CodeAttributesType.FILE_PATH]: arr.includes(CodeAttributesType.FILE_PATH) ? true : null,
-      [CodeAttributesType.FUNCTION]: arr.includes(CodeAttributesType.FUNCTION) ? true : null,
-      [CodeAttributesType.LINE_NUMBER]: arr.includes(CodeAttributesType.LINE_NUMBER) ? true : null,
-      [CodeAttributesType.NAMESPACE]: arr.includes(CodeAttributesType.NAMESPACE) ? true : null,
-      [CodeAttributesType.STACKTRACE]: arr.includes(CodeAttributesType.STACKTRACE) ? true : null,
-    };
+    const payload = Object.values(CodeAttributesType).reduce((acc, attribute) => {
+      // @ts-ignore - TS doesn't know that `acc` is initialized 2 rows below
+      acc[attribute] = arr.includes(attribute) ? true : null;
+      return acc;
+    }, {} as Parsed); // Explicitly initializing with an empty object as Parsed type
 
     setValue('codeAttributes', payload);
     setIsLastSelection(arr.length === 1);

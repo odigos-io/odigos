@@ -1,6 +1,7 @@
 import { useQuery } from '@apollo/client';
 import { DESCRIBE_ODIGOS } from '@/graphql';
 import type { DescribeOdigos } from '@/types';
+import { isEnterprise } from '@/utils';
 
 export const useDescribeOdigos = () => {
   const { data, loading, error } = useQuery<DescribeOdigos>(DESCRIBE_ODIGOS, {
@@ -40,10 +41,13 @@ export const useDescribeOdigos = () => {
     return payload;
   };
 
+  const isPro = isEnterprise(data?.describeOdigos.tier.value);
+
   return {
     loading,
     error,
     data: data?.describeOdigos,
+    isPro,
     restructureForPrettyMode,
   };
 };

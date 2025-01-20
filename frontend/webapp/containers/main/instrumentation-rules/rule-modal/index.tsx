@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { RuleFormBody } from '../';
 import { NOTIFICATION_TYPE } from '@/types';
 import { ACTION, FORM_ALERTS } from '@/utils';
-import { useNotificationStore } from '@/store';
 import { CenterThis, ModalBody } from '@/styles';
 import { RULE_OPTIONS, RuleOption } from './rule-options';
 import { useDescribeOdigos, useInstrumentationRuleCRUD, useInstrumentationRuleFormData, useKeyDown } from '@/hooks';
@@ -16,13 +15,11 @@ interface Props {
 export const RuleModal: React.FC<Props> = ({ isOpen, onClose }) => {
   useKeyDown({ key: 'Enter', active: isOpen }, () => handleSubmit());
 
-  const { data } = useDescribeOdigos();
-  const { addNotification } = useNotificationStore();
+  const { isPro } = useDescribeOdigos();
   const { createInstrumentationRule, loading } = useInstrumentationRuleCRUD({ onSuccess: handleClose });
   const { formData, formErrors, handleFormChange, resetFormData, validateForm } = useInstrumentationRuleFormData();
 
   const [selectedItem, setSelectedItem] = useState<RuleOption | undefined>(undefined);
-  const isPro = ['onprem', 'enterprise'].includes(data?.tier.value || '');
 
   function handleClose() {
     resetFormData();
