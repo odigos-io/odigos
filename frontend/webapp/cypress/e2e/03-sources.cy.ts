@@ -50,7 +50,7 @@ describe('Sources CRUD', () => {
             getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 5 }, (crdIds) => {
               const crdId = CRD_IDS.SOURCE;
               expect(crdIds).includes(crdId);
-              awaitToast({ withSSE: false, message: TEXTS.NOTIF_SOURCES_UPDATED(1) }, () => {
+              awaitToast({ withSSE: false, message: TEXTS.NOTIF_SOURCES_UPDATED(SELECTED_ENTITIES.SOURCE) }, () => {
                 getCrdById({ namespace, crdName, crdId, expectedError: '', expectedKey: 'serviceName', expectedValue: TEXTS.UPDATED_NAME });
               });
             });

@@ -69,8 +69,8 @@ export const useSourceCRUD = (params?: Params) => {
       // Not that there's anything about a watcher that would break the UI, it's just that we would receive unexpected events with ridiculous amounts,
       // (example: instrument 5 apps, update the name of 2, then uninstrument the other 3, we would get an SSE with minimum 10 updated sources, when we expect it to show only 2 due to name change).
       setTimeout(() => {
-        const sourceId = req?.variables?.sourceId;
-        const patchSourceRequest = req?.variables?.patchSourceRequest;
+        const sourceId = req?.variables?.sourceId as PatchSourceRequestInput['sourceId'];
+        const patchSourceRequest = req?.variables?.patchSourceRequest as PatchSourceRequestInput['patchSourceRequest'];
 
         updateSourceInStore(sourceId, patchSourceRequest);
         removePendingItems([{ entityType: OVERVIEW_ENTITY_TYPES.SOURCE, entityId: sourceId }]);
@@ -79,7 +79,7 @@ export const useSourceCRUD = (params?: Params) => {
         addNotification({
           type: NOTIFICATION_TYPE.SUCCESS,
           title: ACTION.UPDATE,
-          message: `Successfully updated "${sourceId}" source`,
+          message: `Successfully updated "${sourceId.name}" source`,
           crdType: OVERVIEW_ENTITY_TYPES.SOURCE,
           target: getSseTargetFromId(sourceId, OVERVIEW_ENTITY_TYPES.SOURCE),
         });
