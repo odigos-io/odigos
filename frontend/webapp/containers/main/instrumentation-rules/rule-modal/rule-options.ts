@@ -23,4 +23,13 @@ export const RULE_OPTIONS: RuleOption[] = [
     docsEndpoint: '/pipeline/rules/payloadcollection',
     docsDescription: 'The “Payload Collection” Rule can be used to add span attributes containing payload data to traces.',
   },
+  {
+    id: 'code_attributes',
+    label: 'Code Attributes',
+    description: 'Collect code attributes containing payload data to traces.',
+    type: InstrumentationRuleType.CODE_ATTRIBUTES,
+    icon: getRuleIcon(InstrumentationRuleType.CODE_ATTRIBUTES),
+    docsEndpoint: '/pipeline/rules/codeattributes',
+    docsDescription: 'The “Code Attributes” Rule can be used to add code attributes containing payload data to traces.',
+  },
 ];

@@ -20,5 +20,5 @@ spec:
       componentProps:
         type: text
         required: true
-        placeholder: "quickwit.example.com:7281"
-        tooltip: "The unencrypted gRPC endpoint of the Quickwit OTLP receiver (indexer component). The default Quickwit gRPC port if not changed is 7281"
+        placeholder: 'quickwit.example.com:7281'
+        tooltip: 'The unencrypted gRPC endpoint of the Quickwit OTLP receiver (indexer component). The default Quickwit gRPC port if not changed is `7281`'

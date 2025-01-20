@@ -20,6 +20,8 @@ spec:
       componentProps:
         type: text
         required: true
+        tooltip: If scheme is not provided, it defaults to `http`. If port is not provided, it defaults to `3100`. If path is not provided, it defaults to `/loki/api/v1/push`.
+        placeholder: http://<loki-host>:<loki-port>/loki/api/v1/push
     - name: LOKI_LABELS
       displayName: Labels
       componentType: multiInput

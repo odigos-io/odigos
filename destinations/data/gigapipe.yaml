@@ -16,32 +16,36 @@ spec:
   fields:
     - name: QRYN_API_SECRET
       displayName: API Secret
+      secret: true
       componentType: input
       componentProps:
         type: password
         required: true
-      secret: true
+        tooltip: The API Secret for your Gigapipe Account
     - name: QRYN_API_KEY
       displayName: API Key
       componentType: input
       componentProps:
         type: password
         required: true
+        tooltip: The API Token for your Gigapipe Account
     - name: QRYN_URL
       displayName: API Url
       componentType: input
       componentProps:
         type: text
         required: true
+        tooltip: The API Endpoint for your Gigapipe Account
+        placeholder: https://your-account.gigapipe.com
     - name: QRYN_RESOURCE_TO_TELEMETRY_CONVERSION
       displayName: Convert container attributes to labels
       componentType: checkbox
+      initialValue: true
       componentProps:
         required: false
-      initialValue: Yes
     - name: QRYN_ADD_EXPORTER_NAME
       displayName: Add exporter name to labels
       componentType: checkbox
+      initialValue: true
       componentProps:
         required: false
-      initialValue: Yes

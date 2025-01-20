@@ -18,3 +18,5 @@ spec:
       componentProps:
         type: text
         required: true
+        placeholder: http://mediator.causely:4317
+        tooltip: 'The endpoint URL is the combined `<protocol>://<hostname>:<port>` to access your Causely Mediator service. Protocol should be `http`; using `https` or omitting it will automatically be converted to `http`. Hostname should typically follow the format: `mediator.<namespace>`. Namespace is the k8s namespace where the Causely Mediator service is deployed. Port is optional and defaults to the default OTLP gRPC port `4317`'
