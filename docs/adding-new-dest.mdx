@@ -2,6 +2,7 @@
 title: "Adding New Observability Destination"
 description: "There are tens if not hundreds of different observability destinations. Odigos's goal is to provide a seamless and easy way to ship observability data to any one of them."
 sidebarTitle: 'Add Destinations'
+icon: 'signal-stream'
 ---
 
 In this guide, you will learn how to contribute a new destination to Odigos. We will create a new dummy destination called `mydest`.
@@ -36,6 +37,26 @@ For our new destination to be visible in the UI, we need to define the destinati
   <Step title="Add Destination Metadata">
     Go to [`destinations/data/`](https://github.com/odigos-io/odigos/tree/main/destinations/data) directory and create a new YAML file.
     - Example: `mydest.yaml`
+
+    <AccordionGroup>
+      <Accordion icon="circle-info" title="Allowed properties for `spec.fields[]`">
+        | Key | Example | Required | Description | Docs |
+        |---|---|:---:|---|:---:|
+        | name | `MYDEST_API_KEY` | ✅ | key name of the field | ✅ |
+        | displayName | `API Key` | ✅ | display name of the field | ✅ |
+        | secret | `true` | ❌ | is the field a secret? (e.g. password, token, etc.) | ❌ |
+        | initialValue | - | ❌ | default value for the field | ✅ |
+        | componentType | `input` | ✅ | one-of: `input` `textarea` `dropdown` `checkbox` `multiInput` `keyValuePairs` | ✅ |
+        | componentProps.type | `password` | ❌ | the type of value (e.g. string, number, password, etc.) | ✅ |
+        | componentProps.required | `true` | ❌ | is the field required? | ✅ |
+        | componentProps.values | - | ❌ | list of options for dropdown | ❌ |
+        | componentProps.placeholder | `glc_eyJvIj...` | ❌ | placeholder text for input | ✅ |
+        | componentProps.tooltip | `Obtained from your "My Dest" account` | ❌ | tooltip text for input | ✅ |
+        | renderCondition | `["MYDEST_URL", "!=", ""]` | ❌ | hide/show the field in the UI (form only)<br/><br/>one-of: `[boolean]`<br/>`[string, operator, any]`<br/><br/>where `string` is the key name of the dependancy field, and `operator` is one-of: `!=` `==` `>=` `<=` `>` `<` | ❌ |
+        | hideFromReadData | `["MYDEST_URL", "==", ""]` | ❌ | hide/show the field in the UI (read only)<br/><br/>one-of: `[boolean]`<br/>`[string, operator, any]`<br/><br/>where `string` is the key name of the dependancy field, and `operator` is one-of: `!=` `==` `>=` `<=` `>` `<` | ❌ |
+        | customReadDataLabels | - | ❌ | custom labels for the UI (read only) | ❌ |
+      </Accordion>
+    </AccordionGroup>
 
     ```yaml mydest.yaml
     apiVersion: internal.odigos.io/v1beta1
@@ -72,24 +93,6 @@ For our new destination to be visible in the UI, we need to define the destinati
             required: true
           secret: true
     ```
-
-    **Allowed properties for Destination Fields `spec.fields[]`:**
-
-    | Key | Example | Required | Description | Docs |
-    |---|---|:---:|---|:---:|
-    | name | `MYDEST_API_KEY` | ✅ | key name of the field | ✅ |
-    | displayName | `API Key` | ✅ | display name of the field | ✅ |
-    | secret | `true` | ❌ | is the field a secret? (e.g. password, token, etc.) | ❌ |
-    | initialValue | - | ❌ | default value for the field | ✅ |
-    | componentType | `input` | ✅ | one-of: `input` `textarea` `dropdown` `checkbox` `multiInput` `keyValuePairs` | ✅ |
-    | componentProps.type | `password` | ❌ | the type of value (e.g. string, number, password, etc.) | ✅ |
-    | componentProps.required | `true` | ❌ | is the field required? | ✅ |
-    | componentProps.values | - | ❌ | list of options for dropdown | ❌ |
-    | componentProps.placeholder | `glc_eyJvIj...` | ❌ | placeholder text for input | ✅ |
-    | componentProps.tooltip | `Obtained from your "My Dest" account` | ❌ | tooltip text for input | ✅ |
-    | renderCondition | `["MYDEST_URL", "!=", ""]` | ❌ | hide/show the field in the UI (form only)<br/><br/>one-of: `[boolean]`<br/>`[string, operator, any]`<br/><br/>where `string` is the key name of the dependancy field, and `operator` is one-of: `!=` `==` `>=` `<=` `>` `<` | ❌ |
-    | hideFromReadData | `["MYDEST_URL", "==", ""]` | ❌ | hide/show the field in the UI (read only)<br/><br/>one-of: `[boolean]`<br/>`[string, operator, any]`<br/><br/>where `string` is the key name of the dependancy field, and `operator` is one-of: `!=` `==` `>=` `<=` `>` `<` | ❌ |
-    | customReadDataLabels | - | ❌ | custom labels for the UI (read only) | ❌ |
   </Step>
 </Steps>
 
@@ -105,6 +108,20 @@ Now that our new vendor can be persisted/loaded in the Kubernetes data store, we
   <Step title="Add Collector Config">
     Go to [`common/config`](https://github.com/odigos-io/odigos/tree/main/common/config) directory and create a new GO file.
     - Example: `mydest.go`
+
+    <AccordionGroup>
+      <Accordion icon="circle-info" title="Explain Config">
+        - **DestType** - Returns the enum value of the destination added to [`common/dests.go`](https://github.com/odigos-io/odigos/tree/main/common/dests.go) in step 1.
+        - **ModifyConfig** - Is called with the `dest` object which holds the data received from the UI and the `currentConfig` object. The `currentConfig` object contains the current configuration of the gateway collector. Modify this object to include the [OpenTelemetry configuration](https://opentelemetry.io/docs/collector/configuration/) needed by your destination. You can assume a basic configuration is already provided in the `currentConfig` object, for details see `getBasicConfig` method in [`common/config/root.go`](https://github.com/odigos-io/odigos/tree/main/common/config/root.go) file.
+            - Make sure to give any exporter or pipeline a unique name in order to avoid conflicts, use the conventions:
+                - `otlp/<dest-name>-<dest.GetID()>` for OTel gRPC exporters
+                - `otlphttp/<dest-name>-<dest.GetID()>` for OTel HTTP exporters
+                - `traces/<dest-name>-<dest.GetID()>` for traces pipelines
+                - `metrics/<dest-name>-<dest.GetID()>` for metrics pipelines
+                - `logs/<dest-name>-<dest.GetID()>` for logs pipelines
+            - You can use the utility methods `isTracingEnabled`, `isMetricsEnabled` and `isLoggingEnabled` to determine which signals are selected by the user for the destination, and configure the collector accordingly.
+      </Accordion>
+    </AccordionGroup>
 
     ```go mydest.go
     package config
@@ -131,14 +148,13 @@ Now that our new vendor can be persisted/loaded in the Kubernetes data store, we
 
     func (m *MyDest) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
       config := dest.GetConfig()
-      apiKey, exists := config[apiKeyKey]
-      if !exists {
-        return errors.New("My Destination API key(\"MYDEST_API_KEY\") not specified, MyDest will not be configured")
-      }
+      // To make sure that the exporter and pipeline names are unique, we'll need to define a unique ID
+      uniqueUri := "mydest-" + dest.GetID()
 
       region, exists := config[regionKey]
       if !exists {
         region = "us"
+        return errors.New("Region (\"MYDEST_REGION\") not specified, MyDest will not be configured")
       }
 
       endpoint, exists := config[urlKey]
@@ -146,26 +162,36 @@ Now that our new vendor can be persisted/loaded in the Kubernetes data store, we
         endpoint = fmt.Sprintf("https://%s.mydest.com:4317", region)
       }
 
-      // to make sure that the exporter name is unique, we'll ask a ID from destination
-      exporterName := "otlp/mydest-" + dest.GetID()
-      currentConfig.Exporters["otlp/mydest"] = GenericMap{
+      // Modify the exporter here
+      exporterName := "otlp/" + uniqueUri
+      exporterConfig := GenericMap{
         "endpoint": endpoint,
         "headers": GenericMap{
-          "x-mydest-header-apikey": apiKey,
+          // The API Key is a secret, so we can't expose it in the config
+          "x-mydest-header-apikey": "${MYDEST_API_KEY}",
         },
       }
 
-      // Modify the config here
+      currentConfig.Exporters[exporterName] = exporterConfig
+
+      // Modify the pipelines here
       if isTracingEnabled(dest) {
-        tracesPipelineName := "traces/mydest-" + dest.GetID()
-        currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
+        pipeName := "traces/" + uniqueUri
+        currentConfig.Service.Pipelines[pipeName] = Pipeline{
           Exporters: []string{exporterName},
         }
       }
 
       if isMetricsEnabled(dest) {
-        metricsPipelineName := "metrics/mydest-" + dest.GetID()
-        currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
+        pipeName := "metrics/" + uniqueUri
+        currentConfig.Service.Pipelines[pipeName] = Pipeline{
+          Exporters: []string{exporterName},
+        }
+      }
+
+      if isLoggingEnabled(dest) {
+        pipeName := "logs/" + uniqueUri
+        currentConfig.Service.Pipelines[pipeName] = Pipeline{
           Exporters: []string{exporterName},
         }
       }
@@ -173,10 +199,6 @@ Now that our new vendor can be persisted/loaded in the Kubernetes data store, we
       return nil
     }
     ```
-
-    - The method `DestType` returns the enum value of the destination added earlier.
-    - The method `ModifyConfig` is called with the `dest` object which holds the data received from the UI and the `currentConfig` object. The `currentConfig` object contains the current configuration of the gateway collector. Modify this object to include the [OpenTelemetry configuration](https://opentelemetry.io/docs/collector/configuration/) needed by your destination. Make sure to give any exporter or pipeline a unique name in order to avoid conflicts (use the convention `traces/<dest-name>-<dest.GetID()>` for traces pipelines and `otlp/<dest-name>-<dest.GetID()>` for OpenTelemetry exporters). You can assume a basic configuration is already provided in the `currentConfig` object, for details see `getBasicConfig` method in `common/config/root.go` file.
-    - You can use the utility methods `isTracingEnabled`, `isMetricsEnabled` and `isLoggingEnabled` to determine which signals are selected by the user for the destination and configure the collector accordingly.
   </Step>
   <Step title="Add Available Config">
     Go to [`common/config/root.go`](https://github.com/odigos-io/odigos/tree/main/common/config/root.go) and add the new destination to the `availableConfigers` list.
@@ -213,16 +235,17 @@ Now that our new vendor can be persisted/loaded in the Kubernetes data store, we
 
     ```mdx mydest.mdx
     {/*
-        Add custom content here (under this comment)...
-
-        e.g:
-        [🔗 website](https://odigos.io)
-
         !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
         !! START CUSTOM EDIT !!
     */}
 
     <img src='/mydest.svg' alt='mydest' width="100" height="100" className="not-prose" />
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
 
     {/*
         !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
