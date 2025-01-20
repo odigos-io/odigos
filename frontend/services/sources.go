@@ -18,6 +18,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -289,20 +290,21 @@ func GetSourceCRD(ctx context.Context, nsName string, workloadName string, workl
 	return &list.Items[0], err
 }
 
-func createSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) error {
+func createSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) (*v1alpha1.Source, error) {
 	err := CheckWorkloadKindForSourceCRD(workloadKind)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	source, err := GetSourceCRD(ctx, nsName, workloadName, workloadKind)
 	if source != nil {
-		// source already exists, do not create a new one
-		return nil
+		// source already exists, do not create a new one, instead update so it's not disabled anymore
+		source, err = updateSourceCRD(ctx, nsName, source.Name, false)
+		return source, err
 	}
 	if err != nil && !strings.Contains(err.Error(), "not found") {
 		// error occurred while trying to get the source
-		return err
+		return nil, err
 	}
 
 	newSource := &v1alpha1.Source{
@@ -318,8 +320,15 @@ func createSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		},
 	}
 
-	_, err = kube.DefaultClient.OdigosClient.Sources(nsName).Create(ctx, newSource, metav1.CreateOptions{})
-	return err
+	source, err = kube.DefaultClient.OdigosClient.Sources(nsName).Create(ctx, newSource, metav1.CreateOptions{})
+	return source, err
+}
+
+func updateSourceCRD(ctx context.Context, nsName string, crdName string, disableInstrumentation bool) (*v1alpha1.Source, error) {
+	patch := fmt.Sprintf(`[{"op": "replace", "path": "/spec/disableInstrumentation", "value": %v}]`, disableInstrumentation)
+
+	source, err := kube.DefaultClient.OdigosClient.Sources(nsName).Patch(ctx, crdName, types.JSONPatchType, []byte(patch), metav1.PatchOptions{})
+	return source, err
 }
 
 func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) error {
@@ -328,6 +337,27 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		return err
 	}
 
+	if workloadKind != WorkloadKindNamespace {
+		// Check for namespace source first
+		nsSource, err := GetSourceCRD(ctx, nsName, nsName, WorkloadKindNamespace)
+		if err != nil && !strings.Contains(err.Error(), "not found") {
+			return err
+		}
+
+		if nsSource != nil {
+			// namespace source exists, we need to add "DisableInstrumentation" to the workload source
+			// note: create will return an existing crd without throwing an error
+			source, err := createSourceCRD(ctx, nsName, workloadName, workloadKind)
+			if err != nil {
+				return err
+			}
+
+			_, err = updateSourceCRD(ctx, nsName, source.Name, true)
+			return err
+		}
+	}
+
+	// namespace source does not exist, we need to delete the workload source
 	source, err := GetSourceCRD(ctx, nsName, workloadName, workloadKind)
 	if err != nil {
 		return err
@@ -335,11 +365,13 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 
 	err = kube.DefaultClient.OdigosClient.Sources(nsName).Delete(ctx, source.Name, metav1.DeleteOptions{})
 	return err
+
 }
 
 func ToggleSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind, enabled bool) error {
 	if enabled {
-		return createSourceCRD(ctx, nsName, workloadName, workloadKind)
+		_, err := createSourceCRD(ctx, nsName, workloadName, workloadKind)
+		return err
 	} else {
 		return deleteSourceCRD(ctx, nsName, workloadName, workloadKind)
 	}

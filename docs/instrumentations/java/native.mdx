@@ -1,9 +1,14 @@
 ---
-title: "Java Native Instrumentation"
-sidebarTitle: "Native instrumentation"
+title: 'Automatic Instrumentation'
+sidebarTitle: 'Native'
+icon: 'java'
 ---
 
-<Info> Native Java Instrumentation is currently the default settings of Odigos open-source version. </Info>
+<Info>
+  Native Instrumentation is currently the default setting of Odigos **Open-Source** version.
+
+  For eBPF-Based Instrumentation [click here](/instrumentations/java/ebpf).
+</Info>
 
 ## Supported Versions
 
@@ -22,6 +27,7 @@ If you use one of the supported logger libraries, the trace id and span id will 
 The following Java modules will be auto instrumented by Odigos:
 
 ### HTTP Frameworks
+
 - [`play-ws`](https://central.sonatype.com/artifact/com.typesafe.play/play-ws_3) `versions >=1.0.0 <2.1.0`
 - [`jaxrs`](https://central.sonatype.com/artifact/com.jslsolucoes/jaxrs) `versions >=0.5`
 - [`resteasy-jaxrs`](https://central.sonatype.com/artifact/org.jboss.resteasy/resteasy-jaxrs) `versions >=3.0.0 <4.0.0`
@@ -35,12 +41,14 @@ The following Java modules will be auto instrumented by Odigos:
 - [`ktor-server-core`](https://central.sonatype.com/artifact/io.ktor/ktor-server-core) `versions >=2.0.0`
 
 ### HTTP Clients
+
 - [`okhttp`](https://central.sonatype.com/artifact/com.squareup.okhttp/okhttp) `versions >=3.0.0`
 - [`httpasyncclient`](https://central.sonatype.com/artifact/org.apache.httpcomponents/httpasyncclient) `versions >=4.1`
 - [`reactor-netty-http`](https://central.sonatype.com/artifact/io.projectreactor.netty/reactor-netty-http) `versions >=1.0.0`
 - [`cxf-rt-frontend-jaxrs`](https://central.sonatype.com/artifact/org.apache.cxf/cxf-rt-frontend-jaxrs) `versions >=3.2 <4.0.0`
 
 ### Database Clients, ORMs, and Data Access Libraries
+
 - [`jedis`](https://central.sonatype.com/artifact/redis.clients/jedis) `versions >=1.4.0 <4.0.0`
 - [`couchbase-java-client`](https://central.sonatype.com/artifact/org.testcontainers/couchbase) `versions >=2.0.0`
 - [`spring-data-commons`](https://central.sonatype.com/artifact/org.springframework.data/spring-data-commons) `versions >=1.8.0`
@@ -51,6 +59,7 @@ The following Java modules will be auto instrumented by Odigos:
 - [`elasticsearch-rest`](https://central.sonatype.com/artifact/org.apache.camel/camel-elasticsearch-rest) `versions >=7.0`
 
 ### Messaging Systems Clients
+
 - [`spring-rabbit`](https://central.sonatype.com/artifact/org.springframework.amqp/spring-rabbit) `versions >=1.6.4 <2.1.1`
 - [`spring-kafka`](https://central.sonatype.com/artifact/org.springframework.kafka/spring-kafka) `versions >=2.7`
 - [`rocketmq-client-java`](https://central.sonatype.com/artifact/org.apache.rocketmq/rocketmq-client-java) `versions >=4.0.0`
@@ -58,17 +67,21 @@ The following Java modules will be auto instrumented by Odigos:
 - [`spring-jms`](https://central.sonatype.com/artifact/org.springframework/spring-jms) `versions >=2.0`
 
 ### RPC (Remote Procedure Call)
+
 - [`dubbo`](https://central.sonatype.com/artifact/com.alibaba/dubbo) `versions >=2.7`
 - [`grpc-core`](https://central.sonatype.com/artifact/io.grpc/grpc-core) `versions >=1.6.0`
 - [`finagle-http`](https://central.sonatype.com/artifact/com.twitter/finagle-http_2.12) `versions >=23.11.0`
 
 ### Security
+
 - [`spring-security-config`](https://central.sonatype.com/artifact/org.springframework.security/spring-security-config) `versions >=6.0.0`
 
 ### Container Orchestration
+
 - [`kubernetes-client`](https://central.sonatype.com/artifact/io.fabric8/kubernetes-client) `versions >=7.0.0`
 
 ### Java Core Modules
+
 - [`spring-aop`](https://central.sonatype.com/artifact/org.springframework/spring-aop) `versions >=1.2`
 - [`spring-context`](https://central.sonatype.com/artifact/org.springframework/spring-context) `versions >=4.0.0 <6.0.0`
 - [`spring-core`](https://central.sonatype.com/artifact/org.springframework/spring-core) `versions >=2.0.`

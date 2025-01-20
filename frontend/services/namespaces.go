@@ -10,6 +10,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/client"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 
 	"golang.org/x/sync/errgroup"
@@ -26,7 +27,9 @@ type GetNamespacesResponse struct {
 }
 
 func GetK8SNamespaces(ctx context.Context) (GetNamespacesResponse, error) {
-	relevantNameSpaces, err := getRelevantNameSpaces(ctx, consts.DefaultOdigosNamespace)
+	ns := env.GetCurrentNamespace()
+
+	relevantNameSpaces, err := getRelevantNameSpaces(ctx, ns)
 	if err != nil {
 		return GetNamespacesResponse{}, err
 	}
@@ -41,10 +44,10 @@ func GetK8SNamespaces(ctx context.Context) (GetNamespacesResponse, error) {
 			return GetNamespacesResponse{}, err
 		}
 
-		selected := source != nil
+		instrumented := source != nil && !source.Spec.DisableInstrumentation
 		response.Namespaces = append(response.Namespaces, model.K8sActualNamespace{
 			Name:     nsName,
-			Selected: selected,
+			Selected: instrumented,
 		})
 	}
 

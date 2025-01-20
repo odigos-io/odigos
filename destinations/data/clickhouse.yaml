@@ -21,7 +21,7 @@ spec:
         type: text
         required: true
         placeholder: 'http://host:port'
-        tooltip: 'Clickhouse server address'
+        tooltip: 'The ClickHouse endpoint is the URL where the ClickHouse server is listening for incoming connections.'
     - name: CLICKHOUSE_USERNAME
       displayName: Username
       componentType: input
@@ -42,7 +42,7 @@ spec:
       componentType: checkbox
       componentProps:
         required: true
-        tooltip: 'Should the destination create the schema for you?'
+        tooltip: 'Should the destination create the schema for you? Set to `false` if you manage your own schema, or `true` to have Odigos create the schema for you'
       initialValue: true
     - name: CLICKHOUSE_DATABASE_NAME
       displayName: Database Name
@@ -50,7 +50,7 @@ spec:
       componentProps:
         type: text
         required: true
-        tooltip: 'Name of the ClickHouse Database to use, which you should have created already'
+        tooltip: 'The name of the Clickhouse Database where the telemetry data will be stored. The Database will not be created when not exists, so make sure you have created it before'
       initialValue: otel
     - name: CLICKHOUSE_TRACES_TABLE
       displayName: Traces Table
