@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	k8sutilsconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -105,7 +105,7 @@ func getResourceSettings(odigosConfig common.OdigosConfiguration) odigosv1.Colle
 
 func newNodeCollectorGroup(odigosConfig common.OdigosConfiguration) *odigosv1.CollectorsGroup {
 
-	ownMetricsPort := k8sutilsconsts.OdigosNodeCollectorOwnTelemetryPortDefault
+	ownMetricsPort := k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault
 	if odigosConfig.CollectorNode != nil && odigosConfig.CollectorNode.CollectorOwnMetricsPort != 0 {
 		ownMetricsPort = odigosConfig.CollectorNode.CollectorOwnMetricsPort
 	}
@@ -116,7 +116,7 @@ func newNodeCollectorGroup(odigosConfig common.OdigosConfiguration) *odigosv1.Co
 			APIVersion: "odigos.io/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      k8sutilsconsts.OdigosNodeCollectorDaemonSetName,
+			Name:      k8sconsts.OdigosNodeCollectorDaemonSetName,
 			Namespace: env.GetCurrentNamespace(),
 		},
 		Spec: odigosv1.CollectorsGroupSpec{
@@ -140,10 +140,10 @@ func sync(ctx context.Context, c client.Client) error {
 
 	if numberOfInstrumentedApps == 0 {
 		// TODO: should we delete the collector group if cluster collector is not ready?
-		return utils.DeleteCollectorGroup(ctx, c, namespace, k8sutilsconsts.OdigosNodeCollectorCollectorGroupName)
+		return utils.DeleteCollectorGroup(ctx, c, namespace, k8sconsts.OdigosNodeCollectorCollectorGroupName)
 	}
 
-	clusterCollectorGroup, err := utils.GetCollectorGroup(ctx, c, namespace, k8sutilsconsts.OdigosClusterCollectorCollectorGroupName)
+	clusterCollectorGroup, err := utils.GetCollectorGroup(ctx, c, namespace, k8sconsts.OdigosClusterCollectorCollectorGroupName)
 	if err != nil {
 		return client.IgnoreNotFound(err)
 	}

@@ -3,8 +3,8 @@ package clustercollectorsgroup
 import (
 	"context"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,12 +18,12 @@ func newClusterCollectorGroup(namespace string, resourcesSettings *odigosv1.Coll
 			APIVersion: "odigos.io/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      consts.OdigosClusterCollectorCollectorGroupName,
+			Name:      k8sconsts.OdigosClusterCollectorCollectorGroupName,
 			Namespace: namespace,
 		},
 		Spec: odigosv1.CollectorsGroupSpec{
 			Role:                    odigosv1.CollectorsGroupRoleClusterGateway,
-			CollectorOwnMetricsPort: consts.OdigosClusterCollectorOwnTelemetryPortDefault,
+			CollectorOwnMetricsPort: k8sconsts.OdigosClusterCollectorOwnTelemetryPortDefault,
 			ResourcesSettings:       *resourcesSettings,
 		},
 	}

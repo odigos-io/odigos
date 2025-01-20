@@ -4,8 +4,7 @@ import (
 	"context"
 	"errors"
 
-	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
-
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
