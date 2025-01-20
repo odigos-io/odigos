@@ -25,6 +25,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 
 	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentationconfig"
+	"github.com/odigos-io/odigos/instrumentor/controllers/labelmigration"
 	"github.com/odigos-io/odigos/instrumentor/controllers/startlangdetection"
 	"github.com/odigos-io/odigos/instrumentor/sdks"
 
@@ -215,27 +216,24 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = builder.
-		WebhookManagedBy(mgr).
-		For(&odigosv1.Source{}).
-		WithDefaulter(&SourcesDefaulter{
-			Client: mgr.GetClient(),
-		}).
-		Complete()
+	err = labelmigration.SetupWithManager(mgr)
 	if err != nil {
-		setupLog.Error(err, "unable to create Sources mutating webhook")
+		setupLog.Error(err, "unable to create controller for instrumentation label migration")
 		os.Exit(1)
 	}
 
 	err = builder.
 		WebhookManagedBy(mgr).
 		For(&odigosv1.Source{}).
+		WithDefaulter(&SourcesDefaulter{
+			Client: mgr.GetClient(),
+		}).
 		WithValidator(&SourcesValidator{
 			Client: mgr.GetClient(),
 		}).
 		Complete()
 	if err != nil {
-		setupLog.Error(err, "unable to create Sources validating webhook")
+		setupLog.Error(err, "unable to create Sources webhooks")
 		os.Exit(1)
 	}
 

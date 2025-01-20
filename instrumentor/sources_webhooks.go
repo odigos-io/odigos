@@ -68,7 +68,7 @@ func (s *SourcesDefaulter) Default(ctx context.Context, obj runtime.Object) erro
 	// Vice versa for an excluded Source that has `spec.disableInstrumentation` removed.
 	// These checks make sure that the right type of Source has the right type of finalizer
 	// by toggling what finalizer is set.
-	if !v1alpha1.IsExcludedSource(source) {
+	if !v1alpha1.IsDisabledSource(source) {
 		if !controllerutil.ContainsFinalizer(source, consts.DeleteInstrumentationConfigFinalizer) && !k8sutils.IsTerminating(source) {
 			controllerutil.AddFinalizer(source, consts.DeleteInstrumentationConfigFinalizer)
 		}
@@ -76,7 +76,7 @@ func (s *SourcesDefaulter) Default(ctx context.Context, obj runtime.Object) erro
 			controllerutil.RemoveFinalizer(source, consts.StartLangDetectionFinalizer)
 		}
 	}
-	if v1alpha1.IsExcludedSource(source) {
+	if v1alpha1.IsDisabledSource(source) {
 		if controllerutil.ContainsFinalizer(source, consts.DeleteInstrumentationConfigFinalizer) {
 			controllerutil.RemoveFinalizer(source, consts.DeleteInstrumentationConfigFinalizer)
 		}
@@ -234,7 +234,7 @@ func (s *SourcesValidator) validateSourceFields(ctx context.Context, source *v1a
 		))
 	}
 
-	if source.Spec.Workload.Kind == "Namespace" &&
+	if source.Spec.Workload.Kind == workload.WorkloadKindNamespace &&
 		(source.Spec.Workload.Name != source.Spec.Workload.Namespace) {
 		allErrs = append(allErrs, field.Invalid(
 			field.NewPath("spec").Child("workload").Child("namespace"),
@@ -244,7 +244,7 @@ func (s *SourcesValidator) validateSourceFields(ctx context.Context, source *v1a
 	}
 
 	validKind := workload.IsValidWorkloadKind(source.Spec.Workload.Kind)
-	if !validKind && source.Spec.Workload.Kind != "Namespace" {
+	if !validKind {
 		allErrs = append(allErrs, field.Invalid(
 			field.NewPath("spec").Child("workload").Child("kind"),
 			source.Spec.Workload.Kind,
@@ -270,7 +270,7 @@ func (s *SourcesValidator) validateSourceUniqueness(ctx context.Context, source 
 		consts.WorkloadNamespaceLabel: source.Labels[consts.WorkloadNamespaceLabel],
 		consts.WorkloadKindLabel:      source.Labels[consts.WorkloadKindLabel],
 	})
-	err := s.Client.List(ctx, sourceList, &client.ListOptions{LabelSelector: selector})
+	err := s.Client.List(ctx, sourceList, &client.ListOptions{LabelSelector: selector}, client.InNamespace(source.GetNamespace()))
 	if err != nil {
 		return err
 	}
@@ -279,7 +279,7 @@ func (s *SourcesValidator) validateSourceUniqueness(ctx context.Context, source 
 		// In theory, there should only ever be at most 1 duplicate. But loop through all to be thorough
 		for _, dupe := range sourceList.Items {
 			// during an update, this source will show up as existing already
-			if dupe.GetName() != source.GetName() || dupe.GetNamespace() != source.GetNamespace() {
+			if dupe.GetName() != source.GetName() {
 				duplicates = append(duplicates, dupe.GetName())
 			}
 		}
