@@ -3,7 +3,6 @@ package v1alpha1
 import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
-	"go.opentelemetry.io/otel/attribute"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -89,7 +88,7 @@ type SdkConfig struct {
 // 'Operand' represents the attributes and values that an operator acts upon in an expression
 type AttributeCondition struct {
 	// attribute key (e.g. "url.path")
-	Key attribute.Key `json:"key"`
+	Key string `json:"key"`
 	// currently only string values are supported.
 	Val string `json:"val"`
 	// The operator to use to compare the attribute value.

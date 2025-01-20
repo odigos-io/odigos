@@ -19,13 +19,12 @@ package v1alpha1
 
 import (
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	attribute "go.opentelemetry.io/otel/attribute"
 )
 
 // AttributeConditionApplyConfiguration represents a declarative configuration of the AttributeCondition type for use
 // with apply.
 type AttributeConditionApplyConfiguration struct {
-	Key      *attribute.Key           `json:"key,omitempty"`
+	Key      *string                  `json:"key,omitempty"`
 	Val      *string                  `json:"val,omitempty"`
 	Operator *odigosv1alpha1.Operator `json:"operator,omitempty"`
 }
@@ -39,7 +38,7 @@ func AttributeCondition() *AttributeConditionApplyConfiguration {
 // WithKey sets the Key field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Key field is set to the value of the last call.
-func (b *AttributeConditionApplyConfiguration) WithKey(value attribute.Key) *AttributeConditionApplyConfiguration {
+func (b *AttributeConditionApplyConfiguration) WithKey(value string) *AttributeConditionApplyConfiguration {
 	b.Key = &value
 	return b
 }
