@@ -126,7 +126,7 @@ export const SourceDrawer: React.FC<Props> = () => {
   const handleDelete = async () => {
     const { namespace } = item;
 
-    await persistSources({ [namespace]: [{ ...item, selected: false }] }, {});
+    await persistSources({ [namespace]: [{ ...item, selected: false }] });
   };
 
   const handleSave = async () => {

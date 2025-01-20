@@ -5,7 +5,7 @@ import styled from 'styled-components';
 import { OdigosLogoText } from '@/assets';
 import { useRouter } from 'next/navigation';
 import { FlexColumn, FlexRow } from '@/styles';
-import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
+import { useDestinationCRUD, useNamespace, useSourceCRUD } from '@/hooks';
 import { Badge, Text, TraceLoader } from '@/reuseable-components';
 
 const Container = styled(FlexColumn)`
@@ -38,11 +38,13 @@ const Description = styled(Text)`
 export const AwaitPipelineContainer = () => {
   const router = useRouter();
   const { persistSources } = useSourceCRUD();
+  const { persistNamespaces } = useNamespace();
   const { createDestination } = useDestinationCRUD();
   const { configuredSources, configuredFutureApps, configuredDestinations, resetState } = useAppStore();
 
   const doPersist = async () => {
-    await persistSources(configuredSources, configuredFutureApps);
+    await persistNamespaces(configuredFutureApps);
+    await persistSources(configuredSources);
     await Promise.all(configuredDestinations.map(async ({ form }) => await createDestination(form)));
 
     resetState();

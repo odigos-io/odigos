@@ -1,10 +1,10 @@
 import React, { useMemo } from 'react';
 import styled from 'styled-components';
-import { usePaginatedSources, useSourceCRUD } from '@/hooks';
 import type { Node, NodeProps } from '@xyflow/react';
 import { useAppStore, usePendingStore } from '@/store';
-import { K8sActualSource, NODE_TYPES, OVERVIEW_ENTITY_TYPES } from '@/types';
+import { usePaginatedSources, useSourceCRUD } from '@/hooks';
 import { Badge, Checkbox, FadeLoader, Text } from '@/reuseable-components';
+import { K8sActualSource, NODE_TYPES, OVERVIEW_ENTITY_TYPES } from '@/types';
 
 interface Props
   extends NodeProps<

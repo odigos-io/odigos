@@ -56,7 +56,7 @@ export const MultiSourceControl = () => {
       payload[namespace] = sources.map((source) => ({ ...source, selected: false }));
     });
 
-    persistSources(payload, {});
+    persistSources(payload);
     setIsWarnModalOpen(false);
     onDeselect();
   };

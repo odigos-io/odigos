@@ -2,7 +2,7 @@ import React from 'react';
 import { type IAppState } from '@/store';
 import { ChooseSourcesBody } from '../choose-sources-body';
 import { Modal, NavigationButtons } from '@/reuseable-components';
-import { useKeyDown, useSourceCRUD, useSourceFormData } from '@/hooks';
+import { useKeyDown, useNamespace, useSourceCRUD, useSourceFormData } from '@/hooks';
 
 interface Props {
   isOpen: boolean;
@@ -13,6 +13,7 @@ export const AddSourceModal: React.FC<Props> = ({ isOpen, onClose }) => {
   useKeyDown({ key: 'Enter', active: isOpen }, () => handleSubmit());
 
   const menuState = useSourceFormData();
+  const { persistNamespaces } = useNamespace();
   const { persistSources } = useSourceCRUD({ onSuccess: onClose });
 
   const handleSubmit = async () => {
@@ -27,7 +28,8 @@ export const AddSourceModal: React.FC<Props> = ({ isOpen, onClose }) => {
     // This forced type is to satisfy TypeScript,
     // while knowing that this doesn't break the onboarding flow in any-way...
 
-    await persistSources(getApiSourcesPayload() as IAppState['configuredSources'], getApiFutureAppsPayload());
+    await persistNamespaces(getApiFutureAppsPayload());
+    await persistSources(getApiSourcesPayload() as IAppState['configuredSources']);
   };
 
   return (

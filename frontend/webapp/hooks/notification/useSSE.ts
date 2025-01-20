@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { NOTIFICATION_TYPE } from '@/types';
+import { usePaginatedSources } from '../sources';
 import { useDestinationCRUD } from '../destinations';
-import { usePaginatedSources } from '../compute-platform';
 import { API, DISPLAY_TITLES, NOTIF_CRD_TYPES } from '@/utils';
 import { type NotifyPayload, useNotificationStore, usePendingStore, useStatusStore } from '@/store';
 
