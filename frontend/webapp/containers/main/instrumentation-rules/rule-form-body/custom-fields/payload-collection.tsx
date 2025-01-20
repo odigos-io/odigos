@@ -49,7 +49,7 @@ const PayloadCollection: React.FC<Props> = ({ value, setValue, formErrors }) => 
 
   const mappedValue = useMemo(
     () =>
-      Object.entries(value['payloadCollection'])
+      Object.entries(value['payloadCollection'] || {})
         .filter(([k, v]) => !!v)
         .map(([k]) => k),
     [value],

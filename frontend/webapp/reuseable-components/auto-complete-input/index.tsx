@@ -217,14 +217,14 @@ interface OptionItemContainerProps {
 }
 
 const OptionItemContainer = styled.li<{ $isActive: OptionItemContainerProps['isActive']; $isList: OptionItemContainerProps['isList'] }>`
-  width: calc(100% - 24px);
-  padding: 8px 12px;
-  cursor: ${({ $isList }) => ($isList ? 'default' : 'pointer')};
-  border-radius: 24px;
-  gap: 8px;
   display: flex;
-  align-items: ${({ $isList }) => ($isList ? 'flex-start' : 'center')};
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  width: calc(100% - 24px);
+  border-radius: 24px;
   background: ${({ $isActive, theme }) => ($isActive ? theme.colors.activeBackground : 'transparent')};
+  cursor: ${({ $isList }) => ($isList ? 'default' : 'pointer')};
   &:hover {
     background: ${({ theme, $isList }) => !$isList && theme.colors.white_opacity['008']};
   }

@@ -122,6 +122,7 @@ type InstrumentationRule {
   workloads: [PodWorkload!]
   instrumentationLibraries: [InstrumentationLibraryGlobalId!]
   payloadCollection: PayloadCollection
+  codeAttributes: CodeAttributes
 }
 
 input InstrumentationRuleInput {
@@ -131,6 +132,7 @@ input InstrumentationRuleInput {
   workloads: [PodWorkloadInput!]
   instrumentationLibraries: [InstrumentationLibraryGlobalIdInput!]
   payloadCollection: PayloadCollectionInput
+  codeAttributes: CodeAttributesInput
 }
 
 type InstrumentationLibraryGlobalId {
@@ -189,6 +191,24 @@ type MessagingPayloadCollection {
 input MessagingPayloadCollectionInput {
   maxPayloadLength: Int
   dropPartialPayloads: Boolean
+}
+
+type CodeAttributes {
+  column: Boolean
+  filePath: Boolean
+  function: Boolean
+  lineNumber: Boolean
+  namespace: Boolean
+  stacktrace: Boolean
+}
+
+input CodeAttributesInput {
+  column: Boolean
+  filePath: Boolean
+  function: Boolean
+  lineNumber: Boolean
+  namespace: Boolean
+  stacktrace: Boolean
 }
 
 type ApiToken {
