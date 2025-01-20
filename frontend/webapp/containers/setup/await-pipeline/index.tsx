@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ROUTES } from '@/utils';
 import { useAppStore } from '@/store';
 import styled from 'styled-components';
@@ -42,10 +42,19 @@ export const AwaitPipelineContainer = () => {
   const { createDestination } = useDestinationCRUD();
   const { configuredSources, configuredFutureApps, configuredDestinations, resetState } = useAppStore();
 
+  const [progress, setProgress] = useState(0);
+
   const doPersist = async () => {
+    setProgress(0);
     await persistNamespaces(configuredFutureApps);
+    setProgress(5);
     await persistSources(configuredSources);
+    setProgress(10);
     await Promise.all(configuredDestinations.map(async ({ form }) => await createDestination(form)));
+    setProgress(15);
+
+    // TODO: await pipeline completion
+    setProgress(100);
 
     resetState();
     setTimeout(() => router.push(ROUTES.OVERVIEW), 100);
@@ -64,7 +73,7 @@ export const AwaitPipelineContainer = () => {
       <TextWrap>
         <FlexRow $gap={16}>
           <Title>Preparing your workspace...</Title>
-          <Badge label={`${69}%`} />
+          <Badge label={`${progress}%`} />
         </FlexRow>
 
         <Description>It can take up to a few minutes. Grab a cup of coffee, look out a window, and enjoy your free moment!</Description>
