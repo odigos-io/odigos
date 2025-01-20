@@ -30,9 +30,8 @@ const Title = styled(Text)`
 
 const Description = styled(Text)`
   text-align: center;
-  font-size: 18px;
-  color: ${({ theme }) => theme.text.info};
   line-height: 26px;
+  color: ${({ theme }) => theme.text.info};
 `;
 
 export const AwaitPipelineContainer = () => {
@@ -60,7 +59,7 @@ export const AwaitPipelineContainer = () => {
     }
 
     resetState();
-    setTimeout(() => router.push(ROUTES.OVERVIEW), 100);
+    // setTimeout(() => router.push(ROUTES.OVERVIEW), 100);
   };
 
   useEffect(() => {
