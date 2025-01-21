@@ -159,8 +159,10 @@ There are two primary methods for configuring destinations in Odigos:
     spec:
       data:
         S3_BUCKET: <Bucket Name>
-        S3_MARSHALER: <Marshaller (Data Format) [otlp_json, otlp_proto]>
-        S3_PARTITION: <Time granularity of S3 Bucket [minute, hour]>
+        S3_MARSHALER: '<Marshaller (Data Format) (default: otlp_json) (options: [otlp_json,
+          otlp_proto])>'
+        S3_PARTITION: '<Time granularity of S3 Bucket (default: minute) (options: [minute,
+          hour])>'
         S3_REGION: <Bucket Region>
       destinationName: s3
       signals:

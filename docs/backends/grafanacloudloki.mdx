@@ -100,7 +100,7 @@ There are two primary methods for configuring destinations in Odigos:
         GRAFANA_CLOUD_LOKI_ENDPOINT: <Endpoint>
         GRAFANA_CLOUD_LOKI_USERNAME: <Username>
         # Note: The commented fields below are optional.
-        # GRAFANA_CLOUD_LOKI_LABELS: <Labels>
+        # GRAFANA_CLOUD_LOKI_LABELS: <Labels (default: ["k8s.container.name", "k8s.pod.name", "k8s.namespace.name"])>
       destinationName: grafanacloudloki
       secretRef:
         name: grafanacloudloki-secret

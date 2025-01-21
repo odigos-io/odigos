@@ -106,7 +106,7 @@ There are two primary methods for configuring destinations in Odigos:
         GRAFANA_CLOUD_PROMETHEUS_RW_ENDPOINT: <Prometheus Remote Write Endpoint>
         GRAFANA_CLOUD_PROMETHEUS_USERNAME: <Username / Instance ID>
         # Note: The commented fields below are optional.
-        # PROMETHEUS_RESOURCE_ATTRIBUTES_LABELS: <Resource Attributes Labels>
+        # PROMETHEUS_RESOURCE_ATTRIBUTES_LABELS: <Resource Attributes Labels (default: ["k8s.container.name", "k8s.pod.name", "k8s.namespace.name"])>
         # PROMETHEUS_RESOURCE_EXTERNAL_LABELS: <External Labels>
       destinationName: grafanacloudprometheus
       secretRef:

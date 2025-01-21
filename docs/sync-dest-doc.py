@@ -246,27 +246,34 @@ def generate_kubectl_apply(yaml_content):
 
     # Handle fields
     for field in yaml_content.get("spec", {}).get("fields", []):
-        config_name = field.get("name", "")
-        # Get field display name
-        config_display = field.get('displayName', '')
+        key = field.get("name", "")
+        name = field.get('displayName', '')
+        component_props = field.get('componentProps', {})
+        required = component_props.get("required", False)
+        initial_value = field.get("initialValue", {})
+
+        # Get initial values
+        if initial_value:
+            name += f" (default: {initial_value})"
+
         # Get values for dropdowns
         if field.get('componentType', '') == 'dropdown':
-            values = field.get('componentProps', {}).get('values', [])
+            values = component_props.get('values', [])
             if values:
-                config_display += f" [{', '.join(values)}]"
+                name += f" (options: [{', '.join(values)}])"
 
         if field.get("secret", False):
             # Secret fields are added only to the Secret manifest
             has_secrets = True
-            secret_yaml["data"][config_name] = f"<Base64 {config_display}>"
-            if not field.get("componentProps", {}).get("required", False):
+            secret_yaml["data"][key] = f"<Base64 {name}>"
+            if not required:
                 secret_optional = True
-        elif field.get("componentProps", {}).get("required", False):
+        elif required:
             # Required fields are added directly to the Destination manifest
-            required_fields[config_name] = f"<{config_display}>"
+            required_fields[key] = f"<{name}>"
         else:
             # Prepare optional fields as commented lines
-            optional_fields += f"\n    # {config_name}: <{config_display}>"
+            optional_fields += f"\n    # {key}: <{name}>"
 
     # Add required fields to the 'data' section
     destination_yaml["spec"]["data"].update(required_fields)

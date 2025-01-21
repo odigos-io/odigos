@@ -87,7 +87,7 @@ There are two primary methods for configuring destinations in Odigos:
       namespace: odigos-system
     spec:
       data:
-        LOKI_LABELS: <Labels>
+        LOKI_LABELS: '<Labels (default: ["k8s.container.name", "k8s.pod.name", "k8s.namespace.name"])>'
         LOKI_URL: <Endpoint>
       destinationName: loki
       signals:
