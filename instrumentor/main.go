@@ -19,11 +19,13 @@ package main
 import (
 	"flag"
 	"os"
+	"time"
 
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 
 	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentationconfig"
+	"github.com/odigos-io/odigos/instrumentor/controllers/labelmigration"
 	"github.com/odigos-io/odigos/instrumentor/controllers/startlangdetection"
 	"github.com/odigos-io/odigos/instrumentor/sdks"
 
@@ -114,6 +116,31 @@ func main() {
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "201bdfa0.odigos.io",
+		/*
+			Leader Election Parameters:
+
+			LeaseDuration (5s):
+			- Maximum time a pod can remain the leader after its last successful renewal.
+			- If the leader pod dies, failover can take up to the LeaseDuration from the last renewal.
+			  The actual failover time depends on how recently the leader renewed the lease.
+			- Controls when the lease is fully expired and failover can occur.
+
+			RenewDeadline (4s):
+			- The maximum time the leader pod has to successfully renew its lease before it is
+			  considered unhealthy. Relevant only while the leader is alive and renewing.
+			- Controls how long the current leader will keep retrying to refresh the lease.
+
+			RetryPeriod (1s):
+			- How often non-leader pods check and attempt to acquire leadership when the lease is available.
+			- Lower value means faster failover but adds more load on the Kubernetes API server.
+
+			Relationship:
+			- RetryPeriod < RenewDeadline < LeaseDuration
+			- This ensures proper failover timing and system stability.
+		*/
+		LeaseDuration: durationPointer(5 * time.Second),
+		RenewDeadline: durationPointer(4 * time.Second),
+		RetryPeriod:   durationPointer(1 * time.Second),
 		Cache: cache.Options{
 			DefaultTransform: cache.TransformStripManagedFields(),
 			// Store minimum amount of data for every object type.
@@ -189,27 +216,24 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = builder.
-		WebhookManagedBy(mgr).
-		For(&odigosv1.Source{}).
-		WithDefaulter(&SourcesDefaulter{
-			Client: mgr.GetClient(),
-		}).
-		Complete()
+	err = labelmigration.SetupWithManager(mgr)
 	if err != nil {
-		setupLog.Error(err, "unable to create Sources mutating webhook")
+		setupLog.Error(err, "unable to create controller for instrumentation label migration")
 		os.Exit(1)
 	}
 
 	err = builder.
 		WebhookManagedBy(mgr).
 		For(&odigosv1.Source{}).
+		WithDefaulter(&SourcesDefaulter{
+			Client: mgr.GetClient(),
+		}).
 		WithValidator(&SourcesValidator{
 			Client: mgr.GetClient(),
 		}).
 		Complete()
 	if err != nil {
-		setupLog.Error(err, "unable to create Sources validating webhook")
+		setupLog.Error(err, "unable to create Sources webhooks")
 		os.Exit(1)
 	}
 
@@ -235,4 +259,8 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func durationPointer(d time.Duration) *time.Duration {
+	return &d
 }

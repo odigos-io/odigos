@@ -8,23 +8,25 @@ import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services/common"
-	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	commonutils "github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 )
 
-type deleteNotification struct {
+type notification struct {
 	notificationType deletedObject
+	eventType        watch.EventType
 	object           string
+
 	// used for source deletion notification
 	sourceID common.SourceID
 }
 
 type deleteWatcher struct {
 	odigosNS            string
-	deleteNotifications chan deleteNotification
+	deleteNotifications chan notification
 }
 
 type deletedObject int
@@ -40,7 +42,7 @@ type watchers struct {
 	nodeCollectors, clusterCollectors, destinations, sources watch.Interface
 }
 
-func runDeleteWatcher(ctx context.Context, cw *deleteWatcher) error {
+func runWatcher(ctx context.Context, cw *deleteWatcher) error {
 	nodeWatcher, err := newCollectorWatcher(ctx, cw.odigosNS, k8sconsts.CollectorsRoleNodeCollector)
 	if err != nil {
 		return err
@@ -53,7 +55,7 @@ func runDeleteWatcher(ctx context.Context, cw *deleteWatcher) error {
 	if err != nil {
 		return err
 	}
-	sourcesWatcher, err := kube.DefaultClient.OdigosClient.InstrumentedApplications("").Watch(ctx, metav1.ListOptions{})
+	sourcesWatcher, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").Watch(ctx, metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
@@ -77,7 +79,7 @@ func newCollectorWatcher(ctx context.Context, odigosNS string, collectorRole k8s
 	})
 }
 
-func runWatcherLoop(ctx context.Context, w watchers, notifyChan chan<- deleteNotification) error {
+func runWatcherLoop(ctx context.Context, w watchers, notifyChan chan<- notification) error {
 	nch := w.nodeCollectors.ResultChan()
 	cch := w.clusterCollectors.ResultChan()
 	dch := w.destinations.ResultChan()
@@ -98,7 +100,7 @@ func runWatcherLoop(ctx context.Context, w watchers, notifyChan chan<- deleteNot
 			switch event.Type {
 			case watch.Deleted:
 				pod := event.Object.(*corev1.Pod)
-				notifyChan <- deleteNotification{notificationType: nodeCollector, object: pod.Name}
+				notifyChan <- notification{notificationType: nodeCollector, object: pod.Name}
 			}
 		case event, ok := <-cch:
 			if !ok {
@@ -107,7 +109,7 @@ func runWatcherLoop(ctx context.Context, w watchers, notifyChan chan<- deleteNot
 			switch event.Type {
 			case watch.Deleted:
 				pod := event.Object.(*corev1.Pod)
-				notifyChan <- deleteNotification{notificationType: clusterCollector, object: pod.Name}
+				notifyChan <- notification{notificationType: clusterCollector, object: pod.Name, eventType: watch.Deleted}
 			}
 		case event, ok := <-dch:
 			if !ok {
@@ -116,20 +118,21 @@ func runWatcherLoop(ctx context.Context, w watchers, notifyChan chan<- deleteNot
 			switch event.Type {
 			case watch.Deleted:
 				d := event.Object.(*v1alpha1.Destination)
-				notifyChan <- deleteNotification{notificationType: destination, object: d.Name}
+				notifyChan <- notification{notificationType: destination, object: d.Name, eventType: watch.Deleted}
 			}
 		case event, ok := <-sch:
 			if !ok {
 				return errors.New("source watcher closed")
 			}
-			switch event.Type {
-			case watch.Deleted:
-				app := event.Object.(*v1alpha1.InstrumentedApplication)
+			t := event.Type
+			switch t {
+			case watch.Deleted, watch.Added:
+				app := event.Object.(*v1alpha1.InstrumentationConfig)
 				name, kind, err := commonutils.ExtractWorkloadInfoFromRuntimeObjectName(app.Name)
 				if err != nil {
 					fmt.Printf("error getting workload info: %v\n", err)
 				}
-				notifyChan <- deleteNotification{notificationType: source, sourceID: common.SourceID{Kind: kind, Name: name, Namespace: app.Namespace}}
+				notifyChan <- notification{notificationType: source, sourceID: common.SourceID{Kind: kind, Name: name, Namespace: app.Namespace}, eventType: t}
 			}
 		}
 	}

@@ -154,6 +154,14 @@ export const GET_INSTRUMENTATION_RULES = gql`
             dropPartialPayloads
           }
         }
+        codeAttributes {
+          column
+          filePath
+          function
+          lineNumber
+          namespace
+          stacktrace
+        }
       }
     }
   }

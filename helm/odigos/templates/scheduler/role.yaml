@@ -18,8 +18,10 @@ rules:
       - configmaps
     resourceNames:
       - effective-config
+      - odigos-deployment
     verbs:
       - patch
+      - create
   - apiGroups:
       - odigos.io
     resources:

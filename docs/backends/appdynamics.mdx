@@ -1,73 +1,111 @@
 ---
 title: 'AppDynamics'
+description: 'Configuring the AppDynamics backend (Managed)'
+sidebarTitle: 'AppDynamics'
+icon: 'signal-stream'
 ---
 
-## Configuring AppDynamics Backend
+### Getting Started
+
+<img src='https://d15jtxgb40qetw.cloudfront.net/appdynamics.svg' alt='appdynamics' width="100" height="100" className="not-prose" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g:
+    [🔗 website](https://odigos.io)
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
 
 1. [Register](https://accounts.appdynamics.com/trial)/[Login](https://login.appdynamics.com/sso/authenticate) to AppDynamics.
-2. Navigate to the OpenTelemetry Configuration page:
-
-```bash
-https://{APPDYNAMICS_ACCOUNT_NAME}.saas.appdynamics.com/controller/#/apm/otel/keyManagement
-```
-
+2. Navigate to the OpenTelemetry Configuration page
 3. Click on `Processors`, you'll find 3 attributes, locate `appdynamics.controller.account` and copy it's value, this is your `Account Name`.
 4. Click on `Exporters`, copy the `Endpoint`, and generate an `API Key`.
 
-- **APPDYNAMICS_APPLICATION_NAME** - Application Name (will define a namespace in AppDynamics)
-- **APPDYNAMICS_ACCOUNT_NAME** - Account Name from above (step 3).
-- **APPDYNAMICS_ENDPOINT_URL** - OTLP HTTP Endpoint URL from above (step 4).
-- **APPDYNAMICS_API_KEY** - API Key from above (step 4).
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
 
-## Adding a destination to Odigos
+### Configuring Destination Fields
 
-Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ✅ Metrics
+  ✅ Logs
+</Accordion>
 
-1. **Using the UI**
+- **APPDYNAMICS_APPLICATION_NAME** `string` : Application Name. Will define a namespace in AppDynamics
+  - This field is optional
+- **APPDYNAMICS_ACCOUNT_NAME** `string` : Account Name.
+  - This field is required
+- **APPDYNAMICS_ENDPOINT_URL** `string` : Endpoint URL.
+  - This field is required
+- **APPDYNAMICS_API_KEY** `string` : API Key.
+  - This field is required
 
-- Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI:
+### Adding Destination to Odigos
 
-```bash
-odigos ui
-```
+There are two primary methods for configuring destinations in Odigos:
 
-2. **Using kubernetes manifests**
+##### **Using the UI**
 
-Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `AppDynamics` and follow the on-screen instructions
+  </Step>
+</Steps>
 
-```bash
-kubectl apply -f destination.yaml
-```
+##### **Using Kubernetes manifests**
 
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `appdynamics.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: appdynamics-example
+      namespace: odigos-system
+    spec:
+      data:
+        APPDYNAMICS_ACCOUNT_NAME: <Account Name>
+        APPDYNAMICS_ENDPOINT_URL: <Endpoint URL>
+        # Note: The commented fields below are optional.
+        # APPDYNAMICS_APPLICATION_NAME: <Application Name>
+      destinationName: appdynamics
+      secretRef:
+        name: appdynamics-secret
+      signals:
+      - TRACES
+      - METRICS
+      - LOGS
+      type: appdynamics
 
-```yaml
-apiVersion: odigos.io/v1alpha1
-kind: Destination
-metadata:
-  name: appdynamics-example
-  namespace: odigos-system
-spec:
-  data:
-    APPDYNAMICS_ACCOUNT_NAME: <Account Name>
-    # APPDYNAMICS_APPLICATION_NAME: <Application Name>
-    # Note: The commented fields above are optional.
-    APPDYNAMICS_ENDPOINT_URL: <Endpoint URL>
-  destinationName: appdynamics
-  secretRef:
-    name: appdynamics-secret
-  signals:
-  - TRACES
-  - METRICS
-  - LOGS
-  type: appdynamics
+    ---
 
----
-apiVersion: v1
-data:
-  APPDYNAMICS_API_KEY: <base64 API Key>
-kind: Secret
-metadata:
-  name: appdynamics-secret
-  namespace: odigos-system
-type: Opaque
-```
+    apiVersion: v1
+    data:
+      APPDYNAMICS_API_KEY: <Base64 API Key>
+    kind: Secret
+    metadata:
+      name: appdynamics-secret
+      namespace: odigos-system
+    type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f appdynamics.yaml
+    ```
+  </Step>
+</Steps>

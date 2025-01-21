@@ -8,7 +8,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/frontend/graph/model"
@@ -18,7 +20,6 @@ import (
 	"github.com/odigos-io/odigos/frontend/services/describe/odigos_describe"
 	"github.com/odigos-io/odigos/frontend/services/describe/source_describe"
 	testconnection "github.com/odigos-io/odigos/frontend/services/test_connection"
-	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -97,21 +98,18 @@ func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *m
 	if err != nil {
 		return nil, err
 	}
+	nsName := namespace.Namespace
 
-	namespaceActualSources, err := services.GetWorkloadsInNamespace(ctx, name)
-	if err != nil {
-		return nil, err
+	// check if entire namespace is instrumented
+	crd, err := services.GetSourceCRD(ctx, nsName, nsName, services.WorkloadKindNamespace)
+	if err != nil && !strings.Contains(err.Error(), "not found") {
+		return &model.K8sActualNamespace{}, err
 	}
-
-	// Convert namespaceActualSources to []*model.K8sActualSource
-	namespaceActualSourcesPointers := make([]*model.K8sActualSource, len(namespaceActualSources))
-	for i, source := range namespaceActualSources {
-		namespaceActualSourcesPointers[i] = &source
-	}
+	instrumented := crd != nil && !crd.Spec.DisableInstrumentation
 
 	return &model.K8sActualNamespace{
-		Name:             namespace.Name,
-		K8sActualSources: namespaceActualSourcesPointers,
+		Name:     namespace.Name,
+		Selected: instrumented,
 	}, nil
 }
 
@@ -317,26 +315,35 @@ func (r *destinationResolver) Conditions(ctx context.Context, obj *model.Destina
 
 // K8sActualSources is the resolver for the k8sActualSources field.
 func (r *k8sActualNamespaceResolver) K8sActualSources(ctx context.Context, obj *model.K8sActualNamespace) ([]*model.K8sActualSource, error) {
-	namespaceActualSources, err := services.GetWorkloadsInNamespace(ctx, obj.Name)
+	ns := obj.Name
+	nsWorkloads, err := services.GetWorkloadsInNamespace(ctx, ns)
 	if err != nil {
 		return nil, err
 	}
 
-	// Convert namespaceActualSources to []*model.K8sActualSource
-	namespaceActualSourcesPointers := make([]*model.K8sActualSource, len(namespaceActualSources))
-	for i, source := range namespaceActualSources {
-		namespaceActualSourcesPointers[i] = &source
+	// Convert nsWorkloads to []*model.K8sActualSource
+	nsActualSources := make([]*model.K8sActualSource, len(nsWorkloads))
+	for i, workload := range nsWorkloads {
+		nsActualSources[i] = &workload
 
-		crd, err := services.GetSourceCRD(ctx, obj.Name, source.Name, services.WorkloadKind(source.Kind))
-		instrumented := false
-		if crd != nil && err == nil {
-			instrumented = true
+		namespaceSource, err := services.GetSourceCRD(ctx, ns, ns, services.WorkloadKindNamespace)
+		if err != nil && !strings.Contains(err.Error(), "not found") {
+			return make([]*model.K8sActualSource, 0), err
 		}
 
-		namespaceActualSourcesPointers[i].Selected = &instrumented
+		workloadSource, err := services.GetSourceCRD(ctx, ns, workload.Name, services.WorkloadKind(workload.Kind))
+		if err != nil && !strings.Contains(err.Error(), "not found") {
+			return make([]*model.K8sActualSource, 0), err
+		}
+
+		nsInstrumented := namespaceSource != nil && !namespaceSource.Spec.DisableInstrumentation
+		srcInstrumented := workloadSource != nil && !workloadSource.Spec.DisableInstrumentation
+
+		instrumented := (nsInstrumented && (srcInstrumented || workloadSource == nil)) || (!nsInstrumented && srcInstrumented)
+		nsActualSources[i].Selected = &instrumented
 	}
 
-	return namespaceActualSourcesPointers, nil
+	return nsActualSources, nil
 }
 
 // UpdateAPIToken is the resolver for the updateApiToken field.

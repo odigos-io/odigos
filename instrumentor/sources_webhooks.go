@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
@@ -53,14 +53,14 @@ func (s *SourcesDefaulter) Default(ctx context.Context, obj runtime.Object) erro
 		source.Labels = make(map[string]string)
 	}
 
-	if _, ok := source.Labels[consts.WorkloadNameLabel]; !ok {
-		source.Labels[consts.WorkloadNameLabel] = source.Spec.Workload.Name
+	if _, ok := source.Labels[k8sconsts.WorkloadNameLabel]; !ok {
+		source.Labels[k8sconsts.WorkloadNameLabel] = source.Spec.Workload.Name
 	}
-	if _, ok := source.Labels[consts.WorkloadNamespaceLabel]; !ok {
-		source.Labels[consts.WorkloadNamespaceLabel] = source.Spec.Workload.Namespace
+	if _, ok := source.Labels[k8sconsts.WorkloadNamespaceLabel]; !ok {
+		source.Labels[k8sconsts.WorkloadNamespaceLabel] = source.Spec.Workload.Namespace
 	}
-	if _, ok := source.Labels[consts.WorkloadKindLabel]; !ok {
-		source.Labels[consts.WorkloadKindLabel] = string(source.Spec.Workload.Kind)
+	if _, ok := source.Labels[k8sconsts.WorkloadKindLabel]; !ok {
+		source.Labels[k8sconsts.WorkloadKindLabel] = string(source.Spec.Workload.Kind)
 	}
 
 	// Make sure the Source has the right finalizer, so the right controller handles it for deletion.
@@ -68,20 +68,20 @@ func (s *SourcesDefaulter) Default(ctx context.Context, obj runtime.Object) erro
 	// Vice versa for an excluded Source that has `spec.disableInstrumentation` removed.
 	// These checks make sure that the right type of Source has the right type of finalizer
 	// by toggling what finalizer is set.
-	if !v1alpha1.IsExcludedSource(source) {
-		if !controllerutil.ContainsFinalizer(source, consts.DeleteInstrumentationConfigFinalizer) && !k8sutils.IsTerminating(source) {
-			controllerutil.AddFinalizer(source, consts.DeleteInstrumentationConfigFinalizer)
+	if !v1alpha1.IsDisabledSource(source) {
+		if !controllerutil.ContainsFinalizer(source, k8sconsts.DeleteInstrumentationConfigFinalizer) && !k8sutils.IsTerminating(source) {
+			controllerutil.AddFinalizer(source, k8sconsts.DeleteInstrumentationConfigFinalizer)
 		}
-		if controllerutil.ContainsFinalizer(source, consts.StartLangDetectionFinalizer) {
-			controllerutil.RemoveFinalizer(source, consts.StartLangDetectionFinalizer)
+		if controllerutil.ContainsFinalizer(source, k8sconsts.StartLangDetectionFinalizer) {
+			controllerutil.RemoveFinalizer(source, k8sconsts.StartLangDetectionFinalizer)
 		}
 	}
-	if v1alpha1.IsExcludedSource(source) {
-		if controllerutil.ContainsFinalizer(source, consts.DeleteInstrumentationConfigFinalizer) {
-			controllerutil.RemoveFinalizer(source, consts.DeleteInstrumentationConfigFinalizer)
+	if v1alpha1.IsDisabledSource(source) {
+		if controllerutil.ContainsFinalizer(source, k8sconsts.DeleteInstrumentationConfigFinalizer) {
+			controllerutil.RemoveFinalizer(source, k8sconsts.DeleteInstrumentationConfigFinalizer)
 		}
-		if !controllerutil.ContainsFinalizer(source, consts.StartLangDetectionFinalizer) && !k8sutils.IsTerminating(source) {
-			controllerutil.AddFinalizer(source, consts.StartLangDetectionFinalizer)
+		if !controllerutil.ContainsFinalizer(source, k8sconsts.StartLangDetectionFinalizer) && !k8sutils.IsTerminating(source) {
+			controllerutil.AddFinalizer(source, k8sconsts.StartLangDetectionFinalizer)
 		}
 	}
 
@@ -142,24 +142,24 @@ func (s *SourcesValidator) ValidateUpdate(ctx context.Context, oldObj, newObj ru
 		))
 	}
 
-	if new.Labels[consts.WorkloadKindLabel] != old.Labels[consts.WorkloadKindLabel] {
+	if new.Labels[k8sconsts.WorkloadKindLabel] != old.Labels[k8sconsts.WorkloadKindLabel] {
 		allErrs = append(allErrs, field.Invalid(
 			field.NewPath("metadata").Child("labels"),
-			new.Labels[consts.WorkloadKindLabel],
+			new.Labels[k8sconsts.WorkloadKindLabel],
 			"Source workload-kind label is immutable",
 		))
 	}
-	if new.Labels[consts.WorkloadNameLabel] != old.Labels[consts.WorkloadNameLabel] {
+	if new.Labels[k8sconsts.WorkloadNameLabel] != old.Labels[k8sconsts.WorkloadNameLabel] {
 		allErrs = append(allErrs, field.Invalid(
 			field.NewPath("metadata").Child("labels"),
-			new.Labels[consts.WorkloadNameLabel],
+			new.Labels[k8sconsts.WorkloadNameLabel],
 			"Source workload-name label is immutable",
 		))
 	}
-	if new.Labels[consts.WorkloadNamespaceLabel] != old.Labels[consts.WorkloadNamespaceLabel] {
+	if new.Labels[k8sconsts.WorkloadNamespaceLabel] != old.Labels[k8sconsts.WorkloadNamespaceLabel] {
 		allErrs = append(allErrs, field.Invalid(
 			field.NewPath("metadata").Child("labels"),
-			new.Labels[consts.WorkloadNamespaceLabel],
+			new.Labels[k8sconsts.WorkloadNamespaceLabel],
 			"Source workload-namespace label is immutable",
 		))
 	}
@@ -192,8 +192,8 @@ func (s *SourcesValidator) ValidateDelete(ctx context.Context, obj runtime.Objec
 func (s *SourcesValidator) validateSourceFields(ctx context.Context, source *v1alpha1.Source) field.ErrorList {
 	allErrs := make([]*field.Error, 0)
 
-	if controllerutil.ContainsFinalizer(source, consts.DeleteInstrumentationConfigFinalizer) &&
-		controllerutil.ContainsFinalizer(source, consts.StartLangDetectionFinalizer) {
+	if controllerutil.ContainsFinalizer(source, k8sconsts.DeleteInstrumentationConfigFinalizer) &&
+		controllerutil.ContainsFinalizer(source, k8sconsts.StartLangDetectionFinalizer) {
 		allErrs = append(allErrs, field.Invalid(
 			field.NewPath("metadata").Child("finalizers"),
 			source.Finalizers,
@@ -201,26 +201,26 @@ func (s *SourcesValidator) validateSourceFields(ctx context.Context, source *v1a
 		))
 	}
 
-	if source.Labels[consts.WorkloadNameLabel] != source.Spec.Workload.Name {
+	if source.Labels[k8sconsts.WorkloadNameLabel] != source.Spec.Workload.Name {
 		allErrs = append(allErrs, field.Invalid(
 			field.NewPath("metadata").Child("labels"),
-			source.Labels[consts.WorkloadNameLabel],
+			source.Labels[k8sconsts.WorkloadNameLabel],
 			"odigos.io/workload-name must match spec.workload.name",
 		))
 	}
 
-	if source.Labels[consts.WorkloadNamespaceLabel] != source.Spec.Workload.Namespace {
+	if source.Labels[k8sconsts.WorkloadNamespaceLabel] != source.Spec.Workload.Namespace {
 		allErrs = append(allErrs, field.Invalid(
 			field.NewPath("metadata").Child("labels"),
-			source.Labels[consts.WorkloadNamespaceLabel],
+			source.Labels[k8sconsts.WorkloadNamespaceLabel],
 			"odigos.io/workload-namespace must match spec.workload.namespace",
 		))
 	}
 
-	if source.Labels[consts.WorkloadKindLabel] != string(source.Spec.Workload.Kind) {
+	if source.Labels[k8sconsts.WorkloadKindLabel] != string(source.Spec.Workload.Kind) {
 		allErrs = append(allErrs, field.Invalid(
 			field.NewPath("metadata").Child("labels"),
-			source.Labels[consts.WorkloadKindLabel],
+			source.Labels[k8sconsts.WorkloadKindLabel],
 			"odigos.io/workload-kind must match spec.workload.kind",
 		))
 	}
@@ -234,7 +234,7 @@ func (s *SourcesValidator) validateSourceFields(ctx context.Context, source *v1a
 		))
 	}
 
-	if source.Spec.Workload.Kind == "Namespace" &&
+	if source.Spec.Workload.Kind == workload.WorkloadKindNamespace &&
 		(source.Spec.Workload.Name != source.Spec.Workload.Namespace) {
 		allErrs = append(allErrs, field.Invalid(
 			field.NewPath("spec").Child("workload").Child("namespace"),
@@ -244,7 +244,7 @@ func (s *SourcesValidator) validateSourceFields(ctx context.Context, source *v1a
 	}
 
 	validKind := workload.IsValidWorkloadKind(source.Spec.Workload.Kind)
-	if !validKind && source.Spec.Workload.Kind != "Namespace" {
+	if !validKind {
 		allErrs = append(allErrs, field.Invalid(
 			field.NewPath("spec").Child("workload").Child("kind"),
 			source.Spec.Workload.Kind,
@@ -266,11 +266,11 @@ func (s *SourcesValidator) validateSourceFields(ctx context.Context, source *v1a
 func (s *SourcesValidator) validateSourceUniqueness(ctx context.Context, source *v1alpha1.Source) error {
 	sourceList := &v1alpha1.SourceList{}
 	selector := labels.SelectorFromSet(labels.Set{
-		consts.WorkloadNameLabel:      source.Labels[consts.WorkloadNameLabel],
-		consts.WorkloadNamespaceLabel: source.Labels[consts.WorkloadNamespaceLabel],
-		consts.WorkloadKindLabel:      source.Labels[consts.WorkloadKindLabel],
+		k8sconsts.WorkloadNameLabel:      source.Labels[k8sconsts.WorkloadNameLabel],
+		k8sconsts.WorkloadNamespaceLabel: source.Labels[k8sconsts.WorkloadNamespaceLabel],
+		k8sconsts.WorkloadKindLabel:      source.Labels[k8sconsts.WorkloadKindLabel],
 	})
-	err := s.Client.List(ctx, sourceList, &client.ListOptions{LabelSelector: selector})
+	err := s.Client.List(ctx, sourceList, &client.ListOptions{LabelSelector: selector}, client.InNamespace(source.GetNamespace()))
 	if err != nil {
 		return err
 	}
@@ -279,7 +279,7 @@ func (s *SourcesValidator) validateSourceUniqueness(ctx context.Context, source 
 		// In theory, there should only ever be at most 1 duplicate. But loop through all to be thorough
 		for _, dupe := range sourceList.Items {
 			// during an update, this source will show up as existing already
-			if dupe.GetName() != source.GetName() || dupe.GetNamespace() != source.GetNamespace() {
+			if dupe.GetName() != source.GetName() {
 				duplicates = append(duplicates, dupe.GetName())
 			}
 		}

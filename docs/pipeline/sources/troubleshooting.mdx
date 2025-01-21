@@ -5,25 +5,32 @@ sidebarTitle: "Troubleshooting"
 
 The process Odigos takes to instrument workloads is as follows:
 
-## Instrumentation Label Added to Workload
+## Source object is created
 
-A following label is required to trigger Odigos to instrument the workload or the namespace:
+A Source object is required for Odigos to instrumente the workload or namespace, such as:
 
 ```yaml
-odigos-instrumentation: enabled
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: example
+  namespace: foo
+spec:
+  workload:
+    name: myapp
+    namespace: foo
+    kind: StatefulSet
 ```
 
-That label can be added in Odigos UI or manually through the Kubernetes APIs.
-
-If you expect to see data from a workload but don't, check that the label is present, for example:
+If you expect to see data from a workload but don't, check that the Source object, for example:
 
 ```shell
-kubectl get deployment <deployment-name> -n <namespace> -o jsonpath='{.metadata.labels}'
+kubectl get sources -n <namespace> -l odigos.io/workload-name=<deployment-name>
 ```
 
 ## Language Detection
 
-After an `odigos-instrumentation` label is added to a workload, Odigos will attempt to detect the programming language
+After Source object is created for a workload, Odigos will attempt to detect the programming language
 of the containers in the workload pods and write the detected language to an `instrumentedapplications.odigos.io` CRD in same namespace.
 
 The resulting language is used to determine which instrumentation to apply.
@@ -47,8 +54,6 @@ To inject the instrumentation agent into pods, Odigos will patch the workload te
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
-    odigos-instrumentation: enabled
   name: my-deployment
   namespace: default
 spec:

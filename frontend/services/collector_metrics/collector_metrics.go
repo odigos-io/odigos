@@ -9,15 +9,16 @@ import (
 	"sync"
 	"time"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/services/common"
-	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver/otlpreceiver"
 	"go.opentelemetry.io/collector/receiver/receivertest"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+	"k8s.io/apimachinery/pkg/watch"
 )
 
 const (
@@ -67,7 +68,7 @@ func (tm *trafficMetrics) String() string {
 type OdigosMetricsConsumer struct {
 	sources      sourcesMetrics
 	destinations destinationsMetrics
-	deletedChan  chan deleteNotification
+	deletedChan  chan notification
 }
 
 var (
@@ -114,7 +115,15 @@ func (c *OdigosMetricsConsumer) runNotificationsLoop(ctx context.Context) {
 			case destination:
 				c.destinations.removeDestination(n.object)
 			case source:
-				c.sources.removeSource(n.sourceID)
+				switch n.eventType {
+				case watch.Deleted:
+					c.sources.removeSource(n.sourceID)
+				case watch.Added:
+					c.sources.addSource(n.sourceID)
+				default:
+					fmt.Println("Unknown event type in metrics notification loop")
+				}
+
 			}
 		case <-ctx.Done():
 			return
@@ -154,7 +163,7 @@ func NewOdigosMetrics() *OdigosMetricsConsumer {
 	return &OdigosMetricsConsumer{
 		sources:      newSourcesMetrics(),
 		destinations: newDestinationsMetrics(),
-		deletedChan:  make(chan deleteNotification),
+		deletedChan:  make(chan notification),
 	}
 }
 
@@ -172,7 +181,7 @@ func (c *OdigosMetricsConsumer) Run(ctx context.Context, odigosNS string) {
 	closeWg.Add(1)
 	go func() {
 		defer closeWg.Done()
-		err := runDeleteWatcher(ctx, &deleteWatcher{
+		err := runWatcher(ctx, &deleteWatcher{
 			odigosNS:            odigosNS,
 			deleteNotifications: c.deletedChan})
 		if err != nil {

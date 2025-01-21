@@ -17,7 +17,6 @@ In your Argo CD configuration, add the following entries under `resource.customi
 data:
   resource.customizations.ignoreDifferences.all: |
     jqPathExpressions:
-    - .metadata.labels."odigos-instrumentation"
     - .metadata.annotations | select(has("odigos.io"))
     - .spec.template.metadata.labels | select(has("odigos.io"))
     - .spec.template.spec.containers[].resources.limits | select(keys[] | startswith("instrumentation.odigos.io"))

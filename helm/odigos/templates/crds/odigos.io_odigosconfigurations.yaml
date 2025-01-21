@@ -74,7 +74,7 @@ spec:
                   requestMemoryMiB:
                     description: |-
                       RequestMemoryMiB is the memory request for the cluster gateway collector deployment.
-                      it will be embedded in the deployment as a resource request of the form "memory: <value>Mi"
+                      it will be embedded in the deployment as a resource request of the form `memory: <value>Mi`
                       default value is 500Mi
                     type: integer
                 type: object

@@ -1,0 +1,7 @@
+package k8sconsts
+
+const (
+	OdigosProSecretName        = "odigos-pro"
+	OdigosCloudApiKeySecretKey = "odigos-cloud-api-key"
+	OdigosOnpremTokenSecretKey = "odigos-onprem-token"
+)

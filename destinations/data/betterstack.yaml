@@ -21,3 +21,9 @@ spec:
       componentProps:
         type: password
         required: true
+  note:
+    type: Check
+    content: |
+      We handle the endpoint internally, so you don't need to provide it.
+      - The endpoint for metrics is `https://in-otel.logs.betterstack.com/metrics`
+      - The endpoint for logs is `https://in-otel.logs.betterstack.com:443`

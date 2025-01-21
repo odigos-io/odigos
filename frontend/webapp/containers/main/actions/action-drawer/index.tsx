@@ -1,14 +1,14 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import buildCard from './build-card';
 import { ActionFormBody } from '../';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
 import buildDrawerItem from './build-drawer-item';
-import { ConditionDetails, DataCard } from '@/reuseable-components';
 import { useActionCRUD, useActionFormData } from '@/hooks';
 import { ACTION, DATA_CARDS, getActionIcon } from '@/utils';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { ACTION_OPTIONS } from '../action-modal/action-options';
+import { ConditionDetails, DataCard } from '@/reuseable-components';
 import { OVERVIEW_ENTITY_TYPES, type ActionDataParsed } from '@/types';
 
 interface Props {}
@@ -30,21 +30,32 @@ const DataContainer = styled.div`
 export const ActionDrawer: React.FC<Props> = () => {
   const { selectedItem, setSelectedItem } = useDrawerStore();
   const { formData, formErrors, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem } = useActionFormData();
-
-  const { updateAction, deleteAction } = useActionCRUD({
+  const { actions, updateAction, deleteAction } = useActionCRUD({
     onSuccess: (type) => {
       setIsEditing(false);
       setIsFormDirty(false);
 
-      if (type === ACTION.DELETE) {
-        setSelectedItem(null);
-      } else {
-        const { item } = selectedItem as { item: ActionDataParsed };
-        const { id } = item;
-        setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.ACTION, item: buildDrawerItem(id, formData, item) });
-      }
+      if (type === ACTION.DELETE) setSelectedItem(null);
+      else reSelectItem();
     },
   });
+
+  const reSelectItem = (fetchedItems?: typeof actions) => {
+    const { item } = selectedItem as { item: ActionDataParsed };
+    const { id } = item;
+
+    if (!!fetchedItems?.length) {
+      const found = fetchedItems.find((x) => x.id === id);
+      if (!!found) {
+        return setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.ACTION, item: found });
+      }
+    }
+
+    setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.ACTION, item: buildDrawerItem(id, formData, item) });
+  };
+
+  // This should keep the drawer up-to-date with the latest data
+  useEffect(() => reSelectItem(actions), [actions]);
 
   const [isEditing, setIsEditing] = useState(false);
   const [isFormDirty, setIsFormDirty] = useState(false);
