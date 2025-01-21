@@ -254,6 +254,7 @@
             "backends/splunk",
             "backends/sumologic",
             "backends/tempo",
+            "backends/traceloop",
             "backends/uptrace"
           ]
         }
