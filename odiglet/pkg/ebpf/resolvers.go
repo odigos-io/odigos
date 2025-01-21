@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/instrumentation/detector"
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -43,12 +43,12 @@ func (dr *k8sDetailsResolver) Resolve(ctx context.Context, event detector.Proces
 func (dr *k8sDetailsResolver) podFromProcEvent(ctx context.Context, e detector.ProcessEvent) (*corev1.Pod, error) {
 	eventEnvs := e.ExecDetails.Environments
 
-	podName, ok := eventEnvs[consts.OdigosEnvVarPodName]
+	podName, ok := eventEnvs[k8sconsts.OdigosEnvVarPodName]
 	if !ok {
 		return nil, errPodNameNotReported
 	}
 
-	podNamespace, ok := eventEnvs[consts.OdigosEnvVarNamespace]
+	podNamespace, ok := eventEnvs[k8sconsts.OdigosEnvVarNamespace]
 	if !ok {
 		return nil, errPodNameSpaceNotReported
 	}
@@ -63,7 +63,7 @@ func (dr *k8sDetailsResolver) podFromProcEvent(ctx context.Context, e detector.P
 }
 
 func containerNameFromProcEvent(event detector.ProcessEvent) (string, bool) {
-	containerName, ok := event.ExecDetails.Environments[consts.OdigosEnvVarContainerName]
+	containerName, ok := event.ExecDetails.Environments[k8sconsts.OdigosEnvVarContainerName]
 	return containerName, ok
 }
 

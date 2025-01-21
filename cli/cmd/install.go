@@ -14,12 +14,12 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/cli/pkg/log"
 	"github.com/odigos-io/odigos/common"
-	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"

@@ -65,15 +65,15 @@
       "cwd": "${workspaceFolder}/cli",
       "args": ["uninstall", "--yes"],
       "buildFlags": "-tags=embed_manifests"
-    }, 
+    },
     {
-      "name": "cli install",
+      "name": "cli diagnose",
       "type": "go",
       "request": "launch",
       "mode": "debug",
       "program": "${workspaceFolder}/cli",
+      "args": ["diagnose"],
       "cwd": "${workspaceFolder}/cli",
-      "args": ["install", "--version", "ODIGOS_VERSION"],
       "buildFlags": "-tags=embed_manifests"
     },
     {

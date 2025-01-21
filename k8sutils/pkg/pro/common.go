@@ -9,8 +9,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosconsts "github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 )
 
 func UpdateOdigosToken(ctx context.Context, client kubernetes.Interface, namespace string, onPremToken string) error {
@@ -24,14 +24,14 @@ func UpdateOdigosToken(ctx context.Context, client kubernetes.Interface, namespa
 }
 
 func updateSecretToken(ctx context.Context, client kubernetes.Interface, namespace string, onPremToken string) error {
-	secret, err := client.CoreV1().Secrets(namespace).Get(ctx, consts.OdigosProSecretName, metav1.GetOptions{})
+	secret, err := client.CoreV1().Secrets(namespace).Get(ctx, k8sconsts.OdigosProSecretName, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return fmt.Errorf("tokens are not available in the open-source version of Odigos. Please contact Odigos team to inquire about pro version")
 		}
 		return err
 	}
-	secret.Data[consts.OdigosOnpremTokenSecretKey] = []byte(onPremToken)
+	secret.Data[k8sconsts.OdigosOnpremTokenSecretKey] = []byte(onPremToken)
 
 	_, err = client.CoreV1().Secrets(namespace).Update(ctx, secret, metav1.UpdateOptions{})
 	if err != nil {

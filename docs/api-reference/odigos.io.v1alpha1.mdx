@@ -509,7 +509,7 @@ auto_generated: true
 <code>key</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/go.opentelemetry.io/otel/attribute#Key"><code>go.opentelemetry.io/otel/attribute.Key</code></a>
+<code>string</code>
 </td>
 <td>
    <p>attribute key (e.g. &quot;url.path&quot;)</p>
@@ -1164,19 +1164,6 @@ The workload is identified by the owner reference</p>
 </tr>
 <tr>
 <td>
-<code>config</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-WorkloadInstrumentationConfig"><code>[]WorkloadInstrumentationConfig</code></a>
-</td>
-<td>
-   <p>config for this workload.
-the config is a list to allow for multiple config options and values to be applied.
-the list is processed in order, and the first matching config is applied.</p>
-</td>
-</tr>
-<tr>
-<td>
 <code>sdkConfigs</code> <B>[Required]</B>
 </td>
 <td>
@@ -1352,45 +1339,6 @@ and whether the values are considered a guaranteed API.</p>
 <td>
    <span class="text-muted">No description provided.</span>
    </td>
-</tr>
-</tbody>
-</table>
-
-## `InstrumentationLibrary` <a id="odigos-io-v1alpha1-InstrumentationLibrary"></a>
-    
-
-**Appears in:**
-
-- [WorkloadInstrumentationConfig](#odigos-io-v1alpha1-WorkloadInstrumentationConfig)
-
-<p>InstrumentationLibrary represents a library for instrumentation</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-    
-  
-<tr>
-<td>
-<code>language</code> <B>[Required]</B>
-</td>
-<td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#ProgrammingLanguage"><code>common.ProgrammingLanguage</code></a>
-</td>
-<td>
-   <p>Language is the programming language of the library</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>instrumentationLibraryName</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <p>InstrumentationLibraryName is the name of the instrumentation library</p>
-</td>
 </tr>
 </tbody>
 </table>
@@ -2502,73 +2450,6 @@ This field is required upon creation and cannot be modified.</p>
 <td>
    <p>Represents the observations of a source's current state.
 Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot;</p>
-</td>
-</tr>
-</tbody>
-</table>
-
-## `WorkloadInstrumentationConfig` <a id="odigos-io-v1alpha1-WorkloadInstrumentationConfig"></a>
-    
-
-**Appears in:**
-
-- [InstrumentationConfigSpec](#odigos-io-v1alpha1-InstrumentationConfigSpec)
-
-<p>WorkloadInstrumentationConfig defined a single config option to apply
-on a workload, along with it's value, filters and instrumentation libraries</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-    
-  
-<tr>
-<td>
-<code>optionKey</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <p>OptionKey is the name of the option
-This value is transparent to the CRD and is passed as-is to the SDK.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>spanKind</code> <B>[Required]</B>
-</td>
-<td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#SpanKind"><code>common.SpanKind</code></a>
-</td>
-<td>
-   <p>This option allow to specify the config option for a specific span kind
-for example, only to client spans or only to server spans.
-it the span kind is not specified, the option will apply to all spans.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>optionValueBoolean</code> <B>[Required]</B>
-</td>
-<td>
-<code>bool</code>
-</td>
-<td>
-   <p>OptionValueBoolean is the boolean value of the option if it is a boolean</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>instrumentationLibraries</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-InstrumentationLibrary"><code>[]InstrumentationLibrary</code></a>
-</td>
-<td>
-   <p>a list of instrumentation libraries to apply this setting to
-if a library is not in this list, the setting should not apply to it
-and should be cleared.</p>
 </td>
 </tr>
 </tbody>
