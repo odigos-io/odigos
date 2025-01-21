@@ -21,30 +21,30 @@ func (g *GrafanaCloudLoki) DestType() common.DestinationType {
 	return common.GrafanaCloudLokiDestinationType
 }
 
-func (g *GrafanaCloudLoki) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (g *GrafanaCloudLoki) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	if !isLoggingEnabled(dest) {
-		return errors.New("Logging not enabled, gateway will not be configured for grafana cloud Loki")
+		return nil, errors.New("Logging not enabled, gateway will not be configured for grafana cloud Loki")
 	}
 
 	lokiUrl, exists := dest.GetConfig()[grafanaCloudLokiEndpointKey]
 	if !exists {
-		return errors.New("Grafana Cloud Loki endpoint not specified, gateway will not be configured for Loki")
+		return nil, errors.New("Grafana Cloud Loki endpoint not specified, gateway will not be configured for Loki")
 	}
 
 	lokiExporterEndpoint, err := grafanaLokiUrlFromInput(lokiUrl)
 	if err != nil {
-		return errors.Join(err, errors.New("failed to parse grafana cloud loki endpoint, gateway will not be configured for Loki"))
+		return nil, errors.Join(err, errors.New("failed to parse grafana cloud loki endpoint, gateway will not be configured for Loki"))
 	}
 
 	lokiUsername, exists := dest.GetConfig()[grafanaCloudLokiUsernameKey]
 	if !exists {
-		return errors.New("Grafana Cloud Loki username not specified, gateway will not be configured for Loki")
+		return nil, errors.New("Grafana Cloud Loki username not specified, gateway will not be configured for Loki")
 	}
 
 	rawLokiLabels, exists := dest.GetConfig()[grafanaCloudLokiLabelsKey]
 	lokiProcessors, err := lokiLabelsProcessors(rawLokiLabels, exists, dest.GetID())
 	if err != nil {
-		return errors.Join(err, errors.New("failed to parse grafana cloud loki labels, gateway will not be configured for Loki"))
+		return nil, errors.Join(err, errors.New("failed to parse grafana cloud loki labels, gateway will not be configured for Loki"))
 	}
 
 	authExtensionName := "basicauth/grafana" + dest.GetID()
@@ -75,8 +75,9 @@ func (g *GrafanaCloudLoki) ModifyConfig(dest ExporterConfigurer, currentConfig *
 		Processors: processorNames,
 		Exporters:  []string{exporterName},
 	}
+	pipelineNames := []string{logsPipelineName}
 
-	return nil
+	return pipelineNames, nil
 }
 
 // to send logs to grafana cloud we use the loki exporter, which uses a loki

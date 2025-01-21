@@ -18,10 +18,10 @@ func (e *ElasticAPM) DestType() common.DestinationType {
 	return common.ElasticAPMDestinationType
 }
 
-func (e *ElasticAPM) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (e *ElasticAPM) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	isTlsDisabled := false
 	if !e.requiredVarsExists(dest) {
-		return errors.New("ElasticAPM config is missing required variables")
+		return nil, errors.New("ElasticAPM config is missing required variables")
 	}
 
 	isTlsDisabled = strings.Contains(dest.GetConfig()[elasticApmServerEndpoint], "http://")
@@ -39,11 +39,13 @@ func (e *ElasticAPM) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 		},
 	}
 
+	var pipelineNames []string
 	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/elastic-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
 	if isMetricsEnabled(dest) {
@@ -51,6 +53,7 @@ func (e *ElasticAPM) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
 	if isLoggingEnabled(dest) {
@@ -58,9 +61,10 @@ func (e *ElasticAPM) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, logsPipelineName)
 	}
 
-	return nil
+	return pipelineNames, nil
 }
 
 func (e *ElasticAPM) requiredVarsExists(dest ExporterConfigurer) bool {

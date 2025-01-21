@@ -22,21 +22,21 @@ func (l *Loki) DestType() common.DestinationType {
 	return common.LokiDestinationType
 }
 
-func (l *Loki) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (l *Loki) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	rawUrl, exists := dest.GetConfig()[lokiUrlKey]
 	if !exists {
-		return errors.New("Loki endpoint not specified, gateway will not be configured for Loki")
+		return nil, errors.New("Loki endpoint not specified, gateway will not be configured for Loki")
 	}
 
 	url, err := lokiUrlFromInput(rawUrl)
 	if err != nil {
-		return errors.Join(err, errors.New("failed to parse loki endpoint, gateway will not be configured for Loki"))
+		return nil, errors.Join(err, errors.New("failed to parse loki endpoint, gateway will not be configured for Loki"))
 	}
 
 	rawLokiLabels, exists := dest.GetConfig()[lokiLabelsKey]
 	lokiProcessors, err := lokiLabelsProcessors(rawLokiLabels, exists, dest.GetID())
 	if err != nil {
-		return errors.Join(err, errors.New("failed to parse loki labels, gateway will not be configured for Loki"))
+		return nil, errors.Join(err, errors.New("failed to parse loki labels, gateway will not be configured for Loki"))
 	}
 
 	lokiExporterName := "loki/loki-" + dest.GetID()
@@ -56,7 +56,7 @@ func (l *Loki) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) erro
 		Exporters:  []string{lokiExporterName},
 	}
 
-	return nil
+	return []string{logsPipelineName}, nil
 }
 
 func lokiUrlFromInput(rawUrl string) (string, error) {

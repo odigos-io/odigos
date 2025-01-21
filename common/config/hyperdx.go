@@ -10,7 +10,7 @@ func (j *HyperDX) DestType() common.DestinationType {
 	return common.HyperDxDestinationType
 }
 
-func (j *HyperDX) ModifyConfig(dest ExporterConfigurer, cfg *Config) error {
+func (j *HyperDX) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, error) {
 	uniqueUri := "hdx-" + dest.GetID()
 
 	exporterName := "otlp/" + uniqueUri
@@ -22,12 +22,13 @@ func (j *HyperDX) ModifyConfig(dest ExporterConfigurer, cfg *Config) error {
 	}
 
 	cfg.Exporters[exporterName] = exporterConfig
-
+	var pipelineNames []string
 	if isTracingEnabled(dest) {
 		pipeName := "traces/" + uniqueUri
 		cfg.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, pipeName)
 	}
 
 	if isMetricsEnabled(dest) {
@@ -35,6 +36,7 @@ func (j *HyperDX) ModifyConfig(dest ExporterConfigurer, cfg *Config) error {
 		cfg.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, pipeName)
 	}
 
 	if isLoggingEnabled(dest) {
@@ -42,7 +44,8 @@ func (j *HyperDX) ModifyConfig(dest ExporterConfigurer, cfg *Config) error {
 		cfg.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, pipeName)
 	}
 
-	return nil
+	return pipelineNames, nil
 }
