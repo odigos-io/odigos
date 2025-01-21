@@ -39,7 +39,21 @@ For our new destination to be visible in the UI, we need to define the destinati
     - Example: `mydest.yaml`
 
     <AccordionGroup>
-      <Accordion icon="circle-info" title="Allowed properties for `spec.fields[]`">
+      <Accordion icon="circle-info" title="Allowed properties">
+        | Key | Example | Required | Description | Docs |
+        |---|---|:---:|---|:---:|
+        | metadata.type | `mydest` | ✅ | unique identifier for the destination | ✅ |
+        | metadata.displayName | `My Destination` | ✅ | display name of the destination | ✅ |
+        | metadata.category | `managed` | ✅ | one-of: `managed` `self hosted` | ✅ |
+        | spec.image | `mydest.svg` | ✅ | logo of the destination | ✅ |
+        | spec.signals.traces.supported | `true` | ✅ | is tracing supported? | ✅ |
+        | spec.signals.metrics.supported | `true` | ✅ | is metrics supported? | ✅ |
+        | spec.signals.logs.supported | `false` | ✅ | is logging supported? | ✅ |
+        | spec.note.type | `Note` | ❌ | type of [callout box](https://mintlify.com/docs/content/components/callouts) to display<br/><br/>one-of: `Note` `Info` `Warning` `Tip` `Check` | ✅ |
+        | spec.note.content | `We handle the endpoint internally, so you don't need to provide it.` | ❌ | content of the callout box | ✅ |
+        | spec.fields | - | ✅ | list of fields to be configured, [see specification here](#allowed-properties-for-spec-fields) | ✅ |
+      </Accordion>
+      <Accordion icon="circle-info" title="Allowed properties for spec.fields[]">
         | Key | Example | Required | Description | Docs |
         |---|---|:---:|---|:---:|
         | name | `MYDEST_API_KEY` | ✅ | key name of the field | ✅ |
