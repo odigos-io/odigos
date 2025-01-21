@@ -9,7 +9,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
@@ -44,11 +43,6 @@ func (r *SourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		WithEventFilter(predicate.Or(
 			odigospredicate.ExistencePredicate{},
 			predicate.LabelChangedPredicate{},
-			predicate.Funcs{
-				DeleteFunc: func(e event.DeleteEvent) bool {
-					return true
-				},
-			},
 		)).
 		Complete(r)
 }

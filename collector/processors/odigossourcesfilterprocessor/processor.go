@@ -89,23 +89,15 @@ func (fp *filterProcessor) processLogs(ctx context.Context, ld plog.Logs) (plog.
 }
 
 func (fp *filterProcessor) matches(name, namespace, kind string) bool {
-	if namespace == "" {
-		return false
-	}
 
 	namespaceSelectorKey := fmt.Sprintf("%s/*/*", namespace)
 	if _, exists := fp.matchMap[namespaceSelectorKey]; exists {
 		return true
 	}
 
-	if name != "" && kind != "" {
-		key := fmt.Sprintf("%s/%s/%s", namespace, kind, name)
-		if _, exists := fp.matchMap[key]; exists {
-			return true
-		}
-	}
-
-	return false
+	key := fmt.Sprintf("%s/%s/%s", namespace, kind, name)
+	_, exists := fp.matchMap[key]
+	return exists
 }
 
 func extractResourceDetails(attributes pcommon.Map) (namespace, name, kind string, found bool) {

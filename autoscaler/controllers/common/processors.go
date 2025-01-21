@@ -101,16 +101,11 @@ func GenerateSourcesFilterProcessors(
 			}
 		}
 		if len(dest.Spec.SourceSelector.Groups) > 0 {
-			matchedSources, err := fetchSourcesByGroups(ctx, kubeClient, dest.Spec.SourceSelector.Groups, logger)
-
+			groupKeys, err := fetchSourceKeysByGroups(ctx, kubeClient, dest.Spec.SourceSelector.Groups, logger)
 			if err != nil {
 				return nil, err
 			}
-
-			for _, source := range matchedSources {
-				sourceSelectorKey := fmt.Sprintf("%s/%s/%s", source.Spec.Workload.Namespace, source.Spec.Workload.Kind, source.Spec.Workload.Name)
-				matchConditions = append(matchConditions, sourceSelectorKey)
-			}
+			matchConditions = append(matchConditions, groupKeys...)
 		}
 
 		sanitizedProcessorName := strings.ReplaceAll(dest.GetID(), ".", "-")
@@ -124,8 +119,9 @@ func GenerateSourcesFilterProcessors(
 	return sourcesFilterProcessors, nil
 }
 
-func fetchSourcesByGroups(ctx context.Context, kubeClient client.Client, groups []string, logger logr.Logger) ([]odigosv1.Source, error) {
-	sourceMap := make(map[string]odigosv1.Source)
+func fetchSourceKeysByGroups(ctx context.Context, kubeClient client.Client, groups []string, logger logr.Logger) ([]string, error) {
+	sourceKeys := []string{}
+
 	for _, group := range groups {
 		labelSelector := labels.Set{fmt.Sprintf("odigos.io/group-%s", group): "true"}.AsSelector()
 
@@ -139,15 +135,10 @@ func fetchSourcesByGroups(ctx context.Context, kubeClient client.Client, groups 
 		}
 
 		for _, source := range sourceList.Items {
-			key := fmt.Sprintf("%s/%s/%s", source.Spec.Workload.Namespace, source.Spec.Workload.Kind, source.Spec.Workload.Name)
-			if _, exists := sourceMap[key]; !exists {
-				sourceMap[key] = source
-			}
+			sourceKey := fmt.Sprintf("%s/%s/%s", source.Spec.Workload.Namespace, source.Spec.Workload.Kind, source.Spec.Workload.Name)
+			sourceKeys = append(sourceKeys, sourceKey)
 		}
 	}
-	sources := make([]odigosv1.Source, 0, len(sourceMap))
-	for _, source := range sourceMap {
-		sources = append(sources, source)
-	}
-	return sources, nil
+
+	return sourceKeys, nil
 }
