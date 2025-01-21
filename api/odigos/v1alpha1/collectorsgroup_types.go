@@ -17,8 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
-	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

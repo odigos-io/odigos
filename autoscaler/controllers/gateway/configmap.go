@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
 	odigoscommon "github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 	odigosconsts "github.com/odigos-io/odigos/common/consts"
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/conditions"
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -160,11 +160,11 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 
 	desiredCM := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      consts.OdigosClusterCollectorConfigMapName,
+			Name:      k8sconsts.OdigosClusterCollectorConfigMapName,
 			Namespace: gateway.Namespace,
 		},
 		Data: map[string]string{
-			consts.OdigosClusterCollectorConfigMapKey: desiredData,
+			k8sconsts.OdigosClusterCollectorConfigMapKey: desiredData,
 		},
 	}
 
@@ -174,7 +174,7 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 	}
 
 	existing := &v1.ConfigMap{}
-	if err := c.Get(ctx, client.ObjectKey{Namespace: gateway.Namespace, Name: consts.OdigosClusterCollectorConfigMapName}, existing); err != nil {
+	if err := c.Get(ctx, client.ObjectKey{Namespace: gateway.Namespace, Name: k8sconsts.OdigosClusterCollectorConfigMapName}, existing); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.V(0).Info("Creating gateway config map")
 			_, err := createConfigMap(desiredCM, ctx, c)

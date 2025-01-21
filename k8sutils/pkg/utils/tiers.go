@@ -8,8 +8,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 )
 
 const (
@@ -37,7 +37,7 @@ func GetCurrentOdigosTier(ctx context.Context, namespaces string, client *kubern
 }
 
 func getCurrentOdigosProSecret(ctx context.Context, namespace string, client *kubernetes.Clientset) (*corev1.Secret, error) {
-	secret, err := client.CoreV1().Secrets(namespace).Get(ctx, consts.OdigosProSecretName, metav1.GetOptions{})
+	secret, err := client.CoreV1().Secrets(namespace).Get(ctx, k8sconsts.OdigosProSecretName, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil, nil
 	}

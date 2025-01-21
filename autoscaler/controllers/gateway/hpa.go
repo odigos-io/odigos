@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/version"
 	"k8s.io/utils/pointer"
@@ -66,7 +66,7 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 				ScaleTargetRef: autoscalingv2beta1.CrossVersionObjectReference{
 					APIVersion: "apps/v1",
 					Kind:       "Deployment",
-					Name:       consts.OdigosClusterCollectorDeploymentName,
+					Name:       k8sconsts.OdigosClusterCollectorDeploymentName,
 				},
 				MinReplicas: minReplicas,
 				MaxReplicas: maxReplicas,
@@ -99,7 +99,7 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 				ScaleTargetRef: autoscalingv2beta2.CrossVersionObjectReference{
 					APIVersion: "apps/v1",
 					Kind:       "Deployment",
-					Name:       consts.OdigosClusterCollectorDeploymentName,
+					Name:       k8sconsts.OdigosClusterCollectorDeploymentName,
 				},
 				MinReplicas: minReplicas,
 				MaxReplicas: maxReplicas,
@@ -143,7 +143,7 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 				ScaleTargetRef: autoscalingv2.CrossVersionObjectReference{
 					APIVersion: "apps/v1",
 					Kind:       "Deployment",
-					Name:       consts.OdigosClusterCollectorDeploymentName,
+					Name:       k8sconsts.OdigosClusterCollectorDeploymentName,
 				},
 				MinReplicas: minReplicas,
 				MaxReplicas: maxReplicas,
@@ -194,13 +194,13 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 		return err
 	}
 
-	logger.Info("Successfully applied HPA", "name", consts.OdigosClusterCollectorDeploymentName, "namespace", gateway.Namespace)
+	logger.Info("Successfully applied HPA", "name", k8sconsts.OdigosClusterCollectorDeploymentName, "namespace", gateway.Namespace)
 	return nil
 }
 
 func buildHPACommonFields(gateway *odigosv1.CollectorsGroup) metav1.ObjectMeta {
 	return metav1.ObjectMeta{
-		Name:      consts.OdigosClusterCollectorDeploymentName,
+		Name:      k8sconsts.OdigosClusterCollectorDeploymentName,
 		Namespace: gateway.Namespace,
 	}
 }
