@@ -21,6 +21,8 @@ spec:
       componentProps:
         type: password
         required: true
-  note: |
-    We handle the endpoint internally, so you don't need to provide it.
-    - The endpoint is `in-otel.hyperdx.io:4317`
+  note:
+    type: Check
+    content: |
+      We handle the endpoint internally, so you don't need to provide it.
+      - The endpoint is `in-otel.hyperdx.io:4317`

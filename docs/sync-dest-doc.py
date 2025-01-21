@@ -122,10 +122,12 @@ def generate_note(yaml_content):
     Returns:
         str: Note content.
     """
-    note = yaml_content.get("spec", {}).get("note", [])
+    note = yaml_content.get("spec", {}).get("note", {})
+    type = note.get("type", "Note")
+    content = note.get("content", "")
 
-    if note:
-        note = f"<Check>\n{indent_lines(note, 2)}\n</Check>"
+    if content:
+        note = f"<{type}>\n{indent_lines(content, 2)}\n</{type}>"
     else:
         note = ""
 
