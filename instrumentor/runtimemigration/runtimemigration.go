@@ -331,6 +331,11 @@ func handleContainerRuntimeDetailsUpdate(
 		// This temporary fix addresses the current bug and will be removed once the `envOverwriter` logic is deprecated following the post-webhook injection release.
 		shouldChangeUpdateStateToSucceeded := false
 		for envKey, envValue := range annotationEnvVarsForContainer {
+
+			if envValue == nil {
+				continue
+			}
+
 			if strings.Contains(*envValue, "/var/odigos") {
 				cleanedEnvValue := cleanUpManifestValueFromOdigosAdditions(envKey, *envValue)
 				annotationEnvVarsForContainer[envKey] = &cleanedEnvValue
