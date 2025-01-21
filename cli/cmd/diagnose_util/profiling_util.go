@@ -10,9 +10,9 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -31,19 +31,19 @@ type ProfilingPodConfig struct {
 // Therefore, the same port cannot be used for multiple services on the same node.
 var servicesProfilingMetadata = map[string]ProfilingPodConfig{
 	"odiglet": {
-		Port: consts.OdigletPprofEndpointPort,
+		Port: k8sconsts.OdigletPprofEndpointPort,
 		Selector: labels.Set{
 			"app.kubernetes.io/name": resources.OdigletAppLabelValue}.AsSelector(),
 	},
 	"data-collection": {
-		Port: consts.CollectorsPprofEndpointPort,
+		Port: k8sconsts.CollectorsPprofEndpointPort,
 		Selector: labels.Set{
-			consts.OdigosCollectorRoleLabel: string(consts.CollectorsRoleNodeCollector)}.AsSelector(),
+			k8sconsts.OdigosCollectorRoleLabel: string(k8sconsts.CollectorsRoleNodeCollector)}.AsSelector(),
 	},
 	"gateway": {
-		Port: consts.CollectorsPprofEndpointPort,
+		Port: k8sconsts.CollectorsPprofEndpointPort,
 		Selector: labels.Set{
-			consts.OdigosCollectorRoleLabel: string(consts.CollectorsRoleClusterGateway)}.AsSelector(),
+			k8sconsts.OdigosCollectorRoleLabel: string(k8sconsts.CollectorsRoleClusterGateway)}.AsSelector(),
 	},
 }
 
@@ -190,18 +190,18 @@ func FetchOdigosCollectorMetrics(ctx context.Context, client *kube.Client, metri
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		err = collectMetrics(ctx, client, odigosNamespace, metricsDir, consts.CollectorsRoleClusterGateway)
+		err = collectMetrics(ctx, client, odigosNamespace, metricsDir, k8sconsts.CollectorsRoleClusterGateway)
 		if err != nil {
-			fmt.Printf("Error Getting Metrics Data of: %v, because: %v\n", consts.CollectorsRoleClusterGateway, err)
+			fmt.Printf("Error Getting Metrics Data of: %v, because: %v\n", k8sconsts.CollectorsRoleClusterGateway, err)
 		}
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		err = collectMetrics(ctx, client, odigosNamespace, metricsDir, consts.CollectorsRoleNodeCollector)
+		err = collectMetrics(ctx, client, odigosNamespace, metricsDir, k8sconsts.CollectorsRoleNodeCollector)
 		if err != nil {
-			fmt.Printf("Error Getting Metrics Data of: %v, because: %v\n", consts.CollectorsRoleNodeCollector, err)
+			fmt.Printf("Error Getting Metrics Data of: %v, because: %v\n", k8sconsts.CollectorsRoleNodeCollector, err)
 		}
 	}()
 
@@ -210,7 +210,7 @@ func FetchOdigosCollectorMetrics(ctx context.Context, client *kube.Client, metri
 	return nil
 }
 
-func collectMetrics(ctx context.Context, client *kube.Client, odigosNamespace string, metricsDir string, collectorRole consts.CollectorRole) error {
+func collectMetrics(ctx context.Context, client *kube.Client, odigosNamespace string, metricsDir string, collectorRole k8sconsts.CollectorRole) error {
 	collectorPods, err := client.CoreV1().Pods(odigosNamespace).List(ctx, metav1.ListOptions{
 		LabelSelector: "odigos.io/collector-role=" + string(collectorRole),
 	})
@@ -245,12 +245,12 @@ func collectMetrics(ctx context.Context, client *kube.Client, odigosNamespace st
 	return nil
 }
 
-func captureMetrics(ctx context.Context, client *kube.Client, podName string, namespace string, metricFile *os.File, collectorRole consts.CollectorRole) error {
+func captureMetrics(ctx context.Context, client *kube.Client, podName string, namespace string, metricFile *os.File, collectorRole k8sconsts.CollectorRole) error {
 	portNumber := ""
-	if collectorRole == consts.CollectorsRoleClusterGateway {
-		portNumber = strconv.Itoa(int(consts.OdigosClusterCollectorOwnTelemetryPortDefault))
-	} else if collectorRole == consts.CollectorsRoleNodeCollector {
-		portNumber = strconv.Itoa(int(consts.OdigosNodeCollectorOwnTelemetryPortDefault))
+	if collectorRole == k8sconsts.CollectorsRoleClusterGateway {
+		portNumber = strconv.Itoa(int(k8sconsts.OdigosClusterCollectorOwnTelemetryPortDefault))
+	} else if collectorRole == k8sconsts.CollectorsRoleNodeCollector {
+		portNumber = strconv.Itoa(int(k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault))
 	} else {
 		return nil
 	}

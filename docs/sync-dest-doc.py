@@ -122,10 +122,12 @@ def generate_note(yaml_content):
     Returns:
         str: Note content.
     """
-    note = yaml_content.get("spec", {}).get("note", [])
+    note = yaml_content.get("spec", {}).get("note", {})
+    type = note.get("type", "Note")
+    content = note.get("content", "")
 
-    if note:
-        note = f"<Check>\n{indent_lines(note, 2)}\n</Check>"
+    if content:
+        note = f"<{type}>\n{indent_lines(content, 2)}\n</{type}>"
     else:
         note = ""
 
@@ -371,6 +373,7 @@ def get_documenation(yaml_content):
         + "\nicon: 'signal-stream'"
         + "\n---"
         + "\n\n### Getting Started"
+        + f"\n\n{generate_logo(yaml_content, True, 100)}"
         + "\n\n{/*"
         + "\n    Add custom content here (under this comment)..."
         + "\n"
@@ -489,8 +492,10 @@ def create_mdx(mdx_path, yaml_content):
 
     mdx_content = (
         f"{documenation.get("content_before_custom")}"
-        # Logo only on-create
-        + f"\n\n{generate_logo(yaml_content, True, 100)}"
+        + "\n\n**Creating Account**<br />"
+        + "\nGo to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**"
+        + "\n\n**Obtaining Access Token**<br />"
+        + "\nGo to **⚙️ > Access Tokens** and click **Create New**"
         + f"\n\n{documenation.get("content_after_custom")}"
     )
 
@@ -575,11 +580,10 @@ def process_overview(backend_yaml_dir, docs_dir):
     content = (
         "---"
         + "\ntitle: 'Overview'"
+        + "\ndescription: 'Odigos makes it simple to add and configure destinations, allowing you to select the specific signals (`traces`,`metrics`,`logs`) that you want to send to each destination.'"
         + "\nsidebarTitle: 'Overview'"
         + "\nicon: 'house'"
         + "\n---"
-        + "\n\nOdigos makes it simple to add and configure destinations, allowing you to select the specific signals (`traces`,`metrics`,`logs`) that you want to send to each destination."
-        + "\n\nOdigos has destinations for many observability backends."
         + "\n\n<Tip>"
         + "\n  Can't find your backend in Odigos? Please tell us! We are constantly adding new integrations.<br />"
         + "\n  You can also follow our quick [add new destination](/adding-new-dest) guide and submit a PR."

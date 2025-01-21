@@ -9,9 +9,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/services/common"
-	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/pdata/pmetric"

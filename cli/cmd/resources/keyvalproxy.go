@@ -8,7 +8,7 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/containers"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -324,7 +324,7 @@ func NewKeyvalProxyDeployment(version string, ns string, imagePrefix string) *ap
 								{
 									ConfigMapRef: &corev1.ConfigMapEnvSource{
 										LocalObjectReference: corev1.LocalObjectReference{
-											Name: consts.OdigosDeploymentConfigMapName,
+											Name: k8sconsts.OdigosDeploymentConfigMapName,
 										},
 									},
 								},

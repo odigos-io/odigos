@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
-	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 	"github.com/spf13/cobra"
 )

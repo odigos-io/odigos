@@ -20,8 +20,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -97,8 +97,8 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	if !v1alpha1.IsDisabledSource(source) &&
 		k8sutils.IsTerminating(source) &&
-		controllerutil.ContainsFinalizer(source, consts.DeleteInstrumentationConfigFinalizer) {
-		controllerutil.RemoveFinalizer(source, consts.DeleteInstrumentationConfigFinalizer)
+		controllerutil.ContainsFinalizer(source, k8sconsts.DeleteInstrumentationConfigFinalizer) {
+		controllerutil.RemoveFinalizer(source, k8sconsts.DeleteInstrumentationConfigFinalizer)
 		if err := r.Update(ctx, source); err != nil {
 			return k8sutils.K8SUpdateErrorHandler(err)
 		}

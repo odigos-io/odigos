@@ -5,6 +5,7 @@ import (
 
 	rbacv1 "k8s.io/api/rbac/v1"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/pkg/containers"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
@@ -12,7 +13,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
