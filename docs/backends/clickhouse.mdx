@@ -7,6 +7,8 @@ icon: 'signal-stream'
 
 ### Getting Started
 
+<img src='https://d15jtxgb40qetw.cloudfront.net/clickhouse.svg' alt='clickhouse' width="100" height="100" className="not-prose" />
+
 {/*
     Add custom content here (under this comment)...
 
@@ -16,8 +18,6 @@ icon: 'signal-stream'
     !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
     !! START CUSTOM EDIT !!
 */}
-
-<img src='https://d15jtxgb40qetw.cloudfront.net/clickhouse.svg' alt='clickhouse' width="100" height="100" className="not-prose" />
 
 ClickHouse is very popular database for storing telemetry data and running efficient queries on it.
 
@@ -155,12 +155,12 @@ There are two primary methods for configuring destinations in Odigos:
       namespace: odigos-system
     spec:
       data:
-        CLICKHOUSE_CREATE_SCHEME: <Create Scheme>
-        CLICKHOUSE_DATABASE_NAME: <Database Name>
+        CLICKHOUSE_CREATE_SCHEME: '<Create Scheme (default: True)>'
+        CLICKHOUSE_DATABASE_NAME: '<Database Name (default: otel)>'
         CLICKHOUSE_ENDPOINT: <Endpoint>
-        CLICKHOUSE_LOGS_TABLE: <Logs Table>
-        CLICKHOUSE_METRICS_TABLE: <Metrics Table>
-        CLICKHOUSE_TRACES_TABLE: <Traces Table>
+        CLICKHOUSE_LOGS_TABLE: '<Logs Table (default: otel_logs)>'
+        CLICKHOUSE_METRICS_TABLE: '<Metrics Table (default: otel_metrics)>'
+        CLICKHOUSE_TRACES_TABLE: '<Traces Table (default: otel_traces)>'
         # Note: The commented fields below are optional.
         # CLICKHOUSE_USERNAME: <Username>
       destinationName: clickhouse
