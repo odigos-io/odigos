@@ -371,6 +371,7 @@ def get_documenation(yaml_content):
         + "\nicon: 'signal-stream'"
         + "\n---"
         + "\n\n### Getting Started"
+        + f"\n\n{generate_logo(yaml_content, True, 100)}"
         + "\n\n{/*"
         + "\n    Add custom content here (under this comment)..."
         + "\n"
@@ -489,8 +490,10 @@ def create_mdx(mdx_path, yaml_content):
 
     mdx_content = (
         f"{documenation.get("content_before_custom")}"
-        # Logo only on-create
-        + f"\n\n{generate_logo(yaml_content, True, 100)}"
+        + "\n\n**Creating Account**<br />"
+        + "\nGo to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**"
+        + "\n\n**Obtaining Access Token**<br />"
+        + "\nGo to **⚙️ > Access Tokens** and click **Create New**"
         + f"\n\n{documenation.get("content_after_custom")}"
     )
 
