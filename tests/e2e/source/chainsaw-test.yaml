@@ -84,7 +84,7 @@ spec:
     - name: Odigos pipeline ready
       try:
         - assert:
-            file: ../../common/assert/pipeline-ready.yaml
+            file:  ../../common/assert/pipeline-ready.yaml
     - name: Simple-demo instrumented after destination added
       try:
         - assert:
