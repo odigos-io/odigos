@@ -7,6 +7,8 @@ icon: 'signal-stream'
 
 ### Getting Started
 
+<img src='https://d15jtxgb40qetw.cloudfront.net/qryn.svg' alt='qryn-oss' width="100" height="100" className="not-prose" />
+
 {/*
     Add custom content here (under this comment)...
 
@@ -16,8 +18,6 @@ icon: 'signal-stream'
     !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
     !! START CUSTOM EDIT !!
 */}
-
-<img src='https://d15jtxgb40qetw.cloudfront.net/qryn.svg' alt='qryn-oss' width="100" height="100" className="not-prose" />
 
 {/*
     !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
@@ -78,8 +78,8 @@ There are two primary methods for configuring destinations in Odigos:
         QRYN_OSS_URL: <API Url>
         # Note: The commented fields below are optional.
         # QRYN_OSS_USERNAME: <Basic auth username>
-        # QRYN_OSS_RESOURCE_TO_TELEMETRY_CONVERSION: <Convert container attributes to labels>
-        # QRYN_OSS_ADD_EXPORTER_NAME: <Add exporter name to labels>
+        # QRYN_OSS_RESOURCE_TO_TELEMETRY_CONVERSION: <Convert container attributes to labels (default: True)>
+        # QRYN_OSS_ADD_EXPORTER_NAME: <Add exporter name to labels (default: True)>
       destinationName: qryn-oss
       # Uncomment the 'secretRef' below if you are using the optional Secret.
       # secretRef:
