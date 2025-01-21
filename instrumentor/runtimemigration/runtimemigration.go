@@ -14,7 +14,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 type MigrationRunnable struct {
@@ -146,11 +145,16 @@ func (m *MigrationRunnable) fetchAndProcessDeployments(ctx context.Context, kube
 					}
 				}
 
-				controllerutil.CreateOrPatch(ctx, kubeClient, &dep, func() error {
-					originalWorkloadEnvVar.SetModifiedSinceCreated()
-					originalWorkloadEnvVar.SerializeToAnnotation(&dep)
-					return nil
-				})
+				originalWorkloadEnvVar.SetModifiedSinceCreated()
+				if err := originalWorkloadEnvVar.SerializeToAnnotation(&dep); err != nil {
+					m.Logger.Error(err, "Failed to serialize annotation for deployment", "Name", dep.Name, "Namespace", dep.Namespace)
+				} else {
+					fmt.Println("Updating deployment annotations")
+					// Only attempt the update if serialization succeeds
+					if err := kubeClient.Update(ctx, &dep); err != nil {
+						m.Logger.Error(err, "Failed to update deployment annotations", "Name", dep.Name, "Namespace", dep.Namespace)
+					}
+				}
 
 				err = kubeClient.Status().Update(
 					ctx,
@@ -218,11 +222,15 @@ func (m *MigrationRunnable) fetchAndProcessStatefulSets(ctx context.Context, kub
 					}
 				}
 
-				controllerutil.CreateOrPatch(ctx, kubeClient, &sts, func() error {
-					originalWorkloadEnvVar.SetModifiedSinceCreated()
-					originalWorkloadEnvVar.SerializeToAnnotation(&sts)
-					return nil
-				})
+				originalWorkloadEnvVar.SetModifiedSinceCreated()
+				if err := originalWorkloadEnvVar.SerializeToAnnotation(&sts); err != nil {
+					m.Logger.Error(err, "Failed to serialize annotation for deployment", "Name", sts.Name, "Namespace", sts.Namespace)
+				} else {
+					// Only attempt the update if serialization succeeds
+					if err := kubeClient.Update(ctx, &sts); err != nil {
+						m.Logger.Error(err, "Failed to update deployment annotations", "Name", sts.Name, "Namespace", sts.Namespace)
+					}
+				}
 
 				// Update the InstrumentationConfig status
 				err = kubeClient.Status().Update(
@@ -287,11 +295,16 @@ func (m *MigrationRunnable) fetchAndProcessDaemonSets(ctx context.Context, kubeC
 						return fmt.Errorf("failed to process container %s in daemonset %s: %v", containerObject.Name, ds.Name, err)
 					}
 				}
-				controllerutil.CreateOrPatch(ctx, kubeClient, &ds, func() error {
-					originalWorkloadEnvVar.SetModifiedSinceCreated()
-					originalWorkloadEnvVar.SerializeToAnnotation(&ds)
-					return nil
-				})
+
+				originalWorkloadEnvVar.SetModifiedSinceCreated()
+				if err := originalWorkloadEnvVar.SerializeToAnnotation(&ds); err != nil {
+					m.Logger.Error(err, "Failed to serialize annotation for deployment", "Name", ds.Name, "Namespace", ds.Namespace)
+				} else {
+					// Only attempt the update if serialization succeeds
+					if err := kubeClient.Update(ctx, &ds); err != nil {
+						m.Logger.Error(err, "Failed to update deployment annotations", "Name", ds.Name, "Namespace", ds.Namespace)
+					}
+				}
 
 				// Update the InstrumentationConfig status
 				err = kubeClient.Status().Update(
@@ -356,11 +369,11 @@ func handleContainerRuntimeDetailsUpdate(
 			containerRuntimeDetails.RuntimeUpdateState = &state
 		}
 
-		// Skip if the container has already been processed
+		// Determine if cleanup of Odigos values is needed in EnvFromContainerRuntime.
+		// This addresses a bug in the runtime inspection for environment variables originating from the device.
+		// If the "Generation runtime detection" failed EnvFromContainerRuntime will include odigos additions this code we clean it.
 		if containerRuntimeDetails.RuntimeUpdateState != nil {
 
-			// Determine if cleanup of Odigos values is needed in EnvFromContainerRuntime.
-			// This addresses a bug in the runtime inspection for environment variables originating from the device.
 			if *containerRuntimeDetails.RuntimeUpdateState == v1alpha1.ProcessingStateSucceeded {
 				filteredEnvVars := []v1alpha1.EnvVar{}
 
