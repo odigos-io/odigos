@@ -7,6 +7,8 @@ icon: 'signal-stream'
 
 ### Getting Started
 
+<img src='https://d15jtxgb40qetw.cloudfront.net/grafana.svg' alt='grafanacloudloki' width="100" height="100" className="not-prose" />
+
 {/*
     Add custom content here (under this comment)...
 
@@ -16,8 +18,6 @@ icon: 'signal-stream'
     !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
     !! START CUSTOM EDIT !!
 */}
-
-<img src='https://d15jtxgb40qetw.cloudfront.net/grafana.svg' alt='grafanacloudloki' width="100" height="100" className="not-prose" />
 
 <Note>
   These instructions are for the Grafana Cloud **managed** Loki service. If you run a self hosted Loki instance, please follow the instructions on the [Loki](/backends/loki) page.
@@ -100,7 +100,7 @@ There are two primary methods for configuring destinations in Odigos:
         GRAFANA_CLOUD_LOKI_ENDPOINT: <Endpoint>
         GRAFANA_CLOUD_LOKI_USERNAME: <Username>
         # Note: The commented fields below are optional.
-        # GRAFANA_CLOUD_LOKI_LABELS: <Labels>
+        # GRAFANA_CLOUD_LOKI_LABELS: <Labels (default: ["k8s.container.name", "k8s.pod.name", "k8s.namespace.name"])>
       destinationName: grafanacloudloki
       secretRef:
         name: grafanacloudloki-secret
