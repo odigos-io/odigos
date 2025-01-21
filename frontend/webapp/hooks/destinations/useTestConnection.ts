@@ -21,7 +21,7 @@ export const useTestConnection = () => {
   });
 
   return {
-    testConnection: (destination: DestinationInput) => testConnectionMutation({ variables: { destination } }),
+    testConnection: (destination: DestinationInput) => {}, // (destination: DestinationInput) => testConnectionMutation({ variables: { destination } }),
     loading,
     error,
     data,

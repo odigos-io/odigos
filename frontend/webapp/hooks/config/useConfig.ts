@@ -4,11 +4,14 @@ import { Config } from '@/types';
 import { GET_CONFIG } from '@/graphql';
 import { useSuspenseQuery } from '@apollo/client';
 
+const data = { config: { installation: 'FINISHED' } };
+const error = undefined;
+
 export const useConfig = () => {
   const isServer = typeof window === 'undefined';
-  const { data, error } = useSuspenseQuery<Config>(GET_CONFIG, {
-    skip: isServer,
-  });
+  // const { data, error } = useSuspenseQuery<Config>(GET_CONFIG, {
+  //   skip: isServer,
+  // });
 
   useEffect(() => {
     if (error) {
