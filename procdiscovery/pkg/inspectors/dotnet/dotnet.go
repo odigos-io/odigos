@@ -2,9 +2,8 @@ package dotnet
 
 import (
 	"bufio"
+	"fmt"
 	"os"
-	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/odigos-io/odigos/common"
@@ -14,7 +13,7 @@ import (
 type DotnetInspector struct{}
 
 func (d *DotnetInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
-	mapsPath := filepath.Join("/proc", strconv.Itoa(p.ProcessID), "maps")
+	mapsPath := fmt.Sprintf("/proc/%d/maps", p.ProcessID)
 	f, err := os.Open(mapsPath)
 	if err != nil {
 		return "", false

@@ -62,6 +62,7 @@ var availableConfigers = []Configer{
 	&Splunk{},
 	&SumoLogic{},
 	&Tempo{},
+	&Traceloop{},
 	&Uptrace{},
 }
 

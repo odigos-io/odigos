@@ -43,6 +43,9 @@ endif
 lint-fix:
 	MODULE=common make lint FIX_LINT=true
 	MODULE=k8sutils make lint FIX_LINT=true
+	MODULE=profiles make lint FIX_LINT=true
+	MODULE=destinations make lint FIX_LINT=true
+	MODULE=procdiscovery make lint FIX_LINT=true
 
 .PHONY: build-odiglet
 build-odiglet:
@@ -281,7 +284,7 @@ crd-apply: api-all cli-upgrade
 dev-tests-kind-cluster:
 	@echo "Creating a kind cluster for development"
 	kind delete cluster
-	kind create cluster
+	kind create cluster --config=tests/common/apply/kind-config.yaml
 
 .PHONY: dev-tests-setup
 dev-tests-setup: TAG := e2e-test
