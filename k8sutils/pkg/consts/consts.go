@@ -44,6 +44,7 @@ const (
 	OdigosDeploymentConfigMapVersionKey            = commonconsts.OdigosVersionEnvVarName
 	OdigosDeploymentConfigMapTierKey               = commonconsts.OdigosTierEnvVarName
 	OdigosDeploymentConfigMapInstallationMethodKey = "installation-method"
+	OdigosDeploymentConfigMapKubernetesVersionKey  = "kubernetes-version"
 )
 
 const (
