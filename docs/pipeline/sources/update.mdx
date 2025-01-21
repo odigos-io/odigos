@@ -1,11 +1,12 @@
 ---
 title: "Source Configuration"
-sidebarTitle: "Configuration"
+sidebarTitle: "Source Configuration"
+icon: "gear"
 ---
 
-## service.name Attribute
+## service.name
 
-The [`service.name` resource attribute](https://opentelemetry.io/docs/specs/semconv/resource/#service) is a required and fundamental info that is reported in all telemetry data.
+[`service.name`](https://opentelemetry.io/docs/specs/semconv/resource/#service) is a required and fundamental resource attribute that is reported in all telemetry data.
 It is used to identify the service that emitted a span, metric or log record for useability in most observability tools.
 
 Odigos will automatically populate this attribute based on the name of the Deployment / DaemonSet / StatefulSet. If there are multiple containers in the workload, the `service.name` will be set to the container name.

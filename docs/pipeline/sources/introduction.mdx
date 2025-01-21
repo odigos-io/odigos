@@ -1,14 +1,40 @@
 ---
-title: "Sources Introduction"
+title: "Introduction"
+description: "Sources are a Custom Resource that define which Kubernetes workloads should be auto-instrumented by Odigos."
 sidebarTitle: "Introduction"
+icon: "hand-wave"
 ---
 
-A Source in Odigos is any component that can generate opentelemetry signals - traces, metrics and logs.
+## Supported Workloads
 
-## Supported Sources
+Odigos supports the following Kubernetes workloads:
 
-Odigos supports the following sources (refered to as `kubernetes workloads`):
+- Kubernetes **Deployment**
+- Kubernetes **DaemonSet**
+- Kubernetes **StatefulSet**
 
-- Kubernetes Deployment
-- Kubernetes DaemonSet
-- Kubernetes StatefulSet
+## Instrumentation Flow:
+
+1. User selects a workload to auto instrument by creating a `Source` object (per workload or per namespace).
+2. Odigos `instrumentor` component watches for changes with `Source` objects, and creates a relative `InstrumentationConfig` object.
+3. Odigos `odiglet` component watches for changes with the `InstrumentationConfig` objects, and runs a runtime inspection on running pods to detect the programming language for every container.
+4. Odigos `instrumentor` component watches for changes with the `InstrumentationConfig` object, and adds a resource request into each pod spec of all relevant containers in the workload manifest. These resource requests are called "instrumentation devices".
+5. Kubernetes detects the changes in the manifest and rollout-restart the pods with the new instrumentation devices.
+6. New pods are scheduled and started. Odiglet resolves the resource request by mounting the auto instrumentation code and relevant environment variables into the container.
+7. The auto instrumentation code starts the OpenTelemetry SDK and sends telemetry data to the odigos pipeline.
+
+## Source Labels
+
+All Sources will automatically have 3 labels applied by a mutating webhook in the `instrumentor` component:
+
+* `odigos.io/workload-name`
+* `odigos.io/workload-namespace`
+* `odigos.io/workload-kind`
+
+The value of these labels will be validated to always match the corresponding fields in `spec.workload`. They can be used to group and list Sources, for example:
+
+```shell
+kubectl get sources -l odigos.io/workload-kind=Deployment
+```
+
+This will list all `Sources` for `Deployments`.

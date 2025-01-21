@@ -74,14 +74,6 @@
           ]
         },
         {
-          "group": "Architecture",
-          "pages": [
-            "architecture/components",
-            "architecture/sources",
-            "architecture/troubleshooting"
-          ]
-        },
-        {
           "group": "CLI Reference",
           "pages": [
             "cli/odigos",
@@ -160,11 +152,14 @@
         "pipeline/configuration",
         {
           "group": "Sources",
+          "icon": "database",
           "pages": [
             "pipeline/sources/introduction",
-            "pipeline/sources/adding-sources",
-            "pipeline/sources/source-configuration",
-            "pipeline/sources/troubleshooting"
+            "pipeline/sources/create",
+            "pipeline/sources/delete",
+            "pipeline/sources/update",
+            "pipeline/sources/troubleshooting",
+            "pipeline/sources/troubleshooting2"
           ]
         },
         {
