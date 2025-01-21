@@ -15,6 +15,7 @@ export const useDescribeOdigos = () => {
 
     const payload: Record<string, any> = {
       [`${code.odigosVersion.name}@tooltip=${code.odigosVersion.explain}`]: code.odigosVersion.value,
+      [`${code.kubernetesVersion.name}@tooltip=${code.kubernetesVersion.explain}`]: code.kubernetesVersion.value,
       [`${code.tier.name}@tooltip=${code.tier.explain}`]: code.tier.value,
       [`${code.installationMethod.name}@tooltip=${code.installationMethod.explain}`]: code.installationMethod.value,
       'Number Of Sources': code.numberOfSources,

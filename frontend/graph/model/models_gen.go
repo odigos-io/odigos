@@ -416,6 +416,7 @@ type NodeCollectorAnalyze struct {
 
 type OdigosAnalyze struct {
 	OdigosVersion        *EntityProperty          `json:"odigosVersion"`
+	KubernetesVersion    *EntityProperty          `json:"kubernetesVersion"`
 	Tier                 *EntityProperty          `json:"tier"`
 	InstallationMethod   *EntityProperty          `json:"installationMethod"`
 	NumberOfDestinations int                      `json:"numberOfDestinations"`
