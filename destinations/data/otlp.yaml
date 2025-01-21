@@ -13,7 +13,6 @@ spec:
       supported: true
     logs:
       supported: true
-    
   fields:
     - name: OTLP_GRPC_ENDPOINT
       displayName: OTLP gRPC Endpoint
@@ -21,6 +20,5 @@ spec:
       componentProps:
         type: text
         required: true
-        placeholder: "host:port"
-        tooltip: 'OTLP gRPC unencrypted endpoint of the receiver'
-
+        placeholder: 'host:port'
+        tooltip: The format is `host:port`, host is required, port is optional and defaults to the default OTLP gRPC port `4317`.

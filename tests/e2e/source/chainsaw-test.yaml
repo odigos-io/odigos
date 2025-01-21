@@ -139,7 +139,7 @@ spec:
       catch:
         - podLogs:
             name: odiglet
-            namespace: odigos-system
+            namespace: odigos-test
     - name: Verify Trace - Resource Attributes
       try:
         - script:
@@ -148,7 +148,7 @@ spec:
       catch:
         - podLogs:
             name: odiglet
-            namespace: odigos-system
+            namespace: odigos-test
     - name: Verify Trace - Span Attributes
       try:
         - script:
@@ -158,7 +158,7 @@ spec:
       catch:
         - podLogs:
             name: odiglet
-            namespace: odigos-system
+            namespace: odigos-test
     - name: Uninstrument individual deployments
       try:
         - script:
@@ -258,7 +258,7 @@ spec:
       catch:
         - podLogs:
             name: odiglet
-            namespace: odigos-system
+            namespace: odigos-test
     - name: Verify Trace - Resource Attributes
       try:
         - script:
@@ -267,7 +267,7 @@ spec:
       catch:
         - podLogs:
             name: odiglet
-            namespace: odigos-system
+            namespace: odigos-test
     - name: Verify Trace - Span Attributes
       try:
         - script:
@@ -277,7 +277,7 @@ spec:
       catch:
         - podLogs:
             name: odiglet
-            namespace: odigos-system
+            namespace: odigos-test
     - name: Uninstrument namespace
       try:
         - script:
@@ -493,6 +493,42 @@ spec:
               kubectl rollout status deployment -l app=membership
     - name: Assert runtime not detected for re-excluded (membership)
       try:
+        - script:
+            content: kubectl get instrumentationconfigs/deployment-membership
+            check:
+              ($error != null): true
+    - name: Irrelevant Namespace update does not trigger uninstrumentation
+      try:
+        - script:
+            timeout: 70s
+            content: kubectl label namespaces default odigos.io/irrelevant-update=foo
+        - assert:
+            timeout: 2m
+            file: 09-assert-runtime-detected.yaml
+    - name: Delete Namespace Source
+      try:
+        - script:
+            timeout: 60s
+            content: |
+              kubectl delete sources/default
+              while true; do
+                ic_count=$(kubectl get instrumentationconfigs --output name | wc -l)
+                if [ $ic_count -eq "1" ]; then
+                  break
+                fi
+                sleep 5
+              done
+        - assert:
+            timeout: 2m
+            file: 11-workloads.yaml
+    - name: Delete excluded Source in non-instrumented Namespace is no-op
+      try:
+        - script:
+            timeout: 60s
+            content: kubectl delete sources/membership-excluded
+        - assert:
+            timeout: 2m
+            file: 11-workloads.yaml
         - script:
             content: kubectl get instrumentationconfigs/deployment-membership
             check:

@@ -2,7 +2,7 @@ name: Check links
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -10,15 +10,16 @@ jobs:
   check-links:
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    - uses: lycheeverse/lychee-action@v2.2.0
-      with:
-        args: >-
-          -v -n "*.md" "**/*.md" "**/*.mdx"
-          --exclude "http://localhost*"
-          --exclude "^https://logs-prod.*"
-          --exclude ".*your-account.*"
-          --exclude ".*qryn.local.*"
-        fail: true
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: lycheeverse/lychee-action@v2.2.0
+        with:
+          args: >-
+            -v -n "*.md" "**/*.md" "**/*.mdx"
+            --exclude "http://localhost*"
+            --exclude "^https://logs-prod.*"
+            --exclude ".*your-account.*"
+            --exclude ".*qryn.local.*"
+            --exclude "^https://d15jtxgb40qetw\\.cloudfront\\.net/.*"
+          fail: true

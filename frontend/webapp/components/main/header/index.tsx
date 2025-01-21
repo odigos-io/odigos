@@ -1,13 +1,13 @@
 import React from 'react';
 import { SLACK_LINK } from '@/utils';
+import { PlatformTypes } from '@/types';
 import { PlatformTitle } from './cp-title';
 import styled, { useTheme } from 'styled-components';
 import { FlexRow, hexPercentValues } from '@/styles';
-import { NOTIFICATION_TYPE, PlatformTypes } from '@/types';
 import { OdigosLogoText, SlackLogo, TerminalIcon } from '@/assets';
 import { NotificationManager, ToggleDarkMode } from '@/components';
 import { ConnectionStatus, IconButton } from '@/reuseable-components';
-import { DRAWER_OTHER_TYPES, useConnectionStore, useDrawerStore } from '@/store';
+import { DRAWER_OTHER_TYPES, useDrawerStore, useStatusStore } from '@/store';
 
 interface MainHeaderProps {}
 
@@ -33,7 +33,7 @@ const AlignRight = styled(FlexRow)`
 export const MainHeader: React.FC<MainHeaderProps> = () => {
   const theme = useTheme();
   const { setSelectedItem } = useDrawerStore();
-  const { title, message, sseConnecting, sseStatus, tokenExpired, tokenExpiring } = useConnectionStore();
+  const { status, title, message } = useStatusStore();
 
   const handleClickCli = () => setSelectedItem({ type: DRAWER_OTHER_TYPES.ODIGOS_CLI, id: DRAWER_OTHER_TYPES.ODIGOS_CLI });
   const handleClickSlack = () => window.open(SLACK_LINK, '_blank', 'noopener noreferrer');
@@ -43,7 +43,7 @@ export const MainHeader: React.FC<MainHeaderProps> = () => {
       <AlignLeft>
         <OdigosLogoText size={80} />
         <PlatformTitle type={PlatformTypes.K8S} />
-        {!sseConnecting && <ConnectionStatus title={title} subtitle={message} status={tokenExpired ? NOTIFICATION_TYPE.ERROR : tokenExpiring ? NOTIFICATION_TYPE.WARNING : sseStatus} />}
+        <ConnectionStatus title={title} subtitle={message} status={status} />
       </AlignLeft>
 
       <AlignRight>

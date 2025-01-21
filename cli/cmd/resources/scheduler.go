@@ -87,8 +87,8 @@ func NewSchedulerRole(ns string) *rbacv1.Role {
 			{ // Needed to apply effective config after reconciling (defaulting and profile applying) and react to it
 				APIGroups:     []string{""},
 				Resources:     []string{"configmaps"},
-				ResourceNames: []string{consts.OdigosEffectiveConfigName},
-				Verbs:         []string{"patch"},
+				ResourceNames: []string{consts.OdigosEffectiveConfigName, k8sconsts.OdigosDeploymentConfigMapName},
+				Verbs:         []string{"patch", "create"},
 			},
 			{ // Needed because the scheduler is managing the collectorsgroups
 				APIGroups: []string{"odigos.io"},

@@ -7,6 +7,6 @@ import (
 
 var HostnameAsPodNameProfile = profile.Profile{
 	ProfileName:      common.ProfileName("hostname-as-podname"),
-	MinimumTier:      common.OdigosTier(common.OnPremOdigosTier),
+	MinimumTier:      common.OnPremOdigosTier,
 	ShortDescription: "Populate the spans resource `host.name` attribute with value of `k8s.pod.name`",
 }

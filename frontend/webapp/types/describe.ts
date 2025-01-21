@@ -103,6 +103,7 @@ interface NodeCollectorAnalyze {
 
 interface OdigosAnalyze {
   odigosVersion: EntityProperty;
+  kubernetesVersion: EntityProperty;
   tier: EntityProperty;
   installationMethod: EntityProperty;
   numberOfDestinations: number;

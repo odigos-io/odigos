@@ -27,21 +27,25 @@ spec:
           - listener-uk.logz.io
           - listener-wa.logz.io
         required: true
+        tooltip: The region of your Logz.io account
     - name: LOGZIO_TRACING_TOKEN
       displayName: Tracing token
       componentType: input
       componentProps:
         type: password
+        tooltip: The token you obtained from Logz.io
       secret: true
     - name: LOGZIO_METRICS_TOKEN
       displayName: Metrics token
       componentType: input
       componentProps:
         type: password
+        tooltip: The token you obtained from Logz.io
       secret: true
     - name: LOGZIO_LOGS_TOKEN
       displayName: Logs token
       componentType: input
       componentProps:
         type: password
+        tooltip: The token you obtained from Logz.io
       secret: true

@@ -7,6 +7,6 @@ import (
 
 var CategoryAttributesProfile = profile.Profile{
 	ProfileName:      common.ProfileName("category-attributes"),
-	MinimumTier:      common.OdigosTier(common.OnPremOdigosTier),
+	MinimumTier:      common.OnPremOdigosTier,
 	ShortDescription: "Add category attributes to the spans",
 }
