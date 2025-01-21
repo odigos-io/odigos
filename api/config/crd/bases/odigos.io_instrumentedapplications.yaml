@@ -20,8 +20,10 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: InstrumentedApplication is the Schema for the instrumentedapplications
-          API
+        description: |-
+          InstrumentedApplication is the Schema for the instrumentedapplications API
+
+          Deprecated: in favour of InstrumentationConfig
         properties:
           apiVersion:
             description: |-
@@ -41,21 +43,27 @@ spec:
           metadata:
             type: object
           spec:
-            description: InstrumentedApplicationSpec defines the desired state of
-              InstrumentedApplication
+            description: |-
+              InstrumentedApplicationSpec defines the desired state of InstrumentedApplication
+
+              Deprecated: in favour of InstrumentationConfig
             properties:
               options:
                 items:
+                  description: 'Deprecated: configuration is done via InstrumentationConfig'
                   properties:
                     containerName:
                       type: string
                     instrumentationsLibraries:
                       items:
+                        description: 'Deprecated: configuration is done via InstrumentationConfig'
                         properties:
                           libraryName:
                             type: string
                           options:
                             items:
+                              description: 'Deprecated: configuration is done via
+                                InstrumentationConfig'
                               properties:
                                 optionKey:
                                   type: string
@@ -158,8 +166,10 @@ spec:
                 type: array
             type: object
           status:
-            description: InstrumentedApplicationStatus defines the observed state
-              of InstrumentedApplication
+            description: |-
+              InstrumentedApplicationStatus defines the observed state of InstrumentedApplication
+
+              Deprecated: in favour of InstrumentationConfig
             properties:
               conditions:
                 description: Represents the observations of a nstrumentedApplication's
