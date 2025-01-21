@@ -25,7 +25,6 @@ import (
 )
 
 type ConnectionHandlers struct {
-	deviceIdCache *di.DeviceIdCache
 	sdkConfig     *sdkconfig.SdkConfigManager
 	logger        logr.Logger
 	kubeclient    client.Client
@@ -41,13 +40,12 @@ type opampAgentAttributesKeys struct {
 	Namespace           string
 }
 
-func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId string, firstMessage *protobufs.AgentToServer) (*connection.ConnectionInfo, *protobufs.ServerToAgent, error) {
-
+func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, firstMessage *protobufs.AgentToServer) (*connection.ConnectionInfo, *protobufs.ServerToAgent, error) {
 	if firstMessage.AgentDescription == nil {
 		// first message must be agent description.
 		// it is, however, possible that the OpAMP server restarted, and the agent is trying to reconnect.
 		// in which case we send back flag and request full status update.
-		c.logger.Info("Agent description is missing in the first OpAMP message, requesting full state update", "deviceId", deviceId)
+		c.logger.Info("Agent description is missing in the first OpAMP message, requesting full state update")
 		serverToAgent := &protobufs.ServerToAgent{
 			Flags: uint64(protobufs.ServerToAgentFlags_ServerToAgentFlags_ReportFullState),
 		}
@@ -71,7 +69,11 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 		return nil, nil, fmt.Errorf("missing programming language in agent description")
 	}
 
-	k8sAttributes, pod, err := c.resolveK8sAttributes(ctx, attrs, deviceId)
+	if !attrs.hasRequiredAttributes() {
+		return nil, nil, fmt.Errorf("missing required attributes in agent description")
+	}
+
+	k8sAttributes, pod, err := resolveFromDirectAttributes(ctx, attrs, c.kubeClientSet)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to process k8s attributes: %w", err)
 	}
@@ -93,7 +95,7 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 	if serviceName == "" {
 		serviceName = k8sAttributes.WorkloadName
 	}
-	remoteResourceAttributes, err := configresolvers.CalculateServerAttributes(k8sAttributes, c.nodeName, serviceName)
+	remoteResourceAttributes, err := configresolvers.CalculateServerAttributes(k8sAttributes, serviceName)
 	if err != nil {
 		c.logger.Error(err, "failed to calculate server attributes", "k8sAttributes", k8sAttributes)
 		return nil, nil, err
@@ -104,10 +106,9 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 		c.logger.Error(err, "failed to get full config", "k8sAttributes", k8sAttributes)
 		return nil, nil, err
 	}
-	c.logger.Info("new OpAMP client connected", "deviceId", deviceId, "namespace", k8sAttributes.Namespace, "podName", k8sAttributes.PodName, "instrumentedAppName", instrumentedAppName, "workloadKind", k8sAttributes.WorkloadKind, "workloadName", k8sAttributes.WorkloadName, "containerName", k8sAttributes.ContainerName, "otelServiceName", serviceName)
+	c.logger.Info("new OpAMP client connected", "namespace", k8sAttributes.Namespace, "podName", k8sAttributes.PodName, "instrumentedAppName", instrumentedAppName, "workloadKind", k8sAttributes.WorkloadKind, "workloadName", k8sAttributes.WorkloadName, "containerName", k8sAttributes.ContainerName, "otelServiceName", serviceName)
 
 	connectionInfo := &connection.ConnectionInfo{
-		DeviceId:                 deviceId,
 		Workload:                 podWorkload,
 		Pod:                      pod,
 		ContainerName:            k8sAttributes.ContainerName,
@@ -211,15 +212,6 @@ func (c *ConnectionHandlers) UpdateInstrumentationInstanceStatus(ctx context.Con
 	}
 
 	return nil
-}
-
-// resolveK8sAttributes resolves K8s resource attributes using either direct attributes from opamp agent or device cache
-func (c *ConnectionHandlers) resolveK8sAttributes(ctx context.Context, attrs opampAgentAttributesKeys, deviceId string) (*di.K8sResourceAttributes, *corev1.Pod, error) {
-
-	if attrs.hasRequiredAttributes() {
-		return resolveFromDirectAttributes(ctx, attrs, c.kubeClientSet)
-	}
-	return c.deviceIdCache.GetAttributesFromDevice(ctx, deviceId)
 }
 
 func extractOpampAgentAttributes(agentDescription *protobufs.AgentDescription) opampAgentAttributesKeys {

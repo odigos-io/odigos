@@ -4,6 +4,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	instrumentorpredicate "github.com/odigos-io/odigos/instrumentor/controllers/utils/predicates"
+	"github.com/odigos-io/odigos/instrumentor/controllers/webhook"
 	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -166,7 +167,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 	err = builder.
 		WebhookManagedBy(mgr).
 		For(&corev1.Pod{}).
-		WithDefaulter(&PodsWebhook{
+		WithDefaulter(&webhook.PodsWebhook{
 			Client: mgr.GetClient(),
 		}).
 		Complete()

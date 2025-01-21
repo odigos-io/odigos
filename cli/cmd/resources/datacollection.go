@@ -34,22 +34,20 @@ func NewDataCollectionClusterRole(psp bool) *rbacv1.ClusterRole {
 			Name: "odigos-data-collection",
 		},
 		Rules: []rbacv1.PolicyRule{
-			{ // TODO: remove this after we remove honeycomb custom exporter config
-				// located at: autoscaler/controllers/datacollection/custom/honeycomb.go
+			{ // Needed for: host metrics processor
 				APIGroups: []string{""},
-				Resources: []string{"nodes/stats", "nodes/proxy"},
-				Verbs:     []string{"get", "list"},
+				Resources: []string{"nodes/stats", "nodes/proxy", "nodes"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
-			{ // Needed to get "resource name" in processor (TODO: remove this after we kill the resource name processor)
+			{ // Needed for: k8s attributes processor
 				APIGroups: []string{""},
-				Resources: []string{"pods"},
-				Verbs:     []string{"get", "list"},
+				Resources: []string{"pods", "namespaces"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
-			{ // Need "replicasets" to get "resource name" in processor (TODO: remove this after we kill the resource name processor),
-				// Others needed to get applications from cluster
+			{ // Needed for: k8s attributes processor
 				APIGroups: []string{"apps"},
 				Resources: []string{"replicasets", "deployments", "daemonsets", "statefulsets"},
-				Verbs:     []string{"get", "list"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
 			{ // Needed for load balancer
 				APIGroups: []string{""},

@@ -27,6 +27,12 @@ func PodWorkloadObjectOrError(ctx context.Context, pod *corev1.Pod) (*PodWorkloa
 // PodWorkload returns the workload object that manages the provided pod.
 // If the pod is not owned by a controller, it returns a nil workload with no error.
 func PodWorkloadObject(ctx context.Context, pod *corev1.Pod) (*PodWorkload, error) {
+	return PodWorkloadObjectWithNamespace(ctx, pod, pod.Namespace)
+}
+
+// PodWorkloadObjectWithNamespace returns the workload object that manages the provided pod.
+// If the pod is not owned by a controller, it returns a nil workload with no error.
+func PodWorkloadObjectWithNamespace(ctx context.Context, pod *corev1.Pod, ns string) (*PodWorkload, error) {
 	for _, owner := range pod.OwnerReferences {
 		workloadName, workloadKind, err := GetWorkloadFromOwnerReference(owner)
 		if err != nil {
@@ -39,7 +45,7 @@ func PodWorkloadObject(ctx context.Context, pod *corev1.Pod) (*PodWorkload, erro
 		return &PodWorkload{
 			Name:      workloadName,
 			Kind:      workloadKind,
-			Namespace: pod.Namespace,
+			Namespace: ns,
 		}, nil
 	}
 
