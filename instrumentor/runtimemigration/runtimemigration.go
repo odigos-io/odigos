@@ -13,6 +13,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -133,9 +134,11 @@ func (m *MigrationRunnable) fetchAndProcessDeployments(ctx context.Context, kube
 
 				runtimeDetailsByContainer := workloadInstrumentationConfigReference.Status.RuntimeDetailsByContainer
 
-				for _, containerObject := range dep.Spec.Template.Spec.Containers {
+				var needToUpdateWorkloadAnnotation bool
 
-					err := handleContainerRuntimeDetailsUpdate(
+				for _, containerObject := range dep.Spec.Template.Spec.Containers {
+					var containerNeedsUpdate bool
+					err, containerNeedsUpdate = handleContainerRuntimeDetailsUpdate(
 						containerObject,
 						originalWorkloadEnvVar,
 						runtimeDetailsByContainer,
@@ -143,16 +146,15 @@ func (m *MigrationRunnable) fetchAndProcessDeployments(ctx context.Context, kube
 					if err != nil {
 						return fmt.Errorf("failed to process container %s in deployment %s: %v", containerObject.Name, dep.Name, err)
 					}
+
+					// Keep the needToUpdateWorkloadAnnotation flag true if any container requires an update
+					needToUpdateWorkloadAnnotation = needToUpdateWorkloadAnnotation || containerNeedsUpdate
 				}
 
-				originalWorkloadEnvVar.SetModifiedSinceCreated()
-				if err := originalWorkloadEnvVar.SerializeToAnnotation(&dep); err != nil {
-					m.Logger.Error(err, "Failed to serialize annotation for deployment", "Name", dep.Name, "Namespace", dep.Namespace)
-				} else {
-					fmt.Println("Updating deployment annotations")
-					// Only attempt the update if serialization succeeds
-					if err := kubeClient.Update(ctx, &dep); err != nil {
-						m.Logger.Error(err, "Failed to update deployment annotations", "Name", dep.Name, "Namespace", dep.Namespace)
+				// If at least one annotation container's include Odigos additions, we need to update the deployment annotations.
+				if needToUpdateWorkloadAnnotation {
+					if err := updateAnnotations(ctx, kubeClient, &dep, originalWorkloadEnvVar); err != nil {
+						m.Logger.Error(err, "Failed to update resource", "Name", dep.GetName(), "Namespace", dep.GetNamespace())
 					}
 				}
 
@@ -211,8 +213,11 @@ func (m *MigrationRunnable) fetchAndProcessStatefulSets(ctx context.Context, kub
 
 				runtimeDetailsByContainer := workloadInstrumentationConfigReference.Status.RuntimeDetailsByContainer
 
+				var needToUpdateWorkloadAnnotation bool
+
 				for _, containerObject := range sts.Spec.Template.Spec.Containers {
-					err := handleContainerRuntimeDetailsUpdate(
+					var containerNeedsUpdate bool
+					err, containerNeedsUpdate := handleContainerRuntimeDetailsUpdate(
 						containerObject,
 						originalWorkloadEnvVar,
 						runtimeDetailsByContainer,
@@ -220,15 +225,14 @@ func (m *MigrationRunnable) fetchAndProcessStatefulSets(ctx context.Context, kub
 					if err != nil {
 						return fmt.Errorf("failed to process container %s in statefulset %s: %v", containerObject.Name, sts.Name, err)
 					}
+					// Keep the needToUpdateWorkloadAnnotation flag true if any container requires an update
+					needToUpdateWorkloadAnnotation = needToUpdateWorkloadAnnotation || containerNeedsUpdate
 				}
 
-				originalWorkloadEnvVar.SetModifiedSinceCreated()
-				if err := originalWorkloadEnvVar.SerializeToAnnotation(&sts); err != nil {
-					m.Logger.Error(err, "Failed to serialize annotation for deployment", "Name", sts.Name, "Namespace", sts.Namespace)
-				} else {
-					// Only attempt the update if serialization succeeds
-					if err := kubeClient.Update(ctx, &sts); err != nil {
-						m.Logger.Error(err, "Failed to update deployment annotations", "Name", sts.Name, "Namespace", sts.Namespace)
+				// If at least one annotation container's include Odigos additions, we need to update the statefulset annotations.
+				if needToUpdateWorkloadAnnotation {
+					if err := updateAnnotations(ctx, kubeClient, &sts, originalWorkloadEnvVar); err != nil {
+						m.Logger.Error(err, "Failed to update resource", "Name", sts.GetName(), "Namespace", sts.GetNamespace())
 					}
 				}
 
@@ -286,23 +290,25 @@ func (m *MigrationRunnable) fetchAndProcessDaemonSets(ctx context.Context, kubeC
 				}
 				runtimeDetailsByContainer := workloadInstrumentationConfigReference.Status.RuntimeDetailsByContainer
 
+				var needToUpdateWorkloadAnnotation bool
+
 				for _, containerObject := range ds.Spec.Template.Spec.Containers {
-					err := handleContainerRuntimeDetailsUpdate(
+					var containerNeedsUpdate bool
+					err, containerNeedsUpdate = handleContainerRuntimeDetailsUpdate(
 						containerObject,
 						originalWorkloadEnvVar,
 						runtimeDetailsByContainer)
 					if err != nil {
 						return fmt.Errorf("failed to process container %s in daemonset %s: %v", containerObject.Name, ds.Name, err)
 					}
+					// Keep the needToUpdateWorkloadAnnotation flag true if any container requires an update
+					needToUpdateWorkloadAnnotation = needToUpdateWorkloadAnnotation || containerNeedsUpdate
 				}
 
-				originalWorkloadEnvVar.SetModifiedSinceCreated()
-				if err := originalWorkloadEnvVar.SerializeToAnnotation(&ds); err != nil {
-					m.Logger.Error(err, "Failed to serialize annotation for deployment", "Name", ds.Name, "Namespace", ds.Namespace)
-				} else {
-					// Only attempt the update if serialization succeeds
-					if err := kubeClient.Update(ctx, &ds); err != nil {
-						m.Logger.Error(err, "Failed to update deployment annotations", "Name", ds.Name, "Namespace", ds.Namespace)
+				// If at least one annotation container's include Odigos additions, we need to update the daemonset annotations.
+				if needToUpdateWorkloadAnnotation {
+					if err := updateAnnotations(ctx, kubeClient, &ds, originalWorkloadEnvVar); err != nil {
+						m.Logger.Error(err, "Failed to update resource", "Name", ds.GetName(), "Namespace", ds.GetNamespace())
 					}
 				}
 
@@ -324,7 +330,9 @@ func handleContainerRuntimeDetailsUpdate(
 	containerObject v1.Container,
 	originalWorkloadEnvVar *envoverwrite.OrigWorkloadEnvValues,
 	runtimeDetailsByContainer []v1alpha1.RuntimeDetailsByContainer,
-) error {
+) (error, bool) {
+	var needToUpdateWorkloadAnnotation bool
+
 	for i := range runtimeDetailsByContainer {
 		containerRuntimeDetails := &(runtimeDetailsByContainer)[i]
 
@@ -352,7 +360,7 @@ func handleContainerRuntimeDetailsUpdate(
 			if strings.Contains(*envValue, "/var/odigos") {
 				cleanedEnvValue := cleanUpManifestValueFromOdigosAdditions(envKey, *envValue)
 				annotationEnvVarsForContainer[envKey] = &cleanedEnvValue
-
+				needToUpdateWorkloadAnnotation = true
 				isEnvVarAlreadyExists := isEnvVarPresent(containerRuntimeDetails.EnvFromContainerRuntime, envKey)
 				if isEnvVarAlreadyExists {
 					continue
@@ -387,7 +395,7 @@ func handleContainerRuntimeDetailsUpdate(
 				}
 				containerRuntimeDetails.EnvFromContainerRuntime = filteredEnvVars
 			}
-			return nil
+			return nil, needToUpdateWorkloadAnnotation
 		}
 
 		// Mark as succeeded if no annotation set.
@@ -430,7 +438,7 @@ func handleContainerRuntimeDetailsUpdate(
 			}
 		}
 	}
-	return nil
+	return nil, needToUpdateWorkloadAnnotation
 }
 
 func contains(workloadNames map[string]*v1alpha1.InstrumentationConfig, workloadName string) bool {
@@ -469,4 +477,18 @@ func isEnvVarPresent(envVars []v1alpha1.EnvVar, envVarName string) bool {
 		}
 	}
 	return false
+}
+
+func updateAnnotations(ctx context.Context, kubeClient client.Client, obj metav1.Object,
+	originalWorkloadEnvVar *envoverwrite.OrigWorkloadEnvValues) error {
+
+	originalWorkloadEnvVar.SetModifiedSinceCreated()
+	if err := originalWorkloadEnvVar.SerializeToAnnotation(obj); err != nil {
+		return err
+	}
+
+	if err := kubeClient.Update(ctx, obj.(client.Object)); err != nil {
+		return err
+	}
+	return nil
 }
