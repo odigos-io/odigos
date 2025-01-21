@@ -19,7 +19,6 @@ import (
 )
 
 const (
-	SchedulerImage                  = "keyval/odigos-scheduler"
 	SchedulerServiceName            = "scheduler"
 	SchedulerDeploymentName         = "odigos-scheduler"
 	SchedulerAppLabelValue          = SchedulerDeploymentName
@@ -181,7 +180,7 @@ func NewSchedulerClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 	}
 }
 
-func NewSchedulerDeployment(ns string, version string, imagePrefix string) *appsv1.Deployment {
+func NewSchedulerDeployment(ns string, version string, imagePrefix string, imageName string) *appsv1.Deployment {
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -214,7 +213,7 @@ func NewSchedulerDeployment(ns string, version string, imagePrefix string) *apps
 					Containers: []corev1.Container{
 						{
 							Name:  SchedulerContainerName,
-							Image: containers.GetImageName(imagePrefix, SchedulerImage, version),
+							Image: containers.GetImageName(imagePrefix, imageName, version),
 							Command: []string{
 								"/app",
 							},
@@ -331,7 +330,7 @@ func (a *schedulerResourceManager) InstallFromScratch(ctx context.Context) error
 		NewSchedulerRoleBinding(a.ns),
 		NewSchedulerClusterRole(),
 		NewSchedulerClusterRoleBinding(a.ns),
-		NewSchedulerDeployment(a.ns, a.odigosVersion, a.config.ImagePrefix),
+		NewSchedulerDeployment(a.ns, a.odigosVersion, a.config.ImagePrefix, a.config.SchedulerImage),
 	}
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }

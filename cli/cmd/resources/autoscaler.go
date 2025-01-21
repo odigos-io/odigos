@@ -225,7 +225,7 @@ func NewAutoscalerLeaderElectionRoleBinding(ns string) *rbacv1.RoleBinding {
 	}
 }
 
-func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imageName string, disableNameProcessor bool) *appsv1.Deployment {
+func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imageName string, disableNameProcessor bool, collectorImage string) *appsv1.Deployment {
 
 	optionalEnvs := []corev1.EnvVar{}
 
@@ -290,6 +290,10 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 											FieldPath: "metadata.namespace",
 										},
 									},
+								},
+								{
+									Name:  "COLLECTOR_IMAGE",
+									Value: collectorImage,
 								},
 								{
 									Name: consts.OdigosVersionEnvVarName,
@@ -385,7 +389,7 @@ func (a *autoScalerResourceManager) InstallFromScratch(ctx context.Context) erro
 		NewAutoscalerClusterRole(),
 		NewAutoscalerClusterRoleBinding(a.ns),
 		NewAutoscalerLeaderElectionRoleBinding(a.ns),
-		NewAutoscalerDeployment(a.ns, a.odigosVersion, a.config.ImagePrefix, a.config.AutoscalerImage, disableNameProcessor),
+		NewAutoscalerDeployment(a.ns, a.odigosVersion, a.config.ImagePrefix, a.config.AutoscalerImage, disableNameProcessor, a.config.CollectorImage),
 	}
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }

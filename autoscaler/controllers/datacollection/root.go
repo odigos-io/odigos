@@ -19,7 +19,7 @@ const (
 	syncDaemonsetRetry = 3
 )
 
-func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, k8sVersion *version.Version, disableNameProcessor bool) error {
+func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, k8sVersion *version.Version, disableNameProcessor bool, collectorImage string) error {
 	logger := log.FromContext(ctx)
 
 	var sources odigosv1.InstrumentationConfigList
@@ -51,12 +51,12 @@ func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePul
 		return err
 	}
 
-	return syncDataCollection(&sources, &dests, &processors, &dataCollectionCollectorGroup, ctx, c, scheme, imagePullSecrets, odigosVersion, k8sVersion, disableNameProcessor)
+	return syncDataCollection(&sources, &dests, &processors, &dataCollectionCollectorGroup, ctx, c, scheme, imagePullSecrets, odigosVersion, k8sVersion, disableNameProcessor, collectorImage)
 }
 
 func syncDataCollection(sources *odigosv1.InstrumentationConfigList, dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList,
 	dataCollection *odigosv1.CollectorsGroup, ctx context.Context, c client.Client,
-	scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, k8sVersion *version.Version, disableNameProcessor bool) error {
+	scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, k8sVersion *version.Version, disableNameProcessor bool, collectorImage string) error {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Syncing data collection")
 
@@ -66,7 +66,7 @@ func syncDataCollection(sources *odigosv1.InstrumentationConfigList, dests *odig
 		return err
 	}
 
-	dm.RunSyncDaemonSetWithDelayAndSkipNewCalls(time.Duration(env.GetSyncDaemonSetDelay())*time.Second, syncDaemonsetRetry, dests, dataCollection, ctx, c, scheme, imagePullSecrets, odigosVersion, k8sVersion)
+	dm.RunSyncDaemonSetWithDelayAndSkipNewCalls(time.Duration(env.GetSyncDaemonSetDelay())*time.Second, syncDaemonsetRetry, dests, dataCollection, ctx, c, scheme, imagePullSecrets, odigosVersion, k8sVersion, collectorImage)
 
 	return nil
 }

@@ -28,7 +28,6 @@ import (
 
 const (
 	containerName        = "data-collection"
-	containerImage       = "keyval/odigos-collector"
 	containerCommand     = "/odigosotelcol"
 	confDir              = "/conf"
 	configHashAnnotation = "odigos.io/config-hash"
@@ -48,7 +47,7 @@ type DelayManager struct {
 
 // RunSyncDaemonSetWithDelayAndSkipNewCalls runs the function with the specified delay and skips new calls until the function execution is finished
 func (dm *DelayManager) RunSyncDaemonSetWithDelayAndSkipNewCalls(delay time.Duration, retries int, dests *odigosv1.DestinationList,
-	collection *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, secrets []string, version string, k8sVersion *version.Version) {
+	collection *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, secrets []string, version string, k8sVersion *version.Version, collectorImage string) {
 	dm.mu.Lock()
 	defer dm.mu.Unlock()
 
@@ -77,7 +76,7 @@ func (dm *DelayManager) RunSyncDaemonSetWithDelayAndSkipNewCalls(delay time.Dura
 		}()
 
 		for i := 0; i < retries; i++ {
-			_, err = syncDaemonSet(ctx, dests, collection, c, scheme, secrets, version, k8sVersion)
+			_, err = syncDaemonSet(ctx, dests, collection, c, scheme, secrets, version, k8sVersion, collectorImage)
 			if err == nil {
 				return
 			}
@@ -92,7 +91,7 @@ func (dm *DelayManager) finishProgress() {
 }
 
 func syncDaemonSet(ctx context.Context, dests *odigosv1.DestinationList, datacollection *odigosv1.CollectorsGroup,
-	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, k8sVersion *version.Version) (*appsv1.DaemonSet, error) {
+	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, k8sVersion *version.Version, collectorImage string) (*appsv1.DaemonSet, error) {
 	logger := log.FromContext(ctx)
 
 	odigletDaemonsetPodSpec, err := getOdigletDaemonsetPodSpec(ctx, c, datacollection.Namespace)
@@ -113,7 +112,7 @@ func syncDaemonSet(ctx context.Context, dests *odigosv1.DestinationList, datacol
 		logger.Error(err, "Failed to get signals from otelcol config")
 		return nil, err
 	}
-	desiredDs, err := getDesiredDaemonSet(datacollection, scheme, imagePullSecrets, odigosVersion, k8sVersion, odigletDaemonsetPodSpec)
+	desiredDs, err := getDesiredDaemonSet(datacollection, scheme, imagePullSecrets, odigosVersion, k8sVersion, odigletDaemonsetPodSpec, collectorImage)
 	if err != nil {
 		logger.Error(err, "Failed to get desired DaemonSet")
 		return nil, err
@@ -171,7 +170,7 @@ func getOdigletDaemonsetPodSpec(ctx context.Context, c client.Client, namespace 
 
 func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 	scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, k8sVersion *version.Version,
-	odigletDaemonsetPodSpec *corev1.PodSpec,
+	odigletDaemonsetPodSpec *corev1.PodSpec, collectorImage string,
 ) (*appsv1.DaemonSet, error) {
 	// TODO(edenfed): add log volumes only if needed according to apps or dests
 
@@ -273,7 +272,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 					Containers: []corev1.Container{
 						{
 							Name:    containerName,
-							Image:   utils.GetCollectorContainerImage(containerImage, odigosVersion),
+							Image:   utils.GetCollectorContainerImage(collectorImage, odigosVersion),
 							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, k8sconsts.OdigosNodeCollectorConfigMapKey)},
 							VolumeMounts: []corev1.VolumeMount{
 								{

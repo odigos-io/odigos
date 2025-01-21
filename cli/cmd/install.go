@@ -44,6 +44,9 @@ var (
 	instrumentorImage string
 	odigletImage      string
 	autoScalerImage   string
+	schedulerImage    string
+	frontendImage     string
+	collectorImage    string
 	imagePrefix       string
 )
 
@@ -223,6 +226,9 @@ func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 		OdigletImage:              odigletImage,
 		InstrumentorImage:         instrumentorImage,
 		AutoscalerImage:           autoScalerImage,
+		SchedulerImage:            schedulerImage,
+		FrontendImage:             frontendImage,
+		CollectorImage:            collectorImage,
 		Profiles:                  selectedProfiles,
 	}
 }
@@ -249,6 +255,9 @@ func init() {
 	installCmd.Flags().StringVar(&odigletImage, "odiglet-image", "", "odiglet container image name")
 	installCmd.Flags().StringVar(&instrumentorImage, "instrumentor-image", "keyval/odigos-instrumentor", "instrumentor container image name")
 	installCmd.Flags().StringVar(&autoScalerImage, "autoscaler-image", "keyval/odigos-autoscaler", "autoscaler container image name")
+	installCmd.Flags().StringVar(&schedulerImage, "scheduler-image", "keyval/odigos-scheduler", "scheduler container image name")
+	installCmd.Flags().StringVar(&frontendImage, "frontend-image", "keyval/odigos-ui", "frontend container image name")
+	installCmd.Flags().StringVar(&collectorImage, "collector-image", "keyval/odigos-collector", "collector container image name")
 	installCmd.Flags().StringVar(&imagePrefix, "image-prefix", "", "prefix for all container images. used when your cluster doesn't have access to docker hub")
 	installCmd.Flags().BoolVar(&psp, "psp", false, "enable pod security policy")
 	installCmd.Flags().StringSliceVar(&userInputIgnoredNamespaces, "ignore-namespace", k8sconsts.DefaultIgnoredNamespaces, "namespaces not to show in odigos ui")

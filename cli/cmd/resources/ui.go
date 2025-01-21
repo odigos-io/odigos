@@ -19,7 +19,6 @@ import (
 )
 
 const (
-	UIImage              = "keyval/odigos-ui"
 	UIServiceName        = "ui"
 	UIDeploymentName     = "odigos-ui"
 	UIAppLabelValue      = "odigos-ui"
@@ -38,7 +37,7 @@ func (u *uiResourceManager) Name() string {
 	return "UI"
 }
 
-func NewUIDeployment(ns string, version string, imagePrefix string) *appsv1.Deployment {
+func NewUIDeployment(ns string, version string, imagePrefix string, imageName string) *appsv1.Deployment {
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -71,7 +70,7 @@ func NewUIDeployment(ns string, version string, imagePrefix string) *appsv1.Depl
 					Containers: []corev1.Container{
 						{
 							Name:  UIContainerName,
-							Image: containers.GetImageName(imagePrefix, UIImage, version),
+							Image: containers.GetImageName(imagePrefix, imageName, version),
 							Args: []string{
 								"--namespace=$(CURRENT_NS)",
 							},
@@ -313,7 +312,7 @@ func (u *uiResourceManager) InstallFromScratch(ctx context.Context) error {
 		NewUIRoleBinding(u.ns),
 		NewUIClusterRole(),
 		NewUIClusterRoleBinding(u.ns),
-		NewUIDeployment(u.ns, u.odigosVersion, u.config.ImagePrefix),
+		NewUIDeployment(u.ns, u.odigosVersion, u.config.ImagePrefix, u.config.FrontendImage),
 		NewUIService(u.ns),
 	}
 	return u.client.ApplyResources(ctx, u.config.ConfigVersion, resources)

@@ -99,6 +99,9 @@ type OdigosConfiguration struct {
 	OdigletImage              string                         `json:"odigletImage,omitempty"`
 	InstrumentorImage         string                         `json:"instrumentorImage,omitempty"`
 	AutoscalerImage           string                         `json:"autoscalerImage,omitempty"`
+	SchedulerImage            string                         `json:"schedulerImage,omitempty"`
+	FrontendImage             string                         `json:"frontendImage,omitempty"`
+	CollectorImage            string                         `json:"collectorImage,omitempty"`
 	SkipWebhookIssuerCreation bool                           `json:"skipWebhookIssuerCreation,omitempty"`
 	CollectorGateway          *CollectorGatewayConfiguration `json:"collectorGateway,omitempty"`
 	CollectorNode             *CollectorNodeConfiguration    `json:"collectorNode,omitempty"`
