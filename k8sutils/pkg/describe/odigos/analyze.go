@@ -38,6 +38,7 @@ type NodeCollectorAnalyze struct {
 
 type OdigosAnalyze struct {
 	OdigosVersion        properties.EntityProperty `json:"odigosVersion"`
+	KubernetesVersion    properties.EntityProperty `json:"kubernetesVersion"`
 	Tier                 properties.EntityProperty `json:"tier"`
 	InstallationMethod   properties.EntityProperty `json:"installationMethod"`
 	NumberOfDestinations int                       `json:"numberOfDestinations"`
@@ -383,6 +384,7 @@ func AnalyzeOdigos(resources *OdigosResources) *OdigosAnalyze {
 	odigosVersion := resources.OdigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapVersionKey]
 	tier := resources.OdigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapTierKey]
 	installationMethod := resources.OdigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey]
+	k8sVersion := resources.OdigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapKubernetesVersionKey]
 
 	odigosVersionProperty := properties.EntityProperty{
 		Name:    "Odigos Version",
@@ -402,8 +404,15 @@ func AnalyzeOdigos(resources *OdigosResources) *OdigosAnalyze {
 		Explain: "the method used to deploy odigos in the cluster (helm or odigos cli)",
 	}
 
+	k8sVersionProperty := properties.EntityProperty{
+		Name:    "Kubernetes Version",
+		Value:   k8sVersion,
+		Explain: "the version of kubernetes cluster where odigos is deployed",
+	}
+
 	return &OdigosAnalyze{
 		OdigosVersion:        odigosVersionProperty,
+		KubernetesVersion:    k8sVersionProperty,
 		Tier:                 odigosTierProperty,
 		InstallationMethod:   installationMethodProperty,
 		NumberOfDestinations: len(resources.Destinations.Items),

@@ -50,6 +50,7 @@ func DescribeOdigosToText(analyze *odigos.OdigosAnalyze) string {
 	var sb strings.Builder
 
 	printProperty(&sb, 0, &analyze.OdigosVersion)
+	printProperty(&sb, 0, &analyze.KubernetesVersion)
 	printProperty(&sb, 0, &analyze.Tier)
 	printProperty(&sb, 0, &analyze.InstallationMethod)
 	sb.WriteString("\n")

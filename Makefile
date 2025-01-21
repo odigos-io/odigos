@@ -43,6 +43,9 @@ endif
 lint-fix:
 	MODULE=common make lint FIX_LINT=true
 	MODULE=k8sutils make lint FIX_LINT=true
+	MODULE=profiles make lint FIX_LINT=true
+	MODULE=destinations make lint FIX_LINT=true
+	MODULE=procdiscovery make lint FIX_LINT=true
 
 .PHONY: build-odiglet
 build-odiglet:
