@@ -22,6 +22,7 @@ export const getMainContainerLanguage = (source: K8sActualSource): WORKLOAD_PROG
   const { numberOfInstances, containers } = source;
 
   if (!containers) {
+    // @ts-ignore
     if (numberOfInstances > 0) {
       return WORKLOAD_PROGRAMMING_LANGUAGES.PROCESSING;
     } else {
@@ -30,7 +31,7 @@ export const getMainContainerLanguage = (source: K8sActualSource): WORKLOAD_PROG
   }
 
   // we will filter out the ignored languages as we don't want to account them in the main language
-  const noneIgnoredLanguages = containers.filter((container) => container.language !== WORKLOAD_PROGRAMMING_LANGUAGES.IGNORED);
+  const noneIgnoredLanguages = containers?.filter((container) => container.language !== WORKLOAD_PROGRAMMING_LANGUAGES.IGNORED);
   if (!noneIgnoredLanguages.length) return WORKLOAD_PROGRAMMING_LANGUAGES.NO_CONTAINERS;
 
   // find the first container with valid language

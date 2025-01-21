@@ -54,6 +54,7 @@ export const DestinationDrawer: React.FC<Props> = () => {
     if (!!fetchedItems?.length) {
       const found = fetchedItems.find((x) => x.id === id);
       if (!!found) {
+        // @ts-ignore
         return setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.DESTINATION, item: found });
       }
     }

@@ -179,6 +179,7 @@ export const SourceDrawer: React.FC<Props> = () => {
                 type: DataCardFieldTypes.CODE,
                 value: JSON.stringify({
                   language: 'json',
+                  // @ts-ignore
                   code: safeJsonStringify(isPrettyMode ? restructureForPrettyMode(describe) : describe),
                   pretty: isPrettyMode,
                 }),

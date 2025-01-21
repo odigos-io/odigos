@@ -67,6 +67,7 @@ export const useNodeDataFlowHandlers = () => {
         setSelectedItem({
           id,
           type,
+          // @ts-ignore
           item: selectedDrawerItem,
         });
       } else if (type === OVERVIEW_ENTITY_TYPES.RULE) {

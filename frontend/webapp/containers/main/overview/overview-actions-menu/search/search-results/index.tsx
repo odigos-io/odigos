@@ -43,6 +43,7 @@ export const SearchResults = ({ searchText, onClose }: Props) => {
         rules: instrumentationRules,
         sources,
         actions,
+        // @ts-ignore
         destinations,
         searchText,
         selectedCategory,

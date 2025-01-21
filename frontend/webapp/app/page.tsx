@@ -17,7 +17,9 @@ export default function App() {
     if (error) {
       addNotification({
         type: NOTIFICATION_TYPE.ERROR,
+        // @ts-ignore
         title: error.name || ACTION.FETCH,
+        // @ts-ignore
         message: error.cause?.message || error.message,
       });
     } else if (data) {

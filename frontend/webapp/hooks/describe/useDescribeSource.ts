@@ -270,16 +270,16 @@ export const useDescribeSource = ({ namespace, name, kind }: WorkloadId) => {
     Object.values(code).forEach((val) => mapObjects(val));
     Object.values(code.labels).forEach((val) => mapObjects(val, 'Labels'));
     Object.values(code.instrumentationConfig).forEach((val) => mapObjects(val, 'Instrumentation Config'));
-    code.runtimeInfo?.containers.forEach((obj, i) => Object.values(obj).forEach((val) => mapObjects(val, 'Runtime Info', { keyPrefix: `Container #${i + 1} - ` })));
+    code.runtimeInfo?.containers?.forEach((obj, i) => Object.values(obj).forEach((val) => mapObjects(val, 'Runtime Info', { keyPrefix: `Container #${i + 1} - ` })));
     Object.values(code.instrumentationDevice).forEach((val) => mapObjects(val, 'Instrumentation Device'));
-    code.instrumentationDevice?.containers.forEach((obj, i) => Object.values(obj).forEach((val) => mapObjects(val, 'Instrumentation Device', { keyPrefix: `Container #${i + 1} - ` })));
+    code.instrumentationDevice?.containers?.forEach((obj, i) => Object.values(obj).forEach((val) => mapObjects(val, 'Instrumentation Device', { keyPrefix: `Container #${i + 1} - ` })));
 
     payload['Pods'] = { 'Total Pods': `${code.totalPods}@status=none` };
     code.pods.forEach((obj) => {
       Object.values(obj).forEach((val) => mapObjects(val, 'Pods'));
-      obj.containers.forEach((containers, i) => {
+      obj.containers?.forEach((containers, i) => {
         Object.values(containers).forEach((val) => mapObjects(val, 'Pods', { keyPrefix: `Container #${i + 1} - ` }));
-        containers.instrumentationInstances.forEach((obj, i) => Object.values(obj).forEach((val) => mapObjects(val, 'Pods', { keyPrefix: `Instrumentation Instance #${i + 1} - ` })));
+        containers?.instrumentationInstances.forEach((obj, i) => Object.values(obj).forEach((val) => mapObjects(val, 'Pods', { keyPrefix: `Instrumentation Instance #${i + 1} - ` })));
       });
     });
 

@@ -49,6 +49,7 @@ export const useClickNotif = () => {
         case 'Destination':
           drawerItem['type'] = OVERVIEW_ENTITY_TYPES.DESTINATION;
           drawerItem['id'] = getIdFromSseTarget(target, OVERVIEW_ENTITY_TYPES.DESTINATION);
+          // @ts-ignore
           drawerItem['item'] = destinations.find((item) => item.id === drawerItem['id']);
           break;
 
