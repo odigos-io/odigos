@@ -53,6 +53,9 @@ func DescribeOdigosToText(analyze *odigos.OdigosAnalyze) string {
 	printProperty(&sb, 0, &analyze.KubernetesVersion)
 	printProperty(&sb, 0, &analyze.Tier)
 	printProperty(&sb, 0, &analyze.InstallationMethod)
+	printProperty(&sb, 0, &analyze.OnpremTokenAud)
+	printProperty(&sb, 0, &analyze.OnpremTokenExpiration)
+	printProperty(&sb, 0, &analyze.OdigosProfiles)
 	sb.WriteString("\n")
 	printOdigosPipeline(analyze, &sb)
 

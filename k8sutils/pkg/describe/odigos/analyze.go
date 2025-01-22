@@ -411,7 +411,7 @@ func AnalyzeOdigos(resources *OdigosResources) *OdigosAnalyze {
 	}
 
 	tokenExpirationProperty := properties.EntityProperty{
-		Name:    "OnPrem Token Expiration",
+		Name:    "OnPrem Token Expiration Date",
 		Value:   tokenExpiration,
 		Explain: "the expiration time of the on-prem token used to authenticate the odigos pro",
 	}
