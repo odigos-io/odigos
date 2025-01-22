@@ -8,8 +8,8 @@ import (
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/confmap"
-	odigosfileprovider "go.opentelemetry.io/collector/odigos/providers/odigosfileprovider"
 	envprovider "go.opentelemetry.io/collector/confmap/provider/envprovider"
+	odigosfileprovider "go.opentelemetry.io/collector/odigos/providers/odigosfileprovider"
 	"go.opentelemetry.io/collector/otelcol"
 )
 
