@@ -34,7 +34,10 @@ func (m *AppDynamics) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 	isHttpsEndpoint := strings.HasPrefix(endpoint, "https://")
 
 	if !isHttpEndpoint && !isHttpsEndpoint {
-		return nil, errors.New("AppDynamics Endpoint URL (\"APPDYNAMICS_ENDPOINT_URL\") malformed, HTTP prefix is required, AppDynamics will not be configured")
+		return nil, errors.New(
+			"AppDynamics Endpoint URL (\"APPDYNAMICS_ENDPOINT_URL\") malformed, " +
+				"HTTP prefix is required, AppDynamics will not be configured",
+		)
 	}
 
 	accountName, accountNameExists := config[APPDYNAMICS_ACCOUNT_NAME]

@@ -76,7 +76,13 @@ type ResourceStatuses struct {
 	Processor   map[string]error
 }
 
-func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, memoryLimiterConfig GenericMap, applySelfTelemetry func(c *Config) error, sourcesFilterProcessors map[string]GenericMap) (string, error, *ResourceStatuses, []common.ObservabilitySignal) {
+func Calculate(
+	dests []ExporterConfigurer,
+	processors []ProcessorConfigurer,
+	memoryLimiterConfig GenericMap,
+	applySelfTelemetry func(c *Config) error,
+	sourcesFilterProcessors map[string]GenericMap,
+) (string, error, *ResourceStatuses, []common.ObservabilitySignal) {
 	currentConfig, prefixProcessors := getBasicConfig(memoryLimiterConfig)
 	return CalculateWithBase(currentConfig, prefixProcessors, dests, processors, applySelfTelemetry, sourcesFilterProcessors)
 }
