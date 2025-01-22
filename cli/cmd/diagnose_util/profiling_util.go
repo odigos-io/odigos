@@ -168,7 +168,7 @@ func captureProfile(ctx context.Context, client *kube.Client, podName string, pp
 
 	response, err := request.Raw()
 	if err != nil {
-		return err
+		return fmt.Errorf("%w: %s", err, string(response))
 	}
 
 	_, err = io.Copy(metricFile, bytes.NewReader(response))
@@ -236,7 +236,7 @@ func collectMetrics(ctx context.Context, client *kube.Client, odigosNamespace st
 			defer wg.Done()
 			err = captureMetrics(ctx, client, collectorPod.Name, odigosNamespace, metricFile, collectorRole)
 			if err != nil {
-				fmt.Printf("Error Getting Metrics Data of: %v, because: %v\n", metricFile, err)
+				fmt.Printf("Error Getting Metrics Data of: %v, because: %v\n", collectorPod.Name, err)
 			}
 		}()
 	}
@@ -265,7 +265,7 @@ func captureMetrics(ctx context.Context, client *kube.Client, podName string, na
 
 	response, err := request.Raw()
 	if err != nil {
-		return err
+		return fmt.Errorf("%w: %s", err, string(response))
 	}
 
 	_, err = io.Copy(metricFile, bytes.NewReader(response))
