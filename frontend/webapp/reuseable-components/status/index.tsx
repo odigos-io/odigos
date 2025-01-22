@@ -35,7 +35,7 @@ const StatusWrapper = styled.div<{
   width: fit-content;
   border-radius: 360px;
   border: ${({ $withBorder, $status, theme }) => ($withBorder ? `1px solid ${theme.text[$status] + hexPercentValues['050']}` : 'none')};
-  background: ${({ $withBackground, $status, theme }) => ($withBackground ? `linear-gradient(90deg, ${theme.text[$status] + hexPercentValues['030']} 0%, transparent 100%)` : 'transparent')};
+  background: ${({ $withBackground, $status, theme }) => ($withBackground ? `linear-gradient(90deg, transparent 0%, ${theme.text[$status] + hexPercentValues['030']} 100%)` : 'transparent')};
 `;
 
 const IconWrapper = styled.div`
