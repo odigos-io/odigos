@@ -7,11 +7,11 @@ import (
 )
 
 var (
-	Type = component.MustNewType("odigossourcesfilter")
+	Type = component.MustNewType("odigossourcesfilterprocessor")
 )
 
 const (
 	TracesStability  = component.StabilityLevelBeta
-	MetricsStability = component.StabilityLevelBeta
 	LogsStability    = component.StabilityLevelBeta
+	MetricsStability = component.StabilityLevelBeta
 )

@@ -47,7 +47,7 @@ func TestProcessor_Traces(t *testing.T) {
 
 	tmp, err := newThroughputMeasurementProcessor(set, metricProvider, &Config{
 		ResourceAttributesKeys: []string{"service.name", "key1"},
-		SamplingRatio: 		     1,
+		SamplingRatio:          1,
 	})
 	require.NoError(t, err)
 
