@@ -7,7 +7,8 @@ import (
 )
 
 var (
-	Type = component.MustNewType("odigossourcesfilterprocessor")
+	Type      = component.MustNewType("odigossourcesfilterprocessor")
+	ScopeName = "github.com/odigos-io/odigos/processor/odigossourcesfilterprocessor"
 )
 
 const (
