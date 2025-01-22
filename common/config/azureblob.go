@@ -22,18 +22,19 @@ func (a *AzureBlobStorage) DestType() common.DestinationType {
 	return common.AzureBlobDestinationType
 }
 
-func (a *AzureBlobStorage) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (a *AzureBlobStorage) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	accountName, ok := dest.GetConfig()[blobAccountName]
 	if !ok {
-		return ErrorMissingAzureBlobAccountName
+		return nil, ErrorMissingAzureBlobAccountName
 	}
 
 	containerName, ok := dest.GetConfig()[blobContainerName]
 	if !ok {
-		return ErrorMissingAzureBlobContainerName
+		return nil, ErrorMissingAzureBlobContainerName
 	}
 
 	exporterName := "azureblobstorage/" + dest.GetID()
+	var pipelineNames []string
 
 	if isLoggingEnabled(dest) {
 		currentConfig.Exporters[exporterName] = GenericMap{
@@ -47,6 +48,7 @@ func (a *AzureBlobStorage) ModifyConfig(dest ExporterConfigurer, currentConfig *
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, logsPipelineName)
 	}
 
 	if isTracingEnabled(dest) {
@@ -61,7 +63,8 @@ func (a *AzureBlobStorage) ModifyConfig(dest ExporterConfigurer, currentConfig *
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
-	return nil
+	return pipelineNames, nil
 }

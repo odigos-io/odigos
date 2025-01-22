@@ -81,7 +81,7 @@ func TestConnection(ctx context.Context, dest config.ExporterConfigurer) TestCon
 			Pipelines: make(map[string]config.Pipeline),
 		},
 	}
-	err := configer.ModifyConfig(dest, &currentConfig)
+	_, err := configer.ModifyConfig(dest, &currentConfig)
 	if err != nil {
 		return TestConnectionResult{Succeeded: false, Message: err.Error(), Reason: InvalidConfig, DestinationType: destType, StatusCode: http.StatusInternalServerError}
 	}

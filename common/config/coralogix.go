@@ -22,22 +22,22 @@ func (c *Coralogix) DestType() common.DestinationType {
 	return common.CoralogixDestinationType
 }
 
-func (c *Coralogix) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (c *Coralogix) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	if !isTracingEnabled(dest) && !isLoggingEnabled(dest) && !isMetricsEnabled(dest) {
-		return ErrorCoralogixNoSignals
+		return nil, ErrorCoralogixNoSignals
 	}
 
 	domain, exists := dest.GetConfig()[coralogixDomain]
 	if !exists {
-		return errors.New("Coralogix domain not specified, gateway will not be configured for Coralogix")
+		return nil, errors.New("Coralogix domain not specified, gateway will not be configured for Coralogix")
 	}
 	appName, exists := dest.GetConfig()[coralogixApplicationName]
 	if !exists {
-		return errors.New("Coralogix application name not specified, gateway will not be configured for Coralogix")
+		return nil, errors.New("Coralogix application name not specified, gateway will not be configured for Coralogix")
 	}
 	subName, exists := dest.GetConfig()[coralogixSubsystemName]
 	if !exists {
-		return errors.New("Coralogix subsystem name not specified, gateway will not be configured for Coralogix")
+		return nil, errors.New("Coralogix subsystem name not specified, gateway will not be configured for Coralogix")
 	}
 
 	exporterName := "coralogix/" + dest.GetID()
@@ -48,11 +48,14 @@ func (c *Coralogix) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		"subsystem_name":   subName,
 	}
 
+	var pipelineNames []string
+
 	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/coralogix-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
 	if isMetricsEnabled(dest) {
@@ -60,6 +63,7 @@ func (c *Coralogix) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
 	if isLoggingEnabled(dest) {
@@ -67,7 +71,8 @@ func (c *Coralogix) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, logsPipelineName)
 	}
 
-	return nil
+	return pipelineNames, nil
 }

@@ -17,12 +17,12 @@ func (s *Splunk) DestType() common.DestinationType {
 	return common.SplunkDestinationType
 }
 
-func (s *Splunk) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (s *Splunk) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	realm, exists := dest.GetConfig()[splunkRealm]
 	if !exists {
-		return errors.New("Splunk realm not specified, gateway will not be configured for Splunk")
+		return nil, errors.New("Splunk realm not specified, gateway will not be configured for Splunk")
 	}
-
+	var pipelineNames []string
 	if isTracingEnabled(dest) {
 		exporterName := "sapm/" + dest.GetID()
 		currentConfig.Exporters[exporterName] = GenericMap{
@@ -34,7 +34,8 @@ func (s *Splunk) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) er
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
-	return nil
+	return pipelineNames, nil
 }
