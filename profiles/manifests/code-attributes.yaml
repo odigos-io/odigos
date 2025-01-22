@@ -1,0 +1,14 @@
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationRule
+metadata:
+  name: code-attributes
+spec:
+  ruleName: "collect all available code attributes"
+  notes: "Auto generated rule from code-attributes profile. Do not edit."
+  codeAttributes:
+    column: true
+    filePath: true
+    function: true
+    lineNumber: true
+    namespace: true
+    stackTrace: true
