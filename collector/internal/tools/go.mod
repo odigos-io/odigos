@@ -10,7 +10,7 @@ require (
 	github.com/ory/go-acc v0.2.8
 	github.com/pavius/impi v0.0.3
 	github.com/tcnksm/ghr v0.16.2
-	go.opentelemetry.io/collector/cmd/mdatagen v0.116.0
+	go.opentelemetry.io/collector/cmd/mdatagen v0.118.0
 	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d
 	golang.org/x/vuln v1.1.0
 )
@@ -199,11 +199,11 @@ require (
 	gitlab.com/bosi/decorder v0.4.2 // indirect
 	go-simpler.org/musttag v0.12.1 // indirect
 	go-simpler.org/sloglint v0.6.0 // indirect
-	go.opentelemetry.io/collector/component v0.116.0 // indirect
-	go.opentelemetry.io/collector/config/configtelemetry v0.116.0 // indirect
+	go.opentelemetry.io/collector/component v0.118.0 // indirect
+	go.opentelemetry.io/collector/config/configtelemetry v0.118.0 // indirect
 	go.opentelemetry.io/collector/confmap v1.22.0 // indirect
 	go.opentelemetry.io/collector/confmap/provider/fileprovider v1.22.0 // indirect
-	go.opentelemetry.io/collector/filter v0.116.0 // indirect
+	go.opentelemetry.io/collector/filter v0.118.0 // indirect
 	go.opentelemetry.io/collector/pdata v1.22.0 // indirect
 	go.opentelemetry.io/otel v1.32.0 // indirect
 	go.opentelemetry.io/otel/metric v1.32.0 // indirect
