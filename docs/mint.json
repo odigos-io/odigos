@@ -163,8 +163,9 @@
         },
         {
           "group": "Instrumentation Rules",
+          "icon": "microchip",
           "pages": [
-            "pipeline/rules/overview",
+            "pipeline/rules/introduction",
             "pipeline/rules/payloadcollection",
             "pipeline/rules/codeattributes"
           ]
