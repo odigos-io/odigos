@@ -34,11 +34,11 @@ func (g *Qryn) DestType() common.DestinationType {
 	return common.QrynDestinationType
 }
 
-func (g *Qryn) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (g *Qryn) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	conf := g.getConfigs(dest)
 	err := g.checkConfigs(&conf)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	passwordPlaceholder := "${QRYN_API_SECRET}"
@@ -47,9 +47,9 @@ func (g *Qryn) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) erro
 	}
 	baseURL, err := parseURL(conf.host, conf.key, passwordPlaceholder)
 	if err != nil {
-		return errors.Join(err, errors.New("invalid qryn endpoint. gateway will not be configured with qryn"))
+		return nil, errors.Join(err, errors.New("invalid qryn endpoint. gateway will not be configured with qryn"))
 	}
-
+	var pipelineNames []string
 	if isMetricsEnabled(dest) {
 		rwExporterName := "prometheusremotewrite/qryn-" + dest.GetID()
 		currentConfig.Exporters[rwExporterName] = GenericMap{
@@ -70,6 +70,7 @@ func (g *Qryn) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) erro
 			&ppl,
 		)
 		currentConfig.Service.Pipelines[metricsPipelineName] = ppl
+		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
 	otlpHttpExporterName := ""
@@ -91,6 +92,7 @@ func (g *Qryn) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) erro
 			&ppl,
 		)
 		currentConfig.Service.Pipelines[tracesPipelineName] = ppl
+		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
 	if isLoggingEnabled(dest) {
@@ -110,13 +112,14 @@ func (g *Qryn) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) erro
 			&ppl,
 		)
 		currentConfig.Service.Pipelines[logsPipelineName] = ppl
+		pipelineNames = append(pipelineNames, logsPipelineName)
 	}
 
 	if otlpHttpExporterName != "" {
 		currentConfig.Exporters[otlpHttpExporterName] = otlpHttpExporter
 	}
 
-	return nil
+	return pipelineNames, nil
 }
 
 func (g *Qryn) getConfigs(dest ExporterConfigurer) qrynConf {

@@ -61,15 +61,15 @@ func validateCauselyUrlInput(rawUrl string) (string, error) {
 	return parsedUrl.String(), nil
 }
 
-func (e *Causely) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (e *Causely) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	rawUrl, exists := dest.GetConfig()[causelyUrl]
 	if !exists {
-		return errors.New("Causely url not specified, gateway will not be configured for Causely")
+		return nil, errors.New("Causely url not specified, gateway will not be configured for Causely")
 	}
 
 	validatedUrl, err := validateCauselyUrlInput(rawUrl)
 	if err != nil {
-		return errors.Join(err, errors.New("failed to parse Causely endpoint, gateway will not be configured for Causely"))
+		return nil, errors.Join(err, errors.New("failed to parse Causely endpoint, gateway will not be configured for Causely"))
 	}
 
 	exporterName := "otlp/causely-" + dest.GetID()
@@ -80,12 +80,14 @@ func (e *Causely) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) e
 			"insecure": true,
 		},
 	}
+	var pipelineNames []string
 
 	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/causely-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
 	if isMetricsEnabled(dest) {
@@ -93,7 +95,8 @@ func (e *Causely) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) e
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, logsPipelineName)
 	}
 
-	return nil
+	return pipelineNames, nil
 }

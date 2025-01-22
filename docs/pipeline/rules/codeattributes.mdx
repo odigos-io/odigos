@@ -1,0 +1,63 @@
+---
+title: "Code Attributes Instrumentation Rule"
+sidebarTitle: "Code Attributes"
+---
+
+<Info> available in Odigos pro only </Info>
+
+The "Code Attributes" Rule can be used to add [semantic Code attributes](https://opentelemetry.io/docs/specs/semconv/attributes-registry/code/) to spans.
+
+Code attributes can help trace back an operation in a trace to the code that generated it.
+
+## Considerations
+
+Before enabling code attributes, please note the following:
+
+- Code attributes have various level of support, depending on the programming language and instrumentation library used.
+- `code.stacktrace` size can sometimes be large and may increase the size of your spans. This can impact the performance of your application and the cost of processing, storing and analyzing traces.
+
+## Basic Example
+
+The following example demonstrates how to enable code attributes for all supported workloads and instrumentation libraries in the cluster.
+
+Create a file named `codeattributes.yaml` with the following content:
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationRule
+metadata:
+  name: collect-all-payloads
+  namespace: odigos-system
+spec:
+  ruleName: "collect all supported code attributes"
+  codeAttributes:
+    column: false
+    filePath: true # recommended
+    function: true # recommended
+    lineNumber: true # recommended
+    namespace: false
+    stackTrace: false
+```
+
+Apply the action to the cluster:
+
+```shell
+kubectl apply -f codeattributes.yaml
+```
+
+### Configuration Options
+
+The full list of configuration options for the "Code Attributes" Rule are:
+
+- `column`: Indicates whether to record the `code.column` attribute for the column number in the `code.filepath` best representing the operation.
+- `filePath`: Indicates whether to record the `code.filepath` attribute for the source code file name that identifies the code unit.
+- `function`: Indicates whether to record the `code.function` attribute for the method or function name, or equivalent.
+- `lineNumber`: Indicates whether to record the `code.lineno` attribute for the line number in the `code.filepath` best representing the operation.
+- `namespace`: Indicates whether to record the `code.namespace` attribute for the “namespace” within which `code.function` is defined. Usually the qualified class or module name, such that `code.namespace` + some separator + `code.function` form a unique identifier for the code unit.
+- `stackTrace`: Indicates whether to record the `code.stacktrace` attribute for the stacktrace as a string in the natural representation for the language runtime.
+
+## Merging Rules
+
+- Any code attribute rule for a specific instrumentation library will take precedence over a rule that does not specify a library.
+- If multiple rules are defined for the same source, the rules will be merged together. Any conflicting options will be resolved by choosing to record the attribute if at least one rule specifies it.
+- Any unspecified options will be set to the default value of `false` (not recorded).
