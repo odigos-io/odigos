@@ -9,7 +9,17 @@ icon: 'question'
   It is recommended to use the [`odigos describe`](/cli/odigos_describe) command to get detailed information in one command.
 </Tip>
 
-## Source Created?
+## Instrumentation Flow:
+
+1. User selects a workload to auto instrument by creating a `Source` object (per workload or per namespace).
+2. Odigos `instrumentor` component watches for changes with `Source` objects, and creates a relative `InstrumentationConfig` object.
+3. Odigos `odiglet` component watches for changes with the `InstrumentationConfig` objects, and runs a runtime inspection on running pods to detect the programming language for every container.
+4. Odigos `instrumentor` component watches for changes with the `InstrumentationConfig` object, and adds a resource request into each pod spec of all relevant containers in the workload manifest. These resource requests are called `Instrumentation Devices`.
+5. Kubernetes detects the changes in the manifest, and rollout-restarts the pods with the new `Instrumentation Devices`.
+6. New pods are scheduled and started. Odiglet resolves the resource request by mounting the auto instrumentation code and relevant environment variables into the container.
+7. The auto instrumentation code starts the OpenTelemetry SDK and sends telemetry data to the odigos pipeline.
+
+## Check is Source Created?
 
 A `Source` object is required for Odigos to instrument the workload or namespace, such as:
 
@@ -40,7 +50,7 @@ If you expect to see data from a workload but don't, check if the `Source` objec
   ```
 </CodeGroup>
 
-## Language Detected?
+## Check is Language Detected?
 
 After a `Source` object is created, Odigos will attempt to detect the programming language of the containers in the workload pods, and write the detected language to an `InstrumentationConfig` object in the same namespace.
 
@@ -74,7 +84,7 @@ status:
     runtimeVersion: 1.21.2
 ```
 
-## Device Instrumented?
+## Check is Device Instrumented?
 
 Once an `InstrumentationConfig` object is created, and the supported language is detected, Odigos will wait until a [destination](/backends-overview) is added, and OpenTelemetry Collectors are deployed to the cluster (which will receive the telemetry data).
 
