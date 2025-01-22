@@ -61,6 +61,9 @@ func createClient(cmd *cobra.Command) (*Client, error) {
 		return nil, err
 	}
 
+	config.QPS = k8sconsts.K8sClientDefaultQPS
+	config.Burst = k8sconsts.K8sClientDefaultBurst
+
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return nil, err
