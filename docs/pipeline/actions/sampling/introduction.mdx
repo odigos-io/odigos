@@ -1,18 +1,21 @@
 ---
-title: "Sampling Actions Introduction"
+title: "Introduction"
+description: "Sampling Actions allow you to configure various types of sampling methods before exporting traces to your destinations."
 sidebarTitle: "Introduction"
+icon: "hand-wave"
 ---
 
-<Warning>
-This feature is in beta. It may be subject to changes and improvements based on user feedback.
-</Warning>
+import BetaWarning from '/snippets/beta-warning.mdx';
 
+<BetaWarning />
 
-Sampling Actions allow you to configure various types of sampling methods before exporting traces to your Odigos Destinations.
+## Sampling Action Types
 
+- [Probabilistic Sampler](/pipeline/actions/sampling/probabilisticsampler): Add a random sample of your data based on a specified probability.
+- [Error Sampler](/pipeline/actions/sampling/errorsampler): Sample traces with status code ERROR.
+- [Latency Sampler](/pipeline/actions/sampling/latencysampler): Sample based on the duration of a trace.
 
-### Actions Scope Categories
-
+## Scope Categories
 
 Odigos Sampling actions are divided into three main categories, each representing the action's scope. The action scope defines the range that the sampler covers. The categories are:
 
@@ -20,7 +23,7 @@ Odigos Sampling actions are divided into three main categories, each representin
 2. **Service Actions**: These sample actions are applied only to traces coming from a specified service.
 3. **Endpoint Actions**: These sample actions are applied to traces coming from a specific service and a specific endpoint. For example, LatencySampler.
 
-### Relation Between Actions
+## Relation Between Actions
 
 When multiple sampling actions are configured, the most specific rule applies. For example:
 
@@ -32,11 +35,3 @@ When multiple sampling actions are configured, the most specific rule applies. F
   4. Any other non-error traces that are not from `Frontend /buy` will be sampled at 20%. 
 
 Each rule ensures you get the specified sampling behavior for your conditions.
-
-### Actions
-
-Odigos comes with a set of sampling actions that you can use out of the box:
-
-- [Probabilistic Sampler](/pipeline/actions/sampling/probabilisticsampler): Add a random sample of your data based on a specified probability.
-- [Error Sampler](/pipeline/actions/sampling/errorsampler): Sample traces with status code ERROR.
-- [Latency Sampler](/pipeline/actions/sampling/latencysampler): Sample based on the duration of a trace.

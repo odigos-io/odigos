@@ -1,24 +1,24 @@
 ---
-title: "Actions Introduction"
+title: "Introduction"
+description: "Actions are a way to modify the OpenTelemetry data recorded by Odigos Sources, before it is exported to your destinations."
 sidebarTitle: "Introduction"
+icon: "hand-wave"
 ---
 
-Actions are a way to modify the OpenTelemetry data recorded by Odigos Sources, before it is exported to your Odigos Destinations.
+## Action Types
 
+Odigos supports a set of common actions grouped into the following categories:
+
+- [Sampling Actions](/pipeline/actions/sampling/introduction)
+- [Attributes Actions](/pipeline/actions/attributes/introduction)
+
+Odigos also supports adding OpenTelemetry processors with [Kuberenetes CRDs](/pipeline/actions/crd) which you can apply manually, or through a GitOps workflow.
 
 ## What are Processors?
 
-Under the hood, Odigos uses the OpenTelemetry Collector Processors to implement actions.
+Under the hood, Odigos uses the [OpenTelemetry Collector Processors](https://opentelemetry.io/docs/collector/configuration/#processors) to implement actions.
 
-Processors are a [class of OpenTelemetry Collector component](https://opentelemetry.io/docs/collector/configuration/#processors).
-They are used to transform, filter, or enrich your OpenTelemetry data before it is sent to your destinations.
-
-Few examples of processors are:
-- Add a resource attribute to all spans, metrics and logs, describing the environment in which the data was collected.
-- Sample a percentage of spans to reduce the volume of data sent to your backend and your costs.
-- Filter out PII data from your signals which you don't want to send to your backend.
-
-and many more...
+Processors are a class of OpenTelemetry Collector component. They are used to transform, filter, or enrich your OpenTelemetry data before it is sent to your [destinations](/backends-overview).
 
 ## Benefits
 
@@ -28,12 +28,3 @@ and many more...
 - OpenTelemetry maintains a large collection of processors, which are ready to use and can be configured to your needs.
 
 Actions are a powerful tool to help you manage your observability data and ensure that you are sending the right data to your backend.
-
-## Adding Actions
-
-Odigos supports a set of common actions grouped into the following categories:
-
-- [Sampling Actions](/pipeline/actions/sampling/introduction)
-- [Attributes Actions](/pipeline/actions/attributes/introduction)
-
-Odigos also supports adding OpenTelemetry processors with [kuberenetes CRDs](/pipeline/actions/crd) which you can apply manually or through a GitOps workflow.
