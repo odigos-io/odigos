@@ -91,17 +91,16 @@ func (odigosConfig *OdigosConfiguration) ToCommonConfig() *common.OdigosConfigur
 		}
 	}
 	return &common.OdigosConfiguration{
-		ConfigVersion:               odigosConfig.Spec.ConfigVersion,
-		TelemetryEnabled:            odigosConfig.Spec.TelemetryEnabled,
-		OpenshiftEnabled:            odigosConfig.Spec.OpenshiftEnabled,
-		IgnoredNamespaces:           odigosConfig.Spec.IgnoredNamespaces,
-		IgnoredContainers:           odigosConfig.Spec.IgnoredContainers,
-		Psp:                         odigosConfig.Spec.Psp,
-		ImagePrefix:                 odigosConfig.Spec.ImagePrefix,
-		OdigletImage:                odigosConfig.Spec.OdigletImage,
-		InstrumentorImage:           odigosConfig.Spec.InstrumentorImage,
-		AutoscalerImage:             odigosConfig.Spec.AutoscalerImage,
-		CollectorGateway:            &collectorGateway,
-		GoAutoIncludeCodeAttributes: odigosConfig.Spec.GoAutoIncludeCodeAttributes,
+		ConfigVersion:     odigosConfig.Spec.ConfigVersion,
+		TelemetryEnabled:  odigosConfig.Spec.TelemetryEnabled,
+		OpenshiftEnabled:  odigosConfig.Spec.OpenshiftEnabled,
+		IgnoredNamespaces: odigosConfig.Spec.IgnoredNamespaces,
+		IgnoredContainers: odigosConfig.Spec.IgnoredContainers,
+		Psp:               odigosConfig.Spec.Psp,
+		ImagePrefix:       odigosConfig.Spec.ImagePrefix,
+		OdigletImage:      odigosConfig.Spec.OdigletImage,
+		InstrumentorImage: odigosConfig.Spec.InstrumentorImage,
+		AutoscalerImage:   odigosConfig.Spec.AutoscalerImage,
+		CollectorGateway:  &collectorGateway,
 	}
 }
