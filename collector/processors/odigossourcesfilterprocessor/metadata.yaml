@@ -1,4 +1,4 @@
-type: odigossourcesfilterprocessor
+type: odigossourcesfilter
 status:
   class: processor
   stability:
