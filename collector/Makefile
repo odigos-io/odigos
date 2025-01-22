@@ -4,8 +4,9 @@ SRC_ROOT := $(shell git rev-parse --show-toplevel)/collector
 TOOLS_BIN_DIR    := $(SRC_ROOT)/.tools
 
 # Define the tool version
-BUILDER_VERSION = 0.106.0
+BUILDER_VERSION = 0.118.0
 BUILDER := $(TOOLS_BIN_DIR)/builder_$(BUILDER_VERSION)
+GOIMPORTS := $(TOOLS_BIN_DIR)/goimports
 
 # Determine the current operating system and architecture
 CURRENT_OS := $(shell go env GOOS)
@@ -51,6 +52,14 @@ install-tools:
 .PHONY: generate
 generate: install-tools
 	@find . -type f -name 'metadata.yaml' -print0 | xargs -0 -I {} sh -c 'cd $$(dirname {}); $(GOBIN)/mdatagen metadata.yaml'
+	$(MAKE) fmt
+
+ALL_GO_MOD_DIRS := $(shell find . -type f -name 'go.mod' -exec dirname {} \; | sort | grep -E '^./' )
+.PHONY: fmt
+fmt: $(ALL_GO_MOD_DIRS:%=fmt/%)
+fmt/%: install-tools
+	cd $* && $(GOIMPORTS) -w -local github.com/odigos-io ./
+	cd $* && gofmt -w .
 
 ALL_GO_MODS := $(shell find . -type f -name 'go.mod' ! -path './exporters/googlecloudstorageexporter/*' ! -path './exporters/azureblobstorageexporter/*' ! -path './internal/tools/*' ! -path './odigosotelcol/*' | sort)
 GO_MODS_TO_TEST := $(ALL_GO_MODS:%=test/%)
