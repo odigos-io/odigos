@@ -24,7 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
@@ -117,9 +117,9 @@ func GetSources(ctx context.Context, kubeClient client.Client, obj client.Object
 	if obj.GetObjectKind().GroupVersionKind().Kind != string(workload.WorkloadKindNamespace) {
 		sourceList := SourceList{}
 		selector := labels.SelectorFromSet(labels.Set{
-			consts.WorkloadNameLabel:      obj.GetName(),
-			consts.WorkloadNamespaceLabel: namespace,
-			consts.WorkloadKindLabel:      obj.GetObjectKind().GroupVersionKind().Kind,
+			k8sconsts.WorkloadNameLabel:      obj.GetName(),
+			k8sconsts.WorkloadNamespaceLabel: namespace,
+			k8sconsts.WorkloadKindLabel:      obj.GetObjectKind().GroupVersionKind().Kind,
 		})
 		err := kubeClient.List(ctx, &sourceList, &client.ListOptions{LabelSelector: selector}, client.InNamespace(namespace))
 		if err != nil {
@@ -135,9 +135,9 @@ func GetSources(ctx context.Context, kubeClient client.Client, obj client.Object
 
 	namespaceSourceList := SourceList{}
 	namespaceSelector := labels.SelectorFromSet(labels.Set{
-		consts.WorkloadNameLabel:      namespace,
-		consts.WorkloadNamespaceLabel: namespace,
-		consts.WorkloadKindLabel:      string(workload.WorkloadKindNamespace),
+		k8sconsts.WorkloadNameLabel:      namespace,
+		k8sconsts.WorkloadNamespaceLabel: namespace,
+		k8sconsts.WorkloadKindLabel:      string(workload.WorkloadKindNamespace),
 	})
 	err = kubeClient.List(ctx, &namespaceSourceList, &client.ListOptions{LabelSelector: namespaceSelector}, client.InNamespace(namespace))
 	if err != nil {
