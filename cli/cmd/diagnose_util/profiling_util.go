@@ -33,7 +33,7 @@ var servicesProfilingMetadata = map[string]ProfilingPodConfig{
 	"odiglet": {
 		Port: k8sconsts.OdigletPprofEndpointPort,
 		Selector: labels.Set{
-			"app.kubernetes.io/name": resources.OdigletAppLabelValue}.AsSelector(),
+			"app.kubernetes.io/name": k8sconsts.OdigletAppLabelValue}.AsSelector(),
 	},
 	"data-collection": {
 		Port: k8sconsts.CollectorsPprofEndpointPort,

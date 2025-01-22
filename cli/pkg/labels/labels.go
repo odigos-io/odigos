@@ -1,11 +1,9 @@
 package labels
 
-const (
-	OdigosSystemLabelKey       = "odigos.io/system-object"
-	OdigosSystemConfigLabelKey = "odigos.io/config"
-	OdigosSystemLabelValue     = "true"
+import (
+	"github.com/odigos-io/odigos/api/k8sconsts"
 )
 
 var OdigosSystem = map[string]string{
-	OdigosSystemLabelKey: OdigosSystemLabelValue,
+	k8sconsts.OdigosSystemLabelKey: k8sconsts.OdigosSystemLabelValue,
 }
