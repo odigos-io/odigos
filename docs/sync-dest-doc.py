@@ -122,10 +122,12 @@ def generate_note(yaml_content):
     Returns:
         str: Note content.
     """
-    note = yaml_content.get("spec", {}).get("note", [])
+    note = yaml_content.get("spec", {}).get("note", {})
+    type = note.get("type", "Note")
+    content = note.get("content", "")
 
-    if note:
-        note = f"<Check>\n{indent_lines(note, 2)}\n</Check>"
+    if content:
+        note = f"<{type}>\n{indent_lines(content, 2)}\n</{type}>"
     else:
         note = ""
 
@@ -246,27 +248,34 @@ def generate_kubectl_apply(yaml_content):
 
     # Handle fields
     for field in yaml_content.get("spec", {}).get("fields", []):
-        config_name = field.get("name", "")
-        # Get field display name
-        config_display = field.get('displayName', '')
+        key = field.get("name", "")
+        name = field.get('displayName', '')
+        component_props = field.get('componentProps', {})
+        required = component_props.get("required", False)
+        initial_value = field.get("initialValue", {})
+
+        # Get initial values
+        if initial_value:
+            name += f" (default: {initial_value})"
+
         # Get values for dropdowns
         if field.get('componentType', '') == 'dropdown':
-            values = field.get('componentProps', {}).get('values', [])
+            values = component_props.get('values', [])
             if values:
-                config_display += f" [{', '.join(values)}]"
+                name += f" (options: [{', '.join(values)}])"
 
         if field.get("secret", False):
             # Secret fields are added only to the Secret manifest
             has_secrets = True
-            secret_yaml["data"][config_name] = f"<Base64 {config_display}>"
-            if not field.get("componentProps", {}).get("required", False):
+            secret_yaml["data"][key] = f"<Base64 {name}>"
+            if not required:
                 secret_optional = True
-        elif field.get("componentProps", {}).get("required", False):
+        elif required:
             # Required fields are added directly to the Destination manifest
-            required_fields[config_name] = f"<{config_display}>"
+            required_fields[key] = f"<{name}>"
         else:
             # Prepare optional fields as commented lines
-            optional_fields += f"\n    # {config_name}: <{config_display}>"
+            optional_fields += f"\n    # {key}: <{name}>"
 
     # Add required fields to the 'data' section
     destination_yaml["spec"]["data"].update(required_fields)
@@ -364,6 +373,7 @@ def get_documenation(yaml_content):
         + "\nicon: 'signal-stream'"
         + "\n---"
         + "\n\n### Getting Started"
+        + f"\n\n{generate_logo(yaml_content, True, 100)}"
         + "\n\n{/*"
         + "\n    Add custom content here (under this comment)..."
         + "\n"
@@ -482,8 +492,10 @@ def create_mdx(mdx_path, yaml_content):
 
     mdx_content = (
         f"{documenation.get("content_before_custom")}"
-        # Logo only on-create
-        + f"\n\n{generate_logo(yaml_content, True, 100)}"
+        + "\n\n**Creating Account**<br />"
+        + "\nGo to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**"
+        + "\n\n**Obtaining Access Token**<br />"
+        + "\nGo to **⚙️ > Access Tokens** and click **Create New**"
         + f"\n\n{documenation.get("content_after_custom")}"
     )
 
@@ -568,11 +580,10 @@ def process_overview(backend_yaml_dir, docs_dir):
     content = (
         "---"
         + "\ntitle: 'Overview'"
+        + "\ndescription: 'Odigos makes it simple to add and configure destinations, allowing you to select the specific signals (`traces`,`metrics`,`logs`) that you want to send to each destination.'"
         + "\nsidebarTitle: 'Overview'"
         + "\nicon: 'house'"
         + "\n---"
-        + "\n\nOdigos makes it simple to add and configure destinations, allowing you to select the specific signals (`traces`,`metrics`,`logs`) that you want to send to each destination."
-        + "\n\nOdigos has destinations for many observability backends."
         + "\n\n<Tip>"
         + "\n  Can't find your backend in Odigos? Please tell us! We are constantly adding new integrations.<br />"
         + "\n  You can also follow our quick [add new destination](/adding-new-dest) guide and submit a PR."

@@ -3,9 +3,9 @@ package odigospro
 import (
 	"context"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,7 +36,7 @@ func CloudTokenAsEnvVar() corev1.EnvVar {
 		ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: consts.OdigosProSecretName,
+					Name: k8sconsts.OdigosProSecretName,
 				},
 				Key: odigosCloudApiKeySecretKey,
 			},
@@ -51,7 +51,7 @@ func OnPremTokenAsEnvVar() corev1.EnvVar {
 		ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: consts.OdigosProSecretName,
+					Name: k8sconsts.OdigosProSecretName,
 				},
 				Key: odigosOnpremTokenSecretKey,
 			},
@@ -60,7 +60,7 @@ func OnPremTokenAsEnvVar() corev1.EnvVar {
 }
 
 func getCurrentOdigosProSecret(ctx context.Context, client *kube.Client, ns string) (*corev1.Secret, error) {
-	secret, err := client.CoreV1().Secrets(ns).Get(ctx, consts.OdigosProSecretName, metav1.GetOptions{})
+	secret, err := client.CoreV1().Secrets(ns).Get(ctx, k8sconsts.OdigosProSecretName, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil, nil
 	}

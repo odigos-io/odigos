@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
@@ -15,7 +16,6 @@ import (
 	odigoscommon "github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/common/consts"
-	constsK8s "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -109,7 +109,7 @@ func getDesiredConfigMap(sources *odigosv1.InstrumentationConfigList, dests *odi
 			Namespace: datacollection.Namespace,
 		},
 		Data: map[string]string{
-			constsK8s.OdigosNodeCollectorConfigMapKey: cmData,
+			k8sconsts.OdigosNodeCollectorConfigMapKey: cmData,
 		},
 	}
 
@@ -400,7 +400,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 
 func getConfigMap(ctx context.Context, c client.Client, namespace string) (*v1.ConfigMap, error) {
 	configMap := &v1.ConfigMap{}
-	if err := c.Get(ctx, client.ObjectKey{Namespace: namespace, Name: constsK8s.OdigosNodeCollectorConfigMapName}, configMap); err != nil {
+	if err := c.Get(ctx, client.ObjectKey{Namespace: namespace, Name: k8sconsts.OdigosNodeCollectorConfigMapName}, configMap); err != nil {
 		return nil, err
 	}
 
