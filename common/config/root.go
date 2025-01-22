@@ -68,7 +68,7 @@ var availableConfigers = []Configer{
 
 type Configer interface {
 	DestType() common.DestinationType
-	ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error
+	ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error)
 }
 
 type ResourceStatuses struct {
@@ -76,15 +76,23 @@ type ResourceStatuses struct {
 	Processor   map[string]error
 }
 
-func Calculate(dests []ExporterConfigurer, processors []ProcessorConfigurer, memoryLimiterConfig GenericMap,
-	applySelfTelemetry func(c *Config) error) (string, error, *ResourceStatuses, []common.ObservabilitySignal) {
+func Calculate(
+	dests []ExporterConfigurer,
+	processors []ProcessorConfigurer,
+	memoryLimiterConfig GenericMap,
+	applySelfTelemetry func(c *Config) error,
+	sourcesFilterProcessors map[string]GenericMap,
+) (string, error, *ResourceStatuses, []common.ObservabilitySignal) {
 	currentConfig, prefixProcessors := getBasicConfig(memoryLimiterConfig)
-	return CalculateWithBase(currentConfig, prefixProcessors, dests, processors, applySelfTelemetry)
+	return CalculateWithBase(currentConfig, prefixProcessors, dests, processors, applySelfTelemetry, sourcesFilterProcessors)
 }
 
-func CalculateWithBase(currentConfig *Config, prefixProcessors []string, dests []ExporterConfigurer,
-	processors []ProcessorConfigurer, applySelfTelemetry func(c *Config) error) (string, error, *ResourceStatuses,
-	[]common.ObservabilitySignal) {
+func CalculateWithBase(currentConfig *Config,
+	prefixProcessors []string,
+	dests []ExporterConfigurer,
+	processors []ProcessorConfigurer,
+	applySelfTelemetry func(c *Config) error,
+	sourcesFilterProcessors map[string]GenericMap) (string, error, *ResourceStatuses, []common.ObservabilitySignal) {
 	configers, err := LoadConfigers()
 	if err != nil {
 		return "", err, nil, nil
@@ -112,13 +120,25 @@ func CalculateWithBase(currentConfig *Config, prefixProcessors []string, dests [
 			status.Destination[dest.GetID()] = fmt.Errorf("no configer for %s", dest.GetType())
 			continue
 		}
-
-		err := configer.ModifyConfig(dest, currentConfig)
+		sanitizedProcessorName := fmt.Sprintf("odigossourcesfilter/%s", strings.ReplaceAll(dest.GetID(), ".", "-"))
+		routingProcessor, exists := sourcesFilterProcessors[sanitizedProcessorName]
+		if exists {
+			currentConfig.Processors[sanitizedProcessorName] = routingProcessor
+		}
+		pipelineNames, err := configer.ModifyConfig(dest, currentConfig)
 		status.Destination[dest.GetID()] = err
 
-		// If configurer ran without errors, but there were no signals enabled, warn the user
 		if len(dest.GetSignals()) == 0 && err == nil {
 			status.Destination[dest.GetID()] = fmt.Errorf("no signals enabled for %s(%s)", dest.GetID(), dest.GetType())
+		}
+
+		for _, pipelineName := range pipelineNames {
+			if pipeline, ok := currentConfig.Service.Pipelines[pipelineName]; ok {
+				if exists {
+					pipeline.Processors = append([]string{sanitizedProcessorName}, pipeline.Processors...)
+					currentConfig.Service.Pipelines[pipelineName] = pipeline
+				}
+			}
 		}
 	}
 

@@ -18,14 +18,14 @@ func (p *Prometheus) DestType() common.DestinationType {
 	return common.PrometheusDestinationType
 }
 
-func (p *Prometheus) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (p *Prometheus) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	url, exists := dest.GetConfig()[promRWurlKey]
 	if !exists {
-		return errors.New("Prometheus remote writer url not specified, gateway will not be configured for prometheus")
+		return nil, errors.New("Prometheus remote writer url not specified, gateway will not be configured for prometheus")
 	}
 
 	if !isMetricsEnabled(dest) {
-		return errors.New("metrics not enabled for prometheus destination, gateway will not be configured for prometheus")
+		return nil, errors.New("metrics not enabled for prometheus destination, gateway will not be configured for prometheus")
 	}
 
 	url = addProtocol(url)
@@ -95,6 +95,6 @@ func (p *Prometheus) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 			},
 		},
 	}
-
-	return nil
+	pipeLineNames := []string{metricsPipelineName, tracesPipelineName}
+	return pipeLineNames, nil
 }

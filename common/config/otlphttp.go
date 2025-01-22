@@ -21,15 +21,15 @@ func (g *OTLPHttp) DestType() common.DestinationType {
 	return common.OtlpHttpDestinationType
 }
 
-func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	url, exists := dest.GetConfig()[otlpHttpEndpointKey]
 	if !exists {
-		return errors.New("OTLP http endpoint not specified, gateway will not be configured for otlp http")
+		return nil, errors.New("OTLP http endpoint not specified, gateway will not be configured for otlp http")
 	}
 
 	parsedUrl, err := parseOtlpHttpEndpoint(url)
 	if err != nil {
-		return errors.Join(err, errors.New("otlp http endpoint invalid, gateway will not be configured for otlp http"))
+		return nil, errors.Join(err, errors.New("otlp http endpoint invalid, gateway will not be configured for otlp http"))
 	}
 
 	basicAuthExtensionName, basicAuthExtensionConf := applyBasicAuth(dest)
@@ -50,12 +50,13 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		}
 	}
 	currentConfig.Exporters[otlpHttpExporterName] = exporterConf
-
+	var pipelineNames []string
 	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/otlphttp-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{otlpHttpExporterName},
 		}
+		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
 	if isMetricsEnabled(dest) {
@@ -63,6 +64,7 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{otlpHttpExporterName},
 		}
+		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
 	if isLoggingEnabled(dest) {
@@ -70,9 +72,10 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{otlpHttpExporterName},
 		}
+		pipelineNames = append(pipelineNames, logsPipelineName)
 	}
 
-	return nil
+	return pipelineNames, nil
 }
 
 func parseOtlpHttpEndpoint(rawUrl string) (string, error) {

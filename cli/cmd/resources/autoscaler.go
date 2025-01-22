@@ -161,6 +161,16 @@ func NewAutoscalerClusterRole() *rbacv1.ClusterRole {
 				Resources: []string{"instrumentationconfigs"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
+			// Needed to read the sources for build the odigos routing processor
+			{
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"sources"},
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+				},
+			},
 		},
 	}
 }

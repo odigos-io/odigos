@@ -24,14 +24,14 @@ func (n *Dynatrace) DestType() common.DestinationType {
 	return common.DynatraceDestinationType
 }
 
-func (n *Dynatrace) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (n *Dynatrace) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	if !n.requiredVarsExists(dest) {
-		return errors.New("Dynatrace config is missing required variables")
+		return nil, errors.New("Dynatrace config is missing required variables")
 	}
 
 	baseURL, err := parsetheDTurl(dest.GetConfig()[dynatraceURLKey])
 	if err != nil {
-		return errors.New("Dynatrace url is not a valid")
+		return nil, errors.New("Dynatrace url is not a valid")
 	}
 
 	exporterName := "otlphttp/dynatrace-" + dest.GetID()
@@ -41,12 +41,13 @@ func (n *Dynatrace) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 			"Authorization": "Api-Token ${DYNATRACE_API_TOKEN}",
 		},
 	}
-
+	var pipelineNames []string
 	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/dynatrace-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
 	if isMetricsEnabled(dest) {
@@ -54,6 +55,7 @@ func (n *Dynatrace) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
 	if isLoggingEnabled(dest) {
@@ -61,9 +63,10 @@ func (n *Dynatrace) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, logsPipelineName)
 	}
 
-	return nil
+	return pipelineNames, nil
 }
 
 func (g *Dynatrace) requiredVarsExists(dest ExporterConfigurer) bool {

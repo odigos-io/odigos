@@ -18,14 +18,14 @@ func (s *Signoz) DestType() common.DestinationType {
 	return common.SignozDestinationType
 }
 
-func (s *Signoz) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (s *Signoz) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	url, exists := dest.GetConfig()[signozUrlKey]
 	if !exists {
-		return errors.New("Signoz url not specified, gateway will not be configured for Signoz")
+		return nil, errors.New("Signoz url not specified, gateway will not be configured for Signoz")
 	}
 
 	if strings.HasPrefix(url, "https://") {
-		return errors.New("Signoz does not currently supports tls export, gateway will not be configured for Signoz")
+		return nil, errors.New("Signoz does not currently supports tls export, gateway will not be configured for Signoz")
 	}
 
 	url = strings.TrimPrefix(url, "http://")
@@ -38,11 +38,13 @@ func (s *Signoz) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) er
 		},
 	}
 
+	var pipelineNames []string
 	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/signoz-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{signozExporterName},
 		}
+		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
 	if isMetricsEnabled(dest) {
@@ -50,6 +52,7 @@ func (s *Signoz) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) er
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{signozExporterName},
 		}
+		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
 	if isLoggingEnabled(dest) {
@@ -57,7 +60,8 @@ func (s *Signoz) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) er
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{signozExporterName},
 		}
+		pipelineNames = append(pipelineNames, logsPipelineName)
 	}
 
-	return nil
+	return pipelineNames, nil
 }

@@ -14,7 +14,7 @@ func (s *Debug) DestType() common.DestinationType {
 	return common.DebugDestinationType
 }
 
-func (s *Debug) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (s *Debug) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	exporterName := "debug/" + dest.GetID()
 
 	verbosity, exists := dest.GetConfig()[VERBOSITY]
@@ -27,11 +27,13 @@ func (s *Debug) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) err
 		"verbosity": verbosity,
 	}
 
+	var pipelineNames []string
 	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/debug-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
 	if isMetricsEnabled(dest) {
@@ -39,6 +41,7 @@ func (s *Debug) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) err
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
 	if isLoggingEnabled(dest) {
@@ -46,7 +49,8 @@ func (s *Debug) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) err
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, logsPipelineName)
 	}
 
-	return nil
+	return pipelineNames, nil
 }
