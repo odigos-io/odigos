@@ -171,7 +171,8 @@
           "group": "Instrumentation Rules",
           "pages": [
             "pipeline/rules/overview",
-            "pipeline/rules/payloadcollection"
+            "pipeline/rules/payloadcollection",
+            "pipeline/rules/codeattributes"
           ]
         },
         {

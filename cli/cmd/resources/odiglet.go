@@ -2,7 +2,6 @@ package resources
 
 import (
 	"context"
-	"slices"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 
@@ -281,20 +280,13 @@ func NewResourceQuota(ns string) *corev1.ResourceQuota {
 	}
 }
 
-func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageName string, odigosTier common.OdigosTier, openshiftEnabled bool, goAutoIncludeCodeAttributes bool, clusterDetails *autodetect.ClusterDetails) *appsv1.DaemonSet {
+func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageName string, odigosTier common.OdigosTier, openshiftEnabled bool, clusterDetails *autodetect.ClusterDetails) *appsv1.DaemonSet {
 
 	dynamicEnv := []corev1.EnvVar{}
 	if odigosTier == common.CloudOdigosTier {
 		dynamicEnv = append(dynamicEnv, odigospro.CloudTokenAsEnvVar())
 	} else if odigosTier == common.OnPremOdigosTier {
 		dynamicEnv = append(dynamicEnv, odigospro.OnPremTokenAsEnvVar())
-	}
-
-	if goAutoIncludeCodeAttributes {
-		dynamicEnv = append(dynamicEnv, corev1.EnvVar{
-			Name:  "OTEL_GO_AUTO_INCLUDE_CODE_ATTRIBUTES",
-			Value: "true",
-		})
 	}
 
 	odigosSeLinuxHostVolumes := []corev1.Volume{}
@@ -606,18 +598,9 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 		resources = append(resources, NewResourceQuota(a.ns))
 	}
 
-	// temporary hack - check if the profiles named "code-attributes" or "kratos" are enabled.
-	// in the future, the go code attribute collection should be handled on an otel-sdk level
-	// instead of setting a global environment variable.
-	// once this is done, we can remove this check.
-	goAutoIncludeCodeAttributes := a.config.GoAutoIncludeCodeAttributes
-	if slices.Contains(a.config.Profiles, "code-attributes") || slices.Contains(a.config.Profiles, "kratos") {
-		goAutoIncludeCodeAttributes = true
-	}
-
 	// before creating the daemonset, we need to create the service account, cluster role and cluster role binding
 	resources = append(resources,
-		NewOdigletDaemonSet(a.ns, a.odigosVersion, a.config.ImagePrefix, odigletImage, a.odigosTier, a.config.OpenshiftEnabled, goAutoIncludeCodeAttributes,
+		NewOdigletDaemonSet(a.ns, a.odigosVersion, a.config.ImagePrefix, odigletImage, a.odigosTier, a.config.OpenshiftEnabled,
 			&autodetect.ClusterDetails{
 				Kind:       clusterKind,
 				K8SVersion: cmdcontext.K8SVersionFromContext(ctx),
