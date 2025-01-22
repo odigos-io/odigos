@@ -158,8 +158,7 @@
             "pipeline/sources/create",
             "pipeline/sources/delete",
             "pipeline/sources/update",
-            "pipeline/sources/troubleshooting",
-            "pipeline/sources/troubleshooting2"
+            "pipeline/sources/troubleshooting"
           ]
         },
         {
