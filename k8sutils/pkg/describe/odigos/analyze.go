@@ -7,6 +7,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/describe/properties"
 )
 
@@ -51,7 +52,7 @@ type OdigosAnalyze struct {
 	NumberOfSources      int                       `json:"numberOfSources"`
 	ClusterCollector     ClusterCollectorAnalyze   `json:"clusterCollector"`
 	NodeCollector        NodeCollectorAnalyze      `json:"nodeCollector"`
-	OdigosPro            OdigosPro                 `json:"odigosPro"`
+	OdigosPro            OdigosPro                 `json:"odigosPro,omitempty"`
 
 	// is settled is true if all resources are created and ready
 	IsSettled bool `json:"isSettled"`
@@ -418,10 +419,10 @@ func AnalyzeOdigos(resources *OdigosResources) *OdigosAnalyze {
 	clusterCollector := analyzeClusterCollector(resources)
 	nodeCollector := analyzeNodeCollector(resources)
 	isSettled, hasErrors := summarizeStatus(&clusterCollector, &nodeCollector)
-	pro := analyzePro(resources)
 
 	odigosVersion := resources.OdigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapVersionKey]
 	tier := resources.OdigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapTierKey]
+
 	installationMethod := resources.OdigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey]
 	k8sVersion := resources.OdigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapKubernetesVersionKey]
 
@@ -449,11 +450,10 @@ func AnalyzeOdigos(resources *OdigosResources) *OdigosAnalyze {
 		Explain: "the version of kubernetes cluster where odigos is deployed",
 	}
 
-	return &OdigosAnalyze{
+	odigosAnalyze := &OdigosAnalyze{
 		OdigosVersion:        odigosVersionProperty,
 		KubernetesVersion:    k8sVersionProperty,
 		Tier:                 odigosTierProperty,
-		OdigosPro:            pro,
 		InstallationMethod:   installationMethodProperty,
 		NumberOfDestinations: len(resources.Destinations.Items),
 		NumberOfSources:      len(resources.InstrumentationConfigs.Items),
@@ -462,4 +462,10 @@ func AnalyzeOdigos(resources *OdigosResources) *OdigosAnalyze {
 		IsSettled:            isSettled,
 		HasErrors:            hasErrors,
 	}
+
+	if odigosTierProperty.Value == string(common.OnPremOdigosTier) {
+		odigosAnalyze.OdigosPro = analyzePro(resources)
+	}
+
+	return odigosAnalyze
 }

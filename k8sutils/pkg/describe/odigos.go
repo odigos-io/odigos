@@ -47,10 +47,13 @@ func printOdigosPipeline(analyze *odigos.OdigosAnalyze, sb *strings.Builder) {
 }
 
 func printOdigosPro(analyze *odigos.OdigosAnalyze, sb *strings.Builder) {
-	describeText(sb, 0, "Odigos Pro:")
-	printProperty(sb, 1, &analyze.OdigosPro.OnpremTokenAud)
-	printProperty(sb, 1, &analyze.OdigosPro.OnpremTokenExpiration)
-	printProperty(sb, 1, &analyze.OdigosPro.OdigosProfiles)
+	if !(analyze.OdigosPro == odigos.OdigosPro{}) {
+		describeText(sb, 0, "Odigos Pro:")
+		printProperty(sb, 1, &analyze.OdigosPro.OnpremTokenAud)
+		printProperty(sb, 1, &analyze.OdigosPro.OnpremTokenExpiration)
+		printProperty(sb, 1, &analyze.OdigosPro.OdigosProfiles)
+		sb.WriteString("\n")
+	}
 }
 
 func DescribeOdigosToText(analyze *odigos.OdigosAnalyze) string {
@@ -62,7 +65,6 @@ func DescribeOdigosToText(analyze *odigos.OdigosAnalyze) string {
 	printProperty(&sb, 0, &analyze.InstallationMethod)
 	sb.WriteString("\n")
 	printOdigosPro(analyze, &sb)
-	sb.WriteString("\n")
 	printOdigosPipeline(analyze, &sb)
 
 	return sb.String()
