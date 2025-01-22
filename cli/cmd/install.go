@@ -10,8 +10,6 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/profiles"
 
-	"github.com/odigos-io/odigos/cli/pkg/labels"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -177,9 +175,9 @@ func createNamespace(ctx context.Context, cmd *cobra.Command, client *kube.Clien
 		return err
 	}
 
-	val, exists := nsObj.Labels[labels.OdigosSystemLabelKey]
-	if !exists || val != labels.OdigosSystemLabelValue {
-		return fmt.Errorf("namespace %s does not contain %s label", ns, labels.OdigosSystemLabelKey)
+	val, exists := nsObj.Labels[k8sconsts.OdigosSystemLabelKey]
+	if !exists || val != k8sconsts.OdigosSystemLabelValue {
+		return fmt.Errorf("namespace %s does not contain %s label", ns, k8sconsts.OdigosSystemLabelKey)
 	}
 
 	return nil
