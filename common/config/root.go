@@ -87,7 +87,12 @@ func Calculate(
 	return CalculateWithBase(currentConfig, prefixProcessors, dests, processors, applySelfTelemetry, sourcesFilterProcessors)
 }
 
-func CalculateWithBase(currentConfig *Config, prefixProcessors []string, dests []ExporterConfigurer, processors []ProcessorConfigurer, applySelfTelemetry func(c *Config) error, sourcesFilterProcessors map[string]GenericMap) (string, error, *ResourceStatuses, []common.ObservabilitySignal) {
+func CalculateWithBase(currentConfig *Config,
+	prefixProcessors []string,
+	dests []ExporterConfigurer,
+	processors []ProcessorConfigurer,
+	applySelfTelemetry func(c *Config) error,
+	sourcesFilterProcessors map[string]GenericMap) (string, error, *ResourceStatuses, []common.ObservabilitySignal) {
 	configers, err := LoadConfigers()
 	if err != nil {
 		return "", err, nil, nil
