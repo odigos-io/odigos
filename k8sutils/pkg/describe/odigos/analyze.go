@@ -36,18 +36,22 @@ type NodeCollectorAnalyze struct {
 	AvailableNodes *properties.EntityProperty `json:"availableNodes,omitempty"`
 }
 
-type OdigosAnalyze struct {
-	OdigosVersion         properties.EntityProperty `json:"odigosVersion"`
-	KubernetesVersion     properties.EntityProperty `json:"kubernetesVersion"`
-	Tier                  properties.EntityProperty `json:"tier"`
-	InstallationMethod    properties.EntityProperty `json:"installationMethod"`
-	NumberOfDestinations  int                       `json:"numberOfDestinations"`
-	NumberOfSources       int                       `json:"numberOfSources"`
-	ClusterCollector      ClusterCollectorAnalyze   `json:"clusterCollector"`
-	NodeCollector         NodeCollectorAnalyze      `json:"nodeCollector"`
+type OdigosPro struct {
 	OnpremTokenAud        properties.EntityProperty `json:"onpremTokenAudience,omitempty"`
 	OnpremTokenExpiration properties.EntityProperty `json:"onpremTokenExpiration,omitempty"`
 	OdigosProfiles        properties.EntityProperty `json:"odigosProfiles,omitempty"`
+}
+
+type OdigosAnalyze struct {
+	OdigosVersion        properties.EntityProperty `json:"odigosVersion"`
+	KubernetesVersion    properties.EntityProperty `json:"kubernetesVersion"`
+	Tier                 properties.EntityProperty `json:"tier"`
+	InstallationMethod   properties.EntityProperty `json:"installationMethod"`
+	NumberOfDestinations int                       `json:"numberOfDestinations"`
+	NumberOfSources      int                       `json:"numberOfSources"`
+	ClusterCollector     ClusterCollectorAnalyze   `json:"clusterCollector"`
+	NodeCollector        NodeCollectorAnalyze      `json:"nodeCollector"`
+	OdigosPro            OdigosPro                 `json:"odigosPro"`
 
 	// is settled is true if all resources are created and ready
 	IsSettled bool `json:"isSettled"`
@@ -337,6 +341,37 @@ func analyzeNodeCollector(resources *OdigosResources) NodeCollectorAnalyze {
 	}
 }
 
+func analyzePro(resources *OdigosResources) OdigosPro {
+	odigosDeployment := resources.OdigosDeployment
+	tokenAud := odigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapOnPremTokenAudKey]
+	tokenExp := odigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapOnPremTokenExpKey]
+	profiles := odigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapOnPremClientProfilesKey]
+
+	tokenAudProperty := properties.EntityProperty{
+		Name:    "OnPrem Token Audience",
+		Value:   tokenAud,
+		Explain: "the audience of the on-prem token used to authenticate the odigos pro",
+	}
+
+	tokenExpProperty := properties.EntityProperty{
+		Name:    "OnPrem Token Expiration Date",
+		Value:   tokenExp,
+		Explain: "the expiration time of the on-prem token used to authenticate the odigos pro",
+	}
+
+	profilesProperty := properties.EntityProperty{
+		Name:    "OnPrem Client Profiles",
+		Value:   profiles,
+		Explain: "the Odigos profiles that are used to configure the odigos pro",
+	}
+
+	return OdigosPro{
+		OnpremTokenAud:        tokenAudProperty,
+		OnpremTokenExpiration: tokenExpProperty,
+		OdigosProfiles:        profilesProperty,
+	}
+}
+
 func summarizeStatus(clusterCollector *ClusterCollectorAnalyze, nodeCollector *NodeCollectorAnalyze) (bool, bool) {
 	isSettled := true  // everything is settled, unless we find property with status transitioning
 	hasErrors := false // there is no error, unless we find property with status error
@@ -383,13 +418,11 @@ func AnalyzeOdigos(resources *OdigosResources) *OdigosAnalyze {
 	clusterCollector := analyzeClusterCollector(resources)
 	nodeCollector := analyzeNodeCollector(resources)
 	isSettled, hasErrors := summarizeStatus(&clusterCollector, &nodeCollector)
+	pro := analyzePro(resources)
 
 	odigosVersion := resources.OdigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapVersionKey]
 	tier := resources.OdigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapTierKey]
 	installationMethod := resources.OdigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey]
-	tokenExpiration := resources.OdigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapOnPremTokenExpKey]
-	tokenAud := resources.OdigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapOnPremTokenAudKey]
-	odigosProfiles := resources.OdigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapOnPremClientProfilesKey]
 	k8sVersion := resources.OdigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapKubernetesVersionKey]
 
 	odigosVersionProperty := properties.EntityProperty{
@@ -410,24 +443,6 @@ func AnalyzeOdigos(resources *OdigosResources) *OdigosAnalyze {
 		Explain: "the method used to deploy odigos in the cluster (helm or odigos cli)",
 	}
 
-	tokenExpirationProperty := properties.EntityProperty{
-		Name:    "OnPrem Token Expiration Date",
-		Value:   tokenExpiration,
-		Explain: "the expiration time of the on-prem token used to authenticate the odigos pro",
-	}
-
-	tokenAudProperty := properties.EntityProperty{
-		Name:    "OnPrem Token Audience",
-		Value:   tokenAud,
-		Explain: "the audience of the on-prem token used to authenticate the odigos pro",
-	}
-
-	odigosProfilesProperty := properties.EntityProperty{
-		Name:    "OnPrem Client Profiles",
-		Value:   odigosProfiles,
-		Explain: "the Odigos profiles that are used to configure the odigos pro",
-	}
-
 	k8sVersionProperty := properties.EntityProperty{
 		Name:    "Kubernetes Version",
 		Value:   k8sVersion,
@@ -435,19 +450,16 @@ func AnalyzeOdigos(resources *OdigosResources) *OdigosAnalyze {
 	}
 
 	return &OdigosAnalyze{
-		OdigosVersion:         odigosVersionProperty,
-		KubernetesVersion:     k8sVersionProperty,
-		Tier:                  odigosTierProperty,
-		OnpremTokenExpiration: tokenExpirationProperty,
-		OnpremTokenAud:        tokenAudProperty,
-		OdigosProfiles:        odigosProfilesProperty,
-		InstallationMethod:    installationMethodProperty,
-		NumberOfDestinations:  len(resources.Destinations.Items),
-		NumberOfSources:       len(resources.InstrumentationConfigs.Items),
-		ClusterCollector:      clusterCollector,
-		NodeCollector:         nodeCollector,
-
-		IsSettled: isSettled,
-		HasErrors: hasErrors,
+		OdigosVersion:        odigosVersionProperty,
+		KubernetesVersion:    k8sVersionProperty,
+		Tier:                 odigosTierProperty,
+		OdigosPro:            pro,
+		InstallationMethod:   installationMethodProperty,
+		NumberOfDestinations: len(resources.Destinations.Items),
+		NumberOfSources:      len(resources.InstrumentationConfigs.Items),
+		ClusterCollector:     clusterCollector,
+		NodeCollector:        nodeCollector,
+		IsSettled:            isSettled,
+		HasErrors:            hasErrors,
 	}
 }

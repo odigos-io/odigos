@@ -46,6 +46,13 @@ func printOdigosPipeline(analyze *odigos.OdigosAnalyze, sb *strings.Builder) {
 	printNodeCollectorStatus(analyze, sb)
 }
 
+func printOdigosPro(analyze *odigos.OdigosAnalyze, sb *strings.Builder) {
+	describeText(sb, 0, "Odigos Pro:")
+	printProperty(sb, 1, &analyze.OdigosPro.OnpremTokenAud)
+	printProperty(sb, 1, &analyze.OdigosPro.OnpremTokenExpiration)
+	printProperty(sb, 1, &analyze.OdigosPro.OdigosProfiles)
+}
+
 func DescribeOdigosToText(analyze *odigos.OdigosAnalyze) string {
 	var sb strings.Builder
 
@@ -53,9 +60,8 @@ func DescribeOdigosToText(analyze *odigos.OdigosAnalyze) string {
 	printProperty(&sb, 0, &analyze.KubernetesVersion)
 	printProperty(&sb, 0, &analyze.Tier)
 	printProperty(&sb, 0, &analyze.InstallationMethod)
-	printProperty(&sb, 0, &analyze.OnpremTokenAud)
-	printProperty(&sb, 0, &analyze.OnpremTokenExpiration)
-	printProperty(&sb, 0, &analyze.OdigosProfiles)
+	sb.WriteString("\n")
+	printOdigosPro(analyze, &sb)
 	sb.WriteString("\n")
 	printOdigosPipeline(analyze, &sb)
 
