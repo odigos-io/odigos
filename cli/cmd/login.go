@@ -12,7 +12,6 @@ import (
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
-	"github.com/odigos-io/odigos/cli/pkg/labels"
 	"github.com/odigos-io/odigos/cli/pkg/log"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/getters"
@@ -26,7 +25,7 @@ import (
 func restartPodsAfterCloudLogin(ctx context.Context, client *kube.Client, ns string, configVersion int) error {
 
 	configVersionStr := strconv.Itoa(configVersion)
-	patch := fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"%s":"%s"}}}}}`, labels.OdigosSystemConfigLabelKey, configVersionStr)
+	patch := fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"%s":"%s"}}}}}`, k8sconsts.OdigosSystemConfigLabelKey, configVersionStr)
 
 	_, err := client.AppsV1().Deployments(ns).Patch(ctx, k8sconsts.KeyvalProxyDeploymentName, types.StrategicMergePatchType, []byte(patch), metav1.PatchOptions{})
 	if err != nil {
