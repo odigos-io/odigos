@@ -72,7 +72,7 @@ export const Status: React.FC<StatusProps> = ({ title, subtitle, size = 12, fami
           {!!subtitle && (
             <TextWrapper>
               <Divider orientation='vertical' length={`${size - 2}px`} type={statusType} />
-              <Text size={size - 2} family={family} color={theme.text[statusType]}>
+              <Text size={size - 2} family={family} color={theme.text[`${statusType}_secondary`]}>
                 {subtitle}
               </Text>
             </TextWrapper>

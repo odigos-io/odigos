@@ -56,7 +56,7 @@ const Content = styled.div<{ $darkMode: boolean; $type: Props['type'] }>`
   align-items: center;
   flex: 1;
   gap: 8px;
-  padding: 8px 12px;
+  padding: 0 12px;
   border-radius: 32px;
   background-color: ${({ $darkMode, $type, theme }) => theme[$darkMode ? 'colors' : 'text'][$type]};
 `;
