@@ -10,7 +10,6 @@ rules:
     verbs:
       - get
       - list
-      - patch
   - apiGroups:
       - apps
     resources:
@@ -20,8 +19,6 @@ rules:
     verbs:
       - get
       - list
-      - patch
-      - update
   - apiGroups:
       - apps
     resources:

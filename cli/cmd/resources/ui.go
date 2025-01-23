@@ -201,15 +201,15 @@ func NewUIClusterRole() *rbacv1.ClusterRole {
 			Name: "odigos-ui",
 		},
 		Rules: []rbacv1.PolicyRule{
-			{ // Needed to get and instrument namespaces
+			{ // Needed to get namespaces
 				APIGroups: []string{""},
 				Resources: []string{"namespaces"},
-				Verbs:     []string{"get", "list", "patch"},
+				Verbs:     []string{"get", "list"},
 			},
-			{ // Needed to get and instrument sources
+			{ // Needed to get workloads
 				APIGroups: []string{"apps"},
 				Resources: []string{"deployments", "statefulsets", "daemonsets"},
-				Verbs:     []string{"get", "list", "patch", "update"},
+				Verbs:     []string{"get", "list"},
 			},
 			{ // Needed for "Describe Source" and for "Describe Odigos"
 				APIGroups: []string{"apps"},
