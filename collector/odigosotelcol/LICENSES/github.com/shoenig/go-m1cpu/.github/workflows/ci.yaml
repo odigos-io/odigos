@@ -1,0 +1,33 @@
+name: Run CI Tests
+on: [push]
+jobs:
+  run-lint:
+    runs-on: [macos-latest]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: hashicorp/setup-golang@v1
+        with:
+          version-file: go.mod
+      - name: GolangCI-Lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.52.2
+          skip-cache: true
+  run-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-11
+          - macos-12
+          - ubuntu-22.04
+    runs-on: ${{matrix.os}}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: hashicorp/setup-golang@v1
+        with:
+          version-file: go.mod
+      - name: Run Go Test
+        run: |
+          make vet
+          make test

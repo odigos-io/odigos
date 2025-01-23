@@ -21,10 +21,11 @@ tools:
 go-licenses: tools
 	GOBIN=$(TOOLS) go install github.com/google/go-licenses@latest
 
+# collector/odigosotelcol has to be run separately due to current ambiguous import upstream
 .PHONY: licenses
 licenses: go-licenses
 	rm -rf $(PWD)/LICENSES
-	$(TOOLS)/go-licenses save ./autoscaler/ ./cli/ ./collector/odigosotelcol/ ./frontend/ ./instrumentor/ ./odiglet/ ./scheduler/ --save_path=LICENSES
+	$(TOOLS)/go-licenses save ./autoscaler/ ./cli/ ./frontend/ ./instrumentor/ ./odiglet/ ./scheduler/ --save_path=LICENSES
 
 .PHONY: install-golangci-lint
 install-golangci-lint:
