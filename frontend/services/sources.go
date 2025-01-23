@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -245,20 +246,23 @@ func GetSourceCRD(ctx context.Context, nsName string, workloadName string, workl
 }
 
 func createSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) (*v1alpha1.Source, error) {
-	err := CheckWorkloadKindForSourceCRD(workloadKind)
-	if err != nil {
-		return nil, err
+	switch workloadKind {
+	// Namespace is not a workload, but we need it to "select future apps" by creating a Source CRD for it
+	case WorkloadKindNamespace, WorkloadKindDeployment, WorkloadKindStatefulSet, WorkloadKindDaemonSet:
+		break
+	default:
+		return nil, errors.New("unsupported workload kind: " + string(workloadKind))
 	}
 
 	source, err := GetSourceCRD(ctx, nsName, workloadName, workloadKind)
+	if err != nil && !strings.Contains(err.Error(), "not found") {
+		// unexpected error occurred while trying to get the source
+		return nil, err
+	}
+
 	if source != nil {
 		// source already exists, do not create a new one, instead update so it's not disabled anymore
-		source, err = UpdateSourceCRDSpec(ctx, nsName, workloadName, workloadKind, "disableInstrumentation", false)
-		return source, err
-	}
-	if err != nil && !strings.Contains(err.Error(), "not found") {
-		// error occurred while trying to get the source
-		return nil, err
+		return UpdateSourceCRDSpec(ctx, nsName, workloadName, workloadKind, "disableInstrumentation", false)
 	}
 
 	newSource := &v1alpha1.Source{
@@ -279,15 +283,11 @@ func createSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 }
 
 func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) error {
-	err := CheckWorkloadKindForSourceCRD(workloadKind)
-	if err != nil {
-		return err
-	}
-
 	if workloadKind != WorkloadKindNamespace {
-		// Check for namespace source first
+		// if is a regular workload, then check for namespace source first
 		nsSource, err := GetSourceCRD(ctx, nsName, nsName, WorkloadKindNamespace)
 		if err != nil && !strings.Contains(err.Error(), "not found") {
+			// unexpected error occurred while trying to get the namespace source
 			return err
 		}
 
@@ -309,11 +309,6 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 }
 
 func UpdateSourceCRDSpec(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind, specField string, newValue any) (*v1alpha1.Source, error) {
-	err := CheckWorkloadKindForSourceCRD(workloadKind)
-	if err != nil {
-		return nil, err
-	}
-
 	// note: create will return an existing crd without throwing an error
 	source, err := createSourceCRD(ctx, nsName, workloadName, workloadKind)
 	if err != nil {
