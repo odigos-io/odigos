@@ -1,46 +1,26 @@
 ---
 title: "Troubleshooting"
+description: "If you are experiencing issues with your actions and processors, use the checklist below to troubleshoot the issue."
 sidebarTitle: "Troubleshooting"
+icon: 'question'
 ---
 
-How to troubleshoot common issues with actions and processors:
+## View Collector Configurations
 
-## View Collector Configuration
+To view the current configurations of the collectors, you can check the ConfigMap objects in the `odigos-system` namespace.
 
-To view the current configuration of the collectors:
+You should see the processors configured under `data/conf/processors`, and actions configured under `data/conf/pipelines`.
 
-node collector:
+**Node Collector:**
 
 ```bash
 kubectl get cm -n odigos-system -o yaml odigos-data-collection
 ```
 
-cluster gateway collector:
+**Gateway Collector:**
 
 ```bash
 kubectl get cm -n odigos-system -o yaml odigos-gateway
-```
-
-You should be able to see your processors configured under `data/conf/processors`, and paraticipate in the service pipelines under `data/conf/pipelines`.
-
-## View Collector Logs
-
-If there is an issue with your action or processor configuration, the collector will log an error and will not start:
-
-```sh
-kubectl get pods -n odigos-system
-```
-
-Will show pods with STATUS `CrashLoopBackOff` or `Error`. You can examine the logs of the collector pod to see the error:
-
-```sh
-kubectl logs -n odigos-system <collector-pod-name>
-```
-
-And might find an error message like:
-
-```
-* error decoding 'processors': unknown type: "invalid" for id: "invalid/example-processor" (valid values: [datadog experimental_metricsgeneration metricstransform resource servicegraph spanmetrics sumologic batch tail_sampling cumulativetodelta resourcedetection remotetap memory_limiter filter redaction routing span attributes deltatorate groupbyattrs groupbytrace k8sattributes probabilistic_sampler odigosresourcename])
 ```
 
 ## View Autoscaler Logs
@@ -50,5 +30,32 @@ The `odigos-autoscaler` controller is the component that watches for changes in 
 If you don't see your processor in the collector configuration, you can check the logs of the autoscaler for errors or clues:
 
 ```sh
-kubectl logs deployments.apps/odigos-autoscaler -n odigos-system
+kubectl logs -n odigos-system deployments.apps/odigos-autoscaler
 ```
+
+## View Collector Logs
+
+If you do see your processor in the collector configuration, and there's an issue, the collector should log an error and will not start. To check the status of the Odigos pods, run:
+
+```sh
+kubectl get pods -n odigos-system
+```
+
+Look for pods with STATUS `CrashLoopBackOff` or `Error`.<br />
+To see the error, you can examine the logs of that pod:
+
+```sh
+kubectl logs -n odigos-system <pod-name>
+```
+
+You might find an error message like this:
+
+```
+* error decoding 'processors': unknown type: "invalid" for id: "invalid/example-processor" (valid values: [datadog experimental_metricsgeneration metricstransform resource servicegraph spanmetrics sumologic batch tail_sampling cumulativetodelta resourcedetection remotetap memory_limiter filter redaction routing span attributes deltatorate groupbyattrs groupbytrace k8sattributes probabilistic_sampler odigosresourcename])
+```
+
+If this is the case, then please follow the instructions in the error message to correct the processor configuration.
+
+## Getting Help
+
+If you still have any issues, please open an issue in [GitHub](https://github.com/odigos-io/odigos) or reach out to us in [Odigos Slack](https://join.slack.com/t/odigos/shared_invite/zt-24u91yknm-0fLXu6qnqYfNHS_GSUgTJw)
