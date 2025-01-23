@@ -3,7 +3,7 @@ ODIGOS_CLI_VERSION ?= $(shell odigos version --cli)
 ORG ?= keyval
 GOLANGCI_LINT_VERSION ?= v1.63.4
 GOLANGCI_LINT := $(shell go env GOPATH)/bin/golangci-lint
-GO_MODULES := $(shell find . -type f -name "go.mod" -not -path "*/vendor/*" -exec dirname {} \; | grep -v "LICENSES")
+GO_MODULES := $(shell find . -type f -name "go.mod" -not -path "*/vendor/*" -exec dirname {} \; | grep -v "licenses")
 LINT_CMD = golangci-lint run -c ../.golangci.yml
 ifdef FIX_LINT
     LINT_CMD += --fix
@@ -108,7 +108,7 @@ build-images-rhel:
 	$(MAKE) build-images IMG_SUFFIX=-ubi9 DOCKERFILE=Dockerfile.rhel TAG=$(TAG) ORG=$(ORG)
 
 push-image/%:
-	docker buildx build --platform linux/amd64,linux/arm64/v8 --push -t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
+	docker buildx build --platform linux/amd64,linux/arm64/v8 -t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
 	--build-arg SERVICE_NAME="$*" \
 	--build-arg VERSION=$(TAG) \
 	--build-arg RELEASE=$(TAG) \
@@ -205,7 +205,7 @@ debug-odiglet:
 e2e-test:
 	./e2e-test.sh
 
-ALL_GO_MOD_DIRS := $(shell find . -type f -name 'go.mod' -exec dirname {} \; | sort | grep -v "LICENSES")
+ALL_GO_MOD_DIRS := $(shell find . -type f -name 'go.mod' -exec dirname {} \; | sort | grep -v "licenses")
 
 .PHONY: go-mod-tidy
 go-mod-tidy: $(ALL_GO_MOD_DIRS:%=go-mod-tidy/%)

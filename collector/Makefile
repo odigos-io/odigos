@@ -53,7 +53,7 @@ generate: install-tools
 	@find . -type f -name 'metadata.yaml' -print0 | xargs -0 -I {} sh -c 'cd $$(dirname {}); $(GOBIN)/mdatagen metadata.yaml'
 	$(MAKE) fmt
 
-ALL_GO_MOD_DIRS := $(shell find . -type f -name 'go.mod' -exec dirname {} \; | sort | grep -E '^./' | grep -v "LICENSES")
+ALL_GO_MOD_DIRS := $(shell find . -type f -name 'go.mod' -exec dirname {} \; | sort | grep -E '^./' | grep -v "licenses")
 .PHONY: fmt
 fmt: $(ALL_GO_MOD_DIRS:%=fmt/%)
 fmt/%: install-tools
@@ -75,7 +75,7 @@ go-licenses:
 
 .PHONY: licenses
 licenses: go-licenses
-	@if [ -d "$(PWD)/odigosotelcol/LICENSES" ]; then \
-		rm -rf $(PWD)/odigosotelcol/LICENSES; \
+	@if [ -d "$(PWD)/odigosotelcol/licenses" ]; then \
+		rm -rf $(PWD)/odigosotelcol/licenses; \
 	fi
-	cp LICENSE odigosotelcol/. && cd odigosotelcol && $(TOOLS_BIN_DIR)/go-licenses save . --save_path=LICENSES
+	cp LICENSE odigosotelcol/. && cd odigosotelcol && $(TOOLS_BIN_DIR)/go-licenses save . --save_path=licenses

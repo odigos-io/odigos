@@ -15,7 +15,7 @@ go-licenses: tools
 
 .PHONY: licenses
 licenses: go-licenses
-	@if [ -d "$(PWD)/LICENSES" ]; then \
-		rm -rf $(PWD)/LICENSES; \
+	@if [ -d "$(PWD)/licenses" ]; then \
+		rm -rf $(PWD)/licenses; \
 	fi
-	$(TOOLS)/go-licenses save . --save_path=LICENSES
+	$(TOOLS)/go-licenses save . --save_path=licenses

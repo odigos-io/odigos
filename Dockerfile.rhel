@@ -41,7 +41,8 @@ LABEL "description"=$DESCRIPTION
 
 WORKDIR /
 COPY --from=builder /workspace/build/$SERVICE_NAME ./app
-COPY --from=builder /workspace/$SERVICE_NAME/LICENSES ./LICENSES
+COPY --from=builder /workspace/$SERVICE_NAME/licenses ./licenses
+COPY --from=builder /workspace/$SERVICE_NAME/LICENSE ./licenses/.
 USER 65532:65532
 # TODO: calling the binary by SERVICE_NAME should be better for us in debugging
 # but it does not work in distroless image

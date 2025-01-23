@@ -73,5 +73,5 @@ go-licenses: $(LOCALBIN)
 # collector/odigosotelcol has to be run separately due to current ambiguous import upstream
 .PHONY: licenses
 licenses: go-licenses
-	rm -rf $(PWD)/LICENSES
-	$(LOCALBIN)/go-licenses save . --save_path=LICENSES
+	rm -rf $(PWD)/licenses
+	$(LOCALBIN)/go-licenses save . --save_path=licenses

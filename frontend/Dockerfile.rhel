@@ -32,6 +32,7 @@ LABEL "summary"=$SUMMARY
 LABEL "description"=$DESCRIPTION
 WORKDIR /app
 COPY --from=backend /app/frontend/odigos-ui .
-COPY --from=backend /app/frontend/LICENSES /LICENSES
+COPY --from=backend /app/frontend/licenses /licenses
+COPY --from=backend /app/frontend/LICENSE /licenses/.
 USER 65532:65532
 ENTRYPOINT ["/app/odigos-ui", "--address", "0.0.0.0"]

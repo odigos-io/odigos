@@ -132,7 +132,8 @@ LABEL "release"=$RELEASE
 LABEL "summary"=$SUMMARY
 LABEL "description"=$DESCRIPTION
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
-COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/LICENSES /LICENSES
+COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/licenses /licenses
+COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/LICENSE /licenses/.
 WORKDIR /instrumentations/
 COPY --from=builder /instrumentations/ .
 CMD ["/root/odiglet"]
