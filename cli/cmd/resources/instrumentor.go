@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/containers"
 	"github.com/odigos-io/odigos/cli/pkg/crypto"
@@ -11,7 +12,6 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 
-	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -21,25 +21,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-const (
-	InstrumentorOtelServiceName             = "instrumentor"
-	InstrumentorDeploymentName              = "odigos-instrumentor"
-	InstrumentorAppLabelValue               = InstrumentorDeploymentName
-	InstrumentorServiceName                 = InstrumentorDeploymentName
-	InstrumentorServiceAccountName          = InstrumentorDeploymentName
-	InstrumentorRoleName                    = InstrumentorDeploymentName
-	InstrumentorRoleBindingName             = InstrumentorDeploymentName
-	InstrumentorClusterRoleName             = InstrumentorDeploymentName
-	InstrumentorClusterRoleBindingName      = InstrumentorDeploymentName
-	InstrumentorCertificateName             = InstrumentorDeploymentName
-	InstrumentorMutatingWebhookName         = "mutating-webhook-configuration"
-	InstrumentorSourceMutatingWebhookName   = "source-mutating-webhook-configuration"
-	InstrumentorSourceValidatingWebhookName = "source-validating-webhook-configuration"
-	InstrumentorContainerName               = "manager"
-	InstrumentorWebhookSecretName           = "webhook-cert"
-	InstrumentorWebhookVolumeName           = "webhook-cert"
-)
-
 func NewInstrumentorServiceAccount(ns string) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
@@ -47,7 +28,7 @@ func NewInstrumentorServiceAccount(ns string) *corev1.ServiceAccount {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      InstrumentorServiceAccountName,
+			Name:      k8sconsts.InstrumentorServiceAccountName,
 			Namespace: ns,
 		},
 	}
@@ -66,7 +47,7 @@ func NewInstrumentorLeaderElectionRoleBinding(ns string) *rbacv1.RoleBinding {
 		Subjects: []rbacv1.Subject{
 			{
 				Kind: "ServiceAccount",
-				Name: InstrumentorServiceAccountName,
+				Name: k8sconsts.InstrumentorServiceAccountName,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
@@ -84,7 +65,7 @@ func NewInstrumentorRole(ns string) *rbacv1.Role {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      InstrumentorRoleName,
+			Name:      k8sconsts.InstrumentorRoleName,
 			Namespace: ns,
 		},
 		Rules: []rbacv1.PolicyRule{
@@ -125,19 +106,19 @@ func NewInstrumentorRoleBinding(ns string) *rbacv1.RoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      InstrumentorRoleBindingName,
+			Name:      k8sconsts.InstrumentorRoleBindingName,
 			Namespace: ns,
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Kind: "ServiceAccount",
-				Name: InstrumentorServiceAccountName,
+				Name: k8sconsts.InstrumentorServiceAccountName,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "Role",
-			Name:     InstrumentorRoleName,
+			Name:     k8sconsts.InstrumentorRoleName,
 		},
 	}
 }
@@ -149,7 +130,7 @@ func NewInstrumentorClusterRole() *rbacv1.ClusterRole {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: InstrumentorClusterRoleName,
+			Name: k8sconsts.InstrumentorClusterRoleName,
 		},
 		Rules: []rbacv1.PolicyRule{
 			{ // Used in events reporting for own telemetry
@@ -213,19 +194,19 @@ func NewInstrumentorClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: InstrumentorClusterRoleBindingName,
+			Name: k8sconsts.InstrumentorClusterRoleBindingName,
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      InstrumentorServiceAccountName,
+				Name:      k8sconsts.InstrumentorServiceAccountName,
 				Namespace: ns,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "ClusterRole",
-			Name:     InstrumentorClusterRoleName,
+			Name:     k8sconsts.InstrumentorClusterRoleName,
 		},
 	}
 }
@@ -237,7 +218,7 @@ func NewInstrumentorService(ns string) *corev1.Service {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      InstrumentorServiceName,
+			Name:      k8sconsts.InstrumentorServiceName,
 			Namespace: ns,
 		},
 		Spec: corev1.ServiceSpec{
@@ -249,7 +230,7 @@ func NewInstrumentorService(ns string) *corev1.Service {
 				},
 			},
 			Selector: map[string]string{
-				"app.kubernetes.io/name": InstrumentorAppLabelValue,
+				"app.kubernetes.io/name": k8sconsts.InstrumentorAppLabelValue,
 			},
 		},
 	}
@@ -262,10 +243,10 @@ func NewSourceValidatingWebhookConfiguration(ns string, caBundle []byte) *admiss
 			APIVersion: "admissionregistration.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: InstrumentorSourceValidatingWebhookName,
+			Name: k8sconsts.InstrumentorSourceValidatingWebhookName,
 			Labels: map[string]string{
 				"app.kubernetes.io/name":       "source-validating-webhook",
-				"app.kubernetes.io/instance":   InstrumentorSourceValidatingWebhookName,
+				"app.kubernetes.io/instance":   k8sconsts.InstrumentorSourceValidatingWebhookName,
 				"app.kubernetes.io/component":  "webhook",
 				"app.kubernetes.io/created-by": "instrumentor",
 				"app.kubernetes.io/part-of":    "odigos",
@@ -276,7 +257,7 @@ func NewSourceValidatingWebhookConfiguration(ns string, caBundle []byte) *admiss
 				Name: "source-validating-webhook.odigos.io",
 				ClientConfig: admissionregistrationv1.WebhookClientConfig{
 					Service: &admissionregistrationv1.ServiceReference{
-						Name:      InstrumentorServiceName,
+						Name:      k8sconsts.InstrumentorServiceName,
 						Namespace: ns,
 						Path:      ptrString("/validate-odigos-io-v1alpha1-source"),
 						Port:      intPtr(9443),
@@ -324,10 +305,10 @@ func NewSourceMutatingWebhookConfiguration(ns string, caBundle []byte) *admissio
 			APIVersion: "admissionregistration.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: InstrumentorSourceMutatingWebhookName,
+			Name: k8sconsts.InstrumentorSourceMutatingWebhookName,
 			Labels: map[string]string{
 				"app.kubernetes.io/name":       "source-mutating-webhook",
-				"app.kubernetes.io/instance":   InstrumentorSourceMutatingWebhookName,
+				"app.kubernetes.io/instance":   k8sconsts.InstrumentorSourceMutatingWebhookName,
 				"app.kubernetes.io/component":  "webhook",
 				"app.kubernetes.io/created-by": "instrumentor",
 				"app.kubernetes.io/part-of":    "odigos",
@@ -338,7 +319,7 @@ func NewSourceMutatingWebhookConfiguration(ns string, caBundle []byte) *admissio
 				Name: "source-mutating-webhook.odigos.io",
 				ClientConfig: admissionregistrationv1.WebhookClientConfig{
 					Service: &admissionregistrationv1.ServiceReference{
-						Name:      InstrumentorServiceName,
+						Name:      k8sconsts.InstrumentorServiceName,
 						Namespace: ns,
 						Path:      ptrString("/mutate-odigos-io-v1alpha1-source"),
 						Port:      intPtr(9443),
@@ -387,10 +368,10 @@ func NewPodMutatingWebhookConfiguration(ns string, caBundle []byte) *admissionre
 			APIVersion: "admissionregistration.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: InstrumentorMutatingWebhookName,
+			Name: k8sconsts.InstrumentorMutatingWebhookName,
 			Labels: map[string]string{
 				"app.kubernetes.io/name":       "pod-mutating-webhook",
-				"app.kubernetes.io/instance":   InstrumentorMutatingWebhookName,
+				"app.kubernetes.io/instance":   k8sconsts.InstrumentorMutatingWebhookName,
 				"app.kubernetes.io/component":  "webhook",
 				"app.kubernetes.io/created-by": "instrumentor",
 				"app.kubernetes.io/part-of":    "odigos",
@@ -401,7 +382,7 @@ func NewPodMutatingWebhookConfiguration(ns string, caBundle []byte) *admissionre
 				Name: "pod-mutating-webhook.odigos.io",
 				ClientConfig: admissionregistrationv1.WebhookClientConfig{
 					Service: &admissionregistrationv1.ServiceReference{
-						Name:      InstrumentorServiceName,
+						Name:      k8sconsts.InstrumentorServiceName,
 						Namespace: ns,
 						Path:      ptrString("/mutate--v1-pod"),
 						Port:      intPtr(9443),
@@ -455,7 +436,7 @@ func NewInstrumentorTLSSecret(ns string, cert *crypto.Certificate) *corev1.Secre
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      InstrumentorWebhookSecretName,
+			Name:      k8sconsts.InstrumentorWebhookSecretName,
 			Namespace: ns,
 			Labels: map[string]string{
 				"app.kubernetes.io/name":       "instrumentor-cert",
@@ -493,26 +474,26 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      InstrumentorDeploymentName,
+			Name:      k8sconsts.InstrumentorDeploymentName,
 			Namespace: ns,
 			Labels: map[string]string{
-				"app.kubernetes.io/name": InstrumentorAppLabelValue,
+				"app.kubernetes.io/name": k8sconsts.InstrumentorAppLabelValue,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptrint32(2),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app.kubernetes.io/name": InstrumentorAppLabelValue,
+					"app.kubernetes.io/name": k8sconsts.InstrumentorAppLabelValue,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app.kubernetes.io/name": InstrumentorAppLabelValue,
+						"app.kubernetes.io/name": k8sconsts.InstrumentorAppLabelValue,
 					},
 					Annotations: map[string]string{
-						"kubectl.kubernetes.io/default-container": InstrumentorContainerName,
+						"kubectl.kubernetes.io/default-container": k8sconsts.InstrumentorContainerName,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -524,7 +505,7 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 									PodAffinityTerm: corev1.PodAffinityTerm{
 										LabelSelector: &metav1.LabelSelector{
 											MatchLabels: map[string]string{
-												"app.kubernetes.io/name": InstrumentorAppLabelValue,
+												"app.kubernetes.io/name": k8sconsts.InstrumentorAppLabelValue,
 											},
 										},
 										TopologyKey: "kubernetes.io/hostname",
@@ -535,7 +516,7 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 					},
 					Containers: []corev1.Container{
 						{
-							Name:  InstrumentorContainerName,
+							Name:  k8sconsts.InstrumentorContainerName,
 							Image: containers.GetImageName(imagePrefix, imageName, version),
 							Command: []string{
 								"/app",
@@ -544,7 +525,7 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 							Env: []corev1.EnvVar{
 								{
 									Name:  "OTEL_SERVICE_NAME",
-									Value: InstrumentorOtelServiceName,
+									Value: k8sconsts.InstrumentorOtelServiceName,
 								},
 								{
 									Name: "CURRENT_NS",
@@ -584,7 +565,7 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      InstrumentorWebhookVolumeName,
+									Name:      k8sconsts.InstrumentorWebhookVolumeName,
 									ReadOnly:  true,
 									MountPath: "/tmp/k8s-webhook-server/serving-certs",
 								},
@@ -619,16 +600,16 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 						},
 					},
 					TerminationGracePeriodSeconds: ptrint64(10),
-					ServiceAccountName:            InstrumentorServiceAccountName,
+					ServiceAccountName:            k8sconsts.InstrumentorServiceAccountName,
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot: ptrbool(true),
 					},
 					Volumes: []corev1.Volume{
 						{
-							Name: InstrumentorWebhookVolumeName,
+							Name: k8sconsts.InstrumentorWebhookVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{
-									SecretName:  InstrumentorWebhookSecretName,
+									SecretName:  k8sconsts.InstrumentorWebhookSecretName,
 									DefaultMode: ptrint32(420),
 								},
 							},
@@ -686,14 +667,14 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 		NewInstrumentorService(a.ns),
 	}
 
-	ca, err := crypto.GenCA(InstrumentorCertificateName, 365)
+	ca, err := crypto.GenCA(k8sconsts.InstrumentorCertificateName, 365)
 	if err != nil {
 		return fmt.Errorf("failed to generate CA: %w", err)
 	}
 
 	altNames := []string{
-		fmt.Sprintf("%s.%s.svc", InstrumentorServiceName, a.ns),
-		fmt.Sprintf("%s.%s.svc.cluster.local", InstrumentorServiceName, a.ns),
+		fmt.Sprintf("%s.%s.svc", k8sconsts.InstrumentorServiceName, a.ns),
+		fmt.Sprintf("%s.%s.svc.cluster.local", k8sconsts.InstrumentorServiceName, a.ns),
 	}
 
 	cert, err := crypto.GenerateSignedCertificate("serving-cert", nil, altNames, 365, ca)

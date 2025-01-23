@@ -6,13 +6,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
 	"github.com/odigos-io/odigos/autoscaler/utils"
 	"k8s.io/apimachinery/pkg/util/version"
 
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -37,7 +37,7 @@ const (
 
 var (
 	NodeCollectorsLabels = map[string]string{
-		consts.OdigosCollectorRoleLabel: string(consts.CollectorsRoleNodeCollector),
+		k8sconsts.OdigosCollectorRoleLabel: string(k8sconsts.CollectorsRoleNodeCollector),
 	}
 )
 
@@ -107,7 +107,7 @@ func syncDaemonSet(ctx context.Context, dests *odigosv1.DestinationList, datacol
 		return nil, err
 	}
 
-	otelcolConfigContent := configMap.Data[consts.OdigosNodeCollectorConfigMapKey]
+	otelcolConfigContent := configMap.Data[k8sconsts.OdigosNodeCollectorConfigMapKey]
 	signals, err := getSignalsFromOtelcolConfig(otelcolConfigContent)
 	if err != nil {
 		logger.Error(err, "Failed to get signals from otelcol config")
@@ -199,7 +199,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 
 	desiredDs := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      consts.OdigosNodeCollectorDaemonSetName,
+			Name:      k8sconsts.OdigosNodeCollectorDaemonSetName,
 			Namespace: datacollection.Namespace,
 			Labels:    NodeCollectorsLabels,
 		},
@@ -219,10 +219,10 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 					NodeSelector:       odigletDaemonsetPodSpec.NodeSelector,
 					Affinity:           odigletDaemonsetPodSpec.Affinity,
 					Tolerations:        odigletDaemonsetPodSpec.Tolerations,
-					ServiceAccountName: consts.OdigosNodeCollectorDaemonSetName,
+					ServiceAccountName: k8sconsts.OdigosNodeCollectorDaemonSetName,
 					Volumes: []corev1.Volume{
 						{
-							Name: consts.OdigosNodeCollectorConfigMapKey,
+							Name: k8sconsts.OdigosNodeCollectorConfigMapKey,
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
@@ -230,8 +230,8 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 									},
 									Items: []corev1.KeyToPath{
 										{
-											Key:  consts.OdigosNodeCollectorConfigMapKey,
-											Path: fmt.Sprintf("%s.yaml", consts.OdigosNodeCollectorConfigMapKey),
+											Key:  k8sconsts.OdigosNodeCollectorConfigMapKey,
+											Path: fmt.Sprintf("%s.yaml", k8sconsts.OdigosNodeCollectorConfigMapKey),
 										},
 									},
 								},
@@ -274,10 +274,10 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 						{
 							Name:    containerName,
 							Image:   utils.GetCollectorContainerImage(containerImage, odigosVersion),
-							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, consts.OdigosNodeCollectorConfigMapKey)},
+							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, k8sconsts.OdigosNodeCollectorConfigMapKey)},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      consts.OdigosNodeCollectorConfigMapKey,
+									Name:      k8sconsts.OdigosNodeCollectorConfigMapKey,
 									MountPath: confDir,
 								},
 								{

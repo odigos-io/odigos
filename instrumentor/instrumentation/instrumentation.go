@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/envOverwrite"
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/odigos-io/odigos/common"
@@ -275,14 +275,14 @@ func SetInjectInstrumentationLabel(original *corev1.PodTemplateSpec) {
 	if original.Labels == nil {
 		original.Labels = make(map[string]string)
 	}
-	original.Labels[consts.OdigosInjectInstrumentationLabel] = "true"
+	original.Labels[k8sconsts.OdigosInjectInstrumentationLabel] = "true"
 }
 
 // RemoveInjectInstrumentationLabel removes the "odigos.io/inject-instrumentation" label if it exists.
 func RemoveInjectInstrumentationLabel(original *corev1.PodTemplateSpec) bool {
 	if original.Labels != nil {
-		if _, ok := original.Labels[consts.OdigosInjectInstrumentationLabel]; ok {
-			delete(original.Labels, consts.OdigosInjectInstrumentationLabel)
+		if _, ok := original.Labels[k8sconsts.OdigosInjectInstrumentationLabel]; ok {
+			delete(original.Labels, k8sconsts.OdigosInjectInstrumentationLabel)
 			return true
 		}
 	}

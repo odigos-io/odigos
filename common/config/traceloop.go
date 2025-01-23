@@ -20,18 +20,18 @@ func (j *Traceloop) DestType() common.DestinationType {
 	return common.TraceloopDestinationType
 }
 
-func (j *Traceloop) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (j *Traceloop) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	config := dest.GetConfig()
 	uniqueUri := "traceloop-" + dest.GetID()
 
 	url, exists := config[TraceloopEndpoint]
 	if !exists {
-		return ErrorTraceloopEndpointMissing
+		return nil, ErrorTraceloopEndpointMissing
 	}
 
 	endpoint, err := parseOtlpHttpEndpoint(url)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	exporterName := "otlphttp/" + uniqueUri
@@ -43,12 +43,13 @@ func (j *Traceloop) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 	}
 
 	currentConfig.Exporters[exporterName] = exporterConfig
-
+	var pipelineNames []string
 	if isTracingEnabled(dest) {
 		pipeName := "traces/" + uniqueUri
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, pipeName)
 	}
 
 	if isMetricsEnabled(dest) {
@@ -56,7 +57,8 @@ func (j *Traceloop) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, pipeName)
 	}
 
-	return nil
+	return pipelineNames, nil
 }

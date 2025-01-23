@@ -20,17 +20,17 @@ func (j *Dash0) DestType() common.DestinationType {
 	return common.Dash0DestinationType
 }
 
-func (j *Dash0) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (j *Dash0) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	config := dest.GetConfig()
 	uniqueUri := "dash0-" + dest.GetID()
 
 	url, exists := config[Dash0Endpoint]
 	if !exists {
-		return ErrorDash0EndpointMissing
+		return nil, ErrorDash0EndpointMissing
 	}
 	endpoint, err := parseOtlpGrpcUrl(url, true)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	exporterName := "otlp/" + uniqueUri
@@ -42,12 +42,13 @@ func (j *Dash0) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) err
 	}
 
 	currentConfig.Exporters[exporterName] = exporterConfig
-
+	var pipelineNames []string
 	if isTracingEnabled(dest) {
 		pipeName := "traces/" + uniqueUri
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, pipeName)
 	}
 
 	if isMetricsEnabled(dest) {
@@ -55,6 +56,7 @@ func (j *Dash0) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) err
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, pipeName)
 	}
 
 	if isLoggingEnabled(dest) {
@@ -62,7 +64,8 @@ func (j *Dash0) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) err
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, pipeName)
 	}
 
-	return nil
+	return pipelineNames, nil
 }

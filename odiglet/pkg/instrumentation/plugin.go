@@ -8,8 +8,8 @@ import (
 
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
-	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/devices"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"

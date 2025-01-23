@@ -24,7 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
@@ -80,6 +80,28 @@ type WorkloadSources struct {
 	Namespace *Source
 }
 
+type SourceSelector struct {
+	// If a namespace is specified, all workloads (sources) within that namespace are allowed to send data.
+	// Example:
+	// namespaces: ["default", "production"]
+	// This means the destination will receive data from all sources in "default" and "production" namespaces.
+	// +optional
+	Namespaces []string `json:"namespaces,omitempty"`
+	// Workloads (sources) are assigned to groups via labels (odigos.io/group-backend: true), allowing a more flexible selection mechanism.
+	// Example:
+	// groups: ["backend", "monitoring"]
+	// This means the destination will receive data only from sources labeled with "backend" or "monitoring".
+	// +optional
+	Groups []string `json:"groups,omitempty"`
+
+	// Selection Semantics:
+	// If both `Namespaces` and `Groups` are specified, the selection follows an **OR** logic:
+	// - A source is included **if** it belongs to **at least one** of the specified namespaces OR groups.
+	// - If `Namespaces` is empty but `Groups` is specified, only sources in those groups are included.
+	// - If `Groups` is empty but `Namespaces` is specified, all sources in those namespaces are included.
+	// - If SourceSelector is nil, the destination receives data from all sources.
+}
+
 // GetSources returns a WorkloadSources listing the Workload and Namespace Source
 // that currently apply to the given object. In theory, this should only ever return at most
 // 1 Namespace and/or 1 Workload Source for an object. If more are found, an error is returned.
@@ -95,9 +117,9 @@ func GetSources(ctx context.Context, kubeClient client.Client, obj client.Object
 	if obj.GetObjectKind().GroupVersionKind().Kind != string(workload.WorkloadKindNamespace) {
 		sourceList := SourceList{}
 		selector := labels.SelectorFromSet(labels.Set{
-			consts.WorkloadNameLabel:      obj.GetName(),
-			consts.WorkloadNamespaceLabel: namespace,
-			consts.WorkloadKindLabel:      obj.GetObjectKind().GroupVersionKind().Kind,
+			k8sconsts.WorkloadNameLabel:      obj.GetName(),
+			k8sconsts.WorkloadNamespaceLabel: namespace,
+			k8sconsts.WorkloadKindLabel:      obj.GetObjectKind().GroupVersionKind().Kind,
 		})
 		err := kubeClient.List(ctx, &sourceList, &client.ListOptions{LabelSelector: selector}, client.InNamespace(namespace))
 		if err != nil {
@@ -113,9 +135,9 @@ func GetSources(ctx context.Context, kubeClient client.Client, obj client.Object
 
 	namespaceSourceList := SourceList{}
 	namespaceSelector := labels.SelectorFromSet(labels.Set{
-		consts.WorkloadNameLabel:      namespace,
-		consts.WorkloadNamespaceLabel: namespace,
-		consts.WorkloadKindLabel:      string(workload.WorkloadKindNamespace),
+		k8sconsts.WorkloadNameLabel:      namespace,
+		k8sconsts.WorkloadNamespaceLabel: namespace,
+		k8sconsts.WorkloadKindLabel:      string(workload.WorkloadKindNamespace),
 	})
 	err = kubeClient.List(ctx, &namespaceSourceList, &client.ListOptions{LabelSelector: namespaceSelector}, client.InNamespace(namespace))
 	if err != nil {

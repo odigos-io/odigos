@@ -7,6 +7,7 @@ import (
 
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -36,7 +37,9 @@ func GetConfig(c context.Context) GetConfigResponse {
 }
 
 func isDestinationChosen(ctx context.Context) bool {
-	dests, err := kube.DefaultClient.OdigosClient.Destinations("").List(ctx, metav1.ListOptions{})
+	odigosNamespace := env.GetCurrentNamespace()
+
+	dests, err := kube.DefaultClient.OdigosClient.Destinations(odigosNamespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		log.Printf("Error listing destinations: %v\n", err)
 		return false
