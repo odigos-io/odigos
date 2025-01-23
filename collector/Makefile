@@ -53,13 +53,13 @@ generate: install-tools
 	@find . -type f -name 'metadata.yaml' -print0 | xargs -0 -I {} sh -c 'cd $$(dirname {}); $(GOBIN)/mdatagen metadata.yaml'
 	$(MAKE) fmt
 
-ALL_GO_MOD_DIRS := $(shell find . -type f -name 'go.mod' -exec dirname {} \; | sort | grep -E '^./' )
+ALL_GO_MOD_DIRS := $(shell find . -type f -name 'go.mod' -exec dirname {} \; | sort | grep -E '^./' | grep -v "LICENSES")
 .PHONY: fmt
 fmt: $(ALL_GO_MOD_DIRS:%=fmt/%)
 fmt/%: install-tools
 	cd $* && goimports -w -local github.com/odigos-io ./
 
-ALL_GO_MODS := $(shell find . -type f -name 'go.mod' ! -path './exporters/googlecloudstorageexporter/*' ! -path './exporters/azureblobstorageexporter/*' ! -path './internal/tools/*' ! -path './odigosotelcol/*' | sort)
+ALL_GO_MODS := $(shell find . -type f -name 'go.mod' ! -path './exporters/googlecloudstorageexporter/*' ! -path './exporters/azureblobstorageexporter/*' ! -path './internal/tools/*' ! -path './odigosotelcol/*' | sort | grep -v "LICENSES")
 GO_MODS_TO_TEST := $(ALL_GO_MODS:%=test/%)
 
 .PHONY: test
