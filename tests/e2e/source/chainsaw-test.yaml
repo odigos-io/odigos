@@ -182,11 +182,40 @@ spec:
         - script:
             timeout: 70s
             content: |
-              kubectl annotate deployment coupon odigos.io/reported-name=coupon-2
-              kubectl annotate deployment frontend odigos.io/reported-name=frontend-2
-              kubectl annotate deployment inventory odigos.io/reported-name=inventory-2
-              kubectl annotate deployment pricing odigos.io/reported-name=pricing-2
-              kubectl annotate deployment membership odigos.io/reported-name=membership-2
+              kubectl get source \
+              -l odigos.io/workload-name=membership \
+              -o name | \
+              xargs -I{} kubectl patch {} \
+              --type=json \
+              -p='[{"op": "replace", "path": "/spec/reportedName", "value": "membership-2"}]'
+
+              kubectl get source \
+              -l odigos.io/workload-name=coupon \
+              -o name | \
+              xargs -I{} kubectl patch {} \
+              --type=json \
+              -p='[{"op": "replace", "path": "/spec/reportedName", "value": "coupon-2"}]'
+
+              kubectl get source \
+              -l odigos.io/workload-name=frontend \
+              -o name | \
+              xargs -I{} kubectl patch {} \
+              --type=json \
+              -p='[{"op": "replace", "path": "/spec/reportedName", "value": "frontend-2"}]'
+
+              kubectl get source \
+              -l odigos.io/workload-name=inventory \
+              -o name | \
+              xargs -I{} kubectl patch {} \
+              --type=json \
+              -p='[{"op": "replace", "path": "/spec/reportedName", "value": "inventory-2"}]'
+
+              kubectl get source \
+              -l odigos.io/workload-name=pricing \
+              -o name | \
+              xargs -I{} kubectl patch {} \
+              --type=json \
+              -p='[{"op": "replace", "path": "/spec/reportedName", "value": "pricing-2"}]'
         - script:
             timeout: 70s
             content: |

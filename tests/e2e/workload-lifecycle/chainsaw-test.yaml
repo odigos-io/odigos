@@ -177,6 +177,110 @@ spec:
         - assert:
             file: 02-assert-workload-update.yaml
 
+    # updating the reported names helps use to verify the traces, and distinguish between the phases
+    - name: "02 - Update reported names"
+      try:
+        - script:
+            timeout: 70s
+            content: |
+              kubectl get source \
+              -l odigos.io/workload-name=nodejs-minimum-version \
+              -o name | \
+              xargs -I{} kubectl patch {} \
+              --type=json \
+              -p='[{"op": "replace", "path": "/spec/reportedName", "value": "nodejs-minimum-version-reported"}]'
+
+              kubectl get source \
+              -l odigos.io/workload-name=nodejs-latest-version \
+              -o name | \
+              xargs -I{} kubectl patch {} \
+              --type=json \
+              -p='[{"op": "replace", "path": "/spec/reportedName", "value": "nodejs-latest-version-reported"}]'
+
+              kubectl get source \
+              -l odigos.io/workload-name=nodejs-dockerfile-env \
+              -o name | \
+              xargs -I{} kubectl patch {} \
+              --type=json \
+              -p='[{"op": "replace", "path": "/spec/reportedName", "value": "nodejs-dockerfile-env-reported"}]'
+
+              kubectl get source \
+              -l odigos.io/workload-name=nodejs-manifest-env \
+              -o name | \
+              xargs -I{} kubectl patch {} \
+              --type=json \
+              -p='[{"op": "replace", "path": "/spec/reportedName", "value": "nodejs-manifest-env-reported"}]'
+
+              kubectl get source \
+              -l odigos.io/workload-name=java-supported-version \
+              -o name | \
+              xargs -I{} kubectl patch {} \
+              --type=json \
+              -p='[{"op": "replace", "path": "/spec/reportedName", "value": "java-supported-version-reported"}]'
+
+              kubectl get source \
+              -l odigos.io/workload-name=java-azul \
+              -o name | \
+              xargs -I{} kubectl patch {} \
+              --type=json \
+              -p='[{"op": "replace", "path": "/spec/reportedName", "value": "java-azul-reported"}]'
+
+              kubectl get source \
+              -l odigos.io/workload-name=java-supported-docker-env \
+              -o name | \
+              xargs -I{} kubectl patch {} \
+              --type=json \
+              -p='[{"op": "replace", "path": "/spec/reportedName", "value": "java-supported-docker-env-reported"}]'
+
+              kubectl get source \
+              -l odigos.io/workload-name=java-supported-manifest-env \
+              -o name | \
+              xargs -I{} kubectl patch {} \
+              --type=json \
+              -p='[{"op": "replace", "path": "/spec/reportedName", "value": "java-supported-manifest-env-reported"}]'
+
+              kubectl get source \
+              -l odigos.io/workload-name=java-latest-version \
+              -o name | \
+              xargs -I{} kubectl patch {} \
+              --type=json \
+              -p='[{"op": "replace", "path": "/spec/reportedName", "value": "java-latest-version-reported"}]'
+
+              kubectl get source \
+              -l odigos.io/workload-name=java-old-version \
+              -o name | \
+              xargs -I{} kubectl patch {} \
+              --type=json \
+              -p='[{"op": "replace", "path": "/spec/reportedName", "value": "java-old-version-reported"}]'
+
+              kubectl get source \
+              -l odigos.io/workload-name=python-latest-version \
+              -o name | \
+              xargs -I{} kubectl patch {} \
+              --type=json \
+              -p='[{"op": "replace", "path": "/spec/reportedName", "value": "python-latest-version-reported"}]'
+
+              kubectl get source \
+              -l odigos.io/workload-name=python-alpine \
+              -o name | \
+              xargs -I{} kubectl patch {} \
+              --type=json \
+              -p='[{"op": "replace", "path": "/spec/reportedName", "value": "python-alpine-reported"}]'
+
+              kubectl get source \
+              -l odigos.io/workload-name=python-not-supported \
+              -o name | \
+              xargs -I{} kubectl patch {} \
+              --type=json \
+              -p='[{"op": "replace", "path": "/spec/reportedName", "value": "python-not-supported-reported"}]'
+
+              kubectl get source \
+              -l odigos.io/workload-name=python-min-version \
+              -o name | \
+              xargs -I{} kubectl patch {} \
+              --type=json \
+              -p='[{"op": "replace", "path": "/spec/reportedName", "value": "python-min-version-reported"}]'
+
     - name: "02 - Generate Traffic"
       try:
         - script:
