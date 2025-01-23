@@ -5,6 +5,8 @@ sidebarTitle: "Introduction"
 icon: "hand-wave"
 ---
 
+import AssumeNoMeaning from '/snippets/assume-no-meaning.mdx';
+
 ## Rule Types:
 
 - [Payload Collection](/pipeline/rules/payloadcollection)
@@ -15,35 +17,35 @@ icon: "hand-wave"
 <AccordionGroup>
   <Accordion title="ruleName">
     **ruleName** `string` : Allows you to attach a meaningful name to the rule for convenience and documentation.
-      - This field is *optional*
-      - <Icon icon="triangle-exclamation" iconType="solid" color="yellow" /> Odigos does not use or assume any meaning from this field
+    - This field is *optional*
+    - <AssumeNoMeaning />
   </Accordion>
   <Accordion title="notes">
     **notes** `string` : Allows you to attach notes regarding the rule for convenience.
-      - This field is *optional*
-      - <Icon icon="triangle-exclamation" iconType="solid" color="yellow" /> Odigos does not use or assume any meaning from this field
+    - This field is *optional*
+    - <AssumeNoMeaning />
   </Accordion>
   <Accordion title="disabled">
     **disabled** `boolean` : Allows you to temporarily disable the rule, but keep it saved for future use.
-      - This field is *optional*, and defaults to `false`
+    - This field is *optional*, and defaults to `false`
   </Accordion>
   <Accordion title="workloads">
     **workloads** `{ namespace; name; kind; }[]` : Allows you to apply/limit the rule to specific workloads. If not specified, the rule will be applied to all workloads.
-      - This field is *optional*, and defaults to `nil` (all workloads)
-      - <Icon icon="triangle-exclamation" iconType="solid" color="red" /> Empty array will make the rule ineffective
+    - This field is *optional*, and defaults to `nil` (all workloads)
+    - <Icon icon="triangle-exclamation" iconType="solid" color="red" /> Empty array will make the rule ineffective
     <AccordionGroup>
       <Accordion title="namespace">
         **namespace** `string` - The name of the Kubernetes namespace.
-          - This field is *required*
+        - This field is *required*
       </Accordion>
       <Accordion title="name">
         **name** `string` - The name of the Kubernetes workload.
-          - This field is *required*
+        - This field is *required*
       </Accordion>
       <Accordion title="kind">
         **kind** `string` - The kind of the Kubernetes workload.
-          - This field is *required*
-          - Supported values: `Deployment`, `DaemonSet`, `StatefulSet`
+        - This field is *required*
+        - Supported values: `Deployment`, `DaemonSet`, `StatefulSet`
       </Accordion>
     </AccordionGroup>
   </Accordion>
@@ -54,17 +56,17 @@ icon: "hand-wave"
     <AccordionGroup>
       <Accordion title="name">
         **name** `string` - The unique name of the instrumentation library.
-          - This field is *required*
+        - This field is *required*
       </Accordion>
       <Accordion title="language">
         **language** `string` - The programming language of the instrumentation library.
-          - This field is *required*
-          - Alphabetical, lowercase, and no spaces
+        - This field is *required*
+        - Alphabetical, lowercase, and no spaces
       </Accordion>
       <Accordion title="spanKind">
         **spanKind** `string` - The span kind of the instrumentation library.
-          - This field is *required*
-          - Supported values: `client`, `server`, `producer`, `consumer`, `internal`
+        - This field is *required*
+        - Supported values: `client`, `server`, `producer`, `consumer`, `internal`
       </Accordion>
     </AccordionGroup>
   </Accordion>

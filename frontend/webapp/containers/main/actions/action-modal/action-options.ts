@@ -46,7 +46,7 @@ export const ACTION_OPTIONS: ActionOption[] = [
         description: 'Rename attributes in logs, metrics, and traces.',
         type: ActionsType.RENAME_ATTRIBUTES,
         icon: getActionIcon(ActionsType.RENAME_ATTRIBUTES),
-        docsEndpoint: '/pipeline/actions/attributes/rename-attribute',
+        docsEndpoint: '/pipeline/actions/attributes/renameattribute',
         docsDescription:
           'The “Rename Attribute” Odigos Action can be used to rename attributes from logs, metrics, and traces. Different instrumentations might use different attribute names for similar information. This action let’s you to consolidate the names across your cluster.',
         allowedSignals: ['TRACES', 'METRICS', 'LOGS'],

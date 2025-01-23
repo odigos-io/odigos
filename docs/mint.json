@@ -182,7 +182,7 @@
                 "pipeline/actions/attributes/introduction",
                 "pipeline/actions/attributes/addclusterinfo",
                 "pipeline/actions/attributes/deleteattribute",
-                "pipeline/actions/attributes/rename-attribute",
+                "pipeline/actions/attributes/renameattribute",
                 "pipeline/actions/attributes/piimasking"
               ]
             },
