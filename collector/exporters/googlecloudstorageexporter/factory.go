@@ -41,7 +41,7 @@ func createLogsExporter(
 		return nil, err
 	}
 
-	return exporterhelper.NewLogsExporter(
+	return exporterhelper.NewLogs(
 		ctx,
 		set,
 		cfg,
@@ -59,7 +59,7 @@ func createTracesExporter(
 		return nil, err
 	}
 
-	return exporterhelper.NewTracesExporter(
+	return exporterhelper.NewTraces(
 		ctx,
 		set,
 		cfg,

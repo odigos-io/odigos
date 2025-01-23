@@ -1,4 +1,4 @@
-package odigossourcesfilter
+package odigossourcesfilterprocessor
 
 import (
 	"context"
