@@ -179,7 +179,6 @@
               "group": "Attributes",
               "icon": "layer-group",
               "pages": [
-                "pipeline/actions/attributes/introduction",
                 "pipeline/actions/attributes/addclusterinfo",
                 "pipeline/actions/attributes/deleteattribute",
                 "pipeline/actions/attributes/renameattribute",
@@ -190,7 +189,6 @@
               "group": "Sampling",
               "icon": "tag",
               "pages": [
-                "pipeline/actions/sampling/introduction",
                 "pipeline/actions/sampling/probabilisticsampler",
                 "pipeline/actions/sampling/latencysampler",
                 "pipeline/actions/sampling/errorsampler"
