@@ -14,6 +14,7 @@ import (
 	nooptrace "go.opentelemetry.io/otel/trace/noop"
 
 	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/component/componenttest"
 )
 
 type mockMeter struct {
@@ -60,4 +61,14 @@ func TestProviders(t *testing.T) {
 	} else {
 		require.Fail(t, "returned Meter not mockTracer")
 	}
+}
+
+func TestNewTelemetryBuilder(t *testing.T) {
+	set := componenttest.NewNopTelemetrySettings()
+	applied := false
+	_, err := NewTelemetryBuilder(set, telemetryBuilderOptionFunc(func(b *TelemetryBuilder) {
+		applied = true
+	}))
+	require.NoError(t, err)
+	require.True(t, applied)
 }
