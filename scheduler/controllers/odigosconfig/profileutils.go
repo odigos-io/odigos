@@ -39,7 +39,7 @@ func calculateProfilesDeploymentHash(profiles []common.ProfileName, odigosVersio
 // from the list of input profiles, calculate the effective profiles:
 // - check the dependencies of each profile and add them to the list
 // - remove profiles which are not present in the profiles list
-func calculateEffectiveProfiles(configProfiles []common.ProfileName, availableProfiles []profile.Profile) []common.ProfileName {
+func calculateEffectiveProfiles(configProfiles []common.ProfileName, tokenProfiles []common.ProfileName, availableProfiles []profile.Profile) []common.ProfileName {
 
 	effectiveProfiles := []common.ProfileName{}
 	for _, profileName := range configProfiles {
@@ -58,4 +58,9 @@ func calculateEffectiveProfiles(configProfiles []common.ProfileName, availablePr
 		}
 	}
 	return effectiveProfiles
+}
+
+func getProfilesFromToken() []common.ProfileName {
+
+	return []common.ProfileName{common.OdigosProProfile}
 }

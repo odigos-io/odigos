@@ -22,7 +22,6 @@ type odigossecretController struct {
 	client.Client
 }
 
-// TODO: logger
 func (r *odigossecretController) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
@@ -133,5 +132,5 @@ func getProfilesString(claims jwt.MapClaims) (string, bool, error) {
 		profileStrings = append(profileStrings, profileString)
 	}
 
-	return strings.Join(profileStrings, ","), true, nil
+	return strings.Join(profileStrings, ", "), true, nil
 }

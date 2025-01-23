@@ -1,11 +1,12 @@
 package predicate
 
 import (
-	"sigs.k8s.io/controller-runtime/pkg/event"
-	cr_predicate "sigs.k8s.io/controller-runtime/pkg/predicate"
-
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common/consts"
+
+	//odigosk8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	cr_predicate "sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 type ObjectNamePredicate struct {
@@ -103,8 +104,8 @@ var ClusterCollectorDeploymentPredicate = ObjectNamePredicate{
 // this predicate will only allow events for the odigos cluster collectors daemon set object.
 // this is useful if you only want to reconcile events for the cluster collectors daemon set object and ignore other daemon set objects.
 var OdigosProSecretPredicate = ObjectNamePredicate{
-	AllowedObjectName: odigosk8sconsts.OdigosProSecretName,
+	AllowedObjectName: k8sconsts.OdigosProSecretName,
 }
 var OdigosDeploymentConfigMapPredicate = ObjectNamePredicate{
-	AllowedObjectName: odigosk8sconsts.OdigosDeploymentConfigMapName,
+	AllowedObjectName: k8sconsts.OdigosDeploymentConfigMapName,
 }

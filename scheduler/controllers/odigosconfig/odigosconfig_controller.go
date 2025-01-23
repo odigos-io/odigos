@@ -6,8 +6,10 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/effectiveconfig"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/profiles"
 	"github.com/odigos-io/odigos/profiles/manifests"
@@ -36,19 +38,39 @@ type odigosConfigController struct {
 
 func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
 
-	odigosConfig, err := r.getOdigosConfigUserObject(ctx)
+	err = effectiveconfig.Sync(ctx, r.Client, r.Scheme, odigosVersion)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
+	return ctrl.Result{}, nil
+}
+
+func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, tier Tier, odigosVersion string) error {
+
+	odigosConfig, err := r.getOdigosConfigUserObject(ctx)
+	if err != nil {
+		return err
+	}
+
+	odigosDeployment := resources.NewOdigosDeploymentConfigMap(env.GetCurrentNamespace(), odigosVersion, tier)
+
 	// effective profiles are what is actually used in the cluster (minus non existing profiles and plus dependencies)
-	availableProfiles := profiles.GetAvailableProfilesForTier(r.Tier)
-	effectiveProfiles := calculateEffectiveProfiles(odigosConfig.Profiles, availableProfiles)
+	availableProfiles := profiles.GetAvailableProfilesForTier(tier)
+
+	effectiveProfilesFromOdigosConfig := calculateEffectiveProfiles(odigosConfig.Profiles, availableProfiles)
+	effectiveProfilesFromOdigosDeployment := calculateEffectiveProfiles(odigosConfig.Profiles, availableProfiles)
+
+	if tier == common.OnPremOdigosTier {
+		tokenProfiles := getProfilesFromToken()
+		// OnPremOdigosTier is a special case, where we need to add the OdigosPro profile
+		effectiveProfiles = append(effectiveProfiles, tokenProfiles...)
+	}
 
 	// apply the current profiles list to the cluster
 	err = r.applyProfileManifests(ctx, effectiveProfiles)
 	if err != nil {
-		return ctrl.Result{}, err
+		return err
 	}
 
 	// make sure the default ignored namespaces are always present
@@ -67,10 +89,10 @@ func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) 
 
 	err = r.persistEffectiveConfig(ctx, odigosConfig)
 	if err != nil {
-		return ctrl.Result{}, err
+		return err
 	}
 
-	return ctrl.Result{}, nil
+	return nil
 }
 
 func (r *odigosConfigController) getOdigosConfigUserObject(ctx context.Context) (*common.OdigosConfiguration, error) {
