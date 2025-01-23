@@ -54,7 +54,7 @@ var uiFS embed.FS
 // If it's red for you...
 // 1. Go to "frontend/webapp/"
 // 2. Then run: "yarn install && yarn build"
-// After the build completed, there should be a "frontend/webapp/out/"" dir (which is ignored from git), that should resolve the red error.
+// After the build completed, there should be a "frontend/webapp/out/" dir (which is ignored from git), that should resolve the red error.
 
 func parseFlags() Flags {
 	defaultKubeConfig := env.GetDefaultKubeConfigPath()
