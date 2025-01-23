@@ -5,6 +5,8 @@ sidebarTitle: "Troubleshooting"
 icon: 'question'
 ---
 
+import GettingHelp from '/snippets/getting-help-section.mdx'
+
 <Tip>
   It is recommended to use the [`odigos describe`](/cli/odigos_describe) command to get detailed information in one command.
 </Tip>
@@ -110,6 +112,4 @@ spec:
 
 The `instrumentation.odigos.io/go-ebpf-community` resource-limit instructs Odigos on how to mount the relevant OpenTelemetry agents and environment variables into the container, and which processes should be instrumented with eBPF.
 
-## Getting Help
-
-If you still have any issues, please open an issue in [GitHub](https://github.com/odigos-io/odigos) or reach out to us in [Odigos Slack](https://join.slack.com/t/odigos/shared_invite/zt-24u91yknm-0fLXu6qnqYfNHS_GSUgTJw)
+<GettingHelp />
