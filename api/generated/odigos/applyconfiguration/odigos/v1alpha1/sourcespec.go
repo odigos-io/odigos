@@ -26,6 +26,7 @@ import (
 type SourceSpecApplyConfiguration struct {
 	Workload               *workload.PodWorkload `json:"workload,omitempty"`
 	DisableInstrumentation *bool                 `json:"disableInstrumentation,omitempty"`
+	ReportedName           *string               `json:"reportedName,omitempty"`
 }
 
 // SourceSpecApplyConfiguration constructs a declarative configuration of the SourceSpec type for use with
@@ -47,5 +48,13 @@ func (b *SourceSpecApplyConfiguration) WithWorkload(value workload.PodWorkload) 
 // If called multiple times, the DisableInstrumentation field is set to the value of the last call.
 func (b *SourceSpecApplyConfiguration) WithDisableInstrumentation(value bool) *SourceSpecApplyConfiguration {
 	b.DisableInstrumentation = &value
+	return b
+}
+
+// WithReportedName sets the ReportedName field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ReportedName field is set to the value of the last call.
+func (b *SourceSpecApplyConfiguration) WithReportedName(value string) *SourceSpecApplyConfiguration {
+	b.ReportedName = &value
 	return b
 }

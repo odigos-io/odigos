@@ -260,6 +260,14 @@ func (s *SourcesValidator) validateSourceFields(ctx context.Context, source *v1a
 		))
 	}
 
+	if source.Spec.Workload.Kind == workload.WorkloadKindNamespace && source.Spec.ReportedName != "" {
+		allErrs = append(allErrs, field.Invalid(
+			field.NewPath("spec").Child("reportedName"),
+			source.Spec.ReportedName,
+			"namespace Source must not have a reportedName",
+		))
+	}
+
 	return allErrs
 }
 

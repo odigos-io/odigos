@@ -51,6 +51,11 @@ spec:
               disableInstrumentation:
                 description: DisableInstrumentation excludes this workload from auto-instrumentation.
                 type: boolean
+              reportedName:
+                description: |-
+                  ReportedName determines "service.name" resource attribute which will be reported by the instrumentations of this source.
+                  If not set, the workload name will be used.
+                type: string
               workload:
                 description: |-
                   Workload represents the workload or namespace to be instrumented.

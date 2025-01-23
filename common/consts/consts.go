@@ -18,6 +18,8 @@ const (
 	OdigosInstrumentationLabel   = "odigos-instrumentation"
 	InstrumentationEnabled       = "enabled"
 	InstrumentationDisabled      = "disabled"
+
+	// Deprecated: reported name is set via the Source CR.
 	OdigosReportedNameAnnotation = "odigos.io/reported-name"
 	RolloutTriggerAnnotation     = "rollout-trigger"
 

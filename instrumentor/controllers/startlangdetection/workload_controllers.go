@@ -80,12 +80,21 @@ func requestOdigletsToCalculateRuntimeDetails(ctx context.Context, k8sClient cli
 		},
 	}
 
+	sources, err := odigosv1.GetSources(ctx, k8sClient, obj)
+	if err != nil {
+		return err
+	}
+
+	if sources.Workload != nil && sources.Workload.Spec.ReportedName != "" {
+		instConfig.Spec.ServiceName = sources.Workload.Spec.ReportedName
+	}
+
 	if err := ctrl.SetControllerReference(obj, instConfig, scheme); err != nil {
 		logger.Error(err, "Failed to set controller reference", "name", instConfigName, "namespace", namespace)
 		return err
 	}
 
-	err := k8sClient.Create(ctx, instConfig)
+	err = k8sClient.Create(ctx, instConfig)
 	if err != nil {
 		return client.IgnoreAlreadyExists(err)
 	}
