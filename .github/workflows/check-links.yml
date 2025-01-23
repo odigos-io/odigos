@@ -22,5 +22,5 @@ jobs:
             --exclude ".*your-account.*"
             --exclude ".*qryn.local.*"
             --exclude "^https://d15jtxgb40qetw\\.cloudfront\\.net/.*"
-            --exclude-path "collector/odigosotelcol/LICENSES"
+            --exclude-path "collector/LICENSES"
           fail: true
