@@ -189,9 +189,9 @@
               "group": "Sampling",
               "icon": "tag",
               "pages": [
-                "pipeline/actions/sampling/probabilisticsampler",
+                "pipeline/actions/sampling/errorsampler",
                 "pipeline/actions/sampling/latencysampler",
-                "pipeline/actions/sampling/errorsampler"
+                "pipeline/actions/sampling/probabilisticsampler"
               ]
             },
             "pipeline/actions/crd",
