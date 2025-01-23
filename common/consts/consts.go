@@ -5,19 +5,19 @@ import (
 )
 
 const (
-	CurrentNamespaceEnvVar       = "CURRENT_NS"
-	OdigosVersionEnvVarName      = "ODIGOS_VERSION"
-	OdigosTierEnvVarName         = "ODIGOS_TIER"
-	DefaultOdigosNamespace       = "odigos-system"
-	OdigosConfigurationName      = "odigos-config"
-	OdigosEffectiveConfigName    = "effective-config"
-	OdigosConfigurationFileName  = "config.yaml"
-	OTLPPort                     = 4317
-	OTLPHttpPort                 = 4318
-	PprofOdigosPort              = 6060
-	OdigosInstrumentationLabel   = "odigos-instrumentation"
-	InstrumentationEnabled       = "enabled"
-	InstrumentationDisabled      = "disabled"
+	CurrentNamespaceEnvVar      = "CURRENT_NS"
+	OdigosVersionEnvVarName     = "ODIGOS_VERSION"
+	OdigosTierEnvVarName        = "ODIGOS_TIER"
+	DefaultOdigosNamespace      = "odigos-system"
+	OdigosConfigurationName     = "odigos-config"
+	OdigosEffectiveConfigName   = "effective-config"
+	OdigosConfigurationFileName = "config.yaml"
+	OTLPPort                    = 4317
+	OTLPHttpPort                = 4318
+	PprofOdigosPort             = 6060
+	OdigosInstrumentationLabel  = "odigos-instrumentation"
+	InstrumentationEnabled      = "enabled"
+	InstrumentationDisabled     = "disabled"
 
 	// Deprecated: reported name is set via the Source CR.
 	OdigosReportedNameAnnotation = "odigos.io/reported-name"

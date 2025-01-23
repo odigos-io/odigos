@@ -80,13 +80,13 @@ func requestOdigletsToCalculateRuntimeDetails(ctx context.Context, k8sClient cli
 		},
 	}
 
-	sources, err := odigosv1.GetSources(ctx, k8sClient, obj)
+	reportedName, err := sourceutils.ReportedNameBySource(ctx, k8sClient, obj)
 	if err != nil {
 		return err
 	}
 
-	if sources.Workload != nil && sources.Workload.Spec.ReportedName != "" {
-		instConfig.Spec.ServiceName = sources.Workload.Spec.ReportedName
+	if reportedName != "" {
+		instConfig.Spec.ServiceName = reportedName
 	}
 
 	if err := ctrl.SetControllerReference(obj, instConfig, scheme); err != nil {

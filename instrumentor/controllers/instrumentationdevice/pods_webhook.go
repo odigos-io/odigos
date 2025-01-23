@@ -8,6 +8,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	containerutils "github.com/odigos-io/odigos/k8sutils/pkg/container"
+	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
@@ -54,7 +55,6 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 
 // checks for the service name on the annotation, or fallback to the workload name
 func (p *PodsWebhook) getServiceNameForEnv(ctx context.Context, pod *corev1.Pod) (*string, *workload.PodWorkload) {
-
 	logger := log.FromContext(ctx)
 
 	podWorkload, err := workload.PodWorkloadObject(ctx, pod)
@@ -70,12 +70,19 @@ func (p *PodsWebhook) getServiceNameForEnv(ctx context.Context, pod *corev1.Pod)
 	}
 	podWorkload.Namespace = req.Namespace
 
-	workloadObj, err := workload.GetWorkloadObject(ctx, client.ObjectKey{Namespace: podWorkload.Namespace, Name: podWorkload.Name}, podWorkload.Kind, p.Client)
+	workloadObj := workload.ClientObjectFromWorkloadKind(podWorkload.Kind)
+	err = p.Client.Get(ctx, client.ObjectKey{Namespace: podWorkload.Namespace, Name: podWorkload.Name}, workloadObj)
 	if err != nil {
-		logger.Error(err, "failed to get workload object from cache. cannot check for workload annotation. using workload name as OTEL_SERVICE_NAME")
+		logger.Error(err, "failed to get workload object from cache. cannot check for workload source. using workload name as OTEL_SERVICE_NAME")
 		return &podWorkload.Name, podWorkload
 	}
-	resolvedServiceName := workload.ExtractServiceNameFromAnnotations(workloadObj.GetAnnotations(), podWorkload.Name)
+
+	resolvedServiceName, err := sourceutils.ReportedNameBySource(ctx, p.Client, workloadObj)
+	if err != nil {
+		logger.Error(err, "failed to get reported name from source. using workload name as OTEL_SERVICE_NAME")
+		return &podWorkload.Name, podWorkload
+	}
+
 	return &resolvedServiceName, podWorkload
 }
 
