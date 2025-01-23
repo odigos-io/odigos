@@ -5,6 +5,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/resource"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/pkg/autodetect"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/common/consts"
@@ -23,19 +24,6 @@ import (
 	k8sversion "k8s.io/apimachinery/pkg/util/version"
 )
 
-const (
-	OdigletDaemonSetName          = "odiglet"
-	OdigletAppLabelValue          = OdigletDaemonSetName
-	OdigletServiceAccountName     = OdigletDaemonSetName
-	OdigletRoleName               = OdigletDaemonSetName
-	OdigletRoleBindingName        = OdigletDaemonSetName
-	OdigletClusterRoleName        = OdigletDaemonSetName
-	OdigletClusterRoleBindingName = OdigletDaemonSetName
-	OdigletContainerName          = "odiglet"
-	OdigletImageName              = "keyval/odigos-odiglet"
-	OdigletEnterpriseImageName    = "keyval/odigos-enterprise-odiglet"
-)
-
 func NewOdigletServiceAccount(ns string) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
@@ -43,7 +31,7 @@ func NewOdigletServiceAccount(ns string) *corev1.ServiceAccount {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      OdigletServiceAccountName,
+			Name:      k8sconsts.OdigletServiceAccountName,
 			Namespace: ns,
 		},
 	}
@@ -56,7 +44,7 @@ func NewOdigletRole(ns string) *rbacv1.Role {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      OdigletRoleName,
+			Name:      k8sconsts.OdigletRoleName,
 			Namespace: ns,
 		},
 		Rules: []rbacv1.PolicyRule{
@@ -84,20 +72,20 @@ func NewOdigletRoleBinding(ns string) *rbacv1.RoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      OdigletRoleBindingName,
+			Name:      k8sconsts.OdigletRoleBindingName,
 			Namespace: ns,
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      OdigletServiceAccountName,
+				Name:      k8sconsts.OdigletServiceAccountName,
 				Namespace: ns,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "Role",
-			Name:     OdigletRoleName,
+			Name:     k8sconsts.OdigletRoleName,
 		},
 	}
 }
@@ -109,7 +97,7 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: OdigletClusterRoleName,
+			Name: k8sconsts.OdigletClusterRoleName,
 		},
 		Rules: []rbacv1.PolicyRule{
 			{ // Needed for language detection
@@ -182,19 +170,19 @@ func NewOdigletClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: OdigletClusterRoleBindingName,
+			Name: k8sconsts.OdigletClusterRoleBindingName,
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      OdigletServiceAccountName,
+				Name:      k8sconsts.OdigletServiceAccountName,
 				Namespace: ns,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "ClusterRole",
-			Name:     OdigletClusterRoleName,
+			Name:     k8sconsts.OdigletClusterRoleName,
 		},
 	}
 }
@@ -212,7 +200,7 @@ func NewSCCRoleBinding(ns string) *rbacv1.RoleBinding {
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      OdigletServiceAccountName,
+				Name:      k8sconsts.OdigletServiceAccountName,
 				Namespace: ns,
 			},
 			{
@@ -321,16 +309,16 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      OdigletDaemonSetName,
+			Name:      k8sconsts.OdigletDaemonSetName,
 			Namespace: ns,
 			Labels: map[string]string{
-				"app.kubernetes.io/name": OdigletAppLabelValue,
+				"app.kubernetes.io/name": k8sconsts.OdigletAppLabelValue,
 			},
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app.kubernetes.io/name": OdigletAppLabelValue,
+					"app.kubernetes.io/name": k8sconsts.OdigletAppLabelValue,
 				},
 			},
 			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
@@ -340,7 +328,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app.kubernetes.io/name": OdigletAppLabelValue,
+						"app.kubernetes.io/name": k8sconsts.OdigletAppLabelValue,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -419,7 +407,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 					},
 					Containers: []corev1.Container{
 						{
-							Name:  OdigletContainerName,
+							Name:  k8sconsts.OdigletContainerName,
 							Image: containers.GetImageName(imagePrefix, imageName, version),
 							Env: append([]corev1.EnvVar{
 								{
@@ -497,7 +485,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 						},
 					},
 					DNSPolicy:          "ClusterFirstWithHostNet",
-					ServiceAccountName: OdigletServiceAccountName,
+					ServiceAccountName: k8sconsts.OdigletServiceAccountName,
 					HostNetwork:        true,
 					HostPID:            true,
 					PriorityClassName:  "system-node-critical",
@@ -569,11 +557,11 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 	// if the user specified an image, use it. otherwise, use the default image.
 	// prev v1.0.4 - the cli would automatically store "keyval/odigos-odiglet" instead of empty value,
 	// thus we need to treat the default image name as empty value.
-	if odigletImage == "" || odigletImage == OdigletImageName {
+	if odigletImage == "" || odigletImage == k8sconsts.OdigletImageName {
 		if a.odigosTier == common.CommunityOdigosTier {
-			odigletImage = OdigletImageName
+			odigletImage = k8sconsts.OdigletImageName
 		} else {
-			odigletImage = OdigletEnterpriseImageName
+			odigletImage = k8sconsts.OdigletEnterpriseImageName
 		}
 	}
 

@@ -29,15 +29,15 @@ func (e *Elasticsearch) DestType() common.DestinationType {
 	return common.ElasticsearchDestinationType
 }
 
-func (e *Elasticsearch) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (e *Elasticsearch) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	rawURL, exists := dest.GetConfig()[ElasticsearchUrlKey]
 	if !exists {
-		return errors.New("ElasticSearch url not specified, gateway will not be configured for ElasticSearch")
+		return nil, errors.New("ElasticSearch url not specified, gateway will not be configured for ElasticSearch")
 	}
 
 	parsedURL, err := e.SanitizeURL(rawURL)
 	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to sanitize URL. elasticsearch-url: %s", rawURL))
+		return nil, errors.Join(err, fmt.Errorf("failed to sanitize URL. elasticsearch-url: %s", rawURL))
 	}
 
 	traceIndexVal, exists := dest.GetConfig()[esTracesIndexKey]
@@ -72,11 +72,14 @@ func (e *Elasticsearch) ModifyConfig(dest ExporterConfigurer, currentConfig *Con
 	exporterName := "elasticsearch/" + dest.GetID()
 	currentConfig.Exporters[exporterName] = exporterConfig
 
+	pipelineNames := []string{}
+
 	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/elasticsearch-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
 	if isLoggingEnabled(dest) {
@@ -84,9 +87,10 @@ func (e *Elasticsearch) ModifyConfig(dest ExporterConfigurer, currentConfig *Con
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, logsPipelineName)
 	}
 
-	return nil
+	return pipelineNames, nil
 }
 
 // SanitizeURL will check whether URL is correct by utilizing url.ParseRequestURI

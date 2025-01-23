@@ -24,18 +24,18 @@ func (j *Groundcover) DestType() common.DestinationType {
 	return common.GroundcoverDestinationType
 }
 
-func (j *Groundcover) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (j *Groundcover) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	config := dest.GetConfig()
 	uniqueUri := "groundcover-" + dest.GetID()
 
 	url, exists := config[GroundcoverEndpoint]
 	if !exists {
-		return ErrorGroundcoverEndpointMissing
+		return nil, ErrorGroundcoverEndpointMissing
 	}
 
 	endpoint, err := parseOtlpGrpcUrl(url, true)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	exporterName := "otlp/" + uniqueUri
@@ -47,12 +47,13 @@ func (j *Groundcover) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 	}
 
 	currentConfig.Exporters[exporterName] = exporterConfig
-
+	var pipelineNames []string
 	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/" + uniqueUri
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
 	if isMetricsEnabled(dest) {
@@ -60,6 +61,7 @@ func (j *Groundcover) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
 	if isLoggingEnabled(dest) {
@@ -67,7 +69,8 @@ func (j *Groundcover) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
-	return nil
+	return pipelineNames, nil
 }
