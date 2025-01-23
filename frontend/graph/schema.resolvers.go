@@ -391,17 +391,11 @@ func (r *mutationResolver) PersistK8sSources(ctx context.Context, namespace stri
 
 // UpdateK8sActualSource is the resolver for the updateK8sActualSource field.
 func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID model.K8sSourceID, patchSourceRequest model.PatchSourceRequestInput) (bool, error) {
-	ns := sourceID.Namespace
-	kind := string(sourceID.Kind)
-	name := sourceID.Name
+	reportedName := patchSourceRequest.ReportedName
 
-	request := patchSourceRequest
-
-	// Handle ReportedName update
-	if request.ReportedName != nil {
-		if err := services.UpdateReportedName(ctx, ns, kind, name, *request.ReportedName); err != nil {
-			return false, err
-		}
+	_, err := services.UpdateSourceCRDSpec(ctx, sourceID.Namespace, sourceID.Name, services.WorkloadKind(sourceID.Kind), "reportedName", *reportedName)
+	if err != nil {
+		return false, err
 	}
 
 	return true, nil
