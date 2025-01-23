@@ -262,7 +262,7 @@ func createSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 
 	if source != nil {
 		// source already exists, do not create a new one, instead update so it's not disabled anymore
-		return UpdateSourceCRDSpec(ctx, nsName, workloadName, workloadKind, "disableInstrumentation", false)
+		return UpdateSourceCRDSpec(ctx, nsName, source.Name, "disableInstrumentation", false)
 	}
 
 	newSource := &v1alpha1.Source{
@@ -292,8 +292,14 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		}
 
 		if nsSource != nil {
+			// note: create will return an existing crd without throwing an error
+			source, err := createSourceCRD(ctx, nsName, workloadName, workloadKind)
+			if err != nil {
+				return err
+			}
+
 			// namespace source exists, we need to add "DisableInstrumentation" to the workload source
-			_, err = UpdateSourceCRDSpec(ctx, nsName, workloadName, workloadKind, "disableInstrumentation", true)
+			_, err = UpdateSourceCRDSpec(ctx, nsName, source.Name, "disableInstrumentation", true)
 			return err
 		}
 	}
@@ -308,15 +314,9 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 	return err
 }
 
-func UpdateSourceCRDSpec(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind, specField string, newValue any) (*v1alpha1.Source, error) {
-	// note: create will return an existing crd without throwing an error
-	source, err := createSourceCRD(ctx, nsName, workloadName, workloadKind)
-	if err != nil {
-		return source, err
-	}
-
+func UpdateSourceCRDSpec(ctx context.Context, nsName string, crdName string, specField string, newValue any) (*v1alpha1.Source, error) {
 	patch := fmt.Sprintf(`[{"op": "replace", "path": "/spec/%s", "value": %v}]`, specField, newValue)
-	source, err = kube.DefaultClient.OdigosClient.Sources(nsName).Patch(ctx, source.Name, types.JSONPatchType, []byte(patch), metav1.PatchOptions{})
+	source, err := kube.DefaultClient.OdigosClient.Sources(nsName).Patch(ctx, crdName, types.JSONPatchType, []byte(patch), metav1.PatchOptions{})
 
 	return source, err
 }
