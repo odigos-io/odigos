@@ -82,6 +82,9 @@ func (p *PodsWebhook) getServiceNameForEnv(ctx context.Context, pod *corev1.Pod)
 		logger.Error(err, "failed to get reported name from source. using workload name as OTEL_SERVICE_NAME")
 		return &podWorkload.Name, podWorkload
 	}
+	if resolvedServiceName == "" {
+		resolvedServiceName = podWorkload.Name
+	}
 
 	return &resolvedServiceName, podWorkload
 }
