@@ -95,8 +95,7 @@ func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind wor
 	obj := workload.ClientObjectFromWorkloadKind(objKind)
 	err := k8sClient.Get(ctx, types.NamespacedName{Name: req.Name, Namespace: req.Namespace}, obj)
 	if err != nil {
-		// Deleted objects should be filtered in the event filter
-		return ctrl.Result{}, err
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	return migrateFromWorkload(ctx, k8sClient, obj, objKind)

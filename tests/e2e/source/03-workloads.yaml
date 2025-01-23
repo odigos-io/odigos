@@ -1,8 +1,6 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: "4"
   generation: 4
   name: coupon
   namespace: default
@@ -10,8 +8,6 @@ metadata:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: "4"
   generation: 4
   name: frontend
   namespace: default
@@ -19,8 +15,6 @@ metadata:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: "4"
   generation: 4
   name: inventory
   namespace: default
@@ -28,8 +22,6 @@ metadata:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: "4"
   generation: 4
   name: membership
   namespace: default
@@ -37,8 +29,6 @@ metadata:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: "4"
   generation: 4
   name: pricing
   namespace: default

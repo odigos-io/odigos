@@ -68,7 +68,7 @@ spec:
               kubectl wait --for=condition=ready pod -l app=membership --timeout=60s
         - assert:
             file: ../../common/assert/simple-demo-installed.yaml
-    - name: Instrument Deployments
+    - name: Instrument Deployments using Sources with reportedName field set
       try:
         - apply:
             file: 01-sources.yaml
@@ -177,45 +177,8 @@ spec:
         - assert:
             timeout: 2m
             file: 02-workloads.yaml
-    - name: Update reported service name for second phase of test
+    - name: Rollout deployments for second phase of the test
       try:
-        - script:
-            timeout: 70s
-            content: |
-              kubectl get source \
-              -l odigos.io/workload-name=membership \
-              -o name | \
-              xargs -I{} kubectl patch {} \
-              --type=json \
-              -p='[{"op": "replace", "path": "/spec/reportedName", "value": "membership-2"}]'
-
-              kubectl get source \
-              -l odigos.io/workload-name=coupon \
-              -o name | \
-              xargs -I{} kubectl patch {} \
-              --type=json \
-              -p='[{"op": "replace", "path": "/spec/reportedName", "value": "coupon-2"}]'
-
-              kubectl get source \
-              -l odigos.io/workload-name=frontend \
-              -o name | \
-              xargs -I{} kubectl patch {} \
-              --type=json \
-              -p='[{"op": "replace", "path": "/spec/reportedName", "value": "frontend-2"}]'
-
-              kubectl get source \
-              -l odigos.io/workload-name=inventory \
-              -o name | \
-              xargs -I{} kubectl patch {} \
-              --type=json \
-              -p='[{"op": "replace", "path": "/spec/reportedName", "value": "inventory-2"}]'
-
-              kubectl get source \
-              -l odigos.io/workload-name=pricing \
-              -o name | \
-              xargs -I{} kubectl patch {} \
-              --type=json \
-              -p='[{"op": "replace", "path": "/spec/reportedName", "value": "pricing-2"}]'
         - script:
             timeout: 70s
             content: |
