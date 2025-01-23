@@ -20,6 +20,7 @@ spec:
       componentProps:
         type: password
         required: true
+        tooltip: 'The Send-Your-Data API Key is used to authenticate the data sent to Coralogix.'
       secret: true
     - name: CORALOGIX_DOMAIN
       displayName: Domain
@@ -33,15 +34,18 @@ spec:
           - coralogix.in
           - coralogixsg.com
         required: true
+        tooltip: 'The Coralogix domain to which you want to send the data.'
     - name: CORALOGIX_APPLICATION_NAME
       displayName: Application Name
       componentType: input
       componentProps:
         type: text
         required: true
+        tooltip: 'The name of the application that sends the data to Coralogix.'
     - name: CORALOGIX_SUBSYSTEM_NAME
       displayName: Subsystem Name
       componentType: input
       componentProps:
         type: text
         required: true
+        tooltip: 'The name of the subsystem that sends the data to Coralogix.'

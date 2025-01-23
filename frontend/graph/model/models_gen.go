@@ -79,6 +79,24 @@ type ClusterInfo struct {
 	AttributeStringValue *string `json:"attributeStringValue,omitempty"`
 }
 
+type CodeAttributes struct {
+	Column     *bool `json:"column,omitempty"`
+	FilePath   *bool `json:"filePath,omitempty"`
+	Function   *bool `json:"function,omitempty"`
+	LineNumber *bool `json:"lineNumber,omitempty"`
+	Namespace  *bool `json:"namespace,omitempty"`
+	Stacktrace *bool `json:"stacktrace,omitempty"`
+}
+
+type CodeAttributesInput struct {
+	Column     *bool `json:"column,omitempty"`
+	FilePath   *bool `json:"filePath,omitempty"`
+	Function   *bool `json:"function,omitempty"`
+	LineNumber *bool `json:"lineNumber,omitempty"`
+	Namespace  *bool `json:"namespace,omitempty"`
+	Stacktrace *bool `json:"stacktrace,omitempty"`
+}
+
 type ComputePlatform struct {
 	ComputePlatformType  ComputePlatformType    `json:"computePlatformType"`
 	APITokens            []*APIToken            `json:"apiTokens"`
@@ -289,9 +307,12 @@ type InstrumentationRule struct {
 	RuleName                 *string                           `json:"ruleName,omitempty"`
 	Notes                    *string                           `json:"notes,omitempty"`
 	Disabled                 *bool                             `json:"disabled,omitempty"`
+	Mutable                  bool                              `json:"mutable"`
+	ProfileName              string                            `json:"profileName"`
 	Workloads                []*PodWorkload                    `json:"workloads,omitempty"`
 	InstrumentationLibraries []*InstrumentationLibraryGlobalID `json:"instrumentationLibraries,omitempty"`
 	PayloadCollection        *PayloadCollection                `json:"payloadCollection,omitempty"`
+	CodeAttributes           *CodeAttributes                   `json:"codeAttributes,omitempty"`
 }
 
 type InstrumentationRuleInput struct {
@@ -301,11 +322,12 @@ type InstrumentationRuleInput struct {
 	Workloads                []*PodWorkloadInput                    `json:"workloads,omitempty"`
 	InstrumentationLibraries []*InstrumentationLibraryGlobalIDInput `json:"instrumentationLibraries,omitempty"`
 	PayloadCollection        *PayloadCollectionInput                `json:"payloadCollection,omitempty"`
+	CodeAttributes           *CodeAttributesInput                   `json:"codeAttributes,omitempty"`
 }
 
 type K8sActualNamespace struct {
 	Name             string             `json:"name"`
-	Selected         *bool              `json:"selected,omitempty"`
+	Selected         bool               `json:"selected"`
 	K8sActualSources []*K8sActualSource `json:"k8sActualSources"`
 }
 
@@ -394,6 +416,7 @@ type NodeCollectorAnalyze struct {
 
 type OdigosAnalyze struct {
 	OdigosVersion        *EntityProperty          `json:"odigosVersion"`
+	KubernetesVersion    *EntityProperty          `json:"kubernetesVersion"`
 	Tier                 *EntityProperty          `json:"tier"`
 	InstallationMethod   *EntityProperty          `json:"installationMethod"`
 	NumberOfDestinations int                      `json:"numberOfDestinations"`

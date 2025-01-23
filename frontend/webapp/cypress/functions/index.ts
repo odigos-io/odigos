@@ -1,4 +1,5 @@
 import { DATA_IDS } from '../constants';
+export * from './cy-alias';
 
 interface GetCrdIdsOptions {
   namespace: string;

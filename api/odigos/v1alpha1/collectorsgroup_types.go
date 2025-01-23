@@ -17,8 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
-	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -41,7 +41,7 @@ type CollectorsGroupResourcesSettings struct {
 	MaxReplicas *int `json:"maxReplicas,omitempty"`
 
 	// MemoryRequestMiB is the memory resource request to be used on the pod template.
-	// it will be embedded in the as a resource request of the form "memory: <value>Mi"
+	// it will be embedded in the as a resource request of the form `memory: <value>Mi`
 	MemoryRequestMiB int `json:"memoryRequestMiB"`
 
 	// This option sets the limit on the memory usage of the collector.
@@ -52,10 +52,10 @@ type CollectorsGroupResourcesSettings struct {
 	MemoryLimitMiB int `json:"memoryLimitMiB"`
 
 	// CPU resource request to be used on the pod template.
-	// it will be embedded in the as a resource request of the form "cpu: <value>m"
+	// it will be embedded in the as a resource request of the form `cpu: <value>m`
 	CpuRequestMillicores int `json:"cpuRequestMillicores"`
 	// CPU resource limit to be used on the pod template.
-	// it will be embedded in the as a resource limit of the form "cpu: <value>m"
+	// it will be embedded in the as a resource limit of the form `cpu: <value>m`
 	CpuLimitMillicores int `json:"cpuLimitMillicores"`
 
 	// this parameter sets the "limit_mib" parameter in the memory limiter configuration for the collector.

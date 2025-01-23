@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	ErrCtxIsNil = errors.New("context is nil when trying to get kube client")
+	ErrCtxIsNil             = errors.New("context is nil when trying to get kube client")
 	ErrCtxWithoutKubeClient = errors.New("context does not contain kube client")
 )
 

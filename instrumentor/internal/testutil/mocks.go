@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
-	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -130,6 +130,34 @@ func NewMockTestStatefulSet(ns *corev1.Namespace) *appsv1.StatefulSet {
 						},
 					},
 				},
+			},
+		},
+	}
+}
+
+// NewMockSource returns a single source for a workload (deployment, daemonset, statefulset)
+func NewMockSource(workloadObject client.Object) *odigosv1.Source {
+	gvk, _ := apiutil.GVKForObject(workloadObject, scheme.Scheme)
+	namespace := workloadObject.GetNamespace()
+	if gvk.Kind == string(workload.WorkloadKindNamespace) && len(namespace) == 0 {
+		namespace = workloadObject.GetName()
+	}
+	return &odigosv1.Source{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      workload.CalculateWorkloadRuntimeObjectName(workloadObject.GetName(), gvk.Kind),
+			Namespace: namespace,
+			Labels: map[string]string{
+				k8sconsts.WorkloadNameLabel:      workloadObject.GetName(),
+				k8sconsts.WorkloadNamespaceLabel: namespace,
+				k8sconsts.WorkloadKindLabel:      gvk.Kind,
+			},
+			Finalizers: []string{k8sconsts.DeleteInstrumentationConfigFinalizer},
+		},
+		Spec: odigosv1.SourceSpec{
+			Workload: workload.PodWorkload{
+				Name:      workloadObject.GetName(),
+				Namespace: namespace,
+				Kind:      workload.WorkloadKind(gvk.Kind),
 			},
 		},
 	}

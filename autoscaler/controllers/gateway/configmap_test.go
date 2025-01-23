@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common/config"
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -117,7 +117,7 @@ func TestAddSelfTelemetryPipeline(t *testing.T) {
 			assert.Equal(t, []string{"prometheus"}, c.Service.Pipelines["metrics/otelcol"].Receivers)
 			assert.Equal(t, []string{"resource/pod-name"}, c.Service.Pipelines["metrics/otelcol"].Processors)
 			assert.Equal(t, []string{"otlp/ui"}, c.Service.Pipelines["metrics/otelcol"].Exporters)
-			assert.Equal(t, fmt.Sprintf("0.0.0.0:%d", consts.OdigosNodeCollectorOwnTelemetryPortDefault), c.Service.Telemetry.Metrics["address"])
+			assert.Equal(t, fmt.Sprintf("0.0.0.0:%d", k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault), c.Service.Telemetry.Metrics["address"])
 			for pipelineName, pipeline := range c.Service.Pipelines {
 				if pipelineName == "metrics/otelcol" {
 					assert.NotContains(t, pipeline.Processors, "odigostrafficmetrics")

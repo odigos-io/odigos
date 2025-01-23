@@ -18,15 +18,15 @@ spec:
       displayName: Jaeger OTLP gRPC Endpoint
       componentType: input
       componentProps:
-        type: text
         required: true
+        tooltip: The format is `host:port`, host is required, port is optional and defaults to the default OTLP gRPC port `4317`
     - name: JAEGER_TLS_ENABLED
       displayName: Enable TLS
       componentType: checkbox
       initialValue: false
       componentProps:
         required: false
-        tooltip: 'Secure connection (Transport Layer Security)'
+        tooltip: 'Secure connection'
       customReadDataLabels:
         - condition: 'true'
           title: 'TLS'
@@ -38,10 +38,9 @@ spec:
       displayName: Certificate Authority
       componentType: textarea
       componentProps:
-        type: text
         required: false
         placeholder: '-----BEGIN CERTIFICATE-----'
-        tooltip: 'When using TLS, provide the CA certificate to verify the server. If empty uses system root CA'
+        tooltip: 'When using TLS, provide the CA certificate in PEM format to verify the server. If empty uses system root CA'
       renderCondition: ['JAEGER_TLS_ENABLED', '==', 'true']
       hideFromReadData: ['true']
   testConnectionSupported: true

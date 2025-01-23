@@ -8,10 +8,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
@@ -19,20 +20,21 @@ import (
 	"github.com/odigos-io/odigos/frontend/services/describe/odigos_describe"
 	"github.com/odigos-io/odigos/frontend/services/describe/source_describe"
 	testconnection "github.com/odigos-io/odigos/frontend/services/test_connection"
-	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 // APITokens is the resolver for the apiTokens field.
 func (r *computePlatformResolver) APITokens(ctx context.Context, obj *model.ComputePlatform) ([]*model.APIToken, error) {
+	ns := env.GetCurrentNamespace()
+
 	// The result should always be 0 or 1:
 	// If it's 0, it means this is the OSS version.
 	// If it's 1, it means this is the Enterprise version.
-	secret, err := kube.DefaultClient.CoreV1().Secrets(services.OdigosSystemNamespace).Get(ctx, k8sconsts.OdigosProSecretName, metav1.GetOptions{})
+
+	secret, err := kube.DefaultClient.CoreV1().Secrets(ns).Get(ctx, k8sconsts.OdigosProSecretName, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return make([]*model.APIToken, 0), nil
@@ -77,51 +79,37 @@ func (r *computePlatformResolver) APITokens(ctx context.Context, obj *model.Comp
 
 // K8sActualNamespaces is the resolver for the k8sActualNamespaces field.
 func (r *computePlatformResolver) K8sActualNamespaces(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualNamespace, error) {
-	namespacesResponse := services.GetK8SNamespaces(ctx)
-
-	K8sActualNamespaces := make([]*model.K8sActualNamespace, len(namespacesResponse.Namespaces))
-	for i, namespace := range namespacesResponse.Namespaces {
-
-		namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, namespace.Name, metav1.GetOptions{})
-		if err != nil {
-			return nil, err
-		}
-
-		nsInstrumented := workload.GetInstrumentationLabelValue(namespace.GetLabels())
-
-		K8sActualNamespaces[i] = &model.K8sActualNamespace{
-			Name:     namespace.Name,
-			Selected: nsInstrumented,
-		}
+	k8sNamespaces, err := services.GetK8SNamespaces(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	return K8sActualNamespaces, nil
+	k8sActualNamespaces := make([]*model.K8sActualNamespace, len(k8sNamespaces.Namespaces))
+	for i, namespace := range k8sNamespaces.Namespaces {
+		k8sActualNamespaces[i] = &namespace
+	}
+
+	return k8sActualNamespaces, nil
 }
 
 // K8sActualNamespace is the resolver for the k8sActualNamespace field.
 func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *model.ComputePlatform, name string) (*model.K8sActualNamespace, error) {
-	namespaceActualSources, err := services.GetWorkloadsInNamespace(ctx, name, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	// Convert namespaceActualSources to []*model.K8sActualSource
-	namespaceActualSourcesPointers := make([]*model.K8sActualSource, len(namespaceActualSources))
-	for i, source := range namespaceActualSources {
-		namespaceActualSourcesPointers[i] = &source
-	}
-
 	namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
+	nsName := namespace.Namespace
 
-	nsInstrumented := workload.GetInstrumentationLabelValue(namespace.GetLabels())
+	// check if entire namespace is instrumented
+	crd, err := services.GetSourceCRD(ctx, nsName, nsName, services.WorkloadKindNamespace)
+	if err != nil && !strings.Contains(err.Error(), "not found") {
+		return &model.K8sActualNamespace{}, err
+	}
+	instrumented := crd != nil && !crd.Spec.DisableInstrumentation
 
 	return &model.K8sActualNamespace{
-		Name:             name,
-		Selected:         nsInstrumented,
-		K8sActualSources: namespaceActualSourcesPointers,
+		Name:     namespace.Name,
+		Selected: instrumented,
 	}, nil
 }
 
@@ -153,15 +141,16 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 
 // Destinations is the resolver for the destinations field.
 func (r *computePlatformResolver) Destinations(ctx context.Context, obj *model.ComputePlatform) ([]*model.Destination, error) {
-	odigosns := consts.DefaultOdigosNamespace
-	dests, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).List(ctx, metav1.ListOptions{})
+	ns := env.GetCurrentNamespace()
+
+	dests, err := kube.DefaultClient.OdigosClient.Destinations(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	var destinations []*model.Destination
 	for _, dest := range dests.Items {
-		secretFields, err := services.GetDestinationSecretFields(ctx, odigosns, &dest)
+		secretFields, err := services.GetDestinationSecretFields(ctx, ns, &dest)
 		if err != nil {
 			return nil, err
 		}
@@ -177,10 +166,10 @@ func (r *computePlatformResolver) Destinations(ctx context.Context, obj *model.C
 // Actions is the resolver for the actions field.
 func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.ComputePlatform) ([]*model.PipelineAction, error) {
 	var response []*model.PipelineAction
-	odigosns := consts.DefaultOdigosNamespace
+	ns := env.GetCurrentNamespace()
 
 	// AddClusterInfos actions
-	icaActions, err := kube.DefaultClient.ActionsClient.AddClusterInfos(odigosns).List(ctx, metav1.ListOptions{})
+	icaActions, err := kube.DefaultClient.ActionsClient.AddClusterInfos(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -198,7 +187,7 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 	}
 
 	// DeleteAttributes actions
-	daActions, err := kube.DefaultClient.ActionsClient.DeleteAttributes(odigosns).List(ctx, metav1.ListOptions{})
+	daActions, err := kube.DefaultClient.ActionsClient.DeleteAttributes(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -216,7 +205,7 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 	}
 
 	// RenameAttributes actions
-	raActions, err := kube.DefaultClient.ActionsClient.RenameAttributes(odigosns).List(ctx, metav1.ListOptions{})
+	raActions, err := kube.DefaultClient.ActionsClient.RenameAttributes(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +223,7 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 	}
 
 	// ErrorSamplers actions
-	esActions, err := kube.DefaultClient.ActionsClient.ErrorSamplers(odigosns).List(ctx, metav1.ListOptions{})
+	esActions, err := kube.DefaultClient.ActionsClient.ErrorSamplers(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -252,7 +241,7 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 	}
 
 	// LatencySamplers actions
-	lsActions, err := kube.DefaultClient.ActionsClient.LatencySamplers(odigosns).List(ctx, metav1.ListOptions{})
+	lsActions, err := kube.DefaultClient.ActionsClient.LatencySamplers(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -270,7 +259,7 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 	}
 
 	// ProbabilisticSamplers actions
-	psActions, err := kube.DefaultClient.ActionsClient.ProbabilisticSamplers(odigosns).List(ctx, metav1.ListOptions{})
+	psActions, err := kube.DefaultClient.ActionsClient.ProbabilisticSamplers(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -288,7 +277,7 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 	}
 
 	// PiiMaskings actions
-	piActions, err := kube.DefaultClient.ActionsClient.PiiMaskings(odigosns).List(ctx, metav1.ListOptions{})
+	piActions, err := kube.DefaultClient.ActionsClient.PiiMaskings(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -325,33 +314,57 @@ func (r *destinationResolver) Conditions(ctx context.Context, obj *model.Destina
 }
 
 // K8sActualSources is the resolver for the k8sActualSources field.
-func (r *k8sActualNamespaceResolver) K8sActualSources(ctx context.Context, obj *model.K8sActualNamespace, instrumentationLabeled *bool) ([]*model.K8sActualSource, error) {
-	namespaceActualSources, err := services.GetWorkloadsInNamespace(ctx, obj.Name, instrumentationLabeled)
+func (r *k8sActualNamespaceResolver) K8sActualSources(ctx context.Context, obj *model.K8sActualNamespace) ([]*model.K8sActualSource, error) {
+	ns := obj.Name
+	nsWorkloads, err := services.GetWorkloadsInNamespace(ctx, ns)
 	if err != nil {
 		return nil, err
 	}
 
-	// Convert namespaceActualSources to []*model.K8sActualSource
-	namespaceActualSourcesPointers := make([]*model.K8sActualSource, len(namespaceActualSources))
-	for i, source := range namespaceActualSources {
-		namespaceActualSourcesPointers[i] = &source
+	// Convert nsWorkloads to []*model.K8sActualSource
+	nsActualSources := make([]*model.K8sActualSource, len(nsWorkloads))
+	for i, workload := range nsWorkloads {
+		nsActualSources[i] = &workload
+
+		namespaceSource, err := services.GetSourceCRD(ctx, ns, ns, services.WorkloadKindNamespace)
+		if err != nil && !strings.Contains(err.Error(), "not found") {
+			return make([]*model.K8sActualSource, 0), err
+		}
+
+		workloadSource, err := services.GetSourceCRD(ctx, ns, workload.Name, services.WorkloadKind(workload.Kind))
+		if err != nil && !strings.Contains(err.Error(), "not found") {
+			return make([]*model.K8sActualSource, 0), err
+		}
+
+		nsInstrumented := namespaceSource != nil && !namespaceSource.Spec.DisableInstrumentation
+		srcInstrumented := workloadSource != nil && !workloadSource.Spec.DisableInstrumentation
+
+		instrumented := (nsInstrumented && (srcInstrumented || workloadSource == nil)) || (!nsInstrumented && srcInstrumented)
+		nsActualSources[i].Selected = &instrumented
 	}
 
-	return namespaceActualSourcesPointers, nil
+	return nsActualSources, nil
 }
 
 // UpdateAPIToken is the resolver for the updateApiToken field.
 func (r *mutationResolver) UpdateAPIToken(ctx context.Context, token string) (bool, error) {
-	err := pro.UpdateOdigosToken(ctx, kube.DefaultClient, consts.DefaultOdigosNamespace, token)
+	ns := env.GetCurrentNamespace()
+	err := pro.UpdateOdigosToken(ctx, kube.DefaultClient, ns, token)
 	return err == nil, nil
 }
 
 // PersistK8sNamespace is the resolver for the persistK8sNamespace field.
 func (r *mutationResolver) PersistK8sNamespace(ctx context.Context, namespace model.PersistNamespaceItemInput) (bool, error) {
-	jsonMergePayload := services.GetJsonMergePatchForInstrumentationLabel(&namespace.FutureSelected)
-	_, err := kube.DefaultClient.CoreV1().Namespaces().Patch(ctx, namespace.Name, types.MergePatchType, jsonMergePayload, metav1.PatchOptions{})
+	persistObjects := []model.PersistNamespaceSourceInput{}
+	persistObjects = append(persistObjects, model.PersistNamespaceSourceInput{
+		Name:     namespace.Name,
+		Kind:     model.K8sResourceKind(services.WorkloadKindNamespace),
+		Selected: namespace.FutureSelected,
+	})
+
+	err := services.SyncWorkloadsInNamespace(ctx, namespace.Name, persistObjects)
 	if err != nil {
-		return false, fmt.Errorf("failed to patch namespace: %v", err)
+		return false, fmt.Errorf("failed to sync workloads: %v", err)
 	}
 
 	return true, nil
@@ -396,8 +409,7 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 
 // CreateNewDestination is the resolver for the createNewDestination field.
 func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination model.DestinationInput) (*model.Destination, error) {
-	odigosns := consts.DefaultOdigosNamespace
-
+	ns := env.GetCurrentNamespace()
 	destType := common.DestinationType(destination.Type)
 	destName := destination.Name
 
@@ -434,29 +446,29 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 
 	createSecret := len(secretFields) > 0
 	if createSecret {
-		secretRef, err := services.CreateDestinationSecret(ctx, destType, secretFields, odigosns)
+		secretRef, err := services.CreateDestinationSecret(ctx, destType, secretFields, ns)
 		if err != nil {
 			return nil, err
 		}
 		k8sDestination.Spec.SecretRef = secretRef
 	}
 
-	dest, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).Create(ctx, &k8sDestination, metav1.CreateOptions{})
+	dest, err := kube.DefaultClient.OdigosClient.Destinations(ns).Create(ctx, &k8sDestination, metav1.CreateOptions{})
 	if err != nil {
 		if createSecret {
-			kube.DefaultClient.CoreV1().Secrets(odigosns).Delete(ctx, destName, metav1.DeleteOptions{})
+			kube.DefaultClient.CoreV1().Secrets(ns).Delete(ctx, destName, metav1.DeleteOptions{})
 		}
 		return nil, err
 	}
 
 	if dest.Spec.SecretRef != nil {
-		err = services.AddDestinationOwnerReferenceToSecret(ctx, odigosns, dest)
+		err = services.AddDestinationOwnerReferenceToSecret(ctx, ns, dest)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	secretFieldsMap, err := services.GetDestinationSecretFields(ctx, odigosns, dest)
+	secretFieldsMap, err := services.GetDestinationSecretFields(ctx, ns, dest)
 	if err != nil {
 		return nil, err
 	}
@@ -467,8 +479,7 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 
 // UpdateDestination is the resolver for the updateDestination field.
 func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, destination model.DestinationInput) (*model.Destination, error) {
-	odigosns := consts.DefaultOdigosNamespace
-
+	ns := env.GetCurrentNamespace()
 	destType := common.DestinationType(destination.Type)
 	destName := destination.Name
 
@@ -498,7 +509,7 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, des
 	dataFields, secretFields := services.TransformFieldsToDataAndSecrets(destTypeConfig, fields)
 
 	// Retrieve the existing destination
-	dest, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).Get(ctx, id, metav1.GetOptions{})
+	dest, err := kube.DefaultClient.OdigosClient.Destinations(ns).Get(ctx, id, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get destination: %v", err)
 	}
@@ -509,36 +520,36 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, des
 
 	if !destUpdateHasSecrets && destCurrentlyHasSecrets {
 		// Delete the secret if it's not needed anymore
-		err := kube.DefaultClient.CoreV1().Secrets(odigosns).Delete(ctx, dest.Spec.SecretRef.Name, metav1.DeleteOptions{})
+		err := kube.DefaultClient.CoreV1().Secrets(ns).Delete(ctx, dest.Spec.SecretRef.Name, metav1.DeleteOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("failed to delete secret: %v", err)
 		}
 		dest.Spec.SecretRef = nil
 	} else if destUpdateHasSecrets && !destCurrentlyHasSecrets {
 		// Create the secret if it was added in this update
-		secretRef, err := services.CreateDestinationSecret(ctx, destType, secretFields, odigosns)
+		secretRef, err := services.CreateDestinationSecret(ctx, destType, secretFields, ns)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create secret: %v", err)
 		}
 		dest.Spec.SecretRef = secretRef
 		// Add owner reference to the secret
-		err = services.AddDestinationOwnerReferenceToSecret(ctx, odigosns, dest)
+		err = services.AddDestinationOwnerReferenceToSecret(ctx, ns, dest)
 		if err != nil {
 			return nil, fmt.Errorf("failed to add owner reference to secret: %v", err)
 		}
 	} else if destUpdateHasSecrets && destCurrentlyHasSecrets {
 		// Update the secret in case it is modified
-		secret, err := kube.DefaultClient.CoreV1().Secrets(odigosns).Get(ctx, dest.Spec.SecretRef.Name, metav1.GetOptions{})
+		secret, err := kube.DefaultClient.CoreV1().Secrets(ns).Get(ctx, dest.Spec.SecretRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("failed to get secret: %v", err)
 		}
 		origSecret := secret.DeepCopy()
 
 		secret.StringData = secretFields
-		_, err = kube.DefaultClient.CoreV1().Secrets(odigosns).Update(ctx, secret, metav1.UpdateOptions{})
+		_, err = kube.DefaultClient.CoreV1().Secrets(ns).Update(ctx, secret, metav1.UpdateOptions{})
 		if err != nil {
 			// Rollback secret if needed
-			_, rollbackErr := kube.DefaultClient.CoreV1().Secrets(odigosns).Update(ctx, origSecret, metav1.UpdateOptions{})
+			_, rollbackErr := kube.DefaultClient.CoreV1().Secrets(ns).Update(ctx, origSecret, metav1.UpdateOptions{})
 			if rollbackErr != nil {
 				fmt.Printf("Failed to rollback secret: %v\n", rollbackErr)
 			}
@@ -553,13 +564,13 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, des
 	dest.Spec.Signals = services.ExportedSignalsObjectToSlice(destination.ExportedSignals)
 
 	// Update the destination in Kubernetes
-	updatedDest, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).Update(ctx, dest, metav1.UpdateOptions{})
+	updatedDest, err := kube.DefaultClient.OdigosClient.Destinations(ns).Update(ctx, dest, metav1.UpdateOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to update destination: %v", err)
 	}
 
 	// Get the secret fields for the updated destination
-	secretFields, err = services.GetDestinationSecretFields(ctx, odigosns, updatedDest)
+	secretFields, err = services.GetDestinationSecretFields(ctx, ns, updatedDest)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get secret fields: %v", err)
 	}
@@ -572,8 +583,8 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, des
 
 // DeleteDestination is the resolver for the deleteDestination field.
 func (r *mutationResolver) DeleteDestination(ctx context.Context, id string) (bool, error) {
-	odigosns := consts.DefaultOdigosNamespace
-	err := kube.DefaultClient.OdigosClient.Destinations(odigosns).Delete(ctx, id, metav1.DeleteOptions{})
+	ns := env.GetCurrentNamespace()
+	err := kube.DefaultClient.OdigosClient.Destinations(ns).Delete(ctx, id, metav1.DeleteOptions{})
 
 	if err != nil {
 		return false, fmt.Errorf("failed to delete destination: %w", err)

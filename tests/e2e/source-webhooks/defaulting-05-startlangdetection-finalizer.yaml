@@ -1,0 +1,11 @@
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: 05-startlangdetection-finalizer
+  namespace: default
+spec:
+  disableInstrumentation: true
+  workload:
+    name: startlangdetection-finalizer
+    namespace: default
+    kind: Deployment

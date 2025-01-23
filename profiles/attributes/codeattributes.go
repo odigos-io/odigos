@@ -7,6 +7,6 @@ import (
 
 var CodeAttributesProfile = profile.Profile{
 	ProfileName:      common.ProfileName("code-attributes"),
-	MinimumTier:      common.OdigosTier(common.OnPremOdigosTier),
+	MinimumTier:      common.OnPremOdigosTier,
 	ShortDescription: "Record span attributes in 'code' namespace where supported",
 }

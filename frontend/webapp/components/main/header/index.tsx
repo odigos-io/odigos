@@ -8,7 +8,7 @@ import { PlatformTitle } from './cp-title';
 import { NotificationManager } from '@/components';
 import { OdigosLogoText, SlackLogo, TerminalIcon } from '@/assets';
 import { ConnectionStatus, IconButton } from '@/reuseable-components';
-import { DRAWER_OTHER_TYPES, useConnectionStore, useDrawerStore } from '@/store';
+import { DRAWER_OTHER_TYPES, useDrawerStore, useStatusStore } from '@/store';
 
 interface MainHeaderProps {}
 
@@ -33,7 +33,7 @@ const AlignRight = styled(FlexRow)`
 
 export const MainHeader: React.FC<MainHeaderProps> = () => {
   const { setSelectedItem } = useDrawerStore();
-  const { connecting, active, title, message } = useConnectionStore();
+  const { status, title, message } = useStatusStore();
 
   const handleClickCli = () => setSelectedItem({ type: DRAWER_OTHER_TYPES.ODIGOS_CLI, id: DRAWER_OTHER_TYPES.ODIGOS_CLI });
   const handleClickSlack = () => window.open(SLACK_LINK, '_blank', 'noopener noreferrer');
@@ -43,7 +43,7 @@ export const MainHeader: React.FC<MainHeaderProps> = () => {
       <AlignLeft>
         <OdigosLogoText size={80} />
         <PlatformTitle type={PlatformTypes.K8S} />
-        {!connecting && <ConnectionStatus title={title} subtitle={message} isActive={active} />}
+        <ConnectionStatus title={title} subtitle={message} status={status} />
       </AlignLeft>
 
       <AlignRight>

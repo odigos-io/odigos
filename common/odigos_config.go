@@ -104,7 +104,4 @@ type OdigosConfiguration struct {
 	CollectorNode             *CollectorNodeConfiguration    `json:"collectorNode,omitempty"`
 	Profiles                  []ProfileName                  `json:"profiles,omitempty"`
 	AllowConcurrentAgents     *bool                          `json:"allowConcurrentAgents,omitempty"`
-	// this is internal currently, and is not exposed on the CLI / helm
-	// used for odigos enterprise
-	GoAutoIncludeCodeAttributes bool `json:"goAutoIncludeCodeAttributes,omitempty"`
 }

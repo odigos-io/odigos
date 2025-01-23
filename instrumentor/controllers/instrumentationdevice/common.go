@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils/versionsupport"
 	"github.com/odigos-io/odigos/instrumentor/instrumentation"
 	"github.com/odigos-io/odigos/instrumentor/sdks"
 	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
-	odigosk8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -48,7 +48,7 @@ func isDataCollectionReady(ctx context.Context, c client.Client) bool {
 	nodeCollectorsGroup := odigosv1.CollectorsGroup{}
 	err := c.Get(ctx, client.ObjectKey{
 		Namespace: env.GetCurrentNamespace(),
-		Name:      odigosk8sconsts.OdigosNodeCollectorCollectorGroupName,
+		Name:      k8sconsts.OdigosNodeCollectorCollectorGroupName,
 	}, &nodeCollectorsGroup)
 
 	if err != nil {

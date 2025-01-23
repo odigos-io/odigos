@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
 
@@ -28,18 +29,22 @@ import (
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
+	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/dynamic"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	"github.com/odigos-io/odigos/scheduler/clusterinfo"
 	"github.com/odigos-io/odigos/scheduler/controllers/clustercollectorsgroup"
 	"github.com/odigos-io/odigos/scheduler/controllers/nodecollectorsgroup"
 	"github.com/odigos-io/odigos/scheduler/controllers/odigosconfig"
@@ -77,8 +82,10 @@ func main() {
 	logger := zapr.NewLogger(zapLogger)
 	ctrl.SetLogger(logger)
 
-	tier := env.GetOdigosTierFromEnv()
 	odigosNs := env.GetCurrentNamespace()
+	tier := env.GetOdigosTierFromEnv()
+	odigosVersion := os.Getenv(consts.OdigosVersionEnvVarName)
+
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
@@ -98,6 +105,12 @@ func main() {
 				&odigosv1.Destination{}: {
 					Field: nsSelector,
 				},
+				&odigosv1.Processor{}: {
+					Field: nsSelector,
+				},
+				&odigosv1.InstrumentationRule{}: {
+					Field: nsSelector,
+				},
 			},
 		},
 		HealthProbeBindAddress: probeAddr,
@@ -107,6 +120,23 @@ func main() {
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
+	}
+
+	// create dynamic k8s client to apply profile manifests
+	dyanmicClient, err := dynamic.NewForConfig(mgr.GetConfig())
+	if err != nil {
+		setupLog.Error(err, "unable to create dynamic client")
+		os.Exit(1)
+	}
+
+	clientset, err := kubernetes.NewForConfig(mgr.GetConfig())
+	if err != nil {
+		setupLog.Error(err, "unable to create kubernetes client")
+		os.Exit(1)
+	}
+	err = clusterinfo.RecordClusterInfo(context.Background(), clientset, odigosNs)
+	if err != nil {
+		setupLog.Error(err, "unable to record cluster info, skipping")
 	}
 
 	err = clustercollectorsgroup.SetupWithManager(mgr)
@@ -119,7 +149,7 @@ func main() {
 		setupLog.Error(err, "unable to create controllers for node collectors group")
 		os.Exit(1)
 	}
-	err = odigosconfig.SetupWithManager(mgr, tier)
+	err = odigosconfig.SetupWithManager(mgr, tier, odigosVersion, dyanmicClient)
 	if err != nil {
 		setupLog.Error(err, "unable to create controllers for odigos config")
 		os.Exit(1)

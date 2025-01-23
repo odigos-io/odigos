@@ -3,8 +3,8 @@ package controllers
 import (
 	"context"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	predicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -29,7 +29,7 @@ func (r *DataCollectionDaemonSetReconciler) Reconcile(ctx context.Context, req c
 	var datacollectionCollectortGroup odigosv1.CollectorsGroup
 	if err := r.Get(ctx, types.NamespacedName{
 		Namespace: ds.Namespace,
-		Name:      consts.OdigosNodeCollectorDaemonSetName,
+		Name:      k8sconsts.OdigosNodeCollectorDaemonSetName,
 	}, &datacollectionCollectortGroup); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
