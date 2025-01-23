@@ -16,19 +16,18 @@ import (
 )
 
 type dataSizesMetricsProcessor struct {
-	logger                         *zap.Logger
-	logSize, metricSize, traceSize metric.Int64Counter
-	tracesSizer                    ptrace.Sizer
-	metricsSizer                   pmetric.Sizer
-	logsSizer                      plog.Sizer
-	resAttrsKeys                   []string
-	samplingFraction               float64
-	inverseSamplingFraction        int64
+	logger                  *zap.Logger
+	tracesSizer             ptrace.Sizer
+	metricsSizer            pmetric.Sizer
+	logsSizer               plog.Sizer
+	resAttrsKeys            []string
+	samplingFraction        float64
+	inverseSamplingFraction int64
 
 	obsrep *metadata.TelemetryBuilder
 }
 
-func newThroughputMeasurementProcessor(set processor.Settings, mp metric.MeterProvider, cfg *Config) (*dataSizesMetricsProcessor, error) {
+func newThroughputMeasurementProcessor(set processor.Settings, cfg *Config) (*dataSizesMetricsProcessor, error) {
 	samplingFraction := cfg.SamplingRatio
 	var inverseSamplingFraction int64
 	if samplingFraction != 0 {
@@ -104,7 +103,7 @@ func (p *dataSizesMetricsProcessor) meterAttributes(md pmetric.Metrics) []attrib
 
 func (p *dataSizesMetricsProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
 	if p.samplingFraction != 0 && rand.Float64() < p.samplingFraction {
-		p.traceSize.Add(ctx, int64(p.tracesSizer.TracesSize(td))*p.inverseSamplingFraction, metric.WithAttributes(p.traceAttributes(td)...))
+		p.obsrep.TraceDataSize.Add(ctx, int64(p.tracesSizer.TracesSize(td))*p.inverseSamplingFraction, metric.WithAttributes(p.traceAttributes(td)...))
 	}
 	p.obsrep.TraceDataSize.Add(ctx, int64(td.SpanCount()))
 	return td, nil
@@ -112,7 +111,7 @@ func (p *dataSizesMetricsProcessor) processTraces(ctx context.Context, td ptrace
 
 func (p *dataSizesMetricsProcessor) processLogs(ctx context.Context, ld plog.Logs) (plog.Logs, error) {
 	if p.samplingFraction != 0 && rand.Float64() < p.samplingFraction {
-		p.logSize.Add(ctx, int64(p.logsSizer.LogsSize(ld))*p.inverseSamplingFraction, metric.WithAttributes(p.logAttributes(ld)...))
+		p.obsrep.LogDataSize.Add(ctx, int64(p.logsSizer.LogsSize(ld))*p.inverseSamplingFraction, metric.WithAttributes(p.logAttributes(ld)...))
 	}
 	p.obsrep.LogDataSize.Add(ctx, int64(ld.LogRecordCount()))
 	return ld, nil
@@ -120,7 +119,7 @@ func (p *dataSizesMetricsProcessor) processLogs(ctx context.Context, ld plog.Log
 
 func (p *dataSizesMetricsProcessor) processMetrics(ctx context.Context, md pmetric.Metrics) (pmetric.Metrics, error) {
 	if p.samplingFraction != 0 && rand.Float64() < p.samplingFraction {
-		p.metricSize.Add(ctx, int64(p.metricsSizer.MetricsSize(md))*p.inverseSamplingFraction, metric.WithAttributes(p.meterAttributes(md)...))
+		p.obsrep.MetricDataSize.Add(ctx, int64(p.metricsSizer.MetricsSize(md))*p.inverseSamplingFraction, metric.WithAttributes(p.meterAttributes(md)...))
 	}
 	p.obsrep.MetricDataSize.Add(ctx, int64(md.MetricCount()))
 	return md, nil

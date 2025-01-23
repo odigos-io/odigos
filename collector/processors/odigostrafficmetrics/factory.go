@@ -38,7 +38,7 @@ func createTracesProcessor(
 	nextConsumer consumer.Traces,
 ) (processor.Traces, error) {
 	oCfg := cfg.(*Config)
-	tmp, err := newThroughputMeasurementProcessor(set, set.TelemetrySettings.MeterProvider, oCfg)
+	tmp, err := newThroughputMeasurementProcessor(set, oCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func createLogsProcessor(
 	nextConsumer consumer.Logs,
 ) (processor.Logs, error) {
 	oCfg := cfg.(*Config)
-	tmp, err := newThroughputMeasurementProcessor(set, set.TelemetrySettings.MeterProvider, oCfg)
+	tmp, err := newThroughputMeasurementProcessor(set, oCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func createMetricsProcessor(
 	nextConsumer consumer.Metrics,
 ) (processor.Metrics, error) {
 	oCfg := cfg.(*Config)
-	tmp, err := newThroughputMeasurementProcessor(set, set.TelemetrySettings.MeterProvider, oCfg)
+	tmp, err := newThroughputMeasurementProcessor(set, oCfg)
 	if err != nil {
 		return nil, err
 	}
