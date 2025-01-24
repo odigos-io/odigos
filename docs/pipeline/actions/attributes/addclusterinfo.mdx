@@ -1,70 +1,98 @@
 ---
 title: "Add Cluster Info"
+description: "This action adds static resource attributes to spans, metrics data points and log records. It is useful to add cluster-wide attributes to all telemetry signals."
 sidebarTitle: "Add Cluster Info"
+icon: "layer-group"
 ---
 
-The "Add Cluster Info" Odigos Action can be used to add resource attributes 
-to telemetry signals originated from the k8s cluster where the Odigos is running.
+import AssumeNoMeaning from '/snippets/assume-no-meaning.mdx';
 
-### Mechanism
+## Considerations
 
-This action adds static **OpenTelemetry Resource Attributes** to spans, metrics data points and log records.
-It is useful to add cluster-wide attributes to all telemetry signals, we recommend:
-- `k8s.cluster.name`: The name of the k8s cluster which can be useful to distinguish between different clusters.
-- `deployment.environment`: The environment of the cluster (e.g. `production`, `staging`, `development`, etc).
+<Warning>
+  Before enabling **add cluster info**, please note the following:
+  - This action is meant to be used for **static** attributes that are known in advanced. It is not suitable for dynamic attributes that need to be extracted from an API or calculated at runtime.
+  - Some destinations may require specific configuration to index resource attributes and make them available for querying. Please refer to the documentation of the destination you are using for more information.
+  - If the attribute already exists in the telemetry signal, the value will be overwritten by the value provided in the action.
+  - An empty string is a valid value for the `attributeStringValue` field
+</Warning>
 
-You can also include any other static value attribute that is meaningful to you like `team.name`, etc.
+## Configuration Options
 
-### Basic Example
+<AccordionGroup>
+  <Accordion title="actionName">
+    **actionName** `string` : Allows you to attach a meaningful name to the action for convenience.
+    - This field is *optional*
+    - <AssumeNoMeaning />
+  </Accordion>
+  <Accordion title="notes">
+    **notes** `string` : Allows you to attach notes regarding the action for convenience.
+    - This field is *optional*
+    - <AssumeNoMeaning />
+  </Accordion>
+  <Accordion title="disabled">
+    **disabled** `boolean` : Allows you to temporarily disable the action, but keep it saved for future use.
+    - This field is *optional*, and defaults to `false`
+  </Accordion>
+  <Accordion title="signals *">
+    **signals** `string[]` : An array with the signals that the processor will act on.
+    - This field is *required*
+    - Supported values: `TRACES`, `METRICS`, `LOGS`
+  </Accordion>
+  <Accordion title="clusterAttributes *">
+    **clusterAttributes** `object[]` : An array of attributes to be added to the telemetry signals.
+    - This field is *required*
+    <AccordionGroup>
+      <Accordion title="attributeName *">
+        **attributeName** `string` : The name of the attribute to be added to the telemetry signals.
+        - This field is *required*
+      </Accordion>
+      <Accordion title="attributeStringValue *">
+        **attributeStringValue** `string` : The value of the attribute to be added to the telemetry signals.
+        - This field is *required*
+      </Accordion>
+    </AccordionGroup>
+  </Accordion>
+</AccordionGroup>
 
-The basic example below shows how to insert the `k8s.cluster.name` attribute to all telemetry signals.
+You can include any static value attribute that is meaningful to you, like `team.name` etc.
 
-Create a file named `insert-cluster-name.yaml` with the following content:
+<Tip>
+  We recommend:
+  - `k8s.cluster.name`: The name of the k8s cluster which can be useful to distinguish between different clusters.
+  - `deployment.environment`: The environment of the cluster (e.g. `production`, `staging`, `development`, etc).
+</Tip>
 
-```yaml
-apiVersion: actions.odigos.io/v1alpha1
-kind: AddClusterInfo
-metadata:
-  name: insert-cluster-name
-  namespace: odigos-system
-spec:
-  actionName: insert-cluster-name
-  clusterAttributes:
-    - attributeName: k8s.cluster.name
-      attributeStringValue: my-cluster
-  signals:
-    - TRACES
-    - METRICS
-    - LOGS
-```
+## Basic Example
 
-Apply the action to the cluster:
+The following example demonstrates how to insert the `k8s.cluster.name` attribute to all telemetry signals.
 
-```bash
-kubectl apply -f insert-cluster-name.yaml
-```
+<Steps>
+  <Step>
+    Create a YAML file with the following content:
 
-### Full Action Options
+    ```yaml insert-cluster-name.yaml
+    apiVersion: actions.odigos.io/v1alpha1
+    kind: AddClusterInfo
+    metadata:
+      name: insert-cluster-name
+      namespace: odigos-system
+    spec:
+      actionName: insert-cluster-name
+      clusterAttributes:
+        - attributeName: k8s.cluster.name
+          attributeStringValue: my-cluster
+      signals:
+        - TRACES
+        - METRICS
+        - LOGS
+    ```
+  </Step>
+  <Step>
+    Apply the action to the cluster:
 
-The full list of options available for the "AddClusterInfo" action are:
-
-- `clusterAttributes` (required): An array of attributes to be added to the telemetry signals. Each attribute is defined by the following fields:
-
-  - `attributeName` (required): The name of the attribute to be added to the telemetry signals.
-
-  - `attributeStringValue` (optional): The value of the attribute to be added to the telemetry signals.
-
-- `signals` (require): An array with the signals that the processor will act on (`TRACES`, `METRICS`, `LOGS`).
-
-- `actionName` (optional): Allows you to attach a meaningful name to the action for convenience. Odigos does not use or assume any meaning from this field.
-
-- `notes` (optional): A free-form text field that allows you to attach notes to the action for convenience. Odigos does not use or assume any meaning from this field.
-
-- `disabled` (optional): A boolean field that allows you to disable the action. When set to `true`, the action will not be executed. The default value is `false`.
-
-### Notes
-
-- This action is meant to be used for **static** attributes that are known in advanced. It is not suitable for dynamic attributes that need to be extracted from an api or calculated at runtime.
-- Some destinations may require specific configuration to index resource attributes and make them available for querying. Please refer to the documentation of the destination you are using for more information.
-- If the attribute already exists in the telemetry signal, the value will be overwritten by the value provided in the action.
-- An empty string is a valid value for the `attributeStringValue` field
+    ```bash
+    kubectl apply -f insert-cluster-name.yaml
+    ```
+  </Step>
+</Steps>
