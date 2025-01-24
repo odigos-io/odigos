@@ -190,7 +190,7 @@ spec:
     - name: Instrument Namespace
       try:
         - apply:
-            file: 02-source-ns.yaml
+            file: ../../common/apply/instrument-default-ns.yaml
     - name: Assert Runtime Detected
       try:
         - assert:
@@ -321,7 +321,7 @@ spec:
     - name: Instrument rest of Namespace
       try:
         - apply:
-            file: 02-source-ns.yaml
+            file: ../../common/apply/instrument-default-ns.yaml
     - name: Assert Runtime Detected for all workloads
       try:
         - assert:
@@ -368,7 +368,7 @@ spec:
     - name: Instrument rest of Namespace
       try:
         - apply:
-            file: 02-source-ns.yaml
+            file: ../../common/apply/instrument-default-ns.yaml
     - name: Wait for created source to roll out new revisions
       try:
         - script:
