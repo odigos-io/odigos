@@ -1,9 +1,10 @@
 package googlecloudstorageexporter
 
 import (
-	"cloud.google.com/go/storage"
 	"context"
 	"errors"
+
+	"cloud.google.com/go/storage"
 	"go.opentelemetry.io/collector/exporter"
 
 	"go.opentelemetry.io/collector/consumer"

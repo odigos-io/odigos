@@ -7,7 +7,8 @@ import (
 )
 
 var (
-	Type = component.MustNewType("googlecloudstorage")
+	Type      = component.MustNewType("googlecloudstorage")
+	ScopeName = "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/googlecloudstorageexporter"
 )
 
 const (
