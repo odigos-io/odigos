@@ -245,7 +245,7 @@ func GetSourceCRD(ctx context.Context, nsName string, workloadName string, workl
 	return &list.Items[0], err
 }
 
-func createSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) (*v1alpha1.Source, error) {
+func CreateSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) (*v1alpha1.Source, error) {
 	switch workloadKind {
 	// Namespace is not a workload, but we need it to "select future apps" by creating a Source CRD for it
 	case WorkloadKindNamespace, WorkloadKindDeployment, WorkloadKindStatefulSet, WorkloadKindDaemonSet:
@@ -293,7 +293,7 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 
 		if nsSource != nil {
 			// note: create will return an existing crd without throwing an error
-			source, err := createSourceCRD(ctx, nsName, workloadName, workloadKind)
+			source, err := CreateSourceCRD(ctx, nsName, workloadName, workloadKind)
 			if err != nil {
 				return err
 			}
@@ -323,7 +323,7 @@ func UpdateSourceCRDSpec(ctx context.Context, nsName string, crdName string, spe
 
 func ToggleSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind, enabled bool) error {
 	if enabled {
-		_, err := createSourceCRD(ctx, nsName, workloadName, workloadKind)
+		_, err := CreateSourceCRD(ctx, nsName, workloadName, workloadKind)
 		return err
 	} else {
 		return deleteSourceCRD(ctx, nsName, workloadName, workloadKind)

@@ -397,13 +397,22 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 	reportedName := patchSourceRequest.ReportedName
 
 	source, err := services.GetSourceCRD(ctx, nsName, workloadName, workloadKind)
-	if err != nil && !strings.Contains(err.Error(), "not found") {
-		// unexpected error occurred while trying to get the source
-		return false, err
+	if err != nil {
+		if !strings.Contains(err.Error(), "not found") {
+			// unexpected error occurred while trying to get the source
+			return false, err
+		}
+
+		source, err = services.CreateSourceCRD(ctx, nsName, workloadName, workloadKind)
+		if err != nil {
+			// unexpected error occurred while trying to create the source
+			return false, err
+		}
 	}
 
 	_, err = services.UpdateSourceCRDSpec(ctx, nsName, source.Name, "reportedName", *reportedName)
 	if err != nil {
+		// unexpected error occurred while trying to update the source
 		return false, err
 	}
 
