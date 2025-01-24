@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/odigos-io/odigos/cli/pkg/autodetect"
+	"github.com/odigos-io/odigos/cli/pkg/confirm"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/profiles"
 
@@ -35,6 +36,7 @@ var (
 	openshiftEnabled           bool
 	skipWebhookIssuerCreation  bool
 	psp                        bool
+	update                     bool
 	userInputIgnoredNamespaces []string
 	userInputIgnoredContainers []string
 	userInputInstallProfiles   []string
@@ -61,9 +63,23 @@ It will install k8s components that will auto-instrument your applications with 
 
 		// Check if Odigos already installed
 		cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
-		if err == nil && cm != nil {
+		if err == nil && cm != nil && !update {
 			fmt.Printf("\033[31mERROR\033[0m Odigos is already installed in namespace\n")
 			os.Exit(1)
+		}
+		if apierrors.IsNotFound(err) && update {
+			fmt.Printf("\033[31mERROR\033[0m Odigos is not currently installed in namespace %s -- nothing to update\n", ns)
+			os.Exit(1)
+		}
+		if update {
+			if !cmd.Flag("yes").Changed {
+				fmt.Printf("About to update existing Odigos installation in namespace %s\n", ns)
+				confirmed, err := confirm.Ask("Are you sure?")
+				if err != nil || !confirmed {
+					fmt.Println("Aborting update")
+					return
+				}
+			}
 		}
 
 		// Check if the cluster meets the minimum requirements
@@ -267,6 +283,8 @@ func init() {
 	installCmd.Flags().StringSliceVar(&userInputIgnoredContainers, "ignore-container", k8sconsts.DefaultIgnoredContainers, "container names to exclude from instrumentation (useful for sidecar container)")
 	installCmd.Flags().StringSliceVar(&userInputInstallProfiles, "profile", []string{}, "install preset profiles with a specific configuration")
 	installCmd.Flags().StringVarP(&uiMode, "ui-mode", "", string(common.NormalUiMode), "set the UI mode (one-of: normal, readonly)")
+	installCmd.Flags().BoolVar(&update, "update", false, "update an existing Odigos installation")
+	installCmd.Flags().Bool("yes", false, "skip the confirmation prompt (currently used with --update)")
 
 	if OdigosVersion != "" {
 		versionFlag = OdigosVersion
