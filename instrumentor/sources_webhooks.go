@@ -264,7 +264,7 @@ func (s *SourcesValidator) validateSourceFields(ctx context.Context, source *v1a
 		allErrs = append(allErrs, field.Invalid(
 			field.NewPath("spec").Child("reportedName"),
 			source.Spec.ReportedName,
-			"Namespace Source must not have a reportedName, to configure a reported name for a workload edit its Source",
+			"Reported name is not valid for Namespace sources, only valid for Workload Sources",
 		))
 	}
 
