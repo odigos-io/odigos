@@ -15,7 +15,7 @@ import (
 )
 
 // These controllers handle update of the InstrumentationConfig's ServiceName
-// whenever there are changes in the associated workloads (Deployments, DaemonSets, StatefulSets).
+// whenever there are changes in the associated Source object.
 type SourceReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
@@ -23,7 +23,6 @@ type SourceReconciler struct {
 
 func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	logger.Info("Reconciling Source object", "name", req.Name, "namespace", req.Namespace)
 	source := &odigosv1alpha1.Source{}
 	err := r.Get(ctx, req.NamespacedName, source)
 	if err != nil {
@@ -41,24 +40,19 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	instConfigName := workload.CalculateWorkloadRuntimeObjectName(source.Spec.Workload.Name, source.Spec.Workload.Kind)
-	return r.updateInstrumentationConfigServiceName(ctx, instConfigName, req.Namespace, source.Spec.OtelServiceName)
-}
-
-func (r *SourceReconciler) updateInstrumentationConfigServiceName(ctx context.Context, instConfigName, namespace string, serviceName string) (reconcile.Result, error) {
-	logger := log.FromContext(ctx)
-
 	instConfig := &odigosv1alpha1.InstrumentationConfig{}
-	err := r.Get(ctx, types.NamespacedName{Name: instConfigName, Namespace: namespace}, instConfig)
+	err = r.Get(ctx, types.NamespacedName{Name: instConfigName, Namespace: req.Namespace}, instConfig)
 	if err != nil {
 		return reconcile.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if instConfig.Spec.ServiceName != serviceName {
-		instConfig.Spec.ServiceName = serviceName
-		logger.Info("Updating InstrumentationConfig service name", "instrumentationConfig", instConfigName, "namespace", namespace, "serviceName", serviceName)
+	if instConfig.Spec.ServiceName != source.Spec.OtelServiceName {
+		instConfig.Spec.ServiceName = source.Spec.OtelServiceName
+		logger.Info("Updating InstrumentationConfig service name", "instrumentationConfig", instConfigName, "namespace", req.Namespace, "serviceName", source.Spec.OtelServiceName)
 		err = r.Update(ctx, instConfig)
 		return utils.K8SUpdateErrorHandler(err)
 	}
 
 	return reconcile.Result{}, nil
 }
+
