@@ -11,6 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -82,7 +83,7 @@ func migrateFromWorkload(ctx context.Context, k8sClient client.Client, obj clien
 	}
 
 	if disabled || labeled || serviceName != "" {
-		err := CreateOrUpdateSourceForObject(ctx, k8sClient, obj, objKind, disable, serviceName)
+		err := createOrUpdateSourceForObject(ctx, logger, k8sClient, obj, objKind, disable, serviceName)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
@@ -101,10 +102,11 @@ func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind wor
 	return migrateFromWorkload(ctx, k8sClient, obj, objKind)
 }
 
-// CreateOrUpdateSourceForObject creates a Source for an object if one does not exist
+// createOrUpdateSourceForObject creates a Source for an object if one does not exist
 // The created Source will have a randomly generated name and be in the object's Namespace.
 // If the source is annotated with the "odigos.io/reported-name" annotation, the Source will have the same value in the OtelServiceName field.
-func CreateOrUpdateSourceForObject(ctx context.Context,
+func createOrUpdateSourceForObject(ctx context.Context,
+	logger logr.Logger,
 	k8sClient client.Client,
 	obj client.Object,
 	kind workload.WorkloadKind,
@@ -162,12 +164,17 @@ func CreateOrUpdateSourceForObject(ctx context.Context,
 	// This is valid, since the annotation is deprecated and we want to encourage users to use Source CR.
 	if kind != workload.WorkloadKindNamespace && source.Spec.OtelServiceName == "" {
 		source.Spec.OtelServiceName = serviceName
+		logger.Info("legacy reported name annotation is deprecated; migrating to source OtelServiceName field",
+			"name", obj.GetName(),
+			"namespace", obj.GetNamespace(),
+			"kind", kind,
+			"serviceName", serviceName)
 	}
 
 	if create {
-		log.FromContext(ctx).Info("creating source", "source", source.Spec)
+		logger.Info("creating source", "source", source.Spec)
 		return k8sClient.Create(ctx, source)
 	}
-	log.FromContext(ctx).Info("updating source", "source", source.Spec)
+	logger.Info("updating source", "source", source.Spec)
 	return k8sClient.Update(ctx, source)
 }
