@@ -68,7 +68,7 @@ spec:
               kubectl wait --for=condition=ready pod -l app=membership --timeout=60s
         - assert:
             file: ../../common/assert/simple-demo-installed.yaml
-    - name: Instrument Deployments using Sources with reportedName field set
+    - name: Instrument Deployments using Sources with otelServiceName field set
       try:
         - apply:
             file: 01-sources.yaml
@@ -84,7 +84,7 @@ spec:
     - name: Odigos pipeline ready
       try:
         - assert:
-            file:  ../../common/assert/pipeline-ready.yaml
+            file: ../../common/assert/pipeline-ready.yaml
     - name: Simple-demo instrumented after destination added
       try:
         - assert:

@@ -189,11 +189,11 @@ spec:
             expect:
               - check:
                   ($error != null): true
-    - name: "[Validating] - Source namespace can't include a non empty spec.reportedName"
+    - name: "[Validating] - Source namespace can't include a non empty spec.otelServiceName"
       try:
         - script:
             timeout: 70s
-            content: kubectl patch source/08-namespace-source --type=merge -p '{"spec":{"reportedName":"this-should-not-be-set"}}'
+            content: kubectl patch source/08-namespace-source --type=merge -p '{"spec":{"otelServiceName":"this-should-not-be-set"}}'
             check:
               ($error != null): true
               (contains($stderr, 'Invalid value')): true

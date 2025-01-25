@@ -80,13 +80,13 @@ func requestOdigletsToCalculateRuntimeDetails(ctx context.Context, k8sClient cli
 		},
 	}
 
-	reportedName, err := sourceutils.ReportedNameBySource(ctx, k8sClient, obj)
+	serviceName, err := sourceutils.OtelServiceNameBySource(ctx, k8sClient, obj)
 	if err != nil {
 		return err
 	}
 
-	if reportedName != "" {
-		instConfig.Spec.ServiceName = reportedName
+	if serviceName != "" {
+		instConfig.Spec.ServiceName = serviceName
 	}
 
 	if err := ctrl.SetControllerReference(obj, instConfig, scheme); err != nil {

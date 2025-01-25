@@ -177,9 +177,9 @@ spec:
         - assert:
             file: 02-assert-workload-update.yaml
 
-    # updating the reported names helps use to verify the traces, and distinguish between the phases
-    # currently, we need to restart pods for reported names update to take effect
-    - name: "02 - Update reported names and rollout deployments"
+    # updating the services names helps use to verify the traces, and distinguish between the phases
+    # currently, we need to restart pods for service names update to take effect
+    - name: "02 - Update services names and rollout deployments"
       try:
         - apply:
             file: 02-sources-reported-names.yaml

@@ -260,11 +260,11 @@ func (s *SourcesValidator) validateSourceFields(ctx context.Context, source *v1a
 		))
 	}
 
-	if source.Spec.Workload.Kind == workload.WorkloadKindNamespace && source.Spec.ReportedName != "" {
+	if source.Spec.Workload.Kind == workload.WorkloadKindNamespace && source.Spec.OtelServiceName != "" {
 		allErrs = append(allErrs, field.Invalid(
-			field.NewPath("spec").Child("reportedName"),
-			source.Spec.ReportedName,
-			"Reported name is not valid for Namespace sources, only valid for Workload Sources",
+			field.NewPath("spec").Child("otelServiceName"),
+			source.Spec.OtelServiceName,
+			"Service name is not valid for Namespace sources, only valid for Workload Sources",
 		))
 	}
 

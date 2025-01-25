@@ -10,7 +10,7 @@ spec:
     name: nodejs-minimum-version
     namespace: default
     kind: Deployment
-  reportedName: nodejs-minimum-version-reported
+  otelServiceName: nodejs-minimum-version-reported
 ---
 apiVersion: odigos.io/v1alpha1
 kind: Source
@@ -24,7 +24,7 @@ spec:
     name: nodejs-latest-version
     namespace: default
     kind: Deployment
-  reportedName: nodejs-latest-version-reported
+  otelServiceName: nodejs-latest-version-reported
 ---
 apiVersion: odigos.io/v1alpha1
 kind: Source
@@ -38,7 +38,7 @@ spec:
     name: nodejs-dockerfile-env
     namespace: default
     kind: Deployment
-  reportedName: nodejs-dockerfile-env-reported
+  otelServiceName: nodejs-dockerfile-env-reported
 ---
 apiVersion: odigos.io/v1alpha1
 kind: Source
@@ -52,7 +52,7 @@ spec:
     name: nodejs-manifest-env
     namespace: default
     kind: Deployment
-  reportedName: nodejs-manifest-env-reported
+  otelServiceName: nodejs-manifest-env-reported
 ---
 apiVersion: odigos.io/v1alpha1
 kind: Source
@@ -66,7 +66,7 @@ spec:
     name: java-supported-version
     namespace: default
     kind: Deployment
-  reportedName: java-supported-version-reported
+  otelServiceName: java-supported-version-reported
 ---
 apiVersion: odigos.io/v1alpha1
 kind: Source
@@ -80,7 +80,7 @@ spec:
     name: java-azul
     namespace: default
     kind: Deployment
-  reportedName: java-azul-reported
+  otelServiceName: java-azul-reported
 ---
 apiVersion: odigos.io/v1alpha1
 kind: Source
@@ -94,7 +94,7 @@ spec:
     name: java-supported-docker-env
     namespace: default
     kind: Deployment
-  reportedName: java-supported-docker-env-reported
+  otelServiceName: java-supported-docker-env-reported
 ---
 apiVersion: odigos.io/v1alpha1
 kind: Source
@@ -108,7 +108,7 @@ spec:
     name: java-supported-manifest-env
     namespace: default
     kind: Deployment
-  reportedName: java-supported-manifest-env-reported
+  otelServiceName: java-supported-manifest-env-reported
 ---
 apiVersion: odigos.io/v1alpha1
 kind: Source
@@ -122,7 +122,7 @@ spec:
     name: java-latest-version
     namespace: default
     kind: Deployment
-  reportedName: java-latest-version-reported
+  otelServiceName: java-latest-version-reported
 ---
 apiVersion: odigos.io/v1alpha1
 kind: Source
@@ -136,7 +136,7 @@ spec:
     name: java-old-version
     namespace: default
     kind: Deployment
-  reportedName: java-old-version-reported
+  otelServiceName: java-old-version-reported
 ---
 apiVersion: odigos.io/v1alpha1
 kind: Source
@@ -150,7 +150,7 @@ spec:
     name: python-latest-version
     namespace: default
     kind: Deployment
-  reportedName: python-latest-version-reported
+  otelServiceName: python-latest-version-reported
 ---
 apiVersion: odigos.io/v1alpha1
 kind: Source
@@ -164,7 +164,7 @@ spec:
     name: python-alpine
     namespace: default
     kind: Deployment
-  reportedName: python-alpine-reported
+  otelServiceName: python-alpine-reported
 ---
 apiVersion: odigos.io/v1alpha1
 kind: Source
@@ -178,7 +178,7 @@ spec:
     name: python-not-supported
     namespace: default
     kind: Deployment
-  reportedName: python-not-supported-reported
+  otelServiceName: python-not-supported-reported
 ---
 apiVersion: odigos.io/v1alpha1
 kind: Source
@@ -192,5 +192,6 @@ spec:
     name: python-min-version
     namespace: default
     kind: Deployment
-  reportedName: python-min-version-reported
+  otelServiceName: python-min-version-reported
 ---
+

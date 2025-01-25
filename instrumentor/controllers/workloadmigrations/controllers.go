@@ -76,13 +76,13 @@ func migrateFromWorkload(ctx context.Context, k8sClient client.Client, obj clien
 	}
 
 	annotations := obj.GetAnnotations()
-	var reportedName string
+	var serviceName string
 	if annotations != nil {
-		reportedName = annotations[consts.OdigosReportedNameAnnotation]
+		serviceName = annotations[consts.OdigosReportedNameAnnotation]
 	}
 
-	if disabled || labeled || reportedName != "" {
-		err := CreateOrUpdateSourceForObject(ctx, k8sClient, obj, objKind, disable, reportedName)
+	if disabled || labeled || serviceName != "" {
+		err := CreateOrUpdateSourceForObject(ctx, k8sClient, obj, objKind, disable, serviceName)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
@@ -103,13 +103,13 @@ func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind wor
 
 // CreateOrUpdateSourceForObject creates a Source for an object if one does not exist
 // The created Source will have a randomly generated name and be in the object's Namespace.
-// If the source is annotated with the "odigos.io/reported-name" annotation, the Source will have the same ReportedName.
+// If the source is annotated with the "odigos.io/reported-name" annotation, the Source will have the same value in the OtelServiceName field.
 func CreateOrUpdateSourceForObject(ctx context.Context,
 	k8sClient client.Client,
 	obj client.Object,
 	kind workload.WorkloadKind,
 	disableInstrumentation bool,
-	reportedName string) error {
+	serviceName string) error {
 	if !workload.IsValidWorkloadKind(kind) {
 		return fmt.Errorf("invalid workload kind %s", kind)
 	}
@@ -154,14 +154,14 @@ func CreateOrUpdateSourceForObject(ctx context.Context,
 	}
 	source.Spec.DisableInstrumentation = disableInstrumentation
 	// migrate the reported name from the workload to the Source only if the Source is not a namespace Source
-	// and the workload Source does not already have a reported name.
+	// and the workload Source does not already have a service name.
 	//
 	// If a user have set the annotation on the workload we will use it in the source only if no reported name is set.
 	// If that happens once, and the reported name was taken from the annotation,
 	// any more changes to the annotation will not be reflected in the source.
 	// This is valid, since the annotation is deprecated and we want to encourage users to use Source CR.
-	if kind != workload.WorkloadKindNamespace && source.Spec.ReportedName == "" {
-		source.Spec.ReportedName = reportedName
+	if kind != workload.WorkloadKindNamespace && source.Spec.OtelServiceName == "" {
+		source.Spec.OtelServiceName = serviceName
 	}
 
 	if create {

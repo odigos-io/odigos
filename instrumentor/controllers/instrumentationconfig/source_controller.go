@@ -41,7 +41,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	instConfigName := workload.CalculateWorkloadRuntimeObjectName(source.Spec.Workload.Name, source.Spec.Workload.Kind)
-	return r.updateInstrumentationConfigServiceName(ctx, instConfigName, req.Namespace, source.Spec.ReportedName)
+	return r.updateInstrumentationConfigServiceName(ctx, instConfigName, req.Namespace, source.Spec.OtelServiceName)
 }
 
 func (r *SourceReconciler) updateInstrumentationConfigServiceName(ctx context.Context, instConfigName, namespace string, serviceName string) (reconcile.Result, error) {
