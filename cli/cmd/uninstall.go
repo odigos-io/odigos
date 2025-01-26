@@ -110,19 +110,19 @@ and rollback any metadata changes made to your objects.`,
 		fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos uninstalled.\n")
 	},
 	Example: `
-	# Uninstall Odigos open-source or cloud from the cluster in your kubeconfig active context.
-    odigos uninstall
+# Uninstall Odigos open-source or cloud from the cluster in your kubeconfig active context.
+odigos uninstall
 
-    # Uninstall Odigos without confirmation
-    odigos uninstall --yes
-    
-    # Uninstall Odigos cloud from a specific cluster
-    odigos uninstall --kubeconfig <path-to-kubeconfig>
+# Uninstall Odigos without confirmation
+odigos uninstall --yes
 
-    # Install a fresh setup of Odigos
-    odigos uninstall
-    odigos install
-	`,
+# Uninstall Odigos cloud from a specific cluster
+odigos uninstall --kubeconfig <path-to-kubeconfig>
+
+# Install a fresh setup of Odigos
+odigos uninstall
+odigos install
+`,
 }
 
 func waitForNamespaceDeletion(ctx context.Context, client *kube.Client, ns string) {

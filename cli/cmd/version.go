@@ -58,9 +58,9 @@ Both the CLI version and the Odigos components in your cluster will be printed.`
 
 	},
 	Example: `
-	# Print the version of odigos CLI and Odigos deployment in your cluster
-    odigos version
-	`,
+# Print the version of odigos CLI and Odigos deployment in your cluster
+odigos version
+`,
 }
 
 func getOdigosVersionInCluster(cmd *cobra.Command) (string, error) {

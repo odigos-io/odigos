@@ -71,12 +71,12 @@ var profileCmd = &cobra.Command{
 		fmt.Println("Currently applied profiles:", config.Profiles)
 	},
 	Example: `
-    # Enable payload collection for all supported workloads and instrumentation libraries in the cluster
-    odigos profile add full-payload-collection
+# Enable payload collection for all supported workloads and instrumentation libraries in the cluster
+odigos profile add full-payload-collection
 
-    # Remove the full-payload-collection profile from the cluster
-    odigos profile remove full-payload-collection
-	`,
+# Remove the full-payload-collection profile from the cluster
+odigos profile remove full-payload-collection
+`,
 }
 
 var addProfileCmd = &cobra.Command{

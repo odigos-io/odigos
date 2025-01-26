@@ -28,8 +28,8 @@ var diagnoseCmd = &cobra.Command{
 	Use:   "diagnose",
 	Short: "Diagnose Client Cluster",
 	Long: `Retrieves Logs of all Odigos components in the odigos-system namespace and CRDs of Actions, instrumentation resources and more. 
-	The results will be saved in a compressed file for further troubleshooting.
-	The file will be saved in this format: odigos_debug_ddmmyyyyhhmmss.tar.gz`,
+The results will be saved in a compressed file for further troubleshooting.
+The file will be saved in this format: odigos_debug_ddmmyyyyhhmmss.tar.gz`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)

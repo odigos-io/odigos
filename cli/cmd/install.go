@@ -129,18 +129,18 @@ It will install k8s components that will auto-instrument your applications with 
 		fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos installed.\n")
 	},
 	Example: `
-	 # Install Odigos open-source in your cluster.
-    odigos install
+# Install Odigos open-source in your cluster.
+odigos install
 
-    # Install Odigos cloud in your cluster.
-    odigos install --api-key <your-api-key>
+# Install Odigos cloud in your cluster.
+odigos install --api-key <your-api-key>
 
-    # Install Odigos cloud in a specific cluster
-    odigos install --kubeconfig <path-to-kubeconfig>
+# Install Odigos cloud in a specific cluster
+odigos install --kubeconfig <path-to-kubeconfig>
 
-    # Install Odigos onprem tier for enterprise users
-    odigos install --onprem-token ${ODIGOS_TOKEN} --profile ${YOUR_ENTERPRISE_PROFILE_NAME}
-	`,
+# Install Odigos onprem tier for enterprise users
+odigos install --onprem-token ${ODIGOS_TOKEN} --profile ${YOUR_ENTERPRISE_PROFILE_NAME}
+`,
 }
 
 func arePodsReady(ctx context.Context, client *kube.Client, ns string) func() (bool, error) {

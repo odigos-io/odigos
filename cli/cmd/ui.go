@@ -65,15 +65,15 @@ var uiCmd = &cobra.Command{
 		}
 	},
 	Example: `
-	# Start the Odigos UI on http://localhost:3000
-    odigos ui
+# Start the Odigos UI on http://localhost:3000
+odigos ui
 
-    # Start the Odigos UI on specific port if 3000 is already in use
-    odigos ui --port 3456
+# Start the Odigos UI on specific port if 3000 is already in use
+odigos ui --port 3456
 
-    # Start the Odigos UI and have it manage and configure a specific cluster
-    odigos ui --kubeconfig <path-to-kubeconfig>
-	`,
+# Start the Odigos UI and have it manage and configure a specific cluster
+odigos ui --kubeconfig <path-to-kubeconfig>
+`,
 }
 
 func portForwardWithContext(ctx context.Context, uiPod *corev1.Pod, client *kube.Client, localPort string, localAddress string) error {

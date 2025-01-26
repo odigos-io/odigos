@@ -127,9 +127,9 @@ and apply any required migrations and adaptations.`,
 		}
 	},
 	Example: `
-	# Upgrade Odigos version
-    odigos upgrade
-	`,
+# Upgrade Odigos version
+odigos upgrade
+`,
 }
 
 func init() {

@@ -50,22 +50,25 @@ var describeCmd = &cobra.Command{
 		fmt.Println(describeText)
 	},
 	Example: `
- # Describe a source of kind deployment and name myservice in the default namespace
-    odigos describe source deployment myservice -n default
+# Describe a source of kind deployment and name myservice in the default namespace
+odigos describe source deployment myservice -n default
 
 Output:
 
 Name:  myservice
 Kind:  deployment
 Namespace:  default
+
 Labels:
   Instrumented:  true
   Workload: odigos-instrumentation=enabled
   Namespace: odigos-instrumentation=enabled
   Decision: Workload is instrumented because the deployment contains the label 'odigos-instrumentation=enabled'
   Troubleshooting: https://docs.odigos.io/architecture/troubleshooting#1-odigos-instrumentation-label
+
 Instrumentation Config:
   Created at 2024-07-30 19:00:40 +0300 IDT
+
 Runtime inspection details:
   Created at 2024-07-30 19:00:40 +0300 IDT
   Detected Containers:
@@ -73,10 +76,12 @@ Runtime inspection details:
       Language:       javascript
       Relevant Environment Variables:
         - NODE_OPTIONS : --require /var/odigos/nodejs/autoinstrumentation.js
+
 Instrumentation Device:
   Status: Successfully applied instrumentation device to pod template
   - Container Name: myservice
     Instrumentation Devices: javascript-native-community
+
 Pods (Total 1, Running 1):
   Pod Name: myservice-ffd68d8c-qqmxl
   Pod Phase: Running
@@ -87,7 +92,7 @@ Pods (Total 1, Running 1):
     Instrumentation Instances:
     - Healthy: true
       Reason: Healthy
-		`,
+`,
 }
 
 var describeSourceCmd = &cobra.Command{

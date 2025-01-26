@@ -27,18 +27,17 @@ var cloudCmd = &cobra.Command{
 	Short: "Manage the connection of the cluster to Odigos cloud",
 	Long:  `This command can be used to interact with the Odigos cloud service.`,
 	Example: `
-    # Install Odigos cloud
-    odigos install -k <API_KEY>
+# Install Odigos cloud
+odigos install -k <API_KEY>
 
-    # Connect existing Odigos installation to Odigos cloud
-    odigos cloud login -k <API_KEY>
+# Connect existing Odigos installation to Odigos cloud
+odigos cloud login -k <API_KEY>
 
-    # Update the api key for an existing Odigos cloud installation
-    odigos cloud update -k <API_KEY>
+# Update the api key for an existing Odigos cloud installation
+odigos cloud update -k <API_KEY>
 
-    # Logout from Odigos cloud
-    odigos cloud logout
-	`,
+# Logout from Odigos cloud
+odigos cloud logout`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
