@@ -345,7 +345,7 @@ func handleContainerRuntimeDetailsUpdate(
 			if envValue == nil {
 				containerEnvFromManifestValue := k8scontainer.GetContainerEnvVarValue(&containerObject, envKey)
 				if containerEnvFromManifestValue != nil {
-					workloadEnvVarWithoutOdigosAdditions := cleanUpManifestValueFromOdigosAdditions(envKey, *containerEnvFromManifestValue)
+					workloadEnvVarWithoutOdigosAdditions := envOverwrite.CleanupEnvValueFromOdigosAdditions(envKey, *containerEnvFromManifestValue)
 
 					if workloadEnvVarWithoutOdigosAdditions != "" {
 						envVarWithoutOdigosAddition := v1alpha1.EnvVar{Name: envKey, Value: workloadEnvVarWithoutOdigosAdditions}
@@ -369,30 +369,6 @@ func handleContainerRuntimeDetailsUpdate(
 func contains(workloadNames map[string]*v1alpha1.InstrumentationConfig, workloadName string) bool {
 	_, exists := workloadNames[workloadName]
 	return exists
-}
-
-func cleanUpManifestValueFromOdigosAdditions(manifestEnvVarKey string, manifestEnvVarValue string) string {
-	_, exists := envOverwrite.EnvValuesMap[manifestEnvVarKey]
-	if exists {
-		// clean up the value from all possible odigos additions
-		for _, value := range envOverwrite.GetPossibleValuesPerEnv(manifestEnvVarKey) {
-			manifestEnvVarValue = strings.ReplaceAll(manifestEnvVarValue, value, "")
-		}
-		withoutTrailingColon := cleanTrailingChar(manifestEnvVarValue, ":")
-		withoutTrailingAndLeadingSpace := strings.TrimSpace(withoutTrailingColon)
-		return withoutTrailingAndLeadingSpace
-	} else {
-		// manifestEnvVarKey does not exist in the EnvValuesMap
-		return ""
-	}
-}
-
-// In case we remove OdigosAdditions to PythonPath we need to remove this also.
-func cleanTrailingChar(input string, char string) string {
-	if len(input) > 0 && input[len(input)-1:] == char {
-		return input[:len(input)-1]
-	}
-	return input
 }
 
 func isEnvVarPresent(envVars []v1alpha1.EnvVar, envVarName string) bool {
