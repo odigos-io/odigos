@@ -402,6 +402,6 @@ func NewUIResourceManager(client *kube.Client, ns string, config *common.OdigosC
 		ns:            ns,
 		config:        config,
 		odigosVersion: odigosVersion,
-		readonly:      config.UiMode == "readonly",
+		readonly:      config.UiMode == common.ReadonlyUiMode,
 	}
 }
