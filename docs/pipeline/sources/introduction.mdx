@@ -1,24 +1,30 @@
 ---
-title: "Sources Introduction"
+title: "Introduction"
+description: "Sources are a Custom Resource that define which Kubernetes workloads should be auto-instrumented by Odigos."
 sidebarTitle: "Introduction"
+icon: "hand-wave"
 ---
 
-A Source in Odigos is any component that can generate opentelemetry signals - traces, metrics and logs.
+## Supported Workloads
 
-## Supported Sources
+Odigos supports the following Kubernetes workloads:
 
-Odigos supports the following sources:
+- Kubernetes **Deployment**
+- Kubernetes **DaemonSet**
+- Kubernetes **StatefulSet**
 
-- Kubernetes Deployment
-- Kubernetes DaemonSet
-- Kubernetes StatefulSet
+## Source Labels
 
-Which are refered to as kubernetes workloads.
+All Sources will automatically have 3 labels applied by a mutating webhook in the `instrumentor` component:
 
-The following programming languages / runtimes are supported:
+- `odigos.io/workload-name`
+- `odigos.io/workload-namespace`
+- `odigos.io/workload-kind`
 
-- golang
-- python
-- nodejs
-- java
-- dotnet
+The value of these labels will be validated to always match the corresponding fields in `spec.workload`. They can be used to group and list Sources, for example:
+
+```shell
+kubectl get sources -l odigos.io/workload-kind=Deployment
+```
+
+This will list all `Sources` for `Deployments`.

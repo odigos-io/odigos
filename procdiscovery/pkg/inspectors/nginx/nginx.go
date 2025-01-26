@@ -1,10 +1,14 @@
 package nginx
 
 import (
-	"github.com/hashicorp/go-version"
+	"context"
+	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
+
+	"github.com/hashicorp/go-version"
 
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
@@ -22,7 +26,7 @@ const (
 var re = regexp.MustCompile(NginxVersionRegex)
 
 func (j *NginxInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
-	if strings.Contains(p.CmdLine, NginxProcessName) || strings.Contains(p.ExeName, NginxProcessName) {
+	if strings.Contains(p.CmdLine, NginxProcessName) || strings.Contains(p.ExePath, NginxProcessName) {
 		return common.NginxProgrammingLanguage, true
 	}
 
@@ -39,9 +43,17 @@ func (j *NginxInspector) GetRuntimeVersion(p *process.Details, containerURL stri
 }
 
 func GetNginxVersion(containerURL string) (string, error) {
-	resp, err := http.Get(containerURL)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, containerURL, http.NoBody)
 	if err != nil {
-		return "", nil
+		return "", fmt.Errorf("failed to create request: %w", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to execute request: %w", err)
 	}
 	defer resp.Body.Close()
 

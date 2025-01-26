@@ -7,7 +7,8 @@ import (
 )
 
 var (
-	Type = component.MustNewType("odigossqldboperationprocessor")
+	Type      = component.MustNewType("odigossqldboperationprocessor")
+	ScopeName = "odigossqldboperationprocessor"
 )
 
 const (

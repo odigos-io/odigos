@@ -34,7 +34,8 @@ func (l *Logzio) DestType() common.DestinationType {
 	return common.LogzioDestinationType
 }
 
-func (l *Logzio) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (l *Logzio) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
+	var pipelineNames []string
 	region := dest.GetConfig()["LOGZIO_REGION"]
 	if isTracingEnabled(dest) {
 		exporterName := "logzio/tracing-" + dest.GetID()
@@ -46,6 +47,7 @@ func (l *Logzio) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) er
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
 	if isMetricsEnabled(dest) {
@@ -64,6 +66,7 @@ func (l *Logzio) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) er
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
 	if isLoggingEnabled(dest) {
@@ -94,7 +97,8 @@ func (l *Logzio) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) er
 			Processors: []string{"attributes/logzio"},
 			Exporters:  []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, logsPipelineName)
 	}
 
-	return nil
+	return pipelineNames, nil
 }

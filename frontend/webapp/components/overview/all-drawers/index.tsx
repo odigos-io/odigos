@@ -1,6 +1,6 @@
 import React from 'react';
+import { CliDrawer } from './cli-drawer';
 import { OVERVIEW_ENTITY_TYPES } from '@/types';
-import { DescribeDrawer } from './describe-drawer';
 import { DRAWER_OTHER_TYPES, useDrawerStore } from '@/store';
 import { ActionDrawer, DestinationDrawer, RuleDrawer, SourceDrawer } from '@/containers';
 
@@ -22,8 +22,8 @@ const AllDrawers = () => {
     case OVERVIEW_ENTITY_TYPES.DESTINATION:
       return <DestinationDrawer />;
 
-    case DRAWER_OTHER_TYPES.DESCRIBE_ODIGOS:
-      return <DescribeDrawer />;
+    case DRAWER_OTHER_TYPES.ODIGOS_CLI:
+      return <CliDrawer />;
 
     default:
       return <></>;

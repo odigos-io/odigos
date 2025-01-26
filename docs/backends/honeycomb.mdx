@@ -1,8 +1,25 @@
 ---
-title: "Honeycomb"
+title: 'Honeycomb'
+description: 'Configuring the Honeycomb backend (Managed)'
+sidebarTitle: 'Honeycomb'
+icon: 'signal-stream'
 ---
 
-## Obtaining Honeycomb API Key
+### Getting Started
+
+<img src='https://d15jtxgb40qetw.cloudfront.net/honeycomb.svg' alt='honeycomb' width="100" height="100" className="not-prose" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g:
+    [🔗 website](https://odigos.io)
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+**Obtaining Honeycomb API Key**
 
 [Click here](https://ui.honeycomb.io) to login to your honeycomb account.
 From the top left corner, select the environment you want to send data to, and click the **Settings** configuration gear icon to go to the settings page.
@@ -11,69 +28,84 @@ Select the `API Keys` tab and create/copy an API Key.
 Make sure the API Key is permitted to **Send Events** to Honeycomb.
 
 <Frame>
-    <img src="/backends/images/honeycomb.png" alt="API Keys settings page in Honeycomb" />
+  <img src="/backends/images/honeycomb.png" alt="API Keys settings page in Honeycomb" />
 </Frame>
 
-## Configuring Honeycomb Backend
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
 
-- **Name**: Choose a name for this backend (e.g. Honeycomb).
-- **API Key**: Insert the API Key from the previous step in the **API Key** field.
-- **Endpoint** - Choose one of the endpoints in the dropdown (api.honeycomb.io is the US instance, api.eu1.honeycomb.io is EU instance)
+### Configuring Destination Fields
 
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ✅ Metrics
+  ✅ Logs
+</Accordion>
 
+- **HONEYCOMB_API_KEY** `string` : API Key.
+  - This field is required
+- **HONEYCOMB_ENDPOINT** `string` : Endpoint. Choose one of the endpoints in the dropdown (`api.honeycomb.io` is the US instance, `api.eu1.honeycomb.io` is EU instance)
+  - This field is required
 
-## Adding a Destination to Odigos
+### Adding Destination to Odigos
 
-Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+There are two primary methods for configuring destinations in Odigos:
 
-1. **Using the UI**  
-   To add a destination via the UI, follow these steps:
-   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
-   ```bash
-   odigos ui
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
     ```
-- In the left sidebar, navigate to the `Destination` page.
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Honeycomb` and follow the on-screen instructions
+  </Step>
+</Steps>
 
-- Click `Add New Destination`
+##### **Using Kubernetes manifests**
 
-- Select `Honeycomb` and follow the on-screen instructions.
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `honeycomb.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: honeycomb-example
+      namespace: odigos-system
+    spec:
+      data:
+        HONEYCOMB_ENDPOINT: '<Endpoint (options: [api.honeycomb.io, api.eu1.honeycomb.io])>'
+      destinationName: honeycomb
+      secretRef:
+        name: honeycomb-secret
+      signals:
+      - TRACES
+      - METRICS
+      - LOGS
+      type: honeycomb
 
+    ---
 
-
-2. **Using kubernetes manifests**
-
-Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
-
-```bash
-kubectl apply -f destination.yaml
-```
-
-
-```yaml
-apiVersion: odigos.io/v1alpha1
-kind: Destination
-metadata:
-  name: honeycomb-example
-  namespace: odigos-system
-spec:
-  data:
-    HONEYCOMB_ENDPOINT: <Endpoint [api.honeycomb.io, api.eu1.honeycomb.io]>
-  destinationName: honeycomb
-  secretRef:
-    name: honeycomb-secret
-  signals:
-  - TRACES
-  - METRICS
-  - LOGS
-  type: honeycomb
-
----
-apiVersion: v1
-data:
-  HONEYCOMB_API_KEY: <base64 API Key>
-kind: Secret
-metadata:
-  name: honeycomb-secret
-  namespace: odigos-system
-type: Opaque
-```
+    apiVersion: v1
+    data:
+      HONEYCOMB_API_KEY: <Base64 API Key>
+    kind: Secret
+    metadata:
+      name: honeycomb-secret
+      namespace: odigos-system
+    type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f honeycomb.yaml
+    ```
+  </Step>
+</Steps>

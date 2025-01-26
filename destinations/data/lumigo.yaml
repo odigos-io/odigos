@@ -22,7 +22,7 @@ spec:
         type: text
         required: true
     - name: LUMIGO_TOKEN
-      displayName: Lumigo Token
+      displayName: Lumigo Authorization Token
       componentType: input
       secret: true
       componentProps:

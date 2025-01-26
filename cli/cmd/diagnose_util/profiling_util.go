@@ -4,18 +4,48 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/odigos-io/odigos/cli/cmd/resources"
-	"github.com/odigos-io/odigos/cli/pkg/kube"
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"io"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"path/filepath"
 	"strconv"
 	"sync"
+
+	"github.com/odigos-io/odigos/api/k8sconsts"
+	"github.com/odigos-io/odigos/cli/cmd/resources"
+	"github.com/odigos-io/odigos/cli/pkg/kube"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 var ProfilingMetricsFunctions = []ProfileInterface{CPUProfiler{}, HeapProfiler{}, GoRoutineProfiler{}, AllocsProfiler{}}
+
+type ProfilingPodConfig struct {
+	Port     int32
+	Selector labels.Selector
+}
+
+// servicesProfilingMetadata is a map that associates service names with their corresponding pprof endpoint ports and selectors.
+// To add new Odigos services to be profiled, include the service name along with the appropriate port and selectors in this map.
+// Note: Since HostNetwork is set to true in DaemonSet services, pods expose ports on the node itself.
+// Therefore, the same port cannot be used for multiple services on the same node.
+var servicesProfilingMetadata = map[string]ProfilingPodConfig{
+	"odiglet": {
+		Port: k8sconsts.OdigletPprofEndpointPort,
+		Selector: labels.Set{
+			"app.kubernetes.io/name": k8sconsts.OdigletAppLabelValue}.AsSelector(),
+	},
+	"data-collection": {
+		Port: k8sconsts.CollectorsPprofEndpointPort,
+		Selector: labels.Set{
+			k8sconsts.OdigosCollectorRoleLabel: string(k8sconsts.CollectorsRoleNodeCollector)}.AsSelector(),
+	},
+	"gateway": {
+		Port: k8sconsts.CollectorsPprofEndpointPort,
+		Selector: labels.Set{
+			k8sconsts.OdigosCollectorRoleLabel: string(k8sconsts.CollectorsRoleClusterGateway)}.AsSelector(),
+	},
+}
 
 type ProfileInterface interface {
 	GetFileName() string
@@ -63,61 +93,74 @@ func (h AllocsProfiler) GetUrlSuffix() string {
 }
 
 func FetchOdigosProfiles(ctx context.Context, client *kube.Client, profileDir string) error {
-
 	odigosNamespace, err := resources.GetOdigosNamespace(client, ctx)
 	if err != nil {
 		return nil
 	}
-
-	odigletPods, err := client.CoreV1().Pods(odigosNamespace).List(ctx, metav1.ListOptions{
-		LabelSelector: "app.kubernetes.io/name=odiglet",
-	})
-	if err != nil {
-		return err
-	}
-
-	var wg sync.WaitGroup
-
-	for _, odigletPod := range odigletPods.Items {
-		fmt.Printf("Fetching profile for node: %v", odigletPod.Spec.NodeName)
-		nodeFilePath := filepath.Join(profileDir, odigletPod.Spec.NodeName)
-		err := os.Mkdir(nodeFilePath, os.ModePerm)
+	var podsWaitGroup sync.WaitGroup
+	for _, service := range servicesProfilingMetadata {
+		selector := service.Selector
+		podsToProfile, err := client.CoreV1().Pods(odigosNamespace).List(ctx, metav1.ListOptions{
+			LabelSelector: selector.String(),
+		})
 		if err != nil {
-			fmt.Printf("Error creating directory for node: %v, because: %v", nodeFilePath, err)
-			continue
+			return err
 		}
+		for _, pod := range podsToProfile.Items {
+			fmt.Printf("Fetching profile for Pod: %s\n", pod.Name)
+			podsWaitGroup.Add(1)
+			go func(pod v1.Pod, pprofPort int32) {
+				defer podsWaitGroup.Done()
 
-		for _, profileMetricFunction := range ProfilingMetricsFunctions {
-			metricFilePath := filepath.Join(nodeFilePath, profileMetricFunction.GetFileName())
-			metricFile, err := os.OpenFile(metricFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-			if err != nil {
-				fmt.Printf("Error creating file: %v, because: %v", metricFilePath, err)
-				continue
-			}
-			defer metricFile.Close()
-
-			wg.Add(1)
-
-			go func() {
-				defer wg.Done()
-				podName := odigletPod.Name
-				err = captureProfile(ctx, client, podName, odigosNamespace, metricFile, profileMetricFunction)
+				directoryName := fmt.Sprintf("%s-%s", pod.Name, pod.Spec.NodeName)
+				nodeFilePath := filepath.Join(profileDir, directoryName)
+				err := os.Mkdir(nodeFilePath, os.ModePerm)
 				if err != nil {
-					fmt.Printf("Error Getting Profile Data  of: %v, because: %v\n", profileMetricFunction, err)
+					fmt.Printf("Error creating directory for node: %v, because: %v", nodeFilePath, err)
+					return
 				}
-			}()
+				// Inner WaitGroup for profiling functions of this pod
+				var profileWaitGroup sync.WaitGroup
+				for _, profileMetricFunction := range ProfilingMetricsFunctions {
+					profileMetricFunction := profileMetricFunction // Capture range variable
+					metricFilePath := filepath.Join(nodeFilePath, profileMetricFunction.GetFileName())
+
+					profileWaitGroup.Add(1)
+
+					go func(metricFilePath string, profileFunc ProfileInterface) {
+						defer profileWaitGroup.Done()
+						metricFile, err := os.OpenFile(metricFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+						if err != nil {
+							fmt.Printf("Error creating file: %v, because: %v\n", metricFilePath, err)
+							return
+						}
+						defer metricFile.Close()
+
+						err = captureProfile(ctx, client, pod.Name, pprofPort, odigosNamespace, metricFile, profileFunc)
+						if err != nil {
+							fmt.Printf(
+								"Failed to capture profile data for Pod: %s, Node: %s, Profile Type: %s. Reason: %v\n",
+								pod.Name,
+								pod.Spec.NodeName,
+								profileFunc.GetFileName(),
+								err,
+							)
+						}
+					}(metricFilePath, profileMetricFunction)
+				}
+				// Wait for all profiling tasks of pod to complete
+				profileWaitGroup.Wait()
+			}(pod, service.Port)
 		}
-
-		wg.Wait()
 	}
-
+	// Wait for all pod-level tasks to complete
+	podsWaitGroup.Wait()
 	return nil
 }
 
-func captureProfile(ctx context.Context, client *kube.Client, podName string, namespace string, metricFile *os.File, profileInterface ProfileInterface) error {
-	proxyURL := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s:6060/proxy/debug/pprof%s", namespace, podName, profileInterface.GetUrlSuffix())
+func captureProfile(ctx context.Context, client *kube.Client, podName string, pprofPort int32, namespace string, metricFile *os.File, profileInterface ProfileInterface) error {
+	proxyURL := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s:%d/proxy/debug/pprof%s", namespace, podName, pprofPort, profileInterface.GetUrlSuffix())
 
-	// Make the HTTP GET request via the API server proxy
 	request := client.Clientset.CoreV1().RESTClient().
 		Get().
 		AbsPath(proxyURL).
@@ -125,7 +168,7 @@ func captureProfile(ctx context.Context, client *kube.Client, podName string, na
 
 	response, err := request.Raw()
 	if err != nil {
-		return err
+		return fmt.Errorf("%w: %s", err, string(response))
 	}
 
 	_, err = io.Copy(metricFile, bytes.NewReader(response))
@@ -147,18 +190,18 @@ func FetchOdigosCollectorMetrics(ctx context.Context, client *kube.Client, metri
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		err = collectMetrics(ctx, client, odigosNamespace, metricsDir, consts.CollectorsRoleClusterGateway)
+		err = collectMetrics(ctx, client, odigosNamespace, metricsDir, k8sconsts.CollectorsRoleClusterGateway)
 		if err != nil {
-			fmt.Printf("Error Getting Metrics Data of: %v, because: %v\n", consts.CollectorsRoleClusterGateway, err)
+			fmt.Printf("Error Getting Metrics Data of: %v, because: %v\n", k8sconsts.CollectorsRoleClusterGateway, err)
 		}
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		err = collectMetrics(ctx, client, odigosNamespace, metricsDir, consts.CollectorsRoleNodeCollector)
+		err = collectMetrics(ctx, client, odigosNamespace, metricsDir, k8sconsts.CollectorsRoleNodeCollector)
 		if err != nil {
-			fmt.Printf("Error Getting Metrics Data of: %v, because: %v\n", consts.CollectorsRoleNodeCollector, err)
+			fmt.Printf("Error Getting Metrics Data of: %v, because: %v\n", k8sconsts.CollectorsRoleNodeCollector, err)
 		}
 	}()
 
@@ -167,7 +210,7 @@ func FetchOdigosCollectorMetrics(ctx context.Context, client *kube.Client, metri
 	return nil
 }
 
-func collectMetrics(ctx context.Context, client *kube.Client, odigosNamespace string, metricsDir string, collectorRole consts.CollectorRole) error {
+func collectMetrics(ctx context.Context, client *kube.Client, odigosNamespace string, metricsDir string, collectorRole k8sconsts.CollectorRole) error {
 	collectorPods, err := client.CoreV1().Pods(odigosNamespace).List(ctx, metav1.ListOptions{
 		LabelSelector: "odigos.io/collector-role=" + string(collectorRole),
 	})
@@ -178,7 +221,7 @@ func collectMetrics(ctx context.Context, client *kube.Client, odigosNamespace st
 	var wg sync.WaitGroup
 
 	for _, collectorPod := range collectorPods.Items {
-		fmt.Printf("Fetching metrics for pod: %v", collectorPod.Name)
+		fmt.Println("Fetching metrics for pod:", collectorPod.Name)
 		metricFilePath := filepath.Join(metricsDir, collectorPod.Name)
 		metricFile, err := os.OpenFile(metricFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 		if err != nil {
@@ -193,7 +236,7 @@ func collectMetrics(ctx context.Context, client *kube.Client, odigosNamespace st
 			defer wg.Done()
 			err = captureMetrics(ctx, client, collectorPod.Name, odigosNamespace, metricFile, collectorRole)
 			if err != nil {
-				fmt.Printf("Error Getting Metrics Data of: %v, because: %v\n", metricFile, err)
+				fmt.Printf("Error Getting Metrics Data of: %v, because: %v\n", collectorPod.Name, err)
 			}
 		}()
 	}
@@ -202,12 +245,12 @@ func collectMetrics(ctx context.Context, client *kube.Client, odigosNamespace st
 	return nil
 }
 
-func captureMetrics(ctx context.Context, client *kube.Client, podName string, namespace string, metricFile *os.File, collectorRole consts.CollectorRole) error {
+func captureMetrics(ctx context.Context, client *kube.Client, podName string, namespace string, metricFile *os.File, collectorRole k8sconsts.CollectorRole) error {
 	portNumber := ""
-	if collectorRole == consts.CollectorsRoleClusterGateway {
-		portNumber = strconv.Itoa(int(consts.OdigosClusterCollectorOwnTelemetryPortDefault))
-	} else if collectorRole == consts.CollectorsRoleNodeCollector {
-		portNumber = strconv.Itoa(int(consts.OdigosNodeCollectorOwnTelemetryPortDefault))
+	if collectorRole == k8sconsts.CollectorsRoleClusterGateway {
+		portNumber = strconv.Itoa(int(k8sconsts.OdigosClusterCollectorOwnTelemetryPortDefault))
+	} else if collectorRole == k8sconsts.CollectorsRoleNodeCollector {
+		portNumber = strconv.Itoa(int(k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault))
 	} else {
 		return nil
 	}
@@ -222,7 +265,7 @@ func captureMetrics(ctx context.Context, client *kube.Client, podName string, na
 
 	response, err := request.Raw()
 	if err != nil {
-		return err
+		return fmt.Errorf("%w: %s", err, string(response))
 	}
 
 	_, err = io.Copy(metricFile, bytes.NewReader(response))

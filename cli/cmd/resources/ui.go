@@ -5,6 +5,7 @@ import (
 
 	rbacv1 "k8s.io/api/rbac/v1"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/pkg/containers"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
@@ -15,15 +16,6 @@ import (
 
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
-)
-
-const (
-	UIImage              = "keyval/odigos-ui"
-	UIServiceName        = "ui"
-	UIDeploymentName     = "odigos-ui"
-	UIAppLabelValue      = "odigos-ui"
-	UIContainerName      = "ui"
-	UIServiceAccountName = "odigos-ui"
 )
 
 type uiResourceManager struct {
@@ -44,33 +36,33 @@ func NewUIDeployment(ns string, version string, imagePrefix string) *appsv1.Depl
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      UIDeploymentName,
+			Name:      k8sconsts.UIDeploymentName,
 			Namespace: ns,
 			Labels: map[string]string{
-				"app.kubernetes.io/name": UIAppLabelValue,
+				"app.kubernetes.io/name": k8sconsts.UIAppLabelValue,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptrint32(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": UIAppLabelValue,
+					"app": k8sconsts.UIAppLabelValue,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": UIAppLabelValue,
+						"app": k8sconsts.UIAppLabelValue,
 					},
 					Annotations: map[string]string{
-						"kubectl.kubernetes.io/default-container": UIContainerName,
+						"kubectl.kubernetes.io/default-container": k8sconsts.UIContainerName,
 					},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  UIContainerName,
-							Image: containers.GetImageName(imagePrefix, UIImage, version),
+							Name:  k8sconsts.UIContainerName,
+							Image: containers.GetImageName(imagePrefix, k8sconsts.UIImage, version),
 							Args: []string{
 								"--namespace=$(CURRENT_NS)",
 							},
@@ -104,7 +96,7 @@ func NewUIDeployment(ns string, version string, imagePrefix string) *appsv1.Depl
 						},
 					},
 					TerminationGracePeriodSeconds: ptrint64(10),
-					ServiceAccountName:            UIServiceAccountName,
+					ServiceAccountName:            k8sconsts.UIServiceAccountName,
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot: ptrbool(true),
 					},
@@ -123,7 +115,7 @@ func NewUIServiceAccount(ns string) *corev1.ServiceAccount {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      UIServiceAccountName,
+			Name:      k8sconsts.UIServiceAccountName,
 			Namespace: ns,
 		},
 	}
@@ -187,7 +179,7 @@ func NewUIRoleBinding(ns string) *rbacv1.RoleBinding {
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      UIServiceAccountName,
+				Name:      k8sconsts.UIServiceAccountName,
 				Namespace: ns,
 			},
 		},
@@ -241,6 +233,11 @@ func NewUIClusterRole() *rbacv1.ClusterRole {
 				Resources: []string{"instrumentationconfigs", "instrumentationinstances"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
+			{ // Needed to instrument / uninstrument sources
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"sources"},
+				Verbs:     []string{"get", "list", "create", "delete"},
+			},
 		},
 	}
 }
@@ -257,7 +254,7 @@ func NewUIClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      UIServiceAccountName,
+				Name:      k8sconsts.UIServiceAccountName,
 				Namespace: ns,
 			},
 		},
@@ -276,24 +273,20 @@ func NewUIService(ns string) *corev1.Service {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      UIServiceName,
+			Name:      k8sconsts.UIServiceName,
 			Namespace: ns,
 			Labels: map[string]string{
-				"app": UIAppLabelValue,
+				"app": k8sconsts.UIAppLabelValue,
 			},
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: map[string]string{
-				"app": UIAppLabelValue,
+				"app": k8sconsts.UIAppLabelValue,
 			},
 			Ports: []corev1.ServicePort{
 				{
-					Name: "ui",
-					Port: 3000,
-				},
-				{
-					Name: "legacy-ui",
-					Port: 3001,
+					Name: k8sconsts.OdigosUiServiceName,
+					Port: k8sconsts.OdigosUiServicePort,
 				},
 				{
 					Name: "otlp",

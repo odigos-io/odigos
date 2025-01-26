@@ -5,8 +5,8 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -22,7 +22,7 @@ func deletePreviousServices(ctx context.Context, c client.Client, ns string) err
 	// so that it can be recreated with the new ClusterIP value
 	logger := log.FromContext(ctx)
 	svc := &v1.Service{}
-	err := c.Get(ctx, client.ObjectKey{Name: consts.OdigosClusterCollectorServiceName, Namespace: ns}, svc)
+	err := c.Get(ctx, client.ObjectKey{Name: k8sconsts.OdigosClusterCollectorServiceName, Namespace: ns}, svc)
 	if err != nil {
 		return client.IgnoreNotFound(err)
 	}
@@ -42,7 +42,7 @@ func syncService(gateway *odigosv1.CollectorsGroup, ctx context.Context, c clien
 	logger := log.FromContext(ctx)
 	gatewaySvc := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      consts.OdigosClusterCollectorServiceName,
+			Name:      k8sconsts.OdigosClusterCollectorServiceName,
 			Namespace: gateway.Namespace,
 			Labels:    ClusterCollectorGateway,
 		},

@@ -18,10 +18,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	actionsv1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // ErrorSamplerLister helps list ErrorSamplers.
@@ -29,7 +29,7 @@ import (
 type ErrorSamplerLister interface {
 	// List lists all ErrorSamplers in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.ErrorSampler, err error)
+	List(selector labels.Selector) (ret []*actionsv1alpha1.ErrorSampler, err error)
 	// ErrorSamplers returns an object that can list and get ErrorSamplers.
 	ErrorSamplers(namespace string) ErrorSamplerNamespaceLister
 	ErrorSamplerListerExpansion
@@ -37,17 +37,17 @@ type ErrorSamplerLister interface {
 
 // errorSamplerLister implements the ErrorSamplerLister interface.
 type errorSamplerLister struct {
-	listers.ResourceIndexer[*v1alpha1.ErrorSampler]
+	listers.ResourceIndexer[*actionsv1alpha1.ErrorSampler]
 }
 
 // NewErrorSamplerLister returns a new ErrorSamplerLister.
 func NewErrorSamplerLister(indexer cache.Indexer) ErrorSamplerLister {
-	return &errorSamplerLister{listers.New[*v1alpha1.ErrorSampler](indexer, v1alpha1.Resource("errorsampler"))}
+	return &errorSamplerLister{listers.New[*actionsv1alpha1.ErrorSampler](indexer, actionsv1alpha1.Resource("errorsampler"))}
 }
 
 // ErrorSamplers returns an object that can list and get ErrorSamplers.
 func (s *errorSamplerLister) ErrorSamplers(namespace string) ErrorSamplerNamespaceLister {
-	return errorSamplerNamespaceLister{listers.NewNamespaced[*v1alpha1.ErrorSampler](s.ResourceIndexer, namespace)}
+	return errorSamplerNamespaceLister{listers.NewNamespaced[*actionsv1alpha1.ErrorSampler](s.ResourceIndexer, namespace)}
 }
 
 // ErrorSamplerNamespaceLister helps list and get ErrorSamplers.
@@ -55,15 +55,15 @@ func (s *errorSamplerLister) ErrorSamplers(namespace string) ErrorSamplerNamespa
 type ErrorSamplerNamespaceLister interface {
 	// List lists all ErrorSamplers in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.ErrorSampler, err error)
+	List(selector labels.Selector) (ret []*actionsv1alpha1.ErrorSampler, err error)
 	// Get retrieves the ErrorSampler from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.ErrorSampler, error)
+	Get(name string) (*actionsv1alpha1.ErrorSampler, error)
 	ErrorSamplerNamespaceListerExpansion
 }
 
 // errorSamplerNamespaceLister implements the ErrorSamplerNamespaceLister
 // interface.
 type errorSamplerNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.ErrorSampler]
+	listers.ResourceIndexer[*actionsv1alpha1.ErrorSampler]
 }

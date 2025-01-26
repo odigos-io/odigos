@@ -201,5 +201,5 @@ spec:
             type: ""
           name: hostfs
 status:
-  numberAvailable: 1
-  numberReady: 1
+  numberAvailable: 2
+  numberReady: 2

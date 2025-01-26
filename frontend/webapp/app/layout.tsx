@@ -6,7 +6,6 @@ import { ApolloWrapper } from '@/lib';
 import { ThemeProviderWrapper } from '@/styles';
 
 const LAYOUT_STYLE: React.CSSProperties = {
-  position: 'fixed',
   width: '100vw',
   height: '100vh',
   margin: 0,

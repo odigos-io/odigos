@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/version"
@@ -34,7 +34,7 @@ func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePul
 
 	odigosNs := env.GetCurrentNamespace()
 	var dataCollectionCollectorGroup odigosv1.CollectorsGroup
-	err := c.Get(ctx, client.ObjectKey{Namespace: odigosNs, Name: consts.OdigosNodeCollectorCollectorGroupName}, &dataCollectionCollectorGroup)
+	err := c.Get(ctx, client.ObjectKey{Namespace: odigosNs, Name: k8sconsts.OdigosNodeCollectorCollectorGroupName}, &dataCollectionCollectorGroup)
 	if err != nil {
 		return client.IgnoreNotFound(err)
 	}

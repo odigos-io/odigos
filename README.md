@@ -22,7 +22,7 @@ If you find Odigos helpful, please ⭐ this repository to show your support!
 
 ## What is Odigos?
 
-Odigos is an open-source distributed tracing solution that simplifyes and improves observability for Kubernetes environments. It provides instant tracing capabilities without requiring any code changes to your applications.
+Odigos is an open-source distributed tracing solution that simplifies and improves observability for Kubernetes environments. It provides instant tracing capabilities without requiring any code changes to your applications.
 
 ## Key Features
 
@@ -98,7 +98,7 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 | Dash0                   |   ✅   |   ✅    |  ✅  |
 | Datadog                 |   ✅   |   ✅    |  ✅  |
 | Dynatrace               |   ✅   |   ✅    |  ✅  |
-| Gigapipe                |   ✅   |         |      |
+| Gigapipe                |   ✅   |   ✅    |  ✅  |
 | Google Cloud Monitoring |   ✅   |   ✅    |      |
 | Google Cloud Storage    |   ✅   |         |  ✅  |
 | Grafana Cloud           |   ✅   |   ✅    |  ✅  |
@@ -115,6 +115,7 @@ For more details, see our [quickstart guide](https://docs.odigos.io/intro).
 | Sentry                  |   ✅   |         |      |
 | Splunk                  |   ✅   |         |      |
 | Sumo Logic              |   ✅   |   ✅    |  ✅  |
+| Traceloop               |   ✅   |   ✅    |      |
 
 ## Self-Hosted (Open Source) Destinations
 

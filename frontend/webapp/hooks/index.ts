@@ -8,3 +8,4 @@ export * from './instrumentation-rules';
 export * from './notification';
 export * from './overview';
 export * from './sources';
+export * from './tokens';

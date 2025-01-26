@@ -71,8 +71,6 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.InstrumentationInstanceSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationInstanceStatus"):
 		return &odigosv1alpha1.InstrumentationInstanceStatusApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationLibrary"):
-		return &odigosv1alpha1.InstrumentationLibraryApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationLibraryConfig"):
 		return &odigosv1alpha1.InstrumentationLibraryConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationLibraryConfigTraces"):
@@ -115,12 +113,12 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.SdkConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("Source"):
 		return &odigosv1alpha1.SourceApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("SourceSelector"):
+		return &odigosv1alpha1.SourceSelectorApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("SourceSpec"):
 		return &odigosv1alpha1.SourceSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("SourceStatus"):
 		return &odigosv1alpha1.SourceStatusApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("WorkloadInstrumentationConfig"):
-		return &odigosv1alpha1.WorkloadInstrumentationConfigApplyConfiguration{}
 
 	}
 	return nil

@@ -19,6 +19,7 @@ const (
 	WorkloadKindDeployment  WorkloadKind = "Deployment"
 	WorkloadKindDaemonSet   WorkloadKind = "DaemonSet"
 	WorkloadKindStatefulSet WorkloadKind = "StatefulSet"
+	WorkloadKindNamespace   WorkloadKind = "Namespace"
 )
 
 // 2. the lower case representation of the workload kind
@@ -29,6 +30,7 @@ const (
 	WorkloadKindLowerCaseDeployment  WorkloadKindLowerCase = "deployment"
 	WorkloadKindLowerCaseDaemonSet   WorkloadKindLowerCase = "daemonset"
 	WorkloadKindLowerCaseStatefulSet WorkloadKindLowerCase = "statefulset"
+	WorkloadKindLowerCaseNamespace   WorkloadKindLowerCase = "namespace"
 )
 
 var ErrKindNotSupported = errors.New("workload kind not supported")
@@ -42,6 +44,14 @@ func IgnoreErrorKindNotSupported(err error) error {
 		return nil
 	}
 	return err
+}
+
+func IsValidWorkloadKind(kind WorkloadKind) bool {
+	switch kind {
+	case WorkloadKindDeployment, WorkloadKindDaemonSet, WorkloadKindStatefulSet, WorkloadKindNamespace:
+		return true
+	}
+	return false
 }
 
 func WorkloadKindLowerCaseFromKind(pascalCase WorkloadKind) WorkloadKindLowerCase {
@@ -104,6 +114,19 @@ func ClientObjectFromWorkloadKind(kind WorkloadKind) client.Object {
 		return &v1.DaemonSet{}
 	case WorkloadKindStatefulSet:
 		return &v1.StatefulSet{}
+	default:
+		return nil
+	}
+}
+
+func ClientListObjectFromWorkloadKind(kind WorkloadKind) client.ObjectList {
+	switch kind {
+	case WorkloadKindDeployment:
+		return &v1.DeploymentList{}
+	case WorkloadKindDaemonSet:
+		return &v1.DaemonSetList{}
+	case WorkloadKindStatefulSet:
+		return &v1.StatefulSetList{}
 	default:
 		return nil
 	}

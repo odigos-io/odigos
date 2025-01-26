@@ -9,6 +9,24 @@ export const DESCRIBE_ODIGOS = gql`
         status
         explain
       }
+      kubernetesVersion {
+        name
+        value
+        status
+        explain
+      }
+      tier {
+        name
+        value
+        status
+        explain
+      }
+      installationMethod {
+        name
+        value
+        status
+        explain
+      }
       numberOfDestinations
       numberOfSources
       clusterCollector {

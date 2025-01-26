@@ -21,3 +21,8 @@ spec:
       componentProps:
         type: password
         required: true
+  note:
+    type: Check
+    content: |
+      We handle the endpoint internally, so you don't need to provide it.
+      - The endpoint is `https://otel.kloudmate.com:4318`

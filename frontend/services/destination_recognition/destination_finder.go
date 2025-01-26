@@ -2,6 +2,7 @@ package destination_recognition
 
 import (
 	"context"
+	"strings"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -10,8 +11,6 @@ import (
 	k8s "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-var SupportedDestinationType = []common.DestinationType{common.JaegerDestinationType, common.ElasticsearchDestinationType}
 
 type DestinationDetails struct {
 	Type   common.DestinationType `json:"type"`
@@ -25,43 +24,42 @@ type IDestinationFinder interface {
 }
 
 func GetAllPotentialDestinationDetails(ctx context.Context, namespaces []k8s.Namespace, dests *odigosv1.DestinationList) ([]DestinationDetails, error) {
-	var destinationFinder IDestinationFinder
 	var destinationDetails []DestinationDetails
-	var err error
 
 	for _, ns := range namespaces {
-		err = client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.CoreV1().Services(ns.Name).List,
-			ctx, metav1.ListOptions{}, func(services *k8s.ServiceList) error {
-				for _, service := range services.Items {
-					for _, destinationType := range SupportedDestinationType {
-						destinationFinder = getDestinationFinder(destinationType)
+		err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.CoreV1().Services(ns.Name).List, ctx, &metav1.ListOptions{},
+			func(svc *k8s.ServiceList) error {
+				for _, service := range svc.Items {
+					df := getDestinationFinder(service.Name)
 
-						if destinationFinder.isPotentialService(service) {
-							potentialDestination := destinationFinder.fetchDestinationDetails(service)
+					if df != nil && df.isPotentialService(service) {
+						pd := df.fetchDestinationDetails(service)
 
-							if !destinationExist(dests, potentialDestination, destinationFinder) {
-								destinationDetails = append(destinationDetails, potentialDestination)
-							}
-							break
+						if !destinationExist(dests, pd, df) {
+							destinationDetails = append(destinationDetails, pd)
 						}
+						break
 					}
 				}
-				return nil
-			})
-	}
 
-	if err != nil {
-		return nil, err
+				return nil
+			},
+		)
+
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return destinationDetails, nil
 }
 
-func getDestinationFinder(destinationType common.DestinationType) IDestinationFinder {
-	switch destinationType {
-	case common.JaegerDestinationType:
+func getDestinationFinder(serviceName string) IDestinationFinder {
+	if strings.Contains(serviceName, string(common.JaegerDestinationType)) {
 		return &JaegerDestinationFinder{}
-	case common.ElasticsearchDestinationType:
+	}
+
+	if strings.Contains(serviceName, string(common.ElasticsearchDestinationType)) {
 		return &ElasticSearchDestinationFinder{}
 	}
 

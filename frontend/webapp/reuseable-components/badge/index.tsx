@@ -1,7 +1,8 @@
+import React from 'react';
 import styled from 'styled-components';
 
 interface Props {
-  label: string | number | JSX.Element;
+  label: string | number | React.ReactNode;
   filled?: boolean;
 }
 

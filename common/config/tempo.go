@@ -21,17 +21,17 @@ func (t *Tempo) DestType() common.DestinationType {
 	return common.TempoDestinationType
 }
 
-func (t *Tempo) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
-
+func (t *Tempo) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	url, exists := dest.GetConfig()[tempoUrlKey]
 	if !exists {
-		return errors.New("Tempo url not specified, gateway will not be configured for Tempo")
+		return nil, errors.New("Tempo url not specified, gateway will not be configured for Tempo")
 	}
 
 	if strings.HasPrefix(url, "https://") {
-		return errors.New("Tempo does not currently supports tls export, gateway will not be configured for Tempo")
+		return nil, errors.New("Tempo does not currently supports tls export, gateway will not be configured for Tempo")
 	}
 
+	var pipelineNames []string
 	if isTracingEnabled(dest) {
 		url = strings.TrimPrefix(url, "http://")
 		endpoint := url
@@ -52,7 +52,8 @@ func (t *Tempo) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) err
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{tempoExporterName},
 		}
+		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
-	return nil
+	return pipelineNames, nil
 }

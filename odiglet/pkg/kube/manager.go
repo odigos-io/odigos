@@ -49,8 +49,8 @@ func CreateManager() (ctrl.Manager, error) {
 
 	odigosNs := env.Current.Namespace
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
-	nameSelector := fields.OneTermEqualSelector("metadata.name", consts.OdigosConfigurationName)
-	odigosConfigSelector := fields.AndSelectors(nsSelector, nameSelector)
+	odigosConfigNameSelector := fields.OneTermEqualSelector("metadata.name", consts.OdigosEffectiveConfigName)
+	odigosConfigSelector := fields.AndSelectors(nsSelector, odigosConfigNameSelector)
 	currentNodeSelector := fields.OneTermEqualSelector("spec.nodeName", env.Current.NodeName)
 
 	return manager.New(config.GetConfigOrDie(), manager.Options{

@@ -4,9 +4,9 @@ import (
 	"context"
 	"slices"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/opampserver/pkg/connection"
 	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig/configsections"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
@@ -26,7 +26,7 @@ func (d *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	// we are configuring the SDKs which sends data to node collectors group.
 	// thus, we only care about this specific CR
-	if req.Name != consts.OdigosNodeCollectorCollectorGroupName {
+	if req.Name != k8sconsts.OdigosNodeCollectorCollectorGroupName {
 		return ctrl.Result{}, nil
 	}
 

@@ -6,8 +6,7 @@ import theme from '@/styles/theme';
 
 export type LengthType = number | string;
 
-interface CommonProps
-  extends DetailedHTMLProps<HTMLAttributes<HTMLSpanElement>, HTMLSpanElement> {
+interface CommonProps extends DetailedHTMLProps<HTMLAttributes<HTMLSpanElement>, HTMLSpanElement> {
   color?: string;
   loading?: boolean;
   cssOverride?: CSSProperties;
@@ -21,11 +20,7 @@ interface LoaderHeightWidthRadiusProps extends CommonProps {
   margin?: LengthType;
 }
 
-const fade = createAnimation(
-  'FadeLoader',
-  '50% {opacity: 0.3} 100% {opacity: 1}',
-  'fade'
-);
+const fade = createAnimation('FadeLoader', '50% {opacity: 0.3} 100% {opacity: 1}', 'fade');
 
 function FadeLoader({
   loading = true,
@@ -37,7 +32,7 @@ function FadeLoader({
   radius = 2,
   margin = 2,
   ...additionalprops
-}: LoaderHeightWidthRadiusProps): JSX.Element | null {
+}: LoaderHeightWidthRadiusProps): React.ReactNode | null {
   const { value } = parseLengthAndUnit(margin);
   const radiusValue = value + 4.2;
   const quarter = radiusValue / 2 + radiusValue / 5.5;
@@ -63,9 +58,7 @@ function FadeLoader({
       borderRadius: cssValue(radius),
       transition: '2s',
       animationFillMode: 'both',
-      animation: `${fade} ${1.2 / speedMultiplier}s ${
-        i * 0.12
-      }s infinite ease-in-out`,
+      animation: `${fade} ${1.2 / speedMultiplier}s ${i * 0.12}s infinite ease-in-out`,
     };
   };
 

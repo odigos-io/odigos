@@ -42,80 +42,47 @@ spec:
               Config for the OpenTelemeetry SDKs that should be applied to a workload.
               The workload is identified by the owner reference
             properties:
-              config:
-                description: |-
-                  config for this workload.
-                  the config is a list to allow for multiple config options and values to be applied.
-                  the list is processed in order, and the first matching config is applied.
-                items:
-                  description: |-
-                    WorkloadInstrumentationConfig defined a single config option to apply
-                    on a workload, along with it's value, filters and instrumentation libraries
-                  properties:
-                    instrumentationLibraries:
-                      description: |-
-                        a list of instrumentation libraries to apply this setting to
-                        if a library is not in this list, the setting should not apply to it
-                        and should be cleared.
-                      items:
-                        description: InstrumentationLibrary represents a library for
-                          instrumentation
-                        properties:
-                          instrumentationLibraryName:
-                            description: InstrumentationLibraryName is the name of
-                              the instrumentation library
-                            type: string
-                          language:
-                            description: Language is the programming language of the
-                              library
-                            enum:
-                            - java
-                            - python
-                            - go
-                            - dotnet
-                            - javascript
-                            - mysql
-                            - nginx
-                            - unknown
-                            - ignored
-                            type: string
-                        required:
-                        - instrumentationLibraryName
-                        - language
-                        type: object
-                      type: array
-                    optionKey:
-                      description: |-
-                        OptionKey is the name of the option
-                        This value is transparent to the CRD and is passed as-is to the SDK.
-                      type: string
-                    optionValueBoolean:
-                      description: OptionValueBoolean is the boolean value of the
-                        option if it is a boolean
-                      type: boolean
-                    spanKind:
-                      description: |-
-                        This option allow to specify the config option for a specific span kind
-                        for example, only to client spans or only to server spans.
-                        it the span kind is not specified, the option will apply to all spans.
-                      enum:
-                      - client
-                      - server
-                      - producer
-                      - consumer
-                      - internal
-                      type: string
-                  required:
-                  - instrumentationLibraries
-                  - optionKey
-                  type: object
-                type: array
               sdkConfigs:
                 description: |-
                   Configuration for the OpenTelemetry SDKs that this workload should use.
                   The SDKs are identified by the programming language they are written in.
                 items:
                   properties:
+                    codeAttributes:
+                      description: default configuration for collecting code attributes,
+                        in case the instrumentation library does not provide a configuration.
+                      properties:
+                        column:
+                          description: |-
+                            Should record the `code.column` attribute.
+                            if unset, the value will resolve from other relevant rules, or fallback to false
+                          type: boolean
+                        filePath:
+                          description: |-
+                            Should record the `code.filepath` attribute.
+                            if unset, the value will resolve from other relevant rules, or fallback to false
+                          type: boolean
+                        function:
+                          description: |-
+                            Should record the `code.function` attribute.
+                            if unset, the value will resolve from other relevant rules, or fallback to false
+                          type: boolean
+                        lineNumber:
+                          description: |-
+                            Should record the `code.lineno` attribute.
+                            if unset, the value will resolve from other relevant rules, or fallback to false
+                          type: boolean
+                        namespace:
+                          description: |-
+                            Should record the `code.namespace` attribute.
+                            if unset, the value will resolve from other relevant rules, or fallback to false
+                          type: boolean
+                        stackTrace:
+                          description: |-
+                            Should record the `code.stacktrace` attribute.
+                            if unset, the value will resolve from other relevant rules, or fallback to false
+                          type: boolean
+                      type: object
                     headSamplerConfig:
                       description: |-
                         HeadSamplingConfig is a set sampling rules.
@@ -189,6 +156,43 @@ spec:
                         the the SDK should use
                       items:
                         properties:
+                          codeAttributes:
+                            description: |-
+                              code attributes configuration for a specific library.
+                              if not set, the default code attributes configuration for the workload will be used.
+                              if set, but internal fields are empty, those fields will be used from the default configuration.
+                            properties:
+                              column:
+                                description: |-
+                                  Should record the `code.column` attribute.
+                                  if unset, the value will resolve from other relevant rules, or fallback to false
+                                type: boolean
+                              filePath:
+                                description: |-
+                                  Should record the `code.filepath` attribute.
+                                  if unset, the value will resolve from other relevant rules, or fallback to false
+                                type: boolean
+                              function:
+                                description: |-
+                                  Should record the `code.function` attribute.
+                                  if unset, the value will resolve from other relevant rules, or fallback to false
+                                type: boolean
+                              lineNumber:
+                                description: |-
+                                  Should record the `code.lineno` attribute.
+                                  if unset, the value will resolve from other relevant rules, or fallback to false
+                                type: boolean
+                              namespace:
+                                description: |-
+                                  Should record the `code.namespace` attribute.
+                                  if unset, the value will resolve from other relevant rules, or fallback to false
+                                type: boolean
+                              stackTrace:
+                                description: |-
+                                  Should record the `code.stacktrace` attribute.
+                                  if unset, the value will resolve from other relevant rules, or fallback to false
+                                type: boolean
+                            type: object
                           libraryId:
                             properties:
                               libraryName:
@@ -409,7 +413,6 @@ spec:
                       type: object
                   required:
                   - language
-                  - payloadCollection
                   type: object
                 type: array
               serviceName:

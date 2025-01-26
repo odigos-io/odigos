@@ -1,6 +1,5 @@
 import { type Node } from '@xyflow/react';
 import nodeConfig from './node-config.json';
-import { type EntityCounts } from './get-entity-counts';
 import { type NodePositions } from './get-node-positions';
 import { getMainContainerLanguage } from '@/utils/constants/programming-languages';
 import { getEntityIcon, getEntityLabel, getHealthStatus, getProgrammingLanguageIcon } from '@/utils';
@@ -10,7 +9,7 @@ interface Params {
   loading: boolean;
   entities: K8sActualSource[];
   positions: NodePositions;
-  unfilteredCounts: EntityCounts;
+  unfilteredCount: number;
   containerHeight: number;
   onScroll: (params: { clientHeight: number; scrollHeight: number; scrollTop: number }) => void;
 }
@@ -36,10 +35,9 @@ const mapToNodeData = (entity: Params['entities'][0]) => {
   };
 };
 
-export const buildSourceNodes = ({ loading, entities, positions, unfilteredCounts, containerHeight, onScroll }: Params) => {
+export const buildSourceNodes = ({ loading, entities, positions, unfilteredCount, containerHeight, onScroll }: Params) => {
   const nodes: Node[] = [];
   const position = positions[OVERVIEW_ENTITY_TYPES.SOURCE];
-  const unfilteredCount = unfilteredCounts[OVERVIEW_ENTITY_TYPES.SOURCE];
 
   nodes.push({
     id: 'source-header',

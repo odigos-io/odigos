@@ -22,6 +22,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	odigosver "github.com/odigos-io/odigos/k8sutils/pkg/version"
 
@@ -93,7 +94,7 @@ func main() {
 		"The image pull secrets to use for the collectors created by autoscaler")
 	flag.StringVar(&nameutils.ImagePrefix, "image-prefix", "", "The image prefix to use for the collectors created by autoscaler")
 
-	odigosVersion := os.Getenv("ODIGOS_VERSION")
+	odigosVersion := os.Getenv(consts.OdigosVersionEnvVarName)
 	if odigosVersion == "" {
 		flag.StringVar(&odigosVersion, "version", "", "for development purposes only")
 	}
@@ -285,6 +286,16 @@ func main() {
 		Client: mgr.GetClient(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "DaemonSet")
+		os.Exit(1)
+	}
+	if err = (&controllers.SourceReconciler{
+		Client:           mgr.GetClient(),
+		Scheme:           mgr.GetScheme(),
+		ImagePullSecrets: imagePullSecrets,
+		OdigosVersion:    odigosVersion,
+		Config:           config,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Source")
 		os.Exit(1)
 	}
 

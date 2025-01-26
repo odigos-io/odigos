@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"strings"
 
+
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/common"
 	webhookenvinjector "github.com/odigos-io/odigos/instrumentor/internal/webhook_env_injector"
 	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	containerutils "github.com/odigos-io/odigos/k8sutils/pkg/container"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"go.opentelemetry.io/otel/attribute"

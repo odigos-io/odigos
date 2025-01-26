@@ -16,7 +16,7 @@ func (e *Quickwit) DestType() common.DestinationType {
 	return common.QuickwitDestinationType
 }
 
-func (e *Quickwit) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (e *Quickwit) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	if url, exists := dest.GetConfig()[qwUrlKey]; exists {
 		exporterName := "otlp/quickwit-" + dest.GetID()
 
@@ -27,11 +27,13 @@ func (e *Quickwit) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 			},
 		}
 
+		var pipelineNames []string
 		if isTracingEnabled(dest) {
 			tracesPipelineName := "traces/quickwit-" + dest.GetID()
 			currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 				Exporters: []string{exporterName},
 			}
+			pipelineNames = append(pipelineNames, tracesPipelineName)
 		}
 
 		if isLoggingEnabled(dest) {
@@ -39,10 +41,11 @@ func (e *Quickwit) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 			currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 				Exporters: []string{exporterName},
 			}
+			pipelineNames = append(pipelineNames, logsPipelineName)
 		}
 
-		return nil
+		return pipelineNames, nil
 	}
 
-	return errors.New("Quickwit url not specified, gateway will not be configured for Quickwit")
+	return nil, errors.New("Quickwit url not specified, gateway will not be configured for Quickwit")
 }

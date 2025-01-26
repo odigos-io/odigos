@@ -20,6 +20,7 @@ spec:
       componentProps:
         type: text
         required: false
+        tooltip: 'Will define a namespace in AppDynamics'
     - name: APPDYNAMICS_ACCOUNT_NAME
       displayName: Account Name
       componentType: input

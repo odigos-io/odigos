@@ -18,13 +18,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	actionsv1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
+	apiactionsv1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	versioned "github.com/odigos-io/odigos/api/generated/actions/clientset/versioned"
 	internalinterfaces "github.com/odigos-io/odigos/api/generated/actions/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/odigos-io/odigos/api/generated/actions/listers/actions/v1alpha1"
+	actionsv1alpha1 "github.com/odigos-io/odigos/api/generated/actions/listers/actions/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -35,7 +35,7 @@ import (
 // DeleteAttributes.
 type DeleteAttributeInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.DeleteAttributeLister
+	Lister() actionsv1alpha1.DeleteAttributeLister
 }
 
 type deleteAttributeInformer struct {
@@ -70,7 +70,7 @@ func NewFilteredDeleteAttributeInformer(client versioned.Interface, namespace st
 				return client.ActionsV1alpha1().DeleteAttributes(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&actionsv1alpha1.DeleteAttribute{},
+		&apiactionsv1alpha1.DeleteAttribute{},
 		resyncPeriod,
 		indexers,
 	)
@@ -81,9 +81,9 @@ func (f *deleteAttributeInformer) defaultInformer(client versioned.Interface, re
 }
 
 func (f *deleteAttributeInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&actionsv1alpha1.DeleteAttribute{}, f.defaultInformer)
+	return f.factory.InformerFor(&apiactionsv1alpha1.DeleteAttribute{}, f.defaultInformer)
 }
 
-func (f *deleteAttributeInformer) Lister() v1alpha1.DeleteAttributeLister {
-	return v1alpha1.NewDeleteAttributeLister(f.Informer().GetIndexer())
+func (f *deleteAttributeInformer) Lister() actionsv1alpha1.DeleteAttributeLister {
+	return actionsv1alpha1.NewDeleteAttributeLister(f.Informer().GetIndexer())
 }

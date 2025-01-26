@@ -18,10 +18,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // InstrumentedApplicationLister helps list InstrumentedApplications.
@@ -29,7 +29,7 @@ import (
 type InstrumentedApplicationLister interface {
 	// List lists all InstrumentedApplications in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.InstrumentedApplication, err error)
+	List(selector labels.Selector) (ret []*odigosv1alpha1.InstrumentedApplication, err error)
 	// InstrumentedApplications returns an object that can list and get InstrumentedApplications.
 	InstrumentedApplications(namespace string) InstrumentedApplicationNamespaceLister
 	InstrumentedApplicationListerExpansion
@@ -37,17 +37,17 @@ type InstrumentedApplicationLister interface {
 
 // instrumentedApplicationLister implements the InstrumentedApplicationLister interface.
 type instrumentedApplicationLister struct {
-	listers.ResourceIndexer[*v1alpha1.InstrumentedApplication]
+	listers.ResourceIndexer[*odigosv1alpha1.InstrumentedApplication]
 }
 
 // NewInstrumentedApplicationLister returns a new InstrumentedApplicationLister.
 func NewInstrumentedApplicationLister(indexer cache.Indexer) InstrumentedApplicationLister {
-	return &instrumentedApplicationLister{listers.New[*v1alpha1.InstrumentedApplication](indexer, v1alpha1.Resource("instrumentedapplication"))}
+	return &instrumentedApplicationLister{listers.New[*odigosv1alpha1.InstrumentedApplication](indexer, odigosv1alpha1.Resource("instrumentedapplication"))}
 }
 
 // InstrumentedApplications returns an object that can list and get InstrumentedApplications.
 func (s *instrumentedApplicationLister) InstrumentedApplications(namespace string) InstrumentedApplicationNamespaceLister {
-	return instrumentedApplicationNamespaceLister{listers.NewNamespaced[*v1alpha1.InstrumentedApplication](s.ResourceIndexer, namespace)}
+	return instrumentedApplicationNamespaceLister{listers.NewNamespaced[*odigosv1alpha1.InstrumentedApplication](s.ResourceIndexer, namespace)}
 }
 
 // InstrumentedApplicationNamespaceLister helps list and get InstrumentedApplications.
@@ -55,15 +55,15 @@ func (s *instrumentedApplicationLister) InstrumentedApplications(namespace strin
 type InstrumentedApplicationNamespaceLister interface {
 	// List lists all InstrumentedApplications in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.InstrumentedApplication, err error)
+	List(selector labels.Selector) (ret []*odigosv1alpha1.InstrumentedApplication, err error)
 	// Get retrieves the InstrumentedApplication from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.InstrumentedApplication, error)
+	Get(name string) (*odigosv1alpha1.InstrumentedApplication, error)
 	InstrumentedApplicationNamespaceListerExpansion
 }
 
 // instrumentedApplicationNamespaceLister implements the InstrumentedApplicationNamespaceLister
 // interface.
 type instrumentedApplicationNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.InstrumentedApplication]
+	listers.ResourceIndexer[*odigosv1alpha1.InstrumentedApplication]
 }

@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { usePaginatedSources, useSourceCRUD } from '@/hooks';
 import type { Node, NodeProps } from '@xyflow/react';
 import { useAppStore, usePendingStore } from '@/store';
-import { NODE_TYPES, OVERVIEW_ENTITY_TYPES } from '@/types';
+import { K8sActualSource, NODE_TYPES, OVERVIEW_ENTITY_TYPES } from '@/types';
 import { Badge, Checkbox, FadeLoader, Text } from '@/reuseable-components';
 
 interface Props
@@ -61,7 +61,7 @@ const HeaderNode: React.FC<Props> = ({ data }) => {
 
     const onSelect = (bool: boolean) => {
       if (bool) {
-        const payload = {};
+        const payload: Record<string, K8sActualSource[]> = {};
 
         sources.forEach((source) => {
           const id = { namespace: source.namespace, name: source.name, kind: source.kind };
