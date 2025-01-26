@@ -358,7 +358,7 @@ func handleContainerRuntimeDetailsUpdate(
 			}
 
 			if strings.Contains(*envValue, "/var/odigos") {
-				cleanedEnvValue := cleanUpManifestValueFromOdigosAdditions(envKey, *envValue)
+				cleanedEnvValue := envOverwrite.CleanupEnvValueFromOdigosAdditions(envKey, *envValue)
 				annotationEnvVarsForContainer[envKey] = &cleanedEnvValue
 				needToUpdateWorkloadAnnotation = true
 				isEnvVarAlreadyExists := isEnvVarPresent(containerRuntimeDetails.EnvFromContainerRuntime, envKey)
