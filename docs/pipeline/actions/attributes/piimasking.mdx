@@ -1,76 +1,93 @@
 ---
 title: "PII Masking"
+description: "This action processes a list of PII categories to be masked from the traces."
 sidebarTitle: "PII Masking"
+icon: "layer-group"
 ---
 
-The "PII Masking" Odigos Action can be used to mask PII data from span attribute values.
+import AssumeNoMeaning from '/snippets/assume-no-meaning.mdx';
 
-### Use Cases
+## Considerations
 
-#### Security
+<Warning>
+  Before enabling **pii masking**, please note the following:
+  - This action masks span attribute values by replacing only the sensitive portions with `****`, while leaving the rest of the value intact.
+  - The regex used for masking are predefined for each PII category and cannot be configured.
+  - Currently, only trace signals are supported.
+  - All span attribute values in every span will be examined and masked accordingly.
+</Warning>
+
+## Use Cases
+
+**Security**
 
 - By default, OpenTelemetry should not record PII (Personally Identifiable Information) or sensitive data such as passwords, api tokens, etc. However, if the data is accidentally added to the telemetry signals, or if a manual instrumentation recorded it into an attribute, this action can be used to mask such data.
 
-#### Legal and Compliance
+**Legal and Compliance**
 
 - Ensure compliance with legal and privacy.
     - Payment Card Industry (PCI) Data Security Standards prohibit logging certain things or storing them unencrypted.
 
+## Configuration Options
 
-### Mechanism
+<AccordionGroup>
+  <Accordion title="actionName">
+    **actionName** `string` : Allows you to attach a meaningful name to the action for convenience.
+    - This field is
+    - <AssumeNoMeaning />
+  </Accordion>
+  <Accordion title="notes">
+    **notes** `string` : Allows you to attach notes regarding the action for convenience.
+    - This field is *optional*
+    - <AssumeNoMeaning />
+  </Accordion>
+  <Accordion title="disabled">
+    **disabled** `boolean` : Allows you to temporarily disable the action, but keep it saved for future use.
+    - This field is *optional*, and defaults to `false`
+  </Accordion>
+  <Accordion title="signals *">
+    **signals** `string[]` : An array with the signals that the processor will act on.
+    - This field is *required*
+    - Supported values: `TRACES`
+  </Accordion>
+  <Accordion title="piiCategories *">
+    **piiCategories** `string[]` : An array of strings representing the PII Category you want to mask.
+    - This field is *required*
+    - The available PII categories are:
+      - `CREDIT_CARD` - mask Visa and MasterCard credit card numbers
+    <Note>
+      Can't find the PII category you need? Please Contact us and we will add it for you
+    </Note>
+  </Accordion>
+</AccordionGroup>
 
-This action processes a list of PII categories to be masked from the traces. Each PII category is linked to a regex that will be applied to all span attribute values. Any portion of the span attribute values that match the regex will be replaced with `****`, while the rest of the attribute value will remain unchanged.
+## Basic Example
 
+The following example demonstrates how to configure the Pii Masking action to mask Visa and MasterCard credit card numbers from span attribute values.
 
-### Basic Example
+<Steps>
+  <Step>
+    Create a YAML file with the following content:
 
-The basic example below shows how to configure the Pii Masking action to mask Visa and MasterCard credit card numbers from span attribute values.
+    ```yaml pii-masking.yaml
+    apiVersion: actions.odigos.io/v1alpha1
+    kind: PiiMasking
+    metadata:
+      name: pii-masking
+      namespace: odigos-system
+    spec:
+      actionName: PII Masking
+      piiCategories:
+        - CREDIT_CARD
+      signals:
+        - TRACES
+    ```
+  </Step>
+  <Step>
+    Apply the action to the cluster:
 
-
-Create a file named `piimasking.yaml` with the following content:
-
-```yaml
-apiVersion: actions.odigos.io/v1alpha1
-kind: PiiMasking
-metadata:
-  name: piimasking
-  namespace: odigos-system
-spec:
-  actionName: "PII Masking"
-  piiCategories:
-    - CREDIT_CARD
-  signals:
-    - TRACES
-```
-
-Apply the action to the cluster:
-
-```bash
-kubectl apply -f piimasking.yaml
-```
-
-### Full Action Options
-
-The full list of options available for the "PiiMasking" action are:
-
-- `piiCategories` (required): An array of strings representing the PII Category you want to mask.
-
-   The available PII categories are:
-  - `CREDIT_CARD` - mask Visa and MasterCard credit card numbers
-
-    <Note> Can't find the PII category you need? Please Contact us and we will add it for you </Note>
-
-- `signals` (required): An array with the signals that the processor will act on (`TRACES`).
-
-- `actionName` (optional): Allows you to attach a meaningful name to the action for convenience. Odigos does not use or assume any meaning from this field.
-
-- `notes` (optional): A free-form text field that allows you to attach notes to the action for convenience. Odigos does not use or assume any meaning from this field.
-
-- `disabled` (optional): A boolean field that allows you to disable the action. When set to `true`, the action will not be executed. The default value is `false`.
-
-### Notes
-
-- This action masks span attribute values by replacing only the sensitive portions with `****`, while leaving the rest of the value intact.
-- The regex used for masking are predefined for each PII category and cannot be configured.
-- Currently, only trace signals are supported.
-- All span attribute values in every span will be examined and masked accordingly.
+    ```bash
+    kubectl apply -f pii-masking.yaml
+    ```
+  </Step>
+</Steps>
