@@ -4,14 +4,32 @@ sidebarTitle: "odigos cloud"
 ---
 ## odigos cloud
 
-Manage odigos cloud
+Manage the connection of the cluster to Odigos cloud
 
 ### Synopsis
 
-Used to interact with odigos managed service.
+This command can be used to interact with the Odigos cloud service.
 
 ```
 odigos cloud [flags]
+```
+
+### Examples
+
+```
+
+    # Install Odigos cloud
+    odigos install -k <API_KEY>
+
+    # Connect existing Odigos installation to Odigos cloud
+    odigos cloud login -k <API_KEY>
+
+    # Update the api key for an existing Odigos cloud installation
+    odigos cloud update -k <API_KEY>
+
+    # Logout from Odigos cloud
+    odigos cloud logout
+	
 ```
 
 ### Options

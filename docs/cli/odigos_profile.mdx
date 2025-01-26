@@ -4,14 +4,26 @@ sidebarTitle: "odigos profile"
 ---
 ## odigos profile
 
-Manage odigos profiles
+Manage presets of applied profiles to your odigos installation
 
 ### Synopsis
 
-Odigos profiles are used to apply some specific preset configuration to the odigos installation
+This command can be used to interact with the applied profiles in your odigos installation.
 
 ```
 odigos profile [flags]
+```
+
+### Examples
+
+```
+
+    # Enable payload collection for all supported workloads and instrumentation libraries in the cluster
+    odigos profile add full-payload-collection
+
+    # Remove the full-payload-collection profile from the cluster
+    odigos profile remove full-payload-collection
+	
 ```
 
 ### Options
