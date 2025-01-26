@@ -20,27 +20,28 @@ To undo the override, simply erase the value from the `Override service.name` fi
 
 ### Kubernetes Manifest
 
-You can also set the `service.name` attribute by adding an annotation to the workload manifest:
+You can also set the `service.name` attribute by adding the `otelServiceName` attribute to an exiting Source,
+or by creating a `Source` with that attribute:
 
 ```yaml
-odigos.io/reported-name: <your-overwite-service.name>
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: example-source
+  namespace: default
+spec:
+  workload:
+    name: frontend
+    namespace: default
+    kind: Deployment
+  otelServiceName: my-custom-service-name
 ```
 
-For example, to set the `service.name` attribute in telemetry for a deployment named `my-deployment`, to a value of `foo` with kubectl, you can run:
+For example, to set the `service.name` attribute in telemetry for an existing source:
 
 ```shell
-kubectl annotate deployment my-deployment odigos.io/reported-name=foo
+kubectl patch source/<source-name> -n <namespace> --type=merge -p '{"spec":{"otelServiceName":"<serviceName>"}}'
 ```
 
-Below is a snippet of the deployment manifest with the annotation:
+Namespace Sources do not support the `otelServiceName` attribute. If a namespace is instrumented, and a Source for a specific workload is not present, a specific source for that workload will need to be created including the desired `otelServiceName`.
 
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  annotations:
-    odigos.io/reported-name: foo
-name: my-deployment
-```
-
-To undo the override, simply remove the annotation from the workload manifest.
