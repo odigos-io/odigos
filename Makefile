@@ -53,7 +53,7 @@ lint-fix:
 .PHONY: cli-docs
 cli-docs:
 	rm -rf docs/cli/*
-	KUBECONFIG=KUBECONFIG go run -tags embed_manifests scripts/cli-docgen/main.go
+	cd scripts/cli-docgen && KUBECONFIG=KUBECONFIG go run -tags embed_manifests main.go
 	for file in docs/cli/*; do \
 		mv $${file} $${file%.md}.mdx; \
 	done

@@ -32,7 +32,7 @@ func main() {
 	}
 
 	rootCmd := cmd.RootCmd()
-	err := doc.GenMarkdownTreeCustom(&rootCmd, "docs/cli", filePrepender, linkHandler)
+	err := doc.GenMarkdownTreeCustom(&rootCmd, "../../docs/cli", filePrepender, linkHandler)
 	if err != nil {
 		log.Fatal(err)
 	}
