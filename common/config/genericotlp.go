@@ -16,15 +16,15 @@ func (g *GenericOTLP) DestType() common.DestinationType {
 	return common.GenericOTLPDestinationType
 }
 
-func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	url, exists := dest.GetConfig()[genericOtlpUrlKey]
 	if !exists {
-		return errors.New("Generic OTLP gRPC endpoint not specified, gateway will not be configured for otlp")
+		return nil, errors.New("Generic OTLP gRPC endpoint not specified, gateway will not be configured for otlp")
 	}
 
 	grpcEndpoint, err := parseOtlpGrpcUrl(url, false)
 	if err != nil {
-		return errors.Join(err, errors.New("otlp endpoint invalid, gateway will not be configured for otlp"))
+		return nil, errors.Join(err, errors.New("otlp endpoint invalid, gateway will not be configured for otlp"))
 	}
 
 	genericOtlpExporterName := "otlp/generic-" + dest.GetID()
@@ -34,12 +34,13 @@ func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 			"insecure": true,
 		},
 	}
-
+	var pipelineNames []string
 	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/generic-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{genericOtlpExporterName},
 		}
+		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
 	if isMetricsEnabled(dest) {
@@ -47,6 +48,7 @@ func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{genericOtlpExporterName},
 		}
+		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
 	if isLoggingEnabled(dest) {
@@ -54,7 +56,8 @@ func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{genericOtlpExporterName},
 		}
+		pipelineNames = append(pipelineNames, logsPipelineName)
 	}
 
-	return nil
+	return pipelineNames, nil
 }

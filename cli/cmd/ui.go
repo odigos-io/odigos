@@ -15,6 +15,7 @@ import (
 
 	"k8s.io/client-go/tools/portforward"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources"
@@ -134,7 +135,7 @@ func forwardPorts(method string, url *url.URL, cfg *rest.Config, stopCh chan str
 
 func findOdigosUIPod(client *kube.Client, ctx context.Context, ns string) (*corev1.Pod, error) {
 	pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("app=%s", resources.UIAppLabelValue),
+		LabelSelector: fmt.Sprintf("app=%s", k8sconsts.UIAppLabelValue),
 	})
 
 	if err != nil {

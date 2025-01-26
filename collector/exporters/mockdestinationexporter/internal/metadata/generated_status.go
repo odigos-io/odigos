@@ -7,7 +7,8 @@ import (
 )
 
 var (
-	Type = component.MustNewType("mockdestination")
+	Type      = component.MustNewType("mockdestination")
+	ScopeName = "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/mockdestinationexporter"
 )
 
 const (

@@ -20,10 +20,10 @@ func GetCurrentOdigosTier(ctx context.Context, client *kube.Client, ns string) (
 		return common.CommunityOdigosTier, nil
 	}
 
-	if _, exists := sec.Data[odigosCloudApiKeySecretKey]; exists {
+	if _, exists := sec.Data[k8sconsts.OdigosCloudApiKeySecretKey]; exists {
 		return common.CloudOdigosTier, nil
 	}
-	if _, exists := sec.Data[odigosOnpremTokenSecretKey]; exists {
+	if _, exists := sec.Data[k8sconsts.OdigosOnpremTokenSecretKey]; exists {
 		return common.OnPremOdigosTier, nil
 	}
 	return common.CommunityOdigosTier, nil
@@ -32,13 +32,13 @@ func GetCurrentOdigosTier(ctx context.Context, client *kube.Client, ns string) (
 // used to inject the cloud token as env var into odigos components
 func CloudTokenAsEnvVar() corev1.EnvVar {
 	return corev1.EnvVar{
-		Name: odigosCloudTokenEnvName,
+		Name: k8sconsts.OdigosCloudTokenEnvName,
 		ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: k8sconsts.OdigosProSecretName,
 				},
-				Key: odigosCloudApiKeySecretKey,
+				Key: k8sconsts.OdigosCloudApiKeySecretKey,
 			},
 		},
 	}
@@ -47,13 +47,13 @@ func CloudTokenAsEnvVar() corev1.EnvVar {
 // used to inject the onprem token as env var into odigos components
 func OnPremTokenAsEnvVar() corev1.EnvVar {
 	return corev1.EnvVar{
-		Name: odigosOnpremTokenEnvName,
+		Name: k8sconsts.OdigosOnpremTokenEnvName,
 		ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: k8sconsts.OdigosProSecretName,
 				},
-				Key: odigosOnpremTokenSecretKey,
+				Key: k8sconsts.OdigosOnpremTokenSecretKey,
 			},
 		},
 	}

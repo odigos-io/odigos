@@ -1,43 +1,50 @@
 ---
-title: "Overview"
-sidebarTitle: "Overview"
+title: 'Overview'
+sidebarTitle: 'Overview'
+icon: 'house'
 ---
 
-Odigos is an [open-source](https://github.com/odigos-io/odigos) observability control plane.
-The project's two main goals are:
+Odigos is an [open-source](https://github.com/odigos-io/odigos) observability control plane. Odigos leverages the power of [OpenTelemetry](https://opentelemetry.io) and [eBPF](https://ebpf.io) to automatically instrument applications.
 
-1. **Automatic instrumentation** - Odigos automatically instruments your
-   applications and produces distributed traces and metrics **without any code changes**.
-2. **Collector management** - Odigos automatically deploys and scales collectors according to application traffic. No need to
-   spend time deploying and configuring collectors.
+Odigos automatically deploys and scales collectors according to the traffic of applications. No need to waste time deploying and configuring collectors.
 
-#### Adopt OpenTelemetry in minutes
-Odigos currently supports all the popular managed and open source destinations.
-By producing data in the [OpenTelemetry](https://opentelemetry.io) format, Odigos can be used with any observability tool that supports OTLP
-and allow you to easily switch to another vendor in the future.
+<Tip>
+  The name Odigos originates from Greek, meaning "guide".
+</Tip>
+
+## Goals
+
+- **Automatic instrumentation** - Odigos automatically instruments your applications and produces distributed traces and metrics **without any code changes**.
+- **Collector management** - Odigos automatically deploys and scales collectors according to application traffic. No need to spend time deploying and configuring collectors.
+
+Odigos achieves it's goals by deploying a set of components that work together to collect, process, and export telemetry data.
 
 ## Who is Odigos for?
 
-- **Application developers** - focus on writing code. Odigos leverages the
-  power of OpenTelemetry and eBPF to automatically instrument applications.
-  Be prepared for the next production incident with best-in-class observability data.
+- Software Developers
+- Platform Engineers
+- IT Professionals
+- Anyone comfortable with command-line interfaces and basic cloud infrastructure
 
-- **Platform engineers** - Odigos automatically deploys and scales collectors according to the traffic of applications.
-  No need to waste time deploying and configuring collectors.
+<Info>
+  Odigos is designed to be easy to use and deploy. It is a great tool for anyone who wants to get started with observability without the hassle of setting up and managing collectors.
+</Info>
 
-<Note>
-The name Odigos originates from Greek, meaning guide.
-</Note>
+## Adopt OpenTelemetry in minutes
+
+Odigos currently supports all the popular managed and open source [destinations](/backends-overview). By producing data in the [OpenTelemetry](https://opentelemetry.io) format, Odigos can be used with any observability tool that supports OTLP and allow you to easily switch to another vendor in the future.
 
 <CardGroup cols={2}>
-  <Card title="Getting Started" icon="circle-play" href="/quickstart/introduction">
-    Use Odigos for generating distributed traces, metrics and logs for
-    applications written in Go, Java, Python, .NET and Node.js.
+  <Card title='Getting Started' icon='circle-play' href='/quickstart'>
+    Use Odigos to generate distributed traces, metrics and logs with OpenTelemetry.
   </Card>
-  <Card title="Telemetry Types" icon="telescope" href="/telemetry-types">
-    Telemetry types that Odigos supports and produce
+  <Card title='Telemetry Types' icon='telescope' href='/telemetry-types'>
+    Telemetry types that Odigos supports and produce.
   </Card>
-  <Card title="Custom Resources" icon="user-gear" href="/custom-resources">
-    Custom resources added to the Kubernetes API server
+  <Card title='Supported Languages' icon='code' href='/instrumentations'>
+    Programming languages that Odigos supports and applies auto-instrumentation to.
+  </Card>
+  <Card title='Supported Destinations' icon='signal-stream' href='/adding-new-dest'>
+    Destinations that Odigos supports and sends telemetry data to.
   </Card>
 </CardGroup>

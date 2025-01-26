@@ -10,10 +10,10 @@ func newOdigosProSecret(ns string, cloudApiKey string, onpremToken string) *core
 
 	data := map[string]string{}
 	if cloudApiKey != "" {
-		data[odigosCloudApiKeySecretKey] = cloudApiKey
+		data[k8sconsts.OdigosCloudApiKeySecretKey] = cloudApiKey
 	}
 	if onpremToken != "" {
-		data[odigosOnpremTokenSecretKey] = onpremToken
+		data[k8sconsts.OdigosOnpremTokenSecretKey] = onpremToken
 	}
 
 	return &corev1.Secret{

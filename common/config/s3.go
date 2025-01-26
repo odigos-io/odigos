@@ -25,19 +25,19 @@ func (s *AWSS3) DestType() common.DestinationType {
 	return common.AWSS3DestinationType
 }
 
-func (s *AWSS3) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (s *AWSS3) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	if !isLoggingEnabled(dest) && !isTracingEnabled(dest) && !isMetricsEnabled(dest) {
-		return errors.New("No metrics, logs or traces enabled, gateway will not be configured for AWS S3")
+		return nil, errors.New("No metrics, logs or traces enabled, gateway will not be configured for AWS S3")
 	}
 
 	bucket, ok := dest.GetConfig()[s3BucketKey]
 	if !ok {
-		return ErrS3BucketNotSpecified
+		return nil, ErrS3BucketNotSpecified
 	}
 
 	region, ok := dest.GetConfig()[s3RegionKey]
 	if !ok {
-		return ErrS3RegionNotSpecified
+		return nil, ErrS3RegionNotSpecified
 	}
 
 	partition, ok := dest.GetConfig()[s3PartitionKey]
@@ -45,7 +45,7 @@ func (s *AWSS3) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) err
 		partition = "minute"
 	}
 	if partition != "minute" && partition != "hour" {
-		return errors.New("Invalid partition specified, gateway will not be configured for AWS S3")
+		return nil, errors.New("Invalid partition specified, gateway will not be configured for AWS S3")
 	}
 
 	marshaler, ok := dest.GetConfig()[s3Marshaller]
@@ -53,7 +53,7 @@ func (s *AWSS3) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) err
 		marshaler = "otlp_json"
 	}
 	if marshaler != "otlp_json" && marshaler != "otlp_proto" {
-		return errors.New("Invalid marshaller specified, gateway will not be configured for AWS S3")
+		return nil, errors.New("Invalid marshaller specified, gateway will not be configured for AWS S3")
 	}
 
 	exporterName := "awss3/" + dest.GetID()
@@ -66,11 +66,13 @@ func (s *AWSS3) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) err
 		"marshaler": marshaler,
 	}
 
+	var pipelineNames []string
 	if isLoggingEnabled(dest) {
 		logsPipelineName := "logs/awss3-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, logsPipelineName)
 	}
 
 	if isMetricsEnabled(dest) {
@@ -78,6 +80,7 @@ func (s *AWSS3) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) err
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
 	if isTracingEnabled(dest) {
@@ -85,7 +88,8 @@ func (s *AWSS3) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) err
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
-	return nil
+	return pipelineNames, nil
 }

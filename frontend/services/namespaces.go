@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
@@ -125,7 +126,7 @@ func CountAppsPerNamespace(ctx context.Context) (map[string]int, error) {
 
 func SyncWorkloadsInNamespace(ctx context.Context, nsName string, workloads []model.PersistNamespaceSourceInput) error {
 	g, ctx := errgroup.WithContext(ctx)
-	g.SetLimit(kube.K8sClientDefaultBurst)
+	g.SetLimit(k8sconsts.K8sClientDefaultBurst)
 
 	for _, workload := range workloads {
 		g.Go(func() error {

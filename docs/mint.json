@@ -74,14 +74,6 @@
           ]
         },
         {
-          "group": "Architecture",
-          "pages": [
-            "architecture/components",
-            "architecture/sources",
-            "architecture/troubleshooting"
-          ]
-        },
-        {
           "group": "CLI Reference",
           "pages": [
             "cli/odigos",
@@ -160,41 +152,46 @@
         "pipeline/configuration",
         {
           "group": "Sources",
+          "icon": "database",
           "pages": [
             "pipeline/sources/introduction",
-            "pipeline/sources/adding-sources",
-            "pipeline/sources/source-configuration",
+            "pipeline/sources/create",
+            "pipeline/sources/delete",
+            "pipeline/sources/update",
             "pipeline/sources/troubleshooting"
           ]
         },
         {
           "group": "Instrumentation Rules",
+          "icon": "microchip",
           "pages": [
-            "pipeline/rules/overview",
-            "pipeline/rules/payloadcollection"
+            "pipeline/rules/introduction",
+            "pipeline/rules/payloadcollection",
+            "pipeline/rules/codeattributes"
           ]
         },
         {
           "group": "Actions",
+          "icon": "bolt",
           "pages": [
             "pipeline/actions/introduction",
             {
-              "group": "Sampling",
+              "group": "Attributes",
+              "icon": "layer-group",
               "pages": [
-                "pipeline/actions/sampling/introduction",
-                "pipeline/actions/sampling/probabilisticsampler",
-                "pipeline/actions/sampling/latencysampler",
-                "pipeline/actions/sampling/errorsampler"
+                "pipeline/actions/attributes/addclusterinfo",
+                "pipeline/actions/attributes/deleteattribute",
+                "pipeline/actions/attributes/renameattribute",
+                "pipeline/actions/attributes/piimasking"
               ]
             },
             {
-              "group": "Attributes",
+              "group": "Sampling",
+              "icon": "tag",
               "pages": [
-                "pipeline/actions/attributes/introduction",
-                "pipeline/actions/attributes/addclusterinfo",
-                "pipeline/actions/attributes/deleteattribute",
-                "pipeline/actions/attributes/rename-attribute",
-                "pipeline/actions/attributes/piimasking"
+                "pipeline/actions/sampling/errorsampler",
+                "pipeline/actions/sampling/latencysampler",
+                "pipeline/actions/sampling/probabilisticsampler"
               ]
             },
             "pipeline/actions/crd",
