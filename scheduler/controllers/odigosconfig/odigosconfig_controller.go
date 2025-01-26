@@ -54,8 +54,7 @@ func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) 
 	allProfiles := make([]common.ProfileName, 0)
 	allProfiles = append(allProfiles, odigosConfig.Profiles...)
 
-	tokenProfilesString := odigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapOnPremClientProfilesKey]
-	if tokenProfilesString != "" {
+	if tokenProfilesString, ok := odigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapOnPremClientProfilesKey]; ok {
 		tokenProfiles := strings.Split(tokenProfilesString, ", ")
 		// cast tokenProfiles to common.ProfileName
 		for _, p := range tokenProfiles {
@@ -63,10 +62,10 @@ func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) 
 		}
 	}
 
-	allEffectiveProfiles := calculateEffectiveProfiles(allProfiles, availableProfiles)
+	effectiveProfiles := calculateEffectiveProfiles(allProfiles, availableProfiles)
 
 	// apply the current profiles list to the cluster
-	err = r.applyProfileManifests(ctx, allEffectiveProfiles)
+	err = r.applyProfileManifests(ctx, effectiveProfiles)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -78,8 +77,8 @@ func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) 
 	// make sure the default ignored containers are always present
 	odigosConfig.IgnoredContainers = mergeIgnoredItemLists(odigosConfig.IgnoredContainers, k8sconsts.DefaultIgnoredContainers)
 
-	modifyConfigWithEffectiveProfiles(allEffectiveProfiles, odigosConfig)
-	odigosConfig.Profiles = allEffectiveProfiles
+	modifyConfigWithEffectiveProfiles(effectiveProfiles, odigosConfig)
+	odigosConfig.Profiles = effectiveProfiles
 
 	// if none of the profiles set sizing for collectors, use size_s as default, so the values are never nil
 	// if the values were already set (by user or profile) this is a no-op

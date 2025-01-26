@@ -37,7 +37,7 @@ type NodeCollectorAnalyze struct {
 	AvailableNodes *properties.EntityProperty `json:"availableNodes,omitempty"`
 }
 
-type OdigosPro struct {
+type OdigosProAnalyze struct {
 	OnpremTokenAud        properties.EntityProperty `json:"onpremTokenAudience,omitempty"`
 	OnpremTokenExpiration properties.EntityProperty `json:"onpremTokenExpiration,omitempty"`
 	OdigosProfiles        properties.EntityProperty `json:"odigosProfiles,omitempty"`
@@ -52,7 +52,7 @@ type OdigosAnalyze struct {
 	NumberOfSources      int                       `json:"numberOfSources"`
 	ClusterCollector     ClusterCollectorAnalyze   `json:"clusterCollector"`
 	NodeCollector        NodeCollectorAnalyze      `json:"nodeCollector"`
-	OdigosPro            OdigosPro                 `json:"odigosPro,omitempty"`
+	OdigosPro            *OdigosProAnalyze         `json:"odigosPro,omitempty"`
 
 	// is settled is true if all resources are created and ready
 	IsSettled bool `json:"isSettled"`
@@ -342,7 +342,7 @@ func analyzeNodeCollector(resources *OdigosResources) NodeCollectorAnalyze {
 	}
 }
 
-func analyzePro(resources *OdigosResources) OdigosPro {
+func analyzePro(resources *OdigosResources) *OdigosProAnalyze {
 	odigosDeployment := resources.OdigosDeployment
 	tokenAud := odigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapOnPremTokenAudKey]
 	tokenExp := odigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapOnPremTokenExpKey]
@@ -366,7 +366,7 @@ func analyzePro(resources *OdigosResources) OdigosPro {
 		Explain: "the Odigos profiles that are used to configure the odigos pro",
 	}
 
-	return OdigosPro{
+	return &OdigosProAnalyze{
 		OnpremTokenAud:        tokenAudProperty,
 		OnpremTokenExpiration: tokenExpProperty,
 		OdigosProfiles:        profilesProperty,

@@ -47,7 +47,7 @@ func printOdigosPipeline(analyze *odigos.OdigosAnalyze, sb *strings.Builder) {
 }
 
 func printOdigosPro(analyze *odigos.OdigosAnalyze, sb *strings.Builder) {
-	if !(analyze.OdigosPro == odigos.OdigosPro{}) {
+	if !(analyze.OdigosPro == nil) {
 		describeText(sb, 0, "Odigos Pro:")
 		printProperty(sb, 1, &analyze.OdigosPro.OnpremTokenAud)
 		printProperty(sb, 1, &analyze.OdigosPro.OnpremTokenExpiration)
