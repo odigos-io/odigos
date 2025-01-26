@@ -112,6 +112,9 @@ func main() {
 				&odigosv1.InstrumentationRule{}: {
 					Field: nsSelector,
 				},
+				&corev1.Secret{}: {
+					Field: nsSelector,
+				},
 			},
 		},
 		HealthProbeBindAddress: probeAddr,

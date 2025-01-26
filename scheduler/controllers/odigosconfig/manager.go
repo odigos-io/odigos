@@ -25,5 +25,22 @@ func SetupWithManager(mgr ctrl.Manager, tier common.OdigosTier, odigosVersion st
 		return err
 	}
 
+	// it is possbile that the secret was deleted when the controller was down.
+	// we want to sync the odigos deployment config map with the secret on startup to reconcile any deleted pro info.
+	err = ctrl.NewControllerManagedBy(mgr).
+		For(&corev1.ConfigMap{}).
+		Named("odigosconfig-odigosdeployment").
+		WithEventFilter(&odigospredicates.OdigosDeploymentConfigMapPredicate).
+		Complete(&odigosConfigController{
+			Client:        mgr.GetClient(),
+			Scheme:        mgr.GetScheme(),
+			Tier:          tier,
+			OdigosVersion: odigosVersion,
+			DynamicClient: dynamicClient,
+		})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

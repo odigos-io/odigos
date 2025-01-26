@@ -9,6 +9,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -51,7 +52,7 @@ func (r *odigossecretController) Reconcile(ctx context.Context, _ ctrl.Request) 
 
 	err = r.Client.Update(ctx, odigosDeploymentConfig)
 	if err != nil {
-		return ctrl.Result{}, err
+		return k8sutils.K8SUpdateErrorHandler(err)
 	}
 
 	return ctrl.Result{}, nil
