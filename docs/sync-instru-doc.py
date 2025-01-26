@@ -2,6 +2,7 @@ import os
 import re
 import time
 import requests
+from packaging.version import Version
 
 
 instrumentations_dir = './instrumentations'
@@ -343,8 +344,54 @@ if __name__ == '__main__':
                                             if not cat_deps[idx]['mdx']:
                                                 cat_deps[idx]['mdx'] = row_str
                                             else:
-                                                # TODO: Handle multiple versions
-                                                cat_deps[idx]['mdx'] += row_str
+                                                # Handle multiple versions
+                                                pre_ver, post_ver = cat_deps[idx]['mdx'].split(
+                                                    ' versions '
+                                                )
+
+                                                # Current values
+                                                curr_gt, curr_lt = post_ver.replace(
+                                                    '`', ''
+                                                ).replace(
+                                                    '>=', ''
+                                                ).replace(
+                                                    '<', ''
+                                                ).strip().split(
+                                                    ' '
+                                                )
+
+                                                # New values
+                                                r_ver = r_ver.split(
+                                                    'versions'
+                                                )[1].replace(
+                                                    '`', ''
+                                                ).replace(
+                                                    '>=', ''
+                                                ).replace(
+                                                    '<', ''
+                                                ).strip().split(
+                                                    ' '
+                                                )
+
+                                                r_gt = r_ver[0]
+                                                try:
+                                                    r_lt = r_ver[1]
+                                                except IndexError:
+                                                    r_lt = '0'
+
+                                                # Update the versions
+                                                if Version(r_gt) < Version(curr_gt):
+                                                    curr_gt = r_gt
+                                                if Version(r_lt) > Version(curr_lt):
+                                                    curr_lt = r_lt
+                                                if Version(curr_lt) == Version(curr_gt) or Version(curr_lt) == Version(r_gt):
+                                                    curr_lt = ''
+
+                                                cat_deps[idx]['mdx'] = (
+                                                    pre_ver
+                                                    + f' versions `>={curr_gt}'
+                                                    + (f' <{curr_lt}`' if curr_lt else '`')
+                                                )
 
                                 if not has_category:
                                     categories[uncategorized_key]['items'].append(
