@@ -396,12 +396,12 @@ func (u *uiResourceManager) InstallFromScratch(ctx context.Context) error {
 	return u.client.ApplyResources(ctx, u.config.ConfigVersion, resources)
 }
 
-func NewUIResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosVersion string, readonly bool) resourcemanager.ResourceManager {
+func NewUIResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosVersion string) resourcemanager.ResourceManager {
 	return &uiResourceManager{
 		client:        client,
 		ns:            ns,
 		config:        config,
 		odigosVersion: odigosVersion,
-		readonly:      readonly,
+		readonly:      config.UiMode == "readonly",
 	}
 }

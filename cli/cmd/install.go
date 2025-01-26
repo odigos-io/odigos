@@ -222,7 +222,7 @@ func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 		InstrumentorImage:         instrumentorImage,
 		AutoscalerImage:           autoScalerImage,
 		Profiles:                  selectedProfiles,
-		UiMode:                    uiMode,
+		UiMode:                    common.UiMode(uiMode),
 	}
 }
 
@@ -253,7 +253,7 @@ func init() {
 	installCmd.Flags().StringSliceVar(&userInputIgnoredNamespaces, "ignore-namespace", k8sconsts.DefaultIgnoredNamespaces, "namespaces not to show in odigos ui")
 	installCmd.Flags().StringSliceVar(&userInputIgnoredContainers, "ignore-container", k8sconsts.DefaultIgnoredContainers, "container names to exclude from instrumentation (useful for sidecar container)")
 	installCmd.Flags().StringSliceVar(&userInputInstallProfiles, "profile", []string{}, "install preset profiles with a specific configuration")
-	installCmd.Flags().StringVarP(&uiMode, "ui-mode", "", "", "set the ui mode (one-of: readonly)")
+	installCmd.Flags().StringVarP(&uiMode, "ui-mode", "", "normal", "set the UI mode (one-of: normal, readonly)")
 
 	if OdigosVersion != "" {
 		versionFlag = OdigosVersion
