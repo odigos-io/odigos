@@ -13,6 +13,7 @@ import (
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/confirm"
+	"github.com/odigos-io/odigos/common"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -104,6 +105,9 @@ and apply any required migrations and adaptations.`,
 
 		// update the config on upgrade
 		config.ConfigVersion += 1
+		if uiMode != "" {
+			config.UiMode = common.UiMode(uiMode)
+		}
 
 		currentTier, err := odigospro.GetCurrentOdigosTier(ctx, client, ns)
 		if err != nil {
@@ -133,5 +137,6 @@ func init() {
 		upgradeCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "for development purposes only")
 		upgradeCmd.Flags().Bool("skip-version-check", false, "skip the version check and install any version tag provided. used for tests")
 		updateCmd.Flags().MarkHidden("skip-version-check")
+		updateCmd.Flags().StringVarP(&uiMode, "ui-mode", "", "", "set the UI mode (one-of: normal, readonly)")
 	}
 }

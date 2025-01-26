@@ -19,19 +19,19 @@ func (g *GrafanaCloudTempo) DestType() common.DestinationType {
 	return common.GrafanaCloudTempoDestinationType
 }
 
-func (g *GrafanaCloudTempo) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (g *GrafanaCloudTempo) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	if !isTracingEnabled(dest) {
-		return errors.New("Tracing not enabled, gateway will not be configured for grafana cloud Tempo")
+		return nil, errors.New("Tracing not enabled, gateway will not be configured for grafana cloud Tempo")
 	}
 
 	tempoUrl, exists := dest.GetConfig()[grafanaCloudTempoEndpointKey]
 	if !exists {
-		return errors.New("Grafana Cloud Tempo endpoint not specified, gateway will not be configured for Tempo")
+		return nil, errors.New("Grafana Cloud Tempo endpoint not specified, gateway will not be configured for Tempo")
 	}
 
 	tempoUsername, exists := dest.GetConfig()[grafanaCloudTempoUsernameKey]
 	if !exists {
-		return errors.New("Grafana Cloud Tempo username not specified, gateway will not be configured for Tempo")
+		return nil, errors.New("Grafana Cloud Tempo username not specified, gateway will not be configured for Tempo")
 	}
 
 	grpcEndpointUrl := grafanaTempoUrlFromInput(tempoUrl)
@@ -57,8 +57,8 @@ func (g *GrafanaCloudTempo) ModifyConfig(dest ExporterConfigurer, currentConfig 
 	currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 		Exporters: []string{exporterName},
 	}
-
-	return nil
+	pipelineNames := []string{tracesPipelineName}
+	return pipelineNames, nil
 }
 
 // grafana cloud tempo url for otlp grpc should be of the form:

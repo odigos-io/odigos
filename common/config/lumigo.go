@@ -20,18 +20,18 @@ func (j *Lumigo) DestType() common.DestinationType {
 	return common.LumigoDestinationType
 }
 
-func (j *Lumigo) ModifyConfig(dest ExporterConfigurer, cfg *Config) error {
+func (j *Lumigo) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, error) {
 	config := dest.GetConfig()
 	uniqueUri := "lumigo-" + dest.GetID()
 
 	url, exists := config[LumigoEndpoint]
 	if !exists {
-		return ErrorLumigoEndpointMissing
+		return nil, ErrorLumigoEndpointMissing
 	}
 
 	endpoint, err := parseOtlpHttpEndpoint(url)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	exporterName := "otlphttp/" + uniqueUri
@@ -43,12 +43,13 @@ func (j *Lumigo) ModifyConfig(dest ExporterConfigurer, cfg *Config) error {
 	}
 
 	cfg.Exporters[exporterName] = exporterConfig
-
+	var pipelineNames []string
 	if isTracingEnabled(dest) {
 		pipeName := "traces/" + uniqueUri
 		cfg.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, pipeName)
 	}
 
 	if isMetricsEnabled(dest) {
@@ -56,6 +57,7 @@ func (j *Lumigo) ModifyConfig(dest ExporterConfigurer, cfg *Config) error {
 		cfg.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, pipeName)
 	}
 
 	if isLoggingEnabled(dest) {
@@ -63,7 +65,8 @@ func (j *Lumigo) ModifyConfig(dest ExporterConfigurer, cfg *Config) error {
 		cfg.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, pipeName)
 	}
 
-	return nil
+	return pipelineNames, nil
 }
