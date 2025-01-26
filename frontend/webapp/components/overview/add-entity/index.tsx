@@ -44,7 +44,7 @@ const DropdownItem = styled.div<{ $selected: boolean }>`
   display: flex;
   align-items: center;
   &:hover {
-    background: ${({ theme }) => theme.colors.majestic_blue + hexPercentValues['050']};
+    background: ${({ theme }) => theme.text.grey + hexPercentValues['050']};
   }
   ${({ $selected, theme }) =>
     $selected &&
