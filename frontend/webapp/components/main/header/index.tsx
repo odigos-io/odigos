@@ -47,13 +47,12 @@ export const MainHeader: React.FC<MainHeaderProps> = () => {
       </AlignLeft>
 
       <AlignRight>
+        <ToggleDarkMode />
+        <NotificationManager />
+
         <IconButton onClick={handleClickCli} tooltip='Odigos CLI' withPing pingColor={theme.colors.majestic_blue}>
           <TerminalIcon size={18} />
         </IconButton>
-
-        <NotificationManager />
-        <ToggleDarkMode />
-
         <IconButton onClick={handleClickSlack} tooltip='Join our Slack community'>
           <SlackLogo />
         </IconButton>
