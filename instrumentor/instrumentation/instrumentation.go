@@ -23,25 +23,23 @@ var (
 )
 
 func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, runtimeDetails []odigosv1.RuntimeDetailsByContainer, defaultSdks map[common.ProgrammingLanguage]common.OtelSdk, targetObj client.Object,
-	logger logr.Logger, agentsCanRunConcurrently bool) (error, bool, bool) {
+	logger logr.Logger, agentsCanRunConcurrently bool) (bool, error) {
 	// delete any existing instrumentation devices.
 	// this is necessary for example when migrating from community to enterprise,
 	// and we need to cleanup the community device before adding the enterprise one.
 	RevertInstrumentationDevices(original)
 
-	deviceApplied := false
 	deviceSkippedDueToOtherAgent := false
 	var modifiedContainers []corev1.Container
 
 	manifestEnvOriginal, err := envoverwrite.NewOrigWorkloadEnvValues(targetObj.GetAnnotations())
 	if err != nil {
-		return err, deviceApplied, deviceSkippedDueToOtherAgent
+		return deviceSkippedDueToOtherAgent, err
 	}
 
 	for _, container := range original.Spec.Containers {
 		containerLanguage := getLanguageOfContainer(runtimeDetails, container.Name)
 		containerHaveOtherAgent := getContainerOtherAgents(runtimeDetails, container.Name)
-		libcType := getLibCTypeOfContainer(runtimeDetails, container.Name)
 
 		// By default, Odigos does not run alongside other agents.
 		// However, if configured in the odigos-config, it can be allowed to run in parallel.
@@ -59,7 +57,7 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 			// this is necessary to sync the existing envs with the missing language if changed for any reason.
 			err = patchEnvVarsForContainer(runtimeDetails, &container, nil, containerLanguage, manifestEnvOriginal)
 			if err != nil {
-				return fmt.Errorf("%w: %v", ErrPatchEnvVars, err), deviceApplied, deviceSkippedDueToOtherAgent
+				return deviceSkippedDueToOtherAgent, fmt.Errorf("%w: %v", ErrPatchEnvVars, err)
 			}
 			modifiedContainers = append(modifiedContainers, container)
 			continue
@@ -68,19 +66,16 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 		// Find and apply the appropriate SDK for the container language.
 		otelSdk, found := defaultSdks[containerLanguage]
 		if !found {
-			return fmt.Errorf("%w for language: %s, container:%s", ErrNoDefaultSDK, containerLanguage, container.Name), deviceApplied, deviceSkippedDueToOtherAgent
+			return deviceSkippedDueToOtherAgent, fmt.Errorf("%w for language: %s, container:%s", ErrNoDefaultSDK, containerLanguage, container.Name)
 		}
 
-		instrumentationDeviceName := common.InstrumentationDeviceName(containerLanguage, otelSdk, libcType)
 		if container.Resources.Limits == nil {
 			container.Resources.Limits = make(map[corev1.ResourceName]resource.Quantity)
 		}
-		container.Resources.Limits[corev1.ResourceName(instrumentationDeviceName)] = resource.MustParse("1")
-		deviceApplied = true
 
 		err = patchEnvVarsForContainer(runtimeDetails, &container, &otelSdk, containerLanguage, manifestEnvOriginal)
 		if err != nil {
-			return fmt.Errorf("%w: %v", ErrPatchEnvVars, err), deviceApplied, deviceSkippedDueToOtherAgent
+			return deviceSkippedDueToOtherAgent, fmt.Errorf("%w: %v", ErrPatchEnvVars, err)
 		}
 
 		modifiedContainers = append(modifiedContainers, container)
@@ -93,7 +88,7 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 	// persist the original values if changed
 	manifestEnvOriginal.SerializeToAnnotation(targetObj)
 
-	return nil, deviceApplied, deviceSkippedDueToOtherAgent
+	return deviceSkippedDueToOtherAgent, nil
 }
 
 // this function restores a workload manifest env vars to their original values.
@@ -172,16 +167,6 @@ func getContainerOtherAgents(runtimeDetails []odigosv1.RuntimeDetailsByContainer
 			}
 		}
 	}
-	return nil
-}
-
-func getLibCTypeOfContainer(runtimeDetails []odigosv1.RuntimeDetailsByContainer, containerName string) *common.LibCType {
-	for _, rd := range runtimeDetails {
-		if rd.ContainerName == containerName {
-			return rd.LibCType
-		}
-	}
-
 	return nil
 }
 

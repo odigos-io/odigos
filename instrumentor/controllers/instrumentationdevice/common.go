@@ -131,20 +131,18 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 			agentsCanRunConcurrently = *odigosConfiguration.AllowConcurrentAgents
 		}
 
-		err, deviceApplied, deviceSkippedDueToOtherAgent := instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, instConfig.Status.RuntimeDetailsByContainer, otelSdkToUse, obj, logger, agentsCanRunConcurrently)
+		deviceSkippedDueToOtherAgent, err := instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, instConfig.Status.RuntimeDetailsByContainer, otelSdkToUse, obj, logger, agentsCanRunConcurrently)
 		if err != nil {
 			return err
 		}
 		// if non of the devices were applied due to the presence of another agent, return an error.
-		if !deviceApplied && deviceSkippedDueToOtherAgent {
+		if deviceSkippedDueToOtherAgent {
 			deviceNotAppliedDueToPresenceOfAnotherAgent = true
 		}
 
-		devicePartiallyApplied = deviceSkippedDueToOtherAgent && deviceApplied
-		// If instrumentation device is applied successfully, add odigos.io/inject-instrumentation label to enable the webhook
-		if deviceApplied {
-			instrumentation.SetInjectInstrumentationLabel(podSpec)
-		}
+		devicePartiallyApplied = deviceSkippedDueToOtherAgent
+		// add odigos.io/inject-instrumentation label to enable the webhook
+		instrumentation.SetInjectInstrumentationLabel(podSpec)
 
 		return nil
 	})

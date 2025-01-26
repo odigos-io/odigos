@@ -6,18 +6,19 @@ import (
 	"strings"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	containerutils "github.com/odigos-io/odigos/k8sutils/pkg/container"
+	"github.com/odigos-io/odigos/instrumentor/sdks"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const otelServiceNameEnvVarName = "OTEL_SERVICE_NAME"
@@ -45,9 +46,15 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 	}
 
 	serviceName, podWorkload := p.getServiceNameForEnv(ctx, pod)
+	var workloadInstrumentationConfig odigosv1.InstrumentationConfig
+	instrumentationConfigName := workload.CalculateWorkloadRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
+
+	if err := p.Get(ctx, client.ObjectKey{Namespace: podWorkload.Namespace, Name: instrumentationConfigName}, &workloadInstrumentationConfig); err != nil {
+		return fmt.Errorf("failed to get instrumentationConfig: %w", err)
+	}
 
 	// Inject ODIGOS environment variables into all containers
-	injectOdigosEnvVars(pod, podWorkload, serviceName)
+	injectOdigosEnvVars(pod, podWorkload, serviceName, workloadInstrumentationConfig)
 
 	return nil
 }
@@ -79,7 +86,7 @@ func (p *PodsWebhook) getServiceNameForEnv(ctx context.Context, pod *corev1.Pod)
 	return &resolvedServiceName, podWorkload
 }
 
-func injectOdigosEnvVars(pod *corev1.Pod, podWorkload *workload.PodWorkload, serviceName *string) {
+func injectOdigosEnvVars(pod *corev1.Pod, podWorkload *workload.PodWorkload, serviceName *string, instConfig odigosv1.InstrumentationConfig) {
 
 	// Common environment variables that do not change across containers
 	commonEnvVars := []corev1.EnvVar{
@@ -108,14 +115,34 @@ func injectOdigosEnvVars(pod *corev1.Pod, podWorkload *workload.PodWorkload, ser
 			Value: *serviceName,
 		}
 	}
+	runtimeDetails := instConfig.Status.RuntimeDetailsByContainer
 
 	for i := range pod.Spec.Containers {
 		container := &pod.Spec.Containers[i]
-
-		pl, otelsdk, found := containerutils.GetLanguageAndOtelSdk(container)
-		if !found {
+		pl := getLanguageOfContainer(runtimeDetails, container.Name)
+		if pl == common.UnknownProgrammingLanguage {
+			fmt.Println("Skipping container as programming language is unknown")
 			continue
 		}
+
+		otelSdk, found := sdks.GetDefaultSDKs()[pl]
+		if !found {
+			fmt.Println("No default SDK found for language", pl)
+			continue
+		}
+
+		libcType := getLibCTypeOfContainer(runtimeDetails, container.Name)
+		instrumentationDeviceName := common.InstrumentationDeviceName(pl, otelSdk, libcType)
+
+		if container.Resources.Limits == nil {
+			container.Resources.Limits = make(corev1.ResourceList)
+		}
+		if container.Resources.Requests == nil {
+			container.Resources.Requests = make(corev1.ResourceList)
+		}
+
+		container.Resources.Limits[corev1.ResourceName(instrumentationDeviceName)] = resource.MustParse("1")
+		container.Resources.Requests[corev1.ResourceName(instrumentationDeviceName)] = resource.MustParse("1")
 
 		// Check if the environment variables are already present, if so skip inject them again.
 		if envVarsExist(container.Env, commonEnvVars) {
@@ -132,7 +159,7 @@ func injectOdigosEnvVars(pod *corev1.Pod, podWorkload *workload.PodWorkload, ser
 
 		container.Env = append(container.Env, append(commonEnvVars, containerNameEnv)...)
 
-		if serviceNameEnv != nil && shouldInjectServiceName(pl, otelsdk) {
+		if serviceNameEnv != nil && shouldInjectServiceName(pl, otelSdk) {
 			if !otelNameExists(container.Env) {
 				container.Env = append(container.Env, *serviceNameEnv)
 			}
@@ -142,6 +169,25 @@ func injectOdigosEnvVars(pod *corev1.Pod, podWorkload *workload.PodWorkload, ser
 			})
 		}
 	}
+}
+
+func getLanguageOfContainer(runtimeDetails []odigosv1.RuntimeDetailsByContainer, containerName string) common.ProgrammingLanguage {
+	for _, rd := range runtimeDetails {
+		if rd.ContainerName == containerName {
+			return rd.Language
+		}
+	}
+	return common.UnknownProgrammingLanguage
+}
+
+func getLibCTypeOfContainer(runtimeDetails []odigosv1.RuntimeDetailsByContainer, containerName string) *common.LibCType {
+	for _, rd := range runtimeDetails {
+		if rd.ContainerName == containerName {
+			return rd.LibCType
+		}
+	}
+
+	return nil
 }
 
 func envVarsExist(containerEnv []corev1.EnvVar, commonEnvVars []corev1.EnvVar) bool {
