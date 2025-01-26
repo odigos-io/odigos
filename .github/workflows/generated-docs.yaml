@@ -1,4 +1,4 @@
-name: Verify CRD API docs
+name: Verify generated docs
 
 on:
   pull_request:
