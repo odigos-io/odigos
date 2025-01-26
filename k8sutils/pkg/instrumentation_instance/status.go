@@ -14,6 +14,8 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 )
 
+const ownerPodNameLabel = "ownerPodName"
+
 type InstrumentationInstanceOption interface {
 	applyInstrumentationInstance(odigosv1.InstrumentationInstanceStatus) odigosv1.InstrumentationInstanceStatus
 }
@@ -73,6 +75,7 @@ func UpdateInstrumentationInstanceStatus(ctx context.Context, owner client.Objec
 			Namespace: owner.GetNamespace(),
 			Labels: map[string]string{
 				consts.InstrumentedAppNameLabel: instrumentedAppName,
+				ownerPodNameLabel:               owner.GetName(),
 			},
 		},
 		Spec: odigosv1.InstrumentationInstanceSpec{
@@ -102,4 +105,13 @@ func UpdateInstrumentationInstanceStatus(ctx context.Context, owner client.Objec
 		return err
 	}
 	return nil
+}
+
+func IsInstrumentationInstancesCountOverLimit(ctx context.Context, owner client.Object, kubeClient client.Client) (int, error) {
+	instances := &odigosv1.InstrumentationInstanceList{}
+	err := kubeClient.List(ctx, instances, client.InNamespace(owner.GetNamespace()), client.MatchingLabels{ownerPodNameLabel: owner.GetName()})
+	if err != nil {
+		return 0, err
+	}
+	return len(instances.Items), nil
 }
