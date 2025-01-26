@@ -119,11 +119,11 @@ ui:
     kubernetes.io/os: linux
   tolerations: []
   affinity: {}
-  # readonly:
-  #  - This flag controls whether the UI should be read-only.
-  #  - Setting this to "true" will make the UI read-only, meaning that users will not be able to create, update, or delete resources.
-  #  - This is useful for scenarios where the UI is used for monitoring purposes only.
-  readonly: false
+  # uiMode: 'normal' or 'readonly'
+  #  - This flag controls whether the UI should be in read-only mode.
+  #  - Setting this to "readonly" will disable the ability to create, update, or delete objects in the UI.
+  #  - If not set, the UI will be in normal mode.
+  uiMode: 'normal'
 
 instrumentor:
   deleteLangDetectionPods: true

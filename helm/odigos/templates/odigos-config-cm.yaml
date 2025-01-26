@@ -2,12 +2,12 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: odigos-config
-  namespace: {{ .Release.Namespace }}
+  namespace: { { .Release.Namespace } }
   annotations:
-    "helm.sh/hook": post-install,post-upgrade
+    'helm.sh/hook': post-install,post-upgrade
   labels:
-    odigos.io/config: "1"
-    odigos.io/system-object: "true"
+    odigos.io/config: '1'
+    odigos.io/system-object: 'true'
 data:
   config.yaml: |
     configVersion: 1
@@ -15,14 +15,17 @@ data:
     {{- if .Values.imagePrefix }}
     imagePrefix: {{ .Values.imagePrefix }}
     {{- end }}
+    {{- if .Values.uiMode }}
+    uiMode: {{ .Values.uiMode }}
+    {{- end }}
     {{- if .Values.collectorGateway }}
     collectorGateway:
       {{- with .Values.collectorGateway.minReplicas }}
       MinReplicas: {{ . }}
-      {{- end }}    
+      {{- end }}
       {{- with .Values.collectorGateway.maxReplicas }}
       MaxReplicas: {{ . }}
-      {{- end }}          
+      {{- end }}
       {{- with .Values.collectorGateway.requestMemoryMiB }}
       requestMemoryMiB: {{ . }}
       {{- end }}
@@ -34,7 +37,7 @@ data:
       {{- end }}
       {{- with .Values.collectorGateway.limitCPUm }}
       limitCPUm: {{ . }}
-      {{- end }}                 
+      {{- end }}
       {{- with .Values.collectorGateway.memoryLimiterLimitMiB }}
       memoryLimiterLimitMiB: {{ . }}
       {{- end }}

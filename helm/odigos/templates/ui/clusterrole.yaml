@@ -10,7 +10,7 @@ rules:
     verbs:
       - get
       - list
-      {{- if not .Values.ui.readonly }}
+      {{- if .Values.ui.uiMode != "readonly" }}
       - patch
       {{- end }}
   - apiGroups:
@@ -22,7 +22,7 @@ rules:
     verbs:
       - get
       - list
-      {{- if not .Values.ui.readonly }}
+      {{- if .Values.ui.uiMode != "readonly" }}
       - patch
       - update
       {{- end }}
@@ -64,7 +64,7 @@ rules:
     verbs:
       - get
       - list
-      {{- if not .Values.ui.readonly }}
+      {{- if .Values.ui.uiMode != "readonly" }}
       - create
       - delete
       {{- end }}
