@@ -64,14 +64,14 @@ func isDataCollectionReady(ctx context.Context, c client.Client) bool {
 	return nodeCollectorsGroup.Status.Ready
 }
 
-func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.Client, instConfig *odigosv1.InstrumentationConfig) (error, bool) {
+func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.Client, instConfig *odigosv1.InstrumentationConfig) error {
 
 	deviceSkipped := false
 
 	logger := log.FromContext(ctx)
 	obj, err := getWorkloadObject(ctx, kubeClient, instConfig)
 	if err != nil {
-		return err, false
+		return err
 	}
 
 	workload := workload.PodWorkload{
@@ -85,7 +85,7 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 	instrumentationRules := odigosv1.InstrumentationRuleList{}
 	err = kubeClient.List(ctx, &instrumentationRules)
 	if err != nil {
-		return err, false
+		return err
 	}
 
 	// default otel sdk map according to Odigos tier
@@ -143,11 +143,11 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 
 	// if non of the devices were applied due to the presence of another agent, return an error.
 	if deviceSkipped {
-		return k8sutils.OtherAgentRunError, false
+		return k8sutils.OtherAgentRunError
 	}
 
 	if err != nil {
-		return err, false
+		return err
 	}
 
 	modified := result != controllerutil.OperationResultNone
@@ -155,7 +155,7 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 		logger.V(0).Info("added instrumentation device to workload", "name", obj.GetName(), "namespace", obj.GetNamespace())
 	}
 
-	return nil, deviceSkipped
+	return nil
 }
 
 func removeInstrumentationDeviceFromWorkload(ctx context.Context, kubeClient client.Client, namespace string, workloadKind workload.WorkloadKind, workloadName string, uninstrumentReason ApplyInstrumentationDeviceReason) error {
@@ -274,17 +274,18 @@ func reconcileSingleWorkload(ctx context.Context, kubeClient client.Client, inst
 		return nil
 	}
 
-	err, devicePartiallyApplied := addInstrumentationDeviceToWorkload(ctx, kubeClient, instrumentationConfig)
-	if err == nil {
-		var successMessage string
-		if devicePartiallyApplied {
-			successMessage = "Instrumentation device partially applied"
-		} else {
-			successMessage = "Instrumentation device applied successfully"
-		}
-		conditions.UpdateStatusConditions(ctx, kubeClient, instrumentationConfig, &instrumentationConfig.Status.Conditions, metav1.ConditionTrue, appliedInstrumentationDeviceType, "InstrumentationDeviceApplied", successMessage)
+	err = addInstrumentationDeviceToWorkload(ctx, kubeClient, instrumentationConfig)
+	if err != nil {
+
+		conditions.UpdateStatusConditions(ctx, kubeClient, instrumentationConfig, &instrumentationConfig.Status.Conditions,
+			metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonErrApplying),
+			"Odigos instrumentation failed to apply: "+err.Error())
 	} else {
-		conditions.UpdateStatusConditions(ctx, kubeClient, instrumentationConfig, &instrumentationConfig.Status.Conditions, metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonErrApplying), err.Error())
+
+		enabledMessage := "Odigos instrumentation is enabled (label: odigos.io/inject-instrumentation=true)."
+		conditions.UpdateStatusConditions(ctx, kubeClient, instrumentationConfig, &instrumentationConfig.Status.Conditions,
+			metav1.ConditionTrue, appliedInstrumentationDeviceType, "InstrumentationEnabled", enabledMessage)
 	}
+
 	return err
 }
