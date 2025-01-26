@@ -50,6 +50,14 @@ lint-fix:
 	MODULE=destinations make lint FIX_LINT=true
 	MODULE=procdiscovery make lint FIX_LINT=true
 
+.PHONY: cli-docs
+cli-docs:
+	rm -rf docs/cli/*
+	KUBECONFIG=KUBECONFIG go run -tags embed_manifests scripts/cli-docgen/main.go
+	for file in docs/cli/*; do \
+		mv $${file} $${file%.md}.mdx; \
+	done
+
 build-image/%:
 	docker build -t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
 	--build-arg SERVICE_NAME="$*" \

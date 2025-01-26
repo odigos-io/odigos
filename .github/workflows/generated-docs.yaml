@@ -1,0 +1,45 @@
+name: Verify CRD API docs
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check-api-doc-change:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate docs
+        run: |
+          cd api && make docgen
+
+      - name: Check for changes
+        run: |
+          if [[ $(git diff --exit-code) ]]; then
+            git diff
+            echo "CRD API docs need to be updated. Please run 'cd api && make docgen' and commit the changes."
+            exit 1
+          fi
+
+  check-cli-doc-change:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate docs
+        run: |
+          make cli-docs
+
+      - name: Check for changes
+        run: |
+          if [[ $(git diff --exit-code) ]]; then
+            git diff
+            echo "CLI docs need to be updated. Please run 'make cli-docs' and commit the changes."
+            exit 1
+          fi
