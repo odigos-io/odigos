@@ -18,9 +18,11 @@ rules:
     verbs:
       - get
       - list
+      {{- if not .Values.ui.readonly }}
       - create
       - patch
       - update
+      {{- end }}
   - apiGroups:
       - odigos.io
     resources:
@@ -29,10 +31,12 @@ rules:
     verbs:
       - get
       - list
+      {{- if not .Values.ui.readonly }}
       - create
       - patch
       - update
       - delete
+      {{- end }}
   - apiGroups:
       - odigos.io
     resources:
@@ -53,7 +57,9 @@ rules:
     verbs:
       - get
       - list
+      {{- if not .Values.ui.readonly }}
       - create
       - patch
       - update
       - delete
+      {{- end }}

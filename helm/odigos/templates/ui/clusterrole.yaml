@@ -10,7 +10,9 @@ rules:
     verbs:
       - get
       - list
+      {{- if not .Values.ui.readonly }}
       - patch
+      {{- end }}
   - apiGroups:
       - apps
     resources:
@@ -20,8 +22,10 @@ rules:
     verbs:
       - get
       - list
+      {{- if not .Values.ui.readonly }}
       - patch
       - update
+      {{- end }}
   - apiGroups:
       - apps
     resources:
@@ -60,5 +64,7 @@ rules:
     verbs:
       - get
       - list
+      {{- if not .Values.ui.readonly }}
       - create
       - delete
+      {{- end }}
