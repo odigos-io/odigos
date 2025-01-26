@@ -183,5 +183,25 @@ func ValToAppend(envName string, sdk common.OtelSdk) (string, bool) {
 }
 
 func GetPossibleValuesPerEnv(env string) map[common.OtelSdk]string {
-	return EnvValuesMap[env].values
+	if envValues, ok := EnvValuesMap[env]; ok {
+		return envValues.values
+	}
+	return nil
+}
+
+func AppendOdigosAdditionsToEnvVar(envName string, observedValue string, desiredOdigosAddition string) *string {
+	envValues, ok := EnvValuesMap[envName]
+	if !ok {
+		// Odigos does not manipulate this environment variable, so ignore it
+		return nil
+	}
+
+	// In case observedValue is exists but empty, we just need to set the desiredOdigosAddition without delim before
+	if strings.TrimSpace(observedValue) == "" {
+		return &desiredOdigosAddition
+	} else {
+		// In case observedValue is not empty, we need to append the desiredOdigosAddition with the delim
+		mergedEnvValue := observedValue + envValues.delim + desiredOdigosAddition
+		return &mergedEnvValue
+	}
 }
