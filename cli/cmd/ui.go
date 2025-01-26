@@ -34,7 +34,7 @@ const (
 var uiCmd = &cobra.Command{
 	Use:   "ui",
 	Short: "Start the Odigos UI",
-	Long:  `Start the Odigos UI. This command will port-forward the odigos-ui pod to your local machine.`,
+	Long:  `Start the Odigos UI. This will start a web server that you can access in your browser and enables you to manage and configure Odigos.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
@@ -64,6 +64,16 @@ var uiCmd = &cobra.Command{
 			os.Exit(1)
 		}
 	},
+	Example: `
+	# Start the Odigos UI on http://localhost:3000
+    odigos ui
+
+    # Start the Odigos UI on specific port if 3000 is already in use
+    odigos ui --port 3456
+
+    # Start the Odigos UI and have it manage and configure a specific cluster
+    odigos ui --kubeconfig <path-to-kubeconfig>
+	`,
 }
 
 func portForwardWithContext(ctx context.Context, uiPod *corev1.Pod, client *kube.Client, localPort string, localAddress string) error {
@@ -156,5 +166,5 @@ func findOdigosUIPod(client *kube.Client, ctx context.Context, ns string) (*core
 func init() {
 	rootCmd.AddCommand(uiCmd)
 	uiCmd.Flags().Int("port", defaultPort, "Port to listen on")
-	uiCmd.Flags().String("address", "localhost", "Address to listen on")
+	uiCmd.Flags().String("address", "localhost", "Address to serve the UI on")
 }

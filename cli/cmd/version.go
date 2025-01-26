@@ -29,6 +29,8 @@ var (
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print odigos version.",
+	Long: `This command is used to print the Odigos version.
+Both the CLI version and the Odigos components in your cluster will be printed.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		cliFlag, _ := cmd.Flags().GetBool(cliFlag)
 		clusterFlag, _ := cmd.Flags().GetBool(clusterFlag)
@@ -55,6 +57,10 @@ var versionCmd = &cobra.Command{
 		fmt.Printf("Odigos Version (in cluster): version.Info{Version:'%s'}\n", OdigosClusterVersion)
 
 	},
+	Example: `
+	# Print the version of odigos CLI and Odigos deployment in your cluster
+    odigos version
+	`,
 }
 
 func getOdigosVersionInCluster(cmd *cobra.Command) (string, error) {
