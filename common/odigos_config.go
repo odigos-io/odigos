@@ -104,4 +104,5 @@ type OdigosConfiguration struct {
 	CollectorNode             *CollectorNodeConfiguration    `json:"collectorNode,omitempty"`
 	Profiles                  []ProfileName                  `json:"profiles,omitempty"`
 	AllowConcurrentAgents     *bool                          `json:"allowConcurrentAgents,omitempty"`
+	UiMode                    string                         `json:"uiMode,omitempty"`
 }

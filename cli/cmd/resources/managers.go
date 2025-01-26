@@ -10,7 +10,7 @@ import (
 // set apiKey to nil for no-op.
 // set to empty string for "no api key" (non odigos cloud mode).
 // set to a valid api key for odigos cloud mode.
-func CreateResourceManagers(client *kube.Client, odigosNs string, odigosTier common.OdigosTier, proTierToken *string, config *common.OdigosConfiguration, odigosVersion string, uiReadonly bool) []resourcemanager.ResourceManager {
+func CreateResourceManagers(client *kube.Client, odigosNs string, odigosTier common.OdigosTier, proTierToken *string, config *common.OdigosConfiguration, odigosVersion string) []resourcemanager.ResourceManager {
 
 	// Note - the order of resource managers is important.
 	// If resource B depends on resource A, then B must be installed after A.
@@ -31,7 +31,7 @@ func CreateResourceManagers(client *kube.Client, odigosNs string, odigosTier com
 		NewSchedulerResourceManager(client, odigosNs, config, odigosVersion),
 		NewOdigletResourceManager(client, odigosNs, config, odigosTier, odigosVersion),
 		NewAutoScalerResourceManager(client, odigosNs, config, odigosVersion),
-		NewUIResourceManager(client, odigosNs, config, odigosVersion, uiReadonly),
+		NewUIResourceManager(client, odigosNs, config, odigosVersion, config.UiMode == "readonly"),
 	}...)
 
 	if odigosTier == common.CloudOdigosTier {

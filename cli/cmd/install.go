@@ -38,7 +38,7 @@ var (
 	userInputIgnoredNamespaces []string
 	userInputIgnoredContainers []string
 	userInputInstallProfiles   []string
-	uiReadonly                 bool
+	uiMode                     string
 
 	instrumentorImage string
 	odigletImage      string
@@ -109,7 +109,7 @@ This command will install k8s components that will auto-instrument your applicat
 		createKubeResourceWithLogging(ctx, fmt.Sprintf("> Creating namespace %s", ns),
 			client, cmd, ns, createNamespace)
 
-		resourceManagers := resources.CreateResourceManagers(client, ns, odigosTier, &odigosProToken, &config, versionFlag, uiReadonly)
+		resourceManagers := resources.CreateResourceManagers(client, ns, odigosTier, &odigosProToken, &config, versionFlag)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Creating")
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Failed to install Odigos: %s\n", err)
@@ -204,7 +204,6 @@ func validateUserInputProfiles(tier common.OdigosTier) {
 }
 
 func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration {
-
 	selectedProfiles := []common.ProfileName{}
 	for _, profile := range userInputInstallProfiles {
 		selectedProfiles = append(selectedProfiles, common.ProfileName(profile))
@@ -223,6 +222,7 @@ func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 		InstrumentorImage:         instrumentorImage,
 		AutoscalerImage:           autoScalerImage,
 		Profiles:                  selectedProfiles,
+		UiMode:                    uiMode,
 	}
 }
 
@@ -253,7 +253,7 @@ func init() {
 	installCmd.Flags().StringSliceVar(&userInputIgnoredNamespaces, "ignore-namespace", k8sconsts.DefaultIgnoredNamespaces, "namespaces not to show in odigos ui")
 	installCmd.Flags().StringSliceVar(&userInputIgnoredContainers, "ignore-container", k8sconsts.DefaultIgnoredContainers, "container names to exclude from instrumentation (useful for sidecar container)")
 	installCmd.Flags().StringSliceVar(&userInputInstallProfiles, "profile", []string{}, "install preset profiles with a specific configuration")
-	installCmd.Flags().BoolVar(&uiReadonly, "ui-readonly", false, "set the ui to read-only mode")
+	installCmd.Flags().StringVarP(&uiMode, "ui-mode", "", "", "set the ui mode (one-of: readonly)")
 
 	if OdigosVersion != "" {
 		versionFlag = OdigosVersion
