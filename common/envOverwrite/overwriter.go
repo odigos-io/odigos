@@ -183,10 +183,7 @@ func ValToAppend(envName string, sdk common.OtelSdk) (string, bool) {
 }
 
 func GetPossibleValuesPerEnv(env string) map[common.OtelSdk]string {
-	if envValues, ok := EnvValuesMap[env]; ok {
-		return envValues.values
-	}
-	return nil
+	return EnvValuesMap[env].values
 }
 
 func AppendOdigosAdditionsToEnvVar(envName string, observedValue string, desiredOdigosAddition string) *string {
