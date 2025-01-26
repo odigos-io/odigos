@@ -19,3 +19,22 @@ generate:
 
 test: generate
 	go test -v ./...
+
+TOOLS := $(PWD)/.tools
+
+.PHONY: tools
+tools:
+	@if [ ! -d "$(TOOLS)" ]; then \
+		mkdir $(TOOLS); \
+	fi
+
+.PHONY: go-licenses
+go-licenses: tools
+	GOBIN=$(TOOLS) go install github.com/google/go-licenses@latest
+
+.PHONY: licenses
+licenses: go-licenses
+	@if [ -d "$(PWD)/licenses" ]; then \
+		rm -rf $(PWD)/licenses; \
+	fi
+	$(TOOLS)/go-licenses save . --save_path=licenses
