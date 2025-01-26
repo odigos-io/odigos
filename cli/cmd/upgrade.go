@@ -137,6 +137,6 @@ func init() {
 		upgradeCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "for development purposes only")
 		upgradeCmd.Flags().Bool("skip-version-check", false, "skip the version check and install any version tag provided. used for tests")
 		updateCmd.Flags().MarkHidden("skip-version-check")
-		installCmd.Flags().StringVarP(&uiMode, "ui-mode", "", "", "set the UI mode (one-of: normal, readonly)")
+		updateCmd.Flags().StringVarP(&uiMode, "ui-mode", "", "", "set the UI mode (one-of: normal, readonly)")
 	}
 }
