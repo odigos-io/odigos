@@ -57,13 +57,15 @@ func isReadonlyMode(ctx context.Context) bool {
 }
 
 func isSourceCreated(ctx context.Context) bool {
-	nsList, err := kube.DefaultClient.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+	ns := env.GetCurrentNamespace()
+
+	nsList, err := getRelevantNameSpaces(ctx, ns)
 	if err != nil {
 		log.Printf("Error listing namespaces: %v\n", err)
 		return false
 	}
 
-	for _, ns := range nsList.Items {
+	for _, ns := range nsList {
 		sourceList, err := kube.DefaultClient.OdigosClient.Sources(ns.Namespace).List(ctx, metav1.ListOptions{})
 		if err != nil {
 			log.Printf("Error listing sources: %v\n", err)
