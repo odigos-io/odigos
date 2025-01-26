@@ -34,10 +34,10 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, nil
 	}
 
-	if odigosv1alpha1.IsDisabledSource(source) {
-		// Exclude this workload from instrumentation, no need to update InstrumentationConfig
-		return ctrl.Result{}, nil
-	}
+	// if a source is disabled, an instrumentationConfig should not be present,
+	// and we would get a NotFound error here.
+	// if the instrumentationConfig is not deleted yet for a disabled source,
+	// we would update it to have the service name, and it would be deleted by another controller.
 
 	instConfigName := workload.CalculateWorkloadRuntimeObjectName(source.Spec.Workload.Name, source.Spec.Workload.Kind)
 	instConfig := &odigosv1alpha1.InstrumentationConfig{}
