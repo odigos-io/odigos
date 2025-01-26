@@ -22,10 +22,10 @@ func (c *Chronosphere) DestType() common.DestinationType {
 	return common.ChronosphereDestinationType
 }
 
-func (c *Chronosphere) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (c *Chronosphere) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	url, exists := dest.GetConfig()[chronosphereDomain]
 	if !exists {
-		return ErrorChronosphereMissingURL
+		return nil, ErrorChronosphereMissingURL
 	}
 
 	company := c.getCompanyNameFromURL(url)
@@ -41,12 +41,14 @@ func (c *Chronosphere) ModifyConfig(dest ExporterConfigurer, currentConfig *Conf
 			"API-Token": "${CHRONOSPHERE_API_TOKEN}",
 		},
 	}
+	var pipelineNames []string
 
 	if isTracingEnabled(dest) {
 		tracePipelineName := "traces/chronosphere-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracePipelineName] = Pipeline{
 			Exporters: []string{chronosphereExporterName},
 		}
+		pipelineNames = append(pipelineNames, tracePipelineName)
 	}
 
 	if isMetricsEnabled(dest) {
@@ -77,9 +79,10 @@ func (c *Chronosphere) ModifyConfig(dest ExporterConfigurer, currentConfig *Conf
 			Exporters:  []string{chronosphereExporterName},
 			Processors: []string{chronosphereMetricProcessorName},
 		}
+		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
-	return nil
+	return pipelineNames, nil
 }
 
 func (c *Chronosphere) getCompanyNameFromURL(url string) string {

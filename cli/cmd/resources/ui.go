@@ -18,15 +18,6 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 )
 
-const (
-	UIImage              = "keyval/odigos-ui"
-	UIServiceName        = "ui"
-	UIDeploymentName     = "odigos-ui"
-	UIAppLabelValue      = "odigos-ui"
-	UIContainerName      = "ui"
-	UIServiceAccountName = "odigos-ui"
-)
-
 type uiResourceManager struct {
 	client        *kube.Client
 	ns            string
@@ -45,33 +36,33 @@ func NewUIDeployment(ns string, version string, imagePrefix string) *appsv1.Depl
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      UIDeploymentName,
+			Name:      k8sconsts.UIDeploymentName,
 			Namespace: ns,
 			Labels: map[string]string{
-				"app.kubernetes.io/name": UIAppLabelValue,
+				"app.kubernetes.io/name": k8sconsts.UIAppLabelValue,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptrint32(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": UIAppLabelValue,
+					"app": k8sconsts.UIAppLabelValue,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": UIAppLabelValue,
+						"app": k8sconsts.UIAppLabelValue,
 					},
 					Annotations: map[string]string{
-						"kubectl.kubernetes.io/default-container": UIContainerName,
+						"kubectl.kubernetes.io/default-container": k8sconsts.UIContainerName,
 					},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  UIContainerName,
-							Image: containers.GetImageName(imagePrefix, UIImage, version),
+							Name:  k8sconsts.UIContainerName,
+							Image: containers.GetImageName(imagePrefix, k8sconsts.UIImage, version),
 							Args: []string{
 								"--namespace=$(CURRENT_NS)",
 							},
@@ -105,7 +96,7 @@ func NewUIDeployment(ns string, version string, imagePrefix string) *appsv1.Depl
 						},
 					},
 					TerminationGracePeriodSeconds: ptrint64(10),
-					ServiceAccountName:            UIServiceAccountName,
+					ServiceAccountName:            k8sconsts.UIServiceAccountName,
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot: ptrbool(true),
 					},
@@ -124,7 +115,7 @@ func NewUIServiceAccount(ns string) *corev1.ServiceAccount {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      UIServiceAccountName,
+			Name:      k8sconsts.UIServiceAccountName,
 			Namespace: ns,
 		},
 	}
@@ -188,7 +179,7 @@ func NewUIRoleBinding(ns string) *rbacv1.RoleBinding {
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      UIServiceAccountName,
+				Name:      k8sconsts.UIServiceAccountName,
 				Namespace: ns,
 			},
 		},
@@ -263,7 +254,7 @@ func NewUIClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      UIServiceAccountName,
+				Name:      k8sconsts.UIServiceAccountName,
 				Namespace: ns,
 			},
 		},
@@ -282,15 +273,15 @@ func NewUIService(ns string) *corev1.Service {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      UIServiceName,
+			Name:      k8sconsts.UIServiceName,
 			Namespace: ns,
 			Labels: map[string]string{
-				"app": UIAppLabelValue,
+				"app": k8sconsts.UIAppLabelValue,
 			},
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: map[string]string{
-				"app": UIAppLabelValue,
+				"app": k8sconsts.UIAppLabelValue,
 			},
 			Ports: []corev1.ServicePort{
 				{

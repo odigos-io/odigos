@@ -7,11 +7,11 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
-	"github.com/odigos-io/odigos/cli/pkg/labels"
 	"github.com/odigos-io/odigos/cli/pkg/log"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/getters"
@@ -25,9 +25,9 @@ import (
 func restartPodsAfterCloudLogin(ctx context.Context, client *kube.Client, ns string, configVersion int) error {
 
 	configVersionStr := strconv.Itoa(configVersion)
-	patch := fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"%s":"%s"}}}}}`, labels.OdigosSystemConfigLabelKey, configVersionStr)
+	patch := fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"%s":"%s"}}}}}`, k8sconsts.OdigosSystemConfigLabelKey, configVersionStr)
 
-	_, err := client.AppsV1().Deployments(ns).Patch(ctx, resources.KeyvalProxyDeploymentName, types.StrategicMergePatchType, []byte(patch), metav1.PatchOptions{})
+	_, err := client.AppsV1().Deployments(ns).Patch(ctx, k8sconsts.KeyvalProxyDeploymentName, types.StrategicMergePatchType, []byte(patch), metav1.PatchOptions{})
 	if err != nil {
 		return err
 	}
@@ -37,7 +37,7 @@ func restartPodsAfterCloudLogin(ctx context.Context, client *kube.Client, ns str
 		return err
 	}
 
-	_, err = client.AppsV1().DaemonSets(ns).Patch(ctx, resources.OdigletDaemonSetName, types.StrategicMergePatchType, []byte(patch), metav1.PatchOptions{})
+	_, err = client.AppsV1().DaemonSets(ns).Patch(ctx, k8sconsts.OdigletDaemonSetName, types.StrategicMergePatchType, []byte(patch), metav1.PatchOptions{})
 	if err != nil {
 		return err
 	}

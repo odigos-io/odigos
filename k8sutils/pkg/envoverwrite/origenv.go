@@ -65,6 +65,10 @@ func (o *OrigWorkloadEnvValues) InsertOriginalValue(containerName, envName strin
 	o.modifiedSinceCreated = true
 }
 
+func (o *OrigWorkloadEnvValues) SetModifiedSinceCreated() {
+	o.modifiedSinceCreated = true
+}
+
 // stores the original values back into the manifest annotations
 // by modifying the annotations map of the input argument
 func (o *OrigWorkloadEnvValues) SerializeToAnnotation(obj metav1.Object) error {

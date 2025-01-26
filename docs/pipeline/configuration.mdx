@@ -1,28 +1,31 @@
 ---
-title: "Pipeline Configuration"
-sidebarTitle: "Configurations"
+title: "Configuring the Pipeline"
+description: "Configure the Odigos pipeline to optimize the performance and resource usage of the Odigos components."
+sidebarTitle: "Configuration"
+icon: "gear"
 ---
 
-Odigos sets up an observability pipeline in your Kubernetes cluster to collect, process and export OpenTelemetry data.
+import GettingHelp from '/snippets/getting-help-section.mdx'
 
-<Frame>
-    <img src="/images/odigos_pipeline.png" alt="Odigos Pipeline" />
-</Frame>
-
-
-User can configure the following components:
+## Configurable Components
 
 - **Cluster Gateway Collector** - a collector that runs as a k8s Deployment. It receives the OpenTelemetry data from the Node Collectors, processes it, and exports it to the configured destinations.
 - **Node Data Collection Collector** - a collector that runs as a k8s DaemonSet. It collects / scrape the OpenTelemetry data from the applications running on the nodes and forwards it to the Cluster Gateway Collector.
 
-### Configuring the Pipeline
+## Configuring the Pipeline
 
 Odigos offers two main options for configuring the pipeline:
-<Info>
-When configuring the pipeline, you must use **only one of the two methods**—either profiles or directly editing the `odigos-config` ConfigMap. Using both methods will result in configurations overwriting each other, potentially leading to unexpected behavior.
-</Info>
+
+<Warning>
+  When configuring the pipeline, you must use **only one of the two methods** — either `profiles`, or directly editing the `odigos-config` ConfigMap.
+
+  Using both methods will result in configurations overwriting each other, potentially leading to unexpected behavior.
+</Warning>
 
 #### 1. Using Profiles
+
+To use profiles, you need to use the [Odigos CLI Command for Profiles](/cli/odigos_profile).<br />
+This simplifies the setup process and ensures optimized settings for typical use cases.
 
 Sizing Profiles `size_s`, `size_m`, `size_l` are pre-defined configurations designed to simplify pipeline configurations. Each profile specifies the following parameters:
 
@@ -42,15 +45,11 @@ Sizing Profiles `size_s`, `size_m`, `size_l` are pre-defined configurations desi
 | `size_m` | **250Mi**            | **500Mi**         | **250m**             | **500m**         |
 | `size_l` | **500Mi**            | **750Mi**         | **500m**             | **750m**         |
 
-
-To use profiles, you need to use the [Odigos CLI Command for Profiles](/cli/odigos_profile).  
-This simplifies the setup process and ensures optimized settings for typical use cases.
-
 #### 2. Directly Editing the `odigos-config` ConfigMap
 
 For more advanced control over the pipeline, you can directly edit the `odigos-config` ConfigMap. This method allows you to configure additional `collectorGateway` settings.
 
-Below is an example of how to configure the `collectorGateway` parameters:
+Editing the ConfigMap allows you to fine-tune every aspect of the pipeline to meet custom requirements. Below is an example of how to configure the `collectorGateway` parameters:
 
 ```yaml
 collectorGateway:
@@ -129,6 +128,4 @@ collectorNode:
   goMemLimitMiB: 
 ```
 
-
-Editing the ConfigMap allows you to fine-tune every aspect of the pipeline to meet custom requirements.  
-If you need any help fine-tuning the configurations, you can reach out to the Odigos team for support.
+<GettingHelp />

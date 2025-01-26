@@ -10,16 +10,17 @@ func (s *Nop) DestType() common.DestinationType {
 	return common.NopDestinationType
 }
 
-func (s *Nop) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (s *Nop) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	exporterName := "nop/" + dest.GetID()
 
 	currentConfig.Exporters[exporterName] = GenericMap{}
-
+	var pipelineNames []string
 	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/nop-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
 	if isMetricsEnabled(dest) {
@@ -27,6 +28,7 @@ func (s *Nop) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
 	if isLoggingEnabled(dest) {
@@ -34,7 +36,8 @@ func (s *Nop) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, logsPipelineName)
 	}
 
-	return nil
+	return pipelineNames, nil
 }

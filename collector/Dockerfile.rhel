@@ -1,0 +1,25 @@
+FROM --platform=$BUILDPLATFORM golang:1.23-bullseye AS builder
+COPY . /go/src/
+WORKDIR /go/src/
+
+ARG TARGETARCH
+RUN GOOS=linux GOARCH=$TARGETARCH make build-odigoscol
+RUN make licenses
+
+FROM registry.access.redhat.com/ubi9:9.5-1736404036
+ARG VERSION
+ARG RELEASE
+ARG SUMMARY
+ARG DESCRIPTION
+LABEL "name"="collector"
+LABEL "vendor"="Odigos"
+LABEL "maintainer"="Odigos"
+LABEL "version"=$VERSION
+LABEL "release"=$RELEASE
+LABEL "summary"=$SUMMARY
+LABEL "description"=$DESCRIPTION
+COPY --from=builder /go/src/odigosotelcol/odigosotelcol /odigosotelcol
+COPY --from=builder /go/src/odigosotelcol/licenses /licenses
+COPY --from=builder /go/src/odigosotelcol/LICENSE /licenses/.
+USER 65532:65532
+CMD ["/odigosotelcol"]

@@ -18,11 +18,11 @@ func (s *Uptrace) DestType() common.DestinationType {
 	return common.UptraceDestinationType
 }
 
-func (s *Uptrace) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (s *Uptrace) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	config := dest.GetConfig()
 	dsn, exists := config[dsnKey]
 	if !exists {
-		return errors.New("Uptrace url(\"UPTRACE_DSN\") not specified, gateway will not be configured for Uptrace")
+		return nil, errors.New("Uptrace url(\"UPTRACE_DSN\") not specified, gateway will not be configured for Uptrace")
 	}
 
 	endpoint, exists := config[endpointKey]
@@ -43,11 +43,13 @@ func (s *Uptrace) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) e
 		},
 	}
 
+	var pipelineNames []string
 	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/uptrace-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
 	if isMetricsEnabled(dest) {
@@ -55,6 +57,7 @@ func (s *Uptrace) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) e
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
 	if isLoggingEnabled(dest) {
@@ -62,7 +65,8 @@ func (s *Uptrace) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) e
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, logsPipelineName)
 	}
 
-	return nil
+	return pipelineNames, nil
 }

@@ -28,13 +28,13 @@ func (j *Jaeger) DestType() common.DestinationType {
 	return common.JaegerDestinationType
 }
 
-func (j *Jaeger) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (j *Jaeger) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	config := dest.GetConfig()
 	uniqueUri := "jaeger-" + dest.GetID()
 
 	url, urlExists := config[JaegerUrlKey]
 	if !urlExists {
-		return ErrorJaegerMissingURL
+		return nil, ErrorJaegerMissingURL
 	}
 
 	tls := dest.GetConfig()[JaegerTlsKey]
@@ -42,7 +42,7 @@ func (j *Jaeger) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) er
 
 	endpoint, err := parseOtlpGrpcUrl(url, tlsEnabled)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	exporterName := "otlp/" + uniqueUri
@@ -59,23 +59,24 @@ func (j *Jaeger) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) er
 
 	exporterConfig["tls"] = tlsConfig
 	currentConfig.Exporters[exporterName] = exporterConfig
-
+	pipelineNames := []string{}
 	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/" + uniqueUri
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, tracesPipelineName)
 	} else {
-		return ErrorJaegerTracingDisabled
+		return nil, ErrorJaegerTracingDisabled
 	}
 
 	if isMetricsEnabled(dest) {
-		return ErrorJaegerMetricsNotAllowed
+		return nil, ErrorJaegerMetricsNotAllowed
 	}
 
 	if isLoggingEnabled(dest) {
-		return ErrorJaegerLogsNotAllowed
+		return nil, ErrorJaegerLogsNotAllowed
 	}
 
-	return nil
+	return pipelineNames, nil
 }

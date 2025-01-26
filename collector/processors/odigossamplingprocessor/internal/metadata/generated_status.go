@@ -7,7 +7,8 @@ import (
 )
 
 var (
-	Type = component.MustNewType("odigossampling")
+	Type      = component.MustNewType("odigossampling")
+	ScopeName = "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossamplingprocessor"
 )
 
 const (
