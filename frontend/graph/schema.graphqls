@@ -274,6 +274,7 @@ type Destination {
 
 type GetConfigResponse {
   installation: InstallationStatus!
+  readonly: Boolean!
 }
 
 type CustomReadDataLabel {

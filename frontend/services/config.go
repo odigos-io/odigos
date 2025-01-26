@@ -4,9 +4,14 @@ import (
 	"context"
 	"log"
 
+	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 type InstallationStatus string
@@ -17,22 +22,38 @@ const (
 	Finished        InstallationStatus = "FINISHED"
 )
 
-type GetConfigResponse struct {
-	Installation InstallationStatus `json:"installation"`
-}
+func GetConfig(ctx context.Context) model.GetConfigResponse {
+	var response model.GetConfigResponse
 
-func GetConfig(ctx context.Context) GetConfigResponse {
-	var response GetConfigResponse
+	response.Readonly = isReadonlyMode(ctx)
 
 	if !isSourceCreated(ctx) {
-		response.Installation = NewInstallation
+		response.Installation = model.InstallationStatus(NewInstallation)
 	} else if !isDestinationConnected(ctx) {
-		response.Installation = AppsSelected
+		response.Installation = model.InstallationStatus(AppsSelected)
 	} else {
-		response.Installation = Finished
+		response.Installation = model.InstallationStatus(Finished)
 	}
 
 	return response
+}
+
+func isReadonlyMode(ctx context.Context) bool {
+	ns := env.GetCurrentNamespace()
+
+	configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
+	if err != nil {
+		log.Printf("Error getting config maps: %v\n", err)
+		return false
+	}
+
+	var odigosConfig common.OdigosConfiguration
+	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig); err != nil {
+		log.Printf("Error parsing YAML: %v\n", err)
+		return false
+	}
+
+	return odigosConfig.UiMode == common.ReadonlyUiMode
 }
 
 func isSourceCreated(ctx context.Context) bool {
