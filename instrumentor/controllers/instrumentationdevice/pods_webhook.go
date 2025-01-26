@@ -46,6 +46,11 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 	}
 
 	serviceName, podWorkload := p.getServiceNameForEnv(ctx, pod)
+	if podWorkload == nil {
+		log.FromContext(ctx).Info("Skipping instrumentation: Pod workload not found")
+		return nil
+	}
+
 	var workloadInstrumentationConfig odigosv1.InstrumentationConfig
 	instrumentationConfigName := workload.CalculateWorkloadRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
 

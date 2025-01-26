@@ -65,9 +65,8 @@ func isDataCollectionReady(ctx context.Context, c client.Client) bool {
 }
 
 func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.Client, instConfig *odigosv1.InstrumentationConfig) (error, bool) {
-	// devicePartiallyApplied is used to indicate that the instrumentation device was partially applied for some of the containers.
-	devicePartiallyApplied := false
-	deviceNotAppliedDueToPresenceOfAnotherAgent := false
+
+	deviceSkipped := false
 
 	logger := log.FromContext(ctx)
 	obj, err := getWorkloadObject(ctx, kubeClient, instConfig)
@@ -131,16 +130,11 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 			agentsCanRunConcurrently = *odigosConfiguration.AllowConcurrentAgents
 		}
 
-		deviceSkippedDueToOtherAgent, err := instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, instConfig.Status.RuntimeDetailsByContainer, otelSdkToUse, obj, logger, agentsCanRunConcurrently)
+		deviceSkipped, err = instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, instConfig.Status.RuntimeDetailsByContainer, otelSdkToUse, obj, logger, agentsCanRunConcurrently)
 		if err != nil {
 			return err
 		}
-		// if non of the devices were applied due to the presence of another agent, return an error.
-		if deviceSkippedDueToOtherAgent {
-			deviceNotAppliedDueToPresenceOfAnotherAgent = true
-		}
 
-		devicePartiallyApplied = deviceSkippedDueToOtherAgent
 		// add odigos.io/inject-instrumentation label to enable the webhook
 		instrumentation.SetInjectInstrumentationLabel(podSpec)
 
@@ -148,7 +142,7 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 	})
 
 	// if non of the devices were applied due to the presence of another agent, return an error.
-	if deviceNotAppliedDueToPresenceOfAnotherAgent {
+	if deviceSkipped {
 		return k8sutils.OtherAgentRunError, false
 	}
 
@@ -161,7 +155,7 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 		logger.V(0).Info("added instrumentation device to workload", "name", obj.GetName(), "namespace", obj.GetNamespace())
 	}
 
-	return nil, devicePartiallyApplied
+	return nil, deviceSkipped
 }
 
 func removeInstrumentationDeviceFromWorkload(ctx context.Context, kubeClient client.Client, namespace string, workloadKind workload.WorkloadKind, workloadName string, uninstrumentReason ApplyInstrumentationDeviceReason) error {
