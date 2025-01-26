@@ -13,7 +13,9 @@ const Container = styled.div`
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px;
+  padding: 4px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 32px;
 `;
 
 const Title = styled(Text)`
