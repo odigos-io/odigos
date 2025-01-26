@@ -18,7 +18,6 @@ type InstallationStatus string
 
 const (
 	NewInstallation InstallationStatus = "NEW"
-	AppsSelected    InstallationStatus = "APPS_SELECTED"
 	Finished        InstallationStatus = "FINISHED"
 )
 
@@ -27,10 +26,8 @@ func GetConfig(ctx context.Context) model.GetConfigResponse {
 
 	response.Readonly = isReadonlyMode(ctx)
 
-	if !isSourceCreated(ctx) {
+	if !isSourceCreated(ctx) && !isDestinationConnected(ctx) {
 		response.Installation = model.InstallationStatus(NewInstallation)
-	} else if !isDestinationConnected(ctx) {
-		response.Installation = model.InstallationStatus(AppsSelected)
 	} else {
 		response.Installation = model.InstallationStatus(Finished)
 	}
