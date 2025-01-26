@@ -59,8 +59,3 @@ func calculateEffectiveProfiles(configProfiles []common.ProfileName, availablePr
 	}
 	return effectiveProfiles
 }
-
-// func getProfilesFromToken() []common.ProfileName {
-
-// 	return []common.ProfileName{common.OdigosProProfile}
-// }
