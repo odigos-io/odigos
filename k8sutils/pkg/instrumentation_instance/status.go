@@ -14,7 +14,14 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 )
 
-const ownerPodNameLabel = "ownerPodName"
+const (
+	// label key used to associate the instrumentation instance with the owner pod
+	ownerPodNameLabel = "ownerPodName"
+
+	// maxInstrumentationInstancesPerPod is the maximum number of instrumentation instances that can be created per pod
+	// this is required to bound the number of instrumentation instances that can be created.
+	maxInstrumentationInstancesPerPod = 15
+)
 
 type InstrumentationInstanceOption interface {
 	applyInstrumentationInstance(odigosv1.InstrumentationInstanceStatus) odigosv1.InstrumentationInstanceStatus
@@ -65,53 +72,70 @@ func InstrumentationInstanceName(ownerName string, pid int) string {
 func UpdateInstrumentationInstanceStatus(ctx context.Context, owner client.Object, containerName string, kubeClient client.Client,
 	instrumentedAppName string, pid int, scheme *runtime.Scheme, options ...InstrumentationInstanceOption) error {
 	instrumentationInstanceName := InstrumentationInstanceName(owner.GetName(), pid)
-	updatedInstance := &odigosv1.InstrumentationInstance{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "odigos.io/v1alpha1",
-			Kind:       "InstrumentationInstance",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      instrumentationInstanceName,
-			Namespace: owner.GetNamespace(),
-			Labels: map[string]string{
-				consts.InstrumentedAppNameLabel: instrumentedAppName,
-				ownerPodNameLabel:               owner.GetName(),
-			},
-		},
-		Spec: odigosv1.InstrumentationInstanceSpec{
-			ContainerName: containerName,
-		},
-	}
+	instance := odigosv1.InstrumentationInstance{}
 
-	err := controllerutil.SetControllerReference(owner, updatedInstance, scheme)
+	err := kubeClient.Get(ctx,
+		client.ObjectKey{Namespace: owner.GetNamespace(), Name: instrumentationInstanceName},
+		&instance,
+	)
 	if err != nil {
-		return err
-	}
-
-	if err = kubeClient.Create(ctx, updatedInstance); err != nil {
-		if !apierrors.IsAlreadyExists(err) {
+		if !apierrors.IsNotFound(err) {
 			return err
 		}
-		err := kubeClient.Get(ctx, client.ObjectKeyFromObject(updatedInstance), updatedInstance)
+
+		// check if we can create a new instance
+		if instrumentationInstancesCountReachedLimit(ctx, owner, kubeClient) {
+			return fmt.Errorf("instrumentation instances count per pod is over the limit of %d", maxInstrumentationInstancesPerPod)
+		}
+
+		// create new instance
+		instance = odigosv1.InstrumentationInstance{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "odigos.io/v1alpha1",
+				Kind:       "InstrumentationInstance",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      instrumentationInstanceName,
+				Namespace: owner.GetNamespace(),
+				Labels: map[string]string{
+					consts.InstrumentedAppNameLabel: instrumentedAppName,
+					ownerPodNameLabel:               owner.GetName(),
+				},
+			},
+			Spec: odigosv1.InstrumentationInstanceSpec{
+				ContainerName: containerName,
+			},
+		}
+
+		err := controllerutil.SetControllerReference(owner, &instance, scheme)
 		if err != nil {
 			return err
 		}
+
+		err = kubeClient.Create(ctx, &instance)
+		if err != nil && !apierrors.IsAlreadyExists(err) {
+			return err
+		}
 	}
 
-	updatedInstance.Status = updateInstrumentationInstanceStatus(updatedInstance.Status, options...)
-
-	err = kubeClient.Status().Update(ctx, updatedInstance)
+	instance.Status = updateInstrumentationInstanceStatus(instance.Status, options...)
+	err = kubeClient.Status().Update(ctx, &instance)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
-func IsInstrumentationInstancesCountOverLimit(ctx context.Context, owner client.Object, kubeClient client.Client) (int, error) {
+func instrumentationInstancesCountReachedLimit(ctx context.Context, owner client.Object, kubeClient client.Client) bool {
 	instances := &odigosv1.InstrumentationInstanceList{}
-	err := kubeClient.List(ctx, instances, client.InNamespace(owner.GetNamespace()), client.MatchingLabels{ownerPodNameLabel: owner.GetName()})
+	err := kubeClient.List(ctx, instances,
+		client.InNamespace(owner.GetNamespace()),
+		client.MatchingLabels{ownerPodNameLabel: owner.GetName()},
+		client.Limit(maxInstrumentationInstancesPerPod),
+	)
 	if err != nil {
-		return 0, err
+		return true
 	}
-	return len(instances.Items), nil
+	return len(instances.Items) == maxInstrumentationInstancesPerPod
 }
