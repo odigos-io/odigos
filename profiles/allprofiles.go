@@ -13,6 +13,7 @@ import (
 var AllProfiles = []profile.Profile{
 
 	aggregators.KratosProfile,
+	aggregators.GratewallProfile,
 
 	attributes.CategoryAttributesProfile,
 	attributes.CodeAttributesProfile,
