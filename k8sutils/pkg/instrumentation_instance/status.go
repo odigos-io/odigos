@@ -20,7 +20,7 @@ const (
 
 	// maxInstrumentationInstancesPerPod is the maximum number of instrumentation instances that can be created per pod
 	// this is required to bound the number of instrumentation instances that can be created.
-	maxInstrumentationInstancesPerPod = 15
+	maxInstrumentationInstancesPerPod = 16
 )
 
 type InstrumentationInstanceOption interface {
@@ -132,10 +132,9 @@ func instrumentationInstancesCountReachedLimit(ctx context.Context, owner client
 	err := kubeClient.List(ctx, instances,
 		client.InNamespace(owner.GetNamespace()),
 		client.MatchingLabels{ownerPodNameLabel: owner.GetName()},
-		client.Limit(maxInstrumentationInstancesPerPod),
 	)
 	if err != nil {
 		return true
 	}
-	return len(instances.Items) == maxInstrumentationInstancesPerPod
+	return len(instances.Items) >= maxInstrumentationInstancesPerPod
 }
