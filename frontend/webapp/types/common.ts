@@ -36,6 +36,7 @@ export interface Notification {
 export type Config = {
   config: {
     installation: string;
+    readonly: boolean;
   };
 };
 
