@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
+import { useConfig } from '../config';
 import { GET_DESTINATIONS } from '@/graphql';
-import { ACTION, getSseTargetFromId } from '@/utils';
 import { useMutation, useQuery } from '@apollo/client';
 import { useFilterStore, useNotificationStore, usePendingStore } from '@/store';
+import { ACTION, DISPLAY_TITLES, FORM_ALERTS, getSseTargetFromId } from '@/utils';
 import { CREATE_DESTINATION, DELETE_DESTINATION, UPDATE_DESTINATION } from '@/graphql/mutations';
 import { NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES, type SupportedSignals, type DestinationInput, type ComputePlatform } from '@/types';
 
@@ -53,6 +54,7 @@ const data = {
 
 export const useDestinationCRUD = (params?: Params) => {
   const filters = useFilterStore();
+  const { data: config } = useConfig();
   const { addPendingItems } = usePendingStore();
   const { addNotification, removeNotifications } = useNotificationStore();
 
@@ -139,19 +141,31 @@ export const useDestinationCRUD = (params?: Params) => {
     refetchDestinations: () => {}, // refetch,
 
     createDestination: (destination: DestinationInput) => {
-      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Creating destination...', undefined, true);
-      addPendingItems([{ entityType: OVERVIEW_ENTITY_TYPES.DESTINATION, entityId: undefined }]);
-      createDestination({ variables: { destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
+      if (config?.readonly) {
+        notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+      } else {
+        notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Creating destination...', undefined, true);
+        addPendingItems([{ entityType: OVERVIEW_ENTITY_TYPES.DESTINATION, entityId: undefined }]);
+        createDestination({ variables: { destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
+      }
     },
     updateDestination: (id: string, destination: DestinationInput) => {
-      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Updating destination...', undefined, true);
-      addPendingItems([{ entityType: OVERVIEW_ENTITY_TYPES.DESTINATION, entityId: id }]);
-      updateDestination({ variables: { id, destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
+      if (config?.readonly) {
+        notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+      } else {
+        notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Updating destination...', undefined, true);
+        addPendingItems([{ entityType: OVERVIEW_ENTITY_TYPES.DESTINATION, entityId: id }]);
+        updateDestination({ variables: { id, destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
+      }
     },
     deleteDestination: (id: string) => {
-      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Deleting destination...', undefined, true);
-      addPendingItems([{ entityType: OVERVIEW_ENTITY_TYPES.DESTINATION, entityId: id }]);
-      deleteDestination({ variables: { id } });
+      if (config?.readonly) {
+        notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+      } else {
+        notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Deleting destination...', undefined, true);
+        addPendingItems([{ entityType: OVERVIEW_ENTITY_TYPES.DESTINATION, entityId: id }]);
+        deleteDestination({ variables: { id } });
+      }
     },
   };
 };

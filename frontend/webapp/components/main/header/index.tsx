@@ -1,13 +1,14 @@
 import React from 'react';
-import { SLACK_LINK } from '@/utils';
-import { PlatformTypes } from '@/types';
+import { useConfig } from '@/hooks';
 import { PlatformTitle } from './cp-title';
+import { FORM_ALERTS, SLACK_LINK } from '@/utils';
 import styled, { useTheme } from 'styled-components';
 import { FlexRow, hexPercentValues } from '@/styles';
-import { OdigosLogoText, SlackLogo, TerminalIcon } from '@/assets';
+import { NOTIFICATION_TYPE, PlatformTypes } from '@/types';
 import { NotificationManager, ToggleDarkMode } from '@/components';
-import { ConnectionStatus, IconButton } from '@/reuseable-components';
+import { OdigosLogoText, SlackLogo, TerminalIcon } from '@/assets';
 import { DRAWER_OTHER_TYPES, useDrawerStore, useStatusStore } from '@/store';
+import { ConnectionStatus, IconButton, Tooltip } from '@/reuseable-components';
 
 interface MainHeaderProps {}
 
@@ -32,6 +33,7 @@ const AlignRight = styled(FlexRow)`
 
 export const MainHeader: React.FC<MainHeaderProps> = () => {
   const theme = useTheme();
+  const { data: config } = useConfig();
   const { setSelectedItem } = useDrawerStore();
   const { status, title, message } = useStatusStore();
 
@@ -44,6 +46,11 @@ export const MainHeader: React.FC<MainHeaderProps> = () => {
         <OdigosLogoText size={80} />
         <PlatformTitle type={PlatformTypes.K8S} />
         <ConnectionStatus title={title} subtitle={message} status={status} />
+        {config?.readonly && (
+          <Tooltip text={FORM_ALERTS.READONLY_WARNING}>
+            <ConnectionStatus title='Read Only' status={NOTIFICATION_TYPE.INFO} />
+          </Tooltip>
+        )}
       </AlignLeft>
 
       <AlignRight>

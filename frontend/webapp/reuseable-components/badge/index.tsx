@@ -18,6 +18,7 @@ const Styled = styled.span<{ $filled: Props['filled'] }>`
   color: ${({ theme, $filled }) => ($filled ? theme.text.info_secondary : theme.text.grey)};
   font-family: ${({ theme }) => theme.font_family.secondary};
   font-size: 12px;
+  white-space: nowrap;
 `;
 
 export const Badge = ({ label, filled }: Props) => {

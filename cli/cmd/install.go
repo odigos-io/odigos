@@ -38,6 +38,7 @@ var (
 	userInputIgnoredNamespaces []string
 	userInputIgnoredContainers []string
 	userInputInstallProfiles   []string
+	uiMode                     string
 
 	instrumentorImage string
 	odigletImage      string
@@ -50,9 +51,9 @@ type ResourceCreationFunc func(ctx context.Context, cmd *cobra.Command, client *
 // installCmd represents the install command
 var installCmd = &cobra.Command{
 	Use:   "install",
-	Short: "Install Odigos",
-	Long: `Install Odigos in your kubernetes cluster.
-This command will install k8s components that will auto-instrument your applications with OpenTelemetry and send traces, metrics and logs to any telemetry backend`,
+	Short: "Install Odigos in your kubernetes cluster.",
+	Long: `This sub command will Install Odigos in your kubernetes cluster.
+It will install k8s components that will auto-instrument your applications with OpenTelemetry and send traces, metrics and logs to any telemetry backend`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
@@ -127,6 +128,19 @@ This command will install k8s components that will auto-instrument your applicat
 
 		fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos installed.\n")
 	},
+	Example: `
+# Install Odigos open-source in your cluster.
+odigos install
+
+# Install Odigos cloud in your cluster.
+odigos install --api-key <your-api-key>
+
+# Install Odigos cloud in a specific cluster
+odigos install --kubeconfig <path-to-kubeconfig>
+
+# Install Odigos onprem tier for enterprise users
+odigos install --onprem-token ${ODIGOS_TOKEN} --profile ${YOUR_ENTERPRISE_PROFILE_NAME}
+`,
 }
 
 func arePodsReady(ctx context.Context, client *kube.Client, ns string) func() (bool, error) {
@@ -203,7 +217,6 @@ func validateUserInputProfiles(tier common.OdigosTier) {
 }
 
 func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration {
-
 	selectedProfiles := []common.ProfileName{}
 	for _, profile := range userInputInstallProfiles {
 		selectedProfiles = append(selectedProfiles, common.ProfileName(profile))
@@ -222,6 +235,7 @@ func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 		InstrumentorImage:         instrumentorImage,
 		AutoscalerImage:           autoScalerImage,
 		Profiles:                  selectedProfiles,
+		UiMode:                    common.UiMode(uiMode),
 	}
 }
 
@@ -252,6 +266,7 @@ func init() {
 	installCmd.Flags().StringSliceVar(&userInputIgnoredNamespaces, "ignore-namespace", k8sconsts.DefaultIgnoredNamespaces, "namespaces not to show in odigos ui")
 	installCmd.Flags().StringSliceVar(&userInputIgnoredContainers, "ignore-container", k8sconsts.DefaultIgnoredContainers, "container names to exclude from instrumentation (useful for sidecar container)")
 	installCmd.Flags().StringSliceVar(&userInputInstallProfiles, "profile", []string{}, "install preset profiles with a specific configuration")
+	installCmd.Flags().StringVarP(&uiMode, "ui-mode", "", string(common.NormalUiMode), "set the UI mode (one-of: normal, readonly)")
 
 	if OdigosVersion != "" {
 		versionFlag = OdigosVersion

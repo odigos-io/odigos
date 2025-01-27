@@ -51,6 +51,12 @@ spec:
               disableInstrumentation:
                 description: DisableInstrumentation excludes this workload from auto-instrumentation.
                 type: boolean
+              otelServiceName:
+                description: |-
+                  OtelServiceName determines the "service.name" resource attribute which will be reported by the instrumentations of this source.
+                  If not set, the workload name will be used.
+                  It is not valid for namespace sources.
+                type: string
               workload:
                 description: |-
                   Workload represents the workload or namespace to be instrumented.

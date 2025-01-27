@@ -1,23 +1,30 @@
 'use client';
 import { useEffect } from 'react';
-import { Config } from '@/types';
-import { GET_CONFIG } from '@/graphql';
-import { useSuspenseQuery } from '@apollo/client';
+// import { ACTION } from '@/utils';
+// import { GET_CONFIG } from '@/graphql';
+// import { useNotificationStore } from '@/store';
+// import { useSuspenseQuery } from '@apollo/client';
+// import { NOTIFICATION_TYPE, type Config } from '@/types';
 
-const data = { config: { installation: 'FINISHED' } };
+const data = { config: { installation: 'FINISHED', readonly: true } };
 const error = undefined;
 
 export const useConfig = () => {
-  const isServer = typeof window === 'undefined';
+  // const { addNotification } = useNotificationStore();
+
   // const { data, error } = useSuspenseQuery<Config>(GET_CONFIG, {
-  //   skip: isServer,
+  //   skip: typeof window === 'undefined',
   // });
 
   useEffect(() => {
     if (error) {
-      console.error('Error fetching config:', error);
+      // addNotification({
+      //   type: NOTIFICATION_TYPE.ERROR,
+      //   title: error.name || ACTION.FETCH,
+      //   message: error.cause?.message || error.message,
+      // });
     }
   }, [error]);
 
-  return { data: data?.config, error };
+  return { data: data?.config };
 };

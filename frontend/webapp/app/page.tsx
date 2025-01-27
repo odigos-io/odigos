@@ -2,34 +2,22 @@
 import { useEffect } from 'react';
 import { useConfig } from '@/hooks';
 import { CenterThis } from '@/styles';
-import { NOTIFICATION_TYPE } from '@/types';
+import { ROUTES, CONFIG } from '@/utils';
 import { useRouter } from 'next/navigation';
-import { useNotificationStore } from '@/store';
-import { ROUTES, CONFIG, ACTION } from '@/utils';
 import { FadeLoader } from '@/reuseable-components';
 
 export default function App() {
   const router = useRouter();
-  const { data, error } = useConfig();
-  const { addNotification } = useNotificationStore();
+  const { data } = useConfig();
 
   useEffect(() => {
-    if (error) {
-      addNotification({
-        type: NOTIFICATION_TYPE.ERROR,
-        // @ts-ignore
-        title: error.name || ACTION.FETCH,
-        // @ts-ignore
-        message: error.cause?.message || error.message,
-      });
-    } else if (data) {
-      const { installation } = data;
-      switch (installation) {
-        case CONFIG.NEW:
-          router.push(ROUTES.CHOOSE_SOURCES);
-          break;
-        default:
-          router.push(ROUTES.OVERVIEW);
+    if (data) {
+      const { installation, readonly } = data;
+
+      if (installation === CONFIG.NEW && !readonly) {
+        router.push(ROUTES.CHOOSE_SOURCES);
+      } else {
+        router.push(ROUTES.OVERVIEW);
       }
     }
   }, [data]);

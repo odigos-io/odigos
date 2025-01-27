@@ -1,9 +1,10 @@
+import { useConfig } from '../config';
 import { useMutation } from '@apollo/client';
 import { useNotificationStore } from '@/store';
-import { ACTION, getSseTargetFromId } from '@/utils';
 import { UPDATE_API_TOKEN } from '@/graphql/mutations';
 import { useComputePlatform } from '../compute-platform';
 import { NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES } from '@/types';
+import { ACTION, DISPLAY_TITLES, FORM_ALERTS, getSseTargetFromId } from '@/utils';
 
 interface UseTokenCrudParams {
   onSuccess?: (type: string) => void;
@@ -11,6 +12,7 @@ interface UseTokenCrudParams {
 }
 
 export const useTokenCRUD = (params?: UseTokenCrudParams) => {
+  const { data: config } = useConfig();
   const { data, refetch } = useComputePlatform();
   const { addNotification } = useNotificationStore();
 
@@ -45,6 +47,12 @@ export const useTokenCRUD = (params?: UseTokenCrudParams) => {
     loading: uState.loading,
     tokens: data?.computePlatform?.apiTokens || [],
 
-    updateToken: async (token: string) => await updateToken({ variables: { token } }),
+    updateToken: async (token: string) => {
+      if (config?.readonly) {
+        notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+      } else {
+        await updateToken({ variables: { token } });
+      }
+    },
   };
 };

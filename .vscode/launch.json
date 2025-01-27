@@ -85,6 +85,16 @@
       "cwd": "${workspaceFolder}/cli",
       "args": ["pro", "--onprem-token", "${input:onprem_token}"],
       "buildFlags": "-tags=embed_manifests"
+    },
+    {
+      "name": "cli describe",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/cli",
+      "args": ["describe"],
+      "cwd": "${workspaceFolder}/cli",
+      "buildFlags": "-tags=embed_manifests"
     }
   ],
     "inputs": [

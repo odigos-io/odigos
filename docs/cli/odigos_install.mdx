@@ -2,67 +2,67 @@
 title: "odigos install"
 sidebarTitle: "odigos install"
 ---
+## odigos install
 
-Install Odigos in your kubernetes cluster
+Install Odigos in your kubernetes cluster.
 
-## Synopsis
+### Synopsis
 
-This sub command will Install Odigos in your kubernetes cluster. 
+This sub command will Install Odigos in your kubernetes cluster.
 It will install k8s components that will auto-instrument your applications with OpenTelemetry and send traces, metrics and logs to any telemetry backend
 
 ```
 odigos install [flags]
 ```
 
-## Examples
+### Examples
 
 ```
 
-    # Install Odigos open-source in your cluster.
-    odigos install
+# Install Odigos open-source in your cluster.
+odigos install
 
-    # Install Odigos cloud in your cluster.
-    odigos install --api-key <your-api-key>
+# Install Odigos cloud in your cluster.
+odigos install --api-key <your-api-key>
 
-    # Install Odigos cloud in a specific cluster
-    odigos install --kubeconfig <path-to-kubeconfig>
+# Install Odigos cloud in a specific cluster
+odigos install --kubeconfig <path-to-kubeconfig>
 
-    # Install Odigos onprem tier for enterprise users
-    odigos install --onprem-token ${ODIGOS_TOKEN} --profile ${YOUR_ENTERPRISE_PROFILE_NAME}
-
-```
-
-## Options
+# Install Odigos onprem tier for enterprise users
+odigos install --onprem-token ${ODIGOS_TOKEN} --profile ${YOUR_ENTERPRISE_PROFILE_NAME}
 
 ```
-    -k, --api-key                   api key for odigos cloud
-    -n, --namespace                 target k8s namespace for Odigos installation
-        --nowait                    skip waiting for odigos pods to be ready
-        --telemetry                 send general telemetry regarding Odigos usage (default true)
-        --openshift                 configure selinux in Openshift environment (default false)
-        --sidecar-instrumentation   use sidecars for eBPF instrumentations
-        --odiglet-image             odiglet container image name
-        --instrumentor-image        instrumentor container image name
-        --autoscaler-image          autoscaler container image name
-        --image-prefix              prefix for collector images. Used when your cluster doesn't have access to docker hub.
-        --psp                       enable pod security policy
-        --ignore-namespace          namespaces not to show in odigos ui
-        --ignore-container          container names to exclude from instrumentation (useful for sidecar container)
-        --onprem-token              authentication token for odigos enterprise on-premises
-        --profile                   install preset profiles with a specific configuration by name. can set multiple times
-```
 
-The `--api-key` is required if you use Odigos Cloud.
-All the other options are targeting advanced users with custom and unique use cases.
-
-## Options inherited from parent commands
+### Options
 
 ```
-        --kubeconfig string   (optional) absolute path to the kubeconfig file
+  -k, --api-key string                 api key for odigos cloud
+      --autoscaler-image string        autoscaler container image name (default "keyval/odigos-autoscaler")
+  -h, --help                           help for install
+      --ignore-container strings       container names to exclude from instrumentation (useful for sidecar container) (default [istio-proxy,vault-agent,filebeat,linkerd-proxy,fluentd,akeyless-init])
+      --ignore-namespace strings       namespaces not to show in odigos ui (default [kube-system,local-path-storage,istio-system,linkerd,kube-node-lease])
+      --image-prefix string            prefix for all container images. used when your cluster doesn't have access to docker hub
+      --instrumentor-image string      instrumentor container image name (default "keyval/odigos-instrumentor")
+  -n, --namespace string               target k8s namespace for Odigos installation (default "odigos-system")
+      --nowait                         skip waiting for odigos pods to be ready
+      --odiglet-image string           odiglet container image name
+      --onprem-token string            authentication token for odigos enterprise on-premises
+      --openshift                      configure selinux on openshift nodes
+      --profile strings                install preset profiles with a specific configuration
+      --psp                            enable pod security policy
+      --skip-webhook-issuer-creation   Skip creating the Issuer and Certificate for the Instrumentor pod webhook if cert-manager is installed.
+      --telemetry                      send general telemetry regarding Odigos usage (default true)
+      --ui-mode string                 set the UI mode (one-of: normal, readonly) (default "normal")
+      --version string                 for development purposes only
 ```
 
-## SEE ALSO
+### Options inherited from parent commands
 
-* [odigos](/cli/odigos) - odigos CLI
-* [odigos uninstall](/cli/odigos_uninstall) - unistall Odigos from your cluster
-* [odigos upgrade](/cli/odigos_upgrade) - upgrade odigos version in your cluster.
+```
+      --kube-context string   (optional) name of the kubeconfig context to use
+      --kubeconfig string     (optional) absolute path to the kubeconfig file (default "KUBECONFIG")
+```
+
+### SEE ALSO
+
+* [odigos](/cli/odigos)	 - Automate OpenTelemetry Observability in Kubernetes
