@@ -182,6 +182,10 @@ func ValToAppend(envName string, sdk common.OtelSdk) (string, bool) {
 	return valToAppend, true
 }
 
+func GetPossibleValuesPerEnv(env string) map[common.OtelSdk]string {
+	return EnvValuesMap[env].values
+}
+
 // due to a bug we had with the env overwriter logic,
 // some patched values were recorded incorrectly into the workload annotation for original value.
 // they include odigos values (/var/odigos/...) as if they were the original value in the manifest,
