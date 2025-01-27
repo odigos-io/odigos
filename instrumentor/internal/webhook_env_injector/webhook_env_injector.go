@@ -126,15 +126,16 @@ func processEnvVarsFromRuntimeDetails(runtimeDetails *v1alpha1.RuntimeDetailsByC
 }
 
 func shouldInject(runtimeDetails *v1alpha1.RuntimeDetailsByContainer, logger logr.Logger, containerName string) bool {
-	if runtimeDetails.CriErrorMessage != nil {
-		logger.Info("CRI error message present, skipping environment variable injection", "container", containerName, "error", *runtimeDetails.CriErrorMessage)
-		return false
-	}
 
 	// Skip injection if runtimeDetails.RuntimeUpdateState is nil.
 	// This indicates that either the new runtime detection or the new runtime detection migrator did not run for this container.
 	if runtimeDetails.RuntimeUpdateState == nil {
 		logger.Info("RuntimeUpdateState is nil, skipping environment variable injection", "container", containerName)
+		return false
+	}
+
+	if *runtimeDetails.RuntimeUpdateState == v1alpha1.ProcessingStateFailed {
+		logger.Info("CRI error message present, skipping environment variable injection", "container", containerName, "error", *runtimeDetails.CriErrorMessage)
 		return false
 	}
 
