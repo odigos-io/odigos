@@ -7,11 +7,12 @@ import (
 )
 
 var (
-	Type = component.MustNewType("odigossourcesfilter")
+	Type      = component.MustNewType("odigossourcesfilter")
+	ScopeName = "github.com/odigos-io/odigos/processor/odigossourcesfilterprocessor"
 )
 
 const (
 	TracesStability  = component.StabilityLevelBeta
-	MetricsStability = component.StabilityLevelBeta
 	LogsStability    = component.StabilityLevelBeta
+	MetricsStability = component.StabilityLevelBeta
 )

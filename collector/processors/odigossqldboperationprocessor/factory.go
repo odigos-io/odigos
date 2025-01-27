@@ -30,7 +30,7 @@ func createTracesProcessor(
 
 	proc := &DBOperationProcessor{logger: set.Logger}
 
-	return processorhelper.NewTracesProcessor(
+	return processorhelper.NewTraces(
 		ctx,
 		set,
 		cfg,

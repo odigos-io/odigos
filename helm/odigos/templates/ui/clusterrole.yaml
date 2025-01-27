@@ -10,6 +10,9 @@ rules:
     verbs:
       - get
       - list
+      {{- if ne .Values.ui.uiMode "readonly" }}
+      - patch
+      {{- end }}
   - apiGroups:
       - apps
     resources:
@@ -57,5 +60,7 @@ rules:
     verbs:
       - get
       - list
+      {{- if ne .Values.ui.uiMode "readonly" }}
       - create
       - delete
+      {{- end }}

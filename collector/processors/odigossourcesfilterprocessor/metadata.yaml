@@ -1,14 +1,8 @@
 type: odigossourcesfilter
-
 status:
   class: processor
   stability:
-    beta:
-      - traces
-      - metrics
-      - logs
-  distributions:
-    - contrib
+    beta: [traces, logs, metrics]
+  distributions: [contrib]
   codeowners:
-    active:
-      - alon
+    active: [alon]

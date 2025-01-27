@@ -3,7 +3,6 @@ package odigostrafficmetrics
 import (
 	"context"
 
-
 	"github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics/internal/metadata"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
@@ -39,12 +38,12 @@ func createTracesProcessor(
 	nextConsumer consumer.Traces,
 ) (processor.Traces, error) {
 	oCfg := cfg.(*Config)
-	tmp, err := newThroughputMeasurementProcessor(set, set.TelemetrySettings.MeterProvider, oCfg)
+	tmp, err := newThroughputMeasurementProcessor(set, oCfg)
 	if err != nil {
 		return nil, err
 	}
 
-	return processorhelper.NewTracesProcessor(ctx, set, cfg, nextConsumer, tmp.processTraces, processorhelper.WithCapabilities(consumerCapabilities))
+	return processorhelper.NewTraces(ctx, set, cfg, nextConsumer, tmp.processTraces, processorhelper.WithCapabilities(consumerCapabilities))
 }
 
 func createLogsProcessor(
@@ -54,12 +53,12 @@ func createLogsProcessor(
 	nextConsumer consumer.Logs,
 ) (processor.Logs, error) {
 	oCfg := cfg.(*Config)
-	tmp, err := newThroughputMeasurementProcessor(set, set.TelemetrySettings.MeterProvider, oCfg)
+	tmp, err := newThroughputMeasurementProcessor(set, oCfg)
 	if err != nil {
 		return nil, err
 	}
 
-	return processorhelper.NewLogsProcessor(ctx, set, cfg, nextConsumer, tmp.processLogs, processorhelper.WithCapabilities(consumerCapabilities))
+	return processorhelper.NewLogs(ctx, set, cfg, nextConsumer, tmp.processLogs, processorhelper.WithCapabilities(consumerCapabilities))
 }
 
 func createMetricsProcessor(
@@ -69,10 +68,10 @@ func createMetricsProcessor(
 	nextConsumer consumer.Metrics,
 ) (processor.Metrics, error) {
 	oCfg := cfg.(*Config)
-	tmp, err := newThroughputMeasurementProcessor(set, set.TelemetrySettings.MeterProvider, oCfg)
+	tmp, err := newThroughputMeasurementProcessor(set, oCfg)
 	if err != nil {
 		return nil, err
 	}
 
-	return processorhelper.NewMetricsProcessor(ctx, set, cfg, nextConsumer, tmp.processMetrics, processorhelper.WithCapabilities(consumerCapabilities))
+	return processorhelper.NewMetrics(ctx, set, cfg, nextConsumer, tmp.processMetrics, processorhelper.WithCapabilities(consumerCapabilities))
 }

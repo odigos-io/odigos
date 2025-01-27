@@ -185,3 +185,53 @@ func ValToAppend(envName string, sdk common.OtelSdk) (string, bool) {
 func GetPossibleValuesPerEnv(env string) map[common.OtelSdk]string {
 	return EnvValuesMap[env].values
 }
+
+// due to a bug we had with the env overwriter logic,
+// some patched values were recorded incorrectly into the workload annotation for original value.
+// they include odigos values (/var/odigos/...) as if they were the original value in the manifest,
+// and then used to revert odigos changes back to the original value, which is incorrect and can lead to issues.
+// this function sanitizes env values by removing them, and returning a "clean" value back to the user.
+// it's a temporary fix since the env overwriter logic is being removed.
+// TODO: remove this function in odigos 1.1
+func CleanupEnvValueFromOdigosAdditions(envVarName string, envVarValue string) string {
+	overwriteMetadata, exists := EnvValuesMap[envVarName]
+	if !exists {
+		// not managed by odigos, so no need to clean up
+		// not expected to happen, but just in case
+		return envVarValue
+	}
+
+	envValueParts := strings.Split(envVarValue, overwriteMetadata.delim)
+	cleanParts := []string{}
+	for _, part := range envValueParts {
+		if strings.Contains(part, "/var/odigos/") {
+			continue
+		}
+		if strings.Contains(part, "-javaagent:/opt/sre-agent/sre-agent.jar") {
+			continue
+		}
+		if strings.Contains(part, "newrelic/bootstrap") {
+			continue
+		}
+		cleanParts = append(cleanParts, part)
+	}
+	sanitizedEnvValue := strings.Join(cleanParts, overwriteMetadata.delim)
+	return sanitizedEnvValue
+}
+
+func AppendOdigosAdditionsToEnvVar(envName string, envFromContainerRuntimeValue string, desiredOdigosAddition string) *string {
+	envValues, ok := EnvValuesMap[envName]
+	if !ok {
+		// Odigos does not manipulate this environment variable, so ignore it
+		return nil
+	}
+
+	// In case observedValue is exists but empty, we just need to set the desiredOdigosAddition without delim before
+	if strings.TrimSpace(envFromContainerRuntimeValue) == "" {
+		return &desiredOdigosAddition
+	} else {
+		// In case observedValue is not empty, we need to append the desiredOdigosAddition with the delim
+		mergedEnvValue := envFromContainerRuntimeValue + envValues.delim + desiredOdigosAddition
+		return &mergedEnvValue
+	}
+}
