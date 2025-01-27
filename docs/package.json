@@ -4,7 +4,9 @@
   "private": true,
   "description": "The content and configuration powering the Odigos documentation is available at [docs.odigos.io](https://docs.odigos.io)",
   "scripts": {
-    "dev": "mintlify dev"
+    "dev": "mintlify dev",
+    "py-preserve-deps": "pip freeze > requirements.txt",
+    "py-install-deps": "pip install -r requirements.txt"
   },
   "author": "Odigos",
   "license": "Apache-2.0",

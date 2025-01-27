@@ -68,7 +68,7 @@ spec:
               kubectl wait --for=condition=ready pod -l app=membership --timeout=60s
         - assert:
             file: ../../common/assert/simple-demo-installed.yaml
-    - name: Instrument Deployments
+    - name: Instrument Deployments using Sources with otelServiceName field set
       try:
         - apply:
             file: 01-sources.yaml
@@ -84,7 +84,7 @@ spec:
     - name: Odigos pipeline ready
       try:
         - assert:
-            file:  ../../common/assert/pipeline-ready.yaml
+            file: ../../common/assert/pipeline-ready.yaml
     - name: Simple-demo instrumented after destination added
       try:
         - assert:
@@ -177,16 +177,8 @@ spec:
         - assert:
             timeout: 2m
             file: 02-workloads.yaml
-    - name: Update reported service name for second phase of test
+    - name: Rollout deployments for second phase of the test
       try:
-        - script:
-            timeout: 70s
-            content: |
-              kubectl annotate deployment coupon odigos.io/reported-name=coupon-2
-              kubectl annotate deployment frontend odigos.io/reported-name=frontend-2
-              kubectl annotate deployment inventory odigos.io/reported-name=inventory-2
-              kubectl annotate deployment pricing odigos.io/reported-name=pricing-2
-              kubectl annotate deployment membership odigos.io/reported-name=membership-2
         - script:
             timeout: 70s
             content: |
@@ -198,7 +190,7 @@ spec:
     - name: Instrument Namespace
       try:
         - apply:
-            file: 02-source-ns.yaml
+            file: ../../common/apply/instrument-default-ns.yaml
     - name: Assert Runtime Detected
       try:
         - assert:
@@ -329,7 +321,7 @@ spec:
     - name: Instrument rest of Namespace
       try:
         - apply:
-            file: 02-source-ns.yaml
+            file: ../../common/apply/instrument-default-ns.yaml
     - name: Assert Runtime Detected for all workloads
       try:
         - assert:
@@ -376,7 +368,7 @@ spec:
     - name: Instrument rest of Namespace
       try:
         - apply:
-            file: 02-source-ns.yaml
+            file: ../../common/apply/instrument-default-ns.yaml
     - name: Wait for created source to roll out new revisions
       try:
         - script:

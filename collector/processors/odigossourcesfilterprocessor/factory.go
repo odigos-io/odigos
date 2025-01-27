@@ -1,4 +1,4 @@
-package odigossourcesfilter
+package odigossourcesfilterprocessor
 
 import (
 	"context"
@@ -31,7 +31,7 @@ func createTracesProcessor(
 
 	filterProc := newFilterProcessor(set.Logger, cfg.(*Config))
 
-	return processorhelper.NewTracesProcessor(
+	return processorhelper.NewTraces(
 		ctx,
 		set,
 		cfg,
@@ -49,7 +49,7 @@ func createLogsProcessor(
 
 	filterProc := newFilterProcessor(set.Logger, cfg.(*Config))
 
-	return processorhelper.NewLogsProcessor(
+	return processorhelper.NewLogs(
 		ctx,
 		set,
 		cfg,
@@ -67,7 +67,7 @@ func createMetricsProcessor(
 
 	filterProc := newFilterProcessor(set.Logger, cfg.(*Config))
 
-	return processorhelper.NewMetricsProcessor(
+	return processorhelper.NewMetrics(
 		ctx,
 		set,
 		cfg,

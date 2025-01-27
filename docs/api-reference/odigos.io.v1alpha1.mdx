@@ -2489,6 +2489,19 @@ This field is required upon creation and cannot be modified.</p>
    <p>DisableInstrumentation excludes this workload from auto-instrumentation.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>otelServiceName</code>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>OtelServiceName determines the &quot;service.name&quot; resource attribute which will be reported by the instrumentations of this source.
+If not set, the workload name will be used.
+It is not valid for namespace sources.</p>
+</td>
+</tr>
 </tbody>
 </table>
 

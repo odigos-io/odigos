@@ -45,6 +45,7 @@ export const FORM_ALERTS = {
   CANNOT_EDIT_RULE: 'Cannot edit a system-managed instrumentation rule',
   CANNOT_DELETE_RULE: 'Cannot delete a system-managed instrumentation rule',
   LATENCY_HTTP_ROUTE: 'HTTP route must start with a forward slash "/"',
+  READONLY_WARNING: "You're not allowed to create/update/delete",
 };
 
 export const BACKEND_BOOLEAN = {
@@ -92,6 +93,7 @@ export const DISPLAY_TITLES = {
   MANAGED_BY_PROFILE: 'Managed by Profile',
 
   API_TOKEN: 'API Token',
+  READONLY: 'Readonly',
 };
 
 export const NOTIF_CRD_TYPES = {

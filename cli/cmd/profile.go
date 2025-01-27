@@ -17,8 +17,8 @@ import (
 
 var profileCmd = &cobra.Command{
 	Use:   "profile",
-	Short: "Manage odigos profiles",
-	Long:  `Odigos profiles are used to apply some specific preset configuration to the odigos installation`,
+	Short: "Manage presets of applied profiles to your odigos installation",
+	Long:  `This command can be used to interact with the applied profiles in your odigos installation.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
@@ -70,6 +70,13 @@ var profileCmd = &cobra.Command{
 
 		fmt.Println("Currently applied profiles:", config.Profiles)
 	},
+	Example: `
+# Enable payload collection for all supported workloads and instrumentation libraries in the cluster
+odigos profile add full-payload-collection
+
+# Remove the full-payload-collection profile from the cluster
+odigos profile remove full-payload-collection
+`,
 }
 
 var addProfileCmd = &cobra.Command{

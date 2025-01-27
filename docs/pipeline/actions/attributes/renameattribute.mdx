@@ -1,0 +1,72 @@
+---
+title: "Rename Attribute"
+description: "This action will rename the specified attributes from all telemetry signals that are specified in the `signals` field, regardless of the source, or any other condition."
+sidebarTitle: "Rename Attribute"
+icon: "layer-group"
+---
+
+import AssumeNoMeaning from '/snippets/assume-no-meaning.mdx';
+
+## Configuration Options
+
+<AccordionGroup>
+  <Accordion title="actionName">
+    **actionName** `string` : Allows you to attach a meaningful name to the action for convenience.
+    - This field is *optional*
+    - <AssumeNoMeaning />
+  </Accordion>
+  <Accordion title="notes">
+    **notes** `string` : Allows you to attach notes regarding the action for convenience.
+    - This field is *optional*
+    - <AssumeNoMeaning />
+  </Accordion>
+  <Accordion title="disabled">
+    **disabled** `boolean` : Allows you to temporarily disable the action, but keep it saved for future use.
+    - This field is *optional*, and defaults to `false`
+  </Accordion>
+  <Accordion title="signals *">
+    **signals** `string[]` : An array with the signals that the processor will act on.
+    - This field is *required*
+    - Supported values: `TRACES`, `METRICS`, `LOGS`
+  </Accordion>
+  <Accordion title="renames *">
+    **renames** `object` : A map of strings, key representing the name of the attribute to rename and values the desired name.
+    - This field is *required*
+  </Accordion>
+</AccordionGroup>
+
+## Basic Example
+
+The following example demonstrates how to rename the deprecated `net.peer.address` attribute to stable `network.peer.address` in all telemetry signals.
+
+<Steps>
+  <Step>
+    Create a YAML file with the following content:
+
+    ```yaml rename-net-to-network.yaml
+    apiVersion: actions.odigos.io/v1alpha1
+    kind: RenameAttribute
+    metadata:
+      name: rename-net-to-network
+      namespace: odigos-system
+    spec:
+      actionName: Rename network attributes
+      renames:
+        net.peer.address: network.peer.address
+        net.local.address: network.local.address
+        net.peer.ip: network.peer.address
+        net.host.ip: network.local.address
+      signals:
+      - LOGS
+      - METRICS
+      - TRACES
+    ```
+  </Step>
+  <Step>
+    Apply the action to the cluster:
+
+    ```bash
+    kubectl apply -f rename-net-to-network.yaml
+    ```
+  </Step>
+</Steps>

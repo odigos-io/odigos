@@ -3,11 +3,14 @@ ODIGOS_CLI_VERSION ?= $(shell odigos version --cli)
 ORG ?= keyval
 GOLANGCI_LINT_VERSION ?= v1.63.4
 GOLANGCI_LINT := $(shell go env GOPATH)/bin/golangci-lint
-GO_MODULES := $(shell find . -type f -name "go.mod" -not -path "*/vendor/*" -exec dirname {} \;)
+GO_MODULES := $(shell find . -type f -name "go.mod" -not -path "*/vendor/*" -exec dirname {} \; | grep -v "licenses")
 LINT_CMD = golangci-lint run -c ../.golangci.yml
 ifdef FIX_LINT
     LINT_CMD += --fix
 endif
+DOCKERFILE=Dockerfile
+IMG_SUFFIX=
+BUILD_DIR=.
 
 .PHONY: install-golangci-lint
 install-golangci-lint:
@@ -47,9 +50,54 @@ lint-fix:
 	MODULE=destinations make lint FIX_LINT=true
 	MODULE=procdiscovery make lint FIX_LINT=true
 
+.PHONY: cli-docs
+cli-docs:
+	rm -rf docs/cli/*
+	cd scripts/cli-docgen && KUBECONFIG=KUBECONFIG go run -tags embed_manifests main.go
+	for file in docs/cli/*; do \
+		mv $${file} $${file%.md}.mdx; \
+	done
+
+build-image/%:
+	docker build -t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
+	--build-arg SERVICE_NAME="$*" \
+	--build-arg ODIGOS_VERSION=$(TAG) \
+	--build-arg VERSION=$(TAG) \
+	--build-arg RELEASE=$(TAG) \
+	--build-arg SUMMARY="$(SUMMARY)" \
+	--build-arg DESCRIPTION="$(DESCRIPTION)"
+
 .PHONY: build-odiglet
 build-odiglet:
-	docker build -t $(ORG)/odigos-odiglet:$(TAG) . -f odiglet/Dockerfile --build-arg ODIGOS_VERSION=$(TAG)
+	$(MAKE) build-image/odiglet DOCKERFILE=odiglet/$(DOCKERFILE) SUMMARY="Odiglet for Odigos" DESCRIPTION="Odiglet is the core component of Odigos managing auto-instrumentation. This container requires a root user to run and manage eBPF programs." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+
+.PHONY: build-autoscaler
+build-autoscaler:
+	$(MAKE) build-image/autoscaler SUMMARY="Autoscaler for Odigos" DESCRIPTION="Autoscaler manages the installation of Odigos components." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+
+.PHONY: build-instrumentor
+build-instrumentor:
+	$(MAKE) build-image/instrumentor SUMMARY="Instrumentor for Odigos" DESCRIPTION="Instrumentor manages auto-instrumentation for workloads with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+
+.PHONY: build-scheduler
+build-scheduler:
+	$(MAKE) build-image/scheduler SUMMARY="Scheduler for Odigos" DESCRIPTION="Scheduler manages the installation of OpenTelemetry Collectors with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+
+.PHONY: build-collector
+build-collector:
+	$(MAKE) build-image/collector DOCKERFILE=collector/$(DOCKERFILE) BUILD_DIR=collector SUMMARY="Odigos Collector" DESCRIPTION="The Odigos build of the OpenTelemetry Collector." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+
+.PHONY: build-ui
+build-ui:
+	$(MAKE) build-image/ui DOCKERFILE=frontend/$(DOCKERFILE) SUMMARY="UI for Odigos" DESCRIPTION="UI provides the frontend webapp for managing an Odigos installation." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+
+.PHONY: build-odiglet-with-agents
+build-odiglet-with-agents:
+	docker build -t $(ORG)/odigos-odiglet$(IMG_SUFFIX):$(TAG) . -f odiglet/$(DOCKERFILE) --build-arg ODIGOS_VERSION=$(TAG) --build-context nodejs-agent-src=../opentelemetry-node \
+	--build-arg VERSION=$(TAG) \
+	--build-arg RELEASE=$(TAG) \
+	--build-arg SUMMARY="Odiglet for Odigos" \
+	--build-arg DESCRIPTION="Odiglet is the core component of Odigos managing auto-instrumentation."
 
 .PHONY: verify-nodejs-agent
 verify-nodejs-agent:
@@ -58,96 +106,61 @@ verify-nodejs-agent:
 		exit 1; \
 	fi
 
-.PHONY: build-odiglet-with-agents
-build-odiglet-with-agents:
-	docker build -t $(ORG)/odigos-odiglet:$(TAG) . -f odiglet/Dockerfile --build-arg ODIGOS_VERSION=$(TAG) --build-context nodejs-agent-src=../opentelemetry-node
-
-.PHONY: build-autoscaler
-build-autoscaler:
-	docker build -t $(ORG)/odigos-autoscaler:$(TAG) . --build-arg SERVICE_NAME=autoscaler
-
-.PHONY: build-instrumentor
-build-instrumentor:
-	docker build -t $(ORG)/odigos-instrumentor:$(TAG) . --build-arg SERVICE_NAME=instrumentor
-
-.PHONY: build-scheduler
-build-scheduler:
-	docker build -t $(ORG)/odigos-scheduler:$(TAG) . --build-arg SERVICE_NAME=scheduler
-
-.PHONY: build-collector
-build-collector:
-	docker build -t $(ORG)/odigos-collector:$(TAG) collector -f collector/Dockerfile
-
-.PHONY: build-ui
-build-ui:
-	docker build -t $(ORG)/odigos-ui:$(TAG) . -f frontend/Dockerfile
-
 .PHONY: build-images
 build-images:
 	# prefer to build timeconsuimg images first to make better use of parallelism
-	make -j 3 build-ui build-collector build-odiglet build-autoscaler build-scheduler build-instrumentor TAG=$(TAG)
+	make -j 3 build-ui build-collector build-odiglet build-autoscaler build-scheduler build-instrumentor TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
+
+.PHONY: build-images-rhel
+build-images-rhel:
+	$(MAKE) build-images IMG_SUFFIX=-ubi9 DOCKERFILE=Dockerfile.rhel TAG=$(TAG) ORG=$(ORG)
+
+push-image/%:
+	docker buildx build --platform linux/amd64,linux/arm64/v8 -t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
+	--build-arg SERVICE_NAME="$*" \
+	--build-arg VERSION=$(TAG) \
+	--build-arg RELEASE=$(TAG) \
+	--build-arg SUMMARY="$(SUMMARY)" \
+	--build-arg DESCRIPTION="$(DESCRIPTION)"
 
 .PHONY: push-odiglet
 push-odiglet:
-	docker buildx build --platform linux/amd64,linux/arm64/v8 --push -t $(ORG)/odigos-odiglet:$(TAG) . -f odiglet/Dockerfile
+	$(MAKE) push-image/odiglet DOCKERFILE=odiglet/$(DOCKERFILE) SUMMARY="Odiglet for Odigos" DESCRIPTION="Odiglet is the core component of Odigos managing auto-instrumentation." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 
 .PHONY: push-autoscaler
 push-autoscaler:
-	docker buildx build --platform linux/amd64,linux/arm64/v8 --push -t $(ORG)/odigos-autoscaler:$(TAG) . --build-arg SERVICE_NAME=autoscaler
+	$(MAKE) push-image/autoscaler SUMMARY="Autoscaler for Odigos" DESCRIPTION="Autoscaler manages the installation of Odigos components." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 
 .PHONY: push-instrumentor
 push-instrumentor:
-	docker buildx build --platform linux/amd64,linux/arm64/v8 --push -t $(ORG)/odigos-instrumentor:$(TAG) . --build-arg SERVICE_NAME=instrumentor
+	$(MAKE) push-image/instrumentor SUMMARY="Instrumentor for Odigos" DESCRIPTION="Instrumentor manages auto-instrumentation for workloads with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 
 .PHONY: push-scheduler
 push-scheduler:
-	docker buildx build --platform linux/amd64,linux/arm64/v8 --push -t $(ORG)/odigos-scheduler:$(TAG) . --build-arg SERVICE_NAME=scheduler
+	$(MAKE) push-image/scheduler SUMMARY="Scheduler for Odigos" DESCRIPTION="Scheduler manages the installation of OpenTelemetry Collectors with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 
 .PHONY: push-collector
 push-collector:
-	docker buildx build --platform linux/amd64,linux/arm64/v8 --push -t $(ORG)/odigos-collector:$(TAG) collector -f collector/Dockerfile
+	$(MAKE) push-image/collector DOCKERFILE=collector/$(DOCKERFILE) BUILD_DIR=collector SUMMARY="Odigos Collector" DESCRIPTION="The Odigos build of the OpenTelemetry Collector." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 
 .PHONY: push-ui
 push-ui:
-	docker buildx build --platform linux/amd64,linux/arm64/v8 --push -t $(ORG)/odigos-ui:$(TAG) . -f frontend/Dockerfile
+	$(MAKE) push-image/ui DOCKERFILE=frontend/$(DOCKERFILE) SUMMARY="UI for Odigos" DESCRIPTION="UI provides the frontend webapp for managing an Odigos installation." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 
 .PHONY: push-images
 push-images:
-	make push-autoscaler TAG=$(TAG)
-	make push-scheduler TAG=$(TAG)
-	make push-odiglet TAG=$(TAG)
-	make push-instrumentor TAG=$(TAG)
-	make push-collector TAG=$(TAG)
-	make push-ui TAG=$(TAG)
+	make push-autoscaler push-scheduler push-odiglet push-instrumentor push-collector push-ui TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
 
-.PHONY: load-to-kind-odiglet
-load-to-kind-odiglet:
-	kind load docker-image $(ORG)/odigos-odiglet:$(TAG)
+.PHONY: push-images-rhel
+push-images-rhel:
+	$(MAKE) push-images IMG_SUFFIX=-ubi9 DOCKERFILE=Dockerfile.rhel TAG=$(TAG) ORG=$(ORG)
 
-.PHONY: load-to-kind-autoscaler
-load-to-kind-autoscaler:
-	kind load docker-image $(ORG)/odigos-autoscaler:$(TAG)
-
-.PHONY: load-to-kind-collector
-load-to-kind-collector:
-	kind load docker-image $(ORG)/odigos-collector:$(TAG)
-
-.PHONY: load-to-kind-instrumentor
-load-to-kind-instrumentor:
-	kind load docker-image $(ORG)/odigos-instrumentor:$(TAG)
-
-.PHONY: load-to-kind-ui
-load-to-kind-ui:
-	kind load docker-image $(ORG)/odigos-ui:$(TAG)
-
-.PHONY: load-to-kind-scheduler
-load-to-kind-scheduler:
-	kind load docker-image $(ORG)/odigos-scheduler:$(TAG)
+load-to-kind-%:
+	kind load docker-image $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG)
 
 .PHONY: load-to-kind
 load-to-kind:
-	make -j 6 load-to-kind-instrumentor load-to-kind-autoscaler load-to-kind-scheduler load-to-kind-odiglet load-to-kind-collector load-to-kind-ui TAG=$(TAG)
-
+	make -j 6 load-to-kind-instrumentor load-to-kind-autoscaler load-to-kind-scheduler load-to-kind-odiglet load-to-kind-collector load-to-kind-ui ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
 
 .PHONY: restart-ui
 restart-ui:
@@ -175,37 +188,18 @@ restart-collector:
 	# DaemonSets don't directly support the rollout restart command in the same way Deployments do. However, you can achieve the same result by updating an environment variable or any other field in the DaemonSet's pod template, triggering a rolling update of the pods managed by the DaemonSet
 	-kubectl -n odigos-system patch daemonset odigos-data-collection -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"kubectl.kubernetes.io/restartedAt\":\"$(date +%Y-%m-%dT%H:%M:%S%z)\"}}}}}"
 
+deploy-%:
+	make build-$* ORG=$(ORG) TAG=$(TAG) DOCKERFILE=$(DOCKERFILE) IMG_SUFFIX=$(IMG_SUFFIX) && make load-to-kind-$* ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX) && make restart-$*
 
-.PHONY: deploy-odiglet
-deploy-odiglet:
-	make build-odiglet TAG=$(TAG) && make load-to-kind-odiglet TAG=$(TAG) && make restart-odiglet
+.PHONY: deploy
+deploy:
+	make deploy-odiglet && make deploy-autoscaler && make deploy-collector && make deploy-instrumentor && make deploy-scheduler && make deploy-ui
 
 # Use this target to deploy odiglet with local clones of the agents.
 # To work, the agents must be cloned in the same directory as the odigos (e.g. in '../opentelemetry-node')
 # There you can make code changes to the agents and deploy them with the odiglet.
 .PHONY: deploy-odiglet-with-agents
 deploy-odiglet-with-agents: verify-nodejs-agent build-odiglet-with-agents load-to-kind-odiglet restart-odiglet
-
-.PHONY: deploy-autoscaler
-deploy-autoscaler:
-	make build-autoscaler TAG=$(TAG) && make load-to-kind-autoscaler TAG=$(TAG) && make restart-autoscaler
-
-.PHONY: deploy-collector
-deploy-collector:
-	make build-collector TAG=$(TAG) && make load-to-kind-collector TAG=$(TAG) && make restart-collector
-
-.PHONY: deploy-instrumentor
-deploy-instrumentor:
-	make build-instrumentor TAG=$(TAG) && make load-to-kind-instrumentor TAG=$(TAG) && make restart-instrumentor
-
-.PHONY: deploy-ui
-deploy-ui:
-	make build-ui TAG=$(TAG) && make load-to-kind-ui TAG=$(TAG) && make restart-ui
-
-.PHONY: deploy-scheduler
-deploy-scheduler:
-	make build-scheduler TAG=$(TAG) && make load-to-kind-scheduler TAG=$(TAG) && make restart-scheduler
-
 
 .PHONY: debug-odiglet
 debug-odiglet:
@@ -215,21 +209,69 @@ debug-odiglet:
 	kubectl wait --for=condition=ready pod -n odigos-system -l app.kubernetes.io/name=odiglet --timeout=180s
 	kubectl port-forward -n odigos-system daemonset/odiglet 2345:2345
 
-.PHONY: deploy
-deploy:
-	make deploy-odiglet && make deploy-autoscaler && make deploy-collector && make deploy-instrumentor && make deploy-scheduler && make deploy-ui
-
 ,PHONY: e2e-test
 e2e-test:
 	./e2e-test.sh
 
-ALL_GO_MOD_DIRS := $(shell find . -type f -name 'go.mod' -exec dirname {} \; | sort)
+ALL_GO_MOD_DIRS := $(shell find . -type f -name 'go.mod' -exec dirname {} \; | sort | grep -v "licenses")
 
 .PHONY: go-mod-tidy
 go-mod-tidy: $(ALL_GO_MOD_DIRS:%=go-mod-tidy/%)
 go-mod-tidy/%: DIR=$*
 go-mod-tidy/%:
 	@cd $(DIR) && go mod tidy -compat=1.21
+
+.PHONY: update-dep
+update-dep: $(ALL_GO_MOD_DIRS:%=update-dep/%)
+update-dep/%: DIR=$*
+update-dep/%:
+	cd $(DIR) && go get $(MODULE)@$(VERSION)
+
+GO_AUTO_VERSION=v0.19.0-alpha
+UNSTABLE_COLLECTOR_VERSION=v0.118.0
+STABLE_COLLECTOR_VERSION=v1.24.0
+STABLE_OTEL_GO_VERSION=v1.34.0
+UNSTABLE_OTEL_GO_VERSION=v0.59.0
+
+.PHONY: update-otel
+update-otel:
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/auto VERSION=$(GO_AUTO_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/cmd/mdatagen VERSION=$(UNSTABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/component VERSION=$(UNSTABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/component/componenttest VERSION=$(UNSTABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/config/configtelemetry VERSION=$(UNSTABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/confmap VERSION=$(STABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/confmap/provider/envprovider VERSION=$(STABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/connector VERSION=$(UNSTABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/connector/forwardconnector VERSION=$(UNSTABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/consumer VERSION=$(STABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/consumer/consumertest VERSION=$(UNSTABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/exporter VERSION=$(UNSTABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/exporter/debugexporter VERSION=$(UNSTABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/exporter/exportertest VERSION=$(UNSTABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/exporter/nopexporter VERSION=$(UNSTABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/exporter/otlpexporter VERSION=$(UNSTABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/exporter/otlphttpexporter VERSION=$(UNSTABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/extension VERSION=$(UNSTABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/extension/zpagesextension VERSION=$(UNSTABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/otelcol VERSION=$(UNSTABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/pdata VERSION=$(STABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/processor VERSION=$(UNSTABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/processor/batchprocessor VERSION=$(UNSTABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/processor/memorylimiterprocessor VERSION=$(UNSTABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/processor/processortest VERSION=$(UNSTABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/receiver VERSION=$(UNSTABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/receiver/otlpreceiver VERSION=$(UNSTABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/receiver/receivertest VERSION=$(UNSTABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/otel VERSION=$(STABLE_OTEL_GO_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc VERSION=$(STABLE_OTEL_GO_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/otel/metric VERSION=$(STABLE_OTEL_GO_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/otel/sdk/metric VERSION=$(STABLE_OTEL_GO_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/otel/trace VERSION=$(STABLE_OTEL_GO_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc VERSION=$(UNSTABLE_OTEL_GO_VERSION)
+	$(MAKE) update-dep MODULE=github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest VERSION=$(UNSTABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig VERSION=$(UNSTABLE_COLLECTOR_VERSION)
+	$(MAKE) go-mod-tidy
 
 .PHONY: check-clean-work-tree
 check-clean-work-tree:
@@ -244,7 +286,7 @@ check-clean-work-tree:
 .PHONY: cli-install
 cli-install:
 	@echo "Installing odigos from source. version: $(ODIGOS_CLI_VERSION)"
-	cd ./cli ; go run -tags=embed_manifests . install --version $(ODIGOS_CLI_VERSION) --nowait
+	cd ./cli ; go run -tags=embed_manifests . install --version $(ODIGOS_CLI_VERSION) --nowait $(FLAGS)
 
 .PHONY: cli-uninstall
 cli-uninstall:

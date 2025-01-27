@@ -1,4 +1,4 @@
-package odigossourcesfilter
+package odigossourcesfilterprocessor
 
 import (
 	"go.opentelemetry.io/collector/component"

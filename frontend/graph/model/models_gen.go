@@ -248,6 +248,7 @@ type FieldInput struct {
 
 type GetConfigResponse struct {
 	Installation InstallationStatus `json:"installation"`
+	Readonly     bool               `json:"readonly"`
 }
 
 type GetDestinationDetailsResponse struct {

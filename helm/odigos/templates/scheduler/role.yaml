@@ -22,6 +22,7 @@ rules:
     verbs:
       - patch
       - create
+      - update
   - apiGroups:
       - odigos.io
     resources:
@@ -60,3 +61,11 @@ rules:
       - patch
       - delete
       - create
+  - apiGroups:
+      - ''
+    resources:
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch

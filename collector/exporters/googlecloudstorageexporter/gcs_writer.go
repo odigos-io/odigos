@@ -1,13 +1,14 @@
 package googlecloudstorageexporter
 
 import (
-	"cloud.google.com/go/storage"
 	"context"
 	"fmt"
-	"go.uber.org/zap"
 	"math/rand"
 	"strconv"
 	"time"
+
+	"cloud.google.com/go/storage"
+	"go.uber.org/zap"
 )
 
 type GCSWriter struct {

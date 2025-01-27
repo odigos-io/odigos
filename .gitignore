@@ -10,6 +10,7 @@ cli/odigos
 **/*.pyc
 serving-certs/
 **/.tools/
+**/LICENSES
 
 **.tfstate
 **.tfstate.backup
