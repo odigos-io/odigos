@@ -51,12 +51,12 @@ jobs:
 
       - name: Generate CRD API docs
         run: |
-          cd
+          cd api
           make docgen
       - name: Check for changes in CRD API Docs
         run: |
           if [[ $(git diff --exit-code) ]]; then
             git diff
-            echo "CRD API docs need to be updated. Pleas run "make docgen", then commit the changes."
+            echo "CRD API docs need to be updated. Pleas run "cd api && make docgen", then commit the changes."
             exit 1
           fi
