@@ -749,13 +749,9 @@ func (r *queryResolver) ComputePlatform(ctx context.Context) (*model.ComputePlat
 
 // Config is the resolver for the config field.
 func (r *queryResolver) Config(ctx context.Context) (*model.GetConfigResponse, error) {
-	response := services.GetConfig(ctx)
+	config := services.GetConfig(ctx)
 
-	gqlResponse := &model.GetConfigResponse{
-		Installation: model.InstallationStatus(response.Installation),
-	}
-
-	return gqlResponse, nil
+	return &config, nil
 }
 
 // DestinationTypes is the resolver for the destinationTypes field.
