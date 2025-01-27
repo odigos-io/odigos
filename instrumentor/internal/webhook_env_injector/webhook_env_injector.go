@@ -135,7 +135,11 @@ func shouldInject(runtimeDetails *v1alpha1.RuntimeDetailsByContainer, logger log
 	}
 
 	if *runtimeDetails.RuntimeUpdateState == v1alpha1.ProcessingStateFailed {
-		logger.Info("CRI error message present, skipping environment variable injection", "container", containerName, "error", *runtimeDetails.CriErrorMessage)
+		var criErrorMessage string
+		if runtimeDetails.CriErrorMessage != nil {
+			criErrorMessage = *runtimeDetails.CriErrorMessage
+		}
+		logger.Info("CRI error message present, skipping environment variable injection", "container", containerName, "error", criErrorMessage)
 		return false
 	}
 
