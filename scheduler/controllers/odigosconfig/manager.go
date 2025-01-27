@@ -25,5 +25,20 @@ func SetupWithManager(mgr ctrl.Manager, tier common.OdigosTier, odigosVersion st
 		return err
 	}
 
+	err = ctrl.NewControllerManagedBy(mgr).
+		For(&corev1.ConfigMap{}).
+		Named("odigosconfig-odigosdeployment").
+		WithEventFilter(&odigospredicates.OdigosDeploymentConfigMapPredicate).
+		Complete(&odigosConfigController{
+			Client:        mgr.GetClient(),
+			Scheme:        mgr.GetScheme(),
+			Tier:          tier,
+			OdigosVersion: odigosVersion,
+			DynamicClient: dynamicClient,
+		})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

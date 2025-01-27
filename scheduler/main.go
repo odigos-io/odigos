@@ -48,6 +48,7 @@ import (
 	"github.com/odigos-io/odigos/scheduler/controllers/clustercollectorsgroup"
 	"github.com/odigos-io/odigos/scheduler/controllers/nodecollectorsgroup"
 	"github.com/odigos-io/odigos/scheduler/controllers/odigosconfig"
+	"github.com/odigos-io/odigos/scheduler/controllers/odigospro"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -111,6 +112,9 @@ func main() {
 				&odigosv1.InstrumentationRule{}: {
 					Field: nsSelector,
 				},
+				&corev1.Secret{}: {
+					Field: nsSelector,
+				},
 			},
 		},
 		HealthProbeBindAddress: probeAddr,
@@ -152,6 +156,11 @@ func main() {
 	err = odigosconfig.SetupWithManager(mgr, tier, odigosVersion, dyanmicClient)
 	if err != nil {
 		setupLog.Error(err, "unable to create controllers for odigos config")
+		os.Exit(1)
+	}
+	err = odigospro.SetupWithManager(mgr)
+	if err != nil {
+		setupLog.Error(err, "unable to create controller for odigos pro")
 		os.Exit(1)
 	}
 
