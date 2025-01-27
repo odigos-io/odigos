@@ -430,7 +430,7 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 		}
 	}
 
-	_, err = services.UpdateSourceCRDSpec(ctx, nsName, source.Name, "otelServiceName", otelServiceName)
+	_, err = services.UpdateSourceCRDSpec(ctx, nsName, source.Name, "otelServiceName", fmt.Sprintf("\"%s\"", otelServiceName))
 	if err != nil {
 		// unexpected error occurred while trying to update the source
 		return false, err
