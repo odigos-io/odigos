@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"log"
 
 	"github.com/odigos-io/odigos/common"
@@ -21,10 +22,14 @@ const (
 	Finished        InstallationStatus = "FINISHED"
 )
 
+var (
+	ErrorIsReadonly = errors.New("cannot execute this mutation in readonly mode")
+)
+
 func GetConfig(ctx context.Context) model.GetConfigResponse {
 	var response model.GetConfigResponse
 
-	response.Readonly = isReadonlyMode(ctx)
+	response.Readonly = IsReadonlyMode(ctx)
 
 	if !isSourceCreated(ctx) && !isDestinationConnected(ctx) {
 		response.Installation = model.InstallationStatus(NewInstallation)
@@ -35,7 +40,7 @@ func GetConfig(ctx context.Context) model.GetConfigResponse {
 	return response
 }
 
-func isReadonlyMode(ctx context.Context) bool {
+func IsReadonlyMode(ctx context.Context) bool {
 	ns := env.GetCurrentNamespace()
 
 	configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
