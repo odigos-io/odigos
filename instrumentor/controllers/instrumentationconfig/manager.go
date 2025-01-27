@@ -41,7 +41,6 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		For(&odigosv1alpha1.Source{}).
 		Complete(&SourceReconciler{
 			Client: mgr.GetClient(),
-			Scheme: mgr.GetScheme(),
 		}); err != nil {
 		return err
 	}
