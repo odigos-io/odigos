@@ -45,3 +45,19 @@ func IsObjectInstrumentedBySource(ctx context.Context, k8sClient client.Client, 
 func IsSourceRelevant(source *v1alpha1.Source) bool {
 	return v1alpha1.IsDisabledSource(source) == k8sutils.IsTerminating(source)
 }
+
+// OtelServiceNameBySource returns the ReportedName for the given workload object.
+// OTel service name is only valid for workload sources (not namespace sources).
+// If none is configured, an empty string is returned.
+func OtelServiceNameBySource(ctx context.Context, k8sClient client.Client, obj client.Object) (string, error) {
+	sources, err := v1alpha1.GetSources(ctx, k8sClient, obj)
+	if err != nil {
+		return "", err
+	}
+
+	if sources.Workload != nil {
+		return sources.Workload.Spec.OtelServiceName, nil
+	}
+
+	return "", nil
+}

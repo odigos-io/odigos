@@ -1,4 +1,4 @@
-package labelmigration
+package workloadmigrations
 
 import (
 	appsv1 "k8s.io/api/apps/v1"
@@ -10,15 +10,24 @@ import (
 	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 )
 
+// SetupWithManager sets up the controllers for the workload migrations.
+//
+// The goal of these controllers is to migrate from features we used to implement by modifying the workloads
+// to the new implementations that are based on our custom resources.
 func SetupWithManager(mgr ctrl.Manager) error {
+	migrationPredicate := predicate.Or(
+		&odigospredicate.CreationPredicate{},
+		predicate.LabelChangedPredicate{},
+		predicate.AnnotationChangedPredicate{},
+	)
+
 	err := builder.
 		ControllerManagedBy(mgr).
-		Named("labelmigration-deployment").
+		Named("workloadmigrations-deployment").
 		For(&appsv1.Deployment{}).
-		WithEventFilter(predicate.Or(&odigospredicate.CreationPredicate{}, predicate.LabelChangedPredicate{})).
+		WithEventFilter(migrationPredicate).
 		Complete(&DeploymentReconciler{
 			Client: mgr.GetClient(),
-			Scheme: mgr.GetScheme(),
 		})
 	if err != nil {
 		return err
@@ -26,12 +35,11 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
-		Named("labelmigration-daemonset").
+		Named("workloadmigrations-daemonset").
 		For(&appsv1.DaemonSet{}).
-		WithEventFilter(predicate.Or(&odigospredicate.CreationPredicate{}, predicate.LabelChangedPredicate{})).
+		WithEventFilter(migrationPredicate).
 		Complete(&DaemonSetReconciler{
 			Client: mgr.GetClient(),
-			Scheme: mgr.GetScheme(),
 		})
 	if err != nil {
 		return err
@@ -39,12 +47,11 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
-		Named("labelmigration-statefulset").
+		Named("workloadmigrations-statefulset").
 		For(&appsv1.StatefulSet{}).
-		WithEventFilter(predicate.Or(&odigospredicate.CreationPredicate{}, predicate.LabelChangedPredicate{})).
+		WithEventFilter(migrationPredicate).
 		Complete(&StatefulSetReconciler{
 			Client: mgr.GetClient(),
-			Scheme: mgr.GetScheme(),
 		})
 	if err != nil {
 		return err
@@ -52,12 +59,11 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
-		Named("labelmigration-namespace").
+		Named("workloadmigrations-namespace").
 		For(&corev1.Namespace{}).
-		WithEventFilter(predicate.Or(&odigospredicate.CreationPredicate{}, predicate.LabelChangedPredicate{})).
+		WithEventFilter(migrationPredicate).
 		Complete(&NamespacesReconciler{
 			Client: mgr.GetClient(),
-			Scheme: mgr.GetScheme(),
 		})
 	if err != nil {
 		return err

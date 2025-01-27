@@ -10,6 +10,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	webhookenvinjector "github.com/odigos-io/odigos/instrumentor/internal/webhook_env_injector"
 	containerutils "github.com/odigos-io/odigos/k8sutils/pkg/container"
+	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
@@ -231,11 +232,22 @@ func getCommonEnvVars() []corev1.EnvVar {
 
 // checks for the service name on the annotation, or fallback to the workload name
 func (p *PodsWebhook) getServiceNameForEnv(ctx context.Context, logger logr.Logger, podWorkload *workload.PodWorkload) *string {
-	workloadObj, err := workload.GetWorkloadObject(ctx, client.ObjectKey{Namespace: podWorkload.Namespace, Name: podWorkload.Name}, podWorkload.Kind, p.Client)
-	if err != nil {
-		logger.Error(err, "failed to get workload object from cache. cannot check for workload annotation. using workload name as OTEL_SERVICE_NAME")
-		return &podWorkload.Name
+	workloadObj := workload.ClientObjectFromWorkloadKind(podWorkload.Kind)
+	err := p.Client.Get(ctx, client.ObjectKey{Namespace: podWorkload.Namespace, Name: podWorkload.Name}, workloadObj)
+ 	if err != nil {
+ 		logger.Error(err, "failed to get workload object from cache. cannot check for workload source. using workload name as OTEL_SERVICE_NAME")
+ 		return &podWorkload.Name
+ 	}
+
+	resolvedServiceName, err := sourceutils.OtelServiceNameBySource(ctx, p.Client, workloadObj)
+ 	if err != nil {
+ 		logger.Error(err, "failed to get OTel service name from source. using workload name as OTEL_SERVICE_NAME")
+ 		return &podWorkload.Name
 	}
-	resolvedServiceName := workload.ExtractServiceNameFromAnnotations(workloadObj.GetAnnotations(), podWorkload.Name)
+
+	if resolvedServiceName == "" {
+		resolvedServiceName = podWorkload.Name
+	}
+
 	return &resolvedServiceName
 }
