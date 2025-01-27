@@ -23,7 +23,7 @@ type VersionChangeType int
 // upgradeCmd represents the upgrade command
 var upgradeCmd = &cobra.Command{
 	Use:   "upgrade",
-	Short: "Upgrade Odigos version",
+	Short: "Upgrade odigos version in your cluster.",
 	Long: `Upgrade odigos version in your cluster.
 
 This command will upgrade the Odigos version in the cluster to the version of Odigos CLI
@@ -126,6 +126,10 @@ and apply any required migrations and adaptations.`,
 			os.Exit(1)
 		}
 	},
+	Example: `
+# Upgrade Odigos version
+odigos upgrade
+`,
 }
 
 func init() {

@@ -36,6 +36,12 @@ Get started with Odigos today to effortlessly improve the observability of your 
 	},
 }
 
+// RootCmd is used to expose the root command for docs generation.
+// It returns a non-pointer copy of the rootCmd.
+func RootCmd() cobra.Command {
+	return *rootCmd
+}
+
 var (
 	kubeConfig  string
 	kubeContext string
