@@ -1,6 +1,9 @@
-import { DestinationInput } from '@/types';
+import { useConfig } from '../config';
 import { useMutation } from '@apollo/client';
+import { useNotificationStore } from '@/store';
 import { TEST_CONNECTION_MUTATION } from '@/graphql';
+import { DISPLAY_TITLES, FORM_ALERTS } from '@/utils';
+import { NOTIFICATION_TYPE, type DestinationInput } from '@/types';
 
 interface TestConnectionResponse {
   succeeded: boolean;
@@ -11,19 +14,29 @@ interface TestConnectionResponse {
 }
 
 export const useTestConnection = () => {
+  const { data: config } = useConfig();
+  const { addNotification } = useNotificationStore();
+
   const [testConnectionMutation, { loading, error, data }] = useMutation<{ testConnectionForDestination: TestConnectionResponse }, { destination: DestinationInput }>(TEST_CONNECTION_MUTATION, {
-    onError: (error, clientOptions) => {
+    onError: (error) => {
       console.error('Error testing connection:', error);
     },
-    onCompleted: (data, clientOptions) => {
+    onCompleted: (data) => {
       console.log('Successfully tested connection:', data);
     },
   });
 
   return {
-    testConnection: (destination: DestinationInput) => testConnectionMutation({ variables: { destination } }),
     loading,
     error,
     data,
+
+    testConnection: (destination: DestinationInput) => {
+      if (config?.readonly) {
+        addNotification({ type: NOTIFICATION_TYPE.WARNING, title: DISPLAY_TITLES.READONLY, message: FORM_ALERTS.READONLY_WARNING, hideFromHistory: true });
+      } else {
+        testConnectionMutation({ variables: { destination } });
+      }
+    },
   };
 };

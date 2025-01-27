@@ -182,6 +182,10 @@ func ValToAppend(envName string, sdk common.OtelSdk) (string, bool) {
 	return valToAppend, true
 }
 
+func GetPossibleValuesPerEnv(env string) map[common.OtelSdk]string {
+	return EnvValuesMap[env].values
+}
+
 // due to a bug we had with the env overwriter logic,
 // some patched values were recorded incorrectly into the workload annotation for original value.
 // they include odigos values (/var/odigos/...) as if they were the original value in the manifest,
@@ -213,4 +217,21 @@ func CleanupEnvValueFromOdigosAdditions(envVarName string, envVarValue string) s
 	}
 	sanitizedEnvValue := strings.Join(cleanParts, overwriteMetadata.delim)
 	return sanitizedEnvValue
+}
+
+func AppendOdigosAdditionsToEnvVar(envName string, envFromContainerRuntimeValue string, desiredOdigosAddition string) *string {
+	envValues, ok := EnvValuesMap[envName]
+	if !ok {
+		// Odigos does not manipulate this environment variable, so ignore it
+		return nil
+	}
+
+	// In case observedValue is exists but empty, we just need to set the desiredOdigosAddition without delim before
+	if strings.TrimSpace(envFromContainerRuntimeValue) == "" {
+		return &desiredOdigosAddition
+	} else {
+		// In case observedValue is not empty, we need to append the desiredOdigosAddition with the delim
+		mergedEnvValue := envFromContainerRuntimeValue + envValues.delim + desiredOdigosAddition
+		return &mergedEnvValue
+	}
 }
