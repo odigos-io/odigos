@@ -103,69 +103,70 @@ func (m *MigrationRunnable) fetchAndProcessDeployments(ctx context.Context, kube
 		for _, dep := range deployments.Items {
 
 			// Checking if the deployment is in the list of deployments that need to be processed
-			if contains(workloadNames, dep.Name) {
+			if !contains(workloadNames, dep.Name) {
+				continue
+			}
 
-				originalWorkloadEnvVar, err := envoverwrite.NewOrigWorkloadEnvValues(dep.Annotations)
-				if err != nil {
-					m.Logger.Error(err, "Failed to get original workload environment variables")
-					continue
-				}
+			originalWorkloadEnvVar, err := envoverwrite.NewOrigWorkloadEnvValues(dep.Annotations)
+			if err != nil {
+				m.Logger.Error(err, "Failed to get original workload environment variables")
+				continue
+			}
 
-				workloadInstrumentationConfigReference := workloadNames[dep.Name]
-				if workloadInstrumentationConfigReference == nil {
-					m.Logger.Error(err, "Failed to get InstrumentationConfig reference")
-					continue
-				}
+			workloadInstrumentationConfigReference := workloadNames[dep.Name]
+			if workloadInstrumentationConfigReference == nil {
+				m.Logger.Error(err, "Failed to get InstrumentationConfig reference")
+				continue
+			}
 
-				// Fetching the latest state of the InstrumentationConfig resource from the Kubernetes API.
-				// This is necessary to ensure we work with the most up-to-date version of the resource, as it may
-				// have been modified by other processes or controllers in the cluster. Without this step, there is
-				// a risk of encountering conflicts or using stale data during operations on the InstrumentationConfig object.
-				err = m.KubeClient.Get(ctx, client.ObjectKey{
-					Namespace: workloadInstrumentationConfigReference.Namespace,
-					Name:      workloadInstrumentationConfigReference.Name,
-				}, workloadInstrumentationConfigReference)
+			// Fetching the latest state of the InstrumentationConfig resource from the Kubernetes API.
+			// This is necessary to ensure we work with the most up-to-date version of the resource, as it may
+			// have been modified by other processes or controllers in the cluster. Without this step, there is
+			// a risk of encountering conflicts or using stale data during operations on the InstrumentationConfig object.
+			err = m.KubeClient.Get(ctx, client.ObjectKey{
+				Namespace: workloadInstrumentationConfigReference.Namespace,
+				Name:      workloadInstrumentationConfigReference.Name,
+			}, workloadInstrumentationConfigReference)
 
-				if err != nil {
-					m.Logger.Error(err, "Failed to get InstrumentationConfig", "Name", workloadInstrumentationConfigReference.Name,
-						"Namespace", workloadInstrumentationConfigReference.Namespace)
-					continue
-				}
+			if err != nil {
+				m.Logger.Error(err, "Failed to get InstrumentationConfig", "Name", workloadInstrumentationConfigReference.Name,
+					"Namespace", workloadInstrumentationConfigReference.Namespace)
+				continue
+			}
 
-				runtimeDetailsByContainer := workloadInstrumentationConfigReference.Status.RuntimeDetailsByContainer
+			runtimeDetailsByContainer := workloadInstrumentationConfigReference.Status.RuntimeDetailsByContainer
 
-				var needToUpdateWorkloadAnnotation bool
+			var needToUpdateWorkloadAnnotation bool
 
-				for _, containerObject := range dep.Spec.Template.Spec.Containers {
-					var containerNeedsUpdate bool
-					err, containerNeedsUpdate = handleContainerRuntimeDetailsUpdate(
-						containerObject,
-						originalWorkloadEnvVar,
-						runtimeDetailsByContainer,
-					)
-					if err != nil {
-						return fmt.Errorf("failed to process container %s in deployment %s: %v", containerObject.Name, dep.Name, err)
-					}
-
-					// Keep the needToUpdateWorkloadAnnotation flag true if any container requires an update
-					needToUpdateWorkloadAnnotation = needToUpdateWorkloadAnnotation || containerNeedsUpdate
-				}
-
-				// If at least one annotation container's include Odigos additions, we need to update the deployment annotations.
-				if needToUpdateWorkloadAnnotation {
-					if err := updateAnnotations(ctx, kubeClient, &dep, originalWorkloadEnvVar); err != nil {
-						m.Logger.Error(err, "Failed to update resource", "Name", dep.GetName(), "Namespace", dep.GetNamespace())
-					}
-				}
-
-				err = kubeClient.Status().Update(
-					ctx,
-					workloadInstrumentationConfigReference,
+			for _, containerObject := range dep.Spec.Template.Spec.Containers {
+				var containerNeedsUpdate bool
+				err, containerNeedsUpdate = handleContainerRuntimeDetailsUpdate(
+					containerObject,
+					originalWorkloadEnvVar,
+					runtimeDetailsByContainer,
 				)
 				if err != nil {
-					m.Logger.Error(err, "Failed to update InstrumentationConfig status", "Name", dep.Name, "Namespace", dep.Namespace)
-					continue
+					return fmt.Errorf("failed to process container %s in deployment %s: %v", containerObject.Name, dep.Name, err)
 				}
+
+				// Keep the needToUpdateWorkloadAnnotation flag true if any container requires an update
+				needToUpdateWorkloadAnnotation = needToUpdateWorkloadAnnotation || containerNeedsUpdate
+			}
+
+			// If at least one annotation container's include Odigos additions, we need to update the deployment annotations.
+			if needToUpdateWorkloadAnnotation {
+				if err := updateAnnotations(ctx, kubeClient, &dep, originalWorkloadEnvVar); err != nil {
+					m.Logger.Error(err, "Failed to update resource", "Name", dep.GetName(), "Namespace", dep.GetNamespace())
+				}
+			}
+
+			err = kubeClient.Status().Update(
+				ctx,
+				workloadInstrumentationConfigReference,
+			)
+			if err != nil {
+				m.Logger.Error(err, "Failed to update InstrumentationConfig status", "Name", dep.Name, "Namespace", dep.Namespace)
+				continue
 			}
 		}
 	}
@@ -182,69 +183,70 @@ func (m *MigrationRunnable) fetchAndProcessStatefulSets(ctx context.Context, kub
 
 		for _, sts := range statefulSets.Items {
 			// Checking if the statefulset is in the list of statefulsets that need to be processed
-			if contains(workloadNames, sts.Name) {
+			if !contains(workloadNames, sts.Name) {
+				continue
+			}
 
-				originalWorkloadEnvVar, err := envoverwrite.NewOrigWorkloadEnvValues(sts.Annotations)
-				if err != nil {
-					m.Logger.Error(err, "Failed to get original workload environment variables")
-					continue
-				}
+			originalWorkloadEnvVar, err := envoverwrite.NewOrigWorkloadEnvValues(sts.Annotations)
+			if err != nil {
+				m.Logger.Error(err, "Failed to get original workload environment variables")
+				continue
+			}
 
-				workloadInstrumentationConfigReference := workloadNames[sts.Name]
-				if workloadInstrumentationConfigReference == nil {
-					m.Logger.Error(err, "Failed to get InstrumentationConfig reference")
-					continue
-				}
+			workloadInstrumentationConfigReference := workloadNames[sts.Name]
+			if workloadInstrumentationConfigReference == nil {
+				m.Logger.Error(err, "Failed to get InstrumentationConfig reference")
+				continue
+			}
 
-				// Fetching the latest state of the InstrumentationConfig resource from the Kubernetes API.
-				// This is necessary to ensure we work with the most up-to-date version of the resource, as it may
-				// have been modified by other processes or controllers in the cluster. Without this step, there is
-				// a risk of encountering conflicts or using stale data during operations on the InstrumentationConfig object.
-				err = m.KubeClient.Get(ctx, client.ObjectKey{
-					Namespace: workloadInstrumentationConfigReference.Namespace,
-					Name:      workloadInstrumentationConfigReference.Name,
-				}, workloadInstrumentationConfigReference)
+			// Fetching the latest state of the InstrumentationConfig resource from the Kubernetes API.
+			// This is necessary to ensure we work with the most up-to-date version of the resource, as it may
+			// have been modified by other processes or controllers in the cluster. Without this step, there is
+			// a risk of encountering conflicts or using stale data during operations on the InstrumentationConfig object.
+			err = m.KubeClient.Get(ctx, client.ObjectKey{
+				Namespace: workloadInstrumentationConfigReference.Namespace,
+				Name:      workloadInstrumentationConfigReference.Name,
+			}, workloadInstrumentationConfigReference)
 
-				if err != nil {
-					m.Logger.Error(err, "Failed to get InstrumentationConfig", "Name", workloadInstrumentationConfigReference.Name,
-						"Namespace", workloadInstrumentationConfigReference.Namespace)
-					continue
-				}
+			if err != nil {
+				m.Logger.Error(err, "Failed to get InstrumentationConfig", "Name", workloadInstrumentationConfigReference.Name,
+					"Namespace", workloadInstrumentationConfigReference.Namespace)
+				continue
+			}
 
-				runtimeDetailsByContainer := workloadInstrumentationConfigReference.Status.RuntimeDetailsByContainer
+			runtimeDetailsByContainer := workloadInstrumentationConfigReference.Status.RuntimeDetailsByContainer
 
-				var needToUpdateWorkloadAnnotation bool
+			var needToUpdateWorkloadAnnotation bool
 
-				for _, containerObject := range sts.Spec.Template.Spec.Containers {
-					var containerNeedsUpdate bool
-					err, containerNeedsUpdate := handleContainerRuntimeDetailsUpdate(
-						containerObject,
-						originalWorkloadEnvVar,
-						runtimeDetailsByContainer,
-					)
-					if err != nil {
-						return fmt.Errorf("failed to process container %s in statefulset %s: %v", containerObject.Name, sts.Name, err)
-					}
-					// Keep the needToUpdateWorkloadAnnotation flag true if any container requires an update
-					needToUpdateWorkloadAnnotation = needToUpdateWorkloadAnnotation || containerNeedsUpdate
-				}
-
-				// If at least one annotation container's include Odigos additions, we need to update the statefulset annotations.
-				if needToUpdateWorkloadAnnotation {
-					if err := updateAnnotations(ctx, kubeClient, &sts, originalWorkloadEnvVar); err != nil {
-						m.Logger.Error(err, "Failed to update resource", "Name", sts.GetName(), "Namespace", sts.GetNamespace())
-					}
-				}
-
-				// Update the InstrumentationConfig status
-				err = kubeClient.Status().Update(
-					ctx,
-					workloadInstrumentationConfigReference,
+			for _, containerObject := range sts.Spec.Template.Spec.Containers {
+				var containerNeedsUpdate bool
+				err, containerNeedsUpdate := handleContainerRuntimeDetailsUpdate(
+					containerObject,
+					originalWorkloadEnvVar,
+					runtimeDetailsByContainer,
 				)
 				if err != nil {
-					m.Logger.Error(err, "Failed to update InstrumentationConfig status", "Name", sts.Name, "Namespace", sts.Namespace)
-					continue
+					return fmt.Errorf("failed to process container %s in statefulset %s: %v", containerObject.Name, sts.Name, err)
 				}
+				// Keep the needToUpdateWorkloadAnnotation flag true if any container requires an update
+				needToUpdateWorkloadAnnotation = needToUpdateWorkloadAnnotation || containerNeedsUpdate
+			}
+
+			// If at least one annotation container's include Odigos additions, we need to update the statefulset annotations.
+			if needToUpdateWorkloadAnnotation {
+				if err := updateAnnotations(ctx, kubeClient, &sts, originalWorkloadEnvVar); err != nil {
+					m.Logger.Error(err, "Failed to update resource", "Name", sts.GetName(), "Namespace", sts.GetNamespace())
+				}
+			}
+
+			// Update the InstrumentationConfig status
+			err = kubeClient.Status().Update(
+				ctx,
+				workloadInstrumentationConfigReference,
+			)
+			if err != nil {
+				m.Logger.Error(err, "Failed to update InstrumentationConfig status", "Name", sts.Name, "Namespace", sts.Namespace)
+				continue
 			}
 		}
 	}
@@ -261,66 +263,67 @@ func (m *MigrationRunnable) fetchAndProcessDaemonSets(ctx context.Context, kubeC
 
 		for _, ds := range daemonSets.Items {
 			// Checking if the daemonset is in the list of daemonsets that need to be processed
-			if contains(workloadNames, ds.Name) {
+			if !contains(workloadNames, ds.Name) {
+				continue
+			}
 
-				originalWorkloadEnvVar, err := envoverwrite.NewOrigWorkloadEnvValues(ds.Annotations)
+			originalWorkloadEnvVar, err := envoverwrite.NewOrigWorkloadEnvValues(ds.Annotations)
+			if err != nil {
+				m.Logger.Error(err, "Failed to get original workload environment variables")
+				continue
+			}
+			workloadInstrumentationConfigReference := workloadNames[ds.Name]
+			if workloadInstrumentationConfigReference == nil {
+				m.Logger.Error(err, "Failed to get InstrumentationConfig reference")
+				continue
+			}
+
+			// Fetching the latest state of the InstrumentationConfig resource from the Kubernetes API.
+			// This is necessary to ensure we work with the most up-to-date version of the resource, as it may
+			// have been modified by other processes or controllers in the cluster. Without this step, there is
+			// a risk of encountering conflicts or using stale data during operations on the InstrumentationConfig object.
+			err = m.KubeClient.Get(ctx, client.ObjectKey{
+				Namespace: workloadInstrumentationConfigReference.Namespace,
+				Name:      workloadInstrumentationConfigReference.Name,
+			}, workloadInstrumentationConfigReference)
+
+			if err != nil {
+				m.Logger.Error(err, "Failed to get InstrumentationConfig", "Name", workloadInstrumentationConfigReference.Name,
+					"Namespace", workloadInstrumentationConfigReference.Namespace)
+				continue
+			}
+			runtimeDetailsByContainer := workloadInstrumentationConfigReference.Status.RuntimeDetailsByContainer
+
+			var needToUpdateWorkloadAnnotation bool
+
+			for _, containerObject := range ds.Spec.Template.Spec.Containers {
+				var containerNeedsUpdate bool
+				err, containerNeedsUpdate = handleContainerRuntimeDetailsUpdate(
+					containerObject,
+					originalWorkloadEnvVar,
+					runtimeDetailsByContainer)
 				if err != nil {
-					m.Logger.Error(err, "Failed to get original workload environment variables")
-					continue
+					return fmt.Errorf("failed to process container %s in daemonset %s: %v", containerObject.Name, ds.Name, err)
 				}
-				workloadInstrumentationConfigReference := workloadNames[ds.Name]
-				if workloadInstrumentationConfigReference == nil {
-					m.Logger.Error(err, "Failed to get InstrumentationConfig reference")
-					continue
+				// Keep the needToUpdateWorkloadAnnotation flag true if any container requires an update
+				needToUpdateWorkloadAnnotation = needToUpdateWorkloadAnnotation || containerNeedsUpdate
+			}
+
+			// If at least one annotation container's include Odigos additions, we need to update the daemonset annotations.
+			if needToUpdateWorkloadAnnotation {
+				if err := updateAnnotations(ctx, kubeClient, &ds, originalWorkloadEnvVar); err != nil {
+					m.Logger.Error(err, "Failed to update resource", "Name", ds.GetName(), "Namespace", ds.GetNamespace())
 				}
+			}
 
-				// Fetching the latest state of the InstrumentationConfig resource from the Kubernetes API.
-				// This is necessary to ensure we work with the most up-to-date version of the resource, as it may
-				// have been modified by other processes or controllers in the cluster. Without this step, there is
-				// a risk of encountering conflicts or using stale data during operations on the InstrumentationConfig object.
-				err = m.KubeClient.Get(ctx, client.ObjectKey{
-					Namespace: workloadInstrumentationConfigReference.Namespace,
-					Name:      workloadInstrumentationConfigReference.Name,
-				}, workloadInstrumentationConfigReference)
-
-				if err != nil {
-					m.Logger.Error(err, "Failed to get InstrumentationConfig", "Name", workloadInstrumentationConfigReference.Name,
-						"Namespace", workloadInstrumentationConfigReference.Namespace)
-					continue
-				}
-				runtimeDetailsByContainer := workloadInstrumentationConfigReference.Status.RuntimeDetailsByContainer
-
-				var needToUpdateWorkloadAnnotation bool
-
-				for _, containerObject := range ds.Spec.Template.Spec.Containers {
-					var containerNeedsUpdate bool
-					err, containerNeedsUpdate = handleContainerRuntimeDetailsUpdate(
-						containerObject,
-						originalWorkloadEnvVar,
-						runtimeDetailsByContainer)
-					if err != nil {
-						return fmt.Errorf("failed to process container %s in daemonset %s: %v", containerObject.Name, ds.Name, err)
-					}
-					// Keep the needToUpdateWorkloadAnnotation flag true if any container requires an update
-					needToUpdateWorkloadAnnotation = needToUpdateWorkloadAnnotation || containerNeedsUpdate
-				}
-
-				// If at least one annotation container's include Odigos additions, we need to update the daemonset annotations.
-				if needToUpdateWorkloadAnnotation {
-					if err := updateAnnotations(ctx, kubeClient, &ds, originalWorkloadEnvVar); err != nil {
-						m.Logger.Error(err, "Failed to update resource", "Name", ds.GetName(), "Namespace", ds.GetNamespace())
-					}
-				}
-
-				// Update the InstrumentationConfig status
-				err = kubeClient.Status().Update(
-					ctx,
-					workloadInstrumentationConfigReference,
-				)
-				if err != nil {
-					m.Logger.Error(err, "Failed to update InstrumentationConfig status", "Name", ds.Name, "Namespace", ds.Namespace)
-					continue
-				}
+			// Update the InstrumentationConfig status
+			err = kubeClient.Status().Update(
+				ctx,
+				workloadInstrumentationConfigReference,
+			)
+			if err != nil {
+				m.Logger.Error(err, "Failed to update InstrumentationConfig status", "Name", ds.Name, "Namespace", ds.Namespace)
+				continue
 			}
 		}
 	}
