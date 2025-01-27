@@ -135,12 +135,13 @@ odigos upgrade
 func init() {
 	rootCmd.AddCommand(upgradeCmd)
 	upgradeCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
+	updateCmd.Flags().StringVarP(&uiMode, "ui-mode", "", "", "set the UI mode (one-of: normal, readonly)")
+
 	if OdigosVersion != "" {
 		versionFlag = OdigosVersion
 	} else {
 		upgradeCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "for development purposes only")
 		upgradeCmd.Flags().Bool("skip-version-check", false, "skip the version check and install any version tag provided. used for tests")
 		updateCmd.Flags().MarkHidden("skip-version-check")
-		updateCmd.Flags().StringVarP(&uiMode, "ui-mode", "", "", "set the UI mode (one-of: normal, readonly)")
 	}
 }

@@ -1,9 +1,10 @@
 import { useMemo } from 'react';
+import { useConfig } from '../config';
 import { GET_ACTIONS } from '@/graphql';
 import { useMutation, useQuery } from '@apollo/client';
 import { useFilterStore, useNotificationStore } from '@/store';
-import { ACTION, getSseTargetFromId, safeJsonParse } from '@/utils';
 import { CREATE_ACTION, DELETE_ACTION, UPDATE_ACTION } from '@/graphql/mutations';
+import { ACTION, DISPLAY_TITLES, FORM_ALERTS, getSseTargetFromId, safeJsonParse } from '@/utils';
 import { type ActionItem, type ComputePlatform, NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES, type ActionInput, type ActionsType } from '@/types';
 
 interface UseActionCrudParams {
@@ -13,6 +14,7 @@ interface UseActionCrudParams {
 
 export const useActionCRUD = (params?: UseActionCrudParams) => {
   const filters = useFilterStore();
+  const { data: config } = useConfig();
   const { addNotification, removeNotifications } = useNotificationStore();
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
@@ -89,13 +91,25 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
     refetchActions: refetch,
 
     createAction: (action: ActionInput) => {
-      createAction({ variables: { action } });
+      if (config?.readonly) {
+        notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+      } else {
+        createAction({ variables: { action } });
+      }
     },
     updateAction: (id: string, action: ActionInput) => {
-      updateAction({ variables: { id, action } });
+      if (config?.readonly) {
+        notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+      } else {
+        updateAction({ variables: { id, action } });
+      }
     },
     deleteAction: (id: string, actionType: ActionsType) => {
-      deleteAction({ variables: { id, actionType } });
+      if (config?.readonly) {
+        notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+      } else {
+        deleteAction({ variables: { id, actionType } });
+      }
     },
   };
 };
