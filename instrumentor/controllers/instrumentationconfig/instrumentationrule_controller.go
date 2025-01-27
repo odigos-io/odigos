@@ -4,7 +4,6 @@ import (
 	"context"
 
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,18 +32,7 @@ func (r *InstrumentationRuleReconciler) Reconcile(ctx context.Context, req ctrl.
 
 	for _, ic := range instrumentationConfigs.Items {
 		currIc := ic
-		workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(ic.Name)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-
-		serviceName, err := resolveServiceName(ctx, r.Client, workloadName, ic.Namespace, workloadKind)
-		if err != nil {
-			logger.Error(err, "error resolving service name", "workload", ic.Name)
-			continue
-		}
-
-		err = updateInstrumentationConfigForWorkload(&currIc, instrumentationRules, serviceName)
+		err = updateInstrumentationConfigForWorkload(&currIc, instrumentationRules)
 		if err != nil {
 			logger.Error(err, "error updating instrumentation config", "workload", ic.Name)
 			continue

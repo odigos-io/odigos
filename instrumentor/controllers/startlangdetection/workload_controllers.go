@@ -80,12 +80,21 @@ func requestOdigletsToCalculateRuntimeDetails(ctx context.Context, k8sClient cli
 		},
 	}
 
+	serviceName, err := sourceutils.OtelServiceNameBySource(ctx, k8sClient, obj)
+	if err != nil {
+		return err
+	}
+
+	if serviceName != "" {
+		instConfig.Spec.ServiceName = serviceName
+	}
+
 	if err := ctrl.SetControllerReference(obj, instConfig, scheme); err != nil {
 		logger.Error(err, "Failed to set controller reference", "name", instConfigName, "namespace", namespace)
 		return err
 	}
 
-	err := k8sClient.Create(ctx, instConfig)
+	err = k8sClient.Create(ctx, instConfig)
 	if err != nil {
 		return client.IgnoreAlreadyExists(err)
 	}

@@ -1,18 +1,14 @@
 package instrumentationconfig
 
 import (
-	"context"
-	"fmt"
-
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationConfig, rules *odigosv1alpha1.InstrumentationRuleList, serviceName string) error {
+func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationConfig, rules *odigosv1alpha1.InstrumentationRuleList) error {
 
 	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(ic.Name)
 	if err != nil {
@@ -23,8 +19,6 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 		Namespace: ic.Namespace,
 		Kind:      workloadKind,
 	}
-
-	ic.Spec.ServiceName = serviceName
 
 	sdkConfigs := make([]odigosv1alpha1.SdkConfig, 0, len(ic.Status.RuntimeDetailsByContainer))
 
@@ -283,12 +277,3 @@ func boolPtr(b bool) *bool {
 	return &b
 }
 
-func resolveServiceName(ctx context.Context, k8sClient client.Client, workloadName string, namespace string, kind workload.WorkloadKind) (string, error) {
-	objectKey := client.ObjectKey{Name: workloadName, Namespace: namespace}
-	obj, err := workload.GetWorkloadObject(ctx, objectKey, kind, k8sClient)
-
-	if err != nil {
-		return "", fmt.Errorf("failed to get workload object to resolve reported service name annotation. will use fallback service name: %w", err)
-	}
-	return workload.ExtractServiceNameFromAnnotations(obj.GetAnnotations(), workloadName), nil
-}
