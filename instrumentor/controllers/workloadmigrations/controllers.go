@@ -111,7 +111,7 @@ func createOrUpdateSourceForObject(ctx context.Context,
 	obj client.Object,
 	kind workload.WorkloadKind,
 	disableInstrumentation bool,
-	serviceName string) error {
+	serviceNameFromWorkload string) error {
 	if !workload.IsValidWorkloadKind(kind) {
 		return fmt.Errorf("invalid workload kind %s", kind)
 	}
@@ -162,13 +162,13 @@ func createOrUpdateSourceForObject(ctx context.Context,
 	// If that happens once, and the reported name was taken from the annotation,
 	// any more changes to the annotation will not be reflected in the source.
 	// This is valid, since the annotation is deprecated and we want to encourage users to use Source CR.
-	if kind != workload.WorkloadKindNamespace && source.Spec.OtelServiceName == "" {
-		source.Spec.OtelServiceName = serviceName
+	if kind != workload.WorkloadKindNamespace && source.Spec.OtelServiceName == "" && serviceNameFromWorkload != "" {
+		source.Spec.OtelServiceName = serviceNameFromWorkload
 		logger.Info("legacy reported name annotation is deprecated; migrating to source OtelServiceName field",
 			"name", obj.GetName(),
 			"namespace", obj.GetNamespace(),
 			"kind", kind,
-			"serviceName", serviceName)
+			"serviceName", serviceNameFromWorkload)
 	}
 
 	if create {
