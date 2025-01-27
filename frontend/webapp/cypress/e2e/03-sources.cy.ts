@@ -46,7 +46,7 @@ describe('Sources CRUD', () => {
           fieldValue: TEXTS.UPDATED_NAME,
         },
         () => {
-          cy.wait('@gql').then(() => {
+          cy.wait(2000).then(() => {
             getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 5 }, (crdIds) => {
               const crdId = CRD_IDS.SOURCE;
               expect(crdIds).includes(crdId);
