@@ -12,14 +12,12 @@ export default function App() {
 
   useEffect(() => {
     if (data) {
-      const { installation } = data;
+      const { installation, readonly } = data;
 
-      switch (installation) {
-        case CONFIG.NEW:
-          router.push(ROUTES.CHOOSE_SOURCES);
-          break;
-        default:
-          router.push(ROUTES.OVERVIEW);
+      if (installation === CONFIG.NEW && !readonly) {
+        router.push(ROUTES.CHOOSE_SOURCES);
+      } else {
+        router.push(ROUTES.OVERVIEW);
       }
     }
   }, [data]);
