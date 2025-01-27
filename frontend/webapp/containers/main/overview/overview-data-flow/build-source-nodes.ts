@@ -50,7 +50,7 @@ export const buildSourceNodes = ({ loading, entities, positions, unfilteredCount
       nodeWidth,
       title: 'Sources',
       icon: getEntityIcon(OVERVIEW_ENTITY_TYPES.SOURCE),
-      tagValue: entities.length !== unfilteredCount ? `${entities.length} / ${unfilteredCount}` : unfilteredCount,
+      tagValue: entities.length !== unfilteredCount ? `${entities.length}/${unfilteredCount}` : unfilteredCount,
     },
   });
 

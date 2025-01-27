@@ -50,6 +50,12 @@ type Flags struct {
 //go:embed all:webapp/out/*
 var uiFS embed.FS
 
+// The above should point to the UI production build.
+// If it's red for you...
+// 1. Go to "frontend/webapp/"
+// 2. Then run: "yarn install && yarn build"
+// After the build completed, there should be a "frontend/webapp/out/" dir (which is ignored from git), that should resolve the red error.
+
 func parseFlags() Flags {
 	defaultKubeConfig := env.GetDefaultKubeConfigPath()
 

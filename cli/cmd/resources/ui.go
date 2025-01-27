@@ -279,12 +279,12 @@ func NewUIClusterRole(readonly bool) *rbacv1.ClusterRole {
 			{ // Needed to get and instrument namespaces
 				APIGroups: []string{""},
 				Resources: []string{"namespaces"},
-				Verbs:     []string{"get", "list", "patch"},
+				Verbs:     []string{"get", "list"},
 			},
-			{ // Needed to get and instrument sources
+			{ // Needed to get workloads
 				APIGroups: []string{"apps"},
 				Resources: []string{"deployments", "statefulsets", "daemonsets"},
-				Verbs:     []string{"get", "list", "patch", "update"},
+				Verbs:     []string{"get", "list"},
 			},
 			{ // Needed for "Describe Source" and for "Describe Odigos"
 				APIGroups: []string{"apps"},
