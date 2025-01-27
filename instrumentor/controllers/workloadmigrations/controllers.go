@@ -1,4 +1,4 @@
-package labelmigration
+package workloadmigrations
 
 import (
 	"context"
@@ -6,19 +6,19 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
 type NamespacesReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
 }
 
 func (n *NamespacesReconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
@@ -28,37 +28,34 @@ func (n *NamespacesReconciler) Reconcile(ctx context.Context, request ctrl.Reque
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	return migrateObject(ctx, n.Client, &ns, workload.WorkloadKindNamespace)
+	return migrateFromWorkload(ctx, n.Client, &ns, workload.WorkloadKindNamespace)
 }
 
 type DeploymentReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
 }
 
 func (r *DeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	return reconcileWorkload(ctx, r.Client, workload.WorkloadKindDeployment, req, r.Scheme)
+	return reconcileWorkload(ctx, r.Client, workload.WorkloadKindDeployment, req)
 }
 
 type DaemonSetReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
 }
 
 func (r *DaemonSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	return reconcileWorkload(ctx, r.Client, workload.WorkloadKindDaemonSet, req, r.Scheme)
+	return reconcileWorkload(ctx, r.Client, workload.WorkloadKindDaemonSet, req)
 }
 
 type StatefulSetReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
 }
 
 func (r *StatefulSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	return reconcileWorkload(ctx, r.Client, workload.WorkloadKindStatefulSet, req, r.Scheme)
+	return reconcileWorkload(ctx, r.Client, workload.WorkloadKindStatefulSet, req)
 }
 
-func migrateObject(ctx context.Context, k8sClient client.Client, obj client.Object, objKind workload.WorkloadKind) (ctrl.Result, error) {
+func migrateFromWorkload(ctx context.Context, k8sClient client.Client, obj client.Object, objKind workload.WorkloadKind) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	disable := false
 	disabled := workload.IsInstrumentationDisabledExplicitly(obj)
@@ -79,8 +76,14 @@ func migrateObject(ctx context.Context, k8sClient client.Client, obj client.Obje
 		disable = false
 	}
 
-	if disabled || labeled {
-		err := CreateOrUpdateSourceForObject(ctx, k8sClient, obj, objKind, disable)
+	annotations := obj.GetAnnotations()
+	var serviceName string
+	if annotations != nil {
+		serviceName = annotations[consts.OdigosReportedNameAnnotation]
+	}
+
+	if disabled || labeled || serviceName != "" {
+		err := createOrUpdateSourceForObject(ctx, logger, k8sClient, obj, objKind, disable, serviceName)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
@@ -89,24 +92,26 @@ func migrateObject(ctx context.Context, k8sClient client.Client, obj client.Obje
 	return ctrl.Result{}, nil
 }
 
-func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind workload.WorkloadKind, req ctrl.Request, scheme *runtime.Scheme) (ctrl.Result, error) {
+func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind workload.WorkloadKind, req ctrl.Request) (ctrl.Result, error) {
 	obj := workload.ClientObjectFromWorkloadKind(objKind)
 	err := k8sClient.Get(ctx, types.NamespacedName{Name: req.Name, Namespace: req.Namespace}, obj)
 	if err != nil {
-		// Deleted objects should be filtered in the event filter
-		return ctrl.Result{}, err
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	return migrateObject(ctx, k8sClient, obj, objKind)
+	return migrateFromWorkload(ctx, k8sClient, obj, objKind)
 }
 
-// CreateOrUpdateSourceForObject creates a Source for an object if one does not exist
+// createOrUpdateSourceForObject creates a Source for an object if one does not exist
 // The created Source will have a randomly generated name and be in the object's Namespace.
-func CreateOrUpdateSourceForObject(ctx context.Context,
+// If the source is annotated with the "odigos.io/reported-name" annotation, the Source will have the same value in the OtelServiceName field.
+func createOrUpdateSourceForObject(ctx context.Context,
+	logger logr.Logger,
 	k8sClient client.Client,
 	obj client.Object,
 	kind workload.WorkloadKind,
-	disableInstrumentation bool) error {
+	disableInstrumentation bool,
+	serviceNameFromWorkload string) error {
 	if !workload.IsValidWorkloadKind(kind) {
 		return fmt.Errorf("invalid workload kind %s", kind)
 	}
@@ -150,11 +155,26 @@ func CreateOrUpdateSourceForObject(ctx context.Context,
 		}
 	}
 	source.Spec.DisableInstrumentation = disableInstrumentation
+	// migrate the reported name from the workload to the Source only if the Source is not a namespace Source
+	// and the workload Source does not already have a service name.
+	//
+	// If a user have set the annotation on the workload we will use it in the source only if no reported name is set.
+	// If that happens once, and the reported name was taken from the annotation,
+	// any more changes to the annotation will not be reflected in the source.
+	// This is valid, since the annotation is deprecated and we want to encourage users to use Source CR.
+	if kind != workload.WorkloadKindNamespace && source.Spec.OtelServiceName == "" && serviceNameFromWorkload != "" {
+		source.Spec.OtelServiceName = serviceNameFromWorkload
+		logger.Info("legacy reported name annotation is deprecated; migrating to source OtelServiceName field",
+			"name", obj.GetName(),
+			"namespace", obj.GetNamespace(),
+			"kind", kind,
+			"serviceName", serviceNameFromWorkload)
+	}
 
 	if create {
-		log.FromContext(ctx).Info("creating source", "source", source.Spec)
+		logger.Info("creating source", "source", source.Spec)
 		return k8sClient.Create(ctx, source)
 	}
-	log.FromContext(ctx).Info("updating source", "source", source.Spec)
+	logger.Info("updating source", "source", source.Spec)
 	return k8sClient.Update(ctx, source)
 }

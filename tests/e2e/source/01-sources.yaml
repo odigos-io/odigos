@@ -10,6 +10,7 @@ spec:
     name: frontend
     namespace: default
     kind: Deployment
+  otelServiceName: frontend-reported
 ---
 apiVersion: odigos.io/v1alpha1
 kind: Source
@@ -23,6 +24,7 @@ spec:
     name: coupon
     namespace: default
     kind: Deployment
+  otelServiceName: coupon-reported
 ---
 apiVersion: odigos.io/v1alpha1
 kind: Source
@@ -36,6 +38,7 @@ spec:
     name: inventory
     namespace: default
     kind: Deployment
+  otelServiceName: inventory-reported
 ---
 apiVersion: odigos.io/v1alpha1
 kind: Source
@@ -49,6 +52,7 @@ spec:
     name: pricing
     namespace: default
     kind: Deployment
+  otelServiceName: pricing-reported
 ---
 apiVersion: odigos.io/v1alpha1
 kind: Source
@@ -62,3 +66,4 @@ spec:
     name: membership
     namespace: default
     kind: Deployment
+  otelServiceName: membership-reported
