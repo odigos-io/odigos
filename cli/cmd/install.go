@@ -38,6 +38,7 @@ var (
 	userInputIgnoredNamespaces []string
 	userInputIgnoredContainers []string
 	userInputInstallProfiles   []string
+	uiMode                     string
 
 	instrumentorImage string
 	odigletImage      string
@@ -203,7 +204,6 @@ func validateUserInputProfiles(tier common.OdigosTier) {
 }
 
 func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration {
-
 	selectedProfiles := []common.ProfileName{}
 	for _, profile := range userInputInstallProfiles {
 		selectedProfiles = append(selectedProfiles, common.ProfileName(profile))
@@ -222,6 +222,7 @@ func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 		InstrumentorImage:         instrumentorImage,
 		AutoscalerImage:           autoScalerImage,
 		Profiles:                  selectedProfiles,
+		UiMode:                    common.UiMode(uiMode),
 	}
 }
 
@@ -252,6 +253,7 @@ func init() {
 	installCmd.Flags().StringSliceVar(&userInputIgnoredNamespaces, "ignore-namespace", k8sconsts.DefaultIgnoredNamespaces, "namespaces not to show in odigos ui")
 	installCmd.Flags().StringSliceVar(&userInputIgnoredContainers, "ignore-container", k8sconsts.DefaultIgnoredContainers, "container names to exclude from instrumentation (useful for sidecar container)")
 	installCmd.Flags().StringSliceVar(&userInputInstallProfiles, "profile", []string{}, "install preset profiles with a specific configuration")
+	installCmd.Flags().StringVarP(&uiMode, "ui-mode", "", string(common.NormalUiMode), "set the UI mode (one-of: normal, readonly)")
 
 	if OdigosVersion != "" {
 		versionFlag = OdigosVersion
