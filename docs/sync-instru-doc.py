@@ -251,15 +251,18 @@ def merge_versions(current_versions, new_versions):
     )
 
 
-def get_npm_versions(otel_dependency):
+def get_npm_versions(otel_dependency, otel_dependency_version):
     """
     Get the versions of an OTel dependency from the npmjs website
 
     :param otel_dependency: The OTel dependency to get the versions of
+    :param otel_dependency_version: The version of the OTel dependency
     :return: The versions of the OTel dependency
     """
     npm_pack_url = 'https://www.npmjs.com/package'
-    content = fetch(f'{npm_pack_url}/{otel_dependency}')._content
+    content = fetch(
+        f'{npm_pack_url}/{otel_dependency}/v/{otel_dependency_version}'
+    )._content
 
     # Extract the block of content that contains the versions
     content_block = content[
@@ -399,7 +402,7 @@ def process_nodejs_dependencies(lang_type_config, current_dir):
 
         # Handle OTel instrumentation dependencies
         elif dep.startswith(instrumentation_dependency_prefix):
-            for row_obj in get_npm_versions(dep):
+            for row_obj in get_npm_versions(dep, ver):
                 r_url = row_obj.get('package_url')
                 r_name = row_obj.get('package_name', '')
                 r_ver = row_obj.get('package_versions')
