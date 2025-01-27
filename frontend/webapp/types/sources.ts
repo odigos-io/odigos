@@ -23,13 +23,13 @@ export interface SourceContainer {
 export interface K8sActualSource extends WorkloadId {
   numberOfInstances: number;
   selected: boolean;
-  reportedName: string;
+  otelServerName: string;
   containers: Array<SourceContainer>;
   conditions: Array<Condition>;
 }
 
 export interface PatchSourceRequestInput {
-  reportedName?: string;
+  otelServerName?: string;
 }
 
 export interface PersistSourcesArray {

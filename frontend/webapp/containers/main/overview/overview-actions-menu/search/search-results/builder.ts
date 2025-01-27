@@ -18,7 +18,7 @@ export const buildSearchResults = ({
   selectedCategory: Category;
 }) => {
   const filteredRules = !searchText ? rules : rules.filter((rule) => rule.type?.toLowerCase().includes(searchText) || rule.ruleName?.toLowerCase().includes(searchText));
-  const filteredSources = !searchText ? sources : sources.filter((source) => source.name?.toLowerCase().includes(searchText) || source.reportedName?.toLowerCase().includes(searchText));
+  const filteredSources = !searchText ? sources : sources.filter((source) => source.name?.toLowerCase().includes(searchText) || source.otelServerName?.toLowerCase().includes(searchText));
   const filteredActions = !searchText ? actions : actions.filter((action) => action.type?.toLowerCase().includes(searchText) || action.spec.actionName?.toLowerCase().includes(searchText));
   const filteredDestinations = !searchText
     ? destinations

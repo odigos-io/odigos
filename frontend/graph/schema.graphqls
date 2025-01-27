@@ -79,7 +79,7 @@ type K8sActualSource {
   kind: K8sResourceKind!
   numberOfInstances: Int
   selected: Boolean
-  reportedName: String
+  otelServerName: String
   containers: [SourceContainerRuntimeDetails!]
   conditions: [Condition!]
 }
@@ -350,7 +350,7 @@ type PipelineAction {
 }
 
 input PatchSourceRequestInput {
-  reportedName: String
+  otelServerName: String
 }
 
 interface Action {

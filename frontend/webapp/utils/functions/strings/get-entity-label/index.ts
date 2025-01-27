@@ -20,7 +20,7 @@ export const getEntityLabel = (
     case OVERVIEW_ENTITY_TYPES.SOURCE:
       const source = entity as K8sActualSource;
       type = source.name;
-      name = source.reportedName;
+      name = source.otelServerName;
       break;
 
     case OVERVIEW_ENTITY_TYPES.ACTION:

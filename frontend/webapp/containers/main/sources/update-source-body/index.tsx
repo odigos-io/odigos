@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { Input } from '@/reuseable-components';
 
 interface Form {
-  reportedName: string;
+  otelServerName: string;
 }
 
 interface Props {
@@ -26,8 +26,8 @@ export const UpdateSourceBody: React.FC<Props> = ({ formData, handleFormChange }
         title='Source name'
         tooltip='This overrides the default service name that runs in your cluster.'
         placeholder='Use a name that overrides the source name'
-        value={formData.reportedName}
-        onChange={({ target: { value } }) => handleFormChange('reportedName', value)}
+        value={formData.otelServerName}
+        onChange={({ target: { value } }) => handleFormChange('otelServerName', value)}
       />
     </Container>
   );

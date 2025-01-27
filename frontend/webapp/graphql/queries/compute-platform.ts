@@ -45,7 +45,7 @@ export const GET_SOURCES = gql`
           name
           kind
           selected
-          reportedName
+          otelServerName
           containers {
             containerName
             language
