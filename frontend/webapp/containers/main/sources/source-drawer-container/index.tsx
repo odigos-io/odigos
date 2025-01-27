@@ -14,7 +14,7 @@ import { ConditionDetails, DataCard, DataCardRow, DataCardFieldTypes, Segment } 
 interface Props {}
 
 const EMPTY_FORM = {
-  otelServerName: '',
+  otelServiceName: '',
 };
 
 const FormContainer = styled.div`
@@ -74,7 +74,7 @@ export const SourceDrawer: React.FC<Props> = () => {
       resetFormData();
     } else {
       const { item } = selectedItem as { item: K8sActualSource };
-      handleFormChange('otelServerName', item.otelServerName || item.name || '');
+      handleFormChange('otelServiceName', item.otelServiceName || item.name || '');
     }
   }, [selectedItem, isEditing]);
 
@@ -130,14 +130,14 @@ export const SourceDrawer: React.FC<Props> = () => {
   };
 
   const handleSave = async () => {
-    const title = formData.otelServerName !== item.name ? formData.otelServerName : '';
-    handleFormChange('otelServerName', title);
-    await updateSource(id, { ...formData, otelServerName: title });
+    const title = formData.otelServiceName !== item.name ? formData.otelServiceName : '';
+    handleFormChange('otelServiceName', title);
+    await updateSource(id, { ...formData, otelServiceName: title });
   };
 
   return (
     <OverviewDrawer
-      title={item.otelServerName || item.name}
+      title={item.otelServiceName || item.name}
       titleTooltip='This attribute is used to identify the name of the service (service.name) that is generating telemetry data.'
       icon={getEntityIcon(OVERVIEW_ENTITY_TYPES.SOURCE)}
       isEdit={isEditing}

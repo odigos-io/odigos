@@ -414,7 +414,7 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 	nsName := sourceID.Namespace
 	workloadName := sourceID.Name
 	workloadKind := services.WorkloadKind(sourceID.Kind)
-	otelServerName := patchSourceRequest.OtelServerName
+	otelServiceName := patchSourceRequest.OtelServiceName
 
 	source, err := services.GetSourceCRD(ctx, nsName, workloadName, workloadKind)
 	if err != nil {
@@ -430,7 +430,7 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 		}
 	}
 
-	_, err = services.UpdateSourceCRDSpec(ctx, nsName, source.Name, "otelServerName", otelServerName)
+	_, err = services.UpdateSourceCRDSpec(ctx, nsName, source.Name, "otelServiceName", otelServiceName)
 	if err != nil {
 		// unexpected error occurred while trying to update the source
 		return false, err

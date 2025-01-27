@@ -338,7 +338,7 @@ type K8sActualSource struct {
 	Kind              K8sResourceKind                  `json:"kind"`
 	NumberOfInstances *int                             `json:"numberOfInstances,omitempty"`
 	Selected          *bool                            `json:"selected,omitempty"`
-	OtelServerName    *string                          `json:"otelServerName,omitempty"`
+	OtelServiceName   *string                          `json:"otelServiceName,omitempty"`
 	Containers        []*SourceContainerRuntimeDetails `json:"containers,omitempty"`
 	Conditions        []*Condition                     `json:"conditions,omitempty"`
 }
@@ -439,7 +439,7 @@ type PaginatedSources struct {
 }
 
 type PatchSourceRequestInput struct {
-	OtelServerName string `json:"otelServerName"`
+	OtelServiceName string `json:"otelServiceName"`
 }
 
 type PayloadCollection struct {

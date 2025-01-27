@@ -1,8 +1,8 @@
 import type { K8sActualSource, WorkloadId } from '@/types';
 
-const buildDrawerItem = (id: WorkloadId, formData: { otelServerName: string }, drawerItem: K8sActualSource): K8sActualSource => {
+const buildDrawerItem = (id: WorkloadId, formData: { otelServiceName: string }, drawerItem: K8sActualSource): K8sActualSource => {
   const { namespace, name, kind } = id;
-  const { otelServerName } = formData;
+  const { otelServiceName } = formData;
   const { numberOfInstances, conditions, containers, selected } = drawerItem;
 
   return {
@@ -10,7 +10,7 @@ const buildDrawerItem = (id: WorkloadId, formData: { otelServerName: string }, d
     name,
     kind,
     numberOfInstances,
-    otelServerName,
+    otelServiceName,
     conditions,
     containers,
     selected,
