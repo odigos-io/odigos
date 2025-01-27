@@ -9,6 +9,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	webhookdeviceinjector "github.com/odigos-io/odigos/instrumentor/internal/webhook_device_injector"
 	webhookenvinjector "github.com/odigos-io/odigos/instrumentor/internal/webhook_env_injector"
 	"github.com/odigos-io/odigos/instrumentor/sdks"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
@@ -16,7 +17,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -105,18 +105,7 @@ func (p *PodsWebhook) injectOdigosEnvVars(ctx context.Context, logger logr.Logge
 			continue
 		}
 
-		libcType := getLibCTypeOfContainer(runtimeDetails, container.Name)
-		instrumentationDeviceName := common.InstrumentationDeviceName(pl, otelSdk, libcType)
-
-		if container.Resources.Limits == nil {
-			container.Resources.Limits = make(corev1.ResourceList)
-		}
-		if container.Resources.Requests == nil {
-			container.Resources.Requests = make(corev1.ResourceList)
-		}
-
-		container.Resources.Limits[corev1.ResourceName(instrumentationDeviceName)] = resource.MustParse("1")
-		container.Resources.Requests[corev1.ResourceName(instrumentationDeviceName)] = resource.MustParse("1")
+		webhookdeviceinjector.InjectOdigosInstrumentationDevice(ctx, p.Client, logger, *podWorkload, container, pl, otelSdk)
 		webhookenvinjector.InjectOdigosAgentEnvVars(ctx, p.Client, logger, *podWorkload, container, pl, otelSdk)
 
 		// Check if the environment variables are already present, if so skip inject them again.
@@ -163,16 +152,6 @@ func getLanguageOfContainer(runtimeDetails []odigosv1.RuntimeDetailsByContainer,
 		}
 	}
 	return common.UnknownProgrammingLanguage
-}
-
-func getLibCTypeOfContainer(runtimeDetails []odigosv1.RuntimeDetailsByContainer, containerName string) *common.LibCType {
-	for _, rd := range runtimeDetails {
-		if rd.ContainerName == containerName {
-			return rd.LibCType
-		}
-	}
-
-	return nil
 }
 
 func envVarsExist(containerEnv []corev1.EnvVar, commonEnvVars []corev1.EnvVar) bool {
