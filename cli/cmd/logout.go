@@ -19,8 +19,8 @@ var logoutCmd = &cobra.Command{
 	Short: "Logout from Odigos cloud",
 	Long: `Disconnect this Odigos installation from your odigos cloud account.
 
-	After running this command, you will no longer be able to control and monitor this Odigos installation from Odigos cloud.
-	You can run 'odigos ui' to manage your Odigos installation locally.
+After running this command, you will no longer be able to control and monitor this Odigos installation from Odigos cloud.
+You can run 'odigos ui' to manage your Odigos installation locally.
 	`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
