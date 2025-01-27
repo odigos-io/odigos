@@ -10,8 +10,8 @@ import (
 	"github.com/odigos-io/odigos/common/envOverwrite"
 )
 
-// original manifest values for the env vars of a workload
-// This is specific to k8s as it assumes there is OriginalEnv per container
+// Deprecated. Used for migration purposes only.
+// remove in odigos v1.1
 type OrigWorkloadEnvValues struct {
 	origManifestValues   map[string]envOverwrite.OriginalEnv
 	modifiedSinceCreated bool
