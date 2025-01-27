@@ -7,7 +7,8 @@ from packaging.version import Version
 
 """
 This script is used to sync the instrumentation documentation with the latest versions of the dependencies.
-!! Currently it only supports Node.js instrumentation libraries.
+!! Currently it only supports Node.js (native) instrumentation libraries.
+TODO: add support for other languages and types of instrumentation libraries.
 """
 
 
