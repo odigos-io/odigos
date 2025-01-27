@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -222,52 +223,6 @@ func k8sKindToGql(k8sResourceKind string) model.K8sResourceKind {
 	return ""
 }
 
-func UpdateReportedName(
-	ctx context.Context,
-	ns, kind, name, reportedName string,
-) error {
-	switch kind {
-	case "Deployment":
-		deployment, err := kube.DefaultClient.AppsV1().Deployments(ns).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			return fmt.Errorf("could not find deployment: %w", err)
-		}
-		deployment.SetAnnotations(updateAnnotations(deployment.GetAnnotations(), reportedName))
-		_, err = kube.DefaultClient.AppsV1().Deployments(ns).Update(ctx, deployment, metav1.UpdateOptions{})
-		return err
-	case "StatefulSet":
-		statefulSet, err := kube.DefaultClient.AppsV1().StatefulSets(ns).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			return fmt.Errorf("could not find statefulset: %w", err)
-		}
-		statefulSet.SetAnnotations(updateAnnotations(statefulSet.GetAnnotations(), reportedName))
-		_, err = kube.DefaultClient.AppsV1().StatefulSets(ns).Update(ctx, statefulSet, metav1.UpdateOptions{})
-		return err
-	case "DaemonSet":
-		daemonSet, err := kube.DefaultClient.AppsV1().DaemonSets(ns).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			return fmt.Errorf("could not find daemonset: %w", err)
-		}
-		daemonSet.SetAnnotations(updateAnnotations(daemonSet.GetAnnotations(), reportedName))
-		_, err = kube.DefaultClient.AppsV1().DaemonSets(ns).Update(ctx, daemonSet, metav1.UpdateOptions{})
-		return err
-	default:
-		return fmt.Errorf("unsupported kind: %s", kind)
-	}
-}
-
-func updateAnnotations(annotations map[string]string, reportedName string) map[string]string {
-	if annotations == nil {
-		annotations = make(map[string]string)
-	}
-	if reportedName == "" {
-		delete(annotations, consts.OdigosReportedNameAnnotation)
-	} else {
-		annotations[consts.OdigosReportedNameAnnotation] = reportedName
-	}
-	return annotations
-}
-
 func GetSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) (*v1alpha1.Source, error) {
 	list, err := kube.DefaultClient.OdigosClient.Sources(nsName).List(ctx, metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(labels.Set{
@@ -290,21 +245,24 @@ func GetSourceCRD(ctx context.Context, nsName string, workloadName string, workl
 	return &list.Items[0], err
 }
 
-func createSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) (*v1alpha1.Source, error) {
-	err := CheckWorkloadKindForSourceCRD(workloadKind)
-	if err != nil {
-		return nil, err
+func CreateSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) (*v1alpha1.Source, error) {
+	switch workloadKind {
+	// Namespace is not a workload, but we need it to "select future apps" by creating a Source CRD for it
+	case WorkloadKindNamespace, WorkloadKindDeployment, WorkloadKindStatefulSet, WorkloadKindDaemonSet:
+		break
+	default:
+		return nil, errors.New("unsupported workload kind: " + string(workloadKind))
 	}
 
 	source, err := GetSourceCRD(ctx, nsName, workloadName, workloadKind)
+	if err != nil && !strings.Contains(err.Error(), "not found") {
+		// unexpected error occurred while trying to get the source
+		return nil, err
+	}
+
 	if source != nil {
 		// source already exists, do not create a new one, instead update so it's not disabled anymore
-		source, err = updateSourceCRD(ctx, nsName, source.Name, false)
-		return source, err
-	}
-	if err != nil && !strings.Contains(err.Error(), "not found") {
-		// error occurred while trying to get the source
-		return nil, err
+		return UpdateSourceCRDSpec(ctx, nsName, source.Name, "disableInstrumentation", false)
 	}
 
 	newSource := &v1alpha1.Source{
@@ -324,35 +282,24 @@ func createSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 	return source, err
 }
 
-func updateSourceCRD(ctx context.Context, nsName string, crdName string, disableInstrumentation bool) (*v1alpha1.Source, error) {
-	patch := fmt.Sprintf(`[{"op": "replace", "path": "/spec/disableInstrumentation", "value": %v}]`, disableInstrumentation)
-
-	source, err := kube.DefaultClient.OdigosClient.Sources(nsName).Patch(ctx, crdName, types.JSONPatchType, []byte(patch), metav1.PatchOptions{})
-	return source, err
-}
-
 func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) error {
-	err := CheckWorkloadKindForSourceCRD(workloadKind)
-	if err != nil {
-		return err
-	}
-
 	if workloadKind != WorkloadKindNamespace {
-		// Check for namespace source first
+		// if is a regular workload, then check for namespace source first
 		nsSource, err := GetSourceCRD(ctx, nsName, nsName, WorkloadKindNamespace)
 		if err != nil && !strings.Contains(err.Error(), "not found") {
+			// unexpected error occurred while trying to get the namespace source
 			return err
 		}
 
 		if nsSource != nil {
-			// namespace source exists, we need to add "DisableInstrumentation" to the workload source
 			// note: create will return an existing crd without throwing an error
-			source, err := createSourceCRD(ctx, nsName, workloadName, workloadKind)
+			source, err := CreateSourceCRD(ctx, nsName, workloadName, workloadKind)
 			if err != nil {
 				return err
 			}
 
-			_, err = updateSourceCRD(ctx, nsName, source.Name, true)
+			// namespace source exists, we need to add "DisableInstrumentation" to the workload source
+			_, err = UpdateSourceCRDSpec(ctx, nsName, source.Name, "disableInstrumentation", true)
 			return err
 		}
 	}
@@ -365,12 +312,18 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 
 	err = kube.DefaultClient.OdigosClient.Sources(nsName).Delete(ctx, source.Name, metav1.DeleteOptions{})
 	return err
+}
 
+func UpdateSourceCRDSpec(ctx context.Context, nsName string, crdName string, specField string, newValue any) (*v1alpha1.Source, error) {
+	patch := fmt.Sprintf(`[{"op": "replace", "path": "/spec/%s", "value": %v}]`, specField, newValue)
+	source, err := kube.DefaultClient.OdigosClient.Sources(nsName).Patch(ctx, crdName, types.JSONPatchType, []byte(patch), metav1.PatchOptions{})
+
+	return source, err
 }
 
 func ToggleSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind, enabled bool) error {
 	if enabled {
-		_, err := createSourceCRD(ctx, nsName, workloadName, workloadKind)
+		_, err := CreateSourceCRD(ctx, nsName, workloadName, workloadKind)
 		return err
 	} else {
 		return deleteSourceCRD(ctx, nsName, workloadName, workloadKind)
