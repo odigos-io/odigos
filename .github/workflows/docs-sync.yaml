@@ -1,0 +1,62 @@
+name: Verify Documentation Changes
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check-doc-change:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml
+          cd docs
+          yarn py-install-deps
+
+      - name: Generate Destination docs
+        run: |
+          cd docs
+          python sync-dest-doc.py
+      - name: Check for changes in Destinations docs
+        run: |
+          if [[ $(git diff --exit-code) ]]; then
+            git diff
+            echo "Destinations docs need to be updated. Pleas run "cd docs && python sync-dest-doc.py", then commit the changes."
+            exit 1
+          fi
+
+      - name: Generate Instrumentation docs
+        run: |
+          cd docs
+          python sync-instru-doc.py
+      - name: Check for changes in Instrumentation docs
+        run: |
+          if [[ $(git diff --exit-code) ]]; then
+            git diff
+            echo "Instrumentation docs need to be updated. Pleas run "cd docs && python sync-instru-doc.py", then commit the changes."
+            exit 1
+          fi
+
+      - name: Generate CRD API docs
+        run: |
+          cd
+          make docgen
+      - name: Check for changes in CRD API Docs
+        run: |
+          if [[ $(git diff --exit-code) ]]; then
+            git diff
+            echo "CRD API docs need to be updated. Pleas run "make docgen", then commit the changes."
+            exit 1
+          fi
