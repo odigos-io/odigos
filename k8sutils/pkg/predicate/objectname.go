@@ -100,8 +100,6 @@ var ClusterCollectorDeploymentPredicate = ObjectNamePredicate{
 	AllowedObjectName: k8sconsts.OdigosClusterCollectorDeploymentName,
 }
 
-// this predicate will only allow events for the odigos cluster collectors daemon set object.
-// this is useful if you only want to reconcile events for the cluster collectors daemon set object and ignore other daemon set objects.
 var OdigosProSecretPredicate = ObjectNamePredicate{
 	AllowedObjectName: k8sconsts.OdigosProSecretName,
 }
