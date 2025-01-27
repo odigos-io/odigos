@@ -89,7 +89,7 @@ supported_languages = {
                         {'dependency': 'generic-pool', 'note': '', 'mdx': ''},
                         {'dependency': 'ioredis', 'note': '', 'mdx': ''},
                         {'dependency': 'knex', 'note': '', 'mdx': ''},
-                        {'dependency': 'lru-memorizer', 'note': '', 'mdx': ''},
+                        {'dependency': 'lru-memoizer', 'note': '', 'mdx': ''},
                         {'dependency': 'memcached', 'note': '', 'mdx': ''},
                         {'dependency': 'mongodb', 'note': '', 'mdx': ''},
                         {'dependency': 'mongoose', 'note': '', 'mdx': ''},
@@ -251,15 +251,15 @@ def merge_versions(current_versions, new_versions):
     )
 
 
-def get_npm_versions(dependency):
+def get_npm_versions(otel_dependency):
     """
-    Get the versions of a dependency from the npmjs website
+    Get the versions of an OTel dependency from the npmjs website
 
-    :param dependency: The dependency to get the versions of
-    :return: The versions of the dependency
+    :param otel_dependency: The OTel dependency to get the versions of
+    :return: The versions of the OTel dependency
     """
     npm_pack_url = 'https://www.npmjs.com/package'
-    content = fetch(f'{npm_pack_url}/{dependency}')._content
+    content = fetch(f'{npm_pack_url}/{otel_dependency}')._content
 
     # Extract the block of content that contains the versions
     content_block = content[
@@ -298,47 +298,49 @@ def get_npm_versions(dependency):
 
     # Extract the names and versions
     versions = []
-    for row in inner_text_rows:
-        if row:
-            row_words = row.split(' ')
-            package_name = row_words[0]
-            package_versions = ' '.join(row_words[1:])
+    filtered_text_rows = [s for s in inner_text_rows if s]
+    for row in filtered_text_rows:
+        row_words = row.split(' ')
+        package_name = row_words[0] if row_words[0].startswith('@') or len(filtered_text_rows) > 1 else otel_dependency.replace(
+            instrumentation_dependency_prefix, ''
+        )
+        package_versions = ' '.join(row_words[1:])
 
-            if not package_name or not package_versions:
-                print(f'Failed to extract version info for {dependency}')
-                os._exit(1)
+        if not package_versions:
+            print(f'Failed to extract version info for {otel_dependency}')
+            os._exit(1)
 
-            if any(char.isalpha() for char in package_versions):
-                print(f'Skipping: {row} (origin: {dependency})')
-            else:
-                package_url = f'{npm_pack_url}/{package_name}'
-                package_versions = f'versions `{package_versions}`'
+        if any(char.isalpha() for char in package_versions):
+            print(f'Skipping: {row} (origin: {otel_dependency})')
+        else:
+            package_url = f'{npm_pack_url}/{package_name}'
+            package_versions = f'versions `{package_versions}`'
 
-                # Node specific
-                if package_name.replace('.', '').lower() == 'nodejs':
-                    package_url = ''
-                    package_name = f'node:{dependency.replace(
-                        instrumentation_dependency_prefix, ''
-                    )}'
-                    package_versions = (
-                        f'[`Node.js`](https://nodejs.org/)'
-                        + f' {package_versions}'
-                    )
+            # Node specific
+            if row_words[0].replace('.', '').lower() == 'nodejs':
+                package_url = ''
+                package_name = f'node:{otel_dependency.replace(
+                    instrumentation_dependency_prefix, ''
+                )}'
+                package_versions = (
+                    f'[`Node.js`](https://nodejs.org/)'
+                    + f' {package_versions}'
+                )
 
+            versions.append({
+                'package_url': package_url,
+                'package_name': package_name,
+                'package_versions': package_versions
+            })
+
+            # Unique case
+            if package_name == 'node:http':
+                package_name = 'node:https'
                 versions.append({
                     'package_url': package_url,
                     'package_name': package_name,
                     'package_versions': package_versions
                 })
-
-                # Unique case
-                if package_name == 'node:http':
-                    package_name = 'node:https'
-                    versions.append({
-                        'package_url': package_url,
-                        'package_name': package_name,
-                        'package_versions': package_versions
-                    })
 
     return versions
 
