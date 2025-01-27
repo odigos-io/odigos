@@ -1,6 +1,7 @@
 import React from 'react';
 import { EDGE_TYPES } from '@/types';
 import styled from 'styled-components';
+import { Tooltip } from '@/reuseable-components';
 import { EdgeLabelRenderer, BaseEdge, type EdgeProps, type Edge, getSmoothStepPath } from '@xyflow/react';
 
 interface Props
@@ -47,9 +48,11 @@ const LabeledEdge: React.FC<Props> = ({ id, sourceX, sourceY, targetX, targetY, 
     <>
       <BaseEdge id={id} path={edgePath} style={style} />
       <EdgeLabelRenderer>
-        <Label $labelX={data?.isMultiTarget ? targetX - 50 : sourceX + 50} $labelY={data?.isMultiTarget ? targetY : sourceY} $isError={data?.isError} className='nodrag nopan'>
-          {data?.label}
-        </Label>
+        <Tooltip text='Heads up! The data-flow metrics you see are calculated over 10-second intervals.'>
+          <Label $labelX={data?.isMultiTarget ? targetX - 50 : sourceX + 50} $labelY={data?.isMultiTarget ? targetY : sourceY} $isError={data?.isError} className='nodrag nopan'>
+            {data?.label}
+          </Label>
+        </Tooltip>
       </EdgeLabelRenderer>
     </>
   );
