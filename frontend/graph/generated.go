@@ -18670,7 +18670,7 @@ func (ec *executionContext) unmarshalInputPatchSourceRequestInput(ctx context.Co
 		switch k {
 		case "otelServerName":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("otelServerName"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}

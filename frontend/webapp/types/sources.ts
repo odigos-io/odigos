@@ -29,7 +29,7 @@ export interface K8sActualSource extends WorkloadId {
 }
 
 export interface PatchSourceRequestInput {
-  otelServerName?: string;
+  otelServerName: string;
 }
 
 export interface PersistSourcesArray {

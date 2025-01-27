@@ -439,7 +439,7 @@ type PaginatedSources struct {
 }
 
 type PatchSourceRequestInput struct {
-	OtelServerName *string `json:"otelServerName,omitempty"`
+	OtelServerName string `json:"otelServerName"`
 }
 
 type PayloadCollection struct {

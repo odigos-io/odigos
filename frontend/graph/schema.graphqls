@@ -350,7 +350,7 @@ type PipelineAction {
 }
 
 input PatchSourceRequestInput {
-  otelServerName: String
+  otelServerName: String!
 }
 
 interface Action {
