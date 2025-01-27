@@ -5,6 +5,12 @@ import requests
 from packaging.version import Version
 
 
+"""
+This script is used to sync the instrumentation documentation with the latest versions of the dependencies.
+!! Currently it only supports Node.js instrumentation libraries.
+"""
+
+
 instrumentations_dir = './instrumentations'
 
 api_dependency_key = '@opentelemetry/api'
@@ -108,7 +114,10 @@ supported_languages = {
                 },
             },
         },
-        # 'ebpf': 'https://raw.githubusercontent.com/odigos-io/ebpf-nodejs-instrumentation/refs/heads/main/dtrace-injector/package.json',
+        # 'ebpf': {
+        #     'package_json_url': 'https://raw.githubusercontent.com/odigos-io/ebpf-nodejs-instrumentation/refs/heads/main/dtrace-injector/package.json',
+        #     'categories': {}
+        # }
     },
     'python': {
         # 'native': '',
@@ -159,15 +168,11 @@ def replace_section(mdx_content, start_block, end_block, new_content):
     """
     Replace or update a section in the content between start_block and end_block.
 
-    Args:
-        mdx_content (str): Original content to modify.
-        start_block (str): Start marker for the block.
-        end_block (str): End marker for the block.
-        new_content (str): New content to insert.
-        default_append_to_end (bool): If true, append to the end; otherwise append to start.
-
-    Returns:
-        str: Modified content.
+    :param mdx_content: The content to update
+    :param start_block: The start block of the section
+    :param end_block: The end block of the section
+    :param new_content: The new content to replace or update the section with
+    :return: The updated content
     """
 
     # Compile the regex pattern to find the section
@@ -186,9 +191,68 @@ def replace_section(mdx_content, start_block, end_block, new_content):
     return mdx_content
 
 
-def get_node_dependency_versions(dependency):
+def merge_versions(current_versions, new_versions):
     """
-    Get the versions of a Node.js dependency
+    Merge the versions of a dependency
+
+    :param current_versions: The current versions of the dependency
+    :param new_versions: The new versions of the dependency
+    :return: The merged versions of the dependency
+    """
+
+    # Split the dependency name and it's versions
+    pre_ver, post_ver = current_versions.split(
+        ' versions '
+    )
+
+    # Current values
+    curr_gt, curr_lt = post_ver.replace(
+        '`', ''
+    ).replace(
+        '>=', ''
+    ).replace(
+        '<', ''
+    ).strip().split(
+        ' '
+    )
+
+    # New values
+    new_versions = new_versions.split(
+        'versions'
+    )[1].replace(
+        '`', ''
+    ).replace(
+        '>=', ''
+    ).replace(
+        '<', ''
+    ).strip().split(
+        ' '
+    )
+
+    new_gt = new_versions[0]
+    try:
+        new_lt = new_versions[1]
+    except IndexError:
+        new_lt = '0'
+
+    # Update the versions
+    if Version(new_gt) < Version(curr_gt):
+        curr_gt = new_gt
+    if Version(new_lt) > Version(curr_lt):
+        curr_lt = new_lt
+    if Version(curr_lt) == Version(curr_gt) or Version(curr_lt) == Version(new_gt):
+        curr_lt = ''
+
+    return (
+        pre_ver
+        + f' versions `>={curr_gt}'
+        + (f' <{curr_lt}`' if curr_lt else '`')
+    )
+
+
+def get_npm_versions(dependency):
+    """
+    Get the versions of a dependency from the npmjs website
 
     :param dependency: The dependency to get the versions of
     :return: The versions of the dependency
@@ -278,6 +342,102 @@ def get_node_dependency_versions(dependency):
     return versions
 
 
+def process_nodejs_dependencies(lang_type_config, current_dir):
+    """
+    Process the Node.js dependencies
+
+    :param lang_type_config: The configuration for the Node.js dependencies
+    :param current_dir: The current directory
+    :return: The categories of the dependencies
+    """
+
+    # Get the categories
+    categories = lang_type_config.get('categories', [])
+
+    # Fetch the package.json file and get it's dependencies
+    dependencies = fetch(
+        lang_type_config.get('package_json_url', '')
+    ).json().get(
+        'dependencies', {}
+    )
+
+    # Get the versions of the dependencies
+    for dep, ver in dependencies.items():
+        # Handle OTel API dependency
+        if dep == api_dependency_key:
+            enrichment_mdx_path = os.path.join(current_dir, 'enrichment.mdx')
+            with open(enrichment_mdx_path, 'r') as r_file:
+                content = r_file.read()
+                with open(enrichment_mdx_path, 'w') as w_file:
+                    start_block = '## Required Dependencies'
+                    end_block = '## Creating Spans'
+                    content = replace_section(
+                        content,
+                        start_block,
+                        end_block,
+                        (
+                            f'{start_block}'
+                            + '\n\nAdd the following npm packages to your service by running:'
+                            + '\n\n```bash'
+                            + f'\nnpm install {dep}@{ver}'
+                            + '\n```'
+                            + '\n\n<Warning>'
+                            + f'\n  Odigos agent implements OpenTelemetry API version {ver}.'
+                            + f' Any version greater than {ver}'
+                            + f' may not be compatible with Odigos agent and fail to produce data.<br />'
+                            + f'\n  Please do not use caret range ~~`{dep}@^{ver}`~~'
+                            + f' for this dependency in your package.json to avoid pulling in incompatible version.'
+                            + f'\n</Warning>'
+                            + f'\n\n{end_block}'
+                        )
+                    )
+
+                    w_file.write(content)
+
+        # Handle OTel instrumentation dependencies
+        elif dep.startswith(instrumentation_dependency_prefix):
+            for row_obj in get_npm_versions(dep):
+                r_url = row_obj.get('package_url')
+                r_name = row_obj.get('package_name', '')
+                r_ver = row_obj.get('package_versions')
+
+                row_str = (
+                    (
+                        f'- [`{r_name}`]({r_url})'
+                        if r_url
+                        else f'- `{r_name}`'
+                    )
+                    + f' {r_ver}'
+                )
+
+                # Append the dependencies to the categories
+                has_category = False
+                for _, cat in categories.items():
+                    cat_deps = cat.get('items', [])
+
+                    for idx, cat_dep in enumerate(cat_deps):
+                        if r_name == cat_dep.get('dependency', ''):
+                            has_category = True
+
+                            if not cat_deps[idx]['mdx']:
+                                cat_deps[idx]['mdx'] = row_str
+                            else:
+                                cat_deps[idx]['mdx'] = merge_versions(
+                                    cat_deps[idx]['mdx'], r_ver
+                                )
+
+                if not has_category:
+                    categories[uncategorized_key]['items'].append(
+                        {
+                            'dependency': r_name,
+                            'note': '',
+                            'mdx': row_str
+                        }
+                    )
+
+    return categories
+
+
 if __name__ == '__main__':
     for root, _, files in os.walk(instrumentations_dir):
         # Skip the root directory
@@ -292,8 +452,8 @@ if __name__ == '__main__':
 
                 # Read the MDX file
                 mdx_path = os.path.join(root, file)
-                with open(mdx_path, 'r') as mdx_file:
-                    mdx_content = mdx_file.read()
+                with open(mdx_path, 'r') as r_file:
+                    mdx_content = r_file.read()
 
                     lang_type = file.replace('.mdx', '')
                     lang_type_config = lang_config.get(lang_type)
@@ -301,106 +461,15 @@ if __name__ == '__main__':
                         print(f'Config not found for {lang} - {file}')
                         continue
 
-                    # Fetch the package.json file and get it's dependencies
-                    dependencies = fetch(
-                        lang_type_config.get('package_json_url', '')
-                    ).json().get(
-                        'dependencies', {}
-                    )
-
-                    # Get the categories of this MDX file
-                    categories = lang_type_config.get('categories', [])
-
-                    # Append the dependencies to the categories
-                    for dep, ver in dependencies.items():
-                        # Handle OTel API dependency
-                        if dep == api_dependency_key:
-                            # TODO: Handle API dependency
-                            print(f"{dep}: {ver}")
-
-                        # Handle OTel instrumentation dependencies
-                        elif dep.startswith(instrumentation_dependency_prefix):
-                            for row_obj in get_node_dependency_versions(dep):
-                                r_url = row_obj.get('package_url')
-                                r_name = row_obj.get('package_name', '')
-                                r_ver = row_obj.get('package_versions')
-
-                                row_str = (
-                                    (
-                                        f'- [`{r_name}`]({r_url})'
-                                        if r_url
-                                        else f'- `{r_name}`'
-                                    )
-                                    + f' {r_ver}'
-                                )
-
-                                has_category = False
-                                for cat_name, cat in categories.items():
-                                    cat_deps = cat.get('items', [])
-
-                                    for idx, cat_dep in enumerate(cat_deps):
-                                        if r_name == cat_dep.get('dependency', ''):
-                                            has_category = True
-                                            if not cat_deps[idx]['mdx']:
-                                                cat_deps[idx]['mdx'] = row_str
-                                            else:
-                                                # Handle multiple versions
-                                                pre_ver, post_ver = cat_deps[idx]['mdx'].split(
-                                                    ' versions '
-                                                )
-
-                                                # Current values
-                                                curr_gt, curr_lt = post_ver.replace(
-                                                    '`', ''
-                                                ).replace(
-                                                    '>=', ''
-                                                ).replace(
-                                                    '<', ''
-                                                ).strip().split(
-                                                    ' '
-                                                )
-
-                                                # New values
-                                                r_ver = r_ver.split(
-                                                    'versions'
-                                                )[1].replace(
-                                                    '`', ''
-                                                ).replace(
-                                                    '>=', ''
-                                                ).replace(
-                                                    '<', ''
-                                                ).strip().split(
-                                                    ' '
-                                                )
-
-                                                r_gt = r_ver[0]
-                                                try:
-                                                    r_lt = r_ver[1]
-                                                except IndexError:
-                                                    r_lt = '0'
-
-                                                # Update the versions
-                                                if Version(r_gt) < Version(curr_gt):
-                                                    curr_gt = r_gt
-                                                if Version(r_lt) > Version(curr_lt):
-                                                    curr_lt = r_lt
-                                                if Version(curr_lt) == Version(curr_gt) or Version(curr_lt) == Version(r_gt):
-                                                    curr_lt = ''
-
-                                                cat_deps[idx]['mdx'] = (
-                                                    pre_ver
-                                                    + f' versions `>={curr_gt}'
-                                                    + (f' <{curr_lt}`' if curr_lt else '`')
-                                                )
-
-                                if not has_category:
-                                    categories[uncategorized_key]['items'].append(
-                                        {
-                                            'dependency': r_name,
-                                            'note': '',
-                                            'mdx': row_str
-                                        }
-                                    )
+                    if lang == 'nodejs':
+                        print(f'\nProcessing: {mdx_path}')
+                        categories = process_nodejs_dependencies(
+                            lang_type_config,
+                            root
+                        )
+                    else:
+                        # TODO: add support for other languages
+                        continue
 
                     # Sort uncategorized items
                     categories[uncategorized_key]['items'] = sorted(
@@ -440,10 +509,9 @@ if __name__ == '__main__':
                             documentation_starting_block
                             + documentation
                             + documentation_ending_block
-                        ),
+                        )
                     )
 
                     # Write the updated MDX file
-                    with open(mdx_path, 'w') as mdx_file:
-                        print(f'Writing to {mdx_path}')
-                        mdx_file.write(mdx_content)
+                    with open(mdx_path, 'w') as w_file:
+                        w_file.write(mdx_content)
