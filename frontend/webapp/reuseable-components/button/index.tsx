@@ -10,71 +10,55 @@ const variantStyles = {
   primary: css`
     border: 1px solid ${({ theme }) => theme.text.secondary + hexPercentValues['024']};
     background: ${({ theme }) => theme.colors.secondary};
+    color: ${({ theme }) => theme.colors.primary};
     &:hover {
-      background: #e0e0e0;
+      background: ${({ theme }) => theme.colors.secondary + hexPercentValues['080']};
     }
     &:active {
-      background: ${({ theme }) => theme.text.grey};
-    }
-    &:focus {
-      background: ${({ theme }) => theme.colors.secondary};
+      background: ${({ theme }) => theme.text.secondary + hexPercentValues['060']};
     }
   `,
   secondary: css`
-    background: ${({ theme }) => theme.text.secondary + hexPercentValues['000']};
     border: 1px solid ${({ theme }) => theme.colors.border};
+    background: ${({ theme }) => theme.colors.primary};
     color: ${({ theme }) => theme.colors.secondary};
     &:hover {
-      border: 1px solid ${({ theme }) => theme.colors.white_opacity['30']};
-      background: ${({ theme }) => theme.colors.white_opacity['004']};
+      border: 1px solid ${({ theme }) => theme.text.darker_grey};
+      background: ${({ theme }) => theme.colors.primary + hexPercentValues['080']};
     }
     &:active {
-      background: ${({ theme }) => theme.colors.white_opacity['008']};
       border: 1px solid ${({ theme }) => theme.text.dark_grey};
-    }
-    &:focus {
-      background: ${({ theme }) => theme.text.secondary + hexPercentValues['000']};
+      background: ${({ theme }) => theme.colors.primary + hexPercentValues['060']};
     }
   `,
   tertiary: css`
     border-color: transparent;
     background: transparent;
     &:hover {
-      background: ${({ theme }) => theme.colors.white_opacity['004']};
+      background: ${({ theme }) => theme.colors.dropdown_bg_2 + hexPercentValues['040']};
     }
     &:active {
-      background: ${({ theme }) => theme.colors.white_opacity['008']};
-    }
-    &:focus {
-      background: ${({ theme }) => theme.text.secondary + hexPercentValues['000']};
+      background: ${({ theme }) => theme.colors.dropdown_bg_2};
     }
   `,
   danger: css`
     border-color: transparent;
     background: ${({ theme }) => theme.text.error};
     &:hover {
-      background: ${({ theme }) => theme.text.error};
-      opacity: 0.9;
+      background: ${({ theme }) => theme.text.error + hexPercentValues['090']};
     }
     &:active {
-      background: ${({ theme }) => theme.text.error};
-    }
-    &:focus {
-      background: ${({ theme }) => theme.text.error};
+      background: ${({ theme }) => theme.text.error + hexPercentValues['080']};
     }
   `,
   warning: css`
     border-color: transparent;
     background: ${({ theme }) => theme.text.warning};
     &:hover {
-      background: ${({ theme }) => theme.text.warning};
-      opacity: 0.9;
+      background: ${({ theme }) => theme.text.warning + hexPercentValues['090']};
     }
     &:active {
-      background: ${({ theme }) => theme.text.warning};
-    }
-    &:focus {
-      background: ${({ theme }) => theme.text.warning};
+      background: ${({ theme }) => theme.text.warning + hexPercentValues['080']};
     }
   `,
 };

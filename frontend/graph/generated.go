@@ -290,7 +290,7 @@ type ComplexityRoot struct {
 		Name              func(childComplexity int) int
 		Namespace         func(childComplexity int) int
 		NumberOfInstances func(childComplexity int) int
-		ReportedName      func(childComplexity int) int
+		OtelServiceName   func(childComplexity int) int
 		Selected          func(childComplexity int) int
 	}
 
@@ -1568,12 +1568,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sActualSource.NumberOfInstances(childComplexity), true
 
-	case "K8sActualSource.reportedName":
-		if e.complexity.K8sActualSource.ReportedName == nil {
+	case "K8sActualSource.otelServiceName":
+		if e.complexity.K8sActualSource.OtelServiceName == nil {
 			break
 		}
 
-		return e.complexity.K8sActualSource.ReportedName(childComplexity), true
+		return e.complexity.K8sActualSource.OtelServiceName(childComplexity), true
 
 	case "K8sActualSource.selected":
 		if e.complexity.K8sActualSource.Selected == nil {
@@ -9506,8 +9506,8 @@ func (ec *executionContext) fieldContext_K8sActualNamespace_k8sActualSources(_ c
 				return ec.fieldContext_K8sActualSource_numberOfInstances(ctx, field)
 			case "selected":
 				return ec.fieldContext_K8sActualSource_selected(ctx, field)
-			case "reportedName":
-				return ec.fieldContext_K8sActualSource_reportedName(ctx, field)
+			case "otelServiceName":
+				return ec.fieldContext_K8sActualSource_otelServiceName(ctx, field)
 			case "containers":
 				return ec.fieldContext_K8sActualSource_containers(ctx, field)
 			case "conditions":
@@ -9733,8 +9733,8 @@ func (ec *executionContext) fieldContext_K8sActualSource_selected(_ context.Cont
 	return fc, nil
 }
 
-func (ec *executionContext) _K8sActualSource_reportedName(ctx context.Context, field graphql.CollectedField, obj *model.K8sActualSource) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_K8sActualSource_reportedName(ctx, field)
+func (ec *executionContext) _K8sActualSource_otelServiceName(ctx context.Context, field graphql.CollectedField, obj *model.K8sActualSource) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sActualSource_otelServiceName(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -9747,7 +9747,7 @@ func (ec *executionContext) _K8sActualSource_reportedName(ctx context.Context, f
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ReportedName, nil
+		return obj.OtelServiceName, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9761,7 +9761,7 @@ func (ec *executionContext) _K8sActualSource_reportedName(ctx context.Context, f
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_K8sActualSource_reportedName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_K8sActualSource_otelServiceName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "K8sActualSource",
 		Field:      field,
@@ -12408,8 +12408,8 @@ func (ec *executionContext) fieldContext_PaginatedSources_items(_ context.Contex
 				return ec.fieldContext_K8sActualSource_numberOfInstances(ctx, field)
 			case "selected":
 				return ec.fieldContext_K8sActualSource_selected(ctx, field)
-			case "reportedName":
-				return ec.fieldContext_K8sActualSource_reportedName(ctx, field)
+			case "otelServiceName":
+				return ec.fieldContext_K8sActualSource_otelServiceName(ctx, field)
 			case "containers":
 				return ec.fieldContext_K8sActualSource_containers(ctx, field)
 			case "conditions":
@@ -18661,20 +18661,20 @@ func (ec *executionContext) unmarshalInputPatchSourceRequestInput(ctx context.Co
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"reportedName"}
+	fieldsInOrder := [...]string{"otelServiceName"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "reportedName":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("reportedName"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+		case "otelServiceName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("otelServiceName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.ReportedName = data
+			it.OtelServiceName = data
 		}
 	}
 
@@ -20886,8 +20886,8 @@ func (ec *executionContext) _K8sActualSource(ctx context.Context, sel ast.Select
 			out.Values[i] = ec._K8sActualSource_numberOfInstances(ctx, field, obj)
 		case "selected":
 			out.Values[i] = ec._K8sActualSource_selected(ctx, field, obj)
-		case "reportedName":
-			out.Values[i] = ec._K8sActualSource_reportedName(ctx, field, obj)
+		case "otelServiceName":
+			out.Values[i] = ec._K8sActualSource_otelServiceName(ctx, field, obj)
 		case "containers":
 			out.Values[i] = ec._K8sActualSource_containers(ctx, field, obj)
 		case "conditions":

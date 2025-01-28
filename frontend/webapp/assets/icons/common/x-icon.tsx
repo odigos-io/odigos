@@ -1,8 +1,11 @@
 import React from 'react';
 import { SVG } from '@/assets';
-import theme from '@/styles/theme';
+import { useTheme } from 'styled-components';
 
-export const XIcon: SVG = ({ size = 16, fill = theme.text.secondary, rotate = 0, onClick }) => {
+export const XIcon: SVG = ({ size = 16, fill: f, rotate = 0, onClick }) => {
+  const theme = useTheme();
+  const fill = f || theme.text.secondary;
+
   return (
     <svg width={size} height={size * (14 / 18)} viewBox='0 0 18 14' xmlns='http://www.w3.org/2000/svg' fill='none' style={{ transform: `rotate(${rotate}deg)` }} onClick={onClick}>
       <path fill={fill} d='M9.487 5.832v2.433h1.495V5.832H9.487ZM17.847 17.185l2.028-1.791L9.487 7.047l10.388-8.414L17.928-3.158 6.162 6.304v1.453l11.685 9.428Z' />

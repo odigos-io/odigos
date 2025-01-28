@@ -13,7 +13,7 @@ export const AddSourceModal: React.FC<Props> = ({ isOpen, onClose }) => {
   useKeyDown({ key: 'Enter', active: isOpen }, () => handleSubmit());
 
   const menuState = useSourceFormData();
-  const { persistSources } = useSourceCRUD({ onSuccess: onClose });
+  const { persistSources, loading } = useSourceCRUD({ onSuccess: onClose });
 
   const handleSubmit = async () => {
     const { getApiSourcesPayload, getApiFutureAppsPayload } = menuState;
@@ -40,8 +40,9 @@ export const AddSourceModal: React.FC<Props> = ({ isOpen, onClose }) => {
           buttons={[
             {
               label: 'DONE',
-              onClick: handleSubmit,
               variant: 'primary',
+              onClick: handleSubmit,
+              disabled: loading,
             },
           ]}
         />
