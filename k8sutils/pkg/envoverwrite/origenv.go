@@ -8,7 +8,7 @@ import (
 	"github.com/odigos-io/odigos/common/envOverwrite"
 )
 
-// Deprecated. Used for migration purposes only.
+// Deprecated: Used for migration purposes only.
 // remove in odigos v1.1
 type OrigWorkloadEnvValues struct {
 	OrigManifestValues map[string]envOverwrite.OriginalEnv
