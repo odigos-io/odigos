@@ -190,10 +190,10 @@ metadata:
   name: deployment-cpp-http-server
 status:
   conditions:
-    - message: "Instrumentation device applied successfully"
+    - message: "no default sdks found for language: unknown, container:cpp-http-server"
       (observedGeneration != null): true
-      reason: InstrumentationDeviceApplied
-      status: "True"
+      reason: ErrApplyingInstrumentationDevice
+      status: "False"
       type: AppliedInstrumentationDevice
 ---
 apiVersion: odigos.io/v1alpha1
