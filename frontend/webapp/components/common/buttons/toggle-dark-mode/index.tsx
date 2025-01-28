@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import { FlexRow } from '@/styles';
+import styled from 'styled-components';
 import { useDarkModeStore } from '@/store';
 import { MoonIcon, SunIcon } from '@/assets';
-import styled, { useTheme } from 'styled-components';
 
 interface Props {}
 

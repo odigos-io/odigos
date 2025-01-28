@@ -1,11 +1,5 @@
 const baseTheme = {
   colors: {
-    // Notification Colors
-    warning: '#472300',
-    error: '#431919',
-    success: '#172013',
-    info: '#242424',
-    default: '#181944',
     // Custom Colors
     majestic_blue: '#444AD9',
     orange_og: '#FE9239',
@@ -16,19 +10,7 @@ const baseTheme = {
     darkest_red_hover: '#351515',
     dark_green: '#2D4323',
   },
-  text: {
-    // Notification Colors
-    warning: '#E9CF35',
-    warning_secondary: '#FFA349',
-    error: '#EF7676',
-    error_secondary: '#DB5151',
-    success: '#81AF65',
-    success_secondary: '#51DB51',
-    info: '#B8B8B8',
-    info_secondary: '#CCDDDD',
-    default: '#AABEF7',
-    default_secondary: '#8CBEFF',
-  },
+  text: {},
   font_family: {
     primary: 'Inter, sans-serif',
     secondary: 'Kode Mono, sans-serif',
@@ -47,9 +29,14 @@ const darkModeTheme = {
     translucent_bg: '#1A1A1A',
     dropdown_bg: '#242424',
     dropdown_bg_2: '#333333',
+    // Notification Colors
+    warning: '#472300',
+    error: '#431919',
+    success: '#172013',
+    info: '#242424',
+    default: '#181944',
   },
   text: {
-    ...baseTheme.text,
     // Base Colors
     primary: '#111111',
     secondary: '#F9F9F9',
@@ -59,6 +46,17 @@ const darkModeTheme = {
     darker_grey: '#7A7A7A',
     light_grey: '#CCD0D2',
     dark_button: '#0A1824',
+    // Notification Colors
+    warning: '#E9CF35',
+    warning_secondary: '#FFA349',
+    error: '#EF7676',
+    error_secondary: '#DB5151',
+    success: '#81AF65',
+    success_secondary: '#51DB51',
+    info: '#B8B8B8',
+    info_secondary: '#CCDDDD',
+    default: '#AABEF7',
+    default_secondary: '#8CBEFF',
   },
   font_family: baseTheme.font_family,
 };
@@ -74,9 +72,14 @@ const lightModeTheme = {
     translucent_bg: '#E5E5E5',
     dropdown_bg: '#DBDBDB',
     dropdown_bg_2: '#CCCCCC',
+    // Notification Colors
+    warning: '#F6F092',
+    error: '#FACECE',
+    success: '#C8DEB8',
+    info: '#E0E0E0',
+    default: '#CAD9FB',
   },
   text: {
-    ...baseTheme.text,
     // Base Colors
     primary: '#EEEEEE',
     secondary: '#060606',
@@ -86,6 +89,17 @@ const lightModeTheme = {
     darker_grey: '#858585',
     light_grey: '#332F2D',
     dark_button: '#F5E7DB',
+    // Notification Colors
+    warning: '#A56F12',
+    warning_secondary: '#CA9416',
+    error: '#B63A3A',
+    error_secondary: '#DB5151',
+    success: '#4E763A',
+    success_secondary: '#67964C',
+    info: '#525252',
+    info_secondary: '#7A7A7A',
+    default: '#444AD9',
+    default_secondary: '#6C7AE8',
   },
   font_family: baseTheme.font_family,
 };

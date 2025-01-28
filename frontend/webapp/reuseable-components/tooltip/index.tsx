@@ -2,7 +2,6 @@ import React, { useState, PropsWithChildren, useRef, MouseEvent, forwardRef } fr
 import ReactDOM from 'react-dom';
 import { Text } from '..';
 import { InfoIcon } from '@/assets';
-import { useDarkModeStore } from '@/store';
 import styled, { useTheme } from 'styled-components';
 
 interface Position {
@@ -58,7 +57,7 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, withIcon, children }) =>
   );
 };
 
-const PopupContainer = styled.div<{ $darkMode: boolean; $top: number; $left: number }>`
+const PopupContainer = styled.div<{ $top: number; $left: number }>`
   position: absolute;
   top: ${({ $top }) => $top}px;
   left: ${({ $left }) => $left}px;
@@ -68,18 +67,17 @@ const PopupContainer = styled.div<{ $darkMode: boolean; $top: number; $left: num
   padding: 8px 12px;
   border-radius: 16px;
   border: 1px solid ${({ theme }) => theme.colors.border};
-  background-color: ${({ theme, $darkMode }) => theme[$darkMode ? 'colors' : 'text'].info};
+  background-color: ${({ theme }) => theme.colors.info};
 
   pointer-events: none;
 `;
 
 const Popup = forwardRef<HTMLDivElement, PopupProps>(({ top, left, children }, ref) => {
   const theme = useTheme();
-  const { darkMode } = useDarkModeStore();
 
   return ReactDOM.createPortal(
-    <PopupContainer ref={ref} $darkMode={darkMode} $top={top} $left={left}>
-      <Text size={12} color={theme[darkMode ? 'text' : 'colors'].info}>
+    <PopupContainer ref={ref} $top={top} $left={left}>
+      <Text size={12} color={theme.text.info}>
         {children}
       </Text>
     </PopupContainer>,

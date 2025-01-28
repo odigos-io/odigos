@@ -3,7 +3,6 @@ import { Text } from '../text';
 import { XIcon } from '@/assets';
 import { Divider } from '../divider';
 import { getStatusIcon } from '@/utils';
-import { useDarkModeStore } from '@/store';
 import { IconButton } from '../icon-button';
 import { FlexRow, progress, slide } from '@/styles';
 import styled, { useTheme } from 'styled-components';
@@ -39,7 +38,7 @@ const Container = styled.div<{ $isLeaving?: boolean }>`
   }
 `;
 
-const DurationAnimation = styled.div<{ $darkMode: boolean; $type: Props['type'] }>`
+const DurationAnimation = styled.div<{ $type: Props['type'] }>`
   position: absolute;
   bottom: -1px;
   left: 0;
@@ -47,35 +46,36 @@ const DurationAnimation = styled.div<{ $darkMode: boolean; $type: Props['type'] 
   width: 100%;
   height: 100%;
   border-radius: 32px;
-  background-color: ${({ $darkMode, $type, theme }) => theme[$darkMode ? 'text' : 'colors'][$type]};
+  background-color: ${({ $type, theme }) => theme.text[$type]};
   animation: ${progress.out} ${TOAST_DURATION - TRANSITION_DURATION}ms forwards;
 `;
 
-const Content = styled.div<{ $darkMode: boolean; $type: Props['type'] }>`
+const Content = styled.div<{ $type: Props['type'] }>`
   display: flex;
   align-items: center;
   flex: 1;
   gap: 8px;
   padding: 0 12px;
   border-radius: 32px;
-  background-color: ${({ $darkMode, $type, theme }) => theme[$darkMode ? 'colors' : 'text'][$type]};
+  background-color: ${({ $type, theme }) => theme.colors[$type]};
 `;
 
 const TextWrapper = styled.div<{ $withAction: boolean }>`
   display: flex;
   align-items: center;
   margin: 0 auto 0 0;
+  padding: 8px 0;
   max-width: ${({ $withAction }) => ($withAction ? '400px' : '500px')};
   height: 12px;
 `;
 
-const Title = styled(Text)<{ $darkMode: boolean; $type: Props['type'] }>`
+const Title = styled(Text)<{ $type: Props['type'] }>`
   font-size: 14px;
-  color: ${({ $darkMode, $type, theme }) => theme[$darkMode ? 'text' : 'colors'][$type]};
+  color: ${({ $type, theme }) => theme.text[$type]};
 `;
 
-const Message = styled(Text)<{ $darkMode: boolean; $type: Props['type'] }>`
-  color: ${({ $darkMode, $type, theme }) => theme[$darkMode ? 'text' : 'colors'][$type]};
+const Message = styled(Text)<{ $type: Props['type'] }>`
+  color: ${({ $type, theme }) => theme.text[$type]};
   font-size: 12px;
 `;
 
@@ -96,7 +96,6 @@ const ActionButton = styled(Text)`
 
 export const NotificationNote: React.FC<Props> = ({ type, title, message, action, onClose, style }) => {
   const theme = useTheme();
-  const { darkMode } = useDarkModeStore();
 
   // These are for handling transitions:
   // isEntering - to stop the progress bar from rendering before the toast is fully slide-in
@@ -150,21 +149,13 @@ export const NotificationNote: React.FC<Props> = ({ type, title, message, action
 
   return (
     <Container className={onClose ? 'animated' : ''} $isLeaving={isLeaving} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-      <Content data-id='toast' $darkMode={darkMode} $type={type} style={style}>
-        <StatusIcon fill={theme[darkMode ? 'text' : 'colors'][type]} />
+      <Content data-id='toast' $type={type} style={style}>
+        <StatusIcon fill={theme.text[type]} />
 
         <TextWrapper $withAction={!!action}>
-          {title && (
-            <Title $darkMode={darkMode} $type={type}>
-              {title}
-            </Title>
-          )}
+          {title && <Title $type={type}>{title}</Title>}
           {title && message && <Divider orientation='vertical' type={type} />}
-          {message && (
-            <Message $darkMode={darkMode} $type={type}>
-              {message}
-            </Message>
-          )}
+          {message && <Message $type={type}>{message}</Message>}
         </TextWrapper>
 
         {(!!action || !!onClose) && (
@@ -183,7 +174,7 @@ export const NotificationNote: React.FC<Props> = ({ type, title, message, action
         )}
       </Content>
 
-      {onClose && !isEntering && !isLeaving && <DurationAnimation ref={progress} $darkMode={darkMode} $type={type} />}
+      {onClose && !isEntering && !isLeaving && <DurationAnimation ref={progress} $type={type} />}
     </Container>
   );
 };
