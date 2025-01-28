@@ -80,9 +80,9 @@ metadata:
 status:
   runtimeDetailsByContainer:
     - containerName: nodejs-dockerfile-env
-      envVars:
-      - name: NODE_OPTIONS
-        value: "--require /app/execute_before.js --max-old-space-size=256"
+      envFromContainerRuntime:
+        - name: NODE_OPTIONS
+          value: "--require /app/execute_before.js --max-old-space-size=256"
       language: javascript
       runtimeVersion: 20.17.0
 ---
@@ -100,9 +100,9 @@ metadata:
 status:
   runtimeDetailsByContainer:
     - containerName: nodejs-manifest-env
-      envVars:
-      - name: NODE_OPTIONS
-        value: "--require /app/execute_before.js --max-old-space-size=256"
+      envFromContainerRuntime:
+        - name: NODE_OPTIONS
+          value: "--require /app/execute_before.js --max-old-space-size=256"
       language: javascript
       runtimeVersion: 20.17.0
 ---
@@ -170,7 +170,7 @@ status:
   runtimeDetailsByContainer:
     - containerName: java-supported-docker-env
       language: java
-      envVars:
+      envFromContainerRuntime:
         - name: JAVA_OPTS
           value: "-Dthis.does.not.exist=true"
       runtimeVersion: 17.0.12+7
@@ -191,7 +191,7 @@ status:
   runtimeDetailsByContainer:
     - containerName: java-supported-manifest-env
       language: java
-      envVars:
+      envFromContainerRuntime:
         - name: JAVA_OPTS
           value: "-Dnot.work=true"
       runtimeVersion: 17.0.12+7
@@ -244,9 +244,9 @@ metadata:
 status:
   runtimeDetailsByContainer:
     - containerName: python-alpine
-      envVars:
-      - name: PYTHONPATH
-        value: "/app"    
+      envFromContainerRuntime:
+        - name: PYTHONPATH
+          value: "/app"
       language: python
       runtimeVersion: 3.10.15
 ---
@@ -263,7 +263,7 @@ metadata:
       name: python-latest-version
 status:
   runtimeDetailsByContainer:
-    - containerName: python-latest-version        
+    - containerName: python-latest-version
       language: python
       (runtimeVersion != null): true
 ---
@@ -280,7 +280,7 @@ metadata:
       name: python-other-agent
 status:
   runtimeDetailsByContainer:
-    - containerName: python-other-agent        
+    - containerName: python-other-agent
       language: python
       otherAgent:
         name: New Relic Agent
