@@ -6,9 +6,9 @@ import styled, { useTheme } from 'styled-components';
 import { FlexRow, hexPercentValues } from '@/styles';
 import { NOTIFICATION_TYPE, PlatformTypes } from '@/types';
 import { NotificationManager, ToggleDarkMode } from '@/components';
-import { OdigosLogoText, SlackLogo, TerminalIcon } from '@/assets';
 import { DRAWER_OTHER_TYPES, useDrawerStore, useStatusStore } from '@/store';
 import { ConnectionStatus, IconButton, Tooltip } from '@/reuseable-components';
+import { OdigosLogoText, SlackLogo, TerminalIcon } from '@odigos/ui-components';
 
 interface MainHeaderProps {}
 

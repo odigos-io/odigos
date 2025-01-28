@@ -1,7 +1,7 @@
 import React from 'react';
 import { slide } from '@/styles';
-import { TrashIcon } from '@/assets';
 import { useTransition } from '@/hooks';
+import { TrashIcon } from '@odigos/ui-components';
 import styled, { useTheme } from 'styled-components';
 import { Button, Text } from '@/reuseable-components';
 

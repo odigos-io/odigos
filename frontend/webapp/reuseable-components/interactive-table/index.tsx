@@ -1,9 +1,9 @@
 import React from 'react';
-import { SVG } from '@/assets';
 import { isEmpty } from '@/utils';
 import styled from 'styled-components';
-import { IconWrapped } from '../icon-wrapped';
 import { hexPercentValues } from '@/styles';
+import { Types } from '@odigos/ui-components';
+import { IconWrapped } from '../icon-wrapped';
 
 interface ColumnCell {
   key: string; // used to bind the row cell to the column
@@ -12,7 +12,7 @@ interface ColumnCell {
 
 interface RowCell {
   columnKey: string; // used to bind the row cell to the column
-  icon?: SVG;
+  icon?: Types.SVG;
   value?: string;
   component?: () => React.ReactNode;
 }

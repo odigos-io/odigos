@@ -3,13 +3,13 @@ import { Text } from '../text';
 import { Tooltip } from '../tooltip';
 import styled from 'styled-components';
 import { hexPercentValues } from '@/styles';
-import { OverviewIcon, type SVG } from '@/assets';
+import { OverviewIcon, Types } from '@odigos/ui-components';
 
 // Define types for the Tab component props
 interface TabProps {
   title: string;
   tooltip?: string;
-  icon: SVG;
+  icon: Types.SVG;
   selected: boolean;
   disabled?: boolean;
   onClick?: () => void;

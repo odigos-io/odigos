@@ -3,7 +3,7 @@ import { useOnClickOutside } from '@/hooks';
 import { hexPercentValues } from '@/styles';
 import type { DropdownOption } from '@/types';
 import styled, { css, useTheme } from 'styled-components';
-import { CheckIcon, CrossIcon, SearchIcon } from '@/assets';
+import { CheckIcon, CrossIcon, SearchIcon } from '@odigos/ui-components';
 import { Badge, Checkbox, Divider, ExtendIcon, FieldError, FieldLabel, Input, NoDataFound, Text } from '@/reuseable-components';
 
 interface DropdownProps {

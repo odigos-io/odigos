@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Text } from '../text';
-import { XIcon } from '@/assets';
 import { Divider } from '../divider';
 import { getStatusIcon } from '@/utils';
 import { IconButton } from '../icon-button';
+import { XIcon } from '@odigos/ui-components';
 import { FlexRow, progress, slide } from '@/styles';
 import styled, { useTheme } from 'styled-components';
 import { type Notification, NOTIFICATION_TYPE } from '@/types';

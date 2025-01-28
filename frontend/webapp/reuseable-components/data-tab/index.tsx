@@ -1,13 +1,13 @@
 import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react';
-import { SVG } from '@/assets';
-import { FlexColumn, FlexRow, hexPercentValues } from '@/styles';
+import { Types } from '@odigos/ui-components';
 import styled, { css } from 'styled-components';
+import { FlexColumn, FlexRow, hexPercentValues } from '@/styles';
 import { ActiveStatus, Divider, ExtendIcon, IconButton, IconWrapped, MonitorsIcons, Text, Tooltip } from '@/reuseable-components';
 
 interface Props {
   title: string;
   subTitle?: string;
-  icon?: SVG;
+  icon?: Types.SVG;
   iconSrc?: string;
   hoverText?: string;
   monitors?: string[];

@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { ExtendArrowIcon } from '@/assets';
+import { ExtendArrowIcon } from '@odigos/ui-components';
 
 interface Props {
   extend: boolean;

@@ -4,9 +4,9 @@ import { hexPercentValues } from '@/styles';
 import { useNotificationStore } from '@/store';
 import { ACTION, getStatusIcon } from '@/utils';
 import styled, { useTheme } from 'styled-components';
-import { NotificationIcon, TrashIcon } from '@/assets';
 import { useOnClickOutside, useTimeAgo } from '@/hooks';
 import { NOTIFICATION_TYPE, type Notification } from '@/types';
+import { NotificationIcon, TrashIcon } from '@odigos/ui-components';
 import { IconButton, NoDataFound, Text } from '@/reuseable-components';
 
 const RelativeContainer = styled.div`

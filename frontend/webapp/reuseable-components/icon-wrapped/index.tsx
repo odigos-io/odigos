@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
 import { hexPercentValues } from '@/styles';
-import { OdigosLogo, type SVG } from '@/assets';
+import { OdigosLogo, Types } from '@odigos/ui-components';
 
 interface Props {
-  icon?: SVG;
+  icon?: Types.SVG;
   src?: string;
   alt?: string;
   isError?: boolean;

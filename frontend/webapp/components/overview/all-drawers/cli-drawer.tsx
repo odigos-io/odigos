@@ -3,9 +3,9 @@ import { NOTIFICATION_TYPE } from '@/types';
 import { FlexColumn, FlexRow } from '@/styles';
 import styled, { useTheme } from 'styled-components';
 import OverviewDrawer from '@/containers/main/overview/overview-drawer';
-import { DATA_CARDS, getStatusIcon, isOverTime, isWithinTime, safeJsonStringify, SEVEN_DAYS_IN_MS } from '@/utils';
 import { useCopy, useDescribeOdigos, useKeyDown, useOnClickOutside, useTimeAgo, useTokenCRUD } from '@/hooks';
-import { CheckIcon, CodeBracketsIcon, CodeIcon, CopyIcon, CrossIcon, EditIcon, KeyIcon, ListIcon } from '@/assets';
+import { DATA_CARDS, getStatusIcon, isOverTime, isWithinTime, safeJsonStringify, SEVEN_DAYS_IN_MS } from '@/utils';
+import { CheckIcon, CodeBracketsIcon, CodeIcon, CopyIcon, CrossIcon, EditIcon, KeyIcon, ListIcon } from '@odigos/ui-components';
 import { Button, DataCard, DataCardFieldTypes, Divider, IconButton, Input, Segment, Text, Tooltip } from '@/reuseable-components';
 
 interface Props {}

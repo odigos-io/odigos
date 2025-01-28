@@ -1,8 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
-import { OdigosLogoText } from '@/assets';
 import { FlexRow, hexPercentValues } from '@/styles';
 import { ToggleDarkMode } from '@/components/common';
+import { OdigosLogoText } from '@odigos/ui-components';
 import { NavigationButtonProps, NavigationButtons, Text } from '@/reuseable-components';
 
 interface Props {

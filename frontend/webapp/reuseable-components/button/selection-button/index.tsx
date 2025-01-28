@@ -1,15 +1,15 @@
 import React from 'react';
 import { Button } from '..';
-import { SVG } from '@/assets';
 import Image from 'next/image';
 import styled from 'styled-components';
 import { hexPercentValues } from '@/styles';
+import { Types } from '@odigos/ui-components';
 import { Badge, Text } from '@/reuseable-components';
 
 interface Props {
   label: string;
   onClick: () => void;
-  icon?: SVG;
+  icon?: Types.SVG;
   iconSrc?: string;
   badgeLabel?: string | number;
   badgeFilled?: boolean;

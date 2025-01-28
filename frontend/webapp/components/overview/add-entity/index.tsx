@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { PlusIcon } from '@/assets';
 import { useModalStore } from '@/store';
 import { getEntityIcon } from '@/utils';
 import { useOnClickOutside } from '@/hooks';
 import { hexPercentValues } from '@/styles';
+import { PlusIcon } from '@odigos/ui-components';
 import { Button, Text } from '@/reuseable-components';
 import styled, { css, useTheme } from 'styled-components';
 import { type DropdownOption, OVERVIEW_ENTITY_TYPES } from '@/types';

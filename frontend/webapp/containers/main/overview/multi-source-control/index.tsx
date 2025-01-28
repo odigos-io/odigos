@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { slide } from '@/styles';
-import { TrashIcon } from '@/assets';
 import { useAppStore } from '@/store';
 import { DeleteWarning } from '@/components';
+import { TrashIcon } from '@odigos/ui-components';
 import styled, { useTheme } from 'styled-components';
 import { useSourceCRUD, useTransition } from '@/hooks';
 import { type K8sActualSource, OVERVIEW_ENTITY_TYPES } from '@/types';

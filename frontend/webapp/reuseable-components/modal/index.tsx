@@ -1,8 +1,8 @@
 import React from 'react';
 import { Text } from '../text';
 import ReactDOM from 'react-dom';
-import { XIcon } from '@/assets';
 import styled from 'styled-components';
+import { XIcon } from '@odigos/ui-components';
 import { useKeyDown, useTransition } from '@/hooks';
 import { slide, Overlay, CenterThis, hexPercentValues } from '@/styles';
 

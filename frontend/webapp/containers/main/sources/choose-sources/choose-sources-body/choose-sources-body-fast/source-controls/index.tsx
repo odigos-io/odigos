@@ -1,6 +1,6 @@
 import React from 'react';
-import { SearchIcon } from '@/assets';
 import styled from 'styled-components';
+import { SearchIcon } from '@odigos/ui-components';
 import { type UseSourceFormDataResponse } from '@/hooks';
 import { Divider, Input, SectionTitle, Toggle } from '@/reuseable-components';
 

@@ -1,7 +1,7 @@
 import React from 'react';
-import { FolderIcon } from '@/assets';
 import styled from 'styled-components';
 import { hexPercentValues } from '@/styles';
+import { FolderIcon } from '@odigos/ui-components';
 import { type UseSourceFormDataResponse } from '@/hooks';
 import { Checkbox, FadeLoader, IconWrapped, NoDataFound, Text } from '@/reuseable-components';
 

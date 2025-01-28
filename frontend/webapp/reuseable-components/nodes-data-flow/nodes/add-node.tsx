@@ -1,9 +1,9 @@
 import React, { Fragment } from 'react';
-import { PlusIcon } from '@/assets';
 import styled from 'styled-components';
 import { usePendingStore } from '@/store';
-import { FlexColumn, FlexRow, hexPercentValues } from '@/styles';
+import { PlusIcon } from '@odigos/ui-components';
 import { FadeLoader, Text } from '@/reuseable-components';
+import { FlexColumn, FlexRow, hexPercentValues } from '@/styles';
 import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';
 import { NODE_TYPES, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES } from '@/types';
 

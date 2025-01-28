@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { FlexRow } from '@/styles';
 import styled from 'styled-components';
 import { useDarkModeStore } from '@/store';
-import { MoonIcon, SunIcon } from '@/assets';
+import { MoonIcon, SunIcon } from '@odigos/ui-components';
 
 interface Props {}
 
@@ -51,8 +51,8 @@ export const ToggleDarkMode: React.FC<Props> = () => {
 
   return (
     <Container onClick={() => handleToggle()}>
-      <SunIcon />
       <MoonIcon />
+      <SunIcon />
       <Background $darkMode={darkMode} />
     </Container>
   );
