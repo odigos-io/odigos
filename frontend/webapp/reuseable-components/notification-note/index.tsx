@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Text } from '../text';
+import { FlexRow } from '@/styles';
 import { Divider } from '../divider';
 import { getStatusIcon } from '@/utils';
 import { IconButton } from '../icon-button';
-import { XIcon } from '@odigos/ui-components';
-import { FlexRow, progress, slide } from '@/styles';
+import { Theme, XIcon } from '@odigos/ui-components';
 import styled, { useTheme } from 'styled-components';
 import { type Notification, NOTIFICATION_TYPE } from '@/types';
 
@@ -34,7 +34,7 @@ const Container = styled.div<{ $isLeaving?: boolean }>`
     overflow: hidden;
     padding-bottom: 1px;
     border-radius: 32px;
-    animation: ${({ $isLeaving }) => ($isLeaving ? slide.out['top'] : slide.in['top'])} ${TRANSITION_DURATION}ms forwards;
+    animation: ${({ $isLeaving }) => ($isLeaving ? Theme.slide.out['top'] : Theme.slide.in['top'])} ${TRANSITION_DURATION}ms forwards;
   }
 `;
 
@@ -47,7 +47,7 @@ const DurationAnimation = styled.div<{ $type: Props['type'] }>`
   height: 100%;
   border-radius: 32px;
   background-color: ${({ $type, theme }) => theme.text[$type]};
-  animation: ${progress.out} ${TOAST_DURATION - TRANSITION_DURATION}ms forwards;
+  animation: ${Theme.progress.out} ${TOAST_DURATION - TRANSITION_DURATION}ms forwards;
 `;
 
 const Content = styled.div<{ $type: Props['type'] }>`

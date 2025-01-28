@@ -1,10 +1,9 @@
 import React, { useMemo, useState } from 'react';
-import { slide } from '@/styles';
 import { useAppStore } from '@/store';
 import { DeleteWarning } from '@/components';
-import { TrashIcon } from '@odigos/ui-components';
 import styled, { useTheme } from 'styled-components';
 import { useSourceCRUD, useTransition } from '@/hooks';
+import { Theme, TrashIcon } from '@odigos/ui-components';
 import { type K8sActualSource, OVERVIEW_ENTITY_TYPES } from '@/types';
 import { Badge, Button, Divider, Text } from '@/reuseable-components';
 
@@ -26,8 +25,8 @@ const Container = styled.div`
 export const MultiSourceControl = () => {
   const Transition = useTransition({
     container: Container,
-    animateIn: slide.in['center'],
-    animateOut: slide.out['center'],
+    animateIn: Theme.slide.in['center'],
+    animateOut: Theme.slide.out['center'],
   });
 
   const theme = useTheme();

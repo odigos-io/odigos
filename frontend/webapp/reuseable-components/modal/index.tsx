@@ -2,9 +2,9 @@ import React from 'react';
 import { Text } from '../text';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components';
+import { Overlay, CenterThis } from '@/styles';
 import { useKeyDown, useTransition } from '@/hooks';
 import { Theme, XIcon } from '@odigos/ui-components';
-import { slide, Overlay, CenterThis } from '@/styles';
 
 interface Props {
   isOpen: boolean;
@@ -88,8 +88,8 @@ export const Modal: React.FC<Props> = ({ isOpen, noOverlay, header, actionCompon
 
   const Transition = useTransition({
     container: Container,
-    animateIn: slide.in['center'],
-    animateOut: slide.out['center'],
+    animateIn: Theme.slide.in['center'],
+    animateOut: Theme.slide.out['center'],
   });
 
   if (!isOpen) return null;

@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { Overlay } from '@/styles';
 import styled from 'styled-components';
-import { slide, Overlay } from '@/styles';
 import { Theme } from '@odigos/ui-components';
 import { useKeyDown, useTransition } from '@/hooks';
 
@@ -34,8 +34,8 @@ export const Drawer: React.FC<Props> = ({ isOpen, onClose, position = 'right', w
 
   const Transition = useTransition({
     container: Container,
-    animateIn: slide.in[position],
-    animateOut: slide.out[position],
+    animateIn: Theme.slide.in[position],
+    animateOut: Theme.slide.out[position],
   });
 
   if (!isOpen) return null;
