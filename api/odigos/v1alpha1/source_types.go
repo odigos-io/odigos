@@ -53,6 +53,12 @@ type SourceSpec struct {
 	// DisableInstrumentation excludes this workload from auto-instrumentation.
 	// +kubebuilder:validation:Optional
 	DisableInstrumentation bool `json:"disableInstrumentation,omitempty"`
+	// OtelServiceName determines the "service.name" resource attribute which will be reported by the instrumentations of this source.
+	// If not set, the workload name will be used.
+	// It is not valid for namespace sources.
+	// +kubebuilder:validation:Optional
+	// +optional
+	OtelServiceName string `json:"otelServiceName,omitempty"`
 }
 
 type SourceStatus struct {

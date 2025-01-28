@@ -1,12 +1,12 @@
 import React, { Fragment, useId, useMemo } from 'react';
 import { Text } from '../text';
 import { FlexRow } from '@/styles';
-import theme from '@/styles/theme';
 import { Tooltip } from '../tooltip';
-import styled from 'styled-components';
+import { NOTIFICATION_TYPE } from '@/types';
+import styled, { useTheme } from 'styled-components';
 import { Highlight, themes as prismThemes, type Token } from 'prism-react-renderer';
 import { flattenObjectKeys, getStatusIcon, removeEmptyValuesFromObject, safeJsonParse, safeJsonStringify } from '@/utils';
-import { NOTIFICATION_TYPE } from '@/types';
+import { useDarkModeStore } from '@/store';
 
 interface Props {
   language: string;
@@ -47,6 +47,8 @@ const CodeLineToken = styled.span<{ $noWrap?: boolean }>`
 `;
 
 export const Code: React.FC<Props> = ({ language, code, flatten, pretty }) => {
+  const { darkMode } = useDarkModeStore();
+
   const str = useMemo(() => {
     if (language === 'json') {
       const obj = safeJsonParse(code, {});
@@ -64,7 +66,7 @@ export const Code: React.FC<Props> = ({ language, code, flatten, pretty }) => {
   }
 
   return (
-    <Highlight theme={prismThemes.palenight} language={language} code={str}>
+    <Highlight theme={darkMode ? prismThemes.palenight : prismThemes.vsLight} language={language} code={str}>
       {({ getLineProps, getTokenProps, tokens }) => (
         <pre>
           {tokens.map((line, i) => (
@@ -129,6 +131,9 @@ const getComponentsFromPropertyString = (propertyString: string) => {
 };
 
 const PrettyJsonCode: React.FC<{ str: string }> = ({ str }) => {
+  const theme = useTheme();
+  const { darkMode } = useDarkModeStore();
+
   const renderEmptyRows = (count: number = 2) => {
     const rows = new Array(count).fill((props: React.HTMLAttributes<HTMLTableRowElement>) => (
       <TableRow {...props}>
@@ -147,7 +152,7 @@ const PrettyJsonCode: React.FC<{ str: string }> = ({ str }) => {
   };
 
   return (
-    <Highlight theme={prismThemes.palenight} language='json' code={str}>
+    <Highlight theme={darkMode ? prismThemes.palenight : prismThemes.vsLight} language='json' code={str}>
       {({ getLineProps, getTokenProps, tokens }) => (
         <Table>
           <TableBody>

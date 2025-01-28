@@ -1,44 +1,35 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: "5"
-  generation: 7
+  generation: 5
   name: coupon
   namespace: default
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: "6" # should be only one updated right now
-  generation: 8
+  # should be only one updated right now
+  generation: 6
   name: frontend
   namespace: default
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: "5"
-  generation: 7
+  generation: 5
   name: inventory
   namespace: default
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: "5"
-  generation: 7
+  generation: 5
   name: membership
   namespace: default
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: "5"
-  generation: 7
+  generation: 5
   name: pricing
   namespace: default

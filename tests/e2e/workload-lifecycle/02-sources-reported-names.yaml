@@ -1,0 +1,197 @@
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: nodejs-minimum-version
+  namespace: default
+  labels:
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: nodejs-minimum-version
+    namespace: default
+    kind: Deployment
+  otelServiceName: nodejs-minimum-version-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: nodejs-latest-version
+  namespace: default
+  labels:
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: nodejs-latest-version
+    namespace: default
+    kind: Deployment
+  otelServiceName: nodejs-latest-version-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: nodejs-dockerfile-env
+  namespace: default
+  labels:
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: nodejs-dockerfile-env
+    namespace: default
+    kind: Deployment
+  otelServiceName: nodejs-dockerfile-env-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: nodejs-manifest-env
+  namespace: default
+  labels:
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: nodejs-manifest-env
+    namespace: default
+    kind: Deployment
+  otelServiceName: nodejs-manifest-env-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: java-supported-version
+  namespace: default
+  labels:
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: java-supported-version
+    namespace: default
+    kind: Deployment
+  otelServiceName: java-supported-version-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: java-azul
+  namespace: default
+  labels:
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: java-azul
+    namespace: default
+    kind: Deployment
+  otelServiceName: java-azul-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: java-supported-docker-env
+  namespace: default
+  labels:
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: java-supported-docker-env
+    namespace: default
+    kind: Deployment
+  otelServiceName: java-supported-docker-env-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: java-supported-manifest-env
+  namespace: default
+  labels:
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: java-supported-manifest-env
+    namespace: default
+    kind: Deployment
+  otelServiceName: java-supported-manifest-env-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: java-latest-version
+  namespace: default
+  labels:
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: java-latest-version
+    namespace: default
+    kind: Deployment
+  otelServiceName: java-latest-version-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: java-old-version
+  namespace: default
+  labels:
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: java-old-version
+    namespace: default
+    kind: Deployment
+  otelServiceName: java-old-version-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: python-latest-version
+  namespace: default
+  labels:
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: python-latest-version
+    namespace: default
+    kind: Deployment
+  otelServiceName: python-latest-version-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: python-alpine
+  namespace: default
+  labels:
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: python-alpine
+    namespace: default
+    kind: Deployment
+  otelServiceName: python-alpine-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: python-not-supported
+  namespace: default
+  labels:
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: python-not-supported
+    namespace: default
+    kind: Deployment
+  otelServiceName: python-not-supported-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: python-min-version
+  namespace: default
+  labels:
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: python-min-version
+    namespace: default
+    kind: Deployment
+  otelServiceName: python-min-version-reported
+---
+

@@ -1,8 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { useOnClickOutside } from '@/hooks';
+import { hexPercentValues } from '@/styles';
 import type { DropdownOption } from '@/types';
-import styled, { css } from 'styled-components';
-import theme, { hexPercentValues } from '@/styles/theme';
+import styled, { css, useTheme } from 'styled-components';
 import { CheckIcon, CrossIcon, SearchIcon } from '@/assets';
 import { Badge, Checkbox, Divider, ExtendIcon, FieldError, FieldLabel, Input, NoDataFound, Text } from '@/reuseable-components';
 
@@ -43,8 +43,8 @@ const DropdownHeader = styled.div<{ $isOpen: boolean; $isMulti?: boolean; $hasSe
   ${({ $isOpen, $isMulti, theme }) =>
     $isOpen && !$isMulti
       ? css`
-          border: 1px solid ${theme.colors.white_opacity['40']};
-          background: ${theme.colors.white_opacity['008']};
+          border: 1px solid ${theme.text.grey};
+          background: ${theme.colors.dropdown_bg_2};
         `
       : css`
           border: 1px solid ${theme.colors.border};
@@ -137,7 +137,7 @@ const MultiLabel = styled(Text)`
   align-items: center;
   gap: 2px;
   padding: 4px 12px;
-  background: ${({ theme }) => theme.colors.white_opacity['008']};
+  background: ${({ theme }) => theme.colors.dropdown_bg_2};
   border-radius: 360px;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -156,6 +156,8 @@ const DropdownPlaceholder: React.FC<{
   placeholder: DropdownProps['placeholder'];
   onDeselect: DropdownProps['onDeselect'];
 }> = ({ value, placeholder, onDeselect }) => {
+  const theme = useTheme();
+
   if (Array.isArray(value)) {
     return !!value.length ? (
       <MultiLabelWrapper>
@@ -260,6 +262,7 @@ const DropdownListItem: React.FC<{
   onSelect: DropdownProps['onSelect'];
   onDeselect: DropdownProps['onDeselect'];
 }> = ({ option, value, isMulti, onSelect, onDeselect }) => {
+  const theme = useTheme();
   const isSelected = Array.isArray(value) ? !!value?.find((s) => s.id === option.id) : value?.id === option.id;
 
   if (isMulti) {

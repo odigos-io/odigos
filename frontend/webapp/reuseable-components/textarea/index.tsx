@@ -17,18 +17,16 @@ const Container = styled.div`
 
 const InputWrapper = styled.div<{ $disabled?: boolean; $hasError?: boolean; $isActive?: boolean }>`
   width: 100%;
-
   display: flex;
   align-items: center;
   gap: 12px;
-
   transition: border-color 0.3s;
   border-radius: 24px;
-  border: 1px solid rgba(249, 249, 249, 0.24);
+  border: 1px solid ${({ theme }) => theme.colors.border};
   ${({ $disabled }) =>
     $disabled &&
     css`
-      background-color: #555;
+      background-color: ${({ theme }) => theme.colors.border};
       cursor: not-allowed;
       opacity: 0.6;
     `}
@@ -58,14 +56,14 @@ const StyledTextArea = styled.textarea`
   border: none;
   outline: none;
   background: none;
-  color: ${({ theme }) => theme.colors.text};
+  color: ${({ theme }) => theme.text.secondary};
   font-size: 14px;
   padding: 12px 20px 0;
   font-family: ${({ theme }) => theme.font_family.primary};
   font-weight: 300;
   line-height: 22px;
   &::placeholder {
-    color: ${({ theme }) => theme.colors.text};
+    color: ${({ theme }) => theme.text.secondary};
     font-family: ${({ theme }) => theme.font_family.primary};
     opacity: 0.4;
     font-size: 14px;
@@ -74,7 +72,7 @@ const StyledTextArea = styled.textarea`
   }
 
   &:disabled {
-    background-color: #555;
+    background-color: ${({ theme }) => theme.colors.border};
     cursor: not-allowed;
   }
 `;

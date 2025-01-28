@@ -9,6 +9,10 @@
   scrollbar-width: thin;
 }
 
+svg {
+  transition: all 0.3s;
+}
+
 /*
   The input styles below are to override the browser ":-webkit-autofill" default style declarations.
   The issue is when someone autocompletes an input field, the browser will apply its own styles (and the browser applies "!important" preventing direct overrides).
@@ -23,9 +27,6 @@ input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
+  -webkit-transition: all 50000s ease-in-out 0s;
   transition: all 50000s ease-in-out 0s;
-}
-
-svg {
-  transition: all 0.3s;
 }
