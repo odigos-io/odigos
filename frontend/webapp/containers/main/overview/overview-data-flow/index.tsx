@@ -64,7 +64,6 @@ export default function OverviewDataFlowContainer() {
     () =>
       buildDestinationNodes({
         loading: destLoad,
-        // @ts-ignore
         entities: filteredDestinations,
         unfilteredCount: destinations.length,
         positions,

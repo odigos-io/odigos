@@ -12,43 +12,6 @@ interface UseActionCrudParams {
   onError?: (type: string) => void;
 }
 
-const data: ComputePlatform = {
-  computePlatform: {
-    actions: [
-      {
-        id: 'aci-z477w',
-        // @ts-ignore
-        type: 'AddClusterInfo',
-        spec: '{"actionName":"Action_01","signals":["LOGS","METRICS","TRACES"],"clusterAttributes":[{"attributeName":"hi","attributeStringValue":"mom"},{"attributeName":"hi","attributeStringValue":"dad"}]}',
-        conditions: [
-          {
-            status: 'True',
-            type: 'TransformedToProcessor',
-            reason: 'ProcessorCreated',
-            message: 'The action has been reconciled to a processor resource.',
-            lastTransitionTime: '2025-01-21T14:44:15+02:00',
-          },
-        ],
-      },
-      {
-        id: 'pi-v9dc8',
-        // @ts-ignore
-        type: 'PiiMasking',
-        spec: '{"actionName":"Action_02","signals":["TRACES"],"piiCategories":["CREDIT_CARD"]}',
-        conditions: [
-          {
-            status: 'True',
-            type: 'TransformedToProcessor',
-            reason: 'ProcessorCreated',
-            message: 'The action has been reconciled to a processor resource.',
-            lastTransitionTime: '2025-01-21T14:44:02+02:00',
-          },
-        ],
-      },
-    ],
-  },
-};
-
 export const useActionCRUD = (params?: UseActionCrudParams) => {
   const filters = useFilterStore();
   const { data: config } = useConfig();
@@ -72,14 +35,14 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
 
   const handleComplete = (actionType: string, message: string, id?: string) => {
     notifyUser(NOTIFICATION_TYPE.SUCCESS, actionType, message, id);
-    // refetch();
+    refetch();
     params?.onSuccess?.(actionType);
   };
 
   // Fetch data
-  // const { data, loading, refetch } = useQuery<ComputePlatform>(GET_ACTIONS, {
-  //   onError: (error) => handleError(error.name || ACTION.FETCH, error.cause?.message || error.message),
-  // });
+  const { data, loading, refetch } = useQuery<ComputePlatform>(GET_ACTIONS, {
+    onError: (error) => handleError(error.name || ACTION.FETCH, error.cause?.message || error.message),
+  });
 
   // Map fetched data
   const mapped = useMemo(() => {
@@ -122,10 +85,10 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
   });
 
   return {
-    loading: cState.loading || uState.loading || dState.loading, // loading || cState.loading || uState.loading || dState.loading,
+    loading: loading || cState.loading || uState.loading || dState.loading,
     actions: mapped,
     filteredActions: filtered,
-    refetchActions: () => {}, // refetch,
+    refetchActions: refetch,
 
     createAction: (action: ActionInput) => {
       if (config?.readonly) {

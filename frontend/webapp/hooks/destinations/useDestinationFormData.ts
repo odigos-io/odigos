@@ -74,102 +74,6 @@ const buildFormDynamicFields = (fields: DestinationDetailsField[]): DynamicField
     .filter((field): field is DynamicField => field !== undefined);
 };
 
-const destinationTypeDetails = {
-  fields: [
-    {
-      name: 'CLICKHOUSE_ENDPOINT',
-      displayName: 'Endpoint',
-      componentType: 'input',
-      componentProperties:
-        '{"placeholder":"http://host:port","required":true,"tooltip":"The ClickHouse endpoint is the URL where the ClickHouse server is listening for incoming connections.","type":"text"}',
-      secret: false,
-      initialValue: '',
-      renderCondition: [],
-      hideFromReadData: [],
-      customReadDataLabels: [],
-    },
-    {
-      name: 'CLICKHOUSE_USERNAME',
-      displayName: 'Username',
-      componentType: 'input',
-      componentProperties: '{"required":false,"tooltip":"If Clickhouse Authentication is used, provide the username","type":"text"}',
-      secret: false,
-      initialValue: '',
-      renderCondition: [],
-      hideFromReadData: [],
-      customReadDataLabels: [],
-    },
-    {
-      name: 'CLICKHOUSE_PASSWORD',
-      displayName: 'Password',
-      componentType: 'input',
-      componentProperties: '{"required":false,"tooltip":"If Clickhouse Authentication is used, provide the password","type":"password"}',
-      secret: true,
-      initialValue: '',
-      renderCondition: [],
-      hideFromReadData: [],
-      customReadDataLabels: [],
-    },
-    {
-      name: 'CLICKHOUSE_CREATE_SCHEME',
-      displayName: 'Create Scheme',
-      componentType: 'checkbox',
-      componentProperties:
-        '{"required":true,"tooltip":"Should the destination create the schema for you? Set to `false` if you manage your own schema, or `true` to have Odigos create the schema for you"}',
-      secret: false,
-      initialValue: 'true',
-      renderCondition: [],
-      hideFromReadData: [],
-      customReadDataLabels: [],
-    },
-    {
-      name: 'CLICKHOUSE_DATABASE_NAME',
-      displayName: 'Database Name',
-      componentType: 'input',
-      componentProperties:
-        '{"required":true,"tooltip":"The name of the Clickhouse Database where the telemetry data will be stored. The Database will not be created when not exists, so make sure you have created it before","type":"text"}',
-      secret: false,
-      initialValue: 'otel',
-      renderCondition: [],
-      hideFromReadData: [],
-      customReadDataLabels: [],
-    },
-    {
-      name: 'CLICKHOUSE_TRACES_TABLE',
-      displayName: 'Traces Table',
-      componentType: 'input',
-      componentProperties: '{"required":true,"tooltip":"Name of the ClickHouse Table to use for storing trace spans. This name should be used in span queries","type":"text"}',
-      secret: false,
-      initialValue: 'otel_traces',
-      renderCondition: [],
-      hideFromReadData: [],
-      customReadDataLabels: [],
-    },
-    {
-      name: 'CLICKHOUSE_METRICS_TABLE',
-      displayName: 'Metrics Table',
-      componentType: 'input',
-      componentProperties: '{"required":true,"tooltip":"Name of the ClickHouse Table to use for storing metrics. This name should be used in metric queries","type":"text"}',
-      secret: false,
-      initialValue: 'otel_metrics',
-      renderCondition: [],
-      hideFromReadData: [],
-      customReadDataLabels: [],
-    },
-    {
-      name: 'CLICKHOUSE_LOGS_TABLE',
-      displayName: 'Logs Table',
-      componentType: 'input',
-      componentProperties: '{"required":true,"tooltip":"Name of the ClickHouse Table to use for storing logs. This name should be used in log queries","type":"text"}',
-      secret: false,
-      initialValue: 'otel_logs',
-      renderCondition: [],
-      hideFromReadData: [],
-      customReadDataLabels: [],
-    },
-  ],
-};
-
 export function useDestinationFormData(params?: { destinationType?: string; supportedSignals?: SupportedDestinationSignals; preLoadedFields?: string | DestinationTypeItem['fields'] }) {
   const { destinationType, supportedSignals, preLoadedFields } = params || {};
 
@@ -179,17 +83,17 @@ export function useDestinationFormData(params?: { destinationType?: string; supp
   const [dynamicFields, setDynamicFields] = useState<DynamicField[]>([]);
 
   const t = destinationType || formData.type;
-  // const { data: { destinationTypeDetails } = {} } = useQuery<DestinationDetailsResponse>(GET_DESTINATION_TYPE_DETAILS, {
-  //   variables: { type: t },
-  //   skip: !t,
-  //   onError: (error) =>
-  //     addNotification({
-  //       type: NOTIFICATION_TYPE.ERROR,
-  //       title: error.name || ACTION.FETCH,
-  //       message: error.cause?.message || error.message,
-  //       crdType: OVERVIEW_ENTITY_TYPES.DESTINATION,
-  //     }),
-  // });
+  const { data: { destinationTypeDetails } = {} } = useQuery<DestinationDetailsResponse>(GET_DESTINATION_TYPE_DETAILS, {
+    variables: { type: t },
+    skip: !t,
+    onError: (error) =>
+      addNotification({
+        type: NOTIFICATION_TYPE.ERROR,
+        title: error.name || ACTION.FETCH,
+        message: error.cause?.message || error.message,
+        crdType: OVERVIEW_ENTITY_TYPES.DESTINATION,
+      }),
+  });
 
   useEffect(() => {
     if (destinationTypeDetails) {

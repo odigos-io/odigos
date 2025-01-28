@@ -33,16 +33,11 @@ export const PotentialDestinationsList: React.FC<Props> = ({ setSelectedItems })
       ) : (
         data.map((item, idx) => (
           <DataTab
-            // @ts-ignore
             key={`select-potential-destination-${item.type}-${idx}`}
-            // @ts-ignore
             data-id={`select-potential-destination-${item.type}`}
-            // @ts-ignore
             title={item.displayName}
-            // @ts-ignore
             iconSrc={item.imageUrl}
             hoverText='Select'
-            // @ts-ignore
             monitors={Object.keys(item.supportedSignals).filter((signal: keyof SupportedSignals) => item.supportedSignals[signal].supported)}
             monitorsWithLabels
             onClick={() => setSelectedItems(item)}

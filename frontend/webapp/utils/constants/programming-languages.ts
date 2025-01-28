@@ -22,8 +22,7 @@ export const getMainContainerLanguage = (source: K8sActualSource): WORKLOAD_PROG
   const { numberOfInstances, containers } = source;
 
   if (!containers) {
-    // @ts-ignore
-    if (numberOfInstances > 0) {
+    if (!!numberOfInstances && numberOfInstances > 0) {
       return WORKLOAD_PROGRAMMING_LANGUAGES.PROCESSING;
     } else {
       return WORKLOAD_PROGRAMMING_LANGUAGES.NO_RUNNING_PODS;

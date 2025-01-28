@@ -36,43 +36,43 @@ const checkIfConfigured = (configuredDest: IAppState['configuredDestinations'][0
 
 export const usePotentialDestinations = () => {
   const { configuredDestinations } = useAppStore();
-  // const { data: { destinationTypes } = {} } = useQuery<GetDestinationTypesResponse>(GET_DESTINATION_TYPE);
-  // const { loading, error, data: { potentialDestinations } = {} } = useQuery<GetPotentialDestinationsData>(GET_POTENTIAL_DESTINATIONS);
+  const { data: { destinationTypes } = {} } = useQuery<GetDestinationTypesResponse>(GET_DESTINATION_TYPE);
+  const { loading, error, data: { potentialDestinations } = {} } = useQuery<GetPotentialDestinationsData>(GET_POTENTIAL_DESTINATIONS);
 
-  // const mappedPotentialDestinations = useMemo(() => {
-  //   if (!destinationTypes || !potentialDestinations) return [];
+  const mappedPotentialDestinations = useMemo(() => {
+    if (!destinationTypes || !potentialDestinations) return [];
 
-  //   // Create a deep copy of destination types to manipulate
-  //   const categories: GetDestinationTypesResponse['destinationTypes']['categories'] = JSON.parse(JSON.stringify(destinationTypes.categories));
+    // Create a deep copy of destination types to manipulate
+    const categories: GetDestinationTypesResponse['destinationTypes']['categories'] = JSON.parse(JSON.stringify(destinationTypes.categories));
 
-  //   // Map over the potential destinations
-  //   return potentialDestinations
-  //     .map((pd) => {
-  //       for (const category of categories) {
-  //         const autoFilledFields = safeJsonParse<{ [key: string]: string }>(pd.fields, {});
-  //         const alreadyConfigured = !!configuredDestinations.find((cd) => checkIfConfigured(cd, pd, autoFilledFields));
+    // Map over the potential destinations
+    return potentialDestinations
+      .map((pd) => {
+        for (const category of categories) {
+          const autoFilledFields = safeJsonParse<{ [key: string]: string }>(pd.fields, {});
+          const alreadyConfigured = !!configuredDestinations.find((cd) => checkIfConfigured(cd, pd, autoFilledFields));
 
-  //         if (!alreadyConfigured) {
-  //           const idx = category.items.findIndex((item) => item.type === pd.type);
+          if (!alreadyConfigured) {
+            const idx = category.items.findIndex((item) => item.type === pd.type);
 
-  //           if (idx !== -1) {
-  //             return {
-  //               // Spread the matched destination type data into the potential destination
-  //               ...category.items[idx],
-  //               fields: autoFilledFields,
-  //             };
-  //           }
-  //         }
-  //       }
+            if (idx !== -1) {
+              return {
+                // Spread the matched destination type data into the potential destination
+                ...category.items[idx],
+                fields: autoFilledFields,
+              };
+            }
+          }
+        }
 
-  //       return null;
-  //     })
-  //     .filter((pd) => !!pd);
-  // }, [configuredDestinations, destinationTypes, potentialDestinations]);
+        return null;
+      })
+      .filter((pd) => !!pd);
+  }, [configuredDestinations, destinationTypes, potentialDestinations]);
 
   return {
-    loading: false,
-    error: undefined,
-    data: [], // mappedPotentialDestinations,
+    loading,
+    error,
+    data: mappedPotentialDestinations,
   };
 };

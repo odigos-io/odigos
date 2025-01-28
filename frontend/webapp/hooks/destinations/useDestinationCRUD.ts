@@ -12,46 +12,6 @@ interface Params {
   onError?: (type: string) => void;
 }
 
-const data = {
-  computePlatform: {
-    destinations: [
-      {
-        id: 'odigos.io.dest.jaeger-6gffq',
-        name: '',
-        fields: '{"JAEGER_TLS_ENABLED":"false","JAEGER_URL":"jaeger.tracing:4317"}',
-        exportedSignals: {
-          logs: false,
-          metrics: false,
-          traces: true,
-        },
-        destinationType: {
-          type: 'jaeger',
-          imageUrl: 'https:/d15jtxgb40qetw.cloudfront.net/jaeger.svg',
-          displayName: 'Jaeger',
-          supportedSignals: {
-            logs: {
-              supported: false,
-            },
-            metrics: {
-              supported: false,
-            },
-            traces: {
-              supported: true,
-            },
-          },
-        },
-        conditions: [
-          {
-            type: 'DestinationConfigured',
-            status: 'True',
-            message: 'Destination successfully transformed to otelcol configuration',
-          },
-        ],
-      },
-    ],
-  },
-};
-
 export const useDestinationCRUD = (params?: Params) => {
   const filters = useFilterStore();
   const { data: config } = useConfig();
@@ -79,9 +39,9 @@ export const useDestinationCRUD = (params?: Params) => {
   };
 
   // Fetch data
-  // const { data, loading, refetch } = useQuery<ComputePlatform>(GET_DESTINATIONS, {
-  //   onError: (error) => handleError(error.name || ACTION.FETCH, error.cause?.message || error.message),
-  // });
+  const { data, loading, refetch } = useQuery<ComputePlatform>(GET_DESTINATIONS, {
+    onError: (error) => handleError(error.name || ACTION.FETCH, error.cause?.message || error.message),
+  });
 
   // Map fetched data
   const mapped = useMemo(() => {
@@ -135,10 +95,10 @@ export const useDestinationCRUD = (params?: Params) => {
   });
 
   return {
-    loading: cState.loading || uState.loading || dState.loading, // loading || cState.loading || uState.loading || dState.loading,
+    loading: loading || cState.loading || uState.loading || dState.loading,
     destinations: mapped,
     filteredDestinations: filtered,
-    refetchDestinations: () => {}, // refetch,
+    refetchDestinations: refetch,
 
     createDestination: (destination: DestinationInput) => {
       if (config?.readonly) {

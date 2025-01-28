@@ -12,12 +12,6 @@ interface Params {
   onError?: (type: string) => void;
 }
 
-const data: ComputePlatform = {
-  computePlatform: {
-    instrumentationRules: [],
-  },
-};
-
 export const useInstrumentationRuleCRUD = (params?: Params) => {
   const { data: config } = useConfig();
   const { addNotification, removeNotifications } = useNotificationStore();
@@ -45,9 +39,9 @@ export const useInstrumentationRuleCRUD = (params?: Params) => {
   };
 
   // Fetch data
-  // const { data, loading, refetch } = useQuery<ComputePlatform>(GET_INSTRUMENTATION_RULES, {
-  //   onError: (error) => handleError(error.name || ACTION.FETCH, error.cause?.message || error.message),
-  // });
+  const { data, loading, refetch } = useQuery<ComputePlatform>(GET_INSTRUMENTATION_RULES, {
+    onError: (error) => handleError(error.name || ACTION.FETCH, error.cause?.message || error.message),
+  });
 
   // Map fetched data
   const mapped = useMemo(() => {
@@ -86,10 +80,10 @@ export const useInstrumentationRuleCRUD = (params?: Params) => {
   });
 
   return {
-    loading: cState.loading || uState.loading || dState.loading, // loading || cState.loading || uState.loading || dState.loading,
+    loading: loading || cState.loading || uState.loading || dState.loading,
     instrumentationRules: mapped,
     filteredInstrumentationRules: filtered,
-    refetchInstrumentationRules: () => {}, // refetch,
+    refetchInstrumentationRules: refetch,
 
     createInstrumentationRule: (instrumentationRule: InstrumentationRuleInput) => {
       if (config?.readonly) {
