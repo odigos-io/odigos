@@ -48,6 +48,10 @@ var proCmd = &cobra.Command{
 			fmt.Println("\u001B[32mSUCCESS:\u001B[0m Token updated successfully")
 		}
 	},
+	Example: `  
+# Renew the on-premises token for Odigos,
+odigos pro --onprem-token ${ODIGOS_TOKEN}
+`,
 }
 
 func executeRemoteUpdateToken(ctx context.Context, client *kube.Client, namespace string, onPremToken string) error {
