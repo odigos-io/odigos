@@ -55,8 +55,6 @@ metadata:
   namespace: default
   labels:
     app: nodejs-minimum-version
-  annotations:
-    odigos.io/reported-name: nodejs-minimum-version-reported
 spec:
   selector:
     matchLabels:
@@ -82,8 +80,6 @@ metadata:
   namespace: default
   labels:
     app: nodejs-latest-version
-  annotations:
-    odigos.io/reported-name: nodejs-latest-version-reported
 spec:
   selector:
     matchLabels:
@@ -109,8 +105,6 @@ metadata:
   namespace: default
   labels:
     app: nodejs-dockerfile-env
-  annotations:
-    odigos.io/reported-name: nodejs-dockerfile-env-reported
 spec:
   selector:
     matchLabels:
@@ -136,8 +130,6 @@ metadata:
   namespace: default
   labels:
     app: nodejs-manifest-env
-  annotations:
-    odigos.io/reported-name: nodejs-manifest-env-reported
 spec:
   selector:
     matchLabels:
@@ -191,8 +183,6 @@ metadata:
   namespace: default
   labels:
     app: java-supported-version
-  annotations:
-    odigos.io/reported-name: java-supported-version-reported
 spec:
   selector:
     matchLabels:
@@ -222,8 +212,6 @@ metadata:
   namespace: default
   labels:
     app: java-azul
-  annotations:
-    odigos.io/reported-name: java-azul-reported
 spec:
   selector:
     matchLabels:
@@ -253,8 +241,6 @@ metadata:
   namespace: default
   labels:
     app: java-supported-docker-env
-  annotations:
-    odigos.io/reported-name: java-supported-docker-env-reported
 spec:
   selector:
     matchLabels:
@@ -285,8 +271,6 @@ metadata:
   namespace: default
   labels:
     app: java-supported-manifest-env
-  annotations:
-    odigos.io/reported-name: java-supported-manifest-env-reported
 spec:
   selector:
     matchLabels:
@@ -317,8 +301,6 @@ metadata:
   namespace: default
   labels:
     app: java-latest-version
-  annotations:
-    odigos.io/reported-name: java-latest-version-reported
 spec:
   selector:
     matchLabels:
@@ -349,8 +331,6 @@ metadata:
   namespace: default
   labels:
     app: java-old-version
-  annotations:
-    odigos.io/reported-name: java-old-version-reported
 spec:
   selector:
     matchLabels:
@@ -380,8 +360,6 @@ metadata:
   namespace: default
   labels:
     app: python-latest-version
-  annotations:
-    odigos.io/reported-name: python-latest-version-reported
 spec:
   selector:
     matchLabels:
@@ -419,8 +397,6 @@ metadata:
   namespace: default
   labels:
     app: python-alpine
-  annotations:
-    odigos.io/reported-name: python-alpine-reported
 spec:
   selector:
     matchLabels:
@@ -458,8 +434,6 @@ metadata:
   namespace: default
   labels:
     app: python-not-supported
-  annotations:
-    odigos.io/reported-name: python-not-supported-reported
 spec:
   selector:
     matchLabels:
@@ -497,8 +471,6 @@ metadata:
   namespace: default
   labels:
     app: python-min-version
-  annotations:
-    odigos.io/reported-name: python-min-version-reported
 spec:
   selector:
     matchLabels:
