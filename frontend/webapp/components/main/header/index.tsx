@@ -1,12 +1,11 @@
 import React from 'react';
-import theme from '@/styles/theme';
-import { FlexRow } from '@/styles';
 import { useConfig } from '@/hooks';
-import styled from 'styled-components';
 import { PlatformTitle } from './cp-title';
 import { FORM_ALERTS, SLACK_LINK } from '@/utils';
-import { NotificationManager } from '@/components';
+import styled, { useTheme } from 'styled-components';
+import { FlexRow, hexPercentValues } from '@/styles';
 import { NOTIFICATION_TYPE, PlatformTypes } from '@/types';
+import { NotificationManager, ToggleDarkMode } from '@/components';
 import { OdigosLogoText, SlackLogo, TerminalIcon } from '@/assets';
 import { DRAWER_OTHER_TYPES, useDrawerStore, useStatusStore } from '@/store';
 import { ConnectionStatus, IconButton, Tooltip } from '@/reuseable-components';
@@ -17,7 +16,7 @@ const HeaderContainer = styled(FlexRow)`
   width: 100%;
   padding: 12px 0;
   background-color: ${({ theme }) => theme.colors.dark_grey};
-  border-bottom: 1px solid rgba(249, 249, 249, 0.16);
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border + hexPercentValues['050']};
 `;
 
 const AlignLeft = styled(FlexRow)`
@@ -33,6 +32,7 @@ const AlignRight = styled(FlexRow)`
 `;
 
 export const MainHeader: React.FC<MainHeaderProps> = () => {
+  const theme = useTheme();
   const { data: config } = useConfig();
   const { setSelectedItem } = useDrawerStore();
   const { status, title, message } = useStatusStore();
@@ -54,12 +54,12 @@ export const MainHeader: React.FC<MainHeaderProps> = () => {
       </AlignLeft>
 
       <AlignRight>
+        <ToggleDarkMode />
+        <NotificationManager />
+
         <IconButton onClick={handleClickCli} tooltip='Odigos CLI' withPing pingColor={theme.colors.majestic_blue}>
           <TerminalIcon size={18} />
         </IconButton>
-
-        <NotificationManager />
-
         <IconButton onClick={handleClickSlack} tooltip='Join our Slack community'>
           <SlackLogo />
         </IconButton>

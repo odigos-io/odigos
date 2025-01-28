@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import theme from '@/styles/theme';
-import styled from 'styled-components';
+import { hexPercentValues } from '@/styles';
+import styled, { useTheme } from 'styled-components';
 import { BACKEND_BOOLEAN, getStatusIcon } from '@/utils';
 import { NOTIFICATION_TYPE, type Condition } from '@/types';
 import { ExtendIcon, FadeLoader, Text } from '@/reuseable-components';
@@ -11,10 +11,10 @@ interface Props {
 
 const Container = styled.div<{ $hasErrors: boolean }>`
   border-radius: 24px;
-  background-color: ${({ theme, $hasErrors }) => ($hasErrors ? theme.colors.darkest_red : theme.colors.white_opacity['004'])};
+  background-color: ${({ theme, $hasErrors }) => ($hasErrors ? theme.text.error + hexPercentValues['010'] : theme.colors.secondary + hexPercentValues['005'])};
   cursor: pointer;
   &:hover {
-    background-color: ${({ theme, $hasErrors }) => ($hasErrors ? theme.colors.error : theme.colors.white_opacity['008'])};
+    background-color: ${({ theme, $hasErrors }) => ($hasErrors ? theme.text.error + hexPercentValues['020'] : theme.colors.secondary + hexPercentValues['010'])};
   }
   transition: background 0.3s;
 `;
@@ -40,6 +40,7 @@ const Row = styled.div`
 `;
 
 export const ConditionDetails: React.FC<Props> = ({ conditions = [] }) => {
+  const theme = useTheme();
   const [extend, setExtend] = useState(false);
 
   const loading = useMemo(() => !conditions.length, [conditions]);
