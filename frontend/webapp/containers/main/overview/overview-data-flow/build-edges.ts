@@ -1,11 +1,11 @@
-import { ITheme } from '@/styles';
 import { formatBytes } from '@/utils';
+import { theme } from '@odigos/ui-components';
 import { type Edge, type Node } from '@xyflow/react';
 import { EDGE_TYPES, NODE_TYPES, OVERVIEW_ENTITY_TYPES, STATUSES, WorkloadId, type OverviewMetricsResponse } from '@/types';
 import nodeConfig from './node-config.json';
 
 interface Params {
-  theme: ITheme;
+  theme: theme.ITheme;
   nodes: Node[];
   metrics?: OverviewMetricsResponse;
   containerHeight: number;

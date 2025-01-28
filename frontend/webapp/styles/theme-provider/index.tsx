@@ -1,15 +1,14 @@
 import React, { type PropsWithChildren } from 'react';
-import { getTheme } from '../theme';
 import { useDarkModeStore } from '@/store';
-import { ThemeProvider } from 'styled-components';
+import { theme } from '@odigos/ui-components';
 import StyledComponentsRegistry from './registry';
 
-export const ThemeProviderWrapper: React.FC<PropsWithChildren> = ({ children }) => {
+export const ThemeProvider: React.FC<PropsWithChildren> = ({ children }) => {
   const { darkMode } = useDarkModeStore();
 
   return (
-    <ThemeProvider theme={getTheme(darkMode)}>
+    <theme.Provider theme={theme.getTheme(darkMode) as theme.ITheme}>
       <StyledComponentsRegistry>{children}</StyledComponentsRegistry>
-    </ThemeProvider>
+    </theme.Provider>
   );
 };

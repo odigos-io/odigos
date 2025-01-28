@@ -4,7 +4,7 @@ import React from 'react';
 import { METADATA } from '@/utils';
 import { ApolloWrapper } from '@/lib';
 import { useDarkModeStore } from '@/store';
-import { ThemeProviderWrapper } from '@/styles';
+import { ThemeProvider } from '@/styles';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const { darkMode } = useDarkModeStore();
@@ -18,7 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <title>{METADATA.title}</title>
       </head>
       <ApolloWrapper>
-        <ThemeProviderWrapper>
+        <ThemeProvider>
           <body
             suppressHydrationWarning={true}
             style={{
@@ -30,7 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           >
             {children}
           </body>
-        </ThemeProviderWrapper>
+        </ThemeProvider>
       </ApolloWrapper>
     </html>
   );
