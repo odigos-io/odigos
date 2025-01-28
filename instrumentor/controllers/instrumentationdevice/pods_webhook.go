@@ -86,27 +86,31 @@ func (p *PodsWebhook) injectOdigosEnvVars(ctx context.Context, logger logr.Logge
 	if err := p.Get(ctx, client.ObjectKey{Namespace: podWorkload.Namespace, Name: instrumentationConfigName}, &workloadInstrumentationConfig); err != nil {
 		return fmt.Errorf("failed to get instrumentationConfig: %w", err)
 	}
-	runtimeDetails := workloadInstrumentationConfig.Status.RuntimeDetailsByContainer
 
 	var serviceName *string
 	var serviceNameEnv *corev1.EnvVar
 
 	for i := range pod.Spec.Containers {
 		container := &pod.Spec.Containers[i]
-		pl := getLanguageOfContainer(runtimeDetails, container.Name)
-		if pl == common.UnknownProgrammingLanguage {
+		runtimeDetails := workloadInstrumentationConfig.Status.GetRuntimeDetailsForContainer(*container)
+		if runtimeDetails == nil {
+			logger.Error(nil, "failed to get runtime details for container", "container", container.Name)
+			continue
+		}
+
+		if runtimeDetails.Language == common.UnknownProgrammingLanguage {
 			fmt.Println("Skipping container as programming language is unknown")
 			continue
 		}
 
-		otelSdk, found := sdks.GetDefaultSDKs()[pl]
+		otelSdk, found := sdks.GetDefaultSDKs()[runtimeDetails.Language]
 		if !found {
-			fmt.Println("No default SDK found for language", pl)
+			fmt.Println("No default SDK found for language", runtimeDetails.Language)
 			continue
 		}
 
-		webhookdeviceinjector.InjectOdigosInstrumentationDevice(ctx, p.Client, logger, *podWorkload, container, pl, otelSdk)
-		webhookenvinjector.InjectOdigosAgentEnvVars(ctx, p.Client, logger, *podWorkload, container, pl, otelSdk)
+		webhookdeviceinjector.InjectOdigosInstrumentationDevice(*podWorkload, container, otelSdk, runtimeDetails)
+		webhookenvinjector.InjectOdigosAgentEnvVars(logger, *podWorkload, container, otelSdk, runtimeDetails)
 
 		// Check if the environment variables are already present, if so skip inject them again.
 		if envVarsExist(container.Env, commonEnvVars) {
@@ -116,7 +120,7 @@ func (p *PodsWebhook) injectOdigosEnvVars(ctx context.Context, logger logr.Logge
 		containerNameEnv := corev1.EnvVar{Name: k8sconsts.OdigosEnvVarContainerName, Value: container.Name}
 		container.Env = append(container.Env, append(commonEnvVars, containerNameEnv)...)
 
-		if shouldInjectServiceName(pl, otelSdk) {
+		if shouldInjectServiceName(runtimeDetails.Language, otelSdk) {
 			// Ensure the serviceName is fetched only once per pod
 			if serviceName == nil {
 				serviceName = p.getServiceNameForEnv(ctx, logger, podWorkload)
@@ -143,15 +147,6 @@ func (p *PodsWebhook) injectOdigosEnvVars(ctx context.Context, logger logr.Logge
 		})
 	}
 	return nil
-}
-
-func getLanguageOfContainer(runtimeDetails []odigosv1.RuntimeDetailsByContainer, containerName string) common.ProgrammingLanguage {
-	for _, rd := range runtimeDetails {
-		if rd.ContainerName == containerName {
-			return rd.Language
-		}
-	}
-	return common.UnknownProgrammingLanguage
 }
 
 func envVarsExist(containerEnv []corev1.EnvVar, commonEnvVars []corev1.EnvVar) bool {
