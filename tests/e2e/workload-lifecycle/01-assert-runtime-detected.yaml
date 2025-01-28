@@ -100,9 +100,9 @@ metadata:
 status:
   runtimeDetailsByContainer:
     - containerName: nodejs-manifest-env
-      envFromContainerRuntime:
-        - name: NODE_OPTIONS
-          value: "--require /app/execute_before.js --max-old-space-size=256"
+# the env var is present in the pod manifest, hence the container runtime value
+# is not relevant and not populated
+      (envFromContainerRuntime == null): true
       language: javascript
       runtimeVersion: 20.17.0
 ---
@@ -191,9 +191,9 @@ status:
   runtimeDetailsByContainer:
     - containerName: java-supported-manifest-env
       language: java
-      envFromContainerRuntime:
-        - name: JAVA_OPTS
-          value: "-Dnot.work=true"
+# the env var is present in the pod manifest, hence the container runtime value
+# is not relevant and not populated
+      (envFromContainerRuntime == null) : true
       runtimeVersion: 17.0.12+7
 
 ---
