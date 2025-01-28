@@ -57,7 +57,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({ title, titleColor, tooltip, 
     <FlexColumn>
       <Container data-id={`checkbox${!!title ? `-${title}` : ''}`} $disabled={disabled} onClick={handleToggle} style={style}>
         <CheckboxWrapper $isChecked={isChecked} $disabled={disabled}>
-          {isChecked && <CheckIcon fill={theme.text.info_secondary} />}
+          {isChecked && <CheckIcon fill={theme.text.white} />}
         </CheckboxWrapper>
 
         {title && (

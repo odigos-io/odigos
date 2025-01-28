@@ -38,9 +38,9 @@ const darkModeTheme = {
   },
   text: {
     // Base Colors
+    white: '#FFFFFF',
     primary: '#111111',
     secondary: '#F9F9F9',
-    white: '#FFFFFF',
     grey: '#B8B8B8',
     dark_grey: '#8F8F8F',
     darker_grey: '#7A7A7A',
@@ -81,9 +81,9 @@ const lightModeTheme = {
   },
   text: {
     // Base Colors
+    white: '#FFFFFF',
     primary: '#EEEEEE',
     secondary: '#060606',
-    white: '#000000',
     grey: '#474747',
     dark_grey: '#707070',
     darker_grey: '#858585',

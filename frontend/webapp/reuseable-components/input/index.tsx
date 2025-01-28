@@ -99,7 +99,7 @@ const IconWrapperClickable = styled(IconWrapper)`
 const Button = styled.button`
   background-color: ${({ theme }) => theme.colors.primary};
   border: none;
-  color: ${({ theme }) => theme.text.white};
+  color: ${({ theme }) => theme.text.secondary};
   padding: 8px 16px;
   border-radius: 20px;
   cursor: pointer;
