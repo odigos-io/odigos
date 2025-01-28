@@ -64,7 +64,7 @@ func isDataCollectionReady(ctx context.Context, c client.Client) bool {
 	return nodeCollectorsGroup.Status.Ready
 }
 
-func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.Client, instConfig *odigosv1.InstrumentationConfig) error {
+func enableOdigosInstrumentation(ctx context.Context, kubeClient client.Client, instConfig *odigosv1.InstrumentationConfig) error {
 
 	deviceSkipped := false
 
@@ -135,10 +135,12 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 			return err
 		}
 
-		// add odigos.io/inject-instrumentation label to enable the webhook
-		instrumentation.SetInjectInstrumentationLabel(podSpec)
-
+		if !deviceSkipped {
+			// add odigos.io/inject-instrumentation label to enable the webhook
+			instrumentation.SetInjectInstrumentationLabel(podSpec)
+		}
 		return nil
+
 	})
 
 	// if non of the devices were applied due to the presence of another agent, return an error.
@@ -152,7 +154,7 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 
 	modified := result != controllerutil.OperationResultNone
 	if modified {
-		logger.V(0).Info("added instrumentation device to workload", "name", obj.GetName(), "namespace", obj.GetNamespace())
+		logger.V(0).Info("inject instrumentation label to workload pod template", "name", obj.GetName(), "namespace", obj.GetNamespace())
 	}
 
 	return nil
@@ -274,7 +276,7 @@ func reconcileSingleWorkload(ctx context.Context, kubeClient client.Client, inst
 		return nil
 	}
 
-	err = addInstrumentationDeviceToWorkload(ctx, kubeClient, instrumentationConfig)
+	err = enableOdigosInstrumentation(ctx, kubeClient, instrumentationConfig)
 	if err != nil {
 
 		conditions.UpdateStatusConditions(ctx, kubeClient, instrumentationConfig, &instrumentationConfig.Status.Conditions,
@@ -282,7 +284,7 @@ func reconcileSingleWorkload(ctx context.Context, kubeClient client.Client, inst
 			"Odigos instrumentation failed to apply: "+err.Error())
 	} else {
 
-		enabledMessage := "Odigos instrumentation is enabled (label: odigos.io/inject-instrumentation=true)."
+		enabledMessage := "Odigos instrumentation is enabled."
 		conditions.UpdateStatusConditions(ctx, kubeClient, instrumentationConfig, &instrumentationConfig.Status.Conditions,
 			metav1.ConditionTrue, appliedInstrumentationDeviceType, "InstrumentationEnabled", enabledMessage)
 	}
