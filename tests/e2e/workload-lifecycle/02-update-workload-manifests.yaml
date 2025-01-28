@@ -153,9 +153,6 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
-          env:
-            - name: NODE_OPTIONS
-              value: "--require /app/execute_before.js --max-old-space-size=256"
 ---
 kind: Deployment
 apiVersion: apps/v1
@@ -272,7 +269,7 @@ spec:
             tcpSocket:
               port: 3000
             initialDelaySeconds: 20
-
+          
 ---
 kind: Deployment
 apiVersion: apps/v1
