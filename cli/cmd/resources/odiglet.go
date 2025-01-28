@@ -110,18 +110,6 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 				Resources: []string{"pods/status"},
 				Verbs:     []string{"get"},
 			},
-			{ // Needed for language detection
-				// TODO: remove this once Tamir/PR is read for new language detection
-				APIGroups: []string{"apps"},
-				Resources: []string{"deployments", "daemonsets", "statefulsets"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{ // Needed for language detection
-				// TODO: remove this once Tamir/PR is read for new language detection
-				APIGroups: []string{"apps"},
-				Resources: []string{"deployments/status", "daemonsets/status", "statefulsets/status"},
-				Verbs:     []string{"get"},
-			},
 			{ // Needed for virtual device registration
 				APIGroups: []string{""},
 				Resources: []string{"nodes"},
