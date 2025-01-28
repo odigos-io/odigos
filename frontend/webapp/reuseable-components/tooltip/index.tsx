@@ -2,7 +2,7 @@ import React, { useState, PropsWithChildren, useRef, MouseEvent, forwardRef } fr
 import ReactDOM from 'react-dom';
 import { Text } from '..';
 import { InfoIcon } from '@/assets';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 
 interface Position {
   top: number;
@@ -66,17 +66,20 @@ const PopupContainer = styled.div<{ $top: number; $left: number }>`
   max-width: 270px;
   padding: 8px 12px;
   border-radius: 16px;
-  border: 1px solid ${({ theme }) => theme.colors.white_opacity['008']};
+  border: 1px solid ${({ theme }) => theme.colors.border};
   background-color: ${({ theme }) => theme.colors.info};
-  color: ${({ theme }) => theme.text.primary};
 
   pointer-events: none;
 `;
 
 const Popup = forwardRef<HTMLDivElement, PopupProps>(({ top, left, children }, ref) => {
+  const theme = useTheme();
+
   return ReactDOM.createPortal(
     <PopupContainer ref={ref} $top={top} $left={left}>
-      <Text size={12}>{children}</Text>
+      <Text size={12} color={theme.text.info}>
+        {children}
+      </Text>
     </PopupContainer>,
     document.body,
   );

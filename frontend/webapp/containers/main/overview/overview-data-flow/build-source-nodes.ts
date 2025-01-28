@@ -110,7 +110,7 @@ export const buildSourceNodes = ({ loading, entities, positions, unfilteredCount
         parentId: 'source-scroll',
         position: {
           x: framePadding,
-          y: position['y'](idx) - (nodeHeight - framePadding),
+          y: position['y'](idx) - (nodeHeight - framePadding / 2),
         },
         style: {
           zIndex: -1,
