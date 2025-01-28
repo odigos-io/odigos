@@ -19,7 +19,7 @@ var (
 
 var proCmd = &cobra.Command{
 	Use:   "pro",
-	Short: "manage odigos pro",
+	Short: "Manage Odigos onprem tier for enterprise users",
 	Long:  `The pro command provides various operations and functionalities specifically designed for enterprise users. Use this command to access advanced features and manage your pro account.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
