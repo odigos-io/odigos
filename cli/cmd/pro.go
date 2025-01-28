@@ -19,7 +19,7 @@ var (
 
 var proCmd = &cobra.Command{
 	Use:   "pro",
-	Short: "manage odigos pro",
+	Short: "Manage Odigos onprem tier for enterprise users",
 	Long:  `The pro command provides various operations and functionalities specifically designed for enterprise users. Use this command to access advanced features and manage your pro account.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
@@ -48,6 +48,10 @@ var proCmd = &cobra.Command{
 			fmt.Println("\u001B[32mSUCCESS:\u001B[0m Token updated successfully")
 		}
 	},
+	Example: `  
+# Renew the on-premises token for Odigos,
+odigos pro --onprem-token ${ODIGOS_TOKEN}
+`,
 }
 
 func executeRemoteUpdateToken(ctx context.Context, client *kube.Client, namespace string, onPremToken string) error {
