@@ -209,7 +209,7 @@ spec:
 
               kubectl apply -f 01-generate-traffic.yaml
               job_name=$(kubectl get -f 01-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
-              kubectl wait --for=condition=complete job/$job_name
+              kubectl wait --for=condition=complete job/$job_name --timeout=90s
               kubectl delete -f 01-generate-traffic.yaml
 
     - name: "02 - Wait for Traces"
@@ -274,7 +274,7 @@ spec:
 
               kubectl apply -f 01-generate-traffic.yaml
               job_name=$(kubectl get -f 01-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
-              kubectl wait --for=condition=complete job/$job_name
+              kubectl wait --for=condition=complete job/$job_name --timeout=90s
               kubectl delete -f 01-generate-traffic.yaml
 
     - name: "03 - Wait for Traces"
