@@ -193,7 +193,7 @@ status:
       language: java
 # the env var is present in the pod manifest, hence the container runtime value
 # is not relevant and not populated
-      (envFromContainerRuntime == null) : true
+      (envFromContainerRuntime == null): true
       runtimeVersion: 17.0.12+7
 
 ---
@@ -244,9 +244,9 @@ metadata:
 status:
   runtimeDetailsByContainer:
     - containerName: python-alpine
-      envFromContainerRuntime:
-        - name: PYTHONPATH
-          value: "/app"
+# the env var is present in the pod manifest, hence the container runtime value
+# is not relevant and not populated
+      (envFromContainerRuntime == null): true
       language: python
       runtimeVersion: 3.10.15
 ---
