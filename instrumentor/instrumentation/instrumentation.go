@@ -46,6 +46,16 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 			continue
 		}
 
+		if containerLanguage == common.UnknownProgrammingLanguage ||
+			containerLanguage == common.IgnoredProgrammingLanguage ||
+			containerLanguage == common.NginxProgrammingLanguage {
+
+			// TODO: this will make it look as if instrumentation device is applied,
+			// which is incorrect
+			modifiedContainers = append(modifiedContainers, container)
+			continue
+		}
+
 		// Find and apply the appropriate SDK for the container language.
 		otelSdk, found := defaultSdks[containerLanguage]
 		if !found {
