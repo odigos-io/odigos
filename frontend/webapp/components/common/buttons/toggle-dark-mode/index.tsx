@@ -1,8 +1,7 @@
 import React, { useEffect } from 'react';
-import { FlexRow } from '@/styles';
 import styled from 'styled-components';
 import { useDarkModeStore } from '@/store';
-import { MoonIcon, SunIcon } from '@odigos/ui-components';
+import { FlexRow, MoonIcon, SunIcon } from '@odigos/ui-components';
 
 interface Props {}
 

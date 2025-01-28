@@ -1,7 +1,6 @@
 import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react';
-import { FlexColumn, FlexRow } from '@/styles';
 import styled, { css } from 'styled-components';
-import { Theme, Types } from '@odigos/ui-components';
+import { FlexColumn, FlexRow, Theme, Types } from '@odigos/ui-components';
 import { ActiveStatus, Divider, ExtendIcon, IconButton, IconWrapped, MonitorsIcons, Text, Tooltip } from '@/reuseable-components';
 
 interface Props {

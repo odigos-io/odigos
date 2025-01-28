@@ -1,7 +1,6 @@
 import React from 'react';
-import { FlexRow } from '@/styles';
 import styled from 'styled-components';
-import { CodeIcon, ListIcon } from '@odigos/ui-components';
+import { CodeIcon, FlexRow, ListIcon } from '@odigos/ui-components';
 
 interface Props {
   isCodeMode: boolean;

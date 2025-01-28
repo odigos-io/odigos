@@ -1,10 +1,9 @@
 import React, { Fragment } from 'react';
 import styled from 'styled-components';
 import { usePendingStore } from '@/store';
-import { FlexColumn, FlexRow } from '@/styles';
-import { PlusIcon, Theme } from '@odigos/ui-components';
 import { FadeLoader, Text } from '@/reuseable-components';
 import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';
+import { FlexColumn, FlexRow, PlusIcon, Theme } from '@odigos/ui-components';
 import { NODE_TYPES, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES } from '@/types';
 
 interface Props

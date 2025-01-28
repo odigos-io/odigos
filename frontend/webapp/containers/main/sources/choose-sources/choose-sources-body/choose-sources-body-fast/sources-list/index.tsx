@@ -1,5 +1,5 @@
 import React from 'react';
-import { Theme } from '@odigos/ui-components';
+import { FlexRow, Theme } from '@odigos/ui-components';
 import styled, { useTheme } from 'styled-components';
 import { type UseSourceFormDataResponse } from '@/hooks';
 import { Checkbox, Divider, ExtendIcon, FadeLoader, NoDataFound, Text, Toggle } from '@/reuseable-components';
@@ -43,12 +43,6 @@ const SourceItem = styled(NamespaceItem)`
   width: calc(100% - 50px);
   margin-left: auto;
   padding: 8px;
-`;
-
-const FlexRow = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
 `;
 
 const RelativeWrapper = styled.div`
@@ -116,12 +110,12 @@ export const SourcesList: React.FC<Props> = ({
         return (
           <Group key={`namespace-${namespace}`} data-id={`namespace-${namespace}`} $selected={isNamespaceAllSourcesSelected} $isOpen={isNamespaceSelected && hasFilteredSources}>
             <NamespaceItem $selected={isNamespaceAllSourcesSelected} onClick={() => onSelectNamespace(namespace)}>
-              <FlexRow>
+              <FlexRow $gap={12}>
                 <Checkbox value={isNamespaceAllSourcesSelected} onChange={(bool) => onSelectAll(bool, namespace)} />
                 <Text>{namespace}</Text>
               </FlexRow>
 
-              <FlexRow>
+              <FlexRow $gap={12}>
                 <Toggle title='Include Future Sources' initialValue={futureAppsForNamespace} onChange={(bool) => onSelectFutureApps(bool, namespace)} />
                 <Divider orientation='vertical' length='12px' margin='0' />
                 <SelectionCount size={10} color={theme.text.grey}>
@@ -143,7 +137,7 @@ export const SourcesList: React.FC<Props> = ({
 
                     return (
                       <SourceItem key={`source-${source.name}`} data-id={`source-${source.name}`} $selected={isSourceSelected} onClick={() => onSelectSource(source)}>
-                        <FlexRow>
+                        <FlexRow $gap={12}>
                           <Checkbox value={isSourceSelected} onChange={() => onSelectSource(source, namespace)} />
                           <Text>{source.name}</Text>
                           <Text opacity={0.8} size={10}>
