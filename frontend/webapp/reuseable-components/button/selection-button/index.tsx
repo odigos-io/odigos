@@ -2,8 +2,7 @@ import React from 'react';
 import { Button } from '..';
 import Image from 'next/image';
 import styled from 'styled-components';
-import { hexPercentValues } from '@/styles';
-import { Types } from '@odigos/ui-components';
+import { Theme, Types } from '@odigos/ui-components';
 import { Badge, Text } from '@/reuseable-components';
 
 interface Props {
@@ -26,13 +25,13 @@ const StyledButton = styled(Button)<{ $withBorder: Props['withBorder']; $color: 
   text-decoration: none;
   border: ${({ theme, $withBorder }) => `1px solid ${$withBorder ? theme.colors.border : 'transparent'}`};
   &.not-selected {
-    background-color: ${({ theme, $color }) => $color || theme.colors.dropdown_bg_2 + hexPercentValues['060']};
+    background-color: ${({ theme, $color }) => $color || theme.colors.dropdown_bg_2 + Theme.hexPercent['060']};
     &:hover {
       background-color: ${({ theme, $hoverColor }) => $hoverColor || theme.colors.dropdown_bg_2};
     }
   }
   &.selected {
-    background-color: ${({ theme }) => theme.colors.majestic_blue + hexPercentValues['048']};
+    background-color: ${({ theme }) => theme.colors.majestic_blue + Theme.hexPercent['048']};
   }
 `;
 

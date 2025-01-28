@@ -1,9 +1,9 @@
 import React, { Fragment } from 'react';
 import styled from 'styled-components';
 import { usePendingStore } from '@/store';
-import { PlusIcon } from '@odigos/ui-components';
+import { FlexColumn, FlexRow } from '@/styles';
+import { PlusIcon, Theme } from '@odigos/ui-components';
 import { FadeLoader, Text } from '@/reuseable-components';
-import { FlexColumn, FlexRow, hexPercentValues } from '@/styles';
 import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';
 import { NODE_TYPES, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES } from '@/types';
 
@@ -37,7 +37,7 @@ const Container = styled(FlexColumn)<{ $nodeWidth: Props['data']['nodeWidth'] }>
   border: 1px dashed ${({ theme }) => theme.colors.border};
 
   &:hover {
-    background-color: ${({ theme }) => theme.colors.dropdown_bg_2 + hexPercentValues['030']};
+    background-color: ${({ theme }) => theme.colors.dropdown_bg_2 + Theme.hexPercent['030']};
   }
 `;
 

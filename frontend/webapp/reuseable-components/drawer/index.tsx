@@ -1,8 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components';
+import { slide, Overlay } from '@/styles';
+import { Theme } from '@odigos/ui-components';
 import { useKeyDown, useTransition } from '@/hooks';
-import { slide, Overlay, hexPercentValues } from '@/styles';
 
 interface Props {
   isOpen: boolean;
@@ -24,7 +25,7 @@ const Container = styled.div<{
   z-index: 1000;
   width: ${({ $width }) => $width};
   background: ${({ theme }) => theme.colors.translucent_bg};
-  box-shadow: 0 2px 10px ${({ theme }) => theme.colors.primary + hexPercentValues['010']};
+  box-shadow: 0 2px 10px ${({ theme }) => theme.colors.primary + Theme.hexPercent['010']};
   overflow-y: auto;
 `;
 

@@ -1,7 +1,7 @@
 import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react';
-import { Types } from '@odigos/ui-components';
+import { FlexColumn, FlexRow } from '@/styles';
 import styled, { css } from 'styled-components';
-import { FlexColumn, FlexRow, hexPercentValues } from '@/styles';
+import { Theme, Types } from '@odigos/ui-components';
 import { ActiveStatus, Divider, ExtendIcon, IconButton, IconWrapped, MonitorsIcons, Text, Tooltip } from '@/reuseable-components';
 
 interface Props {
@@ -34,14 +34,14 @@ const Container = styled.div<{ $withClick: boolean; $isError: Props['isError'] }
   padding: 16px;
   width: calc(100% - 32px);
   border-radius: 16px;
-  background-color: ${({ $isError, theme }) => ($isError ? theme.text.error + hexPercentValues['010'] : theme.colors.secondary + hexPercentValues['005'])};
+  background-color: ${({ $isError, theme }) => ($isError ? theme.text.error + Theme.hexPercent['010'] : theme.colors.secondary + Theme.hexPercent['005'])};
 
   ${({ $withClick, $isError, theme }) =>
     $withClick &&
     css`
       &:hover {
         cursor: pointer;
-        background-color: ${$isError ? theme.text.error + hexPercentValues['020'] : theme.colors.secondary + hexPercentValues['010']};
+        background-color: ${$isError ? theme.text.error + Theme.hexPercent['020'] : theme.colors.secondary + Theme.hexPercent['010']};
         ${ControlledVisibility} {
           visibility: visible;
         }

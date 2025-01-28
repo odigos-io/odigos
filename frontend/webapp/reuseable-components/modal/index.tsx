@@ -2,9 +2,9 @@ import React from 'react';
 import { Text } from '../text';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components';
-import { XIcon } from '@odigos/ui-components';
 import { useKeyDown, useTransition } from '@/hooks';
-import { slide, Overlay, CenterThis, hexPercentValues } from '@/styles';
+import { Theme, XIcon } from '@odigos/ui-components';
+import { slide, Overlay, CenterThis } from '@/styles';
 
 interface Props {
   isOpen: boolean;
@@ -28,7 +28,7 @@ const Container = styled.div`
   border: ${({ theme }) => `1px solid ${theme.colors.border}`};
   border-radius: 40px;
   box-shadow: ${({ theme }) => {
-    const color = theme.colors.primary + hexPercentValues['010'];
+    const color = theme.colors.primary + Theme.hexPercent['010'];
     return `0px 1px 1px 0px ${color}, 0px 2px 2px 0px ${color}, 0px 5px 5px 0px ${color}, 0px 10px 10px 0px ${color}, 0px 0px 8px 0px ${color}`;
   }};
 `;

@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
-import { hexPercentValues } from '@/styles';
-import { OdigosLogo, Types } from '@odigos/ui-components';
+import { OdigosLogo, Theme, Types } from '@odigos/ui-components';
 
 interface Props {
   icon?: Types.SVG;
@@ -20,7 +19,7 @@ const Container = styled.div<{ $isError: Props['isError'] }>`
   border-radius: 8px;
   background: ${({ $isError, theme }) => {
     const clr = $isError ? theme.text.error : theme.text.secondary;
-    return `linear-gradient(180deg, ${clr + hexPercentValues['020']} 0%, ${clr + hexPercentValues['005']} 100%)`;
+    return `linear-gradient(180deg, ${clr + Theme.hexPercent['020']} 0%, ${clr + Theme.hexPercent['005']} 100%)`;
   }};
 `;
 

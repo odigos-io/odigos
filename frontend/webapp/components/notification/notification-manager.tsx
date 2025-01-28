@@ -1,13 +1,12 @@
 import React, { useRef, useState } from 'react';
 import { useClickNotif } from '@/hooks';
-import { hexPercentValues } from '@/styles';
 import { useNotificationStore } from '@/store';
 import { ACTION, getStatusIcon } from '@/utils';
 import styled, { useTheme } from 'styled-components';
 import { useOnClickOutside, useTimeAgo } from '@/hooks';
 import { NOTIFICATION_TYPE, type Notification } from '@/types';
-import { NotificationIcon, TrashIcon } from '@odigos/ui-components';
 import { IconButton, NoDataFound, Text } from '@/reuseable-components';
+import { NotificationIcon, Theme, TrashIcon } from '@odigos/ui-components';
 
 const RelativeContainer = styled.div`
   position: relative;
@@ -119,7 +118,7 @@ const NotifCard = styled.div`
   gap: 12px;
   padding: 16px;
   border-radius: 16px;
-  background-color: ${({ theme }) => theme.colors.dropdown_bg_2 + hexPercentValues['080']};
+  background-color: ${({ theme }) => theme.colors.dropdown_bg_2 + Theme.hexPercent['080']};
   cursor: not-allowed;
   &.click-enabled {
     cursor: pointer;
@@ -130,7 +129,7 @@ const NotifCard = styled.div`
 `;
 
 const StatusIcon = styled.div<{ $type: NOTIFICATION_TYPE }>`
-  background-color: ${({ $type, theme }) => theme.text[$type] + hexPercentValues['015']};
+  background-color: ${({ $type, theme }) => theme.text[$type] + Theme.hexPercent['015']};
   border-radius: 8px;
   width: 36px;
   height: 36px;
