@@ -44,12 +44,12 @@ const DropdownItem = styled.div<{ $selected: boolean }>`
   display: flex;
   align-items: center;
   &:hover {
-    background: ${({ theme }) => theme.colors.majestic_blue + hexPercentValues['050']};
+    background: ${({ theme }) => theme.text.grey + hexPercentValues['050']};
   }
-  ${({ $selected }) =>
+  ${({ $selected, theme }) =>
     $selected &&
     css`
-      background: rgba(68, 74, 217, 0.24);
+      background: ${theme.colors.majestic_blue + hexPercentValues['024']};
     `}
 `;
 
@@ -100,7 +100,7 @@ export const AddEntity: React.FC<Props> = ({ options = DEFAULT_OPTIONS, placehol
 
   const handleSelect = (option: DropdownOption) => {
     setCurrentModal(option.id);
-    setIsDropdownOpen(false);
+    setIsDropdownOpen(false); // ??? maybe remove this line (for fast-toggle between modals)
   };
 
   return (

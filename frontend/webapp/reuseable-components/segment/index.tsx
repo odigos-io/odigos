@@ -45,7 +45,7 @@ const Background = styled.div<{ $bgColor?: CSSProperties['backgroundColor']; $wi
   z-index: -1;
   width: ${({ $width }) => $width}px;
   height: ${({ $height }) => $height}px;
-  background-color: ${({ theme, $bgColor }) => $bgColor || theme.colors.white_opacity['008']};
+  background-color: ${({ theme, $bgColor }) => $bgColor || theme.colors.dropdown_bg_2};
   border-radius: ${({ $isFirstItem, $isLastItem }) => ($isFirstItem ? '32px 0px 0px 32px' : $isLastItem ? '0px 32px 32px 0px' : '0')};
   transition: all 0.3s;
 `;

@@ -1,6 +1,6 @@
 import React from 'react';
-import theme from '@/styles/theme';
-import styled from 'styled-components';
+import { hexPercentValues } from '@/styles';
+import styled, { useTheme } from 'styled-components';
 import { type UseSourceFormDataResponse } from '@/hooks';
 import { Checkbox, Divider, ExtendIcon, FadeLoader, NoDataFound, Text, Toggle } from '@/reuseable-components';
 
@@ -22,7 +22,7 @@ const Group = styled.div<{ $selected: boolean; $isOpen: boolean }>`
   width: 100%;
   padding-bottom: ${({ $isOpen }) => ($isOpen ? '18px' : '0')};
   border-radius: 16px;
-  background-color: ${({ $selected }) => ($selected ? 'rgba(68, 74, 217, 0.24)' : 'rgba(249, 249, 249, 0.04)')};
+  background-color: ${({ $selected, theme }) => ($selected ? theme.colors.majestic_blue + hexPercentValues['024'] : theme.colors.dropdown_bg_2 + hexPercentValues['040'])};
 `;
 
 const NamespaceItem = styled.div<{ $selected: boolean }>`
@@ -34,7 +34,7 @@ const NamespaceItem = styled.div<{ $selected: boolean }>`
   border-radius: 16px;
   cursor: pointer;
   &:hover {
-    background-color: ${({ $selected }) => ($selected ? 'rgba(68, 74, 217, 0.40)' : 'rgba(249, 249, 249, 0.08)')};
+    background-color: ${({ $selected, theme }) => ($selected ? theme.colors.majestic_blue + hexPercentValues['040'] : theme.colors.dropdown_bg_2 + hexPercentValues['080'])};
     transition: background-color 0.3s;
   }
 `;
@@ -92,6 +92,7 @@ export const SourcesList: React.FC<Props> = ({
   selectAllForNamespace,
   onSelectAll,
 }) => {
+  const theme = useTheme();
   const namespaces = filterNamespaces();
 
   if (!namespaces.length) {
