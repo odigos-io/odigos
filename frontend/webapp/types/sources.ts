@@ -21,8 +21,8 @@ export interface SourceContainer {
 }
 
 export interface K8sActualSource extends WorkloadId {
-  numberOfInstances: number;
   selected: boolean;
+  numberOfInstances?: number;
   otelServiceName: string;
   containers: Array<SourceContainer>;
   conditions: Array<Condition>;

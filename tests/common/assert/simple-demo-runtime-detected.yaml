@@ -46,9 +46,9 @@ metadata:
 status:
   runtimeDetailsByContainer:
     - containerName: inventory
-      envVars:
-      - name: PYTHONPATH
-        value: /bar # this env exists in the test image
+      envFromContainerRuntime:
+        - name: PYTHONPATH
+          value: /bar # this env exists in the test image
       language: python
       runtimeVersion: 3.11.9
 ---

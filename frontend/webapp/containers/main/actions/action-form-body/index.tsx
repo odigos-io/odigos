@@ -1,11 +1,11 @@
 import React from 'react';
-import theme from '@/styles/theme';
-import styled from 'styled-components';
 import { type ActionInput } from '@/types';
 import ActionCustomFields from './custom-fields';
+import styled, { useTheme } from 'styled-components';
 import { CheckCircledIcon, CrossCircledIcon } from '@/assets';
 import { type ActionOption } from '../action-modal/action-options';
 import { DocsButton, Input, Text, TextArea, MonitoringCheckboxes, SectionTitle, Segment } from '@/reuseable-components';
+import { hexPercentValues } from '@/styles';
 
 interface Props {
   isUpdate?: boolean;
@@ -27,6 +27,8 @@ const FieldTitle = styled(Text)`
 `;
 
 export const ActionFormBody: React.FC<Props> = ({ isUpdate, action, formData, formErrors, handleFormChange }) => {
+  const theme = useTheme();
+
   return (
     <Container>
       {isUpdate && (
@@ -34,8 +36,8 @@ export const ActionFormBody: React.FC<Props> = ({ isUpdate, action, formData, fo
           <FieldTitle>Status</FieldTitle>
           <Segment
             options={[
-              { icon: CheckCircledIcon, label: 'active', value: false, selectedBgColor: theme.colors.dark_green },
-              { icon: CrossCircledIcon, label: 'inactive', value: true, selectedBgColor: theme.colors.darker_red },
+              { icon: CheckCircledIcon, label: 'active', value: false, selectedBgColor: theme.text.success + hexPercentValues['050'] },
+              { icon: CrossCircledIcon, label: 'inactive', value: true, selectedBgColor: theme.text.error + hexPercentValues['050'] },
             ]}
             selected={formData.disable}
             setSelected={(bool) => handleFormChange('disable', bool)}

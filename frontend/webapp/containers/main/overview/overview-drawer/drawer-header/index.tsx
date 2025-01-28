@@ -1,6 +1,5 @@
 import React, { useEffect, useState, forwardRef, useImperativeHandle } from 'react';
-import theme from '@/styles/theme';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 import { EditIcon, SVG, TrashIcon, XIcon } from '@/assets';
 import { Button, IconWrapped, Input, Text, Tooltip } from '@/reuseable-components';
 
@@ -11,7 +10,7 @@ const HeaderContainer = styled.section`
   justify-content: space-between;
   flex-shrink: 0;
   align-self: stretch;
-  border-bottom: 1px solid rgba(249, 249, 249, 0.24);
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
 const SectionItemsWrapper = styled.div<{ $gap?: number }>`
@@ -33,7 +32,7 @@ const Title = styled(Text)`
   text-overflow: ellipsis;
 `;
 
-const EditButton = styled(Button)`
+const ActionButton = styled(Button)`
   gap: 8px;
 `;
 
@@ -66,6 +65,7 @@ interface DrawerHeaderProps {
 }
 
 const DrawerHeader = forwardRef<DrawerHeaderRef, DrawerHeaderProps>(({ title, titleTooltip, icon, iconSrc, isEdit, onEdit, onClose, onDelete, deleteLabel = 'Delete' }, ref) => {
+  const theme = useTheme();
   const [inputValue, setInputValue] = useState(title);
 
   useEffect(() => {
@@ -98,19 +98,19 @@ const DrawerHeader = forwardRef<DrawerHeaderRef, DrawerHeaderProps>(({ title, ti
 
       <SectionItemsWrapper $gap={2}>
         {!!onEdit && !isEdit && (
-          <EditButton data-id='drawer-edit' variant='tertiary' onClick={onEdit}>
+          <ActionButton data-id='drawer-edit' variant='tertiary' onClick={onEdit}>
             <EditIcon />
             <ButtonText>Edit</ButtonText>
-          </EditButton>
+          </ActionButton>
         )}
 
         {!!onDelete && !isEdit && (
-          <EditButton data-id='drawer-delete' variant='tertiary' onClick={onDelete}>
+          <ActionButton data-id='drawer-delete' variant='tertiary' onClick={onDelete}>
             <TrashIcon />
-            <Text color={theme.text.error} size={14} family='secondary'>
+            <Text size={14} color={theme.text.error} family='secondary' decoration='underline'>
               {deleteLabel}
             </Text>
-          </EditButton>
+          </ActionButton>
         )}
 
         <CloseButton data-id='drawer-close' variant='secondary' onClick={onClose}>

@@ -2,10 +2,10 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Text } from '../text';
 import { XIcon } from '@/assets';
 import { Divider } from '../divider';
-import styled from 'styled-components';
 import { getStatusIcon } from '@/utils';
 import { IconButton } from '../icon-button';
 import { FlexRow, progress, slide } from '@/styles';
+import styled, { useTheme } from 'styled-components';
 import { type Notification, NOTIFICATION_TYPE } from '@/types';
 
 interface OnCloseParams {
@@ -55,7 +55,7 @@ const Content = styled.div<{ $type: Props['type'] }>`
   align-items: center;
   flex: 1;
   gap: 8px;
-  padding: 12px 16px;
+  padding: 0 12px;
   border-radius: 32px;
   background-color: ${({ $type, theme }) => theme.colors[$type]};
 `;
@@ -64,6 +64,7 @@ const TextWrapper = styled.div<{ $withAction: boolean }>`
   display: flex;
   align-items: center;
   margin: 0 auto 0 0;
+  padding: 8px 0;
   max-width: ${({ $withAction }) => ($withAction ? '400px' : '500px')};
   height: 12px;
 `;
@@ -94,6 +95,8 @@ const ActionButton = styled(Text)`
 `;
 
 export const NotificationNote: React.FC<Props> = ({ type, title, message, action, onClose, style }) => {
+  const theme = useTheme();
+
   // These are for handling transitions:
   // isEntering - to stop the progress bar from rendering before the toast is fully slide-in
   // isLeaving - to trigger the slide-out animation
@@ -147,7 +150,7 @@ export const NotificationNote: React.FC<Props> = ({ type, title, message, action
   return (
     <Container className={onClose ? 'animated' : ''} $isLeaving={isLeaving} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
       <Content data-id='toast' $type={type} style={style}>
-        <StatusIcon />
+        <StatusIcon fill={theme.text[type]} />
 
         <TextWrapper $withAction={!!action}>
           {title && <Title $type={type}>{title}</Title>}

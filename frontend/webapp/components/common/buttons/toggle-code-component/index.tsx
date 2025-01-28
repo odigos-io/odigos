@@ -14,7 +14,7 @@ const Container = styled(FlexRow)`
 
 const Button = styled.button<{ $position: 'left' | 'right'; $selected: boolean }>`
   padding: 4px 8px;
-  background-color: ${({ theme, $selected }) => ($selected ? theme.colors.white_opacity['008'] : 'transparent')};
+  background-color: ${({ theme, $selected }) => ($selected ? theme.colors.dropdown_bg_2 : 'transparent')};
   border-radius: ${({ $position }) => ($position === 'left' ? '32px 0px 0px 32px' : $position === 'right' ? '0px 32px 32px 0px' : '0')};
   border: 1px solid ${({ theme }) => theme.colors.border};
   display: flex;
