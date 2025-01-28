@@ -35,7 +35,7 @@ const ControllerWrapper = styled.div`
     border: 1px solid ${({ theme }) => theme.colors.border} !important;
     background-color: ${({ theme }) => theme.colors.dropdown_bg};
     path {
-      fill: #fff;
+      fill: ${({ theme }) => theme.text.secondary};
     }
     &:hover {
       background-color: ${({ theme }) => theme.colors.dropdown_bg_2};

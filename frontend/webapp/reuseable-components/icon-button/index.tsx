@@ -22,7 +22,7 @@ const Button = styled.button<{ $size: number }>`
   justify-content: center;
   cursor: pointer;
   &:hover {
-    background-color: ${({ theme }) => theme.colors.white_opacity['008']};
+    background-color: ${({ theme }) => theme.colors.dropdown_bg_2};
   }
 `;
 

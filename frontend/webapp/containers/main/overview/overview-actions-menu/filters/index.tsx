@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import theme from '@/styles/theme';
 import { FilterIcon } from '@/assets';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 import { useKeyDown, useOnClickOutside } from '@/hooks';
 import { AbsoluteContainer, RelativeContainer } from '../styled';
 import { Button, SelectionButton, Toggle } from '@/reuseable-components';
@@ -38,6 +37,7 @@ const getFilterCount = (params: FiltersState) => {
 };
 
 export const Filters = () => {
+  const theme = useTheme();
   const { namespace, types, monitors, languages, errors, onlyErrors, setAll, clearAll, getEmptyState } = useFilterStore();
 
   const [filters, setFilters] = useState<FiltersState>({ namespace, types, monitors, languages, errors, onlyErrors });
