@@ -2,10 +2,27 @@ import React, { useRef, useState } from 'react';
 import { NOTIFICATION_TYPE } from '@/types';
 import styled, { useTheme } from 'styled-components';
 import OverviewDrawer from '@/containers/main/overview/overview-drawer';
-import { DataCard, DataCardFieldTypes, IconButton, Input } from '@/reuseable-components';
+import { DataCard, DataCardFieldTypes, Input } from '@/reuseable-components';
 import { useCopy, useDescribeOdigos, useKeyDown, useOnClickOutside, useTimeAgo, useTokenCRUD } from '@/hooks';
 import { DATA_CARDS, getStatusIcon, isOverTime, isWithinTime, safeJsonStringify, SEVEN_DAYS_IN_MS } from '@/utils';
-import { Button, CheckIcon, CodeBracketsIcon, CodeIcon, CopyIcon, CrossIcon, Divider, EditIcon, FlexColumn, FlexRow, KeyIcon, ListIcon, Segment, Text, Tooltip } from '@odigos/ui-components';
+import {
+  Button,
+  CheckIcon,
+  CodeBracketsIcon,
+  CodeIcon,
+  CopyIcon,
+  CrossIcon,
+  Divider,
+  EditIcon,
+  FlexColumn,
+  FlexRow,
+  IconButton,
+  KeyIcon,
+  ListIcon,
+  Segment,
+  Text,
+  Tooltip,
+} from '@odigos/ui-components';
 
 interface Props {}
 

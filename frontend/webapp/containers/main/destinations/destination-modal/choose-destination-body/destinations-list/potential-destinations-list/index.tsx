@@ -1,9 +1,9 @@
 import React from 'react';
 import styled from 'styled-components';
-import { OdigosLogo } from '@odigos/ui-components';
 import { usePotentialDestinations } from '@/hooks';
+import { DataTab, SectionTitle } from '@/reuseable-components';
+import { OdigosLogo, SkeletonLoader } from '@odigos/ui-components';
 import type { DestinationTypeItem, SupportedSignals } from '@/types';
-import { DataTab, SectionTitle, SkeletonLoader } from '@/reuseable-components';
 
 interface Props {
   setSelectedItems: (item: DestinationTypeItem) => void;

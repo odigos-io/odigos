@@ -3,9 +3,9 @@ import styled from 'styled-components';
 import { extractMonitors } from '@/utils';
 import { DeleteWarning } from '@/components';
 import { IAppState, useAppStore } from '@/store';
-import { TrashIcon } from '@odigos/ui-components';
+import { IconButton, TrashIcon } from '@odigos/ui-components';
+import { DataCardFields, DataTab } from '@/reuseable-components';
 import { OVERVIEW_ENTITY_TYPES, type ConfiguredDestination } from '@/types';
-import { DataCardFields, DataTab, IconButton } from '@/reuseable-components';
 
 const Container = styled.div`
   display: flex;

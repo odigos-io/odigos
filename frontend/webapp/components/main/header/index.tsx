@@ -5,9 +5,8 @@ import { FORM_ALERTS, SLACK_LINK } from '@/utils';
 import styled, { useTheme } from 'styled-components';
 import { NOTIFICATION_TYPE, PlatformTypes } from '@/types';
 import { NotificationManager, ToggleDarkMode } from '@/components';
-import { ConnectionStatus, IconButton } from '@/reuseable-components';
 import { DRAWER_OTHER_TYPES, useDrawerStore, useStatusStore } from '@/store';
-import { FlexRow, OdigosLogoText, SlackLogo, TerminalIcon, Theme, Tooltip } from '@odigos/ui-components';
+import { FlexRow, IconButton, OdigosLogoText, SlackLogo, Status, TerminalIcon, Theme, Tooltip } from '@odigos/ui-components';
 
 interface MainHeaderProps {}
 
@@ -44,10 +43,10 @@ export const MainHeader: React.FC<MainHeaderProps> = () => {
       <AlignLeft>
         <OdigosLogoText size={80} />
         <PlatformTitle type={PlatformTypes.K8S} />
-        <ConnectionStatus title={title} subtitle={message} status={status} />
+        <Status status={status} title={title} subtitle={message} size={14} family='primary' withIcon withBackground />
         {config?.readonly && (
           <Tooltip text={FORM_ALERTS.READONLY_WARNING}>
-            <ConnectionStatus title='Read Only' status={NOTIFICATION_TYPE.INFO} />
+            <Status status={NOTIFICATION_TYPE.INFO} title='Read Only' size={14} family='primary' withIcon withBackground />
           </Tooltip>
         )}
       </AlignLeft>

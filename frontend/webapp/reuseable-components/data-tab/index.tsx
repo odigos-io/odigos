@@ -1,7 +1,8 @@
 import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import styled, { css } from 'styled-components';
-import { Divider, FlexColumn, FlexRow, Text, Theme, Tooltip, Types } from '@odigos/ui-components';
-import { ActiveStatus, ExtendIcon, IconButton, IconWrapped, MonitorsIcons } from '@/reuseable-components';
+import { ExtendIcon, IconWrapped, MonitorsIcons } from '@/reuseable-components';
+import { Divider, FlexColumn, FlexRow, IconButton, Status, Text, Theme, Tooltip, Types } from '@odigos/ui-components';
+import { NOTIFICATION_TYPE } from '@/types';
 
 interface Props {
   title: string;
@@ -143,7 +144,7 @@ export const DataTab: React.FC<Props> = ({
       return (
         <>
           {withSeperator && <SubTitle>{'•'}</SubTitle>}
-          <ActiveStatus isActive={isActive} size={10} />
+          <Status status={isActive ? NOTIFICATION_TYPE.SUCCESS : NOTIFICATION_TYPE.ERROR} size={10} />
         </>
       );
     },

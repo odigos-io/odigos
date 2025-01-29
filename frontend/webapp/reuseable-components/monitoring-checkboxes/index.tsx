@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styled, { css } from 'styled-components';
-import { Checkbox, FieldError, FieldLabel } from '@/reuseable-components';
+import { Checkbox } from '@/reuseable-components';
+import { FieldError, FieldLabel } from '@odigos/ui-components';
 import { MONITORS_OPTIONS, SignalLowercase, SignalUppercase } from '@/utils';
 
 interface Props {

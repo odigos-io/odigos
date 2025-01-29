@@ -1,8 +1,8 @@
 import React from 'react';
 import { NODE_TYPES } from '@/types';
 import styled from 'styled-components';
+import { SkeletonLoader } from '@odigos/ui-components';
 import { type Node, type NodeProps } from '@xyflow/react';
-import { SkeletonLoader } from '@/reuseable-components/skeleton-loader';
 
 interface Props
   extends NodeProps<

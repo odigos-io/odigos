@@ -1,10 +1,10 @@
 import React, { Dispatch, SetStateAction, useEffect, useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { SignalUppercase } from '@/utils';
-import { Divider } from '@odigos/ui-components';
 import { DestinationDynamicFields } from './dynamic-fields';
+import { Divider, NotificationNote } from '@odigos/ui-components';
 import { type ConnectionStatus, TestConnection } from './test-connection';
-import { Input, MonitoringCheckboxes, NotificationNote, SectionTitle } from '@/reuseable-components';
+import { Input, MonitoringCheckboxes, SectionTitle } from '@/reuseable-components';
 import { NOTIFICATION_TYPE, type DestinationInput, type DestinationTypeItem, type DynamicField } from '@/types';
 
 interface Props {

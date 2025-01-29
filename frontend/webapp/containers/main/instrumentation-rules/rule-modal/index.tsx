@@ -4,9 +4,9 @@ import { ModalBody } from '@/styles';
 import { NOTIFICATION_TYPE } from '@/types';
 import { ACTION, FORM_ALERTS } from '@/utils';
 import { RULE_OPTIONS, RuleOption } from './rule-options';
-import { CenterThis, Divider } from '@odigos/ui-components';
+import { CenterThis, Divider, FadeLoader, NotificationNote } from '@odigos/ui-components';
+import { AutocompleteInput, Modal, NavigationButtons, SectionTitle } from '@/reuseable-components';
 import { useDescribeOdigos, useInstrumentationRuleCRUD, useInstrumentationRuleFormData, useKeyDown } from '@/hooks';
-import { AutocompleteInput, FadeLoader, Modal, NavigationButtons, NotificationNote, SectionTitle } from '@/reuseable-components';
 
 interface Props {
   isOpen: boolean;
@@ -71,7 +71,7 @@ export const RuleModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
             {loading ? (
               <CenterThis>
-                <FadeLoader cssOverride={{ scale: 2 }} />
+                <FadeLoader scale={2} />
               </CenterThis>
             ) : (
               <RuleFormBody rule={selectedItem} formData={formData} formErrors={formErrors} handleFormChange={handleFormChange} />

@@ -1,9 +1,9 @@
 import React from 'react';
 import { NOTIFICATION_TYPE } from '@/types';
 import styled, { useTheme } from 'styled-components';
-import { Divider, Text, Tooltip } from '@odigos/ui-components';
-import { ActiveStatus, Code, DataTab, InstrumentStatus, InteractiveTable, MonitorsIcons, NotificationNote } from '@/reuseable-components';
-import { capitalizeFirstLetter, getProgrammingLanguageIcon, parseJsonStringToPrettyString, safeJsonParse, WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils';
+import { Code, DataTab, InteractiveTable, MonitorsIcons } from '@/reuseable-components';
+import { Divider, NotificationNote, Status, Text, Tooltip } from '@odigos/ui-components';
+import { capitalizeFirstLetter, getProgrammingLanguageIcon, INSTUMENTATION_STATUS, parseJsonStringToPrettyString, safeJsonParse, WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils';
 
 export enum DataCardFieldTypes {
   DIVIDER = 'divider',
@@ -78,7 +78,7 @@ const renderValue = (type: DataCardRow['type'], value: DataCardRow['value']) => 
       return <MonitorsIcons monitors={value?.split(', ') || []} withLabels color={theme.colors.secondary} />;
 
     case DataCardFieldTypes.ACTIVE_STATUS:
-      return <ActiveStatus isActive={value == 'true'} size={10} withIcon withBorder />;
+      return <Status status={value == 'true' ? NOTIFICATION_TYPE.SUCCESS : NOTIFICATION_TYPE.ERROR} title={value == 'true' ? 'Active' : 'Inactive'} size={10} withIcon withBorder />;
 
     case DataCardFieldTypes.CODE: {
       const params = safeJsonParse(value, { language: '', code: '' });
@@ -122,7 +122,24 @@ const renderValue = (type: DataCardRow['type'], value: DataCardRow['value']) => 
               }
             />
           )}
-          renderActions={() => <InstrumentStatus language={language} />}
+          renderActions={() => {
+            const isActive = ![
+              WORKLOAD_PROGRAMMING_LANGUAGES.IGNORED,
+              WORKLOAD_PROGRAMMING_LANGUAGES.UNKNOWN,
+              WORKLOAD_PROGRAMMING_LANGUAGES.PROCESSING,
+              WORKLOAD_PROGRAMMING_LANGUAGES.NO_CONTAINERS,
+              WORKLOAD_PROGRAMMING_LANGUAGES.NO_RUNNING_PODS,
+            ].includes(language);
+
+            return (
+              <Status
+                status={isActive ? NOTIFICATION_TYPE.SUCCESS : NOTIFICATION_TYPE.ERROR}
+                title={isActive ? INSTUMENTATION_STATUS.INSTRUMENTED : INSTUMENTATION_STATUS.UNINSTRUMENTED}
+                withIcon
+                withBorder
+              />
+            );
+          }}
         />
       );
     }

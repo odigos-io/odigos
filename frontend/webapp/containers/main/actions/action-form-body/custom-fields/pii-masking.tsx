@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { safeJsonParse } from '@/utils';
 import type { PiiMaskingSpec } from '@/types';
 import styled, { css } from 'styled-components';
-import { Checkbox, FieldError, FieldLabel } from '@/reuseable-components';
+import { Checkbox } from '@/reuseable-components';
+import { FieldError, FieldLabel } from '@odigos/ui-components';
 
 type Props = {
   value: string;

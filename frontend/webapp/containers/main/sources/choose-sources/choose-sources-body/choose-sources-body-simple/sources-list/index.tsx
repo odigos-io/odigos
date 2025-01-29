@@ -1,8 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
 import { type UseSourceFormDataResponse } from '@/hooks';
-import { FolderIcon, Text, Theme } from '@odigos/ui-components';
-import { Checkbox, FadeLoader, IconWrapped, NoDataFound } from '@/reuseable-components';
+import { FadeLoader, FolderIcon, Text, Theme } from '@odigos/ui-components';
+import { Checkbox, IconWrapped, NoDataFound } from '@/reuseable-components';
 
 interface Props extends UseSourceFormDataResponse {
   isModal?: boolean;
@@ -74,7 +74,7 @@ export const SourcesList: React.FC<Props> = ({
   const sources = selectedSources[selectedNamespace] || [];
 
   if (!sources.length) {
-    return <NoDataFoundWrapper>{namespacesLoading ? <FadeLoader style={{ transform: 'scale(2)' }} /> : <NoDataFound title='No sources found' />}</NoDataFoundWrapper>;
+    return <NoDataFoundWrapper>{namespacesLoading ? <FadeLoader scale={2} /> : <NoDataFound title='No sources found' />}</NoDataFoundWrapper>;
   }
 
   return (

@@ -514,10 +514,10 @@
   resolved "https://registry.yarnpkg.com/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz#3dc35ba0f1e66b403c00b39344f870298ebb1c8e"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
-"@odigos/ui-components@^0.0.17":
-  version "0.0.17"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-components/-/ui-components-0.0.17.tgz#7b258c9a010fe56e8d7a4ffccd4db1c71aa86c18"
-  integrity sha512-6Vw9pl5nQ3D8/PFlQN7+j3wNaUVQIJrmfzmAKlTYR73DJ12Bt8SYb+IjXa4TfecSwYabE1Agneh8svBcBnFfKQ==
+"@odigos/ui-components@^0.0.18":
+  version "0.0.18"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-components/-/ui-components-0.0.18.tgz#2bd818923fb0010ee25c4209a4e75eed78fcb8d0"
+  integrity sha512-TO1N5BD4WNwP13yemqIxm2f/ACiDppx/qKCOfNS7oy8zdbmLEhKzogdjTKziYhWvxJc0WAh79G9uSi3U07AHDg==
 
 "@rtsao/scc@^1.1.0":
   version "1.1.0"

@@ -1,8 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
 import { useAppStore, usePendingStore } from '@/store';
-import { ErrorTriangleIcon, Types } from '@odigos/ui-components';
-import { Checkbox, DataTab, FadeLoader } from '@/reuseable-components';
+import { Checkbox, DataTab } from '@/reuseable-components';
+import { ErrorTriangleIcon, FadeLoader, Types } from '@odigos/ui-components';
 import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';
 import { type ActionDataParsed, type ActualDestination, type InstrumentationRuleSpec, type K8sActualSource, NODE_TYPES, OVERVIEW_ENTITY_TYPES, STATUSES, WorkloadId } from '@/types';
 

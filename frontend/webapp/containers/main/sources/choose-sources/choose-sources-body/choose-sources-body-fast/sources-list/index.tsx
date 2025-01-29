@@ -1,8 +1,8 @@
 import React from 'react';
 import styled, { useTheme } from 'styled-components';
 import { type UseSourceFormDataResponse } from '@/hooks';
-import { Divider, FlexRow, Text, Theme, Toggle } from '@odigos/ui-components';
-import { Checkbox, ExtendIcon, FadeLoader, NoDataFound } from '@/reuseable-components';
+import { Checkbox, ExtendIcon, NoDataFound } from '@/reuseable-components';
+import { Divider, FadeLoader, FlexRow, Text, Theme, Toggle } from '@odigos/ui-components';
 
 interface Props extends UseSourceFormDataResponse {
   isModal?: boolean;
@@ -90,7 +90,7 @@ export const SourcesList: React.FC<Props> = ({
   const namespaces = filterNamespaces();
 
   if (!namespaces.length) {
-    return <NoDataFoundWrapper>{namespacesLoading ? <FadeLoader style={{ transform: 'scale(2)' }} /> : <NoDataFound title='No namespaces found' />}</NoDataFoundWrapper>;
+    return <NoDataFoundWrapper>{namespacesLoading ? <FadeLoader scale={2} /> : <NoDataFound title='No namespaces found' />}</NoDataFoundWrapper>;
   }
 
   return (

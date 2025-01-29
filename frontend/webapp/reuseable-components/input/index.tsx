@@ -1,7 +1,6 @@
 import React, { useState, forwardRef, type ChangeEvent, type KeyboardEventHandler, type InputHTMLAttributes } from 'react';
 import styled, { css, useTheme } from 'styled-components';
-import { FieldError, FieldLabel } from '@/reuseable-components';
-import { EyeClosedIcon, EyeOpenIcon, Types } from '@odigos/ui-components';
+import { EyeClosedIcon, EyeOpenIcon, FieldError, FieldLabel, Types } from '@odigos/ui-components';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   title?: string;
