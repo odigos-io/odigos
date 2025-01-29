@@ -239,10 +239,10 @@ func reconcileSingleWorkload(ctx context.Context, kubeClient client.Client, inst
 
 		conditions.UpdateStatusConditions(ctx, kubeClient, instrumentationConfig, &instrumentationConfig.Status.Conditions,
 			metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonErrApplying),
-			"Odigos instrumentation failed to apply: "+err.Error())
+			"Odigos instrumentation failed to apply")
 	} else {
 
-		enabledMessage := "Odigos instrumentation is enabled."
+		enabledMessage := "Odigos instrumentation is enabled"
 		conditions.UpdateStatusConditions(ctx, kubeClient, instrumentationConfig, &instrumentationConfig.Status.Conditions,
 			metav1.ConditionTrue, appliedInstrumentationDeviceType, "InstrumentationEnabled", enabledMessage)
 	}
