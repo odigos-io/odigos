@@ -8,6 +8,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
+	k8scontainer "github.com/odigos-io/odigos/k8sutils/pkg/container"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -69,19 +70,21 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request
 		return reconcile.Result{}, fmt.Errorf("InstrumentationConfig %s/%s has %d owner references, expected 1", instrumentationConfig.Namespace, instrumentationConfig.Name, len(instrumentationConfig.OwnerReferences))
 	}
 
+	// find pods that are managed by the workload,
+	// filter out pods that are being deleted or not ready,
+	// note that the controller-runtime cache is assumed here to only contain pods in the same node as the odiglet
 	var podList corev1.PodList
 	err = r.List(ctx, &podList, client.InNamespace(instrumentationConfig.Namespace))
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	odigosConfig, err := k8sutils.GetCurrentOdigosConfig(ctx, r.Client)
-	if err != nil {
-		return k8sutils.K8SNoEffectiveConfigErrorHandler(err)
-	}
-
 	var selectedPods []corev1.Pod
 	for _, pod := range podList.Items {
+		// skip pods that are being deleted or not ready
+		if pod.DeletionTimestamp != nil || !k8scontainer.AllContainersReady(&pod) {
+			continue
+		}
 		podWorkload, err := getPodWorkloadObject(&pod)
 		if errors.Is(err, workload.ErrKindNotSupported) {
 			continue
@@ -96,6 +99,11 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request
 		if instrumentationConfigName == instrumentationConfig.Name {
 			selectedPods = append(selectedPods, pod)
 		}
+	}
+
+	odigosConfig, err := k8sutils.GetCurrentOdigosConfig(ctx, r.Client)
+	if err != nil {
+		return k8sutils.K8SNoEffectiveConfigErrorHandler(err)
 	}
 
 	runtimeResults, err := runtimeInspection(ctx, selectedPods, odigosConfig.IgnoredContainers, r.CriClient)
