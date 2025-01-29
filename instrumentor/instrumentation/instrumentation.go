@@ -11,7 +11,6 @@ import (
 
 	"github.com/odigos-io/odigos/common"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 var (
@@ -25,7 +24,7 @@ func ConfigureInstrumentationForPod(original *corev1.PodTemplateSpec, runtimeDet
 	// and we need to cleanup the community device before adding the enterprise one.
 	RevertInstrumentationDevices(original)
 
-	deviceSkippedDueToOtherAgent := false
+	instrumentationSkippedDueToOtherAgent := false
 	var modifiedContainers []corev1.Container
 
 	for _, container := range original.Spec.Containers {
@@ -35,11 +34,11 @@ func ConfigureInstrumentationForPod(original *corev1.PodTemplateSpec, runtimeDet
 		// By default, Odigos does not run alongside other agents.
 		// However, if configured in the odigos-config, it can be allowed to run in parallel.
 		if containerHaveOtherAgent != nil && !agentsCanRunConcurrently {
-			logger.Info("Container is running other agent, skip applying instrumentation device", "agent", containerHaveOtherAgent.Name, "container", container.Name)
+			logger.Info("Container is running other agent, skip applying instrumentation label", "agent", containerHaveOtherAgent.Name, "container", container.Name)
 
 			// Not actually modifying the container, but we need to append it to the list.
 			modifiedContainers = append(modifiedContainers, container)
-			deviceSkippedDueToOtherAgent = true
+			instrumentationSkippedDueToOtherAgent = true
 			continue
 		}
 
@@ -53,10 +52,6 @@ func ConfigureInstrumentationForPod(original *corev1.PodTemplateSpec, runtimeDet
 			continue
 		}
 
-		if container.Resources.Limits == nil {
-			container.Resources.Limits = make(map[corev1.ResourceName]resource.Quantity)
-		}
-
 		modifiedContainers = append(modifiedContainers, container)
 	}
 
@@ -64,7 +59,7 @@ func ConfigureInstrumentationForPod(original *corev1.PodTemplateSpec, runtimeDet
 		original.Spec.Containers = modifiedContainers
 	}
 
-	return deviceSkippedDueToOtherAgent, nil
+	return instrumentationSkippedDueToOtherAgent, nil
 }
 
 func RevertInstrumentationDevices(original *corev1.PodTemplateSpec) bool {
