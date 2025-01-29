@@ -305,7 +305,6 @@ func getWorkloadRolloutJsonPatch(obj kube.Object, pts *v1.PodTemplateSpec) ([]by
 		}
 	}
 
-	fmt.Print(obj.GetName(), patchOperations)
 	return json.Marshal(patchOperations)
 }
 
