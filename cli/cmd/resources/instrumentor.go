@@ -178,6 +178,21 @@ func NewInstrumentorClusterRole(ownerPermissionEnforcement bool) *rbacv1.Cluster
 				Resources: []string{"statefulsets"},
 				Verbs:     []string{"get", "list", "watch", "update", "patch"},
 			},
+			{
+				// Required for OwnerReferencesPermissionEnforcement (on by default in OpenShift)
+				// When we create an InstrumentationConfig, we set the OwnerReference to the related workload.
+				// Controller-runtime sets BlockDeletion: true. So with this Admission Plugin we need permission to
+				// update finalizers on the workloads so that they can block deletion.
+				// seehttps://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#ownerreferencespermissionenforcement
+				APIGroups: []string{"apps"},
+				Resources: []string{"statefulsets/finalizers", "daemonsets/finalizers", "deployments/finalizers"},
+				Verbs:     []string{"update"},
+			},
+			{
+				APIGroups: []string{"operator.odigos.io"},
+				Resources: []string{"odigos/finalizers"},
+				Verbs:     []string{"update"},
+			},
 			{ // React to runtime detection in user workloads in all namespaces
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"instrumentedapplications"},
@@ -693,7 +708,7 @@ func NewInstrumentorResourceManager(client *kube.Client, ns string, config *comm
 
 func (a *instrumentorResourceManager) Name() string { return "Instrumentor" }
 
-func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) error {
+func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context, ownerReferences []metav1.OwnerReference) error {
 	imageName := a.config.InstrumentorImage
 	if imageName == "" || imageName == k8sconsts.InstrumentorImage || imageName == k8sconsts.InstrumentorImageUBI9 {
 		if a.tier == common.CommunityOdigosTier {
@@ -742,5 +757,5 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 	},
 		resources...)
 
-	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, ownerReferences)
 }

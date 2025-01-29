@@ -1,0 +1,9 @@
+apiVersion: operator.odigos.io/v1alpha1
+kind: Odigos
+metadata:
+  labels:
+    app.kubernetes.io/name: odigos-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: odigos-sample
+spec:
+  # TODO(user): Add fields here
