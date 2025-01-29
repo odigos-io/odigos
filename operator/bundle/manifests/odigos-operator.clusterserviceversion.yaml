@@ -1,0 +1,493 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "operator.odigos.io/v1alpha1",
+          "kind": "Odigos",
+          "metadata": {
+            "labels": {
+              "app.kubernetes.io/managed-by": "kustomize",
+              "app.kubernetes.io/name": "odigos-operator"
+            },
+            "name": "odigos-sample"
+          },
+          "spec": null
+        }
+      ]
+    capabilities: Basic Install
+    categories: Logging & Tracing
+    containerImage: docker.io/keyval/odigos-operator:v1.0.144
+    createdAt: "2025-01-29T15:32:47Z"
+    description: Odigos enables automatic distributed tracing with OpenTelemetry and
+      eBPF.
+    features.operators.openshift.io/disconnected: "false"
+    features.operators.openshift.io/fips-compliant: "true"
+    features.operators.openshift.io/proxy-aware: "false"
+    features.operators.openshift.io/tls-profiles: "false"
+    features.operators.openshift.io/token-auth-aws: "false"
+    features.operators.openshift.io/token-auth-azure: "false"
+    features.operators.openshift.io/token-auth-gcp: "false"
+    operators.openshift.io/valid-subscription: Odigos Enterprise subscription (for
+      enterprise features)
+    operators.operatorframework.io/builder: operator-sdk-v1.39.1
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
+    support: Odigos
+  name: odigos-operator.v1.0.144
+  namespace: odigos-operator-system
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: Odigos is the Schema for the odigos API
+      displayName: Odigos
+      kind: Odigos
+      name: odigos.operator.odigos.io
+      specDescriptors:
+      - description: APIKey is an API Key for Odigos Cloud
+        displayName: APIKey
+        path: apiKey
+      - description: OnPremToken is an optional enterprise token for Odigos Enterprise.
+        displayName: On Prem Token
+        path: onPremToken
+      statusDescriptors:
+      - description: Conditions store the status conditions of the Odigos instances
+        displayName: Conditions
+        path: conditions
+      version: v1alpha1
+  description: The Odigos Operator installs Odigos
+  displayName: Odigos Operator
+  icon:
+  - base64data: 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
+    mediatype: image/png
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          - endpoints
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          verbs:
+          - get
+          - list
+          - patch
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - nodes
+          - pods
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - nodes/proxy
+          - nodes/stats
+          verbs:
+          - get
+          - list
+        - apiGroups:
+          - ""
+          resources:
+          - pods/status
+          verbs:
+          - get
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          verbs:
+          - create
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - serviceaccounts
+          verbs:
+          - create
+          - get
+          - list
+          - patch
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - services
+          verbs:
+          - create
+          - delete
+          - deletecollection
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - actions.odigos.io
+          resources:
+          - '*'
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - actions.odigos.io
+          resources:
+          - '*/status'
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - admissionregistration.k8s.io
+          resources:
+          - mutatingwebhookconfigurations
+          - validatingwebhookconfigurations
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - apiextensions.k8s.io
+          resources:
+          - customresourcedefinitions
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - daemonsets
+          - deployments
+          - replicasets
+          - statefulsets
+          verbs:
+          - create
+          - delete
+          - deletecollection
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - daemonsets/status
+          - deployments/status
+          - statefulsets/status
+          verbs:
+          - get
+        - apiGroups:
+          - autoscaling
+          resources:
+          - horizontalpodautoscalers
+          verbs:
+          - create
+          - delete
+          - patch
+          - update
+        - apiGroups:
+          - coordination.k8s.io
+          resources:
+          - leases
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - odigos.io
+          resources:
+          - collectorsgroups
+          - destinations
+          - instrumentationconfigs
+          - instrumentationinstances
+          - instrumentationrules
+          - processors
+          - sources
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - odigos.io
+          resources:
+          - collectorsgroups/status
+          verbs:
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - odigos.io
+          resources:
+          - destinations/status
+          - instrumentationinstances/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - odigos.io
+          resources:
+          - instrumentationconfigs/status
+          verbs:
+          - get
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - odigos.io
+          resources:
+          - instrumentedapplications
+          verbs:
+          - delete
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - odigos.io
+          resources:
+          - sources/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - operator.odigos.io
+          resources:
+          - odigos
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - operator.odigos.io
+          resources:
+          - odigos/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - operator.odigos.io
+          resources:
+          - odigos/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - clusterrolebindings
+          - clusterroles
+          - rolebindings
+          - roles
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - security.openshift.io
+          resources:
+          - securitycontextconstraints
+          verbs:
+          - use
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
+          - tokenreviews
+          verbs:
+          - create
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - subjectaccessreviews
+          verbs:
+          - create
+        serviceAccountName: odigos-operator-controller-manager
+      deployments:
+      - label:
+          app.kubernetes.io/managed-by: kustomize
+          app.kubernetes.io/name: odigos-operator
+          control-plane: controller-manager
+        name: odigos-operator-controller-manager
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              control-plane: controller-manager
+          strategy: {}
+          template:
+            metadata:
+              annotations:
+                kubectl.kubernetes.io/default-container: manager
+              labels:
+                control-plane: controller-manager
+            spec:
+              containers:
+              - args:
+                - --metrics-bind-address=:8443
+                - --leader-elect
+                - --health-probe-bind-address=:8081
+                command:
+                - /manager
+                env:
+                - name: CURRENT_NS
+                  valueFrom:
+                    fieldRef:
+                      apiVersion: v1
+                      fieldPath: metadata.namespace
+                image: keyval/odigos-operator:1.0.144
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: 8081
+                  initialDelaySeconds: 15
+                  periodSeconds: 20
+                name: manager
+                readinessProbe:
+                  httpGet:
+                    path: /readyz
+                    port: 8081
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+                resources:
+                  limits:
+                    cpu: 500m
+                    memory: 128Mi
+                  requests:
+                    cpu: 10m
+                    memory: 64Mi
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                    - ALL
+              securityContext:
+                runAsNonRoot: true
+              serviceAccountName: odigos-operator-controller-manager
+              terminationGracePeriodSeconds: 10
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - coordination.k8s.io
+          resources:
+          - leases
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        serviceAccountName: odigos-operator-controller-manager
+    strategy: deployment
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - OpenTelemetry
+  - eBPF
+  - tracing
+  - observability
+  - distributed tracing
+  - otel
+  - monitoring
+  links:
+  - name: Odigos
+    url: https://odigos.io
+  - name: Odigos on Github
+    url: https://github.com/odigos-io/odigos
+  maintainers:
+  - email: mike@odigos.io
+    name: Mike Dame
+  maturity: alpha
+  minKubeVersion: 1.20.15
+  provider:
+    name: Odigos
+    url: https://odigos.io
+  version: 1.0.144
