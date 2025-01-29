@@ -203,14 +203,14 @@ jobs:
           path: odigos_debug*.tar.gz
         continue-on-error: true
 
-      - name: Destroy Resources
-        if: always()
-        run: |
-          tofu -chdir=$TF_DIR destroy -auto-approve
+      # - name: Destroy Resources
+      #   if: always()
+      #   run: |
+      #     tofu -chdir=$TF_DIR destroy -auto-approve
 
-      - name: Extract Tag
-        id: extract_tag
-        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+      # - name: Extract Tag
+      #   id: extract_tag
+      #   run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
 
       # Notify Slack on Failure or Cancellation
       - name: Notify Slack on Failure or Cancellation
