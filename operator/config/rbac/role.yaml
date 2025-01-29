@@ -154,6 +154,15 @@ rules:
 - apiGroups:
   - apps
   resources:
+  - daemonsets/finalizers
+  - deployments/finalizers
+  - replicasets/finalizers
+  - statefulsets/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - apps
+  resources:
   - daemonsets/status
   - deployments/status
   - statefulsets/status
@@ -201,6 +210,13 @@ rules:
 - apiGroups:
   - odigos.io
   resources:
+  - collectorsgroups/finalizers
+  - sources/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - odigos.io
+  resources:
   - collectorsgroups/status
   verbs:
   - get
@@ -235,12 +251,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - odigos.io
-  resources:
-  - sources/finalizers
-  verbs:
-  - update
 - apiGroups:
   - operator.odigos.io
   resources:

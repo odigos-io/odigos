@@ -122,6 +122,16 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 				Resources: []string{"deployments/status", "daemonsets/status", "statefulsets/status"},
 				Verbs:     []string{"get"},
 			},
+			{
+				// Required for OwnerReferencesPermissionEnforcement (on by default in OpenShift)
+				// When we create an InstrumentationInstance, we set the OwnerReference to the related workload.
+				// Controller-runtime sets BlockDeletion: true. So with this Admission Plugin we need permission to
+				// update finalizers on the workloads so that they can block deletion.
+				// seehttps://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#ownerreferencespermissionenforcement
+				APIGroups: []string{"apps"},
+				Resources: []string{"deployments/finalizers", "daemonsets/finalizers", "statefulsets/finalizers"},
+				Verbs:     []string{"update"},
+			},
 			{ // Needed for virtual device registration
 				APIGroups: []string{""},
 				Resources: []string{"nodes"},

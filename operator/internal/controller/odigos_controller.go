@@ -52,6 +52,7 @@ type OdigosReconciler struct {
 // +kubebuilder:rbac:groups=actions.odigos.io,resources=*/status,verbs=get;patch;update
 // +kubebuilder:rbac:groups=odigos.io,resources=collectorsgroups,verbs=get;list;watch;create;patch;update;delete
 // +kubebuilder:rbac:groups=odigos.io,resources=collectorsgroups/status,verbs=get;list;watch;patch;update
+// +kubebuilder:rbac:groups=odigos.io,resources=collectorsgroups/finalizers,verbs=update
 // +kubebuilder:rbac:groups=odigos.io,resources=destinations,verbs=get;list;watch;create;patch;update;delete
 // +kubebuilder:rbac:groups=odigos.io,resources=destinations/status,verbs=get;patch;update
 // +kubebuilder:rbac:groups=odigos.io,resources=instrumentationrules,verbs=get;list;watch;patch;delete;create;update
@@ -76,6 +77,7 @@ type OdigosReconciler struct {
 // +kubebuilder:rbac:groups="",resources=endpoints,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;get;patch
 // +kubebuilder:rbac:groups=apps,resources=deployments;replicasets;daemonsets;statefulsets,verbs=get;list;watch;create;update;patch;delete;deletecollection
+// +kubebuilder:rbac:groups=apps,resources=deployments/finalizers;replicasets/finalizers;daemonsets/finalizers;statefulsets/finalizers,verbs=update
 // +kubebuilder:rbac:groups=apps,resources=deployments/status;daemonsets/status;statefulsets/status,verbs=get
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;clusterrolebindings;roles;rolebindings,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=security.openshift.io,resources=securitycontextconstraints,verbs=use

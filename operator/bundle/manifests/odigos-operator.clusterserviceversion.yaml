@@ -20,7 +20,7 @@ metadata:
     capabilities: Basic Install
     categories: Logging & Tracing
     containerImage: docker.io/keyval/odigos-operator:v1.0.144
-    createdAt: "2025-01-29T15:55:13Z"
+    createdAt: "2025-01-29T17:15:13Z"
     description: Odigos enables automatic distributed tracing with OpenTelemetry and
       eBPF.
     features.operators.openshift.io/disconnected: "false"
@@ -35,7 +35,7 @@ metadata:
     operators.operatorframework.io/builder: operator-sdk-v1.39.1
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
     support: Odigos
-  name: odigos-operator.v1.0.144
+  name: odigos-operator.v1.0.145
   namespace: odigos-operator-system
 spec:
   apiservicedefinitions: {}
@@ -216,6 +216,15 @@ spec:
         - apiGroups:
           - apps
           resources:
+          - daemonsets/finalizers
+          - deployments/finalizers
+          - replicasets/finalizers
+          - statefulsets/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - apps
+          resources:
           - daemonsets/status
           - deployments/status
           - statefulsets/status
@@ -263,6 +272,13 @@ spec:
         - apiGroups:
           - odigos.io
           resources:
+          - collectorsgroups/finalizers
+          - sources/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - odigos.io
+          resources:
           - collectorsgroups/status
           verbs:
           - get
@@ -297,12 +313,6 @@ spec:
           - get
           - list
           - watch
-        - apiGroups:
-          - odigos.io
-          resources:
-          - sources/finalizers
-          verbs:
-          - update
         - apiGroups:
           - operator.odigos.io
           resources:
@@ -395,7 +405,7 @@ spec:
                     fieldRef:
                       apiVersion: v1
                       fieldPath: metadata.namespace
-                image: keyval/odigos-operator:1.0.144
+                image: keyval/odigos-operator:1.0.145
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -490,4 +500,4 @@ spec:
   provider:
     name: Odigos
     url: https://odigos.io
-  version: 1.0.144
+  version: 1.0.145

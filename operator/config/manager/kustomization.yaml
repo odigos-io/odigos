@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: keyval/odigos-operator
-  newTag: 1.0.144
+  newTag: 1.0.145
