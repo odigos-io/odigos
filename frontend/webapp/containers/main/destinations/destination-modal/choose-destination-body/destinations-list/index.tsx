@@ -2,9 +2,10 @@ import React from 'react';
 import styled from 'styled-components';
 import { IDestinationListItem } from '@/hooks';
 import { capitalizeFirstLetter } from '@/utils';
+import { NoDataFound } from '@odigos/ui-components';
+import { DataTab, SectionTitle } from '@/reuseable-components';
 import type { SupportedSignals, DestinationTypeItem } from '@/types';
 import { PotentialDestinationsList } from './potential-destinations-list';
-import { DataTab, NoDataFound, SectionTitle } from '@/reuseable-components';
 
 const Container = styled.div`
   display: flex;
