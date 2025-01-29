@@ -372,7 +372,7 @@ func NewAutoScalerResourceManager(client *kube.Client, ns string, config *common
 
 func (a *autoScalerResourceManager) Name() string { return "AutoScaler" }
 
-func (a *autoScalerResourceManager) InstallFromScratch(ctx context.Context) error {
+func (a *autoScalerResourceManager) InstallFromScratch(ctx context.Context, ownerReferences []metav1.OwnerReference) error {
 
 	disableNameProcessor := slices.Contains(a.config.Profiles, "disable-name-processor") || slices.Contains(a.config.Profiles, "kratos")
 
@@ -385,5 +385,5 @@ func (a *autoScalerResourceManager) InstallFromScratch(ctx context.Context) erro
 		NewAutoscalerLeaderElectionRoleBinding(a.ns),
 		NewAutoscalerDeployment(a.ns, a.odigosVersion, a.config.ImagePrefix, a.config.AutoscalerImage, disableNameProcessor),
 	}
-	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, ownerReferences)
 }

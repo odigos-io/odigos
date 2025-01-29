@@ -89,7 +89,7 @@ func NewOdigosDeploymentResourceManager(client *kube.Client, ns string, config *
 
 func (a *odigosDeploymentResourceManager) Name() string { return "OdigosDeployment" }
 
-func (a *odigosDeploymentResourceManager) InstallFromScratch(ctx context.Context) error {
+func (a *odigosDeploymentResourceManager) InstallFromScratch(ctx context.Context, ownerReferences []metav1.OwnerReference) error {
 	resources := []kube.Object{
 		NewOdigosDeploymentConfigMap(a.ns, a.odigosVersion, string(a.odigosTier)),
 		NewLeaderElectionRole(a.ns),
@@ -105,5 +105,5 @@ func (a *odigosDeploymentResourceManager) InstallFromScratch(ctx context.Context
 		resources = append(resources, c)
 	}
 
-	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, ownerReferences)
 }

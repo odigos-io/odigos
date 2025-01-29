@@ -655,7 +655,7 @@ func NewInstrumentorResourceManager(client *kube.Client, ns string, config *comm
 
 func (a *instrumentorResourceManager) Name() string { return "Instrumentor" }
 
-func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) error {
+func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context, ownerReferences []metav1.OwnerReference) error {
 	resources := []kube.Object{
 		NewInstrumentorServiceAccount(a.ns),
 		NewInstrumentorLeaderElectionRoleBinding(a.ns),
@@ -689,5 +689,5 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 	},
 		resources...)
 
-	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, ownerReferences)
 }

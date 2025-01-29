@@ -315,7 +315,7 @@ func NewSchedulerResourceManager(client *kube.Client, ns string, config *common.
 
 func (a *schedulerResourceManager) Name() string { return "Scheduler" }
 
-func (a *schedulerResourceManager) InstallFromScratch(ctx context.Context) error {
+func (a *schedulerResourceManager) InstallFromScratch(ctx context.Context, ownerReferences []metav1.OwnerReference) error {
 	resources := []kube.Object{
 		NewSchedulerServiceAccount(a.ns),
 		NewSchedulerLeaderElectionRoleBinding(a.ns),
@@ -325,5 +325,5 @@ func (a *schedulerResourceManager) InstallFromScratch(ctx context.Context) error
 		NewSchedulerClusterRoleBinding(a.ns),
 		NewSchedulerDeployment(a.ns, a.odigosVersion, a.config.ImagePrefix),
 	}
-	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, ownerReferences)
 }

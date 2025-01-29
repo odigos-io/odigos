@@ -88,7 +88,7 @@ It will install k8s components that will auto-instrument your applications with 
 		if odigosCloudApiKeyFlag != "" {
 			odigosTier = common.CloudOdigosTier
 			odigosProToken = odigosCloudApiKeyFlag
-			err = verifyOdigosCloudApiKey(odigosCloudApiKeyFlag)
+			err = VerifyOdigosCloudApiKey(odigosCloudApiKeyFlag)
 			if err != nil {
 				fmt.Println("Odigos install failed - invalid api-key format.")
 				os.Exit(1)
@@ -99,9 +99,9 @@ It will install k8s components that will auto-instrument your applications with 
 		}
 
 		// validate user input profiles against available profiles
-		validateUserInputProfiles(odigosTier)
+		ValidateUserInputProfiles(odigosTier)
 
-		config := createOdigosConfig(odigosTier)
+		config := CreateOdigosConfig(odigosTier)
 
 		fmt.Printf("Installing Odigos version %s in namespace %s ...\n", versionFlag, ns)
 
@@ -197,7 +197,7 @@ func createNamespace(ctx context.Context, cmd *cobra.Command, client *kube.Clien
 	return nil
 }
 
-func validateUserInputProfiles(tier common.OdigosTier) {
+func ValidateUserInputProfiles(tier common.OdigosTier) {
 	// Fetch available profiles for the given tier
 	availableProfiles := profiles.GetAvailableProfilesForTier(tier)
 
@@ -216,7 +216,7 @@ func validateUserInputProfiles(tier common.OdigosTier) {
 	}
 }
 
-func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration {
+func CreateOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration {
 	selectedProfiles := []common.ProfileName{}
 	for _, profile := range userInputInstallProfiles {
 		selectedProfiles = append(selectedProfiles, common.ProfileName(profile))

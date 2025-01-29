@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func verifyOdigosCloudApiKey(apikey string) error {
+func VerifyOdigosCloudApiKey(apikey string) error {
 	_, err := uuid.Parse(apikey)
 	if err != nil {
 		return fmt.Errorf("invalid apikey format. expected uuid format")

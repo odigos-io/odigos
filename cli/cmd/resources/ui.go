@@ -384,7 +384,7 @@ func NewUIService(ns string) *corev1.Service {
 	}
 }
 
-func (u *uiResourceManager) InstallFromScratch(ctx context.Context) error {
+func (u *uiResourceManager) InstallFromScratch(ctx context.Context, ownerReferences []metav1.OwnerReference) error {
 	resources := []kube.Object{
 		NewUIServiceAccount(u.ns),
 		NewUIRole(u.ns, u.readonly),
@@ -394,7 +394,7 @@ func (u *uiResourceManager) InstallFromScratch(ctx context.Context) error {
 		NewUIDeployment(u.ns, u.odigosVersion, u.config.ImagePrefix),
 		NewUIService(u.ns),
 	}
-	return u.client.ApplyResources(ctx, u.config.ConfigVersion, resources)
+	return u.client.ApplyResources(ctx, u.config.ConfigVersion, resources, ownerReferences)
 }
 
 func NewUIResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosVersion string) resourcemanager.ResourceManager {

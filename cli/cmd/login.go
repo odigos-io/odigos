@@ -80,7 +80,7 @@ func updateApiKey(cmd *cobra.Command, args []string) {
 		odigosCloudApiKeyFlag = scanner.Text()
 	}
 
-	err = verifyOdigosCloudApiKey(odigosCloudApiKeyFlag)
+	err = VerifyOdigosCloudApiKey(odigosCloudApiKeyFlag)
 	if err != nil {
 		fmt.Println("Odigos cloud login failed - invalid api-key format.")
 		os.Exit(1)
