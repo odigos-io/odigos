@@ -50,6 +50,14 @@ rules:
       - update
       - patch
   - apiGroups:
+      - apps
+    resources:
+      - statefulsets/finalizers
+      - deployments/finalizers
+      - daemonsets/finalizers
+    verbs:
+      - update
+  - apiGroups:
       - odigos.io
     resources:
       - instrumentedapplications

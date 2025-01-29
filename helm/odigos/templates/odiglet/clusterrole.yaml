@@ -36,6 +36,14 @@ rules:
     verbs:
       - get
   - apiGroups:
+      - apps
+    resources:
+      - deployments/finalizers
+      - daemonsets/finalizers
+      - statefulsets/finalizers
+    verbs:
+      - update
+  - apiGroups:
       - ''
     resources:
       - nodes

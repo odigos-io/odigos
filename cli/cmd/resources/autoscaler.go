@@ -171,6 +171,16 @@ func NewAutoscalerClusterRole() *rbacv1.ClusterRole {
 					"watch",
 				},
 			},
+			{
+				// Required for OwnerReferencesPermissionEnforcement (on by default in OpenShift)
+				// When we create a collector COnfigMap, we set the OwnerReference to the collectorsgroups.
+				// Controller-runtime sets BlockDeletion: true. So with this Admission Plugin we need permission to
+				// update finalizers on the collectorsgroup so that they can block deletion.
+				// seehttps://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#ownerreferencespermissionenforcement
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"collectorsgroups/finalizers"},
+				Verbs:     []string{"update"},
+			},
 		},
 	}
 }
