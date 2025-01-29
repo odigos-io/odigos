@@ -144,11 +144,10 @@ jobs:
             DESCRIPTION=${{ matrix.description }}
           platforms: linux/amd64,linux/arm64
           file: >-
-            file: >-
-              ${{ matrix.service == 'odiglet' && format('odiglet/{0}', matrix.dockerfile) ||
-                  matrix.service == 'collector' && format('collector/{0}', matrix.dockerfile) ||
-                  matrix.service == 'ui' && format('frontend/{0}', matrix.dockerfile) ||
-                  matrix.dockerfile }}
+            ${{ matrix.service == 'odiglet' && format('odiglet/{0}', matrix.dockerfile) ||
+                matrix.service == 'collector' && format('collector/{0}', matrix.dockerfile) ||
+                matrix.service == 'ui' && format('frontend/{0}', matrix.dockerfile) ||
+                matrix.dockerfile }}
           context: >-
             ${{
               (matrix.service == 'collector' && 'collector') ||
