@@ -11,6 +11,7 @@ on:
       - 'opampserver/**'
       - 'instrumentation/**'
       - 'odiglet/**'
+      - 'profiles/**'
 
 jobs:
   trigger-odigos-enterprise:

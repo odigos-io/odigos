@@ -22,31 +22,31 @@ func (g *GrafanaCloudPrometheus) DestType() common.DestinationType {
 	return common.GrafanaCloudPrometheusDestinationType
 }
 
-func (g *GrafanaCloudPrometheus) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (g *GrafanaCloudPrometheus) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	if !isMetricsEnabled(dest) {
-		return errors.New("Metrics not enabled, gateway will not be configured for grafana cloud prometheus")
+		return nil, errors.New("Metrics not enabled, gateway will not be configured for grafana cloud prometheus")
 	}
 
 	promRwUrl, exists := dest.GetConfig()[grafanaCloudPrometheusRWurlKey]
 	if !exists {
-		return errors.New("Grafana Cloud Prometheus remote write endpoint not specified, gateway will not be configured" +
+		return nil, errors.New("Grafana Cloud Prometheus remote write endpoint not specified, gateway will not be configured" +
 			" for Prometheus")
 	}
 
 	if err := validateGrafanaPrometheusUrl(promRwUrl); err != nil {
-		return errors.Join(err, errors.New("failed to validate grafana cloud prometheus remote write endpoint, gateway will "+
+		return nil, errors.Join(err, errors.New("failed to validate grafana cloud prometheus remote write endpoint, gateway will "+
 			"not be configured for Prometheus"))
 	}
 
 	prometheusUsername, exists := dest.GetConfig()[grafanaCloudPrometheusUserKey]
 	if !exists {
-		return errors.New("Grafana Cloud Prometheus username not specified, gateway will not be configured for Prometheus")
+		return nil, errors.New("Grafana Cloud Prometheus username not specified, gateway will not be configured for Prometheus")
 	}
 
 	resourceAttributesLabels, exists := dest.GetConfig()[prometheusResourceAttributesLabelsKey]
 	processors, err := promResourceAttributesProcessors(resourceAttributesLabels, exists, dest.GetID())
 	if err != nil {
-		return errors.Join(err, errors.New("failed to parse grafana cloud prometheus resource attributes labels, gateway will "+
+		return nil, errors.Join(err, errors.New("failed to parse grafana cloud prometheus resource attributes labels, gateway will "+
 			"not be configured for Prometheus"))
 	}
 
@@ -72,7 +72,7 @@ func (g *GrafanaCloudPrometheus) ModifyConfig(dest ExporterConfigurer, currentCo
 		labels := map[string]string{}
 		err := json.Unmarshal([]byte(externalLabels), &labels)
 		if err != nil {
-			return errors.Join(err, errors.New("failed to parse grafana cloud prometheus external labels, gateway will "+
+			return nil, errors.Join(err, errors.New("failed to parse grafana cloud prometheus external labels, gateway will "+
 				"not be configured for Prometheus"))
 		}
 
@@ -95,7 +95,9 @@ func (g *GrafanaCloudPrometheus) ModifyConfig(dest ExporterConfigurer, currentCo
 		Exporters:  []string{rwExporterName},
 	}
 
-	return nil
+	pipelineNames := []string{metricsPipelineName}
+
+	return pipelineNames, nil
 }
 
 func validateGrafanaPrometheusUrl(input string) error {

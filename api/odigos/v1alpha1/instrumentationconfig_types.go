@@ -3,6 +3,7 @@ package v1alpha1
 import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -29,6 +30,14 @@ type EnvVar struct {
 	Value string `json:"value"`
 }
 
+type ProcessingState string
+
+const (
+	ProcessingStateFailed    ProcessingState = "Failed"    // Used when CRI fails to detect the runtime envs
+	ProcessingStateSucceeded ProcessingState = "Succeeded" // Indicates that CRI successfully processed the runtime environments, even if no environments were detected.
+	ProcessingStateSkipped   ProcessingState = "Skipped"   // Used when env originally come from manifest
+)
+
 // +kubebuilder:object:generate=true
 type RuntimeDetailsByContainer struct {
 	ContainerName  string                     `json:"containerName"`
@@ -52,6 +61,15 @@ type InstrumentationConfigStatus struct {
 
 	// Represents the observations of a InstrumentationConfig's current state.
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" protobuf:"bytes,1,rep,name=conditions"`
+}
+
+func (in *InstrumentationConfigStatus) GetRuntimeDetailsForContainer(container v1.Container) *RuntimeDetailsByContainer {
+	for _, runtimeDetails := range in.RuntimeDetailsByContainer {
+		if runtimeDetails.ContainerName == container.Name {
+			return &runtimeDetails
+		}
+	}
+	return nil
 }
 
 // Config for the OpenTelemeetry SDKs that should be applied to a workload.

@@ -5,32 +5,31 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
+
 	"github.com/odigos-io/odigos/cli/cmd/diagnose_util"
-	"github.com/odigos-io/odigos/cli/pkg/kube"
-	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
-	"github.com/spf13/cobra"
+
 	"io"
 	"os"
 	"path/filepath"
 	"sync"
 	"time"
-)
 
-const (
-	LogsDir    = "Logs"
-	CRDsDir    = "CRDs"
-	ProfileDir = "Profile"
-	MetricsDir = "Metrics"
+	"github.com/odigos-io/odigos/api/k8sconsts"
+	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
+	"github.com/odigos-io/odigos/cli/pkg/kube"
+	"github.com/spf13/cobra"
 )
 
 var (
-	diagnoseDirs = []string{LogsDir, CRDsDir, ProfileDir, MetricsDir}
+	diagnoseDirs = []string{k8sconsts.LogsDir, k8sconsts.CRDsDir, k8sconsts.ProfileDir, k8sconsts.MetricsDir}
 )
 
 var diagnoseCmd = &cobra.Command{
 	Use:   "diagnose",
 	Short: "Diagnose Client Cluster",
-	Long:  `Diagnose Client Cluster to identify issues and resolve them. This command is useful for troubleshooting and debugging.`,
+	Long: `Retrieves Logs of all Odigos components in the odigos-system namespace and CRDs of Actions, instrumentation resources and more. 
+The results will be saved in a compressed file for further troubleshooting.
+The file will be saved in this format: odigos_debug_ddmmyyyyhhmmss.tar.gz`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
@@ -55,7 +54,7 @@ func startDiagnose(ctx context.Context, client *kube.Client) error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		if err := diagnose_util.FetchOdigosComponentsLogs(ctx, client, filepath.Join(mainTempDir, LogsDir)); err != nil {
+		if err := diagnose_util.FetchOdigosComponentsLogs(ctx, client, filepath.Join(mainTempDir, k8sconsts.LogsDir)); err != nil {
 			fmt.Printf("Error fetching Odigos components logs: %v\n", err)
 		}
 	}()
@@ -64,7 +63,7 @@ func startDiagnose(ctx context.Context, client *kube.Client) error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		if err = diagnose_util.FetchOdigosCRs(ctx, client, filepath.Join(mainTempDir, CRDsDir)); err != nil {
+		if err = diagnose_util.FetchOdigosCRs(ctx, client, filepath.Join(mainTempDir, k8sconsts.CRDsDir)); err != nil {
 			fmt.Printf("Error fetching Odigos CRDs: %v\n", err)
 		}
 	}()
@@ -73,7 +72,7 @@ func startDiagnose(ctx context.Context, client *kube.Client) error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		if err = diagnose_util.FetchOdigosProfiles(ctx, client, filepath.Join(mainTempDir, ProfileDir)); err != nil {
+		if err = diagnose_util.FetchOdigosProfiles(ctx, client, filepath.Join(mainTempDir, k8sconsts.ProfileDir)); err != nil {
 			fmt.Printf("Error calculating Odigos Profile: %v\n", err)
 		}
 	}()
@@ -82,7 +81,7 @@ func startDiagnose(ctx context.Context, client *kube.Client) error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		if err = diagnose_util.FetchOdigosCollectorMetrics(ctx, client, filepath.Join(mainTempDir, MetricsDir)); err != nil {
+		if err = diagnose_util.FetchOdigosCollectorMetrics(ctx, client, filepath.Join(mainTempDir, k8sconsts.MetricsDir)); err != nil {
 			fmt.Printf("Error calculating Odigos Metrics: %v\n", err)
 		}
 	}()
@@ -91,7 +90,7 @@ func startDiagnose(ctx context.Context, client *kube.Client) error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		if err = diagnose_util.FetchDestinationsCRDs(ctx, client, filepath.Join(mainTempDir, CRDsDir)); err != nil {
+		if err = diagnose_util.FetchDestinationsCRDs(ctx, client, filepath.Join(mainTempDir, k8sconsts.CRDsDir)); err != nil {
 			fmt.Printf("Error fetching Odigos CRDs: %v\n", err)
 		}
 	}()

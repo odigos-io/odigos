@@ -1,8 +1,11 @@
 import React from 'react';
 import { SVG } from '@/assets';
-import theme from '@/styles/theme';
+import { useTheme } from 'styled-components';
 
-export const WarningTriangleIcon: SVG = ({ size = 16, fill = theme.text.warning, rotate = 0, onClick }) => {
+export const WarningTriangleIcon: SVG = ({ size = 16, fill: f, rotate = 0, onClick }) => {
+  const theme = useTheme();
+  const fill = f || theme.text.warning;
+
   return (
     <svg width={size} height={size} viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg' fill='none' style={{ transform: `rotate(${rotate}deg)` }} onClick={onClick}>
       <path

@@ -99,3 +99,10 @@ var NodeCollectorsDaemonSetPredicate = ObjectNamePredicate{
 var ClusterCollectorDeploymentPredicate = ObjectNamePredicate{
 	AllowedObjectName: k8sconsts.OdigosClusterCollectorDeploymentName,
 }
+
+var OdigosProSecretPredicate = ObjectNamePredicate{
+	AllowedObjectName: k8sconsts.OdigosProSecretName,
+}
+var OdigosDeploymentConfigMapPredicate = ObjectNamePredicate{
+	AllowedObjectName: k8sconsts.OdigosDeploymentConfigMapName,
+}

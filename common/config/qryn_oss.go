@@ -44,6 +44,6 @@ func (g *QrynOSS) DestType() common.DestinationType {
 	return common.QrynOSSDestinationType
 }
 
-func (g *QrynOSS) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (g *QrynOSS) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	return g.Qryn.ModifyConfig(QrynOssDest{dest}, currentConfig)
 }

@@ -18,7 +18,7 @@ func (s *Mock) DestType() common.DestinationType {
 	return common.MockDestinationType
 }
 
-func (s *Mock) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (s *Mock) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	exporterName := "mockdestination/" + dest.GetID()
 
 	responseDuration := dest.GetConfig()[mockResponseDurationMs]
@@ -31,12 +31,13 @@ func (s *Mock) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) erro
 		// convert string to float
 		"reject_fraction": reject,
 	}
-
+	var pipelineNames []string
 	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/mockdestination-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
 	if isMetricsEnabled(dest) {
@@ -44,6 +45,7 @@ func (s *Mock) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) erro
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
 	if isLoggingEnabled(dest) {
@@ -51,7 +53,8 @@ func (s *Mock) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) erro
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, logsPipelineName)
 	}
 
-	return nil
+	return pipelineNames, nil
 }

@@ -10,7 +10,7 @@ func (j *KloudMate) DestType() common.DestinationType {
 	return common.KloudMateDestinationType
 }
 
-func (j *KloudMate) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (j *KloudMate) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	uniqueUri := "kloudmate-" + dest.GetID()
 
 	exporterName := "otlphttp/" + uniqueUri
@@ -22,12 +22,13 @@ func (j *KloudMate) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 	}
 
 	currentConfig.Exporters[exporterName] = exporterConfig
-
+	var pipelineNames []string
 	if isTracingEnabled(dest) {
 		pipeName := "traces/" + uniqueUri
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, pipeName)
 	}
 
 	if isMetricsEnabled(dest) {
@@ -35,6 +36,7 @@ func (j *KloudMate) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, pipeName)
 	}
 
 	if isLoggingEnabled(dest) {
@@ -42,7 +44,8 @@ func (j *KloudMate) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, pipeName)
 	}
 
-	return nil
+	return pipelineNames, nil
 }

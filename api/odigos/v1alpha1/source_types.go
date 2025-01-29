@@ -53,6 +53,12 @@ type SourceSpec struct {
 	// DisableInstrumentation excludes this workload from auto-instrumentation.
 	// +kubebuilder:validation:Optional
 	DisableInstrumentation bool `json:"disableInstrumentation,omitempty"`
+	// OtelServiceName determines the "service.name" resource attribute which will be reported by the instrumentations of this source.
+	// If not set, the workload name will be used.
+	// It is not valid for namespace sources.
+	// +kubebuilder:validation:Optional
+	// +optional
+	OtelServiceName string `json:"otelServiceName,omitempty"`
 }
 
 type SourceStatus struct {
@@ -78,6 +84,28 @@ type SourceList struct {
 type WorkloadSources struct {
 	Workload  *Source
 	Namespace *Source
+}
+
+type SourceSelector struct {
+	// If a namespace is specified, all workloads (sources) within that namespace are allowed to send data.
+	// Example:
+	// namespaces: ["default", "production"]
+	// This means the destination will receive data from all sources in "default" and "production" namespaces.
+	// +optional
+	Namespaces []string `json:"namespaces,omitempty"`
+	// Workloads (sources) are assigned to groups via labels (odigos.io/group-backend: true), allowing a more flexible selection mechanism.
+	// Example:
+	// groups: ["backend", "monitoring"]
+	// This means the destination will receive data only from sources labeled with "backend" or "monitoring".
+	// +optional
+	Groups []string `json:"groups,omitempty"`
+
+	// Selection Semantics:
+	// If both `Namespaces` and `Groups` are specified, the selection follows an **OR** logic:
+	// - A source is included **if** it belongs to **at least one** of the specified namespaces OR groups.
+	// - If `Namespaces` is empty but `Groups` is specified, only sources in those groups are included.
+	// - If `Groups` is empty but `Namespaces` is specified, all sources in those namespaces are included.
+	// - If SourceSelector is nil, the destination receives data from all sources.
 }
 
 // GetSources returns a WorkloadSources listing the Workload and Namespace Source

@@ -19,18 +19,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-const (
-	AutoScalerDeploymentName         = "odigos-autoscaler"
-	AutoScalerServiceAccountName     = AutoScalerDeploymentName
-	AutoScalerAppLabelValue          = AutoScalerDeploymentName
-	AutoScalerRoleName               = AutoScalerDeploymentName
-	AutoScalerRoleBindingName        = AutoScalerDeploymentName
-	AutoScalerClusterRoleName        = AutoScalerDeploymentName
-	AutoScalerClusterRoleBindingName = AutoScalerDeploymentName
-	AutoScalerServiceName            = "auto-scaler"
-	AutoScalerContainerName          = "manager"
-)
-
 func NewAutoscalerServiceAccount(ns string) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
@@ -38,7 +26,7 @@ func NewAutoscalerServiceAccount(ns string) *corev1.ServiceAccount {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      AutoScalerServiceAccountName,
+			Name:      k8sconsts.AutoScalerServiceAccountName,
 			Namespace: ns,
 		},
 	}
@@ -51,7 +39,7 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      AutoScalerRoleName,
+			Name:      k8sconsts.AutoScalerRoleName,
 			Namespace: ns,
 		},
 		Rules: []rbacv1.PolicyRule{
@@ -141,19 +129,19 @@ func NewAutoscalerRoleBinding(ns string) *rbacv1.RoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      AutoScalerRoleBindingName,
+			Name:      k8sconsts.AutoScalerRoleBindingName,
 			Namespace: ns,
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Kind: "ServiceAccount",
-				Name: AutoScalerServiceAccountName,
+				Name: k8sconsts.AutoScalerServiceAccountName,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "Role",
-			Name:     AutoScalerRoleName,
+			Name:     k8sconsts.AutoScalerRoleName,
 		},
 	}
 }
@@ -165,13 +153,23 @@ func NewAutoscalerClusterRole() *rbacv1.ClusterRole {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: AutoScalerClusterRoleName,
+			Name: k8sconsts.AutoScalerClusterRoleName,
 		},
 		Rules: []rbacv1.PolicyRule{
 			{ // Needed to read the applications, to populate the receivers.filelog in the data-collector configmap
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"instrumentationconfigs"},
 				Verbs:     []string{"get", "list", "watch"},
+			},
+			// Needed to read the sources for build the odigos routing processor
+			{
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"sources"},
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+				},
 			},
 		},
 	}
@@ -184,19 +182,19 @@ func NewAutoscalerClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: AutoScalerClusterRoleBindingName,
+			Name: k8sconsts.AutoScalerClusterRoleBindingName,
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      AutoScalerServiceAccountName,
+				Name:      k8sconsts.AutoScalerServiceAccountName,
 				Namespace: ns,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "ClusterRole",
-			Name:     AutoScalerClusterRoleName,
+			Name:     k8sconsts.AutoScalerClusterRoleName,
 		},
 	}
 }
@@ -214,7 +212,7 @@ func NewAutoscalerLeaderElectionRoleBinding(ns string) *rbacv1.RoleBinding {
 		Subjects: []rbacv1.Subject{
 			{
 				Kind: "ServiceAccount",
-				Name: AutoScalerServiceAccountName,
+				Name: k8sconsts.AutoScalerServiceAccountName,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
@@ -243,32 +241,32 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      AutoScalerDeploymentName,
+			Name:      k8sconsts.AutoScalerDeploymentName,
 			Namespace: ns,
 			Labels: map[string]string{
-				"app.kubernetes.io/name": AutoScalerAppLabelValue,
+				"app.kubernetes.io/name": k8sconsts.AutoScalerAppLabelValue,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptrint32(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app.kubernetes.io/name": AutoScalerAppLabelValue,
+					"app.kubernetes.io/name": k8sconsts.AutoScalerAppLabelValue,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app.kubernetes.io/name": AutoScalerAppLabelValue,
+						"app.kubernetes.io/name": k8sconsts.AutoScalerAppLabelValue,
 					},
 					Annotations: map[string]string{
-						"kubectl.kubernetes.io/default-container": AutoScalerContainerName,
+						"kubectl.kubernetes.io/default-container": k8sconsts.AutoScalerContainerName,
 					},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  AutoScalerContainerName,
+							Name:  k8sconsts.AutoScalerContainerName,
 							Image: containers.GetImageName(imagePrefix, imageName, version),
 							Command: []string{
 								"/app",
@@ -281,7 +279,7 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 							Env: append([]corev1.EnvVar{
 								{
 									Name:  "OTEL_SERVICE_NAME",
-									Value: AutoScalerServiceName,
+									Value: k8sconsts.AutoScalerServiceName,
 								},
 								{
 									Name: "CURRENT_NS",
@@ -342,7 +340,7 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 						},
 					},
 					TerminationGracePeriodSeconds: ptrint64(10),
-					ServiceAccountName:            AutoScalerServiceAccountName,
+					ServiceAccountName:            k8sconsts.AutoScalerServiceAccountName,
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot: ptrbool(true),
 					},

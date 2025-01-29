@@ -20,7 +20,7 @@ export const LanguageDropdown: React.FC<Props> = ({ title = 'Programming Languag
     const payload: DropdownOption[] = [];
 
     sources.forEach(({ containers }) => {
-      containers.forEach(({ language }) => {
+      containers?.forEach(({ language }) => {
         if (!payload.find((opt) => opt.id === language)) {
           payload.push({ id: language, value: language });
         }
