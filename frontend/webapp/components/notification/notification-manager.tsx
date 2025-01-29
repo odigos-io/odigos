@@ -1,11 +1,11 @@
 import React, { useRef, useState } from 'react';
+import { useTimeAgo } from '@/hooks';
 import { useClickNotif } from '@/hooks';
 import { useNotificationStore } from '@/store';
 import { ACTION, getStatusIcon } from '@/utils';
 import styled, { useTheme } from 'styled-components';
-import { useOnClickOutside, useTimeAgo } from '@/hooks';
 import { NOTIFICATION_TYPE, type Notification } from '@/types';
-import { IconButton, NoDataFound, NotificationIcon, Text, Theme, TrashIcon } from '@odigos/ui-components';
+import { IconButton, NoDataFound, NotificationIcon, Text, Theme, TrashIcon, useOnClickOutside } from '@odigos/ui-components';
 
 const RelativeContainer = styled.div`
   position: relative;

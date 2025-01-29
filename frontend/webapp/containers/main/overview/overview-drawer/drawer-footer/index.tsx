@@ -1,7 +1,6 @@
 import React from 'react';
-import { useTransition } from '@/hooks';
 import styled, { useTheme } from 'styled-components';
-import { Button, Text, Theme, TrashIcon } from '@odigos/ui-components';
+import { Button, Text, Theme, TrashIcon, useTransition } from '@odigos/ui-components';
 
 interface Props {
   isOpen: boolean;

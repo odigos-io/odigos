@@ -4,12 +4,12 @@ import { useAppStore } from '@/store';
 import styled from 'styled-components';
 import { SideMenu } from '@/components';
 import { ACTION, INPUT_TYPES } from '@/utils';
-import { ArrowIcon } from '@odigos/ui-components';
 import { DestinationFormBody } from '../destination-form-body';
 import { ChooseDestinationBody } from './choose-destination-body';
+import { useDestinationCRUD, useDestinationFormData } from '@/hooks';
+import { ArrowIcon, Modal, useKeyDown } from '@odigos/ui-components';
 import type { ConfiguredDestination, DestinationTypeItem } from '@/types';
-import { useDestinationCRUD, useDestinationFormData, useKeyDown } from '@/hooks';
-import { Modal, type NavigationButtonProps, NavigationButtons } from '@/reuseable-components';
+import { type NavigationButtonProps, NavigationButtons } from '@/reuseable-components';
 
 interface AddDestinationModalProps {
   isOnboarding?: boolean;

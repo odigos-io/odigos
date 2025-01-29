@@ -1,8 +1,8 @@
 import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react';
-import styled, { css } from 'styled-components';
-import { ExtendIcon, IconWrapped, MonitorsIcons } from '@/reuseable-components';
-import { Divider, FlexColumn, FlexRow, IconButton, Status, Text, Theme, Tooltip, Types } from '@odigos/ui-components';
 import { NOTIFICATION_TYPE } from '@/types';
+import styled, { css } from 'styled-components';
+import { MonitorsIcons } from '@/reuseable-components';
+import { Divider, ExtendArrow, FlexColumn, FlexRow, IconButton, IconWrapped, Status, Text, Theme, Tooltip, Types } from '@odigos/ui-components';
 
 interface Props {
   title: string;
@@ -154,7 +154,7 @@ export const DataTab: React.FC<Props> = ({
   return (
     <Container $isError={isError} $withClick={!!onClick} onClick={onClick} {...props}>
       <FlexRow $gap={8}>
-        <IconWrapped icon={icon} src={iconSrc} isError={isError} />
+        <IconWrapped icon={icon} src={iconSrc} status={isError ? NOTIFICATION_TYPE.ERROR : undefined} />
 
         <FlexColumn $gap={4}>
           {isTitleOverflowed ? (
@@ -184,7 +184,7 @@ export const DataTab: React.FC<Props> = ({
             <Fragment>
               <Divider orientation='vertical' length='16px' margin='0 2px' />
               <IconButton onClick={() => setExtend((prev) => !prev)}>
-                <ExtendIcon extend={extend} />
+                <ExtendArrow extend={extend} />
               </IconButton>
             </Fragment>
           )}

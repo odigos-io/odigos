@@ -1,9 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { useOnClickOutside } from '@/hooks';
 import type { DropdownOption } from '@/types';
+import { Checkbox, Input } from '@/reuseable-components';
 import styled, { css, useTheme } from 'styled-components';
-import { Checkbox, ExtendIcon, Input } from '@/reuseable-components';
-import { Badge, CheckIcon, CrossIcon, Divider, FieldError, FieldLabel, NoDataFound, SearchIcon, Text, Theme } from '@odigos/ui-components';
+import { Badge, CheckIcon, CrossIcon, Divider, ExtendArrow, FieldError, FieldLabel, NoDataFound, SearchIcon, Text, Theme, useOnClickOutside } from '@odigos/ui-components';
 
 interface DropdownProps {
   title?: string;
@@ -98,7 +97,7 @@ export const Dropdown: React.FC<DropdownProps> = ({ options, value, onSelect, on
           <DropdownPlaceholder value={value} placeholder={placeholder} onDeselect={onDeselect} />
           <IconWrapper>
             {isMulti && <Badge label={arrLen} filled={!!arrLen} />}
-            <ExtendIcon extend={isOpen} />
+            <ExtendArrow extend={isOpen} />
           </IconWrapper>
         </DropdownHeader>
 

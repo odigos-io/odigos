@@ -1,7 +1,7 @@
 import React, { useEffect, useState, forwardRef, useImperativeHandle } from 'react';
+import { Input } from '@/reuseable-components';
 import styled, { useTheme } from 'styled-components';
-import { IconWrapped, Input } from '@/reuseable-components';
-import { Button, EditIcon, Text, Tooltip, TrashIcon, Types, XIcon } from '@odigos/ui-components';
+import { Button, EditIcon, IconWrapped, Text, Tooltip, TrashIcon, Types, XIcon } from '@odigos/ui-components';
 
 const HeaderContainer = styled.section`
   display: flex;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { WarningModal } from '@/reuseable-components';
+import { WarningModal } from '@odigos/ui-components';
 import { NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES } from '@/types';
 
 interface Props {

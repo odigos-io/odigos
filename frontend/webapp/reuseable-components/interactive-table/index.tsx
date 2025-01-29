@@ -1,8 +1,7 @@
 import React from 'react';
 import { isEmpty } from '@/utils';
 import styled from 'styled-components';
-import { IconWrapped } from '../icon-wrapped';
-import { Theme, Types } from '@odigos/ui-components';
+import { IconWrapped, Theme, Types } from '@odigos/ui-components';
 
 interface ColumnCell {
   key: string; // used to bind the row cell to the column

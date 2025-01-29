@@ -1,9 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { ExtendIcon } from '@/reuseable-components';
 import styled, { useTheme } from 'styled-components';
 import { BACKEND_BOOLEAN, getStatusIcon } from '@/utils';
 import { NOTIFICATION_TYPE, type Condition } from '@/types';
-import { FadeLoader, Text, Theme } from '@odigos/ui-components';
+import { ExtendArrow, FadeLoader, Text, Theme } from '@odigos/ui-components';
 
 interface Props {
   conditions: Condition[];
@@ -61,7 +60,7 @@ export const ConditionDetails: React.FC<Props> = ({ conditions = [] }) => {
           ({hasErrors ? errors.length : conditions.length}/{conditions.length})
         </Text>
 
-        <ExtendIcon extend={extend} align='right' />
+        <ExtendArrow extend={extend} align='right' />
       </Header>
 
       {extend && (

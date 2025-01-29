@@ -1,10 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useModalStore } from '@/store';
 import { getEntityIcon } from '@/utils';
-import { useOnClickOutside } from '@/hooks';
 import styled, { css, useTheme } from 'styled-components';
 import { type DropdownOption, OVERVIEW_ENTITY_TYPES } from '@/types';
-import { Button, PlusIcon, Text, Theme } from '@odigos/ui-components';
+import { Button, PlusIcon, Text, Theme, useOnClickOutside } from '@odigos/ui-components';
 
 // Styled components for the dropdown UI
 const Container = styled.div`

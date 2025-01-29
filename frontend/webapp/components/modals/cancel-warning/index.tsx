@@ -1,6 +1,6 @@
 import React from 'react';
 import { NOTIFICATION_TYPE } from '@/types';
-import { WarningModal } from '@/reuseable-components';
+import { WarningModal } from '@odigos/ui-components';
 
 interface Props {
   isOpen: boolean;

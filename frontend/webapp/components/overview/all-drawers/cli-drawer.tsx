@@ -1,9 +1,9 @@
 import React, { useRef, useState } from 'react';
 import { NOTIFICATION_TYPE } from '@/types';
 import styled, { useTheme } from 'styled-components';
+import { useDescribeOdigos, useTimeAgo, useTokenCRUD } from '@/hooks';
 import OverviewDrawer from '@/containers/main/overview/overview-drawer';
 import { DataCard, DataCardFieldTypes, Input } from '@/reuseable-components';
-import { useCopy, useDescribeOdigos, useKeyDown, useOnClickOutside, useTimeAgo, useTokenCRUD } from '@/hooks';
 import { DATA_CARDS, getStatusIcon, isOverTime, isWithinTime, safeJsonStringify, SEVEN_DAYS_IN_MS } from '@/utils';
 import {
   Button,
@@ -22,6 +22,9 @@ import {
   Segment,
   Text,
   Tooltip,
+  useCopy,
+  useKeyDown,
+  useOnClickOutside,
 } from '@odigos/ui-components';
 
 interface Props {}

@@ -1,12 +1,11 @@
 import { PropsWithChildren, useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
 import DrawerFooter from './drawer-footer';
-import { Types } from '@odigos/ui-components';
-import { Drawer } from '@/reuseable-components';
+import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
 import DrawerHeader, { DrawerHeaderRef } from './drawer-header';
+import { Drawer, Types, useKeyDown } from '@odigos/ui-components';
 import { CancelWarning, DeleteWarning } from '@/components/modals';
 import { NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES } from '@/types';
-import { useDestinationCRUD, useKeyDown, useSourceCRUD } from '@/hooks';
 import { useDrawerStore, useNotificationStore, usePendingStore } from '@/store';
 
 const DRAWER_WIDTH = `${640 + 64}px`; // +64 because of "ContentArea" padding

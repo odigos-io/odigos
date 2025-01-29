@@ -1,9 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
-import { useKeyDown, useOnClickOutside } from '@/hooks';
 import { AbsoluteContainer, RelativeContainer } from '../styled';
-import { Button, FilterIcon, Toggle } from '@odigos/ui-components';
 import { type FiltersState, useFilterStore } from '@/store/useFilterStore';
+import { Button, FilterIcon, Toggle, useKeyDown, useOnClickOutside } from '@odigos/ui-components';
 import { ErrorDropdown, LanguageDropdown, MonitorDropdown, NamespaceDropdown, SelectionButton, TypeDropdown } from '@/components';
 
 const FormWrapper = styled.div`
