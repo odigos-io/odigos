@@ -94,14 +94,14 @@ spec:
           volumeMounts:
             - name: run-dir
               mountPath: /run
-            {{ if .Values.openshift.enabled }}
+            {{- if .Values.openshift.enabled }}
             - name: host
               mountPath: /host
               readOnly: true
             - name: selinux
               mountPath: /host/etc/selinux
               mountPropagation: Bidirectional
-            {{ end }}
+            {{- end }}
             - name: device-plugins-dir
               mountPath: /var/lib/kubelet/device-plugins
             - name: pod-resources
@@ -120,7 +120,7 @@ spec:
         - name: run-dir
           hostPath:
             path: /run
-        {{ if .Values.openshift.enabled }}
+        {{- if .Values.openshift.enabled }}
         - name: host
           hostPath:
             path: /
