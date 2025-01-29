@@ -1,6 +1,6 @@
 import React, { useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 import styled, { useTheme } from 'styled-components';
-import { EditIcon, SVG, TrashIcon, XIcon } from '@/assets';
+import { EditIcon, TrashIcon, Types, XIcon } from '@odigos/ui-components';
 import { Button, IconWrapped, Input, Text, Tooltip } from '@/reuseable-components';
 
 const HeaderContainer = styled.section`
@@ -55,7 +55,7 @@ export interface DrawerHeaderRef {
 interface DrawerHeaderProps {
   title: string;
   titleTooltip?: string;
-  icon?: SVG;
+  icon?: Types.SVG;
   iconSrc?: string;
   isEdit?: boolean;
   onEdit?: () => void;

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { ACTION } from '@/utils';
-import { useKeyDown } from '@/hooks';
 import { ActionFormBody } from '../';
-import { CenterThis, ModalBody } from '@/styles';
+import { ModalBody } from '@/styles';
+import { useKeyDown } from '@/hooks';
+import { CenterThis } from '@odigos/ui-components';
 import { useActionCRUD, useActionFormData } from '@/hooks/actions';
 import { ACTION_OPTIONS, type ActionOption } from './action-options';
 import { AutocompleteInput, Modal, NavigationButtons, Divider, FadeLoader, SectionTitle } from '@/reuseable-components';

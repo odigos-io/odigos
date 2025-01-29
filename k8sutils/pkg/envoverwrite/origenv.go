@@ -4,17 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
 )
 
-// original manifest values for the env vars of a workload
-// This is specific to k8s as it assumes there is OriginalEnv per container
+// Deprecated: Used for migration purposes only.
+// remove in odigos v1.1
 type OrigWorkloadEnvValues struct {
-	origManifestValues   map[string]envOverwrite.OriginalEnv
-	modifiedSinceCreated bool
+	OrigManifestValues map[string]envOverwrite.OriginalEnv
 }
 
 func NewOrigWorkloadEnvValues(workloadAnnotations map[string]string) (*OrigWorkloadEnvValues, error) {
@@ -29,87 +26,35 @@ func NewOrigWorkloadEnvValues(workloadAnnotations map[string]string) (*OrigWorkl
 	}
 
 	return &OrigWorkloadEnvValues{
-		origManifestValues:   manifestValues,
-		modifiedSinceCreated: false,
+		OrigManifestValues: manifestValues,
 	}, nil
 }
 
 func (o *OrigWorkloadEnvValues) GetContainerStoredEnvs(containerName string) envOverwrite.OriginalEnv {
-	return o.origManifestValues[containerName]
+	return o.OrigManifestValues[containerName]
 }
 
 // this function is called when reverting a value back to it's original content.
 // it removes the env, if exists, and returns the original value for the caller to populate back into the manifest.
 func (o *OrigWorkloadEnvValues) RemoveOriginalValue(containerName, envName string) (*string, bool) {
-	if val, ok := o.origManifestValues[containerName][envName]; ok {
-		delete(o.origManifestValues[containerName], envName)
-		if len(o.origManifestValues[containerName]) == 0 {
-			delete(o.origManifestValues, containerName)
+	if val, ok := o.OrigManifestValues[containerName][envName]; ok {
+		delete(o.OrigManifestValues[containerName], envName)
+		if len(o.OrigManifestValues[containerName]) == 0 {
+			delete(o.OrigManifestValues, containerName)
 		}
-		o.modifiedSinceCreated = true
 		return val, true
 	}
 	return nil, false
 }
 
 func (o *OrigWorkloadEnvValues) InsertOriginalValue(containerName, envName string, val *string) {
-	if _, ok := o.origManifestValues[containerName]; !ok {
-		o.origManifestValues[containerName] = make(envOverwrite.OriginalEnv)
+	if _, ok := o.OrigManifestValues[containerName]; !ok {
+		o.OrigManifestValues[containerName] = make(envOverwrite.OriginalEnv)
 	}
-	if _, alreadyExists := o.origManifestValues[containerName][envName]; alreadyExists {
+	if _, alreadyExists := o.OrigManifestValues[containerName][envName]; alreadyExists {
 		// we already have the original value for this env, will not update it
 		// TODO: should we update it if the value is different?
 		return
 	}
-	o.origManifestValues[containerName][envName] = val
-	o.modifiedSinceCreated = true
-}
-
-func (o *OrigWorkloadEnvValues) SetModifiedSinceCreated() {
-	o.modifiedSinceCreated = true
-}
-
-// stores the original values back into the manifest annotations
-// by modifying the annotations map of the input argument
-func (o *OrigWorkloadEnvValues) SerializeToAnnotation(obj metav1.Object) error {
-	if !o.modifiedSinceCreated {
-		return nil
-	}
-
-	if len(o.origManifestValues) == 0 {
-		// delete the annotation is there are no original values to store
-		o.DeleteFromObj(obj)
-		return nil
-	}
-
-	annotationContentBytes, err := json.Marshal(o.origManifestValues)
-	if err != nil {
-		// this should never happen, but if it does, we should log it and continue
-		return fmt.Errorf("failed to marshal original env values: %v", err)
-	}
-	annotationEntryContent := string(annotationContentBytes)
-
-	currentAnnotations := obj.GetAnnotations()
-	if currentAnnotations == nil {
-		currentAnnotations = make(map[string]string)
-	}
-
-	// write the original values back to the manifest annotations and update the object
-	currentAnnotations[consts.ManifestEnvOriginalValAnnotation] = annotationEntryContent
-	obj.SetAnnotations(currentAnnotations)
-	return nil
-}
-
-func (o *OrigWorkloadEnvValues) DeleteFromObj(obj metav1.Object) bool {
-	currentAnnotations := obj.GetAnnotations()
-	if currentAnnotations == nil {
-		return false
-	}
-
-	if _, ok := currentAnnotations[consts.ManifestEnvOriginalValAnnotation]; !ok {
-		return false
-	}
-
-	delete(currentAnnotations, consts.ManifestEnvOriginalValAnnotation)
-	return true
+	o.OrigManifestValues[containerName][envName] = val
 }

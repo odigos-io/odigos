@@ -1,14 +1,14 @@
 import React from 'react';
-import { SVG } from '@/assets';
 import { Text } from '../text';
 import { Badge } from '../badge';
 import styled from 'styled-components';
+import { Types } from '@odigos/ui-components';
 
 interface SectionTitleProps {
   title: string;
   description: string;
   badgeLabel?: string | number;
-  icon?: SVG;
+  icon?: Types.SVG;
   actionButton?: React.ReactNode;
   size?: 'small' | 'medium' | 'large';
 }

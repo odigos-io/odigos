@@ -1,8 +1,7 @@
 import React from 'react';
-import { FolderIcon } from '@/assets';
 import styled from 'styled-components';
-import { hexPercentValues } from '@/styles';
 import { type UseSourceFormDataResponse } from '@/hooks';
+import { FolderIcon, Theme } from '@odigos/ui-components';
 import { Checkbox, FadeLoader, IconWrapped, NoDataFound, Text } from '@/reuseable-components';
 
 interface Props extends UseSourceFormDataResponse {
@@ -28,9 +27,9 @@ const ListItem = styled.div<{ $selected: boolean }>`
   transition: background 0.3s;
   border-radius: 16px;
   cursor: pointer;
-  background: ${({ $selected, theme }) => ($selected ? theme.colors.majestic_blue + hexPercentValues['024'] : theme.colors.dropdown_bg_2 + hexPercentValues['040'])};
+  background: ${({ $selected, theme }) => ($selected ? theme.colors.majestic_blue + Theme.hexPercent['024'] : theme.colors.dropdown_bg_2 + Theme.hexPercent['040'])};
   &:hover {
-    background: ${({ $selected, theme }) => ($selected ? theme.colors.majestic_blue + hexPercentValues['040'] : theme.colors.dropdown_bg_2 + hexPercentValues['080'])};
+    background: ${({ $selected, theme }) => ($selected ? theme.colors.majestic_blue + Theme.hexPercent['040'] : theme.colors.dropdown_bg_2 + Theme.hexPercent['080'])};
   }
 `;
 

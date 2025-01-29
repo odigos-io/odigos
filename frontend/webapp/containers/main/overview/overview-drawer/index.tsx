@@ -1,7 +1,7 @@
 import { PropsWithChildren, useMemo, useRef, useState } from 'react';
-import { SVG } from '@/assets';
 import styled from 'styled-components';
 import DrawerFooter from './drawer-footer';
+import { Types } from '@odigos/ui-components';
 import { Drawer } from '@/reuseable-components';
 import DrawerHeader, { DrawerHeaderRef } from './drawer-header';
 import { CancelWarning, DeleteWarning } from '@/components/modals';
@@ -14,7 +14,7 @@ const DRAWER_WIDTH = `${640 + 64}px`; // +64 because of "ContentArea" padding
 interface Props {
   title: string;
   titleTooltip?: string;
-  icon?: SVG;
+  icon?: Types.SVG;
   iconSrc?: string;
   isEdit?: boolean;
   isFormDirty?: boolean;

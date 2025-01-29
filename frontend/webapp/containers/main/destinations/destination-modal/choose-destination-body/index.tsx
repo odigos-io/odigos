@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { SearchIcon } from '@/assets';
 import styled from 'styled-components';
 import { SignalUppercase } from '@/utils';
 import { useDestinationTypes } from '@/hooks';
+import { SearchIcon } from '@odigos/ui-components';
 import { DestinationsList } from './destinations-list';
 import type { DestinationTypeItem, SupportedSignals } from '@/types';
 import { Divider, Dropdown, Input, MonitoringCheckboxes, SectionTitle } from '@/reuseable-components';
