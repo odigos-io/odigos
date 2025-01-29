@@ -1,0 +1,12 @@
+resources:
+- manager.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+images:
+- name: controller
+  newName: registry.connect.redhat.com/odigos/odigos-operator-ubi9
+  newTag: v1.0.154
+configMapGenerator:
+- literals:
+  - ODIGOS_VERSION=1.0.154
+  name: odigos-version

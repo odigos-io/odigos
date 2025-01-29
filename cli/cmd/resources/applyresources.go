@@ -16,10 +16,10 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func ApplyResourceManagers(ctx context.Context, client *kube.Client, resourceManagers []resourcemanager.ResourceManager, prefixForLogging string) error {
+func ApplyResourceManagers(ctx context.Context, client *kube.Client, resourceManagers []resourcemanager.ResourceManager, prefixForLogging string, ownerReferences ...metav1.OwnerReference) error {
 	for _, rm := range resourceManagers {
 		l := log.Print(fmt.Sprintf("> %s %s", prefixForLogging, rm.Name()))
-		err := rm.InstallFromScratch(ctx)
+		err := rm.InstallFromScratch(ctx, ownerReferences)
 		if err != nil {
 			l.Error(err)
 			os.Exit(1)
