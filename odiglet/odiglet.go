@@ -3,6 +3,7 @@ package odiglet
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -14,6 +15,7 @@ import (
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation"
+	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/fs"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"github.com/odigos-io/odigos/opampserver/pkg/server"
@@ -157,11 +159,6 @@ func (o *Odiglet) Run(ctx context.Context) {
 		return err
 	})
 
-	// Add odiglet installed label to node
-	if err := k8snode.AddLabelToNode(ctx, o.clientset, env.Current.NodeName, k8sconsts.OdigletInstalledLabel, k8sconsts.OdigletInstalledLabelValue); err != nil {
-		log.Logger.Error(err, "Failed to add Odiglet installed label to the node")
-	}
-
 	err := g.Wait()
 	if err != nil {
 		log.Logger.Error(err, "Odiglet exited with error")
@@ -181,4 +178,28 @@ func runDeviceManager(clientset *kubernetes.Clientset, otelSdkLsf instrumentatio
 	manager := dpm.NewManager(lister)
 	manager.Run()
 	return nil
+}
+
+func OdigletInitPhase() {
+	if err := log.Init(); err != nil {
+		panic(err)
+	}
+	err := fs.CopyAgentsDirectoryToHost()
+	if err != nil {
+		log.Logger.Error(err, "Failed to copy agents directory to host")
+		os.Exit(-1)
+	}
+
+	nn, ok := os.LookupEnv(k8sconsts.NodeNameEnvVar)
+	if !ok {
+		log.Logger.Error(fmt.Errorf("env var %s is not set", k8sconsts.NodeNameEnvVar), "Failed to load env")
+		os.Exit(-1)
+	}
+
+	if err := k8snode.AddLabelToNode(nn, k8sconsts.OdigletInstalledLabel, k8sconsts.OdigletInstalledLabelValue); err != nil {
+		log.Logger.Error(err, "Failed to add Odiglet installed label to the node")
+		os.Exit(-1)
+	}
+
+	os.Exit(0)
 }

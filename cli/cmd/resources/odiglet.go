@@ -389,6 +389,16 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 							Args: []string{
 								"init",
 							},
+							Env: []corev1.EnvVar{
+								{
+									Name: "NODE_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+							},
 							Resources: corev1.ResourceRequirements{},
 							VolumeMounts: append([]corev1.VolumeMount{
 								{
