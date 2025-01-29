@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
-import { CheckIcon } from '@/assets';
 import { type StepProps } from '@/types';
 import { Text } from '@/reuseable-components';
 import styled, { css } from 'styled-components';
+import { CheckIcon } from '@odigos/ui-components';
 
 const Container = styled.div`
   display: flex;
@@ -52,7 +52,7 @@ const IconWrapper = styled.div<{ $state: 'finish' | 'active' | 'disabled' }>`
         `
       : $state === 'disabled' &&
         css`
-          border: 1px dashed rgba(249, 249, 249, 0.4);
+          border: 1px dashed ${({ theme }) => theme.text.dark_grey};
         `}
 `;
 

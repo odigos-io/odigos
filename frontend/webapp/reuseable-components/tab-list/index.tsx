@@ -2,14 +2,13 @@ import React from 'react';
 import { Text } from '../text';
 import { Tooltip } from '../tooltip';
 import styled from 'styled-components';
-import { OverviewIcon, SVG } from '@/assets';
-import { hexPercentValues } from '@/styles/theme';
+import { OverviewIcon, Theme, Types } from '@odigos/ui-components';
 
 // Define types for the Tab component props
 interface TabProps {
   title: string;
   tooltip?: string;
-  icon: SVG;
+  icon: Types.SVG;
   selected: boolean;
   disabled?: boolean;
   onClick?: () => void;
@@ -27,12 +26,13 @@ const TabContainer = styled.div<{ $selected: TabProps['selected']; $disabled: Ta
   padding: 10px 12px;
   border-radius: 32px;
   cursor: ${({ $noClick, $disabled }) => ($noClick ? 'unset' : $disabled ? 'not-allowed' : 'pointer')};
-  background-color: ${({ $noClick, $selected, theme }) => ($noClick ? 'transparent' : $selected ? theme.colors.majestic_blue + hexPercentValues['024'] : theme.colors.card)};
+  background-color: ${({ $noClick, $selected, theme }) =>
+    $noClick ? 'transparent' : $selected ? theme.colors.majestic_blue + Theme.hexPercent['024'] : theme.colors.secondary + Theme.hexPercent['004']};
   opacity: ${({ $disabled }) => ($disabled ? 0.5 : 1)};
   transition: background-color 0.3s, color 0.3s;
 
   &:hover {
-    background-color: ${({ $noClick, $disabled, theme }) => ($noClick || $disabled ? 'none' : theme.colors.majestic_blue + hexPercentValues['024'])};
+    background-color: ${({ $noClick, $disabled, theme }) => ($noClick || $disabled ? 'none' : theme.colors.majestic_blue + Theme.hexPercent['024'])};
   }
 
   svg {

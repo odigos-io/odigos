@@ -2,9 +2,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import buildCard from './build-card';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
-import { CodeIcon, ListIcon } from '@/assets';
 import buildDrawerItem from './build-drawer-item';
 import { UpdateSourceBody } from '../update-source-body';
+import { CodeIcon, ListIcon } from '@odigos/ui-components';
 import { useDescribeSource, useSourceCRUD } from '@/hooks';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type K8sActualSource } from '@/types';
@@ -14,7 +14,7 @@ import { ConditionDetails, DataCard, DataCardRow, DataCardFieldTypes, Segment } 
 interface Props {}
 
 const EMPTY_FORM = {
-  reportedName: '',
+  otelServiceName: '',
 };
 
 const FormContainer = styled.div`
@@ -74,7 +74,7 @@ export const SourceDrawer: React.FC<Props> = () => {
       resetFormData();
     } else {
       const { item } = selectedItem as { item: K8sActualSource };
-      handleFormChange('reportedName', item.reportedName || item.name || '');
+      handleFormChange('otelServiceName', item.otelServiceName || item.name || '');
     }
   }, [selectedItem, isEditing]);
 
@@ -130,14 +130,14 @@ export const SourceDrawer: React.FC<Props> = () => {
   };
 
   const handleSave = async () => {
-    const title = formData.reportedName !== item.name ? formData.reportedName : '';
-    handleFormChange('reportedName', title);
-    await updateSource(id, { ...formData, reportedName: title });
+    const title = formData.otelServiceName !== item.name ? formData.otelServiceName : '';
+    handleFormChange('otelServiceName', title);
+    await updateSource(id, { ...formData, otelServiceName: title });
   };
 
   return (
     <OverviewDrawer
-      title={item.reportedName || item.name}
+      title={item.otelServiceName || item.name}
       titleTooltip='This attribute is used to identify the name of the service (service.name) that is generating telemetry data.'
       icon={getEntityIcon(OVERVIEW_ENTITY_TYPES.SOURCE)}
       isEdit={isEditing}

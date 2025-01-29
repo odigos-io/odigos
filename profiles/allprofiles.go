@@ -13,6 +13,7 @@ import (
 var AllProfiles = []profile.Profile{
 
 	aggregators.KratosProfile,
+	aggregators.GreatwallProfile,
 
 	attributes.CategoryAttributesProfile,
 	attributes.CodeAttributesProfile,
@@ -26,6 +27,7 @@ var AllProfiles = []profile.Profile{
 	instrumentation.AllowConcurrentAgents,
 	instrumentation.JavaEbpfInstrumentationsProfile,
 	instrumentation.JavaNativeInstrumentationsProfile,
+	instrumentation.LegacyDotNetProfile,
 
 	pipeline.DisableNameProcessorProfile,
 	pipeline.SmallBatchesProfile,

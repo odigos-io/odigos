@@ -1,10 +1,9 @@
 import React from 'react';
-import styled from 'styled-components';
 import { getStatusIcon } from '@/utils';
 import { NOTIFICATION_TYPE } from '@/types';
+import { Theme } from '@odigos/ui-components';
+import styled, { useTheme } from 'styled-components';
 import { Divider, Text } from '@/reuseable-components';
-import theme, { hexPercentValues } from '@/styles/theme';
-import { CheckCircledIcon, CrossCircledIcon } from '@/assets';
 
 export * from './active-status';
 export * from './connection-status';
@@ -17,7 +16,6 @@ export interface StatusProps {
   family?: 'primary' | 'secondary';
   status?: NOTIFICATION_TYPE;
   isActive?: boolean;
-  isPale?: boolean;
   withIcon?: boolean;
   withBorder?: boolean;
   withBackground?: boolean;
@@ -25,8 +23,7 @@ export interface StatusProps {
 
 const StatusWrapper = styled.div<{
   $size: number;
-  $isPale: StatusProps['isPale'];
-  $status: StatusProps['status'];
+  $status: NOTIFICATION_TYPE;
   $withIcon?: StatusProps['withIcon'];
   $withBorder?: StatusProps['withBorder'];
   $withBackground?: StatusProps['withBackground'];
@@ -37,18 +34,8 @@ const StatusWrapper = styled.div<{
   padding: ${({ $size, $withBorder, $withBackground }) => ($withBorder || $withBackground ? `${$size / ($withBorder ? 3 : 2)}px ${$size / ($withBorder ? 1.5 : 1)}px` : '0')};
   width: fit-content;
   border-radius: 360px;
-  border: ${({ $withBorder, $isPale, $status, theme }) =>
-    $withBorder
-      ? `1px solid ${
-          $isPale ? theme.colors.border : $status === NOTIFICATION_TYPE.SUCCESS ? theme.colors.dark_green : $status === NOTIFICATION_TYPE.ERROR ? theme.colors.dark_red : theme.colors.border
-        }`
-      : 'none'};
-  background: ${({ $withBackground, $isPale, $status = NOTIFICATION_TYPE.DEFAULT, theme }) =>
-    $withBackground
-      ? $isPale
-        ? `linear-gradient(90deg, transparent 0%, ${theme.colors.info + hexPercentValues['080']} 50%, ${theme.colors.info} 100%)`
-        : `linear-gradient(90deg, transparent 0%, ${theme.colors[$status] + hexPercentValues['080']} 50%, ${theme.colors[$status]} 100%)`
-      : 'transparent'};
+  border: ${({ $withBorder, $status, theme }) => ($withBorder ? `1px solid ${theme.text[$status] + Theme.hexPercent['050']}` : 'none')};
+  background: ${({ $withBackground, $status, theme }) => ($withBackground ? `linear-gradient(90deg, transparent 0%, ${theme.text[$status] + Theme.hexPercent['030']} 100%)` : 'transparent')};
 `;
 
 const IconWrapper = styled.div`
@@ -61,52 +48,33 @@ const TextWrapper = styled.div`
   align-items: center;
 `;
 
-const Title = styled(Text)<{
-  $isPale: StatusProps['isPale'];
-  $status: StatusProps['status'];
-}>`
-  color: ${({ $isPale, $status = NOTIFICATION_TYPE.DEFAULT, theme }) => ($isPale ? theme.text.secondary : theme.text[$status])};
-`;
-
-const SubTitle = styled(Text)<{
-  $isPale: StatusProps['isPale'];
-  $status: StatusProps['status'];
-}>`
-  color: ${({ $isPale, $status = NOTIFICATION_TYPE.DEFAULT }) => ($isPale ? theme.text.grey : theme.text[`${$status}_secondary`])};
-`;
-
-export const Status: React.FC<StatusProps> = ({ title, subtitle, size = 12, family = 'secondary', status, isActive: oldStatus, isPale, withIcon, withBorder, withBackground }) => {
-  const statusType = status || (oldStatus ? NOTIFICATION_TYPE.SUCCESS : NOTIFICATION_TYPE.ERROR);
+export const Status: React.FC<StatusProps> = ({ title, subtitle, size = 12, family = 'secondary', status, isActive: oldStatus, withIcon, withBorder, withBackground }) => {
+  const statusType = typeof oldStatus === 'boolean' ? (oldStatus ? NOTIFICATION_TYPE.SUCCESS : NOTIFICATION_TYPE.ERROR) : status || NOTIFICATION_TYPE.DEFAULT;
   const StatusIcon = getStatusIcon(statusType);
+  const theme = useTheme();
 
   return (
-    <StatusWrapper $size={size} $isPale={isPale} $status={statusType} $withIcon={withIcon} $withBorder={withBorder} $withBackground={withBackground}>
+    <StatusWrapper $size={size} $status={statusType} $withIcon={withIcon} $withBorder={withBorder} $withBackground={withBackground}>
       {withIcon && (
         <IconWrapper>
-          {isPale && statusType === NOTIFICATION_TYPE.SUCCESS ? (
-            <CheckCircledIcon size={size + 2} />
-          ) : isPale && statusType === NOTIFICATION_TYPE.ERROR ? (
-            <CrossCircledIcon size={size + 2} />
-          ) : (
-            <StatusIcon size={size + 2} />
-          )}
+          <StatusIcon size={size + 2} />
         </IconWrapper>
       )}
 
       {(!!title || !!subtitle) && (
         <TextWrapper>
           {!!title && (
-            <Title size={size} family={family} $isPale={isPale} $status={statusType}>
+            <Text size={size} family={family} color={theme.text[statusType]}>
               {title}
-            </Title>
+            </Text>
           )}
 
           {!!subtitle && (
             <TextWrapper>
-              <Divider orientation='vertical' length={`${size - 2}px`} type={isPale ? undefined : statusType} />
-              <SubTitle size={size - 2} family={family} $isPale={isPale} $status={statusType}>
+              <Divider orientation='vertical' length={`${size - 2}px`} type={statusType} />
+              <Text size={size - 2} family={family} color={theme.text[`${statusType}_secondary`]}>
                 {subtitle}
-              </SubTitle>
+              </Text>
             </TextWrapper>
           )}
         </TextWrapper>

@@ -21,15 +21,15 @@ export interface SourceContainer {
 }
 
 export interface K8sActualSource extends WorkloadId {
-  numberOfInstances: number;
   selected: boolean;
-  reportedName: string;
+  numberOfInstances?: number;
+  otelServiceName: string;
   containers: Array<SourceContainer>;
   conditions: Array<Condition>;
 }
 
 export interface PatchSourceRequestInput {
-  reportedName?: string;
+  otelServiceName: string;
 }
 
 export interface PersistSourcesArray {

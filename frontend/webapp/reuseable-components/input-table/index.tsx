@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { isEmpty } from '@/utils';
 import styled from 'styled-components';
-import { PlusIcon, TrashIcon } from '@/assets';
+import { PlusIcon, TrashIcon } from '@odigos/ui-components';
 import { Button, FieldError, FieldLabel, Input, Text } from '@/reuseable-components';
 
 type Row = {
@@ -38,7 +38,7 @@ const DeleteButton = styled.button`
 `;
 
 const AddButton = styled(Button)`
-  color: white;
+  color: ${({ theme }) => theme.text.secondary};
   background: transparent;
   display: flex;
   gap: 8px;

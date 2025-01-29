@@ -1,7 +1,8 @@
 'use client';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import styled from 'styled-components';
+import { Theme } from '@odigos/ui-components';
 import { OVERVIEW_ENTITY_TYPES } from '@/types';
+import styled, { useTheme } from 'styled-components';
 import { NodeDataFlow } from '@/reuseable-components';
 import { MultiSourceControl } from '../multi-source-control';
 import { OverviewActionsMenu } from '../overview-actions-menu';
@@ -26,6 +27,8 @@ const Container = styled.div`
 `;
 
 export default function OverviewDataFlowContainer() {
+  const theme = useTheme();
+
   const [scrollYOffset, setScrollYOffset] = useState(0);
 
   const { handleNodeClick } = useNodeDataFlowHandlers();
@@ -105,7 +108,7 @@ export default function OverviewDataFlowContainer() {
   useEffect(() => setNodes((prev) => handleNodeState(prev, actionNodes, OVERVIEW_ENTITY_TYPES.ACTION)), [actionNodes]);
   useEffect(() => setNodes((prev) => handleNodeState(prev, destinationNodes, OVERVIEW_ENTITY_TYPES.DESTINATION)), [destinationNodes]);
   useEffect(() => setNodes((prev) => handleNodeState(prev, sourceNodes, OVERVIEW_ENTITY_TYPES.SOURCE, scrollYOffset)), [sourceNodes, scrollYOffset]);
-  useEffect(() => setEdges(buildEdges({ nodes, metrics, containerHeight })), [nodes, metrics, containerHeight]);
+  useEffect(() => setEdges(buildEdges({ theme: theme as Theme.ITheme, nodes, metrics, containerHeight })), [theme, nodes, metrics, containerHeight]);
 
   return (
     <Container ref={containerRef}>

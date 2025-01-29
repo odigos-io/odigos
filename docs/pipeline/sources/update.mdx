@@ -12,11 +12,22 @@ It is used to identify the service that emitted a span, metric or log record.
 
 Odigos will automatically populate this attribute based on the name of the workload. If there are multiple containers in the workload, the `service.name` will be set to the container name.
 
-If odigos fails to set a `service.name`, or if you want to override the default value, you can set it manually for a specific source.
-
+If you want to override the default value, you can also set the `service.name` attribute by adding the `otelServiceName` attribute to an exiting Source, or by creating a `Source` with that attribute:
 ```yaml
-odigos.io/reported-name: <your-overwite-service.name>
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: example-source
+  namespace: default
+spec:
+  workload:
+    name: frontend
+    namespace: default
+    kind: Deployment
+  otelServiceName: my-custom-service-name
 ```
+
+Namespace Sources do not support the `otelServiceName` attribute. If a namespace is instrumented, and a Source for a specific workload is not present, a specific source for that workload will need to be created including the desired `otelServiceName`.
 
 ### From Odigos UI
 
@@ -33,33 +44,27 @@ To undo the override, simply erase the value from the `service.name` field.
 
 ### Kubernetes Manifest
 
-If you prefer to use kubectl or GitOps to manage your Kubernetes workloads, you can can set the `service.name` attribute by adding an annotation to the workload manifest.
+If you prefer to use kubectl or GitOps to manage your Kubernetes workloads, you can can set the `service.name` attribute by updating the corresponding Source.
 
-For example, to set the `service.name` for a deployment named `my-deployment`, to a value of `foo` with kubectl, you can run:
+For example, to set the `service.name` attribute in telemetry for an existing source:
+
+To get the relevant Source for your workload you can either use:
+```shell
+kubectl get sources -n <source namespace> \
+-l odigos.io/workload-kind=<Deployment/DaemonSet/StatefulSet/Namespace> \
+-l odigos.io/workload-name=<Workload name> \
+-l odigos.io/workload-namespace=<source namespace>
+```
+
+or list the sources in the relevant namespace:
 
 ```shell
-kubectl annotate deployment my-deployment odigos.io/reported-name=foo --overwrite
+kubectl get sources -n <namespace>
 ```
 
-To view the changes, run:
+After we have the desired Source we can patch it:
 
 ```shell
-kubectl get deployment my-deployment -o yaml
+kubectl patch source/<source-name> -n <namespace> --type=merge -p '{"spec":{"otelServiceName":"<serviceName>"}}'
 ```
 
-You should see the following snippet with the annotation in the deployment manifest:
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  annotations:
-    odigos.io/reported-name: foo
-name: my-deployment
-```
-
-To undo the override, simply remove the annotation from the workload manifest:
-
-```yaml
-kubectl annotate deployment my-deployment odigos.io/reported-name-
-```

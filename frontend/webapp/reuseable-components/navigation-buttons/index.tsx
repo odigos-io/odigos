@@ -1,14 +1,13 @@
 import React from 'react';
 import Image from 'next/image';
-import { SVG } from '@/assets';
-import theme from '@/styles/theme';
 import { Button } from '../button';
 import { Tooltip } from '../tooltip';
-import styled from 'styled-components';
+import { Types } from '@odigos/ui-components';
+import styled, { useTheme } from 'styled-components';
 
 export interface NavigationButtonProps {
   label: string;
-  icon?: SVG;
+  icon?: Types.SVG;
   iconSrc?: string;
   tooltip?: string;
   onClick: () => void;
@@ -35,6 +34,8 @@ const StyledButton = styled(Button)`
 `;
 
 export const NavigationButtons: React.FC<Props> = ({ buttons }) => {
+  const theme = useTheme();
+
   const shouldRenderBackButton = ({ button, index }: { button: NavigationButtonProps; index: number }) => {
     return buttons.length > 1 && index === 0 && (button.icon || button.iconSrc);
   };

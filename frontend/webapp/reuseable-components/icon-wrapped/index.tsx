@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
-import { OdigosLogo, type SVG } from '@/assets';
+import { OdigosLogo, Theme, Types } from '@odigos/ui-components';
 
 interface Props {
-  icon?: SVG;
+  icon?: Types.SVG;
   src?: string;
   alt?: string;
   isError?: boolean;
@@ -17,8 +17,10 @@ const Container = styled.div<{ $isError: Props['isError'] }>`
   width: 36px;
   height: 36px;
   border-radius: 8px;
-  background: ${({ $isError }) =>
-    $isError ? 'linear-gradient(180deg, rgba(237, 124, 124, 0.2) 0%, rgba(237, 124, 124, 0.05) 100%);' : 'linear-gradient(180deg, rgba(249, 249, 249, 0.2) 0%, rgba(249, 249, 249, 0.05) 100%);'};
+  background: ${({ $isError, theme }) => {
+    const clr = $isError ? theme.text.error : theme.text.secondary;
+    return `linear-gradient(180deg, ${clr + Theme.hexPercent['020']} 0%, ${clr + Theme.hexPercent['005']} 100%)`;
+  }};
 `;
 
 export const IconWrapped: React.FC<Props> = ({ icon: Icon, src = '', alt = '', isError }) => {
