@@ -1,5 +1,5 @@
-import { SVG } from '@/assets';
 import { ActionsType } from '@/types';
+import { Types } from '@odigos/ui-components';
 import { getActionIcon, SignalUppercase } from '@/utils';
 
 export type ActionOption = {
@@ -9,7 +9,7 @@ export type ActionOption = {
   description?: string;
   docsEndpoint?: string;
   docsDescription?: string;
-  icon?: SVG;
+  icon?: Types.SVG;
   items?: ActionOption[];
   allowedSignals?: SignalUppercase[];
 };

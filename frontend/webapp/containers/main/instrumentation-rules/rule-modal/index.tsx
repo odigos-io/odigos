@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { RuleFormBody } from '../';
+import { ModalBody } from '@/styles';
 import { NOTIFICATION_TYPE } from '@/types';
 import { ACTION, FORM_ALERTS } from '@/utils';
-import { CenterThis, ModalBody } from '@/styles';
+import { CenterThis } from '@odigos/ui-components';
 import { RULE_OPTIONS, RuleOption } from './rule-options';
 import { useDescribeOdigos, useInstrumentationRuleCRUD, useInstrumentationRuleFormData, useKeyDown } from '@/hooks';
 import { AutocompleteInput, Divider, FadeLoader, Modal, NavigationButtons, NotificationNote, SectionTitle } from '@/reuseable-components';

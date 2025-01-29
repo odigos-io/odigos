@@ -1,9 +1,8 @@
 import React from 'react';
-import { slide } from '@/styles';
-import { TrashIcon } from '@/assets';
 import { useTransition } from '@/hooks';
 import styled, { useTheme } from 'styled-components';
 import { Button, Text } from '@/reuseable-components';
+import { Theme, TrashIcon } from '@odigos/ui-components';
 
 interface Props {
   isOpen: boolean;
@@ -38,8 +37,8 @@ const DrawerFooter: React.FC<Props> = ({ isOpen, onSave, saveLabel = 'Save', onC
   const theme = useTheme();
   const Transition = useTransition({
     container: FooterContainer,
-    animateIn: slide.in['bottom'],
-    animateOut: slide.out['bottom'],
+    animateIn: Theme.slide.in['bottom'],
+    animateOut: Theme.slide.out['bottom'],
   });
 
   return (

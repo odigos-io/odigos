@@ -1,12 +1,12 @@
-import { SVG } from '@/assets';
-import { InstrumentationRuleType } from '@/types';
 import { getRuleIcon } from '@/utils';
+import { Types } from '@odigos/ui-components';
+import { InstrumentationRuleType } from '@/types';
 
 export type RuleOption = {
   id: string;
   label: string;
   type?: InstrumentationRuleType;
-  icon?: SVG;
+  icon?: Types.SVG;
   description?: string;
   docsEndpoint?: string;
   docsDescription?: string;

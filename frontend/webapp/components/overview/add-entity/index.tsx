@@ -1,10 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { PlusIcon } from '@/assets';
 import { useModalStore } from '@/store';
 import { getEntityIcon } from '@/utils';
 import { useOnClickOutside } from '@/hooks';
-import { hexPercentValues } from '@/styles';
 import { Button, Text } from '@/reuseable-components';
+import { PlusIcon, Theme } from '@odigos/ui-components';
 import styled, { css, useTheme } from 'styled-components';
 import { type DropdownOption, OVERVIEW_ENTITY_TYPES } from '@/types';
 
@@ -44,12 +43,12 @@ const DropdownItem = styled.div<{ $selected: boolean }>`
   display: flex;
   align-items: center;
   &:hover {
-    background: ${({ theme }) => theme.text.grey + hexPercentValues['050']};
+    background: ${({ theme }) => theme.text.grey + Theme.hexPercent['050']};
   }
   ${({ $selected, theme }) =>
     $selected &&
     css`
-      background: ${theme.colors.majestic_blue + hexPercentValues['024']};
+      background: ${theme.colors.majestic_blue + Theme.hexPercent['024']};
     `}
 `;
 

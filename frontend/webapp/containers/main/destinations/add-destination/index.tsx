@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import { ROUTES } from '@/utils';
-import { CenterThis } from '@/styles';
 import { useAppStore } from '@/store';
 import { SetupHeader } from '@/components';
 import { useRouter } from 'next/navigation';
 import { NOTIFICATION_TYPE } from '@/types';
-import { ArrowIcon, PlusIcon } from '@/assets';
 import styled, { useTheme } from 'styled-components';
 import { DestinationModal } from '../destination-modal';
 import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
+import { ArrowIcon, CenterThis, PlusIcon } from '@odigos/ui-components';
 import { ConfiguredDestinationsList } from './configured-destinations-list';
 import { Button, FadeLoader, NotificationNote, SectionTitle, Text } from '@/reuseable-components';
 

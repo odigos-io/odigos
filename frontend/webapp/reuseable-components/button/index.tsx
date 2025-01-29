@@ -1,5 +1,5 @@
 import React, { ButtonHTMLAttributes, forwardRef } from 'react';
-import { hexPercentValues } from '@/styles';
+import { Theme } from '@odigos/ui-components';
 import styled, { css } from 'styled-components';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -8,14 +8,14 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantStyles = {
   primary: css`
-    border: 1px solid ${({ theme }) => theme.text.secondary + hexPercentValues['024']};
+    border: 1px solid ${({ theme }) => theme.text.secondary + Theme.hexPercent['024']};
     background: ${({ theme }) => theme.colors.secondary};
     color: ${({ theme }) => theme.colors.primary};
     &:hover {
-      background: ${({ theme }) => theme.colors.secondary + hexPercentValues['080']};
+      background: ${({ theme }) => theme.colors.secondary + Theme.hexPercent['080']};
     }
     &:active {
-      background: ${({ theme }) => theme.text.secondary + hexPercentValues['060']};
+      background: ${({ theme }) => theme.text.secondary + Theme.hexPercent['060']};
     }
   `,
   secondary: css`
@@ -24,18 +24,18 @@ const variantStyles = {
     color: ${({ theme }) => theme.colors.secondary};
     &:hover {
       border: 1px solid ${({ theme }) => theme.text.darker_grey};
-      background: ${({ theme }) => theme.colors.primary + hexPercentValues['080']};
+      background: ${({ theme }) => theme.colors.primary + Theme.hexPercent['080']};
     }
     &:active {
       border: 1px solid ${({ theme }) => theme.text.dark_grey};
-      background: ${({ theme }) => theme.colors.primary + hexPercentValues['060']};
+      background: ${({ theme }) => theme.colors.primary + Theme.hexPercent['060']};
     }
   `,
   tertiary: css`
     border-color: transparent;
     background: transparent;
     &:hover {
-      background: ${({ theme }) => theme.colors.dropdown_bg_2 + hexPercentValues['040']};
+      background: ${({ theme }) => theme.colors.dropdown_bg_2 + Theme.hexPercent['040']};
     }
     &:active {
       background: ${({ theme }) => theme.colors.dropdown_bg_2};
@@ -45,20 +45,20 @@ const variantStyles = {
     border-color: transparent;
     background: ${({ theme }) => theme.text.error};
     &:hover {
-      background: ${({ theme }) => theme.text.error + hexPercentValues['090']};
+      background: ${({ theme }) => theme.text.error + Theme.hexPercent['090']};
     }
     &:active {
-      background: ${({ theme }) => theme.text.error + hexPercentValues['080']};
+      background: ${({ theme }) => theme.text.error + Theme.hexPercent['080']};
     }
   `,
   warning: css`
     border-color: transparent;
     background: ${({ theme }) => theme.text.warning};
     &:hover {
-      background: ${({ theme }) => theme.text.warning + hexPercentValues['090']};
+      background: ${({ theme }) => theme.text.warning + Theme.hexPercent['090']};
     }
     &:active {
-      background: ${({ theme }) => theme.text.warning + hexPercentValues['080']};
+      background: ${({ theme }) => theme.text.warning + Theme.hexPercent['080']};
     }
   `,
 };
@@ -87,9 +87,9 @@ const StyledButton = styled.button<{ $variant: ButtonProps['variant'] }>`
       ${$variant === 'primary'
         ? css`
             color: ${({ theme }) => theme.colors.secondary};
-            background: ${({ theme }) => theme.text.secondary + hexPercentValues['010']};
+            background: ${({ theme }) => theme.text.secondary + Theme.hexPercent['010']};
             &:hover {
-              background: ${({ theme }) => theme.text.secondary + hexPercentValues['015']};
+              background: ${({ theme }) => theme.text.secondary + Theme.hexPercent['015']};
             }
           `
         : ''}
