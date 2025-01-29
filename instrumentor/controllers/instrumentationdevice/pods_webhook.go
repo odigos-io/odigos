@@ -76,7 +76,7 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		return nil
 	}
 
-	// Add odiglet installed affinity to the pod
+	// Add odiglet installed node-affinity to the pod
 	podutils.AddOdigletInstalledAffinity(pod, k8sconsts.OdigletInstalledLabel, k8sconsts.OdigletInstalledLabelValue)
 
 	return nil
