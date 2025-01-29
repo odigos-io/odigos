@@ -1,11 +1,11 @@
 import React, { useState, forwardRef, type ChangeEvent, type KeyboardEventHandler, type InputHTMLAttributes } from 'react';
 import styled, { css, useTheme } from 'styled-components';
-import { EyeClosedIcon, EyeOpenIcon, SVG } from '@/assets';
 import { FieldError, FieldLabel } from '@/reuseable-components';
+import { EyeClosedIcon, EyeOpenIcon, Types } from '@odigos/ui-components';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   title?: string;
-  icon?: SVG;
+  icon?: Types.SVG;
   tooltip?: string;
   initialValue?: string;
   buttonLabel?: string;
@@ -164,4 +164,5 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({ icon: Icon, buttonLabe
 });
 
 Input.displayName = 'Input';
+
 export { Input };

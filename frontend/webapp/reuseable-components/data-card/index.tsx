@@ -2,7 +2,6 @@ import React from 'react';
 import styled from 'styled-components';
 import { Badge, Text } from '@/reuseable-components';
 import { DataCardFields, type DataCardRow, DataCardFieldTypes } from './data-card-fields';
-import { FlexRow } from '@/styles';
 export { DataCardFields, type DataCardRow, DataCardFieldTypes };
 
 interface Props {

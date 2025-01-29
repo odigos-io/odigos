@@ -1,11 +1,11 @@
 import React from 'react';
 import { ROUTES } from '@/utils';
-import { ArrowIcon } from '@/assets';
 import styled from 'styled-components';
 import { SetupHeader } from '@/components';
 import { useRouter } from 'next/navigation';
 import { useSourceFormData } from '@/hooks';
 import { IAppState, useAppStore } from '@/store';
+import { ArrowIcon } from '@odigos/ui-components';
 import { ChooseSourcesBody } from './choose-sources-body';
 
 const HeaderWrapper = styled.div`

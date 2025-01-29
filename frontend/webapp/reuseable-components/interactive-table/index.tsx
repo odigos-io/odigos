@@ -1,9 +1,8 @@
 import React from 'react';
-import { SVG } from '@/assets';
 import { isEmpty } from '@/utils';
 import styled from 'styled-components';
 import { IconWrapped } from '../icon-wrapped';
-import { hexPercentValues } from '@/styles';
+import { Theme, Types } from '@odigos/ui-components';
 
 interface ColumnCell {
   key: string; // used to bind the row cell to the column
@@ -12,7 +11,7 @@ interface ColumnCell {
 
 interface RowCell {
   columnKey: string; // used to bind the row cell to the column
-  icon?: SVG;
+  icon?: Types.SVG;
   value?: string;
   component?: () => React.ReactNode;
 }
@@ -71,7 +70,7 @@ const RowBackground = styled.div<{ $index: number }>`
   height: 68px;
   margin: 12px 0;
   border-radius: 16px;
-  background-color: ${({ theme }) => theme.colors.dropdown_bg_2 + hexPercentValues['040']};
+  background-color: ${({ theme }) => theme.colors.dropdown_bg_2 + Theme.hexPercent['040']};
 `;
 
 export const InteractiveTable: React.FC<Props> = ({ columns, rows }) => {

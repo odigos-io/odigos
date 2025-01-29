@@ -188,14 +188,10 @@ func removeInstrumentationDeviceFromWorkload(ctx context.Context, kubeClient cli
 	// If instrumentation device is removed successfully, remove odigos.io/inject-instrumentation label to disable the webhook
 	webhookLabelRemoved := instrumentation.RemoveInjectInstrumentationLabel(podSpec)
 	deviceRemoved := instrumentation.RevertInstrumentationDevices(podSpec)
-	envChanged, err := instrumentation.RevertEnvOverwrites(workloadObj, podSpec)
-	if err != nil {
-		return err
-	}
 
 	// if we didn't change anything, we don't need to update the object
 	// skip the api-server call, return no-op and skip the log message
-	if !webhookLabelRemoved && !deviceRemoved && !envChanged {
+	if !webhookLabelRemoved && !deviceRemoved {
 		return nil
 	}
 
