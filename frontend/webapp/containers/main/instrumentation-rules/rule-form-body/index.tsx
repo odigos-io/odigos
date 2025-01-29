@@ -4,7 +4,7 @@ import RuleCustomFields from './custom-fields';
 import styled, { useTheme } from 'styled-components';
 import type { InstrumentationRuleInput } from '@/types';
 import type { RuleOption } from '../rule-modal/rule-options';
-import { CheckCircledIcon, CrossCircledIcon } from '@odigos/ui-components';
+import { CheckCircledIcon, CrossCircledIcon, Theme } from '@odigos/ui-components';
 import { Input, Text, TextArea, SectionTitle, Segment } from '@/reuseable-components';
 
 interface Props {
@@ -36,8 +36,8 @@ export const RuleFormBody: React.FC<Props> = ({ isUpdate, rule, formData, formEr
           <FieldTitle>Status</FieldTitle>
           <Segment
             options={[
-              { icon: CheckCircledIcon, label: 'active', value: false, selectedBgColor: theme.text.success },
-              { icon: CrossCircledIcon, label: 'inactive', value: true, selectedBgColor: theme.text.error },
+              { icon: CheckCircledIcon, label: 'active', value: false, selectedBgColor: theme.text.success + Theme.hexPercent['050'] },
+              { icon: CrossCircledIcon, label: 'inactive', value: true, selectedBgColor: theme.text.error + Theme.hexPercent['050'] },
             ]}
             selected={formData.disabled}
             setSelected={(bool) => handleFormChange('disabled', bool)}
