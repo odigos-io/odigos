@@ -1,5 +1,5 @@
 import React from 'react';
-import { hexPercentValues } from '@/styles';
+import { FlexRow, Theme } from '@odigos/ui-components';
 import styled, { useTheme } from 'styled-components';
 import { type UseSourceFormDataResponse } from '@/hooks';
 import { Checkbox, Divider, ExtendIcon, FadeLoader, NoDataFound, Text, Toggle } from '@/reuseable-components';
@@ -22,7 +22,7 @@ const Group = styled.div<{ $selected: boolean; $isOpen: boolean }>`
   width: 100%;
   padding-bottom: ${({ $isOpen }) => ($isOpen ? '18px' : '0')};
   border-radius: 16px;
-  background-color: ${({ $selected, theme }) => ($selected ? theme.colors.majestic_blue + hexPercentValues['024'] : theme.colors.dropdown_bg_2 + hexPercentValues['040'])};
+  background-color: ${({ $selected, theme }) => ($selected ? theme.colors.majestic_blue + Theme.hexPercent['024'] : theme.colors.dropdown_bg_2 + Theme.hexPercent['040'])};
 `;
 
 const NamespaceItem = styled.div<{ $selected: boolean }>`
@@ -34,7 +34,7 @@ const NamespaceItem = styled.div<{ $selected: boolean }>`
   border-radius: 16px;
   cursor: pointer;
   &:hover {
-    background-color: ${({ $selected, theme }) => ($selected ? theme.colors.majestic_blue + hexPercentValues['040'] : theme.colors.dropdown_bg_2 + hexPercentValues['080'])};
+    background-color: ${({ $selected, theme }) => ($selected ? theme.colors.majestic_blue + Theme.hexPercent['040'] : theme.colors.dropdown_bg_2 + Theme.hexPercent['080'])};
     transition: background-color 0.3s;
   }
 `;
@@ -43,12 +43,6 @@ const SourceItem = styled(NamespaceItem)`
   width: calc(100% - 50px);
   margin-left: auto;
   padding: 8px;
-`;
-
-const FlexRow = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
 `;
 
 const RelativeWrapper = styled.div`
@@ -116,12 +110,12 @@ export const SourcesList: React.FC<Props> = ({
         return (
           <Group key={`namespace-${namespace}`} data-id={`namespace-${namespace}`} $selected={isNamespaceAllSourcesSelected} $isOpen={isNamespaceSelected && hasFilteredSources}>
             <NamespaceItem $selected={isNamespaceAllSourcesSelected} onClick={() => onSelectNamespace(namespace)}>
-              <FlexRow>
+              <FlexRow $gap={12}>
                 <Checkbox value={isNamespaceAllSourcesSelected} onChange={(bool) => onSelectAll(bool, namespace)} />
                 <Text>{namespace}</Text>
               </FlexRow>
 
-              <FlexRow>
+              <FlexRow $gap={12}>
                 <Toggle title='Include Future Sources' initialValue={futureAppsForNamespace} onChange={(bool) => onSelectFutureApps(bool, namespace)} />
                 <Divider orientation='vertical' length='12px' margin='0' />
                 <SelectionCount size={10} color={theme.text.grey}>
@@ -143,7 +137,7 @@ export const SourcesList: React.FC<Props> = ({
 
                     return (
                       <SourceItem key={`source-${source.name}`} data-id={`source-${source.name}`} $selected={isSourceSelected} onClick={() => onSelectSource(source)}>
-                        <FlexRow>
+                        <FlexRow $gap={12}>
                           <Checkbox value={isSourceSelected} onChange={() => onSelectSource(source, namespace)} />
                           <Text>{source.name}</Text>
                           <Text opacity={0.8} size={10}>

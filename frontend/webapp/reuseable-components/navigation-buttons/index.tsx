@@ -1,13 +1,13 @@
 import React from 'react';
 import Image from 'next/image';
-import { SVG } from '@/assets';
 import { Button } from '../button';
 import { Tooltip } from '../tooltip';
+import { Types } from '@odigos/ui-components';
 import styled, { useTheme } from 'styled-components';
 
 export interface NavigationButtonProps {
   label: string;
-  icon?: SVG;
+  icon?: Types.SVG;
   iconSrc?: string;
   tooltip?: string;
   onClick: () => void;

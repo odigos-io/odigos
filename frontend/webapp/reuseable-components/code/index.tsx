@@ -1,12 +1,12 @@
 import React, { Fragment, useId, useMemo } from 'react';
 import { Text } from '../text';
-import { FlexRow } from '@/styles';
 import { Tooltip } from '../tooltip';
+import { useDarkModeStore } from '@/store';
 import { NOTIFICATION_TYPE } from '@/types';
+import { FlexRow } from '@odigos/ui-components';
 import styled, { useTheme } from 'styled-components';
 import { Highlight, themes as prismThemes, type Token } from 'prism-react-renderer';
 import { flattenObjectKeys, getStatusIcon, removeEmptyValuesFromObject, safeJsonParse, safeJsonStringify } from '@/utils';
-import { useDarkModeStore } from '@/store';
 
 interface Props {
   language: string;

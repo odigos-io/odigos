@@ -1,7 +1,7 @@
 import React from 'react';
 import { getStatusIcon } from '@/utils';
-import { hexPercentValues } from '@/styles';
 import { NOTIFICATION_TYPE } from '@/types';
+import { Theme } from '@odigos/ui-components';
 import styled, { useTheme } from 'styled-components';
 import { Divider, Text } from '@/reuseable-components';
 
@@ -34,8 +34,8 @@ const StatusWrapper = styled.div<{
   padding: ${({ $size, $withBorder, $withBackground }) => ($withBorder || $withBackground ? `${$size / ($withBorder ? 3 : 2)}px ${$size / ($withBorder ? 1.5 : 1)}px` : '0')};
   width: fit-content;
   border-radius: 360px;
-  border: ${({ $withBorder, $status, theme }) => ($withBorder ? `1px solid ${theme.text[$status] + hexPercentValues['050']}` : 'none')};
-  background: ${({ $withBackground, $status, theme }) => ($withBackground ? `linear-gradient(90deg, transparent 0%, ${theme.text[$status] + hexPercentValues['030']} 100%)` : 'transparent')};
+  border: ${({ $withBorder, $status, theme }) => ($withBorder ? `1px solid ${theme.text[$status] + Theme.hexPercent['050']}` : 'none')};
+  background: ${({ $withBackground, $status, theme }) => ($withBackground ? `linear-gradient(90deg, transparent 0%, ${theme.text[$status] + Theme.hexPercent['030']} 100%)` : 'transparent')};
 `;
 
 const IconWrapper = styled.div`

@@ -2,10 +2,9 @@ import React from 'react';
 import { type ActionInput } from '@/types';
 import ActionCustomFields from './custom-fields';
 import styled, { useTheme } from 'styled-components';
-import { CheckCircledIcon, CrossCircledIcon } from '@/assets';
 import { type ActionOption } from '../action-modal/action-options';
+import { CheckCircledIcon, CrossCircledIcon, Theme } from '@odigos/ui-components';
 import { DocsButton, Input, Text, TextArea, MonitoringCheckboxes, SectionTitle, Segment } from '@/reuseable-components';
-import { hexPercentValues } from '@/styles';
 
 interface Props {
   isUpdate?: boolean;
@@ -36,8 +35,8 @@ export const ActionFormBody: React.FC<Props> = ({ isUpdate, action, formData, fo
           <FieldTitle>Status</FieldTitle>
           <Segment
             options={[
-              { icon: CheckCircledIcon, label: 'active', value: false, selectedBgColor: theme.text.success + hexPercentValues['050'] },
-              { icon: CrossCircledIcon, label: 'inactive', value: true, selectedBgColor: theme.text.error + hexPercentValues['050'] },
+              { icon: CheckCircledIcon, label: 'active', value: false, selectedBgColor: theme.text.success + Theme.hexPercent['050'] },
+              { icon: CrossCircledIcon, label: 'inactive', value: true, selectedBgColor: theme.text.error + Theme.hexPercent['050'] },
             ]}
             selected={formData.disable}
             setSelected={(bool) => handleFormChange('disable', bool)}
