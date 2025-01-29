@@ -278,6 +278,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - policy
+  resourceNames:
+  - privileged
+  resources:
+  - podsecuritypolicies
+  verbs:
+  - use
+- apiGroups:
   - rbac.authorization.k8s.io
   resources:
   - clusterrolebindings
