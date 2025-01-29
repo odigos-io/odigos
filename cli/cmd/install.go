@@ -47,7 +47,7 @@ var (
 	imagePrefix       string
 )
 
-type ResourceCreationFunc func(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error
+type ResourceCreationFunc func(ctx context.Context, client *kube.Client, ns string) error
 
 // installCmd represents the install command
 var installCmd = &cobra.Command{
@@ -89,7 +89,7 @@ It will install k8s components that will auto-instrument your applications with 
 		if odigosCloudApiKeyFlag != "" {
 			odigosTier = common.CloudOdigosTier
 			odigosProToken = odigosCloudApiKeyFlag
-			err = verifyOdigosCloudApiKey(odigosCloudApiKeyFlag)
+			err = VerifyOdigosCloudApiKey(odigosCloudApiKeyFlag)
 			if err != nil {
 				fmt.Println("Odigos install failed - invalid api-key format.")
 				os.Exit(1)
@@ -100,15 +100,15 @@ It will install k8s components that will auto-instrument your applications with 
 		}
 
 		// validate user input profiles against available profiles
-		validateUserInputProfiles(odigosTier)
+		ValidateUserInputProfiles(odigosTier)
 
-		config := createOdigosConfig(odigosTier)
+		config := CreateOdigosConfig(odigosTier)
 
 		fmt.Printf("Installing Odigos version %s in namespace %s ...\n", versionFlag, ns)
 
 		// namespace is created on "install" and is not managed by resource manager
 		createKubeResourceWithLogging(ctx, fmt.Sprintf("> Creating namespace %s", ns),
-			client, cmd, ns, createNamespace)
+			client, ns, createNamespace)
 
 		resourceManagers := resources.CreateResourceManagers(client, ns, odigosTier, &odigosProToken, &config, versionFlag)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Creating")
@@ -180,7 +180,7 @@ func arePodsReady(ctx context.Context, client *kube.Client, ns string) func() (b
 	}
 }
 
-func createNamespace(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+func createNamespace(ctx context.Context, client *kube.Client, ns string) error {
 	nsObj, err := client.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
@@ -198,7 +198,7 @@ func createNamespace(ctx context.Context, cmd *cobra.Command, client *kube.Clien
 	return nil
 }
 
-func validateUserInputProfiles(tier common.OdigosTier) {
+func ValidateUserInputProfiles(tier common.OdigosTier) {
 	// Fetch available profiles for the given tier
 	availableProfiles := profiles.GetAvailableProfilesForTier(tier)
 
@@ -217,7 +217,7 @@ func validateUserInputProfiles(tier common.OdigosTier) {
 	}
 }
 
-func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration {
+func CreateOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration {
 	selectedProfiles := []common.ProfileName{}
 	for _, profile := range userInputInstallProfiles {
 		selectedProfiles = append(selectedProfiles, common.ProfileName(profile))
@@ -250,9 +250,9 @@ func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 	}
 }
 
-func createKubeResourceWithLogging(ctx context.Context, msg string, client *kube.Client, cmd *cobra.Command, ns string, create ResourceCreationFunc) {
+func createKubeResourceWithLogging(ctx context.Context, msg string, client *kube.Client, ns string, create ResourceCreationFunc) {
 	l := log.Print(msg)
-	err := create(ctx, cmd, client, ns)
+	err := create(ctx, client, ns)
 	if err != nil {
 		l.Error(err)
 	}
