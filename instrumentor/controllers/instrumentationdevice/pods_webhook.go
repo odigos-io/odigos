@@ -14,6 +14,7 @@ import (
 	webhookdeviceinjector "github.com/odigos-io/odigos/instrumentor/internal/webhook_device_injector"
 	webhookenvinjector "github.com/odigos-io/odigos/instrumentor/internal/webhook_env_injector"
 	"github.com/odigos-io/odigos/instrumentor/sdks"
+	podutils "github.com/odigos-io/odigos/k8sutils/pkg/pod"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"go.opentelemetry.io/otel/attribute"
@@ -74,6 +75,9 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		logger.Error(injectErr, "failed to inject ODIGOS instrumentation. Skipping Injection of ODIGOS environment variables")
 		return nil
 	}
+
+	// Add odiglet installed affinity to the pod
+	podutils.AddOdigletInstalledAffinity(pod, k8sconsts.OdigletInstalledLabel, k8sconsts.OdigletInstalledLabelValue)
 
 	return nil
 }

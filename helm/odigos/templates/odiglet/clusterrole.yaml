@@ -33,6 +33,7 @@ rules:
       - get
       - list
       - watch
+      - patch
   - apiGroups:
       - odigos.io
     resources:

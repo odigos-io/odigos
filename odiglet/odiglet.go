@@ -5,10 +5,12 @@ import (
 	"fmt"
 
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	commonInstrumentation "github.com/odigos-io/odigos/instrumentation"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	k8senv "github.com/odigos-io/odigos/k8sutils/pkg/env"
+	k8snode "github.com/odigos-io/odigos/k8sutils/pkg/node"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation"
@@ -110,7 +112,7 @@ func (o *Odiglet) Run(ctx context.Context) {
 	// the device manager library doesn't support passing a context,
 	// however, internally it uses a context to cancel the device manager once SIGTERM or SIGINT is received.
 	// We run it outside of the error group to avoid blocking on Wait() in case of a fatal error.
-	go func()  {
+	go func() {
 		err := runDeviceManager(o.clientset, o.deviceInjectionCallbacks)
 		if err != nil {
 			log.Logger.Error(err, "Device manager exited with error")
@@ -118,7 +120,7 @@ func (o *Odiglet) Run(ctx context.Context) {
 		} else {
 			log.Logger.V(0).Info("Device manager exited")
 		}
-	} ()
+	}()
 
 	g.Go(func() error {
 		err := o.ebpfManager.Run(groupCtx)
@@ -154,6 +156,11 @@ func (o *Odiglet) Run(ctx context.Context) {
 		}
 		return err
 	})
+
+	// Add odiglet installed label to node
+	if err := k8snode.AddLabelToNode(ctx, o.clientset, env.Current.NodeName, k8sconsts.OdigletInstalledLabel, k8sconsts.OdigletInstalledLabelValue); err != nil {
+		log.Logger.Error(err, "Failed to add Odiglet installed label to the node")
+	}
 
 	err := g.Wait()
 	if err != nil {
