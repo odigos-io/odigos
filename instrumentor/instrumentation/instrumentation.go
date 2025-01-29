@@ -18,7 +18,7 @@ var (
 	ErrNoDefaultSDK = errors.New("no default sdks found")
 )
 
-func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, runtimeDetails []odigosv1.RuntimeDetailsByContainer, targetObj client.Object,
+func ConfigureInstrumentationForPod(original *corev1.PodTemplateSpec, runtimeDetails []odigosv1.RuntimeDetailsByContainer, targetObj client.Object,
 	logger logr.Logger, agentsCanRunConcurrently bool) (bool, error) {
 	// delete any existing instrumentation devices.
 	// this is necessary for example when migrating from community to enterprise,

@@ -92,7 +92,7 @@ func enableOdigosInstrumentation(ctx context.Context, kubeClient client.Client, 
 			agentsCanRunConcurrently = *odigosConfiguration.AllowConcurrentAgents
 		}
 
-		deviceSkipped, err = instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, instConfig.Status.RuntimeDetailsByContainer, obj, logger, agentsCanRunConcurrently)
+		deviceSkipped, err = instrumentation.ConfigureInstrumentationForPod(podSpec, instConfig.Status.RuntimeDetailsByContainer, obj, logger, agentsCanRunConcurrently)
 		if err != nil {
 			return err
 		}
