@@ -15,14 +15,14 @@ import (
 var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Manage Odigos configuration",
-	Long:  "Manage Odigos configuration settings, including WebSocket URLs and other parameters.",
+	Long:  "Manage Odigos configuration settings, including central backend URL and other properties",
 }
 
 // `odigos config set <property> <value>`
 var setConfigCmd = &cobra.Command{
 	Use:   "set <property> <value>",
 	Short: "Set a configuration property in Odigos",
-	Args:  cobra.ExactArgs(2), // Expecting exactly two arguments: property and value
+	Args:  cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		property := args[0]
 		value := args[1]
