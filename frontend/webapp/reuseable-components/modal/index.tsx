@@ -1,9 +1,8 @@
 import React from 'react';
-import { Text } from '../text';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components';
 import { useKeyDown, useTransition } from '@/hooks';
-import { CenterThis, Overlay, Theme, XIcon } from '@odigos/ui-components';
+import { CenterThis, Overlay, Text, Theme, XIcon } from '@odigos/ui-components';
 
 interface Props {
   isOpen: boolean;

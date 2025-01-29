@@ -1,6 +1,8 @@
 import { getValueForRange } from '@/utils';
 import { OVERVIEW_ENTITY_TYPES } from '@/types';
-import { nodeWidth, nodeHeight } from './node-config.json';
+import nodeConfig from './node-config.json';
+
+const { nodeWidth, nodeHeight } = nodeConfig;
 
 interface Params {
   containerWidth: number;

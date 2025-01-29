@@ -1,7 +1,6 @@
 import React from 'react';
 import { useTheme } from 'styled-components';
-import { FlexRow } from '@odigos/ui-components';
-import { Text, Tooltip } from '@/reuseable-components';
+import { FlexRow, Text, Tooltip } from '@odigos/ui-components';
 import { capitalizeFirstLetter, getMonitorIcon, MONITORS_OPTIONS } from '@/utils';
 
 interface Props {

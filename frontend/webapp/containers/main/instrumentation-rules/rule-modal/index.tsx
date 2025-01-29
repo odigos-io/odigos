@@ -3,10 +3,10 @@ import { RuleFormBody } from '../';
 import { ModalBody } from '@/styles';
 import { NOTIFICATION_TYPE } from '@/types';
 import { ACTION, FORM_ALERTS } from '@/utils';
-import { CenterThis } from '@odigos/ui-components';
 import { RULE_OPTIONS, RuleOption } from './rule-options';
+import { CenterThis, Divider } from '@odigos/ui-components';
 import { useDescribeOdigos, useInstrumentationRuleCRUD, useInstrumentationRuleFormData, useKeyDown } from '@/hooks';
-import { AutocompleteInput, Divider, FadeLoader, Modal, NavigationButtons, NotificationNote, SectionTitle } from '@/reuseable-components';
+import { AutocompleteInput, FadeLoader, Modal, NavigationButtons, NotificationNote, SectionTitle } from '@/reuseable-components';
 
 interface Props {
   isOpen: boolean;

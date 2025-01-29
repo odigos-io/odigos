@@ -1,9 +1,8 @@
 import React from 'react';
 import { getStatusIcon } from '@/utils';
 import { NOTIFICATION_TYPE } from '@/types';
-import { Theme } from '@odigos/ui-components';
 import styled, { useTheme } from 'styled-components';
-import { Divider, Text } from '@/reuseable-components';
+import { Divider, Text, Theme } from '@odigos/ui-components';
 
 export * from './active-status';
 export * from './connection-status';

@@ -1,8 +1,6 @@
 import React from 'react';
-import { Text } from '../text';
-import { Tooltip } from '../tooltip';
 import styled from 'styled-components';
-import { OverviewIcon, Theme, Types } from '@odigos/ui-components';
+import { OverviewIcon, Text, Theme, Tooltip, Types } from '@odigos/ui-components';
 
 // Define types for the Tab component props
 interface TabProps {

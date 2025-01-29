@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Text } from '../text';
-import { Tooltip } from '../tooltip';
 import { FieldError } from '../field-error';
 import styled, { useTheme } from 'styled-components';
-import { CheckIcon, FlexColumn } from '@odigos/ui-components';
+import { CheckIcon, FlexColumn, Text, Tooltip } from '@odigos/ui-components';
 
 interface CheckboxProps {
   title?: string;

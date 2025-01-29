@@ -1,8 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
-import { SearchIcon } from '@odigos/ui-components';
 import { type UseSourceFormDataResponse } from '@/hooks';
-import { Divider, Input, SectionTitle, Toggle } from '@/reuseable-components';
+import { Input, SectionTitle } from '@/reuseable-components';
+import { Divider, SearchIcon, Toggle } from '@odigos/ui-components';
 
 interface Props extends UseSourceFormDataResponse {
   isModal?: boolean;

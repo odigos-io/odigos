@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react';
 import styled from 'styled-components';
+import { Badge, Text } from '@odigos/ui-components';
 import type { Node, NodeProps } from '@xyflow/react';
 import { useAppStore, usePendingStore } from '@/store';
 import { usePaginatedSources, useSourceCRUD } from '@/hooks';
-import { Badge, Checkbox, FadeLoader, Text } from '@/reuseable-components';
+import { Checkbox, FadeLoader } from '@/reuseable-components';
 import { K8sActualSource, NODE_TYPES, OVERVIEW_ENTITY_TYPES } from '@/types';
 
 interface Props

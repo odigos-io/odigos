@@ -4,8 +4,8 @@ import RuleCustomFields from './custom-fields';
 import styled, { useTheme } from 'styled-components';
 import type { InstrumentationRuleInput } from '@/types';
 import type { RuleOption } from '../rule-modal/rule-options';
-import { CheckCircledIcon, CrossCircledIcon, Theme } from '@odigos/ui-components';
-import { Input, Text, TextArea, SectionTitle, Segment } from '@/reuseable-components';
+import { Input, TextArea, SectionTitle } from '@/reuseable-components';
+import { CheckCircledIcon, CrossCircledIcon, Segment, Text, Theme } from '@odigos/ui-components';
 
 interface Props {
   isUpdate?: boolean;

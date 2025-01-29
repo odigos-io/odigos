@@ -4,8 +4,8 @@ import { type ActionInput } from '@/types';
 import ActionCustomFields from './custom-fields';
 import styled, { useTheme } from 'styled-components';
 import { type ActionOption } from '../action-modal/action-options';
-import { CheckCircledIcon, CrossCircledIcon, Theme } from '@odigos/ui-components';
-import { Input, Text, TextArea, MonitoringCheckboxes, SectionTitle, Segment } from '@/reuseable-components';
+import { Input, TextArea, MonitoringCheckboxes, SectionTitle } from '@/reuseable-components';
+import { CheckCircledIcon, CrossCircledIcon, Segment, Text, Theme } from '@odigos/ui-components';
 
 interface Props {
   isUpdate?: boolean;

@@ -2,10 +2,10 @@ import React, { useMemo, useState } from 'react';
 import styled from 'styled-components';
 import { SignalUppercase } from '@/utils';
 import { useDestinationTypes } from '@/hooks';
-import { SearchIcon } from '@odigos/ui-components';
 import { DestinationsList } from './destinations-list';
+import { Divider, SearchIcon } from '@odigos/ui-components';
 import type { DestinationTypeItem, SupportedSignals } from '@/types';
-import { Divider, Dropdown, Input, MonitoringCheckboxes, SectionTitle } from '@/reuseable-components';
+import { Dropdown, Input, MonitoringCheckboxes, SectionTitle } from '@/reuseable-components';
 
 interface Props {
   onSelect: (item: DestinationTypeItem) => void;

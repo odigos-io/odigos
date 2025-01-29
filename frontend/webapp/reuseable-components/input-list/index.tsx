@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { isEmpty } from '@/utils';
 import styled from 'styled-components';
-import { PlusIcon, TrashIcon } from '@odigos/ui-components';
-import { Button, FieldError, FieldLabel, Input, Text } from '@/reuseable-components';
+import { FieldError, FieldLabel, Input } from '@/reuseable-components';
+import { Button, PlusIcon, Text, TrashIcon } from '@odigos/ui-components';
 
 type Row = string;
 

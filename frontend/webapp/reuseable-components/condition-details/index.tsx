@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react';
-import { Theme } from '@odigos/ui-components';
+import { Text, Theme } from '@odigos/ui-components';
 import styled, { useTheme } from 'styled-components';
 import { BACKEND_BOOLEAN, getStatusIcon } from '@/utils';
 import { NOTIFICATION_TYPE, type Condition } from '@/types';
-import { ExtendIcon, FadeLoader, Text } from '@/reuseable-components';
+import { ExtendIcon, FadeLoader } from '@/reuseable-components';
 
 interface Props {
   conditions: Condition[];

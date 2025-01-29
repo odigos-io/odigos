@@ -3,9 +3,8 @@ import { useAppStore } from '@/store';
 import { DeleteWarning } from '@/components';
 import styled, { useTheme } from 'styled-components';
 import { useSourceCRUD, useTransition } from '@/hooks';
-import { Theme, TrashIcon } from '@odigos/ui-components';
 import { type K8sActualSource, OVERVIEW_ENTITY_TYPES } from '@/types';
-import { Badge, Button, Divider, Text } from '@/reuseable-components';
+import { Badge, Button, Divider, Text, Theme, TrashIcon } from '@odigos/ui-components';
 
 const Container = styled.div`
   position: fixed;

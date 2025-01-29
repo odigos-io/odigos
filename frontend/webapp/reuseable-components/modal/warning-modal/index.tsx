@@ -2,7 +2,8 @@ import React from 'react';
 import { useKeyDown } from '@/hooks';
 import styled from 'styled-components';
 import { NOTIFICATION_TYPE } from '@/types';
-import { Button, ButtonProps, Modal, NotificationNote, Text } from '@/reuseable-components';
+import { Modal, NotificationNote } from '@/reuseable-components';
+import { Button, Text, type ButtonProps } from '@odigos/ui-components';
 
 interface ButtonParams {
   text: string;

@@ -1,8 +1,6 @@
 import React from 'react';
-import { Text } from '../text';
-import { Badge } from '../badge';
 import styled from 'styled-components';
-import { Types } from '@odigos/ui-components';
+import { Badge, Text, Types } from '@odigos/ui-components';
 
 interface SectionTitleProps {
   title: string;

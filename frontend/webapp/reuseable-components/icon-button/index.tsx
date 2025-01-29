@@ -1,5 +1,5 @@
 import React, { CSSProperties, PropsWithChildren } from 'react';
-import { Tooltip } from '../tooltip';
+import { Tooltip } from '@odigos/ui-components';
 import styled, { keyframes } from 'styled-components';
 
 interface Props extends PropsWithChildren {

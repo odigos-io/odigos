@@ -1,6 +1,6 @@
 import React from 'react';
-import { Text } from '../text';
 import styled from 'styled-components';
+import { Text } from '@odigos/ui-components';
 
 const ErrorWrapper = styled.div`
   padding: 4px 0 0 0;

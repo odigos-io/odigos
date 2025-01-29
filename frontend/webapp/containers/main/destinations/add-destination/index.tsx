@@ -7,9 +7,9 @@ import { NOTIFICATION_TYPE } from '@/types';
 import styled, { useTheme } from 'styled-components';
 import { DestinationModal } from '../destination-modal';
 import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
-import { ArrowIcon, CenterThis, PlusIcon } from '@odigos/ui-components';
 import { ConfiguredDestinationsList } from './configured-destinations-list';
-import { Button, FadeLoader, NotificationNote, SectionTitle, Text } from '@/reuseable-components';
+import { FadeLoader, NotificationNote, SectionTitle } from '@/reuseable-components';
+import { ArrowIcon, Button, CenterThis, PlusIcon, Text } from '@odigos/ui-components';
 
 const ContentWrapper = styled.div`
   width: 640px;

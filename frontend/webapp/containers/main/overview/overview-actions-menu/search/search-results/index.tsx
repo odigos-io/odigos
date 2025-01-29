@@ -3,7 +3,7 @@ import { SelectionButton } from '@/components';
 import { OVERVIEW_ENTITY_TYPES } from '@/types';
 import { AbsoluteContainer } from '../../styled';
 import styled, { useTheme } from 'styled-components';
-import { Divider, Text } from '@/reuseable-components';
+import { Divider, Text } from '@odigos/ui-components';
 import { buildSearchResults, type Category } from './builder';
 import { getEntityIcon, getEntityItemId, getEntityLabel } from '@/utils';
 import { useActionCRUD, useDestinationCRUD, useInstrumentationRuleCRUD, useNodeDataFlowHandlers, useSourceCRUD } from '@/hooks';

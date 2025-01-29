@@ -1,8 +1,9 @@
 import React from 'react';
-import styled, { useTheme } from 'styled-components';
 import { NOTIFICATION_TYPE } from '@/types';
+import styled, { useTheme } from 'styled-components';
+import { Divider, Text, Tooltip } from '@odigos/ui-components';
+import { ActiveStatus, Code, DataTab, InstrumentStatus, InteractiveTable, MonitorsIcons, NotificationNote } from '@/reuseable-components';
 import { capitalizeFirstLetter, getProgrammingLanguageIcon, parseJsonStringToPrettyString, safeJsonParse, WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils';
-import { ActiveStatus, Code, DataTab, Divider, InstrumentStatus, InteractiveTable, MonitorsIcons, NotificationNote, Text, Tooltip } from '@/reuseable-components';
 
 export enum DataCardFieldTypes {
   DIVIDER = 'divider',

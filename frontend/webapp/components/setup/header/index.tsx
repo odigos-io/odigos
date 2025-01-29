@@ -1,8 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
 import { ToggleDarkMode } from '@/components/common';
-import { FlexRow, OdigosLogoText, Theme } from '@odigos/ui-components';
-import { NavigationButtonProps, NavigationButtons, Text } from '@/reuseable-components';
+import { FlexRow, OdigosLogoText, Text, Theme } from '@odigos/ui-components';
+import { NavigationButtonProps, NavigationButtons } from '@/reuseable-components';
 
 interface Props {
   navigationButtons: NavigationButtonProps[];

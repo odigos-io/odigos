@@ -1,8 +1,7 @@
 import React from 'react';
 import { PlatformTypes } from '@/types';
-import { Text } from '@/reuseable-components';
-import { K8sLogo } from '@odigos/ui-components';
 import styled, { useTheme } from 'styled-components';
+import { K8sLogo, Text } from '@odigos/ui-components';
 
 interface Props {
   type: PlatformTypes;

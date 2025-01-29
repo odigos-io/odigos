@@ -4,12 +4,12 @@ import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
 import buildDrawerItem from './build-drawer-item';
 import { UpdateSourceBody } from '../update-source-body';
-import { CodeIcon, ListIcon } from '@odigos/ui-components';
 import { useDescribeSource, useSourceCRUD } from '@/hooks';
 import OverviewDrawer from '../../overview/overview-drawer';
+import { CodeIcon, ListIcon, Segment } from '@odigos/ui-components';
 import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type K8sActualSource } from '@/types';
 import { ACTION, BACKEND_BOOLEAN, DATA_CARDS, getEntityIcon, safeJsonStringify } from '@/utils';
-import { ConditionDetails, DataCard, DataCardRow, DataCardFieldTypes, Segment } from '@/reuseable-components';
+import { ConditionDetails, DataCard, DataCardRow, DataCardFieldTypes } from '@/reuseable-components';
 
 interface Props {}
 

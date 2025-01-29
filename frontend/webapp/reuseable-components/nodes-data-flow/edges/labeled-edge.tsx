@@ -1,7 +1,7 @@
 import React from 'react';
 import { EDGE_TYPES } from '@/types';
 import styled from 'styled-components';
-import { Tooltip } from '@/reuseable-components';
+import { Tooltip } from '@odigos/ui-components';
 import { EdgeLabelRenderer, BaseEdge, type EdgeProps, type Edge, getSmoothStepPath } from '@xyflow/react';
 
 interface Props

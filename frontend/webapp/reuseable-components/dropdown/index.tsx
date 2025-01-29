@@ -2,8 +2,8 @@ import React, { useState, useRef } from 'react';
 import { useOnClickOutside } from '@/hooks';
 import type { DropdownOption } from '@/types';
 import styled, { css, useTheme } from 'styled-components';
-import { CheckIcon, CrossIcon, SearchIcon, Theme } from '@odigos/ui-components';
-import { Badge, Checkbox, Divider, ExtendIcon, FieldError, FieldLabel, Input, NoDataFound, Text } from '@/reuseable-components';
+import { Badge, CheckIcon, CrossIcon, Divider, SearchIcon, Text, Theme } from '@odigos/ui-components';
+import { Checkbox, ExtendIcon, FieldError, FieldLabel, Input, NoDataFound } from '@/reuseable-components';
 
 interface DropdownProps {
   title?: string;

@@ -1,7 +1,6 @@
 import React from 'react';
-import { Text } from '../text';
-import { Tooltip } from '../tooltip';
 import styled from 'styled-components';
+import { Text, Tooltip } from '@odigos/ui-components';
 
 interface Props {
   title?: string;

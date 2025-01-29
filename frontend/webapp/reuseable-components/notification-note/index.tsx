@@ -1,11 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Text } from '../text';
-import { Divider } from '../divider';
 import { getStatusIcon } from '@/utils';
 import { IconButton } from '../icon-button';
 import styled, { useTheme } from 'styled-components';
-import { FlexRow, Theme, XIcon } from '@odigos/ui-components';
 import { type Notification, NOTIFICATION_TYPE } from '@/types';
+import { Divider, FlexRow, Text, Theme, XIcon } from '@odigos/ui-components';
 
 interface OnCloseParams {
   asSeen: boolean;

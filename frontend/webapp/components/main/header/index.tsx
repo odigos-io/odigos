@@ -5,9 +5,9 @@ import { FORM_ALERTS, SLACK_LINK } from '@/utils';
 import styled, { useTheme } from 'styled-components';
 import { NOTIFICATION_TYPE, PlatformTypes } from '@/types';
 import { NotificationManager, ToggleDarkMode } from '@/components';
+import { ConnectionStatus, IconButton } from '@/reuseable-components';
 import { DRAWER_OTHER_TYPES, useDrawerStore, useStatusStore } from '@/store';
-import { ConnectionStatus, IconButton, Tooltip } from '@/reuseable-components';
-import { FlexRow, OdigosLogoText, SlackLogo, TerminalIcon, Theme } from '@odigos/ui-components';
+import { FlexRow, OdigosLogoText, SlackLogo, TerminalIcon, Theme, Tooltip } from '@odigos/ui-components';
 
 interface MainHeaderProps {}
 

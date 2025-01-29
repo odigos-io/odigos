@@ -1,9 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
-import { Button } from '../button';
-import { Tooltip } from '../tooltip';
-import { Types } from '@odigos/ui-components';
 import styled, { useTheme } from 'styled-components';
+import { Button, Tooltip, Types } from '@odigos/ui-components';
 
 export interface NavigationButtonProps {
   label: string;

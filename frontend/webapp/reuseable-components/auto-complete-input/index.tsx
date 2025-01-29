@@ -1,7 +1,6 @@
 import React, { useState, type ChangeEvent, type KeyboardEvent, type FC, type InputHTMLAttributes } from 'react';
-import { Text } from '../text';
 import styled from 'styled-components';
-import { Types } from '@odigos/ui-components';
+import { Text, Types } from '@odigos/ui-components';
 
 export interface Option {
   id: string;

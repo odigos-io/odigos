@@ -5,8 +5,8 @@ import { ACTION, getStatusIcon } from '@/utils';
 import styled, { useTheme } from 'styled-components';
 import { useOnClickOutside, useTimeAgo } from '@/hooks';
 import { NOTIFICATION_TYPE, type Notification } from '@/types';
-import { IconButton, NoDataFound, Text } from '@/reuseable-components';
-import { NotificationIcon, Theme, TrashIcon } from '@odigos/ui-components';
+import { IconButton, NoDataFound } from '@/reuseable-components';
+import { NotificationIcon, Text, Theme, TrashIcon } from '@odigos/ui-components';
 
 const RelativeContainer = styled.div`
   position: relative;
