@@ -1,10 +1,11 @@
 import React from 'react';
+import { DocsButton } from '@/components';
 import RuleCustomFields from './custom-fields';
 import styled, { useTheme } from 'styled-components';
 import type { InstrumentationRuleInput } from '@/types';
 import type { RuleOption } from '../rule-modal/rule-options';
 import { CheckCircledIcon, CrossCircledIcon } from '@odigos/ui-components';
-import { DocsButton, Input, Text, TextArea, SectionTitle, Segment } from '@/reuseable-components';
+import { Input, Text, TextArea, SectionTitle, Segment } from '@/reuseable-components';
 
 interface Props {
   isUpdate?: boolean;

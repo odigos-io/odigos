@@ -1,10 +1,11 @@
 import React from 'react';
+import { DocsButton } from '@/components';
 import { type ActionInput } from '@/types';
 import ActionCustomFields from './custom-fields';
 import styled, { useTheme } from 'styled-components';
 import { type ActionOption } from '../action-modal/action-options';
 import { CheckCircledIcon, CrossCircledIcon, Theme } from '@odigos/ui-components';
-import { DocsButton, Input, Text, TextArea, MonitoringCheckboxes, SectionTitle, Segment } from '@/reuseable-components';
+import { Input, Text, TextArea, MonitoringCheckboxes, SectionTitle, Segment } from '@/reuseable-components';
 
 interface Props {
   isUpdate?: boolean;

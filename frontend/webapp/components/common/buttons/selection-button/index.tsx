@@ -1,9 +1,8 @@
 import React from 'react';
-import { Button } from '..';
 import Image from 'next/image';
 import styled from 'styled-components';
-import { Theme, Types } from '@odigos/ui-components';
 import { Badge, Text } from '@/reuseable-components';
+import { Button, Theme, Types } from '@odigos/ui-components';
 
 interface Props {
   label: string;

@@ -1,8 +1,7 @@
 import { useRef } from 'react';
 import { DOCS_LINK } from '@/utils';
 import styled from 'styled-components';
-import { Button, ButtonProps } from '..';
-import { NotebookIcon } from '@odigos/ui-components';
+import { Button, ButtonProps, NotebookIcon } from '@odigos/ui-components';
 
 const StyledButton = styled(Button)`
   display: flex;
