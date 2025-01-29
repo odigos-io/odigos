@@ -1,0 +1,7 @@
+apiVersion: operator.odigos.io/v1alpha1
+kind: Odigos
+metadata:
+  name: sample
+  namespace: odigos-operator-system
+spec:
+  version: v1.0.143
