@@ -47,6 +47,12 @@ kubectl apply -k config/samples/
 
 >**NOTE**: Ensure that the samples has default values to test it out.
 
+Label the installed namespace with:
+
+```
+kubectl label ns/<namespace> odigos.io/system-object=true
+```
+
 ### To Uninstall
 **Delete the instances (CRs) from the cluster:**
 

@@ -40,13 +40,13 @@ with Kustomize to point to your docker image.
 Next, build the Bundle Image:
 
 ```
-make build-bundle
+make bundle-build
 ```
 
 Again, you can point to your image by setting `IMAGE_TAG_BASE`:
 
 ```
-make build-bundle IMAGE_TAG_BASE=mikeodigos/odigos-operator VERSION=dev
+make bundle-build IMAGE_TAG_BASE=mikeodigos/odigos-operator VERSION=dev
 ```
 
 This will build a new docker image for the bundle containing all the generated manifests.
