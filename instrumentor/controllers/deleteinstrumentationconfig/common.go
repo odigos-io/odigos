@@ -155,6 +155,16 @@ func syncGenericWorkloadListToNs(ctx context.Context, c client.Client, kind work
 		return nil
 	}
 
+	// check if the workload is enabled by deprecated labels,
+	// once we fully remove the support for the instrumentation labels, we can remove this check
+	enabledByDeprecatedLabels, err := workload.IsWorkloadInstrumentationEffectiveEnabled(ctx, c, freshWorkloadCopy)
+	if err != nil {
+		return err
+	}
+	if enabledByDeprecatedLabels {
+		return nil
+	}
+
 	err = errors.Join(err, deleteWorkloadInstrumentationConfig(ctx, c, freshWorkloadCopy))
 	err = errors.Join(err, removeReportedNameAnnotation(ctx, c, freshWorkloadCopy))
 	return err
