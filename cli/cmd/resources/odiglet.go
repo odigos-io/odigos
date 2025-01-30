@@ -406,13 +406,21 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 								"init",
 							},
 							Resources: corev1.ResourceRequirements{},
-							VolumeMounts: []corev1.VolumeMount{
+							VolumeMounts: append([]corev1.VolumeMount{
 								{
 									Name:      "odigos",
 									MountPath: "/var/odigos",
 								},
-							},
+							}, odigosSeLinuxHostVolumeMounts...),
 							ImagePullPolicy: "IfNotPresent",
+							SecurityContext: &corev1.SecurityContext{
+								Privileged: ptrbool(true),
+								Capabilities: &corev1.Capabilities{
+									Add: []corev1.Capability{
+										"SYS_PTRACE",
+									},
+								},
+							},
 						},
 					},
 					Containers: []corev1.Container{

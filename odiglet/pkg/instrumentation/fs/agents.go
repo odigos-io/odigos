@@ -59,24 +59,31 @@ func CopyAgentsDirectoryToHost() error {
 	_, err = exec.LookPath(filepath.Join(chrootDir, semanagePath))
 	if err == nil {
 		// Run the semanage command to add the new directory to the container_ro_file_t context
-		cmd := exec.Command(semanagePath, "fcontext", "-a", "-t", "container_ro_file_t", "/var/odigos(/.*)?")
+		// semanage writes SELinux config to host
 		syscall.Chroot(chrootDir)
+		cmd := exec.Command(semanagePath, "fcontext", "-a", "-t", "container_ro_file_t", "/var/odigos(/.*)?")
 		err = cmd.Run()
 		if err != nil {
 			log.Logger.Error(err, "Error running semanage command")
 		}
-	}
 
-	// Check if the restorecon command exists when running on RHEL/CoreOS
-	_, err = exec.LookPath(filepath.Join(chrootDir, restoreconPath))
-	if err == nil {
-		// Run the restorecon command to apply the new context
-		cmd := exec.Command(restoreconPath, "-r", "/var/odigos")
-		syscall.Chroot(chrootDir)
-		err = cmd.Run()
-		if err != nil {
-			log.Logger.Error(err, "Error running restorecon command")
+		// Check if the restorecon command exists when running on RHEL/CoreOS
+		// restorecon applies the SELinux settings we just created to the host
+		// And we are already chrooted to the host path, so we can just look for restoreconPath now
+		_, err = exec.LookPath(restoreconPath)
+		if err == nil {
+			// Run the restorecon command to apply the new context
+			cmd := exec.Command(restoreconPath, "-r", "/var/odigos")
+			err = cmd.Run()
+			if err != nil {
+				log.Logger.Error(err, "Error running restorecon command")
+			}
+		} else {
+			log.Logger.Error(err, "Unable to find restorecon path")
 		}
+
+	} else {
+		log.Logger.Error(err, "Unable to find semanage path")
 	}
 
 	return nil

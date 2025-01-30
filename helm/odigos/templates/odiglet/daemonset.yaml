@@ -44,6 +44,19 @@ spec:
           volumeMounts:
             - name: odigos
               mountPath: /var/odigos
+            {{- if .Values.openshift.enabled }}
+            - name: host
+              mountPath: /host
+              readOnly: true
+            - name: selinux
+              mountPath: /host/etc/selinux
+              mountPropagation: Bidirectional
+            {{- end }}
+          securityContext:
+            privileged: true
+            capabilities:
+              add:
+                - SYS_PTRACE
       containers:
         - name: odiglet
           {{- if .Values.imagePrefix }}
