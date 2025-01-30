@@ -82,7 +82,7 @@ func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.Processor
 		return err
 	}
 
-	_, err = syncDeployment(dests, gateway, ctx, c, scheme, imagePullSecrets, odigosVersion)
+	_, err = syncDeployment(dests, gateway, ctx, c, scheme, imagePullSecrets, odigosVersion, config.CollectorImage)
 	if err != nil {
 		logger.Error(err, "Failed to sync deployment")
 		return err

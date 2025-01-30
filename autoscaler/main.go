@@ -67,8 +67,9 @@ import (
 )
 
 var (
-	scheme   = runtime.NewScheme()
-	setupLog = ctrl.Log.WithName("setup")
+	scheme                = runtime.NewScheme()
+	setupLog              = ctrl.Log.WithName("setup")
+	defaultCollectorImage = "keyval/odigos-collector"
 )
 
 func init() {
@@ -216,8 +217,14 @@ func main() {
 	// at the time of writing (2024-10-22) only dotnet and java native agent are using the name processor.
 	_, disableNameProcessor := os.LookupEnv("DISABLE_NAME_PROCESSOR")
 
+	collectorImage := defaultCollectorImage
+	if collectorImageEnv, ok := os.LookupEnv("ODIGOS_COLLECTOR_IMAGE"); ok {
+		collectorImage = collectorImageEnv
+	}
+
 	config := &controllerconfig.ControllerConfig{
-		K8sVersion: k8sVersion,
+		K8sVersion:     k8sVersion,
+		CollectorImage: collectorImage,
 	}
 
 	if err = (&controllers.DestinationReconciler{
@@ -262,6 +269,7 @@ func main() {
 		OdigosVersion:        odigosVersion,
 		K8sVersion:           k8sVersion,
 		DisableNameProcessor: disableNameProcessor,
+		Config:               config,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "InstrumentationConfig")
 		os.Exit(1)

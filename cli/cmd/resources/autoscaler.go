@@ -237,7 +237,7 @@ func NewAutoscalerLeaderElectionRoleBinding(ns string) *rbacv1.RoleBinding {
 	}
 }
 
-func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imageName string, disableNameProcessor bool) *appsv1.Deployment {
+func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imageName string, disableNameProcessor bool, collectorImage string) *appsv1.Deployment {
 
 	optionalEnvs := []corev1.EnvVar{}
 
@@ -302,6 +302,10 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 											FieldPath: "metadata.namespace",
 										},
 									},
+								},
+								{
+									Name:  "ODIGOS_COLLECTOR_IMAGE",
+									Value: containers.GetImageName(imagePrefix, collectorImage, version),
 								},
 								{
 									Name: consts.OdigosVersionEnvVarName,
@@ -390,6 +394,11 @@ func (a *autoScalerResourceManager) InstallFromScratch(ctx context.Context) erro
 
 	disableNameProcessor := slices.Contains(a.config.Profiles, "disable-name-processor") || slices.Contains(a.config.Profiles, "kratos")
 
+	collectorImage := k8sconsts.OdigosClusterCollectorImage
+	if a.config.OpenshiftEnabled {
+		collectorImage = k8sconsts.OdigosClusterCollectorImageUBI9
+	}
+
 	resources := []kube.Object{
 		NewAutoscalerServiceAccount(a.ns),
 		NewAutoscalerRole(a.ns),
@@ -397,7 +406,7 @@ func (a *autoScalerResourceManager) InstallFromScratch(ctx context.Context) erro
 		NewAutoscalerClusterRole(a.config.OpenshiftEnabled),
 		NewAutoscalerClusterRoleBinding(a.ns),
 		NewAutoscalerLeaderElectionRoleBinding(a.ns),
-		NewAutoscalerDeployment(a.ns, a.odigosVersion, a.config.ImagePrefix, a.config.AutoscalerImage, disableNameProcessor),
+		NewAutoscalerDeployment(a.ns, a.odigosVersion, a.config.ImagePrefix, a.config.AutoscalerImage, disableNameProcessor, collectorImage),
 	}
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }

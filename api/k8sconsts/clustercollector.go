@@ -1,6 +1,9 @@
 package k8sconsts
 
 const (
+	OdigosClusterCollectorImage     = "keyval/odigos-collector"
+	OdigosClusterCollectorImageUBI9 = "odigos-collector-ubi9"
+
 	OdigosClusterCollectorDeploymentName = "odigos-gateway"
 	OdigosClusterCollectorConfigMapName  = OdigosClusterCollectorDeploymentName
 	OdigosClusterCollectorServiceName    = OdigosClusterCollectorDeploymentName

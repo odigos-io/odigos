@@ -223,6 +223,15 @@ func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 		selectedProfiles = append(selectedProfiles, common.ProfileName(profile))
 	}
 
+	if openshiftEnabled {
+		if imagePrefix == "" {
+			imagePrefix = k8sconsts.RedHatImagePrefix
+		}
+		odigletImage = k8sconsts.OdigletImageUBI9
+		instrumentorImage = k8sconsts.InstrumentorImageUBI9
+		autoScalerImage = k8sconsts.AutoScalerImageUBI9
+	}
+
 	return common.OdigosConfiguration{
 		ConfigVersion:             1, // config version starts at 1 and incremented on every config change
 		TelemetryEnabled:          telemetryEnabled,
@@ -258,7 +267,7 @@ func init() {
 	installCmd.Flags().StringVarP(&odigosOnPremToken, "onprem-token", "", "", "authentication token for odigos enterprise on-premises")
 	installCmd.Flags().BoolVar(&skipWait, "nowait", false, "skip waiting for odigos pods to be ready")
 	installCmd.Flags().BoolVar(&telemetryEnabled, "telemetry", true, "send general telemetry regarding Odigos usage")
-	installCmd.Flags().BoolVar(&openshiftEnabled, "openshift", false, "configure requirements for OpenShift: required selinux settings and RBAC roles")
+	installCmd.Flags().BoolVar(&openshiftEnabled, "openshift", false, "configure requirements for OpenShift: required selinux settings, RBAC roles, and will use OpenShift certified images (if --image-prefix is not set)")
 	installCmd.Flags().BoolVar(&skipWebhookIssuerCreation, "skip-webhook-issuer-creation", false, "Skip creating the Issuer and Certificate for the Instrumentor pod webhook if cert-manager is installed.")
 	installCmd.Flags().StringVar(&odigletImage, "odiglet-image", "", "odiglet container image name")
 	installCmd.Flags().StringVar(&instrumentorImage, "instrumentor-image", "keyval/odigos-instrumentor", "instrumentor container image name")
