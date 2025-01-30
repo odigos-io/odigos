@@ -130,13 +130,6 @@ func (m *MigrationRunnable) handleSingleDeployment(ctx context.Context, dep *app
 		m.Logger.Error(err, "Failed to get original workload environment variables")
 		return err
 	}
-
-	if err != nil {
-		m.Logger.Error(err, "Failed to get InstrumentationConfig", "Name", freshInstConfig.Name,
-			"Namespace", freshInstConfig.Namespace)
-		return err
-	}
-
 	runtimeDetailsByContainer := freshInstConfig.Status.RuntimeDetailsByContainer
 
 	for _, containerObject := range freshDep.Spec.Template.Spec.Containers {
