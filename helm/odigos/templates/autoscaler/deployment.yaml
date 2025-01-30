@@ -27,11 +27,8 @@ spec:
           {{ end }}
         command:
           - /app
-        {{- if .Values.imagePrefix }}
-        image: "{{ .Values.imagePrefix }}/{{ .Values.autoscaler.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-        {{- else }}
-        image: "{{ .Values.autoscaler.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-        {{- end }}
+        {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
+        image: {{ template "utils.imageName" (dict "Values" .Values "Component" "autoscaler" "Tag" $imageTag) }}
         env:
           - name: OTEL_SERVICE_NAME
             value: auto-scaler
@@ -43,7 +40,9 @@ spec:
             valueFrom:
               configMapKeyRef:
                 key: ODIGOS_VERSION
-                name: odigos-deployment                
+                name: odigos-deployment   
+          - name: ODIGOS_COLLECTOR_IMAGE
+            value: {{- template "utils.imageName" (dict "Values" .Values "Component" "collector" .Values "Tag" $imageTag) }}
         envFrom:
           - configMapRef:
               name: odigos-own-telemetry-otel-config

@@ -33,11 +33,8 @@ spec:
           - --leader-elect
         command:
           - /app
-        {{- if .Values.imagePrefix }}
-        image: "{{ .Values.imagePrefix }}/{{ .Values.instrumentor.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-        {{- else }}
-        image: "{{ .Values.instrumentor.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-        {{- end }}
+        {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
+        image: {{ template "utils.imageName" (dict "Values" .Values "Component" "instrumentor" "Tag" $imageTag) }}
         ports:
           - containerPort: 9443
             name: webhook-server
