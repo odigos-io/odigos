@@ -451,11 +451,6 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 									MountPath: "/var/lib/kubelet/device-plugins",
 								},
 								{
-									Name:      "pod-resources",
-									MountPath: "/var/lib/kubelet/pod-resources",
-									ReadOnly:  true,
-								},
-								{
 									Name:      "odigos",
 									MountPath: "/var/odigos",
 									ReadOnly:  true,

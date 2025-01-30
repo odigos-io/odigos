@@ -125,9 +125,6 @@ spec:
           hostPath:
             path: /etc/selinux
         {{- end }}
-        - name: pod-resources
-          hostPath:
-            path: /var/lib/kubelet/pod-resources
         - name: device-plugins-dir
           hostPath:
             path: /var/lib/kubelet/device-plugins
