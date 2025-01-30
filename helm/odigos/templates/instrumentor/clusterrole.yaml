@@ -49,6 +49,7 @@ rules:
       - watch
       - update
       - patch
+{{- if .Values.openshift.enabled }}
   - apiGroups:
       - apps
     resources:
@@ -57,6 +58,7 @@ rules:
       - daemonsets/finalizers
     verbs:
       - update
+{{- end }}
   - apiGroups:
       - odigos.io
     resources:

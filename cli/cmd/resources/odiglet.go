@@ -90,7 +90,21 @@ func NewOdigletRoleBinding(ns string) *rbacv1.RoleBinding {
 	}
 }
 
-func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
+func NewOdigletClusterRole(psp, ownerPermissionEnforcement bool) *rbacv1.ClusterRole {
+	finalizersUpdate := []rbacv1.PolicyRule{}
+	if ownerPermissionEnforcement {
+		finalizersUpdate = append(finalizersUpdate, rbacv1.PolicyRule{
+			// Required for OwnerReferencesPermissionEnforcement (on by default in OpenShift)
+			// When we create an InstrumentationInstance, we set the OwnerReference to the related pod.
+			// Controller-runtime sets BlockDeletion: true. So with this Admission Plugin we need permission to
+			// update finalizers on the workloads so that they can block deletion.
+			// seehttps://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#ownerreferencespermissionenforcement
+			APIGroups: []string{""},
+			Resources: []string{"pods/finalizers"},
+			Verbs:     []string{"update"},
+		})
+	}
+
 	clusterrole := &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ClusterRole",
@@ -99,7 +113,7 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: k8sconsts.OdigletClusterRoleName,
 		},
-		Rules: []rbacv1.PolicyRule{
+		Rules: append([]rbacv1.PolicyRule{
 			{ // Needed for language detection
 				APIGroups: []string{""},
 				Resources: []string{"pods"},
@@ -121,16 +135,6 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 				APIGroups: []string{"apps"},
 				Resources: []string{"deployments/status", "daemonsets/status", "statefulsets/status"},
 				Verbs:     []string{"get"},
-			},
-			{
-				// Required for OwnerReferencesPermissionEnforcement (on by default in OpenShift)
-				// When we create an InstrumentationInstance, we set the OwnerReference to the related pod.
-				// Controller-runtime sets BlockDeletion: true. So with this Admission Plugin we need permission to
-				// update finalizers on the workloads so that they can block deletion.
-				// seehttps://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#ownerreferencespermissionenforcement
-				APIGroups: []string{""},
-				Resources: []string{"pods/finalizers"},
-				Verbs:     []string{"update"},
 			},
 			{ // Needed for virtual device registration
 				APIGroups: []string{""},
@@ -157,7 +161,7 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 				Resources: []string{"instrumentationconfigs/status"},
 				Verbs:     []string{"get", "patch", "update"},
 			},
-		},
+		}, finalizersUpdate...),
 	}
 
 	if psp {
@@ -587,7 +591,7 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 		NewOdigletServiceAccount(a.ns),
 		NewOdigletRole(a.ns),
 		NewOdigletRoleBinding(a.ns),
-		NewOdigletClusterRole(a.config.Psp),
+		NewOdigletClusterRole(a.config.Psp, a.config.OpenshiftEnabled),
 		NewOdigletClusterRoleBinding(a.ns),
 	}
 

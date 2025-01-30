@@ -258,7 +258,7 @@ func init() {
 	installCmd.Flags().StringVarP(&odigosOnPremToken, "onprem-token", "", "", "authentication token for odigos enterprise on-premises")
 	installCmd.Flags().BoolVar(&skipWait, "nowait", false, "skip waiting for odigos pods to be ready")
 	installCmd.Flags().BoolVar(&telemetryEnabled, "telemetry", true, "send general telemetry regarding Odigos usage")
-	installCmd.Flags().BoolVar(&openshiftEnabled, "openshift", false, "configure selinux on openshift nodes")
+	installCmd.Flags().BoolVar(&openshiftEnabled, "openshift", false, "configure requirements for OpenShift: required selinux settings and RBAC roles")
 	installCmd.Flags().BoolVar(&skipWebhookIssuerCreation, "skip-webhook-issuer-creation", false, "Skip creating the Issuer and Certificate for the Instrumentor pod webhook if cert-manager is installed.")
 	installCmd.Flags().StringVar(&odigletImage, "odiglet-image", "", "odiglet container image name")
 	installCmd.Flags().StringVar(&instrumentorImage, "instrumentor-image", "keyval/odigos-instrumentor", "instrumentor container image name")

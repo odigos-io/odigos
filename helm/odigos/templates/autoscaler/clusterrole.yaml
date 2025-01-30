@@ -19,6 +19,7 @@ rules:
       - get
       - list
       - watch
+{{- if .Values.openshift.enabled }}
   - apiGroups:
       - odigos.io
     resources:
@@ -27,3 +28,4 @@ rules:
       - get
       - patch
       - update
+{{- end }}

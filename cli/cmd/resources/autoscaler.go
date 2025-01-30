@@ -146,7 +146,21 @@ func NewAutoscalerRoleBinding(ns string) *rbacv1.RoleBinding {
 	}
 }
 
-func NewAutoscalerClusterRole() *rbacv1.ClusterRole {
+func NewAutoscalerClusterRole(ownerPermissionEnforcement bool) *rbacv1.ClusterRole {
+	finalizersUpdate := []rbacv1.PolicyRule{}
+	if ownerPermissionEnforcement {
+		finalizersUpdate = append(finalizersUpdate, rbacv1.PolicyRule{
+			// Required for OwnerReferencesPermissionEnforcement (on by default in OpenShift)
+			// When we create a collector COnfigMap, we set the OwnerReference to the collectorsgroups.
+			// Controller-runtime sets BlockDeletion: true. So with this Admission Plugin we need permission to
+			// update finalizers on the collectorsgroup so that they can block deletion.
+			// seehttps://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#ownerreferencespermissionenforcement
+			APIGroups: []string{"odigos.io"},
+			Resources: []string{"collectorsgroups/finalizers"},
+			Verbs:     []string{"update"},
+		})
+	}
+
 	return &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ClusterRole",
@@ -155,7 +169,7 @@ func NewAutoscalerClusterRole() *rbacv1.ClusterRole {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: k8sconsts.AutoScalerClusterRoleName,
 		},
-		Rules: []rbacv1.PolicyRule{
+		Rules: append([]rbacv1.PolicyRule{
 			{ // Needed to read the applications, to populate the receivers.filelog in the data-collector configmap
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"instrumentationconfigs"},
@@ -171,17 +185,7 @@ func NewAutoscalerClusterRole() *rbacv1.ClusterRole {
 					"watch",
 				},
 			},
-			{
-				// Required for OwnerReferencesPermissionEnforcement (on by default in OpenShift)
-				// When we create a collector COnfigMap, we set the OwnerReference to the collectorsgroups.
-				// Controller-runtime sets BlockDeletion: true. So with this Admission Plugin we need permission to
-				// update finalizers on the collectorsgroup so that they can block deletion.
-				// seehttps://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#ownerreferencespermissionenforcement
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"collectorsgroups/finalizers"},
-				Verbs:     []string{"update"},
-			},
-		},
+		}, finalizersUpdate...),
 	}
 }
 
@@ -390,7 +394,7 @@ func (a *autoScalerResourceManager) InstallFromScratch(ctx context.Context) erro
 		NewAutoscalerServiceAccount(a.ns),
 		NewAutoscalerRole(a.ns),
 		NewAutoscalerRoleBinding(a.ns),
-		NewAutoscalerClusterRole(),
+		NewAutoscalerClusterRole(a.config.OpenshiftEnabled),
 		NewAutoscalerClusterRoleBinding(a.ns),
 		NewAutoscalerLeaderElectionRoleBinding(a.ns),
 		NewAutoscalerDeployment(a.ns, a.odigosVersion, a.config.ImagePrefix, a.config.AutoscalerImage, disableNameProcessor),
