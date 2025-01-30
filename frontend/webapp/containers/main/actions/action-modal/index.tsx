@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { ACTION } from '@/utils';
 import { ActionFormBody } from '../';
 import { ModalBody } from '@/styles';
+import { NavigationButtons } from '@/reuseable-components';
 import { useActionCRUD, useActionFormData } from '@/hooks/actions';
-import { NavigationButtons, SectionTitle } from '@/reuseable-components';
-import { ACTION_OPTIONS, AutocompleteInput, CenterThis, Divider, FadeLoader, Modal, Types, useKeyDown } from '@odigos/ui-components';
+import { ACTION_OPTIONS, AutocompleteInput, CenterThis, Divider, FadeLoader, Modal, SectionTitle, Types, useKeyDown } from '@odigos/ui-components';
 
 interface Props {
   isOpen: boolean;

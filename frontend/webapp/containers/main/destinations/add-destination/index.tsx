@@ -5,11 +5,10 @@ import { SetupHeader } from '@/components';
 import { useRouter } from 'next/navigation';
 import { NOTIFICATION_TYPE } from '@/types';
 import styled, { useTheme } from 'styled-components';
-import { SectionTitle } from '@/reuseable-components';
 import { DestinationModal } from '../destination-modal';
 import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
 import { ConfiguredDestinationsList } from './configured-destinations-list';
-import { ArrowIcon, Button, CenterThis, FadeLoader, NotificationNote, PlusIcon, Text } from '@odigos/ui-components';
+import { ArrowIcon, Button, CenterThis, FadeLoader, NotificationNote, PlusIcon, SectionTitle, Text } from '@odigos/ui-components';
 
 const ContentWrapper = styled.div`
   width: 640px;

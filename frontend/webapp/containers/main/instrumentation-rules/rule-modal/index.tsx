@@ -3,9 +3,9 @@ import { RuleFormBody } from '../';
 import { ModalBody } from '@/styles';
 import { NOTIFICATION_TYPE } from '@/types';
 import { ACTION, FORM_ALERTS } from '@/utils';
-import { NavigationButtons, SectionTitle } from '@/reuseable-components';
+import { NavigationButtons } from '@/reuseable-components';
 import { useDescribeOdigos, useInstrumentationRuleCRUD, useInstrumentationRuleFormData } from '@/hooks';
-import { AutocompleteInput, CenterThis, Divider, FadeLoader, INSTRUMENTATION_RULE_OPTIONS, Modal, NotificationNote, Types, useKeyDown } from '@odigos/ui-components';
+import { AutocompleteInput, CenterThis, Divider, FadeLoader, INSTRUMENTATION_RULE_OPTIONS, Modal, NotificationNote, SectionTitle, Types, useKeyDown } from '@odigos/ui-components';
 
 interface Props {
   isOpen: boolean;

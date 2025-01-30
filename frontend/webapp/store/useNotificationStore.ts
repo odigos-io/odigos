@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { isWithinTime } from '@/utils';
 import type { Notification } from '@/types';
+import { isWithinTime } from '@odigos/ui-components';
 
 export type NotifyPayload = Omit<Notification, 'id' | 'dismissed' | 'seen' | 'time'>;
 

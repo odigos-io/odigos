@@ -1,10 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import styled from 'styled-components';
 import { useDestinationTypes } from '@/hooks';
-import { SectionTitle } from '@/reuseable-components';
 import { DestinationsList } from './destinations-list';
 import type { DestinationTypeItem, SupportedSignals } from '@/types';
-import { Divider, Dropdown, Input, MonitorsCheckboxes, SearchIcon, Types } from '@odigos/ui-components';
+import { Divider, Dropdown, Input, MonitorsCheckboxes, SearchIcon, SectionTitle, Types } from '@odigos/ui-components';
 
 interface Props {
   onSelect: (item: DestinationTypeItem) => void;

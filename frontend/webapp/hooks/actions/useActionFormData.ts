@@ -1,7 +1,7 @@
 import { useGenericForm } from '@/hooks';
-import { Types } from '@odigos/ui-components';
+import { FORM_ALERTS, safeJsonParse } from '@/utils';
+import { isEmpty, Types } from '@odigos/ui-components';
 import { DrawerItem, useNotificationStore } from '@/store';
-import { FORM_ALERTS, isEmpty, safeJsonParse } from '@/utils';
 import { LatencySamplerSpec, NOTIFICATION_TYPE, type ActionDataParsed, type ActionInput } from '@/types';
 
 const INITIAL: ActionInput = {

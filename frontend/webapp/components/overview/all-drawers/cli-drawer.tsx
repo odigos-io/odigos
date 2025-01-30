@@ -2,9 +2,9 @@ import React, { useRef, useState } from 'react';
 import { useDrawerStore } from '@/store';
 import { NOTIFICATION_TYPE } from '@/types';
 import styled, { useTheme } from 'styled-components';
+import { useDescribeOdigos, useTokenCRUD } from '@/hooks';
 import { DataCard, DataCardFieldTypes } from '@/reuseable-components';
-import { useDescribeOdigos, useTimeAgo, useTokenCRUD } from '@/hooks';
-import { DATA_CARDS, isOverTime, isWithinTime, safeJsonStringify, SEVEN_DAYS_IN_MS } from '@/utils';
+import { DATA_CARDS, safeJsonStringify, SEVEN_DAYS_IN_MS } from '@/utils';
 import {
   Button,
   CheckIcon,
@@ -20,6 +20,8 @@ import {
   getStatusIcon,
   IconButton,
   Input,
+  isOverTime,
+  isWithinTime,
   KeyIcon,
   ListIcon,
   Segment,
@@ -28,6 +30,7 @@ import {
   useCopy,
   useKeyDown,
   useOnClickOutside,
+  useTimeAgo,
 } from '@odigos/ui-components';
 
 interface Props {}

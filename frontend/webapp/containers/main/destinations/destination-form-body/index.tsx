@@ -1,10 +1,9 @@
 import React, { Dispatch, SetStateAction, useEffect, useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
-import { SectionTitle } from '@/reuseable-components';
 import { DestinationDynamicFields } from './dynamic-fields';
 import { type ConnectionStatus, TestConnection } from './test-connection';
-import { Divider, Input, MonitorsCheckboxes, NotificationNote, Types } from '@odigos/ui-components';
 import { NOTIFICATION_TYPE, type DestinationInput, type DestinationTypeItem, type DynamicField } from '@/types';
+import { Divider, Input, MonitorsCheckboxes, NotificationNote, SectionTitle, Types } from '@odigos/ui-components';
 
 interface Props {
   isUpdate?: boolean;

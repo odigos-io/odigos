@@ -2,9 +2,9 @@ import React from 'react';
 import styled from 'styled-components';
 import { IDestinationListItem } from '@/hooks';
 import { capitalizeFirstLetter } from '@/utils';
+import { DataTab } from '@/reuseable-components';
 import type { DestinationTypeItem } from '@/types';
-import { NoDataFound, Types } from '@odigos/ui-components';
-import { DataTab, SectionTitle } from '@/reuseable-components';
+import { NoDataFound, SectionTitle, Types } from '@odigos/ui-components';
 import { PotentialDestinationsList } from './potential-destinations-list';
 
 const Container = styled.div`
