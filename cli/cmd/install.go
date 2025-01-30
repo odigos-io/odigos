@@ -39,6 +39,7 @@ var (
 	userInputIgnoredContainers []string
 	userInputInstallProfiles   []string
 	uiMode                     string
+	centralBackendURL          string
 
 	instrumentorImage string
 	odigletImage      string
@@ -236,6 +237,7 @@ func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 		AutoscalerImage:           autoScalerImage,
 		Profiles:                  selectedProfiles,
 		UiMode:                    common.UiMode(uiMode),
+		CentralBackendURL:         centralBackendURL,
 	}
 }
 
@@ -267,6 +269,7 @@ func init() {
 	installCmd.Flags().StringSliceVar(&userInputIgnoredContainers, "ignore-container", k8sconsts.DefaultIgnoredContainers, "container names to exclude from instrumentation (useful for sidecar container)")
 	installCmd.Flags().StringSliceVar(&userInputInstallProfiles, "profile", []string{}, "install preset profiles with a specific configuration")
 	installCmd.Flags().StringVarP(&uiMode, "ui-mode", "", string(common.NormalUiMode), "set the UI mode (one-of: normal, readonly)")
+	installCmd.Flags().StringVar(&centralBackendURL, "central-backend-url", "", "URL for centralized Odigos backend")
 
 	if OdigosVersion != "" {
 		versionFlag = OdigosVersion
