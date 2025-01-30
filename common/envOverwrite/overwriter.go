@@ -94,8 +94,11 @@ func CleanupEnvValueFromOdigosAdditions(envVarName string, envVarValue string) s
 
 	// if any of the possible values for this env exists, remove it
 	for _, value := range overwriteMetadata.values {
+		// try to remove each value with and without the delimiter.
+		// if odigos value is the only one left, the delimiter will not be present.
 		withSeparator := overwriteMetadata.delim + value
 		envVarValue = strings.ReplaceAll(envVarValue, withSeparator, "")
+		envVarValue = strings.ReplaceAll(envVarValue, value, "")
 	}
 
 	// remove any odigos special values if they exist
