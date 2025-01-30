@@ -1,9 +1,9 @@
 import React, { Fragment } from 'react';
 import styled from 'styled-components';
 import { usePendingStore } from '@/store';
+import { NODE_TYPES, OVERVIEW_NODE_TYPES, STATUSES } from '@/types';
 import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';
-import { NODE_TYPES, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES } from '@/types';
-import { FadeLoader, FlexColumn, FlexRow, PlusIcon, Text, Theme } from '@odigos/ui-components';
+import { FadeLoader, FlexColumn, FlexRow, PlusIcon, Text, Theme, Types } from '@odigos/ui-components';
 
 interface Props
   extends NodeProps<
@@ -58,7 +58,7 @@ const AddNode: React.FC<Props> = ({ id: nodeId, data }) => {
   const { nodeWidth, title, subTitle } = data;
 
   const { isThisPending } = usePendingStore();
-  const entity = nodeId.split('-')[0] as OVERVIEW_ENTITY_TYPES;
+  const entity = nodeId.split('-')[0] as Types.ENTITY_TYPES;
   const isPending = isThisPending({ entityType: entity });
 
   return (

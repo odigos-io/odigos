@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
-import { MONITORS_OPTIONS } from '@/utils';
-import { Dropdown, type DropdownProps } from '@odigos/ui-components';
+import { Dropdown, MONITORS_OPTIONS, type DropdownProps } from '@odigos/ui-components';
 
 interface Props {
   title?: string;
@@ -17,9 +16,7 @@ export const MonitorDropdown: React.FC<Props> = ({ title = 'Monitors', value, on
     const payload: DropdownProps['options'] = [];
 
     MONITORS_OPTIONS.forEach(({ id, value }) => {
-      if (!payload.find((opt) => opt.id === id)) {
-        payload.push({ id, value });
-      }
+      if (!payload.find((opt) => opt.id === id)) payload.push({ id, value });
     });
 
     return payload;

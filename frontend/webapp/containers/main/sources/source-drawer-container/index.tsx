@@ -6,9 +6,9 @@ import buildDrawerItem from './build-drawer-item';
 import { UpdateSourceBody } from '../update-source-body';
 import { useDescribeSource, useSourceCRUD } from '@/hooks';
 import OverviewDrawer from '../../overview/overview-drawer';
-import { CodeIcon, ListIcon, Segment } from '@odigos/ui-components';
-import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type K8sActualSource } from '@/types';
-import { ACTION, BACKEND_BOOLEAN, DATA_CARDS, getEntityIcon, safeJsonStringify } from '@/utils';
+import { type WorkloadId, type K8sActualSource } from '@/types';
+import { ACTION, BACKEND_BOOLEAN, DATA_CARDS, safeJsonStringify } from '@/utils';
+import { CodeIcon, getEntityIcon, ListIcon, Segment, Types } from '@odigos/ui-components';
 import { ConditionDetails, DataCard, DataCardRow, DataCardFieldTypes } from '@/reuseable-components';
 
 interface Props {}
@@ -51,11 +51,11 @@ export const SourceDrawer: React.FC<Props> = () => {
     if (!!fetchedItems?.length) {
       const found = fetchedItems.find((x) => x.namespace === namespace && x.name === name && x.kind === kind);
       if (!!found) {
-        return setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.SOURCE, item: found });
+        return setSelectedItem({ id, type: Types.ENTITY_TYPES.SOURCE, item: found });
       }
     }
 
-    setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.SOURCE, item: buildDrawerItem(id, formData, item) });
+    setSelectedItem({ id, type: Types.ENTITY_TYPES.SOURCE, item: buildDrawerItem(id, formData, item) });
   };
 
   // This should keep the drawer up-to-date with the latest data
@@ -139,7 +139,7 @@ export const SourceDrawer: React.FC<Props> = () => {
     <OverviewDrawer
       title={item.otelServiceName || item.name}
       titleTooltip='This attribute is used to identify the name of the service (service.name) that is generating telemetry data.'
-      icon={getEntityIcon(OVERVIEW_ENTITY_TYPES.SOURCE)}
+      icon={getEntityIcon(Types.ENTITY_TYPES.SOURCE)}
       isEdit={isEditing}
       isFormDirty={isFormDirty}
       onEdit={handleEdit}

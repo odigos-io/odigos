@@ -1,11 +1,12 @@
 import { useMemo } from 'react';
 import { useConfig } from '../config';
 import { GET_ACTIONS } from '@/graphql';
+import { Types } from '@odigos/ui-components';
 import { useMutation, useQuery } from '@apollo/client';
 import { useFilterStore, useNotificationStore } from '@/store';
 import { CREATE_ACTION, DELETE_ACTION, UPDATE_ACTION } from '@/graphql/mutations';
 import { ACTION, DISPLAY_TITLES, FORM_ALERTS, getSseTargetFromId, safeJsonParse } from '@/utils';
-import { type ActionItem, type ComputePlatform, NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES, type ActionInput, type ActionsType } from '@/types';
+import { type ActionItem, type ComputePlatform, NOTIFICATION_TYPE, type ActionInput } from '@/types';
 
 interface UseActionCrudParams {
   onSuccess?: (type: string) => void;
@@ -22,8 +23,8 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
       type,
       title,
       message,
-      crdType: OVERVIEW_ENTITY_TYPES.ACTION,
-      target: id ? getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.ACTION) : undefined,
+      crdType: Types.ENTITY_TYPES.ACTION,
+      target: id ? getSseTargetFromId(id, Types.ENTITY_TYPES.ACTION) : undefined,
       hideFromHistory,
     });
   };
@@ -79,7 +80,7 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
     onError: (error) => handleError(ACTION.DELETE, error.message),
     onCompleted: (res, req) => {
       const id = req?.variables?.id;
-      removeNotifications(getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.ACTION));
+      removeNotifications(getSseTargetFromId(id, Types.ENTITY_TYPES.ACTION));
       handleComplete(ACTION.DELETE, `Action "${id}" deleted`, id);
     },
   });
@@ -104,7 +105,7 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
         updateAction({ variables: { id, action } });
       }
     },
-    deleteAction: (id: string, actionType: ActionsType) => {
+    deleteAction: (id: string, actionType: Types.ACTION_TYPE) => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {

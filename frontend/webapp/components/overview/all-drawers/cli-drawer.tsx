@@ -4,7 +4,7 @@ import { NOTIFICATION_TYPE } from '@/types';
 import styled, { useTheme } from 'styled-components';
 import { DataCard, DataCardFieldTypes } from '@/reuseable-components';
 import { useDescribeOdigos, useTimeAgo, useTokenCRUD } from '@/hooks';
-import { DATA_CARDS, getStatusIcon, isOverTime, isWithinTime, safeJsonStringify, SEVEN_DAYS_IN_MS } from '@/utils';
+import { DATA_CARDS, isOverTime, isWithinTime, safeJsonStringify, SEVEN_DAYS_IN_MS } from '@/utils';
 import {
   Button,
   CheckIcon,
@@ -17,6 +17,7 @@ import {
   EditIcon,
   FlexColumn,
   FlexRow,
+  getStatusIcon,
   IconButton,
   Input,
   KeyIcon,

@@ -1,7 +1,6 @@
 'use client';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Theme } from '@odigos/ui-components';
-import { OVERVIEW_ENTITY_TYPES } from '@/types';
+import { Theme, Types } from '@odigos/ui-components';
 import styled, { useTheme } from 'styled-components';
 import { NodeDataFlow } from '@/reuseable-components';
 import { MultiSourceControl } from '../multi-source-control';
@@ -87,7 +86,7 @@ export default function OverviewDataFlowContainer() {
   const [nodes, setNodes, onNodesChange] = useNodesState(([] as Node[]).concat(actionNodes, ruleNodes, sourceNodes, destinationNodes));
   const [edges, setEdges, onEdgesChange] = useEdgesState([] as Edge[]);
 
-  const handleNodeState = useCallback((prevNodes: Node[], currNodes: Node[], key: OVERVIEW_ENTITY_TYPES, yOffset?: number) => {
+  const handleNodeState = useCallback((prevNodes: Node[], currNodes: Node[], key: Types.ENTITY_TYPES, yOffset?: number) => {
     const filtered = [...prevNodes].filter(({ id }) => id.split('-')[0] !== key);
 
     if (!!yOffset) {
@@ -104,10 +103,10 @@ export default function OverviewDataFlowContainer() {
     return filtered;
   }, []);
 
-  useEffect(() => setNodes((prev) => handleNodeState(prev, ruleNodes, OVERVIEW_ENTITY_TYPES.RULE)), [ruleNodes]);
-  useEffect(() => setNodes((prev) => handleNodeState(prev, actionNodes, OVERVIEW_ENTITY_TYPES.ACTION)), [actionNodes]);
-  useEffect(() => setNodes((prev) => handleNodeState(prev, destinationNodes, OVERVIEW_ENTITY_TYPES.DESTINATION)), [destinationNodes]);
-  useEffect(() => setNodes((prev) => handleNodeState(prev, sourceNodes, OVERVIEW_ENTITY_TYPES.SOURCE, scrollYOffset)), [sourceNodes, scrollYOffset]);
+  useEffect(() => setNodes((prev) => handleNodeState(prev, ruleNodes, Types.ENTITY_TYPES.INSTRUMENTATION_RULE)), [ruleNodes]);
+  useEffect(() => setNodes((prev) => handleNodeState(prev, actionNodes, Types.ENTITY_TYPES.ACTION)), [actionNodes]);
+  useEffect(() => setNodes((prev) => handleNodeState(prev, destinationNodes, Types.ENTITY_TYPES.DESTINATION)), [destinationNodes]);
+  useEffect(() => setNodes((prev) => handleNodeState(prev, sourceNodes, Types.ENTITY_TYPES.SOURCE, scrollYOffset)), [sourceNodes, scrollYOffset]);
   useEffect(() => setEdges(buildEdges({ theme: theme as Theme.ITheme, nodes, metrics, containerHeight })), [theme, nodes, metrics, containerHeight]);
 
   return (

@@ -1,8 +1,8 @@
 import { forwardRef, type PropsWithChildren, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { NOTIFICATION_TYPE } from '@/types';
 import { useTheme } from 'styled-components';
 import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
 import { CancelWarning, DeleteWarning } from '@/components/modals';
-import { NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES } from '@/types';
 import { useDrawerStore, useNotificationStore, usePendingStore } from '@/store';
 import { Drawer, DrawerProps, EditIcon, Input, Text, TrashIcon, Types, useKeyDown } from '@odigos/ui-components';
 
@@ -54,8 +54,8 @@ const OverviewDrawer: React.FC<OverviewDrawerProps & PropsWithChildren> = ({
 
   const titleRef = useRef<EditTitleRef>(null);
 
-  const isSource = selectedItem?.type === OVERVIEW_ENTITY_TYPES.SOURCE;
-  const isDestination = selectedItem?.type === OVERVIEW_ENTITY_TYPES.DESTINATION;
+  const isSource = selectedItem?.type === Types.ENTITY_TYPES.SOURCE;
+  const isDestination = selectedItem?.type === Types.ENTITY_TYPES.DESTINATION;
 
   const closeDrawer = () => {
     setSelectedItem(null);
@@ -110,7 +110,7 @@ const OverviewDrawer: React.FC<OverviewDrawerProps & PropsWithChildren> = ({
     if (!selectedItem?.type) return false;
 
     return isThisPending({
-      entityType: selectedItem.type as OVERVIEW_ENTITY_TYPES,
+      entityType: selectedItem.type as Types.ENTITY_TYPES,
       entityId: selectedItem.id,
     });
   }, [selectedItem]);
@@ -211,7 +211,7 @@ const OverviewDrawer: React.FC<OverviewDrawerProps & PropsWithChildren> = ({
         isOpen={isDeleteModalOpen}
         noOverlay
         name={`${selectedItem?.type}${title ? ` (${title})` : ''}`}
-        type={selectedItem?.type as OVERVIEW_ENTITY_TYPES}
+        type={selectedItem?.type as Types.ENTITY_TYPES}
         isLastItem={isLastItem()}
         onApprove={handleDelete}
         onDeny={closeWarningModals}

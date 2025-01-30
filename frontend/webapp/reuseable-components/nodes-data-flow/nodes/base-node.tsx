@@ -4,7 +4,7 @@ import { DataTab } from '@/reuseable-components';
 import { useAppStore, usePendingStore } from '@/store';
 import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';
 import { Checkbox, ErrorTriangleIcon, FadeLoader, Types } from '@odigos/ui-components';
-import { type ActionDataParsed, type ActualDestination, type InstrumentationRuleSpec, type K8sActualSource, NODE_TYPES, OVERVIEW_ENTITY_TYPES, STATUSES, WorkloadId } from '@/types';
+import { type ActionDataParsed, type ActualDestination, type InstrumentationRuleSpec, type K8sActualSource, NODE_TYPES, STATUSES, WorkloadId } from '@/types';
 
 interface Props
   extends NodeProps<
@@ -12,13 +12,13 @@ interface Props
       {
         nodeWidth: number;
         id: string | WorkloadId;
-        type: OVERVIEW_ENTITY_TYPES;
+        type: Types.ENTITY_TYPES;
         status: STATUSES;
         title: string;
         subTitle: string;
         icon?: Types.SVG;
         iconSrc?: string;
-        monitors?: string[];
+        monitors?: Types.SIGNAL_TYPE[];
         isActive?: boolean;
         raw: InstrumentationRuleSpec | K8sActualSource | ActionDataParsed | ActualDestination;
       },

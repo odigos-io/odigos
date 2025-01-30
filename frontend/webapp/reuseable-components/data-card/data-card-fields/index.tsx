@@ -1,9 +1,9 @@
 import React from 'react';
 import { NOTIFICATION_TYPE } from '@/types';
 import styled, { useTheme } from 'styled-components';
-import { Code, DataTab, InteractiveTable, MonitorsIcons } from '@/reuseable-components';
-import { Divider, NotificationNote, Status, Text, Tooltip } from '@odigos/ui-components';
-import { capitalizeFirstLetter, getProgrammingLanguageIcon, INSTUMENTATION_STATUS, parseJsonStringToPrettyString, safeJsonParse, WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils';
+import { Code, DataTab, InteractiveTable } from '@/reuseable-components';
+import { capitalizeFirstLetter, INSTUMENTATION_STATUS, parseJsonStringToPrettyString, safeJsonParse } from '@/utils';
+import { Divider, getProgrammingLanguageIcon, MonitorsIcons, NotificationNote, Status, Text, Tooltip, Types } from '@odigos/ui-components';
 
 export enum DataCardFieldTypes {
   DIVIDER = 'divider',
@@ -95,19 +95,19 @@ const renderValue = (type: DataCardRow['type'], value: DataCardRow['value']) => 
     case DataCardFieldTypes.SOURCE_CONTAINER: {
       const { containerName, language, runtimeVersion, otherAgent, hasPresenceOfOtherAgent } = safeJsonParse(value, {
         containerName: '-',
-        language: WORKLOAD_PROGRAMMING_LANGUAGES.UNKNOWN,
+        language: Types.PROGRAMMING_LANGUAGES.UNKNOWN,
         runtimeVersion: '-',
         otherAgent: null,
         hasPresenceOfOtherAgent: false,
       });
 
       // Determine if running concurrently is possible based on language and other_agent
-      const canRunInParallel = !hasPresenceOfOtherAgent && (language === WORKLOAD_PROGRAMMING_LANGUAGES.PYTHON || language === WORKLOAD_PROGRAMMING_LANGUAGES.JAVA);
+      const canRunInParallel = !hasPresenceOfOtherAgent && (language === Types.PROGRAMMING_LANGUAGES.PYTHON || language === Types.PROGRAMMING_LANGUAGES.JAVA);
 
       return (
         <DataTab
           title={containerName}
-          subTitle={`${language === WORKLOAD_PROGRAMMING_LANGUAGES.JAVASCRIPT ? 'Node.js' : capitalizeFirstLetter(language)}` + (!!runtimeVersion ? ` • Runtime Version: ${runtimeVersion}` : '')}
+          subTitle={`${language === Types.PROGRAMMING_LANGUAGES.JAVASCRIPT ? 'Node.js' : capitalizeFirstLetter(language)}` + (!!runtimeVersion ? ` • Runtime Version: ${runtimeVersion}` : '')}
           iconSrc={getProgrammingLanguageIcon(language)}
           isExtended={!!otherAgent}
           renderExtended={() => (
@@ -124,11 +124,11 @@ const renderValue = (type: DataCardRow['type'], value: DataCardRow['value']) => 
           )}
           renderActions={() => {
             const isActive = ![
-              WORKLOAD_PROGRAMMING_LANGUAGES.IGNORED,
-              WORKLOAD_PROGRAMMING_LANGUAGES.UNKNOWN,
-              WORKLOAD_PROGRAMMING_LANGUAGES.PROCESSING,
-              WORKLOAD_PROGRAMMING_LANGUAGES.NO_CONTAINERS,
-              WORKLOAD_PROGRAMMING_LANGUAGES.NO_RUNNING_PODS,
+              Types.PROGRAMMING_LANGUAGES.IGNORED,
+              Types.PROGRAMMING_LANGUAGES.UNKNOWN,
+              Types.PROGRAMMING_LANGUAGES.PROCESSING,
+              Types.PROGRAMMING_LANGUAGES.NO_CONTAINERS,
+              Types.PROGRAMMING_LANGUAGES.NO_RUNNING_PODS,
             ].includes(language);
 
             return (

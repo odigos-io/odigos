@@ -1,5 +1,5 @@
 import { type Condition } from './common';
-import { WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils';
+import { Types } from '@odigos/ui-components';
 
 export enum K8sResourceKind {
   Deployment = 'Deployment',
@@ -15,7 +15,7 @@ export interface WorkloadId {
 
 export interface SourceContainer {
   containerName: string;
-  language: WORKLOAD_PROGRAMMING_LANGUAGES;
+  language: Types.PROGRAMMING_LANGUAGES;
   runtimeVersion: string;
   otherAgent: string | null;
 }

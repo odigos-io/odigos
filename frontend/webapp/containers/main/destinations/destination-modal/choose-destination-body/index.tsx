@@ -1,11 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import styled from 'styled-components';
-import { SignalUppercase } from '@/utils';
 import { useDestinationTypes } from '@/hooks';
+import { SectionTitle } from '@/reuseable-components';
 import { DestinationsList } from './destinations-list';
 import type { DestinationTypeItem, SupportedSignals } from '@/types';
-import { MonitoringCheckboxes, SectionTitle } from '@/reuseable-components';
-import { Divider, Dropdown, Input, SearchIcon } from '@odigos/ui-components';
+import { Divider, Dropdown, Input, MonitorsCheckboxes, SearchIcon, Types } from '@odigos/ui-components';
 
 interface Props {
   onSelect: (item: DestinationTypeItem) => void;
@@ -36,12 +35,12 @@ const DROPDOWN_OPTIONS = [
 ];
 
 const DEFAULT_CATEGORY = DROPDOWN_OPTIONS[0];
-const DEFAULT_MONITORS: SignalUppercase[] = ['LOGS', 'METRICS', 'TRACES'];
+const DEFAULT_MONITORS: Types.SIGNAL_TYPE[] = [Types.SIGNAL_TYPE.LOGS, Types.SIGNAL_TYPE.METRICS, Types.SIGNAL_TYPE.TRACES];
 
 export const ChooseDestinationBody: React.FC<Props> = ({ onSelect, hidden }) => {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(DEFAULT_CATEGORY);
-  const [selectedMonitors, setSelectedMonitors] = useState<SignalUppercase[]>(DEFAULT_MONITORS);
+  const [selectedMonitors, setSelectedMonitors] = useState<Types.SIGNAL_TYPE[]>(DEFAULT_MONITORS);
 
   const { destinations: destinationTypes } = useDestinationTypes();
 
@@ -74,7 +73,7 @@ export const ChooseDestinationBody: React.FC<Props> = ({ onSelect, hidden }) => 
         <WidthConstraint>
           <Dropdown options={DROPDOWN_OPTIONS} value={selectedCategory} onSelect={(opt) => setSelectedCategory(opt)} onDeselect={() => {}} />
         </WidthConstraint>
-        <MonitoringCheckboxes title='' selectedSignals={selectedMonitors} setSelectedSignals={setSelectedMonitors} />
+        <MonitorsCheckboxes title='' selectedSignals={selectedMonitors} setSelectedSignals={setSelectedMonitors} />
       </Filters>
 
       <Divider />

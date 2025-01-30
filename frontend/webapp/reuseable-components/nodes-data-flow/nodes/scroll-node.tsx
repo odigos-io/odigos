@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { Types } from '@odigos/ui-components';
 import { useNodeDataFlowHandlers } from '@/hooks';
 import { type Node, type NodeProps } from '@xyflow/react';
-import { type K8sActualSource, NODE_TYPES, OVERVIEW_ENTITY_TYPES, STATUSES, type WorkloadId } from '@/types';
+import { type K8sActualSource, NODE_TYPES, STATUSES, type WorkloadId } from '@/types';
 
 interface Props
   extends NodeProps<
@@ -18,7 +18,7 @@ interface Props
               nodeWidth: number;
               framePadding: number;
               id: WorkloadId;
-              type: OVERVIEW_ENTITY_TYPES;
+              type: Types.ENTITY_TYPES;
               status: STATUSES;
               title: string;
               subTitle: string;

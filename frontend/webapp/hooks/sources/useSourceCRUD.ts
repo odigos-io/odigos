@@ -1,11 +1,12 @@
 import { useMemo } from 'react';
 import { useConfig } from '../config';
 import { useMutation } from '@apollo/client';
+import { Types } from '@odigos/ui-components';
 import { useNamespace } from '../compute-platform';
 import { PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import { ACTION, BACKEND_BOOLEAN, DISPLAY_TITLES, FORM_ALERTS, getSseTargetFromId } from '@/utils';
 import { type PendingItem, useAppStore, useFilterStore, useNotificationStore, usePaginatedStore, usePendingStore } from '@/store';
-import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type PatchSourceRequestInput, NOTIFICATION_TYPE, type K8sActualSource, K8sResourceKind } from '@/types';
+import { type WorkloadId, type PatchSourceRequestInput, NOTIFICATION_TYPE, type K8sActualSource, K8sResourceKind } from '@/types';
 
 interface Params {
   onSuccess?: (type: string) => void;
@@ -27,8 +28,8 @@ export const useSourceCRUD = (params?: Params) => {
       type,
       title,
       message,
-      crdType: OVERVIEW_ENTITY_TYPES.SOURCE,
-      target: id ? getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.SOURCE) : undefined,
+      crdType: Types.ENTITY_TYPES.SOURCE,
+      target: id ? getSseTargetFromId(id, Types.ENTITY_TYPES.SOURCE) : undefined,
       hideFromHistory,
     });
   };
@@ -62,7 +63,7 @@ export const useSourceCRUD = (params?: Params) => {
       const count = req?.variables?.sources.length;
 
       req?.variables?.sources.forEach(({ name, kind, selected }: { name: string; kind: K8sResourceKind; selected: boolean }) => {
-        if (!selected) removeNotifications(getSseTargetFromId({ namespace, name, kind }, OVERVIEW_ENTITY_TYPES.SOURCE));
+        if (!selected) removeNotifications(getSseTargetFromId({ namespace, name, kind }, Types.ENTITY_TYPES.SOURCE));
       });
 
       if (count === 1) {
@@ -89,7 +90,7 @@ export const useSourceCRUD = (params?: Params) => {
 
         updateSource(sourceId, patchSourceRequest);
         notifyUser(NOTIFICATION_TYPE.SUCCESS, ACTION.UPDATE, 'Successfully updated 1 source', sourceId);
-        removePendingItems([{ entityType: OVERVIEW_ENTITY_TYPES.SOURCE, entityId: sourceId }]);
+        removePendingItems([{ entityType: Types.ENTITY_TYPES.SOURCE, entityId: sourceId }]);
       }, 2000);
     },
   });
@@ -116,7 +117,7 @@ export const useSourceCRUD = (params?: Params) => {
           const sendToGql: Pick<K8sActualSource, 'name' | 'kind' | 'selected'>[] = [];
 
           sources.forEach(({ name, kind, selected }) => {
-            addToPendingStore.push({ entityType: OVERVIEW_ENTITY_TYPES.SOURCE, entityId: { namespace, name, kind } });
+            addToPendingStore.push({ entityType: Types.ENTITY_TYPES.SOURCE, entityId: { namespace, name, kind } });
             sendToGql.push({ name, kind, selected });
           });
 
@@ -150,7 +151,7 @@ export const useSourceCRUD = (params?: Params) => {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
         notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Updating source...', undefined, true);
-        addPendingItems([{ entityType: OVERVIEW_ENTITY_TYPES.SOURCE, entityId: sourceId }]);
+        addPendingItems([{ entityType: Types.ENTITY_TYPES.SOURCE, entityId: sourceId }]);
         await updateSourceName({ variables: { sourceId, patchSourceRequest } });
       }
     },

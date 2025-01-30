@@ -1,9 +1,10 @@
 import { useConfig } from '../config';
+import { NOTIFICATION_TYPE } from '@/types';
 import { useMutation } from '@apollo/client';
+import { Types } from '@odigos/ui-components';
 import { useNotificationStore } from '@/store';
 import { UPDATE_API_TOKEN } from '@/graphql/mutations';
 import { useComputePlatform } from '../compute-platform';
-import { NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES } from '@/types';
 import { ACTION, DISPLAY_TITLES, FORM_ALERTS, getSseTargetFromId } from '@/utils';
 
 interface UseTokenCrudParams {
@@ -21,8 +22,8 @@ export const useTokenCRUD = (params?: UseTokenCrudParams) => {
       type,
       title,
       message,
-      crdType: OVERVIEW_ENTITY_TYPES.ACTION,
-      target: id ? getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.ACTION) : undefined,
+      crdType: Types.ENTITY_TYPES.ACTION,
+      target: id ? getSseTargetFromId(id, Types.ENTITY_TYPES.ACTION) : undefined,
       hideFromHistory,
     });
   };

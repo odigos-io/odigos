@@ -1,9 +1,8 @@
 import React, { useEffect } from 'react';
-import { getStatusIcon } from '@/utils';
 import { useTestConnection } from '@/hooks';
 import styled, { css, useTheme } from 'styled-components';
-import { Button, FadeLoader, Text } from '@odigos/ui-components';
 import { type DestinationInput, NOTIFICATION_TYPE } from '@/types';
+import { Button, FadeLoader, getStatusIcon, Text } from '@odigos/ui-components';
 
 export type ConnectionStatus = NOTIFICATION_TYPE.SUCCESS | NOTIFICATION_TYPE.ERROR;
 

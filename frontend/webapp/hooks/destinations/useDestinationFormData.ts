@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useGenericForm } from '@/hooks';
 import { useQuery } from '@apollo/client';
+import { Types } from '@odigos/ui-components';
 import { GET_DESTINATION_TYPE_DETAILS } from '@/graphql';
 import { type DrawerItem, useNotificationStore } from '@/store';
 import { ACTION, FORM_ALERTS, INPUT_TYPES, safeJsonParse } from '@/utils';
@@ -11,7 +12,6 @@ import {
   type DestinationTypeItem,
   type ActualDestination,
   type SupportedDestinationSignals,
-  OVERVIEW_ENTITY_TYPES,
   NOTIFICATION_TYPE,
   type DestinationDetailsField,
 } from '@/types';
@@ -91,7 +91,7 @@ export function useDestinationFormData(params?: { destinationType?: string; supp
         type: NOTIFICATION_TYPE.ERROR,
         title: error.name || ACTION.FETCH,
         message: error.cause?.message || error.message,
-        crdType: OVERVIEW_ENTITY_TYPES.DESTINATION,
+        crdType: Types.ENTITY_TYPES.DESTINATION,
       }),
   });
 

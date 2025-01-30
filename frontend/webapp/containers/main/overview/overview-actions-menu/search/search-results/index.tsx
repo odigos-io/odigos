@@ -1,11 +1,10 @@
 import React, { Fragment, useMemo, useState } from 'react';
 import { SelectionButton } from '@/components';
-import { OVERVIEW_ENTITY_TYPES } from '@/types';
 import { AbsoluteContainer } from '../../styled';
 import styled, { useTheme } from 'styled-components';
-import { Divider, Text } from '@odigos/ui-components';
+import { getEntityItemId, getEntityLabel } from '@/utils';
 import { buildSearchResults, type Category } from './builder';
-import { getEntityIcon, getEntityItemId, getEntityLabel } from '@/utils';
+import { Divider, getEntityIcon, Text, Types } from '@odigos/ui-components';
 import { useActionCRUD, useDestinationCRUD, useInstrumentationRuleCRUD, useNodeDataFlowHandlers, useSourceCRUD } from '@/hooks';
 
 interface Props {
@@ -69,8 +68,8 @@ export const SearchResults = ({ searchText, onClose }: Props) => {
             {entities.map((item, entIdx) => (
               <SelectionButton
                 key={`entity-${catIdx}-${entIdx}`}
-                icon={getEntityIcon(category as OVERVIEW_ENTITY_TYPES)}
-                label={getEntityLabel(item, category as OVERVIEW_ENTITY_TYPES, { extended: true })}
+                icon={getEntityIcon(category as Types.ENTITY_TYPES)}
+                label={getEntityLabel(item, category as Types.ENTITY_TYPES, { extended: true })}
                 onClick={() => {
                   const id = getEntityItemId(item);
                   // @ts-ignore

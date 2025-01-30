@@ -1,8 +1,7 @@
 import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { NOTIFICATION_TYPE } from '@/types';
 import styled, { css } from 'styled-components';
-import { MonitorsIcons } from '@/reuseable-components';
-import { Divider, ExtendArrow, FlexColumn, FlexRow, IconButton, IconWrapped, Status, Text, Theme, Tooltip, Types } from '@odigos/ui-components';
+import { Divider, ExtendArrow, FlexColumn, FlexRow, IconButton, IconWrapped, MonitorsIcons, Status, Text, Theme, Tooltip, Types } from '@odigos/ui-components';
 
 interface Props {
   title: string;
@@ -10,7 +9,7 @@ interface Props {
   icon?: Types.SVG;
   iconSrc?: string;
   hoverText?: string;
-  monitors?: string[];
+  monitors?: Types.SIGNAL_TYPE[];
   monitorsWithLabels?: boolean;
   isActive?: boolean;
   isError?: boolean;

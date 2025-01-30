@@ -2,9 +2,9 @@ import React, { Fragment, useId, useMemo } from 'react';
 import { useDarkModeStore } from '@/store';
 import { NOTIFICATION_TYPE } from '@/types';
 import styled, { useTheme } from 'styled-components';
-import { FlexRow, Text, Tooltip } from '@odigos/ui-components';
+import { FlexRow, getStatusIcon, Text, Tooltip } from '@odigos/ui-components';
 import { Highlight, themes as prismThemes, type Token } from 'prism-react-renderer';
-import { flattenObjectKeys, getStatusIcon, removeEmptyValuesFromObject, safeJsonParse, safeJsonStringify } from '@/utils';
+import { flattenObjectKeys, removeEmptyValuesFromObject, safeJsonParse, safeJsonStringify } from '@/utils';
 
 interface Props {
   language: string;

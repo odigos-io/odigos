@@ -3,10 +3,9 @@ import { RuleFormBody } from '../';
 import { ModalBody } from '@/styles';
 import { NOTIFICATION_TYPE } from '@/types';
 import { ACTION, FORM_ALERTS } from '@/utils';
-import { RULE_OPTIONS, RuleOption } from './rule-options';
 import { NavigationButtons, SectionTitle } from '@/reuseable-components';
 import { useDescribeOdigos, useInstrumentationRuleCRUD, useInstrumentationRuleFormData } from '@/hooks';
-import { AutocompleteInput, CenterThis, Divider, FadeLoader, Modal, NotificationNote, useKeyDown } from '@odigos/ui-components';
+import { AutocompleteInput, CenterThis, Divider, FadeLoader, INSTRUMENTATION_RULE_OPTIONS, Modal, NotificationNote, Types, useKeyDown } from '@odigos/ui-components';
 
 interface Props {
   isOpen: boolean;
@@ -20,7 +19,7 @@ export const RuleModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const { createInstrumentationRule, loading } = useInstrumentationRuleCRUD({ onSuccess: handleClose });
   const { formData, formErrors, handleFormChange, resetFormData, validateForm } = useInstrumentationRuleFormData();
 
-  const [selectedItem, setSelectedItem] = useState<RuleOption | undefined>(undefined);
+  const [selectedItem, setSelectedItem] = useState<Types.InstrumentationRuleOption | undefined>(undefined);
 
   function handleClose() {
     resetFormData();
@@ -28,7 +27,7 @@ export const RuleModal: React.FC<Props> = ({ isOpen, onClose }) => {
     onClose();
   }
 
-  const handleSelect = (item?: RuleOption) => {
+  const handleSelect = (item?: Types.InstrumentationRuleOption) => {
     resetFormData();
     setSelectedItem(item);
   };
@@ -63,7 +62,14 @@ export const RuleModal: React.FC<Props> = ({ isOpen, onClose }) => {
       <ModalBody>
         <SectionTitle title='Select Instrumentation Rule' description='Define how telemetry is recorded from your application. Choose a rule type and configure the details.' />
         {!isPro && <NotificationNote type={NOTIFICATION_TYPE.DEFAULT} message={FORM_ALERTS.ENTERPRISE_ONLY('Instrumentation Rules')} style={{ marginTop: '24px' }} />}
-        <AutocompleteInput options={RULE_OPTIONS} selectedOption={selectedItem} onOptionSelect={handleSelect} style={{ marginTop: isPro ? '24px' : '12px' }} autoFocus={!selectedItem?.type} />
+
+        <AutocompleteInput
+          options={INSTRUMENTATION_RULE_OPTIONS}
+          selectedOption={selectedItem}
+          onOptionSelect={handleSelect}
+          style={{ marginTop: isPro ? '24px' : '12px' }}
+          autoFocus={!selectedItem?.type}
+        />
 
         {!!selectedItem?.type ? (
           <div>

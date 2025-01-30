@@ -1,6 +1,6 @@
 import React from 'react';
 import { CliDrawer } from './cli-drawer';
-import { OVERVIEW_ENTITY_TYPES } from '@/types';
+import { Types } from '@odigos/ui-components';
 import { DRAWER_OTHER_TYPES, useDrawerStore } from '@/store';
 import { ActionDrawer, DestinationDrawer, RuleDrawer, SourceDrawer } from '@/containers';
 
@@ -10,16 +10,16 @@ const AllDrawers = () => {
   if (!selected?.type) return null;
 
   switch (selected.type) {
-    case OVERVIEW_ENTITY_TYPES.RULE:
+    case Types.ENTITY_TYPES.INSTRUMENTATION_RULE:
       return <RuleDrawer />;
 
-    case OVERVIEW_ENTITY_TYPES.SOURCE:
+    case Types.ENTITY_TYPES.SOURCE:
       return <SourceDrawer />;
 
-    case OVERVIEW_ENTITY_TYPES.ACTION:
+    case Types.ENTITY_TYPES.ACTION:
       return <ActionDrawer />;
 
-    case OVERVIEW_ENTITY_TYPES.DESTINATION:
+    case Types.ENTITY_TYPES.DESTINATION:
       return <DestinationDrawer />;
 
     case DRAWER_OTHER_TYPES.ODIGOS_CLI:

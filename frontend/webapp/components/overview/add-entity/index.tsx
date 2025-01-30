@@ -1,9 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useModalStore } from '@/store';
-import { getEntityIcon } from '@/utils';
-import { OVERVIEW_ENTITY_TYPES } from '@/types';
 import styled, { css, useTheme } from 'styled-components';
-import { Button, type DropdownProps, PlusIcon, Text, Theme, useOnClickOutside } from '@odigos/ui-components';
+import { Button, type DropdownProps, getEntityIcon, PlusIcon, Text, Theme, Types, useOnClickOutside } from '@odigos/ui-components';
 
 // Styled components for the dropdown UI
 const Container = styled.div`
@@ -58,10 +56,10 @@ const ButtonText = styled(Text)`
 
 // Default options for the dropdown
 const DEFAULT_OPTIONS: DropdownProps['options'] = [
-  { id: OVERVIEW_ENTITY_TYPES.RULE, value: 'Instrumentation Rule' },
-  { id: OVERVIEW_ENTITY_TYPES.SOURCE, value: 'Source' },
-  { id: OVERVIEW_ENTITY_TYPES.ACTION, value: 'Action' },
-  { id: OVERVIEW_ENTITY_TYPES.DESTINATION, value: 'Destination' },
+  { id: Types.ENTITY_TYPES.INSTRUMENTATION_RULE, value: 'Instrumentation Rule' },
+  { id: Types.ENTITY_TYPES.SOURCE, value: 'Source' },
+  { id: Types.ENTITY_TYPES.ACTION, value: 'Action' },
+  { id: Types.ENTITY_TYPES.DESTINATION, value: 'Destination' },
 ];
 
 interface Props {
@@ -110,7 +108,7 @@ export const AddEntity: React.FC<Props> = ({ options = DEFAULT_OPTIONS, placehol
       {isDropdownOpen && (
         <DropdownListContainer>
           {options.map((option) => {
-            const Icon = getEntityIcon(option.id as OVERVIEW_ENTITY_TYPES);
+            const Icon = getEntityIcon(option.id as Types.ENTITY_TYPES);
 
             return (
               <DropdownItem key={option.id} data-id={`add-${option.id}`} $selected={currentModal === option.id} onClick={() => handleSelect(option)}>

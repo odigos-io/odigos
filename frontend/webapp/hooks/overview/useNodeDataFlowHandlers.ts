@@ -1,11 +1,12 @@
 import { useCallback } from 'react';
+import { Node } from '@xyflow/react';
 import { useSourceCRUD } from '../sources';
 import { useActionCRUD } from '../actions';
+import { Types } from '@odigos/ui-components';
 import { useDestinationCRUD } from '../destinations';
 import { useDrawerStore, useModalStore } from '@/store';
+import { OVERVIEW_NODE_TYPES, WorkloadId } from '@/types';
 import { useInstrumentationRuleCRUD } from '../instrumentation-rules';
-import { OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, WorkloadId } from '@/types';
-import { Node } from '@xyflow/react';
 
 export const useNodeDataFlowHandlers = () => {
   const { sources } = useSourceCRUD();
@@ -22,7 +23,7 @@ export const useNodeDataFlowHandlers = () => {
       object: Node<
         {
           id: string | WorkloadId;
-          type: OVERVIEW_ENTITY_TYPES | OVERVIEW_NODE_TYPES;
+          type: Types.ENTITY_TYPES | OVERVIEW_NODE_TYPES;
         },
         'any-node'
       >,
@@ -31,7 +32,7 @@ export const useNodeDataFlowHandlers = () => {
         data: { id, type },
       } = object;
 
-      if (type === OVERVIEW_ENTITY_TYPES.SOURCE) {
+      if (type === Types.ENTITY_TYPES.SOURCE) {
         const { kind, name, namespace } = id as WorkloadId;
 
         const selectedDrawerItem = sources.find((item) => item.kind === kind && item.name === name && item.namespace === namespace);
@@ -45,7 +46,7 @@ export const useNodeDataFlowHandlers = () => {
           type,
           item: selectedDrawerItem,
         });
-      } else if (type === OVERVIEW_ENTITY_TYPES.ACTION) {
+      } else if (type === Types.ENTITY_TYPES.ACTION) {
         const selectedDrawerItem = actions.find((item) => item.id === id);
         if (!selectedDrawerItem) {
           console.warn('Selected item not found', { id, actionsCount: actions.length });
@@ -57,7 +58,7 @@ export const useNodeDataFlowHandlers = () => {
           type,
           item: selectedDrawerItem,
         });
-      } else if (type === OVERVIEW_ENTITY_TYPES.DESTINATION) {
+      } else if (type === Types.ENTITY_TYPES.DESTINATION) {
         const selectedDrawerItem = destinations.find((item) => item.id === id);
         if (!selectedDrawerItem) {
           console.warn('Selected item not found', { id, destinationsCount: destinations.length });
@@ -69,7 +70,7 @@ export const useNodeDataFlowHandlers = () => {
           type,
           item: selectedDrawerItem,
         });
-      } else if (type === OVERVIEW_ENTITY_TYPES.RULE) {
+      } else if (type === Types.ENTITY_TYPES.INSTRUMENTATION_RULE) {
         const selectedDrawerItem = instrumentationRules.find((item) => item.ruleId === id);
         if (!selectedDrawerItem) {
           console.warn('Selected item not found', { id, rulesCount: instrumentationRules.length });
@@ -82,13 +83,13 @@ export const useNodeDataFlowHandlers = () => {
           item: selectedDrawerItem,
         });
       } else if (type === OVERVIEW_NODE_TYPES.ADD_RULE) {
-        setCurrentModal(OVERVIEW_ENTITY_TYPES.RULE);
+        setCurrentModal(Types.ENTITY_TYPES.INSTRUMENTATION_RULE);
       } else if (type === OVERVIEW_NODE_TYPES.ADD_SOURCE) {
-        setCurrentModal(OVERVIEW_ENTITY_TYPES.SOURCE);
+        setCurrentModal(Types.ENTITY_TYPES.SOURCE);
       } else if (type === OVERVIEW_NODE_TYPES.ADD_ACTION) {
-        setCurrentModal(OVERVIEW_ENTITY_TYPES.ACTION);
+        setCurrentModal(Types.ENTITY_TYPES.ACTION);
       } else if (type === OVERVIEW_NODE_TYPES.ADD_DESTINATION) {
-        setCurrentModal(OVERVIEW_ENTITY_TYPES.DESTINATION);
+        setCurrentModal(Types.ENTITY_TYPES.DESTINATION);
       } else {
         console.warn('Unhandled node click', object);
       }

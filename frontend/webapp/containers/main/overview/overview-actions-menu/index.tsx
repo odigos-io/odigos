@@ -2,9 +2,9 @@ import React from 'react';
 import { Search } from './search';
 import { Filters } from './filters';
 import { AddEntity } from '@/components';
-import { Divider } from '@odigos/ui-components';
+import { TabList } from '@/reuseable-components';
 import styled, { useTheme } from 'styled-components';
-import { MonitorsIcons, TabList } from '@/reuseable-components';
+import { Divider, MonitorsIcons } from '@odigos/ui-components';
 
 const MenuContainer = styled.div`
   display: flex;

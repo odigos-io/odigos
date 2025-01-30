@@ -3,11 +3,12 @@ import buildCard from './build-card';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
 import { ACTION, DATA_CARDS } from '@/utils';
+import { Types } from '@odigos/ui-components';
+import { type ActualDestination } from '@/types';
 import buildDrawerItem from './build-drawer-item';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { DestinationFormBody } from '../destination-form-body';
 import { ConditionDetails, DataCard } from '@/reuseable-components';
-import { OVERVIEW_ENTITY_TYPES, type ActualDestination } from '@/types';
 import { useDestinationCRUD, useDestinationFormData, useDestinationTypes } from '@/hooks';
 
 interface Props {}
@@ -54,11 +55,11 @@ export const DestinationDrawer: React.FC<Props> = () => {
     if (!!fetchedItems?.length) {
       const found = fetchedItems.find((x) => x.id === id);
       if (!!found) {
-        return setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.DESTINATION, item: found });
+        return setSelectedItem({ id, type: Types.ENTITY_TYPES.DESTINATION, item: found });
       }
     }
 
-    setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.DESTINATION, item: buildDrawerItem(id, formData, item) });
+    setSelectedItem({ id, type: Types.ENTITY_TYPES.DESTINATION, item: buildDrawerItem(id, formData, item) });
   };
 
   // This should keep the drawer up-to-date with the latest data

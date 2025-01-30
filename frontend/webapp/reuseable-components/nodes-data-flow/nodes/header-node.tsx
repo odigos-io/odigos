@@ -1,10 +1,10 @@
 import React, { useMemo } from 'react';
 import styled from 'styled-components';
 import type { Node, NodeProps } from '@xyflow/react';
+import { K8sActualSource, NODE_TYPES } from '@/types';
 import { useAppStore, usePendingStore } from '@/store';
 import { usePaginatedSources, useSourceCRUD } from '@/hooks';
-import { Badge, Checkbox, FadeLoader, Text } from '@odigos/ui-components';
-import { K8sActualSource, NODE_TYPES, OVERVIEW_ENTITY_TYPES } from '@/types';
+import { Badge, Checkbox, FadeLoader, Text, Types } from '@odigos/ui-components';
 
 interface Props
   extends NodeProps<
@@ -65,7 +65,7 @@ const HeaderNode: React.FC<Props> = ({ data }) => {
 
         sources.forEach((source) => {
           const id = { namespace: source.namespace, name: source.name, kind: source.kind };
-          const isPending = isThisPending({ entityType: OVERVIEW_ENTITY_TYPES.SOURCE, entityId: id });
+          const isPending = isThisPending({ entityType: Types.ENTITY_TYPES.SOURCE, entityId: id });
 
           if (!isPending) {
             if (!payload[source.namespace]) {

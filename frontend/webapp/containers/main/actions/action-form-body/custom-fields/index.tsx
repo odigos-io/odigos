@@ -1,5 +1,4 @@
 import React from 'react';
-import { ActionsType } from '@/types';
 import PiiMasking from './pii-masking';
 import ErrorSampler from './error-sampler';
 import LatencySampler from './latency-sampler';
@@ -7,9 +6,10 @@ import AddClusterInfo from './add-cluster-info';
 import DeleteAttributes from './delete-attributes';
 import RenameAttributes from './rename-attributes';
 import ProbabilisticSampler from './probabilistic-sampler';
+import { Types } from '@odigos/ui-components';
 
 interface Props {
-  actionType?: ActionsType;
+  actionType?: Types.ACTION_TYPE;
   value: string;
   setValue: (value: string) => void;
   errorMessage?: string;
@@ -23,14 +23,14 @@ interface ComponentProps {
 
 type ComponentType = React.FC<ComponentProps> | null;
 
-const componentsMap: Record<ActionsType, ComponentType> = {
-  [ActionsType.ADD_CLUSTER_INFO]: AddClusterInfo,
-  [ActionsType.DELETE_ATTRIBUTES]: DeleteAttributes,
-  [ActionsType.RENAME_ATTRIBUTES]: RenameAttributes,
-  [ActionsType.PII_MASKING]: PiiMasking,
-  [ActionsType.ERROR_SAMPLER]: ErrorSampler,
-  [ActionsType.PROBABILISTIC_SAMPLER]: ProbabilisticSampler,
-  [ActionsType.LATENCY_SAMPLER]: LatencySampler,
+const componentsMap: Record<Types.ACTION_TYPE, ComponentType> = {
+  [Types.ACTION_TYPE.ADD_CLUSTER_INFO]: AddClusterInfo,
+  [Types.ACTION_TYPE.DELETE_ATTRIBUTES]: DeleteAttributes,
+  [Types.ACTION_TYPE.RENAME_ATTRIBUTES]: RenameAttributes,
+  [Types.ACTION_TYPE.PII_MASKING]: PiiMasking,
+  [Types.ACTION_TYPE.ERROR_SAMPLER]: ErrorSampler,
+  [Types.ACTION_TYPE.PROBABILISTIC_SAMPLER]: ProbabilisticSampler,
+  [Types.ACTION_TYPE.LATENCY_SAMPLER]: LatencySampler,
 };
 
 const ActionCustomFields: React.FC<Props> = ({ actionType, value, setValue, errorMessage }) => {

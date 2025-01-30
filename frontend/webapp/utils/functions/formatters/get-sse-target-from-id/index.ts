@@ -1,8 +1,9 @@
-import { OVERVIEW_ENTITY_TYPES, type WorkloadId } from '@/types';
+import { type WorkloadId } from '@/types';
+import { Types } from '@odigos/ui-components';
 
-export const getSseTargetFromId = (id: string | WorkloadId, type: OVERVIEW_ENTITY_TYPES) => {
+export const getSseTargetFromId = (id: string | WorkloadId, type: Types.ENTITY_TYPES) => {
   switch (type) {
-    case OVERVIEW_ENTITY_TYPES.SOURCE: {
+    case Types.ENTITY_TYPES.SOURCE: {
       let target = '';
 
       Object.entries(id as WorkloadId).forEach(([key, value]) => {

@@ -1,20 +1,5 @@
+import { Types } from '@odigos/ui-components';
 import type { Condition } from './common';
-import type { SignalUppercase } from '@/utils';
-
-export enum PlatformTypes {
-  K8S = 'k8s',
-  VM = 'vm',
-}
-
-export enum ActionsType {
-  ADD_CLUSTER_INFO = 'AddClusterInfo',
-  DELETE_ATTRIBUTES = 'DeleteAttribute',
-  RENAME_ATTRIBUTES = 'RenameAttribute',
-  ERROR_SAMPLER = 'ErrorSampler',
-  PROBABILISTIC_SAMPLER = 'ProbabilisticSampler',
-  LATENCY_SAMPLER = 'LatencySampler',
-  PII_MASKING = 'PiiMasking',
-}
 
 export type AddClusterInfoSpec = {
   clusterAttributes: {
@@ -70,7 +55,7 @@ export interface ActionItem {
 
 export interface ActionData {
   id: string;
-  type: ActionsType;
+  type: Types.ACTION_TYPE;
   spec: ActionItem | string;
   conditions: Condition[];
 }
@@ -80,10 +65,10 @@ export interface ActionDataParsed extends ActionData {
 }
 
 export type ActionInput = {
-  type: ActionsType;
+  type: Types.ACTION_TYPE;
   name: string;
   notes: string;
   disable: boolean;
-  signals: SignalUppercase[];
+  signals: Types.SIGNAL_TYPE[];
   details: string;
 };

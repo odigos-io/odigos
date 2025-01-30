@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
+import { BACKEND_BOOLEAN } from '@/utils';
 import styled, { useTheme } from 'styled-components';
-import { BACKEND_BOOLEAN, getStatusIcon } from '@/utils';
 import { NOTIFICATION_TYPE, type Condition } from '@/types';
-import { ExtendArrow, FadeLoader, Text, Theme } from '@odigos/ui-components';
+import { ExtendArrow, FadeLoader, getStatusIcon, Text, Theme } from '@odigos/ui-components';
 
 interface Props {
   conditions: Condition[];

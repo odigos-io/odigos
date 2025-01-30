@@ -3,13 +3,12 @@ import { DocsButton } from '@/components';
 import { type ActionInput } from '@/types';
 import ActionCustomFields from './custom-fields';
 import styled, { useTheme } from 'styled-components';
-import { type ActionOption } from '../action-modal/action-options';
-import { MonitoringCheckboxes, SectionTitle } from '@/reuseable-components';
-import { CheckCircledIcon, CrossCircledIcon, Input, Segment, Text, TextArea, Theme } from '@odigos/ui-components';
+import { SectionTitle } from '@/reuseable-components';
+import { CheckCircledIcon, CrossCircledIcon, Input, MonitorsCheckboxes, Segment, Text, TextArea, Theme, Types } from '@odigos/ui-components';
 
 interface Props {
   isUpdate?: boolean;
-  action: ActionOption;
+  action: Types.ActionOption;
   formData: ActionInput;
   formErrors: Record<string, string>;
   handleFormChange: (key: keyof ActionInput, val: any) => void;
@@ -47,7 +46,7 @@ export const ActionFormBody: React.FC<Props> = ({ isUpdate, action, formData, fo
 
       {!isUpdate && <SectionTitle title='' description={action.docsDescription as string} actionButton={<DocsButton endpoint={action.docsEndpoint} />} />}
 
-      <MonitoringCheckboxes
+      <MonitorsCheckboxes
         title='Signals for Processing'
         required
         allowedSignals={action.allowedSignals}
