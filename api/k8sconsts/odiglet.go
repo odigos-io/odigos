@@ -17,3 +17,7 @@ const (
 	OdigletInstalledLabel      = "odigos.io/odiglet-installed"
 	OdigletInstalledLabelValue = "true"
 )
+
+var OdigletInstalled = map[string]string{
+	OdigletInstalledLabel: OdigletInstalledLabelValue,
+}
