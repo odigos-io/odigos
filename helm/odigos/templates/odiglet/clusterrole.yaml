@@ -18,24 +18,6 @@ rules:
     verbs:
       - get
   - apiGroups:
-      - apps
-    resources:
-      - deployments
-      - daemonsets
-      - statefulsets
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - apps
-    resources:
-      - deployments/status
-      - daemonsets/status
-      - statefulsets/status
-    verbs:
-      - get
-  - apiGroups:
       - ''
     resources:
       - nodes
