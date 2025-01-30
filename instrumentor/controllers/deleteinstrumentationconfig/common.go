@@ -29,6 +29,16 @@ func reconcileWorkloadObject(ctx context.Context, kubeClient client.Client, work
 		return nil
 	}
 
+	// check if the workload is enabled by deprecated labels,
+	// once we fully remove the support for the instrumentation labels, we can remove this check
+	enabledByDeprecatedLabels, err := workload.IsWorkloadInstrumentationEffectiveEnabled(ctx, kubeClient, workloadObject)
+	if err != nil {
+		return err
+	}
+	if enabledByDeprecatedLabels {
+		return nil
+	}
+
 	if err := deleteWorkloadInstrumentationConfig(ctx, kubeClient, workloadObject); err != nil {
 		logger.Error(err, "error removing runtime details")
 		return err
