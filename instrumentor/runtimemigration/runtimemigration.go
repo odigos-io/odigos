@@ -24,8 +24,8 @@ type MigrationRunnable struct {
 	Logger     logr.Logger
 }
 
-// This code ensures that migrationRunnable is categorized as an `Other` Runnable.
 func (m *MigrationRunnable) NeedLeaderElection() bool {
+	// make sure we run it only from one instance of an instrumentor
 	return true
 }
 
