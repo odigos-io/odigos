@@ -4,8 +4,8 @@ import { ActionFormBody } from '../';
 import { ModalBody } from '@/styles';
 import { useActionCRUD, useActionFormData } from '@/hooks/actions';
 import { ACTION_OPTIONS, type ActionOption } from './action-options';
-import { CenterThis, Divider, FadeLoader, Modal, useKeyDown } from '@odigos/ui-components';
-import { AutocompleteInput, NavigationButtons, SectionTitle } from '@/reuseable-components';
+import { NavigationButtons, SectionTitle } from '@/reuseable-components';
+import { AutocompleteInput, CenterThis, Divider, FadeLoader, Modal, useKeyDown } from '@odigos/ui-components';
 
 interface Props {
   isOpen: boolean;

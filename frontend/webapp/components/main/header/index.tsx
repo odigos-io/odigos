@@ -2,11 +2,11 @@ import React from 'react';
 import { useConfig } from '@/hooks';
 import { PlatformTitle } from './cp-title';
 import { FORM_ALERTS, SLACK_LINK } from '@/utils';
+import { NotificationManager } from '@/components';
 import styled, { useTheme } from 'styled-components';
 import { NOTIFICATION_TYPE, PlatformTypes } from '@/types';
-import { NotificationManager, ToggleDarkMode } from '@/components';
-import { DRAWER_OTHER_TYPES, useDrawerStore, useStatusStore } from '@/store';
-import { FlexRow, IconButton, OdigosLogoText, SlackLogo, Status, TerminalIcon, Theme, Tooltip } from '@odigos/ui-components';
+import { DRAWER_OTHER_TYPES, useDarkModeStore, useDrawerStore, useStatusStore } from '@/store';
+import { FlexRow, IconButton, OdigosLogoText, SlackLogo, Status, TerminalIcon, Theme, ToggleDarkMode, Tooltip } from '@odigos/ui-components';
 
 interface MainHeaderProps {}
 
@@ -34,6 +34,7 @@ export const MainHeader: React.FC<MainHeaderProps> = () => {
   const { data: config } = useConfig();
   const { setSelectedItem } = useDrawerStore();
   const { status, title, message } = useStatusStore();
+  const { darkMode, setDarkMode } = useDarkModeStore();
 
   const handleClickCli = () => setSelectedItem({ type: DRAWER_OTHER_TYPES.ODIGOS_CLI, id: DRAWER_OTHER_TYPES.ODIGOS_CLI });
   const handleClickSlack = () => window.open(SLACK_LINK, '_blank', 'noopener noreferrer');
@@ -52,7 +53,7 @@ export const MainHeader: React.FC<MainHeaderProps> = () => {
       </AlignLeft>
 
       <AlignRight>
-        <ToggleDarkMode />
+        <ToggleDarkMode darkMode={darkMode} setDarkMode={setDarkMode} />
         <NotificationManager />
 
         <IconButton onClick={handleClickCli} tooltip='Odigos CLI' withPing pingColor={theme.colors.majestic_blue}>

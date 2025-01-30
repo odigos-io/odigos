@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import styled, { css } from 'styled-components';
-import { Checkbox } from '@/reuseable-components';
-import { FieldError, FieldLabel } from '@odigos/ui-components';
+import { Checkbox, FieldError, FieldLabel } from '@odigos/ui-components';
 import { PayloadCollectionType, type InstrumentationRuleInput } from '@/types';
 
 type Props = {

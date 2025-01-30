@@ -1,9 +1,9 @@
 import React from 'react';
 import styled from 'styled-components';
+import { DataTab } from '@/reuseable-components';
 import { useAppStore, usePendingStore } from '@/store';
-import { Checkbox, DataTab } from '@/reuseable-components';
-import { ErrorTriangleIcon, FadeLoader, Types } from '@odigos/ui-components';
 import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';
+import { Checkbox, ErrorTriangleIcon, FadeLoader, Types } from '@odigos/ui-components';
 import { type ActionDataParsed, type ActualDestination, type InstrumentationRuleSpec, type K8sActualSource, NODE_TYPES, OVERVIEW_ENTITY_TYPES, STATUSES, WorkloadId } from '@/types';
 
 interface Props

@@ -13,7 +13,7 @@
   "dependencies": {
     "@apollo/client": "^3.12.8",
     "@apollo/experimental-nextjs-app-support": "^0.11.8",
-    "@odigos/ui-components": "^0.0.23",
+    "@odigos/ui-components": "^0.0.24",
     "@xyflow/react": "^12.4.2",
     "graphql": "^16.10.0",
     "javascript-time-ago": "^2.5.11",

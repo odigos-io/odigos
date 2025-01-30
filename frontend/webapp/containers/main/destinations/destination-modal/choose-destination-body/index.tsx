@@ -3,9 +3,9 @@ import styled from 'styled-components';
 import { SignalUppercase } from '@/utils';
 import { useDestinationTypes } from '@/hooks';
 import { DestinationsList } from './destinations-list';
-import { Divider, SearchIcon } from '@odigos/ui-components';
 import type { DestinationTypeItem, SupportedSignals } from '@/types';
-import { Dropdown, Input, MonitoringCheckboxes, SectionTitle } from '@/reuseable-components';
+import { MonitoringCheckboxes, SectionTitle } from '@/reuseable-components';
+import { Divider, Dropdown, Input, SearchIcon } from '@odigos/ui-components';
 
 interface Props {
   onSelect: (item: DestinationTypeItem) => void;

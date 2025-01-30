@@ -2,10 +2,10 @@ import React from 'react';
 import { DocsButton } from '@/components';
 import RuleCustomFields from './custom-fields';
 import styled, { useTheme } from 'styled-components';
+import { SectionTitle } from '@/reuseable-components';
 import type { InstrumentationRuleInput } from '@/types';
 import type { RuleOption } from '../rule-modal/rule-options';
-import { Input, TextArea, SectionTitle } from '@/reuseable-components';
-import { CheckCircledIcon, CrossCircledIcon, Segment, Text, Theme } from '@odigos/ui-components';
+import { CheckCircledIcon, CrossCircledIcon, Input, Segment, Text, TextArea, Theme } from '@odigos/ui-components';
 
 interface Props {
   isUpdate?: boolean;

@@ -2,8 +2,8 @@ import React, { useRef, useState } from 'react';
 import { useDrawerStore } from '@/store';
 import { NOTIFICATION_TYPE } from '@/types';
 import styled, { useTheme } from 'styled-components';
+import { DataCard, DataCardFieldTypes } from '@/reuseable-components';
 import { useDescribeOdigos, useTimeAgo, useTokenCRUD } from '@/hooks';
-import { DataCard, DataCardFieldTypes, Input } from '@/reuseable-components';
 import { DATA_CARDS, getStatusIcon, isOverTime, isWithinTime, safeJsonStringify, SEVEN_DAYS_IN_MS } from '@/utils';
 import {
   Button,
@@ -18,6 +18,7 @@ import {
   FlexColumn,
   FlexRow,
   IconButton,
+  Input,
   KeyIcon,
   ListIcon,
   Segment,

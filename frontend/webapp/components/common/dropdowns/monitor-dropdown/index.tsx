@@ -1,13 +1,12 @@
 import React, { useMemo } from 'react';
 import { MONITORS_OPTIONS } from '@/utils';
-import type { DropdownOption } from '@/types';
-import { Dropdown } from '@/reuseable-components';
+import { Dropdown, type DropdownProps } from '@odigos/ui-components';
 
 interface Props {
   title?: string;
-  value?: DropdownOption[];
-  onSelect: (val: DropdownOption) => void;
-  onDeselect: (val: DropdownOption) => void;
+  value?: DropdownProps['options'];
+  onSelect: (val: DropdownProps['options'][0]) => void;
+  onDeselect: (val: DropdownProps['options'][0]) => void;
   isMulti?: boolean;
   required?: boolean;
   showSearch?: boolean;
@@ -15,7 +14,7 @@ interface Props {
 
 export const MonitorDropdown: React.FC<Props> = ({ title = 'Monitors', value, onSelect, onDeselect, ...props }) => {
   const options = useMemo(() => {
-    const payload: DropdownOption[] = [];
+    const payload: DropdownProps['options'] = [];
 
     MONITORS_OPTIONS.forEach(({ id, value }) => {
       if (!payload.find((opt) => opt.id === id)) {

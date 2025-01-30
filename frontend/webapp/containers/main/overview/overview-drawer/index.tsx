@@ -1,11 +1,10 @@
 import { PropsWithChildren, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useTheme } from 'styled-components';
-import { Input } from '@/reuseable-components';
 import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
 import { CancelWarning, DeleteWarning } from '@/components/modals';
 import { NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES } from '@/types';
 import { useDrawerStore, useNotificationStore, usePendingStore } from '@/store';
-import { Drawer, DrawerProps, EditIcon, Text, TrashIcon, Types, useKeyDown } from '@odigos/ui-components';
+import { Drawer, DrawerProps, EditIcon, Input, Text, TrashIcon, Types, useKeyDown } from '@odigos/ui-components';
 
 interface OverviewDrawerProps {
   title: string;

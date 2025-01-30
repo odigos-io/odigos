@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useModalStore } from '@/store';
 import { getEntityIcon } from '@/utils';
+import { OVERVIEW_ENTITY_TYPES } from '@/types';
 import styled, { css, useTheme } from 'styled-components';
-import { type DropdownOption, OVERVIEW_ENTITY_TYPES } from '@/types';
-import { Button, PlusIcon, Text, Theme, useOnClickOutside } from '@odigos/ui-components';
+import { Button, type DropdownProps, PlusIcon, Text, Theme, useOnClickOutside } from '@odigos/ui-components';
 
 // Styled components for the dropdown UI
 const Container = styled.div`
@@ -57,7 +57,7 @@ const ButtonText = styled(Text)`
 `;
 
 // Default options for the dropdown
-const DEFAULT_OPTIONS: DropdownOption[] = [
+const DEFAULT_OPTIONS: DropdownProps['options'] = [
   { id: OVERVIEW_ENTITY_TYPES.RULE, value: 'Instrumentation Rule' },
   { id: OVERVIEW_ENTITY_TYPES.SOURCE, value: 'Source' },
   { id: OVERVIEW_ENTITY_TYPES.ACTION, value: 'Action' },
@@ -65,7 +65,7 @@ const DEFAULT_OPTIONS: DropdownOption[] = [
 ];
 
 interface Props {
-  options?: DropdownOption[];
+  options?: DropdownProps['options'];
   placeholder?: string;
 }
 
@@ -95,7 +95,7 @@ export const AddEntity: React.FC<Props> = ({ options = DEFAULT_OPTIONS, placehol
     }
   }, []);
 
-  const handleSelect = (option: DropdownOption) => {
+  const handleSelect = (option: DropdownProps['options'][0]) => {
     setCurrentModal(option.id);
     setIsDropdownOpen(false); // ??? maybe remove this line (for fast-toggle between modals)
   };
