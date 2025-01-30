@@ -92,22 +92,22 @@ func CleanupEnvValueFromOdigosAdditions(envVarName string, envVarValue string) s
 		return envVarValue
 	}
 
-	envValueParts := strings.Split(envVarValue, overwriteMetadata.delim)
-	cleanParts := []string{}
-	for _, part := range envValueParts {
-		if strings.Contains(part, "/var/odigos/") {
-			continue
-		}
-		if strings.Contains(part, "-javaagent:/opt/sre-agent/sre-agent.jar") {
-			continue
-		}
-		if strings.Contains(part, "newrelic/bootstrap") {
-			continue
-		}
-		cleanParts = append(cleanParts, part)
+	// if any of the possible values for this env exists, remove it
+	for _, value := range overwriteMetadata.values {
+		// try to remove each value with and without the delimiter.
+		// if odigos value is the only one left, the delimiter will not be present.
+		withSeparator := overwriteMetadata.delim + value
+		envVarValue = strings.ReplaceAll(envVarValue, withSeparator, "")
+		envVarValue = strings.ReplaceAll(envVarValue, value, "")
 	}
-	sanitizedEnvValue := strings.Join(cleanParts, overwriteMetadata.delim)
-	return sanitizedEnvValue
+
+	// remove any odigos special values if they exist
+	if envVarName == "JAVA_OPTS" || envVarName == "JAVA_TOOL_OPTIONS" {
+		envVarValue = strings.ReplaceAll(envVarValue, " -javaagent:/opt/sre-agent/sre-agent.jar", "")
+		envVarValue = strings.ReplaceAll(envVarValue, " newrelic/bootstrap", "")
+	}
+
+	return envVarValue
 }
 
 func AppendOdigosAdditionsToEnvVar(envName string, envFromContainerRuntimeValue string, desiredOdigosAddition string) *string {
