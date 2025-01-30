@@ -391,7 +391,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 							},
 							Env: []corev1.EnvVar{
 								{
-									Name: "NODE_NAME",
+									Name: k8sconsts.NodeNameEnvVar,
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
 											FieldPath: "spec.nodeName",
@@ -423,7 +423,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 							Image: containers.GetImageName(imagePrefix, imageName, version),
 							Env: append([]corev1.EnvVar{
 								{
-									Name: "NODE_NAME",
+									Name: k8sconsts.NodeNameEnvVar,
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
 											FieldPath: "spec.nodeName",
