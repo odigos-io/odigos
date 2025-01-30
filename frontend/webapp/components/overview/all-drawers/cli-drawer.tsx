@@ -1,8 +1,8 @@
 import React, { useRef, useState } from 'react';
+import { useDrawerStore } from '@/store';
 import { NOTIFICATION_TYPE } from '@/types';
 import styled, { useTheme } from 'styled-components';
 import { useDescribeOdigos, useTimeAgo, useTokenCRUD } from '@/hooks';
-import OverviewDrawer from '@/containers/main/overview/overview-drawer';
 import { DataCard, DataCardFieldTypes, Input } from '@/reuseable-components';
 import { DATA_CARDS, getStatusIcon, isOverTime, isWithinTime, safeJsonStringify, SEVEN_DAYS_IN_MS } from '@/utils';
 import {
@@ -13,6 +13,7 @@ import {
   CopyIcon,
   CrossIcon,
   Divider,
+  Drawer,
   EditIcon,
   FlexColumn,
   FlexRow,
@@ -61,9 +62,12 @@ const PopoverFormButton = styled(Button)`
   padding-right: 0;
 `;
 
+const DRAWER_WIDTH = '555px';
+
 export const CliDrawer: React.FC<Props> = () => {
   const theme = useTheme();
   const timeAgo = useTimeAgo();
+  const { setSelectedItem } = useDrawerStore();
   const { isCopied, copiedIndex, clickCopy } = useCopy();
   const { tokens, loading, updateToken } = useTokenCRUD();
   const { data: describe, restructureForPrettyMode } = useDescribeOdigos();
@@ -81,8 +85,23 @@ export const CliDrawer: React.FC<Props> = () => {
     if (token) updateToken(token).then(() => setEditTokenIndex(-1));
   }
 
+  const closeDrawer = () => {
+    setSelectedItem(null);
+  };
+
   return (
-    <OverviewDrawer title='Odigos CLI' icon={CodeBracketsIcon}>
+    <Drawer
+      isOpen={true}
+      onClose={closeDrawer}
+      width={DRAWER_WIDTH}
+      header={{
+        icon: CodeBracketsIcon,
+        title: 'Odigos CLI',
+      }}
+      footer={{
+        isOpen: false,
+      }}
+    >
       <DataContainer>
         {!!tokens?.length && (
           <DataCard
@@ -186,6 +205,6 @@ export const CliDrawer: React.FC<Props> = () => {
           ]}
         />
       </DataContainer>
-    </OverviewDrawer>
+    </Drawer>
   );
 };
