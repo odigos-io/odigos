@@ -1,4 +1,4 @@
-import { PropsWithChildren, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { forwardRef, type PropsWithChildren, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useTheme } from 'styled-components';
 import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
 import { CancelWarning, DeleteWarning } from '@/components/modals';
@@ -19,7 +19,7 @@ interface OverviewDrawerProps {
   onCancel?: () => void;
 }
 
-export interface DrawerHeaderRef {
+interface EditTitleRef {
   getTitle: () => string;
   clearTitle: () => void;
 }
@@ -52,7 +52,7 @@ const OverviewDrawer: React.FC<OverviewDrawerProps & PropsWithChildren> = ({
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
-  const titleRef = useRef<DrawerHeaderRef>(null);
+  const titleRef = useRef<EditTitleRef>(null);
 
   const isSource = selectedItem?.type === OVERVIEW_ENTITY_TYPES.SOURCE;
   const isDestination = selectedItem?.type === OVERVIEW_ENTITY_TYPES.DESTINATION;
@@ -124,17 +124,6 @@ const OverviewDrawer: React.FC<OverviewDrawerProps & PropsWithChildren> = ({
     });
   };
 
-  const [inputValue, setInputValue] = useState(title);
-
-  useEffect(() => {
-    setInputValue(title);
-  }, [title]);
-
-  useImperativeHandle(titleRef, () => ({
-    getTitle: () => inputValue,
-    clearTitle: () => setInputValue(title),
-  }));
-
   const actionButtons: DrawerProps['header']['actionButtons'] = [];
 
   if (!!onEdit && !isEdit)
@@ -179,7 +168,7 @@ const OverviewDrawer: React.FC<OverviewDrawerProps & PropsWithChildren> = ({
           iconSrc,
           title,
           titleTooltip,
-          replaceTitleWith: !isSource && isEdit ? () => <Input data-id='title' autoFocus value={inputValue} onChange={(e) => setInputValue(e.target.value)} /> : undefined,
+          replaceTitleWith: !isSource && isEdit ? () => <EditTitle ref={titleRef} title={title} /> : undefined,
           actionButtons,
         }}
         footer={{
@@ -231,5 +220,20 @@ const OverviewDrawer: React.FC<OverviewDrawerProps & PropsWithChildren> = ({
     </>
   );
 };
+
+const EditTitle = forwardRef<EditTitleRef, { title: string }>(({ title }, ref) => {
+  const [inputValue, setInputValue] = useState(title);
+
+  useEffect(() => {
+    setInputValue(title);
+  }, [title]);
+
+  useImperativeHandle(ref, () => ({
+    getTitle: () => inputValue,
+    clearTitle: () => setInputValue(title),
+  }));
+
+  return <Input data-id='title' autoFocus value={inputValue} onChange={(e) => setInputValue(e.target.value)} />;
+});
 
 export default OverviewDrawer;
