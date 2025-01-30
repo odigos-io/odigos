@@ -69,6 +69,8 @@ and rollback any metadata changes made to your objects.`,
 				client, cmd, ns, uninstallRBAC)
 			createKubeResourceWithLogging(ctx, "Uninstalling Odigos Secrets",
 				client, cmd, ns, uninstallSecrets)
+			createKubeResourceWithLogging(ctx, "Cleaning up Odigos node labels",
+				client, cmd, ns, cleanupNodeOdigosLabels)
 
 			// The CLI is running in Kubernetes via a Helm chart [pre-delete hook] to clean up Odigos resources.
 			// Deleting the namespace during uninstallation will cause Helm to fail due to the loss of the release state.
@@ -515,6 +517,39 @@ func uninstallRBAC(ctx context.Context, cmd *cobra.Command, client *kube.Client,
 		err = client.RbacV1().ClusterRoleBindings().Delete(ctx, i.Name, metav1.DeleteOptions{})
 		if err != nil {
 			return err
+		}
+	}
+
+	return nil
+}
+
+func cleanupNodeOdigosLabels(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+	nodes, err := client.CoreV1().Nodes().List(ctx, metav1.ListOptions{
+		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
+			MatchLabels: k8sconsts.OdigletInstalled,
+		}),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to list nodes: %w", err)
+	}
+
+	for _, node := range nodes.Items {
+		patchData := map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"labels": map[string]interface{}{
+					"odigos.io/odiglet-installed": nil, // Setting to `nil` removes the label
+				},
+			},
+		}
+
+		patchBytes, err := json.Marshal(patchData)
+		if err != nil {
+			return fmt.Errorf("failed to marshal patch data: %w", err)
+		}
+
+		_, err = client.CoreV1().Nodes().Patch(ctx, node.Name, types.StrategicMergePatchType, patchBytes, metav1.PatchOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to patch node %s: %w", node.Name, err)
 		}
 	}
 
