@@ -9,7 +9,6 @@ import (
 	"errors"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/autoscaler/utils"
 	"github.com/odigos-io/odigos/common/consts"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -143,7 +142,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 					Containers: []corev1.Container{
 						{
 							Name:    containerName,
-							Image:   utils.GetCollectorContainerImage(collectorImage, odigosVersion),
+							Image:   collectorImage,
 							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, k8sconsts.OdigosClusterCollectorConfigMapKey)},
 							EnvFrom: getSecretsFromDests(dests),
 							// Add the ODIGOS_VERSION environment variable from the ConfigMap

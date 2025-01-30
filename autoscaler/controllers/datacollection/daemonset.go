@@ -10,7 +10,6 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
-	"github.com/odigos-io/odigos/autoscaler/utils"
 	"k8s.io/apimachinery/pkg/util/version"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -272,7 +271,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 					Containers: []corev1.Container{
 						{
 							Name:    containerName,
-							Image:   utils.GetCollectorContainerImage(collectorImage, odigosVersion),
+							Image:   collectorImage,
 							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, k8sconsts.OdigosNodeCollectorConfigMapKey)},
 							VolumeMounts: []corev1.VolumeMount{
 								{

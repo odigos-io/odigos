@@ -579,11 +579,17 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 	// if the user specified an image, use it. otherwise, use the default image.
 	// prev v1.0.4 - the cli would automatically store "keyval/odigos-odiglet" instead of empty value,
 	// thus we need to treat the default image name as empty value.
-	if odigletImage == "" || odigletImage == k8sconsts.OdigletImageName {
+	if odigletImage == "" || odigletImage == k8sconsts.OdigletImageName || odigletImage == k8sconsts.OdigletImageUBI9 {
 		if a.odigosTier == common.CommunityOdigosTier {
-			odigletImage = k8sconsts.OdigletImageName
+			if odigletImage != k8sconsts.OdigletImageUBI9 {
+				odigletImage = k8sconsts.OdigletImageName
+			}
 		} else {
-			odigletImage = k8sconsts.OdigletEnterpriseImageName
+			if odigletImage == k8sconsts.OdigletImageUBI9 {
+				odigletImage = k8sconsts.OdigletEnterpriseImageUBI9
+			} else {
+				odigletImage = k8sconsts.OdigletEnterpriseImageName
+			}
 		}
 	}
 

@@ -93,7 +93,7 @@ func main() {
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.StringVar(&imagePullSecretsString, "image-pull-secrets", "",
 		"The image pull secrets to use for the collectors created by autoscaler")
-	flag.StringVar(&nameutils.ImagePrefix, "image-prefix", "", "The image prefix to use for the collectors created by autoscaler")
+	flag.StringVar(&nameutils.ImagePrefix, "image-prefix", "", "The image prefix to use for the collectors created by autoscaler (DEPRECATED: Use ODIGOS_COLLECTOR_IMAGE env variable)")
 
 	odigosVersion := os.Getenv(consts.OdigosVersionEnvVarName)
 	if odigosVersion == "" {
