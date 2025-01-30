@@ -104,9 +104,6 @@ spec:
             {{ end }}
             - name: device-plugins-dir
               mountPath: /var/lib/kubelet/device-plugins
-            - name: pod-resources
-              mountPath: /var/lib/kubelet/pod-resources
-              readOnly: true
             - name: odigos
               mountPath: /var/odigos
               readOnly: true
