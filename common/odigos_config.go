@@ -111,4 +111,5 @@ type OdigosConfiguration struct {
 	Profiles                  []ProfileName                  `json:"profiles,omitempty"`
 	AllowConcurrentAgents     *bool                          `json:"allowConcurrentAgents,omitempty"`
 	UiMode                    UiMode                         `json:"uiMode,omitempty"`
+	CentralBackendURL         string                         `json:"centralBackendURL,omitempty"`
 }

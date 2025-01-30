@@ -124,6 +124,7 @@ ui:
   #  - Setting this to "readonly" will disable the ability to create, update, or delete objects in the UI.
   #  - If not set, the UI will be in normal mode.
   uiMode: 'normal'
+  centralBackendURL: ''
 
 instrumentor:
   deleteLangDetectionPods: true
@@ -176,4 +177,3 @@ gke:
   enabled: false
 
 profiles: []
-
