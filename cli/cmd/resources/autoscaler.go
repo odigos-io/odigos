@@ -369,11 +369,6 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 		},
 	}
 
-	if imagePrefix != "" {
-		dep.Spec.Template.Spec.Containers[0].Args = append(dep.Spec.Template.Spec.Containers[0].Args,
-			"--image-prefix="+imagePrefix)
-	}
-
 	return dep
 }
 
