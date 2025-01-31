@@ -17,6 +17,14 @@ rules:
       - pods/status
     verbs:
       - get
+{{- if .Values.openshift.enabled }}
+  - apiGroups:
+      - ''
+    resources:
+      - pods/finalizers
+    verbs:
+      - update
+{{- end }}
   - apiGroups:
       - ''
     resources:

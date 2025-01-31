@@ -10,8 +10,8 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
-	"github.com/odigos-io/odigos/autoscaler/utils"
 	"k8s.io/apimachinery/pkg/util/version"
+	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -28,7 +28,6 @@ import (
 
 const (
 	containerName        = "data-collection"
-	containerImage       = "keyval/odigos-collector"
 	containerCommand     = "/odigosotelcol"
 	confDir              = "/conf"
 	configHashAnnotation = "odigos.io/config-hash"
@@ -171,8 +170,7 @@ func getOdigletDaemonsetPodSpec(ctx context.Context, c client.Client, namespace 
 
 func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 	scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, k8sVersion *version.Version,
-	odigletDaemonsetPodSpec *corev1.PodSpec,
-) (*appsv1.DaemonSet, error) {
+	odigletDaemonsetPodSpec *corev1.PodSpec) (*appsv1.DaemonSet, error) {
 	// TODO(edenfed): add log volumes only if needed according to apps or dests
 
 	// 50% of the nodes can be unavailable during the update.
@@ -273,7 +271,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 					Containers: []corev1.Container{
 						{
 							Name:    containerName,
-							Image:   utils.GetCollectorContainerImage(containerImage, odigosVersion),
+							Image:   commonconfig.ControllerConfig.CollectorImage,
 							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, k8sconsts.OdigosNodeCollectorConfigMapKey)},
 							VolumeMounts: []corev1.VolumeMount{
 								{
