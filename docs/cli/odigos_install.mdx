@@ -48,7 +48,7 @@ odigos install --onprem-token ${ODIGOS_TOKEN} --profile ${YOUR_ENTERPRISE_PROFIL
       --nowait                         skip waiting for odigos pods to be ready
       --odiglet-image string           odiglet container image name
       --onprem-token string            authentication token for odigos enterprise on-premises
-      --openshift                      configure selinux on openshift nodes
+      --openshift                      configure requirements for OpenShift: required selinux settings, RBAC roles, and will use OpenShift certified images (if --image-prefix is not set)
       --profile strings                install preset profiles with a specific configuration
       --psp                            enable pod security policy
       --skip-webhook-issuer-creation   Skip creating the Issuer and Certificate for the Instrumentor pod webhook if cert-manager is installed.

@@ -4,6 +4,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/version"
 )
 
+const RedHatImagePrefix = "registry.connect.redhat.com/odigos"
+
 const (
 	OdigletPprofEndpointPort    int32 = 6060
 	CollectorsPprofEndpointPort int32 = 1777
