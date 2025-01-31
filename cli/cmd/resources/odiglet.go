@@ -355,14 +355,6 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 							},
 						},
 						{
-							Name: "pod-resources",
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/var/lib/kubelet/pod-resources",
-								},
-							},
-						},
-						{
 							Name: "device-plugins-dir",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
@@ -467,11 +459,6 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 								{
 									Name:      "device-plugins-dir",
 									MountPath: "/var/lib/kubelet/device-plugins",
-								},
-								{
-									Name:      "pod-resources",
-									MountPath: "/var/lib/kubelet/pod-resources",
-									ReadOnly:  true,
 								},
 								{
 									Name:      "odigos",
