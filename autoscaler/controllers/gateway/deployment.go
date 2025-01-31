@@ -9,10 +9,11 @@ import (
 	"errors"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/common/consts"
-
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
+	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/common/consts"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -33,7 +34,7 @@ const (
 )
 
 func syncDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup,
-	ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, collectorImage string) (*appsv1.Deployment, error) {
+	ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (*appsv1.Deployment, error) {
 	logger := log.FromContext(ctx)
 
 	secretsVersionHash, err := destinationsSecretsVersionsHash(ctx, c, dests)
@@ -43,7 +44,7 @@ func syncDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.Collector
 
 	// Use the hash of the secrets  to make sure the gateway will restart when the secrets (mounted as environment variables) changes
 	configDataHash := common.Sha256Hash(secretsVersionHash)
-	desiredDeployment, err := getDesiredDeployment(dests, configDataHash, gateway, scheme, imagePullSecrets, odigosVersion, collectorImage)
+	desiredDeployment, err := getDesiredDeployment(dests, configDataHash, gateway, scheme, imagePullSecrets, odigosVersion)
 	if err != nil {
 		return nil, errors.Join(err, errors.New("failed to get desired deployment"))
 	}
@@ -87,7 +88,7 @@ func patchDeployment(existing *appsv1.Deployment, desired *appsv1.Deployment, ct
 }
 
 func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string,
-	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, collectorImage string) (*appsv1.Deployment, error) {
+	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (*appsv1.Deployment, error) {
 
 	// request + limits for memory and cpu
 	requestMemoryQuantity := resource.MustParse(fmt.Sprintf("%dMi", gateway.Spec.ResourcesSettings.MemoryRequestMiB))
@@ -142,7 +143,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 					Containers: []corev1.Container{
 						{
 							Name:    containerName,
-							Image:   collectorImage,
+							Image:   commonconfig.ControllerConfig.CollectorImage,
 							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, k8sconsts.OdigosClusterCollectorConfigMapKey)},
 							EnvFrom: getSecretsFromDests(dests),
 							// Add the ODIGOS_VERSION environment variable from the ConfigMap

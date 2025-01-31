@@ -6,7 +6,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
-	controllerconfig "github.com/odigos-io/odigos/autoscaler/controllers/controller_config"
+
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -20,8 +20,7 @@ var (
 	}
 )
 
-func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string,
-	config *controllerconfig.ControllerConfig) error {
+func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) error {
 	logger := log.FromContext(ctx)
 
 	odigosNs := env.GetCurrentNamespace()
@@ -47,7 +46,7 @@ func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, 
 	// Add the generic batch processor to the list of processors
 	processors.Items = append(processors.Items, commonconf.GetGenericBatchProcessor())
 
-	err = syncGateway(&dests, &processors, &gatewayCollectorGroup, ctx, k8sClient, scheme, imagePullSecrets, odigosVersion, config)
+	err = syncGateway(&dests, &processors, &gatewayCollectorGroup, ctx, k8sClient, scheme, imagePullSecrets, odigosVersion)
 	statusPatchString := commonconf.GetCollectorsGroupDeployedConditionsPatch(err)
 	statusErr := k8sClient.Status().Patch(ctx, &gatewayCollectorGroup, client.RawPatch(types.MergePatchType, []byte(statusPatchString)))
 	if statusErr != nil {
@@ -59,8 +58,7 @@ func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, 
 
 func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList,
 	gateway *odigosv1.CollectorsGroup, ctx context.Context,
-	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string,
-	config *controllerconfig.ControllerConfig) error {
+	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) error {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Syncing gateway")
 
@@ -82,7 +80,7 @@ func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.Processor
 		return err
 	}
 
-	_, err = syncDeployment(dests, gateway, ctx, c, scheme, imagePullSecrets, odigosVersion, config.CollectorImage)
+	_, err = syncDeployment(dests, gateway, ctx, c, scheme, imagePullSecrets, odigosVersion)
 	if err != nil {
 		logger.Error(err, "Failed to sync deployment")
 		return err
@@ -94,7 +92,7 @@ func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.Processor
 		return err
 	}
 
-	err = syncHPA(gateway, ctx, c, scheme, config.K8sVersion)
+	err = syncHPA(gateway, ctx, c, scheme)
 	if err != nil {
 		logger.Error(err, "Failed to sync HPA")
 	}

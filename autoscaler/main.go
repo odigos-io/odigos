@@ -57,9 +57,9 @@ import (
 
 	"github.com/odigos-io/odigos/autoscaler/controllers"
 	"github.com/odigos-io/odigos/autoscaler/controllers/actions"
+	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	controllerconfig "github.com/odigos-io/odigos/autoscaler/controllers/controller_config"
 	"github.com/odigos-io/odigos/autoscaler/controllers/gateway"
-	nameutils "github.com/odigos-io/odigos/autoscaler/utils"
 
 	//+kubebuilder:scaffold:imports
 
@@ -93,7 +93,6 @@ func main() {
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.StringVar(&imagePullSecretsString, "image-pull-secrets", "",
 		"The image pull secrets to use for the collectors created by autoscaler")
-	flag.StringVar(&nameutils.ImagePrefix, "image-prefix", "", "The image prefix to use for the collectors created by autoscaler (DEPRECATED: Use ODIGOS_COLLECTOR_IMAGE env variable)")
 
 	odigosVersion := os.Getenv(consts.OdigosVersionEnvVarName)
 	if odigosVersion == "" {
@@ -222,7 +221,7 @@ func main() {
 		collectorImage = collectorImageEnv
 	}
 
-	config := &controllerconfig.ControllerConfig{
+	commonconfig.ControllerConfig = &controllerconfig.ControllerConfig{
 		K8sVersion:     k8sVersion,
 		CollectorImage: collectorImage,
 	}
@@ -232,7 +231,6 @@ func main() {
 		Scheme:           mgr.GetScheme(),
 		ImagePullSecrets: imagePullSecrets,
 		OdigosVersion:    odigosVersion,
-		Config:           config,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Destination")
 		os.Exit(1)
@@ -245,7 +243,6 @@ func main() {
 		OdigosVersion:        odigosVersion,
 		K8sVersion:           k8sVersion,
 		DisableNameProcessor: disableNameProcessor,
-		Config:               config,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Processor")
 		os.Exit(1)
@@ -257,7 +254,6 @@ func main() {
 		OdigosVersion:        odigosVersion,
 		K8sVersion:           k8sVersion,
 		DisableNameProcessor: disableNameProcessor,
-		Config:               config,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "CollectorsGroup")
 		os.Exit(1)
@@ -269,7 +265,6 @@ func main() {
 		OdigosVersion:        odigosVersion,
 		K8sVersion:           k8sVersion,
 		DisableNameProcessor: disableNameProcessor,
-		Config:               config,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "InstrumentationConfig")
 		os.Exit(1)
@@ -279,7 +274,6 @@ func main() {
 		Scheme:           mgr.GetScheme(),
 		ImagePullSecrets: imagePullSecrets,
 		OdigosVersion:    odigosVersion,
-		Config:           config,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Secret")
 		os.Exit(1)
@@ -301,7 +295,6 @@ func main() {
 		Scheme:           mgr.GetScheme(),
 		ImagePullSecrets: imagePullSecrets,
 		OdigosVersion:    odigosVersion,
-		Config:           config,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Source")
 		os.Exit(1)
