@@ -38,7 +38,14 @@ fi
 echo "ℹ️ Using namespace: $NAMESPACE"
 echo "ℹ️ Expecting at least $VALID_SOURCES valid sources and $VALID_DESTINATIONS valid destinations"
 
-kubectl port-forward svc/ui 3000:3000 -n "$NAMESPACE" &
+# Find a random free local port - this script will be called in parallel by multiple tests
+LOCAL_PORT=$(shuf -i 20000-65000 -n 1)
+while nc -z localhost $LOCAL_PORT; do
+    LOCAL_PORT=$(shuf -i 20000-65000 -n 1)
+done
+echo "🔀 Chosen random local port: $LOCAL_PORT"
+
+kubectl port-forward svc/ui $LOCAL_PORT:3000 -n "$NAMESPACE" &
 PORT_FORWARD_PID=$!
 
 cleanup() {
@@ -49,13 +56,13 @@ cleanup() {
 # Register cleanup function to run on script exit
 trap cleanup EXIT
 
-echo "⏳ Waiting for port 3000 to be available..."
+echo "⏳ Waiting for port $LOCAL_PORT to be available..."
 for i in {1..10}; do
-    if nc -z localhost 3000; then
-        echo "✅ Port 3000 is ready!"
+    if nc -z localhost $LOCAL_PORT; then
+        echo "✅ Port $LOCAL_PORT is ready!"
         break
     fi
-    echo "🔄 Port 3000 not ready yet, retrying in 100 milliseconds..."
+    echo "🔄 Port $LOCAL_PORT not ready yet, retrying in 100 milliseconds..."
     sleep 0.1
 done
 
@@ -66,7 +73,7 @@ grahphqlPayload='{
 }'
 
 # Send the GraphQL request and store the response
-response=$(curl -s -X POST http://localhost:3000/graphql \
+response=$(curl -s -X POST http://localhost:$LOCAL_PORT/graphql \
     -H "Content-Type: application/json" \
     -d "$grahphqlPayload")
 
