@@ -6,7 +6,31 @@
 
 The following telemetry is emitted by this component.
 
-### otelcol_log_data_size
+### otelcol_odigos_accepted_log_records
+
+Number of log records passed through the processor.
+
+| Unit | Metric Type | Value Type | Monotonic |
+| ---- | ----------- | ---------- | --------- |
+| {records} | Sum | Int | true |
+
+### otelcol_odigos_accepted_metric_points
+
+Number of data points passed through the processor.
+
+| Unit | Metric Type | Value Type | Monotonic |
+| ---- | ----------- | ---------- | --------- |
+| {datapoints} | Sum | Int | true |
+
+### otelcol_odigos_accepted_spans
+
+Number of spans passed through the processor.
+
+| Unit | Metric Type | Value Type | Monotonic |
+| ---- | ----------- | ---------- | --------- |
+| {spans} | Sum | Int | true |
+
+### otelcol_odigos_log_data_size
 
 Total size of log data passed to the processor
 
@@ -14,7 +38,7 @@ Total size of log data passed to the processor
 | ---- | ----------- | ---------- | --------- |
 | By | Sum | Int | true |
 
-### otelcol_metric_data_size
+### otelcol_odigos_metric_data_size
 
 Total size of metric data passed to the processor
 
@@ -22,7 +46,7 @@ Total size of metric data passed to the processor
 | ---- | ----------- | ---------- | --------- |
 | By | Sum | Int | true |
 
-### otelcol_trace_data_size
+### otelcol_odigos_trace_data_size
 
 Total size of trace data passed to the processor
 
