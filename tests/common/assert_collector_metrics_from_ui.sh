@@ -38,33 +38,49 @@ fi
 echo "ℹ️ Using namespace: $NAMESPACE"
 echo "ℹ️ Expecting at least $VALID_SOURCES valid sources and $VALID_DESTINATIONS valid destinations"
 
-# Find a random free local port - this script will be called in parallel by multiple tests
-LOCAL_PORT=$(shuf -i 20000-65000 -n 1)
-while nc -z localhost $LOCAL_PORT; do
-    LOCAL_PORT=$(shuf -i 20000-65000 -n 1)
-done
-echo "🔀 Chosen random local port: $LOCAL_PORT"
-
-kubectl port-forward svc/ui $LOCAL_PORT:3000 -n "$NAMESPACE" &
-PORT_FORWARD_PID=$!
-
-cleanup() {
-    echo "Cleaning up: Stopping port-forward (PID: $PORT_FORWARD_PID)"
-    kill $PORT_FORWARD_PID
+find_free_port() {
+    while :; do
+        local port=$(shuf -i 20000-65000 -n 1)
+        if ! nc -z localhost $port 2>/dev/null; then
+            echo "$port"
+            return
+        fi
+    done
 }
 
-# Register cleanup function to run on script exit
+cleanup() {
+    if [[ -n "$PORT_FORWARD_PID" ]]; then
+        echo "Cleaning up: Stopping port-forward (PID: $PORT_FORWARD_PID)"
+        kill $PORT_FORWARD_PID 2>/dev/null
+    fi
+}
 trap cleanup EXIT
 
-echo "⏳ Waiting for port $LOCAL_PORT to be available..."
-for i in {1..10}; do
-    if nc -z localhost $LOCAL_PORT; then
-        echo "✅ Port $LOCAL_PORT is ready!"
-        break
-    fi
-    echo "🔄 Port $LOCAL_PORT not ready yet, retrying in 100 milliseconds..."
-    sleep 0.1
+# Try up to 5 different ports before giving up
+for attempt in {1..5}; do
+    LOCAL_PORT=$(find_free_port)
+    echo "🔀 Attempt $attempt: Trying port $LOCAL_PORT..."
+
+    kubectl port-forward svc/ui $LOCAL_PORT:3000 -n "$NAMESPACE" & PORT_FORWARD_PID=$!
+
+    retry_delay=0.1
+    for i in {1..10}; do
+        if nc -z localhost $LOCAL_PORT 2>/dev/null; then
+            echo "✅ Successfully established port-forward on port $LOCAL_PORT"
+            break 2 # Break out of both loops
+        fi
+        sleep $retry_delay
+    done
+
+    echo "❌ Failed to establish port-forward on port $LOCAL_PORT. Retrying..."
+    cleanup
 done
+
+# If no successful port-forward, exit with error
+if ! nc -z localhost $LOCAL_PORT 2>/dev/null; then
+    echo "❌ Error: Unable to establish port-forward after multiple attempts."
+    exit 1
+fi
 
 grahphqlPayload='{
   "operationName": "GetOverviewMetrics",
