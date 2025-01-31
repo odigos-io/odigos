@@ -154,7 +154,7 @@ spec:
             timeout: 30s
             content: |
               while true; do
-                ../../common/assert_collector_metrics_from_ui.sh
+                ../../common/assert_collector_metrics_from_ui.sh odigos-test 5 1
                 if [ $? -eq 0 ]; then
                   break
                 fi
