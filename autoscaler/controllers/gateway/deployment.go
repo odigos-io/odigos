@@ -9,11 +9,11 @@ import (
 	"errors"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/autoscaler/utils"
-	"github.com/odigos-io/odigos/common/consts"
-
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
+	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/common/consts"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -28,7 +28,6 @@ import (
 
 const (
 	containerName        = "gateway"
-	containerImage       = "keyval/odigos-collector"
 	containerCommand     = "/odigosotelcol"
 	confDir              = "/conf"
 	configHashAnnotation = "odigos.io/config-hash"
@@ -144,7 +143,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 					Containers: []corev1.Container{
 						{
 							Name:    containerName,
-							Image:   utils.GetCollectorContainerImage(containerImage, odigosVersion),
+							Image:   commonconfig.ControllerConfig.CollectorImage,
 							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, k8sconsts.OdigosClusterCollectorConfigMapKey)},
 							EnvFrom: getSecretsFromDests(dests),
 							// Add the ODIGOS_VERSION environment variable from the ConfigMap
