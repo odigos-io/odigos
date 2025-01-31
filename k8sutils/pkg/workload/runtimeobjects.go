@@ -13,7 +13,8 @@ import (
 // and then a hyphen and the workload name
 // example: deployment-myapp
 
-func CalculateWorkloadRuntimeObjectName[T string | k8sconsts.WorkloadKind | k8sconsts.WorkloadKindLowerCase](workloadName string, workloadKind T) string {
+func CalculateWorkloadRuntimeObjectName[T string | k8sconsts.WorkloadKind | k8sconsts.WorkloadKindLowerCase](
+	workloadName string, workloadKind T) string {
 	return strings.ToLower(string(workloadKind) + "-" + workloadName)
 }
 

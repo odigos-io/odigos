@@ -4,9 +4,10 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	v1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/odigos-io/odigos/api/k8sconsts"
 )
 
 // This go file contains utils to handle the kind of odigos workloads.

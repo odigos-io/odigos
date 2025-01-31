@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/odigos-io/odigos/api/k8sconsts"
 )
 
 // PodWorkloadObjectOrError is the same as PodWorkloadObject but returns an error if the workload is not found.
