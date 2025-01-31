@@ -12,10 +12,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 )
 
-func InjectOdigosAgentEnvVars(ctx context.Context, p client.Client, logger logr.Logger, podWorkload workload.PodWorkload, container *corev1.Container,
+func InjectOdigosAgentEnvVars(ctx context.Context, p client.Client, logger logr.Logger, podWorkload k8sconsts.PodWorkload, container *corev1.Container,
 	pl common.ProgrammingLanguage, otelsdk common.OtelSdk) {
 	envVarsPerLanguage := getEnvVarNamesForLanguage(pl)
 	if envVarsPerLanguage == nil {
@@ -66,7 +67,7 @@ func handleManifestEnvVar(container *corev1.Container, envVarName string, otelsd
 	return true // Handled, no need for further processing
 }
 
-func injectEnvVarsFromRuntime(ctx context.Context, p client.Client, logger logr.Logger, podWorkload workload.PodWorkload,
+func injectEnvVarsFromRuntime(ctx context.Context, p client.Client, logger logr.Logger, podWorkload k8sconsts.PodWorkload,
 	container *corev1.Container, envVarName string, otelsdk common.OtelSdk) error {
 	logger.Info("Inject Odigos values based on runtime details", "envVarName", envVarName, "container", container.Name)
 

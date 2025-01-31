@@ -3,6 +3,7 @@ package instrumentationconfig
 import (
 	"context"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -27,7 +28,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if source.Spec.Workload.Kind == workload.WorkloadKindNamespace {
+	if source.Spec.Workload.Kind == k8sconsts.WorkloadKindNamespace {
 		// Namespace Source does not contain configuration for a specific workload
 		return ctrl.Result{}, nil
 	}
@@ -53,4 +54,3 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	return reconcile.Result{}, nil
 }
-

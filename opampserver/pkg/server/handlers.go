@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/instrumentation_instance"
@@ -73,9 +74,9 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 		return nil, nil, fmt.Errorf("failed to process k8s attributes: %w", err)
 	}
 
-	podWorkload := workload.PodWorkload{
+	podWorkload := k8sconsts.PodWorkload{
 		Namespace: k8sAttributes.Namespace,
-		Kind:      workload.WorkloadKind(k8sAttributes.WorkloadKind),
+		Kind:      k8sconsts.WorkloadKind(k8sAttributes.WorkloadKind),
 		Name:      k8sAttributes.WorkloadName,
 	}
 
@@ -250,7 +251,7 @@ func resolveFromDirectAttributes(ctx context.Context, attrs opampAgentAttributes
 	}
 
 	var workloadName string
-	var workloadKind workload.WorkloadKind
+	var workloadKind k8sconsts.WorkloadKind
 
 	ownerRefs := pod.GetOwnerReferences()
 	for _, ownerRef := range ownerRefs {
