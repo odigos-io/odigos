@@ -104,9 +104,6 @@ spec:
             {{ end }}
             - name: device-plugins-dir
               mountPath: /var/lib/kubelet/device-plugins
-            - name: pod-resources
-              mountPath: /var/lib/kubelet/pod-resources
-              readOnly: true
             - name: odigos
               mountPath: /var/odigos
               readOnly: true
@@ -128,9 +125,6 @@ spec:
           hostPath:
             path: /etc/selinux
         {{- end }}
-        - name: pod-resources
-          hostPath:
-            path: /var/lib/kubelet/pod-resources
         - name: device-plugins-dir
           hostPath:
             path: /var/lib/kubelet/device-plugins
