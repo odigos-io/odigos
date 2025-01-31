@@ -38,12 +38,6 @@ fi
 echo "ℹ️ Using namespace: $NAMESPACE"
 echo "ℹ️ Expecting at least $VALID_SOURCES valid sources and $VALID_DESTINATIONS valid destinations"
 
-payload='{
-  "operationName": "GetOverviewMetrics",
-  "variables": {},
-  "query": "query GetOverviewMetrics { getOverviewMetrics { sources { namespace kind name totalDataSent throughput } destinations { id totalDataSent throughput } } }"
-}'
-
 kubectl port-forward svc/ui 3000:3000 -n "$NAMESPACE" &
 PORT_FORWARD_PID=$!
 
@@ -65,10 +59,16 @@ for i in {1..10}; do
     sleep 0.1
 done
 
+grahphqlPayload='{
+  "operationName": "GetOverviewMetrics",
+  "variables": {},
+  "query": "query GetOverviewMetrics { getOverviewMetrics { sources { namespace kind name totalDataSent throughput } destinations { id totalDataSent throughput } } }"
+}'
+
 # Send the GraphQL request and store the response
 response=$(curl -s -X POST http://localhost:3000/graphql \
     -H "Content-Type: application/json" \
-    -d "$payload")
+    -d "$grahphqlPayload")
 
 if [[ -z "$response" ]]; then
     echo "❌ Error: Empty response from server."
