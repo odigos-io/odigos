@@ -36,7 +36,8 @@ spec:
             valueFrom:
               configMapKeyRef:
                 name: odigos-config
-                key: centralBackendURL      
+                key: centralBackendURL
+                optional: true
         ports:
           - containerPort: 3000
             name: ui
