@@ -87,6 +87,7 @@ type SourceAnalyze struct {
 	Pods            []PodAnalyze `json:"pods"`
 }
 
+// Deprecated: Sources are used to mark workloads for instrumentation.
 func analyzeInstrumentationLabels(resource *OdigosSourceResources, workloadObj *K8sSourceObject) (InstrumentationLabelsAnalyze, bool) {
 	workloadLabel, workloadFound := workloadObj.GetLabels()[consts.OdigosInstrumentationLabel]
 	nsLabel, nsFound := resource.Namespace.GetLabels()[consts.OdigosInstrumentationLabel]
