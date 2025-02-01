@@ -57,7 +57,7 @@ func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32) error {
 					"metric_relabel_configs": []config.GenericMap{
 						{
 							"source_labels": []string{"__name__"},
-							"regex":         "(.*odigos.*|^otelcol_processor_accepted.*|^otelcol_exporter_sent.*)",
+							"regex":         "(.*odigos.*|^otelcol_exporter_sent.*)",
 							"action":        "keep",
 						},
 					},

@@ -171,3 +171,15 @@ spec:
         - podLogs:
             name: odiglet
             namespace: odigos-test
+    - name: Verify collector metrics are collected by the UI
+      try:
+        - script:
+            timeout: 30s
+            content: |
+              while true; do
+                ../../common/assert_collector_metrics_from_ui.sh odigos-test
+                if [ $? -eq 0 ]; then
+                  break
+                fi
+                sleep 5
+              done
