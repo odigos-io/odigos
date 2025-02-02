@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    deployment.kubernetes.io/revision: "1"
+    deployment.kubernetes.io/revision: '1'
   generation: 1
   labels:
     app: nodejs-unsupported-version
@@ -15,9 +15,9 @@ spec:
   template:
     spec:
       containers:
-      - image: nodejs-unsupported-version:v0.0.1
-        name: nodejs-unsupported-version
-        resources: {}
+        - image: nodejs-unsupported-version:v0.0.1
+          name: nodejs-unsupported-version
+          resources: {}
 status:
   availableReplicas: 1
   observedGeneration: 1
@@ -29,7 +29,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    deployment.kubernetes.io/revision: "2" # the deployment spec changed when odigos resource was added
+    deployment.kubernetes.io/revision: '2' # the deployment spec changed when odigos resource was added
   generation: 2 # the deployment spec changed when odigos resource was added
   labels:
     app: nodejs-very-old-version
@@ -42,11 +42,9 @@ spec:
   template:
     spec:
       containers:
-      - image: nodejs-very-old-version:v0.0.1
-        name: nodejs-very-old-version
-        resources:
-          limits:
-            instrumentation.odigos.io/javascript-native-community: "1"
+        - image: nodejs-very-old-version:v0.0.1
+          name: nodejs-very-old-version
+
 status:
   availableReplicas: 1
   observedGeneration: 2 # the deployment spec changed when odigos resource was added
@@ -58,7 +56,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    deployment.kubernetes.io/revision: "2" # the deployment spec changed when odigos resource was added
+    deployment.kubernetes.io/revision: '2' # the deployment spec changed when odigos resource was added
   generation: 2 # the deployment spec changed when odigos resource was added
   labels:
     app: nodejs-minimum-version
@@ -71,10 +69,8 @@ spec:
   template:
     spec:
       containers:
-      - name: nodejs-minimum-version
-        resources:
-          limits:
-            instrumentation.odigos.io/javascript-native-community: "1"
+        - name: nodejs-minimum-version
+
 status:
   availableReplicas: 1
   observedGeneration: 2 # the deployment spec changed when odigos resource was added
@@ -86,7 +82,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    deployment.kubernetes.io/revision: "2" # the deployment spec changed when odigos resource was added
+    deployment.kubernetes.io/revision: '2' # the deployment spec changed when odigos resource was added
   generation: 2 # the deployment spec changed when odigos resource was added
   labels:
     app: nodejs-latest-version
@@ -99,10 +95,8 @@ spec:
   template:
     spec:
       containers:
-      - name: nodejs-latest-version
-        resources:
-          limits:
-            instrumentation.odigos.io/javascript-native-community: "1"
+        - name: nodejs-latest-version
+
 status:
   availableReplicas: 1
   observedGeneration: 2 # the deployment spec changed when odigos resource was added
@@ -114,7 +108,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    deployment.kubernetes.io/revision: "2" # the deployment spec changed when odigos resource was added
+    deployment.kubernetes.io/revision: '2' # the deployment spec changed when odigos resource was added
   generation: 2 # the deployment spec changed when odigos resource was added
   labels:
     app: nodejs-dockerfile-env
@@ -127,10 +121,8 @@ spec:
   template:
     spec:
       containers:
-      - name: nodejs-dockerfile-env
-        resources:
-          limits:
-            instrumentation.odigos.io/javascript-native-community: "1"
+        - name: nodejs-dockerfile-env
+
 status:
   availableReplicas: 1
   observedGeneration: 2 # the deployment spec changed when odigos resource was added
@@ -142,7 +134,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    deployment.kubernetes.io/revision: "2" # the deployment spec changed when odigos resource was added
+    deployment.kubernetes.io/revision: '2' # the deployment spec changed when odigos resource was added
   generation: 2 # the deployment spec changed when odigos resource was added
   labels:
     app: nodejs-manifest-env
@@ -155,10 +147,8 @@ spec:
   template:
     spec:
       containers:
-      - name: nodejs-manifest-env
-        resources:
-          limits:
-            instrumentation.odigos.io/javascript-native-community: "1"
+        - name: nodejs-manifest-env
+
 status:
   availableReplicas: 1
   observedGeneration: 2 # the deployment spec changed when odigos resource was added
@@ -170,7 +160,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    deployment.kubernetes.io/revision: "1"
+    deployment.kubernetes.io/revision: '1'
   generation: 1
   labels:
     app: cpp-http-server
@@ -183,9 +173,9 @@ spec:
   template:
     spec:
       containers:
-      - image: cpp-http-server:v0.0.1
-        name: cpp-http-server
-        resources: {}
+        - image: cpp-http-server:v0.0.1
+          name: cpp-http-server
+          resources: {}
 status:
   availableReplicas: 1
   observedGeneration: 1
@@ -197,7 +187,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    deployment.kubernetes.io/revision: "2"
+    deployment.kubernetes.io/revision: '2'
   generation: 2
   labels:
     app: java-supported-version
@@ -217,7 +207,7 @@ spec:
               protocol: TCP
           resources:
             limits:
-              instrumentation.odigos.io/java-native-community: "1"
+              instrumentation.odigos.io/java-native-community: '1'
 status:
   availableReplicas: 1
   observedGeneration: 2
@@ -229,7 +219,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    deployment.kubernetes.io/revision: "2"
+    deployment.kubernetes.io/revision: '2'
   generation: 2
   labels:
     app: java-azul
@@ -249,7 +239,7 @@ spec:
               protocol: TCP
           resources:
             limits:
-              instrumentation.odigos.io/java-native-community: "1"
+              instrumentation.odigos.io/java-native-community: '1'
 status:
   availableReplicas: 1
   observedGeneration: 2
@@ -261,7 +251,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    deployment.kubernetes.io/revision: "2"
+    deployment.kubernetes.io/revision: '2'
   generation: 2
   labels:
     app: java-supported-docker-env
@@ -281,7 +271,7 @@ spec:
               protocol: TCP
           resources:
             limits:
-              instrumentation.odigos.io/java-native-community: "1"
+              instrumentation.odigos.io/java-native-community: '1'
 status:
   availableReplicas: 1
   observedGeneration: 2
@@ -293,7 +283,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    deployment.kubernetes.io/revision: "2"
+    deployment.kubernetes.io/revision: '2'
   generation: 2
   labels:
     app: java-supported-manifest-env
@@ -313,7 +303,7 @@ spec:
               protocol: TCP
           resources:
             limits:
-              instrumentation.odigos.io/java-native-community: "1"
+              instrumentation.odigos.io/java-native-community: '1'
 status:
   availableReplicas: 1
   observedGeneration: 2
@@ -325,7 +315,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    deployment.kubernetes.io/revision: "2"
+    deployment.kubernetes.io/revision: '2'
   generation: 2
   labels:
     app: java-latest-version
@@ -345,7 +335,7 @@ spec:
               protocol: TCP
           resources:
             limits:
-              instrumentation.odigos.io/java-native-community: "1"
+              instrumentation.odigos.io/java-native-community: '1'
 status:
   availableReplicas: 1
   observedGeneration: 2
@@ -357,7 +347,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    deployment.kubernetes.io/revision: "2"
+    deployment.kubernetes.io/revision: '2'
   generation: 2
   labels:
     app: java-old-version
@@ -377,7 +367,7 @@ spec:
               protocol: TCP
           resources:
             limits:
-              instrumentation.odigos.io/java-native-community: "1"
+              instrumentation.odigos.io/java-native-community: '1'
 status:
   availableReplicas: 1
   observedGeneration: 2
@@ -389,7 +379,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    deployment.kubernetes.io/revision: "2" # the deployment spec changed when odigos resource was added
+    deployment.kubernetes.io/revision: '2' # the deployment spec changed when odigos resource was added
   generation: 2 # the deployment spec changed when odigos resource was added
   labels:
     app: python-latest-version
@@ -402,11 +392,11 @@ spec:
   template:
     spec:
       containers:
-      - image: python-latest-version:v0.0.1
-        name: python-latest-version
-        resources:
-          limits:
-            instrumentation.odigos.io/python-native-community: "1"
+        - image: python-latest-version:v0.0.1
+          name: python-latest-version
+          resources:
+            limits:
+              instrumentation.odigos.io/python-native-community: '1'
 status:
   availableReplicas: 1
   observedGeneration: 2 # the deployment spec changed when odigos resource was added
@@ -418,7 +408,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    deployment.kubernetes.io/revision: "2" # the deployment spec changed when odigos resource was added
+    deployment.kubernetes.io/revision: '2' # the deployment spec changed when odigos resource was added
   generation: 2 # the deployment spec changed when odigos resource was added
   labels:
     app: python-alpine
@@ -431,11 +421,11 @@ spec:
   template:
     spec:
       containers:
-      - image: python-alpine:v0.0.1
-        name: python-alpine
-        resources:
-          limits:
-            instrumentation.odigos.io/python-native-community: "1"
+        - image: python-alpine:v0.0.1
+          name: python-alpine
+          resources:
+            limits:
+              instrumentation.odigos.io/python-native-community: '1'
 status:
   availableReplicas: 1
   observedGeneration: 2 # the deployment spec changed when odigos resource was added
@@ -447,7 +437,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    deployment.kubernetes.io/revision: "1"
+    deployment.kubernetes.io/revision: '1'
   generation: 1
   labels:
     app: python-not-supported
@@ -460,8 +450,8 @@ spec:
   template:
     spec:
       containers:
-      - image: python-not-supported:v0.0.1
-        name: python-not-supported
+        - image: python-not-supported:v0.0.1
+          name: python-not-supported
 status:
   availableReplicas: 1
   observedGeneration: 1
@@ -473,7 +463,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    deployment.kubernetes.io/revision: "2" # the deployment spec changed when odigos resource was added
+    deployment.kubernetes.io/revision: '2' # the deployment spec changed when odigos resource was added
   generation: 2 # the deployment spec changed when odigos resource was added
   labels:
     app: python-min-version
@@ -486,11 +476,11 @@ spec:
   template:
     spec:
       containers:
-      - image: python-min-version:v0.0.1
-        name: python-min-version
-        resources:
-          limits:
-            instrumentation.odigos.io/python-native-community: "1"
+        - image: python-min-version:v0.0.1
+          name: python-min-version
+          resources:
+            limits:
+              instrumentation.odigos.io/python-native-community: '1'
 status:
   availableReplicas: 1
   observedGeneration: 2 # the deployment spec changed when odigos resource was added
@@ -502,7 +492,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    deployment.kubernetes.io/revision: "2" # the deployment spec changed when odigos resource was added
+    deployment.kubernetes.io/revision: '2' # the deployment spec changed when odigos resource was added
   generation: 2 # the deployment spec changed when odigos resource was added
   labels:
     app: dotnet8-musl
@@ -519,7 +509,7 @@ spec:
           name: dotnet8-musl
           resources:
             limits:
-              instrumentation.odigos.io/musl-dotnet-native-community: "1"
+              instrumentation.odigos.io/musl-dotnet-native-community: '1'
 status:
   availableReplicas: 1
   observedGeneration: 2 # the deployment spec changed when odigos resource was added
@@ -531,7 +521,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    deployment.kubernetes.io/revision: "2" # the deployment spec changed when odigos resource was added
+    deployment.kubernetes.io/revision: '2' # the deployment spec changed when odigos resource was added
   generation: 2 # the deployment spec changed when odigos resource was added
   labels:
     app: dotnet6-musl
@@ -548,7 +538,7 @@ spec:
           name: dotnet6-musl
           resources:
             limits:
-              instrumentation.odigos.io/musl-dotnet-native-community: "1"
+              instrumentation.odigos.io/musl-dotnet-native-community: '1'
 status:
   availableReplicas: 1
   observedGeneration: 2 # the deployment spec changed when odigos resource was added
@@ -560,7 +550,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    deployment.kubernetes.io/revision: "2" # the deployment spec changed when odigos resource was added
+    deployment.kubernetes.io/revision: '2' # the deployment spec changed when odigos resource was added
   generation: 2 # the deployment spec changed when odigos resource was added
   labels:
     app: dotnet8-glibc
@@ -577,7 +567,7 @@ spec:
           name: dotnet8-glibc
           resources:
             limits:
-              instrumentation.odigos.io/dotnet-native-community: "1"
+              instrumentation.odigos.io/dotnet-native-community: '1'
 status:
   availableReplicas: 1
   observedGeneration: 2 # the deployment spec changed when odigos resource was added
@@ -589,7 +579,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    deployment.kubernetes.io/revision: "2" # the deployment spec changed when odigos resource was added
+    deployment.kubernetes.io/revision: '2' # the deployment spec changed when odigos resource was added
   generation: 2 # the deployment spec changed when odigos resource was added
   labels:
     app: dotnet6-glibc
@@ -606,7 +596,7 @@ spec:
           name: dotnet6-glibc
           resources:
             limits:
-              instrumentation.odigos.io/dotnet-native-community: "1"
+              instrumentation.odigos.io/dotnet-native-community: '1'
 status:
   availableReplicas: 1
   observedGeneration: 2 # the deployment spec changed when odigos resource was added
