@@ -1,10 +1,9 @@
 import React from 'react';
 import { Text } from '../text';
 import ReactDOM from 'react-dom';
-import { XIcon } from '@/assets';
 import styled from 'styled-components';
 import { useKeyDown, useTransition } from '@/hooks';
-import { slide, Overlay, CenterThis, hexPercentValues } from '@/styles';
+import { CenterThis, Overlay, Theme, XIcon } from '@odigos/ui-components';
 
 interface Props {
   isOpen: boolean;
@@ -28,7 +27,7 @@ const Container = styled.div`
   border: ${({ theme }) => `1px solid ${theme.colors.border}`};
   border-radius: 40px;
   box-shadow: ${({ theme }) => {
-    const color = theme.colors.primary + hexPercentValues['010'];
+    const color = theme.colors.primary + Theme.hexPercent['010'];
     return `0px 1px 1px 0px ${color}, 0px 2px 2px 0px ${color}, 0px 5px 5px 0px ${color}, 0px 10px 10px 0px ${color}, 0px 0px 8px 0px ${color}`;
   }};
 `;
@@ -88,8 +87,8 @@ export const Modal: React.FC<Props> = ({ isOpen, noOverlay, header, actionCompon
 
   const Transition = useTransition({
     container: Container,
-    animateIn: slide.in['center'],
-    animateOut: slide.out['center'],
+    animateIn: Theme.slide.in['center'],
+    animateOut: Theme.slide.out['center'],
   });
 
   if (!isOpen) return null;

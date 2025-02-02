@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { SVG } from '@/assets';
 import BaseNode from './base-node';
 import styled from 'styled-components';
+import { Types } from '@odigos/ui-components';
 import { useNodeDataFlowHandlers } from '@/hooks';
 import { type Node, type NodeProps } from '@xyflow/react';
 import { type K8sActualSource, NODE_TYPES, OVERVIEW_ENTITY_TYPES, STATUSES, type WorkloadId } from '@/types';
@@ -22,7 +22,7 @@ interface Props
               status: STATUSES;
               title: string;
               subTitle: string;
-              icon?: SVG;
+              icon?: Types.SVG;
               iconSrc?: string;
               raw: K8sActualSource;
             },

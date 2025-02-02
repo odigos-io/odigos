@@ -2,8 +2,11 @@ package common
 
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	controllerconfig "github.com/odigos-io/odigos/autoscaler/controllers/controller_config"
 	"github.com/odigos-io/odigos/common/config"
 )
+
+var ControllerConfig *controllerconfig.ControllerConfig
 
 /* Convenience methods to convert between k8s types and config interfaces */
 func ToProcessorConfigurerArray(items []*odigosv1.Processor) []config.ProcessorConfigurer {

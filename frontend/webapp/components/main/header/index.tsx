@@ -3,12 +3,11 @@ import { useConfig } from '@/hooks';
 import { PlatformTitle } from './cp-title';
 import { FORM_ALERTS, SLACK_LINK } from '@/utils';
 import styled, { useTheme } from 'styled-components';
-import { FlexRow, hexPercentValues } from '@/styles';
 import { NOTIFICATION_TYPE, PlatformTypes } from '@/types';
 import { NotificationManager, ToggleDarkMode } from '@/components';
-import { OdigosLogoText, SlackLogo, TerminalIcon } from '@/assets';
 import { DRAWER_OTHER_TYPES, useDrawerStore, useStatusStore } from '@/store';
 import { ConnectionStatus, IconButton, Tooltip } from '@/reuseable-components';
+import { FlexRow, OdigosLogoText, SlackLogo, TerminalIcon, Theme } from '@odigos/ui-components';
 
 interface MainHeaderProps {}
 
@@ -16,7 +15,7 @@ const HeaderContainer = styled(FlexRow)`
   width: 100%;
   padding: 12px 0;
   background-color: ${({ theme }) => theme.colors.dark_grey};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border + hexPercentValues['050']};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border + Theme.hexPercent['050']};
 `;
 
 const AlignLeft = styled(FlexRow)`

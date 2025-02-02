@@ -165,6 +165,12 @@ spec:
                   fieldPath: metadata.name
             - name: GOMEMLIMIT
               (value != null): true
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  containerName: data-collection
+                  divisor: "0"
+                  resource: limits.cpu
           resources:
             requests:
               (memory != null): true

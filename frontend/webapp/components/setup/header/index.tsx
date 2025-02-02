@@ -1,8 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
-import { OdigosLogoText } from '@/assets';
-import { FlexRow, hexPercentValues } from '@/styles';
 import { ToggleDarkMode } from '@/components/common';
+import { FlexRow, OdigosLogoText, Theme } from '@odigos/ui-components';
 import { NavigationButtonProps, NavigationButtons, Text } from '@/reuseable-components';
 
 interface Props {
@@ -16,7 +15,7 @@ const Container = styled.div`
   height: 80px;
   padding: 0 24px 0 32px;
   background-color: ${({ theme }) => theme.colors.dark_grey};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border + hexPercentValues['050']};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border + Theme.hexPercent['050']};
 `;
 
 const Title = styled(Text)`

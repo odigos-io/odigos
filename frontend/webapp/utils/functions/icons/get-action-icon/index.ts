@@ -1,5 +1,5 @@
 import { ActionsType } from '@/types';
-import { AddClusterInfoIcon, DeleteAttributeIcon, PiiMaskingIcon, RenameAttributeIcon, SamplerIcon, SVG } from '@/assets';
+import { AddClusterInfoIcon, DeleteAttributeIcon, PiiMaskingIcon, RenameAttributeIcon, SamplerIcon, Types } from '@odigos/ui-components';
 
 export const getActionIcon = (type: ActionsType | 'sampler' | 'attributes') => {
   const typeLowerCased = type?.toLowerCase();
@@ -9,7 +9,7 @@ export const getActionIcon = (type: ActionsType | 'sampler' | 'attributes') => {
   if (isSamplerCategory) return SamplerIcon;
   if (isAttributesCategory) return PiiMaskingIcon;
 
-  const LOGOS: Record<ActionsType, SVG> = {
+  const LOGOS: Record<ActionsType, Types.SVG> = {
     [ActionsType.ADD_CLUSTER_INFO]: AddClusterInfoIcon,
     [ActionsType.DELETE_ATTRIBUTES]: DeleteAttributeIcon,
     [ActionsType.PII_MASKING]: PiiMaskingIcon,

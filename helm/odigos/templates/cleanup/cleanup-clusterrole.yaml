@@ -16,6 +16,6 @@ rules:
   resources: ["customresourcedefinitions"]
   verbs: ["list", "get", "patch", "delete"]
 - apiGroups: ["admissionregistration.k8s.io"]
-  resources: ["mutatingwebhookconfigurations"]
+  resources: ["mutatingwebhookconfigurations", "validatingwebhookconfigurations"]
   verbs: ["get", "list", "delete"]
   

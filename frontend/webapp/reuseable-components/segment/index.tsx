@@ -1,14 +1,13 @@
 import React, { CSSProperties, useEffect, useId, useRef, useState } from 'react';
-import { SVG } from '@/assets';
 import { Text } from '../text';
-import { FlexRow } from '@/styles';
 import styled from 'styled-components';
+import { FlexRow, Types } from '@odigos/ui-components';
 
 type SelectedValue = any;
 
 interface Props {
   options: {
-    icon?: SVG;
+    icon?: Types.SVG;
     label?: string;
     value: SelectedValue;
     selectedBgColor?: CSSProperties['backgroundColor'];

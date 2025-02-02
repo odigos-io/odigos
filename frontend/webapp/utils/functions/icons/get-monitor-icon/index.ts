@@ -1,8 +1,8 @@
 import { SignalUppercase } from '@/utils/constants';
-import { LogsIcon, MetricsIcon, SVG, TracesIcon } from '@/assets';
+import { LogsIcon, MetricsIcon, TracesIcon, Types } from '@odigos/ui-components';
 
 export const getMonitorIcon = (type: string) => {
-  const LOGOS: Record<SignalUppercase, SVG> = {
+  const LOGOS: Record<SignalUppercase, Types.SVG> = {
     ['LOGS']: LogsIcon,
     ['METRICS']: MetricsIcon,
     ['TRACES']: TracesIcon,

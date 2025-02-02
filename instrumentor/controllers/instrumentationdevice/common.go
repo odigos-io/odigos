@@ -122,7 +122,7 @@ func enableOdigosInstrumentation(ctx context.Context, kubeClient client.Client, 
 	return nil
 }
 
-func removeInstrumentationDeviceFromWorkload(ctx context.Context, kubeClient client.Client, namespace string, workloadKind workload.WorkloadKind, workloadName string, uninstrumentReason ApplyInstrumentationDeviceReason) error {
+func removeInstrumentationDeviceFromWorkload(ctx context.Context, kubeClient client.Client, namespace string, workloadKind k8sconsts.WorkloadKind, workloadName string, uninstrumentReason ApplyInstrumentationDeviceReason) error {
 
 	workloadObj := workload.ClientObjectFromWorkloadKind(workloadKind)
 	if workloadObj == nil {
