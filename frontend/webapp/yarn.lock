@@ -514,10 +514,10 @@
   resolved "https://registry.yarnpkg.com/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz#3dc35ba0f1e66b403c00b39344f870298ebb1c8e"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
-"@odigos/ui-components@^0.0.28":
-  version "0.0.28"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-components/-/ui-components-0.0.28.tgz#dde39415c224d4915fa317e519ef2b7c2fab041c"
-  integrity sha512-9m5iz+FL6Vvf+tXBu0Mf+/zGYb549YCsdbjwTS6wqcgFxgExl/Yt2fLgyFrE/msdYahgiOmWKPAeGI0wKIrjEw==
+"@odigos/ui-components@^0.0.29":
+  version "0.0.29"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-components/-/ui-components-0.0.29.tgz#ef433b17d37596cef9bff2587e6393846d66d767"
+  integrity sha512-ysXnkZrlklm5DPHeuRYFG5tHxOC7jT2s0/j3GsKAwKvMFiMp+ziEoHkVKQ53c0k/zLoAGJSmuxBaO2YSUVkn1g==
   dependencies:
     javascript-time-ago "^2.5.11"
     prism-react-renderer "^2.4.1"

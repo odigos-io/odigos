@@ -1,10 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { useAppStore } from '@/store';
 import { useSourceCRUD } from '@/hooks';
-import { DeleteWarning } from '@/components';
 import { type K8sActualSource } from '@/types';
 import styled, { useTheme } from 'styled-components';
-import { Badge, Button, Divider, ENTITY_TYPES, Text, Theme, TrashIcon, useTransition } from '@odigos/ui-components';
+import { Badge, Button, DeleteWarning, Divider, ENTITY_TYPES, Text, Theme, TrashIcon, useTransition } from '@odigos/ui-components';
 
 const Container = styled.div`
   position: fixed;

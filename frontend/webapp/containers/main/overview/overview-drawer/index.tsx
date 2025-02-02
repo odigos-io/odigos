@@ -1,9 +1,8 @@
 import { forwardRef, type PropsWithChildren, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useTheme } from 'styled-components';
 import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
-import { CancelWarning, DeleteWarning } from '@/components/modals';
 import { useDrawerStore, useNotificationStore, usePendingStore } from '@/store';
-import { Drawer, DrawerProps, EditIcon, ENTITY_TYPES, Input, NOTIFICATION_TYPE, type SVG, Text, TrashIcon, useKeyDown } from '@odigos/ui-components';
+import { CancelWarning, DeleteWarning, Drawer, DrawerProps, EditIcon, ENTITY_TYPES, Input, NOTIFICATION_TYPE, type SVG, Text, TrashIcon, useKeyDown } from '@odigos/ui-components';
 
 interface OverviewDrawerProps {
   title: string;

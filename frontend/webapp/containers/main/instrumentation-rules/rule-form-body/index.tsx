@@ -1,9 +1,8 @@
 import React from 'react';
-import { DocsButton } from '@/components';
 import RuleCustomFields from './custom-fields';
 import styled, { useTheme } from 'styled-components';
 import type { InstrumentationRuleInput } from '@/types';
-import { CheckCircledIcon, CrossCircledIcon, Input, type InstrumentationRuleOption, SectionTitle, Segment, Text, TextArea, Theme } from '@odigos/ui-components';
+import { CheckCircledIcon, CrossCircledIcon, DocsButton, Input, type InstrumentationRuleOption, SectionTitle, Segment, Text, TextArea, Theme } from '@odigos/ui-components';
 
 interface Props {
   isUpdate?: boolean;
