@@ -49,6 +49,10 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
   const mapped = useMemo(() => {
     return (data?.computePlatform?.actions || []).map((item) => {
       const parsedSpec = typeof item.spec === 'string' ? safeJsonParse(item.spec, {} as ActionItem) : item.spec;
+
+      // format signals to lower
+      parsedSpec.signals = parsedSpec.signals.map((str) => str.toLowerCase());
+
       return { ...item, spec: parsedSpec };
     });
   }, [data]);
@@ -95,6 +99,7 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
+        // format signals to upper
         createAction({ variables: { action: { ...action, signals: action.signals.map((signal) => signal.toUpperCase()) } } });
       }
     },
@@ -102,6 +107,7 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
+        // format signals to upper
         updateAction({ variables: { id, action: { ...action, signals: action.signals.map((signal) => signal.toUpperCase()) } } });
       }
     },
