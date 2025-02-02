@@ -25,12 +25,24 @@ Key Features of Odigos:
 Get started with Odigos today to effortlessly improve the observability of your Kubernetes services!`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
+		var client *kube.Client
 
-		client := kube.GetCLIClientOrExit(cmd)
-		ctx = cmdcontext.ContextWithKubeClient(ctx, client)
+		// for version command, allow to run without a kube client (if only want to print CLI version)
+		if cmd.Name() == "version" {
+			optionalClient, err := kube.CreateClient(cmd)
+			if err == nil {
+				client = optionalClient
+				ctx = cmdcontext.ContextWithKubeClient(ctx, optionalClient)
+			}
+		} else {
+			client = kube.GetCLIClientOrExit(cmd)
+			ctx = cmdcontext.ContextWithKubeClient(ctx, client)
+		}
 
-		details := autodetect.GetK8SClusterDetails(ctx, kubeConfig, kubeContext, client)
-		ctx = cmdcontext.ContextWithClusterDetails(ctx, details)
+		if client != nil {
+			details := autodetect.GetK8SClusterDetails(ctx, kubeConfig, kubeContext, client)
+			ctx = cmdcontext.ContextWithClusterDetails(ctx, details)
+		}
 
 		cmd.SetContext(ctx)
 	},
