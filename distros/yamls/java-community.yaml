@@ -1,0 +1,23 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: OtelDistribution
+metadata:
+  name: java-community
+spec:
+  name: java-community
+  language: java
+  runtimeEnvironments:
+    - name: java-virtual-machine
+      version: '>= 8'
+  displayName: Java Community Native Instrumentation
+  description: |
+    This distribution is for JVM-based applications (Java, Scala, Kotlin, etc.) using OpenTelemetry Native SDK and instrumentation libraries from the OpenTelemetry community.
+  tiers: 
+    - community
+  environmentVariables:
+    - envName: JAVA_OPTS
+      envValue: '-javaagent:{{ODIGOS_AGENTS_DIR}}/java/javaagent.jar'
+      delimiter: ' '
+    - envName: JAVA_TOOL_OPTIONS
+      envValue: '-javaagent:{{ODIGOS_AGENTS_DIR}}/java/javaagent.jar'
+      delimiter: ' '
+  
