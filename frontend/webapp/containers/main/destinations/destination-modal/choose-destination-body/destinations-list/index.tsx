@@ -1,11 +1,9 @@
 import React from 'react';
 import styled from 'styled-components';
 import { IDestinationListItem } from '@/hooks';
-import { capitalizeFirstLetter } from '@/utils';
-import { DataTab } from '@/reuseable-components';
 import type { DestinationTypeItem } from '@/types';
-import { NoDataFound, SectionTitle, Types } from '@odigos/ui-components';
 import { PotentialDestinationsList } from './potential-destinations-list';
+import { capitalizeFirstLetter, DataTab, NoDataFound, SectionTitle, SIGNAL_TYPE } from '@odigos/ui-components';
 
 const Container = styled.div`
   display: flex;
@@ -56,7 +54,7 @@ export const DestinationsList: React.FC<DestinationsListProps> = ({ items, setSe
               title={item.displayName}
               iconSrc={item.imageUrl}
               hoverText='Select'
-              monitors={Object.keys(item.supportedSignals).filter((signal: Types.SIGNAL_TYPE) => item.supportedSignals[signal].supported) as Types.SIGNAL_TYPE[]}
+              monitors={Object.keys(item.supportedSignals).filter((signal: SIGNAL_TYPE) => item.supportedSignals[signal].supported) as SIGNAL_TYPE[]}
               monitorsWithLabels
               onClick={() => setSelectedItems(item)}
             />

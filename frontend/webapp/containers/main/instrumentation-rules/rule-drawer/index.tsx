@@ -2,14 +2,13 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { RuleFormBody } from '../';
 import buildCard from './build-card';
 import styled from 'styled-components';
-import { DataCard } from '@/reuseable-components';
 import buildDrawerItem from './build-drawer-item';
 import { ACTION, DATA_CARDS, FORM_ALERTS } from '@/utils';
 import OverviewDrawer from '../../overview/overview-drawer';
+import { type InstrumentationRuleSpecMapped } from '@/types';
 import { useDrawerStore, useNotificationStore } from '@/store';
-import { NOTIFICATION_TYPE, type InstrumentationRuleSpecMapped } from '@/types';
 import { useInstrumentationRuleCRUD, useInstrumentationRuleFormData } from '@/hooks';
-import { getInstrumentationRuleIcon, INSTRUMENTATION_RULE_OPTIONS, Types } from '@odigos/ui-components';
+import { DataCard, ENTITY_TYPES, getInstrumentationRuleIcon, INSTRUMENTATION_RULE_OPTIONS, NOTIFICATION_TYPE } from '@odigos/ui-components';
 
 interface Props {}
 
@@ -42,11 +41,11 @@ export const RuleDrawer: React.FC<Props> = () => {
     if (!!fetchedItems?.length) {
       const found = fetchedItems.find((x) => x.ruleId === id);
       if (!!found) {
-        return setSelectedItem({ id, type: Types.ENTITY_TYPES.INSTRUMENTATION_RULE, item: found });
+        return setSelectedItem({ id, type: ENTITY_TYPES.INSTRUMENTATION_RULE, item: found });
       }
     }
 
-    setSelectedItem({ id, type: Types.ENTITY_TYPES.INSTRUMENTATION_RULE, item: buildDrawerItem(id, formData, item) });
+    setSelectedItem({ id, type: ENTITY_TYPES.INSTRUMENTATION_RULE, item: buildDrawerItem(id, formData, item) });
   };
 
   // This should keep the drawer up-to-date with the latest data
@@ -87,7 +86,7 @@ export const RuleDrawer: React.FC<Props> = () => {
         type: NOTIFICATION_TYPE.WARNING,
         title: FORM_ALERTS.FORBIDDEN,
         message: FORM_ALERTS.CANNOT_EDIT_RULE,
-        crdType: Types.ENTITY_TYPES.INSTRUMENTATION_RULE,
+        crdType: ENTITY_TYPES.INSTRUMENTATION_RULE,
         target: id,
         hideFromHistory: true,
       });
@@ -107,7 +106,7 @@ export const RuleDrawer: React.FC<Props> = () => {
         type: NOTIFICATION_TYPE.WARNING,
         title: FORM_ALERTS.FORBIDDEN,
         message: FORM_ALERTS.CANNOT_DELETE_RULE,
-        crdType: Types.ENTITY_TYPES.INSTRUMENTATION_RULE,
+        crdType: ENTITY_TYPES.INSTRUMENTATION_RULE,
         target: id,
         hideFromHistory: true,
       });

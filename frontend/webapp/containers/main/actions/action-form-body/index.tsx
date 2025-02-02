@@ -3,11 +3,11 @@ import { DocsButton } from '@/components';
 import { type ActionInput } from '@/types';
 import ActionCustomFields from './custom-fields';
 import styled, { useTheme } from 'styled-components';
-import { CheckCircledIcon, CrossCircledIcon, Input, MonitorsCheckboxes, SectionTitle, Segment, Text, TextArea, Theme, Types } from '@odigos/ui-components';
+import { type ActionOption, CheckCircledIcon, CrossCircledIcon, Input, MonitorsCheckboxes, SectionTitle, Segment, Text, TextArea, Theme } from '@odigos/ui-components';
 
 interface Props {
   isUpdate?: boolean;
-  action: Types.ActionOption;
+  action: ActionOption;
   formData: ActionInput;
   formErrors: Record<string, string>;
   handleFormChange: (key: keyof ActionInput, val: any) => void;

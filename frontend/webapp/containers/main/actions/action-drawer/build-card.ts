@@ -1,6 +1,6 @@
 import { DISPLAY_TITLES } from '@/utils';
 import type { ActionDataParsed } from '@/types';
-import { DataCardFieldTypes, type DataCardRow } from '@/reuseable-components';
+import { DATA_CARD_FIELD_TYPES, DataCardFieldsProps } from '@odigos/ui-components';
 
 const buildCard = (action: ActionDataParsed) => {
   const {
@@ -21,13 +21,13 @@ const buildCard = (action: ActionDataParsed) => {
     },
   } = action;
 
-  const arr: DataCardRow[] = [
+  const arr: DataCardFieldsProps['data'] = [
     { title: DISPLAY_TITLES.TYPE, value: type },
-    { type: DataCardFieldTypes.ACTIVE_STATUS, title: DISPLAY_TITLES.STATUS, value: String(!disabled) },
+    { type: DATA_CARD_FIELD_TYPES.ACTIVE_STATUS, title: DISPLAY_TITLES.STATUS, value: String(!disabled) },
     { title: DISPLAY_TITLES.NAME, value: actionName },
     { title: DISPLAY_TITLES.NOTES, value: notes },
-    { type: DataCardFieldTypes.DIVIDER, width: '100%' },
-    { type: DataCardFieldTypes.MONITORS, title: DISPLAY_TITLES.SIGNALS_FOR_PROCESSING, value: signals.map((str) => str.toLowerCase()).join(', ') },
+    { type: DATA_CARD_FIELD_TYPES.DIVIDER, width: '100%' },
+    { type: DATA_CARD_FIELD_TYPES.MONITORS, title: DISPLAY_TITLES.SIGNALS_FOR_PROCESSING, value: signals.map((str) => str.toLowerCase()).join(', ') },
   ];
 
   if (clusterAttributes) {

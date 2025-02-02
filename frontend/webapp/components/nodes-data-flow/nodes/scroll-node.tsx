@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import BaseNode from './base-node';
 import styled from 'styled-components';
-import { Types } from '@odigos/ui-components';
 import { useNodeDataFlowHandlers } from '@/hooks';
 import { type Node, type NodeProps } from '@xyflow/react';
-import { type K8sActualSource, NODE_TYPES, STATUSES, type WorkloadId } from '@/types';
+import { type K8sActualSource, NODE_TYPES } from '@/types';
+import { ENTITY_TYPES, HEALTH_STATUS, type SVG, type WorkloadId } from '@odigos/ui-components';
 
 interface Props
   extends NodeProps<
@@ -18,11 +18,11 @@ interface Props
               nodeWidth: number;
               framePadding: number;
               id: WorkloadId;
-              type: Types.ENTITY_TYPES;
-              status: STATUSES;
+              type: ENTITY_TYPES;
+              status: HEALTH_STATUS;
               title: string;
               subTitle: string;
-              icon?: Types.SVG;
+              icon?: SVG;
               iconSrc?: string;
               raw: K8sActualSource;
             },

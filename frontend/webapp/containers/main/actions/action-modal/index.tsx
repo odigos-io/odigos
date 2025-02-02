@@ -2,9 +2,8 @@ import React, { useState } from 'react';
 import { ACTION } from '@/utils';
 import { ActionFormBody } from '../';
 import { ModalBody } from '@/styles';
-import { NavigationButtons } from '@/reuseable-components';
 import { useActionCRUD, useActionFormData } from '@/hooks/actions';
-import { ACTION_OPTIONS, AutocompleteInput, CenterThis, Divider, FadeLoader, Modal, SectionTitle, Types, useKeyDown } from '@odigos/ui-components';
+import { ACTION_OPTIONS, ActionOption, AutocompleteInput, CenterThis, Divider, FadeLoader, Modal, NavigationButtons, SectionTitle, useKeyDown } from '@odigos/ui-components';
 
 interface Props {
   isOpen: boolean;
@@ -17,7 +16,7 @@ export const ActionModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const { createAction, loading } = useActionCRUD({ onSuccess: handleClose });
   const { formData, formErrors, handleFormChange, resetFormData, validateForm } = useActionFormData();
 
-  const [selectedItem, setSelectedItem] = useState<Types.ActionOption | undefined>(undefined);
+  const [selectedItem, setSelectedItem] = useState<ActionOption | undefined>(undefined);
 
   function handleClose() {
     resetFormData();
@@ -25,7 +24,7 @@ export const ActionModal: React.FC<Props> = ({ isOpen, onClose }) => {
     onClose();
   }
 
-  const handleSelect = (item?: Types.ActionOption) => {
+  const handleSelect = (item?: ActionOption) => {
     resetFormData();
     handleFormChange('type', item?.type || '');
     setSelectedItem(item);

@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
-import { safeJsonParse } from '@/utils';
 import type { ErrorSamplerSpec } from '@/types';
-import { Input, isEmpty } from '@odigos/ui-components';
+import { Input, isEmpty, safeJsonParse } from '@odigos/ui-components';
 
 type Props = {
   value: string;

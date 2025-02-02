@@ -1,9 +1,9 @@
 import { type Node } from '@xyflow/react';
+import { extractMonitors } from '@/utils';
 import nodeConfig from './node-config.json';
 import { type NodePositions } from './get-node-positions';
-import { getEntityIcon, Types } from '@odigos/ui-components';
-import { extractMonitors, getEntityLabel, getHealthStatus } from '@/utils';
-import { type ActualDestination, NODE_TYPES, OVERVIEW_NODE_TYPES, STATUSES } from '@/types';
+import { type ActualDestination, NODE_TYPES, OVERVIEW_NODE_TYPES } from '@/types';
+import { ENTITY_TYPES, getEntityIcon, getEntityLabel, getHealthStatus, HEALTH_STATUS } from '@odigos/ui-components';
 
 interface Params {
   loading: boolean;
@@ -18,9 +18,9 @@ const mapToNodeData = (entity: Params['entities'][0]) => {
   return {
     nodeWidth,
     id: entity.id,
-    type: Types.ENTITY_TYPES.DESTINATION,
+    type: ENTITY_TYPES.DESTINATION,
     status: getHealthStatus(entity),
-    title: getEntityLabel(entity, Types.ENTITY_TYPES.DESTINATION, { prioritizeDisplayName: true }),
+    title: getEntityLabel(entity, ENTITY_TYPES.DESTINATION, { prioritizeDisplayName: true }),
     subTitle: entity.destinationType.displayName,
     iconSrc: entity.destinationType.imageUrl,
     monitors: extractMonitors(entity.exportedSignals),
@@ -30,19 +30,19 @@ const mapToNodeData = (entity: Params['entities'][0]) => {
 
 export const buildDestinationNodes = ({ loading, entities, positions, unfilteredCount }: Params) => {
   const nodes: Node[] = [];
-  const position = positions[Types.ENTITY_TYPES.DESTINATION];
+  const position = positions[ENTITY_TYPES.DESTINATION];
 
   nodes.push({
     id: 'destination-header',
     type: NODE_TYPES.HEADER,
     position: {
-      x: positions[Types.ENTITY_TYPES.DESTINATION]['x'],
+      x: positions[ENTITY_TYPES.DESTINATION]['x'],
       y: 0,
     },
     data: {
       nodeWidth,
       title: 'Destinations',
-      icon: getEntityIcon(Types.ENTITY_TYPES.DESTINATION),
+      icon: getEntityIcon(ENTITY_TYPES.DESTINATION),
       tagValue: unfilteredCount,
     },
   });
@@ -71,7 +71,7 @@ export const buildDestinationNodes = ({ loading, entities, positions, unfiltered
       data: {
         nodeWidth,
         type: OVERVIEW_NODE_TYPES.ADD_DESTINATION,
-        status: STATUSES.HEALTHY,
+        status: HEALTH_STATUS.HEALTHY,
         title: 'ADD DESTINATION',
         subTitle: 'To monitor OpenTelemetry data',
       },

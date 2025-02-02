@@ -2,14 +2,27 @@ import React, { useEffect, useMemo, useState } from 'react';
 import buildCard from './build-card';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
+import { type K8sActualSource } from '@/types';
 import buildDrawerItem from './build-drawer-item';
 import { UpdateSourceBody } from '../update-source-body';
 import { useDescribeSource, useSourceCRUD } from '@/hooks';
 import OverviewDrawer from '../../overview/overview-drawer';
-import { type WorkloadId, type K8sActualSource } from '@/types';
-import { ACTION, BACKEND_BOOLEAN, DATA_CARDS, safeJsonStringify } from '@/utils';
-import { CodeIcon, getEntityIcon, ListIcon, Segment, Types } from '@odigos/ui-components';
-import { ConditionDetails, DataCard, DataCardRow, DataCardFieldTypes } from '@/reuseable-components';
+import { ACTION, BACKEND_BOOLEAN, DATA_CARDS } from '@/utils';
+import {
+  CodeIcon,
+  ConditionDetails,
+  ConditionDetailsProps,
+  DATA_CARD_FIELD_TYPES,
+  DataCard,
+  type DataCardFieldsProps,
+  ENTITY_TYPES,
+  getEntityIcon,
+  ListIcon,
+  NOTIFICATION_TYPE,
+  safeJsonStringify,
+  Segment,
+  type WorkloadId,
+} from '@odigos/ui-components';
 
 interface Props {}
 
@@ -51,11 +64,11 @@ export const SourceDrawer: React.FC<Props> = () => {
     if (!!fetchedItems?.length) {
       const found = fetchedItems.find((x) => x.namespace === namespace && x.name === name && x.kind === kind);
       if (!!found) {
-        return setSelectedItem({ id, type: Types.ENTITY_TYPES.SOURCE, item: found });
+        return setSelectedItem({ id, type: ENTITY_TYPES.SOURCE, item: found });
       }
     }
 
-    setSelectedItem({ id, type: Types.ENTITY_TYPES.SOURCE, item: buildDrawerItem(id, formData, item) });
+    setSelectedItem({ id, type: ENTITY_TYPES.SOURCE, item: buildDrawerItem(id, formData, item) });
   };
 
   // This should keep the drawer up-to-date with the latest data
@@ -87,6 +100,20 @@ export const SourceDrawer: React.FC<Props> = () => {
     return arr;
   }, [selectedItem]);
 
+  const conditionsData: ConditionDetailsProps = useMemo(() => {
+    if (!selectedItem) return { conditions: [] };
+
+    const { item } = selectedItem as { item: K8sActualSource };
+
+    return {
+      conditions:
+        item?.conditions?.map(({ status, message }) => ({
+          status: ['false', 'error'].includes(String(status).toLowerCase()) ? NOTIFICATION_TYPE.ERROR : NOTIFICATION_TYPE.SUCCESS,
+          message,
+        })) || [],
+    };
+  }, [selectedItem]);
+
   const containersData = useMemo(() => {
     if (!selectedItem) return [];
 
@@ -99,13 +126,13 @@ export const SourceDrawer: React.FC<Props> = () => {
       item?.containers?.map(
         (container) =>
           ({
-            type: DataCardFieldTypes.SOURCE_CONTAINER,
+            type: DATA_CARD_FIELD_TYPES.SOURCE_CONTAINER,
             width: '100%',
             value: JSON.stringify({
               ...container,
               hasPresenceOfOtherAgent,
             }),
-          } as DataCardRow),
+          } as DataCardFieldsProps['data'][0]),
       ) || []
     );
   }, [selectedItem]);
@@ -139,7 +166,7 @@ export const SourceDrawer: React.FC<Props> = () => {
     <OverviewDrawer
       title={item.otelServiceName || item.name}
       titleTooltip='This attribute is used to identify the name of the service (service.name) that is generating telemetry data.'
-      icon={getEntityIcon(Types.ENTITY_TYPES.SOURCE)}
+      icon={getEntityIcon(ENTITY_TYPES.SOURCE)}
       isEdit={isEditing}
       isFormDirty={isFormDirty}
       onEdit={handleEdit}
@@ -159,7 +186,7 @@ export const SourceDrawer: React.FC<Props> = () => {
         </FormContainer>
       ) : (
         <DataContainer>
-          <ConditionDetails conditions={item.conditions || []} />
+          <ConditionDetails conditions={conditionsData.conditions} />
           <DataCard title={DATA_CARDS.SOURCE_DETAILS} data={cardData} />
           <DataCard title={DATA_CARDS.DETECTED_CONTAINERS} titleBadge={containersData.length} description={DATA_CARDS.DETECTED_CONTAINERS_DESCRIPTION} data={containersData} />
           <DataCard
@@ -176,7 +203,7 @@ export const SourceDrawer: React.FC<Props> = () => {
             }
             data={[
               {
-                type: DataCardFieldTypes.CODE,
+                type: DATA_CARD_FIELD_TYPES.CODE,
                 value: JSON.stringify({
                   language: 'json',
                   code: safeJsonStringify(isPrettyMode ? restructureForPrettyMode(describe) : describe),

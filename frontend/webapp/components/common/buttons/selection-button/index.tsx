@@ -1,12 +1,12 @@
 import React from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
-import { Badge, Button, Text, Theme, Types } from '@odigos/ui-components';
+import { Badge, Button, type SVG, Text, Theme } from '@odigos/ui-components';
 
 interface Props {
   label: string;
   onClick: () => void;
-  icon?: Types.SVG;
+  icon?: SVG;
   iconSrc?: string;
   badgeLabel?: string | number;
   badgeFilled?: boolean;

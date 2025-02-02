@@ -3,11 +3,11 @@ import { DocsButton } from '@/components';
 import RuleCustomFields from './custom-fields';
 import styled, { useTheme } from 'styled-components';
 import type { InstrumentationRuleInput } from '@/types';
-import { CheckCircledIcon, CrossCircledIcon, Input, SectionTitle, Segment, Text, TextArea, Theme, Types } from '@odigos/ui-components';
+import { CheckCircledIcon, CrossCircledIcon, Input, type InstrumentationRuleOption, SectionTitle, Segment, Text, TextArea, Theme } from '@odigos/ui-components';
 
 interface Props {
   isUpdate?: boolean;
-  rule: Types.InstrumentationRuleOption;
+  rule: InstrumentationRuleOption;
   formData: InstrumentationRuleInput;
   formErrors: Record<string, string>;
   handleFormChange: (key: keyof InstrumentationRuleInput, val: any) => void;

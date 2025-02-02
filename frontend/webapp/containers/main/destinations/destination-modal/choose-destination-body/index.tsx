@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { useDestinationTypes } from '@/hooks';
 import { DestinationsList } from './destinations-list';
 import type { DestinationTypeItem, SupportedSignals } from '@/types';
-import { Divider, Dropdown, Input, MonitorsCheckboxes, SearchIcon, SectionTitle, Types } from '@odigos/ui-components';
+import { Divider, Dropdown, Input, MonitorsCheckboxes, SearchIcon, SectionTitle, SIGNAL_TYPE } from '@odigos/ui-components';
 
 interface Props {
   onSelect: (item: DestinationTypeItem) => void;
@@ -34,12 +34,12 @@ const DROPDOWN_OPTIONS = [
 ];
 
 const DEFAULT_CATEGORY = DROPDOWN_OPTIONS[0];
-const DEFAULT_MONITORS: Types.SIGNAL_TYPE[] = [Types.SIGNAL_TYPE.LOGS, Types.SIGNAL_TYPE.METRICS, Types.SIGNAL_TYPE.TRACES];
+const DEFAULT_MONITORS: SIGNAL_TYPE[] = [SIGNAL_TYPE.LOGS, SIGNAL_TYPE.METRICS, SIGNAL_TYPE.TRACES];
 
 export const ChooseDestinationBody: React.FC<Props> = ({ onSelect, hidden }) => {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(DEFAULT_CATEGORY);
-  const [selectedMonitors, setSelectedMonitors] = useState<Types.SIGNAL_TYPE[]>(DEFAULT_MONITORS);
+  const [selectedMonitors, setSelectedMonitors] = useState<SIGNAL_TYPE[]>(DEFAULT_MONITORS);
 
   const { destinations: destinationTypes } = useDestinationTypes();
 

@@ -1,12 +1,9 @@
 import React from 'react';
 import styled from 'styled-components';
 import { useDarkModeStore } from '@/store';
-import { NavigationButtonProps, NavigationButtons } from '@/reuseable-components';
-import { FlexRow, OdigosLogoText, Text, Theme, ToggleDarkMode } from '@odigos/ui-components';
+import { FlexRow, NavigationButtons, type NavigationButtonsProps, OdigosLogoText, Text, Theme, ToggleDarkMode } from '@odigos/ui-components';
 
-interface Props {
-  navigationButtons: NavigationButtonProps[];
-}
+interface Props extends NavigationButtonsProps {}
 
 const Container = styled.div`
   display: flex;
@@ -24,7 +21,7 @@ const Title = styled(Text)`
   transform: translateX(-50%);
 `;
 
-export const SetupHeader: React.FC<Props> = ({ navigationButtons }) => {
+export const SetupHeader: React.FC<Props> = ({ buttons }) => {
   const { darkMode, setDarkMode } = useDarkModeStore();
 
   return (
@@ -35,7 +32,7 @@ export const SetupHeader: React.FC<Props> = ({ navigationButtons }) => {
 
       <FlexRow>
         <ToggleDarkMode darkMode={darkMode} setDarkMode={setDarkMode} />
-        <NavigationButtons buttons={navigationButtons} />
+        <NavigationButtons buttons={buttons} />
       </FlexRow>
     </Container>
   );

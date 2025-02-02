@@ -2,9 +2,8 @@ import React, { Fragment, useMemo, useState } from 'react';
 import { SelectionButton } from '@/components';
 import { AbsoluteContainer } from '../../styled';
 import styled, { useTheme } from 'styled-components';
-import { getEntityItemId, getEntityLabel } from '@/utils';
 import { buildSearchResults, type Category } from './builder';
-import { Divider, getEntityIcon, Text, Types } from '@odigos/ui-components';
+import { Divider, ENTITY_TYPES, getEntityIcon, getEntityId, getEntityLabel, Text } from '@odigos/ui-components';
 import { useActionCRUD, useDestinationCRUD, useInstrumentationRuleCRUD, useNodeDataFlowHandlers, useSourceCRUD } from '@/hooks';
 
 interface Props {
@@ -68,10 +67,10 @@ export const SearchResults = ({ searchText, onClose }: Props) => {
             {entities.map((item, entIdx) => (
               <SelectionButton
                 key={`entity-${catIdx}-${entIdx}`}
-                icon={getEntityIcon(category as Types.ENTITY_TYPES)}
-                label={getEntityLabel(item, category as Types.ENTITY_TYPES, { extended: true })}
+                icon={getEntityIcon(category as ENTITY_TYPES)}
+                label={getEntityLabel(item, category as ENTITY_TYPES, { extended: true })}
                 onClick={() => {
-                  const id = getEntityItemId(item);
+                  const id = getEntityId(item);
                   // @ts-ignore
                   handleNodeClick(null, { data: { type: category, id } });
                   onClose();

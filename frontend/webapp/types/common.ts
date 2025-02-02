@@ -1,3 +1,5 @@
+import { NOTIFICATION_TYPE } from '@odigos/ui-components';
+
 export interface ExportedSignals {
   logs: boolean;
   metrics: boolean;
@@ -10,14 +12,6 @@ export interface Condition {
   reason: string;
   message: string;
   lastTransitionTime: string;
-}
-
-export enum NOTIFICATION_TYPE {
-  WARNING = 'warning',
-  ERROR = 'error',
-  SUCCESS = 'success',
-  INFO = 'info',
-  DEFAULT = 'default',
 }
 
 export interface Notification {
@@ -52,9 +46,4 @@ export enum OVERVIEW_NODE_TYPES {
   ADD_SOURCE = 'addSource',
   ADD_ACTION = 'addAction',
   ADD_DESTINATION = 'addDestination',
-}
-
-export enum STATUSES {
-  HEALTHY = 'healthy',
-  UNHEALTHY = 'unhealthy',
 }

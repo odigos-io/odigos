@@ -1,9 +1,8 @@
 import { useEffect } from 'react';
 import { useTokenCRUD } from '.';
-import { NOTIFICATION_TYPE } from '@/types';
 import { DISPLAY_TITLES, SEVEN_DAYS_IN_MS } from '@/utils';
 import { useNotificationStore, useStatusStore } from '@/store';
-import { isOverTime, useTimeAgo } from '@odigos/ui-components';
+import { isOverTime, NOTIFICATION_TYPE, useTimeAgo } from '@odigos/ui-components';
 
 // This hook is responsible for tracking the tokens and their expiration times.
 // When a token is about to expire or has expired, a notification is added to the notification store, and the connection status is updated accordingly.

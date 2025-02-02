@@ -1,7 +1,7 @@
-import { Types } from '@odigos/ui-components';
+import { ENTITY_TYPES } from '@odigos/ui-components';
 import { type ActionDataParsed, type ActualDestination, type InstrumentationRuleSpec, type K8sActualSource } from '@/types';
 
-export type Category = 'all' | Types.ENTITY_TYPES;
+export type Category = 'all' | ENTITY_TYPES;
 
 export const buildSearchResults = ({
   rules,
@@ -32,25 +32,25 @@ export const buildSearchResults = ({
     entities: InstrumentationRuleSpec[] | K8sActualSource[] | ActionDataParsed[] | ActualDestination[];
   }[] = [
     {
-      category: Types.ENTITY_TYPES.SOURCE,
+      category: ENTITY_TYPES.SOURCE,
       label: 'Sources',
       count: filteredSources.length,
       entities: [],
     },
     {
-      category: Types.ENTITY_TYPES.ACTION,
+      category: ENTITY_TYPES.ACTION,
       label: 'Actions',
       count: filteredActions.length,
       entities: [],
     },
     {
-      category: Types.ENTITY_TYPES.DESTINATION,
+      category: ENTITY_TYPES.DESTINATION,
       label: 'Destinations',
       count: filteredDestinations.length,
       entities: [],
     },
     {
-      category: Types.ENTITY_TYPES.INSTRUMENTATION_RULE,
+      category: ENTITY_TYPES.INSTRUMENTATION_RULE,
       label: 'Instrumentation Rules',
       count: filteredRules.length,
       entities: [],
@@ -69,13 +69,13 @@ export const buildSearchResults = ({
     .map((item) => ({
       ...item,
       entities:
-        item.category === Types.ENTITY_TYPES.INSTRUMENTATION_RULE
+        item.category === ENTITY_TYPES.INSTRUMENTATION_RULE
           ? filteredRules
-          : item.category === Types.ENTITY_TYPES.SOURCE
+          : item.category === ENTITY_TYPES.SOURCE
           ? filteredSources
-          : item.category === Types.ENTITY_TYPES.ACTION
+          : item.category === ENTITY_TYPES.ACTION
           ? filteredActions
-          : item.category === Types.ENTITY_TYPES.DESTINATION
+          : item.category === ENTITY_TYPES.DESTINATION
           ? filteredDestinations
           : [],
     }));

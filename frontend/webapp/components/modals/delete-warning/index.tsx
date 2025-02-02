@@ -1,19 +1,18 @@
 import React from 'react';
-import { NOTIFICATION_TYPE } from '@/types';
-import { Types, WarningModal } from '@odigos/ui-components';
+import { ENTITY_TYPES, NOTIFICATION_TYPE, WarningModal } from '@odigos/ui-components';
 
 interface Props {
   isOpen: boolean;
   noOverlay?: boolean;
   name?: string;
-  type?: Types.ENTITY_TYPES;
+  type?: ENTITY_TYPES;
   isLastItem?: boolean;
   onApprove: () => void;
   onDeny: () => void;
 }
 
 const DeleteWarning: React.FC<Props> = ({ isOpen, noOverlay, name, type, isLastItem, onApprove, onDeny }) => {
-  const actionText = type === Types.ENTITY_TYPES.SOURCE ? 'uninstrument' : 'delete';
+  const actionText = type === ENTITY_TYPES.SOURCE ? 'uninstrument' : 'delete';
 
   return (
     <WarningModal

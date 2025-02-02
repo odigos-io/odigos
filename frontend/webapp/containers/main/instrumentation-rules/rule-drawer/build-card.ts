@@ -1,17 +1,17 @@
 import { DISPLAY_TITLES } from '@/utils';
 import type { InstrumentationRuleSpec } from '@/types';
-import { DataCardRow, DataCardFieldTypes } from '@/reuseable-components';
+import { DATA_CARD_FIELD_TYPES, DataCardFieldsProps } from '@odigos/ui-components';
 
 const buildCard = (rule: InstrumentationRuleSpec) => {
   const { type, ruleName, notes, disabled, profileName, payloadCollection } = rule;
 
-  const arr: DataCardRow[] = [
+  const arr: DataCardFieldsProps['data'] = [
     { title: DISPLAY_TITLES.TYPE, value: type },
-    { type: DataCardFieldTypes.ACTIVE_STATUS, title: DISPLAY_TITLES.STATUS, value: String(!disabled) },
+    { type: DATA_CARD_FIELD_TYPES.ACTIVE_STATUS, title: DISPLAY_TITLES.STATUS, value: String(!disabled) },
     { title: DISPLAY_TITLES.NAME, value: ruleName },
     { title: DISPLAY_TITLES.NOTES, value: notes },
     { title: DISPLAY_TITLES.MANAGED_BY_PROFILE, value: profileName },
-    { type: DataCardFieldTypes.DIVIDER, width: '100%' },
+    { type: DATA_CARD_FIELD_TYPES.DIVIDER, width: '100%' },
   ];
 
   if (payloadCollection) {

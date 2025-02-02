@@ -1,9 +1,8 @@
 import { type Node } from '@xyflow/react';
-import { getEntityLabel } from '@/utils';
 import nodeConfig from './node-config.json';
 import { type NodePositions } from './get-node-positions';
-import { getEntityIcon, getInstrumentationRuleIcon, Types } from '@odigos/ui-components';
-import { type InstrumentationRuleSpecMapped, NODE_TYPES, OVERVIEW_NODE_TYPES, STATUSES } from '@/types';
+import { type InstrumentationRuleSpecMapped, NODE_TYPES, OVERVIEW_NODE_TYPES } from '@/types';
+import { ENTITY_TYPES, getEntityIcon, getEntityLabel, getInstrumentationRuleIcon, HEALTH_STATUS } from '@odigos/ui-components';
 
 interface Params {
   loading: boolean;
@@ -18,9 +17,9 @@ const mapToNodeData = (entity: Params['entities'][0]) => {
   return {
     nodeWidth,
     id: entity.ruleId,
-    type: Types.ENTITY_TYPES.INSTRUMENTATION_RULE,
-    status: STATUSES.HEALTHY,
-    title: getEntityLabel(entity, Types.ENTITY_TYPES.INSTRUMENTATION_RULE, { prioritizeDisplayName: true }),
+    type: ENTITY_TYPES.INSTRUMENTATION_RULE,
+    status: HEALTH_STATUS.HEALTHY,
+    title: getEntityLabel(entity, ENTITY_TYPES.INSTRUMENTATION_RULE, { prioritizeDisplayName: true }),
     subTitle: entity.type,
     icon: getInstrumentationRuleIcon(entity.type),
     isActive: !entity.disabled,
@@ -30,19 +29,19 @@ const mapToNodeData = (entity: Params['entities'][0]) => {
 
 export const buildRuleNodes = ({ loading, entities, positions, unfilteredCount }: Params) => {
   const nodes: Node[] = [];
-  const position = positions[Types.ENTITY_TYPES.INSTRUMENTATION_RULE];
+  const position = positions[ENTITY_TYPES.INSTRUMENTATION_RULE];
 
   nodes.push({
     id: 'rule-header',
     type: NODE_TYPES.HEADER,
     position: {
-      x: positions[Types.ENTITY_TYPES.INSTRUMENTATION_RULE]['x'],
+      x: positions[ENTITY_TYPES.INSTRUMENTATION_RULE]['x'],
       y: 0,
     },
     data: {
       nodeWidth,
       title: 'Instrumentation Rules',
-      icon: getEntityIcon(Types.ENTITY_TYPES.INSTRUMENTATION_RULE),
+      icon: getEntityIcon(ENTITY_TYPES.INSTRUMENTATION_RULE),
       tagValue: unfilteredCount,
     },
   });
@@ -71,7 +70,7 @@ export const buildRuleNodes = ({ loading, entities, positions, unfilteredCount }
       data: {
         nodeWidth,
         type: OVERVIEW_NODE_TYPES.ADD_RULE,
-        status: STATUSES.HEALTHY,
+        status: HEALTH_STATUS.HEALTHY,
         title: 'ADD RULE',
         subTitle: 'To modify OpenTelemetry data',
       },

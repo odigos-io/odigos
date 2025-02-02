@@ -8,8 +8,7 @@ import { type ActionDataParsed } from '@/types';
 import buildDrawerItem from './build-drawer-item';
 import { useActionCRUD, useActionFormData } from '@/hooks';
 import OverviewDrawer from '../../overview/overview-drawer';
-import { ConditionDetails, DataCard } from '@/reuseable-components';
-import { ACTION_OPTIONS, getActionIcon, Types } from '@odigos/ui-components';
+import { ACTION_OPTIONS, ConditionDetails, type ConditionDetailsProps, DataCard, ENTITY_TYPES, getActionIcon, NOTIFICATION_TYPE } from '@odigos/ui-components';
 
 interface Props {}
 
@@ -47,11 +46,11 @@ export const ActionDrawer: React.FC<Props> = () => {
     if (!!fetchedItems?.length) {
       const found = fetchedItems.find((x) => x.id === id);
       if (!!found) {
-        return setSelectedItem({ id, type: Types.ENTITY_TYPES.ACTION, item: found });
+        return setSelectedItem({ id, type: ENTITY_TYPES.ACTION, item: found });
       }
     }
 
-    setSelectedItem({ id, type: Types.ENTITY_TYPES.ACTION, item: buildDrawerItem(id, formData, item) });
+    setSelectedItem({ id, type: ENTITY_TYPES.ACTION, item: buildDrawerItem(id, formData, item) });
   };
 
   // This should keep the drawer up-to-date with the latest data
@@ -67,6 +66,20 @@ export const ActionDrawer: React.FC<Props> = () => {
     const arr = buildCard(item);
 
     return arr;
+  }, [selectedItem]);
+
+  const conditionsData: ConditionDetailsProps = useMemo(() => {
+    if (!selectedItem) return { conditions: [] };
+
+    const { item } = selectedItem as { item: ActionDataParsed };
+
+    return {
+      conditions:
+        item?.conditions?.map(({ status, message }) => ({
+          status: ['false', 'error'].includes(String(status).toLowerCase()) ? NOTIFICATION_TYPE.ERROR : NOTIFICATION_TYPE.SUCCESS,
+          message,
+        })) || [],
+    };
   }, [selectedItem]);
 
   const thisAction = useMemo(() => {
@@ -136,7 +149,7 @@ export const ActionDrawer: React.FC<Props> = () => {
         </FormContainer>
       ) : (
         <DataContainer>
-          <ConditionDetails conditions={item?.conditions || []} />
+          <ConditionDetails conditions={conditionsData.conditions} />
           <DataCard title={DATA_CARDS.ACTION_DETAILS} data={cardData} />
         </DataContainer>
       )}

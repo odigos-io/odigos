@@ -1,10 +1,9 @@
 import React from 'react';
 import styled from 'styled-components';
-import { DataTab } from '@/reuseable-components';
 import { useAppStore, usePendingStore } from '@/store';
 import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';
-import { Checkbox, ErrorTriangleIcon, FadeLoader, Types } from '@odigos/ui-components';
-import { type ActionDataParsed, type ActualDestination, type InstrumentationRuleSpec, type K8sActualSource, NODE_TYPES, STATUSES, WorkloadId } from '@/types';
+import { type ActionDataParsed, type ActualDestination, type InstrumentationRuleSpec, type K8sActualSource, NODE_TYPES } from '@/types';
+import { Checkbox, DataTab, ENTITY_TYPES, ErrorTriangleIcon, FadeLoader, HEALTH_STATUS, SIGNAL_TYPE, type SVG, type WorkloadId } from '@odigos/ui-components';
 
 interface Props
   extends NodeProps<
@@ -12,13 +11,13 @@ interface Props
       {
         nodeWidth: number;
         id: string | WorkloadId;
-        type: Types.ENTITY_TYPES;
-        status: STATUSES;
+        type: ENTITY_TYPES;
+        status: HEALTH_STATUS;
         title: string;
         subTitle: string;
-        icon?: Types.SVG;
+        icon?: SVG;
         iconSrc?: string;
-        monitors?: Types.SIGNAL_TYPE[];
+        monitors?: SIGNAL_TYPE[];
         isActive?: boolean;
         raw: InstrumentationRuleSpec | K8sActualSource | ActionDataParsed | ActualDestination;
       },
@@ -32,7 +31,7 @@ const Container = styled.div<{ $nodeWidth: Props['data']['nodeWidth'] }>`
 
 const BaseNode: React.FC<Props> = ({ id: nodeId, data }) => {
   const { nodeWidth, id: entityId, type: entityType, status, title, subTitle, icon, iconSrc, monitors, isActive, raw } = data;
-  const isError = status === STATUSES.UNHEALTHY;
+  const isError = status === HEALTH_STATUS.UNHEALTHY;
 
   const { configuredSources, setConfiguredSources } = useAppStore();
   const { isThisPending } = usePendingStore();

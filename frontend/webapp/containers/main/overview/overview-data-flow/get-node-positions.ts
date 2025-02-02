@@ -1,6 +1,5 @@
-import { getValueForRange } from '@/utils';
 import nodeConfig from './node-config.json';
-import { Types } from '@odigos/ui-components';
+import { ENTITY_TYPES, getValueForRange } from '@odigos/ui-components';
 
 const { nodeWidth, nodeHeight } = nodeConfig;
 
@@ -9,7 +8,7 @@ interface Params {
 }
 
 export type NodePositions = Record<
-  Types.ENTITY_TYPES,
+  ENTITY_TYPES,
   {
     x: number;
     y: (idx?: number) => number;
@@ -22,25 +21,25 @@ export const getNodePositions = ({ containerWidth }: Params) => {
   const getY = (idx?: number) => nodeHeight * ((idx || 0) + 1);
 
   const positions: NodePositions = {
-    [Types.ENTITY_TYPES.INSTRUMENTATION_RULE]: {
+    [ENTITY_TYPES.INSTRUMENTATION_RULE]: {
       x: startX,
       y: getY,
     },
-    [Types.ENTITY_TYPES.SOURCE]: {
+    [ENTITY_TYPES.SOURCE]: {
       x: getValueForRange(containerWidth, [
         [0, 1600, endX / 3.5],
         [1600, null, endX / 4],
       ]),
       y: getY,
     },
-    [Types.ENTITY_TYPES.ACTION]: {
+    [ENTITY_TYPES.ACTION]: {
       x: getValueForRange(containerWidth, [
         [0, 1600, endX / 1.55],
         [1600, null, endX / 1.6],
       ]),
       y: getY,
     },
-    [Types.ENTITY_TYPES.DESTINATION]: {
+    [ENTITY_TYPES.DESTINATION]: {
       x: endX,
       y: getY,
     },

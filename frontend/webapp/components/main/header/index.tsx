@@ -1,12 +1,11 @@
 import React from 'react';
 import { useConfig } from '@/hooks';
 import { PlatformTitle } from './cp-title';
-import { NOTIFICATION_TYPE } from '@/types';
 import { FORM_ALERTS, SLACK_LINK } from '@/utils';
 import { NotificationManager } from '@/components';
 import styled, { useTheme } from 'styled-components';
 import { DRAWER_OTHER_TYPES, useDarkModeStore, useDrawerStore, useStatusStore } from '@/store';
-import { FlexRow, IconButton, OdigosLogoText, SlackLogo, Status, TerminalIcon, Theme, ToggleDarkMode, Tooltip, Types } from '@odigos/ui-components';
+import { FlexRow, IconButton, NOTIFICATION_TYPE, OdigosLogoText, PLATFORM_TYPE, SlackLogo, Status, TerminalIcon, Theme, ToggleDarkMode, Tooltip } from '@odigos/ui-components';
 
 interface MainHeaderProps {}
 
@@ -43,7 +42,7 @@ export const MainHeader: React.FC<MainHeaderProps> = () => {
     <HeaderContainer>
       <AlignLeft>
         <OdigosLogoText size={80} />
-        <PlatformTitle type={Types.PLATFORM_TYPE.K8S} />
+        <PlatformTitle type={PLATFORM_TYPE.K8S} />
         <Status status={status} title={title} subtitle={message} size={14} family='primary' withIcon withBackground />
         {config?.readonly && (
           <Tooltip text={FORM_ALERTS.READONLY_WARNING}>

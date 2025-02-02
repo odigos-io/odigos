@@ -1,7 +1,7 @@
 import React from 'react';
+import { INPUT_TYPES } from '@/utils';
 import type { DynamicField } from '@/types';
-import { compareCondition, INPUT_TYPES, safeJsonParse } from '@/utils';
-import { Checkbox, Dropdown, Input, InputList, KeyValueInputsList, TextArea } from '@odigos/ui-components';
+import { Checkbox, compareCondition, Dropdown, Input, InputList, KeyValueInputsList, safeJsonParse, TextArea } from '@odigos/ui-components';
 
 interface Props {
   fields: DynamicField[];
@@ -13,7 +13,11 @@ export const DestinationDynamicFields: React.FC<Props> = ({ fields, onChange, fo
   return fields?.map((field) => {
     const { componentType, renderCondition, ...rest } = field;
 
-    const shouldRender = compareCondition(renderCondition, fields);
+    const shouldRender = compareCondition(
+      // @ts-ignore
+      renderCondition,
+      fields,
+    );
     if (!shouldRender) return null;
 
     switch (componentType) {

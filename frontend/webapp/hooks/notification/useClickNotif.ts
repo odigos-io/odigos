@@ -1,11 +1,10 @@
 import { useSourceCRUD } from '../sources';
 import { useActionCRUD } from '../actions';
-import { getIdFromSseTarget } from '@/utils';
-import { Types } from '@odigos/ui-components';
+import { type Notification } from '@/types';
 import { useDestinationCRUD } from '../destinations';
-import { type Notification, WorkloadId } from '@/types';
 import { useInstrumentationRuleCRUD } from '../instrumentation-rules';
 import { DrawerItem, useDrawerStore, useNotificationStore } from '@/store';
+import { ENTITY_TYPES, getIdFromSseTarget, WorkloadId } from '@odigos/ui-components';
 
 export const useClickNotif = () => {
   const { sources } = useSourceCRUD();
@@ -23,33 +22,33 @@ export const useClickNotif = () => {
       const drawerItem: Partial<DrawerItem> = {};
 
       switch (crdType) {
-        case Types.ENTITY_TYPES.INSTRUMENTATION_RULE:
-          drawerItem['type'] = Types.ENTITY_TYPES.INSTRUMENTATION_RULE;
-          drawerItem['id'] = getIdFromSseTarget(target, Types.ENTITY_TYPES.INSTRUMENTATION_RULE);
+        case ENTITY_TYPES.INSTRUMENTATION_RULE:
+          drawerItem['type'] = ENTITY_TYPES.INSTRUMENTATION_RULE;
+          drawerItem['id'] = getIdFromSseTarget(target, ENTITY_TYPES.INSTRUMENTATION_RULE);
           drawerItem['item'] = instrumentationRules.find((item) => item.ruleId === drawerItem['id']);
           break;
 
-        case Types.ENTITY_TYPES.SOURCE:
+        case ENTITY_TYPES.SOURCE:
         case 'InstrumentationConfig':
         case 'InstrumentationInstance':
-          drawerItem['type'] = Types.ENTITY_TYPES.SOURCE;
-          drawerItem['id'] = getIdFromSseTarget(target, Types.ENTITY_TYPES.SOURCE);
+          drawerItem['type'] = ENTITY_TYPES.SOURCE;
+          drawerItem['id'] = getIdFromSseTarget(target, ENTITY_TYPES.SOURCE);
           drawerItem['item'] = sources.find(
             (item) => item.kind === (drawerItem['id'] as WorkloadId).kind && item.name === (drawerItem['id'] as WorkloadId).name && item.namespace === (drawerItem['id'] as WorkloadId).namespace,
           );
 
           break;
 
-        case Types.ENTITY_TYPES.ACTION:
-          drawerItem['type'] = Types.ENTITY_TYPES.ACTION;
-          drawerItem['id'] = getIdFromSseTarget(target, Types.ENTITY_TYPES.ACTION);
+        case ENTITY_TYPES.ACTION:
+          drawerItem['type'] = ENTITY_TYPES.ACTION;
+          drawerItem['id'] = getIdFromSseTarget(target, ENTITY_TYPES.ACTION);
           drawerItem['item'] = actions.find((item) => item.id === drawerItem['id']);
           break;
 
-        case Types.ENTITY_TYPES.DESTINATION:
+        case ENTITY_TYPES.DESTINATION:
         case 'Destination':
-          drawerItem['type'] = Types.ENTITY_TYPES.DESTINATION;
-          drawerItem['id'] = getIdFromSseTarget(target, Types.ENTITY_TYPES.DESTINATION);
+          drawerItem['type'] = ENTITY_TYPES.DESTINATION;
+          drawerItem['id'] = getIdFromSseTarget(target, ENTITY_TYPES.DESTINATION);
           drawerItem['item'] = destinations.find((item) => item.id === drawerItem['id']);
           break;
 

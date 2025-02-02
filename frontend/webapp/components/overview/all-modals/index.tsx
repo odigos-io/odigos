@@ -1,6 +1,6 @@
 import React from 'react';
 import { useModalStore } from '@/store';
-import { Types } from '@odigos/ui-components';
+import { ENTITY_TYPES } from '@odigos/ui-components';
 import { ActionModal, AddSourceModal, DestinationModal, RuleModal } from '@/containers';
 
 const AllModals = () => {
@@ -12,16 +12,16 @@ const AllModals = () => {
   const handleClose = () => setSelected('');
 
   switch (selected) {
-    case Types.ENTITY_TYPES.INSTRUMENTATION_RULE:
+    case ENTITY_TYPES.INSTRUMENTATION_RULE:
       return <RuleModal isOpen onClose={handleClose} />;
 
-    case Types.ENTITY_TYPES.SOURCE:
+    case ENTITY_TYPES.SOURCE:
       return <AddSourceModal isOpen onClose={handleClose} />;
 
-    case Types.ENTITY_TYPES.ACTION:
+    case ENTITY_TYPES.ACTION:
       return <ActionModal isOpen onClose={handleClose} />;
 
-    case Types.ENTITY_TYPES.DESTINATION:
+    case ENTITY_TYPES.DESTINATION:
       return <DestinationModal isOpen onClose={handleClose} />;
 
     default:

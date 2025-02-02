@@ -1,11 +1,22 @@
 import React, { useState } from 'react';
 import { RuleFormBody } from '../';
 import { ModalBody } from '@/styles';
-import { NOTIFICATION_TYPE } from '@/types';
 import { ACTION, FORM_ALERTS } from '@/utils';
-import { NavigationButtons } from '@/reuseable-components';
 import { useDescribeOdigos, useInstrumentationRuleCRUD, useInstrumentationRuleFormData } from '@/hooks';
-import { AutocompleteInput, CenterThis, Divider, FadeLoader, INSTRUMENTATION_RULE_OPTIONS, Modal, NotificationNote, SectionTitle, Types, useKeyDown } from '@odigos/ui-components';
+import {
+  AutocompleteInput,
+  CenterThis,
+  Divider,
+  FadeLoader,
+  INSTRUMENTATION_RULE_OPTIONS,
+  type InstrumentationRuleOption,
+  Modal,
+  NavigationButtons,
+  NOTIFICATION_TYPE,
+  NotificationNote,
+  SectionTitle,
+  useKeyDown,
+} from '@odigos/ui-components';
 
 interface Props {
   isOpen: boolean;
@@ -19,7 +30,7 @@ export const RuleModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const { createInstrumentationRule, loading } = useInstrumentationRuleCRUD({ onSuccess: handleClose });
   const { formData, formErrors, handleFormChange, resetFormData, validateForm } = useInstrumentationRuleFormData();
 
-  const [selectedItem, setSelectedItem] = useState<Types.InstrumentationRuleOption | undefined>(undefined);
+  const [selectedItem, setSelectedItem] = useState<InstrumentationRuleOption | undefined>(undefined);
 
   function handleClose() {
     resetFormData();
@@ -27,7 +38,7 @@ export const RuleModal: React.FC<Props> = ({ isOpen, onClose }) => {
     onClose();
   }
 
-  const handleSelect = (item?: Types.InstrumentationRuleOption) => {
+  const handleSelect = (item?: InstrumentationRuleOption) => {
     resetFormData();
     setSelectedItem(item);
   };

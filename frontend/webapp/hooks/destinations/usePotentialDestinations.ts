@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
-import { safeJsonParse } from '@/utils';
 import { useQuery } from '@apollo/client';
-import { IAppState, useAppStore } from '@/store';
-import { GetDestinationTypesResponse } from '@/types';
+import { safeJsonParse } from '@odigos/ui-components';
+import { type IAppState, useAppStore } from '@/store';
+import { type GetDestinationTypesResponse } from '@/types';
 import { GET_DESTINATION_TYPE, GET_POTENTIAL_DESTINATIONS } from '@/graphql';
 
 interface PotentialDestination {

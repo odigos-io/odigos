@@ -7,9 +7,8 @@ import { ACTION, INPUT_TYPES } from '@/utils';
 import { DestinationFormBody } from '../destination-form-body';
 import { ChooseDestinationBody } from './choose-destination-body';
 import { useDestinationCRUD, useDestinationFormData } from '@/hooks';
-import { ArrowIcon, Modal, useKeyDown } from '@odigos/ui-components';
 import type { ConfiguredDestination, DestinationTypeItem } from '@/types';
-import { type NavigationButtonProps, NavigationButtons } from '@/reuseable-components';
+import { ArrowIcon, Modal, NavigationButtons, NavigationButtonsProps, useKeyDown } from '@odigos/ui-components';
 
 interface AddDestinationModalProps {
   isOnboarding?: boolean;
@@ -92,7 +91,7 @@ export const DestinationModal: React.FC<AddDestinationModalProps> = ({ isOnboard
   };
 
   const renderHeaderButtons = () => {
-    const buttons: NavigationButtonProps[] = [
+    const buttons: NavigationButtonsProps['buttons'] = [
       {
         label: 'DONE',
         variant: 'primary' as const,

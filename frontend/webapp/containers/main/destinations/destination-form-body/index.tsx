@@ -2,8 +2,8 @@ import React, { Dispatch, SetStateAction, useEffect, useMemo, useRef, useState }
 import styled from 'styled-components';
 import { DestinationDynamicFields } from './dynamic-fields';
 import { type ConnectionStatus, TestConnection } from './test-connection';
-import { NOTIFICATION_TYPE, type DestinationInput, type DestinationTypeItem, type DynamicField } from '@/types';
-import { Divider, Input, MonitorsCheckboxes, NotificationNote, SectionTitle, Types } from '@odigos/ui-components';
+import { type DestinationInput, type DestinationTypeItem, type DynamicField } from '@/types';
+import { Divider, Input, MonitorsCheckboxes, NOTIFICATION_TYPE, NotificationNote, SectionTitle, SIGNAL_TYPE } from '@odigos/ui-components';
 
 interface Props {
   isUpdate?: boolean;
@@ -67,32 +67,32 @@ export const DestinationFormBody = ({ isUpdate, destination, formData, formError
 
   const supportedMonitors = useMemo(() => {
     const { logs, metrics, traces } = supportedSignals || {};
-    const arr: Types.SIGNAL_TYPE[] = [];
+    const arr: SIGNAL_TYPE[] = [];
 
-    if (logs?.supported) arr.push(Types.SIGNAL_TYPE.LOGS);
-    if (metrics?.supported) arr.push(Types.SIGNAL_TYPE.METRICS);
-    if (traces?.supported) arr.push(Types.SIGNAL_TYPE.TRACES);
+    if (logs?.supported) arr.push(SIGNAL_TYPE.LOGS);
+    if (metrics?.supported) arr.push(SIGNAL_TYPE.METRICS);
+    if (traces?.supported) arr.push(SIGNAL_TYPE.TRACES);
 
     return arr;
   }, [supportedSignals]);
 
   const selectedMonitors = useMemo(() => {
     const { logs, metrics, traces } = formData['exportedSignals'] || {};
-    const arr: Types.SIGNAL_TYPE[] = [];
+    const arr: SIGNAL_TYPE[] = [];
 
-    if (logs) arr.push(Types.SIGNAL_TYPE.LOGS);
-    if (metrics) arr.push(Types.SIGNAL_TYPE.METRICS);
-    if (traces) arr.push(Types.SIGNAL_TYPE.TRACES);
+    if (logs) arr.push(SIGNAL_TYPE.LOGS);
+    if (metrics) arr.push(SIGNAL_TYPE.METRICS);
+    if (traces) arr.push(SIGNAL_TYPE.TRACES);
 
     return arr;
   }, [formData['exportedSignals']]);
 
-  const handleSelectedSignals = (signals: Types.SIGNAL_TYPE[]) => {
+  const handleSelectedSignals = (signals: SIGNAL_TYPE[]) => {
     dirtyForm();
     handleFormChange('exportedSignals', {
-      logs: signals.includes(Types.SIGNAL_TYPE.LOGS),
-      metrics: signals.includes(Types.SIGNAL_TYPE.METRICS),
-      traces: signals.includes(Types.SIGNAL_TYPE.TRACES),
+      logs: signals.includes(SIGNAL_TYPE.LOGS),
+      metrics: signals.includes(SIGNAL_TYPE.METRICS),
+      traces: signals.includes(SIGNAL_TYPE.TRACES),
     });
   };
 

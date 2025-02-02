@@ -1,5 +1,5 @@
-import { Types } from '@odigos/ui-components';
 import type { Condition } from './common';
+import { ACTION_TYPE, SIGNAL_TYPE } from '@odigos/ui-components';
 
 export type AddClusterInfoSpec = {
   clusterAttributes: {
@@ -55,7 +55,7 @@ export interface ActionItem {
 
 export interface ActionData {
   id: string;
-  type: Types.ACTION_TYPE;
+  type: ACTION_TYPE;
   spec: ActionItem | string;
   conditions: Condition[];
 }
@@ -65,10 +65,10 @@ export interface ActionDataParsed extends ActionData {
 }
 
 export type ActionInput = {
-  type: Types.ACTION_TYPE;
+  type: ACTION_TYPE;
   name: string;
   notes: string;
   disable: boolean;
-  signals: Types.SIGNAL_TYPE[];
+  signals: SIGNAL_TYPE[];
   details: string;
 };

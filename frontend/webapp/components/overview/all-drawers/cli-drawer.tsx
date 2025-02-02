@@ -1,10 +1,8 @@
 import React, { useRef, useState } from 'react';
 import { useDrawerStore } from '@/store';
-import { NOTIFICATION_TYPE } from '@/types';
 import styled, { useTheme } from 'styled-components';
+import { DATA_CARDS, SEVEN_DAYS_IN_MS } from '@/utils';
 import { useDescribeOdigos, useTokenCRUD } from '@/hooks';
-import { DataCard, DataCardFieldTypes } from '@/reuseable-components';
-import { DATA_CARDS, safeJsonStringify, SEVEN_DAYS_IN_MS } from '@/utils';
 import {
   Button,
   CheckIcon,
@@ -12,6 +10,8 @@ import {
   CodeIcon,
   CopyIcon,
   CrossIcon,
+  DATA_CARD_FIELD_TYPES,
+  DataCard,
   Divider,
   Drawer,
   EditIcon,
@@ -24,6 +24,8 @@ import {
   isWithinTime,
   KeyIcon,
   ListIcon,
+  NOTIFICATION_TYPE,
+  safeJsonStringify,
   Segment,
   Text,
   Tooltip,
@@ -114,7 +116,7 @@ export const CliDrawer: React.FC<Props> = () => {
             titleBadge={tokens.length}
             data={[
               {
-                type: DataCardFieldTypes.TABLE,
+                type: DATA_CARD_FIELD_TYPES.TABLE,
                 value: {
                   columns: [
                     { key: 'icon', title: '' },
@@ -199,7 +201,7 @@ export const CliDrawer: React.FC<Props> = () => {
           }
           data={[
             {
-              type: DataCardFieldTypes.CODE,
+              type: DATA_CARD_FIELD_TYPES.CODE,
               value: JSON.stringify({
                 language: 'json',
                 code: safeJsonStringify(isPrettyMode ? restructureForPrettyMode(describe) : describe),

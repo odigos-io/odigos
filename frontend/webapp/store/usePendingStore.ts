@@ -1,6 +1,5 @@
 import { create } from 'zustand';
-import { WorkloadId } from '@/types';
-import { Types } from '@odigos/ui-components';
+import { ENTITY_TYPES, type WorkloadId } from '@odigos/ui-components';
 
 // This store is used to keep track of pending items that are being created, updated, or deleted.
 // This is used for entities that require an SSE event to be sent from the backend after a CRUD action.
@@ -12,7 +11,7 @@ import { Types } from '@odigos/ui-components';
 // This can be used for non-SSE entities (like actions & rules), but it's not necessary as we refetch-instantly in those cases.
 
 export interface PendingItem {
-  entityType: Types.ENTITY_TYPES;
+  entityType: ENTITY_TYPES;
   entityId?: string | WorkloadId;
 }
 
@@ -53,7 +52,7 @@ export const usePendingStore = create<StoreState>((set, get) => ({
       if (
         pendingItem.entityType === item.entityType &&
         (!item.entityId ||
-          (pendingItem.entityType === Types.ENTITY_TYPES.SOURCE
+          (pendingItem.entityType === ENTITY_TYPES.SOURCE
             ? !!pendingItem.entityId &&
               !!item.entityId &&
               (pendingItem.entityId as WorkloadId).namespace === (item.entityId as WorkloadId).namespace &&

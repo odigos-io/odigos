@@ -1,13 +1,13 @@
 import { create } from 'zustand';
-import { Types } from '@odigos/ui-components';
-import type { ActionDataParsed, ActualDestination, InstrumentationRuleSpec, K8sActualSource, WorkloadId } from '@/types';
+import { ENTITY_TYPES, type WorkloadId } from '@odigos/ui-components';
+import type { ActionDataParsed, ActualDestination, InstrumentationRuleSpec, K8sActualSource } from '@/types';
 
 export enum DRAWER_OTHER_TYPES {
   ODIGOS_CLI = 'odigos-cli',
 }
 
 export interface DrawerItem {
-  type: Types.ENTITY_TYPES | DRAWER_OTHER_TYPES;
+  type: ENTITY_TYPES | DRAWER_OTHER_TYPES;
   id: string | WorkloadId;
   item?: InstrumentationRuleSpec | K8sActualSource | ActionDataParsed | ActualDestination;
 }
