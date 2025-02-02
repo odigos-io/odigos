@@ -7,20 +7,22 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
+	webhookdeviceinjector "github.com/odigos-io/odigos/instrumentor/internal/webhook_device_injector"
 	webhookenvinjector "github.com/odigos-io/odigos/instrumentor/internal/webhook_env_injector"
-	containerutils "github.com/odigos-io/odigos/k8sutils/pkg/container"
+	"github.com/odigos-io/odigos/instrumentor/sdks"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const otelServiceNameEnvVarName = "OTEL_SERVICE_NAME"
@@ -49,11 +51,11 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		pod.Annotations = map[string]string{}
 	}
 
-	// Inject ODIGOS environment variables into all containers
-	return p.injectOdigosEnvVars(ctx, logger, pod)
+	// Inject ODIGOS environment variables and instrumentation device into all containers
+	return p.injectOdigosInstrumentation(ctx, logger, pod)
 }
 
-func (p *PodsWebhook) injectOdigosEnvVars(ctx context.Context, logger logr.Logger, pod *corev1.Pod) error {
+func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, logger logr.Logger, pod *corev1.Pod) error {
 	// Environment variables that remain consistent across all containers
 	commonEnvVars := getCommonEnvVars()
 
@@ -79,19 +81,39 @@ func (p *PodsWebhook) injectOdigosEnvVars(ctx context.Context, logger logr.Logge
 			return fmt.Errorf("namespace is empty for pod %s/%s, Skipping Injection of ODIGOS environment variables", pod.Namespace, pod.Name)
 		}
 	}
+	var workloadInstrumentationConfig odigosv1.InstrumentationConfig
+	instrumentationConfigName := workload.CalculateWorkloadRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
+
+	if err := p.Get(ctx, client.ObjectKey{Namespace: podWorkload.Namespace, Name: instrumentationConfigName}, &workloadInstrumentationConfig); err != nil {
+		return fmt.Errorf("failed to get instrumentationConfig: %w", err)
+	}
+
+	otelSdkToUse, err := getRelevantOtelSDKs(ctx, p.Client, *podWorkload)
+	if err != nil {
+		return fmt.Errorf("failed to determine OpenTelemetry SDKs: %w", err)
+	}
 
 	var serviceName *string
 	var serviceNameEnv *corev1.EnvVar
 
 	for i := range pod.Spec.Containers {
 		container := &pod.Spec.Containers[i]
+		runtimeDetails := workloadInstrumentationConfig.Status.GetRuntimeDetailsForContainer(*container)
+		if runtimeDetails == nil {
+			continue
+		}
 
-		pl, otelsdk, found := containerutils.GetLanguageAndOtelSdk(container)
+		if runtimeDetails.Language == common.UnknownProgrammingLanguage {
+			continue
+		}
+
+		otelSdk, found := otelSdkToUse[runtimeDetails.Language]
 		if !found {
 			continue
 		}
 
-		webhookenvinjector.InjectOdigosAgentEnvVars(ctx, p.Client, logger, *podWorkload, container, pl, otelsdk)
+		webhookdeviceinjector.InjectOdigosInstrumentationDevice(*podWorkload, container, otelSdk, runtimeDetails)
+		webhookenvinjector.InjectOdigosAgentEnvVars(logger, *podWorkload, container, otelSdk, runtimeDetails)
 
 		// Check if the environment variables are already present, if so skip inject them again.
 		if envVarsExist(container.Env, commonEnvVars) {
@@ -101,7 +123,7 @@ func (p *PodsWebhook) injectOdigosEnvVars(ctx context.Context, logger logr.Logge
 		containerNameEnv := corev1.EnvVar{Name: k8sconsts.OdigosEnvVarContainerName, Value: container.Name}
 		container.Env = append(container.Env, append(commonEnvVars, containerNameEnv)...)
 
-		if shouldInjectServiceName(pl, otelsdk) {
+		if shouldInjectServiceName(runtimeDetails.Language, otelSdk) {
 			// Ensure the serviceName is fetched only once per pod
 			if serviceName == nil {
 				serviceName = p.getServiceNameForEnv(ctx, logger, podWorkload)
@@ -250,4 +272,34 @@ func (p *PodsWebhook) getServiceNameForEnv(ctx context.Context, logger logr.Logg
 	}
 
 	return &resolvedServiceName
+}
+
+func getRelevantOtelSDKs(ctx context.Context, kubeClient client.Client, podWorkload k8sconsts.PodWorkload) (map[common.ProgrammingLanguage]common.OtelSdk, error) {
+
+	instrumentationRules := odigosv1.InstrumentationRuleList{}
+	if err := kubeClient.List(ctx, &instrumentationRules); err != nil {
+		return nil, err
+	}
+
+	otelSdkToUse := sdks.GetDefaultSDKs()
+	for i := range instrumentationRules.Items {
+		rule := &instrumentationRules.Items[i]
+		if rule.Spec.Disabled || rule.Spec.OtelSdks == nil {
+			// we only care about rules that have otel sdks configuration
+			continue
+		}
+
+		if !utils.IsWorkloadParticipatingInRule(podWorkload, rule) {
+			// filter rules that do not apply to the workload
+			continue
+		}
+
+		for lang, otelSdk := range rule.Spec.OtelSdks.OtelSdkByLanguage {
+			// languages can override the default otel sdk or another rule.
+			// there is not check or warning if a language is defined in multiple rules at the moment.
+			otelSdkToUse[lang] = otelSdk
+		}
+	}
+
+	return otelSdkToUse, nil
 }
