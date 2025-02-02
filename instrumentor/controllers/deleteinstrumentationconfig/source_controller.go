@@ -84,7 +84,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		"excluded", v1alpha1.IsDisabledSource(source),
 		"terminating", k8sutils.IsTerminating(source))
 
-	if source.Spec.Workload.Kind == workload.WorkloadKindNamespace {
+	if source.Spec.Workload.Kind == k8sconsts.WorkloadKindNamespace {
 		err = errors.Join(err, syncNamespaceWorkloads(ctx, r.Client, req))
 	} else {
 		// This is a Source for a specific workload, not an entire namespace

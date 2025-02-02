@@ -1,6 +1,7 @@
 package instrumentationconfig
 
 import (
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
@@ -14,7 +15,7 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 	if err != nil {
 		return err
 	}
-	workload := workload.PodWorkload{
+	workload := k8sconsts.PodWorkload{
 		Name:      workloadName,
 		Namespace: ic.Namespace,
 		Kind:      workloadKind,
@@ -276,4 +277,3 @@ func mergeCodeAttributesRules(rule1 *instrumentationrules.CodeAttributes, rule2 
 func boolPtr(b bool) *bool {
 	return &b
 }
-
