@@ -3,11 +3,12 @@ package azureblobstorageexporter
 import (
 	"context"
 	"fmt"
-	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
-	"go.uber.org/zap"
 	"math/rand"
 	"strconv"
 	"time"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
+	"go.uber.org/zap"
 )
 
 type ABSWriter struct {

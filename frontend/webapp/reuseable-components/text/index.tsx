@@ -21,7 +21,7 @@ const TextWrapper = styled.div<{
   $opacity?: TextProps['opacity'];
   $decoration?: TextProps['decoration'];
 }>`
-  color: ${({ $color, theme }) => $color || theme.colors.text};
+  color: ${({ $color, theme }) => $color || theme.text.secondary};
   font-size: ${({ $size }) => ($size !== undefined ? $size : 16)}px;
   font-weight: ${({ $weight }) => ($weight !== undefined ? $weight : 300)};
   text-align: ${({ $align }) => $align || 'left'};

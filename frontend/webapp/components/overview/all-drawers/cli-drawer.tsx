@@ -1,13 +1,11 @@
 import React, { useRef, useState } from 'react';
-import theme from '@/styles/theme';
-import styled from 'styled-components';
 import { NOTIFICATION_TYPE } from '@/types';
-import { FlexColumn, FlexRow } from '@/styles';
+import styled, { useTheme } from 'styled-components';
 import OverviewDrawer from '@/containers/main/overview/overview-drawer';
-import { DATA_CARDS, getStatusIcon, isOverTime, safeJsonStringify, SEVEN_DAYS_IN_MS } from '@/utils';
 import { useCopy, useDescribeOdigos, useKeyDown, useOnClickOutside, useTimeAgo, useTokenCRUD } from '@/hooks';
-import { CheckIcon, CodeBracketsIcon, CodeIcon, CopyIcon, CrossIcon, EditIcon, KeyIcon, ListIcon } from '@/assets';
+import { DATA_CARDS, getStatusIcon, isOverTime, isWithinTime, safeJsonStringify, SEVEN_DAYS_IN_MS } from '@/utils';
 import { Button, DataCard, DataCardFieldTypes, Divider, IconButton, Input, Segment, Text, Tooltip } from '@/reuseable-components';
+import { CheckIcon, CodeBracketsIcon, CodeIcon, CopyIcon, CrossIcon, EditIcon, FlexColumn, FlexRow, KeyIcon, ListIcon } from '@odigos/ui-components';
 
 interface Props {}
 
@@ -44,6 +42,7 @@ const PopoverFormButton = styled(Button)`
 `;
 
 export const CliDrawer: React.FC<Props> = () => {
+  const theme = useTheme();
   const timeAgo = useTimeAgo();
   const { isCopied, copiedIndex, clickCopy } = useCopy();
   const { tokens, loading, updateToken } = useTokenCRUD();
@@ -88,7 +87,7 @@ export const CliDrawer: React.FC<Props> = () => {
                       columnKey: 'expires_at',
                       component: () => {
                         return (
-                          <Text size={14} color={isOverTime(expiresAt, SEVEN_DAYS_IN_MS) ? theme.text.error : theme.text.success}>
+                          <Text size={14} color={isWithinTime(expiresAt, SEVEN_DAYS_IN_MS) ? theme.text.warning : isOverTime(expiresAt, SEVEN_DAYS_IN_MS) ? theme.text.error : theme.text.success}>
                             {timeAgo.format(expiresAt)} ({new Date(expiresAt).toDateString().split(' ').slice(1).join(' ')})
                           </Text>
                         );

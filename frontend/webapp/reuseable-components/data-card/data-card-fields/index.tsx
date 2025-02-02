@@ -1,6 +1,5 @@
 import React from 'react';
-import theme from '@/styles/theme';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 import { NOTIFICATION_TYPE } from '@/types';
 import { capitalizeFirstLetter, getProgrammingLanguageIcon, parseJsonStringToPrettyString, safeJsonParse, WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils';
 import { ActiveStatus, Code, DataTab, Divider, InstrumentStatus, InteractiveTable, MonitorsIcons, NotificationNote, Text, Tooltip } from '@/reuseable-components';
@@ -66,8 +65,9 @@ const PreWrap = styled(Text)`
   white-space: pre-wrap;
 `;
 
+// We need to maintain this with new components every time we add a new type to "DataCardFieldTypes"
 const renderValue = (type: DataCardRow['type'], value: DataCardRow['value']) => {
-  // We need to maintain this with new components every time we add a new type to "DataCardFieldTypes"
+  const theme = useTheme();
 
   switch (type) {
     case DataCardFieldTypes.DIVIDER:

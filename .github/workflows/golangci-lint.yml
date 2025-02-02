@@ -1,8 +1,5 @@
 name: golangci-lint
 on:
-  push:
-    branches:
-      - main
   pull_request:
 
 permissions:
@@ -12,7 +9,7 @@ jobs:
   golangci:
     strategy:
       matrix:
-        modules: [common, k8sutils]
+        modules: [common, k8sutils, profiles, destinations, procdiscovery]
     name: lint
     runs-on: ubuntu-latest
     steps:

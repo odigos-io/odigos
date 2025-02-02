@@ -1,10 +1,9 @@
 import React, { Fragment } from 'react';
-import { PlusIcon } from '@/assets';
 import styled from 'styled-components';
 import { usePendingStore } from '@/store';
-import { FlexColumn, FlexRow } from '@/styles';
 import { FadeLoader, Text } from '@/reuseable-components';
 import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';
+import { FlexColumn, FlexRow, PlusIcon, Theme } from '@odigos/ui-components';
 import { NODE_TYPES, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES } from '@/types';
 
 interface Props
@@ -37,7 +36,7 @@ const Container = styled(FlexColumn)<{ $nodeWidth: Props['data']['nodeWidth'] }>
   border: 1px dashed ${({ theme }) => theme.colors.border};
 
   &:hover {
-    background-color: ${({ theme }) => theme.colors.white_opacity['004']};
+    background-color: ${({ theme }) => theme.colors.dropdown_bg_2 + Theme.hexPercent['030']};
   }
 `;
 

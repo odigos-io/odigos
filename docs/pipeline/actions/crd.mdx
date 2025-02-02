@@ -1,65 +1,96 @@
 ---
-title: "Custom Processors"
-sidebarTitle: "Custom Processors"
+title: "Customized"
+description: "You can define custom actions using OpenTelemetry Collector Processors in Odigos."
+sidebarTitle: "Customized"
+icon: "circle-nodes"
 ---
 
-This option is for advanced users who are familiar with the OpenTelemetry Collector and it's configuration, and with kubernetes CRDs.
+<Note>
+  This option is for advanced users who are familiar with the [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/), it's [configuration](https://opentelemetry.io/docs/collector/configuration/), and with [Kubernetes CRDs](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).
+</Note>
 
-You can define OpenTelemetry Collector Processors in Odigos using the `Processor` kubernetes CRD. 
+You can browse the full list of processors that Odigos includes [here](https://github.com/odigos-io/odigos/blob/main/collector/builder-config.yaml#L61).
 
-You can browse the full list of processors that Odigos includes [here](https://github.com/odigos-io/odigos/blob/main/collector/builder-config.yaml#L64).
 To view the configuration for each processor, it is recommended to visit the README of this component in [OpenTelemetry Collector Contrib codebase](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor).
 
-Adding a processor to your Odigos pipeline can be done by creating a `processor` custom resource in your k8s cluster under odigos namespace, for example:
+Adding a processor to your Odigos pipeline can be done by creating a `Processor` custom resource in your Kuberenetes cluster under the `odigos-system` namespace:
 
-### Basic Example
+## Configuration Options
 
-This basic example demonstrate how to add a resource attribute `deployment.environment` with value `production` to all spans in the cluster.
+<AccordionGroup>
+  <Accordion title="processorName">
+    **processorName** `string` : Allows you to attach a meaningful name to the processor for convenience.
+    - This field is *optional*
+    - <AssumeNoMeaning />
+  </Accordion>
+  <Accordion title="notes">
+    **notes** `string` : Allows you to attach notes regarding the processor for convenience.
+    - This field is *optional*
+    - <AssumeNoMeaning />
+  </Accordion>
+  <Accordion title="disabled">
+    **disabled** `boolean` : Allows you to temporarily disable the processor, but keep it saved for future use.
+    - This field is *optional*, and defaults to `false`
+  </Accordion>
+  <Accordion title="signals *">
+    **signals** `string[]` : An array with the signals that the processor will act on.
+    - This field is *required*
+    - Supported values: `TRACES`, `METRICS`, `LOGS`
+  </Accordion>
+  <Accordion title="collectorRoles *">
+    **collectorRoles** `string[]` : An array with the collector roles that the processor will act on.
+    - This field is *required*
+    - Supported values: `CLUSTER_GATEWAY`, `NODE_COLLECTOR`
+  </Accordion>
+  <Accordion title="type *">
+    **type** `string` : The type of the processor.
+    - This field is *required*
+    - The name of the processor you want to use, as defined in the OpenTelemetry Collector (batch, attributes, etc).
+  </Accordion>
+  <Accordion title="orderHint">
+    **orderHint** `number` : If your processors need to run in a specific order relatively to other processors, you can hint the order by setting an integer value here.
+    - This field is *optional*
+    - The lower the value, the earlier the processor will run in the collector pipeline. If the value is missing or 0, the processor will run in an arbitrary order in the collector pipeline.
+  </Accordion>
+  <Accordion title="processorConfig">
+    **processorConfig** `object` : A field to pass configuration to the processor.
+    - This field is *optional*
+    - The structure of this field is specific to each processor, and you can find the configuration options for each processor in the [OpenTelemetry Collector Contrib codebase](
+  </Accordion>
+</AccordionGroup>
 
-Create a file named `example-processor.yaml` with the following content:
+## Basic Example
 
-```yaml
-apiVersion: odigos.io/v1alpha1
-kind: Processor
-metadata:
-  name: example-processor
-  namespace: odigos-system
-spec:
-  type: resource
-  processorConfig:
-    attributes:
-      - key: deployment.environment
-        value: production
-        action: insert
-  signals:
-    - TRACES
-  collectorRoles:
-    - CLUSTER_GATEWAY
-```
+The following example demonstrates how to add a resource attribute `deployment.environment` with the value `production` to all spans in the cluster.
 
-and apply with kubectl:
-```bash
-kubectl apply -f example-processor.yaml
-```
+<Steps>
+  <Step>
+    Create a YAML file with the following content:
 
-### Full Processor Options
+    ```yaml example-processor.yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Processor
+    metadata:
+      name: example-processor
+      namespace: odigos-system
+    spec:
+      type: resource
+      processorConfig:
+        attributes:
+          - key: deployment.environment
+            value: production
+            action: insert
+      signals:
+        - TRACES
+      collectorRoles:
+        - CLUSTER_GATEWAY
+    ```
+  </Step>
+  <Step>
+    Apply the action to the cluster:
 
-The CRD above is a simple example on how to add a processor to your Odigos pipeline.
-
-The full list of properties for the `Processor` CRD are:
-
-- `type` (required): The type of the processor. This is the name of the processor you want to use, as defined in the OpenTelemetry Collector (batch, attributes, etc).
-
-- `processorConfig` (optional): A field to pass configuration to the processor. The structure of this field is specific to each processor, and you can find the configuration options for each processor in the [OpenTelemetry Collector Contrib codebase](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor).
-
-- `signals` (required): An array with the signals that the processor will act on (`TRACES`, `METRICS`, `LOGS`).
-
-- `collectorRoles` (required): An array with the collector roles that the processor will act on (`CLUSTER_GATEWAY`, `NODE_COLLECTOR`). It is generally enough to apply the processor in just one collector, depending on the use case.
-
-- `orderHint` (optional): If your processors need to run in a specific order relatively to other processors, you can hint the order by setting an integer value here. The lower the value, the earlier the processor will run in the collector pipeline. If the value is missing or 0, the processor will run in an arbitrary order in the collector pipeline.
-
-- `disabled` (optional): A boolean field to disable the processor, if the processor is disabled, it will not be included in the collector configuration yaml, which can be used to keep the processor configuration in the CR, but disable it temporarily.
-
-- `processorName` (optional): Allows you to attach a meaningful name to a processor for convenience. Odigos does not use or assume any meaning from this field.
-
-- `notes` (optional): A field for you to add notes about the processor, such as its purpose or any other relevant information.
+    ```bash
+    kubectl apply -f example-processor.yaml
+    ```
+  </Step>
+</Steps>

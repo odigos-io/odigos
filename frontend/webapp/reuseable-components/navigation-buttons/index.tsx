@@ -1,14 +1,15 @@
 import React from 'react';
 import Image from 'next/image';
-import { SVG } from '@/assets';
 import { Button } from '../button';
-import styled from 'styled-components';
-import theme from '@/styles/theme';
+import { Tooltip } from '../tooltip';
+import { Types } from '@odigos/ui-components';
+import styled, { useTheme } from 'styled-components';
 
 export interface NavigationButtonProps {
   label: string;
-  icon?: SVG;
+  icon?: Types.SVG;
   iconSrc?: string;
+  tooltip?: string;
   onClick: () => void;
   variant?: 'primary' | 'secondary';
   disabled?: boolean;
@@ -33,6 +34,8 @@ const StyledButton = styled(Button)`
 `;
 
 export const NavigationButtons: React.FC<Props> = ({ buttons }) => {
+  const theme = useTheme();
+
   const shouldRenderBackButton = ({ button, index }: { button: NavigationButtonProps; index: number }) => {
     return buttons.length > 1 && index === 0 && (button.icon || button.iconSrc);
   };
@@ -47,12 +50,14 @@ export const NavigationButtons: React.FC<Props> = ({ buttons }) => {
 
   return (
     <ButtonsContainer>
-      {buttons.map((button, index) => (
-        <StyledButton key={index} variant={button.variant || 'secondary'} onClick={button.onClick} disabled={button.disabled}>
-          {shouldRenderBackButton({ button, index }) && renderButton({ button, rotate: 0 })}
-          {button.label}
-          {!shouldRenderBackButton({ button, index }) && renderButton({ button, rotate: 180 })}
-        </StyledButton>
+      {buttons.map((btn, index) => (
+        <Tooltip key={index} text={btn.tooltip || ''}>
+          <StyledButton key={index} variant={btn.variant || 'secondary'} onClick={btn.onClick} disabled={btn.disabled}>
+            {shouldRenderBackButton({ button: btn, index }) && renderButton({ button: btn, rotate: 0 })}
+            {btn.label}
+            {!shouldRenderBackButton({ button: btn, index }) && renderButton({ button: btn, rotate: 180 })}
+          </StyledButton>
+        </Tooltip>
       ))}
     </ButtonsContainer>
   );

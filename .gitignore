@@ -9,6 +9,8 @@ cli/odigos
 **/__pycache__/
 **/*.pyc
 serving-certs/
+**/.tools/
+**/LICENSES
 
 **.tfstate
 **.tfstate.backup

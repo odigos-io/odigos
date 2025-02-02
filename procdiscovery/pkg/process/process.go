@@ -57,7 +57,6 @@ func (d *Details) GetOverwriteEnvsValue(key string) (string, bool) {
 // Find all processes in the system.
 // The function accepts a predicate function that can be used to filter the results.
 func FindAllProcesses(predicate func(string) bool) ([]Details, error) {
-
 	dirs, err := os.ReadDir("/proc")
 	if err != nil {
 		return nil, err
@@ -65,7 +64,6 @@ func FindAllProcesses(predicate func(string) bool) ([]Details, error) {
 
 	var result []Details
 	for _, di := range dirs {
-
 		if !di.IsDir() {
 			continue
 		}

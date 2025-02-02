@@ -17,10 +17,11 @@ spec:
     - name: DATADOG_API_KEY
       displayName: API Key
       componentType: input
+      secret: true
       componentProps:
         type: password
         required: true
-      secret: true
+        tooltip: The API key for your Datadog account.
     - name: DATADOG_SITE
       displayName: Site
       componentType: dropdown
@@ -33,3 +34,4 @@ spec:
           - ddog-gov.com
           - ap1.datadoghq.com
         required: true
+        tooltip: The datadog site you are using (the url of the datadog site you are using).

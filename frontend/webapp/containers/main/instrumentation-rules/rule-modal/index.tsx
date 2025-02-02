@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { ACTION } from '@/utils';
 import { RuleFormBody } from '../';
+import { ModalBody } from '@/styles';
 import { NOTIFICATION_TYPE } from '@/types';
-import { CenterThis, ModalBody } from '@/styles';
+import { ACTION, FORM_ALERTS } from '@/utils';
+import { CenterThis } from '@odigos/ui-components';
 import { RULE_OPTIONS, RuleOption } from './rule-options';
-import { useInstrumentationRuleCRUD, useInstrumentationRuleFormData, useKeyDown } from '@/hooks';
+import { useDescribeOdigos, useInstrumentationRuleCRUD, useInstrumentationRuleFormData, useKeyDown } from '@/hooks';
 import { AutocompleteInput, Divider, FadeLoader, Modal, NavigationButtons, NotificationNote, SectionTitle } from '@/reuseable-components';
 
 interface Props {
@@ -15,10 +16,11 @@ interface Props {
 export const RuleModal: React.FC<Props> = ({ isOpen, onClose }) => {
   useKeyDown({ key: 'Enter', active: isOpen }, () => handleSubmit());
 
+  const { isPro } = useDescribeOdigos();
   const { createInstrumentationRule, loading } = useInstrumentationRuleCRUD({ onSuccess: handleClose });
   const { formData, formErrors, handleFormChange, resetFormData, validateForm } = useInstrumentationRuleFormData();
 
-  const [selectedItem, setSelectedItem] = useState<RuleOption | undefined>(RULE_OPTIONS[0]);
+  const [selectedItem, setSelectedItem] = useState<RuleOption | undefined>(undefined);
 
   function handleClose() {
     resetFormData();
@@ -51,16 +53,17 @@ export const RuleModal: React.FC<Props> = ({ isOpen, onClose }) => {
               variant: 'primary',
               label: 'DONE',
               onClick: handleSubmit,
-              disabled: !selectedItem || loading,
+              disabled: !isPro || !selectedItem || loading,
+              tooltip: !isPro ? FORM_ALERTS.ENTERPRISE_ONLY('Instrumentation Rules') : '',
             },
           ]}
         />
       }
     >
       <ModalBody>
-        <SectionTitle title='Define Instrumentation Rule' description='Define how telemetry is recorded from your application. Choose a rule type and configure the details.' />
-        <NotificationNote type={NOTIFICATION_TYPE.INFO} message='We currently support one rule. We’ll be adding new rule types in the near future.' style={{ marginTop: '24px' }} />
-        <AutocompleteInput disabled options={RULE_OPTIONS} selectedOption={selectedItem} onOptionSelect={handleSelect} style={{ marginTop: '12px' }} />
+        <SectionTitle title='Select Instrumentation Rule' description='Define how telemetry is recorded from your application. Choose a rule type and configure the details.' />
+        {!isPro && <NotificationNote type={NOTIFICATION_TYPE.DEFAULT} message={FORM_ALERTS.ENTERPRISE_ONLY('Instrumentation Rules')} style={{ marginTop: '24px' }} />}
+        <AutocompleteInput options={RULE_OPTIONS} selectedOption={selectedItem} onOptionSelect={handleSelect} style={{ marginTop: isPro ? '24px' : '12px' }} autoFocus={!selectedItem?.type} />
 
         {!!selectedItem?.type ? (
           <div>

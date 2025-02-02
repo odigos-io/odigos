@@ -1,15 +1,14 @@
 import React from 'react';
 import { Button } from '..';
-import { SVG } from '@/assets';
 import Image from 'next/image';
 import styled from 'styled-components';
-import { hexPercentValues } from '@/styles/theme';
+import { Theme, Types } from '@odigos/ui-components';
 import { Badge, Text } from '@/reuseable-components';
 
 interface Props {
   label: string;
   onClick: () => void;
-  icon?: SVG;
+  icon?: Types.SVG;
   iconSrc?: string;
   badgeLabel?: string | number;
   badgeFilled?: boolean;
@@ -26,13 +25,13 @@ const StyledButton = styled(Button)<{ $withBorder: Props['withBorder']; $color: 
   text-decoration: none;
   border: ${({ theme, $withBorder }) => `1px solid ${$withBorder ? theme.colors.border : 'transparent'}`};
   &.not-selected {
-    background-color: ${({ theme, $color }) => $color || theme.colors.white_opacity['004']};
+    background-color: ${({ theme, $color }) => $color || theme.colors.dropdown_bg_2 + Theme.hexPercent['060']};
     &:hover {
-      background-color: ${({ theme, $hoverColor }) => $hoverColor || theme.colors.white_opacity['008']};
+      background-color: ${({ theme, $hoverColor }) => $hoverColor || theme.colors.dropdown_bg_2};
     }
   }
   &.selected {
-    background-color: ${({ theme }) => theme.colors.majestic_blue + hexPercentValues['048']};
+    background-color: ${({ theme }) => theme.colors.majestic_blue + Theme.hexPercent['048']};
   }
 `;
 

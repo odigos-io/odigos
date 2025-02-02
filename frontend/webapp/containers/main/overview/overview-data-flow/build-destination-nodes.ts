@@ -1,15 +1,14 @@
 import { type Node } from '@xyflow/react';
 import nodeConfig from './node-config.json';
-import { type EntityCounts } from './get-entity-counts';
 import { type NodePositions } from './get-node-positions';
 import { extractMonitors, getEntityIcon, getEntityLabel, getHealthStatus } from '@/utils';
-import { NODE_TYPES, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES, type ComputePlatformMapped } from '@/types';
+import { type ActualDestination, NODE_TYPES, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES } from '@/types';
 
 interface Params {
   loading: boolean;
-  entities: ComputePlatformMapped['computePlatform']['destinations'];
+  entities: ActualDestination[];
   positions: NodePositions;
-  unfilteredCounts: EntityCounts;
+  unfilteredCount: number;
 }
 
 const { nodeWidth } = nodeConfig;
@@ -28,10 +27,9 @@ const mapToNodeData = (entity: Params['entities'][0]) => {
   };
 };
 
-export const buildDestinationNodes = ({ loading, entities, positions, unfilteredCounts }: Params) => {
+export const buildDestinationNodes = ({ loading, entities, positions, unfilteredCount }: Params) => {
   const nodes: Node[] = [];
   const position = positions[OVERVIEW_ENTITY_TYPES.DESTINATION];
-  const unfilteredCount = unfilteredCounts[OVERVIEW_ENTITY_TYPES.DESTINATION];
 
   nodes.push({
     id: 'destination-header',
@@ -44,7 +42,7 @@ export const buildDestinationNodes = ({ loading, entities, positions, unfiltered
       nodeWidth,
       title: 'Destinations',
       icon: getEntityIcon(OVERVIEW_ENTITY_TYPES.DESTINATION),
-      tagValue: unfilteredCounts[OVERVIEW_ENTITY_TYPES.DESTINATION],
+      tagValue: unfilteredCount,
     },
   });
 

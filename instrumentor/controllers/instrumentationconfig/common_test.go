@@ -3,10 +3,10 @@ package instrumentationconfig
 import (
 	"testing"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -27,7 +27,7 @@ func TestUpdateInstrumentationConfigForWorkload_SingleLanguage(t *testing.T) {
 		},
 	}
 	rules := &odigosv1.InstrumentationRuleList{}
-	err := updateInstrumentationConfigForWorkload(&ic, rules, "service-name")
+	err := updateInstrumentationConfigForWorkload(&ic, rules)
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -60,7 +60,7 @@ func TestUpdateInstrumentationConfigForWorkload_MultipleLanguages(t *testing.T) 
 		},
 	}
 	rules := &odigosv1.InstrumentationRuleList{}
-	err := updateInstrumentationConfigForWorkload(&ic, rules, "service-name")
+	err := updateInstrumentationConfigForWorkload(&ic, rules)
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -101,7 +101,7 @@ func TestUpdateInstrumentationConfigForWorkload_IgnoreUnknownLanguage(t *testing
 		},
 	}
 	rules := &odigosv1.InstrumentationRuleList{}
-	err := updateInstrumentationConfigForWorkload(&ic, rules, "service-name")
+	err := updateInstrumentationConfigForWorkload(&ic, rules)
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -126,7 +126,7 @@ func TestUpdateInstrumentationConfigForWorkload_NoLanguages(t *testing.T) {
 		},
 	}
 	rules := &odigosv1.InstrumentationRuleList{}
-	err := updateInstrumentationConfigForWorkload(&ic, rules, "service-name")
+	err := updateInstrumentationConfigForWorkload(&ic, rules)
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -156,7 +156,7 @@ func TestUpdateInstrumentationConfigForWorkload_SameLanguageMultipleContainers(t
 		},
 	}
 	rules := &odigosv1.InstrumentationRuleList{}
-	err := updateInstrumentationConfigForWorkload(&ic, rules, "service-name")
+	err := updateInstrumentationConfigForWorkload(&ic, rules)
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -199,7 +199,7 @@ func TestUpdateInstrumentationConfigForWorkload_SingleMatchingRule(t *testing.T)
 			},
 		},
 	}
-	err := updateInstrumentationConfigForWorkload(&ic, rules, "service-name")
+	err := updateInstrumentationConfigForWorkload(&ic, rules)
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -242,10 +242,10 @@ func TestUpdateInstrumentationConfigForWorkload_InWorkloadList(t *testing.T) {
 		Items: []odigosv1.InstrumentationRule{
 			{
 				Spec: odigosv1.InstrumentationRuleSpec{
-					Workloads: &[]workload.PodWorkload{
+					Workloads: &[]k8sconsts.PodWorkload{
 						{
 							Name:      "test",
-							Kind:      workload.WorkloadKindDeployment,
+							Kind:      k8sconsts.WorkloadKindDeployment,
 							Namespace: "testns",
 						},
 					},
@@ -259,7 +259,7 @@ func TestUpdateInstrumentationConfigForWorkload_InWorkloadList(t *testing.T) {
 		},
 	}
 
-	err := updateInstrumentationConfigForWorkload(&ic, rules, "service-name")
+	err := updateInstrumentationConfigForWorkload(&ic, rules)
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -292,10 +292,10 @@ func TestUpdateInstrumentationConfigForWorkload_NotInWorkloadList(t *testing.T) 
 		Items: []odigosv1.InstrumentationRule{
 			{
 				Spec: odigosv1.InstrumentationRuleSpec{
-					Workloads: &[]workload.PodWorkload{
+					Workloads: &[]k8sconsts.PodWorkload{
 						{
 							Name:      "someotherdeployment",
-							Kind:      workload.WorkloadKindDeployment,
+							Kind:      k8sconsts.WorkloadKindDeployment,
 							Namespace: "testns",
 						},
 					},
@@ -309,7 +309,7 @@ func TestUpdateInstrumentationConfigForWorkload_NotInWorkloadList(t *testing.T) 
 		},
 	}
 
-	err := updateInstrumentationConfigForWorkload(&ic, rules, "service-name")
+	err := updateInstrumentationConfigForWorkload(&ic, rules)
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -354,7 +354,7 @@ func TestUpdateInstrumentationConfigForWorkload_DisabledRule(t *testing.T) {
 		},
 	}
 
-	err := updateInstrumentationConfigForWorkload(&ic, rules, "service-name")
+	err := updateInstrumentationConfigForWorkload(&ic, rules)
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -411,7 +411,7 @@ func TestUpdateInstrumentationConfigForWorkload_MultipleDefaultRules(t *testing.
 		},
 	}
 
-	err := updateInstrumentationConfigForWorkload(&ic, rules, "service-name")
+	err := updateInstrumentationConfigForWorkload(&ic, rules)
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -496,7 +496,7 @@ func TestUpdateInstrumentationConfigForWorkload_RuleForLibrary(t *testing.T) {
 		},
 	}
 
-	err := updateInstrumentationConfigForWorkload(&ic, rules, "service-name")
+	err := updateInstrumentationConfigForWorkload(&ic, rules)
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -553,7 +553,7 @@ func TestUpdateInstrumentationConfigForWorkload_LibraryRuleOtherLanguage(t *test
 		},
 	}
 
-	err := updateInstrumentationConfigForWorkload(&ic, rules, "service-name")
+	err := updateInstrumentationConfigForWorkload(&ic, rules)
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}

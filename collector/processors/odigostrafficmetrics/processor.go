@@ -10,86 +10,49 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.opentelemetry.io/collector/processor"
-	"go.opentelemetry.io/collector/processor/processorhelper"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/zap"
 )
 
 type dataSizesMetricsProcessor struct {
-	logger                                     *zap.Logger
-	logSize, metricSize, traceSize             metric.Int64Counter
-	tracesSizer                                ptrace.Sizer
-	metricsSizer                               pmetric.Sizer
-	logsSizer                                  plog.Sizer
-	resAttrsKeys                               []string
-	samplingFraction                           float64
-	inverseSamplingFraction                    int64
+	logger                  *zap.Logger
+	tracesSizer             ptrace.Sizer
+	metricsSizer            pmetric.Sizer
+	logsSizer               plog.Sizer
+	resAttrsKeys            []string
+	samplingFraction        float64
+	inverseSamplingFraction int64
 
-	obsrep     *processorhelper.ObsReport
+	obsrep *metadata.TelemetryBuilder
 }
 
-func newThroughputMeasurementProcessor(set processor.Settings, mp metric.MeterProvider, cfg *Config) (*dataSizesMetricsProcessor, error) {
-	meter := mp.Meter("github.com/odigos-io/odigos/collector/processors/odigostrafficmetrics")
-
-	logSize, err := meter.Int64Counter(
-		processorhelper.BuildCustomMetricName(metadata.Type.String(), "log_data_size"),
-		metric.WithDescription("Total size of log data passed to the processor"),
-		metric.WithUnit("By"),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("create log_data_size counter: %w", err)
-	}
-
-	metricSize, err := meter.Int64Counter(
-		processorhelper.BuildCustomMetricName(metadata.Type.String(), "metric_data_size"),
-		metric.WithDescription("Total size of metric data passed to the processor"),
-		metric.WithUnit("By"),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("create metric_data_size counter: %w", err)
-	}
-
-	traceSize, err := meter.Int64Counter(
-		processorhelper.BuildCustomMetricName(metadata.Type.String(), "trace_data_size"),
-		metric.WithDescription("Total size of trace data passed to the processor"),
-		metric.WithUnit("By"),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("create trace_data_size counter: %w", err)
-	}
-
+func newThroughputMeasurementProcessor(set processor.Settings, cfg *Config) (*dataSizesMetricsProcessor, error) {
 	samplingFraction := cfg.SamplingRatio
 	var inverseSamplingFraction int64
 	if samplingFraction != 0 {
 		inverseSamplingFraction = int64(1 / samplingFraction)
 	}
 
-	set.Logger.Info("Odigos traffic metrics processor is enabled with the following configuration", 
+	set.Logger.Info("Odigos traffic metrics processor is enabled with the following configuration",
 		zap.String("sampling_ratio", fmt.Sprintf("%f", samplingFraction)),
 		zap.String("inverse_sampling_ratio", fmt.Sprintf("%d", inverseSamplingFraction)),
 	)
 
-	obsrep, err := processorhelper.NewObsReport(processorhelper.ObsReportSettings{
-		ProcessorID:             set.ID,
-		ProcessorCreateSettings: set,
-	})
+	obsrep, err := metadata.NewTelemetryBuilder(set.TelemetrySettings)
 	if err != nil {
 		return nil, err
 	}
 
 	return &dataSizesMetricsProcessor{
 		logger:                  set.Logger,
-		logSize:                 logSize,
-		metricSize:              metricSize,
-		traceSize:               traceSize,
 		tracesSizer:             &ptrace.ProtoMarshaler{},
 		metricsSizer:            &pmetric.ProtoMarshaler{},
 		logsSizer:               &plog.ProtoMarshaler{},
 		resAttrsKeys:            cfg.ResourceAttributesKeys,
 		samplingFraction:        samplingFraction,
 		inverseSamplingFraction: inverseSamplingFraction,
-		obsrep: 				 obsrep,
+		obsrep:                  obsrep,
 	}, nil
 }
 
@@ -140,24 +103,24 @@ func (p *dataSizesMetricsProcessor) meterAttributes(md pmetric.Metrics) []attrib
 
 func (p *dataSizesMetricsProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
 	if p.samplingFraction != 0 && rand.Float64() < p.samplingFraction {
-		p.traceSize.Add(ctx, int64(p.tracesSizer.TracesSize(td)) * p.inverseSamplingFraction, metric.WithAttributes(p.traceAttributes(td)...))
+		p.obsrep.OdigosTraceDataSize.Add(ctx, int64(p.tracesSizer.TracesSize(td))*p.inverseSamplingFraction, metric.WithAttributes(p.traceAttributes(td)...))
+		p.obsrep.OdigosAcceptedSpans.Add(ctx, int64(td.SpanCount()))
 	}
-	p.obsrep.TracesAccepted(ctx, td.SpanCount())
 	return td, nil
 }
 
 func (p *dataSizesMetricsProcessor) processLogs(ctx context.Context, ld plog.Logs) (plog.Logs, error) {
 	if p.samplingFraction != 0 && rand.Float64() < p.samplingFraction {
-		p.logSize.Add(ctx, int64(p.logsSizer.LogsSize(ld)) * p.inverseSamplingFraction, metric.WithAttributes(p.logAttributes(ld)...))
+		p.obsrep.OdigosLogDataSize.Add(ctx, int64(p.logsSizer.LogsSize(ld))*p.inverseSamplingFraction, metric.WithAttributes(p.logAttributes(ld)...))
+		p.obsrep.OdigosAcceptedLogRecords.Add(ctx, int64(ld.LogRecordCount()))
 	}
-	p.obsrep.LogsAccepted(ctx, ld.LogRecordCount())
 	return ld, nil
 }
 
 func (p *dataSizesMetricsProcessor) processMetrics(ctx context.Context, md pmetric.Metrics) (pmetric.Metrics, error) {
 	if p.samplingFraction != 0 && rand.Float64() < p.samplingFraction {
-		p.metricSize.Add(ctx, int64(p.metricsSizer.MetricsSize(md)) * p.inverseSamplingFraction, metric.WithAttributes(p.meterAttributes(md)...))
+		p.obsrep.OdigosMetricDataSize.Add(ctx, int64(p.metricsSizer.MetricsSize(md))*p.inverseSamplingFraction, metric.WithAttributes(p.meterAttributes(md)...))
+		p.obsrep.OdigosAcceptedMetricPoints.Add(ctx, int64(md.MetricCount()))
 	}
-	p.obsrep.MetricsAccepted(ctx, md.MetricCount())
 	return md, nil
 }

@@ -25,10 +25,10 @@ func (c *Clickhouse) DestType() common.DestinationType {
 	return common.ClickhouseDestinationType
 }
 
-func (c *Clickhouse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (c *Clickhouse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	endpoint, exists := dest.GetConfig()[clickhouseEndpoint]
 	if !exists {
-		return errors.New("clickhouse endpoint not specified, gateway will not be configured for Clickhouse")
+		return nil, errors.New("clickhouse endpoint not specified, gateway will not be configured for Clickhouse")
 	}
 
 	if !strings.Contains(endpoint, "://") {
@@ -37,7 +37,7 @@ func (c *Clickhouse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 
 	parsedUrl, err := url.Parse(endpoint)
 	if err != nil {
-		return errors.New("clickhouse endpoint is not a valid URL")
+		return nil, errors.New("clickhouse endpoint is not a valid URL")
 	}
 
 	if parsedUrl.Port() == "" {
@@ -60,7 +60,7 @@ func (c *Clickhouse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 
 	dbName, exists := dest.GetConfig()[clickhouseDatabaseName]
 	if !exists {
-		return errors.New("clickhouse database name not specified, gateway will not be configured for Clickhouse")
+		return nil, errors.New("clickhouse database name not specified, gateway will not be configured for Clickhouse")
 	}
 	exporterConfig["database"] = dbName
 
@@ -80,11 +80,13 @@ func (c *Clickhouse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 	}
 
 	currentConfig.Exporters[exporterName] = exporterConfig
+	var pipelineNames []string
 	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/clickhouse-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
 	if isMetricsEnabled(dest) {
@@ -92,6 +94,7 @@ func (c *Clickhouse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
 	if isLoggingEnabled(dest) {
@@ -99,7 +102,8 @@ func (c *Clickhouse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, logsPipelineName)
 	}
 
-	return nil
+	return pipelineNames, nil
 }

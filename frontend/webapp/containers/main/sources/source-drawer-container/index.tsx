@@ -2,9 +2,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import buildCard from './build-card';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
-import { CodeIcon, ListIcon } from '@/assets';
 import buildDrawerItem from './build-drawer-item';
 import { UpdateSourceBody } from '../update-source-body';
+import { CodeIcon, ListIcon } from '@odigos/ui-components';
 import { useDescribeSource, useSourceCRUD } from '@/hooks';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type K8sActualSource } from '@/types';
@@ -14,7 +14,7 @@ import { ConditionDetails, DataCard, DataCardRow, DataCardFieldTypes, Segment } 
 interface Props {}
 
 const EMPTY_FORM = {
-  reportedName: '',
+  otelServiceName: '',
 };
 
 const FormContainer = styled.div`
@@ -33,22 +33,33 @@ const DataContainer = styled.div`
 
 export const SourceDrawer: React.FC<Props> = () => {
   const { selectedItem, setSelectedItem } = useDrawerStore();
-
-  const { persistSources, updateSource } = useSourceCRUD({
+  const { sources, persistSources, updateSource } = useSourceCRUD({
     onSuccess: (type) => {
       setIsEditing(false);
       setIsFormDirty(false);
 
-      if (type === ACTION.DELETE) {
-        setSelectedItem(null);
-      } else {
-        const { item } = selectedItem as { item: K8sActualSource };
-        const { namespace, name, kind } = item;
-        const id = { namespace, name, kind };
-        setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.SOURCE, item: buildDrawerItem(id, formData, item) });
-      }
+      if (type === ACTION.DELETE) setSelectedItem(null);
+      else reSelectItem();
     },
   });
+
+  const reSelectItem = (fetchedItems?: typeof sources) => {
+    const { item } = selectedItem as { item: K8sActualSource };
+    const { namespace, name, kind } = item;
+    const id = { namespace, name, kind };
+
+    if (!!fetchedItems?.length) {
+      const found = fetchedItems.find((x) => x.namespace === namespace && x.name === name && x.kind === kind);
+      if (!!found) {
+        return setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.SOURCE, item: found });
+      }
+    }
+
+    setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.SOURCE, item: buildDrawerItem(id, formData, item) });
+  };
+
+  // This should keep the drawer up-to-date with the latest data
+  useEffect(() => reSelectItem(sources), [sources]);
 
   const [isPrettyMode, setIsPrettyMode] = useState(true); // for "describe source"
   const [isEditing, setIsEditing] = useState(false);
@@ -63,7 +74,7 @@ export const SourceDrawer: React.FC<Props> = () => {
       resetFormData();
     } else {
       const { item } = selectedItem as { item: K8sActualSource };
-      handleFormChange('reportedName', item.reportedName || item.name || '');
+      handleFormChange('otelServiceName', item.otelServiceName || item.name || '');
     }
   }, [selectedItem, isEditing]);
 
@@ -119,14 +130,14 @@ export const SourceDrawer: React.FC<Props> = () => {
   };
 
   const handleSave = async () => {
-    const title = formData.reportedName !== item.name ? formData.reportedName : '';
-    handleFormChange('reportedName', title);
-    await updateSource(id, { ...formData, reportedName: title });
+    const title = formData.otelServiceName !== item.name ? formData.otelServiceName : '';
+    handleFormChange('otelServiceName', title);
+    await updateSource(id, { ...formData, otelServiceName: title });
   };
 
   return (
     <OverviewDrawer
-      title={item.reportedName || item.name}
+      title={item.otelServiceName || item.name}
       titleTooltip='This attribute is used to identify the name of the service (service.name) that is generating telemetry data.'
       icon={getEntityIcon(OVERVIEW_ENTITY_TYPES.SOURCE)}
       isEdit={isEditing}

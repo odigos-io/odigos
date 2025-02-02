@@ -1,0 +1,10 @@
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: 14-invalid-workload-kind
+  namespace: default
+spec:
+  workload:
+    name: 14-invalid-workload-kind
+    namespace: default
+    kind: CronJob

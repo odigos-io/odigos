@@ -15,5 +15,5 @@ export const InstrumentStatus: React.FC<Props> = ({ language, ...props }) => {
     WORKLOAD_PROGRAMMING_LANGUAGES.NO_RUNNING_PODS,
   ].includes(language);
 
-  return <Status title={isActive ? INSTUMENTATION_STATUS.INSTRUMENTED : INSTUMENTATION_STATUS.UNINSTRUMENTED} isPale={!isActive} isActive={isActive} withIcon withBorder {...props} />;
+  return <Status title={isActive ? INSTUMENTATION_STATUS.INSTRUMENTED : INSTUMENTATION_STATUS.UNINSTRUMENTED} isActive={isActive} withIcon withBorder {...props} />;
 };

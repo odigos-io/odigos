@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/instrumentation/detector"
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	instance "github.com/odigos-io/odigos/k8sutils/pkg/instrumentation_instance"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
@@ -20,7 +20,7 @@ import (
 type K8sProcessDetails struct {
 	pod           *corev1.Pod
 	containerName string
-	pw            *workload.PodWorkload
+	pw            *k8sconsts.PodWorkload
 	procEvent     detector.ProcessEvent
 }
 
@@ -39,7 +39,7 @@ type k8sReporter struct {
 }
 
 type K8sConfigGroup struct {
-	Pw   workload.PodWorkload
+	Pw   k8sconsts.PodWorkload
 	Lang common.ProgrammingLanguage
 }
 
@@ -56,9 +56,9 @@ func (e *errRequiredEnvVarNotFound) Error() string {
 var _ error = &errRequiredEnvVarNotFound{}
 
 var (
-	errContainerNameNotReported = &errRequiredEnvVarNotFound{envVarName: consts.OdigosEnvVarContainerName}
-	errPodNameNotReported       = &errRequiredEnvVarNotFound{envVarName: consts.OdigosEnvVarPodName}
-	errPodNameSpaceNotReported  = &errRequiredEnvVarNotFound{envVarName: consts.OdigosEnvVarNamespace}
+	errContainerNameNotReported = &errRequiredEnvVarNotFound{envVarName: k8sconsts.OdigosEnvVarContainerName}
+	errPodNameNotReported       = &errRequiredEnvVarNotFound{envVarName: k8sconsts.OdigosEnvVarPodName}
+	errPodNameSpaceNotReported  = &errRequiredEnvVarNotFound{envVarName: k8sconsts.OdigosEnvVarNamespace}
 )
 
 type InstrumentationStatusReason string

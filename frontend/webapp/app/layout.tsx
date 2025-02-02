@@ -3,16 +3,12 @@ import './globals.css';
 import React from 'react';
 import { METADATA } from '@/utils';
 import { ApolloWrapper } from '@/lib';
-import { ThemeProviderWrapper } from '@/styles';
-
-const LAYOUT_STYLE: React.CSSProperties = {
-  width: '100vw',
-  height: '100vh',
-  margin: 0,
-  backgroundColor: '#111111',
-};
+import { useDarkModeStore } from '@/store';
+import { ThemeProvider } from '@/styles';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const { darkMode } = useDarkModeStore();
+
   return (
     <html lang='en'>
       <head>
@@ -22,11 +18,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <title>{METADATA.title}</title>
       </head>
       <ApolloWrapper>
-        <ThemeProviderWrapper>
-          <body suppressHydrationWarning={true} style={LAYOUT_STYLE}>
+        <ThemeProvider>
+          <body
+            suppressHydrationWarning={true}
+            style={{
+              width: '100vw',
+              height: '100vh',
+              margin: 0,
+              backgroundColor: darkMode ? '#111111' : '#EEEEEE',
+            }}
+          >
             {children}
           </body>
-        </ThemeProviderWrapper>
+        </ThemeProvider>
       </ApolloWrapper>
     </html>
   );

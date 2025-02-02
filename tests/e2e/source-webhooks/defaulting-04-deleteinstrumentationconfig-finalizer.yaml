@@ -1,0 +1,10 @@
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: 04-deleteinstrumentationconfig-finalizer
+  namespace: default
+spec:
+  workload:
+    name: deleteinstrumentationconfig-finalizer
+    namespace: default
+    kind: Deployment

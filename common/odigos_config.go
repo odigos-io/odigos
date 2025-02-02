@@ -1,6 +1,12 @@
 package common
 
 type ProfileName string
+type UiMode string
+
+const (
+	NormalUiMode   UiMode = "normal"
+	ReadonlyUiMode UiMode = "readonly"
+)
 
 type CollectorNodeConfiguration struct {
 	// The port to use for exposing the collector's own metrics as a prometheus endpoint.
@@ -104,7 +110,6 @@ type OdigosConfiguration struct {
 	CollectorNode             *CollectorNodeConfiguration    `json:"collectorNode,omitempty"`
 	Profiles                  []ProfileName                  `json:"profiles,omitempty"`
 	AllowConcurrentAgents     *bool                          `json:"allowConcurrentAgents,omitempty"`
-	// this is internal currently, and is not exposed on the CLI / helm
-	// used for odigos enterprise
-	GoAutoIncludeCodeAttributes bool `json:"goAutoIncludeCodeAttributes,omitempty"`
+	UiMode                    UiMode                         `json:"uiMode,omitempty"`
+	CentralBackendURL         string                         `json:"centralBackendURL,omitempty"`
 }

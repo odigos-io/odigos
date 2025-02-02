@@ -3,6 +3,7 @@ import { gql } from '@apollo/client';
 export const GET_COMPUTE_PLATFORM = gql`
   query GetComputePlatform {
     computePlatform {
+      computePlatformType
       apiTokens {
         token
         name
@@ -13,6 +14,60 @@ export const GET_COMPUTE_PLATFORM = gql`
         name
         selected
       }
+    }
+  }
+`;
+
+export const GET_NAMESPACE = gql`
+  query GetNamespace($namespaceName: String!) {
+    computePlatform {
+      k8sActualNamespace(name: $namespaceName) {
+        name
+        selected
+        k8sActualSources {
+          kind
+          name
+          numberOfInstances
+          selected
+        }
+      }
+    }
+  }
+`;
+
+export const GET_SOURCES = gql`
+  query GetSources($nextPage: String!) {
+    computePlatform {
+      sources(nextPage: $nextPage) {
+        nextPage
+        items {
+          namespace
+          name
+          kind
+          selected
+          otelServiceName
+          containers {
+            containerName
+            language
+            runtimeVersion
+            otherAgent
+          }
+          conditions {
+            status
+            type
+            reason
+            message
+            lastTransitionTime
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const GET_DESTINATIONS = gql`
+  query GetDestinations {
+    computePlatform {
       destinations {
         id
         name
@@ -44,6 +99,13 @@ export const GET_COMPUTE_PLATFORM = gql`
           message
         }
       }
+    }
+  }
+`;
+
+export const GET_ACTIONS = gql`
+  query GetActions {
+    computePlatform {
       actions {
         id
         type
@@ -56,11 +118,20 @@ export const GET_COMPUTE_PLATFORM = gql`
           lastTransitionTime
         }
       }
+    }
+  }
+`;
+
+export const GET_INSTRUMENTATION_RULES = gql`
+  query GetInstrumentationRules {
+    computePlatform {
       instrumentationRules {
         ruleId
         ruleName
         notes
         disabled
+        mutable
+        profileName
         # workloads {}
         # instrumentationLibraries {}
         payloadCollection {
@@ -83,52 +154,13 @@ export const GET_COMPUTE_PLATFORM = gql`
             dropPartialPayloads
           }
         }
-      }
-    }
-  }
-`;
-
-export const GET_NAMESPACES = gql`
-  query GetK8sActualNamespace($namespaceName: String!, $instrumentationLabeled: Boolean) {
-    computePlatform {
-      k8sActualNamespace(name: $namespaceName) {
-        name
-        selected
-        k8sActualSources(instrumentationLabeled: $instrumentationLabeled) {
-          kind
-          name
-          numberOfInstances
-          selected
-        }
-      }
-    }
-  }
-`;
-
-export const GET_SOURCES = gql`
-  query GetSources($nextPage: String!) {
-    computePlatform {
-      sources(nextPage: $nextPage) {
-        nextPage
-        items {
+        codeAttributes {
+          column
+          filePath
+          function
+          lineNumber
           namespace
-          name
-          kind
-          selected
-          reportedName
-          containers {
-            containerName
-            language
-            runtimeVersion
-            otherAgent
-          }
-          conditions {
-            status
-            type
-            reason
-            message
-            lastTransitionTime
-          }
+          stacktrace
         }
       }
     }

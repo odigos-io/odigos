@@ -10,16 +10,23 @@ import (
 )
 
 const (
+	// These metrics are added to each exporter. And are provided by the collector exporterhelper.
+	// These are not stable and may change in the future.
+	// Using these metrics, we can estimate the amount of data sent by each exporter.
 	exporterSentSpansMetricName   = "otelcol_exporter_sent_spans"
 	exporterSentMetricsMetricName = "otelcol_exporter_sent_metric_points"
 	exporterSentLogsMetricName    = "otelcol_exporter_sent_log_records"
 
-	processorAcceptedSpansMetricName   = "otelcol_processor_accepted_spans"
-	processorAcceptedMetricsMetricName = "otelcol_processor_accepted_metric_points"
-	processorAcceptedLogsMetricName    = "otelcol_processor_accepted_log_records"
-
+	// Each metrics from the exporters has this attribute which is the name of the exporter.
 	exporterMetricAttributesKey  = "exporter"
-	processorMetricAttributesKey = "processor"
+
+	// These metrics are added by the odigostrafficmetrics processor.
+	// Each processor comes with `otelcol_processor_incoming_items` and `otelcol_processor_outgoing_items` metrics.
+	// but since we need our processor anyway, we use our custom metrics from it to reduce the handling of breaking changes by the collector.
+	// These metrics are used to estimate the average size of spans/metrics/logs.
+	processorAcceptedSpansMetricName   = "otelcol_odigos_accepted_spans"
+	processorAcceptedMetricsMetricName = "otelcol_odigos_accepted_metric_points"
+	processorAcceptedLogsMetricName    = "otelcol_odigos_accepted_log_records"
 )
 
 type destinationsMetrics struct {
@@ -260,16 +267,13 @@ func (dm *destinationsMetrics) updateAverageEstimates(md pmetric.Metrics) {
 				case processorAcceptedSpansMetricName, processorAcceptedMetricsMetricName, processorAcceptedLogsMetricName:
 					for dataPointIndex := 0; dataPointIndex < m.Sum().DataPoints().Len(); dataPointIndex++ {
 						dataPoint := m.Sum().DataPoints().At(dataPointIndex)
-						processorName, ok := dataPoint.Attributes().Get(processorMetricAttributesKey)
-						if ok && processorName.Str() == "odigostrafficmetrics" {
-							switch m.Name() {
-							case processorAcceptedSpansMetricName:
-								acceptedSpans = int64(dataPoint.DoubleValue())
-							case processorAcceptedMetricsMetricName:
-								acceptedMetrics = int64(dataPoint.DoubleValue())
-							case processorAcceptedLogsMetricName:
-								acceptedLogs = int64(dataPoint.DoubleValue())
-							}
+						switch m.Name() {
+						case processorAcceptedSpansMetricName:
+							acceptedSpans = int64(dataPoint.DoubleValue())
+						case processorAcceptedMetricsMetricName:
+							acceptedMetrics = int64(dataPoint.DoubleValue())
+						case processorAcceptedLogsMetricName:
+							acceptedLogs = int64(dataPoint.DoubleValue())
 						}
 					}
 				case traceSizeMetricName, metricSizeMetricName, logSizeMetricName:

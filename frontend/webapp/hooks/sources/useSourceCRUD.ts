@@ -1,10 +1,11 @@
 import { useMemo } from 'react';
+import { useConfig } from '../config';
 import { useMutation } from '@apollo/client';
 import { useNamespace } from '../compute-platform';
 import { PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
-import { ACTION, BACKEND_BOOLEAN, getSseTargetFromId } from '@/utils';
+import { ACTION, BACKEND_BOOLEAN, DISPLAY_TITLES, FORM_ALERTS, getSseTargetFromId } from '@/utils';
 import { type PendingItem, useAppStore, useFilterStore, useNotificationStore, usePaginatedStore, usePendingStore } from '@/store';
-import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type PatchSourceRequestInput, NOTIFICATION_TYPE, type K8sActualSource } from '@/types';
+import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type PatchSourceRequestInput, NOTIFICATION_TYPE, type K8sActualSource, K8sResourceKind } from '@/types';
 
 interface Params {
   onSuccess?: (type: string) => void;
@@ -15,8 +16,9 @@ export const useSourceCRUD = (params?: Params) => {
   const { persistNamespace } = useNamespace();
 
   const filters = useFilterStore();
-  const { sources, updateSource, removeSource } = usePaginatedStore();
+  const { data: config } = useConfig();
   const { setConfiguredSources } = useAppStore();
+  const { sources, updateSource } = usePaginatedStore();
   const { addPendingItems, removePendingItems } = usePendingStore();
   const { addNotification, removeNotifications } = useNotificationStore();
 
@@ -41,13 +43,25 @@ export const useSourceCRUD = (params?: Params) => {
     params?.onSuccess?.(actionType);
   };
 
+  const filtered = useMemo(() => {
+    let arr = [...sources];
+
+    if (!!filters.namespace) arr = arr.filter((source) => filters.namespace?.id === source.namespace);
+    if (!!filters.types.length) arr = arr.filter((source) => !!filters.types.find((type) => type.id === source.kind));
+    if (!!filters.onlyErrors) arr = arr.filter((source) => !!source.conditions?.find((cond) => cond.status === BACKEND_BOOLEAN.FALSE));
+    if (!!filters.errors.length) arr = arr.filter((source) => !!filters.errors.find((error) => !!source.conditions?.find((cond) => cond.message === error.id)));
+    if (!!filters.languages.length) arr = arr.filter((source) => !!filters.languages.find((language) => !!source.containers?.find((cont) => cont.language === language.id)));
+
+    return arr;
+  }, [sources, filters]);
+
   const [persistSources, cdState] = useMutation<{ persistK8sSources: boolean }>(PERSIST_SOURCE, {
     onError: (error) => handleError('', error.message),
     onCompleted: (res, req) => {
       const namespace = req?.variables?.namespace;
       const count = req?.variables?.sources.length;
 
-      req?.variables?.sources.forEach(({ name, kind, selected }: { name: string; kind: string; selected: boolean }) => {
+      req?.variables?.sources.forEach(({ name, kind, selected }: { name: string; kind: K8sResourceKind; selected: boolean }) => {
         if (!selected) removeNotifications(getSseTargetFromId({ namespace, name, kind }, OVERVIEW_ENTITY_TYPES.SOURCE));
       });
 
@@ -80,55 +94,65 @@ export const useSourceCRUD = (params?: Params) => {
     },
   });
 
-  const filtered = useMemo(() => {
-    let arr = [...sources];
-
-    if (!!filters.namespace) arr = arr.filter((source) => filters.namespace?.id === source.namespace);
-    if (!!filters.types.length) arr = arr.filter((source) => !!filters.types.find((type) => type.id === source.kind));
-    if (!!filters.onlyErrors) arr = arr.filter((source) => !!source.conditions?.find((cond) => cond.status === BACKEND_BOOLEAN.FALSE));
-    if (!!filters.errors.length) arr = arr.filter((source) => !!filters.errors.find((error) => !!source.conditions?.find((cond) => cond.message === error.id)));
-    if (!!filters.languages.length) arr = arr.filter((source) => !!filters.languages.find((language) => !!source.containers?.find((cont) => cont.language === language.id)));
-
-    return arr;
-  }, [sources, filters]);
-
   return {
     loading: cdState.loading || uState.loading,
     sources,
     filteredSources: filtered,
 
     persistSources: async (selectAppsList: { [key: string]: K8sActualSource[] }, futureSelectAppsList: { [key: string]: boolean }) => {
-      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Persisting sources...', undefined, true);
+      if (config?.readonly) {
+        notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+      } else {
+        const entries = Object.entries(selectAppsList);
 
-      // this is to handle "on success" callback if there are no sources to persist
-      let hasSources = false;
+        // this is to handle "on success" callback if there are no sources to persist,
+        // and to notify use if there are source to persist
+        let hasSources = false;
+        let alreadyNotifiedSources = false;
+        let alreadyNotifiedNamespaces = false;
 
-      for (const [namespace, sources] of Object.entries(selectAppsList)) {
-        const addToPendingStore: PendingItem[] = [];
-        const sendToGql: Pick<K8sActualSource, 'name' | 'kind' | 'selected'>[] = [];
+        for (const [namespace, sources] of entries) {
+          const addToPendingStore: PendingItem[] = [];
+          const sendToGql: Pick<K8sActualSource, 'name' | 'kind' | 'selected'>[] = [];
 
-        sources.forEach(({ name, kind, selected }) => {
-          addToPendingStore.push({ entityType: OVERVIEW_ENTITY_TYPES.SOURCE, entityId: { namespace, name, kind } });
-          sendToGql.push({ name, kind, selected });
-        });
+          sources.forEach(({ name, kind, selected }) => {
+            addToPendingStore.push({ entityType: OVERVIEW_ENTITY_TYPES.SOURCE, entityId: { namespace, name, kind } });
+            sendToGql.push({ name, kind, selected });
+          });
 
-        if (!!sendToGql.length) hasSources = true;
+          if (!!sendToGql.length) {
+            hasSources = true;
+            if (!alreadyNotifiedSources) {
+              alreadyNotifiedSources = true;
+              notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Persisting sources...', undefined, true);
+            }
+          }
 
-        addPendingItems(addToPendingStore);
-        await persistSources({ variables: { namespace, sources: sendToGql } });
+          addPendingItems(addToPendingStore);
+          await persistSources({ variables: { namespace, sources: sendToGql } });
+        }
+
+        for (const [namespace, futureSelected] of Object.entries(futureSelectAppsList)) {
+          if (!alreadyNotifiedSources && !alreadyNotifiedNamespaces) {
+            alreadyNotifiedNamespaces = true;
+            notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Persisting namespaces...', undefined, true);
+          }
+
+          await persistNamespace({ name: namespace, futureSelected });
+        }
+
+        if (!hasSources) handleComplete('');
       }
-
-      for (const [namespace, futureSelected] of Object.entries(futureSelectAppsList)) {
-        await persistNamespace({ name: namespace, futureSelected });
-      }
-
-      if (!hasSources) handleComplete('');
     },
 
     updateSource: async (sourceId: WorkloadId, patchSourceRequest: PatchSourceRequestInput) => {
-      notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Updating source...', undefined, true);
-      addPendingItems([{ entityType: OVERVIEW_ENTITY_TYPES.SOURCE, entityId: sourceId }]);
-      await updateSourceName({ variables: { sourceId, patchSourceRequest } });
+      if (config?.readonly) {
+        notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+      } else {
+        notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Updating source...', undefined, true);
+        addPendingItems([{ entityType: OVERVIEW_ENTITY_TYPES.SOURCE, entityId: sourceId }]);
+        await updateSourceName({ variables: { sourceId, patchSourceRequest } });
+      }
     },
   };
 };

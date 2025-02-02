@@ -1,36 +1,39 @@
 import { type Condition } from './common';
 import { WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils';
 
-export type SourceContainer = {
+export enum K8sResourceKind {
+  Deployment = 'Deployment',
+  DaemonSet = 'DaemonSet',
+  StatefulSet = 'StatefulSet',
+}
+
+export interface WorkloadId {
+  namespace: string;
+  name: string;
+  kind: string; // TODO: replace with "K8sResourceKind" and fix all TS errors;
+}
+
+export interface SourceContainer {
   containerName: string;
   language: WORKLOAD_PROGRAMMING_LANGUAGES;
   runtimeVersion: string;
   otherAgent: string | null;
-};
-
-export type K8sActualSource = {
-  namespace: string;
-  name: string;
-  kind: string;
-  numberOfInstances: number;
-  selected: boolean;
-  reportedName: string;
-  containers: Array<SourceContainer>;
-  conditions: Array<Condition>;
-};
-
-export type WorkloadId = {
-  kind: string;
-  name: string;
-  namespace: string;
-};
-
-export interface PatchSourceRequestInput {
-  reportedName?: string;
 }
 
-export type PersistSourcesArray = {
+export interface K8sActualSource extends WorkloadId {
+  selected: boolean;
+  numberOfInstances?: number;
+  otelServiceName: string;
+  containers: Array<SourceContainer>;
+  conditions: Array<Condition>;
+}
+
+export interface PatchSourceRequestInput {
+  otelServiceName: string;
+}
+
+export interface PersistSourcesArray {
   kind: string;
   name: string;
   selected: boolean;
-};
+}

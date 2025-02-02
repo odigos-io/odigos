@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { ACTION } from '@/utils';
-import { useKeyDown } from '@/hooks';
 import { ActionFormBody } from '../';
-import { CenterThis, ModalBody } from '@/styles';
+import { ModalBody } from '@/styles';
+import { useKeyDown } from '@/hooks';
+import { CenterThis } from '@odigos/ui-components';
 import { useActionCRUD, useActionFormData } from '@/hooks/actions';
 import { ACTION_OPTIONS, type ActionOption } from './action-options';
 import { AutocompleteInput, Modal, NavigationButtons, Divider, FadeLoader, SectionTitle } from '@/reuseable-components';
@@ -60,7 +61,7 @@ export const ActionModal: React.FC<Props> = ({ isOpen, onClose }) => {
     >
       <ModalBody>
         <SectionTitle title='Select Action' description='Select an action to modify telemetry data before it`s sent to destinations. Choose an action type and configure its details.' />
-        <AutocompleteInput options={ACTION_OPTIONS} selectedOption={selectedItem} onOptionSelect={handleSelect} style={{ marginTop: '24px' }} autoFocus />
+        <AutocompleteInput options={ACTION_OPTIONS} selectedOption={selectedItem} onOptionSelect={handleSelect} style={{ marginTop: '24px' }} autoFocus={!selectedItem?.type} />
 
         {!!selectedItem?.type ? (
           <div>

@@ -4,8 +4,8 @@ import (
 	"errors"
 	"sync"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/frontend/services/common"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
@@ -29,20 +29,6 @@ func newSourcesMetrics() sourcesMetrics {
 	}
 }
 
-// newSourceMetric creates a new singleSourceMetrics object with initial traffic metrics based on the data point received
-// The sourceMetrics map initialized with the node collector ID and the traffic metrics
-func newSourceMetric(dp pmetric.NumberDataPoint, metricName string, nodeCollectorID string) *singleSourceMetrics {
-	tm := newTrafficMetrics(metricName, dp)
-
-	sm := &singleSourceMetrics{
-		nodeCollectorsTraffic: map[string]*trafficMetrics{
-			nodeCollectorID: tm,
-		},
-	}
-
-	return sm
-}
-
 func (sm *sourcesMetrics) updateSourceMetrics(dp pmetric.NumberDataPoint, metricName string, nodeCollectorID string) {
 	sID, err := metricAttributesToSourceID(dp.Attributes())
 	if err != nil {
@@ -53,8 +39,10 @@ func (sm *sourcesMetrics) updateSourceMetrics(dp pmetric.NumberDataPoint, metric
 	defer sm.sourcesMu.Unlock()
 	currentVal, ok := sm.sourcesMap[sID]
 	if !ok {
-		// first time we receive data for this source, create an entry for it with hte given nodeCollectorID
-		sm.sourcesMap[sID] = newSourceMetric(dp, metricName, nodeCollectorID)
+		// this source is not tracked, this can happen if:
+		// 1) a source has been deleted, and the collectors keep reporting its metrics (those metrics refer to the old deleted source and won't update)
+		// or
+		// 2) this is a new source and we didn't receive the watch event for it's creation yet
 		return
 	}
 
@@ -134,6 +122,15 @@ func (sourceMetrics *sourcesMetrics) removeSource(sID common.SourceID) {
 	sourceMetrics.sourcesMu.Unlock()
 }
 
+func (sourcesMetrics *sourcesMetrics) addSource(sID common.SourceID) {
+	sourcesMetrics.sourcesMu.Lock()
+	defer sourcesMetrics.sourcesMu.Unlock()
+
+	sourcesMetrics.sourcesMap[sID] = &singleSourceMetrics{
+		nodeCollectorsTraffic: make(map[string]*trafficMetrics),
+	}
+}
+
 func (sourceMetrics *sourcesMetrics) metricsByID(sID common.SourceID) (trafficMetrics, bool) {
 	sm, ok := sourceMetrics.sourcesMap[sID]
 	if !ok {
@@ -190,13 +187,13 @@ func metricAttributesToSourceID(attrs pcommon.Map) (common.SourceID, error) {
 		return common.SourceID{}, errors.New("namespace not found")
 	}
 
-	var kind workload.WorkloadKind
+	var kind k8sconsts.WorkloadKind
 	if _, ok := attrs.Get(K8SDeploymentNameKey); ok {
-		kind = workload.WorkloadKindDeployment
+		kind = k8sconsts.WorkloadKindDeployment
 	} else if _, ok := attrs.Get(K8SStatefulSetNameKey); ok {
-		kind = workload.WorkloadKindStatefulSet
+		kind = k8sconsts.WorkloadKindStatefulSet
 	} else if _, ok := attrs.Get(K8SDaemonSetNameKey); ok {
-		kind = workload.WorkloadKindDaemonSet
+		kind = k8sconsts.WorkloadKindDaemonSet
 	} else {
 		return common.SourceID{}, errors.New("kind not found")
 	}

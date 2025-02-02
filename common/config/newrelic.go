@@ -17,10 +17,10 @@ func (n *NewRelic) DestType() common.DestinationType {
 	return common.NewRelicDestinationType
 }
 
-func (n *NewRelic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (n *NewRelic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	endpoint, exists := dest.GetConfig()[newRelicEndpoint]
 	if !exists {
-		return errors.New("New relic endpoint not specified, gateway will not be configured for New Relic")
+		return nil, errors.New("New relic endpoint not specified, gateway will not be configured for New Relic")
 	}
 
 	exporterName := "otlp/newrelic-" + dest.GetID()
@@ -30,12 +30,13 @@ func (n *NewRelic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 			"api-key": "${NEWRELIC_API_KEY}",
 		},
 	}
-
+	var pipelineNames []string
 	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/newrelic-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
 	if isMetricsEnabled(dest) {
@@ -43,6 +44,7 @@ func (n *NewRelic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
 	if isLoggingEnabled(dest) {
@@ -50,7 +52,8 @@ func (n *NewRelic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, logsPipelineName)
 	}
 
-	return nil
+	return pipelineNames, nil
 }

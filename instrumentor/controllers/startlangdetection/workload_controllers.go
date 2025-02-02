@@ -4,16 +4,16 @@ import (
 	"context"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"k8s.io/apimachinery/pkg/runtime"
-
-	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
+
+	"github.com/odigos-io/odigos/api/k8sconsts"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
 type DeploymentReconciler struct {
@@ -22,7 +22,7 @@ type DeploymentReconciler struct {
 }
 
 func (r *DeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	return reconcileWorkload(ctx, r.Client, workload.WorkloadKindDeployment, req, r.Scheme)
+	return reconcileWorkload(ctx, r.Client, k8sconsts.WorkloadKindDeployment, req, r.Scheme)
 }
 
 type DaemonSetReconciler struct {
@@ -31,7 +31,7 @@ type DaemonSetReconciler struct {
 }
 
 func (r *DaemonSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	return reconcileWorkload(ctx, r.Client, workload.WorkloadKindDaemonSet, req, r.Scheme)
+	return reconcileWorkload(ctx, r.Client, k8sconsts.WorkloadKindDaemonSet, req, r.Scheme)
 }
 
 type StatefulSetReconciler struct {
@@ -40,27 +40,26 @@ type StatefulSetReconciler struct {
 }
 
 func (r *StatefulSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	return reconcileWorkload(ctx, r.Client, workload.WorkloadKindStatefulSet, req, r.Scheme)
+	return reconcileWorkload(ctx, r.Client, k8sconsts.WorkloadKindStatefulSet, req, r.Scheme)
 }
 
-func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind workload.WorkloadKind, req ctrl.Request, scheme *runtime.Scheme) (ctrl.Result, error) {
+func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind k8sconsts.WorkloadKind, req ctrl.Request, scheme *runtime.Scheme) (ctrl.Result, error) {
 	obj := workload.ClientObjectFromWorkloadKind(objKind)
-	instConfigName := workload.CalculateWorkloadRuntimeObjectName(req.Name, objKind)
 	err := getWorkloadObject(ctx, k8sClient, req, obj)
 	if err != nil {
 		// Deleted objects should be filtered in the event filter
 		return ctrl.Result{}, err
 	}
 
-	instrumented, err := workload.IsWorkloadInstrumentationEffectiveEnabled(ctx, k8sClient, obj)
+	enabled, err := sourceutils.IsObjectInstrumentedBySource(ctx, k8sClient, obj)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-
-	if !instrumented {
+	if !enabled {
 		return ctrl.Result{}, nil
 	}
 
+	instConfigName := workload.CalculateWorkloadRuntimeObjectName(req.Name, objKind)
 	err = requestOdigletsToCalculateRuntimeDetails(ctx, k8sClient, instConfigName, req.Namespace, obj, scheme)
 	return ctrl.Result{}, err
 }
@@ -82,12 +81,21 @@ func requestOdigletsToCalculateRuntimeDetails(ctx context.Context, k8sClient cli
 		},
 	}
 
+	serviceName, err := sourceutils.OtelServiceNameBySource(ctx, k8sClient, obj)
+	if err != nil {
+		return err
+	}
+
+	if serviceName != "" {
+		instConfig.Spec.ServiceName = serviceName
+	}
+
 	if err := ctrl.SetControllerReference(obj, instConfig, scheme); err != nil {
 		logger.Error(err, "Failed to set controller reference", "name", instConfigName, "namespace", namespace)
 		return err
 	}
 
-	err := k8sClient.Create(ctx, instConfig)
+	err = k8sClient.Create(ctx, instConfig)
 	if err != nil {
 		return client.IgnoreAlreadyExists(err)
 	}

@@ -5,19 +5,27 @@ import (
 )
 
 const (
-	CurrentNamespaceEnvVar       = "CURRENT_NS"
-	OdigosVersionEnvVarName      = "ODIGOS_VERSION"
-	OdigosTierEnvVarName         = "ODIGOS_TIER"
-	DefaultOdigosNamespace       = "odigos-system"
-	OdigosConfigurationName      = "odigos-config"
-	OdigosEffectiveConfigName    = "effective-config"
-	OdigosConfigurationFileName  = "config.yaml"
-	OTLPPort                     = 4317
-	OTLPHttpPort                 = 4318
-	PprofOdigosPort              = 6060
-	OdigosInstrumentationLabel   = "odigos-instrumentation"
-	InstrumentationEnabled       = "enabled"
-	InstrumentationDisabled      = "disabled"
+	CurrentNamespaceEnvVar      = "CURRENT_NS"
+	OdigosVersionEnvVarName     = "ODIGOS_VERSION"
+	OdigosTierEnvVarName        = "ODIGOS_TIER"
+	DefaultOdigosNamespace      = "odigos-system"
+	OdigosConfigurationName     = "odigos-config"
+	OdigosEffectiveConfigName   = "effective-config"
+	OdigosConfigurationFileName = "config.yaml"
+	OTLPPort                    = 4317
+	OTLPHttpPort                = 4318
+	PprofOdigosPort             = 6060
+
+	// Deprecated: Sources are used to mark workloads for instrumentation.
+	OdigosInstrumentationLabel = "odigos-instrumentation"
+
+	// Deprecated: Sources are used to mark workloads for instrumentation.
+	InstrumentationEnabled = "enabled"
+
+	// Deprecated: Sources are used to mark workloads for instrumentation.
+	InstrumentationDisabled = "disabled"
+
+	// Deprecated: reported name is set via the Source CR.
 	OdigosReportedNameAnnotation = "odigos.io/reported-name"
 	RolloutTriggerAnnotation     = "rollout-trigger"
 
@@ -30,6 +38,7 @@ const (
 	// or odigos is uninstalled.
 	// Should only be used for environment variables that are modified by odigos.
 	ManifestEnvOriginalValAnnotation = "odigos.io/manifest-env-original-val"
+
 	// Used to label instrumentation instances by the corresponding
 	// instrumented app for better query performance.
 	InstrumentedAppNameLabel = "instrumented-app"

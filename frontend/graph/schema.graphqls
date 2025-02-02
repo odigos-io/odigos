@@ -61,8 +61,8 @@ type Condition {
 
 type K8sActualNamespace {
   name: String!
-  selected: Boolean
-  k8sActualSources(instrumentationLabeled: Boolean): [K8sActualSource]!
+  selected: Boolean!
+  k8sActualSources: [K8sActualSource]!
 }
 
 input K8sDesiredNamespaceInput {
@@ -79,7 +79,7 @@ type K8sActualSource {
   kind: K8sResourceKind!
   numberOfInstances: Int
   selected: Boolean
-  reportedName: String
+  otelServiceName: String
   containers: [SourceContainerRuntimeDetails!]
   conditions: [Condition!]
 }
@@ -117,9 +117,12 @@ type InstrumentationRule {
   ruleName: String
   notes: String
   disabled: Boolean
+  mutable: Boolean!
+  profileName: String!
   workloads: [PodWorkload!]
   instrumentationLibraries: [InstrumentationLibraryGlobalId!]
   payloadCollection: PayloadCollection
+  codeAttributes: CodeAttributes
 }
 
 input InstrumentationRuleInput {
@@ -129,6 +132,7 @@ input InstrumentationRuleInput {
   workloads: [PodWorkloadInput!]
   instrumentationLibraries: [InstrumentationLibraryGlobalIdInput!]
   payloadCollection: PayloadCollectionInput
+  codeAttributes: CodeAttributesInput
 }
 
 type InstrumentationLibraryGlobalId {
@@ -187,6 +191,24 @@ type MessagingPayloadCollection {
 input MessagingPayloadCollectionInput {
   maxPayloadLength: Int
   dropPartialPayloads: Boolean
+}
+
+type CodeAttributes {
+  column: Boolean
+  filePath: Boolean
+  function: Boolean
+  lineNumber: Boolean
+  namespace: Boolean
+  stacktrace: Boolean
+}
+
+input CodeAttributesInput {
+  column: Boolean
+  filePath: Boolean
+  function: Boolean
+  lineNumber: Boolean
+  namespace: Boolean
+  stacktrace: Boolean
 }
 
 type ApiToken {
@@ -252,6 +274,7 @@ type Destination {
 
 type GetConfigResponse {
   installation: InstallationStatus!
+  readonly: Boolean!
 }
 
 type CustomReadDataLabel {
@@ -327,7 +350,7 @@ type PipelineAction {
 }
 
 input PatchSourceRequestInput {
-  reportedName: String
+  otelServiceName: String!
 }
 
 interface Action {
@@ -552,6 +575,7 @@ type NodeCollectorAnalyze {
 
 type OdigosAnalyze {
   odigosVersion: EntityProperty!
+  kubernetesVersion: EntityProperty!
   tier: EntityProperty!
   installationMethod: EntityProperty!
   numberOfDestinations: Int!

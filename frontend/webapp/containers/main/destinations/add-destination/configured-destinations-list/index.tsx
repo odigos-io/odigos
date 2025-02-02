@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { TrashIcon } from '@/assets';
 import styled from 'styled-components';
 import { extractMonitors } from '@/utils';
 import { DeleteWarning } from '@/components';
 import { IAppState, useAppStore } from '@/store';
+import { TrashIcon } from '@odigos/ui-components';
 import { OVERVIEW_ENTITY_TYPES, type ConfiguredDestination } from '@/types';
 import { DataCardFields, DataTab, IconButton } from '@/reuseable-components';
 

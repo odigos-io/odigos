@@ -11,3 +11,21 @@ rules:
       - get
       - list
       - watch
+  - apiGroups:
+      - odigos.io
+    resources:
+      - sources
+    verbs:
+      - get
+      - list
+      - watch
+{{- if .Values.openshift.enabled }}
+  - apiGroups:
+      - odigos.io
+    resources:
+      - collectorsgroups/finalizers
+    verbs:
+      - get
+      - patch
+      - update
+{{- end }}

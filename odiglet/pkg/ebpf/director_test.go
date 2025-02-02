@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/instrumentation_instance"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,12 +21,12 @@ import (
 )
 
 type FakeEbpfSdk struct {
-	running         bool
-	pid 		    int
+	running bool
+	pid     int
 
-	closed          bool
-	cancel          context.CancelFunc
-	stopped         chan struct{}
+	closed  bool
+	cancel  context.CancelFunc
+	stopped chan struct{}
 }
 
 // compile-time check that FakeEbpfSdk implements ConfigurableOtelEbpfSdk
@@ -65,20 +65,20 @@ func (f *FakeEbpfSdk) Run(ctx context.Context) error {
 
 type FakeInstrumentationFactory struct {
 	timeToSetup time.Duration
-	kubeclient client.Client
+	kubeclient  client.Client
 }
 
 func NewFakeInstrumentationFactory(kubeclient client.Client, setupDuration time.Duration) InstrumentationFactory[*FakeEbpfSdk] {
 	return &FakeInstrumentationFactory{
-		kubeclient: kubeclient,
+		kubeclient:  kubeclient,
 		timeToSetup: setupDuration,
 	}
 }
 
-func (f *FakeInstrumentationFactory) CreateEbpfInstrumentation(ctx context.Context, pid int, serviceName string, podWorkload *workload.PodWorkload, containerName string, podName string, loadedIndicator chan struct{}) (*FakeEbpfSdk, error) {
+func (f *FakeInstrumentationFactory) CreateEbpfInstrumentation(ctx context.Context, pid int, serviceName string, podWorkload *k8sconsts.PodWorkload, containerName string, podName string, loadedIndicator chan struct{}) (*FakeEbpfSdk, error) {
 	<-time.After(f.timeToSetup)
 	return &FakeEbpfSdk{
-		pid:			 pid,
+		pid: pid,
 	}, nil
 }
 
@@ -128,7 +128,7 @@ func TestSingleInstrumentation(t *testing.T) {
 	corev1.AddToScheme(scheme)
 	odigosv1.AddToScheme(scheme)
 
-	workload := &workload.PodWorkload{
+	workload := &k8sconsts.PodWorkload{
 		Name:      "test-workload",
 		Namespace: "default",
 		Kind:      "Deployment",
@@ -193,7 +193,7 @@ func TestInstrumentNotExistingProcess(t *testing.T) {
 	corev1.AddToScheme(scheme)
 	odigosv1.AddToScheme(scheme)
 
-	workload := &workload.PodWorkload{
+	workload := &k8sconsts.PodWorkload{
 		Name:      "test-workload",
 		Namespace: "default",
 		Kind:      "Deployment",
@@ -263,7 +263,7 @@ func TestInstrumentNotExistingProcessWithSlowInstrumentation(t *testing.T) {
 	corev1.AddToScheme(scheme)
 	odigosv1.AddToScheme(scheme)
 
-	workload := &workload.PodWorkload{
+	workload := &k8sconsts.PodWorkload{
 		Name:      "test-workload",
 		Namespace: "default",
 		Kind:      "Deployment",
@@ -325,7 +325,7 @@ func TestMultiplePodsInstrumentation(t *testing.T) {
 	odigosv1.AddToScheme(scheme)
 	numOfPods := 100
 
-	workload := &workload.PodWorkload{
+	workload := &k8sconsts.PodWorkload{
 		Name:      "test-workload",
 		Namespace: "default",
 		Kind:      "Deployment",
@@ -390,7 +390,7 @@ func TestMultiplePodsInstrumentation(t *testing.T) {
 	}
 
 	// the instrumentation instances are deleted
-	for i := 0; i < numOfPods - 1; i++ {
+	for i := 0; i < numOfPods-1; i++ {
 		if !assertInstrumentationInstanceNotExisting(t, client, pod_ids[i], i+1) {
 			t.FailNow()
 		}
@@ -401,7 +401,7 @@ func TestMultiplePodsInstrumentation(t *testing.T) {
 	}
 
 	// closed is call for each instrumentation
-	for i := 0; i < numOfPods - 1; i++ {
+	for i := 0; i < numOfPods-1; i++ {
 		if !assert.Eventually(t, func() bool { return insts[i].closed }, 1*time.Second, 5*time.Millisecond) {
 			t.Logf("instrumentation %d is not closed", i)
 			t.FailNow()

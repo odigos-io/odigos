@@ -1,9 +1,11 @@
-import { useMutation } from '@apollo/client';
-import { useNotificationStore } from '@/store';
-import { ACTION, getSseTargetFromId } from '@/utils';
-import { useComputePlatform } from '../compute-platform';
+import { useMemo } from 'react';
+import { useConfig } from '../config';
+import { GET_ACTIONS } from '@/graphql';
+import { useMutation, useQuery } from '@apollo/client';
+import { useFilterStore, useNotificationStore } from '@/store';
 import { CREATE_ACTION, DELETE_ACTION, UPDATE_ACTION } from '@/graphql/mutations';
-import { NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES, type ActionInput, type ActionsType } from '@/types';
+import { ACTION, DISPLAY_TITLES, FORM_ALERTS, getSseTargetFromId, safeJsonParse } from '@/utils';
+import { type ActionItem, type ComputePlatform, NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES, type ActionInput, type ActionsType } from '@/types';
 
 interface UseActionCrudParams {
   onSuccess?: (type: string) => void;
@@ -11,7 +13,8 @@ interface UseActionCrudParams {
 }
 
 export const useActionCRUD = (params?: UseActionCrudParams) => {
-  const { data, refetch } = useComputePlatform();
+  const filters = useFilterStore();
+  const { data: config } = useConfig();
   const { addNotification, removeNotifications } = useNotificationStore();
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
@@ -36,20 +39,42 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
     params?.onSuccess?.(actionType);
   };
 
+  // Fetch data
+  const { data, loading, refetch } = useQuery<ComputePlatform>(GET_ACTIONS, {
+    onError: (error) => handleError(error.name || ACTION.FETCH, error.cause?.message || error.message),
+  });
+
+  // Map fetched data
+  const mapped = useMemo(() => {
+    return (data?.computePlatform?.actions || []).map((item) => {
+      const parsedSpec = typeof item.spec === 'string' ? safeJsonParse(item.spec, {} as ActionItem) : item.spec;
+      return { ...item, spec: parsedSpec };
+    });
+  }, [data]);
+
+  // Filter mapped data
+  const filtered = useMemo(() => {
+    let arr = [...mapped];
+    if (!!filters.monitors.length) arr = arr.filter((action) => !!filters.monitors.find((metric) => action.spec.signals.find((str) => str.toLowerCase() === metric.id)));
+    return arr;
+  }, [mapped, filters]);
+
   const [createAction, cState] = useMutation<{ createAction: { id: string } }>(CREATE_ACTION, {
     onError: (error) => handleError(ACTION.CREATE, error.message),
-    onCompleted: (res, req) => {
+    onCompleted: (res) => {
       const id = res?.createAction?.id;
       handleComplete(ACTION.CREATE, `Action "${id}" created`, id);
     },
   });
+
   const [updateAction, uState] = useMutation<{ updateAction: { id: string } }>(UPDATE_ACTION, {
     onError: (error) => handleError(ACTION.UPDATE, error.message),
-    onCompleted: (res, req) => {
+    onCompleted: (res) => {
       const id = res?.updateAction?.id;
       handleComplete(ACTION.UPDATE, `Action "${id}" updated`, id);
     },
   });
+
   const [deleteAction, dState] = useMutation<{ deleteAction: boolean }>(DELETE_ACTION, {
     onError: (error) => handleError(ACTION.DELETE, error.message),
     onCompleted: (res, req) => {
@@ -60,17 +85,31 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
   });
 
   return {
-    loading: cState.loading || uState.loading || dState.loading,
-    actions: data?.computePlatform?.actions || [],
+    loading: loading || cState.loading || uState.loading || dState.loading,
+    actions: mapped,
+    filteredActions: filtered,
+    refetchActions: refetch,
 
     createAction: (action: ActionInput) => {
-      createAction({ variables: { action } });
+      if (config?.readonly) {
+        notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+      } else {
+        createAction({ variables: { action } });
+      }
     },
     updateAction: (id: string, action: ActionInput) => {
-      updateAction({ variables: { id, action } });
+      if (config?.readonly) {
+        notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+      } else {
+        updateAction({ variables: { id, action } });
+      }
     },
     deleteAction: (id: string, actionType: ActionsType) => {
-      deleteAction({ variables: { id, actionType } });
+      if (config?.readonly) {
+        notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+      } else {
+        deleteAction({ variables: { id, actionType } });
+      }
     },
   };
 };

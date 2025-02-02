@@ -19,9 +19,9 @@ func (h *Honeycomb) DestType() common.DestinationType {
 	return common.HoneycombDestinationType
 }
 
-func (h *Honeycomb) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (h *Honeycomb) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	if !isTracingEnabled(dest) {
-		return ErrorHoneycombTracingDisabled
+		return nil, ErrorHoneycombTracingDisabled
 	}
 
 	endpoint, exists := dest.GetConfig()[honeycombEndpoint]
@@ -41,6 +41,6 @@ func (h *Honeycomb) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 	currentConfig.Service.Pipelines[tracePipelineName] = Pipeline{
 		Exporters: []string{exporterName},
 	}
-
-	return nil
+	pipelineNames := []string{tracePipelineName}
+	return pipelineNames, nil
 }

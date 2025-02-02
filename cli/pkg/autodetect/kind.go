@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/client"
-	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"k8s.io/apimachinery/pkg/util/version"
 )
 

@@ -1,5 +1,5 @@
 image:
-  tag: ""
+  tag: ''
 imagePullSecrets: []
 
 # namespaces list not to show in odigos ui
@@ -37,11 +37,10 @@ collectorGateway:
   limitCPUm: 1000
 
   # The number of replicas for the cluster gateway collector deployment.
-  # Also uses in MinReplicas the HPA config. 
+  # Also uses in MinReplicas the HPA config.
   minReplicas: 1
   # The maxReplicas in the HPA config.
   maxReplicas: 10
-
 
   # sets the "limit_mib" parameter in the memory limiter configuration for the collector gateway.
   # it is the hard limit after which a force garbage collection will be performed.
@@ -120,6 +119,12 @@ ui:
     kubernetes.io/os: linux
   tolerations: []
   affinity: {}
+  # uiMode: 'normal' or 'readonly'
+  #  - This flag controls whether the UI should be in read-only mode.
+  #  - Setting this to "readonly" will disable the ability to create, update, or delete objects in the UI.
+  #  - If not set, the UI will be in normal mode.
+  uiMode: 'normal'
+  centralBackendURL: ''
 
 instrumentor:
   deleteLangDetectionPods: true
@@ -129,16 +134,16 @@ instrumentor:
     kubernetes.io/os: linux
   tolerations: []
   affinity: {}
-# skipWebhookIssuerCreation:
-#   - This flag controls whether the chart should skip creating an Issuer
-#     and associated Certificate for securing the mutating webhook communication.
-#   - Setting this to "true" will skip the creation of an Issuer and Certificate, 
-#     even if cert-manager is detected in the cluster and the required API version is available.
-#   - In some cases, the Issuer and Certificate are necessary for the instrumentor service 
-#     to run its pod mutating webhook, which requires a signed certificate to comply with 
-#     Kubernetes' TLS requirements.
-#   - If cert-manager is not installed or detected, no Issuer or Certificate will be created 
-#     regardless of this flag.
+  # skipWebhookIssuerCreation:
+  #   - This flag controls whether the chart should skip creating an Issuer
+  #     and associated Certificate for securing the mutating webhook communication.
+  #   - Setting this to "true" will skip the creation of an Issuer and Certificate,
+  #     even if cert-manager is detected in the cluster and the required API version is available.
+  #   - In some cases, the Issuer and Certificate are necessary for the instrumentor service
+  #     to run its pod mutating webhook, which requires a signed certificate to comply with
+  #     Kubernetes' TLS requirements.
+  #   - If cert-manager is not installed or detected, no Issuer or Certificate will be created
+  #     regardless of this flag.
   skipWebhookIssuerCreation: false
 
 odiglet:
@@ -148,8 +153,8 @@ odiglet:
   nodeSelector:
     kubernetes.io/os: linux
   tolerations:
-    ## This toleration with 'Exists' operator and no key/effect specified 
-    ## will match ALL taints, allowing pods to be scheduled on any node 
+    ## This toleration with 'Exists' operator and no key/effect specified
+    ## will match ALL taints, allowing pods to be scheduled on any node
     ## regardless of its taints (including master/control-plane nodes)
     - operator: Exists
   affinity: {}
@@ -170,3 +175,5 @@ openshift:
 
 gke:
   enabled: false
+
+profiles: []

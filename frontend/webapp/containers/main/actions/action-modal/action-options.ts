@@ -1,5 +1,5 @@
-import { SVG } from '@/assets';
 import { ActionsType } from '@/types';
+import { Types } from '@odigos/ui-components';
 import { getActionIcon, SignalUppercase } from '@/utils';
 
 export type ActionOption = {
@@ -9,7 +9,7 @@ export type ActionOption = {
   description?: string;
   docsEndpoint?: string;
   docsDescription?: string;
-  icon?: SVG;
+  icon?: Types.SVG;
   items?: ActionOption[];
   allowedSignals?: SignalUppercase[];
 };
@@ -46,7 +46,7 @@ export const ACTION_OPTIONS: ActionOption[] = [
         description: 'Rename attributes in logs, metrics, and traces.',
         type: ActionsType.RENAME_ATTRIBUTES,
         icon: getActionIcon(ActionsType.RENAME_ATTRIBUTES),
-        docsEndpoint: '/pipeline/actions/attributes/rename-attribute',
+        docsEndpoint: '/pipeline/actions/attributes/renameattribute',
         docsDescription:
           'The “Rename Attribute” Odigos Action can be used to rename attributes from logs, metrics, and traces. Different instrumentations might use different attribute names for similar information. This action let’s you to consolidate the names across your cluster.',
         allowedSignals: ['TRACES', 'METRICS', 'LOGS'],
@@ -79,16 +79,6 @@ export const ACTION_OPTIONS: ActionOption[] = [
         allowedSignals: ['TRACES'],
       },
       {
-        id: 'probabilistic-sampler',
-        label: 'Probabilistic Sampler',
-        description: 'Sample traces based on percentage.',
-        type: ActionsType.PROBABILISTIC_SAMPLER,
-        icon: getActionIcon('sampler'),
-        docsEndpoint: '/pipeline/actions/sampling/probabilisticsampler',
-        docsDescription: 'The “Probabilistic Sampler” Odigos Action supports probabilistic sampling based on a configured sampling percentage applied to the TraceID.',
-        allowedSignals: ['TRACES'],
-      },
-      {
         id: 'latency-action',
         label: 'Latency Sampler',
         description: 'Add latency to your traces.',
@@ -96,6 +86,16 @@ export const ACTION_OPTIONS: ActionOption[] = [
         icon: getActionIcon('sampler'),
         docsEndpoint: '/pipeline/actions/sampling/latencysampler',
         docsDescription: 'The “Latency Sampler” Odigos Action is an Endpoint Action that samples traces based on their duration for a specific service and endpoint (HTTP route) filter.',
+        allowedSignals: ['TRACES'],
+      },
+      {
+        id: 'probabilistic-sampler',
+        label: 'Probabilistic Sampler',
+        description: 'Sample traces based on percentage.',
+        type: ActionsType.PROBABILISTIC_SAMPLER,
+        icon: getActionIcon('sampler'),
+        docsEndpoint: '/pipeline/actions/sampling/probabilisticsampler',
+        docsDescription: 'The “Probabilistic Sampler” Odigos Action supports probabilistic sampling based on a configured sampling percentage applied to the TraceID.',
         allowedSignals: ['TRACES'],
       },
     ],

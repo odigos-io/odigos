@@ -3,11 +3,12 @@ package odigosconfig
 import (
 	"context"
 	"fmt"
+	"strings"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
-	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/profiles"
 	"github.com/odigos-io/odigos/profiles/manifests"
@@ -41,9 +42,27 @@ func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) 
 		return ctrl.Result{}, err
 	}
 
+	odigosDeployment := corev1.ConfigMap{}
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: env.GetCurrentNamespace(), Name: k8sconsts.OdigosDeploymentConfigMapName}, &odigosDeployment)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
 	// effective profiles are what is actually used in the cluster (minus non existing profiles and plus dependencies)
 	availableProfiles := profiles.GetAvailableProfilesForTier(r.Tier)
-	effectiveProfiles := calculateEffectiveProfiles(odigosConfig.Profiles, availableProfiles)
+
+	allProfiles := make([]common.ProfileName, 0)
+	allProfiles = append(allProfiles, odigosConfig.Profiles...)
+
+	if tokenProfilesString, ok := odigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapOnPremClientProfilesKey]; ok {
+		tokenProfiles := strings.Split(tokenProfilesString, ", ")
+		// cast tokenProfiles to common.ProfileName
+		for _, p := range tokenProfiles {
+			allProfiles = append(allProfiles, common.ProfileName(p))
+		}
+	}
+
+	effectiveProfiles := calculateEffectiveProfiles(allProfiles, availableProfiles)
 
 	// apply the current profiles list to the cluster
 	err = r.applyProfileManifests(ctx, effectiveProfiles)
@@ -156,7 +175,8 @@ func (r *odigosConfigController) applyProfileManifests(ctx context.Context, effe
 	// which did not participate in the current deployment.
 	// we will delete any resource with the "odigos.io/profiles-hash" label which is not the current hash.
 	differentHashSelector, _ := labels.NewRequirement(k8sconsts.OdigosProfilesHashLabel, selection.NotEquals, []string{profileDeploymentHash})
-	differentHashLabelSelector := labels.NewSelector().Add(*differentHashSelector)
+	managedByProfileSelector, _ := labels.NewRequirement(k8sconsts.OdigosProfilesManagedByLabel, selection.Equals, []string{k8sconsts.OdigosProfilesManagedByValue})
+	differentHashLabelSelector := labels.NewSelector().Add(*differentHashSelector, *managedByProfileSelector)
 	listOptions := &client.ListOptions{LabelSelector: differentHashLabelSelector, Namespace: env.GetCurrentNamespace()}
 
 	processesList := odigosv1alpha1.ProcessorList{}
@@ -200,6 +220,7 @@ func (r *odigosConfigController) applySingleProfileManifest(ctx context.Context,
 		labels = make(map[string]string)
 	}
 	labels[k8sconsts.OdigosProfilesHashLabel] = profileDeploymentHash
+	labels[k8sconsts.OdigosProfilesManagedByLabel] = k8sconsts.OdigosProfilesManagedByValue
 	obj.SetLabels(labels)
 
 	annotations := obj.GetAnnotations()

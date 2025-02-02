@@ -10,17 +10,19 @@ func (s *SumoLogic) DestType() common.DestinationType {
 	return common.SumoLogicDestinationType
 }
 
-func (s *SumoLogic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (s *SumoLogic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	exporterName := "otlphttp/sumologic-" + dest.GetID()
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": "${SUMOLOGIC_COLLECTION_URL}",
 	}
 
+	var pipelineNames []string
 	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/sumologic-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
 	if isLoggingEnabled(dest) {
@@ -28,6 +30,7 @@ func (s *SumoLogic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, logsPipelineName)
 	}
 
 	if isMetricsEnabled(dest) {
@@ -35,7 +38,8 @@ func (s *SumoLogic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
-	return nil
+	return pipelineNames, nil
 }

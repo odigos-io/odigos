@@ -4,10 +4,10 @@ import (
 	"context"
 
 	"github.com/odigos-io/odigos/api"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
-	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -44,21 +44,6 @@ func NewLeaderElectionRole(ns string) *rbacv1.Role {
 			Namespace: ns,
 		},
 		Rules: []rbacv1.PolicyRule{
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-					"create",
-					"update",
-					"patch",
-					"delete",
-				},
-				APIGroups: []string{""},
-				Resources: []string{
-					"configmaps",
-				},
-			},
 			{
 				Verbs: []string{
 					"get",

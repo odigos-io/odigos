@@ -2,29 +2,31 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 	"time"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/frontend/kube"
-
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	appsv1 "k8s.io/api/apps/v1"
-
 	"github.com/odigos-io/odigos/frontend/graph/model"
-
+	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/client"
 
-	"golang.org/x/sync/errgroup"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
+
+	"golang.org/x/sync/errgroup"
 )
 
 type WorkloadKind string
 
 const (
+	WorkloadKindNamespace   WorkloadKind = "Namespace"
 	WorkloadKindDeployment  WorkloadKind = "Deployment"
 	WorkloadKindStatefulSet WorkloadKind = "StatefulSet"
 	WorkloadKindDaemonSet   WorkloadKind = "DaemonSet"
@@ -99,8 +101,7 @@ func AddHealthyInstrumentationInstancesCondition(ctx context.Context, instruConf
 	return nil
 }
 
-func GetWorkloadsInNamespace(ctx context.Context, nsName string, instrumentationLabeled *bool) ([]model.K8sActualSource, error) {
-
+func GetWorkloadsInNamespace(ctx context.Context, nsName string) ([]model.K8sActualSource, error) {
 	namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, nsName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
@@ -115,19 +116,19 @@ func GetWorkloadsInNamespace(ctx context.Context, nsName string, instrumentation
 
 	g.Go(func() error {
 		var err error
-		deps, err = getDeployments(ctx, *namespace, instrumentationLabeled)
+		deps, err = getDeployments(ctx, *namespace)
 		return err
 	})
 
 	g.Go(func() error {
 		var err error
-		ss, err = getStatefulSets(ctx, *namespace, instrumentationLabeled)
+		ss, err = getStatefulSets(ctx, *namespace)
 		return err
 	})
 
 	g.Go(func() error {
 		var err error
-		dss, err = getDaemonSets(ctx, *namespace, instrumentationLabeled)
+		dss, err = getDaemonSets(ctx, *namespace)
 		return err
 	})
 
@@ -143,14 +144,10 @@ func GetWorkloadsInNamespace(ctx context.Context, nsName string, instrumentation
 	return items, nil
 }
 
-func getDeployments(ctx context.Context, namespace corev1.Namespace, instrumentationLabeled *bool) ([]model.K8sActualSource, error) {
+func getDeployments(ctx context.Context, namespace corev1.Namespace) ([]model.K8sActualSource, error) {
 	var response []model.K8sActualSource
 	err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.AppsV1().Deployments(namespace.Name).List, ctx, &metav1.ListOptions{}, func(deps *appsv1.DeploymentList) error {
 		for _, dep := range deps.Items {
-			_, _, _, autoInstrumented := workload.GetInstrumentationLabelTexts(dep.GetLabels(), string(WorkloadKindDeployment), namespace.GetLabels())
-			if instrumentationLabeled != nil && *instrumentationLabeled != autoInstrumented {
-				continue
-			}
 			numberOfInstances := int(dep.Status.ReadyReplicas)
 			response = append(response, model.K8sActualSource{
 				Namespace:         dep.Namespace,
@@ -169,14 +166,10 @@ func getDeployments(ctx context.Context, namespace corev1.Namespace, instrumenta
 	return response, nil
 }
 
-func getDaemonSets(ctx context.Context, namespace corev1.Namespace, instrumentationLabeled *bool) ([]model.K8sActualSource, error) {
+func getDaemonSets(ctx context.Context, namespace corev1.Namespace) ([]model.K8sActualSource, error) {
 	var response []model.K8sActualSource
 	err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.AppsV1().DaemonSets(namespace.Name).List, ctx, &metav1.ListOptions{}, func(dss *appsv1.DaemonSetList) error {
 		for _, ds := range dss.Items {
-			_, _, _, autoInstrumented := workload.GetInstrumentationLabelTexts(ds.GetLabels(), string(WorkloadKindDaemonSet), namespace.GetLabels())
-			if instrumentationLabeled != nil && *instrumentationLabeled != autoInstrumented {
-				continue
-			}
 			numberOfInstances := int(ds.Status.NumberReady)
 			response = append(response, model.K8sActualSource{
 				Namespace:         ds.Namespace,
@@ -195,14 +188,10 @@ func getDaemonSets(ctx context.Context, namespace corev1.Namespace, instrumentat
 	return response, nil
 }
 
-func getStatefulSets(ctx context.Context, namespace corev1.Namespace, instrumentationLabeled *bool) ([]model.K8sActualSource, error) {
+func getStatefulSets(ctx context.Context, namespace corev1.Namespace) ([]model.K8sActualSource, error) {
 	var response []model.K8sActualSource
 	err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.AppsV1().StatefulSets(namespace.Name).List, ctx, &metav1.ListOptions{}, func(sss *appsv1.StatefulSetList) error {
 		for _, ss := range sss.Items {
-			_, _, _, autoInstrumented := workload.GetInstrumentationLabelTexts(ss.GetLabels(), string(WorkloadKindStatefulSet), namespace.GetLabels())
-			if instrumentationLabeled != nil && *instrumentationLabeled != autoInstrumented {
-				continue
-			}
 			numberOfInstances := int(ss.Status.ReadyReplicas)
 			response = append(response, model.K8sActualSource{
 				Namespace:         ss.Namespace,
@@ -233,48 +222,109 @@ func k8sKindToGql(k8sResourceKind string) model.K8sResourceKind {
 	return ""
 }
 
-func UpdateReportedName(
-	ctx context.Context,
-	ns, kind, name, reportedName string,
-) error {
-	switch kind {
-	case "Deployment":
-		deployment, err := kube.DefaultClient.AppsV1().Deployments(ns).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			return fmt.Errorf("could not find deployment: %w", err)
-		}
-		deployment.SetAnnotations(updateAnnotations(deployment.GetAnnotations(), reportedName))
-		_, err = kube.DefaultClient.AppsV1().Deployments(ns).Update(ctx, deployment, metav1.UpdateOptions{})
-		return err
-	case "StatefulSet":
-		statefulSet, err := kube.DefaultClient.AppsV1().StatefulSets(ns).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			return fmt.Errorf("could not find statefulset: %w", err)
-		}
-		statefulSet.SetAnnotations(updateAnnotations(statefulSet.GetAnnotations(), reportedName))
-		_, err = kube.DefaultClient.AppsV1().StatefulSets(ns).Update(ctx, statefulSet, metav1.UpdateOptions{})
-		return err
-	case "DaemonSet":
-		daemonSet, err := kube.DefaultClient.AppsV1().DaemonSets(ns).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			return fmt.Errorf("could not find daemonset: %w", err)
-		}
-		daemonSet.SetAnnotations(updateAnnotations(daemonSet.GetAnnotations(), reportedName))
-		_, err = kube.DefaultClient.AppsV1().DaemonSets(ns).Update(ctx, daemonSet, metav1.UpdateOptions{})
-		return err
-	default:
-		return fmt.Errorf("unsupported kind: %s", kind)
+func GetSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) (*v1alpha1.Source, error) {
+	list, err := kube.DefaultClient.OdigosClient.Sources(nsName).List(ctx, metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(labels.Set{
+			k8sconsts.WorkloadNamespaceLabel: nsName,
+			k8sconsts.WorkloadNameLabel:      workloadName,
+			k8sconsts.WorkloadKindLabel:      string(workloadKind),
+		}).String(),
+	})
+
+	if err != nil {
+		return nil, err
 	}
+	if len(list.Items) == 0 {
+		return nil, fmt.Errorf(`source "%s" not found`, workloadName)
+	}
+	if len(list.Items) > 1 {
+		return nil, fmt.Errorf(`expected to get 1 source "%s", got %d`, workloadName, len(list.Items))
+	}
+
+	return &list.Items[0], err
 }
 
-func updateAnnotations(annotations map[string]string, reportedName string) map[string]string {
-	if annotations == nil {
-		annotations = make(map[string]string)
+func CreateSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) (*v1alpha1.Source, error) {
+	switch workloadKind {
+	// Namespace is not a workload, but we need it to "select future apps" by creating a Source CRD for it
+	case WorkloadKindNamespace, WorkloadKindDeployment, WorkloadKindStatefulSet, WorkloadKindDaemonSet:
+		break
+	default:
+		return nil, errors.New("unsupported workload kind: " + string(workloadKind))
 	}
-	if reportedName == "" {
-		delete(annotations, consts.OdigosReportedNameAnnotation)
+
+	source, err := GetSourceCRD(ctx, nsName, workloadName, workloadKind)
+	if err != nil && !strings.Contains(err.Error(), "not found") {
+		// unexpected error occurred while trying to get the source
+		return nil, err
+	}
+
+	if source != nil {
+		// source already exists, do not create a new one, instead update so it's not disabled anymore
+		return UpdateSourceCRDSpec(ctx, nsName, source.Name, "disableInstrumentation", false)
+	}
+
+	newSource := &v1alpha1.Source{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "source-",
+		},
+		Spec: v1alpha1.SourceSpec{
+			Workload: k8sconsts.PodWorkload{
+				Namespace: nsName,
+				Name:      workloadName,
+				Kind:      k8sconsts.WorkloadKind(workloadKind),
+			},
+		},
+	}
+
+	source, err = kube.DefaultClient.OdigosClient.Sources(nsName).Create(ctx, newSource, metav1.CreateOptions{})
+	return source, err
+}
+
+func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) error {
+	if workloadKind != WorkloadKindNamespace {
+		// if is a regular workload, then check for namespace source first
+		nsSource, err := GetSourceCRD(ctx, nsName, nsName, WorkloadKindNamespace)
+		if err != nil && !strings.Contains(err.Error(), "not found") {
+			// unexpected error occurred while trying to get the namespace source
+			return err
+		}
+
+		if nsSource != nil {
+			// note: create will return an existing crd without throwing an error
+			source, err := CreateSourceCRD(ctx, nsName, workloadName, workloadKind)
+			if err != nil {
+				return err
+			}
+
+			// namespace source exists, we need to add "DisableInstrumentation" to the workload source
+			_, err = UpdateSourceCRDSpec(ctx, nsName, source.Name, "disableInstrumentation", true)
+			return err
+		}
+	}
+
+	// namespace source does not exist, we need to delete the workload source
+	source, err := GetSourceCRD(ctx, nsName, workloadName, workloadKind)
+	if err != nil {
+		return err
+	}
+
+	err = kube.DefaultClient.OdigosClient.Sources(nsName).Delete(ctx, source.Name, metav1.DeleteOptions{})
+	return err
+}
+
+func UpdateSourceCRDSpec(ctx context.Context, nsName string, crdName string, specField string, newValue any) (*v1alpha1.Source, error) {
+	patch := fmt.Sprintf(`[{"op": "replace", "path": "/spec/%s", "value": %v}]`, specField, newValue)
+	source, err := kube.DefaultClient.OdigosClient.Sources(nsName).Patch(ctx, crdName, types.JSONPatchType, []byte(patch), metav1.PatchOptions{})
+
+	return source, err
+}
+
+func ToggleSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind, enabled bool) error {
+	if enabled {
+		_, err := CreateSourceCRD(ctx, nsName, workloadName, workloadKind)
+		return err
 	} else {
-		annotations[consts.OdigosReportedNameAnnotation] = reportedName
+		return deleteSourceCRD(ctx, nsName, workloadName, workloadKind)
 	}
-	return annotations
 }

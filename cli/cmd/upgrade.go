@@ -8,11 +8,12 @@ import (
 	"os"
 
 	"github.com/hashicorp/go-version"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/confirm"
-	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
+	"github.com/odigos-io/odigos/common"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -22,7 +23,7 @@ type VersionChangeType int
 // upgradeCmd represents the upgrade command
 var upgradeCmd = &cobra.Command{
 	Use:   "upgrade",
-	Short: "Upgrade Odigos version",
+	Short: "Upgrade odigos version in your cluster.",
 	Long: `Upgrade odigos version in your cluster.
 
 This command will upgrade the Odigos version in the cluster to the version of Odigos CLI
@@ -104,6 +105,9 @@ and apply any required migrations and adaptations.`,
 
 		// update the config on upgrade
 		config.ConfigVersion += 1
+		if uiMode != "" {
+			config.UiMode = common.UiMode(uiMode)
+		}
 
 		currentTier, err := odigospro.GetCurrentOdigosTier(ctx, client, ns)
 		if err != nil {
@@ -122,11 +126,17 @@ and apply any required migrations and adaptations.`,
 			os.Exit(1)
 		}
 	},
+	Example: `
+# Upgrade Odigos version
+odigos upgrade
+`,
 }
 
 func init() {
 	rootCmd.AddCommand(upgradeCmd)
 	upgradeCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
+	updateCmd.Flags().StringVarP(&uiMode, "ui-mode", "", "", "set the UI mode (one-of: normal, readonly)")
+
 	if OdigosVersion != "" {
 		versionFlag = OdigosVersion
 	} else {

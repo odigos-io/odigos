@@ -10,7 +10,9 @@ rules:
     verbs:
       - get
       - list
+      {{- if ne .Values.ui.uiMode "readonly" }}
       - patch
+      {{- end }}
   - apiGroups:
       - apps
     resources:
@@ -20,8 +22,6 @@ rules:
     verbs:
       - get
       - list
-      - patch
-      - update
   - apiGroups:
       - apps
     resources:
@@ -53,3 +53,15 @@ rules:
       - get
       - list
       - watch
+  - apiGroups:
+      - odigos.io
+    resources:
+      - sources
+    verbs:
+      - get
+      - list
+      {{- if ne .Values.ui.uiMode "readonly" }}
+      - patch
+      - create
+      - delete
+      {{- end }}

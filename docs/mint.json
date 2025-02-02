@@ -62,15 +62,16 @@
             "setup/system-requirements",
             {
               "group": "Installation",
-              "pages": ["setup/installation", "setup/installation-options", "setup/docker-registry", "setup/odigos-with-argocd"]
+              "pages": [
+                "setup/installation",
+                "setup/installation-options",
+                "setup/docker-registry",
+                "setup/odigos-with-argocd"
+              ]
             },
             "setup/upgrade",
             "setup/uninstall"
           ]
-        },
-        {
-          "group": "Architecture",
-          "pages": ["architecture/components", "architecture/sources", "architecture/troubleshooting"]
         },
         {
           "group": "CLI Reference",
@@ -80,11 +81,19 @@
             "cli/odigos_describe",
             "cli/odigos_diagnose",
             "cli/odigos_install",
+            "cli/odigos_pro",
             "cli/odigos_profile",
             "cli/odigos_ui",
             "cli/odigos_uninstall",
             "cli/odigos_upgrade",
             "cli/odigos_version"
+          ]
+        },
+        {
+          "group": "API Reference",
+          "pages": [
+            "api-reference/odigos.io.v1alpha1",
+            "api-reference/actions.odigos.io.v1alpha1"
           ]
         }
       ]
@@ -95,23 +104,45 @@
         "instrumentations/overview",
         {
           "group": "Go",
-          "pages": ["instrumentations/golang/golang", "instrumentations/golang/enrichment"]
+          "icon": "golang",
+          "pages": [
+            "instrumentations/golang/ebpf",
+            "instrumentations/golang/enrichment"
+          ]
         },
         {
           "group": "Node.js",
-          "pages": ["instrumentations/nodejs/nodejs", "instrumentations/nodejs/enrichment", "instrumentations/nodejs/ebpf"]
+          "icon": "node-js",
+          "pages": [
+            "instrumentations/nodejs/native",
+            "instrumentations/nodejs/ebpf",
+            "instrumentations/nodejs/enrichment"
+          ]
         },
         {
           "group": "Python",
-          "pages": ["instrumentations/python/python", "instrumentations/python/enrichment"]
+          "icon": "python",
+          "pages": [
+            "instrumentations/python/native",
+            "instrumentations/python/enrichment"
+          ]
         },
         {
           "group": "Java",
-          "pages": ["instrumentations/java/java", "instrumentations/java/ebpf"]
+          "icon": "java",
+          "pages": [
+            "instrumentations/java/native",
+            "instrumentations/java/ebpf",
+            "instrumentations/java/enrichment"
+          ]
         },
         {
           "group": ".NET",
-          "pages": ["instrumentations/dotnet/dotnet"]
+          "icon": "code",
+          "pages": [
+            "instrumentations/dotnet/native",
+            "instrumentations/dotnet/enrichment"
+          ]
         }
       ]
     },
@@ -122,38 +153,46 @@
         "pipeline/configuration",
         {
           "group": "Sources",
+          "icon": "database",
           "pages": [
             "pipeline/sources/introduction",
-            "pipeline/sources/adding-sources",
-            "pipeline/sources/source-configuration",
+            "pipeline/sources/create",
+            "pipeline/sources/delete",
+            "pipeline/sources/update",
             "pipeline/sources/troubleshooting"
           ]
         },
         {
           "group": "Instrumentation Rules",
-          "pages": ["pipeline/rules/overview", "pipeline/rules/payloadcollection"]
+          "icon": "microchip",
+          "pages": [
+            "pipeline/rules/introduction",
+            "pipeline/rules/payloadcollection",
+            "pipeline/rules/codeattributes"
+          ]
         },
         {
           "group": "Actions",
+          "icon": "bolt",
           "pages": [
             "pipeline/actions/introduction",
             {
-              "group": "Sampling",
+              "group": "Attributes",
+              "icon": "layer-group",
               "pages": [
-                "pipeline/actions/sampling/introduction",
-                "pipeline/actions/sampling/probabilisticsampler",
-                "pipeline/actions/sampling/latencysampler",
-                "pipeline/actions/sampling/errorsampler"
+                "pipeline/actions/attributes/addclusterinfo",
+                "pipeline/actions/attributes/deleteattribute",
+                "pipeline/actions/attributes/renameattribute",
+                "pipeline/actions/attributes/piimasking"
               ]
             },
             {
-              "group": "Attributes",
+              "group": "Sampling",
+              "icon": "tag",
               "pages": [
-                "pipeline/actions/attributes/introduction",
-                "pipeline/actions/attributes/addclusterinfo",
-                "pipeline/actions/attributes/deleteattribute",
-                "pipeline/actions/attributes/rename-attribute",
-                "pipeline/actions/attributes/piimasking"
+                "pipeline/actions/sampling/errorsampler",
+                "pipeline/actions/sampling/latencysampler",
+                "pipeline/actions/sampling/probabilisticsampler"
               ]
             },
             "pipeline/actions/crd",
@@ -163,23 +202,15 @@
       ]
     },
     {
-      "group": "Generated Data",
-      "pages": [
-        {
-          "group": "Enrich with OpenTelemetry APIs",
-          "pages": ["data/otel-apis", "data/java", "data/python", "data/javascript", "data/golang", "data/dotnet"]
-        }
-      ]
-    },
-    {
       "group": "Destinations",
       "pages": [
         "backends-overview",
         {
           "group": "Supported Backends",
+          "icon": "folder-tree",
           "pages": [
             "backends/appdynamics",
-            "backends/s3",
+            "backends/awss3",
             "backends/axiom",
             "backends/azureblob",
             "backends/betterstack",
@@ -190,10 +221,11 @@
             "backends/dash0",
             "backends/datadog",
             "backends/dynatrace",
+            "backends/elasticapm",
             "backends/elasticsearch",
-            "backends/gcs",
             "backends/gigapipe",
-            "backends/googlecloud",
+            "backends/googlecloudmonitoring",
+            "backends/googlecloudstorage",
             "backends/grafanacloudloki",
             "backends/grafanacloudprometheus",
             "backends/grafanacloudtempo",
@@ -207,6 +239,7 @@
             "backends/logzio",
             "backends/loki",
             "backends/lumigo",
+            "backends/middleware",
             "backends/newrelic",
             "backends/opsverse",
             "backends/otlp",
@@ -218,18 +251,28 @@
             "backends/signoz",
             "backends/splunk",
             "backends/sumologic",
-            "backends/tempo"
+            "backends/tempo",
+            "backends/traceloop",
+            "backends/uptrace"
           ]
         }
       ]
     },
     {
       "group": "Concepts",
-      "pages": ["telemetry-types", "custom-resources", "uninstall", "usage-reports", "benchmarks"]
+      "pages": [
+        "telemetry-types",
+        "custom-resources",
+        "usage-reports",
+        "benchmarks"
+      ]
     },
     {
       "group": "Contibution Guidelines",
-      "pages": ["adding-new-dest", "debugging"]
+      "pages": [
+        "adding-new-dest",
+        "debugging"
+      ]
     },
     {
       "group": "VM Agent",
@@ -253,14 +296,20 @@
             "vmagent/setup/installation",
             {
               "group": "Configuration",
-              "pages": ["vmagent/setup/configuration/service", "vmagent/setup/configuration/agent"]
+              "pages": [
+                "vmagent/setup/configuration/service",
+                "vmagent/setup/configuration/agent"
+              ]
             },
             "vmagent/setup/uninstall"
           ]
         },
         {
           "group": "Configuration",
-          "pages": ["vmagent/configuration/reference", "vmagent/configuration/updating"]
+          "pages": [
+            "vmagent/configuration/reference",
+            "vmagent/configuration/updating"
+          ]
         }
       ]
     }

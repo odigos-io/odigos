@@ -2,10 +2,10 @@ package resources
 
 import (
 	"context"
-	"slices"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/pkg/autodetect"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/common/consts"
@@ -24,19 +24,6 @@ import (
 	k8sversion "k8s.io/apimachinery/pkg/util/version"
 )
 
-const (
-	OdigletDaemonSetName          = "odiglet"
-	OdigletAppLabelValue          = OdigletDaemonSetName
-	OdigletServiceAccountName     = OdigletDaemonSetName
-	OdigletRoleName               = OdigletDaemonSetName
-	OdigletRoleBindingName        = OdigletDaemonSetName
-	OdigletClusterRoleName        = OdigletDaemonSetName
-	OdigletClusterRoleBindingName = OdigletDaemonSetName
-	OdigletContainerName          = "odiglet"
-	OdigletImageName              = "keyval/odigos-odiglet"
-	OdigletEnterpriseImageName    = "keyval/odigos-enterprise-odiglet"
-)
-
 func NewOdigletServiceAccount(ns string) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
@@ -44,7 +31,7 @@ func NewOdigletServiceAccount(ns string) *corev1.ServiceAccount {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      OdigletServiceAccountName,
+			Name:      k8sconsts.OdigletServiceAccountName,
 			Namespace: ns,
 		},
 	}
@@ -57,7 +44,7 @@ func NewOdigletRole(ns string) *rbacv1.Role {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      OdigletRoleName,
+			Name:      k8sconsts.OdigletRoleName,
 			Namespace: ns,
 		},
 		Rules: []rbacv1.PolicyRule{
@@ -85,34 +72,48 @@ func NewOdigletRoleBinding(ns string) *rbacv1.RoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      OdigletRoleBindingName,
+			Name:      k8sconsts.OdigletRoleBindingName,
 			Namespace: ns,
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      OdigletServiceAccountName,
+				Name:      k8sconsts.OdigletServiceAccountName,
 				Namespace: ns,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "Role",
-			Name:     OdigletRoleName,
+			Name:     k8sconsts.OdigletRoleName,
 		},
 	}
 }
 
-func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
+func NewOdigletClusterRole(psp, ownerPermissionEnforcement bool) *rbacv1.ClusterRole {
+	finalizersUpdate := []rbacv1.PolicyRule{}
+	if ownerPermissionEnforcement {
+		finalizersUpdate = append(finalizersUpdate, rbacv1.PolicyRule{
+			// Required for OwnerReferencesPermissionEnforcement (on by default in OpenShift)
+			// When we create an InstrumentationInstance, we set the OwnerReference to the related pod.
+			// Controller-runtime sets BlockDeletion: true. So with this Admission Plugin we need permission to
+			// update finalizers on the workloads so that they can block deletion.
+			// seehttps://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#ownerreferencespermissionenforcement
+			APIGroups: []string{""},
+			Resources: []string{"pods/finalizers"},
+			Verbs:     []string{"update"},
+		})
+	}
+
 	clusterrole := &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ClusterRole",
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: OdigletClusterRoleName,
+			Name: k8sconsts.OdigletClusterRoleName,
 		},
-		Rules: []rbacv1.PolicyRule{
+		Rules: append([]rbacv1.PolicyRule{
 			{ // Needed for language detection
 				APIGroups: []string{""},
 				Resources: []string{"pods"},
@@ -121,18 +122,6 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 			{ // Needed for language detection
 				APIGroups: []string{""},
 				Resources: []string{"pods/status"},
-				Verbs:     []string{"get"},
-			},
-			{ // Needed for language detection
-				// TODO: remove this once Tamir/PR is read for new language detection
-				APIGroups: []string{"apps"},
-				Resources: []string{"deployments", "daemonsets", "statefulsets"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{ // Needed for language detection
-				// TODO: remove this once Tamir/PR is read for new language detection
-				APIGroups: []string{"apps"},
-				Resources: []string{"deployments/status", "daemonsets/status", "statefulsets/status"},
 				Verbs:     []string{"get"},
 			},
 			{ // Needed for virtual device registration
@@ -160,7 +149,7 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 				Resources: []string{"instrumentationconfigs/status"},
 				Verbs:     []string{"get", "patch", "update"},
 			},
-		},
+		}, finalizersUpdate...),
 	}
 
 	if psp {
@@ -183,19 +172,19 @@ func NewOdigletClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: OdigletClusterRoleBindingName,
+			Name: k8sconsts.OdigletClusterRoleBindingName,
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      OdigletServiceAccountName,
+				Name:      k8sconsts.OdigletServiceAccountName,
 				Namespace: ns,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "ClusterRole",
-			Name:     OdigletClusterRoleName,
+			Name:     k8sconsts.OdigletClusterRoleName,
 		},
 	}
 }
@@ -213,7 +202,7 @@ func NewSCCRoleBinding(ns string) *rbacv1.RoleBinding {
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      OdigletServiceAccountName,
+				Name:      k8sconsts.OdigletServiceAccountName,
 				Namespace: ns,
 			},
 			{
@@ -281,20 +270,13 @@ func NewResourceQuota(ns string) *corev1.ResourceQuota {
 	}
 }
 
-func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageName string, odigosTier common.OdigosTier, openshiftEnabled bool, goAutoIncludeCodeAttributes bool, clusterDetails *autodetect.ClusterDetails) *appsv1.DaemonSet {
+func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageName string, odigosTier common.OdigosTier, openshiftEnabled bool, clusterDetails *autodetect.ClusterDetails) *appsv1.DaemonSet {
 
 	dynamicEnv := []corev1.EnvVar{}
 	if odigosTier == common.CloudOdigosTier {
 		dynamicEnv = append(dynamicEnv, odigospro.CloudTokenAsEnvVar())
 	} else if odigosTier == common.OnPremOdigosTier {
 		dynamicEnv = append(dynamicEnv, odigospro.OnPremTokenAsEnvVar())
-	}
-
-	if goAutoIncludeCodeAttributes {
-		dynamicEnv = append(dynamicEnv, corev1.EnvVar{
-			Name:  "OTEL_GO_AUTO_INCLUDE_CODE_ATTRIBUTES",
-			Value: "true",
-		})
 	}
 
 	odigosSeLinuxHostVolumes := []corev1.Volume{}
@@ -329,16 +311,16 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      OdigletDaemonSetName,
+			Name:      k8sconsts.OdigletDaemonSetName,
 			Namespace: ns,
 			Labels: map[string]string{
-				"app.kubernetes.io/name": OdigletAppLabelValue,
+				"app.kubernetes.io/name": k8sconsts.OdigletAppLabelValue,
 			},
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app.kubernetes.io/name": OdigletAppLabelValue,
+					"app.kubernetes.io/name": k8sconsts.OdigletAppLabelValue,
 				},
 			},
 			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
@@ -348,7 +330,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app.kubernetes.io/name": OdigletAppLabelValue,
+						"app.kubernetes.io/name": k8sconsts.OdigletAppLabelValue,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -369,14 +351,6 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: "/run",
-								},
-							},
-						},
-						{
-							Name: "pod-resources",
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/var/lib/kubelet/pod-resources",
 								},
 							},
 						},
@@ -416,18 +390,26 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 								"init",
 							},
 							Resources: corev1.ResourceRequirements{},
-							VolumeMounts: []corev1.VolumeMount{
+							VolumeMounts: append([]corev1.VolumeMount{
 								{
 									Name:      "odigos",
 									MountPath: "/var/odigos",
 								},
-							},
+							}, odigosSeLinuxHostVolumeMounts...),
 							ImagePullPolicy: "IfNotPresent",
+							SecurityContext: &corev1.SecurityContext{
+								Privileged: ptrbool(true),
+								Capabilities: &corev1.Capabilities{
+									Add: []corev1.Capability{
+										"SYS_PTRACE",
+									},
+								},
+							},
 						},
 					},
 					Containers: []corev1.Container{
 						{
-							Name:  OdigletContainerName,
+							Name:  k8sconsts.OdigletContainerName,
 							Image: containers.GetImageName(imagePrefix, imageName, version),
 							Env: append([]corev1.EnvVar{
 								{
@@ -479,11 +461,6 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 									MountPath: "/var/lib/kubelet/device-plugins",
 								},
 								{
-									Name:      "pod-resources",
-									MountPath: "/var/lib/kubelet/pod-resources",
-									ReadOnly:  true,
-								},
-								{
 									Name:      "odigos",
 									MountPath: "/var/odigos",
 									ReadOnly:  true,
@@ -505,7 +482,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 						},
 					},
 					DNSPolicy:          "ClusterFirstWithHostNet",
-					ServiceAccountName: OdigletServiceAccountName,
+					ServiceAccountName: k8sconsts.OdigletServiceAccountName,
 					HostNetwork:        true,
 					HostPID:            true,
 					PriorityClassName:  "system-node-critical",
@@ -577,11 +554,17 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 	// if the user specified an image, use it. otherwise, use the default image.
 	// prev v1.0.4 - the cli would automatically store "keyval/odigos-odiglet" instead of empty value,
 	// thus we need to treat the default image name as empty value.
-	if odigletImage == "" || odigletImage == OdigletImageName {
+	if odigletImage == "" || odigletImage == k8sconsts.OdigletImageName || odigletImage == k8sconsts.OdigletImageUBI9 {
 		if a.odigosTier == common.CommunityOdigosTier {
-			odigletImage = OdigletImageName
+			if odigletImage != k8sconsts.OdigletImageUBI9 {
+				odigletImage = k8sconsts.OdigletImageName
+			}
 		} else {
-			odigletImage = OdigletEnterpriseImageName
+			if odigletImage == k8sconsts.OdigletImageUBI9 {
+				odigletImage = k8sconsts.OdigletEnterpriseImageUBI9
+			} else {
+				odigletImage = k8sconsts.OdigletEnterpriseImageName
+			}
 		}
 	}
 
@@ -589,7 +572,7 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 		NewOdigletServiceAccount(a.ns),
 		NewOdigletRole(a.ns),
 		NewOdigletRoleBinding(a.ns),
-		NewOdigletClusterRole(a.config.Psp),
+		NewOdigletClusterRole(a.config.Psp, a.config.OpenshiftEnabled),
 		NewOdigletClusterRoleBinding(a.ns),
 	}
 
@@ -606,18 +589,9 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 		resources = append(resources, NewResourceQuota(a.ns))
 	}
 
-	// temporary hack - check if the profiles named "code-attributes" or "kratos" are enabled.
-	// in the future, the go code attribute collection should be handled on an otel-sdk level
-	// instead of setting a global environment variable.
-	// once this is done, we can remove this check.
-	goAutoIncludeCodeAttributes := a.config.GoAutoIncludeCodeAttributes
-	if slices.Contains(a.config.Profiles, "code-attributes") || slices.Contains(a.config.Profiles, "kratos") {
-		goAutoIncludeCodeAttributes = true
-	}
-
 	// before creating the daemonset, we need to create the service account, cluster role and cluster role binding
 	resources = append(resources,
-		NewOdigletDaemonSet(a.ns, a.odigosVersion, a.config.ImagePrefix, odigletImage, a.odigosTier, a.config.OpenshiftEnabled, goAutoIncludeCodeAttributes,
+		NewOdigletDaemonSet(a.ns, a.odigosVersion, a.config.ImagePrefix, odigletImage, a.odigosTier, a.config.OpenshiftEnabled,
 			&autodetect.ClusterDetails{
 				Kind:       clusterKind,
 				K8SVersion: cmdcontext.K8SVersionFromContext(ctx),

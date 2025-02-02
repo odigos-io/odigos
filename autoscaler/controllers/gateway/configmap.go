@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
 	odigoscommon "github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 	odigosconsts "github.com/odigos-io/odigos/common/consts"
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/conditions"
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -57,7 +57,7 @@ func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32) error {
 					"metric_relabel_configs": []config.GenericMap{
 						{
 							"source_labels": []string{"__name__"},
-							"regex":         "(.*odigos.*|^otelcol_processor_accepted.*|^otelcol_exporter_sent.*)",
+							"regex":         "(.*odigos.*|^otelcol_exporter_sent.*)",
 							"action":        "keep",
 						},
 					},
@@ -115,6 +115,12 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 	logger := log.FromContext(ctx)
 	memoryLimiterConfiguration := common.GetMemoryLimiterConfig(gateway.Spec.ResourcesSettings)
 
+	sourcesFilterProcessors, err := common.GenerateSourcesFilterProcessors(ctx, c, dests)
+	if err != nil {
+		logger.Error(err, "Failed to generate sources filter processors")
+		return nil, err
+	}
+
 	processors := common.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleClusterGateway)
 
 	desiredData, err, status, signals := config.Calculate(
@@ -124,7 +130,9 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 		func(c *config.Config) error {
 			return addSelfTelemetryPipeline(c, gateway.Spec.CollectorOwnMetricsPort)
 		},
+		sourcesFilterProcessors,
 	)
+
 	if err != nil {
 		logger.Error(err, "Failed to calculate config")
 		return nil, err
@@ -160,11 +168,11 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 
 	desiredCM := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      consts.OdigosClusterCollectorConfigMapName,
+			Name:      k8sconsts.OdigosClusterCollectorConfigMapName,
 			Namespace: gateway.Namespace,
 		},
 		Data: map[string]string{
-			consts.OdigosClusterCollectorConfigMapKey: desiredData,
+			k8sconsts.OdigosClusterCollectorConfigMapKey: desiredData,
 		},
 	}
 
@@ -174,7 +182,7 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 	}
 
 	existing := &v1.ConfigMap{}
-	if err := c.Get(ctx, client.ObjectKey{Namespace: gateway.Namespace, Name: consts.OdigosClusterCollectorConfigMapName}, existing); err != nil {
+	if err := c.Get(ctx, client.ObjectKey{Namespace: gateway.Namespace, Name: k8sconsts.OdigosClusterCollectorConfigMapName}, existing); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.V(0).Info("Creating gateway config map")
 			_, err := createConfigMap(desiredCM, ctx, c)

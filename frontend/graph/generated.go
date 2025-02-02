@@ -85,6 +85,15 @@ type ComplexityRoot struct {
 		AttributeStringValue func(childComplexity int) int
 	}
 
+	CodeAttributes struct {
+		Column     func(childComplexity int) int
+		FilePath   func(childComplexity int) int
+		Function   func(childComplexity int) int
+		LineNumber func(childComplexity int) int
+		Namespace  func(childComplexity int) int
+		Stacktrace func(childComplexity int) int
+	}
+
 	ComputePlatform struct {
 		APITokens            func(childComplexity int) int
 		Actions              func(childComplexity int) int
@@ -208,6 +217,7 @@ type ComplexityRoot struct {
 
 	GetConfigResponse struct {
 		Installation func(childComplexity int) int
+		Readonly     func(childComplexity int) int
 	}
 
 	GetDestinationDetailsResponse struct {
@@ -255,17 +265,20 @@ type ComplexityRoot struct {
 	}
 
 	InstrumentationRule struct {
+		CodeAttributes           func(childComplexity int) int
 		Disabled                 func(childComplexity int) int
 		InstrumentationLibraries func(childComplexity int) int
+		Mutable                  func(childComplexity int) int
 		Notes                    func(childComplexity int) int
 		PayloadCollection        func(childComplexity int) int
+		ProfileName              func(childComplexity int) int
 		RuleID                   func(childComplexity int) int
 		RuleName                 func(childComplexity int) int
 		Workloads                func(childComplexity int) int
 	}
 
 	K8sActualNamespace struct {
-		K8sActualSources func(childComplexity int, instrumentationLabeled *bool) int
+		K8sActualSources func(childComplexity int) int
 		Name             func(childComplexity int) int
 		Selected         func(childComplexity int) int
 	}
@@ -277,7 +290,7 @@ type ComplexityRoot struct {
 		Name              func(childComplexity int) int
 		Namespace         func(childComplexity int) int
 		NumberOfInstances func(childComplexity int) int
-		ReportedName      func(childComplexity int) int
+		OtelServiceName   func(childComplexity int) int
 		Selected          func(childComplexity int) int
 	}
 
@@ -335,6 +348,7 @@ type ComplexityRoot struct {
 		HasErrors            func(childComplexity int) int
 		InstallationMethod   func(childComplexity int) int
 		IsSettled            func(childComplexity int) int
+		KubernetesVersion    func(childComplexity int) int
 		NodeCollector        func(childComplexity int) int
 		NumberOfDestinations func(childComplexity int) int
 		NumberOfSources      func(childComplexity int) int
@@ -495,7 +509,7 @@ type DestinationResolver interface {
 	Conditions(ctx context.Context, obj *model.Destination) ([]*model.Condition, error)
 }
 type K8sActualNamespaceResolver interface {
-	K8sActualSources(ctx context.Context, obj *model.K8sActualNamespace, instrumentationLabeled *bool) ([]*model.K8sActualSource, error)
+	K8sActualSources(ctx context.Context, obj *model.K8sActualNamespace) ([]*model.K8sActualSource, error)
 }
 type MutationResolver interface {
 	UpdateAPIToken(ctx context.Context, token string) (bool, error)
@@ -703,6 +717,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ClusterInfo.AttributeStringValue(childComplexity), true
+
+	case "CodeAttributes.column":
+		if e.complexity.CodeAttributes.Column == nil {
+			break
+		}
+
+		return e.complexity.CodeAttributes.Column(childComplexity), true
+
+	case "CodeAttributes.filePath":
+		if e.complexity.CodeAttributes.FilePath == nil {
+			break
+		}
+
+		return e.complexity.CodeAttributes.FilePath(childComplexity), true
+
+	case "CodeAttributes.function":
+		if e.complexity.CodeAttributes.Function == nil {
+			break
+		}
+
+		return e.complexity.CodeAttributes.Function(childComplexity), true
+
+	case "CodeAttributes.lineNumber":
+		if e.complexity.CodeAttributes.LineNumber == nil {
+			break
+		}
+
+		return e.complexity.CodeAttributes.LineNumber(childComplexity), true
+
+	case "CodeAttributes.namespace":
+		if e.complexity.CodeAttributes.Namespace == nil {
+			break
+		}
+
+		return e.complexity.CodeAttributes.Namespace(childComplexity), true
+
+	case "CodeAttributes.stacktrace":
+		if e.complexity.CodeAttributes.Stacktrace == nil {
+			break
+		}
+
+		return e.complexity.CodeAttributes.Stacktrace(childComplexity), true
 
 	case "ComputePlatform.apiTokens":
 		if e.complexity.ComputePlatform.APITokens == nil {
@@ -1232,6 +1288,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.GetConfigResponse.Installation(childComplexity), true
 
+	case "GetConfigResponse.readonly":
+		if e.complexity.GetConfigResponse.Readonly == nil {
+			break
+		}
+
+		return e.complexity.GetConfigResponse.Readonly(childComplexity), true
+
 	case "GetDestinationDetailsResponse.fields":
 		if e.complexity.GetDestinationDetailsResponse.Fields == nil {
 			break
@@ -1372,6 +1435,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InstrumentationLibraryGlobalId.SpanKind(childComplexity), true
 
+	case "InstrumentationRule.codeAttributes":
+		if e.complexity.InstrumentationRule.CodeAttributes == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationRule.CodeAttributes(childComplexity), true
+
 	case "InstrumentationRule.disabled":
 		if e.complexity.InstrumentationRule.Disabled == nil {
 			break
@@ -1386,6 +1456,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InstrumentationRule.InstrumentationLibraries(childComplexity), true
 
+	case "InstrumentationRule.mutable":
+		if e.complexity.InstrumentationRule.Mutable == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationRule.Mutable(childComplexity), true
+
 	case "InstrumentationRule.notes":
 		if e.complexity.InstrumentationRule.Notes == nil {
 			break
@@ -1399,6 +1476,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InstrumentationRule.PayloadCollection(childComplexity), true
+
+	case "InstrumentationRule.profileName":
+		if e.complexity.InstrumentationRule.ProfileName == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationRule.ProfileName(childComplexity), true
 
 	case "InstrumentationRule.ruleId":
 		if e.complexity.InstrumentationRule.RuleID == nil {
@@ -1426,12 +1510,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_K8sActualNamespace_k8sActualSources_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.K8sActualNamespace.K8sActualSources(childComplexity, args["instrumentationLabeled"].(*bool)), true
+		return e.complexity.K8sActualNamespace.K8sActualSources(childComplexity), true
 
 	case "K8sActualNamespace.name":
 		if e.complexity.K8sActualNamespace.Name == nil {
@@ -1489,12 +1568,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sActualSource.NumberOfInstances(childComplexity), true
 
-	case "K8sActualSource.reportedName":
-		if e.complexity.K8sActualSource.ReportedName == nil {
+	case "K8sActualSource.otelServiceName":
+		if e.complexity.K8sActualSource.OtelServiceName == nil {
 			break
 		}
 
-		return e.complexity.K8sActualSource.ReportedName(childComplexity), true
+		return e.complexity.K8sActualSource.OtelServiceName(childComplexity), true
 
 	case "K8sActualSource.selected":
 		if e.complexity.K8sActualSource.Selected == nil {
@@ -1838,6 +1917,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.OdigosAnalyze.IsSettled(childComplexity), true
+
+	case "OdigosAnalyze.kubernetesVersion":
+		if e.complexity.OdigosAnalyze.KubernetesVersion == nil {
+			break
+		}
+
+		return e.complexity.OdigosAnalyze.KubernetesVersion(childComplexity), true
 
 	case "OdigosAnalyze.nodeCollector":
 		if e.complexity.OdigosAnalyze.NodeCollector == nil {
@@ -2474,6 +2560,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	ec := executionContext{rc, e, 0, 0, make(chan graphql.DeferredResult)}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputActionInput,
+		ec.unmarshalInputCodeAttributesInput,
 		ec.unmarshalInputDbQueryPayloadCollectionInput,
 		ec.unmarshalInputDestinationInput,
 		ec.unmarshalInputExportedSignalsInput,
@@ -2634,21 +2721,6 @@ func (ec *executionContext) field_ComputePlatform_sources_args(ctx context.Conte
 		}
 	}
 	args["nextPage"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_K8sActualNamespace_k8sActualSources_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *bool
-	if tmp, ok := rawArgs["instrumentationLabeled"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("instrumentationLabeled"))
-		arg0, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["instrumentationLabeled"] = arg0
 	return args, nil
 }
 
@@ -4105,6 +4177,252 @@ func (ec *executionContext) fieldContext_ClusterInfo_attributeStringValue(_ cont
 	return fc, nil
 }
 
+func (ec *executionContext) _CodeAttributes_column(ctx context.Context, field graphql.CollectedField, obj *model.CodeAttributes) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CodeAttributes_column(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Column, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CodeAttributes_column(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CodeAttributes",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CodeAttributes_filePath(ctx context.Context, field graphql.CollectedField, obj *model.CodeAttributes) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CodeAttributes_filePath(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FilePath, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CodeAttributes_filePath(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CodeAttributes",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CodeAttributes_function(ctx context.Context, field graphql.CollectedField, obj *model.CodeAttributes) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CodeAttributes_function(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Function, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CodeAttributes_function(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CodeAttributes",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CodeAttributes_lineNumber(ctx context.Context, field graphql.CollectedField, obj *model.CodeAttributes) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CodeAttributes_lineNumber(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LineNumber, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CodeAttributes_lineNumber(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CodeAttributes",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CodeAttributes_namespace(ctx context.Context, field graphql.CollectedField, obj *model.CodeAttributes) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CodeAttributes_namespace(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Namespace, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CodeAttributes_namespace(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CodeAttributes",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CodeAttributes_stacktrace(ctx context.Context, field graphql.CollectedField, obj *model.CodeAttributes) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CodeAttributes_stacktrace(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Stacktrace, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CodeAttributes_stacktrace(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CodeAttributes",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ComputePlatform_computePlatformType(ctx context.Context, field graphql.CollectedField, obj *model.ComputePlatform) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ComputePlatform_computePlatformType(ctx, field)
 	if err != nil {
@@ -4537,12 +4855,18 @@ func (ec *executionContext) fieldContext_ComputePlatform_instrumentationRules(_ 
 				return ec.fieldContext_InstrumentationRule_notes(ctx, field)
 			case "disabled":
 				return ec.fieldContext_InstrumentationRule_disabled(ctx, field)
+			case "mutable":
+				return ec.fieldContext_InstrumentationRule_mutable(ctx, field)
+			case "profileName":
+				return ec.fieldContext_InstrumentationRule_profileName(ctx, field)
 			case "workloads":
 				return ec.fieldContext_InstrumentationRule_workloads(ctx, field)
 			case "instrumentationLibraries":
 				return ec.fieldContext_InstrumentationRule_instrumentationLibraries(ctx, field)
 			case "payloadCollection":
 				return ec.fieldContext_InstrumentationRule_payloadCollection(ctx, field)
+			case "codeAttributes":
+				return ec.fieldContext_InstrumentationRule_codeAttributes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InstrumentationRule", field.Name)
 		},
@@ -7548,6 +7872,50 @@ func (ec *executionContext) fieldContext_GetConfigResponse_installation(_ contex
 	return fc, nil
 }
 
+func (ec *executionContext) _GetConfigResponse_readonly(ctx context.Context, field graphql.CollectedField, obj *model.GetConfigResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GetConfigResponse_readonly(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Readonly, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GetConfigResponse_readonly(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GetConfigResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _GetDestinationDetailsResponse_fields(ctx context.Context, field graphql.CollectedField, obj *model.GetDestinationDetailsResponse) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_GetDestinationDetailsResponse_fields(ctx, field)
 	if err != nil {
@@ -8709,6 +9077,94 @@ func (ec *executionContext) fieldContext_InstrumentationRule_disabled(_ context.
 	return fc, nil
 }
 
+func (ec *executionContext) _InstrumentationRule_mutable(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationRule_mutable(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Mutable, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationRule_mutable(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InstrumentationRule_profileName(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationRule_profileName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProfileName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationRule_profileName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _InstrumentationRule_workloads(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRule) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InstrumentationRule_workloads(ctx, field)
 	if err != nil {
@@ -8858,6 +9314,61 @@ func (ec *executionContext) fieldContext_InstrumentationRule_payloadCollection(_
 	return fc, nil
 }
 
+func (ec *executionContext) _InstrumentationRule_codeAttributes(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationRule_codeAttributes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CodeAttributes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.CodeAttributes)
+	fc.Result = res
+	return ec.marshalOCodeAttributes2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCodeAttributes(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationRule_codeAttributes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "column":
+				return ec.fieldContext_CodeAttributes_column(ctx, field)
+			case "filePath":
+				return ec.fieldContext_CodeAttributes_filePath(ctx, field)
+			case "function":
+				return ec.fieldContext_CodeAttributes_function(ctx, field)
+			case "lineNumber":
+				return ec.fieldContext_CodeAttributes_lineNumber(ctx, field)
+			case "namespace":
+				return ec.fieldContext_CodeAttributes_namespace(ctx, field)
+			case "stacktrace":
+				return ec.fieldContext_CodeAttributes_stacktrace(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CodeAttributes", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _K8sActualNamespace_name(ctx context.Context, field graphql.CollectedField, obj *model.K8sActualNamespace) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_K8sActualNamespace_name(ctx, field)
 	if err != nil {
@@ -8923,11 +9434,14 @@ func (ec *executionContext) _K8sActualNamespace_selected(ctx context.Context, fi
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(bool)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_K8sActualNamespace_selected(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8957,7 +9471,7 @@ func (ec *executionContext) _K8sActualNamespace_k8sActualSources(ctx context.Con
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.K8sActualNamespace().K8sActualSources(rctx, obj, fc.Args["instrumentationLabeled"].(*bool))
+		return ec.resolvers.K8sActualNamespace().K8sActualSources(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8974,7 +9488,7 @@ func (ec *executionContext) _K8sActualNamespace_k8sActualSources(ctx context.Con
 	return ec.marshalNK8sActualSource2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sActualSource(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_K8sActualNamespace_k8sActualSources(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_K8sActualNamespace_k8sActualSources(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "K8sActualNamespace",
 		Field:      field,
@@ -8992,8 +9506,8 @@ func (ec *executionContext) fieldContext_K8sActualNamespace_k8sActualSources(ctx
 				return ec.fieldContext_K8sActualSource_numberOfInstances(ctx, field)
 			case "selected":
 				return ec.fieldContext_K8sActualSource_selected(ctx, field)
-			case "reportedName":
-				return ec.fieldContext_K8sActualSource_reportedName(ctx, field)
+			case "otelServiceName":
+				return ec.fieldContext_K8sActualSource_otelServiceName(ctx, field)
 			case "containers":
 				return ec.fieldContext_K8sActualSource_containers(ctx, field)
 			case "conditions":
@@ -9001,17 +9515,6 @@ func (ec *executionContext) fieldContext_K8sActualNamespace_k8sActualSources(ctx
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sActualSource", field.Name)
 		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_K8sActualNamespace_k8sActualSources_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
 	}
 	return fc, nil
 }
@@ -9230,8 +9733,8 @@ func (ec *executionContext) fieldContext_K8sActualSource_selected(_ context.Cont
 	return fc, nil
 }
 
-func (ec *executionContext) _K8sActualSource_reportedName(ctx context.Context, field graphql.CollectedField, obj *model.K8sActualSource) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_K8sActualSource_reportedName(ctx, field)
+func (ec *executionContext) _K8sActualSource_otelServiceName(ctx context.Context, field graphql.CollectedField, obj *model.K8sActualSource) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sActualSource_otelServiceName(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -9244,7 +9747,7 @@ func (ec *executionContext) _K8sActualSource_reportedName(ctx context.Context, f
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ReportedName, nil
+		return obj.OtelServiceName, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9258,7 +9761,7 @@ func (ec *executionContext) _K8sActualSource_reportedName(ctx context.Context, f
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_K8sActualSource_reportedName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_K8sActualSource_otelServiceName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "K8sActualSource",
 		Field:      field,
@@ -10455,12 +10958,18 @@ func (ec *executionContext) fieldContext_Mutation_createInstrumentationRule(ctx 
 				return ec.fieldContext_InstrumentationRule_notes(ctx, field)
 			case "disabled":
 				return ec.fieldContext_InstrumentationRule_disabled(ctx, field)
+			case "mutable":
+				return ec.fieldContext_InstrumentationRule_mutable(ctx, field)
+			case "profileName":
+				return ec.fieldContext_InstrumentationRule_profileName(ctx, field)
 			case "workloads":
 				return ec.fieldContext_InstrumentationRule_workloads(ctx, field)
 			case "instrumentationLibraries":
 				return ec.fieldContext_InstrumentationRule_instrumentationLibraries(ctx, field)
 			case "payloadCollection":
 				return ec.fieldContext_InstrumentationRule_payloadCollection(ctx, field)
+			case "codeAttributes":
+				return ec.fieldContext_InstrumentationRule_codeAttributes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InstrumentationRule", field.Name)
 		},
@@ -10526,12 +11035,18 @@ func (ec *executionContext) fieldContext_Mutation_updateInstrumentationRule(ctx 
 				return ec.fieldContext_InstrumentationRule_notes(ctx, field)
 			case "disabled":
 				return ec.fieldContext_InstrumentationRule_disabled(ctx, field)
+			case "mutable":
+				return ec.fieldContext_InstrumentationRule_mutable(ctx, field)
+			case "profileName":
+				return ec.fieldContext_InstrumentationRule_profileName(ctx, field)
 			case "workloads":
 				return ec.fieldContext_InstrumentationRule_workloads(ctx, field)
 			case "instrumentationLibraries":
 				return ec.fieldContext_InstrumentationRule_instrumentationLibraries(ctx, field)
 			case "payloadCollection":
 				return ec.fieldContext_InstrumentationRule_payloadCollection(ctx, field)
+			case "codeAttributes":
+				return ec.fieldContext_InstrumentationRule_codeAttributes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InstrumentationRule", field.Name)
 		},
@@ -11222,6 +11737,60 @@ func (ec *executionContext) fieldContext_OdigosAnalyze_odigosVersion(_ context.C
 	return fc, nil
 }
 
+func (ec *executionContext) _OdigosAnalyze_kubernetesVersion(ctx context.Context, field graphql.CollectedField, obj *model.OdigosAnalyze) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_OdigosAnalyze_kubernetesVersion(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.KubernetesVersion, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.EntityProperty)
+	fc.Result = res
+	return ec.marshalNEntityProperty2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐEntityProperty(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_OdigosAnalyze_kubernetesVersion(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "OdigosAnalyze",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_EntityProperty_name(ctx, field)
+			case "value":
+				return ec.fieldContext_EntityProperty_value(ctx, field)
+			case "status":
+				return ec.fieldContext_EntityProperty_status(ctx, field)
+			case "explain":
+				return ec.fieldContext_EntityProperty_explain(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type EntityProperty", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _OdigosAnalyze_tier(ctx context.Context, field graphql.CollectedField, obj *model.OdigosAnalyze) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OdigosAnalyze_tier(ctx, field)
 	if err != nil {
@@ -11839,8 +12408,8 @@ func (ec *executionContext) fieldContext_PaginatedSources_items(_ context.Contex
 				return ec.fieldContext_K8sActualSource_numberOfInstances(ctx, field)
 			case "selected":
 				return ec.fieldContext_K8sActualSource_selected(ctx, field)
-			case "reportedName":
-				return ec.fieldContext_K8sActualSource_reportedName(ctx, field)
+			case "otelServiceName":
+				return ec.fieldContext_K8sActualSource_otelServiceName(ctx, field)
 			case "containers":
 				return ec.fieldContext_K8sActualSource_containers(ctx, field)
 			case "conditions":
@@ -13433,6 +14002,8 @@ func (ec *executionContext) fieldContext_Query_config(_ context.Context, field g
 			switch field.Name {
 			case "installation":
 				return ec.fieldContext_GetConfigResponse_installation(ctx, field)
+			case "readonly":
+				return ec.fieldContext_GetConfigResponse_readonly(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type GetConfigResponse", field.Name)
 		},
@@ -13684,6 +14255,8 @@ func (ec *executionContext) fieldContext_Query_describeOdigos(_ context.Context,
 			switch field.Name {
 			case "odigosVersion":
 				return ec.fieldContext_OdigosAnalyze_odigosVersion(ctx, field)
+			case "kubernetesVersion":
+				return ec.fieldContext_OdigosAnalyze_kubernetesVersion(ctx, field)
 			case "tier":
 				return ec.fieldContext_OdigosAnalyze_tier(ctx, field)
 			case "installationMethod":
@@ -17548,6 +18121,68 @@ func (ec *executionContext) unmarshalInputActionInput(ctx context.Context, obj i
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputCodeAttributesInput(ctx context.Context, obj interface{}) (model.CodeAttributesInput, error) {
+	var it model.CodeAttributesInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"column", "filePath", "function", "lineNumber", "namespace", "stacktrace"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "column":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("column"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Column = data
+		case "filePath":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filePath"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.FilePath = data
+		case "function":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("function"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Function = data
+		case "lineNumber":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lineNumber"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LineNumber = data
+		case "namespace":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Namespace = data
+		case "stacktrace":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("stacktrace"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Stacktrace = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputDbQueryPayloadCollectionInput(ctx context.Context, obj interface{}) (model.DbQueryPayloadCollectionInput, error) {
 	var it model.DbQueryPayloadCollectionInput
 	asMap := map[string]interface{}{}
@@ -17794,7 +18429,7 @@ func (ec *executionContext) unmarshalInputInstrumentationRuleInput(ctx context.C
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"ruleName", "notes", "disabled", "workloads", "instrumentationLibraries", "payloadCollection"}
+	fieldsInOrder := [...]string{"ruleName", "notes", "disabled", "workloads", "instrumentationLibraries", "payloadCollection", "codeAttributes"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -17843,6 +18478,13 @@ func (ec *executionContext) unmarshalInputInstrumentationRuleInput(ctx context.C
 				return it, err
 			}
 			it.PayloadCollection = data
+		case "codeAttributes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("codeAttributes"))
+			data, err := ec.unmarshalOCodeAttributesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCodeAttributesInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CodeAttributes = data
 		}
 	}
 
@@ -18019,20 +18661,20 @@ func (ec *executionContext) unmarshalInputPatchSourceRequestInput(ctx context.Co
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"reportedName"}
+	fieldsInOrder := [...]string{"otelServiceName"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "reportedName":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("reportedName"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+		case "otelServiceName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("otelServiceName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.ReportedName = data
+			it.OtelServiceName = data
 		}
 	}
 
@@ -18467,6 +19109,52 @@ func (ec *executionContext) _ClusterInfo(ctx context.Context, sel ast.SelectionS
 			}
 		case "attributeStringValue":
 			out.Values[i] = ec._ClusterInfo_attributeStringValue(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var codeAttributesImplementors = []string{"CodeAttributes"}
+
+func (ec *executionContext) _CodeAttributes(ctx context.Context, sel ast.SelectionSet, obj *model.CodeAttributes) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, codeAttributesImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CodeAttributes")
+		case "column":
+			out.Values[i] = ec._CodeAttributes_column(ctx, field, obj)
+		case "filePath":
+			out.Values[i] = ec._CodeAttributes_filePath(ctx, field, obj)
+		case "function":
+			out.Values[i] = ec._CodeAttributes_function(ctx, field, obj)
+		case "lineNumber":
+			out.Values[i] = ec._CodeAttributes_lineNumber(ctx, field, obj)
+		case "namespace":
+			out.Values[i] = ec._CodeAttributes_namespace(ctx, field, obj)
+		case "stacktrace":
+			out.Values[i] = ec._CodeAttributes_stacktrace(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -19655,6 +20343,11 @@ func (ec *executionContext) _GetConfigResponse(ctx context.Context, sel ast.Sele
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "readonly":
+			out.Values[i] = ec._GetConfigResponse_readonly(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -20042,12 +20735,24 @@ func (ec *executionContext) _InstrumentationRule(ctx context.Context, sel ast.Se
 			out.Values[i] = ec._InstrumentationRule_notes(ctx, field, obj)
 		case "disabled":
 			out.Values[i] = ec._InstrumentationRule_disabled(ctx, field, obj)
+		case "mutable":
+			out.Values[i] = ec._InstrumentationRule_mutable(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "profileName":
+			out.Values[i] = ec._InstrumentationRule_profileName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "workloads":
 			out.Values[i] = ec._InstrumentationRule_workloads(ctx, field, obj)
 		case "instrumentationLibraries":
 			out.Values[i] = ec._InstrumentationRule_instrumentationLibraries(ctx, field, obj)
 		case "payloadCollection":
 			out.Values[i] = ec._InstrumentationRule_payloadCollection(ctx, field, obj)
+		case "codeAttributes":
+			out.Values[i] = ec._InstrumentationRule_codeAttributes(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -20089,6 +20794,9 @@ func (ec *executionContext) _K8sActualNamespace(ctx context.Context, sel ast.Sel
 			}
 		case "selected":
 			out.Values[i] = ec._K8sActualNamespace_selected(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "k8sActualSources":
 			field := field
 
@@ -20178,8 +20886,8 @@ func (ec *executionContext) _K8sActualSource(ctx context.Context, sel ast.Select
 			out.Values[i] = ec._K8sActualSource_numberOfInstances(ctx, field, obj)
 		case "selected":
 			out.Values[i] = ec._K8sActualSource_selected(ctx, field, obj)
-		case "reportedName":
-			out.Values[i] = ec._K8sActualSource_reportedName(ctx, field, obj)
+		case "otelServiceName":
+			out.Values[i] = ec._K8sActualSource_otelServiceName(ctx, field, obj)
 		case "containers":
 			out.Values[i] = ec._K8sActualSource_containers(ctx, field, obj)
 		case "conditions":
@@ -20563,6 +21271,11 @@ func (ec *executionContext) _OdigosAnalyze(ctx context.Context, sel ast.Selectio
 			out.Values[i] = graphql.MarshalString("OdigosAnalyze")
 		case "odigosVersion":
 			out.Values[i] = ec._OdigosAnalyze_odigosVersion(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "kubernetesVersion":
+			out.Values[i] = ec._OdigosAnalyze_kubernetesVersion(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -23896,6 +24609,21 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	}
 	res := graphql.MarshalBoolean(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOCodeAttributes2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCodeAttributes(ctx context.Context, sel ast.SelectionSet, v *model.CodeAttributes) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._CodeAttributes(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOCodeAttributesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCodeAttributesInput(ctx context.Context, v interface{}) (*model.CodeAttributesInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputCodeAttributesInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOComputePlatform2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐComputePlatform(ctx context.Context, sel ast.SelectionSet, v *model.ComputePlatform) graphql.Marshaler {

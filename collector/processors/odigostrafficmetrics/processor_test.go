@@ -7,6 +7,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest/ptracetest"
 
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/config/configtelemetry"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.opentelemetry.io/collector/processor/processortest"
 	"go.opentelemetry.io/otel/sdk/metric"
@@ -44,10 +45,12 @@ func TestProcessor_Traces(t *testing.T) {
 	defer metricProvider.Shutdown(context.Background())
 
 	set := processortest.NewNopSettings()
+	set.MeterProvider = metricProvider
+	set.MetricsLevel = configtelemetry.LevelBasic
 
-	tmp, err := newThroughputMeasurementProcessor(set, metricProvider, &Config{
+	tmp, err := newThroughputMeasurementProcessor(set, &Config{
 		ResourceAttributesKeys: []string{"service.name", "key1"},
-		SamplingRatio: 		     1,
+		SamplingRatio:          1,
 	})
 	require.NoError(t, err)
 
@@ -72,7 +75,7 @@ func TestProcessor_Traces(t *testing.T) {
 	for _, sm := range rm.ScopeMetrics {
 		for _, metric := range sm.Metrics {
 			switch metric.Name {
-			case "processor_odigostrafficmetrics_trace_data_size":
+			case "otelcol_trace_data_size":
 				sum := metric.Data.(metricdata.Sum[int64])
 				require.Equal(t, 1, len(sum.DataPoints))
 
@@ -101,7 +104,7 @@ func TestProcessor_Traces(t *testing.T) {
 	for _, sm := range rm.ScopeMetrics {
 		for _, metric := range sm.Metrics {
 			switch metric.Name {
-			case "processor_odigostrafficmetrics_trace_data_size":
+			case "otelcol_trace_data_size":
 				sum := metric.Data.(metricdata.Sum[int64])
 				require.Equal(t, 1, len(sum.DataPoints))
 

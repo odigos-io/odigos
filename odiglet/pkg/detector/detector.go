@@ -4,10 +4,10 @@ import (
 	"log/slog"
 
 	"github.com/go-logr/logr"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
-	"github.com/odigos-io/runtime-detector"
+	detector "github.com/odigos-io/runtime-detector"
 )
 
 func K8sDetectorOptions(logger logr.Logger) []detector.DetectorOption {
@@ -16,8 +16,8 @@ func K8sDetectorOptions(logger logr.Logger) []detector.DetectorOption {
 	opts := []detector.DetectorOption{
 		detector.WithLogger(sLogger),
 		detector.WithEnvironments(relevantEnvVars()...),
-		detector.WithEnvPrefixFilter(consts.OdigosEnvVarPodName),
-		detector.WithExePathsToFilter("/usr/bin/bash", "/bin/bash", "/bin/sh", "/usr/bin/sh", "/bin/busybox", "/usr/bin/dash"),
+		detector.WithEnvPrefixFilter(k8sconsts.OdigosEnvVarPodName),
+		detector.WithExePathsToFilter("/usr/bin/bash", "/bin/bash", "/bin/sh", "/usr/bin/sh", "/bin/busybox", "/usr/bin/dash", "/sbin/tini", "/usr/bin/tini"),
 	}
 
 	return opts
@@ -36,7 +36,7 @@ func relevantEnvVars() []string {
 	envs = append(envs, envOverwrite.GetRelevantEnvVarsKeys()...)
 
 	// env vars that Odigos is injecting to the relevant containers
-	envs = append(envs, consts.OdigosInjectedEnvVars()...)
+	envs = append(envs, k8sconsts.OdigosInjectedEnvVars()...)
 
 	return envs
 }

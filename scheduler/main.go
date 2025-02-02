@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
 
@@ -28,6 +29,7 @@ import (
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
+	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -42,9 +44,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	"github.com/odigos-io/odigos/scheduler/clusterinfo"
 	"github.com/odigos-io/odigos/scheduler/controllers/clustercollectorsgroup"
 	"github.com/odigos-io/odigos/scheduler/controllers/nodecollectorsgroup"
 	"github.com/odigos-io/odigos/scheduler/controllers/odigosconfig"
+	"github.com/odigos-io/odigos/scheduler/controllers/odigospro"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -108,6 +112,9 @@ func main() {
 				&odigosv1.InstrumentationRule{}: {
 					Field: nsSelector,
 				},
+				&corev1.Secret{}: {
+					Field: nsSelector,
+				},
 			},
 		},
 		HealthProbeBindAddress: probeAddr,
@@ -126,6 +133,16 @@ func main() {
 		os.Exit(1)
 	}
 
+	clientset, err := kubernetes.NewForConfig(mgr.GetConfig())
+	if err != nil {
+		setupLog.Error(err, "unable to create kubernetes client")
+		os.Exit(1)
+	}
+	err = clusterinfo.RecordClusterInfo(context.Background(), clientset, odigosNs)
+	if err != nil {
+		setupLog.Error(err, "unable to record cluster info, skipping")
+	}
+
 	err = clustercollectorsgroup.SetupWithManager(mgr)
 	if err != nil {
 		setupLog.Error(err, "unable to create controllers for cluster collectors group")
@@ -139,6 +156,11 @@ func main() {
 	err = odigosconfig.SetupWithManager(mgr, tier, odigosVersion, dyanmicClient)
 	if err != nil {
 		setupLog.Error(err, "unable to create controllers for odigos config")
+		os.Exit(1)
+	}
+	err = odigospro.SetupWithManager(mgr)
+	if err != nil {
+		setupLog.Error(err, "unable to create controller for odigos pro")
 		os.Exit(1)
 	}
 

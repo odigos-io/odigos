@@ -30,6 +30,11 @@ type DestinationSpec struct {
 	Data            map[string]string            `json:"data"`
 	SecretRef       *v1.LocalObjectReference     `json:"secretRef,omitempty"`
 	Signals         []common.ObservabilitySignal `json:"signals"`
+
+	// SourceSelector defines which sources can send data to this destination.
+	// If not specified, defaults to "all".
+	// +optional
+	SourceSelector *SourceSelector `json:"sourceSelector,omitempty"`
 }
 
 // DestinationStatus defines the observed state of Destination

@@ -1,25 +1,30 @@
 ---
 title: "System Requirements"
+description: 'To ensure optimal performance and compatibility when deploying Odigos, your environment must meet the following system requirements:'
 sidebarTitle: "System Requirements"
 ---
 
-## System Requirements for Odigos
-To ensure optimal performance and compatibility when deploying Odigos, your environment must meet the following system requirements:
+import KernelVersion from '/snippets/ebpf-kernel-version-note.mdx'
 
-**Kubernetes Version**
-Minimum Version: Odigos requires Kubernetes version 1.23.0 or higher.
+## Kubernetes Version
 
-**Operating System Compatibility**
+Odigos requires Kubernetes version 1.23.0 or higher.
 
-<Info>
-  Odigos data collection for Go, Java, Python, and Node.js applications in the Odigos Enterprise edition utilizes eBPF technology, which requires nodes to run a Linux kernel version of 5.4.0 or higher. Note that Go is also supported in the open-source version of Odigos with the same kernel requirement for eBPF-based data collection.
-</Info>
+<KernelVersion />
 
-- **Supported Platforms**: Odigos operates on Kubernetes clusters with nodes running Linux kernel versions of 5.4.0 or later. However, since nodes within a cluster may vary in OS versions, some nodes may not meet this requirement.
+**What to expect if some nodes don't meet the Kernel requirement:**
 
-**What to Expect if Some Nodes Don’t Meet the Kernel Requirement**:
-
-  - eBPF Agents: If a node’s kernel version is below 5.4.0, eBPF-based data collection will not be applied to workloads on that node. An error will appear in the UI for any source running on unsupported nodes, indicating that instrumentation was not possible.
-  - Non-eBPF Agents: Non-eBPF-based agents are not affected by kernel version requirements and will run and instrument workloads on any Linux version.
+- eBPF Agents: If a node's kernel version is below 5.4.0, eBPF-based data collection will not be applied to workloads on that node. An error will appear in the UI for any source running on unsupported nodes, indicating that instrumentation was not possible.
+- Non-eBPF Agents: Non-eBPF-based agents are not affected by kernel version requirements and will run and instrument workloads on any Linux version.
 
 This allows users to maintain observability on nodes that meet the requirements without needing to upgrade all cluster nodes immediately.
+
+## Kubernetes Cluster Types
+
+- [Kind](https://kind.sigs.k8s.io)
+- [Minikube](https://minikube.sigs.k8s.io/docs/start)
+- [K3s](https://k3s.io)
+- [Red Hat OpenShift](https://www.redhat.com/en/technologies/cloud-computing/openshift) (see [how to install on OpenShift](/setup/installation-options#openshift-installation))
+- [Amazon Elastic Kubernetes Service (EKS)](https://aws.amazon.com/eks/)
+- [Google Kubernetes Engine (GKE)](https://cloud.google.com/kubernetes-engine)
+- [Azure Kubernetes Service (AKS)](https://azure.microsoft.com/en-us/products/kubernetes-service)

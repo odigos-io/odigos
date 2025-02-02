@@ -17,9 +17,9 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -50,7 +50,7 @@ type InstrumentationRuleSpec struct {
 	Disabled bool `json:"disabled,omitempty"`
 
 	// An array of workload objects (name, namespace, kind) to which the rule should be applied. If not specified, the rule will be applied to all workloads. empty array will render the rule inactive.
-	Workloads *[]workload.PodWorkload `json:"workloads,omitempty"`
+	Workloads *[]k8sconsts.PodWorkload `json:"workloads,omitempty"`
 
 	// For fine grained control, the user can specify the instrumentation library to use.
 	// One can specify same rule for multiple languages and libraries at the same time.
@@ -65,6 +65,9 @@ type InstrumentationRuleSpec struct {
 	// instrumentation libraries will be ignored if set.
 	// the rule will be used only for languages which are specified, and ignored otherwise.
 	OtelSdks *instrumentationrules.OtelSdks `json:"otelSdks,omitempty"`
+
+	// Configure which code attributes should be recorded as span attributes.
+	CodeAttributes *instrumentationrules.CodeAttributes `json:"codeAttributes,omitempty"`
 }
 
 type InstrumentationRuleStatus struct {

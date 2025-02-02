@@ -3,12 +3,12 @@ package resources
 import (
 	"context"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/containers"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
-	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -18,19 +18,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-const (
-	SchedulerImage                  = "keyval/odigos-scheduler"
-	SchedulerServiceName            = "scheduler"
-	SchedulerDeploymentName         = "odigos-scheduler"
-	SchedulerAppLabelValue          = SchedulerDeploymentName
-	SchedulerRoleName               = SchedulerDeploymentName
-	SchedulerRoleBindingName        = SchedulerDeploymentName
-	SchedulerClusterRoleName        = SchedulerDeploymentName
-	SchedulerClusterRoleBindingName = SchedulerDeploymentName
-	SchedulerServiceAccountName     = SchedulerDeploymentName
-	SchedulerContainerName          = "manager"
-)
-
 func NewSchedulerServiceAccount(ns string) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
@@ -38,7 +25,7 @@ func NewSchedulerServiceAccount(ns string) *corev1.ServiceAccount {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      SchedulerServiceAccountName,
+			Name:      k8sconsts.SchedulerServiceAccountName,
 			Namespace: ns,
 		},
 	}
@@ -57,7 +44,7 @@ func NewSchedulerLeaderElectionRoleBinding(ns string) *rbacv1.RoleBinding {
 		Subjects: []rbacv1.Subject{
 			{
 				Kind: "ServiceAccount",
-				Name: SchedulerServiceAccountName,
+				Name: k8sconsts.SchedulerServiceAccountName,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
@@ -75,7 +62,7 @@ func NewSchedulerRole(ns string) *rbacv1.Role {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      SchedulerRoleName,
+			Name:      k8sconsts.SchedulerRoleName,
 			Namespace: ns,
 		},
 		Rules: []rbacv1.PolicyRule{
@@ -87,8 +74,8 @@ func NewSchedulerRole(ns string) *rbacv1.Role {
 			{ // Needed to apply effective config after reconciling (defaulting and profile applying) and react to it
 				APIGroups:     []string{""},
 				Resources:     []string{"configmaps"},
-				ResourceNames: []string{consts.OdigosEffectiveConfigName},
-				Verbs:         []string{"patch"},
+				ResourceNames: []string{consts.OdigosEffectiveConfigName, k8sconsts.OdigosDeploymentConfigMapName},
+				Verbs:         []string{"patch", "create", "update"},
 			},
 			{ // Needed because the scheduler is managing the collectorsgroups
 				APIGroups: []string{"odigos.io"},
@@ -110,6 +97,11 @@ func NewSchedulerRole(ns string) *rbacv1.Role {
 				Resources: []string{"processors", "instrumentationrules"},
 				Verbs:     []string{"get", "list", "watch", "patch", "delete", "create"},
 			},
+			{ // read odigos pro token
+				APIGroups: []string{""},
+				Resources: []string{"secrets"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
 		},
 	}
 }
@@ -121,19 +113,19 @@ func NewSchedulerRoleBinding(ns string) *rbacv1.RoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      SchedulerRoleBindingName,
+			Name:      k8sconsts.SchedulerRoleBindingName,
 			Namespace: ns,
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Kind: "ServiceAccount",
-				Name: SchedulerServiceAccountName,
+				Name: k8sconsts.SchedulerServiceAccountName,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "Role",
-			Name:     SchedulerRoleName,
+			Name:     k8sconsts.SchedulerRoleName,
 		},
 	}
 }
@@ -145,7 +137,7 @@ func NewSchedulerClusterRole() *rbacv1.ClusterRole {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: SchedulerClusterRoleName,
+			Name: k8sconsts.SchedulerClusterRoleName,
 		},
 		Rules: []rbacv1.PolicyRule{
 			{ // Needed to track presence/status of configs to wake the data/gateway collectors
@@ -164,57 +156,57 @@ func NewSchedulerClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: SchedulerClusterRoleBindingName,
+			Name: k8sconsts.SchedulerClusterRoleBindingName,
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      SchedulerServiceAccountName,
+				Name:      k8sconsts.SchedulerServiceAccountName,
 				Namespace: ns,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "ClusterRole",
-			Name:     SchedulerClusterRoleName,
+			Name:     k8sconsts.SchedulerClusterRoleName,
 		},
 	}
 }
 
-func NewSchedulerDeployment(ns string, version string, imagePrefix string) *appsv1.Deployment {
+func NewSchedulerDeployment(ns string, version string, imagePrefix string, imageName string) *appsv1.Deployment {
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      SchedulerDeploymentName,
+			Name:      k8sconsts.SchedulerDeploymentName,
 			Namespace: ns,
 			Labels: map[string]string{
-				"app.kubernetes.io/name": SchedulerAppLabelValue,
+				"app.kubernetes.io/name": k8sconsts.SchedulerAppLabelValue,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptrint32(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app.kubernetes.io/name": SchedulerAppLabelValue,
+					"app.kubernetes.io/name": k8sconsts.SchedulerAppLabelValue,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app.kubernetes.io/name": SchedulerAppLabelValue,
+						"app.kubernetes.io/name": k8sconsts.SchedulerAppLabelValue,
 					},
 					Annotations: map[string]string{
-						"kubectl.kubernetes.io/default-container": SchedulerContainerName,
+						"kubectl.kubernetes.io/default-container": k8sconsts.SchedulerContainerName,
 					},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  SchedulerContainerName,
-							Image: containers.GetImageName(imagePrefix, SchedulerImage, version),
+							Name:  k8sconsts.SchedulerContainerName,
+							Image: containers.GetImageName(imagePrefix, imageName, version),
 							Command: []string{
 								"/app",
 							},
@@ -226,7 +218,7 @@ func NewSchedulerDeployment(ns string, version string, imagePrefix string) *apps
 							Env: []corev1.EnvVar{
 								{
 									Name:  "OTEL_SERVICE_NAME",
-									Value: SchedulerServiceName,
+									Value: k8sconsts.SchedulerServiceName,
 								},
 								{
 									Name: "CURRENT_NS",
@@ -298,7 +290,7 @@ func NewSchedulerDeployment(ns string, version string, imagePrefix string) *apps
 						},
 					},
 					TerminationGracePeriodSeconds: ptrint64(10),
-					ServiceAccountName:            SchedulerServiceAccountName,
+					ServiceAccountName:            k8sconsts.SchedulerServiceAccountName,
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot: ptrbool(true),
 					},
@@ -324,6 +316,11 @@ func NewSchedulerResourceManager(client *kube.Client, ns string, config *common.
 func (a *schedulerResourceManager) Name() string { return "Scheduler" }
 
 func (a *schedulerResourceManager) InstallFromScratch(ctx context.Context) error {
+	imageName := k8sconsts.SchedulerImage
+	if a.config.OpenshiftEnabled {
+		imageName = k8sconsts.SchedulerImageUBI9
+	}
+
 	resources := []kube.Object{
 		NewSchedulerServiceAccount(a.ns),
 		NewSchedulerLeaderElectionRoleBinding(a.ns),
@@ -331,7 +328,7 @@ func (a *schedulerResourceManager) InstallFromScratch(ctx context.Context) error
 		NewSchedulerRoleBinding(a.ns),
 		NewSchedulerClusterRole(),
 		NewSchedulerClusterRoleBinding(a.ns),
-		NewSchedulerDeployment(a.ns, a.odigosVersion, a.config.ImagePrefix),
+		NewSchedulerDeployment(a.ns, a.odigosVersion, a.config.ImagePrefix, imageName),
 	}
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }

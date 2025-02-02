@@ -22,7 +22,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/frontend/graph"
 	"github.com/odigos-io/odigos/frontend/kube"
@@ -51,6 +50,12 @@ type Flags struct {
 //go:embed all:webapp/out/*
 var uiFS embed.FS
 
+// The above should point to the UI production build.
+// If it's red for you...
+// 1. Go to "frontend/webapp/"
+// 2. Then run: "yarn install && yarn build"
+// After the build completed, there should be a "frontend/webapp/out/" dir (which is ignored from git), that should resolve the red error.
+
 func parseFlags() Flags {
 	defaultKubeConfig := env.GetDefaultKubeConfigPath()
 
@@ -61,7 +66,7 @@ func parseFlags() Flags {
 	flag.BoolVar(&flags.Debug, "debug", false, "Enable debug mode")
 	flag.StringVar(&flags.KubeConfig, "kubeconfig", defaultKubeConfig, "Path to kubeconfig file")
 	flag.StringVar(&flags.KubeContext, "kube-context", "", "Name of the kubeconfig context to use")
-	flag.StringVar(&flags.Namespace, "namespace", consts.DefaultOdigosNamespace, "Kubernetes namespace where Odigos is installed")
+	flag.StringVar(&flags.Namespace, "namespace", env.GetCurrentNamespace(), "Kubernetes namespace where Odigos is installed")
 	flag.Parse()
 	return flags
 }

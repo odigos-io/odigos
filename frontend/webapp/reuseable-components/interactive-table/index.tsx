@@ -1,8 +1,8 @@
 import React from 'react';
-import { SVG } from '@/assets';
 import { isEmpty } from '@/utils';
 import styled from 'styled-components';
 import { IconWrapped } from '../icon-wrapped';
+import { Theme, Types } from '@odigos/ui-components';
 
 interface ColumnCell {
   key: string; // used to bind the row cell to the column
@@ -11,7 +11,7 @@ interface ColumnCell {
 
 interface RowCell {
   columnKey: string; // used to bind the row cell to the column
-  icon?: SVG;
+  icon?: Types.SVG;
   value?: string;
   component?: () => React.ReactNode;
 }
@@ -32,8 +32,8 @@ const Table = styled.table`
 `;
 
 const TableHead = styled.thead`
-  border-top: 1px solid ${({ theme }) => theme.colors.white_opacity['008']};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.white_opacity['008']};
+  border-top: 1px solid ${({ theme }) => theme.colors.dropdown_bg_2};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.dropdown_bg_2};
 `;
 
 const TableTitle = styled.th`
@@ -70,7 +70,7 @@ const RowBackground = styled.div<{ $index: number }>`
   height: 68px;
   margin: 12px 0;
   border-radius: 16px;
-  background-color: ${({ theme }) => theme.colors.white_opacity['004']};
+  background-color: ${({ theme }) => theme.colors.dropdown_bg_2 + Theme.hexPercent['040']};
 `;
 
 export const InteractiveTable: React.FC<Props> = ({ columns, rows }) => {
