@@ -2,29 +2,6 @@ package distros
 
 import "github.com/odigos-io/odigos/common"
 
-type ImplementationType string
-
-const (
-	// Native is for implementation in the language of the application and
-	// is integrated into the application code via runtime support (e.g. Java agent).
-	NativeImplementation ImplementationType = "native"
-
-	// EbpfImplementation implements using eBPF code injected into the application process.
-	EbpfImplementation ImplementationType = "ebpf"
-
-	// TODO: in the future we can specify more implementation code types like: "integrated".
-)
-
-type OtelInstrumentationsMetadata struct {
-	// The implementation type of the instrumentations
-	Implementation ImplementationType `json:"implementation"`
-}
-
-type OtelSdkMetadata struct {
-	// The implementation type of the SDK
-	Implementation ImplementationType `json:"implementation"`
-}
-
 type RuntimeEnvironment struct {
 	// the runtime environment this distribution targets.
 	// examples: nodejs, JVM, CPython, etc.
@@ -35,7 +12,7 @@ type RuntimeEnvironment struct {
 	RuntimeEnvironmentVersion string `json:"runtimeEnvironmentVersion"`
 }
 
-type Framwork struct {
+type Framework struct {
 	// the framework this distribution targets.
 	FrameworkName string `json:"frameworkName"`
 
@@ -82,7 +59,7 @@ type OtelDistro struct {
 	RuntimeEnvironments []RuntimeEnvironment `json:"runtimeEnvironments"`
 
 	// A list of frameworks this distribution targets (can be left empty)
-	Frameworks []Framwork `json:"frameworks"`
+	Frameworks []Framework `json:"frameworks"`
 
 	// a human-friendly name for this distribution, which can be displayed in the UI and documentation.
 	// may include spaces and special characters.
@@ -93,14 +70,6 @@ type OtelDistro struct {
 
 	// Specifies the odigos tiers which includes this distribution
 	Tiers []common.OdigosTier `json:"tiers"`
-
-	// describe how the instrumentations are implemented in the distribution
-	// instrumentations is the code that calls "startSpan" and runs for each operation being recorded.
-	Instrumentations OtelInstrumentationsMetadata `json:"instrumentations"`
-
-	// describe the OpenTelemetry SDKs used in the distribution
-	// SDK is the code that process and exports a span recorded by instrumentation.
-	OtelSdk OtelSdkMetadata `json:"otelSdk"`
 
 	// a list of environment variables that needs to be set in the application runtime
 	// to enable the distribution.

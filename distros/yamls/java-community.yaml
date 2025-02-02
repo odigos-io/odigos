@@ -13,10 +13,6 @@ spec:
     This distribution is for JVM-based applications (Java, Scala, Kotlin, etc.) using OpenTelemetry Native SDK and instrumentation libraries from the OpenTelemetry community.
   tiers: 
     - community
-  instrumentations:
-    implementation: native
-  otelSdk:
-    implementation: native
   environmentVariables:
     - envName: JAVA_OPTS
       envValue: '-javaagent:{{ODIGOS_AGENTS_DIR}}/java/javaagent.jar'

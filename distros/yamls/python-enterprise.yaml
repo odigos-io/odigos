@@ -13,10 +13,6 @@ spec:
     This distribution is for Python applications using OpenTelemetry native instrumentation libraries and eBPF SDK with enterprise features and capabilities.
   tiers: 
     - onprem
-  instrumentations:
-    implementation: native
-  otelSdk:
-    implementation: ebpf
   environmentVariables:
     - envName: PYTHONPATH
       envValue: '{{ODIGOS_AGENTS_DIR}}/python-ebpf:{{ODIGOS_AGENTS_DIR}}/python/opentelemetry/instrumentation/auto_instrumentation:{{ODIGOS_AGENTS_DIR}}/python'

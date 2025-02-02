@@ -13,8 +13,3 @@ spec:
     This distribution is for Golang applications using OpenTelemetry eBPF-based SDK and eBPF-based instrumentation libraries from the OpenTelemetry community.
   tiers: 
     - community
-  instrumentations:
-    implementation: ebpf
-  otelSdk:
-    implementation: ebpf
-  

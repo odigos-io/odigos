@@ -13,8 +13,3 @@ spec:
     This distribution is for Golang applications using Odigos enterprise version, with ebpf-based SDK and instrumentation libraries, additional features and libraries coverage.
   tiers: 
     - onprem
-  instrumentations:
-    implementation: ebpf
-  otelSdk:
-    implementation: ebpf
-  

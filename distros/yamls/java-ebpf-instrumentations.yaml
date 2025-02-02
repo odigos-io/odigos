@@ -13,10 +13,6 @@ spec:
     This distribution is for JVM-based applications (Java, Scala, Kotlin, etc.) using eBPF based SDK and eBPF enterprise instrumentation libraries.
   tiers: 
     - onprem
-  instrumentations:
-    implementation: ebpf
-  otelSdk:
-    implementation: ebpf
   environmentVariables:
     - envName: JAVA_OPTS
       envValue: '-javaagent:{{ODIGOS_AGENTS_DIR}}/java-ebpf/dtrace-injector.jar'
