@@ -44,7 +44,6 @@ spec:
       containers:
         - image: nodejs-very-old-version:v0.0.1
           name: nodejs-very-old-version
-
 status:
   availableReplicas: 1
   observedGeneration: 2 # the deployment spec changed when odigos resource was added
@@ -70,7 +69,6 @@ spec:
     spec:
       containers:
         - name: nodejs-minimum-version
-
 status:
   availableReplicas: 1
   observedGeneration: 2 # the deployment spec changed when odigos resource was added
@@ -96,7 +94,6 @@ spec:
     spec:
       containers:
         - name: nodejs-latest-version
-
 status:
   availableReplicas: 1
   observedGeneration: 2 # the deployment spec changed when odigos resource was added
@@ -122,7 +119,6 @@ spec:
     spec:
       containers:
         - name: nodejs-dockerfile-env
-
 status:
   availableReplicas: 1
   observedGeneration: 2 # the deployment spec changed when odigos resource was added
@@ -148,7 +144,6 @@ spec:
     spec:
       containers:
         - name: nodejs-manifest-env
-
 status:
   availableReplicas: 1
   observedGeneration: 2 # the deployment spec changed when odigos resource was added
@@ -205,9 +200,6 @@ spec:
           ports:
             - containerPort: 3000
               protocol: TCP
-          resources:
-            limits:
-              instrumentation.odigos.io/java-native-community: '1'
 status:
   availableReplicas: 1
   observedGeneration: 2
@@ -237,9 +229,6 @@ spec:
           ports:
             - containerPort: 3000
               protocol: TCP
-          resources:
-            limits:
-              instrumentation.odigos.io/java-native-community: '1'
 status:
   availableReplicas: 1
   observedGeneration: 2
@@ -269,9 +258,6 @@ spec:
           ports:
             - containerPort: 3000
               protocol: TCP
-          resources:
-            limits:
-              instrumentation.odigos.io/java-native-community: '1'
 status:
   availableReplicas: 1
   observedGeneration: 2
@@ -301,9 +287,6 @@ spec:
           ports:
             - containerPort: 3000
               protocol: TCP
-          resources:
-            limits:
-              instrumentation.odigos.io/java-native-community: '1'
 status:
   availableReplicas: 1
   observedGeneration: 2
@@ -333,9 +316,6 @@ spec:
           ports:
             - containerPort: 3000
               protocol: TCP
-          resources:
-            limits:
-              instrumentation.odigos.io/java-native-community: '1'
 status:
   availableReplicas: 1
   observedGeneration: 2
@@ -365,9 +345,6 @@ spec:
           ports:
             - containerPort: 3000
               protocol: TCP
-          resources:
-            limits:
-              instrumentation.odigos.io/java-native-community: '1'
 status:
   availableReplicas: 1
   observedGeneration: 2
@@ -394,9 +371,6 @@ spec:
       containers:
         - image: python-latest-version:v0.0.1
           name: python-latest-version
-          resources:
-            limits:
-              instrumentation.odigos.io/python-native-community: '1'
 status:
   availableReplicas: 1
   observedGeneration: 2 # the deployment spec changed when odigos resource was added
@@ -423,9 +397,6 @@ spec:
       containers:
         - image: python-alpine:v0.0.1
           name: python-alpine
-          resources:
-            limits:
-              instrumentation.odigos.io/python-native-community: '1'
 status:
   availableReplicas: 1
   observedGeneration: 2 # the deployment spec changed when odigos resource was added
@@ -478,9 +449,6 @@ spec:
       containers:
         - image: python-min-version:v0.0.1
           name: python-min-version
-          resources:
-            limits:
-              instrumentation.odigos.io/python-native-community: '1'
 status:
   availableReplicas: 1
   observedGeneration: 2 # the deployment spec changed when odigos resource was added
@@ -507,9 +475,6 @@ spec:
       containers:
         - image: dotnet8-musl:v0.0.1
           name: dotnet8-musl
-          resources:
-            limits:
-              instrumentation.odigos.io/musl-dotnet-native-community: '1'
 status:
   availableReplicas: 1
   observedGeneration: 2 # the deployment spec changed when odigos resource was added
@@ -536,9 +501,6 @@ spec:
       containers:
         - image: dotnet6-musl:v0.0.1
           name: dotnet6-musl
-          resources:
-            limits:
-              instrumentation.odigos.io/musl-dotnet-native-community: '1'
 status:
   availableReplicas: 1
   observedGeneration: 2 # the deployment spec changed when odigos resource was added
@@ -565,9 +527,6 @@ spec:
       containers:
         - image: dotnet8-glibc:v0.0.1
           name: dotnet8-glibc
-          resources:
-            limits:
-              instrumentation.odigos.io/dotnet-native-community: '1'
 status:
   availableReplicas: 1
   observedGeneration: 2 # the deployment spec changed when odigos resource was added
@@ -594,9 +553,6 @@ spec:
       containers:
         - image: dotnet6-glibc:v0.0.1
           name: dotnet6-glibc
-          resources:
-            limits:
-              instrumentation.odigos.io/dotnet-native-community: '1'
 status:
   availableReplicas: 1
   observedGeneration: 2 # the deployment spec changed when odigos resource was added
