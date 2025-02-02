@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
@@ -114,7 +115,7 @@ func (m *MigrationRunnable) handleSingleDeployment(ctx context.Context, dep *app
 		return client.IgnoreNotFound(err)
 	}
 
-	instConfigName := workload.CalculateWorkloadRuntimeObjectName(freshDep.Name, workload.WorkloadKindDeployment)
+	instConfigName := workload.CalculateWorkloadRuntimeObjectName(freshDep.Name, k8sconsts.WorkloadKindDeployment)
 	freshInstConfig := v1alpha1.InstrumentationConfig{}
 	err = m.KubeClient.Get(ctx, client.ObjectKey{
 		Namespace: freshDep.Namespace,

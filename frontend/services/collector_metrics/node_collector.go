@@ -4,8 +4,8 @@ import (
 	"errors"
 	"sync"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/frontend/services/common"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
@@ -187,13 +187,13 @@ func metricAttributesToSourceID(attrs pcommon.Map) (common.SourceID, error) {
 		return common.SourceID{}, errors.New("namespace not found")
 	}
 
-	var kind workload.WorkloadKind
+	var kind k8sconsts.WorkloadKind
 	if _, ok := attrs.Get(K8SDeploymentNameKey); ok {
-		kind = workload.WorkloadKindDeployment
+		kind = k8sconsts.WorkloadKindDeployment
 	} else if _, ok := attrs.Get(K8SStatefulSetNameKey); ok {
-		kind = workload.WorkloadKindStatefulSet
+		kind = k8sconsts.WorkloadKindStatefulSet
 	} else if _, ok := attrs.Get(K8SDaemonSetNameKey); ok {
-		kind = workload.WorkloadKindDaemonSet
+		kind = k8sconsts.WorkloadKindDaemonSet
 	} else {
 		return common.SourceID{}, errors.New("kind not found")
 	}

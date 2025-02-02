@@ -17,7 +17,6 @@ import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
 type SourceReconciler struct {
@@ -61,7 +60,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if source.Spec.Workload.Kind == workload.WorkloadKindNamespace {
+	if source.Spec.Workload.Kind == k8sconsts.WorkloadKindNamespace {
 		err = errors.Join(err, syncNamespaceWorkloads(ctx, r.Client, r.Scheme, source.Spec.Workload.Name))
 	} else {
 		_, reconcileErr := reconcileWorkload(ctx,
