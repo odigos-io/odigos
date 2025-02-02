@@ -23,7 +23,7 @@ status:
   conditions:
     - message: 'Odigos instrumentation is enabled'
       (observedGeneration != null): true
-      reason: InstrumentationDeviceApplied
+      reason: InstrumentationEnabled
       status: 'True'
       type: AppliedInstrumentationDevice
 ---
@@ -37,7 +37,7 @@ status:
   conditions:
     - message: 'Odigos instrumentation is enabled'
       (observedGeneration != null): true
-      reason: InstrumentationDeviceApplied
+      reason: InstrumentationEnabled
       status: 'True'
       type: AppliedInstrumentationDevice
 ---
@@ -76,7 +76,7 @@ status:
   conditions:
     - message: 'Odigos instrumentation is enabled'
       (observedGeneration != null): true
-      reason: InstrumentationDeviceApplied
+      reason: InstrumentationEnabled
       status: 'True'
       type: AppliedInstrumentationDevice
 ---
@@ -115,7 +115,7 @@ status:
   conditions:
     - message: 'Odigos instrumentation is enabled'
       (observedGeneration != null): true
-      reason: InstrumentationDeviceApplied
+      reason: InstrumentationEnabled
       status: 'True'
       type: AppliedInstrumentationDevice
 ---
@@ -154,7 +154,7 @@ status:
   conditions:
     - message: 'Odigos instrumentation is enabled'
       (observedGeneration != null): true
-      reason: InstrumentationDeviceApplied
+      reason: InstrumentationEnabled
       status: 'True'
       type: AppliedInstrumentationDevice
 ---
@@ -193,7 +193,7 @@ status:
   conditions:
     - message: 'Odigos instrumentation is enabled'
       (observedGeneration != null): true
-      reason: InstrumentationDeviceApplied
+      reason: InstrumentationEnabled
       status: 'True'
       type: AppliedInstrumentationDevice
 ---
@@ -206,7 +206,7 @@ status:
   conditions:
     - message: 'Odigos instrumentation is enabled'
       (observedGeneration != null): true
-      reason: InstrumentationDeviceApplied
+      reason: InstrumentationEnabled
       status: 'True'
       type: AppliedInstrumentationDevice
 ---
@@ -219,7 +219,7 @@ status:
   conditions:
     - message: 'Odigos instrumentation is enabled'
       (observedGeneration != null): true
-      reason: InstrumentationDeviceApplied
+      reason: InstrumentationEnabled
       status: 'True'
       type: AppliedInstrumentationDevice
 ---
@@ -232,7 +232,7 @@ status:
   conditions:
     - message: 'Odigos instrumentation is enabled'
       (observedGeneration != null): true
-      reason: InstrumentationDeviceApplied
+      reason: InstrumentationEnabled
       status: 'True'
       type: AppliedInstrumentationDevice
 ---
@@ -245,7 +245,7 @@ status:
   conditions:
     - message: 'Odigos instrumentation is enabled'
       (observedGeneration != null): true
-      reason: InstrumentationDeviceApplied
+      reason: InstrumentationEnabled
       status: 'True'
       type: AppliedInstrumentationDevice
 ---
@@ -258,7 +258,7 @@ status:
   conditions:
     - message: 'Odigos instrumentation is enabled'
       (observedGeneration != null): true
-      reason: InstrumentationDeviceApplied
+      reason: InstrumentationEnabled
       status: 'True'
       type: AppliedInstrumentationDevice
 ---
@@ -271,7 +271,7 @@ status:
   conditions:
     - message: 'Odigos instrumentation is enabled'
       (observedGeneration != null): true
-      reason: InstrumentationDeviceApplied
+      reason: InstrumentationEnabled
       status: 'True'
       type: AppliedInstrumentationDevice
 ---
@@ -284,7 +284,7 @@ status:
   conditions:
     - message: 'Odigos instrumentation is enabled'
       (observedGeneration != null): true
-      reason: InstrumentationDeviceApplied
+      reason: InstrumentationEnabled
       status: 'True'
       type: AppliedInstrumentationDevice
 ---
@@ -297,7 +297,7 @@ status:
   conditions:
     - message: 'Odigos instrumentation is enabled'
       (observedGeneration != null): true
-      reason: InstrumentationDeviceApplied
+      reason: InstrumentationEnabled
       status: 'True'
       type: AppliedInstrumentationDevice
 ---
@@ -310,7 +310,7 @@ status:
   conditions:
     - message: 'Odigos instrumentation is enabled'
       (observedGeneration != null): true
-      reason: InstrumentationDeviceApplied
+      reason: InstrumentationEnabled
       status: 'True'
       type: AppliedInstrumentationDevice
 ---
