@@ -21,7 +21,6 @@ import {
   IconButton,
   Input,
   isOverTime,
-  isWithinTime,
   KeyIcon,
   ListIcon,
   NOTIFICATION_TYPE,
@@ -133,7 +132,7 @@ export const CliDrawer: React.FC<Props> = () => {
                       columnKey: 'expires_at',
                       component: () => {
                         return (
-                          <Text size={14} color={isWithinTime(expiresAt, SEVEN_DAYS_IN_MS) ? theme.text.warning : isOverTime(expiresAt, SEVEN_DAYS_IN_MS) ? theme.text.error : theme.text.success}>
+                          <Text size={14} color={isOverTime(expiresAt, 0) ? theme.text.error : isOverTime(expiresAt, SEVEN_DAYS_IN_MS) ? theme.text.warning : theme.text.success}>
                             {timeAgo.format(expiresAt)} ({new Date(expiresAt).toDateString().split(' ').slice(1).join(' ')})
                           </Text>
                         );
