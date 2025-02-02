@@ -6,13 +6,13 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/envOverwrite"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 )
 
-func InjectOdigosAgentEnvVars(logger logr.Logger, podWorkload workload.PodWorkload, container *corev1.Container,
+func InjectOdigosAgentEnvVars(logger logr.Logger, podWorkload k8sconsts.PodWorkload, container *corev1.Container,
 	otelsdk common.OtelSdk, runtimeDetails *v1alpha1.RuntimeDetailsByContainer) {
 	envVarsPerLanguage := getEnvVarNamesForLanguage(runtimeDetails.Language)
 	if envVarsPerLanguage == nil {

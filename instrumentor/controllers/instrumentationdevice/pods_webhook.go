@@ -274,7 +274,7 @@ func (p *PodsWebhook) getServiceNameForEnv(ctx context.Context, logger logr.Logg
 	return &resolvedServiceName
 }
 
-func getRelevantOtelSDKs(ctx context.Context, kubeClient client.Client, podWorkload workload.PodWorkload) (map[common.ProgrammingLanguage]common.OtelSdk, error) {
+func getRelevantOtelSDKs(ctx context.Context, kubeClient client.Client, podWorkload k8sconsts.PodWorkload) (map[common.ProgrammingLanguage]common.OtelSdk, error) {
 
 	instrumentationRules := odigosv1.InstrumentationRuleList{}
 	if err := kubeClient.List(ctx, &instrumentationRules); err != nil {
