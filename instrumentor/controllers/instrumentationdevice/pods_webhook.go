@@ -144,19 +144,19 @@ func envVarsExist(containerEnv []corev1.EnvVar, commonEnvVars []corev1.EnvVar) b
 	return false
 }
 
-func getWorkloadKindAttributeKey(podWorkload *workload.PodWorkload) attribute.Key {
+func getWorkloadKindAttributeKey(podWorkload *k8sconsts.PodWorkload) attribute.Key {
 	switch podWorkload.Kind {
-	case workload.WorkloadKindDeployment:
+	case k8sconsts.WorkloadKindDeployment:
 		return semconv.K8SDeploymentNameKey
-	case workload.WorkloadKindStatefulSet:
+	case k8sconsts.WorkloadKindStatefulSet:
 		return semconv.K8SStatefulSetNameKey
-	case workload.WorkloadKindDaemonSet:
+	case k8sconsts.WorkloadKindDaemonSet:
 		return semconv.K8SDaemonSetNameKey
 	}
 	return attribute.Key("")
 }
 
-func getResourceAttributes(podWorkload *workload.PodWorkload, containerName string) []resourceAttribute {
+func getResourceAttributes(podWorkload *k8sconsts.PodWorkload, containerName string) []resourceAttribute {
 	if podWorkload == nil {
 		return []resourceAttribute{}
 	}
@@ -231,18 +231,18 @@ func getCommonEnvVars() []corev1.EnvVar {
 }
 
 // checks for the service name on the annotation, or fallback to the workload name
-func (p *PodsWebhook) getServiceNameForEnv(ctx context.Context, logger logr.Logger, podWorkload *workload.PodWorkload) *string {
+func (p *PodsWebhook) getServiceNameForEnv(ctx context.Context, logger logr.Logger, podWorkload *k8sconsts.PodWorkload) *string {
 	workloadObj := workload.ClientObjectFromWorkloadKind(podWorkload.Kind)
 	err := p.Client.Get(ctx, client.ObjectKey{Namespace: podWorkload.Namespace, Name: podWorkload.Name}, workloadObj)
- 	if err != nil {
- 		logger.Error(err, "failed to get workload object from cache. cannot check for workload source. using workload name as OTEL_SERVICE_NAME")
- 		return &podWorkload.Name
- 	}
+	if err != nil {
+		logger.Error(err, "failed to get workload object from cache. cannot check for workload source. using workload name as OTEL_SERVICE_NAME")
+		return &podWorkload.Name
+	}
 
 	resolvedServiceName, err := sourceutils.OtelServiceNameBySource(ctx, p.Client, workloadObj)
- 	if err != nil {
- 		logger.Error(err, "failed to get OTel service name from source. using workload name as OTEL_SERVICE_NAME")
- 		return &podWorkload.Name
+	if err != nil {
+		logger.Error(err, "failed to get OTel service name from source. using workload name as OTEL_SERVICE_NAME")
+		return &podWorkload.Name
 	}
 
 	if resolvedServiceName == "" {

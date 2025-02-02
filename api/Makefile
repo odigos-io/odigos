@@ -20,7 +20,7 @@ SHELL = /usr/bin/env bash -o pipefail
 TOOLS := $(PWD)/../.tools
 
 .PHONY: all
-all: generate manifests generate-client sync-helm-crd
+all: generate manifests generate-client sync-helm-crd docgen
 
 ##@ General
 

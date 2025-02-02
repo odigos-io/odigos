@@ -1699,7 +1699,7 @@ and whether the values are considered a guaranteed API.</p>
 <code>workloads</code> <B>[Required]</B>
 </td>
 <td>
-<code>[]github.com/odigos-io/odigos/k8sutils/pkg/workload.PodWorkload</code>
+<code>[]github.com/odigos-io/odigos/api/k8sconsts.PodWorkload</code>
 </td>
 <td>
    <p>An array of workload objects (name, namespace, kind) to which the rule should be applied. If not specified, the rule will be applied to all workloads. empty array will render the rule inactive.</p>
@@ -2471,7 +2471,7 @@ This means the destination will receive data only from sources labeled with &quo
 <code>workload</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/k8sutils/pkg/workload#PodWorkload"><code>workload.PodWorkload</code></a>
+<code>k8sconsts.PodWorkload</code>
 </td>
 <td>
    <p>Workload represents the workload or namespace to be instrumented.

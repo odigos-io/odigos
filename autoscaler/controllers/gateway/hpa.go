@@ -11,6 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
@@ -31,7 +32,8 @@ var (
 	stabilizationWindowSeconds = intPtr(300) // cooldown period for scaling down
 )
 
-func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, kubeVersion *version.Version) error {
+func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
+	kubeVersion := commonconfig.ControllerConfig.K8sVersion
 	logger := log.FromContext(ctx)
 
 	var hpa client.Object

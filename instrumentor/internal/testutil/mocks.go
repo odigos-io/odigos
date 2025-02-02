@@ -139,7 +139,7 @@ func NewMockTestStatefulSet(ns *corev1.Namespace) *appsv1.StatefulSet {
 func NewMockSource(workloadObject client.Object) *odigosv1.Source {
 	gvk, _ := apiutil.GVKForObject(workloadObject, scheme.Scheme)
 	namespace := workloadObject.GetNamespace()
-	if gvk.Kind == string(workload.WorkloadKindNamespace) && len(namespace) == 0 {
+	if gvk.Kind == string(k8sconsts.WorkloadKindNamespace) && len(namespace) == 0 {
 		namespace = workloadObject.GetName()
 	}
 	return &odigosv1.Source{
@@ -154,10 +154,10 @@ func NewMockSource(workloadObject client.Object) *odigosv1.Source {
 			Finalizers: []string{k8sconsts.DeleteInstrumentationConfigFinalizer},
 		},
 		Spec: odigosv1.SourceSpec{
-			Workload: workload.PodWorkload{
+			Workload: k8sconsts.PodWorkload{
 				Name:      workloadObject.GetName(),
 				Namespace: namespace,
-				Kind:      workload.WorkloadKind(gvk.Kind),
+				Kind:      k8sconsts.WorkloadKind(gvk.Kind),
 			},
 		},
 	}

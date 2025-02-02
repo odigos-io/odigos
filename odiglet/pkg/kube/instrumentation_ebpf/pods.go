@@ -3,6 +3,7 @@ package instrumentation_ebpf
 import (
 	"context"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -93,7 +94,7 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 	return ctrl.Result{}, nil
 }
 
-func (p *PodsReconciler) instrumentWithEbpf(ctx context.Context, pod *corev1.Pod, podWorkload *workload.PodWorkload) (error, bool) {
+func (p *PodsReconciler) instrumentWithEbpf(ctx context.Context, pod *corev1.Pod, podWorkload *k8sconsts.PodWorkload) (error, bool) {
 	runtimeDetails, err := runtime_details.GetRuntimeDetails(ctx, p.Client, podWorkload)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
@@ -106,14 +107,14 @@ func (p *PodsReconciler) instrumentWithEbpf(ctx context.Context, pod *corev1.Pod
 	return instrumentPodWithEbpf(ctx, pod, p.Directors, runtimeDetails, podWorkload)
 }
 
-func (p *PodsReconciler) getPodWorkloadObject(ctx context.Context, pod *corev1.Pod) (*workload.PodWorkload, error) {
+func (p *PodsReconciler) getPodWorkloadObject(ctx context.Context, pod *corev1.Pod) (*k8sconsts.PodWorkload, error) {
 	for _, owner := range pod.OwnerReferences {
 		workloadName, workloadKind, err := workload.GetWorkloadFromOwnerReference(owner)
 		if err != nil {
 			return nil, workload.IgnoreErrorKindNotSupported(err)
 		}
 
-		return &workload.PodWorkload{
+		return &k8sconsts.PodWorkload{
 			Name:      workloadName,
 			Kind:      workloadKind,
 			Namespace: pod.Namespace,
@@ -123,4 +124,3 @@ func (p *PodsReconciler) getPodWorkloadObject(ctx context.Context, pod *corev1.P
 	// Pod does not necessarily have to be managed by a controller
 	return nil, nil
 }
-

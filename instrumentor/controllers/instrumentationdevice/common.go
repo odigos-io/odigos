@@ -75,10 +75,10 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 		return err, false
 	}
 
-	workload := workload.PodWorkload{
+	workload := k8sconsts.PodWorkload{
 		Name:      obj.GetName(),
 		Namespace: obj.GetNamespace(),
-		Kind:      workload.WorkloadKind(obj.GetObjectKind().GroupVersionKind().Kind),
+		Kind:      k8sconsts.WorkloadKind(obj.GetObjectKind().GroupVersionKind().Kind),
 	}
 
 	// build an otel sdk map from instrumentation rules first, and merge it with the default otel sdk map
@@ -166,7 +166,7 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 	return nil, devicePartiallyApplied
 }
 
-func removeInstrumentationDeviceFromWorkload(ctx context.Context, kubeClient client.Client, namespace string, workloadKind workload.WorkloadKind, workloadName string, uninstrumentReason ApplyInstrumentationDeviceReason) error {
+func removeInstrumentationDeviceFromWorkload(ctx context.Context, kubeClient client.Client, namespace string, workloadKind k8sconsts.WorkloadKind, workloadName string, uninstrumentReason ApplyInstrumentationDeviceReason) error {
 
 	workloadObj := workload.ClientObjectFromWorkloadKind(workloadKind)
 	if workloadObj == nil {

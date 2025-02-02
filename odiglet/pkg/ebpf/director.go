@@ -13,6 +13,7 @@ import (
 
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	inst "github.com/odigos-io/odigos/k8sutils/pkg/instrumentation_instance"
@@ -47,7 +48,7 @@ type ConfigurableOtelEbpfSdk interface {
 // users can use different eBPF otel SDKs by returning them from this function
 // Deprecated: this will be removed once we fully move to the generic instrumentation manager
 type InstrumentationFactory[T OtelEbpfSdk] interface {
-	CreateEbpfInstrumentation(ctx context.Context, pid int, serviceName string, podWorkload *workload.PodWorkload, containerName string, podName string, loadedIndicator chan struct{}) (T, error)
+	CreateEbpfInstrumentation(ctx context.Context, pid int, serviceName string, podWorkload *k8sconsts.PodWorkload, containerName string, podName string, loadedIndicator chan struct{}) (T, error)
 }
 
 // Director manages the instrumentation for a specific SDK in a specific language
@@ -55,12 +56,12 @@ type InstrumentationFactory[T OtelEbpfSdk] interface {
 // Deprecated: this will be removed once we fully move to the process event based approach
 type Director interface {
 	Language() common.ProgrammingLanguage
-	Instrument(ctx context.Context, pid int, podDetails types.NamespacedName, podWorkload *workload.PodWorkload, appName string, containerName string) error
+	Instrument(ctx context.Context, pid int, podDetails types.NamespacedName, podWorkload *k8sconsts.PodWorkload, appName string, containerName string) error
 	Cleanup(podDetails types.NamespacedName)
 	Shutdown()
 	// TODO: once all our implementation move to this function we can rename it to ApplyInstrumentationConfig,
 	// currently that name is reserved for the old API until it is removed.
-	ApplyInstrumentationConfiguration(ctx context.Context, workload *workload.PodWorkload, instrumentationConfig *odigosv1.InstrumentationConfig) error
+	ApplyInstrumentationConfiguration(ctx context.Context, workload *k8sconsts.PodWorkload, instrumentationConfig *odigosv1.InstrumentationConfig) error
 	ShouldInstrument(pid int, details []process.Details) bool
 }
 
@@ -73,7 +74,7 @@ type InstrumentedProcess[T OtelEbpfSdk] struct {
 }
 
 type podDetails[T OtelEbpfSdk] struct {
-	Workload              *workload.PodWorkload
+	Workload              *k8sconsts.PodWorkload
 	InstrumentedProcesses []*InstrumentedProcess[T]
 }
 
@@ -83,7 +84,7 @@ type podDetails[T OtelEbpfSdk] struct {
 var CleanupInterval = 30 * time.Second
 
 type instrumentationStatus struct {
-	Workload      workload.PodWorkload
+	Workload      k8sconsts.PodWorkload
 	PodName       types.NamespacedName
 	ContainerName string
 	Healthy       bool
@@ -104,7 +105,7 @@ type EbpfDirector[T OtelEbpfSdk] struct {
 	podsToDetails map[types.NamespacedName]*podDetails[T]
 
 	// this map can be used when we only have the workload, and need to find the pods to derive pids.
-	workloadToPods map[workload.PodWorkload]map[types.NamespacedName]struct{}
+	workloadToPods map[k8sconsts.PodWorkload]map[types.NamespacedName]struct{}
 
 	// this channel is used to send the status of the instrumentation SDK after it is created and ran.
 	// the status is used to update the status conditions for the instrumentedApplication CR.
@@ -134,7 +135,7 @@ func NewEbpfDirector[T OtelEbpfSdk](ctx context.Context, client client.Client, s
 		language:                  language,
 		instrumentationFactory:    instrumentationFactory,
 		podsToDetails:             make(map[types.NamespacedName]*podDetails[T]),
-		workloadToPods:            make(map[workload.PodWorkload]map[types.NamespacedName]struct{}),
+		workloadToPods:            make(map[k8sconsts.PodWorkload]map[types.NamespacedName]struct{}),
 		instrumentationStatusChan: make(chan instrumentationStatus),
 		client:                    client,
 	}
@@ -212,7 +213,7 @@ func (d *EbpfDirector[T]) periodicCleanup(ctx context.Context) {
 	}
 }
 
-func (d *EbpfDirector[T]) ApplyInstrumentationConfiguration(ctx context.Context, workload *workload.PodWorkload, instrumentationConfig *odigosv1.InstrumentationConfig) error {
+func (d *EbpfDirector[T]) ApplyInstrumentationConfiguration(ctx context.Context, workload *k8sconsts.PodWorkload, instrumentationConfig *odigosv1.InstrumentationConfig) error {
 	var t T
 	if _, ok := any(t).(ConfigurableOtelEbpfSdk); !ok {
 		log.Logger.V(1).Info("eBPF SDK is not configurable, skip applying configuration", "language", d.Language())
@@ -274,7 +275,7 @@ func (d *EbpfDirector[T]) observeInstrumentations(ctx context.Context, scheme *r
 	}
 }
 
-func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.NamespacedName, podWorkload *workload.PodWorkload, appName string, containerName string) error {
+func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.NamespacedName, podWorkload *k8sconsts.PodWorkload, appName string, containerName string) error {
 	log.Logger.V(0).Info("Instrumenting process", "pid", pid, "workload", podWorkload)
 	d.mux.Lock()
 	defer d.mux.Unlock()
@@ -424,7 +425,7 @@ func (d *EbpfDirector[T]) Shutdown() {
 	}
 }
 
-func (d *EbpfDirector[T]) GetWorkloadInstrumentations(workload *workload.PodWorkload) []T {
+func (d *EbpfDirector[T]) GetWorkloadInstrumentations(workload *k8sconsts.PodWorkload) []T {
 	pods, ok := d.workloadToPods[*workload]
 	if !ok {
 		return nil
