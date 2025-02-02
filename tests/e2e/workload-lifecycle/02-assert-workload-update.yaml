@@ -409,7 +409,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4
+  generation: 3
   name: dotnet8-musl
   namespace: default
   labels:
@@ -436,7 +436,7 @@ spec:
               port: 8080
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -444,7 +444,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4
+  generation: 3
   name: dotnet6-musl
   namespace: default
   labels:
@@ -471,7 +471,7 @@ spec:
               port: 8080
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -479,7 +479,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4
+  generation: 3
   name: dotnet8-glibc
   namespace: default
   labels:
@@ -506,7 +506,7 @@ spec:
               port: 8080
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -514,7 +514,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4
+  generation: 3
   name: dotnet6-glibc
   namespace: default
   labels:
@@ -541,7 +541,7 @@ spec:
               port: 8080
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
