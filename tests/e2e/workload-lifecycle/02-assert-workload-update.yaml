@@ -167,7 +167,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4 # on step 2, the manifest was updated (1->2)
+  generation: 3
   labels:
     app: java-supported-version
   name: java-supported-version
@@ -183,7 +183,7 @@ spec:
           name: java-supported-version
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -191,7 +191,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4 # on step 2, the manifest was updated (1->2)
+  generation: 3
   labels:
     app: java-azul
   name: java-azul
@@ -207,7 +207,7 @@ spec:
           name: java-azul
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -215,7 +215,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4 # on step 2, the manifest was updated (1->2)
+  generation: 3
   labels:
     app: java-supported-docker-env
   name: java-supported-docker-env
@@ -231,7 +231,7 @@ spec:
           name: java-supported-docker-env
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -240,7 +240,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4 # on step 2, the manifest was updated (1->2)
+  generation: 3
   labels:
     app: java-supported-manifest-env
   name: java-supported-manifest-env
@@ -256,7 +256,7 @@ spec:
           name: java-supported-manifest-env
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -264,7 +264,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4 # on step 2, the manifest was updated (1->2)
+  generation: 3
   labels:
     app: java-latest-version
   name: java-latest-version
@@ -280,7 +280,7 @@ spec:
           name: java-latest-version
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -288,7 +288,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4 # on step 2, the manifest was updated (1->2)
+  generation: 3
   labels:
     app: java-old-version
   name: java-old-version
@@ -304,7 +304,7 @@ spec:
           name: java-old-version
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -312,7 +312,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4 # on step 2, the manifest was updated (1->2)
+  generation: 3
   labels:
     app: python-latest-version
   name: python-latest-version
@@ -328,7 +328,7 @@ spec:
           name: python-latest-version
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -336,7 +336,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4 # on step 2, the manifest was updated (1->2)
+  generation: 3
   labels:
     app: python-alpine
   name: python-alpine
@@ -352,7 +352,7 @@ spec:
           name: python-alpine
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -360,7 +360,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4 # on step 2, the manifest was updated (1->2)
+  generation: 3
   labels:
     app: python-min-version
   name: python-min-version
@@ -376,7 +376,7 @@ spec:
           name: python-min-version
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
