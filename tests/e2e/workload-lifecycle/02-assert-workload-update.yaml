@@ -26,7 +26,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4 # step 02 updates the manifest (2->3), then odigos update it again (3->4)
+  generation: 3
   labels:
     app: nodejs-very-old-version
   name: nodejs-very-old-version
@@ -42,7 +42,7 @@ spec:
           name: nodejs-very-old-version
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -50,7 +50,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4 # step 02 updates the manifest (2->3), then odigos update it again (3->4)
+  generation: 3
   labels:
     app: nodejs-minimum-version
   name: nodejs-minimum-version
@@ -65,7 +65,7 @@ spec:
         - name: nodejs-minimum-version
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -73,7 +73,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4 # step 02 updates the manifest (2->3), then odigos update it again (3->4)
+  generation: 3
   labels:
     app: nodejs-latest-version
   name: nodejs-latest-version
@@ -88,7 +88,7 @@ spec:
         - name: nodejs-latest-version
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -96,7 +96,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4 # step 02 updates the manifest (2->3), then odigos update it again (3->4)
+  generation: 3
   labels:
     app: nodejs-dockerfile-env
   name: nodejs-dockerfile-env
@@ -111,7 +111,7 @@ spec:
         - name: nodejs-dockerfile-env
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -119,7 +119,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4 # step 02 updates the manifest (2->3), then odigos update it again (3->4)
+  generation: 3
   labels:
     app: nodejs-manifest-env
   name: nodejs-manifest-env
@@ -134,7 +134,7 @@ spec:
         - name: nodejs-manifest-env
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
