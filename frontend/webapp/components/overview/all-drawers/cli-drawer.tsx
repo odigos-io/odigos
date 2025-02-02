@@ -69,7 +69,7 @@ const PopoverFormButton = styled(Button)`
   padding-right: 0;
 `;
 
-const DRAWER_WIDTH = '555px';
+const DRAWER_WIDTH = '750px';
 
 export const CliDrawer: React.FC<Props> = () => {
   const theme = useTheme();
