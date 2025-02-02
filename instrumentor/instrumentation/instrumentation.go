@@ -18,12 +18,13 @@ var (
 )
 
 func ConfigureInstrumentationForPod(original *corev1.PodTemplateSpec, runtimeDetails []odigosv1.RuntimeDetailsByContainer, targetObj client.Object,
-	logger logr.Logger, agentsCanRunConcurrently bool) (bool, error) {
+	logger logr.Logger, agentsCanRunConcurrently bool) (bool, bool, error) {
 	// delete any existing instrumentation devices.
 	// this is necessary for example when migrating from community to enterprise,
 	// and we need to cleanup the community device before adding the enterprise one.
 	RevertInstrumentationDevices(original)
 
+	foundContainerWithSupportedLanguage := false
 	instrumentationSkippedDueToOtherAgent := false
 	var modifiedContainers []corev1.Container
 
@@ -49,9 +50,10 @@ func ConfigureInstrumentationForPod(original *corev1.PodTemplateSpec, runtimeDet
 			// TODO: this will make it look as if instrumentation device is applied,
 			// which is incorrect
 			modifiedContainers = append(modifiedContainers, container)
+
 			continue
 		}
-
+		foundContainerWithSupportedLanguage = true
 		modifiedContainers = append(modifiedContainers, container)
 	}
 
@@ -59,7 +61,7 @@ func ConfigureInstrumentationForPod(original *corev1.PodTemplateSpec, runtimeDet
 		original.Spec.Containers = modifiedContainers
 	}
 
-	return instrumentationSkippedDueToOtherAgent, nil
+	return instrumentationSkippedDueToOtherAgent, foundContainerWithSupportedLanguage, nil
 }
 
 func RevertInstrumentationDevices(original *corev1.PodTemplateSpec) bool {

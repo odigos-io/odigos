@@ -65,7 +65,8 @@ func isDataCollectionReady(ctx context.Context, c client.Client) bool {
 
 func enableOdigosInstrumentation(ctx context.Context, kubeClient client.Client, instConfig *odigosv1.InstrumentationConfig) error {
 
-	instrumentationSkipped := false
+	foundContainerWithSupportedLanguage := false
+	instrumentationSkippedDueToOtherAgent := false
 
 	logger := log.FromContext(ctx)
 	obj, err := getWorkloadObject(ctx, kubeClient, instConfig)
@@ -92,12 +93,12 @@ func enableOdigosInstrumentation(ctx context.Context, kubeClient client.Client, 
 			agentsCanRunConcurrently = *odigosConfiguration.AllowConcurrentAgents
 		}
 
-		instrumentationSkipped, err = instrumentation.ConfigureInstrumentationForPod(podSpec, instConfig.Status.RuntimeDetailsByContainer, obj, logger, agentsCanRunConcurrently)
+		instrumentationSkippedDueToOtherAgent, foundContainerWithSupportedLanguage, err = instrumentation.ConfigureInstrumentationForPod(podSpec, instConfig.Status.RuntimeDetailsByContainer, obj, logger, agentsCanRunConcurrently)
 		if err != nil {
 			return err
 		}
 
-		if !instrumentationSkipped {
+		if !instrumentationSkippedDueToOtherAgent && foundContainerWithSupportedLanguage {
 			// add odigos.io/inject-instrumentation label to enable the webhook
 			instrumentation.SetInjectInstrumentationLabel(podSpec)
 		}
@@ -106,7 +107,7 @@ func enableOdigosInstrumentation(ctx context.Context, kubeClient client.Client, 
 	})
 
 	// if non of the devices were applied due to the presence of another agent, return an error.
-	if instrumentationSkipped {
+	if instrumentationSkippedDueToOtherAgent {
 		return k8sutils.OtherAgentRunError
 	}
 
