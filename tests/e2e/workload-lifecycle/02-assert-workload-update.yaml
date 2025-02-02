@@ -121,9 +121,6 @@ spec:
         resources:
           limits:
             instrumentation.odigos.io/javascript-native-community: "1"
-        env:
-        - name: NODE_OPTIONS
-          value: "--require /app/execute_before.js --max-old-space-size=256 --require /var/odigos/nodejs/autoinstrumentation.js"
 status:
   availableReplicas: 1
   observedGeneration: 4
@@ -150,9 +147,6 @@ spec:
         resources:
           limits:
             instrumentation.odigos.io/javascript-native-community: "1"
-        env:
-        - name: NODE_OPTIONS
-          value: "--require /app/execute_before.js --max-old-space-size=256 --require /var/odigos/nodejs/autoinstrumentation.js"
 status:
   availableReplicas: 1
   observedGeneration: 4

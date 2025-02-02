@@ -11,7 +11,6 @@ import (
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -79,12 +78,12 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 	existingRule.Spec.Notes = *input.Notes
 	existingRule.Spec.Disabled = *input.Disabled
 	if input.Workloads != nil {
-		convertedWorkloads := make([]workload.PodWorkload, len(input.Workloads))
+		convertedWorkloads := make([]k8sconsts.PodWorkload, len(input.Workloads))
 		for i, w := range input.Workloads {
-			convertedWorkloads[i] = workload.PodWorkload{
+			convertedWorkloads[i] = k8sconsts.PodWorkload{
 				Name:      w.Name,
 				Namespace: w.Namespace,
-				Kind:      workload.WorkloadKind(w.Kind),
+				Kind:      k8sconsts.WorkloadKind(w.Kind),
 			}
 		}
 		existingRule.Spec.Workloads = &convertedWorkloads
@@ -191,14 +190,14 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 	notes := *input.Notes
 	disabled := *input.Disabled
 
-	var workloads *[]workload.PodWorkload
+	var workloads *[]k8sconsts.PodWorkload
 	if input.Workloads != nil {
-		convertedWorkloads := make([]workload.PodWorkload, len(input.Workloads))
+		convertedWorkloads := make([]k8sconsts.PodWorkload, len(input.Workloads))
 		for i, w := range input.Workloads {
-			convertedWorkloads[i] = workload.PodWorkload{
+			convertedWorkloads[i] = k8sconsts.PodWorkload{
 				Name:      w.Name,
 				Namespace: w.Namespace,
-				Kind:      workload.WorkloadKind(w.Kind),
+				Kind:      k8sconsts.WorkloadKind(w.Kind),
 			}
 		}
 		workloads = &convertedWorkloads
@@ -293,7 +292,7 @@ func handleNotFoundError(err error, id string, entity string) error {
 }
 
 // Converts Workloads to GraphQL-compatible format
-func convertWorkloads(workloads *[]workload.PodWorkload) []*model.PodWorkload {
+func convertWorkloads(workloads *[]k8sconsts.PodWorkload) []*model.PodWorkload {
 	var gqlWorkloads []*model.PodWorkload
 	if workloads != nil {
 		for _, w := range *workloads {

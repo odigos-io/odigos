@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { FilterIcon } from '@/assets';
+import { FilterIcon } from '@odigos/ui-components';
 import styled, { useTheme } from 'styled-components';
 import { useKeyDown, useOnClickOutside } from '@/hooks';
 import { AbsoluteContainer, RelativeContainer } from '../styled';

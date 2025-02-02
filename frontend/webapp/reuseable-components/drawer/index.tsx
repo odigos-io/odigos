@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components';
 import { useKeyDown, useTransition } from '@/hooks';
-import { slide, Overlay, hexPercentValues } from '@/styles';
+import { Overlay, Theme } from '@odigos/ui-components';
 
 interface Props {
   isOpen: boolean;
@@ -24,7 +24,7 @@ const Container = styled.div<{
   z-index: 1000;
   width: ${({ $width }) => $width};
   background: ${({ theme }) => theme.colors.translucent_bg};
-  box-shadow: 0 2px 10px ${({ theme }) => theme.colors.primary + hexPercentValues['010']};
+  box-shadow: 0 2px 10px ${({ theme }) => theme.colors.primary + Theme.hexPercent['010']};
   overflow-y: auto;
 `;
 
@@ -33,8 +33,8 @@ export const Drawer: React.FC<Props> = ({ isOpen, onClose, position = 'right', w
 
   const Transition = useTransition({
     container: Container,
-    animateIn: slide.in[position],
-    animateOut: slide.out[position],
+    animateIn: Theme.slide.in[position],
+    animateOut: Theme.slide.out[position],
   });
 
   if (!isOpen) return null;

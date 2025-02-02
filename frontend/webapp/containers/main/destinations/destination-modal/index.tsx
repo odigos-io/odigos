@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { ArrowIcon } from '@/assets';
 import { ModalBody } from '@/styles';
 import { useAppStore } from '@/store';
 import styled from 'styled-components';
 import { SideMenu } from '@/components';
 import { ACTION, INPUT_TYPES } from '@/utils';
+import { ArrowIcon } from '@odigos/ui-components';
 import { DestinationFormBody } from '../destination-form-body';
 import { ChooseDestinationBody } from './choose-destination-body';
 import type { ConfiguredDestination, DestinationTypeItem } from '@/types';

@@ -61,6 +61,7 @@ rules:
       - get
       - list
       {{- if ne .Values.ui.uiMode "readonly" }}
+      - patch
       - create
       - delete
       {{- end }}

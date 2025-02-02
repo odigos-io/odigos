@@ -1,9 +1,9 @@
 'use client';
 import { useEffect } from 'react';
 import { useConfig } from '@/hooks';
-import { CenterThis } from '@/styles';
 import { ROUTES, CONFIG } from '@/utils';
 import { useRouter } from 'next/navigation';
+import { CenterThis } from '@odigos/ui-components';
 import { FadeLoader } from '@/reuseable-components';
 
 export default function App() {

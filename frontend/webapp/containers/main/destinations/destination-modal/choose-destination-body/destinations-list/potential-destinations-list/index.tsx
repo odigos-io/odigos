@@ -1,8 +1,8 @@
 import React from 'react';
-import { OdigosLogo } from '@/assets';
 import styled from 'styled-components';
-import type { DestinationTypeItem, SupportedSignals } from '@/types';
+import { OdigosLogo } from '@odigos/ui-components';
 import { usePotentialDestinations } from '@/hooks';
+import type { DestinationTypeItem, SupportedSignals } from '@/types';
 import { DataTab, SectionTitle, SkeletonLoader } from '@/reuseable-components';
 
 interface Props {

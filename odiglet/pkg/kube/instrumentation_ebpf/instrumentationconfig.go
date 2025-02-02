@@ -5,8 +5,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/odigos-io/odigos/instrumentation"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -33,7 +34,7 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, err
 	}
 
-	podWorkload := workload.PodWorkload{
+	podWorkload := k8sconsts.PodWorkload{
 		Namespace: req.Namespace,
 		Kind:      workloadKind,
 		Name:      workloadName,
@@ -66,7 +67,7 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 		if len(instrumentationConfig.Spec.SdkConfigs) == 0 {
 			return ctrl.Result{}, nil
 		}
-	
+
 		// send a config update request for all the instrumentation which are part of the workload.
 		// if the config request is sent, the configuration updates will occur asynchronously.
 		ctx, cancel := context.WithTimeout(ctx, configUpdateTimeout)
@@ -80,7 +81,7 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 		}
 
 		select {
-		case i.ConfigUpdates <-configUpdate:
+		case i.ConfigUpdates <- configUpdate:
 			return ctrl.Result{}, nil
 		case <-ctx.Done():
 			if ctx.Err() == context.DeadlineExceeded {

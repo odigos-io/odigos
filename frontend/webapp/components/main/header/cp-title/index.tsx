@@ -1,7 +1,7 @@
 import React from 'react';
-import { K8sLogo } from '@/assets';
 import { PlatformTypes } from '@/types';
 import { Text } from '@/reuseable-components';
+import { K8sLogo } from '@odigos/ui-components';
 import styled, { useTheme } from 'styled-components';
 
 interface Props {

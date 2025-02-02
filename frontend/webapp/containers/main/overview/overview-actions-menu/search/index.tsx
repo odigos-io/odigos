@@ -1,8 +1,8 @@
 import React, { useRef, useState } from 'react';
-import { SearchIcon } from '@/assets';
 import { RelativeContainer } from '../styled';
 import { Input } from '@/reuseable-components';
 import { SearchResults } from './search-results';
+import { SearchIcon } from '@odigos/ui-components';
 import { useKeyDown, useOnClickOutside } from '@/hooks';
 // import { RecentSearches } from './recent-searches';
 
