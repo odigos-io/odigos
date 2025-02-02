@@ -1,0 +1,19 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: OtelDistribution
+metadata:
+  name: java-enterprise
+spec:
+  name: java-enterprise
+  language: java
+  runtimeEnvironments:
+    - name: java-virtual-machine
+      version: '>= 8'
+  displayName: Java Enterprise
+  description: |
+    This distribution is for JVM-based applications (Java, Scala, Kotlin, etc.) using eBPF based SDK and native instrumentation libraries from the OpenTelemetry community.
+  tiers: 
+    - onprem
+  instrumentations:
+    implementation: native
+  otelSdk:
+    implementation: ebpf

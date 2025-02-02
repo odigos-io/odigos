@@ -1,0 +1,20 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: OtelDistribution
+metadata:
+  name: nodejs-community
+spec:
+  name: nodejs-community
+  language: javascript
+  runtimeEnvironments:
+    - name: nodejs
+      version: '>= 14'
+  displayName: Node.js Community
+  description: |
+    This distribution is for Node.js applications using OpenTelemetry Native SDK and instrumentation libraries from the OpenTelemetry community.
+  tiers: 
+    - community
+  instrumentations:
+    implementation: native
+  otelSdk:
+    implementation: native
+  

@@ -1,0 +1,20 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: OtelDistribution
+metadata:
+  name: java-community
+spec:
+  name: java-community
+  language: java
+  runtimeEnvironments:
+    - name: java-virtual-machine
+      version: '>= 8'
+  displayName: Java Community
+  description: |
+    This distribution is for JVM-based applications (Java, Scala, Kotlin, etc.) using OpenTelemetry Native SDK and instrumentation libraries from the OpenTelemetry community.
+  tiers: 
+    - community
+  instrumentations:
+    implementation: native
+  otelSdk:
+    implementation: native
+  

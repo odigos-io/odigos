@@ -1,0 +1,19 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: OtelDistribution
+metadata:
+  name: java-ebpf-instrumentations
+spec:
+  name: java-ebpf-instrumentations
+  language: java
+  runtimeEnvironments:
+    - name: java-virtual-machine
+      version: '>= 8'
+  displayName: Java Enterprise
+  description: |
+    This distribution is for JVM-based applications (Java, Scala, Kotlin, etc.) using eBPF based SDK and eBPF enterprise instrumentation libraries.
+  tiers: 
+    - onprem
+  instrumentations:
+    implementation: ebpf
+  otelSdk:
+    implementation: ebpf

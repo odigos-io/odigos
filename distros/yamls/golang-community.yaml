@@ -1,0 +1,20 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: OtelDistribution
+metadata:
+  name: golang-community
+spec:
+  name: golang-community
+  language: go
+  runtimeEnvironments:
+    - name: go-runtime
+      version: '>= 1.17'
+  displayName: Golang Community
+  description: |
+    This distribution is for Golang applications using OpenTelemetry eBPF-based SDK and eBPF-based instrumentation libraries from the OpenTelemetry community.
+  tiers: 
+    - community
+  instrumentations:
+    implementation: ebpf
+  otelSdk:
+    implementation: ebpf
+  

@@ -1,0 +1,20 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: OtelDistribution
+metadata:
+  name: python-enterprise
+spec:
+  name: python-enterprise
+  language: javascript
+  runtimeEnvironments:
+    - name: python-runtime
+      version: '>= 3.8'
+  displayName: Python Enterprise
+  description: |
+    This distribution is for Python applications using OpenTelemetry native instrumentation libraries and eBPF SDK with enterprise features and capabilities.
+  tiers: 
+    - onprem
+  instrumentations:
+    implementation: native
+  otelSdk:
+    implementation: ebpf
+  

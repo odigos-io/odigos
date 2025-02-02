@@ -1,0 +1,19 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: OtelDistribution
+metadata:
+  name: nodejs-enterprise
+spec:
+  name: nodejs-enterprise
+  language: javascript
+  runtimeEnvironments:
+    - name: nodejs
+      version: '>= 14'
+  displayName: Node.js Enterprise
+  description: |
+    This distribution is for Node.js applications using an efficient eBPF-based SDK, and native instrumentation libraries from the OpenTelemetry community.
+  tiers: 
+    - onprem
+  instrumentations:
+    implementation: native
+  otelSdk:
+    implementation: ebpf
