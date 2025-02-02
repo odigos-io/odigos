@@ -11,7 +11,7 @@ spec:
   framework:
     - name: dotnet-framework
       version: '>= 4.6.2'
-  displayName: Dotnet Community
+  displayName: Dotnet Community Native Instrumentation
   description: |
     This distribution is for Dotnet applications using OpenTelemetry Native SDK and instrumentation libraries from the OpenTelemetry community.
   tiers: 

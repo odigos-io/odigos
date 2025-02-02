@@ -8,7 +8,7 @@ spec:
   runtimeEnvironments:
     - name: java-virtual-machine
       version: '>= 8'
-  displayName: Java Enterprise
+  displayName: Java Enterprise eBPF Instrumentation
   description: |
     This distribution is for JVM-based applications (Java, Scala, Kotlin, etc.) using eBPF based SDK and eBPF enterprise instrumentation libraries.
   tiers: 
@@ -17,3 +17,10 @@ spec:
     implementation: ebpf
   otelSdk:
     implementation: ebpf
+  environmentVariables:
+    - envName: JAVA_OPTS
+      envValue: '-javaagent:{{ODIGOS_AGENTS_DIR}}/java-ebpf/dtrace-injector.jar'
+      delimiter: ' '
+    - envName: JAVA_TOOL_OPTIONS
+      envValue: '-javaagent:{{ODIGOS_AGENTS_DIR}}/java-ebpf/dtrace-injector.jar'
+      delimiter: ' '

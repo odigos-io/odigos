@@ -8,7 +8,7 @@ spec:
   runtimeEnvironments:
     - name: go-runtime
       version: '>= 1.17'
-  displayName: Golang Enterprise
+  displayName: Golang Enterprise eBPF Instrumentation
   description: |
     This distribution is for Golang applications using Odigos enterprise version, with ebpf-based SDK and instrumentation libraries, additional features and libraries coverage.
   tiers: 

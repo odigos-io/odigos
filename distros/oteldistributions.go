@@ -43,6 +43,24 @@ type Framwork struct {
 	FrameworkVersion string `json:"frameworkVersion"`
 }
 
+// this struct describes environment variables that needs to be set in the application runtime
+// to enable the distribution.
+type EnvironmentVariable struct {
+
+	// The name of the environment variable to set or patch.
+	EnvName string `json:"envName"`
+
+	// The value of the environment variable to set or patch.
+	// One special value can be used in this text which is substituted by the actual value at runtime.
+	// The special value is: `{{ODIGOS_AGENTS_DIR}}` which is replaced by `/var/odigos`, for k8s and with other values for other platforms.
+	EnvValue string `json:"envValue"`
+
+	// In case the environment variable needs to be appended to an existing value,
+	// this field specifies the delimiter to use.
+	// e.g. `:` for PYTHONPATH=/path/to/lib1:/path/to/lib2
+	Delimiter string `json:"delimiter"`
+}
+
 // OtelDistro (Short for OpenTelemetry Distribution) is a collection of OpenTelemetry components,
 // including instrumentations, SDKs, and other components that are distributed together.
 // Each distribution includes a unique name, and metadata about the ways it is implemented.
@@ -83,4 +101,8 @@ type OtelDistro struct {
 	// describe the OpenTelemetry SDKs used in the distribution
 	// SDK is the code that process and exports a span recorded by instrumentation.
 	OtelSdk OtelSdkMetadata `json:"otelSdk"`
+
+	// a list of environment variables that needs to be set in the application runtime
+	// to enable the distribution.
+	EnvironmentVariables []EnvironmentVariable `json:"environmentVariables,omitempty"`
 }
