@@ -1,7 +1,7 @@
 import React, { useState, PropsWithChildren, useRef, MouseEvent, forwardRef } from 'react';
 import ReactDOM from 'react-dom';
 import { Text } from '..';
-import { InfoIcon } from '@/assets';
+import { InfoIcon } from '@odigos/ui-components';
 import styled, { useTheme } from 'styled-components';
 
 interface Position {

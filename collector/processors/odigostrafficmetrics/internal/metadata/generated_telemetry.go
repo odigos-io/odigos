@@ -24,10 +24,13 @@ func Tracer(settings component.TelemetrySettings) trace.Tracer {
 // TelemetryBuilder provides an interface for components to report telemetry
 // as defined in metadata and user config.
 type TelemetryBuilder struct {
-	meter          metric.Meter
-	LogDataSize    metric.Int64Counter
-	MetricDataSize metric.Int64Counter
-	TraceDataSize  metric.Int64Counter
+	meter                      metric.Meter
+	OdigosAcceptedLogRecords   metric.Int64Counter
+	OdigosAcceptedMetricPoints metric.Int64Counter
+	OdigosAcceptedSpans        metric.Int64Counter
+	OdigosLogDataSize          metric.Int64Counter
+	OdigosMetricDataSize       metric.Int64Counter
+	OdigosTraceDataSize        metric.Int64Counter
 }
 
 // TelemetryBuilderOption applies changes to default builder.
@@ -50,20 +53,38 @@ func NewTelemetryBuilder(settings component.TelemetrySettings, options ...Teleme
 	}
 	builder.meter = Meter(settings)
 	var err, errs error
-	builder.LogDataSize, err = getLeveledMeter(builder.meter, configtelemetry.LevelBasic, settings.MetricsLevel).Int64Counter(
-		"otelcol_log_data_size",
+	builder.OdigosAcceptedLogRecords, err = getLeveledMeter(builder.meter, configtelemetry.LevelBasic, settings.MetricsLevel).Int64Counter(
+		"otelcol_odigos_accepted_log_records",
+		metric.WithDescription("Number of log records passed through the processor."),
+		metric.WithUnit("{records}"),
+	)
+	errs = errors.Join(errs, err)
+	builder.OdigosAcceptedMetricPoints, err = getLeveledMeter(builder.meter, configtelemetry.LevelBasic, settings.MetricsLevel).Int64Counter(
+		"otelcol_odigos_accepted_metric_points",
+		metric.WithDescription("Number of data points passed through the processor."),
+		metric.WithUnit("{datapoints}"),
+	)
+	errs = errors.Join(errs, err)
+	builder.OdigosAcceptedSpans, err = getLeveledMeter(builder.meter, configtelemetry.LevelBasic, settings.MetricsLevel).Int64Counter(
+		"otelcol_odigos_accepted_spans",
+		metric.WithDescription("Number of spans passed through the processor."),
+		metric.WithUnit("{spans}"),
+	)
+	errs = errors.Join(errs, err)
+	builder.OdigosLogDataSize, err = getLeveledMeter(builder.meter, configtelemetry.LevelBasic, settings.MetricsLevel).Int64Counter(
+		"otelcol_odigos_log_data_size",
 		metric.WithDescription("Total size of log data passed to the processor"),
 		metric.WithUnit("By"),
 	)
 	errs = errors.Join(errs, err)
-	builder.MetricDataSize, err = getLeveledMeter(builder.meter, configtelemetry.LevelBasic, settings.MetricsLevel).Int64Counter(
-		"otelcol_metric_data_size",
+	builder.OdigosMetricDataSize, err = getLeveledMeter(builder.meter, configtelemetry.LevelBasic, settings.MetricsLevel).Int64Counter(
+		"otelcol_odigos_metric_data_size",
 		metric.WithDescription("Total size of metric data passed to the processor"),
 		metric.WithUnit("By"),
 	)
 	errs = errors.Join(errs, err)
-	builder.TraceDataSize, err = getLeveledMeter(builder.meter, configtelemetry.LevelBasic, settings.MetricsLevel).Int64Counter(
-		"otelcol_trace_data_size",
+	builder.OdigosTraceDataSize, err = getLeveledMeter(builder.meter, configtelemetry.LevelBasic, settings.MetricsLevel).Int64Counter(
+		"otelcol_odigos_trace_data_size",
 		metric.WithDescription("Total size of trace data passed to the processor"),
 		metric.WithUnit("By"),
 	)

@@ -1,5 +1,5 @@
 import React from 'react';
-import { FlexColumn } from '@/styles';
+import { FlexColumn } from '@odigos/ui-components';
 import styled, { keyframes } from 'styled-components';
 
 const shimmer = keyframes<{ $width: string }>`

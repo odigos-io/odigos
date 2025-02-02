@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
@@ -16,10 +17,10 @@ import (
 
 func syncNamespaceWorkloads(ctx context.Context, k8sClient client.Client, runtimeScheme *runtime.Scheme, namespace string) error {
 	var err error
-	for _, kind := range []workload.WorkloadKind{
-		workload.WorkloadKindDaemonSet,
-		workload.WorkloadKindDeployment,
-		workload.WorkloadKindStatefulSet,
+	for _, kind := range []k8sconsts.WorkloadKind{
+		k8sconsts.WorkloadKindDaemonSet,
+		k8sconsts.WorkloadKindDeployment,
+		k8sconsts.WorkloadKindStatefulSet,
 	} {
 		err = errors.Join(err, listAndReconcileWorkloadList(ctx, k8sClient, runtimeScheme, namespace, kind))
 	}
@@ -30,7 +31,7 @@ func listAndReconcileWorkloadList(ctx context.Context,
 	k8sClient client.Client,
 	runtimeScheme *runtime.Scheme,
 	namespace string,
-	kind workload.WorkloadKind) error {
+	kind k8sconsts.WorkloadKind) error {
 
 	// pre-process existing Sources for specific workloads so we don't have to make a bunch of API calls
 	// This is used to check if a workload already has an explicit Source, so we don't overwrite its InstrumentationConfig
@@ -39,7 +40,7 @@ func listAndReconcileWorkloadList(ctx context.Context,
 	if err != nil {
 		return err
 	}
-	namespaceKindSources := make(map[workload.WorkloadKind]map[string]struct{})
+	namespaceKindSources := make(map[k8sconsts.WorkloadKind]map[string]struct{})
 	for _, s := range sourceList.Items {
 		if _, exists := namespaceKindSources[s.Spec.Workload.Kind]; !exists {
 			namespaceKindSources[s.Spec.Workload.Kind] = make(map[string]struct{})
@@ -84,8 +85,8 @@ func reconcileWorkloadList(ctx context.Context,
 	k8sClient client.Client,
 	runtimeScheme *runtime.Scheme,
 	req ctrl.Request,
-	kind workload.WorkloadKind,
-	namespaceKindSources map[workload.WorkloadKind]map[string]struct{}) error {
+	kind k8sconsts.WorkloadKind,
+	namespaceKindSources map[k8sconsts.WorkloadKind]map[string]struct{}) error {
 	logger := log.FromContext(ctx)
 	if _, exists := namespaceKindSources[kind][req.Name]; !exists {
 		_, err := reconcileWorkload(ctx, k8sClient, kind, req, runtimeScheme)

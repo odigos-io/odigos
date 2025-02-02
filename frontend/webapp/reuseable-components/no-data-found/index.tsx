@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text } from '../text';
-import { NoDataIcon } from '@/assets';
+import { NoDataIcon } from '@odigos/ui-components';
 import styled, { useTheme } from 'styled-components';
 
 interface Props {

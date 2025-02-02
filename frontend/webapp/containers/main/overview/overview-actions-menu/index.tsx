@@ -1,8 +1,8 @@
 import React from 'react';
 import { Search } from './search';
 import { Filters } from './filters';
-import styled, { useTheme } from 'styled-components';
 import { AddEntity } from '@/components';
+import styled, { useTheme } from 'styled-components';
 import { Divider, MonitorsIcons, TabList } from '@/reuseable-components';
 
 const MenuContainer = styled.div`

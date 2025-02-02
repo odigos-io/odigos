@@ -3,6 +3,7 @@ package workload_test
 import (
 	"testing"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/tj/assert"
 )
@@ -17,7 +18,7 @@ func TestExtractDeploymentWorkloadInfoFromRuntimeObjectName(t *testing.T) {
 	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(runtimeObjectName)
 	assert.Nil(t, err)
 	assert.Equal(t, "my-app", workloadName)
-	assert.Equal(t, workload.WorkloadKindDeployment, workloadKind)
+	assert.Equal(t, k8sconsts.WorkloadKindDeployment, workloadKind)
 }
 
 func TestExtractDaemonSetWorkloadInfoFromRuntimeObjectName(t *testing.T) {
@@ -25,7 +26,7 @@ func TestExtractDaemonSetWorkloadInfoFromRuntimeObjectName(t *testing.T) {
 	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(runtimeObjectName)
 	assert.Nil(t, err)
 	assert.Equal(t, "my-app", workloadName)
-	assert.Equal(t, workload.WorkloadKindDaemonSet, workloadKind)
+	assert.Equal(t, k8sconsts.WorkloadKindDaemonSet, workloadKind)
 }
 
 func TestExtractStatefulSetWorkloadInfoFromRuntimeObjectName(t *testing.T) {
@@ -33,7 +34,7 @@ func TestExtractStatefulSetWorkloadInfoFromRuntimeObjectName(t *testing.T) {
 	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(runtimeObjectName)
 	assert.Nil(t, err)
 	assert.Equal(t, "my-app", workloadName)
-	assert.Equal(t, workload.WorkloadKindStatefulSet, workloadKind)
+	assert.Equal(t, k8sconsts.WorkloadKindStatefulSet, workloadKind)
 }
 
 func TestExtractInvalidWorkloadInfoFromRuntimeObjectName(t *testing.T) {

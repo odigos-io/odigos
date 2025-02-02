@@ -21,9 +21,9 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -809,10 +809,10 @@ func (in *InstrumentationRuleSpec) DeepCopyInto(out *InstrumentationRuleSpec) {
 	*out = *in
 	if in.Workloads != nil {
 		in, out := &in.Workloads, &out.Workloads
-		*out = new([]workload.PodWorkload)
+		*out = new([]k8sconsts.PodWorkload)
 		if **in != nil {
 			in, out := *in, *out
-			*out = make([]workload.PodWorkload, len(*in))
+			*out = make([]k8sconsts.PodWorkload, len(*in))
 			copy(*out, *in)
 		}
 	}

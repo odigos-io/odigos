@@ -1,13 +1,13 @@
 import React, { useState, type ChangeEvent, type KeyboardEvent, type FC, type InputHTMLAttributes } from 'react';
-import { SVG } from '@/assets';
 import { Text } from '../text';
 import styled from 'styled-components';
+import { Types } from '@odigos/ui-components';
 
 export interface Option {
   id: string;
   label: string;
   description?: string;
-  icon?: SVG;
+  icon?: Types.SVG;
   items?: Option[]; // For handling a list of items
 }
 
