@@ -95,14 +95,14 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
-        createAction({ variables: { action } });
+        createAction({ variables: { action: { ...action, signals: action.signals.map((signal) => signal.toUpperCase()) } } });
       }
     },
     updateAction: (id: string, action: ActionInput) => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
-        updateAction({ variables: { id, action } });
+        updateAction({ variables: { id, action: { ...action, signals: action.signals.map((signal) => signal.toUpperCase()) } } });
       }
     },
     deleteAction: (id: string, actionType: ACTION_TYPE) => {
