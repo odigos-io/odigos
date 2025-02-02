@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -14,7 +14,7 @@ func TestGetPodWorkloadObject(t *testing.T) {
 	cases := []struct {
 		name             string
 		pod              *corev1.Pod
-		expectedWorkload workload.PodWorkload
+		expectedWorkload k8sconsts.PodWorkload
 	}{
 		{
 			name: "pod in deployment",
@@ -29,8 +29,8 @@ func TestGetPodWorkloadObject(t *testing.T) {
 					Namespace: "default",
 				},
 			},
-			expectedWorkload: workload.PodWorkload{
-				Kind:      workload.WorkloadKindDeployment,
+			expectedWorkload: k8sconsts.PodWorkload{
+				Kind:      k8sconsts.WorkloadKindDeployment,
 				Name:      "deployment",
 				Namespace: "default",
 			},
@@ -48,8 +48,8 @@ func TestGetPodWorkloadObject(t *testing.T) {
 					Namespace: "default",
 				},
 			},
-			expectedWorkload: workload.PodWorkload{
-				Kind:      workload.WorkloadKindDeployment,
+			expectedWorkload: k8sconsts.PodWorkload{
+				Kind:      k8sconsts.WorkloadKindDeployment,
 				Name:      "deployment-foo",
 				Namespace: "default",
 			},
@@ -67,8 +67,8 @@ func TestGetPodWorkloadObject(t *testing.T) {
 					Namespace: "default",
 				},
 			},
-			expectedWorkload: workload.PodWorkload{
-				Kind:      workload.WorkloadKindDaemonSet,
+			expectedWorkload: k8sconsts.PodWorkload{
+				Kind:      k8sconsts.WorkloadKindDaemonSet,
 				Name:      "someDaemonSet",
 				Namespace: "default",
 			},
@@ -86,8 +86,8 @@ func TestGetPodWorkloadObject(t *testing.T) {
 					Namespace: "default",
 				},
 			},
-			expectedWorkload: workload.PodWorkload{
-				Kind:      workload.WorkloadKindStatefulSet,
+			expectedWorkload: k8sconsts.PodWorkload{
+				Kind:      k8sconsts.WorkloadKindStatefulSet,
 				Name:      "someStatefulSet",
 				Namespace: "default",
 			},
