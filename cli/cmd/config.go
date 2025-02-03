@@ -151,5 +151,5 @@ func init() {
 	rootCmd.AddCommand(configCmd)
 	configCmd.AddCommand(setConfigCmd)
 
-	setConfigCmd.Flags().StringP("namespace", "n", "odigos-system", "Namespace where Odigos is installed")
+	setConfigCmd.Flags().StringP("namespace", "n", consts.DefaultOdigosNamespace, "Namespace where Odigos is installed")
 }
