@@ -3,8 +3,9 @@ import { useConfig } from '../config';
 import { useNotificationStore } from '@/store';
 import { GET_INSTRUMENTATION_RULES } from '@/graphql';
 import { useMutation, useQuery } from '@apollo/client';
-import { ACTION, deriveTypeFromRule, DISPLAY_TITLES, FORM_ALERTS, getSseTargetFromId } from '@/utils';
-import { type ComputePlatform, NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES, type InstrumentationRuleInput } from '@/types';
+import { ACTION, DISPLAY_TITLES, FORM_ALERTS } from '@/utils';
+import { type ComputePlatform, type InstrumentationRuleInput } from '@/types';
+import { deriveTypeFromRule, ENTITY_TYPES, getSseTargetFromId, NOTIFICATION_TYPE } from '@odigos/ui-components';
 import { CREATE_INSTRUMENTATION_RULE, UPDATE_INSTRUMENTATION_RULE, DELETE_INSTRUMENTATION_RULE } from '@/graphql/mutations';
 
 interface Params {
@@ -21,8 +22,8 @@ export const useInstrumentationRuleCRUD = (params?: Params) => {
       type,
       title,
       message,
-      crdType: OVERVIEW_ENTITY_TYPES.RULE,
-      target: id ? getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.RULE) : undefined,
+      crdType: ENTITY_TYPES.INSTRUMENTATION_RULE,
+      target: id ? getSseTargetFromId(id, ENTITY_TYPES.INSTRUMENTATION_RULE) : undefined,
       hideFromHistory,
     });
   };
@@ -74,7 +75,7 @@ export const useInstrumentationRuleCRUD = (params?: Params) => {
     onError: (error) => handleError(ACTION.DELETE, error.message),
     onCompleted: (res, req) => {
       const id = req?.variables?.ruleId;
-      removeNotifications(getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.RULE));
+      removeNotifications(getSseTargetFromId(id, ENTITY_TYPES.INSTRUMENTATION_RULE));
       handleComplete(ACTION.DELETE, `Rule "${id}" deleted`, id);
     },
   });

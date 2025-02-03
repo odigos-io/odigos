@@ -1,12 +1,12 @@
 import { create } from 'zustand';
-import type { DropdownOption } from '@/types';
+import { type DropdownProps } from '@odigos/ui-components';
 
 export interface FiltersState {
-  namespace: DropdownOption | undefined;
-  types: DropdownOption[];
-  monitors: DropdownOption[];
-  languages: DropdownOption[];
-  errors: DropdownOption[];
+  namespace?: DropdownProps['options'][0];
+  types: DropdownProps['options'];
+  monitors: DropdownProps['options'];
+  languages: DropdownProps['options'];
+  errors: DropdownProps['options'];
   onlyErrors: boolean;
 }
 

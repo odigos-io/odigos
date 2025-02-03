@@ -2,14 +2,13 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { RuleFormBody } from '../';
 import buildCard from './build-card';
 import styled from 'styled-components';
-import { DataCard } from '@/reuseable-components';
 import buildDrawerItem from './build-drawer-item';
-import { RULE_OPTIONS } from '../rule-modal/rule-options';
+import { ACTION, DATA_CARDS, FORM_ALERTS } from '@/utils';
 import OverviewDrawer from '../../overview/overview-drawer';
+import { type InstrumentationRuleSpecMapped } from '@/types';
 import { useDrawerStore, useNotificationStore } from '@/store';
-import { ACTION, DATA_CARDS, FORM_ALERTS, getRuleIcon } from '@/utils';
 import { useInstrumentationRuleCRUD, useInstrumentationRuleFormData } from '@/hooks';
-import { NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES, type InstrumentationRuleSpecMapped } from '@/types';
+import { DataCard, ENTITY_TYPES, getInstrumentationRuleIcon, INSTRUMENTATION_RULE_OPTIONS, NOTIFICATION_TYPE } from '@odigos/ui-components';
 
 interface Props {}
 
@@ -42,11 +41,11 @@ export const RuleDrawer: React.FC<Props> = () => {
     if (!!fetchedItems?.length) {
       const found = fetchedItems.find((x) => x.ruleId === id);
       if (!!found) {
-        return setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.RULE, item: found });
+        return setSelectedItem({ id, type: ENTITY_TYPES.INSTRUMENTATION_RULE, item: found });
       }
     }
 
-    setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.RULE, item: buildDrawerItem(id, formData, item) });
+    setSelectedItem({ id, type: ENTITY_TYPES.INSTRUMENTATION_RULE, item: buildDrawerItem(id, formData, item) });
   };
 
   // This should keep the drawer up-to-date with the latest data
@@ -71,7 +70,7 @@ export const RuleDrawer: React.FC<Props> = () => {
     }
 
     const { item } = selectedItem as { item: InstrumentationRuleSpecMapped };
-    const found = RULE_OPTIONS.find(({ type }) => type === item.type);
+    const found = INSTRUMENTATION_RULE_OPTIONS.find(({ type }) => type === item.type);
 
     loadFormWithDrawerItem(selectedItem);
 
@@ -87,7 +86,7 @@ export const RuleDrawer: React.FC<Props> = () => {
         type: NOTIFICATION_TYPE.WARNING,
         title: FORM_ALERTS.FORBIDDEN,
         message: FORM_ALERTS.CANNOT_EDIT_RULE,
-        crdType: OVERVIEW_ENTITY_TYPES.RULE,
+        crdType: ENTITY_TYPES.INSTRUMENTATION_RULE,
         target: id,
         hideFromHistory: true,
       });
@@ -107,7 +106,7 @@ export const RuleDrawer: React.FC<Props> = () => {
         type: NOTIFICATION_TYPE.WARNING,
         title: FORM_ALERTS.FORBIDDEN,
         message: FORM_ALERTS.CANNOT_DELETE_RULE,
-        crdType: OVERVIEW_ENTITY_TYPES.RULE,
+        crdType: ENTITY_TYPES.INSTRUMENTATION_RULE,
         target: id,
         hideFromHistory: true,
       });
@@ -127,7 +126,7 @@ export const RuleDrawer: React.FC<Props> = () => {
   return (
     <OverviewDrawer
       title={item.ruleName || (item.type as string)}
-      icon={getRuleIcon(item.type)}
+      icon={getInstrumentationRuleIcon(item.type)}
       isEdit={isEditing}
       isFormDirty={isFormDirty}
       onEdit={handleEdit}

@@ -1,8 +1,7 @@
-import { formatBytes } from '@/utils';
-import { Theme } from '@odigos/ui-components';
-import { type Edge, type Node } from '@xyflow/react';
-import { EDGE_TYPES, NODE_TYPES, OVERVIEW_ENTITY_TYPES, STATUSES, WorkloadId, type OverviewMetricsResponse } from '@/types';
 import nodeConfig from './node-config.json';
+import { type Edge, type Node } from '@xyflow/react';
+import { EDGE_TYPES, NODE_TYPES, type OverviewMetricsResponse } from '@/types';
+import { ENTITY_TYPES, formatBytes, HEALTH_STATUS, Theme, type WorkloadId } from '@odigos/ui-components';
 
 interface Params {
   theme: Theme.ITheme;
@@ -33,7 +32,7 @@ export const buildEdges = ({ theme, nodes, metrics, containerHeight }: Params) =
   const actionNodeId = nodes.find(({ id: nodeId }) => ['action-frame', 'action-add'].includes(nodeId))?.id;
 
   nodes.forEach(({ type: nodeType, id: nodeId, data: { type: entityType, id: entityId, status }, position }) => {
-    if (nodeType === NODE_TYPES.EDGED && entityType === OVERVIEW_ENTITY_TYPES.SOURCE) {
+    if (nodeType === NODE_TYPES.EDGED && entityType === ENTITY_TYPES.SOURCE) {
       const { namespace, name, kind } = entityId as WorkloadId;
       const metric = metrics?.getOverviewMetrics.sources.find((m) => m.kind === kind && m.name === name && m.namespace === namespace);
 
@@ -47,13 +46,13 @@ export const buildEdges = ({ theme, nodes, metrics, containerHeight }: Params) =
             animated: false,
             isMultiTarget: false,
             label: formatBytes(metric?.throughput),
-            isError: status === STATUSES.UNHEALTHY,
+            isError: status === HEALTH_STATUS.UNHEALTHY,
           }),
         );
       }
     }
 
-    if (nodeType === NODE_TYPES.BASE && entityType === OVERVIEW_ENTITY_TYPES.DESTINATION) {
+    if (nodeType === NODE_TYPES.BASE && entityType === ENTITY_TYPES.DESTINATION) {
       const metric = metrics?.getOverviewMetrics.destinations.find((m) => m.id === entityId);
 
       edges.push(
@@ -62,7 +61,7 @@ export const buildEdges = ({ theme, nodes, metrics, containerHeight }: Params) =
           animated: false,
           isMultiTarget: true,
           label: formatBytes(metric?.throughput),
-          isError: status === STATUSES.UNHEALTHY,
+          isError: status === HEALTH_STATUS.UNHEALTHY,
         }),
       );
     }

@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { Input } from '@/reuseable-components';
+import { Input } from '@odigos/ui-components';
 
 interface Form {
   otelServiceName: string;
