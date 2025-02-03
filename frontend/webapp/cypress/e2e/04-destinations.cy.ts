@@ -45,8 +45,7 @@ describe('Destinations CRUD', () => {
           cy.wait('@gql').then(() => {
             getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 }, (crdIds) => {
               const crdId = crdIds[0];
-
-              awaitToast({ withSSE: true, message: TEXTS.NOTIF_DESTINATIONS_UPDATED(1) }, () => {
+              awaitToast({ withSSE: false, message: TEXTS.NOTIF_DESTINATIONS_UPDATED(SELECTED_ENTITIES.DESTINATION_TYPE) }, () => {
                 getCrdById({ namespace, crdName, crdId, expectedError: '', expectedKey: 'destinationName', expectedValue: TEXTS.UPDATED_NAME });
               });
             });
