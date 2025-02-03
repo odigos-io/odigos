@@ -4,10 +4,12 @@ import { useAppStore } from '@/store';
 import { SetupHeader } from '@/components';
 import { useRouter } from 'next/navigation';
 import styled, { useTheme } from 'styled-components';
+import { NOTIFICATION_TYPE } from '@odigos/ui-utils';
+import { ArrowIcon, PlusIcon } from '@odigos/ui-icons';
 import { DestinationModal } from '../destination-modal';
 import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
 import { ConfiguredDestinationsList } from './configured-destinations-list';
-import { ArrowIcon, Button, CenterThis, FadeLoader, NOTIFICATION_TYPE, NotificationNote, PlusIcon, SectionTitle, Text } from '@odigos/ui-components';
+import { Button, CenterThis, FadeLoader, NotificationNote, SectionTitle, Text } from '@odigos/ui-components';
 
 const ContentWrapper = styled.div`
   width: 640px;

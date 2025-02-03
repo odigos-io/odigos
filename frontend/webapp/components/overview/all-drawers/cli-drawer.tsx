@@ -3,36 +3,9 @@ import { useDrawerStore } from '@/store';
 import styled, { useTheme } from 'styled-components';
 import { DATA_CARDS, SEVEN_DAYS_IN_MS } from '@/utils';
 import { useDescribeOdigos, useTokenCRUD } from '@/hooks';
-import {
-  Button,
-  CheckIcon,
-  CodeBracketsIcon,
-  CodeIcon,
-  CopyIcon,
-  CrossIcon,
-  DATA_CARD_FIELD_TYPES,
-  DataCard,
-  Divider,
-  Drawer,
-  EditIcon,
-  FlexColumn,
-  FlexRow,
-  getStatusIcon,
-  IconButton,
-  Input,
-  isOverTime,
-  KeyIcon,
-  ListIcon,
-  NOTIFICATION_TYPE,
-  safeJsonStringify,
-  Segment,
-  Text,
-  Tooltip,
-  useCopy,
-  useKeyDown,
-  useOnClickOutside,
-  useTimeAgo,
-} from '@odigos/ui-components';
+import { CheckIcon, CodeBracketsIcon, CodeIcon, CopyIcon, CrossIcon, EditIcon, KeyIcon, ListIcon } from '@odigos/ui-icons';
+import { getStatusIcon, isOverTime, NOTIFICATION_TYPE, safeJsonStringify, useCopy, useKeyDown, useOnClickOutside, useTimeAgo } from '@odigos/ui-utils';
+import { Button, DATA_CARD_FIELD_TYPES, DataCard, Divider, Drawer, FlexColumn, FlexRow, IconButton, Input, Segment, Text, Tooltip } from '@odigos/ui-components';
 
 interface Props {}
 

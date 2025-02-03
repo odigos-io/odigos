@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { ENTITY_TYPES, type WorkloadId } from '@odigos/ui-components';
+import { ENTITY_TYPES, type WorkloadId } from '@odigos/ui-utils';
 import type { ActionDataParsed, ActualDestination, InstrumentationRuleSpec, K8sActualSource } from '@/types';
 
 export enum DRAWER_OTHER_TYPES {

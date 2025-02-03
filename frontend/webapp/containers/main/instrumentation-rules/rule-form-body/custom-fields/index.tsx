@@ -2,7 +2,7 @@ import React from 'react';
 import CodeAttributes from './code-attributes';
 import PayloadCollection from './payload-collection';
 import { type InstrumentationRuleInput } from '@/types';
-import { INSTRUMENTATION_RULE_TYPE } from '@odigos/ui-components';
+import { INSTRUMENTATION_RULE_TYPE } from '@odigos/ui-utils';
 
 interface Props {
   ruleType?: INSTRUMENTATION_RULE_TYPE;

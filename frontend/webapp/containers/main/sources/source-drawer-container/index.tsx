@@ -4,25 +4,13 @@ import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
 import { type K8sActualSource } from '@/types';
 import buildDrawerItem from './build-drawer-item';
+import { CodeIcon, ListIcon } from '@odigos/ui-icons';
 import { UpdateSourceBody } from '../update-source-body';
 import { useDescribeSource, useSourceCRUD } from '@/hooks';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { ACTION, BACKEND_BOOLEAN, DATA_CARDS } from '@/utils';
-import {
-  CodeIcon,
-  ConditionDetails,
-  ConditionDetailsProps,
-  DATA_CARD_FIELD_TYPES,
-  DataCard,
-  type DataCardFieldsProps,
-  ENTITY_TYPES,
-  getEntityIcon,
-  ListIcon,
-  NOTIFICATION_TYPE,
-  safeJsonStringify,
-  Segment,
-  type WorkloadId,
-} from '@odigos/ui-components';
+import { ENTITY_TYPES, getEntityIcon, NOTIFICATION_TYPE, safeJsonStringify, type WorkloadId } from '@odigos/ui-utils';
+import { ConditionDetails, ConditionDetailsProps, DATA_CARD_FIELD_TYPES, DataCard, type DataCardFieldsProps, Segment } from '@odigos/ui-components';
 
 interface Props {}
 

@@ -3,20 +3,8 @@ import { RuleFormBody } from '../';
 import { ModalBody } from '@/styles';
 import { ACTION, FORM_ALERTS } from '@/utils';
 import { useDescribeOdigos, useInstrumentationRuleCRUD, useInstrumentationRuleFormData } from '@/hooks';
-import {
-  AutocompleteInput,
-  CenterThis,
-  Divider,
-  FadeLoader,
-  INSTRUMENTATION_RULE_OPTIONS,
-  type InstrumentationRuleOption,
-  Modal,
-  NavigationButtons,
-  NOTIFICATION_TYPE,
-  NotificationNote,
-  SectionTitle,
-  useKeyDown,
-} from '@odigos/ui-components';
+import { INSTRUMENTATION_RULE_OPTIONS, NOTIFICATION_TYPE, useKeyDown, type InstrumentationRuleOption } from '@odigos/ui-utils';
+import { AutocompleteInput, CenterThis, Divider, FadeLoader, Modal, NavigationButtons, NotificationNote, SectionTitle } from '@odigos/ui-components';
 
 interface Props {
   isOpen: boolean;
