@@ -2,8 +2,9 @@ import React, { Fragment, useMemo, useState } from 'react';
 import { SelectionButton } from '@/components';
 import { AbsoluteContainer } from '../../styled';
 import styled, { useTheme } from 'styled-components';
+import { Divider, Text } from '@odigos/ui-components';
 import { buildSearchResults, type Category } from './builder';
-import { Divider, ENTITY_TYPES, getEntityIcon, getEntityId, getEntityLabel, Text } from '@odigos/ui-components';
+import { ENTITY_TYPES, getEntityIcon, getEntityId, getEntityLabel } from '@odigos/ui-utils';
 import { useActionCRUD, useDestinationCRUD, useInstrumentationRuleCRUD, useNodeDataFlowHandlers, useSourceCRUD } from '@/hooks';
 
 interface Props {

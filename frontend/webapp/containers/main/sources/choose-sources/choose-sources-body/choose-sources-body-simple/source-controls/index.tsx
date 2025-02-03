@@ -1,8 +1,9 @@
 import React from 'react';
 import styled from 'styled-components';
+import { SearchIcon } from '@odigos/ui-icons';
 import { NamespaceDropdown } from '@/components';
 import { type UseSourceFormDataResponse } from '@/hooks';
-import { Badge, Checkbox, Divider, Input, SearchIcon, SectionTitle, Text, Toggle } from '@odigos/ui-components';
+import { Badge, Checkbox, Divider, Input, SectionTitle, Text, Toggle } from '@odigos/ui-components';
 
 interface Props extends UseSourceFormDataResponse {
   isModal?: boolean;

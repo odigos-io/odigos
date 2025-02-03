@@ -4,7 +4,7 @@ import { GET_DESTINATIONS } from '@/graphql';
 import { useMutation, useQuery } from '@apollo/client';
 import { ACTION, DISPLAY_TITLES, FORM_ALERTS } from '@/utils';
 import { useFilterStore, useNotificationStore, usePendingStore } from '@/store';
-import { ENTITY_TYPES, getSseTargetFromId, NOTIFICATION_TYPE } from '@odigos/ui-components';
+import { ENTITY_TYPES, getSseTargetFromId, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 import { type SupportedSignals, type DestinationInput, type ComputePlatform } from '@/types';
 import { CREATE_DESTINATION, DELETE_DESTINATION, UPDATE_DESTINATION } from '@/graphql/mutations';
 

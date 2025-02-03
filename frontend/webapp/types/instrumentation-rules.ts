@@ -1,4 +1,4 @@
-import { INSTRUMENTATION_RULE_TYPE, type WorkloadId } from '@odigos/ui-components';
+import { INSTRUMENTATION_RULE_TYPE, type WorkloadId } from '@odigos/ui-utils';
 
 export enum PayloadCollectionType {
   HTTP_REQUEST = 'httpRequest',

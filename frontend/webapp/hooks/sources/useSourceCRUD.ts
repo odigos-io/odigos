@@ -5,7 +5,7 @@ import { useNamespace } from '../compute-platform';
 import { PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import { type PatchSourceRequestInput, type K8sActualSource } from '@/types';
 import { ACTION, BACKEND_BOOLEAN, DISPLAY_TITLES, FORM_ALERTS } from '@/utils';
-import { ENTITY_TYPES, getSseTargetFromId, K8S_RESOURCE_KIND, NOTIFICATION_TYPE, type WorkloadId } from '@odigos/ui-components';
+import { ENTITY_TYPES, getSseTargetFromId, K8S_RESOURCE_KIND, NOTIFICATION_TYPE, type WorkloadId } from '@odigos/ui-utils';
 import { type PendingItem, useAppStore, useFilterStore, useNotificationStore, usePaginatedStore, usePendingStore } from '@/store';
 
 interface Params {

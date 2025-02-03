@@ -1,9 +1,12 @@
 import React, { Fragment } from 'react';
 import styled from 'styled-components';
+import { Theme } from '@odigos/ui-theme';
 import { usePendingStore } from '@/store';
+import { PlusIcon } from '@odigos/ui-icons';
 import { NODE_TYPES, OVERVIEW_NODE_TYPES } from '@/types';
+import { ENTITY_TYPES, HEALTH_STATUS } from '@odigos/ui-utils';
 import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';
-import { ENTITY_TYPES, FadeLoader, FlexColumn, FlexRow, HEALTH_STATUS, PlusIcon, Text, Theme } from '@odigos/ui-components';
+import { FadeLoader, FlexColumn, FlexRow, Text } from '@odigos/ui-components';
 
 interface Props
   extends NodeProps<

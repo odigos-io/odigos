@@ -1,8 +1,11 @@
 import React from 'react';
+import { Theme } from '@odigos/ui-theme';
 import { type ActionInput } from '@/types';
 import ActionCustomFields from './custom-fields';
 import styled, { useTheme } from 'styled-components';
-import { type ActionOption, CheckCircledIcon, CrossCircledIcon, DocsButton, Input, MonitorsCheckboxes, SectionTitle, Segment, Text, TextArea, Theme } from '@odigos/ui-components';
+import { type ActionOption } from '@odigos/ui-utils';
+import { CheckCircledIcon, CrossCircledIcon } from '@odigos/ui-icons';
+import { DocsButton, Input, MonitorsCheckboxes, SectionTitle, Segment, Text, TextArea } from '@odigos/ui-components';
 
 interface Props {
   isUpdate?: boolean;
