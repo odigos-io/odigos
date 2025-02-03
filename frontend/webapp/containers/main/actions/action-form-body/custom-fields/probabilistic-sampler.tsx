@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
-import { Input } from '@/reuseable-components';
-import { isEmpty, safeJsonParse } from '@/utils';
 import type { ProbabilisticSamplerSpec } from '@/types';
+import { Input, isEmpty, safeJsonParse } from '@odigos/ui-components';
 
 type Props = {
   value: string;

@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
-import { safeJsonParse } from '@/utils';
-import { InputTable } from '@/reuseable-components';
 import type { LatencySamplerSpec } from '@/types';
+import { InputTable, safeJsonParse } from '@odigos/ui-components';
 
 type Props = {
   value: string;

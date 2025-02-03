@@ -1,6 +1,6 @@
-import { compareCondition, DISPLAY_TITLES, safeJsonParse } from '@/utils';
-import { DataCardRow, DataCardFieldTypes } from '@/reuseable-components';
+import { DISPLAY_TITLES } from '@/utils';
 import type { ActualDestination, DestinationDetailsResponse, ExportedSignals } from '@/types';
+import { compareCondition, DATA_CARD_FIELD_TYPES, DataCardFieldsProps, safeJsonParse } from '@odigos/ui-components';
 
 const buildMonitorsList = (exportedSignals: ExportedSignals): string =>
   Object.keys(exportedSignals)
@@ -10,10 +10,10 @@ const buildMonitorsList = (exportedSignals: ExportedSignals): string =>
 const buildCard = (destination: ActualDestination, destinationTypeDetails?: DestinationDetailsResponse['destinationTypeDetails']) => {
   const { exportedSignals, destinationType, fields } = destination;
 
-  const arr: DataCardRow[] = [
+  const arr: DataCardFieldsProps['data'] = [
     { title: DISPLAY_TITLES.DESTINATION, value: destinationType.displayName },
-    { type: DataCardFieldTypes.MONITORS, title: DISPLAY_TITLES.MONITORS, value: buildMonitorsList(exportedSignals) },
-    { type: DataCardFieldTypes.DIVIDER, width: '100%' },
+    { type: DATA_CARD_FIELD_TYPES.MONITORS, title: DISPLAY_TITLES.MONITORS, value: buildMonitorsList(exportedSignals) },
+    { type: DATA_CARD_FIELD_TYPES.DIVIDER, width: '100%' },
   ];
 
   const parsedFields = safeJsonParse<Record<string, string>>(fields, {});
@@ -26,6 +26,7 @@ const buildCard = (destination: ActualDestination, destinationTypeDetails?: Dest
 
     const shouldHide = !!hideFromReadData?.length
       ? compareCondition(
+          // @ts-ignore
           hideFromReadData,
           (destinationTypeDetails?.fields || []).map((field) => ({ name: field.name, value: parsedFields[field.name] ?? null })),
         )

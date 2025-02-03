@@ -1,4 +1,5 @@
-import type { Condition, DropdownOption, ExportedSignals } from './common';
+import { type DropdownProps } from '@odigos/ui-components';
+import { type Condition, type ExportedSignals } from './common';
 
 interface ObservabilitySignalSupport {
   supported: boolean;
@@ -56,7 +57,7 @@ export interface DynamicField {
   type?: string;
   placeholder?: string;
   required?: boolean;
-  options?: DropdownOption[];
+  options?: DropdownProps['options'];
   renderCondition: string[];
 }
 

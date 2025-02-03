@@ -1,10 +1,5 @@
-import { WorkloadId } from './sources';
+import { INSTRUMENTATION_RULE_TYPE, type WorkloadId } from '@odigos/ui-components';
 
-export enum InstrumentationRuleType {
-  UNKNOWN_TYPE = 'UnknownType',
-  PAYLOAD_COLLECTION = 'PayloadCollection',
-  CODE_ATTRIBUTES = 'CodeAttributes',
-}
 export enum PayloadCollectionType {
   HTTP_REQUEST = 'httpRequest',
   HTTP_RESPONSE = 'httpResponse',
@@ -33,7 +28,7 @@ export interface InstrumentationRuleInput {
 export interface InstrumentationRuleSpec {
   ruleId: string;
   ruleName: string;
-  type?: InstrumentationRuleType; // does not come from backend, it's derived during GET
+  type?: INSTRUMENTATION_RULE_TYPE; // does not come from backend, it's derived during GET
   notes: string;
   disabled: boolean;
   mutable: boolean;
@@ -45,7 +40,7 @@ export interface InstrumentationRuleSpec {
 }
 
 export interface InstrumentationRuleSpecMapped extends InstrumentationRuleSpec {
-  type: InstrumentationRuleType; // does not come from backend, it's derived during GET
+  type: INSTRUMENTATION_RULE_TYPE; // does not come from backend, it's derived during GET
 }
 
 // Common types for Instrumentation Rules

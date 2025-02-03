@@ -1,13 +1,12 @@
 import React, { useMemo } from 'react';
 import { useNamespace } from '@/hooks';
-import type { DropdownOption } from '@/types';
-import { Dropdown } from '@/reuseable-components';
+import { Dropdown, type DropdownProps } from '@odigos/ui-components';
 
 interface Props {
   title?: string;
-  value?: DropdownOption;
-  onSelect: (val: DropdownOption) => void;
-  onDeselect: (val: DropdownOption) => void;
+  value?: DropdownProps['options'][0];
+  onSelect: (val: DropdownProps['options'][0]) => void;
+  onDeselect: (val: DropdownProps['options'][0]) => void;
   isMulti?: boolean;
   required?: boolean;
   showSearch?: boolean;
@@ -17,7 +16,7 @@ export const NamespaceDropdown: React.FC<Props> = ({ title = 'Namespace', value,
   const { allNamespaces } = useNamespace();
 
   const options = useMemo(() => {
-    const payload: DropdownOption[] = [];
+    const payload: DropdownProps['options'] = [];
 
     allNamespaces?.forEach(({ name: id }) => {
       if (!payload.find((opt) => opt.id === id)) {

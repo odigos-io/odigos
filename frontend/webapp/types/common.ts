@@ -1,3 +1,5 @@
+import { NOTIFICATION_TYPE } from '@odigos/ui-components';
+
 export interface ExportedSignals {
   logs: boolean;
   metrics: boolean;
@@ -10,14 +12,6 @@ export interface Condition {
   reason: string;
   message: string;
   lastTransitionTime: string;
-}
-
-export enum NOTIFICATION_TYPE {
-  WARNING = 'warning',
-  ERROR = 'error',
-  SUCCESS = 'success',
-  INFO = 'info',
-  DEFAULT = 'default',
 }
 
 export interface Notification {
@@ -40,11 +34,6 @@ export type Config = {
   };
 };
 
-export interface DropdownOption {
-  id: string;
-  value: string;
-}
-
 export interface StepProps {
   title: string;
   subtitle?: string;
@@ -52,21 +41,9 @@ export interface StepProps {
   stepNumber: number;
 }
 
-export enum OVERVIEW_ENTITY_TYPES {
-  RULE = 'rule',
-  SOURCE = 'source',
-  ACTION = 'action',
-  DESTINATION = 'destination',
-}
-
 export enum OVERVIEW_NODE_TYPES {
   ADD_RULE = 'addRule',
   ADD_SOURCE = 'addSource',
   ADD_ACTION = 'addAction',
   ADD_DESTINATION = 'addDestination',
-}
-
-export enum STATUSES {
-  HEALTHY = 'healthy',
-  UNHEALTHY = 'unhealthy',
 }

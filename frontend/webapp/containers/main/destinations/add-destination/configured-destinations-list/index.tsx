@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { extractMonitors } from '@/utils';
-import { DeleteWarning } from '@/components';
 import { IAppState, useAppStore } from '@/store';
-import { TrashIcon } from '@odigos/ui-components';
-import { OVERVIEW_ENTITY_TYPES, type ConfiguredDestination } from '@/types';
-import { DataCardFields, DataTab, IconButton } from '@/reuseable-components';
+import { type ConfiguredDestination } from '@/types';
+import { DataCardFields, DataTab, DeleteWarning, ENTITY_TYPES, IconButton, TrashIcon } from '@odigos/ui-components';
 
 const Container = styled.div`
   display: flex;
@@ -43,7 +41,7 @@ const ListItem: React.FC<{ item: ConfiguredDestination; isLastItem: boolean }> =
       <DeleteWarning
         isOpen={deleteWarning}
         name={item.displayName || item.type}
-        type={OVERVIEW_ENTITY_TYPES.DESTINATION}
+        type={ENTITY_TYPES.DESTINATION}
         isLastItem={isLastItem}
         onApprove={() => removeConfiguredDestination(item)}
         onDeny={() => setDeleteWarning(false)}
