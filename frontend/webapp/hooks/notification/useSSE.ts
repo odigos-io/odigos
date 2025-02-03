@@ -29,8 +29,8 @@ export const useSSE = () => {
           target: data.target,
         };
 
-        if (notification.crdType !== SSE_CRD_TYPES.CONNECTED) {
-          // SSE toast notification (for all events except "connected")
+        if (notification.title !== SSE_EVENT_TYPES.MODIFIED && notification.crdType !== SSE_CRD_TYPES.CONNECTED) {
+          // SSE toast notification (for all events except "modified" and "connected")
           addNotification(notification);
         }
 
