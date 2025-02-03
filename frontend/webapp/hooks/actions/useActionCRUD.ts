@@ -6,7 +6,7 @@ import { useFilterStore, useNotificationStore } from '@/store';
 import { ACTION, DISPLAY_TITLES, FORM_ALERTS } from '@/utils';
 import { CREATE_ACTION, DELETE_ACTION, UPDATE_ACTION } from '@/graphql/mutations';
 import { type ActionItem, type ComputePlatform, type ActionInput } from '@/types';
-import { ACTION_TYPE, ENTITY_TYPES, getSseTargetFromId, NOTIFICATION_TYPE, safeJsonParse } from '@odigos/ui-components';
+import { ACTION_TYPE, ENTITY_TYPES, getSseTargetFromId, NOTIFICATION_TYPE, safeJsonParse } from '@odigos/ui-utils';
 
 interface UseActionCrudParams {
   onSuccess?: (type: string) => void;

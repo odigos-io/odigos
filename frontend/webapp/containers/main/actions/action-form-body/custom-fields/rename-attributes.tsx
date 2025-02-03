@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
+import { safeJsonParse } from '@odigos/ui-utils';
 import type { RenameAttributesSpec } from '@/types';
-import { KeyValueInputsList, safeJsonParse } from '@odigos/ui-components';
+import { KeyValueInputsList } from '@odigos/ui-components';
 
 type Props = {
   value: string;

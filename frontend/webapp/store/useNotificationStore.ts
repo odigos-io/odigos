@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Notification } from '@/types';
-import { isTimeElapsed } from '@odigos/ui-components';
+import { isTimeElapsed } from '@odigos/ui-utils';
 
 export type NotifyPayload = Omit<Notification, 'id' | 'dismissed' | 'seen' | 'time'>;
 

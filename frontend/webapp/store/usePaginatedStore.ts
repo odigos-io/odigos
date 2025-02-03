@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { type K8sActualSource } from '@/types';
-import { type WorkloadId } from '@odigos/ui-components';
+import { type WorkloadId } from '@odigos/ui-utils';
 
 interface IPaginatedState {
   sources: K8sActualSource[];
