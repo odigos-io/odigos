@@ -1,9 +1,11 @@
 import React from 'react';
 import styled from 'styled-components';
 import { useAppStore, usePendingStore } from '@/store';
+import { ErrorTriangleIcon, type SVG } from '@odigos/ui-icons';
+import { Checkbox, DataTab, FadeLoader } from '@odigos/ui-components';
 import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';
+import { ENTITY_TYPES, HEALTH_STATUS, SIGNAL_TYPE, type WorkloadId } from '@odigos/ui-utils';
 import { type ActionDataParsed, type ActualDestination, type InstrumentationRuleSpec, type K8sActualSource, NODE_TYPES } from '@/types';
-import { Checkbox, DataTab, ENTITY_TYPES, ErrorTriangleIcon, FadeLoader, HEALTH_STATUS, SIGNAL_TYPE, type SVG, type WorkloadId } from '@odigos/ui-components';
 
 interface Props
   extends NodeProps<

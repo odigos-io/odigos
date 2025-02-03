@@ -5,7 +5,7 @@ import { GET_INSTRUMENTATION_RULES } from '@/graphql';
 import { useMutation, useQuery } from '@apollo/client';
 import { ACTION, DISPLAY_TITLES, FORM_ALERTS } from '@/utils';
 import { type ComputePlatform, type InstrumentationRuleInput } from '@/types';
-import { deriveTypeFromRule, ENTITY_TYPES, getSseTargetFromId, NOTIFICATION_TYPE } from '@odigos/ui-components';
+import { deriveTypeFromRule, ENTITY_TYPES, getSseTargetFromId, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 import { CREATE_INSTRUMENTATION_RULE, UPDATE_INSTRUMENTATION_RULE, DELETE_INSTRUMENTATION_RULE } from '@/graphql/mutations';
 
 interface Params {

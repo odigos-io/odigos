@@ -1,6 +1,6 @@
 import React from 'react';
 import { useModalStore } from '@/store';
-import { ENTITY_TYPES } from '@odigos/ui-components';
+import { ENTITY_TYPES } from '@odigos/ui-utils';
 import { ActionModal, AddSourceModal, DestinationModal, RuleModal } from '@/containers';
 
 const AllModals = () => {

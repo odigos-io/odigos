@@ -1,5 +1,5 @@
 import type { Condition } from './common';
-import { ACTION_TYPE, SIGNAL_TYPE } from '@odigos/ui-components';
+import { ACTION_TYPE, SIGNAL_TYPE } from '@odigos/ui-utils';
 
 export type AddClusterInfoSpec = {
   clusterAttributes: {
