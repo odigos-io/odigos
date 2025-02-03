@@ -42,6 +42,37 @@ spec:
               Config for the OpenTelemeetry SDKs that should be applied to a workload.
               The workload is identified by the owner reference
             properties:
+              containers:
+                description: configuration for each instrumented container in the
+                  workload
+                items:
+                  description: ContainerConfig is a configuration for a specific container
+                    in a workload.
+                  properties:
+                    containerName:
+                      description: The name of the container to which this configuration
+                        applies.
+                      type: string
+                    instrumentationReason:
+                      description: |-
+                        This field can contain free-form text that describes the reason for the instrumentation decision.
+                        It is meant to be read by humans and can have high cardinality.
+                      type: string
+                    instrumented:
+                      description: boolean flag to indicate if the container should
+                        be instrumented or not.
+                      type: boolean
+                    otelDistroName:
+                      description: |-
+                        The name of the otel distribution to use for this container.
+                        if the name is empty, this container should not be instrumented.
+                      type: string
+                  required:
+                  - containerName
+                  - instrumented
+                  - otelDistroName
+                  type: object
+                type: array
               sdkConfigs:
                 description: |-
                   Configuration for the OpenTelemetry SDKs that this workload should use.
