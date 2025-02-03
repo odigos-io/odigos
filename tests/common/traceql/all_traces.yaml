@@ -1,0 +1,7 @@
+apiVersion: e2e.tests.odigos.io/v1
+kind: TraceTest
+description: This query all the traces, and used for debugging
+query: |
+  {}
+expected:
+  minimum: 1
