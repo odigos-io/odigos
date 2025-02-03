@@ -2,6 +2,7 @@ apiVersion: e2e.tests.odigos.io/v1
 kind: TraceTest
 description: This query all the traces, and used for debugging
 query: |
-  {}
+# filter health check spans
+  {name != "GET /actuator/health/**"}
 expected:
   minimum: 1
