@@ -1,5 +1,4 @@
 import React, { type FC, type PropsWithChildren, useState } from 'react';
-import { useDarkModeStore } from '@/store';
 import { Theme } from '@odigos/ui-components';
 import { useServerInsertedHTML } from 'next/navigation';
 import { ServerStyleSheet, StyleSheetManager } from 'styled-components';
@@ -20,9 +19,7 @@ const StyledComponentsRegistry: FC<PropsWithChildren> = ({ children }) => {
   return <StyleSheetManager sheet={styledComponentsStyleSheet.instance}>{children}</StyleSheetManager>;
 };
 
-export const ThemeProvider: FC<PropsWithChildren> = ({ children }) => {
-  const { darkMode } = useDarkModeStore();
-
+export const ThemeProvider: FC<PropsWithChildren<{ darkMode: boolean }>> = ({ children, darkMode }) => {
   return (
     <Theme.Provider darkMode={darkMode}>
       <StyledComponentsRegistry>{children}</StyledComponentsRegistry>

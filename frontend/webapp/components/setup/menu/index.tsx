@@ -1,8 +1,7 @@
 import React, { useEffect } from 'react';
 import { type StepProps } from '@/types';
-import { Text } from '@/reuseable-components';
 import styled, { css } from 'styled-components';
-import { CheckIcon } from '@odigos/ui-components';
+import { CheckIcon, Text } from '@odigos/ui-components';
 
 const Container = styled.div`
   display: flex;

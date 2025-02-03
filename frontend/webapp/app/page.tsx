@@ -3,8 +3,7 @@ import { useEffect } from 'react';
 import { useConfig } from '@/hooks';
 import { ROUTES, CONFIG } from '@/utils';
 import { useRouter } from 'next/navigation';
-import { CenterThis } from '@odigos/ui-components';
-import { FadeLoader } from '@/reuseable-components';
+import { CenterThis, FadeLoader } from '@odigos/ui-components';
 
 export default function App() {
   const router = useRouter();
@@ -24,7 +23,7 @@ export default function App() {
 
   return (
     <CenterThis style={{ height: '100%' }}>
-      <FadeLoader style={{ scale: 2 }} />
+      <FadeLoader scale={2} />
     </CenterThis>
   );
 }

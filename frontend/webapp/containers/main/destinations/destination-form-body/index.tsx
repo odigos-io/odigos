@@ -1,10 +1,9 @@
 import React, { Dispatch, SetStateAction, useEffect, useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
-import { SignalUppercase } from '@/utils';
 import { DestinationDynamicFields } from './dynamic-fields';
 import { type ConnectionStatus, TestConnection } from './test-connection';
-import { Divider, Input, MonitoringCheckboxes, NotificationNote, SectionTitle } from '@/reuseable-components';
-import { NOTIFICATION_TYPE, type DestinationInput, type DestinationTypeItem, type DynamicField } from '@/types';
+import { type DestinationInput, type DestinationTypeItem, type DynamicField } from '@/types';
+import { Divider, Input, MonitorsCheckboxes, NOTIFICATION_TYPE, NotificationNote, SectionTitle, SIGNAL_TYPE } from '@odigos/ui-components';
 
 interface Props {
   isUpdate?: boolean;
@@ -68,32 +67,32 @@ export const DestinationFormBody = ({ isUpdate, destination, formData, formError
 
   const supportedMonitors = useMemo(() => {
     const { logs, metrics, traces } = supportedSignals || {};
-    const arr: SignalUppercase[] = [];
+    const arr: SIGNAL_TYPE[] = [];
 
-    if (logs?.supported) arr.push('LOGS');
-    if (metrics?.supported) arr.push('METRICS');
-    if (traces?.supported) arr.push('TRACES');
+    if (logs?.supported) arr.push(SIGNAL_TYPE.LOGS);
+    if (metrics?.supported) arr.push(SIGNAL_TYPE.METRICS);
+    if (traces?.supported) arr.push(SIGNAL_TYPE.TRACES);
 
     return arr;
   }, [supportedSignals]);
 
   const selectedMonitors = useMemo(() => {
     const { logs, metrics, traces } = formData['exportedSignals'] || {};
-    const arr: SignalUppercase[] = [];
+    const arr: SIGNAL_TYPE[] = [];
 
-    if (logs) arr.push('LOGS');
-    if (metrics) arr.push('METRICS');
-    if (traces) arr.push('TRACES');
+    if (logs) arr.push(SIGNAL_TYPE.LOGS);
+    if (metrics) arr.push(SIGNAL_TYPE.METRICS);
+    if (traces) arr.push(SIGNAL_TYPE.TRACES);
 
     return arr;
   }, [formData['exportedSignals']]);
 
-  const handleSelectedSignals = (signals: SignalUppercase[]) => {
+  const handleSelectedSignals = (signals: SIGNAL_TYPE[]) => {
     dirtyForm();
     handleFormChange('exportedSignals', {
-      logs: signals.includes('LOGS'),
-      metrics: signals.includes('METRICS'),
-      traces: signals.includes('TRACES'),
+      logs: signals.includes(SIGNAL_TYPE.LOGS),
+      metrics: signals.includes(SIGNAL_TYPE.METRICS),
+      traces: signals.includes(SIGNAL_TYPE.TRACES),
     });
   };
 
@@ -138,7 +137,7 @@ export const DestinationFormBody = ({ isUpdate, destination, formData, formError
         </>
       )}
 
-      <MonitoringCheckboxes
+      <MonitorsCheckboxes
         title={isUpdate ? '' : 'This connection will monitor:'}
         required
         allowedSignals={supportedMonitors}

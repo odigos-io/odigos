@@ -3,13 +3,12 @@ import buildCard from './build-card';
 import { ActionFormBody } from '../';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
+import { ACTION, DATA_CARDS } from '@/utils';
+import { type ActionDataParsed } from '@/types';
 import buildDrawerItem from './build-drawer-item';
 import { useActionCRUD, useActionFormData } from '@/hooks';
-import { ACTION, DATA_CARDS, getActionIcon } from '@/utils';
 import OverviewDrawer from '../../overview/overview-drawer';
-import { ACTION_OPTIONS } from '../action-modal/action-options';
-import { ConditionDetails, DataCard } from '@/reuseable-components';
-import { OVERVIEW_ENTITY_TYPES, type ActionDataParsed } from '@/types';
+import { ACTION_OPTIONS, ConditionDetails, type ConditionDetailsProps, DataCard, ENTITY_TYPES, getActionIcon, NOTIFICATION_TYPE } from '@odigos/ui-components';
 
 interface Props {}
 
@@ -47,11 +46,11 @@ export const ActionDrawer: React.FC<Props> = () => {
     if (!!fetchedItems?.length) {
       const found = fetchedItems.find((x) => x.id === id);
       if (!!found) {
-        return setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.ACTION, item: found });
+        return setSelectedItem({ id, type: ENTITY_TYPES.ACTION, item: found });
       }
     }
 
-    setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.ACTION, item: buildDrawerItem(id, formData, item) });
+    setSelectedItem({ id, type: ENTITY_TYPES.ACTION, item: buildDrawerItem(id, formData, item) });
   };
 
   // This should keep the drawer up-to-date with the latest data
@@ -67,6 +66,20 @@ export const ActionDrawer: React.FC<Props> = () => {
     const arr = buildCard(item);
 
     return arr;
+  }, [selectedItem]);
+
+  const conditionsData: ConditionDetailsProps = useMemo(() => {
+    if (!selectedItem) return { conditions: [] };
+
+    const { item } = selectedItem as { item: ActionDataParsed };
+
+    return {
+      conditions:
+        item?.conditions?.map(({ status, message }) => ({
+          status: ['false', 'error'].includes(String(status).toLowerCase()) ? NOTIFICATION_TYPE.ERROR : NOTIFICATION_TYPE.SUCCESS,
+          message,
+        })) || [],
+    };
   }, [selectedItem]);
 
   const thisAction = useMemo(() => {
@@ -136,7 +149,7 @@ export const ActionDrawer: React.FC<Props> = () => {
         </FormContainer>
       ) : (
         <DataContainer>
-          <ConditionDetails conditions={item?.conditions || []} />
+          <ConditionDetails conditions={conditionsData.conditions} />
           <DataCard title={DATA_CARDS.ACTION_DETAILS} data={cardData} />
         </DataContainer>
       )}

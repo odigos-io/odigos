@@ -1,11 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useModalStore } from '@/store';
-import { getEntityIcon } from '@/utils';
-import { useOnClickOutside } from '@/hooks';
-import { Button, Text } from '@/reuseable-components';
-import { PlusIcon, Theme } from '@odigos/ui-components';
 import styled, { css, useTheme } from 'styled-components';
-import { type DropdownOption, OVERVIEW_ENTITY_TYPES } from '@/types';
+import { Button, type DropdownProps, ENTITY_TYPES, getEntityIcon, PlusIcon, Text, Theme, useOnClickOutside } from '@odigos/ui-components';
 
 // Styled components for the dropdown UI
 const Container = styled.div`
@@ -59,15 +55,15 @@ const ButtonText = styled(Text)`
 `;
 
 // Default options for the dropdown
-const DEFAULT_OPTIONS: DropdownOption[] = [
-  { id: OVERVIEW_ENTITY_TYPES.RULE, value: 'Instrumentation Rule' },
-  { id: OVERVIEW_ENTITY_TYPES.SOURCE, value: 'Source' },
-  { id: OVERVIEW_ENTITY_TYPES.ACTION, value: 'Action' },
-  { id: OVERVIEW_ENTITY_TYPES.DESTINATION, value: 'Destination' },
+const DEFAULT_OPTIONS: DropdownProps['options'] = [
+  { id: ENTITY_TYPES.INSTRUMENTATION_RULE, value: 'Instrumentation Rule' },
+  { id: ENTITY_TYPES.SOURCE, value: 'Source' },
+  { id: ENTITY_TYPES.ACTION, value: 'Action' },
+  { id: ENTITY_TYPES.DESTINATION, value: 'Destination' },
 ];
 
 interface Props {
-  options?: DropdownOption[];
+  options?: DropdownProps['options'];
   placeholder?: string;
 }
 
@@ -97,7 +93,7 @@ export const AddEntity: React.FC<Props> = ({ options = DEFAULT_OPTIONS, placehol
     }
   }, []);
 
-  const handleSelect = (option: DropdownOption) => {
+  const handleSelect = (option: DropdownProps['options'][0]) => {
     setCurrentModal(option.id);
     setIsDropdownOpen(false); // ??? maybe remove this line (for fast-toggle between modals)
   };
@@ -112,7 +108,7 @@ export const AddEntity: React.FC<Props> = ({ options = DEFAULT_OPTIONS, placehol
       {isDropdownOpen && (
         <DropdownListContainer>
           {options.map((option) => {
-            const Icon = getEntityIcon(option.id as OVERVIEW_ENTITY_TYPES);
+            const Icon = getEntityIcon(option.id as ENTITY_TYPES);
 
             return (
               <DropdownItem key={option.id} data-id={`add-${option.id}`} $selected={currentModal === option.id} onClick={() => handleSelect(option)}>

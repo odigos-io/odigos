@@ -3,9 +3,10 @@ import { useConfig } from '../config';
 import { GET_ACTIONS } from '@/graphql';
 import { useMutation, useQuery } from '@apollo/client';
 import { useFilterStore, useNotificationStore } from '@/store';
+import { ACTION, DISPLAY_TITLES, FORM_ALERTS } from '@/utils';
 import { CREATE_ACTION, DELETE_ACTION, UPDATE_ACTION } from '@/graphql/mutations';
-import { ACTION, DISPLAY_TITLES, FORM_ALERTS, getSseTargetFromId, safeJsonParse } from '@/utils';
-import { type ActionItem, type ComputePlatform, NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES, type ActionInput, type ActionsType } from '@/types';
+import { type ActionItem, type ComputePlatform, type ActionInput } from '@/types';
+import { ACTION_TYPE, ENTITY_TYPES, getSseTargetFromId, NOTIFICATION_TYPE, safeJsonParse } from '@odigos/ui-components';
 
 interface UseActionCrudParams {
   onSuccess?: (type: string) => void;
@@ -22,8 +23,8 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
       type,
       title,
       message,
-      crdType: OVERVIEW_ENTITY_TYPES.ACTION,
-      target: id ? getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.ACTION) : undefined,
+      crdType: ENTITY_TYPES.ACTION,
+      target: id ? getSseTargetFromId(id, ENTITY_TYPES.ACTION) : undefined,
       hideFromHistory,
     });
   };
@@ -48,6 +49,10 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
   const mapped = useMemo(() => {
     return (data?.computePlatform?.actions || []).map((item) => {
       const parsedSpec = typeof item.spec === 'string' ? safeJsonParse(item.spec, {} as ActionItem) : item.spec;
+
+      // format signals to lower
+      parsedSpec.signals = parsedSpec.signals.map((str) => str.toLowerCase());
+
       return { ...item, spec: parsedSpec };
     });
   }, [data]);
@@ -79,7 +84,7 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
     onError: (error) => handleError(ACTION.DELETE, error.message),
     onCompleted: (res, req) => {
       const id = req?.variables?.id;
-      removeNotifications(getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.ACTION));
+      removeNotifications(getSseTargetFromId(id, ENTITY_TYPES.ACTION));
       handleComplete(ACTION.DELETE, `Action "${id}" deleted`, id);
     },
   });
@@ -94,17 +99,19 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
-        createAction({ variables: { action } });
+        // format signals to upper
+        createAction({ variables: { action: { ...action, signals: action.signals.map((signal) => signal.toUpperCase()) } } });
       }
     },
     updateAction: (id: string, action: ActionInput) => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
-        updateAction({ variables: { id, action } });
+        // format signals to upper
+        updateAction({ variables: { id, action: { ...action, signals: action.signals.map((signal) => signal.toUpperCase()) } } });
       }
     },
-    deleteAction: (id: string, actionType: ActionsType) => {
+    deleteAction: (id: string, actionType: ACTION_TYPE) => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
