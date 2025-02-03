@@ -1,6 +1,7 @@
 import { DISPLAY_TITLES } from '@/utils';
+import { compareCondition, safeJsonParse } from '@odigos/ui-utils';
+import { DATA_CARD_FIELD_TYPES, DataCardFieldsProps } from '@odigos/ui-components';
 import type { ActualDestination, DestinationDetailsResponse, ExportedSignals } from '@/types';
-import { compareCondition, DATA_CARD_FIELD_TYPES, DataCardFieldsProps, safeJsonParse } from '@odigos/ui-components';
 
 const buildMonitorsList = (exportedSignals: ExportedSignals): string =>
   Object.keys(exportedSignals)
@@ -26,7 +27,6 @@ const buildCard = (destination: ActualDestination, destinationTypeDetails?: Dest
 
     const shouldHide = !!hideFromReadData?.length
       ? compareCondition(
-          // @ts-ignore
           hideFromReadData,
           (destinationTypeDetails?.fields || []).map((field) => ({ name: field.name, value: parsedFields[field.name] ?? null })),
         )

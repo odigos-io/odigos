@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import BaseNode from './base-node';
 import styled from 'styled-components';
+import { type SVG } from '@odigos/ui-icons';
 import { useNodeDataFlowHandlers } from '@/hooks';
 import { type Node, type NodeProps } from '@xyflow/react';
 import { type K8sActualSource, NODE_TYPES } from '@/types';
-import { ENTITY_TYPES, HEALTH_STATUS, type SVG, type WorkloadId } from '@odigos/ui-components';
+import { ENTITY_TYPES, HEALTH_STATUS, type WorkloadId } from '@odigos/ui-utils';
 
 interface Props
   extends NodeProps<

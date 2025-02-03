@@ -5,8 +5,8 @@ import { useActionCRUD } from '../actions';
 import { OVERVIEW_NODE_TYPES } from '@/types';
 import { useDestinationCRUD } from '../destinations';
 import { useDrawerStore, useModalStore } from '@/store';
+import { ENTITY_TYPES, type WorkloadId } from '@odigos/ui-utils';
 import { useInstrumentationRuleCRUD } from '../instrumentation-rules';
-import { ENTITY_TYPES, type WorkloadId } from '@odigos/ui-components';
 
 export const useNodeDataFlowHandlers = () => {
   const { sources } = useSourceCRUD();

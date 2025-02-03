@@ -1,11 +1,14 @@
 import React from 'react';
 import { useConfig } from '@/hooks';
+import { Theme } from '@odigos/ui-theme';
 import { PlatformTitle } from './cp-title';
 import { FORM_ALERTS, SLACK_LINK } from '@/utils';
 import { NotificationManager } from '@/components';
 import styled, { useTheme } from 'styled-components';
+import { NOTIFICATION_TYPE, PLATFORM_TYPE } from '@odigos/ui-utils';
+import { OdigosLogoText, SlackLogo, TerminalIcon } from '@odigos/ui-icons';
+import { FlexRow, IconButton, Status, ToggleDarkMode, Tooltip } from '@odigos/ui-components';
 import { DRAWER_OTHER_TYPES, useDarkModeStore, useDrawerStore, useStatusStore } from '@/store';
-import { FlexRow, IconButton, NOTIFICATION_TYPE, OdigosLogoText, PLATFORM_TYPE, SlackLogo, Status, TerminalIcon, Theme, ToggleDarkMode, Tooltip } from '@odigos/ui-components';
 
 interface MainHeaderProps {}
 

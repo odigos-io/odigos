@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { Dropdown, MONITORS_OPTIONS, type DropdownProps } from '@odigos/ui-components';
+import { MONITORS_OPTIONS } from '@odigos/ui-utils';
+import { Dropdown, type DropdownProps } from '@odigos/ui-components';
 
 interface Props {
   title?: string;

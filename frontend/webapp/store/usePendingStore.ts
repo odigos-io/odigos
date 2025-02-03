@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { ENTITY_TYPES, type WorkloadId } from '@odigos/ui-components';
+import { ENTITY_TYPES, type WorkloadId } from '@odigos/ui-utils';
 
 // This store is used to keep track of pending items that are being created, updated, or deleted.
 // This is used for entities that require an SSE event to be sent from the backend after a CRUD action.
