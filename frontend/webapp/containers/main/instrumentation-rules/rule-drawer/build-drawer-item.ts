@@ -1,4 +1,4 @@
-import { deriveTypeFromRule } from '@/utils';
+import { deriveTypeFromRule } from '@odigos/ui-components';
 import { type InstrumentationRuleSpec, type InstrumentationRuleInput, PayloadCollectionType, CodeAttributesType } from '@/types';
 
 const buildDrawerItem = (id: string, formData: InstrumentationRuleInput, drawerItem: InstrumentationRuleSpec): InstrumentationRuleSpec => {

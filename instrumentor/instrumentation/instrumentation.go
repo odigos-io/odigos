@@ -2,7 +2,6 @@ package instrumentation
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -12,37 +11,35 @@ import (
 
 	"github.com/odigos-io/odigos/common"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 var (
 	ErrNoDefaultSDK = errors.New("no default sdks found")
 )
 
-func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, runtimeDetails []odigosv1.RuntimeDetailsByContainer, defaultSdks map[common.ProgrammingLanguage]common.OtelSdk, targetObj client.Object,
-	logger logr.Logger, agentsCanRunConcurrently bool) (error, bool, bool) {
+func ConfigureInstrumentationForPod(original *corev1.PodTemplateSpec, runtimeDetails []odigosv1.RuntimeDetailsByContainer, targetObj client.Object,
+	logger logr.Logger, agentsCanRunConcurrently bool) (bool, bool, error) {
 	// delete any existing instrumentation devices.
 	// this is necessary for example when migrating from community to enterprise,
 	// and we need to cleanup the community device before adding the enterprise one.
 	RevertInstrumentationDevices(original)
 
-	deviceApplied := false
-	deviceSkippedDueToOtherAgent := false
+	foundContainerWithSupportedLanguage := false
+	instrumentationSkippedDueToOtherAgent := false
 	var modifiedContainers []corev1.Container
 
 	for _, container := range original.Spec.Containers {
 		containerLanguage := getLanguageOfContainer(runtimeDetails, container.Name)
 		containerHaveOtherAgent := getContainerOtherAgents(runtimeDetails, container.Name)
-		libcType := getLibCTypeOfContainer(runtimeDetails, container.Name)
 
 		// By default, Odigos does not run alongside other agents.
 		// However, if configured in the odigos-config, it can be allowed to run in parallel.
 		if containerHaveOtherAgent != nil && !agentsCanRunConcurrently {
-			logger.Info("Container is running other agent, skip applying instrumentation device", "agent", containerHaveOtherAgent.Name, "container", container.Name)
+			logger.Info("Container is running other agent, skip applying instrumentation label", "agent", containerHaveOtherAgent.Name, "container", container.Name)
 
 			// Not actually modifying the container, but we need to append it to the list.
 			modifiedContainers = append(modifiedContainers, container)
-			deviceSkippedDueToOtherAgent = true
+			instrumentationSkippedDueToOtherAgent = true
 			continue
 		}
 
@@ -53,22 +50,10 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 			// TODO: this will make it look as if instrumentation device is applied,
 			// which is incorrect
 			modifiedContainers = append(modifiedContainers, container)
+
 			continue
 		}
-
-		// Find and apply the appropriate SDK for the container language.
-		otelSdk, found := defaultSdks[containerLanguage]
-		if !found {
-			return fmt.Errorf("%w for language: %s, container:%s", ErrNoDefaultSDK, containerLanguage, container.Name), deviceApplied, deviceSkippedDueToOtherAgent
-		}
-
-		instrumentationDeviceName := common.InstrumentationDeviceName(containerLanguage, otelSdk, libcType)
-		if container.Resources.Limits == nil {
-			container.Resources.Limits = make(map[corev1.ResourceName]resource.Quantity)
-		}
-		container.Resources.Limits[corev1.ResourceName(instrumentationDeviceName)] = resource.MustParse("1")
-		deviceApplied = true
-
+		foundContainerWithSupportedLanguage = true
 		modifiedContainers = append(modifiedContainers, container)
 	}
 
@@ -76,7 +61,7 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 		original.Spec.Containers = modifiedContainers
 	}
 
-	return nil, deviceApplied, deviceSkippedDueToOtherAgent
+	return instrumentationSkippedDueToOtherAgent, foundContainerWithSupportedLanguage, nil
 }
 
 func RevertInstrumentationDevices(original *corev1.PodTemplateSpec) bool {
@@ -117,16 +102,6 @@ func getContainerOtherAgents(runtimeDetails []odigosv1.RuntimeDetailsByContainer
 			}
 		}
 	}
-	return nil
-}
-
-func getLibCTypeOfContainer(runtimeDetails []odigosv1.RuntimeDetailsByContainer, containerName string) *common.LibCType {
-	for _, rd := range runtimeDetails {
-		if rd.ContainerName == containerName {
-			return rd.LibCType
-		}
-	}
-
 	return nil
 }
 

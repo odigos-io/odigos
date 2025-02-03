@@ -1,10 +1,9 @@
 'use client';
-import './globals.css';
 import React from 'react';
 import { METADATA } from '@/utils';
 import { ApolloWrapper } from '@/lib';
-import { useDarkModeStore } from '@/store';
 import { ThemeProvider } from '@/styles';
+import { useDarkModeStore } from '@/store';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const { darkMode } = useDarkModeStore();
@@ -18,7 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <title>{METADATA.title}</title>
       </head>
       <ApolloWrapper>
-        <ThemeProvider>
+        <ThemeProvider darkMode={darkMode}>
           <body
             suppressHydrationWarning={true}
             style={{

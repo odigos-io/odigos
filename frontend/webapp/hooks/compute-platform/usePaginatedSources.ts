@@ -2,8 +2,9 @@ import { useEffect } from 'react';
 import { ACTION } from '@/utils';
 import { GET_SOURCES } from '@/graphql';
 import { useLazyQuery } from '@apollo/client';
+import { type ComputePlatform } from '@/types';
+import { NOTIFICATION_TYPE } from '@odigos/ui-components';
 import { useNotificationStore, usePaginatedStore } from '@/store';
-import { NOTIFICATION_TYPE, type ComputePlatform } from '@/types';
 
 export const usePaginatedSources = () => {
   const { addNotification } = useNotificationStore();

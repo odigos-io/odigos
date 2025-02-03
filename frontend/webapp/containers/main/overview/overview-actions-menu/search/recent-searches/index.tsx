@@ -1,4 +1,4 @@
-import { Text } from '@/reuseable-components';
+import { Text } from '@odigos/ui-components';
 import { AbsoluteContainer } from '../../styled';
 
 export const RecentSearches = () => {

@@ -53,11 +53,6 @@ export const BACKEND_BOOLEAN = {
   TRUE: 'True',
 };
 
-export const INSTUMENTATION_STATUS = {
-  INSTRUMENTED: 'Instrumented',
-  UNINSTRUMENTED: 'Uninstrumented',
-};
-
 export const DATA_CARDS = {
   ACTION_DETAILS: 'Action Details',
   RULE_DETAILS: 'Instrumentation Rule Details',

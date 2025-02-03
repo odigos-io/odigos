@@ -5,11 +5,12 @@ metadata:
   name: deployment-nodejs-unsupported-version
 status:
   conditions:
-    - message: "javascript runtime version not supported by OpenTelemetry SDK. Found:
-        8.17.0, supports: 14.0.0"
+    - message:
+        'javascript runtime version not supported by OpenTelemetry SDK. Found:
+        8.17.0, supports: 14.0.0'
       (observedGeneration != null): true
       reason: RuntimeVersionNotSupported
-      status: "False"
+      status: 'False'
       type: AppliedInstrumentationDevice
 ---
 # expecting injection of instrumentation device to be successful since the runtime version was not detected
@@ -20,10 +21,10 @@ metadata:
   name: deployment-nodejs-very-old-version
 status:
   conditions:
-    - message: "Instrumentation device applied successfully"
+    - message: 'Odigos instrumentation is enabled'
       (observedGeneration != null): true
-      reason: InstrumentationDeviceApplied
-      status: "True"
+      reason: InstrumentationEnabled
+      status: 'True'
       type: AppliedInstrumentationDevice
 ---
 # expecting injection of instrumentation device to be successful since the runtime version is supported
@@ -34,10 +35,10 @@ metadata:
   name: deployment-nodejs-minimum-version
 status:
   conditions:
-    - message: "Instrumentation device applied successfully"
+    - message: 'Odigos instrumentation is enabled'
       (observedGeneration != null): true
-      reason: InstrumentationDeviceApplied
-      status: "True"
+      reason: InstrumentationEnabled
+      status: 'True'
       type: AppliedInstrumentationDevice
 ---
 apiVersion: odigos.io/v1alpha1
@@ -54,7 +55,7 @@ status:
     - key: telemetry.sdk.language
       value: nodejs
     - key: process.runtime.version
-      value: "14.0.0"
+      value: '14.0.0'
     - key: telemetry.distro.version
       value: e2e-test
     - key: process.pid
@@ -64,7 +65,7 @@ status:
     - key: k8s.container.name
       (value != null): true
     - key: k8s.pod.name
-      (value != null): true      
+      (value != null): true
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -73,10 +74,10 @@ metadata:
   name: deployment-nodejs-latest-version
 status:
   conditions:
-    - message: "Instrumentation device applied successfully"
+    - message: 'Odigos instrumentation is enabled'
       (observedGeneration != null): true
-      reason: InstrumentationDeviceApplied
-      status: "True"
+      reason: InstrumentationEnabled
+      status: 'True'
       type: AppliedInstrumentationDevice
 ---
 apiVersion: odigos.io/v1alpha1
@@ -103,7 +104,7 @@ status:
     - key: k8s.container.name
       (value != null): true
     - key: k8s.pod.name
-      (value != null): true      
+      (value != null): true
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -112,10 +113,10 @@ metadata:
   name: deployment-nodejs-dockerfile-env
 status:
   conditions:
-    - message: "Instrumentation device applied successfully"
+    - message: 'Odigos instrumentation is enabled'
       (observedGeneration != null): true
-      reason: InstrumentationDeviceApplied
-      status: "True"
+      reason: InstrumentationEnabled
+      status: 'True'
       type: AppliedInstrumentationDevice
 ---
 apiVersion: odigos.io/v1alpha1
@@ -132,7 +133,7 @@ status:
     - key: telemetry.sdk.language
       value: nodejs
     - key: process.runtime.version
-      value: "20.17.0"
+      value: '20.17.0'
     - key: telemetry.distro.version
       value: e2e-test
     - key: process.pid
@@ -142,7 +143,7 @@ status:
     - key: k8s.container.name
       (value != null): true
     - key: k8s.pod.name
-      (value != null): true      
+      (value != null): true
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -151,10 +152,10 @@ metadata:
   name: deployment-nodejs-manifest-env
 status:
   conditions:
-    - message: "Instrumentation device applied successfully"
+    - message: 'Odigos instrumentation is enabled'
       (observedGeneration != null): true
-      reason: InstrumentationDeviceApplied
-      status: "True"
+      reason: InstrumentationEnabled
+      status: 'True'
       type: AppliedInstrumentationDevice
 ---
 apiVersion: odigos.io/v1alpha1
@@ -171,7 +172,7 @@ status:
     - key: telemetry.sdk.language
       value: nodejs
     - key: process.runtime.version
-      value: "20.17.0"
+      value: '20.17.0'
     - key: telemetry.distro.version
       value: e2e-test
     - key: process.pid
@@ -181,7 +182,7 @@ status:
     - key: k8s.container.name
       (value != null): true
     - key: k8s.pod.name
-      (value != null): true      
+      (value != null): true
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -190,10 +191,10 @@ metadata:
   name: deployment-cpp-http-server
 status:
   conditions:
-    - message: "Instrumentation device applied successfully"
+    - message: 'Odigos instrumentation is enabled'
       (observedGeneration != null): true
-      reason: InstrumentationDeviceApplied
-      status: "True"
+      reason: InstrumentationEnabled
+      status: 'True'
       type: AppliedInstrumentationDevice
 ---
 apiVersion: odigos.io/v1alpha1
@@ -203,10 +204,10 @@ metadata:
   name: deployment-java-supported-version
 status:
   conditions:
-    - message: "Instrumentation device applied successfully"
+    - message: 'Odigos instrumentation is enabled'
       (observedGeneration != null): true
-      reason: InstrumentationDeviceApplied
-      status: "True"
+      reason: InstrumentationEnabled
+      status: 'True'
       type: AppliedInstrumentationDevice
 ---
 apiVersion: odigos.io/v1alpha1
@@ -216,10 +217,10 @@ metadata:
   name: deployment-java-azul
 status:
   conditions:
-    - message: "Instrumentation device applied successfully"
+    - message: 'Odigos instrumentation is enabled'
       (observedGeneration != null): true
-      reason: InstrumentationDeviceApplied
-      status: "True"
+      reason: InstrumentationEnabled
+      status: 'True'
       type: AppliedInstrumentationDevice
 ---
 apiVersion: odigos.io/v1alpha1
@@ -229,10 +230,10 @@ metadata:
   name: deployment-java-supported-docker-env
 status:
   conditions:
-    - message: "Instrumentation device applied successfully"
+    - message: 'Odigos instrumentation is enabled'
       (observedGeneration != null): true
-      reason: InstrumentationDeviceApplied
-      status: "True"
+      reason: InstrumentationEnabled
+      status: 'True'
       type: AppliedInstrumentationDevice
 ---
 apiVersion: odigos.io/v1alpha1
@@ -242,10 +243,10 @@ metadata:
   name: deployment-java-supported-manifest-env
 status:
   conditions:
-    - message: "Instrumentation device applied successfully"
+    - message: 'Odigos instrumentation is enabled'
       (observedGeneration != null): true
-      reason: InstrumentationDeviceApplied
-      status: "True"
+      reason: InstrumentationEnabled
+      status: 'True'
       type: AppliedInstrumentationDevice
 ---
 apiVersion: odigos.io/v1alpha1
@@ -255,10 +256,10 @@ metadata:
   name: deployment-java-latest-version
 status:
   conditions:
-    - message: "Instrumentation device applied successfully"
+    - message: 'Odigos instrumentation is enabled'
       (observedGeneration != null): true
-      reason: InstrumentationDeviceApplied
-      status: "True"
+      reason: InstrumentationEnabled
+      status: 'True'
       type: AppliedInstrumentationDevice
 ---
 apiVersion: odigos.io/v1alpha1
@@ -268,10 +269,10 @@ metadata:
   name: deployment-java-old-version
 status:
   conditions:
-    - message: "Instrumentation device applied successfully"
+    - message: 'Odigos instrumentation is enabled'
       (observedGeneration != null): true
-      reason: InstrumentationDeviceApplied
-      status: "True"
+      reason: InstrumentationEnabled
+      status: 'True'
       type: AppliedInstrumentationDevice
 ---
 apiVersion: odigos.io/v1alpha1
@@ -281,10 +282,10 @@ metadata:
   name: deployment-python-alpine
 status:
   conditions:
-    - message: "Instrumentation device applied successfully"
+    - message: 'Odigos instrumentation is enabled'
       (observedGeneration != null): true
-      reason: InstrumentationDeviceApplied
-      status: "True"
+      reason: InstrumentationEnabled
+      status: 'True'
       type: AppliedInstrumentationDevice
 ---
 apiVersion: odigos.io/v1alpha1
@@ -294,10 +295,10 @@ metadata:
   name: deployment-python-latest-version
 status:
   conditions:
-    - message: "Instrumentation device applied successfully"
+    - message: 'Odigos instrumentation is enabled'
       (observedGeneration != null): true
-      reason: InstrumentationDeviceApplied
-      status: "True"
+      reason: InstrumentationEnabled
+      status: 'True'
       type: AppliedInstrumentationDevice
 ---
 apiVersion: odigos.io/v1alpha1
@@ -307,10 +308,10 @@ metadata:
   name: deployment-python-min-version
 status:
   conditions:
-    - message: "Instrumentation device applied successfully"
+    - message: 'Odigos instrumentation is enabled'
       (observedGeneration != null): true
-      reason: InstrumentationDeviceApplied
-      status: "True"
+      reason: InstrumentationEnabled
+      status: 'True'
       type: AppliedInstrumentationDevice
 ---
 apiVersion: odigos.io/v1alpha1
@@ -320,10 +321,10 @@ metadata:
   name: deployment-python-not-supported
 status:
   conditions:
-    - message: "python runtime version not supported by OpenTelemetry SDK. Found: 3.6.15, supports: 3.8.0"
+    - message: 'python runtime version not supported by OpenTelemetry SDK. Found: 3.6.15, supports: 3.8.0'
       (observedGeneration != null): true
       reason: RuntimeVersionNotSupported
-      status: "False"
+      status: 'False'
       type: AppliedInstrumentationDevice
 ---
 apiVersion: odigos.io/v1alpha1
@@ -333,10 +334,10 @@ metadata:
   name: deployment-python-other-agent
 status:
   conditions:
-    - message: "device not added to any container due to the presence of another agent"
+    - message: 'Odigos instrumentation failed to apply'
       (observedGeneration != null): true
       reason: ErrApplyingInstrumentationDevice
-      status: "False"
+      status: 'False'
       type: AppliedInstrumentationDevice
 ---
 apiVersion: odigos.io/v1alpha1
@@ -353,13 +354,13 @@ status:
     - key: process.pid
       (value != null): true
     - key: telemetry.sdk.language
-      value: python      
+      value: python
     - key: k8s.namespace.name
       (value != null): true
     - key: k8s.container.name
       (value != null): true
     - key: k8s.pod.name
-      (value != null): true         
+      (value != null): true
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationInstance
@@ -381,7 +382,7 @@ status:
     - key: k8s.container.name
       (value != null): true
     - key: k8s.pod.name
-      (value != null): true          
+      (value != null): true
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationInstance
@@ -403,4 +404,4 @@ status:
     - key: k8s.container.name
       (value != null): true
     - key: k8s.pod.name
-      (value != null): true          
+      (value != null): true

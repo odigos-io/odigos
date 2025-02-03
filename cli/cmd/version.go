@@ -4,11 +4,11 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
-	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/getters"
 	"github.com/spf13/cobra"
 )
@@ -31,31 +31,39 @@ var versionCmd = &cobra.Command{
 	Short: "Print odigos version.",
 	Long: `This command is used to print the Odigos version.
 Both the CLI version and the Odigos components in your cluster will be printed.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
+
+		odigosClusterVersion, clusterVersionErr := getOdigosVersionInCluster(cmd)
+
 		cliFlag, _ := cmd.Flags().GetBool(cliFlag)
 		clusterFlag, _ := cmd.Flags().GetBool(clusterFlag)
 
+		// check for errors - both flags cannot be used at the same time
+		if cliFlag && clusterFlag {
+			return errors.New("Only one of the flags --cli or --cluster can be used at a time")
+		}
+
+		// handle case where only one of the flags is used, and print the version accordingly or return an error
 		if cliFlag {
 			fmt.Printf("%s\n", OdigosVersion)
+			return nil
+		} else if clusterFlag {
+			if clusterVersionErr != nil {
+				return clusterVersionErr
+			}
+			fmt.Printf("%s\n", odigosClusterVersion)
+			return nil
 		}
 
-		OdigosClusterVersion, err := getOdigosVersionInCluster(cmd)
-
-		if clusterFlag && err == nil {
-			fmt.Printf("%s\n", OdigosClusterVersion)
+		fmt.Printf("Odigos CLI: \n  Version: %s\n  GitCommit: %s\n  BuildDate: %s\n\n", OdigosVersion, OdigosCommit, OdigosDate)
+		var odigosClusterVersionText string
+		if clusterVersionErr != nil {
+			odigosClusterVersionText = fmt.Sprintf("Status: %s", clusterVersionErr.Error())
+		} else {
+			odigosClusterVersionText = fmt.Sprintf("Version: %s", odigosClusterVersion)
 		}
-
-		if cliFlag || clusterFlag {
-			return
-		}
-
-		if err != nil {
-			fmt.Printf("%s\n", err)
-		}
-
-		fmt.Printf("Odigos Cli Version: version.Info{Version:'%s', GitCommit:'%s', BuildDate:'%s'}\n", OdigosVersion, OdigosCommit, OdigosDate)
-		fmt.Printf("Odigos Version (in cluster): version.Info{Version:'%s'}\n", OdigosClusterVersion)
-
+		fmt.Printf("Odigos in Cluster:\n  %s\n", odigosClusterVersionText)
+		return nil
 	},
 	Example: `
 # Print the version of odigos CLI and Odigos deployment in your cluster
@@ -63,29 +71,28 @@ odigos version
 `,
 }
 
+// returns the odigos version in the cluster (as v1.2.3) or err if the version cannot be determined
 func getOdigosVersionInCluster(cmd *cobra.Command) (string, error) {
-	client, ns, err := getOdigosKubeClientAndNamespace(cmd)
+
+	// get the client which is generated from the root command
+	ctx := cmd.Context()
+	client, err := cmdcontext.KubeClientFromContext(ctx)
 	if err != nil {
-		return "", err
+		return "", errors.New("No Kubernetes cluster found")
 	}
 
-	return getters.GetOdigosVersionInClusterFromConfigMap(cmd.Context(), client.Clientset, ns)
-}
-
-func getOdigosKubeClientAndNamespace(cmd *cobra.Command) (*kube.Client, string, error) {
-	ctx := cmd.Context()
-	client := cmdcontext.KubeClientFromContextOrExit(ctx)
-
-	ns, err := resources.GetOdigosNamespace(client, ctx)
+	odigosns, err := resources.GetOdigosNamespace(client, ctx)
 	if err != nil {
 		if resources.IsErrNoOdigosNamespaceFound(err) {
-			err = fmt.Errorf("Odigos is NOT yet installed in the current cluster")
+			return "", errors.New("Not Installed")
 		} else {
-			err = fmt.Errorf("Error detecting Odigos namespace in the current cluster")
+			return "", errors.New("Multiple Odigos installations found")
 		}
 	}
 
-	return client, ns, err
+	v, err := getters.GetOdigosVersionInClusterFromConfigMap(ctx, client.Clientset, odigosns)
+
+	return v, err
 }
 
 func init() {

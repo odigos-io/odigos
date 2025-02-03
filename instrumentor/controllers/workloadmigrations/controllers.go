@@ -12,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/go-logr/logr"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -28,7 +29,7 @@ func (n *NamespacesReconciler) Reconcile(ctx context.Context, request ctrl.Reque
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	return migrateFromWorkload(ctx, n.Client, &ns, workload.WorkloadKindNamespace)
+	return migrateFromWorkload(ctx, n.Client, &ns, k8sconsts.WorkloadKindNamespace)
 }
 
 type DeploymentReconciler struct {
@@ -36,7 +37,7 @@ type DeploymentReconciler struct {
 }
 
 func (r *DeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	return reconcileWorkload(ctx, r.Client, workload.WorkloadKindDeployment, req)
+	return reconcileWorkload(ctx, r.Client, k8sconsts.WorkloadKindDeployment, req)
 }
 
 type DaemonSetReconciler struct {
@@ -44,7 +45,7 @@ type DaemonSetReconciler struct {
 }
 
 func (r *DaemonSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	return reconcileWorkload(ctx, r.Client, workload.WorkloadKindDaemonSet, req)
+	return reconcileWorkload(ctx, r.Client, k8sconsts.WorkloadKindDaemonSet, req)
 }
 
 type StatefulSetReconciler struct {
@@ -52,10 +53,10 @@ type StatefulSetReconciler struct {
 }
 
 func (r *StatefulSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	return reconcileWorkload(ctx, r.Client, workload.WorkloadKindStatefulSet, req)
+	return reconcileWorkload(ctx, r.Client, k8sconsts.WorkloadKindStatefulSet, req)
 }
 
-func migrateFromWorkload(ctx context.Context, k8sClient client.Client, obj client.Object, objKind workload.WorkloadKind) (ctrl.Result, error) {
+func migrateFromWorkload(ctx context.Context, k8sClient client.Client, obj client.Object, objKind k8sconsts.WorkloadKind) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	disable := false
 	disabled := workload.IsInstrumentationDisabledExplicitly(obj)
@@ -92,7 +93,7 @@ func migrateFromWorkload(ctx context.Context, k8sClient client.Client, obj clien
 	return ctrl.Result{}, nil
 }
 
-func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind workload.WorkloadKind, req ctrl.Request) (ctrl.Result, error) {
+func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind k8sconsts.WorkloadKind, req ctrl.Request) (ctrl.Result, error) {
 	obj := workload.ClientObjectFromWorkloadKind(objKind)
 	err := k8sClient.Get(ctx, types.NamespacedName{Name: req.Name, Namespace: req.Namespace}, obj)
 	if err != nil {
@@ -109,7 +110,7 @@ func createOrUpdateSourceForObject(ctx context.Context,
 	logger logr.Logger,
 	k8sClient client.Client,
 	obj client.Object,
-	kind workload.WorkloadKind,
+	kind k8sconsts.WorkloadKind,
 	disableInstrumentation bool,
 	serviceNameFromWorkload string) error {
 	if !workload.IsValidWorkloadKind(kind) {
@@ -117,7 +118,7 @@ func createOrUpdateSourceForObject(ctx context.Context,
 	}
 
 	namespace := obj.GetNamespace()
-	if namespace == "" && kind == workload.WorkloadKindNamespace {
+	if namespace == "" && kind == k8sconsts.WorkloadKindNamespace {
 		namespace = obj.GetName()
 	}
 
@@ -127,7 +128,7 @@ func createOrUpdateSourceForObject(ctx context.Context,
 	}
 	var source *v1alpha1.Source
 
-	if kind == workload.WorkloadKindNamespace {
+	if kind == k8sconsts.WorkloadKindNamespace {
 		if sources.Namespace != nil {
 			source = sources.Namespace
 		}
@@ -146,7 +147,7 @@ func createOrUpdateSourceForObject(ctx context.Context,
 				Namespace:    namespace,
 			},
 			Spec: v1alpha1.SourceSpec{
-				Workload: workload.PodWorkload{
+				Workload: k8sconsts.PodWorkload{
 					Name:      obj.GetName(),
 					Namespace: namespace,
 					Kind:      kind,
@@ -162,7 +163,7 @@ func createOrUpdateSourceForObject(ctx context.Context,
 	// If that happens once, and the reported name was taken from the annotation,
 	// any more changes to the annotation will not be reflected in the source.
 	// This is valid, since the annotation is deprecated and we want to encourage users to use Source CR.
-	if kind != workload.WorkloadKindNamespace && source.Spec.OtelServiceName == "" && serviceNameFromWorkload != "" {
+	if kind != k8sconsts.WorkloadKindNamespace && source.Spec.OtelServiceName == "" && serviceNameFromWorkload != "" {
 		source.Spec.OtelServiceName = serviceNameFromWorkload
 		logger.Info("legacy reported name annotation is deprecated; migrating to source OtelServiceName field",
 			"name", obj.GetName(),

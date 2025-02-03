@@ -18,6 +18,9 @@ data:
     {{- if .Values.ui.uiMode }}
     uiMode: {{ .Values.ui.uiMode }}
     {{- end }}
+    {{- if .Values.ui.centralBackendURL }}
+    centralBackendURL: {{ .Values.ui.centralBackendURL }}
+    {{- end }}
     {{- if .Values.collectorGateway }}
     collectorGateway:
       {{- with .Values.collectorGateway.minReplicas }}

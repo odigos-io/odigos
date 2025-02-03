@@ -4,12 +4,11 @@ import { useAppStore } from '@/store';
 import styled from 'styled-components';
 import { SideMenu } from '@/components';
 import { ACTION, INPUT_TYPES } from '@/utils';
-import { ArrowIcon } from '@odigos/ui-components';
 import { DestinationFormBody } from '../destination-form-body';
 import { ChooseDestinationBody } from './choose-destination-body';
+import { useDestinationCRUD, useDestinationFormData } from '@/hooks';
 import type { ConfiguredDestination, DestinationTypeItem } from '@/types';
-import { useDestinationCRUD, useDestinationFormData, useKeyDown } from '@/hooks';
-import { Modal, type NavigationButtonProps, NavigationButtons } from '@/reuseable-components';
+import { ArrowIcon, Modal, NavigationButtons, NavigationButtonsProps, useKeyDown } from '@odigos/ui-components';
 
 interface AddDestinationModalProps {
   isOnboarding?: boolean;
@@ -92,7 +91,7 @@ export const DestinationModal: React.FC<AddDestinationModalProps> = ({ isOnboard
   };
 
   const renderHeaderButtons = () => {
-    const buttons: NavigationButtonProps[] = [
+    const buttons: NavigationButtonsProps['buttons'] = [
       {
         label: 'DONE',
         variant: 'primary' as const,

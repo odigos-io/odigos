@@ -22,9 +22,9 @@ import (
 )
 
 const (
-	traceSizeMetricName  = "processor_odigostrafficmetrics_trace_data_size"
-	metricSizeMetricName = "processor_odigostrafficmetrics_metric_data_size"
-	logSizeMetricName    = "processor_odigostrafficmetrics_log_data_size"
+	traceSizeMetricName  = "otelcol_odigos_trace_data_size"
+	metricSizeMetricName = "otelcol_odigos_metric_data_size"
+	logSizeMetricName    = "otelcol_odigos_log_data_size"
 )
 
 var (

@@ -1,23 +1,20 @@
 package webhookenvinjector
 
 import (
-	"context"
-	"fmt"
 	"strings"
 
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/envOverwrite"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 )
 
-func InjectOdigosAgentEnvVars(ctx context.Context, p client.Client, logger logr.Logger, podWorkload workload.PodWorkload, container *corev1.Container,
-	pl common.ProgrammingLanguage, otelsdk common.OtelSdk) {
-	envVarsPerLanguage := getEnvVarNamesForLanguage(pl)
+func InjectOdigosAgentEnvVars(logger logr.Logger, podWorkload k8sconsts.PodWorkload, container *corev1.Container,
+	otelsdk common.OtelSdk, runtimeDetails *v1alpha1.RuntimeDetailsByContainer) {
+	envVarsPerLanguage := getEnvVarNamesForLanguage(runtimeDetails.Language)
 	if envVarsPerLanguage == nil {
 		return
 	}
@@ -27,7 +24,7 @@ func InjectOdigosAgentEnvVars(ctx context.Context, p client.Client, logger logr.
 			continue
 		}
 
-		err := injectEnvVarsFromRuntime(ctx, p, logger, podWorkload, container, envVarName, otelsdk)
+		err := injectEnvVarsFromRuntime(logger, container, envVarName, otelsdk, runtimeDetails)
 		if err != nil {
 			logger.Error(err, "failed to inject environment variables for container", "container", container.Name)
 		}
@@ -66,22 +63,9 @@ func handleManifestEnvVar(container *corev1.Container, envVarName string, otelsd
 	return true // Handled, no need for further processing
 }
 
-func injectEnvVarsFromRuntime(ctx context.Context, p client.Client, logger logr.Logger, podWorkload workload.PodWorkload,
-	container *corev1.Container, envVarName string, otelsdk common.OtelSdk) error {
+func injectEnvVarsFromRuntime(logger logr.Logger, container *corev1.Container, envVarName string,
+	otelsdk common.OtelSdk, runtimeDetails *v1alpha1.RuntimeDetailsByContainer) error {
 	logger.Info("Inject Odigos values based on runtime details", "envVarName", envVarName, "container", container.Name)
-
-	var workloadInstrumentationConfig v1alpha1.InstrumentationConfig
-	instrumentationConfigName := workload.CalculateWorkloadRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
-
-	if err := p.Get(ctx, client.ObjectKey{Namespace: podWorkload.Namespace, Name: instrumentationConfigName}, &workloadInstrumentationConfig); err != nil {
-		return fmt.Errorf("failed to get instrumentationConfig: %w", err)
-	}
-
-	runtimeDetails := workloadInstrumentationConfig.Status.GetRuntimeDetailsForContainer(*container)
-	if runtimeDetails == nil {
-		logger.Error(nil, "failed to get runtime details for container", "container", container.Name)
-		return nil
-	}
 
 	if !shouldInject(runtimeDetails, logger, container.Name) {
 		return nil
