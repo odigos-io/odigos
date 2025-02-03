@@ -1,8 +1,7 @@
 import React from 'react';
-import { FlexRow, Theme } from '@odigos/ui-components';
 import styled, { useTheme } from 'styled-components';
 import { type UseSourceFormDataResponse } from '@/hooks';
-import { Checkbox, Divider, ExtendIcon, FadeLoader, NoDataFound, Text, Toggle } from '@/reuseable-components';
+import { Checkbox, Divider, ExtendArrow, FadeLoader, FlexRow, NoDataFound, Text, Theme, Toggle } from '@odigos/ui-components';
 
 interface Props extends UseSourceFormDataResponse {
   isModal?: boolean;
@@ -90,7 +89,7 @@ export const SourcesList: React.FC<Props> = ({
   const namespaces = filterNamespaces();
 
   if (!namespaces.length) {
-    return <NoDataFoundWrapper>{namespacesLoading ? <FadeLoader style={{ transform: 'scale(2)' }} /> : <NoDataFound title='No namespaces found' />}</NoDataFoundWrapper>;
+    return <NoDataFoundWrapper>{namespacesLoading ? <FadeLoader scale={2} /> : <NoDataFound title='No namespaces found' />}</NoDataFoundWrapper>;
   }
 
   return (
@@ -121,7 +120,7 @@ export const SourcesList: React.FC<Props> = ({
                 <SelectionCount size={10} color={theme.text.grey}>
                   {isNamespaceLoaded ? `${onlySelectedSources.length}/${sources.length}` : null}
                 </SelectionCount>
-                <ExtendIcon extend={isNamespaceSelected} />
+                <ExtendArrow extend={isNamespaceSelected} />
               </FlexRow>
             </NamespaceItem>
 

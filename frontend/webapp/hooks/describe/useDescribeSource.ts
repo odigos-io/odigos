@@ -1,6 +1,7 @@
 import { useQuery } from '@apollo/client';
 import { DESCRIBE_SOURCE } from '@/graphql';
-import type { DescribeSource, WorkloadId } from '@/types';
+import { type DescribeSource } from '@/types';
+import { type WorkloadId } from '@odigos/ui-components';
 
 export const useDescribeSource = ({ namespace, name, kind }: WorkloadId) => {
   const { data, loading, error } = useQuery<DescribeSource>(DESCRIBE_SOURCE, {

@@ -1,8 +1,8 @@
 import { type Node } from '@xyflow/react';
 import nodeConfig from './node-config.json';
 import { type NodePositions } from './get-node-positions';
-import { getActionIcon, getEntityIcon, getEntityLabel } from '@/utils';
-import { type ActionDataParsed, NODE_TYPES, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES } from '@/types';
+import { type ActionDataParsed, NODE_TYPES, OVERVIEW_NODE_TYPES } from '@/types';
+import { ENTITY_TYPES, getActionIcon, getEntityIcon, getEntityLabel, HEALTH_STATUS } from '@odigos/ui-components';
 
 interface Params {
   loading: boolean;
@@ -17,9 +17,9 @@ const mapToNodeData = (entity: Params['entities'][0]) => {
   return {
     nodeWidth,
     id: entity.id,
-    type: OVERVIEW_ENTITY_TYPES.ACTION,
-    status: STATUSES.HEALTHY,
-    title: getEntityLabel(entity, OVERVIEW_ENTITY_TYPES.ACTION, { prioritizeDisplayName: true }),
+    type: ENTITY_TYPES.ACTION,
+    status: HEALTH_STATUS.HEALTHY,
+    title: getEntityLabel(entity, ENTITY_TYPES.ACTION, { prioritizeDisplayName: true }),
     subTitle: entity.type,
     icon: getActionIcon(entity.type),
     monitors: entity.spec.signals,
@@ -30,19 +30,19 @@ const mapToNodeData = (entity: Params['entities'][0]) => {
 
 export const buildActionNodes = ({ loading, entities, positions, unfilteredCount }: Params) => {
   const nodes: Node[] = [];
-  const position = positions[OVERVIEW_ENTITY_TYPES.ACTION];
+  const position = positions[ENTITY_TYPES.ACTION];
 
   nodes.push({
     id: 'action-header',
     type: NODE_TYPES.HEADER,
     position: {
-      x: positions[OVERVIEW_ENTITY_TYPES.ACTION]['x'],
+      x: positions[ENTITY_TYPES.ACTION]['x'],
       y: 0,
     },
     data: {
       nodeWidth,
       title: 'Actions',
-      icon: getEntityIcon(OVERVIEW_ENTITY_TYPES.ACTION),
+      icon: getEntityIcon(ENTITY_TYPES.ACTION),
       tagValue: unfilteredCount,
     },
   });
@@ -71,7 +71,7 @@ export const buildActionNodes = ({ loading, entities, positions, unfilteredCount
       data: {
         nodeWidth,
         type: OVERVIEW_NODE_TYPES.ADD_ACTION,
-        status: STATUSES.HEALTHY,
+        status: HEALTH_STATUS.HEALTHY,
         title: 'ADD ACTION',
         subTitle: 'To modify OpenTelemetry data',
       },

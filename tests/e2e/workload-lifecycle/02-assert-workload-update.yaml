@@ -13,9 +13,9 @@ spec:
   template:
     spec:
       containers:
-      - image: nodejs-unsupported-version:v0.0.1
-        name: nodejs-unsupported-version
-        resources: {}
+        - image: nodejs-unsupported-version:v0.0.1
+          name: nodejs-unsupported-version
+          resources: {}
 status:
   availableReplicas: 1
   observedGeneration: 2
@@ -26,7 +26,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4 # step 02 updates the manifest (2->3), then odigos update it again (3->4)
+  generation: 3
   labels:
     app: nodejs-very-old-version
   name: nodejs-very-old-version
@@ -38,14 +38,11 @@ spec:
   template:
     spec:
       containers:
-      - image: nodejs-very-old-version:v0.0.1
-        name: nodejs-very-old-version
-        resources:
-          limits:
-            instrumentation.odigos.io/javascript-native-community: "1"
+        - image: nodejs-very-old-version:v0.0.1
+          name: nodejs-very-old-version
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -53,7 +50,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4 # step 02 updates the manifest (2->3), then odigos update it again (3->4)
+  generation: 3
   labels:
     app: nodejs-minimum-version
   name: nodejs-minimum-version
@@ -65,13 +62,10 @@ spec:
   template:
     spec:
       containers:
-      - name: nodejs-minimum-version
-        resources:
-          limits:
-            instrumentation.odigos.io/javascript-native-community: "1"
+        - name: nodejs-minimum-version
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -79,7 +73,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4 # step 02 updates the manifest (2->3), then odigos update it again (3->4)    
+  generation: 3
   labels:
     app: nodejs-latest-version
   name: nodejs-latest-version
@@ -91,13 +85,10 @@ spec:
   template:
     spec:
       containers:
-      - name: nodejs-latest-version
-        resources:
-          limits:
-            instrumentation.odigos.io/javascript-native-community: "1"
+        - name: nodejs-latest-version
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -105,7 +96,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4 # step 02 updates the manifest (2->3), then odigos update it again (3->4)
+  generation: 3
   labels:
     app: nodejs-dockerfile-env
   name: nodejs-dockerfile-env
@@ -117,13 +108,10 @@ spec:
   template:
     spec:
       containers:
-      - name: nodejs-dockerfile-env
-        resources:
-          limits:
-            instrumentation.odigos.io/javascript-native-community: "1"
+        - name: nodejs-dockerfile-env
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -131,7 +119,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4 # step 02 updates the manifest (2->3), then odigos update it again (3->4)
+  generation: 3
   labels:
     app: nodejs-manifest-env
   name: nodejs-manifest-env
@@ -143,13 +131,10 @@ spec:
   template:
     spec:
       containers:
-      - name: nodejs-manifest-env
-        resources:
-          limits:
-            instrumentation.odigos.io/javascript-native-community: "1"
+        - name: nodejs-manifest-env
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -169,9 +154,9 @@ spec:
   template:
     spec:
       containers:
-      - image: cpp-http-server:v0.0.1
-        name: cpp-http-server
-        resources: {}
+        - image: cpp-http-server:v0.0.1
+          name: cpp-http-server
+          resources: {}
 status:
   availableReplicas: 1
   observedGeneration: 2
@@ -182,7 +167,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4 # on step 2, the manifest was updated (1->2)
+  generation: 3
   labels:
     app: java-supported-version
   name: java-supported-version
@@ -196,12 +181,9 @@ spec:
       containers:
         - image: java-supported-version:v0.0.1
           name: java-supported-version
-          resources:
-            limits:
-              instrumentation.odigos.io/java-native-community: "1"
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -209,7 +191,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4 # on step 2, the manifest was updated (1->2)
+  generation: 3
   labels:
     app: java-azul
   name: java-azul
@@ -223,12 +205,9 @@ spec:
       containers:
         - image: java-azul:v0.0.1
           name: java-azul
-          resources:
-            limits:
-              instrumentation.odigos.io/java-native-community: "1"
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -236,7 +215,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4 # on step 2, the manifest was updated (1->2)
+  generation: 3
   labels:
     app: java-supported-docker-env
   name: java-supported-docker-env
@@ -250,12 +229,9 @@ spec:
       containers:
         - image: java-supported-docker-env:v0.0.1
           name: java-supported-docker-env
-          resources:
-            limits:
-              instrumentation.odigos.io/java-native-community: "1"
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -264,7 +240,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4 # on step 2, the manifest was updated (1->2)
+  generation: 3
   labels:
     app: java-supported-manifest-env
   name: java-supported-manifest-env
@@ -278,12 +254,9 @@ spec:
       containers:
         - image: java-supported-manifest-env:v0.0.1
           name: java-supported-manifest-env
-          resources:
-            limits:
-              instrumentation.odigos.io/java-native-community: "1"
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -291,7 +264,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4 # on step 2, the manifest was updated (1->2)
+  generation: 3
   labels:
     app: java-latest-version
   name: java-latest-version
@@ -305,12 +278,9 @@ spec:
       containers:
         - image: java-latest-version:v0.0.1
           name: java-latest-version
-          resources:
-            limits:
-              instrumentation.odigos.io/java-native-community: "1"
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -318,7 +288,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4 # on step 2, the manifest was updated (1->2)
+  generation: 3
   labels:
     app: java-old-version
   name: java-old-version
@@ -332,12 +302,9 @@ spec:
       containers:
         - image: java-old-version:v0.0.1
           name: java-old-version
-          resources:
-            limits:
-              instrumentation.odigos.io/java-native-community: "1"
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -345,7 +312,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4 # on step 2, the manifest was updated (1->2)
+  generation: 3
   labels:
     app: python-latest-version
   name: python-latest-version
@@ -357,14 +324,11 @@ spec:
   template:
     spec:
       containers:
-      - image: python-latest-version:v0.0.1
-        name: python-latest-version
-        resources:
-          limits:
-            instrumentation.odigos.io/python-native-community: "1"
+        - image: python-latest-version:v0.0.1
+          name: python-latest-version
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -372,7 +336,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4 # on step 2, the manifest was updated (1->2)
+  generation: 3
   labels:
     app: python-alpine
   name: python-alpine
@@ -383,15 +347,12 @@ spec:
       app: python-alpine
   template:
     spec:
-      containers: 
-      - image: python-alpine:v0.0.1
-        name: python-alpine
-        resources:
-          limits:
-            instrumentation.odigos.io/python-native-community: "1"
+      containers:
+        - image: python-alpine:v0.0.1
+          name: python-alpine
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -399,7 +360,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4 # on step 2, the manifest was updated (1->2)
+  generation: 3
   labels:
     app: python-min-version
   name: python-min-version
@@ -411,14 +372,11 @@ spec:
   template:
     spec:
       containers:
-      - image: python-min-version:v0.0.1
-        name: python-min-version
-        resources:
-          limits:
-            instrumentation.odigos.io/python-native-community: "1"
+        - image: python-min-version:v0.0.1
+          name: python-min-version
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -438,9 +396,9 @@ spec:
   template:
     spec:
       containers:
-      - image: python-not-supported:v0.0.1
-        name: python-not-supported
-        resources: {}
+        - image: python-not-supported:v0.0.1
+          name: python-not-supported
+          resources: {}
 status:
   availableReplicas: 1
   observedGeneration: 2
@@ -451,7 +409,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4
+  generation: 3
   name: dotnet8-musl
   namespace: default
   labels:
@@ -465,7 +423,7 @@ spec:
       labels:
         app: dotnet8-musl
       annotations:
-        odigos-test-step: "2"
+        odigos-test-step: '2'
     spec:
       containers:
         - name: dotnet8-musl
@@ -478,7 +436,7 @@ spec:
               port: 8080
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -486,7 +444,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4
+  generation: 3
   name: dotnet6-musl
   namespace: default
   labels:
@@ -500,7 +458,7 @@ spec:
       labels:
         app: dotnet6-musl
       annotations:
-        odigos-test-step: "2"
+        odigos-test-step: '2'
     spec:
       containers:
         - name: dotnet6-musl
@@ -513,7 +471,7 @@ spec:
               port: 8080
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -521,7 +479,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4
+  generation: 3
   name: dotnet8-glibc
   namespace: default
   labels:
@@ -535,7 +493,7 @@ spec:
       labels:
         app: dotnet8-glibc
       annotations:
-        odigos-test-step: "2"
+        odigos-test-step: '2'
     spec:
       containers:
         - name: dotnet8-glibc
@@ -548,7 +506,7 @@ spec:
               port: 8080
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -556,7 +514,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 4
+  generation: 3
   name: dotnet6-glibc
   namespace: default
   labels:
@@ -570,7 +528,7 @@ spec:
       labels:
         app: dotnet6-glibc
       annotations:
-        odigos-test-step: "2"
+        odigos-test-step: '2'
     spec:
       containers:
         - name: dotnet6-glibc
@@ -583,7 +541,7 @@ spec:
               port: 8080
 status:
   availableReplicas: 1
-  observedGeneration: 4
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
