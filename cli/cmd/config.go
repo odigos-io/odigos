@@ -17,7 +17,7 @@ import (
 var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Manage Odigos configuration",
-	Long:  "Manage Odigos configuration settings, including central backend URL and other properties",
+	Long:  "Manage Odigos configuration settings to customize system behavior.",
 }
 
 // `odigos config set <property> <value>`
@@ -31,10 +31,7 @@ var setConfigCmd = &cobra.Command{
 
 		ctx := cmd.Context()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
-		ns, _ := cmd.Flags().GetString("namespace")
-		if ns == "" {
-			ns = consts.DefaultOdigosNamespace
-		}
+		ns, err := resources.GetOdigosNamespace(client, ctx)
 
 		l := log.Print(fmt.Sprintf("Updating %s to %s...", property, value))
 
@@ -82,63 +79,61 @@ var setConfigCmd = &cobra.Command{
 func setConfigProperty(config *common.OdigosConfiguration, property string, value []string) error {
 	switch property {
 	case "central-backend-url":
+		if len(value) != 1 {
+			return fmt.Errorf("%s expects exactly one value", property)
+		}
 		config.CentralBackendURL = value[0]
 
-	case "telemetry-enabled":
+	case "telemetry-enabled", "openshift-enabled", "psp", "skip-webhook-issuer-creation", "allow-concurrent-agents":
+		if len(value) != 1 {
+			return fmt.Errorf("%s expects exactly one value (true/false)", property)
+		}
 		boolValue, err := strconv.ParseBool(value[0])
 		if err != nil {
 			return fmt.Errorf("invalid boolean value for %s: %s", property, value[0])
 		}
-		config.TelemetryEnabled = boolValue
 
-	case "openshift-enabled":
-		boolValue, err := strconv.ParseBool(value[0])
-		if err != nil {
-			return fmt.Errorf("invalid boolean value for %s: %s", property, value[0])
+		switch property {
+		case "telemetry-enabled":
+			config.TelemetryEnabled = boolValue
+		case "openshift-enabled":
+			config.OpenshiftEnabled = boolValue
+		case "psp":
+			config.Psp = boolValue
+		case "skip-webhook-issuer-creation":
+			config.SkipWebhookIssuerCreation = boolValue
+		case "allow-concurrent-agents":
+			config.AllowConcurrentAgents = &boolValue
 		}
-		config.OpenshiftEnabled = boolValue
 
-	case "psp":
-		boolValue, err := strconv.ParseBool(value[0])
-		if err != nil {
-			return fmt.Errorf("invalid boolean value for %s: %s", property, value[0])
+	case "image-prefix", "odiglet-image", "instrumentor-image", "autoscaler-image", "ui-mode":
+		if len(value) != 1 {
+			return fmt.Errorf("%s expects exactly one value", property)
 		}
-		config.Psp = boolValue
-
-	case "image-prefix":
-		config.ImagePrefix = value[0]
-
-	case "odiglet-image":
-		config.OdigletImage = value[0]
-
-	case "instrumentor-image":
-		config.InstrumentorImage = value[0]
-
-	case "autoscaler-image":
-		config.AutoscalerImage = value[0]
-
-	case "skip-webhook-issuer-creation":
-		boolValue, err := strconv.ParseBool(value[0])
-		if err != nil {
-			return fmt.Errorf("invalid boolean value for %s: %s", property, value[0])
+		switch property {
+		case "image-prefix":
+			config.ImagePrefix = value[0]
+		case "odiglet-image":
+			config.OdigletImage = value[0]
+		case "instrumentor-image":
+			config.InstrumentorImage = value[0]
+		case "autoscaler-image":
+			config.AutoscalerImage = value[0]
+		case "ui-mode":
+			config.UiMode = common.UiMode(value[0])
 		}
-		config.SkipWebhookIssuerCreation = boolValue
 
 	case "ignored-namespaces":
+		if len(value) < 1 {
+			return fmt.Errorf("%s expects at least one value", property)
+		}
 		config.IgnoredNamespaces = value
 
 	case "ignored-containers":
-		config.IgnoredContainers = value
-
-	case "allow-concurrent-agents":
-		boolValue, err := strconv.ParseBool(value[0])
-		if err != nil {
-			return fmt.Errorf("invalid boolean value for %s: %s", property, value[0])
+		if len(value) < 1 {
+			return fmt.Errorf("%s expects at least one value", property)
 		}
-		config.AllowConcurrentAgents = &boolValue
-
-	case "ui-mode":
-		config.UiMode = common.UiMode(value[0])
+		config.IgnoredContainers = value
 
 	default:
 		return fmt.Errorf("invalid property: %s", property)
