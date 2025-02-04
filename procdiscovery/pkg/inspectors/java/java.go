@@ -40,8 +40,8 @@ func (j *JavaInspector) Inspect(proc *process.Details) (common.ProgrammingLangua
 
 // This function inspects the memory-mapped regions of the process by reading the "/proc/<pid>/maps" file.
 // It then searches for "libjvm.so", which is a shared library loaded by Java processes.
-func checkForLoadedJVM(ProcessID int) bool {
-	mapsPath := fmt.Sprintf("/proc/%d/maps", ProcessID)
+func checkForLoadedJVM(processID int) bool {
+	mapsPath := fmt.Sprintf("/proc/%d/maps", processID)
 	mapsBytes, err := os.ReadFile(mapsPath)
 	if err != nil {
 		return false
