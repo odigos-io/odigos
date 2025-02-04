@@ -472,11 +472,14 @@ type ComplexityRoot struct {
 		TotalPods             func(childComplexity int) int
 	}
 
-	SourceContainerRuntimeDetails struct {
-		ContainerName  func(childComplexity int) int
-		Language       func(childComplexity int) int
-		OtherAgent     func(childComplexity int) int
-		RuntimeVersion func(childComplexity int) int
+	SourceContainer struct {
+		ContainerName          func(childComplexity int) int
+		InstrumentationMessage func(childComplexity int) int
+		Instrumented           func(childComplexity int) int
+		Language               func(childComplexity int) int
+		OtelDistroName         func(childComplexity int) int
+		OtherAgent             func(childComplexity int) int
+		RuntimeVersion         func(childComplexity int) int
 	}
 
 	SupportedSignals struct {
@@ -2467,33 +2470,54 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.SourceAnalyze.TotalPods(childComplexity), true
 
-	case "SourceContainerRuntimeDetails.containerName":
-		if e.complexity.SourceContainerRuntimeDetails.ContainerName == nil {
+	case "SourceContainer.containerName":
+		if e.complexity.SourceContainer.ContainerName == nil {
 			break
 		}
 
-		return e.complexity.SourceContainerRuntimeDetails.ContainerName(childComplexity), true
+		return e.complexity.SourceContainer.ContainerName(childComplexity), true
 
-	case "SourceContainerRuntimeDetails.language":
-		if e.complexity.SourceContainerRuntimeDetails.Language == nil {
+	case "SourceContainer.instrumentationMessage":
+		if e.complexity.SourceContainer.InstrumentationMessage == nil {
 			break
 		}
 
-		return e.complexity.SourceContainerRuntimeDetails.Language(childComplexity), true
+		return e.complexity.SourceContainer.InstrumentationMessage(childComplexity), true
 
-	case "SourceContainerRuntimeDetails.otherAgent":
-		if e.complexity.SourceContainerRuntimeDetails.OtherAgent == nil {
+	case "SourceContainer.instrumented":
+		if e.complexity.SourceContainer.Instrumented == nil {
 			break
 		}
 
-		return e.complexity.SourceContainerRuntimeDetails.OtherAgent(childComplexity), true
+		return e.complexity.SourceContainer.Instrumented(childComplexity), true
 
-	case "SourceContainerRuntimeDetails.runtimeVersion":
-		if e.complexity.SourceContainerRuntimeDetails.RuntimeVersion == nil {
+	case "SourceContainer.language":
+		if e.complexity.SourceContainer.Language == nil {
 			break
 		}
 
-		return e.complexity.SourceContainerRuntimeDetails.RuntimeVersion(childComplexity), true
+		return e.complexity.SourceContainer.Language(childComplexity), true
+
+	case "SourceContainer.otelDistroName":
+		if e.complexity.SourceContainer.OtelDistroName == nil {
+			break
+		}
+
+		return e.complexity.SourceContainer.OtelDistroName(childComplexity), true
+
+	case "SourceContainer.otherAgent":
+		if e.complexity.SourceContainer.OtherAgent == nil {
+			break
+		}
+
+		return e.complexity.SourceContainer.OtherAgent(childComplexity), true
+
+	case "SourceContainer.runtimeVersion":
+		if e.complexity.SourceContainer.RuntimeVersion == nil {
+			break
+		}
+
+		return e.complexity.SourceContainer.RuntimeVersion(childComplexity), true
 
 	case "SupportedSignals.logs":
 		if e.complexity.SupportedSignals.Logs == nil {
@@ -9797,9 +9821,9 @@ func (ec *executionContext) _K8sActualSource_containers(ctx context.Context, fie
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model.SourceContainerRuntimeDetails)
+	res := resTmp.([]*model.SourceContainer)
 	fc.Result = res
-	return ec.marshalOSourceContainerRuntimeDetails2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceContainerRuntimeDetailsᚄ(ctx, field.Selections, res)
+	return ec.marshalOSourceContainer2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceContainerᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_K8sActualSource_containers(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9811,15 +9835,21 @@ func (ec *executionContext) fieldContext_K8sActualSource_containers(_ context.Co
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "containerName":
-				return ec.fieldContext_SourceContainerRuntimeDetails_containerName(ctx, field)
+				return ec.fieldContext_SourceContainer_containerName(ctx, field)
 			case "language":
-				return ec.fieldContext_SourceContainerRuntimeDetails_language(ctx, field)
+				return ec.fieldContext_SourceContainer_language(ctx, field)
 			case "runtimeVersion":
-				return ec.fieldContext_SourceContainerRuntimeDetails_runtimeVersion(ctx, field)
+				return ec.fieldContext_SourceContainer_runtimeVersion(ctx, field)
+			case "instrumented":
+				return ec.fieldContext_SourceContainer_instrumented(ctx, field)
+			case "instrumentationMessage":
+				return ec.fieldContext_SourceContainer_instrumentationMessage(ctx, field)
+			case "otelDistroName":
+				return ec.fieldContext_SourceContainer_otelDistroName(ctx, field)
 			case "otherAgent":
-				return ec.fieldContext_SourceContainerRuntimeDetails_otherAgent(ctx, field)
+				return ec.fieldContext_SourceContainer_otherAgent(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type SourceContainerRuntimeDetails", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type SourceContainer", field.Name)
 		},
 	}
 	return fc, nil
@@ -15758,8 +15788,8 @@ func (ec *executionContext) fieldContext_SourceAnalyze_pods(_ context.Context, f
 	return fc, nil
 }
 
-func (ec *executionContext) _SourceContainerRuntimeDetails_containerName(ctx context.Context, field graphql.CollectedField, obj *model.SourceContainerRuntimeDetails) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_SourceContainerRuntimeDetails_containerName(ctx, field)
+func (ec *executionContext) _SourceContainer_containerName(ctx context.Context, field graphql.CollectedField, obj *model.SourceContainer) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SourceContainer_containerName(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -15789,9 +15819,9 @@ func (ec *executionContext) _SourceContainerRuntimeDetails_containerName(ctx con
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_SourceContainerRuntimeDetails_containerName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_SourceContainer_containerName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "SourceContainerRuntimeDetails",
+		Object:     "SourceContainer",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -15802,8 +15832,8 @@ func (ec *executionContext) fieldContext_SourceContainerRuntimeDetails_container
 	return fc, nil
 }
 
-func (ec *executionContext) _SourceContainerRuntimeDetails_language(ctx context.Context, field graphql.CollectedField, obj *model.SourceContainerRuntimeDetails) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_SourceContainerRuntimeDetails_language(ctx, field)
+func (ec *executionContext) _SourceContainer_language(ctx context.Context, field graphql.CollectedField, obj *model.SourceContainer) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SourceContainer_language(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -15833,9 +15863,9 @@ func (ec *executionContext) _SourceContainerRuntimeDetails_language(ctx context.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_SourceContainerRuntimeDetails_language(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_SourceContainer_language(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "SourceContainerRuntimeDetails",
+		Object:     "SourceContainer",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -15846,8 +15876,8 @@ func (ec *executionContext) fieldContext_SourceContainerRuntimeDetails_language(
 	return fc, nil
 }
 
-func (ec *executionContext) _SourceContainerRuntimeDetails_runtimeVersion(ctx context.Context, field graphql.CollectedField, obj *model.SourceContainerRuntimeDetails) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_SourceContainerRuntimeDetails_runtimeVersion(ctx, field)
+func (ec *executionContext) _SourceContainer_runtimeVersion(ctx context.Context, field graphql.CollectedField, obj *model.SourceContainer) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SourceContainer_runtimeVersion(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -15877,9 +15907,9 @@ func (ec *executionContext) _SourceContainerRuntimeDetails_runtimeVersion(ctx co
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_SourceContainerRuntimeDetails_runtimeVersion(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_SourceContainer_runtimeVersion(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "SourceContainerRuntimeDetails",
+		Object:     "SourceContainer",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -15890,8 +15920,137 @@ func (ec *executionContext) fieldContext_SourceContainerRuntimeDetails_runtimeVe
 	return fc, nil
 }
 
-func (ec *executionContext) _SourceContainerRuntimeDetails_otherAgent(ctx context.Context, field graphql.CollectedField, obj *model.SourceContainerRuntimeDetails) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_SourceContainerRuntimeDetails_otherAgent(ctx, field)
+func (ec *executionContext) _SourceContainer_instrumented(ctx context.Context, field graphql.CollectedField, obj *model.SourceContainer) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SourceContainer_instrumented(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Instrumented, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SourceContainer_instrumented(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SourceContainer",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SourceContainer_instrumentationMessage(ctx context.Context, field graphql.CollectedField, obj *model.SourceContainer) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SourceContainer_instrumentationMessage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.InstrumentationMessage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SourceContainer_instrumentationMessage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SourceContainer",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SourceContainer_otelDistroName(ctx context.Context, field graphql.CollectedField, obj *model.SourceContainer) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SourceContainer_otelDistroName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OtelDistroName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SourceContainer_otelDistroName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SourceContainer",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SourceContainer_otherAgent(ctx context.Context, field graphql.CollectedField, obj *model.SourceContainer) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SourceContainer_otherAgent(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -15918,9 +16077,9 @@ func (ec *executionContext) _SourceContainerRuntimeDetails_otherAgent(ctx contex
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_SourceContainerRuntimeDetails_otherAgent(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_SourceContainer_otherAgent(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "SourceContainerRuntimeDetails",
+		Object:     "SourceContainer",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -22311,34 +22470,46 @@ func (ec *executionContext) _SourceAnalyze(ctx context.Context, sel ast.Selectio
 	return out
 }
 
-var sourceContainerRuntimeDetailsImplementors = []string{"SourceContainerRuntimeDetails"}
+var sourceContainerImplementors = []string{"SourceContainer"}
 
-func (ec *executionContext) _SourceContainerRuntimeDetails(ctx context.Context, sel ast.SelectionSet, obj *model.SourceContainerRuntimeDetails) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, sourceContainerRuntimeDetailsImplementors)
+func (ec *executionContext) _SourceContainer(ctx context.Context, sel ast.SelectionSet, obj *model.SourceContainer) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, sourceContainerImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("SourceContainerRuntimeDetails")
+			out.Values[i] = graphql.MarshalString("SourceContainer")
 		case "containerName":
-			out.Values[i] = ec._SourceContainerRuntimeDetails_containerName(ctx, field, obj)
+			out.Values[i] = ec._SourceContainer_containerName(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
 		case "language":
-			out.Values[i] = ec._SourceContainerRuntimeDetails_language(ctx, field, obj)
+			out.Values[i] = ec._SourceContainer_language(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
 		case "runtimeVersion":
-			out.Values[i] = ec._SourceContainerRuntimeDetails_runtimeVersion(ctx, field, obj)
+			out.Values[i] = ec._SourceContainer_runtimeVersion(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "instrumented":
+			out.Values[i] = ec._SourceContainer_instrumented(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "instrumentationMessage":
+			out.Values[i] = ec._SourceContainer_instrumentationMessage(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "otelDistroName":
+			out.Values[i] = ec._SourceContainer_otelDistroName(ctx, field, obj)
 		case "otherAgent":
-			out.Values[i] = ec._SourceContainerRuntimeDetails_otherAgent(ctx, field, obj)
+			out.Values[i] = ec._SourceContainer_otherAgent(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -24224,14 +24395,14 @@ func (ec *executionContext) marshalNSourceAnalyze2ᚖgithubᚗcomᚋodigosᚑio�
 	return ec._SourceAnalyze(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNSourceContainerRuntimeDetails2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceContainerRuntimeDetails(ctx context.Context, sel ast.SelectionSet, v *model.SourceContainerRuntimeDetails) graphql.Marshaler {
+func (ec *executionContext) marshalNSourceContainer2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceContainer(ctx context.Context, sel ast.SelectionSet, v *model.SourceContainer) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
-	return ec._SourceContainerRuntimeDetails(ctx, sel, v)
+	return ec._SourceContainer(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
@@ -24948,7 +25119,7 @@ func (ec *executionContext) marshalOProgrammingLanguage2ᚖgithubᚗcomᚋodigos
 	return v
 }
 
-func (ec *executionContext) marshalOSourceContainerRuntimeDetails2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceContainerRuntimeDetailsᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.SourceContainerRuntimeDetails) graphql.Marshaler {
+func (ec *executionContext) marshalOSourceContainer2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceContainerᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.SourceContainer) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -24975,7 +25146,7 @@ func (ec *executionContext) marshalOSourceContainerRuntimeDetails2ᚕᚖgithub�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNSourceContainerRuntimeDetails2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceContainerRuntimeDetails(ctx, sel, v[i])
+			ret[i] = ec.marshalNSourceContainer2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceContainer(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)

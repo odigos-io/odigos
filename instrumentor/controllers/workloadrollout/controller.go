@@ -76,7 +76,7 @@ func (r *instrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 
 	ic.Status.WorkloadRolloutHash = newRolloutHash
 	meta.SetStatusCondition(&ic.Status.Conditions, rolloutCondition(rolloutErr))
-	err = r.Client.Update(ctx, &ic)
+	err = r.Client.Status().Update(ctx, &ic)
 	return utils.K8SUpdateErrorHandler(err)
 }
 
