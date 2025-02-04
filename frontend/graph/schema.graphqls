@@ -50,6 +50,7 @@ type SourceContainer {
   runtimeVersion: String!
   instrumented: Boolean!
   instrumentationMessage: String!
+  otelDistroName: String
   otherAgent: String
 }
 

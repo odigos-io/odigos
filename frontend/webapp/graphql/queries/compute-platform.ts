@@ -52,12 +52,11 @@ export const GET_SOURCES = gql`
             runtimeVersion
             instrumented
             instrumentationMessage
+            otelDistroName
             otherAgent
           }
           conditions {
             status
-            type
-            reason
             message
             lastTransitionTime
           }

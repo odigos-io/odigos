@@ -7,6 +7,7 @@ export interface SourceContainer {
   runtimeVersion: string;
   instrumented: boolean;
   instrumentationMessage: string;
+  otelDistroName: string | null;
   otherAgent: string | null;
 }
 
