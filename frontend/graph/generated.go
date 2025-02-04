@@ -108,9 +108,7 @@ type ComplexityRoot struct {
 	Condition struct {
 		LastTransitionTime func(childComplexity int) int
 		Message            func(childComplexity int) int
-		Reason             func(childComplexity int) int
 		Status             func(childComplexity int) int
-		Type               func(childComplexity int) int
 	}
 
 	ContainerRuntimeInfoAnalyze struct {
@@ -842,26 +840,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Condition.Message(childComplexity), true
 
-	case "Condition.reason":
-		if e.complexity.Condition.Reason == nil {
-			break
-		}
-
-		return e.complexity.Condition.Reason(childComplexity), true
-
 	case "Condition.status":
 		if e.complexity.Condition.Status == nil {
 			break
 		}
 
 		return e.complexity.Condition.Status(childComplexity), true
-
-	case "Condition.type":
-		if e.complexity.Condition.Type == nil {
-			break
-		}
-
-		return e.complexity.Condition.Type(childComplexity), true
 
 	case "ContainerRuntimeInfoAnalyze.containerName":
 		if e.complexity.ContainerRuntimeInfoAnalyze.ContainerName == nil {
@@ -4934,91 +4918,6 @@ func (ec *executionContext) fieldContext_Condition_status(_ context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _Condition_type(ctx context.Context, field graphql.CollectedField, obj *model.Condition) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Condition_type(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Type, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Condition_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Condition",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Condition_reason(ctx context.Context, field graphql.CollectedField, obj *model.Condition) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Condition_reason(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Reason, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Condition_reason(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Condition",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Condition_message(ctx context.Context, field graphql.CollectedField, obj *model.Condition) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Condition_message(ctx, field)
 	if err != nil {
@@ -6361,10 +6260,6 @@ func (ec *executionContext) fieldContext_Destination_conditions(_ context.Contex
 			switch field.Name {
 			case "status":
 				return ec.fieldContext_Condition_status(ctx, field)
-			case "type":
-				return ec.fieldContext_Condition_type(ctx, field)
-			case "reason":
-				return ec.fieldContext_Condition_reason(ctx, field)
 			case "message":
 				return ec.fieldContext_Condition_message(ctx, field)
 			case "lastTransitionTime":
@@ -9883,10 +9778,6 @@ func (ec *executionContext) fieldContext_K8sActualSource_conditions(_ context.Co
 			switch field.Name {
 			case "status":
 				return ec.fieldContext_Condition_status(ctx, field)
-			case "type":
-				return ec.fieldContext_Condition_type(ctx, field)
-			case "reason":
-				return ec.fieldContext_Condition_reason(ctx, field)
 			case "message":
 				return ec.fieldContext_Condition_message(ctx, field)
 			case "lastTransitionTime":
@@ -13102,10 +12993,6 @@ func (ec *executionContext) fieldContext_PipelineAction_conditions(_ context.Con
 			switch field.Name {
 			case "status":
 				return ec.fieldContext_Condition_status(ctx, field)
-			case "type":
-				return ec.fieldContext_Condition_type(ctx, field)
-			case "reason":
-				return ec.fieldContext_Condition_reason(ctx, field)
 			case "message":
 				return ec.fieldContext_Condition_message(ctx, field)
 			case "lastTransitionTime":
@@ -19590,13 +19477,6 @@ func (ec *executionContext) _Condition(ctx context.Context, sel ast.SelectionSet
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "type":
-			out.Values[i] = ec._Condition_type(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "reason":
-			out.Values[i] = ec._Condition_reason(ctx, field, obj)
 		case "message":
 			out.Values[i] = ec._Condition_message(ctx, field, obj)
 		case "lastTransitionTime":

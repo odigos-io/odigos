@@ -56,8 +56,6 @@ export const GET_SOURCES = gql`
           }
           conditions {
             status
-            type
-            reason
             message
             lastTransitionTime
           }

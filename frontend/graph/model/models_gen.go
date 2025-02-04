@@ -110,8 +110,6 @@ type ComputePlatform struct {
 
 type Condition struct {
 	Status             ConditionStatus `json:"status"`
-	Type               string          `json:"type"`
-	Reason             *string         `json:"reason,omitempty"`
 	Message            *string         `json:"message,omitempty"`
 	LastTransitionTime *string         `json:"lastTransitionTime,omitempty"`
 }

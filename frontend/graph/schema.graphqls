@@ -55,8 +55,6 @@ type SourceContainer {
 
 type Condition {
   status: ConditionStatus!
-  type: String!
-  reason: String
   message: String
   lastTransitionTime: String
 }

@@ -34,6 +34,7 @@ func k8sConditionStatusToGql(status v1.ConditionStatus) model.ConditionStatus {
 
 }
 
+// Convert LastTransitionTime to a string pointer if it's not nil
 func k8sLastTransitionTimeToGql(t v1.Time) *string {
 	if t.IsZero() {
 		return nil
@@ -44,7 +45,6 @@ func k8sLastTransitionTimeToGql(t v1.Time) *string {
 
 func instrumentationConfigToActualSource(instruConfig v1alpha1.InstrumentationConfig) *model.K8sActualSource {
 	var containers []*model.SourceContainer
-	var conditions []*model.Condition
 
 	// Map the containers runtime details
 	for _, statusContainer := range instruConfig.Status.RuntimeDetailsByContainer {
@@ -76,17 +76,6 @@ func instrumentationConfigToActualSource(instruConfig v1alpha1.InstrumentationCo
 		})
 	}
 
-	// Map the conditions
-	for _, condition := range instruConfig.Status.Conditions {
-		conditions = append(conditions, &model.Condition{
-			Status:             k8sConditionStatusToGql(condition.Status),
-			Type:               condition.Type,
-			Reason:             &condition.Reason,
-			Message:            &condition.Message,
-			LastTransitionTime: k8sLastTransitionTimeToGql(condition.LastTransitionTime),
-		})
-	}
-
 	// Return the converted K8sActualSource object
 	return &model.K8sActualSource{
 		Namespace:         instruConfig.Namespace,
@@ -95,7 +84,7 @@ func instrumentationConfigToActualSource(instruConfig v1alpha1.InstrumentationCo
 		NumberOfInstances: nil,
 		OtelServiceName:   &instruConfig.Spec.ServiceName,
 		Containers:        containers,
-		Conditions:        conditions,
+		Conditions:        convertConditions(instruConfig.Status.Conditions),
 	}
 }
 
@@ -114,20 +103,18 @@ func convertCustomReadDataLabels(labels []*destinations.CustomReadDataLabel) []*
 func convertConditions(conditions []v1.Condition) []*model.Condition {
 	var result []*model.Condition
 	for _, c := range conditions {
-		// Convert LastTransitionTime to a string pointer if it's not nil
-		var lastTransitionTime *string
-		if !c.LastTransitionTime.IsZero() {
-			t := c.LastTransitionTime.Format(time.RFC3339)
-			lastTransitionTime = &t
-		}
+		if c.Type != "AppliedInstrumentationDevice" {
+			message := c.Message
+			if message == "" {
+				message = string(c.Reason)
+			}
 
-		result = append(result, &model.Condition{
-			Status:             model.ConditionStatus(c.Status),
-			Type:               c.Type,
-			Reason:             &c.Reason,
-			Message:            &c.Message,
-			LastTransitionTime: lastTransitionTime,
-		})
+			result = append(result, &model.Condition{
+				Status:             model.ConditionStatus(c.Status),
+				Message:            &message,
+				LastTransitionTime: k8sLastTransitionTimeToGql(c.LastTransitionTime),
+			})
+		}
 	}
 	return result
 }
