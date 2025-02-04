@@ -25,8 +25,8 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 
 	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentationconfig"
-	"github.com/odigos-io/odigos/instrumentor/controllers/workloadmigrations"
 	"github.com/odigos-io/odigos/instrumentor/controllers/startlangdetection"
+	"github.com/odigos-io/odigos/instrumentor/controllers/workloadmigrations"
 	"github.com/odigos-io/odigos/instrumentor/sdks"
 
 	corev1 "k8s.io/api/core/v1"

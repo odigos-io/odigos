@@ -1,11 +1,11 @@
 import React, { useRef, useState } from 'react';
-import { NOTIFICATION_TYPE } from '@/types';
+import { useDrawerStore } from '@/store';
 import styled, { useTheme } from 'styled-components';
-import OverviewDrawer from '@/containers/main/overview/overview-drawer';
-import { useCopy, useDescribeOdigos, useKeyDown, useOnClickOutside, useTimeAgo, useTokenCRUD } from '@/hooks';
-import { DATA_CARDS, getStatusIcon, isOverTime, isWithinTime, safeJsonStringify, SEVEN_DAYS_IN_MS } from '@/utils';
-import { Button, DataCard, DataCardFieldTypes, Divider, IconButton, Input, Segment, Text, Tooltip } from '@/reuseable-components';
-import { CheckIcon, CodeBracketsIcon, CodeIcon, CopyIcon, CrossIcon, EditIcon, FlexColumn, FlexRow, KeyIcon, ListIcon } from '@odigos/ui-components';
+import { DATA_CARDS, SEVEN_DAYS_IN_MS } from '@/utils';
+import { useDescribeOdigos, useTokenCRUD } from '@/hooks';
+import { CheckIcon, CodeBracketsIcon, CodeIcon, CopyIcon, CrossIcon, EditIcon, KeyIcon, ListIcon } from '@odigos/ui-icons';
+import { getStatusIcon, isOverTime, NOTIFICATION_TYPE, safeJsonStringify, useCopy, useKeyDown, useOnClickOutside, useTimeAgo } from '@odigos/ui-utils';
+import { Button, DATA_CARD_FIELD_TYPES, DataCard, Divider, Drawer, FlexColumn, FlexRow, IconButton, Input, Segment, Text, Tooltip } from '@odigos/ui-components';
 
 interface Props {}
 
@@ -41,9 +41,12 @@ const PopoverFormButton = styled(Button)`
   padding-right: 0;
 `;
 
+const DRAWER_WIDTH = '750px';
+
 export const CliDrawer: React.FC<Props> = () => {
   const theme = useTheme();
   const timeAgo = useTimeAgo();
+  const { setSelectedItem } = useDrawerStore();
   const { isCopied, copiedIndex, clickCopy } = useCopy();
   const { tokens, loading, updateToken } = useTokenCRUD();
   const { data: describe, restructureForPrettyMode } = useDescribeOdigos();
@@ -61,8 +64,23 @@ export const CliDrawer: React.FC<Props> = () => {
     if (token) updateToken(token).then(() => setEditTokenIndex(-1));
   }
 
+  const closeDrawer = () => {
+    setSelectedItem(null);
+  };
+
   return (
-    <OverviewDrawer title='Odigos CLI' icon={CodeBracketsIcon}>
+    <Drawer
+      isOpen={true}
+      onClose={closeDrawer}
+      width={DRAWER_WIDTH}
+      header={{
+        icon: CodeBracketsIcon,
+        title: 'Odigos CLI',
+      }}
+      footer={{
+        isOpen: false,
+      }}
+    >
       <DataContainer>
         {!!tokens?.length && (
           <DataCard
@@ -70,7 +88,7 @@ export const CliDrawer: React.FC<Props> = () => {
             titleBadge={tokens.length}
             data={[
               {
-                type: DataCardFieldTypes.TABLE,
+                type: DATA_CARD_FIELD_TYPES.TABLE,
                 value: {
                   columns: [
                     { key: 'icon', title: '' },
@@ -87,7 +105,7 @@ export const CliDrawer: React.FC<Props> = () => {
                       columnKey: 'expires_at',
                       component: () => {
                         return (
-                          <Text size={14} color={isWithinTime(expiresAt, SEVEN_DAYS_IN_MS) ? theme.text.warning : isOverTime(expiresAt, SEVEN_DAYS_IN_MS) ? theme.text.error : theme.text.success}>
+                          <Text size={14} color={isOverTime(expiresAt, 0) ? theme.text.error : isOverTime(expiresAt, SEVEN_DAYS_IN_MS) ? theme.text.warning : theme.text.success}>
                             {timeAgo.format(expiresAt)} ({new Date(expiresAt).toDateString().split(' ').slice(1).join(' ')})
                           </Text>
                         );
@@ -155,7 +173,7 @@ export const CliDrawer: React.FC<Props> = () => {
           }
           data={[
             {
-              type: DataCardFieldTypes.CODE,
+              type: DATA_CARD_FIELD_TYPES.CODE,
               value: JSON.stringify({
                 language: 'json',
                 code: safeJsonStringify(isPrettyMode ? restructureForPrettyMode(describe) : describe),
@@ -166,6 +184,6 @@ export const CliDrawer: React.FC<Props> = () => {
           ]}
         />
       </DataContainer>
-    </OverviewDrawer>
+    </Drawer>
   );
 };

@@ -1,11 +1,11 @@
 import React from 'react';
-import { PlatformTypes } from '@/types';
-import { Text } from '@/reuseable-components';
-import { K8sLogo } from '@odigos/ui-components';
+import { K8sLogo } from '@odigos/ui-icons';
+import { Text } from '@odigos/ui-components';
+import { PLATFORM_TYPE } from '@odigos/ui-utils';
 import styled, { useTheme } from 'styled-components';
 
 interface Props {
-  type: PlatformTypes;
+  type: PLATFORM_TYPE;
 }
 
 const Container = styled.div`
@@ -35,7 +35,7 @@ const LogoWrap = styled.div`
 export const PlatformTitle: React.FC<Props> = ({ type }) => {
   const theme = useTheme();
 
-  if (type === PlatformTypes.K8S) {
+  if (type === PLATFORM_TYPE.K8S) {
     return (
       <Container>
         <LogoWrap>

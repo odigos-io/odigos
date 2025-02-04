@@ -1,8 +1,9 @@
 import React from 'react';
 import { type IAppState } from '@/store';
+import { useKeyDown } from '@odigos/ui-utils';
+import { useSourceCRUD, useSourceFormData } from '@/hooks';
 import { ChooseSourcesBody } from '../choose-sources-body';
-import { Modal, NavigationButtons } from '@/reuseable-components';
-import { useKeyDown, useSourceCRUD, useSourceFormData } from '@/hooks';
+import { Modal, NavigationButtons } from '@odigos/ui-components';
 
 interface Props {
   isOpen: boolean;

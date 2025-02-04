@@ -42,33 +42,43 @@ type ClusterDetails struct {
 	K8SVersion *version.Version
 }
 
-func GetK8SClusterDetails(ctx context.Context, kc string, kContext string, client *kube.Client) *ClusterDetails {
-	clusterDetails := &ClusterDetails{}
-	details := k8sutils.GetCurrentClusterDetails(kc, kContext)
-	serverVersion, err := client.Discovery().ServerVersion()
-	if err != nil {
-		clusterDetails.K8SVersion = nil
-		fmt.Printf("Unknown k8s version, assuming oldest supported version: %s\n", k8sconsts.MinK8SVersionForInstallation)
-	} else {
-		ver := version.MustParse(serverVersion.String())
-		clusterDetails.K8SVersion = ver
-	}
-
-	args := DetectionArguments{
-		ClusterDetails: details,
-		ServerVersion:  serverVersion.GitVersion,
-		KubeClient:     client,
-	}
-
+func getKindFromDetectors(ctx context.Context, args DetectionArguments) Kind {
 	for _, detector := range availableDetectors {
 		relevant := detector.Detect(ctx, args)
-		if !relevant {
-			continue
+		if relevant {
+			return detector.Kind()
 		}
-		clusterDetails.Kind = detector.Kind()
-		return clusterDetails
+	}
+	return KindUnknown
+}
+
+func getServerVersion(c *kube.Client) (string, *version.Version) {
+	resp, err := c.Discovery().ServerVersion()
+	if err != nil {
+		fmt.Printf("Unknown k8s version, assuming oldest supported version: %s\n", k8sconsts.MinK8SVersionForInstallation)
+		return k8sconsts.MinK8SVersionForInstallation.String(), k8sconsts.MinK8SVersionForInstallation
 	}
 
-	clusterDetails.Kind = KindUnknown
-	return clusterDetails
+	parsedVer, err := version.Parse(resp.GitVersion)
+	if err != nil {
+		fmt.Printf("Unknown k8s version, assuming oldest supported version: %s\n", k8sconsts.MinK8SVersionForInstallation)
+		return k8sconsts.MinK8SVersionForInstallation.String(), k8sconsts.MinK8SVersionForInstallation
+	}
+	return resp.GitVersion, parsedVer
+}
+
+func GetK8SClusterDetails(ctx context.Context, kc string, kContext string, client *kube.Client) *ClusterDetails {
+	details := k8sutils.GetCurrentClusterDetails(kc, kContext)
+	serverVersionStr, serverVersion := getServerVersion(client)
+
+	kind := getKindFromDetectors(ctx, DetectionArguments{
+		ClusterDetails: details,
+		ServerVersion:  serverVersionStr,
+		KubeClient:     client,
+	})
+
+	return &ClusterDetails{
+		Kind:       kind,
+		K8SVersion: serverVersion,
+	}
 }

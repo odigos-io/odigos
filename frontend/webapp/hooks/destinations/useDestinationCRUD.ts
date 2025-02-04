@@ -2,10 +2,11 @@ import { useMemo } from 'react';
 import { useConfig } from '../config';
 import { GET_DESTINATIONS } from '@/graphql';
 import { useMutation, useQuery } from '@apollo/client';
+import { ACTION, DISPLAY_TITLES, FORM_ALERTS } from '@/utils';
 import { useFilterStore, useNotificationStore, usePendingStore } from '@/store';
-import { ACTION, DISPLAY_TITLES, FORM_ALERTS, getSseTargetFromId } from '@/utils';
+import { ENTITY_TYPES, getSseTargetFromId, NOTIFICATION_TYPE } from '@odigos/ui-utils';
+import { type SupportedSignals, type DestinationInput, type ComputePlatform } from '@/types';
 import { CREATE_DESTINATION, DELETE_DESTINATION, UPDATE_DESTINATION } from '@/graphql/mutations';
-import { NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES, type SupportedSignals, type DestinationInput, type ComputePlatform } from '@/types';
 
 interface Params {
   onSuccess?: (type: string) => void;
@@ -15,7 +16,7 @@ interface Params {
 export const useDestinationCRUD = (params?: Params) => {
   const filters = useFilterStore();
   const { data: config } = useConfig();
-  const { addPendingItems } = usePendingStore();
+  const { addPendingItems, removePendingItems } = usePendingStore();
   const { addNotification, removeNotifications } = useNotificationStore();
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
@@ -23,8 +24,8 @@ export const useDestinationCRUD = (params?: Params) => {
       type,
       title,
       message,
-      crdType: OVERVIEW_ENTITY_TYPES.DESTINATION,
-      target: id ? getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.DESTINATION) : undefined,
+      crdType: ENTITY_TYPES.DESTINATION,
+      target: id ? getSseTargetFromId(id, ENTITY_TYPES.DESTINATION) : undefined,
       hideFromHistory,
     });
   };
@@ -82,14 +83,27 @@ export const useDestinationCRUD = (params?: Params) => {
 
   const [updateDestination, uState] = useMutation<{ updateDestination: { id: string } }>(UPDATE_DESTINATION, {
     onError: (error) => handleError(ACTION.UPDATE, error.message),
-    onCompleted: () => handleComplete(ACTION.UPDATE),
+    onCompleted: (res, req) => {
+      handleComplete(ACTION.UPDATE);
+
+      // This is instead of toasting a k8s modified-event watcher...
+      // If we do toast with a watcher, we can't guarantee an SSE will be sent for this update alone. It will definitely include SSE for all updates, even those unexpected.
+      // Not that there's anything about a watcher that would break the UI, it's just that we would receive unexpected events with ridiculous amounts.
+      setTimeout(() => {
+        const { id, destination } = req?.variables || {};
+
+        refetch();
+        notifyUser(NOTIFICATION_TYPE.SUCCESS, ACTION.UPDATE, `Successfully updated "${destination.type}" destination`, id);
+        removePendingItems([{ entityType: ENTITY_TYPES.DESTINATION, entityId: id }]);
+      }, 2000);
+    },
   });
 
   const [deleteDestination, dState] = useMutation<{ deleteDestination: boolean }>(DELETE_DESTINATION, {
     onError: (error) => handleError(ACTION.DELETE, error.message),
     onCompleted: (res, req) => {
       const id = req?.variables?.id;
-      removeNotifications(getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.DESTINATION));
+      removeNotifications(getSseTargetFromId(id, ENTITY_TYPES.DESTINATION));
       handleComplete(ACTION.DELETE);
     },
   });
@@ -100,31 +114,31 @@ export const useDestinationCRUD = (params?: Params) => {
     filteredDestinations: filtered,
     refetchDestinations: refetch,
 
-    createDestination: (destination: DestinationInput) => {
+    createDestination: async (destination: DestinationInput) => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
         notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Creating destination...', undefined, true);
-        addPendingItems([{ entityType: OVERVIEW_ENTITY_TYPES.DESTINATION, entityId: undefined }]);
-        createDestination({ variables: { destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
+        addPendingItems([{ entityType: ENTITY_TYPES.DESTINATION, entityId: undefined }]);
+        await createDestination({ variables: { destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
       }
     },
-    updateDestination: (id: string, destination: DestinationInput) => {
+    updateDestination: async (id: string, destination: DestinationInput) => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
         notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Updating destination...', undefined, true);
-        addPendingItems([{ entityType: OVERVIEW_ENTITY_TYPES.DESTINATION, entityId: id }]);
-        updateDestination({ variables: { id, destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
+        addPendingItems([{ entityType: ENTITY_TYPES.DESTINATION, entityId: id }]);
+        await updateDestination({ variables: { id, destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
       }
     },
-    deleteDestination: (id: string) => {
+    deleteDestination: async (id: string) => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
         notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Deleting destination...', undefined, true);
-        addPendingItems([{ entityType: OVERVIEW_ENTITY_TYPES.DESTINATION, entityId: id }]);
-        deleteDestination({ variables: { id } });
+        addPendingItems([{ entityType: ENTITY_TYPES.DESTINATION, entityId: id }]);
+        await deleteDestination({ variables: { id } });
       }
     },
   };

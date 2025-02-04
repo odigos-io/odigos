@@ -1,4 +1,8 @@
-import type { Condition, DropdownOption, ExportedSignals } from './common';
+import { type DropdownProps } from '@odigos/ui-components';
+import { type Condition, type ExportedSignals } from './common';
+import { type Condition as CompareCondition } from '@odigos/ui-utils';
+
+type YamlCompareArr = [string, CompareCondition, string] | ['true' | 'false'];
 
 interface ObservabilitySignalSupport {
   supported: boolean;
@@ -39,8 +43,8 @@ export interface DestinationDetailsField {
   componentProperties: string;
   secret: boolean;
   initialValue: string;
-  renderCondition: string[];
-  hideFromReadData: string[];
+  renderCondition: YamlCompareArr;
+  hideFromReadData: YamlCompareArr;
   customReadDataLabels: {
     condition: string;
     title: string;
@@ -56,8 +60,8 @@ export interface DynamicField {
   type?: string;
   placeholder?: string;
   required?: boolean;
-  options?: DropdownOption[];
-  renderCondition: string[];
+  options?: DropdownProps['options'];
+  renderCondition: YamlCompareArr;
 }
 
 export interface DestinationDetailsResponse {

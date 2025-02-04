@@ -1,20 +1,15 @@
-import { PropsWithChildren, useMemo, useRef, useState } from 'react';
-import styled from 'styled-components';
-import DrawerFooter from './drawer-footer';
-import { Types } from '@odigos/ui-components';
-import { Drawer } from '@/reuseable-components';
-import DrawerHeader, { DrawerHeaderRef } from './drawer-header';
-import { CancelWarning, DeleteWarning } from '@/components/modals';
-import { NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES } from '@/types';
-import { useDestinationCRUD, useKeyDown, useSourceCRUD } from '@/hooks';
+import { forwardRef, type PropsWithChildren, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { useTheme } from 'styled-components';
+import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
+import { EditIcon, TrashIcon, type SVG } from '@odigos/ui-icons';
+import { ENTITY_TYPES, NOTIFICATION_TYPE, useKeyDown } from '@odigos/ui-utils';
 import { useDrawerStore, useNotificationStore, usePendingStore } from '@/store';
+import { CancelWarning, DeleteWarning, Drawer, DrawerProps, Input, Text } from '@odigos/ui-components';
 
-const DRAWER_WIDTH = `${640 + 64}px`; // +64 because of "ContentArea" padding
-
-interface Props {
+interface OverviewDrawerProps {
   title: string;
   titleTooltip?: string;
-  icon?: Types.SVG;
+  icon?: SVG;
   iconSrc?: string;
   isEdit?: boolean;
   isFormDirty?: boolean;
@@ -24,19 +19,27 @@ interface Props {
   onCancel?: () => void;
 }
 
-const DrawerContent = styled.div`
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-`;
+interface EditTitleRef {
+  getTitle: () => string;
+  clearTitle: () => void;
+}
 
-const ContentArea = styled.div`
-  flex-grow: 1;
-  padding: 24px 32px;
-  overflow-y: auto;
-`;
+const DRAWER_WIDTH = `${640 + 64}px`; // +64 because of "ContentArea" padding
 
-const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, titleTooltip, icon, iconSrc, isEdit = false, isFormDirty = false, onEdit, onSave, onDelete, onCancel }) => {
+const OverviewDrawer: React.FC<OverviewDrawerProps & PropsWithChildren> = ({
+  children,
+  title,
+  titleTooltip,
+  icon,
+  iconSrc,
+  isEdit = false,
+  isFormDirty = false,
+  onEdit,
+  onSave,
+  onDelete,
+  onCancel,
+}) => {
+  const theme = useTheme();
   const { isThisPending } = usePendingStore();
   const { addNotification } = useNotificationStore();
   const { selectedItem, setSelectedItem } = useDrawerStore();
@@ -49,10 +52,10 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
-  const titleRef = useRef<DrawerHeaderRef>(null);
+  const titleRef = useRef<EditTitleRef>(null);
 
-  const isSource = selectedItem?.type === OVERVIEW_ENTITY_TYPES.SOURCE;
-  const isDestination = selectedItem?.type === OVERVIEW_ENTITY_TYPES.DESTINATION;
+  const isSource = selectedItem?.type === ENTITY_TYPES.SOURCE;
+  const isDestination = selectedItem?.type === ENTITY_TYPES.DESTINATION;
 
   const closeDrawer = () => {
     setSelectedItem(null);
@@ -107,7 +110,7 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, 
     if (!selectedItem?.type) return false;
 
     return isThisPending({
-      entityType: selectedItem.type as OVERVIEW_ENTITY_TYPES,
+      entityType: selectedItem.type as ENTITY_TYPES,
       entityId: selectedItem.id,
     });
   }, [selectedItem]);
@@ -121,32 +124,94 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, 
     });
   };
 
+  const actionButtons: DrawerProps['header']['actionButtons'] = [];
+
+  if (!!onEdit && !isEdit)
+    actionButtons.push({
+      'data-id': 'drawer-edit',
+      variant: 'tertiary',
+      onClick: isPending ? () => handlePending('edit') : onEdit ? () => onEdit(true) : undefined,
+      children: (
+        <>
+          <EditIcon />
+          <Text size={14} family='secondary' decoration='underline'>
+            Edit
+          </Text>
+        </>
+      ),
+    });
+
+  if (!!onDelete && !isEdit)
+    actionButtons.push({
+      'data-id': 'drawer-delete',
+      variant: 'tertiary',
+      onClick: isPending ? () => handlePending(isSource ? 'uninstrument' : 'delete') : onEdit ? clickDelete : undefined,
+      children: (
+        <>
+          <TrashIcon />
+          <Text color={theme.text.error} size={14} family='secondary' decoration='underline'>
+            {isSource ? 'Uninstrument' : 'Delete'}
+          </Text>
+        </>
+      ),
+    });
+
   return (
     <>
-      <Drawer isOpen onClose={isEdit ? clickCancel : closeDrawer} width={DRAWER_WIDTH} closeOnEscape={!isDeleteModalOpen && !isCancelModalOpen}>
-        <DrawerContent>
-          <DrawerHeader
-            ref={titleRef}
-            title={title}
-            titleTooltip={titleTooltip}
-            icon={icon}
-            iconSrc={iconSrc}
-            isEdit={isEdit}
-            onEdit={isPending ? () => handlePending('edit') : onEdit ? () => onEdit(true) : undefined}
-            onClose={isEdit ? clickCancel : closeDrawer}
-            onDelete={isPending ? () => handlePending(isSource ? 'uninstrument' : 'delete') : onEdit ? clickDelete : undefined}
-            deleteLabel={isSource ? 'Uninstrument' : undefined}
-          />
-          <ContentArea>{children}</ContentArea>
-          <DrawerFooter isOpen={isEdit} onSave={clickSave} onCancel={clickCancel} onDelete={clickDelete} deleteLabel={isSource ? 'Uninstrument' : undefined} />
-        </DrawerContent>
+      <Drawer
+        isOpen
+        onClose={isEdit ? clickCancel : closeDrawer}
+        closeOnEscape={!isDeleteModalOpen && !isCancelModalOpen}
+        width={DRAWER_WIDTH}
+        header={{
+          icon,
+          iconSrc,
+          title,
+          titleTooltip,
+          replaceTitleWith: !isSource && isEdit ? () => <EditTitle ref={titleRef} title={title} /> : undefined,
+          actionButtons,
+        }}
+        footer={{
+          isOpen: isEdit,
+          leftButtons: [
+            {
+              'data-id': 'drawer-save',
+              variant: 'primary',
+              onClick: clickSave,
+              children: 'save',
+            },
+            {
+              'data-id': 'drawer-cancel',
+              variant: 'secondary',
+              onClick: clickCancel,
+              children: 'cancel',
+            },
+          ],
+          rightButtons: [
+            {
+              'data-id': 'drawer-delete',
+              variant: 'tertiary',
+              onClick: clickDelete,
+              children: (
+                <>
+                  <TrashIcon />
+                  <Text size={14} color={theme.text.error} family='secondary' decoration='underline'>
+                    delete
+                  </Text>
+                </>
+              ),
+            },
+          ],
+        }}
+      >
+        {children}
       </Drawer>
 
       <DeleteWarning
         isOpen={isDeleteModalOpen}
         noOverlay
         name={`${selectedItem?.type}${title ? ` (${title})` : ''}`}
-        type={selectedItem?.type as OVERVIEW_ENTITY_TYPES}
+        type={selectedItem?.type as ENTITY_TYPES}
         isLastItem={isLastItem()}
         onApprove={handleDelete}
         onDeny={closeWarningModals}
@@ -155,5 +220,20 @@ const OverviewDrawer: React.FC<Props & PropsWithChildren> = ({ children, title, 
     </>
   );
 };
+
+const EditTitle = forwardRef<EditTitleRef, { title: string }>(({ title }, ref) => {
+  const [inputValue, setInputValue] = useState(title);
+
+  useEffect(() => {
+    setInputValue(title);
+  }, [title]);
+
+  useImperativeHandle(ref, () => ({
+    getTitle: () => inputValue,
+    clearTitle: () => setInputValue(title),
+  }));
+
+  return <Input data-id='title' autoFocus value={inputValue} onChange={(e) => setInputValue(e.target.value)} />;
+});
 
 export default OverviewDrawer;

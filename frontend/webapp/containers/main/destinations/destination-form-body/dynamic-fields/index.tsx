@@ -1,7 +1,8 @@
 import React from 'react';
+import { INPUT_TYPES } from '@/utils';
 import type { DynamicField } from '@/types';
-import { compareCondition, INPUT_TYPES, safeJsonParse } from '@/utils';
-import { Dropdown, Input, TextArea, InputList, KeyValueInputsList, Checkbox } from '@/reuseable-components';
+import { compareCondition, safeJsonParse } from '@odigos/ui-utils';
+import { Checkbox, Dropdown, Input, InputList, KeyValueInputsList, TextArea } from '@odigos/ui-components';
 
 interface Props {
   fields: DynamicField[];
