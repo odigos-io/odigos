@@ -2,6 +2,7 @@ package agentenabled
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -18,6 +19,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -40,27 +42,47 @@ type PodsWebhook struct {
 var _ webhook.CustomDefaulter = &PodsWebhook{}
 
 func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
+
+	logger := log.FromContext(ctx)
+
 	pod, ok := obj.(*corev1.Pod)
 	if !ok {
-		return fmt.Errorf("expected a Pod but got a %T", obj)
+		logger.Error(errors.New("expected a Pod but got a different object"), "expected a Pod but got a different object")
+		return nil
 	}
 
 	pw, err := p.podWorkload(ctx, pod)
 	if err != nil {
-		// TODO: if the webhook is enabled for all pods, this is not necessarily an error
-		return err
+		// TODO: ignore error if this pod does not belong to any odigos workloads
+		logger.Error(err, "failed to get pod workload details")
+		return nil
 	}
 
 	var ic odigosv1.InstrumentationConfig
 	icName := workload.CalculateWorkloadRuntimeObjectName(pw.Name, pw.Kind)
-	if err := p.Get(ctx, client.ObjectKey{Namespace: pw.Namespace, Name: icName}, &ic); err != nil {
-		// TODO: if the webhook is enabled for all pods, this is not an error
-		// as it is expected for pods that are not relevant for instrumentation
-		return fmt.Errorf("failed to get instrumentationConfig: %w", err)
+	err = p.Get(ctx, client.ObjectKey{Namespace: pw.Namespace, Name: icName}, &ic)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			// instrumentationConfig does not exist, this pod does not belong to any odigos workloads
+			return nil
+		}
+		logger.Error(err, "failed to get instrumentationConfig")
+		return nil
+	}
+
+	if !ic.Spec.AgentInjectionEnabled {
+		// instrumentation config exists, but no agent should be injected by webhook
+		return nil
 	}
 
 	// Inject ODIGOS environment variables and instrumentation device into all containers
-	return p.injectOdigosInstrumentation(ctx, pod, &ic, pw)
+	err = p.injectOdigosInstrumentation(ctx, pod, &ic, pw)
+	if err != nil {
+		logger.Error(err, "failed to inject ODIGOS environment variables and instrumentation device")
+		return nil
+	}
+
+	return nil
 }
 
 func (p *PodsWebhook) podWorkload(ctx context.Context, pod *corev1.Pod) (*k8sconsts.PodWorkload, error) {

@@ -133,7 +133,7 @@ type ContainerConfig struct {
 
 	// The name of the otel distribution to use for this container.
 	// if the name is empty, this container should not be instrumented.
-	OtelDistroName string `json:"otelDistroName"`
+	OtelDistroName string `json:"otelDistroName,omitempty"`
 }
 
 // Config for the OpenTelemeetry SDKs that should be applied to a workload.

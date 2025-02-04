@@ -144,9 +144,15 @@ func (m *MigrationRunnable) handleSingleDeployment(ctx context.Context, dep *app
 		}
 	}
 
+	envReverted := false
 	if odigosOriginalAnnotationFound(freshDep.Annotations) {
 		deleteOriginalEnvAnnotationInPlace(&freshDep)
 		revertOriginalEnvAnnotationInPlace(originalWorkloadEnvVar, &freshDep.Spec.Template.Spec)
+	}
+	labelRemoved := removeInjectInstrumentationLabel(&freshDep.Spec.Template)
+	devicesRemoved := revertInstrumentationDevices(&freshDep.Spec.Template)
+
+	if envReverted || labelRemoved || devicesRemoved {
 		err = m.KubeClient.Update(ctx, &freshDep)
 		if err != nil {
 			m.Logger.Error(err, "Failed to revert deployment", "Name", freshDep.GetName(), "Namespace", freshDep.GetNamespace())

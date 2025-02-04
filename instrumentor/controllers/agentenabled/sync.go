@@ -78,6 +78,8 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	logger.Info("Reconciling workload for InstrumentationConfig object agent enabling", "name", ic.Name, "namespace", ic.Namespace, "instrumentationConfig", ic)
+
 	condition, err := updateInstrumentationConfigSpec(ctx, c, pw, &ic)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -280,7 +282,7 @@ func containerInstrumentationConfig(containerName string,
 
 	// check for presence of other agents
 	if runtimeDetails.OtherAgent != nil {
-		if effectiveConfig.AllowConcurrentAgents != nil || *effectiveConfig.AllowConcurrentAgents == true {
+		if effectiveConfig.AllowConcurrentAgents == nil || !*effectiveConfig.AllowConcurrentAgents {
 			return odigosv1.ContainerConfig{
 				ContainerName:          containerName,
 				Instrumented:           false,
