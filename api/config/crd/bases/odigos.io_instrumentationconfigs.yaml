@@ -85,7 +85,6 @@ spec:
                   required:
                   - containerName
                   - instrumented
-                  - otelDistroName
                   type: object
                 type: array
               sdkConfigs:
