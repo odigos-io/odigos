@@ -196,7 +196,11 @@ func OdigletInitPhase() {
 		os.Exit(-1)
 	}
 
-	if err := k8snode.AddLabelToNode(nn, k8sconsts.OdigletInstalledLabel, k8sconsts.OdigletInstalledLabelValue); err != nil {
+	odigletInstalledLabel := k8snode.DetermineNodeOdigletInstalledLabelByTier()
+
+	log.Logger.V(0).Info("Adding Label to Node", "odigletLabel", odigletInstalledLabel)
+
+	if err := k8snode.AddLabelToNode(nn, odigletInstalledLabel, k8sconsts.OdigletInstalledLabelValue); err != nil {
 		log.Logger.Error(err, "Failed to add Odiglet installed label to the node")
 		os.Exit(-1)
 	}

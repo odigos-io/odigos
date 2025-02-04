@@ -14,10 +14,15 @@ const (
 	OdigletEnterpriseImageUBI9    = "odigos-enterprise-odiglet-ubi9"
 	OdigletImageUBI9              = "odigos-odiglet-ubi9"
 	// Used to indicate that the odiglet is installed on a node.
-	OdigletInstalledLabel      = "odigos.io/odiglet-installed"
-	OdigletInstalledLabelValue = "true"
+	OdigletOSSInstalledLabel        = "odigos.io/odiglet-oss-installed"
+	OdigletEnterpriseInstalledLabel = "odigos.io/odiglet-enterprise-installed"
+	OdigletInstalledLabelValue      = "true"
 )
 
-var OdigletInstalled = map[string]string{
-	OdigletInstalledLabel: OdigletInstalledLabelValue,
+var OdigletOSSInstalled = map[string]string{
+	OdigletOSSInstalledLabel: OdigletInstalledLabelValue,
+}
+
+var OdigletEnterpriseInstalled = map[string]string{
+	OdigletEnterpriseInstalledLabel: OdigletInstalledLabelValue,
 }

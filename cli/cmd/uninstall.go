@@ -524,20 +524,37 @@ func uninstallRBAC(ctx context.Context, cmd *cobra.Command, client *kube.Client,
 }
 
 func cleanupNodeOdigosLabels(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
-	nodes, err := client.CoreV1().Nodes().List(ctx, metav1.ListOptions{
-		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
-			MatchLabels: k8sconsts.OdigletInstalled,
-		}),
+	nodeSet := make(map[string]struct{})
+
+	// Step 1: Get OSS nodes
+	ossNodes, err := client.CoreV1().Nodes().List(ctx, metav1.ListOptions{
+		LabelSelector: k8sconsts.OdigletOSSInstalledLabel,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to list nodes: %w", err)
+		return fmt.Errorf("failed to list nodes with %s: %w", k8sconsts.OdigletOSSInstalledLabel, err)
+	}
+	for _, node := range ossNodes.Items {
+		nodeSet[node.Name] = struct{}{}
 	}
 
-	for _, node := range nodes.Items {
+	// Step 2: Get Enterprise nodes
+	enterpriseNodes, err := client.CoreV1().Nodes().List(ctx, metav1.ListOptions{
+		LabelSelector: k8sconsts.OdigletEnterpriseInstalledLabel,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to list nodes with %s: %w", k8sconsts.OdigletEnterpriseInstalledLabel, err)
+	}
+	for _, node := range enterpriseNodes.Items {
+		nodeSet[node.Name] = struct{}{}
+	}
+
+	for nodeName := range nodeSet {
 		patchData := map[string]interface{}{
 			"metadata": map[string]interface{}{
 				"labels": map[string]interface{}{
-					"odigos.io/odiglet-installed": nil, // Setting to `nil` removes the label
+					// Setting to `nil` removes the labels if exists, otherwise will ignore
+					k8sconsts.OdigletOSSInstalledLabel:        nil,
+					k8sconsts.OdigletEnterpriseInstalledLabel: nil,
 				},
 			},
 		}
@@ -547,9 +564,9 @@ func cleanupNodeOdigosLabels(ctx context.Context, cmd *cobra.Command, client *ku
 			return fmt.Errorf("failed to marshal patch data: %w", err)
 		}
 
-		_, err = client.CoreV1().Nodes().Patch(ctx, node.Name, types.StrategicMergePatchType, patchBytes, metav1.PatchOptions{})
+		_, err = client.CoreV1().Nodes().Patch(ctx, nodeName, types.StrategicMergePatchType, patchBytes, metav1.PatchOptions{})
 		if err != nil {
-			return fmt.Errorf("failed to patch node %s: %w", node.Name, err)
+			return fmt.Errorf("failed to patch node %s: %w", nodeName, err)
 		}
 	}
 

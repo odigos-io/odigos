@@ -398,6 +398,17 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 										},
 									},
 								},
+								{
+									Name: consts.OdigosTierEnvVarName,
+									ValueFrom: &corev1.EnvVarSource{
+										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: k8sconsts.OdigosDeploymentConfigMapName,
+											},
+											Key: k8sconsts.OdigosDeploymentConfigMapTierKey,
+										},
+									},
+								},
 							},
 							Resources: corev1.ResourceRequirements{},
 							VolumeMounts: append([]corev1.VolumeMount{
