@@ -17,13 +17,18 @@ limitations under the License.
 
 package v1alpha1
 
+import (
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+)
+
 // ContainerConfigApplyConfiguration represents a declarative configuration of the ContainerConfig type for use
 // with apply.
 type ContainerConfigApplyConfiguration struct {
-	ContainerName         *string `json:"containerName,omitempty"`
-	Instrumented          *bool   `json:"instrumented,omitempty"`
-	InstrumentationReason *string `json:"instrumentationReason,omitempty"`
-	OtelDistroName        *string `json:"otelDistroName,omitempty"`
+	ContainerName          *string                              `json:"containerName,omitempty"`
+	Instrumented           *bool                                `json:"instrumented,omitempty"`
+	InstrumentationReason  *odigosv1alpha1.AgentInjectionReason `json:"instrumentationReason,omitempty"`
+	InstrumentationMessage *string                              `json:"instrumentationMessage,omitempty"`
+	OtelDistroName         *string                              `json:"otelDistroName,omitempty"`
 }
 
 // ContainerConfigApplyConfiguration constructs a declarative configuration of the ContainerConfig type for use with
@@ -51,8 +56,16 @@ func (b *ContainerConfigApplyConfiguration) WithInstrumented(value bool) *Contai
 // WithInstrumentationReason sets the InstrumentationReason field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the InstrumentationReason field is set to the value of the last call.
-func (b *ContainerConfigApplyConfiguration) WithInstrumentationReason(value string) *ContainerConfigApplyConfiguration {
+func (b *ContainerConfigApplyConfiguration) WithInstrumentationReason(value odigosv1alpha1.AgentInjectionReason) *ContainerConfigApplyConfiguration {
 	b.InstrumentationReason = &value
+	return b
+}
+
+// WithInstrumentationMessage sets the InstrumentationMessage field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the InstrumentationMessage field is set to the value of the last call.
+func (b *ContainerConfigApplyConfiguration) WithInstrumentationMessage(value string) *ContainerConfigApplyConfiguration {
+	b.InstrumentationMessage = &value
 	return b
 }
 

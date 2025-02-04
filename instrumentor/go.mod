@@ -9,6 +9,7 @@ require (
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/odigos/k8sutils v0.0.0
+	github.com/odigos-io/odigos/distros v0.0.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.36.2
 	github.com/stretchr/testify v1.10.0
@@ -103,4 +104,5 @@ replace (
 	github.com/odigos-io/odigos/api => ../api
 	github.com/odigos-io/odigos/common => ../common
 	github.com/odigos-io/odigos/k8sutils => ../k8sutils
+	github.com/odigos-io/odigos/distros => ../distros
 )
