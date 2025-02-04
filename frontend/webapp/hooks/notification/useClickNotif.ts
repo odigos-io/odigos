@@ -3,16 +3,17 @@ import { useActionCRUD } from '../actions';
 import { type Notification } from '@/types';
 import { useDestinationCRUD } from '../destinations';
 import { useInstrumentationRuleCRUD } from '../instrumentation-rules';
-import { DrawerItem, useDrawerStore, useNotificationStore } from '@/store';
 import { ENTITY_TYPES, getIdFromSseTarget, type WorkloadId } from '@odigos/ui-utils';
+import { DrawerItem, useDrawerStore, useNotificationStore } from '@odigos/ui-containers';
 
 export const useClickNotif = () => {
   const { sources } = useSourceCRUD();
   const { actions } = useActionCRUD();
   const { destinations } = useDestinationCRUD();
   const { instrumentationRules } = useInstrumentationRuleCRUD();
+
+  const { setSelectedItem } = useDrawerStore();
   const { markAsDismissed, markAsSeen } = useNotificationStore();
-  const setSelectedItem = useDrawerStore(({ setSelectedItem }) => setSelectedItem);
 
   const clickNotif = (notif: Notification, options?: { dismissToast?: boolean }) => {
     const { id, crdType, target } = notif;

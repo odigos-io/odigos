@@ -1,15 +1,15 @@
 import React from 'react';
 import { CliDrawer } from './cli-drawer';
 import { ENTITY_TYPES } from '@odigos/ui-utils';
-import { DRAWER_OTHER_TYPES, useDrawerStore } from '@/store';
+import { DRAWER_OTHER_TYPES, useDrawerStore } from '@odigos/ui-containers';
 import { ActionDrawer, DestinationDrawer, RuleDrawer, SourceDrawer } from '@/containers';
 
 const AllDrawers = () => {
-  const selected = useDrawerStore(({ selectedItem }) => selectedItem);
+  const { selectedItem } = useDrawerStore();
 
-  if (!selected?.type) return null;
+  if (!selectedItem?.type) return null;
 
-  switch (selected.type) {
+  switch (selectedItem.type) {
     case ENTITY_TYPES.INSTRUMENTATION_RULE:
       return <RuleDrawer />;
 

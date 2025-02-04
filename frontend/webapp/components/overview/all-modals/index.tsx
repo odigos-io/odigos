@@ -1,17 +1,16 @@
 import React from 'react';
-import { useModalStore } from '@/store';
 import { ENTITY_TYPES } from '@odigos/ui-utils';
+import { useModalStore } from '@odigos/ui-containers';
 import { ActionModal, AddSourceModal, DestinationModal, RuleModal } from '@/containers';
 
 const AllModals = () => {
-  const selected = useModalStore(({ currentModal }) => currentModal);
-  const setSelected = useModalStore(({ setCurrentModal }) => setCurrentModal);
+  const { currentModal, setCurrentModal } = useModalStore();
 
-  if (!selected) return null;
+  if (!currentModal) return null;
 
-  const handleClose = () => setSelected('');
+  const handleClose = () => setCurrentModal('');
 
-  switch (selected) {
+  switch (currentModal) {
     case ENTITY_TYPES.INSTRUMENTATION_RULE:
       return <RuleModal isOpen onClose={handleClose} />;
 

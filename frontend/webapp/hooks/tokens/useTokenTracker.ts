@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { useTokenCRUD } from '.';
+import { useStatusStore } from '@/store';
 import { DISPLAY_TITLES, SEVEN_DAYS_IN_MS } from '@/utils';
-import { useNotificationStore, useStatusStore } from '@/store';
+import { useNotificationStore } from '@odigos/ui-containers';
 import { isOverTime, NOTIFICATION_TYPE, useTimeAgo } from '@odigos/ui-utils';
 
 // This hook is responsible for tracking the tokens and their expiration times.

@@ -16,22 +16,20 @@ export interface K8sActualNamespace {
   k8sActualSources?: K8sActualSource[];
 }
 
-interface PaginatedSources {
+interface PaginatedData<T = any> {
   nextPage: string;
-  items: K8sActualSource[];
+  items: T[];
 }
 
-interface ComputePlatformData {
-  computePlatformType?: string;
-  apiTokens?: TokenPayload[];
-  k8sActualNamespaces?: K8sActualNamespace[];
-  k8sActualNamespace?: K8sActualNamespace;
-  sources?: PaginatedSources;
-  destinations?: ActualDestination[];
-  actions?: ActionData[]; // mapped to "ActionDataParsed" in the frontend
-  instrumentationRules?: InstrumentationRuleSpec[]; // mapped to "InstrumentationRuleSpecMapped" in the frontend
+export interface ComputePlatform {
+  computePlatform: {
+    computePlatformType?: string;
+    apiTokens?: TokenPayload[];
+    k8sActualNamespaces?: K8sActualNamespace[];
+    k8sActualNamespace?: K8sActualNamespace;
+    sources?: PaginatedData<K8sActualSource>;
+    destinations?: ActualDestination[];
+    actions?: ActionData[]; // should map from "ActionData" to "ActionDataParsed" in get-query
+    instrumentationRules?: InstrumentationRuleSpec[]; // should map from "InstrumentationRuleSpec" to "InstrumentationRuleSpecMapped" in get-query
+  };
 }
-
-export type ComputePlatform = {
-  computePlatform: ComputePlatformData;
-};

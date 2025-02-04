@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react';
+import { useAppStore } from '@/store';
 import styled from 'styled-components';
 import { ENTITY_TYPES } from '@odigos/ui-utils';
 import type { Node, NodeProps } from '@xyflow/react';
 import { K8sActualSource, NODE_TYPES } from '@/types';
-import { useAppStore, usePendingStore } from '@/store';
+import { usePendingStore } from '@odigos/ui-containers';
 import { usePaginatedSources, useSourceCRUD } from '@/hooks';
 import { Badge, Checkbox, FadeLoader, Text } from '@odigos/ui-components';
 

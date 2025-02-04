@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
-import { useDrawerStore } from '@/store';
 import styled, { useTheme } from 'styled-components';
+import { useDrawerStore } from '@odigos/ui-containers';
 import { DATA_CARDS, SEVEN_DAYS_IN_MS } from '@/utils';
 import { useDescribeOdigos, useTokenCRUD } from '@/hooks';
 import { CheckIcon, CodeBracketsIcon, CodeIcon, CopyIcon, CrossIcon, EditIcon, KeyIcon, ListIcon } from '@odigos/ui-icons';

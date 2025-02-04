@@ -1,7 +1,7 @@
 import { FORM_ALERTS } from '@/utils';
 import { useGenericForm } from '@/hooks';
 import { NOTIFICATION_TYPE } from '@odigos/ui-utils';
-import { useNotificationStore, type DrawerItem } from '@/store';
+import { type DrawerItem, useNotificationStore } from '@odigos/ui-containers';
 import { CodeAttributesType, PayloadCollectionType, type InstrumentationRuleInput, type InstrumentationRuleSpec } from '@/types';
 
 const INITIAL: InstrumentationRuleInput = {

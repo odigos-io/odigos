@@ -1,9 +1,9 @@
 import { ACTION, DISPLAY_TITLES, FORM_ALERTS } from '@/utils';
 import { useConfig } from '../config';
-import { useNotificationStore } from '@/store';
 import { NOTIFICATION_TYPE } from '@odigos/ui-utils';
 import { useMutation, useQuery } from '@apollo/client';
 import { useComputePlatform } from './useComputePlatform';
+import { useNotificationStore } from '@odigos/ui-containers';
 import { GET_NAMESPACE, PERSIST_NAMESPACE } from '@/graphql';
 import { type ComputePlatform, type PersistNamespaceItemInput } from '@/types';
 

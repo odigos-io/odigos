@@ -2,8 +2,8 @@ import React from 'react';
 import styled from 'styled-components';
 import { Notification } from '@/types';
 import { useClickNotif } from '@/hooks';
-import { useNotificationStore } from '@/store';
 import { NotificationNote } from '@odigos/ui-components';
+import { useNotificationStore } from '@odigos/ui-containers';
 
 const Container = styled.div`
   position: fixed;

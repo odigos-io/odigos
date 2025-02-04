@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react';
+import { useStatusStore } from '@/store';
 import { NOTIFICATION_TYPE } from '@odigos/ui-utils';
 import { useDestinationCRUD } from '../destinations';
 import { usePaginatedSources } from '../compute-platform';
 import { API, DISPLAY_TITLES, NOTIF_CRD_TYPES } from '@/utils';
-import { type NotifyPayload, useNotificationStore, usePendingStore, useStatusStore } from '@/store';
+import { type NotifyPayload, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
 
 export const useSSE = () => {
   const { setPendingItems } = usePendingStore();

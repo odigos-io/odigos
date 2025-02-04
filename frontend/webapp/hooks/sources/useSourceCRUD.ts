@@ -2,11 +2,12 @@ import { useMemo } from 'react';
 import { useConfig } from '../config';
 import { useMutation } from '@apollo/client';
 import { useNamespace } from '../compute-platform';
+import { useAppStore, usePaginatedStore } from '@/store';
 import { PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import { type PatchSourceRequestInput, type K8sActualSource } from '@/types';
 import { ACTION, BACKEND_BOOLEAN, DISPLAY_TITLES, FORM_ALERTS } from '@/utils';
+import { type PendingItem, useFilterStore, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
 import { ENTITY_TYPES, getSseTargetFromId, K8S_RESOURCE_KIND, NOTIFICATION_TYPE, type WorkloadId } from '@odigos/ui-utils';
-import { type PendingItem, useAppStore, useFilterStore, useNotificationStore, usePaginatedStore, usePendingStore } from '@/store';
 
 interface Params {
   onSuccess?: (type: string) => void;

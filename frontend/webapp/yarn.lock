@@ -9,10 +9,10 @@
   dependencies:
     ts-invariant "^0.10.3"
 
-"@apollo/client@^3.12.8":
-  version "3.12.8"
-  resolved "https://registry.yarnpkg.com/@apollo/client/-/client-3.12.8.tgz#99670386104f77ceba03f7e3dc0d91813f03cd3c"
-  integrity sha512-053z5eCM7zNl81Lxs/SqHv8e+x3sszrtmGS2TNuPW0ZTZzmKATMsIsoblx1Kt0E67Ze3jb99JSPiQHG9ozGc3g==
+"@apollo/client@^3.12.9":
+  version "3.12.9"
+  resolved "https://registry.yarnpkg.com/@apollo/client/-/client-3.12.9.tgz#fb7afc254bc4a5bfeeae905426edcb9d3e643fae"
+  integrity sha512-rH2Vzfbp+IR0l/xAjUIbDH4/sqBzPATMbzXv/L36E33yhp40yM5LFJnC6cc4YDPUH2gom7Dk4BrYZVLbFpYTsA==
   dependencies:
     "@graphql-typed-document-node/core" "^3.1.1"
     "@wry/caches" "^1.0.0"
@@ -527,6 +527,20 @@
     react-dom "^19.0.0"
     styled-components "^6.1.14"
 
+"@odigos/ui-containers@^0.0.5":
+  version "0.0.5"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-containers/-/ui-containers-0.0.5.tgz#820c9f15dc6c148b19cafcf7f0fc79d7bdbb19da"
+  integrity sha512-cWvRd9n+TGruf+XCMZI2uygc57zbjdHRQ+gEWme7u6x588oxJJQZgXjUzJU7ki41AA61SUzIvVfKbbSxram3Bg==
+  dependencies:
+    "@odigos/ui-components" "^0.0.33"
+    "@odigos/ui-theme" "^0.0.2"
+    "@odigos/ui-utils" "^0.0.5"
+    "@xyflow/react" "^12.4.2"
+    react "^19.0.0"
+    react-dom "^19.0.0"
+    styled-components "^6.1.14"
+    zustand "^5.0.3"
+
 "@odigos/ui-icons@^0.0.2":
   version "0.0.2"
   resolved "https://registry.yarnpkg.com/@odigos/ui-icons/-/ui-icons-0.0.2.tgz#0cdc9867b871971e7487e7728ad762d2a5440a3e"
@@ -549,6 +563,17 @@
   version "0.0.3"
   resolved "https://registry.yarnpkg.com/@odigos/ui-utils/-/ui-utils-0.0.3.tgz#f69200442ff1d52322c6c469c5eec3bec98df640"
   integrity sha512-M1Ys9N5drozQNNIydkwjHK1omr1tszCosDmEVETbjMmIKhm01B8AKfKjY8VmBBILpZQnZN2fjUC/DWAvSUQh5g==
+  dependencies:
+    "@odigos/ui-icons" "^0.0.2"
+    javascript-time-ago "^2.5.11"
+    react "^19.0.0"
+    react-dom "^19.0.0"
+    styled-components "^6.1.14"
+
+"@odigos/ui-utils@^0.0.5":
+  version "0.0.5"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-utils/-/ui-utils-0.0.5.tgz#dd00587005aaaa056cac30164e6f26cae621fa70"
+  integrity sha512-Q71imiIQZIC/ZuT27O8zjP2pX1MPiU3msM7KSgK4ewpELQGfQZcgCPlRa6HVO3VTkrJgQbl3QJ1LRuQPVyIV7g==
   dependencies:
     "@odigos/ui-icons" "^0.0.2"
     javascript-time-ago "^2.5.11"
@@ -815,10 +840,10 @@
   dependencies:
     undici-types "~6.20.0"
 
-"@types/node@22.13.0":
-  version "22.13.0"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-22.13.0.tgz#d376dd9a0ee2f9382d86c2d5d7beb4d198b4ea8c"
-  integrity sha512-ClIbNe36lawluuvq3+YYhnIN2CELi+6q8NpnM7PYp4hBn/TatfboPgVSm2rwKRfnV2M+Ty9GWDFI64KEe+kysA==
+"@types/node@22.13.1":
+  version "22.13.1"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-22.13.1.tgz#a2a3fefbdeb7ba6b89f40371842162fac0934f33"
+  integrity sha512-jK8uzQlrvXqEU91UxiK5J7pKHyzgnI1Qnl0QDHIgVGuolJhRb9EEl28Cj9b3rGR8B2lhFCtvIm5os8lFnO/1Ew==
   dependencies:
     undici-types "~6.20.0"
 

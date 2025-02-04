@@ -1,8 +1,8 @@
 import React, { Fragment } from 'react';
 import styled from 'styled-components';
 import { Theme } from '@odigos/ui-theme';
-import { usePendingStore } from '@/store';
 import { PlusIcon } from '@odigos/ui-icons';
+import { usePendingStore } from '@odigos/ui-containers';
 import { NODE_TYPES, OVERVIEW_NODE_TYPES } from '@/types';
 import { ENTITY_TYPES, HEALTH_STATUS } from '@odigos/ui-utils';
 import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';

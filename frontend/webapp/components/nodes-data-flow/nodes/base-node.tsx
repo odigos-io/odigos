@@ -1,6 +1,7 @@
 import React from 'react';
+import { useAppStore } from '@/store';
 import styled from 'styled-components';
-import { useAppStore, usePendingStore } from '@/store';
+import { usePendingStore } from '@odigos/ui-containers';
 import { ErrorTriangleIcon, type SVG } from '@odigos/ui-icons';
 import { Checkbox, DataTab, FadeLoader } from '@odigos/ui-components';
 import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';

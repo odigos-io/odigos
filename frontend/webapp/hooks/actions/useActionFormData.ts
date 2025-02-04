@@ -1,6 +1,6 @@
 import { useGenericForm } from '@/hooks';
 import { FORM_ALERTS } from '@/utils';
-import { DrawerItem, useNotificationStore } from '@/store';
+import { DrawerItem, useNotificationStore } from '@odigos/ui-containers';
 import { LatencySamplerSpec, type ActionDataParsed, type ActionInput } from '@/types';
 import { ACTION_TYPE, isEmpty, NOTIFICATION_TYPE, safeJsonParse } from '@odigos/ui-utils';
 

@@ -7,7 +7,7 @@ import buildDrawerItem from './build-drawer-item';
 import { ACTION, DATA_CARDS, FORM_ALERTS } from '@/utils';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { type InstrumentationRuleSpecMapped } from '@/types';
-import { useDrawerStore, useNotificationStore } from '@/store';
+import { useDrawerStore, useNotificationStore } from '@odigos/ui-containers';
 import { useInstrumentationRuleCRUD, useInstrumentationRuleFormData } from '@/hooks';
 import { ENTITY_TYPES, getInstrumentationRuleIcon, INSTRUMENTATION_RULE_OPTIONS, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 

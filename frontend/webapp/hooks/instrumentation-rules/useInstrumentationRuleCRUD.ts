@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { useConfig } from '../config';
-import { useNotificationStore } from '@/store';
 import { GET_INSTRUMENTATION_RULES } from '@/graphql';
 import { useMutation, useQuery } from '@apollo/client';
+import { useNotificationStore } from '@odigos/ui-containers';
 import { ACTION, DISPLAY_TITLES, FORM_ALERTS } from '@/utils';
 import { type ComputePlatform, type InstrumentationRuleInput } from '@/types';
 import { deriveTypeFromRule, ENTITY_TYPES, getSseTargetFromId, NOTIFICATION_TYPE } from '@odigos/ui-utils';

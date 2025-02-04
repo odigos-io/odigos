@@ -3,7 +3,7 @@ import { useTheme } from 'styled-components';
 import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
 import { EditIcon, TrashIcon, type SVG } from '@odigos/ui-icons';
 import { ENTITY_TYPES, NOTIFICATION_TYPE, useKeyDown } from '@odigos/ui-utils';
-import { useDrawerStore, useNotificationStore, usePendingStore } from '@/store';
+import { useDrawerStore, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
 import { CancelWarning, DeleteWarning, Drawer, DrawerProps, Input, Text } from '@odigos/ui-components';
 
 interface OverviewDrawerProps {

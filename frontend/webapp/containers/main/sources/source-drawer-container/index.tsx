@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import buildCard from './build-card';
 import styled from 'styled-components';
-import { useDrawerStore } from '@/store';
 import { type K8sActualSource } from '@/types';
 import buildDrawerItem from './build-drawer-item';
 import { CodeIcon, ListIcon } from '@odigos/ui-icons';
+import { useDrawerStore } from '@odigos/ui-containers';
 import { UpdateSourceBody } from '../update-source-body';
 import { useDescribeSource, useSourceCRUD } from '@/hooks';
 import OverviewDrawer from '../../overview/overview-drawer';

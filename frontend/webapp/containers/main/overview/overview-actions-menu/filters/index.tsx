@@ -4,7 +4,7 @@ import styled, { useTheme } from 'styled-components';
 import { Button, Toggle } from '@odigos/ui-components';
 import { useKeyDown, useOnClickOutside } from '@odigos/ui-utils';
 import { AbsoluteContainer, RelativeContainer } from '../styled';
-import { type FiltersState, useFilterStore } from '@/store/useFilterStore';
+import { useFilterStore, type FiltersState } from '@odigos/ui-containers';
 import { ErrorDropdown, LanguageDropdown, MonitorDropdown, NamespaceDropdown, SelectionButton, TypeDropdown } from '@/components';
 
 const FormWrapper = styled.div`
