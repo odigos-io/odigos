@@ -5,6 +5,5 @@ export * from './data-flow';
 export * from './describe';
 export * from './destinations';
 export * from './instrumentation-rules';
-export * from './metrics';
 export * from './namespace';
 export * from './sources';

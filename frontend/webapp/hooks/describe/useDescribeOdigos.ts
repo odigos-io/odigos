@@ -1,4 +1,3 @@
-import { isEnterprise } from '@/utils';
 import { useQuery } from '@apollo/client';
 import { DESCRIBE_ODIGOS } from '@/graphql';
 import { type DescribeOdigos } from '@/types';
@@ -42,7 +41,7 @@ export const useDescribeOdigos = () => {
     return payload;
   };
 
-  const isPro = isEnterprise(data?.describeOdigos.tier.value);
+  const isPro = ['onprem', 'enterprise'].includes(data?.describeOdigos.tier.value || '');
 
   return {
     loading,

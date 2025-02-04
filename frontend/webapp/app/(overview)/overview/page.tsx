@@ -1,12 +1,22 @@
 'use client';
 import React from 'react';
 import dynamic from 'next/dynamic';
-import { usePaginatedSources, useSSE, useTokenTracker } from '@/hooks';
+import styled from 'styled-components';
+import { DataFlow } from '@odigos/ui-containers';
+import { useActionCRUD, useDestinationCRUD, useInstrumentationRuleCRUD, useMetrics, useNodeDataFlowHandlers, usePaginatedSources, useSourceCRUD, useSSE, useTokenTracker } from '@/hooks';
 
 const ToastList = dynamic(() => import('@/components/notification/toast-list'), { ssr: false });
 const AllDrawers = dynamic(() => import('@/components/overview/all-drawers'), { ssr: false });
 const AllModals = dynamic(() => import('@/components/overview/all-modals'), { ssr: false });
-const OverviewDataFlowContainer = dynamic(() => import('@/containers/main/overview/overview-data-flow'), { ssr: false });
+
+const OverviewActionsMenu = dynamic(() => import('@/containers/main/overview/overview-actions-menu'), { ssr: false });
+const MultiSourceControl = dynamic(() => import('@/containers/main/overview/multi-source-control'), { ssr: false });
+
+const Container = styled.div`
+  width: 100%;
+  height: calc(100vh - 176px);
+  position: relative;
+`;
 
 export default function MainPage() {
   useSSE();
@@ -14,14 +24,50 @@ export default function MainPage() {
 
   // "usePaginatedSources" is here to fetch sources just once
   // (hooks run on every mount, we don't want that for pagination)
-  usePaginatedSources();
+  const { loading: pageLoading } = usePaginatedSources();
+
+  const { handleNodeClick } = useNodeDataFlowHandlers();
+
+  const { metrics } = useMetrics();
+  const { sources, filteredSources, loading: srcLoad } = useSourceCRUD();
+  const { actions, filteredActions, loading: actLoad } = useActionCRUD();
+  const { destinations, filteredDestinations, loading: destLoad } = useDestinationCRUD();
+  const { instrumentationRules, filteredInstrumentationRules, loading: ruleLoad } = useInstrumentationRuleCRUD();
 
   return (
     <>
       <ToastList />
+      <MultiSourceControl />
       <AllDrawers />
       <AllModals />
-      <OverviewDataFlowContainer />
+
+      <Container>
+        <OverviewActionsMenu />
+        <DataFlow
+          sources={{
+            loading: srcLoad || pageLoading,
+            entities: filteredSources,
+            unfilteredCount: sources.length,
+          }}
+          destinations={{
+            loading: destLoad,
+            entities: filteredDestinations,
+            unfilteredCount: destinations.length,
+          }}
+          actions={{
+            loading: actLoad,
+            entities: filteredActions,
+            unfilteredCount: actions.length,
+          }}
+          instrumentationRules={{
+            loading: ruleLoad,
+            entities: filteredInstrumentationRules,
+            unfilteredCount: instrumentationRules.length,
+          }}
+          metrics={metrics}
+          onNodeClick={handleNodeClick}
+        />
+      </Container>
     </>
   );
 }

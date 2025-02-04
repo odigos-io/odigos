@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { useAppStore } from '@/store';
 import { useSourceCRUD } from '@/hooks';
 import { Theme } from '@odigos/ui-theme';
 import { TrashIcon } from '@odigos/ui-icons';
 import { type K8sActualSource } from '@/types';
 import styled, { useTheme } from 'styled-components';
+import { useSelectedStore } from '@odigos/ui-containers';
 import { ENTITY_TYPES, useTransition } from '@odigos/ui-utils';
 import { Badge, Button, DeleteWarning, Divider, Text } from '@odigos/ui-components';
 
@@ -23,7 +23,7 @@ const Container = styled.div`
   background-color: ${({ theme }) => theme.colors.dropdown_bg};
 `;
 
-export const MultiSourceControl = () => {
+const MultiSourceControl = () => {
   const Transition = useTransition({
     container: Container,
     animateIn: Theme.slide.in['center'],
@@ -32,27 +32,27 @@ export const MultiSourceControl = () => {
 
   const theme = useTheme();
   const { sources, persistSources } = useSourceCRUD();
-  const { configuredSources, setConfiguredSources } = useAppStore();
+  const { selectedSources, setSelectedSources } = useSelectedStore();
   const [isWarnModalOpen, setIsWarnModalOpen] = useState(false);
 
   const totalSelected = useMemo(() => {
     let num = 0;
 
-    Object.values(configuredSources).forEach((selectedSources) => {
-      num += selectedSources.length;
+    Object.values(selectedSources).forEach((sources) => {
+      num += sources.length;
     });
 
     return num;
-  }, [configuredSources]);
+  }, [selectedSources]);
 
   const onDeselect = () => {
-    setConfiguredSources({});
+    setSelectedSources({});
   };
 
   const onDelete = () => {
     const payload: Record<string, K8sActualSource[]> = {};
 
-    Object.entries(configuredSources).forEach(([namespace, sources]: [string, K8sActualSource[]]) => {
+    Object.entries(selectedSources).forEach(([namespace, sources]: [string, K8sActualSource[]]) => {
       payload[namespace] = sources.map((source) => ({ ...source, selected: false }));
     });
 
@@ -94,3 +94,5 @@ export const MultiSourceControl = () => {
     </>
   );
 };
+
+export default MultiSourceControl;

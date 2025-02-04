@@ -45,7 +45,7 @@ const TabListContainer = styled.div`
   gap: 8px;
 `;
 
-export const OverviewActionsMenu = () => {
+const OverviewActionsMenu = () => {
   const theme = useTheme();
 
   return (
@@ -97,3 +97,5 @@ export const OverviewActionsMenu = () => {
     </MenuContainer>
   );
 };
+
+export default OverviewActionsMenu;

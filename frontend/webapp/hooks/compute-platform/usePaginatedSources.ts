@@ -51,6 +51,7 @@ export const usePaginatedSources = () => {
   }, []);
 
   return {
+    loading,
     sources,
     fetchSources,
     sourcesNotFinished,

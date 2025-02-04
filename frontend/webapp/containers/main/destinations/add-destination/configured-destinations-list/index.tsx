@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { extractMonitors } from '@/utils';
 import { TrashIcon } from '@odigos/ui-icons';
-import { ENTITY_TYPES } from '@odigos/ui-utils';
 import { IAppState, useAppStore } from '@/store';
 import { type ConfiguredDestination } from '@/types';
+import { ENTITY_TYPES, SIGNAL_TYPE } from '@odigos/ui-utils';
 import { DataCardFields, DataTab, DeleteWarning, IconButton } from '@odigos/ui-components';
 
 const Container = styled.div`
@@ -28,7 +27,7 @@ const ListItem: React.FC<{ item: ConfiguredDestination; isLastItem: boolean }> =
       <DataTab
         title={item.displayName}
         iconSrc={item.imageUrl}
-        monitors={extractMonitors(item.exportedSignals)}
+        monitors={Object.keys(item.exportedSignals).filter((signal) => item.exportedSignals[signal as SIGNAL_TYPE] === true) as SIGNAL_TYPE[]}
         monitorsWithLabels
         withExtend
         renderExtended={() => <DataCardFields data={item.destinationTypeDetails} />}
