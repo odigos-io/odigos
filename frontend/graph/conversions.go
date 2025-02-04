@@ -43,24 +43,37 @@ func k8sLastTransitionTimeToGql(t v1.Time) *string {
 }
 
 func instrumentationConfigToActualSource(instruConfig v1alpha1.InstrumentationConfig) *model.K8sActualSource {
+	var containers []*model.SourceContainer
+	var conditions []*model.Condition
+
 	// Map the containers runtime details
-	var containers []*model.SourceContainerRuntimeDetails
-	for _, container := range instruConfig.Status.RuntimeDetailsByContainer {
+	for _, statusContainer := range instruConfig.Status.RuntimeDetailsByContainer {
+		var instrumented bool
+		var instrumentationMessage string
 		var otherAgentName *string
-		if container.OtherAgent != nil {
-			otherAgentName = &container.OtherAgent.Name
+
+		for _, specContainer := range instruConfig.Spec.Containers {
+			if specContainer.ContainerName == statusContainer.ContainerName {
+				instrumented = specContainer.Instrumented
+				instrumentationMessage = specContainer.InstrumentationMessage
+			}
 		}
 
-		containers = append(containers, &model.SourceContainerRuntimeDetails{
-			ContainerName:  container.ContainerName,
-			Language:       string(container.Language),
-			RuntimeVersion: container.RuntimeVersion,
-			OtherAgent:     otherAgentName,
+		if statusContainer.OtherAgent != nil {
+			otherAgentName = &statusContainer.OtherAgent.Name
+		}
+
+		containers = append(containers, &model.SourceContainer{
+			ContainerName:          statusContainer.ContainerName,
+			Language:               string(statusContainer.Language),
+			RuntimeVersion:         statusContainer.RuntimeVersion,
+			Instrumented:           instrumented,
+			InstrumentationMessage: instrumentationMessage,
+			OtherAgent:             otherAgentName,
 		})
 	}
 
 	// Map the conditions
-	var conditions []*model.Condition
 	for _, condition := range instruConfig.Status.Conditions {
 		conditions = append(conditions, &model.Condition{
 			Status:             k8sConditionStatusToGql(condition.Status),
