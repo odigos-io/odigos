@@ -5,12 +5,8 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common/consts"
-)
-
-const (
-	NodeNameEnvVar = "NODE_NAME"
-	NodeIPEnvVar   = "NODE_IP"
 )
 
 type Environment struct {
@@ -22,14 +18,14 @@ type Environment struct {
 var Current Environment
 
 func Load() error {
-	nn, ok := os.LookupEnv(NodeNameEnvVar)
+	nn, ok := os.LookupEnv(k8sconsts.NodeNameEnvVar)
 	if !ok {
-		return fmt.Errorf("env var %s is not set", NodeNameEnvVar)
+		return fmt.Errorf("env var %s is not set", k8sconsts.NodeNameEnvVar)
 	}
 
-	ni, ok := os.LookupEnv(NodeIPEnvVar)
+	ni, ok := os.LookupEnv(k8sconsts.NodeIPEnvVar)
 	if !ok {
-		return fmt.Errorf("env var %s is not set", NodeIPEnvVar)
+		return fmt.Errorf("env var %s is not set", k8sconsts.NodeIPEnvVar)
 	}
 
 	ns, ok := os.LookupEnv(consts.CurrentNamespaceEnvVar)
