@@ -9,10 +9,10 @@
   dependencies:
     ts-invariant "^0.10.3"
 
-"@apollo/client@^3.12.8":
-  version "3.12.8"
-  resolved "https://registry.yarnpkg.com/@apollo/client/-/client-3.12.8.tgz#99670386104f77ceba03f7e3dc0d91813f03cd3c"
-  integrity sha512-053z5eCM7zNl81Lxs/SqHv8e+x3sszrtmGS2TNuPW0ZTZzmKATMsIsoblx1Kt0E67Ze3jb99JSPiQHG9ozGc3g==
+"@apollo/client@^3.12.9":
+  version "3.12.9"
+  resolved "https://registry.yarnpkg.com/@apollo/client/-/client-3.12.9.tgz#fb7afc254bc4a5bfeeae905426edcb9d3e643fae"
+  integrity sha512-rH2Vzfbp+IR0l/xAjUIbDH4/sqBzPATMbzXv/L36E33yhp40yM5LFJnC6cc4YDPUH2gom7Dk4BrYZVLbFpYTsA==
   dependencies:
     "@graphql-typed-document-node/core" "^3.1.1"
     "@wry/caches" "^1.0.0"
@@ -98,6 +98,13 @@
   integrity sha512-ld6oezHQMZsZfp6pWtbjaNDF2tiiCYYDqQszHt5VV437lewP9aSi2Of99CK0D0XB21k7FLgnLcmQKyKzynfeAA==
   dependencies:
     "@babel/helper-plugin-utils" "^7.25.9"
+
+"@babel/runtime@^7.12.5":
+  version "7.26.7"
+  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.26.7.tgz#f4e7fe527cd710f8dc0618610b61b4b060c3c341"
+  integrity sha512-AOPI3D+a8dXnja+iwsUqGRjr1BbZIe771sXdapOtYI531gSqpi92vXivKcq2asu/DFpdl1ceFAKZyRzK2PCVcQ==
+  dependencies:
+    regenerator-runtime "^0.14.0"
 
 "@babel/runtime@^7.18.9":
   version "7.26.0"
@@ -514,10 +521,10 @@
   resolved "https://registry.yarnpkg.com/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz#3dc35ba0f1e66b403c00b39344f870298ebb1c8e"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
-"@odigos/ui-components@^0.0.33":
-  version "0.0.33"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-components/-/ui-components-0.0.33.tgz#ede74c18ed070a117ea4cc47530846bb9bfeb3b2"
-  integrity sha512-YYCSkwhNUYcS2CT1HWPbQvuw8oIvClzl9sjXtp7dPfT/13m3QYJ0ZvgcY8Y5samTLQw1zC9sBOrou25Qm+DLEQ==
+"@odigos/ui-components@^0.0.37":
+  version "0.0.37"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-components/-/ui-components-0.0.37.tgz#27c0a4c346e28af69300c16d40d63e457250e605"
+  integrity sha512-ZV0+v0g63YHQn1+tLw0wlXrloaQt3SKZ+fENXVe/SsUO1AJ5XGdVClymCx3hmk/OJnr5HsOPu8B65whT9Hk6xQ==
   dependencies:
     "@odigos/ui-icons" "^0.0.2"
     "@odigos/ui-theme" "^0.0.2"
@@ -549,6 +556,17 @@
   version "0.0.3"
   resolved "https://registry.yarnpkg.com/@odigos/ui-utils/-/ui-utils-0.0.3.tgz#f69200442ff1d52322c6c469c5eec3bec98df640"
   integrity sha512-M1Ys9N5drozQNNIydkwjHK1omr1tszCosDmEVETbjMmIKhm01B8AKfKjY8VmBBILpZQnZN2fjUC/DWAvSUQh5g==
+  dependencies:
+    "@odigos/ui-icons" "^0.0.2"
+    javascript-time-ago "^2.5.11"
+    react "^19.0.0"
+    react-dom "^19.0.0"
+    styled-components "^6.1.14"
+
+"@odigos/ui-utils@^0.0.6":
+  version "0.0.6"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-utils/-/ui-utils-0.0.6.tgz#10084c433151081c6ff1e3031fae221169f9ca51"
+  integrity sha512-s30fM28QBnYFmesalsJSn/ELom+AnIAB8JRNfsN5iC2WMtJjJ+vtLBzLxEPFT9uUc/493n5YC840NfGyP6yjPQ==
   dependencies:
     "@odigos/ui-icons" "^0.0.2"
     javascript-time-ago "^2.5.11"
@@ -815,10 +833,10 @@
   dependencies:
     undici-types "~6.20.0"
 
-"@types/node@22.13.0":
-  version "22.13.0"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-22.13.0.tgz#d376dd9a0ee2f9382d86c2d5d7beb4d198b4ea8c"
-  integrity sha512-ClIbNe36lawluuvq3+YYhnIN2CELi+6q8NpnM7PYp4hBn/TatfboPgVSm2rwKRfnV2M+Ty9GWDFI64KEe+kysA==
+"@types/node@22.13.1":
+  version "22.13.1"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-22.13.1.tgz#a2a3fefbdeb7ba6b89f40371842162fac0934f33"
+  integrity sha512-jK8uzQlrvXqEU91UxiK5J7pKHyzgnI1Qnl0QDHIgVGuolJhRb9EEl28Cj9b3rGR8B2lhFCtvIm5os8lFnO/1Ew==
   dependencies:
     undici-types "~6.20.0"
 
@@ -3402,6 +3420,13 @@ react-dom@19.0.0, react-dom@^19.0.0:
   integrity sha512-4GV5sHFG0e/0AD4X+ySy6UJd3jVl1iNsNHdpad0qhABJ11twS3TTBnseqsKurKcsNqCEFeGL3uLpVChpIO3QfQ==
   dependencies:
     scheduler "^0.25.0"
+
+react-error-boundary@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/react-error-boundary/-/react-error-boundary-5.0.0.tgz#6b6c7e075c922afb0283147e5b084efa44e68570"
+  integrity sha512-tnjAxG+IkpLephNcePNA7v6F/QpWLH8He65+DmedchDwg162JZqx4NmbXj0mlAYVVEd81OW7aFhmbsScYfiAFQ==
+  dependencies:
+    "@babel/runtime" "^7.12.5"
 
 react-flow-renderer@^10.3.17:
   version "10.3.17"
