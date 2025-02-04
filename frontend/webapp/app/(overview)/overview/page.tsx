@@ -44,26 +44,19 @@ export default function MainPage() {
       <Container>
         <OverviewActionsMenu />
         <DataFlow
-          sources={{
-            loading: srcLoad || pageLoading,
-            entities: filteredSources,
-            unfilteredCount: sources.length,
-          }}
-          destinations={{
-            loading: destLoad,
-            entities: filteredDestinations,
-            unfilteredCount: destinations.length,
-          }}
-          actions={{
-            loading: actLoad,
-            entities: filteredActions,
-            unfilteredCount: actions.length,
-          }}
-          instrumentationRules={{
-            loading: ruleLoad,
-            entities: filteredInstrumentationRules,
-            unfilteredCount: instrumentationRules.length,
-          }}
+          heightToRemove='176px'
+          sources={filteredSources}
+          sourcesLoading={srcLoad || pageLoading}
+          sourcesTotalCount={sources.length}
+          destinations={filteredDestinations}
+          destinationsLoading={destLoad}
+          destinationsTotalCount={destinations.length}
+          actions={filteredActions}
+          actionsLoading={actLoad}
+          actionsTotalCount={actions.length}
+          instrumentationRules={filteredInstrumentationRules}
+          instrumentationRulesLoading={ruleLoad}
+          instrumentationRulesTotalCount={instrumentationRules.length}
           metrics={metrics}
           onNodeClick={handleNodeClick}
         />
