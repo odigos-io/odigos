@@ -148,6 +148,7 @@ func (m *MigrationRunnable) handleSingleDeployment(ctx context.Context, dep *app
 	if odigosOriginalAnnotationFound(freshDep.Annotations) {
 		deleteOriginalEnvAnnotationInPlace(&freshDep)
 		revertOriginalEnvAnnotationInPlace(originalWorkloadEnvVar, &freshDep.Spec.Template.Spec)
+		envReverted = true
 	}
 	labelRemoved := removeInjectInstrumentationLabel(&freshDep.Spec.Template)
 	devicesRemoved := revertInstrumentationDevices(&freshDep.Spec.Template)
