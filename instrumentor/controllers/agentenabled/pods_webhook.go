@@ -40,55 +40,62 @@ type PodsWebhook struct {
 var _ webhook.CustomDefaulter = &PodsWebhook{}
 
 func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
-	logger := log.FromContext(ctx)
-
 	pod, ok := obj.(*corev1.Pod)
 	if !ok {
 		return fmt.Errorf("expected a Pod but got a %T", obj)
 	}
 
-	if pod.Annotations == nil {
-		pod.Annotations = map[string]string{}
+	pw, err := p.podWorkload(ctx, pod)
+	if err != nil {
+		// TODO: if the webhook is enabled for all pods, this is not necessarily an error
+		return err
+	}
+
+	var ic odigosv1.InstrumentationConfig
+	icName := workload.CalculateWorkloadRuntimeObjectName(pw.Name, pw.Kind)
+	if err := p.Get(ctx, client.ObjectKey{Namespace: pw.Namespace, Name: icName}, &ic); err != nil {
+		// TODO: if the webhook is enabled for all pods, this is not an error
+		// as it is expected for pods that are not relevant for instrumentation
+		return fmt.Errorf("failed to get instrumentationConfig: %w", err)
 	}
 
 	// Inject ODIGOS environment variables and instrumentation device into all containers
-	return p.injectOdigosInstrumentation(ctx, logger, pod)
+	return p.injectOdigosInstrumentation(ctx, pod, &ic, pw)
 }
 
-func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, logger logr.Logger, pod *corev1.Pod) error {
-	// Environment variables that remain consistent across all containers
-	commonEnvVars := getCommonEnvVars()
-
+func (p *PodsWebhook) podWorkload(ctx context.Context, pod *corev1.Pod) (*k8sconsts.PodWorkload, error) {
 	// In certain scenarios, the raw request can be utilized to retrieve missing details, like the namespace.
 	// For example, prior to Kubernetes version 1.24 (see https://github.com/kubernetes/kubernetes/pull/94637),
 	// namespaced objects could be sent to admission webhooks with empty namespaces during their creation.
 	admissionRequest, err := admission.RequestFromContext(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to get admission request: %w", err)
+		return nil, fmt.Errorf("failed to get admission request: %w", err)
 	}
 
-	podWorkload, err := workload.PodWorkloadObject(ctx, pod)
+	pw, err := workload.PodWorkloadObject(ctx, pod)
 	if err != nil {
-		return fmt.Errorf("failed to extract pod workload details from pod: %w", err)
+		return nil, fmt.Errorf("failed to extract pod workload details from pod: %w", err)
 	}
 
-	if podWorkload.Namespace == "" {
+	if pw.Namespace == "" {
 		if admissionRequest.Namespace != "" {
 			// If the namespace is available in the admission request, set it in the podWorkload.Namespace.
-			podWorkload.Namespace = admissionRequest.Namespace
+			pw.Namespace = admissionRequest.Namespace
 		} else {
 			// It is a case that not supposed to happen, but if it does, return an error.
-			return fmt.Errorf("namespace is empty for pod %s/%s, Skipping Injection of ODIGOS environment variables", pod.Namespace, pod.Name)
+			return nil, fmt.Errorf("namespace is empty for pod %s/%s, Skipping Injection of ODIGOS environment variables", pod.Namespace, pod.Name)
 		}
 	}
-	var workloadInstrumentationConfig odigosv1.InstrumentationConfig
-	instrumentationConfigName := workload.CalculateWorkloadRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
 
-	if err := p.Get(ctx, client.ObjectKey{Namespace: podWorkload.Namespace, Name: instrumentationConfigName}, &workloadInstrumentationConfig); err != nil {
-		return fmt.Errorf("failed to get instrumentationConfig: %w", err)
-	}
+	return pw, nil
+}
 
-	otelSdkToUse, err := getRelevantOtelSDKs(ctx, p.Client, *podWorkload)
+func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *corev1.Pod, ic *odigosv1.InstrumentationConfig, pw *k8sconsts.PodWorkload) error {
+	logger := log.FromContext(ctx)
+	// Environment variables that remain consistent across all containers
+	commonEnvVars := getCommonEnvVars()
+
+	otelSdkToUse, err := getRelevantOtelSDKs(ctx, p.Client, *pw)
 	if err != nil {
 		return fmt.Errorf("failed to determine OpenTelemetry SDKs: %w", err)
 	}
@@ -98,7 +105,7 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, logger lo
 
 	for i := range pod.Spec.Containers {
 		container := &pod.Spec.Containers[i]
-		runtimeDetails := workloadInstrumentationConfig.Status.GetRuntimeDetailsForContainer(*container)
+		runtimeDetails := ic.Status.GetRuntimeDetailsForContainer(*container)
 		if runtimeDetails == nil {
 			continue
 		}
@@ -112,8 +119,8 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, logger lo
 			continue
 		}
 
-		webhookdeviceinjector.InjectOdigosInstrumentationDevice(*podWorkload, container, otelSdk, runtimeDetails)
-		webhookenvinjector.InjectOdigosAgentEnvVars(logger, *podWorkload, container, otelSdk, runtimeDetails)
+		webhookdeviceinjector.InjectOdigosInstrumentationDevice(*pw, container, otelSdk, runtimeDetails)
+		webhookenvinjector.InjectOdigosAgentEnvVars(logger, *pw, container, otelSdk, runtimeDetails)
 
 		// Check if the environment variables are already present, if so skip inject them again.
 		if envVarsExist(container.Env, commonEnvVars) {
@@ -126,7 +133,7 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, logger lo
 		if shouldInjectServiceName(runtimeDetails.Language, otelSdk) {
 			// Ensure the serviceName is fetched only once per pod
 			if serviceName == nil {
-				serviceName = p.getServiceNameForEnv(ctx, logger, podWorkload)
+				serviceName = p.getServiceNameForEnv(ctx, logger, pw)
 			}
 			// Initialize serviceNameEnv only once per pod if serviceName is valid
 			if serviceName != nil && serviceNameEnv == nil {
@@ -141,7 +148,7 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, logger lo
 			}
 		}
 
-		resourceAttributes := getResourceAttributes(podWorkload, container.Name)
+		resourceAttributes := getResourceAttributes(pw, container.Name)
 		resourceAttributesEnvValue := getResourceAttributesEnvVarValue(resourceAttributes)
 
 		container.Env = append(container.Env, corev1.EnvVar{
