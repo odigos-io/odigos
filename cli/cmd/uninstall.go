@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
 	"github.com/odigos-io/odigos/k8sutils/pkg/envoverwrite"
 
@@ -151,11 +150,9 @@ func rollbackPodChanges(ctx context.Context, client *kube.Client) error {
 			errs = multierr.Append(errs, err)
 			continue
 		}
-		if len(jsonPatchPayloadBytes) > 0 {
-			_, err = client.AppsV1().Deployments(dep.Namespace).Patch(ctx, dep.Name, types.JSONPatchType, jsonPatchPayloadBytes, metav1.PatchOptions{})
-			if err != nil {
-				errs = multierr.Append(errs, err)
-			}
+		_, err = client.AppsV1().Deployments(dep.Namespace).Patch(ctx, dep.Name, types.JSONPatchType, jsonPatchPayloadBytes, metav1.PatchOptions{})
+		if err != nil {
+			errs = multierr.Append(errs, err)
 		}
 	}
 
@@ -169,11 +166,9 @@ func rollbackPodChanges(ctx context.Context, client *kube.Client) error {
 			errs = multierr.Append(errs, err)
 			continue
 		}
-		if len(jsonPatchPayloadBytes) > 0 {
-			_, err = client.AppsV1().StatefulSets(s.Namespace).Patch(ctx, s.Name, types.JSONPatchType, jsonPatchPayloadBytes, metav1.PatchOptions{})
-			if err != nil {
-				errs = multierr.Append(errs, err)
-			}
+		_, err = client.AppsV1().StatefulSets(s.Namespace).Patch(ctx, s.Name, types.JSONPatchType, jsonPatchPayloadBytes, metav1.PatchOptions{})
+		if err != nil {
+			errs = multierr.Append(errs, err)
 		}
 	}
 
@@ -187,11 +182,9 @@ func rollbackPodChanges(ctx context.Context, client *kube.Client) error {
 			errs = multierr.Append(errs, err)
 			continue
 		}
-		if len(jsonPatchPayloadBytes) > 0 {
-			_, err = client.AppsV1().DaemonSets(d.Namespace).Patch(ctx, d.Name, types.JSONPatchType, jsonPatchPayloadBytes, metav1.PatchOptions{})
-			if err != nil {
-				errs = multierr.Append(errs, err)
-			}
+		_, err = client.AppsV1().DaemonSets(d.Namespace).Patch(ctx, d.Name, types.JSONPatchType, jsonPatchPayloadBytes, metav1.PatchOptions{})
+		if err != nil {
+			errs = multierr.Append(errs, err)
 		}
 	}
 
@@ -215,12 +208,6 @@ func getWorkloadRolloutJsonPatch(obj kube.Object, pts *v1.PodTemplateSpec) ([]by
 				"path": "/metadata/labels/" + consts.OdigosInstrumentationLabel,
 			})
 		}
-	}
-	if _, found := pts.ObjectMeta.Labels[k8sconsts.OdigosInjectInstrumentationLabel]; found {
-		patchOperations = append(patchOperations, map[string]interface{}{
-			"op":   "remove",
-			"path": "/spec/template/metadata/labels/" + jsonPatchEscapeKey(k8sconsts.OdigosInjectInstrumentationLabel),
-		})
 	}
 
 	// remove odigos reported name annotation
@@ -305,7 +292,6 @@ func getWorkloadRolloutJsonPatch(obj kube.Object, pts *v1.PodTemplateSpec) ([]by
 		}
 	}
 
-	fmt.Print(obj.GetName(), patchOperations)
 	return json.Marshal(patchOperations)
 }
 
