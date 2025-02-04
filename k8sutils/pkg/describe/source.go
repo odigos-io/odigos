@@ -9,6 +9,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/describe/source"
 )
 
@@ -18,10 +19,10 @@ func printWorkloadManifestInfo(analyze *source.SourceAnalyze, sb *strings.Builde
 	printProperty(sb, 0, &analyze.Namespace)
 
 	sb.WriteString("Labels:\n")
-	printProperty(sb, 1, &analyze.Labels.Instrumented)
-	printProperty(sb, 1, analyze.Labels.Workload)
-	printProperty(sb, 1, analyze.Labels.Namespace)
-	printProperty(sb, 1, &analyze.Labels.InstrumentedText)
+	printProperty(sb, 1, &analyze.SourceObjectsAnalysis.Instrumented)
+	printProperty(sb, 1, analyze.SourceObjectsAnalysis.Workload)
+	printProperty(sb, 1, analyze.SourceObjectsAnalysis.Namespace)
+	printProperty(sb, 1, &analyze.SourceObjectsAnalysis.InstrumentedText)
 }
 
 func printRuntimeDetails(analyze *source.SourceAnalyze, sb *strings.Builder) {
@@ -150,7 +151,7 @@ func DescribeDeployment(ctx context.Context, kubeClient kubernetes.Interface, od
 		return nil, err
 	}
 	workloadObj := &source.K8sSourceObject{
-		Kind:            "deployment",
+		Kind:            k8sconsts.WorkloadKindDeployment,
 		ObjectMeta:      deployment.ObjectMeta,
 		PodTemplateSpec: &deployment.Spec.Template,
 		LabelSelector:   deployment.Spec.Selector,
@@ -165,7 +166,7 @@ func DescribeDaemonSet(ctx context.Context, kubeClient kubernetes.Interface, odi
 		return nil, err
 	}
 	workloadObj := &source.K8sSourceObject{
-		Kind:            "daemonset",
+		Kind:            k8sconsts.WorkloadKindDaemonSet,
 		ObjectMeta:      ds.ObjectMeta,
 		PodTemplateSpec: &ds.Spec.Template,
 		LabelSelector:   ds.Spec.Selector,
@@ -180,7 +181,7 @@ func DescribeStatefulSet(ctx context.Context, kubeClient kubernetes.Interface, o
 		return nil, err
 	}
 	workloadObj := &source.K8sSourceObject{
-		Kind:            "statefulset",
+		Kind:            k8sconsts.WorkloadKindStatefulSet,
 		ObjectMeta:      ss.ObjectMeta,
 		PodTemplateSpec: &ss.Spec.Template,
 		LabelSelector:   ss.Spec.Selector,
