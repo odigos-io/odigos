@@ -521,10 +521,10 @@
   resolved "https://registry.yarnpkg.com/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz#3dc35ba0f1e66b403c00b39344f870298ebb1c8e"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
-"@odigos/ui-components@^0.0.38":
-  version "0.0.38"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-components/-/ui-components-0.0.38.tgz#13e3b73abbfc76a407e6094813f85cb1a91d4b22"
-  integrity sha512-EaExzly94OoqGhp4DP5u2gAWG30mSWcuKYmthzFuOsFwDzmD5U86P1EiEEV1P0J5dpms5wxfDpwbFZY5Re6ZIA==
+"@odigos/ui-components@^0.0.39":
+  version "0.0.39"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-components/-/ui-components-0.0.39.tgz#c87eb690bd0d330827e2b67791bad2719a55d713"
+  integrity sha512-CPcgRPNodc2AzZjvPRcC+osHcVanQlIE6HJjCxszB9WcqPBYscJfYZFcKl284ZEWKjPIDr4TY7i6ZdEPCgZyTQ==
   dependencies:
     "@odigos/ui-icons" "^0.0.2"
     "@odigos/ui-theme" "^0.0.2"
