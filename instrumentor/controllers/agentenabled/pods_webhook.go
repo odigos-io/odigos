@@ -57,6 +57,8 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		// TODO: if the webhook is enabled for all pods, this is not necessarily an error
 		logger.Error(err, "failed to get pod workload details. Skipping Injection of ODIGOS agent")
 		return nil
+	} else if pw == nil {
+		return nil
 	}
 
 	var ic odigosv1.InstrumentationConfig
@@ -101,6 +103,10 @@ func (p *PodsWebhook) podWorkload(ctx context.Context, pod *corev1.Pod) (*k8scon
 	pw, err := workload.PodWorkloadObject(ctx, pod)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract pod workload details from pod: %w", err)
+	}
+	if pw == nil {
+		// for pods which are not managed by odigos supported workload
+		return nil, nil
 	}
 
 	if pw.Namespace == "" {
