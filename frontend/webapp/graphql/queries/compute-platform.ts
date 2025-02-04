@@ -50,6 +50,8 @@ export const GET_SOURCES = gql`
             containerName
             language
             runtimeVersion
+            instrumented
+            instrumentationMessage
             otherAgent
           }
           conditions {

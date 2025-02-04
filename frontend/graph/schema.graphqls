@@ -44,10 +44,12 @@ enum InstallationStatus {
   FINISHED
 }
 
-type SourceContainerRuntimeDetails {
+type SourceContainer {
   containerName: String!
   language: String!
   runtimeVersion: String!
+  instrumented: Boolean!
+  instrumentationMessage: String!
   otherAgent: String
 }
 
@@ -80,7 +82,7 @@ type K8sActualSource {
   numberOfInstances: Int
   selected: Boolean
   otelServiceName: String
-  containers: [SourceContainerRuntimeDetails!]
+  containers: [SourceContainer!]
   conditions: [Condition!]
 }
 
