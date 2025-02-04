@@ -111,6 +111,8 @@ func convertConditions(conditions []v1.Condition) []*model.Condition {
 
 			result = append(result, &model.Condition{
 				Status:             model.ConditionStatus(c.Status),
+				Type:               c.Type,
+				Reason:             &c.Reason,
 				Message:            &message,
 				LastTransitionTime: k8sLastTransitionTimeToGql(c.LastTransitionTime),
 			})
