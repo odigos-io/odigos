@@ -44,6 +44,9 @@ var (
 
 	sourceRemoveGroupFlagName = "remove-group"
 	sourceRemoveGroupFlag     string
+
+	sourceOtelServiceFlagName = "otel-service"
+	sourceOtelServiceFlag     string
 )
 
 var sourcesCmd = &cobra.Command{
@@ -85,6 +88,7 @@ var sourceCreateCmd = &cobra.Command{
 					Namespace: workloadNamespaceFlag,
 				},
 				DisableInstrumentation: disableInstrumentation,
+				OtelServiceName:        sourceOtelServiceFlag,
 			},
 		}
 
@@ -181,6 +185,11 @@ var sourceUpdateCmd = &cobra.Command{
 				}
 				source.Labels[k8sconsts.SourceGroupLabelPrefix+sourceSetGroupFlag] = "true"
 			}
+
+			if len(sourceOtelServiceFlag) > 0 {
+				source.Spec.OtelServiceName = sourceOtelServiceFlag
+			}
+
 			_, err := client.OdigosClient.Sources(namespaceList).Update(ctx, &source, v1.UpdateOptions{})
 			if err != nil {
 				fmt.Printf("\033[31mERROR\033[0m Cannot update Sources %s/%s: %+v\n", source.GetNamespace(), source.GetName(), err)
@@ -234,6 +243,7 @@ func init() {
 
 	sourceCreateCmd.Flags().AddFlagSet(sourceFlags)
 	sourceCreateCmd.Flags().BoolVar(&disableInstrumentationFlag, disableInstrumentationFlagName, false, "Disable instrumentation for Source")
+	sourceCreateCmd.Flags().StringVar(&sourceOtelServiceFlag, sourceOtelServiceFlagName, "", "OpenTelemetry service name to use for the Source")
 
 	sourceDeleteCmd.Flags().AddFlagSet(sourceFlags)
 	sourceDeleteCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
@@ -245,4 +255,5 @@ func init() {
 	sourceUpdateCmd.Flags().StringVar(&sourceRemoveGroupFlag, sourceRemoveGroupFlagName, "", "Group name to be removed from the Source (if set)")
 	sourceUpdateCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
 	sourceUpdateCmd.Flags().Bool(allNamespacesFlagName, false, "apply to all Kubernetes namespaces")
+	sourceUpdateCmd.Flags().StringVar(&sourceOtelServiceFlag, sourceOtelServiceFlagName, "", "OpenTelemetry service name to use for the Source")
 }
