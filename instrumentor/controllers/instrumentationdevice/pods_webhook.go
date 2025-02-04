@@ -18,7 +18,6 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
-	"gorm.io/gorm/logger"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -43,6 +42,9 @@ type PodsWebhook struct {
 var _ webhook.CustomDefaulter = &PodsWebhook{}
 
 func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
+
+	logger := log.FromContext(ctx)
+
 	pod, ok := obj.(*corev1.Pod)
 	if !ok {
 		logger.Error(errors.New("expected a Pod but got a %T"), "failed to inject odigos instrumentation to new pod")
