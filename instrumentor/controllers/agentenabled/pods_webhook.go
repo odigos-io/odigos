@@ -11,6 +11,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
+	podutils "github.com/odigos-io/odigos/instrumentor/internal/pod"
 	webhookdeviceinjector "github.com/odigos-io/odigos/instrumentor/internal/webhook_device_injector"
 	webhookenvinjector "github.com/odigos-io/odigos/instrumentor/internal/webhook_env_injector"
 	"github.com/odigos-io/odigos/instrumentor/sdks"
@@ -81,6 +82,9 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		logger.Error(injectErr, "failed to inject ODIGOS instrumentation. Skipping Injection of ODIGOS agent")
 		return nil
 	}
+
+	// Add odiglet installed node-affinity to the pod
+	podutils.AddOdigletInstalledAffinity(pod)
 
 	return nil
 }
