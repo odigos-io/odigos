@@ -32,7 +32,7 @@ export const useDescribeSource = ({ namespace, name, kind }: WorkloadId) => {
     };
 
     Object.values(code).forEach((val) => mapObjects(val));
-    Object.values(code.labels).forEach((val) => mapObjects(val, 'Labels'));
+    Object.values(code.sourceObjects).forEach((val) => mapObjects(val, 'Sources'));
     Object.values(code.instrumentationConfig).forEach((val) => mapObjects(val, 'Instrumentation Config'));
     code.runtimeInfo?.containers?.forEach((obj, i) => Object.values(obj).forEach((val) => mapObjects(val, 'Runtime Info', { keyPrefix: `Container #${i + 1} - ` })));
     Object.values(code.instrumentationDevice).forEach((val) => mapObjects(val, 'Instrumentation Device'));

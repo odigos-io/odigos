@@ -123,7 +123,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	}
 
 	// check if we are waiting for some transient prerequisites to be completed before injecting the agent
-	prerequisiteCompleted, reason, message := isPrerequisiteCompleted(cg, ic)
+	prerequisiteCompleted, reason, message := isReadyForInstrumentation(cg, ic)
 	if !prerequisiteCompleted {
 		ic.Spec.AgentInjectionEnabled = false
 		ic.Spec.Containers = []odigosv1.ContainerConfig{}
@@ -339,7 +339,7 @@ func applyRulesForDistros(defaultDistros map[common.ProgrammingLanguage]string,
 // - waitingForPrerequisites: true if we are waiting for some prerequisites to be completed before injecting the agent
 // - reason: AgentInjectionReason enum value that represents the reason why we are waiting
 // - message: human-readable message that describes the reason why we are waiting
-func isPrerequisiteCompleted(cg *odigosv1.CollectorsGroup, ic *odigosv1.InstrumentationConfig) (bool, odigosv1.AgentInjectionReason, string) {
+func isReadyForInstrumentation(cg *odigosv1.CollectorsGroup, ic *odigosv1.InstrumentationConfig) (bool, odigosv1.AgentInjectionReason, string) {
 
 	// Check if the node collector is ready
 	isNodeCollectorReady, message := isNodeCollectorReady(cg)

@@ -116,12 +116,23 @@ func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *m
 // Sources is the resolver for the sources field.
 func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.ComputePlatform, nextPage string) (*model.PaginatedSources, error) {
 	list, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{
-		Limit:    int64(10),
+		Limit:    int64(50),
 		Continue: nextPage,
 	})
 
 	if err != nil {
-		return nil, err
+		if strings.Contains(err.Error(), "The provided continue parameter is too old") {
+			// Retry without the continue token
+			list, err = kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{
+				Limit: int64(50),
+			})
+
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
 	}
 
 	var actualSources []*model.K8sActualSource

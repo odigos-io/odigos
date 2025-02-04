@@ -37,7 +37,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
-		Named("instrumentationdevice-instrumentationrules").
+		Named("agentenabled-instrumentationrules").
 		For(&odigosv1.InstrumentationRule{}).
 		WithEventFilter(&instrumentorpredicate.OtelSdkInstrumentationRulePredicate{}).
 		Complete(&InstrumentationRuleReconciler{
@@ -49,7 +49,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
-		Named("instrumentationdevice-effectiveconfig").
+		Named("agentenabled-effectiveconfig").
 		For(&corev1.ConfigMap{}).
 		WithEventFilter(odigospredicate.OdigosEffectiveConfigMapPredicate).
 		Complete(&EffectiveConfigReconciler{

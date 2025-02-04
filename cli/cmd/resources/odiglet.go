@@ -55,12 +55,6 @@ func NewOdigletRole(ns string) *rbacv1.Role {
 				Resources: []string{"collectorsgroups", "collectorsgroups/status"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
-			{ // Needed to read the odigos_config for ignored containers
-				APIGroups:     []string{""},
-				Resources:     []string{"configmaps"},
-				ResourceNames: []string{consts.OdigosEffectiveConfigName},
-				Verbs:         []string{"get", "list", "watch"},
-			},
 		},
 	}
 }
@@ -127,7 +121,7 @@ func NewOdigletClusterRole(psp, ownerPermissionEnforcement bool) *rbacv1.Cluster
 			{ // Needed for virtual device registration
 				APIGroups: []string{""},
 				Resources: []string{"nodes"},
-				Verbs:     []string{"get", "list", "watch"},
+				Verbs:     []string{"get", "list", "watch", "patch"},
 			},
 			{ // Needed for storage of the process instrumentation state
 				APIGroups: []string{"odigos.io"},
@@ -389,6 +383,27 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 							Args: []string{
 								"init",
 							},
+							Env: []corev1.EnvVar{
+								{
+									Name: k8sconsts.NodeNameEnvVar,
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+								{
+									Name: consts.OdigosTierEnvVarName,
+									ValueFrom: &corev1.EnvVarSource{
+										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: k8sconsts.OdigosDeploymentConfigMapName,
+											},
+											Key: k8sconsts.OdigosDeploymentConfigMapTierKey,
+										},
+									},
+								},
+							},
 							Resources: corev1.ResourceRequirements{},
 							VolumeMounts: append([]corev1.VolumeMount{
 								{
@@ -413,7 +428,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 							Image: containers.GetImageName(imagePrefix, imageName, version),
 							Env: append([]corev1.EnvVar{
 								{
-									Name: "NODE_NAME",
+									Name: k8sconsts.NodeNameEnvVar,
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
 											FieldPath: "spec.nodeName",
