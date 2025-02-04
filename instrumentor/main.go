@@ -28,6 +28,7 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentationconfig"
 	"github.com/odigos-io/odigos/instrumentor/controllers/startlangdetection"
 	"github.com/odigos-io/odigos/instrumentor/controllers/workloadmigrations"
+	"github.com/odigos-io/odigos/instrumentor/controllers/workloadrollout"
 	"github.com/odigos-io/odigos/instrumentor/sdks"
 
 	corev1 "k8s.io/api/core/v1"
@@ -217,6 +218,12 @@ func main() {
 	err = instrumentationconfig.SetupWithManager(mgr)
 	if err != nil {
 		setupLog.Error(err, "unable to create controller for instrumentation rules")
+		os.Exit(1)
+	}
+
+	err = workloadrollout.SetupWithManager(mgr)
+	if err != nil {
+		setupLog.Error(err, "unable to create controller for workload rollout")
 		os.Exit(1)
 	}
 

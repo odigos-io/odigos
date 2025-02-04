@@ -600,6 +600,8 @@ spec:
                   - language
                   type: object
                 type: array
+              workloadRolloutHash:
+                type: string
             type: object
         type: object
     served: true

@@ -20,9 +20,13 @@ type InstrumentationConfig struct {
 	Status InstrumentationConfigStatus `json:"status,omitempty"`
 }
 
+// conditions for the InstrumentationConfigStatus
 const (
 	// this const is the Type field in the conditions of the InstrumentationConfigStatus.
 	AgentEnabledStatusConditionType = "AgentEnabled"
+	// reports whether the workload associated with the InstrumentationConfig has been rolled out.
+	// the rollout is needed to update the instrumentation done by the Pods webhook.
+	WorkloadRolloutConditionType = "WorkloadRollout"
 )
 
 // +kubebuilder:validation:Enum=InjectedSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;UnsupportedProgrammingLanguage;UnsupportedRuntimeVersion;OtherAgentDetected;IgnoredContainer
@@ -105,6 +109,9 @@ type InstrumentationConfigStatus struct {
 
 	// Represents the observations of a InstrumentationConfig's current state.
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" protobuf:"bytes,1,rep,name=conditions"`
+
+	// TODO: add nice comment for this
+	WorkloadRolloutHash string `json:"workloadRolloutHash,omitempty"`
 }
 
 func (in *InstrumentationConfigStatus) GetRuntimeDetailsForContainer(container v1.Container) *RuntimeDetailsByContainer {
