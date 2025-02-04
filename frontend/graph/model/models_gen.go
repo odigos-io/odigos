@@ -621,6 +621,7 @@ type SourceContainer struct {
 	RuntimeVersion         string  `json:"runtimeVersion"`
 	Instrumented           bool    `json:"instrumented"`
 	InstrumentationMessage string  `json:"instrumentationMessage"`
+	OtelDistroName         *string `json:"otelDistroName,omitempty"`
 	OtherAgent             *string `json:"otherAgent,omitempty"`
 }
 

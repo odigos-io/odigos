@@ -50,6 +50,7 @@ func instrumentationConfigToActualSource(instruConfig v1alpha1.InstrumentationCo
 	for _, statusContainer := range instruConfig.Status.RuntimeDetailsByContainer {
 		var instrumented bool
 		var instrumentationMessage string
+		var otelDistroName string
 		var otherAgentName *string
 
 		for _, specContainer := range instruConfig.Spec.Containers {
@@ -59,6 +60,7 @@ func instrumentationConfigToActualSource(instruConfig v1alpha1.InstrumentationCo
 				if instrumentationMessage == "" {
 					instrumentationMessage = string(specContainer.InstrumentationReason)
 				}
+				otelDistroName = specContainer.OtelDistroName
 			}
 		}
 
@@ -72,6 +74,7 @@ func instrumentationConfigToActualSource(instruConfig v1alpha1.InstrumentationCo
 			RuntimeVersion:         statusContainer.RuntimeVersion,
 			Instrumented:           instrumented,
 			InstrumentationMessage: instrumentationMessage,
+			OtelDistroName:         &otelDistroName,
 			OtherAgent:             otherAgentName,
 		})
 	}

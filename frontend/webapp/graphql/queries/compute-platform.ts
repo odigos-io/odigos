@@ -52,6 +52,7 @@ export const GET_SOURCES = gql`
             runtimeVersion
             instrumented
             instrumentationMessage
+            otelDistroName
             otherAgent
           }
           conditions {
