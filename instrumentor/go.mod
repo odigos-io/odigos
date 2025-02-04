@@ -8,11 +8,10 @@ require (
 	github.com/hashicorp/go-version v1.7.0
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
-	github.com/odigos-io/odigos/k8sutils v0.0.0
 	github.com/odigos-io/odigos/distros v0.0.0
+	github.com/odigos-io/odigos/k8sutils v0.0.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.36.2
-	github.com/stretchr/testify v1.10.0
 	go.opentelemetry.io/otel v1.34.0
 	k8s.io/api v0.32.1
 	k8s.io/apimachinery v0.32.1
@@ -34,7 +33,6 @@ require (
 	github.com/mattn/go-colorable v0.1.8 // indirect
 	github.com/mattn/go-isatty v0.0.12 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
-	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/otel/metric v1.34.0 // indirect
@@ -103,6 +101,6 @@ require (
 replace (
 	github.com/odigos-io/odigos/api => ../api
 	github.com/odigos-io/odigos/common => ../common
-	github.com/odigos-io/odigos/k8sutils => ../k8sutils
 	github.com/odigos-io/odigos/distros => ../distros
+	github.com/odigos-io/odigos/k8sutils => ../k8sutils
 )
