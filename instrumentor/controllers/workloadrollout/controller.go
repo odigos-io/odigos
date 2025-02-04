@@ -33,8 +33,7 @@ func (r *instrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 	workloadObj:= workload.ClientObjectFromWorkloadKind(workloadKind)
 	err = r.Get(ctx, client.ObjectKey{Name: workloadName, Namespace: req.Namespace}, workloadObj)
 	if err != nil {
-		logger.Error(err, "error getting workload object", "name", workloadName, "namespace", req.Namespace)
-		return ctrl.Result{}, nil
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	var ic odigosv1alpha1.InstrumentationConfig
