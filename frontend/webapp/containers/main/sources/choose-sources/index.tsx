@@ -4,8 +4,8 @@ import styled from 'styled-components';
 import { SetupHeader } from '@/components';
 import { useRouter } from 'next/navigation';
 import { useSourceFormData } from '@/hooks';
+import { ArrowIcon } from '@odigos/ui-icons';
 import { IAppState, useAppStore } from '@/store';
-import { ArrowIcon } from '@odigos/ui-components';
 import { ChooseSourcesBody } from './choose-sources-body';
 
 const HeaderWrapper = styled.div`
@@ -30,8 +30,8 @@ export function ChooseSourcesContainer() {
     // This forced type is to satisfy TypeScript,
     // while knowing that this doesn't break the onboarding flow in any-way...
 
-    setAvailableSources(recordedInitialSources as IAppState['availableSources']);
-    setConfiguredSources(getApiSourcesPayload() as IAppState['configuredSources']);
+    setAvailableSources(recordedInitialSources as unknown as IAppState['availableSources']);
+    setConfiguredSources(getApiSourcesPayload() as unknown as IAppState['configuredSources']);
     setConfiguredFutureApps(getApiFutureAppsPayload());
 
     router.push(ROUTES.CHOOSE_DESTINATION);
@@ -41,7 +41,7 @@ export function ChooseSourcesContainer() {
     <>
       <HeaderWrapper>
         <SetupHeader
-          navigationButtons={[
+          buttons={[
             {
               label: 'NEXT',
               icon: ArrowIcon,

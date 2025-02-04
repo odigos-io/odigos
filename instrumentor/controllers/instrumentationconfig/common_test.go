@@ -3,10 +3,10 @@ package instrumentationconfig
 import (
 	"testing"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -242,10 +242,10 @@ func TestUpdateInstrumentationConfigForWorkload_InWorkloadList(t *testing.T) {
 		Items: []odigosv1.InstrumentationRule{
 			{
 				Spec: odigosv1.InstrumentationRuleSpec{
-					Workloads: &[]workload.PodWorkload{
+					Workloads: &[]k8sconsts.PodWorkload{
 						{
 							Name:      "test",
-							Kind:      workload.WorkloadKindDeployment,
+							Kind:      k8sconsts.WorkloadKindDeployment,
 							Namespace: "testns",
 						},
 					},
@@ -292,10 +292,10 @@ func TestUpdateInstrumentationConfigForWorkload_NotInWorkloadList(t *testing.T) 
 		Items: []odigosv1.InstrumentationRule{
 			{
 				Spec: odigosv1.InstrumentationRuleSpec{
-					Workloads: &[]workload.PodWorkload{
+					Workloads: &[]k8sconsts.PodWorkload{
 						{
 							Name:      "someotherdeployment",
-							Kind:      workload.WorkloadKindDeployment,
+							Kind:      k8sconsts.WorkloadKindDeployment,
 							Namespace: "testns",
 						},
 					},

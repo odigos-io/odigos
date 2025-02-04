@@ -1,10 +1,11 @@
 'use client';
 import { useEffect } from 'react';
 import { ACTION } from '@/utils';
+import { type Config } from '@/types';
 import { GET_CONFIG } from '@/graphql';
 import { useNotificationStore } from '@/store';
 import { useSuspenseQuery } from '@apollo/client';
-import { NOTIFICATION_TYPE, type Config } from '@/types';
+import { NOTIFICATION_TYPE } from '@odigos/ui-utils';
 
 export const useConfig = () => {
   const { addNotification } = useNotificationStore();

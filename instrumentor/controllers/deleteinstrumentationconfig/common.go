@@ -12,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
@@ -26,6 +27,16 @@ func reconcileWorkloadObject(ctx context.Context, kubeClient client.Client, work
 		return err
 	}
 	if instrumented {
+		return nil
+	}
+
+	// check if the workload is enabled by deprecated labels,
+	// once we fully remove the support for the instrumentation labels, we can remove this check
+	enabledByDeprecatedLabels, err := workload.IsWorkloadInstrumentationEffectiveEnabled(ctx, kubeClient, workloadObject)
+	if err != nil {
+		return err
+	}
+	if enabledByDeprecatedLabels {
 		return nil
 	}
 
@@ -74,10 +85,10 @@ func removeReportedNameAnnotation(ctx context.Context, kubeClient client.Client,
 
 func syncNamespaceWorkloads(ctx context.Context, k8sClient client.Client, req ctrl.Request) error {
 	var err error
-	for _, kind := range []workload.WorkloadKind{
-		workload.WorkloadKindDaemonSet,
-		workload.WorkloadKindDeployment,
-		workload.WorkloadKindStatefulSet,
+	for _, kind := range []k8sconsts.WorkloadKind{
+		k8sconsts.WorkloadKindDaemonSet,
+		k8sconsts.WorkloadKindDeployment,
+		k8sconsts.WorkloadKindStatefulSet,
 	} {
 		err = errors.Join(err, listAndSyncWorkloadList(ctx, k8sClient, req, kind))
 	}
@@ -87,7 +98,7 @@ func syncNamespaceWorkloads(ctx context.Context, k8sClient client.Client, req ct
 func listAndSyncWorkloadList(ctx context.Context,
 	k8sClient client.Client,
 	req ctrl.Request,
-	kind workload.WorkloadKind) error {
+	kind k8sconsts.WorkloadKind) error {
 	logger := log.FromContext(ctx)
 	logger.V(2).Info("Uninstrumenting workloads for Namespace Source", "name", req.Name, "namespace", req.Namespace, "kind", kind)
 
@@ -123,7 +134,7 @@ func listAndSyncWorkloadList(ctx context.Context,
 	return err
 }
 
-func syncGenericWorkloadListToNs(ctx context.Context, c client.Client, kind workload.WorkloadKind, key client.ObjectKey) error {
+func syncGenericWorkloadListToNs(ctx context.Context, c client.Client, kind k8sconsts.WorkloadKind, key client.ObjectKey) error {
 	// it is very important that we make the changes based on a fresh copy of the workload object
 	// if a list operation pulled in state and is now slowly iterating over it, we might be working with stale data
 	freshWorkloadCopy := workload.ClientObjectFromWorkloadKind(kind)
@@ -142,6 +153,16 @@ func syncGenericWorkloadListToNs(ctx context.Context, c client.Client, kind work
 		return err
 	}
 	if instrumented {
+		return nil
+	}
+
+	// check if the workload is enabled by deprecated labels,
+	// once we fully remove the support for the instrumentation labels, we can remove this check
+	enabledByDeprecatedLabels, err := workload.IsWorkloadInstrumentationEffectiveEnabled(ctx, c, freshWorkloadCopy)
+	if err != nil {
+		return err
+	}
+	if enabledByDeprecatedLabels {
 		return nil
 	}
 

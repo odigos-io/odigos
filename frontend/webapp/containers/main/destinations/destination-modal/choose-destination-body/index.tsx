@@ -1,11 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import styled from 'styled-components';
-import { SignalUppercase } from '@/utils';
 import { useDestinationTypes } from '@/hooks';
-import { SearchIcon } from '@odigos/ui-components';
+import { SearchIcon } from '@odigos/ui-icons';
+import { SIGNAL_TYPE } from '@odigos/ui-utils';
 import { DestinationsList } from './destinations-list';
 import type { DestinationTypeItem, SupportedSignals } from '@/types';
-import { Divider, Dropdown, Input, MonitoringCheckboxes, SectionTitle } from '@/reuseable-components';
+import { Divider, Dropdown, Input, MonitorsCheckboxes, SectionTitle } from '@odigos/ui-components';
 
 interface Props {
   onSelect: (item: DestinationTypeItem) => void;
@@ -36,12 +36,12 @@ const DROPDOWN_OPTIONS = [
 ];
 
 const DEFAULT_CATEGORY = DROPDOWN_OPTIONS[0];
-const DEFAULT_MONITORS: SignalUppercase[] = ['LOGS', 'METRICS', 'TRACES'];
+const DEFAULT_MONITORS: SIGNAL_TYPE[] = [SIGNAL_TYPE.LOGS, SIGNAL_TYPE.METRICS, SIGNAL_TYPE.TRACES];
 
 export const ChooseDestinationBody: React.FC<Props> = ({ onSelect, hidden }) => {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(DEFAULT_CATEGORY);
-  const [selectedMonitors, setSelectedMonitors] = useState<SignalUppercase[]>(DEFAULT_MONITORS);
+  const [selectedMonitors, setSelectedMonitors] = useState<SIGNAL_TYPE[]>(DEFAULT_MONITORS);
 
   const { destinations: destinationTypes } = useDestinationTypes();
 
@@ -74,7 +74,7 @@ export const ChooseDestinationBody: React.FC<Props> = ({ onSelect, hidden }) => 
         <WidthConstraint>
           <Dropdown options={DROPDOWN_OPTIONS} value={selectedCategory} onSelect={(opt) => setSelectedCategory(opt)} onDeselect={() => {}} />
         </WidthConstraint>
-        <MonitoringCheckboxes title='' selectedSignals={selectedMonitors} setSelectedSignals={setSelectedMonitors} />
+        <MonitorsCheckboxes title='' selectedSignals={selectedMonitors} setSelectedSignals={setSelectedMonitors} />
       </Filters>
 
       <Divider />

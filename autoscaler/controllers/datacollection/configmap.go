@@ -224,7 +224,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 							"metric_relabel_configs": []config.GenericMap{
 								{
 									"source_labels": []string{"__name__"},
-									"regex":         "(.*odigos.*|^otelcol_processor_accepted.*)",
+									"regex":         "(.*odigos.*)",
 									"action":        "keep",
 								},
 							},

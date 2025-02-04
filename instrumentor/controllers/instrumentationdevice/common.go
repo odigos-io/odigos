@@ -6,7 +6,6 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils/versionsupport"
 	"github.com/odigos-io/odigos/instrumentor/instrumentation"
 	"github.com/odigos-io/odigos/instrumentor/sdks"
@@ -64,52 +63,15 @@ func isDataCollectionReady(ctx context.Context, c client.Client) bool {
 	return nodeCollectorsGroup.Status.Ready
 }
 
-func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.Client, instConfig *odigosv1.InstrumentationConfig) (error, bool) {
-	// devicePartiallyApplied is used to indicate that the instrumentation device was partially applied for some of the containers.
-	devicePartiallyApplied := false
-	deviceNotAppliedDueToPresenceOfAnotherAgent := false
+func enableOdigosInstrumentation(ctx context.Context, kubeClient client.Client, instConfig *odigosv1.InstrumentationConfig) error {
+
+	foundContainerWithSupportedLanguage := false
+	instrumentationSkippedDueToOtherAgent := false
 
 	logger := log.FromContext(ctx)
 	obj, err := getWorkloadObject(ctx, kubeClient, instConfig)
 	if err != nil {
-		return err, false
-	}
-
-	workload := workload.PodWorkload{
-		Name:      obj.GetName(),
-		Namespace: obj.GetNamespace(),
-		Kind:      workload.WorkloadKind(obj.GetObjectKind().GroupVersionKind().Kind),
-	}
-
-	// build an otel sdk map from instrumentation rules first, and merge it with the default otel sdk map
-	// this way, we can override the default otel sdk with the instrumentation rules
-	instrumentationRules := odigosv1.InstrumentationRuleList{}
-	err = kubeClient.List(ctx, &instrumentationRules)
-	if err != nil {
-		return err, false
-	}
-
-	// default otel sdk map according to Odigos tier
-	otelSdkToUse := GetDefaultSDKs()
-
-	for i := range instrumentationRules.Items {
-		instrumentationRule := &instrumentationRules.Items[i]
-		if instrumentationRule.Spec.Disabled || instrumentationRule.Spec.OtelSdks == nil {
-			// we only care about rules that have otel sdks configuration
-			continue
-		}
-
-		participating := utils.IsWorkloadParticipatingInRule(workload, instrumentationRule)
-		if !participating {
-			// filter rules that do not apply to the workload
-			continue
-		}
-
-		for lang, otelSdk := range instrumentationRule.Spec.OtelSdks.OtelSdkByLanguage {
-			// languages can override the default otel sdk or another rule.
-			// there is not check or warning if a language is defined in multiple rules at the moment.
-			otelSdkToUse[lang] = otelSdk
-		}
+		return err
 	}
 
 	result, err := controllerutil.CreateOrPatch(ctx, kubeClient, obj, func() error {
@@ -131,42 +93,37 @@ func addInstrumentationDeviceToWorkload(ctx context.Context, kubeClient client.C
 			agentsCanRunConcurrently = *odigosConfiguration.AllowConcurrentAgents
 		}
 
-		err, deviceApplied, deviceSkippedDueToOtherAgent := instrumentation.ApplyInstrumentationDevicesToPodTemplate(podSpec, instConfig.Status.RuntimeDetailsByContainer, otelSdkToUse, obj, logger, agentsCanRunConcurrently)
+		instrumentationSkippedDueToOtherAgent, foundContainerWithSupportedLanguage, err = instrumentation.ConfigureInstrumentationForPod(podSpec, instConfig.Status.RuntimeDetailsByContainer, obj, logger, agentsCanRunConcurrently)
 		if err != nil {
 			return err
 		}
-		// if non of the devices were applied due to the presence of another agent, return an error.
-		if !deviceApplied && deviceSkippedDueToOtherAgent {
-			deviceNotAppliedDueToPresenceOfAnotherAgent = true
-		}
 
-		devicePartiallyApplied = deviceSkippedDueToOtherAgent && deviceApplied
-		// If instrumentation device is applied successfully, add odigos.io/inject-instrumentation label to enable the webhook
-		if deviceApplied {
+		if !instrumentationSkippedDueToOtherAgent && foundContainerWithSupportedLanguage {
+			// add odigos.io/inject-instrumentation label to enable the webhook
 			instrumentation.SetInjectInstrumentationLabel(podSpec)
 		}
-
 		return nil
+
 	})
 
 	// if non of the devices were applied due to the presence of another agent, return an error.
-	if deviceNotAppliedDueToPresenceOfAnotherAgent {
-		return k8sutils.OtherAgentRunError, false
+	if instrumentationSkippedDueToOtherAgent {
+		return k8sutils.OtherAgentRunError
 	}
 
 	if err != nil {
-		return err, false
+		return err
 	}
 
 	modified := result != controllerutil.OperationResultNone
 	if modified {
-		logger.V(0).Info("added instrumentation device to workload", "name", obj.GetName(), "namespace", obj.GetNamespace())
+		logger.V(0).Info("inject instrumentation label to workload pod template", "name", obj.GetName(), "namespace", obj.GetNamespace())
 	}
 
-	return nil, devicePartiallyApplied
+	return nil
 }
 
-func removeInstrumentationDeviceFromWorkload(ctx context.Context, kubeClient client.Client, namespace string, workloadKind workload.WorkloadKind, workloadName string, uninstrumentReason ApplyInstrumentationDeviceReason) error {
+func removeInstrumentationDeviceFromWorkload(ctx context.Context, kubeClient client.Client, namespace string, workloadKind k8sconsts.WorkloadKind, workloadName string, uninstrumentReason ApplyInstrumentationDeviceReason) error {
 
 	workloadObj := workload.ClientObjectFromWorkloadKind(workloadKind)
 	if workloadObj == nil {
@@ -278,17 +235,18 @@ func reconcileSingleWorkload(ctx context.Context, kubeClient client.Client, inst
 		return nil
 	}
 
-	err, devicePartiallyApplied := addInstrumentationDeviceToWorkload(ctx, kubeClient, instrumentationConfig)
-	if err == nil {
-		var successMessage string
-		if devicePartiallyApplied {
-			successMessage = "Instrumentation device partially applied"
-		} else {
-			successMessage = "Instrumentation device applied successfully"
-		}
-		conditions.UpdateStatusConditions(ctx, kubeClient, instrumentationConfig, &instrumentationConfig.Status.Conditions, metav1.ConditionTrue, appliedInstrumentationDeviceType, "InstrumentationDeviceApplied", successMessage)
+	err = enableOdigosInstrumentation(ctx, kubeClient, instrumentationConfig)
+	if err != nil {
+
+		conditions.UpdateStatusConditions(ctx, kubeClient, instrumentationConfig, &instrumentationConfig.Status.Conditions,
+			metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonErrApplying),
+			"Odigos instrumentation failed to apply")
 	} else {
-		conditions.UpdateStatusConditions(ctx, kubeClient, instrumentationConfig, &instrumentationConfig.Status.Conditions, metav1.ConditionFalse, appliedInstrumentationDeviceType, string(ApplyInstrumentationDeviceReasonErrApplying), err.Error())
+
+		enabledMessage := "Odigos instrumentation is enabled"
+		conditions.UpdateStatusConditions(ctx, kubeClient, instrumentationConfig, &instrumentationConfig.Status.Conditions,
+			metav1.ConditionTrue, appliedInstrumentationDeviceType, "InstrumentationEnabled", enabledMessage)
 	}
+
 	return err
 }

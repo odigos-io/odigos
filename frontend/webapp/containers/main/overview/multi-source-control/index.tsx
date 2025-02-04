@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { useAppStore } from '@/store';
-import { DeleteWarning } from '@/components';
+import { useSourceCRUD } from '@/hooks';
+import { Theme } from '@odigos/ui-theme';
+import { TrashIcon } from '@odigos/ui-icons';
+import { type K8sActualSource } from '@/types';
 import styled, { useTheme } from 'styled-components';
-import { useSourceCRUD, useTransition } from '@/hooks';
-import { Theme, TrashIcon } from '@odigos/ui-components';
-import { type K8sActualSource, OVERVIEW_ENTITY_TYPES } from '@/types';
-import { Badge, Button, Divider, Text } from '@/reuseable-components';
+import { ENTITY_TYPES, useTransition } from '@odigos/ui-utils';
+import { Badge, Button, DeleteWarning, Divider, Text } from '@odigos/ui-components';
 
 const Container = styled.div`
   position: fixed;
@@ -85,7 +86,7 @@ export const MultiSourceControl = () => {
       <DeleteWarning
         isOpen={isWarnModalOpen}
         name={`${totalSelected} sources`}
-        type={OVERVIEW_ENTITY_TYPES.SOURCE}
+        type={ENTITY_TYPES.SOURCE}
         isLastItem={totalSelected === sources.length}
         onApprove={onDelete}
         onDeny={() => setIsWarnModalOpen(false)}

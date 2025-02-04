@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
-import { safeJsonParse } from '@/utils';
-import { InputList } from '@/reuseable-components';
+import { safeJsonParse } from '@odigos/ui-utils';
+import { InputList } from '@odigos/ui-components';
 import type { DeleteAttributesSpec } from '@/types';
 
 type Props = {

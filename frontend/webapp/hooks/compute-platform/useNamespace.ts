@@ -1,10 +1,11 @@
 import { ACTION, DISPLAY_TITLES, FORM_ALERTS } from '@/utils';
 import { useConfig } from '../config';
 import { useNotificationStore } from '@/store';
+import { NOTIFICATION_TYPE } from '@odigos/ui-utils';
 import { useMutation, useQuery } from '@apollo/client';
 import { useComputePlatform } from './useComputePlatform';
 import { GET_NAMESPACE, PERSIST_NAMESPACE } from '@/graphql';
-import { type ComputePlatform, NOTIFICATION_TYPE, type PersistNamespaceItemInput } from '@/types';
+import { type ComputePlatform, type PersistNamespaceItemInput } from '@/types';
 
 export const useNamespace = (namespaceName?: string) => {
   const { data: config } = useConfig();

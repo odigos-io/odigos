@@ -1,9 +1,9 @@
 import { type Node } from '@xyflow/react';
 import nodeConfig from './node-config.json';
 import { type NodePositions } from './get-node-positions';
+import { type K8sActualSource, NODE_TYPES, OVERVIEW_NODE_TYPES } from '@/types';
 import { getMainContainerLanguage } from '@/utils/constants/programming-languages';
-import { getEntityIcon, getEntityLabel, getHealthStatus, getProgrammingLanguageIcon } from '@/utils';
-import { type K8sActualSource, NODE_TYPES, OVERVIEW_ENTITY_TYPES, OVERVIEW_NODE_TYPES, STATUSES } from '@/types';
+import { ENTITY_TYPES, getEntityIcon, getEntityLabel, getHealthStatus, getProgrammingLanguageIcon, HEALTH_STATUS } from '@odigos/ui-utils';
 
 interface Params {
   loading: boolean;
@@ -26,9 +26,9 @@ const mapToNodeData = (entity: Params['entities'][0]) => {
       name: entity.name,
       kind: entity.kind,
     },
-    type: OVERVIEW_ENTITY_TYPES.SOURCE,
+    type: ENTITY_TYPES.SOURCE,
     status: getHealthStatus(entity),
-    title: getEntityLabel(entity, OVERVIEW_ENTITY_TYPES.SOURCE, { extended: true }),
+    title: getEntityLabel(entity, ENTITY_TYPES.SOURCE, { extended: true }),
     subTitle: `${entity.namespace} • ${entity.kind}`,
     iconSrc: getProgrammingLanguageIcon(getMainContainerLanguage(entity)),
     raw: entity,
@@ -37,19 +37,19 @@ const mapToNodeData = (entity: Params['entities'][0]) => {
 
 export const buildSourceNodes = ({ loading, entities, positions, unfilteredCount, containerHeight, onScroll }: Params) => {
   const nodes: Node[] = [];
-  const position = positions[OVERVIEW_ENTITY_TYPES.SOURCE];
+  const position = positions[ENTITY_TYPES.SOURCE];
 
   nodes.push({
     id: 'source-header',
     type: NODE_TYPES.HEADER,
     position: {
-      x: positions[OVERVIEW_ENTITY_TYPES.SOURCE]['x'],
+      x: positions[ENTITY_TYPES.SOURCE]['x'],
       y: 0,
     },
     data: {
       nodeWidth,
       title: 'Sources',
-      icon: getEntityIcon(OVERVIEW_ENTITY_TYPES.SOURCE),
+      icon: getEntityIcon(ENTITY_TYPES.SOURCE),
       tagValue: entities.length !== unfilteredCount ? `${entities.length}/${unfilteredCount}` : unfilteredCount,
     },
   });
@@ -78,7 +78,7 @@ export const buildSourceNodes = ({ loading, entities, positions, unfilteredCount
       data: {
         nodeWidth,
         type: OVERVIEW_NODE_TYPES.ADD_SOURCE,
-        status: STATUSES.HEALTHY,
+        status: HEALTH_STATUS.HEALTHY,
         title: 'ADD SOURCE',
         subTitle: 'To collect OpenTelemetry data',
       },

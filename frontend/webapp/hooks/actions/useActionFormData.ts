@@ -1,7 +1,8 @@
 import { useGenericForm } from '@/hooks';
+import { FORM_ALERTS } from '@/utils';
 import { DrawerItem, useNotificationStore } from '@/store';
-import { FORM_ALERTS, isEmpty, safeJsonParse } from '@/utils';
-import { ActionsType, LatencySamplerSpec, NOTIFICATION_TYPE, type ActionDataParsed, type ActionInput } from '@/types';
+import { LatencySamplerSpec, type ActionDataParsed, type ActionInput } from '@/types';
+import { ACTION_TYPE, isEmpty, NOTIFICATION_TYPE, safeJsonParse } from '@odigos/ui-utils';
 
 const INITIAL: ActionInput = {
   // @ts-ignore (TS complains about empty string because we expect an "ActionsType", but it's fine)
@@ -36,7 +37,7 @@ export function useActionFormData() {
 
         case 'details':
           if (isEmpty(v)) errors[k as keyof Errors] = FORM_ALERTS.FIELD_IS_REQUIRED;
-          if (formData.type === ActionsType.LATENCY_SAMPLER) {
+          if (formData.type === ACTION_TYPE.LATENCY_SAMPLER) {
             (safeJsonParse(v as string, { endpoints_filters: [] }) as LatencySamplerSpec).endpoints_filters.forEach((endpoint) => {
               if (endpoint.http_route.charAt(0) !== '/') {
                 errors[k as keyof Errors] = FORM_ALERTS.LATENCY_HTTP_ROUTE;

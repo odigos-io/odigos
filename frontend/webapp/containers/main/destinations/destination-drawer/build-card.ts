@@ -1,5 +1,6 @@
-import { compareCondition, DISPLAY_TITLES, safeJsonParse } from '@/utils';
-import { DataCardRow, DataCardFieldTypes } from '@/reuseable-components';
+import { DISPLAY_TITLES } from '@/utils';
+import { compareCondition, safeJsonParse } from '@odigos/ui-utils';
+import { DATA_CARD_FIELD_TYPES, DataCardFieldsProps } from '@odigos/ui-components';
 import type { ActualDestination, DestinationDetailsResponse, ExportedSignals } from '@/types';
 
 const buildMonitorsList = (exportedSignals: ExportedSignals): string =>
@@ -10,10 +11,10 @@ const buildMonitorsList = (exportedSignals: ExportedSignals): string =>
 const buildCard = (destination: ActualDestination, destinationTypeDetails?: DestinationDetailsResponse['destinationTypeDetails']) => {
   const { exportedSignals, destinationType, fields } = destination;
 
-  const arr: DataCardRow[] = [
+  const arr: DataCardFieldsProps['data'] = [
     { title: DISPLAY_TITLES.DESTINATION, value: destinationType.displayName },
-    { type: DataCardFieldTypes.MONITORS, title: DISPLAY_TITLES.MONITORS, value: buildMonitorsList(exportedSignals) },
-    { type: DataCardFieldTypes.DIVIDER, width: '100%' },
+    { type: DATA_CARD_FIELD_TYPES.MONITORS, title: DISPLAY_TITLES.MONITORS, value: buildMonitorsList(exportedSignals) },
+    { type: DATA_CARD_FIELD_TYPES.DIVIDER, width: '100%' },
   ];
 
   const parsedFields = safeJsonParse<Record<string, string>>(fields, {});

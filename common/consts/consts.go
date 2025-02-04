@@ -15,9 +15,15 @@ const (
 	OTLPPort                    = 4317
 	OTLPHttpPort                = 4318
 	PprofOdigosPort             = 6060
-	OdigosInstrumentationLabel  = "odigos-instrumentation"
-	InstrumentationEnabled      = "enabled"
-	InstrumentationDisabled     = "disabled"
+
+	// Deprecated: Sources are used to mark workloads for instrumentation.
+	OdigosInstrumentationLabel = "odigos-instrumentation"
+
+	// Deprecated: Sources are used to mark workloads for instrumentation.
+	InstrumentationEnabled = "enabled"
+
+	// Deprecated: Sources are used to mark workloads for instrumentation.
+	InstrumentationDisabled = "disabled"
 
 	// Deprecated: reported name is set via the Source CR.
 	OdigosReportedNameAnnotation = "odigos.io/reported-name"

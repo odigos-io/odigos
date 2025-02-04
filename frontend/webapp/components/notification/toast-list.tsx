@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { Notification } from '@/types';
 import { useClickNotif } from '@/hooks';
 import { useNotificationStore } from '@/store';
-import { NotificationNote } from '@/reuseable-components';
+import { NotificationNote } from '@odigos/ui-components';
 
 const Container = styled.div`
   position: fixed;

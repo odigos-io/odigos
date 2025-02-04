@@ -60,6 +60,7 @@ func ObjectToWorkload(obj client.Object) (Workload, error) {
 	}
 }
 
+// Deprecated: this should only be used for backward compatibility migration.
 func IsObjectLabeledForInstrumentation(obj client.Object) bool {
 	labels := obj.GetLabels()
 	if labels == nil {
@@ -74,6 +75,7 @@ func IsObjectLabeledForInstrumentation(obj client.Object) bool {
 	return val == consts.InstrumentationEnabled
 }
 
+// Deprecated: this should only be used for backward compatibility migration.
 func IsWorkloadInstrumentationEffectiveEnabled(ctx context.Context, kubeClient client.Client, obj client.Object) (bool, error) {
 	// if the object itself is labeled, we will use that value
 	workloadLabels := obj.GetLabels()
@@ -98,6 +100,7 @@ func IsWorkloadInstrumentationEffectiveEnabled(ctx context.Context, kubeClient c
 	return IsObjectLabeledForInstrumentation(&ns), nil
 }
 
+// Deprecated: this should only be used for backward compatibility migration.
 func IsInstrumentationDisabledExplicitly(obj client.Object) bool {
 	labels := obj.GetLabels()
 	if labels != nil {
