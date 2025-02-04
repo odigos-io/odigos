@@ -9,7 +9,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const { darkMode } = useDarkModeStore();
 
   return (
-    <html lang='en'>
+    <html lang='en' suppressHydrationWarning>
       <head>
         <meta name='description' content={METADATA.title} />
         <link rel='icon' type='image/svg+xml' href={`/${METADATA.icon}`} />
@@ -19,7 +19,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <ApolloWrapper>
         <ThemeProvider darkMode={darkMode}>
           <body
-            suppressHydrationWarning={true}
             style={{
               width: '100vw',
               height: '100vh',
