@@ -27,7 +27,6 @@ func (j *JavaInspector) Inspect(proc *process.Details) (common.ProgrammingLangua
 		return common.JavaProgrammingLanguage, true
 	}
 
-	// 3. Check if the executable file is "java" or "javaw"
 	if isJavaExecutable(proc.ExePath) {
 		return common.JavaProgrammingLanguage, true
 	}
