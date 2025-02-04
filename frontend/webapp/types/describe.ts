@@ -5,7 +5,7 @@ interface EntityProperty {
   explain?: string;
 }
 
-interface InstrumentationLabelsAnalyze {
+interface InstrumentationSourcesAnalyze {
   instrumented: EntityProperty;
   workload?: EntityProperty;
   namespace?: EntityProperty;
@@ -64,7 +64,7 @@ interface SourceAnalyze {
   name: EntityProperty;
   kind: EntityProperty;
   namespace: EntityProperty;
-  labels: InstrumentationLabelsAnalyze;
+  sourceObjects: InstrumentationSourcesAnalyze;
 
   runtimeInfo?: RuntimeInfoAnalyze;
   instrumentationConfig: InstrumentationConfigAnalyze;
