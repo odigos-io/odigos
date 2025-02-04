@@ -3,7 +3,7 @@ import { ACTION } from '@/utils';
 import { GET_SOURCES } from '@/graphql';
 import { useLazyQuery } from '@apollo/client';
 import { type ComputePlatform } from '@/types';
-import { NOTIFICATION_TYPE } from '@odigos/ui-components';
+import { NOTIFICATION_TYPE } from '@odigos/ui-utils';
 import { useNotificationStore, usePaginatedStore } from '@/store';
 
 export const usePaginatedSources = () => {

@@ -8,7 +8,8 @@ import { type ActionDataParsed } from '@/types';
 import buildDrawerItem from './build-drawer-item';
 import { useActionCRUD, useActionFormData } from '@/hooks';
 import OverviewDrawer from '../../overview/overview-drawer';
-import { ACTION_OPTIONS, ConditionDetails, type ConditionDetailsProps, DataCard, ENTITY_TYPES, getActionIcon, NOTIFICATION_TYPE } from '@odigos/ui-components';
+import { ConditionDetails, type ConditionDetailsProps, DataCard } from '@odigos/ui-components';
+import { ACTION_OPTIONS, ENTITY_TYPES, getActionIcon, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 
 interface Props {}
 

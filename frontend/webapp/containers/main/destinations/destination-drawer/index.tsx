@@ -7,8 +7,9 @@ import { type ActualDestination } from '@/types';
 import buildDrawerItem from './build-drawer-item';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { DestinationFormBody } from '../destination-form-body';
+import { ENTITY_TYPES, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 import { useDestinationCRUD, useDestinationFormData, useDestinationTypes } from '@/hooks';
-import { ConditionDetails, ConditionDetailsProps, DataCard, ENTITY_TYPES, NOTIFICATION_TYPE } from '@odigos/ui-components';
+import { ConditionDetails, ConditionDetailsProps, DataCard } from '@odigos/ui-components';
 
 interface Props {}
 

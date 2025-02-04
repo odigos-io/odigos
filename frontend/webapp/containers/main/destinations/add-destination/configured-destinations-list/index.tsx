@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { extractMonitors } from '@/utils';
+import { TrashIcon } from '@odigos/ui-icons';
+import { ENTITY_TYPES } from '@odigos/ui-utils';
 import { IAppState, useAppStore } from '@/store';
 import { type ConfiguredDestination } from '@/types';
-import { DataCardFields, DataTab, DeleteWarning, ENTITY_TYPES, IconButton, TrashIcon } from '@odigos/ui-components';
+import { DataCardFields, DataTab, DeleteWarning, IconButton } from '@odigos/ui-components';
 
 const Container = styled.div`
   display: flex;

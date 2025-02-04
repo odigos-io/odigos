@@ -1,7 +1,8 @@
 import React from 'react';
+import { Theme } from '@odigos/ui-theme';
 import styled, { useTheme } from 'styled-components';
 import { type UseSourceFormDataResponse } from '@/hooks';
-import { Checkbox, Divider, ExtendArrow, FadeLoader, FlexRow, NoDataFound, Text, Theme, Toggle } from '@odigos/ui-components';
+import { Checkbox, Divider, ExtendArrow, FadeLoader, FlexRow, NoDataFound, Text, Toggle } from '@odigos/ui-components';
 
 interface Props extends UseSourceFormDataResponse {
   isModal?: boolean;
@@ -59,7 +60,7 @@ const SelectionCount = styled(Text)`
 `;
 
 const NoDataFoundWrapper = styled.div`
-  margin: 50px 0;
+  padding: 50px 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -149,7 +150,7 @@ export const SourcesList: React.FC<Props> = ({
                 </RelativeWrapper>
               ) : (
                 <NoDataFoundWrapper>
-                  <NoDataFound title='No sources available in this namespace' subTitle='Try searching again or select another namespace.' />
+                  {namespacesLoading ? <FadeLoader scale={1.5} /> : <NoDataFound title='No sources available in this namespace' subTitle='Try searching again or select another namespace.' />}
                 </NoDataFoundWrapper>
               ))}
           </Group>
