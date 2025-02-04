@@ -59,16 +59,16 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
-	// err = builder.
-	// 	WebhookManagedBy(mgr).
-	// 	For(&corev1.Pod{}).
-	// 	WithDefaulter(&PodsWebhook{
-	// 		Client: mgr.GetClient(),
-	// 	}).
-	// 	Complete()
-	// if err != nil {
-	// 	return err
-	// }
+	err = builder.
+		WebhookManagedBy(mgr).
+		For(&corev1.Pod{}).
+		WithDefaulter(&PodsWebhook{
+			Client: mgr.GetClient(),
+		}).
+		Complete()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

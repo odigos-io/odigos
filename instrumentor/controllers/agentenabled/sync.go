@@ -313,7 +313,7 @@ func applyRulesForDistros(defaultDistros map[common.ProgrammingLanguage]string,
 		if rule.Spec.OtelSdks == nil {
 			continue
 		}
-		// TODO: apply otel sdk rules
+		// TODO: change this from otel sdks to distros and use distro name
 	}
 
 	return defaultDistros

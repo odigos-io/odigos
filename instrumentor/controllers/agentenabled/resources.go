@@ -6,8 +6,9 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -33,7 +34,7 @@ func getRelevantResources(ctx context.Context, c client.Client, pw k8sconsts.Pod
 
 	// TODO: we are yaml unmarshalling the configmap data for every workload, this is not efficient
 	// can we cache the configmap data in the controller?
-	effectiveConfig, err := utils.GetCurrentOdigosConfig(ctx, c)
+	effectiveConfig, err := k8sutils.GetCurrentOdigosConfig(ctx, c)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -61,13 +62,13 @@ func getRelevantInstrumentationRules(ctx context.Context, c client.Client, pw k8
 	for i := range irList.Items {
 		ir := &irList.Items[i]
 
-		// if the rule is disabled, it is irrelevant
-		if ir.Spec.Disabled {
+		if !utils.IsWorkloadParticipatingInRule(pw, ir) {
 			continue
 		}
 
-		// if the rules specifies workloads, check if the current workload is participating
-		if !isWorkloadParticipating(pw, ir) {
+		if ir.Spec.OtelSdks == nil {
+			// we only care about otel sdks rules at the moment.
+			// no need to process other rules.
 			continue
 		}
 
