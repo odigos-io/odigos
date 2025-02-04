@@ -60,9 +60,6 @@ func CreateManager() (ctrl.Manager, error) {
 			// running `kubectl get .... --show-managed-fields` will show the managed fields.
 			DefaultTransform: cache.TransformStripManagedFields(),
 			ByObject: map[client.Object]cache.ByObject{
-				&corev1.ConfigMap{}: {
-					Field: odigosConfigSelector,
-				},
 				&corev1.Pod{}: {
 					Field: currentNodeSelector,
 				},
