@@ -110,7 +110,9 @@ type InstrumentationConfigStatus struct {
 	// Represents the observations of a InstrumentationConfig's current state.
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" protobuf:"bytes,1,rep,name=conditions"`
 
-	// TODO: add nice comment for this
+	// The hash used to determine whether the associated workload needs to be rolled out.
+	// This hash is calculated based on the containers config array and takes into account the
+	// container name, Instrumented flag and the OTel distro name.
 	WorkloadRolloutHash string `json:"workloadRolloutHash,omitempty"`
 }
 

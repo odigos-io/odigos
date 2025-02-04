@@ -601,6 +601,10 @@ spec:
                   type: object
                 type: array
               workloadRolloutHash:
+                description: |-
+                  The hash used to determine whether the associated workload needs to be rolled out.
+                  This hash is calculated based on the containers config array and takes into account the
+                  container name, Instrumented flag and the OTel distro name.
                 type: string
             type: object
         type: object
