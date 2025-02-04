@@ -11,12 +11,12 @@
     "cy:open": "cypress open --e2e -b electron"
   },
   "dependencies": {
-    "@apollo/client": "^3.12.8",
+    "@apollo/client": "^3.12.9",
     "@apollo/experimental-nextjs-app-support": "^0.11.8",
     "@odigos/ui-components": "^0.0.33",
     "@odigos/ui-icons": "^0.0.2",
     "@odigos/ui-theme": "^0.0.2",
-    "@odigos/ui-utils": "^0.0.3",
+    "@odigos/ui-utils": "^0.0.6",
     "@xyflow/react": "^12.4.2",
     "graphql": "^16.10.0",
     "javascript-time-ago": "^2.5.11",
@@ -30,7 +30,7 @@
     "zustand": "^5.0.3"
   },
   "devDependencies": {
-    "@types/node": "22.13.0",
+    "@types/node": "22.13.1",
     "@types/react": "19.0.8",
     "@types/react-dom": "19.0.3",
     "autoprefixer": "^10.4.20",
