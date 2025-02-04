@@ -29,7 +29,7 @@ const (
 	WorkloadRolloutConditionType = "WorkloadRollout"
 )
 
-// +kubebuilder:validation:Enum=InjectedSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;UnsupportedProgrammingLanguage;UnsupportedRuntimeVersion;OtherAgentDetected;IgnoredContainer
+// +kubebuilder:validation:Enum=InjectedSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;UnsupportedProgrammingLanguage;IgnoredContainer;NoAvailableAgent;UnsupportedRuntimeVersion;OtherAgentDetected
 type AgentInjectionReason string
 
 const (
