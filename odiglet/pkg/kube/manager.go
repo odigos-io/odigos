@@ -1,7 +1,6 @@
 package kube
 
 import (
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/instrumentation"
 
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
@@ -49,8 +48,6 @@ func CreateManager() (ctrl.Manager, error) {
 
 	odigosNs := env.Current.Namespace
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
-	odigosConfigNameSelector := fields.OneTermEqualSelector("metadata.name", consts.OdigosEffectiveConfigName)
-	odigosConfigSelector := fields.AndSelectors(nsSelector, odigosConfigNameSelector)
 	currentNodeSelector := fields.OneTermEqualSelector("spec.nodeName", env.Current.NodeName)
 
 	return manager.New(config.GetConfigOrDie(), manager.Options{
