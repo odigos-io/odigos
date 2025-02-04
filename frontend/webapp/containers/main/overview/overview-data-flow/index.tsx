@@ -1,12 +1,12 @@
 'use client';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Theme } from '@odigos/ui-theme';
-import { ENTITY_TYPES } from '@odigos/ui-utils';
 import styled, { useTheme } from 'styled-components';
 import { MultiSourceControl } from '../multi-source-control';
 import { OverviewActionsMenu } from '../overview-actions-menu';
+import { ENTITY_TYPES, useContainerSize } from '@odigos/ui-utils';
 import { type Edge, useEdgesState, useNodesState, type Node, applyNodeChanges } from '@xyflow/react';
-import { useActionCRUD, useContainerSize, useDestinationCRUD, useInstrumentationRuleCRUD, useMetrics, useNodeDataFlowHandlers, useSourceCRUD } from '@/hooks';
+import { useActionCRUD, useDestinationCRUD, useInstrumentationRuleCRUD, useMetrics, useNodeDataFlowHandlers, useSourceCRUD } from '@/hooks';
 
 // TODO: proper UI conatiners
 import { NodeDataFlow } from '@/components/nodes-data-flow';
