@@ -451,6 +451,16 @@ auto_generated: true
 </tbody>
 </table>
 
+## `AgentInjectionReason` <a id="odigos-io-v1alpha1-AgentInjectionReason"></a>
+    
+(Alias of `string`)
+
+**Appears in:**
+
+- [ContainerConfig](#odigos-io-v1alpha1-ContainerConfig)
+
+
+
 ## `Attribute` <a id="odigos-io-v1alpha1-Attribute"></a>
     
 
@@ -958,6 +968,80 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </tbody>
 </table>
 
+## `ContainerConfig` <a id="odigos-io-v1alpha1-ContainerConfig"></a>
+    
+
+**Appears in:**
+
+- [InstrumentationConfigSpec](#odigos-io-v1alpha1-InstrumentationConfigSpec)
+
+<p>ContainerConfig is a configuration for a specific container in a workload.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>containerName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>The name of the container to which this configuration applies.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>instrumented</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>boolean flag to indicate if the container should be instrumented or not.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>instrumentationReason</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-AgentInjectionReason"><code>AgentInjectionReason</code></a>
+</td>
+<td>
+   <p>An enum reason for the agent injection decision.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>instrumentationMessage</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>free text message to provide more information about the instrumentation decision.
+can be left empty if reason is self-explanatory.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>otelDistroName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>The name of the otel distribution to use for this container.
+if the name is empty, this container should not be instrumented.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
 ## `DestinationSpec` <a id="odigos-io-v1alpha1-DestinationSpec"></a>
     
 
@@ -1179,6 +1263,28 @@ The workload is identified by the owner reference</p>
 </tr>
 <tr>
 <td>
+<code>agentInjectionEnabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>determines if odigos should inject agents to pods of this workload.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>containers</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-ContainerConfig"><code>[]ContainerConfig</code></a>
+</td>
+<td>
+   <p>configuration for each instrumented container in the workload</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>sdkConfigs</code> <B>[Required]</B>
 </td>
 <td>
@@ -1225,6 +1331,17 @@ TODO: consider adding more granular control over the SDKs, such as community/ent
 </td>
 <td>
    <p>Represents the observations of a InstrumentationConfig's current state.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>workloadRolloutHash</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>TODO: add nice comment for this</p>
 </td>
 </tr>
 </tbody>
