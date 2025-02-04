@@ -1,21 +1,9 @@
 import { type Condition } from './common';
-import { WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils';
-
-export enum K8sResourceKind {
-  Deployment = 'Deployment',
-  DaemonSet = 'DaemonSet',
-  StatefulSet = 'StatefulSet',
-}
-
-export interface WorkloadId {
-  namespace: string;
-  name: string;
-  kind: string; // TODO: replace with "K8sResourceKind" and fix all TS errors;
-}
+import { PROGRAMMING_LANGUAGES, type WorkloadId } from '@odigos/ui-utils';
 
 export interface SourceContainer {
   containerName: string;
-  language: WORKLOAD_PROGRAMMING_LANGUAGES;
+  language: PROGRAMMING_LANGUAGES;
   runtimeVersion: string;
   otherAgent: string | null;
 }

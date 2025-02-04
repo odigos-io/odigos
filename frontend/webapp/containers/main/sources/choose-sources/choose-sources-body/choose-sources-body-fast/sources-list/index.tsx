@@ -1,8 +1,8 @@
 import React from 'react';
-import { FlexRow, Theme } from '@odigos/ui-components';
+import { Theme } from '@odigos/ui-theme';
 import styled, { useTheme } from 'styled-components';
 import { type UseSourceFormDataResponse } from '@/hooks';
-import { Checkbox, Divider, ExtendIcon, FadeLoader, NoDataFound, Text, Toggle } from '@/reuseable-components';
+import { Checkbox, Divider, ExtendArrow, FadeLoader, FlexRow, NoDataFound, Text, Toggle } from '@odigos/ui-components';
 
 interface Props extends UseSourceFormDataResponse {
   isModal?: boolean;
@@ -60,7 +60,7 @@ const SelectionCount = styled(Text)`
 `;
 
 const NoDataFoundWrapper = styled.div`
-  margin: 50px 0;
+  padding: 50px 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -90,7 +90,7 @@ export const SourcesList: React.FC<Props> = ({
   const namespaces = filterNamespaces();
 
   if (!namespaces.length) {
-    return <NoDataFoundWrapper>{namespacesLoading ? <FadeLoader style={{ transform: 'scale(2)' }} /> : <NoDataFound title='No namespaces found' />}</NoDataFoundWrapper>;
+    return <NoDataFoundWrapper>{namespacesLoading ? <FadeLoader scale={2} /> : <NoDataFound title='No namespaces found' />}</NoDataFoundWrapper>;
   }
 
   return (
@@ -121,7 +121,7 @@ export const SourcesList: React.FC<Props> = ({
                 <SelectionCount size={10} color={theme.text.grey}>
                   {isNamespaceLoaded ? `${onlySelectedSources.length}/${sources.length}` : null}
                 </SelectionCount>
-                <ExtendIcon extend={isNamespaceSelected} />
+                <ExtendArrow extend={isNamespaceSelected} />
               </FlexRow>
             </NamespaceItem>
 
@@ -150,7 +150,7 @@ export const SourcesList: React.FC<Props> = ({
                 </RelativeWrapper>
               ) : (
                 <NoDataFoundWrapper>
-                  <NoDataFound title='No sources available in this namespace' subTitle='Try searching again or select another namespace.' />
+                  {namespacesLoading ? <FadeLoader scale={1.5} /> : <NoDataFound title='No sources available in this namespace' subTitle='Try searching again or select another namespace.' />}
                 </NoDataFoundWrapper>
               ))}
           </Group>

@@ -1,8 +1,9 @@
 import { ACTION } from '@/utils';
 import { useQuery } from '@apollo/client';
 import { useNotificationStore } from '@/store';
+import { type ComputePlatform } from '@/types';
 import { GET_COMPUTE_PLATFORM } from '@/graphql';
-import { NOTIFICATION_TYPE, type ComputePlatform } from '@/types';
+import { NOTIFICATION_TYPE } from '@odigos/ui-utils';
 
 export const useComputePlatform = () => {
   const { addNotification } = useNotificationStore();

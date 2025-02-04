@@ -2,11 +2,9 @@ import React, { useState } from 'react';
 import { ACTION } from '@/utils';
 import { ActionFormBody } from '../';
 import { ModalBody } from '@/styles';
-import { useKeyDown } from '@/hooks';
-import { CenterThis } from '@odigos/ui-components';
 import { useActionCRUD, useActionFormData } from '@/hooks/actions';
-import { ACTION_OPTIONS, type ActionOption } from './action-options';
-import { AutocompleteInput, Modal, NavigationButtons, Divider, FadeLoader, SectionTitle } from '@/reuseable-components';
+import { ACTION_OPTIONS, useKeyDown, type ActionOption } from '@odigos/ui-utils';
+import { AutocompleteInput, CenterThis, Divider, FadeLoader, Modal, NavigationButtons, SectionTitle } from '@odigos/ui-components';
 
 interface Props {
   isOpen: boolean;
@@ -69,7 +67,7 @@ export const ActionModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
             {loading ? (
               <CenterThis>
-                <FadeLoader cssOverride={{ scale: 2 }} />
+                <FadeLoader scale={2} />
               </CenterThis>
             ) : (
               <ActionFormBody action={selectedItem} formData={formData} formErrors={formErrors} handleFormChange={handleFormChange} />

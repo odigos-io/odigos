@@ -46,14 +46,14 @@ type Object interface {
 // otherwise it creates a new client and returns it.
 func GetCLIClientOrExit(cmd *cobra.Command) *Client {
 	// we can check the cmd context for client, but currently avoiding that due to circular dependencies
-	client, err := createClient(cmd)
+	client, err := CreateClient(cmd)
 	if err != nil {
 		PrintClientErrorAndExit(err)
 	}
 	return client
 }
 
-func createClient(cmd *cobra.Command) (*Client, error) {
+func CreateClient(cmd *cobra.Command) (*Client, error) {
 	kc := cmd.Flag("kubeconfig").Value.String()
 	kContext := cmd.Flag("kube-context").Value.String()
 	config, err := k8sutils.GetClientConfigWithContext(kc, kContext)

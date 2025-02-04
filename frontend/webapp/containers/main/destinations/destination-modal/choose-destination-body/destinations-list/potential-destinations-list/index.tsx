@@ -1,9 +1,10 @@
 import React from 'react';
 import styled from 'styled-components';
-import { OdigosLogo } from '@odigos/ui-components';
+import { OdigosLogo } from '@odigos/ui-icons';
+import { SIGNAL_TYPE } from '@odigos/ui-utils';
 import { usePotentialDestinations } from '@/hooks';
-import type { DestinationTypeItem, SupportedSignals } from '@/types';
-import { DataTab, SectionTitle, SkeletonLoader } from '@/reuseable-components';
+import { type DestinationTypeItem } from '@/types';
+import { DataTab, SectionTitle, SkeletonLoader } from '@odigos/ui-components';
 
 interface Props {
   setSelectedItems: (item: DestinationTypeItem) => void;
@@ -38,7 +39,7 @@ export const PotentialDestinationsList: React.FC<Props> = ({ setSelectedItems })
             title={item.displayName}
             iconSrc={item.imageUrl}
             hoverText='Select'
-            monitors={Object.keys(item.supportedSignals).filter((signal: keyof SupportedSignals) => item.supportedSignals[signal].supported)}
+            monitors={Object.keys(item.supportedSignals).filter((signal: SIGNAL_TYPE) => item.supportedSignals[signal].supported) as SIGNAL_TYPE[]}
             monitorsWithLabels
             onClick={() => setSelectedItems(item)}
           />

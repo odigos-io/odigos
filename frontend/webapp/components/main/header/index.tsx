@@ -1,13 +1,14 @@
 import React from 'react';
 import { useConfig } from '@/hooks';
+import { Theme } from '@odigos/ui-theme';
 import { PlatformTitle } from './cp-title';
 import { FORM_ALERTS, SLACK_LINK } from '@/utils';
+import { NotificationManager } from '@/components';
 import styled, { useTheme } from 'styled-components';
-import { NOTIFICATION_TYPE, PlatformTypes } from '@/types';
-import { NotificationManager, ToggleDarkMode } from '@/components';
-import { DRAWER_OTHER_TYPES, useDrawerStore, useStatusStore } from '@/store';
-import { ConnectionStatus, IconButton, Tooltip } from '@/reuseable-components';
-import { FlexRow, OdigosLogoText, SlackLogo, TerminalIcon, Theme } from '@odigos/ui-components';
+import { NOTIFICATION_TYPE, PLATFORM_TYPE } from '@odigos/ui-utils';
+import { OdigosLogoText, SlackLogo, TerminalIcon } from '@odigos/ui-icons';
+import { FlexRow, IconButton, Status, ToggleDarkMode, Tooltip } from '@odigos/ui-components';
+import { DRAWER_OTHER_TYPES, useDarkModeStore, useDrawerStore, useStatusStore } from '@/store';
 
 interface MainHeaderProps {}
 
@@ -35,6 +36,7 @@ export const MainHeader: React.FC<MainHeaderProps> = () => {
   const { data: config } = useConfig();
   const { setSelectedItem } = useDrawerStore();
   const { status, title, message } = useStatusStore();
+  const { darkMode, setDarkMode } = useDarkModeStore();
 
   const handleClickCli = () => setSelectedItem({ type: DRAWER_OTHER_TYPES.ODIGOS_CLI, id: DRAWER_OTHER_TYPES.ODIGOS_CLI });
   const handleClickSlack = () => window.open(SLACK_LINK, '_blank', 'noopener noreferrer');
@@ -43,17 +45,17 @@ export const MainHeader: React.FC<MainHeaderProps> = () => {
     <HeaderContainer>
       <AlignLeft>
         <OdigosLogoText size={80} />
-        <PlatformTitle type={PlatformTypes.K8S} />
-        <ConnectionStatus title={title} subtitle={message} status={status} />
+        <PlatformTitle type={PLATFORM_TYPE.K8S} />
+        <Status status={status} title={title} subtitle={message} size={14} family='primary' withIcon withBackground />
         {config?.readonly && (
           <Tooltip text={FORM_ALERTS.READONLY_WARNING}>
-            <ConnectionStatus title='Read Only' status={NOTIFICATION_TYPE.INFO} />
+            <Status status={NOTIFICATION_TYPE.INFO} title='Read Only' size={14} family='primary' withIcon withBackground />
           </Tooltip>
         )}
       </AlignLeft>
 
       <AlignRight>
-        <ToggleDarkMode />
+        <ToggleDarkMode darkMode={darkMode} setDarkMode={setDarkMode} />
         <NotificationManager />
 
         <IconButton onClick={handleClickCli} tooltip='Odigos CLI' withPing pingColor={theme.colors.majestic_blue}>

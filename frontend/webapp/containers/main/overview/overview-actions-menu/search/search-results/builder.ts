@@ -1,6 +1,7 @@
-import { type ActionDataParsed, type ActualDestination, type InstrumentationRuleSpec, type K8sActualSource, OVERVIEW_ENTITY_TYPES } from '@/types';
+import { ENTITY_TYPES } from '@odigos/ui-utils';
+import { type ActionDataParsed, type ActualDestination, type InstrumentationRuleSpec, type K8sActualSource } from '@/types';
 
-export type Category = 'all' | OVERVIEW_ENTITY_TYPES;
+export type Category = 'all' | ENTITY_TYPES;
 
 export const buildSearchResults = ({
   rules,
@@ -31,25 +32,25 @@ export const buildSearchResults = ({
     entities: InstrumentationRuleSpec[] | K8sActualSource[] | ActionDataParsed[] | ActualDestination[];
   }[] = [
     {
-      category: OVERVIEW_ENTITY_TYPES.SOURCE,
+      category: ENTITY_TYPES.SOURCE,
       label: 'Sources',
       count: filteredSources.length,
       entities: [],
     },
     {
-      category: OVERVIEW_ENTITY_TYPES.ACTION,
+      category: ENTITY_TYPES.ACTION,
       label: 'Actions',
       count: filteredActions.length,
       entities: [],
     },
     {
-      category: OVERVIEW_ENTITY_TYPES.DESTINATION,
+      category: ENTITY_TYPES.DESTINATION,
       label: 'Destinations',
       count: filteredDestinations.length,
       entities: [],
     },
     {
-      category: OVERVIEW_ENTITY_TYPES.RULE,
+      category: ENTITY_TYPES.INSTRUMENTATION_RULE,
       label: 'Instrumentation Rules',
       count: filteredRules.length,
       entities: [],
@@ -68,13 +69,13 @@ export const buildSearchResults = ({
     .map((item) => ({
       ...item,
       entities:
-        item.category === OVERVIEW_ENTITY_TYPES.RULE
+        item.category === ENTITY_TYPES.INSTRUMENTATION_RULE
           ? filteredRules
-          : item.category === OVERVIEW_ENTITY_TYPES.SOURCE
+          : item.category === ENTITY_TYPES.SOURCE
           ? filteredSources
-          : item.category === OVERVIEW_ENTITY_TYPES.ACTION
+          : item.category === ENTITY_TYPES.ACTION
           ? filteredActions
-          : item.category === OVERVIEW_ENTITY_TYPES.DESTINATION
+          : item.category === ENTITY_TYPES.DESTINATION
           ? filteredDestinations
           : [],
     }));
