@@ -14,8 +14,6 @@ import (
 
 type JavaInspector struct{}
 
-const processName = "java"
-
 // libjvmRegex is a regular expression that matches any path containing "libjvm.so",
 // ensuring that we correctly detect the presence of the JVM shared library.
 var libjvmRegex = regexp.MustCompile(`.*/libjvm\.so`)
@@ -42,8 +40,8 @@ func (j *JavaInspector) Inspect(proc *process.Details) (common.ProgrammingLangua
 
 // This function inspects the memory-mapped regions of the process by reading the "/proc/<pid>/maps" file.
 // It then searches for "libjvm.so", which is a shared library loaded by Java processes.
-func checkForLoadedJVM(ProcessID int) bool {
-	mapsPath := fmt.Sprintf("/proc/%d/maps", ProcessID)
+func checkForLoadedJVM(pid int) bool {
+	mapsPath := fmt.Sprintf("/proc/%d/maps", pid)
 	mapsBytes, err := os.ReadFile(mapsPath)
 	if err != nil {
 		return false
@@ -57,7 +55,7 @@ func checkForLoadedJVM(ProcessID int) bool {
 // isJavaExecutable checks if the process binary name suggests it's a Java process.
 // This is useful for cases where "libjvm.so" isn't found in "/proc/<pid>/maps".
 func isJavaExecutable(procExe string) bool {
-	return strings.HasSuffix(procExe, processName)
+	return strings.HasSuffix(procExe, "java")
 }
 
 func isGraalVMProcess(cmdline string) bool {
