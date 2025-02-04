@@ -69,9 +69,10 @@ spec:
                       - WaitingForRuntimeInspection
                       - WaitingForNodeCollector
                       - UnsupportedProgrammingLanguage
+                      - IgnoredContainer
+                      - NoAvailableAgent
                       - UnsupportedRuntimeVersion
                       - OtherAgentDetected
-                      - IgnoredContainer
                       type: string
                     instrumented:
                       description: boolean flag to indicate if the container should
