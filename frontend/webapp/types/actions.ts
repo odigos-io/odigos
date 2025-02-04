@@ -57,7 +57,7 @@ export interface ActionData {
   id: string;
   type: ACTION_TYPE;
   spec: ActionItem | string;
-  conditions: Condition[];
+  conditions: Condition[] | null;
 }
 
 export interface ActionDataParsed extends ActionData {

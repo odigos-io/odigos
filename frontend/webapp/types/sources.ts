@@ -13,7 +13,7 @@ export interface K8sActualSource extends WorkloadId {
   numberOfInstances?: number;
   otelServiceName: string;
   containers: Array<SourceContainer>;
-  conditions: Array<Condition>;
+  conditions: Array<Condition> | null;
 }
 
 export interface PatchSourceRequestInput {
