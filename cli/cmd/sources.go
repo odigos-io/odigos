@@ -19,7 +19,8 @@ import (
 var (
 	sourceFlags *pflag.FlagSet
 
-	namespaceFlagName = "namespace"
+	namespaceFlagName   = "namespace"
+	sourceNamespaceFlag string
 
 	allNamespacesFlagName = "all-namespaces"
 	allNamespaceFlag      bool
@@ -79,7 +80,7 @@ var sourceCreateCmd = &cobra.Command{
 		source := &v1alpha1.Source{
 			ObjectMeta: v1.ObjectMeta{
 				Name:      sourceName,
-				Namespace: namespaceFlag,
+				Namespace: sourceNamespaceFlag,
 			},
 			Spec: v1alpha1.SourceSpec{
 				Workload: k8sconsts.PodWorkload{
@@ -97,7 +98,7 @@ var sourceCreateCmd = &cobra.Command{
 			source.Labels[k8sconsts.SourceGroupLabelPrefix+sourceGroupFlag] = "true"
 		}
 
-		_, err := client.OdigosClient.Sources(namespaceFlag).Create(ctx, source, v1.CreateOptions{})
+		_, err := client.OdigosClient.Sources(sourceNamespaceFlag).Create(ctx, source, v1.CreateOptions{})
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Cannot create Source: %+v\n", err)
 			os.Exit(1)
@@ -219,8 +220,8 @@ func parseSourceLabelFlags() (string, string, string, labels.Set) {
 		providedWorkloadFlags = fmt.Sprintf("%s Source Group: %s\n", providedWorkloadFlags, sourceGroupFlag)
 		labelSet[k8sconsts.SourceGroupLabelPrefix+sourceGroupFlag] = "true"
 	}
-	namespaceList := namespaceFlag
-	namespaceText := fmt.Sprintf("namespace %s", namespaceFlag)
+	namespaceList := sourceNamespaceFlag
+	namespaceText := fmt.Sprintf("namespace %s", sourceNamespaceFlag)
 	if allNamespaceFlag {
 		namespaceText = "all namespaces"
 		namespaceList = ""
@@ -230,7 +231,7 @@ func parseSourceLabelFlags() (string, string, string, labels.Set) {
 
 func init() {
 	sourceFlags = pflag.NewFlagSet("sourceFlags", pflag.ContinueOnError)
-	sourceFlags.StringVarP(&namespaceFlag, namespaceFlagName, "n", "default", "Kubernetes Namespace for Source")
+	sourceFlags.StringVarP(&sourceNamespaceFlag, namespaceFlagName, "n", "default", "Kubernetes Namespace for Source")
 	sourceFlags.StringVar(&workloadKindFlag, workloadKindFlagName, "", "Kubernetes Kind for entity (one of: Deployment, DaemonSet, StatefulSet, Namespace)")
 	sourceFlags.StringVar(&workloadNameFlag, workloadNameFlagName, "", "Name of entity for Source")
 	sourceFlags.StringVar(&workloadNamespaceFlag, workloadNamespaceFlagName, "", "Namespace of entity for Source")
