@@ -2,8 +2,10 @@ import React from 'react';
 import { Search } from './search';
 import { Filters } from './filters';
 import { AddEntity } from '@/components';
+import { Theme } from '@odigos/ui-theme';
+import { OverviewIcon } from '@odigos/ui-icons';
 import styled, { useTheme } from 'styled-components';
-import { Divider, MonitorsIcons, OverviewIcon, Text, Theme, Tooltip } from '@odigos/ui-components';
+import { Divider, MonitorsIcons, Text, Tooltip } from '@odigos/ui-components';
 
 const MenuContainer = styled.div`
   display: flex;

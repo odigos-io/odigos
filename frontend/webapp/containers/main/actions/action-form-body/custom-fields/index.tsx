@@ -2,10 +2,10 @@ import React from 'react';
 import PiiMasking from './pii-masking';
 import ErrorSampler from './error-sampler';
 import LatencySampler from './latency-sampler';
+import { ACTION_TYPE } from '@odigos/ui-utils';
 import AddClusterInfo from './add-cluster-info';
 import DeleteAttributes from './delete-attributes';
 import RenameAttributes from './rename-attributes';
-import { ACTION_TYPE } from '@odigos/ui-components';
 import ProbabilisticSampler from './probabilistic-sampler';
 
 interface Props {

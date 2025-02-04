@@ -4,7 +4,7 @@ import { useNotificationStore } from '@/store';
 import { UPDATE_API_TOKEN } from '@/graphql/mutations';
 import { useComputePlatform } from '../compute-platform';
 import { ACTION, DISPLAY_TITLES, FORM_ALERTS } from '@/utils';
-import { ENTITY_TYPES, getSseTargetFromId, NOTIFICATION_TYPE } from '@odigos/ui-components';
+import { ENTITY_TYPES, getSseTargetFromId, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 
 interface UseTokenCrudParams {
   onSuccess?: (type: string) => void;

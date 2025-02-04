@@ -1,5 +1,5 @@
 import { type Condition } from './common';
-import { PROGRAMMING_LANGUAGES, WorkloadId } from '@odigos/ui-components';
+import { PROGRAMMING_LANGUAGES, type WorkloadId } from '@odigos/ui-utils';
 
 export interface SourceContainer {
   containerName: string;

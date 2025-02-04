@@ -3,7 +3,7 @@ import nodeConfig from './node-config.json';
 import { type NodePositions } from './get-node-positions';
 import { type K8sActualSource, NODE_TYPES, OVERVIEW_NODE_TYPES } from '@/types';
 import { getMainContainerLanguage } from '@/utils/constants/programming-languages';
-import { ENTITY_TYPES, getEntityIcon, getEntityLabel, getHealthStatus, getProgrammingLanguageIcon, HEALTH_STATUS } from '@odigos/ui-components';
+import { ENTITY_TYPES, getEntityIcon, getEntityLabel, getHealthStatus, getProgrammingLanguageIcon, HEALTH_STATUS } from '@odigos/ui-utils';
 
 interface Params {
   loading: boolean;

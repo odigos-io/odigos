@@ -1,7 +1,9 @@
 import React from 'react';
 import styled from 'styled-components';
+import { Theme } from '@odigos/ui-theme';
+import { FolderIcon } from '@odigos/ui-icons';
 import { type UseSourceFormDataResponse } from '@/hooks';
-import { Checkbox, FadeLoader, FolderIcon, IconWrapped, NoDataFound, Text, Theme } from '@odigos/ui-components';
+import { Checkbox, FadeLoader, IconWrapped, NoDataFound, Text } from '@odigos/ui-components';
 
 interface Props extends UseSourceFormDataResponse {
   isModal?: boolean;

@@ -1,4 +1,4 @@
-import { ENTITY_TYPES } from '@odigos/ui-components';
+import { ENTITY_TYPES } from '@odigos/ui-utils';
 import { type ActionDataParsed, type ActualDestination, type InstrumentationRuleSpec, type K8sActualSource } from '@/types';
 
 export type Category = 'all' | ENTITY_TYPES;

@@ -2,13 +2,14 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { RuleFormBody } from '../';
 import buildCard from './build-card';
 import styled from 'styled-components';
+import { DataCard } from '@odigos/ui-components';
 import buildDrawerItem from './build-drawer-item';
 import { ACTION, DATA_CARDS, FORM_ALERTS } from '@/utils';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { type InstrumentationRuleSpecMapped } from '@/types';
 import { useDrawerStore, useNotificationStore } from '@/store';
 import { useInstrumentationRuleCRUD, useInstrumentationRuleFormData } from '@/hooks';
-import { DataCard, ENTITY_TYPES, getInstrumentationRuleIcon, INSTRUMENTATION_RULE_OPTIONS, NOTIFICATION_TYPE } from '@odigos/ui-components';
+import { ENTITY_TYPES, getInstrumentationRuleIcon, INSTRUMENTATION_RULE_OPTIONS, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 
 interface Props {}
 

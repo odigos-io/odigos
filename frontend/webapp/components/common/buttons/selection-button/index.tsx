@@ -1,7 +1,9 @@
 import React from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
-import { Badge, Button, type SVG, Text, Theme } from '@odigos/ui-components';
+import { Theme } from '@odigos/ui-theme';
+import { type SVG } from '@odigos/ui-icons';
+import { Badge, Button, Text } from '@odigos/ui-components';
 
 interface Props {
   label: string;

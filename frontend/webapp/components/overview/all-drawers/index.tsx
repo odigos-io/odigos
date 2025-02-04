@@ -1,6 +1,6 @@
 import React from 'react';
 import { CliDrawer } from './cli-drawer';
-import { ENTITY_TYPES } from '@odigos/ui-components';
+import { ENTITY_TYPES } from '@odigos/ui-utils';
 import { DRAWER_OTHER_TYPES, useDrawerStore } from '@/store';
 import { ActionDrawer, DestinationDrawer, RuleDrawer, SourceDrawer } from '@/containers';
 

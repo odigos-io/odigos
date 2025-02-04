@@ -1,8 +1,10 @@
 import React from 'react';
 import styled from 'styled-components';
+import { OdigosLogo } from '@odigos/ui-icons';
+import { SIGNAL_TYPE } from '@odigos/ui-utils';
 import { usePotentialDestinations } from '@/hooks';
 import { type DestinationTypeItem } from '@/types';
-import { DataTab, OdigosLogo, SectionTitle, SIGNAL_TYPE, SkeletonLoader } from '@odigos/ui-components';
+import { DataTab, SectionTitle, SkeletonLoader } from '@odigos/ui-components';
 
 interface Props {
   setSelectedItems: (item: DestinationTypeItem) => void;

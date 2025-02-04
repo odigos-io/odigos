@@ -4,7 +4,7 @@ import { type Notification } from '@/types';
 import { useDestinationCRUD } from '../destinations';
 import { useInstrumentationRuleCRUD } from '../instrumentation-rules';
 import { DrawerItem, useDrawerStore, useNotificationStore } from '@/store';
-import { ENTITY_TYPES, getIdFromSseTarget, WorkloadId } from '@odigos/ui-components';
+import { ENTITY_TYPES, getIdFromSseTarget, type WorkloadId } from '@odigos/ui-utils';
 
 export const useClickNotif = () => {
   const { sources } = useSourceCRUD();

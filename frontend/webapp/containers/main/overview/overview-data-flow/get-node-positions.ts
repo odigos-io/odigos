@@ -1,5 +1,5 @@
 import nodeConfig from './node-config.json';
-import { ENTITY_TYPES, getValueForRange } from '@odigos/ui-components';
+import { ENTITY_TYPES, getValueForRange } from '@odigos/ui-utils';
 
 const { nodeWidth, nodeHeight } = nodeConfig;
 

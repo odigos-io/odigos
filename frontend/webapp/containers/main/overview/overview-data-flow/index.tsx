@@ -1,6 +1,7 @@
 'use client';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ENTITY_TYPES, Theme } from '@odigos/ui-components';
+import { Theme } from '@odigos/ui-theme';
+import { ENTITY_TYPES } from '@odigos/ui-utils';
 import styled, { useTheme } from 'styled-components';
 import { MultiSourceControl } from '../multi-source-control';
 import { OverviewActionsMenu } from '../overview-actions-menu';

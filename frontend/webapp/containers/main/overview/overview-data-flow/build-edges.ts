@@ -1,7 +1,8 @@
+import { Theme } from '@odigos/ui-theme';
 import nodeConfig from './node-config.json';
 import { type Edge, type Node } from '@xyflow/react';
 import { EDGE_TYPES, NODE_TYPES, type OverviewMetricsResponse } from '@/types';
-import { ENTITY_TYPES, formatBytes, HEALTH_STATUS, Theme, type WorkloadId } from '@odigos/ui-components';
+import { ENTITY_TYPES, formatBytes, HEALTH_STATUS, type WorkloadId } from '@odigos/ui-utils';
 
 interface Params {
   theme: Theme.ITheme;
