@@ -56,6 +56,9 @@ func instrumentationConfigToActualSource(instruConfig v1alpha1.InstrumentationCo
 			if specContainer.ContainerName == statusContainer.ContainerName {
 				instrumented = specContainer.Instrumented
 				instrumentationMessage = specContainer.InstrumentationMessage
+				if instrumentationMessage == "" {
+					instrumentationMessage = string(specContainer.InstrumentationReason)
+				}
 			}
 		}
 
