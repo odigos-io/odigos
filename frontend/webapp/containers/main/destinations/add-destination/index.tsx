@@ -3,13 +3,13 @@ import { ROUTES } from '@/utils';
 import { useAppStore } from '@/store';
 import { SetupHeader } from '@/components';
 import { useRouter } from 'next/navigation';
-import { NOTIFICATION_TYPE } from '@/types';
 import styled, { useTheme } from 'styled-components';
+import { NOTIFICATION_TYPE } from '@odigos/ui-utils';
+import { ArrowIcon, PlusIcon } from '@odigos/ui-icons';
 import { DestinationModal } from '../destination-modal';
 import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
-import { ArrowIcon, CenterThis, PlusIcon } from '@odigos/ui-components';
 import { ConfiguredDestinationsList } from './configured-destinations-list';
-import { Button, FadeLoader, NotificationNote, SectionTitle, Text } from '@/reuseable-components';
+import { Button, CenterThis, FadeLoader, NotificationNote, SectionTitle, Text } from '@odigos/ui-components';
 
 const ContentWrapper = styled.div`
   width: 640px;
@@ -71,7 +71,7 @@ export function AddDestinationContainer() {
     <>
       <HeaderWrapper>
         <SetupHeader
-          navigationButtons={[
+          buttons={[
             {
               label: 'BACK',
               icon: ArrowIcon,
@@ -117,7 +117,7 @@ export function AddDestinationContainer() {
 
         {isLoading ? (
           <CenterThis>
-            <FadeLoader style={{ transform: 'scale(2)', marginTop: '3rem' }} />
+            <FadeLoader scale={2} cssOverride={{ marginTop: '3rem' }} />
           </CenterThis>
         ) : (
           <ConfiguredDestinationsList data={configuredDestinations} />

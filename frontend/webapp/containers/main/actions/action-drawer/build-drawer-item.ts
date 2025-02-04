@@ -1,4 +1,4 @@
-import { safeJsonParse } from '@/utils';
+import { safeJsonParse } from '@odigos/ui-utils';
 import type { ActionDataParsed, ActionInput } from '@/types';
 
 const buildDrawerItem = (id: string, formData: ActionInput, drawerItem: ActionDataParsed): ActionDataParsed => {

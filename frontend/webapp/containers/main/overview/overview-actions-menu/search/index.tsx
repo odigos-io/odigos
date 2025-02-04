@@ -1,9 +1,9 @@
 import React, { useRef, useState } from 'react';
+import { SearchIcon } from '@odigos/ui-icons';
+import { Input } from '@odigos/ui-components';
 import { RelativeContainer } from '../styled';
-import { Input } from '@/reuseable-components';
 import { SearchResults } from './search-results';
-import { SearchIcon } from '@odigos/ui-components';
-import { useKeyDown, useOnClickOutside } from '@/hooks';
+import { useKeyDown, useOnClickOutside } from '@odigos/ui-utils';
 // import { RecentSearches } from './recent-searches';
 
 const Search = () => {

@@ -3,12 +3,13 @@ import buildCard from './build-card';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
 import { ACTION, DATA_CARDS } from '@/utils';
+import { type ActualDestination } from '@/types';
 import buildDrawerItem from './build-drawer-item';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { DestinationFormBody } from '../destination-form-body';
-import { ConditionDetails, DataCard } from '@/reuseable-components';
-import { OVERVIEW_ENTITY_TYPES, type ActualDestination } from '@/types';
+import { ENTITY_TYPES, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 import { useDestinationCRUD, useDestinationFormData, useDestinationTypes } from '@/hooks';
+import { ConditionDetails, ConditionDetailsProps, DataCard } from '@odigos/ui-components';
 
 interface Props {}
 
@@ -54,11 +55,11 @@ export const DestinationDrawer: React.FC<Props> = () => {
     if (!!fetchedItems?.length) {
       const found = fetchedItems.find((x) => x.id === id);
       if (!!found) {
-        return setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.DESTINATION, item: found });
+        return setSelectedItem({ id, type: ENTITY_TYPES.DESTINATION, item: found });
       }
     }
 
-    setSelectedItem({ id, type: OVERVIEW_ENTITY_TYPES.DESTINATION, item: buildDrawerItem(id, formData, item) });
+    setSelectedItem({ id, type: ENTITY_TYPES.DESTINATION, item: buildDrawerItem(id, formData, item) });
   };
 
   // This should keep the drawer up-to-date with the latest data
@@ -75,6 +76,20 @@ export const DestinationDrawer: React.FC<Props> = () => {
 
     return arr;
   }, [selectedItem, destinationTypeDetails]);
+
+  const conditionsData: ConditionDetailsProps = useMemo(() => {
+    if (!selectedItem) return { conditions: [] };
+
+    const { item } = selectedItem as { item: ActualDestination };
+
+    return {
+      conditions:
+        item?.conditions?.map(({ status, message }) => ({
+          status: ['false', 'error'].includes(String(status).toLowerCase()) ? NOTIFICATION_TYPE.ERROR : NOTIFICATION_TYPE.SUCCESS,
+          message,
+        })) || [],
+    };
+  }, [selectedItem]);
 
   const thisDestinationType = useMemo(() => {
     if (!destinationTypes.length || !selectedItem || !isEditing) {
@@ -146,7 +161,7 @@ export const DestinationDrawer: React.FC<Props> = () => {
         </FormContainer>
       ) : (
         <DataContainer>
-          <ConditionDetails conditions={item.conditions} />
+          <ConditionDetails conditions={conditionsData.conditions} />
           <DataCard title={DATA_CARDS.DESTINATION_DETAILS} data={cardData} />
         </DataContainer>
       )}
