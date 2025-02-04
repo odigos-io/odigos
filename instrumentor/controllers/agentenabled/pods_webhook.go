@@ -47,14 +47,14 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 
 	pod, ok := obj.(*corev1.Pod)
 	if !ok {
-		logger.Error(errors.New("expected a Pod but got a different object"), "expected a Pod but got a different object")
+		logger.Error(errors.New("expected a Pod but got a %T"), "failed to inject odigos agent")
 		return nil
 	}
 
 	pw, err := p.podWorkload(ctx, pod)
 	if err != nil {
-		// TODO: ignore error if this pod does not belong to any odigos workloads
-		logger.Error(err, "failed to get pod workload details")
+		// TODO: if the webhook is enabled for all pods, this is not necessarily an error
+		logger.Error(err, "failed to get pod workload details. Skipping Injection of ODIGOS agent")
 		return nil
 	}
 
@@ -66,7 +66,7 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 			// instrumentationConfig does not exist, this pod does not belong to any odigos workloads
 			return nil
 		}
-		logger.Error(err, "failed to get instrumentationConfig")
+		logger.Error(err, "failed to get instrumentationConfig. Skipping Injection of ODIGOS agent")
 		return nil
 	}
 
@@ -76,9 +76,9 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 	}
 
 	// Inject ODIGOS environment variables and instrumentation device into all containers
-	err = p.injectOdigosInstrumentation(ctx, pod, &ic, pw)
-	if err != nil {
-		logger.Error(err, "failed to inject ODIGOS environment variables and instrumentation device")
+	injectErr := p.injectOdigosInstrumentation(ctx, pod, &ic, pw)
+	if injectErr != nil {
+		logger.Error(injectErr, "failed to inject ODIGOS instrumentation. Skipping Injection of ODIGOS agent")
 		return nil
 	}
 
