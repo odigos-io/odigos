@@ -1,4 +1,4 @@
-import type { ActionData } from './actions';
+import type { FetchedAction } from './actions';
 import type { K8sActualSource } from './sources';
 import type { ActualDestination } from './destinations';
 import type { InstrumentationRuleSpec } from './instrumentation-rules';
@@ -29,7 +29,7 @@ export interface ComputePlatform {
     k8sActualNamespace?: K8sActualNamespace;
     sources?: PaginatedData<K8sActualSource>;
     destinations?: ActualDestination[];
-    actions?: ActionData[]; // should map from "ActionData" to "ActionDataParsed" in get-query
+    actions?: FetchedAction[]; // should map from "FetchedAction" to "Action" in get-query
     instrumentationRules?: InstrumentationRuleSpec[]; // should map from "InstrumentationRuleSpec" to "InstrumentationRuleSpecMapped" in get-query
   };
 }

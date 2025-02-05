@@ -1,8 +1,8 @@
 import { DISPLAY_TITLES } from '@/utils';
-import type { ActionDataParsed } from '@/types';
+import { type Action } from '@odigos/ui-containers';
 import { DATA_CARD_FIELD_TYPES, DataCardFieldsProps } from '@odigos/ui-components';
 
-const buildCard = (action: ActionDataParsed) => {
+const buildCard = (action: Action) => {
   const {
     type,
     spec: {
@@ -15,9 +15,9 @@ const buildCard = (action: ActionDataParsed) => {
       attributeNamesToDelete,
       renames,
       piiCategories,
-      fallback_sampling_ratio,
-      sampling_percentage,
-      endpoints_filters,
+      fallbackSamplingRatio,
+      samplingPercentage,
+      endpointsFilters,
     },
   } = action;
 
@@ -71,23 +71,23 @@ const buildCard = (action: ActionDataParsed) => {
     arr.push({ title: 'Attributes', value: str });
   }
 
-  if (fallback_sampling_ratio) {
-    arr.push({ title: 'Sampling Ratio', value: String(fallback_sampling_ratio) });
+  if (fallbackSamplingRatio) {
+    arr.push({ title: 'Sampling Ratio', value: String(fallbackSamplingRatio) });
   }
 
-  if (sampling_percentage) {
-    arr.push({ title: 'Sampling Percentage', value: sampling_percentage });
+  if (samplingPercentage) {
+    arr.push({ title: 'Sampling Percentage', value: samplingPercentage });
   }
 
-  if (endpoints_filters) {
-    endpoints_filters.forEach(({ service_name, http_route, minimum_latency_threshold, fallback_sampling_ratio }, idx) => {
+  if (endpointsFilters) {
+    endpointsFilters.forEach(({ serviceName, httpRoute, minimumLatencyThreshold, fallbackSamplingRatio }, idx) => {
       let str = '';
-      str += `Service Name: ${service_name}\n`;
-      str += `HTTP Route: ${http_route}\n`;
-      str += `Min. Latency: ${minimum_latency_threshold}\n`;
-      str += `Sampling Ratio: ${fallback_sampling_ratio}`;
+      str += `Service Name: ${serviceName}\n`;
+      str += `HTTP Route: ${httpRoute}\n`;
+      str += `Min. Latency: ${minimumLatencyThreshold}\n`;
+      str += `Sampling Ratio: ${fallbackSamplingRatio}`;
 
-      arr.push({ title: `Endpoint${endpoints_filters.length > 1 ? ` #${idx + 1}` : ''}`, value: str });
+      arr.push({ title: `Endpoint${endpointsFilters.length > 1 ? ` #${idx + 1}` : ''}`, value: str });
     });
   }
 

@@ -1,8 +1,8 @@
 import { useGenericForm } from '@/hooks';
 import { FORM_ALERTS } from '@/utils';
-import { DrawerItem, useNotificationStore } from '@odigos/ui-containers';
-import { LatencySamplerSpec, type ActionDataParsed, type ActionInput } from '@/types';
+import { LatencySamplerSpec, type ActionInput } from '@/types';
 import { ACTION_TYPE, isEmpty, NOTIFICATION_TYPE, safeJsonParse } from '@odigos/ui-utils';
+import { type Action, type DrawerItem, useNotificationStore } from '@odigos/ui-containers';
 
 const INITIAL: ActionInput = {
   // @ts-ignore (TS complains about empty string because we expect an "ActionsType", but it's fine)
@@ -68,7 +68,7 @@ export function useActionFormData() {
   };
 
   const loadFormWithDrawerItem = (drawerItem: DrawerItem) => {
-    const { type, spec } = drawerItem.item as ActionDataParsed;
+    const { type, spec } = drawerItem.item as Action;
 
     const updatedData: ActionInput = {
       ...INITIAL,

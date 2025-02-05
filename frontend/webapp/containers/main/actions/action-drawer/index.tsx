@@ -3,13 +3,12 @@ import buildCard from './build-card';
 import { ActionFormBody } from '../';
 import styled from 'styled-components';
 import { ACTION, DATA_CARDS } from '@/utils';
-import { type ActionDataParsed } from '@/types';
 import buildDrawerItem from './build-drawer-item';
-import { useDrawerStore } from '@odigos/ui-containers';
 import { useActionCRUD, useActionFormData } from '@/hooks';
 import OverviewDrawer from '../../overview/overview-drawer';
-import { ConditionDetails, type ConditionDetailsProps, DataCard } from '@odigos/ui-components';
-import { ACTION_OPTIONS, ENTITY_TYPES, getActionIcon, NOTIFICATION_TYPE } from '@odigos/ui-utils';
+import { type Action, useDrawerStore } from '@odigos/ui-containers';
+import { ConditionDetails, DataCard } from '@odigos/ui-components';
+import { ACTION_OPTIONS, ENTITY_TYPES, getActionIcon } from '@odigos/ui-utils';
 
 interface Props {}
 
@@ -41,7 +40,7 @@ export const ActionDrawer: React.FC<Props> = () => {
   });
 
   const reSelectItem = (fetchedItems?: typeof actions) => {
-    const { item } = selectedItem as { item: ActionDataParsed };
+    const { item } = selectedItem as { item: Action };
     const { id } = item;
 
     if (!!fetchedItems?.length) {
@@ -63,24 +62,10 @@ export const ActionDrawer: React.FC<Props> = () => {
   const cardData = useMemo(() => {
     if (!selectedItem) return [];
 
-    const { item } = selectedItem as { item: ActionDataParsed };
+    const { item } = selectedItem as { item: Action };
     const arr = buildCard(item);
 
     return arr;
-  }, [selectedItem]);
-
-  const conditionsData: ConditionDetailsProps = useMemo(() => {
-    if (!selectedItem) return { conditions: [] };
-
-    const { item } = selectedItem as { item: ActionDataParsed };
-
-    return {
-      conditions:
-        item?.conditions?.map(({ status, message }) => ({
-          status: ['false', 'error'].includes(String(status).toLowerCase()) ? NOTIFICATION_TYPE.ERROR : NOTIFICATION_TYPE.SUCCESS,
-          message,
-        })) || [],
-    };
   }, [selectedItem]);
 
   const thisAction = useMemo(() => {
@@ -89,7 +74,7 @@ export const ActionDrawer: React.FC<Props> = () => {
       return undefined;
     }
 
-    const { item } = selectedItem as { item: ActionDataParsed };
+    const { item } = selectedItem as { item: Action };
     const found =
       ACTION_OPTIONS.find(({ type }) => type === item.type) ||
       ACTION_OPTIONS.find(({ id }) => id === 'attributes')?.items?.find(({ type }) => type === item.type) ||
@@ -101,7 +86,7 @@ export const ActionDrawer: React.FC<Props> = () => {
   }, [selectedItem, isEditing]);
 
   if (!selectedItem?.item) return null;
-  const { id, item } = selectedItem as { id: string; item: ActionDataParsed };
+  const { id, item } = selectedItem as { id: string; item: Action };
 
   const handleEdit = (bool?: boolean) => {
     setIsEditing(typeof bool === 'boolean' ? bool : true);
@@ -150,7 +135,7 @@ export const ActionDrawer: React.FC<Props> = () => {
         </FormContainer>
       ) : (
         <DataContainer>
-          <ConditionDetails conditions={conditionsData.conditions} />
+          <ConditionDetails conditions={item.conditions || []} />
           <DataCard title={DATA_CARDS.ACTION_DETAILS} data={cardData} />
         </DataContainer>
       )}

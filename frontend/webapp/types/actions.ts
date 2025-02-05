@@ -1,5 +1,4 @@
-import type { Condition } from './common';
-import { ACTION_TYPE, SIGNAL_TYPE } from '@odigos/ui-utils';
+import { ACTION_TYPE, type FetchedCondition, SIGNAL_TYPE } from '@odigos/ui-utils';
 
 export type AddClusterInfoSpec = {
   clusterAttributes: {
@@ -39,7 +38,7 @@ export type LatencySamplerSpec = {
   }[];
 };
 
-export interface ActionItem {
+export interface FetchedActionSpec {
   actionName: string;
   notes: string;
   signals: string[];
@@ -53,15 +52,11 @@ export interface ActionItem {
   endpoints_filters?: LatencySamplerSpec['endpoints_filters'];
 }
 
-export interface ActionData {
+export interface FetchedAction {
   id: string;
   type: ACTION_TYPE;
-  spec: ActionItem | string;
-  conditions: Condition[];
-}
-
-export interface ActionDataParsed extends ActionData {
-  spec: ActionItem;
+  spec: string;
+  conditions: FetchedCondition[];
 }
 
 export type ActionInput = {

@@ -1,7 +1,8 @@
+import { type ActionInput } from '@/types';
 import { safeJsonParse } from '@odigos/ui-utils';
-import type { ActionDataParsed, ActionInput } from '@/types';
+import { type Action } from '@odigos/ui-containers';
 
-const buildDrawerItem = (id: string, formData: ActionInput, drawerItem: ActionDataParsed): ActionDataParsed => {
+const buildDrawerItem = (id: string, formData: ActionInput, drawerItem: Action): Action => {
   const { type, name, notes, signals, disable, details } = formData;
   const { conditions } = drawerItem;
 

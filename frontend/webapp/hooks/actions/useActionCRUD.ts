@@ -3,9 +3,9 @@ import { useConfig } from '../config';
 import { GET_ACTIONS } from '@/graphql';
 import { useMutation, useQuery } from '@apollo/client';
 import { ACTION, DISPLAY_TITLES, FORM_ALERTS } from '@/utils';
-import { useFilterStore, useNotificationStore } from '@odigos/ui-containers';
 import { CREATE_ACTION, DELETE_ACTION, UPDATE_ACTION } from '@/graphql/mutations';
-import { type ActionItem, type ComputePlatform, type ActionInput } from '@/types';
+import { type ComputePlatform, type ActionInput, type FetchedActionSpec } from '@/types';
+import { type Action, useFilterStore, useNotificationStore } from '@odigos/ui-containers';
 import { ACTION_TYPE, ENTITY_TYPES, getSseTargetFromId, NOTIFICATION_TYPE, safeJsonParse } from '@odigos/ui-utils';
 
 interface UseActionCrudParams {
@@ -13,7 +13,18 @@ interface UseActionCrudParams {
   onError?: (type: string) => void;
 }
 
-export const useActionCRUD = (params?: UseActionCrudParams) => {
+interface UseActionCrudResponse {
+  loading: boolean;
+  actions: Action[];
+  filteredActions: Action[];
+  refetchActions: () => void;
+
+  createAction: (action: ActionInput) => void;
+  updateAction: (id: string, action: ActionInput) => void;
+  deleteAction: (id: string, actionType: ACTION_TYPE) => void;
+}
+
+export const useActionCRUD = (params?: UseActionCrudParams): UseActionCrudResponse => {
   const filters = useFilterStore();
   const { data: config } = useConfig();
   const { addNotification, removeNotifications } = useNotificationStore();
@@ -46,12 +57,25 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
   });
 
   // Map fetched data
-  const mapped = useMemo(() => {
+  const mapped: Action[] = useMemo(() => {
     return (data?.computePlatform?.actions || []).map((item) => {
-      const parsedSpec = typeof item.spec === 'string' ? safeJsonParse(item.spec, {} as ActionItem) : item.spec;
+      const parsedSpec = typeof item.spec === 'string' ? safeJsonParse(item.spec, {} as FetchedActionSpec) : item.spec;
 
-      // format signals to lower
       parsedSpec.signals = parsedSpec.signals.map((str) => str.toLowerCase());
+
+      (parsedSpec as Action['spec']).fallbackSamplingRatio = parsedSpec.fallback_sampling_ratio;
+      delete parsedSpec.fallback_sampling_ratio;
+
+      (parsedSpec as Action['spec']).samplingPercentage = parsedSpec.sampling_percentage;
+      delete parsedSpec.sampling_percentage;
+
+      (parsedSpec as Action['spec']).endpointsFilters = parsedSpec.endpoints_filters?.map(({ service_name, http_route, minimum_latency_threshold, fallback_sampling_ratio }) => ({
+        serviceName: service_name,
+        httpRoute: http_route,
+        minimumLatencyThreshold: minimum_latency_threshold,
+        fallbackSamplingRatio: fallback_sampling_ratio,
+      }));
+      delete parsedSpec.endpoints_filters;
 
       return { ...item, spec: parsedSpec };
     });
@@ -95,23 +119,21 @@ export const useActionCRUD = (params?: UseActionCrudParams) => {
     filteredActions: filtered,
     refetchActions: refetch,
 
-    createAction: (action: ActionInput) => {
+    createAction: (action) => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
-        // format signals to upper
         createAction({ variables: { action: { ...action, signals: action.signals.map((signal) => signal.toUpperCase()) } } });
       }
     },
-    updateAction: (id: string, action: ActionInput) => {
+    updateAction: (id, action) => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
-        // format signals to upper
         updateAction({ variables: { id, action: { ...action, signals: action.signals.map((signal) => signal.toUpperCase()) } } });
       }
     },
-    deleteAction: (id: string, actionType: ACTION_TYPE) => {
+    deleteAction: (id, actionType) => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
