@@ -18,11 +18,11 @@ function RootLayout({ children }: PropsWithChildren) {
       </head>
 
       {/*
-        The "!window" check is to prevent hydration errors,
+        The "window" check is to prevent hydration errors,
         previously we had "suppressHydrationWarning={true}" on the "body" tag, but it was causing issues and had to be handled better.
       */}
 
-      {!window ? null : (
+      {typeof window === 'undefined' ? null : (
         <ApolloWrapper>
           <ThemeProvider darkMode={darkMode}>
             <body
