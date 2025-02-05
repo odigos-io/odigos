@@ -32,7 +32,7 @@ type agentInjectedStatusCondition struct {
 
 	// The reason represents the reason why the agent is not injected in an enum closed set of values.
 	// use the AgentInjectionReason constants to set the value to the appropriate reason.
-	Reason odigosv1.AgentInjectionReason
+	Reason odigosv1.AgentEnabledReason
 
 	// Human-readable message for the condition. it will show up in the ui and tools,
 	// and should describe any additional context for the condition in free-form text.
@@ -132,7 +132,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	prerequisiteCompleted, reason, message := isReadyForInstrumentation(cg, ic)
 	if !prerequisiteCompleted {
 		ic.Spec.AgentInjectionEnabled = false
-		ic.Spec.Containers = []odigosv1.ContainerConfig{}
+		ic.Spec.Containers = []odigosv1.ContainerAgentConfig{}
 		return &agentInjectedStatusCondition{
 			Status:  metav1.ConditionUnknown,
 			Reason:  reason,
@@ -144,7 +144,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	defaultDistrosPerLanguage := distros.GetDefaultDistroNames(tier)
 	distroPerLanguage := applyRulesForDistros(defaultDistrosPerLanguage, irls)
 
-	containersConfig := make([]odigosv1.ContainerConfig, 0, len(ic.Spec.Containers))
+	containersConfig := make([]odigosv1.ContainerAgentConfig, 0, len(ic.Spec.Containers))
 	for _, containerRuntimeDetails := range ic.Status.RuntimeDetailsByContainer {
 		currentContainerConfig := containerInstrumentationConfig(containerRuntimeDetails.ContainerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage)
 		containersConfig = append(containersConfig, currentContainerConfig)
@@ -160,10 +160,10 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	aggregatedCondition := containerConfigToStatusCondition(ic.Spec.Containers[0])
 	instrumentedContainerNames := []string{}
 	for _, containerConfig := range ic.Spec.Containers {
-		if containerConfig.Instrumented {
+		if containerConfig.AgentEnabled {
 			instrumentedContainerNames = append(instrumentedContainerNames, containerConfig.ContainerName)
 		}
-		if odigosv1.AgentInjectionReasonPriority(containerConfig.InstrumentationReason) > odigosv1.AgentInjectionReasonPriority(aggregatedCondition.Reason) {
+		if odigosv1.AgentInjectionReasonPriority(containerConfig.AgentEnabledReason) > odigosv1.AgentInjectionReasonPriority(aggregatedCondition.Reason) {
 			// set to the most specific (highest priority) reason from multiple containers.
 			aggregatedCondition = containerConfigToStatusCondition(containerConfig)
 		}
@@ -174,7 +174,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		ic.Spec.AgentInjectionEnabled = true
 		return &agentInjectedStatusCondition{
 			Status:  metav1.ConditionTrue,
-			Reason:  odigosv1.AgentInjectionReasonInjectedSuccessfully,
+			Reason:  odigosv1.AgentEnabledReasonEnabledSuccessfully,
 			Message: fmt.Sprintf("agent injected successfully to %d containers: %v", len(instrumentedContainerNames), instrumentedContainerNames),
 		}, nil
 	} else {
@@ -185,19 +185,19 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	}
 }
 
-func containerConfigToStatusCondition(containerConfig odigosv1.ContainerConfig) *agentInjectedStatusCondition {
-	if containerConfig.Instrumented {
+func containerConfigToStatusCondition(containerConfig odigosv1.ContainerAgentConfig) *agentInjectedStatusCondition {
+	if containerConfig.AgentEnabled {
 		// no expecting to hit this case, but for completeness
 		return &agentInjectedStatusCondition{
 			Status:  metav1.ConditionTrue,
-			Reason:  odigosv1.AgentInjectionReasonInjectedSuccessfully,
+			Reason:  odigosv1.AgentEnabledReasonEnabledSuccessfully,
 			Message: fmt.Sprintf("agent injected successfully to container %s", containerConfig.ContainerName),
 		}
 	} else {
 		return &agentInjectedStatusCondition{
 			Status:  metav1.ConditionFalse,
-			Reason:  containerConfig.InstrumentationReason,
-			Message: containerConfig.InstrumentationMessage,
+			Reason:  containerConfig.AgentEnabledReason,
+			Message: containerConfig.AgentEnabledMessage,
 		}
 	}
 }
@@ -205,24 +205,24 @@ func containerConfigToStatusCondition(containerConfig odigosv1.ContainerConfig) 
 func containerInstrumentationConfig(containerName string,
 	effectiveConfig *common.OdigosConfiguration,
 	runtimeDetails odigosv1.RuntimeDetailsByContainer,
-	distroPerLanguage map[common.ProgrammingLanguage]string) odigosv1.ContainerConfig {
+	distroPerLanguage map[common.ProgrammingLanguage]string) odigosv1.ContainerAgentConfig {
 
 	// check unknown language first. if language is not supported, we can skip the rest of the checks.
 	if runtimeDetails.Language == common.UnknownProgrammingLanguage {
-		return odigosv1.ContainerConfig{
-			ContainerName:         containerName,
-			Instrumented:          false,
-			InstrumentationReason: odigosv1.AgentInjectionReasonUnsupportedProgrammingLanguage,
+		return odigosv1.ContainerAgentConfig{
+			ContainerName:      containerName,
+			AgentEnabled:       false,
+			AgentEnabledReason: odigosv1.AgentEnabledReasonUnsupportedProgrammingLanguage,
 		}
 	}
 
 	// check if container is ignored by name, assuming IgnoredContainers is a short list.
 	for _, ignoredContainer := range effectiveConfig.IgnoredContainers {
 		if ignoredContainer == containerName {
-			return odigosv1.ContainerConfig{
-				ContainerName:         containerName,
-				Instrumented:          false,
-				InstrumentationReason: odigosv1.AgentInjectionReasonIgnoredContainer,
+			return odigosv1.ContainerAgentConfig{
+				ContainerName:      containerName,
+				AgentEnabled:       false,
+				AgentEnabledReason: odigosv1.AgentEnabledReasonIgnoredContainer,
 			}
 		}
 	}
@@ -230,29 +230,29 @@ func containerInstrumentationConfig(containerName string,
 	// check for deprecated "ignored" language
 	// TODO: remove this in odigos v1.1
 	if runtimeDetails.Language == common.IgnoredProgrammingLanguage {
-		return odigosv1.ContainerConfig{
-			ContainerName:         containerName,
-			Instrumented:          false,
-			InstrumentationReason: odigosv1.AgentInjectionReasonIgnoredContainer,
+		return odigosv1.ContainerAgentConfig{
+			ContainerName:      containerName,
+			AgentEnabled:       false,
+			AgentEnabledReason: odigosv1.AgentEnabledReasonIgnoredContainer,
 		}
 	}
 
 	// get relevant distroName for the detected language
 	distroName, ok := distroPerLanguage[runtimeDetails.Language]
 	if !ok {
-		return odigosv1.ContainerConfig{
-			ContainerName:         containerName,
-			Instrumented:          false,
-			InstrumentationReason: odigosv1.AgentInjectionReasonNoAvailableAgent,
+		return odigosv1.ContainerAgentConfig{
+			ContainerName:      containerName,
+			AgentEnabled:       false,
+			AgentEnabledReason: odigosv1.AgentEnabledReasonNoAvailableAgent,
 		}
 	}
 
 	distro := distros.GetDistroByName(distroName)
 	if distro == nil {
-		return odigosv1.ContainerConfig{
-			ContainerName:         containerName,
-			Instrumented:          false,
-			InstrumentationReason: odigosv1.AgentInjectionReasonNoAvailableAgent,
+		return odigosv1.ContainerAgentConfig{
+			ContainerName:      containerName,
+			AgentEnabled:       false,
+			AgentEnabledReason: odigosv1.AgentEnabledReasonNoAvailableAgent,
 		}
 	}
 
@@ -260,28 +260,28 @@ func containerInstrumentationConfig(containerName string,
 	if runtimeDetails.RuntimeVersion != "" && len(distro.RuntimeEnvironments) == 1 {
 		constraint, err := version.NewConstraint(distro.RuntimeEnvironments[0].SupportedVersions)
 		if err != nil {
-			return odigosv1.ContainerConfig{
-				ContainerName:          containerName,
-				Instrumented:           false,
-				InstrumentationReason:  odigosv1.AgentInjectionReasonUnsupportedRuntimeVersion,
-				InstrumentationMessage: fmt.Sprintf("failed to parse supported versions constraint: %s", distro.RuntimeEnvironments[0].SupportedVersions),
+			return odigosv1.ContainerAgentConfig{
+				ContainerName:       containerName,
+				AgentEnabled:        false,
+				AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedRuntimeVersion,
+				AgentEnabledMessage: fmt.Sprintf("failed to parse supported versions constraint: %s", distro.RuntimeEnvironments[0].SupportedVersions),
 			}
 		}
 		detectedVersion, err := version.NewVersion(runtimeDetails.RuntimeVersion)
 		if err != nil {
-			return odigosv1.ContainerConfig{
-				ContainerName:          containerName,
-				Instrumented:           false,
-				InstrumentationReason:  odigosv1.AgentInjectionReasonUnsupportedRuntimeVersion,
-				InstrumentationMessage: fmt.Sprintf("failed to parse runtime version: %s", runtimeDetails.RuntimeVersion),
+			return odigosv1.ContainerAgentConfig{
+				ContainerName:       containerName,
+				AgentEnabled:        false,
+				AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedRuntimeVersion,
+				AgentEnabledMessage: fmt.Sprintf("failed to parse runtime version: %s", runtimeDetails.RuntimeVersion),
 			}
 		}
 		if !constraint.Check(detectedVersion) {
-			return odigosv1.ContainerConfig{
-				ContainerName:          containerName,
-				Instrumented:           false,
-				InstrumentationReason:  odigosv1.AgentInjectionReasonUnsupportedRuntimeVersion,
-				InstrumentationMessage: fmt.Sprintf("%s runtime not supported by OpenTelemetry. supported versions: '%s', found: %s", distro.RuntimeEnvironments[0].Name, constraint, detectedVersion),
+			return odigosv1.ContainerAgentConfig{
+				ContainerName:       containerName,
+				AgentEnabled:        false,
+				AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedRuntimeVersion,
+				AgentEnabledMessage: fmt.Sprintf("%s runtime not supported by OpenTelemetry. supported versions: '%s', found: %s", distro.RuntimeEnvironments[0].Name, constraint, detectedVersion),
 			}
 		}
 	}
@@ -289,26 +289,26 @@ func containerInstrumentationConfig(containerName string,
 	// check for presence of other agents
 	if runtimeDetails.OtherAgent != nil {
 		if effectiveConfig.AllowConcurrentAgents == nil || !*effectiveConfig.AllowConcurrentAgents {
-			return odigosv1.ContainerConfig{
-				ContainerName:          containerName,
-				Instrumented:           false,
-				InstrumentationReason:  odigosv1.AgentInjectionReasonOtherAgentDetected,
-				InstrumentationMessage: fmt.Sprintf("odigos agent not enabled due to other instrumentation agent '%s' detected running in the container", runtimeDetails.OtherAgent.Name),
+			return odigosv1.ContainerAgentConfig{
+				ContainerName:       containerName,
+				AgentEnabled:        false,
+				AgentEnabledReason:  odigosv1.AgentEnabledReasonOtherAgentDetected,
+				AgentEnabledMessage: fmt.Sprintf("odigos agent not enabled due to other instrumentation agent '%s' detected running in the container", runtimeDetails.OtherAgent.Name),
 			}
 		} else {
-			return odigosv1.ContainerConfig{
-				ContainerName:          containerName,
-				Instrumented:           true,
-				InstrumentationReason:  odigosv1.AgentInjectionReasonInjectedSuccessfully,
-				InstrumentationMessage: fmt.Sprintf("we are operating alongside the %s, which is not the recommended configuration. We suggest disabling the %s for optimal performance.", runtimeDetails.OtherAgent.Name, runtimeDetails.OtherAgent.Name),
-				OtelDistroName:         distroName,
+			return odigosv1.ContainerAgentConfig{
+				ContainerName:       containerName,
+				AgentEnabled:        true,
+				AgentEnabledReason:  odigosv1.AgentEnabledReasonEnabledSuccessfully,
+				AgentEnabledMessage: fmt.Sprintf("we are operating alongside the %s, which is not the recommended configuration. We suggest disabling the %s for optimal performance.", runtimeDetails.OtherAgent.Name, runtimeDetails.OtherAgent.Name),
+				OtelDistroName:      distroName,
 			}
 		}
 	}
 
-	containerConfig := odigosv1.ContainerConfig{
+	containerConfig := odigosv1.ContainerAgentConfig{
 		ContainerName:  containerName,
-		Instrumented:   true,
+		AgentEnabled:   true,
 		OtelDistroName: distroName,
 	}
 
@@ -346,20 +346,20 @@ func applyRulesForDistros(defaultDistros map[common.ProgrammingLanguage]string,
 // - waitingForPrerequisites: true if we are waiting for some prerequisites to be completed before injecting the agent
 // - reason: AgentInjectionReason enum value that represents the reason why we are waiting
 // - message: human-readable message that describes the reason why we are waiting
-func isReadyForInstrumentation(cg *odigosv1.CollectorsGroup, ic *odigosv1.InstrumentationConfig) (bool, odigosv1.AgentInjectionReason, string) {
+func isReadyForInstrumentation(cg *odigosv1.CollectorsGroup, ic *odigosv1.InstrumentationConfig) (bool, odigosv1.AgentEnabledReason, string) {
 
 	// Check if the node collector is ready
 	isNodeCollectorReady, message := isNodeCollectorReady(cg)
 	if !isNodeCollectorReady {
-		return false, odigosv1.AgentInjectionReasonWaitingForNodeCollector, message
+		return false, odigosv1.AgentEnabledReasonWaitingForNodeCollector, message
 	}
 
 	if len(ic.Status.RuntimeDetailsByContainer) == 0 {
-		return false, odigosv1.AgentInjectionReasonWaitingForRuntimeInspection, "waiting for runtime inspection to complete"
+		return false, odigosv1.AgentEnabledReasonWaitingForRuntimeInspection, "waiting for runtime inspection to complete"
 	}
 
 	// report success if both prerequisites are completed
-	return true, odigosv1.AgentInjectionReasonInjectedSuccessfully, ""
+	return true, odigosv1.AgentEnabledReasonEnabledSuccessfully, ""
 }
 
 func isNodeCollectorReady(cg *odigosv1.CollectorsGroup) (bool, string) {

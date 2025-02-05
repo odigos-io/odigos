@@ -26,21 +26,21 @@ const (
 	AgentEnabledStatusConditionType = "AgentEnabled"
 	// reports whether the workload associated with the InstrumentationConfig has been rolled out.
 	// the rollout is needed to update the instrumentation done by the Pods webhook.
-	WorkloadRolloutConditionType = "WorkloadRollout"
+	WorkloadRolloutStatusConditionType = "WorkloadRollout"
 )
 
-// +kubebuilder:validation:Enum=InjectedSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;UnsupportedProgrammingLanguage;IgnoredContainer;NoAvailableAgent;UnsupportedRuntimeVersion;OtherAgentDetected
-type AgentInjectionReason string
+// +kubebuilder:validation:Enum=EnabledSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;UnsupportedProgrammingLanguage;IgnoredContainer;NoAvailableAgent;UnsupportedRuntimeVersion;OtherAgentDetected
+type AgentEnabledReason string
 
 const (
-	AgentInjectionReasonInjectedSuccessfully           AgentInjectionReason = "InjectedSuccessfully"
-	AgentInjectionReasonWaitingForRuntimeInspection    AgentInjectionReason = "WaitingForRuntimeInspection"
-	AgentInjectionReasonWaitingForNodeCollector        AgentInjectionReason = "WaitingForNodeCollector"
-	AgentInjectionReasonUnsupportedProgrammingLanguage AgentInjectionReason = "UnsupportedProgrammingLanguage"
-	AgentInjectionReasonIgnoredContainer               AgentInjectionReason = "IgnoredContainer"
-	AgentInjectionReasonNoAvailableAgent               AgentInjectionReason = "NoAvailableAgent"
-	AgentInjectionReasonUnsupportedRuntimeVersion      AgentInjectionReason = "UnsupportedRuntimeVersion"
-	AgentInjectionReasonOtherAgentDetected             AgentInjectionReason = "OtherAgentDetected"
+	AgentEnabledReasonEnabledSuccessfully            AgentEnabledReason = "EnabledSuccessfully"
+	AgentEnabledReasonWaitingForRuntimeInspection    AgentEnabledReason = "WaitingForRuntimeInspection"
+	AgentEnabledReasonWaitingForNodeCollector        AgentEnabledReason = "WaitingForNodeCollector"
+	AgentEnabledReasonUnsupportedProgrammingLanguage AgentEnabledReason = "UnsupportedProgrammingLanguage"
+	AgentEnabledReasonIgnoredContainer               AgentEnabledReason = "IgnoredContainer"
+	AgentEnabledReasonNoAvailableAgent               AgentEnabledReason = "NoAvailableAgent"
+	AgentEnabledReasonUnsupportedRuntimeVersion      AgentEnabledReason = "UnsupportedRuntimeVersion"
+	AgentEnabledReasonOtherAgentDetected             AgentEnabledReason = "OtherAgentDetected"
 )
 
 // +kubebuilder:validation:Enum=RolloutTriggeredSuccessfully;FailedToPatch;PreviousRolloutOngoing
@@ -54,23 +54,23 @@ const (
 
 // givin multiple reasons for not injecting an agent, this function returns the priority of the reason.
 // which is - it allows choosing the most important reason to be displayed to the user in the aggregate status.
-func AgentInjectionReasonPriority(reason AgentInjectionReason) int {
+func AgentInjectionReasonPriority(reason AgentEnabledReason) int {
 	switch reason {
-	case AgentInjectionReasonInjectedSuccessfully:
+	case AgentEnabledReasonEnabledSuccessfully:
 		return 0
-	case AgentInjectionReasonWaitingForRuntimeInspection:
+	case AgentEnabledReasonWaitingForRuntimeInspection:
 		return 1
-	case AgentInjectionReasonWaitingForNodeCollector:
+	case AgentEnabledReasonWaitingForNodeCollector:
 		return 2
-	case AgentInjectionReasonUnsupportedProgrammingLanguage:
+	case AgentEnabledReasonUnsupportedProgrammingLanguage:
 		return 3
-	case AgentInjectionReasonUnsupportedRuntimeVersion:
+	case AgentEnabledReasonUnsupportedRuntimeVersion:
 		return 4
-	case AgentInjectionReasonIgnoredContainer:
+	case AgentEnabledReasonIgnoredContainer:
 		return 5
-	case AgentInjectionReasonNoAvailableAgent:
+	case AgentEnabledReasonNoAvailableAgent:
 		return 6
-	case AgentInjectionReasonOtherAgentDetected:
+	case AgentEnabledReasonOtherAgentDetected:
 		return 7
 	default:
 		return 8
@@ -134,20 +134,20 @@ func (in *InstrumentationConfigStatus) GetRuntimeDetailsForContainer(container v
 	return nil
 }
 
-// ContainerConfig is a configuration for a specific container in a workload.
-type ContainerConfig struct {
+// ContainerAgentConfig is a configuration for a specific container in a workload.
+type ContainerAgentConfig struct {
 	// The name of the container to which this configuration applies.
 	ContainerName string `json:"containerName"`
 
-	// boolean flag to indicate if the container should be instrumented or not.
-	Instrumented bool `json:"instrumented"`
+	// boolean flag to indicate if the agent should be enabled for this container.
+	AgentEnabled bool `json:"agentEnabled"`
 
 	// An enum reason for the agent injection decision.
-	InstrumentationReason AgentInjectionReason `json:"instrumentationReason,omitempty"`
+	AgentEnabledReason AgentEnabledReason `json:"agentEnabledReason,omitempty"`
 
 	// free text message to provide more information about the instrumentation decision.
 	// can be left empty if reason is self-explanatory.
-	InstrumentationMessage string `json:"instrumentationMessage,omitempty"`
+	AgentEnabledMessage string `json:"agentEnabledMessage,omitempty"`
 
 	// The name of the otel distribution to use for this container.
 	// if the name is empty, this container should not be instrumented.
@@ -164,7 +164,7 @@ type InstrumentationConfigSpec struct {
 	AgentInjectionEnabled bool `json:"agentInjectionEnabled"`
 
 	// configuration for each instrumented container in the workload
-	Containers []ContainerConfig `json:"containers,omitempty"`
+	Containers []ContainerAgentConfig `json:"containers,omitempty"`
 
 	// Configuration for the OpenTelemetry SDKs that this workload should use.
 	// The SDKs are identified by the programming language they are written in.

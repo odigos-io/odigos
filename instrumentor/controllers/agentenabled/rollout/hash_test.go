@@ -1,8 +1,9 @@
 package rollout
 
 import (
-	"testing"
 	"encoding/hex"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -10,19 +11,19 @@ import (
 
 func TestHashForContainersConfig(t *testing.T) {
 	// empty containers config
-	hash, err := hashForContainersConfig([]odigosv1alpha1.ContainerConfig{})
+	hash, err := hashForContainersConfig([]odigosv1alpha1.ContainerAgentConfig{})
 	assert.NoError(t, err)
 	assert.Equal(t, len(hash), 0)
 
-	containersConfig := []odigosv1alpha1.ContainerConfig{
+	containersConfig := []odigosv1alpha1.ContainerAgentConfig{
 		{
 			ContainerName:  "container1",
-			Instrumented:   true,
+			AgentEnabled:   true,
 			OtelDistroName: "otel-distro-1",
 		},
 		{
 			ContainerName:  "container2",
-			Instrumented:   false,
+			AgentEnabled:   false,
 			OtelDistroName: "otel-distro-2",
 		},
 	}
@@ -33,15 +34,15 @@ func TestHashForContainersConfig(t *testing.T) {
 
 	// flip the order of the containers and check if the hash is the same
 
-	containersConfig = []odigosv1alpha1.ContainerConfig{
+	containersConfig = []odigosv1alpha1.ContainerAgentConfig{
 		{
 			ContainerName:  "container2",
-			Instrumented:   false,
+			AgentEnabled:   false,
 			OtelDistroName: "otel-distro-2",
 		},
 		{
 			ContainerName:  "container1",
-			Instrumented:   true,
+			AgentEnabled:   true,
 			OtelDistroName: "otel-distro-1",
 		},
 	}
@@ -52,7 +53,7 @@ func TestHashForContainersConfig(t *testing.T) {
 	assert.Equal(t, hex.EncodeToString(hash), hex.EncodeToString(hash2))
 
 	// flip the false instrumented flag and check if the hash is different
-	containersConfig[1].Instrumented = true
+	containersConfig[1].AgentEnabled = true
 	hash3, err := hashForContainersConfig(containersConfig)
 	assert.NoError(t, err)
 	assert.Greater(t, len(hash3), 0)

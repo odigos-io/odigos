@@ -29,7 +29,7 @@ type ContainerRuntimeInfoAnalyze struct {
 
 type ContainerAgentConfigAnalyze struct {
 	ContainerName  properties.EntityProperty  `json:"containerName"`
-	Instrumented   properties.EntityProperty  `json:"instrumented"`
+	AgentEnabled   properties.EntityProperty  `json:"agentEnabled"`
 	Reason         *properties.EntityProperty `json:"reason"`
 	Message        *properties.EntityProperty `json:"message"`
 	OtelDistroName *properties.EntityProperty `json:"otelDistroName"`
@@ -170,7 +170,7 @@ func analyzeEnabledAgents(resources *OdigosSourceResources, instrumented bool) O
 	}
 }
 
-func analyzeContainersConfig(containers *[]odigosv1.ContainerConfig) []ContainerAgentConfigAnalyze {
+func analyzeContainersConfig(containers *[]odigosv1.ContainerAgentConfig) []ContainerAgentConfigAnalyze {
 	containersAnalysis := make([]ContainerAgentConfigAnalyze, 0, len(*containers))
 	for i := range *containers {
 		container := (*containers)[i]
@@ -182,27 +182,27 @@ func analyzeContainersConfig(containers *[]odigosv1.ContainerConfig) []Container
 			ListKey: true,
 		}
 
-		instrumented := properties.EntityProperty{
-			Name:    "Agent Injection Enabled",
-			Value:   container.Instrumented,
-			Explain: "whether the container is instrumented by the odigos agent",
+		agentEnabled := properties.EntityProperty{
+			Name:    "Agent Enabled",
+			Value:   container.AgentEnabled,
+			Explain: "whether the agent is enabled for this container",
 		}
 
-		var reason *properties.EntityProperty
-		if container.InstrumentationReason != "" {
-			reason = &properties.EntityProperty{
-				Name:    "Instrumentation Reason",
-				Value:   string(container.InstrumentationReason),
-				Explain: "the reason why the container is or is not instrumented by the odigos agent",
+		var agentEnabledReason *properties.EntityProperty
+		if container.AgentEnabledReason != "" {
+			agentEnabledReason = &properties.EntityProperty{
+				Name:    "Agent Enabled Reason",
+				Value:   string(container.AgentEnabledReason),
+				Explain: "the reason why the agent is enabled/disabled for this container",
 			}
 		}
 
-		var message *properties.EntityProperty
-		if container.InstrumentationMessage != "" {
-			message = &properties.EntityProperty{
-				Name:    "Message",
-				Value:   container.InstrumentationMessage,
-				Explain: "a human readable message from the odigos agent indicating the status of the instrumentation",
+		var agentEnabledMessage *properties.EntityProperty
+		if container.AgentEnabledMessage != "" {
+			agentEnabledMessage = &properties.EntityProperty{
+				Name:    "Agent Enabled Message",
+				Value:   container.AgentEnabledMessage,
+				Explain: "a human readable message from the odigos agent indicating the status of the agent enabled",
 			}
 		}
 
@@ -217,9 +217,9 @@ func analyzeContainersConfig(containers *[]odigosv1.ContainerConfig) []Container
 
 		containersAnalysis = append(containersAnalysis, ContainerAgentConfigAnalyze{
 			ContainerName:  containerName,
-			Instrumented:   instrumented,
-			Reason:         reason,
-			Message:        message,
+			AgentEnabled:   agentEnabled,
+			Reason:         agentEnabledReason,
+			Message:        agentEnabledMessage,
 			OtelDistroName: otelDistroName,
 		})
 	}

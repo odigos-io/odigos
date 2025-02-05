@@ -57,7 +57,7 @@ func printInstrumentationConfigInfo(analyze *source.SourceAnalyze, sb *strings.B
 	for i := range analyze.OtelAgents.Containers {
 		containerConfig := analyze.OtelAgents.Containers[i]
 		printProperty(sb, 2, &containerConfig.ContainerName)
-		printProperty(sb, 2, &containerConfig.Instrumented)
+		printProperty(sb, 2, &containerConfig.AgentEnabled)
 		printProperty(sb, 2, containerConfig.Reason)
 		printProperty(sb, 2, containerConfig.Message)
 		printProperty(sb, 2, containerConfig.OtelDistroName)

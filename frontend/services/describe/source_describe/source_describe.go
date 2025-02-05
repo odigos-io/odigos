@@ -89,7 +89,7 @@ func convertOtelAgentContainersToGQL(containers []source.ContainerAgentConfigAna
 	for _, container := range containers {
 		gqlContainers = append(gqlContainers, &model.ContainerAgentConfigAnalyze{
 			ContainerName:  describe_utils.ConvertEntityPropertyToGQL(&container.ContainerName),
-			Instrumented:   describe_utils.ConvertEntityPropertyToGQL(&container.Instrumented),
+			AgentEnabled:   describe_utils.ConvertEntityPropertyToGQL(&container.AgentEnabled),
 			Reason:         describe_utils.ConvertEntityPropertyToGQL(container.Reason),
 			Message:        describe_utils.ConvertEntityPropertyToGQL(container.Message),
 			OtelDistroName: describe_utils.ConvertEntityPropertyToGQL(container.OtelDistroName),

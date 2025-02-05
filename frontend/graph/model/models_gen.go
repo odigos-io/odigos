@@ -118,7 +118,7 @@ type Condition struct {
 
 type ContainerAgentConfigAnalyze struct {
 	ContainerName  *EntityProperty `json:"containerName"`
-	Instrumented   *EntityProperty `json:"instrumented"`
+	AgentEnabled   *EntityProperty `json:"agentEnabled"`
 	Reason         *EntityProperty `json:"reason,omitempty"`
 	Message        *EntityProperty `json:"message,omitempty"`
 	OtelDistroName *EntityProperty `json:"otelDistroName,omitempty"`

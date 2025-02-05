@@ -254,7 +254,7 @@ export const DESCRIBE_SOURCE = gql`
             status
             explain
           }
-          instrumented {
+          agentEnabled {
             name
             value
             status

@@ -10,11 +10,11 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,7 +33,7 @@ const requeueWaitingForWorkloadRollout = 10 * time.Second
 // and a corresponding condition is set.
 func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.InstrumentationConfig, pw k8sconsts.PodWorkload) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	workloadObj:= workload.ClientObjectFromWorkloadKind(pw.Kind)
+	workloadObj := workload.ClientObjectFromWorkloadKind(pw.Kind)
 	err := c.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, workloadObj)
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -63,7 +63,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	// if a rollout is ongoing, wait for it to finish, requeue
 	if !isWorkloadRolloutDone(workloadObj) {
 		meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
-			Type:    odigosv1alpha1.WorkloadRolloutConditionType,
+			Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
 			Status:  metav1.ConditionFalse,
 			Reason:  string(odigosv1alpha1.WorkloadRolloutReasonPreviousRolloutOngoing),
 			Message: "waiting for workload rollout to finish before triggering a new one",
@@ -204,7 +204,7 @@ func configHash(ic *odigosv1alpha1.InstrumentationConfig) (string, error) {
 
 func rolloutCondition(rolloutErr error) metav1.Condition {
 	cond := metav1.Condition{
-		Type:    odigosv1alpha1.WorkloadRolloutConditionType,
+		Type: odigosv1alpha1.WorkloadRolloutStatusConditionType,
 	}
 
 	if rolloutErr == nil {

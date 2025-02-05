@@ -114,8 +114,8 @@ type ComplexityRoot struct {
 	}
 
 	ContainerAgentConfigAnalyze struct {
+		AgentEnabled   func(childComplexity int) int
 		ContainerName  func(childComplexity int) int
-		Instrumented   func(childComplexity int) int
 		Message        func(childComplexity int) int
 		OtelDistroName func(childComplexity int) int
 		Reason         func(childComplexity int) int
@@ -859,19 +859,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Condition.Type(childComplexity), true
 
+	case "ContainerAgentConfigAnalyze.agentEnabled":
+		if e.complexity.ContainerAgentConfigAnalyze.AgentEnabled == nil {
+			break
+		}
+
+		return e.complexity.ContainerAgentConfigAnalyze.AgentEnabled(childComplexity), true
+
 	case "ContainerAgentConfigAnalyze.containerName":
 		if e.complexity.ContainerAgentConfigAnalyze.ContainerName == nil {
 			break
 		}
 
 		return e.complexity.ContainerAgentConfigAnalyze.ContainerName(childComplexity), true
-
-	case "ContainerAgentConfigAnalyze.instrumented":
-		if e.complexity.ContainerAgentConfigAnalyze.Instrumented == nil {
-			break
-		}
-
-		return e.complexity.ContainerAgentConfigAnalyze.Instrumented(childComplexity), true
 
 	case "ContainerAgentConfigAnalyze.message":
 		if e.complexity.ContainerAgentConfigAnalyze.Message == nil {
@@ -5144,8 +5144,8 @@ func (ec *executionContext) fieldContext_ContainerAgentConfigAnalyze_containerNa
 	return fc, nil
 }
 
-func (ec *executionContext) _ContainerAgentConfigAnalyze_instrumented(ctx context.Context, field graphql.CollectedField, obj *model.ContainerAgentConfigAnalyze) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ContainerAgentConfigAnalyze_instrumented(ctx, field)
+func (ec *executionContext) _ContainerAgentConfigAnalyze_agentEnabled(ctx context.Context, field graphql.CollectedField, obj *model.ContainerAgentConfigAnalyze) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ContainerAgentConfigAnalyze_agentEnabled(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -5158,7 +5158,7 @@ func (ec *executionContext) _ContainerAgentConfigAnalyze_instrumented(ctx contex
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Instrumented, nil
+		return obj.AgentEnabled, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5175,7 +5175,7 @@ func (ec *executionContext) _ContainerAgentConfigAnalyze_instrumented(ctx contex
 	return ec.marshalNEntityProperty2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐEntityProperty(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_ContainerAgentConfigAnalyze_instrumented(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ContainerAgentConfigAnalyze_agentEnabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ContainerAgentConfigAnalyze",
 		Field:      field,
@@ -12196,8 +12196,8 @@ func (ec *executionContext) fieldContext_OtelAgentsAnalyze_containers(_ context.
 			switch field.Name {
 			case "containerName":
 				return ec.fieldContext_ContainerAgentConfigAnalyze_containerName(ctx, field)
-			case "instrumented":
-				return ec.fieldContext_ContainerAgentConfigAnalyze_instrumented(ctx, field)
+			case "agentEnabled":
+				return ec.fieldContext_ContainerAgentConfigAnalyze_agentEnabled(ctx, field)
 			case "reason":
 				return ec.fieldContext_ContainerAgentConfigAnalyze_reason(ctx, field)
 			case "message":
@@ -19572,8 +19572,8 @@ func (ec *executionContext) _ContainerAgentConfigAnalyze(ctx context.Context, se
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "instrumented":
-			out.Values[i] = ec._ContainerAgentConfigAnalyze_instrumented(ctx, field, obj)
+		case "agentEnabled":
+			out.Values[i] = ec._ContainerAgentConfigAnalyze_agentEnabled(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

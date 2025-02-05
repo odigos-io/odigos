@@ -54,10 +54,10 @@ func instrumentationConfigToActualSource(instruConfig v1alpha1.InstrumentationCo
 
 		for _, specContainer := range instruConfig.Spec.Containers {
 			if specContainer.ContainerName == statusContainer.ContainerName {
-				instrumented = specContainer.Instrumented
-				instrumentationMessage = specContainer.InstrumentationMessage
+				instrumented = specContainer.AgentEnabled
+				instrumentationMessage = specContainer.AgentEnabledMessage
 				if instrumentationMessage == "" {
-					instrumentationMessage = string(specContainer.InstrumentationReason)
+					instrumentationMessage = string(specContainer.AgentEnabledReason)
 				}
 				otelDistroName = specContainer.OtelDistroName
 			}

@@ -26,7 +26,7 @@ interface RuntimeInfoAnalyze {
 
 interface ContainerAgentConfigAnalyze {
   containerName: EntityProperty;
-  instrumented: EntityProperty;
+  agentEnabled: EntityProperty;
   reason?: EntityProperty;
   message?: EntityProperty;
   otelDistroName?: EntityProperty;

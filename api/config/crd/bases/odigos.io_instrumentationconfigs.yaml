@@ -50,22 +50,22 @@ spec:
                 description: configuration for each instrumented container in the
                   workload
                 items:
-                  description: ContainerConfig is a configuration for a specific container
-                    in a workload.
+                  description: ContainerAgentConfig is a configuration for a specific
+                    container in a workload.
                   properties:
-                    containerName:
-                      description: The name of the container to which this configuration
-                        applies.
-                      type: string
-                    instrumentationMessage:
+                    agentEnabled:
+                      description: boolean flag to indicate if the agent should be
+                        enabled for this container.
+                      type: boolean
+                    agentEnabledMessage:
                       description: |-
                         free text message to provide more information about the instrumentation decision.
                         can be left empty if reason is self-explanatory.
                       type: string
-                    instrumentationReason:
+                    agentEnabledReason:
                       description: An enum reason for the agent injection decision.
                       enum:
-                      - InjectedSuccessfully
+                      - EnabledSuccessfully
                       - WaitingForRuntimeInspection
                       - WaitingForNodeCollector
                       - UnsupportedProgrammingLanguage
@@ -74,18 +74,18 @@ spec:
                       - UnsupportedRuntimeVersion
                       - OtherAgentDetected
                       type: string
-                    instrumented:
-                      description: boolean flag to indicate if the container should
-                        be instrumented or not.
-                      type: boolean
+                    containerName:
+                      description: The name of the container to which this configuration
+                        applies.
+                      type: string
                     otelDistroName:
                       description: |-
                         The name of the otel distribution to use for this container.
                         if the name is empty, this container should not be instrumented.
                       type: string
                   required:
+                  - agentEnabled
                   - containerName
-                  - instrumented
                   type: object
                 type: array
               sdkConfigs:

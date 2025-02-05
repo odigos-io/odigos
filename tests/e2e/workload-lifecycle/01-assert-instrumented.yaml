@@ -5,8 +5,7 @@ metadata:
   name: deployment-nodejs-unsupported-version
 status:
   conditions:
-    - message:
-        "nodejs runtime not supported by OpenTelemetry. supported versions: '>= 14', found: 8.17.0"
+    - message: "nodejs runtime not supported by OpenTelemetry. supported versions: '>= 14', found: 8.17.0"
       reason: UnsupportedRuntimeVersion
       status: "False"
       type: AgentEnabled
@@ -20,7 +19,7 @@ metadata:
 status:
   conditions:
     - message: "agent injected successfully to 1 containers: [nodejs-very-old-version]"
-      reason: InjectedSuccessfully
+      reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
     - message: workload rollout triggered successfully
@@ -37,7 +36,7 @@ metadata:
 status:
   conditions:
     - message: "agent injected successfully to 1 containers: [nodejs-minimum-version]"
-      reason: InjectedSuccessfully
+      reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
     - message: workload rollout triggered successfully
@@ -79,7 +78,7 @@ metadata:
 status:
   conditions:
     - message: "agent injected successfully to 1 containers: [nodejs-latest-version]"
-      reason: InjectedSuccessfully
+      reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
     - message: workload rollout triggered successfully
@@ -121,7 +120,7 @@ metadata:
 status:
   conditions:
     - message: "agent injected successfully to 1 containers: [nodejs-dockerfile-env]"
-      reason: InjectedSuccessfully
+      reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
     - message: workload rollout triggered successfully
@@ -163,7 +162,7 @@ metadata:
 status:
   conditions:
     - message: "agent injected successfully to 1 containers: [nodejs-manifest-env]"
-      reason: InjectedSuccessfully
+      reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
     - message: workload rollout triggered successfully
@@ -216,7 +215,7 @@ metadata:
 status:
   conditions:
     - message: "agent injected successfully to 1 containers: [java-supported-version]"
-      reason: InjectedSuccessfully
+      reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
     - message: workload rollout triggered successfully
@@ -232,7 +231,7 @@ metadata:
 status:
   conditions:
     - message: "agent injected successfully to 1 containers: [java-azul]"
-      reason: InjectedSuccessfully
+      reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
     - message: workload rollout triggered successfully
@@ -248,7 +247,7 @@ metadata:
 status:
   conditions:
     - message: "agent injected successfully to 1 containers: [java-supported-docker-env]"
-      reason: InjectedSuccessfully
+      reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
     - message: workload rollout triggered successfully
@@ -264,7 +263,7 @@ metadata:
 status:
   conditions:
     - message: "agent injected successfully to 1 containers: [java-supported-manifest-env]"
-      reason: InjectedSuccessfully
+      reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
     - message: workload rollout triggered successfully
@@ -280,7 +279,7 @@ metadata:
 status:
   conditions:
     - message: "agent injected successfully to 1 containers: [java-latest-version]"
-      reason: InjectedSuccessfully
+      reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
     - message: workload rollout triggered successfully
@@ -296,7 +295,7 @@ metadata:
 status:
   conditions:
     - message: "agent injected successfully to 1 containers: [java-old-version]"
-      reason: InjectedSuccessfully
+      reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
     - message: workload rollout triggered successfully
@@ -312,7 +311,7 @@ metadata:
 status:
   conditions:
     - message: "agent injected successfully to 1 containers: [python-alpine]"
-      reason: InjectedSuccessfully
+      reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
     - message: workload rollout triggered successfully
@@ -328,7 +327,7 @@ metadata:
 status:
   conditions:
     - message: "agent injected successfully to 1 containers: [python-latest-version]"
-      reason: InjectedSuccessfully
+      reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
     - message: workload rollout triggered successfully
@@ -344,7 +343,7 @@ metadata:
 status:
   conditions:
     - message: "agent injected successfully to 1 containers: [python-min-version]"
-      reason: InjectedSuccessfully
+      reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
     - message: workload rollout triggered successfully

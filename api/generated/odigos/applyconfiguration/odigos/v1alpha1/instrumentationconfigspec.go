@@ -20,10 +20,10 @@ package v1alpha1
 // InstrumentationConfigSpecApplyConfiguration represents a declarative configuration of the InstrumentationConfigSpec type for use
 // with apply.
 type InstrumentationConfigSpecApplyConfiguration struct {
-	ServiceName           *string                             `json:"serviceName,omitempty"`
-	AgentInjectionEnabled *bool                               `json:"agentInjectionEnabled,omitempty"`
-	Containers            []ContainerConfigApplyConfiguration `json:"containers,omitempty"`
-	SdkConfigs            []SdkConfigApplyConfiguration       `json:"sdkConfigs,omitempty"`
+	ServiceName           *string                                  `json:"serviceName,omitempty"`
+	AgentInjectionEnabled *bool                                    `json:"agentInjectionEnabled,omitempty"`
+	Containers            []ContainerAgentConfigApplyConfiguration `json:"containers,omitempty"`
+	SdkConfigs            []SdkConfigApplyConfiguration            `json:"sdkConfigs,omitempty"`
 }
 
 // InstrumentationConfigSpecApplyConfiguration constructs a declarative configuration of the InstrumentationConfigSpec type for use with
@@ -51,7 +51,7 @@ func (b *InstrumentationConfigSpecApplyConfiguration) WithAgentInjectionEnabled(
 // WithContainers adds the given value to the Containers field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the Containers field.
-func (b *InstrumentationConfigSpecApplyConfiguration) WithContainers(values ...*ContainerConfigApplyConfiguration) *InstrumentationConfigSpecApplyConfiguration {
+func (b *InstrumentationConfigSpecApplyConfiguration) WithContainers(values ...*ContainerAgentConfigApplyConfiguration) *InstrumentationConfigSpecApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
 			panic("nil value passed to WithContainers")

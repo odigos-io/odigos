@@ -49,8 +49,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.CollectorsGroupStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("ConfigOption"):
 		return &odigosv1alpha1.ConfigOptionApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("ContainerConfig"):
-		return &odigosv1alpha1.ContainerConfigApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("ContainerAgentConfig"):
+		return &odigosv1alpha1.ContainerAgentConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("Destination"):
 		return &odigosv1alpha1.DestinationApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("DestinationSpec"):
