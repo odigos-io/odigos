@@ -32,11 +32,10 @@ export const useDescribeSource = ({ namespace, name, kind }: WorkloadId) => {
     };
 
     Object.values(code).forEach((val) => mapObjects(val));
-    Object.values(code.sourceObjects).forEach((val) => mapObjects(val, 'Sources'));
-    Object.values(code.instrumentationConfig).forEach((val) => mapObjects(val, 'Instrumentation Config'));
+    Object.values(code?.sourceObjects || {}).forEach((val) => mapObjects(val, 'Sources'));
+    Object.values(code?.otelAgents || {}).forEach((val) => mapObjects(val, 'Instrumentation Config'));
+    code.otelAgents?.containers?.forEach((obj, i) => Object.values(obj).forEach((val) => mapObjects(val, 'Instrumentation Config', { keyPrefix: `Container #${i + 1} - ` })));
     code.runtimeInfo?.containers?.forEach((obj, i) => Object.values(obj).forEach((val) => mapObjects(val, 'Runtime Info', { keyPrefix: `Container #${i + 1} - ` })));
-    Object.values(code.instrumentationDevice).forEach((val) => mapObjects(val, 'Instrumentation Device'));
-    code.instrumentationDevice?.containers?.forEach((obj, i) => Object.values(obj).forEach((val) => mapObjects(val, 'Instrumentation Device', { keyPrefix: `Container #${i + 1} - ` })));
 
     payload['Pods'] = { 'Total Pods': `${code.totalPods}@status=none` };
     code.pods.forEach((obj) => {

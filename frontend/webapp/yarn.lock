@@ -521,17 +521,18 @@
   resolved "https://registry.yarnpkg.com/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz#3dc35ba0f1e66b403c00b39344f870298ebb1c8e"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
-"@odigos/ui-components@^0.0.37":
-  version "0.0.37"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-components/-/ui-components-0.0.37.tgz#27c0a4c346e28af69300c16d40d63e457250e605"
-  integrity sha512-ZV0+v0g63YHQn1+tLw0wlXrloaQt3SKZ+fENXVe/SsUO1AJ5XGdVClymCx3hmk/OJnr5HsOPu8B65whT9Hk6xQ==
+"@odigos/ui-components@^0.0.45":
+  version "0.0.45"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-components/-/ui-components-0.0.45.tgz#a32854fabe2304f5f1b7d6dd2d0c5a15734135ff"
+  integrity sha512-YGicjsh+ST1m2Cl8F/0kbbQpmel3KKqn14UtO0YM3lnF/k4x1gkGtyfRTqGk1bFNOcH5uATVHHsbUJSPoDbZng==
   dependencies:
     "@odigos/ui-icons" "^0.0.2"
     "@odigos/ui-theme" "^0.0.2"
-    "@odigos/ui-utils" "^0.0.3"
+    "@odigos/ui-utils" "^0.0.8"
     prism-react-renderer "^2.4.1"
     react "^19.0.0"
     react-dom "^19.0.0"
+    react-lottie "^1.2.10"
     styled-components "^6.1.14"
 
 "@odigos/ui-icons@^0.0.2":
@@ -552,21 +553,10 @@
     react-dom "^19.0.0"
     styled-components "^6.1.14"
 
-"@odigos/ui-utils@^0.0.3":
-  version "0.0.3"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-utils/-/ui-utils-0.0.3.tgz#f69200442ff1d52322c6c469c5eec3bec98df640"
-  integrity sha512-M1Ys9N5drozQNNIydkwjHK1omr1tszCosDmEVETbjMmIKhm01B8AKfKjY8VmBBILpZQnZN2fjUC/DWAvSUQh5g==
-  dependencies:
-    "@odigos/ui-icons" "^0.0.2"
-    javascript-time-ago "^2.5.11"
-    react "^19.0.0"
-    react-dom "^19.0.0"
-    styled-components "^6.1.14"
-
-"@odigos/ui-utils@^0.0.6":
-  version "0.0.6"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-utils/-/ui-utils-0.0.6.tgz#10084c433151081c6ff1e3031fae221169f9ca51"
-  integrity sha512-s30fM28QBnYFmesalsJSn/ELom+AnIAB8JRNfsN5iC2WMtJjJ+vtLBzLxEPFT9uUc/493n5YC840NfGyP6yjPQ==
+"@odigos/ui-utils@^0.0.8":
+  version "0.0.8"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-utils/-/ui-utils-0.0.8.tgz#f1042948d2207420e796c7f6ce2b3f894905bac2"
+  integrity sha512-lB9xYPqQcz/UzKoGKIS+fF4B/Ca3iNKpViVJvswfnwEtMs79OINTm/JPWsKci1exNakPy6F9nWpycQZMXYjhAQ==
   dependencies:
     "@odigos/ui-icons" "^0.0.2"
     javascript-time-ago "^2.5.11"
@@ -1257,6 +1247,14 @@ babel-plugin-styled-components@^2.1.4:
     lodash "^4.17.21"
     picomatch "^2.3.1"
 
+babel-runtime@^6.26.0:
+  version "6.26.0"
+  resolved "https://registry.yarnpkg.com/babel-runtime/-/babel-runtime-6.26.0.tgz#965c7058668e82b55d7bfe04ff2337bc8b5647fe"
+  integrity sha512-ITKNuq2wKlW1fJg9sSW52eepoYgZBggvOAHC0u/CYu/qxQ9EVzThCgR69BnSXLHjy2f7SY5zaQ4yt7H9ZVxY2g==
+  dependencies:
+    core-js "^2.4.0"
+    regenerator-runtime "^0.11.0"
+
 balanced-match@^1.0.0:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/balanced-match/-/balanced-match-1.0.2.tgz#e83e3a7e3f300b34cb9d87f615fa0cbf357690ee"
@@ -1503,6 +1501,11 @@ concat-map@0.0.1:
   version "0.0.1"
   resolved "https://registry.yarnpkg.com/concat-map/-/concat-map-0.0.1.tgz#d8a96bd77fd68df7793a73036a3ba0d5405d477b"
   integrity sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==
+
+core-js@^2.4.0:
+  version "2.6.12"
+  resolved "https://registry.yarnpkg.com/core-js/-/core-js-2.6.12.tgz#d9333dfa7b065e347cc5682219d6f690859cc2ec"
+  integrity sha512-Kb2wC0fvsWfQrgk8HU5lW6U/Lcs8+9aaYcy4ZFc6DDlo4nZ7n70dEgE5rtR0oG6ufKDUnrwfWL1mXR5ljDatrQ==
 
 core-util-is@1.0.2:
   version "1.0.2"
@@ -3018,6 +3021,11 @@ loose-envify@^1.4.0:
   dependencies:
     js-tokens "^3.0.0 || ^4.0.0"
 
+lottie-web@^5.12.2:
+  version "5.12.2"
+  resolved "https://registry.yarnpkg.com/lottie-web/-/lottie-web-5.12.2.tgz#579ca9fe6d3fd9e352571edd3c0be162492f68e5"
+  integrity sha512-uvhvYPC8kGPjXT3MyKMrL3JitEAmDMp30lVkuq/590Mw9ok6pWcFCwXJveo0t5uqYw1UREQHofD+jVpdjBv8wg==
+
 math-intrinsics@^1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/math-intrinsics/-/math-intrinsics-1.1.0.tgz#a0dd74be81e2aa5c2f27e65ce283605ee4e2b7f9"
@@ -3375,7 +3383,7 @@ process@^0.11.10:
   resolved "https://registry.yarnpkg.com/process/-/process-0.11.10.tgz#7332300e840161bda3e69a1d1d91a7d4bc16f182"
   integrity sha512-cdGef/drWFoydD1JsMzuFf8100nZl+GT+yacc2bEced5f9Rjk4z+WtFUTBu9PhOi9j/jfmBPu0mMEY4wIdAF8A==
 
-prop-types@^15.7.2, prop-types@^15.8.1:
+prop-types@^15.6.1, prop-types@^15.7.2, prop-types@^15.8.1:
   version "15.8.1"
   resolved "https://registry.yarnpkg.com/prop-types/-/prop-types-15.8.1.tgz#67d87bf1a694f48435cf332c24af10214a3140b5"
   integrity sha512-oj87CgZICdulUohogVAR7AjlC0327U4el4L6eAvOqCeudMDVU0NThNaV+b9Df4dXgSP1gXMTnPdhfe/2qDH5cg==
@@ -3447,6 +3455,15 @@ react-is@^16.13.1, react-is@^16.7.0:
   resolved "https://registry.yarnpkg.com/react-is/-/react-is-16.13.1.tgz#789729a4dc36de2999dc156dd6c1d9c18cea56a4"
   integrity sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==
 
+react-lottie@^1.2.10:
+  version "1.2.10"
+  resolved "https://registry.yarnpkg.com/react-lottie/-/react-lottie-1.2.10.tgz#399f78a448a7833b2380d74fc489ecf15f8d18c7"
+  integrity sha512-x0eWX3Z6zSx1XM5QSjnLupc6D22LlMCB0PH06O/N/epR2hsLaj1Vxd9RtMnbbEHjJ/qlsgHJ6bpN3vnZI92hjw==
+  dependencies:
+    babel-runtime "^6.26.0"
+    lottie-web "^5.12.2"
+    prop-types "^15.6.1"
+
 react@19.0.0, react@^19.0.0:
   version "19.0.0"
   resolved "https://registry.yarnpkg.com/react/-/react-19.0.0.tgz#6e1969251b9f108870aa4bff37a0ce9ddfaaabdd"
@@ -3465,6 +3482,11 @@ reflect.getprototypeof@^1.0.6, reflect.getprototypeof@^1.0.9:
     get-intrinsic "^1.2.7"
     get-proto "^1.0.1"
     which-builtin-type "^1.2.1"
+
+regenerator-runtime@^0.11.0:
+  version "0.11.1"
+  resolved "https://registry.yarnpkg.com/regenerator-runtime/-/regenerator-runtime-0.11.1.tgz#be05ad7f9bf7d22e056f9726cee5017fbf19e2e9"
+  integrity sha512-MguG95oij0fC3QV3URf4V2SDYGJhJnJGqvIIgdECeODCT98wSWDAJ94SSuVpYQUoTcGUIL6L4yNB7j1DFFHSBg==
 
 regenerator-runtime@^0.14.0:
   version "0.14.1"
