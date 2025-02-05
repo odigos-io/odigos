@@ -86,6 +86,12 @@ spec:
             timeout: 60s
         - assert:
             file: ../../common/assert/odigos-installed.yaml
+
+    - name: Verify Node Odiglet label has been added
+      try:
+        - assert:
+            file: ../../common/assert/node-odiglet-label.yaml
+            
     - name: "01 - Install Test Apps"
       try:
         - apply:
