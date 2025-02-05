@@ -8,8 +8,15 @@ import { useDarkModeStore } from '@/store';
 function RootLayout({ children }: PropsWithChildren) {
   const { darkMode } = useDarkModeStore();
 
+  const bodyStyle = {
+    width: '100vw',
+    height: '100vh',
+    margin: 0,
+    backgroundColor: darkMode ? '#111111' : '#EEEEEE',
+  };
+
   return (
-    <html lang='en' suppressHydrationWarning={true}>
+    <html lang='en'>
       <head>
         <meta name='description' content={METADATA.title} />
         <link rel='icon' type='image/svg+xml' href={`/${METADATA.icon}`} />
@@ -17,27 +24,13 @@ function RootLayout({ children }: PropsWithChildren) {
         <title>{METADATA.title}</title>
       </head>
 
-      {/*
-        The "window" check is to prevent hydration errors,
-        previously we had "suppressHydrationWarning={true}" on the "body" tag, but it was causing issues and had to be handled better.
-      */}
-
-      {typeof window === 'undefined' ? null : (
-        <ApolloWrapper>
-          <ThemeProvider darkMode={darkMode}>
-            <body
-              style={{
-                width: '100vw',
-                height: '100vh',
-                margin: 0,
-                backgroundColor: darkMode ? '#111111' : '#EEEEEE',
-              }}
-            >
-              {children}
-            </body>
-          </ThemeProvider>
-        </ApolloWrapper>
-      )}
+      <ApolloWrapper>
+        <ThemeProvider darkMode={darkMode}>
+          <body suppressHydrationWarning={true} style={bodyStyle}>
+            {children}
+          </body>
+        </ThemeProvider>
+      </ApolloWrapper>
     </html>
   );
 }
