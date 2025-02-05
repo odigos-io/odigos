@@ -1,42 +1,42 @@
 import { ACTION_TYPE, type FetchedCondition, SIGNAL_TYPE } from '@odigos/ui-utils';
 
-export type AddClusterInfoSpec = {
+export interface AddClusterInfoSpec {
   clusterAttributes: {
     attributeName: string;
     attributeStringValue: string;
   }[];
-};
+}
 
-export type DeleteAttributesSpec = {
+export interface DeleteAttributesSpec {
   attributeNamesToDelete: string[];
-};
+}
 
-export type RenameAttributesSpec = {
+export interface RenameAttributesSpec {
   renames: {
     [oldKey: string]: string;
   };
-};
+}
 
-export type PiiMaskingSpec = {
+export interface PiiMaskingSpec {
   piiCategories: string[];
-};
+}
 
-export type ErrorSamplerSpec = {
+export interface ErrorSamplerSpec {
   fallback_sampling_ratio: number;
-};
+}
 
-export type ProbabilisticSamplerSpec = {
+export interface ProbabilisticSamplerSpec {
   sampling_percentage: string;
-};
+}
 
-export type LatencySamplerSpec = {
+export interface LatencySamplerSpec {
   endpoints_filters: {
     service_name: string;
     http_route: string;
     minimum_latency_threshold: number;
     fallback_sampling_ratio: number;
   }[];
-};
+}
 
 export interface FetchedActionSpec {
   actionName: string;
@@ -59,11 +59,11 @@ export interface FetchedAction {
   conditions: FetchedCondition[];
 }
 
-export type ActionInput = {
+export interface ActionInput {
   type: ACTION_TYPE;
   name: string;
   notes: string;
   disable: boolean;
   signals: SIGNAL_TYPE[];
   details: string;
-};
+}
