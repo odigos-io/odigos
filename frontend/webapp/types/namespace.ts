@@ -1,8 +1,16 @@
-export interface NamespaceFutureAppsInput {
-  [namespace: string]: boolean;
+import { FetchedSource } from './sources';
+
+export interface FetchedNamespace {
+  name: string;
+  selected: boolean;
+  k8sActualSources?: FetchedSource[];
 }
 
-export interface PersistNamespaceItemInput {
+export interface NamespaceInstrumentInput {
   name: string;
   futureSelected: boolean;
+}
+
+export interface NamespaceFutureAppsSelection {
+  [namespace: string]: boolean;
 }

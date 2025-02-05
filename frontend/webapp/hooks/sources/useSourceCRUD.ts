@@ -7,7 +7,7 @@ import { PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import { ACTION, BACKEND_BOOLEAN, DISPLAY_TITLES, FORM_ALERTS } from '@/utils';
 import { type PendingItem, useFilterStore, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
 import { ENTITY_TYPES, getSseTargetFromId, K8S_RESOURCE_KIND, NOTIFICATION_TYPE, type WorkloadId } from '@odigos/ui-utils';
-import { type NamespaceFutureAppsInput, type FetchedSource, type SourceInstrumentInput, type SourceUpdateInput } from '@/types';
+import { type NamespaceFutureAppsSelection, type FetchedSource, type SourceInstrumentInput, type SourceUpdateInput } from '@/types';
 
 interface Params {
   onSuccess?: (type: string) => void;
@@ -19,7 +19,7 @@ interface UseSourceCrudResponse {
   sources: FetchedSource[];
   filteredSources: FetchedSource[];
 
-  persistSources: (selectAppsList: SourceInstrumentInput, futureSelectAppsList: NamespaceFutureAppsInput) => Promise<void>;
+  persistSources: (selectAppsList: SourceInstrumentInput, futureSelectAppsList: NamespaceFutureAppsSelection) => Promise<void>;
   updateSource: (sourceId: WorkloadId, payload: SourceUpdateInput) => Promise<void>;
 }
 
@@ -123,15 +123,7 @@ export const useSourceCRUD = (params?: Params): UseSourceCrudResponse => {
         let alreadyNotifiedNamespaces = false;
 
         for (const [namespace, sources] of entries) {
-          const addToPendingStore: PendingItem[] = [];
-          const sendToGql: SourceInstrumentInput[0] = [];
-
-          sources.forEach(({ name, kind, selected }) => {
-            addToPendingStore.push({ entityType: ENTITY_TYPES.SOURCE, entityId: { namespace, name, kind } });
-            sendToGql.push({ name, kind, selected });
-          });
-
-          if (!!sendToGql.length) {
+          if (!!sources.length) {
             hasSources = true;
             if (!alreadyNotifiedSources) {
               alreadyNotifiedSources = true;
@@ -139,8 +131,17 @@ export const useSourceCRUD = (params?: Params): UseSourceCrudResponse => {
             }
           }
 
+          const addToPendingStore: PendingItem[] = [];
+
+          sources.forEach(({ name, kind }) => {
+            addToPendingStore.push({
+              entityType: ENTITY_TYPES.SOURCE,
+              entityId: { namespace, name, kind },
+            });
+          });
+
           addPendingItems(addToPendingStore);
-          await persistSources({ variables: { namespace, sources: sendToGql } });
+          await persistSources({ variables: { namespace, sources } });
         }
 
         for (const [namespace, futureSelected] of Object.entries(futureSelectAppsList)) {

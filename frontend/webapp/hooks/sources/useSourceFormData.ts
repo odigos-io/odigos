@@ -1,7 +1,7 @@
 import { Dispatch, SetStateAction, useCallback, useEffect, useState } from 'react';
 import { useAppStore } from '@/store';
 import { useNamespace } from '../compute-platform';
-import type { FetchedAvailableSources, FetchedSource, NamespaceFutureAppsInput, SourceInstrumentInput } from '@/types';
+import type { FetchedAvailableSources, FetchedSource, NamespaceFutureAppsSelection, SourceInstrumentInput } from '@/types';
 
 type SelectedNamespace = string;
 type SelectedSource = FetchedAvailableSources[0][0];
@@ -16,13 +16,13 @@ export interface UseSourceFormDataResponse {
   filterNamespaces: (options?: { cancelSearch?: boolean }) => [SelectedNamespace, SelectedSource[]][];
   filterSources: (namespace?: SelectedNamespace, options?: { cancelSearch?: boolean; cancelSelected?: boolean }) => SelectedSource[];
   getApiSourcesPayload: () => SourceInstrumentInput;
-  getApiFutureAppsPayload: () => NamespaceFutureAppsInput;
+  getApiFutureAppsPayload: () => NamespaceFutureAppsSelection;
 
   selectedNamespace: SelectedNamespace;
   onSelectNamespace: (namespace: SelectedNamespace) => void;
   selectedSources: FetchedAvailableSources;
   onSelectSource: (source: SelectedSource, namespace?: SelectedNamespace) => void;
-  selectedFutureApps: NamespaceFutureAppsInput;
+  selectedFutureApps: NamespaceFutureAppsSelection;
   onSelectFutureApps: (bool: boolean, namespace?: SelectedNamespace) => void;
 
   searchText: string;

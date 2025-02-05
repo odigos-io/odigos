@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { ConfiguredDestination, DestinationInput, FetchedAvailableSources, NamespaceFutureAppsInput, SourceInstrumentInput } from '@/types';
+import type { ConfiguredDestination, DestinationInput, FetchedAvailableSources, NamespaceFutureAppsSelection, SourceInstrumentInput } from '@/types';
 
 export interface IAppState {
   // in onboarding this is used to keep state of sources that are available for selection in a namespace, in-case user goes back a page (from destinations to sources)
@@ -7,7 +7,7 @@ export interface IAppState {
   // in onboarding this is used to keep state of added sources, until end of onboarding
   configuredSources: SourceInstrumentInput;
   // in onboarding this is used to keep state of namespaces with future-apps selected, until end of onboarding
-  configuredFutureApps: NamespaceFutureAppsInput;
+  configuredFutureApps: NamespaceFutureAppsSelection;
   // in onbaording this is used to keep state of added destinations, until end of onboarding
   configuredDestinations: { stored: ConfiguredDestination; form: DestinationInput }[];
 }

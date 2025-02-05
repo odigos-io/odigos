@@ -5,9 +5,17 @@ import { useMutation, useQuery } from '@apollo/client';
 import { useComputePlatform } from './useComputePlatform';
 import { useNotificationStore } from '@odigos/ui-containers';
 import { GET_NAMESPACE, PERSIST_NAMESPACE } from '@/graphql';
-import { type ComputePlatform, type PersistNamespaceItemInput } from '@/types';
+import type { FetchedNamespace, NamespaceInstrumentInput, ComputePlatform } from '@/types';
 
-export const useNamespace = (namespaceName?: string) => {
+interface UseNameSpaceResponse {
+  loading: boolean;
+  data?: FetchedNamespace;
+  allNamespaces: FetchedNamespace[];
+
+  persistNamespace: (namespace: NamespaceInstrumentInput) => Promise<void>;
+}
+
+export const useNamespace = (namespaceName?: string): UseNameSpaceResponse => {
   const { data: config } = useConfig();
   const { addNotification } = useNotificationStore();
   const { data: cp, loading: cpLoading } = useComputePlatform();
@@ -27,7 +35,7 @@ export const useNamespace = (namespaceName?: string) => {
     data: data?.computePlatform?.k8sActualNamespace,
     allNamespaces: cp?.computePlatform?.k8sActualNamespaces || [],
 
-    persistNamespace: async (namespace: PersistNamespaceItemInput) => {
+    persistNamespace: async (namespace) => {
       if (config?.readonly) {
         addNotification({ type: NOTIFICATION_TYPE.WARNING, title: DISPLAY_TITLES.READONLY, message: FORM_ALERTS.READONLY_WARNING, hideFromHistory: true });
       } else {

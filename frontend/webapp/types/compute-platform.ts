@@ -1,5 +1,6 @@
 import { type FetchedSource } from './sources';
 import { type FetchedAction } from './actions';
+import { type FetchedNamespace } from './namespace';
 import { type Destination } from '@odigos/ui-containers';
 import { type InstrumentationRuleSpec } from './instrumentation-rules';
 
@@ -8,12 +9,6 @@ export interface TokenPayload {
   name: string;
   issuedAt: number;
   expiresAt: number;
-}
-
-export interface K8sActualNamespace {
-  name: string;
-  selected: boolean;
-  k8sActualSources?: FetchedSource[];
 }
 
 interface PaginatedData<T = any> {
@@ -25,8 +20,8 @@ export interface ComputePlatform {
   computePlatform: {
     computePlatformType?: string;
     apiTokens?: TokenPayload[];
-    k8sActualNamespaces?: K8sActualNamespace[];
-    k8sActualNamespace?: K8sActualNamespace;
+    k8sActualNamespaces?: FetchedNamespace[];
+    k8sActualNamespace?: FetchedNamespace;
     sources?: PaginatedData<FetchedSource>; // fetched is already "mapped", except for conditions (which are mapped by it's own component)
     destinations?: Destination[]; // fetched is already "mapped"
     actions?: FetchedAction[]; // should map from "FetchedAction" to "Action" in get-query
