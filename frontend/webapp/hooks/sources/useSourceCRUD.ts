@@ -4,10 +4,10 @@ import { useMutation } from '@apollo/client';
 import { useNamespace } from '../compute-platform';
 import { useAppStore, usePaginatedStore } from '@/store';
 import { PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
-import { ACTION, BACKEND_BOOLEAN, DISPLAY_TITLES, FORM_ALERTS } from '@/utils';
+import { ACTION, DISPLAY_TITLES, FORM_ALERTS } from '@/utils';
 import { type PendingItem, useFilterStore, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
-import { ENTITY_TYPES, getSseTargetFromId, K8S_RESOURCE_KIND, NOTIFICATION_TYPE, type WorkloadId } from '@odigos/ui-utils';
 import { type NamespaceFutureAppsSelection, type FetchedSource, type SourceInstrumentInput, type SourceUpdateInput } from '@/types';
+import { CONDITION_STATUS, ENTITY_TYPES, getSseTargetFromId, K8S_RESOURCE_KIND, NOTIFICATION_TYPE, type WorkloadId } from '@odigos/ui-utils';
 
 interface Params {
   onSuccess?: (type: string) => void;
@@ -59,7 +59,7 @@ export const useSourceCRUD = (params?: Params): UseSourceCrudResponse => {
 
     if (!!filters.namespace) arr = arr.filter((source) => filters.namespace?.id === source.namespace);
     if (!!filters.types.length) arr = arr.filter((source) => !!filters.types.find((type) => type.id === source.kind));
-    if (!!filters.onlyErrors) arr = arr.filter((source) => !!source.conditions?.find((cond) => cond.status === BACKEND_BOOLEAN.FALSE));
+    if (!!filters.onlyErrors) arr = arr.filter((source) => !!source.conditions?.find((cond) => cond.status === CONDITION_STATUS.FALSE));
     if (!!filters.errors.length) arr = arr.filter((source) => !!filters.errors.find((error) => !!source.conditions?.find((cond) => cond.message === error.id)));
     if (!!filters.languages.length) arr = arr.filter((source) => !!filters.languages.find((language) => !!source.containers?.find((cont) => cont.language === language.id)));
 

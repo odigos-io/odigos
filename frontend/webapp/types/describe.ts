@@ -24,21 +24,18 @@ interface RuntimeInfoAnalyze {
   containers: ContainerRuntimeInfoAnalyze[];
 }
 
-interface InstrumentationConfigAnalyze {
+interface ContainerAgentConfigAnalyze {
+  containerName: EntityProperty;
+  agentEnabled: EntityProperty;
+  reason?: EntityProperty;
+  message?: EntityProperty;
+  otelDistroName?: EntityProperty;
+}
+
+interface OtelAgentsAnalyze {
   created: EntityProperty;
   createTime?: EntityProperty;
-  containers: ContainerRuntimeInfoAnalyze[];
-}
-
-interface ContainerWorkloadManifestAnalyze {
-  containerName: EntityProperty;
-  devices: EntityProperty;
-  originalEnv: EntityProperty[];
-}
-
-interface InstrumentationDeviceAnalyze {
-  statusText: EntityProperty;
-  containers: ContainerWorkloadManifestAnalyze[];
+  containers: ContainerAgentConfigAnalyze[];
 }
 
 interface InstrumentationInstanceAnalyze {
@@ -64,11 +61,10 @@ interface SourceAnalyze {
   name: EntityProperty;
   kind: EntityProperty;
   namespace: EntityProperty;
-  sourceObjects: InstrumentationSourcesAnalyze;
 
+  sourceObjects?: InstrumentationSourcesAnalyze;
   runtimeInfo?: RuntimeInfoAnalyze;
-  instrumentationConfig: InstrumentationConfigAnalyze;
-  instrumentationDevice: InstrumentationDeviceAnalyze;
+  otelAgents?: OtelAgentsAnalyze;
 
   totalPods: number;
   podsPhasesCount: string;

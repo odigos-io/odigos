@@ -50,12 +50,12 @@ export const GET_SOURCES = gql`
             containerName
             language
             runtimeVersion
-            otherAgent
+            instrumented
+            instrumentationMessage
+            otelDistroName
           }
           conditions {
             status
-            type
-            reason
             message
             lastTransitionTime
           }

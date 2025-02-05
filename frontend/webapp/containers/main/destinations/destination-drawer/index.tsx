@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import buildCard from './build-card';
 import styled from 'styled-components';
-import { ACTION, DATA_CARDS } from '@/utils';
+import { ACTION,  DATA_CARDS } from '@/utils';
 import { ENTITY_TYPES } from '@odigos/ui-utils';
 import buildDrawerItem from './build-drawer-item';
 import OverviewDrawer from '../../overview/overview-drawer';

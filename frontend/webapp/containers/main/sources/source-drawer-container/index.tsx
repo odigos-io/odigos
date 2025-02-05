@@ -8,8 +8,8 @@ import { useDrawerStore } from '@odigos/ui-containers';
 import { UpdateSourceBody } from '../update-source-body';
 import { useDescribeSource, useSourceCRUD } from '@/hooks';
 import OverviewDrawer from '../../overview/overview-drawer';
-import { ACTION, BACKEND_BOOLEAN, DATA_CARDS } from '@/utils';
-import { ENTITY_TYPES, getEntityIcon, safeJsonStringify, type WorkloadId } from '@odigos/ui-utils';
+import { ACTION,  DATA_CARDS } from '@/utils';
+import { CONDITION_STATUS, ENTITY_TYPES, getEntityIcon, safeJsonStringify, type WorkloadId } from '@odigos/ui-utils';
 import { ConditionDetails, DATA_CARD_FIELD_TYPES, DataCard, type DataCardFieldsProps, Segment } from '@odigos/ui-components';
 
 interface Props {}
@@ -93,7 +93,7 @@ export const SourceDrawer: React.FC<Props> = () => {
 
     const { item } = selectedItem as { item: FetchedSource };
     const hasPresenceOfOtherAgent =
-      item?.conditions?.some((condition) => condition.status === BACKEND_BOOLEAN.FALSE && condition.message.includes('device not added to any container due to the presence of another agent')) ||
+      item?.conditions?.some((condition) => condition.status === CONDITION_STATUS.FALSE && condition.message.includes('device not added to any container due to the presence of another agent')) ||
       false;
 
     return (

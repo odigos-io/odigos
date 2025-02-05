@@ -24,6 +24,7 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 
+	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled"
 	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentationconfig"
 	"github.com/odigos-io/odigos/instrumentor/controllers/startlangdetection"
 	"github.com/odigos-io/odigos/instrumentor/controllers/workloadmigrations"
@@ -47,7 +48,6 @@ import (
 	"github.com/odigos-io/odigos/common"
 
 	"github.com/odigos-io/odigos/instrumentor/controllers/deleteinstrumentationconfig"
-	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentationdevice"
 	"github.com/odigos-io/odigos/instrumentor/report"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -105,8 +105,8 @@ func main() {
 
 	odigosNs := env.GetCurrentNamespace()
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
-	odigosConfigNameSelector := fields.OneTermEqualSelector("metadata.name", consts.OdigosEffectiveConfigName)
-	odigosConfigSelector := fields.AndSelectors(nsSelector, odigosConfigNameSelector)
+	odigosEffectiveConfigNameSelector := fields.OneTermEqualSelector("metadata.name", consts.OdigosEffectiveConfigName)
+	odigosEffectiveConfigSelector := fields.AndSelectors(nsSelector, odigosEffectiveConfigNameSelector)
 
 	mgrOptions := ctrl.Options{
 		Scheme: scheme,
@@ -144,10 +144,10 @@ func main() {
 		Cache: cache.Options{
 			DefaultTransform: cache.TransformStripManagedFields(),
 			// Store minimum amount of data for every object type.
-			// Currently, instrumentor only need the labels and the .spec.template.spec field of the workloads.
+			// Currently, instrumentor only need the labels of the workloads.
 			ByObject: map[client.Object]cache.ByObject{
 				&corev1.ConfigMap{}: {
-					Field: odigosConfigSelector,
+					Field: odigosEffectiveConfigSelector,
 				},
 				&odigosv1.CollectorsGroup{}: {
 					Field: nsSelector,
@@ -157,6 +157,10 @@ func main() {
 				},
 				&odigosv1.InstrumentationRule{}: {
 					Field: nsSelector,
+				},
+				&odigosv1.InstrumentationConfig{}: {
+					// all instrumentation configs are managed by this controller
+					// and should be pulled into the cache
 				},
 			},
 		},
@@ -192,7 +196,7 @@ func main() {
 		os.Exit(-1)
 	}
 
-	err = instrumentationdevice.SetupWithManager(mgr)
+	err = agentenabled.SetupWithManager(mgr)
 	if err != nil {
 		setupLog.Error(err, "unable to create controller")
 		os.Exit(1)
