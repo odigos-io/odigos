@@ -528,10 +528,24 @@
     react-lottie "^1.2.10"
     styled-components "^6.1.14"
 
-"@odigos/ui-containers@^0.0.8":
-  version "0.0.8"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-containers/-/ui-containers-0.0.8.tgz#14d0bcbacebd20ea72730b294f8edc86c720b46d"
-  integrity sha512-LPaBDuhLv0pVhr2674JuPS5GaU/6Xwk3Oxg+7HiA0JqCQe++wSJKUbgzju75orm0uCr2vg008ZsjXj85Oc48iQ==
+"@odigos/ui-components@^0.0.45":
+  version "0.0.45"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-components/-/ui-components-0.0.45.tgz#a32854fabe2304f5f1b7d6dd2d0c5a15734135ff"
+  integrity sha512-YGicjsh+ST1m2Cl8F/0kbbQpmel3KKqn14UtO0YM3lnF/k4x1gkGtyfRTqGk1bFNOcH5uATVHHsbUJSPoDbZng==
+  dependencies:
+    "@odigos/ui-icons" "^0.0.2"
+    "@odigos/ui-theme" "^0.0.2"
+    "@odigos/ui-utils" "^0.0.8"
+    prism-react-renderer "^2.4.1"
+    react "^19.0.0"
+    react-dom "^19.0.0"
+    react-lottie "^1.2.10"
+    styled-components "^6.1.14"
+
+"@odigos/ui-containers@^0.0.9":
+  version "0.0.9"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-containers/-/ui-containers-0.0.9.tgz#a2b02178d4ca5de8e879e794a6080a550a1c4bb2"
+  integrity sha512-Np37xqdTN4tiNUXcAJ5/ncf7q9Wf2/keh4nTr37XgO7/USJVVRCphLg7EmfPUB3DZU6NcNo1SpiSg62PefyfQA==
   dependencies:
     "@odigos/ui-components" "^0.0.44"
     "@odigos/ui-theme" "^0.0.2"

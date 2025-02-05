@@ -2,14 +2,13 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
 import styled from 'styled-components';
-import { DataFlow } from '@odigos/ui-containers';
-import { useActionCRUD, useDestinationCRUD, useInstrumentationRuleCRUD, useMetrics, useNodeDataFlowHandlers, usePaginatedSources, useSourceCRUD, useSSE, useTokenTracker } from '@/hooks';
+import { DataFlow, DataFlowActionsMenu } from '@odigos/ui-containers';
+import { useActionCRUD, useDestinationCRUD, useInstrumentationRuleCRUD, useMetrics, useNamespace, useNodeDataFlowHandlers, usePaginatedSources, useSourceCRUD, useSSE, useTokenTracker } from '@/hooks';
 
 const ToastList = dynamic(() => import('@/components/notification/toast-list'), { ssr: false });
 const AllDrawers = dynamic(() => import('@/components/overview/all-drawers'), { ssr: false });
 const AllModals = dynamic(() => import('@/components/overview/all-modals'), { ssr: false });
 
-const OverviewActionsMenu = dynamic(() => import('@/containers/main/overview/overview-actions-menu'), { ssr: false });
 const MultiSourceControl = dynamic(() => import('@/containers/main/overview/multi-source-control'), { ssr: false });
 
 const Container = styled.div`
@@ -29,6 +28,7 @@ export default function MainPage() {
   const { handleNodeClick } = useNodeDataFlowHandlers();
 
   const { metrics } = useMetrics();
+  const { allNamespaces } = useNamespace();
   const { sources, filteredSources, loading: srcLoad } = useSourceCRUD();
   const { actions, filteredActions, loading: actLoad } = useActionCRUD();
   const { destinations, filteredDestinations, loading: destLoad } = useDestinationCRUD();
@@ -42,7 +42,14 @@ export default function MainPage() {
       <AllModals />
 
       <Container>
-        <OverviewActionsMenu />
+        <DataFlowActionsMenu
+          namespaces={allNamespaces}
+          sources={filteredSources}
+          destinations={filteredDestinations}
+          actions={filteredActions}
+          instrumentationRules={filteredInstrumentationRules}
+          onNodeClick={handleNodeClick}
+        />
         <DataFlow
           heightToRemove='176px'
           sources={filteredSources}
