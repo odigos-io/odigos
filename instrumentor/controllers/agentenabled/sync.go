@@ -300,7 +300,8 @@ func containerInstrumentationConfig(containerName string,
 				ContainerName:          containerName,
 				Instrumented:           true,
 				InstrumentationReason:  odigosv1.AgentInjectionReasonInjectedSuccessfully,
-				InstrumentationMessage: fmt.Sprintf("odigos running alongside other instrumentation agent '%s'", runtimeDetails.OtherAgent.Name),
+				InstrumentationMessage: fmt.Sprintf("we are operating alongside the %s, which is not the recommended configuration. We suggest disabling the %s for optimal performance.", runtimeDetails.OtherAgent.Name, runtimeDetails.OtherAgent.Name),
+				OtelDistroName:         distroName,
 			}
 		}
 	}
