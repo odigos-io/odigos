@@ -103,7 +103,7 @@ func convertEntityPropertiesToGQL(props []properties.EntityProperty) []*model.En
 // 			ContainerName: describe_utils.ConvertEntityPropertyToGQL(&container.ContainerName),
 // 			Devices:       describe_utils.ConvertEntityPropertyToGQL(&container.Devices),
 // 			OriginalEnv:   convertEntityPropertiesToGQL(container.OriginalEnv),
-// 		})
+// 		)}
 // 	}
 // 	return gqlContainers
 // }
