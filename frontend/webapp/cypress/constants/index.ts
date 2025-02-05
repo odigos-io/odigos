@@ -21,6 +21,7 @@ export const CRD_IDS = {
 
 export const NAMESPACES = {
   DEFAULT: 'default',
+  ODIGOS_TEST: 'odigos-test',
   ODIGOS_SYSTEM: 'odigos-system',
 };
 
