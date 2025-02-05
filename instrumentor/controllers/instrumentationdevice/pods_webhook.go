@@ -2,6 +2,7 @@ package instrumentationdevice
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -10,6 +11,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
+	podutils "github.com/odigos-io/odigos/instrumentor/internal/pod"
 	webhookdeviceinjector "github.com/odigos-io/odigos/instrumentor/internal/webhook_device_injector"
 	webhookenvinjector "github.com/odigos-io/odigos/instrumentor/internal/webhook_env_injector"
 	"github.com/odigos-io/odigos/instrumentor/sdks"
@@ -18,6 +20,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -40,27 +43,43 @@ type PodsWebhook struct {
 var _ webhook.CustomDefaulter = &PodsWebhook{}
 
 func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
+
+	logger := log.FromContext(ctx)
+
 	pod, ok := obj.(*corev1.Pod)
 	if !ok {
-		return fmt.Errorf("expected a Pod but got a %T", obj)
+		logger.Error(errors.New("expected a Pod but got a %T"), "failed to inject odigos instrumentation to new pod")
+		return nil
 	}
 
 	pw, err := p.podWorkload(ctx, pod)
 	if err != nil {
 		// TODO: if the webhook is enabled for all pods, this is not necessarily an error
-		return err
+		logger.Error(err, "failed to get pod workload details. Skipping Injection of ODIGOS environment variables")
+		return nil
 	}
 
 	var ic odigosv1.InstrumentationConfig
 	icName := workload.CalculateWorkloadRuntimeObjectName(pw.Name, pw.Kind)
 	if err := p.Get(ctx, client.ObjectKey{Namespace: pw.Namespace, Name: icName}, &ic); err != nil {
-		// TODO: if the webhook is enabled for all pods, this is not an error
-		// as it is expected for pods that are not relevant for instrumentation
-		return fmt.Errorf("failed to get instrumentationConfig: %w", err)
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		logger.Error(err, "failed to get instrumentationConfig. Skipping Injection of ODIGOS environment variables")
+		return nil
 	}
 
 	// Inject ODIGOS environment variables and instrumentation device into all containers
-	return p.injectOdigosInstrumentation(ctx, pod, &ic, pw)
+	injectErr := p.injectOdigosInstrumentation(ctx, pod, &ic, pw)
+	if injectErr != nil {
+		logger.Error(injectErr, "failed to inject ODIGOS instrumentation. Skipping Injection of ODIGOS environment variables")
+		return nil
+	}
+
+	// Add odiglet installed node-affinity to the pod
+	podutils.AddOdigletInstalledAffinity(pod)
+
+	return nil
 }
 
 func (p *PodsWebhook) podWorkload(ctx context.Context, pod *corev1.Pod) (*k8sconsts.PodWorkload, error) {

@@ -7,7 +7,7 @@ rules:
   resources: ["deployments", "statefulsets", "daemonsets"]
   verbs: ["get", "list", "patch"]
 - apiGroups: [""]
-  resources: ["namespaces", "services", "secrets"]
+  resources: ["namespaces", "services", "secrets", "nodes"]
   verbs: ["get", "list", "patch"]
 - apiGroups: ["rbac.authorization.k8s.io"]
   resources: ["clusterroles", "clusterrolebindings"]
