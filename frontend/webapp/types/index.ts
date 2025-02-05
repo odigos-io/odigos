@@ -2,7 +2,6 @@ export * from './actions';
 export * from './common';
 export * from './compute-platform';
 export * from './config';
-export * from './data-flow';
 export * from './describe';
 export * from './destinations';
 export * from './instrumentation-rules';

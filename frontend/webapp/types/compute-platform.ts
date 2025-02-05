@@ -1,3 +1,4 @@
+import { type PaginatedData } from './common';
 import { type FetchedSource } from './sources';
 import { type FetchedAction } from './actions';
 import { type FetchedNamespace } from './namespace';
@@ -9,11 +10,6 @@ export interface TokenPayload {
   name: string;
   issuedAt: number;
   expiresAt: number;
-}
-
-interface PaginatedData<T = any> {
-  nextPage: string;
-  items: T[];
 }
 
 export interface ComputePlatform {

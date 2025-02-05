@@ -1,5 +1,10 @@
 import { NOTIFICATION_TYPE } from '@odigos/ui-utils';
 
+export interface PaginatedData<T = any> {
+  nextPage: string;
+  items: T[];
+}
+
 export interface ExportedSignals {
   logs: boolean;
   metrics: boolean;
