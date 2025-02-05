@@ -4,8 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
-	"strings"
 
 	"github.com/hashicorp/go-version"
 
@@ -20,6 +20,7 @@ type JavaInspector struct{}
 var libjvmRegex = regexp.MustCompile(`.*/libjvm\.so`)
 
 const JavaVersionRegex = `\d+\.\d+\.\d+\+\d+`
+const processName = "java"
 
 var re = regexp.MustCompile(JavaVersionRegex)
 
@@ -28,6 +29,7 @@ func (j *JavaInspector) Inspect(proc *process.Details) (common.ProgrammingLangua
 		return common.JavaProgrammingLanguage, true
 	}
 
+	// TODO: do we need to cover the case that the process is a Java process but it dont loaded JVM?
 	if isJavaExecutable(proc.ExePath) {
 		return common.JavaProgrammingLanguage, true
 	}
@@ -63,7 +65,7 @@ func checkForLoadedJVM(processID int) bool {
 // isJavaExecutable checks if the process binary name suggests it's a Java process.
 // This is useful for cases where "libjvm.so" isn't found in "/proc/<pid>/maps".
 func isJavaExecutable(procExe string) bool {
-	return strings.HasSuffix(procExe, "java")
+	return filepath.Base(procExe) == processName
 }
 
 // func isGraalVMProcess(cmdline string) bool {
