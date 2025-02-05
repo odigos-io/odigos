@@ -1,8 +1,6 @@
 package k8sconsts
 
 const (
-	// OdigosInjectInstrumentationLabel is the label used to enable the mutating webhook.
-	OdigosInjectInstrumentationLabel = "odigos.io/inject-instrumentation"
 	// OdigosCollectorRoleLabel is the label used to identify the role of the Odigos collector.
 	OdigosCollectorRoleLabel = "odigos.io/collector-role"
 

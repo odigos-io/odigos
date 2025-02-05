@@ -44,11 +44,13 @@ enum InstallationStatus {
   FINISHED
 }
 
-type SourceContainerRuntimeDetails {
+type SourceContainer {
   containerName: String!
   language: String!
   runtimeVersion: String!
-  otherAgent: String
+  instrumented: Boolean!
+  instrumentationMessage: String!
+  otelDistroName: String
 }
 
 type Condition {
@@ -80,7 +82,7 @@ type K8sActualSource {
   numberOfInstances: Int
   selected: Boolean
   otelServiceName: String
-  containers: [SourceContainerRuntimeDetails!]
+  containers: [SourceContainer!]
   conditions: [Condition!]
 }
 
@@ -491,26 +493,23 @@ type ContainerRuntimeInfoAnalyze {
   envVars: [EntityProperty!]!
 }
 
-type InstrumentationConfigAnalyze {
-  created: EntityProperty!
-  createTime: EntityProperty
-  containers: [ContainerRuntimeInfoAnalyze!]!
-}
-
 type RuntimeInfoAnalyze {
   generation: EntityProperty!
   containers: [ContainerRuntimeInfoAnalyze!]!
 }
 
-type ContainerWorkloadManifestAnalyze {
+type ContainerAgentConfigAnalyze {
   containerName: EntityProperty!
-  devices: EntityProperty!
-  originalEnv: [EntityProperty!]!
+  agentEnabled: EntityProperty!
+  reason: EntityProperty
+  message: EntityProperty
+  otelDistroName: EntityProperty
 }
 
-type InstrumentationDeviceAnalyze {
-  statusText: EntityProperty!
-  containers: [ContainerWorkloadManifestAnalyze!]!
+type OtelAgentsAnalyze {
+  created: EntityProperty!
+  createTime: EntityProperty
+  containers: [ContainerAgentConfigAnalyze!]!
 }
 
 type InstrumentationInstanceAnalyze {
@@ -539,8 +538,7 @@ type SourceAnalyze {
   sourceObjects: InstrumentationSourcesAnalyze!
 
   runtimeInfo: RuntimeInfoAnalyze!
-  instrumentationConfig: InstrumentationConfigAnalyze!
-  instrumentationDevice: InstrumentationDeviceAnalyze!
+  otelAgents: OtelAgentsAnalyze!
 
   totalPods: Int!
   podsPhasesCount: String!

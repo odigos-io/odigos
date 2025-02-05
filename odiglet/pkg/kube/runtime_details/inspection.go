@@ -17,7 +17,6 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/envOverwrite"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
-	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
@@ -27,19 +26,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func runtimeInspection(ctx context.Context, pods []corev1.Pod, ignoredContainers []string, criClient *criwrapper.CriClient) ([]odigosv1.RuntimeDetailsByContainer, error) {
+func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwrapper.CriClient) ([]odigosv1.RuntimeDetailsByContainer, error) {
 	resultsMap := make(map[string]odigosv1.RuntimeDetailsByContainer)
 	for _, pod := range pods {
 		for _, container := range pod.Spec.Containers {
-
-			// Skip ignored containers, but label them as ignored
-			if utils.IsItemIgnored(container.Name, ignoredContainers) {
-				resultsMap[container.Name] = odigosv1.RuntimeDetailsByContainer{
-					ContainerName: container.Name,
-					Language:      common.IgnoredProgrammingLanguage,
-				}
-				continue
-			}
 
 			processes, err := process.FindAllInContainer(string(pod.UID), container.Name)
 			if err != nil {
