@@ -2,8 +2,6 @@ package python
 
 import (
 	"debug/elf"
-	"fmt"
-	"os"
 	"strings"
 
 	"github.com/hashicorp/go-version"
@@ -40,14 +38,7 @@ func (p *PythonInspector) GetRuntimeVersion(proc *process.Details, containerURL 
 }
 
 func (p *PythonInspector) isLibPythonLinked(proc *process.Details) bool {
-	f := fmt.Sprintf("/proc/%d/exe", proc.ProcessID)
-	file, err := os.Open(f)
-	if err != nil {
-		return false
-	}
-	defer file.Close()
-
-	elfFile, err := elf.NewFile(file)
+	elfFile, err := elf.NewFile(proc.Exefile)
 	if err != nil {
 		return false
 	}

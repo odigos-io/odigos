@@ -2,7 +2,6 @@ package golang
 
 import (
 	"debug/buildinfo"
-	"fmt"
 	"regexp"
 
 	"github.com/hashicorp/go-version"
@@ -18,8 +17,7 @@ const GolangVersionRegex = `go(\d+\.\d+\.\d+)`
 var re = regexp.MustCompile(GolangVersionRegex)
 
 func (g *GolangInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
-	file := fmt.Sprintf("/proc/%d/exe", p.ProcessID)
-	_, err := buildinfo.ReadFile(file)
+	_, err := buildinfo.Read(p.Exefile)
 	if err != nil {
 		return "", false
 	}
@@ -28,8 +26,7 @@ func (g *GolangInspector) Inspect(p *process.Details) (common.ProgrammingLanguag
 }
 
 func (g *GolangInspector) GetRuntimeVersion(p *process.Details, containerURL string) *version.Version {
-	file := fmt.Sprintf("/proc/%d/exe", p.ProcessID)
-	buildInfo, err := buildinfo.ReadFile(file)
+	buildInfo, err := buildinfo.Read(p.Exefile)
 	if err != nil || buildInfo == nil {
 		return nil
 	}
