@@ -124,7 +124,7 @@ export interface Destination {
     logs: boolean;
   };
   fields: Record<string, any>;
-  conditions: Condition[];
+  conditions: Condition[] | null;
   destination_type: {
     type: string;
     display_name: string;
@@ -151,7 +151,7 @@ export interface ActualDestination {
     logs: boolean;
   };
   fields: string;
-  conditions: Condition[];
+  conditions: Condition[] | null;
   destinationType: {
     type: string;
     displayName: string;

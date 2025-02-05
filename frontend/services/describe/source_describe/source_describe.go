@@ -44,11 +44,11 @@ func ConvertSourceAnalyzeToGQL(analyze *source.SourceAnalyze) *model.SourceAnaly
 		Name:      describe_utils.ConvertEntityPropertyToGQL(&analyze.Name),
 		Kind:      describe_utils.ConvertEntityPropertyToGQL(&analyze.Kind),
 		Namespace: describe_utils.ConvertEntityPropertyToGQL(&analyze.Namespace),
-		Labels: &model.InstrumentationLabelsAnalyze{
-			Instrumented:     describe_utils.ConvertEntityPropertyToGQL(&analyze.Labels.Instrumented),
-			Workload:         describe_utils.ConvertEntityPropertyToGQL(analyze.Labels.Workload),
-			Namespace:        describe_utils.ConvertEntityPropertyToGQL(analyze.Labels.Namespace),
-			InstrumentedText: describe_utils.ConvertEntityPropertyToGQL(&analyze.Labels.InstrumentedText),
+		SourceObjects: &model.InstrumentationSourcesAnalyze{
+			Instrumented:     describe_utils.ConvertEntityPropertyToGQL(&analyze.SourceObjectsAnalysis.Instrumented),
+			Workload:         describe_utils.ConvertEntityPropertyToGQL(analyze.SourceObjectsAnalysis.Workload),
+			Namespace:        describe_utils.ConvertEntityPropertyToGQL(analyze.SourceObjectsAnalysis.Namespace),
+			InstrumentedText: describe_utils.ConvertEntityPropertyToGQL(&analyze.SourceObjectsAnalysis.InstrumentedText),
 		},
 		RuntimeInfo: convertRuntimeInfoToGQL(analyze.RuntimeInfo),
 		InstrumentationConfig: &model.InstrumentationConfigAnalyze{
