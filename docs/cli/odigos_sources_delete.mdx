@@ -1,0 +1,39 @@
+---
+title: "odigos sources delete"
+sidebarTitle: "odigos sources delete"
+---
+## odigos sources delete
+
+Delete Odigos Sources
+
+### Synopsis
+
+This command will delete any Source objects that match the provided Workload info.
+
+```
+odigos sources delete [flags]
+```
+
+### Options
+
+```
+      --all-namespaces              apply to all Kubernetes namespaces
+      --group string                Name of Source group to use
+  -h, --help                        help for delete
+  -n, --namespace string            Kubernetes Namespace for Source (default "default")
+      --workload-kind string        Kubernetes Kind for entity (one of: Deployment, DaemonSet, StatefulSet, Namespace)
+      --workload-name string        Name of entity for Source
+      --workload-namespace string   Namespace of entity for Source
+      --yes                         skip the confirmation prompt
+```
+
+### Options inherited from parent commands
+
+```
+      --kube-context string   (optional) name of the kubeconfig context to use
+      --kubeconfig string     (optional) absolute path to the kubeconfig file (default "KUBECONFIG")
+```
+
+### SEE ALSO
+
+* [odigos sources](/cli/odigos_sources)	 - Manage Odigos Sources in a cluster
