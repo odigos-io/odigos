@@ -31,9 +31,10 @@ func (j *JavaInspector) Inspect(proc *process.Details) (common.ProgrammingLangua
 		return common.JavaProgrammingLanguage, true
 	}
 
-	if isGraalVMProcess(proc.CmdLine) {
-		return common.JavaProgrammingLanguage, true
-	}
+	// TODO: (optional) add support for GraalVM
+	// if isGraalVMProcess(proc.CmdLine) {
+	// 	return common.JavaProgrammingLanguage, true
+	// }
 
 	return "", false
 }
@@ -58,10 +59,10 @@ func isJavaExecutable(procExe string) bool {
 	return strings.HasSuffix(procExe, "java")
 }
 
-func isGraalVMProcess(cmdline string) bool {
-	// GraalVM native images do not load libjvm.so but have Graal-specific arguments
-	return strings.Contains(cmdline, "-XX:+UseGraalVM") || strings.Contains(cmdline, "-H:+")
-}
+// func isGraalVMProcess(cmdline string) bool {
+// 	// GraalVM native images do not load libjvm.so but have Graal-specific arguments
+// 	return strings.Contains(cmdline, "-XX:+UseGraalVM") || strings.Contains(cmdline, "-H:+")
+// }
 
 func (j *JavaInspector) GetRuntimeVersion(proc *process.Details, containerURL string) *version.Version {
 	if value, exists := proc.GetDetailedEnvsValue(process.JavaVersionConst); exists {
