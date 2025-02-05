@@ -451,13 +451,13 @@ auto_generated: true
 </tbody>
 </table>
 
-## `AgentInjectionReason` <a id="odigos-io-v1alpha1-AgentInjectionReason"></a>
+## `AgentEnabledReason` <a id="odigos-io-v1alpha1-AgentEnabledReason"></a>
     
 (Alias of `string`)
 
 **Appears in:**
 
-- [ContainerConfig](#odigos-io-v1alpha1-ContainerConfig)
+- [ContainerAgentConfig](#odigos-io-v1alpha1-ContainerAgentConfig)
 
 
 
@@ -968,14 +968,14 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </tbody>
 </table>
 
-## `ContainerConfig` <a id="odigos-io-v1alpha1-ContainerConfig"></a>
+## `ContainerAgentConfig` <a id="odigos-io-v1alpha1-ContainerAgentConfig"></a>
     
 
 **Appears in:**
 
 - [InstrumentationConfigSpec](#odigos-io-v1alpha1-InstrumentationConfigSpec)
 
-<p>ContainerConfig is a configuration for a specific container in a workload.</p>
+<p>ContainerAgentConfig is a configuration for a specific container in a workload.</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -995,21 +995,21 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </tr>
 <tr>
 <td>
-<code>instrumented</code> <B>[Required]</B>
+<code>agentEnabled</code> <B>[Required]</B>
 </td>
 <td>
 <code>bool</code>
 </td>
 <td>
-   <p>boolean flag to indicate if the container should be instrumented or not.</p>
+   <p>boolean flag to indicate if the agent should be enabled for this container.</p>
 </td>
 </tr>
 <tr>
 <td>
-<code>instrumentationReason</code> <B>[Required]</B>
+<code>agentEnabledReason</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#odigos-io-v1alpha1-AgentInjectionReason"><code>AgentInjectionReason</code></a>
+<a href="#odigos-io-v1alpha1-AgentEnabledReason"><code>AgentEnabledReason</code></a>
 </td>
 <td>
    <p>An enum reason for the agent injection decision.</p>
@@ -1017,7 +1017,7 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </tr>
 <tr>
 <td>
-<code>instrumentationMessage</code> <B>[Required]</B>
+<code>agentEnabledMessage</code> <B>[Required]</B>
 </td>
 <td>
 <code>string</code>
@@ -1277,7 +1277,7 @@ The workload is identified by the owner reference</p>
 <code>containers</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#odigos-io-v1alpha1-ContainerConfig"><code>[]ContainerConfig</code></a>
+<a href="#odigos-io-v1alpha1-ContainerAgentConfig"><code>[]ContainerAgentConfig</code></a>
 </td>
 <td>
    <p>configuration for each instrumented container in the workload</p>
