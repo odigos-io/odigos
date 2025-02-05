@@ -3,6 +3,7 @@ import React, { type PropsWithChildren } from 'react';
 import { ApolloWrapper } from '@/lib';
 import { ThemeProvider } from '@/styles';
 import { useDarkModeStore } from '@/store';
+import { AppErrorBoundary } from '@/components';
 
 const METADATA = {
   title: 'Odigos',
@@ -28,13 +29,15 @@ function RootLayout({ children }: PropsWithChildren) {
         <title>{METADATA.title}</title>
       </head>
 
-      <ApolloWrapper>
-        <ThemeProvider darkMode={darkMode}>
-          <body suppressHydrationWarning={true} style={bodyStyle}>
-            {children}
-          </body>
-        </ThemeProvider>
-      </ApolloWrapper>
+      <AppErrorBoundary>
+        <ApolloWrapper>
+          <ThemeProvider darkMode={darkMode}>
+            <body suppressHydrationWarning={true} style={bodyStyle}>
+              {children}
+            </body>
+          </ThemeProvider>
+        </ApolloWrapper>
+      </AppErrorBoundary>
     </html>
   );
 }

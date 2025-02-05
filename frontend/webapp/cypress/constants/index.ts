@@ -21,6 +21,7 @@ export const CRD_IDS = {
 
 export const NAMESPACES = {
   DEFAULT: 'default',
+  ODIGOS_TEST: 'odigos-test',
   ODIGOS_SYSTEM: 'odigos-system',
 };
 
@@ -111,12 +112,11 @@ export const TEXTS = {
   INSTRUMENTATION_RULE_WARN_MODAL_TITLE: `Delete rule (${CYPRESS_TEST})`,
 
   NOTIF_SOURCES_CREATED: (amount: number) => `Successfully created ${amount} sources`,
-  NOTIF_SOURCES_UPDATED: (amount: number) => `Successfully updated ${amount} source`,
+  NOTIF_SOURCES_UPDATED: (name: string) => `Successfully updated "${name}" source`,
   NOTIF_SOURCES_DELETED: (amount: number) => `Successfully deleted ${amount} sources`,
 
   NOTIF_DESTINATIONS_CREATED: (amount: number) => `Successfully created ${amount} destinations`,
-  // TODO: this message isn't right, fix in backend
-  NOTIF_DESTINATIONS_UPDATED: (amount: number) => `Successfully transformed ${amount + 1} destinations to otelcol configuration`,
+  NOTIF_DESTINATIONS_UPDATED: (name: string) => `Successfully updated "${name}" destination`,
   NOTIF_DESTINATIONS_DELETED: (amount: number) => `Successfully deleted ${amount} destinations`,
 
   NOTIF_ACTION_CREATED: (crdId: string) => `Action "${crdId}" created`,

@@ -477,7 +477,7 @@ type EntityProperty {
   explain: String
 }
 
-type InstrumentationLabelsAnalyze {
+type InstrumentationSourcesAnalyze {
   instrumented: EntityProperty!
   workload: EntityProperty
   namespace: EntityProperty
@@ -536,7 +536,7 @@ type SourceAnalyze {
   name: EntityProperty!
   kind: EntityProperty!
   namespace: EntityProperty!
-  labels: InstrumentationLabelsAnalyze!
+  sourceObjects: InstrumentationSourcesAnalyze!
 
   runtimeInfo: RuntimeInfoAnalyze!
   instrumentationConfig: InstrumentationConfigAnalyze!

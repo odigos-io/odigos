@@ -180,7 +180,7 @@ export const DESCRIBE_SOURCE = gql`
         status
         explain
       }
-      labels {
+      sourceObjects {
         instrumented {
           name
           value

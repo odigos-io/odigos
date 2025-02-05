@@ -60,7 +60,7 @@ const SelectionCount = styled(Text)`
 `;
 
 const NoDataFoundWrapper = styled.div`
-  margin: 50px 0;
+  padding: 50px 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -150,7 +150,7 @@ export const SourcesList: React.FC<Props> = ({
                 </RelativeWrapper>
               ) : (
                 <NoDataFoundWrapper>
-                  <NoDataFound title='No sources available in this namespace' subTitle='Try searching again or select another namespace.' />
+                  {namespacesLoading ? <FadeLoader scale={1.5} /> : <NoDataFound title='No sources available in this namespace' subTitle='Try searching again or select another namespace.' />}
                 </NoDataFoundWrapper>
               ))}
           </Group>

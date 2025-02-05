@@ -27,7 +27,7 @@ interface UseDestinationCrudResponse {
 export const useDestinationCRUD = (params?: Params): UseDestinationCrudResponse => {
   const filters = useFilterStore();
   const { data: config } = useConfig();
-  const { addPendingItems } = usePendingStore();
+  const { addPendingItems, removePendingItems } = usePendingStore();
   const { addNotification, removeNotifications } = useNotificationStore();
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
@@ -95,7 +95,20 @@ export const useDestinationCRUD = (params?: Params): UseDestinationCrudResponse 
 
   const [updateDestination, uState] = useMutation<{ updateDestination: { id: string } }>(UPDATE_DESTINATION, {
     onError: (error) => handleError(ACTION.UPDATE, error.message),
-    onCompleted: () => handleComplete(ACTION.UPDATE),
+    onCompleted: (res, req) => {
+      handleComplete(ACTION.UPDATE);
+
+      // This is instead of toasting a k8s modified-event watcher...
+      // If we do toast with a watcher, we can't guarantee an SSE will be sent for this update alone. It will definitely include SSE for all updates, even those unexpected.
+      // Not that there's anything about a watcher that would break the UI, it's just that we would receive unexpected events with ridiculous amounts.
+      setTimeout(() => {
+        const { id, destination } = req?.variables || {};
+
+        refetch();
+        notifyUser(NOTIFICATION_TYPE.SUCCESS, ACTION.UPDATE, `Successfully updated "${destination.type}" destination`, id);
+        removePendingItems([{ entityType: ENTITY_TYPES.DESTINATION, entityId: id }]);
+      }, 2000);
+    },
   });
 
   const [deleteDestination, dState] = useMutation<{ deleteDestination: boolean }>(DELETE_DESTINATION, {
@@ -113,31 +126,31 @@ export const useDestinationCRUD = (params?: Params): UseDestinationCrudResponse 
     filteredDestinations: filtered,
     refetchDestinations: refetch,
 
-    createDestination: (destination) => {
+    createDestination: async (destination) => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
         notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Creating destination...', undefined, true);
         addPendingItems([{ entityType: ENTITY_TYPES.DESTINATION, entityId: undefined }]);
-        createDestination({ variables: { destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
+        await createDestination({ variables: { destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
       }
     },
-    updateDestination: (id, destination) => {
+    updateDestination: async (id, destination) => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
         notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Updating destination...', undefined, true);
         addPendingItems([{ entityType: ENTITY_TYPES.DESTINATION, entityId: id }]);
-        updateDestination({ variables: { id, destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
+        await updateDestination({ variables: { id, destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
       }
     },
-    deleteDestination: (id) => {
+    deleteDestination: async (id) => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
         notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Deleting destination...', undefined, true);
         addPendingItems([{ entityType: ENTITY_TYPES.DESTINATION, entityId: id }]);
-        deleteDestination({ variables: { id } });
+        await deleteDestination({ variables: { id } });
       }
     },
   };

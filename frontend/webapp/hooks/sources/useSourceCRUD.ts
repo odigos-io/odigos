@@ -90,16 +90,14 @@ export const useSourceCRUD = (params?: Params): UseSourceCrudResponse => {
     onCompleted: (res, req) => {
       handleComplete(ACTION.UPDATE);
 
-      // This is instead of using a k8s modified-event watcher...
-      // If we do use a watcher, we can't guarantee an SSE will be sent for this update alone.
-      // It will definitely include SSE for all updates, that can be instrument/uninstrument, conditions changed etc.
-      // Not that there's anything about a watcher that would break the UI, it's just that we would receive unexpected events with ridiculous amounts,
-      // (example: instrument 5 apps, update the name of 2, then uninstrument the other 3, we would get an SSE with minimum 10 updated sources, when we expect it to show only 2 due to name change).
+      // This is instead of toasting a k8s modified-event watcher...
+      // If we do toast with a watcher, we can't guarantee an SSE will be sent for this update alone. It will definitely include SSE for all updates, even those unexpected.
+      // Not that there's anything about a watcher that would break the UI, it's just that we would receive unexpected events with ridiculous amounts.
       setTimeout(() => {
         const { sourceId, patchSourceRequest } = req?.variables || {};
 
         updateSource(sourceId, patchSourceRequest);
-        notifyUser(NOTIFICATION_TYPE.SUCCESS, ACTION.UPDATE, 'Successfully updated 1 source', sourceId);
+        notifyUser(NOTIFICATION_TYPE.SUCCESS, ACTION.UPDATE, `Successfully updated "${sourceId.name}" source`, sourceId);
         removePendingItems([{ entityType: ENTITY_TYPES.SOURCE, entityId: sourceId }]);
       }, 2000);
     },
