@@ -6,12 +6,10 @@ metadata:
 status:
   conditions:
     - message:
-        'javascript runtime version not supported by OpenTelemetry SDK. Found:
-        8.17.0, supports: 14.0.0'
-      (observedGeneration != null): true
-      reason: RuntimeVersionNotSupported
-      status: 'False'
-      type: AppliedInstrumentationDevice
+        "nodejs runtime not supported by OpenTelemetry. supported versions: '>= 14', found: 8.17.0"
+      reason: UnsupportedRuntimeVersion
+      status: "False"
+      type: AgentEnabled
 ---
 # expecting injection of instrumentation device to be successful since the runtime version was not detected
 apiVersion: odigos.io/v1alpha1
@@ -21,11 +19,14 @@ metadata:
   name: deployment-nodejs-very-old-version
 status:
   conditions:
-    - message: 'Odigos instrumentation is enabled'
-      (observedGeneration != null): true
-      reason: InstrumentationEnabled
-      status: 'True'
-      type: AppliedInstrumentationDevice
+    - message: "agent injected successfully to 1 containers: [nodejs-very-old-version]"
+      reason: InjectedSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
 ---
 # expecting injection of instrumentation device to be successful since the runtime version is supported
 apiVersion: odigos.io/v1alpha1
@@ -35,11 +36,14 @@ metadata:
   name: deployment-nodejs-minimum-version
 status:
   conditions:
-    - message: 'Odigos instrumentation is enabled'
-      (observedGeneration != null): true
-      reason: InstrumentationEnabled
-      status: 'True'
-      type: AppliedInstrumentationDevice
+    - message: "agent injected successfully to 1 containers: [nodejs-minimum-version]"
+      reason: InjectedSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationInstance
@@ -55,7 +59,7 @@ status:
     - key: telemetry.sdk.language
       value: nodejs
     - key: process.runtime.version
-      value: '14.0.0'
+      value: "14.0.0"
     - key: telemetry.distro.version
       value: e2e-test
     - key: process.pid
@@ -74,11 +78,14 @@ metadata:
   name: deployment-nodejs-latest-version
 status:
   conditions:
-    - message: 'Odigos instrumentation is enabled'
-      (observedGeneration != null): true
-      reason: InstrumentationEnabled
-      status: 'True'
-      type: AppliedInstrumentationDevice
+    - message: "agent injected successfully to 1 containers: [nodejs-latest-version]"
+      reason: InjectedSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationInstance
@@ -113,11 +120,14 @@ metadata:
   name: deployment-nodejs-dockerfile-env
 status:
   conditions:
-    - message: 'Odigos instrumentation is enabled'
-      (observedGeneration != null): true
-      reason: InstrumentationEnabled
-      status: 'True'
-      type: AppliedInstrumentationDevice
+    - message: "agent injected successfully to 1 containers: [nodejs-dockerfile-env]"
+      reason: InjectedSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationInstance
@@ -133,7 +143,7 @@ status:
     - key: telemetry.sdk.language
       value: nodejs
     - key: process.runtime.version
-      value: '20.17.0'
+      value: "20.17.0"
     - key: telemetry.distro.version
       value: e2e-test
     - key: process.pid
@@ -152,11 +162,14 @@ metadata:
   name: deployment-nodejs-manifest-env
 status:
   conditions:
-    - message: 'Odigos instrumentation is enabled'
-      (observedGeneration != null): true
-      reason: InstrumentationEnabled
-      status: 'True'
-      type: AppliedInstrumentationDevice
+    - message: "agent injected successfully to 1 containers: [nodejs-manifest-env]"
+      reason: InjectedSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationInstance
@@ -172,7 +185,7 @@ status:
     - key: telemetry.sdk.language
       value: nodejs
     - key: process.runtime.version
-      value: '20.17.0'
+      value: "20.17.0"
     - key: telemetry.distro.version
       value: e2e-test
     - key: process.pid
@@ -191,11 +204,9 @@ metadata:
   name: deployment-cpp-http-server
 status:
   conditions:
-    - message: 'Odigos instrumentation is enabled'
-      (observedGeneration != null): true
-      reason: InstrumentationEnabled
-      status: 'True'
-      type: AppliedInstrumentationDevice
+    - reason: UnsupportedProgrammingLanguage
+      status: "False"
+      type: AgentEnabled
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -204,11 +215,14 @@ metadata:
   name: deployment-java-supported-version
 status:
   conditions:
-    - message: 'Odigos instrumentation is enabled'
-      (observedGeneration != null): true
-      reason: InstrumentationEnabled
-      status: 'True'
-      type: AppliedInstrumentationDevice
+    - message: "agent injected successfully to 1 containers: [java-supported-version]"
+      reason: InjectedSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -217,11 +231,14 @@ metadata:
   name: deployment-java-azul
 status:
   conditions:
-    - message: 'Odigos instrumentation is enabled'
-      (observedGeneration != null): true
-      reason: InstrumentationEnabled
-      status: 'True'
-      type: AppliedInstrumentationDevice
+    - message: "agent injected successfully to 1 containers: [java-azul]"
+      reason: InjectedSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -230,11 +247,14 @@ metadata:
   name: deployment-java-supported-docker-env
 status:
   conditions:
-    - message: 'Odigos instrumentation is enabled'
-      (observedGeneration != null): true
-      reason: InstrumentationEnabled
-      status: 'True'
-      type: AppliedInstrumentationDevice
+    - message: "agent injected successfully to 1 containers: [java-supported-docker-env]"
+      reason: InjectedSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -243,11 +263,14 @@ metadata:
   name: deployment-java-supported-manifest-env
 status:
   conditions:
-    - message: 'Odigos instrumentation is enabled'
-      (observedGeneration != null): true
-      reason: InstrumentationEnabled
-      status: 'True'
-      type: AppliedInstrumentationDevice
+    - message: "agent injected successfully to 1 containers: [java-supported-manifest-env]"
+      reason: InjectedSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -256,11 +279,14 @@ metadata:
   name: deployment-java-latest-version
 status:
   conditions:
-    - message: 'Odigos instrumentation is enabled'
-      (observedGeneration != null): true
-      reason: InstrumentationEnabled
-      status: 'True'
-      type: AppliedInstrumentationDevice
+    - message: "agent injected successfully to 1 containers: [java-latest-version]"
+      reason: InjectedSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -269,11 +295,14 @@ metadata:
   name: deployment-java-old-version
 status:
   conditions:
-    - message: 'Odigos instrumentation is enabled'
-      (observedGeneration != null): true
-      reason: InstrumentationEnabled
-      status: 'True'
-      type: AppliedInstrumentationDevice
+    - message: "agent injected successfully to 1 containers: [java-old-version]"
+      reason: InjectedSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -282,11 +311,14 @@ metadata:
   name: deployment-python-alpine
 status:
   conditions:
-    - message: 'Odigos instrumentation is enabled'
-      (observedGeneration != null): true
-      reason: InstrumentationEnabled
-      status: 'True'
-      type: AppliedInstrumentationDevice
+    - message: "agent injected successfully to 1 containers: [python-alpine]"
+      reason: InjectedSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -295,11 +327,14 @@ metadata:
   name: deployment-python-latest-version
 status:
   conditions:
-    - message: 'Odigos instrumentation is enabled'
-      (observedGeneration != null): true
-      reason: InstrumentationEnabled
-      status: 'True'
-      type: AppliedInstrumentationDevice
+    - message: "agent injected successfully to 1 containers: [python-latest-version]"
+      reason: InjectedSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -308,11 +343,14 @@ metadata:
   name: deployment-python-min-version
 status:
   conditions:
-    - message: 'Odigos instrumentation is enabled'
-      (observedGeneration != null): true
-      reason: InstrumentationEnabled
-      status: 'True'
-      type: AppliedInstrumentationDevice
+    - message: "agent injected successfully to 1 containers: [python-min-version]"
+      reason: InjectedSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -321,11 +359,10 @@ metadata:
   name: deployment-python-not-supported
 status:
   conditions:
-    - message: 'python runtime version not supported by OpenTelemetry SDK. Found: 3.6.15, supports: 3.8.0'
-      (observedGeneration != null): true
-      reason: RuntimeVersionNotSupported
-      status: 'False'
-      type: AppliedInstrumentationDevice
+    - message: "python-runtime runtime not supported by OpenTelemetry. supported versions: '>= 3.8', found: 3.6.15"
+      reason: UnsupportedRuntimeVersion
+      status: "False"
+      type: AgentEnabled
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -334,11 +371,10 @@ metadata:
   name: deployment-python-other-agent
 status:
   conditions:
-    - message: 'Odigos instrumentation failed to apply'
-      (observedGeneration != null): true
-      reason: ErrApplyingInstrumentationDevice
-      status: 'False'
-      type: AppliedInstrumentationDevice
+    - message: "odigos agent not enabled due to other instrumentation agent 'New Relic Agent' detected running in the container"
+      reason: OtherAgentDetected
+      status: "False"
+      type: AgentEnabled
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationInstance

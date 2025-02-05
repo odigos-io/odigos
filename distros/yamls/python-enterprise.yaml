@@ -4,7 +4,7 @@ metadata:
   name: python-enterprise
 spec:
   name: python-enterprise
-  language: javascript
+  language: python
   runtimeEnvironments:
     - name: python-runtime
       supportedVersions: '>= 3.8'
