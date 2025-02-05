@@ -4,17 +4,26 @@ import { useMutation } from '@apollo/client';
 import { useNamespace } from '../compute-platform';
 import { useAppStore, usePaginatedStore } from '@/store';
 import { PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
-import { type PatchSourceRequestInput, type K8sActualSource } from '@/types';
 import { ACTION, BACKEND_BOOLEAN, DISPLAY_TITLES, FORM_ALERTS } from '@/utils';
 import { type PendingItem, useFilterStore, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
 import { ENTITY_TYPES, getSseTargetFromId, K8S_RESOURCE_KIND, NOTIFICATION_TYPE, type WorkloadId } from '@odigos/ui-utils';
+import { type NamespaceFutureAppsInput, type FetchedSource, type SourceInstrumentInput, type SourceUpdateInput } from '@/types';
 
 interface Params {
   onSuccess?: (type: string) => void;
   onError?: (type: string) => void;
 }
 
-export const useSourceCRUD = (params?: Params) => {
+interface UseSourceCrudResponse {
+  loading: boolean;
+  sources: FetchedSource[];
+  filteredSources: FetchedSource[];
+
+  persistSources: (selectAppsList: SourceInstrumentInput, futureSelectAppsList: NamespaceFutureAppsInput) => Promise<void>;
+  updateSource: (sourceId: WorkloadId, payload: SourceUpdateInput) => Promise<void>;
+}
+
+export const useSourceCRUD = (params?: Params): UseSourceCrudResponse => {
   const { persistNamespace } = useNamespace();
 
   const filters = useFilterStore();
@@ -101,7 +110,7 @@ export const useSourceCRUD = (params?: Params) => {
     sources,
     filteredSources: filtered,
 
-    persistSources: async (selectAppsList: { [key: string]: K8sActualSource[] }, futureSelectAppsList: { [key: string]: boolean }) => {
+    persistSources: async (selectAppsList, futureSelectAppsList) => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
@@ -115,7 +124,7 @@ export const useSourceCRUD = (params?: Params) => {
 
         for (const [namespace, sources] of entries) {
           const addToPendingStore: PendingItem[] = [];
-          const sendToGql: Pick<K8sActualSource, 'name' | 'kind' | 'selected'>[] = [];
+          const sendToGql: SourceInstrumentInput[0] = [];
 
           sources.forEach(({ name, kind, selected }) => {
             addToPendingStore.push({ entityType: ENTITY_TYPES.SOURCE, entityId: { namespace, name, kind } });
@@ -147,13 +156,13 @@ export const useSourceCRUD = (params?: Params) => {
       }
     },
 
-    updateSource: async (sourceId: WorkloadId, patchSourceRequest: PatchSourceRequestInput) => {
+    updateSource: async (sourceId, payload) => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
         notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Updating source...', undefined, true);
         addPendingItems([{ entityType: ENTITY_TYPES.SOURCE, entityId: sourceId }]);
-        await updateSourceName({ variables: { sourceId, patchSourceRequest } });
+        await updateSourceName({ variables: { sourceId, patchSourceRequest: payload } });
       }
     },
   };

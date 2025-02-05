@@ -1,27 +1,18 @@
-import { type Condition } from './common';
-import { PROGRAMMING_LANGUAGES, type WorkloadId } from '@odigos/ui-utils';
+import { type Source } from '@odigos/ui-containers';
+import { type FetchedCondition } from '@odigos/ui-utils';
 
-export interface SourceContainer {
-  containerName: string;
-  language: PROGRAMMING_LANGUAGES;
-  runtimeVersion: string;
-  otherAgent: string | null;
+export interface FetchedSource extends Source {
+  conditions: FetchedCondition[] | null;
 }
 
-export interface K8sActualSource extends WorkloadId {
-  selected: boolean;
-  numberOfInstances?: number;
+export interface FetchedAvailableSources {
+  [namespace: string]: Pick<FetchedSource, 'name' | 'kind' | 'selected' | 'numberOfInstances'>[];
+}
+
+export interface SourceInstrumentInput {
+  [namespace: string]: Pick<FetchedSource, 'name' | 'kind' | 'selected'>[];
+}
+
+export interface SourceUpdateInput {
   otelServiceName: string;
-  containers: Array<SourceContainer>;
-  conditions: Array<Condition>;
-}
-
-export interface PatchSourceRequestInput {
-  otelServiceName: string;
-}
-
-export interface PersistSourcesArray {
-  kind: string;
-  name: string;
-  selected: boolean;
 }

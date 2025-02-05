@@ -1,8 +1,8 @@
 import { DISPLAY_TITLES } from '@/utils';
-import type { K8sActualSource } from '@/types';
+import type { FetchedSource } from '@/types';
 import { DataCardFieldsProps } from '@odigos/ui-components';
 
-const buildCard = (source: K8sActualSource) => {
+const buildCard = (source: FetchedSource) => {
   const { name, kind, namespace } = source;
 
   const arr: DataCardFieldsProps['data'] = [

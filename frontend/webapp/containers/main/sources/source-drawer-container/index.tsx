@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import buildCard from './build-card';
 import styled from 'styled-components';
-import { type K8sActualSource } from '@/types';
+import { type FetchedSource } from '@/types';
 import buildDrawerItem from './build-drawer-item';
 import { CodeIcon, ListIcon } from '@odigos/ui-icons';
 import { useDrawerStore } from '@odigos/ui-containers';
@@ -9,8 +9,8 @@ import { UpdateSourceBody } from '../update-source-body';
 import { useDescribeSource, useSourceCRUD } from '@/hooks';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { ACTION, BACKEND_BOOLEAN, DATA_CARDS } from '@/utils';
-import { ENTITY_TYPES, getEntityIcon, NOTIFICATION_TYPE, safeJsonStringify, type WorkloadId } from '@odigos/ui-utils';
-import { ConditionDetails, ConditionDetailsProps, DATA_CARD_FIELD_TYPES, DataCard, type DataCardFieldsProps, Segment } from '@odigos/ui-components';
+import { ENTITY_TYPES, getEntityIcon, safeJsonStringify, type WorkloadId } from '@odigos/ui-utils';
+import { ConditionDetails, DATA_CARD_FIELD_TYPES, DataCard, type DataCardFieldsProps, Segment } from '@odigos/ui-components';
 
 interface Props {}
 
@@ -45,7 +45,7 @@ export const SourceDrawer: React.FC<Props> = () => {
   });
 
   const reSelectItem = (fetchedItems?: typeof sources) => {
-    const { item } = selectedItem as { item: K8sActualSource };
+    const { item } = selectedItem as { item: FetchedSource };
     const { namespace, name, kind } = item;
     const id = { namespace, name, kind };
 
@@ -74,7 +74,7 @@ export const SourceDrawer: React.FC<Props> = () => {
     if (!selectedItem || !isEditing) {
       resetFormData();
     } else {
-      const { item } = selectedItem as { item: K8sActualSource };
+      const { item } = selectedItem as { item: FetchedSource };
       handleFormChange('otelServiceName', item.otelServiceName || item.name || '');
     }
   }, [selectedItem, isEditing]);
@@ -82,30 +82,16 @@ export const SourceDrawer: React.FC<Props> = () => {
   const cardData = useMemo(() => {
     if (!selectedItem) return [];
 
-    const { item } = selectedItem as { item: K8sActualSource };
+    const { item } = selectedItem as { item: FetchedSource };
     const arr = buildCard(item);
 
     return arr;
   }, [selectedItem]);
 
-  const conditionsData: ConditionDetailsProps = useMemo(() => {
-    if (!selectedItem) return { conditions: [] };
-
-    const { item } = selectedItem as { item: K8sActualSource };
-
-    return {
-      conditions:
-        item?.conditions?.map(({ status, message }) => ({
-          status: ['false', 'error'].includes(String(status).toLowerCase()) ? NOTIFICATION_TYPE.ERROR : NOTIFICATION_TYPE.SUCCESS,
-          message,
-        })) || [],
-    };
-  }, [selectedItem]);
-
   const containersData = useMemo(() => {
     if (!selectedItem) return [];
 
-    const { item } = selectedItem as { item: K8sActualSource };
+    const { item } = selectedItem as { item: FetchedSource };
     const hasPresenceOfOtherAgent =
       item?.conditions?.some((condition) => condition.status === BACKEND_BOOLEAN.FALSE && condition.message.includes('device not added to any container due to the presence of another agent')) ||
       false;
@@ -126,7 +112,7 @@ export const SourceDrawer: React.FC<Props> = () => {
   }, [selectedItem]);
 
   if (!selectedItem?.item) return null;
-  const { id, item } = selectedItem as { id: WorkloadId; item: K8sActualSource };
+  const { id, item } = selectedItem as { id: WorkloadId; item: FetchedSource };
   const { data: describe, restructureForPrettyMode } = useDescribeSource(id);
 
   const handleEdit = (bool?: boolean) => {
@@ -174,7 +160,7 @@ export const SourceDrawer: React.FC<Props> = () => {
         </FormContainer>
       ) : (
         <DataContainer>
-          <ConditionDetails conditions={conditionsData.conditions} />
+          <ConditionDetails conditions={item.conditions || []} />
           <DataCard title={DATA_CARDS.SOURCE_DETAILS} data={cardData} />
           <DataCard title={DATA_CARDS.DETECTED_CONTAINERS} titleBadge={containersData.length} description={DATA_CARDS.DETECTED_CONTAINERS_DESCRIPTION} data={containersData} />
           <DataCard

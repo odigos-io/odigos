@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useSourceCRUD } from '@/hooks';
 import { Theme } from '@odigos/ui-theme';
 import { TrashIcon } from '@odigos/ui-icons';
-import { type K8sActualSource } from '@/types';
+import { type FetchedSource } from '@/types';
 import styled, { useTheme } from 'styled-components';
 import { useSelectedStore } from '@odigos/ui-containers';
 import { ENTITY_TYPES, useTransition } from '@odigos/ui-utils';
@@ -50,9 +50,9 @@ const MultiSourceControl = () => {
   };
 
   const onDelete = () => {
-    const payload: Record<string, K8sActualSource[]> = {};
+    const payload: Record<string, FetchedSource[]> = {};
 
-    Object.entries(selectedSources).forEach(([namespace, sources]: [string, K8sActualSource[]]) => {
+    Object.entries(selectedSources).forEach(([namespace, sources]: [string, FetchedSource[]]) => {
       payload[namespace] = sources.map((source) => ({ ...source, selected: false }));
     });
 

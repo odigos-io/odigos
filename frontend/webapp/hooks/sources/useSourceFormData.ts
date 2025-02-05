@@ -1,10 +1,10 @@
 import { Dispatch, SetStateAction, useCallback, useEffect, useState } from 'react';
 import { useAppStore } from '@/store';
-import type { K8sActualSource } from '@/types';
 import { useNamespace } from '../compute-platform';
+import type { FetchedAvailableSources, FetchedSource, NamespaceFutureAppsInput, SourceInstrumentInput } from '@/types';
 
 type SelectedNamespace = string;
-type SelectedSource = Pick<K8sActualSource, 'name' | 'kind' | 'selected' | 'numberOfInstances'>;
+type SelectedSource = FetchedAvailableSources[0][0];
 
 interface UseSourceFormDataParams {
   autoSelectNamespace?: boolean;
@@ -12,17 +12,17 @@ interface UseSourceFormDataParams {
 
 export interface UseSourceFormDataResponse {
   namespacesLoading: boolean;
-  recordedInitialSources: { [namespace: SelectedNamespace]: SelectedSource[] };
+  recordedInitialSources: FetchedAvailableSources;
   filterNamespaces: (options?: { cancelSearch?: boolean }) => [SelectedNamespace, SelectedSource[]][];
   filterSources: (namespace?: SelectedNamespace, options?: { cancelSearch?: boolean; cancelSelected?: boolean }) => SelectedSource[];
-  getApiSourcesPayload: () => { [namespace: SelectedNamespace]: SelectedSource[] };
-  getApiFutureAppsPayload: () => { [namespace: SelectedNamespace]: boolean };
+  getApiSourcesPayload: () => SourceInstrumentInput;
+  getApiFutureAppsPayload: () => NamespaceFutureAppsInput;
 
   selectedNamespace: SelectedNamespace;
   onSelectNamespace: (namespace: SelectedNamespace) => void;
-  selectedSources: { [namespace: SelectedNamespace]: SelectedSource[] };
+  selectedSources: FetchedAvailableSources;
   onSelectSource: (source: SelectedSource, namespace?: SelectedNamespace) => void;
-  selectedFutureApps: { [namespace: SelectedNamespace]: boolean };
+  selectedFutureApps: NamespaceFutureAppsInput;
   onSelectFutureApps: (bool: boolean, namespace?: SelectedNamespace) => void;
 
   searchText: string;
@@ -32,6 +32,15 @@ export interface UseSourceFormDataResponse {
   selectAllForNamespace: SelectedNamespace;
   onSelectAll: (bool: boolean, namespace?: SelectedNamespace, isFromInterval?: boolean) => void;
 }
+
+const mapSourcesToSelections = (sources: FetchedSource[]): FetchedAvailableSources[0] => {
+  return sources.map(({ name, kind, numberOfInstances, selected }) => ({
+    name,
+    kind,
+    numberOfInstances,
+    selected,
+  }));
+};
 
 export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFormDataResponse => {
   const { autoSelectNamespace } = params || {};
@@ -76,8 +85,15 @@ export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFo
     if (!!singleNamespace) {
       // initialize sources for this namespace
       const { name, k8sActualSources = [] } = singleNamespace;
-      setRecordedInitialSources((prev) => ({ ...prev, [name]: k8sActualSources }));
-      setSelectedSources((prev) => ({ ...prev, [name]: !!prev[name].length ? prev[name] : k8sActualSources }));
+
+      setRecordedInitialSources((prev) => ({
+        ...prev,
+        [name]: mapSourcesToSelections(k8sActualSources),
+      }));
+      setSelectedSources((prev) => ({
+        ...prev,
+        [name]: !!prev[name].length ? prev[name] : mapSourcesToSelections(k8sActualSources),
+      }));
     }
   }, [singleNamespace]);
 
@@ -185,7 +201,11 @@ export const useSourceFormData = (params?: UseSourceFormDataParams): UseSourceFo
 
         if (foundInitial?.selected !== source.selected) {
           if (!payload[namespace]) payload[namespace] = [];
-          payload[namespace].push(source);
+          payload[namespace].push({
+            name: source.name,
+            kind: source.kind,
+            selected: source.selected,
+          });
         }
       });
     });
