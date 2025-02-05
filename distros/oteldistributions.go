@@ -20,9 +20,10 @@ func GetDefaultDistroNames(tier common.OdigosTier) map[common.ProgrammingLanguag
 		return map[common.ProgrammingLanguage]string{
 			common.JavascriptProgrammingLanguage: "nodejs-enterprise",
 			common.PythonProgrammingLanguage:     "python-enterprise",
-			common.DotNetProgrammingLanguage:     "dotnet-enterprise",
+			common.DotNetProgrammingLanguage:     "dotnet-community",
 			common.JavaProgrammingLanguage:       "java-enterprise",
 			common.GoProgrammingLanguage:         "golang-enterprise",
+			common.MySQLProgrammingLanguage:      "mysql-enterprise",
 		}
 	default:
 		return nil
