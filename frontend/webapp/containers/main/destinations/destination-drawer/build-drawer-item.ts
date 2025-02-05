@@ -1,6 +1,7 @@
-import type { ActualDestination, DestinationInput } from '@/types';
+import { type DestinationInput } from '@/types';
+import { type Destination } from '@odigos/ui-containers';
 
-const buildDrawerItem = (id: string, formData: DestinationInput, drawerItem: ActualDestination): ActualDestination => {
+const buildDrawerItem = (id: string, formData: DestinationInput, drawerItem: Destination): Destination => {
   const { name, exportedSignals, fields } = formData;
   const { destinationType, conditions } = drawerItem || {};
 

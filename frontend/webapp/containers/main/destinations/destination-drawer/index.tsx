@@ -2,14 +2,13 @@ import React, { useEffect, useMemo, useState } from 'react';
 import buildCard from './build-card';
 import styled from 'styled-components';
 import { ACTION, DATA_CARDS } from '@/utils';
-import { type ActualDestination } from '@/types';
+import { ENTITY_TYPES } from '@odigos/ui-utils';
 import buildDrawerItem from './build-drawer-item';
-import { useDrawerStore } from '@odigos/ui-containers';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { DestinationFormBody } from '../destination-form-body';
-import { ENTITY_TYPES, NOTIFICATION_TYPE } from '@odigos/ui-utils';
+import { ConditionDetails, DataCard } from '@odigos/ui-components';
+import { type Destination, useDrawerStore } from '@odigos/ui-containers';
 import { useDestinationCRUD, useDestinationFormData, useDestinationTypes } from '@/hooks';
-import { ConditionDetails, ConditionDetailsProps, DataCard } from '@odigos/ui-components';
 
 interface Props {}
 
@@ -32,8 +31,8 @@ export const DestinationDrawer: React.FC<Props> = () => {
   const { destinations: destinationTypes } = useDestinationTypes();
 
   const { formData, formErrors, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem, destinationTypeDetails, dynamicFields, setDynamicFields } = useDestinationFormData({
-    destinationType: (selectedItem?.item as ActualDestination)?.destinationType?.type,
-    preLoadedFields: (selectedItem?.item as ActualDestination)?.fields,
+    destinationType: (selectedItem?.item as Destination)?.destinationType?.type,
+    preLoadedFields: (selectedItem?.item as Destination)?.fields,
     // TODO: supportedSignals: thisDestination?.supportedSignals,
     // currently, the real "supportedSignals" is being used by "destination" passed as prop to "DestinationFormBody"
   });
@@ -49,7 +48,7 @@ export const DestinationDrawer: React.FC<Props> = () => {
   });
 
   const reSelectItem = (fetchedItems?: typeof destinations) => {
-    const { item } = selectedItem as { item: ActualDestination };
+    const { item } = selectedItem as { item: Destination };
     const { id } = item;
 
     if (!!fetchedItems?.length) {
@@ -71,25 +70,11 @@ export const DestinationDrawer: React.FC<Props> = () => {
   const cardData = useMemo(() => {
     if (!selectedItem) return [];
 
-    const { item } = selectedItem as { item: ActualDestination };
+    const { item } = selectedItem as { item: Destination };
     const arr = buildCard(item, destinationTypeDetails);
 
     return arr;
   }, [selectedItem, destinationTypeDetails]);
-
-  const conditionsData: ConditionDetailsProps = useMemo(() => {
-    if (!selectedItem) return { conditions: [] };
-
-    const { item } = selectedItem as { item: ActualDestination };
-
-    return {
-      conditions:
-        item?.conditions?.map(({ status, message }) => ({
-          status: ['false', 'error'].includes(String(status).toLowerCase()) ? NOTIFICATION_TYPE.ERROR : NOTIFICATION_TYPE.SUCCESS,
-          message,
-        })) || [],
-    };
-  }, [selectedItem]);
 
   const thisDestinationType = useMemo(() => {
     if (!destinationTypes.length || !selectedItem || !isEditing) {
@@ -97,7 +82,7 @@ export const DestinationDrawer: React.FC<Props> = () => {
       return undefined;
     }
 
-    const { item } = selectedItem as { item: ActualDestination };
+    const { item } = selectedItem as { item: Destination };
     const found = destinationTypes.map(({ items }) => items.filter(({ type }) => type === item.destinationType.type)).filter((arr) => !!arr.length)?.[0]?.[0];
 
     loadFormWithDrawerItem(selectedItem);
@@ -106,7 +91,7 @@ export const DestinationDrawer: React.FC<Props> = () => {
   }, [destinationTypes, selectedItem, isEditing]);
 
   if (!selectedItem?.item) return null;
-  const { id, item } = selectedItem as { id: string; item: ActualDestination };
+  const { id, item } = selectedItem as { id: string; item: Destination };
 
   const handleEdit = (bool?: boolean) => {
     setIsEditing(typeof bool === 'boolean' ? bool : true);
@@ -161,7 +146,7 @@ export const DestinationDrawer: React.FC<Props> = () => {
         </FormContainer>
       ) : (
         <DataContainer>
-          <ConditionDetails conditions={conditionsData.conditions} />
+          <ConditionDetails conditions={item.conditions || []} />
           <DataCard title={DATA_CARDS.DESTINATION_DETAILS} data={cardData} />
         </DataContainer>
       )}

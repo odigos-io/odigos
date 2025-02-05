@@ -1,6 +1,6 @@
 import { ENTITY_TYPES } from '@odigos/ui-utils';
-import { type Action } from '@odigos/ui-containers';
-import { type ActualDestination, type InstrumentationRuleSpec, type K8sActualSource } from '@/types';
+import { type Destination, type Action } from '@odigos/ui-containers';
+import { type InstrumentationRuleSpec, type K8sActualSource } from '@/types';
 
 export type Category = 'all' | ENTITY_TYPES;
 
@@ -15,7 +15,7 @@ export const buildSearchResults = ({
   rules: InstrumentationRuleSpec[];
   sources: K8sActualSource[];
   actions: Action[];
-  destinations: ActualDestination[];
+  destinations: Destination[];
   searchText: string;
   selectedCategory: Category;
 }) => {
@@ -30,7 +30,7 @@ export const buildSearchResults = ({
     category: Category;
     label: string;
     count: number;
-    entities: InstrumentationRuleSpec[] | K8sActualSource[] | Action[] | ActualDestination[];
+    entities: InstrumentationRuleSpec[] | K8sActualSource[] | Action[] | Destination[];
   }[] = [
     {
       category: ENTITY_TYPES.SOURCE,

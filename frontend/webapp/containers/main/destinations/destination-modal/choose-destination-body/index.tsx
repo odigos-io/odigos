@@ -4,7 +4,7 @@ import { useDestinationTypes } from '@/hooks';
 import { SearchIcon } from '@odigos/ui-icons';
 import { SIGNAL_TYPE } from '@odigos/ui-utils';
 import { DestinationsList } from './destinations-list';
-import type { DestinationTypeItem, SupportedSignals } from '@/types';
+import { type DestinationTypeItem } from '@/types';
 import { Divider, Dropdown, Input, MonitorsCheckboxes, SectionTitle } from '@odigos/ui-components';
 
 interface Props {
@@ -51,7 +51,7 @@ export const ChooseDestinationBody: React.FC<Props> = ({ onSelect, hidden }) => 
         const filteredItems = category.items.filter((item) => {
           const matchesSearch = !search || item.displayName.toLowerCase().includes(search.toLowerCase());
           const matchesCategory = selectedCategory.id === 'all' || selectedCategory.id === category.name;
-          const matchesMonitor = selectedMonitors.some((monitor) => item.supportedSignals[monitor.toLowerCase() as keyof SupportedSignals]?.supported);
+          const matchesMonitor = selectedMonitors.some((monitor) => item.supportedSignals[monitor.toLowerCase() as keyof DestinationTypeItem['supportedSignals']]?.supported);
 
           return matchesSearch && matchesCategory && matchesMonitor;
         });

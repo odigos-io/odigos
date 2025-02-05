@@ -1,7 +1,7 @@
-import type { FetchedAction } from './actions';
-import type { K8sActualSource } from './sources';
-import type { ActualDestination } from './destinations';
-import type { InstrumentationRuleSpec } from './instrumentation-rules';
+import { type FetchedAction } from './actions';
+import { type K8sActualSource } from './sources';
+import { type Destination } from '@odigos/ui-containers';
+import { type InstrumentationRuleSpec } from './instrumentation-rules';
 
 export interface TokenPayload {
   token: string;
@@ -28,7 +28,7 @@ export interface ComputePlatform {
     k8sActualNamespaces?: K8sActualNamespace[];
     k8sActualNamespace?: K8sActualNamespace;
     sources?: PaginatedData<K8sActualSource>;
-    destinations?: ActualDestination[];
+    destinations?: Destination[]; // fetched is already "mapped"
     actions?: FetchedAction[]; // should map from "FetchedAction" to "Action" in get-query
     instrumentationRules?: InstrumentationRuleSpec[]; // should map from "InstrumentationRuleSpec" to "InstrumentationRuleSpecMapped" in get-query
   };

@@ -3,17 +3,9 @@ import { useGenericForm } from '@/hooks';
 import { useQuery } from '@apollo/client';
 import { GET_DESTINATION_TYPE_DETAILS } from '@/graphql';
 import { ACTION, FORM_ALERTS, INPUT_TYPES } from '@/utils';
-import { type DrawerItem, useNotificationStore } from '@odigos/ui-containers';
 import { ENTITY_TYPES, NOTIFICATION_TYPE, safeJsonParse } from '@odigos/ui-utils';
-import {
-  type DynamicField,
-  type DestinationDetailsResponse,
-  type DestinationInput,
-  type DestinationTypeItem,
-  type ActualDestination,
-  type SupportedDestinationSignals,
-  type DestinationDetailsField,
-} from '@/types';
+import { type Destination, type DrawerItem, useNotificationStore } from '@odigos/ui-containers';
+import { type DynamicField, type DestinationDetailsResponse, type DestinationInput, type DestinationTypeItem, type DestinationDetailsField } from '@/types';
 
 const INITIAL: DestinationInput = {
   type: '',
@@ -73,7 +65,11 @@ const buildFormDynamicFields = (fields: DestinationDetailsField[]): DynamicField
     .filter((field): field is DynamicField => field !== undefined);
 };
 
-export function useDestinationFormData(params?: { destinationType?: string; supportedSignals?: SupportedDestinationSignals; preLoadedFields?: string | DestinationTypeItem['fields'] }) {
+export function useDestinationFormData(params?: {
+  destinationType?: string;
+  supportedSignals?: Destination['destinationType']['supportedSignals'];
+  preLoadedFields?: string | DestinationTypeItem['fields'];
+}) {
   const { destinationType, supportedSignals, preLoadedFields } = params || {};
 
   const { addNotification } = useNotificationStore();
@@ -170,7 +166,7 @@ export function useDestinationFormData(params?: { destinationType?: string; supp
       name,
       exportedSignals,
       fields,
-    } = drawerItem.item as ActualDestination;
+    } = drawerItem.item as Destination;
 
     const updatedData: DestinationInput = {
       ...INITIAL,
