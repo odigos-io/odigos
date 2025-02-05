@@ -4,16 +4,27 @@ import { GET_DESTINATIONS } from '@/graphql';
 import { useMutation, useQuery } from '@apollo/client';
 import { ACTION, DISPLAY_TITLES, FORM_ALERTS } from '@/utils';
 import { ENTITY_TYPES, getSseTargetFromId, NOTIFICATION_TYPE } from '@odigos/ui-utils';
-import { useFilterStore, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
-import { type DestinationInput, type ComputePlatform, type FetchedDestinationTypeItem } from '@/types';
 import { CREATE_DESTINATION, DELETE_DESTINATION, UPDATE_DESTINATION } from '@/graphql/mutations';
+import { type DestinationInput, type ComputePlatform, type FetchedDestinationTypeItem } from '@/types';
+import { type Destination, useFilterStore, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
 
 interface Params {
   onSuccess?: (type: string) => void;
   onError?: (type: string) => void;
 }
 
-export const useDestinationCRUD = (params?: Params) => {
+interface UseDestinationCrudResponse {
+  loading: boolean;
+  destinations: Destination[];
+  filteredDestinations: Destination[];
+  refetchDestinations: () => void;
+
+  createDestination: (destination: DestinationInput) => void;
+  updateDestination: (id: string, destination: DestinationInput) => void;
+  deleteDestination: (id: string) => void;
+}
+
+export const useDestinationCRUD = (params?: Params): UseDestinationCrudResponse => {
   const filters = useFilterStore();
   const { data: config } = useConfig();
   const { addPendingItems } = usePendingStore();
@@ -102,7 +113,7 @@ export const useDestinationCRUD = (params?: Params) => {
     filteredDestinations: filtered,
     refetchDestinations: refetch,
 
-    createDestination: (destination: DestinationInput) => {
+    createDestination: (destination) => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
@@ -111,7 +122,7 @@ export const useDestinationCRUD = (params?: Params) => {
         createDestination({ variables: { destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
       }
     },
-    updateDestination: (id: string, destination: DestinationInput) => {
+    updateDestination: (id, destination) => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
@@ -120,7 +131,7 @@ export const useDestinationCRUD = (params?: Params) => {
         updateDestination({ variables: { id, destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
       }
     },
-    deleteDestination: (id: string) => {
+    deleteDestination: (id) => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
