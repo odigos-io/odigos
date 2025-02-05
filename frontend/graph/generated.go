@@ -474,7 +474,6 @@ type ComplexityRoot struct {
 		Instrumented           func(childComplexity int) int
 		Language               func(childComplexity int) int
 		OtelDistroName         func(childComplexity int) int
-		OtherAgent             func(childComplexity int) int
 		RuntimeVersion         func(childComplexity int) int
 	}
 
@@ -2493,13 +2492,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.SourceContainer.OtelDistroName(childComplexity), true
-
-	case "SourceContainer.otherAgent":
-		if e.complexity.SourceContainer.OtherAgent == nil {
-			break
-		}
-
-		return e.complexity.SourceContainer.OtherAgent(childComplexity), true
 
 	case "SourceContainer.runtimeVersion":
 		if e.complexity.SourceContainer.RuntimeVersion == nil {
@@ -9669,8 +9661,6 @@ func (ec *executionContext) fieldContext_K8sActualSource_containers(_ context.Co
 				return ec.fieldContext_SourceContainer_instrumentationMessage(ctx, field)
 			case "otelDistroName":
 				return ec.fieldContext_SourceContainer_otelDistroName(ctx, field)
-			case "otherAgent":
-				return ec.fieldContext_SourceContainer_otherAgent(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type SourceContainer", field.Name)
 		},
@@ -15969,47 +15959,6 @@ func (ec *executionContext) _SourceContainer_otelDistroName(ctx context.Context,
 }
 
 func (ec *executionContext) fieldContext_SourceContainer_otelDistroName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "SourceContainer",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _SourceContainer_otherAgent(ctx context.Context, field graphql.CollectedField, obj *model.SourceContainer) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_SourceContainer_otherAgent(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.OtherAgent, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_SourceContainer_otherAgent(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "SourceContainer",
 		Field:      field,
@@ -22392,8 +22341,6 @@ func (ec *executionContext) _SourceContainer(ctx context.Context, sel ast.Select
 			}
 		case "otelDistroName":
 			out.Values[i] = ec._SourceContainer_otelDistroName(ctx, field, obj)
-		case "otherAgent":
-			out.Values[i] = ec._SourceContainer_otherAgent(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

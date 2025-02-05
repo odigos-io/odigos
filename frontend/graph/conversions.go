@@ -51,7 +51,6 @@ func instrumentationConfigToActualSource(instruConfig v1alpha1.InstrumentationCo
 		var instrumented bool
 		var instrumentationMessage string
 		var otelDistroName string
-		var otherAgentName *string
 
 		for _, specContainer := range instruConfig.Spec.Containers {
 			if specContainer.ContainerName == statusContainer.ContainerName {
@@ -64,10 +63,6 @@ func instrumentationConfigToActualSource(instruConfig v1alpha1.InstrumentationCo
 			}
 		}
 
-		if statusContainer.OtherAgent != nil {
-			otherAgentName = &statusContainer.OtherAgent.Name
-		}
-
 		containers = append(containers, &model.SourceContainer{
 			ContainerName:          statusContainer.ContainerName,
 			Language:               string(statusContainer.Language),
@@ -75,7 +70,6 @@ func instrumentationConfigToActualSource(instruConfig v1alpha1.InstrumentationCo
 			Instrumented:           instrumented,
 			InstrumentationMessage: instrumentationMessage,
 			OtelDistroName:         &otelDistroName,
-			OtherAgent:             otherAgentName,
 		})
 	}
 

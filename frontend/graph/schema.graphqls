@@ -51,7 +51,6 @@ type SourceContainer {
   instrumented: Boolean!
   instrumentationMessage: String!
   otelDistroName: String
-  otherAgent: String
 }
 
 type Condition {

@@ -8,7 +8,6 @@ export interface SourceContainer {
   instrumented: boolean;
   instrumentationMessage: string;
   otelDistroName: string | null;
-  otherAgent: string | null;
 }
 
 export interface K8sActualSource extends WorkloadId {

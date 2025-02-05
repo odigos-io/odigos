@@ -618,7 +618,6 @@ type SourceContainer struct {
 	Instrumented           bool    `json:"instrumented"`
 	InstrumentationMessage string  `json:"instrumentationMessage"`
 	OtelDistroName         *string `json:"otelDistroName,omitempty"`
-	OtherAgent             *string `json:"otherAgent,omitempty"`
 }
 
 type TestConnectionResponse struct {
