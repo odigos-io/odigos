@@ -51,7 +51,6 @@ type SourceContainer {
   instrumented: Boolean!
   instrumentationMessage: String!
   otelDistroName: String
-  otherAgent: String
 }
 
 type Condition {
@@ -494,26 +493,23 @@ type ContainerRuntimeInfoAnalyze {
   envVars: [EntityProperty!]!
 }
 
-type InstrumentationConfigAnalyze {
-  created: EntityProperty!
-  createTime: EntityProperty
-  containers: [ContainerRuntimeInfoAnalyze!]!
-}
-
 type RuntimeInfoAnalyze {
   generation: EntityProperty!
   containers: [ContainerRuntimeInfoAnalyze!]!
 }
 
-type ContainerWorkloadManifestAnalyze {
+type ContainerAgentConfigAnalyze {
   containerName: EntityProperty!
-  devices: EntityProperty!
-  originalEnv: [EntityProperty!]!
+  instrumented: EntityProperty!
+  reason: EntityProperty
+  message: EntityProperty
+  otelDistroName: EntityProperty
 }
 
-type InstrumentationDeviceAnalyze {
-  statusText: EntityProperty!
-  containers: [ContainerWorkloadManifestAnalyze!]!
+type OtelAgentsAnalyze {
+  created: EntityProperty!
+  createTime: EntityProperty
+  containers: [ContainerAgentConfigAnalyze!]!
 }
 
 type InstrumentationInstanceAnalyze {
@@ -542,8 +538,7 @@ type SourceAnalyze {
   sourceObjects: InstrumentationSourcesAnalyze!
 
   runtimeInfo: RuntimeInfoAnalyze!
-  instrumentationConfig: InstrumentationConfigAnalyze!
-  instrumentationDevice: InstrumentationDeviceAnalyze!
+  otelAgents: OtelAgentsAnalyze!
 
   totalPods: Int!
   podsPhasesCount: String!
