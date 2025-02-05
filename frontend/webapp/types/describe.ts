@@ -27,14 +27,14 @@ interface RuntimeInfoAnalyze {
 interface ContainerAgentConfigAnalyze {
   containerName: EntityProperty;
   instrumented: EntityProperty;
-  reason: EntityProperty;
-  message: EntityProperty;
-  otelDistroName: EntityProperty;
+  reason?: EntityProperty;
+  message?: EntityProperty;
+  otelDistroName?: EntityProperty;
 }
 
 interface OtelAgentsAnalyze {
   created: EntityProperty;
-  createTime: EntityProperty;
+  createTime?: EntityProperty;
   containers: ContainerAgentConfigAnalyze[];
 }
 
