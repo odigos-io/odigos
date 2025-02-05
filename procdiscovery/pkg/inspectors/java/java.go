@@ -1,6 +1,7 @@
 package java
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"regexp"
@@ -43,14 +44,20 @@ func (j *JavaInspector) Inspect(proc *process.Details) (common.ProgrammingLangua
 // It then searches for "libjvm.so", which is a shared library loaded by Java processes.
 func checkForLoadedJVM(processID int) bool {
 	mapsPath := fmt.Sprintf("/proc/%d/maps", processID)
-	mapsBytes, err := os.ReadFile(mapsPath)
+	mapsFile, err := os.Open(mapsPath)
 	if err != nil {
 		return false
 	}
+	defer mapsFile.Close()
 
-	// Look for shared JVM libraries
-	mapsStr := string(mapsBytes)
-	return libjvmRegex.MatchString(mapsStr)
+	// Look for shared JVM libraries line by line inside the "/proc/<pid>/maps" file
+	scanner := bufio.NewScanner(mapsFile)
+	for scanner.Scan() {
+		if libjvmRegex.MatchString(scanner.Text()) {
+			return true
+		}
+	}
+	return false
 }
 
 // isJavaExecutable checks if the process binary name suggests it's a Java process.
