@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useSourceCRUD } from '@/hooks';
-import { BACKEND_BOOLEAN } from '@/utils';
+import { CONDITION_STATUS } from '@/utils';
 import { Dropdown, type DropdownProps } from '@odigos/ui-components';
 
 interface Props {
@@ -21,7 +21,7 @@ export const ErrorDropdown: React.FC<Props> = ({ title = 'Error Message', value,
 
     sources.forEach(({ conditions }) => {
       conditions?.forEach(({ status, message }) => {
-        if (status === BACKEND_BOOLEAN.FALSE && !payload.find((opt) => opt.id === message)) {
+        if (status === CONDITION_STATUS.FALSE && !payload.find((opt) => opt.id === message)) {
           payload.push({ id: message, value: message });
         }
       });

@@ -8,10 +8,10 @@ require (
 	github.com/hashicorp/go-version v1.7.0
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
+	github.com/odigos-io/odigos/distros v0.0.0
 	github.com/odigos-io/odigos/k8sutils v0.0.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.36.2
-	github.com/stretchr/testify v1.10.0
 	go.opentelemetry.io/otel v1.34.0
 	k8s.io/api v0.32.1
 	k8s.io/apimachinery v0.32.1
@@ -78,6 +78,7 @@ require (
 	github.com/prometheus/common v0.62.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/stretchr/testify v1.10.0
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/net v0.34.0 // indirect
@@ -102,5 +103,6 @@ require (
 replace (
 	github.com/odigos-io/odigos/api => ../api
 	github.com/odigos-io/odigos/common => ../common
+	github.com/odigos-io/odigos/distros => ../distros
 	github.com/odigos-io/odigos/k8sutils => ../k8sutils
 )
