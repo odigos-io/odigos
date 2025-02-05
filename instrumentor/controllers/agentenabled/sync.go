@@ -287,14 +287,14 @@ func containerInstrumentationConfig(containerName string,
 				ContainerName:          containerName,
 				Instrumented:           false,
 				InstrumentationReason:  odigosv1.AgentInjectionReasonOtherAgentDetected,
-				InstrumentationMessage: fmt.Sprintf("odigos disabled due to other instrumentation agent '%s' detected running in the container", runtimeDetails.OtherAgent.Name),
+				InstrumentationMessage: fmt.Sprintf("odigos agent not enabled due to other instrumentation agent '%s' detected running in the container", runtimeDetails.OtherAgent.Name),
 			}
 		} else {
 			return odigosv1.ContainerConfig{
 				ContainerName:          containerName,
 				Instrumented:           true,
 				InstrumentationReason:  odigosv1.AgentInjectionReasonInjectedSuccessfully,
-				InstrumentationMessage: fmt.Sprintf("container is running with other instrumentation agent '%s' and concurrent agents are allowed", runtimeDetails.OtherAgent.Name),
+				InstrumentationMessage: fmt.Sprintf("odigos running alongside other instrumentation agent '%s'", runtimeDetails.OtherAgent.Name),
 			}
 		}
 	}
