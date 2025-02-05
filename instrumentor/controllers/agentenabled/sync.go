@@ -10,9 +10,11 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/distros"
+	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -74,8 +76,12 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 	ic := odigosv1.InstrumentationConfig{}
 	err = c.Get(ctx, client.ObjectKey{Namespace: namespace, Name: icName}, &ic)
 	if err != nil {
-		// if instrumentation config not found, we have nothing to updated.
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		if apierrors.IsNotFound(err) {
+			// instrumentation config is deleted, trigger a rollout for the associated workload
+			// this should happen once per workload, as the instrumentation config is deleted
+			return rollout.Do(ctx, c, nil, pw)
+		}
+		return ctrl.Result{}, err
 	}
 
 	logger.Info("Reconciling workload for InstrumentationConfig object agent enabling", "name", ic.Name, "namespace", ic.Namespace, "instrumentationConfig", ic)
@@ -105,7 +111,7 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 		}
 	}
 
-	return ctrl.Result{}, nil
+	return rollout.Do(ctx, c, &ic, pw)
 }
 
 // this function receives a workload object, and updates the instrumentation config object ptr.

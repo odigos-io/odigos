@@ -78,19 +78,3 @@ func getRelevantInstrumentationRules(ctx context.Context, c client.Client, pw k8
 	return &relevantIr, nil
 }
 
-func isWorkloadParticipating(pw k8sconsts.PodWorkload, ir *odigosv1.InstrumentationRule) bool {
-	if ir.Spec.Workloads == nil {
-		// if workloads is nil, all workloads are participating
-		return true
-	}
-
-	for _, w := range *ir.Spec.Workloads {
-		// workload is participating if it is in the list
-		// TODO: consider using a map for faster lookup
-		if w.Namespace == pw.Namespace && w.Kind == pw.Kind && w.Name == pw.Name {
-			return true
-		}
-	}
-
-	return false
-}

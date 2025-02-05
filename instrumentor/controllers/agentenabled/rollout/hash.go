@@ -1,4 +1,4 @@
-package workloadrollout
+package rollout
 
 import (
 	"bytes"
