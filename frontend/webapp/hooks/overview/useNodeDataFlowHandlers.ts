@@ -2,11 +2,10 @@ import { useCallback } from 'react';
 import { Node } from '@xyflow/react';
 import { useSourceCRUD } from '../sources';
 import { useActionCRUD } from '../actions';
-import { OVERVIEW_NODE_TYPES } from '@/types';
 import { useDestinationCRUD } from '../destinations';
 import { ENTITY_TYPES, type WorkloadId } from '@odigos/ui-utils';
-import { useDrawerStore, useModalStore } from '@odigos/ui-containers';
 import { useInstrumentationRuleCRUD } from '../instrumentation-rules';
+import { ADD_NODE_TYPES, useDrawerStore, useModalStore } from '@odigos/ui-containers';
 
 export const useNodeDataFlowHandlers = () => {
   const { sources } = useSourceCRUD();
@@ -23,7 +22,7 @@ export const useNodeDataFlowHandlers = () => {
       object: Node<
         {
           id: string | WorkloadId;
-          type: ENTITY_TYPES | OVERVIEW_NODE_TYPES;
+          type: ENTITY_TYPES | ADD_NODE_TYPES;
         },
         'any-node'
       >,
@@ -82,13 +81,13 @@ export const useNodeDataFlowHandlers = () => {
           type,
           item: selectedDrawerItem,
         });
-      } else if (type === OVERVIEW_NODE_TYPES.ADD_RULE) {
+      } else if (type === ADD_NODE_TYPES.ADD_RULE) {
         setCurrentModal(ENTITY_TYPES.INSTRUMENTATION_RULE);
-      } else if (type === OVERVIEW_NODE_TYPES.ADD_SOURCE) {
+      } else if (type === ADD_NODE_TYPES.ADD_SOURCE) {
         setCurrentModal(ENTITY_TYPES.SOURCE);
-      } else if (type === OVERVIEW_NODE_TYPES.ADD_ACTION) {
+      } else if (type === ADD_NODE_TYPES.ADD_ACTION) {
         setCurrentModal(ENTITY_TYPES.ACTION);
-      } else if (type === OVERVIEW_NODE_TYPES.ADD_DESTINATION) {
+      } else if (type === ADD_NODE_TYPES.ADD_DESTINATION) {
         setCurrentModal(ENTITY_TYPES.DESTINATION);
       } else {
         console.warn('Unhandled node click', object);
