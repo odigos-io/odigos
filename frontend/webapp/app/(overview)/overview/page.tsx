@@ -2,14 +2,13 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
 import styled from 'styled-components';
-import { DataFlow, DataFlowActionsMenu } from '@odigos/ui-containers';
+import { type SourceInstrumentInput } from '@/types';
+import { DataFlow, DataFlowActionsMenu, MultiSourceControl, Source } from '@odigos/ui-containers';
 import { useActionCRUD, useDestinationCRUD, useInstrumentationRuleCRUD, useMetrics, useNamespace, useNodeDataFlowHandlers, usePaginatedSources, useSourceCRUD, useSSE, useTokenTracker } from '@/hooks';
 
 const ToastList = dynamic(() => import('@/components/notification/toast-list'), { ssr: false });
-const AllDrawers = dynamic(() => import('@/components/overview/all-drawers'), { ssr: false });
 const AllModals = dynamic(() => import('@/components/overview/all-modals'), { ssr: false });
-
-const MultiSourceControl = dynamic(() => import('@/containers/main/overview/multi-source-control'), { ssr: false });
+const AllDrawers = dynamic(() => import('@/components/overview/all-drawers'), { ssr: false });
 
 const Container = styled.div`
   width: 100%;
@@ -25,23 +24,20 @@ export default function MainPage() {
   // (hooks run on every mount, we don't want that for pagination)
   const { loading: pageLoading } = usePaginatedSources();
 
-  const { handleNodeClick } = useNodeDataFlowHandlers();
-
   const { metrics } = useMetrics();
   const { allNamespaces } = useNamespace();
-  const { sources, filteredSources, loading: srcLoad } = useSourceCRUD();
   const { actions, filteredActions, loading: actLoad } = useActionCRUD();
+  const { sources, filteredSources, loading: srcLoad, persistSources } = useSourceCRUD();
   const { destinations, filteredDestinations, loading: destLoad } = useDestinationCRUD();
   const { instrumentationRules, filteredInstrumentationRules, loading: ruleLoad } = useInstrumentationRuleCRUD();
 
+  const { handleNodeClick } = useNodeDataFlowHandlers();
+
   return (
     <>
-      <ToastList />
-      <MultiSourceControl />
-      <AllDrawers />
-      <AllModals />
-
       <Container>
+        <ToastList />
+
         <DataFlowActionsMenu
           namespaces={allNamespaces}
           sources={filteredSources}
@@ -67,6 +63,22 @@ export default function MainPage() {
           metrics={metrics}
           onNodeClick={handleNodeClick}
         />
+
+        <MultiSourceControl
+          totalSourceCount={sources.length}
+          uninstrumentSources={(payload) => {
+            const inp: SourceInstrumentInput = {};
+
+            Object.entries(payload).forEach(([namespace, sources]: [string, Source[]]) => {
+              inp[namespace] = sources.map(({ name, kind }) => ({ name, kind, selected: false }));
+            });
+
+            persistSources(inp, {});
+          }}
+        />
+
+        <AllModals />
+        <AllDrawers />
       </Container>
     </>
   );

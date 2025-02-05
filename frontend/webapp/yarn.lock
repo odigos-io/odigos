@@ -514,20 +514,6 @@
   resolved "https://registry.yarnpkg.com/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz#3dc35ba0f1e66b403c00b39344f870298ebb1c8e"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
-"@odigos/ui-components@^0.0.44":
-  version "0.0.44"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-components/-/ui-components-0.0.44.tgz#32f3785bf0025df69c00bd6a8523347c7498ac5a"
-  integrity sha512-RqxyVdVaa8yweHVMZ5lOdgkQ5+0oWHtTiBTrjCsqo0fkA4v0DyaaiWKMFZXQIeuT3nVEPjETgFdWjucQtE3ivw==
-  dependencies:
-    "@odigos/ui-icons" "^0.0.2"
-    "@odigos/ui-theme" "^0.0.2"
-    "@odigos/ui-utils" "^0.0.8"
-    prism-react-renderer "^2.4.1"
-    react "^19.0.0"
-    react-dom "^19.0.0"
-    react-lottie "^1.2.10"
-    styled-components "^6.1.14"
-
 "@odigos/ui-components@^0.0.45":
   version "0.0.45"
   resolved "https://registry.yarnpkg.com/@odigos/ui-components/-/ui-components-0.0.45.tgz#a32854fabe2304f5f1b7d6dd2d0c5a15734135ff"
@@ -542,12 +528,12 @@
     react-lottie "^1.2.10"
     styled-components "^6.1.14"
 
-"@odigos/ui-containers@^0.0.9":
-  version "0.0.9"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-containers/-/ui-containers-0.0.9.tgz#a2b02178d4ca5de8e879e794a6080a550a1c4bb2"
-  integrity sha512-Np37xqdTN4tiNUXcAJ5/ncf7q9Wf2/keh4nTr37XgO7/USJVVRCphLg7EmfPUB3DZU6NcNo1SpiSg62PefyfQA==
+"@odigos/ui-containers@^0.0.10":
+  version "0.0.10"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-containers/-/ui-containers-0.0.10.tgz#10e2d66acaefc3ca4ec1697b495ffe15495a4588"
+  integrity sha512-+rDwyidJk7uDGGr1Yjhu/TZfVlMC3t8FFqC1vS94zHzuosEKxDBwgzgtfyaLg25V31P0R/qJfdu5NNa/K3XHSQ==
   dependencies:
-    "@odigos/ui-components" "^0.0.44"
+    "@odigos/ui-components" "^0.0.45"
     "@odigos/ui-theme" "^0.0.2"
     "@odigos/ui-utils" "^0.0.8"
     "@xyflow/react" "^12.4.2"
