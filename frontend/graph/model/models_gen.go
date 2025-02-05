@@ -333,14 +333,14 @@ type K8sActualNamespace struct {
 }
 
 type K8sActualSource struct {
-	Namespace         string                           `json:"namespace"`
-	Name              string                           `json:"name"`
-	Kind              K8sResourceKind                  `json:"kind"`
-	NumberOfInstances *int                             `json:"numberOfInstances,omitempty"`
-	Selected          *bool                            `json:"selected,omitempty"`
-	OtelServiceName   *string                          `json:"otelServiceName,omitempty"`
-	Containers        []*SourceContainerRuntimeDetails `json:"containers,omitempty"`
-	Conditions        []*Condition                     `json:"conditions,omitempty"`
+	Namespace         string             `json:"namespace"`
+	Name              string             `json:"name"`
+	Kind              K8sResourceKind    `json:"kind"`
+	NumberOfInstances *int               `json:"numberOfInstances,omitempty"`
+	Selected          *bool              `json:"selected,omitempty"`
+	OtelServiceName   *string            `json:"otelServiceName,omitempty"`
+	Containers        []*SourceContainer `json:"containers,omitempty"`
+	Conditions        []*Condition       `json:"conditions,omitempty"`
 }
 
 type K8sDesiredNamespaceInput struct {
@@ -615,11 +615,14 @@ type SourceAnalyze struct {
 	Pods                  []*PodAnalyze                  `json:"pods"`
 }
 
-type SourceContainerRuntimeDetails struct {
-	ContainerName  string  `json:"containerName"`
-	Language       string  `json:"language"`
-	RuntimeVersion string  `json:"runtimeVersion"`
-	OtherAgent     *string `json:"otherAgent,omitempty"`
+type SourceContainer struct {
+	ContainerName          string  `json:"containerName"`
+	Language               string  `json:"language"`
+	RuntimeVersion         string  `json:"runtimeVersion"`
+	Instrumented           bool    `json:"instrumented"`
+	InstrumentationMessage string  `json:"instrumentationMessage"`
+	OtelDistroName         *string `json:"otelDistroName,omitempty"`
+	OtherAgent             *string `json:"otherAgent,omitempty"`
 }
 
 type TestConnectionResponse struct {

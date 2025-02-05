@@ -29,7 +29,7 @@ const (
 	WorkloadRolloutConditionType = "WorkloadRollout"
 )
 
-// +kubebuilder:validation:Enum=InjectedSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;UnsupportedProgrammingLanguage;UnsupportedRuntimeVersion;OtherAgentDetected;IgnoredContainer
+// +kubebuilder:validation:Enum=InjectedSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;UnsupportedProgrammingLanguage;IgnoredContainer;NoAvailableAgent;UnsupportedRuntimeVersion;OtherAgentDetected
 type AgentInjectionReason string
 
 const (
@@ -41,6 +41,15 @@ const (
 	AgentInjectionReasonNoAvailableAgent               AgentInjectionReason = "NoAvailableAgent"
 	AgentInjectionReasonUnsupportedRuntimeVersion      AgentInjectionReason = "UnsupportedRuntimeVersion"
 	AgentInjectionReasonOtherAgentDetected             AgentInjectionReason = "OtherAgentDetected"
+)
+
+// +kubebuilder:validation:Enum=RolloutTriggeredSuccessfully;FailedToPatch;PreviousRolloutOngoing
+type WorkloadRolloutReason string
+
+const (
+	WorkloadRolloutReasonTriggeredSuccessfully  WorkloadRolloutReason = "RolloutTriggeredSuccessfully"
+	WorkloadRolloutReasonFailedToPatch          WorkloadRolloutReason = "FailedToPatch"
+	WorkloadRolloutReasonPreviousRolloutOngoing WorkloadRolloutReason = "PreviousRolloutOngoing"
 )
 
 // givin multiple reasons for not injecting an agent, this function returns the priority of the reason.
@@ -110,7 +119,9 @@ type InstrumentationConfigStatus struct {
 	// Represents the observations of a InstrumentationConfig's current state.
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" protobuf:"bytes,1,rep,name=conditions"`
 
-	// TODO: add nice comment for this
+	// The hash used to determine whether the associated workload needs to be rolled out.
+	// This hash is calculated based on the containers config array and takes into account the
+	// container name, Instrumented flag and the OTel distro name.
 	WorkloadRolloutHash string `json:"workloadRolloutHash,omitempty"`
 }
 

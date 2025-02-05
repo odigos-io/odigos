@@ -8,7 +8,7 @@ import { CodeIcon, ListIcon } from '@odigos/ui-icons';
 import { UpdateSourceBody } from '../update-source-body';
 import { useDescribeSource, useSourceCRUD } from '@/hooks';
 import OverviewDrawer from '../../overview/overview-drawer';
-import { ACTION, BACKEND_BOOLEAN, DATA_CARDS } from '@/utils';
+import { ACTION, CONDITION_STATUS, DATA_CARDS } from '@/utils';
 import { ENTITY_TYPES, getEntityIcon, NOTIFICATION_TYPE, safeJsonStringify, type WorkloadId } from '@odigos/ui-utils';
 import { ConditionDetails, ConditionDetailsProps, DATA_CARD_FIELD_TYPES, DataCard, type DataCardFieldsProps, Segment } from '@odigos/ui-components';
 
@@ -95,9 +95,10 @@ export const SourceDrawer: React.FC<Props> = () => {
 
     return {
       conditions:
-        item?.conditions?.map(({ status, message }) => ({
-          status: ['false', 'error'].includes(String(status).toLowerCase()) ? NOTIFICATION_TYPE.ERROR : NOTIFICATION_TYPE.SUCCESS,
+        item?.conditions?.map(({ status, message, lastTransitionTime }) => ({
+          status: status === CONDITION_STATUS.FALSE ? NOTIFICATION_TYPE.ERROR : status === CONDITION_STATUS.TRUE ? NOTIFICATION_TYPE.SUCCESS : NOTIFICATION_TYPE.WARNING,
           message,
+          lastTransitionTime,
         })) || [],
     };
   }, [selectedItem]);
@@ -107,7 +108,7 @@ export const SourceDrawer: React.FC<Props> = () => {
 
     const { item } = selectedItem as { item: K8sActualSource };
     const hasPresenceOfOtherAgent =
-      item?.conditions?.some((condition) => condition.status === BACKEND_BOOLEAN.FALSE && condition.message.includes('device not added to any container due to the presence of another agent')) ||
+      item?.conditions?.some((condition) => condition.status === CONDITION_STATUS.FALSE && condition.message.includes('device not added to any container due to the presence of another agent')) ||
       false;
 
     return (

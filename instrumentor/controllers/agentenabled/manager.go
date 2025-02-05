@@ -27,7 +27,9 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("agentenabled-instrumentationconfig").
 		For(&odigosv1.InstrumentationConfig{}).
-		WithEventFilter(&instrumentorpredicate.RuntimeDetailsChangedPredicate{}).
+		// When the runtime details change we need to potentially update the instrumentation config and roll out the workload.
+		// When the instrumentation config is deleted, we need to roll out the workload to un-instrument it.
+		WithEventFilter(predicate.Or(&instrumentorpredicate.RuntimeDetailsChangedPredicate{}, odigospredicate.DeletionPredicate{})).
 		Complete(&InstrumentationConfigReconciler{
 			Client: mgr.GetClient(),
 		})

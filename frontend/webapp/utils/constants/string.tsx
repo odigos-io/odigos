@@ -48,9 +48,10 @@ export const FORM_ALERTS = {
   READONLY_WARNING: "You're not allowed to create/update/delete in readonly mode",
 };
 
-export const BACKEND_BOOLEAN = {
+export const CONDITION_STATUS = {
   FALSE: 'False',
   TRUE: 'True',
+  UNKNOWN: 'Unknown',
 };
 
 export const DATA_CARDS = {

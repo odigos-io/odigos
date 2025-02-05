@@ -34,6 +34,7 @@ func k8sConditionStatusToGql(status v1.ConditionStatus) model.ConditionStatus {
 
 }
 
+// Convert LastTransitionTime to a string pointer if it's not nil
 func k8sLastTransitionTimeToGql(t v1.Time) *string {
 	if t.IsZero() {
 		return nil
@@ -43,31 +44,38 @@ func k8sLastTransitionTimeToGql(t v1.Time) *string {
 }
 
 func instrumentationConfigToActualSource(instruConfig v1alpha1.InstrumentationConfig) *model.K8sActualSource {
+	var containers []*model.SourceContainer
+
 	// Map the containers runtime details
-	var containers []*model.SourceContainerRuntimeDetails
-	for _, container := range instruConfig.Status.RuntimeDetailsByContainer {
+	for _, statusContainer := range instruConfig.Status.RuntimeDetailsByContainer {
+		var instrumented bool
+		var instrumentationMessage string
+		var otelDistroName string
 		var otherAgentName *string
-		if container.OtherAgent != nil {
-			otherAgentName = &container.OtherAgent.Name
+
+		for _, specContainer := range instruConfig.Spec.Containers {
+			if specContainer.ContainerName == statusContainer.ContainerName {
+				instrumented = specContainer.Instrumented
+				instrumentationMessage = specContainer.InstrumentationMessage
+				if instrumentationMessage == "" {
+					instrumentationMessage = string(specContainer.InstrumentationReason)
+				}
+				otelDistroName = specContainer.OtelDistroName
+			}
 		}
 
-		containers = append(containers, &model.SourceContainerRuntimeDetails{
-			ContainerName:  container.ContainerName,
-			Language:       string(container.Language),
-			RuntimeVersion: container.RuntimeVersion,
-			OtherAgent:     otherAgentName,
-		})
-	}
+		if statusContainer.OtherAgent != nil {
+			otherAgentName = &statusContainer.OtherAgent.Name
+		}
 
-	// Map the conditions
-	var conditions []*model.Condition
-	for _, condition := range instruConfig.Status.Conditions {
-		conditions = append(conditions, &model.Condition{
-			Status:             k8sConditionStatusToGql(condition.Status),
-			Type:               condition.Type,
-			Reason:             &condition.Reason,
-			Message:            &condition.Message,
-			LastTransitionTime: k8sLastTransitionTimeToGql(condition.LastTransitionTime),
+		containers = append(containers, &model.SourceContainer{
+			ContainerName:          statusContainer.ContainerName,
+			Language:               string(statusContainer.Language),
+			RuntimeVersion:         statusContainer.RuntimeVersion,
+			Instrumented:           instrumented,
+			InstrumentationMessage: instrumentationMessage,
+			OtelDistroName:         &otelDistroName,
+			OtherAgent:             otherAgentName,
 		})
 	}
 
@@ -79,7 +87,7 @@ func instrumentationConfigToActualSource(instruConfig v1alpha1.InstrumentationCo
 		NumberOfInstances: nil,
 		OtelServiceName:   &instruConfig.Spec.ServiceName,
 		Containers:        containers,
-		Conditions:        conditions,
+		Conditions:        convertConditions(instruConfig.Status.Conditions),
 	}
 }
 
@@ -98,20 +106,20 @@ func convertCustomReadDataLabels(labels []*destinations.CustomReadDataLabel) []*
 func convertConditions(conditions []v1.Condition) []*model.Condition {
 	var result []*model.Condition
 	for _, c := range conditions {
-		// Convert LastTransitionTime to a string pointer if it's not nil
-		var lastTransitionTime *string
-		if !c.LastTransitionTime.IsZero() {
-			t := c.LastTransitionTime.Format(time.RFC3339)
-			lastTransitionTime = &t
-		}
+		if c.Type != "AppliedInstrumentationDevice" {
+			message := c.Message
+			if message == "" {
+				message = string(c.Reason)
+			}
 
-		result = append(result, &model.Condition{
-			Status:             model.ConditionStatus(c.Status),
-			Type:               c.Type,
-			Reason:             &c.Reason,
-			Message:            &c.Message,
-			LastTransitionTime: lastTransitionTime,
-		})
+			result = append(result, &model.Condition{
+				Status:             model.ConditionStatus(c.Status),
+				Type:               c.Type,
+				Reason:             &c.Reason,
+				Message:            &message,
+				LastTransitionTime: k8sLastTransitionTimeToGql(c.LastTransitionTime),
+			})
+		}
 	}
 	return result
 }
