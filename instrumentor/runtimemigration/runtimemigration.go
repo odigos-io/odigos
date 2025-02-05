@@ -103,75 +103,6 @@ func odigosOriginalAnnotationFound(annotations map[string]string) bool {
 	return annotationFound
 }
 
-func (m *MigrationRunnable) handleSingleDeployment(ctx context.Context, dep *appsv1.Deployment) error {
-
-	freshDep := appsv1.Deployment{}
-	err := m.KubeClient.Get(ctx, client.ObjectKey{
-		Namespace: dep.Namespace,
-		Name:      dep.Name,
-	}, &freshDep)
-	if err != nil {
-		m.Logger.Error(err, "Failed to fresh copy of a deployment", "Name", dep.GetName(), "Namespace", dep.GetNamespace())
-		return client.IgnoreNotFound(err)
-	}
-
-	instConfigName := workload.CalculateWorkloadRuntimeObjectName(freshDep.Name, k8sconsts.WorkloadKindDeployment)
-	freshInstConfig := v1alpha1.InstrumentationConfig{}
-	err = m.KubeClient.Get(ctx, client.ObjectKey{
-		Namespace: freshDep.Namespace,
-		Name:      instConfigName,
-	}, &freshInstConfig)
-	if err != nil {
-		m.Logger.Error(err, "Failed to get fresh InstrumentationConfig", "Name", instConfigName, "Namespace", freshDep.Namespace)
-		return err
-	}
-
-	originalWorkloadEnvVar, err := envoverwrite.NewOrigWorkloadEnvValues(freshDep.Annotations)
-	if err != nil {
-		m.Logger.Error(err, "Failed to get original workload environment variables")
-		return err
-	}
-	runtimeDetailsByContainer := freshInstConfig.Status.RuntimeDetailsByContainer
-
-	for _, containerObject := range freshDep.Spec.Template.Spec.Containers {
-		err, _ = handleContainerRuntimeDetailsUpdate(
-			containerObject,
-			originalWorkloadEnvVar,
-			runtimeDetailsByContainer,
-		)
-		if err != nil {
-			return fmt.Errorf("failed to process container %s in deployment %s: %v", containerObject.Name, freshDep.Name, err)
-		}
-	}
-
-	envReverted := false
-	if odigosOriginalAnnotationFound(freshDep.Annotations) {
-		deleteOriginalEnvAnnotationInPlace(&freshDep)
-		revertOriginalEnvAnnotationInPlace(originalWorkloadEnvVar, &freshDep.Spec.Template.Spec)
-		envReverted = true
-	}
-	labelRemoved := removeInjectInstrumentationLabel(&freshDep.Spec.Template)
-	devicesRemoved := revertInstrumentationDevices(&freshDep.Spec.Template)
-
-	if envReverted || labelRemoved || devicesRemoved {
-		err = m.KubeClient.Update(ctx, &freshDep)
-		if err != nil {
-			m.Logger.Error(err, "Failed to revert deployment", "Name", freshDep.GetName(), "Namespace", freshDep.GetNamespace())
-		}
-	}
-
-	err = m.KubeClient.Status().Update(
-		ctx,
-		&freshInstConfig,
-	)
-	if err != nil {
-		m.Logger.Error(err, "Failed to update InstrumentationConfig status", "Name", freshDep.Name, "Namespace", freshDep.Namespace)
-		return err
-	}
-
-	return nil
-}
-
 func (m *MigrationRunnable) fetchAndProcessDeployments(ctx context.Context, kubeClient client.Client, namespaces map[string]map[string]*v1alpha1.InstrumentationConfig) error {
 	for namespace, workloadNames := range namespaces {
 		var deployments appsv1.DeploymentList
@@ -194,7 +125,7 @@ func (m *MigrationRunnable) fetchAndProcessDeployments(ctx context.Context, kube
 				Jitter:   0.1,                    // Add randomness
 				Steps:    5,                      // Max retries
 			}, func() (bool, error) {
-				err := m.handleSingleDeployment(ctx, &dep)
+				err := m.handleSingleWorkload(ctx, &dep)
 				if err != nil {
 					m.Logger.Info("Error during env migration, retrying", "Deployment", dep.Name)
 					return false, nil // Retry
@@ -219,79 +150,31 @@ func (m *MigrationRunnable) fetchAndProcessStatefulSets(ctx context.Context, kub
 		}
 
 		for _, sts := range statefulSets.Items {
+
 			// Checking if the statefulset is in the list of statefulsets that need to be processed
 			if !contains(workloadNames, sts.Name) {
 				continue
 			}
 
-			freshSts := appsv1.StatefulSet{}
-			err := kubeClient.Get(ctx, client.ObjectKey{
-				Namespace: sts.Namespace,
-				Name:      sts.Name,
-			}, &freshSts)
-			if err != nil {
-				m.Logger.Error(err, "Failed to fresh copy of a statefulset", "Name", sts.GetName(), "Namespace", sts.GetNamespace())
-				continue
-			}
-
-			originalWorkloadEnvVar, err := envoverwrite.NewOrigWorkloadEnvValues(freshSts.Annotations)
-			if err != nil {
-				m.Logger.Error(err, "Failed to get original workload environment variables")
-				continue
-			}
-
-			workloadInstrumentationConfigReference := workloadNames[freshSts.Name]
-			if workloadInstrumentationConfigReference == nil {
-				m.Logger.Error(err, "Failed to get InstrumentationConfig reference")
-				continue
-			}
-
-			// Fetching the latest state of the InstrumentationConfig resource from the Kubernetes API.
-			// This is necessary to ensure we work with the most up-to-date version of the resource, as it may
-			// have been modified by other processes or controllers in the cluster. Without this step, there is
-			// a risk of encountering conflicts or using stale data during operations on the InstrumentationConfig object.
-			err = m.KubeClient.Get(ctx, client.ObjectKey{
-				Namespace: workloadInstrumentationConfigReference.Namespace,
-				Name:      workloadInstrumentationConfigReference.Name,
-			}, workloadInstrumentationConfigReference)
-
-			if err != nil {
-				m.Logger.Error(err, "Failed to get InstrumentationConfig", "Name", workloadInstrumentationConfigReference.Name,
-					"Namespace", workloadInstrumentationConfigReference.Namespace)
-				continue
-			}
-
-			runtimeDetailsByContainer := workloadInstrumentationConfigReference.Status.RuntimeDetailsByContainer
-
-			for _, containerObject := range freshSts.Spec.Template.Spec.Containers {
-				err, _ = handleContainerRuntimeDetailsUpdate(
-					containerObject,
-					originalWorkloadEnvVar,
-					runtimeDetailsByContainer,
-				)
+			// Retry logic for handling conflicts
+			err := wait.ExponentialBackoff(wait.Backoff{
+				Duration: 100 * time.Millisecond, // Initial wait time
+				Factor:   2.0,                    // Exponential factor
+				Jitter:   0.1,                    // Add randomness
+				Steps:    5,                      // Max retries
+			}, func() (bool, error) {
+				err := m.handleSingleWorkload(ctx, &sts)
 				if err != nil {
-					return fmt.Errorf("failed to process container %s in statefulset %s: %v", containerObject.Name, freshSts.Name, err)
+					m.Logger.Info("Error during env migration, retrying", "Deployment", sts.Name)
+					return false, nil // Retry
 				}
-			}
+				return true, nil // Success, stop retrying
+			})
 
-			if odigosOriginalAnnotationFound(freshSts.Annotations) {
-				deleteOriginalEnvAnnotationInPlace(&freshSts)
-				revertOriginalEnvAnnotationInPlace(originalWorkloadEnvVar, &freshSts.Spec.Template.Spec)
-				err = kubeClient.Update(ctx, &freshSts)
-				if err != nil {
-					m.Logger.Error(err, "Failed to revert statefulset", "Name", freshSts.GetName(), "Namespace", freshSts.GetNamespace())
-				}
-			}
-
-			// Update the InstrumentationConfig status
-			err = kubeClient.Status().Update(
-				ctx,
-				workloadInstrumentationConfigReference,
-			)
 			if err != nil {
-				m.Logger.Error(err, "Failed to update InstrumentationConfig status", "Name", freshSts.Name, "Namespace", freshSts.Namespace)
-				continue
+				m.Logger.Error(err, "Failed to handle deployment with retries", "Name", sts.GetName(), "Namespace", sts.GetNamespace())
 			}
+
 		}
 	}
 	return nil
@@ -311,70 +194,23 @@ func (m *MigrationRunnable) fetchAndProcessDaemonSets(ctx context.Context, kubeC
 				continue
 			}
 
-			freshDs := appsv1.DaemonSet{}
-			err := kubeClient.Get(ctx, client.ObjectKey{
-				Namespace: ds.Namespace,
-				Name:      ds.Name,
-			}, &freshDs)
-			if err != nil {
-				m.Logger.Error(err, "Failed to fresh copy of a daemonset", "Name", ds.GetName(), "Namespace", ds.GetNamespace())
-				continue
-			}
-
-			originalWorkloadEnvVar, err := envoverwrite.NewOrigWorkloadEnvValues(freshDs.Annotations)
-			if err != nil {
-				m.Logger.Error(err, "Failed to get original workload environment variables")
-				continue
-			}
-			workloadInstrumentationConfigReference := workloadNames[freshDs.Name]
-			if workloadInstrumentationConfigReference == nil {
-				m.Logger.Error(err, "Failed to get InstrumentationConfig reference")
-				continue
-			}
-
-			// Fetching the latest state of the InstrumentationConfig resource from the Kubernetes API.
-			// This is necessary to ensure we work with the most up-to-date version of the resource, as it may
-			// have been modified by other processes or controllers in the cluster. Without this step, there is
-			// a risk of encountering conflicts or using stale data during operations on the InstrumentationConfig object.
-			err = m.KubeClient.Get(ctx, client.ObjectKey{
-				Namespace: workloadInstrumentationConfigReference.Namespace,
-				Name:      workloadInstrumentationConfigReference.Name,
-			}, workloadInstrumentationConfigReference)
-
-			if err != nil {
-				m.Logger.Error(err, "Failed to get InstrumentationConfig", "Name", workloadInstrumentationConfigReference.Name,
-					"Namespace", workloadInstrumentationConfigReference.Namespace)
-				continue
-			}
-			runtimeDetailsByContainer := workloadInstrumentationConfigReference.Status.RuntimeDetailsByContainer
-
-			for _, containerObject := range freshDs.Spec.Template.Spec.Containers {
-				err, _ = handleContainerRuntimeDetailsUpdate(
-					containerObject,
-					originalWorkloadEnvVar,
-					runtimeDetailsByContainer)
+			// Retry logic for handling conflicts
+			err := wait.ExponentialBackoff(wait.Backoff{
+				Duration: 100 * time.Millisecond, // Initial wait time
+				Factor:   2.0,                    // Exponential factor
+				Jitter:   0.1,                    // Add randomness
+				Steps:    5,                      // Max retries
+			}, func() (bool, error) {
+				err := m.handleSingleWorkload(ctx, &ds)
 				if err != nil {
-					return fmt.Errorf("failed to process container %s in daemonset %s: %v", containerObject.Name, freshDs.Name, err)
+					m.Logger.Info("Error during env migration, retrying", "Deployment", ds.Name)
+					return false, nil // Retry
 				}
-			}
+				return true, nil // Success, stop retrying
+			})
 
-			if odigosOriginalAnnotationFound(freshDs.Annotations) {
-				deleteOriginalEnvAnnotationInPlace(&freshDs)
-				revertOriginalEnvAnnotationInPlace(originalWorkloadEnvVar, &freshDs.Spec.Template.Spec)
-				err = kubeClient.Update(ctx, &freshDs)
-				if err != nil {
-					m.Logger.Error(err, "Failed to revert daemonset", "Name", freshDs.GetName(), "Namespace", freshDs.GetNamespace())
-				}
-			}
-
-			// Update the InstrumentationConfig status
-			err = kubeClient.Status().Update(
-				ctx,
-				workloadInstrumentationConfigReference,
-			)
 			if err != nil {
-				m.Logger.Error(err, "Failed to update InstrumentationConfig status", "Name", freshDs.Name, "Namespace", freshDs.Namespace)
-				continue
+				m.Logger.Error(err, "Failed to handle deployment with retries", "Name", ds.GetName(), "Namespace", ds.GetNamespace())
 			}
 		}
 	}
@@ -567,4 +403,116 @@ func revertOriginalEnvAnnotationInPlace(originalWorkloadEnvVar *envoverwrite.Ori
 		}
 		containerManifest.Env = newContainerEnvs
 	}
+}
+
+func (m *MigrationRunnable) handleSingleWorkload(ctx context.Context, workloadObject client.Object) error {
+	// Fetch fresh copy of the workload
+	freshWorkload := workloadObject.DeepCopyObject().(client.Object)
+	err := m.KubeClient.Get(ctx, client.ObjectKey{
+		Namespace: workloadObject.GetNamespace(),
+		Name:      workloadObject.GetName(),
+	}, freshWorkload)
+	if err != nil {
+		m.Logger.Error(err, "Failed to fetch fresh copy of workload", "Name", workloadObject.GetName(), "Namespace", workloadObject.GetNamespace())
+		return client.IgnoreNotFound(err)
+	}
+
+	// Fetch InstrumentationConfig
+	workloadKindType := getWorkloadKindByWorkloadType(freshWorkload)
+	if workloadKindType == nil {
+		return fmt.Errorf("failed to get workload type for workload %s", workloadObject.GetName())
+	}
+
+	instConfigName := workload.CalculateWorkloadRuntimeObjectName(workloadObject.GetName(), *workloadKindType)
+
+	// Fetching the latest state of the InstrumentationConfig resource from the Kubernetes API.
+	// This is necessary to ensure we work with the most up-to-date version of the resource, as it may
+	// have been modified by other processes or controllers in the cluster. Without this step, there is
+	// a risk of encountering conflicts or using stale data during operations on the InstrumentationConfig object.
+	freshInstConfig := v1alpha1.InstrumentationConfig{}
+	err = m.KubeClient.Get(ctx, client.ObjectKey{
+		Namespace: workloadObject.GetNamespace(),
+		Name:      instConfigName,
+	}, &freshInstConfig)
+	if err != nil {
+		m.Logger.Error(err, "Failed to get InstrumentationConfig", "Name", instConfigName, "Namespace", workloadObject.GetNamespace())
+		return err
+	}
+
+	// Extract original environment variables
+	originalWorkloadEnvVar, err := envoverwrite.NewOrigWorkloadEnvValues(freshWorkload.GetAnnotations())
+	if err != nil {
+		m.Logger.Error(err, "Failed to get original workload environment variables")
+		return err
+	}
+
+	// Process container runtime details
+	runtimeDetailsByContainer := freshInstConfig.Status.RuntimeDetailsByContainer
+	podTemplateSpec := getPodTemplateSpecByWorkloadType(freshWorkload)
+
+	for _, containerObject := range podTemplateSpec.Spec.Containers {
+		err, _ = handleContainerRuntimeDetailsUpdate(
+			containerObject,
+			originalWorkloadEnvVar,
+			runtimeDetailsByContainer,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to process container %s in workload %s: %v", containerObject.Name, workloadObject.GetName(), err)
+		}
+	}
+
+	// Handle annotation, label, and device revert operations
+	envReverted := false
+	if odigosOriginalAnnotationFound(freshWorkload.GetAnnotations()) {
+		deleteOriginalEnvAnnotationInPlace(freshWorkload)
+		revertOriginalEnvAnnotationInPlace(originalWorkloadEnvVar, &podTemplateSpec.Spec)
+		envReverted = true
+	}
+	labelRemoved := removeInjectInstrumentationLabel(podTemplateSpec)
+	devicesRemoved := revertInstrumentationDevices(podTemplateSpec)
+
+	// Update workload if changes were made
+	if envReverted || labelRemoved || devicesRemoved {
+		err = m.KubeClient.Update(ctx, freshWorkload)
+		if err != nil {
+			m.Logger.Error(err, "Failed to revert workload", "Name", freshWorkload.GetName(), "Namespace", freshWorkload.GetNamespace())
+		}
+	}
+
+	// Update InstrumentationConfig status
+	err = m.KubeClient.Status().Update(ctx, &freshInstConfig)
+	if err != nil {
+		m.Logger.Error(err, "Failed to update InstrumentationConfig status", "Name", freshWorkload.GetName(), "Namespace", freshWorkload.GetNamespace())
+		return err
+	}
+
+	return nil
+}
+
+func getPodTemplateSpecByWorkloadType(workload client.Object) *corev1.PodTemplateSpec {
+	switch w := workload.(type) {
+	case *appsv1.Deployment:
+		return &w.Spec.Template
+	case *appsv1.StatefulSet:
+		return &w.Spec.Template
+	case *appsv1.DaemonSet:
+		return &w.Spec.Template
+	default:
+		return nil
+	}
+}
+
+func getWorkloadKindByWorkloadType(workload client.Object) *k8sconsts.WorkloadKind {
+	switch workload.(type) {
+	case *appsv1.Deployment:
+		value := k8sconsts.WorkloadKindDeployment
+		return &value
+	case *appsv1.StatefulSet:
+		value := k8sconsts.WorkloadKindStatefulSet
+		return &value
+	case *appsv1.DaemonSet:
+		value := k8sconsts.WorkloadKindDaemonSet
+		return &value
+	}
+	return nil
 }
