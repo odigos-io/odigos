@@ -3,18 +3,18 @@ import styled from 'styled-components';
 import { DestinationDynamicFields } from './dynamic-fields';
 import { NOTIFICATION_TYPE, SIGNAL_TYPE } from '@odigos/ui-utils';
 import { type ConnectionStatus, TestConnection } from './test-connection';
-import { type DestinationInput, type DestinationTypeItem, type DynamicField } from '@/types';
+import { type DestinationInput, type FetchedDestinationTypeItem, type FetchedDestinationDynamicField } from '@/types';
 import { Divider, Input, MonitorsCheckboxes, NotificationNote, SectionTitle } from '@odigos/ui-components';
 
 interface Props {
   isUpdate?: boolean;
-  destination?: DestinationTypeItem;
+  destination?: FetchedDestinationTypeItem;
   formData: DestinationInput;
   formErrors: Record<string, string>;
   validateForm: () => boolean;
   handleFormChange: (key: keyof DestinationInput, val: any) => void;
-  dynamicFields: DynamicField[];
-  setDynamicFields: Dispatch<SetStateAction<DynamicField[]>>;
+  dynamicFields: FetchedDestinationDynamicField[];
+  setDynamicFields: Dispatch<SetStateAction<FetchedDestinationDynamicField[]>>;
 }
 
 const Container = styled.div`

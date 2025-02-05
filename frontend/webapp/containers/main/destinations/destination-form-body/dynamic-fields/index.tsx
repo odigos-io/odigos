@@ -1,11 +1,11 @@
 import React from 'react';
 import { INPUT_TYPES } from '@/utils';
-import type { DynamicField } from '@/types';
+import type { FetchedDestinationDynamicField } from '@/types';
 import { compareCondition, safeJsonParse } from '@odigos/ui-utils';
 import { Checkbox, Dropdown, Input, InputList, KeyValueInputsList, TextArea } from '@odigos/ui-components';
 
 interface Props {
-  fields: DynamicField[];
+  fields: FetchedDestinationDynamicField[];
   onChange: (name: string, value: any) => void;
   formErrors: Record<string, string>;
 }

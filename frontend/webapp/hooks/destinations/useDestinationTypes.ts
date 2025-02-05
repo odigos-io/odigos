@@ -1,32 +1,28 @@
+import { useMemo } from 'react';
 import { useQuery } from '@apollo/client';
-import { useEffect, useState } from 'react';
 import { GET_DESTINATION_TYPE } from '@/graphql';
-import { DestinationsCategory, GetDestinationTypesResponse } from '@/types';
+import { type FetchedDestinationTypes } from '@/types';
 
 const CATEGORIES_DESCRIPTION = {
   managed: 'Effortless Monitoring with Scalable Performance Management',
   'self hosted': 'Full Control and Customization for Advanced Application Monitoring',
 };
 
-export interface IDestinationListItem extends DestinationsCategory {
-  description: string;
+export interface UseDestinationTypesResponse {
+  destinations: (FetchedDestinationTypes['destinationTypes']['categories'][0] & { description: string })[];
 }
 
-export function useDestinationTypes() {
-  const [destinations, setDestinations] = useState<IDestinationListItem[]>([]);
-  const { data } = useQuery<GetDestinationTypesResponse>(GET_DESTINATION_TYPE);
+export const useDestinationTypes = (): UseDestinationTypesResponse => {
+  const { data } = useQuery<FetchedDestinationTypes>(GET_DESTINATION_TYPE);
 
-  useEffect(() => {
-    if (data) {
-      setDestinations(
-        data.destinationTypes.categories.map((category) => ({
-          name: category.name,
-          description: CATEGORIES_DESCRIPTION[category.name as keyof typeof CATEGORIES_DESCRIPTION],
-          items: category.items,
-        })),
-      );
-    }
+  // Map fetched data
+  const mapped: UseDestinationTypesResponse['destinations'] = useMemo(() => {
+    return (data?.destinationTypes?.categories || []).map((category) => {
+      const description = CATEGORIES_DESCRIPTION[category.name as keyof typeof CATEGORIES_DESCRIPTION];
+
+      return { ...category, description };
+    });
   }, [data]);
 
-  return { destinations };
-}
+  return { destinations: mapped };
+};

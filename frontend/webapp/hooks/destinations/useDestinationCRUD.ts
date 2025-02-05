@@ -5,7 +5,7 @@ import { useMutation, useQuery } from '@apollo/client';
 import { ACTION, DISPLAY_TITLES, FORM_ALERTS } from '@/utils';
 import { ENTITY_TYPES, getSseTargetFromId, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 import { useFilterStore, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
-import { type DestinationInput, type ComputePlatform, type DestinationTypeItem } from '@/types';
+import { type DestinationInput, type ComputePlatform, type FetchedDestinationTypeItem } from '@/types';
 import { CREATE_DESTINATION, DELETE_DESTINATION, UPDATE_DESTINATION } from '@/graphql/mutations';
 
 interface Params {
@@ -72,7 +72,8 @@ export const useDestinationCRUD = (params?: Params) => {
   // Filter mapped data
   const filtered = useMemo(() => {
     let arr = [...mapped];
-    if (!!filters.monitors.length) arr = arr.filter((destination) => !!filters.monitors.find((metric) => destination.exportedSignals[metric.id as keyof DestinationTypeItem['supportedSignals']]));
+    if (!!filters.monitors.length)
+      arr = arr.filter((destination) => !!filters.monitors.find((metric) => destination.exportedSignals[metric.id as keyof FetchedDestinationTypeItem['supportedSignals']]));
     return arr;
   }, [mapped, filters]);
 

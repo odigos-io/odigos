@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
-import { IDestinationListItem } from '@/hooks';
-import type { DestinationTypeItem } from '@/types';
+import { type FetchedDestinationTypeItem } from '@/types';
+import { type UseDestinationTypesResponse } from '@/hooks';
 import { capitalizeFirstLetter, SIGNAL_TYPE } from '@odigos/ui-utils';
 import { PotentialDestinationsList } from './potential-destinations-list';
 import { DataTab, NoDataFound, SectionTitle } from '@odigos/ui-components';
@@ -30,8 +30,8 @@ const NoDataFoundWrapper = styled(Container)`
 `;
 
 interface DestinationsListProps {
-  items: IDestinationListItem[];
-  setSelectedItems: (item: DestinationTypeItem) => void;
+  items: UseDestinationTypesResponse['destinations'];
+  setSelectedItems: (item: FetchedDestinationTypeItem) => void;
 }
 
 export const DestinationsList: React.FC<DestinationsListProps> = ({ items, setSelectedItems }) => {

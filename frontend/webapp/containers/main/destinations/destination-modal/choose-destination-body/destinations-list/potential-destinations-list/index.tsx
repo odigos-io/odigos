@@ -3,11 +3,11 @@ import styled from 'styled-components';
 import { OdigosLogo } from '@odigos/ui-icons';
 import { SIGNAL_TYPE } from '@odigos/ui-utils';
 import { usePotentialDestinations } from '@/hooks';
-import { type DestinationTypeItem } from '@/types';
+import { type FetchedDestinationTypeItem } from '@/types';
 import { DataTab, SectionTitle, SkeletonLoader } from '@odigos/ui-components';
 
 interface Props {
-  setSelectedItems: (item: DestinationTypeItem) => void;
+  setSelectedItems: (item: FetchedDestinationTypeItem) => void;
 }
 
 const ListsWrapper = styled.div`

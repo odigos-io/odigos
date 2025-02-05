@@ -9,7 +9,7 @@ import { ACTION, INPUT_TYPES } from '@/utils';
 import { DestinationFormBody } from '../destination-form-body';
 import { ChooseDestinationBody } from './choose-destination-body';
 import { useDestinationCRUD, useDestinationFormData } from '@/hooks';
-import type { ConfiguredDestination, DestinationTypeItem } from '@/types';
+import type { ConfiguredDestination, FetchedDestinationTypeItem } from '@/types';
 import { Modal, NavigationButtons, NavigationButtonsProps } from '@odigos/ui-components';
 
 interface AddDestinationModalProps {
@@ -34,7 +34,7 @@ const SideMenuWrapper = styled.div`
 export const DestinationModal: React.FC<AddDestinationModalProps> = ({ isOnboarding, isOpen, onClose }) => {
   useKeyDown({ key: 'Enter', active: isOpen }, () => handleSubmit());
 
-  const [selectedItem, setSelectedItem] = useState<DestinationTypeItem | undefined>();
+  const [selectedItem, setSelectedItem] = useState<FetchedDestinationTypeItem | undefined>();
 
   const { addConfiguredDestination } = useAppStore();
   const { createDestination, loading } = useDestinationCRUD();
@@ -54,7 +54,7 @@ export const DestinationModal: React.FC<AddDestinationModalProps> = ({ isOnboard
     setSelectedItem(undefined);
   };
 
-  const handleSelect = (item: DestinationTypeItem) => {
+  const handleSelect = (item: FetchedDestinationTypeItem) => {
     resetFormData();
     handleFormChange('type', item.type);
     setSelectedItem(item);

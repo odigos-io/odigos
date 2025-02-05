@@ -2,8 +2,8 @@ import { useMemo } from 'react';
 import { useQuery } from '@apollo/client';
 import { safeJsonParse } from '@odigos/ui-utils';
 import { type IAppState, useAppStore } from '@/store';
-import { type GetDestinationTypesResponse } from '@/types';
-import { GET_DESTINATION_TYPE, GET_POTENTIAL_DESTINATIONS } from '@/graphql';
+import { GET_POTENTIAL_DESTINATIONS } from '@/graphql';
+import { useDestinationTypes } from './useDestinationTypes';
 
 interface PotentialDestination {
   type: string;
@@ -36,14 +36,14 @@ const checkIfConfigured = (configuredDest: IAppState['configuredDestinations'][0
 
 export const usePotentialDestinations = () => {
   const { configuredDestinations } = useAppStore();
-  const { data: { destinationTypes } = {} } = useQuery<GetDestinationTypesResponse>(GET_DESTINATION_TYPE);
+  const { destinations: destinationTypes } = useDestinationTypes();
   const { loading, error, data: { potentialDestinations } = {} } = useQuery<GetPotentialDestinationsData>(GET_POTENTIAL_DESTINATIONS);
 
   const mappedPotentialDestinations = useMemo(() => {
     if (!destinationTypes || !potentialDestinations) return [];
 
     // Create a deep copy of destination types to manipulate
-    const categories: GetDestinationTypesResponse['destinationTypes']['categories'] = JSON.parse(JSON.stringify(destinationTypes.categories));
+    const categories: typeof destinationTypes = JSON.parse(JSON.stringify(destinationTypes));
 
     // Map over the potential destinations
     return potentialDestinations

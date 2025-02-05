@@ -5,7 +5,7 @@ import { GET_DESTINATION_TYPE_DETAILS } from '@/graphql';
 import { ACTION, FORM_ALERTS, INPUT_TYPES } from '@/utils';
 import { ENTITY_TYPES, NOTIFICATION_TYPE, safeJsonParse } from '@odigos/ui-utils';
 import { type Destination, type DrawerItem, useNotificationStore } from '@odigos/ui-containers';
-import { type DynamicField, type DestinationDetailsResponse, type DestinationInput, type DestinationTypeItem, type DestinationDetailsField } from '@/types';
+import { type FetchedDestinationDynamicField, type FetchedDestinationDetailsResponse, type DestinationInput, type FetchedDestinationTypeItem, type FetchedDestinationDetailsField } from '@/types';
 
 const INITIAL: DestinationInput = {
   type: '',
@@ -18,7 +18,7 @@ const INITIAL: DestinationInput = {
   fields: [],
 };
 
-const buildFormDynamicFields = (fields: DestinationDetailsField[]): DynamicField[] => {
+const buildFormDynamicFields = (fields: FetchedDestinationDetailsField[]): FetchedDestinationDynamicField[] => {
   return fields
     .map((field) => {
       const { name, componentType, componentProperties, displayName, initialValue, renderCondition } = field;
@@ -62,23 +62,23 @@ const buildFormDynamicFields = (fields: DestinationDetailsField[]): DynamicField
         }
       }
     })
-    .filter((field): field is DynamicField => field !== undefined);
+    .filter((field): field is FetchedDestinationDynamicField => field !== undefined);
 };
 
 export function useDestinationFormData(params?: {
   destinationType?: string;
   supportedSignals?: Destination['destinationType']['supportedSignals'];
-  preLoadedFields?: string | DestinationTypeItem['fields'];
+  preLoadedFields?: string | FetchedDestinationTypeItem['fields'];
 }) {
   const { destinationType, supportedSignals, preLoadedFields } = params || {};
 
   const { addNotification } = useNotificationStore();
   const { formData, formErrors, handleFormChange, handleErrorChange, resetFormData } = useGenericForm<DestinationInput>(INITIAL);
 
-  const [dynamicFields, setDynamicFields] = useState<DynamicField[]>([]);
+  const [dynamicFields, setDynamicFields] = useState<FetchedDestinationDynamicField[]>([]);
 
   const t = destinationType || formData.type;
-  const { data: { destinationTypeDetails } = {} } = useQuery<DestinationDetailsResponse>(GET_DESTINATION_TYPE_DETAILS, {
+  const { data: { destinationTypeDetails } = {} } = useQuery<FetchedDestinationDetailsResponse>(GET_DESTINATION_TYPE_DETAILS, {
     variables: { type: t },
     skip: !t,
     onError: (error) =>
@@ -136,7 +136,7 @@ export function useDestinationFormData(params?: {
   }, [supportedSignals]);
 
   const validateForm = (params?: { withAlert?: boolean; alertTitle?: string }) => {
-    const errors: Record<DynamicField['name'], string> = {};
+    const errors: Record<FetchedDestinationDynamicField['name'], string> = {};
     let ok = true;
 
     dynamicFields.forEach(({ name, value, required }) => {

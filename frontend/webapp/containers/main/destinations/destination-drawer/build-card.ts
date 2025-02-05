@@ -1,7 +1,7 @@
 import { DISPLAY_TITLES } from '@/utils';
 import { type Destination } from '@odigos/ui-containers';
 import { compareCondition, safeJsonParse } from '@odigos/ui-utils';
-import { type DestinationDetailsResponse, type ExportedSignals } from '@/types';
+import { type FetchedDestinationDetailsResponse, type ExportedSignals } from '@/types';
 import { DATA_CARD_FIELD_TYPES, type DataCardFieldsProps } from '@odigos/ui-components';
 
 const buildMonitorsList = (exportedSignals: ExportedSignals): string =>
@@ -9,7 +9,7 @@ const buildMonitorsList = (exportedSignals: ExportedSignals): string =>
     .filter((key) => exportedSignals[key as keyof ExportedSignals])
     .join(', ');
 
-const buildCard = (destination: Destination, destinationTypeDetails?: DestinationDetailsResponse['destinationTypeDetails']) => {
+const buildCard = (destination: Destination, destinationTypeDetails?: FetchedDestinationDetailsResponse['destinationTypeDetails']) => {
   const { exportedSignals, destinationType, fields } = destination;
 
   const arr: DataCardFieldsProps['data'] = [

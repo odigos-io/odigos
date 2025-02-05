@@ -1,42 +1,32 @@
 import { type ExportedSignals } from './common';
 import { type Comparison } from '@odigos/ui-utils';
+import { type Destination } from '@odigos/ui-containers';
 import { type DropdownProps } from '@odigos/ui-components';
 
 type YamlCompareArr = [string, Comparison, string] | ['true' | 'false'];
 
-export interface DestinationTypeItem {
-  type: string;
+export interface FetchedDestinationTypeItem {
+  type: Destination['destinationType']['type'];
+  displayName: Destination['destinationType']['displayName'];
+  imageUrl: Destination['destinationType']['imageUrl'];
+  supportedSignals: Destination['destinationType']['supportedSignals'];
+
   testConnectionSupported: boolean;
-  displayName: string;
-  imageUrl: string;
-  supportedSignals: {
-    logs: {
-      supported: boolean;
-    };
-    metrics: {
-      supported: boolean;
-    };
-    traces: {
-      supported: boolean;
-    };
-  };
   fields: {
     [key: string]: string;
   };
 }
 
-export interface DestinationsCategory {
-  name: string;
-  items: DestinationTypeItem[];
-}
-
-export interface GetDestinationTypesResponse {
+export interface FetchedDestinationTypes {
   destinationTypes: {
-    categories: DestinationsCategory[];
+    categories: {
+      name: string;
+      items: FetchedDestinationTypeItem[];
+    }[];
   };
 }
 
-export interface DestinationDetailsField {
+export interface FetchedDestinationDetailsField {
   name: string;
   displayName: string;
   componentType: string;
@@ -52,13 +42,13 @@ export interface DestinationDetailsField {
   }[];
 }
 
-export interface DestinationDetailsResponse {
+export interface FetchedDestinationDetailsResponse {
   destinationTypeDetails: {
-    fields: DestinationDetailsField[];
+    fields: FetchedDestinationDetailsField[];
   };
 }
 
-export interface DynamicField {
+export interface FetchedDestinationDynamicField {
   componentType: string;
   name: string;
   title: string;
