@@ -1,8 +1,9 @@
 'use client';
 import { useEffect } from 'react';
+import { ROUTES } from '@/utils';
 import { useConfig } from '@/hooks';
-import { ROUTES, CONFIG } from '@/utils';
 import { useRouter } from 'next/navigation';
+import { CONFIG_INSTALLATION } from '@/types';
 import { CenterThis, FadeLoader } from '@odigos/ui-components';
 
 export default function App() {
@@ -13,7 +14,7 @@ export default function App() {
     if (data) {
       const { installation, readonly } = data;
 
-      if (installation === CONFIG.NEW && !readonly) {
+      if (installation === CONFIG_INSTALLATION.NEW && !readonly) {
         router.push(ROUTES.CHOOSE_SOURCES);
       } else {
         router.push(ROUTES.OVERVIEW);

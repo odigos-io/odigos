@@ -19,20 +19,6 @@ export interface Notification {
   time: string;
 }
 
-export type Config = {
-  config: {
-    installation: string;
-    readonly: boolean;
-  };
-};
-
-export interface StepProps {
-  title: string;
-  subtitle?: string;
-  state: 'finish' | 'active' | 'disabled';
-  stepNumber: number;
-}
-
 export enum OVERVIEW_NODE_TYPES {
   ADD_RULE = 'addRule',
   ADD_SOURCE = 'addSource',

@@ -1,8 +1,14 @@
 import React, { useEffect } from 'react';
-import { type StepProps } from '@/types';
 import { Text } from '@odigos/ui-components';
 import { CheckIcon } from '@odigos/ui-icons';
 import styled, { css } from 'styled-components';
+
+interface StepProps {
+  title: string;
+  subtitle?: string;
+  state: 'finish' | 'active' | 'disabled';
+  stepNumber: number;
+}
 
 const Container = styled.div`
   display: flex;
