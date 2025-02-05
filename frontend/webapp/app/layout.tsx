@@ -1,9 +1,13 @@
 'use client';
-import React, { PropsWithChildren } from 'react';
-import { METADATA } from '@/utils';
+import React, { type PropsWithChildren } from 'react';
 import { ApolloWrapper } from '@/lib';
 import { ThemeProvider } from '@/styles';
 import { useDarkModeStore } from '@/store';
+
+const METADATA = {
+  title: 'Odigos',
+  icon: 'favicon.svg',
+};
 
 function RootLayout({ children }: PropsWithChildren) {
   const { darkMode } = useDarkModeStore();
