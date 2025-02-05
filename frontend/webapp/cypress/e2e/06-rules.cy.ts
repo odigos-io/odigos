@@ -5,7 +5,7 @@ import { BUTTONS, CRD_NAMES, DATA_IDS, INPUTS, MOCKED_DESCRIBE, NAMESPACES, ROUT
 // Tests will fail if you have existing CRDs in the cluster.
 // If you have to run tests locally, make sure to clean up the cluster before running the tests.
 
-const namespace = NAMESPACES.ODIGOS_SYSTEM;
+const namespace = NAMESPACES.ODIGOS_TEST;
 const crdName = CRD_NAMES.INSTRUMENTATION_RULE;
 
 describe('Instrumentation Rules CRUD', () => {
