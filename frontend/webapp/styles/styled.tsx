@@ -8,3 +8,13 @@ export const ModalBody = styled.div<{ $isNotModal?: boolean }>`
   margin: ${({ $isNotModal }) => ($isNotModal ? '64px 0 0 0' : '64px 7vw 32px 7vw')};
   overflow-y: scroll;
 `;
+
+export const OnboardingSideMenuWrapper = styled.div`
+  position: absolute;
+  left: 24px;
+  top: 144px;
+
+  @media (max-width: 1050px) {
+    display: none;
+  }
+`;

@@ -1,15 +1,15 @@
 'use client';
 import React from 'react';
 import { SideMenu } from '@/components';
-import { SideMenuWrapper } from '../styled';
+import { OnboardingSideMenuWrapper } from '@/styles';
 import { AddDestinationContainer } from '@/containers/main';
 
 export default function ChooseDestinationPage() {
   return (
     <>
-      <SideMenuWrapper>
+      <OnboardingSideMenuWrapper>
         <SideMenu currentStep={3} />
-      </SideMenuWrapper>
+      </OnboardingSideMenuWrapper>
       <AddDestinationContainer />
     </>
   );

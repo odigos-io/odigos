@@ -20,7 +20,7 @@ export const ErrorDropdown: React.FC<Props> = ({ title = 'Error Message', value,
     const payload: DropdownProps['options'] = [];
 
     sources.forEach(({ conditions = [] }) => {
-      conditions.forEach(({ status, message }) => {
+      conditions?.forEach(({ status, message }) => {
         if (status === BACKEND_BOOLEAN.FALSE && !payload.find((opt) => opt.id === message)) {
           payload.push({ id: message, value: message });
         }

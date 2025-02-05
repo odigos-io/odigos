@@ -1,15 +1,15 @@
 'use client';
 import React from 'react';
 import { SideMenu } from '@/components';
+import { OnboardingSideMenuWrapper } from '@/styles';
 import { ChooseSourcesContainer } from '@/containers/main';
-import { SideMenuWrapper } from '../styled';
 
 export default function ChooseSourcesPage() {
   return (
     <>
-      <SideMenuWrapper>
+      <OnboardingSideMenuWrapper>
         <SideMenu currentStep={2} />
-      </SideMenuWrapper>
+      </OnboardingSideMenuWrapper>
       <ChooseSourcesContainer />
     </>
   );
