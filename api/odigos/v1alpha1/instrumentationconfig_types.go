@@ -43,6 +43,15 @@ const (
 	AgentInjectionReasonOtherAgentDetected             AgentInjectionReason = "OtherAgentDetected"
 )
 
+// +kubebuilder:validation:Enum=RolloutTriggeredSuccessfully;FailedToPatch;PreviousRolloutOngoing
+type WorkloadRolloutReason string
+
+const (
+	WorkloadRolloutReasonTriggeredSuccessfully  WorkloadRolloutReason = "RolloutTriggeredSuccessfully"
+	WorkloadRolloutReasonFailedToPatch          WorkloadRolloutReason = "FailedToPatch"
+	WorkloadRolloutReasonPreviousRolloutOngoing WorkloadRolloutReason = "PreviousRolloutOngoing"
+)
+
 // givin multiple reasons for not injecting an agent, this function returns the priority of the reason.
 // which is - it allows choosing the most important reason to be displayed to the user in the aggregate status.
 func AgentInjectionReasonPriority(reason AgentInjectionReason) int {

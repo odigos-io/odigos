@@ -66,6 +66,16 @@ func (r *instrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 
 	// if the rollout is ongoing, wait for it to finish, requeue
 	if !isWorkloadRolloutDone(workloadObj) {
+		meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
+			Type:    odigosv1alpha1.WorkloadRolloutConditionType,
+			Status:  metav1.ConditionFalse,
+			Reason:  string(odigosv1alpha1.WorkloadRolloutReasonPreviousRolloutOngoing),
+			Message: "waiting for workload rollout to finish before triggering a new one",
+		})
+		err = r.Client.Status().Update(ctx, &ic)
+		if err != nil {
+			logger.Error(err, "error updating instrumentation config status")
+		}
 		return ctrl.Result{RequeueAfter: requeueWaitingForWorkloadRollout}, nil
 	}
 
@@ -87,14 +97,22 @@ func rolloutCondition(rolloutErr error) metav1.Condition {
 
 	if rolloutErr == nil {
 		cond.Status = metav1.ConditionTrue
+		cond.Reason = string(odigosv1alpha1.WorkloadRolloutReasonTriggeredSuccessfully)
+		cond.Message = "workload rollout triggered successfully"
 	} else {
 		cond.Status = metav1.ConditionFalse
+		cond.Reason = string(odigosv1alpha1.WorkloadRolloutReasonFailedToPatch)
 		cond.Message = rolloutErr.Error()
 	}
 
 	return cond
 }
 
+// configHash calculates a hash for the instrumentation config, based on the containers configuration
+// if agent injection is enabled, the hash is based on the containers configuration
+// if agent injection is disabled, the hash is empty
+// the reason for this is to avoid unnecessary rollouts when agent injection is disabled
+// (e,g the transition from empty config to a disabled one should not trigger a rollout)
 func configHash(ic *odigosv1alpha1.InstrumentationConfig) (string, error) {
 	if !ic.Spec.AgentInjectionEnabled {
 		return "", nil
