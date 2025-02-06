@@ -57,6 +57,10 @@ type OtelDistro struct {
 	// each distribution must target a single language.
 	Language common.ProgrammingLanguage `yaml:"language"`
 
+	// List of distribution parameters that are required to be set by the user.
+	// for example: libc type.
+	RequireParameters []string `yaml:"requireParameters,omitempty"`
+
 	// the runtime environments this distribution targets.
 	// examples: nodejs, JVM, CPython, etc.
 	// while java-script can run in both nodejs and browser, the distribution should specify where it is intended to run.

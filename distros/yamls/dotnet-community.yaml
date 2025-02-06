@@ -5,6 +5,8 @@ metadata:
 spec:
   name: dotnet-community
   language: dotnet
+  requireParameters:
+    - LIBC_TYPE
   runtimeEnvironments:
     - name: dotnet-version
       supportedVersions: '>= 6.0'
@@ -16,3 +18,4 @@ spec:
     This distribution is for Dotnet applications using OpenTelemetry Native SDK and instrumentation libraries from the OpenTelemetry community.
   tiers: 
     - community
+    - onprem

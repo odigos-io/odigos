@@ -1039,6 +1039,18 @@ can be left empty if reason is self-explanatory.</p>
 if the name is empty, this container should not be instrumented.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>distroParams</code> <B>[Required]</B>
+</td>
+<td>
+<code>map[string]string</code>
+</td>
+<td>
+   <p>Additional parameters to the distro that controls how it's being applied.
+Keys are parameter names (like &quot;libc&quot;) and values are the value to use for that parameter (glibc / musl)</p>
+</td>
+</tr>
 </tbody>
 </table>
 

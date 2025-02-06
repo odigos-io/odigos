@@ -29,7 +29,7 @@ const (
 	WorkloadRolloutStatusConditionType = "WorkloadRollout"
 )
 
-// +kubebuilder:validation:Enum=EnabledSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;UnsupportedProgrammingLanguage;IgnoredContainer;NoAvailableAgent;UnsupportedRuntimeVersion;OtherAgentDetected
+// +kubebuilder:validation:Enum=EnabledSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;UnsupportedProgrammingLanguage;IgnoredContainer;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected
 type AgentEnabledReason string
 
 const (
@@ -40,6 +40,7 @@ const (
 	AgentEnabledReasonIgnoredContainer               AgentEnabledReason = "IgnoredContainer"
 	AgentEnabledReasonNoAvailableAgent               AgentEnabledReason = "NoAvailableAgent"
 	AgentEnabledReasonUnsupportedRuntimeVersion      AgentEnabledReason = "UnsupportedRuntimeVersion"
+	AgentEnabledReasonMissingDistroParameter         AgentEnabledReason = "MissingDistroParameter"
 	AgentEnabledReasonOtherAgentDetected             AgentEnabledReason = "OtherAgentDetected"
 )
 
@@ -70,10 +71,12 @@ func AgentInjectionReasonPriority(reason AgentEnabledReason) int {
 		return 5
 	case AgentEnabledReasonNoAvailableAgent:
 		return 6
-	case AgentEnabledReasonOtherAgentDetected:
+	case AgentEnabledReasonMissingDistroParameter:
 		return 7
-	default:
+	case AgentEnabledReasonOtherAgentDetected:
 		return 8
+	default:
+		return 9
 	}
 }
 
@@ -152,6 +155,10 @@ type ContainerAgentConfig struct {
 	// The name of the otel distribution to use for this container.
 	// if the name is empty, this container should not be instrumented.
 	OtelDistroName string `json:"otelDistroName,omitempty"`
+
+	// Additional parameters to the distro that controls how it's being applied.
+	// Keys are parameter names (like "libc") and values are the value to use for that parameter (glibc / musl)
+	DistroParams map[string]string `json:"distroParams,omitempty"`
 }
 
 // Config for the OpenTelemeetry SDKs that should be applied to a workload.
