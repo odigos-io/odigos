@@ -1869,9 +1869,18 @@ If empty, no instrumentation libraries will be used.</p>
 <a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#OtelSdks"><code>instrumentationrules.OtelSdks</code></a>
 </td>
 <td>
-   <p>Set the OtelSdk to use for the workloads in this rule.
-instrumentation libraries will be ignored if set.
-the rule will be used only for languages which are specified, and ignored otherwise.</p>
+   <p>Deprecated: use OrelDistros instead.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>otelDistros</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#OtelDistros"><code>instrumentationrules.OtelDistros</code></a>
+</td>
+<td>
+   <p>Set the otel distros to use instead of the defaults.</p>
 </td>
 </tr>
 <tr>
