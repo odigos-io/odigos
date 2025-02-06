@@ -10,12 +10,12 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 )
 
 const (
 	containerDir   = "/instrumentations"
-	hostDir        = "/var/odigos"
 	chrootDir      = "/host"
 	semanagePath   = "/sbin/semanage"
 	restoreconPath = "/sbin/restorecon"
@@ -38,18 +38,18 @@ func CopyAgentsDirectoryToHost() error {
 		"/var/odigos/python-ebpf/pythonUSDT.abi3.so":                                                   {},
 	}
 
-	updatedFilesToKeepMap, err := removeChangedFilesFromKeepMap(filesToKeep, containerDir, hostDir)
+	updatedFilesToKeepMap, err := removeChangedFilesFromKeepMap(filesToKeep, containerDir, k8sconsts.OdigosAgentsDirectory)
 	if err != nil {
 		log.Logger.Error(err, "Error getting changed files")
 	}
 
-	err = removeFilesInDir(hostDir, updatedFilesToKeepMap)
+	err = removeFilesInDir(k8sconsts.OdigosAgentsDirectory, updatedFilesToKeepMap)
 	if err != nil {
 		log.Logger.Error(err, "Error removing instrumentation directory from host")
 		return err
 	}
 
-	err = copyDirectories(containerDir, hostDir, updatedFilesToKeepMap)
+	err = copyDirectories(containerDir, k8sconsts.OdigosAgentsDirectory, updatedFilesToKeepMap)
 	if err != nil {
 		log.Logger.Error(err, "Error copying instrumentation directory to host")
 		return err
@@ -73,7 +73,7 @@ func CopyAgentsDirectoryToHost() error {
 		_, err = exec.LookPath(restoreconPath)
 		if err == nil {
 			// Run the restorecon command to apply the new context
-			cmd := exec.Command(restoreconPath, "-r", "/var/odigos")
+			cmd := exec.Command(restoreconPath, "-r", k8sconsts.OdigosAgentsDirectory)
 			err = cmd.Run()
 			if err != nil {
 				log.Logger.Error(err, "Error running restorecon command")
