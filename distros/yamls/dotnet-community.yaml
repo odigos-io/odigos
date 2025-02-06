@@ -19,3 +19,5 @@ spec:
   tiers: 
     - community
     - onprem
+  agentDirectories:
+    - directoryName: "{{ODIGOS_AGENTS_DIR}}/dotnet"
