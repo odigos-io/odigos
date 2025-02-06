@@ -21,4 +21,4 @@ spec:
       envValue: '-javaagent:{{ODIGOS_AGENTS_DIR}}/java/javaagent.jar'
       delimiter: ' '
   agentDirectories:
-    - directoryName: "{{ODIGOS_AGENTS_DIR}}/dotnet"    
+    - directoryName: "{{ODIGOS_AGENTS_DIR}}/java"    

@@ -20,3 +20,5 @@ spec:
     - envName: JAVA_TOOL_OPTIONS
       envValue: "-javaagent:{{ODIGOS_AGENTS_DIR}}/java-ext-ebpf/javaagent.jar -Dotel.javaagent.extensions={{ODIGOS_AGENTS_DIR}}/java-ext-ebpf/otel_agent_extension.jar"
       delimiter: ' '
+  agentDirectories:
+    - directoryName: "{{ODIGOS_AGENTS_DIR}}/java-ext-ebpf"

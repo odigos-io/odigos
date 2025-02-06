@@ -10,6 +10,8 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/distros"
+	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	podutils "github.com/odigos-io/odigos/instrumentor/internal/pod"
 	webhookdeviceinjector "github.com/odigos-io/odigos/instrumentor/internal/webhook_device_injector"
@@ -87,6 +89,34 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 
 	// Add odiglet installed node-affinity to the pod
 	podutils.AddOdigletInstalledAffinity(pod)
+
+	volumeMounted := false
+	for i := range pod.Spec.Containers {
+		podContainerSpec := &pod.Spec.Containers[i]
+
+		containerConfig := findContainerConfigByName(ic.Spec.Containers, podContainerSpec.Name)
+		if containerConfig == nil {
+			// no config is found for this container, so skip (don't inject anything to it)
+			continue
+		}
+		distroName := containerConfig.OtelDistroName
+
+		distroMetadata := distros.GetDistroByName(distroName)
+		if distroMetadata == nil {
+			logger.Error(fmt.Errorf("distribution %s not found", distroName), "failed to get distribution metadata. Skipping Injection of ODIGOS agent for container")
+			continue
+		}
+
+		for _, agentDirectory := range distroMetadata.AgentDirectories {
+			mountDirectory(podContainerSpec, agentDirectory.DirectoryName)
+			volumeMounted = true
+		}
+	}
+
+	if volumeMounted {
+		// only mount the volume if at least one container has a volume to mount
+		mountPodVolume(pod)
+	}
 
 	return nil
 }
@@ -187,6 +217,41 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *core
 			Name:  otelResourceAttributesEnvVarName,
 			Value: resourceAttributesEnvValue,
 		})
+	}
+	return nil
+}
+
+func mountDirectory(containerSpec *corev1.Container, dir string) {
+	// TODO: assuming the directory always starts with {{ODIGOS_AGENTS_DIR}}. This should be validated.
+	// Should we return errors here to validate static values?
+	relativePath := strings.TrimPrefix(dir, distro.AgentDirSpecialValue+"/")
+	absolutePath := strings.ReplaceAll(dir, distro.AgentDirSpecialValue, k8sconsts.OdigosAgentsDirectory)
+	containerSpec.VolumeMounts = append(containerSpec.VolumeMounts, corev1.VolumeMount{
+		Name:      k8sconsts.OdigosAgentMountVolumeName,
+		SubPath:   relativePath,
+		MountPath: absolutePath,
+		ReadOnly:  true,
+	})
+}
+
+func mountPodVolume(pod *corev1.Pod) {
+	pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
+		Name: k8sconsts.OdigosAgentMountVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			HostPath: &corev1.HostPathVolumeSource{
+				Path: k8sconsts.OdigosAgentsDirectory,
+			},
+		},
+	})
+}
+
+// return the relevant container config by it's name, or nil if the container is not found
+func findContainerConfigByName(containersConfig []odigosv1.ContainerAgentConfig, containerName string) *odigosv1.ContainerAgentConfig {
+	for i := range containersConfig {
+		containerConfig := &containersConfig[i]
+		if containerConfig.ContainerName == containerName {
+			return containerConfig
+		}
 	}
 	return nil
 }
