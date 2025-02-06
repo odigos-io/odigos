@@ -1,7 +1,8 @@
 ---
-title: 'odigos config set'
-sidebarTitle: 'odigos config set'
+title: "odigos config set"
+sidebarTitle: "odigos config set"
 ---
+## odigos config set
 
 Set a configuration property in Odigos
 
@@ -9,28 +10,20 @@ Set a configuration property in Odigos
 odigos config set <property> <value> [flags]
 ```
 
-## Configurable Properties
+### Options
 
-The following properties can be set using the `odigos config set` command:
+```
+  -h, --help               help for set
+  -n, --namespace string   Namespace where Odigos is installed (default "odigos-system")
+```
 
-### Boolean Properties
+### Options inherited from parent commands
 
-- `telemetry-enabled`: Enables or disables telemetry.
-- `openshift-enabled`: Enables OpenShift-specific settings.
-- `psp`: Enables or disables Pod Security Policies.
-- `skip-webhook-issuer-creation`: Skips the creation of webhook issuers.
-- `allow-concurrent-agents`: Allows running multiple agents concurrently.
-
-### String Properties
-
-- `image-prefix`: Specifies a prefix for all container images.
-- `ui-mode`: Defines the UI mode, "normal" or "readonly".
-
-### List Properties
-
-- `ignored-namespaces`: Specifies a list of namespaces to be ignored.
-- `ignored-containers`: Specifies a list of containers to be ignored.
+```
+      --kube-context string   (optional) name of the kubeconfig context to use
+      --kubeconfig string     (optional) absolute path to the kubeconfig file (default "KUBECONFIG")
+```
 
 ### SEE ALSO
 
-- [odigos config](/cli/odigos_config) - Manage Odigos configuration
+* [odigos config](/cli/odigos_config)	 - Manage Odigos configuration
