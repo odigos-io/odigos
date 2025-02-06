@@ -21,6 +21,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+	"gorm.io/gorm/logger"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -80,42 +81,32 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		return nil
 	}
 
-	// Inject ODIGOS environment variables and instrumentation device into all containers
-	injectErr := p.injectOdigosInstrumentation(ctx, pod, &ic, pw)
-	if injectErr != nil {
-		logger.Error(injectErr, "failed to inject ODIGOS instrumentation. Skipping Injection of ODIGOS agent")
-		return nil
-	}
-
 	// Add odiglet installed node-affinity to the pod
 	podutils.AddOdigletInstalledAffinity(pod)
 
 	volumeMounted := false
 	for i := range pod.Spec.Containers {
 		podContainerSpec := &pod.Spec.Containers[i]
-
-		containerConfig := findContainerConfigByName(ic.Spec.Containers, podContainerSpec.Name)
+		containerConfig := ic.Spec.GetContainerAgentConfig(podContainerSpec.Name)
 		if containerConfig == nil {
 			// no config is found for this container, so skip (don't inject anything to it)
 			continue
 		}
-		distroName := containerConfig.OtelDistroName
 
-		distroMetadata := distros.GetDistroByName(distroName)
-		if distroMetadata == nil {
-			logger.Error(fmt.Errorf("distribution %s not found", distroName), "failed to get distribution metadata. Skipping Injection of ODIGOS agent for container")
-			continue
-		}
-
-		for _, agentDirectory := range distroMetadata.AgentDirectories {
-			mountDirectory(podContainerSpec, agentDirectory.DirectoryName)
-			volumeMounted = true
-		}
+		containerVolumeMounted := injectOdigosToContainer(containerConfig, podContainerSpec)
+		volumeMounted = volumeMounted || containerVolumeMounted
 	}
 
 	if volumeMounted {
 		// only mount the volume if at least one container has a volume to mount
 		mountPodVolume(pod)
+	}
+
+	// Inject ODIGOS environment variables and instrumentation device into all containers
+	injectErr := p.injectOdigosInstrumentation(ctx, pod, &ic, pw)
+	if injectErr != nil {
+		logger.Error(injectErr, "failed to inject ODIGOS instrumentation. Skipping Injection of ODIGOS agent")
+		return nil
 	}
 
 	return nil
@@ -234,6 +225,25 @@ func mountDirectory(containerSpec *corev1.Container, dir string) {
 	})
 }
 
+func injectOdigosToContainer(containerConfig *odigosv1.ContainerAgentConfig, podContainerSpec *corev1.Container) bool {
+
+	distroName := containerConfig.OtelDistroName
+
+	distroMetadata := distros.GetDistroByName(distroName)
+	if distroMetadata == nil {
+		logger.Error(fmt.Errorf("distribution %s not found", distroName), "failed to get distribution metadata. Skipping Injection of ODIGOS agent for container")
+		return false
+	}
+
+	volumeMounted := false
+	for _, agentDirectory := range distroMetadata.AgentDirectories {
+		mountDirectory(podContainerSpec, agentDirectory.DirectoryName)
+		volumeMounted = true
+	}
+
+	return volumeMounted
+}
+
 func mountPodVolume(pod *corev1.Pod) {
 	pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
 		Name: k8sconsts.OdigosAgentMountVolumeName,
@@ -243,17 +253,6 @@ func mountPodVolume(pod *corev1.Pod) {
 			},
 		},
 	})
-}
-
-// return the relevant container config by it's name, or nil if the container is not found
-func findContainerConfigByName(containersConfig []odigosv1.ContainerAgentConfig, containerName string) *odigosv1.ContainerAgentConfig {
-	for i := range containersConfig {
-		containerConfig := &containersConfig[i]
-		if containerConfig.ContainerName == containerName {
-			return containerConfig
-		}
-	}
-	return nil
 }
 
 func envVarsExist(containerEnv []corev1.EnvVar, commonEnvVars []corev1.EnvVar) bool {

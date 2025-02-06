@@ -2,7 +2,7 @@ package distro
 
 import "github.com/odigos-io/odigos/common"
 
-const AgentDirSpecialValue = "{{ODIGOS_AGENTS_DIR}}"
+const AgentPlaceholderDirectory = "{{ODIGOS_AGENTS_DIR}}"
 
 type RuntimeEnvironment struct {
 	// the runtime environment this distribution targets.
