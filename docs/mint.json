@@ -271,7 +271,10 @@
     },
     {
       "group": "Contibution Guidelines",
-      "pages": ["adding-new-dest", "debugging"]
+      "pages": [
+        "adding-new-dest",
+        "debugging"
+      ]
     },
     {
       "group": "VM Agent",
