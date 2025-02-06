@@ -144,7 +144,7 @@ spec:
                 - otelDistroNames
                 type: object
               otelSdks:
-                description: Deprecated use OrelDistros instead.
+                description: 'Deprecated: use OrelDistros instead.'
                 properties:
                   otelSdkByLanguage:
                     additionalProperties:
