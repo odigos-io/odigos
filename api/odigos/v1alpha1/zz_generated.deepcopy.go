@@ -864,6 +864,11 @@ func (in *InstrumentationRuleSpec) DeepCopyInto(out *InstrumentationRuleSpec) {
 		*out = new(instrumentationrules.OtelSdks)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.OtelDistros != nil {
+		in, out := &in.OtelDistros, &out.OtelDistros
+		*out = new(instrumentationrules.OtelDistros)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.CodeAttributes != nil {
 		in, out := &in.CodeAttributes, &out.CodeAttributes
 		*out = new(instrumentationrules.CodeAttributes)
