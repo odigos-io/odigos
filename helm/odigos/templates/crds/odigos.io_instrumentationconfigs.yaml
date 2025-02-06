@@ -72,6 +72,7 @@ spec:
                       - IgnoredContainer
                       - NoAvailableAgent
                       - UnsupportedRuntimeVersion
+                      - MissingDistroParameter
                       - OtherAgentDetected
                       type: string
                     containerName:
