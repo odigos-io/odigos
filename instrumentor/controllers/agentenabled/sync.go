@@ -344,14 +344,27 @@ func containerInstrumentationConfig(containerName string,
 func applyRulesForDistros(defaultDistros map[common.ProgrammingLanguage]string,
 	instrumentationRules *[]odigosv1.InstrumentationRule) map[common.ProgrammingLanguage]string {
 
-	for _, rule := range *instrumentationRules {
-		if rule.Spec.OtelSdks == nil {
-			continue
-		}
-		// TODO: change this from otel sdks to distros and use distro name
+	distrosPerLanguage := make(map[common.ProgrammingLanguage]string, len(defaultDistros))
+	for lang, distroName := range defaultDistros {
+		distrosPerLanguage[lang] = distroName
 	}
 
-	return defaultDistros
+	for _, rule := range *instrumentationRules {
+		if rule.Spec.OtelDistros == nil {
+			continue
+		}
+		for _, distroName := range rule.Spec.OtelDistros.OtelDistroNames {
+			distro := distros.GetDistroByName(distroName)
+			if distro == nil {
+				continue
+			}
+
+			lang := distro.Language
+			distrosPerLanguage[lang] = distroName
+		}
+	}
+
+	return distrosPerLanguage
 }
 
 // This function checks if we are waiting for some transient prerequisites to be completed before injecting the agent.
