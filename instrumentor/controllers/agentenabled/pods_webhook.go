@@ -10,6 +10,8 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/distros"
+	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	podutils "github.com/odigos-io/odigos/instrumentor/internal/pod"
 	webhookdeviceinjector "github.com/odigos-io/odigos/instrumentor/internal/webhook_device_injector"
@@ -78,15 +80,37 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		return nil
 	}
 
+	// Add odiglet installed node-affinity to the pod
+	podutils.AddOdigletInstalledAffinity(pod)
+
+	volumeMounted := false
+	for i := range pod.Spec.Containers {
+		podContainerSpec := &pod.Spec.Containers[i]
+		containerConfig := ic.Spec.GetContainerAgentConfig(podContainerSpec.Name)
+		if containerConfig == nil {
+			// no config is found for this container, so skip (don't inject anything to it)
+			continue
+		}
+
+		containerVolumeMounted, err := injectOdigosToContainer(containerConfig, podContainerSpec)
+		if err != nil {
+			logger.Error(err, "failed to inject ODIGOS agent to container")
+			continue
+		}
+		volumeMounted = volumeMounted || containerVolumeMounted
+	}
+
+	if volumeMounted {
+		// only mount the volume if at least one container has a volume to mount
+		mountPodVolume(pod)
+	}
+
 	// Inject ODIGOS environment variables and instrumentation device into all containers
 	injectErr := p.injectOdigosInstrumentation(ctx, pod, &ic, pw)
 	if injectErr != nil {
 		logger.Error(injectErr, "failed to inject ODIGOS instrumentation. Skipping Injection of ODIGOS agent")
 		return nil
 	}
-
-	// Add odiglet installed node-affinity to the pod
-	podutils.AddOdigletInstalledAffinity(pod)
 
 	return nil
 }
@@ -189,6 +213,48 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *core
 		})
 	}
 	return nil
+}
+
+func mountDirectory(containerSpec *corev1.Container, dir string) {
+	// TODO: assuming the directory always starts with {{ODIGOS_AGENTS_DIR}}. This should be validated.
+	// Should we return errors here to validate static values?
+	relativePath := strings.TrimPrefix(dir, distro.AgentPlaceholderDirectory+"/")
+	absolutePath := strings.ReplaceAll(dir, distro.AgentPlaceholderDirectory, k8sconsts.OdigosAgentsDirectory)
+	containerSpec.VolumeMounts = append(containerSpec.VolumeMounts, corev1.VolumeMount{
+		Name:      k8sconsts.OdigosAgentMountVolumeName,
+		SubPath:   relativePath,
+		MountPath: absolutePath,
+		ReadOnly:  true,
+	})
+}
+
+func injectOdigosToContainer(containerConfig *odigosv1.ContainerAgentConfig, podContainerSpec *corev1.Container) (bool, error) {
+
+	distroName := containerConfig.OtelDistroName
+
+	distroMetadata := distros.GetDistroByName(distroName)
+	if distroMetadata == nil {
+		return false, fmt.Errorf("distribution %s not found", distroName)
+	}
+
+	volumeMounted := false
+	for _, agentDirectory := range distroMetadata.AgentDirectories {
+		mountDirectory(podContainerSpec, agentDirectory.DirectoryName)
+		volumeMounted = true
+	}
+
+	return volumeMounted, nil
+}
+
+func mountPodVolume(pod *corev1.Pod) {
+	pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
+		Name: k8sconsts.OdigosAgentMountVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			HostPath: &corev1.HostPathVolumeSource{
+				Path: k8sconsts.OdigosAgentsDirectory,
+			},
+		},
+	})
 }
 
 func envVarsExist(containerEnv []corev1.EnvVar, commonEnvVars []corev1.EnvVar) bool {

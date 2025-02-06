@@ -179,6 +179,15 @@ type InstrumentationConfigSpec struct {
 	SdkConfigs []SdkConfig `json:"sdkConfigs,omitempty"`
 }
 
+func (in *InstrumentationConfigSpec) GetContainerAgentConfig(containerName string) *ContainerAgentConfig {
+	for _, containerConfig := range in.Containers {
+		if containerConfig.ContainerName == containerName {
+			return &containerConfig
+		}
+	}
+	return nil
+}
+
 type SdkConfig struct {
 
 	// The language of the SDK being configured

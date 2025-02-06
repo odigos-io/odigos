@@ -2,6 +2,8 @@ package distro
 
 import "github.com/odigos-io/odigos/common"
 
+const AgentPlaceholderDirectory = "{{ODIGOS_AGENTS_DIR}}"
+
 type RuntimeEnvironment struct {
 	// the runtime environment this distribution targets.
 	// examples: nodejs, JVM, CPython, etc.
@@ -36,6 +38,13 @@ type EnvironmentVariable struct {
 	// this field specifies the delimiter to use.
 	// e.g. `:` for PYTHONPATH=/path/to/lib1:/path/to/lib2
 	Delimiter string `yaml:"delimiter"`
+}
+
+type AgentDirectory struct {
+	// The name of a directory where odigos agent files can be found.
+	// The special value {{ODIGOS_AGENTS_DIR}} is replaced with the actual value at this platform.
+	// K8s will mount this directory from the node fs to the container, but other platforms may have different ways for handling this.
+	DirectoryName string `yaml:"directoryName"`
 }
 
 // OtelDistro (Short for OpenTelemetry Distribution) is a collection of OpenTelemetry components,
@@ -78,4 +87,9 @@ type OtelDistro struct {
 	// a list of environment variables that needs to be set in the application runtime
 	// to enable the distribution.
 	EnvironmentVariables []EnvironmentVariable `yaml:"environmentVariables,omitempty"`
+
+	// Directories on the FS where the agent files can be consumed from.
+	// this can be empty if the distribution does not require agent files,
+	// or contain more than one directory if the distribution requires it.
+	AgentDirectories []AgentDirectory `yaml:"agentDirectories,omitempty"`
 }
