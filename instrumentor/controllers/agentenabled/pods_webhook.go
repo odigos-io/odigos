@@ -21,7 +21,6 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
-	"gorm.io/gorm/logger"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -93,7 +92,11 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 			continue
 		}
 
-		containerVolumeMounted := injectOdigosToContainer(containerConfig, podContainerSpec)
+		containerVolumeMounted, err := injectOdigosToContainer(containerConfig, podContainerSpec)
+		if err != nil {
+			logger.Error(err, "failed to inject ODIGOS agent to container")
+			continue
+		}
 		volumeMounted = volumeMounted || containerVolumeMounted
 	}
 
@@ -225,14 +228,13 @@ func mountDirectory(containerSpec *corev1.Container, dir string) {
 	})
 }
 
-func injectOdigosToContainer(containerConfig *odigosv1.ContainerAgentConfig, podContainerSpec *corev1.Container) bool {
+func injectOdigosToContainer(containerConfig *odigosv1.ContainerAgentConfig, podContainerSpec *corev1.Container) (bool, error) {
 
 	distroName := containerConfig.OtelDistroName
 
 	distroMetadata := distros.GetDistroByName(distroName)
 	if distroMetadata == nil {
-		logger.Error(fmt.Errorf("distribution %s not found", distroName), "failed to get distribution metadata. Skipping Injection of ODIGOS agent for container")
-		return false
+		return false, fmt.Errorf("distribution %s not found", distroName)
 	}
 
 	volumeMounted := false
@@ -241,7 +243,7 @@ func injectOdigosToContainer(containerConfig *odigosv1.ContainerAgentConfig, pod
 		volumeMounted = true
 	}
 
-	return volumeMounted
+	return volumeMounted, nil
 }
 
 func mountPodVolume(pod *corev1.Pod) {
