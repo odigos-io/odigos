@@ -141,6 +141,20 @@ spec:
 apiVersion: odigos.io/v1alpha1
 kind: Source
 metadata:
+  name: java-omit-in-entrypoint
+  namespace: default
+  labels:
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: java-omit-in-entrypoint
+    namespace: default
+    kind: Deployment
+  otelServiceName: java-omit-in-entrypoint-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
   name: python-latest-version
   namespace: default
   labels:

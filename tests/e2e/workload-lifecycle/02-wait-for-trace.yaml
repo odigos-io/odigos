@@ -9,6 +9,7 @@ query: |
   { resource.service.name = "java-supported-version-reported" } ||
   { resource.service.name = "java-latest-version-reported" } ||
   { resource.service.name = "java-old-version-reported" } ||
+  { resource.service.name = "java-omit-in-entrypoint-reported" } ||
   { resource.service.name = "java-supported-docker-env-reported" } ||
   { resource.service.name = "java-supported-manifest-env-reported" } ||
   { resource.service.name = "java-azul-reported" } ||

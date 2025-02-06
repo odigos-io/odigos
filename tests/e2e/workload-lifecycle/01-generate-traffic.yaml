@@ -38,6 +38,7 @@ spec:
               curl -s --fail http://java-supported-manifest-env:3000
               curl -s --fail http://java-latest-version:3000
               curl -s --fail http://java-old-version:3000
+              curl -s --fail http://java-omit-in-entrypoint:3000
 
               curl -s --fail http://python-alpine:3000/insert-random/
               curl -s --fail http://python-latest-version:3000/insert-random/

@@ -78,6 +78,10 @@ This e2e test verify various scenarios related to the lifecycle of workloads in 
 - Application uses JAVA_OPTS environment variable in the k8s deployment manifest.
 - This workload verifies that after instrumentation is applied, those 2 options still works as expected.
 
+### java-supported-manifest-env
+
+- This workload verifies that even if there is no "java" keyword in exec command, the runtime ispection process still recognize it as java process
+
 ## Python Workloads
 
 ### python-latest-version

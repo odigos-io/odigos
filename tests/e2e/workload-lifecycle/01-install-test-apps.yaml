@@ -475,6 +475,33 @@ spec:
               port: 3000
             initialDelaySeconds: 20
 ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-omit-in-entrypoint:v0.0.1
+  namespace: default
+  labels:
+    app: java-omit-in-entrypoint
+spec:
+  selector:
+    matchLabels:
+      app: java-omit-in-entrypoint
+  template:
+    metadata:
+      labels:
+        app: java-omit-in-entrypoint
+    spec:
+      containers:
+        - name: java-omit-in-entrypoint
+          image: java-omit-in-entrypoint:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          readinessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 20
+---
 kind: Service
 apiVersion: v1
 metadata:

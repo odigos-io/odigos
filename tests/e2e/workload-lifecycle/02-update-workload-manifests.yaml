@@ -366,6 +366,38 @@ spec:
               port: 3000
             initialDelaySeconds: 20
 ---
+
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: java-omit-in-entrypoint
+  namespace: default
+  labels:
+    app: java-omit-in-entrypoint
+    odigos.io/e2e: test-workload
+spec:
+  selector:
+    matchLabels:
+      app: java-omit-in-entrypoint
+  template:
+    metadata:
+      labels:
+        app: java-omit-in-entrypoint
+      annotations:
+        odigos-test-step: "2"
+    spec:
+      containers:
+        - name: java-omit-in-entrypoint
+          image: java-omit-in-entrypoint:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          readinessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 20
+---
+
 kind: Deployment
 apiVersion: apps/v1
 metadata:
