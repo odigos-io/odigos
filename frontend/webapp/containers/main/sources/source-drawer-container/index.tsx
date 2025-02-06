@@ -8,7 +8,7 @@ import { useDrawerStore } from '@odigos/ui-containers';
 import { UpdateSourceBody } from '../update-source-body';
 import { useDescribeSource, useSourceCRUD } from '@/hooks';
 import OverviewDrawer from '../../overview/overview-drawer';
-import { ACTION,  DATA_CARDS } from '@/utils';
+import { ACTION, DATA_CARDS } from '@/utils';
 import { CONDITION_STATUS, ENTITY_TYPES, getEntityIcon, safeJsonStringify, type WorkloadId } from '@odigos/ui-utils';
 import { ConditionDetails, DATA_CARD_FIELD_TYPES, DataCard, type DataCardFieldsProps, Segment } from '@odigos/ui-components';
 
@@ -44,6 +44,10 @@ export const SourceDrawer: React.FC<Props> = () => {
     },
   });
 
+  // TODO: check if the item is already set on-mount
+  // drawerItem['item'] = sources.find(
+  //   (item) => item.kind === (drawerItem['id'] as WorkloadId).kind && item.name === (drawerItem['id'] as WorkloadId).name && item.namespace === (drawerItem['id'] as WorkloadId).namespace,
+  // );
   const reSelectItem = (fetchedItems?: typeof sources) => {
     const { item } = selectedItem as { item: FetchedSource };
     const { namespace, name, kind } = item;

@@ -1,3 +1,5 @@
+import { CRUD } from '@odigos/ui-utils';
+
 export const SETUP = {
   MONITORS: {
     LOGS: 'Logs',
@@ -14,12 +16,6 @@ export const INPUT_TYPES = {
   TEXTAREA: 'textarea',
   CHECKBOX: 'checkbox',
 };
-
-export enum CRUD {
-  CREATE = 'Create',
-  UPDATE = 'Update',
-  DELETE = 'Delete',
-}
 
 export const ACTION = {
   SAVE: 'Save',

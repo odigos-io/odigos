@@ -3,10 +3,9 @@ import React from 'react';
 import dynamic from 'next/dynamic';
 import styled from 'styled-components';
 import { type SourceInstrumentInput } from '@/types';
-import { DataFlow, DataFlowActionsMenu, MultiSourceControl, Source } from '@odigos/ui-containers';
+import { DataFlow, DataFlowActionsMenu, MultiSourceControl, Source, ToastList } from '@odigos/ui-containers';
 import { useActionCRUD, useDestinationCRUD, useInstrumentationRuleCRUD, useMetrics, useNamespace, useNodeDataFlowHandlers, usePaginatedSources, useSourceCRUD, useSSE, useTokenTracker } from '@/hooks';
 
-const ToastList = dynamic(() => import('@/components/notification/toast-list'), { ssr: false });
 const AllModals = dynamic(() => import('@/components/overview/all-modals'), { ssr: false });
 const AllDrawers = dynamic(() => import('@/components/overview/all-drawers'), { ssr: false });
 
@@ -63,7 +62,6 @@ export default function MainPage() {
           metrics={metrics}
           onNodeClick={handleNodeClick}
         />
-
         <MultiSourceControl
           totalSourceCount={sources.length}
           uninstrumentSources={(payload) => {

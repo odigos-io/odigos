@@ -35,6 +35,8 @@ export const RuleDrawer: React.FC<Props> = () => {
     },
   });
 
+  // TODO: check if the item is already set on-mount
+  // drawerItem['item'] = instrumentationRules.find((item) => item.ruleId === drawerItem['id']);
   const reSelectItem = (fetchedItems?: typeof instrumentationRules) => {
     const { item } = selectedItem as { item: InstrumentationRuleSpecMapped };
     const { ruleId: id } = item;

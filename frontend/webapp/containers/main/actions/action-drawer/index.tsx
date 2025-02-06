@@ -39,6 +39,8 @@ export const ActionDrawer: React.FC<Props> = () => {
     },
   });
 
+  // TODO: check if the item is already set on-mount
+  // drawerItem['item'] = actions.find((item) => item.id === drawerItem['id']);
   const reSelectItem = (fetchedItems?: typeof actions) => {
     const { item } = selectedItem as { item: Action };
     const { id } = item;

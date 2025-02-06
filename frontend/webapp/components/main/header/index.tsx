@@ -3,13 +3,12 @@ import { useConfig } from '@/hooks';
 import { Theme } from '@odigos/ui-theme';
 import { PlatformTitle } from './cp-title';
 import { FORM_ALERTS, SLACK_LINK } from '@/utils';
-import { NotificationManager } from '@/components';
 import styled, { useTheme } from 'styled-components';
 import { useDarkModeStore, useStatusStore } from '@/store';
 import { NOTIFICATION_TYPE, PLATFORM_TYPE } from '@odigos/ui-utils';
 import { OdigosLogoText, SlackLogo, TerminalIcon } from '@odigos/ui-icons';
-import { DRAWER_OTHER_TYPES, useDrawerStore } from '@odigos/ui-containers';
 import { FlexRow, IconButton, Status, ToggleDarkMode, Tooltip } from '@odigos/ui-components';
+import { DRAWER_OTHER_TYPES, NotificationManager, useDrawerStore } from '@odigos/ui-containers';
 
 interface MainHeaderProps {}
 
