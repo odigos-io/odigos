@@ -87,7 +87,8 @@
             "cli/odigos_uninstall",
             "cli/odigos_upgrade",
             "cli/odigos_version",
-            "cli/odigos_sources"
+            "cli/odigos_sources",
+            "cli/odigos_config"
           ]
         },
         {
