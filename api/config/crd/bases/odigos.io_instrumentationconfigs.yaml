@@ -78,6 +78,13 @@ spec:
                       description: The name of the container to which this configuration
                         applies.
                       type: string
+                    distroParams:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        Additional parameters to the distro that controls how it's being applied.
+                        Keys are parameter names (like "libc") and values are the value to use for that parameter (glibc / musl)
+                      type: object
                     otelDistroName:
                       description: |-
                         The name of the otel distribution to use for this container.
