@@ -286,6 +286,30 @@ func containerInstrumentationConfig(containerName string,
 		}
 	}
 
+	distroParameters := map[string]string{}
+	for _, parameterName := range distro.RequireParameters {
+		switch parameterName {
+		case common.LibcTypeDistroParameterName:
+			if runtimeDetails.LibCType == nil {
+				return odigosv1.ContainerAgentConfig{
+					ContainerName:       containerName,
+					AgentEnabled:        false,
+					AgentEnabledReason:  odigosv1.AgentEnabledReasonMissingDistroParameter,
+					AgentEnabledMessage: fmt.Sprintf("missing required parameter '%s' for distro '%s'", common.LibcTypeDistroParameterName, distroName),
+				}
+			}
+			distroParameters[common.LibcTypeDistroParameterName] = string(*runtimeDetails.LibCType)
+
+		default:
+			return odigosv1.ContainerAgentConfig{
+				ContainerName:       containerName,
+				AgentEnabled:        false,
+				AgentEnabledReason:  odigosv1.AgentEnabledReasonMissingDistroParameter,
+				AgentEnabledMessage: fmt.Sprintf("unsupported parameter '%s' for distro '%s'", parameterName, distroName),
+			}
+		}
+	}
+
 	// check for presence of other agents
 	if runtimeDetails.OtherAgent != nil {
 		if effectiveConfig.AllowConcurrentAgents == nil || !*effectiveConfig.AllowConcurrentAgents {
@@ -302,6 +326,7 @@ func containerInstrumentationConfig(containerName string,
 				AgentEnabledReason:  odigosv1.AgentEnabledReasonEnabledSuccessfully,
 				AgentEnabledMessage: fmt.Sprintf("we are operating alongside the %s, which is not the recommended configuration. We suggest disabling the %s for optimal performance.", runtimeDetails.OtherAgent.Name, runtimeDetails.OtherAgent.Name),
 				OtelDistroName:      distroName,
+				DistroParams:        distroParameters,
 			}
 		}
 	}
@@ -310,6 +335,7 @@ func containerInstrumentationConfig(containerName string,
 		ContainerName:  containerName,
 		AgentEnabled:   true,
 		OtelDistroName: distroName,
+		DistroParams:   distroParameters,
 	}
 
 	return containerConfig
@@ -318,14 +344,27 @@ func containerInstrumentationConfig(containerName string,
 func applyRulesForDistros(defaultDistros map[common.ProgrammingLanguage]string,
 	instrumentationRules *[]odigosv1.InstrumentationRule) map[common.ProgrammingLanguage]string {
 
-	for _, rule := range *instrumentationRules {
-		if rule.Spec.OtelSdks == nil {
-			continue
-		}
-		// TODO: change this from otel sdks to distros and use distro name
+	distrosPerLanguage := make(map[common.ProgrammingLanguage]string, len(defaultDistros))
+	for lang, distroName := range defaultDistros {
+		distrosPerLanguage[lang] = distroName
 	}
 
-	return defaultDistros
+	for _, rule := range *instrumentationRules {
+		if rule.Spec.OtelDistros == nil {
+			continue
+		}
+		for _, distroName := range rule.Spec.OtelDistros.OtelDistroNames {
+			distro := distros.GetDistroByName(distroName)
+			if distro == nil {
+				continue
+			}
+
+			lang := distro.Language
+			distrosPerLanguage[lang] = distroName
+		}
+	}
+
+	return distrosPerLanguage
 }
 
 // This function checks if we are waiting for some transient prerequisites to be completed before injecting the agent.
