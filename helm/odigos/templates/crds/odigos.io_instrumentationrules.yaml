@@ -128,11 +128,23 @@ spec:
                   regarding the rule for convenience. For example: why it was added.
                   Odigos does not use or assume any meaning from this field.'
                 type: string
+              otelDistros:
+                description: Set the otel distros to use instead of the defaults.
+                properties:
+                  otelDistroNames:
+                    description: |-
+                      Set a list of distribution names that take priority over the default distributions.
+                      if a language is not in this list, the default distribution will be used.
+                      it multiple distributions are specified for the same language, in one or many rules,
+                      the behavior is undefined.
+                    items:
+                      type: string
+                    type: array
+                required:
+                - otelDistroNames
+                type: object
               otelSdks:
-                description: |-
-                  Set the OtelSdk to use for the workloads in this rule.
-                  instrumentation libraries will be ignored if set.
-                  the rule will be used only for languages which are specified, and ignored otherwise.
+                description: Deprecated use OrelDistros instead.
                 properties:
                   otelSdkByLanguage:
                     additionalProperties:
