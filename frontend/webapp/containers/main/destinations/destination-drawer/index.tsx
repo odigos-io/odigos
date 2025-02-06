@@ -2,10 +2,10 @@ import React, { useEffect, useMemo, useState } from 'react';
 import buildCard from './build-card';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
-import { ACTION, DATA_CARDS } from '@/utils';
 import { type ActualDestination } from '@/types';
 import buildDrawerItem from './build-drawer-item';
 import OverviewDrawer from '../../overview/overview-drawer';
+import { ACTION, CONDITION_STATUS, DATA_CARDS } from '@/utils';
 import { DestinationFormBody } from '../destination-form-body';
 import { ENTITY_TYPES, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 import { useDestinationCRUD, useDestinationFormData, useDestinationTypes } from '@/hooks';
@@ -84,9 +84,10 @@ export const DestinationDrawer: React.FC<Props> = () => {
 
     return {
       conditions:
-        item?.conditions?.map(({ status, message }) => ({
-          status: ['false', 'error'].includes(String(status).toLowerCase()) ? NOTIFICATION_TYPE.ERROR : NOTIFICATION_TYPE.SUCCESS,
+        item?.conditions?.map(({ status, message, lastTransitionTime }) => ({
+          status: status === CONDITION_STATUS.FALSE ? NOTIFICATION_TYPE.ERROR : status === CONDITION_STATUS.TRUE ? NOTIFICATION_TYPE.SUCCESS : NOTIFICATION_TYPE.WARNING,
           message,
+          lastTransitionTime,
         })) || [],
     };
   }, [selectedItem]);

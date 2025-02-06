@@ -7,7 +7,7 @@ spec:
   language: java
   runtimeEnvironments:
     - name: java-virtual-machine
-      version: '>= 8'
+      supportedVersions: '>= 8'
   displayName: Java Enterprise eBPF Instrumentation
   description: |
     This distribution is for JVM-based applications (Java, Scala, Kotlin, etc.) using eBPF based SDK and eBPF enterprise instrumentation libraries.

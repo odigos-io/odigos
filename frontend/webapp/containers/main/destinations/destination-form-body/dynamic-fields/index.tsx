@@ -14,6 +14,7 @@ export const DestinationDynamicFields: React.FC<Props> = ({ fields, onChange, fo
   return fields?.map((field) => {
     const { componentType, renderCondition, ...rest } = field;
 
+    // @ts-ignore
     const shouldRender = compareCondition(renderCondition, fields);
     if (!shouldRender) return null;
 
