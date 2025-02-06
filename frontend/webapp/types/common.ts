@@ -8,8 +8,6 @@ export interface ExportedSignals {
 
 export interface Condition {
   status: string;
-  type: string;
-  reason: string;
   message: string;
   lastTransitionTime: string;
 }
