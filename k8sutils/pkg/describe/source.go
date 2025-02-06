@@ -18,7 +18,7 @@ func printWorkloadManifestInfo(analyze *source.SourceAnalyze, sb *strings.Builde
 	printProperty(sb, 0, &analyze.Kind)
 	printProperty(sb, 0, &analyze.Namespace)
 
-	sb.WriteString("Labels:\n")
+	sb.WriteString("Source Custom Resources:\n")
 	printProperty(sb, 1, &analyze.SourceObjectsAnalysis.Instrumented)
 	printProperty(sb, 1, analyze.SourceObjectsAnalysis.Workload)
 	printProperty(sb, 1, analyze.SourceObjectsAnalysis.Namespace)
@@ -26,95 +26,67 @@ func printWorkloadManifestInfo(analyze *source.SourceAnalyze, sb *strings.Builde
 }
 
 func printRuntimeDetails(analyze *source.SourceAnalyze, sb *strings.Builder) {
-	describeText(sb, 0, "\nRuntime Inspection Details:")
+	describeText(sb, 0, false, "\nRuntime Inspection Details:")
 
 	if analyze.RuntimeInfo == nil {
-		describeText(sb, 1, "No runtime details")
+		describeText(sb, 1, false, "No runtime details")
 		return
 	}
 
-	describeText(sb, 1, "Detected Containers:")
+	describeText(sb, 1, false, "Detected Containers:")
 	for i := range analyze.RuntimeInfo.Containers {
 		container := analyze.RuntimeInfo.Containers[i]
 		printProperty(sb, 2, &container.ContainerName)
-		printProperty(sb, 3, &container.Language)
-		printProperty(sb, 3, &container.RuntimeVersion)
+		printProperty(sb, 2, &container.Language)
+		printProperty(sb, 2, &container.RuntimeVersion)
 		if len(container.EnvVars) > 0 {
-			describeText(sb, 3, "Relevant Environment Variables:")
+			describeText(sb, 2, false, "Relevant Environment Variables:")
 			for _, envVar := range container.EnvVars {
-				describeText(sb, 4, "%s", fmt.Sprintf("%s: %s", envVar.Name, envVar.Value))
+				describeText(sb, 3, true, "%s", fmt.Sprintf("%s: %s", envVar.Name, envVar.Value))
 			}
 		}
 	}
 }
 
 func printInstrumentationConfigInfo(analyze *source.SourceAnalyze, sb *strings.Builder) {
-	describeText(sb, 0, "\nInstrumentation Config:")
-	printProperty(sb, 1, &analyze.InstrumentationConfig.Created)
-	printProperty(sb, 1, analyze.InstrumentationConfig.CreateTime)
+	describeText(sb, 0, false, "\nInstrumentation Config:")
+	printProperty(sb, 1, &analyze.OtelAgents.Created)
+	printProperty(sb, 1, analyze.OtelAgents.CreateTime)
 
-	describeText(sb, 1, "Detected Containers:")
-	for i := range analyze.InstrumentationConfig.Containers {
-		container := analyze.InstrumentationConfig.Containers[i]
-		printProperty(sb, 2, &container.ContainerName)
-		printProperty(sb, 3, &container.Language)
-		printProperty(sb, 3, &container.RuntimeVersion)
-		printProperty(sb, 3, &container.CriError)
-		if len(container.EnvVars) > 0 {
-			describeText(sb, 3, "Relevant Environment Variables:")
-			for _, envVar := range container.EnvVars {
-				describeText(sb, 4, "%s", fmt.Sprintf("%s: %s", envVar.Name, envVar.Value))
-			}
-		}
-		if len(container.ContainerRuntimeEnvs) > 0 {
-			describeText(sb, 3, "Relevant Container Runtime Environment Variables:")
-			for _, containerRuntimeEnvVar := range container.ContainerRuntimeEnvs {
-				describeText(sb, 4, "%s", fmt.Sprintf("%s: %s", containerRuntimeEnvVar.Name, containerRuntimeEnvVar.Value))
-			}
-		}
-	}
-}
-
-func printAppliedInstrumentationDeviceInfo(analyze *source.SourceAnalyze, sb *strings.Builder) {
-	describeText(sb, 0, "\nInstrumentation Device:")
-	printProperty(sb, 1, &analyze.InstrumentationDevice.StatusText)
-	describeText(sb, 1, "Containers:")
-	for i := range analyze.InstrumentationDevice.Containers {
-		container := analyze.InstrumentationDevice.Containers[i]
-		printProperty(sb, 2, &container.ContainerName)
-		printProperty(sb, 3, &container.Devices)
-		if len(container.OriginalEnv) > 0 {
-			describeText(sb, 3, "Original Environment Variables:")
-			for _, envVar := range container.OriginalEnv {
-				printProperty(sb, 4, &envVar)
-			}
-		}
+	describeText(sb, 1, false, "Containers:")
+	for i := range analyze.OtelAgents.Containers {
+		containerConfig := analyze.OtelAgents.Containers[i]
+		printProperty(sb, 2, &containerConfig.ContainerName)
+		printProperty(sb, 2, &containerConfig.AgentEnabled)
+		printProperty(sb, 2, containerConfig.Reason)
+		printProperty(sb, 2, containerConfig.Message)
+		printProperty(sb, 2, containerConfig.OtelDistroName)
 	}
 }
 
 func printPodsInfo(analyze *source.SourceAnalyze, sb *strings.Builder) {
-	describeText(sb, 0, "\nPods (Total %d, %s):", analyze.TotalPods, analyze.PodsPhasesCount)
+	describeText(sb, 0, false, "\nPods (Total %d, %s):", analyze.TotalPods, analyze.PodsPhasesCount)
 
 	for i := range analyze.Pods {
 		pod := analyze.Pods[i]
-		describeText(sb, 0, "")
+		describeText(sb, 0, false, "")
 		printProperty(sb, 1, &pod.PodName)
 		printProperty(sb, 1, &pod.NodeName)
 		printProperty(sb, 1, &pod.Phase)
-		describeText(sb, 1, "Containers:")
+		describeText(sb, 1, false, "Containers:")
 		for i := range pod.Containers {
 			container := pod.Containers[i]
 			printProperty(sb, 2, &container.ContainerName)
-			printProperty(sb, 3, &container.ActualDevices)
-			describeText(sb, 3, "")
-			describeText(sb, 3, "Instrumentation Instances:")
+			printProperty(sb, 2, &container.ActualDevices)
+			describeText(sb, 2, false, "")
+			describeText(sb, 2, false, "Instrumentation Instances:")
 			for _, ii := range container.InstrumentationInstances {
-				printProperty(sb, 4, &ii.Healthy)
-				printProperty(sb, 4, ii.Message)
+				printProperty(sb, 3, &ii.Healthy)
+				printProperty(sb, 3, ii.Message)
 				if len(ii.IdentifyingAttributes) > 0 {
-					describeText(sb, 4, "Identifying Attributes:")
+					describeText(sb, 3, false, "Identifying Attributes:")
 					for _, attr := range ii.IdentifyingAttributes {
-						printProperty(sb, 5, &attr)
+						printProperty(sb, 4, &attr)
 					}
 				}
 			}
@@ -128,7 +100,6 @@ func DescribeSourceToText(analyze *source.SourceAnalyze) string {
 	printWorkloadManifestInfo(analyze, &sb)
 	printRuntimeDetails(analyze, &sb)
 	printInstrumentationConfigInfo(analyze, &sb)
-	printAppliedInstrumentationDeviceInfo(analyze, &sb)
 	printPodsInfo(analyze, &sb)
 
 	return sb.String()

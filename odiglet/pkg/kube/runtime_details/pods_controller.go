@@ -6,7 +6,6 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
-	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -56,13 +55,8 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request reconcile.Reques
 		return reconcile.Result{}, client.IgnoreNotFound(err)
 	}
 
-	odigosConfig, err := k8sutils.GetCurrentOdigosConfig(ctx, p.Client)
-	if err != nil {
-		return k8sutils.K8SNoEffectiveConfigErrorHandler(err)
-	}
-
 	// Perform runtime inspection once we know the pod is newer that the latest runtime inspection performed and saved.
-	runtimeResults, err := runtimeInspection(ctx, []corev1.Pod{pod}, odigosConfig.IgnoredContainers, p.CriClient)
+	runtimeResults, err := runtimeInspection(ctx, []corev1.Pod{pod}, p.CriClient)
 	if err != nil {
 		return reconcile.Result{}, err
 	}

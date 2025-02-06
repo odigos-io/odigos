@@ -3,11 +3,11 @@ import buildCard from './build-card';
 import { ActionFormBody } from '../';
 import styled from 'styled-components';
 import { useDrawerStore } from '@/store';
-import { ACTION, DATA_CARDS } from '@/utils';
 import { type ActionDataParsed } from '@/types';
 import buildDrawerItem from './build-drawer-item';
 import { useActionCRUD, useActionFormData } from '@/hooks';
 import OverviewDrawer from '../../overview/overview-drawer';
+import { ACTION, CONDITION_STATUS, DATA_CARDS } from '@/utils';
 import { ConditionDetails, type ConditionDetailsProps, DataCard } from '@odigos/ui-components';
 import { ACTION_OPTIONS, ENTITY_TYPES, getActionIcon, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 
@@ -76,9 +76,10 @@ export const ActionDrawer: React.FC<Props> = () => {
 
     return {
       conditions:
-        item?.conditions?.map(({ status, message }) => ({
-          status: ['false', 'error'].includes(String(status).toLowerCase()) ? NOTIFICATION_TYPE.ERROR : NOTIFICATION_TYPE.SUCCESS,
+        item?.conditions?.map(({ status, message, lastTransitionTime }) => ({
+          status: status === CONDITION_STATUS.FALSE ? NOTIFICATION_TYPE.ERROR : status === CONDITION_STATUS.TRUE ? NOTIFICATION_TYPE.SUCCESS : NOTIFICATION_TYPE.WARNING,
           message,
+          lastTransitionTime,
         })) || [],
     };
   }, [selectedItem]);
