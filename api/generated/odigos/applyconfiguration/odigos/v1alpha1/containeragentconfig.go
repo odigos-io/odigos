@@ -29,6 +29,7 @@ type ContainerAgentConfigApplyConfiguration struct {
 	AgentEnabledReason  *odigosv1alpha1.AgentEnabledReason `json:"agentEnabledReason,omitempty"`
 	AgentEnabledMessage *string                            `json:"agentEnabledMessage,omitempty"`
 	OtelDistroName      *string                            `json:"otelDistroName,omitempty"`
+	DistroParams        map[string]string                  `json:"distroParams,omitempty"`
 }
 
 // ContainerAgentConfigApplyConfiguration constructs a declarative configuration of the ContainerAgentConfig type for use with
@@ -74,5 +75,19 @@ func (b *ContainerAgentConfigApplyConfiguration) WithAgentEnabledMessage(value s
 // If called multiple times, the OtelDistroName field is set to the value of the last call.
 func (b *ContainerAgentConfigApplyConfiguration) WithOtelDistroName(value string) *ContainerAgentConfigApplyConfiguration {
 	b.OtelDistroName = &value
+	return b
+}
+
+// WithDistroParams puts the entries into the DistroParams field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, the entries provided by each call will be put on the DistroParams field,
+// overwriting an existing map entries in DistroParams field with the same key.
+func (b *ContainerAgentConfigApplyConfiguration) WithDistroParams(entries map[string]string) *ContainerAgentConfigApplyConfiguration {
+	if b.DistroParams == nil && len(entries) > 0 {
+		b.DistroParams = make(map[string]string, len(entries))
+	}
+	for k, v := range entries {
+		b.DistroParams[k] = v
+	}
 	return b
 }
