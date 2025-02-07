@@ -1,15 +1,12 @@
 'use client';
 
 import React, { type PropsWithChildren } from 'react';
+import dynamic from 'next/dynamic';
 import Theme from '@odigos/ui-theme';
 import { ApolloWrapper } from '@/lib';
-import { ThemeProvider } from '@/styles';
 import { ErrorBoundary } from '@/components';
 
-const METADATA = {
-  title: 'Odigos',
-  icon: 'favicon.svg',
-};
+const ThemeProvider = dynamic(() => import('@/providers/theme-provider'), { ssr: false });
 
 function RootLayout({ children }: PropsWithChildren) {
   const { darkMode } = Theme.useDarkMode();
@@ -17,10 +14,10 @@ function RootLayout({ children }: PropsWithChildren) {
   return (
     <html lang='en'>
       <head>
-        <meta name='description' content={METADATA.title} />
-        <link rel='icon' type='image/svg+xml' href={`/${METADATA.icon}`} />
+        <meta name='description' content='Odigos' />
+        <link rel='icon' type='image/svg+xml' href='/favicon.svg' />
         <link rel='manifest' href='/manifest.json' />
-        <title>{METADATA.title}</title>
+        <title>Odigos</title>
       </head>
 
       <body

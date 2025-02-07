@@ -1,3 +1,5 @@
+'use client';
+
 import React, { type FC, type PropsWithChildren, useState } from 'react';
 import Theme from '@odigos/ui-theme';
 import { useServerInsertedHTML } from 'next/navigation';
@@ -19,10 +21,12 @@ const StyledComponentsRegistry: FC<PropsWithChildren> = ({ children }) => {
   return <StyleSheetManager sheet={styledComponentsStyleSheet.instance}>{children}</StyleSheetManager>;
 };
 
-export const ThemeProvider: FC<PropsWithChildren> = ({ children }) => {
+const ThemeProvider: FC<PropsWithChildren> = ({ children }) => {
   return (
     <Theme.Provider>
       <StyledComponentsRegistry>{children}</StyledComponentsRegistry>
     </Theme.Provider>
   );
 };
+
+export default ThemeProvider;
