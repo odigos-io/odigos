@@ -1,6 +1,6 @@
 import React from 'react';
-import { Theme } from '@odigos/ui-theme';
-import styled, { useTheme } from 'styled-components';
+import Theme from '@odigos/ui-theme';
+import styled from 'styled-components';
 import { type UseSourceFormDataResponse } from '@/hooks';
 import { Checkbox, Divider, ExtendArrow, FadeLoader, FlexRow, NoDataFound, Text, Toggle } from '@odigos/ui-components';
 
@@ -22,7 +22,7 @@ const Group = styled.div<{ $selected: boolean; $isOpen: boolean }>`
   width: 100%;
   padding-bottom: ${({ $isOpen }) => ($isOpen ? '18px' : '0')};
   border-radius: 16px;
-  background-color: ${({ $selected, theme }) => ($selected ? theme.colors.majestic_blue + Theme.hexPercent['024'] : theme.colors.dropdown_bg_2 + Theme.hexPercent['040'])};
+  background-color: ${({ $selected, theme }) => ($selected ? theme.colors.majestic_blue + Theme.opacity.hex['024'] : theme.colors.dropdown_bg_2 + Theme.opacity.hex['040'])};
 `;
 
 const NamespaceItem = styled.div<{ $selected: boolean }>`
@@ -34,7 +34,7 @@ const NamespaceItem = styled.div<{ $selected: boolean }>`
   border-radius: 16px;
   cursor: pointer;
   &:hover {
-    background-color: ${({ $selected, theme }) => ($selected ? theme.colors.majestic_blue + Theme.hexPercent['040'] : theme.colors.dropdown_bg_2 + Theme.hexPercent['080'])};
+    background-color: ${({ $selected, theme }) => ($selected ? theme.colors.majestic_blue + Theme.opacity.hex['040'] : theme.colors.dropdown_bg_2 + Theme.opacity.hex['080'])};
     transition: background-color 0.3s;
   }
 `;
@@ -86,7 +86,7 @@ export const SourcesList: React.FC<Props> = ({
   selectAllForNamespace,
   onSelectAll,
 }) => {
-  const theme = useTheme();
+  const theme = Theme.useTheme();
   const namespaces = filterNamespaces();
 
   if (!namespaces.length) {

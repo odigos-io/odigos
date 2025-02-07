@@ -569,6 +569,16 @@
     react-dom "^19.0.0"
     styled-components "^6.1.15"
 
+"@odigos/ui-theme@^0.0.7":
+  version "0.0.7"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-theme/-/ui-theme-0.0.7.tgz#287ab109a5fa232b9b3b30a6f05838b4d39007c2"
+  integrity sha512-gCR3Q0DAk8mRNgDMwH453IOqZOKITyAq9Yc9panByIMV6LMMhQaOV45PwGjlX4dX8OuGL/F0AYS747ojlo5y4Q==
+  dependencies:
+    react "^19.0.0"
+    react-dom "^19.0.0"
+    styled-components "^6.1.15"
+    zustand "^5.0.3"
+
 "@odigos/ui-utils@^0.0.10":
   version "0.0.10"
   resolved "https://registry.yarnpkg.com/@odigos/ui-utils/-/ui-utils-0.0.10.tgz#ac3c46fb7e810a2140b85935e9820eb440272944"

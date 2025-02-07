@@ -1,9 +1,8 @@
 import React from 'react';
+import Theme from '@odigos/ui-theme';
 import styled from 'styled-components';
-import { Theme } from '@odigos/ui-theme';
 import { OdigosLogoText } from '@odigos/ui-icons';
 import { FlexRow, NavigationButtons, type NavigationButtonsProps, Text, ToggleDarkMode } from '@odigos/ui-components';
-import { useDarkModeStore } from '@odigos/ui-containers';
 
 interface Props extends NavigationButtonsProps {}
 
@@ -14,7 +13,7 @@ const Container = styled.div`
   height: 80px;
   padding: 0 24px 0 32px;
   background-color: ${({ theme }) => theme.colors.dark_grey};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border + Theme.hexPercent['050']};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border + Theme.opacity.hex['050']};
 `;
 
 const Title = styled(Text)`
@@ -24,7 +23,7 @@ const Title = styled(Text)`
 `;
 
 export const SetupHeader: React.FC<Props> = ({ buttons }) => {
-  const { darkMode, setDarkMode } = useDarkModeStore();
+  const { darkMode, setDarkMode } = Theme.useDarkMode();
 
   return (
     <Container>

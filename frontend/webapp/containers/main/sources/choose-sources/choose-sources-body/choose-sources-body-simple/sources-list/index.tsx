@@ -1,6 +1,6 @@
 import React from 'react';
+import Theme from '@odigos/ui-theme';
 import styled from 'styled-components';
-import { Theme } from '@odigos/ui-theme';
 import { FolderIcon } from '@odigos/ui-icons';
 import { type UseSourceFormDataResponse } from '@/hooks';
 import { Checkbox, FadeLoader, IconWrapped, NoDataFound, Text } from '@odigos/ui-components';
@@ -28,9 +28,9 @@ const ListItem = styled.div<{ $selected: boolean }>`
   transition: background 0.3s;
   border-radius: 16px;
   cursor: pointer;
-  background: ${({ $selected, theme }) => ($selected ? theme.colors.majestic_blue + Theme.hexPercent['024'] : theme.colors.dropdown_bg_2 + Theme.hexPercent['040'])};
+  background: ${({ $selected, theme }) => ($selected ? theme.colors.majestic_blue + Theme.opacity.hex['024'] : theme.colors.dropdown_bg_2 + Theme.opacity.hex['040'])};
   &:hover {
-    background: ${({ $selected, theme }) => ($selected ? theme.colors.majestic_blue + Theme.hexPercent['040'] : theme.colors.dropdown_bg_2 + Theme.hexPercent['080'])};
+    background: ${({ $selected, theme }) => ($selected ? theme.colors.majestic_blue + Theme.opacity.hex['040'] : theme.colors.dropdown_bg_2 + Theme.opacity.hex['080'])};
   }
 `;
 

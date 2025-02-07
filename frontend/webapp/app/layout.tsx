@@ -1,9 +1,10 @@
 'use client';
+
 import React, { type PropsWithChildren } from 'react';
+import Theme from '@odigos/ui-theme';
 import { ApolloWrapper } from '@/lib';
 import { ThemeProvider } from '@/styles';
 import { ErrorBoundary } from '@/components';
-import { useDarkModeStore } from '@odigos/ui-containers';
 
 const METADATA = {
   title: 'Odigos',
@@ -11,14 +12,7 @@ const METADATA = {
 };
 
 function RootLayout({ children }: PropsWithChildren) {
-  const { darkMode } = useDarkModeStore();
-
-  const bodyStyle = {
-    width: '100vw',
-    height: '100vh',
-    margin: 0,
-    backgroundColor: darkMode ? '#111111' : '#EEEEEE',
-  };
+  const { darkMode } = Theme.useDarkMode();
 
   return (
     <html lang='en'>
@@ -29,10 +23,18 @@ function RootLayout({ children }: PropsWithChildren) {
         <title>{METADATA.title}</title>
       </head>
 
-      <body suppressHydrationWarning={true} style={bodyStyle}>
+      <body
+        suppressHydrationWarning={true}
+        style={{
+          width: '100vw',
+          height: '100vh',
+          margin: 0,
+          backgroundColor: darkMode ? '#111111' : '#EEEEEE',
+        }}
+      >
         <ErrorBoundary>
           <ApolloWrapper>
-            <ThemeProvider darkMode={darkMode}>{children}</ThemeProvider>
+            <ThemeProvider>{children}</ThemeProvider>
           </ApolloWrapper>
         </ErrorBoundary>
       </body>

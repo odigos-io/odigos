@@ -1,8 +1,9 @@
 import React from 'react';
+import Theme from '@odigos/ui-theme';
+import styled from 'styled-components';
 import { K8sLogo } from '@odigos/ui-icons';
 import { Text } from '@odigos/ui-components';
 import { PLATFORM_TYPE } from '@odigos/ui-utils';
-import styled, { useTheme } from 'styled-components';
 
 interface Props {
   type: PLATFORM_TYPE;
@@ -33,7 +34,7 @@ const LogoWrap = styled.div`
 `;
 
 export const PlatformTitle: React.FC<Props> = ({ type }) => {
-  const theme = useTheme();
+  const theme = Theme.useTheme();
 
   if (type === PLATFORM_TYPE.K8S) {
     return (

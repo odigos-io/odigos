@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
-import styled, { useTheme } from 'styled-components';
+import Theme from '@odigos/ui-theme';
+import styled from 'styled-components';
 import { useDrawerStore } from '@odigos/ui-containers';
 import { DATA_CARDS, SEVEN_DAYS_IN_MS } from '@/utils';
 import { useDescribeOdigos, useTokenCRUD } from '@/hooks';
@@ -44,7 +45,7 @@ const PopoverFormButton = styled(Button)`
 const DRAWER_WIDTH = '750px';
 
 export const CliDrawer: React.FC<Props> = () => {
-  const theme = useTheme();
+  const theme = Theme.useTheme();
   const timeAgo = useTimeAgo();
   const { setDrawerType } = useDrawerStore();
   const { isCopied, copiedIndex, clickCopy } = useCopy();

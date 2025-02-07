@@ -1,5 +1,5 @@
 import { forwardRef, type PropsWithChildren, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { useTheme } from 'styled-components';
+import Theme from '@odigos/ui-theme';
 import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
 import { EditIcon, TrashIcon, type SVG } from '@odigos/ui-icons';
 import { ENTITY_TYPES, NOTIFICATION_TYPE, useKeyDown, WorkloadId } from '@odigos/ui-utils';
@@ -39,7 +39,7 @@ const OverviewDrawer: React.FC<OverviewDrawerProps & PropsWithChildren> = ({
   onDelete,
   onCancel,
 }) => {
-  const theme = useTheme();
+  const theme = Theme.useTheme();
   const { isThisPending } = usePendingStore();
   const { addNotification } = useNotificationStore();
   const { drawerType, entityId, setDrawerType, setDrawerEntityId } = useDrawerStore();

@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
+import Theme from '@odigos/ui-theme';
 import { useTestConnection } from '@/hooks';
+import styled, { css } from 'styled-components';
 import { type DestinationInput } from '@/types';
-import styled, { css, useTheme } from 'styled-components';
 import { Button, FadeLoader, Text } from '@odigos/ui-components';
 import { getStatusIcon, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 
@@ -38,7 +39,7 @@ const ActionButton = styled(Button)<{ $status?: ConnectionStatus }>`
 `;
 
 export const TestConnection: React.FC<Props> = ({ destination, disabled, status, onError, onSuccess, validateForm }) => {
-  const theme = useTheme();
+  const theme = Theme.useTheme();
   const { testConnection, loading, data } = useTestConnection();
 
   useEffect(() => {

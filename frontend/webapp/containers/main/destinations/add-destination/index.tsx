@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { ROUTES } from '@/utils';
+import Theme from '@odigos/ui-theme';
 import { useAppStore } from '@/store';
+import styled from 'styled-components';
 import { SetupHeader } from '@/components';
 import { useRouter } from 'next/navigation';
-import styled, { useTheme } from 'styled-components';
 import { NOTIFICATION_TYPE } from '@odigos/ui-utils';
 import { ArrowIcon, PlusIcon } from '@odigos/ui-icons';
 import { DestinationModal } from '../destination-modal';
@@ -38,7 +39,7 @@ const StyledAddDestinationButton = styled(Button)`
 `;
 
 export function AddDestinationContainer() {
-  const theme = useTheme();
+  const theme = Theme.useTheme();
   const router = useRouter();
   const { persistSources } = useSourceCRUD();
   const { createDestination } = useDestinationCRUD();

@@ -1,8 +1,8 @@
 import React from 'react';
-import { Theme } from '@odigos/ui-theme';
+import Theme from '@odigos/ui-theme';
+import styled from 'styled-components';
 import { type ActionInput } from '@/types';
 import ActionCustomFields from './custom-fields';
-import styled, { useTheme } from 'styled-components';
 import { type ActionOption } from '@odigos/ui-utils';
 import { CheckCircledIcon, CrossCircledIcon } from '@odigos/ui-icons';
 import { DocsButton, Input, MonitorsCheckboxes, SectionTitle, Segment, Text, TextArea } from '@odigos/ui-components';
@@ -27,7 +27,7 @@ const FieldTitle = styled(Text)`
 `;
 
 export const ActionFormBody: React.FC<Props> = ({ isUpdate, action, formData, formErrors, handleFormChange }) => {
-  const theme = useTheme();
+  const theme = Theme.useTheme();
 
   return (
     <Container>
@@ -36,8 +36,8 @@ export const ActionFormBody: React.FC<Props> = ({ isUpdate, action, formData, fo
           <FieldTitle>Status</FieldTitle>
           <Segment
             options={[
-              { icon: CheckCircledIcon, label: 'active', value: false, selectedBgColor: theme.text.success + Theme.hexPercent['050'] },
-              { icon: CrossCircledIcon, label: 'inactive', value: true, selectedBgColor: theme.text.error + Theme.hexPercent['050'] },
+              { icon: CheckCircledIcon, label: 'active', value: false, selectedBgColor: theme.text.success + Theme.opacity.hex['050'] },
+              { icon: CrossCircledIcon, label: 'inactive', value: true, selectedBgColor: theme.text.error + Theme.opacity.hex['050'] },
             ]}
             selected={formData.disable}
             setSelected={(bool) => handleFormChange('disable', bool)}

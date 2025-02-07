@@ -1,7 +1,7 @@
 'use client';
 
 import React, { type PropsWithChildren } from 'react';
-import { Theme } from '@odigos/ui-theme';
+import Theme from '@odigos/ui-theme';
 import { Button } from '@odigos/ui-components';
 import { ErrorBoundary as ReactErrorBoundary } from 'react-error-boundary';
 
@@ -75,7 +75,7 @@ export const ErrorBoundary = ({ children }: PropsWithChildren) => {
   return (
     <ReactErrorBoundary
       FallbackComponent={(props) => (
-        <Theme.Provider darkMode={[undefined, null, 'true'].includes(localStorage.getItem('darkMode'))}>
+        <Theme.Provider>
           <ErrorFallback {...props} />
         </Theme.Provider>
       )}
