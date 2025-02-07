@@ -1,12 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { RuleFormBody } from '../';
 import buildCard from './build-card';
 import styled from 'styled-components';
 import { DataCard } from '@odigos/ui-components';
-import buildDrawerItem from './build-drawer-item';
 import { ACTION, DATA_CARDS, FORM_ALERTS } from '@/utils';
 import OverviewDrawer from '../../overview/overview-drawer';
-import { type InstrumentationRuleSpecMapped } from '@/types';
 import { useDrawerStore, useNotificationStore } from '@odigos/ui-containers';
 import { useInstrumentationRuleCRUD, useInstrumentationRuleFormData } from '@/hooks';
 import { ENTITY_TYPES, getInstrumentationRuleIcon, INSTRUMENTATION_RULE_OPTIONS, NOTIFICATION_TYPE } from '@odigos/ui-utils';
@@ -23,74 +21,44 @@ const FormContainer = styled.div`
 
 export const RuleDrawer: React.FC<Props> = () => {
   const { addNotification } = useNotificationStore();
-  const { selectedItem, setSelectedItem } = useDrawerStore();
+  const { entityId, setDrawerEntityId, setDrawerType } = useDrawerStore();
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [isFormDirty, setIsFormDirty] = useState(false);
+
   const { formData, formErrors, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem } = useInstrumentationRuleFormData();
   const { instrumentationRules, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD({
     onSuccess: (type) => {
       setIsEditing(false);
       setIsFormDirty(false);
 
-      if (type === ACTION.DELETE) setSelectedItem(null);
-      else reSelectItem();
+      if (type === ACTION.DELETE) {
+        setDrawerType(null);
+        setDrawerEntityId(null);
+        resetFormData();
+      }
     },
   });
 
-  // TODO: check if the item is already set on-mount
-  // drawerItem['item'] = instrumentationRules.find((item) => item.ruleId === drawerItem['id']);
-  const reSelectItem = (fetchedItems?: typeof instrumentationRules) => {
-    const { item } = selectedItem as { item: InstrumentationRuleSpecMapped };
-    const { ruleId: id } = item;
-
-    if (!!fetchedItems?.length) {
-      const found = fetchedItems.find((x) => x.ruleId === id);
-      if (!!found) {
-        return setSelectedItem({ id, type: ENTITY_TYPES.INSTRUMENTATION_RULE, item: found });
-      }
-    }
-
-    setSelectedItem({ id, type: ENTITY_TYPES.INSTRUMENTATION_RULE, item: buildDrawerItem(id, formData, item) });
-  };
-
-  // This should keep the drawer up-to-date with the latest data
-  useEffect(() => reSelectItem(instrumentationRules), [instrumentationRules]);
-
-  const [isEditing, setIsEditing] = useState(false);
-  const [isFormDirty, setIsFormDirty] = useState(false);
-
-  const cardData = useMemo(() => {
-    if (!selectedItem) return [];
-
-    const { item } = selectedItem as { item: InstrumentationRuleSpecMapped };
-    const arr = buildCard(item);
-
-    return arr;
-  }, [selectedItem]);
-
-  const thisRule = useMemo(() => {
-    if (!selectedItem || !isEditing) {
-      resetFormData();
-      return undefined;
-    }
-
-    const { item } = selectedItem as { item: InstrumentationRuleSpecMapped };
-    const found = INSTRUMENTATION_RULE_OPTIONS.find(({ type }) => type === item.type);
-
-    loadFormWithDrawerItem(selectedItem);
+  const thisItem = useMemo(() => {
+    const found = instrumentationRules?.find((x) => x.ruleId === entityId);
+    if (!!found) loadFormWithDrawerItem(found);
 
     return found;
-  }, [selectedItem, isEditing]);
+  }, [instrumentationRules, entityId]);
 
-  if (!selectedItem?.item) return null;
-  const { id, item } = selectedItem as { id: string; item: InstrumentationRuleSpecMapped };
+  if (!thisItem) return null;
+
+  const thisOptionType = INSTRUMENTATION_RULE_OPTIONS.find(({ type }) => type === thisItem.type);
 
   const handleEdit = (bool?: boolean) => {
-    if (!item.mutable && (bool || bool === undefined)) {
+    if (!thisItem.mutable && (bool || bool === undefined)) {
       addNotification({
         type: NOTIFICATION_TYPE.WARNING,
         title: FORM_ALERTS.FORBIDDEN,
         message: FORM_ALERTS.CANNOT_EDIT_RULE,
         crdType: ENTITY_TYPES.INSTRUMENTATION_RULE,
-        target: id,
+        target: entityId as string,
         hideFromHistory: true,
       });
     } else {
@@ -101,35 +69,36 @@ export const RuleDrawer: React.FC<Props> = () => {
   const handleCancel = () => {
     setIsEditing(false);
     setIsFormDirty(false);
+    loadFormWithDrawerItem(thisItem);
   };
 
-  const handleDelete = async () => {
-    if (!item.mutable) {
+  const handleDelete = () => {
+    if (!thisItem.mutable) {
       addNotification({
         type: NOTIFICATION_TYPE.WARNING,
         title: FORM_ALERTS.FORBIDDEN,
         message: FORM_ALERTS.CANNOT_DELETE_RULE,
         crdType: ENTITY_TYPES.INSTRUMENTATION_RULE,
-        target: id,
+        target: entityId as string,
         hideFromHistory: true,
       });
     } else {
-      await deleteInstrumentationRule(id);
+      deleteInstrumentationRule(entityId as string);
     }
   };
 
-  const handleSave = async (newTitle: string) => {
+  const handleSave = (newTitle: string) => {
     if (validateForm({ withAlert: true, alertTitle: ACTION.UPDATE })) {
-      const title = newTitle !== item.type ? newTitle : '';
+      const title = newTitle !== thisItem.type ? newTitle : '';
       handleFormChange('ruleName', title);
-      await updateInstrumentationRule(id, { ...formData, ruleName: title });
+      updateInstrumentationRule(entityId as string, { ...formData, ruleName: title });
     }
   };
 
   return (
     <OverviewDrawer
-      title={item.ruleName || (item.type as string)}
-      icon={getInstrumentationRuleIcon(item.type)}
+      title={thisItem.ruleName || thisItem.type}
+      icon={getInstrumentationRuleIcon(thisItem.type)}
       isEdit={isEditing}
       isFormDirty={isFormDirty}
       onEdit={handleEdit}
@@ -137,11 +106,11 @@ export const RuleDrawer: React.FC<Props> = () => {
       onDelete={handleDelete}
       onCancel={handleCancel}
     >
-      {isEditing && thisRule ? (
+      {isEditing && thisOptionType ? (
         <FormContainer>
           <RuleFormBody
             isUpdate
-            rule={thisRule}
+            rule={thisOptionType}
             formData={formData}
             formErrors={formErrors}
             handleFormChange={(...params) => {
@@ -151,7 +120,7 @@ export const RuleDrawer: React.FC<Props> = () => {
           />
         </FormContainer>
       ) : (
-        <DataCard title={DATA_CARDS.RULE_DETAILS} data={cardData} />
+        <DataCard title={DATA_CARDS.RULE_DETAILS} data={!!thisItem ? buildCard(thisItem) : []} />
       )}
     </OverviewDrawer>
   );

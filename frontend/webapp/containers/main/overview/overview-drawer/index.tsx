@@ -2,7 +2,7 @@ import { forwardRef, type PropsWithChildren, useEffect, useImperativeHandle, use
 import { useTheme } from 'styled-components';
 import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
 import { EditIcon, TrashIcon, type SVG } from '@odigos/ui-icons';
-import { ENTITY_TYPES, NOTIFICATION_TYPE, useKeyDown } from '@odigos/ui-utils';
+import { ENTITY_TYPES, NOTIFICATION_TYPE, useKeyDown, WorkloadId } from '@odigos/ui-utils';
 import { useDrawerStore, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
 import { CancelWarning, DeleteWarning, Drawer, DrawerProps, Input, Text } from '@odigos/ui-components';
 
@@ -42,9 +42,9 @@ const OverviewDrawer: React.FC<OverviewDrawerProps & PropsWithChildren> = ({
   const theme = useTheme();
   const { isThisPending } = usePendingStore();
   const { addNotification } = useNotificationStore();
-  const { selectedItem, setSelectedItem } = useDrawerStore();
+  const { drawerType, entityId, setDrawerType, setDrawerEntityId } = useDrawerStore();
 
-  useKeyDown({ key: 'Enter', active: !!selectedItem?.item }, () => (isEdit ? clickSave() : closeDrawer()));
+  useKeyDown({ key: 'Enter', active: isEdit }, () => clickSave());
 
   const { sources } = useSourceCRUD();
   const { destinations } = useDestinationCRUD();
@@ -54,11 +54,12 @@ const OverviewDrawer: React.FC<OverviewDrawerProps & PropsWithChildren> = ({
 
   const titleRef = useRef<EditTitleRef>(null);
 
-  const isSource = selectedItem?.type === ENTITY_TYPES.SOURCE;
-  const isDestination = selectedItem?.type === ENTITY_TYPES.DESTINATION;
+  const isSource = drawerType === ENTITY_TYPES.SOURCE;
+  const isDestination = drawerType === ENTITY_TYPES.DESTINATION;
 
   const closeDrawer = () => {
-    setSelectedItem(null);
+    setDrawerType(null);
+    setDrawerEntityId(null);
     if (onEdit) onEdit(false);
     setIsDeleteModalOpen(false);
     setIsCancelModalOpen(false);
@@ -107,19 +108,19 @@ const OverviewDrawer: React.FC<OverviewDrawerProps & PropsWithChildren> = ({
   };
 
   const isPending = useMemo(() => {
-    if (!selectedItem?.type) return false;
+    if (!drawerType) return false;
 
     return isThisPending({
-      entityType: selectedItem.type as ENTITY_TYPES,
-      entityId: selectedItem.id,
+      entityType: drawerType as ENTITY_TYPES,
+      entityId: entityId as string | WorkloadId,
     });
-  }, [selectedItem]);
+  }, [drawerType, entityId]);
 
   const handlePending = (action: string) => {
     addNotification({
       type: NOTIFICATION_TYPE.WARNING,
       title: 'Pending',
-      message: `Cannot click ${action}, ${selectedItem?.type} is pending`,
+      message: `Cannot click ${action}, ${drawerType} is pending`,
       hideFromHistory: true,
     });
   };
@@ -210,8 +211,8 @@ const OverviewDrawer: React.FC<OverviewDrawerProps & PropsWithChildren> = ({
       <DeleteWarning
         isOpen={isDeleteModalOpen}
         noOverlay
-        name={`${selectedItem?.type}${title ? ` (${title})` : ''}`}
-        type={selectedItem?.type as ENTITY_TYPES}
+        name={`${drawerType}${title ? ` (${title})` : ''}`}
+        type={drawerType as ENTITY_TYPES}
         isLastItem={isLastItem()}
         onApprove={handleDelete}
         onDeny={closeWarningModals}

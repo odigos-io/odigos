@@ -9,10 +9,10 @@
   dependencies:
     ts-invariant "^0.10.3"
 
-"@apollo/client@^3.12.9":
-  version "3.12.9"
-  resolved "https://registry.yarnpkg.com/@apollo/client/-/client-3.12.9.tgz#fb7afc254bc4a5bfeeae905426edcb9d3e643fae"
-  integrity sha512-rH2Vzfbp+IR0l/xAjUIbDH4/sqBzPATMbzXv/L36E33yhp40yM5LFJnC6cc4YDPUH2gom7Dk4BrYZVLbFpYTsA==
+"@apollo/client@^3.12.10":
+  version "3.12.10"
+  resolved "https://registry.yarnpkg.com/@apollo/client/-/client-3.12.10.tgz#8a18018915b70a339f9bf2e95bc2e296f0d3b02e"
+  integrity sha512-XVNOBLkU3mC/tmDSJhZ2lv0sgq8ahHTLtjMeCclcsRinXfUfV8neZQ+OAkE0Mkd0uYsaRjijN51xu0ok39mqbA==
   dependencies:
     "@graphql-typed-document-node/core" "^3.1.1"
     "@wry/caches" "^1.0.0"
@@ -528,10 +528,10 @@
     react-lottie "^1.2.10"
     styled-components "^6.1.15"
 
-"@odigos/ui-containers@^0.0.11":
-  version "0.0.11"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-containers/-/ui-containers-0.0.11.tgz#3b2ac17db1e213b67861b182fda8538c8670a0e0"
-  integrity sha512-7nMI7MwCdRkKBnDKwS2RYm+9Jj0/rmkqSd7vgiDFERLglbP/7XFlNK3eg3IZTgZCfE/SAbBlK6KuA8jXyXF6vg==
+"@odigos/ui-containers@^0.0.12":
+  version "0.0.12"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-containers/-/ui-containers-0.0.12.tgz#b196510cbd23a0b22a95bf1bf40edf67bcdbccc8"
+  integrity sha512-ztBUi4sG+qn4qYAVwwo4VVHBVFyOWpIi8e+fHF/Ceu6Xwx4ikdoLLgANws47cMdtUpXyLiTYGFlSXH7tyiXzQw==
   dependencies:
     "@odigos/ui-components" "^0.0.47"
     "@odigos/ui-theme" "^0.0.4"

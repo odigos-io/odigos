@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic';
 import styled from 'styled-components';
 import { type SourceInstrumentInput } from '@/types';
 import { DataFlow, DataFlowActionsMenu, MultiSourceControl, Source, ToastList } from '@odigos/ui-containers';
-import { useActionCRUD, useDestinationCRUD, useInstrumentationRuleCRUD, useMetrics, useNamespace, useNodeDataFlowHandlers, usePaginatedSources, useSourceCRUD, useSSE, useTokenTracker } from '@/hooks';
+import { useActionCRUD, useDestinationCRUD, useInstrumentationRuleCRUD, useMetrics, useNamespace, usePaginatedSources, useSourceCRUD, useSSE, useTokenTracker } from '@/hooks';
 
 const AllModals = dynamic(() => import('@/components/overview/all-modals'), { ssr: false });
 const AllDrawers = dynamic(() => import('@/components/overview/all-drawers'), { ssr: false });
@@ -30,21 +30,12 @@ export default function MainPage() {
   const { destinations, filteredDestinations, loading: destLoad } = useDestinationCRUD();
   const { instrumentationRules, filteredInstrumentationRules, loading: ruleLoad } = useInstrumentationRuleCRUD();
 
-  const { handleNodeClick } = useNodeDataFlowHandlers();
-
   return (
     <>
       <Container>
         <ToastList />
 
-        <DataFlowActionsMenu
-          namespaces={allNamespaces}
-          sources={filteredSources}
-          destinations={filteredDestinations}
-          actions={filteredActions}
-          instrumentationRules={filteredInstrumentationRules}
-          onNodeClick={handleNodeClick}
-        />
+        <DataFlowActionsMenu namespaces={allNamespaces} sources={filteredSources} destinations={filteredDestinations} actions={filteredActions} instrumentationRules={filteredInstrumentationRules} />
         <DataFlow
           heightToRemove='176px'
           sources={filteredSources}
@@ -60,7 +51,6 @@ export default function MainPage() {
           instrumentationRulesLoading={ruleLoad}
           instrumentationRulesTotalCount={instrumentationRules.length}
           metrics={metrics}
-          onNodeClick={handleNodeClick}
         />
         <MultiSourceControl
           totalSourceCount={sources.length}

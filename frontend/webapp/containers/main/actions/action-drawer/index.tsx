@@ -1,14 +1,13 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import buildCard from './build-card';
 import { ActionFormBody } from '../';
 import styled from 'styled-components';
 import { ACTION, DATA_CARDS } from '@/utils';
-import buildDrawerItem from './build-drawer-item';
+import { useDrawerStore } from '@odigos/ui-containers';
 import { useActionCRUD, useActionFormData } from '@/hooks';
 import OverviewDrawer from '../../overview/overview-drawer';
-import { type Action, useDrawerStore } from '@odigos/ui-containers';
+import { ACTION_OPTIONS, getActionIcon } from '@odigos/ui-utils';
 import { ConditionDetails, DataCard } from '@odigos/ui-components';
-import { ACTION_OPTIONS, ENTITY_TYPES, getActionIcon } from '@odigos/ui-utils';
 
 interface Props {}
 
@@ -27,68 +26,38 @@ const DataContainer = styled.div`
 `;
 
 export const ActionDrawer: React.FC<Props> = () => {
-  const { selectedItem, setSelectedItem } = useDrawerStore();
+  const { entityId, setDrawerEntityId, setDrawerType } = useDrawerStore();
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [isFormDirty, setIsFormDirty] = useState(false);
+
   const { formData, formErrors, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem } = useActionFormData();
   const { actions, updateAction, deleteAction } = useActionCRUD({
     onSuccess: (type) => {
       setIsEditing(false);
       setIsFormDirty(false);
 
-      if (type === ACTION.DELETE) setSelectedItem(null);
-      else reSelectItem();
+      if (type === ACTION.DELETE) {
+        setDrawerType(null);
+        setDrawerEntityId(null);
+        resetFormData();
+      }
     },
   });
 
-  // TODO: check if the item is already set on-mount
-  // drawerItem['item'] = actions.find((item) => item.id === drawerItem['id']);
-  const reSelectItem = (fetchedItems?: typeof actions) => {
-    const { item } = selectedItem as { item: Action };
-    const { id } = item;
-
-    if (!!fetchedItems?.length) {
-      const found = fetchedItems.find((x) => x.id === id);
-      if (!!found) {
-        return setSelectedItem({ id, type: ENTITY_TYPES.ACTION, item: found });
-      }
-    }
-
-    setSelectedItem({ id, type: ENTITY_TYPES.ACTION, item: buildDrawerItem(id, formData, item) });
-  };
-
-  // This should keep the drawer up-to-date with the latest data
-  useEffect(() => reSelectItem(actions), [actions]);
-
-  const [isEditing, setIsEditing] = useState(false);
-  const [isFormDirty, setIsFormDirty] = useState(false);
-
-  const cardData = useMemo(() => {
-    if (!selectedItem) return [];
-
-    const { item } = selectedItem as { item: Action };
-    const arr = buildCard(item);
-
-    return arr;
-  }, [selectedItem]);
-
-  const thisAction = useMemo(() => {
-    if (!selectedItem || !isEditing) {
-      resetFormData();
-      return undefined;
-    }
-
-    const { item } = selectedItem as { item: Action };
-    const found =
-      ACTION_OPTIONS.find(({ type }) => type === item.type) ||
-      ACTION_OPTIONS.find(({ id }) => id === 'attributes')?.items?.find(({ type }) => type === item.type) ||
-      ACTION_OPTIONS.find(({ id }) => id === 'sampler')?.items?.find(({ type }) => type === item.type);
-
-    loadFormWithDrawerItem(selectedItem);
+  const thisItem = useMemo(() => {
+    const found = actions?.find((x) => x.id === entityId);
+    if (!!found) loadFormWithDrawerItem(found);
 
     return found;
-  }, [selectedItem, isEditing]);
+  }, [actions, entityId]);
 
-  if (!selectedItem?.item) return null;
-  const { id, item } = selectedItem as { id: string; item: Action };
+  if (!thisItem) return null;
+
+  const thisOptionType =
+    ACTION_OPTIONS.find(({ type }) => type === thisItem.type) ||
+    ACTION_OPTIONS.find(({ id }) => id === 'attributes')?.items?.find(({ type }) => type === thisItem.type) ||
+    ACTION_OPTIONS.find(({ id }) => id === 'sampler')?.items?.find(({ type }) => type === thisItem.type);
 
   const handleEdit = (bool?: boolean) => {
     setIsEditing(typeof bool === 'boolean' ? bool : true);
@@ -97,24 +66,25 @@ export const ActionDrawer: React.FC<Props> = () => {
   const handleCancel = () => {
     setIsEditing(false);
     setIsFormDirty(false);
+    loadFormWithDrawerItem(thisItem);
   };
 
-  const handleDelete = async () => {
-    await deleteAction(id, item.type);
+  const handleDelete = () => {
+    deleteAction(entityId as string, thisItem.type);
   };
 
-  const handleSave = async (newTitle: string) => {
+  const handleSave = (newTitle: string) => {
     if (validateForm({ withAlert: true, alertTitle: ACTION.UPDATE })) {
-      const title = newTitle !== item.type ? newTitle : '';
+      const title = newTitle !== thisItem.type ? newTitle : '';
       handleFormChange('name', title);
-      await updateAction(id, { ...formData, name: title });
+      updateAction(entityId as string, { ...formData, name: title });
     }
   };
 
   return (
     <OverviewDrawer
-      title={item.spec.actionName || item.type}
-      icon={getActionIcon(item.type)}
+      title={thisItem.spec.actionName || thisItem.type}
+      icon={getActionIcon(thisItem.type)}
       isEdit={isEditing}
       isFormDirty={isFormDirty}
       onEdit={handleEdit}
@@ -122,11 +92,11 @@ export const ActionDrawer: React.FC<Props> = () => {
       onDelete={handleDelete}
       onCancel={handleCancel}
     >
-      {isEditing && thisAction ? (
+      {isEditing && thisOptionType ? (
         <FormContainer>
           <ActionFormBody
             isUpdate
-            action={thisAction}
+            action={thisOptionType}
             formData={formData}
             formErrors={formErrors}
             handleFormChange={(...params) => {
@@ -137,8 +107,8 @@ export const ActionDrawer: React.FC<Props> = () => {
         </FormContainer>
       ) : (
         <DataContainer>
-          <ConditionDetails conditions={item.conditions || []} />
-          <DataCard title={DATA_CARDS.ACTION_DETAILS} data={cardData} />
+          <ConditionDetails conditions={thisItem.conditions || []} />
+          <DataCard title={DATA_CARDS.ACTION_DETAILS} data={!!thisItem ? buildCard(thisItem) : []} />
         </DataContainer>
       )}
     </OverviewDrawer>

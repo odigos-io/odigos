@@ -1,8 +1,8 @@
 import { FORM_ALERTS } from '@/utils';
 import { useGenericForm } from '@/hooks';
 import { NOTIFICATION_TYPE } from '@odigos/ui-utils';
-import { type DrawerItem, useNotificationStore } from '@odigos/ui-containers';
-import { CodeAttributesType, PayloadCollectionType, type InstrumentationRuleInput, type InstrumentationRuleSpec } from '@/types';
+import { type InstrumentationRule, useNotificationStore } from '@odigos/ui-containers';
+import { CodeAttributesType, PayloadCollectionType, type InstrumentationRuleInput } from '@/types';
 
 const INITIAL: InstrumentationRuleInput = {
   ruleName: '',
@@ -50,9 +50,7 @@ export function useInstrumentationRuleFormData() {
     return ok;
   };
 
-  const loadFormWithDrawerItem = (drawerItem: DrawerItem) => {
-    const { ruleName, notes, disabled, payloadCollection, codeAttributes } = drawerItem.item as InstrumentationRuleSpec;
-
+  const loadFormWithDrawerItem = ({ ruleName, notes, disabled, payloadCollection, codeAttributes }: InstrumentationRule) => {
     const updatedData: InstrumentationRuleInput = {
       ...INITIAL,
       ruleName,

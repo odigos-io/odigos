@@ -46,7 +46,7 @@ const DRAWER_WIDTH = '750px';
 export const CliDrawer: React.FC<Props> = () => {
   const theme = useTheme();
   const timeAgo = useTimeAgo();
-  const { setSelectedItem } = useDrawerStore();
+  const { setDrawerType } = useDrawerStore();
   const { isCopied, copiedIndex, clickCopy } = useCopy();
   const { tokens, loading, updateToken } = useTokenCRUD();
   const { data: describe, restructureForPrettyMode } = useDescribeOdigos();
@@ -65,7 +65,7 @@ export const CliDrawer: React.FC<Props> = () => {
   }
 
   const closeDrawer = () => {
-    setSelectedItem(null);
+    setDrawerType(null);
   };
 
   return (

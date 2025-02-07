@@ -1,8 +1,8 @@
 import { useGenericForm } from '@/hooks';
 import { FORM_ALERTS } from '@/utils';
 import { LatencySamplerSpec, type ActionInput } from '@/types';
+import { type Action, useNotificationStore } from '@odigos/ui-containers';
 import { ACTION_TYPE, isEmpty, NOTIFICATION_TYPE, safeJsonParse } from '@odigos/ui-utils';
-import { type Action, type DrawerItem, useNotificationStore } from '@odigos/ui-containers';
 
 const INITIAL: ActionInput = {
   // @ts-ignore (TS complains about empty string because we expect an "ActionsType", but it's fine)
@@ -67,35 +67,64 @@ export function useActionFormData() {
     return ok;
   };
 
-  const loadFormWithDrawerItem = (drawerItem: DrawerItem) => {
-    const { type, spec } = drawerItem.item as Action;
-
+  const loadFormWithDrawerItem = ({ type, spec }: Action) => {
     const updatedData: ActionInput = {
       ...INITIAL,
       type,
     };
 
     Object.entries(spec).forEach(([k, v]) => {
-      switch (k) {
-        case 'actionName': {
-          updatedData['name'] = v;
-          break;
-        }
+      if (!!v) {
+        switch (k) {
+          case 'type': {
+            updatedData['type'] = v;
+            break;
+          }
 
-        case 'disabled': {
-          updatedData['disable'] = v;
-          break;
-        }
+          case 'actionName': {
+            updatedData['name'] = v;
+            break;
+          }
 
-        case 'notes':
-        case 'signals': {
-          updatedData[k] = v;
-          break;
-        }
+          case 'disabled': {
+            updatedData['disable'] = v;
+            break;
+          }
 
-        default: {
-          updatedData['details'] = JSON.stringify({ [k]: v });
-          break;
+          case 'notes':
+          case 'signals': {
+            updatedData[k] = v;
+            break;
+          }
+
+          case 'fallbackSamplingRatio': {
+            updatedData['details'] = JSON.stringify({ fallback_sampling_ratio: v });
+            break;
+          }
+
+          case 'samplingPercentage': {
+            updatedData['details'] = JSON.stringify({ sampling_percentage: v });
+            break;
+          }
+
+          case 'endpointsFilters': {
+            updatedData['details'] = JSON.stringify({
+              endpoints_filters:
+                (v as Action['spec']['endpointsFilters'])?.map(({ serviceName, httpRoute, minimumLatencyThreshold, fallbackSamplingRatio }) => ({
+                  service_name: serviceName,
+                  http_route: httpRoute,
+                  minimum_latency_threshold: minimumLatencyThreshold,
+                  fallback_sampling_ratio: fallbackSamplingRatio,
+                })) || [],
+            });
+            break;
+          }
+
+          default: {
+            // pii masking, add attributes, delete attributes, rename attributes
+            updatedData['details'] = JSON.stringify({ [k]: v });
+            break;
+          }
         }
       }
     });

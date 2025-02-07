@@ -2,8 +2,8 @@
 import React, { type PropsWithChildren } from 'react';
 import { ApolloWrapper } from '@/lib';
 import { ThemeProvider } from '@/styles';
-import { useDarkModeStore } from '@/store';
 import { ErrorBoundary } from '@/components';
+import { useDarkModeStore } from '@odigos/ui-containers';
 
 const METADATA = {
   title: 'Odigos',

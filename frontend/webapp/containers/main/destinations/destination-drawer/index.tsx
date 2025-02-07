@@ -1,13 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import buildCard from './build-card';
 import styled from 'styled-components';
 import { ACTION, DATA_CARDS } from '@/utils';
-import { ENTITY_TYPES } from '@odigos/ui-utils';
-import buildDrawerItem from './build-drawer-item';
 import OverviewDrawer from '../../overview/overview-drawer';
 import { DestinationFormBody } from '../destination-form-body';
 import { ConditionDetails, DataCard } from '@odigos/ui-components';
-import { type Destination, useDrawerStore } from '@odigos/ui-containers';
+import { Destination, useDrawerStore } from '@odigos/ui-containers';
 import { useDestinationCRUD, useDestinationFormData, useDestinationTypes } from '@/hooks';
 
 interface Props {}
@@ -27,73 +25,45 @@ const DataContainer = styled.div`
 `;
 
 export const DestinationDrawer: React.FC<Props> = () => {
-  const { selectedItem, setSelectedItem } = useDrawerStore();
+  const { entityId, setDrawerEntityId, setDrawerType } = useDrawerStore();
   const { destinations: destinationTypes } = useDestinationTypes();
 
-  const { formData, formErrors, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem, destinationTypeDetails, dynamicFields, setDynamicFields } = useDestinationFormData({
-    destinationType: (selectedItem?.item as Destination)?.destinationType?.type,
-    preLoadedFields: (selectedItem?.item as Destination)?.fields,
-    // TODO: supportedSignals: thisDestination?.supportedSignals,
-    // currently, the real "supportedSignals" is being used by "destination" passed as prop to "DestinationFormBody"
-  });
+  const [isEditing, setIsEditing] = useState(false);
+  const [isFormDirty, setIsFormDirty] = useState(false);
+  const [thisItem, setThisItem] = useState<Destination | undefined>(undefined);
 
   const { destinations, updateDestination, deleteDestination } = useDestinationCRUD({
     onSuccess: (type) => {
       setIsEditing(false);
       setIsFormDirty(false);
 
-      if (type === ACTION.DELETE) setSelectedItem(null);
-      else reSelectItem();
+      if (type === ACTION.DELETE) {
+        setDrawerType(null);
+        setDrawerEntityId(null);
+        resetFormData();
+      }
     },
   });
 
-  // TODO: check if the item is already set on-mount
-  // drawerItem['item'] = destinations.find((item) => item.id === drawerItem['id']);
-  const reSelectItem = (fetchedItems?: typeof destinations) => {
-    const { item } = selectedItem as { item: Destination };
-    const { id } = item;
+  useEffect(() => {
+    const found = destinations?.find((x) => x.id === entityId);
+    setThisItem(found);
+  }, [destinations, entityId]);
 
-    if (!!fetchedItems?.length) {
-      const found = fetchedItems.find((x) => x.id === id);
-      if (!!found) {
-        return setSelectedItem({ id, type: ENTITY_TYPES.DESTINATION, item: found });
-      }
-    }
+  const { formData, formErrors, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem, destinationTypeDetails, dynamicFields, setDynamicFields } = useDestinationFormData({
+    destinationType: thisItem?.destinationType?.type,
+    preLoadedFields: thisItem?.fields,
+    // TODO: supportedSignals: thisDestination?.supportedSignals,
+    // currently, the real "supportedSignals" is being used by "destination" passed as prop to "DestinationFormBody"
+  });
 
-    setSelectedItem({ id, type: ENTITY_TYPES.DESTINATION, item: buildDrawerItem(id, formData, item) });
-  };
+  useEffect(() => {
+    if (!!thisItem) loadFormWithDrawerItem(thisItem);
+  }, [thisItem]);
 
-  // This should keep the drawer up-to-date with the latest data
-  useEffect(() => reSelectItem(destinations), [destinations]);
+  if (!thisItem) return null;
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [isFormDirty, setIsFormDirty] = useState(false);
-
-  const cardData = useMemo(() => {
-    if (!selectedItem) return [];
-
-    const { item } = selectedItem as { item: Destination };
-    const arr = buildCard(item, destinationTypeDetails);
-
-    return arr;
-  }, [selectedItem, destinationTypeDetails]);
-
-  const thisDestinationType = useMemo(() => {
-    if (!destinationTypes.length || !selectedItem || !isEditing) {
-      resetFormData();
-      return undefined;
-    }
-
-    const { item } = selectedItem as { item: Destination };
-    const found = destinationTypes.map(({ items }) => items.filter(({ type }) => type === item.destinationType.type)).filter((arr) => !!arr.length)?.[0]?.[0];
-
-    loadFormWithDrawerItem(selectedItem);
-
-    return found;
-  }, [destinationTypes, selectedItem, isEditing]);
-
-  if (!selectedItem?.item) return null;
-  const { id, item } = selectedItem as { id: string; item: Destination };
+  const thisOptionType = destinationTypes?.map(({ items }) => items.filter(({ type }) => type === thisItem.destinationType.type)).filter((arr) => !!arr.length)?.[0]?.[0];
 
   const handleEdit = (bool?: boolean) => {
     setIsEditing(typeof bool === 'boolean' ? bool : true);
@@ -102,24 +72,25 @@ export const DestinationDrawer: React.FC<Props> = () => {
   const handleCancel = () => {
     setIsEditing(false);
     setIsFormDirty(false);
+    loadFormWithDrawerItem(thisItem);
   };
 
-  const handleDelete = async () => {
-    await deleteDestination(id);
+  const handleDelete = () => {
+    deleteDestination(entityId as string);
   };
 
-  const handleSave = async (newTitle: string) => {
+  const handleSave = (newTitle: string) => {
     if (validateForm({ withAlert: true, alertTitle: ACTION.UPDATE })) {
-      const title = newTitle !== item.destinationType.displayName ? newTitle : '';
+      const title = newTitle !== thisItem.destinationType.displayName ? newTitle : '';
       handleFormChange('name', title);
-      await updateDestination(id, { ...formData, name: title });
+      updateDestination(entityId as string, { ...formData, name: title });
     }
   };
 
   return (
     <OverviewDrawer
-      title={item.name || item.destinationType.displayName}
-      iconSrc={item.destinationType.imageUrl}
+      title={thisItem.name || thisItem.destinationType.displayName}
+      iconSrc={thisItem.destinationType.imageUrl}
       isEdit={isEditing}
       isFormDirty={isFormDirty}
       onEdit={handleEdit}
@@ -131,7 +102,7 @@ export const DestinationDrawer: React.FC<Props> = () => {
         <FormContainer>
           <DestinationFormBody
             isUpdate
-            destination={thisDestinationType}
+            destination={thisOptionType}
             formData={formData}
             formErrors={formErrors}
             validateForm={validateForm}
@@ -148,8 +119,8 @@ export const DestinationDrawer: React.FC<Props> = () => {
         </FormContainer>
       ) : (
         <DataContainer>
-          <ConditionDetails conditions={item.conditions || []} />
-          <DataCard title={DATA_CARDS.DESTINATION_DETAILS} data={cardData} />
+          <ConditionDetails conditions={thisItem.conditions || []} />
+          <DataCard title={DATA_CARDS.DESTINATION_DETAILS} data={!!thisItem ? buildCard(thisItem) : []} />
         </DataContainer>
       )}
     </OverviewDrawer>

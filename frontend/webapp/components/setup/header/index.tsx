@@ -1,9 +1,9 @@
 import React from 'react';
 import styled from 'styled-components';
 import { Theme } from '@odigos/ui-theme';
-import { useDarkModeStore } from '@/store';
 import { OdigosLogoText } from '@odigos/ui-icons';
 import { FlexRow, NavigationButtons, type NavigationButtonsProps, Text, ToggleDarkMode } from '@odigos/ui-components';
+import { useDarkModeStore } from '@odigos/ui-containers';
 
 interface Props extends NavigationButtonsProps {}
 

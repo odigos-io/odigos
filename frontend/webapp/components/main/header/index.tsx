@@ -1,14 +1,14 @@
 import React from 'react';
 import { useConfig } from '@/hooks';
+import { useStatusStore } from '@/store';
 import { Theme } from '@odigos/ui-theme';
 import { PlatformTitle } from './cp-title';
 import { FORM_ALERTS, SLACK_LINK } from '@/utils';
 import styled, { useTheme } from 'styled-components';
-import { useDarkModeStore, useStatusStore } from '@/store';
 import { NOTIFICATION_TYPE, PLATFORM_TYPE } from '@odigos/ui-utils';
 import { OdigosLogoText, SlackLogo, TerminalIcon } from '@odigos/ui-icons';
 import { FlexRow, IconButton, Status, ToggleDarkMode, Tooltip } from '@odigos/ui-components';
-import { DRAWER_OTHER_TYPES, NotificationManager, useDrawerStore } from '@odigos/ui-containers';
+import { DRAWER_OTHER_TYPES, NotificationManager, useDarkModeStore, useDrawerStore } from '@odigos/ui-containers';
 
 interface MainHeaderProps {}
 
@@ -34,11 +34,11 @@ const AlignRight = styled(FlexRow)`
 export const MainHeader: React.FC<MainHeaderProps> = () => {
   const theme = useTheme();
   const { data: config } = useConfig();
-  const { setSelectedItem } = useDrawerStore();
+  const { setDrawerType } = useDrawerStore();
   const { status, title, message } = useStatusStore();
   const { darkMode, setDarkMode } = useDarkModeStore();
 
-  const handleClickCli = () => setSelectedItem({ type: DRAWER_OTHER_TYPES.ODIGOS_CLI, id: DRAWER_OTHER_TYPES.ODIGOS_CLI });
+  const handleClickCli = () => setDrawerType(DRAWER_OTHER_TYPES.ODIGOS_CLI);
   const handleClickSlack = () => window.open(SLACK_LINK, '_blank', 'noopener noreferrer');
 
   return (

@@ -5,11 +5,9 @@ import { DRAWER_OTHER_TYPES, useDrawerStore } from '@odigos/ui-containers';
 import { ActionDrawer, DestinationDrawer, RuleDrawer, SourceDrawer } from '@/containers';
 
 const AllDrawers = () => {
-  const { selectedItem } = useDrawerStore();
+  const { drawerType } = useDrawerStore();
 
-  if (!selectedItem?.type) return null;
-
-  switch (selectedItem.type) {
+  switch (drawerType) {
     case ENTITY_TYPES.INSTRUMENTATION_RULE:
       return <RuleDrawer />;
 
@@ -26,7 +24,7 @@ const AllDrawers = () => {
       return <CliDrawer />;
 
     default:
-      return <></>;
+      return null;
   }
 };
 

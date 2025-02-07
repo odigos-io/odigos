@@ -3,8 +3,8 @@ import { useGenericForm } from '@/hooks';
 import { useQuery } from '@apollo/client';
 import { GET_DESTINATION_TYPE_DETAILS } from '@/graphql';
 import { ACTION, FORM_ALERTS, INPUT_TYPES } from '@/utils';
+import { type Destination, useNotificationStore } from '@odigos/ui-containers';
 import { ENTITY_TYPES, NOTIFICATION_TYPE, safeJsonParse } from '@odigos/ui-utils';
-import { type Destination, type DrawerItem, useNotificationStore } from '@odigos/ui-containers';
 import { type FetchedDestinationDynamicField, type FetchedDestinationDetailsResponse, type DestinationInput, type FetchedDestinationTypeItem, type FetchedDestinationDetailsField } from '@/types';
 
 const INITIAL: DestinationInput = {
@@ -160,14 +160,7 @@ export function useDestinationFormData(params?: {
     return ok;
   };
 
-  const loadFormWithDrawerItem = (drawerItem: DrawerItem) => {
-    const {
-      destinationType: { type },
-      name,
-      exportedSignals,
-      fields,
-    } = drawerItem.item as Destination;
-
+  const loadFormWithDrawerItem = ({ destinationType: { type }, name, exportedSignals, fields }: Destination) => {
     const updatedData: DestinationInput = {
       ...INITIAL,
       type,
