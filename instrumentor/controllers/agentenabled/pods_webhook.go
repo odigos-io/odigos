@@ -222,7 +222,7 @@ func injectOdigosToContainer(containerConfig *odigosv1.ContainerAgentConfig, pod
 	volumeMounted := false
 	for _, agentDirectory := range distroMetadata.AgentDirectories {
 		podswebhook.MountDirectory(podContainerSpec, agentDirectory.DirectoryName)
-		podswebhook.InjectK8sEnvVars(podContainerSpec, distroName, pw)
+		podswebhook.InjectOdigosK8sEnvVars(podContainerSpec, distroName, pw.Namespace)
 		volumeMounted = true
 	}
 
