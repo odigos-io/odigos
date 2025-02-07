@@ -2,7 +2,6 @@ package agentenabled
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/hashicorp/go-version"
@@ -40,22 +39,20 @@ type agentInjectedStatusCondition struct {
 }
 
 func reconcileAll(ctx context.Context, c client.Client) (ctrl.Result, error) {
-
 	allInstrumentationConfigs := odigosv1.InstrumentationConfigList{}
 	listErr := c.List(ctx, &allInstrumentationConfigs)
 	if listErr != nil {
 		return ctrl.Result{}, listErr
 	}
 
-	var err error
 	for _, ic := range allInstrumentationConfigs.Items {
-		_, workloadErr := reconcileWorkload(ctx, c, ic.Name, ic.Namespace)
-		if workloadErr != nil {
-			err = errors.Join(err, workloadErr)
+		res, err := reconcileWorkload(ctx, c, ic.Name, ic.Namespace)
+		if err != nil || !res.IsZero() {
+			return res, err
 		}
 	}
 
-	return ctrl.Result{}, err
+	return ctrl.Result{}, nil
 }
 
 func reconcileWorkload(ctx context.Context, c client.Client, icName string, namespace string) (ctrl.Result, error) {
