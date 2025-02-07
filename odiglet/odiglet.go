@@ -21,7 +21,6 @@ import (
 	"github.com/odigos-io/odigos/opampserver/pkg/server"
 	"golang.org/x/sync/errgroup"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 )
 
@@ -39,18 +38,7 @@ const (
 )
 
 // New creates a new Odiglet instance.
-func New(deviceInjectionCallbacks instrumentation.OtelSdksLsf, factories map[commonInstrumentation.OtelDistribution]commonInstrumentation.Factory) (*Odiglet, error) {
-	// Init Kubernetes API client
-	cfg, err := rest.InClusterConfig()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create in-cluster config for Kubernetes client %w", err)
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Kubernetes client %w", err)
-	}
-
+func New(clientset *kubernetes.Clientset, deviceInjectionCallbacks instrumentation.OtelSdksLsf, factories map[commonInstrumentation.OtelDistribution]commonInstrumentation.Factory) (*Odiglet, error) {
 	mgr, err := kube.CreateManager()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create controller-runtime manager %w", err)
@@ -180,7 +168,7 @@ func runDeviceManager(clientset *kubernetes.Clientset, otelSdkLsf instrumentatio
 	return nil
 }
 
-func OdigletInitPhase() {
+func OdigletInitPhase(clientset *kubernetes.Clientset) {
 	if err := log.Init(); err != nil {
 		panic(err)
 	}
@@ -200,7 +188,7 @@ func OdigletInitPhase() {
 
 	log.Logger.V(0).Info("Adding Label to Node", "odigletLabel", odigletInstalledLabel)
 
-	if err := k8snode.AddLabelToNode(nn, odigletInstalledLabel, k8sconsts.OdigletInstalledLabelValue); err != nil {
+	if err := k8snode.AddLabelToNode(clientset, nn, odigletInstalledLabel, k8sconsts.OdigletInstalledLabelValue); err != nil {
 		log.Logger.Error(err, "Failed to add Odiglet installed label to the node")
 		os.Exit(-1)
 	}
