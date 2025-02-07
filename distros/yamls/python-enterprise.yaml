@@ -19,3 +19,4 @@ spec:
       delimiter: ':'
   agentDirectories:
     - directoryName: "{{ODIGOS_AGENTS_DIR}}/python-ebpf"
+    - directoryName: "{{ODIGOS_AGENTS_DIR}}/python"
