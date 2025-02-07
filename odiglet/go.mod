@@ -17,7 +17,7 @@ require (
 	github.com/odigos-io/opentelemetry-zap-bridge v0.0.5
 	github.com/odigos-io/runtime-detector v0.0.6
 	github.com/stretchr/testify v1.10.0
-	go.opentelemetry.io/auto v0.20.0
+	go.opentelemetry.io/auto v0.19.0-alpha
 	go.opentelemetry.io/otel v1.34.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.34.0
 	go.uber.org/zap v1.27.0
@@ -69,9 +69,8 @@ require (
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
-	github.com/xwb1989/sqlparser v0.0.0-20180606152119-120387863bf2 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
-	go.opentelemetry.io/collector/pdata v1.24.0 // indirect
+	go.opentelemetry.io/collector/pdata v1.25.0 // indirect
 	go.opentelemetry.io/contrib/bridges/prometheus v0.59.0 // indirect
 	go.opentelemetry.io/contrib/exporters/autoexport v0.59.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc v0.10.0 // indirect
