@@ -1,7 +1,7 @@
 import React from 'react';
 import Theme from '@odigos/ui-theme';
+import styled from 'styled-components';
 import RuleCustomFields from './custom-fields';
-import styled, { useTheme } from 'styled-components';
 import type { InstrumentationRuleInput } from '@/types';
 import { InstrumentationRuleOption } from '@odigos/ui-utils';
 import { CheckCircledIcon, CrossCircledIcon } from '@odigos/ui-icons';
@@ -27,7 +27,7 @@ const FieldTitle = styled(Text)`
 `;
 
 export const RuleFormBody: React.FC<Props> = ({ isUpdate, rule, formData, formErrors, handleFormChange }) => {
-  const theme = useTheme();
+  const theme = Theme.useTheme();
 
   return (
     <Container>

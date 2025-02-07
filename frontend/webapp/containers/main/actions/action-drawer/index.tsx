@@ -26,7 +26,7 @@ const DataContainer = styled.div`
 `;
 
 export const ActionDrawer: React.FC<Props> = () => {
-  const { entityId, setDrawerEntityId, setDrawerType } = useDrawerStore();
+  const { drawerEntityId, setDrawerEntityId, setDrawerType } = useDrawerStore();
 
   const [isEditing, setIsEditing] = useState(false);
   const [isFormDirty, setIsFormDirty] = useState(false);
@@ -46,11 +46,11 @@ export const ActionDrawer: React.FC<Props> = () => {
   });
 
   const thisItem = useMemo(() => {
-    const found = actions?.find((x) => x.id === entityId);
+    const found = actions?.find((x) => x.id === drawerEntityId);
     if (!!found) loadFormWithDrawerItem(found);
 
     return found;
-  }, [actions, entityId]);
+  }, [actions, drawerEntityId]);
 
   if (!thisItem) return null;
 
@@ -70,14 +70,14 @@ export const ActionDrawer: React.FC<Props> = () => {
   };
 
   const handleDelete = () => {
-    deleteAction(entityId as string, thisItem.type);
+    deleteAction(drawerEntityId as string, thisItem.type);
   };
 
   const handleSave = (newTitle: string) => {
     if (validateForm({ withAlert: true, alertTitle: ACTION.UPDATE })) {
       const title = newTitle !== thisItem.type ? newTitle : '';
       handleFormChange('name', title);
-      updateAction(entityId as string, { ...formData, name: title });
+      updateAction(drawerEntityId as string, { ...formData, name: title });
     }
   };
 

@@ -25,7 +25,7 @@ const DataContainer = styled.div`
 `;
 
 export const DestinationDrawer: React.FC<Props> = () => {
-  const { entityId, setDrawerEntityId, setDrawerType } = useDrawerStore();
+  const { drawerEntityId, setDrawerEntityId, setDrawerType } = useDrawerStore();
   const { destinations: destinationTypes } = useDestinationTypes();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -46,9 +46,9 @@ export const DestinationDrawer: React.FC<Props> = () => {
   });
 
   useEffect(() => {
-    const found = destinations?.find((x) => x.id === entityId);
+    const found = destinations?.find((x) => x.id === drawerEntityId);
     setThisItem(found);
-  }, [destinations, entityId]);
+  }, [destinations, drawerEntityId]);
 
   const { formData, formErrors, handleFormChange, resetFormData, validateForm, loadFormWithDrawerItem, destinationTypeDetails, dynamicFields, setDynamicFields } = useDestinationFormData({
     destinationType: thisItem?.destinationType?.type,
@@ -76,14 +76,14 @@ export const DestinationDrawer: React.FC<Props> = () => {
   };
 
   const handleDelete = () => {
-    deleteDestination(entityId as string);
+    deleteDestination(drawerEntityId as string);
   };
 
   const handleSave = (newTitle: string) => {
     if (validateForm({ withAlert: true, alertTitle: ACTION.UPDATE })) {
       const title = newTitle !== thisItem.destinationType.displayName ? newTitle : '';
       handleFormChange('name', title);
-      updateDestination(entityId as string, { ...formData, name: title });
+      updateDestination(drawerEntityId as string, { ...formData, name: title });
     }
   };
 

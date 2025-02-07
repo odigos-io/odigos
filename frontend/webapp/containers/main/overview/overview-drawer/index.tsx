@@ -42,7 +42,7 @@ const OverviewDrawer: React.FC<OverviewDrawerProps & PropsWithChildren> = ({
   const theme = Theme.useTheme();
   const { isThisPending } = usePendingStore();
   const { addNotification } = useNotificationStore();
-  const { drawerType, entityId, setDrawerType, setDrawerEntityId } = useDrawerStore();
+  const { drawerType, drawerEntityId, setDrawerType, setDrawerEntityId } = useDrawerStore();
 
   useKeyDown({ key: 'Enter', active: isEdit }, () => clickSave());
 
@@ -112,9 +112,9 @@ const OverviewDrawer: React.FC<OverviewDrawerProps & PropsWithChildren> = ({
 
     return isThisPending({
       entityType: drawerType as ENTITY_TYPES,
-      entityId: entityId as string | WorkloadId,
+      entityId: drawerEntityId as string | WorkloadId,
     });
-  }, [drawerType, entityId]);
+  }, [drawerType, drawerEntityId]);
 
   const handlePending = (action: string) => {
     addNotification({

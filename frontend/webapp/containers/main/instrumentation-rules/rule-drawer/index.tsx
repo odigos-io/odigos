@@ -21,7 +21,7 @@ const FormContainer = styled.div`
 
 export const RuleDrawer: React.FC<Props> = () => {
   const { addNotification } = useNotificationStore();
-  const { entityId, setDrawerEntityId, setDrawerType } = useDrawerStore();
+  const { drawerEntityId, setDrawerEntityId, setDrawerType } = useDrawerStore();
 
   const [isEditing, setIsEditing] = useState(false);
   const [isFormDirty, setIsFormDirty] = useState(false);
@@ -41,11 +41,11 @@ export const RuleDrawer: React.FC<Props> = () => {
   });
 
   const thisItem = useMemo(() => {
-    const found = instrumentationRules?.find((x) => x.ruleId === entityId);
+    const found = instrumentationRules?.find((x) => x.ruleId === drawerEntityId);
     if (!!found) loadFormWithDrawerItem(found);
 
     return found;
-  }, [instrumentationRules, entityId]);
+  }, [instrumentationRules, drawerEntityId]);
 
   if (!thisItem) return null;
 
@@ -58,7 +58,7 @@ export const RuleDrawer: React.FC<Props> = () => {
         title: FORM_ALERTS.FORBIDDEN,
         message: FORM_ALERTS.CANNOT_EDIT_RULE,
         crdType: ENTITY_TYPES.INSTRUMENTATION_RULE,
-        target: entityId as string,
+        target: drawerEntityId as string,
         hideFromHistory: true,
       });
     } else {
@@ -79,11 +79,11 @@ export const RuleDrawer: React.FC<Props> = () => {
         title: FORM_ALERTS.FORBIDDEN,
         message: FORM_ALERTS.CANNOT_DELETE_RULE,
         crdType: ENTITY_TYPES.INSTRUMENTATION_RULE,
-        target: entityId as string,
+        target: drawerEntityId as string,
         hideFromHistory: true,
       });
     } else {
-      deleteInstrumentationRule(entityId as string);
+      deleteInstrumentationRule(drawerEntityId as string);
     }
   };
 
@@ -91,7 +91,7 @@ export const RuleDrawer: React.FC<Props> = () => {
     if (validateForm({ withAlert: true, alertTitle: ACTION.UPDATE })) {
       const title = newTitle !== thisItem.type ? newTitle : '';
       handleFormChange('ruleName', title);
-      updateInstrumentationRule(entityId as string, { ...formData, ruleName: title });
+      updateInstrumentationRule(drawerEntityId as string, { ...formData, ruleName: title });
     }
   };
 

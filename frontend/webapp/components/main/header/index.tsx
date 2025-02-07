@@ -7,7 +7,7 @@ import { PlatformTitle } from './cp-title';
 import { FORM_ALERTS, SLACK_LINK } from '@/utils';
 import { NOTIFICATION_TYPE, PLATFORM_TYPE } from '@odigos/ui-utils';
 import { OdigosLogoText, SlackLogo, TerminalIcon } from '@odigos/ui-icons';
-import { FlexRow, IconButton, Status, ToggleDarkMode, Tooltip } from '@odigos/ui-components';
+import { FlexRow, IconButton, Status, Tooltip } from '@odigos/ui-components';
 import { DRAWER_OTHER_TYPES, NotificationManager, useDrawerStore } from '@odigos/ui-containers';
 
 interface MainHeaderProps {}
@@ -36,7 +36,6 @@ export const MainHeader: React.FC<MainHeaderProps> = () => {
   const { data: config } = useConfig();
   const { setDrawerType } = useDrawerStore();
   const { status, title, message } = useStatusStore();
-  const { darkMode, setDarkMode } = Theme.useDarkMode();
 
   const handleClickCli = () => setDrawerType(DRAWER_OTHER_TYPES.ODIGOS_CLI);
   const handleClickSlack = () => window.open(SLACK_LINK, '_blank', 'noopener noreferrer');
@@ -55,7 +54,7 @@ export const MainHeader: React.FC<MainHeaderProps> = () => {
       </AlignLeft>
 
       <AlignRight>
-        <ToggleDarkMode darkMode={darkMode} setDarkMode={setDarkMode} />
+        <Theme.ToggleDarkMode />
         <NotificationManager />
 
         <IconButton onClick={handleClickCli} tooltip='Odigos CLI' withPing pingColor={theme.colors.majestic_blue}>

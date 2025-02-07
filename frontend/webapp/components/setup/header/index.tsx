@@ -2,7 +2,7 @@ import React from 'react';
 import Theme from '@odigos/ui-theme';
 import styled from 'styled-components';
 import { OdigosLogoText } from '@odigos/ui-icons';
-import { FlexRow, NavigationButtons, type NavigationButtonsProps, Text, ToggleDarkMode } from '@odigos/ui-components';
+import { FlexRow, NavigationButtons, type NavigationButtonsProps, Text } from '@odigos/ui-components';
 
 interface Props extends NavigationButtonsProps {}
 
@@ -23,8 +23,6 @@ const Title = styled(Text)`
 `;
 
 export const SetupHeader: React.FC<Props> = ({ buttons }) => {
-  const { darkMode, setDarkMode } = Theme.useDarkMode();
-
   return (
     <Container>
       <OdigosLogoText size={80} />
@@ -32,7 +30,7 @@ export const SetupHeader: React.FC<Props> = ({ buttons }) => {
       <Title family='secondary'>START WITH ODIGOS</Title>
 
       <FlexRow>
-        <ToggleDarkMode darkMode={darkMode} setDarkMode={setDarkMode} />
+        <Theme.ToggleDarkMode />
         <NavigationButtons buttons={buttons} />
       </FlexRow>
     </Container>

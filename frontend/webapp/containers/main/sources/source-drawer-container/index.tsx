@@ -31,7 +31,7 @@ const EMPTY_FORM = {
 };
 
 export const SourceDrawer: React.FC<Props> = () => {
-  const { entityId, setDrawerEntityId, setDrawerType } = useDrawerStore();
+  const { drawerEntityId, setDrawerEntityId, setDrawerType } = useDrawerStore();
 
   const [isPrettyMode, setIsPrettyMode] = useState(true); // for "describe source"
   const [isEditing, setIsEditing] = useState(false);
@@ -41,7 +41,7 @@ export const SourceDrawer: React.FC<Props> = () => {
   const handleFormChange = (key: keyof typeof EMPTY_FORM, val: any) => setFormData((prev) => ({ ...prev, [key]: val }));
   const resetFormData = () => setFormData({ ...EMPTY_FORM });
 
-  const { data: describe, restructureForPrettyMode } = useDescribeSource(entityId as WorkloadId);
+  const { data: describe, restructureForPrettyMode } = useDescribeSource(drawerEntityId as WorkloadId);
   const { sources, persistSources, updateSource } = useSourceCRUD({
     onSuccess: (type) => {
       setIsEditing(false);
@@ -56,11 +56,11 @@ export const SourceDrawer: React.FC<Props> = () => {
   });
 
   const thisItem = useMemo(() => {
-    const found = sources?.find((x) => x.namespace === (entityId as WorkloadId).namespace && x.name === (entityId as WorkloadId).name && x.kind === (entityId as WorkloadId).kind);
+    const found = sources?.find((x) => x.namespace === (drawerEntityId as WorkloadId).namespace && x.name === (drawerEntityId as WorkloadId).name && x.kind === (drawerEntityId as WorkloadId).kind);
     if (!!found) handleFormChange('otelServiceName', found.otelServiceName || found.name || '');
 
     return found;
-  }, [sources, entityId]);
+  }, [sources, drawerEntityId]);
 
   if (!thisItem) return null;
 
@@ -92,7 +92,7 @@ export const SourceDrawer: React.FC<Props> = () => {
   const handleSave = async () => {
     const title = formData.otelServiceName !== thisItem.name ? formData.otelServiceName : '';
     handleFormChange('otelServiceName', title);
-    await updateSource(entityId as WorkloadId, { ...formData, otelServiceName: title });
+    await updateSource(drawerEntityId as WorkloadId, { ...formData, otelServiceName: title });
   };
 
   return (

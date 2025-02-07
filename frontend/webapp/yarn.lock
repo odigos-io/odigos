@@ -9,10 +9,10 @@
   dependencies:
     ts-invariant "^0.10.3"
 
-"@apollo/client@^3.12.10":
-  version "3.12.10"
-  resolved "https://registry.yarnpkg.com/@apollo/client/-/client-3.12.10.tgz#8a18018915b70a339f9bf2e95bc2e296f0d3b02e"
-  integrity sha512-XVNOBLkU3mC/tmDSJhZ2lv0sgq8ahHTLtjMeCclcsRinXfUfV8neZQ+OAkE0Mkd0uYsaRjijN51xu0ok39mqbA==
+"@apollo/client@^3.12.11":
+  version "3.12.11"
+  resolved "https://registry.yarnpkg.com/@apollo/client/-/client-3.12.11.tgz#250301155a86c59e2915637fd19c9a2c42f878a8"
+  integrity sha512-1RppV9U3E6Uusl/33yGkZa+rXpkGU5iCstcYltwWjdTjoA/YBD2Yyu0aHy8J4uKfIExUgnMW1HJWn4A0E0rRsw==
   dependencies:
     "@graphql-typed-document-node/core" "^3.1.1"
     "@wry/caches" "^1.0.0"
@@ -514,42 +514,33 @@
   resolved "https://registry.yarnpkg.com/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz#3dc35ba0f1e66b403c00b39344f870298ebb1c8e"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
-"@odigos/ui-components@^0.0.47":
-  version "0.0.47"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-components/-/ui-components-0.0.47.tgz#4c4ee87330e77f0895160f27747fda02e3261135"
-  integrity sha512-ZVibC2TwUbcdeO9W4O/ot3vBHiW3C4PBFCilqQ7/wvORlEgNdLzDknOINDcqfmrSs4XPpO5QYxk+pBdKws/ePA==
+"@odigos/ui-components@^0.0.51":
+  version "0.0.51"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-components/-/ui-components-0.0.51.tgz#02b7363f7c4b3c83a75b8e8ef6a06b36ebec7f0e"
+  integrity sha512-i8gg51ADEkguQwVDGDYMClgbZPOMepF9mrblIPnJ8udKaDnT+1FJWvtNzatknn+/mgQdVzYCq/0G27hMOfvszQ==
   dependencies:
-    "@odigos/ui-icons" "^0.0.5"
-    "@odigos/ui-theme" "^0.0.4"
-    "@odigos/ui-utils" "^0.0.10"
+    "@odigos/ui-icons" "^0.0.9"
+    "@odigos/ui-theme" "^0.0.11"
+    "@odigos/ui-utils" "^0.0.11"
     prism-react-renderer "^2.4.1"
     react "^19.0.0"
     react-dom "^19.0.0"
     react-lottie "^1.2.10"
     styled-components "^6.1.15"
 
-"@odigos/ui-containers@^0.0.12":
-  version "0.0.12"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-containers/-/ui-containers-0.0.12.tgz#b196510cbd23a0b22a95bf1bf40edf67bcdbccc8"
-  integrity sha512-ztBUi4sG+qn4qYAVwwo4VVHBVFyOWpIi8e+fHF/Ceu6Xwx4ikdoLLgANws47cMdtUpXyLiTYGFlSXH7tyiXzQw==
+"@odigos/ui-containers@^0.0.14":
+  version "0.0.14"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-containers/-/ui-containers-0.0.14.tgz#da611e618f25a54e9d2ae636fd60b34e4dc4659b"
+  integrity sha512-oe1O8u42FR0A7IjI4y2jo64ZdwU/fJjmjGDAeM2KC14f9jwsq4Xlc/Aj9GfWr/7W26JI0h5VpkZ11OjO6uHQPA==
   dependencies:
-    "@odigos/ui-components" "^0.0.47"
-    "@odigos/ui-theme" "^0.0.4"
-    "@odigos/ui-utils" "^0.0.10"
+    "@odigos/ui-components" "^0.0.51"
+    "@odigos/ui-theme" "^0.0.11"
+    "@odigos/ui-utils" "^0.0.11"
     "@xyflow/react" "^12.4.2"
     react "^19.0.0"
     react-dom "^19.0.0"
     styled-components "^6.1.15"
     zustand "^5.0.3"
-
-"@odigos/ui-icons@^0.0.4":
-  version "0.0.4"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-icons/-/ui-icons-0.0.4.tgz#9653b27d58ed3eaa49849e7a6a84ca25521f2298"
-  integrity sha512-il20p/3g3e7Qxc1ZeaIxWAavRhEi7iVRjY10Mq484KJuiD51IrZOP5QAjn7o6h0Choo18mf8MYP1dWvvc+6jnA==
-  dependencies:
-    react "^19.0.0"
-    react-dom "^19.0.0"
-    styled-components "^6.1.15"
 
 "@odigos/ui-icons@^0.0.5":
   version "0.0.5"
@@ -560,31 +551,31 @@
     react-dom "^19.0.0"
     styled-components "^6.1.15"
 
-"@odigos/ui-theme@^0.0.4":
-  version "0.0.4"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-theme/-/ui-theme-0.0.4.tgz#869c190c82e51df5d30b6846a9d61ab25b7672a5"
-  integrity sha512-ZwKq4eEyxTos1VX4Epg7BTZlHjekCilnLEsC4Adt/MJrpAugnGfbhttzFDANEM2Ve0xiILmZqo4c6ZWhOSI95g==
+"@odigos/ui-icons@^0.0.9":
+  version "0.0.9"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-icons/-/ui-icons-0.0.9.tgz#ba2a927bc2eb549126a914b92fa2e54aa8554922"
+  integrity sha512-xR0Uho7xwQuMy5E6ZMrs0fnKGeIrhW6khXwMaRYPb4ppYdu/AScI1PZ4bm4dGra5GdAr5ea1GAfQz7JYniJ0vg==
   dependencies:
+    "@odigos/ui-theme" "^0.0.11"
     react "^19.0.0"
     react-dom "^19.0.0"
-    styled-components "^6.1.15"
 
-"@odigos/ui-theme@^0.0.7":
-  version "0.0.7"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-theme/-/ui-theme-0.0.7.tgz#287ab109a5fa232b9b3b30a6f05838b4d39007c2"
-  integrity sha512-gCR3Q0DAk8mRNgDMwH453IOqZOKITyAq9Yc9panByIMV6LMMhQaOV45PwGjlX4dX8OuGL/F0AYS747ojlo5y4Q==
+"@odigos/ui-theme@^0.0.11":
+  version "0.0.11"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-theme/-/ui-theme-0.0.11.tgz#deb7114694f80a744155a6aca5e11fe1f44315c1"
+  integrity sha512-u0CsHR39cGTjUBoucZsagHO9rQIScW4CDrArQd1DmLVZavkTytbuvp9m2lsLl6ZXS48DLetkXWRLJaSOfWa6CA==
   dependencies:
     react "^19.0.0"
     react-dom "^19.0.0"
     styled-components "^6.1.15"
     zustand "^5.0.3"
 
-"@odigos/ui-utils@^0.0.10":
-  version "0.0.10"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-utils/-/ui-utils-0.0.10.tgz#ac3c46fb7e810a2140b85935e9820eb440272944"
-  integrity sha512-4nZgasu2Ofis2pCOk0u2VWH1Q+2I0LwMxf03nXmCvQKS2J+XcD1XluVeDDDU/n3hmz+1pQ8b286q+052DTFovQ==
+"@odigos/ui-utils@^0.0.11":
+  version "0.0.11"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-utils/-/ui-utils-0.0.11.tgz#538b5cd20232b7c2d13c4cb766ba7564f6d0cc45"
+  integrity sha512-fxsY11dhMUUFTwn0T140qUiihbPzdR+8w/oxS/a1mqWvxLMga1W0itLZUvDH9jwqEDIEs+pOtMsbA4P+oqtHgQ==
   dependencies:
-    "@odigos/ui-icons" "^0.0.4"
+    "@odigos/ui-icons" "^0.0.5"
     javascript-time-ago "^2.5.11"
     react "^19.0.0"
     react-dom "^19.0.0"
@@ -1400,9 +1391,9 @@ camelize@^1.0.0:
   integrity sha512-dU+Tx2fsypxTgtLoE36npi3UqcjSSMNYfkqgmoEhtZrraP5VWq0K7FkWVTYa8eMPtnU/G2txVsfdCJTn9uzpuQ==
 
 caniuse-lite@^1.0.30001579, caniuse-lite@^1.0.30001646, caniuse-lite@^1.0.30001688:
-  version "1.0.30001697"
-  resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001697.tgz#040bbbb54463c4b4b3377c716b34a322d16e6fc7"
-  integrity sha512-GwNPlWJin8E+d7Gxq96jxM6w0w+VFeyyXRsjU58emtkYqnbwHqXm5uT2uCmO0RQE9htWknOP4xtBlLmM/gWxvQ==
+  version "1.0.30001698"
+  resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001698.tgz#3e86d4bad6f87f493197fb2483a211fe8841abd3"
+  integrity sha512-xJ3km2oiG/MbNU8G6zIq6XRZ6HtAOVXsbOrP/blGazi52kc5Yy7b6sDA5O+FbROzRrV7BSTllLHuNvmawYUJjw==
 
 caseless@~0.12.0:
   version "0.12.0"
@@ -1791,9 +1782,9 @@ ecc-jsbn@~0.1.1:
     safer-buffer "^2.1.0"
 
 electron-to-chromium@^1.5.73:
-  version "1.5.93"
-  resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.5.93.tgz#6fae820ac8bb772a841aa67fce5389e6c6da7ba2"
-  integrity sha512-M+29jTcfNNoR9NV7la4SwUqzWAxEwnc7ThA5e1m6LRSotmpfpCpLcIfgtSCVL+MllNLgAyM/5ru86iMRemPzDQ==
+  version "1.5.96"
+  resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.5.96.tgz#afa3bf1608c897a7c7e33f22d4be1596dd5a4f3e"
+  integrity sha512-8AJUW6dh75Fm/ny8+kZKJzI1pgoE8bKLZlzDU2W1ENd+DXKJrx7I7l9hb8UWR4ojlnb5OlixMt00QWiYJoVw1w==
 
 emoji-regex@^8.0.0:
   version "8.0.0"
@@ -3349,9 +3340,9 @@ pify@^2.2.0:
   integrity sha512-udgsAY+fTnvv7kI7aaxbqwWNb0AHiB0qBO89PZKPkoTmGOgdbrHDKD+0B2X4uTfJ/FT1R09r9gTsjUjNJotuog==
 
 possible-typed-array-names@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/possible-typed-array-names/-/possible-typed-array-names-1.0.0.tgz#89bb63c6fada2c3e90adc4a647beeeb39cc7bf8f"
-  integrity sha512-d7Uw+eZoloe0EHDIYoe+bQ5WXnGMOpmiZFTuMWCwpjzzkL2nTjcKiAk4hh8TjnGye2TwWOk3UXucZ+3rbmBa8Q==
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/possible-typed-array-names/-/possible-typed-array-names-1.1.0.tgz#93e3582bc0e5426586d9d07b79ee40fc841de4ae"
+  integrity sha512-/+5VFTchJDoVj3bhoqi6UeymcD00DAwb1nJwamzPvHEszJ4FpF6SNNbUbOS8yI56qHzdV8eK0qEfOSiodkTdxg==
 
 postcss-value-parser@^4.0.2, postcss-value-parser@^4.2.0:
   version "4.2.0"
@@ -4027,9 +4018,9 @@ to-regex-range@^5.0.1:
     is-number "^7.0.0"
 
 tough-cookie@^5.0.0:
-  version "5.1.0"
-  resolved "https://registry.yarnpkg.com/tough-cookie/-/tough-cookie-5.1.0.tgz#0667b0f2fbb5901fe6f226c3e0b710a9a4292f87"
-  integrity sha512-rvZUv+7MoBYTiDmFPBrhL7Ujx9Sk+q9wwm22x8c8T5IJaR+Wsyc7TNxbVxo84kZoRJZZMazowFLqpankBEQrGg==
+  version "5.1.1"
+  resolved "https://registry.yarnpkg.com/tough-cookie/-/tough-cookie-5.1.1.tgz#4641c1fdbf024927e29c5532edb7b6e5377ea1f2"
+  integrity sha512-Ek7HndSVkp10hmHP9V4qZO1u+pn1RU5sI0Fw+jCU3lyvuMZcgqsNgc6CmJJZyByK4Vm/qotGRJlfgAX8q+4JiA==
   dependencies:
     tldts "^6.1.32"
 
