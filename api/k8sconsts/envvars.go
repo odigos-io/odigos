@@ -4,6 +4,7 @@ const (
 	OdigosEnvVarNamespace     = "ODIGOS_WORKLOAD_NAMESPACE"
 	OdigosEnvVarContainerName = "ODIGOS_CONTAINER_NAME"
 	OdigosEnvVarPodName       = "ODIGOS_POD_NAME"
+	OdigosEnvVarDistroName    = "ODIGOS_DISTRO_NAME"
 )
 
 func OdigosInjectedEnvVars() []string {
@@ -11,5 +12,6 @@ func OdigosInjectedEnvVars() []string {
 		OdigosEnvVarNamespace,
 		OdigosEnvVarContainerName,
 		OdigosEnvVarPodName,
+		OdigosEnvVarDistroName,
 	}
 }

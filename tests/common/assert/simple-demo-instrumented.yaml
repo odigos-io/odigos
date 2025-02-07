@@ -110,11 +110,6 @@ spec:
                   - "true"
   containers:
     - name: membership
-      resources:
-        limits:
-          instrumentation.odigos.io/go-ebpf-community: "1"
-        requests:
-          instrumentation.odigos.io/go-ebpf-community: "1"
 status:
   containerStatuses:
     - name: membership
