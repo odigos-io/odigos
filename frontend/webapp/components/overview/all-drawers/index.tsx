@@ -4,8 +4,6 @@ import { ENTITY_TYPES } from '@odigos/ui-utils';
 import { DRAWER_OTHER_TYPES, useDrawerStore } from '@odigos/ui-containers';
 import { ActionDrawer, DestinationDrawer, RuleDrawer, SourceDrawer } from '@/containers';
 
-// TODO: fix edit form for all drawers
-
 const AllDrawers = () => {
   const { drawerType } = useDrawerStore();
 

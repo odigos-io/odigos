@@ -234,7 +234,7 @@ const EditTitle = forwardRef<EditTitleRef, { title: string }>(({ title }, ref) =
     clearTitle: () => setInputValue(title),
   }));
 
-  return <Input data-id='title' autoFocus value={inputValue} onChange={(e) => setInputValue(e.target.value)} />;
+  return <Input data-id='title' value={inputValue} onChange={(e) => setInputValue(e.target.value)} />;
 });
 
 export default OverviewDrawer;
