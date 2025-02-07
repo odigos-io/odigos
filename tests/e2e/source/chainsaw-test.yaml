@@ -322,6 +322,16 @@ spec:
       try:
         - apply:
             file: ../../common/apply/instrument-default-ns.yaml
+    - name: Wait for workloads to roll out new revisions
+      try:
+        - script:
+            timeout: 70s
+            content: |
+              kubectl rollout status deployment -l app=coupon
+              kubectl rollout status deployment -l app=frontend
+              kubectl rollout status deployment -l app=inventory
+              kubectl rollout status deployment -l app=pricing
+              kubectl rollout status deployment -l app=membership
     - name: Assert Runtime Detected for all workloads
       try:
         - assert:
