@@ -105,13 +105,14 @@ export const SourcesList: React.FC<Props> = ({
         const filteredSources = filterSources(namespace, { cancelSearch: true });
 
         const isNamespaceAllSourcesSelected = !!onlySelectedSources.length && onlySelectedSources.length === sources.length;
+        const isNamespacePartiallySourcesSelected = !!onlySelectedSources.length && onlySelectedSources.length !== sources.length;
         const hasFilteredSources = !!filteredSources.length;
 
         return (
           <Group key={`namespace-${namespace}`} data-id={`namespace-${namespace}`} $selected={isNamespaceAllSourcesSelected} $isOpen={isNamespaceSelected && hasFilteredSources}>
             <NamespaceItem $selected={isNamespaceAllSourcesSelected} onClick={() => onSelectNamespace(namespace)}>
               <FlexRow $gap={12}>
-                <Checkbox value={isNamespaceAllSourcesSelected} onChange={(bool) => onSelectAll(bool, namespace)} />
+                <Checkbox partiallyChecked={isNamespacePartiallySourcesSelected} value={isNamespaceAllSourcesSelected} onChange={(bool) => onSelectAll(bool, namespace)} />
                 <Text>{namespace}</Text>
               </FlexRow>
 
