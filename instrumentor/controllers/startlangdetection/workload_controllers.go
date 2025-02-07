@@ -3,6 +3,7 @@ package startlangdetection
 import (
 	"context"
 
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -51,7 +52,7 @@ func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind k8s
 		return ctrl.Result{}, err
 	}
 
-	enabled, err := sourceutils.IsObjectInstrumentedBySource(ctx, k8sClient, obj)
+	enabled, reason, message, err := sourceutils.IsObjectInstrumentedBySource(ctx, k8sClient, obj)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -61,6 +62,28 @@ func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind k8s
 
 	instConfigName := workload.CalculateWorkloadRuntimeObjectName(req.Name, objKind)
 	err = requestOdigletsToCalculateRuntimeDetails(ctx, k8sClient, instConfigName, req.Namespace, obj, scheme)
+
+	// update the status with the reason
+	ic := odigosv1.InstrumentationConfig{}
+	err = k8sClient.Get(ctx, types.NamespacedName{Name: instConfigName, Namespace: req.Namespace}, &ic)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	cond := metav1.Condition{
+		Type:    odigosv1.WorkloadInstrumentationStatusConditionType,
+		Status:  metav1.ConditionTrue, // if instrumentation config is created, it is always instrumented.
+		Reason:  string(reason),
+		Message: message,
+	}
+	statuschanged := meta.SetStatusCondition(&ic.Status.Conditions, cond)
+	if statuschanged {
+		err = k8sClient.Status().Update(ctx, &ic)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
 	return ctrl.Result{}, err
 }
 

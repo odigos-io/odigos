@@ -22,6 +22,8 @@ type InstrumentationConfig struct {
 
 // conditions for the InstrumentationConfigStatus
 const (
+	// Define a status condition type that describes why the workload is instrumented.
+	WorkloadInstrumentationStatusConditionType = "WorkloadInstrumentation"
 	// this const is the Type field in the conditions of the InstrumentationConfigStatus.
 	AgentEnabledStatusConditionType = "AgentEnabled"
 	// reports whether the workload associated with the InstrumentationConfig has been rolled out.
@@ -51,6 +53,28 @@ const (
 	WorkloadRolloutReasonTriggeredSuccessfully  WorkloadRolloutReason = "RolloutTriggeredSuccessfully"
 	WorkloadRolloutReasonFailedToPatch          WorkloadRolloutReason = "FailedToPatch"
 	WorkloadRolloutReasonPreviousRolloutOngoing WorkloadRolloutReason = "PreviousRolloutOngoing"
+)
+
+// +kubebuilder:validation:Enum=WorkloadSource;NamespaceSource
+type WorkloadInstrumentationReason string
+
+const (
+	// denotes that the workload is instrumented because of a source CR exists for this workload.
+	// and the source is not disabled..
+	WorkloadInstrumentationReasonWorkloadSource WorkloadInstrumentationReason = "WorkloadSource"
+
+	// denotes that the workload does not have a source CR, but the namespace has a source CR,
+	// so the workload is instrumented as inherited from the namespace.
+	WorkloadInstrumentationReasonNamespaceSource WorkloadInstrumentationReason = "NamespaceSource"
+
+	// the source object for workload exists, and it is disabled, thus uninstrumented.
+	WorkloadInstrumentationReasonWorkloadSourceDisabled WorkloadInstrumentationReason = "WorkloadSourceDisabled"
+
+	// this workload is not instrumented because no source CR exists for it or its namespace.
+	WorkloadInstrumentationReasonNoSource WorkloadInstrumentationReason = "NoSource"
+
+	// cannot determine the reason for the instrumentation due to a possible transient error.
+	WorkloadInstrumentationReasonError WorkloadInstrumentationReason = "RetirableError"
 )
 
 // givin multiple reasons for not injecting an agent, this function returns the priority of the reason.
