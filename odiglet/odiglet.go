@@ -205,5 +205,12 @@ func OdigletInitPhase() {
 		os.Exit(-1)
 	}
 
+	// SELinux settings should be applied last. This function chroot's to use the host's PATH for
+	// executing selinux commands to make agents readable by pods.
+	if err := fs.ApplyOpenShiftSELinuxSettings(); err != nil {
+		log.Logger.Error(err, "Failed to apply SELinux settings on RHEL host")
+		os.Exit(-1)
+	}
+
 	os.Exit(0)
 }
