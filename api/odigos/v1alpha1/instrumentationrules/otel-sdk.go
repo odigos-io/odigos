@@ -15,7 +15,6 @@ type OtelDistros struct {
 
 	// Set a list of distribution names that take priority over the default distributions.
 	// if a language is not in this list, the default distribution will be used.
-	// it multiple distributions are specified for the same language, in one or many rules,
-	// the behavior is undefined.
+	// if multiple distributions are specified for the same language, in one or many rules, the behavior is undefined.
 	OtelDistroNames []string `json:"otelDistroNames"`
 }
