@@ -178,7 +178,15 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *core
 			continue
 		}
 
-		webhookdeviceinjector.InjectOdigosInstrumentationDevice(*pw, container, otelSdk, runtimeDetails)
+		// amir: 07 feb 2025. hard-coded temporary list which is removed once all distros migrate away from device
+		if (runtimeDetails.Language == common.JavascriptProgrammingLanguage && otelSdk == common.OtelSdkEbpfEnterprise) ||
+			(runtimeDetails.Language == common.GoProgrammingLanguage && otelSdk == common.OtelSdkEbpfCommunity) ||
+			(runtimeDetails.Language == common.JavaProgrammingLanguage && otelSdk == common.OtelSdkEbpfEnterprise) {
+			// Skip device injection for distros that no longer use it
+		} else {
+			webhookdeviceinjector.InjectOdigosInstrumentationDevice(*pw, container, otelSdk, runtimeDetails)
+		}
+
 		webhookenvinjector.InjectOdigosAgentEnvVars(logger, *pw, container, otelSdk, runtimeDetails)
 
 		if shouldInjectServiceName(runtimeDetails.Language, otelSdk) {
@@ -222,9 +230,9 @@ func injectOdigosToContainer(containerConfig *odigosv1.ContainerAgentConfig, pod
 	volumeMounted := false
 	for _, agentDirectory := range distroMetadata.AgentDirectories {
 		podswebhook.MountDirectory(podContainerSpec, agentDirectory.DirectoryName)
-		podswebhook.InjectOdigosK8sEnvVars(podContainerSpec, distroName, pw.Namespace)
 		volumeMounted = true
 	}
+	podswebhook.InjectOdigosK8sEnvVars(podContainerSpec, distroName, pw.Namespace)
 
 	return volumeMounted, nil
 }
