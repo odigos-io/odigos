@@ -1,4 +1,4 @@
-import React, { forwardRef, useImperativeHandle, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import Theme from '@odigos/ui-theme';
 import styled from 'styled-components';
 import { useDrawerStore } from '@odigos/ui-containers';
@@ -53,24 +53,103 @@ export const CliDrawer: React.FC<Props> = () => {
   const theme = Theme.useTheme();
   const timeAgo = useTimeAgo();
   const { setDrawerType } = useDrawerStore();
-  const { isCopied, copiedIndex, clickCopy } = useCopy();
+
   const { tokens, loading, updateToken } = useTokenCRUD();
   const { data: describe, restructureForPrettyMode } = useDescribeOdigos();
 
   const [isPrettyMode, setIsPrettyMode] = useState(true);
   const [editTokenIndex, setEditTokenIndex] = useState(-1);
 
-  const saveToken = () => {
-    const token = editTokenRef.current?.getValue() || '';
-    if (token) updateToken(token).then(() => setEditTokenIndex(-1));
+  const saveToken = (newToken: string) => {
+    updateToken(newToken).then(() => setEditTokenIndex(-1));
   };
 
   const closeDrawer = () => {
     setDrawerType(null);
   };
 
-  const editTokenRef = useRef<EditTokenRef>(null);
-  useKeyDown({ key: 'Enter', active: editTokenIndex !== -1 }, saveToken);
+  const tokenCardData = useMemo(() => {
+    return [
+      {
+        type: DATA_CARD_FIELD_TYPES.TABLE,
+        value: {
+          columns: [
+            { key: 'icon', title: '' },
+            { key: 'name', title: 'Name' },
+            { key: 'expires_at', title: 'Expires' },
+            { key: 'token', title: 'Token' },
+            { key: 'actions', title: '' },
+          ],
+          rows: tokens.map(({ token, name, expiresAt }, idx) => [
+            { columnKey: 'icon', icon: KeyIcon },
+            { columnKey: 'name', value: name },
+            { columnKey: 'token', value: `${new Array(15).fill('•').join('')}` },
+            {
+              columnKey: 'expires_at',
+              component: () => {
+                return (
+                  <Text size={14} color={isOverTime(expiresAt, 0) ? theme.text.error : isOverTime(expiresAt, SEVEN_DAYS_IN_MS) ? theme.text.warning : theme.text.success}>
+                    {timeAgo.format(expiresAt)} ({new Date(expiresAt).toDateString().split(' ').slice(1).join(' ')})
+                  </Text>
+                );
+              },
+            },
+            {
+              columnKey: 'actions',
+              component: () => {
+                const { isCopied, copiedIndex, clickCopy } = useCopy();
+                const [inputValue, setInputValue] = useState(token);
+
+                const onClose = () => setEditTokenIndex(-1);
+                const popupRef = useRef<HTMLDivElement>(null);
+                useOnClickOutside(popupRef, onClose);
+
+                const SuccessIcon = getStatusIcon(NOTIFICATION_TYPE.SUCCESS, theme);
+
+                return (
+                  <FlexRow $gap={0}>
+                    <IconButton size={32} onClick={() => clickCopy(token, idx)}>
+                      {isCopied && copiedIndex === idx ? <SuccessIcon /> : <CopyIcon />}
+                    </IconButton>
+                    <Divider orientation='vertical' length='12px' />
+
+                    <Relative>
+                      <IconButton size={32} onClick={() => setEditTokenIndex(idx)}>
+                        <EditIcon />
+                      </IconButton>
+
+                      {editTokenIndex === idx && (
+                        <TokenPopover ref={popupRef}>
+                          <Tooltip text='Contact us to generate a new one' withIcon>
+                            <Text size={14} style={{ lineHeight: '20px', display: 'flex' }}>
+                              Enter a new API Token:
+                            </Text>
+                          </Tooltip>
+
+                          <PopoverFormWrapper>
+                            <Input placeholder='API Token' type='password' value={inputValue} onChange={(e) => setInputValue(e.target.value)} />
+
+                            <PopoverFormButton variant='primary' disabled={loading} onClick={() => saveToken(inputValue)}>
+                              <CheckIcon fill={theme.text.primary} />
+                            </PopoverFormButton>
+
+                            <PopoverFormButton variant='secondary' disabled={loading} onClick={onClose}>
+                              <CrossIcon />
+                            </PopoverFormButton>
+                          </PopoverFormWrapper>
+                        </TokenPopover>
+                      )}
+                    </Relative>
+                  </FlexRow>
+                );
+              },
+            },
+          ]),
+        },
+        width: 'inherit',
+      },
+    ];
+  }, [tokens, editTokenIndex]);
 
   return (
     <Drawer
@@ -86,65 +165,7 @@ export const CliDrawer: React.FC<Props> = () => {
       }}
     >
       <DataContainer>
-        {!!tokens?.length && (
-          <DataCard
-            title={DATA_CARDS.API_TOKENS}
-            titleBadge={tokens.length}
-            data={[
-              {
-                type: DATA_CARD_FIELD_TYPES.TABLE,
-                value: {
-                  columns: [
-                    { key: 'icon', title: '' },
-                    { key: 'name', title: 'Name' },
-                    { key: 'expires_at', title: 'Expires' },
-                    { key: 'token', title: 'Token' },
-                    { key: 'actions', title: '' },
-                  ],
-                  rows: tokens.map(({ token, name, expiresAt }, idx) => [
-                    { columnKey: 'icon', icon: KeyIcon },
-                    { columnKey: 'name', value: name },
-                    { columnKey: 'token', value: `${new Array(15).fill('•').join('')}` },
-                    {
-                      columnKey: 'expires_at',
-                      component: () => {
-                        return (
-                          <Text size={14} color={isOverTime(expiresAt, 0) ? theme.text.error : isOverTime(expiresAt, SEVEN_DAYS_IN_MS) ? theme.text.warning : theme.text.success}>
-                            {timeAgo.format(expiresAt)} ({new Date(expiresAt).toDateString().split(' ').slice(1).join(' ')})
-                          </Text>
-                        );
-                      },
-                    },
-                    {
-                      columnKey: 'actions',
-                      component: () => {
-                        const SuccessIcon = getStatusIcon(NOTIFICATION_TYPE.SUCCESS, theme);
-
-                        return (
-                          <FlexRow $gap={0}>
-                            <IconButton size={32} onClick={() => clickCopy(token, idx)}>
-                              {isCopied && copiedIndex === idx ? <SuccessIcon /> : <CopyIcon />}
-                            </IconButton>
-                            <Divider orientation='vertical' length='12px' />
-
-                            <Relative>
-                              <IconButton size={32} onClick={() => setEditTokenIndex(idx)}>
-                                <EditIcon />
-                              </IconButton>
-
-                              {editTokenIndex === idx && <EditToken ref={editTokenRef} initialValue={token} loading={loading} onSave={saveToken} onClose={() => setEditTokenIndex(-1)} />}
-                            </Relative>
-                          </FlexRow>
-                        );
-                      },
-                    },
-                  ]),
-                },
-                width: 'inherit',
-              },
-            ]}
-          />
-        )}
+        {!!tokens?.length && <DataCard title={DATA_CARDS.API_TOKENS} titleBadge={tokens.length} data={tokenCardData} />}
 
         <DataCard
           title={DATA_CARDS.DESCRIBE_ODIGOS}
@@ -174,38 +195,3 @@ export const CliDrawer: React.FC<Props> = () => {
     </Drawer>
   );
 };
-
-const EditToken = forwardRef<EditTokenRef, { initialValue: string; loading: boolean; onSave: () => void; onClose: () => void }>(({ initialValue, loading, onSave, onClose }, ref) => {
-  const theme = Theme.useTheme();
-  const [inputValue, setInputValue] = useState(initialValue);
-
-  useImperativeHandle(ref, () => ({
-    getValue: () => inputValue,
-    clearValue: () => setInputValue(initialValue),
-  }));
-
-  const popupRef = useRef<HTMLDivElement>(null);
-  useOnClickOutside(popupRef, onClose);
-
-  return (
-    <TokenPopover ref={popupRef}>
-      <Tooltip text='Contact us to generate a new one' withIcon>
-        <Text size={14} style={{ lineHeight: '20px', display: 'flex' }}>
-          Enter a new API Token:
-        </Text>
-      </Tooltip>
-
-      <PopoverFormWrapper>
-        <Input placeholder='API Token' type='password' value={inputValue} onChange={(e) => setInputValue(e.target.value)} />
-
-        <PopoverFormButton variant='primary' disabled={loading} onClick={onSave}>
-          <CheckIcon fill={theme.text.primary} />
-        </PopoverFormButton>
-
-        <PopoverFormButton variant='secondary' disabled={loading} onClick={onClose}>
-          <CrossIcon />
-        </PopoverFormButton>
-      </PopoverFormWrapper>
-    </TokenPopover>
-  );
-});
