@@ -3,7 +3,7 @@ import type { InstrumentationRuleSpec } from '@/types';
 import { DATA_CARD_FIELD_TYPES, DataCardFieldsProps } from '@odigos/ui-components';
 
 const buildCard = (rule: InstrumentationRuleSpec) => {
-  const { type, ruleName, notes, disabled, profileName, payloadCollection } = rule;
+  const { type, ruleName, notes, disabled, profileName, payloadCollection, codeAttributes } = rule;
 
   const arr: DataCardFieldsProps['data'] = [
     { title: DISPLAY_TITLES.TYPE, value: type },
@@ -14,13 +14,22 @@ const buildCard = (rule: InstrumentationRuleSpec) => {
     { type: DATA_CARD_FIELD_TYPES.DIVIDER, width: '100%' },
   ];
 
-  if (payloadCollection) {
+  if (!!payloadCollection) {
     const str = Object.entries(payloadCollection)
       .filter(([key, val]) => !!val)
       .map(([key, val]) => key)
       .join(', ');
 
-    arr.push({ title: 'Collect', value: str });
+    if (!!str) arr.push({ title: 'Collect', value: str });
+  }
+
+  if (!!codeAttributes) {
+    const str = Object.entries(codeAttributes)
+      .filter(([key, val]) => !!val)
+      .map(([key, val]) => key)
+      .join(', ');
+
+    if (!!str) arr.push({ title: 'Collect', value: str });
   }
 
   return arr;
