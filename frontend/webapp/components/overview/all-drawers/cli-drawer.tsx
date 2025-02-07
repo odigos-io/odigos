@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import Theme from '@odigos/ui-theme';
 import styled from 'styled-components';
 import { useDrawerStore } from '@odigos/ui-containers';
@@ -9,6 +9,11 @@ import { getStatusIcon, isOverTime, NOTIFICATION_TYPE, safeJsonStringify, useCop
 import { Button, DATA_CARD_FIELD_TYPES, DataCard, Divider, Drawer, FlexColumn, FlexRow, IconButton, Input, Segment, Text, Tooltip } from '@odigos/ui-components';
 
 interface Props {}
+
+interface EditTokenRef {
+  getValue: () => string;
+  clearValue: () => void;
+}
 
 const DataContainer = styled.div`
   display: flex;
@@ -55,19 +60,17 @@ export const CliDrawer: React.FC<Props> = () => {
   const [isPrettyMode, setIsPrettyMode] = useState(true);
   const [editTokenIndex, setEditTokenIndex] = useState(-1);
 
-  const tokenPopoverRef = useRef<HTMLDivElement>(null);
-  const tokenInputRef = useRef<HTMLInputElement>(null);
-  useOnClickOutside(tokenPopoverRef, () => setEditTokenIndex(-1));
-  useKeyDown({ key: 'Enter', active: editTokenIndex !== -1 }, saveToken);
-
-  function saveToken() {
-    const token = tokenInputRef.current?.value;
+  const saveToken = () => {
+    const token = editTokenRef.current?.getValue() || '';
     if (token) updateToken(token).then(() => setEditTokenIndex(-1));
-  }
+  };
 
   const closeDrawer = () => {
     setDrawerType(null);
   };
+
+  const editTokenRef = useRef<EditTokenRef>(null);
+  useKeyDown({ key: 'Enter', active: editTokenIndex !== -1 }, saveToken);
 
   return (
     <Drawer
@@ -115,7 +118,7 @@ export const CliDrawer: React.FC<Props> = () => {
                     {
                       columnKey: 'actions',
                       component: () => {
-                        const SuccessIcon = getStatusIcon(NOTIFICATION_TYPE.SUCCESS);
+                        const SuccessIcon = getStatusIcon(NOTIFICATION_TYPE.SUCCESS, theme);
 
                         return (
                           <FlexRow $gap={0}>
@@ -129,24 +132,7 @@ export const CliDrawer: React.FC<Props> = () => {
                                 <EditIcon />
                               </IconButton>
 
-                              {editTokenIndex === idx && (
-                                <TokenPopover ref={tokenPopoverRef}>
-                                  <Tooltip text='Contact us to generate a new one' withIcon>
-                                    <Text size={14} style={{ lineHeight: '20px', display: 'flex' }}>
-                                      Enter a new API Token:
-                                    </Text>
-                                  </Tooltip>
-                                  <PopoverFormWrapper>
-                                    <Input ref={tokenInputRef} placeholder='API Token' autoFocus />
-                                    <PopoverFormButton variant='primary' disabled={loading} onClick={saveToken}>
-                                      <CheckIcon fill={theme.text.primary} />
-                                    </PopoverFormButton>
-                                    <PopoverFormButton variant='secondary' disabled={loading} onClick={() => setEditTokenIndex(-1)}>
-                                      <CrossIcon />
-                                    </PopoverFormButton>
-                                  </PopoverFormWrapper>
-                                </TokenPopover>
-                              )}
+                              {editTokenIndex === idx && <EditToken ref={editTokenRef} initialValue={token} loading={loading} onSave={saveToken} onClose={() => setEditTokenIndex(-1)} />}
                             </Relative>
                           </FlexRow>
                         );
@@ -188,3 +174,38 @@ export const CliDrawer: React.FC<Props> = () => {
     </Drawer>
   );
 };
+
+const EditToken = forwardRef<EditTokenRef, { initialValue: string; loading: boolean; onSave: () => void; onClose: () => void }>(({ initialValue, loading, onSave, onClose }, ref) => {
+  const theme = Theme.useTheme();
+  const [inputValue, setInputValue] = useState(initialValue);
+
+  useImperativeHandle(ref, () => ({
+    getValue: () => inputValue,
+    clearValue: () => setInputValue(initialValue),
+  }));
+
+  const popupRef = useRef<HTMLDivElement>(null);
+  useOnClickOutside(popupRef, onClose);
+
+  return (
+    <TokenPopover ref={popupRef}>
+      <Tooltip text='Contact us to generate a new one' withIcon>
+        <Text size={14} style={{ lineHeight: '20px', display: 'flex' }}>
+          Enter a new API Token:
+        </Text>
+      </Tooltip>
+
+      <PopoverFormWrapper>
+        <Input placeholder='API Token' type='password' value={inputValue} onChange={(e) => setInputValue(e.target.value)} />
+
+        <PopoverFormButton variant='primary' disabled={loading} onClick={onSave}>
+          <CheckIcon fill={theme.text.primary} />
+        </PopoverFormButton>
+
+        <PopoverFormButton variant='secondary' disabled={loading} onClick={onClose}>
+          <CrossIcon />
+        </PopoverFormButton>
+      </PopoverFormWrapper>
+    </TokenPopover>
+  );
+});

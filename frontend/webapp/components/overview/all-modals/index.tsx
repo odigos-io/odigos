@@ -6,8 +6,6 @@ import { ActionModal, AddSourceModal, DestinationModal, RuleModal } from '@/cont
 const AllModals = () => {
   const { currentModal, setCurrentModal } = useModalStore();
 
-  if (!currentModal) return null;
-
   const handleClose = () => setCurrentModal('');
 
   switch (currentModal) {
@@ -24,7 +22,7 @@ const AllModals = () => {
       return <DestinationModal isOpen onClose={handleClose} />;
 
     default:
-      return <></>;
+      return null;
   }
 };
 

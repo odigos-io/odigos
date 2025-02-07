@@ -225,6 +225,13 @@
   dependencies:
     "@types/json-schema" "^7.0.15"
 
+"@eslint/core@^0.11.0":
+  version "0.11.0"
+  resolved "https://registry.yarnpkg.com/@eslint/core/-/core-0.11.0.tgz#7a9226e850922e42cbd2ba71361eacbe74352a12"
+  integrity sha512-DWUB2pksgNEb6Bz2fggIy1wh6fGgZP4Xyy/Mt0QZPiloKKXerbqq9D3SBQTlCRYOrcRPu4vuz+CGjwdfqxnoWA==
+  dependencies:
+    "@types/json-schema" "^7.0.15"
+
 "@eslint/eslintrc@^3.2.0":
   version "3.2.0"
   resolved "https://registry.yarnpkg.com/@eslint/eslintrc/-/eslintrc-3.2.0.tgz#57470ac4e2e283a6bf76044d63281196e370542c"
@@ -240,10 +247,10 @@
     minimatch "^3.1.2"
     strip-json-comments "^3.1.1"
 
-"@eslint/js@9.19.0":
-  version "9.19.0"
-  resolved "https://registry.yarnpkg.com/@eslint/js/-/js-9.19.0.tgz#51dbb140ed6b49d05adc0b171c41e1a8713b7789"
-  integrity sha512-rbq9/g38qjfqFLOVPvwjIvFFdNziEC5S65jmjPw5r6A//QH+W91akh9irMwjDN8zKUTak6W9EsAv4m/7Wnw0UQ==
+"@eslint/js@9.20.0":
+  version "9.20.0"
+  resolved "https://registry.yarnpkg.com/@eslint/js/-/js-9.20.0.tgz#7421bcbe74889fcd65d1be59f00130c289856eb4"
+  integrity sha512-iZA07H9io9Wn836aVTytRaNqh00Sad+EamwOVJT12GTLw1VGMFV/4JaME+JjLtr9fiGaoWgYnS54wrfWsSs4oQ==
 
 "@eslint/object-schema@^2.1.6":
   version "2.1.6"
@@ -514,61 +521,43 @@
   resolved "https://registry.yarnpkg.com/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz#3dc35ba0f1e66b403c00b39344f870298ebb1c8e"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
-"@odigos/ui-components@^0.0.52":
-  version "0.0.52"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-components/-/ui-components-0.0.52.tgz#211590744449bcab74f3682058271b023bcb5603"
-  integrity sha512-DIdA2WlzqttWsGQGkyQlRVLILLX2k5DZXO0sGuD+S5e7AiCTCcDmVutlWIe7KmB7lm+Pe/8ZRsHU0RDh1vuHTg==
+"@odigos/ui-components@^0.0.55":
+  version "0.0.55"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-components/-/ui-components-0.0.55.tgz#1a6e4690296baa56e229e6ad0bad544df4f80c37"
+  integrity sha512-7V1hsC9ESISn+y83a4k820yABBSaS3QXt4er+JmQdOKA3R7kw+RNh9vO9icisVkIh3VAIDpqO8IDD3LT4HiwlQ==
   dependencies:
-    "@odigos/ui-icons" "^0.0.9"
+    "@odigos/ui-icons" "^0.0.10"
     "@odigos/ui-theme" "^0.0.12"
-    "@odigos/ui-utils" "^0.0.11"
+    "@odigos/ui-utils" "^0.0.13"
     prism-react-renderer "^2.4.1"
     react "^19.0.0"
     react-dom "^19.0.0"
     react-lottie "^1.2.10"
     styled-components "^6.1.15"
 
-"@odigos/ui-containers@^0.0.16":
-  version "0.0.16"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-containers/-/ui-containers-0.0.16.tgz#d2b33c21376622c7a52cc1f699fe1a61856feba2"
-  integrity sha512-0zpra8JK0i45oSzpoGlPy5KQ6/eINiQba7LwgGAPExAHcZ86sTYeRV2Nea6oVzkZYjaS1+UdWJTgYlW3Z9OAwg==
+"@odigos/ui-containers@^0.0.19":
+  version "0.0.19"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-containers/-/ui-containers-0.0.19.tgz#cb63b2577522b00b10973eca1f5b1a68fbbdf6df"
+  integrity sha512-ijD/Cs/YToNHF3C9/9yOwi2/MHfyNbTdM2hS7VtenfWWGoPb/H3HXnPfJbdYotPGvO7qnAmg9tOct+qvrj8/QQ==
   dependencies:
-    "@odigos/ui-components" "^0.0.52"
+    "@odigos/ui-components" "^0.0.55"
+    "@odigos/ui-icons" "^0.0.10"
     "@odigos/ui-theme" "^0.0.12"
-    "@odigos/ui-utils" "^0.0.11"
+    "@odigos/ui-utils" "^0.0.13"
     "@xyflow/react" "^12.4.2"
     react "^19.0.0"
     react-dom "^19.0.0"
     styled-components "^6.1.15"
     zustand "^5.0.3"
 
-"@odigos/ui-icons@^0.0.5":
-  version "0.0.5"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-icons/-/ui-icons-0.0.5.tgz#62a0690e72b89a70ea1bef37e648b7378914ceaf"
-  integrity sha512-J9vhgHHc5Fhuf3XuKH1OiIB6OGwyReWx0p+DhAobUttYd6JZHZrKh7jQNpExIcAxJWPdxGaiqGAMbg1h3j7kcg==
+"@odigos/ui-icons@^0.0.10":
+  version "0.0.10"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-icons/-/ui-icons-0.0.10.tgz#b690db39324cae858370216bdbf2faf55e795944"
+  integrity sha512-53WlRAw0DY122kLLibkfF3ZxtsbECIjjpxs+4elpVedlYGhE+ZfcqpjzyQYFSGiv5jsBgCwixjk4G0X6oUwkPg==
   dependencies:
+    "@odigos/ui-theme" "^0.0.12"
     react "^19.0.0"
     react-dom "^19.0.0"
-    styled-components "^6.1.15"
-
-"@odigos/ui-icons@^0.0.9":
-  version "0.0.9"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-icons/-/ui-icons-0.0.9.tgz#ba2a927bc2eb549126a914b92fa2e54aa8554922"
-  integrity sha512-xR0Uho7xwQuMy5E6ZMrs0fnKGeIrhW6khXwMaRYPb4ppYdu/AScI1PZ4bm4dGra5GdAr5ea1GAfQz7JYniJ0vg==
-  dependencies:
-    "@odigos/ui-theme" "^0.0.11"
-    react "^19.0.0"
-    react-dom "^19.0.0"
-
-"@odigos/ui-theme@^0.0.11":
-  version "0.0.11"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-theme/-/ui-theme-0.0.11.tgz#deb7114694f80a744155a6aca5e11fe1f44315c1"
-  integrity sha512-u0CsHR39cGTjUBoucZsagHO9rQIScW4CDrArQd1DmLVZavkTytbuvp9m2lsLl6ZXS48DLetkXWRLJaSOfWa6CA==
-  dependencies:
-    react "^19.0.0"
-    react-dom "^19.0.0"
-    styled-components "^6.1.15"
-    zustand "^5.0.3"
 
 "@odigos/ui-theme@^0.0.12":
   version "0.0.12"
@@ -580,12 +569,12 @@
     styled-components "^6.1.15"
     zustand "^5.0.3"
 
-"@odigos/ui-utils@^0.0.11":
-  version "0.0.11"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-utils/-/ui-utils-0.0.11.tgz#538b5cd20232b7c2d13c4cb766ba7564f6d0cc45"
-  integrity sha512-fxsY11dhMUUFTwn0T140qUiihbPzdR+8w/oxS/a1mqWvxLMga1W0itLZUvDH9jwqEDIEs+pOtMsbA4P+oqtHgQ==
+"@odigos/ui-utils@^0.0.13":
+  version "0.0.13"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-utils/-/ui-utils-0.0.13.tgz#b870b5fd00b01878c7e1e309f0c581782b728f0f"
+  integrity sha512-f0bk7UjwflURD/5dg3HJ3MVNwR2BCE7cDXSuyKWh+7QYrmu1mXnieloLox9GmPPcJxTF3onaGreNsHp/FTQyKw==
   dependencies:
-    "@odigos/ui-icons" "^0.0.5"
+    "@odigos/ui-icons" "^0.0.10"
     javascript-time-ago "^2.5.11"
     react "^19.0.0"
     react-dom "^19.0.0"
@@ -2105,17 +2094,17 @@ eslint-visitor-keys@^4.2.0:
   resolved "https://registry.yarnpkg.com/eslint-visitor-keys/-/eslint-visitor-keys-4.2.0.tgz#687bacb2af884fcdda8a6e7d65c606f46a14cd45"
   integrity sha512-UyLnSehNt62FFhSwjZlHmeokpRK59rcz29j+F1/aDgbkbRTk7wIc9XzdoasMUbRNKDM0qQt/+BJ4BrpFeABemw==
 
-eslint@9.19.0:
-  version "9.19.0"
-  resolved "https://registry.yarnpkg.com/eslint/-/eslint-9.19.0.tgz#ffa1d265fc4205e0f8464330d35f09e1d548b1bf"
-  integrity sha512-ug92j0LepKlbbEv6hD911THhoRHmbdXt2gX+VDABAW/Ir7D3nqKdv5Pf5vtlyY6HQMTEP2skXY43ueqTCWssEA==
+eslint@9.20.0:
+  version "9.20.0"
+  resolved "https://registry.yarnpkg.com/eslint/-/eslint-9.20.0.tgz#6244c46c1640cd5e577a31ebc460fca87838c0b7"
+  integrity sha512-aL4F8167Hg4IvsW89ejnpTwx+B/UQRzJPGgbIOl+4XqffWsahVVsLEWoZvnrVuwpWmnRd7XeXmQI1zlKcFDteA==
   dependencies:
     "@eslint-community/eslint-utils" "^4.2.0"
     "@eslint-community/regexpp" "^4.12.1"
     "@eslint/config-array" "^0.19.0"
-    "@eslint/core" "^0.10.0"
+    "@eslint/core" "^0.11.0"
     "@eslint/eslintrc" "^3.2.0"
-    "@eslint/js" "9.19.0"
+    "@eslint/js" "9.20.0"
     "@eslint/plugin-kit" "^0.2.5"
     "@humanfs/node" "^0.16.6"
     "@humanwhocodes/module-importer" "^1.0.1"

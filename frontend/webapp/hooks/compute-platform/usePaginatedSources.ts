@@ -11,7 +11,7 @@ export const usePaginatedSources = () => {
   const { addNotification } = useNotificationStore();
   const { sources, addSources, setSources, sourcesNotFinished, setSourcesNotFinished, sourcesFetching, setSourcesFetching } = usePaginatedStore();
 
-  const [getSources, { loading }] = useLazyQuery<{ computePlatform: { sources: ComputePlatform['computePlatform']['sources'] } }>(GET_SOURCES, {
+  const [getSources] = useLazyQuery<{ computePlatform: { sources: ComputePlatform['computePlatform']['sources'] } }>(GET_SOURCES, {
     onError: (error) =>
       addNotification({
         type: NOTIFICATION_TYPE.ERROR,
@@ -47,11 +47,10 @@ export const usePaginatedSources = () => {
 
   // Fetch 1 batch on initial mount
   useEffect(() => {
-    if (!sources.length && !loading && !sourcesFetching) fetchSources();
+    if (!sources.length && !sourcesFetching) fetchSources();
   }, []);
 
   return {
-    loading,
     sources,
     fetchSources,
     sourcesNotFinished,

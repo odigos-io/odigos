@@ -55,7 +55,7 @@ export const TestConnection: React.FC<Props> = ({ destination, disabled, status,
     if (validateForm()) await testConnection(destination);
   };
 
-  const Icon = !!status ? getStatusIcon(status) : undefined;
+  const Icon = !!status ? getStatusIcon(status, theme) : undefined;
 
   return (
     <ActionButton $status={status} variant='secondary' disabled={disabled} onClick={onClick}>
