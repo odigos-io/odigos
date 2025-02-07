@@ -247,7 +247,7 @@ func handleContainerRuntimeDetailsUpdate(
 				continue
 			}
 
-			if strings.Contains(*envValue, "/var/odigos") {
+			if strings.Contains(*envValue, k8sconsts.OdigosAgentsDirectory) {
 				cleanedEnvValue := envOverwrite.CleanupEnvValueFromOdigosAdditions(envKey, *envValue)
 				annotationEnvVarsForContainer[envKey] = &cleanedEnvValue
 				needToUpdateWorkloadAnnotation = true
@@ -276,7 +276,7 @@ func handleContainerRuntimeDetailsUpdate(
 				filteredEnvVars := []v1alpha1.EnvVar{}
 
 				for _, envVar := range containerRuntimeDetails.EnvFromContainerRuntime {
-					if strings.Contains(envVar.Value, "/var/odigos") {
+					if strings.Contains(envVar.Value, k8sconsts.OdigosAgentsDirectory) {
 						// Skip the entry
 						continue
 					}
@@ -378,7 +378,7 @@ func revertOriginalEnvAnnotationInPlace(originalWorkloadEnvVar *envoverwrite.Ori
 		newContainerEnvs := []corev1.EnvVar{}
 		for _, manifestEnvVar := range containerManifest.Env {
 
-			if !strings.Contains(manifestEnvVar.Value, "/var/odigos") {
+			if !strings.Contains(manifestEnvVar.Value, k8sconsts.OdigosAgentsDirectory) {
 				// we only revert values that odigos overwrote,
 				// if the value is not odigos value, keep it as is
 				newContainerEnvs = append(newContainerEnvs, manifestEnvVar)

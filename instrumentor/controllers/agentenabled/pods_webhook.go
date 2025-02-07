@@ -10,6 +10,8 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/distros"
+	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/podswebhook"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	podutils "github.com/odigos-io/odigos/instrumentor/internal/pod"
 	webhookdeviceinjector "github.com/odigos-io/odigos/instrumentor/internal/webhook_device_injector"
@@ -78,15 +80,42 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		return nil
 	}
 
+	// Add odiglet installed node-affinity to the pod
+	podutils.AddOdigletInstalledAffinity(pod)
+
+	volumeMounted := false
+	for i := range pod.Spec.Containers {
+		podContainerSpec := &pod.Spec.Containers[i]
+		containerConfig := ic.Spec.GetContainerAgentConfig(podContainerSpec.Name)
+		if containerConfig == nil {
+			// no config is found for this container, so skip (don't inject anything to it)
+			continue
+		}
+
+		if !containerConfig.AgentEnabled || containerConfig.OtelDistroName == "" {
+			// container config exists, but no agent should be injected by webhook to this container
+			continue
+		}
+
+		containerVolumeMounted, err := injectOdigosToContainer(containerConfig, podContainerSpec, *pw)
+		if err != nil {
+			logger.Error(err, "failed to inject ODIGOS agent to container")
+			continue
+		}
+		volumeMounted = volumeMounted || containerVolumeMounted
+	}
+
+	if volumeMounted {
+		// only mount the volume if at least one container has a volume to mount
+		podswebhook.MountPodVolume(pod)
+	}
+
 	// Inject ODIGOS environment variables and instrumentation device into all containers
 	injectErr := p.injectOdigosInstrumentation(ctx, pod, &ic, pw)
 	if injectErr != nil {
 		logger.Error(injectErr, "failed to inject ODIGOS instrumentation. Skipping Injection of ODIGOS agent")
 		return nil
 	}
-
-	// Add odiglet installed node-affinity to the pod
-	podutils.AddOdigletInstalledAffinity(pod)
 
 	return nil
 }
@@ -124,8 +153,6 @@ func (p *PodsWebhook) podWorkload(ctx context.Context, pod *corev1.Pod) (*k8scon
 
 func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *corev1.Pod, ic *odigosv1.InstrumentationConfig, pw *k8sconsts.PodWorkload) error {
 	logger := log.FromContext(ctx)
-	// Environment variables that remain consistent across all containers
-	commonEnvVars := getCommonEnvVars()
 
 	otelSdkToUse, err := getRelevantOtelSDKs(ctx, p.Client, *pw)
 	if err != nil {
@@ -151,16 +178,17 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *core
 			continue
 		}
 
-		webhookdeviceinjector.InjectOdigosInstrumentationDevice(*pw, container, otelSdk, runtimeDetails)
-		webhookenvinjector.InjectOdigosAgentEnvVars(logger, *pw, container, otelSdk, runtimeDetails)
-
-		// Check if the environment variables are already present, if so skip inject them again.
-		if envVarsExist(container.Env, commonEnvVars) {
-			continue
+		// amir: 07 feb 2025. hard-coded temporary list which is removed once all distros migrate away from device
+		if (runtimeDetails.Language == common.JavascriptProgrammingLanguage && otelSdk == common.OtelSdkEbpfEnterprise) ||
+			(runtimeDetails.Language == common.GoProgrammingLanguage && otelSdk == common.OtelSdkEbpfCommunity) ||
+			(runtimeDetails.Language == common.JavaProgrammingLanguage && otelSdk == common.OtelSdkEbpfEnterprise) ||
+			(runtimeDetails.Language == common.MySQLProgrammingLanguage && otelSdk == common.OtelSdkEbpfEnterprise) {
+			// Skip device injection for distros that no longer use it
+		} else {
+			webhookdeviceinjector.InjectOdigosInstrumentationDevice(*pw, container, otelSdk, runtimeDetails)
 		}
 
-		containerNameEnv := corev1.EnvVar{Name: k8sconsts.OdigosEnvVarContainerName, Value: container.Name}
-		container.Env = append(container.Env, append(commonEnvVars, containerNameEnv)...)
+		webhookenvinjector.InjectOdigosAgentEnvVars(logger, *pw, container, otelSdk, runtimeDetails)
 
 		if shouldInjectServiceName(runtimeDetails.Language, otelSdk) {
 			// Ensure the serviceName is fetched only once per pod
@@ -191,18 +219,23 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *core
 	return nil
 }
 
-func envVarsExist(containerEnv []corev1.EnvVar, commonEnvVars []corev1.EnvVar) bool {
-	envMap := make(map[string]struct{})
-	for _, envVar := range containerEnv {
-		envMap[envVar.Name] = struct{}{} // Inserting empty struct as value
+func injectOdigosToContainer(containerConfig *odigosv1.ContainerAgentConfig, podContainerSpec *corev1.Container, pw k8sconsts.PodWorkload) (bool, error) {
+
+	distroName := containerConfig.OtelDistroName
+
+	distroMetadata := distros.GetDistroByName(distroName)
+	if distroMetadata == nil {
+		return false, fmt.Errorf("distribution %s not found", distroName)
 	}
 
-	for _, commonEnvVar := range commonEnvVars {
-		if _, exists := envMap[commonEnvVar.Name]; exists { // Checking if key exists
-			return true
-		}
+	volumeMounted := false
+	for _, agentDirectory := range distroMetadata.AgentDirectories {
+		podswebhook.MountDirectory(podContainerSpec, agentDirectory.DirectoryName)
+		volumeMounted = true
 	}
-	return false
+	podswebhook.InjectOdigosK8sEnvVars(podContainerSpec, distroName, pw.Namespace)
+
+	return volumeMounted, nil
 }
 
 func getWorkloadKindAttributeKey(podWorkload *k8sconsts.PodWorkload) attribute.Key {
@@ -268,27 +301,6 @@ func shouldInjectServiceName(pl common.ProgrammingLanguage, otelsdk common.OtelS
 		return true
 	}
 	return false
-}
-
-func getCommonEnvVars() []corev1.EnvVar {
-	return []corev1.EnvVar{
-		{
-			Name: k8sconsts.OdigosEnvVarNamespace,
-			ValueFrom: &corev1.EnvVarSource{
-				FieldRef: &corev1.ObjectFieldSelector{
-					FieldPath: "metadata.namespace",
-				},
-			},
-		},
-		{
-			Name: k8sconsts.OdigosEnvVarPodName,
-			ValueFrom: &corev1.EnvVarSource{
-				FieldRef: &corev1.ObjectFieldSelector{
-					FieldPath: "metadata.name",
-				},
-			},
-		},
-	}
 }
 
 // checks for the service name on the annotation, or fallback to the workload name
