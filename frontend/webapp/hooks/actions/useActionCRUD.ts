@@ -4,8 +4,8 @@ import { GET_ACTIONS } from '@/graphql';
 import { useMutation, useQuery } from '@apollo/client';
 import { CREATE_ACTION, DELETE_ACTION, UPDATE_ACTION } from '@/graphql/mutations';
 import { type ComputePlatform, type ActionInput, type FetchedActionSpec } from '@/types';
-import { type Action, useFilterStore, useNotificationStore } from '@odigos/ui-containers';
-import { ACTION_TYPE, CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE, safeJsonParse } from '@odigos/ui-utils';
+import { type Action, ActionFormData, useFilterStore, useNotificationStore } from '@odigos/ui-containers';
+import { ACTION_TYPE, CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE, safeJsonParse, SIGNAL_TYPE } from '@odigos/ui-utils';
 
 interface UseActionCrudParams {
   onSuccess?: (type: string) => void;
@@ -18,8 +18,8 @@ interface UseActionCrudResponse {
   filteredActions: Action[];
   refetchActions: () => void;
 
-  createAction: (action: ActionInput) => void;
-  updateAction: (id: string, action: ActionInput) => void;
+  createAction: (action: ActionFormData) => void;
+  updateAction: (id: string, action: ActionFormData) => void;
   deleteAction: (id: string, actionType: ACTION_TYPE) => void;
 }
 
@@ -60,23 +60,24 @@ export const useActionCRUD = (params?: UseActionCrudParams): UseActionCrudRespon
     return (data?.computePlatform?.actions || []).map((item) => {
       const parsedSpec = typeof item.spec === 'string' ? safeJsonParse(item.spec, {} as FetchedActionSpec) : item.spec;
 
-      parsedSpec.signals = parsedSpec.signals.map((str) => str.toLowerCase());
-
-      (parsedSpec as Action['spec']).fallbackSamplingRatio = parsedSpec.fallback_sampling_ratio;
-      delete parsedSpec.fallback_sampling_ratio;
-
-      (parsedSpec as Action['spec']).samplingPercentage = parsedSpec.sampling_percentage;
-      delete parsedSpec.sampling_percentage;
-
-      (parsedSpec as Action['spec']).endpointsFilters = parsedSpec.endpoints_filters?.map(({ service_name, http_route, minimum_latency_threshold, fallback_sampling_ratio }) => ({
-        serviceName: service_name,
-        httpRoute: http_route,
-        minimumLatencyThreshold: minimum_latency_threshold,
-        fallbackSamplingRatio: fallback_sampling_ratio,
-      }));
-      delete parsedSpec.endpoints_filters;
-
-      return { ...item, spec: parsedSpec };
+      return {
+        ...item,
+        spec: {
+          signals: parsedSpec.signals.map((str) => str.toLowerCase() as SIGNAL_TYPE),
+          clusterAttributes: parsedSpec.clusterAttributes,
+          attributeNamesToDelete: parsedSpec.attributeNamesToDelete,
+          renames: parsedSpec.renames,
+          piiCategories: parsedSpec.piiCategories,
+          fallbackSamplingRatio: parsedSpec.fallback_sampling_ratio,
+          samplingPercentage: parsedSpec.sampling_percentage,
+          endpointsFilters: parsedSpec.endpoints_filters?.map(({ service_name, http_route, minimum_latency_threshold, fallback_sampling_ratio }) => ({
+            serviceName: service_name,
+            httpRoute: http_route,
+            minimumLatencyThreshold: minimum_latency_threshold,
+            fallbackSamplingRatio: fallback_sampling_ratio,
+          })),
+        },
+      };
     });
   }, [data]);
 
@@ -87,7 +88,7 @@ export const useActionCRUD = (params?: UseActionCrudParams): UseActionCrudRespon
     return arr;
   }, [mapped, filters]);
 
-  const [createAction, cState] = useMutation<{ createAction: { id: string } }>(CREATE_ACTION, {
+  const [createAction, cState] = useMutation<{ createAction: { id: string } }, { action: ActionInput }>(CREATE_ACTION, {
     onError: (error) => handleError(CRUD.CREATE, error.message),
     onCompleted: (res) => {
       const id = res?.createAction?.id;
@@ -95,7 +96,7 @@ export const useActionCRUD = (params?: UseActionCrudParams): UseActionCrudRespon
     },
   });
 
-  const [updateAction, uState] = useMutation<{ updateAction: { id: string } }>(UPDATE_ACTION, {
+  const [updateAction, uState] = useMutation<{ updateAction: { id: string } }, { id: string; action: ActionInput }>(UPDATE_ACTION, {
     onError: (error) => handleError(CRUD.UPDATE, error.message),
     onCompleted: (res) => {
       const id = res?.updateAction?.id;
@@ -112,6 +113,75 @@ export const useActionCRUD = (params?: UseActionCrudParams): UseActionCrudRespon
     },
   });
 
+  const mapFormActionToInput = (action: ActionFormData): ActionInput => {
+    const {
+      type,
+      name = '',
+      notes = '',
+      disabled = false,
+      signals,
+      clusterAttributes,
+      attributeNamesToDelete,
+      renames,
+      piiCategories,
+      fallbackSamplingRatio,
+      samplingPercentage,
+      endpointsFilters,
+    } = action;
+
+    const payload: ActionInput = {
+      type,
+      name,
+      notes,
+      disable: disabled,
+      signals: signals.map((signal) => signal.toUpperCase()),
+      details: '',
+    };
+
+    switch (type) {
+      case ACTION_TYPE.ADD_CLUSTER_INFO:
+        payload['details'] = JSON.stringify({ clusterAttributes });
+        break;
+
+      case ACTION_TYPE.DELETE_ATTRIBUTES:
+        payload['details'] = JSON.stringify({ attributeNamesToDelete });
+        break;
+
+      case ACTION_TYPE.RENAME_ATTRIBUTES:
+        payload['details'] = JSON.stringify({ renames });
+        break;
+
+      case ACTION_TYPE.PII_MASKING:
+        payload['details'] = JSON.stringify({ piiCategories });
+        break;
+
+      case ACTION_TYPE.ERROR_SAMPLER:
+        payload['details'] = JSON.stringify({ fallback_sampling_ratio: fallbackSamplingRatio });
+        break;
+
+      case ACTION_TYPE.PROBABILISTIC_SAMPLER:
+        payload['details'] = JSON.stringify({ sampling_percentage: samplingPercentage });
+        break;
+
+      case ACTION_TYPE.LATENCY_SAMPLER:
+        payload['details'] = JSON.stringify({
+          endpoints_filters:
+            endpointsFilters?.map(({ serviceName, httpRoute, minimumLatencyThreshold, fallbackSamplingRatio }) => ({
+              service_name: serviceName,
+              http_route: httpRoute,
+              minimum_latency_threshold: minimumLatencyThreshold,
+              fallback_sampling_ratio: fallbackSamplingRatio,
+            })) || [],
+        });
+        break;
+
+      default:
+        break;
+    }
+
+    return payload;
+  };
+
   return {
     loading: loading || cState.loading || uState.loading || dState.loading,
     actions: mapped,
@@ -122,14 +192,14 @@ export const useActionCRUD = (params?: UseActionCrudParams): UseActionCrudRespon
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
-        createAction({ variables: { action: { ...action, signals: action.signals.map((signal) => signal.toUpperCase()) } } });
+        createAction({ variables: { action: mapFormActionToInput(action) } });
       }
     },
     updateAction: (id, action) => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
-        updateAction({ variables: { id, action: { ...action, signals: action.signals.map((signal) => signal.toUpperCase()) } } });
+        updateAction({ variables: { id, action: mapFormActionToInput(action) } });
       }
     },
     deleteAction: (id, actionType) => {

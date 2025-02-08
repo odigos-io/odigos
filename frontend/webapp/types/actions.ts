@@ -64,6 +64,6 @@ export interface ActionInput {
   name: string;
   notes: string;
   disable: boolean;
-  signals: SIGNAL_TYPE[];
+  signals: string[]; // uppercase
   details: string;
 }

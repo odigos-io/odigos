@@ -3,15 +3,26 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
 import Theme from '@odigos/ui-theme';
-import { MainContent } from '@/styles';
 import { SLACK_LINK } from '@/utils';
+import { MainContent } from '@/styles';
 import { type SourceInstrumentInput } from '@/types';
 import { usePaginatedStore, useStatusStore } from '@/store';
-import { OdigosLogoText, SlackLogo, TerminalIcon } from '@odigos/ui-icons';
+import { OdigosLogoText, SlackLogo } from '@odigos/ui-icons';
 import { FORM_ALERTS, NOTIFICATION_TYPE, PLATFORM_TYPE } from '@odigos/ui-utils';
 import { Header, IconButton, PlatformSelect, Status, Tooltip } from '@odigos/ui-components';
-import { DataFlow, DataFlowActionsMenu, DRAWER_OTHER_TYPES, MultiSourceControl, NotificationManager, Source, useDrawerStore } from '@odigos/ui-containers';
-import { useActionCRUD, useConfig, useDestinationCRUD, useInstrumentationRuleCRUD, useMetrics, useNamespace, useSourceCRUD, useSSE, useTokenTracker } from '@/hooks';
+import { useActionCRUD, useConfig, useDescribeOdigos, useDestinationCRUD, useInstrumentationRuleCRUD, useMetrics, useNamespace, useSourceCRUD, useSSE, useTokenCRUD, useTokenTracker } from '@/hooks';
+import {
+  ActionDrawer,
+  ActionModal,
+  CliDrawer,
+  DataFlow,
+  DataFlowActionsMenu,
+  InstrumentationRuleDrawer,
+  InstrumentationRuleModal,
+  MultiSourceControl,
+  NotificationManager,
+  Source,
+} from '@odigos/ui-containers';
 
 const AllModals = dynamic(() => import('@/components/overview/all-modals'), { ssr: false });
 const AllDrawers = dynamic(() => import('@/components/overview/all-drawers'), { ssr: false });
@@ -21,19 +32,18 @@ export default function Page() {
   useSSE();
   useTokenTracker();
 
-  const theme = Theme.useTheme();
-
-  const { setDrawerType } = useDrawerStore();
   const { sourcesFetching } = usePaginatedStore();
   const { status, title, message } = useStatusStore();
 
   const { metrics } = useMetrics();
   const { data: config } = useConfig();
   const { allNamespaces } = useNamespace();
-  const { actions, filteredActions, loading: actLoad } = useActionCRUD();
+  const { tokens, updateToken } = useTokenCRUD();
+  const { data: describeOdigos } = useDescribeOdigos();
   const { sources, filteredSources, loading: srcLoad, persistSources } = useSourceCRUD();
   const { destinations, filteredDestinations, loading: destLoad } = useDestinationCRUD();
-  const { instrumentationRules, filteredInstrumentationRules, loading: ruleLoad } = useInstrumentationRuleCRUD();
+  const { actions, filteredActions, loading: actLoad, createAction, updateAction, deleteAction } = useActionCRUD();
+  const { instrumentationRules, filteredInstrumentationRules, loading: ruleLoad, createInstrumentationRule, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
 
   return (
     <>
@@ -51,9 +61,7 @@ export default function Page() {
         right={[
           <Theme.ToggleDarkMode key='toggle-theme' />,
           <NotificationManager key='notifs' />,
-          <IconButton key='cli' onClick={() => setDrawerType(DRAWER_OTHER_TYPES.ODIGOS_CLI)} tooltip='Odigos CLI' withPing pingColor={theme.colors.majestic_blue}>
-            <TerminalIcon size={18} />
-          </IconButton>,
+          <CliDrawer key='cli' tokens={tokens} saveToken={updateToken} describe={describeOdigos} />,
           <IconButton key='slack' onClick={() => window.open(SLACK_LINK, '_blank', 'noopener noreferrer')} tooltip='Join our Slack community'>
             <SlackLogo />
           </IconButton>,
@@ -92,7 +100,12 @@ export default function Page() {
         />
       </MainContent>
 
+      <InstrumentationRuleModal isEnterprise={false} createInstrumentationRule={createInstrumentationRule} />
+      <ActionModal createAction={createAction} />
       <AllModals />
+
+      <InstrumentationRuleDrawer instrumentationRules={instrumentationRules} updateInstrumentationRule={updateInstrumentationRule} deleteInstrumentationRule={deleteInstrumentationRule} />
+      <ActionDrawer actions={actions} updateAction={updateAction} deleteAction={deleteAction} />
       <AllDrawers />
     </>
   );
