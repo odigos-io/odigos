@@ -4,10 +4,9 @@ import { useMutation } from '@apollo/client';
 import { useNamespace } from '../compute-platform';
 import { useAppStore, usePaginatedStore } from '@/store';
 import { PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
-import { ACTION, DISPLAY_TITLES, FORM_ALERTS } from '@/utils';
 import { type PendingItem, useFilterStore, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
 import { type NamespaceFutureAppsSelection, type FetchedSource, type SourceInstrumentInput, type SourceUpdateInput } from '@/types';
-import { CONDITION_STATUS, ENTITY_TYPES, getSseTargetFromId, K8S_RESOURCE_KIND, NOTIFICATION_TYPE, type WorkloadId } from '@odigos/ui-utils';
+import { CONDITION_STATUS, CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, K8S_RESOURCE_KIND, NOTIFICATION_TYPE, type WorkloadId } from '@odigos/ui-utils';
 
 interface Params {
   onSuccess?: (type: string) => void;
@@ -78,7 +77,7 @@ export const useSourceCRUD = (params?: Params): UseSourceCrudResponse => {
 
       if (count === 1) {
         const { selected } = req?.variables?.sources?.[0] || {};
-        handleComplete(selected ? ACTION.CREATE : ACTION.DELETE);
+        handleComplete(selected ? CRUD.CREATE : CRUD.DELETE);
       } else {
         handleComplete('');
       }
@@ -86,9 +85,9 @@ export const useSourceCRUD = (params?: Params): UseSourceCrudResponse => {
   });
 
   const [updateSourceName, uState] = useMutation<{ updateK8sActualSource: boolean }>(UPDATE_K8S_ACTUAL_SOURCE, {
-    onError: (error) => handleError(ACTION.UPDATE, error.message),
+    onError: (error) => handleError(CRUD.UPDATE, error.message),
     onCompleted: (res, req) => {
-      handleComplete(ACTION.UPDATE);
+      handleComplete(CRUD.UPDATE);
 
       // This is instead of toasting a k8s modified-event watcher...
       // If we do toast with a watcher, we can't guarantee an SSE will be sent for this update alone. It will definitely include SSE for all updates, even those unexpected.
@@ -97,7 +96,7 @@ export const useSourceCRUD = (params?: Params): UseSourceCrudResponse => {
         const { sourceId, patchSourceRequest } = req?.variables || {};
 
         updateSource(sourceId, patchSourceRequest);
-        notifyUser(NOTIFICATION_TYPE.SUCCESS, ACTION.UPDATE, `Successfully updated "${sourceId.name}" source`, sourceId);
+        notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.UPDATE, `Successfully updated "${sourceId.name}" source`, sourceId);
         removePendingItems([{ entityType: ENTITY_TYPES.SOURCE, entityId: sourceId }]);
       }, 2000);
     },

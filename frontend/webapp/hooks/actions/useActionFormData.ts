@@ -1,8 +1,6 @@
-import { useGenericForm } from '@/hooks';
-import { FORM_ALERTS } from '@/utils';
 import { LatencySamplerSpec, type ActionInput } from '@/types';
 import { type Action, useNotificationStore } from '@odigos/ui-containers';
-import { ACTION_TYPE, isEmpty, NOTIFICATION_TYPE, safeJsonParse } from '@odigos/ui-utils';
+import { ACTION_TYPE, FORM_ALERTS, isEmpty, NOTIFICATION_TYPE, safeJsonParse, useGenericForm } from '@odigos/ui-utils';
 
 const INITIAL: ActionInput = {
   // @ts-ignore (TS complains about empty string because we expect an "ActionsType", but it's fine)

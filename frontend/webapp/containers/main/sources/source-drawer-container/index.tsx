@@ -1,14 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import buildCard from './build-card';
 import styled from 'styled-components';
-import { ACTION, DATA_CARDS } from '@/utils';
 import { CodeIcon, ListIcon } from '@odigos/ui-icons';
 import { useDrawerStore } from '@odigos/ui-containers';
 import { UpdateSourceBody } from '../update-source-body';
 import { useDescribeSource, useSourceCRUD } from '@/hooks';
-import OverviewDrawer from '../../overview/overview-drawer';
-import { ENTITY_TYPES, getEntityIcon, safeJsonStringify, type WorkloadId } from '@odigos/ui-utils';
+import { CRUD, DISPLAY_TITLES, ENTITY_TYPES, getEntityIcon, safeJsonStringify, type WorkloadId } from '@odigos/ui-utils';
 import { ConditionDetails, DATA_CARD_FIELD_TYPES, DataCard, type DataCardFieldsProps, Segment } from '@odigos/ui-components';
+import OverviewDrawer from '../../overview/overview-drawer';
 
 interface Props {}
 
@@ -47,7 +46,7 @@ export const SourceDrawer: React.FC<Props> = () => {
       setIsEditing(false);
       setIsFormDirty(false);
 
-      if (type === ACTION.DELETE) {
+      if (type === CRUD.DELETE) {
         setDrawerType(null);
         setDrawerEntityId(null);
         resetFormData();
@@ -120,10 +119,10 @@ export const SourceDrawer: React.FC<Props> = () => {
       ) : (
         <DataContainer>
           <ConditionDetails conditions={thisItem.conditions || []} />
-          <DataCard title={DATA_CARDS.SOURCE_DETAILS} data={!!thisItem ? buildCard(thisItem) : []} />
-          <DataCard title={DATA_CARDS.DETECTED_CONTAINERS} titleBadge={containersData.length} description={DATA_CARDS.DETECTED_CONTAINERS_DESCRIPTION} data={containersData} />
+          <DataCard title={DISPLAY_TITLES.SOURCE_DETAILS} data={!!thisItem ? buildCard(thisItem) : []} />
+          <DataCard title={DISPLAY_TITLES.DETECTED_CONTAINERS} titleBadge={containersData.length} description={DISPLAY_TITLES.DETECTED_CONTAINERS_DESCRIPTION} data={containersData} />
           <DataCard
-            title={DATA_CARDS.DESCRIBE_SOURCE}
+            title={DISPLAY_TITLES.DESCRIBE_SOURCE}
             action={
               <Segment
                 options={[

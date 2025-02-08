@@ -4,11 +4,11 @@ import React from 'react';
 import dynamic from 'next/dynamic';
 import Theme from '@odigos/ui-theme';
 import { MainContent } from '@/styles';
-import { FORM_ALERTS, SLACK_LINK } from '@/utils';
+import { SLACK_LINK } from '@/utils';
 import { type SourceInstrumentInput } from '@/types';
 import { usePaginatedStore, useStatusStore } from '@/store';
-import { NOTIFICATION_TYPE, PLATFORM_TYPE } from '@odigos/ui-utils';
 import { OdigosLogoText, SlackLogo, TerminalIcon } from '@odigos/ui-icons';
+import { FORM_ALERTS, NOTIFICATION_TYPE, PLATFORM_TYPE } from '@odigos/ui-utils';
 import { Header, IconButton, PlatformSelect, Status, Tooltip } from '@odigos/ui-components';
 import { DataFlow, DataFlowActionsMenu, DRAWER_OTHER_TYPES, MultiSourceControl, NotificationManager, Source, useDrawerStore } from '@odigos/ui-containers';
 import { useActionCRUD, useConfig, useDestinationCRUD, useInstrumentationRuleCRUD, useMetrics, useNamespace, useSourceCRUD, useSSE, useTokenTracker } from '@/hooks';
@@ -39,22 +39,22 @@ export default function Page() {
     <>
       <Header
         left={[
-          <OdigosLogoText size={80} />,
-          <PlatformSelect type={PLATFORM_TYPE.K8S} />,
-          <Status status={status} title={title} subtitle={message} size={14} family='primary' withIcon withBackground />,
+          <OdigosLogoText key='logo' size={80} />,
+          <PlatformSelect key='platform' type={PLATFORM_TYPE.K8S} />,
+          <Status key='status' status={status} title={title} subtitle={message} size={14} family='primary' withIcon withBackground />,
           config?.readonly && (
-            <Tooltip text={FORM_ALERTS.READONLY_WARNING}>
+            <Tooltip key='readonly' text={FORM_ALERTS.READONLY_WARNING}>
               <Status status={NOTIFICATION_TYPE.INFO} title='Read Only' size={14} family='primary' withIcon withBackground />
             </Tooltip>
           ),
         ]}
         right={[
-          <Theme.ToggleDarkMode />,
-          <NotificationManager />,
-          <IconButton onClick={() => setDrawerType(DRAWER_OTHER_TYPES.ODIGOS_CLI)} tooltip='Odigos CLI' withPing pingColor={theme.colors.majestic_blue}>
+          <Theme.ToggleDarkMode key='toggle-theme' />,
+          <NotificationManager key='notifs' />,
+          <IconButton key='cli' onClick={() => setDrawerType(DRAWER_OTHER_TYPES.ODIGOS_CLI)} tooltip='Odigos CLI' withPing pingColor={theme.colors.majestic_blue}>
             <TerminalIcon size={18} />
           </IconButton>,
-          <IconButton onClick={() => window.open(SLACK_LINK, '_blank', 'noopener noreferrer')} tooltip='Join our Slack community'>
+          <IconButton key='slack' onClick={() => window.open(SLACK_LINK, '_blank', 'noopener noreferrer')} tooltip='Join our Slack community'>
             <SlackLogo />
           </IconButton>,
         ]}

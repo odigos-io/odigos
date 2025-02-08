@@ -1,10 +1,9 @@
 import { useEffect } from 'react';
-import { ACTION } from '@/utils';
 import { GET_SOURCES } from '@/graphql';
 import { usePaginatedStore } from '@/store';
 import { useLazyQuery } from '@apollo/client';
 import { type ComputePlatform } from '@/types';
-import { NOTIFICATION_TYPE } from '@odigos/ui-utils';
+import { CRUD, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 import { useNotificationStore } from '@odigos/ui-containers';
 
 export const usePaginatedSources = () => {
@@ -15,7 +14,7 @@ export const usePaginatedSources = () => {
     onError: (error) =>
       addNotification({
         type: NOTIFICATION_TYPE.ERROR,
-        title: error.name || ACTION.FETCH,
+        title: error.name || CRUD.READ,
         message: error.cause?.message || error.message,
       }),
   });

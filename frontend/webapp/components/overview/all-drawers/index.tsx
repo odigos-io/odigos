@@ -1,15 +1,18 @@
 import React from 'react';
-import { CliDrawer } from './cli-drawer';
 import { ENTITY_TYPES } from '@odigos/ui-utils';
-import { DRAWER_OTHER_TYPES, useDrawerStore } from '@odigos/ui-containers';
-import { ActionDrawer, DestinationDrawer, RuleDrawer, SourceDrawer } from '@/containers';
+import { ActionDrawer, DestinationDrawer, SourceDrawer } from '@/containers';
+import { useDescribeOdigos, useInstrumentationRuleCRUD, useTokenCRUD } from '@/hooks';
+import { CliDrawer, DRAWER_OTHER_TYPES, InstrumentationRuleDrawer, useDrawerStore } from '@odigos/ui-containers';
 
 const AllDrawers = () => {
   const { drawerType } = useDrawerStore();
+  const { data: describe } = useDescribeOdigos();
+  const { tokens, updateToken } = useTokenCRUD();
+  const { instrumentationRules, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
 
   switch (drawerType) {
     case ENTITY_TYPES.INSTRUMENTATION_RULE:
-      return <RuleDrawer />;
+      return <InstrumentationRuleDrawer instrumentationRules={instrumentationRules} updateInstrumentationRule={updateInstrumentationRule} deleteInstrumentationRule={deleteInstrumentationRule} />;
 
     case ENTITY_TYPES.SOURCE:
       return <SourceDrawer />;
@@ -21,7 +24,7 @@ const AllDrawers = () => {
       return <DestinationDrawer />;
 
     case DRAWER_OTHER_TYPES.ODIGOS_CLI:
-      return <CliDrawer />;
+      return <CliDrawer tokens={tokens} saveToken={updateToken} describe={describe} />;
 
     default:
       return null;

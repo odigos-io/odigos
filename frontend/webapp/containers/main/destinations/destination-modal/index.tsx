@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { ModalBody } from '@/styles';
 import { useAppStore } from '@/store';
+import { INPUT_TYPES } from '@/utils';
 import styled from 'styled-components';
 import { ArrowIcon } from '@odigos/ui-icons';
-import { useKeyDown } from '@odigos/ui-utils';
-import { ACTION, INPUT_TYPES } from '@/utils';
+import { CRUD, useKeyDown } from '@odigos/ui-utils';
 import { DestinationFormBody } from '../destination-form-body';
 import { ChooseDestinationBody } from './choose-destination-body';
 import { useDestinationCRUD, useDestinationFormData } from '@/hooks';
@@ -60,7 +60,7 @@ export const DestinationModal: React.FC<AddDestinationModalProps> = ({ isOnboard
   };
 
   const handleSubmit = async () => {
-    const isFormOk = validateForm({ withAlert: !isOnboarding, alertTitle: ACTION.CREATE });
+    const isFormOk = validateForm({ withAlert: !isOnboarding, alertTitle: CRUD.CREATE });
     if (!isFormOk) return null;
 
     if (isOnboarding) {

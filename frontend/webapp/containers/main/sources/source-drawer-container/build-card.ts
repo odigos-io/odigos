@@ -1,5 +1,5 @@
-import { DISPLAY_TITLES } from '@/utils';
 import type { FetchedSource } from '@/types';
+import { DISPLAY_TITLES } from '@odigos/ui-utils';
 import { DataCardFieldsProps } from '@odigos/ui-components';
 
 const buildCard = (source: FetchedSource) => {

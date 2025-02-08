@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { ACTION } from '@/utils';
 import { ActionFormBody } from '../';
 import { ModalBody } from '@/styles';
 import { useActionCRUD, useActionFormData } from '@/hooks/actions';
-import { ACTION_OPTIONS, useKeyDown, type ActionOption } from '@odigos/ui-utils';
+import { ACTION_OPTIONS, CRUD, useKeyDown, type ActionOption } from '@odigos/ui-utils';
 import { AutocompleteInput, CenterThis, Divider, FadeLoader, Modal, NavigationButtons, SectionTitle } from '@odigos/ui-components';
 
 interface Props {
@@ -32,7 +31,7 @@ export const ActionModal: React.FC<Props> = ({ isOpen, onClose }) => {
   };
 
   const handleSubmit = async () => {
-    const isFormOk = validateForm({ withAlert: true, alertTitle: ACTION.CREATE });
+    const isFormOk = validateForm({ withAlert: true, alertTitle: CRUD.CREATE });
     if (!isFormOk) return null;
 
     await createAction(formData);

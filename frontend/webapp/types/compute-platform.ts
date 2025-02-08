@@ -2,15 +2,8 @@ import { type PaginatedData } from './common';
 import { type FetchedSource } from './sources';
 import { type FetchedAction } from './actions';
 import { type FetchedNamespace } from './namespace';
-import { type Destination } from '@odigos/ui-containers';
 import { type InstrumentationRuleSpec } from './instrumentation-rules';
-
-export interface TokenPayload {
-  token: string;
-  name: string;
-  issuedAt: number;
-  expiresAt: number;
-}
+import { type TokenPayload, type Destination } from '@odigos/ui-containers';
 
 export interface ComputePlatform {
   computePlatform: {

@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import buildCard from './build-card';
 import styled from 'styled-components';
-import { ACTION, DATA_CARDS } from '@/utils';
-import OverviewDrawer from '../../overview/overview-drawer';
+import { CRUD, DISPLAY_TITLES } from '@odigos/ui-utils';
 import { DestinationFormBody } from '../destination-form-body';
 import { ConditionDetails, DataCard } from '@odigos/ui-components';
 import { Destination, useDrawerStore } from '@odigos/ui-containers';
 import { useDestinationCRUD, useDestinationFormData, useDestinationTypes } from '@/hooks';
+import OverviewDrawer from '../../overview/overview-drawer';
 
 interface Props {}
 
@@ -37,7 +37,7 @@ export const DestinationDrawer: React.FC<Props> = () => {
       setIsEditing(false);
       setIsFormDirty(false);
 
-      if (type === ACTION.DELETE) {
+      if (type === CRUD.DELETE) {
         setDrawerType(null);
         setDrawerEntityId(null);
         resetFormData();
@@ -80,7 +80,7 @@ export const DestinationDrawer: React.FC<Props> = () => {
   };
 
   const handleSave = (newTitle: string) => {
-    if (validateForm({ withAlert: true, alertTitle: ACTION.UPDATE })) {
+    if (validateForm({ withAlert: true, alertTitle: CRUD.UPDATE })) {
       const title = newTitle !== thisItem.destinationType.displayName ? newTitle : '';
       handleFormChange('name', title);
       updateDestination(drawerEntityId as string, { ...formData, name: title });
@@ -120,7 +120,7 @@ export const DestinationDrawer: React.FC<Props> = () => {
       ) : (
         <DataContainer>
           <ConditionDetails conditions={thisItem.conditions || []} />
-          <DataCard title={DATA_CARDS.DESTINATION_DETAILS} data={!!thisItem ? buildCard(thisItem) : []} />
+          <DataCard title={DISPLAY_TITLES.DESTINATION_DETAILS} data={!!thisItem ? buildCard(thisItem) : []} />
         </DataContainer>
       )}
     </OverviewDrawer>

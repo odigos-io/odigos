@@ -1,16 +1,18 @@
 import React from 'react';
 import { ENTITY_TYPES } from '@odigos/ui-utils';
-import { useModalStore } from '@odigos/ui-containers';
-import { ActionModal, AddSourceModal, DestinationModal, RuleModal } from '@/containers';
+import { useInstrumentationRuleCRUD } from '@/hooks';
+import { ActionModal, AddSourceModal, DestinationModal } from '@/containers';
+import { InstrumentationRuleModal, useModalStore } from '@odigos/ui-containers';
 
 const AllModals = () => {
   const { currentModal, setCurrentModal } = useModalStore();
-
   const handleClose = () => setCurrentModal('');
+
+  const { createInstrumentationRule } = useInstrumentationRuleCRUD();
 
   switch (currentModal) {
     case ENTITY_TYPES.INSTRUMENTATION_RULE:
-      return <RuleModal isOpen onClose={handleClose} />;
+      return <InstrumentationRuleModal isEnterprise={false} createInstrumentationRule={createInstrumentationRule} />;
 
     case ENTITY_TYPES.SOURCE:
       return <AddSourceModal isOpen onClose={handleClose} />;

@@ -2,11 +2,10 @@ import { useMemo } from 'react';
 import { useConfig } from '../config';
 import { GET_ACTIONS } from '@/graphql';
 import { useMutation, useQuery } from '@apollo/client';
-import { ACTION, DISPLAY_TITLES, FORM_ALERTS } from '@/utils';
 import { CREATE_ACTION, DELETE_ACTION, UPDATE_ACTION } from '@/graphql/mutations';
 import { type ComputePlatform, type ActionInput, type FetchedActionSpec } from '@/types';
 import { type Action, useFilterStore, useNotificationStore } from '@odigos/ui-containers';
-import { ACTION_TYPE, ENTITY_TYPES, getSseTargetFromId, NOTIFICATION_TYPE, safeJsonParse } from '@odigos/ui-utils';
+import { ACTION_TYPE, CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE, safeJsonParse } from '@odigos/ui-utils';
 
 interface UseActionCrudParams {
   onSuccess?: (type: string) => void;
@@ -53,7 +52,7 @@ export const useActionCRUD = (params?: UseActionCrudParams): UseActionCrudRespon
 
   // Fetch data
   const { data, loading, refetch } = useQuery<ComputePlatform>(GET_ACTIONS, {
-    onError: (error) => handleError(error.name || ACTION.FETCH, error.cause?.message || error.message),
+    onError: (error) => handleError(error.name || CRUD.READ, error.cause?.message || error.message),
   });
 
   // Map fetched data
@@ -89,27 +88,27 @@ export const useActionCRUD = (params?: UseActionCrudParams): UseActionCrudRespon
   }, [mapped, filters]);
 
   const [createAction, cState] = useMutation<{ createAction: { id: string } }>(CREATE_ACTION, {
-    onError: (error) => handleError(ACTION.CREATE, error.message),
+    onError: (error) => handleError(CRUD.CREATE, error.message),
     onCompleted: (res) => {
       const id = res?.createAction?.id;
-      handleComplete(ACTION.CREATE, `Action "${id}" created`, id);
+      handleComplete(CRUD.CREATE, `Action "${id}" created`, id);
     },
   });
 
   const [updateAction, uState] = useMutation<{ updateAction: { id: string } }>(UPDATE_ACTION, {
-    onError: (error) => handleError(ACTION.UPDATE, error.message),
+    onError: (error) => handleError(CRUD.UPDATE, error.message),
     onCompleted: (res) => {
       const id = res?.updateAction?.id;
-      handleComplete(ACTION.UPDATE, `Action "${id}" updated`, id);
+      handleComplete(CRUD.UPDATE, `Action "${id}" updated`, id);
     },
   });
 
   const [deleteAction, dState] = useMutation<{ deleteAction: boolean }>(DELETE_ACTION, {
-    onError: (error) => handleError(ACTION.DELETE, error.message),
+    onError: (error) => handleError(CRUD.DELETE, error.message),
     onCompleted: (res, req) => {
       const id = req?.variables?.id;
       removeNotifications(getSseTargetFromId(id, ENTITY_TYPES.ACTION));
-      handleComplete(ACTION.DELETE, `Action "${id}" deleted`, id);
+      handleComplete(CRUD.DELETE, `Action "${id}" deleted`, id);
     },
   });
 

@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { useStatusStore } from '@/store';
-import { NOTIFICATION_TYPE } from '@odigos/ui-utils';
 import { useDestinationCRUD } from '../destinations';
 import { usePaginatedSources } from '../compute-platform';
-import { API, DISPLAY_TITLES, SSE_CRD_TYPES, SSE_EVENT_TYPES } from '@/utils';
+import { API, SSE_CRD_TYPES, SSE_EVENT_TYPES } from '@/utils';
+import { DISPLAY_TITLES, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 import { type NotifyPayload, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
 
 export const useSSE = () => {

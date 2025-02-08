@@ -69,29 +69,32 @@ export default function Page() {
   return (
     <>
       <Header
-        left={[<OdigosLogoText size={100} />]}
-        center={[<Text family='secondary'>START WITH ODIGOS</Text>]}
+        left={[<OdigosLogoText key='logo' size={100} />]}
+        center={[
+          <Text key='msg' family='secondary'>
+            START WITH ODIGOS
+          </Text>,
+        ]}
         right={[
-          <FlexRow>
-            <Theme.ToggleDarkMode />
-            <NavigationButtons
-              buttons={[
-                {
-                  label: 'BACK',
-                  icon: ArrowIcon,
-                  variant: 'secondary',
-                  onClick: clickBack,
-                  disabled: isLoading,
-                },
-                {
-                  label: 'DONE',
-                  variant: 'primary',
-                  onClick: clickDone,
-                  disabled: isLoading,
-                },
-              ]}
-            />
-          </FlexRow>,
+          <Theme.ToggleDarkMode key='toggle-theme' />,
+          <NavigationButtons
+            key='nav-buttons'
+            buttons={[
+              {
+                label: 'BACK',
+                icon: ArrowIcon,
+                variant: 'secondary',
+                onClick: clickBack,
+                disabled: isLoading,
+              },
+              {
+                label: 'DONE',
+                variant: 'primary',
+                onClick: clickDone,
+                disabled: isLoading,
+              },
+            ]}
+          />,
         ]}
       />
 

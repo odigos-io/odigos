@@ -15,16 +15,6 @@ export enum CodeAttributesType {
   STACKTRACE = 'stacktrace',
 }
 
-export interface InstrumentationRuleInput {
-  ruleName: string;
-  notes: string;
-  disabled: boolean;
-  workloads: WorkloadId[] | null;
-  instrumentationLibraries: InstrumentationLibraryInput[] | null;
-  payloadCollection?: PayloadCollectionInput;
-  codeAttributes?: CodeAttributesInput;
-}
-
 export interface InstrumentationRuleSpec {
   ruleId: string;
   ruleName: string;
@@ -41,28 +31,6 @@ export interface InstrumentationRuleSpec {
 
 export interface InstrumentationRuleSpecMapped extends InstrumentationRuleSpec {
   type: INSTRUMENTATION_RULE_TYPE; // does not come from backend, it's derived during GET
-}
-
-// Common types for Instrumentation Rules
-enum SpanKind {
-  Internal = 'Internal',
-  Server = 'Server',
-  Client = 'Client',
-  Producer = 'Producer',
-  Consumer = 'Consumer',
-}
-enum ProgrammingLanguage {
-  Unspecified = 'Unspecified',
-  Java = 'Java',
-  Go = 'Go',
-  JavaScript = 'JavaScript',
-  Python = 'Python',
-  DotNet = 'DotNet',
-}
-interface InstrumentationLibraryInput {
-  name: string;
-  spanKind?: SpanKind;
-  language?: ProgrammingLanguage;
 }
 interface InstrumentationLibraryGlobalId {
   language: string;

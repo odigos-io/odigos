@@ -1,12 +1,11 @@
 import { useMemo } from 'react';
 import { useConfig } from '../config';
+import { type ComputePlatform } from '@/types';
 import { GET_INSTRUMENTATION_RULES } from '@/graphql';
 import { useMutation, useQuery } from '@apollo/client';
-import { useNotificationStore } from '@odigos/ui-containers';
-import { ACTION, DISPLAY_TITLES, FORM_ALERTS } from '@/utils';
-import { type ComputePlatform, type InstrumentationRuleInput } from '@/types';
-import { deriveTypeFromRule, ENTITY_TYPES, getSseTargetFromId, NOTIFICATION_TYPE } from '@odigos/ui-utils';
+import { type InstrumentationRuleFormData, useNotificationStore } from '@odigos/ui-containers';
 import { CREATE_INSTRUMENTATION_RULE, UPDATE_INSTRUMENTATION_RULE, DELETE_INSTRUMENTATION_RULE } from '@/graphql/mutations';
+import { CRUD, deriveTypeFromRule, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 
 interface Params {
   onSuccess?: (type: string) => void;
@@ -41,7 +40,7 @@ export const useInstrumentationRuleCRUD = (params?: Params) => {
 
   // Fetch data
   const { data, loading, refetch } = useQuery<ComputePlatform>(GET_INSTRUMENTATION_RULES, {
-    onError: (error) => handleError(error.name || ACTION.FETCH, error.cause?.message || error.message),
+    onError: (error) => handleError(error.name || CRUD.READ, error.cause?.message || error.message),
   });
 
   // Map fetched data
@@ -56,27 +55,27 @@ export const useInstrumentationRuleCRUD = (params?: Params) => {
   const filtered = mapped; // no filters for rules yet, TBA in future
 
   const [createInstrumentationRule, cState] = useMutation<{ createInstrumentationRule: { ruleId: string } }>(CREATE_INSTRUMENTATION_RULE, {
-    onError: (error) => handleError(ACTION.CREATE, error.message),
+    onError: (error) => handleError(CRUD.CREATE, error.message),
     onCompleted: (res, req) => {
       const id = res?.createInstrumentationRule?.ruleId;
-      handleComplete(ACTION.CREATE, `Rule "${id}" created`, id);
+      handleComplete(CRUD.CREATE, `Rule "${id}" created`, id);
     },
   });
 
   const [updateInstrumentationRule, uState] = useMutation<{ updateInstrumentationRule: { ruleId: string } }>(UPDATE_INSTRUMENTATION_RULE, {
-    onError: (error) => handleError(ACTION.UPDATE, error.message),
+    onError: (error) => handleError(CRUD.UPDATE, error.message),
     onCompleted: (res, req) => {
       const id = res?.updateInstrumentationRule?.ruleId;
-      handleComplete(ACTION.UPDATE, `Rule "${id}" updated`, id);
+      handleComplete(CRUD.UPDATE, `Rule "${id}" updated`, id);
     },
   });
 
   const [deleteInstrumentationRule, dState] = useMutation<{ deleteInstrumentationRule: boolean }>(DELETE_INSTRUMENTATION_RULE, {
-    onError: (error) => handleError(ACTION.DELETE, error.message),
+    onError: (error) => handleError(CRUD.DELETE, error.message),
     onCompleted: (res, req) => {
       const id = req?.variables?.ruleId;
       removeNotifications(getSseTargetFromId(id, ENTITY_TYPES.INSTRUMENTATION_RULE));
-      handleComplete(ACTION.DELETE, `Rule "${id}" deleted`, id);
+      handleComplete(CRUD.DELETE, `Rule "${id}" deleted`, id);
     },
   });
 
@@ -86,14 +85,14 @@ export const useInstrumentationRuleCRUD = (params?: Params) => {
     filteredInstrumentationRules: filtered,
     refetchInstrumentationRules: refetch,
 
-    createInstrumentationRule: (instrumentationRule: InstrumentationRuleInput) => {
+    createInstrumentationRule: (instrumentationRule: InstrumentationRuleFormData) => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
         createInstrumentationRule({ variables: { instrumentationRule } });
       }
     },
-    updateInstrumentationRule: (ruleId: string, instrumentationRule: InstrumentationRuleInput) => {
+    updateInstrumentationRule: (ruleId: string, instrumentationRule: InstrumentationRuleFormData) => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {

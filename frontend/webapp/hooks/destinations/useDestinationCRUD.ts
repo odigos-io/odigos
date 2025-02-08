@@ -2,11 +2,10 @@ import { useMemo } from 'react';
 import { useConfig } from '../config';
 import { GET_DESTINATIONS } from '@/graphql';
 import { useMutation, useQuery } from '@apollo/client';
-import { ACTION, DISPLAY_TITLES, FORM_ALERTS } from '@/utils';
-import { ENTITY_TYPES, getSseTargetFromId, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 import { CREATE_DESTINATION, DELETE_DESTINATION, UPDATE_DESTINATION } from '@/graphql/mutations';
 import { type DestinationInput, type ComputePlatform, type FetchedDestinationTypeItem } from '@/types';
 import { type Destination, useFilterStore, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
+import { CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 
 interface Params {
   onSuccess?: (type: string) => void;
@@ -52,7 +51,7 @@ export const useDestinationCRUD = (params?: Params): UseDestinationCrudResponse 
 
   // Fetch data
   const { data, loading, refetch } = useQuery<ComputePlatform>(GET_DESTINATIONS, {
-    onError: (error) => handleError(error.name || ACTION.FETCH, error.cause?.message || error.message),
+    onError: (error) => handleError(error.name || CRUD.READ, error.cause?.message || error.message),
   });
 
   // Map fetched data
@@ -89,14 +88,14 @@ export const useDestinationCRUD = (params?: Params): UseDestinationCrudResponse 
   }, [mapped, filters]);
 
   const [createDestination, cState] = useMutation<{ createNewDestination: { id: string } }>(CREATE_DESTINATION, {
-    onError: (error) => handleError(ACTION.CREATE, error.message),
-    onCompleted: () => handleComplete(ACTION.CREATE),
+    onError: (error) => handleError(CRUD.CREATE, error.message),
+    onCompleted: () => handleComplete(CRUD.CREATE),
   });
 
   const [updateDestination, uState] = useMutation<{ updateDestination: { id: string } }>(UPDATE_DESTINATION, {
-    onError: (error) => handleError(ACTION.UPDATE, error.message),
+    onError: (error) => handleError(CRUD.UPDATE, error.message),
     onCompleted: (res, req) => {
-      handleComplete(ACTION.UPDATE);
+      handleComplete(CRUD.UPDATE);
 
       // This is instead of toasting a k8s modified-event watcher...
       // If we do toast with a watcher, we can't guarantee an SSE will be sent for this update alone. It will definitely include SSE for all updates, even those unexpected.
@@ -105,18 +104,18 @@ export const useDestinationCRUD = (params?: Params): UseDestinationCrudResponse 
         const { id, destination } = req?.variables || {};
 
         refetch();
-        notifyUser(NOTIFICATION_TYPE.SUCCESS, ACTION.UPDATE, `Successfully updated "${destination.type}" destination`, id);
+        notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.UPDATE, `Successfully updated "${destination.type}" destination`, id);
         removePendingItems([{ entityType: ENTITY_TYPES.DESTINATION, entityId: id }]);
       }, 2000);
     },
   });
 
   const [deleteDestination, dState] = useMutation<{ deleteDestination: boolean }>(DELETE_DESTINATION, {
-    onError: (error) => handleError(ACTION.DELETE, error.message),
+    onError: (error) => handleError(CRUD.DELETE, error.message),
     onCompleted: (res, req) => {
       const id = req?.variables?.id;
       removeNotifications(getSseTargetFromId(id, ENTITY_TYPES.DESTINATION));
-      handleComplete(ACTION.DELETE);
+      handleComplete(CRUD.DELETE);
     },
   });
 

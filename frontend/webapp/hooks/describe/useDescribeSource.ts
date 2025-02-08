@@ -4,14 +4,14 @@ import { type DescribeSource } from '@/types';
 import { type WorkloadId } from '@odigos/ui-utils';
 
 export const useDescribeSource = ({ namespace, name, kind }: WorkloadId) => {
-  const { data, loading, error } = useQuery<DescribeSource>(DESCRIBE_SOURCE, {
+  const { data, loading, error } = useQuery<{ describeSource: DescribeSource }>(DESCRIBE_SOURCE, {
     variables: { namespace, name, kind },
     pollInterval: 5000,
   });
 
   // This function is used to restructure the data, so that it reflects the output given by "odigos describe" command in the CLI.
   // This is not really needed, but it's a nice-to-have feature to make the data more readable.
-  const restructureForPrettyMode = (code?: DescribeSource['describeSource']) => {
+  const restructureForPrettyMode = (code?: DescribeSource) => {
     if (!code) return {};
 
     const payload: Record<string, any> = {};

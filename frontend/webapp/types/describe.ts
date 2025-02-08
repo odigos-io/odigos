@@ -57,7 +57,7 @@ interface PodAnalyze {
   containers: PodContainerAnalyze[];
 }
 
-interface SourceAnalyze {
+export interface DescribeSource {
   name: EntityProperty;
   kind: EntityProperty;
   namespace: EntityProperty;
@@ -69,51 +69,4 @@ interface SourceAnalyze {
   totalPods: number;
   podsPhasesCount: string;
   pods: PodAnalyze[];
-}
-
-interface ClusterCollectorAnalyze {
-  enabled: EntityProperty;
-  collectorGroup: EntityProperty;
-  deployed?: EntityProperty;
-  deployedError?: EntityProperty;
-  collectorReady?: EntityProperty;
-  deploymentCreated: EntityProperty;
-  expectedReplicas?: EntityProperty;
-  healthyReplicas?: EntityProperty;
-  failedReplicas?: EntityProperty;
-  failedReplicasReason?: EntityProperty;
-}
-
-interface NodeCollectorAnalyze {
-  enabled: EntityProperty;
-  collectorGroup: EntityProperty;
-  deployed?: EntityProperty;
-  deployedError?: EntityProperty;
-  collectorReady?: EntityProperty;
-  daemonSet: EntityProperty;
-  desiredNodes?: EntityProperty;
-  currentNodes?: EntityProperty;
-  updatedNodes?: EntityProperty;
-  availableNodes?: EntityProperty;
-}
-
-interface OdigosAnalyze {
-  odigosVersion: EntityProperty;
-  kubernetesVersion: EntityProperty;
-  tier: EntityProperty;
-  installationMethod: EntityProperty;
-  numberOfDestinations: number;
-  numberOfSources: number;
-  clusterCollector: ClusterCollectorAnalyze;
-  nodeCollector: NodeCollectorAnalyze;
-  isSettled: boolean;
-  hasErrors: boolean;
-}
-
-export interface DescribeSource {
-  describeSource: SourceAnalyze;
-}
-
-export interface DescribeOdigos {
-  describeOdigos: OdigosAnalyze;
 }

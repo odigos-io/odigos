@@ -1,8 +1,7 @@
-import { ACTION } from '@/utils';
 import { useQuery } from '@apollo/client';
 import { type ComputePlatform } from '@/types';
 import { GET_COMPUTE_PLATFORM } from '@/graphql';
-import { NOTIFICATION_TYPE } from '@odigos/ui-utils';
+import { CRUD, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 import { useNotificationStore } from '@odigos/ui-containers';
 
 export const useComputePlatform = () => {
@@ -12,7 +11,7 @@ export const useComputePlatform = () => {
     onError: (error) =>
       addNotification({
         type: NOTIFICATION_TYPE.ERROR,
-        title: error.name || ACTION.FETCH,
+        title: error.name || CRUD.READ,
         message: error.cause?.message || error.message,
       }),
   });

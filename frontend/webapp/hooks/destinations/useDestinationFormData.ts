@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useGenericForm } from '@/hooks';
+import { INPUT_TYPES } from '@/utils';
 import { useQuery } from '@apollo/client';
 import { GET_DESTINATION_TYPE_DETAILS } from '@/graphql';
-import { ACTION, FORM_ALERTS, INPUT_TYPES } from '@/utils';
 import { type Destination, useNotificationStore } from '@odigos/ui-containers';
-import { ENTITY_TYPES, NOTIFICATION_TYPE, safeJsonParse } from '@odigos/ui-utils';
+import { CRUD, ENTITY_TYPES, FORM_ALERTS, NOTIFICATION_TYPE, safeJsonParse, useGenericForm } from '@odigos/ui-utils';
 import { type FetchedDestinationDynamicField, type FetchedDestinationDetailsResponse, type DestinationInput, type FetchedDestinationTypeItem, type FetchedDestinationDetailsField } from '@/types';
 
 const INITIAL: DestinationInput = {
@@ -84,7 +83,7 @@ export function useDestinationFormData(params?: {
     onError: (error) =>
       addNotification({
         type: NOTIFICATION_TYPE.ERROR,
-        title: error.name || ACTION.FETCH,
+        title: error.name || CRUD.READ,
         message: error.cause?.message || error.message,
         crdType: ENTITY_TYPES.DESTINATION,
       }),

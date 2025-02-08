@@ -2,9 +2,8 @@ import { useConfig } from '../config';
 import { useMutation } from '@apollo/client';
 import { type DestinationInput } from '@/types';
 import { TEST_CONNECTION_MUTATION } from '@/graphql';
-import { NOTIFICATION_TYPE } from '@odigos/ui-utils';
-import { DISPLAY_TITLES, FORM_ALERTS } from '@/utils';
 import { useNotificationStore } from '@odigos/ui-containers';
+import { DISPLAY_TITLES, FORM_ALERTS, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 
 interface TestConnectionResponse {
   succeeded: boolean;

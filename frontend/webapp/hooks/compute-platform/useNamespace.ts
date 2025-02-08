@@ -1,10 +1,9 @@
-import { ACTION, DISPLAY_TITLES, FORM_ALERTS } from '@/utils';
 import { useConfig } from '../config';
-import { NOTIFICATION_TYPE } from '@odigos/ui-utils';
 import { useMutation, useQuery } from '@apollo/client';
 import { useComputePlatform } from './useComputePlatform';
-import { useNotificationStore } from '@odigos/ui-containers';
 import { GET_NAMESPACE, PERSIST_NAMESPACE } from '@/graphql';
+import { useNotificationStore } from '@odigos/ui-containers';
+import { CRUD, DISPLAY_TITLES, FORM_ALERTS, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 import type { FetchedNamespace, NamespaceInstrumentInput, ComputePlatform } from '@/types';
 
 interface UseNameSpaceResponse {
@@ -23,11 +22,11 @@ export const useNamespace = (namespaceName?: string): UseNameSpaceResponse => {
   const { data, loading } = useQuery<ComputePlatform>(GET_NAMESPACE, {
     skip: !namespaceName,
     variables: { namespaceName },
-    onError: (error) => addNotification({ type: NOTIFICATION_TYPE.ERROR, title: error.name || ACTION.FETCH, message: error.cause?.message || error.message }),
+    onError: (error) => addNotification({ type: NOTIFICATION_TYPE.ERROR, title: error.name || CRUD.READ, message: error.cause?.message || error.message }),
   });
 
   const [persistNamespaceMutation] = useMutation(PERSIST_NAMESPACE, {
-    onError: (error) => addNotification({ type: NOTIFICATION_TYPE.ERROR, title: error.name || ACTION.UPDATE, message: error.cause?.message || error.message }),
+    onError: (error) => addNotification({ type: NOTIFICATION_TYPE.ERROR, title: error.name || CRUD.UPDATE, message: error.cause?.message || error.message }),
   });
 
   return {

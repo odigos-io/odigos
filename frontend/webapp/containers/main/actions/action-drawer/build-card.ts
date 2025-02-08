@@ -1,4 +1,4 @@
-import { DISPLAY_TITLES } from '@/utils';
+import { DISPLAY_TITLES } from '@odigos/ui-utils';
 import { type Action } from '@odigos/ui-containers';
 import { DATA_CARD_FIELD_TYPES, DataCardFieldsProps } from '@odigos/ui-components';
 

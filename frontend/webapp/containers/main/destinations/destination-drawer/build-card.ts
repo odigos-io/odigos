@@ -1,6 +1,5 @@
-import { DISPLAY_TITLES } from '@/utils';
 import { type Destination } from '@odigos/ui-containers';
-import { compareCondition, safeJsonParse } from '@odigos/ui-utils';
+import { compareCondition, DISPLAY_TITLES, safeJsonParse } from '@odigos/ui-utils';
 import { type FetchedDestinationDetailsResponse, type ExportedSignals } from '@/types';
 import { DATA_CARD_FIELD_TYPES, type DataCardFieldsProps } from '@odigos/ui-components';
 

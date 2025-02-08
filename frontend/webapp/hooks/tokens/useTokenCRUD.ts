@@ -3,8 +3,7 @@ import { useMutation } from '@apollo/client';
 import { UPDATE_API_TOKEN } from '@/graphql/mutations';
 import { useComputePlatform } from '../compute-platform';
 import { useNotificationStore } from '@odigos/ui-containers';
-import { ACTION, DISPLAY_TITLES, FORM_ALERTS } from '@/utils';
-import { ENTITY_TYPES, getSseTargetFromId, NOTIFICATION_TYPE } from '@odigos/ui-utils';
+import { CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 
 interface UseTokenCrudParams {
   onSuccess?: (type: string) => void;
@@ -39,8 +38,8 @@ export const useTokenCRUD = (params?: UseTokenCrudParams) => {
   };
 
   const [updateToken, uState] = useMutation<{ updateApiToken: boolean }>(UPDATE_API_TOKEN, {
-    onError: (error) => handleError(error.name || ACTION.UPDATE, error.cause?.message || error.message),
-    onCompleted: () => handleComplete(ACTION.UPDATE, 'API Token updated'),
+    onError: (error) => handleError(error.name || CRUD.UPDATE, error.cause?.message || error.message),
+    onCompleted: () => handleComplete(CRUD.UPDATE, 'API Token updated'),
   });
 
   return {
