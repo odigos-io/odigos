@@ -4,8 +4,8 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
 - name: controller
-  newName: keyval/odigos-operator
-  newTag: 1.0.149
+  newName: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-operator
+  newTag: v1.0.149
 configMapGenerator:
 - literals:
   - ODIGOS_VERSION=1.0.149
