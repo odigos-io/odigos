@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import { CONDITION_STATUS } from '@/utils';
 import { useAppStore, usePendingStore } from '@/store';
 import { ErrorTriangleIcon, type SVG } from '@odigos/ui-icons';
 import { Checkbox, DataTab, FadeLoader } from '@odigos/ui-components';
@@ -34,6 +35,7 @@ const Container = styled.div<{ $nodeWidth: Props['data']['nodeWidth'] }>`
 const BaseNode: React.FC<Props> = ({ id: nodeId, data }) => {
   const { nodeWidth, id: entityId, type: entityType, status, title, subTitle, icon, iconSrc, monitors, isActive, raw } = data;
   const isError = status === HEALTH_STATUS.UNHEALTHY;
+  const isSource = entityType === ENTITY_TYPES.SOURCE;
 
   const { configuredSources, setConfiguredSources } = useAppStore();
   const { isThisPending } = usePendingStore();
@@ -59,8 +61,8 @@ const BaseNode: React.FC<Props> = ({ id: nodeId, data }) => {
     return (
       <>
         {/* TODO: handle action/icon to apply instrumentation-rules for individual sources (@Notion GEN-1650) */}
-        {isPending ? <FadeLoader /> : isError ? <ErrorTriangleIcon size={20} /> : null}
-        {entityType === 'source' ? <Checkbox value={index !== -1} onChange={onSelectSource} disabled={isPending} /> : null}
+        {isPending || (isSource && (raw as K8sActualSource).conditions?.every(({ status }) => status === CONDITION_STATUS.UNKNOWN)) ? <FadeLoader /> : isError ? <ErrorTriangleIcon size={20} /> : null}
+        {isSource ? <Checkbox value={index !== -1} onChange={onSelectSource} disabled={isPending} /> : null}
       </>
     );
   };

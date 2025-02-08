@@ -234,7 +234,7 @@ export const DESCRIBE_SOURCE = gql`
           }
         }
       }
-      instrumentationConfig {
+      otelAgents {
         created {
           name
           value
@@ -254,47 +254,25 @@ export const DESCRIBE_SOURCE = gql`
             status
             explain
           }
-          language {
+          agentEnabled {
             name
             value
             status
             explain
           }
-          runtimeVersion {
+          reason {
             name
             value
             status
             explain
           }
-          envVars {
+          message {
             name
             value
             status
             explain
           }
-        }
-      }
-      instrumentationDevice {
-        statusText {
-          name
-          value
-          status
-          explain
-        }
-        containers {
-          containerName {
-            name
-            value
-            status
-            explain
-          }
-          devices {
-            name
-            value
-            status
-            explain
-          }
-          originalEnv {
+          otelDistroName {
             name
             value
             status

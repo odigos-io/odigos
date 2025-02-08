@@ -7,7 +7,7 @@ spec:
   language: go
   runtimeEnvironments:
     - name: go-runtime
-      version: '>= 1.17'
+      supportedVersions: '>= 1.17'
   displayName: Golang Community eBPF Instrumentation
   description: |
     This distribution is for Golang applications using OpenTelemetry eBPF-based SDK and eBPF-based instrumentation libraries from the OpenTelemetry community.

@@ -55,12 +55,6 @@ func NewOdigletRole(ns string) *rbacv1.Role {
 				Resources: []string{"collectorsgroups", "collectorsgroups/status"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
-			{ // Needed to read the odigos_config for ignored containers
-				APIGroups:     []string{""},
-				Resources:     []string{"configmaps"},
-				ResourceNames: []string{consts.OdigosEffectiveConfigName},
-				Verbs:         []string{"get", "list", "watch"},
-			},
 		},
 	}
 }
@@ -366,7 +360,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 							Name: "odigos",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/var/odigos",
+									Path: k8sconsts.OdigosAgentsDirectory,
 								},
 							},
 						},
@@ -414,7 +408,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 							VolumeMounts: append([]corev1.VolumeMount{
 								{
 									Name:      "odigos",
-									MountPath: "/var/odigos",
+									MountPath: k8sconsts.OdigosAgentsDirectory,
 								},
 							}, odigosSeLinuxHostVolumeMounts...),
 							ImagePullPolicy: "IfNotPresent",
@@ -483,7 +477,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 								},
 								{
 									Name:      "odigos",
-									MountPath: "/var/odigos",
+									MountPath: k8sconsts.OdigosAgentsDirectory,
 									ReadOnly:  true,
 								},
 								{

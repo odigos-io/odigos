@@ -1,0 +1,17 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: OtelDistribution
+metadata:
+  name: dotnet-legacy
+spec:
+  name: dotnet-legacy
+  language: dotnet
+  runtimeEnvironments:
+    - name: dotnet-version
+      supportedVersions: '>=4 <7'
+  displayName: 'Dotnet Community Native Instrumentation for Legacy Versions'
+  description: |
+    This distribution is for Dotnet applications running on old runtimes, using OpenTelemetry Native SDK and instrumentation libraries from the OpenTelemetry community.
+  tiers: 
+    - onprem
+  agentDirectories:
+    - directoryName: "{{ODIGOS_AGENTS_DIR}}/legacy-dotnet"
