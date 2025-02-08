@@ -113,7 +113,7 @@ export const useActionCRUD = (params?: UseActionCrudParams): UseActionCrudRespon
     },
   });
 
-  const mapFormActionToInput = (action: ActionFormData): ActionInput => {
+  const mapFormToInput = (action: ActionFormData): ActionInput => {
     const {
       type,
       name = '',
@@ -160,7 +160,7 @@ export const useActionCRUD = (params?: UseActionCrudParams): UseActionCrudRespon
         break;
 
       case ACTION_TYPE.PROBABILISTIC_SAMPLER:
-        payload['details'] = JSON.stringify({ sampling_percentage: samplingPercentage });
+        payload['details'] = JSON.stringify({ sampling_percentage: String(samplingPercentage) });
         break;
 
       case ACTION_TYPE.LATENCY_SAMPLER:
@@ -192,14 +192,14 @@ export const useActionCRUD = (params?: UseActionCrudParams): UseActionCrudRespon
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
-        createAction({ variables: { action: mapFormActionToInput(action) } });
+        createAction({ variables: { action: mapFormToInput(action) } });
       }
     },
     updateAction: (id, action) => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
-        updateAction({ variables: { id, action: mapFormActionToInput(action) } });
+        updateAction({ variables: { id, action: mapFormToInput(action) } });
       }
     },
     deleteAction: (id, actionType) => {
