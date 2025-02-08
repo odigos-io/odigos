@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 
@@ -16,30 +15,35 @@ import (
 // 2) Is the object instrumentation disabled on the workload Source (overrides namespace instrumentation): false
 // 3) Is the object actively included by a namespace Source: true
 // 4) False
-func IsObjectInstrumentedBySource(ctx context.Context, k8sClient client.Client, obj client.Object) (bool, odigosv1.WorkloadInstrumentationReason, string, error) {
+func IsObjectInstrumentedBySource(ctx context.Context,
+	k8sClient client.Client,
+	obj client.Object) (bool, odigosv1.WorkloadInstrumentationReason, string, error) {
 	// Check if a Source object exists for this object
-	sources, err := v1alpha1.GetSources(ctx, k8sClient, obj)
+	sources, err := odigosv1.GetSources(ctx, k8sClient, obj)
 	if err != nil {
 		reason := odigosv1.WorkloadInstrumentationReasonError
 		return false, reason, "cannot determine if workload is instrumented due to error", err
 	}
 
 	if sources.Workload != nil {
-		if !v1alpha1.IsDisabledSource(sources.Workload) && !k8sutils.IsTerminating(sources.Workload) {
+		if !odigosv1.IsDisabledSource(sources.Workload) && !k8sutils.IsTerminating(sources.Workload) {
 			reason := odigosv1.WorkloadInstrumentationReasonWorkloadSource
-			message := fmt.Sprintf("instrumented by workload source CR '%s' in namespace '%s'", sources.Workload.Name, sources.Workload.Namespace)
+			message := fmt.Sprintf("instrumented by workload source CR '%s' in namespace '%s'",
+				sources.Workload.Name, sources.Workload.Namespace)
 			return true, reason, message, nil
 		}
-		if v1alpha1.IsDisabledSource(sources.Workload) && !k8sutils.IsTerminating(sources.Workload) {
+		if odigosv1.IsDisabledSource(sources.Workload) && !k8sutils.IsTerminating(sources.Workload) {
 			reason := odigosv1.WorkloadInstrumentationReasonWorkloadSourceDisabled
-			message := fmt.Sprintf("disabled for instrumentation by workload source CR '%s' in namespace '%s'", sources.Workload.Name, sources.Workload.Namespace)
+			message := fmt.Sprintf("disabled for instrumentation by workload source CR '%s' in namespace '%s'",
+				sources.Workload.Name, sources.Workload.Namespace)
 			return false, reason, message, nil
 		}
 	}
 
-	if sources.Namespace != nil && !v1alpha1.IsDisabledSource(sources.Namespace) && !k8sutils.IsTerminating(sources.Namespace) {
+	if sources.Namespace != nil && !odigosv1.IsDisabledSource(sources.Namespace) && !k8sutils.IsTerminating(sources.Namespace) {
 		reason := odigosv1.WorkloadInstrumentationReasonNamespaceSource
-		message := fmt.Sprintf("instrumented by namespace source CR '%s' in namespace '%s'", sources.Namespace.Name, sources.Namespace.Namespace)
+		message := fmt.Sprintf("instrumented by namespace source CR '%s' in namespace '%s'",
+			sources.Namespace.Name, sources.Namespace.Namespace)
 		return true, reason, message, nil
 	}
 
@@ -53,15 +57,15 @@ func IsObjectInstrumentedBySource(ctx context.Context, k8sClient client.Client, 
 // 2) Exclusive AND terminating
 // This function alone should not be used to determine any instrumentation changes, and is provided
 // for the Instrumentor controllers to filter events.
-func IsSourceRelevant(source *v1alpha1.Source) bool {
-	return v1alpha1.IsDisabledSource(source) == k8sutils.IsTerminating(source)
+func IsSourceRelevant(source *odigosv1.Source) bool {
+	return odigosv1.IsDisabledSource(source) == k8sutils.IsTerminating(source)
 }
 
 // OtelServiceNameBySource returns the ReportedName for the given workload object.
 // OTel service name is only valid for workload sources (not namespace sources).
 // If none is configured, an empty string is returned.
 func OtelServiceNameBySource(ctx context.Context, k8sClient client.Client, obj client.Object) (string, error) {
-	sources, err := v1alpha1.GetSources(ctx, k8sClient, obj)
+	sources, err := odigosv1.GetSources(ctx, k8sClient, obj)
 	if err != nil {
 		return "", err
 	}
