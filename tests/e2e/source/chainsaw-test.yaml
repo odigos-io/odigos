@@ -299,6 +299,9 @@ spec:
             file: ../../common/apply/instrument-default-ns.yaml
     - name: Wait for workloads to roll out new revisions
       try:
+        - assert:
+            timeout: 2m
+            file: 06-workloads.yaml
         - script:
             timeout: 70s
             content: ./wait_for_rollout.sh
@@ -307,9 +310,6 @@ spec:
         - assert:
             timeout: 2m
             file: ../../common/assert/simple-demo-runtime-detected.yaml
-        - assert:
-            timeout: 2m
-            file: 06-workloads.yaml
     - name: Uninstrument namespace
       try:
         - script:
@@ -325,6 +325,9 @@ spec:
               done
     - name: Wait for deleted sources to roll out new revisions
       try:
+        - assert:
+            timeout: 2m
+            file: 07-workloads.yaml
         - script:
             timeout: 70s
             content: ./wait_for_rollout.sh
@@ -333,9 +336,6 @@ spec:
         - assert:
             timeout: 2m
             file: 05-assert-runtime-detected.yaml
-        - assert:
-            timeout: 2m
-            file: 07-workloads.yaml
     - name: Create Workload exclusion Source for single workload
       try:
         - apply:
@@ -346,6 +346,9 @@ spec:
             file: ../../common/apply/instrument-default-ns.yaml
     - name: Wait for created source to roll out new revisions
       try:
+        - assert:
+            timeout: 2m
+            file: 08-workloads.yaml
         - script:
             timeout: 70s
             content: ./wait_for_rollout.sh
@@ -354,9 +357,6 @@ spec:
         - assert:
             timeout: 2m
             file: 08-assert-runtime-detected.yaml
-        - assert:
-            timeout: 2m
-            file: 08-workloads.yaml
     - name: Assert runtime not detected for excluded (coupon)
       try:
         - script:
@@ -371,6 +371,9 @@ spec:
               ($error == null): true
     - name: Wait for deleted exclusion source to roll out new revisions
       try:
+        - assert:
+            timeout: 2m
+            file: 08-workloads-2.yaml
         - script:
             timeout: 70s
             content: ./wait_for_rollout.sh
@@ -379,15 +382,15 @@ spec:
         - assert:
             timeout: 2m
             file: ../../common/assert/simple-demo-runtime-detected.yaml
-        - assert:
-            timeout: 2m
-            file: 08-workloads-2.yaml
     - name: Create excluded workload Source while namespace is instrumented
       try:
         - apply:
             file: 09-source.yaml
     - name: Wait for created source to roll out new revisions
       try:
+        - assert:
+            timeout: 2m
+            file: 09-workloads.yaml
         - script:
             timeout: 70s
             content: ./wait_for_rollout.sh
@@ -396,9 +399,6 @@ spec:
         - assert:
             timeout: 2m
             file: 09-assert-runtime-detected.yaml
-        - assert:
-            timeout: 2m
-            file: 09-workloads.yaml
     - name: Assert runtime not detected for newly excluded (membership)
       try:
         - script:
@@ -412,6 +412,9 @@ spec:
             content: kubectl patch source/membership-excluded --type=merge -p '{"spec":{"disableInstrumentation":false}}'
     - name: Wait for updated source to roll out new revisions
       try:
+        - assert:
+            timeout: 2m
+            file: 10-workloads.yaml
         - script:
             timeout: 70s
             content: ./wait_for_rollout.sh
@@ -420,9 +423,6 @@ spec:
         - assert:
             timeout: 2m
             file: ../../common/assert/simple-demo-runtime-detected.yaml
-        - assert:
-            timeout: 2m
-            file: 10-workloads.yaml
     - name: Set disableInstrumentation=true on previously-excluded Source
       try:
         - script:
@@ -471,6 +471,9 @@ spec:
         - assert:
             timeout: 2m
             file: 11-workloads.yaml
+        - script:
+            timeout: 70s
+            content: ./wait_for_rollout.sh
         - script:
             content: kubectl get instrumentationconfigs/deployment-membership
             check:
