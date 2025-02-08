@@ -7,8 +7,8 @@ spec:
   language: javascript
   runtimeEnvironments:
     - name: nodejs
-      version: '>= 14'
-  displayName: Node.js Community Native Instrumentation
+      supportedVersions: '>= 14'
+  displayName: 'Node.js Community Native Instrumentation'
   description: |
     This distribution is for Node.js applications using OpenTelemetry Native SDK and instrumentation libraries from the OpenTelemetry community.
   tiers: 
@@ -17,3 +17,5 @@ spec:
     - envName: NODE_OPTIONS
       envValue: '--require {{ODIGOS_AGENTS_DIR}}/nodejs/autoinstrumentation.js'
       delimiter: ' '
+  agentDirectories:
+    - directoryName: "{{ODIGOS_AGENTS_DIR}}/nodejs"

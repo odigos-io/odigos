@@ -4,10 +4,10 @@ metadata:
   name: python-community
 spec:
   name: python-community
-  language: javascript
+  language: python
   runtimeEnvironments:
     - name: python-runtime
-      version: '>= 3.8'
+      supportedVersions: '>= 3.8'
   displayName: Python Community Native Instrumentation
   description: |
     This distribution is for Python applications using OpenTelemetry Native SDK and instrumentation libraries from the OpenTelemetry community.
@@ -17,3 +17,5 @@ spec:
     - envName: PYTHONPATH
       envValue: '{{ODIGOS_AGENTS_DIR}}/python:{{ODIGOS_AGENTS_DIR}}/python/opentelemetry/instrumentation/auto_instrumentation'
       delimiter: ':'
+  agentDirectories:
+    - directoryName: "{{ODIGOS_AGENTS_DIR}}/python"

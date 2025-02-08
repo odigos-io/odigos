@@ -14,6 +14,34 @@ var (
 	ErrContainerNotInPodSpec = errors.New("container not found in pod spec")
 )
 
+func LanguageAndSdk(pod *v1.Pod, containerName string, distroName string) (common.ProgrammingLanguage, common.OtelSdk, error) {
+	if distroName != "" {
+		// TODO: so we can remove the device slowly while having backward compatibility,
+		// we map here the distroNames one by one.
+		// this is temporary, and should be refactored once device is removed
+		switch distroName {
+		case "golang-community":
+			return common.GoProgrammingLanguage, common.OtelSdkEbpfCommunity, nil
+		case "golang-enterprise":
+			return common.GoProgrammingLanguage, common.OtelSdkEbpfEnterprise, nil
+		case "java-enterprise":
+			return common.JavaProgrammingLanguage, common.OtelSdkNativeEnterprise, nil
+		case "java-ebpf-instrumentations":
+			return common.JavaProgrammingLanguage, common.OtelSdkEbpfEnterprise, nil
+		case "python-enterprise":
+			return common.PythonProgrammingLanguage, common.OtelSdkEbpfEnterprise, nil
+		case "nodejs-enterprise":
+			return common.JavascriptProgrammingLanguage, common.OtelSdkEbpfEnterprise, nil
+		case "mysql-enterprise":
+			return common.MySQLProgrammingLanguage, common.OtelSdkEbpfEnterprise, nil
+		}
+	}
+
+	// TODO: this is fallback for migration from device (so that we can handle pods that have not been updated yet)
+	// remove this once device is removed
+	return LanguageSdkFromPodContainer(pod, containerName)
+}
+
 func LanguageSdkFromPodContainer(pod *v1.Pod, containerName string) (common.ProgrammingLanguage, common.OtelSdk, error) {
 	for i := range pod.Spec.Containers {
 		container := pod.Spec.Containers[i]

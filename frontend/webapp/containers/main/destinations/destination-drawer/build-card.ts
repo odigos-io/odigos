@@ -27,6 +27,7 @@ const buildCard = (destination: ActualDestination, destinationTypeDetails?: Dest
 
     const shouldHide = !!hideFromReadData?.length
       ? compareCondition(
+          // @ts-ignore
           hideFromReadData,
           (destinationTypeDetails?.fields || []).map((field) => ({ name: field.name, value: parsedFields[field.name] ?? null })),
         )

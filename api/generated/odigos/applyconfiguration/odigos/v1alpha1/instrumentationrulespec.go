@@ -32,6 +32,7 @@ type InstrumentationRuleSpecApplyConfiguration struct {
 	InstrumentationLibraries *[]InstrumentationLibraryGlobalIdApplyConfiguration `json:"instrumentationLibraries,omitempty"`
 	PayloadCollection        *instrumentationrules.PayloadCollection             `json:"payloadCollection,omitempty"`
 	OtelSdks                 *instrumentationrules.OtelSdks                      `json:"otelSdks,omitempty"`
+	OtelDistros              *instrumentationrules.OtelDistros                   `json:"otelDistros,omitempty"`
 	CodeAttributes           *instrumentationrules.CodeAttributes                `json:"codeAttributes,omitempty"`
 }
 
@@ -106,6 +107,14 @@ func (b *InstrumentationRuleSpecApplyConfiguration) WithPayloadCollection(value 
 // If called multiple times, the OtelSdks field is set to the value of the last call.
 func (b *InstrumentationRuleSpecApplyConfiguration) WithOtelSdks(value instrumentationrules.OtelSdks) *InstrumentationRuleSpecApplyConfiguration {
 	b.OtelSdks = &value
+	return b
+}
+
+// WithOtelDistros sets the OtelDistros field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the OtelDistros field is set to the value of the last call.
+func (b *InstrumentationRuleSpecApplyConfiguration) WithOtelDistros(value instrumentationrules.OtelDistros) *InstrumentationRuleSpecApplyConfiguration {
+	b.OtelDistros = &value
 	return b
 }
 
