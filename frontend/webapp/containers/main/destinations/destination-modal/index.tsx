@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { ModalBody } from '@/styles';
 import { useAppStore } from '@/store';
 import styled from 'styled-components';
-import { SideMenu } from '@/components';
 import { ArrowIcon } from '@odigos/ui-icons';
 import { useKeyDown } from '@odigos/ui-utils';
 import { ACTION, INPUT_TYPES } from '@/utils';
@@ -10,7 +9,7 @@ import { DestinationFormBody } from '../destination-form-body';
 import { ChooseDestinationBody } from './choose-destination-body';
 import { useDestinationCRUD, useDestinationFormData } from '@/hooks';
 import type { ConfiguredDestination, FetchedDestinationTypeItem } from '@/types';
-import { Modal, NavigationButtons, NavigationButtonsProps } from '@odigos/ui-components';
+import { Modal, NavigationButtons, NavigationButtonsProps, Stepper } from '@odigos/ui-components';
 
 interface AddDestinationModalProps {
   isOnboarding?: boolean;
@@ -119,11 +118,11 @@ export const DestinationModal: React.FC<AddDestinationModalProps> = ({ isOnboard
     <Modal isOpen={isOpen} onClose={handleClose} header={{ title: 'Add Destination' }} actionComponent={<NavigationButtons buttons={renderHeaderButtons()} />}>
       <Container>
         <SideMenuWrapper>
-          <SideMenu
+          <Stepper
             currentStep={!!selectedItem ? 2 : 1}
             data={[
-              { stepNumber: 1, title: 'DESTINATIONS', state: 'active' },
-              { stepNumber: 2, title: 'CONNECTION', state: 'disabled' },
+              { stepNumber: 1, title: 'DESTINATIONS' },
+              { stepNumber: 2, title: 'CONNECTION' },
             ]}
           />
         </SideMenuWrapper>

@@ -4,8 +4,10 @@ import React, { type PropsWithChildren } from 'react';
 import dynamic from 'next/dynamic';
 import Theme from '@odigos/ui-theme';
 import { ApolloWrapper } from '@/lib';
+import { LayoutContainer } from '@/styles';
 import { ToastList } from '@odigos/ui-containers';
 import ErrorBoundary from '@/providers/error-boundary';
+
 const ThemeProvider = dynamic(() => import('@/providers/theme-provider'), { ssr: false });
 
 function RootLayout({ children }: PropsWithChildren) {
@@ -33,7 +35,7 @@ function RootLayout({ children }: PropsWithChildren) {
           <ApolloWrapper>
             <ThemeProvider>
               <ToastList />
-              {children}
+              <LayoutContainer>{children}</LayoutContainer>
             </ThemeProvider>
           </ApolloWrapper>
         </ErrorBoundary>

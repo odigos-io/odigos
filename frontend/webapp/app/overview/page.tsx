@@ -1,30 +1,34 @@
 'use client';
+
 import React from 'react';
 import dynamic from 'next/dynamic';
-import styled from 'styled-components';
-import { usePaginatedStore } from '@/store';
+import Theme from '@odigos/ui-theme';
+import { MainContent } from '@/styles';
+import { FORM_ALERTS, SLACK_LINK } from '@/utils';
 import { type SourceInstrumentInput } from '@/types';
-import { DataFlow, DataFlowActionsMenu, MultiSourceControl, Source } from '@odigos/ui-containers';
-import { useActionCRUD, useDestinationCRUD, useInstrumentationRuleCRUD, useMetrics, useNamespace, useSourceCRUD, useSSE, useTokenTracker } from '@/hooks';
+import { usePaginatedStore, useStatusStore } from '@/store';
+import { NOTIFICATION_TYPE, PLATFORM_TYPE } from '@odigos/ui-utils';
+import { OdigosLogoText, SlackLogo, TerminalIcon } from '@odigos/ui-icons';
+import { Header, IconButton, PlatformSelect, Status, Tooltip } from '@odigos/ui-components';
+import { DataFlow, DataFlowActionsMenu, DRAWER_OTHER_TYPES, MultiSourceControl, NotificationManager, Source, useDrawerStore } from '@odigos/ui-containers';
+import { useActionCRUD, useConfig, useDestinationCRUD, useInstrumentationRuleCRUD, useMetrics, useNamespace, useSourceCRUD, useSSE, useTokenTracker } from '@/hooks';
 
-import { MainHeader } from '@/components';
 const AllModals = dynamic(() => import('@/components/overview/all-modals'), { ssr: false });
 const AllDrawers = dynamic(() => import('@/components/overview/all-drawers'), { ssr: false });
 
-const MainContent = styled.div`
-  width: 100%;
-  height: calc(100vh - 176px);
-  position: relative;
-`;
-
-export default function MainPage() {
+export default function Page() {
   // call important hooks that should run on page-mount
   useSSE();
   useTokenTracker();
 
+  const theme = Theme.useTheme();
+
+  const { setDrawerType } = useDrawerStore();
   const { sourcesFetching } = usePaginatedStore();
+  const { status, title, message } = useStatusStore();
 
   const { metrics } = useMetrics();
+  const { data: config } = useConfig();
   const { allNamespaces } = useNamespace();
   const { actions, filteredActions, loading: actLoad } = useActionCRUD();
   const { sources, filteredSources, loading: srcLoad, persistSources } = useSourceCRUD();
@@ -33,7 +37,29 @@ export default function MainPage() {
 
   return (
     <>
-      <MainHeader />
+      <Header
+        left={[
+          <OdigosLogoText size={80} />,
+          <PlatformSelect type={PLATFORM_TYPE.K8S} />,
+          <Status status={status} title={title} subtitle={message} size={14} family='primary' withIcon withBackground />,
+          config?.readonly && (
+            <Tooltip text={FORM_ALERTS.READONLY_WARNING}>
+              <Status status={NOTIFICATION_TYPE.INFO} title='Read Only' size={14} family='primary' withIcon withBackground />
+            </Tooltip>
+          ),
+        ]}
+        right={[
+          <Theme.ToggleDarkMode />,
+          <NotificationManager />,
+          <IconButton onClick={() => setDrawerType(DRAWER_OTHER_TYPES.ODIGOS_CLI)} tooltip='Odigos CLI' withPing pingColor={theme.colors.majestic_blue}>
+            <TerminalIcon size={18} />
+          </IconButton>,
+          <IconButton onClick={() => window.open(SLACK_LINK, '_blank', 'noopener noreferrer')} tooltip='Join our Slack community'>
+            <SlackLogo />
+          </IconButton>,
+        ]}
+      />
+
       <MainContent>
         <DataFlowActionsMenu namespaces={allNamespaces} sources={filteredSources} destinations={filteredDestinations} actions={filteredActions} instrumentationRules={filteredInstrumentationRules} />
         <DataFlow
