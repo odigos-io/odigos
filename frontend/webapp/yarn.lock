@@ -535,15 +535,15 @@
     react-lottie "^1.2.10"
     styled-components "^6.1.15"
 
-"@odigos/ui-containers@^0.0.25":
-  version "0.0.25"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-containers/-/ui-containers-0.0.25.tgz#dd2ed3b9c4246ad0aa4868f3bb6df2220d8ad244"
-  integrity sha512-5tvVI4vyPMpjYEkZWCTbp0W9Gp57vuy5Vb+ApUGEVslQJ5e908v0khbyWcs41tZZHY6XTLnp7OKKtLUJVMO5qw==
+"@odigos/ui-containers@^0.0.26":
+  version "0.0.26"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-containers/-/ui-containers-0.0.26.tgz#a3cce8764bf7340b8743fe1c4d83177fc47b65fe"
+  integrity sha512-UCYxbET3yPqH4MblGYtpahKfGnyZ9YRVteHaJfRc7e5FROknunTNmE/oAC9/QCBkQ3GfNMe6//Qv5+YwLRdbqg==
   dependencies:
     "@odigos/ui-components" "^0.0.57"
     "@odigos/ui-icons" "^0.0.10"
     "@odigos/ui-theme" "^0.0.12"
-    "@odigos/ui-utils" "^0.0.15"
+    "@odigos/ui-utils" "^0.0.19"
     "@xyflow/react" "^12.4.2"
     react "^19.0.0"
     react-dom "^19.0.0"
@@ -580,10 +580,10 @@
     react-dom "^19.0.0"
     styled-components "^6.1.15"
 
-"@odigos/ui-utils@^0.0.15":
-  version "0.0.15"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-utils/-/ui-utils-0.0.15.tgz#49d2f5b7f619987d6cb6389ab63cd4f0e62e89da"
-  integrity sha512-+8T1cluZxB1+rgDsJxijXbU1hFxtd75BjSFlDXLhwvhIM57TfePm48ExSxHinqFjfiJfeiE2GbyfkhXYrq2uZA==
+"@odigos/ui-utils@^0.0.19":
+  version "0.0.19"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-utils/-/ui-utils-0.0.19.tgz#3374401cc6a918ffdf1921163c8e10c9bbec3412"
+  integrity sha512-Eam1dkW/8NN7QJ9NxZGNeJnuBPpt4dQojLkrQwzvUrJNO9hcjNvvq2n7IfAppHK2F+lrQCHYnmLA7sY78AS4oQ==
   dependencies:
     "@odigos/ui-icons" "^0.0.10"
     javascript-time-ago "^2.5.11"

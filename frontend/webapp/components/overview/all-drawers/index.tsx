@@ -1,7 +1,7 @@
 import React from 'react';
+import { SourceDrawer } from '@/containers';
 import { ENTITY_TYPES } from '@odigos/ui-utils';
 import { useDrawerStore } from '@odigos/ui-containers';
-import { DestinationDrawer, SourceDrawer } from '@/containers';
 
 const AllDrawers = () => {
   const { drawerType } = useDrawerStore();
@@ -9,9 +9,6 @@ const AllDrawers = () => {
   switch (drawerType) {
     case ENTITY_TYPES.SOURCE:
       return <SourceDrawer />;
-
-    case ENTITY_TYPES.DESTINATION:
-      return <DestinationDrawer />;
 
     default:
       return null;

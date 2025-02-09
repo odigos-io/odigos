@@ -5,11 +5,12 @@ import { ROUTES } from '@/utils';
 import { useAppStore } from '@/store';
 import Theme, { styled } from '@odigos/ui-theme';
 import { OnboardingStepperWrapper } from '@/styles';
-import { NOTIFICATION_TYPE } from '@odigos/ui-utils';
-import { useDestinationCRUD, useSourceCRUD, useSSE } from '@/hooks';
+import { ENTITY_TYPES, NOTIFICATION_TYPE } from '@odigos/ui-utils';
+import { DestinationModal, useModalStore } from '@odigos/ui-containers';
+import { ConfiguredDestinationsList } from '@/containers';
+import { useDestinationCategories, useDestinationCRUD, usePotentialDestinations, useSourceCRUD, useSSE, useTestConnection } from '@/hooks';
 import { ArrowIcon, OdigosLogoText, PlusIcon } from '@odigos/ui-icons';
-import { ConfiguredDestinationsList, DestinationModal } from '@/containers';
-import { Button, CenterThis, FadeLoader, FlexRow, Header, NavigationButtons, NotificationNote, SectionTitle, Stepper, Text } from '@odigos/ui-components';
+import { Button, CenterThis, FadeLoader, Header, NavigationButtons, NotificationNote, SectionTitle, Stepper, Text } from '@odigos/ui-components';
 
 const ContentWrapper = styled.div`
   width: 640px;
@@ -39,15 +40,21 @@ export default function Page() {
 
   const theme = Theme.useTheme();
   const router = useRouter();
+
+  const { setCurrentModal } = useModalStore();
+  const { addConfiguredDestination } = useAppStore();
+
+  const onOpen = () => setCurrentModal(ENTITY_TYPES.DESTINATION);
+
   const { persistSources } = useSourceCRUD();
+  const { categories } = useDestinationCategories();
   const { createDestination } = useDestinationCRUD();
+  const { data: potentialDestinations } = usePotentialDestinations();
+  const { testConnection, loading: testLoading, data: testResult } = useTestConnection();
   const { configuredSources, configuredFutureApps, configuredDestinations, resetState } = useAppStore();
 
   // we need this state, because "loading" from CRUD hooks is a bit delayed, and allows the user to double-click, as well as see elements render in the UI when they should not be rendered.
   const [isLoading, setIsLoading] = useState(false);
-  const [isModalOpen, setModalOpen] = useState(false);
-  const handleOpenModal = () => setModalOpen(true);
-  const handleCloseModal = () => setModalOpen(false);
 
   const clickBack = () => {
     router.push(ROUTES.CHOOSE_SOURCES);
@@ -126,14 +133,23 @@ export default function Page() {
         )}
 
         <AddDestinationButtonWrapper>
-          <StyledAddDestinationButton variant='secondary' disabled={isLoading} onClick={() => handleOpenModal()}>
+          <StyledAddDestinationButton variant='secondary' disabled={isLoading} onClick={onOpen}>
             <PlusIcon />
             <Text color={theme.colors.secondary} size={14} decoration='underline' family='secondary'>
               ADD DESTINATION
             </Text>
           </StyledAddDestinationButton>
 
-          <DestinationModal isOnboarding isOpen={isModalOpen && !isLoading} onClose={handleCloseModal} />
+          <DestinationModal
+            isOnboarding={true}
+            addConfiguredDestination={addConfiguredDestination}
+            categories={categories}
+            potentialDestinations={potentialDestinations}
+            createDestination={createDestination}
+            testConnection={testConnection}
+            testLoading={testLoading}
+            testResult={testResult}
+          />
         </AddDestinationButtonWrapper>
 
         {isLoading ? (

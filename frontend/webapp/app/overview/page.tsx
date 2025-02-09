@@ -8,20 +8,36 @@ import { MainContent } from '@/styles';
 import { type SourceInstrumentInput } from '@/types';
 import { usePaginatedStore, useStatusStore } from '@/store';
 import { OdigosLogoText, SlackLogo } from '@odigos/ui-icons';
-import { FORM_ALERTS, NOTIFICATION_TYPE, PLATFORM_TYPE } from '@odigos/ui-utils';
 import { Header, IconButton, PlatformSelect, Status, Tooltip } from '@odigos/ui-components';
-import { useActionCRUD, useConfig, useDescribeOdigos, useDestinationCRUD, useInstrumentationRuleCRUD, useMetrics, useNamespace, useSourceCRUD, useSSE, useTokenCRUD, useTokenTracker } from '@/hooks';
+import { FORM_ALERTS, NOTIFICATION_TYPE, PLATFORM_TYPE, type Source } from '@odigos/ui-utils';
+import {
+  useActionCRUD,
+  useConfig,
+  useDescribeOdigos,
+  useDestinationCategories,
+  useDestinationCRUD,
+  useInstrumentationRuleCRUD,
+  useMetrics,
+  useNamespace,
+  usePotentialDestinations,
+  useSourceCRUD,
+  useSSE,
+  useTestConnection,
+  useTokenCRUD,
+  useTokenTracker,
+} from '@/hooks';
 import {
   ActionDrawer,
   ActionModal,
   CliDrawer,
   DataFlow,
   DataFlowActionsMenu,
+  DestinationDrawer,
+  DestinationModal,
   InstrumentationRuleDrawer,
   InstrumentationRuleModal,
   MultiSourceControl,
   NotificationManager,
-  Source,
 } from '@odigos/ui-containers';
 
 const AllModals = dynamic(() => import('@/components/overview/all-modals'), { ssr: false });
@@ -39,9 +55,12 @@ export default function Page() {
   const { data: config } = useConfig();
   const { allNamespaces } = useNamespace();
   const { tokens, updateToken } = useTokenCRUD();
-  const { data: describeOdigos } = useDescribeOdigos();
+  const { categories } = useDestinationCategories();
+  const { data: describeOdigos, isPro } = useDescribeOdigos();
+  const { data: potentialDestinations } = usePotentialDestinations();
   const { sources, filteredSources, loading: srcLoad, persistSources } = useSourceCRUD();
-  const { destinations, filteredDestinations, loading: destLoad } = useDestinationCRUD();
+  const { testConnection, loading: testLoading, data: testResult } = useTestConnection();
+  const { destinations, filteredDestinations, loading: destLoad, createDestination, updateDestination, deleteDestination } = useDestinationCRUD();
   const { actions, filteredActions, loading: actLoad, createAction, updateAction, deleteAction } = useActionCRUD();
   const { instrumentationRules, filteredInstrumentationRules, loading: ruleLoad, createInstrumentationRule, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
 
@@ -67,7 +86,6 @@ export default function Page() {
           </IconButton>,
         ]}
       />
-
       <MainContent>
         <DataFlowActionsMenu namespaces={allNamespaces} sources={filteredSources} destinations={filteredDestinations} actions={filteredActions} instrumentationRules={filteredInstrumentationRules} />
         <DataFlow
@@ -100,10 +118,29 @@ export default function Page() {
         />
       </MainContent>
 
-      <InstrumentationRuleModal isEnterprise={false} createInstrumentationRule={createInstrumentationRule} />
+      <DestinationModal
+        isOnboarding={false}
+        addConfiguredDestination={() => {}}
+        categories={categories}
+        potentialDestinations={potentialDestinations}
+        createDestination={createDestination}
+        testConnection={testConnection}
+        testLoading={testLoading}
+        testResult={testResult}
+      />
+      <InstrumentationRuleModal isEnterprise={isPro} createInstrumentationRule={createInstrumentationRule} />
       <ActionModal createAction={createAction} />
       <AllModals />
 
+      <DestinationDrawer
+        categories={categories}
+        destinations={destinations}
+        updateDestination={updateDestination}
+        deleteDestination={deleteDestination}
+        testConnection={testConnection}
+        testLoading={testLoading}
+        testResult={testResult}
+      />
       <InstrumentationRuleDrawer instrumentationRules={instrumentationRules} updateInstrumentationRule={updateInstrumentationRule} deleteInstrumentationRule={deleteInstrumentationRule} />
       <ActionDrawer actions={actions} updateAction={updateAction} deleteAction={deleteAction} />
       <AllDrawers />

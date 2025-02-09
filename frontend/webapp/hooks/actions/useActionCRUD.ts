@@ -3,9 +3,9 @@ import { useConfig } from '../config';
 import { GET_ACTIONS } from '@/graphql';
 import { useMutation, useQuery } from '@apollo/client';
 import { CREATE_ACTION, DELETE_ACTION, UPDATE_ACTION } from '@/graphql/mutations';
-import { type ComputePlatform, type ActionInput, type FetchedActionSpec } from '@/types';
-import { type Action, ActionFormData, useFilterStore, useNotificationStore } from '@odigos/ui-containers';
-import { ACTION_TYPE, CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE, safeJsonParse, SIGNAL_TYPE } from '@odigos/ui-utils';
+import { type ComputePlatform, type ActionInput, type ParsedActionSpec } from '@/types';
+import { ActionFormData, useFilterStore, useNotificationStore } from '@odigos/ui-containers';
+import { type Action, ACTION_TYPE, CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE, safeJsonParse, SIGNAL_TYPE } from '@odigos/ui-utils';
 
 interface UseActionCrudParams {
   onSuccess?: (type: string) => void;
@@ -58,7 +58,7 @@ export const useActionCRUD = (params?: UseActionCrudParams): UseActionCrudRespon
   // Map fetched data
   const mapped: Action[] = useMemo(() => {
     return (data?.computePlatform?.actions || []).map((item) => {
-      const parsedSpec = typeof item.spec === 'string' ? safeJsonParse(item.spec, {} as FetchedActionSpec) : item.spec;
+      const parsedSpec = typeof item.spec === 'string' ? safeJsonParse(item.spec, {} as ParsedActionSpec) : item.spec;
 
       return {
         ...item,
@@ -69,7 +69,7 @@ export const useActionCRUD = (params?: UseActionCrudParams): UseActionCrudRespon
           renames: parsedSpec.renames,
           piiCategories: parsedSpec.piiCategories,
           fallbackSamplingRatio: parsedSpec.fallback_sampling_ratio,
-          samplingPercentage: parsedSpec.sampling_percentage,
+          samplingPercentage: Number(parsedSpec.sampling_percentage),
           endpointsFilters: parsedSpec.endpoints_filters?.map(({ service_name, http_route, minimum_latency_threshold, fallback_sampling_ratio }) => ({
             serviceName: service_name,
             httpRoute: http_route,

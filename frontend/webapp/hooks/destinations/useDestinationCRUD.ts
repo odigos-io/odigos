@@ -2,10 +2,10 @@ import { useMemo } from 'react';
 import { useConfig } from '../config';
 import { GET_DESTINATIONS } from '@/graphql';
 import { useMutation, useQuery } from '@apollo/client';
+import { type DestinationInput, type ComputePlatform } from '@/types';
+import { useFilterStore, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
 import { CREATE_DESTINATION, DELETE_DESTINATION, UPDATE_DESTINATION } from '@/graphql/mutations';
-import { type DestinationInput, type ComputePlatform, type FetchedDestinationTypeItem } from '@/types';
-import { type Destination, useFilterStore, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
-import { CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE } from '@odigos/ui-utils';
+import { CRUD, type Destination, type DestinationOption, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 
 interface Params {
   onSuccess?: (type: string) => void;
@@ -82,8 +82,7 @@ export const useDestinationCRUD = (params?: Params): UseDestinationCrudResponse 
   // Filter mapped data
   const filtered = useMemo(() => {
     let arr = [...mapped];
-    if (!!filters.monitors.length)
-      arr = arr.filter((destination) => !!filters.monitors.find((metric) => destination.exportedSignals[metric.id as keyof FetchedDestinationTypeItem['supportedSignals']]));
+    if (!!filters.monitors.length) arr = arr.filter((destination) => !!filters.monitors.find((metric) => destination.exportedSignals[metric.id as keyof DestinationOption['supportedSignals']]));
     return arr;
   }, [mapped, filters]);
 

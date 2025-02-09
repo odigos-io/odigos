@@ -29,9 +29,9 @@ export const useTestConnection = () => {
   return {
     loading,
     error,
-    data,
+    data: data?.testConnectionForDestination,
 
-    testConnection: (destination: DestinationInput) => {
+    testConnection: async (destination: DestinationInput) => {
       if (config?.readonly) {
         addNotification({ type: NOTIFICATION_TYPE.WARNING, title: DISPLAY_TITLES.READONLY, message: FORM_ALERTS.READONLY_WARNING, hideFromHistory: true });
       } else {

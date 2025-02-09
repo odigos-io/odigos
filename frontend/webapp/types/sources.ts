@@ -1,5 +1,4 @@
-import { type Source } from '@odigos/ui-containers';
-import { type FetchedCondition } from '@odigos/ui-utils';
+import type { Source, FetchedCondition } from '@odigos/ui-utils';
 
 export interface FetchedSource extends Source {
   conditions: FetchedCondition[] | null;

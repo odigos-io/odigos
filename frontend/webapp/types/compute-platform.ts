@@ -1,9 +1,9 @@
-import { type PaginatedData } from './common';
-import { type FetchedSource } from './sources';
-import { type FetchedAction } from './actions';
-import { type FetchedNamespace } from './namespace';
-import { type InstrumentationRuleSpec } from './instrumentation-rules';
-import { type TokenPayload, type Destination } from '@odigos/ui-containers';
+import type { PaginatedData } from './common';
+import type { FetchedSource } from './sources';
+import type { FetchedAction } from './actions';
+import type { FetchedNamespace } from './namespace';
+import type { InstrumentationRuleSpec } from './instrumentation-rules';
+import type { Destination, TokenPayload } from '@odigos/ui-utils';
 
 export interface ComputePlatform {
   computePlatform: {

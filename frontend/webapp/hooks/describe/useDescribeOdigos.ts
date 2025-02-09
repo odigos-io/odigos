@@ -1,6 +1,6 @@
 import { useQuery } from '@apollo/client';
 import { DESCRIBE_ODIGOS } from '@/graphql';
-import type { DescribeOdigos } from '@odigos/ui-containers';
+import type { DescribeOdigos } from '@odigos/ui-utils';
 
 export const useDescribeOdigos = () => {
   const { data, loading, error } = useQuery<{ describeOdigos: DescribeOdigos }>(DESCRIBE_ODIGOS, {

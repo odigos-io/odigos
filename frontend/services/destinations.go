@@ -17,44 +17,80 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func GetDestinationTypes() model.GetDestinationTypesResponse {
-	var resp model.GetDestinationTypesResponse
-	itemsByCategory := make(map[string][]model.DestinationTypesCategoryItem)
+func GetDestinationCategories() model.GetDestinationCategories {
+	var resp model.GetDestinationCategories
+	itemsByCategory := make(map[string][]*model.DestinationTypesCategoryItem)
+
 	for _, destConfig := range destinations.Get() {
 		item := DestinationTypeConfigToCategoryItem(destConfig)
-		itemsByCategory[destConfig.Metadata.Category] = append(itemsByCategory[destConfig.Metadata.Category], item)
+		itemsByCategory[destConfig.Metadata.Category] = append(itemsByCategory[destConfig.Metadata.Category], &item)
+	}
+
+	descriptions := map[string]string{
+		"managed":     "Effortless Monitoring with Scalable Performance Management",
+		"self hosted": "Full Control and Customization for Advanced Application Monitoring",
 	}
 
 	for category, items := range itemsByCategory {
-		resp.Categories = append(resp.Categories, model.DestinationsCategory{
-			Name:  category,
-			Items: items,
+		resp.Categories = append(resp.Categories, &model.DestinationsCategory{
+			Name:        category,
+			Description: descriptions[category],
+			Items:       items,
 		})
-
 	}
 
 	return resp
+}
 
+func convertCustomReadDataLabels(labels []*destinations.CustomReadDataLabel) []*model.CustomReadDataLabel {
+	var result []*model.CustomReadDataLabel
+	for _, label := range labels {
+		result = append(result, &model.CustomReadDataLabel{
+			Condition: label.Condition,
+			Title:     label.Title,
+			Value:     label.Value,
+		})
+	}
+	return result
 }
 
 func DestinationTypeConfigToCategoryItem(destConfig destinations.Destination) model.DestinationTypesCategoryItem {
+	fields := []*model.DestinationFieldYamlProperties{}
+
+	for _, field := range destConfig.Spec.Fields {
+		componentPropsJSON, err := json.Marshal(field.ComponentProps)
+		if err == nil {
+			fields = append(fields, &model.DestinationFieldYamlProperties{
+				Name:                 field.Name,
+				DisplayName:          field.DisplayName,
+				ComponentType:        field.ComponentType,
+				ComponentProperties:  string(componentPropsJSON),
+				Secret:               field.Secret,
+				InitialValue:         field.InitialValue,
+				RenderCondition:      field.RenderCondition,
+				HideFromReadData:     field.HideFromReadData,
+				CustomReadDataLabels: convertCustomReadDataLabels(field.CustomReadDataLabels),
+			})
+		}
+	}
 
 	return model.DestinationTypesCategoryItem{
 		Type:                    string(destConfig.Metadata.Type),
 		DisplayName:             destConfig.Metadata.DisplayName,
-		ImageUrl:                GetImageURL(destConfig.Spec.Image),
+		ImageURL:                GetImageURL(destConfig.Spec.Image),
 		TestConnectionSupported: destConfig.Spec.TestConnectionSupported,
-		SupportedSignals: model.SupportedSignals{
-			Traces: model.ObservabilitySignalSupport{
+		SupportedSignals: &model.SupportedSignals{
+			Traces: &model.ObservabilitySignalSupport{
 				Supported: destConfig.Spec.Signals.Traces.Supported,
 			},
-			Metrics: model.ObservabilitySignalSupport{
+			Metrics: &model.ObservabilitySignalSupport{
 				Supported: destConfig.Spec.Signals.Metrics.Supported,
 			},
-			Logs: model.ObservabilitySignalSupport{
+			Logs: &model.ObservabilitySignalSupport{
 				Supported: destConfig.Spec.Signals.Logs.Supported,
 			},
 		},
+		Fields: fields,
 	}
 
 }
@@ -166,27 +202,27 @@ func K8sDestinationToEndpointFormat(k8sDest v1alpha1.Destination, secretFields m
 		fieldsJSON = []byte("{}") // Set to an empty JSON object in case of error
 	}
 
-	var conditions []metav1.Condition
+	var conditions []*model.Condition
 	for _, condition := range k8sDest.Status.Conditions {
-		conditions = append(conditions, metav1.Condition{
+		conditions = append(conditions, &model.Condition{
 			Type:               condition.Type,
-			Status:             condition.Status,
-			Message:            condition.Message,
-			LastTransitionTime: condition.LastTransitionTime,
+			Status:             model.ConditionStatus(condition.Status),
+			Message:            &condition.Message,
+			LastTransitionTime: func(s string) *string { return &s }(condition.LastTransitionTime.String()),
 		})
 	}
 
 	return model.Destination{
-		Id:   k8sDest.Name,
+		ID:   k8sDest.Name,
 		Name: destName,
-		Type: destType,
-		ExportedSignals: model.ExportedSignals{
+		Type: string(destType),
+		ExportedSignals: &model.ExportedSignals{
 			Traces:  isSignalExported(k8sDest, common.TracesObservabilitySignal),
 			Metrics: isSignalExported(k8sDest, common.MetricsObservabilitySignal),
 			Logs:    isSignalExported(k8sDest, common.LogsObservabilitySignal),
 		},
 		Fields:          string(fieldsJSON),
-		DestinationType: destTypeConfig,
+		DestinationType: &destTypeConfig,
 		Conditions:      conditions,
 	}
 }
