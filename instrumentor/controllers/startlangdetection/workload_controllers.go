@@ -79,7 +79,7 @@ func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind k8s
 	}
 
 	cond := metav1.Condition{
-		Type:    odigosv1.WorkloadInstrumentationStatusConditionType,
+		Type:    odigosv1.MarkedForInstrumentationStatusConditionType,
 		Status:  metav1.ConditionTrue, // if instrumentation config is created, it is always instrumented.
 		Reason:  string(reason),
 		Message: message,

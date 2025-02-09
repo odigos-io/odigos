@@ -22,8 +22,8 @@ type InstrumentationConfig struct {
 
 // conditions for the InstrumentationConfigStatus
 const (
-	// Define a status condition type that describes why the workload is instrumented.
-	WorkloadInstrumentationStatusConditionType = "WorkloadInstrumentation"
+	// Define a status condition type that describes why the workload is marked for instrumentation or not.
+	MarkedForInstrumentationStatusConditionType = "MarkedForInstrumentation"
 	// Describe the runtime detection status of this workload.
 	RuntimeDetectionStatusConditionType = "RuntimeDetection" // TODO: placeholder, not yet implemented
 	// this const is the Type field in the conditions of the InstrumentationConfigStatus.
@@ -35,7 +35,7 @@ const (
 
 func StatusConditionTypeLogicalOrder(condType string) int {
 	switch condType {
-	case WorkloadInstrumentationStatusConditionType:
+	case MarkedForInstrumentationStatusConditionType:
 		return 1
 	case RuntimeDetectionStatusConditionType:
 		// TODO: placeholder, not yet implemented
