@@ -35,7 +35,7 @@ export const useTestConnection = () => {
       if (config?.readonly) {
         addNotification({ type: NOTIFICATION_TYPE.WARNING, title: DISPLAY_TITLES.READONLY, message: FORM_ALERTS.READONLY_WARNING, hideFromHistory: true });
       } else {
-        testConnectionMutation({ variables: { destination } });
+        testConnectionMutation({ variables: { destination: { ...destination, fields: destination.fields.map((f) => ({ ...f, value: f.value || '' })) } } });
       }
     },
   };
