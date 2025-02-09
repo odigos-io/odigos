@@ -62,6 +62,9 @@ func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind k8s
 
 	instConfigName := workload.CalculateWorkloadRuntimeObjectName(req.Name, objKind)
 	err = requestOdigletsToCalculateRuntimeDetails(ctx, k8sClient, instConfigName, req.Namespace, obj, scheme)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	// update the status with the reason
 	ic := odigosv1.InstrumentationConfig{}
