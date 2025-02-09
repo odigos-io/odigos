@@ -14,7 +14,7 @@
     "@apollo/client": "^3.12.11",
     "@apollo/experimental-nextjs-app-support": "^0.11.8",
     "@odigos/ui-components": "^0.0.57",
-    "@odigos/ui-containers": "^0.0.26",
+    "@odigos/ui-containers": "^0.0.28",
     "@odigos/ui-icons": "^0.0.10",
     "@odigos/ui-theme": "^0.0.12",
     "@odigos/ui-utils": "^0.0.19",

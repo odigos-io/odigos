@@ -1,20 +1,42 @@
 import React from 'react';
-import { ENTITY_TYPES } from '@odigos/ui-utils';
-import { AddSourceModal, SourceDrawer } from '@/containers';
-import { useActionCRUD, useDescribeOdigos, useDestinationCategories, useDestinationCRUD, useInstrumentationRuleCRUD, usePotentialDestinations, useTestConnection } from '@/hooks';
-import { ActionDrawer, ActionModal, DestinationDrawer, DestinationModal, InstrumentationRuleDrawer, InstrumentationRuleModal, useDrawerStore, useModalStore } from '@odigos/ui-containers';
+import { AddSourceModal } from '@/containers';
+import { ENTITY_TYPES, type WorkloadId } from '@odigos/ui-utils';
+import {
+  ActionDrawer,
+  ActionModal,
+  DestinationDrawer,
+  DestinationModal,
+  InstrumentationRuleDrawer,
+  InstrumentationRuleModal,
+  SourceDrawer,
+  useDrawerStore,
+  useModalStore,
+} from '@odigos/ui-containers';
+import {
+  useActionCRUD,
+  useDescribeOdigos,
+  useDescribeSource,
+  useDestinationCategories,
+  useDestinationCRUD,
+  useInstrumentationRuleCRUD,
+  usePotentialDestinations,
+  useSourceCRUD,
+  useTestConnection,
+} from '@/hooks';
 
 const OverviewModalsAndDrawers = () => {
-  const { drawerType } = useDrawerStore();
+  const { drawerEntityId } = useDrawerStore();
   const { currentModal, setCurrentModal } = useModalStore();
   const handleClose = () => setCurrentModal('');
 
   const { isPro } = useDescribeOdigos();
   const { categories } = useDestinationCategories();
   const { potentialDestinations } = usePotentialDestinations();
+  const { sources, persistSources, updateSource } = useSourceCRUD();
   const { actions, createAction, updateAction, deleteAction } = useActionCRUD();
   const { data: testResult, loading: testLoading, testConnection } = useTestConnection();
   const { destinations, createDestination, updateDestination, deleteDestination } = useDestinationCRUD();
+  const { data: describeSource } = useDescribeSource(typeof drawerEntityId === 'object' ? (drawerEntityId as WorkloadId) : undefined);
   const { instrumentationRules, createInstrumentationRule, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
 
   return (
@@ -35,7 +57,7 @@ const OverviewModalsAndDrawers = () => {
       <ActionModal createAction={createAction} />
 
       {/* drawers */}
-      {drawerType === ENTITY_TYPES.SOURCE && <SourceDrawer />}
+      <SourceDrawer sources={sources} persistSources={persistSources} updateSource={updateSource} describe={describeSource} />
       <DestinationDrawer
         categories={categories}
         destinations={destinations}
