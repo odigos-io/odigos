@@ -135,8 +135,6 @@ spec:
     spec:
       containers:
         - name: data-collection
-          securityContext:
-            privileged: true
           volumeMounts:
             - mountPath: /conf
               name: conf
