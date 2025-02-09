@@ -10,7 +10,6 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
-	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -31,12 +30,14 @@ const requeueWaitingForWorkloadRollout = 10 * time.Second
 //
 // If a rollout is triggered the status of the instrumentation config is updated with the new rollout hash
 // and a corresponding condition is set.
-func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.InstrumentationConfig, pw k8sconsts.PodWorkload) (ctrl.Result, error) {
+//
+// Returns a boolean indicating if the status of the instrumentation config has changed, a ctrl.Result and an error.
+func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.InstrumentationConfig, pw k8sconsts.PodWorkload) (bool, ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	workloadObj := workload.ClientObjectFromWorkloadKind(pw.Kind)
 	err := c.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, workloadObj)
 	if err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return false, ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	if ic == nil {
@@ -44,33 +45,30 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		// this should happen once per workload, as the instrumentation config is deleted
 		// and we want to rollout the workload to remove the instrumentation
 		rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, time.Now())
-		return ctrl.Result{}, client.IgnoreNotFound(rolloutErr)
+		return false, ctrl.Result{}, client.IgnoreNotFound(rolloutErr)
 	}
 
 	savedRolloutHash := ic.Status.WorkloadRolloutHash
 	newRolloutHash, err := configHash(ic)
 	if err != nil {
 		logger.Error(err, "error calculating rollout hash")
-		return ctrl.Result{}, nil
+		return false, ctrl.Result{}, nil
 	}
 
 	if savedRolloutHash == newRolloutHash {
-		return ctrl.Result{}, nil
+		return false, ctrl.Result{}, nil
 	}
 
 	// if a rollout is ongoing, wait for it to finish, requeue
+	statusChanged := false
 	if !isWorkloadRolloutDone(workloadObj) {
-		meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
+		statusChanged = meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
 			Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
 			Status:  metav1.ConditionFalse,
 			Reason:  string(odigosv1alpha1.WorkloadRolloutReasonPreviousRolloutOngoing),
 			Message: "waiting for workload rollout to finish before triggering a new one",
 		})
-		err = c.Status().Update(ctx, ic)
-		if err != nil {
-			logger.Error(err, "error updating instrumentation config status")
-		}
-		return ctrl.Result{RequeueAfter: requeueWaitingForWorkloadRollout}, nil
+		return statusChanged, ctrl.Result{RequeueAfter: requeueWaitingForWorkloadRollout}, nil
 	}
 
 	rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, time.Now())
@@ -80,8 +78,9 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 
 	ic.Status.WorkloadRolloutHash = newRolloutHash
 	meta.SetStatusCondition(&ic.Status.Conditions, rolloutCondition(rolloutErr))
-	err = c.Status().Update(ctx, ic)
-	return utils.K8SUpdateErrorHandler(err)
+
+	// at this point, the hashes are different, notify the caller the status has changed
+	return true, ctrl.Result{}, nil
 }
 
 // RolloutRestartWorkload restarts the given workload by patching its template annotations.
