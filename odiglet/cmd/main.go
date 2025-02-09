@@ -5,6 +5,8 @@ import (
 
 	"github.com/odigos-io/odigos/odiglet"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf/sdks"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 
 	"github.com/odigos-io/odigos/common"
 	commonInstrumentation "github.com/odigos-io/odigos/instrumentation"
@@ -18,9 +20,19 @@ import (
 )
 
 func main() {
+	// Init Kubernetes clientset
+	cfg, err := rest.InClusterConfig()
+	if err != nil {
+		panic(err)
+	}
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		panic(err)
+	}
+
 	// If started in init mode
 	if len(os.Args) == 2 && os.Args[1] == "init" {
-		odiglet.OdigletInitPhase()
+		odiglet.OdigletInitPhase(clientset)
 	}
 
 	if err := log.Init(); err != nil {
@@ -35,7 +47,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	o, err := odiglet.New(deviceInjectionCallbacks(), ebpfInstrumentationFactories())
+	o, err := odiglet.New(clientset, deviceInjectionCallbacks(), ebpfInstrumentationFactories())
 	if err != nil {
 		log.Logger.Error(err, "Failed to initialize odiglet")
 		os.Exit(1)
