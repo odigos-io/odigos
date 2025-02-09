@@ -1,4 +1,4 @@
-package utils
+package startlangdetection
 
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -7,7 +7,7 @@ import (
 
 // Checks if the conditions array in the status is currently sorted by logical order
 // this can be used to check if sorting is needed.
-func AreConditionsLogicallySorted(conditions []metav1.Condition) bool {
+func areConditionsLogicallySorted(conditions []metav1.Condition) bool {
 	var lastTypeLogicalOrder int = 0
 	for _, condition := range conditions {
 		currentLogicalOrder := odigosv1.StatusConditionTypeLogicalOrder(condition.Type)
@@ -20,7 +20,7 @@ func AreConditionsLogicallySorted(conditions []metav1.Condition) bool {
 }
 
 // giving the input conditions array, this function will return a new array with the conditions sorted by logical order
-func SortIcConditionsByLogicalOrder(conditions []metav1.Condition) []metav1.Condition {
+func sortIcConditionsByLogicalOrder(conditions []metav1.Condition) []metav1.Condition {
 	conditionsByLogicalOrder := make(map[int]metav1.Condition, len(conditions))
 	maxLogicalOrder := 0
 	for _, condition := range conditions {
