@@ -1,47 +1,14 @@
 'use client';
 
 import React from 'react';
-import dynamic from 'next/dynamic';
-import Theme from '@odigos/ui-theme';
-import { SLACK_LINK } from '@/utils';
 import { MainContent } from '@/styles';
-import { type SourceInstrumentInput } from '@/types';
-import { usePaginatedStore, useStatusStore } from '@/store';
-import { OdigosLogoText, SlackLogo } from '@odigos/ui-icons';
-import { Header, IconButton, PlatformSelect, Status, Tooltip } from '@odigos/ui-components';
-import { FORM_ALERTS, NOTIFICATION_TYPE, PLATFORM_TYPE, type Source } from '@odigos/ui-utils';
-import {
-  useActionCRUD,
-  useConfig,
-  useDescribeOdigos,
-  useDestinationCategories,
-  useDestinationCRUD,
-  useInstrumentationRuleCRUD,
-  useMetrics,
-  useNamespace,
-  usePotentialDestinations,
-  useSourceCRUD,
-  useSSE,
-  useTestConnection,
-  useTokenCRUD,
-  useTokenTracker,
-} from '@/hooks';
-import {
-  ActionDrawer,
-  ActionModal,
-  CliDrawer,
-  DataFlow,
-  DataFlowActionsMenu,
-  DestinationDrawer,
-  DestinationModal,
-  InstrumentationRuleDrawer,
-  InstrumentationRuleModal,
-  MultiSourceControl,
-  NotificationManager,
-} from '@odigos/ui-containers';
-
-const AllModals = dynamic(() => import('@/components/overview/all-modals'), { ssr: false });
-const AllDrawers = dynamic(() => import('@/components/overview/all-drawers'), { ssr: false });
+import { usePaginatedStore } from '@/store';
+import type { Source } from '@odigos/ui-utils';
+import type { SourceInstrumentInput } from '@/types';
+import OverviewHeader from '@/components/lib-imports/overview-header';
+import { DataFlow, DataFlowActionsMenu, MultiSourceControl } from '@odigos/ui-containers';
+import OverviewModalsAndDrawers from '@/components/lib-imports/overview-modals-and-drawers';
+import { useActionCRUD, useDestinationCRUD, useInstrumentationRuleCRUD, useMetrics, useNamespace, useSourceCRUD, useSSE, useTokenTracker } from '@/hooks';
 
 export default function Page() {
   // call important hooks that should run on page-mount
@@ -49,43 +16,17 @@ export default function Page() {
   useTokenTracker();
 
   const { sourcesFetching } = usePaginatedStore();
-  const { status, title, message } = useStatusStore();
 
   const { metrics } = useMetrics();
-  const { data: config } = useConfig();
   const { allNamespaces } = useNamespace();
-  const { tokens, updateToken } = useTokenCRUD();
-  const { categories } = useDestinationCategories();
-  const { data: describeOdigos, isPro } = useDescribeOdigos();
-  const { data: potentialDestinations } = usePotentialDestinations();
+  const { actions, filteredActions, loading: actLoad } = useActionCRUD();
   const { sources, filteredSources, loading: srcLoad, persistSources } = useSourceCRUD();
-  const { testConnection, loading: testLoading, data: testResult } = useTestConnection();
-  const { destinations, filteredDestinations, loading: destLoad, createDestination, updateDestination, deleteDestination } = useDestinationCRUD();
-  const { actions, filteredActions, loading: actLoad, createAction, updateAction, deleteAction } = useActionCRUD();
-  const { instrumentationRules, filteredInstrumentationRules, loading: ruleLoad, createInstrumentationRule, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
+  const { destinations, filteredDestinations, loading: destLoad } = useDestinationCRUD();
+  const { instrumentationRules, filteredInstrumentationRules, loading: ruleLoad } = useInstrumentationRuleCRUD();
 
   return (
     <>
-      <Header
-        left={[
-          <OdigosLogoText key='logo' size={80} />,
-          <PlatformSelect key='platform' type={PLATFORM_TYPE.K8S} />,
-          <Status key='status' status={status} title={title} subtitle={message} size={14} family='primary' withIcon withBackground />,
-          config?.readonly && (
-            <Tooltip key='readonly' text={FORM_ALERTS.READONLY_WARNING}>
-              <Status status={NOTIFICATION_TYPE.INFO} title='Read Only' size={14} family='primary' withIcon withBackground />
-            </Tooltip>
-          ),
-        ]}
-        right={[
-          <Theme.ToggleDarkMode key='toggle-theme' />,
-          <NotificationManager key='notifs' />,
-          <CliDrawer key='cli' tokens={tokens} saveToken={updateToken} describe={describeOdigos} />,
-          <IconButton key='slack' onClick={() => window.open(SLACK_LINK, '_blank', 'noopener noreferrer')} tooltip='Join our Slack community'>
-            <SlackLogo />
-          </IconButton>,
-        ]}
-      />
+      <OverviewHeader />
       <MainContent>
         <DataFlowActionsMenu namespaces={allNamespaces} sources={filteredSources} destinations={filteredDestinations} actions={filteredActions} instrumentationRules={filteredInstrumentationRules} />
         <DataFlow
@@ -117,33 +58,7 @@ export default function Page() {
           }}
         />
       </MainContent>
-
-      <DestinationModal
-        isOnboarding={false}
-        addConfiguredDestination={() => {}}
-        categories={categories}
-        potentialDestinations={potentialDestinations}
-        createDestination={createDestination}
-        testConnection={testConnection}
-        testLoading={testLoading}
-        testResult={testResult}
-      />
-      <InstrumentationRuleModal isEnterprise={isPro} createInstrumentationRule={createInstrumentationRule} />
-      <ActionModal createAction={createAction} />
-      <AllModals />
-
-      <DestinationDrawer
-        categories={categories}
-        destinations={destinations}
-        updateDestination={updateDestination}
-        deleteDestination={deleteDestination}
-        testConnection={testConnection}
-        testLoading={testLoading}
-        testResult={testResult}
-      />
-      <InstrumentationRuleDrawer instrumentationRules={instrumentationRules} updateInstrumentationRule={updateInstrumentationRule} deleteInstrumentationRule={deleteInstrumentationRule} />
-      <ActionDrawer actions={actions} updateAction={updateAction} deleteAction={deleteAction} />
-      <AllDrawers />
+      <OverviewModalsAndDrawers />
     </>
   );
 }

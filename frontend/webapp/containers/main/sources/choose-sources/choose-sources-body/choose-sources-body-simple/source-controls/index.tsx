@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { SearchIcon } from '@odigos/ui-icons';
-import { NamespaceDropdown } from '@/components';
+import { NamespaceDropdown } from '@/components/common';
 import { type UseSourceFormDataResponse } from '@/hooks';
 import { Badge, Checkbox, Divider, Input, SectionTitle, Text, Toggle } from '@odigos/ui-components';
 

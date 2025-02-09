@@ -76,6 +76,6 @@ export const usePotentialDestinations = () => {
   return {
     loading,
     error,
-    data: mappedPotentialDestinations,
+    potentialDestinations: mappedPotentialDestinations,
   };
 };

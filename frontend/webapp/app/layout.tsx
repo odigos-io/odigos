@@ -6,9 +6,9 @@ import Theme from '@odigos/ui-theme';
 import { ApolloWrapper } from '@/lib';
 import { LayoutContainer } from '@/styles';
 import { ToastList } from '@odigos/ui-containers';
-import ErrorBoundary from '@/providers/error-boundary';
+import ErrorBoundary from '@/components/providers/error-boundary';
 
-const ThemeProvider = dynamic(() => import('@/providers/theme-provider'), { ssr: false });
+const ThemeProvider = dynamic(() => import('@/components/providers/theme-provider'), { ssr: false });
 
 function RootLayout({ children }: PropsWithChildren) {
   const { darkMode } = Theme.useDarkMode();
