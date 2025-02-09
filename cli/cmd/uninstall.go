@@ -218,10 +218,11 @@ func getWorkloadRolloutJsonPatch(obj kube.Object, pts *v1.PodTemplateSpec) ([]by
 			})
 		}
 	}
-	if _, found := pts.ObjectMeta.Labels[k8sconsts.OdigosInjectInstrumentationLabel]; found {
+	odigosInjectInstrumentationLabel := "odigos.io/inject-instrumentation"
+	if _, found := pts.ObjectMeta.Labels[odigosInjectInstrumentationLabel]; found {
 		patchOperations = append(patchOperations, map[string]interface{}{
 			"op":   "remove",
-			"path": "/spec/template/metadata/labels/" + jsonPatchEscapeKey(k8sconsts.OdigosInjectInstrumentationLabel),
+			"path": "/spec/template/metadata/labels/" + jsonPatchEscapeKey(odigosInjectInstrumentationLabel),
 		})
 	}
 

@@ -5,15 +5,17 @@ export interface SourceContainer {
   containerName: string;
   language: PROGRAMMING_LANGUAGES;
   runtimeVersion: string;
-  otherAgent: string | null;
+  instrumented: boolean;
+  instrumentationMessage: string;
+  otelDistroName: string | null;
 }
 
 export interface K8sActualSource extends WorkloadId {
   selected: boolean;
   numberOfInstances?: number;
   otelServiceName: string;
-  containers: Array<SourceContainer>;
-  conditions: Array<Condition> | null;
+  containers: SourceContainer[];
+  conditions: Condition[] | null;
 }
 
 export interface PatchSourceRequestInput {

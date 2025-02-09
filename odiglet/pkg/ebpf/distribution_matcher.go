@@ -15,7 +15,7 @@ type podDeviceDistributionMatcher struct{}
 func (dm *podDeviceDistributionMatcher) Distribution(ctx context.Context, e K8sProcessDetails) (instrumentation.OtelDistribution, error) {
 	// get the language and sdk for this process event
 	// based on the pod spec and the container name from the process event
-	lang, sdk, err := odgiosK8s.LanguageSdkFromPodContainer(e.pod, e.containerName)
+	lang, sdk, err := odgiosK8s.LanguageAndSdk(e.pod, e.containerName, e.distroName)
 	if err != nil {
 		return instrumentation.OtelDistribution{}, fmt.Errorf("failed to get language and sdk: %w", err)
 	}

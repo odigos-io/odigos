@@ -3,6 +3,7 @@ package watchers
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -11,6 +12,8 @@ import (
 	"github.com/odigos-io/odigos/frontend/services/sse"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/tools/cache"
+	toolsWatch "k8s.io/client-go/tools/watch"
 )
 
 var destinationAddedEventBatcher *EventBatcher
@@ -63,9 +66,11 @@ func StartDestinationWatcher(ctx context.Context, namespace string) error {
 		},
 	)
 
-	watcher, err := kube.DefaultClient.OdigosClient.Destinations(namespace).Watch(context.Background(), metav1.ListOptions{})
+	watcher, err := toolsWatch.NewRetryWatcher("1", &cache.ListWatch{WatchFunc: func(_ metav1.ListOptions) (watch.Interface, error) {
+		return kube.DefaultClient.OdigosClient.Destinations(namespace).Watch(ctx, metav1.ListOptions{})
+	}})
 	if err != nil {
-		return fmt.Errorf("error creating watcher: %v", err)
+		return fmt.Errorf("error creating destinations watcher: %v", err)
 	}
 
 	go handleDestinationWatchEvents(ctx, watcher)
@@ -84,6 +89,7 @@ func handleDestinationWatchEvents(ctx context.Context, watcher watch.Interface) 
 			return
 		case event, ok := <-ch:
 			if !ok {
+				log.Println("Destination watcher closed")
 				return
 			}
 			switch event.Type {
