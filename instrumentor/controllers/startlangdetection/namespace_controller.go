@@ -34,5 +34,5 @@ func (n *NamespacesReconciler) Reconcile(ctx context.Context, request ctrl.Reque
 	}
 
 	logger.V(0).Info("Namespace enabled for instrumentation, recalculating runtime details of relevant workloads")
-	return ctrl.Result{}, syncNamespaceWorkloads(ctx, n.Client, n.Scheme, ns.GetName())
+	return syncNamespaceWorkloads(ctx, n.Client, n.Scheme, ns.GetName())
 }

@@ -13,7 +13,9 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
@@ -45,6 +47,9 @@ func (r *StatefulSetReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 }
 
 func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind k8sconsts.WorkloadKind, req ctrl.Request, scheme *runtime.Scheme) (ctrl.Result, error) {
+
+	logger := log.FromContext(ctx)
+
 	obj := workload.ClientObjectFromWorkloadKind(objKind)
 	err := getWorkloadObject(ctx, k8sClient, req, obj)
 	if err != nil {
@@ -61,16 +66,17 @@ func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind k8s
 	}
 
 	instConfigName := workload.CalculateWorkloadRuntimeObjectName(req.Name, objKind)
-	err = requestOdigletsToCalculateRuntimeDetails(ctx, k8sClient, instConfigName, req.Namespace, obj, scheme)
+	ic, err := requestOdigletsToCalculateRuntimeDetails(ctx, k8sClient, instConfigName, req.Namespace, obj, scheme)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	// update the status with the reason
-	ic := odigosv1.InstrumentationConfig{}
-	err = k8sClient.Get(ctx, types.NamespacedName{Name: instConfigName, Namespace: req.Namespace}, &ic)
-	if err != nil {
-		return ctrl.Result{}, err
+	if ic == nil {
+		ic = &odigosv1.InstrumentationConfig{}
+		err = k8sClient.Get(ctx, types.NamespacedName{Name: instConfigName, Namespace: req.Namespace}, ic)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	cond := metav1.Condition{
@@ -81,9 +87,14 @@ func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind k8s
 	}
 	statuschanged := meta.SetStatusCondition(&ic.Status.Conditions, cond)
 	if statuschanged {
-		err = k8sClient.Status().Update(ctx, &ic)
+		logger.Info("Updating initial status conditions of InstrumentationConfig", "name", instConfigName, "namespace", req.Namespace)
+		if !utils.AreConditionsLogicallySorted(ic.Status.Conditions) {
+			ic.Status.Conditions = utils.SortConditions(ic.Status.Conditions)
+		}
+		err = k8sClient.Status().Update(ctx, ic)
 		if err != nil {
-			return ctrl.Result{}, err
+			logger.Info("Failed to update status conditions of InstrumentationConfig", "name", instConfigName, "namespace", req.Namespace)
+			return k8sutils.K8SUpdateErrorHandler(err)
 		}
 	}
 
@@ -94,9 +105,9 @@ func getWorkloadObject(ctx context.Context, k8sClient client.Client, req ctrl.Re
 	return k8sClient.Get(ctx, types.NamespacedName{Name: req.Name, Namespace: req.Namespace}, obj)
 }
 
-func requestOdigletsToCalculateRuntimeDetails(ctx context.Context, k8sClient client.Client, instConfigName string, namespace string, obj client.Object, scheme *runtime.Scheme) error {
+func requestOdigletsToCalculateRuntimeDetails(ctx context.Context, k8sClient client.Client, instConfigName string, namespace string, obj client.Object, scheme *runtime.Scheme) (*odigosv1.InstrumentationConfig, error) {
 	logger := log.FromContext(ctx)
-	instConfig := &odigosv1.InstrumentationConfig{
+	instConfig := odigosv1.InstrumentationConfig{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "odigos.io/v1alpha1",
 			Kind:       "InstrumentationConfig",
@@ -109,23 +120,23 @@ func requestOdigletsToCalculateRuntimeDetails(ctx context.Context, k8sClient cli
 
 	serviceName, err := sourceutils.OtelServiceNameBySource(ctx, k8sClient, obj)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if serviceName != "" {
 		instConfig.Spec.ServiceName = serviceName
 	}
 
-	if err := ctrl.SetControllerReference(obj, instConfig, scheme); err != nil {
+	if err := ctrl.SetControllerReference(obj, &instConfig, scheme); err != nil {
 		logger.Error(err, "Failed to set controller reference", "name", instConfigName, "namespace", namespace)
-		return err
+		return nil, err
 	}
 
-	err = k8sClient.Create(ctx, instConfig)
+	err = k8sClient.Create(ctx, &instConfig)
 	if err != nil {
-		return client.IgnoreAlreadyExists(err)
+		return nil, client.IgnoreAlreadyExists(err)
 	}
 
 	logger.V(0).Info("Requested calculation of runtime details from odiglets", "name", instConfigName, "namespace", namespace)
-	return nil
+	return &instConfig, nil
 }

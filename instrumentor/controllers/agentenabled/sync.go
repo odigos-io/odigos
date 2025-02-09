@@ -81,7 +81,7 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 		return ctrl.Result{}, err
 	}
 
-	logger.Info("Reconciling workload for InstrumentationConfig object agent enabling", "name", ic.Name, "namespace", ic.Namespace, "instrumentationConfig", ic)
+	logger.Info("Reconciling workload for InstrumentationConfig object agent enabling", "name", ic.Name, "namespace", ic.Namespace, "instrumentationConfigName", ic.Name)
 
 	condition, err := updateInstrumentationConfigSpec(ctx, c, pw, &ic)
 	if err != nil {

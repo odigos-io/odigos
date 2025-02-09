@@ -24,12 +24,30 @@ type InstrumentationConfig struct {
 const (
 	// Define a status condition type that describes why the workload is instrumented.
 	WorkloadInstrumentationStatusConditionType = "WorkloadInstrumentation"
+	// Describe the runtime detection status of this workload.
+	RuntimeDetectionStatusConditionType = "RuntimeDetection" // TODO: placeholder, not yet implemented
 	// this const is the Type field in the conditions of the InstrumentationConfigStatus.
 	AgentEnabledStatusConditionType = "AgentEnabled"
 	// reports whether the workload associated with the InstrumentationConfig has been rolled out.
 	// the rollout is needed to update the instrumentation done by the Pods webhook.
 	WorkloadRolloutStatusConditionType = "WorkloadRollout"
 )
+
+func StatusConditionTypeLogicalOrder(condType string) int {
+	switch condType {
+	case WorkloadInstrumentationStatusConditionType:
+		return 1
+	case RuntimeDetectionStatusConditionType:
+		// TODO: placeholder, not yet implemented
+		return 2
+	case AgentEnabledStatusConditionType:
+		return 3
+	case WorkloadRolloutStatusConditionType:
+		return 4
+	default:
+		return 5
+	}
+}
 
 // +kubebuilder:validation:Enum=EnabledSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;UnsupportedProgrammingLanguage;IgnoredContainer;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected
 type AgentEnabledReason string
