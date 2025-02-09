@@ -27,6 +27,11 @@ func (dr *k8sDetailsResolver) Resolve(ctx context.Context, event detector.Proces
 		return K8sProcessDetails{}, errContainerNameNotReported
 	}
 
+	distroName, found := distroNameFromProcEvent(event)
+	if !found {
+		// TODO: this is ok for migration period. Once device is removed, this should be an error
+	}
+
 	podWorkload, err := workload.PodWorkloadObjectOrError(ctx, pod)
 	if err != nil {
 		return K8sProcessDetails{}, fmt.Errorf("failed to find workload object from pod manifest owners references: %w", err)
@@ -35,6 +40,7 @@ func (dr *k8sDetailsResolver) Resolve(ctx context.Context, event detector.Proces
 	return K8sProcessDetails{
 		pod:           pod,
 		containerName: containerName,
+		distroName:    distroName,
 		pw:            podWorkload,
 		procEvent:     event,
 	}, nil
@@ -65,6 +71,11 @@ func (dr *k8sDetailsResolver) podFromProcEvent(ctx context.Context, e detector.P
 func containerNameFromProcEvent(event detector.ProcessEvent) (string, bool) {
 	containerName, ok := event.ExecDetails.Environments[k8sconsts.OdigosEnvVarContainerName]
 	return containerName, ok
+}
+
+func distroNameFromProcEvent(event detector.ProcessEvent) (string, bool) {
+	distronName, ok := event.ExecDetails.Environments[k8sconsts.OdigosEnvVarDistroName]
+	return distronName, ok
 }
 
 type k8sConfigGroupResolver struct{}

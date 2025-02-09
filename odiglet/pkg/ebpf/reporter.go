@@ -20,6 +20,7 @@ import (
 type K8sProcessDetails struct {
 	pod           *corev1.Pod
 	containerName string
+	distroName    string
 	pw            *k8sconsts.PodWorkload
 	procEvent     detector.ProcessEvent
 }

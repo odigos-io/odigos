@@ -4,14 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/distros"
-	"github.com/odigos-io/odigos/distros/distro"
+	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/podswebhook"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	podutils "github.com/odigos-io/odigos/instrumentor/internal/pod"
 	webhookdeviceinjector "github.com/odigos-io/odigos/instrumentor/internal/webhook_device_injector"
@@ -19,8 +18,6 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/sdks"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	"go.opentelemetry.io/otel/attribute"
-	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -29,14 +26,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
-
-const otelServiceNameEnvVarName = "OTEL_SERVICE_NAME"
-const otelResourceAttributesEnvVarName = "OTEL_RESOURCE_ATTRIBUTES"
-
-type resourceAttribute struct {
-	Key   attribute.Key
-	Value string
-}
 
 type PodsWebhook struct {
 	client.Client
@@ -80,6 +69,13 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		return nil
 	}
 
+	// this is temporary and should be refactored so the service name and other resource attributes are written to agent config
+	serviceName := p.getServiceNameForEnv(ctx, logger, pw)
+	if serviceName == nil || *serviceName == "" {
+		logger.Error(errors.New("failed to get service name for pod"), "Skipping Injection of ODIGOS agent")
+		return nil
+	}
+
 	// Add odiglet installed node-affinity to the pod
 	podutils.AddOdigletInstalledAffinity(pod)
 
@@ -92,7 +88,12 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 			continue
 		}
 
-		containerVolumeMounted, err := injectOdigosToContainer(containerConfig, podContainerSpec)
+		if !containerConfig.AgentEnabled || containerConfig.OtelDistroName == "" {
+			// container config exists, but no agent should be injected by webhook to this container
+			continue
+		}
+
+		containerVolumeMounted, err := injectOdigosToContainer(containerConfig, podContainerSpec, *pw, *serviceName)
 		if err != nil {
 			logger.Error(err, "failed to inject ODIGOS agent to container")
 			continue
@@ -102,7 +103,7 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 
 	if volumeMounted {
 		// only mount the volume if at least one container has a volume to mount
-		mountPodVolume(pod)
+		podswebhook.MountPodVolume(pod)
 	}
 
 	// Inject ODIGOS environment variables and instrumentation device into all containers
@@ -148,16 +149,11 @@ func (p *PodsWebhook) podWorkload(ctx context.Context, pod *corev1.Pod) (*k8scon
 
 func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *corev1.Pod, ic *odigosv1.InstrumentationConfig, pw *k8sconsts.PodWorkload) error {
 	logger := log.FromContext(ctx)
-	// Environment variables that remain consistent across all containers
-	commonEnvVars := getCommonEnvVars()
 
 	otelSdkToUse, err := getRelevantOtelSDKs(ctx, p.Client, *pw)
 	if err != nil {
 		return fmt.Errorf("failed to determine OpenTelemetry SDKs: %w", err)
 	}
-
-	var serviceName *string
-	var serviceNameEnv *corev1.EnvVar
 
 	for i := range pod.Spec.Containers {
 		container := &pod.Spec.Containers[i]
@@ -175,60 +171,22 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *core
 			continue
 		}
 
-		webhookdeviceinjector.InjectOdigosInstrumentationDevice(*pw, container, otelSdk, runtimeDetails)
+		// amir: 07 feb 2025. hard-coded temporary list which is removed once all distros migrate away from device
+		if (runtimeDetails.Language == common.JavascriptProgrammingLanguage && otelSdk == common.OtelSdkEbpfEnterprise) ||
+			(runtimeDetails.Language == common.GoProgrammingLanguage && otelSdk == common.OtelSdkEbpfCommunity) ||
+			(runtimeDetails.Language == common.JavaProgrammingLanguage && otelSdk == common.OtelSdkEbpfEnterprise) ||
+			(runtimeDetails.Language == common.MySQLProgrammingLanguage && otelSdk == common.OtelSdkEbpfEnterprise) {
+			// Skip device injection for distros that no longer use it
+		} else {
+			webhookdeviceinjector.InjectOdigosInstrumentationDevice(*pw, container, otelSdk, runtimeDetails)
+		}
+
 		webhookenvinjector.InjectOdigosAgentEnvVars(logger, *pw, container, otelSdk, runtimeDetails)
-
-		// Check if the environment variables are already present, if so skip inject them again.
-		if envVarsExist(container.Env, commonEnvVars) {
-			continue
-		}
-
-		containerNameEnv := corev1.EnvVar{Name: k8sconsts.OdigosEnvVarContainerName, Value: container.Name}
-		container.Env = append(container.Env, append(commonEnvVars, containerNameEnv)...)
-
-		if shouldInjectServiceName(runtimeDetails.Language, otelSdk) {
-			// Ensure the serviceName is fetched only once per pod
-			if serviceName == nil {
-				serviceName = p.getServiceNameForEnv(ctx, logger, pw)
-			}
-			// Initialize serviceNameEnv only once per pod if serviceName is valid
-			if serviceName != nil && serviceNameEnv == nil {
-				serviceNameEnv = &corev1.EnvVar{
-					Name:  otelServiceNameEnvVarName,
-					Value: *serviceName,
-				}
-			}
-
-			if !otelNameExists(container.Env) {
-				container.Env = append(container.Env, *serviceNameEnv)
-			}
-		}
-
-		resourceAttributes := getResourceAttributes(pw, container.Name)
-		resourceAttributesEnvValue := getResourceAttributesEnvVarValue(resourceAttributes)
-
-		container.Env = append(container.Env, corev1.EnvVar{
-			Name:  otelResourceAttributesEnvVarName,
-			Value: resourceAttributesEnvValue,
-		})
 	}
 	return nil
 }
 
-func mountDirectory(containerSpec *corev1.Container, dir string) {
-	// TODO: assuming the directory always starts with {{ODIGOS_AGENTS_DIR}}. This should be validated.
-	// Should we return errors here to validate static values?
-	relativePath := strings.TrimPrefix(dir, distro.AgentPlaceholderDirectory+"/")
-	absolutePath := strings.ReplaceAll(dir, distro.AgentPlaceholderDirectory, k8sconsts.OdigosAgentsDirectory)
-	containerSpec.VolumeMounts = append(containerSpec.VolumeMounts, corev1.VolumeMount{
-		Name:      k8sconsts.OdigosAgentMountVolumeName,
-		SubPath:   relativePath,
-		MountPath: absolutePath,
-		ReadOnly:  true,
-	})
-}
-
-func injectOdigosToContainer(containerConfig *odigosv1.ContainerAgentConfig, podContainerSpec *corev1.Container) (bool, error) {
+func injectOdigosToContainer(containerConfig *odigosv1.ContainerAgentConfig, podContainerSpec *corev1.Container, pw k8sconsts.PodWorkload, serviceName string) (bool, error) {
 
 	distroName := containerConfig.OtelDistroName
 
@@ -237,124 +195,25 @@ func injectOdigosToContainer(containerConfig *odigosv1.ContainerAgentConfig, pod
 		return false, fmt.Errorf("distribution %s not found", distroName)
 	}
 
-	volumeMounted := false
-	for _, agentDirectory := range distroMetadata.AgentDirectories {
-		mountDirectory(podContainerSpec, agentDirectory.DirectoryName)
-		volumeMounted = true
+	// check for existing env vars so we don't introduce them again
+	existingEnvNames := make(map[string]struct{})
+	for _, envVar := range podContainerSpec.Env {
+		existingEnvNames[envVar.Name] = struct{}{}
 	}
+
+	volumeMounted := false
+	if distroMetadata.RuntimeAgent != nil {
+		for _, agentDirectoryName := range distroMetadata.RuntimeAgent.DirectoryNames {
+			podswebhook.MountDirectory(podContainerSpec, agentDirectoryName)
+			volumeMounted = true
+		}
+		if distroMetadata.RuntimeAgent.K8sAttrsViaEnvVars {
+			podswebhook.InjectOtelResourceAndServerNameEnvVars(&existingEnvNames, podContainerSpec, distroName, pw, serviceName)
+		}
+	}
+	podswebhook.InjectOdigosK8sEnvVars(&existingEnvNames, podContainerSpec, distroName, pw.Namespace)
 
 	return volumeMounted, nil
-}
-
-func mountPodVolume(pod *corev1.Pod) {
-	pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
-		Name: k8sconsts.OdigosAgentMountVolumeName,
-		VolumeSource: corev1.VolumeSource{
-			HostPath: &corev1.HostPathVolumeSource{
-				Path: k8sconsts.OdigosAgentsDirectory,
-			},
-		},
-	})
-}
-
-func envVarsExist(containerEnv []corev1.EnvVar, commonEnvVars []corev1.EnvVar) bool {
-	envMap := make(map[string]struct{})
-	for _, envVar := range containerEnv {
-		envMap[envVar.Name] = struct{}{} // Inserting empty struct as value
-	}
-
-	for _, commonEnvVar := range commonEnvVars {
-		if _, exists := envMap[commonEnvVar.Name]; exists { // Checking if key exists
-			return true
-		}
-	}
-	return false
-}
-
-func getWorkloadKindAttributeKey(podWorkload *k8sconsts.PodWorkload) attribute.Key {
-	switch podWorkload.Kind {
-	case k8sconsts.WorkloadKindDeployment:
-		return semconv.K8SDeploymentNameKey
-	case k8sconsts.WorkloadKindStatefulSet:
-		return semconv.K8SStatefulSetNameKey
-	case k8sconsts.WorkloadKindDaemonSet:
-		return semconv.K8SDaemonSetNameKey
-	}
-	return attribute.Key("")
-}
-
-func getResourceAttributes(podWorkload *k8sconsts.PodWorkload, containerName string) []resourceAttribute {
-	if podWorkload == nil {
-		return []resourceAttribute{}
-	}
-
-	workloadKindKey := getWorkloadKindAttributeKey(podWorkload)
-	return []resourceAttribute{
-		{
-			Key:   semconv.K8SContainerNameKey,
-			Value: containerName,
-		},
-		{
-			Key:   semconv.K8SNamespaceNameKey,
-			Value: podWorkload.Namespace,
-		},
-		{
-			Key:   workloadKindKey,
-			Value: podWorkload.Name,
-		},
-	}
-}
-
-func getResourceAttributesEnvVarValue(ra []resourceAttribute) string {
-	var attrs []string
-	for _, a := range ra {
-		attrs = append(attrs, fmt.Sprintf("%s=%s", a.Key, a.Value))
-	}
-	return strings.Join(attrs, ",")
-}
-
-func otelNameExists(containerEnv []corev1.EnvVar) bool {
-	for _, envVar := range containerEnv {
-		if envVar.Name == otelServiceNameEnvVarName {
-			return true
-		}
-	}
-	return false
-}
-
-// this is used to set the OTEL_SERVICE_NAME for programming languages and otel sdks that requires it.
-// eBPF instrumentations sets the service name in code, thus it's not needed here.
-// OpAMP sends the service name in the protocol, thus it's not needed here.
-// We are only left with OSS Java and Dotnet that requires the OTEL_SERVICE_NAME to be set.
-func shouldInjectServiceName(pl common.ProgrammingLanguage, otelsdk common.OtelSdk) bool {
-	if pl == common.DotNetProgrammingLanguage {
-		return true
-	}
-	if pl == common.JavaProgrammingLanguage && otelsdk.SdkTier == common.CommunityOtelSdkTier {
-		return true
-	}
-	return false
-}
-
-func getCommonEnvVars() []corev1.EnvVar {
-	return []corev1.EnvVar{
-		{
-			Name: k8sconsts.OdigosEnvVarNamespace,
-			ValueFrom: &corev1.EnvVarSource{
-				FieldRef: &corev1.ObjectFieldSelector{
-					FieldPath: "metadata.namespace",
-				},
-			},
-		},
-		{
-			Name: k8sconsts.OdigosEnvVarPodName,
-			ValueFrom: &corev1.EnvVarSource{
-				FieldRef: &corev1.ObjectFieldSelector{
-					FieldPath: "metadata.name",
-				},
-			},
-		},
-	}
 }
 
 // checks for the service name on the annotation, or fallback to the workload name

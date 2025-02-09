@@ -17,5 +17,6 @@ spec:
     - envName: NODE_OPTIONS
       envValue: '--require {{ODIGOS_AGENTS_DIR}}/nodejs-ebpf/autoinstrumentation.js'
       delimiter: ' '
-  agentDirectories:
-    - directoryName: "{{ODIGOS_AGENTS_DIR}}/nodejs-ebpf"
+  runtimeAgent:
+    directoryNames:
+      - "{{ODIGOS_AGENTS_DIR}}/nodejs-ebpf"

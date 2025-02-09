@@ -17,5 +17,7 @@ spec:
     - envName: PYTHONPATH
       envValue: '{{ODIGOS_AGENTS_DIR}}/python:{{ODIGOS_AGENTS_DIR}}/python/opentelemetry/instrumentation/auto_instrumentation'
       delimiter: ':'
-  agentDirectories:
-    - directoryName: "{{ODIGOS_AGENTS_DIR}}/python"
+  runtimeAgent:
+    directoryNames:
+      - "{{ODIGOS_AGENTS_DIR}}/python"
+      
