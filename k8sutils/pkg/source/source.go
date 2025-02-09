@@ -17,23 +17,23 @@ import (
 // 4) False
 func IsObjectInstrumentedBySource(ctx context.Context,
 	k8sClient client.Client,
-	obj client.Object) (bool, odigosv1.WorkloadInstrumentationReason, string, error) {
+	obj client.Object) (bool, odigosv1.MarkedForInstrumentationReason, string, error) {
 	// Check if a Source object exists for this object
 	sources, err := odigosv1.GetSources(ctx, k8sClient, obj)
 	if err != nil {
-		reason := odigosv1.WorkloadInstrumentationReasonError
+		reason := odigosv1.MarkedForInstrumentationReasonError
 		return false, reason, "cannot determine if workload is marked for instrumentation due to error", err
 	}
 
 	if sources.Workload != nil {
 		if !odigosv1.IsDisabledSource(sources.Workload) && !k8sutils.IsTerminating(sources.Workload) {
-			reason := odigosv1.WorkloadInstrumentationReasonWorkloadSource
+			reason := odigosv1.MarkedForInstrumentationReasonWorkloadSource
 			message := fmt.Sprintf("workload marked for automatic instrumentation by workload source CR '%s' in namespace '%s'",
 				sources.Workload.Name, sources.Workload.Namespace)
 			return true, reason, message, nil
 		}
 		if odigosv1.IsDisabledSource(sources.Workload) && !k8sutils.IsTerminating(sources.Workload) {
-			reason := odigosv1.WorkloadInstrumentationReasonWorkloadSourceDisabled
+			reason := odigosv1.MarkedForInstrumentationReasonWorkloadSourceDisabled
 			message := fmt.Sprintf("workload marked to disable instrumentation by workload source CR '%s' in namespace '%s'",
 				sources.Workload.Name, sources.Workload.Namespace)
 			return false, reason, message, nil
@@ -41,13 +41,13 @@ func IsObjectInstrumentedBySource(ctx context.Context,
 	}
 
 	if sources.Namespace != nil && !odigosv1.IsDisabledSource(sources.Namespace) && !k8sutils.IsTerminating(sources.Namespace) {
-		reason := odigosv1.WorkloadInstrumentationReasonNamespaceSource
+		reason := odigosv1.MarkedForInstrumentationReasonNamespaceSource
 		message := fmt.Sprintf("workload marked for automatic instrumentation by namespace source CR '%s' in namespace '%s'",
 			sources.Namespace.Name, sources.Namespace.Namespace)
 		return true, reason, message, nil
 	}
 
-	reason := odigosv1.WorkloadInstrumentationReasonNoSource
+	reason := odigosv1.MarkedForInstrumentationReasonNoSource
 	message := "workload not marked for automatic instrumentation by any source CR"
 	return false, reason, message, nil
 }
