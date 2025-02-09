@@ -8,7 +8,7 @@ status:
     - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
       reason: NamespaceSource
       status: "True"
-      type: WorkloadInstrumentation
+      type: MarkedForInstrumentation
     - message: "nodejs runtime not supported by OpenTelemetry. supported versions: '>= 14', found: 8.17.0"
       reason: UnsupportedRuntimeVersion
       status: "False"
@@ -25,7 +25,7 @@ status:
     - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
       reason: NamespaceSource
       status: "True"
-      type: WorkloadInstrumentation
+      type: MarkedForInstrumentation
     - message: "agent injected successfully to 1 containers: [nodejs-very-old-version]"
       reason: EnabledSuccessfully
       status: "True"
@@ -46,7 +46,7 @@ status:
     - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
       reason: NamespaceSource
       status: "True"
-      type: WorkloadInstrumentation
+      type: MarkedForInstrumentation
     - message: "agent injected successfully to 1 containers: [nodejs-minimum-version]"
       reason: EnabledSuccessfully
       status: "True"
@@ -92,7 +92,7 @@ status:
     - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
       reason: NamespaceSource
       status: "True"
-      type: WorkloadInstrumentation
+      type: MarkedForInstrumentation
     - message: "agent injected successfully to 1 containers: [nodejs-latest-version]"
       reason: EnabledSuccessfully
       status: "True"
@@ -138,7 +138,7 @@ status:
     - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
       reason: NamespaceSource
       status: "True"
-      type: WorkloadInstrumentation
+      type: MarkedForInstrumentation
     - message: "agent injected successfully to 1 containers: [nodejs-dockerfile-env]"
       reason: EnabledSuccessfully
       status: "True"
@@ -184,7 +184,7 @@ status:
     - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
       reason: NamespaceSource
       status: "True"
-      type: WorkloadInstrumentation
+      type: MarkedForInstrumentation
     - message: "agent injected successfully to 1 containers: [nodejs-manifest-env]"
       reason: EnabledSuccessfully
       status: "True"
@@ -230,7 +230,7 @@ status:
     - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
       reason: NamespaceSource
       status: "True"
-      type: WorkloadInstrumentation
+      type: MarkedForInstrumentation
     - reason: UnsupportedProgrammingLanguage
       status: "False"
       type: AgentEnabled
@@ -245,7 +245,7 @@ status:
     - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
       reason: NamespaceSource
       status: "True"
-      type: WorkloadInstrumentation
+      type: MarkedForInstrumentation
     - message: "agent injected successfully to 1 containers: [java-supported-version]"
       reason: EnabledSuccessfully
       status: "True"
@@ -265,7 +265,7 @@ status:
     - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
       reason: NamespaceSource
       status: "True"
-      type: WorkloadInstrumentation
+      type: MarkedForInstrumentation
     - message: "agent injected successfully to 1 containers: [java-azul]"
       reason: EnabledSuccessfully
       status: "True"
@@ -285,7 +285,7 @@ status:
     - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
       reason: NamespaceSource
       status: "True"
-      type: WorkloadInstrumentation
+      type: MarkedForInstrumentation
     - message: "agent injected successfully to 1 containers: [java-supported-docker-env]"
       reason: EnabledSuccessfully
       status: "True"
@@ -305,7 +305,7 @@ status:
     - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
       reason: NamespaceSource
       status: "True"
-      type: WorkloadInstrumentation
+      type: MarkedForInstrumentation
     - message: "agent injected successfully to 1 containers: [java-supported-manifest-env]"
       reason: EnabledSuccessfully
       status: "True"
@@ -325,7 +325,7 @@ status:
     - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
       reason: NamespaceSource
       status: "True"
-      type: WorkloadInstrumentation
+      type: MarkedForInstrumentation
     - message: "agent injected successfully to 1 containers: [java-latest-version]"
       reason: EnabledSuccessfully
       status: "True"
@@ -345,7 +345,7 @@ status:
     - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
       reason: NamespaceSource
       status: "True"
-      type: WorkloadInstrumentation
+      type: MarkedForInstrumentation
     - message: "agent injected successfully to 1 containers: [java-old-version]"
       reason: EnabledSuccessfully
       status: "True"
@@ -365,7 +365,7 @@ status:
     - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
       reason: NamespaceSource
       status: "True"
-      type: WorkloadInstrumentation
+      type: MarkedForInstrumentation
     - message: "agent injected successfully to 1 containers: [python-alpine]"
       reason: EnabledSuccessfully
       status: "True"
@@ -385,7 +385,7 @@ status:
     - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
       reason: NamespaceSource
       status: "True"
-      type: WorkloadInstrumentation
+      type: MarkedForInstrumentation
     - message: "agent injected successfully to 1 containers: [python-latest-version]"
       reason: EnabledSuccessfully
       status: "True"
@@ -405,7 +405,7 @@ status:
     - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
       reason: NamespaceSource
       status: "True"
-      type: WorkloadInstrumentation
+      type: MarkedForInstrumentation
     - message: "agent injected successfully to 1 containers: [python-min-version]"
       reason: EnabledSuccessfully
       status: "True"
@@ -425,7 +425,7 @@ status:
     - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
       reason: NamespaceSource
       status: "True"
-      type: WorkloadInstrumentation
+      type: MarkedForInstrumentation
     - message: "python-runtime runtime not supported by OpenTelemetry. supported versions: '>= 3.8', found: 3.6.15"
       reason: UnsupportedRuntimeVersion
       status: "False"
@@ -441,7 +441,7 @@ status:
     - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
       reason: NamespaceSource
       status: "True"
-      type: WorkloadInstrumentation
+      type: MarkedForInstrumentation
     - message: "odigos agent not enabled due to other instrumentation agent 'New Relic Agent' detected running in the container"
       reason: OtherAgentDetected
       status: "False"
