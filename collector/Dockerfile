@@ -5,6 +5,6 @@ WORKDIR /go/src/
 ARG TARGETARCH
 RUN GOOS=linux GOARCH=$TARGETARCH make build-odigoscol
 
-FROM gcr.io/distroless/base:latest
+FROM gcr.io/distroless/base:nonroot
 COPY --from=builder /go/src/odigosotelcol/odigosotelcol /odigosotelcol
 CMD ["/odigosotelcol"]

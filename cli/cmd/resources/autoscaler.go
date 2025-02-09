@@ -2,7 +2,6 @@ package resources
 
 import (
 	"context"
-	"slices"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
@@ -237,18 +236,9 @@ func NewAutoscalerLeaderElectionRoleBinding(ns string) *rbacv1.RoleBinding {
 	}
 }
 
-func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imageName string, disableNameProcessor bool, collectorImage string) *appsv1.Deployment {
+func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imageName string, collectorImage string) *appsv1.Deployment {
 
 	optionalEnvs := []corev1.EnvVar{}
-
-	if disableNameProcessor {
-		// temporary until we migrate java and dotnet to OpAMP
-		optionalEnvs = append(optionalEnvs, corev1.EnvVar{
-			Name:  "DISABLE_NAME_PROCESSOR",
-			Value: "true",
-		})
-	}
-
 	dep := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -386,9 +376,6 @@ func NewAutoScalerResourceManager(client *kube.Client, ns string, config *common
 func (a *autoScalerResourceManager) Name() string { return "AutoScaler" }
 
 func (a *autoScalerResourceManager) InstallFromScratch(ctx context.Context) error {
-
-	disableNameProcessor := slices.Contains(a.config.Profiles, "disable-name-processor") || slices.Contains(a.config.Profiles, "kratos")
-
 	collectorImage := k8sconsts.OdigosClusterCollectorImage
 	if a.config.OpenshiftEnabled {
 		collectorImage = k8sconsts.OdigosClusterCollectorImageUBI9
@@ -401,7 +388,7 @@ func (a *autoScalerResourceManager) InstallFromScratch(ctx context.Context) erro
 		NewAutoscalerClusterRole(a.config.OpenshiftEnabled),
 		NewAutoscalerClusterRoleBinding(a.ns),
 		NewAutoscalerLeaderElectionRoleBinding(a.ns),
-		NewAutoscalerDeployment(a.ns, a.odigosVersion, a.config.ImagePrefix, a.config.AutoscalerImage, disableNameProcessor, collectorImage),
+		NewAutoscalerDeployment(a.ns, a.odigosVersion, a.config.ImagePrefix, a.config.AutoscalerImage, collectorImage),
 	}
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }
