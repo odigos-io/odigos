@@ -87,9 +87,12 @@ func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind k8s
 	}
 	statuschanged := meta.SetStatusCondition(&ic.Status.Conditions, cond)
 	if statuschanged {
-		logger.Info("Updating initial status conditions of InstrumentationConfig", "name", instConfigName, "namespace", req.Namespace)
+		logger.Info("Updating initial instrumentation status condition of InstrumentationConfig", "name", instConfigName, "namespace", req.Namespace)
 		if !utils.AreConditionsLogicallySorted(ic.Status.Conditions) {
-			ic.Status.Conditions = utils.SortConditions(ic.Status.Conditions)
+			// it is possible that by the time we are running this code, the status conditions are updated by another controller
+			// in this case, we want to make sure that the conditions are sorted in a logical order.
+			// this case also covers upgrade from previous versions of odigos where some conditions are already present.
+			ic.Status.Conditions = utils.SortIcConditionsByLogicalOrder(ic.Status.Conditions)
 		}
 		err = k8sClient.Status().Update(ctx, ic)
 		if err != nil {

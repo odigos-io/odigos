@@ -5,6 +5,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Checks if the conditions array in the status is currently sorted by logical order
+// this can be used to check if sorting is needed.
 func AreConditionsLogicallySorted(conditions []metav1.Condition) bool {
 	var lastTypeLogicalOrder int = 0
 	for _, condition := range conditions {
@@ -17,7 +19,8 @@ func AreConditionsLogicallySorted(conditions []metav1.Condition) bool {
 	return true
 }
 
-func SortConditions(conditions []metav1.Condition) []metav1.Condition {
+// giving the input conditions array, this function will return a new array with the conditions sorted by logical order
+func SortIcConditionsByLogicalOrder(conditions []metav1.Condition) []metav1.Condition {
 	conditionsByLogicalOrder := make(map[int]metav1.Condition, len(conditions))
 	maxLogicalOrder := 0
 	for _, condition := range conditions {
@@ -29,6 +32,7 @@ func SortConditions(conditions []metav1.Condition) []metav1.Condition {
 	}
 
 	var sortedConditions []metav1.Condition
+	// assuming a small number of conditions (<10) so this should be ok.
 	for i := 0; i < maxLogicalOrder; i++ {
 		cond, found := conditionsByLogicalOrder[i]
 		if !found {
