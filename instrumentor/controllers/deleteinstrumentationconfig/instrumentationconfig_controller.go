@@ -84,7 +84,7 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, err
 	}
 
-	enabled, err := sourceutils.IsObjectInstrumentedBySource(ctx, r.Client, workloadObject)
+	enabled, _, _, err := sourceutils.IsObjectInstrumentedBySource(ctx, r.Client, workloadObject)
 	if err != nil {
 		return ctrl.Result{}, err
 	}

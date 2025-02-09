@@ -19,5 +19,7 @@ spec:
   tiers: 
     - community
     - onprem
-  agentDirectories:
-    - directoryName: "{{ODIGOS_AGENTS_DIR}}/dotnet"
+  runtimeAgent:
+    directoryNames:
+      - "{{ODIGOS_AGENTS_DIR}}/dotnet"
+    k8sAttrsViaEnvVars: true

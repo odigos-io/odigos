@@ -2,6 +2,7 @@ package agentenabled
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/hashicorp/go-version"
@@ -56,7 +57,6 @@ func reconcileAll(ctx context.Context, c client.Client) (ctrl.Result, error) {
 }
 
 func reconcileWorkload(ctx context.Context, c client.Client, icName string, namespace string) (ctrl.Result, error) {
-
 	logger := log.FromContext(ctx)
 
 	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(icName)
@@ -76,12 +76,13 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 		if apierrors.IsNotFound(err) {
 			// instrumentation config is deleted, trigger a rollout for the associated workload
 			// this should happen once per workload, as the instrumentation config is deleted
-			return rollout.Do(ctx, c, nil, pw)
+			_, res, err := rollout.Do(ctx, c, nil, pw)
+			return res, err
 		}
 		return ctrl.Result{}, err
 	}
 
-	logger.Info("Reconciling workload for InstrumentationConfig object agent enabling", "name", ic.Name, "namespace", ic.Namespace, "instrumentationConfig", ic)
+	logger.Info("Reconciling workload for InstrumentationConfig object agent enabling", "name", ic.Name, "namespace", ic.Namespace, "instrumentationConfigName", ic.Name)
 
 	condition, err := updateInstrumentationConfigSpec(ctx, c, pw, &ic)
 	if err != nil {
@@ -100,15 +101,15 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 		Message: condition.Message,
 	}
 
-	changed := meta.SetStatusCondition(&ic.Status.Conditions, cond)
-	if changed {
-		err = c.Status().Update(ctx, &ic)
-		if err != nil {
-			return utils.K8SUpdateErrorHandler(err)
-		}
+	agentEnabledChanged := meta.SetStatusCondition(&ic.Status.Conditions, cond)
+	rolloutChanged, res, err := rollout.Do(ctx, c, &ic, pw)
+
+	if rolloutChanged || agentEnabledChanged {
+		updateErr := c.Status().Update(ctx, &ic)
+		err = errors.Join(err, updateErr)
 	}
 
-	return rollout.Do(ctx, c, &ic, pw)
+	return res, err
 }
 
 // this function receives a workload object, and updates the instrumentation config object ptr.
