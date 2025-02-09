@@ -42,11 +42,9 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	if ic == nil {
 		// instrumentation config is deleted, trigger a rollout for the associated workload
 		// this should happen once per workload, as the instrumentation config is deleted
+		// and we want to rollout the workload to remove the instrumentation
 		rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, time.Now())
-		if rolloutErr != nil {
-			logger.Error(rolloutErr, "error rolling out workload", "name", pw.Name, "namespace", pw.Namespace)
-		}
-		return ctrl.Result{}, nil
+		return ctrl.Result{}, client.IgnoreNotFound(rolloutErr)
 	}
 
 	savedRolloutHash := ic.Status.WorkloadRolloutHash

@@ -20,5 +20,6 @@ spec:
     - envName: JAVA_TOOL_OPTIONS
       envValue: '-javaagent:{{ODIGOS_AGENTS_DIR}}/java-ebpf/dtrace-injector.jar'
       delimiter: ' '
-  agentDirectories:
-    - directoryName: "{{ODIGOS_AGENTS_DIR}}/java-ebpf"
+  runtimeAgent:
+    directoryNames:
+      - "{{ODIGOS_AGENTS_DIR}}/java-ebpf"
