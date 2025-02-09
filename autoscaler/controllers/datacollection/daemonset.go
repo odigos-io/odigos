@@ -245,18 +245,42 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 							},
 						},
 						{
-							Name: "varlibdockercontainers",
+							Name: "host-dev",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/var/lib/docker/containers",
+									Path: "/dev",
 								},
 							},
 						},
 						{
-							Name: "hostfs",
+							Name: "host-etc",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/",
+									Path: "/etc",
+								},
+							},
+						},
+						{
+							Name: "host-proc",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/proc",
+								},
+							},
+						},
+						{
+							Name: "host-sys",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/sys",
+								},
+							},
+						},
+						{
+							Name: "host-var",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/var",
 								},
 							},
 						},
@@ -264,14 +288,13 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 					InitContainers: []corev1.Container{
 						{
 							Name:  "set-logs-acls",
-							Image: "alpine:latest",
+							Image: commonconfig.ControllerConfig.CollectorImage,
 							Command: []string{
 								"/bin/sh",
 								"-c",
-								`apk add --no-cache acl && \
-            find /hostfs/var/log/pods -type d -exec setfacl -m u:65532:rx,g:65532:rx {} \; && \
-            find /hostfs/var/log/pods -type d -exec setfacl -d -m u:65532:rx,g:65532:rx {} \; && \
-            find /hostfs/var/log/pods -type f -exec setfacl -m u:65532:r,g:65532:r {} \;`,
+								`find /hostfs/var/log/pods -type d -exec setfacl -m u:65532:rx,g:65532:rx {} \; || true && \
+            					 find /hostfs/var/log/pods -type d -exec setfacl -d -m u:65532:rx,g:65532:rx {} \; || true && \
+            					 find /hostfs/var/log/pods -type f -exec setfacl -m u:65532:r,g:65532:r {} \; || true;`,
 							},
 							SecurityContext: &corev1.SecurityContext{
 								Privileged: &privileged,
@@ -297,18 +320,33 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 									MountPath: confDir,
 								},
 								{
-									Name:      "varlibdockercontainers",
-									MountPath: "/var/lib/docker/containers",
-									ReadOnly:  true,
-								},
-								{
 									Name:      "varlog",
 									MountPath: "/var/log",
 									ReadOnly:  true,
 								},
 								{
-									Name:      "hostfs",
-									MountPath: "/hostfs",
+									Name:      "host-dev",
+									MountPath: "/hostfs/dev",
+									ReadOnly:  true,
+								},
+								{
+									Name:      "host-etc",
+									MountPath: "/hostfs/etc",
+									ReadOnly:  true,
+								},
+								{
+									Name:      "host-proc",
+									MountPath: "/hostfs/proc",
+									ReadOnly:  true,
+								},
+								{
+									Name:      "host-sys",
+									MountPath: "/hostfs/sys",
+									ReadOnly:  true,
+								},
+								{
+									Name:      "host-var",
+									MountPath: "/hostfs/var",
 									ReadOnly:  true,
 								},
 							},
