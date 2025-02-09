@@ -22,11 +22,53 @@ type InstrumentationConfig struct {
 
 // conditions for the InstrumentationConfigStatus
 const (
+	// Define a status condition type that describes why the workload is marked for instrumentation or not.
+	MarkedForInstrumentationStatusConditionType = "MarkedForInstrumentation"
+	// Describe the runtime detection status of this workload.
+	RuntimeDetectionStatusConditionType = "RuntimeDetection" // TODO: placeholder, not yet implemented
 	// this const is the Type field in the conditions of the InstrumentationConfigStatus.
 	AgentEnabledStatusConditionType = "AgentEnabled"
 	// reports whether the workload associated with the InstrumentationConfig has been rolled out.
 	// the rollout is needed to update the instrumentation done by the Pods webhook.
 	WorkloadRolloutStatusConditionType = "WorkloadRollout"
+)
+
+func StatusConditionTypeLogicalOrder(condType string) int {
+	switch condType {
+	case MarkedForInstrumentationStatusConditionType:
+		return 1
+	case RuntimeDetectionStatusConditionType:
+		// TODO: placeholder, not yet implemented
+		return 2
+	case AgentEnabledStatusConditionType:
+		return 3
+	case WorkloadRolloutStatusConditionType:
+		return 4
+	default:
+		return 5
+	}
+}
+
+// +kubebuilder:validation:Enum=WorkloadSource;NamespaceSource;WorkloadSourceDisabled;NoSource;RetirableError
+type MarkedForInstrumentationReason string
+
+const (
+	// denotes that the workload is instrumented because of a source CR exists for this workload.
+	// and the source is not disabled..
+	MarkedForInstrumentationReasonWorkloadSource MarkedForInstrumentationReason = "WorkloadSource"
+
+	// denotes that the workload does not have a source CR, but the namespace has a source CR,
+	// so the workload is instrumented as inherited from the namespace.
+	MarkedForInstrumentationReasonNamespaceSource MarkedForInstrumentationReason = "NamespaceSource"
+
+	// the source object for workload exists, and it is disabled, thus uninstrumented.
+	MarkedForInstrumentationReasonWorkloadSourceDisabled MarkedForInstrumentationReason = "WorkloadSourceDisabled"
+
+	// this workload is not instrumented because no source CR exists for it or its namespace.
+	MarkedForInstrumentationReasonNoSource MarkedForInstrumentationReason = "NoSource"
+
+	// cannot determine the reason for the instrumentation due to a possible transient error.
+	MarkedForInstrumentationReasonError MarkedForInstrumentationReason = "RetirableError"
 )
 
 // +kubebuilder:validation:Enum=EnabledSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;UnsupportedProgrammingLanguage;IgnoredContainer;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected

@@ -5,18 +5,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func InjectOdigosK8sEnvVars(container *corev1.Container, distroName string, ns string) {
+func InjectOdigosK8sEnvVars(existingEnvNames *map[string]struct{}, container *corev1.Container, distroName string, ns string) {
 
-	// check for existing env vars so we don't introduce them again
-	existingEnvNames := make(map[string]struct{})
-	for _, envVar := range container.Env {
-		existingEnvNames[envVar.Name] = struct{}{}
-	}
-
-	injectEnvVarToPodContainer(&existingEnvNames, container, k8sconsts.OdigosEnvVarContainerName, container.Name)
-	injectEnvVarToPodContainer(&existingEnvNames, container, k8sconsts.OdigosEnvVarDistroName, distroName)
-	injectEnvVarObjectFieldRefToPodContainer(&existingEnvNames, container, k8sconsts.OdigosEnvVarPodName, "metadata.name")
-	injectEnvVarToPodContainer(&existingEnvNames, container, k8sconsts.OdigosEnvVarNamespace, ns)
+	injectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarContainerName, container.Name)
+	injectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarDistroName, distroName)
+	injectEnvVarObjectFieldRefToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarPodName, "metadata.name")
+	injectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarNamespace, ns)
 }
 
 func injectEnvVarObjectFieldRefToPodContainer(existingEnvNames *map[string]struct{}, container *corev1.Container, envVarName, envVarRef string) {
