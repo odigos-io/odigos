@@ -20,5 +20,7 @@ spec:
     - envName: JAVA_TOOL_OPTIONS
       envValue: '-javaagent:{{ODIGOS_AGENTS_DIR}}/java/javaagent.jar'
       delimiter: ' '
-  agentDirectories:
-    - directoryName: "{{ODIGOS_AGENTS_DIR}}/java"    
+  runtimeAgent:
+    directoryNames:
+      - "{{ODIGOS_AGENTS_DIR}}/java"
+    k8sAttrsViaEnvVars: true

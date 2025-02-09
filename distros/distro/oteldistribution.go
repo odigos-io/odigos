@@ -40,11 +40,18 @@ type EnvironmentVariable struct {
 	Delimiter string `yaml:"delimiter"`
 }
 
-type AgentDirectory struct {
+type RuntimeAgent struct {
 	// The name of a directory where odigos agent files can be found.
 	// The special value {{ODIGOS_AGENTS_DIR}} is replaced with the actual value at this platform.
-	// K8s will mount this directory from the node fs to the container, but other platforms may have different ways for handling this.
-	DirectoryName string `yaml:"directoryName"`
+	// K8s will mount this directory from the node fs to the container. other platforms may have different ways to make the directory accessible.
+	DirectoryNames []string `yaml:"directoryNames"`
+
+	// This field indicates that the agent populates k8s resource attributes via environment variables.
+	// It targets distros odigos uses without wrapper or customization.
+	// For eBPF, the resource attributes are set in code.
+	// For opamp distros, the resource attributes are set in the opamp server.
+	// We will eventually remove this field once all distros upgrade to dynamic resource attributes.
+	K8sAttrsViaEnvVars bool `yaml:"k8sAttrsViaEnvVars,omitempty"`
 }
 
 // OtelDistro (Short for OpenTelemetry Distribution) is a collection of OpenTelemetry components,
@@ -88,8 +95,7 @@ type OtelDistro struct {
 	// to enable the distribution.
 	EnvironmentVariables []EnvironmentVariable `yaml:"environmentVariables,omitempty"`
 
-	// Directories on the FS where the agent files can be consumed from.
-	// this can be empty if the distribution does not require agent files,
-	// or contain more than one directory if the distribution requires it.
-	AgentDirectories []AgentDirectory `yaml:"agentDirectories,omitempty"`
+	// Metadata and properties of the runtime agent that is used to enable the distribution.
+	// Can be nil in case no runtime agent is required.
+	RuntimeAgent *RuntimeAgent `yaml:"runtimeAgent,omitempty"`
 }
