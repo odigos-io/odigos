@@ -140,14 +140,23 @@ spec:
           volumeMounts:
             - mountPath: /conf
               name: conf
-            - mountPath: /var/lib/docker/containers
-              name: varlibdockercontainers
-              readOnly: true
             - mountPath: /var/log
               name: varlog
               readOnly: true
-            - mountPath: /hostfs
-              name: hostfs
+            - mountPath: /hostfs/dev
+              name: host-dev
+              readOnly: true
+            - mountPath: /hostfs/etc
+              name: host-etc
+              readOnly: true
+            - mountPath: /hostfs/proc
+              name: host-proc
+              readOnly: true
+            - mountPath: /hostfs/sys
+              name: host-sys
+              readOnly: true
+            - mountPath: /hostfs/var
+              name: host-var
               readOnly: true
           env:
             - name: NODE_NAME
@@ -191,14 +200,26 @@ spec:
             path: /var/log
             type: ""
           name: varlog
-        - hostPath:
-            path: /var/lib/docker/containers
+        - name: host-dev
+          hostPath:
+            path: /dev
             type: ""
-          name: varlibdockercontainers
-        - hostPath:
-            path: /
+        - name: host-etc
+          hostPath:
+            path: /etc
             type: ""
-          name: hostfs
+        - name: host-proc
+          hostPath:
+            path: /proc
+            type: ""
+        - name: host-sys
+          hostPath:
+            path: /sys
+            type: ""
+        - name: host-var
+          hostPath:
+            path: /var
+            type: ""
 status:
   numberAvailable: 2
   numberReady: 2
