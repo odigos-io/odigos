@@ -22,19 +22,19 @@ func IsObjectInstrumentedBySource(ctx context.Context,
 	sources, err := odigosv1.GetSources(ctx, k8sClient, obj)
 	if err != nil {
 		reason := odigosv1.WorkloadInstrumentationReasonError
-		return false, reason, "cannot determine if workload is instrumented due to error", err
+		return false, reason, "cannot determine if workload is marked for instrumentation due to error", err
 	}
 
 	if sources.Workload != nil {
 		if !odigosv1.IsDisabledSource(sources.Workload) && !k8sutils.IsTerminating(sources.Workload) {
 			reason := odigosv1.WorkloadInstrumentationReasonWorkloadSource
-			message := fmt.Sprintf("instrumented by workload source CR '%s' in namespace '%s'",
+			message := fmt.Sprintf("workload marked for automatic instrumentation by workload source CR '%s' in namespace '%s'",
 				sources.Workload.Name, sources.Workload.Namespace)
 			return true, reason, message, nil
 		}
 		if odigosv1.IsDisabledSource(sources.Workload) && !k8sutils.IsTerminating(sources.Workload) {
 			reason := odigosv1.WorkloadInstrumentationReasonWorkloadSourceDisabled
-			message := fmt.Sprintf("disabled for instrumentation by workload source CR '%s' in namespace '%s'",
+			message := fmt.Sprintf("workload marked to disable instrumentation by workload source CR '%s' in namespace '%s'",
 				sources.Workload.Name, sources.Workload.Namespace)
 			return false, reason, message, nil
 		}
@@ -42,13 +42,13 @@ func IsObjectInstrumentedBySource(ctx context.Context,
 
 	if sources.Namespace != nil && !odigosv1.IsDisabledSource(sources.Namespace) && !k8sutils.IsTerminating(sources.Namespace) {
 		reason := odigosv1.WorkloadInstrumentationReasonNamespaceSource
-		message := fmt.Sprintf("instrumented by namespace source CR '%s' in namespace '%s'",
+		message := fmt.Sprintf("workload marked for automatic instrumentation by namespace source CR '%s' in namespace '%s'",
 			sources.Namespace.Name, sources.Namespace.Namespace)
 		return true, reason, message, nil
 	}
 
 	reason := odigosv1.WorkloadInstrumentationReasonNoSource
-	message := "no workload or namespace source CR enables this workload for instrumentation"
+	message := "workload not marked for automatic instrumentation by any source CR"
 	return false, reason, message, nil
 }
 
