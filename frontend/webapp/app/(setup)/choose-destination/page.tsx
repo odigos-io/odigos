@@ -49,7 +49,7 @@ export default function Page() {
   const { persistSources } = useSourceCRUD();
   const { categories } = useDestinationCategories();
   const { createDestination } = useDestinationCRUD();
-  const { data: potentialDestinations } = usePotentialDestinations();
+  const { potentialDestinations } = usePotentialDestinations();
   const { testConnection, loading: testLoading, data: testResult } = useTestConnection();
   const { configuredSources, configuredFutureApps, configuredDestinations, resetState } = useAppStore();
 
