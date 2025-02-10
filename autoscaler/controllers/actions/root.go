@@ -76,5 +76,14 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
+	err = ctrl.NewControllerManagedBy(mgr).
+		For(&v1.K8sAttributes{}).
+		Complete(&K8sAttributesReconciler{
+			Client: mgr.GetClient(),
+		})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

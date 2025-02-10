@@ -301,7 +301,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 							},
 							Env: []corev1.EnvVar{
 								{
-									Name: "NODE_NAME",
+									Name: k8sconsts.NodeNameEnvVar,
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
 											FieldPath: "spec.nodeName",

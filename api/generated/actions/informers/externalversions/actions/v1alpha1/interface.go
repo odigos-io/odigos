@@ -29,6 +29,8 @@ type Interface interface {
 	DeleteAttributes() DeleteAttributeInformer
 	// ErrorSamplers returns a ErrorSamplerInformer.
 	ErrorSamplers() ErrorSamplerInformer
+	// K8sAttributeses returns a K8sAttributesInformer.
+	K8sAttributeses() K8sAttributesInformer
 	// LatencySamplers returns a LatencySamplerInformer.
 	LatencySamplers() LatencySamplerInformer
 	// PiiMaskings returns a PiiMaskingInformer.
@@ -63,6 +65,11 @@ func (v *version) DeleteAttributes() DeleteAttributeInformer {
 // ErrorSamplers returns a ErrorSamplerInformer.
 func (v *version) ErrorSamplers() ErrorSamplerInformer {
 	return &errorSamplerInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// K8sAttributeses returns a K8sAttributesInformer.
+func (v *version) K8sAttributeses() K8sAttributesInformer {
+	return &k8sAttributesInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // LatencySamplers returns a LatencySamplerInformer.
