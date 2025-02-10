@@ -241,20 +241,40 @@ type ObservabilitySignalSupport {
   supported: Boolean!
 }
 
+type CustomReadDataLabel {
+  condition: String!
+  title: String!
+  value: String!
+}
+
+type DestinationFieldYamlProperties {
+  name: String!
+  displayName: String!
+  componentType: String!
+  componentProperties: String! # Using String to store JSON data as a string
+  secret: Boolean!
+  initialValue: String!
+  renderCondition: [String!]!
+  hideFromReadData: [String!]!
+  customReadDataLabels: [CustomReadDataLabel!]!
+}
+
 type DestinationTypesCategoryItem {
   type: String!
   displayName: String!
   imageUrl: String!
   supportedSignals: SupportedSignals!
   testConnectionSupported: Boolean!
+  fields: [DestinationFieldYamlProperties!]!
 }
 
 type DestinationsCategory {
   name: String!
+  description: String!
   items: [DestinationTypesCategoryItem!]!
 }
 
-type GetDestinationTypesResponse {
+type GetDestinationCategories {
   categories: [DestinationsCategory!]!
 }
 
@@ -277,28 +297,6 @@ type Destination {
 type GetConfigResponse {
   installation: InstallationStatus!
   readonly: Boolean!
-}
-
-type CustomReadDataLabel {
-  condition: String!
-  title: String!
-  value: String!
-}
-
-type Field {
-  name: String!
-  displayName: String!
-  componentType: String!
-  componentProperties: String! # Using String to store JSON data as a string
-  secret: Boolean!
-  initialValue: String!
-  renderCondition: [String!]!
-  hideFromReadData: [String!]!
-  customReadDataLabels: [CustomReadDataLabel!]!
-}
-
-type GetDestinationDetailsResponse {
-  fields: [Field!]!
 }
 
 input DestinationInput {
@@ -587,8 +585,7 @@ type OdigosAnalyze {
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
-  destinationTypes: GetDestinationTypesResponse
-  destinationTypeDetails(type: String!): GetDestinationDetailsResponse
+  destinationCategories: GetDestinationCategories
   potentialDestinations: [DestinationDetails!]!
   getOverviewMetrics: OverviewMetricsResponse!
   describeOdigos: OdigosAnalyze!

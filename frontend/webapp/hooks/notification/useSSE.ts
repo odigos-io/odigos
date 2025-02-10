@@ -1,9 +1,18 @@
 import { useEffect, useRef } from 'react';
-import { NOTIFICATION_TYPE } from '@odigos/ui-utils';
+import { API } from '@/utils';
+import { useStatusStore } from '@/store';
 import { useDestinationCRUD } from '../destinations';
 import { usePaginatedSources } from '../compute-platform';
-import { API, DISPLAY_TITLES, SSE_CRD_TYPES, SSE_EVENT_TYPES } from '@/utils';
-import { type NotifyPayload, useNotificationStore, usePendingStore, useStatusStore } from '@/store';
+import { CRD_TYPES, DISPLAY_TITLES, NOTIFICATION_TYPE } from '@odigos/ui-utils';
+import { type NotifyPayload, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
+
+const CONNECTED = 'CONNECTED';
+
+const EVENT_TYPES = {
+  ADDED: 'Added',
+  MODIFIED: 'Modified',
+  DELETED: 'Deleted',
+};
 
 export const useSSE = () => {
   const { setPendingItems } = usePendingStore();
@@ -29,19 +38,19 @@ export const useSSE = () => {
           target: data.target,
         };
 
-        if (notification.title !== SSE_EVENT_TYPES.MODIFIED && notification.crdType !== SSE_CRD_TYPES.CONNECTED) {
+        if (notification.title !== EVENT_TYPES.MODIFIED && notification.crdType !== CONNECTED) {
           // SSE toast notification (for all events except "modified" and "connected")
           addNotification(notification);
         }
 
         // Handle specific CRD types
-        if ([SSE_CRD_TYPES.CONNECTED].includes(notification.crdType as string)) {
+        if ([CONNECTED].includes(notification.crdType as string)) {
           if (title !== DISPLAY_TITLES.API_TOKEN) {
             setStatusStore({ status: NOTIFICATION_TYPE.SUCCESS, title: notification.title as string, message: notification.message as string });
           }
-        } else if ([SSE_CRD_TYPES.INSTRUMENTATION_CONFIG, SSE_CRD_TYPES.INSTRUMENTATION_INSTANCE].includes(notification.crdType as string)) {
+        } else if ([CRD_TYPES.INSTRUMENTATION_CONFIG, CRD_TYPES.INSTRUMENTATION_INSTANCE].includes(notification.crdType as CRD_TYPES)) {
           fetchSources();
-        } else if ([SSE_CRD_TYPES.DESTINATION].includes(notification.crdType as string)) {
+        } else if ([CRD_TYPES.DESTINATION].includes(notification.crdType as CRD_TYPES)) {
           refetchDestinations();
         } else console.warn('Unhandled SSE for CRD type:', notification.crdType);
 
