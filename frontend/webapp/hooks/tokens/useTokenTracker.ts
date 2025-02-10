@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { useTokenCRUD } from '.';
-import { DISPLAY_TITLES, SEVEN_DAYS_IN_MS } from '@/utils';
-import { useNotificationStore, useStatusStore } from '@/store';
-import { isOverTime, NOTIFICATION_TYPE, useTimeAgo } from '@odigos/ui-utils';
+import { useStatusStore } from '@/store';
+import { useNotificationStore } from '@odigos/ui-containers';
+import { DISPLAY_TITLES, isOverTime, NOTIFICATION_TYPE, TOKEN_ABOUT_TO_EXPIRE, useTimeAgo } from '@odigos/ui-utils';
 
 // This hook is responsible for tracking the tokens and their expiration times.
 // When a token is about to expire or has expired, a notification is added to the notification store, and the connection status is updated accordingly.
@@ -28,7 +28,7 @@ export const useTokenTracker = () => {
           title: notif.title,
           message: notif.message,
         });
-      } else if (isOverTime(expiresAt, SEVEN_DAYS_IN_MS)) {
+      } else if (isOverTime(expiresAt, TOKEN_ABOUT_TO_EXPIRE)) {
         const notif = {
           type: NOTIFICATION_TYPE.WARNING,
           title: DISPLAY_TITLES.API_TOKEN,
