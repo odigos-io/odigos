@@ -6,7 +6,7 @@ import { ENTITY_TYPES } from '@odigos/ui-utils';
 import { Stepper } from '@odigos/ui-components';
 import { OnboardingStepperWrapper } from '@/components';
 import SetupHeader from '@/components/lib-imports/setup-header';
-import { FormRef, SourceSelectionForm } from '@odigos/ui-containers';
+import { SourceSelectionForm, type SourceSelectionFormRef } from '@odigos/ui-containers';
 
 export default function Page() {
   // call important hooks that should run on page-mount
@@ -16,7 +16,7 @@ export default function Page() {
   const onSelectNamespace = (ns: string) => setSelectedNamespace((prev) => (prev === ns ? '' : ns));
   const { allNamespaces, data: namespace, loading: nsLoad } = useNamespace(selectedNamespace);
 
-  const formRef = useRef<FormRef>(null);
+  const formRef = useRef<SourceSelectionFormRef>(null);
 
   return (
     <>
