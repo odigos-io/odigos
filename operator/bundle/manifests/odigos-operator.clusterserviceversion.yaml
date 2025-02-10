@@ -19,8 +19,8 @@ metadata:
       ]
     capabilities: Basic Install
     categories: Logging & Tracing
-    containerImage: registry.connect.redhat.com/odigos/odigos-operator-ubi9@sha256:3e607855001aadbeaecfe9c75ecc9587aa664b7c674687991bb5982acb8f502d
-    createdAt: "2025-02-10T20:34:37Z"
+    containerImage: registry.connect.redhat.com/odigos/odigos-operator-ubi9@sha256:ae6d36c50a00014b607f3020abb2f639da2d255216d744b8447b943adba78132
+    createdAt: "2025-02-10T20:53:26Z"
     description: Odigos enables automatic distributed tracing with OpenTelemetry and eBPF.
     features.operators.openshift.io/disconnected: "false"
     features.operators.openshift.io/fips-compliant: "true"
@@ -376,7 +376,7 @@ spec:
                           configMapKeyRef:
                             key: ODIGOS_VERSION
                             name: odigos-operator-odigos-version-5t5fk676bf
-                    image: registry.connect.redhat.com/odigos/odigos-operator-ubi9@sha256:3e607855001aadbeaecfe9c75ecc9587aa664b7c674687991bb5982acb8f502d
+                    image: registry.connect.redhat.com/odigos/odigos-operator-ubi9@sha256:ae6d36c50a00014b607f3020abb2f639da2d255216d744b8447b943adba78132
                     livenessProbe:
                       httpGet:
                         path: /healthz
@@ -472,8 +472,8 @@ spec:
     name: Odigos
     url: https://odigos.io
   relatedImages:
-    - image: registry.connect.redhat.com/odigos/odigos-operator-ubi9@sha256:3e607855001aadbeaecfe9c75ecc9587aa664b7c674687991bb5982acb8f502d
+    - image: registry.connect.redhat.com/odigos/odigos-operator-ubi9@sha256:ae6d36c50a00014b607f3020abb2f639da2d255216d744b8447b943adba78132
       name: manager
-    - image: registry.connect.redhat.com/odigos/odigos-operator-ubi9@sha256:3e607855001aadbeaecfe9c75ecc9587aa664b7c674687991bb5982acb8f502d
-      name: odigos-operator-ubi9-3e607855001aadbeaecfe9c75ecc9587aa664b7c674687991bb5982acb8f502d-annotation
+    - image: registry.connect.redhat.com/odigos/odigos-operator-ubi9@sha256:ae6d36c50a00014b607f3020abb2f639da2d255216d744b8447b943adba78132
+      name: odigos-operator-ubi9-ae6d36c50a00014b607f3020abb2f639da2d255216d744b8447b943adba78132-annotation
   version: 1.0.149
