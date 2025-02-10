@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -19,19 +18,6 @@ func k8sKindToGql(k8sResourceKind string) model.K8sResourceKind {
 		return model.K8sResourceKindDaemonSet
 	}
 	return ""
-}
-
-func k8sConditionStatusToGql(status v1.ConditionStatus) model.ConditionStatus {
-	switch status {
-	case v1.ConditionTrue:
-		return model.ConditionStatusTrue
-	case v1.ConditionFalse:
-		return model.ConditionStatusFalse
-	case v1.ConditionUnknown:
-		return model.ConditionStatusUnknown
-	}
-	return model.ConditionStatusUnknown
-
 }
 
 // Convert LastTransitionTime to a string pointer if it's not nil
@@ -83,18 +69,6 @@ func instrumentationConfigToActualSource(instruConfig v1alpha1.InstrumentationCo
 		Containers:        containers,
 		Conditions:        convertConditions(instruConfig.Status.Conditions),
 	}
-}
-
-func convertCustomReadDataLabels(labels []*destinations.CustomReadDataLabel) []*model.CustomReadDataLabel {
-	var result []*model.CustomReadDataLabel
-	for _, label := range labels {
-		result = append(result, &model.CustomReadDataLabel{
-			Condition: label.Condition,
-			Title:     label.Title,
-			Value:     label.Value,
-		})
-	}
-	return result
 }
 
 func convertConditions(conditions []v1.Condition) []*model.Condition {
