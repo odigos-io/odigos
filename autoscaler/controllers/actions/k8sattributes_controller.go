@@ -112,7 +112,7 @@ type k8sAttributesConfig struct {
 
 func (r *K8sAttributesReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	logger.V(0).Info("Reconciling RenameAttribute action")
+	logger.V(0).Info("Reconciling K8sAttributes action")
 
 	actions := actionv1.K8sAttributesList{}
 	err := r.List(ctx, &actions, client.InNamespace(req.Namespace))
@@ -141,7 +141,7 @@ func (r *K8sAttributesReconciler) convertToUnifiedProcessor(actions *actionv1.K8
 		},
 		Spec: odigosv1alpha1.ProcessorSpec{
 			Type:          "k8sattributes",
-			ProcessorName: "unified",
+			ProcessorName: "Unified Kubernetes Attributes",
 			CollectorRoles: []odigosv1alpha1.CollectorsGroupRole{
 				odigosv1alpha1.CollectorsGroupRoleNodeCollector,
 			},
