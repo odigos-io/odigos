@@ -42,23 +42,21 @@ func GetDestinationCategories() model.GetDestinationCategories {
 	return resp
 }
 
-func convertCustomReadDataLabels(labels []*destinations.CustomReadDataLabel) []*model.CustomReadDataLabel {
-	var result []*model.CustomReadDataLabel
-	for _, label := range labels {
-		result = append(result, &model.CustomReadDataLabel{
-			Condition: label.Condition,
-			Title:     label.Title,
-			Value:     label.Value,
-		})
-	}
-	return result
-}
-
 func DestinationTypeConfigToCategoryItem(destConfig destinations.Destination) model.DestinationTypesCategoryItem {
 	fields := []*model.DestinationFieldYamlProperties{}
 
 	for _, field := range destConfig.Spec.Fields {
 		componentPropsJSON, err := json.Marshal(field.ComponentProps)
+
+		var customReadDataLabels []*model.CustomReadDataLabel
+		for _, label := range field.CustomReadDataLabels {
+			customReadDataLabels = append(customReadDataLabels, &model.CustomReadDataLabel{
+				Condition: label.Condition,
+				Title:     label.Title,
+				Value:     label.Value,
+			})
+		}
+
 		if err == nil {
 			fields = append(fields, &model.DestinationFieldYamlProperties{
 				Name:                 field.Name,
@@ -69,7 +67,7 @@ func DestinationTypeConfigToCategoryItem(destConfig destinations.Destination) mo
 				InitialValue:         field.InitialValue,
 				RenderCondition:      field.RenderCondition,
 				HideFromReadData:     field.HideFromReadData,
-				CustomReadDataLabels: convertCustomReadDataLabels(field.CustomReadDataLabels),
+				CustomReadDataLabels: customReadDataLabels,
 			})
 		}
 	}
