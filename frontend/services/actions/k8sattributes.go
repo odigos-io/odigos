@@ -53,7 +53,7 @@ func CreateK8sAttributes(ctx context.Context, action model.ActionInput) (model.A
 
 	ns := env.GetCurrentNamespace()
 
-	generatedAction, err := kube.DefaultClient.ActionsClient.K8sAttributeses(ns).Create(ctx, k8sAttributesAction, metav1.CreateOptions{})
+	generatedAction, err := kube.DefaultClient.ActionsClient.K8sAttributes(ns).Create(ctx, k8sAttributesAction, metav1.CreateOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create K8sAttributes: %v", err)
 	}
@@ -97,7 +97,7 @@ func UpdateK8sAttributes(ctx context.Context, id string, action model.ActionInpu
 	ns := env.GetCurrentNamespace()
 
 	// Fetch the existing action
-	existingAction, err := kube.DefaultClient.ActionsClient.K8sAttributeses(ns).Get(ctx, id, metav1.GetOptions{})
+	existingAction, err := kube.DefaultClient.ActionsClient.K8sAttributes(ns).Get(ctx, id, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch K8sAttributes: %v", err)
 	}
@@ -127,7 +127,7 @@ func UpdateK8sAttributes(ctx context.Context, id string, action model.ActionInpu
 	existingAction.Spec.AnnotationsAttributes = details.AnnotationsAttributes
 
 	// Update the action in Kubernetes
-	updatedAction, err := kube.DefaultClient.ActionsClient.K8sAttributeses(ns).Update(ctx, existingAction, metav1.UpdateOptions{})
+	updatedAction, err := kube.DefaultClient.ActionsClient.K8sAttributes(ns).Update(ctx, existingAction, metav1.UpdateOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to update K8sAttributes: %v", err)
 	}
@@ -172,7 +172,7 @@ func DeleteK8sAttributes(ctx context.Context, id string) error {
 	ns := env.GetCurrentNamespace()
 
 	// Delete the action by its ID from Kubernetes
-	err := kube.DefaultClient.ActionsClient.K8sAttributeses(ns).Delete(ctx, id, metav1.DeleteOptions{})
+	err := kube.DefaultClient.ActionsClient.K8sAttributes(ns).Delete(ctx, id, metav1.DeleteOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return fmt.Errorf("K8sAttributes action with ID %s not found", id)

@@ -35,7 +35,7 @@ func newFakeK8sAttributeses(fake *FakeActionsV1alpha1, namespace string) typedac
 		gentype.NewFakeClientWithListAndApply[*v1alpha1.K8sAttributes, *v1alpha1.K8sAttributesList, *actionsv1alpha1.K8sAttributesApplyConfiguration](
 			fake.Fake,
 			namespace,
-			v1alpha1.SchemeGroupVersion.WithResource("k8sattributeses"),
+			v1alpha1.SchemeGroupVersion.WithResource("k8sattributes"),
 			v1alpha1.SchemeGroupVersion.WithKind("K8sAttributes"),
 			func() *v1alpha1.K8sAttributes { return &v1alpha1.K8sAttributes{} },
 			func() *v1alpha1.K8sAttributesList { return &v1alpha1.K8sAttributesList{} },
