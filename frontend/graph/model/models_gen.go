@@ -178,10 +178,32 @@ func (this DeleteAttributeAction) GetSignals() []SignalType {
 	return interfaceSlice
 }
 
+type Destination struct {
+	ID              string                        `json:"id"`
+	Name            string                        `json:"name"`
+	Type            string                        `json:"type"`
+	ExportedSignals *ExportedSignals              `json:"exportedSignals"`
+	Fields          string                        `json:"fields"`
+	DestinationType *DestinationTypesCategoryItem `json:"destinationType"`
+	Conditions      []*Condition                  `json:"conditions,omitempty"`
+}
+
 type DestinationDetails struct {
 	Type      string `json:"type"`
 	URLString string `json:"urlString"`
 	Fields    string `json:"fields"`
+}
+
+type DestinationFieldYamlProperties struct {
+	Name                 string                 `json:"name"`
+	DisplayName          string                 `json:"displayName"`
+	ComponentType        string                 `json:"componentType"`
+	ComponentProperties  string                 `json:"componentProperties"`
+	Secret               bool                   `json:"secret"`
+	InitialValue         string                 `json:"initialValue"`
+	RenderCondition      []string               `json:"renderCondition"`
+	HideFromReadData     []string               `json:"hideFromReadData"`
+	CustomReadDataLabels []*CustomReadDataLabel `json:"customReadDataLabels"`
 }
 
 type DestinationInput struct {
@@ -189,6 +211,21 @@ type DestinationInput struct {
 	Type            string                `json:"type"`
 	ExportedSignals *ExportedSignalsInput `json:"exportedSignals"`
 	Fields          []*FieldInput         `json:"fields"`
+}
+
+type DestinationTypesCategoryItem struct {
+	Type                    string                            `json:"type"`
+	DisplayName             string                            `json:"displayName"`
+	ImageURL                string                            `json:"imageUrl"`
+	SupportedSignals        *SupportedSignals                 `json:"supportedSignals"`
+	TestConnectionSupported bool                              `json:"testConnectionSupported"`
+	Fields                  []*DestinationFieldYamlProperties `json:"fields"`
+}
+
+type DestinationsCategory struct {
+	Name        string                          `json:"name"`
+	Description string                          `json:"description"`
+	Items       []*DestinationTypesCategoryItem `json:"items"`
 }
 
 type EntityProperty struct {
@@ -225,22 +262,16 @@ func (this ErrorSamplerAction) GetSignals() []SignalType {
 	return interfaceSlice
 }
 
-type ExportedSignalsInput struct {
+type ExportedSignals struct {
 	Traces  bool `json:"traces"`
 	Metrics bool `json:"metrics"`
 	Logs    bool `json:"logs"`
 }
 
-type Field struct {
-	Name                 string                 `json:"name"`
-	DisplayName          string                 `json:"displayName"`
-	ComponentType        string                 `json:"componentType"`
-	ComponentProperties  string                 `json:"componentProperties"`
-	Secret               bool                   `json:"secret"`
-	InitialValue         string                 `json:"initialValue"`
-	RenderCondition      []string               `json:"renderCondition"`
-	HideFromReadData     []string               `json:"hideFromReadData"`
-	CustomReadDataLabels []*CustomReadDataLabel `json:"customReadDataLabels"`
+type ExportedSignalsInput struct {
+	Traces  bool `json:"traces"`
+	Metrics bool `json:"metrics"`
+	Logs    bool `json:"logs"`
 }
 
 type FieldInput struct {
@@ -253,8 +284,8 @@ type GetConfigResponse struct {
 	Readonly     bool               `json:"readonly"`
 }
 
-type GetDestinationDetailsResponse struct {
-	Fields []*Field `json:"fields"`
+type GetDestinationCategories struct {
+	Categories []*DestinationsCategory `json:"categories"`
 }
 
 type HTTPPayloadCollection struct {
@@ -404,6 +435,10 @@ type NodeCollectorAnalyze struct {
 	CurrentNodes   *EntityProperty `json:"currentNodes,omitempty"`
 	UpdatedNodes   *EntityProperty `json:"updatedNodes,omitempty"`
 	AvailableNodes *EntityProperty `json:"availableNodes,omitempty"`
+}
+
+type ObservabilitySignalSupport struct {
+	Supported bool `json:"supported"`
 }
 
 type OdigosAnalyze struct {
@@ -618,6 +653,12 @@ type SourceContainer struct {
 	Instrumented           bool    `json:"instrumented"`
 	InstrumentationMessage string  `json:"instrumentationMessage"`
 	OtelDistroName         *string `json:"otelDistroName,omitempty"`
+}
+
+type SupportedSignals struct {
+	Traces  *ObservabilitySignalSupport `json:"traces"`
+	Metrics *ObservabilitySignalSupport `json:"metrics"`
+	Logs    *ObservabilitySignalSupport `json:"logs"`
 }
 
 type TestConnectionResponse struct {
