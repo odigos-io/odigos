@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
