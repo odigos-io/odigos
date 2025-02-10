@@ -116,17 +116,19 @@ type Condition struct {
 	LastTransitionTime *string         `json:"lastTransitionTime,omitempty"`
 }
 
+type ContainerAgentConfigAnalyze struct {
+	ContainerName  *EntityProperty `json:"containerName"`
+	AgentEnabled   *EntityProperty `json:"agentEnabled"`
+	Reason         *EntityProperty `json:"reason,omitempty"`
+	Message        *EntityProperty `json:"message,omitempty"`
+	OtelDistroName *EntityProperty `json:"otelDistroName,omitempty"`
+}
+
 type ContainerRuntimeInfoAnalyze struct {
 	ContainerName  *EntityProperty   `json:"containerName"`
 	Language       *EntityProperty   `json:"language"`
 	RuntimeVersion *EntityProperty   `json:"runtimeVersion"`
 	EnvVars        []*EntityProperty `json:"envVars"`
-}
-
-type ContainerWorkloadManifestAnalyze struct {
-	ContainerName *EntityProperty   `json:"containerName"`
-	Devices       *EntityProperty   `json:"devices"`
-	OriginalEnv   []*EntityProperty `json:"originalEnv"`
 }
 
 type CustomReadDataLabel struct {
@@ -267,17 +269,6 @@ type HTTPPayloadCollectionInput struct {
 	DropPartialPayloads *bool     `json:"dropPartialPayloads,omitempty"`
 }
 
-type InstrumentationConfigAnalyze struct {
-	Created    *EntityProperty                `json:"created"`
-	CreateTime *EntityProperty                `json:"createTime,omitempty"`
-	Containers []*ContainerRuntimeInfoAnalyze `json:"containers"`
-}
-
-type InstrumentationDeviceAnalyze struct {
-	StatusText *EntityProperty                     `json:"statusText"`
-	Containers []*ContainerWorkloadManifestAnalyze `json:"containers"`
-}
-
 type InstrumentationInstanceAnalyze struct {
 	Healthy               *EntityProperty   `json:"healthy"`
 	Message               *EntityProperty   `json:"message,omitempty"`
@@ -333,14 +324,14 @@ type K8sActualNamespace struct {
 }
 
 type K8sActualSource struct {
-	Namespace         string                           `json:"namespace"`
-	Name              string                           `json:"name"`
-	Kind              K8sResourceKind                  `json:"kind"`
-	NumberOfInstances *int                             `json:"numberOfInstances,omitempty"`
-	Selected          *bool                            `json:"selected,omitempty"`
-	OtelServiceName   *string                          `json:"otelServiceName,omitempty"`
-	Containers        []*SourceContainerRuntimeDetails `json:"containers,omitempty"`
-	Conditions        []*Condition                     `json:"conditions,omitempty"`
+	Namespace         string             `json:"namespace"`
+	Name              string             `json:"name"`
+	Kind              K8sResourceKind    `json:"kind"`
+	NumberOfInstances *int               `json:"numberOfInstances,omitempty"`
+	Selected          *bool              `json:"selected,omitempty"`
+	OtelServiceName   *string            `json:"otelServiceName,omitempty"`
+	Containers        []*SourceContainer `json:"containers,omitempty"`
+	Conditions        []*Condition       `json:"conditions,omitempty"`
 }
 
 type K8sDesiredNamespaceInput struct {
@@ -426,6 +417,12 @@ type OdigosAnalyze struct {
 	NodeCollector        *NodeCollectorAnalyze    `json:"nodeCollector"`
 	IsSettled            bool                     `json:"isSettled"`
 	HasErrors            bool                     `json:"hasErrors"`
+}
+
+type OtelAgentsAnalyze struct {
+	Created    *EntityProperty                `json:"created"`
+	CreateTime *EntityProperty                `json:"createTime,omitempty"`
+	Containers []*ContainerAgentConfigAnalyze `json:"containers"`
 }
 
 type OverviewMetricsResponse struct {
@@ -603,23 +600,24 @@ type SingleSourceMetricsResponse struct {
 }
 
 type SourceAnalyze struct {
-	Name                  *EntityProperty                `json:"name"`
-	Kind                  *EntityProperty                `json:"kind"`
-	Namespace             *EntityProperty                `json:"namespace"`
-	SourceObjects         *InstrumentationSourcesAnalyze `json:"sourceObjects"`
-	RuntimeInfo           *RuntimeInfoAnalyze            `json:"runtimeInfo"`
-	InstrumentationConfig *InstrumentationConfigAnalyze  `json:"instrumentationConfig"`
-	InstrumentationDevice *InstrumentationDeviceAnalyze  `json:"instrumentationDevice"`
-	TotalPods             int                            `json:"totalPods"`
-	PodsPhasesCount       string                         `json:"podsPhasesCount"`
-	Pods                  []*PodAnalyze                  `json:"pods"`
+	Name            *EntityProperty                `json:"name"`
+	Kind            *EntityProperty                `json:"kind"`
+	Namespace       *EntityProperty                `json:"namespace"`
+	SourceObjects   *InstrumentationSourcesAnalyze `json:"sourceObjects"`
+	RuntimeInfo     *RuntimeInfoAnalyze            `json:"runtimeInfo"`
+	OtelAgents      *OtelAgentsAnalyze             `json:"otelAgents"`
+	TotalPods       int                            `json:"totalPods"`
+	PodsPhasesCount string                         `json:"podsPhasesCount"`
+	Pods            []*PodAnalyze                  `json:"pods"`
 }
 
-type SourceContainerRuntimeDetails struct {
-	ContainerName  string  `json:"containerName"`
-	Language       string  `json:"language"`
-	RuntimeVersion string  `json:"runtimeVersion"`
-	OtherAgent     *string `json:"otherAgent,omitempty"`
+type SourceContainer struct {
+	ContainerName          string  `json:"containerName"`
+	Language               string  `json:"language"`
+	RuntimeVersion         string  `json:"runtimeVersion"`
+	Instrumented           bool    `json:"instrumented"`
+	InstrumentationMessage string  `json:"instrumentationMessage"`
+	OtelDistroName         *string `json:"otelDistroName,omitempty"`
 }
 
 type TestConnectionResponse struct {

@@ -25,7 +25,7 @@ const (
 	NginxProgrammingLanguage ProgrammingLanguage = "nginx"
 	// Used when the language detection is not successful for all the available inspectors
 	UnknownProgrammingLanguage ProgrammingLanguage = "unknown"
-	// Ignored is used when the odigos is configured to ignore the process/container
+	// Deprecated: This is no longer supported and will not be set be odiglet
 	IgnoredProgrammingLanguage ProgrammingLanguage = "ignored"
 )
 

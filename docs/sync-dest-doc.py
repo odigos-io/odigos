@@ -18,7 +18,7 @@ def indent_lines(str="", spaces=0):
         str: Indented string.
     """
     indented = "\n".join(
-        f"{" " * spaces}{line}" if line.strip() else line for line in str.splitlines()
+        f"{' ' * spaces}{line}" if line.strip() else line for line in str.splitlines()
     )
 
     return indented
@@ -392,12 +392,15 @@ def get_documenation(yaml_content):
         + "\n    !! END CUSTOM EDIT !!"
         + "\n*/}"
     )
+    signals_content = f"\n\n{signals}" if signals else ""
+    fields_content = f"\n\n{fields}" if fields else ""
+    note_content = f"\n\n{note}" if note else ""
     content_after_custom = (
         f"{start_after_custom}"
         + "\n\n### Configuring Destination Fields"
-        + f"{f"\n\n{signals}" if signals else ""}"
-        + f"{f"\n\n{fields}" if fields else ""}"
-        + f"{f"\n\n{note}" if note else ""}"
+        + signals_content
+        + fields_content
+        + note_content
         + "\n\n### Adding Destination to Odigos"
         + "\n\nThere are two primary methods for configuring destinations in Odigos:"
         + "\n\n##### **Using the UI**"
@@ -489,14 +492,15 @@ def create_mdx(mdx_path, yaml_content):
         None
     """
     documenation = get_documenation(yaml_content)
-
+    content_before = documenation.get("content_before_custom")
+    content_after = documenation.get("content_after_custom")    
     mdx_content = (
-        f"{documenation.get("content_before_custom")}"
+        f"{content_before}"
         + "\n\n**Creating Account**<br />"
         + "\nGo to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**"
         + "\n\n**Obtaining Access Token**<br />"
         + "\nGo to **⚙️ > Access Tokens** and click **Create New**"
-        + f"\n\n{documenation.get("content_after_custom")}"
+        + f"\n\n{content_after}"
     )
 
     with open(mdx_path, 'w') as mdx_file:
@@ -561,20 +565,13 @@ def process_overview(backend_yaml_dir, docs_dir):
                     category = meta.get("category", "")
                     signals = yaml_content.get("spec", {}).get("signals", {})
 
-                    rows.append(f"{
-                        generate_logo(yaml_content, True)
-                    } | [{name}](/backends/{file.replace('.yaml', '')}) | {
-                        "Managed" if category == "managed" else "Self-Hosted"
-                    } | {
-                        '✅' if signals.get("traces", {}).get(
-                            "supported", False) else ''
-                    } | {
-                        '✅' if signals.get("metrics", {}).get(
-                            "supported", False) else ''
-                    } | {
-                        '✅' if signals.get("logs", {}).get(
-                            "supported", False) else ''
-                    } |"
+                    rows.append(
+                        f"{generate_logo(yaml_content, True)} | "
+                        f"[{name}](/backends/{file.replace('.yaml', '')}) | "
+                        f"{'Managed' if category == 'managed' else 'Self-Hosted'} | "
+                        f"{'✅' if signals.get('traces', {}).get('supported', False) else ''} | "
+                        f"{'✅' if signals.get('metrics', {}).get('supported', False) else ''} | "
+                        f"{'✅' if signals.get('logs', {}).get('supported', False) else ''} |"
                     )
 
     content = (
