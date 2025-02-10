@@ -313,17 +313,6 @@ func (r *computePlatformResolver) InstrumentationRules(ctx context.Context, obj 
 	return services.ListInstrumentationRules(ctx)
 }
 
-// Type is the resolver for the type field.
-func (r *destinationResolver) Type(ctx context.Context, obj *model.Destination) (string, error) {
-	return string(obj.Type), nil
-}
-
-// Conditions is the resolver for the conditions field.
-func (r *destinationResolver) Conditions(ctx context.Context, obj *model.Destination) ([]*model.Condition, error) {
-	conditions := convertConditions(obj.Conditions)
-	return conditions, nil
-}
-
 // K8sActualSources is the resolver for the k8sActualSources field.
 func (r *k8sActualNamespaceResolver) K8sActualSources(ctx context.Context, obj *model.K8sActualNamespace) ([]*model.K8sActualSource, error) {
 	ns := obj.Name
@@ -847,41 +836,11 @@ func (r *queryResolver) Config(ctx context.Context) (*model.GetConfigResponse, e
 	return &config, nil
 }
 
-// DestinationTypes is the resolver for the destinationTypes field.
-func (r *queryResolver) DestinationTypes(ctx context.Context) (*model.GetDestinationTypesResponse, error) {
-	destTypes := services.GetDestinationTypes()
+// DestinationCategories is the resolver for the destinationCategories field.
+func (r *queryResolver) DestinationCategories(ctx context.Context) (*model.GetDestinationCategories, error) {
+	destTypes := services.GetDestinationCategories()
 
 	return &destTypes, nil
-}
-
-// DestinationTypeDetails is the resolver for the destinationTypeDetails field.
-func (r *queryResolver) DestinationTypeDetails(ctx context.Context, typeArg string) (*model.GetDestinationDetailsResponse, error) {
-	destType := common.DestinationType(typeArg)
-	destTypeConfig, err := services.GetDestinationTypeConfig(destType)
-	if err != nil {
-		return nil, fmt.Errorf("destination type %s not found", destType)
-	}
-
-	var resp model.GetDestinationDetailsResponse
-	for _, field := range destTypeConfig.Spec.Fields {
-		componentPropsJSON, err := json.Marshal(field.ComponentProps)
-		if err != nil {
-			return nil, fmt.Errorf("error marshalling component properties: %v", err)
-		}
-		resp.Fields = append(resp.Fields, &model.Field{
-			Name:                 field.Name,
-			DisplayName:          field.DisplayName,
-			ComponentType:        field.ComponentType,
-			ComponentProperties:  string(componentPropsJSON),
-			Secret:               field.Secret,
-			InitialValue:         field.InitialValue,
-			RenderCondition:      field.RenderCondition,
-			HideFromReadData:     field.HideFromReadData,
-			CustomReadDataLabels: convertCustomReadDataLabels(field.CustomReadDataLabels),
-		})
-	}
-
-	return &resp, nil
 }
 
 // PotentialDestinations is the resolver for the potentialDestinations field.
@@ -957,9 +916,6 @@ func (r *queryResolver) DescribeSource(ctx context.Context, namespace string, ki
 // ComputePlatform returns ComputePlatformResolver implementation.
 func (r *Resolver) ComputePlatform() ComputePlatformResolver { return &computePlatformResolver{r} }
 
-// Destination returns DestinationResolver implementation.
-func (r *Resolver) Destination() DestinationResolver { return &destinationResolver{r} }
-
 // K8sActualNamespace returns K8sActualNamespaceResolver implementation.
 func (r *Resolver) K8sActualNamespace() K8sActualNamespaceResolver {
 	return &k8sActualNamespaceResolver{r}
@@ -972,7 +928,6 @@ func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type computePlatformResolver struct{ *Resolver }
-type destinationResolver struct{ *Resolver }
 type k8sActualNamespaceResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

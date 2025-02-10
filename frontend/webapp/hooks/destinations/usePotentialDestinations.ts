@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import { useQuery } from '@apollo/client';
 import { safeJsonParse } from '@odigos/ui-utils';
-import { type IAppState, useAppStore } from '@/store';
-import { type GetDestinationTypesResponse } from '@/types';
-import { GET_DESTINATION_TYPE, GET_POTENTIAL_DESTINATIONS } from '@/graphql';
+import { GET_POTENTIAL_DESTINATIONS } from '@/graphql';
+import { useDestinationCategories } from './useDestinationCategories';
+import { type ISetupState, useSetupStore } from '@odigos/ui-containers';
 
 interface PotentialDestination {
   type: string;
@@ -14,7 +14,7 @@ interface GetPotentialDestinationsData {
   potentialDestinations: PotentialDestination[];
 }
 
-const checkIfConfigured = (configuredDest: IAppState['configuredDestinations'][0], potentialDest: PotentialDestination, autoFilledFields: Record<string, any>) => {
+const checkIfConfigured = (configuredDest: ISetupState['configuredDestinations'][0], potentialDest: PotentialDestination, autoFilledFields: Record<string, any>) => {
   const typesMatch = configuredDest.stored.type === potentialDest.type;
   if (!typesMatch) return false;
 
@@ -35,20 +35,20 @@ const checkIfConfigured = (configuredDest: IAppState['configuredDestinations'][0
 };
 
 export const usePotentialDestinations = () => {
-  const { configuredDestinations } = useAppStore();
-  const { data: { destinationTypes } = {} } = useQuery<GetDestinationTypesResponse>(GET_DESTINATION_TYPE);
+  const { configuredDestinations } = useSetupStore();
+  const { categories } = useDestinationCategories();
   const { loading, error, data: { potentialDestinations } = {} } = useQuery<GetPotentialDestinationsData>(GET_POTENTIAL_DESTINATIONS);
 
   const mappedPotentialDestinations = useMemo(() => {
-    if (!destinationTypes || !potentialDestinations) return [];
+    if (!categories || !potentialDestinations) return [];
 
     // Create a deep copy of destination types to manipulate
-    const categories: GetDestinationTypesResponse['destinationTypes']['categories'] = JSON.parse(JSON.stringify(destinationTypes.categories));
+    const parsed: typeof categories = JSON.parse(JSON.stringify(categories));
 
     // Map over the potential destinations
     return potentialDestinations
       .map((pd) => {
-        for (const category of categories) {
+        for (const category of parsed) {
           const autoFilledFields = safeJsonParse<{ [key: string]: string }>(pd.fields, {});
           const alreadyConfigured = !!configuredDestinations.find((cd) => checkIfConfigured(cd, pd, autoFilledFields));
 
@@ -59,7 +59,10 @@ export const usePotentialDestinations = () => {
               return {
                 // Spread the matched destination type data into the potential destination
                 ...category.items[idx],
-                fields: autoFilledFields,
+                fields: category.items[idx].fields.map((field) => ({
+                  ...field,
+                  initialValue: autoFilledFields[field.name],
+                })),
               };
             }
           }
@@ -68,11 +71,11 @@ export const usePotentialDestinations = () => {
         return null;
       })
       .filter((pd) => !!pd);
-  }, [configuredDestinations, destinationTypes, potentialDestinations]);
+  }, [configuredDestinations, categories, potentialDestinations]);
 
   return {
     loading,
     error,
-    data: mappedPotentialDestinations,
+    potentialDestinations: mappedPotentialDestinations,
   };
 };
