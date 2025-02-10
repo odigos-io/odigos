@@ -41,6 +41,14 @@ type ErrorSamplerListerExpansion interface{}
 // ErrorSamplerNamespaceLister.
 type ErrorSamplerNamespaceListerExpansion interface{}
 
+// K8sAttributesListerExpansion allows custom methods to be added to
+// K8sAttributesLister.
+type K8sAttributesListerExpansion interface{}
+
+// K8sAttributesNamespaceListerExpansion allows custom methods to be added to
+// K8sAttributesNamespaceLister.
+type K8sAttributesNamespaceListerExpansion interface{}
+
 // LatencySamplerListerExpansion allows custom methods to be added to
 // LatencySamplerLister.
 type LatencySamplerListerExpansion interface{}

@@ -56,7 +56,12 @@ func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind k8s
 		return ctrl.Result{}, err
 	}
 
-	enabled, reason, message, err := sourceutils.IsObjectInstrumentedBySource(ctx, k8sClient, obj)
+	workloadObj, err := workload.ObjectToWorkload(obj)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	enabled, markedForInstrumentationCondition, err := sourceutils.IsObjectInstrumentedBySource(ctx, k8sClient, obj)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -78,14 +83,10 @@ func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind k8s
 		}
 	}
 
-	cond := metav1.Condition{
-		Type:    odigosv1.MarkedForInstrumentationStatusConditionType,
-		Status:  metav1.ConditionTrue, // if instrumentation config is created, it is always instrumented.
-		Reason:  string(reason),
-		Message: message,
-	}
-	statuschanged := meta.SetStatusCondition(&ic.Status.Conditions, cond)
-	if statuschanged {
+	markedForInstChanged := meta.SetStatusCondition(&ic.Status.Conditions, markedForInstrumentationCondition)
+	runtimeDetailsChanged := initiateRuntimeDetailsConditionIfMissing(ic, workloadObj)
+
+	if markedForInstChanged || runtimeDetailsChanged {
 		logger.Info("Updating initial instrumentation status condition of InstrumentationConfig", "name", instConfigName, "namespace", req.Namespace)
 		if !areConditionsLogicallySorted(ic.Status.Conditions) {
 			// it is possible that by the time we are running this code, the status conditions are updated by another controller

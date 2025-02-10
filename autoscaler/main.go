@@ -188,6 +188,9 @@ func main() {
 				&apiactions.RenameAttribute{}: {
 					Field: nsSelector,
 				},
+				&apiactions.K8sAttributes{}: {
+					Field: nsSelector,
+				},
 			},
 		},
 		HealthProbeBindAddress: probeAddr,
