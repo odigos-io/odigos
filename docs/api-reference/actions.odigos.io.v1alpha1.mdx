@@ -783,7 +783,7 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
   
 <tr>
 <td>
-<code>annotation</code> <B>[Required]</B>
+<code>annotationKey</code> <B>[Required]</B>
 </td>
 <td>
 <code>string</code>
@@ -866,21 +866,42 @@ e.g. &quot;kubectl.kubernetes.restartedAte&quot;</p>
 </tr>
 <tr>
 <td>
-<code>metadataAttributes</code>
+<code>collectContainerAttributes</code> <B>[Required]</B>
 </td>
 <td>
-<code>[]string</code>
+<code>bool</code>
 </td>
 <td>
-   <p>Specifies the list of metadata attributes to be extracted from the pod.
-The attributes collected by default are:
-k8s.namespace.name
-k8s.pod.name
-k8s.pod.uid
-k8s.pod.start_time
-k8s.deployment.name
-k8s.node.name
-To see all possible attributes see https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/k8sattributesprocessor</p>
+   <p>Collect the following pod attributes:
+k8s.container.name
+container.id
+container.image.name
+container.image.tag</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>collectWorkloadUID</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>Collect the following workload UID attributes:
+k8s.deployment.uid
+k8s.daemonset.uid
+k8s.statefulset.uid</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>collectClusterUID</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>Collect the k8s.cluster.uid attribute, which is set to the uid of the namespace &quot;kube-system&quot;</p>
 </td>
 </tr>
 <tr>
@@ -930,7 +951,7 @@ To see all possible attributes see https://github.com/open-telemetry/opentelemet
 <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#condition-v1-meta"><code>[]meta/v1.Condition</code></a>
 </td>
 <td>
-   <p>Represents the observations of a k8sattirbutes' current state.
+   <p>Represents the observations of a k8sattributes' current state.
 Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot;</p>
 </td>
 </tr>
@@ -951,7 +972,7 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
   
 <tr>
 <td>
-<code>label</code> <B>[Required]</B>
+<code>labelKey</code> <B>[Required]</B>
 </td>
 <td>
 <code>string</code>
