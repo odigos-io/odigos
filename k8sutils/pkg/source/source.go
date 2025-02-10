@@ -27,7 +27,7 @@ func IsObjectInstrumentedBySource(ctx context.Context,
 			Type:    odigosv1.MarkedForInstrumentationStatusConditionType,
 			Status:  metav1.ConditionUnknown,
 			Reason:  string(odigosv1.MarkedForInstrumentationReasonError),
-			Message: "cannot determine if workload is marked for instrumentation due to error",
+			Message: "cannot determine if workload is marked for instrumentation due to error: " + err.Error(),
 		}
 		return false, condition, err
 	}
