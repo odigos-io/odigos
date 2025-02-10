@@ -63,6 +63,9 @@ export const useActionCRUD = (params?: UseActionCrudParams): UseActionCrudRespon
       return {
         ...item,
         spec: {
+          actionName: parsedSpec.actionName,
+          notes: parsedSpec.notes,
+          disabled: parsedSpec.disabled,
           signals: parsedSpec.signals.map((str) => str.toLowerCase() as SIGNAL_TYPE),
           clusterAttributes: parsedSpec.clusterAttributes,
           attributeNamesToDelete: parsedSpec.attributeNamesToDelete,
@@ -192,14 +195,14 @@ export const useActionCRUD = (params?: UseActionCrudParams): UseActionCrudRespon
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
-        createAction({ variables: { action: mapFormToInput(action) } });
+        createAction({ variables: { action: mapFormToInput({ ...action }) } });
       }
     },
     updateAction: (id, action) => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
-        updateAction({ variables: { id, action: mapFormToInput(action) } });
+        updateAction({ variables: { id, action: mapFormToInput({ ...action }) } });
       }
     },
     deleteAction: (id, actionType) => {
