@@ -115,24 +115,6 @@ func UpdateK8sAttributes(ctx context.Context, id string, action model.ActionInpu
 		return nil, fmt.Errorf("failed to convert signals: %v", err)
 	}
 
-	// Convert LabelsAttributes from model to v1alpha1
-	// labelAttrs := make([]v1alpha1.K8sLabelAttribute, len(details.LabelsAttributes))
-	// for i, attr := range details.LabelsAttributes {
-	// 	labelAttrs[i] = v1alpha1.K8sLabelAttribute{
-	// 		LabelKey:     attr.LabelKey,
-	// 		AttributeKey: attr.AttributeKey,
-	// 	}
-	// }
-
-	// Convert AnnotationsAttributes from model to v1alpha1
-	// annotAttrs := make([]v1alpha1.K8sAnnotationAttribute, len(details.AnnotationsAttributes))
-	// for i, attr := range details.AnnotationsAttributes {
-	// 	annotAttrs[i] = v1alpha1.K8sAnnotationAttribute{
-	// 		AnnotationKey:     attr.AnnotationKey,
-	// 		AttributeKey: attr.AttributeKey,
-	// 	}
-	// }
-
 	// Update the existing action with new values
 	existingAction.Spec.ActionName = services.DerefString(action.Name)
 	existingAction.Spec.Notes = services.DerefString(action.Notes)
