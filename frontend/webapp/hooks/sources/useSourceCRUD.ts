@@ -2,23 +2,32 @@ import { useMemo } from 'react';
 import { useConfig } from '../config';
 import { useMutation } from '@apollo/client';
 import { useNamespace } from '../compute-platform';
+import { usePaginatedStore } from '@/store';
 import { PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
-import { type PatchSourceRequestInput, type K8sActualSource } from '@/types';
-import { ACTION, CONDITION_STATUS, DISPLAY_TITLES, FORM_ALERTS } from '@/utils';
-import { ENTITY_TYPES, getSseTargetFromId, K8S_RESOURCE_KIND, NOTIFICATION_TYPE, type WorkloadId } from '@odigos/ui-utils';
-import { type PendingItem, useAppStore, useFilterStore, useNotificationStore, usePaginatedStore, usePendingStore } from '@/store';
+import type { FetchedSource, SourceUpdateInput } from '@/@types';
+import { CONDITION_STATUS, CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, K8S_RESOURCE_KIND, NOTIFICATION_TYPE, type WorkloadId } from '@odigos/ui-utils';
+import { type NamespaceSelectionFormData, type PendingItem, type SourceSelectionFormData, useFilterStore, useNotificationStore, usePendingStore, useSetupStore } from '@odigos/ui-containers';
 
 interface Params {
   onSuccess?: (type: string) => void;
   onError?: (type: string) => void;
 }
 
-export const useSourceCRUD = (params?: Params) => {
+interface UseSourceCrudResponse {
+  loading: boolean;
+  sources: FetchedSource[];
+  filteredSources: FetchedSource[];
+
+  persistSources: (selectAppsList: SourceSelectionFormData, futureSelectAppsList: NamespaceSelectionFormData) => Promise<void>;
+  updateSource: (sourceId: WorkloadId, payload: SourceUpdateInput) => Promise<void>;
+}
+
+export const useSourceCRUD = (params?: Params): UseSourceCrudResponse => {
   const { persistNamespace } = useNamespace();
 
   const filters = useFilterStore();
   const { data: config } = useConfig();
-  const { setConfiguredSources } = useAppStore();
+  const { setConfiguredSources } = useSetupStore();
   const { sources, updateSource } = usePaginatedStore();
   const { addPendingItems, removePendingItems } = usePendingStore();
   const { addNotification, removeNotifications } = useNotificationStore();
@@ -68,7 +77,7 @@ export const useSourceCRUD = (params?: Params) => {
 
       if (count === 1) {
         const { selected } = req?.variables?.sources?.[0] || {};
-        handleComplete(selected ? ACTION.CREATE : ACTION.DELETE);
+        handleComplete(selected ? CRUD.CREATE : CRUD.DELETE);
       } else {
         handleComplete('');
       }
@@ -76,9 +85,9 @@ export const useSourceCRUD = (params?: Params) => {
   });
 
   const [updateSourceName, uState] = useMutation<{ updateK8sActualSource: boolean }>(UPDATE_K8S_ACTUAL_SOURCE, {
-    onError: (error) => handleError(ACTION.UPDATE, error.message),
+    onError: (error) => handleError(CRUD.UPDATE, error.message),
     onCompleted: (res, req) => {
-      handleComplete(ACTION.UPDATE);
+      handleComplete(CRUD.UPDATE);
 
       // This is instead of toasting a k8s modified-event watcher...
       // If we do toast with a watcher, we can't guarantee an SSE will be sent for this update alone. It will definitely include SSE for all updates, even those unexpected.
@@ -87,7 +96,7 @@ export const useSourceCRUD = (params?: Params) => {
         const { sourceId, patchSourceRequest } = req?.variables || {};
 
         updateSource(sourceId, patchSourceRequest);
-        notifyUser(NOTIFICATION_TYPE.SUCCESS, ACTION.UPDATE, `Successfully updated "${sourceId.name}" source`, sourceId);
+        notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.UPDATE, `Successfully updated "${sourceId.name}" source`, sourceId);
         removePendingItems([{ entityType: ENTITY_TYPES.SOURCE, entityId: sourceId }]);
       }, 2000);
     },
@@ -98,7 +107,7 @@ export const useSourceCRUD = (params?: Params) => {
     sources,
     filteredSources: filtered,
 
-    persistSources: async (selectAppsList: { [key: string]: K8sActualSource[] }, futureSelectAppsList: { [key: string]: boolean }) => {
+    persistSources: async (selectAppsList, futureSelectAppsList) => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
@@ -111,15 +120,7 @@ export const useSourceCRUD = (params?: Params) => {
         let alreadyNotifiedNamespaces = false;
 
         for (const [namespace, sources] of entries) {
-          const addToPendingStore: PendingItem[] = [];
-          const sendToGql: Pick<K8sActualSource, 'name' | 'kind' | 'selected'>[] = [];
-
-          sources.forEach(({ name, kind, selected }) => {
-            addToPendingStore.push({ entityType: ENTITY_TYPES.SOURCE, entityId: { namespace, name, kind } });
-            sendToGql.push({ name, kind, selected });
-          });
-
-          if (!!sendToGql.length) {
+          if (!!sources.length) {
             hasSources = true;
             if (!alreadyNotifiedSources) {
               alreadyNotifiedSources = true;
@@ -127,8 +128,17 @@ export const useSourceCRUD = (params?: Params) => {
             }
           }
 
+          const addToPendingStore: PendingItem[] = [];
+
+          sources.forEach(({ name, kind }) => {
+            addToPendingStore.push({
+              entityType: ENTITY_TYPES.SOURCE,
+              entityId: { namespace, name, kind },
+            });
+          });
+
           addPendingItems(addToPendingStore);
-          await persistSources({ variables: { namespace, sources: sendToGql } });
+          await persistSources({ variables: { namespace, sources } });
         }
 
         for (const [namespace, futureSelected] of Object.entries(futureSelectAppsList)) {
@@ -144,13 +154,13 @@ export const useSourceCRUD = (params?: Params) => {
       }
     },
 
-    updateSource: async (sourceId: WorkloadId, patchSourceRequest: PatchSourceRequestInput) => {
+    updateSource: async (sourceId, payload) => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
         notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Updating source...', undefined, true);
         addPendingItems([{ entityType: ENTITY_TYPES.SOURCE, entityId: sourceId }]);
-        await updateSourceName({ variables: { sourceId, patchSourceRequest } });
+        await updateSourceName({ variables: { sourceId, patchSourceRequest: payload } });
       }
     },
   };

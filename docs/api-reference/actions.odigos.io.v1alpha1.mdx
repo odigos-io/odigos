@@ -6,6 +6,7 @@
 - [AddClusterInfo](#AddClusterInfo)
 - [DeleteAttribute](#DeleteAttribute)
 - [ErrorSampler](#ErrorSampler)
+- [K8sAttributes](#K8sAttributes)
 - [LatencySampler](#LatencySampler)
 - [PiiMasking](#PiiMasking)
 - [ProbabilisticSampler](#ProbabilisticSampler)
@@ -153,6 +154,55 @@
 </td>
 <td>
 <a href="#ErrorSamplerStatus"><code>ErrorSamplerStatus</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `K8sAttributes` <a id="K8sAttributes"></a>
+    
+<p>K8sAttributes allows adding an action to collect k8s attributes.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
+<tr><td><code>kind</code></td><td>string</td><td><code>K8sAttributes</code></td></tr>
+    
+  
+<tr>
+<td>
+<code>metadata</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta"><code>meta/v1.ObjectMeta</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   Refer to the Kubernetes API documentation for the fields of the <code>metadata</code> field.
+   </td>
+</tr>
+<tr>
+<td>
+<code>spec</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#K8sAttributesSpec"><code>K8sAttributesSpec</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>status</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#K8sAttributesStatus"><code>K8sAttributesStatus</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -714,6 +764,234 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </td>
 <td>
    <p>Specifies the fallback sampling ratio to be applied in case service and endpoint filter match but the latency threshold is not met.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `K8sAnnotationAttribute` <a id="K8sAnnotationAttribute"></a>
+    
+
+**Appears in:**
+
+- [K8sAttributesSpec](#K8sAttributesSpec)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>annotationKey</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>The label name to be extracted from the pod.
+e.g. &quot;kubectl.kubernetes.io/restartedAt&quot;</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>attributeKey</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>The attribute key to be used for the resource attribute created from the label.
+e.g. &quot;kubectl.kubernetes.restartedAte&quot;</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `K8sAttributesSpec` <a id="K8sAttributesSpec"></a>
+    
+
+**Appears in:**
+
+- [K8sAttributes](#K8sAttributes)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>actionName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>notes</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>disabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>signals</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#ObservabilitySignal"><code>[]common.ObservabilitySignal</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>collectContainerAttributes</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>Collect the following container related attributes:
+k8s.container.name
+container.id
+container.image.name
+container.image.tag</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>collectWorkloadUID</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>Collect the following workload UID attributes:
+k8s.deployment.uid
+k8s.daemonset.uid
+k8s.statefulset.uid</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>collectClusterUID</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>Collect the k8s.cluster.uid attribute, which is set to the uid of the namespace &quot;kube-system&quot;</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>labelsAttributes</code>
+</td>
+<td>
+<a href="#K8sLabelAttribute"><code>[]K8sLabelAttribute</code></a>
+</td>
+<td>
+   <p>list of labels to be extracted from the pod, and the attribute key to be used for the resource attribute created from each label.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>annotationsAttributes</code>
+</td>
+<td>
+<a href="#K8sAnnotationAttribute"><code>[]K8sAnnotationAttribute</code></a>
+</td>
+<td>
+   <p>list of annotations to be extracted from the pod, and the attribute key to be used for the resource attribute created from each annotation.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `K8sAttributesStatus` <a id="K8sAttributesStatus"></a>
+    
+
+**Appears in:**
+
+- [K8sAttributes](#K8sAttributes)
+
+<p>K8sAttributesStatus defines the observed state of K8sAttributes action</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>conditions</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#condition-v1-meta"><code>[]meta/v1.Condition</code></a>
+</td>
+<td>
+   <p>Represents the observations of a k8sattributes' current state.
+Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot;</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `K8sLabelAttribute` <a id="K8sLabelAttribute"></a>
+    
+
+**Appears in:**
+
+- [K8sAttributesSpec](#K8sAttributesSpec)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>labelKey</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>The label name to be extracted from the pod.
+e.g. &quot;app.kubernetes.io/name&quot;</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>attributeKey</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>The attribute key to be used for the resource attribute created from the label.
+e.g. &quot;app.kubernetes.name&quot;</p>
 </td>
 </tr>
 </tbody>
