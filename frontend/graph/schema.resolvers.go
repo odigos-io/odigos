@@ -180,7 +180,7 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 	ns := env.GetCurrentNamespace()
 
 	// K8sAttributes actions
-	kaActions, err := kube.DefaultClient.ActionsClient.K8sAttributes(ns).List(ctx, metav1.ListOptions{})
+	kaActions, err := kube.DefaultClient.ActionsClient.K8sAttributeses(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
