@@ -70,7 +70,7 @@ spec:
                 type: boolean
               collectContainerAttributes:
                 description: |-
-                  Collect the following pod attributes:
+                  Collect the following container related attributes:
                   k8s.container.name
                   container.id
                   container.image.name

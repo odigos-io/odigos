@@ -49,7 +49,7 @@ type K8sAttributesSpec struct {
 	Disabled   bool                         `json:"disabled,omitempty"`
 	Signals    []common.ObservabilitySignal `json:"signals"`
 
-	// Collect the following pod attributes:
+	// Collect the following container related attributes:
 	// k8s.container.name
 	// container.id
 	// container.image.name
