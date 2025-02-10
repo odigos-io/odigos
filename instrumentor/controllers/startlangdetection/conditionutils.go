@@ -46,7 +46,7 @@ func initiateRuntimeDetailsConditionIfMissing(ic *odigosv1.InstrumentationConfig
 			Type:               odigosv1.RuntimeDetectionStatusConditionType,
 			Status:             metav1.ConditionTrue,
 			Reason:             string(odigosv1.RuntimeDetectionReasonWaitingForDetection),
-			Message:            "Runtime detection completed successfully",
+			Message:            "runtime detection completed successfully",
 			LastTransitionTime: metav1.NewTime(time.Now()),
 		})
 		return true

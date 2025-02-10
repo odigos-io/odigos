@@ -244,7 +244,7 @@ func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclien
 		Type:    odigosv1.RuntimeDetectionStatusConditionType,
 		Status:  metav1.ConditionTrue,
 		Reason:  string(odigosv1.RuntimeDetectionReasonDetectedSuccessfully),
-		Message: "Runtime detection completed successfully",
+		Message: "runtime detection completed successfully",
 	})
 
 	err = kubeclient.Status().Update(ctx, currentConfig)
