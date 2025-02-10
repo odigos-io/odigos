@@ -5,10 +5,11 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "lint": "next lint --fix",
+    "back:build": "cd .. && go build -o odigos-backend",
+    "back:start": "cd .. && ./odigos-backend --port 8085 --debug --address 0.0.0.0",
     "cy:run": "cypress run --e2e -q",
-    "cy:open": "cypress open --e2e -b electron"
+    "cy:open": "cypress open --e2e -b electron",
+    "lint:fix": "next lint --fix"
   },
   "dependencies": {
     "@apollo/client": "^3.12.11",
@@ -41,5 +42,6 @@
     "eslint-config-next": "15.1.6",
     "postcss": "^8.5.1",
     "typescript": "5.7.3"
-  }
+  },
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }
