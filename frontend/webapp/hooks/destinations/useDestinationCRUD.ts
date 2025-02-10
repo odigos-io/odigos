@@ -18,9 +18,9 @@ interface UseDestinationCrudResponse {
   filteredDestinations: Destination[];
   refetchDestinations: () => void;
 
-  createDestination: (destination: DestinationInput) => void;
-  updateDestination: (id: string, destination: DestinationInput) => void;
-  deleteDestination: (id: string) => void;
+  createDestination: (destination: DestinationInput) => Promise<void>;
+  updateDestination: (id: string, destination: DestinationInput) => Promise<void>;
+  deleteDestination: (id: string) => Promise<void>;
 }
 
 export const useDestinationCRUD = (params?: Params): UseDestinationCrudResponse => {

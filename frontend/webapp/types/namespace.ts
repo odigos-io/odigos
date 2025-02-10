@@ -10,7 +10,3 @@ export interface NamespaceInstrumentInput {
   name: string;
   futureSelected: boolean;
 }
-
-export interface NamespaceFutureAppsSelection {
-  [namespace: string]: boolean;
-}

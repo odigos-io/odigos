@@ -18,7 +18,7 @@ const OverviewHeader = () => {
   return (
     <Header
       left={[
-        <OdigosLogoText key='logo' size={80} />,
+        <OdigosLogoText key='logo' size={100} />,
         <PlatformSelect key='platform' type={PLATFORM_TYPE.K8S} />,
         <Status key='status' status={status} title={title} subtitle={message} size={14} family='primary' withIcon withBackground />,
         config?.readonly && (

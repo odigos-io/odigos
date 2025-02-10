@@ -4,9 +4,9 @@ import { useMutation } from '@apollo/client';
 import { useNamespace } from '../compute-platform';
 import { usePaginatedStore } from '@/store';
 import { PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
-import { type PendingItem, useFilterStore, useNotificationStore, usePendingStore, useSetupStore } from '@odigos/ui-containers';
-import { type NamespaceFutureAppsSelection, type FetchedSource, type SourceInstrumentInput, type SourceUpdateInput } from '@/types';
+import type { FetchedSource, SourceUpdateInput } from '@/types';
 import { CONDITION_STATUS, CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, K8S_RESOURCE_KIND, NOTIFICATION_TYPE, type WorkloadId } from '@odigos/ui-utils';
+import { type NamespaceSelectionFormData, type PendingItem, type SourceSelectionFormData, useFilterStore, useNotificationStore, usePendingStore, useSetupStore } from '@odigos/ui-containers';
 
 interface Params {
   onSuccess?: (type: string) => void;
@@ -18,7 +18,7 @@ interface UseSourceCrudResponse {
   sources: FetchedSource[];
   filteredSources: FetchedSource[];
 
-  persistSources: (selectAppsList: SourceInstrumentInput, futureSelectAppsList: NamespaceFutureAppsSelection) => Promise<void>;
+  persistSources: (selectAppsList: SourceSelectionFormData, futureSelectAppsList: NamespaceSelectionFormData) => Promise<void>;
   updateSource: (sourceId: WorkloadId, payload: SourceUpdateInput) => Promise<void>;
 }
 

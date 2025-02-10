@@ -1,7 +1,6 @@
 import { useQuery } from '@apollo/client';
 import { DESCRIBE_SOURCE } from '@/graphql';
-import { type DescribeSource } from '@/types';
-import { type WorkloadId } from '@odigos/ui-utils';
+import type { DescribeSource, WorkloadId } from '@odigos/ui-utils';
 
 export const useDescribeSource = (params?: WorkloadId) => {
   const { namespace, name, kind } = params || {};

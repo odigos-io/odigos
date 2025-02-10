@@ -1,9 +1,13 @@
-import type { PaginatedData } from './common';
 import type { FetchedSource } from './sources';
 import type { FetchedAction } from './actions';
 import type { FetchedNamespace } from './namespace';
 import type { InstrumentationRuleSpec } from './instrumentation-rules';
 import type { Destination, TokenPayload } from '@odigos/ui-utils';
+
+interface PaginatedData<T = any> {
+  nextPage: string;
+  items: T[];
+}
 
 export interface ComputePlatform {
   computePlatform: {

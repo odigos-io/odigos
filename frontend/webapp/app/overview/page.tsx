@@ -4,10 +4,9 @@ import React from 'react';
 import { MainContent } from '@/styles';
 import { usePaginatedStore } from '@/store';
 import type { Source } from '@odigos/ui-utils';
-import type { SourceInstrumentInput } from '@/types';
 import OverviewHeader from '@/components/lib-imports/overview-header';
-import { DataFlow, DataFlowActionsMenu, MultiSourceControl } from '@odigos/ui-containers';
 import OverviewModalsAndDrawers from '@/components/lib-imports/overview-modals-and-drawers';
+import { DataFlow, DataFlowActionsMenu, MultiSourceControl, type SourceSelectionFormData } from '@odigos/ui-containers';
 import { useActionCRUD, useDestinationCRUD, useInstrumentationRuleCRUD, useMetrics, useNamespace, useSourceCRUD, useSSE, useTokenTracker } from '@/hooks';
 
 export default function Page() {
@@ -48,7 +47,7 @@ export default function Page() {
         <MultiSourceControl
           totalSourceCount={sources.length}
           uninstrumentSources={(payload) => {
-            const inp: SourceInstrumentInput = {};
+            const inp: SourceSelectionFormData = {};
 
             Object.entries(payload).forEach(([namespace, sources]: [string, Source[]]) => {
               inp[namespace] = sources.map(({ name, kind }) => ({ name, kind, selected: false }));
