@@ -3,22 +3,15 @@ import { useMutation, useQuery } from '@apollo/client';
 import { useComputePlatform } from './useComputePlatform';
 import { GET_NAMESPACE, PERSIST_NAMESPACE } from '@/graphql';
 import { useNotificationStore } from '@odigos/ui-containers';
+import type { NamespaceInstrumentInput, ComputePlatform } from '@/types';
 import { CRUD, DISPLAY_TITLES, FORM_ALERTS, NOTIFICATION_TYPE } from '@odigos/ui-utils';
-import type { FetchedNamespace, NamespaceInstrumentInput, ComputePlatform } from '@/types';
 
-interface UseNameSpaceResponse {
-  loading: boolean;
-  data?: FetchedNamespace;
-  allNamespaces: FetchedNamespace[];
-
-  persistNamespace: (namespace: NamespaceInstrumentInput) => Promise<void>;
-}
-
-export const useNamespace = (namespaceName?: string): UseNameSpaceResponse => {
+export const useNamespace = (namespaceName?: string) => {
   const { data: config } = useConfig();
   const { addNotification } = useNotificationStore();
   const { data: cp, loading: cpLoading } = useComputePlatform();
 
+  // TODO: change query, to lazy query
   const { data, loading } = useQuery<ComputePlatform>(GET_NAMESPACE, {
     skip: !namespaceName,
     variables: { namespaceName },
@@ -31,10 +24,20 @@ export const useNamespace = (namespaceName?: string): UseNameSpaceResponse => {
 
   return {
     loading: loading || cpLoading,
-    data: data?.computePlatform?.k8sActualNamespace,
-    allNamespaces: cp?.computePlatform?.k8sActualNamespaces || [],
+    allNamespaces: (cp?.computePlatform?.k8sActualNamespaces || []).map(({ name, selected, k8sActualSources }) => ({
+      name,
+      selected,
+      sources: k8sActualSources,
+    })),
+    data: !!data?.computePlatform?.k8sActualNamespace
+      ? {
+          name: data.computePlatform.k8sActualNamespace.name,
+          selected: data.computePlatform.k8sActualNamespace.selected,
+          sources: data.computePlatform.k8sActualNamespace.k8sActualSources,
+        }
+      : undefined,
 
-    persistNamespace: async (namespace) => {
+    persistNamespace: async (namespace: NamespaceInstrumentInput) => {
       if (config?.readonly) {
         addNotification({ type: NOTIFICATION_TYPE.WARNING, title: DISPLAY_TITLES.READONLY, message: FORM_ALERTS.READONLY_WARNING, hideFromHistory: true });
       } else {

@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { type FC, useState } from 'react';
 import styled from 'styled-components';
 import { TrashIcon } from '@odigos/ui-icons';
-import { IAppState, useAppStore } from '@/store';
 import { type ConfiguredDestination } from '@/types';
 import { ENTITY_TYPES, SIGNAL_TYPE } from '@odigos/ui-utils';
+import { type ISetupState, useSetupStore } from '@odigos/ui-containers';
 import { DataCardFields, DataTab, DeleteWarning, IconButton } from '@odigos/ui-components';
+
+interface ConfiguredDestinationsListProps {
+  data: ISetupState['configuredDestinations'];
+}
 
 const Container = styled.div`
   display: flex;
@@ -19,7 +23,7 @@ const Container = styled.div`
 `;
 
 const ListItem: React.FC<{ item: ConfiguredDestination; isLastItem: boolean }> = ({ item, isLastItem, ...props }) => {
-  const { removeConfiguredDestination } = useAppStore((state) => state);
+  const { removeConfiguredDestination } = useSetupStore();
   const [deleteWarning, setDeleteWarning] = useState(false);
 
   return (
@@ -51,7 +55,7 @@ const ListItem: React.FC<{ item: ConfiguredDestination; isLastItem: boolean }> =
   );
 };
 
-export const ConfiguredDestinationsList: React.FC<{ data: IAppState['configuredDestinations'] }> = ({ data }) => {
+export const ConfiguredDestinationsList: FC<ConfiguredDestinationsListProps> = ({ data }) => {
   return (
     <Container>
       {data.map(({ stored }, idx) => (

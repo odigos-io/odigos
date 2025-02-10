@@ -1,34 +1,41 @@
 'use client';
 
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/utils';
 import Theme from '@odigos/ui-theme';
-import { useAppStore } from '@/store';
-import { useSourceFormData, useSSE } from '@/hooks';
+import { useNamespace, useSSE } from '@/hooks';
 import { OnboardingStepperWrapper } from '@/styles';
-import { ChooseSourcesBody } from '@/containers/main';
 import { ArrowIcon, OdigosLogoText } from '@odigos/ui-icons';
-import { FlexRow, Header, NavigationButtons, Stepper, Text } from '@odigos/ui-components';
+import { FormRef, SourceSelectionForm, useSetupStore } from '@odigos/ui-containers';
+import { Header, NavigationButtons, Stepper, Text } from '@odigos/ui-components';
 
 export default function Page() {
   // call important hooks that should run on page-mount
   useSSE();
 
   const router = useRouter();
-  const appState = useAppStore();
-  const menuState = useSourceFormData();
+  const setupState = useSetupStore();
+
+  const [selectedNamespace, setSelectedNamespace] = useState('');
+  const onSelectNamespace = (ns: string) => setSelectedNamespace((prev) => (prev === ns ? '' : ns));
+  const { allNamespaces, data: namespace, loading: nsLoad } = useNamespace(selectedNamespace);
 
   const onNext = () => {
-    const { recordedInitialSources, getApiSourcesPayload, getApiFutureAppsPayload } = menuState;
-    const { setAvailableSources, setConfiguredSources, setConfiguredFutureApps } = appState;
+    if (formRef.current) {
+      // const { initial, apps, futureApps } = formRef.current.getFormValues();
+      const { apps, futureApps } = formRef.current.getFormValues();
+      const { setAvailableSources, setConfiguredSources, setConfiguredFutureApps } = setupState;
 
-    setAvailableSources(recordedInitialSources);
-    setConfiguredSources(getApiSourcesPayload());
-    setConfiguredFutureApps(getApiFutureAppsPayload());
+      setAvailableSources({});
+      setConfiguredSources(apps);
+      setConfiguredFutureApps(futureApps);
 
-    router.push(ROUTES.CHOOSE_DESTINATION);
+      router.push(ROUTES.CHOOSE_DESTINATION);
+    }
   };
+
+  const formRef = useRef<FormRef>(null);
 
   return (
     <>
@@ -66,7 +73,16 @@ export default function Page() {
         />
       </OnboardingStepperWrapper>
 
-      <ChooseSourcesBody componentType='FAST' {...menuState} />
+      <SourceSelectionForm
+        ref={formRef}
+        componentType='FAST'
+        isModal={false}
+        namespaces={allNamespaces}
+        namespace={namespace}
+        namespacesLoading={nsLoad}
+        selectedNamespace={selectedNamespace}
+        onSelectNamespace={onSelectNamespace}
+      />
     </>
   );
 }

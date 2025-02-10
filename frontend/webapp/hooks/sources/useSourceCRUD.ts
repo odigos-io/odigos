@@ -2,9 +2,9 @@ import { useMemo } from 'react';
 import { useConfig } from '../config';
 import { useMutation } from '@apollo/client';
 import { useNamespace } from '../compute-platform';
-import { useAppStore, usePaginatedStore } from '@/store';
+import { usePaginatedStore } from '@/store';
 import { PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
-import { type PendingItem, useFilterStore, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
+import { type PendingItem, useFilterStore, useNotificationStore, usePendingStore, useSetupStore } from '@odigos/ui-containers';
 import { type NamespaceFutureAppsSelection, type FetchedSource, type SourceInstrumentInput, type SourceUpdateInput } from '@/types';
 import { CONDITION_STATUS, CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, K8S_RESOURCE_KIND, NOTIFICATION_TYPE, type WorkloadId } from '@odigos/ui-utils';
 
@@ -27,7 +27,7 @@ export const useSourceCRUD = (params?: Params): UseSourceCrudResponse => {
 
   const filters = useFilterStore();
   const { data: config } = useConfig();
-  const { setConfiguredSources } = useAppStore();
+  const { setConfiguredSources } = useSetupStore();
   const { sources, updateSource } = usePaginatedStore();
   const { addPendingItems, removePendingItems } = usePendingStore();
   const { addNotification, removeNotifications } = useNotificationStore();

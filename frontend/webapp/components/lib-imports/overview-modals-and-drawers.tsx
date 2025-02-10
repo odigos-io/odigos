@@ -1,17 +1,6 @@
-import React from 'react';
-import { AddSourceModal } from '@/containers';
-import { ENTITY_TYPES, type WorkloadId } from '@odigos/ui-utils';
-import {
-  ActionDrawer,
-  ActionModal,
-  DestinationDrawer,
-  DestinationModal,
-  InstrumentationRuleDrawer,
-  InstrumentationRuleModal,
-  SourceDrawer,
-  useDrawerStore,
-  useModalStore,
-} from '@odigos/ui-containers';
+import React, { useState } from 'react';
+import { type WorkloadId } from '@odigos/ui-utils';
+import { ActionDrawer, ActionModal, DestinationDrawer, DestinationModal, InstrumentationRuleDrawer, InstrumentationRuleModal, SourceDrawer, SourceModal, useDrawerStore } from '@odigos/ui-containers';
 import {
   useActionCRUD,
   useDescribeOdigos,
@@ -19,6 +8,7 @@ import {
   useDestinationCategories,
   useDestinationCRUD,
   useInstrumentationRuleCRUD,
+  useNamespace,
   usePotentialDestinations,
   useSourceCRUD,
   useTestConnection,
@@ -26,26 +16,34 @@ import {
 
 const OverviewModalsAndDrawers = () => {
   const { drawerEntityId } = useDrawerStore();
-  const { currentModal, setCurrentModal } = useModalStore();
-  const handleClose = () => setCurrentModal('');
+
+  const { sources, persistSources, updateSource } = useSourceCRUD();
+  const { actions, createAction, updateAction, deleteAction } = useActionCRUD();
+  const { destinations, createDestination, updateDestination, deleteDestination } = useDestinationCRUD();
+  const { instrumentationRules, createInstrumentationRule, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
+
+  const [selectedNamespace, setSelectedNamespace] = useState('');
+  const { allNamespaces, data: namespace, loading: nsLoad } = useNamespace(selectedNamespace);
 
   const { isPro } = useDescribeOdigos();
   const { categories } = useDestinationCategories();
   const { potentialDestinations } = usePotentialDestinations();
-  const { sources, persistSources, updateSource } = useSourceCRUD();
-  const { actions, createAction, updateAction, deleteAction } = useActionCRUD();
   const { data: testResult, loading: testLoading, testConnection } = useTestConnection();
-  const { destinations, createDestination, updateDestination, deleteDestination } = useDestinationCRUD();
   const { data: describeSource } = useDescribeSource(typeof drawerEntityId === 'object' ? (drawerEntityId as WorkloadId) : undefined);
-  const { instrumentationRules, createInstrumentationRule, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
 
   return (
     <>
       {/* modals */}
-      {currentModal === ENTITY_TYPES.SOURCE && <AddSourceModal isOpen onClose={handleClose} />}
+      <SourceModal
+        namespaces={allNamespaces}
+        namespace={namespace}
+        namespacesLoading={nsLoad}
+        selectedNamespace={selectedNamespace}
+        setSelectedNamespace={setSelectedNamespace}
+        persistSources={persistSources}
+      />
       <DestinationModal
         isOnboarding={false}
-        addConfiguredDestination={() => {}}
         categories={categories}
         potentialDestinations={potentialDestinations}
         createDestination={createDestination}

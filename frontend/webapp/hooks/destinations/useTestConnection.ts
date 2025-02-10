@@ -17,6 +17,7 @@ export const useTestConnection = () => {
   const { data: config } = useConfig();
   const { addNotification } = useNotificationStore();
 
+  // TODO: change mutation, to lazy query
   const [testConnectionMutation, { loading, error, data }] = useMutation<{ testConnectionForDestination: TestConnectionResponse }, { destination: DestinationInput }>(TEST_CONNECTION_MUTATION, {
     onError: (error) => {
       console.error('Error testing connection:', error);

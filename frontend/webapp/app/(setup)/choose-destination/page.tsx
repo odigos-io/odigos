@@ -2,14 +2,13 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/utils';
-import { useAppStore } from '@/store';
 import Theme, { styled } from '@odigos/ui-theme';
 import { OnboardingStepperWrapper } from '@/styles';
-import { ENTITY_TYPES, NOTIFICATION_TYPE } from '@odigos/ui-utils';
-import { DestinationModal, useModalStore } from '@odigos/ui-containers';
 import { ConfiguredDestinationsList } from '@/containers';
-import { useDestinationCategories, useDestinationCRUD, usePotentialDestinations, useSourceCRUD, useSSE, useTestConnection } from '@/hooks';
+import { ENTITY_TYPES, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 import { ArrowIcon, OdigosLogoText, PlusIcon } from '@odigos/ui-icons';
+import { DestinationModal, useModalStore, useSetupStore } from '@odigos/ui-containers';
+import { useDestinationCategories, useDestinationCRUD, usePotentialDestinations, useSourceCRUD, useSSE, useTestConnection } from '@/hooks';
 import { Button, CenterThis, FadeLoader, Header, NavigationButtons, NotificationNote, SectionTitle, Stepper, Text } from '@odigos/ui-components';
 
 const ContentWrapper = styled.div`
@@ -40,9 +39,7 @@ export default function Page() {
 
   const theme = Theme.useTheme();
   const router = useRouter();
-
   const { setCurrentModal } = useModalStore();
-  const { addConfiguredDestination } = useAppStore();
 
   const onOpen = () => setCurrentModal(ENTITY_TYPES.DESTINATION);
 
@@ -51,7 +48,7 @@ export default function Page() {
   const { createDestination } = useDestinationCRUD();
   const { potentialDestinations } = usePotentialDestinations();
   const { testConnection, loading: testLoading, data: testResult } = useTestConnection();
-  const { configuredSources, configuredFutureApps, configuredDestinations, resetState } = useAppStore();
+  const { configuredSources, configuredFutureApps, configuredDestinations, resetState } = useSetupStore();
 
   // we need this state, because "loading" from CRUD hooks is a bit delayed, and allows the user to double-click, as well as see elements render in the UI when they should not be rendered.
   const [isLoading, setIsLoading] = useState(false);
@@ -142,7 +139,6 @@ export default function Page() {
 
           <DestinationModal
             isOnboarding={true}
-            addConfiguredDestination={addConfiguredDestination}
             categories={categories}
             potentialDestinations={potentialDestinations}
             createDestination={createDestination}

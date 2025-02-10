@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import { useQuery } from '@apollo/client';
 import { safeJsonParse } from '@odigos/ui-utils';
-import { type IAppState, useAppStore } from '@/store';
 import { GET_POTENTIAL_DESTINATIONS } from '@/graphql';
 import { useDestinationCategories } from './useDestinationCategories';
+import { type ISetupState, useSetupStore } from '@odigos/ui-containers';
 
 interface PotentialDestination {
   type: string;
@@ -14,7 +14,7 @@ interface GetPotentialDestinationsData {
   potentialDestinations: PotentialDestination[];
 }
 
-const checkIfConfigured = (configuredDest: IAppState['configuredDestinations'][0], potentialDest: PotentialDestination, autoFilledFields: Record<string, any>) => {
+const checkIfConfigured = (configuredDest: ISetupState['configuredDestinations'][0], potentialDest: PotentialDestination, autoFilledFields: Record<string, any>) => {
   const typesMatch = configuredDest.stored.type === potentialDest.type;
   if (!typesMatch) return false;
 
@@ -35,7 +35,7 @@ const checkIfConfigured = (configuredDest: IAppState['configuredDestinations'][0
 };
 
 export const usePotentialDestinations = () => {
-  const { configuredDestinations } = useAppStore();
+  const { configuredDestinations } = useSetupStore();
   const { categories } = useDestinationCategories();
   const { loading, error, data: { potentialDestinations } = {} } = useQuery<GetPotentialDestinationsData>(GET_POTENTIAL_DESTINATIONS);
 
