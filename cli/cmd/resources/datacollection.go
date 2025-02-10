@@ -40,16 +40,15 @@ func NewDataCollectionClusterRole(psp bool) *rbacv1.ClusterRole {
 				Resources: []string{"nodes/stats", "nodes/proxy"},
 				Verbs:     []string{"get", "list"},
 			},
-			{ // Needed to get "resource name" in processor (TODO: remove this after we kill the resource name processor)
+			{ // Need for k8s attributes processor
 				APIGroups: []string{""},
-				Resources: []string{"pods"},
-				Verbs:     []string{"get", "list"},
+				Resources: []string{"pods", "namespaces"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
-			{ // Need "replicasets" to get "resource name" in processor (TODO: remove this after we kill the resource name processor),
-				// Others needed to get applications from cluster
+			{ // Need for k8s attributes processor
 				APIGroups: []string{"apps"},
 				Resources: []string{"replicasets", "deployments", "daemonsets", "statefulsets"},
-				Verbs:     []string{"get", "list"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
 			{ // Needed for load balancer
 				APIGroups: []string{""},
