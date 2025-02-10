@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/utils';
 import { Stepper } from '@odigos/ui-components';
 import { ENTITY_TYPES } from '@odigos/ui-utils';
-import { OnboardingStepperWrapper } from '@/styles';
+import { OnboardingStepperWrapper } from '@/components';
 import SetupHeader from '@/components/lib-imports/setup-header';
 import { DestinationSelectionForm, useSetupStore } from '@odigos/ui-containers';
 import { useDestinationCategories, useDestinationCRUD, usePotentialDestinations, useSSE, useTestConnection } from '@/hooks';

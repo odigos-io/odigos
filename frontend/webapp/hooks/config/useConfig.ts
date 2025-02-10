@@ -1,7 +1,7 @@
 'use client';
 import { useEffect } from 'react';
 import { GET_CONFIG } from '@/graphql';
-import { type FetchedConfig } from '@/types';
+import { type FetchedConfig } from '@/@types';
 import { useSuspenseQuery } from '@apollo/client';
 import { CRUD, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 import { useNotificationStore } from '@odigos/ui-containers';

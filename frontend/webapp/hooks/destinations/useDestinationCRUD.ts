@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useConfig } from '../config';
 import { GET_DESTINATIONS } from '@/graphql';
 import { useMutation, useQuery } from '@apollo/client';
-import { type DestinationInput, type ComputePlatform } from '@/types';
+import { type DestinationInput, type ComputePlatform } from '@/@types';
 import { useFilterStore, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
 import { CREATE_DESTINATION, DELETE_DESTINATION, UPDATE_DESTINATION } from '@/graphql/mutations';
 import { CRUD, type Destination, type DestinationOption, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE } from '@odigos/ui-utils';

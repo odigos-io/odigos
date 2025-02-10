@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { MainContent } from '@/styles';
+import { MainContent } from '@/components';
 import { usePaginatedStore } from '@/store';
 import type { Source } from '@odigos/ui-utils';
 import OverviewHeader from '@/components/lib-imports/overview-header';

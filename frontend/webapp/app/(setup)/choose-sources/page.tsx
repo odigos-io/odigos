@@ -4,7 +4,7 @@ import React, { useRef, useState } from 'react';
 import { useNamespace, useSSE } from '@/hooks';
 import { ENTITY_TYPES } from '@odigos/ui-utils';
 import { Stepper } from '@odigos/ui-components';
-import { OnboardingStepperWrapper } from '@/styles';
+import { OnboardingStepperWrapper } from '@/components';
 import SetupHeader from '@/components/lib-imports/setup-header';
 import { FormRef, SourceSelectionForm } from '@odigos/ui-containers';
 

@@ -1,11 +1,12 @@
 'use client';
 
+import { type FC, type PropsWithChildren } from 'react';
 import { API } from '@/utils';
 import { onError } from '@apollo/client/link/error';
 import { ApolloLink, HttpLink } from '@apollo/client';
 import { ApolloNextAppProvider, InMemoryCache, ApolloClient, SSRMultipartLink } from '@apollo/experimental-nextjs-app-support';
 
-function makeClient() {
+const makeClient = () => {
   const httpLink = new HttpLink({
     uri: API.GRAPHQL,
   });
@@ -33,8 +34,10 @@ function makeClient() {
           ])
         : ApolloLink.from([errorLink, httpLink]),
   });
-}
+};
 
-export function ApolloWrapper({ children }: React.PropsWithChildren<{}>) {
+const ApolloProvider: FC<PropsWithChildren> = ({ children }) => {
   return <ApolloNextAppProvider makeClient={makeClient}>{children}</ApolloNextAppProvider>;
-}
+};
+
+export default ApolloProvider;

@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { GET_SOURCES } from '@/graphql';
 import { usePaginatedStore } from '@/store';
 import { useLazyQuery } from '@apollo/client';
-import { type ComputePlatform } from '@/types';
+import { type ComputePlatform } from '@/@types';
 import { CRUD, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 import { useNotificationStore } from '@odigos/ui-containers';
 

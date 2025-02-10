@@ -3,7 +3,7 @@ import { useConfig } from '../config';
 import { GET_ACTIONS } from '@/graphql';
 import { useMutation, useQuery } from '@apollo/client';
 import { CREATE_ACTION, DELETE_ACTION, UPDATE_ACTION } from '@/graphql/mutations';
-import { type ComputePlatform, type ActionInput, type ParsedActionSpec } from '@/types';
+import { type ComputePlatform, type ActionInput, type ParsedActionSpec } from '@/@types';
 import { ActionFormData, useFilterStore, useNotificationStore } from '@odigos/ui-containers';
 import { type Action, ACTION_TYPE, CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE, safeJsonParse, SIGNAL_TYPE } from '@odigos/ui-utils';
 

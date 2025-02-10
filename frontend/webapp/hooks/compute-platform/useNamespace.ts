@@ -3,7 +3,7 @@ import { useMutation, useQuery } from '@apollo/client';
 import { useComputePlatform } from './useComputePlatform';
 import { GET_NAMESPACE, PERSIST_NAMESPACE } from '@/graphql';
 import { useNotificationStore } from '@odigos/ui-containers';
-import type { NamespaceInstrumentInput, ComputePlatform } from '@/types';
+import type { NamespaceInstrumentInput, ComputePlatform } from '@/@types';
 import { CRUD, DISPLAY_TITLES, FORM_ALERTS, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 
 export const useNamespace = (namespaceName?: string) => {

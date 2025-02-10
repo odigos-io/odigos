@@ -3,10 +3,10 @@
 import React, { type PropsWithChildren } from 'react';
 import dynamic from 'next/dynamic';
 import Theme from '@odigos/ui-theme';
-import { ApolloWrapper } from '@/lib';
-import { LayoutContainer } from '@/styles';
+import { LayoutContainer } from '@/components';
 import { ToastList } from '@odigos/ui-containers';
 import ErrorBoundary from '@/components/providers/error-boundary';
+import ApolloProvider from '@/components/providers/apollo-provider';
 
 const ThemeProvider = dynamic(() => import('@/components/providers/theme-provider'), { ssr: false });
 
@@ -32,12 +32,12 @@ function RootLayout({ children }: PropsWithChildren) {
         }}
       >
         <ErrorBoundary>
-          <ApolloWrapper>
+          <ApolloProvider>
             <ThemeProvider>
               <ToastList />
               <LayoutContainer>{children}</LayoutContainer>
             </ThemeProvider>
-          </ApolloWrapper>
+          </ApolloProvider>
         </ErrorBoundary>
       </body>
     </html>

@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import { styled } from '@odigos/ui-theme';
 import { FlexColumn } from '@odigos/ui-components';
 
 export const LayoutContainer = styled(FlexColumn)`

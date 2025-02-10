@@ -7,6 +7,7 @@ export interface FetchedAction {
   spec: string;
 }
 
+// the stringified spec is parsed to this, which we still have to map to our ui-containers
 export interface ParsedActionSpec {
   actionName: string;
   notes: string;

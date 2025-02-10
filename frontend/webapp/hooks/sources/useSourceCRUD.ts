@@ -4,7 +4,7 @@ import { useMutation } from '@apollo/client';
 import { useNamespace } from '../compute-platform';
 import { usePaginatedStore } from '@/store';
 import { PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
-import type { FetchedSource, SourceUpdateInput } from '@/types';
+import type { FetchedSource, SourceUpdateInput } from '@/@types';
 import { CONDITION_STATUS, CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, K8S_RESOURCE_KIND, NOTIFICATION_TYPE, type WorkloadId } from '@odigos/ui-utils';
 import { type NamespaceSelectionFormData, type PendingItem, type SourceSelectionFormData, useFilterStore, useNotificationStore, usePendingStore, useSetupStore } from '@odigos/ui-containers';
 

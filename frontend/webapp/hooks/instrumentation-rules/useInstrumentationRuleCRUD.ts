@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useConfig } from '../config';
-import { type ComputePlatform } from '@/types';
+import { type ComputePlatform } from '@/@types';
 import { GET_INSTRUMENTATION_RULES } from '@/graphql';
 import { useMutation, useQuery } from '@apollo/client';
 import { type InstrumentationRuleFormData, useNotificationStore } from '@odigos/ui-containers';

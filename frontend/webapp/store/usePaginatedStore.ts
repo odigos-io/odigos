@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { type FetchedSource } from '@/types';
+import { type FetchedSource } from '@/@types';
 import { type WorkloadId } from '@odigos/ui-utils';
 
 interface IPaginatedState {
