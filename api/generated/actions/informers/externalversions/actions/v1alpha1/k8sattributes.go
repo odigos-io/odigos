@@ -32,7 +32,7 @@ import (
 )
 
 // K8sAttributesInformer provides access to a shared informer and lister for
-// K8sAttributes.
+// K8sAttributeses.
 type K8sAttributesInformer interface {
 	Informer() cache.SharedIndexInformer
 	Lister() actionsv1alpha1.K8sAttributesLister
@@ -61,13 +61,13 @@ func NewFilteredK8sAttributesInformer(client versioned.Interface, namespace stri
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ActionsV1alpha1().K8sAttributes(namespace).List(context.TODO(), options)
+				return client.ActionsV1alpha1().K8sAttributeses(namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ActionsV1alpha1().K8sAttributes(namespace).Watch(context.TODO(), options)
+				return client.ActionsV1alpha1().K8sAttributeses(namespace).Watch(context.TODO(), options)
 			},
 		},
 		&apiactionsv1alpha1.K8sAttributes{},
