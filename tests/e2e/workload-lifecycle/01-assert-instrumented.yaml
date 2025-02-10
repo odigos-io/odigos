@@ -5,6 +5,10 @@ metadata:
   name: deployment-nodejs-unsupported-version
 status:
   conditions:
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
     - message: "nodejs runtime not supported by OpenTelemetry. supported versions: '>= 14', found: 8.17.0"
       reason: UnsupportedRuntimeVersion
       status: "False"
@@ -18,6 +22,10 @@ metadata:
   name: deployment-nodejs-very-old-version
 status:
   conditions:
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
     - message: "agent injected successfully to 1 containers: [nodejs-very-old-version]"
       reason: EnabledSuccessfully
       status: "True"
@@ -35,6 +43,10 @@ metadata:
   name: deployment-nodejs-minimum-version
 status:
   conditions:
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
     - message: "agent injected successfully to 1 containers: [nodejs-minimum-version]"
       reason: EnabledSuccessfully
       status: "True"
@@ -77,6 +89,10 @@ metadata:
   name: deployment-nodejs-latest-version
 status:
   conditions:
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
     - message: "agent injected successfully to 1 containers: [nodejs-latest-version]"
       reason: EnabledSuccessfully
       status: "True"
@@ -119,6 +135,10 @@ metadata:
   name: deployment-nodejs-dockerfile-env
 status:
   conditions:
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
     - message: "agent injected successfully to 1 containers: [nodejs-dockerfile-env]"
       reason: EnabledSuccessfully
       status: "True"
@@ -161,6 +181,10 @@ metadata:
   name: deployment-nodejs-manifest-env
 status:
   conditions:
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
     - message: "agent injected successfully to 1 containers: [nodejs-manifest-env]"
       reason: EnabledSuccessfully
       status: "True"
@@ -203,6 +227,10 @@ metadata:
   name: deployment-cpp-http-server
 status:
   conditions:
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
     - reason: UnsupportedProgrammingLanguage
       status: "False"
       type: AgentEnabled
@@ -214,6 +242,10 @@ metadata:
   name: deployment-java-supported-version
 status:
   conditions:
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
     - message: "agent injected successfully to 1 containers: [java-supported-version]"
       reason: EnabledSuccessfully
       status: "True"
@@ -230,6 +262,10 @@ metadata:
   name: deployment-java-azul
 status:
   conditions:
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
     - message: "agent injected successfully to 1 containers: [java-azul]"
       reason: EnabledSuccessfully
       status: "True"
@@ -246,6 +282,10 @@ metadata:
   name: deployment-java-supported-docker-env
 status:
   conditions:
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
     - message: "agent injected successfully to 1 containers: [java-supported-docker-env]"
       reason: EnabledSuccessfully
       status: "True"
@@ -262,6 +302,10 @@ metadata:
   name: deployment-java-supported-manifest-env
 status:
   conditions:
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
     - message: "agent injected successfully to 1 containers: [java-supported-manifest-env]"
       reason: EnabledSuccessfully
       status: "True"
@@ -278,6 +322,10 @@ metadata:
   name: deployment-java-latest-version
 status:
   conditions:
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
     - message: "agent injected successfully to 1 containers: [java-latest-version]"
       reason: EnabledSuccessfully
       status: "True"
@@ -294,6 +342,10 @@ metadata:
   name: deployment-java-old-version
 status:
   conditions:
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
     - message: "agent injected successfully to 1 containers: [java-old-version]"
       reason: EnabledSuccessfully
       status: "True"
@@ -310,6 +362,10 @@ metadata:
   name: deployment-python-alpine
 status:
   conditions:
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
     - message: "agent injected successfully to 1 containers: [python-alpine]"
       reason: EnabledSuccessfully
       status: "True"
@@ -326,6 +382,10 @@ metadata:
   name: deployment-python-latest-version
 status:
   conditions:
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
     - message: "agent injected successfully to 1 containers: [python-latest-version]"
       reason: EnabledSuccessfully
       status: "True"
@@ -342,6 +402,10 @@ metadata:
   name: deployment-python-min-version
 status:
   conditions:
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
     - message: "agent injected successfully to 1 containers: [python-min-version]"
       reason: EnabledSuccessfully
       status: "True"
@@ -358,6 +422,10 @@ metadata:
   name: deployment-python-not-supported
 status:
   conditions:
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
     - message: "python-runtime runtime not supported by OpenTelemetry. supported versions: '>= 3.8', found: 3.6.15"
       reason: UnsupportedRuntimeVersion
       status: "False"
@@ -370,6 +438,10 @@ metadata:
   name: deployment-python-other-agent
 status:
   conditions:
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
     - message: "odigos agent not enabled due to other instrumentation agent 'New Relic Agent' detected running in the container"
       reason: OtherAgentDetected
       status: "False"
