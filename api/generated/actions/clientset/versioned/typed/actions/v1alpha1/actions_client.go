@@ -54,7 +54,7 @@ func (c *ActionsV1alpha1Client) ErrorSamplers(namespace string) ErrorSamplerInte
 	return newErrorSamplers(c, namespace)
 }
 
-func (c *ActionsV1alpha1Client) K8sAttributeses(namespace string) K8sAttributesInterface {
+func (c *ActionsV1alpha1Client) K8sAttributes(namespace string) K8sAttributesInterface {
 	return newK8sAttributeses(c, namespace)
 }
 

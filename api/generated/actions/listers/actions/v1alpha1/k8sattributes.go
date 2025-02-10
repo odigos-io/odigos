@@ -24,14 +24,14 @@ import (
 	cache "k8s.io/client-go/tools/cache"
 )
 
-// K8sAttributesLister helps list K8sAttributeses.
+// K8sAttributesLister helps list K8sAttributes.
 // All objects returned here must be treated as read-only.
 type K8sAttributesLister interface {
-	// List lists all K8sAttributeses in the indexer.
+	// List lists all K8sAttributes in the indexer.
 	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*actionsv1alpha1.K8sAttributes, err error)
-	// K8sAttributeses returns an object that can list and get K8sAttributeses.
-	K8sAttributeses(namespace string) K8sAttributesNamespaceLister
+	// K8sAttributes returns an object that can list and get K8sAttributes.
+	K8sAttributes(namespace string) K8sAttributesNamespaceLister
 	K8sAttributesListerExpansion
 }
 
@@ -45,15 +45,15 @@ func NewK8sAttributesLister(indexer cache.Indexer) K8sAttributesLister {
 	return &k8sAttributesLister{listers.New[*actionsv1alpha1.K8sAttributes](indexer, actionsv1alpha1.Resource("k8sattributes"))}
 }
 
-// K8sAttributeses returns an object that can list and get K8sAttributeses.
-func (s *k8sAttributesLister) K8sAttributeses(namespace string) K8sAttributesNamespaceLister {
+// K8sAttributes returns an object that can list and get K8sAttributes.
+func (s *k8sAttributesLister) K8sAttributes(namespace string) K8sAttributesNamespaceLister {
 	return k8sAttributesNamespaceLister{listers.NewNamespaced[*actionsv1alpha1.K8sAttributes](s.ResourceIndexer, namespace)}
 }
 
-// K8sAttributesNamespaceLister helps list and get K8sAttributeses.
+// K8sAttributesNamespaceLister helps list and get K8sAttributes.
 // All objects returned here must be treated as read-only.
 type K8sAttributesNamespaceLister interface {
-	// List lists all K8sAttributeses in the indexer for a given namespace.
+	// List lists all K8sAttributes in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*actionsv1alpha1.K8sAttributes, err error)
 	// Get retrieves the K8sAttributes from the indexer for a given namespace and name.

@@ -32,7 +32,7 @@ import (
 // K8sAttributesesGetter has a method to return a K8sAttributesInterface.
 // A group's client should implement this interface.
 type K8sAttributesesGetter interface {
-	K8sAttributeses(namespace string) K8sAttributesInterface
+	K8sAttributes(namespace string) K8sAttributesInterface
 }
 
 // K8sAttributesInterface has methods to work with K8sAttributes resources.
@@ -58,11 +58,11 @@ type k8sAttributeses struct {
 	*gentype.ClientWithListAndApply[*actionsv1alpha1.K8sAttributes, *actionsv1alpha1.K8sAttributesList, *applyconfigurationactionsv1alpha1.K8sAttributesApplyConfiguration]
 }
 
-// newK8sAttributeses returns a K8sAttributeses
+// newK8sAttributeses returns a K8sAttributes
 func newK8sAttributeses(c *ActionsV1alpha1Client, namespace string) *k8sAttributeses {
 	return &k8sAttributeses{
 		gentype.NewClientWithListAndApply[*actionsv1alpha1.K8sAttributes, *actionsv1alpha1.K8sAttributesList, *applyconfigurationactionsv1alpha1.K8sAttributesApplyConfiguration](
-			"k8sattributeses",
+			"k8sattributes",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
