@@ -25,7 +25,7 @@ const (
 	// Define a status condition type that describes why the workload is marked for instrumentation or not.
 	MarkedForInstrumentationStatusConditionType = "MarkedForInstrumentation"
 	// Describe the runtime detection status of this workload.
-	RuntimeDetectionStatusConditionType = "RuntimeDetection" // TODO: placeholder, not yet implemented
+	RuntimeDetectionStatusConditionType = "RuntimeDetection"
 	// this const is the Type field in the conditions of the InstrumentationConfigStatus.
 	AgentEnabledStatusConditionType = "AgentEnabled"
 	// reports whether the workload associated with the InstrumentationConfig has been rolled out.
@@ -38,7 +38,6 @@ func StatusConditionTypeLogicalOrder(condType string) int {
 	case MarkedForInstrumentationStatusConditionType:
 		return 1
 	case RuntimeDetectionStatusConditionType:
-		// TODO: placeholder, not yet implemented
 		return 2
 	case AgentEnabledStatusConditionType:
 		return 3
@@ -69,6 +68,22 @@ const (
 
 	// cannot determine the reason for the instrumentation due to a possible transient error.
 	MarkedForInstrumentationReasonError MarkedForInstrumentationReason = "RetirableError"
+)
+
+// +kubebuilder:validation:Enum=DetectedSuccessfully;WaitingForDetection;NoRunningPods;Error
+type RuntimeDetectionReason string
+
+const (
+	// when the runtime detection process is successful and runtime details are available for instrumentation.
+	RuntimeDetectionReasonDetectedSuccessfully RuntimeDetectionReason = "DetectedSuccessfully"
+	// when the runtime detection process is still ongoing and the runtime details are not yet available.
+	// this status should be visible only for a short period of time until the detection process is completed by one odiglet.
+	RuntimeDetectionReasonWaitingForDetection RuntimeDetectionReason = "WaitingForDetection"
+	// when the runtime detection process is not yet started because there are no running pods for this workload.
+	// runtime detection requires at least one running pod to inspect the runtime details from.
+	RuntimeDetectionReasonNoRunningPods RuntimeDetectionReason = "NoRunningPods"
+	// error occurred during the runtime detection process.
+	RuntimeDetectionReasonError RuntimeDetectionReason = "Error"
 )
 
 // +kubebuilder:validation:Enum=EnabledSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;UnsupportedProgrammingLanguage;IgnoredContainer;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected
