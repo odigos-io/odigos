@@ -9,6 +9,10 @@ status:
       reason: NamespaceSource
       status: "True"
       type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
     - message: "nodejs runtime not supported by OpenTelemetry. supported versions: '>= 14', found: 8.17.0"
       reason: UnsupportedRuntimeVersion
       status: "False"
@@ -26,6 +30,10 @@ status:
       reason: NamespaceSource
       status: "True"
       type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
     - message: "agent injected successfully to 1 containers: [nodejs-very-old-version]"
       reason: EnabledSuccessfully
       status: "True"
@@ -47,6 +55,10 @@ status:
       reason: NamespaceSource
       status: "True"
       type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
     - message: "agent injected successfully to 1 containers: [nodejs-minimum-version]"
       reason: EnabledSuccessfully
       status: "True"
@@ -93,6 +105,10 @@ status:
       reason: NamespaceSource
       status: "True"
       type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
     - message: "agent injected successfully to 1 containers: [nodejs-latest-version]"
       reason: EnabledSuccessfully
       status: "True"
@@ -139,6 +155,10 @@ status:
       reason: NamespaceSource
       status: "True"
       type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
     - message: "agent injected successfully to 1 containers: [nodejs-dockerfile-env]"
       reason: EnabledSuccessfully
       status: "True"
@@ -185,6 +205,10 @@ status:
       reason: NamespaceSource
       status: "True"
       type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
     - message: "agent injected successfully to 1 containers: [nodejs-manifest-env]"
       reason: EnabledSuccessfully
       status: "True"
@@ -231,6 +255,10 @@ status:
       reason: NamespaceSource
       status: "True"
       type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
     - reason: UnsupportedProgrammingLanguage
       status: "False"
       type: AgentEnabled
@@ -246,6 +274,10 @@ status:
       reason: NamespaceSource
       status: "True"
       type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
     - message: "agent injected successfully to 1 containers: [java-supported-version]"
       reason: EnabledSuccessfully
       status: "True"
@@ -266,6 +298,10 @@ status:
       reason: NamespaceSource
       status: "True"
       type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
     - message: "agent injected successfully to 1 containers: [java-azul]"
       reason: EnabledSuccessfully
       status: "True"
@@ -286,6 +322,10 @@ status:
       reason: NamespaceSource
       status: "True"
       type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
     - message: "agent injected successfully to 1 containers: [java-supported-docker-env]"
       reason: EnabledSuccessfully
       status: "True"
@@ -306,6 +346,10 @@ status:
       reason: NamespaceSource
       status: "True"
       type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
     - message: "agent injected successfully to 1 containers: [java-supported-manifest-env]"
       reason: EnabledSuccessfully
       status: "True"
@@ -326,6 +370,10 @@ status:
       reason: NamespaceSource
       status: "True"
       type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
     - message: "agent injected successfully to 1 containers: [java-latest-version]"
       reason: EnabledSuccessfully
       status: "True"
@@ -346,6 +394,10 @@ status:
       reason: NamespaceSource
       status: "True"
       type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
     - message: "agent injected successfully to 1 containers: [java-old-version]"
       reason: EnabledSuccessfully
       status: "True"
@@ -366,6 +418,10 @@ status:
       reason: NamespaceSource
       status: "True"
       type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
     - message: "agent injected successfully to 1 containers: [python-alpine]"
       reason: EnabledSuccessfully
       status: "True"
@@ -386,6 +442,10 @@ status:
       reason: NamespaceSource
       status: "True"
       type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
     - message: "agent injected successfully to 1 containers: [python-latest-version]"
       reason: EnabledSuccessfully
       status: "True"
@@ -406,6 +466,10 @@ status:
       reason: NamespaceSource
       status: "True"
       type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
     - message: "agent injected successfully to 1 containers: [python-min-version]"
       reason: EnabledSuccessfully
       status: "True"
@@ -426,6 +490,10 @@ status:
       reason: NamespaceSource
       status: "True"
       type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
     - message: "python-runtime runtime not supported by OpenTelemetry. supported versions: '>= 3.8', found: 3.6.15"
       reason: UnsupportedRuntimeVersion
       status: "False"
@@ -442,6 +510,10 @@ status:
       reason: NamespaceSource
       status: "True"
       type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
     - message: "odigos agent not enabled due to other instrumentation agent 'New Relic Agent' detected running in the container"
       reason: OtherAgentDetected
       status: "False"
