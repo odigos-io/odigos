@@ -53,8 +53,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &actionsv1alpha1.HttpRouteFilterApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("K8sAnnotationAttribute"):
 		return &actionsv1alpha1.K8sAnnotationAttributeApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("K8sAttributes"):
-		return &actionsv1alpha1.K8sAttributesApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("K8sAttributesResolver"):
+		return &actionsv1alpha1.K8sAttributesResolverApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("K8sAttributesSpec"):
 		return &actionsv1alpha1.K8sAttributesSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("K8sAttributesStatus"):

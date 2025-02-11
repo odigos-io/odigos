@@ -23,7 +23,7 @@ type DeleteAttributeExpansion interface{}
 
 type ErrorSamplerExpansion interface{}
 
-type K8sAttributesExpansion interface{}
+type K8sAttributesResolverExpansion interface{}
 
 type LatencySamplerExpansion interface{}
 
