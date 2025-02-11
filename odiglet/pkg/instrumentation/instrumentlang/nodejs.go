@@ -3,6 +3,7 @@ package instrumentlang
 import (
 	"fmt"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	commonconsts "github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"

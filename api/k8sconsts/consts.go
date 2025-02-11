@@ -26,3 +26,9 @@ var (
 	DefaultIgnoredNamespaces = []string{"kube-system", "local-path-storage", "istio-system", "linkerd", "kube-node-lease"}
 	DefaultIgnoredContainers = []string{"istio-proxy", "vault-agent", "filebeat", "linkerd-proxy", "fluentd", "akeyless-init"}
 )
+
+// Agents related consts
+var (
+	OpampServerHostEnvName = "ODIGOS_OPAMP_SERVER_HOST"
+	OpAMPPort              = 4320
+)
