@@ -52,6 +52,7 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 					inspectProc = &proc
 					break
 				}
+				defer proc.Exefile.Close()
 			}
 
 			envs := make([]odigosv1.EnvVar, 0)
