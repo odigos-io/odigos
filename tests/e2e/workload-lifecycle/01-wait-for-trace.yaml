@@ -21,4 +21,4 @@ query: |
   { resource.service.name = "dotnet6-glibc" } ||
   { resource.service.name = "dotnet6-musl" }
 expected:
-  count: 17
+  count: 18
