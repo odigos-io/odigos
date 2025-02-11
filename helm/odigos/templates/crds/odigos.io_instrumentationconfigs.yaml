@@ -46,7 +46,7 @@ spec:
                 description: determines if odigos should inject agents to pods of
                   this workload.
                 type: boolean
-              agentsDeploymentHash:
+              agentsMetaHash:
                 description: |-
                   this hash is used to determine the deployment of the agents.
                   e.g. when the distro for container changes, or it's compatibility version,

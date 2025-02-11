@@ -1,7 +1,7 @@
 package k8sconsts
 
 const (
-	OdigosAgentsDeploymentHashLabel = "odigos.io/agents-deployment-hash"
+	OdigosAgentsMetaHashLabel = "odigos.io/agents-meta-hash"
 
 	// OdigosCollectorRoleLabel is the label used to identify the role of the Odigos collector.
 	OdigosCollectorRoleLabel = "odigos.io/collector-role"

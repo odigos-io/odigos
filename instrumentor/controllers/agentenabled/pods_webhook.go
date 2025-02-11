@@ -115,7 +115,7 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 
 	// store the agents deployment value so we can later associate each pod with the instrumentation version.
 	// we can pull only our pods into cache, and follow the lifecycle of the instrumentation process.
-	pod.Labels[k8sconsts.OdigosAgentsDeploymentHashLabel] = ic.Spec.AgentsDeploymentHash
+	pod.Labels[k8sconsts.OdigosAgentsMetaHashLabel] = ic.Spec.AgentsMetaHash
 
 	return nil
 }

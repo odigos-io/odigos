@@ -111,7 +111,7 @@ func main() {
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
 	odigosEffectiveConfigNameSelector := fields.OneTermEqualSelector("metadata.name", consts.OdigosEffectiveConfigName)
 	odigosEffectiveConfigSelector := fields.AndSelectors(nsSelector, odigosEffectiveConfigNameSelector)
-	instrumentedPodReq, _ := labels.NewRequirement(k8sconsts.OdigosAgentsDeploymentHashLabel, selection.Exists, []string{})
+	instrumentedPodReq, _ := labels.NewRequirement(k8sconsts.OdigosAgentsMetaHashLabel, selection.Exists, []string{})
 	instrumentedPodSelector := labels.NewSelector().Add(*instrumentedPodReq)
 
 	podsTransformFunc := func(obj interface{}) (interface{}, error) {

@@ -234,7 +234,7 @@ type InstrumentationConfigSpec struct {
 	// e.g. when the distro for container changes, or it's compatibility version,
 	// or something else that requires rollout, the hash change will indicate that.
 	// if the hash is empty, it means that no agent should be enabled in any pod container.
-	AgentsDeploymentHash string `json:"agentsDeploymentHash,omitempty"`
+	AgentsMetaHash string `json:"agentsMetaHash,omitempty"`
 
 	// Configuration for the OpenTelemetry SDKs that this workload should use.
 	// The SDKs are identified by the programming language they are written in.

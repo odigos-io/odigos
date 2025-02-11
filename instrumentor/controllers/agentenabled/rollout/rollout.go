@@ -48,7 +48,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	}
 
 	savedRolloutHash := ic.Status.WorkloadRolloutHash
-	newRolloutHash := ic.Spec.AgentsDeploymentHash
+	newRolloutHash := ic.Spec.AgentsMetaHash
 
 	if savedRolloutHash == newRolloutHash {
 		return false, ctrl.Result{}, nil
