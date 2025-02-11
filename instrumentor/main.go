@@ -18,6 +18,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"time"
 
@@ -44,6 +45,7 @@ import (
 	"github.com/go-logr/zapr"
 	bridge "github.com/odigos-io/opentelemetry-zap-bridge"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 
@@ -54,6 +56,7 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -108,6 +111,25 @@ func main() {
 	odigosEffectiveConfigNameSelector := fields.OneTermEqualSelector("metadata.name", consts.OdigosEffectiveConfigName)
 	odigosEffectiveConfigSelector := fields.AndSelectors(nsSelector, odigosEffectiveConfigNameSelector)
 
+	podsTransformFunc := func(obj interface{}) (interface{}, error) {
+		pod, ok := obj.(*corev1.Pod)
+		if !ok {
+			return nil, fmt.Errorf("expected a Pod, got %T", obj)
+		}
+
+		stripedStatus := corev1.PodStatus{
+			Phase:             pod.Status.Phase,
+			ContainerStatuses: pod.Status.ContainerStatuses, // TODO: we don't need all data here
+			Message:           pod.Status.Message,
+			Reason:            pod.Status.Reason,
+			StartTime:         pod.Status.StartTime,
+		}
+		return &corev1.Pod{
+			ObjectMeta: pod.ObjectMeta,
+			Status:     stripedStatus,
+		}, nil
+	}
+
 	mgrOptions := ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
@@ -143,9 +165,13 @@ func main() {
 		RetryPeriod:   durationPointer(1 * time.Second),
 		Cache: cache.Options{
 			DefaultTransform: cache.TransformStripManagedFields(),
-			// Store minimum amount of data for every object type.
-			// Currently, instrumentor only need the labels of the workloads.
 			ByObject: map[client.Object]cache.ByObject{
+				&corev1.Pod{}: {
+					Label: labels.SelectorFromSet(map[string]string{
+						k8sconsts.OdigosAgentsWebhookAppliedLabel: "true",
+					}),
+					Transform: podsTransformFunc,
+				},
 				&corev1.ConfigMap{}: {
 					Field: odigosEffectiveConfigSelector,
 				},
