@@ -93,14 +93,14 @@ func GetPidDetails(pid int) Details {
 	exePath := getExePath(pid)
 	cmdLine := getCommandLine(pid)
 	envVars := getRelevantEnvVars(pid)
-	exeData, _ := GetProcessExeFile(pid)
+	exeFile, _ := GetProcessExeFile(pid)
 
 	return Details{
 		ProcessID:    pid,
 		ExePath:      exePath,
 		CmdLine:      cmdLine,
 		Environments: envVars,
-		Exefile:      exeData,
+		Exefile:      exeFile,
 	}
 }
 
