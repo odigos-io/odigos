@@ -1,7 +1,6 @@
 package config
 
 import (
-	"errors"
 	"fmt"
 	"net"
 	"net/url"
@@ -100,5 +99,5 @@ func getBooleanConfig(currentValue string, deprecatedValue string) bool {
 }
 
 func errorMissingKey(key string) error {
-	return errors.New(fmt.Sprintf("Key (\"%s\") not specified, destination will not be configured", key))
+	return fmt.Errorf("key (\"%q\") not specified, destination will not be configured", key)
 }
