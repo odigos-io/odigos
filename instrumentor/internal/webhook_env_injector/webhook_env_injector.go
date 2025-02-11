@@ -1,10 +1,12 @@
 package webhookenvinjector
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/common"
+	commonconsts "github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
 	corev1 "k8s.io/api/core/v1"
 
@@ -14,6 +16,12 @@ import (
 
 func InjectOdigosAgentEnvVars(logger logr.Logger, podWorkload k8sconsts.PodWorkload, container *corev1.Container,
 	otelsdk common.OtelSdk, runtimeDetails *v1alpha1.RuntimeDetailsByContainer) {
+
+	// This is a temporary and should be migrated to distro
+	if runtimeDetails.Language == common.PythonProgrammingLanguage && otelsdk == common.OtelSdkNativeCommunity {
+		InjectPythonNativeEnvVars(container)
+	}
+
 	envVarsPerLanguage := getEnvVarNamesForLanguage(runtimeDetails.Language)
 	if envVarsPerLanguage == nil {
 		return
@@ -138,4 +146,29 @@ func getContainerEnvVarPointer(containerEnv *[]corev1.EnvVar, envVarName string)
 		}
 	}
 	return nil
+}
+
+func InjectPythonNativeEnvVars(container *corev1.Container) {
+	container.Env = append(container.Env,
+		corev1.EnvVar{
+			Name: "NODE_IP",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "status.hostIP",
+				},
+			},
+		},
+		corev1.EnvVar{
+			Name:  k8sconsts.OpampServerHostEnvName,
+			Value: fmt.Sprintf("$(NODE_IP):%d", k8sconsts.OpAMPPort),
+		},
+		corev1.EnvVar{
+			Name:  commonconsts.OtelExporterEndpointEnvName,
+			Value: fmt.Sprintf("http://$(NODE_IP):%d", commonconsts.OTLPHttpPort),
+		},
+		corev1.EnvVar{
+			Name:  commonconsts.OtelPythonConfiguratorEnvName,
+			Value: commonconsts.OtelPythonConfiguratorEnvValue,
+		},
+	)
 }
