@@ -39,7 +39,7 @@ spec:
               kind load docker-image java-latest-version:v0.0.1
               docker build -t java-old-version:v0.0.1 -f services/java-http-server/java-old-version.Dockerfile services/java-http-server
               kind load docker-image java-old-version:v0.0.1
-              docker build -t java-:v0.0.1 -f services/java-http-server/java-omit-in-entrypoint.Dockerfile services/java-http-server
+              docker build -t java-omit-in-entrypoint:v0.0.1 -f services/java-http-server/java-omit-in-entrypoint.Dockerfile services/java-http-server
               kind load docker-image java-omit-in-entrypoint:v0.0.1
 
               docker build -t python-latest-version:v0.0.1 -f services/python-http-server/Dockerfile.python-latest services/python-http-server
