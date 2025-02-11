@@ -15,7 +15,7 @@ import (
 )
 
 type AddClusterInfoDetails struct {
-	ClusterAttributes []model.ClusterInfo `json:"clusterAttributes"`
+	ClusterAttributes []v1alpha1.OtelAttributeWithValue `json:"clusterAttributes"`
 }
 
 func CreateAddClusterInfo(ctx context.Context, action model.ActionInput) (model.Action, error) {

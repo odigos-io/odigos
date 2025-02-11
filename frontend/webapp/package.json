@@ -14,13 +14,13 @@
   "dependencies": {
     "@apollo/client": "^3.12.11",
     "@apollo/experimental-nextjs-app-support": "^0.11.8",
-    "@odigos/ui-components": "^0.0.59",
-    "@odigos/ui-containers": "^0.0.32",
+    "@odigos/ui-components": "^0.0.60",
+    "@odigos/ui-containers": "^0.0.37",
     "@odigos/ui-icons": "^0.0.12",
     "@odigos/ui-theme": "^0.0.16",
-    "@odigos/ui-utils": "^0.0.22",
+    "@odigos/ui-utils": "^0.0.26",
     "graphql": "^16.10.0",
-    "next": "15.1.6",
+    "next": "15.1.7",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-error-boundary": "^5.0.0",
@@ -34,8 +34,8 @@
     "autoprefixer": "^10.4.20",
     "cypress": "^14.0.2",
     "eslint": "9.20.0",
-    "eslint-config-next": "15.1.6",
-    "postcss": "^8.5.1",
+    "eslint-config-next": "15.1.7",
+    "postcss": "^8.5.2",
     "typescript": "5.7.3"
   }
 }

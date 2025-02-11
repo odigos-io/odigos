@@ -14,10 +14,14 @@ export interface ParsedActionSpec {
   signals: string[];
   disabled?: boolean;
 
+  collectContainerAttributes?: boolean | null;
+  collectWorkloadUID?: boolean | null;
+  collectClusterUID?: boolean | null;
+  labelsAttributes?: { labelKey: string; attributeKey: string }[] | null;
+  annotationsAttributes?: { annotationKey: string; attributeKey: string }[] | null;
   clusterAttributes?: { attributeName: string; attributeStringValue: string }[] | null;
   attributeNamesToDelete?: string[] | null;
   renames?: { [oldKey: string]: string } | null;
-
   piiCategories?: string[] | null;
   fallback_sampling_ratio?: number | null;
   sampling_percentage?: string | null;

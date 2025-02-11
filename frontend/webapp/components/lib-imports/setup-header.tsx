@@ -5,12 +5,12 @@ import Theme from '@odigos/ui-theme';
 import { ENTITY_TYPES } from '@odigos/ui-utils';
 import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
 import { ArrowIcon, OdigosLogoText } from '@odigos/ui-icons';
-import { type FormRef, useSetupStore } from '@odigos/ui-containers';
+import { type SourceSelectionFormRef, useSetupStore } from '@odigos/ui-containers';
 import { Header, NavigationButtons, NavigationButtonsProps, Text } from '@odigos/ui-components';
 
 interface SetupHeaderProps {
   entityType: ENTITY_TYPES;
-  formRef?: RefObject<FormRef | null>; // in sources
+  formRef?: RefObject<SourceSelectionFormRef | null>; // in sources
   isLoading?: boolean; // in destinations
   setIsLoading?: Dispatch<SetStateAction<boolean>>; // in destinations
 }
