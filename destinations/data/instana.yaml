@@ -1,0 +1,28 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: instana
+  displayName: IBM Instana
+  category: managed
+spec:
+  image: instana.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+  fields:
+    - name: INSTANA_HOST
+      displayName: Host
+      componentType: input
+      componentProps:
+        required: true
+    - name: INSTANA_API_TOKEN
+      displayName: API Token
+      componentType: input
+      componentProps:
+        type: password
+        required: true
+      secret: true
