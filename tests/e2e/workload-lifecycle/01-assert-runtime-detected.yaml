@@ -213,7 +213,7 @@ status:
   runtimeDetailsByContainer:
     - containerName: java-omit-in-entrypoint
       language: java
-      runtimeVersion: 17.0.12+7
+      runtimeVersion: 21.0.6+7
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
