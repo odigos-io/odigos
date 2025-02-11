@@ -4,6 +4,7 @@ const (
 	InstrumentorOtelServiceName             = "instrumentor"
 	InstrumentorDeploymentName              = "odigos-instrumentor"
 	InstrumentorImageUBI9                   = "odigos-instrumentor-ubi9"
+	InstrumentorImageName                   = "registry.odigos.io/odigos-instrumentor"
 	InstrumentorAppLabelValue               = InstrumentorDeploymentName
 	InstrumentorServiceName                 = InstrumentorDeploymentName
 	InstrumentorServiceAccountName          = InstrumentorDeploymentName

@@ -70,7 +70,7 @@ import (
 var (
 	scheme                = runtime.NewScheme()
 	setupLog              = ctrl.Log.WithName("setup")
-	defaultCollectorImage = "keyval/odigos-collector"
+	defaultCollectorImage = "registry.odigos.io/odigos-collector"
 )
 
 func init() {
