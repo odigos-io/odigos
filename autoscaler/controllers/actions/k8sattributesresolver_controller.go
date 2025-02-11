@@ -3,13 +3,16 @@ package actions
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 
 	actionv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	semconv1_21 "go.opentelemetry.io/otel/semconv/v1.21.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -17,7 +20,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-type K8sAttributesReconciler struct {
+type K8sAttributesResolverReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
@@ -110,11 +113,11 @@ type k8sAttributesConfig struct {
 	PodAssociation k8sAttributesPodsAssociation `json:"pod_association"`
 }
 
-func (r *K8sAttributesReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *K8sAttributesResolverReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling K8sAttributes action")
 
-	actions := actionv1.K8sAttributesList{}
+	actions := actionv1.K8sAttributesResolverList{}
 	err := r.List(ctx, &actions, client.InNamespace(req.Namespace))
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -125,11 +128,12 @@ func (r *K8sAttributesReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, err
 	}
 
-	err = r.Patch(ctx, processor, client.Apply, client.FieldOwner("odigos-k8sattributes"), client.ForceOwnership)
-	return ctrl.Result{}, err
+	err = r.Patch(ctx, processor, client.Apply, client.FieldOwner("odigos-k8sattributesresolver"), client.ForceOwnership)
+	reportErr := r.reportActionsStatuses(ctx, &actions, err)
+	return ctrl.Result{}, errors.Join(err, reportErr)
 }
 
-func (r *K8sAttributesReconciler) convertToUnifiedProcessor(actions *actionv1.K8sAttributesList, ns string) (*odigosv1alpha1.Processor, error) {
+func (r *K8sAttributesResolverReconciler) convertToUnifiedProcessor(actions *actionv1.K8sAttributesResolverList, ns string) (*odigosv1alpha1.Processor, error) {
 	processor := odigosv1alpha1.Processor{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "odigos.io/v1alpha1",
@@ -256,4 +260,35 @@ func (r *K8sAttributesReconciler) convertToUnifiedProcessor(actions *actionv1.K8
 	}
 
 	return &processor, nil
+}
+
+func (r *K8sAttributesResolverReconciler) reportActionsStatuses(ctx context.Context, actions *actionv1.K8sAttributesResolverList, processorErr error) error {
+	var updateErr error
+	status := metav1.ConditionTrue
+	message := "The action successfully transformed to a unified processor"
+	reason := "ProcessorCreated"
+
+	if processorErr != nil {
+		status = metav1.ConditionFalse
+		message = fmt.Sprintf("Failed to transform the action to a unified processor: %s", processorErr.Error())
+		reason = "ProcessorCreationFailed"
+	}
+
+	for actionIndex := range actions.Items {
+		action := &actions.Items[actionIndex]
+		changed := meta.SetStatusCondition(&action.Status.Conditions, metav1.Condition{
+			Type:               "ActionTransformedToProcessorType",
+			Status:             status,
+			Reason:             reason,
+			Message:            message,
+		})
+
+		if changed {
+			err := r.Status().Update(ctx, action)
+			updateErr = errors.Join(updateErr, err)
+		}
+	}
+	
+
+	return updateErr
 }

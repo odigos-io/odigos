@@ -6,7 +6,7 @@
 - [AddClusterInfo](#AddClusterInfo)
 - [DeleteAttribute](#DeleteAttribute)
 - [ErrorSampler](#ErrorSampler)
-- [K8sAttributes](#K8sAttributes)
+- [K8sAttributesResolver](#K8sAttributesResolver)
 - [LatencySampler](#LatencySampler)
 - [PiiMasking](#PiiMasking)
 - [ProbabilisticSampler](#ProbabilisticSampler)
@@ -162,16 +162,16 @@
 </tbody>
 </table>
 
-## `K8sAttributes` <a id="K8sAttributes"></a>
+## `K8sAttributesResolver` <a id="K8sAttributesResolver"></a>
     
-<p>K8sAttributes allows adding an action to collect k8s attributes.</p>
+<p>K8sAttributesResolver allows adding an action to collect k8s attributes.</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
     
 <tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
-<tr><td><code>kind</code></td><td>string</td><td><code>K8sAttributes</code></td></tr>
+<tr><td><code>kind</code></td><td>string</td><td><code>K8sAttributesResolver</code></td></tr>
     
   
 <tr>
@@ -813,7 +813,7 @@ e.g. &quot;kubectl.kubernetes.restartedAte&quot;</p>
 
 **Appears in:**
 
-- [K8sAttributes](#K8sAttributes)
+- [K8sAttributesResolver](#K8sAttributesResolver)
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -934,7 +934,7 @@ k8s.statefulset.uid</p>
 
 **Appears in:**
 
-- [K8sAttributes](#K8sAttributes)
+- [K8sAttributesResolver](#K8sAttributesResolver)
 
 <p>K8sAttributesStatus defines the observed state of K8sAttributes action</p>
 
