@@ -8,7 +8,6 @@ query: |
   { resource.service.name = "nodejs-manifest-env" } ||
   { resource.service.name = "java-supported-version" } ||
   { resource.service.name = "java-latest-version" } ||
-  { resource.service.name = "java-old-version" } ||
   { resource.service.name = "java-omit-in-entrypoint" } ||
   { resource.service.name = "java-supported-docker-env" } ||
   { resource.service.name = "java-omit-in-entrypoint" } ||
@@ -23,4 +22,4 @@ query: |
   { resource.service.name = "dotnet6-glibc" } ||
   { resource.service.name = "dotnet6-musl" }
 expected:
-  count: 19
+  count: 18
