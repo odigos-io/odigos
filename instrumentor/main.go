@@ -119,8 +119,6 @@ func main() {
 		if !ok {
 			return nil, fmt.Errorf("expected a Pod, got %T", obj)
 		}
-		pod.SetManagedFields(nil)
-		pod.ObjectMeta.ManagedFields = nil
 
 		stripedStatus := corev1.PodStatus{
 			Phase:             pod.Status.Phase,
@@ -129,10 +127,12 @@ func main() {
 			Reason:            pod.Status.Reason,
 			StartTime:         pod.Status.StartTime,
 		}
-		return &corev1.Pod{
+		strippedPod := corev1.Pod{
 			ObjectMeta: pod.ObjectMeta,
 			Status:     stripedStatus,
-		}, nil
+		}
+		strippedPod.SetManagedFields(nil) // don't store managed fields in the cache
+		return &strippedPod, nil
 	}
 
 	mgrOptions := ctrl.Options{
