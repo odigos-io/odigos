@@ -147,10 +147,6 @@ type DbQueryPayloadCollectionInput struct {
 	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
 }
 
-type DeleteAttribute struct {
-	AttributeName string `json:"attributeName"`
-}
-
 type DeleteAttributeAction struct {
 	ID      string       `json:"id"`
 	Type    string       `json:"type"`
@@ -365,6 +361,46 @@ type K8sActualSource struct {
 	Conditions        []*Condition       `json:"conditions,omitempty"`
 }
 
+type K8sAnnotationAttribute struct {
+	AnnotationKey string `json:"annotationKey"`
+	AttributeKey  string `json:"attributeKey"`
+}
+
+type K8sAttributes struct {
+	CollectContainerAttributes bool                      `json:"collectContainerAttributes"`
+	CollectWorkloadID          bool                      `json:"collectWorkloadId"`
+	CollectClusterID           bool                      `json:"collectClusterId"`
+	LabelsAttributes           []*K8sLabelAttribute      `json:"labelsAttributes"`
+	AnnotationsAttributes      []*K8sAnnotationAttribute `json:"annotationsAttributes"`
+}
+
+type K8sAttributesAction struct {
+	ID      string         `json:"id"`
+	Type    string         `json:"type"`
+	Name    *string        `json:"name,omitempty"`
+	Notes   *string        `json:"notes,omitempty"`
+	Disable bool           `json:"disable"`
+	Signals []SignalType   `json:"signals"`
+	Details *K8sAttributes `json:"details"`
+}
+
+func (K8sAttributesAction) IsAction()              {}
+func (this K8sAttributesAction) GetID() string     { return this.ID }
+func (this K8sAttributesAction) GetType() string   { return this.Type }
+func (this K8sAttributesAction) GetName() *string  { return this.Name }
+func (this K8sAttributesAction) GetNotes() *string { return this.Notes }
+func (this K8sAttributesAction) GetDisable() bool  { return this.Disable }
+func (this K8sAttributesAction) GetSignals() []SignalType {
+	if this.Signals == nil {
+		return nil
+	}
+	interfaceSlice := make([]SignalType, 0, len(this.Signals))
+	for _, concrete := range this.Signals {
+		interfaceSlice = append(interfaceSlice, concrete)
+	}
+	return interfaceSlice
+}
+
 type K8sDesiredNamespaceInput struct {
 	AutoInstrument *bool `json:"autoInstrument,omitempty"`
 }
@@ -372,6 +408,11 @@ type K8sDesiredNamespaceInput struct {
 type K8sDesiredSourceInput struct {
 	ServiceName    *string `json:"serviceName,omitempty"`
 	AutoInstrument *bool   `json:"autoInstrument,omitempty"`
+}
+
+type K8sLabelAttribute struct {
+	LabelKey     string `json:"labelKey"`
+	AttributeKey string `json:"attributeKey"`
 }
 
 type K8sNamespaceID struct {
