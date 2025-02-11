@@ -478,7 +478,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: java-omit-in-entrypoint:v0.0.1
+  name: java-omit-in-entrypoint
   namespace: default
   labels:
     app: java-omit-in-entrypoint
