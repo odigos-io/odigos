@@ -18,4 +18,4 @@ query: |
   { resource.service.name = "python-not-supported-reported" && span.http.route = "insert-random/" } ||
   { resource.service.name = "python-min-version-reported" && span.http.route = "insert-random/" }
 expected:
-  count: 13
+  count: 14
