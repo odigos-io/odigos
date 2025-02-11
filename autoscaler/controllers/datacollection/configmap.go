@@ -346,13 +346,30 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 			"collection_interval": "10s",
 			"root_path":           "/hostfs",
 			"scrapers": config.GenericMap{
-				"paging": struct{}{},
-				"cpu":    struct{}{},
-				"disk":   struct{}{},
+				"paging": config.GenericMap{
+					"metrics": config.GenericMap{
+						"system.paging.utilization": config.GenericMap{
+							"enabled": true,
+						},
+					},
+				},
+				"cpu": config.GenericMap{
+					"metrics": config.GenericMap{
+						"system.cpu.utilization": config.GenericMap{
+							"enabled": true,
+						},
+					},
+				},
+				"disk": struct{}{},
 				"filesystem": config.GenericMap{
-					"include_mount_points": config.GenericMap{
-						"match_type":   "strict",
-						"mount_points": []string{"/"},
+					"metrics": config.GenericMap{
+						"system.filesystem.utilization": config.GenericMap{
+							"enabled": true,
+						},
+					},
+					"exclude_mount_points": config.GenericMap{
+						"match_type":   "regexp",
+						"mount_points": []string{"/var/lib/kubelet/*"},
 					},
 				},
 				"load":      struct{}{},
