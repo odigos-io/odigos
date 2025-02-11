@@ -67,6 +67,11 @@ export const useActionCRUD = (params?: UseActionCrudParams): UseActionCrudRespon
           notes: parsedSpec.notes,
           disabled: parsedSpec.disabled,
           signals: parsedSpec.signals.map((str) => str.toLowerCase() as SIGNAL_TYPE),
+          collectContainerAttributes: parsedSpec.collectContainerAttributes || false,
+          collectWorkloadId: parsedSpec.collectWorkloadUID || false,
+          collectClusterId: parsedSpec.collectClusterUID || false,
+          labelsAttributes: parsedSpec.labelsAttributes,
+          annotationsAttributes: parsedSpec.annotationsAttributes,
           clusterAttributes: parsedSpec.clusterAttributes,
           attributeNamesToDelete: parsedSpec.attributeNamesToDelete,
           renames: parsedSpec.renames,
@@ -123,6 +128,11 @@ export const useActionCRUD = (params?: UseActionCrudParams): UseActionCrudRespon
       notes = '',
       disabled = false,
       signals,
+      collectContainerAttributes,
+      collectWorkloadId,
+      collectClusterId,
+      labelsAttributes,
+      annotationsAttributes,
       clusterAttributes,
       attributeNamesToDelete,
       renames,
@@ -142,6 +152,10 @@ export const useActionCRUD = (params?: UseActionCrudParams): UseActionCrudRespon
     };
 
     switch (type) {
+      case ACTION_TYPE.K8S_ATTRIBUTES:
+        payload['details'] = JSON.stringify({ collectContainerAttributes, collectWorkloadId, collectClusterId, labelsAttributes, annotationsAttributes });
+        break;
+
       case ACTION_TYPE.ADD_CLUSTER_INFO:
         payload['details'] = JSON.stringify({ clusterAttributes });
         break;
