@@ -10,7 +10,6 @@ import (
 )
 
 type ConnectionInfo struct {
-	DeviceId            string
 	Workload            k8sconsts.PodWorkload
 	Pod                 *corev1.Pod
 	ContainerName       string
