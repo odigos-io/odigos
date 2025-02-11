@@ -230,6 +230,12 @@ type InstrumentationConfigSpec struct {
 	// configuration for each instrumented container in the workload
 	Containers []ContainerAgentConfig `json:"containers,omitempty"`
 
+	// this hash is used to determine the deployment of the agents.
+	// e.g. when the distro for container changes, or it's compatibility version,
+	// or something else that requires rollout, the hash change will indicate that.
+	// if the hash is empty, it means that no agent should be enabled in any pod container.
+	AgentsDeploymentHash string `json:"agentsDeploymentHash,omitempty"`
+
 	// Configuration for the OpenTelemetry SDKs that this workload should use.
 	// The SDKs are identified by the programming language they are written in.
 	// TODO: consider adding more granular control over the SDKs, such as community/enterprise, native/ebpf.

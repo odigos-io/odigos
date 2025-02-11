@@ -1297,6 +1297,20 @@ The workload is identified by the owner reference</p>
 </tr>
 <tr>
 <td>
+<code>agentsDeploymentHash</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>this hash is used to determine the deployment of the agents.
+e.g. when the distro for container changes, or it's compatibility version,
+or something else that requires rollout, the hash change will indicate that.
+if the hash is empty, it means that no agent should be enabled in any pod container.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>sdkConfigs</code> <B>[Required]</B>
 </td>
 <td>
