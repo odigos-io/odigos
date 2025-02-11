@@ -26,6 +26,7 @@ import (
 type InstrumentationConfigStatusApplyConfiguration struct {
 	RuntimeDetailsByContainer []RuntimeDetailsByContainerApplyConfiguration `json:"runtimeDetailsByContainer,omitempty"`
 	Conditions                []v1.ConditionApplyConfiguration              `json:"conditions,omitempty"`
+	WorkloadRolloutHash       *string                                       `json:"workloadRolloutHash,omitempty"`
 }
 
 // InstrumentationConfigStatusApplyConfiguration constructs a declarative configuration of the InstrumentationConfigStatus type for use with
@@ -57,5 +58,13 @@ func (b *InstrumentationConfigStatusApplyConfiguration) WithConditions(values ..
 		}
 		b.Conditions = append(b.Conditions, *values[i])
 	}
+	return b
+}
+
+// WithWorkloadRolloutHash sets the WorkloadRolloutHash field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the WorkloadRolloutHash field is set to the value of the last call.
+func (b *InstrumentationConfigStatusApplyConfiguration) WithWorkloadRolloutHash(value string) *InstrumentationConfigStatusApplyConfiguration {
+	b.WorkloadRolloutHash = &value
 	return b
 }

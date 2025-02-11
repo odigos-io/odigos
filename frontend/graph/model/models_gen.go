@@ -116,17 +116,19 @@ type Condition struct {
 	LastTransitionTime *string         `json:"lastTransitionTime,omitempty"`
 }
 
+type ContainerAgentConfigAnalyze struct {
+	ContainerName  *EntityProperty `json:"containerName"`
+	AgentEnabled   *EntityProperty `json:"agentEnabled"`
+	Reason         *EntityProperty `json:"reason,omitempty"`
+	Message        *EntityProperty `json:"message,omitempty"`
+	OtelDistroName *EntityProperty `json:"otelDistroName,omitempty"`
+}
+
 type ContainerRuntimeInfoAnalyze struct {
 	ContainerName  *EntityProperty   `json:"containerName"`
 	Language       *EntityProperty   `json:"language"`
 	RuntimeVersion *EntityProperty   `json:"runtimeVersion"`
 	EnvVars        []*EntityProperty `json:"envVars"`
-}
-
-type ContainerWorkloadManifestAnalyze struct {
-	ContainerName *EntityProperty   `json:"containerName"`
-	Devices       *EntityProperty   `json:"devices"`
-	OriginalEnv   []*EntityProperty `json:"originalEnv"`
 }
 
 type CustomReadDataLabel struct {
@@ -143,10 +145,6 @@ type DbQueryPayloadCollection struct {
 type DbQueryPayloadCollectionInput struct {
 	MaxPayloadLength    *int  `json:"maxPayloadLength,omitempty"`
 	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
-}
-
-type DeleteAttribute struct {
-	AttributeName string `json:"attributeName"`
 }
 
 type DeleteAttributeAction struct {
@@ -176,10 +174,32 @@ func (this DeleteAttributeAction) GetSignals() []SignalType {
 	return interfaceSlice
 }
 
+type Destination struct {
+	ID              string                        `json:"id"`
+	Name            string                        `json:"name"`
+	Type            string                        `json:"type"`
+	ExportedSignals *ExportedSignals              `json:"exportedSignals"`
+	Fields          string                        `json:"fields"`
+	DestinationType *DestinationTypesCategoryItem `json:"destinationType"`
+	Conditions      []*Condition                  `json:"conditions,omitempty"`
+}
+
 type DestinationDetails struct {
 	Type      string `json:"type"`
 	URLString string `json:"urlString"`
 	Fields    string `json:"fields"`
+}
+
+type DestinationFieldYamlProperties struct {
+	Name                 string                 `json:"name"`
+	DisplayName          string                 `json:"displayName"`
+	ComponentType        string                 `json:"componentType"`
+	ComponentProperties  string                 `json:"componentProperties"`
+	Secret               bool                   `json:"secret"`
+	InitialValue         string                 `json:"initialValue"`
+	RenderCondition      []string               `json:"renderCondition"`
+	HideFromReadData     []string               `json:"hideFromReadData"`
+	CustomReadDataLabels []*CustomReadDataLabel `json:"customReadDataLabels"`
 }
 
 type DestinationInput struct {
@@ -187,6 +207,21 @@ type DestinationInput struct {
 	Type            string                `json:"type"`
 	ExportedSignals *ExportedSignalsInput `json:"exportedSignals"`
 	Fields          []*FieldInput         `json:"fields"`
+}
+
+type DestinationTypesCategoryItem struct {
+	Type                    string                            `json:"type"`
+	DisplayName             string                            `json:"displayName"`
+	ImageURL                string                            `json:"imageUrl"`
+	SupportedSignals        *SupportedSignals                 `json:"supportedSignals"`
+	TestConnectionSupported bool                              `json:"testConnectionSupported"`
+	Fields                  []*DestinationFieldYamlProperties `json:"fields"`
+}
+
+type DestinationsCategory struct {
+	Name        string                          `json:"name"`
+	Description string                          `json:"description"`
+	Items       []*DestinationTypesCategoryItem `json:"items"`
 }
 
 type EntityProperty struct {
@@ -223,22 +258,16 @@ func (this ErrorSamplerAction) GetSignals() []SignalType {
 	return interfaceSlice
 }
 
-type ExportedSignalsInput struct {
+type ExportedSignals struct {
 	Traces  bool `json:"traces"`
 	Metrics bool `json:"metrics"`
 	Logs    bool `json:"logs"`
 }
 
-type Field struct {
-	Name                 string                 `json:"name"`
-	DisplayName          string                 `json:"displayName"`
-	ComponentType        string                 `json:"componentType"`
-	ComponentProperties  string                 `json:"componentProperties"`
-	Secret               bool                   `json:"secret"`
-	InitialValue         string                 `json:"initialValue"`
-	RenderCondition      []string               `json:"renderCondition"`
-	HideFromReadData     []string               `json:"hideFromReadData"`
-	CustomReadDataLabels []*CustomReadDataLabel `json:"customReadDataLabels"`
+type ExportedSignalsInput struct {
+	Traces  bool `json:"traces"`
+	Metrics bool `json:"metrics"`
+	Logs    bool `json:"logs"`
 }
 
 type FieldInput struct {
@@ -251,8 +280,8 @@ type GetConfigResponse struct {
 	Readonly     bool               `json:"readonly"`
 }
 
-type GetDestinationDetailsResponse struct {
-	Fields []*Field `json:"fields"`
+type GetDestinationCategories struct {
+	Categories []*DestinationsCategory `json:"categories"`
 }
 
 type HTTPPayloadCollection struct {
@@ -265,17 +294,6 @@ type HTTPPayloadCollectionInput struct {
 	MimeTypes           []*string `json:"mimeTypes,omitempty"`
 	MaxPayloadLength    *int      `json:"maxPayloadLength,omitempty"`
 	DropPartialPayloads *bool     `json:"dropPartialPayloads,omitempty"`
-}
-
-type InstrumentationConfigAnalyze struct {
-	Created    *EntityProperty                `json:"created"`
-	CreateTime *EntityProperty                `json:"createTime,omitempty"`
-	Containers []*ContainerRuntimeInfoAnalyze `json:"containers"`
-}
-
-type InstrumentationDeviceAnalyze struct {
-	StatusText *EntityProperty                     `json:"statusText"`
-	Containers []*ContainerWorkloadManifestAnalyze `json:"containers"`
 }
 
 type InstrumentationInstanceAnalyze struct {
@@ -333,14 +351,54 @@ type K8sActualNamespace struct {
 }
 
 type K8sActualSource struct {
-	Namespace         string                           `json:"namespace"`
-	Name              string                           `json:"name"`
-	Kind              K8sResourceKind                  `json:"kind"`
-	NumberOfInstances *int                             `json:"numberOfInstances,omitempty"`
-	Selected          *bool                            `json:"selected,omitempty"`
-	OtelServiceName   *string                          `json:"otelServiceName,omitempty"`
-	Containers        []*SourceContainerRuntimeDetails `json:"containers,omitempty"`
-	Conditions        []*Condition                     `json:"conditions,omitempty"`
+	Namespace         string             `json:"namespace"`
+	Name              string             `json:"name"`
+	Kind              K8sResourceKind    `json:"kind"`
+	NumberOfInstances *int               `json:"numberOfInstances,omitempty"`
+	Selected          *bool              `json:"selected,omitempty"`
+	OtelServiceName   *string            `json:"otelServiceName,omitempty"`
+	Containers        []*SourceContainer `json:"containers,omitempty"`
+	Conditions        []*Condition       `json:"conditions,omitempty"`
+}
+
+type K8sAnnotationAttribute struct {
+	AnnotationKey string `json:"annotationKey"`
+	AttributeKey  string `json:"attributeKey"`
+}
+
+type K8sAttributes struct {
+	CollectContainerAttributes bool                      `json:"collectContainerAttributes"`
+	CollectWorkloadID          bool                      `json:"collectWorkloadId"`
+	CollectClusterID           bool                      `json:"collectClusterId"`
+	LabelsAttributes           []*K8sLabelAttribute      `json:"labelsAttributes"`
+	AnnotationsAttributes      []*K8sAnnotationAttribute `json:"annotationsAttributes"`
+}
+
+type K8sAttributesAction struct {
+	ID      string         `json:"id"`
+	Type    string         `json:"type"`
+	Name    *string        `json:"name,omitempty"`
+	Notes   *string        `json:"notes,omitempty"`
+	Disable bool           `json:"disable"`
+	Signals []SignalType   `json:"signals"`
+	Details *K8sAttributes `json:"details"`
+}
+
+func (K8sAttributesAction) IsAction()              {}
+func (this K8sAttributesAction) GetID() string     { return this.ID }
+func (this K8sAttributesAction) GetType() string   { return this.Type }
+func (this K8sAttributesAction) GetName() *string  { return this.Name }
+func (this K8sAttributesAction) GetNotes() *string { return this.Notes }
+func (this K8sAttributesAction) GetDisable() bool  { return this.Disable }
+func (this K8sAttributesAction) GetSignals() []SignalType {
+	if this.Signals == nil {
+		return nil
+	}
+	interfaceSlice := make([]SignalType, 0, len(this.Signals))
+	for _, concrete := range this.Signals {
+		interfaceSlice = append(interfaceSlice, concrete)
+	}
+	return interfaceSlice
 }
 
 type K8sDesiredNamespaceInput struct {
@@ -350,6 +408,11 @@ type K8sDesiredNamespaceInput struct {
 type K8sDesiredSourceInput struct {
 	ServiceName    *string `json:"serviceName,omitempty"`
 	AutoInstrument *bool   `json:"autoInstrument,omitempty"`
+}
+
+type K8sLabelAttribute struct {
+	LabelKey     string `json:"labelKey"`
+	AttributeKey string `json:"attributeKey"`
 }
 
 type K8sNamespaceID struct {
@@ -415,6 +478,10 @@ type NodeCollectorAnalyze struct {
 	AvailableNodes *EntityProperty `json:"availableNodes,omitempty"`
 }
 
+type ObservabilitySignalSupport struct {
+	Supported bool `json:"supported"`
+}
+
 type OdigosAnalyze struct {
 	OdigosVersion        *EntityProperty          `json:"odigosVersion"`
 	KubernetesVersion    *EntityProperty          `json:"kubernetesVersion"`
@@ -426,6 +493,12 @@ type OdigosAnalyze struct {
 	NodeCollector        *NodeCollectorAnalyze    `json:"nodeCollector"`
 	IsSettled            bool                     `json:"isSettled"`
 	HasErrors            bool                     `json:"hasErrors"`
+}
+
+type OtelAgentsAnalyze struct {
+	Created    *EntityProperty                `json:"created"`
+	CreateTime *EntityProperty                `json:"createTime,omitempty"`
+	Containers []*ContainerAgentConfigAnalyze `json:"containers"`
 }
 
 type OverviewMetricsResponse struct {
@@ -603,23 +676,30 @@ type SingleSourceMetricsResponse struct {
 }
 
 type SourceAnalyze struct {
-	Name                  *EntityProperty                `json:"name"`
-	Kind                  *EntityProperty                `json:"kind"`
-	Namespace             *EntityProperty                `json:"namespace"`
-	SourceObjects         *InstrumentationSourcesAnalyze `json:"sourceObjects"`
-	RuntimeInfo           *RuntimeInfoAnalyze            `json:"runtimeInfo"`
-	InstrumentationConfig *InstrumentationConfigAnalyze  `json:"instrumentationConfig"`
-	InstrumentationDevice *InstrumentationDeviceAnalyze  `json:"instrumentationDevice"`
-	TotalPods             int                            `json:"totalPods"`
-	PodsPhasesCount       string                         `json:"podsPhasesCount"`
-	Pods                  []*PodAnalyze                  `json:"pods"`
+	Name            *EntityProperty                `json:"name"`
+	Kind            *EntityProperty                `json:"kind"`
+	Namespace       *EntityProperty                `json:"namespace"`
+	SourceObjects   *InstrumentationSourcesAnalyze `json:"sourceObjects"`
+	RuntimeInfo     *RuntimeInfoAnalyze            `json:"runtimeInfo"`
+	OtelAgents      *OtelAgentsAnalyze             `json:"otelAgents"`
+	TotalPods       int                            `json:"totalPods"`
+	PodsPhasesCount string                         `json:"podsPhasesCount"`
+	Pods            []*PodAnalyze                  `json:"pods"`
 }
 
-type SourceContainerRuntimeDetails struct {
-	ContainerName  string  `json:"containerName"`
-	Language       string  `json:"language"`
-	RuntimeVersion string  `json:"runtimeVersion"`
-	OtherAgent     *string `json:"otherAgent,omitempty"`
+type SourceContainer struct {
+	ContainerName          string  `json:"containerName"`
+	Language               string  `json:"language"`
+	RuntimeVersion         string  `json:"runtimeVersion"`
+	Instrumented           bool    `json:"instrumented"`
+	InstrumentationMessage string  `json:"instrumentationMessage"`
+	OtelDistroName         *string `json:"otelDistroName,omitempty"`
+}
+
+type SupportedSignals struct {
+	Traces  *ObservabilitySignalSupport `json:"traces"`
+	Metrics *ObservabilitySignalSupport `json:"metrics"`
+	Logs    *ObservabilitySignalSupport `json:"logs"`
 }
 
 type TestConnectionResponse struct {

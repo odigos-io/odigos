@@ -61,9 +61,15 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	if source.Spec.Workload.Kind == k8sconsts.WorkloadKindNamespace {
-		err = errors.Join(err, syncNamespaceWorkloads(ctx, r.Client, r.Scheme, source.Spec.Workload.Name))
+		res, reconcileErr := syncNamespaceWorkloads(ctx, r.Client, r.Scheme, source.Spec.Workload.Name)
+		if reconcileErr != nil {
+			err = errors.Join(err, reconcileErr)
+		}
+		if !res.IsZero() {
+			return res, err
+		}
 	} else {
-		_, reconcileErr := reconcileWorkload(ctx,
+		res, reconcileErr := reconcileWorkload(ctx,
 			r.Client,
 			source.Spec.Workload.Kind,
 			ctrl.Request{
@@ -75,6 +81,10 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			r.Scheme)
 		if reconcileErr != nil {
 			err = errors.Join(err, reconcileErr)
+		}
+		if !res.IsZero() {
+			// propagate the requeue result to the caller if there is one
+			return res, err
 		}
 	}
 

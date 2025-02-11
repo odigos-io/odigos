@@ -6,9 +6,8 @@ import (
 	"fmt"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
-	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	k8scontainer "github.com/odigos-io/odigos/k8sutils/pkg/container"
+	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -101,19 +100,17 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request
 		}
 	}
 
-	odigosConfig, err := k8sutils.GetCurrentOdigosConfig(ctx, r.Client)
-	if err != nil {
-		return k8sutils.K8SNoEffectiveConfigErrorHandler(err)
+	if len(selectedPods) == 0 {
+		// this node is not running any pods managed by the workload, so nothing to do
+		return reconcile.Result{}, nil
 	}
 
-	runtimeResults, err := runtimeInspection(ctx, selectedPods, odigosConfig.IgnoredContainers, r.CriClient)
+	runtimeResults, err := runtimeInspection(ctx, selectedPods, r.CriClient)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	err = persistRuntimeDetailsToInstrumentationConfig(ctx, r.Client, &instrumentationConfig, odigosv1.InstrumentationConfigStatus{
-		RuntimeDetailsByContainer: runtimeResults,
-	})
+	err = persistRuntimeDetailsToInstrumentationConfig(ctx, r.Client, &instrumentationConfig, runtimeResults)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -121,4 +118,3 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request
 	logger.Info("Completed runtime detection for new instrumentation config", "namespace", request.Namespace, "name", request.Name)
 	return reconcile.Result{}, nil
 }
-

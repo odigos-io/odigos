@@ -17,7 +17,19 @@ import (
 var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Manage Odigos configuration",
-	Long:  "Manage Odigos configuration settings to customize system behavior.",
+	Long: `Manage Odigos configuration settings to customize system behavior.
+
+	Configurable properties:
+	- "telemetry-enabled": Enables or disables telemetry (true/false).
+	- "openshift-enabled": Enables or disables OpenShift support (true/false).
+	- "psp": Enables or disables Pod Security Policies (true/false).
+	- "skip-webhook-issuer-creation": Skips webhook issuer creation (true/false).
+	- "allow-concurrent-agents": Allows concurrent agents (true/false).
+	- "image-prefix": Sets the image prefix.
+	- "ui-mode": Sets the UI mode(normal/readonly).
+	- "ignored-namespaces": List of namespaces to be ignored.
+	- "ignored-containers": List of containers to be ignored.
+	`,
 }
 
 // `odigos config set <property> <value>`

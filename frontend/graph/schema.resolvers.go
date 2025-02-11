@@ -179,6 +179,24 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 	var response []*model.PipelineAction
 	ns := env.GetCurrentNamespace()
 
+	// K8sAttributes actions
+	kaActions, err := kube.DefaultClient.ActionsClient.K8sAttributesResolvers(ns).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, action := range kaActions.Items {
+		specStr, err := json.Marshal(action.Spec)
+		if err != nil {
+			return nil, err
+		}
+		response = append(response, &model.PipelineAction{
+			ID:         action.Name,
+			Type:       action.Kind,
+			Spec:       string(specStr),
+			Conditions: convertConditions(action.Status.Conditions),
+		})
+	}
+
 	// AddClusterInfos actions
 	icaActions, err := kube.DefaultClient.ActionsClient.AddClusterInfos(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
@@ -311,17 +329,6 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 // InstrumentationRules is the resolver for the instrumentationRules field.
 func (r *computePlatformResolver) InstrumentationRules(ctx context.Context, obj *model.ComputePlatform) ([]*model.InstrumentationRule, error) {
 	return services.ListInstrumentationRules(ctx)
-}
-
-// Type is the resolver for the type field.
-func (r *destinationResolver) Type(ctx context.Context, obj *model.Destination) (string, error) {
-	return string(obj.Type), nil
-}
-
-// Conditions is the resolver for the conditions field.
-func (r *destinationResolver) Conditions(ctx context.Context, obj *model.Destination) ([]*model.Condition, error) {
-	conditions := convertConditions(obj.Conditions)
-	return conditions, nil
 }
 
 // K8sActualSources is the resolver for the k8sActualSources field.
@@ -700,6 +707,8 @@ func (r *mutationResolver) CreateAction(ctx context.Context, action model.Action
 	}
 
 	switch action.Type {
+	case actionservices.ActionTypeK8sAttributes:
+		return actionservices.CreateK8sAttributes(ctx, action)
 	case actionservices.ActionTypeAddClusterInfo:
 		return actionservices.CreateAddClusterInfo(ctx, action)
 	case actionservices.ActionTypeDeleteAttribute:
@@ -727,6 +736,8 @@ func (r *mutationResolver) UpdateAction(ctx context.Context, id string, action m
 	}
 
 	switch action.Type {
+	case actionservices.ActionTypeK8sAttributes:
+		return actionservices.UpdateK8sAttributes(ctx, id, action)
 	case actionservices.ActionTypeAddClusterInfo:
 		return actionservices.UpdateAddClusterInfo(ctx, id, action)
 	case actionservices.ActionTypeDeleteAttribute:
@@ -754,6 +765,12 @@ func (r *mutationResolver) DeleteAction(ctx context.Context, id string, actionTy
 	}
 
 	switch actionType {
+	case actionservices.ActionTypeK8sAttributes:
+		err := actionservices.DeleteK8sAttributes(ctx, id)
+		if err != nil {
+			return false, fmt.Errorf("failed to delete K8sAttributes: %v", err)
+		}
+
 	case actionservices.ActionTypeAddClusterInfo:
 		err := actionservices.DeleteAddClusterInfo(ctx, id)
 		if err != nil {
@@ -847,41 +864,11 @@ func (r *queryResolver) Config(ctx context.Context) (*model.GetConfigResponse, e
 	return &config, nil
 }
 
-// DestinationTypes is the resolver for the destinationTypes field.
-func (r *queryResolver) DestinationTypes(ctx context.Context) (*model.GetDestinationTypesResponse, error) {
-	destTypes := services.GetDestinationTypes()
+// DestinationCategories is the resolver for the destinationCategories field.
+func (r *queryResolver) DestinationCategories(ctx context.Context) (*model.GetDestinationCategories, error) {
+	destTypes := services.GetDestinationCategories()
 
 	return &destTypes, nil
-}
-
-// DestinationTypeDetails is the resolver for the destinationTypeDetails field.
-func (r *queryResolver) DestinationTypeDetails(ctx context.Context, typeArg string) (*model.GetDestinationDetailsResponse, error) {
-	destType := common.DestinationType(typeArg)
-	destTypeConfig, err := services.GetDestinationTypeConfig(destType)
-	if err != nil {
-		return nil, fmt.Errorf("destination type %s not found", destType)
-	}
-
-	var resp model.GetDestinationDetailsResponse
-	for _, field := range destTypeConfig.Spec.Fields {
-		componentPropsJSON, err := json.Marshal(field.ComponentProps)
-		if err != nil {
-			return nil, fmt.Errorf("error marshalling component properties: %v", err)
-		}
-		resp.Fields = append(resp.Fields, &model.Field{
-			Name:                 field.Name,
-			DisplayName:          field.DisplayName,
-			ComponentType:        field.ComponentType,
-			ComponentProperties:  string(componentPropsJSON),
-			Secret:               field.Secret,
-			InitialValue:         field.InitialValue,
-			RenderCondition:      field.RenderCondition,
-			HideFromReadData:     field.HideFromReadData,
-			CustomReadDataLabels: convertCustomReadDataLabels(field.CustomReadDataLabels),
-		})
-	}
-
-	return &resp, nil
 }
 
 // PotentialDestinations is the resolver for the potentialDestinations field.
@@ -957,9 +944,6 @@ func (r *queryResolver) DescribeSource(ctx context.Context, namespace string, ki
 // ComputePlatform returns ComputePlatformResolver implementation.
 func (r *Resolver) ComputePlatform() ComputePlatformResolver { return &computePlatformResolver{r} }
 
-// Destination returns DestinationResolver implementation.
-func (r *Resolver) Destination() DestinationResolver { return &destinationResolver{r} }
-
 // K8sActualNamespace returns K8sActualNamespaceResolver implementation.
 func (r *Resolver) K8sActualNamespace() K8sActualNamespaceResolver {
 	return &k8sActualNamespaceResolver{r}
@@ -972,7 +956,6 @@ func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type computePlatformResolver struct{ *Resolver }
-type destinationResolver struct{ *Resolver }
 type k8sActualNamespaceResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

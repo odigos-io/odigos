@@ -44,11 +44,13 @@ enum InstallationStatus {
   FINISHED
 }
 
-type SourceContainerRuntimeDetails {
+type SourceContainer {
   containerName: String!
   language: String!
   runtimeVersion: String!
-  otherAgent: String
+  instrumented: Boolean!
+  instrumentationMessage: String!
+  otelDistroName: String
 }
 
 type Condition {
@@ -80,7 +82,7 @@ type K8sActualSource {
   numberOfInstances: Int
   selected: Boolean
   otelServiceName: String
-  containers: [SourceContainerRuntimeDetails!]
+  containers: [SourceContainer!]
   conditions: [Condition!]
 }
 
@@ -239,20 +241,40 @@ type ObservabilitySignalSupport {
   supported: Boolean!
 }
 
+type CustomReadDataLabel {
+  condition: String!
+  title: String!
+  value: String!
+}
+
+type DestinationFieldYamlProperties {
+  name: String!
+  displayName: String!
+  componentType: String!
+  componentProperties: String! # Using String to store JSON data as a string
+  secret: Boolean!
+  initialValue: String!
+  renderCondition: [String!]!
+  hideFromReadData: [String!]!
+  customReadDataLabels: [CustomReadDataLabel!]!
+}
+
 type DestinationTypesCategoryItem {
   type: String!
   displayName: String!
   imageUrl: String!
   supportedSignals: SupportedSignals!
   testConnectionSupported: Boolean!
+  fields: [DestinationFieldYamlProperties!]!
 }
 
 type DestinationsCategory {
   name: String!
+  description: String!
   items: [DestinationTypesCategoryItem!]!
 }
 
-type GetDestinationTypesResponse {
+type GetDestinationCategories {
   categories: [DestinationsCategory!]!
 }
 
@@ -275,28 +297,6 @@ type Destination {
 type GetConfigResponse {
   installation: InstallationStatus!
   readonly: Boolean!
-}
-
-type CustomReadDataLabel {
-  condition: String!
-  title: String!
-  value: String!
-}
-
-type Field {
-  name: String!
-  displayName: String!
-  componentType: String!
-  componentProperties: String! # Using String to store JSON data as a string
-  secret: Boolean!
-  initialValue: String!
-  renderCondition: [String!]!
-  hideFromReadData: [String!]!
-  customReadDataLabels: [CustomReadDataLabel!]!
-}
-
-type GetDestinationDetailsResponse {
-  fields: [Field!]!
 }
 
 input DestinationInput {
@@ -362,6 +362,34 @@ interface Action {
   signals: [SignalType!]!
 }
 
+type K8sLabelAttribute {
+  labelKey: String!
+  attributeKey: String!
+}
+
+type K8sAnnotationAttribute {
+  annotationKey: String!
+  attributeKey: String!
+}
+
+type K8sAttributes {
+  collectContainerAttributes: Boolean!
+  collectWorkloadId: Boolean!
+  collectClusterId: Boolean!
+  labelsAttributes: [K8sLabelAttribute!]!
+  annotationsAttributes: [K8sAnnotationAttribute!]!
+}
+
+type K8sAttributesAction implements Action {
+  id: ID!
+  type: String!
+  name: String
+  notes: String
+  disable: Boolean!
+  signals: [SignalType!]!
+  details: K8sAttributes!
+}
+
 type ClusterInfo {
   attributeName: String!
   attributeStringValue: String
@@ -375,10 +403,6 @@ type AddClusterInfoAction implements Action {
   disable: Boolean!
   signals: [SignalType!]!
   details: [ClusterInfo!]!
-}
-
-type DeleteAttribute {
-  attributeName: String!
 }
 
 type DeleteAttributeAction implements Action {
@@ -491,26 +515,23 @@ type ContainerRuntimeInfoAnalyze {
   envVars: [EntityProperty!]!
 }
 
-type InstrumentationConfigAnalyze {
-  created: EntityProperty!
-  createTime: EntityProperty
-  containers: [ContainerRuntimeInfoAnalyze!]!
-}
-
 type RuntimeInfoAnalyze {
   generation: EntityProperty!
   containers: [ContainerRuntimeInfoAnalyze!]!
 }
 
-type ContainerWorkloadManifestAnalyze {
+type ContainerAgentConfigAnalyze {
   containerName: EntityProperty!
-  devices: EntityProperty!
-  originalEnv: [EntityProperty!]!
+  agentEnabled: EntityProperty!
+  reason: EntityProperty
+  message: EntityProperty
+  otelDistroName: EntityProperty
 }
 
-type InstrumentationDeviceAnalyze {
-  statusText: EntityProperty!
-  containers: [ContainerWorkloadManifestAnalyze!]!
+type OtelAgentsAnalyze {
+  created: EntityProperty!
+  createTime: EntityProperty
+  containers: [ContainerAgentConfigAnalyze!]!
 }
 
 type InstrumentationInstanceAnalyze {
@@ -539,8 +560,7 @@ type SourceAnalyze {
   sourceObjects: InstrumentationSourcesAnalyze!
 
   runtimeInfo: RuntimeInfoAnalyze!
-  instrumentationConfig: InstrumentationConfigAnalyze!
-  instrumentationDevice: InstrumentationDeviceAnalyze!
+  otelAgents: OtelAgentsAnalyze!
 
   totalPods: Int!
   podsPhasesCount: String!
@@ -589,8 +609,7 @@ type OdigosAnalyze {
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
-  destinationTypes: GetDestinationTypesResponse
-  destinationTypeDetails(type: String!): GetDestinationDetailsResponse
+  destinationCategories: GetDestinationCategories
   potentialDestinations: [DestinationDetails!]!
   getOverviewMetrics: OverviewMetricsResponse!
   describeOdigos: OdigosAnalyze!
