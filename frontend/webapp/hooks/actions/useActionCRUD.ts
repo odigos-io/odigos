@@ -60,8 +60,6 @@ export const useActionCRUD = (params?: UseActionCrudParams): UseActionCrudRespon
     return (data?.computePlatform?.actions || []).map((item) => {
       const parsedSpec = typeof item.spec === 'string' ? safeJsonParse(item.spec, {} as ParsedActionSpec) : item.spec;
 
-      console.log('parsedSpec', parsedSpec);
-
       return {
         ...item,
         spec: {
