@@ -10,3 +10,6 @@ spec:
       dotnet:
         sdkTier: "enterprise"
         sdkType: "native"
+  otelDistros:
+    otelDistroNames:
+    - "dotnet-legacy"

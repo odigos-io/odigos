@@ -3,6 +3,7 @@ package watchers
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -12,6 +13,8 @@ import (
 	commonutils "github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/tools/cache"
+	toolsWatch "k8s.io/client-go/tools/watch"
 )
 
 var instrumentationConfigAddedEventBatcher *EventBatcher
@@ -64,9 +67,11 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 		},
 	)
 
-	watcher, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs(namespace).Watch(context.Background(), metav1.ListOptions{})
+	watcher, err := toolsWatch.NewRetryWatcher("1", &cache.ListWatch{WatchFunc: func(_ metav1.ListOptions) (watch.Interface, error) {
+		return kube.DefaultClient.OdigosClient.InstrumentationConfigs(namespace).Watch(ctx, metav1.ListOptions{})
+	}})
 	if err != nil {
-		return fmt.Errorf("error creating watcher: %w", err)
+		return fmt.Errorf("failed to create instrumentation config watcher: %w", err)
 	}
 
 	go handleInstrumentationConfigWatchEvents(ctx, watcher)
@@ -85,6 +90,7 @@ func handleInstrumentationConfigWatchEvents(ctx context.Context, watcher watch.I
 			return
 		case event, ok := <-ch:
 			if !ok {
+				log.Println("InstrumentationConfig watcher closed")
 				return
 			}
 			switch event.Type {

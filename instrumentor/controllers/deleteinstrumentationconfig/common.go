@@ -22,7 +22,7 @@ import (
 func reconcileWorkloadObject(ctx context.Context, kubeClient client.Client, workloadObject client.Object) error {
 	logger := log.FromContext(ctx)
 
-	instrumented, err := sourceutils.IsObjectInstrumentedBySource(ctx, kubeClient, workloadObject)
+	instrumented, _, err := sourceutils.IsObjectInstrumentedBySource(ctx, kubeClient, workloadObject)
 	if err != nil {
 		return err
 	}
@@ -148,7 +148,7 @@ func syncGenericWorkloadListToNs(ctx context.Context, c client.Client, kind k8sc
 		}
 	}
 
-	instrumented, err := sourceutils.IsObjectInstrumentedBySource(ctx, c, freshWorkloadCopy)
+	instrumented, _, err := sourceutils.IsObjectInstrumentedBySource(ctx, c, freshWorkloadCopy)
 	if err != nil {
 		return err
 	}

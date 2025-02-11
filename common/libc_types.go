@@ -7,3 +7,5 @@ const (
 	Glibc LibCType = "glibc"
 	Musl  LibCType = "musl"
 )
+
+const LibcTypeDistroParameterName = "LIBC_TYPE"
