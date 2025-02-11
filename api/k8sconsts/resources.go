@@ -1,8 +1,7 @@
 package k8sconsts
 
 const (
-	OdigosAgentsWebhookAppliedLabel      = "odigos.io/webhook-applied"
-	OdigosAgentsDeploymentHashAnnotation = "odigos.io/agents-deployment-hash"
+	OdigosAgentsDeploymentHashLabel = "odigos.io/agents-deployment-hash"
 
 	// OdigosCollectorRoleLabel is the label used to identify the role of the Odigos collector.
 	OdigosCollectorRoleLabel = "odigos.io/collector-role"

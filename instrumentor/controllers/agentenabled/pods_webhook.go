@@ -69,9 +69,6 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		return nil
 	}
 
-	// mark it with label so we can track it
-	pod.Labels[k8sconsts.OdigosAgentsWebhookAppliedLabel] = "true"
-
 	// this is temporary and should be refactored so the service name and other resource attributes are written to agent config
 	serviceName := p.getServiceNameForEnv(ctx, logger, pw)
 	if serviceName == nil || *serviceName == "" {
@@ -118,8 +115,7 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 
 	// after we finish injecting the agent, mark it with the hash of the agent deployment.
 	// this can be used later on to identify pods that need to be updated when the agent deployment changes.
-	// TODO: write this value also on the spec and read it from there
-	pod.Annotations[k8sconsts.OdigosAgentsDeploymentHashAnnotation] = ic.Spec.AgentsDeploymentHash
+	pod.Labels[k8sconsts.OdigosAgentsDeploymentHashLabel] = ic.Spec.AgentsDeploymentHash
 
 	return nil
 }

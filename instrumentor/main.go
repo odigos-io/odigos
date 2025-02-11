@@ -58,6 +58,7 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/selection"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -110,12 +111,16 @@ func main() {
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
 	odigosEffectiveConfigNameSelector := fields.OneTermEqualSelector("metadata.name", consts.OdigosEffectiveConfigName)
 	odigosEffectiveConfigSelector := fields.AndSelectors(nsSelector, odigosEffectiveConfigNameSelector)
+	instrumentedPodReq, _ := labels.NewRequirement(k8sconsts.OdigosAgentsDeploymentHashLabel, selection.Exists, []string{})
+	instrumentedPodSelector := labels.NewSelector().Add(*instrumentedPodReq)
 
 	podsTransformFunc := func(obj interface{}) (interface{}, error) {
 		pod, ok := obj.(*corev1.Pod)
 		if !ok {
 			return nil, fmt.Errorf("expected a Pod, got %T", obj)
 		}
+		pod.SetManagedFields(nil)
+		pod.ObjectMeta.ManagedFields = nil
 
 		stripedStatus := corev1.PodStatus{
 			Phase:             pod.Status.Phase,
@@ -167,9 +172,7 @@ func main() {
 			DefaultTransform: cache.TransformStripManagedFields(),
 			ByObject: map[client.Object]cache.ByObject{
 				&corev1.Pod{}: {
-					Label: labels.SelectorFromSet(map[string]string{
-						k8sconsts.OdigosAgentsWebhookAppliedLabel: "true",
-					}),
+					Label:     instrumentedPodSelector,
 					Transform: podsTransformFunc,
 				},
 				&corev1.ConfigMap{}: {

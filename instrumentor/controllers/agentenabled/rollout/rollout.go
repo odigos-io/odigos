@@ -2,7 +2,6 @@ package rollout
 
 import (
 	"context"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"time"
@@ -49,11 +48,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	}
 
 	savedRolloutHash := ic.Status.WorkloadRolloutHash
-	newRolloutHash, err := configHash(ic)
-	if err != nil {
-		logger.Error(err, "error calculating rollout hash")
-		return false, ctrl.Result{}, nil
-	}
+	newRolloutHash := ic.Spec.AgentsDeploymentHash
 
 	if savedRolloutHash == newRolloutHash {
 		return false, ctrl.Result{}, nil
@@ -179,24 +174,6 @@ func isWorkloadRolloutDone(obj client.Object) bool {
 	default:
 		return false
 	}
-}
-
-// configHash calculates a hash for the instrumentation config, based on the containers configuration
-// if agent injection is enabled, the hash is based on the containers configuration
-// if agent injection is disabled, the hash is empty
-// the reason for this is to avoid unnecessary rollouts when agent injection is disabled
-// (e,g the transition from empty config to a disabled one should not trigger a rollout)
-func configHash(ic *odigosv1alpha1.InstrumentationConfig) (string, error) {
-	if !ic.Spec.AgentInjectionEnabled {
-		return "", nil
-	}
-
-	newRolloutHashBytes, err := hashForContainersConfig(ic.Spec.Containers)
-	if err != nil {
-		return "", err
-	}
-
-	return hex.EncodeToString(newRolloutHashBytes), nil
 }
 
 func rolloutCondition(rolloutErr error) metav1.Condition {

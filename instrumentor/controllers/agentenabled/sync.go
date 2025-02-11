@@ -168,14 +168,14 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		}
 	}
 	if len(instrumentedContainerNames) > 0 {
-		agentsDeploymentHash, err := hashForContainersConfig(containersConfig)
+		// if any instrumented containers are found, the pods webhook should process pods for this workload.
+		// set the AgentInjectionEnabled to true to signal that.
+		ic.Spec.AgentInjectionEnabled = true
+		agentsDeploymentHash, err := rollout.HashForContainersConfig(containersConfig)
 		if err != nil {
 			return nil, err
 		}
 		ic.Spec.AgentsDeploymentHash = string(agentsDeploymentHash)
-		// if any instrumented containers are found, the pods webhook should process pods for this workload.
-		// set the AgentInjectionEnabled to true to signal that.
-		ic.Spec.AgentInjectionEnabled = true
 		return &agentInjectedStatusCondition{
 			Status:  metav1.ConditionTrue,
 			Reason:  odigosv1.AgentEnabledReasonEnabledSuccessfully,
