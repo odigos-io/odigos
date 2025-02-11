@@ -475,6 +475,18 @@ spec:
               port: 3000
             initialDelaySeconds: 20
 ---
+kind: Service
+apiVersion: v1
+metadata:
+  name: java-old-version
+  namespace: default
+spec:
+  selector:
+    app: java-old-version
+  ports:
+    - protocol: TCP
+      port: 3000
+---      
 apiVersion: apps/v1
 kind: Deployment
 metadata:
