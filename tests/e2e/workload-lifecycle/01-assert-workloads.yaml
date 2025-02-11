@@ -359,7 +359,7 @@ metadata:
     deployment.kubernetes.io/revision: '2'
   generation: 2
   labels:
-    app: java-omit-in-entrypoint:v0.0.1
+    app: java-omit-in-entrypoint
   name: java-omit-in-entrypoint
   namespace: default
 spec:
