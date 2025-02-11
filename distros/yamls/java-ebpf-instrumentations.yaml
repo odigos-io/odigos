@@ -22,4 +22,4 @@ spec:
       delimiter: ' '
   runtimeAgent:
     directoryNames:
-      - "{{ODIGOS_AGENTS_DIR}}/java-ebpf"
+      # - "{{ODIGOS_AGENTS_DIR}}/java-ebpf"
