@@ -1,6 +1,8 @@
 package config
 
 import (
+	"errors"
+
 	"github.com/odigos-io/odigos/common"
 )
 
@@ -58,7 +60,7 @@ func (m *Kafka) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 	}
 	resolveCanonicalBootstrapServersOnly, exists := config[KAFKA_RESOLVE_CANONICAL_BOOTSTRAP_SERVERS_ONLY]
 	if !exists {
-		resolveCanonicalBootstrapServersOnly = "False"
+		resolveCanonicalBootstrapServersOnly = "false"
 	}
 	clientId, exists := config[KAFKA_CLIENT_ID]
 	if !exists {
@@ -78,15 +80,15 @@ func (m *Kafka) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 	}
 	partitionTracesById, exists := config[KAFKA_PARTITION_TRACES_BY_ID]
 	if !exists {
-		partitionTracesById = "False"
+		partitionTracesById = "false"
 	}
 	partitionMetricsByResourceAttributes, exists := config[KAFKA_PARTITION_METRICS_BY_RESOURCE_ATTRIBUTES]
 	if !exists {
-		partitionMetricsByResourceAttributes = "False"
+		partitionMetricsByResourceAttributes = "false"
 	}
 	partitionLogsByResourceAttributes, exists := config[KAFKA_PARTITION_LOGS_BY_RESOURCE_ATTRIBUTES]
 	if !exists {
-		partitionLogsByResourceAttributes = "False"
+		partitionLogsByResourceAttributes = "false"
 	}
 	authMethod, exists := config[KAFKA_AUTH_METHOD]
 	if !exists {
@@ -98,7 +100,7 @@ func (m *Kafka) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 	}
 	metadataFull, exists := config[KAFKA_METADATA_FULL]
 	if !exists {
-		metadataFull = "False"
+		metadataFull = "false"
 	}
 	metadataMaxRetry, exists := config[KAFKA_METADATA_MAX_RETRY]
 	if !exists {
@@ -114,7 +116,7 @@ func (m *Kafka) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 	}
 	retryOnFailureEnabled, exists := config[KAFKA_RETRY_ON_FAILURE_ENABLED]
 	if !exists {
-		retryOnFailureEnabled = "True"
+		retryOnFailureEnabled = "true"
 	}
 	retryOnFailureInitialInterval, exists := config[KAFKA_RETRY_ON_FAILURE_INITIAL_INTERVAL]
 	if !exists {
@@ -130,7 +132,7 @@ func (m *Kafka) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 	}
 	sendingQueueEnabled, exists := config[KAFKA_SENDING_QUEUE_ENABLED]
 	if !exists {
-		sendingQueueEnabled = "True"
+		sendingQueueEnabled = "true"
 	}
 	sendingQueueNumConsumers, exists := config[KAFKA_SENDING_QUEUE_NUM_CONSUMERS]
 	if !exists {
@@ -158,49 +160,56 @@ func (m *Kafka) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 	}
 
 	// Modify the exporter here
-	exporterName := "otlp/" + uniqueUri
+	exporterName := "kafka/" + uniqueUri
 	exporterConfig := GenericMap{
 		"protocol_version": protocolVersion,
 		"brokers":          brokers,
-		"resolve_canonical_bootstrap_servers_only": resolveCanonicalBootstrapServersOnly,
+		"resolve_canonical_bootstrap_servers_only": parseBool(resolveCanonicalBootstrapServersOnly),
 		"client_id":              clientId,
 		"topic":                  topic,
 		"topic_from_attribute":   topicFromAttribute,
 		"encoding":               encoding,
-		"partition_traces_by_id": partitionTracesById,
-		"partition_metrics_by_resource_attributes": partitionMetricsByResourceAttributes,
-		"partition_logs_by_resource_attributes":    partitionLogsByResourceAttributes,
-		"tls": GenericMap{
-			"insecure": true,
-		},
+		"partition_traces_by_id": parseBool(partitionTracesById),
+		"partition_metrics_by_resource_attributes": parseBool(partitionMetricsByResourceAttributes),
+		"partition_logs_by_resource_attributes":    parseBool(partitionLogsByResourceAttributes),
 		"metadata": GenericMap{
-			"full": metadataFull,
+			"full": parseBool(metadataFull),
 			"retry": GenericMap{
-				"max":     metadataMaxRetry,
+				"max":     parseInt(metadataMaxRetry),
 				"backoff": metadataBackoffRetry,
 			},
 		},
 		"timeout": timeout,
 		"retry_on_failure": GenericMap{
-			"enabled":          retryOnFailureEnabled,
+			"enabled":          parseBool(retryOnFailureEnabled),
 			"initial_interval": retryOnFailureInitialInterval,
 			"max_interval":     retryOnFailureMaxInterval,
 			"max_elapsed_time": retryOnFailureMaxTimeElapsed,
 		},
 		"sending_queue": GenericMap{
-			"enabled":       sendingQueueEnabled,
-			"num_consumers": sendingQueueNumConsumers,
-			"queue_size":    sendingQueueSize,
+			"enabled":       parseBool(sendingQueueEnabled),
+			"num_consumers": parseInt(sendingQueueNumConsumers),
+			"queue_size":    parseInt(sendingQueueSize),
 		},
 		"producer": GenericMap{
-			"max_message_bytes":  producerMaxMessageBytes,
-			"required_acks":      producerRequiredAcks,
+			"max_message_bytes":  parseInt(producerMaxMessageBytes),
+			"required_acks":      parseInt(producerRequiredAcks),
 			"compression":        producerCompression,
-			"flush_max_messages": producerFlushMaxMessages,
+			"flush_max_messages": parseInt(producerFlushMaxMessages),
+		},
+		"auth": GenericMap{
+			"tls": GenericMap{
+				"insecure": true,
+			},
 		},
 	}
+
 	if authMethod == "plain_text" {
-		exporterConfig["plain_text"] = GenericMap{
+		exporterConfigAuth, ok := exporterConfig["auth"].(GenericMap)
+		if !ok {
+			return nil, errors.New("invalid type assertion for exporterConfig[\"auth\"]")
+		}
+		exporterConfigAuth["plain_text"] = GenericMap{
 			"username": username,
 			"password": "${KAFKA_PASSWORD}",
 		}
