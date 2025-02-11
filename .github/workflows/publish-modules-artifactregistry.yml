@@ -4,10 +4,17 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Docker image tag'
+        required: true
 
 jobs:
-
   publish-docker-images:
+    permissions:
+      contents: 'read'
+      id-token: 'write'
     strategy:
       matrix:
         dockerfile: ['Dockerfile', 'Dockerfile.rhel']
@@ -54,9 +61,8 @@ jobs:
 
       - id: gcp-auth
         name: Authenticate with Google Cloud
-        uses: google-github-actions/auth@v0
+        uses: google-github-actions/auth@v2
         with:
-          token_format: access_token
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
           access_token_lifetime: 1200s
@@ -70,14 +76,16 @@ jobs:
 
       - name: Build and Push Docker Image for ${{ matrix.service }}
         uses: docker/build-push-action@v6
+        env:
+          ODIGOS_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || steps.extract_tag.outputs.tag}}
         with:
           push: true
-          tags: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-${{ matrix.service }}${{ matrix.dockerfile == 'Dockerfile.rhel' && '-ubi9' || '' }}:${{ steps.extract_tag.outputs.tag }}
+          tags: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-${{ matrix.service }}${{ matrix.dockerfile == 'Dockerfile.rhel' && '-ubi9' || '' }}:${{ env.ODIGOS_TAG }}
           build-args: |
             SERVICE_NAME=${{ matrix.service }}
-            ODIGOS_VERSION=${{ steps.extract_tag.outputs.tag }}
-            RELEASE=${{ steps.extract_tag.outputs.tag }}
-            VERSION=${{ steps.extract_tag.outputs.tag }}
+            ODIGOS_VERSION=${{ env.ODIGOS_TAG }}
+            RELEASE=${{ env.ODIGOS_TAG }}
+            VERSION=${{ env.ODIGOS_TAG }}
             SUMMARY=${{ matrix.summary }}
             DESCRIPTION=${{ matrix.description }}
           platforms: linux/amd64,linux/arm64
