@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/opampserver/pkg/connection"
 	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
@@ -18,7 +19,7 @@ import (
 )
 
 func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager, kubeClientSet *kubernetes.Clientset, nodeName string, odigosNs string) error {
-	listenEndpoint := fmt.Sprintf("0.0.0.0:%d", OpAmpServerDefaultPort)
+	listenEndpoint := fmt.Sprintf("0.0.0.0:%d", k8sconsts.OpAMPPort)
 	logger.Info("Starting opamp server", "listenEndpoint", listenEndpoint)
 
 	connectionCache := connection.NewConnectionsCache()
@@ -66,19 +67,12 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 			return
 		}
 
-		deviceId := req.Header.Get("X-Odigos-DeviceId")
-		if deviceId == "" {
-			logger.Error(err, "X-Odigos-DeviceId header is missing")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-
 		isAgentDisconnect := agentToServer.AgentDisconnect != nil
 
 		var serverToAgent *protobufs.ServerToAgent
 		connectionInfo, exists := connectionCache.GetConnection(instanceUid)
 		if !exists {
-			connectionInfo, serverToAgent, err = handlers.OnNewConnection(ctx, deviceId, &agentToServer)
+			connectionInfo, serverToAgent, err = handlers.OnNewConnection(ctx, &agentToServer)
 			if err != nil {
 				logger.Error(err, "Failed to process new connection")
 				w.WriteHeader(http.StatusInternalServerError)
