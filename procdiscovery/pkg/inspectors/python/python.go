@@ -38,6 +38,10 @@ func (p *PythonInspector) GetRuntimeVersion(proc *process.Details, containerURL 
 }
 
 func (p *PythonInspector) isLibPythonLinked(proc *process.Details) bool {
+	if proc.Exefile == nil {
+		return false
+	}
+
 	elfFile, err := elf.NewFile(proc.Exefile)
 	if err != nil {
 		return false
