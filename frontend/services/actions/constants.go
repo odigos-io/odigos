@@ -1,6 +1,7 @@
 package services
 
 const (
+	ActionTypeK8sAttributes        = "K8sAttributesResolver"
 	ActionTypeAddClusterInfo       = "AddClusterInfo"
 	ActionTypeDeleteAttribute      = "DeleteAttribute"
 	ActionTypeRenameAttribute      = "RenameAttribute"
