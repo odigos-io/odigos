@@ -41,13 +41,13 @@ type ErrorSamplerListerExpansion interface{}
 // ErrorSamplerNamespaceLister.
 type ErrorSamplerNamespaceListerExpansion interface{}
 
-// K8sAttributesListerExpansion allows custom methods to be added to
-// K8sAttributesLister.
-type K8sAttributesListerExpansion interface{}
+// K8sAttributesResolverListerExpansion allows custom methods to be added to
+// K8sAttributesResolverLister.
+type K8sAttributesResolverListerExpansion interface{}
 
-// K8sAttributesNamespaceListerExpansion allows custom methods to be added to
-// K8sAttributesNamespaceLister.
-type K8sAttributesNamespaceListerExpansion interface{}
+// K8sAttributesResolverNamespaceListerExpansion allows custom methods to be added to
+// K8sAttributesResolverNamespaceLister.
+type K8sAttributesResolverNamespaceListerExpansion interface{}
 
 // LatencySamplerListerExpansion allows custom methods to be added to
 // LatencySamplerLister.

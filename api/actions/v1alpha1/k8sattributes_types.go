@@ -88,12 +88,12 @@ type K8sAttributesStatus struct {
 //+genclient
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:resource:path=k8sattributes,scope=Namespaced
+//+kubebuilder:resource:path=k8sattributesresolvers,scope=Namespaced
 //+kubebuilder:metadata:labels=metadata.labels.odigos.io/config=1
 //+kubebuilder:metadata:labels=metadata.labels.odigos.io/system-object=true
 
-// K8sAttributes allows adding an action to collect k8s attributes.
-type K8sAttributes struct {
+// K8sAttributesResolver allows adding an action to collect k8s attributes.
+type K8sAttributesResolver struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
@@ -103,13 +103,13 @@ type K8sAttributes struct {
 
 //+kubebuilder:object:root=true
 
-// K8sAttributesList contains a list of K8sAttributes
-type K8sAttributesList struct {
+// K8sAttributesResolverList contains a list of K8sAttributes
+type K8sAttributesResolverList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []K8sAttributes `json:"items"`
+	Items           []K8sAttributesResolver `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&K8sAttributes{}, &K8sAttributesList{})
+	SchemeBuilder.Register(&K8sAttributesResolver{}, &K8sAttributesResolverList{})
 }
