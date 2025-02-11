@@ -31,59 +31,59 @@ import (
 	cache "k8s.io/client-go/tools/cache"
 )
 
-// K8sAttributesInformer provides access to a shared informer and lister for
-// K8sAttributes.
-type K8sAttributesInformer interface {
+// K8sAttributesResolverInformer provides access to a shared informer and lister for
+// K8sAttributesResolvers.
+type K8sAttributesResolverInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() actionsv1alpha1.K8sAttributesLister
+	Lister() actionsv1alpha1.K8sAttributesResolverLister
 }
 
-type k8sAttributesInformer struct {
+type k8sAttributesResolverInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
 	namespace        string
 }
 
-// NewK8sAttributesInformer constructs a new informer for K8sAttributes type.
+// NewK8sAttributesResolverInformer constructs a new informer for K8sAttributesResolver type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewK8sAttributesInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredK8sAttributesInformer(client, namespace, resyncPeriod, indexers, nil)
+func NewK8sAttributesResolverInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return NewFilteredK8sAttributesResolverInformer(client, namespace, resyncPeriod, indexers, nil)
 }
 
-// NewFilteredK8sAttributesInformer constructs a new informer for K8sAttributes type.
+// NewFilteredK8sAttributesResolverInformer constructs a new informer for K8sAttributesResolver type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewFilteredK8sAttributesInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
+func NewFilteredK8sAttributesResolverInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ActionsV1alpha1().K8sAttributes(namespace).List(context.TODO(), options)
+				return client.ActionsV1alpha1().K8sAttributesResolvers(namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ActionsV1alpha1().K8sAttributes(namespace).Watch(context.TODO(), options)
+				return client.ActionsV1alpha1().K8sAttributesResolvers(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&apiactionsv1alpha1.K8sAttributes{},
+		&apiactionsv1alpha1.K8sAttributesResolver{},
 		resyncPeriod,
 		indexers,
 	)
 }
 
-func (f *k8sAttributesInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredK8sAttributesInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
+func (f *k8sAttributesResolverInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+	return NewFilteredK8sAttributesResolverInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
 }
 
-func (f *k8sAttributesInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&apiactionsv1alpha1.K8sAttributes{}, f.defaultInformer)
+func (f *k8sAttributesResolverInformer) Informer() cache.SharedIndexInformer {
+	return f.factory.InformerFor(&apiactionsv1alpha1.K8sAttributesResolver{}, f.defaultInformer)
 }
 
-func (f *k8sAttributesInformer) Lister() actionsv1alpha1.K8sAttributesLister {
-	return actionsv1alpha1.NewK8sAttributesLister(f.Informer().GetIndexer())
+func (f *k8sAttributesResolverInformer) Lister() actionsv1alpha1.K8sAttributesResolverLister {
+	return actionsv1alpha1.NewK8sAttributesResolverLister(f.Informer().GetIndexer())
 }
