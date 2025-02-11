@@ -188,7 +188,7 @@ func main() {
 				&apiactions.RenameAttribute{}: {
 					Field: nsSelector,
 				},
-				&apiactions.K8sAttributes{}: {
+				&apiactions.K8sAttributesResolver{}: {
 					Field: nsSelector,
 				},
 			},
