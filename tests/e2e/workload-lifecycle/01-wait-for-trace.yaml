@@ -11,7 +11,6 @@ query: |
   { resource.service.name = "java-omit-in-entrypoint" } ||
   { resource.service.name = "java-supported-docker-env" } ||
   { resource.service.name = "java-omit-in-entrypoint" } ||
-  { resource.service.name = "java-supported-docker-env" } ||
   { resource.service.name = "java-supported-manifest-env" } ||
   { resource.service.name = "java-azul" } ||
   { resource.service.name = "python-latest-version" && span.http.route = "insert-random/" } ||
@@ -22,4 +21,4 @@ query: |
   { resource.service.name = "dotnet6-glibc" } ||
   { resource.service.name = "dotnet6-musl" }
 expected:
-  count: 18
+  count: 17
