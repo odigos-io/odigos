@@ -44,7 +44,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
-	enabled, err := sourceutils.IsObjectInstrumentedBySource(ctx, r.Client, &ns)
+	enabled, _, err := sourceutils.IsObjectInstrumentedBySource(ctx, r.Client, &ns)
 	if err != nil {
 		return ctrl.Result{}, err
 	}

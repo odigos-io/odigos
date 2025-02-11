@@ -10,12 +10,12 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 )
 
 const (
 	containerDir   = "/instrumentations"
-	hostDir        = "/var/odigos"
 	chrootDir      = "/host"
 	semanagePath   = "/sbin/semanage"
 	restoreconPath = "/sbin/restorecon"
@@ -38,52 +38,21 @@ func CopyAgentsDirectoryToHost() error {
 		"/var/odigos/python-ebpf/pythonUSDT.abi3.so":                                                   {},
 	}
 
-	updatedFilesToKeepMap, err := removeChangedFilesFromKeepMap(filesToKeep, containerDir, hostDir)
+	updatedFilesToKeepMap, err := removeChangedFilesFromKeepMap(filesToKeep, containerDir, k8sconsts.OdigosAgentsDirectory)
 	if err != nil {
 		log.Logger.Error(err, "Error getting changed files")
 	}
 
-	err = removeFilesInDir(hostDir, updatedFilesToKeepMap)
+	err = removeFilesInDir(k8sconsts.OdigosAgentsDirectory, updatedFilesToKeepMap)
 	if err != nil {
 		log.Logger.Error(err, "Error removing instrumentation directory from host")
 		return err
 	}
 
-	err = copyDirectories(containerDir, hostDir, updatedFilesToKeepMap)
+	err = copyDirectories(containerDir, k8sconsts.OdigosAgentsDirectory, updatedFilesToKeepMap)
 	if err != nil {
 		log.Logger.Error(err, "Error copying instrumentation directory to host")
 		return err
-	}
-
-	// Check if the semanage command exists when running on RHEL/CoreOS
-	_, err = exec.LookPath(filepath.Join(chrootDir, semanagePath))
-	if err == nil {
-		// Run the semanage command to add the new directory to the container_ro_file_t context
-		// semanage writes SELinux config to host
-		syscall.Chroot(chrootDir)
-		cmd := exec.Command(semanagePath, "fcontext", "-a", "-t", "container_ro_file_t", "/var/odigos(/.*)?")
-		err = cmd.Run()
-		if err != nil {
-			log.Logger.Error(err, "Error running semanage command")
-		}
-
-		// Check if the restorecon command exists when running on RHEL/CoreOS
-		// restorecon applies the SELinux settings we just created to the host
-		// And we are already chrooted to the host path, so we can just look for restoreconPath now
-		_, err = exec.LookPath(restoreconPath)
-		if err == nil {
-			// Run the restorecon command to apply the new context
-			cmd := exec.Command(restoreconPath, "-r", "/var/odigos")
-			err = cmd.Run()
-			if err != nil {
-				log.Logger.Error(err, "Error running restorecon command")
-			}
-		} else {
-			log.Logger.Error(err, "Unable to find restorecon path")
-		}
-
-	} else {
-		log.Logger.Error(err, "Unable to find semanage path")
 	}
 
 	return nil
@@ -172,4 +141,43 @@ func calculateFileHash(filePath string) (string, error) {
 	}
 
 	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
+}
+
+// ApplyOpenShiftSELinuxSettings makes auto-instrumentation agents readable by containers on RHEL hosts.
+// Note: This function calls chroot to use the host's PATH to execute selinux commands. Calling it will
+// affect the odiglet running process's apparent filesystem.
+func ApplyOpenShiftSELinuxSettings() error {
+	// Check if the semanage command exists when running on RHEL/CoreOS
+	_, err := exec.LookPath(filepath.Join(chrootDir, semanagePath))
+	if err == nil {
+		// Run the semanage command to add the new directory to the container_ro_file_t context
+		// semanage writes SELinux config to host
+		syscall.Chroot(chrootDir)
+		cmd := exec.Command(semanagePath, "fcontext", "-a", "-t", "container_ro_file_t", "/var/odigos(/.*)?")
+		err = cmd.Run()
+		if err != nil {
+			log.Logger.Error(err, "Error running semanage command")
+			return err
+		}
+
+		// Check if the restorecon command exists when running on RHEL/CoreOS
+		// restorecon applies the SELinux settings we just created to the host
+		// And we are already chrooted to the host path, so we can just look for restoreconPath now
+		_, err = exec.LookPath(restoreconPath)
+		if err == nil {
+			// Run the restorecon command to apply the new context
+			cmd := exec.Command(restoreconPath, "-r", k8sconsts.OdigosAgentsDirectory)
+			err = cmd.Run()
+			if err != nil {
+				log.Logger.Error(err, "Error running restorecon command")
+				return err
+			}
+		} else {
+			log.Logger.Error(err, "Unable to find restorecon path")
+			return err
+		}
+	} else {
+		log.Logger.Info("Unable to find semanage path, possibly not on RHEL host")
+	}
+	return nil
 }

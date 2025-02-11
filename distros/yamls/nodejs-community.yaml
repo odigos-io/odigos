@@ -17,3 +17,6 @@ spec:
     - envName: NODE_OPTIONS
       envValue: '--require {{ODIGOS_AGENTS_DIR}}/nodejs/autoinstrumentation.js'
       delimiter: ' '
+  runtimeAgent:
+    directoryNames:
+      - "{{ODIGOS_AGENTS_DIR}}/nodejs"

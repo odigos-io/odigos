@@ -118,7 +118,7 @@ COPY --from=nodejs-agent-native-community-builder /repos/odigos/agents/nodejs-na
 # .NET
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
 
-FROM registry.fedoraproject.org/fedora-minimal:38
+FROM gcr.io/distroless/base:latest
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
 WORKDIR /instrumentations/
 COPY --from=builder /instrumentations/ .

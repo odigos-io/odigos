@@ -130,7 +130,24 @@ tests/e2e/common/traceql_runner.sh <path-to-yaml-file>
 
 When tests fail, and it's related to some traceql query not succeeding, it can be useful to setup a grafana ui to commit queries and see the traces that are stored in tempo.
 
-- Install grafana with helm:
+### TL;DR
+
+```bash
+make dev-tests-grafana
+make dev-tests-grafana-port-forward
+```
+
+Then browse to `http://localhost:3080/explore`.
+
+### Detailed Steps
+
+- Install grafana with helm once:
+
+```bash
+make dev-tests-grafana
+```
+
+or manually:
 
 ```bash
 helm install -n traces grafana grafana/grafana \
@@ -145,6 +162,12 @@ helm install -n traces grafana grafana/grafana \
 ```
 
 - Port forward to the grafana service:
+
+```bash
+make dev-tests-grafana-port-forward
+```
+
+or manually:
 
 ```bash
 kubectl port-forward svc/grafana 3080:80 -n traces

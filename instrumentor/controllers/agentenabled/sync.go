@@ -40,26 +40,23 @@ type agentInjectedStatusCondition struct {
 }
 
 func reconcileAll(ctx context.Context, c client.Client) (ctrl.Result, error) {
-
 	allInstrumentationConfigs := odigosv1.InstrumentationConfigList{}
 	listErr := c.List(ctx, &allInstrumentationConfigs)
 	if listErr != nil {
 		return ctrl.Result{}, listErr
 	}
 
-	var err error
 	for _, ic := range allInstrumentationConfigs.Items {
-		_, workloadErr := reconcileWorkload(ctx, c, ic.Name, ic.Namespace)
-		if workloadErr != nil {
-			err = errors.Join(err, workloadErr)
+		res, err := reconcileWorkload(ctx, c, ic.Name, ic.Namespace)
+		if err != nil || !res.IsZero() {
+			return res, err
 		}
 	}
 
-	return ctrl.Result{}, err
+	return ctrl.Result{}, nil
 }
 
 func reconcileWorkload(ctx context.Context, c client.Client, icName string, namespace string) (ctrl.Result, error) {
-
 	logger := log.FromContext(ctx)
 
 	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(icName)
@@ -79,12 +76,13 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 		if apierrors.IsNotFound(err) {
 			// instrumentation config is deleted, trigger a rollout for the associated workload
 			// this should happen once per workload, as the instrumentation config is deleted
-			return rollout.Do(ctx, c, nil, pw)
+			_, res, err := rollout.Do(ctx, c, nil, pw)
+			return res, err
 		}
 		return ctrl.Result{}, err
 	}
 
-	logger.Info("Reconciling workload for InstrumentationConfig object agent enabling", "name", ic.Name, "namespace", ic.Namespace, "instrumentationConfig", ic)
+	logger.Info("Reconciling workload for InstrumentationConfig object agent enabling", "name", ic.Name, "namespace", ic.Namespace, "instrumentationConfigName", ic.Name)
 
 	condition, err := updateInstrumentationConfigSpec(ctx, c, pw, &ic)
 	if err != nil {
@@ -103,15 +101,15 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 		Message: condition.Message,
 	}
 
-	changed := meta.SetStatusCondition(&ic.Status.Conditions, cond)
-	if changed {
-		err = c.Status().Update(ctx, &ic)
-		if err != nil {
-			return utils.K8SUpdateErrorHandler(err)
-		}
+	agentEnabledChanged := meta.SetStatusCondition(&ic.Status.Conditions, cond)
+	rolloutChanged, res, err := rollout.Do(ctx, c, &ic, pw)
+
+	if rolloutChanged || agentEnabledChanged {
+		updateErr := c.Status().Update(ctx, &ic)
+		err = errors.Join(err, updateErr)
 	}
 
-	return rollout.Do(ctx, c, &ic, pw)
+	return res, err
 }
 
 // this function receives a workload object, and updates the instrumentation config object ptr.
@@ -286,6 +284,30 @@ func containerInstrumentationConfig(containerName string,
 		}
 	}
 
+	distroParameters := map[string]string{}
+	for _, parameterName := range distro.RequireParameters {
+		switch parameterName {
+		case common.LibcTypeDistroParameterName:
+			if runtimeDetails.LibCType == nil {
+				return odigosv1.ContainerAgentConfig{
+					ContainerName:       containerName,
+					AgentEnabled:        false,
+					AgentEnabledReason:  odigosv1.AgentEnabledReasonMissingDistroParameter,
+					AgentEnabledMessage: fmt.Sprintf("missing required parameter '%s' for distro '%s'", common.LibcTypeDistroParameterName, distroName),
+				}
+			}
+			distroParameters[common.LibcTypeDistroParameterName] = string(*runtimeDetails.LibCType)
+
+		default:
+			return odigosv1.ContainerAgentConfig{
+				ContainerName:       containerName,
+				AgentEnabled:        false,
+				AgentEnabledReason:  odigosv1.AgentEnabledReasonMissingDistroParameter,
+				AgentEnabledMessage: fmt.Sprintf("unsupported parameter '%s' for distro '%s'", parameterName, distroName),
+			}
+		}
+	}
+
 	// check for presence of other agents
 	if runtimeDetails.OtherAgent != nil {
 		if effectiveConfig.AllowConcurrentAgents == nil || !*effectiveConfig.AllowConcurrentAgents {
@@ -302,6 +324,7 @@ func containerInstrumentationConfig(containerName string,
 				AgentEnabledReason:  odigosv1.AgentEnabledReasonEnabledSuccessfully,
 				AgentEnabledMessage: fmt.Sprintf("we are operating alongside the %s, which is not the recommended configuration. We suggest disabling the %s for optimal performance.", runtimeDetails.OtherAgent.Name, runtimeDetails.OtherAgent.Name),
 				OtelDistroName:      distroName,
+				DistroParams:        distroParameters,
 			}
 		}
 	}
@@ -310,6 +333,7 @@ func containerInstrumentationConfig(containerName string,
 		ContainerName:  containerName,
 		AgentEnabled:   true,
 		OtelDistroName: distroName,
+		DistroParams:   distroParameters,
 	}
 
 	return containerConfig
@@ -318,14 +342,27 @@ func containerInstrumentationConfig(containerName string,
 func applyRulesForDistros(defaultDistros map[common.ProgrammingLanguage]string,
 	instrumentationRules *[]odigosv1.InstrumentationRule) map[common.ProgrammingLanguage]string {
 
-	for _, rule := range *instrumentationRules {
-		if rule.Spec.OtelSdks == nil {
-			continue
-		}
-		// TODO: change this from otel sdks to distros and use distro name
+	distrosPerLanguage := make(map[common.ProgrammingLanguage]string, len(defaultDistros))
+	for lang, distroName := range defaultDistros {
+		distrosPerLanguage[lang] = distroName
 	}
 
-	return defaultDistros
+	for _, rule := range *instrumentationRules {
+		if rule.Spec.OtelDistros == nil {
+			continue
+		}
+		for _, distroName := range rule.Spec.OtelDistros.OtelDistroNames {
+			distro := distros.GetDistroByName(distroName)
+			if distro == nil {
+				continue
+			}
+
+			lang := distro.Language
+			distrosPerLanguage[lang] = distroName
+		}
+	}
+
+	return distrosPerLanguage
 }
 
 // This function checks if we are waiting for some transient prerequisites to be completed before injecting the agent.

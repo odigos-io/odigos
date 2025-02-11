@@ -87,7 +87,8 @@
             "cli/odigos_uninstall",
             "cli/odigos_upgrade",
             "cli/odigos_version",
-            "cli/odigos_sources"
+            "cli/odigos_sources",
+            "cli/odigos_config"
           ]
         },
         {
@@ -184,7 +185,8 @@
                 "pipeline/actions/attributes/addclusterinfo",
                 "pipeline/actions/attributes/deleteattribute",
                 "pipeline/actions/attributes/renameattribute",
-                "pipeline/actions/attributes/piimasking"
+                "pipeline/actions/attributes/piimasking",
+                "pipeline/actions/attributes/k8sattributes"
               ]
             },
             {

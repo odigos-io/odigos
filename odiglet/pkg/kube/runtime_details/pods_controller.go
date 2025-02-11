@@ -61,9 +61,7 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request reconcile.Reques
 		return reconcile.Result{}, err
 	}
 
-	err = persistRuntimeDetailsToInstrumentationConfig(ctx, p.Client, &instrumentationConfig, odigosv1.InstrumentationConfigStatus{
-		RuntimeDetailsByContainer: runtimeResults,
-	})
+	err = persistRuntimeDetailsToInstrumentationConfig(ctx, p.Client, &instrumentationConfig, runtimeResults)
 	if err != nil {
 		return reconcile.Result{}, err
 	}

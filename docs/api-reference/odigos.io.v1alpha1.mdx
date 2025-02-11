@@ -1039,6 +1039,18 @@ can be left empty if reason is self-explanatory.</p>
 if the name is empty, this container should not be instrumented.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>distroParams</code> <B>[Required]</B>
+</td>
+<td>
+<code>map[string]string</code>
+</td>
+<td>
+   <p>Additional parameters to the distro that controls how it's being applied.
+Keys are parameter names (like &quot;libc&quot;) and values are the value to use for that parameter (glibc / musl)</p>
+</td>
+</tr>
 </tbody>
 </table>
 
@@ -1857,9 +1869,18 @@ If empty, no instrumentation libraries will be used.</p>
 <a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#OtelSdks"><code>instrumentationrules.OtelSdks</code></a>
 </td>
 <td>
-   <p>Set the OtelSdk to use for the workloads in this rule.
-instrumentation libraries will be ignored if set.
-the rule will be used only for languages which are specified, and ignored otherwise.</p>
+   <p>Deprecated: use OtelDistros instead.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>otelDistros</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#OtelDistros"><code>instrumentationrules.OtelDistros</code></a>
+</td>
+<td>
+   <p>Set the otel distros to use instead of the defaults.</p>
 </td>
 </tr>
 <tr>

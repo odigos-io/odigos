@@ -1,1 +1,0 @@
-export const SEVEN_DAYS_IN_MS = 604800000;
