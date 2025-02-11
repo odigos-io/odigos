@@ -14,18 +14,55 @@ import (
 
 func TestSetupTelemetry(t *testing.T) {
 	testTel := SetupTelemetry()
-	tb, err := metadata.NewTelemetryBuilder(
-		testTel.NewTelemetrySettings(),
-	)
+	tb, err := metadata.NewTelemetryBuilder(testTel.NewTelemetrySettings())
 	require.NoError(t, err)
-	require.NotNil(t, tb)
-	tb.LogDataSize.Add(context.Background(), 1)
-	tb.MetricDataSize.Add(context.Background(), 1)
-	tb.TraceDataSize.Add(context.Background(), 1)
+	defer tb.Shutdown()
+	tb.OdigosAcceptedLogRecords.Add(context.Background(), 1)
+	tb.OdigosAcceptedMetricPoints.Add(context.Background(), 1)
+	tb.OdigosAcceptedSpans.Add(context.Background(), 1)
+	tb.OdigosLogDataSize.Add(context.Background(), 1)
+	tb.OdigosMetricDataSize.Add(context.Background(), 1)
+	tb.OdigosTraceDataSize.Add(context.Background(), 1)
 
 	testTel.AssertMetrics(t, []metricdata.Metrics{
 		{
-			Name:        "otelcol_log_data_size",
+			Name:        "otelcol_odigos_accepted_log_records",
+			Description: "Number of log records passed through the processor.",
+			Unit:        "{records}",
+			Data: metricdata.Sum[int64]{
+				Temporality: metricdata.CumulativeTemporality,
+				IsMonotonic: true,
+				DataPoints: []metricdata.DataPoint[int64]{
+					{},
+				},
+			},
+		},
+		{
+			Name:        "otelcol_odigos_accepted_metric_points",
+			Description: "Number of data points passed through the processor.",
+			Unit:        "{datapoints}",
+			Data: metricdata.Sum[int64]{
+				Temporality: metricdata.CumulativeTemporality,
+				IsMonotonic: true,
+				DataPoints: []metricdata.DataPoint[int64]{
+					{},
+				},
+			},
+		},
+		{
+			Name:        "otelcol_odigos_accepted_spans",
+			Description: "Number of spans passed through the processor.",
+			Unit:        "{spans}",
+			Data: metricdata.Sum[int64]{
+				Temporality: metricdata.CumulativeTemporality,
+				IsMonotonic: true,
+				DataPoints: []metricdata.DataPoint[int64]{
+					{},
+				},
+			},
+		},
+		{
+			Name:        "otelcol_odigos_log_data_size",
 			Description: "Total size of log data passed to the processor",
 			Unit:        "By",
 			Data: metricdata.Sum[int64]{
@@ -37,7 +74,7 @@ func TestSetupTelemetry(t *testing.T) {
 			},
 		},
 		{
-			Name:        "otelcol_metric_data_size",
+			Name:        "otelcol_odigos_metric_data_size",
 			Description: "Total size of metric data passed to the processor",
 			Unit:        "By",
 			Data: metricdata.Sum[int64]{
@@ -49,7 +86,7 @@ func TestSetupTelemetry(t *testing.T) {
 			},
 		},
 		{
-			Name:        "otelcol_trace_data_size",
+			Name:        "otelcol_odigos_trace_data_size",
 			Description: "Total size of trace data passed to the processor",
 			Unit:        "By",
 			Data: metricdata.Sum[int64]{
@@ -61,5 +98,24 @@ func TestSetupTelemetry(t *testing.T) {
 			},
 		},
 	}, metricdatatest.IgnoreTimestamp(), metricdatatest.IgnoreValue())
+	AssertEqualOdigosAcceptedLogRecords(t, testTel.Telemetry,
+		[]metricdata.DataPoint[int64]{{Value: 1}},
+		metricdatatest.IgnoreTimestamp())
+	AssertEqualOdigosAcceptedMetricPoints(t, testTel.Telemetry,
+		[]metricdata.DataPoint[int64]{{Value: 1}},
+		metricdatatest.IgnoreTimestamp())
+	AssertEqualOdigosAcceptedSpans(t, testTel.Telemetry,
+		[]metricdata.DataPoint[int64]{{Value: 1}},
+		metricdatatest.IgnoreTimestamp())
+	AssertEqualOdigosLogDataSize(t, testTel.Telemetry,
+		[]metricdata.DataPoint[int64]{{Value: 1}},
+		metricdatatest.IgnoreTimestamp())
+	AssertEqualOdigosMetricDataSize(t, testTel.Telemetry,
+		[]metricdata.DataPoint[int64]{{Value: 1}},
+		metricdatatest.IgnoreTimestamp())
+	AssertEqualOdigosTraceDataSize(t, testTel.Telemetry,
+		[]metricdata.DataPoint[int64]{{Value: 1}},
+		metricdatatest.IgnoreTimestamp())
+
 	require.NoError(t, testTel.Shutdown(context.Background()))
 }

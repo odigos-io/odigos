@@ -30,7 +30,7 @@ func (u *uiResourceManager) Name() string {
 	return "UI"
 }
 
-func NewUIDeployment(ns string, version string, imagePrefix string) *appsv1.Deployment {
+func NewUIDeployment(ns string, version string, imagePrefix string, imageName string) *appsv1.Deployment {
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -63,7 +63,7 @@ func NewUIDeployment(ns string, version string, imagePrefix string) *appsv1.Depl
 					Containers: []corev1.Container{
 						{
 							Name:  k8sconsts.UIContainerName,
-							Image: containers.GetImageName(imagePrefix, k8sconsts.UIImage, version),
+							Image: containers.GetImageName(imagePrefix, imageName, version),
 							Args: []string{
 								"--namespace=$(CURRENT_NS)",
 							},
@@ -385,13 +385,17 @@ func NewUIService(ns string) *corev1.Service {
 }
 
 func (u *uiResourceManager) InstallFromScratch(ctx context.Context) error {
+	imageName := k8sconsts.UIImage
+	if u.config.OpenshiftEnabled {
+		imageName = k8sconsts.UIImageUBI9
+	}
 	resources := []kube.Object{
 		NewUIServiceAccount(u.ns),
 		NewUIRole(u.ns, u.readonly),
 		NewUIRoleBinding(u.ns),
 		NewUIClusterRole(u.readonly),
 		NewUIClusterRoleBinding(u.ns),
-		NewUIDeployment(u.ns, u.odigosVersion, u.config.ImagePrefix),
+		NewUIDeployment(u.ns, u.odigosVersion, u.config.ImagePrefix, imageName),
 		NewUIService(u.ns),
 	}
 	return u.client.ApplyResources(ctx, u.config.ConfigVersion, resources)

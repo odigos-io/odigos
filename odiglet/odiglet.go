@@ -3,21 +3,24 @@ package odiglet
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	commonInstrumentation "github.com/odigos-io/odigos/instrumentation"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	k8senv "github.com/odigos-io/odigos/k8sutils/pkg/env"
+	k8snode "github.com/odigos-io/odigos/k8sutils/pkg/node"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation"
+	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/fs"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"github.com/odigos-io/odigos/opampserver/pkg/server"
 	"golang.org/x/sync/errgroup"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 )
 
@@ -35,18 +38,7 @@ const (
 )
 
 // New creates a new Odiglet instance.
-func New(deviceInjectionCallbacks instrumentation.OtelSdksLsf, factories map[commonInstrumentation.OtelDistribution]commonInstrumentation.Factory) (*Odiglet, error) {
-	// Init Kubernetes API client
-	cfg, err := rest.InClusterConfig()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create in-cluster config for Kubernetes client %w", err)
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Kubernetes client %w", err)
-	}
-
+func New(clientset *kubernetes.Clientset, deviceInjectionCallbacks instrumentation.OtelSdksLsf, factories map[commonInstrumentation.OtelDistribution]commonInstrumentation.Factory) (*Odiglet, error) {
 	mgr, err := kube.CreateManager()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create controller-runtime manager %w", err)
@@ -110,7 +102,7 @@ func (o *Odiglet) Run(ctx context.Context) {
 	// the device manager library doesn't support passing a context,
 	// however, internally it uses a context to cancel the device manager once SIGTERM or SIGINT is received.
 	// We run it outside of the error group to avoid blocking on Wait() in case of a fatal error.
-	go func()  {
+	go func() {
 		err := runDeviceManager(o.clientset, o.deviceInjectionCallbacks)
 		if err != nil {
 			log.Logger.Error(err, "Device manager exited with error")
@@ -118,7 +110,7 @@ func (o *Odiglet) Run(ctx context.Context) {
 		} else {
 			log.Logger.V(0).Info("Device manager exited")
 		}
-	} ()
+	}()
 
 	g.Go(func() error {
 		err := o.ebpfManager.Run(groupCtx)
@@ -174,4 +166,39 @@ func runDeviceManager(clientset *kubernetes.Clientset, otelSdkLsf instrumentatio
 	manager := dpm.NewManager(lister)
 	manager.Run()
 	return nil
+}
+
+func OdigletInitPhase(clientset *kubernetes.Clientset) {
+	if err := log.Init(); err != nil {
+		panic(err)
+	}
+	err := fs.CopyAgentsDirectoryToHost()
+	if err != nil {
+		log.Logger.Error(err, "Failed to copy agents directory to host")
+		os.Exit(-1)
+	}
+
+	nn, ok := os.LookupEnv(k8sconsts.NodeNameEnvVar)
+	if !ok {
+		log.Logger.Error(fmt.Errorf("env var %s is not set", k8sconsts.NodeNameEnvVar), "Failed to load env")
+		os.Exit(-1)
+	}
+
+	odigletInstalledLabel := k8snode.DetermineNodeOdigletInstalledLabelByTier()
+
+	log.Logger.V(0).Info("Adding Label to Node", "odigletLabel", odigletInstalledLabel)
+
+	if err := k8snode.AddLabelToNode(clientset, nn, odigletInstalledLabel, k8sconsts.OdigletInstalledLabelValue); err != nil {
+		log.Logger.Error(err, "Failed to add Odiglet installed label to the node")
+		os.Exit(-1)
+	}
+
+	// SELinux settings should be applied last. This function chroot's to use the host's PATH for
+	// executing selinux commands to make agents readable by pods.
+	if err := fs.ApplyOpenShiftSELinuxSettings(); err != nil {
+		log.Logger.Error(err, "Failed to apply SELinux settings on RHEL host")
+		os.Exit(-1)
+	}
+
+	os.Exit(0)
 }

@@ -18,8 +18,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	k8sconsts "github.com/odigos-io/odigos/api/k8sconsts"
 	instrumentationrules "github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
-	workload "github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
 // InstrumentationRuleSpecApplyConfiguration represents a declarative configuration of the InstrumentationRuleSpec type for use
@@ -28,10 +28,11 @@ type InstrumentationRuleSpecApplyConfiguration struct {
 	RuleName                 *string                                             `json:"ruleName,omitempty"`
 	Notes                    *string                                             `json:"notes,omitempty"`
 	Disabled                 *bool                                               `json:"disabled,omitempty"`
-	Workloads                *[]workload.PodWorkload                             `json:"workloads,omitempty"`
+	Workloads                *[]k8sconsts.PodWorkload                            `json:"workloads,omitempty"`
 	InstrumentationLibraries *[]InstrumentationLibraryGlobalIdApplyConfiguration `json:"instrumentationLibraries,omitempty"`
 	PayloadCollection        *instrumentationrules.PayloadCollection             `json:"payloadCollection,omitempty"`
 	OtelSdks                 *instrumentationrules.OtelSdks                      `json:"otelSdks,omitempty"`
+	OtelDistros              *instrumentationrules.OtelDistros                   `json:"otelDistros,omitempty"`
 	CodeAttributes           *instrumentationrules.CodeAttributes                `json:"codeAttributes,omitempty"`
 }
 
@@ -68,7 +69,7 @@ func (b *InstrumentationRuleSpecApplyConfiguration) WithDisabled(value bool) *In
 // WithWorkloads sets the Workloads field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Workloads field is set to the value of the last call.
-func (b *InstrumentationRuleSpecApplyConfiguration) WithWorkloads(value []workload.PodWorkload) *InstrumentationRuleSpecApplyConfiguration {
+func (b *InstrumentationRuleSpecApplyConfiguration) WithWorkloads(value []k8sconsts.PodWorkload) *InstrumentationRuleSpecApplyConfiguration {
 	b.Workloads = &value
 	return b
 }
@@ -106,6 +107,14 @@ func (b *InstrumentationRuleSpecApplyConfiguration) WithPayloadCollection(value 
 // If called multiple times, the OtelSdks field is set to the value of the last call.
 func (b *InstrumentationRuleSpecApplyConfiguration) WithOtelSdks(value instrumentationrules.OtelSdks) *InstrumentationRuleSpecApplyConfiguration {
 	b.OtelSdks = &value
+	return b
+}
+
+// WithOtelDistros sets the OtelDistros field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the OtelDistros field is set to the value of the last call.
+func (b *InstrumentationRuleSpecApplyConfiguration) WithOtelDistros(value instrumentationrules.OtelDistros) *InstrumentationRuleSpecApplyConfiguration {
+	b.OtelDistros = &value
 	return b
 }
 

@@ -1,53 +1,31 @@
 package utils
 
 import (
-	"context"
 	"fmt"
 
-	k8scontainer "github.com/odigos-io/odigos/k8sutils/pkg/container"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
 	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func IsPodInCurrentNode(pod *corev1.Pod) bool {
 	return pod.Spec.NodeName == env.Current.NodeName
 }
 
-func GetRunningPods(ctx context.Context, labels map[string]string, ns string, kubeClient client.Client) ([]corev1.Pod, error) {
-	var podList corev1.PodList
-	err := kubeClient.List(ctx, &podList, client.MatchingLabels(labels), client.InNamespace(ns))
-	if err != nil {
-		return nil, err
-	}
-
-	var filteredPods []corev1.Pod
-	for _, pod := range podList.Items {
-		if IsPodInCurrentNode(&pod) && pod.DeletionTimestamp == nil {
-			if k8scontainer.AllContainersReady(&pod) {
-				filteredPods = append(filteredPods, pod)
-			}
-		}
-	}
-
-	return filteredPods, nil
-}
-
-func GetResourceAttributes(podWorkload *workload.PodWorkload, podName string) []attribute.KeyValue {
+func GetResourceAttributes(podWorkload *k8sconsts.PodWorkload, podName string) []attribute.KeyValue {
 	attrs := []attribute.KeyValue{
 		semconv.K8SNamespaceName(podWorkload.Namespace),
 		semconv.K8SPodName(podName),
 	}
 
 	switch podWorkload.Kind {
-	case workload.WorkloadKindDeployment:
+	case k8sconsts.WorkloadKindDeployment:
 		attrs = append(attrs, semconv.K8SDeploymentName(podWorkload.Name))
-	case workload.WorkloadKindStatefulSet:
+	case k8sconsts.WorkloadKindStatefulSet:
 		attrs = append(attrs, semconv.K8SStatefulSetName(podWorkload.Name))
-	case workload.WorkloadKindDaemonSet:
+	case k8sconsts.WorkloadKindDaemonSet:
 		attrs = append(attrs, semconv.K8SDaemonSetName(podWorkload.Name))
 	}
 

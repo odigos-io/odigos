@@ -1,7 +1,8 @@
 package nodejs
 
 import (
-	"strings"
+	"path/filepath"
+	"regexp"
 
 	"github.com/hashicorp/go-version"
 
@@ -11,10 +12,15 @@ import (
 
 type NodejsInspector struct{}
 
-const nodeProcessName = "node"
+var v8Regex = regexp.MustCompile(`^(?:.*/)?node(\d+)?$`)
+
+var nodeExecutables = map[string]bool{
+	"npm":  true,
+	"yarn": true,
+}
 
 func (n *NodejsInspector) Inspect(proc *process.Details) (common.ProgrammingLanguage, bool) {
-	if strings.Contains(proc.ExePath, nodeProcessName) || strings.Contains(proc.CmdLine, nodeProcessName) {
+	if v8Regex.MatchString(filepath.Base(proc.ExePath)) || nodeExecutables[filepath.Base(proc.ExePath)] {
 		return common.JavascriptProgrammingLanguage, true
 	}
 

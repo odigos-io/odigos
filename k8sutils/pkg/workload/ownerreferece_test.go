@@ -3,6 +3,7 @@ package workload_test
 import (
 	"testing"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/tj/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,37 +16,37 @@ func TestGetWorkloadFromOwnerReferenceWithReplicaSet(t *testing.T) {
 	})
 	assert.Nil(t, err)
 	assert.Equal(t, "mydeployment", name)
-	assert.Equal(t, workload.WorkloadKindDeployment, kind)
+	assert.Equal(t, k8sconsts.WorkloadKindDeployment, kind)
 }
 
 func TestGetWorkloadFromOwnerReferenceWithDaemonSet(t *testing.T) {
 	workloadName, workloadKind, err := workload.GetWorkloadFromOwnerReference(metav1.OwnerReference{
 		Name: "my-ds",
-		Kind: string(workload.WorkloadKindDaemonSet),
+		Kind: string(k8sconsts.WorkloadKindDaemonSet),
 	})
 	assert.Nil(t, err)
 	assert.Equal(t, "my-ds", workloadName)
-	assert.Equal(t, workload.WorkloadKindDaemonSet, workloadKind)
+	assert.Equal(t, k8sconsts.WorkloadKindDaemonSet, workloadKind)
 }
 
 func TestGetWorkloadFromOwnerReferenceWithStatefulSet(t *testing.T) {
 	workloadName, workloadKind, err := workload.GetWorkloadFromOwnerReference(metav1.OwnerReference{
 		Name: "my-ss",
-		Kind: string(workload.WorkloadKindStatefulSet),
+		Kind: string(k8sconsts.WorkloadKindStatefulSet),
 	})
 	assert.Nil(t, err)
 	assert.Equal(t, "my-ss", workloadName)
-	assert.Equal(t, workload.WorkloadKindStatefulSet, workloadKind)
+	assert.Equal(t, k8sconsts.WorkloadKindStatefulSet, workloadKind)
 }
 
 func TestGetWorkloadFromOwnerReferenceWithDeployment(t *testing.T) {
 	workloadName, workloadKind, err := workload.GetWorkloadFromOwnerReference(metav1.OwnerReference{
 		Name: "my-deployment",
-		Kind: string(workload.WorkloadKindDeployment),
+		Kind: string(k8sconsts.WorkloadKindDeployment),
 	})
 	assert.Nil(t, err)
 	assert.Equal(t, "my-deployment", workloadName)
-	assert.Equal(t, workload.WorkloadKindDeployment, workloadKind)
+	assert.Equal(t, k8sconsts.WorkloadKindDeployment, workloadKind)
 }
 
 func TestGetWorkloadFromOwnerReferenceWithInvalidKind(t *testing.T) {
@@ -55,7 +56,7 @@ func TestGetWorkloadFromOwnerReferenceWithInvalidKind(t *testing.T) {
 	})
 	assert.NotNil(t, err)
 	assert.Equal(t, "", workloadName)
-	assert.Equal(t, workload.WorkloadKind(""), workloadKind)
+	assert.Equal(t, k8sconsts.WorkloadKind(""), workloadKind)
 }
 
 func TestGetWorkloadFromOwnerReferenceWithInvalidReplicaSet(t *testing.T) {
@@ -65,5 +66,5 @@ func TestGetWorkloadFromOwnerReferenceWithInvalidReplicaSet(t *testing.T) {
 	})
 	assert.NotNil(t, err)
 	assert.Equal(t, "", workloadName)
-	assert.Equal(t, workload.WorkloadKind(""), workloadKind)
+	assert.Equal(t, k8sconsts.WorkloadKind(""), workloadKind)
 }

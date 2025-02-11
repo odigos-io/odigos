@@ -1,10 +1,11 @@
 import { gql } from '@apollo/client';
 
-export const GET_DESTINATION_TYPE = gql`
-  query GetDestinationType {
-    destinationTypes {
+export const GET_DESTINATION_CATEGORIES = gql`
+  query GetDestinationCategories {
+    destinationCategories {
       categories {
         name
+        description
         items {
           type
           testConnectionSupported
@@ -21,28 +22,21 @@ export const GET_DESTINATION_TYPE = gql`
               supported
             }
           }
-        }
-      }
-    }
-  }
-`;
-
-export const GET_DESTINATION_TYPE_DETAILS = gql`
-  query GetDestinationTypeDetails($type: String!) {
-    destinationTypeDetails(type: $type) {
-      fields {
-        name
-        displayName
-        componentType
-        componentProperties
-        secret
-        initialValue
-        renderCondition
-        hideFromReadData
-        customReadDataLabels {
-          condition
-          title
-          value
+          fields {
+            name
+            displayName
+            componentType
+            componentProperties
+            secret
+            initialValue
+            renderCondition
+            hideFromReadData
+            customReadDataLabels {
+              condition
+              title
+              value
+            }
+          }
         }
       }
     }

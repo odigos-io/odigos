@@ -33,7 +33,7 @@ jobs:
             "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/commits/$COMMIT_SHA/pulls")
 
           # Extract PR URL
-          PR_URL=$(echo "$RESPONSE" | jq -r '.[0].html_url')
+          echo "PR_URL=$(echo "$RESPONSE" | jq -r '.[0].html_url')" >> "$GITHUB_ENV"
 
       - name: Trigger process PR in Odigos Enterprise
         run: |

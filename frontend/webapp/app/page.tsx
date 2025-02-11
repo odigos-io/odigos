@@ -1,10 +1,10 @@
 'use client';
 import { useEffect } from 'react';
+import { ROUTES } from '@/utils';
 import { useConfig } from '@/hooks';
-import { ROUTES, CONFIG } from '@/utils';
 import { useRouter } from 'next/navigation';
-import { CenterThis } from '@odigos/ui-components';
-import { FadeLoader } from '@/reuseable-components';
+import { CONFIG_INSTALLATION } from '@/@types';
+import { CenterThis, FadeLoader } from '@odigos/ui-components';
 
 export default function App() {
   const router = useRouter();
@@ -14,7 +14,7 @@ export default function App() {
     if (data) {
       const { installation, readonly } = data;
 
-      if (installation === CONFIG.NEW && !readonly) {
+      if (installation === CONFIG_INSTALLATION.NEW && !readonly) {
         router.push(ROUTES.CHOOSE_SOURCES);
       } else {
         router.push(ROUTES.OVERVIEW);
@@ -24,7 +24,7 @@ export default function App() {
 
   return (
     <CenterThis style={{ height: '100%' }}>
-      <FadeLoader style={{ scale: 2 }} />
+      <FadeLoader scale={2} />
     </CenterThis>
   );
 }

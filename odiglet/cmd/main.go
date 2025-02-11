@@ -5,7 +5,8 @@ import (
 
 	"github.com/odigos-io/odigos/odiglet"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf/sdks"
-	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/fs"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 
 	"github.com/odigos-io/odigos/common"
 	commonInstrumentation "github.com/odigos-io/odigos/instrumentation"
@@ -18,22 +19,20 @@ import (
 	_ "net/http/pprof"
 )
 
-func odigletInitPhase() {
-	if err := log.Init(); err != nil {
+func main() {
+	// Init Kubernetes clientset
+	cfg, err := rest.InClusterConfig()
+	if err != nil {
 		panic(err)
 	}
-	err := fs.CopyAgentsDirectoryToHost()
+	clientset, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
-		log.Logger.Error(err, "Failed to copy agents directory to host")
-		os.Exit(-1)
+		panic(err)
 	}
-	os.Exit(0)
-}
 
-func main() {
 	// If started in init mode
 	if len(os.Args) == 2 && os.Args[1] == "init" {
-		odigletInitPhase()
+		odiglet.OdigletInitPhase(clientset)
 	}
 
 	if err := log.Init(); err != nil {
@@ -48,7 +47,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	o, err := odiglet.New(deviceInjectionCallbacks(), ebpfInstrumentationFactories())
+	o, err := odiglet.New(clientset, deviceInjectionCallbacks(), ebpfInstrumentationFactories())
 	if err != nil {
 		log.Logger.Error(err, "Failed to initialize odiglet")
 		os.Exit(1)

@@ -6,7 +6,6 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
-	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -38,7 +37,7 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request reconcile.Reques
 		return reconcile.Result{}, client.IgnoreNotFound(err)
 	}
 
-	podWorkload, err := p.getPodWorkloadObject(ctx, &pod)
+	podWorkload, err := getPodWorkloadObject(&pod)
 	if err != nil {
 		logger.Error(err, "error getting pod workload object")
 		return reconcile.Result{}, err
@@ -56,44 +55,19 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request reconcile.Reques
 		return reconcile.Result{}, client.IgnoreNotFound(err)
 	}
 
-	odigosConfig, err := k8sutils.GetCurrentOdigosConfig(ctx, p.Client)
-	if err != nil {
-		return k8sutils.K8SNoEffectiveConfigErrorHandler(err)
-	}
-
 	// Perform runtime inspection once we know the pod is newer that the latest runtime inspection performed and saved.
-	runtimeResults, err := runtimeInspection(ctx, []corev1.Pod{pod}, odigosConfig.IgnoredContainers, p.CriClient)
+	runtimeResults, err := runtimeInspection(ctx, []corev1.Pod{pod}, p.CriClient)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	err = persistRuntimeDetailsToInstrumentationConfig(ctx, p.Client, &instrumentationConfig, odigosv1.InstrumentationConfigStatus{
-		RuntimeDetailsByContainer: runtimeResults,
-	})
+	err = persistRuntimeDetailsToInstrumentationConfig(ctx, p.Client, &instrumentationConfig, runtimeResults)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
 	logger.V(0).Info("Completed runtime details detection for a new running pod", "name", request.Name, "namespace", request.Namespace)
 	return reconcile.Result{}, nil
-}
-
-func (p *PodsReconciler) getPodWorkloadObject(ctx context.Context, pod *corev1.Pod) (*workload.PodWorkload, error) {
-	for _, owner := range pod.OwnerReferences {
-		workloadName, workloadKind, err := workload.GetWorkloadFromOwnerReference(owner)
-		if err != nil {
-			return nil, workload.IgnoreErrorKindNotSupported(err)
-		}
-
-		return &workload.PodWorkload{
-			Name:      workloadName,
-			Kind:      workloadKind,
-			Namespace: pod.Namespace,
-		}, nil
-	}
-
-	// Pod does not necessarily have to be managed by a controller
-	return nil, nil
 }
 
 func InstrumentationConfigContainsUnknownLanguage(config odigosv1.InstrumentationConfig) bool {

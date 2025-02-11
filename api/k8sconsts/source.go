@@ -12,4 +12,6 @@ const (
 	WorkloadNameLabel      = "odigos.io/workload-name"
 	WorkloadNamespaceLabel = "odigos.io/workload-namespace"
 	WorkloadKindLabel      = "odigos.io/workload-kind"
+
+	SourceGroupLabelPrefix = "odigos.io/group-"
 )

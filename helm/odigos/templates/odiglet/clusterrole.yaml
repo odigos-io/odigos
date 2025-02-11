@@ -17,24 +17,14 @@ rules:
       - pods/status
     verbs:
       - get
+{{- if .Values.openshift.enabled }}
   - apiGroups:
-      - apps
+      - ''
     resources:
-      - deployments
-      - daemonsets
-      - statefulsets
+      - pods/finalizers
     verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - apps
-    resources:
-      - deployments/status
-      - daemonsets/status
-      - statefulsets/status
-    verbs:
-      - get
+      - update
+{{- end }}
   - apiGroups:
       - ''
     resources:
@@ -43,6 +33,7 @@ rules:
       - get
       - list
       - watch
+      - patch
   - apiGroups:
       - odigos.io
     resources:

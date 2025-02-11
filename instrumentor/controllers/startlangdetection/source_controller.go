@@ -17,7 +17,6 @@ import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
 type SourceReconciler struct {
@@ -61,10 +60,16 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if source.Spec.Workload.Kind == workload.WorkloadKindNamespace {
-		err = errors.Join(err, syncNamespaceWorkloads(ctx, r.Client, r.Scheme, source.Spec.Workload.Name))
+	if source.Spec.Workload.Kind == k8sconsts.WorkloadKindNamespace {
+		res, reconcileErr := syncNamespaceWorkloads(ctx, r.Client, r.Scheme, source.Spec.Workload.Name)
+		if reconcileErr != nil {
+			err = errors.Join(err, reconcileErr)
+		}
+		if !res.IsZero() {
+			return res, err
+		}
 	} else {
-		_, reconcileErr := reconcileWorkload(ctx,
+		res, reconcileErr := reconcileWorkload(ctx,
 			r.Client,
 			source.Spec.Workload.Kind,
 			ctrl.Request{
@@ -76,6 +81,10 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			r.Scheme)
 		if reconcileErr != nil {
 			err = errors.Join(err, reconcileErr)
+		}
+		if !res.IsZero() {
+			// propagate the requeue result to the caller if there is one
+			return res, err
 		}
 	}
 

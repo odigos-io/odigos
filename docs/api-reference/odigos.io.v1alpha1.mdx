@@ -451,6 +451,16 @@ auto_generated: true
 </tbody>
 </table>
 
+## `AgentEnabledReason` <a id="odigos-io-v1alpha1-AgentEnabledReason"></a>
+    
+(Alias of `string`)
+
+**Appears in:**
+
+- [ContainerAgentConfig](#odigos-io-v1alpha1-ContainerAgentConfig)
+
+
+
 ## `Attribute` <a id="odigos-io-v1alpha1-Attribute"></a>
     
 
@@ -958,6 +968,92 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </tbody>
 </table>
 
+## `ContainerAgentConfig` <a id="odigos-io-v1alpha1-ContainerAgentConfig"></a>
+    
+
+**Appears in:**
+
+- [InstrumentationConfigSpec](#odigos-io-v1alpha1-InstrumentationConfigSpec)
+
+<p>ContainerAgentConfig is a configuration for a specific container in a workload.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>containerName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>The name of the container to which this configuration applies.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>agentEnabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>boolean flag to indicate if the agent should be enabled for this container.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>agentEnabledReason</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-AgentEnabledReason"><code>AgentEnabledReason</code></a>
+</td>
+<td>
+   <p>An enum reason for the agent injection decision.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>agentEnabledMessage</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>free text message to provide more information about the instrumentation decision.
+can be left empty if reason is self-explanatory.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>otelDistroName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>The name of the otel distribution to use for this container.
+if the name is empty, this container should not be instrumented.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>distroParams</code> <B>[Required]</B>
+</td>
+<td>
+<code>map[string]string</code>
+</td>
+<td>
+   <p>Additional parameters to the distro that controls how it's being applied.
+Keys are parameter names (like &quot;libc&quot;) and values are the value to use for that parameter (glibc / musl)</p>
+</td>
+</tr>
+</tbody>
+</table>
+
 ## `DestinationSpec` <a id="odigos-io-v1alpha1-DestinationSpec"></a>
     
 
@@ -1179,6 +1275,28 @@ The workload is identified by the owner reference</p>
 </tr>
 <tr>
 <td>
+<code>agentInjectionEnabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>determines if odigos should inject agents to pods of this workload.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>containers</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-ContainerAgentConfig"><code>[]ContainerAgentConfig</code></a>
+</td>
+<td>
+   <p>configuration for each instrumented container in the workload</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>sdkConfigs</code> <B>[Required]</B>
 </td>
 <td>
@@ -1225,6 +1343,19 @@ TODO: consider adding more granular control over the SDKs, such as community/ent
 </td>
 <td>
    <p>Represents the observations of a InstrumentationConfig's current state.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>workloadRolloutHash</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>The hash used to determine whether the associated workload needs to be rolled out.
+This hash is calculated based on the containers config array and takes into account the
+container name, Instrumented flag and the OTel distro name.</p>
 </td>
 </tr>
 </tbody>
@@ -1699,7 +1830,7 @@ and whether the values are considered a guaranteed API.</p>
 <code>workloads</code> <B>[Required]</B>
 </td>
 <td>
-<code>[]github.com/odigos-io/odigos/k8sutils/pkg/workload.PodWorkload</code>
+<code>[]github.com/odigos-io/odigos/api/k8sconsts.PodWorkload</code>
 </td>
 <td>
    <p>An array of workload objects (name, namespace, kind) to which the rule should be applied. If not specified, the rule will be applied to all workloads. empty array will render the rule inactive.</p>
@@ -1738,9 +1869,18 @@ If empty, no instrumentation libraries will be used.</p>
 <a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#OtelSdks"><code>instrumentationrules.OtelSdks</code></a>
 </td>
 <td>
-   <p>Set the OtelSdk to use for the workloads in this rule.
-instrumentation libraries will be ignored if set.
-the rule will be used only for languages which are specified, and ignored otherwise.</p>
+   <p>Deprecated: use OtelDistros instead.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>otelDistros</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#OtelDistros"><code>instrumentationrules.OtelDistros</code></a>
+</td>
+<td>
+   <p>Set the otel distros to use instead of the defaults.</p>
 </td>
 </tr>
 <tr>
@@ -2471,7 +2611,7 @@ This means the destination will receive data only from sources labeled with &quo
 <code>workload</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/k8sutils/pkg/workload#PodWorkload"><code>workload.PodWorkload</code></a>
+<code>k8sconsts.PodWorkload</code>
 </td>
 <td>
    <p>Workload represents the workload or namespace to be instrumented.

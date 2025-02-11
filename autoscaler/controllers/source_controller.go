@@ -3,7 +3,6 @@ package controllers
 import (
 	"context"
 
-	controllerconfig "github.com/odigos-io/odigos/autoscaler/controllers/controller_config"
 	"github.com/odigos-io/odigos/autoscaler/controllers/gateway"
 	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -20,7 +19,6 @@ type SourceReconciler struct {
 	Scheme           *runtime.Scheme
 	ImagePullSecrets []string
 	OdigosVersion    string
-	Config           *controllerconfig.ControllerConfig
 }
 
 // Reconcile ensures that any changes to Source CRDs (creation, deletion, or label modifications)
@@ -29,7 +27,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling Source")
 
-	err := gateway.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion, r.Config)
+	err := gateway.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion)
 	if err != nil {
 		return ctrl.Result{}, err
 	}

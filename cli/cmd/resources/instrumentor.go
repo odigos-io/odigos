@@ -123,7 +123,21 @@ func NewInstrumentorRoleBinding(ns string) *rbacv1.RoleBinding {
 	}
 }
 
-func NewInstrumentorClusterRole() *rbacv1.ClusterRole {
+func NewInstrumentorClusterRole(ownerPermissionEnforcement bool) *rbacv1.ClusterRole {
+	finalizersUpdate := []rbacv1.PolicyRule{}
+	if ownerPermissionEnforcement {
+		finalizersUpdate = append(finalizersUpdate, rbacv1.PolicyRule{
+			// Required for OwnerReferencesPermissionEnforcement (on by default in OpenShift)
+			// When we create an InstrumentationConfig, we set the OwnerReference to the related workload.
+			// Controller-runtime sets BlockDeletion: true. So with this Admission Plugin we need permission to
+			// update finalizers on the workloads so that they can block deletion.
+			// seehttps://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#ownerreferencespermissionenforcement
+			APIGroups: []string{"apps"},
+			Resources: []string{"statefulsets/finalizers", "daemonsets/finalizers", "deployments/finalizers"},
+			Verbs:     []string{"update"},
+		})
+	}
+
 	return &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ClusterRole",
@@ -132,7 +146,7 @@ func NewInstrumentorClusterRole() *rbacv1.ClusterRole {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: k8sconsts.InstrumentorClusterRoleName,
 		},
-		Rules: []rbacv1.PolicyRule{
+		Rules: append([]rbacv1.PolicyRule{
 			{ // Used in events reporting for own telemetry
 				APIGroups: []string{""},
 				Resources: []string{"nodes"},
@@ -183,7 +197,7 @@ func NewInstrumentorClusterRole() *rbacv1.ClusterRole {
 				Resources: []string{"sources/finalizers"},
 				Verbs:     []string{"update"},
 			},
-		},
+		}, finalizersUpdate...),
 	}
 }
 
@@ -406,11 +420,6 @@ func NewPodMutatingWebhookConfiguration(ns string, caBundle []byte) *admissionre
 				ReinvocationPolicy: ptrGeneric(admissionregistrationv1.IfNeededReinvocationPolicy),
 				SideEffects:        ptrGeneric(admissionregistrationv1.SideEffectClassNone),
 				TimeoutSeconds:     intPtr(10),
-				ObjectSelector: &metav1.LabelSelector{
-					MatchLabels: map[string]string{
-						k8sconsts.OdigosInjectInstrumentationLabel: "true",
-					},
-				},
 				AdmissionReviewVersions: []string{
 					"v1",
 				},
@@ -661,7 +670,7 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 		NewInstrumentorLeaderElectionRoleBinding(a.ns),
 		NewInstrumentorRole(a.ns),
 		NewInstrumentorRoleBinding(a.ns),
-		NewInstrumentorClusterRole(),
+		NewInstrumentorClusterRole(a.config.OpenshiftEnabled),
 		NewInstrumentorClusterRoleBinding(a.ns),
 		NewInstrumentorDeployment(a.ns, a.odigosVersion, a.config.TelemetryEnabled, a.config.ImagePrefix, a.config.InstrumentorImage),
 		NewInstrumentorService(a.ns),
