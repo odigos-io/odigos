@@ -197,6 +197,24 @@ status:
       runtimeVersion: 17.0.12+7
 
 ---
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-java-omit-in-entrypoint
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: java-omit-in-entrypoint
+status:
+  runtimeDetailsByContainer:
+    - containerName: java-omit-in-entrypoint
+      language: java
+      runtimeVersion: 17.0.12+7
+---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
 metadata:

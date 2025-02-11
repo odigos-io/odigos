@@ -505,11 +505,11 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-  name: java-old-version
+  name: java-omit-in-entrypoint
   namespace: default
 spec:
   selector:
-    app: java-old-version
+    app: java-omit-in-entrypoint
   ports:
     - protocol: TCP
       port: 3000

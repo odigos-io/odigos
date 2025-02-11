@@ -291,6 +291,30 @@ apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
 metadata:
   namespace: default
+  name: deployment-java-omit-in-entrypoint
+status:
+  conditions:
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
+    - message: "agent injected successfully to 1 containers: [java-omit-in-entrypoint]"
+      reason: EnabledSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  namespace: default
   name: deployment-java-azul
 status:
   conditions:
