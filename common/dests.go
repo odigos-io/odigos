@@ -28,6 +28,7 @@ const (
 	HoneycombDestinationType              DestinationType = "honeycomb"
 	HyperDxDestinationType                DestinationType = "hyperdx"
 	JaegerDestinationType                 DestinationType = "jaeger"
+	KafkaDestinationType                  DestinationType = "kafka"
 	KloudMateDestinationType              DestinationType = "kloudmate"
 	Last9DestinationType                  DestinationType = "last9"
 	LightstepDestinationType              DestinationType = "lightstep"

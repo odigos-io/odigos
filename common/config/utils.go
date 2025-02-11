@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"net/url"
@@ -96,4 +97,8 @@ func urlHostContainsPort(host string) bool {
 func getBooleanConfig(currentValue string, deprecatedValue string) bool {
 	lowerCaseValue := strings.ToLower(currentValue)
 	return lowerCaseValue == "true" || lowerCaseValue == deprecatedValue
+}
+
+func errorMissingKey(key string) error {
+	return errors.New(fmt.Sprintf("Key (\"%s\") not specified, destination will not be configured", key))
 }

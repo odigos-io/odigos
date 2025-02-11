@@ -236,6 +236,7 @@
             "backends/honeycomb",
             "backends/hyperdx",
             "backends/jaeger",
+            "backends/kafka",
             "backends/kloudmate",
             "backends/last9",
             "backends/lightstep",
