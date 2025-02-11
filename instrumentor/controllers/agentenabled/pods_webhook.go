@@ -113,8 +113,8 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		return nil
 	}
 
-	// after we finish injecting the agent, mark it with the hash of the agent deployment.
-	// this can be used later on to identify pods that need to be updated when the agent deployment changes.
+	// store the agents deployment value so we can later associate each pod with the instrumentation version.
+	// we can pull only our pods into cache, and follow the lifecycle of the instrumentation process.
 	pod.Labels[k8sconsts.OdigosAgentsDeploymentHashLabel] = ic.Spec.AgentsDeploymentHash
 
 	return nil
