@@ -179,6 +179,24 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 	var response []*model.PipelineAction
 	ns := env.GetCurrentNamespace()
 
+	// K8sAttributes actions
+	kaActions, err := kube.DefaultClient.ActionsClient.K8sAttributesResolvers(ns).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, action := range kaActions.Items {
+		specStr, err := json.Marshal(action.Spec)
+		if err != nil {
+			return nil, err
+		}
+		response = append(response, &model.PipelineAction{
+			ID:         action.Name,
+			Type:       action.Kind,
+			Spec:       string(specStr),
+			Conditions: convertConditions(action.Status.Conditions),
+		})
+	}
+
 	// AddClusterInfos actions
 	icaActions, err := kube.DefaultClient.ActionsClient.AddClusterInfos(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
@@ -689,6 +707,8 @@ func (r *mutationResolver) CreateAction(ctx context.Context, action model.Action
 	}
 
 	switch action.Type {
+	case actionservices.ActionTypeK8sAttributes:
+		return actionservices.CreateK8sAttributes(ctx, action)
 	case actionservices.ActionTypeAddClusterInfo:
 		return actionservices.CreateAddClusterInfo(ctx, action)
 	case actionservices.ActionTypeDeleteAttribute:
@@ -716,6 +736,8 @@ func (r *mutationResolver) UpdateAction(ctx context.Context, id string, action m
 	}
 
 	switch action.Type {
+	case actionservices.ActionTypeK8sAttributes:
+		return actionservices.UpdateK8sAttributes(ctx, id, action)
 	case actionservices.ActionTypeAddClusterInfo:
 		return actionservices.UpdateAddClusterInfo(ctx, id, action)
 	case actionservices.ActionTypeDeleteAttribute:
@@ -743,6 +765,12 @@ func (r *mutationResolver) DeleteAction(ctx context.Context, id string, actionTy
 	}
 
 	switch actionType {
+	case actionservices.ActionTypeK8sAttributes:
+		err := actionservices.DeleteK8sAttributes(ctx, id)
+		if err != nil {
+			return false, fmt.Errorf("failed to delete K8sAttributes: %v", err)
+		}
+
 	case actionservices.ActionTypeAddClusterInfo:
 		err := actionservices.DeleteAddClusterInfo(ctx, id)
 		if err != nil {

@@ -362,6 +362,34 @@ interface Action {
   signals: [SignalType!]!
 }
 
+type K8sLabelAttribute {
+  labelKey: String!
+  attributeKey: String!
+}
+
+type K8sAnnotationAttribute {
+  annotationKey: String!
+  attributeKey: String!
+}
+
+type K8sAttributes {
+  collectContainerAttributes: Boolean!
+  collectWorkloadId: Boolean!
+  collectClusterId: Boolean!
+  labelsAttributes: [K8sLabelAttribute!]!
+  annotationsAttributes: [K8sAnnotationAttribute!]!
+}
+
+type K8sAttributesAction implements Action {
+  id: ID!
+  type: String!
+  name: String
+  notes: String
+  disable: Boolean!
+  signals: [SignalType!]!
+  details: K8sAttributes!
+}
+
 type ClusterInfo {
   attributeName: String!
   attributeStringValue: String
@@ -375,10 +403,6 @@ type AddClusterInfoAction implements Action {
   disable: Boolean!
   signals: [SignalType!]!
   details: [ClusterInfo!]!
-}
-
-type DeleteAttribute {
-  attributeName: String!
 }
 
 type DeleteAttributeAction implements Action {

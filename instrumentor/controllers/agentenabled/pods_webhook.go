@@ -113,6 +113,10 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		return nil
 	}
 
+	// store the agents deployment value so we can later associate each pod with the instrumentation version.
+	// we can pull only our pods into cache, and follow the lifecycle of the instrumentation process.
+	pod.Labels[k8sconsts.OdigosAgentsMetaHashLabel] = ic.Spec.AgentsMetaHash
+
 	return nil
 }
 
@@ -172,9 +176,11 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *core
 		}
 
 		// amir: 07 feb 2025. hard-coded temporary list which is removed once all distros migrate away from device
-		if (runtimeDetails.Language == common.JavascriptProgrammingLanguage && otelSdk == common.OtelSdkEbpfEnterprise) ||
-			(runtimeDetails.Language == common.GoProgrammingLanguage && otelSdk == common.OtelSdkEbpfCommunity) ||
-			(runtimeDetails.Language == common.JavaProgrammingLanguage && otelSdk == common.OtelSdkEbpfEnterprise) ||
+		// amir: 11 feb 2025. reverted java and nodejs enterprise temporarily
+		if
+		// (runtimeDetails.Language == common.JavascriptProgrammingLanguage && otelSdk == common.OtelSdkEbpfEnterprise) ||
+		(runtimeDetails.Language == common.GoProgrammingLanguage && otelSdk == common.OtelSdkEbpfCommunity) ||
+			// (runtimeDetails.Language == common.JavaProgrammingLanguage && otelSdk == common.OtelSdkEbpfEnterprise) ||
 			(runtimeDetails.Language == common.MySQLProgrammingLanguage && otelSdk == common.OtelSdkEbpfEnterprise) {
 			// Skip device injection for distros that no longer use it
 		} else {

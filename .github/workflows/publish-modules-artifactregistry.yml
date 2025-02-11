@@ -1,0 +1,102 @@
+name: Publish Images to Artifact Registry
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Docker image tag'
+        required: true
+
+jobs:
+  publish-docker-images:
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    strategy:
+      matrix:
+        dockerfile: ['Dockerfile', 'Dockerfile.rhel']
+        service: ['autoscaler', 'scheduler', 'instrumentor', 'collector', 'odiglet', 'ui']
+        include:
+          - service: autoscaler
+            runner: ubuntu-latest
+            summary: "Autoscaler for Odigos"
+            description: "Autoscaler manages the installation of Odigos components."
+          - service: scheduler
+            runner: ubuntu-latest
+            summary: "Scheduler for Odigos"
+            description: "Scheduler manages the installation of OpenTelemetry Collectors with Odigos."
+          - service: instrumentor
+            runner: ubuntu-latest
+            summary: "Instrumentor for Odigos"
+            description: "Instrumentor manages auto-instrumentation for workloads with Odigos."
+          - service: collector
+            runner: large-runner
+            summary: "Odigos Collector"
+            description: "The Odigos build of the OpenTelemetry Collector."
+          - service: odiglet
+            runner: ubuntu-latest
+            summary: "Odiglet for Odigos"
+            description: "Odiglet is the core component of Odigos managing auto-instrumentation. This image requires a root user to load and manage eBPF programs."
+          - service: ui
+            runner: ubuntu-latest
+            summary: "UI for Odigos"
+            description: "UI provides the frontend webapp for managing an Odigos installation."
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract Tag
+        id: extract_tag
+        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - id: gcp-auth
+        name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          token_format: 'access_token'
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          access_token_lifetime: 1200s
+        
+      - name: Login to Artifact Registry
+        uses: docker/login-action@v1
+        with:
+          registry: us-central1-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.gcp-auth.outputs.access_token }}
+
+      - name: Build and Push Docker Image for ${{ matrix.service }}
+        uses: docker/build-push-action@v6
+        env:
+          ODIGOS_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || steps.extract_tag.outputs.tag}}
+        with:
+          push: true
+          tags: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-${{ matrix.service }}${{ matrix.dockerfile == 'Dockerfile.rhel' && '-ubi9' || '' }}:${{ env.ODIGOS_TAG }}
+          build-args: |
+            SERVICE_NAME=${{ matrix.service }}
+            ODIGOS_VERSION=${{ env.ODIGOS_TAG }}
+            RELEASE=${{ env.ODIGOS_TAG }}
+            VERSION=${{ env.ODIGOS_TAG }}
+            SUMMARY=${{ matrix.summary }}
+            DESCRIPTION=${{ matrix.description }}
+          platforms: linux/amd64,linux/arm64
+          file: >-
+            ${{ matrix.service == 'odiglet' && format('odiglet/{0}', matrix.dockerfile) ||
+                matrix.service == 'collector' && format('collector/{0}', matrix.dockerfile) ||
+                matrix.service == 'ui' && format('frontend/{0}', matrix.dockerfile) ||
+                matrix.dockerfile }}
+          context: >-
+            ${{
+              (matrix.service == 'collector' && 'collector') ||
+              '.'
+            }}

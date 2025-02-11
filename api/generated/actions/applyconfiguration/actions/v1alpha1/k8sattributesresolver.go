@@ -23,22 +23,22 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// K8sAttributesApplyConfiguration represents a declarative configuration of the K8sAttributes type for use
+// K8sAttributesResolverApplyConfiguration represents a declarative configuration of the K8sAttributesResolver type for use
 // with apply.
-type K8sAttributesApplyConfiguration struct {
+type K8sAttributesResolverApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
 	Spec                             *K8sAttributesSpecApplyConfiguration   `json:"spec,omitempty"`
 	Status                           *K8sAttributesStatusApplyConfiguration `json:"status,omitempty"`
 }
 
-// K8sAttributes constructs a declarative configuration of the K8sAttributes type for use with
+// K8sAttributesResolver constructs a declarative configuration of the K8sAttributesResolver type for use with
 // apply.
-func K8sAttributes(name, namespace string) *K8sAttributesApplyConfiguration {
-	b := &K8sAttributesApplyConfiguration{}
+func K8sAttributesResolver(name, namespace string) *K8sAttributesResolverApplyConfiguration {
+	b := &K8sAttributesResolverApplyConfiguration{}
 	b.WithName(name)
 	b.WithNamespace(namespace)
-	b.WithKind("K8sAttributes")
+	b.WithKind("K8sAttributesResolver")
 	b.WithAPIVersion("actions/v1alpha1")
 	return b
 }
@@ -46,7 +46,7 @@ func K8sAttributes(name, namespace string) *K8sAttributesApplyConfiguration {
 // WithKind sets the Kind field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Kind field is set to the value of the last call.
-func (b *K8sAttributesApplyConfiguration) WithKind(value string) *K8sAttributesApplyConfiguration {
+func (b *K8sAttributesResolverApplyConfiguration) WithKind(value string) *K8sAttributesResolverApplyConfiguration {
 	b.TypeMetaApplyConfiguration.Kind = &value
 	return b
 }
@@ -54,7 +54,7 @@ func (b *K8sAttributesApplyConfiguration) WithKind(value string) *K8sAttributesA
 // WithAPIVersion sets the APIVersion field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the APIVersion field is set to the value of the last call.
-func (b *K8sAttributesApplyConfiguration) WithAPIVersion(value string) *K8sAttributesApplyConfiguration {
+func (b *K8sAttributesResolverApplyConfiguration) WithAPIVersion(value string) *K8sAttributesResolverApplyConfiguration {
 	b.TypeMetaApplyConfiguration.APIVersion = &value
 	return b
 }
@@ -62,7 +62,7 @@ func (b *K8sAttributesApplyConfiguration) WithAPIVersion(value string) *K8sAttri
 // WithName sets the Name field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Name field is set to the value of the last call.
-func (b *K8sAttributesApplyConfiguration) WithName(value string) *K8sAttributesApplyConfiguration {
+func (b *K8sAttributesResolverApplyConfiguration) WithName(value string) *K8sAttributesResolverApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.Name = &value
 	return b
@@ -71,7 +71,7 @@ func (b *K8sAttributesApplyConfiguration) WithName(value string) *K8sAttributesA
 // WithGenerateName sets the GenerateName field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the GenerateName field is set to the value of the last call.
-func (b *K8sAttributesApplyConfiguration) WithGenerateName(value string) *K8sAttributesApplyConfiguration {
+func (b *K8sAttributesResolverApplyConfiguration) WithGenerateName(value string) *K8sAttributesResolverApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.GenerateName = &value
 	return b
@@ -80,7 +80,7 @@ func (b *K8sAttributesApplyConfiguration) WithGenerateName(value string) *K8sAtt
 // WithNamespace sets the Namespace field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Namespace field is set to the value of the last call.
-func (b *K8sAttributesApplyConfiguration) WithNamespace(value string) *K8sAttributesApplyConfiguration {
+func (b *K8sAttributesResolverApplyConfiguration) WithNamespace(value string) *K8sAttributesResolverApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.Namespace = &value
 	return b
@@ -89,7 +89,7 @@ func (b *K8sAttributesApplyConfiguration) WithNamespace(value string) *K8sAttrib
 // WithUID sets the UID field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the UID field is set to the value of the last call.
-func (b *K8sAttributesApplyConfiguration) WithUID(value types.UID) *K8sAttributesApplyConfiguration {
+func (b *K8sAttributesResolverApplyConfiguration) WithUID(value types.UID) *K8sAttributesResolverApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.UID = &value
 	return b
@@ -98,7 +98,7 @@ func (b *K8sAttributesApplyConfiguration) WithUID(value types.UID) *K8sAttribute
 // WithResourceVersion sets the ResourceVersion field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the ResourceVersion field is set to the value of the last call.
-func (b *K8sAttributesApplyConfiguration) WithResourceVersion(value string) *K8sAttributesApplyConfiguration {
+func (b *K8sAttributesResolverApplyConfiguration) WithResourceVersion(value string) *K8sAttributesResolverApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.ResourceVersion = &value
 	return b
@@ -107,7 +107,7 @@ func (b *K8sAttributesApplyConfiguration) WithResourceVersion(value string) *K8s
 // WithGeneration sets the Generation field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Generation field is set to the value of the last call.
-func (b *K8sAttributesApplyConfiguration) WithGeneration(value int64) *K8sAttributesApplyConfiguration {
+func (b *K8sAttributesResolverApplyConfiguration) WithGeneration(value int64) *K8sAttributesResolverApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.Generation = &value
 	return b
@@ -116,7 +116,7 @@ func (b *K8sAttributesApplyConfiguration) WithGeneration(value int64) *K8sAttrib
 // WithCreationTimestamp sets the CreationTimestamp field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the CreationTimestamp field is set to the value of the last call.
-func (b *K8sAttributesApplyConfiguration) WithCreationTimestamp(value metav1.Time) *K8sAttributesApplyConfiguration {
+func (b *K8sAttributesResolverApplyConfiguration) WithCreationTimestamp(value metav1.Time) *K8sAttributesResolverApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.CreationTimestamp = &value
 	return b
@@ -125,7 +125,7 @@ func (b *K8sAttributesApplyConfiguration) WithCreationTimestamp(value metav1.Tim
 // WithDeletionTimestamp sets the DeletionTimestamp field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the DeletionTimestamp field is set to the value of the last call.
-func (b *K8sAttributesApplyConfiguration) WithDeletionTimestamp(value metav1.Time) *K8sAttributesApplyConfiguration {
+func (b *K8sAttributesResolverApplyConfiguration) WithDeletionTimestamp(value metav1.Time) *K8sAttributesResolverApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.DeletionTimestamp = &value
 	return b
@@ -134,7 +134,7 @@ func (b *K8sAttributesApplyConfiguration) WithDeletionTimestamp(value metav1.Tim
 // WithDeletionGracePeriodSeconds sets the DeletionGracePeriodSeconds field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the DeletionGracePeriodSeconds field is set to the value of the last call.
-func (b *K8sAttributesApplyConfiguration) WithDeletionGracePeriodSeconds(value int64) *K8sAttributesApplyConfiguration {
+func (b *K8sAttributesResolverApplyConfiguration) WithDeletionGracePeriodSeconds(value int64) *K8sAttributesResolverApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.DeletionGracePeriodSeconds = &value
 	return b
@@ -144,7 +144,7 @@ func (b *K8sAttributesApplyConfiguration) WithDeletionGracePeriodSeconds(value i
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, the entries provided by each call will be put on the Labels field,
 // overwriting an existing map entries in Labels field with the same key.
-func (b *K8sAttributesApplyConfiguration) WithLabels(entries map[string]string) *K8sAttributesApplyConfiguration {
+func (b *K8sAttributesResolverApplyConfiguration) WithLabels(entries map[string]string) *K8sAttributesResolverApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	if b.ObjectMetaApplyConfiguration.Labels == nil && len(entries) > 0 {
 		b.ObjectMetaApplyConfiguration.Labels = make(map[string]string, len(entries))
@@ -159,7 +159,7 @@ func (b *K8sAttributesApplyConfiguration) WithLabels(entries map[string]string) 
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, the entries provided by each call will be put on the Annotations field,
 // overwriting an existing map entries in Annotations field with the same key.
-func (b *K8sAttributesApplyConfiguration) WithAnnotations(entries map[string]string) *K8sAttributesApplyConfiguration {
+func (b *K8sAttributesResolverApplyConfiguration) WithAnnotations(entries map[string]string) *K8sAttributesResolverApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	if b.ObjectMetaApplyConfiguration.Annotations == nil && len(entries) > 0 {
 		b.ObjectMetaApplyConfiguration.Annotations = make(map[string]string, len(entries))
@@ -173,7 +173,7 @@ func (b *K8sAttributesApplyConfiguration) WithAnnotations(entries map[string]str
 // WithOwnerReferences adds the given value to the OwnerReferences field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the OwnerReferences field.
-func (b *K8sAttributesApplyConfiguration) WithOwnerReferences(values ...*v1.OwnerReferenceApplyConfiguration) *K8sAttributesApplyConfiguration {
+func (b *K8sAttributesResolverApplyConfiguration) WithOwnerReferences(values ...*v1.OwnerReferenceApplyConfiguration) *K8sAttributesResolverApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	for i := range values {
 		if values[i] == nil {
@@ -187,7 +187,7 @@ func (b *K8sAttributesApplyConfiguration) WithOwnerReferences(values ...*v1.Owne
 // WithFinalizers adds the given value to the Finalizers field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the Finalizers field.
-func (b *K8sAttributesApplyConfiguration) WithFinalizers(values ...string) *K8sAttributesApplyConfiguration {
+func (b *K8sAttributesResolverApplyConfiguration) WithFinalizers(values ...string) *K8sAttributesResolverApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	for i := range values {
 		b.ObjectMetaApplyConfiguration.Finalizers = append(b.ObjectMetaApplyConfiguration.Finalizers, values[i])
@@ -195,7 +195,7 @@ func (b *K8sAttributesApplyConfiguration) WithFinalizers(values ...string) *K8sA
 	return b
 }
 
-func (b *K8sAttributesApplyConfiguration) ensureObjectMetaApplyConfigurationExists() {
+func (b *K8sAttributesResolverApplyConfiguration) ensureObjectMetaApplyConfigurationExists() {
 	if b.ObjectMetaApplyConfiguration == nil {
 		b.ObjectMetaApplyConfiguration = &v1.ObjectMetaApplyConfiguration{}
 	}
@@ -204,7 +204,7 @@ func (b *K8sAttributesApplyConfiguration) ensureObjectMetaApplyConfigurationExis
 // WithSpec sets the Spec field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Spec field is set to the value of the last call.
-func (b *K8sAttributesApplyConfiguration) WithSpec(value *K8sAttributesSpecApplyConfiguration) *K8sAttributesApplyConfiguration {
+func (b *K8sAttributesResolverApplyConfiguration) WithSpec(value *K8sAttributesSpecApplyConfiguration) *K8sAttributesResolverApplyConfiguration {
 	b.Spec = value
 	return b
 }
@@ -212,13 +212,13 @@ func (b *K8sAttributesApplyConfiguration) WithSpec(value *K8sAttributesSpecApply
 // WithStatus sets the Status field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Status field is set to the value of the last call.
-func (b *K8sAttributesApplyConfiguration) WithStatus(value *K8sAttributesStatusApplyConfiguration) *K8sAttributesApplyConfiguration {
+func (b *K8sAttributesResolverApplyConfiguration) WithStatus(value *K8sAttributesStatusApplyConfiguration) *K8sAttributesResolverApplyConfiguration {
 	b.Status = value
 	return b
 }
 
 // GetName retrieves the value of the Name field in the declarative configuration.
-func (b *K8sAttributesApplyConfiguration) GetName() *string {
+func (b *K8sAttributesResolverApplyConfiguration) GetName() *string {
 	b.ensureObjectMetaApplyConfigurationExists()
 	return b.ObjectMetaApplyConfiguration.Name
 }
