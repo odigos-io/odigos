@@ -2,7 +2,6 @@ package runtime_details
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -22,7 +21,8 @@ import (
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -224,8 +224,10 @@ func checkEnvVarsInContainerManifest(container corev1.Container, envVarNames []s
 	return false
 }
 
-func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclient client.Client, instrumentationConfig *odigosv1.InstrumentationConfig, newStatus odigosv1.InstrumentationConfigStatus) error {
-	// This come to make sure we're updating instrumentationConfig only once (at the first time)
+func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclient client.Client, instrumentationConfig *odigosv1.InstrumentationConfig, newRuntimeDetials []odigosv1.RuntimeDetailsByContainer) error {
+
+	// fetch a fresh copy of instrumentation config.
+	// TODO: is this necessary? can we do it with the existing object?
 	currentConfig := &odigosv1.InstrumentationConfig{}
 	err := kubeclient.Get(ctx, client.ObjectKeyFromObject(instrumentationConfig), currentConfig)
 	if err != nil {
@@ -238,15 +240,15 @@ func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclien
 		return nil
 	}
 
-	// persist the runtime results into the status of the instrumentation config
-	patchStatus := odigosv1.InstrumentationConfig{
-		Status: newStatus,
-	}
-	patchData, err := json.Marshal(patchStatus)
-	if err != nil {
-		return err
-	}
-	err = kubeclient.Status().Patch(ctx, instrumentationConfig, client.RawPatch(types.MergePatchType, patchData), client.FieldOwner("odiglet-runtimedetails"))
+	currentConfig.Status.RuntimeDetailsByContainer = newRuntimeDetials
+	meta.SetStatusCondition(&currentConfig.Status.Conditions, metav1.Condition{
+		Type:    odigosv1.RuntimeDetectionStatusConditionType,
+		Status:  metav1.ConditionTrue,
+		Reason:  string(odigosv1.RuntimeDetectionReasonDetectedSuccessfully),
+		Message: "runtime detection completed successfully",
+	})
+
+	err = kubeclient.Status().Update(ctx, currentConfig)
 	if err != nil {
 		return err
 	}

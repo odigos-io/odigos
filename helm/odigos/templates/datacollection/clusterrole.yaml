@@ -15,9 +15,11 @@ rules:
       - ''
     resources:
       - pods
+      - namespaces
     verbs:
       - get
       - list
+      - watch
   - apiGroups:
       - apps
     resources:
@@ -28,6 +30,7 @@ rules:
     verbs:
       - get
       - list
+      - watch
   - apiGroups:
       - ''
     resources:
