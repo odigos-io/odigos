@@ -24,13 +24,16 @@ const processName = "java"
 
 var re = regexp.MustCompile(JavaVersionRegex)
 
+// Note: We could support GraalVM native images in the future if needed.
+// GraalVM native images do not load libjvm.so but have Graal-specific arguments.
+// This could be detected with something like: strings.Contains(proc.CmdLine, "-XX:+UseGraalVM") || strings.Contains(proc.CmdLine, "-H:+")
 func (j *JavaInspector) Inspect(proc *process.Details) (common.ProgrammingLanguage, bool) {
 	if checkForLoadedJVM(proc.ProcessID) {
 		return common.JavaProgrammingLanguage, true
 	}
 
 	// TODO: do we need to cover the case that the process is a Java process but it dont loaded JVM?
-	if isJavaExecutable(proc.ExePath) {
+	if filepath.Base(proc.ExePath) == processName {
 		return common.JavaProgrammingLanguage, true
 	}
 
@@ -61,17 +64,6 @@ func checkForLoadedJVM(processID int) bool {
 	}
 	return false
 }
-
-// isJavaExecutable checks if the process binary name suggests it's a Java process.
-// This is useful for cases where "libjvm.so" isn't found in "/proc/<pid>/maps".
-func isJavaExecutable(procExe string) bool {
-	return filepath.Base(procExe) == processName
-}
-
-// func isGraalVMProcess(cmdline string) bool {
-// 	// GraalVM native images do not load libjvm.so but have Graal-specific arguments
-// 	return strings.Contains(cmdline, "-XX:+UseGraalVM") || strings.Contains(cmdline, "-H:+")
-// }
 
 func (j *JavaInspector) GetRuntimeVersion(proc *process.Details, containerURL string) *version.Version {
 	if value, exists := proc.GetDetailedEnvsValue(process.JavaVersionConst); exists {
