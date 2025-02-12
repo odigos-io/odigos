@@ -1086,6 +1086,8 @@ github.com/open-telemetry/opentelemetry-collector-contrib/connector/servicegraph
 github.com/open-telemetry/opentelemetry-collector-contrib/connector/servicegraphconnector v0.119.0/go.mod h1:lN1WmtmDnZ0oPwZJUyHUFXG6z1SokTr9rQWN01JsQtA=
 github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector v0.119.0 h1:0eIwc699pvvChuyKDexhl3xovAQzc18xVOvxJ7tv9r8=
 github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector v0.119.0/go.mod h1:Cmey/JEL25DSYfYNxSNpunKzuebMypjZs3VsNc4JSeU=
+github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awscloudwatchlogsexporter v0.119.0 h1:MnUTZoWyXg36xGc5VQ7F5eSMzXH33pamnSWcubdFapM=
+github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awscloudwatchlogsexporter v0.119.0/go.mod h1:+veWfuJaBUDJRFbtAHzY3nHzTjnfetfuJfZEEmG6Opg=
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awss3exporter v0.119.0 h1:0FAtPJ8yCZgMVRoKz1YjlaZhyOaV7QJWFDYpTVvMV2Y=
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awss3exporter v0.119.0/go.mod h1:3wvrLx2DPLts6vLXG6u+GdC/yvn1lpSDfiwiDnQGzZI=
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsxrayexporter v0.119.0 h1:39iyJsiU3gV7a23UlAc7Ho94VheZqNJVHjFcKgb0Tx8=
@@ -1174,6 +1176,8 @@ github.com/open-telemetry/opentelemetry-collector-contrib/extension/sumologicext
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/sumologicextension v0.119.0/go.mod h1:8ryGwbyDwngV3IQadAUaf0uRHQcxjkPTplU+iOnhSXM=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/awsutil v0.119.0 h1:LlxMj5seXi/cVErs61fmRojj1Goo3bYvgFOpJMtlwwo=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/awsutil v0.119.0/go.mod h1:cN2XY980uuIPD1ZOyjDbMzxWLoHBufZqRKWeEx/LugU=
+github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/cwlogs v0.119.0 h1:8F8KzuHm0biZRrIboo7atAW+/bGOxIbW+nfYneBnpQ8=
+github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/cwlogs v0.119.0/go.mod h1:mfPPeFGUksoO+nwoKZMcg9uIpmlovZLVUVjAAzfxpm4=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/ecsutil v0.119.0 h1:U/j+jjOId2iiudkHN5EOqmZoMSDxWXTR6N9xGdj3bh8=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/ecsutil v0.119.0/go.mod h1:K6fKwsOcIEkOMR7CitUWBYaS8yrb3Y2TjM1ocMwgJx4=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/xray v0.119.0 h1:tS//iYtDvw/LnUN4Vk8d4RJUXFbxX94WodT7icgwTd0=
