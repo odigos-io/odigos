@@ -25,7 +25,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
 var ErrorTooManySources = errors.New("too many Sources found for workload")
@@ -37,6 +36,7 @@ var ErrorTooManySources = errors.New("too many Sources found for workload")
 // +kubebuilder:printcolumn:name="Workload",type=string,JSONPath=`.spec.workload.name`
 // +kubebuilder:printcolumn:name="Kind",type=string,JSONPath=`.spec.workload.kind`
 // +kubebuilder:printcolumn:name="Namespace",type=string,JSONPath=`.spec.workload.namespace`
+// +kubebuilder:printcolumn:name="Disabled",type=string,JSONPath=`.spec.disableInstrumentation`
 type Source struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -49,7 +49,7 @@ type SourceSpec struct {
 	// Workload represents the workload or namespace to be instrumented.
 	// This field is required upon creation and cannot be modified.
 	// +kubebuilder:validation:Required
-	Workload workload.PodWorkload `json:"workload"`
+	Workload k8sconsts.PodWorkload `json:"workload"`
 	// DisableInstrumentation excludes this workload from auto-instrumentation.
 	// +kubebuilder:validation:Optional
 	DisableInstrumentation bool `json:"disableInstrumentation,omitempty"`
@@ -116,11 +116,11 @@ func GetSources(ctx context.Context, kubeClient client.Client, obj client.Object
 	workloadSources := &WorkloadSources{}
 
 	namespace := obj.GetNamespace()
-	if len(namespace) == 0 && obj.GetObjectKind().GroupVersionKind().Kind == string(workload.WorkloadKindNamespace) {
+	if len(namespace) == 0 && obj.GetObjectKind().GroupVersionKind().Kind == string(k8sconsts.WorkloadKindNamespace) {
 		namespace = obj.GetName()
 	}
 
-	if obj.GetObjectKind().GroupVersionKind().Kind != string(workload.WorkloadKindNamespace) {
+	if obj.GetObjectKind().GroupVersionKind().Kind != string(k8sconsts.WorkloadKindNamespace) {
 		sourceList := SourceList{}
 		selector := labels.SelectorFromSet(labels.Set{
 			k8sconsts.WorkloadNameLabel:      obj.GetName(),
@@ -143,7 +143,7 @@ func GetSources(ctx context.Context, kubeClient client.Client, obj client.Object
 	namespaceSelector := labels.SelectorFromSet(labels.Set{
 		k8sconsts.WorkloadNameLabel:      namespace,
 		k8sconsts.WorkloadNamespaceLabel: namespace,
-		k8sconsts.WorkloadKindLabel:      string(workload.WorkloadKindNamespace),
+		k8sconsts.WorkloadKindLabel:      string(k8sconsts.WorkloadKindNamespace),
 	})
 	err = kubeClient.List(ctx, &namespaceSourceList, &client.ListOptions{LabelSelector: namespaceSelector}, client.InNamespace(namespace))
 	if err != nil {

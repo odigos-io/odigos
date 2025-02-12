@@ -3,19 +3,7 @@ package devices
 import (
 	"github.com/google/uuid"
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
-	"strings"
 )
-
-type PodDetails string
-
-func NewPodDetails(name string, namespace string) PodDetails {
-	return PodDetails(name + "_" + namespace)
-}
-
-func (p PodDetails) Details() (string, string) {
-	parts := strings.Split(string(p), "_")
-	return parts[0], parts[1]
-}
 
 type DeviceManager interface {
 	Init(initialDevices int64)

@@ -48,6 +48,7 @@ jobs:
           git tag opampserver/${{ steps.extract_tag.outputs.tag }}
           git tag procdiscovery/${{ steps.extract_tag.outputs.tag }}
           git tag profiles/${{ steps.extract_tag.outputs.tag }}
+          git tag distros/${{ steps.extract_tag.outputs.tag }}
           git push origin --tags
 
       - name: Trigger Release PR in Odigos Enterprise
@@ -55,7 +56,7 @@ jobs:
           curl -X POST \
             -H "Accept: application/vnd.github.v3+json" \
             -H "Authorization: token ${{ secrets.RELEASE_BOT_TOKEN }}" \
-            https://api.github.com/repos/odigos-io/odigos-enterprise/dispatches \
+          https://api.github.com/repos/odigos-io/odigos-enterprise/dispatches \
             -d '{"event_type": "create_release_pr", "client_payload": {"tag": "${{ steps.extract_tag.outputs.tag }}"}}'
 
       - name: Notify Slack End
@@ -144,12 +145,10 @@ jobs:
             DESCRIPTION=${{ matrix.description }}
           platforms: linux/amd64,linux/arm64
           file: >-
-            ${{
-              (matrix.service == 'odiglet' && 'odiglet/${{ matrix.dockerfile }}') ||
-              (matrix.service == 'collector' && 'collector/${{ matrix.dockerfile }}') ||
-              (matrix.service == 'ui' && 'frontend/${{ matrix.dockerfile }}') ||
-              '${{ matrix.dockerfile }}'
-            }}
+            ${{ matrix.service == 'odiglet' && format('odiglet/{0}', matrix.dockerfile) ||
+                matrix.service == 'collector' && format('collector/{0}', matrix.dockerfile) ||
+                matrix.service == 'ui' && format('frontend/{0}', matrix.dockerfile) ||
+                matrix.dockerfile }}
           context: >-
             ${{
               (matrix.service == 'collector' && 'collector') ||

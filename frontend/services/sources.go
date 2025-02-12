@@ -13,7 +13,6 @@ import (
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/client"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -270,10 +269,10 @@ func CreateSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 			GenerateName: "source-",
 		},
 		Spec: v1alpha1.SourceSpec{
-			Workload: workload.PodWorkload{
+			Workload: k8sconsts.PodWorkload{
 				Namespace: nsName,
 				Name:      workloadName,
-				Kind:      workload.WorkloadKind(workloadKind),
+				Kind:      k8sconsts.WorkloadKind(workloadKind),
 			},
 		},
 	}

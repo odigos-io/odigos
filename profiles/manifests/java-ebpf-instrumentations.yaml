@@ -10,3 +10,6 @@ spec:
       java:
         sdkTier: "enterprise"
         sdkType: "ebpf"
+  otelDistros:
+    otelDistroNames:
+    - "java-ebpf-instrumentations"

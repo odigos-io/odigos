@@ -17,7 +17,7 @@ func main() {
 	info := component.BuildInfo{
 		Command:     "odigosotelcol",
 		Description: "OpenTelemetry Collector for Odigos",
-		Version:     "0.118.0",
+		Version:     "0.119.0",
 	}
 
 	set := otelcol.CollectorSettings{
@@ -30,6 +30,9 @@ func main() {
 					envprovider.NewFactory(),
 				},
 			},
+		}, ProviderModules: map[string]string{
+			odigosfileprovider.NewFactory().Create(confmap.ProviderSettings{}).Scheme(): "go.opentelemetry.io/collector/odigos/providers/odigosfileprovider v0.119.0",
+			envprovider.NewFactory().Create(confmap.ProviderSettings{}).Scheme():        "go.opentelemetry.io/collector/confmap/provider/envprovider v0.119.0",
 		},
 	}
 

@@ -1,32 +1,43 @@
-import { ACTION, DISPLAY_TITLES, FORM_ALERTS } from '@/utils';
 import { useConfig } from '../config';
-import { useNotificationStore } from '@/store';
 import { useMutation, useQuery } from '@apollo/client';
 import { useComputePlatform } from './useComputePlatform';
 import { GET_NAMESPACE, PERSIST_NAMESPACE } from '@/graphql';
-import { type ComputePlatform, NOTIFICATION_TYPE, type PersistNamespaceItemInput } from '@/types';
+import { useNotificationStore } from '@odigos/ui-containers';
+import type { NamespaceInstrumentInput, ComputePlatform } from '@/@types';
+import { CRUD, DISPLAY_TITLES, FORM_ALERTS, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 
 export const useNamespace = (namespaceName?: string) => {
   const { data: config } = useConfig();
   const { addNotification } = useNotificationStore();
   const { data: cp, loading: cpLoading } = useComputePlatform();
 
+  // TODO: change query, to lazy query
   const { data, loading } = useQuery<ComputePlatform>(GET_NAMESPACE, {
     skip: !namespaceName,
     variables: { namespaceName },
-    onError: (error) => addNotification({ type: NOTIFICATION_TYPE.ERROR, title: error.name || ACTION.FETCH, message: error.cause?.message || error.message }),
+    onError: (error) => addNotification({ type: NOTIFICATION_TYPE.ERROR, title: error.name || CRUD.READ, message: error.cause?.message || error.message }),
   });
 
   const [persistNamespaceMutation] = useMutation(PERSIST_NAMESPACE, {
-    onError: (error) => addNotification({ type: NOTIFICATION_TYPE.ERROR, title: error.name || ACTION.UPDATE, message: error.cause?.message || error.message }),
+    onError: (error) => addNotification({ type: NOTIFICATION_TYPE.ERROR, title: error.name || CRUD.UPDATE, message: error.cause?.message || error.message }),
   });
 
   return {
     loading: loading || cpLoading,
-    data: data?.computePlatform?.k8sActualNamespace,
-    allNamespaces: cp?.computePlatform?.k8sActualNamespaces || [],
+    allNamespaces: (cp?.computePlatform?.k8sActualNamespaces || []).map(({ name, selected, k8sActualSources }) => ({
+      name,
+      selected,
+      sources: k8sActualSources,
+    })),
+    data: !!data?.computePlatform?.k8sActualNamespace
+      ? {
+          name: data.computePlatform.k8sActualNamespace.name,
+          selected: data.computePlatform.k8sActualNamespace.selected,
+          sources: data.computePlatform.k8sActualNamespace.k8sActualSources,
+        }
+      : undefined,
 
-    persistNamespace: async (namespace: PersistNamespaceItemInput) => {
+    persistNamespace: async (namespace: NamespaceInstrumentInput) => {
       if (config?.readonly) {
         addNotification({ type: NOTIFICATION_TYPE.WARNING, title: DISPLAY_TITLES.READONLY, message: FORM_ALERTS.READONLY_WARNING, hideFromHistory: true });
       } else {

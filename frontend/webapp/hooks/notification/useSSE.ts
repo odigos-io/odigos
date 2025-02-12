@@ -1,9 +1,18 @@
 import { useEffect, useRef } from 'react';
-import { NOTIFICATION_TYPE } from '@/types';
+import { API } from '@/utils';
+import { useStatusStore } from '@/store';
 import { useDestinationCRUD } from '../destinations';
 import { usePaginatedSources } from '../compute-platform';
-import { API, DISPLAY_TITLES, NOTIF_CRD_TYPES } from '@/utils';
-import { type NotifyPayload, useNotificationStore, usePendingStore, useStatusStore } from '@/store';
+import { CRD_TYPES, DISPLAY_TITLES, NOTIFICATION_TYPE } from '@odigos/ui-utils';
+import { type NotifyPayload, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
+
+const CONNECTED = 'CONNECTED';
+
+const EVENT_TYPES = {
+  ADDED: 'Added',
+  MODIFIED: 'Modified',
+  DELETED: 'Deleted',
+};
 
 export const useSSE = () => {
   const { setPendingItems } = usePendingStore();
@@ -21,28 +30,29 @@ export const useSSE = () => {
 
       es.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        const crdType = data.crdType || '';
         const notification: NotifyPayload = {
           type: data.type,
           title: data.event || '',
           message: data.data || '',
-          crdType,
+          crdType: data.crdType || '',
           target: data.target,
         };
 
-        // SSE toast notification
-        if (crdType !== NOTIF_CRD_TYPES.CONNECTED) addNotification(notification);
+        if (notification.title !== EVENT_TYPES.MODIFIED && notification.crdType !== CONNECTED) {
+          // SSE toast notification (for all events except "modified" and "connected")
+          addNotification(notification);
+        }
 
         // Handle specific CRD types
-        if ([NOTIF_CRD_TYPES.CONNECTED].includes(crdType)) {
+        if ([CONNECTED].includes(notification.crdType as string)) {
           if (title !== DISPLAY_TITLES.API_TOKEN) {
             setStatusStore({ status: NOTIFICATION_TYPE.SUCCESS, title: notification.title as string, message: notification.message as string });
           }
-        } else if ([NOTIF_CRD_TYPES.INSTRUMENTATION_CONFIG, NOTIF_CRD_TYPES.INSTRUMENTATION_INSTANCE].includes(crdType)) {
+        } else if ([CRD_TYPES.INSTRUMENTATION_CONFIG, CRD_TYPES.INSTRUMENTATION_INSTANCE].includes(notification.crdType as CRD_TYPES)) {
           fetchSources();
-        } else if ([NOTIF_CRD_TYPES.DESTINATION].includes(crdType)) {
+        } else if ([CRD_TYPES.DESTINATION].includes(notification.crdType as CRD_TYPES)) {
           refetchDestinations();
-        } else console.warn('Unhandled SSE for CRD type:', crdType);
+        } else console.warn('Unhandled SSE for CRD type:', notification.crdType);
 
         // This works for now,
         // but in the future we might have to change this to "removePendingItems",

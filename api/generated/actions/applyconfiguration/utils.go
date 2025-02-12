@@ -51,6 +51,16 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &actionsv1alpha1.ErrorSamplerStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("HttpRouteFilter"):
 		return &actionsv1alpha1.HttpRouteFilterApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("K8sAnnotationAttribute"):
+		return &actionsv1alpha1.K8sAnnotationAttributeApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("K8sAttributesResolver"):
+		return &actionsv1alpha1.K8sAttributesResolverApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("K8sAttributesSpec"):
+		return &actionsv1alpha1.K8sAttributesSpecApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("K8sAttributesStatus"):
+		return &actionsv1alpha1.K8sAttributesStatusApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("K8sLabelAttribute"):
+		return &actionsv1alpha1.K8sLabelAttributeApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("LatencySampler"):
 		return &actionsv1alpha1.LatencySamplerApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("LatencySamplerSpec"):

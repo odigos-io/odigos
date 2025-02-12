@@ -30,6 +30,7 @@ type ActionsV1alpha1Interface interface {
 	AddClusterInfosGetter
 	DeleteAttributesGetter
 	ErrorSamplersGetter
+	K8sAttributesResolversGetter
 	LatencySamplersGetter
 	PiiMaskingsGetter
 	ProbabilisticSamplersGetter
@@ -51,6 +52,10 @@ func (c *ActionsV1alpha1Client) DeleteAttributes(namespace string) DeleteAttribu
 
 func (c *ActionsV1alpha1Client) ErrorSamplers(namespace string) ErrorSamplerInterface {
 	return newErrorSamplers(c, namespace)
+}
+
+func (c *ActionsV1alpha1Client) K8sAttributesResolvers(namespace string) K8sAttributesResolverInterface {
+	return newK8sAttributesResolvers(c, namespace)
 }
 
 func (c *ActionsV1alpha1Client) LatencySamplers(namespace string) LatencySamplerInterface {

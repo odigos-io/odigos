@@ -1,5 +1,4 @@
 export * from './actions';
-export * from './common';
 export * from './compute-platform';
 export * from './config';
 export * from './describe';

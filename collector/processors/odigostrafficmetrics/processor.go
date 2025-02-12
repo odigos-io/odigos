@@ -103,24 +103,24 @@ func (p *dataSizesMetricsProcessor) meterAttributes(md pmetric.Metrics) []attrib
 
 func (p *dataSizesMetricsProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
 	if p.samplingFraction != 0 && rand.Float64() < p.samplingFraction {
-		p.obsrep.TraceDataSize.Add(ctx, int64(p.tracesSizer.TracesSize(td))*p.inverseSamplingFraction, metric.WithAttributes(p.traceAttributes(td)...))
+		p.obsrep.OdigosTraceDataSize.Add(ctx, int64(p.tracesSizer.TracesSize(td))*p.inverseSamplingFraction, metric.WithAttributes(p.traceAttributes(td)...))
+		p.obsrep.OdigosAcceptedSpans.Add(ctx, int64(td.SpanCount()))
 	}
-	p.obsrep.TraceDataSize.Add(ctx, int64(td.SpanCount()))
 	return td, nil
 }
 
 func (p *dataSizesMetricsProcessor) processLogs(ctx context.Context, ld plog.Logs) (plog.Logs, error) {
 	if p.samplingFraction != 0 && rand.Float64() < p.samplingFraction {
-		p.obsrep.LogDataSize.Add(ctx, int64(p.logsSizer.LogsSize(ld))*p.inverseSamplingFraction, metric.WithAttributes(p.logAttributes(ld)...))
+		p.obsrep.OdigosLogDataSize.Add(ctx, int64(p.logsSizer.LogsSize(ld))*p.inverseSamplingFraction, metric.WithAttributes(p.logAttributes(ld)...))
+		p.obsrep.OdigosAcceptedLogRecords.Add(ctx, int64(ld.LogRecordCount()))
 	}
-	p.obsrep.LogDataSize.Add(ctx, int64(ld.LogRecordCount()))
 	return ld, nil
 }
 
 func (p *dataSizesMetricsProcessor) processMetrics(ctx context.Context, md pmetric.Metrics) (pmetric.Metrics, error) {
 	if p.samplingFraction != 0 && rand.Float64() < p.samplingFraction {
-		p.obsrep.MetricDataSize.Add(ctx, int64(p.metricsSizer.MetricsSize(md))*p.inverseSamplingFraction, metric.WithAttributes(p.meterAttributes(md)...))
+		p.obsrep.OdigosMetricDataSize.Add(ctx, int64(p.metricsSizer.MetricsSize(md))*p.inverseSamplingFraction, metric.WithAttributes(p.meterAttributes(md)...))
+		p.obsrep.OdigosAcceptedMetricPoints.Add(ctx, int64(md.MetricCount()))
 	}
-	p.obsrep.MetricDataSize.Add(ctx, int64(md.MetricCount()))
 	return md, nil
 }

@@ -6,12 +6,12 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/instrumentation_instance"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/opampserver/pkg/connection"
-	di "github.com/odigos-io/odigos/opampserver/pkg/deviceid"
 	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig"
 	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig/configresolvers"
 	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig/configsections"
@@ -25,7 +25,6 @@ import (
 )
 
 type ConnectionHandlers struct {
-	deviceIdCache *di.DeviceIdCache
 	sdkConfig     *sdkconfig.SdkConfigManager
 	logger        logr.Logger
 	kubeclient    client.Client
@@ -65,20 +64,19 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 		return nil, nil, fmt.Errorf("missing pid in agent description")
 	}
 
-	attrs := extractOpampAgentAttributes(firstMessage.AgentDescription)
-
-	if attrs.ProgrammingLanguage == "" {
-		return nil, nil, fmt.Errorf("missing programming language in agent description")
+	attrs, err := extractOpampAgentAttributes(firstMessage.AgentDescription)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to extract agent attributes: %w", err)
 	}
 
-	k8sAttributes, pod, err := c.resolveK8sAttributes(ctx, attrs, deviceId)
+	k8sAttributes, pod, err := resolveFromDirectAttributes(ctx, attrs, c.kubeClientSet)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to process k8s attributes: %w", err)
 	}
 
-	podWorkload := workload.PodWorkload{
+	podWorkload := k8sconsts.PodWorkload{
 		Namespace: k8sAttributes.Namespace,
-		Kind:      workload.WorkloadKind(k8sAttributes.WorkloadKind),
+		Kind:      k8sconsts.WorkloadKind(k8sAttributes.WorkloadKind),
 		Name:      k8sAttributes.WorkloadName,
 	}
 
@@ -213,16 +211,7 @@ func (c *ConnectionHandlers) UpdateInstrumentationInstanceStatus(ctx context.Con
 	return nil
 }
 
-// resolveK8sAttributes resolves K8s resource attributes using either direct attributes from opamp agent or device cache
-func (c *ConnectionHandlers) resolveK8sAttributes(ctx context.Context, attrs opampAgentAttributesKeys, deviceId string) (*di.K8sResourceAttributes, *corev1.Pod, error) {
-
-	if attrs.hasRequiredAttributes() {
-		return resolveFromDirectAttributes(ctx, attrs, c.kubeClientSet)
-	}
-	return c.deviceIdCache.GetAttributesFromDevice(ctx, deviceId)
-}
-
-func extractOpampAgentAttributes(agentDescription *protobufs.AgentDescription) opampAgentAttributesKeys {
+func extractOpampAgentAttributes(agentDescription *protobufs.AgentDescription) (opampAgentAttributesKeys, error) {
 	result := opampAgentAttributesKeys{}
 
 	for _, attr := range agentDescription.IdentifyingAttributes {
@@ -238,14 +227,23 @@ func extractOpampAgentAttributes(agentDescription *protobufs.AgentDescription) o
 		}
 	}
 
-	return result
+	if result.ProgrammingLanguage == "" {
+		return result, fmt.Errorf("missing programming language in agent description")
+	}
+	if result.ContainerName == "" {
+		return result, fmt.Errorf("missing container name in agent description")
+	}
+	if result.PodName == "" {
+		return result, fmt.Errorf("missing pod name in agent description")
+	}
+	if result.Namespace == "" {
+		return result, fmt.Errorf("missing namespace in agent description")
+	}
+
+	return result, nil
 }
 
-func (k opampAgentAttributesKeys) hasRequiredAttributes() bool {
-	return k.ContainerName != "" && k.PodName != "" && k.Namespace != ""
-}
-
-func resolveFromDirectAttributes(ctx context.Context, attrs opampAgentAttributesKeys, kubeClient *kubernetes.Clientset) (*di.K8sResourceAttributes, *corev1.Pod, error) {
+func resolveFromDirectAttributes(ctx context.Context, attrs opampAgentAttributesKeys, kubeClient *kubernetes.Clientset) (*configresolvers.K8sResourceAttributes, *corev1.Pod, error) {
 
 	pod, err := kubeClient.CoreV1().Pods(attrs.Namespace).Get(ctx, attrs.PodName, metav1.GetOptions{})
 	if err != nil {
@@ -253,7 +251,7 @@ func resolveFromDirectAttributes(ctx context.Context, attrs opampAgentAttributes
 	}
 
 	var workloadName string
-	var workloadKind workload.WorkloadKind
+	var workloadKind k8sconsts.WorkloadKind
 
 	ownerRefs := pod.GetOwnerReferences()
 	for _, ownerRef := range ownerRefs {
@@ -263,7 +261,7 @@ func resolveFromDirectAttributes(ctx context.Context, attrs opampAgentAttributes
 		}
 	}
 
-	k8sAttributes := &di.K8sResourceAttributes{
+	k8sAttributes := &configresolvers.K8sResourceAttributes{
 		Namespace:     attrs.Namespace,
 		PodName:       attrs.PodName,
 		ContainerName: attrs.ContainerName,

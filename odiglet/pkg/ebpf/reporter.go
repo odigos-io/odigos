@@ -20,7 +20,8 @@ import (
 type K8sProcessDetails struct {
 	pod           *corev1.Pod
 	containerName string
-	pw            *workload.PodWorkload
+	distroName    string
+	pw            *k8sconsts.PodWorkload
 	procEvent     detector.ProcessEvent
 }
 
@@ -39,7 +40,7 @@ type k8sReporter struct {
 }
 
 type K8sConfigGroup struct {
-	Pw   workload.PodWorkload
+	Pw   k8sconsts.PodWorkload
 	Lang common.ProgrammingLanguage
 }
 

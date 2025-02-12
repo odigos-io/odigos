@@ -1,15 +1,15 @@
 'use client';
 import { useEffect } from 'react';
-import { ACTION } from '@/utils';
 import { GET_CONFIG } from '@/graphql';
-import { useNotificationStore } from '@/store';
+import { type FetchedConfig } from '@/@types';
 import { useSuspenseQuery } from '@apollo/client';
-import { NOTIFICATION_TYPE, type Config } from '@/types';
+import { CRUD, NOTIFICATION_TYPE } from '@odigos/ui-utils';
+import { useNotificationStore } from '@odigos/ui-containers';
 
 export const useConfig = () => {
   const { addNotification } = useNotificationStore();
 
-  const { data, error } = useSuspenseQuery<Config>(GET_CONFIG, {
+  const { data, error } = useSuspenseQuery<FetchedConfig>(GET_CONFIG, {
     skip: typeof window === 'undefined',
   });
 
@@ -17,7 +17,7 @@ export const useConfig = () => {
     if (error) {
       addNotification({
         type: NOTIFICATION_TYPE.ERROR,
-        title: error.name || ACTION.FETCH,
+        title: error.name || CRUD.READ,
         message: error.cause?.message || error.message,
       });
     }

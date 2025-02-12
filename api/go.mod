@@ -4,7 +4,6 @@ go 1.23.0
 
 require (
 	github.com/odigos-io/odigos/common v0.0.0
-	github.com/odigos-io/odigos/k8sutils v0.0.0
 	github.com/stretchr/testify v1.10.0
 	k8s.io/api v0.32.1
 	k8s.io/apimachinery v0.32.1
@@ -60,7 +59,7 @@ require (
 	golang.org/x/time v0.7.0 // indirect
 	golang.org/x/tools v0.28.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
-	google.golang.org/protobuf v1.36.3 // indirect
+	google.golang.org/protobuf v1.36.4 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/apiextensions-apiserver v0.32.0
@@ -72,7 +71,4 @@ require (
 	sigs.k8s.io/yaml v1.4.0
 )
 
-replace (
-	github.com/odigos-io/odigos/common => ../common
-	github.com/odigos-io/odigos/k8sutils => ../k8sutils
-)
+replace github.com/odigos-io/odigos/common => ../common

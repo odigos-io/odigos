@@ -3,6 +3,7 @@ package sdkconfig
 import (
 	"context"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/opampserver/pkg/connection"
@@ -30,9 +31,9 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, err
 	}
 
-	podWorkload := workload.PodWorkload{
+	podWorkload := k8sconsts.PodWorkload{
 		Namespace: req.Namespace,
-		Kind:      workload.WorkloadKind(workloadKind),
+		Kind:      k8sconsts.WorkloadKind(workloadKind),
 		Name:      workloadName,
 	}
 

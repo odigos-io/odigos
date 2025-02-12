@@ -2,7 +2,6 @@ package runtime_details
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -12,33 +11,25 @@ import (
 
 	"github.com/odigos-io/odigos/odiglet/pkg/process"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/envOverwrite"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
-	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func runtimeInspection(ctx context.Context, pods []corev1.Pod, ignoredContainers []string, criClient *criwrapper.CriClient) ([]odigosv1.RuntimeDetailsByContainer, error) {
+func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwrapper.CriClient) ([]odigosv1.RuntimeDetailsByContainer, error) {
 	resultsMap := make(map[string]odigosv1.RuntimeDetailsByContainer)
 	for _, pod := range pods {
 		for _, container := range pod.Spec.Containers {
-
-			// Skip ignored containers, but label them as ignored
-			if utils.IsItemIgnored(container.Name, ignoredContainers) {
-				resultsMap[container.Name] = odigosv1.RuntimeDetailsByContainer{
-					ContainerName: container.Name,
-					Language:      common.IgnoredProgrammingLanguage,
-				}
-				continue
-			}
 
 			processes, err := process.FindAllInContainer(string(pod.UID), container.Name)
 			if err != nil {
@@ -232,8 +223,10 @@ func checkEnvVarsInContainerManifest(container corev1.Container, envVarNames []s
 	return false
 }
 
-func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclient client.Client, instrumentationConfig *odigosv1.InstrumentationConfig, newStatus odigosv1.InstrumentationConfigStatus) error {
-	// This come to make sure we're updating instrumentationConfig only once (at the first time)
+func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclient client.Client, instrumentationConfig *odigosv1.InstrumentationConfig, newRuntimeDetials []odigosv1.RuntimeDetailsByContainer) error {
+
+	// fetch a fresh copy of instrumentation config.
+	// TODO: is this necessary? can we do it with the existing object?
 	currentConfig := &odigosv1.InstrumentationConfig{}
 	err := kubeclient.Get(ctx, client.ObjectKeyFromObject(instrumentationConfig), currentConfig)
 	if err != nil {
@@ -246,15 +239,15 @@ func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclien
 		return nil
 	}
 
-	// persist the runtime results into the status of the instrumentation config
-	patchStatus := odigosv1.InstrumentationConfig{
-		Status: newStatus,
-	}
-	patchData, err := json.Marshal(patchStatus)
-	if err != nil {
-		return err
-	}
-	err = kubeclient.Status().Patch(ctx, instrumentationConfig, client.RawPatch(types.MergePatchType, patchData), client.FieldOwner("odiglet-runtimedetails"))
+	currentConfig.Status.RuntimeDetailsByContainer = newRuntimeDetials
+	meta.SetStatusCondition(&currentConfig.Status.Conditions, metav1.Condition{
+		Type:    odigosv1.RuntimeDetectionStatusConditionType,
+		Status:  metav1.ConditionTrue,
+		Reason:  string(odigosv1.RuntimeDetectionReasonDetectedSuccessfully),
+		Message: "runtime detection completed successfully",
+	})
+
+	err = kubeclient.Status().Update(ctx, currentConfig)
 	if err != nil {
 		return err
 	}
@@ -262,7 +255,7 @@ func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclien
 	return nil
 }
 
-func GetRuntimeDetails(ctx context.Context, kubeClient client.Client, podWorkload *workload.PodWorkload) (*odigosv1.InstrumentationConfig, error) {
+func GetRuntimeDetails(ctx context.Context, kubeClient client.Client, podWorkload *k8sconsts.PodWorkload) (*odigosv1.InstrumentationConfig, error) {
 	instrumentedApplicationName := workload.CalculateWorkloadRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
 
 	var runtimeDetails odigosv1.InstrumentationConfig

@@ -1,37 +1,47 @@
 'use client';
-import './globals.css';
-import React from 'react';
-import { METADATA } from '@/utils';
-import { ApolloWrapper } from '@/lib';
-import { useDarkModeStore } from '@/store';
-import { ThemeProviderWrapper } from '@/styles';
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const { darkMode } = useDarkModeStore();
+import React, { type PropsWithChildren } from 'react';
+import dynamic from 'next/dynamic';
+import Theme from '@odigos/ui-theme';
+import { LayoutContainer } from '@/components';
+import { ToastList } from '@odigos/ui-containers';
+import ErrorBoundary from '@/components/providers/error-boundary';
+import ApolloProvider from '@/components/providers/apollo-provider';
+
+const ThemeProvider = dynamic(() => import('@/components/providers/theme-provider'), { ssr: false });
+
+function RootLayout({ children }: PropsWithChildren) {
+  const { darkMode } = Theme.useDarkMode();
 
   return (
     <html lang='en'>
       <head>
-        <meta name='description' content={METADATA.title} />
-        <link rel='icon' type='image/svg+xml' href={`/${METADATA.icon}`} />
+        <meta name='description' content='Odigos' />
+        <link rel='icon' type='image/svg+xml' href='/favicon.svg' />
         <link rel='manifest' href='/manifest.json' />
-        <title>{METADATA.title}</title>
+        <title>Odigos</title>
       </head>
-      <ApolloWrapper>
-        <ThemeProviderWrapper>
-          <body
-            suppressHydrationWarning={true}
-            style={{
-              width: '100vw',
-              height: '100vh',
-              margin: 0,
-              backgroundColor: darkMode ? '#111111' : '#EEEEEE',
-            }}
-          >
-            {children}
-          </body>
-        </ThemeProviderWrapper>
-      </ApolloWrapper>
+
+      <body
+        suppressHydrationWarning={true}
+        style={{
+          width: '100vw',
+          height: '100vh',
+          margin: 0,
+          backgroundColor: darkMode ? '#111111' : '#EEEEEE',
+        }}
+      >
+        <ErrorBoundary>
+          <ApolloProvider>
+            <ThemeProvider>
+              <ToastList />
+              <LayoutContainer>{children}</LayoutContainer>
+            </ThemeProvider>
+          </ApolloProvider>
+        </ErrorBoundary>
+      </body>
     </html>
   );
 }
+
+export default RootLayout;

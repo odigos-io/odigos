@@ -27,6 +27,7 @@ var AllProfiles = []profile.Profile{
 	instrumentation.AllowConcurrentAgents,
 	instrumentation.JavaEbpfInstrumentationsProfile,
 	instrumentation.JavaNativeInstrumentationsProfile,
+	instrumentation.LegacyDotNetProfile,
 
 	pipeline.DisableNameProcessorProfile,
 	pipeline.SmallBatchesProfile,
