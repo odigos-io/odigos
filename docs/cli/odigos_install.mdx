@@ -37,13 +37,13 @@ odigos install --onprem-token ${ODIGOS_TOKEN} --profile ${YOUR_ENTERPRISE_PROFIL
 
 ```
   -k, --api-key string                 api key for odigos cloud
-      --autoscaler-image string        autoscaler container image name (default "registry.odigos.io/odigos-autoscaler")
+      --autoscaler-image string        autoscaler container image name (default "odigos-autoscaler")
       --central-backend-url string     URL for centralized Odigos backend
   -h, --help                           help for install
       --ignore-container strings       container names to exclude from instrumentation (useful for sidecar container) (default [istio-proxy,vault-agent,filebeat,linkerd-proxy,fluentd,akeyless-init])
       --ignore-namespace strings       namespaces not to show in odigos ui (default [kube-system,local-path-storage,istio-system,linkerd,kube-node-lease])
-      --image-prefix string            prefix for all container images. used when your cluster doesn't have access to docker hub
-      --instrumentor-image string      instrumentor container image name (default "registry.odigos.io/odigos-instrumentor")
+      --image-prefix string            prefix for all container images. (default "registry.odigos.io")
+      --instrumentor-image string      instrumentor container image name (default "odigos-instrumentor")
   -n, --namespace string               target k8s namespace for Odigos installation (default "odigos-system")
       --nowait                         skip waiting for odigos pods to be ready
       --odiglet-image string           odiglet container image name
