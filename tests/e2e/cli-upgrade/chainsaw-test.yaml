@@ -170,6 +170,10 @@ spec:
                   sleep 5
                 fi
               done
+      catch:
+        - script:
+            content: |
+              ../../common/traceql_runner.sh ../../common/traceql/all_traces.yaml --verbose
     - name: Verify Trace - Context Propagation
       try:
         - script:
