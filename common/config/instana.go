@@ -40,8 +40,8 @@ func (m *Instana) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) (
 		},
 	}
 
-	// The Instana backend requires the host.id, faas.id, or device.id resource attribute, or you can also set x-instana-host as a header in the exporter config.
-	// Source: https://www.ibm.com/docs/en/instana-observability/current?topic=instana-backend#creating-the-required-resource-attribute-or-environment-variable
+	// The Instana backend requires the host.id, faas.id, or device.id resource attribute,
+	// or you can also set x-instana-host as a header in the exporter config.
 	processorName := "resource/" + uniqueUri
 	processorConfig := GenericMap{
 		"attributes": []GenericMap{
