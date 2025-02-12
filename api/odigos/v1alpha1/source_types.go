@@ -36,6 +36,7 @@ var ErrorTooManySources = errors.New("too many Sources found for workload")
 // +kubebuilder:printcolumn:name="Workload",type=string,JSONPath=`.spec.workload.name`
 // +kubebuilder:printcolumn:name="Kind",type=string,JSONPath=`.spec.workload.kind`
 // +kubebuilder:printcolumn:name="Namespace",type=string,JSONPath=`.spec.workload.namespace`
+// +kubebuilder:printcolumn:name="Disabled",type=string,JSONPath=`.spec.disableInstrumentation`
 type Source struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
