@@ -29,3 +29,7 @@ spec:
         type: password
         required: true
         tooltip: 'The agent key of the Instana for targeting the Instana backend.'
+  note:
+    type: Warning
+    content: |
+      For ingesting logs via OpenTelemetry, an add-on to the Instana license is required. It’s advisable to contact your IBM Sales representative to include this add-on in your account.
