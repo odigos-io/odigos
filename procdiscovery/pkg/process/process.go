@@ -93,7 +93,7 @@ func GetPidDetails(pid int) Details {
 	exePath := getExePath(pid)
 	cmdLine := getCommandLine(pid)
 	envVars := getRelevantEnvVars(pid)
-	exeFile, _ := GetProcessExeFile(pid)
+	exeFile := GetProcessExeFile(pid)
 
 	return Details{
 		ProcessID:    pid,
@@ -190,11 +190,14 @@ func getRelevantEnvVars(pid int) ProcessEnvs {
 	return envs
 }
 
-func GetProcessExeFile(pid int) (*os.File, error) {
+func GetProcessExeFile(pid int) *os.File {
 	path := fmt.Sprintf("/proc/%d/exe", pid)
 	fileData, err := os.Open(path)
 	if err != nil {
-		return nil, err
+		// Ignore errors and return nil since we dont want to stop the process discovery
+		// if we fail to open the file (e.g. due to permissions or file not exist).
+		// nil check should be done by the relevant caller.
+		return nil
 	}
-	return fileData, nil
+	return fileData
 }
