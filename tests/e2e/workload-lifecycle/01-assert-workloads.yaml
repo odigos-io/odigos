@@ -359,18 +359,18 @@ metadata:
     deployment.kubernetes.io/revision: '2'
   generation: 2
   labels:
-    app: java-omit-in-entrypoint
-  name: java-omit-in-entrypoint
+    app: java-special-exec
+  name: java-special-exec
   namespace: default
 spec:
   selector:
     matchLabels:
-      app: java-omit-in-entrypoint
+      app: java-special-exec
   template:
     spec:
       containers:
-        - image: java-omit-in-entrypoint:v0.0.1
-          name: java-omit-in-entrypoint
+        - image: java-special-exec:v0.0.1
+          name: java-special-exec
           ports:
             - containerPort: 3000
               protocol: TCP

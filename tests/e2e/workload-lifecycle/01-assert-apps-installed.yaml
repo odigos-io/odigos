@@ -86,11 +86,11 @@ apiVersion: v1
 kind: Pod
 metadata:
   labels:
-    app: java-omit-in-entrypoint
+    app: java-special-exec
   namespace: default
 status:
   containerStatuses:
-    - name: java-omit-in-entrypoint
+    - name: java-special-exec
       ready: true
       restartCount: 0
       started: true

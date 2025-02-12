@@ -141,16 +141,16 @@ spec:
 apiVersion: odigos.io/v1alpha1
 kind: Source
 metadata:
-  name: java-omit-in-entrypoint
+  name: java-special-exec
   namespace: default
   labels:
     odigos.io/e2e: source
 spec:
   workload:
-    name: java-omit-in-entrypoint
+    name: java-special-exec
     namespace: default
     kind: Deployment
-  otelServiceName: java-omit-in-entrypoint-reported
+  otelServiceName: java-special-exec-reported
 ---
 apiVersion: odigos.io/v1alpha1
 kind: Source

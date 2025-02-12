@@ -201,17 +201,17 @@ status:
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
 metadata:
-  name: deployment-java-omit-in-entrypoint
+  name: deployment-java-special-exec
   namespace: default
   ownerReferences:
     - apiVersion: apps/v1
       blockOwnerDeletion: true
       controller: true
       kind: Deployment
-      name: java-omit-in-entrypoint
+      name: java-special-exec
 status:
   runtimeDetailsByContainer:
-    - containerName: java-omit-in-entrypoint
+    - containerName: java-special-exec
       language: java
       runtimeVersion: 21.0.6+7
 ---
