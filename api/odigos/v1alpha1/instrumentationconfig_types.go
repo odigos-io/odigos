@@ -179,9 +179,9 @@ type InstrumentationConfigStatus struct {
 	// Represents the observations of a InstrumentationConfig's current state.
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" protobuf:"bytes,1,rep,name=conditions"`
 
-	// The hash used to determine whether the associated workload needs to be rolled out.
-	// This hash is calculated based on the containers config array and takes into account the
-	// container name, Instrumented flag and the OTel distro name.
+	// This hash is recorded only after the rollout took place.
+	// it allows us to determine if the workload needs to be rollout based on previous rollout and the current config.
+	// if this field is different than the spec.AgentsDeploymentHash it means rollout is needed or not yet updated.
 	WorkloadRolloutHash string `json:"workloadRolloutHash,omitempty"`
 }
 
@@ -229,6 +229,12 @@ type InstrumentationConfigSpec struct {
 
 	// configuration for each instrumented container in the workload
 	Containers []ContainerAgentConfig `json:"containers,omitempty"`
+
+	// this hash is used to determine the deployment of the agents.
+	// e.g. when the distro for container changes, or it's compatibility version,
+	// or something else that requires rollout, the hash change will indicate that.
+	// if the hash is empty, it means that no agent should be enabled in any pod container.
+	AgentsMetaHash string `json:"agentsMetaHash,omitempty"`
 
 	// Configuration for the OpenTelemetry SDKs that this workload should use.
 	// The SDKs are identified by the programming language they are written in.

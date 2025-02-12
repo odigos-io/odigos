@@ -40,6 +40,7 @@ var availableConfigers = []Configer{
 	&Groundcover{},
 	&Honeycomb{},
 	&HyperDX{},
+	&Instana{},
 	&Jaeger{},
 	&Kafka{},
 	&KloudMate{},

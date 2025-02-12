@@ -157,6 +157,11 @@ func NewInstrumentorClusterRole(ownerPermissionEnforcement bool) *rbacv1.Cluster
 				Resources: []string{"namespaces"},
 				Verbs:     []string{"list", "watch", "get"},
 			},
+			{ // reconcile rollouts and instrumentation delpoyment status by actual odigos pods
+				APIGroups: []string{""},
+				Resources: []string{"pods"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
 			{ // Read instrumentation labels from daemonsets and apply pod spec changes
 				APIGroups: []string{"apps"},
 				Resources: []string{"daemonsets"},
