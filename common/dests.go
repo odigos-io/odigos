@@ -29,6 +29,7 @@ const (
 	HyperDxDestinationType                DestinationType = "hyperdx"
 	InstanaDestinationType                DestinationType = "instana"
 	JaegerDestinationType                 DestinationType = "jaeger"
+	KafkaDestinationType                  DestinationType = "kafka"
 	KloudMateDestinationType              DestinationType = "kloudmate"
 	Last9DestinationType                  DestinationType = "last9"
 	LightstepDestinationType              DestinationType = "lightstep"

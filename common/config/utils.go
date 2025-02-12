@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
@@ -96,6 +97,22 @@ func urlHostContainsPort(host string) bool {
 func getBooleanConfig(currentValue string, deprecatedValue string) bool {
 	lowerCaseValue := strings.ToLower(currentValue)
 	return lowerCaseValue == "true" || lowerCaseValue == deprecatedValue
+}
+
+func parseBool(value string) bool {
+	result, err := strconv.ParseBool(value)
+	if err != nil {
+		return false
+	}
+	return result
+}
+
+func parseInt(value string) int {
+	num, err := strconv.Atoi(value)
+	if err != nil {
+		panic(err.Error())
+	}
+	return num
 }
 
 func errorMissingKey(key string) error {

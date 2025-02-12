@@ -237,6 +237,7 @@
             "backends/hyperdx",
             "backends/instana",
             "backends/jaeger",
+            "backends/kafka",
             "backends/kloudmate",
             "backends/last9",
             "backends/lightstep",
