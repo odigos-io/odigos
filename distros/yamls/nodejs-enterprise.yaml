@@ -19,4 +19,4 @@ spec:
       delimiter: ' '
   runtimeAgent:
     directoryNames:
-      - "{{ODIGOS_AGENTS_DIR}}/nodejs-ebpf"
+      # - "{{ODIGOS_AGENTS_DIR}}/nodejs-ebpf"

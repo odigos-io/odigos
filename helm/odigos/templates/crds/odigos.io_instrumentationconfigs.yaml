@@ -46,6 +46,13 @@ spec:
                 description: determines if odigos should inject agents to pods of
                   this workload.
                 type: boolean
+              agentsMetaHash:
+                description: |-
+                  this hash is used to determine the deployment of the agents.
+                  e.g. when the distro for container changes, or it's compatibility version,
+                  or something else that requires rollout, the hash change will indicate that.
+                  if the hash is empty, it means that no agent should be enabled in any pod container.
+                type: string
               containers:
                 description: configuration for each instrumented container in the
                   workload
@@ -611,9 +618,9 @@ spec:
                 type: array
               workloadRolloutHash:
                 description: |-
-                  The hash used to determine whether the associated workload needs to be rolled out.
-                  This hash is calculated based on the containers config array and takes into account the
-                  container name, Instrumented flag and the OTel distro name.
+                  This hash is recorded only after the rollout took place.
+                  it allows us to determine if the workload needs to be rollout based on previous rollout and the current config.
+                  if this field is different than the spec.AgentsDeploymentHash it means rollout is needed or not yet updated.
                 type: string
             type: object
         type: object

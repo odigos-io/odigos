@@ -24,6 +24,9 @@ spec:
     - jsonPath: .spec.workload.namespace
       name: Namespace
       type: string
+    - jsonPath: .spec.disableInstrumentation
+      name: Disabled
+      type: string
     name: v1alpha1
     schema:
       openAPIV3Schema:
