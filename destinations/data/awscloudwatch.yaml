@@ -1,0 +1,36 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: cloudwatch
+  displayName: AWS CloudWatch
+  category: managed
+spec:
+  image: awscloudwatch.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+  fields:
+    - name: AWS_CLOUDWATCH_TRACES_ENDPOINT
+      displayName: Traces Endpoint
+      componentType: input
+      componentProps:
+        required: false
+    - name: AWS_CLOUDWATCH_METRICS_ENDPOINT
+      displayName: Metrics Endpoint
+      componentType: input
+      componentProps:
+        required: false
+    - name: AWS_CLOUDWATCH_LOGS_ENDPOINT
+      displayName: Logs Endpoint
+      componentType: input
+      componentProps:
+        required: false
+  note:
+    type: Warning
+    content: |
+      1. For ingesting traces, metrics, or logs, ensure that you have the necessary AWS credentials and permissions set up in your cluster.
+      2. For traces, ensure that `Transaction Search` is enabled in your CloudWatch settings.
