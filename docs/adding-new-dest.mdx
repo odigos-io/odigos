@@ -159,7 +159,7 @@ Now that our new vendor can be persisted/loaded in the Kubernetes data store, we
       return common.MyDestDestinationType
     }
 
-    func (m *MyDest) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+    func (m *MyDest) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
       config := dest.GetConfig()
       // To make sure that the exporter and pipeline names are unique, we'll need to define a unique ID
       uniqueUri := "mydest-" + dest.GetID()
