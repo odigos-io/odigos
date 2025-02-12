@@ -1,0 +1,35 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: instana
+  displayName: IBM Instana
+  category: managed
+spec:
+  image: instana.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+  fields:
+    - name: INSTANA_ENDPOINT
+      displayName: OTLP gRPC Endpoint
+      componentType: input
+      componentProps:
+        required: true
+        placeholder: 'otlp-{color}-saas.instana.io'
+        tooltip: 'Domain name of the otlp-acceptor component of the Instana backend.'
+    - name: INSTANA_AGENT_KEY
+      displayName: Agent Key
+      secret: true
+      componentType: input
+      componentProps:
+        type: password
+        required: true
+        tooltip: 'The agent key of the Instana for targeting the Instana backend.'
+  note:
+    type: Warning
+    content: |
+      For ingesting logs via OpenTelemetry, an add-on to the Instana license is required. It’s advisable to contact your IBM Sales representative to include this add-on in your account.
