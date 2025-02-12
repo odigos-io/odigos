@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
 	"github.com/odigos-io/odigos/k8sutils/pkg/envoverwrite"
 
@@ -68,6 +69,8 @@ and rollback any metadata changes made to your objects.`,
 				client, cmd, ns, uninstallRBAC)
 			createKubeResourceWithLogging(ctx, "Uninstalling Odigos Secrets",
 				client, cmd, ns, uninstallSecrets)
+			createKubeResourceWithLogging(ctx, "Cleaning up Odigos node labels",
+				client, cmd, ns, cleanupNodeOdigosLabels)
 
 			// The CLI is running in Kubernetes via a Helm chart [pre-delete hook] to clean up Odigos resources.
 			// Deleting the namespace during uninstallation will cause Helm to fail due to the loss of the release state.
@@ -150,9 +153,11 @@ func rollbackPodChanges(ctx context.Context, client *kube.Client) error {
 			errs = multierr.Append(errs, err)
 			continue
 		}
-		_, err = client.AppsV1().Deployments(dep.Namespace).Patch(ctx, dep.Name, types.JSONPatchType, jsonPatchPayloadBytes, metav1.PatchOptions{})
-		if err != nil {
-			errs = multierr.Append(errs, err)
+		if len(jsonPatchPayloadBytes) > 0 {
+			_, err = client.AppsV1().Deployments(dep.Namespace).Patch(ctx, dep.Name, types.JSONPatchType, jsonPatchPayloadBytes, metav1.PatchOptions{})
+			if err != nil {
+				errs = multierr.Append(errs, err)
+			}
 		}
 	}
 
@@ -166,9 +171,11 @@ func rollbackPodChanges(ctx context.Context, client *kube.Client) error {
 			errs = multierr.Append(errs, err)
 			continue
 		}
-		_, err = client.AppsV1().StatefulSets(s.Namespace).Patch(ctx, s.Name, types.JSONPatchType, jsonPatchPayloadBytes, metav1.PatchOptions{})
-		if err != nil {
-			errs = multierr.Append(errs, err)
+		if len(jsonPatchPayloadBytes) > 0 {
+			_, err = client.AppsV1().StatefulSets(s.Namespace).Patch(ctx, s.Name, types.JSONPatchType, jsonPatchPayloadBytes, metav1.PatchOptions{})
+			if err != nil {
+				errs = multierr.Append(errs, err)
+			}
 		}
 	}
 
@@ -182,9 +189,11 @@ func rollbackPodChanges(ctx context.Context, client *kube.Client) error {
 			errs = multierr.Append(errs, err)
 			continue
 		}
-		_, err = client.AppsV1().DaemonSets(d.Namespace).Patch(ctx, d.Name, types.JSONPatchType, jsonPatchPayloadBytes, metav1.PatchOptions{})
-		if err != nil {
-			errs = multierr.Append(errs, err)
+		if len(jsonPatchPayloadBytes) > 0 {
+			_, err = client.AppsV1().DaemonSets(d.Namespace).Patch(ctx, d.Name, types.JSONPatchType, jsonPatchPayloadBytes, metav1.PatchOptions{})
+			if err != nil {
+				errs = multierr.Append(errs, err)
+			}
 		}
 	}
 
@@ -208,6 +217,13 @@ func getWorkloadRolloutJsonPatch(obj kube.Object, pts *v1.PodTemplateSpec) ([]by
 				"path": "/metadata/labels/" + consts.OdigosInstrumentationLabel,
 			})
 		}
+	}
+	odigosInjectInstrumentationLabel := "odigos.io/inject-instrumentation"
+	if _, found := pts.ObjectMeta.Labels[odigosInjectInstrumentationLabel]; found {
+		patchOperations = append(patchOperations, map[string]interface{}{
+			"op":   "remove",
+			"path": "/spec/template/metadata/labels/" + jsonPatchEscapeKey(odigosInjectInstrumentationLabel),
+		})
 	}
 
 	// remove odigos reported name annotation
@@ -502,6 +518,56 @@ func uninstallRBAC(ctx context.Context, cmd *cobra.Command, client *kube.Client,
 		err = client.RbacV1().ClusterRoleBindings().Delete(ctx, i.Name, metav1.DeleteOptions{})
 		if err != nil {
 			return err
+		}
+	}
+
+	return nil
+}
+
+func cleanupNodeOdigosLabels(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+	nodeSet := make(map[string]struct{})
+
+	// Step 1: Get OSS nodes
+	ossNodes, err := client.CoreV1().Nodes().List(ctx, metav1.ListOptions{
+		LabelSelector: k8sconsts.OdigletOSSInstalledLabel,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to list nodes with %s: %w", k8sconsts.OdigletOSSInstalledLabel, err)
+	}
+	for _, node := range ossNodes.Items {
+		nodeSet[node.Name] = struct{}{}
+	}
+
+	// Step 2: Get Enterprise nodes
+	enterpriseNodes, err := client.CoreV1().Nodes().List(ctx, metav1.ListOptions{
+		LabelSelector: k8sconsts.OdigletEnterpriseInstalledLabel,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to list nodes with %s: %w", k8sconsts.OdigletEnterpriseInstalledLabel, err)
+	}
+	for _, node := range enterpriseNodes.Items {
+		nodeSet[node.Name] = struct{}{}
+	}
+
+	for nodeName := range nodeSet {
+		patchData := map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"labels": map[string]interface{}{
+					// Setting to `nil` removes the labels if exists, otherwise will ignore
+					k8sconsts.OdigletOSSInstalledLabel:        nil,
+					k8sconsts.OdigletEnterpriseInstalledLabel: nil,
+				},
+			},
+		}
+
+		patchBytes, err := json.Marshal(patchData)
+		if err != nil {
+			return fmt.Errorf("failed to marshal patch data: %w", err)
+		}
+
+		_, err = client.CoreV1().Nodes().Patch(ctx, nodeName, types.StrategicMergePatchType, patchBytes, metav1.PatchOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to patch node %s: %w", nodeName, err)
 		}
 	}
 

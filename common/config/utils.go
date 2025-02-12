@@ -97,3 +97,7 @@ func getBooleanConfig(currentValue string, deprecatedValue string) bool {
 	lowerCaseValue := strings.ToLower(currentValue)
 	return lowerCaseValue == "true" || lowerCaseValue == deprecatedValue
 }
+
+func errorMissingKey(key string) error {
+	return fmt.Errorf("key (\"%q\") not specified, destination will not be configured", key)
+}

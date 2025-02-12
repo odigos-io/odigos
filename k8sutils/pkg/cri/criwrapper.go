@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	criapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 )
 
@@ -157,7 +158,7 @@ func (rc *CriClient) GetContainerEnvVarsList(ctx context.Context, envVarKeys []s
 			// If the environment variable originates from the device, it will still be observed in the CRI.
 			// In this case, it should not be set as envFromContainerRuntime.
 			// We can be certain that it is not coming from the manifest, as CRI is only queried when the variable is not found in the manifest.
-			if strings.Contains(value, "/var/odigos") {
+			if strings.Contains(value, k8sconsts.OdigosAgentsDirectory) {
 				continue
 			}
 			result = append(result, odigosv1.EnvVar{Name: key, Value: value})

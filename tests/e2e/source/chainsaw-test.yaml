@@ -94,12 +94,7 @@ spec:
             file: 01-workloads.yaml
         - script:
             timeout: 70s
-            content: |
-              kubectl rollout status deployment -l app=coupon
-              kubectl rollout status deployment -l app=frontend
-              kubectl rollout status deployment -l app=inventory
-              kubectl rollout status deployment -l app=pricing
-              kubectl rollout status deployment -l app=membership
+            content: ./wait_for_rollout.sh
     - name: Generate Traffic
       try:
         - script:
@@ -181,12 +176,7 @@ spec:
       try:
         - script:
             timeout: 70s
-            content: |
-              kubectl rollout status deployment -l app=coupon
-              kubectl rollout status deployment -l app=frontend
-              kubectl rollout status deployment -l app=inventory
-              kubectl rollout status deployment -l app=pricing
-              kubectl rollout status deployment -l app=membership
+            content: ./wait_for_rollout.sh
     - name: Instrument Namespace
       try:
         - apply:
@@ -205,12 +195,7 @@ spec:
             file: ../../common/assert/simple-demo-instrumented.yaml
         - script:
             timeout: 70s
-            content: |
-              kubectl rollout status deployment -l app=coupon
-              kubectl rollout status deployment -l app=frontend
-              kubectl rollout status deployment -l app=inventory
-              kubectl rollout status deployment -l app=pricing
-              kubectl rollout status deployment -l app=membership
+            content: ./wait_for_rollout.sh
     - name: Generate Traffic
       try:
         - script:
@@ -290,12 +275,7 @@ spec:
             file: 04-workloads.yaml
         - script:
             timeout: 70s
-            content: |
-              kubectl rollout status deployment -l app=coupon
-              kubectl rollout status deployment -l app=frontend
-              kubectl rollout status deployment -l app=inventory
-              kubectl rollout status deployment -l app=pricing
-              kubectl rollout status deployment -l app=membership
+            content: ./wait_for_rollout.sh
     - name: Instrument frontend workload specifically
       try:
         - apply:
@@ -312,16 +292,16 @@ spec:
       try:
         - script:
             timeout: 70s
-            content: |
-              kubectl rollout status deployment -l app=coupon
-              kubectl rollout status deployment -l app=frontend
-              kubectl rollout status deployment -l app=inventory
-              kubectl rollout status deployment -l app=pricing
-              kubectl rollout status deployment -l app=membership
+            content: ./wait_for_rollout.sh
     - name: Instrument rest of Namespace
       try:
         - apply:
             file: ../../common/apply/instrument-default-ns.yaml
+    - name: Wait for workloads to roll out new revisions
+      try:
+        - script:
+            timeout: 70s
+            content: ./wait_for_rollout.sh
     - name: Assert Runtime Detected for all workloads
       try:
         - assert:
@@ -347,12 +327,7 @@ spec:
       try:
         - script:
             timeout: 70s
-            content: |
-              kubectl rollout status deployment -l app=coupon
-              kubectl rollout status deployment -l app=frontend
-              kubectl rollout status deployment -l app=inventory
-              kubectl rollout status deployment -l app=pricing
-              kubectl rollout status deployment -l app=membership
+            content: ./wait_for_rollout.sh
     - name: Assert Runtime still Detected for single workload
       try:
         - assert:
@@ -373,12 +348,7 @@ spec:
       try:
         - script:
             timeout: 70s
-            content: |
-              kubectl rollout status deployment -l app=coupon
-              kubectl rollout status deployment -l app=frontend
-              kubectl rollout status deployment -l app=inventory
-              kubectl rollout status deployment -l app=pricing
-              kubectl rollout status deployment -l app=membership
+            content: ./wait_for_rollout.sh
     - name: Assert runtime detected for all workloads except excluded (coupon)
       try:
         - assert:
@@ -403,12 +373,7 @@ spec:
       try:
         - script:
             timeout: 70s
-            content: |
-              kubectl rollout status deployment -l app=coupon
-              kubectl rollout status deployment -l app=frontend
-              kubectl rollout status deployment -l app=inventory
-              kubectl rollout status deployment -l app=pricing
-              kubectl rollout status deployment -l app=membership
+            content: ./wait_for_rollout.sh
     - name: Assert runtime detected for no-longer-excluded workload
       try:
         - assert:
@@ -425,12 +390,7 @@ spec:
       try:
         - script:
             timeout: 70s
-            content: |
-              kubectl rollout status deployment -l app=coupon
-              kubectl rollout status deployment -l app=frontend
-              kubectl rollout status deployment -l app=inventory
-              kubectl rollout status deployment -l app=pricing
-              kubectl rollout status deployment -l app=membership
+            content: ./wait_for_rollout.sh
     - name: Assert runtime detected for all workloads except newly excluded (membership)
       try:
         - assert:
@@ -454,12 +414,7 @@ spec:
       try:
         - script:
             timeout: 70s
-            content: |
-              kubectl rollout status deployment -l app=coupon
-              kubectl rollout status deployment -l app=frontend
-              kubectl rollout status deployment -l app=inventory
-              kubectl rollout status deployment -l app=pricing
-              kubectl rollout status deployment -l app=membership
+            content: ./wait_for_rollout.sh
     - name: Assert runtime detected for no-longer-excluded workload
       try:
         - assert:
@@ -477,12 +432,7 @@ spec:
       try:
         - script:
             timeout: 70s
-            content: |
-              kubectl rollout status deployment -l app=coupon
-              kubectl rollout status deployment -l app=frontend
-              kubectl rollout status deployment -l app=inventory
-              kubectl rollout status deployment -l app=pricing
-              kubectl rollout status deployment -l app=membership
+            content: ./wait_for_rollout.sh
     - name: Assert runtime not detected for re-excluded (membership)
       try:
         - script:
