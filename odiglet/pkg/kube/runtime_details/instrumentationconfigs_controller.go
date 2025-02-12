@@ -100,14 +100,17 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request
 		}
 	}
 
+	if len(selectedPods) == 0 {
+		// this node is not running any pods managed by the workload, so nothing to do
+		return reconcile.Result{}, nil
+	}
+
 	runtimeResults, err := runtimeInspection(ctx, selectedPods, r.CriClient)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	err = persistRuntimeDetailsToInstrumentationConfig(ctx, r.Client, &instrumentationConfig, odigosv1.InstrumentationConfigStatus{
-		RuntimeDetailsByContainer: runtimeResults,
-	})
+	err = persistRuntimeDetailsToInstrumentationConfig(ctx, r.Client, &instrumentationConfig, runtimeResults)
 	if err != nil {
 		return reconcile.Result{}, err
 	}

@@ -56,6 +56,8 @@ export const GET_SOURCES = gql`
           }
           conditions {
             status
+            type
+            reason
             message
             lastTransitionTime
           }
@@ -94,9 +96,11 @@ export const GET_DESTINATIONS = gql`
           }
         }
         conditions {
-          type
           status
+          type
+          reason
           message
+          lastTransitionTime
         }
       }
     }

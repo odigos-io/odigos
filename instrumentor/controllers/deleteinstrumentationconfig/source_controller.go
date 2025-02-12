@@ -115,7 +115,7 @@ func (r *SourceReconciler) syncWorkload(ctx context.Context, source *v1alpha1.So
 		return err
 	}
 
-	instrumented, _, _, err := sourceutils.IsObjectInstrumentedBySource(ctx, r.Client, obj)
+	instrumented, _, err := sourceutils.IsObjectInstrumentedBySource(ctx, r.Client, obj)
 	if err != nil {
 		return err
 	}

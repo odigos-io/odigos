@@ -147,10 +147,6 @@ type DbQueryPayloadCollectionInput struct {
 	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
 }
 
-type DeleteAttribute struct {
-	AttributeName string `json:"attributeName"`
-}
-
 type DeleteAttributeAction struct {
 	ID      string       `json:"id"`
 	Type    string       `json:"type"`
@@ -178,10 +174,32 @@ func (this DeleteAttributeAction) GetSignals() []SignalType {
 	return interfaceSlice
 }
 
+type Destination struct {
+	ID              string                        `json:"id"`
+	Name            string                        `json:"name"`
+	Type            string                        `json:"type"`
+	ExportedSignals *ExportedSignals              `json:"exportedSignals"`
+	Fields          string                        `json:"fields"`
+	DestinationType *DestinationTypesCategoryItem `json:"destinationType"`
+	Conditions      []*Condition                  `json:"conditions,omitempty"`
+}
+
 type DestinationDetails struct {
 	Type      string `json:"type"`
 	URLString string `json:"urlString"`
 	Fields    string `json:"fields"`
+}
+
+type DestinationFieldYamlProperties struct {
+	Name                 string                 `json:"name"`
+	DisplayName          string                 `json:"displayName"`
+	ComponentType        string                 `json:"componentType"`
+	ComponentProperties  string                 `json:"componentProperties"`
+	Secret               bool                   `json:"secret"`
+	InitialValue         string                 `json:"initialValue"`
+	RenderCondition      []string               `json:"renderCondition"`
+	HideFromReadData     []string               `json:"hideFromReadData"`
+	CustomReadDataLabels []*CustomReadDataLabel `json:"customReadDataLabels"`
 }
 
 type DestinationInput struct {
@@ -189,6 +207,21 @@ type DestinationInput struct {
 	Type            string                `json:"type"`
 	ExportedSignals *ExportedSignalsInput `json:"exportedSignals"`
 	Fields          []*FieldInput         `json:"fields"`
+}
+
+type DestinationTypesCategoryItem struct {
+	Type                    string                            `json:"type"`
+	DisplayName             string                            `json:"displayName"`
+	ImageURL                string                            `json:"imageUrl"`
+	SupportedSignals        *SupportedSignals                 `json:"supportedSignals"`
+	TestConnectionSupported bool                              `json:"testConnectionSupported"`
+	Fields                  []*DestinationFieldYamlProperties `json:"fields"`
+}
+
+type DestinationsCategory struct {
+	Name        string                          `json:"name"`
+	Description string                          `json:"description"`
+	Items       []*DestinationTypesCategoryItem `json:"items"`
 }
 
 type EntityProperty struct {
@@ -225,22 +258,16 @@ func (this ErrorSamplerAction) GetSignals() []SignalType {
 	return interfaceSlice
 }
 
-type ExportedSignalsInput struct {
+type ExportedSignals struct {
 	Traces  bool `json:"traces"`
 	Metrics bool `json:"metrics"`
 	Logs    bool `json:"logs"`
 }
 
-type Field struct {
-	Name                 string                 `json:"name"`
-	DisplayName          string                 `json:"displayName"`
-	ComponentType        string                 `json:"componentType"`
-	ComponentProperties  string                 `json:"componentProperties"`
-	Secret               bool                   `json:"secret"`
-	InitialValue         string                 `json:"initialValue"`
-	RenderCondition      []string               `json:"renderCondition"`
-	HideFromReadData     []string               `json:"hideFromReadData"`
-	CustomReadDataLabels []*CustomReadDataLabel `json:"customReadDataLabels"`
+type ExportedSignalsInput struct {
+	Traces  bool `json:"traces"`
+	Metrics bool `json:"metrics"`
+	Logs    bool `json:"logs"`
 }
 
 type FieldInput struct {
@@ -253,8 +280,8 @@ type GetConfigResponse struct {
 	Readonly     bool               `json:"readonly"`
 }
 
-type GetDestinationDetailsResponse struct {
-	Fields []*Field `json:"fields"`
+type GetDestinationCategories struct {
+	Categories []*DestinationsCategory `json:"categories"`
 }
 
 type HTTPPayloadCollection struct {
@@ -334,6 +361,46 @@ type K8sActualSource struct {
 	Conditions        []*Condition       `json:"conditions,omitempty"`
 }
 
+type K8sAnnotationAttribute struct {
+	AnnotationKey string `json:"annotationKey"`
+	AttributeKey  string `json:"attributeKey"`
+}
+
+type K8sAttributes struct {
+	CollectContainerAttributes bool                      `json:"collectContainerAttributes"`
+	CollectWorkloadID          bool                      `json:"collectWorkloadId"`
+	CollectClusterID           bool                      `json:"collectClusterId"`
+	LabelsAttributes           []*K8sLabelAttribute      `json:"labelsAttributes"`
+	AnnotationsAttributes      []*K8sAnnotationAttribute `json:"annotationsAttributes"`
+}
+
+type K8sAttributesAction struct {
+	ID      string         `json:"id"`
+	Type    string         `json:"type"`
+	Name    *string        `json:"name,omitempty"`
+	Notes   *string        `json:"notes,omitempty"`
+	Disable bool           `json:"disable"`
+	Signals []SignalType   `json:"signals"`
+	Details *K8sAttributes `json:"details"`
+}
+
+func (K8sAttributesAction) IsAction()              {}
+func (this K8sAttributesAction) GetID() string     { return this.ID }
+func (this K8sAttributesAction) GetType() string   { return this.Type }
+func (this K8sAttributesAction) GetName() *string  { return this.Name }
+func (this K8sAttributesAction) GetNotes() *string { return this.Notes }
+func (this K8sAttributesAction) GetDisable() bool  { return this.Disable }
+func (this K8sAttributesAction) GetSignals() []SignalType {
+	if this.Signals == nil {
+		return nil
+	}
+	interfaceSlice := make([]SignalType, 0, len(this.Signals))
+	for _, concrete := range this.Signals {
+		interfaceSlice = append(interfaceSlice, concrete)
+	}
+	return interfaceSlice
+}
+
 type K8sDesiredNamespaceInput struct {
 	AutoInstrument *bool `json:"autoInstrument,omitempty"`
 }
@@ -341,6 +408,11 @@ type K8sDesiredNamespaceInput struct {
 type K8sDesiredSourceInput struct {
 	ServiceName    *string `json:"serviceName,omitempty"`
 	AutoInstrument *bool   `json:"autoInstrument,omitempty"`
+}
+
+type K8sLabelAttribute struct {
+	LabelKey     string `json:"labelKey"`
+	AttributeKey string `json:"attributeKey"`
 }
 
 type K8sNamespaceID struct {
@@ -404,6 +476,10 @@ type NodeCollectorAnalyze struct {
 	CurrentNodes   *EntityProperty `json:"currentNodes,omitempty"`
 	UpdatedNodes   *EntityProperty `json:"updatedNodes,omitempty"`
 	AvailableNodes *EntityProperty `json:"availableNodes,omitempty"`
+}
+
+type ObservabilitySignalSupport struct {
+	Supported bool `json:"supported"`
 }
 
 type OdigosAnalyze struct {
@@ -618,6 +694,12 @@ type SourceContainer struct {
 	Instrumented           bool    `json:"instrumented"`
 	InstrumentationMessage string  `json:"instrumentationMessage"`
 	OtelDistroName         *string `json:"otelDistroName,omitempty"`
+}
+
+type SupportedSignals struct {
+	Traces  *ObservabilitySignalSupport `json:"traces"`
+	Metrics *ObservabilitySignalSupport `json:"metrics"`
+	Logs    *ObservabilitySignalSupport `json:"logs"`
 }
 
 type TestConnectionResponse struct {

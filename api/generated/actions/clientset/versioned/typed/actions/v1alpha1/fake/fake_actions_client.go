@@ -39,6 +39,10 @@ func (c *FakeActionsV1alpha1) ErrorSamplers(namespace string) v1alpha1.ErrorSamp
 	return newFakeErrorSamplers(c, namespace)
 }
 
+func (c *FakeActionsV1alpha1) K8sAttributesResolvers(namespace string) v1alpha1.K8sAttributesResolverInterface {
+	return newFakeK8sAttributesResolvers(c, namespace)
+}
+
 func (c *FakeActionsV1alpha1) LatencySamplers(namespace string) v1alpha1.LatencySamplerInterface {
 	return newFakeLatencySamplers(c, namespace)
 }
