@@ -22,7 +22,7 @@ linters:
     - gocyclo
     - gofmt
     - goimports
-#    - revive
+    # - revive
     - gosec
     - gosimple
     - govet
