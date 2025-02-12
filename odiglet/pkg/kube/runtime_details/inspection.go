@@ -41,6 +41,14 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 				continue
 			}
 
+			defer func() {
+				for _, proc := range processes {
+					if proc.Exefile != nil {
+						proc.Exefile.Close()
+					}
+				}
+			}()
+
 			programLanguageDetails := common.ProgramLanguageDetails{Language: common.UnknownProgrammingLanguage}
 			var inspectProc *procdiscovery.Details
 			var detectErr error
@@ -52,7 +60,6 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 					inspectProc = &proc
 					break
 				}
-				defer proc.Exefile.Close()
 			}
 
 			envs := make([]odigosv1.EnvVar, 0)
