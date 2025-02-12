@@ -1,0 +1,98 @@
+---
+title: 'AWS CloudWatch'
+description: 'Configuring the AWS CloudWatch backend (Managed)'
+sidebarTitle: 'AWS CloudWatch'
+icon: 'signal-stream'
+---
+
+### Getting Started
+
+<img src='https://d15jtxgb40qetw.cloudfront.net/awscloudwatch.svg' alt='cloudwatch' width="100" height="100" className="not-prose" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g:
+    [🔗 website](https://odigos.io)
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+**Creating Account**<br />
+Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+**Obtaining Access Token**<br />
+Go to **⚙️ > Access Tokens** and click **Create New**
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ✅ Metrics
+  ✅ Logs
+</Accordion>
+
+- **AWS_CLOUDWATCH_TRACES_ENDPOINT** `string` : Traces Endpoint.
+  - This field is optional
+- **AWS_CLOUDWATCH_METRICS_ENDPOINT** `string` : Metrics Endpoint.
+  - This field is optional
+- **AWS_CLOUDWATCH_LOGS_ENDPOINT** `string` : Logs Endpoint.
+  - This field is optional
+
+<Warning>
+  1. For ingesting traces, metrics, or logs, ensure that you have the necessary AWS credentials and permissions set up in your cluster.
+  2. For traces, ensure that `Transaction Search` is enabled in your CloudWatch settings.
+</Warning>
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `AWS CloudWatch` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `cloudwatch.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: cloudwatch-example
+      namespace: odigos-system
+    spec:
+      data: {}
+      destinationName: cloudwatch
+      signals:
+      - TRACES
+      - METRICS
+      - LOGS
+      type: cloudwatch
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f cloudwatch.yaml
+    ```
+  </Step>
+</Steps>
