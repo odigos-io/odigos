@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	INSTANA_HOST = "INSTANA_HOST"
+	INSTANA_ENDPOINT = "INSTANA_ENDPOINT"
 )
 
 type Instana struct{}
@@ -19,54 +19,67 @@ func (m *Instana) DestType() common.DestinationType {
 func (m *Instana) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	config := dest.GetConfig()
 	// To make sure that the exporter and pipeline names are unique, we'll need to define a unique ID
-	uniqueUri := "kafka-" + dest.GetID()
+	uniqueUri := "instana-" + dest.GetID()
 
-	host, exists := config[INSTANA_HOST]
+	endpoint, exists := config[INSTANA_ENDPOINT]
 	if !exists {
-		// return nil, errorMissingKey(INSTANA_HOST)
-		host = ""
+		return nil, errorMissingKey(INSTANA_ENDPOINT)
+	}
+
+	endpoint, err := parseOtlpGrpcUrl(endpoint, true)
+	if err != nil {
+		return nil, err
 	}
 
 	// Modify the exporter here
-	exporterName := "kafka/" + uniqueUri
+	exporterName := "otlp/" + uniqueUri
 	exporterConfig := GenericMap{
-		"endpoint": host,
+		"endpoint": endpoint,
 		"headers": GenericMap{
-			"Authorization": "apiToken ${INSTANA_API_TOKEN}",
+			"x-instana-key": "${INSTANA_AGENT_KEY}",
+		},
+	}
+
+	processorName := "resource/" + uniqueUri
+	processorConfig := GenericMap{
+		"attributes": []GenericMap{
+			{
+				"key":            "host.id",
+				"from_attribute": "k8s.node.name",
+				"action":         "insert",
+			},
 		},
 	}
 
 	currentConfig.Exporters[exporterName] = exporterConfig
+	currentConfig.Processors[processorName] = processorConfig
 
 	// Modify the pipelines here
 	var pipelineNames []string
 
 	if isTracingEnabled(dest) {
-		// "https://<INSTANA_ZONE>.instana.io/api/otel"
-
 		pipeName := "traces/" + uniqueUri
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
-			Exporters: []string{exporterName},
+			Exporters:  []string{exporterName},
+			Processors: []string{processorName},
 		}
 		pipelineNames = append(pipelineNames, pipeName)
 	}
 
 	if isMetricsEnabled(dest) {
-		// https://<INSTANA_ZONE>.instana.io/api/prom/push
-
 		pipeName := "metrics/" + uniqueUri
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
-			Exporters: []string{exporterName},
+			Exporters:  []string{exporterName},
+			Processors: []string{processorName},
 		}
 		pipelineNames = append(pipelineNames, pipeName)
 	}
 
 	if isLoggingEnabled(dest) {
-		// https://<INSTANA_ZONE>.instana.io/api/logs
-
 		pipeName := "logs/" + uniqueUri
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
-			Exporters: []string{exporterName},
+			Exporters:  []string{exporterName},
+			Processors: []string{processorName},
 		}
 		pipelineNames = append(pipelineNames, pipeName)
 	}

@@ -141,7 +141,6 @@ Now that our new vendor can be persisted/loaded in the Kubernetes data store, we
     package config
 
     import (
-      "errors"
       "fmt"
 
       "github.com/odigos-io/odigos/common"
@@ -168,7 +167,7 @@ Now that our new vendor can be persisted/loaded in the Kubernetes data store, we
       region, exists := config[regionKey]
       if !exists {
         region = "us"
-        return errors.New("Region (\"MYDEST_REGION\") not specified, MyDest will not be configured")
+        return errorMissingKey(regionKey)
       }
 
       endpoint, exists := config[urlKey]
@@ -189,11 +188,14 @@ Now that our new vendor can be persisted/loaded in the Kubernetes data store, we
       currentConfig.Exporters[exporterName] = exporterConfig
 
       // Modify the pipelines here
+      var pipelineNames []string
+
       if isTracingEnabled(dest) {
         pipeName := "traces/" + uniqueUri
         currentConfig.Service.Pipelines[pipeName] = Pipeline{
           Exporters: []string{exporterName},
         }
+        pipelineNames = append(pipelineNames, pipeName)
       }
 
       if isMetricsEnabled(dest) {
@@ -201,6 +203,7 @@ Now that our new vendor can be persisted/loaded in the Kubernetes data store, we
         currentConfig.Service.Pipelines[pipeName] = Pipeline{
           Exporters: []string{exporterName},
         }
+        pipelineNames = append(pipelineNames, pipeName)
       }
 
       if isLoggingEnabled(dest) {
@@ -208,9 +211,10 @@ Now that our new vendor can be persisted/loaded in the Kubernetes data store, we
         currentConfig.Service.Pipelines[pipeName] = Pipeline{
           Exporters: []string{exporterName},
         }
+        pipelineNames = append(pipelineNames, pipeName)
       }
 
-      return nil
+      return pipelineNames, nil
     }
     ```
   </Step>
