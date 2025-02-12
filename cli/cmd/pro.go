@@ -11,7 +11,6 @@ import (
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
-	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 	"github.com/spf13/cobra"
 )
@@ -58,7 +57,7 @@ odigos pro --onprem-token ${ODIGOS_TOKEN}
 }
 
 func createTokenPayload(onpremToken string) (string, error) {
-	tokenPayload := common.TokenPayload{OnpremToken: onpremToken}
+	tokenPayload := pro.TokenPayload{OnpremToken: onpremToken}
 	jsonBytes, err := json.Marshal(tokenPayload)
 	if err != nil {
 		return "", err
