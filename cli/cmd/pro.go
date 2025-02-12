@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -54,15 +56,40 @@ odigos pro --onprem-token ${ODIGOS_TOKEN}
 `,
 }
 
-func executeRemoteUpdateToken(ctx context.Context, client *kube.Client, namespace string, onPremToken string) error {
-	uiSvcProxyEndpoint := fmt.Sprintf("/api/v1/namespaces/%s/services/%s:%d/proxy/api/token/update/%s", namespace, k8sconsts.OdigosUiServiceName, k8sconsts.OdigosUiServicePort, onPremToken)
-	request := client.Clientset.RESTClient().Get().AbsPath(uiSvcProxyEndpoint).Do(ctx)
-	_, err := request.Raw()
+func createTokenPayload(onpremToken string) (string, error) {
+	tokenPayload := pro.TokenPayload{OnpremToken: onpremToken}
+	jsonBytes, err := json.Marshal(tokenPayload)
 	if err != nil {
-		return err
-	} else {
-		return nil
+		return "", err
 	}
+	return string(jsonBytes), nil
+}
+
+func executeRemoteUpdateToken(ctx context.Context, client *kube.Client, namespace string, onPremToken string) error {
+	uiSvcProxyEndpoint := fmt.Sprintf(
+		"/api/v1/namespaces/%s/services/%s:%d/proxy/api/token/update",
+		namespace,
+		k8sconsts.OdigosUiServiceName,
+		k8sconsts.OdigosUiServicePort,
+	)
+
+	tokenPayload, err := createTokenPayload(onPremToken)
+	if err != nil {
+		return fmt.Errorf("failed to create token payload: %v", err)
+	}
+	body := bytes.NewBuffer([]byte(tokenPayload))
+
+	request := client.Clientset.RESTClient().Post().
+		AbsPath(uiSvcProxyEndpoint).
+		Body(body).
+		SetHeader("Content-Type", "application/json").
+		Do(ctx)
+
+	if err := request.Error(); err != nil {
+		return fmt.Errorf("failed to update token: %v", err)
+	}
+
+	return nil
 }
 
 func init() {

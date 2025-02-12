@@ -42,6 +42,7 @@ var availableConfigers = []Configer{
 	&HyperDX{},
 	&Instana{},
 	&Jaeger{},
+	&Kafka{},
 	&KloudMate{},
 	&Last9{},
 	&Lightstep{},
