@@ -1,7 +1,7 @@
 package k8sconsts
 
 const (
-	UIImage              = "registry.odigos.io/odigos-ui"
+	UIImage              = "odigos-ui"
 	UIImageUBI9          = "odigos-ui-ubi9"
 	UIServiceName        = "ui"
 	UIDeploymentName     = "odigos-ui"

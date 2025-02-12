@@ -3,7 +3,7 @@ package k8sconsts
 const (
 	OdigosCloudProxyVersion           = "v0.11.0"
 	KeyvalProxyServiceName            = "odigos-cloud-k8s"
-	KeyvalProxyImage                  = "registry.odigos.io/odigos-proxy-k8s"
+	KeyvalProxyImage                  = "odigos-proxy-k8s"
 	KeyvalProxyAppName                = "odigos-cloud-proxy"
 	KeyvalProxyDeploymentName         = "odigos-cloud-proxy"
 	KeyvalProxyServiceAccountName     = "odigos-cloud-proxy"

@@ -272,7 +272,7 @@ func init() {
 	installCmd.Flags().StringVar(&odigletImage, "odiglet-image", "", "odiglet container image name")
 	installCmd.Flags().StringVar(&instrumentorImage, "instrumentor-image", k8sconsts.InstrumentorImageName, "instrumentor container image name")
 	installCmd.Flags().StringVar(&autoScalerImage, "autoscaler-image", k8sconsts.AutoScalerImageName, "autoscaler container image name")
-	installCmd.Flags().StringVar(&imagePrefix, "image-prefix", "", "prefix for all container images. used when your cluster doesn't have access to docker hub")
+	installCmd.Flags().StringVar(&imagePrefix, "image-prefix", "registry.odigos.io", "prefix for all container images.")
 	installCmd.Flags().BoolVar(&psp, "psp", false, "enable pod security policy")
 	installCmd.Flags().StringSliceVar(&userInputIgnoredNamespaces, "ignore-namespace", k8sconsts.DefaultIgnoredNamespaces, "namespaces not to show in odigos ui")
 	installCmd.Flags().StringSliceVar(&userInputIgnoredContainers, "ignore-container", k8sconsts.DefaultIgnoredContainers, "container names to exclude from instrumentation (useful for sidecar container)")

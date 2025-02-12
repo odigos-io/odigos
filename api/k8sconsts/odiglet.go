@@ -9,8 +9,8 @@ const (
 	OdigletClusterRoleName        = OdigletDaemonSetName
 	OdigletClusterRoleBindingName = OdigletDaemonSetName
 	OdigletContainerName          = "odiglet"
-	OdigletImageName              = "registry.odigos.io/odigos-odiglet"
-	OdigletEnterpriseImageName    = "registry.odigos.io/odigos-enterprise-odiglet"
+	OdigletImageName              = "odigos-odiglet"
+	OdigletEnterpriseImageName    = "odigos-enterprise-odiglet"
 	OdigletEnterpriseImageUBI9    = "odigos-enterprise-odiglet-ubi9"
 	OdigletImageUBI9              = "odigos-odiglet-ubi9"
 	// Used to indicate that the odiglet is installed on a node.
