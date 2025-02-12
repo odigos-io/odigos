@@ -10,11 +10,11 @@ FROM eclipse-temurin:21
 # Copy the built application from the Maven build stage
 COPY --from=build /home/app/target/*.jar /app/app.jar
 
-# Rename Java binary to remove "java" from the execution command
-RUN mv /opt/java/openjdk/bin/java /opt/java/openjdk/bin/app_runner
+# Move and rename Java binary
+RUN mv /opt/java/openjdk/bin/java /usr/local/bin/app_runner
 
 # Set user for security
 USER 15000
 
-# Run the application without "java" keyword
-ENTRYPOINT ["/opt/java/openjdk/bin/app_runner", "-jar", "/app/app.jar"]
+# Run the application with the new binary name
+ENTRYPOINT ["/usr/local/bin/app_runner", "-jar", "/app/app.jar"]
