@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"golang.org/x/sync/errgroup"
 
@@ -17,6 +18,10 @@ var (
 	errFailedToGetDetails       = errors.New("failed to get details for process event")
 	errFailedToGetDistribution  = errors.New("failed to get otel distribution for details")
 	errFailedToGetConfigGroup   = errors.New("failed to get config group")
+)
+
+const (
+	shutdownCleanupTimeout = 5 * time.Second
 )
 
 // ConfigUpdate is used to send a configuration update request to the manager.
@@ -139,27 +144,39 @@ func NewManager[processDetails ProcessDetails, configGroup ConfigGroup](options 
 }
 
 func (m *manager[ProcessDetails, ConfigGroup]) runEventLoop(ctx context.Context) {
-	defer func () {
+	// cleanup all instrumentations on shutdown
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), shutdownCleanupTimeout)
+		defer cancel()
+
 		for pid, details := range m.detailsByPid {
-			if details.inst == nil {
-				continue
+			select {
+			case <-ctx.Done():
+				m.logger.Error(ctx.Err(), "failed to cleanup instrumentation resources", "pid", pid)
+				return
+			default:
+				if details.inst == nil {
+					continue
+				}
+				if err := details.inst.Close(ctx); err != nil {
+					m.logger.Error(err, "failed to close instrumentation", "pid", pid)
+				}
+				if err := m.handler.Reporter.OnExit(ctx, pid, details.pd); err != nil {
+					m.logger.Error(err, "failed to report instrumentation exit")
+				}
 			}
-			err := details.inst.Close(ctx)
-			if err != nil {
-				m.logger.Error(err, "failed to close instrumentation", "pid", pid)
-			}
-			// probably shouldn't remove instrumentation instance here
-			// as this flow is happening when Odiglet is shutting down
 		}
+
 		m.detailsByPid = nil
 		m.detailsByWorkload = nil
-	} ()
+		m.logger.Info("all instrumentations cleaned up")
+	}()
 
 	// main event loop for handling instrumentations
 	for {
 		select {
 		case <-ctx.Done():
-			m.logger.Info("context canceled, stopping eBPF instrumentation manager")
+			m.logger.Info("stopping eBPF instrumentation manager")
 			return
 		case e, ok := <-m.procEvents:
 			if !ok {
@@ -194,7 +211,7 @@ func (m *manager[ProcessDetails, ConfigGroup]) handleProcessExecEventError(err e
 
 	// we might fail to get the distribution for the process details,
 	// in cases where we detected a certain language for a container, but multiple processes are running in it,
-	// only one or some of them are in the language we detected. 
+	// only one or some of them are in the language we detected.
 	if errors.Is(err, errFailedToGetDistribution) {
 		m.logger.Info("failed to get otel distribution for process", "error", err)
 		return
