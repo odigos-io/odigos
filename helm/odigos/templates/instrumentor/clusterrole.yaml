@@ -20,6 +20,14 @@ rules:
       - watch
       - get
   - apiGroups:
+      - ''
+    resources:
+      - pods
+    verbs:
+      - list
+      - watch
+      - get
+  - apiGroups:
       - apps
     resources:
       - daemonsets

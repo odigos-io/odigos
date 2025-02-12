@@ -4,21 +4,22 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/gob"
+	"encoding/hex"
 	"slices"
 	"strings"
 
-	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 )
 
-func hashForContainersConfig(containersConfig []odigosv1alpha1.ContainerAgentConfig) ([]byte, error) {
+func HashForContainersConfig(containersConfig []odigosv1.ContainerAgentConfig) (string, error) {
 	if len(containersConfig) == 0 {
-		return []byte{}, nil
+		return "", nil
 	}
 
 	// sort the entries by container name
 	// then hash the body of each entry
 	// this is required to ensure that the hash is consistent
-	slices.SortFunc(containersConfig, func(i, j odigosv1alpha1.ContainerAgentConfig) int {
+	slices.SortFunc(containersConfig, func(i, j odigosv1.ContainerAgentConfig) int {
 		return strings.Compare(i.ContainerName, j.ContainerName)
 	})
 
@@ -42,11 +43,15 @@ func hashForContainersConfig(containersConfig []odigosv1alpha1.ContainerAgentCon
 		}
 		err = enc.Encode(configEntry)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 		hash.Write(buf.Bytes())
 		buf.Reset()
 	}
 
-	return hash.Sum(nil), nil
+	hashBytes := hash.Sum(nil)
+	// limit the hash to 16 characters, as it's written into k8s resources and annotations
+	shortHash := hashBytes[:8]
+	hashAsHex := hex.EncodeToString(shortHash)
+	return hashAsHex, nil
 }
