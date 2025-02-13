@@ -60,3 +60,7 @@ func odigletRolloutTrigger(ctx context.Context, client kubernetes.Interface, nam
 	}
 	return nil
 }
+
+type TokenPayload struct {
+	OnpremToken string `json:"token"`
+}
