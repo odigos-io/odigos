@@ -8,29 +8,206 @@ spec:
   image: awscloudwatch.svg
   signals:
     traces:
-      supported: true
+      supported: false
     metrics:
-      supported: true
+      supported: false
     logs:
       supported: true
   fields:
-    - name: AWS_CLOUDWATCH_TRACES_ENDPOINT
-      displayName: Traces Endpoint
+    - name: AWS_CLOUDWATCH_LOG_GROUP_NAME
+      displayName: Log Group Name
+      componentType: input
+      componentProps:
+        required: true
+        tooltip: 'The group name of the CloudWatch Logs. If it does not exist it will be created automatically.'
+    - name: AWS_CLOUDWATCH_LOG_STREAM_NAME
+      displayName: Log Stream Name
+      componentType: input
+      componentProps:
+        required: true
+        tooltip: 'The stream name of the CloudWatch Logs. If it does not exist it will be created automatically.'
+    - name: AWS_CLOUDWATCH_REGION
+      displayName: Region
+      componentType: dropdown
+      componentProps:
+        required: false
+        tooltip: 'The AWS region where the log stream is in. Region must be specified if it is not already set in the default credential chain.'
+        values:
+          - af-south-1
+          - ap-east-1
+          - ap-northeast-1
+          - ap-northeast-2
+          - ap-northeast-3
+          - ap-south-1
+          - ap-south-2
+          - ap-southeast-1
+          - ap-southeast-2
+          - ap-southeast-3
+          - ap-southeast-4
+          - ap-southeast-5
+          - ap-southeast-7
+          - ca-central-1
+          - ca-west-1
+          - eu-central-1
+          - eu-central-2
+          - eu-north-1
+          - eu-south-1
+          - eu-south-2
+          - eu-west-1
+          - eu-west-2
+          - eu-west-3
+          - il-central-1
+          - me-central-1
+          - me-south-1
+          - mx-central-1
+          - sa-east-1
+          - us-east-1
+          - us-east-2
+          - us-gov-east-1
+          - us-gov-west-1
+          - us-west-1
+          - us-west-2
+    - name: AWS_CLOUDWATCH_ENDPOINT
+      displayName: Endpoint
+      componentType: dropdown
+      componentProps:
+        required: false
+        tooltip: 'The CloudWatch Logs service endpoint which the requests are forwarded to.'
+        values:
+          - logs.af-south-1.amazonaws.com
+          - logs.af-south-1.api.aws
+          - logs.ap-east-1.amazonaws.com
+          - logs.ap-east-1.api.aws
+          - logs.ap-northeast-1.amazonaws.com
+          - logs.ap-northeast-1.api.aws
+          - logs.ap-northeast-2.amazonaws.com
+          - logs.ap-northeast-2.api.aws
+          - logs.ap-northeast-3.amazonaws.com
+          - logs.ap-northeast-3.api.aws
+          - logs.ap-south-1.amazonaws.com
+          - logs.ap-south-1.api.aws
+          - logs.ap-south-2.amazonaws.com
+          - logs.ap-south-2.api.aws
+          - logs.ap-southeast-1.amazonaws.com
+          - logs.ap-southeast-1.api.aws
+          - logs.ap-southeast-2.amazonaws.com
+          - logs.ap-southeast-2.api.aws
+          - logs.ap-southeast-3.amazonaws.com
+          - logs.ap-southeast-3.api.aws
+          - logs.ap-southeast-4.amazonaws.com
+          - logs.ap-southeast-4.api.aws
+          - logs.ap-southeast-5.amazonaws.com
+          - logs.ap-southeast-5.api.aws
+          - logs.ap-southeast-7.amazonaws.com
+          - logs.ap-southeast-7.api.aws
+          - logs.ca-central-1.amazonaws.com
+          - logs.ca-central-1.api.aws
+          - logs-fips.ca-central-1.amazonaws.com
+          - logs.ca-west-1.amazonaws.com
+          - logs.ca-west-1.api.aws
+          - logs-fips.ca-west-1.amazonaws.com
+          - logs.eu-central-1.amazonaws.com
+          - logs.eu-central-1.api.aws
+          - logs.eu-central-2.amazonaws.com
+          - logs.eu-central-2.api.aws
+          - logs.eu-north-1.amazonaws.com
+          - logs.eu-north-1.api.aws
+          - logs.eu-south-1.amazonaws.com
+          - logs.eu-south-1.api.aws
+          - logs.eu-south-2.amazonaws.com
+          - logs.eu-south-2.api.aws
+          - logs.eu-west-1.amazonaws.com
+          - logs.eu-west-1.api.aws
+          - logs.eu-west-2.amazonaws.com
+          - logs.eu-west-2.api.aws
+          - logs.eu-west-3.amazonaws.com
+          - logs.eu-west-3.api.aws
+          - logs.il-central-1.amazonaws.com
+          - logs.il-central-1.api.aws
+          - logs.me-central-1.amazonaws.com
+          - logs.me-central-1.api.aws
+          - logs.me-south-1.amazonaws.com
+          - logs.me-south-1.api.aws
+          - logs.mx-central-1.amazonaws.com
+          - logs.mx-central-1.api.aws
+          - logs.sa-east-1.amazonaws.com
+          - logs.sa-east-1.api.aws
+          - logs.us-east-1.amazonaws.com
+          - logs-fips.us-east-1.amazonaws.com
+          - logs.us-east-1.api.aws
+          - logs.us-east-2.amazonaws.com
+          - logs.us-east-2.api.aws
+          - logs-fips.us-east-2.amazonaws.com
+          - logs.us-gov-east-1.amazonaws.com
+          - logs.us-gov-west-1.amazonaws.com
+          - logs.us-west-1.amazonaws.com
+          - logs.us-west-1.api.aws
+          - logs-fips.us-west-1.amazonaws.com
+          - logs.us-west-2.amazonaws.com
+          - logs-fips.us-west-2.amazonaws.com
+          - logs.us-west-2.api.aws
+    - name: AWS_CLOUDWATCH_LOG_RETENTION
+      displayName: Log Retention
+      componentType: dropdown
+      componentProps:
+        required: false
+        tooltip: 'LogRetention is the option to set the log retention policy for only newly created CloudWatch Log Groups. The value is in days, 0 = Never Expire.'
+        values:
+          - '0'
+          - '1'
+          - '3'
+          - '5'
+          - '7'
+          - '14'
+          - '30'
+          - '60'
+          - '90'
+          - '120'
+          - '150'
+          - '180'
+          - '365'
+          - '400'
+          - '545'
+          - '731'
+          - '1827'
+          - '2192'
+          - '2557'
+          - '2922'
+          - '3288'
+          - '3653'
+      initialValue: '0'
+    - name: AWS_CLOUDWATCH_TAGS
+      displayName: Tags
+      componentType: keyValuePairs
+      componentProps:
+        required: false
+        tooltip: 'Tags is the option to set tags for the CloudWatch Log Group. If specified, please add at most 50 tags. Keys must be between 1-128 characters and follow the pattern: (alphanumerics, whitespace, and _.:/=+-!). Values must be between 1-256 characters and follow the pattern: (alphanumerics, whitespace, and _.:/=+-!).'
+    - name: AWS_CLOUDWATCH_RAW_LOG
+      displayName: Raw Log
+      componentType: checkbox
+      componentProps:
+        required: false
+        tooltip: 'If set to true, only the log message will be exported to CloudWatch Logs. This needs to be set to true for EMF logs.'
+      initialValue: false
+    - name: AWS_CLOUDWATCH_SENDING_QUEUE_ENABLED
+      displayName: Enable Sending Queue
+      componentType: checkbox
+      componentProps:
+        required: false
+      initialValue: true
+    - name: AWS_CLOUDWATCH_SENDING_QUEUE_NUM_CONSUMERS
+      displayName: Number of Consumers
       componentType: input
       componentProps:
         required: false
-    - name: AWS_CLOUDWATCH_METRICS_ENDPOINT
-      displayName: Metrics Endpoint
+        tooltip: 'Number of consumers that will consume from the sending queue. This parameter controls how many consumers will consume from the sending queue in parallel; ignored if `enabled` is `false`.'
+      renderCondition: ['AWS_CLOUDWATCH_SENDING_QUEUE_ENABLED', '==', 'true']
+      hideFromReadData: ['AWS_CLOUDWATCH_SENDING_QUEUE_ENABLED', '==', 'false']
+    - name: AWS_CLOUDWATCH_SENDING_QUEUE_SIZE
+      displayName: Queue Size
       componentType: input
       componentProps:
         required: false
-    - name: AWS_CLOUDWATCH_LOGS_ENDPOINT
-      displayName: Logs Endpoint
-      componentType: input
-      componentProps:
-        required: false
-  note:
-    type: Warning
-    content: |
-      1. For ingesting traces, metrics, or logs, ensure that you have the necessary AWS credentials and permissions set up in your cluster.
-      2. For traces, ensure that `Transaction Search` is enabled in your CloudWatch settings.
+        tooltip: 'Maximum number of batches kept in memory before dropping; ignored if `enabled` is `false`.'
+      renderCondition: ['AWS_CLOUDWATCH_SENDING_QUEUE_ENABLED', '==', 'true']
+      hideFromReadData: ['AWS_CLOUDWATCH_SENDING_QUEUE_ENABLED', '==', 'false']

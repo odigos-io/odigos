@@ -1,19 +1,29 @@
 package config
 
 import (
+	"encoding/json"
+	"errors"
+
 	"github.com/odigos-io/odigos/common"
 )
 
 const (
-	AWS_CLOUDWATCH_TRACES_ENDPOINT  = "AWS_CLOUDWATCH_TRACES_ENDPOINT"
-	AWS_CLOUDWATCH_METRICS_ENDPOINT = "AWS_CLOUDWATCH_METRICS_ENDPOINT"
-	AWS_CLOUDWATCH_LOGS_ENDPOINT    = "AWS_CLOUDWATCH_LOGS_ENDPOINT"
+	AWS_CLOUDWATCH_LOG_GROUP_NAME              = "AWS_CLOUDWATCH_LOG_GROUP_NAME"
+	AWS_CLOUDWATCH_LOG_STREAM_NAME             = "AWS_CLOUDWATCH_LOG_STREAM_NAME"
+	AWS_CLOUDWATCH_REGION                      = "AWS_CLOUDWATCH_REGION"
+	AWS_CLOUDWATCH_ENDPOINT                    = "AWS_CLOUDWATCH_ENDPOINT"
+	AWS_CLOUDWATCH_LOG_RETENTION               = "AWS_CLOUDWATCH_LOG_RETENTION"
+	AWS_CLOUDWATCH_TAGS                        = "AWS_CLOUDWATCH_TAGS"
+	AWS_CLOUDWATCH_RAW_LOG                     = "AWS_CLOUDWATCH_RAW_LOG"
+	AWS_CLOUDWATCH_SENDING_QUEUE_ENABLED       = "AWS_CLOUDWATCH_SENDING_QUEUE_ENABLED"
+	AWS_CLOUDWATCH_SENDING_QUEUE_NUM_CONSUMERS = "AWS_CLOUDWATCH_SENDING_QUEUE_NUM_CONSUMERS"
+	AWS_CLOUDWATCH_SENDING_QUEUE_SIZE          = "AWS_CLOUDWATCH_SENDING_QUEUE_SIZE"
 )
 
 type AWSCloudWatch struct{}
 
 func (m *AWSCloudWatch) DestType() common.DestinationType {
-	return common.InstanaDestinationType
+	return common.AWSCloudWatchDestinationType
 }
 
 func (m *AWSCloudWatch) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
@@ -21,70 +31,84 @@ func (m *AWSCloudWatch) ModifyConfig(dest ExporterConfigurer, currentConfig *Con
 	uniqueUri := "awscloudwatch-" + dest.GetID()
 	var pipelineNames []string
 
-	if isTracingEnabled(dest) {
-		endpoint, exists := config[AWS_CLOUDWATCH_TRACES_ENDPOINT]
-		if !exists {
-			return nil, errorMissingKey(AWS_CLOUDWATCH_TRACES_ENDPOINT)
-		}
-
-		endpoint, err := parseOtlpHttpEndpoint(endpoint)
-		if err != nil {
-			return nil, err
-		}
-
-		exporterName := "otlphttp/" + uniqueUri
-		currentConfig.Exporters[exporterName] = GenericMap{
-			"endpoint": endpoint,
-		}
-
-		pipeName := "traces/" + uniqueUri
-		currentConfig.Service.Pipelines[pipeName] = Pipeline{
-			Exporters: []string{exporterName},
-		}
-
-		pipelineNames = append(pipelineNames, pipeName)
+	logGroupName, exists := config[AWS_CLOUDWATCH_LOG_GROUP_NAME]
+	if !exists {
+		return nil, errorMissingKey(AWS_CLOUDWATCH_LOG_GROUP_NAME)
 	}
 
-	if isMetricsEnabled(dest) {
-		endpoint, exists := config[AWS_CLOUDWATCH_METRICS_ENDPOINT]
-		if !exists {
-			return nil, errorMissingKey(AWS_CLOUDWATCH_METRICS_ENDPOINT)
-		}
-
-		endpoint, err := parseOtlpHttpEndpoint(endpoint)
-		if err != nil {
-			return nil, err
-		}
-
-		exporterName := "otlphttp/" + uniqueUri
-		currentConfig.Exporters[exporterName] = GenericMap{
-			"endpoint": endpoint,
-		}
-
-		pipeName := "metrics/" + uniqueUri
-		currentConfig.Service.Pipelines[pipeName] = Pipeline{
-			Exporters: []string{exporterName},
-		}
-
-		pipelineNames = append(pipelineNames, pipeName)
+	logStreamName, exists := config[AWS_CLOUDWATCH_LOG_STREAM_NAME]
+	if !exists {
+		return nil, errorMissingKey(AWS_CLOUDWATCH_LOG_STREAM_NAME)
 	}
+
+	exporterName := "awscloudwatchlogs/" + uniqueUri
+	exporterConfig := GenericMap{
+		"log_group_name":  logGroupName,
+		"log_stream_name": logStreamName,
+	}
+
+	region, exists := config[AWS_CLOUDWATCH_REGION]
+	if exists {
+		exporterConfig["region"] = region
+	}
+
+	endpoint, exists := config[AWS_CLOUDWATCH_ENDPOINT]
+	if exists {
+		exporterConfig["endpoint"] = endpoint
+	}
+
+	logRetention, exists := config[AWS_CLOUDWATCH_LOG_RETENTION]
+	if exists {
+		exporterConfig["log_retention"] = parseInt(logRetention)
+	}
+
+	tags, exists := config[AWS_CLOUDWATCH_TAGS]
+	if exists {
+		var tagList []struct {
+			Key   string `json:"key"`
+			Value string `json:"value"`
+		}
+
+		err := json.Unmarshal([]byte(tags), &tagList)
+		if err != nil {
+			return nil, errors.Join(err, errors.New("failed to parse tags"))
+		}
+
+		mappedTags := map[string]string{}
+		for _, tag := range tagList {
+			mappedTags[tag.Key] = tag.Value
+		}
+
+		exporterConfig["tags"] = mappedTags
+	}
+
+	rawLog, exists := config[AWS_CLOUDWATCH_RAW_LOG]
+	if exists {
+		exporterConfig["raw_log"] = parseBool(rawLog)
+	}
+
+	sendingQueueEnabled, exists := config[AWS_CLOUDWATCH_SENDING_QUEUE_ENABLED]
+	if exists {
+		sendingQueue := GenericMap{
+			"enabled": parseBool(sendingQueueEnabled),
+		}
+
+		sendingQueueNumConsumers, exists := config[AWS_CLOUDWATCH_SENDING_QUEUE_NUM_CONSUMERS]
+		if exists {
+			sendingQueue["num_consumers"] = parseInt(sendingQueueNumConsumers)
+		}
+
+		sendingQueueSize, exists := config[AWS_CLOUDWATCH_SENDING_QUEUE_SIZE]
+		if exists {
+			sendingQueue["queue_size"] = parseInt(sendingQueueSize)
+		}
+
+		exporterConfig["sending_queue"] = sendingQueue
+	}
+
+	currentConfig.Exporters[exporterName] = exporterConfig
 
 	if isLoggingEnabled(dest) {
-		endpoint, exists := config[AWS_CLOUDWATCH_LOGS_ENDPOINT]
-		if !exists {
-			return nil, errorMissingKey(AWS_CLOUDWATCH_LOGS_ENDPOINT)
-		}
-
-		endpoint, err := parseOtlpHttpEndpoint(endpoint)
-		if err != nil {
-			return nil, err
-		}
-
-		exporterName := "otlphttp/" + uniqueUri
-		currentConfig.Exporters[exporterName] = GenericMap{
-			"endpoint": endpoint,
-		}
-
 		pipeName := "logs/" + uniqueUri
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},

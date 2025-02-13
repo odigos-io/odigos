@@ -493,7 +493,7 @@ def create_mdx(mdx_path, yaml_content):
     """
     documenation = get_documenation(yaml_content)
     content_before = documenation.get("content_before_custom")
-    content_after = documenation.get("content_after_custom")    
+    content_after = documenation.get("content_after_custom")
     mdx_content = (
         f"{content_before}"
         + "\n\n**Creating Account**<br />"
