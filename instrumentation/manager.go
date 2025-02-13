@@ -21,7 +21,7 @@ var (
 )
 
 const (
-	shutdownCleanupTimeout = 5 * time.Second
+	shutdownCleanupTimeout = 10 * time.Second
 )
 
 // ConfigUpdate is used to send a configuration update request to the manager.
@@ -152,7 +152,7 @@ func (m *manager[ProcessDetails, ConfigGroup]) runEventLoop(ctx context.Context)
 		for pid, details := range m.detailsByPid {
 			select {
 			case <-ctx.Done():
-				m.logger.Error(ctx.Err(), "failed to cleanup instrumentation resources", "pid", pid)
+				m.logger.Error(ctx.Err(), "context canceled while cleaning up instrumentations before shutdown")
 				return
 			default:
 				if details.inst == nil {
