@@ -19,11 +19,14 @@ icon: 'signal-stream'
     !! START CUSTOM EDIT !!
 */}
 
-**Creating Account**<br />
-Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+**AWS Credentials**<br />
+Go to the **[📖 docs](https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/configuring-sdk.html#specifying-credentials) > Specifying Credentials** and follow the instructions.
 
-**Obtaining Access Token**<br />
-Go to **⚙️ > Access Tokens** and click **Create New**
+<Warning>
+  For ingesting logs via OpenTelemtry, ensure that you have the necessary AWS Credentials and permissions set up in your cluster.
+
+  If you do not specify the AWS Credentials, then you will have to define all `optional` fields as if they were `required`.
+</Warning>
 
 {/*
     !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
