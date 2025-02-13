@@ -211,3 +211,38 @@ spec:
         tooltip: 'Maximum number of batches kept in memory before dropping; ignored if `enabled` is `false`.'
       renderCondition: ['AWS_CLOUDWATCH_SENDING_QUEUE_ENABLED', '==', 'true']
       hideFromReadData: ['AWS_CLOUDWATCH_SENDING_QUEUE_ENABLED', '==', 'false']
+  note:
+    type: Note
+    content: |
+      - If the log group and/or log stream are specified in an EMF log, that EMF log will be exported to that log group and/or log stream (i.e. ignores the log group and log stream defined in the configuration).
+        - The log group and log stream will also be created automatically if they do not already exist.
+        - Example of an EMF log with log group and log stream:
+        ```json
+        {
+          "_aws": {
+            "Timestamp": 1574109732004,
+            "LogGroupName": "Foo",
+            "LogStreamName": "Bar",
+            "CloudWatchMetrics": [
+              {
+                "Namespace": "MyApp",
+                "Dimensions": [
+                  [
+                    "Operation"
+                  ]
+                ],
+                "Metrics": [
+                  {
+                    "Name": "ProcessingLatency",
+                    "Unit": "Milliseconds",
+                    "StorageResolution": 60
+                  }
+                ]
+              }
+            ]
+          },
+          "Operation": "Aggregator",
+          "ProcessingLatency": 100
+        }
+        ```
+      - Resource ARNs (Amazon Resource Name (ARN) of the AWS resource running the collector) are currently not supported with the CloudWatch Logs Exporter.

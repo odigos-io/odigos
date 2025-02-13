@@ -19,13 +19,9 @@ icon: 'signal-stream'
     !! START CUSTOM EDIT !!
 */}
 
-**AWS Credentials**<br />
-Go to the **[📖 docs](https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/configuring-sdk.html#specifying-credentials) > Specifying Credentials** and follow the instructions.
-
 <Warning>
-  For ingesting logs via OpenTelemtry, ensure that you have the necessary AWS Credentials and permissions set up in your cluster.
-
-  If you do not specify the AWS Credentials, then you will have to define all `optional` fields as if they were `required`.
+  Make sure that you have the necessary `AWS Credentials` and permissions set up.<br />
+  AWS credentials are retrieved from the [default credential chain](https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/configuring-sdk.html#specifying-credentials).
 </Warning>
 
 {/*
@@ -61,6 +57,41 @@ Go to the **[📖 docs](https://docs.aws.amazon.com/sdk-for-go/v1/developer-guid
   - This field is optional
 - **AWS_CLOUDWATCH_SENDING_QUEUE_SIZE** `string` : Queue Size. Maximum number of batches kept in memory before dropping; ignored if `enabled` is `false`.
   - This field is optional
+
+<Note>
+  - If the log group and/or log stream are specified in an EMF log, that EMF log will be exported to that log group and/or log stream (i.e. ignores the log group and log stream defined in the configuration).
+    - The log group and log stream will also be created automatically if they do not already exist.
+    - Example of an EMF log with log group and log stream:
+    ```json
+    {
+      "_aws": {
+        "Timestamp": 1574109732004,
+        "LogGroupName": "Foo",
+        "LogStreamName": "Bar",
+        "CloudWatchMetrics": [
+          {
+            "Namespace": "MyApp",
+            "Dimensions": [
+              [
+                "Operation"
+              ]
+            ],
+            "Metrics": [
+              {
+                "Name": "ProcessingLatency",
+                "Unit": "Milliseconds",
+                "StorageResolution": 60
+              }
+            ]
+          }
+        ]
+      },
+      "Operation": "Aggregator",
+      "ProcessingLatency": 100
+    }
+    ```
+  - Resource ARNs (Amazon Resource Name (ARN) of the AWS resource running the collector) are currently not supported with the CloudWatch Logs Exporter.
+</Note>
 
 ### Adding Destination to Odigos
 
