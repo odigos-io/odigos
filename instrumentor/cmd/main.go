@@ -51,6 +51,7 @@ import (
 
 	"github.com/odigos-io/odigos/instrumentor/controllers/deleteinstrumentationconfig"
 	"github.com/odigos-io/odigos/instrumentor/report"
+	"github.com/odigos-io/odigos/instrumentor"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -259,10 +260,10 @@ func main() {
 	err = builder.
 		WebhookManagedBy(mgr).
 		For(&odigosv1.Source{}).
-		WithDefaulter(&SourcesDefaulter{
+		WithDefaulter(&instrumentor.SourcesDefaulter{
 			Client: mgr.GetClient(),
 		}).
-		WithValidator(&SourcesValidator{
+		WithValidator(&instrumentor.SourcesValidator{
 			Client: mgr.GetClient(),
 		}).
 		Complete()
