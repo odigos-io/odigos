@@ -68,6 +68,7 @@ import (
 
 	//+kubebuilder:scaffold:imports
 
+	"net/http"
 	_ "net/http/pprof"
 )
 
@@ -272,12 +273,9 @@ func main() {
 
 	//+kubebuilder:scaffold:builder
 
-	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up health check")
-		os.Exit(1)
-	}
-	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up ready check")
+	err = addHealthAndReadyChecks(mgr)
+	if err != nil {
+		setupLog.Error(err, "unable to set up health and ready checks")
 		os.Exit(1)
 	}
 
@@ -292,6 +290,19 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func addHealthAndReadyChecks(mgr ctrl.Manager) error {
+	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
+		return fmt.Errorf("unable to set up health check: %w", err)
+	}
+
+	if err := mgr.AddReadyzCheck("readyz", func(req *http.Request) error{
+		return mgr.GetWebhookServer().StartedChecker()(req)
+	}); err != nil {
+		return fmt.Errorf("unable to set up ready check: %w", err)
+	}
+	return nil
 }
 
 func durationPointer(d time.Duration) *time.Duration {

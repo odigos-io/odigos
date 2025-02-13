@@ -32,6 +32,7 @@ function process_yaml_file() {
   local dest_namespace="traces"
   local dest_service="e2e-tests-tempo"
   local dest_port="tempo-prom-metrics"
+  local verbose=$2
 
   local file=$1
   file_name=$(basename "$file")
@@ -44,7 +45,14 @@ function process_yaml_file() {
   one_hour=3600
   start_epoch=$(($current_epoch - one_hour))
   end_epoch=$(($current_epoch + one_hour))
+
   response=$(kubectl get --raw /api/v1/namespaces/$dest_namespace/services/$dest_service:$dest_port/proxy/api/search\?end=$end_epoch\&start=$start_epoch\&q=$encoded_query\&limit=50)
+  if [ "$verbose" == "true" ]; then
+    echo "==============Raw response from tempo===================="
+    echo "$response" | jq .traces
+    echo "========================================================="
+  fi
+
   num_of_traces=$(echo $response | jq '.traces | length')
 
   if [ "$expected_count" != "null" ]; then
@@ -71,12 +79,16 @@ function process_yaml_file() {
 
 # Check if the first argument is provided
 if [ -z "$1" ]; then
-  echo "Usage: $0 <traceql-test-file>"
+  echo "Usage: $0 <traceql-test-file> [--verbose]"
   exit 1
 fi
 
 # Test file path
 TEST_FILE=$1
+VERBOSE=false
+if [ "$2" == "--verbose" ]; then
+  VERBOSE=true
+fi
 
 # Check if yq is installed
 if ! command -v yq &> /dev/null; then
@@ -85,4 +97,4 @@ if ! command -v yq &> /dev/null; then
 fi
 
 verify_yaml_schema $TEST_FILE
-process_yaml_file $TEST_FILE
+process_yaml_file $TEST_FILE $VERBOSE
