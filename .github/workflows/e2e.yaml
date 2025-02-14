@@ -131,3 +131,10 @@ jobs:
       - name: Run E2E Tests
         run: |
           chainsaw test tests/e2e/${{ matrix.test-scenario }}
+      - name: Setup interactive ssh session
+        if: ${{ failure() }}
+        uses: Warpbuilds/action-debugger@v1.3
+        with:
+          limit-access-to-actor: true
+          detached: true
+          timeout-minutes: 15
