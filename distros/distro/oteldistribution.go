@@ -98,4 +98,8 @@ type OtelDistro struct {
 	// Metadata and properties of the runtime agent that is used to enable the distribution.
 	// Can be nil in case no runtime agent is required.
 	RuntimeAgent *RuntimeAgent `yaml:"runtimeAgent,omitempty"`
+
+	// If mounting of agent directory is achieved via k8s virtual device,
+	// this field specifies the name of the device to inject into the resources part of the pods container spec.
+	Device *string `yaml:"device,omitempty"`
 }

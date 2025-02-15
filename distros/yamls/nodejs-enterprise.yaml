@@ -20,3 +20,4 @@ spec:
   runtimeAgent:
     directoryNames:
       # - "{{ODIGOS_AGENTS_DIR}}/nodejs-ebpf"
+  device: 'instrumentation.odigos.io/javascript-ebpf-enterprise'

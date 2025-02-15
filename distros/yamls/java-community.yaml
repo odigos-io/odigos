@@ -24,3 +24,4 @@ spec:
     directoryNames:
       - "{{ODIGOS_AGENTS_DIR}}/java"
     k8sAttrsViaEnvVars: true
+  device: 'instrumentation.odigos.io/java-native-community'

@@ -21,3 +21,4 @@ spec:
     directoryNames:
       - "{{ODIGOS_AGENTS_DIR}}/python"
       - "{{ODIGOS_AGENTS_DIR}}/python-ebpf"
+  device: 'instrumentation.odigos.io/python-ebpf-enterprise'
