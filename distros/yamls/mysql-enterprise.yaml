@@ -12,4 +12,3 @@ spec:
     Instrumentation for the internals of MySQL server using eBPF
   tiers: 
     - onprem
-  device: 'instrumentation.odigos.io/mysql-ebpf-enterprise'

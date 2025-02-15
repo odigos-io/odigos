@@ -23,4 +23,4 @@ spec:
     directoryNames:
       - '{{ODIGOS_AGENTS_DIR}}/dotnet'
     k8sAttrsViaEnvVars: true
-  device: 'instrumentation.odigos.io/{{param.LIBC_TYPE}}dotnet-native-community'
+    device: 'instrumentation.odigos.io/{{param.LIBC_TYPE}}dotnet-native-community'

@@ -23,4 +23,4 @@ spec:
   runtimeAgent:
     directoryNames:
       - "{{ODIGOS_AGENTS_DIR}}/java-ext-ebpf"
-  device: 'instrumentation.odigos.io/java-native-enterprise'
+    device: 'instrumentation.odigos.io/java-native-enterprise'

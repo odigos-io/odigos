@@ -203,26 +203,26 @@ func injectOdigosToContainer(containerConfig *odigosv1.ContainerAgentConfig, pod
 		if distroMetadata.RuntimeAgent.K8sAttrsViaEnvVars {
 			podswebhook.InjectOtelResourceAndServerNameEnvVars(&existingEnvNames, podContainerSpec, distroName, pw, serviceName)
 		}
+		// TODO: once we have a flag to enable/disable device injection, we should check it here.
+		if distroMetadata.RuntimeAgent.Device != nil {
+			deviceName := *distroMetadata.RuntimeAgent.Device
+			// TODO: currently devices are composed with glibc as input for dotnet.
+			// as devices will soon converge to a single device, I am hardcoding the logic here,
+			// which will eventually be removed once dotnet specific devices are removed.
+			if containerConfig.DistroParams != nil {
+				libcType, ok := containerConfig.DistroParams[common.LibcTypeDistroParameterName]
+				if ok {
+					libcPrefix := ""
+					if libcType == string(common.Musl) {
+						libcPrefix = "musl-"
+					}
+					deviceName = strings.ReplaceAll(deviceName, "{{param.LIBC_TYPE}}", libcPrefix)
+				}
+			}
+			podswebhook.InjectDeviceToContainer(podContainerSpec, deviceName)
+		}
 	}
 	podswebhook.InjectOdigosK8sEnvVars(&existingEnvNames, podContainerSpec, distroName, pw.Namespace)
-	// TODO: once we have a flag to enable/disable device injection, we should check it here.
-	if distroMetadata.Device != nil {
-		deviceName := *distroMetadata.Device
-		// TODO: currently devices are composed with glibc as input for dotnet.
-		// as devices will soon converge to a single device, I am hardcoding the logic here,
-		// which will eventually be removed once dotnet specific devices are removed.
-		if containerConfig.DistroParams != nil {
-			libcType, ok := containerConfig.DistroParams[common.LibcTypeDistroParameterName]
-			if ok {
-				libcPrefix := ""
-				if libcType == string(common.Musl) {
-					libcPrefix = "musl-"
-				}
-				deviceName = strings.ReplaceAll(deviceName, "{{param.LIBC_TYPE}}", libcPrefix)
-			}
-		}
-		podswebhook.InjectDeviceToContainer(podContainerSpec, deviceName)
-	}
 
 	return volumeMounted, nil
 }

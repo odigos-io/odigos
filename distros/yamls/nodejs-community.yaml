@@ -20,4 +20,4 @@ spec:
   runtimeAgent:
     directoryNames:
       - "{{ODIGOS_AGENTS_DIR}}/nodejs"
-  device: 'instrumentation.odigos.io/javascript-native-community'
+    device: 'instrumentation.odigos.io/javascript-native-community'
