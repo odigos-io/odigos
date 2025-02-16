@@ -3,7 +3,6 @@ package ebpf
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/odigos-io/odigos/instrumentation"
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/container"
@@ -20,6 +19,7 @@ func (dm *podDeviceDistributionMatcher) Distribution(ctx context.Context, e K8sP
 	if err != nil {
 		return instrumentation.OtelDistribution{}, fmt.Errorf("failed to get language and sdk: %w", err)
 	}
+
 	// verify the language of the process event
 	if ok := inspectors.VerifyLanguage(process.Details{
 		ProcessID: e.procEvent.PID,
@@ -28,13 +28,7 @@ func (dm *podDeviceDistributionMatcher) Distribution(ctx context.Context, e K8sP
 		Environments: process.ProcessEnvs{
 			DetailedEnvs: e.procEvent.ExecDetails.Environments,
 		},
-		Exefile: func() *os.File {
-			file, err := process.GetProcessExeFile(e.procEvent.PID)
-			if err != nil {
-				return nil
-			}
-			return file
-		}(),
+		Exefile: nil,
 	}, lang); ok {
 		return instrumentation.OtelDistribution{Language: lang, OtelSdk: sdk}, nil
 	}

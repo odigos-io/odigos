@@ -2,6 +2,7 @@ package golang
 
 import (
 	"debug/buildinfo"
+	"os"
 	"regexp"
 
 	"github.com/hashicorp/go-version"
@@ -18,7 +19,12 @@ var re = regexp.MustCompile(GolangVersionRegex)
 
 func (g *GolangInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
 	if p.Exefile == nil {
-		return "", false
+		var err error
+		p.Exefile, err = os.Open(p.ExePath)
+		if err != nil {
+			return "", false
+		}
+		defer p.Exefile.Close()
 	}
 
 	_, err := buildinfo.Read(p.Exefile)
