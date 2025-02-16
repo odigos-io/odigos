@@ -11,8 +11,6 @@ spec:
   displayName: Node.js Enterprise eBPF Processing
   description: |
     This distribution is for Node.js applications using an efficient eBPF-based SDK, and native instrumentation libraries from the OpenTelemetry community.
-  tiers: 
-    - onprem
   environmentVariables:
     - envName: NODE_OPTIONS
       envValue: '--require {{ODIGOS_AGENTS_DIR}}/nodejs-ebpf/autoinstrumentation.js'
