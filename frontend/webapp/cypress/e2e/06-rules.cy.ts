@@ -12,10 +12,10 @@ describe('Instrumentation Rules CRUD', () => {
   beforeEach(() =>
     cy
       .intercept('/graphql', (req) => {
-        aliasMutation(req, 'DescribeOdigos');
+        aliasMutation(req, 'GetConfig');
 
-        if (hasOperationName(req, 'DescribeOdigos')) {
-          req.alias = 'describeOdigos';
+        if (hasOperationName(req, 'GetConfig')) {
+          req.alias = 'config';
           req.reply((res) => {
             // This is to make the test think this is enterprise/onprem - which will allow us to create rules
             res.body.data = { config: { tier: 'onprem' } };
