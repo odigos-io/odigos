@@ -15,7 +15,6 @@ describe('Sources CRUD', () => {
     cy.visit(ROUTES.OVERVIEW);
 
     getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 }, () => {
-      cy.get(DATA_IDS.ADD_ENTITY).click();
       cy.get(DATA_IDS.ADD_SOURCE).click();
       cy.get(DATA_IDS.MODAL_ADD_SOURCE).should('exist');
       cy.get(DATA_IDS.SELECT_NAMESPACE).find(DATA_IDS.CHECKBOX).click({ force: true });
