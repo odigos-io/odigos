@@ -59,4 +59,6 @@ var (
 	// Python related ones
 	OtelPythonConfiguratorEnvName  = "OTEL_PYTHON_CONFIGURATOR"
 	OtelPythonConfiguratorEnvValue = "odigos-python-configurator"
+	OpampServerHostEnvName         = "ODIGOS_OPAMP_SERVER_HOST"
+	OpAMPPort                      = 4320
 )

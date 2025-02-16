@@ -159,8 +159,8 @@ func InjectPythonNativeEnvVars(container *corev1.Container) {
 			},
 		},
 		corev1.EnvVar{
-			Name:  k8sconsts.OpampServerHostEnvName,
-			Value: fmt.Sprintf("$(NODE_IP):%d", k8sconsts.OpAMPPort),
+			Name:  commonconsts.OpampServerHostEnvName,
+			Value: fmt.Sprintf("$(NODE_IP):%d", commonconsts.OpAMPPort),
 		},
 		corev1.EnvVar{
 			Name:  commonconsts.OtelExporterEndpointEnvName,
