@@ -64,6 +64,12 @@ func GetLanguageAndOtelSdk(container *v1.Container) (common.ProgrammingLanguage,
 		return common.UnknownProgrammingLanguage, common.OtelSdk{}, false
 	}
 
+	// temporary workaround for the "generic" device until we git rid of the other devices
+	// and it is the only one left
+	if *deviceName == "instrumentation.odigos.io/generic" {
+		return common.UnknownProgrammingLanguage, common.OtelSdk{}, false
+	}
+
 	language, sdk := common.InstrumentationDeviceNameToComponents(*deviceName)
 	return language, sdk, true
 }
