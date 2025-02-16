@@ -3,9 +3,6 @@
 import React, { type PropsWithChildren } from 'react';
 import dynamic from 'next/dynamic';
 import Theme from '@odigos/ui-theme';
-import { LayoutContainer } from '@/components';
-import { ToastList } from '@odigos/ui-containers';
-import ErrorBoundary from '@/components/providers/error-boundary';
 import ApolloProvider from '@/components/providers/apollo-provider';
 
 const ThemeProvider = dynamic(() => import('@/components/providers/theme-provider'), { ssr: false });
@@ -17,7 +14,7 @@ function RootLayout({ children }: PropsWithChildren) {
     <html lang='en'>
       <head>
         <meta name='description' content='Odigos' />
-        <link rel='icon' type='image/svg+xml' href='/favicon.svg' />
+        <link rel='icon' type='image/x-icon' href='/favicon.svg' />
         <link rel='manifest' href='/manifest.json' />
         <title>Odigos</title>
       </head>
@@ -31,14 +28,9 @@ function RootLayout({ children }: PropsWithChildren) {
           backgroundColor: darkMode ? '#111111' : '#EEEEEE',
         }}
       >
-        <ErrorBoundary>
-          <ApolloProvider>
-            <ThemeProvider>
-              <ToastList />
-              <LayoutContainer>{children}</LayoutContainer>
-            </ThemeProvider>
-          </ApolloProvider>
-        </ErrorBoundary>
+        <ThemeProvider>
+          <ApolloProvider>{children}</ApolloProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

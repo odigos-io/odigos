@@ -277,6 +277,7 @@ type FieldInput struct {
 
 type GetConfigResponse struct {
 	Installation InstallationStatus `json:"installation"`
+	Tier         Tier               `json:"tier"`
 	Readonly     bool               `json:"readonly"`
 }
 
@@ -1016,5 +1017,48 @@ func (e *SpanKind) UnmarshalGQL(v interface{}) error {
 }
 
 func (e SpanKind) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type Tier string
+
+const (
+	TierCommunity Tier = "community"
+	TierCloud     Tier = "cloud"
+	TierOnprem    Tier = "onprem"
+)
+
+var AllTier = []Tier{
+	TierCommunity,
+	TierCloud,
+	TierOnprem,
+}
+
+func (e Tier) IsValid() bool {
+	switch e {
+	case TierCommunity, TierCloud, TierOnprem:
+		return true
+	}
+	return false
+}
+
+func (e Tier) String() string {
+	return string(e)
+}
+
+func (e *Tier) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = Tier(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid Tier", str)
+	}
+	return nil
+}
+
+func (e Tier) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
