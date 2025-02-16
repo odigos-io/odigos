@@ -8,6 +8,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	commonconsts "github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -18,8 +19,9 @@ func InjectOdigosAgentEnvVars(logger logr.Logger, podWorkload k8sconsts.PodWorkl
 	otelsdk common.OtelSdk, runtimeDetails *v1alpha1.RuntimeDetailsByContainer) {
 
 	// This is a temporary and should be migrated to distro
-	if runtimeDetails.Language == common.PythonProgrammingLanguage && otelsdk == common.OtelSdkNativeCommunity {
-		InjectPythonNativeEnvVars(container)
+	if runtimeDetails.Language == common.PythonProgrammingLanguage && otelsdk == common.OtelSdkNativeCommunity ||
+		runtimeDetails.Language == common.PythonProgrammingLanguage && otelsdk == common.OtelSdkEbpfEnterprise {
+		InjectPythonEnvVars(container)
 	}
 
 	envVarsPerLanguage := getEnvVarNamesForLanguage(runtimeDetails.Language)
@@ -148,9 +150,10 @@ func getContainerEnvVarPointer(containerEnv *[]corev1.EnvVar, envVarName string)
 	return nil
 }
 
-func InjectPythonNativeEnvVars(container *corev1.Container) {
-	container.Env = append(container.Env,
-		corev1.EnvVar{
+func InjectPythonEnvVars(container *corev1.Container) {
+	// Common environment variables for all tiers
+	commonEnvs := []corev1.EnvVar{
+		{
 			Name: "NODE_IP",
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
@@ -158,17 +161,36 @@ func InjectPythonNativeEnvVars(container *corev1.Container) {
 				},
 			},
 		},
-		corev1.EnvVar{
+		{
 			Name:  commonconsts.OpampServerHostEnvName,
 			Value: fmt.Sprintf("$(NODE_IP):%d", commonconsts.OpAMPPort),
 		},
-		corev1.EnvVar{
-			Name:  commonconsts.OtelExporterEndpointEnvName,
-			Value: fmt.Sprintf("http://$(NODE_IP):%d", commonconsts.OTLPHttpPort),
-		},
-		corev1.EnvVar{
-			Name:  commonconsts.OtelPythonConfiguratorEnvName,
-			Value: commonconsts.OtelPythonConfiguratorEnvValue,
-		},
-	)
+	}
+
+	// Determine envs based on the tier
+	odigosTier := env.GetOdigosTierFromEnv()
+
+	var tierSpecificEnvs []corev1.EnvVar
+	if odigosTier == common.OnPremOdigosTier {
+		tierSpecificEnvs = []corev1.EnvVar{
+			{
+				Name:  commonconsts.OtelPythonConfiguratorEnvName,
+				Value: commonconsts.OtelPythonEBPFConfiguratorEnvValue,
+			},
+		}
+	} else {
+		tierSpecificEnvs = []corev1.EnvVar{
+			{
+				Name:  commonconsts.OtelPythonConfiguratorEnvName,
+				Value: commonconsts.OtelPythonOSSConfiguratorEnvValue,
+			},
+			{
+				Name:  commonconsts.OtelExporterEndpointEnvName,
+				Value: fmt.Sprintf("http://$(NODE_IP):%d", commonconsts.OTLPHttpPort),
+			},
+		}
+	}
+
+	container.Env = append(container.Env, commonEnvs...)
+	container.Env = append(container.Env, tierSpecificEnvs...)
 }
