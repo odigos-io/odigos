@@ -1,4 +1,4 @@
-package autosacler
+package autoscaler
 
 import (
 	"context"

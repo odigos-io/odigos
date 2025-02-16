@@ -40,13 +40,13 @@ type opampAgentAttributesKeys struct {
 	Namespace           string
 }
 
-func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId string, firstMessage *protobufs.AgentToServer) (*connection.ConnectionInfo, *protobufs.ServerToAgent, error) {
+func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, firstMessage *protobufs.AgentToServer) (*connection.ConnectionInfo, *protobufs.ServerToAgent, error) {
 
 	if firstMessage.AgentDescription == nil {
 		// first message must be agent description.
 		// it is, however, possible that the OpAMP server restarted, and the agent is trying to reconnect.
 		// in which case we send back flag and request full status update.
-		c.logger.Info("Agent description is missing in the first OpAMP message, requesting full state update", "deviceId", deviceId)
+		c.logger.Info("Agent description is missing in the first OpAMP message, requesting full state update")
 		serverToAgent := &protobufs.ServerToAgent{
 			Flags: uint64(protobufs.ServerToAgentFlags_ServerToAgentFlags_ReportFullState),
 		}
@@ -102,10 +102,9 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId strin
 		c.logger.Error(err, "failed to get full config", "k8sAttributes", k8sAttributes)
 		return nil, nil, err
 	}
-	c.logger.Info("new OpAMP client connected", "deviceId", deviceId, "namespace", k8sAttributes.Namespace, "podName", k8sAttributes.PodName, "instrumentedAppName", instrumentedAppName, "workloadKind", k8sAttributes.WorkloadKind, "workloadName", k8sAttributes.WorkloadName, "containerName", k8sAttributes.ContainerName, "otelServiceName", serviceName)
+	c.logger.Info("new OpAMP client connected", "namespace", k8sAttributes.Namespace, "podName", k8sAttributes.PodName, "instrumentedAppName", instrumentedAppName, "workloadKind", k8sAttributes.WorkloadKind, "workloadName", k8sAttributes.WorkloadName, "containerName", k8sAttributes.ContainerName, "otelServiceName", serviceName)
 
 	connectionInfo := &connection.ConnectionInfo{
-		DeviceId:                 deviceId,
 		Workload:                 podWorkload,
 		Pod:                      pod,
 		ContainerName:            k8sAttributes.ContainerName,

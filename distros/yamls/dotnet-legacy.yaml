@@ -5,6 +5,8 @@ metadata:
 spec:
   name: dotnet-legacy
   language: dotnet
+  requireParameters:
+    - LIBC_TYPE
   runtimeEnvironments:
     - name: dotnet-version
       supportedVersions: '>=4 <7'
@@ -17,3 +19,4 @@ spec:
     directoryNames:
       - "{{ODIGOS_AGENTS_DIR}}/legacy-dotnet"
     k8sAttrsViaEnvVars: true
+    device: 'instrumentation.odigos.io/{{param.LIBC_TYPE}}dotnet-native-enterprise'

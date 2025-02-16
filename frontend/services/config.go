@@ -9,6 +9,7 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/frontend/services/describe/odigos_describe"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,6 +31,13 @@ func GetConfig(ctx context.Context) model.GetConfigResponse {
 	var response model.GetConfigResponse
 
 	response.Readonly = IsReadonlyMode(ctx)
+
+	describe, err := odigos_describe.GetOdigosDescription(ctx)
+	if err != nil {
+		response.Tier = model.Tier(common.CommunityOdigosTier)
+	} else {
+		response.Tier = model.Tier(describe.Tier.Value)
+	}
 
 	if !isSourceCreated(ctx) && !isDestinationConnected(ctx) {
 		response.Installation = model.InstallationStatus(NewInstallation)

@@ -1,27 +1,24 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { useNamespace, useSSE } from '@/hooks';
+import { useNamespace } from '@/hooks';
 import { ENTITY_TYPES } from '@odigos/ui-utils';
 import { Stepper } from '@odigos/ui-components';
 import { OnboardingStepperWrapper } from '@/components';
 import SetupHeader from '@/components/lib-imports/setup-header';
-import { SourceSelectionForm, type SourceSelectionFormRef } from '@odigos/ui-containers';
+import PageContainer from '@/components/providers/page-container';
+import { SourceSelectionForm, ToastList, type SourceSelectionFormRef } from '@odigos/ui-containers';
 
 export default function Page() {
-  // call important hooks that should run on page-mount
-  useSSE();
-
   const [selectedNamespace, setSelectedNamespace] = useState('');
   const onSelectNamespace = (ns: string) => setSelectedNamespace((prev) => (prev === ns ? '' : ns));
   const { allNamespaces, data: namespace, loading: nsLoad } = useNamespace(selectedNamespace);
-
   const formRef = useRef<SourceSelectionFormRef>(null);
 
   return (
-    <>
+    <PageContainer>
+      <ToastList />
       <SetupHeader entityType={ENTITY_TYPES.SOURCE} formRef={formRef} />
-
       <OnboardingStepperWrapper>
         <Stepper
           currentStep={2}
@@ -32,7 +29,6 @@ export default function Page() {
           ]}
         />
       </OnboardingStepperWrapper>
-
       <SourceSelectionForm
         ref={formRef}
         componentType='FAST'
@@ -43,6 +39,6 @@ export default function Page() {
         selectedNamespace={selectedNamespace}
         onSelectNamespace={onSelectNamespace}
       />
-    </>
+    </PageContainer>
   );
 }
