@@ -4,7 +4,9 @@ import (
 	"context"
 
 	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"k8s.io/client-go/rest"
+	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 
 	"github.com/odigos-io/odigos/procdiscovery/pkg/libc"
 
@@ -79,6 +81,21 @@ func NewLister(ctx context.Context, clientset *kubernetes.Clientset, otelSdksLsf
 			}
 		}
 	}
+
+	// device that only mounts the odigos agent directory.
+	// always present regardless of the otelSdksLsf
+	mountDeviceFunc := func(deviceId string, uniqueDestinationSignals map[common.ObservabilitySignal]struct{}) *v1beta1.ContainerAllocateResponse {
+		return &v1beta1.ContainerAllocateResponse{
+			Mounts: []*v1beta1.Mount{
+				{
+					ContainerPath: k8sconsts.OdigosAgentsDirectory,
+					HostPath:      k8sconsts.OdigosAgentsDirectory,
+					ReadOnly:      true,
+				},
+			},
+		}
+	}
+	availablePlugins["agentmount"] = NewPlugin(maxPods, mountDeviceFunc, odigosKubeClient)
 
 	return &lister{
 		plugins: availablePlugins,
