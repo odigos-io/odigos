@@ -2,13 +2,11 @@ package sdkconfig
 
 import (
 	"context"
-	"slices"
 
 	"github.com/go-logr/logr"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/opampserver/pkg/connection"
 	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig/configresolvers"
 	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig/configsections"
@@ -60,9 +58,8 @@ func (m *SdkConfigManager) GetFullConfig(ctx context.Context, remoteResourceAttr
 	if err != nil {
 		return nil, err
 	}
-	tracesEnabled := slices.Contains(nodeCollectorGroup.Status.ReceiverSignals, common.TracesObservabilitySignal)
 
-	sdkRemoteConfig := configsections.CalcSdkRemoteConfig(remoteResourceAttributes, tracesEnabled)
+	sdkRemoteConfig := configsections.CalcSdkRemoteConfig(remoteResourceAttributes, nodeCollectorGroup.Status.ReceiverSignals)
 	opampRemoteConfigSdk, sdkSectionName, err := configsections.SdkRemoteConfigToOpamp(sdkRemoteConfig)
 	if err != nil {
 		m.logger.Error(err, "failed to marshal server offered resource attributes")
