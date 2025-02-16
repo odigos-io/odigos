@@ -34,6 +34,18 @@ func LanguageAndSdk(pod *v1.Pod, containerName string, distroName string) (commo
 			return common.JavascriptProgrammingLanguage, common.OtelSdkEbpfEnterprise, nil
 		case "mysql-enterprise":
 			return common.MySQLProgrammingLanguage, common.OtelSdkEbpfEnterprise, nil
+
+		// None ebpf distros here only to avoid error when parsing the generic device
+		case "python-community":
+			return common.PythonProgrammingLanguage, common.OtelSdkNativeCommunity, nil
+		case "nodejs-community":
+			return common.JavascriptProgrammingLanguage, common.OtelSdkNativeCommunity, nil
+		case "java-community":
+			return common.JavaProgrammingLanguage, common.OtelSdkNativeCommunity, nil
+		case "dotnet-community":
+			return common.DotNetProgrammingLanguage, common.OtelSdkNativeCommunity, nil
+		case "dotnet-legacy":
+			return common.DotNetProgrammingLanguage, common.OtelSdkNativeEnterprise, nil
 		}
 	}
 
