@@ -395,30 +395,30 @@
   resolved "https://registry.yarnpkg.com/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz#3dc35ba0f1e66b403c00b39344f870298ebb1c8e"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
-"@odigos/ui-components@^0.0.65":
-  version "0.0.65"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-components/-/ui-components-0.0.65.tgz#124ecce86f2baceb21e9177ff3a1960144bf5c51"
-  integrity sha512-bAF8Owfh7Hg6bA7U8UALS/zodOPrRlrvh06BV+VXJF8kY9J1dHuMPL/iKLUP1ySL/J/l4Kc7A7pRLlP+4Q9qWQ==
+"@odigos/ui-components@^0.0.68":
+  version "0.0.68"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-components/-/ui-components-0.0.68.tgz#467cbe28aaac74ddf81f681ba82c489128957327"
+  integrity sha512-dq4Qo5xrMmm0B4I8pke6EgMyw1i4lHI2ruO+CrOJtDLDlkFNNdGBTpbhn29ScZv7VLfb222F7+unR9jysMtNPg==
   dependencies:
     "@odigos/ui-icons" "^0.0.12"
     "@odigos/ui-theme" "^0.0.16"
-    "@odigos/ui-utils" "^0.0.28"
+    "@odigos/ui-utils" "^0.0.29"
     prism-react-renderer "^2.4.1"
     react "^19.0.0"
     react-dom "^19.0.0"
     react-lottie "^1.2.10"
     styled-components "^6.1.15"
 
-"@odigos/ui-containers@^0.0.43":
-  version "0.0.43"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-containers/-/ui-containers-0.0.43.tgz#659aacee3ad677eb51989cf2e209c240c6fcb0fd"
-  integrity sha512-sgF3PWB+jjzdNgBvPKOtP4LX2FhLUab24G1eA4f6Ipe8jL1YbajAf7/id2GSHfMYPCOfh5hr1M4ZNY63353aaQ==
+"@odigos/ui-containers@^0.0.44":
+  version "0.0.44"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-containers/-/ui-containers-0.0.44.tgz#068fc2a10229a4b11dadd485ed4ef0e1e7b8c041"
+  integrity sha512-lgy01FWdA67vSQZ71P56N7IfPSeI9jVGoSK06LItlaZR7fUmYqX+aJYjP6o98/h0+4QZBvb5T5QVGhFGvazmHw==
   dependencies:
-    "@odigos/ui-components" "^0.0.65"
+    "@odigos/ui-components" "^0.0.68"
     "@odigos/ui-icons" "^0.0.12"
     "@odigos/ui-theme" "^0.0.16"
-    "@odigos/ui-utils" "^0.0.28"
-    "@xyflow/react" "^12.4.2"
+    "@odigos/ui-utils" "^0.0.29"
+    "@xyflow/react" "^12.4.3"
     react "^19.0.0"
     react-dom "^19.0.0"
     styled-components "^6.1.15"
@@ -444,10 +444,10 @@
     styled-components "^6.1.15"
     zustand "^5.0.3"
 
-"@odigos/ui-utils@^0.0.28":
-  version "0.0.28"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-utils/-/ui-utils-0.0.28.tgz#1bae955b4f95cae0d915876af2bcfe885950a4a3"
-  integrity sha512-y4pL/RGD9S2j42QDxTXLCHHdGhcbkNCZQvD0H55RXvotAnNegZGFtl00Oltaobc6AHpS9cbcN4rzCxJimuVLrQ==
+"@odigos/ui-utils@^0.0.29":
+  version "0.0.29"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-utils/-/ui-utils-0.0.29.tgz#40adfa217f398b2845b3c23124fa676a2c9122bd"
+  integrity sha512-l92jgZhiKTLjQp/GN4Yol2zRlVmKXv9WaCCjRGXjELujFZ4kiK68M42KkZ8hh2ipPvxDahHEdqUwlqKRibx3GQ==
   dependencies:
     "@odigos/ui-icons" "^0.0.12"
     "@odigos/ui-theme" "^0.0.16"
@@ -694,19 +694,19 @@
   dependencies:
     tslib "^2.3.0"
 
-"@xyflow/react@^12.4.2":
-  version "12.4.2"
-  resolved "https://registry.yarnpkg.com/@xyflow/react/-/react-12.4.2.tgz#669ab18923d93a8d8fb526241a2affc0d50abf9d"
-  integrity sha512-AFJKVc/fCPtgSOnRst3xdYJwiEcUN9lDY7EO/YiRvFHYCJGgfzg+jpvZjkTOnBLGyrMJre9378pRxAc3fsR06A==
+"@xyflow/react@^12.4.3":
+  version "12.4.3"
+  resolved "https://registry.yarnpkg.com/@xyflow/react/-/react-12.4.3.tgz#0943fca8ff64e5360b0f8c8f46da2e3dc1a64c6b"
+  integrity sha512-oO50TIY4rbgOURK5pmvL4LwLOQdh6YkvrvOBZPBedltJ1TINCRp0FiyYKfYhLnaDcW8/aayvGtFpUcSkPQxpGg==
   dependencies:
-    "@xyflow/system" "0.0.50"
+    "@xyflow/system" "0.0.51"
     classcat "^5.0.3"
     zustand "^4.4.0"
 
-"@xyflow/system@0.0.50":
-  version "0.0.50"
-  resolved "https://registry.yarnpkg.com/@xyflow/system/-/system-0.0.50.tgz#8517cb46e1523cc6abe620f3ad18f5a94315d7e3"
-  integrity sha512-HVUZd4LlY88XAaldFh2nwVxDOcdIBxGpQ5txzwfJPf+CAjj2BfYug1fHs2p4yS7YO8H6A3EFJQovBE8YuHkAdg==
+"@xyflow/system@0.0.51":
+  version "0.0.51"
+  resolved "https://registry.yarnpkg.com/@xyflow/system/-/system-0.0.51.tgz#3816c75edc8b43f1c9554bccda92afc6bbe79658"
+  integrity sha512-cYnuM3oWQQjx2Rdz0LdZCnbUaWZdZDiik20kPDYsa5SIlq++ZDIcKiDF6a93ncfMv9Ej5GWfDkouE7bObrdRqQ==
   dependencies:
     "@types/d3-drag" "^3.0.7"
     "@types/d3-selection" "^3.0.10"

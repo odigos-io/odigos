@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ActionDrawer, ActionModal, DestinationDrawer, DestinationModal, InstrumentationRuleDrawer, InstrumentationRuleModal, SourceDrawer, SourceModal } from '@odigos/ui-containers';
 import {
   useActionCRUD,
-  useDescribeOdigos,
+  useConfig,
   useDescribeSource,
   useDestinationCategories,
   useDestinationCRUD,
@@ -14,6 +14,8 @@ import {
 } from '@/hooks';
 
 const OverviewModalsAndDrawers = () => {
+  const { isEnterprise } = useConfig();
+
   const { sources, persistSources, updateSource } = useSourceCRUD();
   const { actions, createAction, updateAction, deleteAction } = useActionCRUD();
   const { destinations, createDestination, updateDestination, deleteDestination } = useDestinationCRUD();
@@ -22,7 +24,6 @@ const OverviewModalsAndDrawers = () => {
   const [selectedNamespace, setSelectedNamespace] = useState('');
   const { allNamespaces, data: namespace, loading: nsLoad } = useNamespace(selectedNamespace);
 
-  const { isPro } = useDescribeOdigos();
   const { categories } = useDestinationCategories();
   const { fetchDescribeSource } = useDescribeSource();
   const { potentialDestinations } = usePotentialDestinations();
@@ -48,7 +49,7 @@ const OverviewModalsAndDrawers = () => {
         testLoading={testLoading}
         testResult={testResult}
       />
-      <InstrumentationRuleModal isEnterprise={isPro} createInstrumentationRule={createInstrumentationRule} />
+      <InstrumentationRuleModal isEnterprise={isEnterprise} createInstrumentationRule={createInstrumentationRule} />
       <ActionModal createAction={createAction} />
 
       {/* drawers */}

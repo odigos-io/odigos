@@ -44,6 +44,12 @@ enum InstallationStatus {
   FINISHED
 }
 
+enum Tier {
+  community
+  cloud
+  onprem
+}
+
 type SourceContainer {
   containerName: String!
   language: String!
@@ -296,6 +302,7 @@ type Destination {
 
 type GetConfigResponse {
   installation: InstallationStatus!
+  tier: Tier!
   readonly: Boolean!
 }
 

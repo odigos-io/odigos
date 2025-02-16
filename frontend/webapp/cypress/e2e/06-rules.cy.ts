@@ -1,4 +1,3 @@
-import { MOCK_DESCRIBE_ODIGOS } from '@odigos/ui-utils';
 import { BUTTONS, CRD_NAMES, DATA_IDS, INPUTS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
 import { aliasMutation, awaitToast, deleteEntity, getCrdById, getCrdIds, hasOperationName, updateEntity } from '../functions';
 
@@ -19,7 +18,7 @@ describe('Instrumentation Rules CRUD', () => {
           req.alias = 'describeOdigos';
           req.reply((res) => {
             // This is to make the test think this is enterprise/onprem - which will allow us to create rules
-            res.body.data = MOCK_DESCRIBE_ODIGOS;
+            res.body.data = { config: { tier: 'onprem' } };
           });
         }
       })

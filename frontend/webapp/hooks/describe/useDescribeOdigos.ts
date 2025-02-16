@@ -16,13 +16,10 @@ export const useDescribeOdigos = () => {
       }),
   });
 
-  const isPro = ['onprem', 'enterprise'].includes(data?.describeOdigos.tier.value || '');
-
   return {
     loading,
     error,
     data: data?.describeOdigos,
     fetchDescribeOdigos,
-    isPro,
   };
 };
