@@ -13,7 +13,7 @@ const OverviewHeader = () => {
 
   const { data: config } = useConfig();
   const { tokens, updateToken } = useTokenCRUD();
-  const { data: describeOdigos } = useDescribeOdigos();
+  const { fetchDescribeOdigos } = useDescribeOdigos();
 
   return (
     <Header
@@ -30,7 +30,7 @@ const OverviewHeader = () => {
       right={[
         <Theme.ToggleDarkMode key='toggle-theme' />,
         <NotificationManager key='notifs' />,
-        <CliDrawer key='cli' tokens={tokens} saveToken={updateToken} describe={describeOdigos} />,
+        <CliDrawer key='cli' tokens={tokens} saveToken={updateToken} fetchDescribeOdigos={fetchDescribeOdigos} />,
         <IconButton key='slack' onClick={() => window.open(SLACK_LINK, '_blank', 'noopener noreferrer')} tooltip='Join our Slack community'>
           <SlackLogo />
         </IconButton>,

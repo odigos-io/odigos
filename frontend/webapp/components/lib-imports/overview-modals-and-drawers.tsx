@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { type WorkloadId } from '@odigos/ui-utils';
-import { ActionDrawer, ActionModal, DestinationDrawer, DestinationModal, InstrumentationRuleDrawer, InstrumentationRuleModal, SourceDrawer, SourceModal, useDrawerStore } from '@odigos/ui-containers';
+import { ActionDrawer, ActionModal, DestinationDrawer, DestinationModal, InstrumentationRuleDrawer, InstrumentationRuleModal, SourceDrawer, SourceModal } from '@odigos/ui-containers';
 import {
   useActionCRUD,
   useDescribeOdigos,
@@ -15,8 +14,6 @@ import {
 } from '@/hooks';
 
 const OverviewModalsAndDrawers = () => {
-  const { drawerEntityId } = useDrawerStore();
-
   const { sources, persistSources, updateSource } = useSourceCRUD();
   const { actions, createAction, updateAction, deleteAction } = useActionCRUD();
   const { destinations, createDestination, updateDestination, deleteDestination } = useDestinationCRUD();
@@ -27,9 +24,9 @@ const OverviewModalsAndDrawers = () => {
 
   const { isPro } = useDescribeOdigos();
   const { categories } = useDestinationCategories();
+  const { fetchDescribeSource } = useDescribeSource();
   const { potentialDestinations } = usePotentialDestinations();
   const { data: testResult, loading: testLoading, testConnection } = useTestConnection();
-  const { data: describeSource } = useDescribeSource(typeof drawerEntityId === 'object' ? (drawerEntityId as WorkloadId) : undefined);
 
   return (
     <>
@@ -55,7 +52,7 @@ const OverviewModalsAndDrawers = () => {
       <ActionModal createAction={createAction} />
 
       {/* drawers */}
-      <SourceDrawer sources={sources} persistSources={persistSources} updateSource={updateSource} describe={describeSource} />
+      <SourceDrawer sources={sources} persistSources={persistSources} updateSource={updateSource} fetchDescribeSource={fetchDescribeSource} />
       <DestinationDrawer
         categories={categories}
         destinations={destinations}
