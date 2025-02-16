@@ -6,6 +6,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
+	"github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 )
 
@@ -24,7 +25,6 @@ const (
 )
 
 func Python(deviceId string, uniqueDestinationSignals map[common.ObservabilitySignal]struct{}) *v1beta1.ContainerAllocateResponse {
-	otlpEndpoint := fmt.Sprintf("http://%s:%d", env.Current.NodeIP, consts.OTLPHttpPort)
 	opampServerHost := fmt.Sprintf("%s:%d", env.Current.NodeIP, consts.OpAMPPort)
 
 	logsExporter := "none"
@@ -44,7 +44,7 @@ func Python(deviceId string, uniqueDestinationSignals map[common.ObservabilitySi
 			pythonOdigosOpampServer:       opampServerHost,
 			envLogCorrelation:             "true",
 			pythonConfiguratorEnvVar:      pythonConfiguratorValue,
-			"OTEL_EXPORTER_OTLP_ENDPOINT": otlpEndpoint,
+			"OTEL_EXPORTER_OTLP_ENDPOINT": utils.SameNodeOTLPHttpDataCollectionEndpoint(),
 			envOtelTracesExporter:         tracesExporter,
 			envOtelMetricsExporter:        metricsExporter,
 			// Log exporter is currently set to "none" due to the data collection method, which collects logs from the file system.

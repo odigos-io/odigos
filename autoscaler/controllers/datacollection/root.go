@@ -60,7 +60,13 @@ func syncDataCollection(sources *odigosv1.InstrumentationConfigList, dests *odig
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Syncing data collection")
 
-	err := SyncConfigMap(sources, dests, processors, dataCollection, ctx, c, scheme, disableNameProcessor)
+	err := syncService(ctx, c, scheme, dataCollection)
+	if err != nil {
+		logger.Error(err, "Failed to sync service")
+		return err
+	}
+
+	err = SyncConfigMap(sources, dests, processors, dataCollection, ctx, c, scheme, disableNameProcessor)
 	if err != nil {
 		logger.Error(err, "Failed to sync config map")
 		return err

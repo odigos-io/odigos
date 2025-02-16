@@ -4,8 +4,7 @@ import (
 	"fmt"
 
 	"github.com/odigos-io/odigos/common"
-	commonconsts "github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/odiglet/pkg/env"
+	"github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 )
@@ -23,8 +22,6 @@ const (
 )
 
 func Java(deviceId string, uniqueDestinationSignals map[common.ObservabilitySignal]struct{}) *v1beta1.ContainerAllocateResponse {
-	otlpEndpoint := fmt.Sprintf("http://%s:%d", env.Current.NodeIP, commonconsts.OTLPPort)
-
 	logsExporter := "none"
 	metricsExporter := "none"
 	tracesExporter := "none"
@@ -43,7 +40,7 @@ func Java(deviceId string, uniqueDestinationSignals map[common.ObservabilitySign
 	return &v1beta1.ContainerAllocateResponse{
 		Envs: map[string]string{
 			otelResourceAttributesEnvVar:  fmt.Sprintf(otelResourceAttrPattern, deviceId),
-			javaOtlpEndpointEnvVar:        otlpEndpoint,
+			javaOtlpEndpointEnvVar:        utils.SameNodeOTLPDataCollectionEndpoint(),
 			javaOtlpProtocolEnvVar:        "grpc",
 			javaOtelLogsExporterEnvVar:    logsExporter,
 			javaOtelMetricsExporterEnvVar: metricsExporter,
