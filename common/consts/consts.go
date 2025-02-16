@@ -52,3 +52,13 @@ const (
 var (
 	ErrorPodsNotFound = errors.New("could not find a ready pod")
 )
+
+// Agents related consts
+var (
+	OtelExporterEndpointEnvName = "OTEL_EXPORTER_OTLP_ENDPOINT"
+	// Python related ones
+	OtelPythonConfiguratorEnvName  = "OTEL_PYTHON_CONFIGURATOR"
+	OtelPythonConfiguratorEnvValue = "odigos-python-configurator"
+	OpampServerHostEnvName         = "ODIGOS_OPAMP_SERVER_HOST"
+	OpAMPPort                      = 4320
+)
