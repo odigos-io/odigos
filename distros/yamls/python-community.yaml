@@ -20,5 +20,5 @@ spec:
   runtimeAgent:
     directoryNames:
       - "{{ODIGOS_AGENTS_DIR}}/python"
-    device: 'instrumentation.odigos.io/python-native-community'
+    device: 'instrumentation.odigos.io/generic'
       

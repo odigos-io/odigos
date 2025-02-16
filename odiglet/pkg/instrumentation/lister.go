@@ -95,7 +95,7 @@ func NewLister(ctx context.Context, clientset *kubernetes.Clientset, otelSdksLsf
 			},
 		}
 	}
-	availablePlugins["agentmount"] = NewPlugin(maxPods, mountDeviceFunc, odigosKubeClient)
+	availablePlugins["generic"] = NewPlugin(maxPods, mountDeviceFunc, odigosKubeClient)
 
 	return &lister{
 		plugins: availablePlugins,
