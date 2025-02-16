@@ -34,7 +34,7 @@ export const useInstrumentationRuleCRUD = (params?: Params) => {
 
   const handleComplete = (actionType: string, message: string, id?: string) => {
     notifyUser(NOTIFICATION_TYPE.SUCCESS, actionType, message, id);
-    // refetch();
+    refetch();
     params?.onSuccess?.(actionType);
   };
 
