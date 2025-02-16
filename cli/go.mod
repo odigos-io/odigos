@@ -9,7 +9,7 @@ require (
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/odigos/k8sutils v0.0.0
 	github.com/odigos-io/odigos/profiles v0.0.0
-	github.com/spf13/cobra v1.8.1
+	github.com/spf13/cobra v1.9.0
 	github.com/spf13/pflag v1.0.6
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.32.1
