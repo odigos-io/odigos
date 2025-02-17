@@ -189,28 +189,6 @@ spec:
         required: false
         tooltip: 'If set to true, only the log message will be exported to CloudWatch Logs. This needs to be set to true for EMF logs.'
       initialValue: false
-    - name: AWS_CLOUDWATCH_SENDING_QUEUE_ENABLED
-      displayName: Enable Sending Queue
-      componentType: checkbox
-      componentProps:
-        required: false
-      initialValue: true
-    - name: AWS_CLOUDWATCH_SENDING_QUEUE_NUM_CONSUMERS
-      displayName: Number of Consumers
-      componentType: input
-      componentProps:
-        required: false
-        tooltip: 'Number of consumers that will consume from the sending queue. This parameter controls how many consumers will consume from the sending queue in parallel; ignored if `enabled` is `false`.'
-      renderCondition: ['AWS_CLOUDWATCH_SENDING_QUEUE_ENABLED', '==', 'true']
-      hideFromReadData: ['AWS_CLOUDWATCH_SENDING_QUEUE_ENABLED', '==', 'false']
-    - name: AWS_CLOUDWATCH_SENDING_QUEUE_SIZE
-      displayName: Queue Size
-      componentType: input
-      componentProps:
-        required: false
-        tooltip: 'Maximum number of batches kept in memory before dropping; ignored if `enabled` is `false`.'
-      renderCondition: ['AWS_CLOUDWATCH_SENDING_QUEUE_ENABLED', '==', 'true']
-      hideFromReadData: ['AWS_CLOUDWATCH_SENDING_QUEUE_ENABLED', '==', 'false']
   note:
     type: Note
     content: |

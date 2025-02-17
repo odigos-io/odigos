@@ -56,12 +56,6 @@ icon: 'signal-stream'
   - This field is optional
 - **AWS_CLOUDWATCH_RAW_LOG** `boolean` : Raw Log. If set to true, only the log message will be exported to CloudWatch Logs. This needs to be set to true for EMF logs.
   - This field is optional and defaults to `False`
-- **AWS_CLOUDWATCH_SENDING_QUEUE_ENABLED** `boolean` : Enable Sending Queue.
-  - This field is optional and defaults to `True`
-- **AWS_CLOUDWATCH_SENDING_QUEUE_NUM_CONSUMERS** `string` : Number of Consumers. Number of consumers that will consume from the sending queue. This parameter controls how many consumers will consume from the sending queue in parallel; ignored if `enabled` is `false`.
-  - This field is optional
-- **AWS_CLOUDWATCH_SENDING_QUEUE_SIZE** `string` : Queue Size. Maximum number of batches kept in memory before dropping; ignored if `enabled` is `false`.
-  - This field is optional
 
 <Note>
   - If the log group and/or log stream are specified in an EMF log, that EMF log will be exported to that log group and/or log stream (i.e. ignores the log group and log stream defined in the configuration).
@@ -137,9 +131,6 @@ There are two primary methods for configuring destinations in Odigos:
         # AWS_CLOUDWATCH_LOG_RETENTION: <Log Retention (default: 0) (options: [0, 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 2192, 2557, 2922, 3288, 3653])>
         # AWS_CLOUDWATCH_TAGS: <Tags>
         # AWS_CLOUDWATCH_RAW_LOG: <Raw Log>
-        # AWS_CLOUDWATCH_SENDING_QUEUE_ENABLED: <Enable Sending Queue (default: True)>
-        # AWS_CLOUDWATCH_SENDING_QUEUE_NUM_CONSUMERS: <Number of Consumers>
-        # AWS_CLOUDWATCH_SENDING_QUEUE_SIZE: <Queue Size>
       destinationName: cloudwatch
       signals:
       - LOGS

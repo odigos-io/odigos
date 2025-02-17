@@ -80,12 +80,6 @@ icon: 'signal-stream'
   - This field is optional and defaults to `30s`
 - **KAFKA_RETRY_ON_FAILURE_MAX_ELAPSED_TIME** `string` : Max Elapsed Time. Is the maximum amount of time spent trying to send a batch; ignored if `enabled` is `false`.
   - This field is optional and defaults to `120s`
-- **KAFKA_SENDING_QUEUE_ENABLED** `boolean` : Enable Sending Queue.
-  - This field is optional and defaults to `True`
-- **KAFKA_SENDING_QUEUE_NUM_CONSUMERS** `string` : Number of Consumers. Number of consumers that dequeue batches; ignored if `enabled` is `false`.
-  - This field is optional and defaults to `10`
-- **KAFKA_SENDING_QUEUE_SIZE** `string` : Queue Size. Maximum number of batches kept in memory before dropping data; ignored if `enabled` is `false`. User should calculate this as `num_seconds` * `requests_per_second` where: `num_seconds` is the number of seconds to buffer in case of a backend outage, `requests_per_second` is the average number of requests per seconds.
-  - This field is optional and defaults to `1000`
 - **KAFKA_PRODUCER_MAX_MESSAGE_BYTES** `string` : Producer Max Message Bytes. The maximum permitted size of a message in bytes.
   - This field is optional and defaults to `1000000`
 - **KAFKA_PRODUCER_REQUIRED_ACKS** `string` : Producer Required Acks. Controls when a message is regarded as transmitted.
@@ -155,9 +149,6 @@ There are two primary methods for configuring destinations in Odigos:
         # KAFKA_RETRY_ON_FAILURE_INITIAL_INTERVAL: <Initial Interval (default: 5s)>
         # KAFKA_RETRY_ON_FAILURE_MAX_INTERVAL: <Max Interval (default: 30s)>
         # KAFKA_RETRY_ON_FAILURE_MAX_ELAPSED_TIME: <Max Elapsed Time (default: 120s)>
-        # KAFKA_SENDING_QUEUE_ENABLED: <Enable Sending Queue (default: True)>
-        # KAFKA_SENDING_QUEUE_NUM_CONSUMERS: <Number of Consumers (default: 10)>
-        # KAFKA_SENDING_QUEUE_SIZE: <Queue Size (default: 1000)>
         # KAFKA_PRODUCER_MAX_MESSAGE_BYTES: <Producer Max Message Bytes (default: 1000000)>
         # KAFKA_PRODUCER_REQUIRED_ACKS: <Producer Required Acks (default: 1)>
         # KAFKA_PRODUCER_COMPRESSION: <Producer Compression (default: none) (options: [none, gzip, snappy, lz4, zstd])>

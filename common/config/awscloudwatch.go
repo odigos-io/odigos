@@ -8,16 +8,13 @@ import (
 )
 
 const (
-	AWS_CLOUDWATCH_LOG_GROUP_NAME              = "AWS_CLOUDWATCH_LOG_GROUP_NAME"
-	AWS_CLOUDWATCH_LOG_STREAM_NAME             = "AWS_CLOUDWATCH_LOG_STREAM_NAME"
-	AWS_CLOUDWATCH_REGION                      = "AWS_CLOUDWATCH_REGION"
-	AWS_CLOUDWATCH_ENDPOINT                    = "AWS_CLOUDWATCH_ENDPOINT"
-	AWS_CLOUDWATCH_LOG_RETENTION               = "AWS_CLOUDWATCH_LOG_RETENTION"
-	AWS_CLOUDWATCH_TAGS                        = "AWS_CLOUDWATCH_TAGS"
-	AWS_CLOUDWATCH_RAW_LOG                     = "AWS_CLOUDWATCH_RAW_LOG"
-	AWS_CLOUDWATCH_SENDING_QUEUE_ENABLED       = "AWS_CLOUDWATCH_SENDING_QUEUE_ENABLED"
-	AWS_CLOUDWATCH_SENDING_QUEUE_NUM_CONSUMERS = "AWS_CLOUDWATCH_SENDING_QUEUE_NUM_CONSUMERS"
-	AWS_CLOUDWATCH_SENDING_QUEUE_SIZE          = "AWS_CLOUDWATCH_SENDING_QUEUE_SIZE"
+	AWS_CLOUDWATCH_LOG_GROUP_NAME  = "AWS_CLOUDWATCH_LOG_GROUP_NAME"
+	AWS_CLOUDWATCH_LOG_STREAM_NAME = "AWS_CLOUDWATCH_LOG_STREAM_NAME"
+	AWS_CLOUDWATCH_REGION          = "AWS_CLOUDWATCH_REGION"
+	AWS_CLOUDWATCH_ENDPOINT        = "AWS_CLOUDWATCH_ENDPOINT"
+	AWS_CLOUDWATCH_LOG_RETENTION   = "AWS_CLOUDWATCH_LOG_RETENTION"
+	AWS_CLOUDWATCH_TAGS            = "AWS_CLOUDWATCH_TAGS"
+	AWS_CLOUDWATCH_RAW_LOG         = "AWS_CLOUDWATCH_RAW_LOG"
 )
 
 type AWSCloudWatch struct{}
@@ -85,25 +82,6 @@ func (m *AWSCloudWatch) ModifyConfig(dest ExporterConfigurer, currentConfig *Con
 	rawLog, exists := config[AWS_CLOUDWATCH_RAW_LOG]
 	if exists {
 		exporterConfig["raw_log"] = parseBool(rawLog)
-	}
-
-	sendingQueueEnabled, exists := config[AWS_CLOUDWATCH_SENDING_QUEUE_ENABLED]
-	if exists {
-		sendingQueue := GenericMap{
-			"enabled": parseBool(sendingQueueEnabled),
-		}
-
-		sendingQueueNumConsumers, exists := config[AWS_CLOUDWATCH_SENDING_QUEUE_NUM_CONSUMERS]
-		if exists {
-			sendingQueue["num_consumers"] = parseInt(sendingQueueNumConsumers)
-		}
-
-		sendingQueueSize, exists := config[AWS_CLOUDWATCH_SENDING_QUEUE_SIZE]
-		if exists {
-			sendingQueue["queue_size"] = parseInt(sendingQueueSize)
-		}
-
-		exporterConfig["sending_queue"] = sendingQueue
 	}
 
 	currentConfig.Exporters[exporterName] = exporterConfig
