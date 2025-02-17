@@ -84,6 +84,11 @@ func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) 
 	// if the values were already set (by user or profile) this is a no-op
 	sizing.SizeSProfile.ModifyConfigFunc(odigosConfig)
 
+	// TODO: revisit doing this here, might be nicer to maintain in a more generic way
+	// and have it on the config object itself.
+	// I want to preserve that user input (specific request or empty), and persist the resolved value in effective config.
+	resolveMountMethod(odigosConfig)
+
 	err = r.persistEffectiveConfig(ctx, odigosConfig)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -258,5 +263,25 @@ func modifyConfigWithEffectiveProfiles(effectiveProfiles []common.ProfileName, o
 		if p.ModifyConfigFunc != nil {
 			p.ModifyConfigFunc(odigosConfig)
 		}
+	}
+}
+
+func resolveMountMethod(odigosConfig *common.OdigosConfiguration) {
+	defaultMountMethod := common.K8sVirtualDeviceMountMethod
+
+	if odigosConfig.MountMethod == nil {
+		odigosConfig.MountMethod = &defaultMountMethod
+		return
+	}
+
+	switch *odigosConfig.MountMethod {
+	case common.K8sHostPathMountMethod:
+		return
+	case common.K8sVirtualDeviceMountMethod:
+		return
+	default:
+		// any illegal value will be defaulted to host-path
+		// TODO: emit some error here and think how to handle it
+		odigosConfig.MountMethod = &defaultMountMethod
 	}
 }
