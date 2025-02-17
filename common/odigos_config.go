@@ -112,4 +112,5 @@ type OdigosConfiguration struct {
 	AllowConcurrentAgents     *bool                          `json:"allowConcurrentAgents,omitempty"`
 	UiMode                    UiMode                         `json:"uiMode,omitempty"`
 	CentralBackendURL         string                         `json:"centralBackendURL,omitempty"`
+	MountMethod               *MountMethod                   `json:"mountMethod,omitempty"`
 }
