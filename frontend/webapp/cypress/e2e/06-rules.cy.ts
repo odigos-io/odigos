@@ -1,5 +1,5 @@
+import { BUTTONS, CRD_NAMES, DATA_IDS, INPUTS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
 import { aliasMutation, awaitToast, deleteEntity, getCrdById, getCrdIds, hasOperationName, updateEntity } from '../functions';
-import { BUTTONS, CRD_NAMES, DATA_IDS, INPUTS, MOCKED_DESCRIBE, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
 
 // The number of CRDs that exist in the cluster before running any tests should be 0.
 // Tests will fail if you have existing CRDs in the cluster.
@@ -12,13 +12,13 @@ describe('Instrumentation Rules CRUD', () => {
   beforeEach(() =>
     cy
       .intercept('/graphql', (req) => {
-        aliasMutation(req, 'DescribeOdigos');
+        aliasMutation(req, 'GetConfig');
 
-        if (hasOperationName(req, 'DescribeOdigos')) {
-          req.alias = 'describeOdigos';
+        if (hasOperationName(req, 'GetConfig')) {
+          req.alias = 'config';
           req.reply((res) => {
             // This is to make the test think this is enterprise/onprem - which will allow us to create rules
-            res.body.data = MOCKED_DESCRIBE;
+            res.body.data = { config: { tier: 'onprem' } };
           });
         }
       })
@@ -29,7 +29,6 @@ describe('Instrumentation Rules CRUD', () => {
     cy.visit(ROUTES.OVERVIEW);
 
     getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 }, () => {
-      cy.get(DATA_IDS.ADD_ENTITY).click();
       cy.get(DATA_IDS.ADD_INSTRUMENTATION_RULE).click();
       cy.get(DATA_IDS.MODAL_ADD_INSTRUMENTATION_RULE).should('exist');
       cy.get(DATA_IDS.MODAL_ADD_INSTRUMENTATION_RULE).find('input').should('have.attr', 'placeholder', INPUTS.RULE_DROPDOWN).click();

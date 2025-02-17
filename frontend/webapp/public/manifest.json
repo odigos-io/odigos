@@ -4,8 +4,8 @@
   "icons": [
     {
       "src": "/favicon.svg",
-      "sizes": "64x64 32x32 24x24 16x16 192x192 512x512",
-      "type": "image/svg+xml"
+      "sizes": "16x16 24x24 32x32 64x64 192x192 512x512",
+      "type": "image/x-icon"
     }
   ],
   "theme_color": "#FFFFFF",
