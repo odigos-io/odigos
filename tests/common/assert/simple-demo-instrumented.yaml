@@ -79,6 +79,11 @@ spec:
                   - "true"
   containers:
     - name: inventory
+      resources:
+        limits:
+          instrumentation.odigos.io/generic: "1"
+        requests:
+          instrumentation.odigos.io/generic: "1"
 status:
   containerStatuses:
     - name: inventory

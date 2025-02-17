@@ -267,7 +267,7 @@ func modifyConfigWithEffectiveProfiles(effectiveProfiles []common.ProfileName, o
 }
 
 func verifyAndResolveEffectiveMountMethod(odigosConfig *common.OdigosConfiguration) {
-	defaultMountMethod := common.K8sHostPathMountMethod
+	defaultMountMethod := common.K8sVirtualDeviceMountMethod
 
 	if odigosConfig.MountMethod == nil {
 		odigosConfig.MountMethod = &defaultMountMethod
