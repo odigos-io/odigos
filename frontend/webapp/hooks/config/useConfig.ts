@@ -3,8 +3,8 @@ import { useEffect } from 'react';
 import { GET_CONFIG } from '@/graphql';
 import { type FetchedConfig } from '@/@types';
 import { useSuspenseQuery } from '@apollo/client';
-import { CRUD, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 import { useNotificationStore } from '@odigos/ui-containers';
+import { CRUD, NOTIFICATION_TYPE, TIER } from '@odigos/ui-utils';
 
 export const useConfig = () => {
   const { addNotification } = useNotificationStore();
@@ -23,5 +23,9 @@ export const useConfig = () => {
     }
   }, [error]);
 
-  return { data: data?.config };
+  const cfg = data?.config;
+  const isCommunity = !!cfg?.tier && [TIER.COMMUNITY].includes(cfg.tier);
+  const isEnterprise = !!cfg?.tier && [TIER.ONPREM].includes(cfg.tier);
+
+  return { data: cfg, isCommunity, isEnterprise };
 };

@@ -15,7 +15,6 @@ describe('Actions CRUD', () => {
     cy.visit(ROUTES.OVERVIEW);
 
     getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 }, () => {
-      cy.get(DATA_IDS.ADD_ENTITY).click();
       cy.get(DATA_IDS.ADD_ACTION).click();
       cy.get(DATA_IDS.MODAL_ADD_ACTION).should('exist');
       cy.get(DATA_IDS.MODAL_ADD_ACTION).find('input').should('have.attr', 'placeholder', INPUTS.ACTION_DROPDOWN).click();

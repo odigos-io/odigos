@@ -49,6 +49,7 @@ jobs:
           git tag procdiscovery/${{ steps.extract_tag.outputs.tag }}
           git tag profiles/${{ steps.extract_tag.outputs.tag }}
           git tag distros/${{ steps.extract_tag.outputs.tag }}
+          git tag instrumentor/${{ steps.extract_tag.outputs.tag }}
           git push origin --tags
 
       - name: Trigger Release PR in Odigos Enterprise

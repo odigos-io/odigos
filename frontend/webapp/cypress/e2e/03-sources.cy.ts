@@ -15,20 +15,20 @@ describe('Sources CRUD', () => {
     cy.visit(ROUTES.OVERVIEW);
 
     getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 }, () => {
-      cy.get(DATA_IDS.ADD_ENTITY).click();
       cy.get(DATA_IDS.ADD_SOURCE).click();
       cy.get(DATA_IDS.MODAL_ADD_SOURCE).should('exist');
-      cy.get(DATA_IDS.SELECT_NAMESPACE).find(DATA_IDS.CHECKBOX).click();
+      cy.get(DATA_IDS.SELECT_NAMESPACE).find(DATA_IDS.CHECKBOX).click({ force: true });
 
-      SELECTED_ENTITIES.NAMESPACE_SOURCES.forEach((sourceName) => {
-        cy.get(DATA_IDS.SELECT_NAMESPACE).get(DATA_IDS.SELECT_SOURCE(sourceName)).contains(sourceName).should('exist');
-      });
-
-      cy.contains('button', BUTTONS.DONE).click();
-
+      // await namespace sources
       cy.wait('@gql').then(() => {
-        awaitToast({ withSSE: true, message: TEXTS.NOTIF_SOURCES_CREATED(5) }, () => {
-          getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 5 });
+        SELECTED_ENTITIES.NAMESPACE_SOURCES.forEach((sourceName) => cy.get(DATA_IDS.SELECT_NAMESPACE).get(DATA_IDS.SELECT_SOURCE(sourceName)).contains(sourceName).should('exist'));
+        cy.contains('button', BUTTONS.DONE).click();
+
+        // await instrumentation
+        cy.wait('@gql').then(() => {
+          awaitToast({ withSSE: true, message: TEXTS.NOTIF_SOURCES_CREATED(5) }, () => {
+            getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 5 });
+          });
         });
       });
     });

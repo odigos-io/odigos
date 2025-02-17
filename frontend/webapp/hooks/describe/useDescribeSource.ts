@@ -1,20 +1,25 @@
-import { useQuery } from '@apollo/client';
+import { useLazyQuery } from '@apollo/client';
 import { DESCRIBE_SOURCE } from '@/graphql';
-import type { DescribeSource, WorkloadId } from '@odigos/ui-utils';
+import { useNotificationStore } from '@odigos/ui-containers';
+import { CRUD, NOTIFICATION_TYPE, type DescribeSource, type WorkloadId } from '@odigos/ui-utils';
 
-export const useDescribeSource = (params?: WorkloadId) => {
-  const { namespace, name, kind } = params || {};
+export const useDescribeSource = () => {
+  const { addNotification } = useNotificationStore();
 
-  // TODO: change query, to lazy query
-  const { data, loading, error } = useQuery<{ describeSource: DescribeSource }>(DESCRIBE_SOURCE, {
-    skip: !namespace || !name || !kind,
-    variables: { namespace, name, kind },
-    pollInterval: 5000,
+  const [fetchDescribeSource, { data, loading, error }] = useLazyQuery<{ describeSource: DescribeSource }, WorkloadId>(DESCRIBE_SOURCE, {
+    fetchPolicy: 'no-cache',
+    onError: (error) =>
+      addNotification({
+        type: NOTIFICATION_TYPE.ERROR,
+        title: error.name || CRUD.READ,
+        message: error.cause?.message || error.message,
+      }),
   });
 
   return {
     loading,
     error,
     data: data?.describeSource,
+    fetchDescribeSource,
   };
 };
