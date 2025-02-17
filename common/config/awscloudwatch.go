@@ -68,7 +68,9 @@ func (m *AWSCloudWatch) ModifyConfig(dest ExporterConfigurer, currentConfig *Con
 
 		err := json.Unmarshal([]byte(tags), &tagList)
 		if err != nil {
-			return nil, errors.Join(err, errors.New("failed to parse awscloudwatch destination AWS_CLOUDWATCH_TAGS parameter as json string in the form {key: string, value: string}[]"))
+			return nil, errors.Join(err, errors.New(
+				"failed to parse awscloudwatch destination AWS_CLOUDWATCH_TAGS parameter as json string in the form {key: string, value: string}[]",
+			))
 		}
 
 		mappedTags := map[string]string{}
