@@ -56,11 +56,11 @@ export const useSourceCRUD = (params?: Params): UseSourceCrudResponse => {
   const filtered = useMemo(() => {
     let arr = [...sources];
 
-    if (!!filters.namespace) arr = arr.filter((source) => filters.namespace?.id === source.namespace);
-    if (!!filters.types.length) arr = arr.filter((source) => !!filters.types.find((type) => type.id === source.kind));
+    if (!!filters.namespaces?.length) arr = arr.filter((source) => !!filters.namespaces?.find((ns) => ns.id === source.namespace));
+    if (!!filters.kinds?.length) arr = arr.filter((source) => !!filters.kinds?.find((type) => type.id === source.kind));
     if (!!filters.onlyErrors) arr = arr.filter((source) => !!source.conditions?.find((cond) => cond.status === CONDITION_STATUS.FALSE));
-    if (!!filters.errors.length) arr = arr.filter((source) => !!filters.errors.find((error) => !!source.conditions?.find((cond) => cond.message === error.id)));
-    if (!!filters.languages.length) arr = arr.filter((source) => !!filters.languages.find((language) => !!source.containers?.find((cont) => cont.language === language.id)));
+    if (!!filters.errors?.length) arr = arr.filter((source) => !!filters.errors?.find((error) => !!source.conditions?.find((cond) => cond.message === error.id)));
+    if (!!filters.languages?.length) arr = arr.filter((source) => !!filters.languages?.find((language) => !!source.containers?.find((cont) => cont.language === language.id)));
 
     return arr;
   }, [sources, filters]);
