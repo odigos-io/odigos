@@ -151,7 +151,7 @@ spec:
       componentType: dropdown
       componentProps:
         required: false
-        tooltip: 'LogRetention is the option to set the log retention policy for only newly created CloudWatch Log Groups. The value is in days, 0 = Never Expire.'
+        tooltip: "LogRetention is the option to set the log retention policy for only newly created CloudWatch Log Groups. The value is in days, 0 = Never Expire. This value can also be changed later-on via the AWS console (UI) or AWS API, it's not a permanent decision once set. Also, the value here might not reflect the actual retention value in the destination if it was modified or some automatic policy is applied."
         values:
           - '0'
           - '1'

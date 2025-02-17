@@ -50,7 +50,7 @@ icon: 'signal-stream'
   - This field is optional
 - **AWS_CLOUDWATCH_ENDPOINT** `string` : Endpoint. The CloudWatch Logs service endpoint which the requests are forwarded to.
   - This field is optional
-- **AWS_CLOUDWATCH_LOG_RETENTION** `string` : Log Retention. LogRetention is the option to set the log retention policy for only newly created CloudWatch Log Groups. The value is in days, 0 = Never Expire.
+- **AWS_CLOUDWATCH_LOG_RETENTION** `string` : Log Retention. LogRetention is the option to set the log retention policy for only newly created CloudWatch Log Groups. The value is in days, 0 = Never Expire. This value can also be changed later-on via the AWS console (UI) or AWS API, it's not a permanent decision once set. Also, the value here might not reflect the actual retention value in the destination if it was modified or some automatic policy is applied.
   - This field is optional and defaults to `0`
 - **AWS_CLOUDWATCH_TAGS** `{ key: string; value: string; }[]` : Tags. Tags is the option to set tags for the CloudWatch Log Group. If specified, please add at most 50 tags. Keys must be between 1-128 characters and follow the pattern: (alphanumerics, whitespace, and _.:/=+-!). Values must be between 1-256 characters and follow the pattern: (alphanumerics, whitespace, and _.:/=+-!).
   - This field is optional
