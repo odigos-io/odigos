@@ -39,6 +39,8 @@ docker tag registry.odigos.io/odigos-odiglet:$VERSION $CUSTOM_DOCKER_REGISTRY/od
 docker tag registry.odigos.io/odigos-collector:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-collector:$VERSION
 ```
 
+> **Note:** Prior to v1.0.155, Odigos images were prefixed with `keyval/` (such as `keyval/odigos-scheduler`) In v1.0.155+, this is no longer the case, and Odigos does not assume this prefix. If you were hosting custom images prior to this version, you may have to re-tag your images to remove the `keyval/` prefix.
+
 ### Step 4: Push the Images
 Now, push the tagged images to your custom Docker registry:  
 ```bash
