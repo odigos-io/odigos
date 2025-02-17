@@ -34,7 +34,7 @@ func NewOnPremDefaulter() *onPremDefaulter {
 func NewGetter() (*Getter, error) {
 	g := Getter{}
 
-	distrosByName, err := getDistrosMap(yamls.GetFS())
+	distrosByName, err := GetDistrosMap(yamls.GetFS())
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ type distroResource struct {
 	Spec       distro.OtelDistro `json:"spec"`
 }
 
-func getDistrosMap(fs embed.FS) (map[string]*distro.OtelDistro, error) {
+func GetDistrosMap(fs embed.FS) (map[string]*distro.OtelDistro, error) {
 	files, err := fs.ReadDir(".")
 	if err != nil {
 		return nil, err
