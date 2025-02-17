@@ -29,6 +29,7 @@ import (
 
 type PodsWebhook struct {
 	client.Client
+	DistrosGetter *distros.Getter
 }
 
 var _ webhook.CustomDefaulter = &PodsWebhook{}
@@ -93,7 +94,7 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 			continue
 		}
 
-		containerVolumeMounted, err := injectOdigosToContainer(containerConfig, podContainerSpec, *pw, *serviceName)
+		containerVolumeMounted, err := p.injectOdigosToContainer(containerConfig, podContainerSpec, *pw, *serviceName)
 		if err != nil {
 			logger.Error(err, "failed to inject ODIGOS agent to container")
 			continue
@@ -179,11 +180,11 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *core
 	return nil
 }
 
-func injectOdigosToContainer(containerConfig *odigosv1.ContainerAgentConfig, podContainerSpec *corev1.Container, pw k8sconsts.PodWorkload, serviceName string) (bool, error) {
+func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.ContainerAgentConfig, podContainerSpec *corev1.Container, pw k8sconsts.PodWorkload, serviceName string) (bool, error) {
 
 	distroName := containerConfig.OtelDistroName
 
-	distroMetadata := distros.GetDistroByName(distroName)
+	distroMetadata := p.DistrosGetter.GetDistroByName(distroName)
 	if distroMetadata == nil {
 		return false, fmt.Errorf("distribution %s not found", distroName)
 	}
