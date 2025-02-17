@@ -25,9 +25,13 @@ func NewCommunityDefaulter() Defaulter {
 }
 
 func NewCommunityGetter() (*Getter, error) {
+	return NewGetterFromFS(yamls.GetFS())
+}
+
+func NewGetterFromFS(fs embed.FS) (*Getter, error) {
 	g := Getter{}
 
-	distrosByName, err := GetDistrosMap(yamls.GetFS())
+	distrosByName, err := GetDistrosMap(fs)
 	if err != nil {
 		return nil, err
 	}
