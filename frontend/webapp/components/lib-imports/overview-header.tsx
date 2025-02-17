@@ -19,6 +19,7 @@ const OverviewHeader = () => {
       left={[
         <OdigosLogoText key='logo' size={100} />,
         <PlatformSelect
+          key='cp-select'
           selected={{
             id: 'default',
             name: getPlatformLabel(PLATFORM_TYPE.K8S),
