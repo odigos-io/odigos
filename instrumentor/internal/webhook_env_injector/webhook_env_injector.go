@@ -24,7 +24,7 @@ func InjectOdigosAgentEnvVars(logger logr.Logger, podWorkload k8sconsts.PodWorkl
 		InjectPythonEnvVars(container)
 	}
 
-	if runtimeDetails.Language == common.JavaProgrammingLanguage && otelsdk == common.OtelSdkNativeCommunity {
+	if runtimeDetails.Language == common.JavascriptProgrammingLanguage && otelsdk == common.OtelSdkNativeCommunity {
 		injectNodejsCommunityEnvVars(container)
 	}
 
