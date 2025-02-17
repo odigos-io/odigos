@@ -19,8 +19,8 @@ metadata:
       ]
     capabilities: Basic Install
     categories: Logging & Tracing
-    containerImage: registry.connect.redhat.com/odigos/odigos-operator-ubi9@sha256:ae6d36c50a00014b607f3020abb2f639da2d255216d744b8447b943adba78132
-    createdAt: "2025-02-10T20:53:26Z"
+    containerImage: registry.connect.redhat.com/odigos/odigos-operator-ubi9@sha256:be543164c22b5f2e7762a73a854d6bdb122babd042b6747fec0283d3b101c04f
+    createdAt: "2025-02-17T21:40:51Z"
     description: Odigos enables automatic distributed tracing with OpenTelemetry and eBPF.
     features.operators.openshift.io/disconnected: "false"
     features.operators.openshift.io/fips-compliant: "true"
@@ -33,7 +33,7 @@ metadata:
     operators.operatorframework.io/builder: operator-sdk-v1.39.1
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
     support: Odigos
-  name: odigos-operator.v1.0.149
+  name: odigos-operator.v1.0.154
   namespace: odigos-operator-system
 spec:
   apiservicedefinitions: {}
@@ -375,8 +375,8 @@ spec:
                         valueFrom:
                           configMapKeyRef:
                             key: ODIGOS_VERSION
-                            name: odigos-operator-odigos-version-5t5fk676bf
-                    image: registry.connect.redhat.com/odigos/odigos-operator-ubi9@sha256:ae6d36c50a00014b607f3020abb2f639da2d255216d744b8447b943adba78132
+                            name: odigos-operator-odigos-version-46f47t59fb
+                    image: registry.connect.redhat.com/odigos/odigos-operator-ubi9@sha256:be543164c22b5f2e7762a73a854d6bdb122babd042b6747fec0283d3b101c04f
                     livenessProbe:
                       httpGet:
                         path: /healthz
@@ -472,8 +472,8 @@ spec:
     name: Odigos
     url: https://odigos.io
   relatedImages:
-    - image: registry.connect.redhat.com/odigos/odigos-operator-ubi9@sha256:ae6d36c50a00014b607f3020abb2f639da2d255216d744b8447b943adba78132
+    - image: registry.connect.redhat.com/odigos/odigos-operator-ubi9@sha256:be543164c22b5f2e7762a73a854d6bdb122babd042b6747fec0283d3b101c04f
       name: manager
-    - image: registry.connect.redhat.com/odigos/odigos-operator-ubi9@sha256:ae6d36c50a00014b607f3020abb2f639da2d255216d744b8447b943adba78132
-      name: odigos-operator-ubi9-ae6d36c50a00014b607f3020abb2f639da2d255216d744b8447b943adba78132-annotation
-  version: 1.0.149
+    - image: registry.connect.redhat.com/odigos/odigos-operator-ubi9@sha256:be543164c22b5f2e7762a73a854d6bdb122babd042b6747fec0283d3b101c04f
+      name: odigos-operator-ubi9-be543164c22b5f2e7762a73a854d6bdb122babd042b6747fec0283d3b101c04f-annotation
+  version: 1.0.154
