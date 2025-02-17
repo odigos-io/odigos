@@ -148,6 +148,7 @@
         },
         {
           "group": "Advanced",
+          "icon": "gear",
           "pages": [
             "instrumentations/configuration/mount-method"
           ]

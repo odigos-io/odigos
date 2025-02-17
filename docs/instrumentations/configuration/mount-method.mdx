@@ -1,13 +1,11 @@
 ---
 title: "Agent Mount Method"
 sidebarTitle: "Mount Method"
+icon: "gear"
+description: "For Odigos agents to run inside instrumented pod containers, certain files must be mounted into the container. In Kubernetes, these files are mounted under `/var/odigos` directory, with subdirectories for each agent. There are few mechanisms to achieve this, which are explained in this document."
 ---
 
 ## Mount Method
-
-For Odigos agents to run inside instrumented pod containers, certain files must be mounted into the container.
-
-In Kubernetes, these files are mounted under `/var/odigos` directory, with subdirectories for each agent.
 
 <Warning>
 This section is for advanced users and odigos administrators.
@@ -19,7 +17,7 @@ It is recommended to use the default settings, unless you have specific requirem
 
 Odigos supports 2 mount methods, which can be used depending on the user preference, cluster policies, integration with existing tools, etc.
 
-### VirtualDevice
+### 1. VirtualDevice
 
 <Info>
 This is the default mount method
@@ -27,7 +25,7 @@ This is the default mount method
 
 #### Pod Manifest Additions
 
-For agents and languages that requires fs mounts, odigos webhook will add the following:
+For agents and languages that requires filesystem mounts, odigos webhook will add the following:
 
 - For each instrumented container in the pod spec, odigos will add a resource requirement under the `spec.containers[].resources` field:
 
@@ -39,18 +37,18 @@ For agents and languages that requires fs mounts, odigos webhook will add the fo
         instrumentation.odigos.io/generic: "1"
 ```
 
-### Caveats
+#### Caveats
 
 - May sometimes not integrate well with node auto-scaling tools like [Karpenter](https://karpenter.sh/).
 - Odiglet daemonset needs to be running on a node for instrumented pods to be scheduled on that node.
 
-### HostPath
+### 2. HostPath
 
 This method is an opt-in configuration option which can be used if the virtual device method is not suitable for your cluster.
 
 If it is supported in the cluster, it is preferred to use over the VirtualDevice method which requires odiglet component to run.
 
-#### Enabling HostPath
+**Enabling HostPath**
 
 - Profile: `odigos profile add mount-method-k8s-host-path`
 
@@ -60,7 +58,7 @@ If it is supported in the cluster, it is preferred to use over the VirtualDevice
 
 - Kubernetes Manifest: under the `odigos-config` ConfigMap in odigos namespace, set the value in the `mountMethod` field of `config.yaml` to `k8s-host-path`.
 
-#### Pod Manifest Additions
+**Pod Manifest Additions**
 
 For agents and languages that requires filesystem mounts, odigos webhook will add the following:
 
@@ -82,7 +80,7 @@ For agents and languages that requires filesystem mounts, odigos webhook will ad
       subPath: {agent_sub_dir}
 ```
 
-#### Caveats
+**Caveats**
 
 The "HostPath" option should be enabled in the cluster. Some policy tools may block this, like: 
 
