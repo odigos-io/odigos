@@ -19,8 +19,6 @@ It is recommended to use the default settings, unless you have specific requirem
 
 Odigos supports 2 mount methods, which can be used depending on the user preference, cluster policies, integration with existing tools, etc.
 
-It is recommended to use `HostPath` unless it does not work, in this case fallback to `VirtualDevice`.
-
 ### HostPath
 
 This is the default and the recommended method.
@@ -54,10 +52,10 @@ The "host path" option should be enabled in the cluster. Some policy tools may b
 - [Open Policy Agent](https://www.openpolicyagent.org/)
 - [Kyverno](https://kyverno.io/)
 
-If you cluster has such policies, you can:
+If your cluster enforces such policies, you have the following options:
 
-- use the `VirtualDevice` method, or
-- ask the cluster admin to whitelist the odigos agent host path in the policy tool.
+- Use the VirtualDevice method.
+- Request the cluster administrator to whitelist the Odigos agent host path in the policy tool.
 
 
 ### VirtualDevice

@@ -74,7 +74,7 @@ var setConfigCmd = &cobra.Command{
 
 		currentOdigosVersion, err := getters.GetOdigosVersionInClusterFromConfigMap(ctx, client.Clientset, ns)
 		if err != nil {
-			fmt.Println("Odigos cloud login failed - unable to read the current Odigos version.")
+			fmt.Println("Odigos config failed - unable to read the current Odigos version.")
 			os.Exit(1)
 		}
 
