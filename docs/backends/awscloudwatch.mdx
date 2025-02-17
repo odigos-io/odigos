@@ -55,7 +55,7 @@ icon: 'signal-stream'
 - **AWS_CLOUDWATCH_TAGS** `{ key: string; value: string; }[]` : Tags. Tags is the option to set tags for the CloudWatch Log Group. If specified, please add at most 50 tags. Keys must be between 1-128 characters and follow the pattern: (alphanumerics, whitespace, and _.:/=+-!). Values must be between 1-256 characters and follow the pattern: (alphanumerics, whitespace, and _.:/=+-!).
   - This field is optional
 - **AWS_CLOUDWATCH_RAW_LOG** `boolean` : Raw Log. If set to true, only the log message will be exported to CloudWatch Logs. This needs to be set to true for EMF logs.
-  - This field is optional
+  - This field is optional and defaults to `False`
 - **AWS_CLOUDWATCH_SENDING_QUEUE_ENABLED** `boolean` : Enable Sending Queue.
   - This field is optional and defaults to `True`
 - **AWS_CLOUDWATCH_SENDING_QUEUE_NUM_CONSUMERS** `string` : Number of Consumers. Number of consumers that will consume from the sending queue. This parameter controls how many consumers will consume from the sending queue in parallel; ignored if `enabled` is `false`.
