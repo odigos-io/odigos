@@ -217,6 +217,7 @@ type ComplexityRoot struct {
 	GetConfigResponse struct {
 		Installation func(childComplexity int) int
 		Readonly     func(childComplexity int) int
+		Tier         func(childComplexity int) int
 	}
 
 	GetDestinationCategories struct {
@@ -1327,6 +1328,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GetConfigResponse.Readonly(childComplexity), true
+
+	case "GetConfigResponse.tier":
+		if e.complexity.GetConfigResponse.Tier == nil {
+			break
+		}
+
+		return e.complexity.GetConfigResponse.Tier(childComplexity), true
 
 	case "GetDestinationCategories.categories":
 		if e.complexity.GetDestinationCategories.Categories == nil {
@@ -8143,6 +8151,50 @@ func (ec *executionContext) fieldContext_GetConfigResponse_installation(_ contex
 	return fc, nil
 }
 
+func (ec *executionContext) _GetConfigResponse_tier(ctx context.Context, field graphql.CollectedField, obj *model.GetConfigResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GetConfigResponse_tier(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Tier, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.Tier)
+	fc.Result = res
+	return ec.marshalNTier2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTier(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GetConfigResponse_tier(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GetConfigResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Tier does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _GetConfigResponse_readonly(ctx context.Context, field graphql.CollectedField, obj *model.GetConfigResponse) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_GetConfigResponse_readonly(ctx, field)
 	if err != nil {
@@ -14833,6 +14885,8 @@ func (ec *executionContext) fieldContext_Query_config(_ context.Context, field g
 			switch field.Name {
 			case "installation":
 				return ec.fieldContext_GetConfigResponse_installation(ctx, field)
+			case "tier":
+				return ec.fieldContext_GetConfigResponse_tier(ctx, field)
 			case "readonly":
 				return ec.fieldContext_GetConfigResponse_readonly(ctx, field)
 			}
@@ -21071,6 +21125,11 @@ func (ec *executionContext) _GetConfigResponse(ctx context.Context, sel ast.Sele
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "tier":
+			out.Values[i] = ec._GetConfigResponse_tier(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "readonly":
 			out.Values[i] = ec._GetConfigResponse_readonly(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -25302,6 +25361,16 @@ func (ec *executionContext) marshalNTestConnectionResponse2ᚖgithubᚗcomᚋodi
 		return graphql.Null
 	}
 	return ec._TestConnectionResponse(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNTier2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTier(ctx context.Context, v interface{}) (model.Tier, error) {
+	var res model.Tier
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNTier2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTier(ctx context.Context, sel ast.SelectionSet, v model.Tier) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
