@@ -145,6 +145,12 @@
             "instrumentations/dotnet/native",
             "instrumentations/dotnet/enrichment"
           ]
+        },
+        {
+          "group": "Advanced",
+          "pages": [
+            "instrumentations/configuration/mount-method"
+          ]
         }
       ]
     },

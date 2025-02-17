@@ -127,6 +127,10 @@ ui:
   centralBackendURL: ''
 
 instrumentor:
+  # which mount method to use for odigos agent directory
+  # k8s-host-path: use hostPath volume (default and recommended, requires hostPath volume to be enabled in the cluster)
+  # k8s-virtual-device: fallback using a virtual device (recommended as fallback only)
+  mountMethod: 'k8s-host-path'
   deleteLangDetectionPods: true
   image:
     repository: keyval/odigos-instrumentor

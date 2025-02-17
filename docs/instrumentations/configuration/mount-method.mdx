@@ -1,0 +1,94 @@
+---
+title: "Agent Mount Method"
+sidebarTitle: "Mount Method"
+---
+
+## Mount Method
+
+For odigos agents to run in the instrumented pod containers, some files need to be mounted to the container.
+
+In Kubernetes, these files are mounted under `/var/odigos` directory, with subdirectories for each agent.
+
+<Warning>
+This section is for advanced users and odigos administrators.
+
+It is recommended to use the default settings, unless you have specific requirements or run into an issue.
+</Warning>
+
+## Supported Mount Methods
+
+Odigos supports 2 mount methods, which can be used depending on the user preference, cluster policies, integration with existing tools, etc.
+
+It is recommended to use `HostPath` unless it does not work, in this case fallback to `VirtualDevice`.
+
+### HostPath
+
+This is the default and the recommended method.
+
+#### Pod Manifest Additions
+
+For agents and languages that requires fs mounts, odigos webhook will add the following:
+
+- Volume to the pod spec, under the `spec.volumes` field:
+
+```yaml
+  - hostPath:
+      path: /var/odigos
+      type: ""
+    name: odigos-agent
+```
+
+- VolumeMount to the instrumented container specs, under the `spec.containers[].volumeMounts` field:
+
+```yaml
+    - mountPath: /var/odigos/{agent_sub_dir}
+      name: odigos-agent
+      readOnly: true
+      subPath: {agent_sub_dir}
+```
+
+#### Caveats
+
+The "host path" option should be enabled in the cluster. Some policy tools may block this option, like: 
+
+- [Open Policy Agent](https://www.openpolicyagent.org/)
+- [Kyverno](https://kyverno.io/)
+
+If you cluster has such policies, you can:
+
+- use the `VirtualDevice` method, or
+- ask the cluster admin to whitelist the odigos agent host path in the policy tool.
+
+
+### VirtualDevice
+
+This method is useful when the `HostPath` method is blocked by cluster policies.
+
+#### Enabling VirtualDevice
+
+- Profile: `odigos profile add mount-method-k8s-virtual-device`
+
+- Odigos CLI: `odigos config set mount-method mount-method-k8s-virtual-device`
+
+- Helm Chart: in your values file, set `instrumentor.mountMethod` to `k8s-virtual-device`, or use helm cli `--set instrumentor.mountMethod=k8s-virtual-device` flag with helm upgrade.
+
+- Kubernetes Manifest: under the `odigos-config` ConfigMap in odigos namespace, set the value in the `mountMethod` field of `config.yaml` to `k8s-virtual-device`.
+
+#### Pod Manifest Additions
+
+For agents and languages that requires fs mounts, odigos webhook will add the following:
+
+- For each instrumented container in the pod spec, odigos will add a resource requirement under the `spec.containers[].resources` field:
+
+```yaml
+    resources:
+      limits:
+        instrumentation.odigos.io/generic: "1"
+      requests:
+        instrumentation.odigos.io/generic: "1"
+```
+
+### Caveats
+
+- May sometimes not integrate well with node auto-scaling tools like [Karpenter](https://karpenter.sh/).
+- Odiglet daemonset needs to be running on a node for instrumented pods to be scheduled on that node.

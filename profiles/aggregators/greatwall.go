@@ -9,9 +9,10 @@ var GreatwallProfile = profile.Profile{
 	ProfileName: common.ProfileName("greatwall"),
 	MinimumTier: common.OnPremOdigosTier,
 	ShortDescription: "Bundle profile that includes " +
-		"java-ebpf-instrumentations and legacy-dotnet-instrumentation",
+		"specific preset of profiles for on-premises installations.",
 	Dependencies: []common.ProfileName{
 		"java-ebpf-instrumentations",
 		"legacy-dotnet-instrumentation",
+		"mount-method-k8s-virtual-device",
 	},
 }

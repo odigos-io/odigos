@@ -11,6 +11,7 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/log"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/getters"
 	"github.com/spf13/cobra"
 )
 
@@ -29,6 +30,7 @@ var configCmd = &cobra.Command{
 	- "ui-mode": Sets the UI mode(normal/readonly).
 	- "ignored-namespaces": List of namespaces to be ignored.
 	- "ignored-containers": List of containers to be ignored.
+	- "mount-method": Mount method for Odigos agents files to pod container filesystem (k8s-host-path/k8s-virtual-device).
 	`,
 }
 
@@ -70,7 +72,13 @@ var setConfigCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, config, "Updating Config")
+		currentOdigosVersion, err := getters.GetOdigosVersionInClusterFromConfigMap(ctx, client.Clientset, ns)
+		if err != nil {
+			fmt.Println("Odigos cloud login failed - unable to read the current Odigos version.")
+			os.Exit(1)
+		}
+
+		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, config, currentOdigosVersion)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Updating Config")
 		if err != nil {
 			l.Error(fmt.Errorf("failed to apply updated configuration: %w", err))
@@ -146,6 +154,19 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 			return fmt.Errorf("%s expects at least one value", property)
 		}
 		config.IgnoredContainers = value
+
+	case "mount-method":
+		if len(value) != 1 {
+			return fmt.Errorf("%s expects exactly one value", property)
+		}
+		mountMethod := common.MountMethod(value[0])
+		switch mountMethod {
+		case common.K8sHostPathMountMethod:
+		case common.K8sVirtualDeviceMountMethod:
+		default:
+			return fmt.Errorf("invalid mount method: %s (valid values: %s, %s)", value[0], common.K8sHostPathMountMethod, common.K8sVirtualDeviceMountMethod)
+		}
+		config.MountMethod = &mountMethod
 
 	default:
 		return fmt.Errorf("invalid property: %s", property)
