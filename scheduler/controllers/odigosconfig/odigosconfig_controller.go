@@ -87,7 +87,7 @@ func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) 
 	// TODO: revisit doing this here, might be nicer to maintain in a more generic way
 	// and have it on the config object itself.
 	// I want to preserve that user input (specific request or empty), and persist the resolved value in effective config.
-	verifyAndResolveEffectiveMountMethod(odigosConfig)
+	resolveMountMethod(odigosConfig)
 
 	err = r.persistEffectiveConfig(ctx, odigosConfig)
 	if err != nil {
@@ -266,7 +266,7 @@ func modifyConfigWithEffectiveProfiles(effectiveProfiles []common.ProfileName, o
 	}
 }
 
-func verifyAndResolveEffectiveMountMethod(odigosConfig *common.OdigosConfiguration) {
+func resolveMountMethod(odigosConfig *common.OdigosConfiguration) {
 	defaultMountMethod := common.K8sVirtualDeviceMountMethod
 
 	if odigosConfig.MountMethod == nil {
