@@ -92,9 +92,6 @@ type OtelDistro struct {
 	// Free text description of the distribution, what it includes, it's use cases, etc.
 	Description string `yaml:"description"`
 
-	// Specifies the odigos tiers which includes this distribution
-	Tiers []common.OdigosTier `yaml:"tiers"`
-
 	// a list of environment variables that needs to be set in the application runtime
 	// to enable the distribution.
 	EnvironmentVariables []EnvironmentVariable `yaml:"environmentVariables,omitempty"`
