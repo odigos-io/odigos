@@ -22,7 +22,6 @@ import (
 
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/distros"
-	"github.com/odigos-io/odigos/distros/yamls"
 
 	"github.com/odigos-io/odigos/instrumentor/controllers"
 	"github.com/odigos-io/odigos/instrumentor/sdks"
@@ -84,7 +83,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	dp, err := distros.NewProvider(defaulter, yamls.GetFS())
+	distrosGetter, err := distros.NewGetter()
+	if err != nil {
+		setupLog.Error(err, "Failed to initialize distro getter")
+		os.Exit(1)
+	}
+	dp, err := distros.NewProvider(defaulter, distrosGetter)
 	if err != nil {
 		setupLog.Error(err, "Failed to initialize distro provider")
 		os.Exit(1)
