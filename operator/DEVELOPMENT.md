@@ -35,7 +35,7 @@ and metadata required to install the Operator.
 From this directory, run:
 
 ```
-make generate manifests bundle
+USE_IMAGE_DIGESTS=true make generate manifests bundle
 ```
 
 You can set your dev image by passing the `IMG` build arg:
