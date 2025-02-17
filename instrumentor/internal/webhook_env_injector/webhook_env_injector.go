@@ -24,6 +24,10 @@ func InjectOdigosAgentEnvVars(logger logr.Logger, podWorkload k8sconsts.PodWorkl
 		InjectPythonEnvVars(container)
 	}
 
+	if runtimeDetails.Language == common.JavaProgrammingLanguage && otelsdk == common.OtelSdkNativeCommunity {
+		injectNodejsCommunityEnvVars(container)
+	}
+
 	envVarsPerLanguage := getEnvVarNamesForLanguage(runtimeDetails.Language)
 	if envVarsPerLanguage == nil {
 		return
@@ -148,6 +152,25 @@ func getContainerEnvVarPointer(containerEnv *[]corev1.EnvVar, envVarName string)
 		}
 	}
 	return nil
+}
+
+func injectNodejsCommunityEnvVars(container *corev1.Container) {
+	container.Env = append(container.Env, corev1.EnvVar{
+		Name: "NODE_IP",
+		ValueFrom: &corev1.EnvVarSource{
+			FieldRef: &corev1.ObjectFieldSelector{
+				FieldPath: "status.hostIP",
+			},
+		},
+	})
+	container.Env = append(container.Env, corev1.EnvVar{
+		Name:  commonconsts.OpampServerHostEnvName,
+		Value: fmt.Sprintf("$(NODE_IP):%d", commonconsts.OpAMPPort),
+	})
+	container.Env = append(container.Env, corev1.EnvVar{
+		Name:  commonconsts.OtelExporterEndpointEnvName,
+		Value: fmt.Sprintf("http://$(NODE_IP):%d", commonconsts.OTLPHttpPort),
+	})
 }
 
 func InjectPythonEnvVars(container *corev1.Container) {
