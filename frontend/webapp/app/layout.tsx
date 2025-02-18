@@ -13,9 +13,9 @@ function RootLayout({ children }: PropsWithChildren) {
   return (
     <html lang='en'>
       <head>
-        <meta name='description' content='Odigos' />
-        <link rel='icon' type='image/x-icon' href='/favicon.svg' />
         <link rel='manifest' href='/manifest.json' />
+        <link rel='icon' type='image/x-icon' href='/favicon.svg' />
+        <meta name='description' content='Odigos' />
         <title>Odigos</title>
       </head>
 
