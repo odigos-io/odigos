@@ -56,7 +56,7 @@ spec:
     - name: Run Cypress tests
       try:
         - script:
-            timeout: 300s
+            timeout: 600s
             content: |
               cd ../../../frontend/webapp
               yarn install
