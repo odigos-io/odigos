@@ -127,5 +127,5 @@ export const TEXTS = {
 
   NOTIF_INSTRUMENTATION_RULE_CREATED: (crdId: string) => `Rule "${crdId}" created`,
   NOTIF_INSTRUMENTATION_RULE_UPDATED: (crdId: string) => `Rule "${crdId}" updated`,
-  NOTIF_INSTRUMENTATION_RULE_DELETED: (crdId: string) => `Rule "${crdId}" delete`,
+  NOTIF_INSTRUMENTATION_RULE_DELETED: (crdId: string) => `Rule "${crdId}" deleted`,
 };

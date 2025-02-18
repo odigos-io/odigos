@@ -8,7 +8,6 @@ import { aliasMutation, awaitToast, deleteEntity, getCrdById, getCrdIds, hasOper
 const namespace = NAMESPACES.ODIGOS_SYSTEM;
 const crdName = CRD_NAMES.INSTRUMENTATION_RULE;
 const totalEntities = SELECTED_ENTITIES.INSTRUMENTATION_RULES.length;
-let recordedCrdIds: string[] = [];
 
 describe('Instrumentation Rules CRUD', () => {
   beforeEach(() =>
@@ -55,10 +54,11 @@ describe('Instrumentation Rules CRUD', () => {
 
   it(`Should update ${totalEntities} rules via API, and notify locally`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
-      SELECTED_ENTITIES.INSTRUMENTATION_RULES.forEach((ruleType, idx) => {
+      SELECTED_ENTITIES.INSTRUMENTATION_RULES.forEach((ruleType) => {
         updateEntity(
           {
-            nodeId: DATA_IDS.INSTRUMENTATION_RULE_NODE(idx),
+            // no indexed node, because rules are fetched in random order
+            nodeId: 'div',
             nodeContains: ruleType,
             fieldKey: DATA_IDS.TITLE,
             fieldValue: TEXTS.UPDATED_NAME,
@@ -76,7 +76,6 @@ describe('Instrumentation Rules CRUD', () => {
 
   it(`Should update ${totalEntities} ${crdName} CRDs in the cluster`, () => {
     getCrdIds({ namespace, crdName, expectedError: '', expectedLength: totalEntities }, (crdIds) => {
-      recordedCrdIds = crdIds;
       crdIds.forEach((crdId) => {
         getCrdById({ namespace, crdName, crdId, expectedError: '', expectedKey: 'ruleName', expectedValue: TEXTS.UPDATED_NAME });
       });
@@ -85,18 +84,20 @@ describe('Instrumentation Rules CRUD', () => {
 
   it(`Should delete ${totalEntities} actions via API, and notify locally`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
-      SELECTED_ENTITIES.INSTRUMENTATION_RULES.forEach((ruleType, idx) => {
+      SELECTED_ENTITIES.INSTRUMENTATION_RULES.forEach((ruleType) => {
         deleteEntity(
           {
-            // always index 0, because when one rule is deleted, it shifts the index of the next rule
-            nodeId: DATA_IDS.INSTRUMENTATION_RULE_NODE(0),
+            // no indexed node, because rules are fetched in random order
+            nodeId: 'div',
             nodeContains: ruleType,
             warnModalTitle: TEXTS.INSTRUMENTATION_RULE_WARN_MODAL_TITLE,
           },
           () => {
             // Wait for the rule to delete
             cy.wait('@gql').then(() => {
-              awaitToast({ withSSE: false, message: TEXTS.NOTIF_INSTRUMENTATION_RULE_DELETED(recordedCrdIds[idx]) });
+              // TODO: bring back full message after replacing CRD ID with rule type in the CRUD hook
+              // awaitToast({ withSSE: false, message: TEXTS.NOTIF_INSTRUMENTATION_RULE_DELETED('was crdId - should be ruleType') });
+              awaitToast({ withSSE: false, message: 'deleted' });
             });
           },
         );
