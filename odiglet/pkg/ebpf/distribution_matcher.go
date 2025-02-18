@@ -28,7 +28,6 @@ func (dm *podDeviceDistributionMatcher) Distribution(ctx context.Context, e K8sP
 		Environments: process.ProcessEnvs{
 			DetailedEnvs: e.procEvent.ExecDetails.Environments,
 		},
-		Exefile: nil,
 	}, lang); ok {
 		return instrumentation.OtelDistribution{Language: lang, OtelSdk: sdk}, nil
 	}

@@ -36,7 +36,49 @@ type Details struct {
 	ExePath      string
 	CmdLine      string
 	Environments ProcessEnvs
-	Exefile      *os.File
+}
+
+type ProcessContext struct {
+	Details
+
+	exeFileContent  *os.File
+	mapsFileContent *os.File
+}
+
+func NewProcessContext(details Details) *ProcessContext {
+	return &ProcessContext{
+		Details: details,
+	}
+}
+
+func (ctx *ProcessContext) ExeContent() *os.File {
+	if ctx.exeFileContent == nil {
+		path := fmt.Sprintf("/proc/%d/exe", ctx.ProcessID)
+		fileData, err := os.Open(path)
+		if err != nil {
+			// Ignore errors and return nil since we dont want to stop the process discovery
+			// if we fail to open the file (e.g. due to permissions or file not exist).
+			// nil check should be done by the relevant caller.
+			return nil
+		}
+		defer fileData.Close()
+		ctx.exeFileContent = fileData
+	}
+
+	return ctx.exeFileContent
+}
+
+func (ctx *ProcessContext) MapsContent() *os.File {
+	if ctx.mapsFileContent == nil {
+		mapsPath := fmt.Sprintf("/proc/%d/maps", ctx.ProcessID)
+		fileData, err := os.Open(mapsPath)
+		if err != nil {
+			return nil
+		}
+		defer fileData.Close()
+		ctx.mapsFileContent = fileData
+	}
+	return ctx.mapsFileContent
 }
 
 type ProcessEnvs struct {
@@ -93,14 +135,12 @@ func GetPidDetails(pid int) Details {
 	exePath := getExePath(pid)
 	cmdLine := getCommandLine(pid)
 	envVars := getRelevantEnvVars(pid)
-	exeFile := GetProcessExeFile(pid)
 
 	return Details{
 		ProcessID:    pid,
 		ExePath:      exePath,
 		CmdLine:      cmdLine,
 		Environments: envVars,
-		Exefile:      exeFile,
 	}
 }
 
@@ -188,16 +228,4 @@ func getRelevantEnvVars(pid int) ProcessEnvs {
 	}
 
 	return envs
-}
-
-func GetProcessExeFile(pid int) *os.File {
-	path := fmt.Sprintf("/proc/%d/exe", pid)
-	fileData, err := os.Open(path)
-	if err != nil {
-		// Ignore errors and return nil since we dont want to stop the process discovery
-		// if we fail to open the file (e.g. due to permissions or file not exist).
-		// nil check should be done by the relevant caller.
-		return nil
-	}
-	return fileData
 }
