@@ -1,8 +1,8 @@
 {{- define "utils.imageName" -}}
-{{- $defaultRegistry := "docker.io/keyval" -}}
+{{- $defaultRegistry := "registry.odigos.io" -}}
 {{- $redHatRegistry := "registry.connect.redhat.com/odigos" -}}
 {{- if $.Values.imagePrefix -}}
-    {{- $.Values.imagePrefix -}}/keyval/
+    {{- $.Values.imagePrefix -}}/
 {{- else -}}
     {{- if $.Values.openshift.enabled -}}
         {{- $redHatRegistry -}}/

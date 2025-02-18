@@ -118,7 +118,7 @@ func startHTTPServer(flags *Flags, odigosMetrics *collectormetrics.OdigosMetrics
 	r.GET("/api/events", sse.HandleSSEConnections)
 
 	// Remote CLI handlers
-	r.GET("/token/update/:onPremToken", services.UpdateToken)
+	r.POST("/token/update", services.UpdateToken)
 	r.GET("/describe/odigos", services.DescribeOdigos)
 	r.GET("/describe/source/namespace/:namespace/kind/:kind/name/:name", services.DescribeSource)
 

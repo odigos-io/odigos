@@ -98,7 +98,7 @@ collectorNode:
 
 autoscaler:
   image:
-    repository: keyval/odigos-autoscaler
+    repository: registry.odigos.io/odigos-autoscaler
   nodeSelector:
     kubernetes.io/os: linux
   tolerations: []
@@ -106,7 +106,7 @@ autoscaler:
 
 scheduler:
   image:
-    repository: keyval/odigos-scheduler
+    repository: registry.odigos.io/odigos-scheduler
   nodeSelector:
     kubernetes.io/os: linux
   tolerations: []
@@ -114,7 +114,7 @@ scheduler:
 
 ui:
   image:
-    repository: keyval/odigos-ui
+    repository: registry.odigos.io/odigos-ui
   nodeSelector:
     kubernetes.io/os: linux
   tolerations: []
@@ -127,9 +127,13 @@ ui:
   centralBackendURL: ''
 
 instrumentor:
+  # which mount method to use for odigos agent directory
+  # k8s-virtual-device: default method using a virtual device
+  # k8s-host-path: alternative which uses hostPath volume (recommended if supported, requires hostPath volume to be enabled in the cluster)
+  mountMethod: 'k8s-virtual-device'
   deleteLangDetectionPods: true
   image:
-    repository: keyval/odigos-instrumentor
+    repository: registry.odigos.io/odigos-instrumentor
   nodeSelector:
     kubernetes.io/os: linux
   tolerations: []
@@ -148,8 +152,8 @@ instrumentor:
 
 odiglet:
   image:
-    repository: keyval/odigos-odiglet
-    enterpriseRepository: keyval/odigos-enterprise-odiglet
+    repository: registry.odigos.io/odigos-odiglet
+    enterpriseRepository: registry.odigos.io/odigos-enterprise-odiglet
   nodeSelector:
     kubernetes.io/os: linux
   tolerations:
@@ -161,7 +165,7 @@ odiglet:
 
 cli:
   image:
-    repository: keyval/odigos-cli
+    repository: registry.odigos.io/odigos-cli
 
 # Pod Security Policy
 psp:

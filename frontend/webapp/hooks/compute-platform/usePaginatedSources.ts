@@ -11,6 +11,7 @@ export const usePaginatedSources = () => {
   const { sources, addSources, setSources, sourcesNotFinished, setSourcesNotFinished, sourcesFetching, setSourcesFetching } = usePaginatedStore();
 
   const [getSources] = useLazyQuery<{ computePlatform: { sources: ComputePlatform['computePlatform']['sources'] } }>(GET_SOURCES, {
+    fetchPolicy: 'no-cache',
     onError: (error) =>
       addNotification({
         type: NOTIFICATION_TYPE.ERROR,
