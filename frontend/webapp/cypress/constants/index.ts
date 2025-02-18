@@ -21,10 +21,12 @@ export const NAMESPACES = {
 export const SELECTED_ENTITIES = {
   NAMESPACE: NAMESPACES.DEFAULT,
   NAMESPACE_SOURCES: ['coupon', 'frontend', 'inventory', 'membership', 'pricing'],
-  DESTINATION_TYPE: 'jaeger',
-  DESTINATION_DISPLAY_NAME: 'Jaeger',
-  DESTINATION_AUTOFILL_FIELD: 'JAEGER_URL',
-  DESTINATION_AUTOFILL_VALUE: 'jaeger.tracing:4317',
+  DESTINATION: {
+    TYPE: 'jaeger',
+    DISPLAY_NAME: 'Jaeger',
+    AUTOFILL_FIELD: 'JAEGER_URL',
+    AUTOFILL_VALUE: 'jaeger.tracing:4317',
+  },
   ACTION: 'PiiMasking',
   INSTRUMENTATION_RULE: 'PayloadCollection',
 };
@@ -32,8 +34,8 @@ export const SELECTED_ENTITIES = {
 export const DATA_IDS = {
   SELECT_NAMESPACE: `[data-id=namespace-${SELECTED_ENTITIES.NAMESPACE}]`,
   SELECT_SOURCE: (sourceName: string) => `[data-id=source-${sourceName}]`,
-  SELECT_DESTINATION: `[data-id=select-potential-destination-${SELECTED_ENTITIES.DESTINATION_TYPE}]`,
-  SELECT_DESTINATION_AUTOFILL_FIELD: `[data-id=${SELECTED_ENTITIES.DESTINATION_AUTOFILL_FIELD}]`,
+  SELECT_DESTINATION: `[data-id=select-potential-destination-${SELECTED_ENTITIES.DESTINATION.TYPE}]`,
+  SELECT_DESTINATION_AUTOFILL_FIELD: `[data-id=${SELECTED_ENTITIES.DESTINATION.AUTOFILL_FIELD}]`,
 
   ADD_SOURCE: '[data-id=add-source]',
   ADD_DESTINATION: '[data-id=add-destination]',

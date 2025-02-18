@@ -16,7 +16,7 @@ describe('Sources CRUD', () => {
     getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
   });
 
-  it(`Should create ${totalEntities} via API, and notify with SSE`, () => {
+  it(`Should create ${totalEntities} ${crdName} via API, and notify with SSE`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
       cy.get(DATA_IDS.ADD_SOURCE).click();
       cy.get(DATA_IDS.MODAL_ADD_SOURCE).should('exist');
@@ -42,7 +42,7 @@ describe('Sources CRUD', () => {
     getCrdIds({ namespace, crdName, expectedError: '', expectedLength: totalEntities });
   });
 
-  it(`Should update ${totalEntities} via API, and notify locally`, () => {
+  it(`Should update ${totalEntities} ${crdName} via API, and notify locally`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
       SELECTED_ENTITIES.NAMESPACE_SOURCES.forEach((sourceName, idx) => {
         updateEntity(
@@ -71,7 +71,7 @@ describe('Sources CRUD', () => {
     });
   });
 
-  it(`Should delete ${totalEntities} via API, and notify with SSE`, () => {
+  it(`Should delete ${totalEntities} ${crdName} via API, and notify with SSE`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
       cy.get(DATA_IDS.SOURCE_NODE_HEADER).find(DATA_IDS.CHECKBOX).click();
       cy.get(DATA_IDS.MULTI_SOURCE_CONTROL).contains(totalEntities).should('exist');

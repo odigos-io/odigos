@@ -4,7 +4,7 @@ import { BUTTONS, DATA_IDS, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constant
 describe('Onboarding', () => {
   beforeEach(() => cy.intercept('/graphql').as('gql'));
 
-  it('Should contain a "default" namespace, and it should have 5 sources', () => {
+  it(`Should contain a "${SELECTED_ENTITIES.NAMESPACE}" namespace, and it should have 5 sources`, () => {
     visitPage(ROUTES.CHOOSE_SOURCES, () => {
       // Wait for the namespaces to load
       cy.wait('@gql').then(() => {
@@ -19,13 +19,13 @@ describe('Onboarding', () => {
     });
   });
 
-  it('Should contain a "Jaeger" destination, and it should be autocompleted', () => {
+  it(`Should contain a "${SELECTED_ENTITIES.DESTINATION.TYPE}" destination, and it should be autocompleted`, () => {
     visitPage(ROUTES.CHOOSE_DESTINATION, () => {
       cy.contains('button', BUTTONS.ADD_DESTINATION).click();
       // Wait for the destinations to load
       cy.wait('@gql').then(() => {
-        cy.get(DATA_IDS.SELECT_DESTINATION).contains(SELECTED_ENTITIES.DESTINATION_DISPLAY_NAME).should('exist').click();
-        cy.get(DATA_IDS.SELECT_DESTINATION_AUTOFILL_FIELD).should('have.value', SELECTED_ENTITIES.DESTINATION_AUTOFILL_VALUE);
+        cy.get(DATA_IDS.SELECT_DESTINATION).contains(SELECTED_ENTITIES.DESTINATION.DISPLAY_NAME).should('exist').click();
+        cy.get(DATA_IDS.SELECT_DESTINATION_AUTOFILL_FIELD).should('have.value', SELECTED_ENTITIES.DESTINATION.AUTOFILL_VALUE);
       });
     });
   });
