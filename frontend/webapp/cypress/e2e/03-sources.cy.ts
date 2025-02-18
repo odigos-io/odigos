@@ -56,6 +56,12 @@ describe('Sources CRUD', () => {
             // Wait for the source to update
             cy.wait('@gql').then(() => {
               awaitToast({ withSSE: false, message: TEXTS.NOTIF_SOURCES_UPDATED(sourceName) });
+
+              // Since we're updating all sources, and the modified event batcher (in SSE) refreshes the sources...
+              // We will force an extra 3 seconds-wait before we continue to the next source in the loop, this is to ensure we have an updated UI before we proceed to update the next source (otherwise Cypress will fail to find the elements).
+              cy.wait(3000).then(() => {
+                expect(true).to.be.true;
+              });
             });
           },
         );
