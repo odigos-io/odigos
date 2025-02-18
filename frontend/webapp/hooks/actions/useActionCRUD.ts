@@ -92,7 +92,7 @@ export const useActionCRUD = (params?: UseActionCrudParams): UseActionCrudRespon
   // Filter mapped data
   const filtered = useMemo(() => {
     let arr = [...mapped];
-    if (!!filters.monitors.length) arr = arr.filter((action) => !!filters.monitors.find((metric) => action.spec.signals.find((str) => str.toLowerCase() === metric.id)));
+    if (!!filters.monitors?.length) arr = arr.filter((action) => !!filters.monitors?.find((metric) => action.spec.signals.find((str) => str.toLowerCase() === metric.id)));
     return arr;
   }, [mapped, filters]);
 
