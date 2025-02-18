@@ -15,7 +15,6 @@ func (m *Instana) DestType() common.DestinationType {
 	return common.InstanaDestinationType
 }
 
-//nolint:funlen,gocyclo // This function is inherently complex due to Instana config validation, refactoring is non-trivial
 func (m *Instana) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	config := dest.GetConfig()
 	// To make sure that the exporter and pipeline names are unique, we'll need to define a unique ID

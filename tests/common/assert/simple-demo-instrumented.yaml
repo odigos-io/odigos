@@ -50,9 +50,9 @@ spec:
     - name: coupon
       resources:
         limits:
-          instrumentation.odigos.io/javascript-native-community: "1"
+          instrumentation.odigos.io/generic: "1"
         requests:
-          instrumentation.odigos.io/javascript-native-community: "1"
+          instrumentation.odigos.io/generic: "1"
 status:
   containerStatuses:
     - name: coupon
@@ -182,7 +182,7 @@ status:
   runtimeDetailsByContainer:
     - containerName: frontend
       language: java
-      runtimeVersion: 17.0.11+9
+      runtimeVersion: 17.0.14+7
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -199,7 +199,7 @@ status:
   runtimeDetailsByContainer:
     - containerName: inventory
       language: python
-      runtimeVersion: 3.11.9
+      runtimeVersion: 3.11.11
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig

@@ -145,6 +145,13 @@
             "instrumentations/dotnet/native",
             "instrumentations/dotnet/enrichment"
           ]
+        },
+        {
+          "group": "Advanced",
+          "icon": "gear",
+          "pages": [
+            "instrumentations/configuration/mount-method"
+          ]
         }
       ]
     },
@@ -213,6 +220,7 @@
           "icon": "folder-tree",
           "pages": [
             "backends/appdynamics",
+            "backends/awscloudwatch",
             "backends/awss3",
             "backends/axiom",
             "backends/azureblob",
