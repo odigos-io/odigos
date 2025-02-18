@@ -181,7 +181,9 @@ def generate_fields(yaml_content):
             f"- **{id}** `{type}` : {name}."
             + (f" {tooltip}" if tooltip else "")
             + f"\n  - This field is {'required' if is_required else 'optional'}"
-            + (f" and defaults to `{initial_value}`" if initial_value else "")
+            + (f" and defaults to `{initial_value}`" if initial_value is not None and (
+                initial_value or isinstance(initial_value, (bool, int))
+            ) else "")
             + (f"\n  - Example: `{placeholder}`" if placeholder else "")
         )
 

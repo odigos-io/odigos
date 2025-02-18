@@ -220,6 +220,7 @@
           "icon": "folder-tree",
           "pages": [
             "backends/appdynamics",
+            "backends/awscloudwatch",
             "backends/awss3",
             "backends/axiom",
             "backends/azureblob",
