@@ -23,7 +23,6 @@ export const CRD_NAMES = {
 
 export const NAMESPACES = {
   DEFAULT: 'default',
-  ODIGOS_TEST: 'odigos-test',
   ODIGOS_SYSTEM: 'odigos-system',
 };
 
@@ -37,7 +36,7 @@ export const SELECTED_ENTITIES = {
     AUTOFILL_VALUE: 'jaeger.tracing:4317',
   },
   ACTIONS: ['K8sAttributesResolver', 'AddClusterInfo', 'DeleteAttribute', 'RenameAttribute', 'ErrorSampler', 'LatencySampler', 'ProbabilisticSampler', 'PiiMasking'],
-  INSTRUMENTATION_RULE: 'PayloadCollection',
+  INSTRUMENTATION_RULES: ['PayloadCollection', 'CodeAttributes'],
 };
 
 export const DATA_IDS = {
@@ -55,9 +54,9 @@ export const DATA_IDS = {
   MODAL_ADD_SOURCE: '[data-id=modal-Add-Source]',
   MODAL_ADD_DESTINATION: '[data-id=modal-Add-Destination]',
   MODAL_ADD_ACTION: '[data-id=modal-Add-Action]',
-  ACTION_OPTION: (actionType: string) => `[data-id=option-${actionType}]`,
   MODAL_ADD_INSTRUMENTATION_RULE: '[data-id=modal-Add-Instrumentation-Rule]',
-  RULE_DROPDOWN_OPTION: '[data-id=option-payload_collection]',
+  ACTION_OPTION: (type: string) => `[data-id=option-${type}]`,
+  RULE_OPTION: (type: string) => `[data-id=option-${type}]`,
 
   DRAWER: '[data-id=drawer]',
   DRAWER_EDIT: '[data-id=drawer-edit]',

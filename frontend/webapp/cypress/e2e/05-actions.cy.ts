@@ -27,8 +27,6 @@ describe('Actions CRUD', () => {
         cy.get(DATA_IDS.MODAL_ADD_ACTION).find('input').should('have.attr', 'placeholder', INPUTS.ACTION_DROPDOWN).click();
         cy.get(DATA_IDS.ACTION_OPTION(actionType)).click();
 
-        console.log('actionType', actionType);
-
         switch (actionType) {
           case 'K8sAttributesResolver': {
             // default values are enough 👍
@@ -88,6 +86,7 @@ describe('Actions CRUD', () => {
   it(`Should have ${totalEntities} ${JSON.stringify(crdNames)} CRDs in the cluster`, () => {
     expect(crdNames.length).to.eq(totalEntities);
     crdNames.forEach((crdName) => {
+      // always 1, because each CRD has a unique name (actions only)
       getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 });
     });
   });
@@ -116,6 +115,7 @@ describe('Actions CRUD', () => {
   it(`Should update ${totalEntities} ${JSON.stringify(crdNames)} CRDs in the cluster`, () => {
     expect(crdNames.length).to.eq(totalEntities);
     crdNames.forEach((crdName) => {
+      // always 1, because each CRD has a unique name (actions only)
       getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 }, (crdIds) => {
         crdIds.forEach((crdId) => {
           getCrdById({ namespace, crdName, crdId, expectedError: '', expectedKey: 'actionName', expectedValue: TEXTS.UPDATED_NAME });
@@ -129,7 +129,8 @@ describe('Actions CRUD', () => {
       SELECTED_ENTITIES.ACTIONS.forEach((actionType) => {
         deleteEntity(
           {
-            nodeId: DATA_IDS.ACTION_NODE(0), // always index 0, because when one action is deleted, it shifts the index of the next action
+            // always index 0, because when one action is deleted, it shifts the index of the next action
+            nodeId: DATA_IDS.ACTION_NODE(0),
             nodeContains: actionType,
             warnModalTitle: TEXTS.ACTION_WARN_MODAL_TITLE,
           },
