@@ -28,6 +28,8 @@ var AllProfiles = []profile.Profile{
 	instrumentation.JavaEbpfInstrumentationsProfile,
 	instrumentation.JavaNativeInstrumentationsProfile,
 	instrumentation.LegacyDotNetProfile,
+	instrumentation.MountMethodK8sHostPathProfile,
+	instrumentation.MountMethodK8sVirtualDevice,
 
 	pipeline.DisableNameProcessorProfile,
 	pipeline.SmallBatchesProfile,

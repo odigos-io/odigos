@@ -1,0 +1,165 @@
+name: Release Odigos
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag"
+        required: true
+
+  repository_dispatch:
+    types: [release_cli]
+
+permissions:
+  contents: write
+  packages: write
+  id-token: 'write'
+
+env:
+  DOCKERHUB_ORG: "keyval"
+
+jobs:
+  release-cli:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine Tag Value
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "TAG=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
+          elif [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            echo "TAG=${{ github.event.client_payload.tag }}" >> $GITHUB_ENV
+          else
+            echo "Unknown event type"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ env.TAG }}
+
+      - name: Set env
+        id: vars
+        run: |
+          SHORT_COMMIT=$(git rev-parse --short HEAD)
+          echo "short_commit=${SHORT_COMMIT}" >> $GITHUB_ENV
+          echo "date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> $GITHUB_OUTPUT
+
+      - name: Notify Slack Start
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"description":"Starting Odigos CLI release", "tag":"${{ env.TAG }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+
+      - name: Verify Components Image Ready
+        run: |
+          declare -a REPOS=("odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-enterprise-odiglet" "odigos-ui")
+          TAG_TO_CHECK=${{ env.TAG }}
+
+          for REPO in "${REPOS[@]}"; do
+            echo "Checking tag $TAG_TO_CHECK in $REPO..."
+            TAGS_JSON=$(curl -s "https://artifactregistry.us-central1.rep.googleapis.com/v1/projects/odigos-cloud/locations/us-central1/repositories/components/packages/$REPO/tags")
+            if echo "$TAGS_JSON" | grep -q "\"name\": \"projects/odigos-cloud/locations/us-central1/repositories/components/packages/$REPO/tags/$TAG_TO_CHECK"; then
+                echo "Tag $TAG_TO_CHECK exists in Docker Hub repository $REPO."
+            else
+                echo "Tag $TAG_TO_CHECK does not exist in Docker Hub repository $REPO."
+                exit 1
+            fi
+          done
+
+      - id: gcp-auth
+        name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          token_format: 'access_token'
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          access_token_lifetime: 1200s
+        
+      - name: Login to Artifact Registry
+        uses: docker/login-action@v3
+        with:
+          registry: us-central1-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.gcp-auth.outputs.access_token }}
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - uses: goreleaser/goreleaser-action@v5
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --rm-dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_GITHUB_API_TOKEN }}
+
+      - uses: ko-build/setup-ko@v0.8
+
+      - name: publish cli image to docker registries
+        working-directory: ./cli
+        env:
+          KO_DOCKER_REPO: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-cli
+          KO_CONFIG_PATH: ./.ko.yaml
+          VERSION: ${{ env.TAG }}
+          SHORT_COMMIT: ${{ steps.vars.outputs.short_commit }}
+          DATE: ${{ steps.vars.outputs.date }}
+        run: |
+          ko build --bare --tags latest --tags ${{ env.TAG }} --platform=all .
+
+      - name: Notify Slack End
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"description":"Odigos CLI released successfully. new version is ready", "tag":"${{ env.TAG }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+
+      - name: Notify Slack on Failure
+        if: ${{ failure() || cancelled() }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"ERROR: failed to publish odigos CLI", "tag":"${{ env.TAG }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+
+  release-helm:
+    needs: [release-cli]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine Tag Value
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "TAG=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
+          elif [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            echo "TAG=${{ github.event.client_payload.tag }}" >> $GITHUB_ENV
+          else
+            echo "Unknown event type"
+            echo "TAG=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config --global user.email "bot@odigos.io"
+          git config --global user.name "Odigos Release Bot"
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4.2.0
+        with:
+          version: v3.15.2
+
+      - name: Release Helm charts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash ./scripts/release-charts.sh
