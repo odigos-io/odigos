@@ -177,7 +177,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		return &agentInjectedStatusCondition{
 			Status:  metav1.ConditionTrue,
 			Reason:  odigosv1.AgentEnabledReasonEnabledSuccessfully,
-			Message: fmt.Sprintf("agent injected successfully to %d containers: %v", len(instrumentedContainerNames), instrumentedContainerNames),
+			Message: fmt.Sprintf("agent enabled in %d containers: %v", len(instrumentedContainerNames), instrumentedContainerNames),
 		}, nil
 	} else {
 		// if none of the containers are instrumented, we can set the status to false
@@ -194,7 +194,7 @@ func containerConfigToStatusCondition(containerConfig odigosv1.ContainerAgentCon
 		return &agentInjectedStatusCondition{
 			Status:  metav1.ConditionTrue,
 			Reason:  odigosv1.AgentEnabledReasonEnabledSuccessfully,
-			Message: fmt.Sprintf("agent injected successfully to container %s", containerConfig.ContainerName),
+			Message: fmt.Sprintf("agent enabled for container %s", containerConfig.ContainerName),
 		}
 	} else {
 		return &agentInjectedStatusCondition{
