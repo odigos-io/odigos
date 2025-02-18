@@ -36,7 +36,7 @@ export const SELECTED_ENTITIES = {
     AUTOFILL_VALUE: 'jaeger.tracing:4317',
   },
   ACTIONS: ['K8sAttributesResolver', 'AddClusterInfo', 'DeleteAttribute', 'RenameAttribute', 'ErrorSampler', 'LatencySampler', 'ProbabilisticSampler', 'PiiMasking'],
-  INSTRUMENTATION_RULES: ['CodeAttributes', 'PayloadCollection'],
+  INSTRUMENTATION_RULES: ['PayloadCollection', 'CodeAttributes'],
 };
 
 export const DATA_IDS = {
