@@ -64,7 +64,7 @@ describe('Sources CRUD', () => {
   });
 
   it(`Should update ${totalEntities} ${crdName} CRDs in the cluster`, () => {
-    getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 5 }, (crdIds) => {
+    getCrdIds({ namespace, crdName, expectedError: '', expectedLength: totalEntities }, (crdIds) => {
       crdIds.forEach((crdId) => {
         getCrdById({ namespace, crdName, crdId, expectedError: '', expectedKey: 'serviceName', expectedValue: TEXTS.UPDATED_NAME });
       });
