@@ -12,13 +12,6 @@ export const CRD_NAMES = {
   INSTRUMENTATION_RULE: 'instrumentationrules.odigos.io',
 };
 
-export const CRD_IDS = {
-  SOURCE: 'deployment-frontend',
-  DESTINATION: '',
-  ACTION: '',
-  INSTRUMENTATION_RULE: '',
-};
-
 export const NAMESPACES = {
   DEFAULT: 'default',
   ODIGOS_TEST: 'odigos-test',
@@ -28,7 +21,6 @@ export const NAMESPACES = {
 export const SELECTED_ENTITIES = {
   NAMESPACE: NAMESPACES.DEFAULT,
   NAMESPACE_SOURCES: ['coupon', 'frontend', 'inventory', 'membership', 'pricing'],
-  SOURCE: 'frontend',
   DESTINATION_TYPE: 'jaeger',
   DESTINATION_DISPLAY_NAME: 'Jaeger',
   DESTINATION_AUTOFILL_FIELD: 'JAEGER_URL',
@@ -67,10 +59,10 @@ export const DATA_IDS = {
   TOAST_ACTION: '[data-id=toast-action]',
 
   SOURCE_NODE_HEADER: '[data-id=source-header]',
-  SOURCE_NODE: '[data-id=source-1]',
-  DESTINATION_NODE: '[data-id=destination-0]',
-  ACTION_NODE: '[data-id=action-0]',
-  INSTRUMENTATION_RULE_NODE: '[data-id=rule-0]',
+  SOURCE_NODE: (index: number) => `[data-id=source-${index}]`,
+  DESTINATION_NODE: (index: number) => `[data-id=destination-${index}]`,
+  ACTION_NODE: (index: number) => `[data-id=action-${index}]`,
+  INSTRUMENTATION_RULE_NODE: (index: number) => `[data-id=rule-${index}]`,
 
   ACTION_DROPDOWN_OPTION: '[data-id=option-pii-masking]',
   RULE_DROPDOWN_OPTION: '[data-id=option-payload_collection]',
