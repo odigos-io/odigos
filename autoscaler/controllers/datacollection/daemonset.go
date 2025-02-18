@@ -319,32 +319,32 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 									Name:      k8sconsts.OdigosNodeCollectorConfigMapKey,
 									MountPath: confDir,
 								},
-								{
+								{ // Pod logs
 									Name:      "varlog",
 									MountPath: "/var/log",
 									ReadOnly:  true,
 								},
-								{
+								{ // Host metrics
 									Name:      "host-dev",
 									MountPath: "/hostfs/dev",
 									ReadOnly:  true,
 								},
-								{
+								{ // Host metrics
 									Name:      "host-etc",
 									MountPath: "/hostfs/etc",
 									ReadOnly:  true,
 								},
-								{
+								{ // Host metrics
 									Name:      "host-proc",
 									MountPath: "/hostfs/proc",
 									ReadOnly:  true,
 								},
-								{
+								{ // Host metrics
 									Name:      "host-sys",
 									MountPath: "/hostfs/sys",
 									ReadOnly:  true,
 								},
-								{
+								{ // Host metrics
 									Name:      "host-var",
 									MountPath: "/hostfs/var",
 									ReadOnly:  true,
