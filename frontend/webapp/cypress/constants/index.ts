@@ -8,7 +8,16 @@ export const ROUTES = {
 export const CRD_NAMES = {
   SOURCE: 'instrumentationconfigs.odigos.io',
   DESTINATION: 'destinations.odigos.io',
-  ACTION: 'piimaskings.actions.odigos.io',
+  ACTIONS: [
+    'k8sattributesresolvers.actions.odigos.io',
+    'addclusterinfos.actions.odigos.io',
+    'deleteattributes.actions.odigos.io',
+    'renameattributes.actions.odigos.io',
+    'errorsamplers.actions.odigos.io',
+    'latencysamplers.actions.odigos.io',
+    'probabilisticsamplers.actions.odigos.io',
+    'piimaskings.actions.odigos.io',
+  ],
   INSTRUMENTATION_RULE: 'instrumentationrules.odigos.io',
 };
 
@@ -27,7 +36,7 @@ export const SELECTED_ENTITIES = {
     AUTOFILL_FIELD: 'JAEGER_URL',
     AUTOFILL_VALUE: 'jaeger.tracing:4317',
   },
-  ACTION: 'PiiMasking',
+  ACTIONS: ['K8sAttributesResolver', 'AddClusterInfo', 'DeleteAttribute', 'RenameAttribute', 'ErrorSampler', 'LatencySampler', 'ProbabilisticSampler', 'PiiMasking'],
   INSTRUMENTATION_RULE: 'PayloadCollection',
 };
 
@@ -46,7 +55,9 @@ export const DATA_IDS = {
   MODAL_ADD_SOURCE: '[data-id=modal-Add-Source]',
   MODAL_ADD_DESTINATION: '[data-id=modal-Add-Destination]',
   MODAL_ADD_ACTION: '[data-id=modal-Add-Action]',
+  ACTION_OPTION: (actionType: string) => `[data-id=option-${actionType}]`,
   MODAL_ADD_INSTRUMENTATION_RULE: '[data-id=modal-Add-Instrumentation-Rule]',
+  RULE_DROPDOWN_OPTION: '[data-id=option-payload_collection]',
 
   DRAWER: '[data-id=drawer]',
   DRAWER_EDIT: '[data-id=drawer-edit]',
@@ -60,15 +71,12 @@ export const DATA_IDS = {
   TOAST_CLOSE: '[data-id=toast-close]',
   TOAST_ACTION: '[data-id=toast-action]',
 
+  MULTI_SOURCE_CONTROL: '[data-id=multi-source-control]',
   SOURCE_NODE_HEADER: '[data-id=source-header]',
   SOURCE_NODE: (index: number) => `[data-id=source-${index}]`,
   DESTINATION_NODE: (index: number) => `[data-id=destination-${index}]`,
   ACTION_NODE: (index: number) => `[data-id=action-${index}]`,
   INSTRUMENTATION_RULE_NODE: (index: number) => `[data-id=rule-${index}]`,
-
-  ACTION_DROPDOWN_OPTION: '[data-id=option-pii-masking]',
-  RULE_DROPDOWN_OPTION: '[data-id=option-payload_collection]',
-  MULTI_SOURCE_CONTROL: '[data-id=multi-source-control]',
 
   TITLE: '[data-id=title]',
   SOURCE_TITLE: '[data-id=sourceName]',
