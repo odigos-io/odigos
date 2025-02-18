@@ -10,6 +10,7 @@ on:
 
 jobs:
   build-autoscaler:
+    name: build-autoscaler
     strategy:
       matrix:
         dockerfile: ['Dockerfile', 'Dockerfile.rhel']
@@ -28,6 +29,7 @@ jobs:
           file: ${{ matrix.dockerfile }}
 
   build-scheduler:
+    name: build-scheduler
     strategy:
       matrix:
         dockerfile: ['Dockerfile', 'Dockerfile.rhel']
@@ -46,6 +48,7 @@ jobs:
           file: ${{ matrix.dockerfile }}
 
   build-and-test-instrumentor:
+    name: build-and-test-instrumentor
     strategy:
       matrix:
         dockerfile: ['Dockerfile', 'Dockerfile.rhel']
@@ -71,6 +74,7 @@ jobs:
           make test
 
   build-and-test-odigos-collector:
+    name: build-and-test-odigos-collector
     strategy:
       matrix:
         dockerfile: ['collector/Dockerfile', 'collector/Dockerfile.rhel']
@@ -93,6 +97,7 @@ jobs:
           make test
 
   build-and-test-odiglet:
+    name: build-and-test-odiglet
     strategy:
       matrix:
         dockerfile: ['odiglet/Dockerfile', 'odiglet/Dockerfile.rhel']
@@ -120,6 +125,7 @@ jobs:
           make test
 
   build-frontend:
+    name: build-frontend
     strategy:
       matrix:
         dockerfile: ['frontend/Dockerfile', 'frontend/Dockerfile.rhel']
