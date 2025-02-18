@@ -407,11 +407,11 @@ func isReadyForInstrumentation(cg *odigosv1.CollectorsGroup, ic *odigosv1.Instru
 
 func isNodeCollectorReady(cg *odigosv1.CollectorsGroup) (bool, string) {
 	if cg == nil {
-		return false, "node collector deployment not yet created"
+		return false, "waiting for OpenTelemetry Collector to be created"
 	}
 
 	if !cg.Status.Ready {
-		return false, "node collector is not yet ready to receive telemetry from instrumented workloads"
+		return false, "waiting for OpenTelemetry Collector to be ready"
 	}
 
 	// node collector is ready to receive telemetry
