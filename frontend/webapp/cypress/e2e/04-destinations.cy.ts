@@ -16,7 +16,7 @@ describe('Destinations CRUD', () => {
     getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
   });
 
-  it(`Should create ${totalEntities} ${crdName} via API, and notify with SSE`, () => {
+  it(`Should create ${totalEntities} destinations via API, and notify with SSE`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
       cy.get(DATA_IDS.ADD_DESTINATION).click();
       cy.get(DATA_IDS.MODAL_ADD_DESTINATION).should('exist');
@@ -35,7 +35,7 @@ describe('Destinations CRUD', () => {
     getCrdIds({ namespace, crdName, expectedError: '', expectedLength: totalEntities });
   });
 
-  it(`Should update ${totalEntities} ${crdName} via API, and notify locally`, () => {
+  it(`Should update ${totalEntities} destinations via API, and notify locally`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
       updateEntity(
         {
@@ -62,7 +62,7 @@ describe('Destinations CRUD', () => {
     });
   });
 
-  it(`Should delete ${totalEntities} ${crdName} via API, and notify with SSE`, () => {
+  it(`Should delete ${totalEntities} destinations via API, and notify with SSE`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
       deleteEntity(
         {
