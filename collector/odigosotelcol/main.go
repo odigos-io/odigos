@@ -8,8 +8,8 @@ import (
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/confmap"
-	odigosfileprovider "go.opentelemetry.io/collector/odigos/providers/odigosfileprovider"
 	envprovider "go.opentelemetry.io/collector/confmap/provider/envprovider"
+	odigosfileprovider "go.opentelemetry.io/collector/odigos/providers/odigosfileprovider"
 	"go.opentelemetry.io/collector/otelcol"
 )
 
@@ -32,8 +32,8 @@ func main() {
 			},
 		}, ProviderModules: map[string]string{
 			odigosfileprovider.NewFactory().Create(confmap.ProviderSettings{}).Scheme(): "go.opentelemetry.io/collector/odigos/providers/odigosfileprovider v0.120.0",
-			envprovider.NewFactory().Create(confmap.ProviderSettings{}).Scheme(): "go.opentelemetry.io/collector/confmap/provider/envprovider v0.120.0",
-           },
+			envprovider.NewFactory().Create(confmap.ProviderSettings{}).Scheme():        "go.opentelemetry.io/collector/confmap/provider/envprovider v0.120.0",
+		},
 	}
 
 	if err := run(set); err != nil {
