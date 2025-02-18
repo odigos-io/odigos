@@ -15,7 +15,6 @@ describe('Destinations CRUD', () => {
     cy.visit(ROUTES.OVERVIEW);
 
     getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 }, () => {
-      cy.get(DATA_IDS.ADD_ENTITY).click();
       cy.get(DATA_IDS.ADD_DESTINATION).click();
       cy.get(DATA_IDS.MODAL_ADD_DESTINATION).should('exist');
       cy.get(DATA_IDS.SELECT_DESTINATION).contains(SELECTED_ENTITIES.DESTINATION_DISPLAY_NAME).should('exist').click();

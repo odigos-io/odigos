@@ -11,7 +11,6 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
-	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -39,7 +38,7 @@ type agentInjectedStatusCondition struct {
 	Message string
 }
 
-func reconcileAll(ctx context.Context, c client.Client) (ctrl.Result, error) {
+func reconcileAll(ctx context.Context, c client.Client, dp *distros.Provider) (ctrl.Result, error) {
 	allInstrumentationConfigs := odigosv1.InstrumentationConfigList{}
 	listErr := c.List(ctx, &allInstrumentationConfigs)
 	if listErr != nil {
@@ -47,7 +46,7 @@ func reconcileAll(ctx context.Context, c client.Client) (ctrl.Result, error) {
 	}
 
 	for _, ic := range allInstrumentationConfigs.Items {
-		res, err := reconcileWorkload(ctx, c, ic.Name, ic.Namespace)
+		res, err := reconcileWorkload(ctx, c, ic.Name, ic.Namespace, dp)
 		if err != nil || !res.IsZero() {
 			return res, err
 		}
@@ -56,7 +55,7 @@ func reconcileAll(ctx context.Context, c client.Client) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-func reconcileWorkload(ctx context.Context, c client.Client, icName string, namespace string) (ctrl.Result, error) {
+func reconcileWorkload(ctx context.Context, c client.Client, icName string, namespace string, distroProvider *distros.Provider) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
 	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(icName)
@@ -84,7 +83,7 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 
 	logger.Info("Reconciling workload for InstrumentationConfig object agent enabling", "name", ic.Name, "namespace", ic.Namespace, "instrumentationConfigName", ic.Name)
 
-	condition, err := updateInstrumentationConfigSpec(ctx, c, pw, &ic)
+	condition, err := updateInstrumentationConfigSpec(ctx, c, pw, &ic, distroProvider)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -118,7 +117,7 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 // if the function returns without an error, it also returns an agentInjectedStatusCondition object
 // which records what should be written to the status.conditions field of the instrumentation config
 // and later be used for viability and monitoring purposes.
-func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload, ic *odigosv1.InstrumentationConfig) (*agentInjectedStatusCondition, error) {
+func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload, ic *odigosv1.InstrumentationConfig, distroProvider *distros.Provider) (*agentInjectedStatusCondition, error) {
 
 	cg, irls, effectiveConfig, err := getRelevantResources(ctx, c, pw)
 	if err != nil {
@@ -130,6 +129,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	prerequisiteCompleted, reason, message := isReadyForInstrumentation(cg, ic)
 	if !prerequisiteCompleted {
 		ic.Spec.AgentInjectionEnabled = false
+		ic.Spec.AgentsMetaHash = ""
 		ic.Spec.Containers = []odigosv1.ContainerAgentConfig{}
 		return &agentInjectedStatusCondition{
 			Status:  metav1.ConditionUnknown,
@@ -138,13 +138,12 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		}, nil
 	}
 
-	tier := env.GetOdigosTierFromEnv()
-	defaultDistrosPerLanguage := distros.GetDefaultDistroNames(tier)
-	distroPerLanguage := applyRulesForDistros(defaultDistrosPerLanguage, irls)
+	defaultDistrosPerLanguage := distroProvider.GetDefaultDistroNames()
+	distroPerLanguage := applyRulesForDistros(defaultDistrosPerLanguage, irls, distroProvider.Getter)
 
 	containersConfig := make([]odigosv1.ContainerAgentConfig, 0, len(ic.Spec.Containers))
 	for _, containerRuntimeDetails := range ic.Status.RuntimeDetailsByContainer {
-		currentContainerConfig := containerInstrumentationConfig(containerRuntimeDetails.ContainerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage)
+		currentContainerConfig := containerInstrumentationConfig(containerRuntimeDetails.ContainerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter)
 		containersConfig = append(containersConfig, currentContainerConfig)
 	}
 	ic.Spec.Containers = containersConfig
@@ -170,6 +169,11 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		// if any instrumented containers are found, the pods webhook should process pods for this workload.
 		// set the AgentInjectionEnabled to true to signal that.
 		ic.Spec.AgentInjectionEnabled = true
+		agentsDeploymentHash, err := rollout.HashForContainersConfig(containersConfig)
+		if err != nil {
+			return nil, err
+		}
+		ic.Spec.AgentsMetaHash = string(agentsDeploymentHash)
 		return &agentInjectedStatusCondition{
 			Status:  metav1.ConditionTrue,
 			Reason:  odigosv1.AgentEnabledReasonEnabledSuccessfully,
@@ -179,6 +183,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		// if none of the containers are instrumented, we can set the status to false
 		// to signal to the webhook that those pods should not be processed.
 		ic.Spec.AgentInjectionEnabled = false
+		ic.Spec.AgentsMetaHash = ""
 		return aggregatedCondition, nil
 	}
 }
@@ -203,7 +208,8 @@ func containerConfigToStatusCondition(containerConfig odigosv1.ContainerAgentCon
 func containerInstrumentationConfig(containerName string,
 	effectiveConfig *common.OdigosConfiguration,
 	runtimeDetails odigosv1.RuntimeDetailsByContainer,
-	distroPerLanguage map[common.ProgrammingLanguage]string) odigosv1.ContainerAgentConfig {
+	distroPerLanguage map[common.ProgrammingLanguage]string,
+	distroGetter *distros.Getter) odigosv1.ContainerAgentConfig {
 
 	// check unknown language first. if language is not supported, we can skip the rest of the checks.
 	if runtimeDetails.Language == common.UnknownProgrammingLanguage {
@@ -245,7 +251,7 @@ func containerInstrumentationConfig(containerName string,
 		}
 	}
 
-	distro := distros.GetDistroByName(distroName)
+	distro := distroGetter.GetDistroByName(distroName)
 	if distro == nil {
 		return odigosv1.ContainerAgentConfig{
 			ContainerName:      containerName,
@@ -340,7 +346,7 @@ func containerInstrumentationConfig(containerName string,
 }
 
 func applyRulesForDistros(defaultDistros map[common.ProgrammingLanguage]string,
-	instrumentationRules *[]odigosv1.InstrumentationRule) map[common.ProgrammingLanguage]string {
+	instrumentationRules *[]odigosv1.InstrumentationRule, dg *distros.Getter) map[common.ProgrammingLanguage]string {
 
 	distrosPerLanguage := make(map[common.ProgrammingLanguage]string, len(defaultDistros))
 	for lang, distroName := range defaultDistros {
@@ -352,7 +358,7 @@ func applyRulesForDistros(defaultDistros map[common.ProgrammingLanguage]string,
 			continue
 		}
 		for _, distroName := range rule.Spec.OtelDistros.OtelDistroNames {
-			distro := distros.GetDistroByName(distroName)
+			distro := dg.GetDistroByName(distroName)
 			if distro == nil {
 				continue
 			}
