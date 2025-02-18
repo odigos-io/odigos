@@ -74,3 +74,20 @@ func initiateRuntimeDetailsConditionIfMissing(ic *odigosv1.InstrumentationConfig
 
 	return true
 }
+
+func initiateAgentEnabledConditionIfMissing(ic *odigosv1.InstrumentationConfig) bool {
+	if meta.FindStatusCondition(ic.Status.Conditions, odigosv1.AgentEnabledStatusConditionType) != nil {
+		// avoid adding the condition if it already exists
+		return false
+	}
+
+	ic.Status.Conditions = append(ic.Status.Conditions, metav1.Condition{
+		Type:               odigosv1.AgentEnabledStatusConditionType,
+		Status:             metav1.ConditionUnknown,
+		Reason:             string(odigosv1.AgentEnabledReasonWaitingForRuntimeInspection),
+		Message:            "Waiting for runtime detection to complete",
+		LastTransitionTime: metav1.NewTime(time.Now()),
+	})
+
+	return true
+}
