@@ -85,6 +85,7 @@ export const DATA_IDS = {
 };
 
 export const BUTTONS = {
+  BACK: 'BACK',
   NEXT: 'NEXT',
   DONE: 'DONE',
   ADD_DESTINATION: 'ADD DESTINATION',
@@ -102,6 +103,7 @@ export const TEXTS = {
   UPDATED_NAME: CYPRESS_TEST,
 
   NO_RESOURCES: (namespace: string) => `No resources found in ${namespace} namespace.`,
+  NO_SOURCES_SELECTED: 'No sources selected. Please go back to select sources.',
 
   SOURCE_WARN_MODAL_TITLE: 'Uninstrument 5 sources',
   SOURCE_WARN_MODAL_NOTE: "You're about to uninstrument the last source",
