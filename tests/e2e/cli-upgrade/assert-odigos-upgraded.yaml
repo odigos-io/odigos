@@ -14,7 +14,7 @@ metadata:
 spec:
   containers:
     - name: manager
-      image: keyval/odigos-autoscaler:e2e-test
+      image: registry.odigos.io/odigos-autoscaler:e2e-test
 status:
   containerStatuses:
     - name: manager
@@ -32,7 +32,7 @@ metadata:
 spec:
   containers:
     - name: manager
-      image: keyval/odigos-scheduler:e2e-test
+      image: registry.odigos.io/odigos-scheduler:e2e-test
 status:
   containerStatuses:
     - name: manager
@@ -50,7 +50,7 @@ metadata:
 spec:
   containers:
     - name: manager
-      image: keyval/odigos-instrumentor:e2e-test
+      image: registry.odigos.io/odigos-instrumentor:e2e-test
 status:
   containerStatuses:
     - name: manager
@@ -80,7 +80,7 @@ spec:
           add:
             - SYS_PTRACE
         privileged: true
-      image: keyval/odigos-odiglet:e2e-test
+      image: registry.odigos.io/odigos-odiglet:e2e-test
   hostNetwork: true
   hostPID: true
   nodeName: kind-control-plane
@@ -116,7 +116,7 @@ spec:
           add:
             - SYS_PTRACE
         privileged: true
-      image: keyval/odigos-odiglet:e2e-test
+      image: registry.odigos.io/odigos-odiglet:e2e-test
   hostNetwork: true
   hostPID: true
   nodeName: kind-worker
@@ -146,7 +146,7 @@ metadata:
 spec:
   containers:
     - name: data-collection
-      image: keyval/odigos-collector:e2e-test
+      image: registry.odigos.io/odigos-collector:e2e-test
   hostNetwork: true
   nodeName: kind-control-plane
   nodeSelector:
@@ -176,7 +176,7 @@ metadata:
 spec:
   containers:
     - name: data-collection
-      image: keyval/odigos-collector:e2e-test
+      image: registry.odigos.io/odigos-collector:e2e-test
   hostNetwork: true
   nodeName: kind-worker
   nodeSelector:
@@ -200,7 +200,7 @@ metadata:
 spec:
   containers:
     - name: gateway
-      image: keyval/odigos-collector:e2e-test
+      image: registry.odigos.io/odigos-collector:e2e-test
 status:
   containerStatuses:
     - name: gateway

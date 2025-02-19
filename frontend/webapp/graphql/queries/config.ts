@@ -5,6 +5,7 @@ export const GET_CONFIG = gql`
   query GetConfig {
     config {
       installation
+      tier
       readonly
     }
   }

@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { type WorkloadId } from '@odigos/ui-utils';
-import { ActionDrawer, ActionModal, DestinationDrawer, DestinationModal, InstrumentationRuleDrawer, InstrumentationRuleModal, SourceDrawer, SourceModal, useDrawerStore } from '@odigos/ui-containers';
+import { ActionDrawer, ActionModal, DestinationDrawer, DestinationModal, InstrumentationRuleDrawer, InstrumentationRuleModal, SourceDrawer, SourceModal } from '@odigos/ui-containers';
 import {
   useActionCRUD,
-  useDescribeOdigos,
+  useConfig,
   useDescribeSource,
   useDestinationCategories,
   useDestinationCRUD,
@@ -15,7 +14,7 @@ import {
 } from '@/hooks';
 
 const OverviewModalsAndDrawers = () => {
-  const { drawerEntityId } = useDrawerStore();
+  const { isEnterprise } = useConfig();
 
   const { sources, persistSources, updateSource } = useSourceCRUD();
   const { actions, createAction, updateAction, deleteAction } = useActionCRUD();
@@ -25,11 +24,10 @@ const OverviewModalsAndDrawers = () => {
   const [selectedNamespace, setSelectedNamespace] = useState('');
   const { allNamespaces, data: namespace, loading: nsLoad } = useNamespace(selectedNamespace);
 
-  const { isPro } = useDescribeOdigos();
   const { categories } = useDestinationCategories();
+  const { fetchDescribeSource } = useDescribeSource();
   const { potentialDestinations } = usePotentialDestinations();
   const { data: testResult, loading: testLoading, testConnection } = useTestConnection();
-  const { data: describeSource } = useDescribeSource(typeof drawerEntityId === 'object' ? (drawerEntityId as WorkloadId) : undefined);
 
   return (
     <>
@@ -51,11 +49,11 @@ const OverviewModalsAndDrawers = () => {
         testLoading={testLoading}
         testResult={testResult}
       />
-      <InstrumentationRuleModal isEnterprise={isPro} createInstrumentationRule={createInstrumentationRule} />
+      <InstrumentationRuleModal isEnterprise={isEnterprise} createInstrumentationRule={createInstrumentationRule} />
       <ActionModal createAction={createAction} />
 
       {/* drawers */}
-      <SourceDrawer sources={sources} persistSources={persistSources} updateSource={updateSource} describe={describeSource} />
+      <SourceDrawer sources={sources} persistSources={persistSources} updateSource={updateSource} fetchDescribeSource={fetchDescribeSource} />
       <DestinationDrawer
         categories={categories}
         destinations={destinations}

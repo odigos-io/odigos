@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --turbopack",
     "build": "next build",
     "back:build": "cd .. && go build -o odigos-backend",
     "back:start": "cd .. && ./odigos-backend --port 8085 --debug --address 0.0.0.0",
@@ -12,13 +12,13 @@
     "lint:fix": "next lint --fix"
   },
   "dependencies": {
-    "@apollo/client": "^3.12.11",
-    "@apollo/experimental-nextjs-app-support": "^0.11.8",
-    "@odigos/ui-components": "^0.0.60",
-    "@odigos/ui-containers": "^0.0.37",
-    "@odigos/ui-icons": "^0.0.12",
+    "@apollo/client": "^3.13.1",
+    "@apollo/experimental-nextjs-app-support": "^0.11.9",
+    "@odigos/ui-components": "^0.0.73",
+    "@odigos/ui-containers": "^0.0.51",
+    "@odigos/ui-icons": "^0.0.13",
     "@odigos/ui-theme": "^0.0.16",
-    "@odigos/ui-utils": "^0.0.26",
+    "@odigos/ui-utils": "^0.0.33",
     "graphql": "^16.10.0",
     "next": "15.1.7",
     "react": "19.0.0",
@@ -28,12 +28,12 @@
     "zustand": "^5.0.3"
   },
   "devDependencies": {
-    "@types/node": "22.13.1",
-    "@types/react": "19.0.8",
-    "@types/react-dom": "19.0.3",
+    "@types/node": "22.13.4",
+    "@types/react": "19.0.10",
+    "@types/react-dom": "19.0.4",
     "autoprefixer": "^10.4.20",
-    "cypress": "^14.0.2",
-    "eslint": "9.20.0",
+    "cypress": "^14.0.3",
+    "eslint": "9.20.1",
     "eslint-config-next": "15.1.7",
     "postcss": "^8.5.2",
     "typescript": "5.7.3"
