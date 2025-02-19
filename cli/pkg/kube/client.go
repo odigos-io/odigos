@@ -10,6 +10,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
 	k8stypes "k8s.io/apimachinery/pkg/types"
@@ -40,6 +41,58 @@ type Client struct {
 type Object interface {
 	metav1.Object
 	runtime.Object
+}
+
+type ErrorInfo struct {
+	Namespace string
+	Name      string
+	Condition string
+	Reason    string
+	Message   string
+}
+
+func (c *Client) Errors(ctx context.Context) ([]ErrorInfo, error) {
+	var allErrors []ErrorInfo
+
+	instrumentationConfigs, err := c.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list InstrumentationConfigs: %w", err)
+	}
+
+	for _, config := range instrumentationConfigs.Items {
+		for _, condition := range config.Status.Conditions {
+			if condition.Status == "False" {
+				allErrors = append(allErrors, ErrorInfo{
+					Namespace: config.Namespace,
+					Name:      config.Name,
+					Condition: condition.Type,
+					Reason:    condition.Reason,
+					Message:   condition.Message,
+				})
+			}
+		}
+	}
+
+	instrumentedApps, err := c.OdigosClient.InstrumentedApplications("").List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list InstrumentedApplications: %w", err)
+	}
+
+	for _, app := range instrumentedApps.Items {
+		for _, condition := range app.Status.Conditions {
+			if condition.Status == "False" {
+				allErrors = append(allErrors, ErrorInfo{
+					Namespace: app.Namespace,
+					Name:      app.Name,
+					Condition: condition.Type,
+					Reason:    condition.Reason,
+					Message:   condition.Message,
+				})
+			}
+		}
+	}
+
+	return allErrors, nil
 }
 
 // GetCLIClientOrExit returns the current kube client from cmd.Context() if one exists.

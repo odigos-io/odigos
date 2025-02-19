@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"text/tabwriter"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -201,6 +202,39 @@ var sourceUpdateCmd = &cobra.Command{
 	},
 }
 
+var sourceErrorListCmd = &cobra.Command{
+	Use:   "error list",
+	Short: "List errors related to Odigos Sources",
+	Long:  "This command retrieves and displays errors related to Odigos Sources in the Kubernetes cluster.",
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx := cmd.Context()
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
+
+		errors, err := client.Errors(ctx)
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Cannot list errors: %+v\n", err)
+			os.Exit(1)
+		}
+
+		if len(errors) == 0 {
+			fmt.Println("No errors found for Sources.")
+			os.Exit(1)
+		}
+
+		fmt.Println("\n\033[33mOdigos Source Errors:\033[0m")
+		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', tabwriter.TabIndent)
+
+		fmt.Fprintln(w, "NAMESPACE\tNAME\tCONDITION\tREASON\tMESSAGE")
+
+		for _, errObj := range errors {
+			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+				errObj.Namespace, errObj.Name, errObj.Condition, errObj.Reason, errObj.Message)
+		}
+
+		w.Flush()
+	},
+}
+
 func parseSourceLabelFlags() (string, string, string, labels.Set) {
 	labelSet := labels.Set{}
 	providedWorkloadFlags := ""
@@ -241,6 +275,7 @@ func init() {
 	sourcesCmd.AddCommand(sourceCreateCmd)
 	sourcesCmd.AddCommand(sourceDeleteCmd)
 	sourcesCmd.AddCommand(sourceUpdateCmd)
+	sourcesCmd.AddCommand(sourceErrorListCmd)
 
 	sourceCreateCmd.Flags().AddFlagSet(sourceFlags)
 	sourceCreateCmd.Flags().BoolVar(&disableInstrumentationFlag, disableInstrumentationFlagName, false, "Disable instrumentation for Source")
