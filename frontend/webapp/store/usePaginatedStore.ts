@@ -4,20 +4,15 @@ import { ENTITY_TYPES, getEntityId, type WorkloadId } from '@odigos/ui-utils';
 
 interface IPaginatedState {
   sources: FetchedSource[];
-  sourcesNotFinished: boolean;
   destinations: FetchedDestination[];
-  destinationsNotFinished: boolean;
   actions: FetchedAction[];
-  actionsNotFinished: boolean;
   instrumentationRules: FetchedInstrumentationRule[];
-  instrumentationRulesNotFinished: boolean;
 }
 
 type EntityId = string | WorkloadId;
 type EntityItems = IPaginatedState['sources'] | IPaginatedState['destinations'] | IPaginatedState['actions'] | IPaginatedState['instrumentationRules'];
 
 interface IPaginatedStateSetters {
-  setPaginationNotFinished: (entityType: ENTITY_TYPES, bool: boolean) => void;
   setPaginated: (entityType: ENTITY_TYPES, entities: EntityItems) => void;
   addPaginated: (entityType: ENTITY_TYPES, entities: EntityItems) => void;
   removePaginated: (entityType: ENTITY_TYPES, entityIds: EntityId[]) => void;
@@ -25,30 +20,9 @@ interface IPaginatedStateSetters {
 
 export const usePaginatedStore = create<IPaginatedState & IPaginatedStateSetters>((set) => ({
   sources: [],
-  sourcesNotFinished: false,
   destinations: [],
-  destinationsNotFinished: false,
   actions: [],
-  actionsNotFinished: false,
   instrumentationRules: [],
-  instrumentationRulesNotFinished: false,
-
-  setPaginationNotFinished: (entityType, bool) => {
-    const KEY =
-      entityType === ENTITY_TYPES.SOURCE
-        ? 'sourcesNotFinished'
-        : entityType === ENTITY_TYPES.DESTINATION
-        ? 'destinationsNotFinished'
-        : entityType === ENTITY_TYPES.ACTION
-        ? 'actionsNotFinished'
-        : entityType === ENTITY_TYPES.INSTRUMENTATION_RULE
-        ? 'instrumentationRulesNotFinished'
-        : 'NONE';
-
-    if (KEY === 'NONE') return;
-
-    set({ [KEY]: bool });
-  },
 
   setPaginated: (entityType, payload) => {
     const KEY =

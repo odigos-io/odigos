@@ -49,7 +49,7 @@ export const useSSE = () => {
           if (title !== DISPLAY_TITLES.API_TOKEN) {
             setStatusStore({ status: NOTIFICATION_TYPE.SUCCESS, title: notification.title as string, message: notification.message as string });
           }
-        } else if ([CRD_TYPES.INSTRUMENTATION_CONFIG, CRD_TYPES.INSTRUMENTATION_INSTANCE].includes(notification.crdType as CRD_TYPES)) {
+        } else if ([CRD_TYPES.INSTRUMENTATION_CONFIG].includes(notification.crdType as CRD_TYPES)) {
           if (notification.title === EVENT_TYPES.MODIFIED && !!notification.target) {
             fetchSourceById(getIdFromSseTarget(notification.target, ENTITY_TYPES.SOURCE) as WorkloadId);
           } else {

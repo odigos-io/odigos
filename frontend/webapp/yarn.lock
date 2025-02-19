@@ -409,10 +409,10 @@
     react-lottie "^1.2.10"
     styled-components "^6.1.15"
 
-"@odigos/ui-containers@^0.0.55":
-  version "0.0.55"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-containers/-/ui-containers-0.0.55.tgz#f31b48426cad78a8a19d48165feb6dcb8d83471b"
-  integrity sha512-Nk6LvWazAK2rx1AVw8OOP9u0DHCN3aNa2ZragL0pw4H9eSLHKm+3bCHKZv2t7InUNDSOSXWEITbHLHgb7y/QRQ==
+"@odigos/ui-containers@^0.0.56":
+  version "0.0.56"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-containers/-/ui-containers-0.0.56.tgz#de39b2d86438000b509f7fd0470eeb9fb5518eda"
+  integrity sha512-nfcEpqWop7RYvMxWZw2JkueR0PcAGFKuFIIy0WCgksoY4aU72IsEfi1DPmTzJPyxCOEhLX7xfTI/pSLCp6Qh2g==
   dependencies:
     "@odigos/ui-components" "^0.0.75"
     "@odigos/ui-icons" "^0.0.13"
@@ -448,6 +448,18 @@
   version "0.0.33"
   resolved "https://registry.yarnpkg.com/@odigos/ui-utils/-/ui-utils-0.0.33.tgz#3a20ac9404caf02b54f2d3a7089b48dac0368619"
   integrity sha512-qbdGpwLxLU7ffitNx4oXRSxU0Zpf3aACDm9wQAzTt2HERCHnQ6Is7KXD+trufBROd0I0SWfxt8BtrdPmoo5uDQ==
+  dependencies:
+    "@odigos/ui-icons" "^0.0.13"
+    "@odigos/ui-theme" "^0.0.16"
+    javascript-time-ago "^2.5.11"
+    react "^19.0.0"
+    react-dom "^19.0.0"
+    styled-components "^6.1.15"
+
+"@odigos/ui-utils@^0.0.34":
+  version "0.0.34"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-utils/-/ui-utils-0.0.34.tgz#7ce643fe28013256f6ee783754b0bc2564141b42"
+  integrity sha512-iUlc/2VtXgxkYAkrhLDb++S9w5PB1WpqqEP9fu+rqLCfMm0HWKggQ0CA8ZAcGlstv0AUB2Q7MI94W/TJiX70JQ==
   dependencies:
     "@odigos/ui-icons" "^0.0.13"
     "@odigos/ui-theme" "^0.0.16"

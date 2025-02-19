@@ -69,10 +69,9 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
       setTimeout(() => {
         const { id, destination } = req?.variables || {};
 
-        fetchDestinations();
         notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.UPDATE, `Successfully updated "${destination.type}" destination`, id);
         removePendingItems([{ entityType: ENTITY_TYPES.DESTINATION, entityId: id }]);
-      }, 2000);
+      }, 1000);
     },
   });
 
