@@ -203,7 +203,7 @@ var sourceUpdateCmd = &cobra.Command{
 }
 
 var sourceErrorListCmd = &cobra.Command{
-	Use:   "error list",
+	Use:   "error-list",
 	Short: "List errors related to Odigos Sources",
 	Long:  "This command retrieves and displays errors related to Odigos Sources in the Kubernetes cluster.",
 	Run: func(cmd *cobra.Command, args []string) {
