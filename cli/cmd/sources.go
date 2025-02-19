@@ -228,15 +228,10 @@ var sourceStatusCmd = &cobra.Command{
 			statuses = filteredStatuses
 		}
 
-		if len(statuses) == 0 {
-			fmt.Println("✅ No issues found with sources.")
-			return
-		}
-
 		fmt.Println("\n\033[33mOdigos Source Status:\033[0m")
-		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', tabwriter.TabIndent)
+		w := tabwriter.NewWriter(os.Stdout, 20, 4, 2, ' ', tabwriter.TabIndent)
 
-		fmt.Fprintln(w, "NAMESPACE\tNAME\tCONDITION\tREASON\tMESSAGE")
+		fmt.Fprintln(w, "NAMESPACE\tNAME\tSTATUS\tMESSAGE")
 
 		for _, status := range statuses {
 			color := "\033[32m"
@@ -244,8 +239,8 @@ var sourceStatusCmd = &cobra.Command{
 				color = "\033[31m"
 			}
 
-			fmt.Fprintf(w, "%s%s\t%s\t%s\t%s\t%s\033[0m\n",
-				color, status.Namespace, status.Name, status.Condition, status.Reason, status.Message)
+			fmt.Fprintf(w, "%s%s\t%s\t%s\t%s\033[0m\n",
+				color, status.Namespace, status.Name, status.Status, status.Message)
 		}
 
 		w.Flush()
