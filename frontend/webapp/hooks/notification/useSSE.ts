@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { API } from '@/utils';
 import { useStatusStore } from '@/store';
+import { useSourceCRUD } from '../sources';
 import { useDestinationCRUD } from '../destinations';
-import { usePaginatedSources } from '../compute-platform';
 import { CRD_TYPES, DISPLAY_TITLES, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 import { type NotifyPayload, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
 
@@ -15,11 +15,11 @@ const EVENT_TYPES = {
 };
 
 export const useSSE = () => {
+  const { fetchSources } = useSourceCRUD();
   const { setPendingItems } = usePendingStore();
-  const { fetchSources } = usePaginatedSources();
   const { title, setStatusStore } = useStatusStore();
   const { addNotification } = useNotificationStore();
-  const { refetchDestinations } = useDestinationCRUD();
+  const { fetchDestinations } = useDestinationCRUD();
 
   const retryCount = useRef(0);
   const maxRetries = 10;
@@ -51,7 +51,7 @@ export const useSSE = () => {
         } else if ([CRD_TYPES.INSTRUMENTATION_CONFIG, CRD_TYPES.INSTRUMENTATION_INSTANCE].includes(notification.crdType as CRD_TYPES)) {
           fetchSources();
         } else if ([CRD_TYPES.DESTINATION].includes(notification.crdType as CRD_TYPES)) {
-          refetchDestinations();
+          fetchDestinations();
         } else console.warn('Unhandled SSE for CRD type:', notification.crdType);
 
         // This works for now,
