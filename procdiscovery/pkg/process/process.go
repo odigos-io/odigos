@@ -41,8 +41,8 @@ type Details struct {
 type ProcessContext struct {
 	Details
 
-	exeFileContent  *os.File
-	mapsFileContent *os.File
+	ExeFileContent  *os.File
+	MapsFileContent *os.File
 }
 
 func NewProcessContext(details Details) *ProcessContext {
@@ -51,34 +51,41 @@ func NewProcessContext(details Details) *ProcessContext {
 	}
 }
 
-func (ctx *ProcessContext) ExeContent() *os.File {
-	if ctx.exeFileContent == nil {
-		path := fmt.Sprintf("/proc/%d/exe", ctx.ProcessID)
-		fileData, err := os.Open(path)
-		if err != nil {
-			// Ignore errors and return nil since we dont want to stop the process discovery
-			// if we fail to open the file (e.g. due to permissions or file not exist).
-			// nil check should be done by the relevant caller.
-			return nil
+// Close method to close any open file handles.
+func (ctx *ProcessContext) CloseFiles() error {
+	var firstErr error
+
+	if ctx.ExeFileContent != nil {
+		if err := ctx.ExeFileContent.Close(); err != nil && firstErr == nil {
+			firstErr = err
 		}
-		defer fileData.Close()
-		ctx.exeFileContent = fileData
+		ctx.ExeFileContent = nil
 	}
 
-	return ctx.exeFileContent
+	if ctx.MapsFileContent != nil {
+		if err := ctx.MapsFileContent.Close(); err != nil && firstErr == nil {
+			firstErr = err
+		}
+		ctx.MapsFileContent = nil
+	}
+
+	return firstErr
 }
 
-func (ctx *ProcessContext) MapsContent() *os.File {
-	if ctx.mapsFileContent == nil {
-		mapsPath := fmt.Sprintf("/proc/%d/maps", ctx.ProcessID)
-		fileData, err := os.Open(mapsPath)
-		if err != nil {
-			return nil
-		}
-		defer fileData.Close()
-		ctx.mapsFileContent = fileData
+func (ctx *ProcessContext) ExeContent() {
+	if ctx.ExeFileContent == nil {
+		path := fmt.Sprintf("/proc/%d/exe", ctx.ProcessID)
+		fileData, _ := os.Open(path)
+		ctx.ExeFileContent = fileData
 	}
-	return ctx.mapsFileContent
+}
+
+func (ctx *ProcessContext) MapsContent() {
+	if ctx.MapsFileContent == nil {
+		mapsPath := fmt.Sprintf("/proc/%d/maps", ctx.ProcessID)
+		fileData, _ := os.Open(mapsPath)
+		ctx.MapsFileContent = fileData
+	}
 }
 
 type ProcessEnvs struct {
