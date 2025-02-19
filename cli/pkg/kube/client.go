@@ -11,7 +11,6 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
@@ -56,7 +55,7 @@ type ErrorInfo struct {
 func (c *Client) Errors(ctx context.Context) ([]ErrorInfo, error) {
 	var allErrors []ErrorInfo
 
-	instrumentationConfigs, err := c.OdigosClient.InstrumentationConfigs("").List(ctx, v1.ListOptions{})
+	instrumentationConfigs, err := c.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list InstrumentationConfigs: %w", err)
 	}
@@ -75,7 +74,7 @@ func (c *Client) Errors(ctx context.Context) ([]ErrorInfo, error) {
 		}
 
 		labelSelector := fmt.Sprintf("%s=%s", consts.InstrumentedAppNameLabel, instruConfig.Name)
-		instancesList, err := c.OdigosClient.InstrumentationInstances(instruConfig.Namespace).List(ctx, v1.ListOptions{
+		instancesList, err := c.OdigosClient.InstrumentationInstances(instruConfig.Namespace).List(ctx, metav1.ListOptions{
 			LabelSelector: labelSelector,
 		})
 		if err != nil {
