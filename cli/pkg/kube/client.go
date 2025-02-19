@@ -6,10 +6,12 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/odigos-io/odigos/common/consts"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/client"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
@@ -54,39 +56,48 @@ type ErrorInfo struct {
 func (c *Client) Errors(ctx context.Context) ([]ErrorInfo, error) {
 	var allErrors []ErrorInfo
 
-	instrumentationConfigs, err := c.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{})
+	instrumentationConfigs, err := c.OdigosClient.InstrumentationConfigs("").List(ctx, v1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list InstrumentationConfigs: %w", err)
 	}
 
-	for _, config := range instrumentationConfigs.Items {
-		for _, condition := range config.Status.Conditions {
+	for _, instruConfig := range instrumentationConfigs.Items {
+		for _, condition := range instruConfig.Status.Conditions {
 			if condition.Status == "False" {
 				allErrors = append(allErrors, ErrorInfo{
-					Namespace: config.Namespace,
-					Name:      config.Name,
+					Namespace: instruConfig.Namespace,
+					Name:      instruConfig.Name,
 					Condition: condition.Type,
 					Reason:    condition.Reason,
 					Message:   condition.Message,
 				})
 			}
 		}
-	}
 
-	instrumentedApps, err := c.OdigosClient.InstrumentedApplications("").List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to list InstrumentedApplications: %w", err)
-	}
+		labelSelector := fmt.Sprintf("%s=%s", consts.InstrumentedAppNameLabel, instruConfig.Name)
+		instancesList, err := c.OdigosClient.InstrumentationInstances(instruConfig.Namespace).List(ctx, v1.ListOptions{
+			LabelSelector: labelSelector,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to list InstrumentationInstances for %s: %w", instruConfig.Name, err)
+		}
 
-	for _, app := range instrumentedApps.Items {
-		for _, condition := range app.Status.Conditions {
-			if condition.Status == "False" {
+		totalInstances := len(instancesList.Items)
+		if totalInstances == 0 {
+			continue
+		}
+
+		healthyInstances := 0
+		for _, instance := range instancesList.Items {
+			if instance.Status.Healthy != nil && *instance.Status.Healthy {
+				healthyInstances++
+			} else {
 				allErrors = append(allErrors, ErrorInfo{
-					Namespace: app.Namespace,
-					Name:      app.Name,
-					Condition: condition.Type,
-					Reason:    condition.Reason,
-					Message:   condition.Message,
+					Namespace: instance.Namespace,
+					Name:      instance.Name,
+					Condition: "HealthyInstrumentationInstances",
+					Reason:    "UnhealthyInstance",
+					Message:   fmt.Sprintf("Only %d/%d instances are healthy", healthyInstances, totalInstances),
 				})
 			}
 		}
