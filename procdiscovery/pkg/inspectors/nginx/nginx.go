@@ -25,15 +25,21 @@ const (
 
 var re = regexp.MustCompile(NginxVersionRegex)
 
-func (j *NginxInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
+// LightCheck inspects the process command line and executable path for Nginx indicators.
+func (j *NginxInspector) LightCheck(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+	p := ctx.Details
 	if strings.Contains(p.CmdLine, NginxProcessName) || strings.Contains(p.ExePath, NginxProcessName) {
 		return common.NginxProgrammingLanguage, true
 	}
-
 	return "", false
 }
 
-func (j *NginxInspector) GetRuntimeVersion(p *process.Details, containerURL string) *version.Version {
+// ExpensiveCheck returns no detection as no heavy check is required for Nginx.
+func (j *NginxInspector) ExpensiveCheck(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+	return "", false
+}
+
+func (j *NginxInspector) GetRuntimeVersion(ctx *process.ProcessContext, containerURL string) *version.Version {
 	nginxVersion, err := GetNginxVersion(containerURL)
 	if err != nil {
 		return nil

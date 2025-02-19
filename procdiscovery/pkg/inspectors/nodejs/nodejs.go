@@ -19,16 +19,23 @@ var nodeExecutables = map[string]bool{
 	"yarn": true,
 }
 
-func (n *NodejsInspector) Inspect(proc *process.Details) (common.ProgrammingLanguage, bool) {
-	if v8Regex.MatchString(filepath.Base(proc.ExePath)) || nodeExecutables[filepath.Base(proc.ExePath)] {
+// LightCheck uses the filename heuristics to detect a Node.js process.
+func (n *NodejsInspector) LightCheck(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+	proc := ctx.Details
+	baseExe := filepath.Base(proc.ExePath)
+	if v8Regex.MatchString(baseExe) || nodeExecutables[baseExe] {
 		return common.JavascriptProgrammingLanguage, true
 	}
-
 	return "", false
 }
 
-func (n *NodejsInspector) GetRuntimeVersion(proc *process.Details, containerURL string) *version.Version {
-	if value, exists := proc.GetDetailedEnvsValue(process.NodeVersionConst); exists {
+// ExpensiveCheck is not required for Node.js detection, so it returns no detection.
+func (n *NodejsInspector) ExpensiveCheck(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+	return "", false
+}
+
+func (n *NodejsInspector) GetRuntimeVersion(ctx *process.ProcessContext, containerURL string) *version.Version {
+	if value, exists := ctx.Details.GetDetailedEnvsValue(process.NodeVersionConst); exists {
 		return common.GetVersion(value)
 	}
 

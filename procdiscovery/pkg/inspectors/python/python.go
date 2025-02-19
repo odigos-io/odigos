@@ -2,7 +2,6 @@ package python
 
 import (
 	"debug/elf"
-	"os"
 	"strings"
 
 	"github.com/hashicorp/go-version"
@@ -18,18 +17,23 @@ const (
 	libPythonStr      = "libpython3"
 )
 
-func (p *PythonInspector) Inspect(proc *process.Details) (common.ProgrammingLanguage, bool) {
+// LightCheck performs a lightweight check by looking for pythonProcessName
+// in the executable path or the command line.
+func (p *PythonInspector) LightCheck(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+	proc := ctx.Details
 	if strings.Contains(proc.ExePath, pythonProcessName) || strings.Contains(proc.CmdLine, pythonProcessName) {
 		return common.PythonProgrammingLanguage, true
 	}
-
-	if p.isLibPythonLinked(proc) {
-		return common.PythonProgrammingLanguage, true
-	}
-
 	return "", false
 }
 
+// ExpensiveCheck performs a heavy check by examining whether libpython is linked.
+func (p *PythonInspector) ExpensiveCheck(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+	if p.isLibPythonLinked(ctx) {
+		return common.PythonProgrammingLanguage, true
+	}
+	return "", false
+}
 func (p *PythonInspector) GetRuntimeVersion(proc *process.Details, containerURL string) *version.Version {
 	if value, exists := proc.GetDetailedEnvsValue(process.PythonVersionConst); exists {
 		return common.GetVersion(value)
@@ -38,17 +42,10 @@ func (p *PythonInspector) GetRuntimeVersion(proc *process.Details, containerURL 
 	return nil
 }
 
-func (p *PythonInspector) isLibPythonLinked(proc *process.Details) bool {
-	if proc.Exefile == nil {
-		var err error
-		proc.Exefile, err = os.Open(proc.ExePath)
-		if err != nil {
-			return false
-		}
-		defer proc.Exefile.Close()
-	}
+func (p *PythonInspector) isLibPythonLinked(ctx *process.ProcessContext) bool {
+	ctx.ExeContent()
 
-	elfFile, err := elf.NewFile(proc.Exefile)
+	elfFile, err := elf.NewFile(ctx.ExeFileContent)
 	if err != nil {
 		return false
 	}
