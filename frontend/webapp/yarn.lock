@@ -395,10 +395,10 @@
   resolved "https://registry.yarnpkg.com/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz#3dc35ba0f1e66b403c00b39344f870298ebb1c8e"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
-"@odigos/ui-components@^0.0.73":
-  version "0.0.73"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-components/-/ui-components-0.0.73.tgz#c3a5001238f581d2d96eadff4b6d8889545309bd"
-  integrity sha512-I+J6x7AchtQotFSc/0RLS0aFbLyPzHWg3vrrRRGAocW4SETpKJcpaGKWCo72THFG+bzM9whYKppa6a5pVohgmA==
+"@odigos/ui-components@^0.0.75":
+  version "0.0.75"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-components/-/ui-components-0.0.75.tgz#2c7be34c73ebbaefd2bf64aaf4071593ff875e9b"
+  integrity sha512-vHP67g6llcXmR12dDkgwQ9Myrkncfczl78Pg5o9TvmGHvIxTQ0JPDn6CnESSka0DlEa3jxqLy1p4tmhdTRPqeg==
   dependencies:
     "@odigos/ui-icons" "^0.0.13"
     "@odigos/ui-theme" "^0.0.16"
@@ -409,12 +409,12 @@
     react-lottie "^1.2.10"
     styled-components "^6.1.15"
 
-"@odigos/ui-containers@^0.0.54":
-  version "0.0.54"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-containers/-/ui-containers-0.0.54.tgz#5299fa437b8ee2c6f6a48eab578a3975b84e7e0b"
-  integrity sha512-PwV7PdbIERnyo+m9fRl5jVvOW4Xfv2ppI1MQjum+JqhSrJBOccKXQlt9yj+0rbqcthj0vqh738hvQ2PX7Ix8aA==
+"@odigos/ui-containers@^0.0.55":
+  version "0.0.55"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-containers/-/ui-containers-0.0.55.tgz#f31b48426cad78a8a19d48165feb6dcb8d83471b"
+  integrity sha512-Nk6LvWazAK2rx1AVw8OOP9u0DHCN3aNa2ZragL0pw4H9eSLHKm+3bCHKZv2t7InUNDSOSXWEITbHLHgb7y/QRQ==
   dependencies:
-    "@odigos/ui-components" "^0.0.73"
+    "@odigos/ui-components" "^0.0.75"
     "@odigos/ui-icons" "^0.0.13"
     "@odigos/ui-theme" "^0.0.16"
     "@odigos/ui-utils" "^0.0.33"

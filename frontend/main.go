@@ -152,11 +152,6 @@ func startWatchers(ctx context.Context, flags *Flags) error {
 		return fmt.Errorf("error starting Destination watcher: %v", err)
 	}
 
-	err = watchers.StartInstrumentationInstanceWatcher(ctx, "")
-	if err != nil {
-		return fmt.Errorf("error starting InstrumentationInstance watcher: %v", err)
-	}
-
 	return nil
 }
 
