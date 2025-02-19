@@ -1,8 +1,8 @@
 package java
 
 import (
+	"path/filepath"
 	"regexp"
-	"strings"
 
 	"github.com/hashicorp/go-version"
 
@@ -18,7 +18,7 @@ const JavaVersionRegex = `\d+\.\d+\.\d+\+\d+`
 var re = regexp.MustCompile(JavaVersionRegex)
 
 func (j *JavaInspector) Inspect(proc *process.Details) (common.ProgrammingLanguage, bool) {
-	if strings.Contains(proc.ExePath, processName) || strings.Contains(proc.CmdLine, processName) {
+	if filepath.Base(proc.ExePath) == processName {
 		return common.JavaProgrammingLanguage, true
 	}
 
