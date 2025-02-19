@@ -30,15 +30,14 @@ import (
 
 type InstrumentationConfigReconciler struct {
 	client.Client
-	Scheme               *runtime.Scheme
-	ImagePullSecrets     []string
-	OdigosVersion        string
-	K8sVersion           *version.Version
-	DisableNameProcessor bool
+	Scheme           *runtime.Scheme
+	ImagePullSecrets []string
+	OdigosVersion    string
+	K8sVersion       *version.Version
 }
 
 func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	err := datacollection.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion, r.K8sVersion, r.DisableNameProcessor)
+	err := datacollection.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion, r.K8sVersion)
 	if err != nil {
 		return ctrl.Result{}, err
 	}

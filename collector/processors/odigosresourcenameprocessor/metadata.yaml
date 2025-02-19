@@ -1,9 +1,0 @@
-type: odigosresourcename
-
-status:
-  class: processor
-  stability:
-    beta: [logs, metrics, traces]
-  distributions: [contrib]
-  codeowners:
-    active: [edeNFed]
