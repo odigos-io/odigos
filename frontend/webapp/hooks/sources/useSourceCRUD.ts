@@ -2,9 +2,9 @@ import { useEffect } from 'react';
 import { useConfig } from '../config';
 import { usePaginatedStore } from '@/store';
 import { useNamespace } from '../compute-platform';
-import { useLazyQuery, useMutation } from '@apollo/client';
+import { QueryResult, useLazyQuery, useMutation } from '@apollo/client';
 import type { FetchedSource, PaginatedData, SourceUpdateInput } from '@/@types';
-import { GET_SOURCES, PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
+import { GET_SOURCE, GET_SOURCES, PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import { CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, K8S_RESOURCE_KIND, NOTIFICATION_TYPE, type Source, type WorkloadId } from '@odigos/ui-utils';
 import { type NamespaceSelectionFormData, type PendingItem, type SourceFormData, type SourceSelectionFormData, useNotificationStore, usePendingStore, useSetupStore } from '@odigos/ui-containers';
 
@@ -12,6 +12,7 @@ interface UseSourceCrud {
   sources: Source[];
   sourcesLoading: boolean;
   fetchSources: (getAll?: boolean, nextPage?: string) => Promise<void>;
+  fetchSourceById: (id: WorkloadId) => Promise<QueryResult<{ computePlatform: { source: FetchedSource } }, { sourceId: WorkloadId }>>;
   persistSources: (selectAppsList: SourceSelectionFormData, futureSelectAppsList: NamespaceSelectionFormData) => Promise<void>;
   updateSource: (sourceId: WorkloadId, payload: SourceFormData) => Promise<void>;
 }
@@ -26,13 +27,13 @@ export const useSourceCRUD = (): UseSourceCrud => {
   const { addPendingItems, removePendingItems } = usePendingStore();
   const { configuredSources, setConfiguredSources } = useSetupStore();
   const { addNotification, removeNotifications } = useNotificationStore();
-  const { sources, setSources, addSources, updateSource, setSourcesNotFinished } = usePaginatedStore();
+  const { sources, setPaginationNotFinished, setPaginated, addPaginated } = usePaginatedStore();
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: WorkloadId, hideFromHistory?: boolean) => {
     addNotification({ type, title, message, crdType: ENTITY_TYPES.SOURCE, target: id ? getSseTargetFromId(id, ENTITY_TYPES.SOURCE) : undefined, hideFromHistory });
   };
 
-  const [lazyFetch, { loading: isFetching }] = useLazyQuery<{ computePlatform: { sources: PaginatedData<FetchedSource> } }>(GET_SOURCES, {
+  const [fetchPaginated, { loading: isFetching }] = useLazyQuery<{ computePlatform: { sources: PaginatedData<FetchedSource> } }>(GET_SOURCES, {
     fetchPolicy: 'no-cache',
     onError: (error) =>
       addNotification({
@@ -44,27 +45,40 @@ export const useSourceCRUD = (): UseSourceCrud => {
 
   const fetchSources = async (getAll: boolean = true, nextPage: string = '') => {
     if (isFetching) return;
-    if (nextPage === '') setSources([]);
-
-    const { data } = await lazyFetch({ variables: { nextPage } });
+    if (nextPage === '') setPaginated(ENTITY_TYPES.SOURCE, []);
+    const { data } = await fetchPaginated({ variables: { nextPage } });
 
     if (!!data?.computePlatform?.sources) {
       const { nextPage, items } = data.computePlatform.sources;
-
-      addSources(items);
+      addPaginated(ENTITY_TYPES.SOURCE, items);
 
       if (getAll) {
         if (!!nextPage) {
           // This timeout is to prevent react-flow from flickering on re-renders
           setTimeout(() => fetchSources(true, nextPage), 10);
         } else {
-          setSourcesNotFinished(false);
+          setPaginationNotFinished(ENTITY_TYPES.SOURCE, false);
         }
       } else if (!!nextPage) {
-        setSourcesNotFinished(true);
+        setPaginationNotFinished(ENTITY_TYPES.SOURCE, true);
       }
     }
   };
+
+  const [fetchSourceById, { loading: isFetchingById }] = useLazyQuery<{ computePlatform: { source: FetchedSource } }, { sourceId: WorkloadId }>(GET_SOURCE, {
+    fetchPolicy: 'no-cache',
+    onError: (error) =>
+      addNotification({
+        type: NOTIFICATION_TYPE.ERROR,
+        title: error.name || CRUD.READ,
+        message: error.cause?.message || error.message,
+      }),
+    onCompleted: (data) => {
+      if (!!data.computePlatform.source) {
+        addPaginated(ENTITY_TYPES.SOURCE, [data.computePlatform.source]);
+      }
+    },
+  });
 
   const [persistSources, cdState] = useMutation<{ persistK8sSources: boolean }, { namespace: string; sources: Pick<Source, 'name' | 'kind' | 'selected'>[] }>(PERSIST_SOURCE, {
     onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.UPDATE, error.cause?.message || error.message),
@@ -86,12 +100,11 @@ export const useSourceCRUD = (): UseSourceCrud => {
       // If we do toast with a watcher, we can't guarantee an SSE will be sent for this update alone. It will definitely include SSE for all updates, even those unexpected.
       // Not that there's anything about a watcher that would break the UI, it's just that we would receive unexpected events with ridiculous amounts.
       setTimeout(() => {
-        const { sourceId, patchSourceRequest } = req?.variables || {};
+        const { sourceId } = req?.variables || {};
 
-        updateSource(sourceId, patchSourceRequest);
         notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.UPDATE, `Successfully updated "${sourceId.name}" source`, sourceId);
         removePendingItems([{ entityType: ENTITY_TYPES.SOURCE, entityId: sourceId }]);
-      }, 2000);
+      }, 1000);
     },
   });
 
@@ -101,8 +114,9 @@ export const useSourceCRUD = (): UseSourceCrud => {
 
   return {
     sources: mapFetched(sources),
-    sourcesLoading: isFetching || cdState.loading || uState.loading,
+    sourcesLoading: isFetching || isFetchingById || cdState.loading || uState.loading,
     fetchSources,
+    fetchSourceById: (id) => fetchSourceById({ variables: { sourceId: id } }),
 
     persistSources: async (selectAppsList, futureSelectAppsList) => {
       if (config?.readonly) {

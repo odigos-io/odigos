@@ -3,8 +3,8 @@ import { API } from '@/utils';
 import { useStatusStore } from '@/store';
 import { useSourceCRUD } from '../sources';
 import { useDestinationCRUD } from '../destinations';
-import { CRD_TYPES, DISPLAY_TITLES, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 import { type NotifyPayload, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
+import { CRD_TYPES, DISPLAY_TITLES, ENTITY_TYPES, getIdFromSseTarget, NOTIFICATION_TYPE, type WorkloadId } from '@odigos/ui-utils';
 
 const CONNECTED = 'CONNECTED';
 
@@ -15,11 +15,11 @@ const EVENT_TYPES = {
 };
 
 export const useSSE = () => {
-  const { fetchSources } = useSourceCRUD();
   const { setPendingItems } = usePendingStore();
   const { title, setStatusStore } = useStatusStore();
   const { addNotification } = useNotificationStore();
   const { fetchDestinations } = useDestinationCRUD();
+  const { fetchSources, fetchSourceById } = useSourceCRUD();
 
   const retryCount = useRef(0);
   const maxRetries = 10;
@@ -45,11 +45,16 @@ export const useSSE = () => {
 
         // Handle specific CRD types
         if ([CONNECTED].includes(notification.crdType as string)) {
+          // If the current status in store is API Token related, we don't want to override it with the connected message
           if (title !== DISPLAY_TITLES.API_TOKEN) {
             setStatusStore({ status: NOTIFICATION_TYPE.SUCCESS, title: notification.title as string, message: notification.message as string });
           }
         } else if ([CRD_TYPES.INSTRUMENTATION_CONFIG, CRD_TYPES.INSTRUMENTATION_INSTANCE].includes(notification.crdType as CRD_TYPES)) {
-          fetchSources();
+          if (notification.title === EVENT_TYPES.MODIFIED && !!notification.target) {
+            fetchSourceById(getIdFromSseTarget(notification.target, ENTITY_TYPES.SOURCE) as WorkloadId);
+          } else {
+            fetchSources();
+          }
         } else if ([CRD_TYPES.DESTINATION].includes(notification.crdType as CRD_TYPES)) {
           fetchDestinations();
         } else console.warn('Unhandled SSE for CRD type:', notification.crdType);

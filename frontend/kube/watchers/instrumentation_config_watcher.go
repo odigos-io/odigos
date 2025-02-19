@@ -39,8 +39,11 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 
 	instrumentationConfigModifiedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
-			MinBatchSize: 1,
-			Duration:     5 * time.Second,
+			// By applying 100 every 1 second, we ensure that the event is always an individual event - no batching.
+			// We need to do this because we have to get an event with the target ID, which is not possible with batching.
+			// We need the target ID to fetch the individual entity, instead of fetching all entities.
+			MinBatchSize: 100,
+			Duration:     1 * time.Second,
 			Event:        sse.MessageEventModified,
 			CRDType:      consts.InstrumentationConfig,
 			SuccessBatchMessageFunc: func(count int, crdType string) string {

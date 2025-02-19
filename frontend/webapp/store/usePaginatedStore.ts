@@ -1,56 +1,129 @@
 import { create } from 'zustand';
-import { type FetchedSource } from '@/@types';
-import { type WorkloadId } from '@odigos/ui-utils';
+import { FetchedAction, FetchedDestination, FetchedInstrumentationRule, type FetchedSource } from '@/@types';
+import { ENTITY_TYPES, getEntityId, type WorkloadId } from '@odigos/ui-utils';
 
 interface IPaginatedState {
   sources: FetchedSource[];
   sourcesNotFinished: boolean;
+  destinations: FetchedDestination[];
+  destinationsNotFinished: boolean;
+  actions: FetchedAction[];
+  actionsNotFinished: boolean;
+  instrumentationRules: FetchedInstrumentationRule[];
+  instrumentationRulesNotFinished: boolean;
 }
 
+type EntityId = string | WorkloadId;
+type EntityItems = IPaginatedState['sources'] | IPaginatedState['destinations'] | IPaginatedState['actions'] | IPaginatedState['instrumentationRules'];
+
 interface IPaginatedStateSetters {
-  setSources: (payload: IPaginatedState['sources']) => void;
-  addSources: (payload: IPaginatedState['sources']) => void;
-  updateSource: (id: WorkloadId, payload: Partial<IPaginatedState['sources'][0]>) => void;
-  removeSource: (id: WorkloadId) => void;
-  setSourcesNotFinished: (bool: boolean) => void;
+  setPaginationNotFinished: (entityType: ENTITY_TYPES, bool: boolean) => void;
+  setPaginated: (entityType: ENTITY_TYPES, entities: EntityItems) => void;
+  addPaginated: (entityType: ENTITY_TYPES, entities: EntityItems) => void;
+  removePaginated: (entityType: ENTITY_TYPES, entityIds: EntityId[]) => void;
 }
 
 export const usePaginatedStore = create<IPaginatedState & IPaginatedStateSetters>((set) => ({
   sources: [],
-  setSources: (payload) => set({ sources: payload }),
-  addSources: (payload) =>
-    set((state) => {
-      const prev = [...state.sources];
-      const noDuplicates = [
-        ...payload.filter((newItem) => !state.sources.find((existingItem) => existingItem.namespace === newItem.namespace && existingItem.name === newItem.name && existingItem.kind === newItem.kind)),
-      ];
-
-      prev.push(...noDuplicates);
-      return { sources: prev };
-    }),
-  updateSource: (id, payload) =>
-    set((state) => {
-      const prev = [...state.sources];
-      const foundIdx = prev.findIndex(({ namespace, name, kind }) => namespace === id.namespace && name === id.name && kind === id.kind);
-
-      if (foundIdx !== -1) {
-        prev[foundIdx] = { ...prev[foundIdx], ...payload };
-      }
-
-      return { sources: prev };
-    }),
-  removeSource: (id) =>
-    set((state) => {
-      const prev = [...state.sources];
-      const foundIdx = prev.findIndex(({ namespace, name, kind }) => namespace === id.namespace && name === id.name && kind === id.kind);
-
-      if (foundIdx !== -1) {
-        prev.splice(foundIdx, 1);
-      }
-
-      return { sources: prev };
-    }),
-
   sourcesNotFinished: false,
-  setSourcesNotFinished: (bool) => set({ sourcesNotFinished: bool }),
+  destinations: [],
+  destinationsNotFinished: false,
+  actions: [],
+  actionsNotFinished: false,
+  instrumentationRules: [],
+  instrumentationRulesNotFinished: false,
+
+  setPaginationNotFinished: (entityType, bool) => {
+    const KEY =
+      entityType === ENTITY_TYPES.SOURCE
+        ? 'sourcesNotFinished'
+        : entityType === ENTITY_TYPES.DESTINATION
+        ? 'destinationsNotFinished'
+        : entityType === ENTITY_TYPES.ACTION
+        ? 'actionsNotFinished'
+        : entityType === ENTITY_TYPES.INSTRUMENTATION_RULE
+        ? 'instrumentationRulesNotFinished'
+        : 'NONE';
+
+    if (KEY === 'NONE') return;
+
+    set({ [KEY]: bool });
+  },
+
+  setPaginated: (entityType, payload) => {
+    const KEY =
+      entityType === ENTITY_TYPES.SOURCE
+        ? 'sources'
+        : entityType === ENTITY_TYPES.DESTINATION
+        ? 'destinations'
+        : entityType === ENTITY_TYPES.ACTION
+        ? 'actions'
+        : entityType === ENTITY_TYPES.INSTRUMENTATION_RULE
+        ? 'instrumentationRules'
+        : 'NONE';
+
+    if (KEY === 'NONE') return;
+
+    set({ [KEY]: payload });
+  },
+
+  addPaginated: (entityType, entities) => {
+    const KEY =
+      entityType === ENTITY_TYPES.SOURCE
+        ? 'sources'
+        : entityType === ENTITY_TYPES.DESTINATION
+        ? 'destinations'
+        : entityType === ENTITY_TYPES.ACTION
+        ? 'actions'
+        : entityType === ENTITY_TYPES.INSTRUMENTATION_RULE
+        ? 'instrumentationRules'
+        : 'NONE';
+
+    if (KEY === 'NONE') return;
+
+    set((state) => {
+      const prev = [...state[KEY]];
+
+      entities.forEach((newItem) => {
+        const foundIdx = prev.findIndex((oldItem) => JSON.stringify(getEntityId(oldItem)) === JSON.stringify(getEntityId(newItem)));
+
+        if (foundIdx !== -1) {
+          prev[foundIdx] = { ...prev[foundIdx], ...newItem };
+        } else {
+          prev.push(newItem);
+        }
+      });
+
+      return { [KEY]: prev };
+    });
+  },
+
+  removePaginated: (entityType, entityIds) => {
+    const KEY =
+      entityType === ENTITY_TYPES.SOURCE
+        ? 'sources'
+        : entityType === ENTITY_TYPES.DESTINATION
+        ? 'destinations'
+        : entityType === ENTITY_TYPES.ACTION
+        ? 'actions'
+        : entityType === ENTITY_TYPES.INSTRUMENTATION_RULE
+        ? 'instrumentationRules'
+        : 'NONE';
+
+    if (KEY === 'NONE') return;
+
+    set((state) => {
+      const prev = [...state[KEY]];
+
+      entityIds.forEach((id) => {
+        const foundIdx = prev.findIndex((entity) => JSON.stringify(getEntityId(entity)) === (entityType === ENTITY_TYPES.SOURCE ? JSON.stringify(getEntityId(id as WorkloadId)) : id));
+
+        if (foundIdx !== -1) {
+          prev.splice(foundIdx, 1);
+        }
+      });
+
+      return { [KEY]: prev };
+    });
+  },
 }));

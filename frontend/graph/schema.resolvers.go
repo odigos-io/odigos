@@ -150,6 +150,31 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 	}, nil
 }
 
+// Source is the resolver for the source field.
+func (r *computePlatformResolver) Source(ctx context.Context, obj *model.ComputePlatform, sourceID model.K8sSourceID) (*model.K8sActualSource, error) {
+	ns := sourceID.Namespace
+	kind := sourceID.Kind
+	name := sourceID.Name
+
+	list, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs(ns).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list InstrumentationConfigs in namespace %s: %w", ns, err)
+	}
+
+	// Loop with early exit
+	for _, ic := range list.Items {
+		for _, ownerRef := range ic.OwnerReferences {
+			if ownerRef.Kind == string(kind) && ownerRef.Name == name {
+				src := instrumentationConfigToActualSource(ic)
+				services.AddHealthyInstrumentationInstancesCondition(ctx, &ic, src)
+				return src, nil
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("no InstrumentationConfig found for owner %s/%s in namespace %s", kind, name, ns)
+}
+
 // Destinations is the resolver for the destinations field.
 func (r *computePlatformResolver) Destinations(ctx context.Context, obj *model.ComputePlatform) ([]*model.Destination, error) {
 	ns := env.GetCurrentNamespace()

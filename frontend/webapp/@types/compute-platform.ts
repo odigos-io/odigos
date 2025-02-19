@@ -17,6 +17,7 @@ export interface ComputePlatform {
     k8sActualNamespaces?: FetchedNamespace[];
     k8sActualNamespace?: FetchedNamespace;
     sources?: PaginatedData<FetchedSource>;
+    source?: FetchedSource;
     destinations?: FetchedDestination[];
     actions?: FetchedAction[];
     instrumentationRules?: FetchedInstrumentationRule[];
