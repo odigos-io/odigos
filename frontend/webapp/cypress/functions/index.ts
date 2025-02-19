@@ -1,6 +1,16 @@
 import { DATA_IDS } from '../constants';
 export * from './cy-alias';
 
+export const visitPage = (path: string, callback?: () => void) => {
+  cy.visit(path);
+
+  // Wait for the page to load.
+  // On rare occasions, the page might still be blank, and cypress would attempt to interact with it, triggering false errors...
+  cy.wait(500).then(() => {
+    if (!!callback) callback();
+  });
+};
+
 interface GetCrdIdsOptions {
   namespace: string;
   crdName: string;

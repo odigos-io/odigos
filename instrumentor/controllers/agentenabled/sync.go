@@ -177,7 +177,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		return &agentInjectedStatusCondition{
 			Status:  metav1.ConditionTrue,
 			Reason:  odigosv1.AgentEnabledReasonEnabledSuccessfully,
-			Message: fmt.Sprintf("agent injected successfully to %d containers: %v", len(instrumentedContainerNames), instrumentedContainerNames),
+			Message: fmt.Sprintf("agent enabled in %d containers: %v", len(instrumentedContainerNames), instrumentedContainerNames),
 		}, nil
 	} else {
 		// if none of the containers are instrumented, we can set the status to false
@@ -194,7 +194,7 @@ func containerConfigToStatusCondition(containerConfig odigosv1.ContainerAgentCon
 		return &agentInjectedStatusCondition{
 			Status:  metav1.ConditionTrue,
 			Reason:  odigosv1.AgentEnabledReasonEnabledSuccessfully,
-			Message: fmt.Sprintf("agent injected successfully to container %s", containerConfig.ContainerName),
+			Message: fmt.Sprintf("agent enabled for container %s", containerConfig.ContainerName),
 		}
 	} else {
 		return &agentInjectedStatusCondition{
@@ -407,11 +407,11 @@ func isReadyForInstrumentation(cg *odigosv1.CollectorsGroup, ic *odigosv1.Instru
 
 func isNodeCollectorReady(cg *odigosv1.CollectorsGroup) (bool, string) {
 	if cg == nil {
-		return false, "node collector deployment not yet created"
+		return false, "waiting for OpenTelemetry Collector to be created"
 	}
 
 	if !cg.Status.Ready {
-		return false, "node collector is not yet ready to receive telemetry from instrumented workloads"
+		return false, "waiting for OpenTelemetry Collector to be ready"
 	}
 
 	// node collector is ready to receive telemetry

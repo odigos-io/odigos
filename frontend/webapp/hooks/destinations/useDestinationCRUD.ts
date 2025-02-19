@@ -82,7 +82,7 @@ export const useDestinationCRUD = (params?: Params): UseDestinationCrudResponse 
   // Filter mapped data
   const filtered = useMemo(() => {
     let arr = [...mapped];
-    if (!!filters.monitors.length) arr = arr.filter((destination) => !!filters.monitors.find((metric) => destination.exportedSignals[metric.id as keyof DestinationOption['supportedSignals']]));
+    if (!!filters.monitors?.length) arr = arr.filter((destination) => !!filters.monitors?.find((metric) => destination.exportedSignals[metric.id as keyof DestinationOption['supportedSignals']]));
     return arr;
   }, [mapped, filters]);
 

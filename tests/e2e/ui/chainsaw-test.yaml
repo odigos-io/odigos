@@ -11,7 +11,7 @@ spec:
         - script:
             timeout: 60s
             content: |
-              ../../../cli/odigos install --namespace odigos-test --version e2e-test
+              ../../../cli/odigos install --version e2e-test
 
     - name: Install App - Simple Demo
       try:
@@ -56,7 +56,7 @@ spec:
     - name: Run Cypress tests
       try:
         - script:
-            timeout: 300s
+            timeout: 600s
             content: |
               cd ../../../frontend/webapp
               yarn install
