@@ -7,6 +7,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/cli/cmd/sources_utils"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/confirm"
 
@@ -202,33 +203,49 @@ var sourceUpdateCmd = &cobra.Command{
 	},
 }
 
-var sourceErrorListCmd = &cobra.Command{
-	Use:   "error-list",
-	Short: "List errors related to Odigos Sources",
-	Long:  "This command retrieves and displays errors related to Odigos Sources in the Kubernetes cluster.",
+var errorOnly bool
+
+var sourceStatusCmd = &cobra.Command{
+	Use:   "status",
+	Short: "Show the status of all Odigos Sources",
+	Long:  "Lists all InstrumentationConfigs and InstrumentationInstances with their current status. Use --error to filter only failed sources.",
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
-		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
-		errors, err := client.Errors(ctx)
+		statuses, err := sources_utils.SourcesStatus(ctx)
 		if err != nil {
-			fmt.Printf("\033[31mERROR\033[0m Cannot list errors: %+v\n", err)
-			os.Exit(1)
+			fmt.Printf("\033[31mERROR\033[0m Failed to retrieve source statuses: %+v\n", err)
+			return
 		}
 
-		if len(errors) == 0 {
-			fmt.Println("No errors found for Sources.")
-			os.Exit(1)
+		if errorOnly {
+			var filteredStatuses []sources_utils.SourceStatus
+			for _, s := range statuses {
+				if s.IsError {
+					filteredStatuses = append(filteredStatuses, s)
+				}
+			}
+			statuses = filteredStatuses
 		}
 
-		fmt.Println("\n\033[33mOdigos Source Errors:\033[0m")
+		if len(statuses) == 0 {
+			fmt.Println("✅ No issues found with sources.")
+			return
+		}
+
+		fmt.Println("\n\033[33mOdigos Source Status:\033[0m")
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', tabwriter.TabIndent)
 
 		fmt.Fprintln(w, "NAMESPACE\tNAME\tCONDITION\tREASON\tMESSAGE")
 
-		for _, errObj := range errors {
-			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
-				errObj.Namespace, errObj.Name, errObj.Condition, errObj.Reason, errObj.Message)
+		for _, status := range statuses {
+			color := "\033[32m"
+			if status.IsError {
+				color = "\033[31m"
+			}
+
+			fmt.Fprintf(w, "%s%s\t%s\t%s\t%s\t%s\033[0m\n",
+				color, status.Namespace, status.Name, status.Condition, status.Reason, status.Message)
 		}
 
 		w.Flush()
@@ -275,7 +292,7 @@ func init() {
 	sourcesCmd.AddCommand(sourceCreateCmd)
 	sourcesCmd.AddCommand(sourceDeleteCmd)
 	sourcesCmd.AddCommand(sourceUpdateCmd)
-	sourcesCmd.AddCommand(sourceErrorListCmd)
+	sourcesCmd.AddCommand(sourceStatusCmd)
 
 	sourceCreateCmd.Flags().AddFlagSet(sourceFlags)
 	sourceCreateCmd.Flags().BoolVar(&disableInstrumentationFlag, disableInstrumentationFlagName, false, "Disable instrumentation for Source")
@@ -292,4 +309,7 @@ func init() {
 	sourceUpdateCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
 	sourceUpdateCmd.Flags().Bool(allNamespacesFlagName, false, "apply to all Kubernetes namespaces")
 	sourceUpdateCmd.Flags().StringVar(&sourceOtelServiceFlag, sourceOtelServiceFlagName, "", "OpenTelemetry service name to use for the Source")
+
+	sourceStatusCmd.Flags().BoolVar(&errorOnly, "error", false, "Show only sources with errors")
+
 }

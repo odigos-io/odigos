@@ -1,23 +1,24 @@
 ---
-title: "odigos sources error-list"
-sidebarTitle: "odigos sources error-list"
+title: "odigos sources status"
+sidebarTitle: "odigos sources status"
 ---
-## odigos sources error-list
+## odigos sources status
 
-List errors related to Odigos Sources
+Show the status of all Odigos Sources
 
 ### Synopsis
 
-This command retrieves and displays errors related to Odigos Sources in the Kubernetes cluster.
+Lists all InstrumentationConfigs and InstrumentationInstances with their current status. Use --error to filter only failed sources.
 
 ```
-odigos sources error-list [flags]
+odigos sources status [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for error-list
+      --error   Show only sources with errors
+  -h, --help    help for status
 ```
 
 ### Options inherited from parent commands
