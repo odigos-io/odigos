@@ -98,26 +98,29 @@ export const useActionCRUD = (params?: UseActionCrudParams): UseActionCrudRespon
 
   const [createAction, cState] = useMutation<{ createAction: { id: string } }, { action: ActionInput }>(CREATE_ACTION, {
     onError: (error) => handleError(CRUD.CREATE, error.message),
-    onCompleted: (res) => {
+    onCompleted: (res, req) => {
       const id = res?.createAction?.id;
-      handleComplete(CRUD.CREATE, `Action "${id}" created`, id);
+      const type = req?.variables?.action?.type;
+      handleComplete(CRUD.CREATE, `Action "${type}" created`, id);
     },
   });
 
   const [updateAction, uState] = useMutation<{ updateAction: { id: string } }, { id: string; action: ActionInput }>(UPDATE_ACTION, {
     onError: (error) => handleError(CRUD.UPDATE, error.message),
-    onCompleted: (res) => {
+    onCompleted: (res, req) => {
       const id = res?.updateAction?.id;
-      handleComplete(CRUD.UPDATE, `Action "${id}" updated`, id);
+      const type = req?.variables?.action?.type;
+      handleComplete(CRUD.UPDATE, `Action "${type}" updated`, id);
     },
   });
 
-  const [deleteAction, dState] = useMutation<{ deleteAction: boolean }>(DELETE_ACTION, {
+  const [deleteAction, dState] = useMutation<{ deleteAction: boolean }, { id: string; actionType: ACTION_TYPE }>(DELETE_ACTION, {
     onError: (error) => handleError(CRUD.DELETE, error.message),
     onCompleted: (res, req) => {
       const id = req?.variables?.id;
+      const type = req?.variables?.actionType;
       removeNotifications(getSseTargetFromId(id, ENTITY_TYPES.ACTION));
-      handleComplete(CRUD.DELETE, `Action "${id}" deleted`, id);
+      handleComplete(CRUD.DELETE, `Action "${type}" deleted`, id);
     },
   });
 

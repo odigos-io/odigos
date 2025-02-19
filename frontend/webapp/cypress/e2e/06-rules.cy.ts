@@ -1,12 +1,13 @@
 import { BUTTONS, CRD_NAMES, DATA_IDS, INPUTS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
-import { aliasMutation, awaitToast, deleteEntity, getCrdById, getCrdIds, hasOperationName, updateEntity } from '../functions';
+import { aliasMutation, awaitToast, deleteEntity, getCrdById, getCrdIds, hasOperationName, updateEntity, visitPage } from '../functions';
 
 // The number of CRDs that exist in the cluster before running any tests should be 0.
 // Tests will fail if you have existing CRDs in the cluster.
 // If you have to run tests locally, make sure to clean up the cluster before running the tests.
 
-const namespace = NAMESPACES.ODIGOS_TEST;
+const namespace = NAMESPACES.ODIGOS_SYSTEM;
 const crdName = CRD_NAMES.INSTRUMENTATION_RULE;
+const totalEntities = SELECTED_ENTITIES.INSTRUMENTATION_RULES.length;
 
 describe('Instrumentation Rules CRUD', () => {
   beforeEach(() =>
@@ -25,69 +26,86 @@ describe('Instrumentation Rules CRUD', () => {
       .as('gql'),
   );
 
-  it('Should create a CRD in the cluster', () => {
-    cy.visit(ROUTES.OVERVIEW);
+  it(`Should have 0 ${crdName} CRDs in the cluster`, () => {
+    getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
+  });
 
-    getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 }, () => {
-      cy.get(DATA_IDS.ADD_INSTRUMENTATION_RULE).click();
-      cy.get(DATA_IDS.MODAL_ADD_INSTRUMENTATION_RULE).should('exist');
-      cy.get(DATA_IDS.MODAL_ADD_INSTRUMENTATION_RULE).find('input').should('have.attr', 'placeholder', INPUTS.RULE_DROPDOWN).click();
-      cy.get(DATA_IDS.RULE_DROPDOWN_OPTION).click();
-      cy.get('button').contains(BUTTONS.DONE).click();
+  it(`Should create ${totalEntities} rules via API, and notify locally`, () => {
+    visitPage(ROUTES.OVERVIEW, () => {
+      SELECTED_ENTITIES.INSTRUMENTATION_RULES.forEach((ruleType) => {
+        cy.get(DATA_IDS.ADD_INSTRUMENTATION_RULE).click();
+        cy.get(DATA_IDS.MODAL_ADD_INSTRUMENTATION_RULE).should('exist');
+        cy.get(DATA_IDS.MODAL_ADD_INSTRUMENTATION_RULE).find('input').should('have.attr', 'placeholder', INPUTS.RULE_DROPDOWN).click();
+        cy.get(DATA_IDS.RULE_OPTION(ruleType)).click();
+        // No need to fill form (as we did in actions), because default values are enough 👍 for all rules
+        cy.get('button').contains(BUTTONS.DONE).click();
 
-      cy.wait('@gql').then(() => {
-        getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 }, (crdIds) => {
-          const crdId = crdIds[0];
-          awaitToast({ withSSE: false, message: TEXTS.NOTIF_INSTRUMENTATION_RULE_CREATED(crdId) });
+        // Wait for rule to create
+        cy.wait('@gql').then(() => {
+          awaitToast({ withSSE: false, message: TEXTS.NOTIF_INSTRUMENTATION_RULE_CREATED(ruleType) });
         });
       });
     });
   });
 
-  it('Should update the CRD in the cluster', () => {
-    cy.visit(ROUTES.OVERVIEW);
+  it(`Should have ${totalEntities} ${crdName} CRDs in the cluster`, () => {
+    getCrdIds({ namespace, crdName, expectedError: '', expectedLength: totalEntities });
+  });
 
-    getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 }, () => {
-      updateEntity(
-        {
-          nodeId: DATA_IDS.INSTRUMENTATION_RULE_NODE,
-          nodeContains: SELECTED_ENTITIES.INSTRUMENTATION_RULE,
-          fieldKey: DATA_IDS.TITLE,
-          fieldValue: TEXTS.UPDATED_NAME,
-        },
-        () => {
-          cy.wait('@gql').then(() => {
-            getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 }, (crdIds) => {
-              const crdId = crdIds[0];
-              awaitToast({ withSSE: false, message: TEXTS.NOTIF_INSTRUMENTATION_RULE_UPDATED(crdId) }, () => {
-                getCrdById({ namespace, crdName, crdId, expectedError: '', expectedKey: 'ruleName', expectedValue: TEXTS.UPDATED_NAME });
-              });
+  it(`Should update ${totalEntities} rules via API, and notify locally`, () => {
+    visitPage(ROUTES.OVERVIEW, () => {
+      SELECTED_ENTITIES.INSTRUMENTATION_RULES.forEach((ruleType) => {
+        updateEntity(
+          {
+            // no indexed node, because rules are fetched in random order
+            nodeId: 'div',
+            nodeContains: ruleType,
+            fieldKey: DATA_IDS.TITLE,
+            fieldValue: TEXTS.UPDATED_NAME,
+          },
+          () => {
+            // Wait for the rule to update
+            cy.wait('@gql').then(() => {
+              awaitToast({ withSSE: false, message: TEXTS.NOTIF_INSTRUMENTATION_RULE_UPDATED(ruleType) });
             });
-          });
-        },
-      );
+          },
+        );
+      });
     });
   });
 
-  it('Should delete the CRD from the cluster', () => {
-    cy.visit(ROUTES.OVERVIEW);
-
-    getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 }, (crdIds) => {
-      const crdId = crdIds[0];
-      deleteEntity(
-        {
-          nodeId: DATA_IDS.INSTRUMENTATION_RULE_NODE,
-          nodeContains: SELECTED_ENTITIES.INSTRUMENTATION_RULE,
-          warnModalTitle: TEXTS.INSTRUMENTATION_RULE_WARN_MODAL_TITLE,
-        },
-        () => {
-          cy.wait('@gql').then(() => {
-            awaitToast({ withSSE: false, message: TEXTS.NOTIF_INSTRUMENTATION_RULE_DELETED(crdId) }, () => {
-              getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
-            });
-          });
-        },
-      );
+  it(`Should update ${totalEntities} ${crdName} CRDs in the cluster`, () => {
+    getCrdIds({ namespace, crdName, expectedError: '', expectedLength: totalEntities }, (crdIds) => {
+      crdIds.forEach((crdId) => {
+        getCrdById({ namespace, crdName, crdId, expectedError: '', expectedKey: 'ruleName', expectedValue: TEXTS.UPDATED_NAME });
+      });
     });
+  });
+
+  it(`Should delete ${totalEntities} actions via API, and notify locally`, () => {
+    visitPage(ROUTES.OVERVIEW, () => {
+      SELECTED_ENTITIES.INSTRUMENTATION_RULES.forEach((ruleType) => {
+        deleteEntity(
+          {
+            // no indexed node, because rules are fetched in random order
+            nodeId: 'div',
+            nodeContains: ruleType,
+            warnModalTitle: TEXTS.INSTRUMENTATION_RULE_WARN_MODAL_TITLE,
+          },
+          () => {
+            // Wait for the rule to delete
+            cy.wait('@gql').then(() => {
+              // TODO: bring back full message after replacing CRD ID with rule type in the CRUD hook
+              // awaitToast({ withSSE: false, message: TEXTS.NOTIF_INSTRUMENTATION_RULE_DELETED('was crdId - should be ruleType') });
+              awaitToast({ withSSE: false, message: 'deleted' });
+            });
+          },
+        );
+      });
+    });
+  });
+
+  it(`Should delete ${totalEntities} ${crdName} CRDs in the cluster`, () => {
+    getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
   });
 });
