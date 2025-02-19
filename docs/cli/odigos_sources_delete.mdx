@@ -8,10 +8,41 @@ Delete Odigos Sources
 
 ### Synopsis
 
-This command will delete any Source objects that match the provided Workload info.
+This command will delete the named Source object or any Source objects that match the provided Workload info.
+
+If a [name] is provided, that Source object will be deleted in the given namespace using the --namespace (-n) flag.
+
+For example, to delete the Source named "mysource-abc123" in namespace "myapp", run:
+
+$ odigos sources delete mysource-abc123 -n myapp
+
+Multiple Source objects can be deleted at once using the --workload-name, --workload-kind, and --workload-namespace flags.
+These flags are AND-ed so that if any of these flags are provided, all Sources that match the given flags will be deleted.
+
+For example, to delete all Sources for StatefulSet workloads in the cluster, run:
+
+$ odigos sources delete --workload-kind=StatefulSet --all-namespaces
+
+To delete all Deployment Sources in namespace Foobar, run:
+
+$ odigos sources delete --workload-kind=Deployment --workload-namespace=Foobar
+
+or
+
+$ odigos sources delete --workload-kind=Deployment -n Foobar
+
+These flags can be used to batch delete Sources, or as an alternative to deleting a Source by name (for instance, when
+the name of the Source might not be known, but the Workload information is known). For example:
+
+$ odigos sources delete --workload-kind=Deployment --workload-name=myapp -n myapp-namespace
+
+This command will delete any Sources in the namespace "myapp-namespace" that instrument a Deployment named "myapp"
+
+It is important to note that if a Source [name] is provided, all --workload-* flags will be ignored to delete only the named Source.
+
 
 ```
-odigos sources delete [flags]
+odigos sources delete [name] [flags]
 ```
 
 ### Options
