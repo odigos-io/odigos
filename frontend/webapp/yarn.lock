@@ -409,10 +409,10 @@
     react-lottie "^1.2.10"
     styled-components "^6.1.15"
 
-"@odigos/ui-containers@^0.0.56":
-  version "0.0.56"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-containers/-/ui-containers-0.0.56.tgz#de39b2d86438000b509f7fd0470eeb9fb5518eda"
-  integrity sha512-nfcEpqWop7RYvMxWZw2JkueR0PcAGFKuFIIy0WCgksoY4aU72IsEfi1DPmTzJPyxCOEhLX7xfTI/pSLCp6Qh2g==
+"@odigos/ui-containers@^0.0.57":
+  version "0.0.57"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-containers/-/ui-containers-0.0.57.tgz#d70bc7a0f6ad89abbaf89dbc09da37fde25029ce"
+  integrity sha512-sOOAZtb9INRj0of2p5txY1ibZfrwLUU6+8u+whGXIe0lFnlxVRQv8tC0ecsLlKqgRzphSNJrDy7vZRlMVz6VnA==
   dependencies:
     "@odigos/ui-components" "^0.0.75"
     "@odigos/ui-icons" "^0.0.13"
@@ -3062,10 +3062,10 @@ postcss@8.4.49:
     picocolors "^1.1.1"
     source-map-js "^1.2.1"
 
-postcss@^8.5.2:
-  version "8.5.2"
-  resolved "https://registry.yarnpkg.com/postcss/-/postcss-8.5.2.tgz#e7b99cb9d2ec3e8dd424002e7c16517cb2b846bd"
-  integrity sha512-MjOadfU3Ys9KYoX0AdkBlFEF1Vx37uCCeN4ZHnmwm9FfpbsGWMZeBLMmmpY+6Ocqod7mkdZ0DT31OlbsFrLlkA==
+postcss@^8.5.3:
+  version "8.5.3"
+  resolved "https://registry.yarnpkg.com/postcss/-/postcss-8.5.3.tgz#1463b6f1c7fb16fe258736cba29a2de35237eafb"
+  integrity sha512-dle9A3yYxlBSrt8Fu+IpjGT8SY8hN0mlaA6GY8t0P5PjIOZemULz/E2Bnm/2dcUOena75OTNkHI76uZBNUUq3A==
   dependencies:
     nanoid "^3.3.8"
     picocolors "^1.1.1"
