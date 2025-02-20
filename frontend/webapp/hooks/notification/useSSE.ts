@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { API } from '@/utils';
-import { useStatusStore } from '@/store';
+import { usePaginatedStore, useStatusStore } from '@/store';
 import { useSourceCRUD } from '../sources';
 import { useDestinationCRUD } from '../destinations';
 import { type NotifyPayload, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
@@ -15,6 +15,7 @@ const EVENT_TYPES = {
 };
 
 export const useSSE = () => {
+  const { setPaginated } = usePaginatedStore();
   const { setPendingItems } = usePendingStore();
   const { title, setStatusStore } = useStatusStore();
   const { addNotification } = useNotificationStore();
@@ -53,6 +54,7 @@ export const useSSE = () => {
           if (notification.title === EVENT_TYPES.MODIFIED && !!notification.target) {
             fetchSourceById(getIdFromSseTarget(notification.target, ENTITY_TYPES.SOURCE) as WorkloadId);
           } else {
+            if (notification.title === EVENT_TYPES.DELETED) setPaginated(ENTITY_TYPES.SOURCE, []);
             fetchSources();
           }
         } else if ([CRD_TYPES.DESTINATION].includes(notification.crdType as CRD_TYPES)) {

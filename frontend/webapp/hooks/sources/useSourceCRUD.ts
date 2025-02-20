@@ -24,10 +24,10 @@ const mapFetched = (items: FetchedSource[]): Source[] => {
 export const useSourceCRUD = (): UseSourceCrud => {
   const { data: config } = useConfig();
   const { persistNamespace } = useNamespace();
+  const { sources, addPaginated } = usePaginatedStore();
   const { addPendingItems, removePendingItems } = usePendingStore();
   const { configuredSources, setConfiguredSources } = useSetupStore();
   const { addNotification, removeNotifications } = useNotificationStore();
-  const { sources, setPaginated, addPaginated } = usePaginatedStore();
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: WorkloadId, hideFromHistory?: boolean) => {
     addNotification({ type, title, message, crdType: ENTITY_TYPES.SOURCE, target: id ? getSseTargetFromId(id, ENTITY_TYPES.SOURCE) : undefined, hideFromHistory });
@@ -42,7 +42,6 @@ export const useSourceCRUD = (): UseSourceCrud => {
   });
 
   const fetchSources = async (getAll: boolean = true, page: string = '') => {
-    if (page === '') setPaginated(ENTITY_TYPES.SOURCE, []);
     const { error, data } = await fetchPaginated({ variables: { nextPage: page } });
 
     if (!!error) {
