@@ -17,7 +17,7 @@ const JavaVersionRegex = `\d+\.\d+\.\d+\+\d+`
 //   - "java" (e.g., /usr/bin/java)
 //   - "javaw" (though less common on Linux)
 //   - "java" / "javaw" followed by version digits (e.g., java8, java11, java17).
-var exeRegex = regexp.MustCompile(`.*/java(?:w)?(?:\d+)?$`)
+var exeRegex = regexp.MustCompile(`.*/javaw?(?:\d+)?$`)
 var versionRegex = regexp.MustCompile(JavaVersionRegex)
 
 func (j *JavaInspector) Inspect(proc *process.Details) (common.ProgrammingLanguage, bool) {
