@@ -395,10 +395,10 @@
   resolved "https://registry.yarnpkg.com/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz#3dc35ba0f1e66b403c00b39344f870298ebb1c8e"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
-"@odigos/ui-components@^0.0.73":
-  version "0.0.73"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-components/-/ui-components-0.0.73.tgz#c3a5001238f581d2d96eadff4b6d8889545309bd"
-  integrity sha512-I+J6x7AchtQotFSc/0RLS0aFbLyPzHWg3vrrRRGAocW4SETpKJcpaGKWCo72THFG+bzM9whYKppa6a5pVohgmA==
+"@odigos/ui-components@^0.0.75":
+  version "0.0.75"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-components/-/ui-components-0.0.75.tgz#2c7be34c73ebbaefd2bf64aaf4071593ff875e9b"
+  integrity sha512-vHP67g6llcXmR12dDkgwQ9Myrkncfczl78Pg5o9TvmGHvIxTQ0JPDn6CnESSka0DlEa3jxqLy1p4tmhdTRPqeg==
   dependencies:
     "@odigos/ui-icons" "^0.0.13"
     "@odigos/ui-theme" "^0.0.16"
@@ -409,12 +409,12 @@
     react-lottie "^1.2.10"
     styled-components "^6.1.15"
 
-"@odigos/ui-containers@^0.0.51":
-  version "0.0.51"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-containers/-/ui-containers-0.0.51.tgz#4fe7cc542613473e2e5a238614d6d2185e902a67"
-  integrity sha512-CnPzNB1V+onn2ei+hZt0fUfXl/hgUqeiudCJj0ehvs3f0n9uirczy65OLP37DKGIZp6QzMBEi1L6j0cU3B/i5g==
+"@odigos/ui-containers@^0.0.59":
+  version "0.0.59"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-containers/-/ui-containers-0.0.59.tgz#c75ba92b3fdb934b5b71d8f932cf0af04cdc7802"
+  integrity sha512-fhj3SisFtgwa15TuQhq4E9VL3os/JA9aPd9tqPK8aY5tEmUovyA2iaxTL8vxnoDcmdkFoqx23XAuO4xINUSKPA==
   dependencies:
-    "@odigos/ui-components" "^0.0.73"
+    "@odigos/ui-components" "^0.0.75"
     "@odigos/ui-icons" "^0.0.13"
     "@odigos/ui-theme" "^0.0.16"
     "@odigos/ui-utils" "^0.0.33"
@@ -448,6 +448,18 @@
   version "0.0.33"
   resolved "https://registry.yarnpkg.com/@odigos/ui-utils/-/ui-utils-0.0.33.tgz#3a20ac9404caf02b54f2d3a7089b48dac0368619"
   integrity sha512-qbdGpwLxLU7ffitNx4oXRSxU0Zpf3aACDm9wQAzTt2HERCHnQ6Is7KXD+trufBROd0I0SWfxt8BtrdPmoo5uDQ==
+  dependencies:
+    "@odigos/ui-icons" "^0.0.13"
+    "@odigos/ui-theme" "^0.0.16"
+    javascript-time-ago "^2.5.11"
+    react "^19.0.0"
+    react-dom "^19.0.0"
+    styled-components "^6.1.15"
+
+"@odigos/ui-utils@^0.0.34":
+  version "0.0.34"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-utils/-/ui-utils-0.0.34.tgz#7ce643fe28013256f6ee783754b0bc2564141b42"
+  integrity sha512-iUlc/2VtXgxkYAkrhLDb++S9w5PB1WpqqEP9fu+rqLCfMm0HWKggQ0CA8ZAcGlstv0AUB2Q7MI94W/TJiX70JQ==
   dependencies:
     "@odigos/ui-icons" "^0.0.13"
     "@odigos/ui-theme" "^0.0.16"
@@ -3050,10 +3062,10 @@ postcss@8.4.49:
     picocolors "^1.1.1"
     source-map-js "^1.2.1"
 
-postcss@^8.5.2:
-  version "8.5.2"
-  resolved "https://registry.yarnpkg.com/postcss/-/postcss-8.5.2.tgz#e7b99cb9d2ec3e8dd424002e7c16517cb2b846bd"
-  integrity sha512-MjOadfU3Ys9KYoX0AdkBlFEF1Vx37uCCeN4ZHnmwm9FfpbsGWMZeBLMmmpY+6Ocqod7mkdZ0DT31OlbsFrLlkA==
+postcss@^8.5.3:
+  version "8.5.3"
+  resolved "https://registry.yarnpkg.com/postcss/-/postcss-8.5.3.tgz#1463b6f1c7fb16fe258736cba29a2de35237eafb"
+  integrity sha512-dle9A3yYxlBSrt8Fu+IpjGT8SY8hN0mlaA6GY8t0P5PjIOZemULz/E2Bnm/2dcUOena75OTNkHI76uZBNUUq3A==
   dependencies:
     nanoid "^3.3.8"
     picocolors "^1.1.1"

@@ -9,7 +9,8 @@ ifdef FIX_LINT
     LINT_CMD += --fix
 endif
 DOCKERFILE=Dockerfile
-IMG_SUFFIX=
+IMG_PREFIX?=
+IMG_SUFFIX?=
 BUILD_DIR=.
 
 .PHONY: install-golangci-lint
@@ -371,3 +372,35 @@ dev-nop-destination:
 .PHONY: dev-add-backpressue-destination
 dev-backpressue-destination:
 	kubectl apply -f ./tests/backpressure-exporter.yaml
+
+# Use these to deploy Odigos into an EKS cluster
+
+.PHONY: ecr-login
+ecr-login:
+	aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+
+build-tag-push-eks-image/%:
+	docker build --platform linux/amd64 -t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
+	--build-arg SERVICE_NAME="$*" \
+	--build-arg ODIGOS_VERSION=$(TAG) \
+	--build-arg VERSION=$(TAG) \
+	--build-arg RELEASE=$(TAG) \
+	--build-arg SUMMARY="$(SUMMARY)" \
+	--build-arg DESCRIPTION="$(DESCRIPTION)"
+	docker tag registry.odigos.io/odigos-$*$(IMG_SUFFIX):$(TAG) $(IMG_PREFIX)/odigos-$*$(IMG_SUFFIX):$(TAG)
+	docker push $(IMG_PREFIX)/odigos-$*$(IMG_SUFFIX):$(TAG)
+
+.PHONY: deploy-to-eks
+deploy-to-eks:
+	if [ -z "$(IMG_PREFIX)" ]; then \
+		echo "❌ IMG_PREFIX is not set"; \
+		exit 1; \
+	fi
+	make ecr-login
+	make -j 3 build-tag-push-eks-image/odiglet DOCKERFILE=odiglet/$(DOCKERFILE) SUMMARY="Odiglet for Odigos" DESCRIPTION="Odiglet is the core component of Odigos managing auto-instrumentation. This container requires a root user to run and manage eBPF programs." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	make -j 3 build-tag-push-eks-image/autoscaler SUMMARY="Autoscaler for Odigos" DESCRIPTION="Autoscaler manages the installation of Odigos components." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	make -j 3 build-tag-push-eks-image/instrumentor SUMMARY="Instrumentor for Odigos" DESCRIPTION="Instrumentor manages auto-instrumentation for workloads with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	make -j 3 build-tag-push-eks-image/scheduler SUMMARY="Scheduler for Odigos" DESCRIPTION="Scheduler manages the installation of OpenTelemetry Collectors with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	make -j 3 build-tag-push-eks-image/collector DOCKERFILE=collector/$(DOCKERFILE) BUILD_DIR=collector SUMMARY="Odigos Collector" DESCRIPTION="The Odigos build of the OpenTelemetry Collector." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	make -j 3 build-tag-push-eks-image/ui DOCKERFILE=frontend/$(DOCKERFILE) SUMMARY="UI for Odigos" DESCRIPTION="UI provides the frontend webapp for managing an Odigos installation." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	echo "✅ Deployed Odigos to EKS, now install the CLI"
