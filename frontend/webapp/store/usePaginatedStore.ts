@@ -5,12 +5,16 @@ import type { FetchedAction, FetchedDestination, FetchedInstrumentationRule, Fet
 interface IPaginatedState {
   sources: FetchedSource[];
   sourcesPaginating: boolean;
+  sourcesExpected: number;
   destinations: FetchedDestination[];
   destinationsPaginating: boolean;
+  destinationsExpected: number;
   actions: FetchedAction[];
   actionsPaginating: boolean;
+  actionsExpected: number;
   instrumentationRules: FetchedInstrumentationRule[];
   instrumentationRulesPaginating: boolean;
+  instrumentationRulesExpected: number;
 }
 
 type EntityId = string | WorkloadId;
@@ -18,6 +22,7 @@ type EntityItems = IPaginatedState['sources'] | IPaginatedState['destinations'] 
 
 interface IPaginatedStateSetters {
   setPaginating: (entityType: ENTITY_TYPES, bool: boolean) => void;
+  setExpected: (entityType: ENTITY_TYPES, num: number) => void;
   setPaginated: (entityType: ENTITY_TYPES, entities: EntityItems) => void;
   addPaginated: (entityType: ENTITY_TYPES, entities: EntityItems) => void;
   removePaginated: (entityType: ENTITY_TYPES, entityIds: EntityId[]) => void;
@@ -26,12 +31,36 @@ interface IPaginatedStateSetters {
 export const usePaginatedStore = create<IPaginatedState & IPaginatedStateSetters>((set) => ({
   sources: [],
   sourcesPaginating: false,
+  sourcesExpected: 0,
+
   destinations: [],
   destinationsPaginating: false,
+  destinationsExpected: 0,
+
   actions: [],
   actionsPaginating: false,
+  actionsExpected: 0,
+
   instrumentationRules: [],
   instrumentationRulesPaginating: false,
+  instrumentationRulesExpected: 0,
+
+  setExpected: (entityType, num) => {
+    const KEY =
+      entityType === ENTITY_TYPES.SOURCE
+        ? 'sourcesExpected'
+        : entityType === ENTITY_TYPES.DESTINATION
+        ? 'destinationsExpected'
+        : entityType === ENTITY_TYPES.ACTION
+        ? 'actionsExpected'
+        : entityType === ENTITY_TYPES.INSTRUMENTATION_RULE
+        ? 'instrumentationRulesExpected'
+        : 'NONE';
+
+    if (KEY === 'NONE') return;
+
+    set({ [KEY]: num });
+  },
 
   setPaginating: (entityType, bool) => {
     const KEY =

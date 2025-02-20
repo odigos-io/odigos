@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useConfig } from '../config';
 import { usePaginatedStore } from '@/store';
 import { useNamespace } from '../compute-platform';
@@ -28,7 +28,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
   const { addPendingItems, removePendingItems } = usePendingStore();
   const { configuredSources, setConfiguredSources } = useSetupStore();
   const { addNotification, removeNotifications } = useNotificationStore();
-  const { sources, sourcesPaginating, setPaginating, addPaginated, removePaginated } = usePaginatedStore();
+  const { sources, addPaginated, sourcesPaginating, setPaginating, setExpected } = usePaginatedStore();
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: WorkloadId, hideFromHistory?: boolean) => {
     addNotification({ type, title, message, crdType: ENTITY_TYPES.SOURCE, target: id ? getSseTargetFromId(id, ENTITY_TYPES.SOURCE) : undefined, hideFromHistory });
@@ -56,8 +56,12 @@ export const useSourceCRUD = (): UseSourceCrud => {
       const { items, nextPage } = data.computePlatform.sources;
       addPaginated(ENTITY_TYPES.SOURCE, items);
 
-      if (getAll && !!nextPage) fetchSources(true, nextPage);
-      else setPaginating(ENTITY_TYPES.SOURCE, false);
+      if (getAll && !!nextPage) {
+        setTimeout(() => fetchSources(true, nextPage), 100);
+      } else if (usePaginatedStore.getState().sources.length >= usePaginatedStore.getState().sourcesExpected) {
+        setPaginating(ENTITY_TYPES.SOURCE, false);
+        setExpected(ENTITY_TYPES.SOURCE, 0);
+      }
     }
   };
 
@@ -65,7 +69,6 @@ export const useSourceCRUD = (): UseSourceCrud => {
     // We have to get the boolean like this,
     // because simply using "sourcesPaginating" will contain an outdated value within this function's scope.
     if (usePaginatedStore.getState().sourcesPaginating) return;
-
     const { error, data } = await fetchById({ variables: { sourceId: id } });
 
     if (!!error) {
@@ -85,10 +88,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
       const namespace = req?.variables?.namespace;
 
       req?.variables?.sources.forEach(({ name, kind, selected }: { name: string; kind: K8S_RESOURCE_KIND; selected: boolean }) => {
-        if (!selected) {
-          removeNotifications(getSseTargetFromId({ namespace, name, kind }, ENTITY_TYPES.SOURCE));
-          removePaginated(ENTITY_TYPES.SOURCE, [{ namespace, name, kind }]);
-        }
+        if (!selected) removeNotifications(getSseTargetFromId({ namespace, name, kind }, ENTITY_TYPES.SOURCE));
       });
 
       // No fetch, we wait for SSE
@@ -111,7 +111,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
   });
 
   useEffect(() => {
-    if (!sources.length && !isFetching) fetchSources();
+    if (!sources.length && !sourcesPaginating) fetchSources();
   }, []);
 
   return {
@@ -140,6 +140,10 @@ export const useSourceCRUD = (): UseSourceCrud => {
               alreadyNotifiedSources = true;
               notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Persisting sources...', undefined, true);
             }
+
+            // This is to stop modified events from being fetched on initial instrumentation
+            setPaginating(ENTITY_TYPES.SOURCE, true);
+            setExpected(ENTITY_TYPES.SOURCE, usePaginatedStore.getState().sourcesExpected + items.filter((src) => src.selected).length);
           }
 
           const addToPendingStore: PendingItem[] = [];
@@ -160,6 +164,9 @@ export const useSourceCRUD = (): UseSourceCrud => {
           if (!alreadyNotifiedSources && !alreadyNotifiedNamespaces) {
             alreadyNotifiedNamespaces = true;
             notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Persisting namespaces...', undefined, true);
+
+            // This is to stop modified events from being fetched on initial instrumentation
+            setPaginating(ENTITY_TYPES.SOURCE, true);
           }
 
           await persistNamespace({ name: ns, futureSelected: items });
