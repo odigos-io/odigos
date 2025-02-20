@@ -1,7 +1,7 @@
 import type { DestinationCategories, FetchedCondition } from '@odigos/ui-utils';
 import type { DestinationDynamicField, DestinationFormData } from '@odigos/ui-containers';
 
-export interface FetechedDestination {
+export interface FetchedDestination {
   id: string;
   name: string;
   exportedSignals: {
