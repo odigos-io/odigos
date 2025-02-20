@@ -11,6 +11,7 @@ cli/odigos
 serving-certs/
 **/.tools/
 **/LICENSES
+odigos
 
 **.tfstate
 **.tfstate.backup
