@@ -19,7 +19,6 @@ func (dm *podDeviceDistributionMatcher) Distribution(ctx context.Context, e K8sP
 	if err != nil {
 		return instrumentation.OtelDistribution{}, fmt.Errorf("failed to get language and sdk: %w", err)
 	}
-
 	// verify the language of the process event
 	if ok := inspectors.VerifyLanguage(process.Details{
 		ProcessID: e.procEvent.PID,
