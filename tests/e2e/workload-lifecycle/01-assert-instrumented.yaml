@@ -34,7 +34,7 @@ status:
       reason: DetectedSuccessfully
       status: "True"
       type: RuntimeDetection
-    - message: "agent injected successfully to 1 containers: [nodejs-very-old-version]"
+    - message: "agent enabled in 1 containers: [nodejs-very-old-version]"
       reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
@@ -59,7 +59,7 @@ status:
       reason: DetectedSuccessfully
       status: "True"
       type: RuntimeDetection
-    - message: "agent injected successfully to 1 containers: [nodejs-minimum-version]"
+    - message: "agent enabled in 1 containers: [nodejs-minimum-version]"
       reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
@@ -109,7 +109,7 @@ status:
       reason: DetectedSuccessfully
       status: "True"
       type: RuntimeDetection
-    - message: "agent injected successfully to 1 containers: [nodejs-latest-version]"
+    - message: "agent enabled in 1 containers: [nodejs-latest-version]"
       reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
@@ -159,7 +159,7 @@ status:
       reason: DetectedSuccessfully
       status: "True"
       type: RuntimeDetection
-    - message: "agent injected successfully to 1 containers: [nodejs-dockerfile-env]"
+    - message: "agent enabled in 1 containers: [nodejs-dockerfile-env]"
       reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
@@ -209,7 +209,7 @@ status:
       reason: DetectedSuccessfully
       status: "True"
       type: RuntimeDetection
-    - message: "agent injected successfully to 1 containers: [nodejs-manifest-env]"
+    - message: "agent enabled in 1 containers: [nodejs-manifest-env]"
       reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
@@ -278,7 +278,7 @@ status:
       reason: DetectedSuccessfully
       status: "True"
       type: RuntimeDetection
-    - message: "agent injected successfully to 1 containers: [java-supported-version]"
+    - message: "agent enabled in 1 containers: [java-supported-version]"
       reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
@@ -302,7 +302,7 @@ status:
       reason: DetectedSuccessfully
       status: "True"
       type: RuntimeDetection
-    - message: "agent injected successfully to 1 containers: [java-azul]"
+    - message: "agent enabled in 1 containers: [java-azul]"
       reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
@@ -326,7 +326,7 @@ status:
       reason: DetectedSuccessfully
       status: "True"
       type: RuntimeDetection
-    - message: "agent injected successfully to 1 containers: [java-supported-docker-env]"
+    - message: "agent enabled in 1 containers: [java-supported-docker-env]"
       reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
@@ -350,7 +350,7 @@ status:
       reason: DetectedSuccessfully
       status: "True"
       type: RuntimeDetection
-    - message: "agent injected successfully to 1 containers: [java-supported-manifest-env]"
+    - message: "agent enabled in 1 containers: [java-supported-manifest-env]"
       reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
@@ -374,7 +374,7 @@ status:
       reason: DetectedSuccessfully
       status: "True"
       type: RuntimeDetection
-    - message: "agent injected successfully to 1 containers: [java-latest-version]"
+    - message: "agent enabled in 1 containers: [java-latest-version]"
       reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
@@ -398,7 +398,7 @@ status:
       reason: DetectedSuccessfully
       status: "True"
       type: RuntimeDetection
-    - message: "agent injected successfully to 1 containers: [java-old-version]"
+    - message: "agent enabled in 1 containers: [java-old-version]"
       reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
@@ -422,7 +422,7 @@ status:
       reason: DetectedSuccessfully
       status: "True"
       type: RuntimeDetection
-    - message: "agent injected successfully to 1 containers: [python-alpine]"
+    - message: "agent enabled in 1 containers: [python-alpine]"
       reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
@@ -446,7 +446,7 @@ status:
       reason: DetectedSuccessfully
       status: "True"
       type: RuntimeDetection
-    - message: "agent injected successfully to 1 containers: [python-latest-version]"
+    - message: "agent enabled in 1 containers: [python-latest-version]"
       reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
@@ -470,7 +470,7 @@ status:
       reason: DetectedSuccessfully
       status: "True"
       type: RuntimeDetection
-    - message: "agent injected successfully to 1 containers: [python-min-version]"
+    - message: "agent enabled in 1 containers: [python-min-version]"
       reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled

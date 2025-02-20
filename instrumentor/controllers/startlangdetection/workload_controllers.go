@@ -85,8 +85,9 @@ func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind k8s
 
 	markedForInstChanged := meta.SetStatusCondition(&ic.Status.Conditions, markedForInstrumentationCondition)
 	runtimeDetailsChanged := initiateRuntimeDetailsConditionIfMissing(ic, workloadObj)
+	agentEnabledChanged := initiateAgentEnabledConditionIfMissing(ic)
 
-	if markedForInstChanged || runtimeDetailsChanged {
+	if markedForInstChanged || runtimeDetailsChanged || agentEnabledChanged {
 		logger.Info("Updating initial instrumentation status condition of InstrumentationConfig", "name", instConfigName, "namespace", req.Namespace)
 		if !areConditionsLogicallySorted(ic.Status.Conditions) {
 			// it is possible that by the time we are running this code, the status conditions are updated by another controller
