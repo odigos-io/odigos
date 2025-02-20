@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useConfig } from '../config';
 import { usePaginatedStore } from '@/store';
 import { useNamespace } from '../compute-platform';
@@ -11,6 +11,7 @@ import { type NamespaceSelectionFormData, type PendingItem, type SourceFormData,
 interface UseSourceCrud {
   sources: Source[];
   sourcesLoading: boolean;
+  sourcesPaginating: boolean;
   fetchSources: (getAll?: boolean, nextPage?: string) => Promise<void>;
   fetchSourceById: (id: WorkloadId) => Promise<void>;
   persistSources: (selectAppsList: SourceSelectionFormData, futureSelectAppsList: NamespaceSelectionFormData) => Promise<void>;
@@ -24,10 +25,10 @@ const mapFetched = (items: FetchedSource[]): Source[] => {
 export const useSourceCRUD = (): UseSourceCrud => {
   const { data: config } = useConfig();
   const { persistNamespace } = useNamespace();
-  const { sources, addPaginated } = usePaginatedStore();
   const { addPendingItems, removePendingItems } = usePendingStore();
   const { configuredSources, setConfiguredSources } = useSetupStore();
   const { addNotification, removeNotifications } = useNotificationStore();
+  const { sources, sourcesPaginating, setPaginating, addPaginated, removePaginated } = usePaginatedStore();
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: WorkloadId, hideFromHistory?: boolean) => {
     addNotification({ type, title, message, crdType: ENTITY_TYPES.SOURCE, target: id ? getSseTargetFromId(id, ENTITY_TYPES.SOURCE) : undefined, hideFromHistory });
@@ -42,6 +43,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
   });
 
   const fetchSources = async (getAll: boolean = true, page: string = '') => {
+    setPaginating(ENTITY_TYPES.SOURCE, true);
     const { error, data } = await fetchPaginated({ variables: { nextPage: page } });
 
     if (!!error) {
@@ -54,12 +56,16 @@ export const useSourceCRUD = (): UseSourceCrud => {
       const { items, nextPage } = data.computePlatform.sources;
       addPaginated(ENTITY_TYPES.SOURCE, items);
 
-      // This timeout is to prevent react-flow from flickering on re-renders
-      if (getAll && !!nextPage) setTimeout(() => fetchSources(true, nextPage), 10);
+      if (getAll && !!nextPage) fetchSources(true, nextPage);
+      else setPaginating(ENTITY_TYPES.SOURCE, false);
     }
   };
 
   const fetchSourceById = async (id: WorkloadId) => {
+    // We have to get the boolean like this,
+    // because simply using "sourcesPaginating" will contain an outdated value within this function's scope.
+    if (usePaginatedStore.getState().sourcesPaginating) return;
+
     const { error, data } = await fetchById({ variables: { sourceId: id } });
 
     if (!!error) {
@@ -79,7 +85,10 @@ export const useSourceCRUD = (): UseSourceCrud => {
       const namespace = req?.variables?.namespace;
 
       req?.variables?.sources.forEach(({ name, kind, selected }: { name: string; kind: K8S_RESOURCE_KIND; selected: boolean }) => {
-        if (!selected) removeNotifications(getSseTargetFromId({ namespace, name, kind }, ENTITY_TYPES.SOURCE));
+        if (!selected) {
+          removeNotifications(getSseTargetFromId({ namespace, name, kind }, ENTITY_TYPES.SOURCE));
+          removePaginated(ENTITY_TYPES.SOURCE, [{ namespace, name, kind }]);
+        }
       });
 
       // No fetch, we wait for SSE
@@ -107,7 +116,8 @@ export const useSourceCRUD = (): UseSourceCrud => {
 
   return {
     sources: mapFetched(sources),
-    sourcesLoading: isFetching || isFetchingById || cdState.loading || uState.loading,
+    sourcesLoading: isFetching || isFetchingById || sourcesPaginating || cdState.loading || uState.loading,
+    sourcesPaginating,
     fetchSources,
     fetchSourceById,
 

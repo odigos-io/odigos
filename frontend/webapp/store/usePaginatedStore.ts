@@ -1,18 +1,23 @@
 import { create } from 'zustand';
-import { FetchedAction, FetchedDestination, FetchedInstrumentationRule, type FetchedSource } from '@/@types';
 import { ENTITY_TYPES, getEntityId, type WorkloadId } from '@odigos/ui-utils';
+import type { FetchedAction, FetchedDestination, FetchedInstrumentationRule, FetchedSource } from '@/@types';
 
 interface IPaginatedState {
   sources: FetchedSource[];
+  sourcesPaginating: boolean;
   destinations: FetchedDestination[];
+  destinationsPaginating: boolean;
   actions: FetchedAction[];
+  actionsPaginating: boolean;
   instrumentationRules: FetchedInstrumentationRule[];
+  instrumentationRulesPaginating: boolean;
 }
 
 type EntityId = string | WorkloadId;
 type EntityItems = IPaginatedState['sources'] | IPaginatedState['destinations'] | IPaginatedState['actions'] | IPaginatedState['instrumentationRules'];
 
 interface IPaginatedStateSetters {
+  setPaginating: (entityType: ENTITY_TYPES, bool: boolean) => void;
   setPaginated: (entityType: ENTITY_TYPES, entities: EntityItems) => void;
   addPaginated: (entityType: ENTITY_TYPES, entities: EntityItems) => void;
   removePaginated: (entityType: ENTITY_TYPES, entityIds: EntityId[]) => void;
@@ -20,9 +25,30 @@ interface IPaginatedStateSetters {
 
 export const usePaginatedStore = create<IPaginatedState & IPaginatedStateSetters>((set) => ({
   sources: [],
+  sourcesPaginating: false,
   destinations: [],
+  destinationsPaginating: false,
   actions: [],
+  actionsPaginating: false,
   instrumentationRules: [],
+  instrumentationRulesPaginating: false,
+
+  setPaginating: (entityType, bool) => {
+    const KEY =
+      entityType === ENTITY_TYPES.SOURCE
+        ? 'sourcesPaginating'
+        : entityType === ENTITY_TYPES.DESTINATION
+        ? 'destinationsPaginating'
+        : entityType === ENTITY_TYPES.ACTION
+        ? 'actionsPaginating'
+        : entityType === ENTITY_TYPES.INSTRUMENTATION_RULE
+        ? 'instrumentationRulesPaginating'
+        : 'NONE';
+
+    if (KEY === 'NONE') return;
+
+    set({ [KEY]: bool });
+  },
 
   setPaginated: (entityType, payload) => {
     const KEY =

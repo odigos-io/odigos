@@ -22,6 +22,7 @@ import (
 	testconnection "github.com/odigos-io/odigos/frontend/services/test_connection"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -116,7 +117,7 @@ func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *m
 // Sources is the resolver for the sources field.
 func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.ComputePlatform, nextPage string) (*model.PaginatedSources, error) {
 	list, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{
-		Limit:    int64(10),
+		Limit:    int64(50),
 		Continue: nextPage,
 	})
 
@@ -124,7 +125,7 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 		if strings.Contains(err.Error(), "The provided continue parameter is too old") {
 			// Retry without the continue token
 			list, err = kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{
-				Limit: int64(10),
+				Limit: int64(50),
 			})
 
 			if err != nil {
@@ -156,23 +157,17 @@ func (r *computePlatformResolver) Source(ctx context.Context, obj *model.Compute
 	kind := sourceID.Kind
 	name := sourceID.Name
 
-	list, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs(ns).List(ctx, metav1.ListOptions{})
+	ic, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs(ns).Get(ctx, workload.CalculateWorkloadRuntimeObjectName(name, string(kind)), metav1.GetOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to list InstrumentationConfigs in namespace %s: %w", ns, err)
+		return nil, fmt.Errorf("failed to get InstrumentationConfig: %w", err)
+	}
+	if ic == nil {
+		return nil, fmt.Errorf("InstrumentationConfig not found for %s/%s in namespace %s", kind, name, ns)
 	}
 
-	// Loop with early exit
-	for _, ic := range list.Items {
-		for _, ownerRef := range ic.OwnerReferences {
-			if ownerRef.Kind == string(kind) && ownerRef.Name == name {
-				src := instrumentationConfigToActualSource(ic)
-				services.AddHealthyInstrumentationInstancesCondition(ctx, &ic, src)
-				return src, nil
-			}
-		}
-	}
-
-	return nil, fmt.Errorf("no InstrumentationConfig found for owner %s/%s in namespace %s", kind, name, ns)
+	src := instrumentationConfigToActualSource(*ic)
+	services.AddHealthyInstrumentationInstancesCondition(ctx, ic, src)
+	return src, nil
 }
 
 // Destinations is the resolver for the destinations field.

@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { API } from '@/utils';
-import { usePaginatedStore, useStatusStore } from '@/store';
 import { useSourceCRUD } from '../sources';
 import { useDestinationCRUD } from '../destinations';
+import { usePaginatedStore, useStatusStore } from '@/store';
 import { type NotifyPayload, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
 import { CRD_TYPES, DISPLAY_TITLES, ENTITY_TYPES, getIdFromSseTarget, NOTIFICATION_TYPE, type WorkloadId } from '@odigos/ui-utils';
 
@@ -39,8 +39,8 @@ export const useSSE = () => {
           target: data.target,
         };
 
-        if (notification.title !== EVENT_TYPES.MODIFIED && notification.crdType !== CONNECTED) {
-          // SSE toast notification (for all events except "modified" and "connected")
+        if (notification.crdType !== CONNECTED && notification.title !== EVENT_TYPES.MODIFIED) {
+          // SSE toast notification (for all events except "connected" and "modified")
           addNotification(notification);
         }
 
