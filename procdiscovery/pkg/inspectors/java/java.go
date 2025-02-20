@@ -21,7 +21,7 @@ const JavaVersionRegex = `\d+\.\d+\.\d+\+\d+`
 
 var re = regexp.MustCompile(JavaVersionRegex)
 
-func (j *JavaInspector) LightCheck(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+func (j *JavaInspector) QuickScan(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	// Low cost: simply check the exe filename.
 	if filepath.Base(ctx.ExePath) == processName {
 		return common.JavaProgrammingLanguage, true
@@ -29,7 +29,7 @@ func (j *JavaInspector) LightCheck(ctx *process.ProcessContext) (common.Programm
 	return "", false
 }
 
-func (j *JavaInspector) ExpensiveCheck(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+func (j *JavaInspector) DeepScan(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	ctx.MapsContent()
 	if ctx.MapsFileContent == nil {
 		return "", false

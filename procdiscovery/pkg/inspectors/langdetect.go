@@ -28,8 +28,8 @@ type InspectFunc func(ctx *process.ProcessContext) (common.ProgrammingLanguage, 
 
 // Inspector holds two kinds of checks as well as an optional runtime version getter.
 type Inspector interface {
-	LightCheck(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool)
-	ExpensiveCheck(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool)
+	QuickScan(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool)
+	DeepScan(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool)
 }
 
 type LanguageInspector interface {
@@ -102,7 +102,7 @@ func DetectLanguage(proc process.Details, containerURL string) (common.ProgramLa
 	for _, inspector := range inspectorsByLanguage {
 		// Stage 1: Low-Cost (light) Checks
 		detectedLanguage, err := runInspectionStage(procContext, containerURL, inspector, func(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
-			return inspector.LightCheck(ctx)
+			return inspector.QuickScan(ctx)
 		})
 		if detectedLanguage.Language != common.UnknownProgrammingLanguage {
 			detectedLanguageDetailes = detectedLanguage
@@ -119,7 +119,7 @@ func DetectLanguage(proc process.Details, containerURL string) (common.ProgramLa
 		for _, inspector := range inspectorsByLanguage {
 			// Stage 2: Expensive Checks (only if no language was detected in stage 1)
 			detectedLanguage, err := runInspectionStage(procContext, containerURL, inspector, func(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
-				return inspector.ExpensiveCheck(ctx)
+				return inspector.DeepScan(ctx)
 			})
 			if detectedLanguage.Language != common.UnknownProgrammingLanguage {
 				detectedLanguageDetailes = detectedLanguage
@@ -145,10 +145,10 @@ func VerifyLanguage(proc process.Details, lang common.ProgrammingLanguage) bool 
 	}
 	procContext := process.NewProcessContext(proc)
 
-	_, lightDetected := inspector.LightCheck(procContext)
+	_, lightDetected := inspector.QuickScan(procContext)
 	if lightDetected {
 		return true
 	}
-	_, expensiveDetected := inspector.ExpensiveCheck(procContext)
+	_, expensiveDetected := inspector.DeepScan(procContext)
 	return expensiveDetected
 }

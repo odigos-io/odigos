@@ -10,12 +10,12 @@ import (
 
 type DotnetInspector struct{}
 
-func (d *DotnetInspector) LightCheck(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+func (d *DotnetInspector) QuickScan(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	// No low-cost heuristic; immediately defer to the heavy check.
 	return "", false
 }
 
-func (d *DotnetInspector) ExpensiveCheck(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+func (d *DotnetInspector) DeepScan(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	// Heavy check: read the process maps from cache and look for "libcoreclr.so"
 	ctx.MapsContent()
 	if ctx.MapsFileContent == nil {

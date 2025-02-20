@@ -17,9 +17,7 @@ const (
 	libPythonStr      = "libpython3"
 )
 
-// LightCheck performs a lightweight check by looking for pythonProcessName
-// in the executable path or the command line.
-func (p *PythonInspector) LightCheck(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+func (p *PythonInspector) QuickScan(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	proc := ctx.Details
 	if strings.Contains(proc.ExePath, pythonProcessName) || strings.Contains(proc.CmdLine, pythonProcessName) {
 		return common.PythonProgrammingLanguage, true
@@ -27,8 +25,7 @@ func (p *PythonInspector) LightCheck(ctx *process.ProcessContext) (common.Progra
 	return "", false
 }
 
-// ExpensiveCheck performs a heavy check by examining whether libpython is linked.
-func (p *PythonInspector) ExpensiveCheck(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+func (p *PythonInspector) DeepScan(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	if p.isLibPythonLinked(ctx) {
 		return common.PythonProgrammingLanguage, true
 	}

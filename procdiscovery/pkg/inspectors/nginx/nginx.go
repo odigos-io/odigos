@@ -25,8 +25,7 @@ const (
 
 var re = regexp.MustCompile(NginxVersionRegex)
 
-// LightCheck inspects the process command line and executable path for Nginx indicators.
-func (j *NginxInspector) LightCheck(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+func (j *NginxInspector) QuickScan(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	p := ctx.Details
 	if strings.Contains(p.CmdLine, NginxProcessName) || strings.Contains(p.ExePath, NginxProcessName) {
 		return common.NginxProgrammingLanguage, true
@@ -34,8 +33,7 @@ func (j *NginxInspector) LightCheck(ctx *process.ProcessContext) (common.Program
 	return "", false
 }
 
-// ExpensiveCheck returns no detection as no heavy check is required for Nginx.
-func (j *NginxInspector) ExpensiveCheck(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+func (j *NginxInspector) DeepScan(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	return "", false
 }
 

@@ -16,8 +16,7 @@ const GolangVersionRegex = `go(\d+\.\d+\.\d+)`
 
 var re = regexp.MustCompile(GolangVersionRegex)
 
-// LightCheck performs a lightweight check for Go by reading the build info.
-func (g *GolangInspector) LightCheck(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+func (g *GolangInspector) QuickScan(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 
 	ctx.ExeContent()
 	if ctx.ExeFileContent == nil {
@@ -32,8 +31,7 @@ func (g *GolangInspector) LightCheck(ctx *process.ProcessContext) (common.Progra
 	return common.GoProgrammingLanguage, true
 }
 
-// ExpensiveCheck returns false because no heavy check is required for Go.
-func (g *GolangInspector) ExpensiveCheck(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+func (g *GolangInspector) DeepScan(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	return "", false
 }
 
