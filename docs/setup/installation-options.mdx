@@ -75,3 +75,20 @@ from `registry.connect.redhat.com/odigos`. These images are based on
 the `-ubi9` suffix. These images are also hosted on the Odigos
 DockerHub registry, which you can deploy by setting `--openshift` with
 `--image-prefix docker.io/keyval`.
+
+### Exposing the Odigos UI via OpenShift Routes
+
+To access the Odigos UI in OpenShift, use either the standard `odigos
+ui` command or create a `Route` that exposes the `ui` service on your
+cluster's external address. For example:
+
+```
+oc expose service ui -n odigos-system
+```
+
+Then get the external address for the Route with `oc get routes ui -n
+odigos-system`.
+
+Check the OpenShift documentation or run `oc expose -h` for more
+information on configuring OpenShift routes according to your
+cluster's requirements.

@@ -5,7 +5,7 @@ metadata:
   displayName: AWS S3
   category: managed
 spec:
-  image: s3.svg
+  image: awss3.svg
   signals:
     traces:
       supported: true

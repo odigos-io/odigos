@@ -6,6 +6,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/hashicorp/go-version"
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -107,6 +108,14 @@ and apply any required migrations and adaptations.`,
 		config.ConfigVersion += 1
 		if uiMode != "" {
 			config.UiMode = common.UiMode(uiMode)
+		}
+
+		// Migrate images from prior to registry.odigos.io
+		if config.ImagePrefix == "" {
+			config.ImagePrefix = "registry.odigos.io"
+			config.AutoscalerImage = strings.TrimPrefix(config.AutoscalerImage, "keyval/")
+			config.InstrumentorImage = strings.TrimPrefix(config.InstrumentorImage, "keyval/")
+			config.OdigletImage = strings.TrimPrefix(config.OdigletImage, "keyval/")
 		}
 
 		currentTier, err := odigospro.GetCurrentOdigosTier(ctx, client, ns)
