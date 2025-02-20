@@ -409,10 +409,10 @@
     react-lottie "^1.2.10"
     styled-components "^6.1.15"
 
-"@odigos/ui-containers@^0.0.57":
-  version "0.0.57"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-containers/-/ui-containers-0.0.57.tgz#d70bc7a0f6ad89abbaf89dbc09da37fde25029ce"
-  integrity sha512-sOOAZtb9INRj0of2p5txY1ibZfrwLUU6+8u+whGXIe0lFnlxVRQv8tC0ecsLlKqgRzphSNJrDy7vZRlMVz6VnA==
+"@odigos/ui-containers@^0.0.58":
+  version "0.0.58"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-containers/-/ui-containers-0.0.58.tgz#2a48e581b3cec191bbf9211aa54287637c2301df"
+  integrity sha512-KreLMFMKokRX2eDiayZokTymENXr6eyWYdgrbYLhiYe72YSfVYueydIzcux7EVVxr1glhHzYGdCZaLWu7lZRpg==
   dependencies:
     "@odigos/ui-components" "^0.0.75"
     "@odigos/ui-icons" "^0.0.13"
