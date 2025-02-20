@@ -132,10 +132,10 @@ func DetectLanguage(proc process.Details, containerURL string) (common.ProgramLa
 		if detectedLanguageDetailes.Language != common.UnknownProgrammingLanguage {
 			return detectedLanguageDetailes, nil
 		}
-		return common.ProgramLanguageDetails{
-			Language: common.UnknownProgrammingLanguage,
-		}, nil
 	}
+	return common.ProgramLanguageDetails{
+		Language: common.UnknownProgrammingLanguage,
+	}, nil
 }
 
 func VerifyLanguage(proc process.Details, lang common.ProgrammingLanguage) bool {
