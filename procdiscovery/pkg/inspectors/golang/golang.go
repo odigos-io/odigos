@@ -2,7 +2,6 @@ package golang
 
 import (
 	"debug/buildinfo"
-	"fmt"
 	"regexp"
 
 	"github.com/hashicorp/go-version"
@@ -17,19 +16,29 @@ const GolangVersionRegex = `go(\d+\.\d+\.\d+)`
 
 var re = regexp.MustCompile(GolangVersionRegex)
 
-func (g *GolangInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
-	file := fmt.Sprintf("/proc/%d/exe", p.ProcessID)
-	_, err := buildinfo.ReadFile(file)
-	if err != nil {
+// LightCheck performs a lightweight check for Go by reading the build info.
+func (g *GolangInspector) LightCheck(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+
+	ctx.ExeContent()
+	if ctx.ExeFileContent == nil {
+		return "", false
+	}
+
+	// Try reading the build info. If successful, this is a Go binary.
+	if _, err := buildinfo.Read(ctx.ExeFileContent); err != nil {
 		return "", false
 	}
 
 	return common.GoProgrammingLanguage, true
 }
 
-func (g *GolangInspector) GetRuntimeVersion(p *process.Details, containerURL string) *version.Version {
-	file := fmt.Sprintf("/proc/%d/exe", p.ProcessID)
-	buildInfo, err := buildinfo.ReadFile(file)
+// ExpensiveCheck returns false because no heavy check is required for Go.
+func (g *GolangInspector) ExpensiveCheck(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+	return "", false
+}
+
+func (g *GolangInspector) GetRuntimeVersion(ctx *process.ProcessContext, containerURL string) *version.Version {
+	buildInfo, err := buildinfo.Read(ctx.ExeFileContent)
 	if err != nil || buildInfo == nil {
 		return nil
 	}
