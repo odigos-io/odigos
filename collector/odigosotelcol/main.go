@@ -31,7 +31,7 @@ func main() {
 				},
 			},
 		}, ProviderModules: map[string]string{
-			odigosfileprovider.NewFactory().Create(confmap.ProviderSettings{}).Scheme(): "go.opentelemetry.io/collector/odigos/providers/odigosfileprovider v0.120.0",
+			odigosfileprovider.NewFactory().Create(confmap.ProviderSettings{}).Scheme(): "go.opentelemetry.io/collector/odigos/providers/odigosfileprovider v0.120.1",
 			envprovider.NewFactory().Create(confmap.ProviderSettings{}).Scheme():        "go.opentelemetry.io/collector/confmap/provider/envprovider v0.120.0",
 		},
 	}
