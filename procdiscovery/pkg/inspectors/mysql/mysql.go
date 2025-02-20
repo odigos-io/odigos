@@ -1,7 +1,7 @@
 package mysql
 
 import (
-	"strings"
+	"path/filepath"
 
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
@@ -15,8 +15,7 @@ const MySQLProcessName = "mysqld"
 
 // LightCheck performs a lightweight check by inspecting the process's executable path and command line.
 func (j *MySQLInspector) LightCheck(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
-	p := ctx.Details
-	if strings.HasSuffix(p.ExePath, MySQLProcessName) || strings.HasSuffix(p.CmdLine, MySQLProcessName) {
+	if filepath.Base(ctx.ExePath) == "mysqld" {
 		return common.MySQLProgrammingLanguage, true
 	}
 	return "", false
