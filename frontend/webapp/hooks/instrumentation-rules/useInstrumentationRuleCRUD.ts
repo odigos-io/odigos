@@ -34,7 +34,7 @@ export const useInstrumentationRuleCRUD = (params?: Params) => {
 
   const handleComplete = (actionType: string, message: string, id?: string) => {
     notifyUser(NOTIFICATION_TYPE.SUCCESS, actionType, message, id);
-    // refetch();
+    refetch();
     params?.onSuccess?.(actionType);
   };
 
@@ -54,27 +54,33 @@ export const useInstrumentationRuleCRUD = (params?: Params) => {
   // Filter mapped data
   const filtered = mapped; // no filters for rules yet, TBA in future
 
-  const [createInstrumentationRule, cState] = useMutation<{ createInstrumentationRule: { ruleId: string } }>(CREATE_INSTRUMENTATION_RULE, {
+  const [createInstrumentationRule, cState] = useMutation<{ createInstrumentationRule: { ruleId: string } }, { instrumentationRule: InstrumentationRuleFormData }>(CREATE_INSTRUMENTATION_RULE, {
     onError: (error) => handleError(CRUD.CREATE, error.message),
     onCompleted: (res, req) => {
       const id = res?.createInstrumentationRule?.ruleId;
-      handleComplete(CRUD.CREATE, `Rule "${id}" created`, id);
+      const type = deriveTypeFromRule(req?.variables?.instrumentationRule);
+      handleComplete(CRUD.CREATE, `Rule "${type}" created`, id);
     },
   });
 
-  const [updateInstrumentationRule, uState] = useMutation<{ updateInstrumentationRule: { ruleId: string } }>(UPDATE_INSTRUMENTATION_RULE, {
-    onError: (error) => handleError(CRUD.UPDATE, error.message),
-    onCompleted: (res, req) => {
-      const id = res?.updateInstrumentationRule?.ruleId;
-      handleComplete(CRUD.UPDATE, `Rule "${id}" updated`, id);
+  const [updateInstrumentationRule, uState] = useMutation<{ updateInstrumentationRule: { ruleId: string } }, { ruleId: string; instrumentationRule: InstrumentationRuleFormData }>(
+    UPDATE_INSTRUMENTATION_RULE,
+    {
+      onError: (error) => handleError(CRUD.UPDATE, error.message),
+      onCompleted: (res, req) => {
+        const id = res?.updateInstrumentationRule?.ruleId;
+        const type = deriveTypeFromRule(req?.variables?.instrumentationRule);
+        handleComplete(CRUD.UPDATE, `Rule "${type}" updated`, id);
+      },
     },
-  });
+  );
 
-  const [deleteInstrumentationRule, dState] = useMutation<{ deleteInstrumentationRule: boolean }>(DELETE_INSTRUMENTATION_RULE, {
+  const [deleteInstrumentationRule, dState] = useMutation<{ deleteInstrumentationRule: boolean }, { ruleId: string }>(DELETE_INSTRUMENTATION_RULE, {
     onError: (error) => handleError(CRUD.DELETE, error.message),
     onCompleted: (res, req) => {
       const id = req?.variables?.ruleId;
       removeNotifications(getSseTargetFromId(id, ENTITY_TYPES.INSTRUMENTATION_RULE));
+      // TODO: find a way to derive the type, instead of ID in toast
       handleComplete(CRUD.DELETE, `Rule "${id}" deleted`, id);
     },
   });

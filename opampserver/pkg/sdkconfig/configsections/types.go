@@ -23,11 +23,33 @@ type TraceSignalGeneralConfig struct {
 	DefaultEnabledValue bool `json:"defaultEnabledValue"`
 }
 
+type LogSignalGeneralConfig struct {
+
+	// reflects if the logs signals is enabled for this SDK.
+	// if false, the SDK should not produce any logs.
+	// this is to spare computation on the agent in case the receiver is not setup to receive logs.
+	Enabled bool `json:"enabled"`
+
+	DefaultEnabledValue bool `json:"defaultEnabledValue"`
+}
+
+type MetricSignalGeneralConfig struct {
+
+	// reflects if the metrics signals is enabled for this SDK.
+	// if false, the SDK should not produce any metrics.
+	// this is to spare computation on the agent in case the receiver is not setup to receive metrics.
+	Enabled bool `json:"enabled"`
+
+	DefaultEnabledValue bool `json:"defaultEnabledValue"`
+}
+
 type RemoteConfigSdk struct {
 	RemoteResourceAttributes []configresolvers.ResourceAttribute `json:"remoteResourceAttributes"`
 
 	// general configuration for trace signals in the SDK level.
-	TraceSignal TraceSignalGeneralConfig `json:"traceSignal"`
+	TraceSignal   TraceSignalGeneralConfig  `json:"traceSignal"`
+	LogsSignal    LogSignalGeneralConfig    `json:"logsSignal"`
+	MetricsSignal MetricSignalGeneralConfig `json:"metricsSignal"`
 }
 
 type RemoteConfigInstrumentationLibrary struct {

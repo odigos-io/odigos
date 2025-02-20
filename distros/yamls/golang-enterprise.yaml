@@ -11,5 +11,5 @@ spec:
   displayName: Golang Enterprise eBPF Instrumentation
   description: |
     This distribution is for Golang applications using Odigos enterprise version, with ebpf-based SDK and instrumentation libraries, additional features and libraries coverage.
-  tiers: 
-    - onprem
+  runtimeAgent:
+    device: 'instrumentation.odigos.io/go-ebpf-enterprise'

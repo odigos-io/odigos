@@ -69,7 +69,7 @@ jobs:
           access_token_lifetime: 1200s
         
       - name: Login to Artifact Registry
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3
         with:
           registry: us-central1-docker.pkg.dev
           username: oauth2accesstoken

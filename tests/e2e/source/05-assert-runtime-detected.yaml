@@ -13,4 +13,4 @@ status:
   runtimeDetailsByContainer:
     - containerName: frontend
       language: java
-      runtimeVersion: 17.0.11+9
+      runtimeVersion: 17.0.14+7
