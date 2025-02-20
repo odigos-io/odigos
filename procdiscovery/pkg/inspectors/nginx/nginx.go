@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -26,9 +27,10 @@ const (
 var re = regexp.MustCompile(NginxVersionRegex)
 
 func (j *NginxInspector) LightCheck(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
-	if strings.Contains(ctx.CmdLine, "nginx") {
+	if (filepath.Base(ctx.ExePath) == NginxProcessName) || strings.Contains(ctx.CmdLine, NginxProcessName) {
 		return common.NginxProgrammingLanguage, true
 	}
+
 	return "", false
 }
 
