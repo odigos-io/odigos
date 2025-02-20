@@ -1,0 +1,4 @@
+## Append samples of your project ##
+resources:
+- operator_v1alpha1_odigos.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples

@@ -100,9 +100,9 @@ func PrintClientErrorAndExit(err error) {
 	os.Exit(-1)
 }
 
-func (c *Client) ApplyResources(ctx context.Context, configVersion int, objs []Object) error {
+func (c *Client) ApplyResources(ctx context.Context, configVersion int, objs []Object, ownerReferences []metav1.OwnerReference) error {
 	for _, obj := range objs {
-		err := c.ApplyResource(ctx, configVersion, obj)
+		err := c.ApplyResource(ctx, configVersion, obj, ownerReferences)
 		if err != nil {
 			return err
 		}
@@ -110,7 +110,7 @@ func (c *Client) ApplyResources(ctx context.Context, configVersion int, objs []O
 	return nil
 }
 
-func (c *Client) ApplyResource(ctx context.Context, configVersion int, obj Object) error {
+func (c *Client) ApplyResource(ctx context.Context, configVersion int, obj Object, ownerReferences []metav1.OwnerReference) error {
 
 	labels := obj.GetLabels()
 	if labels == nil {
@@ -119,6 +119,8 @@ func (c *Client) ApplyResource(ctx context.Context, configVersion int, obj Objec
 	labels[k8sconsts.OdigosSystemLabelKey] = k8sconsts.OdigosSystemLabelValue
 	labels[k8sconsts.OdigosSystemConfigLabelKey] = strconv.Itoa(configVersion)
 	obj.SetLabels(labels)
+
+	obj.SetOwnerReferences(ownerReferences)
 
 	depBytes, _ := yaml.Marshal(obj)
 
