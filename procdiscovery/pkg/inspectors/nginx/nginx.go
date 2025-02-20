@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -25,15 +26,19 @@ const (
 
 var re = regexp.MustCompile(NginxVersionRegex)
 
-func (j *NginxInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
-	if strings.Contains(p.CmdLine, NginxProcessName) || strings.Contains(p.ExePath, NginxProcessName) {
+func (j *NginxInspector) LightCheck(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+	if (filepath.Base(ctx.ExePath) == NginxProcessName) || strings.Contains(ctx.CmdLine, NginxProcessName) {
 		return common.NginxProgrammingLanguage, true
 	}
 
 	return "", false
 }
 
-func (j *NginxInspector) GetRuntimeVersion(p *process.Details, containerURL string) *version.Version {
+func (j *NginxInspector) ExpensiveCheck(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+	return "", false
+}
+
+func (j *NginxInspector) GetRuntimeVersion(ctx *process.ProcessContext, containerURL string) *version.Version {
 	nginxVersion, err := GetNginxVersion(containerURL)
 	if err != nil {
 		return nil
