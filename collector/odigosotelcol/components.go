@@ -105,7 +105,7 @@ func components() (otelcol.Factories, error) {
 	var err error
 	factories := otelcol.Factories{}
 
-	factories.Extensions, err = extension.MakeFactoryMap(
+	factories.Extensions, err = otelcol.MakeFactoryMap[extension.Factory](
 		zpagesextension.NewFactory(),
 		healthcheckextension.NewFactory(),
 		pprofextension.NewFactory(),
@@ -120,7 +120,7 @@ func components() (otelcol.Factories, error) {
 	factories.ExtensionModules[pprofextension.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.120.0"
 	factories.ExtensionModules[basicauthextension.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v0.120.0"
 
-	factories.Receivers, err = receiver.MakeFactoryMap(
+	factories.Receivers, err = otelcol.MakeFactoryMap[receiver.Factory](
 		otlpreceiver.NewFactory(),
 		zipkinreceiver.NewFactory(),
 		filelogreceiver.NewFactory(),
@@ -139,7 +139,7 @@ func components() (otelcol.Factories, error) {
 	factories.ReceiverModules[hostmetricsreceiver.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.120.0"
 	factories.ReceiverModules[prometheusreceiver.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.120.0"
 
-	factories.Exporters, err = exporter.MakeFactoryMap(
+	factories.Exporters, err = otelcol.MakeFactoryMap[exporter.Factory](
 		debugexporter.NewFactory(),
 		nopexporter.NewFactory(),
 		otlpexporter.NewFactory(),
@@ -234,7 +234,7 @@ func components() (otelcol.Factories, error) {
 	factories.ExporterModules[tencentcloudlogserviceexporter.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/tencentcloudlogserviceexporter v0.120.0"
 	factories.ExporterModules[zipkinexporter.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/zipkinexporter v0.120.0"
 
-	factories.Processors, err = processor.MakeFactoryMap(
+	factories.Processors, err = otelcol.MakeFactoryMap[processor.Factory](
 		odigosresourcenameprocessor.NewFactory(),
 		odigossamplingprocessor.NewFactory(),
 		odigosconditionalattributes.NewFactory(),
@@ -295,7 +295,7 @@ func components() (otelcol.Factories, error) {
 	factories.ProcessorModules[odigostrafficmetrics.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics v0.120.0"
 	factories.ProcessorModules[odigossourcesfilterprocessor.NewFactory().Type()] = "github.com/odigos-io/odigos/processor/odigossourcesfilterprocessor v0.120.0"
 
-	factories.Connectors, err = connector.MakeFactoryMap(
+	factories.Connectors, err = otelcol.MakeFactoryMap[connector.Factory](
 		forwardconnector.NewFactory(),
 		countconnector.NewFactory(),
 		datadogconnector.NewFactory(),
