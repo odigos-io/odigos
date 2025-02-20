@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/hashicorp/go-version"
@@ -23,12 +23,13 @@ const (
 	NginxVersionRegex = `nginx/(\d+\.\d+\.\d+)`
 )
 
+// Matches "nginx", "nginx1", "nginx17", etc.
+var nginxRegex = regexp.MustCompile(`^nginx\d*$`)
 var re = regexp.MustCompile(NginxVersionRegex)
 
 // LightCheck inspects the process command line and executable path for Nginx indicators.
 func (j *NginxInspector) LightCheck(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
-	p := ctx.Details
-	if strings.Contains(p.CmdLine, NginxProcessName) || strings.Contains(p.ExePath, NginxProcessName) {
+	if nginxRegex.MatchString(filepath.Base(ctx.ExePath)) {
 		return common.NginxProgrammingLanguage, true
 	}
 	return "", false
