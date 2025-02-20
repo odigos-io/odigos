@@ -53,8 +53,7 @@ export const useSSE = () => {
         } else if ([CRD_TYPES.INSTRUMENTATION_CONFIG].includes(notification.crdType as CRD_TYPES)) {
           if (notification.title === EVENT_TYPES.MODIFIED && !!notification.target) {
             fetchSourceById(getIdFromSseTarget(notification.target, ENTITY_TYPES.SOURCE) as WorkloadId);
-          } else {
-            if (notification.title === EVENT_TYPES.DELETED) setPaginated(ENTITY_TYPES.SOURCE, []);
+          } else if (notification.title !== EVENT_TYPES.DELETED) {
             fetchSources();
           }
         } else if ([CRD_TYPES.DESTINATION].includes(notification.crdType as CRD_TYPES)) {

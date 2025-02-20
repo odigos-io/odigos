@@ -28,7 +28,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
   const { addPendingItems, removePendingItems } = usePendingStore();
   const { configuredSources, setConfiguredSources } = useSetupStore();
   const { addNotification, removeNotifications } = useNotificationStore();
-  const { sources, addPaginated, sourcesPaginating, setPaginating, setExpected } = usePaginatedStore();
+  const { sources, addPaginated, removePaginated, sourcesPaginating, setPaginating, setExpected } = usePaginatedStore();
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: WorkloadId, hideFromHistory?: boolean) => {
     addNotification({ type, title, message, crdType: ENTITY_TYPES.SOURCE, target: id ? getSseTargetFromId(id, ENTITY_TYPES.SOURCE) : undefined, hideFromHistory });
@@ -87,8 +87,13 @@ export const useSourceCRUD = (): UseSourceCrud => {
     onCompleted: (res, req) => {
       const namespace = req?.variables?.namespace;
 
+      const hasTrueSelections = req?.variables?.sources.some(({ selected }: { selected: boolean }) => selected);
       req?.variables?.sources.forEach(({ name, kind, selected }: { name: string; kind: K8S_RESOURCE_KIND; selected: boolean }) => {
-        if (!selected) removeNotifications(getSseTargetFromId({ namespace, name, kind }, ENTITY_TYPES.SOURCE));
+        if (!selected) {
+          removeNotifications(getSseTargetFromId({ namespace, name, kind }, ENTITY_TYPES.SOURCE));
+          removePaginated(ENTITY_TYPES.SOURCE, [{ namespace, name, kind }]);
+          if (!hasTrueSelections) setPaginating(ENTITY_TYPES.SOURCE, false);
+        }
       });
 
       // No fetch, we wait for SSE
@@ -143,7 +148,8 @@ export const useSourceCRUD = (): UseSourceCrud => {
 
             // This is to stop modified events from being fetched on initial instrumentation
             setPaginating(ENTITY_TYPES.SOURCE, true);
-            setExpected(ENTITY_TYPES.SOURCE, usePaginatedStore.getState().sourcesExpected + items.filter((src) => src.selected).length);
+            const exp = usePaginatedStore.getState().sourcesExpected;
+            setExpected(ENTITY_TYPES.SOURCE, (!!sources.length && !exp ? sources.length : 0) + exp + items.filter((src) => src.selected).length);
           }
 
           const addToPendingStore: PendingItem[] = [];
