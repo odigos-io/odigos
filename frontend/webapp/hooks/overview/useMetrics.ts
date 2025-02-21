@@ -25,7 +25,7 @@ export const useMetrics = () => {
     };
   }>(GET_METRICS, {
     skip: !sources.length && !destinations.length,
-    pollInterval: 3000,
+    pollInterval: 5000,
   });
 
   return {

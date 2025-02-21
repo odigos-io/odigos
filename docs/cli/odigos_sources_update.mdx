@@ -8,10 +8,41 @@ Update Odigos Sources
 
 ### Synopsis
 
-This command will update any Source objects that match the provided Workload info.
+This command will update the named Source object or any Source objects that match the provided Workload info.
+
+If a [name] is provided, that Source object will be updated in the given namespace using the --namespace (-n) flag.
+
+For example, to update the Source named "mysource-abc123" in namespace "myapp", run:
+
+$ odigos sources update mysource-abc123 -n myapp <flags>
+
+Multiple Source objects can be updated at once using the --workload-name, --workload-kind, and --workload-namespace flags.
+These flags are AND-ed so that if any of these flags are provided, all Sources that match the given flags will be updated.
+
+For example, to update all Sources for StatefulSet workloads in the cluster, run:
+
+$ odigos sources update --workload-kind=StatefulSet --all-namespaces <flags>
+
+To update all Deployment Sources in namespace Foobar, run:
+
+$ odigos sources update --workload-kind=Deployment --workload-namespace=Foobar <flags>
+
+or
+
+$ odigos sources update --workload-kind=Deployment -n Foobar <flags>
+
+These flags can be used to batch update Sources, or as an alternative to updating a Source by name (for instance, when
+the name of the Source might not be known, but the Workload information is known). For example:
+
+$ odigos sources update --workload-kind=Deployment --workload-name=myapp -n myapp-namespace <flags>
+
+This command will update any Sources in the namespace "myapp-namespace" that instrument a Deployment named "myapp"
+
+It is important to note that if a Source [name] is provided, all --workload-* flags will be ignored to update only the named Source.
+
 
 ```
-odigos sources update [flags]
+odigos sources update [name] [flags]
 ```
 
 ### Options
