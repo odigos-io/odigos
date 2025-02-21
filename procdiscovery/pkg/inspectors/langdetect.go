@@ -24,42 +24,54 @@ func (e ErrLanguageDetectionConflict) Error() string {
 	return fmt.Sprintf("language detection conflict between %v and %v", e.languages[0], e.languages[1])
 }
 
+type InspectFunc func(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool)
+
+// Inspector holds two kinds of checks as well as an optional runtime version getter.
+type Inspector interface {
+	QuickScan(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool)
+	DeepScan(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool)
+}
+
 type LanguageInspector interface {
-	Inspect(process *process.Details) (common.ProgrammingLanguage, bool)
+	Inspect(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool)
 }
-
 type VersionInspector interface {
-	GetRuntimeVersion(process *process.Details, containerURL string) *version.Version
+	GetRuntimeVersion(ctx *process.ProcessContext, containerURL string) *version.Version
 }
 
-var inspectorsMap = map[common.ProgrammingLanguage]LanguageInspector{
-	common.GoProgrammingLanguage:         &golang.GolangInspector{},
+var inspectorsByLanguage = map[common.ProgrammingLanguage]Inspector{
 	common.JavaProgrammingLanguage:       &java.JavaInspector{},
 	common.DotNetProgrammingLanguage:     &dotnet.DotnetInspector{},
-	common.JavascriptProgrammingLanguage: &nodejs.NodejsInspector{},
+	common.GoProgrammingLanguage:         &golang.GolangInspector{},
 	common.PythonProgrammingLanguage:     &python.PythonInspector{},
+	common.JavascriptProgrammingLanguage: &nodejs.NodejsInspector{},
 	common.MySQLProgrammingLanguage:      &mysql.MySQLInspector{},
 	common.NginxProgrammingLanguage:      &nginx.NginxInspector{},
 }
 
-// DetectLanguage returns the detected language for the process or
-// common.UnknownProgrammingLanguage if the language could not be detected, in which case error == nil
-// if error or language detectors disagree common.UnknownProgrammingLanguage is also returned
-func DetectLanguage(process process.Details, containerURL string) (common.ProgramLanguageDetails, error) {
+// runInspectionStage iterates over the inspectors using the check provided by checkSelector.
+// It returns a ProgramLanguageDetails with the detected language (and runtime version, if available).
+// If multiple inspectors return different languages, it returns an error.
+func runInspectionStage(
+	procContext *process.ProcessContext,
+	containerURL string,
+	inspector Inspector,
+	inspectFunc InspectFunc,
+) (common.ProgramLanguageDetails, error) {
 	detectedProgramLanguageDetails := common.ProgramLanguageDetails{
 		Language: common.UnknownProgrammingLanguage,
 	}
+	if languageDetected, detected := inspectFunc(procContext); detected {
+		// First detection: assign language and runtime version if available.
+		if detectedProgramLanguageDetails.Language == common.UnknownProgrammingLanguage {
+			detectedProgramLanguageDetails.Language = languageDetected
+			if v, ok := inspector.(VersionInspector); ok {
+				detectedProgramLanguageDetails.RuntimeVersion = v.GetRuntimeVersion(&process.ProcessContext{}, containerURL)
 
-	for _, i := range inspectorsMap {
-		languageDetected, detected := i.Inspect(&process)
-		if detected {
-			if detectedProgramLanguageDetails.Language == common.UnknownProgrammingLanguage {
-				detectedProgramLanguageDetails.Language = languageDetected
-				if v, ok := i.(VersionInspector); ok {
-					detectedProgramLanguageDetails.RuntimeVersion = v.GetRuntimeVersion(&process, containerURL)
-				}
-				continue
 			}
+		}
+		// If a conflict is found, return an error.
+		if detectedProgramLanguageDetails.Language != languageDetected {
 			return common.ProgramLanguageDetails{
 					Language: common.UnknownProgrammingLanguage,
 				}, ErrLanguageDetectionConflict{
@@ -74,12 +86,69 @@ func DetectLanguage(process process.Details, containerURL string) (common.Progra
 	return detectedProgramLanguageDetails, nil
 }
 
-func VerifyLanguage(process process.Details, lang common.ProgrammingLanguage) bool {
-	inspector, ok := inspectorsMap[lang]
+// DetectLanguage returns the detected language for the process or
+// common.UnknownProgrammingLanguage if the language could not be detected, in which case error == nil
+// if error or language detectors disagree common.UnknownProgrammingLanguage is also returned.
+// DetectLanguage creates a process context, runs the light checks first,
+// and if no language is detected, falls back to the expensive checks.
+func DetectLanguage(proc process.Details, containerURL string) (common.ProgramLanguageDetails, error) {
+	procContext := process.NewProcessContext(proc)
+	defer procContext.CloseFiles()
+
+	detectedLanguageDetailes := common.ProgramLanguageDetails{
+		Language: common.UnknownProgrammingLanguage,
+	}
+
+	for _, inspector := range inspectorsByLanguage {
+		// Stage 1: Low-Cost (light) Checks
+		detectedLanguage, err := runInspectionStage(procContext, containerURL, inspector, func(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+			return inspector.QuickScan(ctx)
+		})
+		if detectedLanguage.Language != common.UnknownProgrammingLanguage {
+			detectedLanguageDetailes = detectedLanguage
+		}
+		// if we found double match, return common.UnknownProgrammingLanguage and the error
+		if err != nil {
+			return detectedLanguage, err
+		}
+	}
+	if detectedLanguageDetailes.Language != common.UnknownProgrammingLanguage {
+		return detectedLanguageDetailes, nil
+	} else {
+		// if no language was detected in stage 1, run stage 2
+		for _, inspector := range inspectorsByLanguage {
+			// Stage 2: Expensive Checks (only if no language was detected in stage 1)
+			detectedLanguage, err := runInspectionStage(procContext, containerURL, inspector, func(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+				return inspector.DeepScan(ctx)
+			})
+			if detectedLanguage.Language != common.UnknownProgrammingLanguage {
+				detectedLanguageDetailes = detectedLanguage
+			}
+			// if we found double match, return common.UnknownProgrammingLanguage and the error
+			if err != nil {
+				return detectedLanguage, err
+			}
+		}
+		if detectedLanguageDetailes.Language != common.UnknownProgrammingLanguage {
+			return detectedLanguageDetailes, nil
+		}
+	}
+	return common.ProgramLanguageDetails{
+		Language: common.UnknownProgrammingLanguage,
+	}, nil
+}
+
+func VerifyLanguage(proc process.Details, lang common.ProgrammingLanguage) bool {
+	inspector, ok := inspectorsByLanguage[lang]
 	if !ok {
 		return false
 	}
+	procContext := process.NewProcessContext(proc)
 
-	_, detected := inspector.Inspect(&process)
-	return detected
+	_, lightDetected := inspector.QuickScan(procContext)
+	if lightDetected {
+		return true
+	}
+	_, expensiveDetected := inspector.DeepScan(procContext)
+	return expensiveDetected
 }

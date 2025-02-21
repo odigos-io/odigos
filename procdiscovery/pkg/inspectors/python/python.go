@@ -2,8 +2,6 @@ package python
 
 import (
 	"debug/elf"
-	"fmt"
-	"os"
 	"strings"
 
 	"github.com/hashicorp/go-version"
@@ -19,18 +17,20 @@ const (
 	libPythonStr      = "libpython3"
 )
 
-func (p *PythonInspector) Inspect(proc *process.Details) (common.ProgrammingLanguage, bool) {
+func (p *PythonInspector) QuickScan(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+	proc := ctx.Details
 	if strings.Contains(proc.ExePath, pythonProcessName) || strings.Contains(proc.CmdLine, pythonProcessName) {
 		return common.PythonProgrammingLanguage, true
 	}
-
-	if p.isLibPythonLinked(proc) {
-		return common.PythonProgrammingLanguage, true
-	}
-
 	return "", false
 }
 
+func (p *PythonInspector) DeepScan(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+	if p.isLibPythonLinked(ctx) {
+		return common.PythonProgrammingLanguage, true
+	}
+	return "", false
+}
 func (p *PythonInspector) GetRuntimeVersion(proc *process.Details, containerURL string) *version.Version {
 	if value, exists := proc.GetDetailedEnvsValue(process.PythonVersionConst); exists {
 		return common.GetVersion(value)
@@ -39,15 +39,10 @@ func (p *PythonInspector) GetRuntimeVersion(proc *process.Details, containerURL 
 	return nil
 }
 
-func (p *PythonInspector) isLibPythonLinked(proc *process.Details) bool {
-	f := fmt.Sprintf("/proc/%d/exe", proc.ProcessID)
-	file, err := os.Open(f)
-	if err != nil {
-		return false
-	}
-	defer file.Close()
+func (p *PythonInspector) isLibPythonLinked(ctx *process.ProcessContext) bool {
+	ctx.ExeContent()
 
-	elfFile, err := elf.NewFile(file)
+	elfFile, err := elf.NewFile(ctx.ExeFileContent)
 	if err != nil {
 		return false
 	}
