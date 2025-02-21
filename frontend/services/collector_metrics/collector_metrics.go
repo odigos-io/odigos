@@ -72,11 +72,11 @@ type OdigosMetricsConsumer struct {
 }
 
 var (
-	ServiceNameKey        = strings.ReplaceAll(string(semconv.ServiceNameKey), ".", "_")
-	K8SNamespaceNameKey   = strings.ReplaceAll(string(semconv.K8SNamespaceNameKey), ".", "_")
-	K8SDeploymentNameKey  = strings.ReplaceAll(string(semconv.K8SDeploymentNameKey), ".", "_")
-	K8SStatefulSetNameKey = strings.ReplaceAll(string(semconv.K8SStatefulSetNameKey), ".", "_")
-	K8SDaemonSetNameKey   = strings.ReplaceAll(string(semconv.K8SDaemonSetNameKey), ".", "_")
+	ServiceNameKey        = string(semconv.ServiceNameKey)
+	K8SNamespaceNameKey   = string(semconv.K8SNamespaceNameKey)
+	K8SDeploymentNameKey  = string(semconv.K8SDeploymentNameKey)
+	K8SStatefulSetNameKey = string(semconv.K8SStatefulSetNameKey)
+	K8SDaemonSetNameKey   = string(semconv.K8SDaemonSetNameKey)
 )
 
 func (c *OdigosMetricsConsumer) Capabilities() consumer.Capabilities {
