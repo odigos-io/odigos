@@ -271,7 +271,7 @@ func (m *manager[ProcessDetails, ConfigGroup]) tryInstrument(ctx context.Context
 		// TODO: better handle this?
 		// this can be done by first closing the existing instrumentation,
 		// and then creating a new one
-		m.logger.Info("received exec event for process id which is already instrumented with ebpf, skipping it", "pid", e.PID)
+		m.logger.Info("received exec event for process id which is already instrumented with ebpf, skipping it", "pid", e.PID, "event type", e.EventType)
 		return nil
 	}
 
@@ -294,6 +294,9 @@ func (m *manager[ProcessDetails, ConfigGroup]) tryInstrument(ctx context.Context
 	if !found {
 		return errNoInstrumentationFactory
 	}
+
+	// TODO: remove this log before merging
+	m.logger.Info("###### resolved process details", "pid", e.PID, "event type", e.EventType, "process details", pd)
 
 	// Fetch initial settings for the instrumentation
 	settings, err := m.handler.SettingsGetter.Settings(ctx, pd, otelDisto)
