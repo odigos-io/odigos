@@ -1,6 +1,7 @@
 package java
 
 import (
+	"path/filepath"
 	"regexp"
 
 	"github.com/hashicorp/go-version"
@@ -13,15 +14,16 @@ type JavaInspector struct{}
 
 const JavaVersionRegex = `\d+\.\d+\.\d+\+\d+`
 
+var versionRegex = regexp.MustCompile(JavaVersionRegex)
+
 // Matches any file path ending with:
 //   - "java" (e.g., /usr/bin/java)
 //   - "javaw" (though less common on Linux)
 //   - "java" / "javaw" followed by version digits (e.g., java8, java11, java17).
-var exeRegex = regexp.MustCompile(`.*/javaw?(?:\d+)?$`)
-var versionRegex = regexp.MustCompile(JavaVersionRegex)
+var exeRegex = regexp.MustCompile(`^javaw?(?:\d+)?$`)
 
 func (j *JavaInspector) Inspect(proc *process.Details) (common.ProgrammingLanguage, bool) {
-	if exeRegex.MatchString(proc.ExePath) {
+	if exeRegex.MatchString(filepath.Base(proc.ExePath)) {
 		return common.JavaProgrammingLanguage, true
 	}
 
