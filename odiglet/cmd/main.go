@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/odiglet"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf/sdks"
@@ -48,7 +49,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	o, err := odiglet.New(clientset, deviceInjectionCallbacks(), instrumentationManagerOptions())
+	dg, err := distros.NewCommunityGetter()
+	if err != nil {
+		log.Logger.Error(err, "Failed to create distro getter")
+		os.Exit(1)
+	}
+
+	instrumentationManagerOptions := ebpf.InstrumentationManagerOptions{
+		Factories:          ebpfInstrumentationFactories(),
+		DistributionGetter: dg,
+	}
+
+	o, err := odiglet.New(clientset, deviceInjectionCallbacks(), instrumentationManagerOptions)
 	if err != nil {
 		log.Logger.Error(err, "Failed to initialize odiglet")
 		os.Exit(1)
@@ -80,12 +92,6 @@ func deviceInjectionCallbacks() instrumentation.OtelSdksLsf {
 		common.NginxProgrammingLanguage: {
 			common.OtelSdkNativeCommunity: instrumentlang.Nginx,
 		},
-	}
-}
-
-func instrumentationManagerOptions() ebpf.InstrumentationManagerOptions {
-	return ebpf.InstrumentationManagerOptions{
-		Factories: ebpfInstrumentationFactories(),
 	}
 }
 

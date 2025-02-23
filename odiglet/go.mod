@@ -10,6 +10,7 @@ require (
 	github.com/moby/sys/mountinfo v0.7.2
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
+	github.com/odigos-io/odigos/distros v0.0.0
 	github.com/odigos-io/odigos/instrumentation v0.0.0
 	github.com/odigos-io/odigos/k8sutils v0.0.0
 	github.com/odigos-io/odigos/opampserver v0.0.0
@@ -120,6 +121,7 @@ require (
 replace (
 	github.com/odigos-io/odigos/api => ../api
 	github.com/odigos-io/odigos/common => ../common
+	github.com/odigos-io/odigos/distros => ../distros
 	github.com/odigos-io/odigos/instrumentation => ../instrumentation
 	github.com/odigos-io/odigos/k8sutils => ../k8sutils
 	github.com/odigos-io/odigos/opampserver => ../opampserver

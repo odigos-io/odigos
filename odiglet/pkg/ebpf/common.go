@@ -2,8 +2,12 @@ package ebpf
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/go-logr/logr"
+	"github.com/odigos-io/odigos/api/k8sconsts"
+	"github.com/odigos-io/odigos/distros"
+	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/odiglet/pkg/detector"
 
@@ -13,8 +17,8 @@ import (
 )
 
 type InstrumentationManagerOptions struct {
-	Factories       map[instrumentation.OtelDistribution]instrumentation.Factory
-	DetectorOptions []processdetector.DetectorOption
+	Factories          map[instrumentation.OtelDistribution]instrumentation.Factory
+	DistributionGetter *distros.Getter
 }
 
 // NewManager creates a new instrumentation manager for eBPF which is configured to work with Kubernetes.
@@ -25,17 +29,43 @@ func NewManager(client client.Client, logger logr.Logger, opts InstrumentationMa
 		return nil, errors.New("instrumentation factories must be provided")
 	}
 
-	managerOpts := instrumentation.ManagerOptions[K8sProcessDetails, K8sConfigGroup]{
-		Logger:        logger,
-		Factories:     opts.Factories,
-		Handler:       newHandler(client),
-		ConfigUpdates: configUpdates,
+	if opts.DistributionGetter == nil {
+		return nil, errors.New("distribution getter must be provided")
 	}
 
-	if opts.DetectorOptions != nil {
-		managerOpts.DetectorOptions = opts.DetectorOptions
-	} else {
-		managerOpts.DetectorOptions = detector.DefaultK8sDetectorOptions(logger)
+	managerOpts := instrumentation.ManagerOptions[K8sProcessDetails, K8sConfigGroup]{
+		Logger:          logger,
+		Factories:       opts.Factories,
+		Handler:         newHandler(client),
+		DetectorOptions: detector.DefaultK8sDetectorOptions(logger),
+		ConfigUpdates:   configUpdates,
+	}
+
+	// Add file open triggers from all distributions.
+	// This is required to avoid race conditions in which we would attempt to instrument a process
+	// before it load the required native library (e.g. .so file)
+	// adding this option to the process detector will add an event to the instrumentation event loop
+	fileOpenTriggers := []string{}
+	for _, d := range(opts.DistributionGetter.GetAllDistros()) {
+		if d.RuntimeAgent == nil {
+			continue
+		}
+		if d.RuntimeAgent.FileOpenTriggers == nil {
+			continue
+		}
+
+		// Sanitize the file open triggers
+		// TODO: this should not be here but in the distro package - we should have templating resolved in the distro package
+		for i, filename := range d.RuntimeAgent.FileOpenTriggers {
+			d.RuntimeAgent.FileOpenTriggers[i] = strings.ReplaceAll(filename, distro.AgentPlaceholderDirectory, k8sconsts.OdigosAgentsDirectory)
+		}
+
+		fileOpenTriggers = append(fileOpenTriggers, d.RuntimeAgent.FileOpenTriggers...)
+	}
+
+	if len(fileOpenTriggers) > 0 {
+		managerOpts.DetectorOptions = append(managerOpts.DetectorOptions, processdetector.WithFilesOpenTrigger(fileOpenTriggers...))
+		logger.V(0).Info("Added file open triggers to the detector", "triggers", fileOpenTriggers)
 	}
 
 	manager, err := instrumentation.NewManager(managerOpts)
