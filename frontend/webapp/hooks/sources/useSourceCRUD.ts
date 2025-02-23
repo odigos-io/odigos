@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useConfig } from '../config';
 import { usePaginatedStore } from '@/store';
 import { useNamespace } from '../compute-platform';
@@ -54,6 +54,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
       });
     } else if (!!data?.computePlatform?.sources) {
       const { items, nextPage } = data.computePlatform.sources;
+
       addPaginated(ENTITY_TYPES.SOURCE, items);
 
       if (getAll && !!nextPage) {
@@ -119,8 +120,10 @@ export const useSourceCRUD = (): UseSourceCrud => {
     if (!sources.length && !sourcesPaginating) fetchSources();
   }, []);
 
+  const mapped = useMemo(() => mapFetched(sources), [sources]);
+
   return {
-    sources: mapFetched(sources),
+    sources: mapped,
     sourcesLoading: isFetching || isFetchingById || sourcesPaginating || cdState.loading || uState.loading,
     sourcesPaginating,
     fetchSources,

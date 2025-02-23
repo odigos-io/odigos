@@ -5,6 +5,7 @@ import type { ActionInput, ParsedActionSpec, FetchedAction } from '@/@types';
 import { CREATE_ACTION, DELETE_ACTION, UPDATE_ACTION } from '@/graphql/mutations';
 import { type ActionFormData, useNotificationStore } from '@odigos/ui-containers';
 import { type Action, ACTION_TYPE, CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE, safeJsonParse, SIGNAL_TYPE } from '@odigos/ui-utils';
+import { useMemo } from 'react';
 
 interface UseActionCrud {
   actions: Action[];
@@ -173,8 +174,10 @@ export const useActionCRUD = (): UseActionCrud => {
     },
   });
 
+  const mapped = useMemo(() => mapFetched(data?.computePlatform?.actions || []), [data?.computePlatform?.actions]);
+
   return {
-    actions: mapFetched(data?.computePlatform?.actions || []),
+    actions: mapped,
     actionsLoading: isFetching || cState.loading || uState.loading || dState.loading,
     fetchActions,
 

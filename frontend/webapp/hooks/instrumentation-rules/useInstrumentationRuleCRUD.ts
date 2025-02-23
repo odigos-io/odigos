@@ -5,6 +5,7 @@ import type { FetchedInstrumentationRule, ComputePlatform } from '@/@types';
 import { type InstrumentationRuleFormData, useNotificationStore } from '@odigos/ui-containers';
 import { CREATE_INSTRUMENTATION_RULE, UPDATE_INSTRUMENTATION_RULE, DELETE_INSTRUMENTATION_RULE } from '@/graphql/mutations';
 import { CRUD, deriveTypeFromRule, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, InstrumentationRule, NOTIFICATION_TYPE } from '@odigos/ui-utils';
+import { useMemo } from 'react';
 
 interface UseInstrumentationRuleCrud {
   instrumentationRules: InstrumentationRule[];
@@ -73,8 +74,10 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
     },
   });
 
+  const mapped = useMemo(() => mapFetched(data?.computePlatform?.instrumentationRules || []), [data?.computePlatform?.instrumentationRules]);
+
   return {
-    instrumentationRules: mapFetched(data?.computePlatform?.instrumentationRules || []),
+    instrumentationRules: mapped,
     instrumentationRulesLoading: isFetching || cState.loading || uState.loading || dState.loading,
     fetchInstrumentationRules,
 

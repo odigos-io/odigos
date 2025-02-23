@@ -5,6 +5,7 @@ import type { DestinationInput, FetchedDestination } from '@/@types';
 import { CREATE_DESTINATION, DELETE_DESTINATION, UPDATE_DESTINATION } from '@/graphql/mutations';
 import { type DestinationFormData, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
 import { CRUD, type Destination, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE } from '@odigos/ui-utils';
+import { useMemo } from 'react';
 
 interface UseDestinationCrud {
   destinations: Destination[];
@@ -83,8 +84,10 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
     },
   });
 
+  const mapped = useMemo(() => mapFetched(data?.computePlatform?.destinations || []), [data?.computePlatform?.destinations]);
+
   return {
-    destinations: mapFetched(data?.computePlatform?.destinations || []),
+    destinations: mapped,
     destinationsLoading: isFetching || cState.loading || uState.loading || dState.loading,
     fetchDestinations,
 

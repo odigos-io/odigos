@@ -14,8 +14,8 @@
   "dependencies": {
     "@apollo/client": "^3.13.1",
     "@apollo/experimental-nextjs-app-support": "^0.11.9",
-    "@odigos/ui-components": "^0.0.75",
-    "@odigos/ui-containers": "^0.0.59",
+    "@odigos/ui-components": "^0.0.76",
+    "@odigos/ui-containers": "^0.0.61",
     "@odigos/ui-icons": "^0.0.13",
     "@odigos/ui-theme": "^0.0.16",
     "@odigos/ui-utils": "^0.0.34",
@@ -28,7 +28,7 @@
     "zustand": "^5.0.3"
   },
   "devDependencies": {
-    "@types/node": "22.13.4",
+    "@types/node": "22.13.5",
     "@types/react": "19.0.10",
     "@types/react-dom": "19.0.4",
     "autoprefixer": "^10.4.20",
