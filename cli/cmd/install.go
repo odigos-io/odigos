@@ -270,7 +270,7 @@ func init() {
 	installCmd.Flags().BoolVar(&openshiftEnabled, "openshift", false, "configure requirements for OpenShift: required selinux settings, RBAC roles, and will use OpenShift certified images (if --image-prefix is not set)")
 	installCmd.Flags().BoolVar(&skipWebhookIssuerCreation, "skip-webhook-issuer-creation", false, "Skip creating the Issuer and Certificate for the Instrumentor pod webhook if cert-manager is installed.")
 	installCmd.Flags().StringVar(&odigletImage, "odiglet-image", "", "odiglet container image name")
-	installCmd.Flags().StringVar(&instrumentorImage, "instrumentor-image", k8sconsts.InstrumentorImageName, "instrumentor container image name")
+	installCmd.Flags().StringVar(&instrumentorImage, "instrumentor-image", k8sconsts.InstrumentorImage, "instrumentor container image name")
 	installCmd.Flags().StringVar(&autoScalerImage, "autoscaler-image", k8sconsts.AutoScalerImageName, "autoscaler container image name")
 	installCmd.Flags().StringVar(&imagePrefix, "image-prefix", "registry.odigos.io", "prefix for all container images.")
 	installCmd.Flags().BoolVar(&psp, "psp", false, "enable pod security policy")
