@@ -10,7 +10,7 @@ import (
 	detector "github.com/odigos-io/runtime-detector"
 )
 
-func K8sDetectorOptions(logger logr.Logger) []detector.DetectorOption {
+func DefaultK8sDetectorOptions(logger logr.Logger) []detector.DetectorOption {
 	sLogger := slog.New(logr.ToSlogHandler(logger))
 
 	opts := []detector.DetectorOption{
