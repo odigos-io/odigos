@@ -184,10 +184,12 @@ func (m *manager[ProcessDetails, ConfigGroup]) runEventLoop(ctx context.Context)
 				return
 			}
 			switch e.EventType {
-			case detector.ProcessExecEvent:
+			case detector.ProcessExecEvent, detector.ProcessForkEvent, detector.ProcessFileOpenEvent:
 				m.logger.V(1).Info("detected new process", "pid", e.PID, "cmd", e.ExecDetails.CmdLine)
-				err := m.handleProcessExecEvent(ctx, e)
-				m.handleProcessExecEventError(err)
+				err := m.tryInstrument(ctx, e)
+				if err != nil {
+					m.handleInstrumentError(err)
+				}
 			case detector.ProcessExitEvent:
 				m.cleanInstrumentation(ctx, e.PID)
 			}
@@ -202,7 +204,7 @@ func (m *manager[ProcessDetails, ConfigGroup]) runEventLoop(ctx context.Context)
 	}
 }
 
-func (m *manager[ProcessDetails, ConfigGroup]) handleProcessExecEventError(err error) {
+func (m *manager[ProcessDetails, ConfigGroup]) handleInstrumentError(err error) {
 	// ignore the error if no instrumentation factory is found,
 	// as this is expected for some language and sdk combinations which don't have ebpf support.
 	if errors.Is(err, errNoInstrumentationFactory) {
@@ -263,7 +265,7 @@ func (m *manager[ProcessDetails, ConfigGroup]) cleanInstrumentation(ctx context.
 	m.stopTrackInstrumentation(pid)
 }
 
-func (m *manager[ProcessDetails, ConfigGroup]) handleProcessExecEvent(ctx context.Context, e detector.ProcessEvent) error {
+func (m *manager[ProcessDetails, ConfigGroup]) tryInstrument(ctx context.Context, e detector.ProcessEvent) error {
 	if details, found := m.detailsByPid[e.PID]; found && details.inst != nil {
 		// this can happen if we have multiple exec events for the same pid (chain loading)
 		// TODO: better handle this?

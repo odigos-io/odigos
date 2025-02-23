@@ -15,7 +15,7 @@ require (
 	github.com/odigos-io/odigos/opampserver v0.0.0
 	github.com/odigos-io/odigos/procdiscovery v0.0.0
 	github.com/odigos-io/opentelemetry-zap-bridge v0.0.5
-	github.com/odigos-io/runtime-detector v0.0.6
+	github.com/odigos-io/runtime-detector v0.0.7-0.20250223100740-b4eebadbb219
 	github.com/stretchr/testify v1.10.0
 	go.opentelemetry.io/auto v0.20.0
 	go.opentelemetry.io/otel v1.34.0
@@ -34,7 +34,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/cilium/ebpf v0.17.2 // indirect
+	github.com/cilium/ebpf v0.17.3 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/emicklei/go-restful/v3 v3.12.1 // indirect
 	github.com/evanphx/json-patch/v5 v5.9.11 // indirect
@@ -95,7 +95,7 @@ require (
 	golang.org/x/arch v0.13.0 // indirect
 	golang.org/x/net v0.34.0 // indirect
 	golang.org/x/oauth2 v0.25.0 // indirect
-	golang.org/x/sys v0.29.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/term v0.28.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 	golang.org/x/time v0.8.0 // indirect
