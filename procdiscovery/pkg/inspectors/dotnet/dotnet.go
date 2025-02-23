@@ -2,6 +2,7 @@ package dotnet
 
 import (
 	"bufio"
+	"path/filepath"
 	"strings"
 
 	"github.com/odigos-io/odigos/common"
@@ -10,8 +11,12 @@ import (
 
 type DotnetInspector struct{}
 
+const processName = "dotnet"
+
 func (d *DotnetInspector) QuickScan(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
-	// No low-cost heuristic; immediately defer to the heavy check.
+	if filepath.Base(ctx.ExePath) == processName {
+		return common.DotNetProgrammingLanguage, true
+	}
 	return "", false
 }
 
