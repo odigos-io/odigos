@@ -20,21 +20,18 @@ type communityDefaulter struct{}
 
 var _ Defaulter = &communityDefaulter{}
 
-// TODO: remove/rename this once we have an enterprise instrumentor
-func NewCommunityDefaulter() *communityDefaulter {
+func NewCommunityDefaulter() Defaulter {
 	return &communityDefaulter{}
 }
 
-// TODO: remove this once we have an enterprise instrumentor
-func NewOnPremDefaulter() *onPremDefaulter {
-	return &onPremDefaulter{}
+func NewCommunityGetter() (*Getter, error) {
+	return NewGetterFromFS(yamls.GetFS())
 }
 
-// TODO: once we split the distros package this should be renamed
-func NewGetter() (*Getter, error) {
+func NewGetterFromFS(fs embed.FS) (*Getter, error) {
 	g := Getter{}
 
-	distrosByName, err := getDistrosMap(yamls.GetFS())
+	distrosByName, err := GetDistrosMap(fs)
 	if err != nil {
 		return nil, err
 	}
@@ -51,22 +48,6 @@ func (c *communityDefaulter) GetDefaultDistroNames() map[common.ProgrammingLangu
 		common.DotNetProgrammingLanguage:     "dotnet-community",
 		common.JavaProgrammingLanguage:       "java-community",
 		common.GoProgrammingLanguage:         "golang-community",
-	}
-}
-
-// TODO: remove this once we have an enterprise instrumentor
-type onPremDefaulter struct{}
-
-var _ Defaulter = &onPremDefaulter{}
-
-func (o *onPremDefaulter) GetDefaultDistroNames() map[common.ProgrammingLanguage]string {
-	return map[common.ProgrammingLanguage]string{
-		common.JavascriptProgrammingLanguage: "nodejs-enterprise",
-		common.PythonProgrammingLanguage:     "python-enterprise",
-		common.DotNetProgrammingLanguage:     "dotnet-community",
-		common.JavaProgrammingLanguage:       "java-enterprise",
-		common.GoProgrammingLanguage:         "golang-enterprise",
-		common.MySQLProgrammingLanguage:      "mysql-enterprise",
 	}
 }
 
@@ -125,7 +106,7 @@ type distroResource struct {
 	Spec       distro.OtelDistro `json:"spec"`
 }
 
-func getDistrosMap(fs embed.FS) (map[string]*distro.OtelDistro, error) {
+func GetDistrosMap(fs embed.FS) (map[string]*distro.OtelDistro, error) {
 	files, err := fs.ReadDir(".")
 	if err != nil {
 		return nil, err

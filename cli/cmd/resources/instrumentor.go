@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/containers"
 	"github.com/odigos-io/odigos/cli/pkg/crypto"
@@ -471,7 +472,7 @@ func NewInstrumentorTLSSecret(ns string, cert *crypto.Certificate) *corev1.Secre
 	}
 }
 
-func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool, imagePrefix string, imageName string) *appsv1.Deployment {
+func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool, imagePrefix string, imageName string, tier common.OdigosTier) *appsv1.Deployment {
 	args := []string{
 		"--health-probe-bind-address=:8081",
 		"--metrics-bind-address=127.0.0.1:8080",
@@ -480,6 +481,13 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 
 	if !telemetryEnabled {
 		args = append(args, "--telemetry-disabled")
+	}
+
+	dynamicEnv := []corev1.EnvVar{}
+	if tier == common.CloudOdigosTier {
+		dynamicEnv = append(dynamicEnv, odigospro.CloudTokenAsEnvVar())
+	} else if tier == common.OnPremOdigosTier {
+		dynamicEnv = append(dynamicEnv, odigospro.OnPremTokenAsEnvVar())
 	}
 
 	dep := &appsv1.Deployment{
@@ -536,7 +544,7 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 								"/app",
 							},
 							Args: args,
-							Env: []corev1.EnvVar{
+							Env: append([]corev1.EnvVar{
 								{
 									Name:  "OTEL_SERVICE_NAME",
 									Value: k8sconsts.InstrumentorOtelServiceName,
@@ -549,6 +557,8 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 										},
 									},
 								},
+								// TODO: this tier env var should be removed once we complete the transition to
+								// enterprise and community images, and the webhook code won't rely on this env var
 								{
 									Name: consts.OdigosTierEnvVarName,
 									ValueFrom: &corev1.EnvVarSource{
@@ -560,7 +570,7 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 										},
 									},
 								},
-							},
+							}, dynamicEnv...),
 							EnvFrom: []corev1.EnvFromSource{
 								{
 									ConfigMapRef: &corev1.ConfigMapEnvSource{
@@ -620,7 +630,7 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 										},
 									},
 								},
-								PeriodSeconds: 	 10,
+								PeriodSeconds: 10,
 							},
 							SecurityContext: &corev1.SecurityContext{},
 						},
@@ -668,20 +678,37 @@ type instrumentorResourceManager struct {
 	ns            string
 	config        *common.OdigosConfiguration
 	odigosVersion string
+	tier          common.OdigosTier
 }
 
-func NewInstrumentorResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosVersion string) resourcemanager.ResourceManager {
+func NewInstrumentorResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, tier common.OdigosTier, odigosVersion string) resourcemanager.ResourceManager {
 	return &instrumentorResourceManager{
 		client:        client,
 		ns:            ns,
 		config:        config,
 		odigosVersion: odigosVersion,
+		tier:          tier,
 	}
 }
 
 func (a *instrumentorResourceManager) Name() string { return "Instrumentor" }
 
 func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) error {
+	imageName := a.config.InstrumentorImage
+	if imageName == "" || imageName == k8sconsts.InstrumentorImage || imageName == k8sconsts.InstrumentorImageUBI9 {
+		if a.tier == common.CommunityOdigosTier {
+			if imageName != k8sconsts.InstrumentorImageUBI9 {
+				imageName = k8sconsts.InstrumentorImage
+			}
+		} else {
+			if imageName == k8sconsts.InstrumentorImageUBI9 {
+				imageName = k8sconsts.InstrumentorEnterpriseImageUBI9
+			} else {
+				imageName = k8sconsts.InstrumentorEnterpriseImage
+			}
+		}
+	}
+
 	resources := []kube.Object{
 		NewInstrumentorServiceAccount(a.ns),
 		NewInstrumentorLeaderElectionRoleBinding(a.ns),
@@ -689,7 +716,7 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 		NewInstrumentorRoleBinding(a.ns),
 		NewInstrumentorClusterRole(a.config.OpenshiftEnabled),
 		NewInstrumentorClusterRoleBinding(a.ns),
-		NewInstrumentorDeployment(a.ns, a.odigosVersion, a.config.TelemetryEnabled, a.config.ImagePrefix, a.config.InstrumentorImage),
+		NewInstrumentorDeployment(a.ns, a.odigosVersion, a.config.TelemetryEnabled, a.config.ImagePrefix, imageName, a.tier),
 		NewInstrumentorService(a.ns),
 	}
 
