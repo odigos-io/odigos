@@ -18,7 +18,6 @@ import (
 )
 
 var instrumentationConfigAddedEventBatcher *EventBatcher
-var instrumentationConfigModifiedEventBatcher *EventBatcher
 var instrumentationConfigDeletedEventBatcher *EventBatcher
 
 func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) error {
@@ -33,21 +32,6 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 			},
 			FailureBatchMessageFunc: func(count int, crdType string) string {
 				return fmt.Sprintf("Failed to create %d sources", count)
-			},
-		},
-	)
-
-	instrumentationConfigModifiedEventBatcher = NewEventBatcher(
-		EventBatcherConfig{
-			MinBatchSize: 1,
-			Duration:     5 * time.Second,
-			Event:        sse.MessageEventModified,
-			CRDType:      consts.InstrumentationConfig,
-			SuccessBatchMessageFunc: func(count int, crdType string) string {
-				return fmt.Sprintf("Successfully updated %d sources", count)
-			},
-			FailureBatchMessageFunc: func(count int, crdType string) string {
-				return fmt.Sprintf("Failed to update %d sources", count)
 			},
 		},
 	)
@@ -81,7 +65,6 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 func handleInstrumentationConfigWatchEvents(ctx context.Context, watcher watch.Interface) {
 	ch := watcher.ResultChan()
 	defer instrumentationConfigAddedEventBatcher.Cancel()
-	defer instrumentationConfigModifiedEventBatcher.Cancel()
 	defer instrumentationConfigDeletedEventBatcher.Cancel()
 	for {
 		select {
@@ -128,7 +111,17 @@ func handleModifiedInstrumentationConfig(instruConfig *v1alpha1.InstrumentationC
 
 	target := fmt.Sprintf("namespace=%s&name=%s&kind=%s", namespace, name, kind)
 	data := fmt.Sprintf(`Source "%s" updated`, name)
-	instrumentationConfigModifiedEventBatcher.AddEvent(sse.MessageTypeSuccess, data, target)
+
+	// We have to ensure that the event is always an individual event - no batching.
+	// We need to do this because we have to get an event with the target ID, which is not possible with batching.
+	// We need the target ID to fetch the individual entity, instead of fetching all entities.
+	sse.SendMessageToClient(sse.SSEMessage{
+		Type:    sse.MessageTypeSuccess,
+		Event:   sse.MessageEventModified,
+		Data:    data,
+		CRDType: consts.InstrumentationConfig,
+		Target:  target,
+	})
 }
 
 func handleDeletedInstrumentationConfig(instruConfig *v1alpha1.InstrumentationConfig) {

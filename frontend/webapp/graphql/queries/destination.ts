@@ -51,3 +51,43 @@ export const GET_POTENTIAL_DESTINATIONS = gql`
     }
   }
 `;
+
+export const GET_DESTINATIONS = gql`
+  query GetDestinations {
+    computePlatform {
+      destinations {
+        id
+        name
+        fields
+        exportedSignals {
+          logs
+          metrics
+          traces
+        }
+        destinationType {
+          type
+          imageUrl
+          displayName
+          supportedSignals {
+            logs {
+              supported
+            }
+            metrics {
+              supported
+            }
+            traces {
+              supported
+            }
+          }
+        }
+        conditions {
+          status
+          type
+          reason
+          message
+          lastTransitionTime
+        }
+      }
+    }
+  }
+`;

@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { API } from '@/utils';
-import { useStatusStore } from '@/store';
+import { useSourceCRUD } from '../sources';
 import { useDestinationCRUD } from '../destinations';
-import { usePaginatedSources } from '../compute-platform';
-import { CRD_TYPES, DISPLAY_TITLES, NOTIFICATION_TYPE } from '@odigos/ui-utils';
+import { usePaginatedStore, useStatusStore } from '@/store';
 import { type NotifyPayload, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
+import { CRD_TYPES, DISPLAY_TITLES, ENTITY_TYPES, getIdFromSseTarget, NOTIFICATION_TYPE, type WorkloadId } from '@odigos/ui-utils';
 
 const CONNECTED = 'CONNECTED';
 
@@ -15,11 +15,12 @@ const EVENT_TYPES = {
 };
 
 export const useSSE = () => {
+  const { setPaginated } = usePaginatedStore();
   const { setPendingItems } = usePendingStore();
-  const { fetchSources } = usePaginatedSources();
   const { title, setStatusStore } = useStatusStore();
   const { addNotification } = useNotificationStore();
-  const { refetchDestinations } = useDestinationCRUD();
+  const { fetchDestinations } = useDestinationCRUD();
+  const { fetchSources, fetchSourceById } = useSourceCRUD();
 
   const retryCount = useRef(0);
   const maxRetries = 10;
@@ -38,20 +39,25 @@ export const useSSE = () => {
           target: data.target,
         };
 
-        if (notification.title !== EVENT_TYPES.MODIFIED && notification.crdType !== CONNECTED) {
-          // SSE toast notification (for all events except "modified" and "connected")
+        if (notification.crdType !== CONNECTED && notification.title !== EVENT_TYPES.MODIFIED) {
+          // SSE toast notification (for all events except "connected" and "modified")
           addNotification(notification);
         }
 
         // Handle specific CRD types
         if ([CONNECTED].includes(notification.crdType as string)) {
+          // If the current status in store is API Token related, we don't want to override it with the connected message
           if (title !== DISPLAY_TITLES.API_TOKEN) {
             setStatusStore({ status: NOTIFICATION_TYPE.SUCCESS, title: notification.title as string, message: notification.message as string });
           }
-        } else if ([CRD_TYPES.INSTRUMENTATION_CONFIG, CRD_TYPES.INSTRUMENTATION_INSTANCE].includes(notification.crdType as CRD_TYPES)) {
-          fetchSources();
+        } else if ([CRD_TYPES.INSTRUMENTATION_CONFIG].includes(notification.crdType as CRD_TYPES)) {
+          if (notification.title === EVENT_TYPES.MODIFIED && !!notification.target) {
+            fetchSourceById(getIdFromSseTarget(notification.target, ENTITY_TYPES.SOURCE) as WorkloadId);
+          } else if (notification.title !== EVENT_TYPES.DELETED) {
+            fetchSources();
+          }
         } else if ([CRD_TYPES.DESTINATION].includes(notification.crdType as CRD_TYPES)) {
-          refetchDestinations();
+          fetchDestinations();
         } else console.warn('Unhandled SSE for CRD type:', notification.crdType);
 
         // This works for now,
