@@ -205,10 +205,10 @@ jobs:
           path: odigos_debug*.tar.gz
         continue-on-error: true
 
-      # - name: Destroy Resources
-      #   if: always()
-      #   run: |
-      #     tofu -chdir=$TF_DIR destroy -auto-approve
+      - name: Destroy Resources
+        if: always()
+        run: |
+          tofu -chdir=$TF_DIR destroy -auto-approve
 
       - name: Extract Tag
         id: extract_tag
