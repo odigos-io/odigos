@@ -20,12 +20,10 @@ import (
 	"flag"
 	"os"
 
-	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/distros"
 
 	"github.com/odigos-io/odigos/instrumentor/controllers"
 	"github.com/odigos-io/odigos/instrumentor/sdks"
-	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 
@@ -70,25 +68,12 @@ func main() {
 	// TODO: remove once the webhook stops using the default SDKs from the sdks package
 	sdks.SetDefaultSDKs()
 
-	// TODO: remove once we create an enterprise instrumentor
-	tier := env.GetOdigosTierFromEnv()
-	var defaulter distros.Defaulter
-	switch tier {
-	case common.CommunityOdigosTier:
-		defaulter = distros.NewCommunityDefaulter()
-	case common.OnPremOdigosTier:
-		defaulter = distros.NewOnPremDefaulter()
-	default:
-		setupLog.Error(nil, "Invalid tier", "tier", tier)
-		os.Exit(1)
-	}
-
-	distrosGetter, err := distros.NewGetter()
+	distrosGetter, err := distros.NewCommunityGetter()
 	if err != nil {
 		setupLog.Error(err, "Failed to initialize distro getter")
 		os.Exit(1)
 	}
-	dp, err := distros.NewProvider(defaulter, distrosGetter)
+	dp, err := distros.NewProvider(distros.NewCommunityDefaulter(), distrosGetter)
 	if err != nil {
 		setupLog.Error(err, "Failed to initialize distro provider")
 		os.Exit(1)
