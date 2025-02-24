@@ -157,7 +157,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
             // we instantly remove deleted items, and newly added items are not relevant for pending state.
             removePaginated(
               ENTITY_TYPES.SOURCE,
-              sources.filter(({ selected }) => !selected).map(({ name, kind }) => ({ namespace: ns, name, kind })),
+              toDelete.map(({ name, kind }) => ({ namespace: ns, name, kind })),
             );
 
             persistSourcesPayloads.push({ namespace: ns, sources: items });
