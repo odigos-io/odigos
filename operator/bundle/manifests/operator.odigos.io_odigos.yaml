@@ -39,9 +39,6 @@ spec:
           spec:
             description: OdigosSpec defines the desired state of Odigos
             properties:
-              apiKey:
-                description: APIKey is an API Key for Odigos Cloud
-                type: string
               ignoredContainers:
                 description: IgnoredContainers is a list of container names to exclude
                   from instrumentation (useful for sidecars)

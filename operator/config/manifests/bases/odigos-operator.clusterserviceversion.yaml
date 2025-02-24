@@ -30,9 +30,6 @@ spec:
       kind: Odigos
       name: odigos.operator.odigos.io
       specDescriptors:
-      - description: APIKey is an API Key for Odigos Cloud
-        displayName: APIKey
-        path: apiKey
       - description: IgnoredContainers is a list of container names to exclude from
           instrumentation (useful for sidecars)
         displayName: Ignored Containers
