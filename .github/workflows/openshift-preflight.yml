@@ -15,7 +15,8 @@ permissions:
   packages: write
 
 jobs:
-  download-preflight:    
+  download-preflight:
+    runs-on: ubuntu-latest
     steps:
       - name: Download OpenShift Preflight binary
         run: |
