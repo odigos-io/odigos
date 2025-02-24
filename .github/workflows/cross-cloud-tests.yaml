@@ -94,7 +94,7 @@ jobs:
           echo "TF_VAR_run_id=${{ github.run_id }}" >> $GITHUB_ENV
 
       - name: Configure AWS Credentials for EKS
-        if: ${{ matrix.cloud-provider == "eks" }}
+        if: ${{ matrix.cloud-provider == 'eks' }}
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: arn:aws:iam::061717858829:role/GitHubActionsEKSCreatorRole
