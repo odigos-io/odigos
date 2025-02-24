@@ -115,7 +115,7 @@ export const awaitToast = ({ withSSE, message }: AwaitToastOptions, callback?: (
   cy.wait(withSSE ? 2000 : 0).then(() => {
     cy.get(DATA_IDS.TOAST).contains(message).as('toast-msg');
     cy.get('@toast-msg').should('exist');
-    cy.get('@toast-msg').parent().parent().find(DATA_IDS.TOAST_CLOSE).click();
+    cy.get('@toast-msg').parent().parent().find(DATA_IDS.TOAST_CLOSE).click({ force: true });
 
     if (!!callback) callback();
   });
