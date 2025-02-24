@@ -63,9 +63,6 @@ type OdigosSpec struct {
 	// OnPremToken is an optional enterprise token for Odigos Enterprise.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="On-Prem Token"
 	OnPremToken string `json:"onPremToken,omitempty"`
-	// APIKey is an API Key for Odigos Cloud
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	APIKey string `json:"apiKey,omitempty"`
 }
 
 // OdigosStatus defines the observed state of Odigos
