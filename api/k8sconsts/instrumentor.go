@@ -3,8 +3,10 @@ package k8sconsts
 const (
 	InstrumentorOtelServiceName             = "instrumentor"
 	InstrumentorDeploymentName              = "odigos-instrumentor"
+	InstrumentorImage                       = "odigos-instrumentor"
+	InstrumentorEnterpriseImage             = "odigos-enterprise-instrumentor"
 	InstrumentorImageUBI9                   = "odigos-instrumentor-ubi9"
-	InstrumentorImageName                   = "odigos-instrumentor"
+	InstrumentorEnterpriseImageUBI9         = "odigos-enterprise-instrumentor-ubi9"
 	InstrumentorAppLabelValue               = InstrumentorDeploymentName
 	InstrumentorServiceName                 = InstrumentorDeploymentName
 	InstrumentorServiceAccountName          = InstrumentorDeploymentName
