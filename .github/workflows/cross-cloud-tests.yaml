@@ -65,6 +65,7 @@ jobs:
       matrix:
         cloud-provider: [aks] # Add or remove providers as needed [TODO: later add -> eks + gke]
         test-scenario: [multi-apps, helm-chart] # Add or remove scenarios as needed
+      fail-fast: false # In case 1 matrix job fails, the other matrix jobs will continue to run
 
     steps:
       - name: Configure AWS credentials from OIDC
@@ -215,7 +216,7 @@ jobs:
 
       # Notify Slack on Failure or Cancellation
       - name: Notify Slack on Failure or Cancellation
-        if: ${{ failure() || cancelled() }}
+        if: ${{ failure() }}
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.CLOUD_PROVIDERS_TESTS_WEBHOOK_URL }}
           GITHUB_REPOSITORY: ${{ github.repository }}
