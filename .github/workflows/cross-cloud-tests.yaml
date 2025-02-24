@@ -63,7 +63,7 @@ jobs:
     runs-on: warp-ubuntu-latest-x64-8x-spot
     strategy:
       matrix:
-        cloud-provider: [aks] # Add or remove providers as needed [TODO: later add -> eks + gke]
+        cloud-provider: [eks] # Add or remove providers as needed [TODO: later add -> eks + gke]
         test-scenario: [multi-apps, helm-chart] # Add or remove scenarios as needed
       fail-fast: false # In case 1 matrix job fails, the other matrix jobs will continue to run
 
@@ -85,6 +85,9 @@ jobs:
         run: |
           CLUSTER_NAME="${{ matrix.test-scenario }}-${{ github.run_id }}"
           echo "CLUSTER_NAME=${CLUSTER_NAME}" >> $GITHUB_ENV
+          if [ "${{ matrix.cloud-provider }}" = "eks" ]; then
+            echo "TF_VAR_region=il-central-1" >> $GITHUB_ENV
+          fi
           echo "TF_VAR_cluster_name=${CLUSTER_NAME}" >> $GITHUB_ENV
           echo "TF_VAR_resource_group_name=${CLUSTER_NAME}" >> $GITHUB_ENV
           echo "TF_VAR_test_scenario=${{ matrix.test-scenario }}" >> $GITHUB_ENV
@@ -153,6 +156,7 @@ jobs:
             az aks get-credentials --resource-group $CLUSTER_NAME --name $CLUSTER_NAME
           elif [ "${{ matrix.cloud-provider }}" == "eks" ]; then
             echo "Fetching EKS kubeconfig..."
+            aws eks update-kubeconfig --region us-east-1 --name $CLUSTER_NAME
           elif [ "${{ matrix.cloud-provider }}" == "gke" ]; then
             echo "Fetching GKE kubeconfig..."
           else
