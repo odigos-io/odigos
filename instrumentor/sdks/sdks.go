@@ -1,8 +1,6 @@
 package sdks
 
 import (
-	"context"
-
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 )
@@ -41,7 +39,7 @@ func otelSdkConfigOnPrem() map[common.ProgrammingLanguage]common.OtelSdk {
 	}
 }
 
-func SetDefaultSDKs(ctx context.Context) error {
+func SetDefaultSDKs() {
 	odigosTier := env.GetOdigosTierFromEnv()
 
 	switch odigosTier {
@@ -52,8 +50,6 @@ func SetDefaultSDKs(ctx context.Context) error {
 	case common.OnPremOdigosTier:
 		defaultOtelSdkPerLanguage = otelSdkConfigOnPrem()
 	}
-
-	return nil
 }
 
 func copyOtelSdkMap(m map[common.ProgrammingLanguage]common.OtelSdk) map[common.ProgrammingLanguage]common.OtelSdk {

@@ -1,3 +1,5 @@
+import { TIER } from '@odigos/ui-utils';
+
 export enum CONFIG_INSTALLATION {
   NEW = 'NEW',
   APPS_SELECTED = 'APPS_SELECTED',
@@ -7,6 +9,7 @@ export enum CONFIG_INSTALLATION {
 export interface FetchedConfig {
   config: {
     installation: CONFIG_INSTALLATION;
+    tier: TIER;
     readonly: boolean;
   };
 }

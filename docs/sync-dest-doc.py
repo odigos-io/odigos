@@ -63,14 +63,14 @@ def replace_section(mdx_content, start_block, end_block, new_content, default_ap
 # Generate functions
 # (generate content from within YAML files)
 
-def generate_logo(yaml_content, img_tag=False, img_size=16):
+def generate_logo(yaml_content, img_tag=False, img_size=4):
     """
     Function to generate the logo for the destination.
 
     Args:
         yaml_content (dict): Destination YAML content.
         img_tag (bool): If True, return the image tag; otherwise, return the markdown link.
-        img_size (int): Size of the image.
+        img_size (int): Size of the image (in Tailwind format).
 
     Returns:
         str: Logo content.
@@ -79,7 +79,7 @@ def generate_logo(yaml_content, img_tag=False, img_size=16):
     dest_image = yaml_content.get("spec", {}).get("image", "")
 
     if img_tag:
-        return f"<img src='https://d15jtxgb40qetw.cloudfront.net/{dest_image}' alt='{dest_type}' width=\"{img_size}\" height=\"{img_size}\" className=\"not-prose\" />"
+        return f"<img src=\"https://d15jtxgb40qetw.cloudfront.net/{dest_image}\" alt=\"{dest_type}\" className=\"not-prose h-{int(img_size)}\" />"
 
     return f"[![logo with clickable link](https://d15jtxgb40qetw.cloudfront.net/{dest_image})](https://www.google.com/search?q={dest_type})"
 
@@ -181,7 +181,9 @@ def generate_fields(yaml_content):
             f"- **{id}** `{type}` : {name}."
             + (f" {tooltip}" if tooltip else "")
             + f"\n  - This field is {'required' if is_required else 'optional'}"
-            + (f" and defaults to `{initial_value}`" if initial_value else "")
+            + (f" and defaults to `{initial_value}`" if initial_value is not None and (
+                initial_value or isinstance(initial_value, (bool, int))
+            ) else "")
             + (f"\n  - Example: `{placeholder}`" if placeholder else "")
         )
 
@@ -373,12 +375,15 @@ def get_documenation(yaml_content):
         + "\nicon: 'signal-stream'"
         + "\n---"
         + "\n\n### Getting Started"
-        + f"\n\n{generate_logo(yaml_content, True, 100)}"
+        + f"\n\n{generate_logo(yaml_content, True, 20)}"
         + "\n\n{/*"
         + "\n    Add custom content here (under this comment)..."
         + "\n"
-        + "\n    e.g:"
-        + "\n    [🔗 website](https://odigos.io)"
+        + "\n    e.g."
+        + "\n\n    **Creating Account**<br />"
+        + "\n    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**"
+        + "\n\n    **Obtaining Access Token**<br />"
+        + "\n    Go to **⚙️ > Access Tokens** and click **Create New**"
         + "\n"
         + "\n    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!"
         + "\n    !! START CUSTOM EDIT !!"
@@ -493,13 +498,9 @@ def create_mdx(mdx_path, yaml_content):
     """
     documenation = get_documenation(yaml_content)
     content_before = documenation.get("content_before_custom")
-    content_after = documenation.get("content_after_custom")    
+    content_after = documenation.get("content_after_custom")
     mdx_content = (
         f"{content_before}"
-        + "\n\n**Creating Account**<br />"
-        + "\nGo to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**"
-        + "\n\n**Obtaining Access Token**<br />"
-        + "\nGo to **⚙️ > Access Tokens** and click **Create New**"
         + f"\n\n{content_after}"
     )
 
@@ -566,7 +567,7 @@ def process_overview(backend_yaml_dir, docs_dir):
                     signals = yaml_content.get("spec", {}).get("signals", {})
 
                     rows.append(
-                        f"{generate_logo(yaml_content, True)} | "
+                        f"{generate_logo(yaml_content, True, 4)} | "
                         f"[{name}](/backends/{file.replace('.yaml', '')}) | "
                         f"{'Managed' if category == 'managed' else 'Self-Hosted'} | "
                         f"{'✅' if signals.get('traces', {}).get('supported', False) else ''} | "
