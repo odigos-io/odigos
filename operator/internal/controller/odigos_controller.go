@@ -206,22 +206,7 @@ func (r *OdigosReconciler) install(ctx context.Context, odigos *operatorv1alpha1
 
 	var odigosProToken string
 	odigosTier := common.CommunityOdigosTier
-	if odigos.Spec.APIKey != "" {
-		odigosTier = common.CloudOdigosTier
-		odigosProToken = odigos.Spec.APIKey
-		err = cmd.VerifyOdigosCloudApiKey(odigos.Spec.APIKey)
-		if err != nil {
-			meta.SetStatusCondition(&odigos.Status.Conditions, metav1.Condition{
-				Type:               odigosInstalledCondition,
-				Status:             metav1.ConditionFalse,
-				Reason:             "InvalidAPIKey",
-				Message:            "Provided Odigos API key is not valid",
-				ObservedGeneration: odigos.GetGeneration(),
-			})
-			logger.Info("invalid Odigos API key format")
-			return ctrl.Result{}, r.Status().Update(ctx, odigos)
-		}
-	} else if odigos.Spec.OnPremToken != "" {
+	if odigos.Spec.OnPremToken != "" {
 		odigosTier = common.OnPremOdigosTier
 		odigosProToken = odigos.Spec.OnPremToken
 	}

@@ -20,7 +20,7 @@ metadata:
     capabilities: Basic Install
     categories: Logging & Tracing
     containerImage: registry.connect.redhat.com/odigos/odigos-operator-ubi9@sha256:be543164c22b5f2e7762a73a854d6bdb122babd042b6747fec0283d3b101c04f
-    createdAt: "2025-02-20T15:21:30Z"
+    createdAt: "2025-02-24T19:27:57Z"
     description: Odigos enables automatic distributed tracing with OpenTelemetry and eBPF.
     features.operators.openshift.io/disconnected: "false"
     features.operators.openshift.io/fips-compliant: "true"
@@ -44,9 +44,6 @@ spec:
         kind: Odigos
         name: odigos.operator.odigos.io
         specDescriptors:
-          - description: APIKey is an API Key for Odigos Cloud
-            displayName: APIKey
-            path: apiKey
           - description: IgnoredContainers is a list of container names to exclude from instrumentation (useful for sidecars)
             displayName: Ignored Containers
             path: ignoredContainers
