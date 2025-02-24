@@ -97,7 +97,7 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
-        notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Creating destination...', undefined, true);
+        notifyUser(NOTIFICATION_TYPE.DEFAULT, 'Pending', 'Creating destination...', undefined, true);
         addPendingItems([{ entityType: ENTITY_TYPES.DESTINATION, entityId: undefined }]);
         mutateCreate({ variables: { destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
       }
@@ -106,7 +106,7 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
-        notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Updating destination...', undefined, true);
+        notifyUser(NOTIFICATION_TYPE.DEFAULT, 'Pending', 'Updating destination...', undefined, true);
         addPendingItems([{ entityType: ENTITY_TYPES.DESTINATION, entityId: id }]);
         mutateUpdate({ variables: { id, destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
       }
@@ -115,7 +115,7 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
-        notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Deleting destination...', undefined, true);
+        notifyUser(NOTIFICATION_TYPE.DEFAULT, 'Pending', 'Deleting destination...', undefined, true);
         addPendingItems([{ entityType: ENTITY_TYPES.DESTINATION, entityId: id }]);
         mutateDelete({ variables: { id } });
       }

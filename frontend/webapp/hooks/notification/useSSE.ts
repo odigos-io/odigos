@@ -20,7 +20,6 @@ export const useSSE = () => {
   const { addNotification } = useNotificationStore();
   const { fetchDestinations } = useDestinationCRUD();
   const { fetchSources, fetchSourceById } = useSourceCRUD();
-  const { setInstrumentAwait, setInstrumentCount } = useInstrumentStore();
 
   const retryCount = useRef(0);
   const maxRetries = 10;
@@ -39,7 +38,8 @@ export const useSSE = () => {
           target: data.target,
         };
 
-        const { isAwaitingInstrumentation, sourcesToCreate, sourcesCreated } = useInstrumentStore.getState();
+        const { setInstrumentAwait, isAwaitingInstrumentation, setInstrumentCount, sourcesToCreate, sourcesCreated, sourcesToDelete, sourcesDeleted } = useInstrumentStore.getState();
+
         const isConnected = [CONNECTED].includes(notification.crdType as string);
         const isSource = [CRD_TYPES.INSTRUMENTATION_CONFIG].includes(notification.crdType as CRD_TYPES);
         const isDestination = [CRD_TYPES.DESTINATION].includes(notification.crdType as CRD_TYPES);
@@ -57,7 +57,7 @@ export const useSSE = () => {
         } else if (isSource) {
           switch (notification.title) {
             case EVENT_TYPES.MODIFIED:
-              if (!!notification.target) {
+              if (!isAwaitingInstrumentation && !!notification.target) {
                 const id = getIdFromSseTarget(notification.target, ENTITY_TYPES.SOURCE);
                 fetchSourceById(id as WorkloadId);
               }
@@ -67,9 +67,22 @@ export const useSSE = () => {
               const created = sourcesCreated + Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
               setInstrumentCount('sourcesCreated', created);
 
-              if (isAwaitingInstrumentation && created >= sourcesToCreate) {
+              if (!isAwaitingInstrumentation || (isAwaitingInstrumentation && created >= sourcesToCreate)) {
+                addNotification({ type: NOTIFICATION_TYPE.SUCCESS, title: EVENT_TYPES.ADDED, message: `Successfully created ${created} sources` });
                 setInstrumentAwait(false);
                 fetchSources();
+              }
+              break;
+
+            case EVENT_TYPES.DELETED:
+              const deleted = sourcesDeleted + Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
+              setInstrumentCount('sourcesDeleted', deleted);
+
+              if (!isAwaitingInstrumentation || (isAwaitingInstrumentation && deleted >= sourcesToDelete)) {
+                addNotification({ type: NOTIFICATION_TYPE.SUCCESS, title: EVENT_TYPES.DELETED, message: `Successfully deleted ${deleted} sources` });
+                setInstrumentAwait(false);
+                setInstrumentCount('sourcesToDelete', 0);
+                setInstrumentCount('sourcesDeleted', 0);
               }
               break;
 
