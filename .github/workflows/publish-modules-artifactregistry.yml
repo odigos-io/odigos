@@ -18,7 +18,7 @@ jobs:
     strategy:
       matrix:
         dockerfile: ['Dockerfile', 'Dockerfile.rhel']
-        service: ['autoscaler', 'scheduler', 'instrumentor', 'collector', 'odiglet', 'ui']
+        service: ['autoscaler', 'scheduler', 'instrumentor', 'collector', 'odiglet', 'ui', 'operator']
         include:
           - service: autoscaler
             runner: ubuntu-latest
@@ -44,6 +44,10 @@ jobs:
             runner: ubuntu-latest
             summary: "UI for Odigos"
             description: "UI provides the frontend webapp for managing an Odigos installation."
+          - service: operator
+            runner: ubuntu-latest
+            summary: "Odigos Operator"
+            description: "The Odigos Operator installs and managed Odigos in a cluster"
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout repository
