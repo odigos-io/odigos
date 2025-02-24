@@ -48,10 +48,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Notify Slack Start
-          env:
-            SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-          run: |
-            curl -X POST -H 'Content-type: application/json' --data '{"description":"Starting Odigos OpenShift Preflight submission", "tag":"${{ env.TAG }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"description":"Starting Odigos OpenShift Preflight submission", "tag":"${{ env.TAG }}"}' ${{ env.SLACK_WEBHOOK_URL }}
 
       - name: Download Preflight Binary
         uses: actions/download-artifact@v4
