@@ -17,7 +17,18 @@ func DefaultK8sDetectorOptions(logger logr.Logger) []detector.DetectorOption {
 		detector.WithLogger(sLogger),
 		detector.WithEnvironments(relevantEnvVars()...),
 		detector.WithEnvPrefixFilter(k8sconsts.OdigosEnvVarPodName),
-		detector.WithExePathsToFilter("/usr/bin/bash", "/bin/bash", "/bin/sh", "/usr/bin/sh", "/bin/busybox", "/usr/bin/dash", "/sbin/tini", "/usr/bin/tini"),
+		detector.WithExePathsToFilter(
+			"/usr/bin/bash",
+			"/bin/bash",
+			"/usr/local/sbin/bash",
+			"/usr/local/bin/bash",
+			"/bin/sh",
+			"/usr/bin/sh",
+			"/bin/busybox",
+			"/usr/bin/dash",
+			"/sbin/tini",
+			"/usr/bin/tini",
+		),
 	}
 
 	return opts
