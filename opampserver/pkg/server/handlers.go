@@ -41,8 +41,12 @@ type opampAgentAttributesKeys struct {
 }
 
 func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, deviceId string, firstMessage *protobufs.AgentToServer) (*connection.ConnectionInfo, *protobufs.ServerToAgent, error) {
+	fmt.Print("------------------------------------------------")
+	fmt.Print(firstMessage.AgentDescription.IdentifyingAttributes)
+	fmt.Print("------------------------------------------------")
 
 	if firstMessage.AgentDescription == nil {
+		fmt.Print("1111111")
 		// first message must be agent description.
 		// it is, however, possible that the OpAMP server restarted, and the agent is trying to reconnect.
 		// in which case we send back flag and request full status update.

@@ -78,6 +78,7 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 		var serverToAgent *protobufs.ServerToAgent
 		connectionInfo, exists := connectionCache.GetConnection(instanceUid)
 		if !exists {
+			fmt.Print("22222222222222")
 			connectionInfo, serverToAgent, err = handlers.OnNewConnection(ctx, deviceId, &agentToServer)
 			if err != nil {
 				logger.Error(err, "Failed to process new connection")
