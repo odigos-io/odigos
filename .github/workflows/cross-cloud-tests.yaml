@@ -214,7 +214,7 @@ jobs:
         id: extract_tag
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
 
-      # Notify Slack on Failure or Cancellation
+      # Notify Slack on Failure
       - name: Notify Slack on Failure or Cancellation
         if: ${{ failure() }}
         env:
