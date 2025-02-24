@@ -10,5 +10,4 @@ spec:
   displayName: 'Mysql Server Internals Enterprise Instrumentation'
   description: |
     Instrumentation for the internals of MySQL server using eBPF
-  tiers: 
-    - onprem
+

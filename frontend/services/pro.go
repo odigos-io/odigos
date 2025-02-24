@@ -1,6 +1,8 @@
 package services
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -8,9 +10,25 @@ import (
 )
 
 func UpdateToken(c *gin.Context) {
+	var request pro.TokenPayload
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid JSON",
+		})
+		return
+	}
+
+	onPremToken := request.OnpremToken
+	if onPremToken == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "onprem-token is required",
+		})
+		return
+	}
 	ctx := c.Request.Context()
 
-	err := pro.UpdateOdigosToken(ctx, kube.DefaultClient, env.GetCurrentNamespace(), c.Param("onPremToken"))
+	err := pro.UpdateOdigosToken(ctx, kube.DefaultClient, env.GetCurrentNamespace(), onPremToken)
 	if err != nil {
 		c.JSON(500, gin.H{
 			"message": err.Error(),

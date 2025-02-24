@@ -118,7 +118,7 @@ func startHTTPServer(flags *Flags, odigosMetrics *collectormetrics.OdigosMetrics
 	r.GET("/api/events", sse.HandleSSEConnections)
 
 	// Remote CLI handlers
-	r.GET("/token/update/:onPremToken", services.UpdateToken)
+	r.POST("/token/update", services.UpdateToken)
 	r.GET("/describe/odigos", services.DescribeOdigos)
 	r.GET("/describe/source/namespace/:namespace/kind/:kind/name/:name", services.DescribeSource)
 
@@ -150,11 +150,6 @@ func startWatchers(ctx context.Context, flags *Flags) error {
 	err = watchers.StartDestinationWatcher(ctx, flags.Namespace)
 	if err != nil {
 		return fmt.Errorf("error starting Destination watcher: %v", err)
-	}
-
-	err = watchers.StartInstrumentationInstanceWatcher(ctx, "")
-	if err != nil {
-		return fmt.Errorf("error starting InstrumentationInstance watcher: %v", err)
 	}
 
 	return nil

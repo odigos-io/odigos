@@ -1,0 +1,93 @@
+name: OpenShift certification for container images
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag"
+        required: true
+
+  repository_dispatch:
+    types: [openshift_preflight]
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  download-preflight:    
+    steps:
+      - name: Download OpenShift Preflight binary
+        run: |
+          curl -OL https://github.com/redhat-openshift-ecosystem/openshift-preflight/releases/download/1.12.0/preflight-linux-amd64
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: preflight-binary
+          path: preflight-linux-amd64
+
+  run-and-submit-openshift-certification:
+    needs: download-preflight
+    strategy:
+      matrix:
+        include:
+          - service: autoscaler
+            project_id: '6792518fe676251b15d7cf9a'
+          - service: scheduler
+            project_id: '679251fd5ffdc336cfb4c43f'
+          - service: instrumentor
+            project_id: '679251f3a8a8d04d0d10cc07'
+          - service: collector
+            project_id: '679252b3ea28e5acc3d38df2'
+          - service: odiglet
+            project_id: '6792517927c09edd021cddf1'
+          - service: enterprise-odiglet
+            project_id: '679bbe1fe0ccfe3f428bae2d'
+          - service: ui
+            project_id: '6792b077b086a666569d9935'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Slack Start
+          env:
+            SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          run: |
+            curl -X POST -H 'Content-type: application/json' --data '{"description":"Starting Odigos OpenShift Preflight submission", "tag":"${{ env.TAG }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+
+      - name: Download Preflight Binary
+        uses: actions/download-artifact@v4
+        with:
+          name: preflight-binary
+          path: .
+      
+      - name: Make binary executable
+        run: chmod +x preflight-linux-amd64
+
+      - name: Determine Tag Value
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "TAG=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
+          elif [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            echo "TAG=${{ github.event.client_payload.tag }}" >> $GITHUB_ENV
+          else
+            echo "Unknown event type"
+            exit 1
+          fi
+
+      - name: Run Preflight
+        run: |
+          ./preflight-linux-amd64 check container registry.odigos.io/odigos-${{ matrix.service }}-ubi9:${{ env.TAG }} --pyxis-api-token=${{ secrets.OPENSHIFT_PYXIS_TOKEN }} --certification-project-id ${{ matrix.project_id }} --submit
+
+      - name: Notify Slack End
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"description":"Odigos components submitted to OpenShift Certification successfully", "tag":"${{ env.TAG }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+
+      - name: Notify Slack on Failure
+        if: ${{ failure() || cancelled() }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"ERROR: failed to submit Odigos components to OpenShift Certification", "tag":"${{ env.TAG }}"}' ${{ env.SLACK_WEBHOOK_URL }}

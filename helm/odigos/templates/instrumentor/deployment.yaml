@@ -34,7 +34,11 @@ spec:
         command:
           - /app
         {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
+        {{- if .Values.onPremToken }}
+        image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-instrumentor" "Tag" $imageTag) }}
+        {{- else }}
         image: {{ template "utils.imageName" (dict "Values" .Values "Component" "instrumentor" "Tag" $imageTag) }}
+        {{- end }}
         ports:
           - containerPort: 9443
             name: webhook-server
@@ -50,7 +54,14 @@ spec:
             valueFrom:
               configMapKeyRef:
                 key: ODIGOS_TIER
-                name: odigos-deployment                
+                name: odigos-deployment
+          {{- if .Values.onPremToken }}
+          - name: ODIGOS_ONPREM_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: odigos-pro
+                key: odigos-onprem-token
+          {{- end }}
         volumeMounts:
           - name: webhook-cert
             mountPath: /tmp/k8s-webhook-server/serving-certs
@@ -65,6 +76,11 @@ spec:
             port: 8081
           initialDelaySeconds: 15
           periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          periodSeconds: 10
         name: manager
         resources:
           limits:

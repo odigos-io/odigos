@@ -6,13 +6,11 @@ import { Stepper } from '@odigos/ui-components';
 import { ENTITY_TYPES } from '@odigos/ui-utils';
 import { OnboardingStepperWrapper } from '@/components';
 import SetupHeader from '@/components/lib-imports/setup-header';
+import PageContainer from '@/components/providers/page-container';
 import { DestinationSelectionForm, useSetupStore } from '@odigos/ui-containers';
-import { useDestinationCategories, useDestinationCRUD, usePotentialDestinations, useSSE, useTestConnection } from '@/hooks';
+import { useDestinationCategories, useDestinationCRUD, usePotentialDestinations, useTestConnection } from '@/hooks';
 
 export default function Page() {
-  // call important hooks that should run on page-mount
-  useSSE();
-
   const router = useRouter();
   const { configuredSources } = useSetupStore();
 
@@ -25,9 +23,8 @@ export default function Page() {
   const [isLoading, setIsLoading] = useState(false);
 
   return (
-    <>
+    <PageContainer>
       <SetupHeader entityType={ENTITY_TYPES.DESTINATION} isLoading={isLoading} setIsLoading={setIsLoading} />
-
       <OnboardingStepperWrapper>
         <Stepper
           currentStep={3}
@@ -38,7 +35,6 @@ export default function Page() {
           ]}
         />
       </OnboardingStepperWrapper>
-
       <DestinationSelectionForm
         categories={categories}
         potentialDestinations={potentialDestinations}
@@ -50,6 +46,6 @@ export default function Page() {
         isSourcesListEmpty={!Object.values(configuredSources).some((sources) => !!sources.length)}
         goToSources={() => router.push(ROUTES.CHOOSE_SOURCES)}
       />
-    </>
+    </PageContainer>
   );
 }

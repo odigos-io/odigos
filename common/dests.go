@@ -4,6 +4,7 @@ type DestinationType string
 
 const (
 	AppDynamicsDestinationType            DestinationType = "appdynamics"
+	AWSCloudWatchDestinationType          DestinationType = "cloudwatch"
 	AWSS3DestinationType                  DestinationType = "s3"
 	AxiomDestinationType                  DestinationType = "axiom"
 	AzureBlobDestinationType              DestinationType = "azureblob"
@@ -27,7 +28,9 @@ const (
 	GroundcoverDestinationType            DestinationType = "groundcover"
 	HoneycombDestinationType              DestinationType = "honeycomb"
 	HyperDxDestinationType                DestinationType = "hyperdx"
+	InstanaDestinationType                DestinationType = "instana"
 	JaegerDestinationType                 DestinationType = "jaeger"
+	KafkaDestinationType                  DestinationType = "kafka"
 	KloudMateDestinationType              DestinationType = "kloudmate"
 	Last9DestinationType                  DestinationType = "last9"
 	LightstepDestinationType              DestinationType = "lightstep"

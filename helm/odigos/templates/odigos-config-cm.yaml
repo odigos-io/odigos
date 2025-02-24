@@ -80,12 +80,23 @@ data:
     {{- end }}
     instrumentorImage: {{ .Values.instrumentor.image.repository }}
     {{- if .Values.profiles }}
-      profiles: {{- toYaml .Values.profiles | nindent 8 }}
+    profiles: 
+      {{- toYaml .Values.profiles | nindent 6 }}
     {{- end }}
     telemetryEnabled: {{ .Values.telemetry.enabled }}
     openshiftEnabled: {{ .Values.openshift.enabled }}
     psp: {{ .Values.psp.enabled }}
+    {{- if .Values.ignoredNamespaces }}
     ignoredNamespaces:
-      {{- toYaml .Values.ignoredNamespaces | nindent 8 }}
+      {{- toYaml .Values.ignoredNamespaces | nindent 6 }}
+    {{- end }}
+    {{- if .Values.ignoredContainers }}
     ignoredContainers:
-      {{- toYaml .Values.ignoredContainers | nindent 8 }}
+      {{- toYaml .Values.ignoredContainers | nindent 6 }}
+    {{- end }}
+    {{- if and .Values.instrumentor.mountMethod (has .Values.instrumentor.mountMethod (list "k8s-host-path" "k8s-virtual-device")) }}
+    mountMethod: {{ .Values.instrumentor.mountMethod }}
+    {{- else }}
+    {{- fail "Error: Invalid mountMethod. Supported values are 'k8s-host-path' and 'k8s-virtual-device'." }}
+    {{- end }}
+    
