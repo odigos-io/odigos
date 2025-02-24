@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useConfig } from '../config';
 import { GET_DESTINATIONS } from '@/graphql';
 import { useMutation, useQuery } from '@apollo/client';
@@ -5,7 +6,6 @@ import type { DestinationInput, FetchedDestination } from '@/@types';
 import { CREATE_DESTINATION, DELETE_DESTINATION, UPDATE_DESTINATION } from '@/graphql/mutations';
 import { type DestinationFormData, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
 import { CRUD, type Destination, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE } from '@odigos/ui-utils';
-import { useMemo } from 'react';
 
 interface UseDestinationCrud {
   destinations: Destination[];
@@ -42,8 +42,8 @@ const mapFetched = (items: FetchedDestination[]): Destination[] => {
 
 export const useDestinationCRUD = (): UseDestinationCrud => {
   const { data: config } = useConfig();
+  const { addNotification } = useNotificationStore();
   const { addPendingItems, removePendingItems } = usePendingStore();
-  const { addNotification, removeNotifications } = useNotificationStore();
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
     addNotification({ type, title, message, crdType: ENTITY_TYPES.DESTINATION, target: id ? getSseTargetFromId(id, ENTITY_TYPES.DESTINATION) : undefined, hideFromHistory });
@@ -59,6 +59,9 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
 
   const [mutateCreate, cState] = useMutation<{ createNewDestination: { id: string } }, { destination: DestinationInput }>(CREATE_DESTINATION, {
     onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.CREATE, error.cause?.message || error.message),
+    onCompleted: () => {
+      // We wait for SSE
+    },
   });
 
   const [mutateUpdate, uState] = useMutation<{ updateDestination: { id: string } }, { id: string; destination: DestinationInput }>(UPDATE_DESTINATION, {
@@ -78,9 +81,8 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
 
   const [mutateDelete, dState] = useMutation<{ deleteDestination: boolean }, { id: string }>(DELETE_DESTINATION, {
     onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.DELETE, error.cause?.message || error.message),
-    onCompleted: (res, req) => {
-      const id = req?.variables?.id;
-      removeNotifications(getSseTargetFromId(id, ENTITY_TYPES.DESTINATION));
+    onCompleted: () => {
+      // We wait for SSE
     },
   });
 

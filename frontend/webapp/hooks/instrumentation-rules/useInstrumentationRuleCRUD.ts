@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useConfig } from '../config';
 import { GET_INSTRUMENTATION_RULES } from '@/graphql';
 import { useMutation, useQuery } from '@apollo/client';
@@ -5,7 +6,6 @@ import type { FetchedInstrumentationRule, ComputePlatform } from '@/@types';
 import { type InstrumentationRuleFormData, useNotificationStore } from '@odigos/ui-containers';
 import { CREATE_INSTRUMENTATION_RULE, UPDATE_INSTRUMENTATION_RULE, DELETE_INSTRUMENTATION_RULE } from '@/graphql/mutations';
 import { CRUD, deriveTypeFromRule, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, InstrumentationRule, NOTIFICATION_TYPE } from '@odigos/ui-utils';
-import { useMemo } from 'react';
 
 interface UseInstrumentationRuleCrud {
   instrumentationRules: InstrumentationRule[];
@@ -26,7 +26,7 @@ const mapFetched = (items: FetchedInstrumentationRule[]): InstrumentationRule[] 
 
 export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
   const { data: config } = useConfig();
-  const { addNotification, removeNotifications } = useNotificationStore();
+  const { addNotification } = useNotificationStore();
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
     addNotification({ type, title, message, crdType: ENTITY_TYPES.INSTRUMENTATION_RULE, target: id ? getSseTargetFromId(id, ENTITY_TYPES.INSTRUMENTATION_RULE) : undefined, hideFromHistory });
@@ -67,7 +67,6 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
     onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.DELETE, error.cause?.message || error.message),
     onCompleted: (res, req) => {
       const id = req?.variables?.ruleId;
-      removeNotifications(getSseTargetFromId(id, ENTITY_TYPES.INSTRUMENTATION_RULE));
       // TODO: find a way to derive the type, instead of ID in toast
       notifyUser(NOTIFICATION_TYPE.ERROR, CRUD.DELETE, `Rule "${id}" deleted`, id);
       fetchInstrumentationRules();

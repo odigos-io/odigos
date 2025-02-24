@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useConfig } from '../config';
 import { GET_ACTIONS } from '@/graphql';
 import { useMutation, useQuery } from '@apollo/client';
@@ -5,7 +6,6 @@ import type { ActionInput, ParsedActionSpec, FetchedAction } from '@/@types';
 import { CREATE_ACTION, DELETE_ACTION, UPDATE_ACTION } from '@/graphql/mutations';
 import { type ActionFormData, useNotificationStore } from '@odigos/ui-containers';
 import { type Action, ACTION_TYPE, CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE, safeJsonParse, SIGNAL_TYPE } from '@odigos/ui-utils';
-import { useMemo } from 'react';
 
 interface UseActionCrud {
   actions: Action[];
@@ -129,7 +129,7 @@ const mapFormToInput = (action: ActionFormData): ActionInput => {
 
 export const useActionCRUD = (): UseActionCrud => {
   const { data: config } = useConfig();
-  const { addNotification, removeNotifications } = useNotificationStore();
+  const { addNotification } = useNotificationStore();
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
     addNotification({ type, title, message, crdType: ENTITY_TYPES.ACTION, target: id ? getSseTargetFromId(id, ENTITY_TYPES.ACTION) : undefined, hideFromHistory });
@@ -168,7 +168,6 @@ export const useActionCRUD = (): UseActionCrud => {
     onCompleted: (res, req) => {
       const id = req?.variables?.id;
       const type = req?.variables?.actionType;
-      removeNotifications(getSseTargetFromId(id, ENTITY_TYPES.ACTION));
       notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.DELETE, `Action "${type}" deleted`, id);
       fetchActions();
     },
