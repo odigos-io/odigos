@@ -41,10 +41,6 @@ type opampAgentAttributesKeys struct {
 }
 
 func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, firstMessage *protobufs.AgentToServer) (*connection.ConnectionInfo, *protobufs.ServerToAgent, error) {
-	fmt.Print("------------------------------------------------")
-	fmt.Print(firstMessage.AgentDescription.IdentifyingAttributes)
-	fmt.Print("------------------------------------------------")
-
 	if firstMessage.AgentDescription == nil {
 		fmt.Print("1111111")
 		// first message must be agent description.
