@@ -38,6 +38,56 @@ type Details struct {
 	Environments ProcessEnvs
 }
 
+type ProcessContext struct {
+	Details
+
+	ExeFileContent  *os.File
+	MapsFileContent *os.File
+}
+
+func NewProcessContext(details Details) *ProcessContext {
+	return &ProcessContext{
+		Details: details,
+	}
+}
+
+// Close method to close any open file handles.
+func (ctx *ProcessContext) CloseFiles() error {
+	var firstErr error
+
+	if ctx.ExeFileContent != nil {
+		if err := ctx.ExeFileContent.Close(); err != nil && firstErr == nil {
+			firstErr = err
+		}
+		ctx.ExeFileContent = nil
+	}
+
+	if ctx.MapsFileContent != nil {
+		if err := ctx.MapsFileContent.Close(); err != nil && firstErr == nil {
+			firstErr = err
+		}
+		ctx.MapsFileContent = nil
+	}
+
+	return firstErr
+}
+
+func (ctx *ProcessContext) ExeContent() {
+	if ctx.ExeFileContent == nil {
+		path := fmt.Sprintf("/proc/%d/exe", ctx.ProcessID)
+		fileData, _ := os.Open(path)
+		ctx.ExeFileContent = fileData
+	}
+}
+
+func (ctx *ProcessContext) MapsContent() {
+	if ctx.MapsFileContent == nil {
+		mapsPath := fmt.Sprintf("/proc/%d/maps", ctx.ProcessID)
+		fileData, _ := os.Open(mapsPath)
+		ctx.MapsFileContent = fileData
+	}
+}
+
 type ProcessEnvs struct {
 	DetailedEnvs map[string]string
 	// OverwriteEnvs only contains environment variables that Odigos is using for auto-instrumentation and may need to be overwritten
