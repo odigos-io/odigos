@@ -27,4 +27,4 @@ const PageContainer: FC<PropsWithChildren> = ({ children }) => {
   );
 };
 
-export default PageContainer;
+export { PageContainer };

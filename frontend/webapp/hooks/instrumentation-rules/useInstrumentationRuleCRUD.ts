@@ -45,7 +45,7 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
     onCompleted: (res, req) => {
       const id = res?.createInstrumentationRule?.ruleId;
       const type = deriveTypeFromRule(req?.variables?.instrumentationRule);
-      notifyUser(NOTIFICATION_TYPE.ERROR, CRUD.CREATE, `Rule "${type}" created`, id);
+      notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.CREATE, `Rule "${type}" created`, id);
       fetchInstrumentationRules();
     },
   });
@@ -57,7 +57,7 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
       onCompleted: (res, req) => {
         const id = res?.updateInstrumentationRule?.ruleId;
         const type = deriveTypeFromRule(req?.variables?.instrumentationRule);
-        notifyUser(NOTIFICATION_TYPE.ERROR, CRUD.UPDATE, `Rule "${type}" updated`, id);
+        notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.UPDATE, `Rule "${type}" updated`, id);
         fetchInstrumentationRules();
       },
     },
@@ -68,7 +68,7 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
     onCompleted: (res, req) => {
       const id = req?.variables?.ruleId;
       // TODO: find a way to derive the type, instead of ID in toast
-      notifyUser(NOTIFICATION_TYPE.ERROR, CRUD.DELETE, `Rule "${id}" deleted`, id);
+      notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.DELETE, `Rule "${id}" deleted`, id);
       fetchInstrumentationRules();
     },
   });

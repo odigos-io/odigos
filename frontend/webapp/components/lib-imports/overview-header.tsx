@@ -47,4 +47,4 @@ const OverviewHeader = () => {
   );
 };
 
-export default OverviewHeader;
+export { OverviewHeader };

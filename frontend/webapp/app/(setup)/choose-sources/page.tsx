@@ -4,9 +4,7 @@ import React, { useRef, useState } from 'react';
 import { useNamespace } from '@/hooks';
 import { ENTITY_TYPES } from '@odigos/ui-utils';
 import { Stepper } from '@odigos/ui-components';
-import { OnboardingStepperWrapper } from '@/components';
-import SetupHeader from '@/components/lib-imports/setup-header';
-import PageContainer from '@/components/providers/page-container';
+import { OnboardingStepperWrapper, PageContainer, SetupHeader } from '@/components';
 import { SourceSelectionForm, ToastList, type SourceSelectionFormRef } from '@odigos/ui-containers';
 
 export default function Page() {

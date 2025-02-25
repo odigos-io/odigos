@@ -69,4 +69,4 @@ const OverviewModalsAndDrawers = () => {
   );
 };
 
-export default OverviewModalsAndDrawers;
+export { OverviewModalsAndDrawers };

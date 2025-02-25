@@ -91,4 +91,4 @@ const SetupHeader: FC<SetupHeaderProps> = ({ formRef, entityType, isLoading, set
   );
 };
 
-export default SetupHeader;
+export { SetupHeader };
