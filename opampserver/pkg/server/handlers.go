@@ -51,12 +51,9 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, firstMessage *
 		}
 		return nil, serverToAgent, nil
 	}
-	c.logger.Info("firstMessage.AgentDescription: %v\n", firstMessage.AgentDescription)
 	var vpid int64
 	for _, attr := range firstMessage.AgentDescription.IdentifyingAttributes {
 		if attr.Key == string(semconv.ProcessPIDKey) || attr.Key == "process.vpid" {
-			c.logger.Info("attr.Value.GetIntValue(): %v\n", attr.Value.GetIntValue())
-			print("attr.Value.GetIntValue(): %v\n", attr.Value.GetIntValue())
 			vpid = attr.Value.GetIntValue()
 			break
 		}
