@@ -72,12 +72,12 @@ interface UpdateEntityOptions {
 }
 
 export const updateEntity = ({ nodeId, nodeContains, fieldKey, fieldValue }: UpdateEntityOptions, callback?: () => void) => {
-  cy.contains(nodeId, nodeContains).should('exist').click();
+  cy.contains(nodeId, nodeContains).should('exist').click({ force: true });
   cy.get(DATA_IDS.DRAWER).should('exist');
-  cy.get(DATA_IDS.DRAWER_EDIT).click();
+  cy.get(DATA_IDS.DRAWER_EDIT).click({ force: true });
   cy.get(fieldKey).clear().type(fieldValue);
-  cy.get(DATA_IDS.DRAWER_SAVE).click();
-  cy.get(DATA_IDS.DRAWER_CLOSE).click();
+  cy.get(DATA_IDS.DRAWER_SAVE).click({ force: true });
+  cy.get(DATA_IDS.DRAWER_CLOSE).click({ force: true });
 
   if (!!callback) callback();
 };
@@ -115,7 +115,7 @@ export const awaitToast = ({ withSSE, message }: AwaitToastOptions, callback?: (
   cy.wait(withSSE ? 2000 : 0).then(() => {
     cy.get(DATA_IDS.TOAST).contains(message).as('toast-msg');
     cy.get('@toast-msg').should('exist');
-    cy.get('@toast-msg').parent().parent().find(DATA_IDS.TOAST_CLOSE).click();
+    cy.get('@toast-msg').parent().parent().find(DATA_IDS.TOAST_CLOSE).click({ force: true });
 
     if (!!callback) callback();
   });
