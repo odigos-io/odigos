@@ -117,3 +117,17 @@ jobs:
           GITHUB_RUN_ID: ${{ github.run_id }}
         run: |
           curl -X POST -H 'Content-type: application/json' --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"ERROR: failed to publish odigos CLI", "tag":"${{ env.TAG }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+
+  trigger-openshift-certification:
+    needs: release-cli
+    runs-on: ubuntu-latest
+    steps:
+    - name: Trigger CLI Release in Odigos Main Repo
+      env:
+        ODIGOS_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || steps.vars.outputs.tag}}
+      run: |
+        curl -X POST \
+          -H "Accept: application/vnd.github.v3+json" \
+          -H "Authorization: token ${{ secrets.RELEASE_BOT_TOKEN }}" \
+          https://api.github.com/repos/odigos-io/odigos/dispatches \
+          -d '{"event_type": "openshift_preflight", "client_payload": {"tag": "${{ env.ODIGOS_TAG }}"}}'
