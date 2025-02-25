@@ -133,10 +133,10 @@ jobs:
             exit 1
           fi
 
-    - name: Trigger OpenShift Preflight job
-      run: |
-        curl -X POST \
-          -H "Accept: application/vnd.github.v3+json" \
-          -H "Authorization: token ${{ secrets.RELEASE_BOT_TOKEN }}" \
-          https://api.github.com/repos/odigos-io/odigos/dispatches \
-          -d '{"event_type": "openshift_preflight", "client_payload": {"tag": "${{ env.TAG }}"}}'
+      - name: Trigger OpenShift Preflight job
+        run: |
+          curl -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.RELEASE_BOT_TOKEN }}" \
+            https://api.github.com/repos/odigos-io/odigos/dispatches \
+            -d '{"event_type": "openshift_preflight", "client_payload": {"tag": "${{ env.TAG }}"}}'
