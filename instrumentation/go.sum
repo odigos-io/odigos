@@ -22,8 +22,8 @@ github.com/mdlayher/netlink v1.7.2 h1:/UtM3ofJap7Vl4QWCPDGXY8d3GIY2UGSDbK+QWmY8/
 github.com/mdlayher/netlink v1.7.2/go.mod h1:xraEF7uJbxLhc5fpHL4cPe221LI2bdttWlU+ZGLfQSw=
 github.com/mdlayher/socket v0.4.1 h1:eM9y2/jlbs1M615oshPQOHZzj6R6wMT7bX5NPiQvn2U=
 github.com/mdlayher/socket v0.4.1/go.mod h1:cAqeGjoufqdxWkD7DkpyS+wcefOtmu5OQ8KuoJGIReA=
-github.com/odigos-io/runtime-detector v0.0.7-0.20250224135019-f87bea180026 h1:RYBQLV1KFt5qY5cQTop82o4pdgATQRf6D4MTdAkcNbA=
-github.com/odigos-io/runtime-detector v0.0.7-0.20250224135019-f87bea180026/go.mod h1:59ei9q7pYZVs7ClPbB35vPj5AGpDYtENajLhQaikcGU=
+github.com/odigos-io/runtime-detector v0.0.7 h1:5jguo5bfvQ/pRz18inCB29sf+pOR+fhHhBh+MLNm1Pw=
+github.com/odigos-io/runtime-detector v0.0.7/go.mod h1:59ei9q7pYZVs7ClPbB35vPj5AGpDYtENajLhQaikcGU=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRIccs7FGNTlIRMkT8wgtp5eCXdBlqhYGL6U=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/rogpeppe/go-internal v1.13.1 h1:KvO1DLK/DRN07sQ1LQKScxyZJuNnedQ5/wKSR38lUII=

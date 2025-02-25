@@ -295,9 +295,6 @@ func (m *manager[ProcessDetails, ConfigGroup]) tryInstrument(ctx context.Context
 		return errNoInstrumentationFactory
 	}
 
-	// TODO: remove this log before merging
-	m.logger.Info("###### resolved process details", "pid", e.PID, "event type", e.EventType, "process details", pd)
-
 	// Fetch initial settings for the instrumentation
 	settings, err := m.handler.SettingsGetter.Settings(ctx, pd, otelDisto)
 	if err != nil {
