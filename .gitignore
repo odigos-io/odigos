@@ -13,6 +13,8 @@ serving-certs/
 **/LICENSES
 odigos
 gha-creds-*.json
+artifacts/
+preflight*
 
 **.tfstate
 **.tfstate.backup

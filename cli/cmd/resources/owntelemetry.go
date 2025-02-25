@@ -271,7 +271,7 @@ func NewOwnTelemetryResourceManager(client *kube.Client, ns string, config *comm
 
 func (a *ownTelemetryResourceManager) Name() string { return "OwnTelemetry Pipeline" }
 
-func (a *ownTelemetryResourceManager) InstallFromScratch(ctx context.Context) error {
+func (a *ownTelemetryResourceManager) InstallFromScratch(ctx context.Context, ownerReferences []metav1.OwnerReference) error {
 	var resources []kube.Object
 	if a.odigosTier == common.CloudOdigosTier {
 		resources = []kube.Object{
@@ -285,5 +285,5 @@ func (a *ownTelemetryResourceManager) InstallFromScratch(ctx context.Context) er
 			NewOwnTelemetryConfigMapDisabled(a.ns),
 		}
 	}
-	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, ownerReferences)
 }

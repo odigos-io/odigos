@@ -12,6 +12,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/getters"
+	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 	"github.com/spf13/cobra"
 )
 
@@ -78,7 +79,7 @@ var setConfigCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, config, currentOdigosVersion)
+		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, config, currentOdigosVersion, string(installationmethod.K8sInstallationMethodOdigosCli))
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Updating Config")
 		if err != nil {
 			l.Error(fmt.Errorf("failed to apply updated configuration: %w", err))

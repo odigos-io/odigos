@@ -57,26 +57,13 @@ and rollback any metadata changes made to your objects.`,
 				}
 			}
 
-			createKubeResourceWithLogging(ctx, "Uninstalling Odigos Deployments",
-				client, cmd, ns, uninstallDeployments)
-			createKubeResourceWithLogging(ctx, "Uninstalling Odigos DaemonSets",
-				client, cmd, ns, uninstallDaemonSets)
-			createKubeResourceWithLogging(ctx, "Uninstalling Odigos ConfigMaps",
-				client, cmd, ns, uninstallConfigMaps)
-			createKubeResourceWithLogging(ctx, "Uninstalling Odigos Services",
-				client, cmd, ns, uninstallServices)
-			createKubeResourceWithLogging(ctx, "Uninstalling Odigos RBAC",
-				client, cmd, ns, uninstallRBAC)
-			createKubeResourceWithLogging(ctx, "Uninstalling Odigos Secrets",
-				client, cmd, ns, uninstallSecrets)
-			createKubeResourceWithLogging(ctx, "Cleaning up Odigos node labels",
-				client, cmd, ns, cleanupNodeOdigosLabels)
+			UninstallOdigosResources(ctx, client, ns)
 
 			// The CLI is running in Kubernetes via a Helm chart [pre-delete hook] to clean up Odigos resources.
 			// Deleting the namespace during uninstallation will cause Helm to fail due to the loss of the release state.
 			if !k8sutils.IsRunningInKubernetes() {
 				createKubeResourceWithLogging(ctx, fmt.Sprintf("Uninstalling Namespace %s", ns),
-					client, cmd, ns, uninstallNamespace)
+					client, ns, uninstallNamespace)
 
 				waitForNamespaceDeletion(ctx, client, ns)
 			}
@@ -85,30 +72,7 @@ and rollback any metadata changes made to your objects.`,
 			fmt.Println("Odigos is not installed in any namespace. cleaning up any other Odigos resources that might be left in the cluster...")
 		}
 
-		l := log.Print("Rolling back odigos changes to pods")
-		err = rollbackPodChanges(ctx, client)
-		if err != nil {
-			l.Warn(err.Error())
-		} else {
-			l.Success()
-		}
-
-		l = log.Print("Rolling back odigos changes to namespaces")
-		err = rollbackNamespaceChanges(ctx, client)
-		if err != nil {
-			l.Warn(err.Error())
-		} else {
-			l.Success()
-		}
-
-		createKubeResourceWithLogging(ctx, "Uninstalling Odigos CRDs",
-			client, cmd, ns, uninstallCRDs)
-
-		createKubeResourceWithLogging(ctx, "Uninstalling Odigos MutatingWebhookConfigurations",
-			client, cmd, ns, uninstallMutatingWebhookConfigs)
-
-		createKubeResourceWithLogging(ctx, "Uninstalling Odigos ValidatingWebhookConfigurations",
-			client, cmd, ns, uninstallValidatingWebhookConfigs)
+		UninstallClusterResources(ctx, client, ns)
 
 		fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos uninstalled.\n")
 	},
@@ -126,6 +90,55 @@ odigos uninstall --kubeconfig <path-to-kubeconfig>
 odigos uninstall
 odigos install
 `,
+}
+
+// UninstallOdigosResources removes Odigos system resources from the Odigos namespace,
+// such as component deployments, daemonsets, configmaps, services, RBAC, and secrets.
+func UninstallOdigosResources(ctx context.Context, client *kube.Client, ns string) {
+	createKubeResourceWithLogging(ctx, "Uninstalling Odigos Deployments",
+		client, ns, uninstallDeployments)
+	createKubeResourceWithLogging(ctx, "Uninstalling Odigos DaemonSets",
+		client, ns, uninstallDaemonSets)
+	createKubeResourceWithLogging(ctx, "Uninstalling Odigos ConfigMaps",
+		client, ns, uninstallConfigMaps)
+	createKubeResourceWithLogging(ctx, "Uninstalling Odigos Services",
+		client, ns, uninstallServices)
+	createKubeResourceWithLogging(ctx, "Uninstalling Odigos RBAC",
+		client, ns, uninstallRBAC)
+	createKubeResourceWithLogging(ctx, "Uninstalling Odigos Secrets",
+		client, ns, uninstallSecrets)
+}
+
+// UninstallClusterResources removes cluster-wide Odigos resources, such as node labels,
+// pod and namespace changes, CRDs, and webhook configurations.
+func UninstallClusterResources(ctx context.Context, client *kube.Client, ns string) {
+	createKubeResourceWithLogging(ctx, "Cleaning up Odigos node labels",
+		client, ns, cleanupNodeOdigosLabels)
+
+	l := log.Print("Rolling back odigos changes to pods")
+	err := rollbackPodChanges(ctx, client)
+	if err != nil {
+		l.Warn(err.Error())
+	} else {
+		l.Success()
+	}
+
+	l = log.Print("Rolling back odigos changes to namespaces")
+	err = rollbackNamespaceChanges(ctx, client)
+	if err != nil {
+		l.Warn(err.Error())
+	} else {
+		l.Success()
+	}
+
+	createKubeResourceWithLogging(ctx, "Uninstalling Odigos CRDs",
+		client, ns, uninstallCRDs)
+
+	createKubeResourceWithLogging(ctx, "Uninstalling Odigos MutatingWebhookConfigurations",
+		client, ns, uninstallMutatingWebhookConfigs)
+
+	createKubeResourceWithLogging(ctx, "Uninstalling Odigos ValidatingWebhookConfigurations",
+		client, ns, uninstallValidatingWebhookConfigs)
 }
 
 func waitForNamespaceDeletion(ctx context.Context, client *kube.Client, ns string) {
@@ -334,7 +347,7 @@ func rollbackNamespaceChanges(ctx context.Context, client *kube.Client) error {
 	return errs
 }
 
-func uninstallDeployments(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+func uninstallDeployments(ctx context.Context, client *kube.Client, ns string) error {
 	list, err := client.AppsV1().Deployments(ns).List(ctx, metav1.ListOptions{
 		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
 			MatchLabels: labels.OdigosSystem,
@@ -354,7 +367,7 @@ func uninstallDeployments(ctx context.Context, cmd *cobra.Command, client *kube.
 	return nil
 }
 
-func uninstallServices(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+func uninstallServices(ctx context.Context, client *kube.Client, ns string) error {
 	list, err := client.CoreV1().Services(ns).List(ctx, metav1.ListOptions{
 		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
 			MatchLabels: labels.OdigosSystem,
@@ -374,7 +387,7 @@ func uninstallServices(ctx context.Context, cmd *cobra.Command, client *kube.Cli
 	return nil
 }
 
-func uninstallDaemonSets(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+func uninstallDaemonSets(ctx context.Context, client *kube.Client, ns string) error {
 	list, err := client.AppsV1().DaemonSets(ns).List(ctx, metav1.ListOptions{
 		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
 			MatchLabels: labels.OdigosSystem,
@@ -394,7 +407,7 @@ func uninstallDaemonSets(ctx context.Context, cmd *cobra.Command, client *kube.C
 	return nil
 }
 
-func uninstallConfigMaps(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+func uninstallConfigMaps(ctx context.Context, client *kube.Client, ns string) error {
 	list, err := client.CoreV1().ConfigMaps(ns).List(ctx, metav1.ListOptions{
 		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
 			MatchLabels: labels.OdigosSystem,
@@ -414,7 +427,7 @@ func uninstallConfigMaps(ctx context.Context, cmd *cobra.Command, client *kube.C
 	return nil
 }
 
-func uninstallCRDs(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+func uninstallCRDs(ctx context.Context, client *kube.Client, ns string) error {
 	// Clear finalizers from Source objects so they can be uninstalled
 	sources, err := client.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
 	for _, i := range sources.Items {
@@ -448,7 +461,7 @@ func uninstallCRDs(ctx context.Context, cmd *cobra.Command, client *kube.Client,
 	return nil
 }
 
-func uninstallMutatingWebhookConfigs(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+func uninstallMutatingWebhookConfigs(ctx context.Context, client *kube.Client, ns string) error {
 	list, err := client.AdmissionregistrationV1().MutatingWebhookConfigurations().List(ctx, metav1.ListOptions{
 		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
 			MatchLabels: labels.OdigosSystem,
@@ -468,7 +481,7 @@ func uninstallMutatingWebhookConfigs(ctx context.Context, cmd *cobra.Command, cl
 	return nil
 }
 
-func uninstallValidatingWebhookConfigs(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+func uninstallValidatingWebhookConfigs(ctx context.Context, client *kube.Client, ns string) error {
 	list, err := client.AdmissionregistrationV1().ValidatingWebhookConfigurations().List(ctx, metav1.ListOptions{
 		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
 			MatchLabels: labels.OdigosSystem,
@@ -488,7 +501,7 @@ func uninstallValidatingWebhookConfigs(ctx context.Context, cmd *cobra.Command, 
 	return nil
 }
 
-func uninstallRBAC(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+func uninstallRBAC(ctx context.Context, client *kube.Client, ns string) error {
 	list, err := client.RbacV1().ClusterRoles().List(ctx, metav1.ListOptions{
 		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
 			MatchLabels: labels.OdigosSystem,
@@ -524,7 +537,7 @@ func uninstallRBAC(ctx context.Context, cmd *cobra.Command, client *kube.Client,
 	return nil
 }
 
-func cleanupNodeOdigosLabels(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+func cleanupNodeOdigosLabels(ctx context.Context, client *kube.Client, ns string) error {
 	nodeSet := make(map[string]struct{})
 
 	// Step 1: Get OSS nodes
@@ -574,7 +587,7 @@ func cleanupNodeOdigosLabels(ctx context.Context, cmd *cobra.Command, client *ku
 	return nil
 }
 
-func uninstallSecrets(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+func uninstallSecrets(ctx context.Context, client *kube.Client, ns string) error {
 	list, err := client.CoreV1().Secrets(ns).List(ctx, metav1.ListOptions{
 		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
 			MatchLabels: labels.OdigosSystem,
@@ -594,7 +607,7 @@ func uninstallSecrets(ctx context.Context, cmd *cobra.Command, client *kube.Clie
 	return nil
 }
 
-func uninstallNamespace(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+func uninstallNamespace(ctx context.Context, client *kube.Client, ns string) error {
 	err := client.CoreV1().Namespaces().Delete(ctx, ns, metav1.DeleteOptions{})
 	return err
 }
