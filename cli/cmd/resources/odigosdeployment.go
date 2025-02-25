@@ -3,6 +3,7 @@ package resources
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/odigos-io/odigos/api"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
@@ -29,6 +30,7 @@ func NewOdigosDeploymentConfigMap(ns string, odigosVersion string, odigosTier st
 			k8sconsts.OdigosDeploymentConfigMapVersionKey:            odigosVersion,
 			k8sconsts.OdigosDeploymentConfigMapTierKey:               odigosTier,
 			k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey: string(installationmethod.K8sInstallationMethodOdigosCli),
+			k8sconsts.OdigosDeploymentConfigMapOdigosDeploymentIDKey: uuid.New().String(),
 		},
 	}
 }
