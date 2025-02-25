@@ -6,7 +6,7 @@ export const visitPage = (path: string, callback?: () => void) => {
 
   // Wait for the page to load.
   // On rare occasions, the page might still be blank, and cypress would attempt to interact with it, triggering false errors...
-  cy.wait(500).then(() => {
+  cy.wait(1000).then(() => {
     if (!!callback) callback();
   });
 };
@@ -72,12 +72,12 @@ interface UpdateEntityOptions {
 }
 
 export const updateEntity = ({ nodeId, nodeContains, fieldKey, fieldValue }: UpdateEntityOptions, callback?: () => void) => {
-  cy.contains(nodeId, nodeContains).should('exist').click({ force: true });
+  cy.contains(nodeId, nodeContains).should('exist').click();
   cy.get(DATA_IDS.DRAWER).should('exist');
-  cy.get(DATA_IDS.DRAWER_EDIT).click({ force: true });
+  cy.get(DATA_IDS.DRAWER_EDIT).click();
   cy.get(fieldKey).clear().type(fieldValue);
-  cy.get(DATA_IDS.DRAWER_SAVE).click({ force: true });
-  cy.get(DATA_IDS.DRAWER_CLOSE).click({ force: true });
+  cy.get(DATA_IDS.DRAWER_SAVE).click();
+  cy.get(DATA_IDS.DRAWER_CLOSE).click();
 
   if (!!callback) callback();
 };
