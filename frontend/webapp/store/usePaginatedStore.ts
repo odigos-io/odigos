@@ -1,61 +1,135 @@
 import { create } from 'zustand';
-import { type FetchedSource } from '@/@types';
-import { type WorkloadId } from '@odigos/ui-utils';
+import { ENTITY_TYPES, getEntityId, type WorkloadId } from '@odigos/ui-utils';
+import type { FetchedAction, FetchedDestination, FetchedInstrumentationRule, FetchedSource } from '@/@types';
 
 interface IPaginatedState {
+  sourcesPaginating: boolean;
   sources: FetchedSource[];
-  sourcesNotFinished: boolean;
-  sourcesFetching: boolean;
+
+  destinationsPaginating: boolean;
+  destinations: FetchedDestination[];
+
+  actionsPaginating: boolean;
+  actions: FetchedAction[];
+
+  instrumentationRulesPaginating: boolean;
+  instrumentationRules: FetchedInstrumentationRule[];
 }
 
+type EntityId = string | WorkloadId;
+type EntityItems = IPaginatedState['sources'] | IPaginatedState['destinations'] | IPaginatedState['actions'] | IPaginatedState['instrumentationRules'];
+
 interface IPaginatedStateSetters {
-  setSources: (payload: IPaginatedState['sources']) => void;
-  addSources: (payload: IPaginatedState['sources']) => void;
-  updateSource: (id: WorkloadId, payload: Partial<IPaginatedState['sources'][0]>) => void;
-  removeSource: (id: WorkloadId) => void;
-  setSourcesNotFinished: (bool: boolean) => void;
-  setSourcesFetching: (bool: boolean) => void;
+  setPaginating: (entityType: ENTITY_TYPES, bool: boolean) => void;
+  setPaginated: (entityType: ENTITY_TYPES, entities: EntityItems) => void;
+  addPaginated: (entityType: ENTITY_TYPES, entities: EntityItems) => void;
+  removePaginated: (entityType: ENTITY_TYPES, entityIds: EntityId[]) => void;
 }
 
 export const usePaginatedStore = create<IPaginatedState & IPaginatedStateSetters>((set) => ({
+  sourcesPaginating: false,
   sources: [],
-  setSources: (payload) => set({ sources: payload }),
-  addSources: (payload) =>
+
+  destinationsPaginating: false,
+  destinations: [],
+
+  actionsPaginating: false,
+  actions: [],
+
+  instrumentationRulesPaginating: false,
+  instrumentationRules: [],
+
+  setPaginating: (entityType, bool) => {
+    const KEY =
+      entityType === ENTITY_TYPES.SOURCE
+        ? 'sourcesPaginating'
+        : entityType === ENTITY_TYPES.DESTINATION
+        ? 'destinationsPaginating'
+        : entityType === ENTITY_TYPES.ACTION
+        ? 'actionsPaginating'
+        : entityType === ENTITY_TYPES.INSTRUMENTATION_RULE
+        ? 'instrumentationRulesPaginating'
+        : 'NONE';
+
+    if (KEY === 'NONE') return;
+
+    set({ [KEY]: bool });
+  },
+
+  setPaginated: (entityType, payload) => {
+    const KEY =
+      entityType === ENTITY_TYPES.SOURCE
+        ? 'sources'
+        : entityType === ENTITY_TYPES.DESTINATION
+        ? 'destinations'
+        : entityType === ENTITY_TYPES.ACTION
+        ? 'actions'
+        : entityType === ENTITY_TYPES.INSTRUMENTATION_RULE
+        ? 'instrumentationRules'
+        : 'NONE';
+
+    if (KEY === 'NONE') return;
+
+    set({ [KEY]: payload });
+  },
+
+  addPaginated: (entityType, entities) => {
+    const KEY =
+      entityType === ENTITY_TYPES.SOURCE
+        ? 'sources'
+        : entityType === ENTITY_TYPES.DESTINATION
+        ? 'destinations'
+        : entityType === ENTITY_TYPES.ACTION
+        ? 'actions'
+        : entityType === ENTITY_TYPES.INSTRUMENTATION_RULE
+        ? 'instrumentationRules'
+        : 'NONE';
+
+    if (KEY === 'NONE') return;
+
     set((state) => {
-      const prev = [...state.sources];
-      const noDuplicates = [
-        ...payload.filter((newItem) => !state.sources.find((existingItem) => existingItem.namespace === newItem.namespace && existingItem.name === newItem.name && existingItem.kind === newItem.kind)),
-      ];
+      const prev = [...state[KEY]];
 
-      prev.push(...noDuplicates);
-      return { sources: prev };
-    }),
-  updateSource: (id, payload) =>
+      entities.forEach((newItem) => {
+        const foundIdx = prev.findIndex((oldItem) => JSON.stringify(getEntityId(oldItem)) === JSON.stringify(getEntityId(newItem)));
+
+        if (foundIdx !== -1) {
+          prev[foundIdx] = { ...prev[foundIdx], ...newItem };
+        } else {
+          prev.push(newItem);
+        }
+      });
+
+      return { [KEY]: prev };
+    });
+  },
+
+  removePaginated: (entityType, entityIds) => {
+    const KEY =
+      entityType === ENTITY_TYPES.SOURCE
+        ? 'sources'
+        : entityType === ENTITY_TYPES.DESTINATION
+        ? 'destinations'
+        : entityType === ENTITY_TYPES.ACTION
+        ? 'actions'
+        : entityType === ENTITY_TYPES.INSTRUMENTATION_RULE
+        ? 'instrumentationRules'
+        : 'NONE';
+
+    if (KEY === 'NONE') return;
+
     set((state) => {
-      const prev = [...state.sources];
-      const foundIdx = prev.findIndex(({ namespace, name, kind }) => namespace === id.namespace && name === id.name && kind === id.kind);
+      const prev = [...state[KEY]];
 
-      if (foundIdx !== -1) {
-        prev[foundIdx] = { ...prev[foundIdx], ...payload };
-      }
+      entityIds.forEach((id) => {
+        const foundIdx = prev.findIndex((entity) => JSON.stringify(getEntityId(entity)) === (entityType === ENTITY_TYPES.SOURCE ? JSON.stringify(getEntityId(id as WorkloadId)) : id));
 
-      return { sources: prev };
-    }),
-  removeSource: (id) =>
-    set((state) => {
-      const prev = [...state.sources];
-      const foundIdx = prev.findIndex(({ namespace, name, kind }) => namespace === id.namespace && name === id.name && kind === id.kind);
+        if (foundIdx !== -1) {
+          prev.splice(foundIdx, 1);
+        }
+      });
 
-      if (foundIdx !== -1) {
-        prev.splice(foundIdx, 1);
-      }
-
-      return { sources: prev };
-    }),
-
-  sourcesNotFinished: false,
-  setSourcesNotFinished: (bool) => set({ sourcesNotFinished: bool }),
-
-  sourcesFetching: false,
-  setSourcesFetching: (bool) => set({ sourcesFetching: bool }),
+      return { [KEY]: prev };
+    });
+  },
 }));

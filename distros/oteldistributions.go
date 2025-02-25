@@ -20,21 +20,18 @@ type communityDefaulter struct{}
 
 var _ Defaulter = &communityDefaulter{}
 
-// TODO: remove/rename this once we have an enterprise instrumentor
-func NewCommunityDefaulter() *communityDefaulter {
+func NewCommunityDefaulter() Defaulter {
 	return &communityDefaulter{}
 }
 
-// TODO: remove this once we have an enterprise instrumentor
-func NewOnPremDefaulter() *onPremDefaulter {
-	return &onPremDefaulter{}
+func NewCommunityGetter() (*Getter, error) {
+	return NewGetterFromFS(yamls.GetFS())
 }
 
-// TODO: once we split the distros package this should be renamed
-func NewGetter() (*Getter, error) {
+func NewGetterFromFS(fs embed.FS) (*Getter, error) {
 	g := Getter{}
 
-	distrosByName, err := getDistrosMap(yamls.GetFS())
+	distrosByName, err := GetDistrosMap(fs)
 	if err != nil {
 		return nil, err
 	}
@@ -54,28 +51,22 @@ func (c *communityDefaulter) GetDefaultDistroNames() map[common.ProgrammingLangu
 	}
 }
 
-// TODO: remove this once we have an enterprise instrumentor
-type onPremDefaulter struct{}
-
-var _ Defaulter = &onPremDefaulter{}
-
-func (o *onPremDefaulter) GetDefaultDistroNames() map[common.ProgrammingLanguage]string {
-	return map[common.ProgrammingLanguage]string{
-		common.JavascriptProgrammingLanguage: "nodejs-enterprise",
-		common.PythonProgrammingLanguage:     "python-enterprise",
-		common.DotNetProgrammingLanguage:     "dotnet-community",
-		common.JavaProgrammingLanguage:       "java-enterprise",
-		common.GoProgrammingLanguage:         "golang-enterprise",
-		common.MySQLProgrammingLanguage:      "mysql-enterprise",
-	}
-}
-
 type Getter struct {
 	distrosByName map[string]*distro.OtelDistro
 }
 
 func (g *Getter) GetDistroByName(distroName string) *distro.OtelDistro {
 	return g.distrosByName[distroName]
+}
+
+// GetAllDistros returns all the distributions available in the getter.
+// used in the enterprise repo
+func (g *Getter) GetAllDistros() []*distro.OtelDistro {
+	distros := make([]*distro.OtelDistro, 0, len(g.distrosByName))
+	for _, d := range g.distrosByName {
+		distros = append(distros, d)
+	}
+	return distros
 }
 
 type Provider struct {
@@ -125,7 +116,7 @@ type distroResource struct {
 	Spec       distro.OtelDistro `json:"spec"`
 }
 
-func getDistrosMap(fs embed.FS) (map[string]*distro.OtelDistro, error) {
+func GetDistrosMap(fs embed.FS) (map[string]*distro.OtelDistro, error) {
 	files, err := fs.ReadDir(".")
 	if err != nil {
 		return nil, err

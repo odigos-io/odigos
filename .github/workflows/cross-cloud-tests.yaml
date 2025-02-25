@@ -36,23 +36,24 @@ jobs:
       - name: Build and Tag Docker Images
         env:
           COMMIT_HASH: ${{ github.sha }}
+          DOCKER_REGISTRY: registry.odigos.io
         run: |
           # Build images
           make build-images TAG=${COMMIT_HASH}
           # Tag images for public ECR
-          docker tag keyval/odigos-collector:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-collector:${COMMIT_HASH}
-          docker tag keyval/odigos-instrumentor:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-instrumentor:${COMMIT_HASH}
-          docker tag keyval/odigos-ui:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-ui:${COMMIT_HASH}
-          docker tag keyval/odigos-scheduler:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-scheduler:${COMMIT_HASH}
-          docker tag keyval/odigos-autoscaler:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-autoscaler:${COMMIT_HASH}
-          docker tag keyval/odigos-odiglet:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/keyval/odigos-odiglet:${COMMIT_HASH}
+          docker tag ${DOCKER_REGISTRY}/odigos-collector:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/odigos-collector:${COMMIT_HASH}
+          docker tag ${DOCKER_REGISTRY}/odigos-instrumentor:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/odigos-instrumentor:${COMMIT_HASH}
+          docker tag ${DOCKER_REGISTRY}/odigos-ui:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/odigos-ui:${COMMIT_HASH}
+          docker tag ${DOCKER_REGISTRY}/odigos-scheduler:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/odigos-scheduler:${COMMIT_HASH}
+          docker tag ${DOCKER_REGISTRY}/odigos-autoscaler:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/odigos-autoscaler:${COMMIT_HASH}
+          docker tag ${DOCKER_REGISTRY}/odigos-odiglet:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/odigos-odiglet:${COMMIT_HASH}
 
-          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-collector:${COMMIT_HASH}
-          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-instrumentor:${COMMIT_HASH}
-          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-ui:${COMMIT_HASH}
-          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-scheduler:${COMMIT_HASH}
-          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-autoscaler:${COMMIT_HASH}
-          docker push public.ecr.aws/y2v0v6s7/keyval/odigos-odiglet:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/odigos-collector:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/odigos-instrumentor:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/odigos-ui:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/odigos-scheduler:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/odigos-autoscaler:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/odigos-odiglet:${COMMIT_HASH}
 
   test:
     permissions:
@@ -64,6 +65,7 @@ jobs:
       matrix:
         cloud-provider: [aks] # Add or remove providers as needed [TODO: later add -> eks + gke]
         test-scenario: [multi-apps, helm-chart] # Add or remove scenarios as needed
+      fail-fast: false # In case 1 matrix job fails, the other matrix jobs will continue to run
 
     steps:
       - name: Configure AWS credentials from OIDC
@@ -212,9 +214,9 @@ jobs:
         id: extract_tag
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
 
-      # Notify Slack on Failure or Cancellation
+      # Notify Slack on Failure
       - name: Notify Slack on Failure or Cancellation
-        if: ${{ failure() || cancelled() }}
+        if: ${{ failure() }}
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.CLOUD_PROVIDERS_TESTS_WEBHOOK_URL }}
           GITHUB_REPOSITORY: ${{ github.repository }}
