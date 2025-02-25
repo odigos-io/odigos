@@ -58,3 +58,15 @@ updates:
     schedule:
       day: sunday
       interval: weekly
+
+  - package-ecosystem: docker
+    directories:
+      - /
+      - /collector
+      - /frontend
+      - /odiglet
+    schedule:
+      day: sunday
+      interval: weekly
+    allow:
+      - dependency-name: 'registry.access.redhat.com/ubi9*'
