@@ -19,9 +19,9 @@ spec:
     - name: frontend
       resources:
         limits:
-          instrumentation.odigos.io/java-native-community: "1"
+          instrumentation.odigos.io/generic: "1"
         requests:
-          instrumentation.odigos.io/java-native-community: "1"
+          instrumentation.odigos.io/generic: "1"
 status:
   containerStatuses:
     - name: frontend
