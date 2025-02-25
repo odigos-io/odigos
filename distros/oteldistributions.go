@@ -59,6 +59,16 @@ func (g *Getter) GetDistroByName(distroName string) *distro.OtelDistro {
 	return g.distrosByName[distroName]
 }
 
+// GetAllDistros returns all the distributions available in the getter.
+// used in the enterprise repo
+func (g *Getter) GetAllDistros() []*distro.OtelDistro {
+	distros := make([]*distro.OtelDistro, 0, len(g.distrosByName))
+	for _, d := range g.distrosByName {
+		distros = append(distros, d)
+	}
+	return distros
+}
+
 type Provider struct {
 	Defaulter
 	*Getter
