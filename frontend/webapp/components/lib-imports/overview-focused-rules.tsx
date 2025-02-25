@@ -30,7 +30,7 @@ const OverviewFocusedRules = () => {
 
       <MainContent>
         <SideNav
-          defaultSelectedId={NAV_ICON_IDS.SOURCES}
+          defaultSelectedId={NAV_ICON_IDS.INSTRUMENTATION_RULES}
           onClickOverview={() => router.push(ROUTES.OVERVIEW)}
           onClickRules={() => router.push(ROUTES.OVERVIEW_INSTRUMENTATION_RULES)}
           onClickSources={() => router.push(ROUTES.OVERVIEW_SOURCES)}
