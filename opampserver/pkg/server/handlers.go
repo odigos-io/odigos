@@ -42,7 +42,6 @@ type opampAgentAttributesKeys struct {
 
 func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, firstMessage *protobufs.AgentToServer) (*connection.ConnectionInfo, *protobufs.ServerToAgent, error) {
 	if firstMessage.AgentDescription == nil {
-		fmt.Print("1111111")
 		// first message must be agent description.
 		// it is, however, possible that the OpAMP server restarted, and the agent is trying to reconnect.
 		// in which case we send back flag and request full status update.
@@ -52,16 +51,18 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, firstMessage *
 		}
 		return nil, serverToAgent, nil
 	}
-
-	var pid int64
+	c.logger.Info("firstMessage.AgentDescription: %v\n", firstMessage.AgentDescription)
+	var vpid int64
 	for _, attr := range firstMessage.AgentDescription.IdentifyingAttributes {
-		if attr.Key == string(semconv.ProcessPIDKey) {
-			pid = attr.Value.GetIntValue()
+		if attr.Key == string(semconv.ProcessPIDKey) || attr.Key == "process.vpid" {
+			c.logger.Info("attr.Value.GetIntValue(): %v\n", attr.Value.GetIntValue())
+			print("attr.Value.GetIntValue(): %v\n", attr.Value.GetIntValue())
+			vpid = attr.Value.GetIntValue()
 			break
 		}
 	}
-	if pid == 0 {
-		return nil, nil, fmt.Errorf("missing pid in agent description")
+	if vpid == 0 {
+		return nil, nil, fmt.Errorf("missing container pid in agent description")
 	}
 
 	attrs, err := extractOpampAgentAttributes(firstMessage.AgentDescription)
@@ -108,7 +109,7 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, firstMessage *
 		Workload:                 podWorkload,
 		Pod:                      pod,
 		ContainerName:            k8sAttributes.ContainerName,
-		Pid:                      pid,
+		Pid:                      vpid,
 		ProgrammingLanguage:      attrs.ProgrammingLanguage,
 		InstrumentedAppName:      instrumentedAppName,
 		AgentRemoteConfig:        fullRemoteConfig,
