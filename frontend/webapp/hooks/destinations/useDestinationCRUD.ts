@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useConfig } from '../config';
 import { GET_DESTINATIONS } from '@/graphql';
 import { useMutation, useQuery } from '@apollo/client';
@@ -41,8 +42,8 @@ const mapFetched = (items: FetchedDestination[]): Destination[] => {
 
 export const useDestinationCRUD = (): UseDestinationCrud => {
   const { data: config } = useConfig();
+  const { addNotification } = useNotificationStore();
   const { addPendingItems, removePendingItems } = usePendingStore();
-  const { addNotification, removeNotifications } = useNotificationStore();
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
     addNotification({ type, title, message, crdType: ENTITY_TYPES.DESTINATION, target: id ? getSseTargetFromId(id, ENTITY_TYPES.DESTINATION) : undefined, hideFromHistory });
@@ -58,6 +59,9 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
 
   const [mutateCreate, cState] = useMutation<{ createNewDestination: { id: string } }, { destination: DestinationInput }>(CREATE_DESTINATION, {
     onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.CREATE, error.cause?.message || error.message),
+    onCompleted: () => {
+      // We wait for SSE
+    },
   });
 
   const [mutateUpdate, uState] = useMutation<{ updateDestination: { id: string } }, { id: string; destination: DestinationInput }>(UPDATE_DESTINATION, {
@@ -77,14 +81,15 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
 
   const [mutateDelete, dState] = useMutation<{ deleteDestination: boolean }, { id: string }>(DELETE_DESTINATION, {
     onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.DELETE, error.cause?.message || error.message),
-    onCompleted: (res, req) => {
-      const id = req?.variables?.id;
-      removeNotifications(getSseTargetFromId(id, ENTITY_TYPES.DESTINATION));
+    onCompleted: () => {
+      // We wait for SSE
     },
   });
 
+  const mapped = useMemo(() => mapFetched(data?.computePlatform?.destinations || []), [data?.computePlatform?.destinations]);
+
   return {
-    destinations: mapFetched(data?.computePlatform?.destinations || []),
+    destinations: mapped,
     destinationsLoading: isFetching || cState.loading || uState.loading || dState.loading,
     fetchDestinations,
 
@@ -92,7 +97,7 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
-        notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Creating destination...', undefined, true);
+        notifyUser(NOTIFICATION_TYPE.DEFAULT, 'Pending', 'Creating destination...', undefined, true);
         addPendingItems([{ entityType: ENTITY_TYPES.DESTINATION, entityId: undefined }]);
         mutateCreate({ variables: { destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
       }
@@ -101,7 +106,7 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
-        notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Updating destination...', undefined, true);
+        notifyUser(NOTIFICATION_TYPE.DEFAULT, 'Pending', 'Updating destination...', undefined, true);
         addPendingItems([{ entityType: ENTITY_TYPES.DESTINATION, entityId: id }]);
         mutateUpdate({ variables: { id, destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
       }
@@ -110,7 +115,7 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
-        notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Deleting destination...', undefined, true);
+        notifyUser(NOTIFICATION_TYPE.DEFAULT, 'Pending', 'Deleting destination...', undefined, true);
         addPendingItems([{ entityType: ENTITY_TYPES.DESTINATION, entityId: id }]);
         mutateDelete({ variables: { id } });
       }

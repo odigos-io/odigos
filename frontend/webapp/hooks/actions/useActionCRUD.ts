@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useConfig } from '../config';
 import { GET_ACTIONS } from '@/graphql';
 import { useMutation, useQuery } from '@apollo/client';
@@ -128,7 +129,7 @@ const mapFormToInput = (action: ActionFormData): ActionInput => {
 
 export const useActionCRUD = (): UseActionCrud => {
   const { data: config } = useConfig();
-  const { addNotification, removeNotifications } = useNotificationStore();
+  const { addNotification } = useNotificationStore();
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
     addNotification({ type, title, message, crdType: ENTITY_TYPES.ACTION, target: id ? getSseTargetFromId(id, ENTITY_TYPES.ACTION) : undefined, hideFromHistory });
@@ -167,14 +168,15 @@ export const useActionCRUD = (): UseActionCrud => {
     onCompleted: (res, req) => {
       const id = req?.variables?.id;
       const type = req?.variables?.actionType;
-      removeNotifications(getSseTargetFromId(id, ENTITY_TYPES.ACTION));
       notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.DELETE, `Action "${type}" deleted`, id);
       fetchActions();
     },
   });
 
+  const mapped = useMemo(() => mapFetched(data?.computePlatform?.actions || []), [data?.computePlatform?.actions]);
+
   return {
-    actions: mapFetched(data?.computePlatform?.actions || []),
+    actions: mapped,
     actionsLoading: isFetching || cState.loading || uState.loading || dState.loading,
     fetchActions,
 
