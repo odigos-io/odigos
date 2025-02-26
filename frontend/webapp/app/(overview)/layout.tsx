@@ -38,7 +38,7 @@ function OverviewLayout({ children }: PropsWithChildren) {
 
   const { sources } = useSourceCRUD();
   const { actions } = useActionCRUD();
-  const { allNamespaces } = useNamespace();
+  const { namespaces } = useNamespace();
   const { destinations } = useDestinationCRUD();
   const { instrumentationRules } = useInstrumentationRuleCRUD();
 
@@ -48,7 +48,7 @@ function OverviewLayout({ children }: PropsWithChildren) {
         <OverviewHeader />
 
         <ContentWithActions>
-          <DataFlowActionsMenu namespaces={allNamespaces} sources={sources} destinations={destinations} actions={actions} instrumentationRules={instrumentationRules} />
+          <DataFlowActionsMenu namespaces={namespaces} sources={sources} destinations={destinations} actions={actions} instrumentationRules={instrumentationRules} />
           <ContentUnderActions>
             <SideNav
               defaultSelectedId={
@@ -64,11 +64,28 @@ function OverviewLayout({ children }: PropsWithChildren) {
                   ? NAV_ICON_IDS.INSTRUMENTATION_RULES
                   : undefined
               }
-              onClickOverview={() => router.push(ROUTES.OVERVIEW)}
-              onClickRules={() => router.push(ROUTES.OVERVIEW_INSTRUMENTATION_RULES)}
-              onClickSources={() => router.push(ROUTES.OVERVIEW_SOURCES)}
-              onClickActions={() => router.push(ROUTES.OVERVIEW_ACTIONS)}
-              onClickDestinations={() => router.push(ROUTES.OVERVIEW_DESTINATIONS)}
+              onClickId={(id) => {
+                switch (id) {
+                  case NAV_ICON_IDS.OVERVIEW:
+                    router.push(ROUTES.OVERVIEW);
+                    break;
+                  case NAV_ICON_IDS.SOURCES:
+                    router.push(ROUTES.OVERVIEW_SOURCES);
+                    break;
+                  case NAV_ICON_IDS.DESTINATIONS:
+                    router.push(ROUTES.OVERVIEW_DESTINATIONS);
+                    break;
+                  case NAV_ICON_IDS.ACTIONS:
+                    router.push(ROUTES.OVERVIEW_ACTIONS);
+                    break;
+                  case NAV_ICON_IDS.INSTRUMENTATION_RULES:
+                    router.push(ROUTES.OVERVIEW_INSTRUMENTATION_RULES);
+                    break;
+                  default:
+                    console.warn('unhandled nav icon id', id);
+                    break;
+                }
+              }}
             />
             {children}
           </ContentUnderActions>

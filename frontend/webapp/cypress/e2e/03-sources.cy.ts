@@ -36,17 +36,11 @@ describe('Sources CRUD', () => {
           cy.get(DATA_IDS.SELECT_NAMESPACE).get(DATA_IDS.SELECT_SOURCE(sourceName)).should('exist');
         });
 
-        // Unselect "future apps"
-        cy.get(DATA_IDS.SELECT_NAMESPACE).find('div').contains(TEXTS.INCLUDE_FUTURE_APPS).click();
+        cy.contains('button', BUTTONS.DONE).click();
 
-        // Wait for the "future apps" toggle to take effect
-        cy.wait(500).then(() => {
-          cy.contains('button', BUTTONS.DONE).click();
-
-          // Wait for sources to instrument
-          cy.wait('@gql').then(() => {
-            awaitToast({ withSSE: true, message: TEXTS.NOTIF_SOURCES_CREATED(totalEntities) });
-          });
+        // Wait for sources to instrument
+        cy.wait('@gql').then(() => {
+          awaitToast({ withSSE: true, message: TEXTS.NOTIF_SOURCES_CREATED(totalEntities) });
         });
       });
     });

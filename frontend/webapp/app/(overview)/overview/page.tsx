@@ -1,8 +1,7 @@
 'use client';
 
 import React from 'react';
-import type { Source } from '@odigos/ui-utils';
-import { DataFlow, MultiSourceControl, type SourceSelectionFormData } from '@odigos/ui-containers';
+import { DataFlow, MultiSourceControl } from '@odigos/ui-containers';
 import { useActionCRUD, useDestinationCRUD, useInstrumentationRuleCRUD, useMetrics, useSourceCRUD } from '@/hooks';
 
 export default function Page() {
@@ -26,19 +25,7 @@ export default function Page() {
         instrumentationRulesLoading={instrumentationRulesLoading}
         metrics={metrics}
       />
-
-      <MultiSourceControl
-        totalSourceCount={sources.length}
-        uninstrumentSources={(payload) => {
-          const inp: SourceSelectionFormData = {};
-
-          Object.entries(payload).forEach(([namespace, sources]: [string, Source[]]) => {
-            inp[namespace] = sources.map(({ name, kind }) => ({ name, kind, selected: false }));
-          });
-
-          persistSources(inp, {});
-        }}
-      />
+      <MultiSourceControl totalSourceCount={sources.length} uninstrumentSources={(payload) => persistSources(payload, {})} />
     </>
   );
 }
