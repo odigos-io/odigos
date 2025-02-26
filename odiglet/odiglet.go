@@ -38,14 +38,14 @@ const (
 )
 
 // New creates a new Odiglet instance.
-func New(clientset *kubernetes.Clientset, deviceInjectionCallbacks instrumentation.OtelSdksLsf, factories map[commonInstrumentation.OtelDistribution]commonInstrumentation.Factory) (*Odiglet, error) {
+func New(clientset *kubernetes.Clientset, deviceInjectionCallbacks instrumentation.OtelSdksLsf, instrumentationMgrOpts ebpf.InstrumentationManagerOptions) (*Odiglet, error) {
 	mgr, err := kube.CreateManager()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create controller-runtime manager %w", err)
 	}
 
 	configUpdates := make(chan commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup], configUpdatesBufferSize)
-	ebpfManager, err := ebpf.NewManager(mgr.GetClient(), log.Logger, factories, configUpdates)
+	ebpfManager, err := ebpf.NewManager(mgr.GetClient(), log.Logger, instrumentationMgrOpts, configUpdates)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ebpf manager %w", err)
 	}

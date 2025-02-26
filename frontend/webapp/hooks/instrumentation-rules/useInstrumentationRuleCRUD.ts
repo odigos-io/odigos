@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useConfig } from '../config';
 import { GET_INSTRUMENTATION_RULES } from '@/graphql';
 import { useMutation, useQuery } from '@apollo/client';
@@ -25,7 +26,7 @@ const mapFetched = (items: FetchedInstrumentationRule[]): InstrumentationRule[] 
 
 export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
   const { data: config } = useConfig();
-  const { addNotification, removeNotifications } = useNotificationStore();
+  const { addNotification } = useNotificationStore();
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
     addNotification({ type, title, message, crdType: ENTITY_TYPES.INSTRUMENTATION_RULE, target: id ? getSseTargetFromId(id, ENTITY_TYPES.INSTRUMENTATION_RULE) : undefined, hideFromHistory });
@@ -66,15 +67,16 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
     onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.DELETE, error.cause?.message || error.message),
     onCompleted: (res, req) => {
       const id = req?.variables?.ruleId;
-      removeNotifications(getSseTargetFromId(id, ENTITY_TYPES.INSTRUMENTATION_RULE));
       // TODO: find a way to derive the type, instead of ID in toast
       notifyUser(NOTIFICATION_TYPE.ERROR, CRUD.DELETE, `Rule "${id}" deleted`, id);
       fetchInstrumentationRules();
     },
   });
 
+  const mapped = useMemo(() => mapFetched(data?.computePlatform?.instrumentationRules || []), [data?.computePlatform?.instrumentationRules]);
+
   return {
-    instrumentationRules: mapFetched(data?.computePlatform?.instrumentationRules || []),
+    instrumentationRules: mapped,
     instrumentationRulesLoading: isFetching || cState.loading || uState.loading || dState.loading,
     fetchInstrumentationRules,
 

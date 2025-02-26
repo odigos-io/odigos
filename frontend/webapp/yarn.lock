@@ -395,10 +395,10 @@
   resolved "https://registry.yarnpkg.com/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz#3dc35ba0f1e66b403c00b39344f870298ebb1c8e"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
-"@odigos/ui-components@^0.0.75":
-  version "0.0.75"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-components/-/ui-components-0.0.75.tgz#2c7be34c73ebbaefd2bf64aaf4071593ff875e9b"
-  integrity sha512-vHP67g6llcXmR12dDkgwQ9Myrkncfczl78Pg5o9TvmGHvIxTQ0JPDn6CnESSka0DlEa3jxqLy1p4tmhdTRPqeg==
+"@odigos/ui-components@^0.0.76":
+  version "0.0.76"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-components/-/ui-components-0.0.76.tgz#211cc52ac8b3188f80714e0fc9c0c2f9ed5746da"
+  integrity sha512-vHSx1dTnf7RIWULNLSxdUotXumZYtNzNvjyXiY/l4k7qgfQMY6fPWvSWYKymK8zVJ7gyrpV50QugqnGO+o3Ppw==
   dependencies:
     "@odigos/ui-icons" "^0.0.13"
     "@odigos/ui-theme" "^0.0.16"
@@ -409,15 +409,15 @@
     react-lottie "^1.2.10"
     styled-components "^6.1.15"
 
-"@odigos/ui-containers@^0.0.59":
-  version "0.0.59"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-containers/-/ui-containers-0.0.59.tgz#c75ba92b3fdb934b5b71d8f932cf0af04cdc7802"
-  integrity sha512-fhj3SisFtgwa15TuQhq4E9VL3os/JA9aPd9tqPK8aY5tEmUovyA2iaxTL8vxnoDcmdkFoqx23XAuO4xINUSKPA==
+"@odigos/ui-containers@^0.0.63":
+  version "0.0.63"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-containers/-/ui-containers-0.0.63.tgz#10f55d6b592921e3e0866da855a68600d3838759"
+  integrity sha512-GfV5nrVeBNwap2gAhBCnr334Zs4tTDDfa704mi2xGZo6Yj+yu1ECDAhjc/hGXJPi/5hIG+3Odoo5VPRM/USjOw==
   dependencies:
-    "@odigos/ui-components" "^0.0.75"
+    "@odigos/ui-components" "^0.0.76"
     "@odigos/ui-icons" "^0.0.13"
     "@odigos/ui-theme" "^0.0.16"
-    "@odigos/ui-utils" "^0.0.33"
+    "@odigos/ui-utils" "^0.0.34"
     "@xyflow/react" "^12.4.3"
     react "^19.0.0"
     react-dom "^19.0.0"
@@ -544,10 +544,17 @@
   resolved "https://registry.yarnpkg.com/@types/json5/-/json5-0.0.29.tgz#ee28707ae94e11d2b827bcbe5270bcea7f3e71ee"
   integrity sha512-dRLjCWHYg4oaA77cxO64oO+7JwCwnIzkZPdrrC71jQmQtlhM556pwKo5bUzqvZndkVbeFLIIi+9TC40JNF5hNQ==
 
-"@types/node@*", "@types/node@22.13.4":
+"@types/node@*":
   version "22.13.4"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-22.13.4.tgz#3fe454d77cd4a2d73c214008b3e331bfaaf5038a"
   integrity sha512-ywP2X0DYtX3y08eFVx5fNIw7/uIv8hYUKgXoK8oayJlLnKcRfEYCxWMVE1XagUdVtCJlZT1AU4LXEABW+L1Peg==
+  dependencies:
+    undici-types "~6.20.0"
+
+"@types/node@22.13.5":
+  version "22.13.5"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-22.13.5.tgz#23add1d71acddab2c6a4d31db89c0f98d330b511"
+  integrity sha512-+lTU0PxZXn0Dr1NBtC7Y8cR21AJr87dLLU953CWA6pMxxv/UDc7jYAY90upcrie1nRcD6XNG5HOYEDtgW5TxAg==
   dependencies:
     undici-types "~6.20.0"
 

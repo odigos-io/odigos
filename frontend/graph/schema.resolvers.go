@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -116,8 +117,9 @@ func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *m
 
 // Sources is the resolver for the sources field.
 func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.ComputePlatform, nextPage string) (*model.PaginatedSources, error) {
+	startTime := time.Now()
 	list, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{
-		Limit:    int64(50),
+		Limit:    int64(10),
 		Continue: nextPage,
 	})
 
@@ -125,7 +127,7 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 		if strings.Contains(err.Error(), "The provided continue parameter is too old") {
 			// Retry without the continue token
 			list, err = kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{
-				Limit: int64(50),
+				Limit: int64(10),
 			})
 
 			if err != nil {
@@ -144,6 +146,8 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 		services.AddHealthyInstrumentationInstancesCondition(ctx, &ic, src)
 		actualSources = append(actualSources, src)
 	}
+
+	r.Logger.Info("resolved sources query", "count", len(list.Items), "duration", time.Since(startTime).String())
 
 	return &model.PaginatedSources{
 		NextPage: list.GetContinue(),
