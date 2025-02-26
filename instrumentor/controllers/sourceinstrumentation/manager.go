@@ -88,5 +88,19 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
+	err = builder.
+		WebhookManagedBy(mgr).
+		For(&v1alpha1.Source{}).
+		WithDefaulter(&SourcesDefaulter{
+			Client: mgr.GetClient(),
+		}).
+		WithValidator(&SourcesValidator{
+			Client: mgr.GetClient(),
+		}).
+		Complete()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

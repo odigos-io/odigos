@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package sourceinstrumentation
 
 import (
 	"context"
@@ -62,7 +62,7 @@ func (s *SourcesDefaulter) Default(ctx context.Context, obj runtime.Object) erro
 		source.Labels[k8sconsts.WorkloadKindLabel] = string(source.Spec.Workload.Kind)
 	}
 
-	if !source.DeletionTimestamp.IsZero() {
+	if source.DeletionTimestamp.IsZero() {
 		if !controllerutil.ContainsFinalizer(source, k8sconsts.SourceInstrumentationFinalizer) {
 			controllerutil.AddFinalizer(source, k8sconsts.SourceInstrumentationFinalizer)
 		}
