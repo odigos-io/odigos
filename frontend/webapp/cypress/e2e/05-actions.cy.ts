@@ -1,5 +1,5 @@
-import { awaitToast, deleteEntity, getCrdById, getCrdIds, updateEntity, visitPage } from '../functions';
 import { BUTTONS, CRD_NAMES, DATA_IDS, INPUTS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
+import { awaitToast, deleteEntity, getCrdById, getCrdIds, handleExceptions, updateEntity, visitPage } from '../functions';
 
 // The number of CRDs that exist in the cluster before running any tests should be 0.
 // Tests will fail if you have existing CRDs in the cluster.
@@ -12,14 +12,7 @@ const totalEntities = SELECTED_ENTITIES.ACTIONS.length;
 describe('Actions CRUD', () => {
   beforeEach(() => {
     cy.intercept('/graphql').as('gql');
-
-    cy.on('uncaught:exception', (err, runnable) => {
-      if (err.message.includes('ResizeObserver loop completed with undelivered notifications')) {
-        // returning false here prevents Cypress from failing the test
-        return false;
-      }
-      // we still want to ensure there are no other unexpected errors, so we let them fail the test
-    });
+    handleExceptions();
   });
 
   it(`Should have 0 ${JSON.stringify(crdNames)} CRDs in the cluster`, () => {

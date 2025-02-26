@@ -104,6 +104,7 @@ const CYPRESS_TEST = 'Cypress Test';
 export const TEXTS = {
   UPDATED_NAME: CYPRESS_TEST,
 
+  INCLUDE_FUTURE_APPS: 'Include Future Sources',
   NO_RESOURCES: (namespace: string) => `No resources found in ${namespace} namespace.`,
   NO_SOURCES_SELECTED: 'No sources selected. Please go back to select sources.',
 

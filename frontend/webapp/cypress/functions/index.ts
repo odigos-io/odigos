@@ -1,5 +1,5 @@
-import { CRD_NAMES, DATA_IDS } from '../constants';
 export * from './cy-alias';
+import { DATA_IDS } from '../constants';
 
 export const visitPage = (path: string, callback?: () => void) => {
   cy.visit(path);
@@ -58,12 +58,7 @@ export const getCrdById = ({ namespace, crdName, crdId, expectedError, expectedK
     const { spec } = parsed?.items?.[0] || parsed || {};
 
     expect(spec).to.not.be.empty;
-
-    if (crdId === CRD_NAMES.SOURCE && spec.workload.kind === 'Namespace') {
-      // skip namespace source checks
-    } else {
-      expect(spec[expectedKey]).to.eq(expectedValue);
-    }
+    expect(spec[expectedKey]).to.eq(expectedValue);
 
     if (!!callback) callback();
   });
@@ -123,5 +118,15 @@ export const awaitToast = ({ withSSE, message }: AwaitToastOptions, callback?: (
     cy.get('@toast-msg').parent().parent().find(DATA_IDS.TOAST_CLOSE).click({ force: true });
 
     if (!!callback) callback();
+  });
+};
+
+export const handleExceptions = () => {
+  return cy.on('uncaught:exception', (err, runnable) => {
+    if (err.message.includes('ResizeObserver loop completed with undelivered notifications')) {
+      // returning false here prevents Cypress from failing the test
+      return false;
+    }
+    // we still want to ensure there are no other unexpected errors, so we let them fail the test
   });
 };
