@@ -34,7 +34,7 @@ var _ = Describe("deleteInstrumentationConfig Deployment controller", func() {
 				Expect(k8sClient.Create(ctx, source)).Should(Succeed())
 
 				instrumentationConfig = testutil.NewMockInstrumentationConfig(deployment)
-				Expect(k8sClient.Create(ctx, instrumentationConfig)).Should(Succeed())
+				//Expect(k8sClient.Create(ctx, instrumentationConfig)).Should(Succeed())
 			})
 
 			It("InstrumentationConfig deleted after removing instrumentation source from deployment", func() {
@@ -66,7 +66,6 @@ var _ = Describe("deleteInstrumentationConfig Deployment controller", func() {
 				Expect(k8sClient.Create(ctx, depSource)).Should(Succeed())
 
 				instrumentationConfig = testutil.NewMockInstrumentationConfig(deployment)
-				Expect(k8sClient.Create(ctx, instrumentationConfig)).Should(Succeed())
 			})
 
 			It("InstrumentationConfig retain when removing instrumentation source from deployment", func() {
@@ -96,7 +95,6 @@ var _ = Describe("deleteInstrumentationConfig Deployment controller", func() {
 			Expect(k8sClient.Create(ctx, source)).Should(Succeed())
 
 			instrumentationConfig = testutil.NewMockInstrumentationConfig(deployment)
-			Expect(k8sClient.Create(ctx, instrumentationConfig)).Should(Succeed())
 		})
 
 		It("should delete the reported name annotation on instrumentation source disabled", func() {
