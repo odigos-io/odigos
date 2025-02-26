@@ -8,5 +8,5 @@ export default function Page() {
   const { metrics } = useMetrics();
   const { destinations } = useDestinationCRUD();
 
-  return <DestinationTable destinations={destinations} metrics={metrics} maxHeight='calc(100vh - 220px)' />;
+  return <DestinationTable destinations={destinations} metrics={metrics} maxHeight='calc(100vh - 220px)' maxWidth='calc(100vw - 70px)' />;
 }
