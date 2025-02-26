@@ -4,6 +4,7 @@ import React, { type PropsWithChildren } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { ROUTES } from '@/utils';
 import styled from 'styled-components';
+import { ENTITY_TYPES } from '@odigos/ui-utils';
 import { FlexColumn, FlexRow } from '@odigos/ui-components';
 import { ErrorBoundary, OverviewHeader, OverviewModalsAndDrawers } from '@/components';
 import { DataFlowActionsMenu, NAV_ICON_IDS, SideNav, ToastList } from '@odigos/ui-containers';
@@ -24,6 +25,7 @@ const ContentWithActions = styled.div`
 
 const ContentUnderActions = styled(FlexRow)`
   align-items: flex-start;
+  justify-content: space-between;
   padding-left: 12px;
   width: calc(100% - 12px);
 `;
@@ -48,7 +50,24 @@ function OverviewLayout({ children }: PropsWithChildren) {
         <OverviewHeader />
 
         <ContentWithActions>
-          <DataFlowActionsMenu namespaces={namespaces} sources={sources} destinations={destinations} actions={actions} instrumentationRules={instrumentationRules} />
+          <DataFlowActionsMenu
+            namespaces={namespaces}
+            sources={sources}
+            destinations={destinations}
+            actions={actions}
+            instrumentationRules={instrumentationRules}
+            addEntity={
+              pathname === ROUTES.OVERVIEW_SOURCES
+                ? ENTITY_TYPES.SOURCE
+                : pathname === ROUTES.OVERVIEW_DESTINATIONS
+                ? ENTITY_TYPES.DESTINATION
+                : pathname === ROUTES.OVERVIEW_ACTIONS
+                ? ENTITY_TYPES.ACTION
+                : pathname === ROUTES.OVERVIEW_INSTRUMENTATION_RULES
+                ? ENTITY_TYPES.INSTRUMENTATION_RULE
+                : undefined
+            }
+          />
           <ContentUnderActions>
             <SideNav
               defaultSelectedId={
