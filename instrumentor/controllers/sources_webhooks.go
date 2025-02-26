@@ -23,7 +23,6 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -63,25 +62,9 @@ func (s *SourcesDefaulter) Default(ctx context.Context, obj runtime.Object) erro
 		source.Labels[k8sconsts.WorkloadKindLabel] = string(source.Spec.Workload.Kind)
 	}
 
-	// Make sure the Source has the right finalizer, so the right controller handles it for deletion.
-	// If a normal source has `spec.disableInstrumentation` updated to `true`, it is now an excluded Source.
-	// Vice versa for an excluded Source that has `spec.disableInstrumentation` removed.
-	// These checks make sure that the right type of Source has the right type of finalizer
-	// by toggling what finalizer is set.
-	if !v1alpha1.IsDisabledSource(source) {
-		if !controllerutil.ContainsFinalizer(source, k8sconsts.DeleteInstrumentationConfigFinalizer) && !k8sutils.IsTerminating(source) {
-			controllerutil.AddFinalizer(source, k8sconsts.DeleteInstrumentationConfigFinalizer)
-		}
-		if controllerutil.ContainsFinalizer(source, k8sconsts.StartLangDetectionFinalizer) {
-			controllerutil.RemoveFinalizer(source, k8sconsts.StartLangDetectionFinalizer)
-		}
-	}
-	if v1alpha1.IsDisabledSource(source) {
-		if controllerutil.ContainsFinalizer(source, k8sconsts.DeleteInstrumentationConfigFinalizer) {
-			controllerutil.RemoveFinalizer(source, k8sconsts.DeleteInstrumentationConfigFinalizer)
-		}
-		if !controllerutil.ContainsFinalizer(source, k8sconsts.StartLangDetectionFinalizer) && !k8sutils.IsTerminating(source) {
-			controllerutil.AddFinalizer(source, k8sconsts.StartLangDetectionFinalizer)
+	if !source.DeletionTimestamp.IsZero() {
+		if !controllerutil.ContainsFinalizer(source, k8sconsts.SourceInstrumentationFinalizer) {
+			controllerutil.AddFinalizer(source, k8sconsts.SourceInstrumentationFinalizer)
 		}
 	}
 

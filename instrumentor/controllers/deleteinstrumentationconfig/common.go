@@ -111,21 +111,21 @@ func listAndSyncWorkloadList(ctx context.Context,
 	switch obj := workloads.(type) {
 	case *appsv1.DeploymentList:
 		for _, dep := range obj.Items {
-			err = syncGenericWorkloadListToNs(ctx, k8sClient, kind, client.ObjectKey{Namespace: dep.Namespace, Name: dep.Name})
+			err = syncGenericWorkload(ctx, k8sClient, kind, client.ObjectKey{Namespace: dep.Namespace, Name: dep.Name})
 			if err != nil {
 				return err
 			}
 		}
 	case *appsv1.DaemonSetList:
 		for _, dep := range obj.Items {
-			err = syncGenericWorkloadListToNs(ctx, k8sClient, kind, client.ObjectKey{Namespace: dep.Namespace, Name: dep.Name})
+			err = syncGenericWorkload(ctx, k8sClient, kind, client.ObjectKey{Namespace: dep.Namespace, Name: dep.Name})
 			if err != nil {
 				return err
 			}
 		}
 	case *appsv1.StatefulSetList:
 		for _, dep := range obj.Items {
-			err = syncGenericWorkloadListToNs(ctx, k8sClient, kind, client.ObjectKey{Namespace: dep.Namespace, Name: dep.Name})
+			err = syncGenericWorkload(ctx, k8sClient, kind, client.ObjectKey{Namespace: dep.Namespace, Name: dep.Name})
 			if err != nil {
 				return err
 			}
@@ -134,7 +134,7 @@ func listAndSyncWorkloadList(ctx context.Context,
 	return err
 }
 
-func syncGenericWorkloadListToNs(ctx context.Context, c client.Client, kind k8sconsts.WorkloadKind, key client.ObjectKey) error {
+func syncGenericWorkload(ctx context.Context, c client.Client, kind k8sconsts.WorkloadKind, key client.ObjectKey) error {
 	// it is very important that we make the changes based on a fresh copy of the workload object
 	// if a list operation pulled in state and is now slowly iterating over it, we might be working with stale data
 	freshWorkloadCopy := workload.ClientObjectFromWorkloadKind(kind)
