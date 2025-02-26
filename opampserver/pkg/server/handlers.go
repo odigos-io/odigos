@@ -41,6 +41,7 @@ type opampAgentAttributesKeys struct {
 }
 
 func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, firstMessage *protobufs.AgentToServer) (*connection.ConnectionInfo, *protobufs.ServerToAgent, error) {
+
 	if firstMessage.AgentDescription == nil {
 		// first message must be agent description.
 		// it is, however, possible that the OpAMP server restarted, and the agent is trying to reconnect.
@@ -51,6 +52,7 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, firstMessage *
 		}
 		return nil, serverToAgent, nil
 	}
+
 	var vpid int64
 	for _, attr := range firstMessage.AgentDescription.IdentifyingAttributes {
 		if attr.Key == string(semconv.ProcessPIDKey) || attr.Key == "process.vpid" {
