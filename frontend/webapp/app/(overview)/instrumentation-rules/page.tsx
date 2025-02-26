@@ -1,12 +1,11 @@
 'use client';
 
 import React from 'react';
-import { OverviewFocusedRules } from '@/components';
+import { useInstrumentationRuleCRUD } from '@/hooks';
+import { InstrumentationRuleTable } from '@odigos/ui-containers';
 
 export default function Page() {
-  return (
-    <>
-      <OverviewFocusedRules />
-    </>
-  );
+  const { instrumentationRules } = useInstrumentationRuleCRUD();
+
+  return <InstrumentationRuleTable instrumentationRules={instrumentationRules} tableMaxHeight='calc(100vh - 220px)' />;
 }
