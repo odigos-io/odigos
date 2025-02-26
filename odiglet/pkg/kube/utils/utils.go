@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
@@ -31,14 +30,6 @@ func GetResourceAttributes(podWorkload *k8sconsts.PodWorkload, podName string) [
 	}
 
 	return attrs
-}
-
-func SameNodeOTLPDataCollectionEndpoint() string {
-	return fmt.Sprintf("%s.%s:%d", k8sconsts.OdigosNodeCollectorSameNodeServiceName, env.Current.Namespace, consts.OTLPPort)
-}
-
-func SameNodeOTLPHttpDataCollectionEndpoint() string {
-	return fmt.Sprintf("http://%s.%s:%d", k8sconsts.OdigosNodeCollectorSameNodeServiceName, env.Current.Namespace, consts.OTLPHttpPort)
 }
 
 func GetPodExternalURL(ip string, ports []corev1.ContainerPort) string {

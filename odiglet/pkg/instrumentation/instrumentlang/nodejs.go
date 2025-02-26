@@ -5,8 +5,8 @@ import (
 
 	"github.com/odigos-io/odigos/common"
 	commonconsts "github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/service"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
-	"github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 )
 
@@ -23,7 +23,7 @@ func NodeJS(deviceId string, uniqueDestinationSignals map[common.ObservabilitySi
 
 	return &v1beta1.ContainerAllocateResponse{
 		Envs: map[string]string{
-			nodeEnvEndpoint:       utils.SameNodeOTLPHttpDataCollectionEndpoint(),
+			nodeEnvEndpoint:       service.SameNodeOTLPHttpDataCollectionEndpoint(),
 			nodeEnvServiceName:    deviceId, // temporary set the device id as well, so if opamp fails we can fallback to resolve k8s attributes in the collector
 			nodeOdigosOpampServer: opampServerHost,
 			nodeOdigosDeviceId:    deviceId,

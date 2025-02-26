@@ -5,7 +5,7 @@ import (
 	"runtime"
 
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
+	"github.com/odigos-io/odigos/k8sutils/pkg/service"
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 )
 
@@ -36,7 +36,7 @@ func DotNet(deviceId string, uniqueDestinationSignals map[common.ObservabilitySi
 			profilerEndVar:        profilerId,
 			profilerPathEnv:       fmt.Sprintf(profilerPath, getArch()),
 			tracerHomeEnv:         tracerHome,
-			collectorUrlEnv:       utils.SameNodeOTLPHttpDataCollectionEndpoint(),
+			collectorUrlEnv:       service.SameNodeOTLPHttpDataCollectionEndpoint(),
 			serviceNameEnv:        deviceId,
 			exportTypeEnv:         "otlp",
 			resourceAttrEnv:       "odigos.device=dotnet",
