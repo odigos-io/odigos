@@ -13,6 +13,11 @@ variable "node_count" {
   default     = 2
 }
 
+variable "node_spec" {
+  description = "The node spec for the cluster"
+  default     = "m6a.xlarge"
+}
+
 variable "test_scenario" {
   description = "Test scenario to differentiate state files"
   type        = string
