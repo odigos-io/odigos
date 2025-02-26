@@ -13,11 +13,9 @@ dest_namespace="traces"
 function wait_for_ready() {
   local dest_service="e2e-tests-tempo"
   local dest_port=3100
-
   
   response=$(run_curl_cmd $dest_namespace "http://${dest_service}:${dest_port}/ready")
   
-
   if [ "$response" != "ready" ]; then
     echo "Tempo is not ready yet. Retrying in 2 seconds..."
     sleep 2
