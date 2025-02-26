@@ -1,13 +1,13 @@
 'use client';
 
 import React, { type PropsWithChildren } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
+import { ROUTES } from '@/utils';
 import styled from 'styled-components';
 import { useSSE, useTokenTracker } from '@/hooks';
 import { ToastList } from '@odigos/ui-containers';
 import { FlexColumn, Stepper } from '@odigos/ui-components';
 import { ErrorBoundary, OnboardingStepperWrapper } from '@/components';
-import { ROUTES } from '@/utils';
 
 const PageContent = styled(FlexColumn)`
   width: 100%;
