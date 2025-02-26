@@ -6,7 +6,8 @@ export const ROUTES = {
 };
 
 export const CRD_NAMES = {
-  SOURCE: 'instrumentationconfigs.odigos.io',
+  SOURCE: 'sources.odigos.io',
+  INSTRUMENTATION_CONFIG: 'instrumentationconfigs.odigos.io',
   DESTINATION: 'destinations.odigos.io',
   ACTIONS: [
     'k8sattributesresolvers.actions.odigos.io',
