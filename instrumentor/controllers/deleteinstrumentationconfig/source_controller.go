@@ -49,12 +49,12 @@ type SourceReconciler struct {
 var DeleteInstrumentationSourcePredicate = predicate.Funcs{
 	UpdateFunc: func(e event.UpdateEvent) bool {
 		source := e.ObjectNew.(*v1alpha1.Source)
-		return !sourceutils.IsSourceRelevant(source)
+		return !sourceutils.SourceEnablesInstrumentation(source)
 	},
 
 	CreateFunc: func(e event.CreateEvent) bool {
 		source := e.Object.(*v1alpha1.Source)
-		return !sourceutils.IsSourceRelevant(source)
+		return !sourceutils.SourceEnablesInstrumentation(source)
 	},
 
 	DeleteFunc: func(e event.DeleteEvent) bool {
@@ -64,7 +64,7 @@ var DeleteInstrumentationSourcePredicate = predicate.Funcs{
 	// Allow generic events (e.g., external triggers)
 	GenericFunc: func(e event.GenericEvent) bool {
 		source := e.Object.(*v1alpha1.Source)
-		return !sourceutils.IsSourceRelevant(source)
+		return !sourceutils.SourceEnablesInstrumentation(source)
 	},
 }
 
