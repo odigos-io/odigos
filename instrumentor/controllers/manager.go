@@ -9,9 +9,8 @@ import (
 
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled"
-	"github.com/odigos-io/odigos/instrumentor/controllers/deleteinstrumentationconfig"
 	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentationconfig"
-	"github.com/odigos-io/odigos/instrumentor/controllers/startlangdetection"
+	"github.com/odigos-io/odigos/instrumentor/controllers/sourceinstrumentation"
 	"github.com/odigos-io/odigos/instrumentor/controllers/workloadmigrations"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -165,12 +164,7 @@ func SetupWithManager(mgr manager.Manager, dp *distros.Provider) error {
 		return fmt.Errorf("failed to create controller for agent enabled: %w", err)
 	}
 
-	err = deleteinstrumentationconfig.SetupWithManager(mgr)
-	if err != nil {
-		return fmt.Errorf("failed to create controller for delete instrumentation config: %w", err)
-	}
-
-	err = startlangdetection.SetupWithManager(mgr)
+	err = sourceinstrumentation.SetupWithManager(mgr)
 	if err != nil {
 		return fmt.Errorf("failed to create controller for start language detection: %w", err)
 	}
