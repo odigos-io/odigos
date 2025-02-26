@@ -31,7 +31,6 @@ var AllProfiles = []profile.Profile{
 	instrumentation.MountMethodK8sHostPathProfile,
 	instrumentation.MountMethodK8sVirtualDevice,
 
-	pipeline.DisableNameProcessorProfile,
 	pipeline.SmallBatchesProfile,
 
 	sizing.SizeSProfile,

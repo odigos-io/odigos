@@ -9,9 +9,9 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
+	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
 	"k8s.io/apimachinery/pkg/util/version"
-	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -171,7 +171,8 @@ func getOdigletDaemonsetPodSpec(ctx context.Context, c client.Client, namespace 
 func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 	scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, k8sVersion *version.Version,
 	odigletDaemonsetPodSpec *corev1.PodSpec) (*appsv1.DaemonSet, error) {
-	// TODO(edenfed): add log volumes only if needed according to apps or dests
+	privileged := true
+	var runAsUser int64 = 0
 
 	// 50% of the nodes can be unavailable during the update.
 	// if we do not set it, the default value is 1.
@@ -244,26 +245,66 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 							},
 						},
 						{
-							Name: "varlibdockercontainers",
+							Name: "host-dev",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/var/lib/docker/containers",
+									Path: "/dev",
 								},
 							},
 						},
 						{
-							Name: "kubeletpodresources",
+							Name: "host-etc",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/var/lib/kubelet/pod-resources", // TODO: remove this when removing name resoultion processor from collector
+									Path: "/etc",
 								},
 							},
 						},
 						{
-							Name: "hostfs",
+							Name: "host-proc",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/",
+									Path: "/proc",
+								},
+							},
+						},
+						{
+							Name: "host-sys",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/sys",
+								},
+							},
+						},
+						{
+							Name: "host-var",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/var",
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:  "set-logs-acls",
+							Image: commonconfig.ControllerConfig.CollectorImage,
+							Command: []string{
+								"/bin/sh",
+								"-c",
+								`find /hostfs/var/log/pods -type d -exec setfacl -m u:65532:rx,g:65532:rx {} \; || true && \
+            					 find /hostfs/var/log/pods -type d -exec setfacl -d -m u:65532:rx,g:65532:rx {} \; || true && \
+            					 find /hostfs/var/log/pods -type f -exec setfacl -m u:65532:r,g:65532:r {} \; || true;`,
+							},
+							SecurityContext: &corev1.SecurityContext{
+								Privileged: &privileged,
+								RunAsUser:  &runAsUser,
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "varlog",
+									MountPath: "/hostfs/var/log",
+									ReadOnly:  false,
 								},
 							},
 						},
@@ -278,24 +319,34 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 									Name:      k8sconsts.OdigosNodeCollectorConfigMapKey,
 									MountPath: confDir,
 								},
-								{
-									Name:      "varlibdockercontainers",
-									MountPath: "/var/lib/docker/containers",
-									ReadOnly:  true,
-								},
-								{
+								{ // Pod logs
 									Name:      "varlog",
 									MountPath: "/var/log",
 									ReadOnly:  true,
 								},
-								{
-									Name:      "kubeletpodresources",
-									MountPath: "/var/lib/kubelet/pod-resources",
+								{ // Host metrics
+									Name:      "host-dev",
+									MountPath: "/hostfs/dev",
 									ReadOnly:  true,
 								},
-								{
-									Name:      "hostfs",
-									MountPath: "/hostfs",
+								{ // Host metrics
+									Name:      "host-etc",
+									MountPath: "/hostfs/etc",
+									ReadOnly:  true,
+								},
+								{ // Host metrics
+									Name:      "host-proc",
+									MountPath: "/hostfs/proc",
+									ReadOnly:  true,
+								},
+								{ // Host metrics
+									Name:      "host-sys",
+									MountPath: "/hostfs/sys",
+									ReadOnly:  true,
+								},
+								{ // Host metrics
+									Name:      "host-var",
+									MountPath: "/hostfs/var",
 									ReadOnly:  true,
 								},
 							},
@@ -359,9 +410,6 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 									corev1.ResourceMemory: resourceMemoryLimitQuantity,
 									corev1.ResourceCPU:    resourceCpuLimitQuantity,
 								},
-							},
-							SecurityContext: &corev1.SecurityContext{
-								Privileged: boolPtr(true),
 							},
 						},
 					},
