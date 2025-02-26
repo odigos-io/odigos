@@ -41,7 +41,7 @@ interface GetCrdByIdOptions {
   crdId: string;
   expectedError: string;
   expectedKey: string;
-  expectedValue: string;
+  expectedValue: string | boolean;
 }
 
 export const getCrdById = ({ namespace, crdName, crdId, expectedError, expectedKey, expectedValue }: GetCrdByIdOptions, callback?: () => void) => {

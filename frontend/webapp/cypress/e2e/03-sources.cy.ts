@@ -18,8 +18,7 @@ describe('Sources CRUD', () => {
         // returning false here prevents Cypress from failing the test
         return false;
       }
-
-      return true;
+      // we still want to ensure there are no other unexpected errors, so we let them fail the test
     });
   });
 
@@ -31,8 +30,7 @@ describe('Sources CRUD', () => {
     visitPage(ROUTES.OVERVIEW, () => {
       cy.get(DATA_IDS.ADD_SOURCE).click();
       cy.get(DATA_IDS.MODAL_ADD_SOURCE).should('exist');
-      cy.get(DATA_IDS.SELECT_NAMESPACE).find(DATA_IDS.CHECKBOX).click(); // select all
-      cy.get(DATA_IDS.SELECT_NAMESPACE).find('div').contains(TEXTS.INCLUDE_FUTURE_APPS).click(); // unselect future apps
+      cy.get(DATA_IDS.SELECT_NAMESPACE).find(DATA_IDS.CHECKBOX).click();
 
       // Wait for the namespace sources to load
       cy.wait('@gql').then(() => {
@@ -105,7 +103,11 @@ describe('Sources CRUD', () => {
     });
   });
 
-  it(`Should delete ${totalEntities} ${crdName} CRDs in the cluster`, () => {
-    getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
+  it(`Should update ${totalEntities} ${crdName} CRDs in the cluster with "disabled=true"`, () => {
+    getCrdIds({ namespace, crdName, expectedError: '', expectedLength: totalEntities }, (crdIds) => {
+      crdIds.forEach((crdId) => {
+        getCrdById({ namespace, crdName, crdId, expectedError: '', expectedKey: 'disableInstrumentation', expectedValue: true });
+      });
+    });
   });
 });

@@ -18,8 +18,7 @@ describe('Actions CRUD', () => {
         // returning false here prevents Cypress from failing the test
         return false;
       }
-
-      return true;
+      // we still want to ensure there are no other unexpected errors, so we let them fail the test
     });
   });
 
@@ -156,7 +155,7 @@ describe('Actions CRUD', () => {
     });
   });
 
-  it(`Should delete ${totalEntities} ${JSON.stringify(crdNames)} CRDs in the cluster`, () => {
+  it(`Should have ${0} ${JSON.stringify(crdNames)} CRDs in the cluster`, () => {
     expect(crdNames.length).to.eq(totalEntities);
     crdNames.forEach((crdName) => {
       getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });

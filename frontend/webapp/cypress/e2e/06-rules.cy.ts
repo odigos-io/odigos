@@ -28,8 +28,7 @@ describe('Instrumentation Rules CRUD', () => {
         // returning false here prevents Cypress from failing the test
         return false;
       }
-
-      return true;
+      // we still want to ensure there are no other unexpected errors, so we let them fail the test
     });
   });
 
@@ -112,7 +111,7 @@ describe('Instrumentation Rules CRUD', () => {
     });
   });
 
-  it(`Should delete ${totalEntities} ${crdName} CRDs in the cluster`, () => {
+  it(`Should have ${0} ${crdName} CRDs in the cluster`, () => {
     getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
   });
 });
