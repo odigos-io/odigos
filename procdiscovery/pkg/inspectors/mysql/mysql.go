@@ -13,10 +13,14 @@ type MySQLInspector struct{}
 
 const MySQLProcessName = "mysqld"
 
-func (j *MySQLInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
+func (j *MySQLInspector) QuickScan(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+	p := ctx.Details
 	if strings.HasSuffix(p.ExePath, MySQLProcessName) || strings.HasSuffix(p.CmdLine, MySQLProcessName) {
 		return common.MySQLProgrammingLanguage, true
 	}
+	return "", false
+}
 
+func (j *MySQLInspector) DeepScan(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	return "", false
 }

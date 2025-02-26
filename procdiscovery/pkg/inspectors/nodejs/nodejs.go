@@ -19,16 +19,21 @@ var nodeExecutables = map[string]bool{
 	"yarn": true,
 }
 
-func (n *NodejsInspector) Inspect(proc *process.Details) (common.ProgrammingLanguage, bool) {
-	if v8Regex.MatchString(filepath.Base(proc.ExePath)) || nodeExecutables[filepath.Base(proc.ExePath)] {
+func (n *NodejsInspector) QuickScan(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+	proc := ctx.Details
+	baseExe := filepath.Base(proc.ExePath)
+	if v8Regex.MatchString(baseExe) || nodeExecutables[baseExe] {
 		return common.JavascriptProgrammingLanguage, true
 	}
-
 	return "", false
 }
 
-func (n *NodejsInspector) GetRuntimeVersion(proc *process.Details, containerURL string) *version.Version {
-	if value, exists := proc.GetDetailedEnvsValue(process.NodeVersionConst); exists {
+func (n *NodejsInspector) DeepScan(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+	return "", false
+}
+
+func (n *NodejsInspector) GetRuntimeVersion(ctx *process.ProcessContext, containerURL string) *version.Version {
+	if value, exists := ctx.Details.GetDetailedEnvsValue(process.NodeVersionConst); exists {
 		return common.GetVersion(value)
 	}
 
