@@ -62,6 +62,14 @@ func (s *SourcesDefaulter) Default(ctx context.Context, obj runtime.Object) erro
 		source.Labels[k8sconsts.WorkloadKindLabel] = string(source.Spec.Workload.Kind)
 	}
 
+	// Remove old split finalizers
+	if controllerutil.ContainsFinalizer(source, k8sconsts.StartLangDetectionFinalizer) {
+		controllerutil.RemoveFinalizer(source, k8sconsts.StartLangDetectionFinalizer)
+	}
+	if controllerutil.ContainsFinalizer(source, k8sconsts.DeleteInstrumentationConfigFinalizer) {
+		controllerutil.RemoveFinalizer(source, k8sconsts.DeleteInstrumentationConfigFinalizer)
+	}
+
 	if source.DeletionTimestamp.IsZero() {
 		if !controllerutil.ContainsFinalizer(source, k8sconsts.SourceInstrumentationFinalizer) {
 			controllerutil.AddFinalizer(source, k8sconsts.SourceInstrumentationFinalizer)

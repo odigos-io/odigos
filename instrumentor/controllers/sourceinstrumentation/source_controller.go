@@ -45,7 +45,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			r.Scheme,
 			source.Spec.Workload.Name,
 			reconcileFunc)
-		if err != nil {
+		if client.IgnoreNotFound(err) != nil {
 			return res, err
 		}
 	} else {
@@ -58,16 +58,9 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 				Name:      source.Spec.Workload.Name,
 			},
 			r.Scheme)
-		if err != nil {
+		if client.IgnoreNotFound(err) != nil {
 			return res, err
 		}
-	}
-
-	if controllerutil.ContainsFinalizer(source, k8sconsts.StartLangDetectionFinalizer) {
-		controllerutil.RemoveFinalizer(source, k8sconsts.StartLangDetectionFinalizer)
-	}
-	if controllerutil.ContainsFinalizer(source, k8sconsts.DeleteInstrumentationConfigFinalizer) {
-		controllerutil.RemoveFinalizer(source, k8sconsts.DeleteInstrumentationConfigFinalizer)
 	}
 
 	if !source.DeletionTimestamp.IsZero() {
