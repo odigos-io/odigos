@@ -22,7 +22,6 @@ import (
 	"k8s.io/apimachinery/pkg/selection"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -177,23 +176,6 @@ func SetupWithManager(mgr manager.Manager, dp *distros.Provider) error {
 	err = workloadmigrations.SetupWithManager(mgr)
 	if err != nil {
 		return fmt.Errorf("failed to create controller for workload migrations: %w", err)
-	}
-
-	// TODO: this webhook is relevant for both the startlangdetection and deleteinstrumentationconfig controllers
-	// we are planning to combine these controllers into a single controller in the future,
-	// so we can move this webhook to that combined controller
-	err = builder.
-		WebhookManagedBy(mgr).
-		For(&odigosv1.Source{}).
-		WithDefaulter(&SourcesDefaulter{
-			Client: mgr.GetClient(),
-		}).
-		WithValidator(&SourcesValidator{
-			Client: mgr.GetClient(),
-		}).
-		Complete()
-	if err != nil {
-		return err
 	}
 
 	return nil
