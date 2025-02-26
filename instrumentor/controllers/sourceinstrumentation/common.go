@@ -91,7 +91,7 @@ func syncNamespaceWorkloads(
 
 		for _, key := range objectKeys {
 			// For namespace instrumentation, we only want to reconcile workloads that don't have their own explicit Source object because:
-			// For instrumentation: 
+			// For instrumentation:
 			//  - settings in Workload Sources take priority over settings in Namespace Sources
 			//  - disabled Workload Sources prevent instrumentation
 			// For uninstrumentation:

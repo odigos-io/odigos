@@ -52,11 +52,8 @@ var _ = Describe("DeleteInstrumentationConfig Namespace controller", func() {
 
 				// these workloads has instrumentation application because the namespace has instrumentation enabled
 				instrumentationConfigDeployment = testutil.NewMockInstrumentationConfig(deployment)
-				Expect(k8sClient.Create(ctx, instrumentationConfigDeployment)).Should(Succeed())
 				instrumentationConfigDaemonSet = testutil.NewMockInstrumentationConfig(daemonSet)
-				Expect(k8sClient.Create(ctx, instrumentationConfigDaemonSet)).Should(Succeed())
 				instrumentationConfigStatefulSet = testutil.NewMockInstrumentationConfig(statefulSet)
-				Expect(k8sClient.Create(ctx, instrumentationConfigStatefulSet)).Should(Succeed())
 			})
 
 			It("should delete instrumented application", func() {
@@ -98,13 +95,9 @@ var _ = Describe("DeleteInstrumentationConfig Namespace controller", func() {
 				sourceStatefulSet = testutil.NewMockSource(statefulSet)
 				Expect(k8sClient.Create(ctx, sourceStatefulSet)).Should(Succeed())
 
-				// these workloads has instrumentation application because the namespace has instrumentation enabled
 				instrumentationConfigDeployment = testutil.NewMockInstrumentationConfig(deployment)
-				Expect(k8sClient.Create(ctx, instrumentationConfigDeployment)).Should(Succeed())
 				instrumentationConfigDaemonSet = testutil.NewMockInstrumentationConfig(daemonSet)
-				Expect(k8sClient.Create(ctx, instrumentationConfigDaemonSet)).Should(Succeed())
 				instrumentationConfigStatefulSet = testutil.NewMockInstrumentationConfig(statefulSet)
-				Expect(k8sClient.Create(ctx, instrumentationConfigStatefulSet)).Should(Succeed())
 			})
 
 			It("should retain instrumented application", func() {
