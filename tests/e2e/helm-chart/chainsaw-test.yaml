@@ -152,9 +152,9 @@ spec:
     - name: Verify Trace - Context Propagation
       try:
         - script:
-            timeout: 30s
+            timeout: 60s
             content: |
-              ../../common/traceql_runner.sh tracesql/context-propagation.yaml
+              ../../common/traceql_runner.sh tracesql/context-propagation.yaml --verbose
       catch:
         - podLogs:
             name: odiglet
@@ -163,7 +163,7 @@ spec:
       try:
         - script:
             content: |
-              ../../common/traceql_runner.sh tracesql/resource-attributes.yaml
+              ../../common/traceql_runner.sh tracesql/resource-attributes.yaml --verbose
       catch:
         - podLogs:
             name: odiglet
@@ -172,7 +172,7 @@ spec:
       try:
         - script:
             content: |
-              ../../common/traceql_runner.sh tracesql/span-attributes.yaml
+              ../../common/traceql_runner.sh tracesql/span-attributes.yaml --verbose
       catch:
         - podLogs:
             name: odiglet

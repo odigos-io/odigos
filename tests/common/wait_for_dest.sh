@@ -3,41 +3,31 @@
 # Ensure the script fails if any command fails
 set -e
 
+source "$(dirname "${BASH_SOURCE[0]}")/curl_helper.sh"
+
 # function to verify tempo is ready
 # This is needed due to bug in tempo - It reports Ready before it is actually ready
 # So we manually hit the health check endpoint to verify it is ready
-wait_for_ready() {
-  local namespace="traces"
-  local pod_name="temp-curl-checker"
-  local service_name="e2e-tests-tempo"  # service name as defined in your cluster
-  local max_retries=30
-  local retries=0
+dest_namespace="traces"
 
-  echo "Creating temporary pod..."
-  # Launch a pod that just sleeps for an hour (enough time for our check)
-  kubectl run "$pod_name" -n "$namespace" --image=curlimages/curl --restart=Never --command -- sleep 3600 >/dev/null
+function wait_for_ready() {
+  local dest_service="e2e-tests-tempo"
+  local dest_port=3100
 
-  echo "Waiting for pod $pod_name to be ready..."
-  kubectl wait --for=condition=Ready pod/"$pod_name" -n "$namespace" --timeout=60s
+  
+  response=$(run_curl_cmd $dest_namespace "http://${dest_service}:${dest_port}/ready")
+  
 
-  while [ $retries -lt $max_retries ]; do
-    echo "Checking readiness endpoint from within the pod..."
-    # Execute curl inside the temporary pod to query the /ready endpoint via cluster DNS.
-    response=$(kubectl exec -n "$namespace" "$pod_name" -- curl -s "http://${service_name}:3100/ready")
-    if [ "$response" = "ready" ]; then
-      echo "Tempo is ready."
-      kubectl delete pod "$pod_name" -n "$namespace" --ignore-not-found >/dev/null
-      return 0
-    else
-      echo "Tempo is not ready yet. Retrying in 2 seconds..."
-      sleep 2
-      retries=$((retries+1))
-    fi
-  done
-
-  echo "Tempo did not become ready within the expected time."
-  kubectl delete pod "$pod_name" -n "$namespace" --ignore-not-found >/dev/null
-  return 1
+  if [ "$response" != "ready" ]; then
+    echo "Tempo is not ready yet. Retrying in 2 seconds..."
+    sleep 2
+    wait_for_ready
+  else
+    echo "Tempo is ready"
+    sleep 2
+  fi
 }
 
+deploy_curl_pod $dest_namespace
 wait_for_ready
+delete_curl_pod $dest_namespace
