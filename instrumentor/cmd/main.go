@@ -20,6 +20,8 @@ import (
 	"flag"
 	"os"
 
+	"github.com/odigos-io/odigos/distros"
+
 	"github.com/odigos-io/odigos/instrumentor/controllers"
 	"github.com/odigos-io/odigos/instrumentor/sdks"
 
@@ -63,9 +65,21 @@ func main() {
 	logger := zapr.NewLogger(zapLogger)
 	managerOptions.Logger = logger
 
+	// TODO: remove once the webhook stops using the default SDKs from the sdks package
 	sdks.SetDefaultSDKs()
 
-	i, err := instrumentor.New(managerOptions)
+	distrosGetter, err := distros.NewCommunityGetter()
+	if err != nil {
+		setupLog.Error(err, "Failed to initialize distro getter")
+		os.Exit(1)
+	}
+	dp, err := distros.NewProvider(distros.NewCommunityDefaulter(), distrosGetter)
+	if err != nil {
+		setupLog.Error(err, "Failed to initialize distro provider")
+		os.Exit(1)
+	}
+
+	i, err := instrumentor.New(managerOptions, dp)
 	if err != nil {
 		setupLog.Error(err, "Failed to initialize instrumentor")
 		os.Exit(1)

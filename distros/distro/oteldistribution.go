@@ -56,6 +56,11 @@ type RuntimeAgent struct {
 	// If mounting of agent directory is achieved via k8s virtual device,
 	// this field specifies the name of the device to inject into the resources part of the pods container spec.
 	Device *string `yaml:"device,omitempty"`
+
+	// Some of the agents might require a specific file to loaded before we can start the instrumentation.
+	// This list contains the full path of the files that need to be opened for the agent to properly start.
+	// All these paths must be contained in one of the directoryNames.
+	FileOpenTriggers []string `yaml:"fileOpenTriggers,omitempty"`
 }
 
 // OtelDistro (Short for OpenTelemetry Distribution) is a collection of OpenTelemetry components,
@@ -91,9 +96,6 @@ type OtelDistro struct {
 
 	// Free text description of the distribution, what it includes, it's use cases, etc.
 	Description string `yaml:"description"`
-
-	// Specifies the odigos tiers which includes this distribution
-	Tiers []common.OdigosTier `yaml:"tiers"`
 
 	// a list of environment variables that needs to be set in the application runtime
 	// to enable the distribution.

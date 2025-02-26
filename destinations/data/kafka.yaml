@@ -175,30 +175,6 @@ spec:
       initialValue: '120s'
       renderCondition: ['KAFKA_RETRY_ON_FAILURE_ENABLED', '==', 'true']
       hideFromReadData: ['KAFKA_RETRY_ON_FAILURE_ENABLED', '==', 'false']
-    - name: KAFKA_SENDING_QUEUE_ENABLED
-      displayName: Enable Sending Queue
-      componentType: checkbox
-      componentProps:
-        required: false
-      initialValue: true
-    - name: KAFKA_SENDING_QUEUE_NUM_CONSUMERS
-      displayName: Number of Consumers
-      componentType: input
-      componentProps:
-        required: false
-        tooltip: 'Number of consumers that dequeue batches; ignored if `enabled` is `false`.'
-      initialValue: '10'
-      renderCondition: ['KAFKA_SENDING_QUEUE_ENABLED', '==', 'true']
-      hideFromReadData: ['KAFKA_SENDING_QUEUE_ENABLED', '==', 'false']
-    - name: KAFKA_SENDING_QUEUE_SIZE
-      displayName: Queue Size
-      componentType: input
-      componentProps:
-        required: false
-        tooltip: 'Maximum number of batches kept in memory before dropping data; ignored if `enabled` is `false`. User should calculate this as `num_seconds` * `requests_per_second` where: `num_seconds` is the number of seconds to buffer in case of a backend outage, `requests_per_second` is the average number of requests per seconds.'
-      initialValue: '1000'
-      renderCondition: ['KAFKA_SENDING_QUEUE_ENABLED', '==', 'true']
-      hideFromReadData: ['KAFKA_SENDING_QUEUE_ENABLED', '==', 'false']
     - name: KAFKA_PRODUCER_MAX_MESSAGE_BYTES
       displayName: Producer Max Message Bytes
       componentType: input

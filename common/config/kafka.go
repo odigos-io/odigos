@@ -28,9 +28,6 @@ const (
 	KAFKA_RETRY_ON_FAILURE_INITIAL_INTERVAL        = "KAFKA_RETRY_ON_FAILURE_INITIAL_INTERVAL"
 	KAFKA_RETRY_ON_FAILURE_MAX_INTERVAL            = "KAFKA_RETRY_ON_FAILURE_MAX_INTERVAL"
 	KAFKA_RETRY_ON_FAILURE_MAX_ELAPSED_TIME        = "KAFKA_RETRY_ON_FAILURE_MAX_ELAPSED_TIME"
-	KAFKA_SENDING_QUEUE_ENABLED                    = "KAFKA_SENDING_QUEUE_ENABLED"
-	KAFKA_SENDING_QUEUE_NUM_CONSUMERS              = "KAFKA_SENDING_QUEUE_NUM_CONSUMERS"
-	KAFKA_SENDING_QUEUE_SIZE                       = "KAFKA_SENDING_QUEUE_SIZE"
 	KAFKA_PRODUCER_MAX_MESSAGE_BYTES               = "KAFKA_PRODUCER_MAX_MESSAGE_BYTES"
 	KAFKA_PRODUCER_REQUIRED_ACKS                   = "KAFKA_PRODUCER_REQUIRED_ACKS"
 	KAFKA_PRODUCER_COMPRESSION                     = "KAFKA_PRODUCER_COMPRESSION"
@@ -130,18 +127,6 @@ func (m *Kafka) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 	if !exists {
 		retryOnFailureMaxTimeElapsed = "120s"
 	}
-	sendingQueueEnabled, exists := config[KAFKA_SENDING_QUEUE_ENABLED]
-	if !exists {
-		sendingQueueEnabled = "true"
-	}
-	sendingQueueNumConsumers, exists := config[KAFKA_SENDING_QUEUE_NUM_CONSUMERS]
-	if !exists {
-		sendingQueueNumConsumers = "10"
-	}
-	sendingQueueSize, exists := config[KAFKA_SENDING_QUEUE_SIZE]
-	if !exists {
-		sendingQueueSize = "1000"
-	}
 	producerMaxMessageBytes, exists := config[KAFKA_PRODUCER_MAX_MESSAGE_BYTES]
 	if !exists {
 		producerMaxMessageBytes = "1000000"
@@ -185,11 +170,6 @@ func (m *Kafka) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 			"initial_interval": retryOnFailureInitialInterval,
 			"max_interval":     retryOnFailureMaxInterval,
 			"max_elapsed_time": retryOnFailureMaxTimeElapsed,
-		},
-		"sending_queue": GenericMap{
-			"enabled":       parseBool(sendingQueueEnabled),
-			"num_consumers": parseInt(sendingQueueNumConsumers),
-			"queue_size":    parseInt(sendingQueueSize),
 		},
 		"producer": GenericMap{
 			"max_message_bytes":  parseInt(producerMaxMessageBytes),

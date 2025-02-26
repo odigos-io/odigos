@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentor/controllers"
 	"github.com/odigos-io/odigos/instrumentor/report"
 	"github.com/odigos-io/odigos/instrumentor/runtimemigration"
@@ -20,7 +21,7 @@ type Instrumentor struct {
 	logger logr.Logger
 }
 
-func New(opts controllers.KubeManagerOptions) (*Instrumentor, error) {
+func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrumentor, error) {
 	mgr, err := controllers.CreateManager(opts)
 	if err != nil {
 		return nil, err
@@ -31,7 +32,7 @@ func New(opts controllers.KubeManagerOptions) (*Instrumentor, error) {
 	mgr.Add(&runtimemigration.MigrationRunnable{KubeClient: mgr.GetClient(), Logger: opts.Logger})
 
 	// wire up the controllers and webhooks
-	err = controllers.SetupWithManager(mgr)
+	err = controllers.SetupWithManager(mgr, dp)
 	if err != nil {
 		return nil, err
 	}

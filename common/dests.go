@@ -4,6 +4,7 @@ type DestinationType string
 
 const (
 	AppDynamicsDestinationType            DestinationType = "appdynamics"
+	AWSCloudWatchDestinationType          DestinationType = "cloudwatch"
 	AWSS3DestinationType                  DestinationType = "s3"
 	AxiomDestinationType                  DestinationType = "axiom"
 	AzureBlobDestinationType              DestinationType = "azureblob"

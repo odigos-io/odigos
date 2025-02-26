@@ -139,4 +139,4 @@ go-licenses: $(LOCALBIN)
 .PHONY: licenses
 licenses: go-licenses
 	rm -rf $(PWD)/licenses
-	$(LOCALBIN)/go-licenses save . --save_path=licenses
+	$(LOCALBIN)/go-licenses save ./... --save_path=licenses

@@ -1,25 +1,35 @@
 import React from 'react';
 import Theme from '@odigos/ui-theme';
-import { SLACK_LINK } from '@/utils';
 import { useStatusStore } from '@/store';
-import { OdigosLogoText, SlackLogo } from '@odigos/ui-icons';
+import { OdigosLogoText } from '@odigos/ui-icons';
+import { Header, Status, Tooltip } from '@odigos/ui-components';
 import { useConfig, useDescribeOdigos, useTokenCRUD } from '@/hooks';
-import { CliDrawer, NotificationManager } from '@odigos/ui-containers';
-import { FORM_ALERTS, NOTIFICATION_TYPE, PLATFORM_TYPE } from '@odigos/ui-utils';
-import { Header, IconButton, PlatformSelect, Status, Tooltip } from '@odigos/ui-components';
+import { FORM_ALERTS, getPlatformLabel, NOTIFICATION_TYPE, PLATFORM_TYPE } from '@odigos/ui-utils';
+import { CliDrawer, ComputePlatformSelect, NotificationManager, SlackInvite } from '@odigos/ui-containers';
 
 const OverviewHeader = () => {
   const { status, title, message } = useStatusStore();
 
   const { data: config } = useConfig();
   const { tokens, updateToken } = useTokenCRUD();
-  const { data: describeOdigos } = useDescribeOdigos();
+  const { fetchDescribeOdigos } = useDescribeOdigos();
 
   return (
     <Header
       left={[
         <OdigosLogoText key='logo' size={100} />,
-        <PlatformSelect key='platform' type={PLATFORM_TYPE.K8S} />,
+        <ComputePlatformSelect
+          key='cp-select'
+          selected={{
+            id: 'default',
+            name: getPlatformLabel(PLATFORM_TYPE.K8S),
+            type: PLATFORM_TYPE.K8S,
+            connectionStatus: NOTIFICATION_TYPE.SUCCESS,
+          }}
+          computePlatforms={[]}
+          onSelect={() => {}}
+          onViewAll={() => {}}
+        />,
         <Status key='status' status={status} title={title} subtitle={message} size={14} family='primary' withIcon withBackground />,
         config?.readonly && (
           <Tooltip key='readonly' text={FORM_ALERTS.READONLY_WARNING}>
@@ -30,10 +40,8 @@ const OverviewHeader = () => {
       right={[
         <Theme.ToggleDarkMode key='toggle-theme' />,
         <NotificationManager key='notifs' />,
-        <CliDrawer key='cli' tokens={tokens} saveToken={updateToken} describe={describeOdigos} />,
-        <IconButton key='slack' onClick={() => window.open(SLACK_LINK, '_blank', 'noopener noreferrer')} tooltip='Join our Slack community'>
-          <SlackLogo />
-        </IconButton>,
+        <CliDrawer key='cli' tokens={tokens} saveToken={updateToken} fetchDescribeOdigos={fetchDescribeOdigos} />,
+        <SlackInvite key='slack' />,
       ]}
     />
   );

@@ -1,89 +1,84 @@
 import { useMemo } from 'react';
 import { useConfig } from '../config';
-import { type ComputePlatform } from '@/@types';
 import { GET_INSTRUMENTATION_RULES } from '@/graphql';
 import { useMutation, useQuery } from '@apollo/client';
+import type { FetchedInstrumentationRule, ComputePlatform } from '@/@types';
 import { type InstrumentationRuleFormData, useNotificationStore } from '@odigos/ui-containers';
 import { CREATE_INSTRUMENTATION_RULE, UPDATE_INSTRUMENTATION_RULE, DELETE_INSTRUMENTATION_RULE } from '@/graphql/mutations';
-import { CRUD, deriveTypeFromRule, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE } from '@odigos/ui-utils';
+import { CRUD, deriveTypeFromRule, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, InstrumentationRule, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 
-interface Params {
-  onSuccess?: (type: string) => void;
-  onError?: (type: string) => void;
+interface UseInstrumentationRuleCrud {
+  instrumentationRules: InstrumentationRule[];
+  instrumentationRulesLoading: boolean;
+  fetchInstrumentationRules: () => void;
+  createInstrumentationRule: (instrumentationRule: InstrumentationRuleFormData) => void;
+  updateInstrumentationRule: (ruleId: string, instrumentationRule: InstrumentationRuleFormData) => void;
+  deleteInstrumentationRule: (ruleId: string) => void;
 }
 
-export const useInstrumentationRuleCRUD = (params?: Params) => {
+const mapFetched = (items: FetchedInstrumentationRule[]): InstrumentationRule[] => {
+  return items.map((item) => {
+    const type = deriveTypeFromRule(item);
+
+    return { ...item, type };
+  });
+};
+
+export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
   const { data: config } = useConfig();
-  const { addNotification, removeNotifications } = useNotificationStore();
+  const { addNotification } = useNotificationStore();
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
-    addNotification({
-      type,
-      title,
-      message,
-      crdType: ENTITY_TYPES.INSTRUMENTATION_RULE,
-      target: id ? getSseTargetFromId(id, ENTITY_TYPES.INSTRUMENTATION_RULE) : undefined,
-      hideFromHistory,
-    });
+    addNotification({ type, title, message, crdType: ENTITY_TYPES.INSTRUMENTATION_RULE, target: id ? getSseTargetFromId(id, ENTITY_TYPES.INSTRUMENTATION_RULE) : undefined, hideFromHistory });
   };
 
-  const handleError = (actionType: string, message: string) => {
-    notifyUser(NOTIFICATION_TYPE.ERROR, actionType, message);
-    params?.onError?.(actionType);
-  };
-
-  const handleComplete = (actionType: string, message: string, id?: string) => {
-    notifyUser(NOTIFICATION_TYPE.SUCCESS, actionType, message, id);
-    // refetch();
-    params?.onSuccess?.(actionType);
-  };
-
-  // Fetch data
-  const { data, loading, refetch } = useQuery<ComputePlatform>(GET_INSTRUMENTATION_RULES, {
-    onError: (error) => handleError(error.name || CRUD.READ, error.cause?.message || error.message),
+  const {
+    data,
+    loading: isFetching,
+    refetch: fetchInstrumentationRules,
+  } = useQuery<ComputePlatform>(GET_INSTRUMENTATION_RULES, {
+    onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message),
   });
 
-  // Map fetched data
-  const mapped = useMemo(() => {
-    return (data?.computePlatform?.instrumentationRules || []).map((item) => {
-      const type = deriveTypeFromRule(item);
-      return { ...item, type };
-    });
-  }, [data]);
-
-  // Filter mapped data
-  const filtered = mapped; // no filters for rules yet, TBA in future
-
-  const [createInstrumentationRule, cState] = useMutation<{ createInstrumentationRule: { ruleId: string } }>(CREATE_INSTRUMENTATION_RULE, {
-    onError: (error) => handleError(CRUD.CREATE, error.message),
+  const [createInstrumentationRule, cState] = useMutation<{ createInstrumentationRule: { ruleId: string } }, { instrumentationRule: InstrumentationRuleFormData }>(CREATE_INSTRUMENTATION_RULE, {
+    onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.CREATE, error.cause?.message || error.message),
     onCompleted: (res, req) => {
       const id = res?.createInstrumentationRule?.ruleId;
-      handleComplete(CRUD.CREATE, `Rule "${id}" created`, id);
+      const type = deriveTypeFromRule(req?.variables?.instrumentationRule);
+      notifyUser(NOTIFICATION_TYPE.ERROR, CRUD.CREATE, `Rule "${type}" created`, id);
+      fetchInstrumentationRules();
     },
   });
 
-  const [updateInstrumentationRule, uState] = useMutation<{ updateInstrumentationRule: { ruleId: string } }>(UPDATE_INSTRUMENTATION_RULE, {
-    onError: (error) => handleError(CRUD.UPDATE, error.message),
-    onCompleted: (res, req) => {
-      const id = res?.updateInstrumentationRule?.ruleId;
-      handleComplete(CRUD.UPDATE, `Rule "${id}" updated`, id);
+  const [updateInstrumentationRule, uState] = useMutation<{ updateInstrumentationRule: { ruleId: string } }, { ruleId: string; instrumentationRule: InstrumentationRuleFormData }>(
+    UPDATE_INSTRUMENTATION_RULE,
+    {
+      onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.UPDATE, error.cause?.message || error.message),
+      onCompleted: (res, req) => {
+        const id = res?.updateInstrumentationRule?.ruleId;
+        const type = deriveTypeFromRule(req?.variables?.instrumentationRule);
+        notifyUser(NOTIFICATION_TYPE.ERROR, CRUD.UPDATE, `Rule "${type}" updated`, id);
+        fetchInstrumentationRules();
+      },
     },
-  });
+  );
 
-  const [deleteInstrumentationRule, dState] = useMutation<{ deleteInstrumentationRule: boolean }>(DELETE_INSTRUMENTATION_RULE, {
-    onError: (error) => handleError(CRUD.DELETE, error.message),
+  const [deleteInstrumentationRule, dState] = useMutation<{ deleteInstrumentationRule: boolean }, { ruleId: string }>(DELETE_INSTRUMENTATION_RULE, {
+    onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.DELETE, error.cause?.message || error.message),
     onCompleted: (res, req) => {
       const id = req?.variables?.ruleId;
-      removeNotifications(getSseTargetFromId(id, ENTITY_TYPES.INSTRUMENTATION_RULE));
-      handleComplete(CRUD.DELETE, `Rule "${id}" deleted`, id);
+      // TODO: find a way to derive the type, instead of ID in toast
+      notifyUser(NOTIFICATION_TYPE.ERROR, CRUD.DELETE, `Rule "${id}" deleted`, id);
+      fetchInstrumentationRules();
     },
   });
 
+  const mapped = useMemo(() => mapFetched(data?.computePlatform?.instrumentationRules || []), [data?.computePlatform?.instrumentationRules]);
+
   return {
-    loading: loading || cState.loading || uState.loading || dState.loading,
     instrumentationRules: mapped,
-    filteredInstrumentationRules: filtered,
-    refetchInstrumentationRules: refetch,
+    instrumentationRulesLoading: isFetching || cState.loading || uState.loading || dState.loading,
+    fetchInstrumentationRules,
 
     createInstrumentationRule: (instrumentationRule: InstrumentationRuleFormData) => {
       if (config?.readonly) {

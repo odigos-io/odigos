@@ -27,7 +27,7 @@ func CreateResourceManagers(client *kube.Client, odigosNs string, odigosTier com
 	resourceManagers = append(resourceManagers, []resourcemanager.ResourceManager{
 		NewOwnTelemetryResourceManager(client, odigosNs, config, odigosTier, odigosVersion),
 		NewDataCollectionResourceManager(client, odigosNs, config),
-		NewInstrumentorResourceManager(client, odigosNs, config, odigosVersion),
+		NewInstrumentorResourceManager(client, odigosNs, config, odigosTier, odigosVersion),
 		NewSchedulerResourceManager(client, odigosNs, config, odigosVersion),
 		NewOdigletResourceManager(client, odigosNs, config, odigosTier, odigosVersion),
 		NewAutoScalerResourceManager(client, odigosNs, config, odigosVersion),
