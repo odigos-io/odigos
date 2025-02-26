@@ -10,21 +10,28 @@ const crdName = CRD_NAMES.INSTRUMENTATION_RULE;
 const totalEntities = SELECTED_ENTITIES.INSTRUMENTATION_RULES.length;
 
 describe('Instrumentation Rules CRUD', () => {
-  beforeEach(() =>
-    cy
-      .intercept('/graphql', (req) => {
-        aliasMutation(req, 'GetConfig');
+  beforeEach(() => {
+    cy.intercept('/graphql', (req) => {
+      aliasMutation(req, 'GetConfig');
 
-        if (hasOperationName(req, 'GetConfig')) {
-          req.alias = 'config';
-          req.reply((res) => {
-            // This is to make the test think this is enterprise/onprem - which will allow us to create rules
-            res.body.data = { config: { tier: 'onprem' } };
-          });
-        }
-      })
-      .as('gql'),
-  );
+      if (hasOperationName(req, 'GetConfig')) {
+        req.alias = 'config';
+        req.reply((res) => {
+          // This is to make the test think this is enterprise/onprem - which will allow us to create rules
+          res.body.data = { config: { tier: 'onprem' } };
+        });
+      }
+    }).as('gql');
+
+    cy.on('uncaught:exception', (err, runnable) => {
+      if (err.message.includes('ResizeObserver loop completed with undelivered notifications')) {
+        // returning false here prevents Cypress from failing the test
+        return false;
+      }
+
+      return true;
+    });
+  });
 
   it(`Should have 0 ${crdName} CRDs in the cluster`, () => {
     getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });

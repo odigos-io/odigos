@@ -10,7 +10,18 @@ const crdName = CRD_NAMES.SOURCE;
 const totalEntities = SELECTED_ENTITIES.NAMESPACE_SOURCES.length;
 
 describe('Sources CRUD', () => {
-  beforeEach(() => cy.intercept('/graphql').as('gql'));
+  beforeEach(() => {
+    cy.intercept('/graphql').as('gql');
+
+    cy.on('uncaught:exception', (err, runnable) => {
+      if (err.message.includes('ResizeObserver loop completed with undelivered notifications')) {
+        // returning false here prevents Cypress from failing the test
+        return false;
+      }
+
+      return true;
+    });
+  });
 
   it(`Should have 0 ${crdName} CRDs in the cluster`, () => {
     getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });

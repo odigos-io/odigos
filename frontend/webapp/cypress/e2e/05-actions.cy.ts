@@ -10,7 +10,18 @@ const crdNames = CRD_NAMES.ACTIONS;
 const totalEntities = SELECTED_ENTITIES.ACTIONS.length;
 
 describe('Actions CRUD', () => {
-  beforeEach(() => cy.intercept('/graphql').as('gql'));
+  beforeEach(() => {
+    cy.intercept('/graphql').as('gql');
+
+    cy.on('uncaught:exception', (err, runnable) => {
+      if (err.message.includes('ResizeObserver loop completed with undelivered notifications')) {
+        // returning false here prevents Cypress from failing the test
+        return false;
+      }
+
+      return true;
+    });
+  });
 
   it(`Should have 0 ${JSON.stringify(crdNames)} CRDs in the cluster`, () => {
     expect(crdNames.length).to.eq(totalEntities);
