@@ -56,8 +56,8 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	return syncNamespaceWorkloads(
-		ctx, 
-		r.Client, 
+		ctx,
+		r.Client,
 		r.Scheme,
 		ns.GetName(),
 		reconcileFunc)
