@@ -4,7 +4,6 @@ import { useEffect } from 'react';
 import { ROUTES } from '@/utils';
 import { useConfig } from '@/hooks';
 import { useRouter } from 'next/navigation';
-import { PageContainer } from '@/components';
 import { CONFIG_INSTALLATION } from '@/@types';
 import { CenterThis, FadeLoader } from '@odigos/ui-components';
 
@@ -25,10 +24,8 @@ export default function App() {
   }, [data]);
 
   return (
-    <PageContainer>
-      <CenterThis style={{ height: '100%' }}>
-        <FadeLoader scale={2} />
-      </CenterThis>
-    </PageContainer>
+    <CenterThis style={{ height: '100%' }}>
+      <FadeLoader scale={2} />
+    </CenterThis>
   );
 }

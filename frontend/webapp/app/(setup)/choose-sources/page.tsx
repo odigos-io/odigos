@@ -2,10 +2,9 @@
 
 import React, { useRef, useState } from 'react';
 import { useNamespace } from '@/hooks';
+import { SetupHeader } from '@/components';
 import { ENTITY_TYPES } from '@odigos/ui-utils';
-import { Stepper } from '@odigos/ui-components';
-import { OnboardingStepperWrapper, PageContainer, SetupHeader } from '@/components';
-import { SourceSelectionForm, ToastList, type SourceSelectionFormRef } from '@odigos/ui-containers';
+import { SourceSelectionForm, type SourceSelectionFormRef } from '@odigos/ui-containers';
 
 export default function Page() {
   const [selectedNamespace, setSelectedNamespace] = useState('');
@@ -14,19 +13,8 @@ export default function Page() {
   const formRef = useRef<SourceSelectionFormRef>(null);
 
   return (
-    <PageContainer>
-      <ToastList />
+    <>
       <SetupHeader entityType={ENTITY_TYPES.SOURCE} formRef={formRef} />
-      <OnboardingStepperWrapper>
-        <Stepper
-          currentStep={2}
-          data={[
-            { stepNumber: 1, title: 'INSTALLATION' },
-            { stepNumber: 2, title: 'SOURCES' },
-            { stepNumber: 3, title: 'DESTINATIONS' },
-          ]}
-        />
-      </OnboardingStepperWrapper>
       <SourceSelectionForm
         ref={formRef}
         componentType='FAST'
@@ -37,6 +25,6 @@ export default function Page() {
         selectedNamespace={selectedNamespace}
         onSelectNamespace={onSelectNamespace}
       />
-    </PageContainer>
+    </>
   );
 }

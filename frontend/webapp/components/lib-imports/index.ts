@@ -1,3 +1,4 @@
+export * from './error-boundary';
 export * from './overview-focused-actions';
 export * from './overview-focused-destinations';
 export * from './overview-focused-rules';

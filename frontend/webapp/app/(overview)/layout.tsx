@@ -1,18 +1,20 @@
-import React, { type FC, type PropsWithChildren } from 'react';
+'use client';
+
+import React, { type PropsWithChildren } from 'react';
 import styled from 'styled-components';
-import ErrorBoundary from './error-boundary';
 import { useSSE, useTokenTracker } from '@/hooks';
 import { ToastList } from '@odigos/ui-containers';
 import { FlexColumn } from '@odigos/ui-components';
+import { ErrorBoundary, OverviewHeader, OverviewModalsAndDrawers } from '@/components';
 
-export const PageContent = styled(FlexColumn)`
+const PageContent = styled(FlexColumn)`
   width: 100%;
   height: 100vh;
   background-color: ${({ theme }) => theme.colors.primary};
   align-items: center;
 `;
 
-const PageContainer: FC<PropsWithChildren> = ({ children }) => {
+function OverviewLayout({ children }: PropsWithChildren) {
   // call important hooks that should run on page-mount
   useSSE();
   useTokenTracker();
@@ -20,11 +22,15 @@ const PageContainer: FC<PropsWithChildren> = ({ children }) => {
   return (
     <ErrorBoundary>
       <PageContent>
-        <ToastList />
+        <OverviewHeader />
+
         {children}
+
+        <OverviewModalsAndDrawers />
+        <ToastList />
       </PageContent>
     </ErrorBoundary>
   );
-};
+}
 
-export { PageContainer };
+export default OverviewLayout;
