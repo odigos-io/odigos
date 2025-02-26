@@ -16,7 +16,7 @@ type DotnetInspector struct{}
 const processName = "dotnet"
 
 func (d *DotnetInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
-	if filepath.Base(p.ExePath) == processName {
+	if strings.HasPrefix(filepath.Base(p.ExePath), processName) {
 		return common.DotNetProgrammingLanguage, true
 	}
 
