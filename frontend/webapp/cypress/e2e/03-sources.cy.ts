@@ -6,7 +6,8 @@ import { BUTTONS, CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TE
 // If you have to run tests locally, make sure to clean up the cluster before running the tests.
 
 const namespace = NAMESPACES.DEFAULT;
-const crdName = CRD_NAMES.SOURCE;
+const sourceCrdName = CRD_NAMES.SOURCE;
+const configCrdName = CRD_NAMES.INSTRUMENTATION_CONFIG;
 const totalEntities = SELECTED_ENTITIES.NAMESPACE_SOURCES.length;
 
 describe('Sources CRUD', () => {
@@ -22,8 +23,12 @@ describe('Sources CRUD', () => {
     });
   });
 
-  it(`Should have 0 ${crdName} CRDs in the cluster`, () => {
-    getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
+  it(`Should have 0 ${sourceCrdName} CRDs in the cluster`, () => {
+    getCrdIds({ namespace, crdName: sourceCrdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
+  });
+
+  it(`Should have 0 ${configCrdName} CRDs in the cluster`, () => {
+    getCrdIds({ namespace, crdName: configCrdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
   });
 
   it(`Should create ${totalEntities} sources via API, and notify with SSE`, () => {
@@ -33,7 +38,7 @@ describe('Sources CRUD', () => {
       cy.get(DATA_IDS.SELECT_NAMESPACE).find(DATA_IDS.CHECKBOX).click();
 
       // Wait for the namespace sources to load
-      cy.wait('@gql').then(() => {
+      cy.wait(1000).then(() => {
         SELECTED_ENTITIES.NAMESPACE_SOURCES.forEach((sourceName) => {
           cy.get(DATA_IDS.SELECT_NAMESPACE).get(DATA_IDS.SELECT_SOURCE(sourceName)).should('exist');
         });
@@ -48,8 +53,12 @@ describe('Sources CRUD', () => {
     });
   });
 
-  it(`Should have ${totalEntities} ${crdName} CRDs in the cluster`, () => {
-    getCrdIds({ namespace, crdName, expectedError: '', expectedLength: totalEntities });
+  it(`Should have ${totalEntities + 1} ${sourceCrdName} CRDs in the cluster (with +1 ${sourceCrdName} CRD for namespace)`, () => {
+    getCrdIds({ namespace, crdName: sourceCrdName, expectedError: '', expectedLength: totalEntities + 1 });
+  });
+
+  it(`Should have ${totalEntities} ${configCrdName} CRDs in the cluster`, () => {
+    getCrdIds({ namespace, crdName: configCrdName, expectedError: '', expectedLength: totalEntities });
   });
 
   it(`Should update ${totalEntities} sources via API, and notify locally`, () => {
@@ -79,10 +88,18 @@ describe('Sources CRUD', () => {
     });
   });
 
-  it(`Should update ${totalEntities} ${crdName} CRDs in the cluster`, () => {
-    getCrdIds({ namespace, crdName, expectedError: '', expectedLength: totalEntities }, (crdIds) => {
+  it(`Should update ${totalEntities + 1} ${sourceCrdName} CRDs in the cluster (with +1 ${sourceCrdName} CRD for namespace)`, () => {
+    getCrdIds({ namespace, crdName: sourceCrdName, expectedError: '', expectedLength: totalEntities + 1 }, (crdIds) => {
       crdIds.forEach((crdId) => {
-        getCrdById({ namespace, crdName, crdId, expectedError: '', expectedKey: 'serviceName', expectedValue: TEXTS.UPDATED_NAME });
+        getCrdById({ namespace, crdName: sourceCrdName, crdId, expectedError: '', expectedKey: 'serviceName', expectedValue: TEXTS.UPDATED_NAME });
+      });
+    });
+  });
+
+  it(`Should update ${totalEntities} ${configCrdName} CRDs in the cluster`, () => {
+    getCrdIds({ namespace, crdName: configCrdName, expectedError: '', expectedLength: totalEntities }, (crdIds) => {
+      crdIds.forEach((crdId) => {
+        getCrdById({ namespace, crdName: configCrdName, crdId, expectedError: '', expectedKey: 'serviceName', expectedValue: TEXTS.UPDATED_NAME });
       });
     });
   });
@@ -103,11 +120,15 @@ describe('Sources CRUD', () => {
     });
   });
 
-  it(`Should update ${totalEntities} ${crdName} CRDs in the cluster with "disabled=true"`, () => {
-    getCrdIds({ namespace, crdName, expectedError: '', expectedLength: totalEntities }, (crdIds) => {
+  it(`Should update ${totalEntities} ${sourceCrdName} CRDs in the cluster with "disabled=true" (and skip +1 ${sourceCrdName} CRD for namespace)`, () => {
+    getCrdIds({ namespace, crdName: sourceCrdName, expectedError: '', expectedLength: totalEntities + 1 }, (crdIds) => {
       crdIds.forEach((crdId) => {
-        getCrdById({ namespace, crdName, crdId, expectedError: '', expectedKey: 'disableInstrumentation', expectedValue: true });
+        getCrdById({ namespace, crdName: sourceCrdName, crdId, expectedError: '', expectedKey: 'disableInstrumentation', expectedValue: true });
       });
     });
+  });
+
+  it(`Should have ${0} ${configCrdName} CRDs in the cluster`, () => {
+    getCrdIds({ namespace, crdName: configCrdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
   });
 });

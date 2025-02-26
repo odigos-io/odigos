@@ -1,4 +1,4 @@
-import { DATA_IDS } from '../constants';
+import { CRD_NAMES, DATA_IDS } from '../constants';
 export * from './cy-alias';
 
 export const visitPage = (path: string, callback?: () => void) => {
@@ -58,7 +58,12 @@ export const getCrdById = ({ namespace, crdName, crdId, expectedError, expectedK
     const { spec } = parsed?.items?.[0] || parsed || {};
 
     expect(spec).to.not.be.empty;
-    expect(spec[expectedKey]).to.eq(expectedValue);
+
+    if (crdId === CRD_NAMES.SOURCE && spec.workload.kind === 'Namespace') {
+      // skip namespace source checks
+    } else {
+      expect(spec[expectedKey]).to.eq(expectedValue);
+    }
 
     if (!!callback) callback();
   });
