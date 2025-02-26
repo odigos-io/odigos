@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"path/filepath"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/hashicorp/go-version"
@@ -29,15 +28,6 @@ var re = regexp.MustCompile(NginxVersionRegex)
 func (j *NginxInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
 	if filepath.Base(p.ExePath) == NginxProcessName {
 		return common.NginxProgrammingLanguage, true
-	}
-
-	cmdline := strings.Split(string(p.CmdLine), "\x00") // Split arguments
-
-	// Iterate over cmdline arguments and check the basename
-	for _, arg := range cmdline {
-		if filepath.Base(arg) == "nginx" {
-			return common.NginxProgrammingLanguage, true
-		}
 	}
 
 	return "", false
