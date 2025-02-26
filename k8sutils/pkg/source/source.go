@@ -79,12 +79,12 @@ func IsObjectInstrumentedBySource(ctx context.Context,
 	return false, condition, nil
 }
 
-// IsSourceRelevant returns true if a Source:
+// SourceEnablesInstrumentation returns true if a Source:
 // 1) Inclusive AND NOT terminating, or
 // 2) Exclusive AND terminating
 // This function alone should not be used to determine any instrumentation changes, and is provided
 // for the Instrumentor controllers to filter events.
-func IsSourceRelevant(source *odigosv1.Source) bool {
+func SourceEnablesInstrumentation(source *odigosv1.Source) bool {
 	return odigosv1.IsDisabledSource(source) == k8sutils.IsTerminating(source)
 }
 
