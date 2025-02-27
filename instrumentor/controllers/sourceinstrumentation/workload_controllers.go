@@ -64,11 +64,16 @@ func reconcileWorkload(
 		reconcileFunc = uninstrumentWorkload
 	}
 
+	podWorkload := k8sconsts.PodWorkload{
+		Name:      key.Name,
+		Namespace: key.Namespace,
+		Kind:      objKind,
+	}
+
 	res, err := reconcileFunc(
 		ctx,
 		k8sClient,
-		objKind,
-		key,
+		podWorkload,
 		scheme)
 	if err != nil {
 		return res, err

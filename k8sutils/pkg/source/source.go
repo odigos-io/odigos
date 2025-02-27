@@ -79,12 +79,21 @@ func IsObjectInstrumentedBySource(ctx context.Context,
 	return false, condition, nil
 }
 
-// SourceEnablesInstrumentation returns true if a Source:
+// SourceStatePermitsInstrumentation returns true if a Source:
 // 1) Inclusive AND NOT terminating, or
 // 2) Exclusive AND terminating
-// This function alone should not be used to determine any instrumentation changes, and is provided
-// for the Instrumentor controllers to filter events.
-func SourceEnablesInstrumentation(source *odigosv1.Source) bool {
+// This shows whether the Source and its state make it possible for the Source's workload to be instrumented.
+// In general, this determines whether controllers should take an "instrumentation" or "uninstrumentation" path.
+//
+// However, this function alone does not guarantee that the Source's workload _will_ be instrumented, for example:
+//   - A terminating Disabled Source does not mean there is another, non-terminating, inclusive Source for the workload.
+//     Therefore, in that case you must check to see if there is another Source for the workload.
+//   - A non-terminating Enabled Namespace Source could still have specific Workloads disabled by their own Workload Sources.
+//
+// This function is meant to be used as a basic filter for the top level instrumentor controllers
+// (which are triggered by an event for only a single Source).
+// Individual workloads should have their instrumentation state verified before acting on them.
+func SourceStatePermitsInstrumentation(source *odigosv1.Source) bool {
 	return odigosv1.IsDisabledSource(source) == k8sutils.IsTerminating(source)
 }
 

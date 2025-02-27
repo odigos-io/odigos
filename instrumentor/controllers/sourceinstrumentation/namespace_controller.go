@@ -35,19 +35,18 @@ type NamespaceReconciler struct {
 
 func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	logger.Info("namespace reconcile - will delete instrumentation for workloads that are not enabled in this namespace", "namespace", req.Name)
+	logger.Info("Syncing instrumentation for workloads in namespace", "namespace", req.Name)
 
 	var ns corev1.Namespace
 	err := r.Get(ctx, client.ObjectKey{Name: req.Name}, &ns)
 	if client.IgnoreNotFound(err) != nil {
-		logger.Error(err, "error fetching namespace object")
 		return ctrl.Result{}, err
 	}
 
 	var reconcileFunc reconcileFunction
 	enabled, _, err := sourceutils.IsObjectInstrumentedBySource(ctx, r.Client, &ns)
 	if err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 	if enabled {
 		reconcileFunc = instrumentWorkload

@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -24,20 +23,23 @@ type SourceReconciler struct {
 
 func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	logger.Info("Reconciling Source object", "name", req.Name, "namespace", req.Namespace)
 	source := &v1alpha1.Source{}
 	err := r.Get(ctx, req.NamespacedName, source)
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+	logger.Info("Reconciling Source object", "name", req.Name, "namespace", req.Namespace, "workload-kind", source.Spec.Workload.Kind, "workload-name", source.Spec.Workload.Name)
 
 	var reconcileFunc reconcileFunction
-	if sourceutils.SourceEnablesInstrumentation(source) {
+	if sourceutils.SourceStatePermitsInstrumentation(source) {
 		reconcileFunc = instrumentWorkload
 	} else {
 		reconcileFunc = uninstrumentWorkload
 	}
 
+	// Sync based on the Source object's workload kind
+	// An error from the sync functions will trigger a re-sync, except for NotFound errors
+	// In a NotFound case, we still want to progress to removing the finalizer if necessary
 	if source.Spec.Workload.Kind == k8sconsts.WorkloadKindNamespace {
 		res, err := syncNamespaceWorkloads(
 			ctx,
@@ -52,18 +54,14 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		res, err := reconcileFunc(
 			ctx,
 			r.Client,
-			source.Spec.Workload.Kind,
-			types.NamespacedName{
-				Namespace: source.Spec.Workload.Namespace,
-				Name:      source.Spec.Workload.Name,
-			},
+			source.Spec.Workload,
 			r.Scheme)
 		if client.IgnoreNotFound(err) != nil {
 			return res, err
 		}
 	}
 
-	if !source.DeletionTimestamp.IsZero() {
+	if k8sutils.IsTerminating(source) {
 		if controllerutil.ContainsFinalizer(source, k8sconsts.SourceInstrumentationFinalizer) {
 			controllerutil.RemoveFinalizer(source, k8sconsts.SourceInstrumentationFinalizer)
 		}
@@ -72,5 +70,5 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 
-	return ctrl.Result{}, client.IgnoreNotFound(err)
+	return ctrl.Result{}, nil
 }

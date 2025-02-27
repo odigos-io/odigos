@@ -36,7 +36,7 @@ var _ = Describe("DeleteInstrumentationConfig Namespace controller", func() {
 			Expect(k8sClient.Create(ctx, namespace)).Should(Succeed())
 			sourceNamespace = testutil.NewMockSource(namespace)
 			sourceNamespace.Spec.DisableInstrumentation = false
-			sourceNamespace.Finalizers = []string{k8sconsts.DeleteInstrumentationConfigFinalizer}
+			sourceNamespace.Finalizers = []string{k8sconsts.SourceInstrumentationFinalizer}
 			Expect(k8sClient.Create(ctx, sourceNamespace)).Should(Succeed())
 		})
 
@@ -58,7 +58,7 @@ var _ = Describe("DeleteInstrumentationConfig Namespace controller", func() {
 
 			It("should delete instrumented application", func() {
 				sourceNamespace.Spec.DisableInstrumentation = true
-				sourceNamespace.Finalizers = []string{k8sconsts.StartLangDetectionFinalizer}
+				sourceNamespace.Finalizers = []string{k8sconsts.SourceInstrumentationFinalizer}
 				Expect(k8sClient.Update(ctx, sourceNamespace)).Should(Succeed())
 
 				testutil.AssertInstrumentationConfigDeleted(ctx, k8sClient, instrumentationConfigDeployment)
@@ -69,7 +69,7 @@ var _ = Describe("DeleteInstrumentationConfig Namespace controller", func() {
 			It("should delete reported name annotation", func() {
 
 				sourceNamespace.Spec.DisableInstrumentation = true
-				sourceNamespace.Finalizers = []string{k8sconsts.StartLangDetectionFinalizer}
+				sourceNamespace.Finalizers = []string{k8sconsts.SourceInstrumentationFinalizer}
 				Expect(k8sClient.Update(ctx, sourceNamespace)).Should(Succeed())
 
 				testutil.AssertReportedNameAnnotationDeletedDeployment(ctx, k8sClient, deployment)
@@ -102,7 +102,7 @@ var _ = Describe("DeleteInstrumentationConfig Namespace controller", func() {
 
 			It("should retain instrumented application", func() {
 				sourceNamespace.Spec.DisableInstrumentation = true
-				sourceNamespace.Finalizers = []string{k8sconsts.StartLangDetectionFinalizer}
+				sourceNamespace.Finalizers = []string{k8sconsts.SourceInstrumentationFinalizer}
 				Expect(k8sClient.Update(ctx, sourceNamespace)).Should(Succeed())
 
 				testutil.AssertInstrumentationConfigRetained(ctx, k8sClient, instrumentationConfigDeployment)
