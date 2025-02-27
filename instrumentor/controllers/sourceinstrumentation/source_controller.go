@@ -38,27 +38,25 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	// Sync based on the Source object's workload kind
-	// An error from the sync functions will trigger a re-sync, except for NotFound errors
-	// In a NotFound case, we still want to progress to removing the finalizer if necessary
+	var result ctrl.Result
 	if source.Spec.Workload.Kind == k8sconsts.WorkloadKindNamespace {
-		res, err := syncNamespaceWorkloads(
+		result, err = syncNamespaceWorkloads(
 			ctx,
 			r.Client,
 			r.Scheme,
 			source.Spec.Workload.Name,
 			reconcileFunc)
-		if client.IgnoreNotFound(err) != nil {
-			return res, err
-		}
 	} else {
-		res, err := reconcileFunc(
+		result, err = reconcileFunc(
 			ctx,
 			r.Client,
 			source.Spec.Workload,
 			r.Scheme)
-		if client.IgnoreNotFound(err) != nil {
-			return res, err
-		}
+	}
+	// We could get a non-error Requeue signal from the reconcile functions,
+	// such as a conflict updating the instrumentationconfig status
+	if result.Requeue || client.IgnoreNotFound(err) != nil {
+		return result, err
 	}
 
 	if k8sutils.IsTerminating(source) {
