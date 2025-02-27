@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package deleteinstrumentationconfig
+package sourceinstrumentation
 
 import (
 	"context"
@@ -35,27 +35,29 @@ type NamespaceReconciler struct {
 
 func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	logger.Info("namespace reconcile - will delete instrumentation for workloads that are not enabled in this namespace", "namespace", req.Name)
+	logger.Info("Syncing instrumentation for workloads in namespace", "namespace", req.Name)
 
 	var ns corev1.Namespace
 	err := r.Get(ctx, client.ObjectKey{Name: req.Name}, &ns)
 	if client.IgnoreNotFound(err) != nil {
-		logger.Error(err, "error fetching namespace object")
 		return ctrl.Result{}, err
 	}
 
+	var reconcileFunc reconcileFunction
 	enabled, _, err := sourceutils.IsObjectInstrumentedBySource(ctx, r.Client, &ns)
 	if err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 	if enabled {
-		return ctrl.Result{}, err
+		reconcileFunc = instrumentWorkload
+	} else {
+		reconcileFunc = uninstrumentWorkload
 	}
 
-	// Request is used by common functions for Namespace and Workload reconciliation
-	// Since Namespace requests don't set a Namespace value (only Name), set it here
-	// So the common functions can rely on req.Namespace.
-	req.Namespace = req.Name
-
-	return ctrl.Result{}, syncNamespaceWorkloads(ctx, r.Client, req)
+	return syncNamespaceWorkloads(
+		ctx,
+		r.Client,
+		r.Scheme,
+		ns.GetName(),
+		reconcileFunc)
 }
