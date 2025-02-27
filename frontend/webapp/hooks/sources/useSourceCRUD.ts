@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { useConfig } from '../config';
 import { usePaginatedStore } from '@/store';
 import { useNamespace } from '../compute-platform';
@@ -18,10 +18,6 @@ interface UseSourceCrud {
   updateSource: (sourceId: WorkloadId, payload: SourceFormData) => Promise<void>;
 }
 
-const mapFetched = (items: FetchedSource[]): Source[] => {
-  return items;
-};
-
 export const useSourceCRUD = (): UseSourceCrud => {
   const { data: config } = useConfig();
   const { persistNamespace } = useNamespace();
@@ -36,11 +32,11 @@ export const useSourceCRUD = (): UseSourceCrud => {
   };
 
   const [fetchPaginated, { loading: isFetching }] = useLazyQuery<{ computePlatform: { sources: PaginatedData<FetchedSource> } }>(GET_SOURCES, {
-    fetchPolicy: 'no-cache',
+    fetchPolicy: 'cache-and-network',
   });
 
   const [fetchById, { loading: isFetchingById }] = useLazyQuery<{ computePlatform: { source: FetchedSource } }, { sourceId: WorkloadId }>(GET_SOURCE, {
-    fetchPolicy: 'no-cache',
+    fetchPolicy: 'cache-and-network',
   });
 
   const fetchSources = async (getAll: boolean = true, page: string = '') => {
@@ -48,7 +44,10 @@ export const useSourceCRUD = (): UseSourceCrud => {
     if (useInstrumentStore.getState().isAwaitingInstrumentation) return;
 
     setPaginating(ENTITY_TYPES.SOURCE, true);
+
+    const startTime = Date.now();
     const { error, data } = await fetchPaginated({ variables: { nextPage: page } });
+    const endTime = Date.now();
 
     if (!!error) {
       addNotification({
@@ -62,8 +61,15 @@ export const useSourceCRUD = (): UseSourceCrud => {
       addPaginated(ENTITY_TYPES.SOURCE, items);
 
       if (getAll && !!nextPage) {
-        // timeout helps avoid some lag
-        setTimeout(() => fetchSources(true, nextPage), 500);
+        const halfSecond = 500;
+        const timeElapsed = endTime - startTime;
+
+        if (timeElapsed > halfSecond) {
+          fetchSources(true, nextPage);
+        } else {
+          // timeout helps avoid some lag on quick paginations
+          setTimeout(() => fetchSources(true, nextPage), halfSecond);
+        }
       } else if (usePaginatedStore.getState().sources.length >= useInstrumentStore.getState().sourcesToCreate) {
         setPaginating(ENTITY_TYPES.SOURCE, false);
         setInstrumentCount('sourcesToCreate', 0);
@@ -118,10 +124,8 @@ export const useSourceCRUD = (): UseSourceCrud => {
     if (!sources.length && !sourcesPaginating) fetchSources();
   }, []);
 
-  const mapped = useMemo(() => mapFetched(sources), [sources]);
-
   return {
-    sources: mapped,
+    sources,
     sourcesLoading: isFetching || isFetchingById || sourcesPaginating || cdState.loading || uState.loading,
     sourcesPaginating,
     fetchSources,

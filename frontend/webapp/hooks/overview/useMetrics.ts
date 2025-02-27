@@ -24,6 +24,7 @@ export const useMetrics = () => {
       }[];
     };
   }>(GET_METRICS, {
+    fetchPolicy: 'cache-and-network',
     skip: !sources.length && !destinations.length,
     pollInterval: 5000,
   });

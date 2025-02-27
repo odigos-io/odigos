@@ -7,7 +7,7 @@ export const useDescribeOdigos = () => {
   const { addNotification } = useNotificationStore();
 
   const [fetchDescribeOdigos, { data, loading, error }] = useLazyQuery<{ describeOdigos: DescribeOdigos }>(DESCRIBE_ODIGOS, {
-    fetchPolicy: 'no-cache',
+    fetchPolicy: 'cache-and-network',
     onError: (error) =>
       addNotification({
         type: NOTIFICATION_TYPE.ERROR,

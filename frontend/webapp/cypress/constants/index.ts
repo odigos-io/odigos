@@ -114,6 +114,10 @@ export const TEXTS = {
   ACTION_WARN_MODAL_TITLE: `Delete action (${CYPRESS_TEST})`,
   INSTRUMENTATION_RULE_WARN_MODAL_TITLE: `Delete rule (${CYPRESS_TEST})`,
 
+  NOTIF_CREATED: 'Successfully created',
+  NOTIF_UPDATED: 'Successfully updated',
+  NOTIF_DELETED: 'Successfully deleted',
+
   NOTIF_SOURCES_CREATED: (amount: number) => `Successfully created ${amount} sources`,
   NOTIF_SOURCES_UPDATED: (name: string) => `Successfully updated "${name}" source`,
   NOTIF_SOURCES_DELETED: (amount: number) => `Successfully deleted ${amount} sources`,

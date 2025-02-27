@@ -140,6 +140,7 @@ export const useActionCRUD = (): UseActionCrud => {
     loading: isFetching,
     refetch: fetchActions,
   } = useQuery<{ computePlatform: { actions: FetchedAction[] } }>(GET_ACTIONS, {
+    fetchPolicy: 'cache-and-network',
     onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message),
   });
 
