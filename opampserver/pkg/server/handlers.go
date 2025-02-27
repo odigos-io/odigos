@@ -53,15 +53,15 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, firstMessage *
 		return nil, serverToAgent, nil
 	}
 
-	var pid int64
+	var vpid int64
 	for _, attr := range firstMessage.AgentDescription.IdentifyingAttributes {
-		if attr.Key == string(semconv.ProcessPIDKey) {
-			pid = attr.Value.GetIntValue()
+		if attr.Key == string(semconv.ProcessPIDKey) || attr.Key == "process.vpid" {
+			vpid = attr.Value.GetIntValue()
 			break
 		}
 	}
-	if pid == 0 {
-		return nil, nil, fmt.Errorf("missing pid in agent description")
+	if vpid == 0 {
+		return nil, nil, fmt.Errorf("missing container pid in agent description")
 	}
 
 	attrs, err := extractOpampAgentAttributes(firstMessage.AgentDescription)
@@ -108,7 +108,7 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, firstMessage *
 		Workload:                 podWorkload,
 		Pod:                      pod,
 		ContainerName:            k8sAttributes.ContainerName,
-		Pid:                      pid,
+		Pid:                      vpid,
 		ProgrammingLanguage:      attrs.ProgrammingLanguage,
 		InstrumentedAppName:      instrumentedAppName,
 		AgentRemoteConfig:        fullRemoteConfig,
