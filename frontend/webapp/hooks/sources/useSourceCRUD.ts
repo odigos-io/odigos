@@ -44,7 +44,10 @@ export const useSourceCRUD = (): UseSourceCrud => {
     if (useInstrumentStore.getState().isAwaitingInstrumentation) return;
 
     setPaginating(ENTITY_TYPES.SOURCE, true);
+
+    const startTime = Date.now();
     const { error, data } = await fetchPaginated({ variables: { nextPage: page } });
+    const endTime = Date.now();
 
     if (!!error) {
       addNotification({
@@ -58,8 +61,15 @@ export const useSourceCRUD = (): UseSourceCrud => {
       addPaginated(ENTITY_TYPES.SOURCE, items);
 
       if (getAll && !!nextPage) {
-        // timeout helps avoid some lag
-        setTimeout(() => fetchSources(true, nextPage), 500);
+        const halfSecond = 500;
+        const timeElapsed = endTime - startTime;
+
+        if (timeElapsed > halfSecond) {
+          fetchSources(true, nextPage);
+        } else {
+          // timeout helps avoid some lag on quick paginations
+          setTimeout(() => fetchSources(true, nextPage), halfSecond);
+        }
       } else if (usePaginatedStore.getState().sources.length >= useInstrumentStore.getState().sourcesToCreate) {
         setPaginating(ENTITY_TYPES.SOURCE, false);
         setInstrumentCount('sourcesToCreate', 0);
