@@ -85,4 +85,4 @@ const ErrorBoundary = ({ children }: PropsWithChildren) => {
   );
 };
 
-export default ErrorBoundary;
+export { ErrorBoundary };

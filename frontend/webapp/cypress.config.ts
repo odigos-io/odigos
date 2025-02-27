@@ -5,10 +5,17 @@ const BASE_URL = `http://localhost:${PORT}`;
 
 const config: Cypress.ConfigOptions = {
   e2e: {
-    setupNodeEvents(on, config) {},
     baseUrl: BASE_URL,
     supportFile: false,
     waitForAnimations: true,
+    setupNodeEvents(on, config) {
+      on('task', {
+        log(message) {
+          console.log(message);
+          return null;
+        },
+      });
+    },
   },
 };
 
