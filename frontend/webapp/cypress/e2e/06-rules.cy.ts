@@ -95,7 +95,9 @@ describe('Instrumentation Rules CRUD', () => {
           () => {
             // Wait for the rule to delete
             cy.wait('@gql').then(() => {
-              awaitToast({ withSSE: false, message: TEXTS.NOTIF_DELETED });
+              // TODO: bring back full message after replacing CRD ID with rule type in the CRUD hook
+              // awaitToast({ withSSE: false, message: TEXTS.NOTIF_INSTRUMENTATION_RULE_DELETED('was crdId - should be ruleType') });
+              awaitToast({ withSSE: false, message: 'deleted' });
             });
           },
         );
