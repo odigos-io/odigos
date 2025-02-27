@@ -84,7 +84,7 @@ func syncNamespaceWorkloads(
 				if err != nil {
 					errs = errors.Join(errs, err)
 				}
-				if !res.IsZero() {
+				if res.Requeue {
 					collectiveRes = res
 				}
 			}
@@ -167,7 +167,7 @@ func instrumentWorkload(
 
 		err = k8sClient.Status().Update(ctx, ic)
 		if err != nil {
-			logger.Info("Failed to update status conditions of InstrumentationConfig", "name", instConfigName, "namespace", podWorkload.Namespace)
+			logger.Info("Failed to update status conditions of InstrumentationConfig", "name", instConfigName, "namespace", podWorkload.Namespace, "error", err.Error())
 			return k8sutils.K8SUpdateErrorHandler(err)
 		}
 	}
