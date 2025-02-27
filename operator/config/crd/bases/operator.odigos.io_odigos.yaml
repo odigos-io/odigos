@@ -55,6 +55,14 @@ spec:
                 description: ImagePrefix is the prefix for all container images. used
                   when your cluster doesn't have access to docker hub
                 type: string
+              mountMethod:
+                description: |-
+                  MountMethod defines the mechanism for mounting Odigos files into instrumented pods.
+                  Must be one of: (k8s-virtual-device, k8s-host-path)
+                enum:
+                - virtual-device
+                - host-path
+                type: string
               onPremToken:
                 description: OnPremToken is an optional enterprise token for Odigos
                   Enterprise.

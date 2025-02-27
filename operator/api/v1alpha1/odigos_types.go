@@ -63,6 +63,11 @@ type OdigosSpec struct {
 	// OnPremToken is an optional enterprise token for Odigos Enterprise.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="On-Prem Token"
 	OnPremToken string `json:"onPremToken,omitempty"`
+
+	// MountMethod defines the mechanism for mounting Odigos files into instrumented pods.
+	// Must be one of: (k8s-virtual-device, k8s-host-path)
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Mount Method"
+	MountMethod common.MountMethod `json:"mountMethod,omitempty"`
 }
 
 // OdigosStatus defines the observed state of Odigos
