@@ -65,6 +65,7 @@ updates:
       - /collector
       - /frontend
       - /odiglet
+      - /operator
     schedule:
       day: sunday
       interval: weekly
