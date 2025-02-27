@@ -136,7 +136,7 @@ var addProfileCmd = &cobra.Command{
 		config.Profiles = append(config.Profiles, selectedProfile.ProfileName)
 
 		// Apply the updated configuration
-		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, config, currentOdigosVersion, string(installationmethod.K8sInstallationMethodOdigosCli))
+		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, config, currentOdigosVersion, installationmethod.K8sInstallationMethodOdigosCli)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Updating")
 		if err != nil {
 			fmt.Println("Odigos profile add failed - unable to apply Odigos resources.")
@@ -210,7 +210,7 @@ var removeProfileCmd = &cobra.Command{
 		config.Profiles = newProfiles
 
 		// Apply the updated configuration
-		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, config, currentOdigosVersion, string(installationmethod.K8sInstallationMethodOdigosCli))
+		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, config, currentOdigosVersion, installationmethod.K8sInstallationMethodOdigosCli)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Updating")
 		if err != nil {
 			fmt.Println("Odigos profile remove failed - unable to apply Odigos resources.")

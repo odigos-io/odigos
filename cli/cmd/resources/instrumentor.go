@@ -132,7 +132,7 @@ func NewInstrumentorClusterRole(ownerPermissionEnforcement bool) *rbacv1.Cluster
 			// When we create an InstrumentationConfig, we set the OwnerReference to the related workload.
 			// Controller-runtime sets BlockDeletion: true. So with this Admission Plugin we need permission to
 			// update finalizers on the workloads so that they can block deletion.
-			// seehttps://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#ownerreferencespermissionenforcement
+			// see https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#ownerreferencespermissionenforcement
 			APIGroups: []string{"apps"},
 			Resources: []string{"statefulsets/finalizers", "daemonsets/finalizers", "deployments/finalizers"},
 			Verbs:     []string{"update"},
