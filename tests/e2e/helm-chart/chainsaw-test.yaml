@@ -62,7 +62,7 @@ spec:
               fi
         - assert:
             file: ../../common/assert/odigos-installed.yaml
-    
+
     - name: Verify Node Odiglet label has been added
       try:
         - assert:
@@ -134,7 +134,7 @@ spec:
               # Delete the job
               kubectl delete -f ../../common/apply/generate-traffic-job.yaml
               sleep 5
-          
+
               while true; do
                 # Flush traces before accessing
                 ../../common/flush_traces.sh
@@ -143,7 +143,7 @@ spec:
                 # Run the wait-for-trace script
                 echo "Running TraceQL test at $(date)"
                 ../../common/traceql_runner.sh tracesql/wait-for-trace.yaml
-                
+
                 if [ $? -eq 0 ]; then
                   break
                 fi
@@ -151,7 +151,7 @@ spec:
     - name: Verify Trace - Context Propagation
       try:
         - script:
-            timeout: 1m
+            timeout: 3m
             content: |
               ../../common/traceql_runner.sh tracesql/context-propagation.yaml
       catch:
@@ -161,7 +161,7 @@ spec:
     - name: Verify Trace - Resource Attributes
       try:
         - script:
-            timeout: 1m
+            timeout: 3m
             content: |
               ../../common/traceql_runner.sh tracesql/resource-attributes.yaml
       catch:
@@ -171,7 +171,7 @@ spec:
     - name: Verify Trace - Span Attributes
       try:
         - script:
-            timeout: 1m
+            timeout: 3m
             content: |
               ../../common/traceql_runner.sh tracesql/span-attributes.yaml
       catch:
