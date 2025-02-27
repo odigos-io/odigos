@@ -29,11 +29,12 @@ import (
 
 type Client struct {
 	kubernetes.Interface
-	Clientset     *kubernetes.Clientset
-	Dynamic       *dynamic.DynamicClient
-	ApiExtensions apiextensionsclient.Interface
-	OdigosClient  v1alpha1.OdigosV1alpha1Interface
-	Config        *rest.Config
+	Clientset       *kubernetes.Clientset
+	Dynamic         *dynamic.DynamicClient
+	ApiExtensions   apiextensionsclient.Interface
+	OdigosClient    v1alpha1.OdigosV1alpha1Interface
+	Config          *rest.Config
+	OwnerReferences []metav1.OwnerReference
 }
 
 // Identical to the Object interface defined in controller-runtime: https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/client#Object
@@ -100,9 +101,9 @@ func PrintClientErrorAndExit(err error) {
 	os.Exit(-1)
 }
 
-func (c *Client) ApplyResources(ctx context.Context, configVersion int, objs []Object, ownerReferences []metav1.OwnerReference) error {
+func (c *Client) ApplyResources(ctx context.Context, configVersion int, objs []Object) error {
 	for _, obj := range objs {
-		err := c.ApplyResource(ctx, configVersion, obj, ownerReferences)
+		err := c.ApplyResource(ctx, configVersion, obj)
 		if err != nil {
 			return err
 		}
@@ -110,7 +111,7 @@ func (c *Client) ApplyResources(ctx context.Context, configVersion int, objs []O
 	return nil
 }
 
-func (c *Client) ApplyResource(ctx context.Context, configVersion int, obj Object, ownerReferences []metav1.OwnerReference) error {
+func (c *Client) ApplyResource(ctx context.Context, configVersion int, obj Object) error {
 
 	labels := obj.GetLabels()
 	if labels == nil {
@@ -120,7 +121,7 @@ func (c *Client) ApplyResource(ctx context.Context, configVersion int, obj Objec
 	labels[k8sconsts.OdigosSystemConfigLabelKey] = strconv.Itoa(configVersion)
 	obj.SetLabels(labels)
 
-	obj.SetOwnerReferences(ownerReferences)
+	obj.SetOwnerReferences(c.OwnerReferences)
 
 	depBytes, _ := yaml.Marshal(obj)
 

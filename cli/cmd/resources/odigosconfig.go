@@ -45,7 +45,7 @@ func NewOdigosConfigResourceManager(client *kube.Client, ns string, config *comm
 
 func (a *odigosConfigResourceManager) Name() string { return "OdigosConfig" }
 
-func (a *odigosConfigResourceManager) InstallFromScratch(ctx context.Context, ownerReferences []metav1.OwnerReference) error {
+func (a *odigosConfigResourceManager) InstallFromScratch(ctx context.Context) error {
 
 	obj, err := NewOdigosConfiguration(a.ns, a.config)
 	if err != nil {
@@ -55,5 +55,5 @@ func (a *odigosConfigResourceManager) InstallFromScratch(ctx context.Context, ow
 	resources := []kube.Object{
 		obj,
 	}
-	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, ownerReferences)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }

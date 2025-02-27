@@ -563,7 +563,7 @@ func NewOdigletResourceManager(client *kube.Client, ns string, config *common.Od
 
 func (a *odigletResourceManager) Name() string { return "Odiglet" }
 
-func (a *odigletResourceManager) InstallFromScratch(ctx context.Context, ownerReferences []metav1.OwnerReference) error {
+func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 
 	odigletImage := a.config.OdigletImage
 	// if the user specified an image, use it. otherwise, use the default image.
@@ -612,5 +612,5 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context, ownerRe
 				K8SVersion: cmdcontext.K8SVersionFromContext(ctx),
 			}))
 
-	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, ownerReferences)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }

@@ -384,7 +384,7 @@ func NewUIService(ns string) *corev1.Service {
 	}
 }
 
-func (u *uiResourceManager) InstallFromScratch(ctx context.Context, ownerReferences []metav1.OwnerReference) error {
+func (u *uiResourceManager) InstallFromScratch(ctx context.Context) error {
 	imageName := k8sconsts.UIImage
 	if u.config.OpenshiftEnabled {
 		imageName = k8sconsts.UIImageUBI9
@@ -398,7 +398,7 @@ func (u *uiResourceManager) InstallFromScratch(ctx context.Context, ownerReferen
 		NewUIDeployment(u.ns, u.odigosVersion, u.config.ImagePrefix, imageName),
 		NewUIService(u.ns),
 	}
-	return u.client.ApplyResources(ctx, u.config.ConfigVersion, resources, ownerReferences)
+	return u.client.ApplyResources(ctx, u.config.ConfigVersion, resources)
 }
 
 func NewUIResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosVersion string) resourcemanager.ResourceManager {

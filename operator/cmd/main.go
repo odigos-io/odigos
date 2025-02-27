@@ -25,23 +25,17 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	"github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	operatorv1alpha1 "github.com/odigos-io/odigos/operator/api/v1alpha1"
 	"github.com/odigos-io/odigos/operator/internal/controller"
@@ -156,45 +150,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	k8sConfig, err := config.GetConfig()
-	if err != nil {
-		setupLog.Error(err, "unable to get k8s config", "controller", "Odigos")
-		os.Exit(1)
-	}
-	clientset, err := kubernetes.NewForConfig(k8sConfig)
-	if err != nil {
-		setupLog.Error(err, "unable to get k8s clientset", "controller", "Odigos")
-		os.Exit(1)
-	}
-	dynamicClient, err := dynamic.NewForConfig(k8sConfig)
-	if err != nil {
-		setupLog.Error(err, "unable to get k8s dynamic client", "controller", "Odigos")
-		os.Exit(1)
-	}
-	extendClientset, err := apiextensionsclient.NewForConfig(k8sConfig)
-	if err != nil {
-		setupLog.Error(err, "unable to get k8s extendClientset", "controller", "Odigos")
-		os.Exit(1)
-	}
-
-	odigosClient, err := v1alpha1.NewForConfig(k8sConfig)
-	if err != nil {
-		setupLog.Error(err, "unable to get Odigos client", "controller", "Odigos")
-		os.Exit(1)
-	}
-	kubeClient := &kube.Client{
-		Interface:     clientset,
-		Clientset:     clientset,
-		Dynamic:       dynamicClient,
-		ApiExtensions: extendClientset,
-		OdigosClient:  odigosClient,
-		Config:        k8sConfig,
-	}
-
 	if err = (&controller.OdigosReconciler{
-		Client:     mgr.GetClient(),
-		Scheme:     mgr.GetScheme(),
-		KubeClient: kubeClient,
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Odigos")
 		os.Exit(1)

@@ -21,12 +21,16 @@ import (
 	"fmt"
 	"os"
 
+	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -39,6 +43,7 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 
+	"github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	operatorv1alpha1 "github.com/odigos-io/odigos/operator/api/v1alpha1"
@@ -54,8 +59,7 @@ const (
 // OdigosReconciler reconciles a Odigos object
 type OdigosReconciler struct {
 	client.Client
-	KubeClient *kube.Client
-	Scheme     *runtime.Scheme
+	Scheme *runtime.Scheme
 }
 
 // +kubebuilder:rbac:groups=operator.odigos.io,resources=odigos,verbs=get;list;watch;create;update;patch;delete
@@ -92,16 +96,60 @@ type OdigosReconciler struct {
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 func (r *OdigosReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	logger := log.FromContext(ctx)
 	odigos := &operatorv1alpha1.Odigos{}
 	err := r.Client.Get(ctx, req.NamespacedName, odigos)
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	k8sConfig, err := config.GetConfig()
+	if err != nil {
+		logger.Error(err, "unable to get k8s config", "controller", "Odigos")
+		os.Exit(1)
+	}
+	clientset, err := kubernetes.NewForConfig(k8sConfig)
+	if err != nil {
+		logger.Error(err, "unable to get k8s clientset", "controller", "Odigos")
+		os.Exit(1)
+	}
+	dynamicClient, err := dynamic.NewForConfig(k8sConfig)
+	if err != nil {
+		logger.Error(err, "unable to get k8s dynamic client", "controller", "Odigos")
+		os.Exit(1)
+	}
+	extendClientset, err := apiextensionsclient.NewForConfig(k8sConfig)
+	if err != nil {
+		logger.Error(err, "unable to get k8s extendClientset", "controller", "Odigos")
+		os.Exit(1)
+	}
+
+	odigosClient, err := v1alpha1.NewForConfig(k8sConfig)
+	if err != nil {
+		logger.Error(err, "unable to get Odigos client", "controller", "Odigos")
+		os.Exit(1)
+	}
+	kubeClient := &kube.Client{
+		Interface:     clientset,
+		Clientset:     clientset,
+		Dynamic:       dynamicClient,
+		ApiExtensions: extendClientset,
+		OdigosClient:  odigosClient,
+		Config:        k8sConfig,
+	}
+
+	ownerReference := metav1.OwnerReference{
+		APIVersion: odigos.APIVersion,
+		Kind:       odigos.Kind,
+		Name:       odigos.GetName(),
+		UID:        odigos.GetUID(),
+	}
+	kubeClient.OwnerReferences = []metav1.OwnerReference{ownerReference}
+
 	if odigos.ObjectMeta.DeletionTimestamp.IsZero() {
-		return r.install(ctx, odigos)
+		return r.install(ctx, kubeClient, odigos)
 	} else {
-		return r.uninstall(ctx, odigos)
+		return r.uninstall(ctx, kubeClient, odigos)
 	}
 }
 
@@ -113,12 +161,12 @@ func (r *OdigosReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *OdigosReconciler) uninstall(ctx context.Context, odigos *operatorv1alpha1.Odigos) (ctrl.Result, error) {
+func (r *OdigosReconciler) uninstall(ctx context.Context, kubeClient *kube.Client, odigos *operatorv1alpha1.Odigos) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
 	ns := odigos.GetNamespace()
-	cmd.UninstallOdigosResources(ctx, r.KubeClient, ns)
-	cmd.UninstallClusterResources(ctx, r.KubeClient, ns)
+	cmd.UninstallOdigosResources(ctx, kubeClient, ns)
+	cmd.UninstallClusterResources(ctx, kubeClient, ns)
 
 	if controllerutil.ContainsFinalizer(odigos, operatorFinalizer) {
 		controllerutil.RemoveFinalizer(odigos, operatorFinalizer)
@@ -132,7 +180,7 @@ func (r *OdigosReconciler) uninstall(ctx context.Context, odigos *operatorv1alph
 }
 
 // install Odigos based on the config passed in odigos
-func (r *OdigosReconciler) install(ctx context.Context, odigos *operatorv1alpha1.Odigos) (ctrl.Result, error) {
+func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client, odigos *operatorv1alpha1.Odigos) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
 	if !controllerutil.ContainsFinalizer(odigos, operatorFinalizer) {
@@ -232,7 +280,7 @@ func (r *OdigosReconciler) install(ctx context.Context, odigos *operatorv1alpha1
 
 	odigosConfig := common.OdigosConfiguration{}
 	upgrade := false
-	config, err := resources.GetCurrentConfig(ctx, r.KubeClient, ns)
+	config, err := resources.GetCurrentConfig(ctx, kubeClient, ns)
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
 			meta.SetStatusCondition(&odigos.Status.Conditions, metav1.Condition{
@@ -278,15 +326,8 @@ func (r *OdigosReconciler) install(ctx context.Context, odigos *operatorv1alpha1
 
 	logger.Info("Installing Odigos version " + version + " in namespace " + ns)
 
-	ownerReference := metav1.OwnerReference{
-		APIVersion: odigos.APIVersion,
-		Kind:       odigos.Kind,
-		Name:       odigos.GetName(),
-		UID:        odigos.GetUID(),
-	}
-
-	resourceManagers := resources.CreateResourceManagers(r.KubeClient, ns, odigosTier, &odigosProToken, &odigosConfig, version, string(installationmethod.K8sInstallationMethodOdigosOperator))
-	err = resources.ApplyResourceManagers(ctx, r.KubeClient, resourceManagers, "Creating", ownerReference)
+	resourceManagers := resources.CreateResourceManagers(kubeClient, ns, odigosTier, &odigosProToken, &odigosConfig, version, string(installationmethod.K8sInstallationMethodOdigosOperator))
+	err = resources.ApplyResourceManagers(ctx, kubeClient, resourceManagers, "Creating")
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -301,7 +342,7 @@ func (r *OdigosReconciler) install(ctx context.Context, odigos *operatorv1alpha1
 	})
 
 	if upgrade {
-		err = resources.DeleteOldOdigosSystemObjects(ctx, r.KubeClient, ns, &odigosConfig)
+		err = resources.DeleteOldOdigosSystemObjects(ctx, kubeClient, ns, &odigosConfig)
 		if err != nil {
 			meta.SetStatusCondition(&odigos.Status.Conditions, metav1.Condition{
 				Type:               odigosUpgradeCondition,

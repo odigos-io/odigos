@@ -315,7 +315,7 @@ func NewSchedulerResourceManager(client *kube.Client, ns string, config *common.
 
 func (a *schedulerResourceManager) Name() string { return "Scheduler" }
 
-func (a *schedulerResourceManager) InstallFromScratch(ctx context.Context, ownerReferences []metav1.OwnerReference) error {
+func (a *schedulerResourceManager) InstallFromScratch(ctx context.Context) error {
 	imageName := k8sconsts.SchedulerImage
 	if a.config.OpenshiftEnabled {
 		imageName = k8sconsts.SchedulerImageUBI9
@@ -330,5 +330,5 @@ func (a *schedulerResourceManager) InstallFromScratch(ctx context.Context, owner
 		NewSchedulerClusterRoleBinding(a.ns),
 		NewSchedulerDeployment(a.ns, a.odigosVersion, a.config.ImagePrefix, imageName),
 	}
-	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, ownerReferences)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }

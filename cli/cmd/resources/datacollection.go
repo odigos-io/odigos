@@ -107,11 +107,11 @@ func NewDataCollectionResourceManager(client *kube.Client, ns string, config *co
 
 func (a *dataCollectionResourceManager) Name() string { return "DataCollection" }
 
-func (a *dataCollectionResourceManager) InstallFromScratch(ctx context.Context, ownerReferences []metav1.OwnerReference) error {
+func (a *dataCollectionResourceManager) InstallFromScratch(ctx context.Context) error {
 	resources := []kube.Object{
 		NewDataCollectionServiceAccount(a.ns),
 		NewDataCollectionClusterRole(a.config.Psp),
 		NewDataCollectionClusterRoleBinding(a.ns),
 	}
-	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, ownerReferences)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }

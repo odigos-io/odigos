@@ -708,7 +708,7 @@ func NewInstrumentorResourceManager(client *kube.Client, ns string, config *comm
 
 func (a *instrumentorResourceManager) Name() string { return "Instrumentor" }
 
-func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context, ownerReferences []metav1.OwnerReference) error {
+func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) error {
 	imageName := a.config.InstrumentorImage
 	if imageName == "" || imageName == k8sconsts.InstrumentorImage || imageName == k8sconsts.InstrumentorImageUBI9 {
 		if a.tier == common.CommunityOdigosTier {
@@ -757,5 +757,5 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context, ow
 	},
 		resources...)
 
-	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, ownerReferences)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }
