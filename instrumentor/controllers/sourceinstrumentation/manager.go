@@ -2,6 +2,7 @@ package sourceinstrumentation
 
 import (
 	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -56,6 +57,18 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		For(&appsv1.StatefulSet{}).
 		WithEventFilter(predicate.Or(&odigospredicate.CreationPredicate{}, predicate.LabelChangedPredicate{})).
 		Complete(&StatefulSetReconciler{
+			Client: mgr.GetClient(),
+			Scheme: mgr.GetScheme(),
+		})
+	if err != nil {
+		return err
+	}
+
+	err = builder.
+		ControllerManagedBy(mgr).
+		Named("sourceinstrumentation-namespace").
+		For(&v1.Namespace{}).
+		Complete(&NamespaceReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
 		})
