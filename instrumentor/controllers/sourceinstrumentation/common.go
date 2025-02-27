@@ -27,7 +27,7 @@ import (
 )
 
 type workloadKindSourceMap map[k8sconsts.WorkloadKind]map[string]*v1alpha1.Source
-type reconcileFunction func(context.Context, client.Client, k8sconsts.WorkloadKind, client.ObjectKey, *runtime.Scheme) (ctrl.Result, error)
+type reconcileFunction func(context.Context, client.Client, k8sconsts.PodWorkload, *runtime.Scheme) (ctrl.Result, error)
 
 func syncNamespaceWorkloads(
 	ctx context.Context,
@@ -36,27 +36,9 @@ func syncNamespaceWorkloads(
 	namespace string,
 	reconcileFunc reconcileFunction) (ctrl.Result, error) {
 
-	// pre-process existing Sources for specific workloads so we don't have to make a bunch of API calls
-	// This is used to check if a workload already has an explicit Source, so we don't overwrite its InstrumentationConfig
-	sourceList := v1alpha1.SourceList{}
-	// Filter out Namespace Sources, this function just checks for duplicate Workload Sources
-	nonNamespaceKind, err := labels.NewRequirement(k8sconsts.WorkloadKindLabel, selection.NotIn, []string{string(k8sconsts.WorkloadKindNamespace)})
+	namespaceKindSources, err := getWorkloadSourcesInNamespace(ctx, k8sClient, namespace)
 	if err != nil {
 		return ctrl.Result{}, err
-	}
-	labelSelector := labels.NewSelector().Add(*nonNamespaceKind)
-	err = k8sClient.List(ctx, &sourceList, client.InNamespace(namespace), &client.ListOptions{LabelSelector: labelSelector})
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	namespaceKindSources := make(workloadKindSourceMap)
-	// Initialize sub-maps for all 3 kinds
-	namespaceKindSources[k8sconsts.WorkloadKindDaemonSet] = make(map[string]*v1alpha1.Source)
-	namespaceKindSources[k8sconsts.WorkloadKindDeployment] = make(map[string]*v1alpha1.Source)
-	namespaceKindSources[k8sconsts.WorkloadKindStatefulSet] = make(map[string]*v1alpha1.Source)
-	for _, s := range sourceList.Items {
-		// ex: map["Deployment"]["my-app"] = ...
-		namespaceKindSources[s.Spec.Workload.Kind][s.Spec.Workload.Name] = &s
 	}
 
 	collectiveRes := ctrl.Result{}
@@ -98,7 +80,7 @@ func syncNamespaceWorkloads(
 			//  - explicit Workload Sources should preserve instrumentation settings if the namespace is uninstrumented
 			// TODO: The semantics of this may change for automatically created Sources (such as the UI, source grouping, non-instrumenting sources, etc)
 			if _, exists := namespaceKindSources[kind][key.Name]; !exists {
-				res, err := reconcileFunc(ctx, k8sClient, kind, key, runtimeScheme)
+				res, err := reconcileFunc(ctx, k8sClient, k8sconsts.PodWorkload{Name: key.Name, Namespace: key.Namespace, Kind: kind}, runtimeScheme)
 				if err != nil {
 					errs = errors.Join(errs, err)
 				}
@@ -114,12 +96,11 @@ func syncNamespaceWorkloads(
 func uninstrumentWorkload(
 	ctx context.Context,
 	k8sClient client.Client,
-	objKind k8sconsts.WorkloadKind,
-	key client.ObjectKey,
+	podWorkload k8sconsts.PodWorkload,
 	scheme *runtime.Scheme) (ctrl.Result, error) {
-	obj := workload.ClientObjectFromWorkloadKind(objKind)
-	err := k8sClient.Get(ctx, key, obj)
-	if err != nil {
+	obj := workload.ClientObjectFromWorkloadKind(podWorkload.Kind)
+	err := k8sClient.Get(ctx, client.ObjectKey{Name: podWorkload.Name, Namespace: podWorkload.Namespace}, obj)
+	if client.IgnoreNotFound(err) != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -128,7 +109,7 @@ func uninstrumentWorkload(
 		return ctrl.Result{}, err
 	}
 	if !instrumented {
-		err = errors.Join(err, deleteWorkloadInstrumentationConfig(ctx, k8sClient, obj))
+		err = errors.Join(err, deleteWorkloadInstrumentationConfig(ctx, k8sClient, podWorkload))
 		err = errors.Join(err, removeReportedNameAnnotation(ctx, k8sClient, obj))
 	}
 	return ctrl.Result{}, err
@@ -137,14 +118,13 @@ func uninstrumentWorkload(
 func instrumentWorkload(
 	ctx context.Context,
 	k8sClient client.Client,
-	objKind k8sconsts.WorkloadKind,
-	key client.ObjectKey,
+	podWorkload k8sconsts.PodWorkload,
 	scheme *runtime.Scheme) (ctrl.Result, error) {
 
 	logger := log.FromContext(ctx)
 
-	obj := workload.ClientObjectFromWorkloadKind(objKind)
-	err := k8sClient.Get(ctx, key, obj)
+	obj := workload.ClientObjectFromWorkloadKind(podWorkload.Kind)
+	err := k8sClient.Get(ctx, client.ObjectKey{Name: podWorkload.Name, Namespace: podWorkload.Namespace}, obj)
 	if err != nil {
 		// Deleted objects should be filtered in the event filter
 		return ctrl.Result{}, err
@@ -163,15 +143,15 @@ func instrumentWorkload(
 		return ctrl.Result{}, nil
 	}
 
-	instConfigName := workload.CalculateWorkloadRuntimeObjectName(key.Name, objKind)
-	ic, err := requestOdigletsToCalculateRuntimeDetails(ctx, k8sClient, instConfigName, key.Namespace, obj, scheme)
+	instConfigName := workload.CalculateWorkloadRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
+	ic, err := createInstrumentationConfigForWorkload(ctx, k8sClient, instConfigName, podWorkload.Namespace, obj, scheme)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
 	if ic == nil {
 		ic = &v1alpha1.InstrumentationConfig{}
-		err = k8sClient.Get(ctx, types.NamespacedName{Name: instConfigName, Namespace: key.Namespace}, ic)
+		err = k8sClient.Get(ctx, types.NamespacedName{Name: instConfigName, Namespace: podWorkload.Namespace}, ic)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
@@ -182,12 +162,12 @@ func instrumentWorkload(
 	agentEnabledChanged := initiateAgentEnabledConditionIfMissing(ic)
 
 	if markedForInstChanged || runtimeDetailsChanged || agentEnabledChanged {
-		logger.Info("Updating initial instrumentation status condition of InstrumentationConfig", "name", instConfigName, "namespace", key.Namespace)
+		logger.V(2).Info("Updating initial instrumentation status condition of InstrumentationConfig", "name", instConfigName, "namespace", podWorkload.Namespace)
 		ic.Status.Conditions = sortIcConditionsByLogicalOrder(ic.Status.Conditions)
 
 		err = k8sClient.Status().Update(ctx, ic)
 		if err != nil {
-			logger.Info("Failed to update status conditions of InstrumentationConfig", "name", instConfigName, "namespace", key.Namespace)
+			logger.Info("Failed to update status conditions of InstrumentationConfig", "name", instConfigName, "namespace", podWorkload.Namespace)
 			return k8sutils.K8SUpdateErrorHandler(err)
 		}
 	}
@@ -195,7 +175,7 @@ func instrumentWorkload(
 	return ctrl.Result{}, err
 }
 
-func requestOdigletsToCalculateRuntimeDetails(ctx context.Context, k8sClient client.Client, instConfigName string, namespace string, obj client.Object, scheme *runtime.Scheme) (*v1alpha1.InstrumentationConfig, error) {
+func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient client.Client, instConfigName string, namespace string, obj client.Object, scheme *runtime.Scheme) (*v1alpha1.InstrumentationConfig, error) {
 	logger := log.FromContext(ctx)
 	instConfig := v1alpha1.InstrumentationConfig{
 		TypeMeta: metav1.TypeMeta{
@@ -298,24 +278,21 @@ func sortIcConditionsByLogicalOrder(conditions []metav1.Condition) []metav1.Cond
 	return conditions
 }
 
-func deleteWorkloadInstrumentationConfig(ctx context.Context, kubeClient client.Client, workloadObject client.Object) error {
+func deleteWorkloadInstrumentationConfig(ctx context.Context, kubeClient client.Client, podWorkload k8sconsts.PodWorkload) error {
 	logger := log.FromContext(ctx)
-	ns := workloadObject.GetNamespace()
-	name := workloadObject.GetName()
-	kind := workload.WorkloadKindFromClientObject(workloadObject)
-	instrumentationConfigName := workload.CalculateWorkloadRuntimeObjectName(name, kind)
-	logger.V(1).Info("deleting instrumentationconfig", "name", instrumentationConfigName, "namespace", ns)
+	instrumentationConfigName := workload.CalculateWorkloadRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
 
-	instConfigErr := kubeClient.Delete(ctx, &v1alpha1.InstrumentationConfig{
+	err := kubeClient.Delete(ctx, &v1alpha1.InstrumentationConfig{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: ns,
+			Namespace: podWorkload.Namespace,
 			Name:      instrumentationConfigName,
 		},
 	})
-
-	if instConfigErr != nil {
-		return client.IgnoreNotFound(instConfigErr)
+	if err != nil {
+		return client.IgnoreNotFound(err)
 	}
+
+	logger.V(1).Info("deleted instrumentationconfig", "name", instrumentationConfigName, "namespace", podWorkload.Namespace)
 
 	return nil
 }
@@ -326,4 +303,30 @@ func removeReportedNameAnnotation(ctx context.Context, kubeClient client.Client,
 	}
 
 	return kubeClient.Patch(ctx, workloadObject, client.RawPatch(types.MergePatchType, []byte(`{"metadata":{"annotations":{"`+consts.OdigosReportedNameAnnotation+`":null}}}`)))
+}
+
+func getWorkloadSourcesInNamespace(ctx context.Context, k8sClient client.Client, namespace string) (workloadKindSourceMap, error) {
+	// pre-process existing Sources for specific workloads so we don't have to make a bunch of API calls
+	// This is used to check if a workload already has an explicit Source, so we don't overwrite its InstrumentationConfig
+	sourceList := v1alpha1.SourceList{}
+	// Filter out Namespace Sources, this function just checks for duplicate Workload Sources
+	nonNamespaceKind, err := labels.NewRequirement(k8sconsts.WorkloadKindLabel, selection.NotIn, []string{string(k8sconsts.WorkloadKindNamespace)})
+	if err != nil {
+		return nil, err
+	}
+	labelSelector := labels.NewSelector().Add(*nonNamespaceKind)
+	err = k8sClient.List(ctx, &sourceList, client.InNamespace(namespace), &client.ListOptions{LabelSelector: labelSelector})
+	if err != nil {
+		return nil, err
+	}
+	namespaceKindSources := make(workloadKindSourceMap)
+	// Initialize sub-maps for all 3 kinds
+	namespaceKindSources[k8sconsts.WorkloadKindDaemonSet] = make(map[string]*v1alpha1.Source)
+	namespaceKindSources[k8sconsts.WorkloadKindDeployment] = make(map[string]*v1alpha1.Source)
+	namespaceKindSources[k8sconsts.WorkloadKindStatefulSet] = make(map[string]*v1alpha1.Source)
+	for _, s := range sourceList.Items {
+		// ex: map["Deployment"]["my-app"] = ...
+		namespaceKindSources[s.Spec.Workload.Kind][s.Spec.Workload.Name] = &s
+	}
+	return namespaceKindSources, nil
 }
