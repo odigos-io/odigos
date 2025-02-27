@@ -367,7 +367,7 @@ func NewKeyvalProxyResourceManager(client *kube.Client, ns string, config *commo
 
 func (a *keyvalProxyResourceManager) Name() string { return "CloudProxy" }
 
-func (a *keyvalProxyResourceManager) InstallFromScratch(ctx context.Context, ownerReferences []metav1.OwnerReference) error {
+func (a *keyvalProxyResourceManager) InstallFromScratch(ctx context.Context) error {
 	resources := []kube.Object{
 		NewKeyvalProxyServiceAccount(a.ns),
 		NewKeyvalProxyRole(a.ns),
@@ -376,5 +376,5 @@ func (a *keyvalProxyResourceManager) InstallFromScratch(ctx context.Context, own
 		NewKeyvalProxyClusterRoleBinding(a.ns),
 		NewKeyvalProxyDeployment(k8sconsts.OdigosCloudProxyVersion, a.ns, a.config.ImagePrefix),
 	}
-	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, ownerReferences)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }

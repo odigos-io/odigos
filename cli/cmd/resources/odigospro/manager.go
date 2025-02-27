@@ -3,8 +3,6 @@ package odigospro
 import (
 	"context"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
@@ -29,7 +27,7 @@ func NewOdigosProResourceManager(client *kube.Client, ns string, config *common.
 
 func (a *odigosCloudResourceManager) Name() string { return "Odigos Pro" }
 
-func (a *odigosCloudResourceManager) InstallFromScratch(ctx context.Context, ownerReferences []metav1.OwnerReference) error {
+func (a *odigosCloudResourceManager) InstallFromScratch(ctx context.Context) error {
 
 	var secret *corev1.Secret
 
@@ -63,5 +61,5 @@ func (a *odigosCloudResourceManager) InstallFromScratch(ctx context.Context, own
 	}
 
 	resources := []kube.Object{secret}
-	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, ownerReferences)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
 }
