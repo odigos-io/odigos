@@ -24,7 +24,7 @@ export const useNamespace = (namespaceName?: string) => {
 
   return {
     loading: loading || cpLoading,
-    allNamespaces: (cp?.computePlatform?.k8sActualNamespaces || []).map(({ name, selected, k8sActualSources }) => ({
+    namespaces: (cp?.computePlatform?.k8sActualNamespaces || []).map(({ name, selected, k8sActualSources }) => ({
       name,
       selected,
       sources: k8sActualSources,

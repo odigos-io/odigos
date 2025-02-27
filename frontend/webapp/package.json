@@ -14,11 +14,11 @@
   "dependencies": {
     "@apollo/client": "^3.13.1",
     "@apollo/experimental-nextjs-app-support": "^0.11.9",
-    "@odigos/ui-components": "^0.0.75",
-    "@odigos/ui-containers": "^0.0.59",
+    "@odigos/ui-components": "^0.0.85",
+    "@odigos/ui-containers": "^0.0.75",
     "@odigos/ui-icons": "^0.0.13",
     "@odigos/ui-theme": "^0.0.16",
-    "@odigos/ui-utils": "^0.0.34",
+    "@odigos/ui-utils": "^0.0.35",
     "graphql": "^16.10.0",
     "next": "15.1.7",
     "react": "19.0.0",
@@ -28,12 +28,12 @@
     "zustand": "^5.0.3"
   },
   "devDependencies": {
-    "@types/node": "22.13.4",
+    "@types/node": "22.13.5",
     "@types/react": "19.0.10",
     "@types/react-dom": "19.0.4",
     "autoprefixer": "^10.4.20",
-    "cypress": "^14.0.3",
-    "eslint": "9.20.1",
+    "cypress": "^14.1.0",
+    "eslint": "9.21.0",
     "eslint-config-next": "15.1.7",
     "postcss": "^8.5.3",
     "typescript": "5.7.3"

@@ -1,5 +1,5 @@
 import { BUTTONS, CRD_NAMES, DATA_IDS, INPUTS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
-import { aliasMutation, awaitToast, deleteEntity, getCrdById, getCrdIds, hasOperationName, updateEntity, visitPage } from '../functions';
+import { aliasMutation, awaitToast, deleteEntity, getCrdById, getCrdIds, handleExceptions, hasOperationName, updateEntity, visitPage } from '../functions';
 
 // The number of CRDs that exist in the cluster before running any tests should be 0.
 // Tests will fail if you have existing CRDs in the cluster.
@@ -10,21 +10,21 @@ const crdName = CRD_NAMES.INSTRUMENTATION_RULE;
 const totalEntities = SELECTED_ENTITIES.INSTRUMENTATION_RULES.length;
 
 describe('Instrumentation Rules CRUD', () => {
-  beforeEach(() =>
-    cy
-      .intercept('/graphql', (req) => {
-        aliasMutation(req, 'GetConfig');
+  beforeEach(() => {
+    cy.intercept('/graphql', (req) => {
+      aliasMutation(req, 'GetConfig');
 
-        if (hasOperationName(req, 'GetConfig')) {
-          req.alias = 'config';
-          req.reply((res) => {
-            // This is to make the test think this is enterprise/onprem - which will allow us to create rules
-            res.body.data = { config: { tier: 'onprem' } };
-          });
-        }
-      })
-      .as('gql'),
-  );
+      if (hasOperationName(req, 'GetConfig')) {
+        req.alias = 'config';
+        req.reply((res) => {
+          // This is to make the test think this is enterprise/onprem - which will allow us to create rules
+          res.body.data = { config: { tier: 'onprem' } };
+        });
+      }
+    }).as('gql');
+
+    handleExceptions();
+  });
 
   it(`Should have 0 ${crdName} CRDs in the cluster`, () => {
     getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
@@ -105,7 +105,7 @@ describe('Instrumentation Rules CRUD', () => {
     });
   });
 
-  it(`Should delete ${totalEntities} ${crdName} CRDs in the cluster`, () => {
+  it(`Should have ${0} ${crdName} CRDs in the cluster`, () => {
     getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
   });
 });

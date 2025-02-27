@@ -9,7 +9,7 @@ spec:
     - name: Build and Load Test App Images
       try:
         - script:
-            timeout: 450s
+            timeout: 600s
             content: |
               docker build -t nodejs-unsupported-version:v0.0.1 -f services/nodejs-http-server/unsupported-version.Dockerfile services/nodejs-http-server
               kind load docker-image nodejs-unsupported-version:v0.0.1
@@ -50,7 +50,7 @@ spec:
               kind load docker-image python-not-supported:v0.0.1
               docker build -t python-min-version:v0.0.1 -f services/python-http-server/Dockerfile.python-min-version services/python-http-server
               kind load docker-image python-min-version:v0.0.1
-              
+
               docker build -t dotnet8-musl:v0.0.1 -f services/dotnet-http-server/net8-musl.Dockerfile services/dotnet-http-server
               kind load docker-image dotnet8-musl:v0.0.1
               docker build -t dotnet6-musl:v0.0.1 -f services/dotnet-http-server/net6-musl.Dockerfile services/dotnet-http-server
@@ -91,43 +91,43 @@ spec:
       try:
         - assert:
             file: ../../common/assert/node-odiglet-label.yaml
-            
-    - name: "01 - Install Test Apps"
+
+    - name: '01 - Install Test Apps'
       try:
         - apply:
             file: 01-install-test-apps.yaml
-    - name: "01 - Assert Apps installed"
+    - name: '01 - Assert Apps installed'
       try:
         - assert:
             file: 01-assert-apps-installed.yaml
-    - name: "01 Instrument Namespaces"
+    - name: '01 Instrument Namespaces'
       try:
         - apply:
             file: ../../common/apply/instrument-default-ns.yaml
-    - name: "01 Assert runtime detection"
+    - name: '01 Assert runtime detection'
       try:
         - assert:
             file: 01-assert-runtime-detected.yaml
-    - name: "01 Add Destination"
+    - name: '01 Add Destination'
       try:
         - apply:
             file: ../../common/apply/add-tempo-traces-destination.yaml
-    - name: "01 Assert Pipeline"
+    - name: '01 Assert Pipeline'
       try:
         - assert:
             file: ../../common/assert/pipeline-ready.yaml
 
-    - name: "01 Assert Instrumented"
+    - name: '01 Assert Instrumented'
       try:
         - assert:
             file: 01-assert-instrumented.yaml
 
-    - name: "01 Assert Workloads"
+    - name: '01 Assert Workloads'
       try:
         - assert:
             file: 01-assert-workloads.yaml
 
-    - name: "01 - Generate Traffic"
+    - name: '01 - Generate Traffic'
       # at this point, we know the expected services are instrumented because we asserted the instrumentation instance
       # send traffic to all services to verify they are working as expected and verify traces for instrumented ones
       try:
@@ -160,7 +160,7 @@ spec:
               # Delete the job
               kubectl delete -f 01-generate-traffic.yaml
 
-    - name: "01 - Wait for Traces"
+    - name: '01 - Wait for Traces'
       try:
         - script:
             timeout: 60s
@@ -176,7 +176,7 @@ spec:
                 fi
               done
 
-    - name: "02 - Update workload manifest template spec"
+    - name: '02 - Update workload manifest template spec'
       try:
         - apply:
             file: 02-update-workload-manifests.yaml
@@ -185,14 +185,14 @@ spec:
 
     # updating the services names helps use to verify the traces, and distinguish between the phases
     # currently, we need to restart pods for service names update to take effect
-    - name: "02 - Update services names and rollout deployments"
+    - name: '02 - Update services names and rollout deployments'
       try:
         - apply:
             file: 02-sources-reported-names.yaml
         - script:
             content: kubectl rollout restart deployment -l odigos.io/e2e=test-workload
 
-    - name: "02 - Generate Traffic"
+    - name: '02 - Generate Traffic'
       try:
         - script:
             timeout: 200s
@@ -218,7 +218,7 @@ spec:
               kubectl wait --for=condition=complete job/$job_name
               kubectl delete -f 01-generate-traffic.yaml
 
-    - name: "02 - Wait for Traces"
+    - name: '02 - Wait for Traces'
       try:
         - script:
             timeout: 60s
@@ -236,14 +236,14 @@ spec:
                 fi
               done
 
-    - name: "03 - Create cluster info action"
+    - name: '03 - Create cluster info action'
       try:
         - apply:
             file: 03-create-action.yaml
         - assert:
             file: 03-assert-action-created.yaml
 
-    - name: "03 - Collector config reload"
+    - name: '03 - Collector config reload'
       try:
         - script:
             timeout: 200s
@@ -257,7 +257,7 @@ spec:
                 fi
               done
 
-    - name: "03 - Generate Traffic"
+    - name: '03 - Generate Traffic'
       try:
         - script:
             timeout: 200s
@@ -283,11 +283,11 @@ spec:
               kubectl wait --for=condition=complete job/$job_name
               kubectl delete -f 01-generate-traffic.yaml
 
-    - name: "03 - Wait for Traces"
+    - name: '03 - Wait for Traces'
       try:
         - script:
             timeout: 60s
-            content: | 
+            content: |
               sleep 20
 
               while true; do
