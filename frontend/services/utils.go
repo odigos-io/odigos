@@ -3,7 +3,9 @@ package services
 import (
 	"errors"
 	"fmt"
+	"os"
 	"path"
+	"strconv"
 	"time"
 
 	"github.com/odigos-io/odigos/common"
@@ -11,10 +13,28 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const cdnUrl = "https://d15jtxgb40qetw.cloudfront.net"
+const (
+	cdnUrl                     = "https://d15jtxgb40qetw.cloudfront.net"
+	ODIGOS_UI_PAGINATION_LIMIT = "ODIGOS_UI_PAGINATION_LIMIT"
+)
 
 func GetImageURL(image string) string {
 	return path.Join(cdnUrl, image)
+}
+
+func GetPageLimit() int {
+	defaultValue := 10
+	envValue, exists := os.LookupEnv(ODIGOS_UI_PAGINATION_LIMIT)
+
+	if exists && envValue != "" {
+		envValue, err := strconv.Atoi(envValue)
+
+		if err != nil {
+			return defaultValue
+		}
+		return envValue
+	}
+	return defaultValue
 }
 
 func ConvertSignals(signals []model.SignalType) ([]common.ObservabilitySignal, error) {
