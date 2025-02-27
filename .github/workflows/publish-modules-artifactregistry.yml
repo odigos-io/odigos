@@ -47,7 +47,7 @@ jobs:
           - service: operator
             runner: ubuntu-latest
             summary: "Odigos Operator"
-            description: "The Odigos Operator installs and managed Odigos in a cluster"
+            description: "The Odigos Operator installs and manages Odigos in a cluster"
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout repository

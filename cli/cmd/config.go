@@ -79,7 +79,7 @@ var setConfigCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, config, currentOdigosVersion, string(installationmethod.K8sInstallationMethodOdigosCli))
+		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, config, currentOdigosVersion, installationmethod.K8sInstallationMethodOdigosCli)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Updating Config")
 		if err != nil {
 			l.Error(fmt.Errorf("failed to apply updated configuration: %w", err))

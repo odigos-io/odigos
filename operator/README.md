@@ -1,8 +1,7 @@
 # odigos-operator
-// TODO(user): Add simple overview of use/purpose
+The Odigos Operator is another installation, management, and upgrade method for installing Odigos in a Kubernetes cluster.
 
-## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+Currently, the Operator is designed specifically for OpenShift users. It may not function as expected in other Kubernetes clusters.
 
 ## Getting Started
 
@@ -96,7 +95,6 @@ kubectl apply -f https://raw.githubusercontent.com/<org>/odigos-operator/<tag or
 ```
 
 ## Contributing
-// TODO(user): Add detailed information on how you would like others to contribute to this project
 
 **NOTE:** Run `make help` for more information on all potential `make` targets
 

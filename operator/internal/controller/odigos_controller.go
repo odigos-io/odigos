@@ -326,7 +326,7 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 
 	logger.Info("Installing Odigos version " + version + " in namespace " + ns)
 
-	resourceManagers := resources.CreateResourceManagers(kubeClient, ns, odigosTier, &odigosProToken, &odigosConfig, version, string(installationmethod.K8sInstallationMethodOdigosOperator))
+	resourceManagers := resources.CreateResourceManagers(kubeClient, ns, odigosTier, &odigosProToken, &odigosConfig, version, installationmethod.K8sInstallationMethodOdigosOperator)
 	err = resources.ApplyResourceManagers(ctx, kubeClient, resourceManagers, "Creating")
 	if err != nil {
 		return ctrl.Result{}, err

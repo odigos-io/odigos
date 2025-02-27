@@ -153,14 +153,14 @@ jobs:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Build Frontend Image
+      - name: Build Operator Image
         uses: docker/build-push-action@v6
         with:
           platforms: linux/amd64,linux/arm64
           file: ${{ matrix.dockerfile }}
           context: .
           push: false
-          tags: frontend:pr-${{ github.event.number }}
+          tags: operator:pr-${{ github.event.number }}
 
   build-cli:
     runs-on: ubuntu-latest

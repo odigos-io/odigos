@@ -9,13 +9,14 @@ import (
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func NewOdigosDeploymentConfigMap(ns string, odigosVersion string, odigosTier string, installationMethod string) *corev1.ConfigMap {
+func NewOdigosDeploymentConfigMap(ns string, odigosVersion string, odigosTier string, installationMethod installationmethod.K8sInstallationMethod) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		TypeMeta: v1.TypeMeta{
 			Kind:       "ConfigMap",
@@ -28,7 +29,7 @@ func NewOdigosDeploymentConfigMap(ns string, odigosVersion string, odigosTier st
 		Data: map[string]string{
 			k8sconsts.OdigosDeploymentConfigMapVersionKey:            odigosVersion,
 			k8sconsts.OdigosDeploymentConfigMapTierKey:               odigosTier,
-			k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey: installationMethod,
+			k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey: string(installationMethod),
 			k8sconsts.OdigosDeploymentConfigMapOdigosDeploymentIDKey: uuid.New().String(),
 		},
 	}
@@ -82,10 +83,10 @@ type odigosDeploymentResourceManager struct {
 	config             *common.OdigosConfiguration
 	odigosTier         common.OdigosTier
 	odigosVersion      string
-	installationMethod string
+	installationMethod installationmethod.K8sInstallationMethod
 }
 
-func NewOdigosDeploymentResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosTier common.OdigosTier, odigosVersion, installationMethod string) resourcemanager.ResourceManager {
+func NewOdigosDeploymentResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosTier common.OdigosTier, odigosVersion string, installationMethod installationmethod.K8sInstallationMethod) resourcemanager.ResourceManager {
 	return &odigosDeploymentResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier, odigosVersion: odigosVersion, installationMethod: installationMethod}
 }
 

@@ -98,7 +98,7 @@ func updateApiKey(cmd *cobra.Command, args []string) {
 	}
 	isPrevOdigosCloud := currentTier == common.CloudOdigosTier
 
-	resourceManagers := resources.CreateResourceManagers(client, ns, common.CloudOdigosTier, &odigosCloudApiKeyFlag, config, currentOdigosVersion, string(installationmethod.K8sInstallationMethodOdigosCli))
+	resourceManagers := resources.CreateResourceManagers(client, ns, common.CloudOdigosTier, &odigosCloudApiKeyFlag, config, currentOdigosVersion, installationmethod.K8sInstallationMethodOdigosCli)
 	err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Updating")
 	if err != nil {
 		fmt.Println("Odigos cloud login failed - unable to apply Odigos resources.")
