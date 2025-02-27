@@ -42,6 +42,11 @@ spec:
           your cluster doesn't have access to docker hub
         displayName: Image Prefix
         path: imagePrefix
+      - description: |-
+          MountMethod defines the mechanism for mounting Odigos files into instrumented pods.
+          Must be one of: (k8s-virtual-device, k8s-host-path)
+        displayName: Mount Method
+        path: mountMethod
       - description: OnPremToken is an optional enterprise token for Odigos Enterprise.
         displayName: On-Prem Token
         path: onPremToken

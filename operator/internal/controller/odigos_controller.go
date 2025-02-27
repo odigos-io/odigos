@@ -315,6 +315,27 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 	odigosConfig.AutoscalerImage = k8sconsts.AutoScalerImageName
 	odigosConfig.InstrumentorImage = k8sconsts.InstrumentorImage
 
+	defaultMountMethod := common.K8sVirtualDeviceMountMethod
+	if len(odigos.Spec.MountMethod) == 0 {
+		odigosConfig.MountMethod = &defaultMountMethod
+	} else {
+		switch odigos.Spec.MountMethod {
+		case common.K8sHostPathMountMethod:
+		case common.K8sVirtualDeviceMountMethod:
+		default:
+			meta.SetStatusCondition(&odigos.Status.Conditions, metav1.Condition{
+				Type:               odigosInstalledCondition,
+				Status:             metav1.ConditionFalse,
+				Reason:             "OdigosConfigErr",
+				Message:            "Invalid mount method " + string(odigos.Spec.MountMethod),
+				ObservedGeneration: odigos.GetGeneration(),
+			})
+			logger.Error(fmt.Errorf("invalid mount method (valid values: %s, %s)", common.K8sHostPathMountMethod, common.K8sVirtualDeviceMountMethod), "mountMethod", odigos.Spec.MountMethod)
+			return ctrl.Result{}, r.Status().Update(ctx, odigos)
+		}
+		odigosConfig.MountMethod = &odigos.Spec.MountMethod
+	}
+
 	if odigos.Spec.OpenShiftEnabled {
 		if odigos.Spec.ImagePrefix == "" {
 			odigosConfig.ImagePrefix = k8sconsts.RedHatImagePrefix
