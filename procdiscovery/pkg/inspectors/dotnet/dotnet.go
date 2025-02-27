@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/odigos-io/odigos/common"
@@ -12,7 +13,13 @@ import (
 
 type DotnetInspector struct{}
 
+const processName = "dotnet"
+
 func (d *DotnetInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
+	if strings.HasPrefix(filepath.Base(p.ExePath), processName) {
+		return common.DotNetProgrammingLanguage, true
+	}
+
 	mapsPath := fmt.Sprintf("/proc/%d/maps", p.ProcessID)
 	f, err := os.Open(mapsPath)
 	if err != nil {
