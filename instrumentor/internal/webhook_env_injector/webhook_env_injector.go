@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/k8sutils/pkg/service"
 	"github.com/odigos-io/odigos/common"
 	commonconsts "github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
@@ -177,7 +178,7 @@ func injectNodejsCommunityEnvVars(container *corev1.Container) {
 	})
 	container.Env = append(container.Env, corev1.EnvVar{
 		Name:  commonconsts.OtelExporterEndpointEnvName,
-		Value: fmt.Sprintf("http://$(NODE_IP):%d", commonconsts.OTLPHttpPort),
+		Value: service.SameNodeOTLPHttpDataCollectionEndpoint(),
 	})
 }
 
@@ -185,16 +186,8 @@ func injectJavaCommunityEnvVars(ctx context.Context, logger logr.Logger,
 	container *corev1.Container, client client.Client) {
 
 	container.Env = append(container.Env, corev1.EnvVar{
-		Name: "NODE_IP",
-		ValueFrom: &corev1.EnvVarSource{
-			FieldRef: &corev1.ObjectFieldSelector{
-				FieldPath: "status.hostIP",
-			},
-		},
-	})
-	container.Env = append(container.Env, corev1.EnvVar{
 		Name:  commonconsts.OtelExporterEndpointEnvName,
-		Value: fmt.Sprintf("http://$(NODE_IP):%d", commonconsts.OTLPHttpPort),
+		Value: service.SameNodeOTLPHttpDataCollectionEndpoint(),
 	})
 
 	// Set the OTEL signals exporter env vars
@@ -237,7 +230,7 @@ func InjectPythonEnvVars(container *corev1.Container) {
 			},
 			{
 				Name:  commonconsts.OtelExporterEndpointEnvName,
-				Value: fmt.Sprintf("http://$(NODE_IP):%d", commonconsts.OTLPHttpPort),
+				Value: service.SameNodeOTLPHttpDataCollectionEndpoint(),
 			},
 		}
 	}
