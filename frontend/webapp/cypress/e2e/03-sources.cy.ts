@@ -60,7 +60,6 @@ describe('Sources CRUD', () => {
         updateEntity(
           {
             nodeId: DATA_IDS.SOURCE_NODE(idx),
-            nodeContains: sourceName,
             fieldKey: DATA_IDS.SOURCE_TITLE,
             fieldValue: TEXTS.UPDATED_NAME,
           },
