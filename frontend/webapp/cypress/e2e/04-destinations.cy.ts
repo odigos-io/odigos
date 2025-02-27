@@ -1,5 +1,5 @@
-import { awaitToast, deleteEntity, getCrdById, getCrdIds, updateEntity, visitPage } from '../functions';
 import { BUTTONS, CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
+import { awaitToast, deleteEntity, getCrdById, getCrdIds, handleExceptions, updateEntity, visitPage } from '../functions';
 
 // The number of CRDs that exist in the cluster before running any tests should be 0.
 // Tests will fail if you have existing CRDs in the cluster.
@@ -10,7 +10,10 @@ const crdName = CRD_NAMES.DESTINATION;
 const totalEntities = 1;
 
 describe('Destinations CRUD', () => {
-  beforeEach(() => cy.intercept('/graphql').as('gql'));
+  beforeEach(() => {
+    cy.intercept('/graphql').as('gql');
+    handleExceptions();
+  });
 
   it(`Should have 0 ${crdName} CRDs in the cluster`, () => {
     getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
@@ -83,7 +86,7 @@ describe('Destinations CRUD', () => {
     });
   });
 
-  it(`Should delete ${totalEntities} ${crdName} CRDs in the cluster`, () => {
+  it(`Should have ${0} ${crdName} CRDs in the cluster`, () => {
     getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
   });
 });

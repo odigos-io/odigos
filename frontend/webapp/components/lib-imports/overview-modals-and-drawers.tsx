@@ -22,7 +22,7 @@ const OverviewModalsAndDrawers = () => {
   const { instrumentationRules, createInstrumentationRule, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
 
   const [selectedNamespace, setSelectedNamespace] = useState('');
-  const { allNamespaces, data: namespace, loading: nsLoad } = useNamespace(selectedNamespace);
+  const { namespaces, data: namespace, loading: nsLoad } = useNamespace(selectedNamespace);
 
   const { categories } = useDestinationCategories();
   const { fetchDescribeSource } = useDescribeSource();
@@ -33,7 +33,7 @@ const OverviewModalsAndDrawers = () => {
     <>
       {/* modals */}
       <SourceModal
-        namespaces={allNamespaces}
+        namespaces={namespaces}
         namespace={namespace}
         namespacesLoading={nsLoad}
         selectedNamespace={selectedNamespace}
@@ -69,4 +69,4 @@ const OverviewModalsAndDrawers = () => {
   );
 };
 
-export default OverviewModalsAndDrawers;
+export { OverviewModalsAndDrawers };
