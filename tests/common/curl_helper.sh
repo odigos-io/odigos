@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Utility file to start a curl able pod (EKS is not working with doing `kubectl get --raw <path>:<port>/proxy/<url>`)
+
 deploy_curl_pod() {
   local pod_name="temp-curl-checker"
   local namespace="${1:-default}"
