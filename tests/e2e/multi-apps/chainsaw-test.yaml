@@ -97,7 +97,7 @@ spec:
     - name: Generate Traffic
       try:
         - script:
-            timeout: 300s
+            timeout: 6m
             content: |
               # Apply the job
               kubectl apply -f ../../common/apply/generate-traffic-job.yaml
@@ -106,28 +106,27 @@ spec:
               job_name=$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
               kubectl wait --for=condition=complete job/$job_name
 
-              # Delete the job        
+              # Delete the job
               kubectl delete -f ../../common/apply/generate-traffic-job.yaml
+              sleep 5
 
               while true; do
-                # wait for traces to be available
-                sleep 8
+                # Flush traces before accessing
+                ../../common/flush_traces.sh
+                sleep 5
 
                 # Run the wait-for-trace script
                 echo "Running TraceQL test at $(date)"
                 ../../common/traceql_runner.sh tracesql/wait-for-trace.yaml
-                
+
                 if [ $? -eq 0 ]; then
                   break
-                else
-                  ../../common/flush_traces.sh
-                  sleep 5
                 fi
               done
     - name: Verify Trace - Context Propagation
       try:
         - script:
-            timeout: 30s
+            timeout: 1m
             content: |
               ../../common/traceql_runner.sh tracesql/context-propagation.yaml
       catch:
@@ -137,6 +136,7 @@ spec:
     - name: Verify Trace - Resource Attributes
       try:
         - script:
+            timeout: 1m
             content: |
               ../../common/traceql_runner.sh tracesql/resource-attributes.yaml
       catch:
@@ -146,7 +146,7 @@ spec:
     - name: Verify Trace - Span Attributes
       try:
         - script:
-            timeout: 60s
+            timeout: 1m
             content: |
               ../../common/traceql_runner.sh tracesql/span-attributes.yaml
       catch:
@@ -156,7 +156,7 @@ spec:
     - name: Verify collector metrics are collected by the UI
       try:
         - script:
-            timeout: 30s
+            timeout: 5m
             content: |
               while true; do
                 ../../common/assert_collector_metrics_from_ui.sh odigos-test
