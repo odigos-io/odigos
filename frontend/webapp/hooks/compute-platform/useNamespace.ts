@@ -13,6 +13,7 @@ export const useNamespace = (namespaceName?: string) => {
 
   // TODO: change query, to lazy query
   const { data, loading } = useQuery<ComputePlatform>(GET_NAMESPACE, {
+    fetchPolicy: 'cache-and-network',
     skip: !namespaceName,
     variables: { namespaceName },
     onError: (error) => addNotification({ type: NOTIFICATION_TYPE.ERROR, title: error.name || CRUD.READ, message: error.cause?.message || error.message }),

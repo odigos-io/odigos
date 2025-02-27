@@ -37,6 +37,7 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
     loading: isFetching,
     refetch: fetchInstrumentationRules,
   } = useQuery<ComputePlatform>(GET_INSTRUMENTATION_RULES, {
+    fetchPolicy: 'cache-and-network',
     onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message),
   });
 

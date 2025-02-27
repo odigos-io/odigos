@@ -7,7 +7,7 @@ export const useDescribeSource = () => {
   const { addNotification } = useNotificationStore();
 
   const [fetchDescribeSource, { data, loading, error }] = useLazyQuery<{ describeSource: DescribeSource }, WorkloadId>(DESCRIBE_SOURCE, {
-    fetchPolicy: 'no-cache',
+    fetchPolicy: 'cache-and-network',
     onError: (error) =>
       addNotification({
         type: NOTIFICATION_TYPE.ERROR,

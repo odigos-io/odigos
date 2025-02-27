@@ -37,7 +37,13 @@ const checkIfConfigured = (configuredDest: ISetupState['configuredDestinations']
 export const usePotentialDestinations = () => {
   const { configuredDestinations } = useSetupStore();
   const { categories } = useDestinationCategories();
-  const { loading, error, data: { potentialDestinations } = {} } = useQuery<GetPotentialDestinationsData>(GET_POTENTIAL_DESTINATIONS);
+  const {
+    loading,
+    error,
+    data: { potentialDestinations } = {},
+  } = useQuery<GetPotentialDestinationsData>(GET_POTENTIAL_DESTINATIONS, {
+    fetchPolicy: 'cache-and-network',
+  });
 
   const mappedPotentialDestinations = useMemo(() => {
     if (!categories || !potentialDestinations) return [];

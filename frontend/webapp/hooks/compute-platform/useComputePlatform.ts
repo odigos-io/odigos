@@ -8,6 +8,7 @@ export const useComputePlatform = () => {
   const { addNotification } = useNotificationStore();
 
   const { data, loading, error, refetch } = useQuery<ComputePlatform>(GET_COMPUTE_PLATFORM, {
+    fetchPolicy: 'cache-and-network',
     onError: (error) =>
       addNotification({
         type: NOTIFICATION_TYPE.ERROR,
