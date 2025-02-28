@@ -160,7 +160,7 @@ export const useActionCRUD = (): UseActionCrud => {
     onCompleted: (res) => {
       const id = res.createAction.id;
       const type = res.createAction.type;
-      notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.CREATE, `Successfully created "${type} action"`, id);
+      notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.CREATE, `Successfully created "${type}" action`, id);
       fetchActions();
     },
   });
@@ -170,7 +170,7 @@ export const useActionCRUD = (): UseActionCrud => {
     onCompleted: (res) => {
       const id = res.updateAction.id;
       const type = res.updateAction.type;
-      notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.UPDATE, `Successfully updated "${type} action"`, id);
+      notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.UPDATE, `Successfully updated "${type}" action`, id);
       fetchActions();
     },
   });
