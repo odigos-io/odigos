@@ -24,7 +24,7 @@ RUN go mod download
 RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -tags=embed_manifests -a -o manager cmd/main.go
 RUN make licenses
 
-FROM registry.access.redhat.com/ubi9:9.5-1736404036
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest
 ARG VERSION
 ARG RELEASE
 ARG SUMMARY
