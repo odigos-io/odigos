@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { useConfig } from '../config';
 import { usePaginatedStore } from '@/store';
 import { GET_INSTRUMENTATION_RULES } from '@/graphql';

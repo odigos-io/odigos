@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { useConfig } from '../config';
 import { GET_ACTIONS } from '@/graphql';
 import { usePaginatedStore } from '@/store';
@@ -170,7 +170,7 @@ export const useActionCRUD = (): UseActionCrud => {
 
   const [updateAction, uState] = useMutation<{ updateAction: FetchedAction }, { id: string; action: ActionInput }>(UPDATE_ACTION, {
     onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.UPDATE, error.cause?.message || error.message),
-    onCompleted: (res, req) => {
+    onCompleted: (res) => {
       const action = res.updateAction;
       addPaginated(ENTITY_TYPES.ACTION, mapFetched([action]));
       notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.UPDATE, `Successfully updated "${action.type} action"`, action.id);
