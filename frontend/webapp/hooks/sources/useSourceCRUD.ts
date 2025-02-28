@@ -145,9 +145,12 @@ export const useSourceCRUD = (): UseSourceCrud => {
               setInstrumentAwait(true);
             }
 
-            const toDelete = items.filter((src) => !src.selected);
+            // this is to map selected=undefined to selected=false
+            const mappedItems = items.map(({ name, kind, selected }) => ({ name, kind, selected: !selected ? false : true }));
+
+            const toDelete = mappedItems.filter((src) => !src.selected);
             const toDeleteCount = toDelete.length;
-            const toAddCount = items.length - toDeleteCount;
+            const toAddCount = mappedItems.length - toDeleteCount;
 
             const { sourcesToCreate, sourcesToDelete } = useInstrumentStore.getState();
             setInstrumentCount('sourcesToDelete', sourcesToDelete + toDeleteCount);
@@ -160,7 +163,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
               toDelete.map(({ name, kind }) => ({ namespace: ns, name, kind })),
             );
 
-            persistSourcesPayloads.push({ namespace: ns, sources: items });
+            persistSourcesPayloads.push({ namespace: ns, sources: mappedItems });
           }
         }
 
