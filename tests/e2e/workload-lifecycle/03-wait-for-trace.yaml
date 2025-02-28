@@ -5,3 +5,4 @@ query: |
   { resource.k8s.cluster.name = "e2e-test-cluster" }
 expected:
   count: 17
+custom_jq: '.traces | map(.rootServiceName) | unique| length'

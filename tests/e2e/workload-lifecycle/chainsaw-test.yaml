@@ -132,13 +132,10 @@ spec:
       # send traffic to all services to verify they are working as expected and verify traces for instrumented ones
       try:
         - script:
-            timeout: 200s
+            timeout: 500s
             content: |
-              set -e
-
               NAMESPACE="default"
               DEPLOYMENTS=$(kubectl get deployments -n $NAMESPACE -o jsonpath='{.items[*].metadata.name}')
-
 
               for DEPLOYMENT in $DEPLOYMENTS; do
               echo "Waiting for deployment $DEPLOYMENT to finish rollout..."
@@ -149,30 +146,26 @@ spec:
               fi
               done
 
-
-              # Apply the job
-              kubectl apply -f 01-generate-traffic.yaml
-
-              # Wait for the job to complete
-              job_name=$(kubectl get -f 01-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
-              kubectl wait --for=condition=complete job/$job_name
-
-              # Delete the job
-              kubectl delete -f 01-generate-traffic.yaml
-
-    - name: '01 - Wait for Traces'
-      try:
-        - script:
-            timeout: 60s
-            content: |
-              sleep 20
               while true; do
+                # Apply the job
+                kubectl apply -f 01-generate-traffic.yaml
+
+                # Wait for the job to complete
+                job_name=$(kubectl get -f 01-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
+                kubectl wait --for=condition=complete job/$job_name
+
+                # Delete the job
+                kubectl delete -f 01-generate-traffic.yaml
+
+                # Run the wait-for-trace script
+                echo "Running TraceQL test at $(date)"
                 ../../common/traceql_runner.sh 01-wait-for-trace.yaml
+
                 if [ $? -eq 0 ]; then
                   break
                 else
-                  sleep 3
                   ../../common/flush_traces.sh
+                  sleep 5
                 fi
               done
 
@@ -197,11 +190,8 @@ spec:
         - script:
             timeout: 200s
             content: |
-              set -e
-
               NAMESPACE="default"
               DEPLOYMENTS=$(kubectl get deployments -n $NAMESPACE -o jsonpath='{.items[*].metadata.name}')
-
 
               for DEPLOYMENT in $DEPLOYMENTS; do
               echo "Waiting for deployment $DEPLOYMENT to finish rollout..."
@@ -212,27 +202,26 @@ spec:
               fi
               done
 
-
-              kubectl apply -f 01-generate-traffic.yaml
-              job_name=$(kubectl get -f 01-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
-              kubectl wait --for=condition=complete job/$job_name
-              kubectl delete -f 01-generate-traffic.yaml
-
-    - name: '02 - Wait for Traces'
-      try:
-        - script:
-            timeout: 60s
-            content: |
-
-              sleep 20
-
               while true; do
+                # Apply the job
+                kubectl apply -f 01-generate-traffic.yaml
+
+                # Wait for the job to complete
+                job_name=$(kubectl get -f 01-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
+                kubectl wait --for=condition=complete job/$job_name
+
+                # Delete the job
+                kubectl delete -f 01-generate-traffic.yaml
+
+                # Run the wait-for-trace script
+                echo "Running TraceQL test at $(date)"
                 ../../common/traceql_runner.sh 02-wait-for-trace.yaml
+
                 if [ $? -eq 0 ]; then
                   break
                 else
-                  sleep 3
                   ../../common/flush_traces.sh
+                  sleep 5
                 fi
               done
 
@@ -262,8 +251,6 @@ spec:
         - script:
             timeout: 200s
             content: |
-              set -e
-
               NAMESPACE="default"
               DEPLOYMENTS=$(kubectl get deployments -n $NAMESPACE -o jsonpath='{.items[*].metadata.name}')
 
@@ -277,25 +264,25 @@ spec:
               fi
               done
 
-
-              kubectl apply -f 01-generate-traffic.yaml
-              job_name=$(kubectl get -f 01-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
-              kubectl wait --for=condition=complete job/$job_name
-              kubectl delete -f 01-generate-traffic.yaml
-
-    - name: '03 - Wait for Traces'
-      try:
-        - script:
-            timeout: 60s
-            content: |
-              sleep 20
-
               while true; do
+                # Apply the job
+                kubectl apply -f 01-generate-traffic.yaml
+
+                # Wait for the job to complete
+                job_name=$(kubectl get -f 01-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
+                kubectl wait --for=condition=complete job/$job_name
+
+                # Delete the job
+                kubectl delete -f 01-generate-traffic.yaml
+
+                # Run the wait-for-trace script
+                echo "Running TraceQL test at $(date)"
                 ../../common/traceql_runner.sh 03-wait-for-trace.yaml
+
                 if [ $? -eq 0 ]; then
                   break
                 else
-                  sleep 3
                   ../../common/flush_traces.sh
+                  sleep 5
                 fi
               done

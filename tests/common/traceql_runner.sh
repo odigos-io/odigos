@@ -45,6 +45,7 @@ function process_yaml_file() {
   one_hour=3600
   start_epoch=$(($current_epoch - one_hour))
   end_epoch=$(($current_epoch + one_hour))
+  custom_jq=$(yq e '.custom_jq' "$file")
 
   response=$(kubectl get --raw /api/v1/namespaces/$dest_namespace/services/$dest_service:$dest_port/proxy/api/search\?end=$end_epoch\&start=$start_epoch\&q=$encoded_query\&limit=50)
   if [ "$verbose" == "true" ]; then
@@ -53,7 +54,11 @@ function process_yaml_file() {
     echo "========================================================="
   fi
 
-  num_of_traces=$(echo $response | jq '.traces | length')
+  jq_filter=".traces | length"
+  if [ "$custom_jq" != "null" ]; then
+    jq_filter="$custom_jq"
+  fi
+  num_of_traces=$(echo $response | jq "$jq_filter")
 
   if [ "$expected_count" != "null" ]; then
     # if num_of_traces not equal to expected_count
