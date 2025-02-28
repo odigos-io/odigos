@@ -1,7 +1,8 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useConfig } from '../config';
 import { GET_ACTIONS } from '@/graphql';
-import { useMutation, useQuery } from '@apollo/client';
+import { usePaginatedStore } from '@/store';
+import { useLazyQuery, useMutation } from '@apollo/client';
 import type { ActionInput, ParsedActionSpec, FetchedAction } from '@/@types';
 import { CREATE_ACTION, DELETE_ACTION, UPDATE_ACTION } from '@/graphql/mutations';
 import { type ActionFormData, useNotificationStore } from '@odigos/ui-containers';
@@ -130,36 +131,49 @@ const mapFormToInput = (action: ActionFormData): ActionInput => {
 export const useActionCRUD = (): UseActionCrud => {
   const { data: config } = useConfig();
   const { addNotification } = useNotificationStore();
+  const { actionsPaginating, setPaginating, actions, addPaginated, removePaginated } = usePaginatedStore();
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
     addNotification({ type, title, message, crdType: ENTITY_TYPES.ACTION, target: id ? getSseTargetFromId(id, ENTITY_TYPES.ACTION) : undefined, hideFromHistory });
   };
 
-  const {
-    data,
-    loading: isFetching,
-    refetch: fetchActions,
-  } = useQuery<{ computePlatform: { actions: FetchedAction[] } }>(GET_ACTIONS, {
-    onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message),
+  const [fetchAll, { loading: isFetching }] = useLazyQuery<{ computePlatform?: { actions?: FetchedAction[] } }>(GET_ACTIONS, {
+    fetchPolicy: 'cache-and-network',
   });
 
-  const [createAction, cState] = useMutation<{ createAction: { id: string } }, { action: ActionInput }>(CREATE_ACTION, {
+  const fetchActions = async () => {
+    setPaginating(ENTITY_TYPES.ACTION, true);
+    const { error, data } = await fetchAll();
+
+    if (!!error) {
+      addNotification({
+        type: NOTIFICATION_TYPE.ERROR,
+        title: error.name || CRUD.READ,
+        message: error.cause?.message || error.message,
+      });
+    } else if (!!data?.computePlatform?.actions) {
+      const { actions: items } = data.computePlatform;
+
+      addPaginated(ENTITY_TYPES.ACTION, mapFetched(items));
+      setPaginating(ENTITY_TYPES.ACTION, false);
+    }
+  };
+
+  const [createAction, cState] = useMutation<{ createAction: FetchedAction }, { action: ActionInput }>(CREATE_ACTION, {
     onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.CREATE, error.cause?.message || error.message),
-    onCompleted: (res, req) => {
-      const id = res?.createAction?.id;
-      const type = req?.variables?.action?.type;
-      notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.CREATE, `Action "${type}" created`, id);
-      fetchActions();
+    onCompleted: (res) => {
+      const action = res.createAction;
+      addPaginated(ENTITY_TYPES.ACTION, mapFetched([action]));
+      notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.CREATE, `Successfully created "${action.type} action"`, action.id);
     },
   });
 
-  const [updateAction, uState] = useMutation<{ updateAction: { id: string } }, { id: string; action: ActionInput }>(UPDATE_ACTION, {
+  const [updateAction, uState] = useMutation<{ updateAction: FetchedAction }, { id: string; action: ActionInput }>(UPDATE_ACTION, {
     onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.UPDATE, error.cause?.message || error.message),
     onCompleted: (res, req) => {
-      const id = res?.updateAction?.id;
-      const type = req?.variables?.action?.type;
-      notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.UPDATE, `Action "${type}" updated`, id);
-      fetchActions();
+      const action = res.updateAction;
+      addPaginated(ENTITY_TYPES.ACTION, mapFetched([action]));
+      notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.UPDATE, `Successfully updated "${action.type} action"`, action.id);
     },
   });
 
@@ -168,16 +182,18 @@ export const useActionCRUD = (): UseActionCrud => {
     onCompleted: (res, req) => {
       const id = req?.variables?.id;
       const type = req?.variables?.actionType;
-      notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.DELETE, `Action "${type}" deleted`, id);
-      fetchActions();
+      removePaginated(ENTITY_TYPES.ACTION, id);
+      notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.DELETE, `Successfully deleted "${type}" action`, id);
     },
   });
 
-  const mapped = useMemo(() => mapFetched(data?.computePlatform?.actions || []), [data?.computePlatform?.actions]);
+  useEffect(() => {
+    if (!actions.length && !actionsPaginating) fetchActions();
+  }, []);
 
   return {
-    actions: mapped,
-    actionsLoading: isFetching || cState.loading || uState.loading || dState.loading,
+    actions,
+    actionsLoading: isFetching || actionsPaginating || cState.loading || uState.loading || dState.loading,
     fetchActions,
 
     createAction: (action) => {

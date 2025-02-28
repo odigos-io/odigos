@@ -1,19 +1,18 @@
 import { create } from 'zustand';
-import { ENTITY_TYPES, getEntityId, type WorkloadId } from '@odigos/ui-utils';
-import type { FetchedAction, FetchedDestination, FetchedInstrumentationRule, FetchedSource } from '@/@types';
+import { type Action, type Destination, ENTITY_TYPES, getEntityId, type InstrumentationRule, type Source, type WorkloadId } from '@odigos/ui-utils';
 
 interface IPaginatedState {
   sourcesPaginating: boolean;
-  sources: FetchedSource[];
+  sources: Source[];
 
   destinationsPaginating: boolean;
-  destinations: FetchedDestination[];
+  destinations: Destination[];
 
   actionsPaginating: boolean;
-  actions: FetchedAction[];
+  actions: Action[];
 
   instrumentationRulesPaginating: boolean;
-  instrumentationRules: FetchedInstrumentationRule[];
+  instrumentationRules: InstrumentationRule[];
 }
 
 type EntityId = string | WorkloadId;

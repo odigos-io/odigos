@@ -18,10 +18,6 @@ interface UseSourceCrud {
   updateSource: (sourceId: WorkloadId, payload: SourceFormData) => Promise<void>;
 }
 
-const mapFetched = (items: FetchedSource[]): Source[] => {
-  return items;
-};
-
 export const useSourceCRUD = (): UseSourceCrud => {
   const { data: config } = useConfig();
   const { persistNamespace } = useNamespace();
@@ -118,10 +114,8 @@ export const useSourceCRUD = (): UseSourceCrud => {
     if (!sources.length && !sourcesPaginating) fetchSources();
   }, []);
 
-  const mapped = useMemo(() => mapFetched(sources), [sources]);
-
   return {
-    sources: mapped,
+    sources,
     sourcesLoading: isFetching || isFetchingById || sourcesPaginating || cdState.loading || uState.loading,
     sourcesPaginating,
     fetchSources,

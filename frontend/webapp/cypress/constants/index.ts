@@ -122,9 +122,9 @@ export const TEXTS = {
   NOTIF_DESTINATIONS_UPDATED: (name: string) => `Successfully updated "${name}" destination`,
   NOTIF_DESTINATIONS_DELETED: (amount: number) => `Successfully deleted ${amount} destinations`,
 
-  NOTIF_ACTION_CREATED: (crdId: string) => `Action "${crdId}" created`,
-  NOTIF_ACTION_UPDATED: (crdId: string) => `Action "${crdId}" updated`,
-  NOTIF_ACTION_DELETED: (crdId: string) => `Action "${crdId}" delete`,
+  NOTIF_ACTION_CREATED: (actionType: string) => `Successfully created "${actionType}" action`,
+  NOTIF_ACTION_UPDATED: (actionType: string) => `Successfully updated "${actionType}" action`,
+  NOTIF_ACTION_DELETED: (actionType: string) => `Successfully delete "${actionType}" action`,
 
   NOTIF_INSTRUMENTATION_RULE_CREATED: (ruleType: string) => `Successfully created "${ruleType}" rule`,
   NOTIF_INSTRUMENTATION_RULE_UPDATED: (ruleType: string) => `Successfully updated "${ruleType}" rule`,

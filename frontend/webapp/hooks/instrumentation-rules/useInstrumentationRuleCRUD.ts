@@ -51,7 +51,7 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
     } else if (!!data?.computePlatform?.instrumentationRules) {
       const { instrumentationRules: items } = data.computePlatform;
 
-      addPaginated(ENTITY_TYPES.INSTRUMENTATION_RULE, items);
+      addPaginated(ENTITY_TYPES.INSTRUMENTATION_RULE, mapFetched(items));
       setPaginating(ENTITY_TYPES.INSTRUMENTATION_RULE, false);
     }
   };
@@ -63,7 +63,7 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
       onCompleted: (res) => {
         const rule = res.createInstrumentationRule;
         const type = deriveTypeFromRule(rule);
-        addPaginated(ENTITY_TYPES.INSTRUMENTATION_RULE, [rule]);
+        addPaginated(ENTITY_TYPES.INSTRUMENTATION_RULE, mapFetched([rule]));
         notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.CREATE, `Successfully created "${type}" rule`, rule.ruleId);
       },
     },
@@ -76,7 +76,7 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
       onCompleted: (res) => {
         const rule = res.updateInstrumentationRule;
         const type = deriveTypeFromRule(rule);
-        addPaginated(ENTITY_TYPES.INSTRUMENTATION_RULE, [rule]);
+        addPaginated(ENTITY_TYPES.INSTRUMENTATION_RULE, mapFetched([rule]));
         notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.UPDATE, `Successfully updated "${type}" rule`, rule.ruleId);
       },
     },
@@ -88,8 +88,8 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
       const id = req?.variables?.ruleId;
       const rule = instrumentationRules.find((r) => r.ruleId === id);
       const type = !!rule ? deriveTypeFromRule(rule) : '';
-      notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.DELETE, `Successfully deleted "${type || id}" rule`, id);
       removePaginated(ENTITY_TYPES.INSTRUMENTATION_RULE, id);
+      notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.DELETE, `Successfully deleted "${type || id}" rule`, id);
     },
   });
 
@@ -97,10 +97,8 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
     if (!instrumentationRules.length && !instrumentationRulesPaginating) fetchInstrumentationRules();
   }, []);
 
-  const mapped = useMemo(() => mapFetched(instrumentationRules), [instrumentationRules]);
-
   return {
-    instrumentationRules: mapped,
+    instrumentationRules,
     instrumentationRulesLoading: isFetching || instrumentationRulesPaginating || cState.loading || uState.loading || dState.loading,
     fetchInstrumentationRules,
 
