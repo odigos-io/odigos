@@ -84,9 +84,13 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
   const [mutateUpdate, uState] = useMutation<{ updateDestination: { id: string } }, { id: string; destination: DestinationInput }>(UPDATE_DESTINATION, {
     onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.UPDATE, error.cause?.message || error.message),
     onCompleted: (res, req) => {
-      const id = req?.variables?.id as string;
-      removePendingItems([{ entityType: ENTITY_TYPES.DESTINATION, entityId: id }]);
-      // We wait for SSE
+      setTimeout(() => {
+        const id = req?.variables?.id as string;
+        const destination = destinations.find((r) => r.id === id);
+        removePendingItems([{ entityType: ENTITY_TYPES.DESTINATION, entityId: id }]);
+        notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.CREATE, `Successfully updated "${destination?.destinationType?.type || id}" destination`, id);
+        // We wait for SSE
+      }, 3000);
     },
   });
 
