@@ -1,0 +1,23 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: odigos-operator
+  name: odigos-operator-odigos-viewer-role
+rules:
+- apiGroups:
+  - operator.odigos.io
+  resources:
+  - odigos
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - operator.odigos.io
+  resources:
+  - odigos/status
+  verbs:
+  - get
