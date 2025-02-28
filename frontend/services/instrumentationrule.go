@@ -160,11 +160,16 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 		return nil, fmt.Errorf("error updating instrumentation rule: %w", err)
 	}
 
+	annotations := updatedRule.GetAnnotations()
+	profileName := annotations[k8sconsts.OdigosProfileAnnotation]
+
 	return &model.InstrumentationRule{
 		RuleID:                   updatedRule.Name,
 		RuleName:                 &updatedRule.Spec.RuleName,
 		Notes:                    &updatedRule.Spec.Notes,
 		Disabled:                 &updatedRule.Spec.Disabled,
+		Mutable:                  profileName == "",
+		ProfileName:              profileName,
 		Workloads:                convertWorkloads(updatedRule.Spec.Workloads),
 		InstrumentationLibraries: convertInstrumentationLibraries(updatedRule.Spec.InstrumentationLibraries),
 		PayloadCollection:        convertPayloadCollection(updatedRule.Spec.PayloadCollection),
@@ -278,9 +283,19 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 	if err != nil {
 		return nil, fmt.Errorf("error creating instrumentation rule: %w", err)
 	}
+
 	// Convert to GraphQL model and return
 	return &model.InstrumentationRule{
-		RuleID: createdRule.Name,
+		RuleID:                   createdRule.Name,
+		RuleName:                 &createdRule.Spec.RuleName,
+		Notes:                    &createdRule.Spec.Notes,
+		Disabled:                 &createdRule.Spec.Disabled,
+		Mutable:                  true, // New rules are always mutable
+		ProfileName:              "",   // New rules are not associated with a profile
+		Workloads:                convertWorkloads(createdRule.Spec.Workloads),
+		InstrumentationLibraries: convertInstrumentationLibraries(createdRule.Spec.InstrumentationLibraries),
+		PayloadCollection:        convertPayloadCollection(createdRule.Spec.PayloadCollection),
+		CodeAttributes:           (*model.CodeAttributes)(createdRule.Spec.CodeAttributes),
 	}, nil
 }
 
