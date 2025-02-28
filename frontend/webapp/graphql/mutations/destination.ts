@@ -4,6 +4,36 @@ export const CREATE_DESTINATION = gql`
   mutation CreateNewDestination($destination: DestinationInput!) {
     createNewDestination(destination: $destination) {
       id
+      name
+      fields
+      exportedSignals {
+        logs
+        metrics
+        traces
+      }
+      destinationType {
+        type
+        imageUrl
+        displayName
+        supportedSignals {
+          logs {
+            supported
+          }
+          metrics {
+            supported
+          }
+          traces {
+            supported
+          }
+        }
+      }
+      conditions {
+        status
+        type
+        reason
+        message
+        lastTransitionTime
+      }
     }
   }
 `;
