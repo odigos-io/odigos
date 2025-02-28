@@ -240,15 +240,13 @@ update-dep/%: DIR=$*
 update-dep/%:
 	cd $(DIR) && go get $(MODULE)@$(VERSION)
 
-GO_AUTO_VERSION=v0.19.0-alpha
-UNSTABLE_COLLECTOR_VERSION=v0.119.0
-STABLE_COLLECTOR_VERSION=v1.25.0
+UNSTABLE_COLLECTOR_VERSION=v0.120.0
+STABLE_COLLECTOR_VERSION=v1.26.0
 STABLE_OTEL_GO_VERSION=v1.34.0
 UNSTABLE_OTEL_GO_VERSION=v0.59.0
 
 .PHONY: update-otel
 update-otel:
-	$(MAKE) update-dep MODULE=go.opentelemetry.io/auto VERSION=$(GO_AUTO_VERSION)
 	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/cmd/mdatagen VERSION=$(UNSTABLE_COLLECTOR_VERSION)
 	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/component VERSION=$(UNSTABLE_COLLECTOR_VERSION)
 	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/component/componenttest VERSION=$(UNSTABLE_COLLECTOR_VERSION)
