@@ -1,12 +1,12 @@
 import { useEffect, useMemo } from 'react';
 import { useConfig } from '../config';
+import { usePaginatedStore } from '@/store';
 import { GET_INSTRUMENTATION_RULES } from '@/graphql';
-import { useLazyQuery, useMutation, useQuery } from '@apollo/client';
-import type { FetchedInstrumentationRule, ComputePlatform } from '@/@types';
+import { useLazyQuery, useMutation } from '@apollo/client';
+import type { FetchedInstrumentationRule } from '@/@types';
 import { type InstrumentationRuleFormData, useNotificationStore } from '@odigos/ui-containers';
 import { CREATE_INSTRUMENTATION_RULE, UPDATE_INSTRUMENTATION_RULE, DELETE_INSTRUMENTATION_RULE } from '@/graphql/mutations';
 import { CRUD, deriveTypeFromRule, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, InstrumentationRule, NOTIFICATION_TYPE } from '@odigos/ui-utils';
-import { usePaginatedStore } from '@/store';
 
 interface UseInstrumentationRuleCrud {
   instrumentationRules: InstrumentationRule[];
@@ -33,14 +33,6 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
     addNotification({ type, title, message, crdType: ENTITY_TYPES.INSTRUMENTATION_RULE, target: id ? getSseTargetFromId(id, ENTITY_TYPES.INSTRUMENTATION_RULE) : undefined, hideFromHistory });
   };
-
-  // const {
-  //   data,
-  //   loading: isFetching,
-  //   refetch: fetchInstrumentationRules,
-  // } = useQuery<{computePlatform: {instrumentationRules:FetchedInstrumentationRule[]}}>(GET_INSTRUMENTATION_RULES, {
-  //   onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message),
-  // });
 
   const [fetchAll, { loading: isFetching }] = useLazyQuery<{ computePlatform?: { instrumentationRules?: FetchedInstrumentationRule[] } }>(GET_INSTRUMENTATION_RULES, {
     fetchPolicy: 'cache-and-network',
