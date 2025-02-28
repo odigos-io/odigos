@@ -5,14 +5,6 @@ export const CREATE_ACTION = gql`
     createAction(action: $action) {
       id
       type
-      spec
-      conditions {
-        status
-        type
-        reason
-        message
-        lastTransitionTime
-      }
     }
   }
 `;
@@ -22,14 +14,6 @@ export const UPDATE_ACTION = gql`
     updateAction(id: $id, action: $action) {
       id
       type
-      spec
-      conditions {
-        status
-        type
-        reason
-        message
-        lastTransitionTime
-      }
     }
   }
 `;

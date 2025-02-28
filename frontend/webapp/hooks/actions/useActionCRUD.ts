@@ -159,30 +159,32 @@ export const useActionCRUD = (): UseActionCrud => {
     }
   };
 
-  const [createAction, cState] = useMutation<{ createAction: FetchedAction }, { action: ActionInput }>(CREATE_ACTION, {
+  const [createAction, cState] = useMutation<{ createAction: { id: string; type: ACTION_TYPE } }, { action: ActionInput }>(CREATE_ACTION, {
     onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.CREATE, error.cause?.message || error.message),
     onCompleted: (res) => {
-      const action = res.createAction;
-      addPaginated(ENTITY_TYPES.ACTION, mapFetched([action]));
-      notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.CREATE, `Successfully created "${action.type} action"`, action.id);
+      const id = res.createAction.id;
+      const type = res.createAction.type;
+      notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.CREATE, `Successfully created "${type} action"`, id);
+      fetchActions();
     },
   });
 
-  const [updateAction, uState] = useMutation<{ updateAction: FetchedAction }, { id: string; action: ActionInput }>(UPDATE_ACTION, {
+  const [updateAction, uState] = useMutation<{ updateAction: { id: string; type: ACTION_TYPE } }, { id: string; action: ActionInput }>(UPDATE_ACTION, {
     onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.UPDATE, error.cause?.message || error.message),
     onCompleted: (res) => {
-      const action = res.updateAction;
-      addPaginated(ENTITY_TYPES.ACTION, mapFetched([action]));
-      notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.UPDATE, `Successfully updated "${action.type} action"`, action.id);
+      const id = res.updateAction.id;
+      const type = res.updateAction.type;
+      notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.UPDATE, `Successfully updated "${type} action"`, id);
+      fetchActions();
     },
   });
 
   const [deleteAction, dState] = useMutation<{ deleteAction: boolean }, { id: string; actionType: ACTION_TYPE }>(DELETE_ACTION, {
     onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.DELETE, error.cause?.message || error.message),
     onCompleted: (res, req) => {
-      const id = req?.variables?.id;
+      const id = req?.variables?.id as string;
       const type = req?.variables?.actionType;
-      removePaginated(ENTITY_TYPES.ACTION, id);
+      removePaginated(ENTITY_TYPES.ACTION, [id]);
       notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.DELETE, `Successfully deleted "${type}" action`, id);
     },
   });

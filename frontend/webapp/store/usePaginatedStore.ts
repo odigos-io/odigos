@@ -121,7 +121,7 @@ export const usePaginatedStore = create<IPaginatedState & IPaginatedStateSetters
       const prev = [...state[KEY]];
 
       entityIds.forEach((id) => {
-        const foundIdx = prev.findIndex((entity) => JSON.stringify(getEntityId(entity)) === (entityType === ENTITY_TYPES.SOURCE ? JSON.stringify(getEntityId(id as WorkloadId)) : id));
+        const foundIdx = prev.findIndex((entity) => JSON.stringify(getEntityId(entity)) === (entityType === ENTITY_TYPES.SOURCE ? JSON.stringify(getEntityId(id as WorkloadId)) : JSON.stringify(id)));
 
         if (foundIdx !== -1) {
           prev.splice(foundIdx, 1);

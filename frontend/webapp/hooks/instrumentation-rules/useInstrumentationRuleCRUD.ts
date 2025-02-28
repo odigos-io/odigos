@@ -85,10 +85,10 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
   const [deleteInstrumentationRule, dState] = useMutation<{ deleteInstrumentationRule: boolean }, { ruleId: string }>(DELETE_INSTRUMENTATION_RULE, {
     onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.DELETE, error.cause?.message || error.message),
     onCompleted: (res, req) => {
-      const id = req?.variables?.ruleId;
+      const id = req?.variables?.ruleId as string;
       const rule = instrumentationRules.find((r) => r.ruleId === id);
       const type = !!rule ? deriveTypeFromRule(rule) : '';
-      removePaginated(ENTITY_TYPES.INSTRUMENTATION_RULE, id);
+      removePaginated(ENTITY_TYPES.INSTRUMENTATION_RULE, [id]);
       notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.DELETE, `Successfully deleted "${type || id}" rule`, id);
     },
   });
