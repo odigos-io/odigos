@@ -47,11 +47,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
     const { error, data } = await fetchPaginated({ variables: { nextPage: page } });
 
     if (!!error) {
-      addNotification({
-        type: NOTIFICATION_TYPE.ERROR,
-        title: error.name || CRUD.READ,
-        message: error.cause?.message || error.message,
-      });
+      notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message);
     } else if (!!data?.computePlatform?.sources) {
       const { items, nextPage } = data.computePlatform.sources;
 
@@ -78,11 +74,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
     const { error, data } = await fetchById({ variables: { sourceId: id } });
 
     if (!!error) {
-      addNotification({
-        type: NOTIFICATION_TYPE.ERROR,
-        title: error.name || CRUD.READ,
-        message: error.cause?.message || error.message,
-      });
+      notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message);
     } else if (!!data?.computePlatform.source) {
       addPaginated(ENTITY_TYPES.SOURCE, [data.computePlatform.source]);
     }

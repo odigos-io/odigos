@@ -60,11 +60,7 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
     const { error, data } = await fetchAll();
 
     if (!!error) {
-      addNotification({
-        type: NOTIFICATION_TYPE.ERROR,
-        title: error.name || CRUD.READ,
-        message: error.cause?.message || error.message,
-      });
+      notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message);
     } else if (!!data?.computePlatform?.destinations) {
       const { destinations: items } = data.computePlatform;
       addPaginated(ENTITY_TYPES.DESTINATION, mapFetched(items));
