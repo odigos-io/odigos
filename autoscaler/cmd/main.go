@@ -210,6 +210,9 @@ func main() {
 		collectorImage = collectorImageEnv
 	}
 
+	// TODO: this should be removed once the hpa logic uses the feature package for its checks
+	k8sVersion := feature.K8sVersion()
+
 	commonconfig.ControllerConfig = &controllerconfig.ControllerConfig{
 		K8sVersion:     k8sVersion,
 		CollectorImage: collectorImage,

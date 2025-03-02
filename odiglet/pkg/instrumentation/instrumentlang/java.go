@@ -5,6 +5,7 @@ import (
 
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/service"
+	"github.com/odigos-io/odigos/odiglet/pkg/env"
 
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 )
@@ -42,7 +43,7 @@ func Java(deviceId string, uniqueDestinationSignals map[common.ObservabilitySign
 			otelResourceAttributesEnvVar:  fmt.Sprintf(otelResourceAttrPattern, deviceId),
 			// OTEL javaagent seems to expect the endpoint to be in the format http://<host>:<port>
 			// in go, we can pass the endpoint as <host>:<port>
-			javaOtlpEndpointEnvVar:        fmt.Sprintf("http://%s", service.SameNodeOTLPDataCollectionEndpoint()),
+			javaOtlpEndpointEnvVar:        fmt.Sprintf("http://%s", service.SameNodeOTLPDataCollectionEndpoint(env.Current.NodeIP)),
 			javaOtlpProtocolEnvVar:        "grpc",
 			javaOtelLogsExporterEnvVar:    logsExporter,
 			javaOtelMetricsExporterEnvVar: metricsExporter,

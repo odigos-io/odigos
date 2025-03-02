@@ -178,7 +178,7 @@ func injectNodejsCommunityEnvVars(container *corev1.Container) {
 	})
 	container.Env = append(container.Env, corev1.EnvVar{
 		Name:  commonconsts.OtelExporterEndpointEnvName,
-		Value: service.SameNodeOTLPHttpDataCollectionEndpoint(),
+		Value: service.SameNodeOTLPHttpDataCollectionEndpoint("$(NODE_IP)"),
 	})
 }
 
@@ -187,7 +187,7 @@ func injectJavaCommunityEnvVars(ctx context.Context, logger logr.Logger,
 
 	container.Env = append(container.Env, corev1.EnvVar{
 		Name:  commonconsts.OtelExporterEndpointEnvName,
-		Value: service.SameNodeOTLPHttpDataCollectionEndpoint(),
+		Value: service.SameNodeOTLPHttpDataCollectionEndpoint("$(NODE_IP)"),
 	})
 
 	// Set the OTEL signals exporter env vars
@@ -230,7 +230,7 @@ func InjectPythonEnvVars(container *corev1.Container) {
 			},
 			{
 				Name:  commonconsts.OtelExporterEndpointEnvName,
-				Value: service.SameNodeOTLPHttpDataCollectionEndpoint(),
+				Value: service.SameNodeOTLPHttpDataCollectionEndpoint("$(NODE_IP)"),
 			},
 		}
 	}

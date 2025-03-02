@@ -10,6 +10,7 @@ import (
 
 	"github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
+	"github.com/odigos-io/odigos/odiglet/pkg/env"
 
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"go.opentelemetry.io/auto"
@@ -35,7 +36,7 @@ func (g *GoInstrumentationFactory) CreateInstrumentation(ctx context.Context, pi
 	defaultExporter, err := otlptracegrpc.New(
 		ctx,
 		otlptracegrpc.WithInsecure(),
-		otlptracegrpc.WithEndpoint(service.SameNodeOTLPDataCollectionEndpoint()),
+		otlptracegrpc.WithEndpoint(service.SameNodeOTLPDataCollectionEndpoint(env.Current.NodeIP)),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create exporter: %w", err)

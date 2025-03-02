@@ -9,7 +9,6 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
-	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 
@@ -271,7 +270,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 					Containers: []corev1.Container{
 						{
 							Name:    containerName,
-							Image:   commonconfig.ControllerConfig.CollectorImage,
+							Image:   common.ControllerConfig.CollectorImage,
 							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, k8sconsts.OdigosNodeCollectorConfigMapKey)},
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -365,12 +364,16 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 							},
 						},
 					},
-					HostNetwork:       true,
 					DNSPolicy:         corev1.DNSClusterFirstWithHostNet,
 					PriorityClassName: "system-node-critical",
 				},
 			},
 		},
+	}
+
+	// if the service internal traffic policy is not enabled, the datacollection pod should be host networked
+	if !feature.ServiceInternalTrafficPolicy(feature.GA) {
+		desiredDs.Spec.Template.Spec.HostNetwork = true
 	}
 
 	if len(imagePullSecrets) > 0 {

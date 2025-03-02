@@ -80,7 +80,35 @@ var (
 	}
 )
 
+// https://github.com/kubernetes/kubernetes/blob/v1.26.0/pkg/features/kube_features.go#L775
+var (
+	serviceInternalTrafficPolicy = &featureSupport{
+		alphaVersion: "1.21.0",
+		betaVersion:  "1.22.0",
+		gaVersion:    "1.26.0",
+	}
+
+	ServiceInternalTrafficPolicy = func(ml maturityLevel) bool {
+		return serviceInternalTrafficPolicy.isEnabled(ml)
+	}
+)
+
+// K8sVersion returns the Kubernetes version detected once Setup is called.
+// It returns nil if Setup has not been called or failed.
+//
+// TODO: we should remove this function once the hpa.go file is updated to use featureSupport instances.
+func K8sVersion() *version.Version {
+	return k8sVersion
+}
+
+// Setup initializes the feature support based on the Kubernetes version.
+// It should be called once before using any feature support.
+// It must be called only for clients running inside a Kubernetes cluster.
 func Setup() error {
+	if k8sVersion != nil {
+		return nil
+	}
+
 	cfg, err := rest.InClusterConfig()
 	if err != nil {
 		return err
