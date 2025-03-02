@@ -2,7 +2,7 @@
 
 # Check if jq is installed
 if ! command -v jq &> /dev/null; then
-  echo "qq command not found. Please install qq."
+  echo "jq command not found. Please install jq."
   exit 1
 fi
 
@@ -50,9 +50,13 @@ for attempt in {1..5}; do
     LOCAL_PORT=$(find_free_port)
     echo "🔀 Attempt $attempt: Trying port $LOCAL_PORT..."
 
-    kubectl port-forward svc/ui $LOCAL_PORT:3000 -n "$NAMESPACE" & PORT_FORWARD_PID=$!
+    kubectl port-forward svc/ui $LOCAL_PORT:3000 -n "$NAMESPACE" &
+    PORT_FORWARD_PID=$!
 
-    retry_delay=0.1
+    # Allow `kubectl port-forward` to finish establishing connection before tring to connect to it.
+    sleep 5
+
+    retry_delay=0.5
     for i in {1..10}; do
         if nc -z localhost $LOCAL_PORT 2>/dev/null; then
             echo "✅ Successfully established port-forward on port $LOCAL_PORT"
