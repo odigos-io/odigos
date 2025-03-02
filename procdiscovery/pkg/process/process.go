@@ -41,8 +41,8 @@ type Details struct {
 type ProcessContext struct {
 	Details
 
-	ExeFileContent  *os.File
-	MapsFileContent *os.File
+	ExeFile  io.ReadCloser
+	MapsFile io.ReadCloser
 }
 
 func NewProcessContext(details Details) *ProcessContext {
@@ -52,40 +52,49 @@ func NewProcessContext(details Details) *ProcessContext {
 }
 
 // Close method to close any open file handles.
-func (ctx *ProcessContext) CloseFiles() error {
+func (pcx *ProcessContext) CloseFiles() error {
 	var firstErr error
 
-	if ctx.ExeFileContent != nil {
-		if err := ctx.ExeFileContent.Close(); err != nil && firstErr == nil {
+	if pcx.ExeFile != nil {
+		if err := pcx.ExeFile.Close(); err != nil && firstErr == nil {
 			firstErr = err
 		}
-		ctx.ExeFileContent = nil
+		pcx.ExeFile = nil
 	}
 
-	if ctx.MapsFileContent != nil {
-		if err := ctx.MapsFileContent.Close(); err != nil && firstErr == nil {
+	if pcx.MapsFile != nil {
+		if err := pcx.MapsFile.Close(); err != nil && firstErr == nil {
 			firstErr = err
 		}
-		ctx.MapsFileContent = nil
+		pcx.MapsFile = nil
 	}
 
 	return firstErr
 }
 
-func (ctx *ProcessContext) ExeContent() {
-	if ctx.ExeFileContent == nil {
-		path := fmt.Sprintf("/proc/%d/exe", ctx.ProcessID)
-		fileData, _ := os.Open(path)
-		ctx.ExeFileContent = fileData
+func (pcx *ProcessContext) GetExeFile() (*os.File, error) {
+	if pcx.ExeFile == nil {
+		path := fmt.Sprintf("/proc/%d/exe", pcx.ProcessID)
+		fileData, err := os.Open(path)
+		if err != nil {
+			return nil, err
+		}
+		pcx.ExeFile = fileData
 	}
+
+	return pcx.ExeFile, nil
 }
 
-func (ctx *ProcessContext) MapsContent() {
-	if ctx.MapsFileContent == nil {
-		mapsPath := fmt.Sprintf("/proc/%d/maps", ctx.ProcessID)
-		fileData, _ := os.Open(mapsPath)
-		ctx.MapsFileContent = fileData
+func (pcx *ProcessContext) GetMapsFile() (*os.File, error) {
+	if pcx.MapsFile == nil {
+		mapsPath := fmt.Sprintf("/proc/%d/maps", pcx.ProcessID)
+		fileData, err := os.Open(mapsPath)
+		if err != nil {
+			return nil, err
+		}
+		pcx.MapsFile = fileData
 	}
+	return pcx.MapsFile, nil
 }
 
 type ProcessEnvs struct {

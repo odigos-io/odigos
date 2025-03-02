@@ -10,20 +10,20 @@ import (
 
 type DotnetInspector struct{}
 
-func (d *DotnetInspector) QuickScan(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+func (d *DotnetInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	// No low-cost heuristic; immediately defer to the heavy check.
 	return "", false
 }
 
-func (d *DotnetInspector) DeepScan(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+func (d *DotnetInspector) DeepScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	// Heavy check: read the process maps from cache and look for "libcoreclr.so"
-	ctx.MapsContent()
-	if ctx.MapsFileContent == nil {
+	mapsFile, err := pcx.GetMapsFile()
+	if err != nil {
 		return "", false
 	}
 
 	// Scan the maps content for the .NET runtime library.
-	scanner := bufio.NewScanner(ctx.MapsFileContent)
+	scanner := bufio.NewScanner(mapsFile)
 	for scanner.Scan() {
 		line := scanner.Text()
 		if strings.Contains(line, "libcoreclr.so") {

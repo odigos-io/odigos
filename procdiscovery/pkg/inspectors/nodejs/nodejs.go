@@ -19,8 +19,8 @@ var nodeExecutables = map[string]bool{
 	"yarn": true,
 }
 
-func (n *NodejsInspector) QuickScan(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
-	proc := ctx.Details
+func (n *NodejsInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+	proc := pcx.Details
 	baseExe := filepath.Base(proc.ExePath)
 	if v8Regex.MatchString(baseExe) || nodeExecutables[baseExe] {
 		return common.JavascriptProgrammingLanguage, true
@@ -28,12 +28,12 @@ func (n *NodejsInspector) QuickScan(ctx *process.ProcessContext) (common.Program
 	return "", false
 }
 
-func (n *NodejsInspector) DeepScan(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+func (n *NodejsInspector) DeepScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	return "", false
 }
 
-func (n *NodejsInspector) GetRuntimeVersion(ctx *process.ProcessContext, containerURL string) *version.Version {
-	if value, exists := ctx.Details.GetDetailedEnvsValue(process.NodeVersionConst); exists {
+func (n *NodejsInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) *version.Version {
+	if value, exists := pcx.Details.GetDetailedEnvsValue(process.NodeVersionConst); exists {
 		return common.GetVersion(value)
 	}
 

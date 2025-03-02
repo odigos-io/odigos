@@ -25,19 +25,19 @@ const (
 
 var re = regexp.MustCompile(NginxVersionRegex)
 
-func (j *NginxInspector) QuickScan(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
-	p := ctx.Details
+func (j *NginxInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+	p := pcx.Details
 	if strings.Contains(p.CmdLine, NginxProcessName) || strings.Contains(p.ExePath, NginxProcessName) {
 		return common.NginxProgrammingLanguage, true
 	}
 	return "", false
 }
 
-func (j *NginxInspector) DeepScan(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+func (j *NginxInspector) DeepScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	return "", false
 }
 
-func (j *NginxInspector) GetRuntimeVersion(ctx *process.ProcessContext, containerURL string) *version.Version {
+func (j *NginxInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) *version.Version {
 	nginxVersion, err := GetNginxVersion(containerURL)
 	if err != nil {
 		return nil
@@ -47,10 +47,10 @@ func (j *NginxInspector) GetRuntimeVersion(ctx *process.ProcessContext, containe
 }
 
 func GetNginxVersion(containerURL string) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	pcx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, containerURL, http.NoBody)
+	req, err := http.NewRequestWithContext(pcx, http.MethodGet, containerURL, http.NoBody)
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}

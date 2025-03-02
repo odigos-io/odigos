@@ -17,16 +17,16 @@ const (
 	libPythonStr      = "libpython3"
 )
 
-func (p *PythonInspector) QuickScan(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
-	proc := ctx.Details
+func (p *PythonInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+	proc := pcx.Details
 	if strings.Contains(proc.ExePath, pythonProcessName) || strings.Contains(proc.CmdLine, pythonProcessName) {
 		return common.PythonProgrammingLanguage, true
 	}
 	return "", false
 }
 
-func (p *PythonInspector) DeepScan(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
-	if p.isLibPythonLinked(ctx) {
+func (p *PythonInspector) DeepScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+	if p.isLibPythonLinked(pcx) {
 		return common.PythonProgrammingLanguage, true
 	}
 	return "", false
@@ -39,10 +39,14 @@ func (p *PythonInspector) GetRuntimeVersion(proc *process.Details, containerURL 
 	return nil
 }
 
-func (p *PythonInspector) isLibPythonLinked(ctx *process.ProcessContext) bool {
-	ctx.ExeContent()
+func (p *PythonInspector) isLibPythonLinked(pcx *process.ProcessContext) bool {
+	exeFile, err := pcx.GetExeFile()
 
-	elfFile, err := elf.NewFile(ctx.ExeFileContent)
+	if err != nil {
+		return false
+	}
+
+	elfFile, err := elf.NewFile(exeFile)
 	if err != nil {
 		return false
 	}

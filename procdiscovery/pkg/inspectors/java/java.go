@@ -21,20 +21,20 @@ const JavaVersionRegex = `\d+\.\d+\.\d+\+\d+`
 
 var re = regexp.MustCompile(JavaVersionRegex)
 
-func (j *JavaInspector) QuickScan(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+func (j *JavaInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	// Low cost: simply check the exe filename.
-	if filepath.Base(ctx.ExePath) == processName {
+	if filepath.Base(pcx.ExePath) == processName {
 		return common.JavaProgrammingLanguage, true
 	}
 	return "", false
 }
 
-func (j *JavaInspector) DeepScan(ctx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
-	ctx.MapsContent()
-	if ctx.MapsFileContent == nil {
+func (j *JavaInspector) DeepScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+	mapsFile, err := pcx.GetMapsFile()
+	if err != nil {
 		return "", false
 	}
-	scanner := bufio.NewScanner(ctx.MapsFileContent)
+	scanner := bufio.NewScanner(mapsFile)
 	for scanner.Scan() {
 		if libjvmRegex.MatchString(scanner.Text()) {
 			return common.JavaProgrammingLanguage, true
@@ -43,8 +43,8 @@ func (j *JavaInspector) DeepScan(ctx *process.ProcessContext) (common.Programmin
 	return "", false
 }
 
-func (j *JavaInspector) GetRuntimeVersion(ctx *process.ProcessContext, containerURL string) *version.Version {
-	if value, exists := ctx.Details.GetDetailedEnvsValue(process.JavaVersionConst); exists {
+func (j *JavaInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) *version.Version {
+	if value, exists := pcx.Details.GetDetailedEnvsValue(process.JavaVersionConst); exists {
 		javaVersion := re.FindString(value)
 		return common.GetVersion(javaVersion)
 	}
