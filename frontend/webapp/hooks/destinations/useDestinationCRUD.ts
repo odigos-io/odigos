@@ -54,7 +54,6 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
     loading: isFetching,
     refetch: fetchDestinations,
   } = useQuery<{ computePlatform: { destinations: FetchedDestination[] } }>(GET_DESTINATIONS, {
-    fetchPolicy: 'cache-and-network',
     onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message),
   });
 

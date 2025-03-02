@@ -17,12 +17,17 @@ const makeClient = () => {
   });
 
   return new ApolloClient({
-    cache: new InMemoryCache({
-      addTypename: false,
-    }),
     devtools: {
       enabled: true,
     },
+    defaultOptions: {
+      watchQuery: { fetchPolicy: 'cache-and-network' },
+      query: { fetchPolicy: 'cache-first' },
+      mutate: { fetchPolicy: 'network-only' },
+    },
+    cache: new InMemoryCache({
+      addTypename: false,
+    }),
     link:
       typeof window === 'undefined'
         ? ApolloLink.from([

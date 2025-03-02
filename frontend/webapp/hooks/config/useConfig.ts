@@ -10,7 +10,6 @@ export const useConfig = () => {
   const { addNotification } = useNotificationStore();
 
   const { data, error } = useSuspenseQuery<FetchedConfig>(GET_CONFIG, {
-    fetchPolicy: 'cache-and-network',
     skip: typeof window === 'undefined',
   });
 
