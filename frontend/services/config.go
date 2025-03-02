@@ -5,11 +5,11 @@ import (
 	"errors"
 	"log"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
-	"github.com/odigos-io/odigos/frontend/services/describe/odigos_describe"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,11 +32,12 @@ func GetConfig(ctx context.Context) model.GetConfigResponse {
 
 	response.Readonly = IsReadonlyMode(ctx)
 
-	describe, err := odigos_describe.GetOdigosDescription(ctx)
+	odigosDeployment, err := kube.DefaultClient.CoreV1().ConfigMaps(env.GetCurrentNamespace()).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
 	if err != nil {
+		log.Printf("error getting %s config map: %v\n", k8sconsts.OdigosDeploymentConfigMapName, err)
 		response.Tier = model.Tier(common.CommunityOdigosTier)
 	} else {
-		response.Tier = model.Tier(describe.Tier.Value)
+		response.Tier = model.Tier(odigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapTierKey])
 	}
 
 	if !isSourceCreated(ctx) && !isDestinationConnected(ctx) {
