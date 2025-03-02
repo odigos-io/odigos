@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { useConfig } from '../config';
 import { usePaginatedStore } from '@/store';
 import { useNamespace } from '../compute-platform';
@@ -17,10 +17,6 @@ interface UseSourceCrud {
   persistSources: (selectAppsList: SourceSelectionFormData, futureSelectAppsList: NamespaceSelectionFormData) => Promise<void>;
   updateSource: (sourceId: WorkloadId, payload: SourceFormData) => Promise<void>;
 }
-
-const mapFetched = (items: FetchedSource[]): Source[] => {
-  return items;
-};
 
 export const useSourceCRUD = (): UseSourceCrud => {
   const { data: config } = useConfig();
@@ -51,11 +47,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
     const { error, data } = await fetchPaginated({ variables: { nextPage: page } });
 
     if (!!error) {
-      addNotification({
-        type: NOTIFICATION_TYPE.ERROR,
-        title: error.name || CRUD.READ,
-        message: error.cause?.message || error.message,
-      });
+      notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message);
     } else if (!!data?.computePlatform?.sources) {
       const { items, nextPage } = data.computePlatform.sources;
 
@@ -82,11 +74,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
     const { error, data } = await fetchById({ variables: { sourceId: id } });
 
     if (!!error) {
-      addNotification({
-        type: NOTIFICATION_TYPE.ERROR,
-        title: error.name || CRUD.READ,
-        message: error.cause?.message || error.message,
-      });
+      notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message);
     } else if (!!data?.computePlatform.source) {
       addPaginated(ENTITY_TYPES.SOURCE, [data.computePlatform.source]);
     }
@@ -118,10 +106,8 @@ export const useSourceCRUD = (): UseSourceCrud => {
     if (!sources.length && !sourcesPaginating) fetchSources();
   }, []);
 
-  const mapped = useMemo(() => mapFetched(sources), [sources]);
-
   return {
-    sources: mapped,
+    sources,
     sourcesLoading: isFetching || isFetchingById || sourcesPaginating || cdState.loading || uState.loading,
     sourcesPaginating,
     fetchSources,

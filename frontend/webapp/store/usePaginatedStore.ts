@@ -1,19 +1,18 @@
 import { create } from 'zustand';
-import { ENTITY_TYPES, getEntityId, type WorkloadId } from '@odigos/ui-utils';
-import type { FetchedAction, FetchedDestination, FetchedInstrumentationRule, FetchedSource } from '@/@types';
+import { type Action, type Destination, ENTITY_TYPES, getEntityId, type InstrumentationRule, type Source, type WorkloadId } from '@odigos/ui-utils';
 
 interface IPaginatedState {
   sourcesPaginating: boolean;
-  sources: FetchedSource[];
+  sources: Source[];
 
   destinationsPaginating: boolean;
-  destinations: FetchedDestination[];
+  destinations: Destination[];
 
   actionsPaginating: boolean;
-  actions: FetchedAction[];
+  actions: Action[];
 
   instrumentationRulesPaginating: boolean;
-  instrumentationRules: FetchedInstrumentationRule[];
+  instrumentationRules: InstrumentationRule[];
 }
 
 type EntityId = string | WorkloadId;
@@ -122,7 +121,9 @@ export const usePaginatedStore = create<IPaginatedState & IPaginatedStateSetters
       const prev = [...state[KEY]];
 
       entityIds.forEach((id) => {
-        const foundIdx = prev.findIndex((entity) => JSON.stringify(getEntityId(entity)) === (entityType === ENTITY_TYPES.SOURCE ? JSON.stringify(getEntityId(id as WorkloadId)) : id));
+        const foundIdx = prev.findIndex((entity) =>
+          entityType === ENTITY_TYPES.SOURCE ? JSON.stringify(getEntityId(entity)) === JSON.stringify(getEntityId(id as WorkloadId)) : getEntityId(entity) === id,
+        );
 
         if (foundIdx !== -1) {
           prev.splice(foundIdx, 1);
