@@ -79,7 +79,7 @@ func (h *LatencySamplerHandler) GetActionScope(action metav1.Object) string {
 }
 
 func (lc *LatencyConfig) Validate() error {
-	if lc.ThresholdMs < 0 {
+	if lc.ThresholdMs <= 0 {
 		return errors.New("minimum latency threshold must be positive")
 	}
 	if lc.FallbackSamplingRatio < 0 || lc.FallbackSamplingRatio > 100 {
