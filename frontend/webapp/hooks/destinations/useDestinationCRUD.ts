@@ -1,7 +1,8 @@
-import { useMemo } from 'react';
+import { useEffect } from 'react';
 import { useConfig } from '../config';
+import { usePaginatedStore } from '@/store';
 import { GET_DESTINATIONS } from '@/graphql';
-import { useMutation, useQuery } from '@apollo/client';
+import { useLazyQuery, useMutation } from '@apollo/client';
 import type { DestinationInput, FetchedDestination } from '@/@types';
 import { CREATE_DESTINATION, DELETE_DESTINATION, UPDATE_DESTINATION } from '@/graphql/mutations';
 import { type DestinationFormData, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
@@ -44,61 +45,74 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
   const { data: config } = useConfig();
   const { addNotification } = useNotificationStore();
   const { addPendingItems, removePendingItems } = usePendingStore();
+  const { destinationsPaginating, setPaginating, destinations, addPaginated, removePaginated } = usePaginatedStore();
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
     addNotification({ type, title, message, crdType: ENTITY_TYPES.DESTINATION, target: id ? getSseTargetFromId(id, ENTITY_TYPES.DESTINATION) : undefined, hideFromHistory });
   };
 
-  const {
-    data,
-    loading: isFetching,
-    refetch: fetchDestinations,
-  } = useQuery<{ computePlatform: { destinations: FetchedDestination[] } }>(GET_DESTINATIONS, {
-    onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message),
+  const [fetchAll, { loading: isFetching }] = useLazyQuery<{ computePlatform?: { destinations?: FetchedDestination[] } }>(GET_DESTINATIONS, {
+    fetchPolicy: 'cache-and-network',
   });
 
-  const [mutateCreate, cState] = useMutation<{ createNewDestination: { id: string } }, { destination: DestinationInput }>(CREATE_DESTINATION, {
+  const fetchDestinations = async () => {
+    setPaginating(ENTITY_TYPES.DESTINATION, true);
+    const { error, data } = await fetchAll();
+
+    if (!!error) {
+      notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message);
+    } else if (!!data?.computePlatform?.destinations) {
+      const { destinations: items } = data.computePlatform;
+      addPaginated(ENTITY_TYPES.DESTINATION, mapFetched(items));
+      setPaginating(ENTITY_TYPES.DESTINATION, false);
+    }
+  };
+
+  const [mutateCreate, cState] = useMutation<{ createNewDestination: FetchedDestination }, { destination: DestinationInput }>(CREATE_DESTINATION, {
     onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.CREATE, error.cause?.message || error.message),
-    onCompleted: () => {
-      // We wait for SSE
+    onCompleted: (res) => {
+      const destination = res.createNewDestination;
+      addPaginated(ENTITY_TYPES.DESTINATION, mapFetched([destination]));
+      notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.CREATE, `Successfully created "${destination.destinationType.type}" destination`, destination.id);
     },
   });
 
   const [mutateUpdate, uState] = useMutation<{ updateDestination: { id: string } }, { id: string; destination: DestinationInput }>(UPDATE_DESTINATION, {
     onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.UPDATE, error.cause?.message || error.message),
     onCompleted: (res, req) => {
-      // This is instead of toasting a k8s modified-event watcher...
-      // If we do toast with a watcher, we can't guarantee an SSE will be sent for this update alone. It will definitely include SSE for all updates, even those unexpected.
-      // Not that there's anything about a watcher that would break the UI, it's just that we would receive unexpected events with ridiculous amounts.
       setTimeout(() => {
-        const { id, destination } = req?.variables || {};
-
-        notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.UPDATE, `Successfully updated "${destination.type}" destination`, id);
+        const id = req?.variables?.id as string;
+        const destination = destinations.find((r) => r.id === id);
         removePendingItems([{ entityType: ENTITY_TYPES.DESTINATION, entityId: id }]);
-      }, 1000);
+        notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.CREATE, `Successfully updated "${destination?.destinationType?.type || id}" destination`, id);
+        // We wait for SSE
+      }, 3000);
     },
   });
 
   const [mutateDelete, dState] = useMutation<{ deleteDestination: boolean }, { id: string }>(DELETE_DESTINATION, {
     onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.DELETE, error.cause?.message || error.message),
-    onCompleted: () => {
-      // We wait for SSE
+    onCompleted: (res, req) => {
+      const id = req?.variables?.id as string;
+      const destination = destinations.find((r) => r.id === id);
+      removePaginated(ENTITY_TYPES.DESTINATION, [id]);
+      notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.DELETE, `Successfully deleted "${destination?.destinationType.type || id}" destination`, id);
     },
   });
 
-  const mapped = useMemo(() => mapFetched(data?.computePlatform?.destinations || []), [data?.computePlatform?.destinations]);
+  useEffect(() => {
+    if (!destinations.length && !destinationsPaginating) fetchDestinations();
+  }, []);
 
   return {
-    destinations: mapped,
-    destinationsLoading: isFetching || cState.loading || uState.loading || dState.loading,
+    destinations,
+    destinationsLoading: isFetching || destinationsPaginating || cState.loading || uState.loading || dState.loading,
     fetchDestinations,
 
     createDestination: (destination) => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
-        notifyUser(NOTIFICATION_TYPE.DEFAULT, 'Pending', 'Creating destination...', undefined, true);
-        addPendingItems([{ entityType: ENTITY_TYPES.DESTINATION, entityId: undefined }]);
         mutateCreate({ variables: { destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
       }
     },
@@ -115,8 +129,6 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
-        notifyUser(NOTIFICATION_TYPE.DEFAULT, 'Pending', 'Deleting destination...', undefined, true);
-        addPendingItems([{ entityType: ENTITY_TYPES.DESTINATION, entityId: id }]);
         mutateDelete({ variables: { id } });
       }
     },
