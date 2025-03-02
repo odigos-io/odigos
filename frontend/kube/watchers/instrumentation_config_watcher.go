@@ -24,7 +24,7 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 	instrumentationConfigAddedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			MinBatchSize: 1,
-			Duration:     5 * time.Second,
+			Duration:     3 * time.Second,
 			Event:        sse.MessageEventAdded,
 			CRDType:      consts.InstrumentationConfig,
 			SuccessBatchMessageFunc: func(count int, crdType string) string {
@@ -39,7 +39,7 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 	instrumentationConfigDeletedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			MinBatchSize: 1,
-			Duration:     5 * time.Second,
+			Duration:     3 * time.Second,
 			Event:        sse.MessageEventDeleted,
 			CRDType:      consts.InstrumentationConfig,
 			SuccessBatchMessageFunc: func(count int, crdType string) string {
