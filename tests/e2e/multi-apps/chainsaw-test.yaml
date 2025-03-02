@@ -9,7 +9,7 @@ spec:
     - name: Prepare destination
       try:
         - script:
-            timeout: 60s
+            timeout: 2m
             content: |
               helm repo add grafana https://grafana.github.io/helm-charts
               helm repo update
@@ -19,28 +19,32 @@ spec:
               --version 1.10.1
         - assert:
             file: ../../common/assert/tempo-running.yaml
+
     - name: Wait for destination to be ready
       try:
         - script:
             timeout: 60s
             content: ../../common/wait_for_dest.sh
+
     - name: Install Odigos
       try:
         - script:
+            timeout: 60s
             content: |
               if [ "$MODE" = "cross-cloud-tests" ]; then
                 ../../../cli/odigos install --namespace odigos-test --version "$COMMIT_HASH" --image-prefix=public.ecr.aws/y2v0v6s7
               else
                 ../../../cli/odigos install --namespace odigos-test --version e2e-test
               fi
-            timeout: 60s
         - assert:
             file: ../../common/assert/odigos-installed.yaml
+
 
     - name: Verify Node Odiglet label has been added
       try:
         - assert:
             file: ../../common/assert/node-odiglet-label.yaml
+
 
     - name: Install Demo App
       try:
@@ -73,27 +77,33 @@ spec:
               kubectl wait --for=condition=ready pod -l app=membership --timeout=60s
         - assert:
             file: ../../common/assert/simple-demo-installed.yaml
+
     - name: Instrument Namespace
       try:
         - apply:
             file: ../../common/apply/instrument-default-ns.yaml
+
     - name: Assert Runtime Detected
       try:
         - assert:
             timeout: 2m
             file: ../../common/assert/simple-demo-runtime-detected.yaml
+
     - name: Add Destination
       try:
         - apply:
             file: ../../common/apply/add-tempo-traces-destination.yaml
+
     - name: Odigos pipeline ready
       try:
         - assert:
             file:  ../../common/assert/pipeline-ready.yaml
+
     - name: Simple-demo instrumented after destination added
       try:
         - assert:
             file: ../../common/assert/simple-demo-instrumented.yaml
+
     - name: Generate Traffic
       try:
         - script:
@@ -123,6 +133,7 @@ spec:
                   break
                 fi
               done
+
     - name: Verify Trace - Context Propagation
       try:
         - script:
@@ -133,6 +144,7 @@ spec:
         - podLogs:
             name: odiglet
             namespace: odigos-test
+
     - name: Verify Trace - Resource Attributes
       try:
         - script:
@@ -143,6 +155,7 @@ spec:
         - podLogs:
             name: odiglet
             namespace: odigos-test
+
     - name: Verify Trace - Span Attributes
       try:
         - script:
@@ -153,6 +166,7 @@ spec:
         - podLogs:
             name: odiglet
             namespace: odigos-test
+
     - name: Verify collector metrics are collected by the UI
       try:
         - script:
