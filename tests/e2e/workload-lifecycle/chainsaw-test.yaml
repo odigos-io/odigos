@@ -21,10 +21,11 @@ spec:
               --version 1.10.1
         - assert:
             file: ../../common/assert/tempo-running.yaml
+
     - name: Wait for destination to be ready
       try:
         - script:
-            timeout: 60s
+            timeout: 2m
             content: ../../common/wait_for_dest.sh
     - name: Install Odigos
       try:
