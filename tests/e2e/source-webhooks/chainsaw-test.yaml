@@ -39,48 +39,48 @@ spec:
             expect:
               - check:
                   ($error != null): true
-    - name: "[Defaulting] - Normal Source has deleteinstrumentationconfig finalizer added"
+    - name: "[Defaulting] - Normal Source has finalizer added"
       try:
         - apply:
-            file: defaulting-04-deleteinstrumentationconfig-finalizer.yaml
+            file: defaulting-04-finalizer.yaml
         - assert:
             timeout: 2m
-            file: defaulting-04-assert-deleteinstrumentationconfig-finalizer.yaml
-    - name: "[Defaulting] - Normal Source updated to disableInstrumentation=true has deleteinstrumentationconfig finalizer removed and startlangdetection finalizer added"
+            file: defaulting-04-assert-finalizer.yaml
+    - name: "[Defaulting] - Normal Source updated to disableInstrumentation=true still has finalizer"
       try:
         - script:
             timeout: 70s
-            content: kubectl patch source/04-deleteinstrumentationconfig-finalizer --type=merge -p '{"spec":{"disableInstrumentation":true}}'
+            content: kubectl patch source/04-finalizer --type=merge -p '{"spec":{"disableInstrumentation":true}}'
         - assert:
             timeout: 2m
-            file: defaulting-04-assert-delete-to-startlang-finalizer.yaml
+            file: defaulting-04-assert-finalizer.yaml
     - name: "[Defaulting] - Finalizer does not block normal Source from being deleted"
       try:
         - script:
             timeout: 70s
-            content: kubectl delete source 04-deleteinstrumentationconfig-finalizer
+            content: kubectl delete source 04-finalizer
             check:
               ($error == null): true
-    - name: "[Defaulting] - Workload excluded Source has startlangdetection finalizer added"
+    - name: "[Defaulting] - Workload excluded Source has finalizer added"
       try:
         - apply:
-            file: defaulting-05-startlangdetection-finalizer.yaml
+            file: defaulting-05-disabled-finalizer.yaml
         - assert:
             timeout: 2m
-            file: defaulting-05-assert-startlangdetection-finalizer.yaml
-    - name: "[Defaulting] - Workload excluded Source updated to disableInstrumentation=false has deleteinstrumentationconfig finalizer added and startlangdetection finalizer removed"
+            file: defaulting-05-assert-disabled-finalizer.yaml
+    - name: "[Defaulting] - Workload excluded Source updated to disableInstrumentation=false still has finalizer"
       try:
         - script:
             timeout: 70s
-            content: kubectl patch source/05-startlangdetection-finalizer --type=merge -p '{"spec":{"disableInstrumentation":false}}'
+            content: kubectl patch source/05-disabled-finalizer --type=merge -p '{"spec":{"disableInstrumentation":false}}'
         - assert:
             timeout: 2m
-            file: defaulting-05-assert-startlang-to-delete-finalizer.yaml
+            file: defaulting-05-assert-enabled-finalizer.yaml
     - name: "[Defaulting] - Finalizer does not block exclusion Source from being deleted"
       try:
         - script:
             timeout: 70s
-            content: kubectl delete source 05-startlangdetection-finalizer
+            content: kubectl delete source 05-disabled-finalizer
             check:
               ($error == null): true
     - name: "[Validating] - Normal Source passes validation"
@@ -197,3 +197,17 @@ spec:
             check:
               ($error != null): true
               (contains($stderr, 'Invalid value')): true
+    - name: '[Migration] - Old startlangdetection finalizer is removed and migrated to new combined one'
+      try:
+        - apply:
+            file: migration-01-source-with-old-finalizer.yaml
+        - assert:
+            timeout: 2m
+            file: migration-01-assert-source-with-old-finalizer.yaml
+    - name: '[Migration] - Old deleteinstrumentationconfig finalizer is removed and migrated to new combined one'
+      try:
+        - apply:
+            file: migration-02-source-with-old-finalizer.yaml
+        - assert:
+            timeout: 2m
+            file: migration-02-assert-source-with-old-finalizer.yaml
