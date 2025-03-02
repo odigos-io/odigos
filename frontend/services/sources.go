@@ -246,7 +246,15 @@ func GetSourceCRD(ctx context.Context, nsName string, workloadName string, workl
 	return &list.Items[0], err
 }
 
+func DeleteSourceWithAPI(c *gin.Context) {
+	toggleSourceWithAPI(c, false)
+}
+
 func CreateSourceWithAPI(c *gin.Context) {
+	toggleSourceWithAPI(c, true)
+}
+
+func toggleSourceWithAPI(c *gin.Context, enabled bool) {
 	ctx := c.Request.Context()
 	ns := c.Param("namespace")
 	name := c.Param("name")
@@ -259,7 +267,7 @@ func CreateSourceWithAPI(c *gin.Context) {
 		return
 	}
 
-	src, err := CreateSourceCRD(ctx, ns, name, wk)
+	err := ToggleSourceCRD(ctx, ns, name, wk, enabled)
 	if err != nil {
 		c.JSON(500, gin.H{
 			"message": err.Error(),
@@ -267,7 +275,9 @@ func CreateSourceWithAPI(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, src)
+	c.JSON(200, gin.H{
+		"message": "toggle successful",
+	})
 }
 
 func stringToWorkloadKind(workloadKind string) (WorkloadKind, bool) {
