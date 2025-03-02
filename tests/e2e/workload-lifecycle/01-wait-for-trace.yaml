@@ -21,3 +21,4 @@ query: |
   { resource.service.name = "dotnet6-musl" }
 expected:
   count: 17
+custom_jq: '.traces | map(.rootServiceName) | unique | length'
