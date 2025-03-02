@@ -119,7 +119,7 @@ func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *m
 // Sources is the resolver for the sources field.
 func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.ComputePlatform, nextPage string) (*model.PaginatedSources, error) {
 	startTime := time.Now()
-	limit := services.GetPageLimit()
+	limit, _ := services.GetPageLimit(ctx)
 
 	list, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{
 		Limit:    int64(limit),
@@ -150,7 +150,7 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 
 	g, ctx := errgroup.WithContext(ctx)
 	g.SetLimit(limit)
-	ch := make(chan *model.K8sActualSource, 100)
+	ch := make(chan *model.K8sActualSource, limit*10)
 
 	for _, ic := range list.Items {
 		g.Go(func() error {
