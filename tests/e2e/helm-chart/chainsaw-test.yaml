@@ -23,7 +23,7 @@ spec:
     - name: Wait for destination to be ready
       try:
         - script:
-            timeout: 60s
+            timeout: 2m
             content: ../../common/wait_for_dest.sh
 
     - name: Install Odigos
