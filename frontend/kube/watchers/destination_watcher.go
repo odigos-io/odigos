@@ -21,7 +21,7 @@ var destinationModifiedEventBatcher *EventBatcher
 func StartDestinationWatcher(ctx context.Context, namespace string) error {
 	destinationModifiedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
-			MinBatchSize: 2,
+			MinBatchSize: 1,
 			Duration:     3 * time.Second,
 			Event:        sse.MessageEventModified,
 			CRDType:      consts.Destination,
