@@ -150,7 +150,7 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 
 	g, ctx := errgroup.WithContext(ctx)
 	g.SetLimit(limit)
-	ch := make(chan *model.K8sActualSource, limit*10)
+	ch := make(chan *model.K8sActualSource, len(list.Items))
 
 	for _, ic := range list.Items {
 		g.Go(func() error {
