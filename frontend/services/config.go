@@ -34,7 +34,6 @@ func GetConfig(ctx context.Context) model.GetConfigResponse {
 
 	odigosDeployment, err := kube.DefaultClient.CoreV1().ConfigMaps(env.GetCurrentNamespace()).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
 	if err != nil {
-		log.Printf("error getting %s config map: %v\n", k8sconsts.OdigosDeploymentConfigMapName, err)
 		response.Tier = model.Tier(common.CommunityOdigosTier)
 	} else {
 		response.Tier = model.Tier(odigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapTierKey])
