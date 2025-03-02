@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
+
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
@@ -242,6 +244,45 @@ func GetSourceCRD(ctx context.Context, nsName string, workloadName string, workl
 	}
 
 	return &list.Items[0], err
+}
+
+func CreateSourceWithAPI(c *gin.Context) {
+	ctx := c.Request.Context()
+	ns := c.Param("namespace")
+	name := c.Param("name")
+	kind := c.Param("kind")
+	wk, ok := stringToWorkloadKind(kind)
+	if !ok {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("invalid kind: %s", kind),
+		})
+		return
+	}
+
+	src, err := CreateSourceCRD(ctx, ns, name, wk)
+	if err != nil {
+		c.JSON(500, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, src)
+}
+
+func stringToWorkloadKind(workloadKind string) (WorkloadKind, bool) {
+	switch strings.ToLower(workloadKind) {
+	case "namespace":
+		return WorkloadKindNamespace, true
+	case "deployment":
+		return WorkloadKindDeployment, true
+	case "statefulset":
+		return WorkloadKindStatefulSet, true
+	case "daemonset":
+		return WorkloadKindDaemonSet, true
+	}
+
+	return "", false
 }
 
 func CreateSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) (*v1alpha1.Source, error) {
