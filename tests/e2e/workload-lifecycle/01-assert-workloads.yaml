@@ -253,7 +253,7 @@ spec:
   template:
     spec:
       containers:
-        - image: java-supported-docker-env:v0.0.1
+        - image: public.ecr.aws/odigos/java-supported-docker-env:v0.0.1
           name: java-supported-docker-env
           ports:
             - containerPort: 3000
