@@ -3,10 +3,9 @@ name: Publish Modules
 on:
   push:
     tags:
-      - "v*"
+      - 'v*'
 
 jobs:
-
   print-tag:
     runs-on: ubuntu-latest
     steps:
@@ -83,32 +82,32 @@ jobs:
         include:
           - service: autoscaler
             runner: ubuntu-latest
-            summary: "Autoscaler for Odigos"
-            description: "Autoscaler manages the installation of Odigos components."
+            summary: 'Autoscaler for Odigos'
+            description: 'Autoscaler manages the installation of Odigos components.'
           - service: scheduler
             runner: ubuntu-latest
-            summary: "Scheduler for Odigos"
-            description: "Scheduler manages the installation of OpenTelemetry Collectors with Odigos."
+            summary: 'Scheduler for Odigos'
+            description: 'Scheduler manages the installation of OpenTelemetry Collectors with Odigos.'
           - service: instrumentor
             runner: ubuntu-latest
-            summary: "Instrumentor for Odigos"
-            description: "Instrumentor manages auto-instrumentation for workloads with Odigos."
+            summary: 'Instrumentor for Odigos'
+            description: 'Instrumentor manages auto-instrumentation for workloads with Odigos.'
           - service: collector
             runner: large-runner
-            summary: "Odigos Collector"
-            description: "The Odigos build of the OpenTelemetry Collector."
+            summary: 'Odigos Collector'
+            description: 'The Odigos build of the OpenTelemetry Collector.'
           - service: odiglet
             runner: ubuntu-latest
-            summary: "Odiglet for Odigos"
-            description: "Odiglet is the core component of Odigos managing auto-instrumentation. This image requires a root user to load and manage eBPF programs."
+            summary: 'Odiglet for Odigos'
+            description: 'Odiglet is the core component of Odigos managing auto-instrumentation. This image requires a root user to load and manage eBPF programs.'
           - service: ui
             runner: ubuntu-latest
-            summary: "UI for Odigos"
-            description: "UI provides the frontend webapp for managing an Odigos installation."
+            summary: 'UI for Odigos'
+            description: 'UI provides the frontend webapp for managing an Odigos installation.'
           - service: operator
             runner: ubuntu-latest
-            summary: "Odigos Operator"
-            description: "Kubernetes Operator for Odigos installs Odigos"
+            summary: 'Odigos Operator'
+            description: 'Kubernetes Operator for Odigos installs Odigos'
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout repository
@@ -153,6 +152,7 @@ jobs:
             ${{ matrix.service == 'odiglet' && format('odiglet/{0}', matrix.dockerfile) ||
                 matrix.service == 'collector' && format('collector/{0}', matrix.dockerfile) ||
                 matrix.service == 'ui' && format('frontend/{0}', matrix.dockerfile) ||
+                matrix.service == 'operator' && format('operator/{0}', matrix.dockerfile) ||
                 matrix.dockerfile }}
           context: >-
             ${{
@@ -203,7 +203,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.23"
+          go-version: '1.23'
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5
