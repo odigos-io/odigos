@@ -122,15 +122,15 @@ export const TEXTS = {
   NOTIF_SOURCES_UPDATED: (name: string) => `Successfully updated "${name}" source`,
   NOTIF_SOURCES_DELETED: (amount: number) => `Successfully deleted ${amount} sources`,
 
-  NOTIF_DESTINATIONS_CREATED: (amount: number) => `Successfully created ${amount} destinations`,
-  NOTIF_DESTINATIONS_UPDATED: (name: string) => `Successfully updated "${name}" destination`,
-  NOTIF_DESTINATIONS_DELETED: (amount: number) => `Successfully deleted ${amount} destinations`,
+  NOTIF_DESTINATION_CREATED: (destinationType: string) => `Successfully created "${destinationType}" destination`,
+  NOTIF_DESTINATION_UPDATED: (destinationType: string) => `Successfully updated "${destinationType}" destination`,
+  NOTIF_DESTINATION_DELETED: (destinationType: string) => `Successfully deleted "${destinationType}" destination`,
 
-  NOTIF_ACTION_CREATED: (crdId: string) => `Action "${crdId}" created`,
-  NOTIF_ACTION_UPDATED: (crdId: string) => `Action "${crdId}" updated`,
-  NOTIF_ACTION_DELETED: (crdId: string) => `Action "${crdId}" delete`,
+  NOTIF_ACTION_CREATED: (actionType: string) => `Successfully created "${actionType}" action`,
+  NOTIF_ACTION_UPDATED: (actionType: string) => `Successfully updated "${actionType}" action`,
+  NOTIF_ACTION_DELETED: (actionType: string) => `Successfully deleted "${actionType}" action`,
 
-  NOTIF_INSTRUMENTATION_RULE_CREATED: (crdId: string) => `Rule "${crdId}" created`,
-  NOTIF_INSTRUMENTATION_RULE_UPDATED: (crdId: string) => `Rule "${crdId}" updated`,
-  NOTIF_INSTRUMENTATION_RULE_DELETED: (crdId: string) => `Rule "${crdId}" deleted`,
+  NOTIF_INSTRUMENTATION_RULE_CREATED: (ruleType: string) => `Successfully created "${ruleType}" rule`,
+  NOTIF_INSTRUMENTATION_RULE_UPDATED: (ruleType: string) => `Successfully updated "${ruleType}" rule`,
+  NOTIF_INSTRUMENTATION_RULE_DELETED: (ruleType: string) => `Successfully deleted "${ruleType}" rule`,
 };
