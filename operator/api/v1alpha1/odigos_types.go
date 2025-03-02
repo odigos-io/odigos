@@ -60,6 +60,10 @@ type OdigosSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="UI Mode"
 	UIMode string `json:"uiMode,omitempty"`
 
+	// UIPaginationLimit controls the number of items to fetch per paginated-batch in the UI (if not set, default is 10).
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="UI Pagination Limit"
+	UIPaginationLimit int `json:"uiPaginationLimit,omitempty"`
+
 	// OnPremToken is an optional enterprise token for Odigos Enterprise.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="On-Prem Token"
 	OnPremToken string `json:"onPremToken,omitempty"`
