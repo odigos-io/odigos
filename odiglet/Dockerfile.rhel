@@ -120,7 +120,7 @@ COPY --from=nodejs-agent-native-community-builder /repos/odigos/agents/nodejs-na
 # .NET
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
 
-FROM registry.access.redhat.com/ubi9:9.5-1736404036
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest
 ARG VERSION
 ARG RELEASE
 ARG SUMMARY

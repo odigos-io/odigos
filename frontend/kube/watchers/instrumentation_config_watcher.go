@@ -24,7 +24,7 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 	instrumentationConfigAddedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			MinBatchSize: 1,
-			Duration:     5 * time.Second,
+			Duration:     3 * time.Second,
 			Event:        sse.MessageEventAdded,
 			CRDType:      consts.InstrumentationConfig,
 			SuccessBatchMessageFunc: func(count int, crdType string) string {
@@ -39,7 +39,7 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 	instrumentationConfigDeletedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			MinBatchSize: 1,
-			Duration:     5 * time.Second,
+			Duration:     3 * time.Second,
 			Event:        sse.MessageEventDeleted,
 			CRDType:      consts.InstrumentationConfig,
 			SuccessBatchMessageFunc: func(count int, crdType string) string {
@@ -97,7 +97,7 @@ func handleAddedInstrumentationConfig(instruConfig *v1alpha1.InstrumentationConf
 	}
 
 	target := fmt.Sprintf("namespace=%s&name=%s&kind=%s", namespace, name, kind)
-	data := fmt.Sprintf(`Source "%s" created`, name)
+	data := fmt.Sprintf(`Successfully created "%s" source`, name)
 	instrumentationConfigAddedEventBatcher.AddEvent(sse.MessageTypeSuccess, data, target)
 }
 
@@ -110,7 +110,7 @@ func handleModifiedInstrumentationConfig(instruConfig *v1alpha1.InstrumentationC
 	}
 
 	target := fmt.Sprintf("namespace=%s&name=%s&kind=%s", namespace, name, kind)
-	data := fmt.Sprintf(`Source "%s" updated`, name)
+	data := fmt.Sprintf(`Successfully updated "%s" source`, name)
 
 	// We have to ensure that the event is always an individual event - no batching.
 	// We need to do this because we have to get an event with the target ID, which is not possible with batching.
@@ -133,6 +133,6 @@ func handleDeletedInstrumentationConfig(instruConfig *v1alpha1.InstrumentationCo
 	}
 
 	target := fmt.Sprintf("namespace=%s&name=%s&kind=%s", namespace, name, kind)
-	data := fmt.Sprintf(`Source "%s" deleted`, name)
+	data := fmt.Sprintf(`Successfully deleted "%s" source`, name)
 	instrumentationConfigDeletedEventBatcher.AddEvent(sse.MessageTypeSuccess, data, target)
 }
