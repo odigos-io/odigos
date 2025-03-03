@@ -107,8 +107,9 @@ To debug the `cli install` command in Visual Studio Code, use the following conf
 
 ### Updating OpenTelemetry dependencies
 
-1. Update `OTEL_*` versions in `Makefile`
-2. Run `make update-otel`
-3. Update versions in `collector/builder-config.yaml`
-4. In `collector` directory, run `make genodigoscol generate` (may help to run in a Docker container)
-5. Run `make go-mod-tidy`
+1. Update builder version and component versions in `collector/builder-config.yaml` and builder version in `collector/Makefile`
+2. In `collector` directory, run `make genodigoscol generate` (may help to run in a Docker container)
+3. Run `make go-mod-tidy`
+4. Update `OTEL_*` versions in `Makefile`
+5. Run `make update-otel`
+6. Run `make go-mod-tidy`

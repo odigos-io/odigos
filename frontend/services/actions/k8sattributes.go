@@ -76,7 +76,7 @@ func CreateK8sAttributes(ctx context.Context, action model.ActionInput) (model.A
 
 	response := &model.K8sAttributesAction{
 		ID:      generatedAction.Name,
-		Type:    ActionTypeAddClusterInfo,
+		Type:    ActionTypeK8sAttributes,
 		Name:    action.Name,
 		Notes:   action.Notes,
 		Disable: action.Disable,
@@ -151,7 +151,7 @@ func UpdateK8sAttributes(ctx context.Context, id string, action model.ActionInpu
 
 	response := &model.K8sAttributesAction{
 		ID:      updatedAction.Name,
-		Type:    ActionTypeAddClusterInfo,
+		Type:    ActionTypeK8sAttributes,
 		Name:    action.Name,
 		Notes:   action.Notes,
 		Disable: action.Disable,

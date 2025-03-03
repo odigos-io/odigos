@@ -16,7 +16,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func NewOdigosDeploymentConfigMap(ns string, odigosVersion string, odigosTier string) *corev1.ConfigMap {
+func NewOdigosDeploymentConfigMap(ns string, odigosVersion string, odigosTier string, installationMethod installationmethod.K8sInstallationMethod) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		TypeMeta: v1.TypeMeta{
 			Kind:       "ConfigMap",
@@ -29,7 +29,7 @@ func NewOdigosDeploymentConfigMap(ns string, odigosVersion string, odigosTier st
 		Data: map[string]string{
 			k8sconsts.OdigosDeploymentConfigMapVersionKey:            odigosVersion,
 			k8sconsts.OdigosDeploymentConfigMapTierKey:               odigosTier,
-			k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey: string(installationmethod.K8sInstallationMethodOdigosCli),
+			k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey: string(installationMethod),
 			k8sconsts.OdigosDeploymentConfigMapOdigosDeploymentIDKey: uuid.New().String(),
 		},
 	}
@@ -78,22 +78,23 @@ func NewLeaderElectionRole(ns string) *rbacv1.Role {
 }
 
 type odigosDeploymentResourceManager struct {
-	client        *kube.Client
-	ns            string
-	config        *common.OdigosConfiguration
-	odigosTier    common.OdigosTier
-	odigosVersion string
+	client             *kube.Client
+	ns                 string
+	config             *common.OdigosConfiguration
+	odigosTier         common.OdigosTier
+	odigosVersion      string
+	installationMethod installationmethod.K8sInstallationMethod
 }
 
-func NewOdigosDeploymentResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosTier common.OdigosTier, odigosVersion string) resourcemanager.ResourceManager {
-	return &odigosDeploymentResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier, odigosVersion: odigosVersion}
+func NewOdigosDeploymentResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosTier common.OdigosTier, odigosVersion string, installationMethod installationmethod.K8sInstallationMethod) resourcemanager.ResourceManager {
+	return &odigosDeploymentResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier, odigosVersion: odigosVersion, installationMethod: installationMethod}
 }
 
 func (a *odigosDeploymentResourceManager) Name() string { return "OdigosDeployment" }
 
 func (a *odigosDeploymentResourceManager) InstallFromScratch(ctx context.Context) error {
 	resources := []kube.Object{
-		NewOdigosDeploymentConfigMap(a.ns, a.odigosVersion, string(a.odigosTier)),
+		NewOdigosDeploymentConfigMap(a.ns, a.odigosVersion, string(a.odigosTier), a.installationMethod),
 		NewLeaderElectionRole(a.ns),
 	}
 
