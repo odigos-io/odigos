@@ -21,11 +21,17 @@ const JavaVersionRegex = `\d+\.\d+\.\d+\+\d+`
 
 var re = regexp.MustCompile(JavaVersionRegex)
 
+// Matches any file path ending with:
+//   - "java" (e.g., /usr/bin/java)
+//   - "javaw" (though less common on Linux)
+//   - "java" / "javaw" followed by version digits (e.g., java8, java11, java17).
+var exeRegex = regexp.MustCompile(`^javaw?(?:\d+)?$`)
+
 func (j *JavaInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
-	// Low cost: simply check the exe filename.
-	if filepath.Base(pcx.ExePath) == processName {
+	if exeRegex.MatchString(filepath.Base(pcx.ExePath)) {
 		return common.JavaProgrammingLanguage, true
 	}
+
 	return "", false
 }
 

@@ -2,6 +2,7 @@ package dotnet
 
 import (
 	"bufio"
+	"path/filepath"
 	"strings"
 
 	"github.com/odigos-io/odigos/common"
@@ -10,11 +11,14 @@ import (
 
 type DotnetInspector struct{}
 
+const processName = "dotnet"
+
 func (d *DotnetInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
-	// No low-cost heuristic; immediately defer to the heavy check.
+	if strings.HasPrefix(filepath.Base(pcx.ExePath), processName) {
+		return common.DotNetProgrammingLanguage, true
+	}
 	return "", false
 }
-
 func (d *DotnetInspector) DeepScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	// Heavy check: read the process maps from cache and look for "libcoreclr.so"
 	mapsFile, err := pcx.GetMapsFile()
