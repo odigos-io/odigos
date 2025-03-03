@@ -41,9 +41,8 @@ type Details struct {
 type ProcessContext struct {
 	Details
 
-	ExeFile  io.ReadCloser
-	MapsFile io.ReadCloser
-	// io.ReadCloser
+	ExeFile  *os.File
+	MapsFile *os.File
 }
 
 func NewProcessContext(details Details) *ProcessContext {
@@ -73,7 +72,7 @@ func (pcx *ProcessContext) CloseFiles() error {
 	return firstErr
 }
 
-func (pcx *ProcessContext) GetExeFile() (io.ReadCloser, error) {
+func (pcx *ProcessContext) GetExeFile() (*os.File, error) {
 	if pcx.ExeFile == nil {
 		path := fmt.Sprintf("/proc/%d/exe", pcx.ProcessID)
 		fileData, err := os.Open(path)
@@ -86,7 +85,7 @@ func (pcx *ProcessContext) GetExeFile() (io.ReadCloser, error) {
 	return pcx.ExeFile, nil
 }
 
-func (pcx *ProcessContext) GetMapsFile() (io.ReadCloser, error) {
+func (pcx *ProcessContext) GetMapsFile() (*os.File, error) {
 	if pcx.MapsFile == nil {
 		mapsPath := fmt.Sprintf("/proc/%d/maps", pcx.ProcessID)
 		fileData, err := os.Open(mapsPath)
