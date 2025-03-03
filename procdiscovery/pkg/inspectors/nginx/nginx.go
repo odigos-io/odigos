@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/hashicorp/go-version"
@@ -27,9 +27,10 @@ var re = regexp.MustCompile(NginxVersionRegex)
 
 func (j *NginxInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	p := pcx.Details
-	if strings.Contains(p.CmdLine, NginxProcessName) || strings.Contains(p.ExePath, NginxProcessName) {
+	if filepath.Base(p.ExePath) == NginxProcessName {
 		return common.NginxProgrammingLanguage, true
 	}
+
 	return "", false
 }
 

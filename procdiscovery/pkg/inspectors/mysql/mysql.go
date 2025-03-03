@@ -1,7 +1,7 @@
 package mysql
 
 import (
-	"strings"
+	"path/filepath"
 
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
@@ -15,7 +15,7 @@ const MySQLProcessName = "mysqld"
 
 func (j *MySQLInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	p := pcx.Details
-	if strings.HasSuffix(p.ExePath, MySQLProcessName) || strings.HasSuffix(p.CmdLine, MySQLProcessName) {
+	if filepath.Base(p.ExePath) == MySQLProcessName {
 		return common.MySQLProgrammingLanguage, true
 	}
 	return "", false

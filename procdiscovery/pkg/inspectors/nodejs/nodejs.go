@@ -25,6 +25,7 @@ func (n *NodejsInspector) QuickScan(pcx *process.ProcessContext) (common.Program
 	if v8Regex.MatchString(baseExe) || nodeExecutables[baseExe] {
 		return common.JavascriptProgrammingLanguage, true
 	}
+
 	return "", false
 }
 

@@ -22,6 +22,7 @@ func (p *PythonInspector) QuickScan(pcx *process.ProcessContext) (common.Program
 	if strings.Contains(proc.ExePath, pythonProcessName) || strings.Contains(proc.CmdLine, pythonProcessName) {
 		return common.PythonProgrammingLanguage, true
 	}
+
 	return "", false
 }
 
@@ -29,6 +30,7 @@ func (p *PythonInspector) DeepScan(pcx *process.ProcessContext) (common.Programm
 	if p.isLibPythonLinked(pcx) {
 		return common.PythonProgrammingLanguage, true
 	}
+
 	return "", false
 }
 
