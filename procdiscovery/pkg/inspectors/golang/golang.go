@@ -17,7 +17,6 @@ const GolangVersionRegex = `go(\d+\.\d+\.\d+)`
 var re = regexp.MustCompile(GolangVersionRegex)
 
 func (g *GolangInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
-
 	exeFile, err := pcx.GetExeFile()
 	if err != nil {
 		return "", false
