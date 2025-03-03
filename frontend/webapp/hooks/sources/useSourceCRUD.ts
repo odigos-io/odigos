@@ -34,9 +34,35 @@ export const useSourceCRUD = (): UseSourceCrud => {
   const [fetchPaginated, { loading: isFetching }] = useLazyQuery<{ computePlatform: { sources: PaginatedData<FetchedSource> } }>(GET_SOURCES);
   const [fetchById, { loading: isFetchingById }] = useLazyQuery<{ computePlatform: { source: FetchedSource } }, { sourceId: WorkloadId }>(GET_SOURCE);
 
+  const fetchSourceById = async (id: WorkloadId, bypassPaginationLoader: boolean = false) => {
+    // We should not fetch while sources are being instrumented.
+    if (useInstrumentStore.getState().isAwaitingInstrumentation) return;
+    // We should not re-fetch if we are already paginating.
+    // The backend will simply restart it's "page" due to an invalid hash, which will then force a full re-fetch including this item by ID.
+    if (usePaginatedStore.getState().sourcesPaginating && !bypassPaginationLoader) return;
+
+    const { error, data } = await fetchById({ variables: { sourceId: id } });
+
+    if (!!error) {
+      notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message);
+    } else if (!!data?.computePlatform.source) {
+      addPaginated(ENTITY_TYPES.SOURCE, [data.computePlatform.source]);
+    }
+  };
+
+  const fetchExtendedSources = async () => {
+    const items = usePaginatedStore.getState().sources;
+
+    for (const { namespace, name, kind } of items) {
+      fetchSourceById({ namespace, name, kind }, true);
+    }
+  };
+
   const fetchSources = async (getAll: boolean = true, page: string = '') => {
     // We should not fetch while sources are being instrumented.
     if (useInstrumentStore.getState().isAwaitingInstrumentation) return;
+    // We should not fetch if we are already fetching.
+    if (usePaginatedStore.getState().sourcesPaginating && !page) return;
 
     setPaginating(ENTITY_TYPES.SOURCE, true);
 
@@ -65,23 +91,8 @@ export const useSourceCRUD = (): UseSourceCrud => {
         setPaginating(ENTITY_TYPES.SOURCE, false);
         setInstrumentCount('sourcesToCreate', 0);
         setInstrumentCount('sourcesCreated', 0);
+        fetchExtendedSources();
       }
-    }
-  };
-
-  const fetchSourceById = async (id: WorkloadId) => {
-    // We should not fetch while sources are being instrumented.
-    if (useInstrumentStore.getState().isAwaitingInstrumentation) return;
-    // We should not re-fetch if we are already paginating.
-    // The backend will simply restart it's "page" due to an invalid hash, which will then force a full re-fetch including this item by ID.
-    if (usePaginatedStore.getState().sourcesPaginating) return;
-
-    const { error, data } = await fetchById({ variables: { sourceId: id } });
-
-    if (!!error) {
-      notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message);
-    } else if (!!data?.computePlatform.source) {
-      addPaginated(ENTITY_TYPES.SOURCE, [data.computePlatform.source]);
     }
   };
 
