@@ -73,7 +73,7 @@ func (pcx *ProcessContext) CloseFiles() error {
 	return firstErr
 }
 
-func (pcx *ProcessContext) GetExeFile() (*os.File, error) {
+func (pcx *ProcessContext) GetExeFile() (io.ReadCloser, error) {
 	if pcx.ExeFile == nil {
 		path := fmt.Sprintf("/proc/%d/exe", pcx.ProcessID)
 		fileData, err := os.Open(path)
@@ -86,7 +86,7 @@ func (pcx *ProcessContext) GetExeFile() (*os.File, error) {
 	return pcx.ExeFile, nil
 }
 
-func (pcx *ProcessContext) GetMapsFile() (*os.File, error) {
+func (pcx *ProcessContext) GetMapsFile() (io.ReadCloser, error) {
 	if pcx.MapsFile == nil {
 		mapsPath := fmt.Sprintf("/proc/%d/maps", pcx.ProcessID)
 		fileData, err := os.Open(mapsPath)
