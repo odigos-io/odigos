@@ -186,6 +186,14 @@ func injectJavaCommunityEnvVars(ctx context.Context, logger logr.Logger,
 	container *corev1.Container, client client.Client) {
 
 	container.Env = append(container.Env, corev1.EnvVar{
+		Name: "NODE_IP",
+		ValueFrom: &corev1.EnvVarSource{
+			FieldRef: &corev1.ObjectFieldSelector{
+				FieldPath: "status.hostIP",
+			},
+		},
+	})
+	container.Env = append(container.Env, corev1.EnvVar{
 		Name:  commonconsts.OtelExporterEndpointEnvName,
 		Value: service.SameNodeOTLPHttpDataCollectionEndpoint("$(NODE_IP)"),
 	})
