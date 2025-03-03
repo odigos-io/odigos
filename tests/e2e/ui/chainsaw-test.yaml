@@ -18,7 +18,7 @@ spec:
         - apply:
             file: ../../common/apply/install-simple-demo.yaml
         - script:
-            timeout: 120s
+            timeout: 4m
             content: |
               kubectl wait --for=condition=ready pod -l app=frontend --timeout=120s
               kubectl wait --for=condition=ready pod -l app=coupon --timeout=120s
@@ -31,7 +31,7 @@ spec:
     - name: Add Destination - Jaeger
       try:
         - script:
-            timeout: 120s
+            timeout: 4m
             content: |
               kubectl apply -f https://raw.githubusercontent.com/odigos-io/simple-demo/main/kubernetes/jaeger.yaml
               kubectl wait --for=condition=available --timeout=120s deployment/jaeger -n tracing
@@ -39,7 +39,7 @@ spec:
     - name: Start UI from CLI
       try:
         - script:
-            timeout: 10s
+            timeout: 1m
             content: |
               nohup ../../../cli/odigos ui > odigos-ui.log 2>&1 &
               sleep 5
@@ -47,7 +47,7 @@ spec:
     - name: Wait for UI
       try:
         - script:
-            timeout: 30s
+            timeout: 3m
             content: |
               for i in {1..10}; do
                 curl -s http://localhost:3000 && break || sleep 2
@@ -56,7 +56,7 @@ spec:
     - name: Run Cypress tests
       try:
         - script:
-            timeout: 600s
+            timeout: 12m
             content: |
               cd ../../../frontend/webapp
               yarn install

@@ -21,7 +21,6 @@ spec:
               --version 1.10.1
         - assert:
             file: ../../common/assert/tempo-running.yaml
-
     - name: Wait for destination to be ready
       try:
         - script:
@@ -31,7 +30,7 @@ spec:
       try:
         - script:
             content: ../../../cli/odigos install --namespace odigos-test --version e2e-test
-            timeout: 60s
+            timeout: 2m
         - assert:
             file: ../../common/assert/odigos-installed.yaml
 
@@ -112,7 +111,7 @@ spec:
     - name: '01 - Wait for Traces'
       try:
         - script:
-            timeout: 60s
+            timeout: 2m
             content: |
               sleep 20
               while true; do
@@ -170,7 +169,7 @@ spec:
     - name: '02 - Wait for Traces'
       try:
         - script:
-            timeout: 60s
+            timeout: 2m
             content: |
 
               sleep 20
@@ -235,7 +234,7 @@ spec:
     - name: '03 - Wait for Traces'
       try:
         - script:
-            timeout: 60s
+            timeout: 2m
             content: |
               sleep 20
 

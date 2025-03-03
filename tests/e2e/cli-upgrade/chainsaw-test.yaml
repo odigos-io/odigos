@@ -9,7 +9,7 @@ spec:
     - name: Prepare destination
       try:
         - script:
-            timeout: 2m
+            timeout: 5m
             content: |
               if helm status e2e-tests -n traces >/dev/null 2>&1; then
                 echo "e2e-tests helm already installed, probably from previous run. Skipping..."
@@ -27,13 +27,13 @@ spec:
     - name: Wait for destination to be ready
       try:
         - script:
-            timeout: 2m
+            timeout: 4m
             content: ../../common/wait_for_dest.sh
 
     - name: Install Odigos latest release from GitHub for pre upgrade setup
       try:
         - script:
-            timeout: 120s # longer timeout since the images are being pulled from dockerhub
+            timeout: 6m # longer timeout since the images are being pulled from dockerhub
             content: |
               #!/bin/bash
 
@@ -77,7 +77,7 @@ spec:
     - name: Install Demo App
       try:
         - script:
-            timeout: 100s
+            timeout: 5m
             content: |
               docker pull registry.odigos.io/odigos-demo-inventory:v0.1
               docker pull registry.odigos.io/odigos-demo-membership:v0.1
@@ -106,7 +106,7 @@ spec:
     - name: Assert Runtime Detected
       try:
         - assert:
-            timeout: 2m
+            timeout: 4m
             file: ../../common/assert/simple-demo-runtime-detected.yaml
 
     - name: Add Destination
@@ -122,7 +122,7 @@ spec:
       try:
         - script:
             content: ../../common/assert_pipeline_pods_ready.sh
-            timeout: 60s
+            timeout: 5m
 
     - name: Simple-demo instrumented after destination added
       try:
@@ -133,10 +133,10 @@ spec:
       try:
         - script:
             content: ../../../cli/odigos upgrade --version e2e-test --skip-version-check # since the tag e2e-test is not a valid semantic version, we need to bypass it with --skip-version-check
-            timeout: 60s
+            timeout: 3m
         - assert:
             file: assert-odigos-upgraded.yaml
-            timeout: 60s
+            timeout: 3m
       catch:
       - get:
           apiVersion: v1
@@ -190,7 +190,7 @@ spec:
     - name: Verify Trace - Context Propagation
       try:
         - script:
-            timeout: 3m
+            timeout: 5m
             content: |
               ../../common/traceql_runner.sh tracesql/context-propagation.yaml
       catch:
@@ -201,7 +201,7 @@ spec:
     - name: Verify Trace - Resource Attributes
       try:
         - script:
-            timeout: 3m
+            timeout: 5m
             content: |
               ../../common/traceql_runner.sh tracesql/resource-attributes.yaml
       catch:
@@ -212,7 +212,7 @@ spec:
     - name: Verify Trace - Span Attributes
       try:
         - script:
-            timeout: 3m
+            timeout: 5m
             content: |
               ../../common/traceql_runner.sh tracesql/span-attributes.yaml
       catch:

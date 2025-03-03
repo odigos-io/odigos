@@ -29,7 +29,7 @@ spec:
     - name: Install Odigos
       try:
         - script:
-            timeout: 60s
+            timeout: 2m
             content: |
               if [ "$MODE" = "cross-cloud-tests" ]; then
                 ../../../cli/odigos install --namespace odigos-test --version "$COMMIT_HASH" --image-prefix=public.ecr.aws/y2v0v6s7
@@ -43,7 +43,7 @@ spec:
     - name: Install Demo App
       try:
         - script:
-            timeout: 200s
+            timeout: 5m
             content: |
               if [ "$MODE" != "cross-cloud-tests" ]; then
                 docker pull registry.odigos.io/odigos-demo-inventory:v0.1

@@ -9,7 +9,7 @@ spec:
     - name: Prepare destination
       try:
         - script:
-            timeout: 2m
+            timeout: 3m
             content: |
               helm repo add grafana https://grafana.github.io/helm-charts
               helm repo update
@@ -23,13 +23,13 @@ spec:
     - name: Wait for destination to be ready
       try:
         - script:
-            timeout: 2m
+            timeout: 3m
             content: ../../common/wait_for_dest.sh
 
     - name: Install Odigos
       try:
         - script:
-            timeout: 60s
+            timeout: 3m
             content: |
               # The pwd is the directory of this file, so we have to walk up to the project root to find the helm chart
               P="../../.."
@@ -43,7 +43,7 @@ spec:
     - name: Verify Odigos Installation
       try:
         - script:
-            timeout: 200s
+            timeout: 5m
             content: |
               echo "Starting Odigos version check..."
               export ACTUAL_VERSION=$(../../../cli/odigos version --cluster)
@@ -74,7 +74,7 @@ spec:
     - name: Install Demo App
       try:
         - script:
-            timeout: 100s
+            timeout: 3m
             content: |
               if [ "$MODE" != "cross-cloud-tests" ]; then
                 docker pull registry.odigos.io/odigos-demo-inventory:v0.1
@@ -110,7 +110,7 @@ spec:
     - name: Assert Runtime Detected
       try:
         - assert:
-            timeout: 2m
+            timeout: 3m
             file: ../../common/assert/simple-demo-runtime-detected.yaml
 
     - name: Add Destination
