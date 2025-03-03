@@ -31,6 +31,7 @@ func (p *PythonInspector) DeepScan(pcx *process.ProcessContext) (common.Programm
 	}
 	return "", false
 }
+
 func (p *PythonInspector) GetRuntimeVersion(proc *process.Details, containerURL string) *version.Version {
 	if value, exists := proc.GetDetailedEnvsValue(process.PythonVersionConst); exists {
 		return common.GetVersion(value)
