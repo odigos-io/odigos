@@ -31,20 +31,18 @@ export const useSourceCRUD = (): UseSourceCrud => {
     addNotification({ type, title, message, crdType: ENTITY_TYPES.SOURCE, target: id ? getSseTargetFromId(id, ENTITY_TYPES.SOURCE) : undefined, hideFromHistory });
   };
 
-  const [fetchPaginated, { loading: isFetching }] = useLazyQuery<{ computePlatform: { sources: PaginatedData<FetchedSource> } }>(GET_SOURCES, {
-    fetchPolicy: 'no-cache',
-  });
-
-  const [fetchById, { loading: isFetchingById }] = useLazyQuery<{ computePlatform: { source: FetchedSource } }, { sourceId: WorkloadId }>(GET_SOURCE, {
-    fetchPolicy: 'no-cache',
-  });
+  const [fetchPaginated, { loading: isFetching }] = useLazyQuery<{ computePlatform: { sources: PaginatedData<FetchedSource> } }>(GET_SOURCES);
+  const [fetchById, { loading: isFetchingById }] = useLazyQuery<{ computePlatform: { source: FetchedSource } }, { sourceId: WorkloadId }>(GET_SOURCE);
 
   const fetchSources = async (getAll: boolean = true, page: string = '') => {
     // We should not fetch while sources are being instrumented.
     if (useInstrumentStore.getState().isAwaitingInstrumentation) return;
 
     setPaginating(ENTITY_TYPES.SOURCE, true);
+
+    const startTime = Date.now();
     const { error, data } = await fetchPaginated({ variables: { nextPage: page } });
+    const endTime = Date.now();
 
     if (!!error) {
       notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message);
@@ -54,8 +52,15 @@ export const useSourceCRUD = (): UseSourceCrud => {
       addPaginated(ENTITY_TYPES.SOURCE, items);
 
       if (getAll && !!nextPage) {
-        // timeout helps avoid some lag
-        setTimeout(() => fetchSources(true, nextPage), 500);
+        const halfSecond = 500;
+        const timeElapsed = endTime - startTime;
+
+        if (timeElapsed > halfSecond) {
+          fetchSources(true, nextPage);
+        } else {
+          // timeout helps avoid some lag on quick paginations
+          setTimeout(() => fetchSources(true, nextPage), halfSecond);
+        }
       } else if (usePaginatedStore.getState().sources.length >= useInstrumentStore.getState().sourcesToCreate) {
         setPaginating(ENTITY_TYPES.SOURCE, false);
         setInstrumentCount('sourcesToCreate', 0);
