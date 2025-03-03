@@ -20,7 +20,6 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common/consts"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -48,26 +47,26 @@ func syncNamespaceWorkloads(
 		k8sconsts.WorkloadKindDeployment,
 		k8sconsts.WorkloadKindStatefulSet,
 	} {
-		deps := workload.ClientListObjectFromWorkloadKind(kind)
-		err := k8sClient.List(ctx, deps, client.InNamespace(namespace))
-		if client.IgnoreNotFound(err) != nil {
+		workloadObjects := workload.ClientListObjectFromWorkloadKind(kind)
+		err := k8sClient.List(ctx, workloadObjects, client.InNamespace(namespace))
+		if err != nil {
 			errs = errors.Join(errs, err)
 			continue
 		}
 
 		objectKeys := make([]client.ObjectKey, 0)
-		switch obj := deps.(type) {
+		switch obj := workloadObjects.(type) {
 		case *v1.DeploymentList:
 			for _, dep := range obj.Items {
 				objectKeys = append(objectKeys, client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace})
 			}
 		case *v1.DaemonSetList:
-			for _, dep := range obj.Items {
-				objectKeys = append(objectKeys, client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace})
+			for _, ds := range obj.Items {
+				objectKeys = append(objectKeys, client.ObjectKey{Name: ds.Name, Namespace: ds.Namespace})
 			}
 		case *v1.StatefulSetList:
-			for _, dep := range obj.Items {
-				objectKeys = append(objectKeys, client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace})
+			for _, ss := range obj.Items {
+				objectKeys = append(objectKeys, client.ObjectKey{Name: ss.Name, Namespace: ss.Namespace})
 			}
 		}
 
@@ -93,14 +92,14 @@ func syncNamespaceWorkloads(
 	return collectiveRes, errs
 }
 
-func uninstrumentWorkload(
+func syncUninstrumentWorkload(
 	ctx context.Context,
 	k8sClient client.Client,
 	podWorkload k8sconsts.PodWorkload,
 	scheme *runtime.Scheme) (ctrl.Result, error) {
 	obj := workload.ClientObjectFromWorkloadKind(podWorkload.Kind)
 	err := k8sClient.Get(ctx, client.ObjectKey{Name: podWorkload.Name, Namespace: podWorkload.Namespace}, obj)
-	if client.IgnoreNotFound(err) != nil {
+	if err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -110,12 +109,11 @@ func uninstrumentWorkload(
 	}
 	if !instrumented {
 		err = errors.Join(err, deleteWorkloadInstrumentationConfig(ctx, k8sClient, podWorkload))
-		err = errors.Join(err, removeReportedNameAnnotation(ctx, k8sClient, obj))
 	}
 	return ctrl.Result{}, err
 }
 
-func instrumentWorkload(
+func syncInstrumentWorkload(
 	ctx context.Context,
 	k8sClient client.Client,
 	podWorkload k8sconsts.PodWorkload,
@@ -126,8 +124,7 @@ func instrumentWorkload(
 	obj := workload.ClientObjectFromWorkloadKind(podWorkload.Kind)
 	err := k8sClient.Get(ctx, client.ObjectKey{Name: podWorkload.Name, Namespace: podWorkload.Namespace}, obj)
 	if err != nil {
-		// Deleted objects should be filtered in the event filter
-		return ctrl.Result{}, err
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	workloadObj, err := workload.ObjectToWorkload(obj)
@@ -162,7 +159,6 @@ func instrumentWorkload(
 	agentEnabledChanged := initiateAgentEnabledConditionIfMissing(ic)
 
 	if markedForInstChanged || runtimeDetailsChanged || agentEnabledChanged {
-		logger.V(2).Info("Updating initial instrumentation status condition of InstrumentationConfig", "name", instConfigName, "namespace", podWorkload.Namespace)
 		ic.Status.Conditions = sortIcConditionsByLogicalOrder(ic.Status.Conditions)
 
 		err = k8sClient.Status().Update(ctx, ic)
@@ -172,7 +168,7 @@ func instrumentWorkload(
 		}
 	}
 
-	return ctrl.Result{}, err
+	return ctrl.Result{}, nil
 }
 
 func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient client.Client, instConfigName string, namespace string, obj client.Object, scheme *runtime.Scheme) (*v1alpha1.InstrumentationConfig, error) {
@@ -297,14 +293,6 @@ func deleteWorkloadInstrumentationConfig(ctx context.Context, kubeClient client.
 	return nil
 }
 
-func removeReportedNameAnnotation(ctx context.Context, kubeClient client.Client, workloadObject client.Object) error {
-	if _, exists := workloadObject.GetAnnotations()[consts.OdigosReportedNameAnnotation]; !exists {
-		return nil
-	}
-
-	return kubeClient.Patch(ctx, workloadObject, client.RawPatch(types.MergePatchType, []byte(`{"metadata":{"annotations":{"`+consts.OdigosReportedNameAnnotation+`":null}}}`)))
-}
-
 func getWorkloadSourcesInNamespace(ctx context.Context, k8sClient client.Client, namespace string) (workloadKindSourceMap, error) {
 	// pre-process existing Sources for specific workloads so we don't have to make a bunch of API calls
 	// This is used to check if a workload already has an explicit Source, so we don't overwrite its InstrumentationConfig
@@ -314,7 +302,11 @@ func getWorkloadSourcesInNamespace(ctx context.Context, k8sClient client.Client,
 	if err != nil {
 		return nil, err
 	}
-	labelSelector := labels.NewSelector().Add(*nonNamespaceKind)
+	namespaceSelector, err := labels.NewRequirement(k8sconsts.WorkloadNamespaceLabel, selection.In, []string{namespace})
+	if err != nil {
+		return nil, err
+	}
+	labelSelector := labels.NewSelector().Add(*nonNamespaceKind).Add(*namespaceSelector)
 	err = k8sClient.List(ctx, &sourceList, client.InNamespace(namespace), &client.ListOptions{LabelSelector: labelSelector})
 	if err != nil {
 		return nil, err
@@ -329,4 +321,22 @@ func getWorkloadSourcesInNamespace(ctx context.Context, k8sClient client.Client,
 		namespaceKindSources[s.Spec.Workload.Kind][s.Spec.Workload.Name] = &s
 	}
 	return namespaceKindSources, nil
+}
+
+// SourceStatePermitsInstrumentation returns true if a Source:
+// 1) Inclusive AND NOT terminating, or
+// 2) Exclusive AND terminating
+// This shows whether the Source and its state make it possible for the Source's workload to be instrumented.
+// In general, this determines whether controllers should take an "instrumentation" or "uninstrumentation" path.
+//
+// However, this function alone does not guarantee that the Source's workload _will_ be instrumented, for example:
+//   - A terminating Disabled Source does not mean there is another, non-terminating, inclusive Source for the workload.
+//     Therefore, in that case you must check to see if there is another Source for the workload.
+//   - A non-terminating Enabled Namespace Source could still have specific Workloads disabled by their own Workload Sources.
+//
+// This function is meant to be used as a basic filter for the top level instrumentor controllers
+// (which are triggered by an event for only a single Source).
+// Individual workloads should have their instrumentation state verified before acting on them.
+func SourceStatePermitsInstrumentation(source *v1alpha1.Source) bool {
+	return v1alpha1.IsDisabledSource(source) == k8sutils.IsTerminating(source)
 }
