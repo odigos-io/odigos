@@ -81,7 +81,7 @@ var _ = Describe("deleteInstrumentationConfig Deployment controller", func() {
 		})
 	})
 
-	Describe("Delete reported name annotation", func() {
+	Describe("Retain annotations", func() {
 
 		BeforeEach(func() {
 			namespace = testutil.NewMockNamespace()
@@ -95,13 +95,6 @@ var _ = Describe("deleteInstrumentationConfig Deployment controller", func() {
 			Expect(k8sClient.Create(ctx, source)).Should(Succeed())
 
 			instrumentationConfig = testutil.NewMockInstrumentationConfig(deployment)
-		})
-
-		It("should delete the reported name annotation on instrumentation source disabled", func() {
-
-			source.Spec.DisableInstrumentation = true
-			Expect(k8sClient.Update(ctx, source)).Should(Succeed())
-			testutil.AssertReportedNameAnnotationDeletedDeployment(ctx, k8sClient, deployment)
 		})
 
 		It("should retain other annotations on instrumentation source deleted", func() {

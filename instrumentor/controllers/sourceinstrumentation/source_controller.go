@@ -3,6 +3,7 @@ package sourceinstrumentation
 import (
 	"context"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 )
 
@@ -28,14 +28,18 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	logger.Info("Reconciling Source object", "name", req.Name, "namespace", req.Namespace, "workload-kind", source.Spec.Workload.Kind, "workload-name", source.Spec.Workload.Name)
 
 	var reconcileFunc reconcileFunction
-	if sourceutils.SourceStatePermitsInstrumentation(source) {
-		reconcileFunc = instrumentWorkload
+	var action string
+	if SourceStatePermitsInstrumentation(source) {
+		reconcileFunc = syncInstrumentWorkload
+		action = "enable instrumentation"
 	} else {
-		reconcileFunc = uninstrumentWorkload
+		reconcileFunc = syncUninstrumentWorkload
+		action = "disable instrumentation"
 	}
+
+	logger.Info("Reconciling Source object", "name", req.Name, "namespace", req.Namespace, "action", action, "workload-kind", source.Spec.Workload.Kind, "workload-name", source.Spec.Workload.Name)
 
 	// Sync based on the Source object's workload kind
 	var result ctrl.Result
@@ -44,7 +48,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			ctx,
 			r.Client,
 			r.Scheme,
-			source.Spec.Workload.Name,
+			source.Spec.Workload.Namespace,
 			reconcileFunc)
 	} else {
 		result, err = reconcileFunc(
@@ -53,9 +57,10 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			source.Spec.Workload,
 			r.Scheme)
 	}
+
 	// We could get a non-error Requeue signal from the reconcile functions,
 	// such as a conflict updating the instrumentationconfig status
-	if result.Requeue || client.IgnoreNotFound(err) != nil {
+	if result.Requeue || !apierrors.IsNotFound(err) {
 		return result, err
 	}
 

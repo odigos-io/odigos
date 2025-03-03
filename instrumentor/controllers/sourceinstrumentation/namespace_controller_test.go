@@ -66,16 +66,6 @@ var _ = Describe("DeleteInstrumentationConfig Namespace controller", func() {
 				testutil.AssertInstrumentationConfigDeleted(ctx, k8sClient, instrumentationConfigStatefulSet)
 			})
 
-			It("should delete reported name annotation", func() {
-
-				sourceNamespace.Spec.DisableInstrumentation = true
-				sourceNamespace.Finalizers = []string{k8sconsts.SourceInstrumentationFinalizer}
-				Expect(k8sClient.Update(ctx, sourceNamespace)).Should(Succeed())
-
-				testutil.AssertReportedNameAnnotationDeletedDeployment(ctx, k8sClient, deployment)
-				testutil.AssertReportedNameAnnotationDeletedDaemonSet(ctx, k8sClient, daemonSet)
-				testutil.AssertReportedNameAnnotationDeletedStatefulSet(ctx, k8sClient, statefulSet)
-			})
 		})
 
 		Context("workloads instrumentation source enabled (override namespace)", func() {
