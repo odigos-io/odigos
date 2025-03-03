@@ -41,8 +41,9 @@ type Details struct {
 type ProcessContext struct {
 	Details
 
-	ExeFile  io.ReadCloser
-	MapsFile io.ReadCloser
+	ExeFile  *os.File
+	MapsFile *os.File
+	// io.ReadCloser
 }
 
 func NewProcessContext(details Details) *ProcessContext {
