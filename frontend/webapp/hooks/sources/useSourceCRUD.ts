@@ -34,7 +34,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
   const [fetchPaginated, { loading: isFetching }] = useLazyQuery<{ computePlatform: { sources: PaginatedData<FetchedSource> } }>(GET_SOURCES);
   const [fetchById, { loading: isFetchingById }] = useLazyQuery<{ computePlatform: { source: FetchedSource } }, { sourceId: WorkloadId }>(GET_SOURCE);
 
-  const fetchSourceById = async (id: WorkloadId, bypassPaginationLoader: boolean = false) => {
+  const fetchSourceById = async (id: WorkloadId, bypassPaginationLoader: boolean = false, isLastItemInArray: boolean = false) => {
     // We should not fetch while sources are being instrumented.
     if (useInstrumentStore.getState().isAwaitingInstrumentation) return;
     // We should not re-fetch if we are already paginating.
@@ -48,13 +48,16 @@ export const useSourceCRUD = (): UseSourceCrud => {
     } else if (!!data?.computePlatform.source) {
       addPaginated(ENTITY_TYPES.SOURCE, [data.computePlatform.source]);
     }
+
+    if (isLastItemInArray) setPaginating(ENTITY_TYPES.SOURCE, false);
   };
 
   const fetchExtendedSources = async () => {
     const items = usePaginatedStore.getState().sources;
 
-    for (const { namespace, name, kind } of items) {
-      fetchSourceById({ namespace, name, kind }, true);
+    for (let i = 0; i < items.length; i++) {
+      const { namespace, name, kind } = items[i];
+      fetchSourceById({ namespace, name, kind }, true, i === items.length - 1);
     }
   };
 
@@ -88,7 +91,8 @@ export const useSourceCRUD = (): UseSourceCrud => {
           setTimeout(() => fetchSources(true, nextPage), halfSecond);
         }
       } else if (usePaginatedStore.getState().sources.length >= useInstrumentStore.getState().sourcesToCreate) {
-        setPaginating(ENTITY_TYPES.SOURCE, false);
+        // if we move "fetchExtendedSources" elsewhere, we might need to uncomment the following
+        // setPaginating(ENTITY_TYPES.SOURCE, false);
         setInstrumentCount('sourcesToCreate', 0);
         setInstrumentCount('sourcesCreated', 0);
         fetchExtendedSources();
