@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { API } from '@/utils';
+import { useStatusStore } from '@/store';
 import { useSourceCRUD } from '../sources';
 import { useDestinationCRUD } from '../destinations';
-import { usePaginatedStore, useStatusStore } from '@/store';
-import { type NotifyPayload, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
+import { type NotifyPayload, useInstrumentStore, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
 import { CRD_TYPES, DISPLAY_TITLES, ENTITY_TYPES, getIdFromSseTarget, NOTIFICATION_TYPE, type WorkloadId } from '@odigos/ui-utils';
 
 const CONNECTED = 'CONNECTED';
@@ -15,7 +15,6 @@ const EVENT_TYPES = {
 };
 
 export const useSSE = () => {
-  const { setPaginated } = usePaginatedStore();
   const { setPendingItems } = usePendingStore();
   const { title, setStatusStore } = useStatusStore();
   const { addNotification } = useNotificationStore();
@@ -39,26 +38,62 @@ export const useSSE = () => {
           target: data.target,
         };
 
-        if (notification.crdType !== CONNECTED && notification.title !== EVENT_TYPES.MODIFIED) {
-          // SSE toast notification (for all events except "connected" and "modified")
+        const { setInstrumentAwait, isAwaitingInstrumentation, setInstrumentCount, sourcesToCreate, sourcesCreated, sourcesToDelete, sourcesDeleted } = useInstrumentStore.getState();
+
+        const isConnected = [CONNECTED].includes(notification.crdType as string);
+        const isSource = [CRD_TYPES.INSTRUMENTATION_CONFIG].includes(notification.crdType as CRD_TYPES);
+        const isDestination = [CRD_TYPES.DESTINATION].includes(notification.crdType as CRD_TYPES);
+
+        if (!isConnected && !(isSource && isAwaitingInstrumentation) && notification.title !== EVENT_TYPES.MODIFIED) {
           addNotification(notification);
         }
 
         // Handle specific CRD types
-        if ([CONNECTED].includes(notification.crdType as string)) {
+        if (isConnected) {
           // If the current status in store is API Token related, we don't want to override it with the connected message
           if (title !== DISPLAY_TITLES.API_TOKEN) {
             setStatusStore({ status: NOTIFICATION_TYPE.SUCCESS, title: notification.title as string, message: notification.message as string });
           }
-        } else if ([CRD_TYPES.INSTRUMENTATION_CONFIG].includes(notification.crdType as CRD_TYPES)) {
-          if (notification.title === EVENT_TYPES.MODIFIED && !!notification.target) {
-            fetchSourceById(getIdFromSseTarget(notification.target, ENTITY_TYPES.SOURCE) as WorkloadId);
-          } else if (notification.title !== EVENT_TYPES.DELETED) {
-            fetchSources();
+        } else if (isSource) {
+          switch (notification.title) {
+            case EVENT_TYPES.MODIFIED:
+              if (!isAwaitingInstrumentation && !!notification.target) {
+                const id = getIdFromSseTarget(notification.target, ENTITY_TYPES.SOURCE);
+                fetchSourceById(id as WorkloadId);
+              }
+              break;
+
+            case EVENT_TYPES.ADDED:
+              const created = sourcesCreated + Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
+              setInstrumentCount('sourcesCreated', created);
+
+              if (!isAwaitingInstrumentation || (isAwaitingInstrumentation && created >= sourcesToCreate)) {
+                addNotification({ type: NOTIFICATION_TYPE.SUCCESS, title: EVENT_TYPES.ADDED, message: `Successfully created ${created} sources` });
+                setInstrumentAwait(false);
+                fetchSources();
+              }
+              break;
+
+            case EVENT_TYPES.DELETED:
+              const deleted = sourcesDeleted + Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
+              setInstrumentCount('sourcesDeleted', deleted);
+
+              if (!isAwaitingInstrumentation || (isAwaitingInstrumentation && deleted >= sourcesToDelete)) {
+                addNotification({ type: NOTIFICATION_TYPE.SUCCESS, title: EVENT_TYPES.DELETED, message: `Successfully deleted ${deleted} sources` });
+                setInstrumentAwait(false);
+                setInstrumentCount('sourcesToDelete', 0);
+                setInstrumentCount('sourcesDeleted', 0);
+              }
+              break;
+
+            default:
+              break;
           }
-        } else if ([CRD_TYPES.DESTINATION].includes(notification.crdType as CRD_TYPES)) {
+        } else if (isDestination) {
           fetchDestinations();
-        } else console.warn('Unhandled SSE for CRD type:', notification.crdType);
+        } else {
+          console.warn('Unhandled SSE for CRD type:', notification.crdType);
+        }
 
         // This works for now,
         // but in the future we might have to change this to "removePendingItems",

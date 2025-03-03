@@ -1,5 +1,5 @@
-import { awaitToast, deleteEntity, getCrdById, getCrdIds, updateEntity, visitPage } from '../functions';
 import { BUTTONS, CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
+import { awaitToast, deleteEntity, getCrdById, getCrdIds, handleExceptions, updateEntity, visitPage } from '../functions';
 
 // The number of CRDs that exist in the cluster before running any tests should be 0.
 // Tests will fail if you have existing CRDs in the cluster.
@@ -10,7 +10,10 @@ const crdName = CRD_NAMES.DESTINATION;
 const totalEntities = 1;
 
 describe('Destinations CRUD', () => {
-  beforeEach(() => cy.intercept('/graphql').as('gql'));
+  beforeEach(() => {
+    cy.intercept('/graphql').as('gql');
+    handleExceptions();
+  });
 
   it(`Should have 0 ${crdName} CRDs in the cluster`, () => {
     getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
@@ -26,7 +29,7 @@ describe('Destinations CRUD', () => {
 
       // Wait for destinations to create
       cy.wait('@gql').then(() => {
-        awaitToast({ withSSE: true, message: TEXTS.NOTIF_DESTINATIONS_CREATED(totalEntities) });
+        awaitToast({ withSSE: false, message: TEXTS.NOTIF_DESTINATION_CREATED(SELECTED_ENTITIES.DESTINATION.TYPE) });
       });
     });
   });
@@ -47,7 +50,7 @@ describe('Destinations CRUD', () => {
         () => {
           // Wait for the destination to update
           cy.wait('@gql').then(() => {
-            awaitToast({ withSSE: false, message: TEXTS.NOTIF_DESTINATIONS_UPDATED(SELECTED_ENTITIES.DESTINATION.TYPE) });
+            awaitToast({ withSSE: true, message: TEXTS.NOTIF_DESTINATION_UPDATED(SELECTED_ENTITIES.DESTINATION.TYPE) });
           });
         },
       );
@@ -74,7 +77,7 @@ describe('Destinations CRUD', () => {
         () => {
           // Wait for the destination to delete
           cy.wait('@gql').then(() => {
-            awaitToast({ withSSE: true, message: TEXTS.NOTIF_DESTINATIONS_DELETED(totalEntities) }, () => {
+            awaitToast({ withSSE: false, message: TEXTS.NOTIF_DESTINATION_DELETED(SELECTED_ENTITIES.DESTINATION.TYPE) }, () => {
               getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
             });
           });
@@ -83,7 +86,7 @@ describe('Destinations CRUD', () => {
     });
   });
 
-  it(`Should delete ${totalEntities} ${crdName} CRDs in the cluster`, () => {
+  it(`Should have ${0} ${crdName} CRDs in the cluster`, () => {
     getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
   });
 });

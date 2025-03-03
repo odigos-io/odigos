@@ -3,6 +3,10 @@ export const ROUTES = {
   CHOOSE_SOURCES: '/choose-sources',
   CHOOSE_DESTINATION: '/choose-destination',
   OVERVIEW: '/overview',
+  OVERVIEW_SOURCES: '/sources',
+  OVERVIEW_DESTINATIONS: '/destinations',
+  OVERVIEW_ACTIONS: '/actions',
+  OVERVIEW_INSTRUMENTATION_RULES: '/instrumentation-rules',
 };
 
 const IS_PROD = process.env.NODE_ENV === 'production';

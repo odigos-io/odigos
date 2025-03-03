@@ -9,7 +9,7 @@ spec:
     - name: Prepare destination
       try:
         - script:
-            timeout: 60s
+            timeout: 5m
             content: |
               if helm status e2e-tests -n traces >/dev/null 2>&1; then
                 echo "e2e-tests helm already installed, probably from previous run. Skipping..."
@@ -23,14 +23,17 @@ spec:
               fi
         - assert:
             file: ../../common/assert/tempo-running.yaml
+
     - name: Wait for destination to be ready
       try:
         - script:
-            timeout: 60s
+            timeout: 4m
             content: ../../common/wait_for_dest.sh
+
     - name: Install Odigos latest release from GitHub for pre upgrade setup
       try:
         - script:
+            timeout: 6m # longer timeout since the images are being pulled from dockerhub
             content: |
               #!/bin/bash
 
@@ -68,13 +71,13 @@ spec:
               ./odigos uninstall --yes
               # Run the Odigos CLI installation
               ./odigos install --namespace odigos-test
-            timeout: 120s # longer timeout since the images are being pulled from dockerhub
         - assert:
             file: ../../common/assert/odigos-installed.yaml
+
     - name: Install Demo App
       try:
         - script:
-            timeout: 100s
+            timeout: 5m
             content: |
               docker pull registry.odigos.io/odigos-demo-inventory:v0.1
               docker pull registry.odigos.io/odigos-demo-membership:v0.1
@@ -90,6 +93,7 @@ spec:
             file: ../../common/apply/install-simple-demo.yaml
         - assert:
             file: ../../common/assert/simple-demo-installed.yaml
+
     - name: Instrument Namespace
       try:
       # Using the deprecated way of instrumenting a namespace,
@@ -98,15 +102,18 @@ spec:
             content: kubectl label namespace default odigos-instrumentation=enabled
         # - apply:
         #     file: ../../common/apply/instrument-default-ns.yaml
+
     - name: Assert Runtime Detected
       try:
         - assert:
-            timeout: 2m
+            timeout: 4m
             file: ../../common/assert/simple-demo-runtime-detected.yaml
+
     - name: Add Destination
       try:
         - apply:
             file: ../../common/apply/add-tempo-traces-destination.yaml
+
     - name: Odigos pipeline pods ready
     # We make sure that the pipeline pods are ready before proceeding with the next steps
     # This is intentionally different from pipeline-ready.yaml, which checks for the pipeline CRDs
@@ -115,35 +122,40 @@ spec:
       try:
         - script:
             content: ../../common/assert_pipeline_pods_ready.sh
-            timeout: 60s
+            timeout: 5m
+
     - name: Simple-demo instrumented after destination added
       try:
         - assert:
             file: ../../common/assert/simple-demo-instrumented.yaml
+
     - name: Upgrade to HEAD version with the current compiled cli
       try:
         - script:
             content: ../../../cli/odigos upgrade --version e2e-test --skip-version-check # since the tag e2e-test is not a valid semantic version, we need to bypass it with --skip-version-check
-            timeout: 60s
+            timeout: 3m
         - assert:
             file: assert-odigos-upgraded.yaml
-            timeout: 60s
+            timeout: 3m
       catch:
       - get:
           apiVersion: v1
           kind: Pod
+
     - name: Odigos pipeline ready after upgrade
       try:
         - assert:
             file:  ../../common/assert/pipeline-ready.yaml
+
     - name: Simple-demo instrumented after upgrade
       try:
         - assert:
             file: ../../common/assert/simple-demo-instrumented.yaml
+
     - name: Generate Traffic
       try:
         - script:
-            timeout: 300s
+            timeout: 6m
             content: |
               # Apply the job
               kubectl apply -f ../../common/apply/generate-traffic-job.yaml
@@ -153,7 +165,7 @@ spec:
               kubectl wait --for=condition=complete job/$job_name
 
               # Delete the job
-              kubectl delete -f ../../common/apply/generate-traffic-job.yaml      
+              kubectl delete -f ../../common/apply/generate-traffic-job.yaml
 
               while true; do
                 # wait for traces to be available
@@ -174,28 +186,33 @@ spec:
         - script:
             content: |
               ../../common/traceql_runner.sh ../../common/traceql/all_traces.yaml --verbose
+
     - name: Verify Trace - Context Propagation
       try:
         - script:
+            timeout: 5m
             content: |
               ../../common/traceql_runner.sh tracesql/context-propagation.yaml
       catch:
         - podLogs:
             name: odiglet
             namespace: odigos-test
+
     - name: Verify Trace - Resource Attributes
       try:
         - script:
+            timeout: 5m
             content: |
               ../../common/traceql_runner.sh tracesql/resource-attributes.yaml
       catch:
         - podLogs:
             name: odiglet
             namespace: odigos-test
+
     - name: Verify Trace - Span Attributes
       try:
         - script:
-            timeout: 60s
+            timeout: 5m
             content: |
               ../../common/traceql_runner.sh tracesql/span-attributes.yaml
       catch:

@@ -68,6 +68,12 @@ rules:
       - update
 {{- end }}
   - apiGroups:
+      - operator.odigos.io
+    resources:
+      - odigos/finalizers
+    verbs:
+      - update
+  - apiGroups:
       - odigos.io
     resources:
       - instrumentedapplications

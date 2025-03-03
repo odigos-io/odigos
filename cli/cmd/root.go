@@ -1,7 +1,10 @@
 package cmd
 
 import (
+	"flag"
 	"os"
+
+	"k8s.io/klog/v2"
 
 	"github.com/odigos-io/odigos/cli/pkg/autodetect"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
@@ -25,6 +28,9 @@ Key Features of Odigos:
 Get started with Odigos today to effortlessly improve the observability of your Kubernetes services!`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
+		if verbosity {
+			enableVerbosity()
+		}
 
 		commandRequiresKubeClient := true
 		if cmd.Name() == "version" {
@@ -56,6 +62,7 @@ func RootCmd() cobra.Command {
 var (
 	kubeConfig  string
 	kubeContext string
+	verbosity   bool
 )
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -70,4 +77,12 @@ func Execute() {
 func init() {
 	rootCmd.PersistentFlags().StringVar(&kubeConfig, "kubeconfig", env.GetDefaultKubeConfigPath(), "(optional) absolute path to the kubeconfig file")
 	rootCmd.PersistentFlags().StringVar(&kubeContext, "kube-context", "", "(optional) name of the kubeconfig context to use")
+	rootCmd.PersistentFlags().BoolVarP(&verbosity, "verbose", "v", false, "enable verbose output")
+}
+
+// enableVerbosity will enable logging for every client-go api call
+func enableVerbosity() {
+	flagSet := flag.NewFlagSet("klog", flag.ExitOnError)
+	klog.InitFlags(flagSet)
+	flagSet.Set("v", "6")
 }

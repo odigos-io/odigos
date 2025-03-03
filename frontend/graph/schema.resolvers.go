@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -23,6 +24,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	"golang.org/x/sync/errgroup"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -116,34 +118,60 @@ func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *m
 
 // Sources is the resolver for the sources field.
 func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.ComputePlatform, nextPage string) (*model.PaginatedSources, error) {
+	startTime := time.Now()
+	limit, _ := services.GetPageLimit(ctx)
+
 	list, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{
-		Limit:    int64(50),
+		Limit:    int64(limit),
 		Continue: nextPage,
 	})
 
+	r.Logger.Info("listed instrumentation configs", "count", len(list.Items), "duration", time.Since(startTime).String())
+	prevTime := time.Now()
+
 	if err != nil {
 		if strings.Contains(err.Error(), "The provided continue parameter is too old") {
+			r.Logger.Info("the provided continue parameter is too old, re-paginating from scratch")
+
 			// Retry without the continue token
 			list, err = kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{
-				Limit: int64(50),
+				Limit: int64(limit),
 			})
-
 			if err != nil {
 				return nil, err
 			}
+
+			r.Logger.Info("listed instrumentation configs", "count", len(list.Items), "duration", time.Since(prevTime).String())
+			prevTime = time.Now()
 		} else {
 			return nil, err
 		}
 	}
 
-	var actualSources []*model.K8sActualSource
+	g, ctx := errgroup.WithContext(ctx)
+	g.SetLimit(limit)
+	ch := make(chan *model.K8sActualSource, len(list.Items))
 
-	// Convert each InstrumentationConfig to the K8sActualSource type
 	for _, ic := range list.Items {
-		src := instrumentationConfigToActualSource(ic)
-		services.AddHealthyInstrumentationInstancesCondition(ctx, &ic, src)
+		g.Go(func() error {
+			src := instrumentationConfigToActualSource(ic)
+			services.AddHealthyInstrumentationInstancesCondition(ctx, &ic, src)
+			ch <- src
+			return nil
+		})
+	}
+
+	g.Wait()
+	close(ch)
+
+	r.Logger.Info("listed instrumentation instances", "count", len(ch), "duration", time.Since(prevTime).String())
+
+	var actualSources []*model.K8sActualSource
+	for src := range ch {
 		actualSources = append(actualSources, src)
 	}
+
+	r.Logger.Info("resolved sources query", "count", len(list.Items), "duration", time.Since(startTime).String())
 
 	return &model.PaginatedSources{
 		NextPage: list.GetContinue(),

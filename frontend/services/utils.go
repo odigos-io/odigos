@@ -1,20 +1,51 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"path"
 	"time"
 
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
+	"github.com/odigos-io/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"sigs.k8s.io/yaml"
 )
 
-const cdnUrl = "https://d15jtxgb40qetw.cloudfront.net"
+const (
+	cdnUrl = "https://d15jtxgb40qetw.cloudfront.net"
+)
 
 func GetImageURL(image string) string {
 	return path.Join(cdnUrl, image)
+}
+
+func GetPageLimit(ctx context.Context) (int, error) {
+	defaultValue := 10
+	odigosNs := env.GetCurrentNamespace()
+
+	configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(odigosNs).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
+	if err != nil {
+		return defaultValue, err
+	}
+
+	var odigosConfig common.OdigosConfiguration
+	err = yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig)
+	if err != nil {
+		return defaultValue, err
+	}
+
+	configValue := odigosConfig.UiPaginationLimit
+	if configValue > 0 {
+		return configValue, nil
+	}
+
+	return defaultValue, nil
 }
 
 func ConvertSignals(signals []model.SignalType) ([]common.ObservabilitySignal, error) {
