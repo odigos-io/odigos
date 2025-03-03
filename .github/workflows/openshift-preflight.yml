@@ -53,6 +53,8 @@ jobs:
             project_id: '679251fd5ffdc336cfb4c43f'
           - service: instrumentor
             project_id: '679251f3a8a8d04d0d10cc07'
+          - service: enterprise-instrumentor
+            project_id: '67c5caee54f161b7c42c5e6f'
           - service: collector
             project_id: '679252b3ea28e5acc3d38df2'
           - service: odiglet
@@ -61,6 +63,8 @@ jobs:
             project_id: '679bbe1fe0ccfe3f428bae2d'
           - service: ui
             project_id: '6792b077b086a666569d9935'
+          - service: operator
+            project_id: '67c5cadf8d089ef3612cf861'
     runs-on: ubuntu-latest
     steps:
       - name: Download Preflight Binary
