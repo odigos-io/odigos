@@ -10,9 +10,10 @@ enum K8sResourceKind {
 }
 
 enum ConditionStatus {
-  True
-  False
-  Unknown
+  success
+  error
+  warning
+  loading
 }
 
 enum ProgrammingLanguage {
