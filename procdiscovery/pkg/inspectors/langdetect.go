@@ -92,7 +92,7 @@ func runInspectionStage(
 func DetectLanguage(proc process.Details, containerURL string) (common.ProgramLanguageDetails, error) {
 	procContext := process.NewProcessContext(proc)
 	defer procContext.CloseFiles()
-
+	// TODO: add error handling for CloseFiles function
 	detectedLanguageDetails := common.ProgramLanguageDetails{
 		Language: common.UnknownProgrammingLanguage,
 	}
