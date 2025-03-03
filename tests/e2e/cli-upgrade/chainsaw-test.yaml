@@ -20,10 +20,6 @@ spec:
                 -f ../../common/tempo_values.yaml \
                 --version 1.18.2
               fi
-        - assert:
-            timeout: 5m
-            file: ../../common/assert/tempo-running.yaml
-
     - name: Install Odigos latest release from GitHub for pre upgrade setup
       try:
         - script:
@@ -67,7 +63,11 @@ spec:
               ./odigos install --namespace odigos-test
         - assert:
             file: ../../common/assert/odigos-installed.yaml
-
+    - name: Assert Tempo Is Up
+      try:
+        - assert:
+            timeout: 5m
+            file: ../../common/assert/tempo-running.yaml
     - name: Install Demo App
       try:
         - script:
