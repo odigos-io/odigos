@@ -13,7 +13,7 @@ interface UseSourceCrud {
   sourcesLoading: boolean;
   sourcesPaginating: boolean;
   fetchSources: (getAll?: boolean, nextPage?: string) => Promise<void>;
-  fetchSourceById: (id: WorkloadId) => Promise<void>;
+  fetchSourceById: (id: WorkloadId, bypassPaginationLoader?: boolean) => Promise<void>;
   persistSources: (selectAppsList: SourceSelectionFormData, futureSelectAppsList: NamespaceSelectionFormData) => Promise<void>;
   updateSource: (sourceId: WorkloadId, payload: SourceFormData) => Promise<void>;
 }
@@ -34,7 +34,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
   const [fetchPaginated, { loading: isFetching }] = useLazyQuery<{ computePlatform: { sources: PaginatedData<FetchedSource> } }>(GET_SOURCES);
   const [fetchById, { loading: isFetchingById }] = useLazyQuery<{ computePlatform: { source: FetchedSource } }, { sourceId: WorkloadId }>(GET_SOURCE);
 
-  const fetchSourceById = async (id: WorkloadId, bypassPaginationLoader: boolean = false, isLastItemInArray: boolean = false) => {
+  const fetchSourceById = async (id: WorkloadId, bypassPaginationLoader: boolean = false) => {
     // We should not fetch while sources are being instrumented.
     if (useInstrumentStore.getState().isAwaitingInstrumentation) return;
     // We should not re-fetch if we are already paginating.
@@ -48,8 +48,6 @@ export const useSourceCRUD = (): UseSourceCrud => {
     } else if (!!data?.computePlatform.source) {
       addPaginated(ENTITY_TYPES.SOURCE, [data.computePlatform.source]);
     }
-
-    if (isLastItemInArray) setPaginating(ENTITY_TYPES.SOURCE, false);
   };
 
   const fetchExtendedSources = async () => {
@@ -57,8 +55,11 @@ export const useSourceCRUD = (): UseSourceCrud => {
 
     for (let i = 0; i < items.length; i++) {
       const { namespace, name, kind } = items[i];
-      fetchSourceById({ namespace, name, kind }, true, i === items.length - 1);
+      const bypassPaginationLoader = true;
+      await fetchSourceById({ namespace, name, kind }, bypassPaginationLoader);
     }
+
+    setPaginating(ENTITY_TYPES.SOURCE, false);
   };
 
   const fetchSources = async (getAll: boolean = true, page: string = '') => {
