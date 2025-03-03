@@ -55,6 +55,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 
+	"github.com/odigos-io/odigos/autoscaler"
 	"github.com/odigos-io/odigos/autoscaler/controllers"
 	"github.com/odigos-io/odigos/autoscaler/controllers/actions"
 	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
@@ -206,7 +207,7 @@ func main() {
 	// This is the reason we skip it for versions < 1.23 (Also, versions < 1.23 require a non-caching client and API chane)
 	if k8sVersion != nil && k8sVersion.GreaterThan(version.MustParse("v1.23")) {
 		// Use the cached client for versions >= 1.23
-		err = MigrateCollectorsWorkloadToNewLabels(context.Background(), mgr.GetClient(), odigosNs)
+		err = autoscaler.MigrateCollectorsWorkloadToNewLabels(context.Background(), mgr.GetClient(), odigosNs)
 		if err != nil {
 			setupLog.Error(err, "unable to migrate collectors workload to new labels")
 			os.Exit(1)

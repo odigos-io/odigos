@@ -51,6 +51,7 @@ import (
 
 	"github.com/odigos-io/odigos/instrumentor/controllers/deleteinstrumentationconfig"
 	"github.com/odigos-io/odigos/instrumentor/report"
+	"github.com/odigos-io/odigos/instrumentor"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -68,6 +69,7 @@ import (
 
 	//+kubebuilder:scaffold:imports
 
+	"net/http"
 	_ "net/http/pprof"
 )
 
@@ -258,10 +260,10 @@ func main() {
 	err = builder.
 		WebhookManagedBy(mgr).
 		For(&odigosv1.Source{}).
-		WithDefaulter(&SourcesDefaulter{
+		WithDefaulter(&instrumentor.SourcesDefaulter{
 			Client: mgr.GetClient(),
 		}).
-		WithValidator(&SourcesValidator{
+		WithValidator(&instrumentor.SourcesValidator{
 			Client: mgr.GetClient(),
 		}).
 		Complete()
@@ -272,12 +274,9 @@ func main() {
 
 	//+kubebuilder:scaffold:builder
 
-	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up health check")
-		os.Exit(1)
-	}
-	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up ready check")
+	err = addHealthAndReadyChecks(mgr)
+	if err != nil {
+		setupLog.Error(err, "unable to set up health and ready checks")
 		os.Exit(1)
 	}
 
@@ -292,6 +291,19 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func addHealthAndReadyChecks(mgr ctrl.Manager) error {
+	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
+		return fmt.Errorf("unable to set up health check: %w", err)
+	}
+
+	if err := mgr.AddReadyzCheck("readyz", func(req *http.Request) error{
+		return mgr.GetWebhookServer().StartedChecker()(req)
+	}); err != nil {
+		return fmt.Errorf("unable to set up ready check: %w", err)
+	}
+	return nil
 }
 
 func durationPointer(d time.Duration) *time.Duration {
