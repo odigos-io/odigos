@@ -19,7 +19,7 @@ spec:
                 helm install e2e-tests grafana/tempo -n traces --create-namespace --set tempo.storage.trace.block.version=vParquet4 \
                 --set tempo.ingester.trace_idle_period=5s \
                 --set tempo.ingester.max_block_duration=20s \
-                --version 1.10.1
+                --version 1.18.2
               fi
         - assert:
             file: ../../common/assert/tempo-running.yaml
