@@ -50,18 +50,7 @@ func reconcileWorkload(
 	obj := workload.ClientObjectFromWorkloadKind(objKind)
 	err := k8sClient.Get(ctx, key, obj)
 	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	var reconcileFunc reconcileFunction
-	enabled, _, err := sourceutils.IsObjectInstrumentedBySource(ctx, k8sClient, obj)
-	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
-	if enabled {
-		reconcileFunc = instrumentWorkload
-	} else {
-		reconcileFunc = uninstrumentWorkload
 	}
 
 	podWorkload := k8sconsts.PodWorkload{
@@ -70,14 +59,20 @@ func reconcileWorkload(
 		Kind:      objKind,
 	}
 
-	res, err := reconcileFunc(
+	enabled, _, err := sourceutils.IsObjectInstrumentedBySource(ctx, k8sClient, obj)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	if enabled {
+		return syncInstrumentWorkload(
+			ctx,
+			k8sClient,
+			podWorkload,
+			scheme)
+	}
+	return syncUninstrumentWorkload(
 		ctx,
 		k8sClient,
 		podWorkload,
 		scheme)
-	if err != nil {
-		return res, err
-	}
-
-	return ctrl.Result{}, nil
 }

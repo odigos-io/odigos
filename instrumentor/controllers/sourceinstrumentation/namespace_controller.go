@@ -39,19 +39,19 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	var ns corev1.Namespace
 	err := r.Get(ctx, client.ObjectKey{Name: req.Name}, &ns)
-	if client.IgnoreNotFound(err) != nil {
-		return ctrl.Result{}, err
+	if err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	var reconcileFunc reconcileFunction
 	enabled, _, err := sourceutils.IsObjectInstrumentedBySource(ctx, r.Client, &ns)
 	if err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return ctrl.Result{}, err
 	}
 	if enabled {
-		reconcileFunc = instrumentWorkload
+		reconcileFunc = syncInstrumentWorkload
 	} else {
-		reconcileFunc = uninstrumentWorkload
+		reconcileFunc = syncUninstrumentWorkload
 	}
 
 	return syncNamespaceWorkloads(
