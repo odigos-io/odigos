@@ -19,7 +19,8 @@ func LocalTrafficOTLPGrpcDataCollectionEndpoint(nodeIP string) string {
 // LocalTrafficOTLPHttpDataCollectionEndpoint returns the endpoint for the OTLP HTTP data collection pod on the same node.
 // If the internal traffic policy is enabled, the endpoint will use the service name.
 // Otherwise, it will use the node IP.
-// The node IP might be passed as explicit IP or as a pattern like "$(NODE_IP)" which also requires having the `NODE_IP` environment variable set in the manifest.
+// The node IP might be passed as explicit IP or as a pattern like "$(NODE_IP)"
+// which also requires having the `NODE_IP` environment variable set in the manifest.
 // Using a pattern is useful when the target node is not known once calling this function.
 func LocalTrafficOTLPHttpDataCollectionEndpoint(nodeIP string) string {
 	if feature.ServiceInternalTrafficPolicy(feature.GA) {
