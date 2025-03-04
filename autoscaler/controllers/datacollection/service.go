@@ -5,6 +5,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -21,6 +22,9 @@ var (
 )
 
 func syncService(ctx context.Context, c client.Client, scheme *runtime.Scheme, dc *odigosv1.CollectorsGroup) error {
+	if !feature.ServiceInternalTrafficPolicy(feature.GA) {
+		return nil
+	}
 	logger := log.FromContext(ctx)
 
 	localTrafficPolicy := v1.ServiceInternalTrafficPolicyLocal
