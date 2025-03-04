@@ -88,8 +88,11 @@ jobs:
       - name: Load Images to Kind
         run: |
           for image in /tmp/images/*.tar; do
+            # Load the OCI image and get its ID
             docker load -i "$image"
+            # Get the image name with e2e-test tag
             image_name=$(docker images --format "{{.Repository}}:e2e-test" | grep "odigos" | head -n 1)
+            # Load the image into kind
             kind load docker-image "$image_name" --name kind
           done
 

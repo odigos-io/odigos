@@ -29,7 +29,7 @@ jobs:
             autoscaler:e2e-test
           build-args: SERVICE_NAME=autoscaler
           file: ${{ matrix.dockerfile }}
-          outputs: type=docker,dest=/tmp/autoscaler.tar
+          outputs: type=oci,dest=/tmp/autoscaler.tar
       - name: Upload image artifact
         uses: actions/upload-artifact@v4
         with:
@@ -56,7 +56,7 @@ jobs:
             scheduler:e2e-test
           build-args: SERVICE_NAME=scheduler
           file: ${{ matrix.dockerfile }}
-          outputs: type=docker,dest=/tmp/scheduler.tar
+          outputs: type=oci,dest=/tmp/scheduler.tar
       - name: Upload image artifact
         uses: actions/upload-artifact@v4
         with:
@@ -86,7 +86,7 @@ jobs:
             instrumentor:e2e-test
           build-args: SERVICE_NAME=instrumentor
           file: ${{ matrix.dockerfile }}
-          outputs: type=docker,dest=/tmp/instrumentor.tar
+          outputs: type=oci,dest=/tmp/instrumentor.tar
       - name: run tests
         working-directory: ./instrumentor
         run: |
@@ -117,7 +117,7 @@ jobs:
             odigos-collector:e2e-test
           context: ./collector
           file: ${{ matrix.dockerfile }}
-          outputs: type=docker,dest=/tmp/odigos-collector.tar
+          outputs: type=oci,dest=/tmp/odigos-collector.tar
       - name: run tests
         working-directory: ./collector
         run: |
@@ -150,7 +150,7 @@ jobs:
           tags: |
             odiglet:pr-${{ github.event.number }}
             odiglet:e2e-test
-          outputs: type=docker,dest=/tmp/odiglet.tar
+          outputs: type=oci,dest=/tmp/odiglet.tar
       - name: Install build dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y clang llvm libbpf-dev
@@ -184,7 +184,7 @@ jobs:
           tags: |
             frontend:pr-${{ github.event.number }}
             frontend:e2e-test
-          outputs: type=docker,dest=/tmp/frontend.tar
+          outputs: type=oci,dest=/tmp/frontend.tar
       - name: Upload image artifact
         uses: actions/upload-artifact@v4
         with:
@@ -211,7 +211,7 @@ jobs:
           tags: |
             operator:pr-${{ github.event.number }}
             operator:e2e-test
-          outputs: type=docker,dest=/tmp/operator.tar
+          outputs: type=oci,dest=/tmp/operator.tar
       - name: Upload image artifact
         uses: actions/upload-artifact@v4
         with:
