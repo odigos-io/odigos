@@ -133,13 +133,13 @@ jobs:
           chainsaw test tests/e2e/${{ matrix.test-scenario }}
 
       - name: Run diagnose command
-        if: ${{ failure() && matrix.test-scenario == 'cli-upgrade' }}
+        if: ${{ failure() }}
         run: |
           ./cli/odigos diagnose
         continue-on-error: true
 
       - name: Upload run details artifact
-        if: ${{ failure() && matrix.test-scenario == 'cli-upgrade' }}
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: run-details-${{ matrix.test-scenario }}-${{ matrix.kube-version }}
