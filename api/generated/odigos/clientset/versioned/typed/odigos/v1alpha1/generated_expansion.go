@@ -29,8 +29,6 @@ type InstrumentationRuleExpansion interface{}
 
 type InstrumentedApplicationExpansion interface{}
 
-type OdigosConfigurationExpansion interface{}
-
 type ProcessorExpansion interface{}
 
 type SourceExpansion interface{}
