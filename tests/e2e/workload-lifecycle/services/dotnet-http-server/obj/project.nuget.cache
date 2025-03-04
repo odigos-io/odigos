@@ -1,12 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "ximEUX4dSV8=",
+  "dgSpecHash": "9NJOUczYkvg=",
   "success": true,
-  "projectFilePath": "/Users/amirblum/repos/odigos/tests/e2e/workload-lifecycle/services/dotnet-http-server/dotnet-http-server.csproj",
-  "expectedPackageFiles": [
-    "/Users/amirblum/.nuget/packages/microsoft.netcore.app.ref/8.0.10/microsoft.netcore.app.ref.8.0.10.nupkg.sha512",
-    "/Users/amirblum/.nuget/packages/microsoft.aspnetcore.app.ref/8.0.10/microsoft.aspnetcore.app.ref.8.0.10.nupkg.sha512",
-    "/Users/amirblum/.nuget/packages/microsoft.netcore.app.host.osx-arm64/8.0.10/microsoft.netcore.app.host.osx-arm64.8.0.10.nupkg.sha512"
-  ],
+  "projectFilePath": "/app/dotnet-http-server.csproj",
+  "expectedPackageFiles": [],
   "logs": []
 }
