@@ -121,6 +121,7 @@ spec:
               mountPath: /sys/kernel/debug
       hostNetwork: true
       hostPID: true
+      dnsPolicy: ClusterFirstWithHostNet
       priorityClassName: system-node-critical
       serviceAccountName: odiglet
       volumes:

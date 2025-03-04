@@ -130,4 +130,10 @@ jobs:
 
       - name: Run E2E Tests
         run: |
-          chainsaw test tests/e2e/${{ matrix.test-scenario }}
+          # Extract minor version number from the kube-version
+          MINOR_VERSION=$(echo ${{ matrix.kube-version }} | sed -E 's/^1\.([0-9]+).*$/\1/')
+
+          # Run chainsaw with the extracted minor version
+          chainsaw test tests/e2e/${{ matrix.test-scenario }} --values - <<EOF
+          k8sMinorVersion: ${MINOR_VERSION}
+          EOF
