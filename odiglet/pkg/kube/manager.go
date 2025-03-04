@@ -36,7 +36,6 @@ func init() {
 
 type KubeManagerOptions struct {
 	Mgr           ctrl.Manager
-	EbpfDirectors ebpf.DirectorsMap
 	Clientset     *kubernetes.Clientset
 	ConfigUpdates chan<- instrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
 	CriClient     *criwrapper.CriClient
@@ -77,7 +76,7 @@ func SetupWithManager(kubeManagerOptions KubeManagerOptions) error {
 		return err
 	}
 
-	err = instrumentation_ebpf.SetupWithManager(kubeManagerOptions.Mgr, kubeManagerOptions.EbpfDirectors, kubeManagerOptions.ConfigUpdates)
+	err = instrumentation_ebpf.SetupWithManager(kubeManagerOptions.Mgr, kubeManagerOptions.ConfigUpdates)
 	if err != nil {
 		return err
 	}

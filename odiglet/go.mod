@@ -17,7 +17,6 @@ require (
 	github.com/odigos-io/odigos/procdiscovery v0.0.0
 	github.com/odigos-io/opentelemetry-zap-bridge v0.0.5
 	github.com/odigos-io/runtime-detector v0.0.7
-	github.com/stretchr/testify v1.10.0
 	go.opentelemetry.io/auto v0.20.0
 	go.opentelemetry.io/otel v1.34.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.34.0
@@ -63,7 +62,6 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_golang v1.20.5 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.62.0 // indirect
