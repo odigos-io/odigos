@@ -3,8 +3,6 @@
 # Ensure the script fails if any command fails
 set -e
 
-source "$(dirname "${BASH_SOURCE[0]}")/curl_helper.sh"
-
 # Function to verify the YAML schema
 function verify_yaml_schema() {
   local file=$1
@@ -33,7 +31,7 @@ function urlencode() (
 function process_yaml_file() {
   local dest_namespace="traces"
   local dest_service="e2e-tests-tempo"
-  local dest_port=3100
+  local dest_port="tempo-prom-metrics"
   local verbose=$2
 
   local file=$1
@@ -48,16 +46,14 @@ function process_yaml_file() {
   start_epoch=$(($current_epoch - one_hour))
   end_epoch=$(($current_epoch + one_hour))
 
-  deploy_curl_pod $dest_namespace
-  response=$(run_curl_cmd $dest_namespace http://${dest_service}:${dest_port}/api/search\?end=$end_epoch\&start=$start_epoch\&q=$encoded_query\&limit=50)
-  delete_curl_pod $dest_namespace
-  
+  response=$(kubectl get --raw /api/v1/namespaces/$dest_namespace/services/$dest_service:$dest_port/proxy/api/search\?end=$end_epoch\&start=$start_epoch\&q=$encoded_query\&limit=50)
+
   if [ "$verbose" == "true" ]; then
     echo "==============Raw response from tempo===================="
     echo "$response" | jq .traces
     echo "========================================================="
   fi
-  
+
   num_of_traces=$(echo $response | jq '.traces | length')
 
   if [ "$expected_count" != "null" ]; then
