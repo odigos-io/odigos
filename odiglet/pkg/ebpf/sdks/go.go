@@ -36,7 +36,7 @@ func (g *GoInstrumentationFactory) CreateInstrumentation(ctx context.Context, pi
 	defaultExporter, err := otlptracegrpc.New(
 		ctx,
 		otlptracegrpc.WithInsecure(),
-		otlptracegrpc.WithEndpoint(service.LocalTrafficOTLPDataCollectionEndpoint(env.Current.NodeIP)),
+		otlptracegrpc.WithEndpoint(service.LocalTrafficOTLPGrpcDataCollectionEndpoint(env.Current.NodeIP)),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create exporter: %w", err)
