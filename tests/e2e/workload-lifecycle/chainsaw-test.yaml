@@ -31,11 +31,6 @@ spec:
       try:
         - assert:
             file: ../../common/assert/node-odiglet-label.yaml
-    - name: Assert Tempo Is Up
-      try:
-        - assert:
-            timeout: 5m
-            file: ../../common/assert/tempo-running.yaml
     - name: '01 - Install Test Apps'
       try:
         - apply:
@@ -45,6 +40,11 @@ spec:
         - assert:
             timeout: 150s
             file: 01-assert-apps-installed.yaml
+    - name: Assert Tempo Is Up
+      try:
+        - assert:
+            timeout: 5m
+            file: ../../common/assert/tempo-running.yaml
     - name: '01 Instrument Namespaces'
       try:
         - apply:
