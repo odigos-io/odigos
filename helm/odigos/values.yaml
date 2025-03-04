@@ -133,7 +133,6 @@ instrumentor:
   # k8s-virtual-device: default method using a virtual device
   # k8s-host-path: alternative which uses hostPath volume (recommended if supported, requires hostPath volume to be enabled in the cluster)
   mountMethod: 'k8s-virtual-device'
-  deleteLangDetectionPods: true
   nodeSelector:
     kubernetes.io/os: linux
   tolerations: []
