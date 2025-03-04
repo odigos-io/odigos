@@ -129,6 +129,7 @@ spec:
         - apply:
             file: 02-update-workload-manifests.yaml
         - assert:
+            timeout: 2m
             file: 02-assert-workload-update.yaml
 
     # updating the services names helps use to verify the traces, and distinguish between the phases
