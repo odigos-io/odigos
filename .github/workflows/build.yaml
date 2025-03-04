@@ -29,9 +29,10 @@ jobs:
             autoscaler:e2e-test
           build-args: SERVICE_NAME=autoscaler
           file: ${{ matrix.dockerfile }}
-          outputs: type=oci,dest=/tmp/autoscaler.tar
+          outputs: ${{ matrix.dockerfile == 'Dockerfile' && 'type=oci,dest=/tmp/autoscaler.tar' || 'type=image' }}
       - name: Upload image artifact
         uses: actions/upload-artifact@v4
+        if: matrix.dockerfile == 'Dockerfile'
         with:
           name: autoscaler-image
           path: /tmp/autoscaler.tar
@@ -56,9 +57,10 @@ jobs:
             scheduler:e2e-test
           build-args: SERVICE_NAME=scheduler
           file: ${{ matrix.dockerfile }}
-          outputs: type=oci,dest=/tmp/scheduler.tar
+          outputs: ${{ matrix.dockerfile == 'Dockerfile' && 'type=oci,dest=/tmp/scheduler.tar' || 'type=image' }}
       - name: Upload image artifact
         uses: actions/upload-artifact@v4
+        if: matrix.dockerfile == 'Dockerfile'
         with:
           name: scheduler-image
           path: /tmp/scheduler.tar
@@ -86,13 +88,14 @@ jobs:
             instrumentor:e2e-test
           build-args: SERVICE_NAME=instrumentor
           file: ${{ matrix.dockerfile }}
-          outputs: type=oci,dest=/tmp/instrumentor.tar
+          outputs: ${{ matrix.dockerfile == 'Dockerfile' && 'type=oci,dest=/tmp/instrumentor.tar' || 'type=image' }}
       - name: run tests
         working-directory: ./instrumentor
         run: |
           make test
       - name: Upload image artifact
         uses: actions/upload-artifact@v4
+        if: matrix.dockerfile == 'Dockerfile'
         with:
           name: instrumentor-image
           path: /tmp/instrumentor.tar
@@ -117,13 +120,14 @@ jobs:
             odigos-collector:e2e-test
           context: ./collector
           file: ${{ matrix.dockerfile }}
-          outputs: type=oci,dest=/tmp/odigos-collector.tar
+          outputs: ${{ matrix.dockerfile == 'collector/Dockerfile' && 'type=oci,dest=/tmp/odigos-collector.tar' || 'type=image' }}
       - name: run tests
         working-directory: ./collector
         run: |
           make test
       - name: Upload image artifact
         uses: actions/upload-artifact@v4
+        if: matrix.dockerfile == 'collector/Dockerfile'
         with:
           name: odigos-collector-image
           path: /tmp/odigos-collector.tar
@@ -150,7 +154,7 @@ jobs:
           tags: |
             odiglet:pr-${{ github.event.number }}
             odiglet:e2e-test
-          outputs: type=oci,dest=/tmp/odiglet.tar
+          outputs: ${{ matrix.dockerfile == 'odiglet/Dockerfile' && 'type=oci,dest=/tmp/odiglet.tar' || 'type=image' }}
       - name: Install build dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y clang llvm libbpf-dev
@@ -160,6 +164,7 @@ jobs:
           make test
       - name: Upload image artifact
         uses: actions/upload-artifact@v4
+        if: matrix.dockerfile == 'odiglet/Dockerfile'
         with:
           name: odiglet-image
           path: /tmp/odiglet.tar
@@ -184,9 +189,10 @@ jobs:
           tags: |
             frontend:pr-${{ github.event.number }}
             frontend:e2e-test
-          outputs: type=oci,dest=/tmp/frontend.tar
+          outputs: ${{ matrix.dockerfile == 'frontend/Dockerfile' && 'type=oci,dest=/tmp/frontend.tar' || 'type=image' }}
       - name: Upload image artifact
         uses: actions/upload-artifact@v4
+        if: matrix.dockerfile == 'frontend/Dockerfile'
         with:
           name: frontend-image
           path: /tmp/frontend.tar
@@ -211,9 +217,10 @@ jobs:
           tags: |
             operator:pr-${{ github.event.number }}
             operator:e2e-test
-          outputs: type=oci,dest=/tmp/operator.tar
+          outputs: ${{ matrix.dockerfile == 'operator/Dockerfile' && 'type=oci,dest=/tmp/operator.tar' || 'type=image' }}
       - name: Upload image artifact
         uses: actions/upload-artifact@v4
+        if: matrix.dockerfile == 'operator/Dockerfile'
         with:
           name: operator-image
           path: /tmp/operator.tar
