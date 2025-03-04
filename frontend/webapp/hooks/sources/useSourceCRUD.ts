@@ -12,7 +12,7 @@ interface UseSourceCrud {
   sources: Source[];
   sourcesLoading: boolean;
   sourcesPaginating: boolean;
-  fetchSources: (getAll?: boolean, nextPage?: string) => Promise<void>;
+  fetchSourcesPaginated: (getAll?: boolean, nextPage?: string) => Promise<void>;
   fetchSourceById: (id: WorkloadId, bypassPaginationLoader?: boolean) => Promise<void>;
   persistSources: (selectAppsList: SourceSelectionFormData, futureSelectAppsList: NamespaceSelectionFormData) => Promise<void>;
   updateSource: (sourceId: WorkloadId, payload: SourceFormData) => Promise<void>;
@@ -31,8 +31,8 @@ export const useSourceCRUD = (): UseSourceCrud => {
     addNotification({ type, title, message, crdType: ENTITY_TYPES.SOURCE, target: id ? getSseTargetFromId(id, ENTITY_TYPES.SOURCE) : undefined, hideFromHistory });
   };
 
-  const [fetchPaginated, { loading: isFetching }] = useLazyQuery<{ computePlatform: { sources: PaginatedData<FetchedSource> } }>(GET_SOURCES);
-  const [fetchById, { loading: isFetchingById }] = useLazyQuery<{ computePlatform: { source: FetchedSource } }, { sourceId: WorkloadId }>(GET_SOURCE);
+  const [queryByPage, { loading: isFetching }] = useLazyQuery<{ computePlatform: { sources: PaginatedData<FetchedSource> } }>(GET_SOURCES);
+  const [queryById, { loading: isFetchingById }] = useLazyQuery<{ computePlatform: { source: FetchedSource } }, { sourceId: WorkloadId }>(GET_SOURCE);
 
   const fetchSourceById = async (id: WorkloadId, bypassPaginationLoader: boolean = false) => {
     // We should not fetch while sources are being instrumented.
@@ -41,7 +41,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
     // The backend will simply restart it's "page" due to an invalid hash, which will then force a full re-fetch including this item by ID.
     if (usePaginatedStore.getState().sourcesPaginating && !bypassPaginationLoader) return;
 
-    const { error, data } = await fetchById({ variables: { sourceId: id } });
+    const { error, data } = await queryById({ variables: { sourceId: id } });
 
     if (!!error) {
       notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message);
@@ -50,7 +50,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
     }
   };
 
-  const fetchExtendedSources = async () => {
+  const fetchAllSourcesIndividually = async () => {
     const items = usePaginatedStore.getState().sources;
 
     for (let i = 0; i < items.length; i++) {
@@ -62,7 +62,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
     setPaginating(ENTITY_TYPES.SOURCE, false);
   };
 
-  const fetchSources = async (getAll: boolean = true, page: string = '') => {
+  const fetchSourcesPaginated = async (getAll: boolean = true, page: string = '') => {
     // We should not fetch while sources are being instrumented.
     if (useInstrumentStore.getState().isAwaitingInstrumentation) return;
     // We should not fetch if we are already fetching.
@@ -71,7 +71,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
     setPaginating(ENTITY_TYPES.SOURCE, true);
 
     const startTime = Date.now();
-    const { error, data } = await fetchPaginated({ variables: { nextPage: page } });
+    const { error, data } = await queryByPage({ variables: { nextPage: page } });
     const endTime = Date.now();
 
     if (!!error) {
@@ -86,17 +86,17 @@ export const useSourceCRUD = (): UseSourceCrud => {
         const timeElapsed = endTime - startTime;
 
         if (timeElapsed > halfSecond) {
-          fetchSources(true, nextPage);
+          fetchSourcesPaginated(true, nextPage);
         } else {
           // timeout helps avoid some lag on quick paginations
-          setTimeout(() => fetchSources(true, nextPage), halfSecond);
+          setTimeout(() => fetchSourcesPaginated(true, nextPage), halfSecond);
         }
       } else if (usePaginatedStore.getState().sources.length >= useInstrumentStore.getState().sourcesToCreate) {
-        // if we move "fetchExtendedSources" elsewhere, we might need to uncomment the following
+        // if we move "fetchAllSourcesIndividually" elsewhere, we might need to uncomment the following
         // setPaginating(ENTITY_TYPES.SOURCE, false);
         setInstrumentCount('sourcesToCreate', 0);
         setInstrumentCount('sourcesCreated', 0);
-        fetchExtendedSources();
+        fetchAllSourcesIndividually();
       }
     }
   };
@@ -124,14 +124,14 @@ export const useSourceCRUD = (): UseSourceCrud => {
   });
 
   useEffect(() => {
-    if (!sources.length && !sourcesPaginating) fetchSources();
+    if (!sources.length && !sourcesPaginating) fetchSourcesPaginated();
   }, []);
 
   return {
     sources,
     sourcesLoading: isFetching || isFetchingById || sourcesPaginating || cdState.loading || uState.loading,
     sourcesPaginating,
-    fetchSources,
+    fetchSourcesPaginated,
     fetchSourceById,
 
     persistSources: async (selectAppsList, futureSelectAppsList) => {
