@@ -3,7 +3,8 @@ image:
 imagePullSecrets: []
 
 # By default, images are pulled from odigos registry at `registry.odigos.io`
-# If you use custom or internal registry to serve in your cluster, you can set the imagePrefix to your registry
+# If you use custom or internal registry to serve in your cluster, you can set the imagePrefix to your registry.
+# For example, if you set imagePrefix to `myregistry.io/odigos`, the images will be pulled from `myregistry.io/odigos/odigos-<component>:<tag>`
 imagePrefix: 
 
 # namespaces list not to show in odigos ui
