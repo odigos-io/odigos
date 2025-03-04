@@ -37,7 +37,7 @@ func DotNet(deviceId string, uniqueDestinationSignals map[common.ObservabilitySi
 			profilerEndVar:        profilerId,
 			profilerPathEnv:       fmt.Sprintf(profilerPath, getArch()),
 			tracerHomeEnv:         tracerHome,
-			collectorUrlEnv:       service.SameNodeOTLPHttpDataCollectionEndpoint(env.Current.NodeIP),
+			collectorUrlEnv:       service.LocalTrafficOTLPHttpDataCollectionEndpoint(env.Current.NodeIP),
 			serviceNameEnv:        deviceId,
 			exportTypeEnv:         "otlp",
 			resourceAttrEnv:       "odigos.device=dotnet",

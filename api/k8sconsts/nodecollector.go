@@ -6,7 +6,7 @@ const (
 	OdigosNodeCollectorCollectorGroupName      = OdigosNodeCollectorDaemonSetName
 	OdigosNodeCollectorOwnTelemetryPortDefault = int32(55682)
 
-	OdigosNodeCollectorSameNodeServiceName = "odigos-data-collection-same-node"
+	OdigosNodeCollectorLocalTrafficServiceName = "odigos-data-collection-local-traffic"
 
 	OdigosNodeCollectorConfigMapKey = "conf" // this key is different than the cluster collector value. not sure why
 )

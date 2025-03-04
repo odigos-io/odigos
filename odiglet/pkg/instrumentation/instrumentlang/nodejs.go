@@ -23,7 +23,7 @@ func NodeJS(deviceId string, uniqueDestinationSignals map[common.ObservabilitySi
 
 	return &v1beta1.ContainerAllocateResponse{
 		Envs: map[string]string{
-			nodeEnvEndpoint:       service.SameNodeOTLPHttpDataCollectionEndpoint(env.Current.NodeIP),
+			nodeEnvEndpoint:       service.LocalTrafficOTLPHttpDataCollectionEndpoint(env.Current.NodeIP),
 			nodeEnvServiceName:    deviceId, // temporary set the device id as well, so if opamp fails we can fallback to resolve k8s attributes in the collector
 			nodeOdigosOpampServer: opampServerHost,
 			nodeOdigosDeviceId:    deviceId,

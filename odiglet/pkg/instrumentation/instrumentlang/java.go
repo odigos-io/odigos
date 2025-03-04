@@ -40,10 +40,10 @@ func Java(deviceId string, uniqueDestinationSignals map[common.ObservabilitySign
 
 	return &v1beta1.ContainerAllocateResponse{
 		Envs: map[string]string{
-			otelResourceAttributesEnvVar:  fmt.Sprintf(otelResourceAttrPattern, deviceId),
+			otelResourceAttributesEnvVar: fmt.Sprintf(otelResourceAttrPattern, deviceId),
 			// OTEL javaagent seems to expect the endpoint to be in the format http://<host>:<port>
 			// in go, we can pass the endpoint as <host>:<port>
-			javaOtlpEndpointEnvVar:        fmt.Sprintf("http://%s", service.SameNodeOTLPDataCollectionEndpoint(env.Current.NodeIP)),
+			javaOtlpEndpointEnvVar:        fmt.Sprintf("http://%s", service.LocalTrafficOTLPDataCollectionEndpoint(env.Current.NodeIP)),
 			javaOtlpProtocolEnvVar:        "grpc",
 			javaOtelLogsExporterEnvVar:    logsExporter,
 			javaOtelMetricsExporterEnvVar: metricsExporter,

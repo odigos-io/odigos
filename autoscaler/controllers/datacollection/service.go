@@ -26,7 +26,7 @@ func syncService(ctx context.Context, c client.Client, scheme *runtime.Scheme, d
 	localTrafficPolicy := v1.ServiceInternalTrafficPolicyLocal
 	dcService := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      k8sconsts.OdigosNodeCollectorSameNodeServiceName,
+			Name:      k8sconsts.OdigosNodeCollectorLocalTrafficServiceName,
 			Namespace: dc.Namespace,
 			Labels:    ClusterCollectorGateway,
 		},

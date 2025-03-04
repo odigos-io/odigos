@@ -7,11 +7,11 @@ import (
 
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/k8sutils/pkg/service"
 	"github.com/odigos-io/odigos/common"
 	commonconsts "github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"github.com/odigos-io/odigos/k8sutils/pkg/service"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -178,7 +178,7 @@ func injectNodejsCommunityEnvVars(container *corev1.Container) {
 	})
 	container.Env = append(container.Env, corev1.EnvVar{
 		Name:  commonconsts.OtelExporterEndpointEnvName,
-		Value: service.SameNodeOTLPHttpDataCollectionEndpoint("$(NODE_IP)"),
+		Value: service.LocalTrafficOTLPHttpDataCollectionEndpoint("$(NODE_IP)"),
 	})
 }
 
@@ -195,7 +195,7 @@ func injectJavaCommunityEnvVars(ctx context.Context, logger logr.Logger,
 	})
 	container.Env = append(container.Env, corev1.EnvVar{
 		Name:  commonconsts.OtelExporterEndpointEnvName,
-		Value: service.SameNodeOTLPHttpDataCollectionEndpoint("$(NODE_IP)"),
+		Value: service.LocalTrafficOTLPHttpDataCollectionEndpoint("$(NODE_IP)"),
 	})
 
 	// Set the OTEL signals exporter env vars
@@ -238,7 +238,7 @@ func InjectPythonEnvVars(container *corev1.Container) {
 			},
 			{
 				Name:  commonconsts.OtelExporterEndpointEnvName,
-				Value: service.SameNodeOTLPHttpDataCollectionEndpoint("$(NODE_IP)"),
+				Value: service.LocalTrafficOTLPHttpDataCollectionEndpoint("$(NODE_IP)"),
 			},
 		}
 	}

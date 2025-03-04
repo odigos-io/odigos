@@ -44,7 +44,7 @@ func Python(deviceId string, uniqueDestinationSignals map[common.ObservabilitySi
 			pythonOdigosOpampServer:       opampServerHost,
 			envLogCorrelation:             "true",
 			pythonConfiguratorEnvVar:      pythonConfiguratorValue,
-			"OTEL_EXPORTER_OTLP_ENDPOINT": service.SameNodeOTLPHttpDataCollectionEndpoint(env.Current.NodeIP),
+			"OTEL_EXPORTER_OTLP_ENDPOINT": service.LocalTrafficOTLPHttpDataCollectionEndpoint(env.Current.NodeIP),
 			envOtelTracesExporter:         tracesExporter,
 			envOtelMetricsExporter:        metricsExporter,
 			// Log exporter is currently set to "none" due to the data collection method, which collects logs from the file system.
