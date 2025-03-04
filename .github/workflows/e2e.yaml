@@ -13,53 +13,19 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-cli:
+  wait-for-build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - name: Wait for build workflow
+        uses: lewagon/wait-on-check-action@v1.3.1
         with:
-          go-version: '~1.23'
-          check-latest: true
-          cache: true
-          cache-dependency-path: |
-            **/go.sum
-
-      - name: Build CLI
-        run: |
-          cd cli
-          go build -tags=embed_manifests -o odigos
-
-      - name: Upload CLI
-        uses: actions/upload-artifact@v4
-        with:
-          name: odigos-cli
-          path: cli/odigos
-
-  build-odigos-images:
-    runs-on: warp-ubuntu-latest-x64-8x-spot
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Build Odigos Images
-        run: |
-          TAG=e2e-test make build-images
-          docker save -o odigos-images.tar $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "odigos")
-
-      - name: Upload Odigos Images
-        uses: actions/upload-artifact@v4
-        with:
-          name: odigos-images
-          path: odigos-images.tar
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          check-name: build-cli
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
 
   kubernetes-test:
-    needs:
-      - build-odigos-images
-      - build-cli
+    needs: wait-for-build
     runs-on: warp-ubuntu-latest-x64-8x-spot
     strategy:
       fail-fast: false
@@ -112,21 +78,27 @@ jobs:
           cluster_name: kind
           config: tests/common/apply/kind-config.yaml
 
-      - name: Download and Load Docker Images to Kind
+      - name: Download Docker Images
         uses: actions/download-artifact@v4
         with:
-          name: odigos-images
-      - run: |
-          docker load -i odigos-images.tar
-          TAG=e2e-test make load-to-kind
+          pattern: '*-image'
+          path: /tmp/images
+          merge-multiple: true
+
+      - name: Load Images to Kind
+        run: |
+          for image in /tmp/images/*.tar; do
+            docker load -i "$image"
+            image_name=$(docker images --format "{{.Repository}}:e2e-test" | grep "odigos" | head -n 1)
+            kind load docker-image "$image_name" --name kind
+          done
 
       - name: Download CLI binary
         uses: actions/download-artifact@v4
         with:
           name: odigos-cli
-      - run: |
-          mv odigos cli/odigos
-          chmod +x cli/odigos
+          path: cli/
+      - run: chmod +x cli/odigos
 
       - name: Run E2E Tests
         run: |

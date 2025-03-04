@@ -24,9 +24,17 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           push: false
-          tags: autoscaler:pr-${{ github.event.number }}
+          tags: |
+            autoscaler:pr-${{ github.event.number }}
+            autoscaler:e2e-test
           build-args: SERVICE_NAME=autoscaler
           file: ${{ matrix.dockerfile }}
+          outputs: type=docker,dest=/tmp/autoscaler.tar
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: autoscaler-image
+          path: /tmp/autoscaler.tar
 
   build-scheduler:
     name: build-scheduler
@@ -43,9 +51,17 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           push: false
-          tags: scheduler:pr-${{ github.event.number }}
+          tags: |
+            scheduler:pr-${{ github.event.number }}
+            scheduler:e2e-test
           build-args: SERVICE_NAME=scheduler
           file: ${{ matrix.dockerfile }}
+          outputs: type=docker,dest=/tmp/scheduler.tar
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: scheduler-image
+          path: /tmp/scheduler.tar
 
   build-and-test-instrumentor:
     name: build-and-test-instrumentor
@@ -65,13 +81,21 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           push: false
-          tags: instrumentor:pr-${{ github.event.number }}
+          tags: |
+            instrumentor:pr-${{ github.event.number }}
+            instrumentor:e2e-test
           build-args: SERVICE_NAME=instrumentor
           file: ${{ matrix.dockerfile }}
+          outputs: type=docker,dest=/tmp/instrumentor.tar
       - name: run tests
         working-directory: ./instrumentor
         run: |
           make test
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: instrumentor-image
+          path: /tmp/instrumentor.tar
 
   build-and-test-odigos-collector:
     name: build-and-test-odigos-collector
@@ -88,13 +112,21 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           push: false
-          tags: odigos-collector:pr-${{ github.event.number }}
+          tags: |
+            odigos-collector:pr-${{ github.event.number }}
+            odigos-collector:e2e-test
           context: ./collector
           file: ${{ matrix.dockerfile }}
+          outputs: type=docker,dest=/tmp/odigos-collector.tar
       - name: run tests
         working-directory: ./collector
         run: |
           make test
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: odigos-collector-image
+          path: /tmp/odigos-collector.tar
 
   build-and-test-odiglet:
     name: build-and-test-odiglet
@@ -115,7 +147,10 @@ jobs:
           file: ${{ matrix.dockerfile }}
           context: .
           push: false
-          tags: odiglet:pr-${{ github.event.number }}
+          tags: |
+            odiglet:pr-${{ github.event.number }}
+            odiglet:e2e-test
+          outputs: type=docker,dest=/tmp/odiglet.tar
       - name: Install build dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y clang llvm libbpf-dev
@@ -123,6 +158,11 @@ jobs:
         working-directory: ./odiglet
         run: |
           make test
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: odiglet-image
+          path: /tmp/odiglet.tar
 
   build-frontend:
     name: build-frontend
@@ -141,7 +181,15 @@ jobs:
           file: ${{ matrix.dockerfile }}
           context: .
           push: false
-          tags: frontend:pr-${{ github.event.number }}
+          tags: |
+            frontend:pr-${{ github.event.number }}
+            frontend:e2e-test
+          outputs: type=docker,dest=/tmp/frontend.tar
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-image
+          path: /tmp/frontend.tar
 
   build-operator:
     name: build-operator
@@ -160,7 +208,15 @@ jobs:
           file: ${{ matrix.dockerfile }}
           context: .
           push: false
-          tags: operator:pr-${{ github.event.number }}
+          tags: |
+            operator:pr-${{ github.event.number }}
+            operator:e2e-test
+          outputs: type=docker,dest=/tmp/operator.tar
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: operator-image
+          path: /tmp/operator.tar
 
   build-cli:
     runs-on: ubuntu-latest
@@ -175,6 +231,11 @@ jobs:
         with:
           version: latest
           args: build --snapshot --clean
+      - name: Upload CLI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: odigos-cli
+          path: dist/odigos_linux_amd64_v1/odigos
 
   test-k8sutils:
     runs-on: ubuntu-latest
