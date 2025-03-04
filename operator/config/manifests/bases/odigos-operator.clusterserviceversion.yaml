@@ -3,10 +3,10 @@ kind: ClusterServiceVersion
 metadata:
   annotations:
     alm-examples: '[{"apiVersion":"operator.odigos.io/v1alpha1", "kind":"Odigos",
-      "metadata":{"name":"odigos","namespace":"odigos-operator-system"}, "spec":{"version":"v1.0.144"}}]'
+      "metadata":{"name":"odigos","namespace":"odigos-operator-system"}, "spec":{"version":"v1.0.159"}}]'
     capabilities: Basic Install
     categories: Logging & Tracing
-    containerImage: registry.connect.redhat.com/odigos/odigos-operator-ubi9:v1.0.154
+    containerImage: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9:v1.0.159
     description: Odigos enables automatic distributed tracing with OpenTelemetry and
       eBPF.
     features.operators.openshift.io/disconnected: "false"
@@ -74,7 +74,18 @@ spec:
         displayName: Conditions
         path: conditions
       version: v1alpha1
-  description: The Odigos Operator installs Odigos
+  description: |-
+    The Odigos Operator provides options for installing and configuring Odigos.
+
+    Upon creation of an Odigos resource, the Odigos Operator installs the following Odigos components:
+
+    - Instrumentor
+    - Odiglet
+    - Autoscaler
+    - Scheduler
+    - Frontend UI
+
+    With Odigos installed, follow the Odigos docs at docs.odigos.io for instructions on instrumenting applications and configuring destinations.
   displayName: Odigos Operator
   icon:
   - base64data: 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
@@ -103,6 +114,8 @@ spec:
   links:
   - name: Odigos
     url: https://odigos.io
+  - name: Odigos Documentation
+    url: https://docs.odigos.io
   - name: Odigos on Github
     url: https://github.com/odigos-io/odigos
   maintainers:
@@ -113,4 +126,4 @@ spec:
   provider:
     name: Odigos
     url: https://odigos.io
-  version: 1.0.144
+  version: 1.0.159
