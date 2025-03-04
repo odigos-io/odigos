@@ -66,13 +66,18 @@ export const getCrdById = ({ namespace, crdName, crdId, expectedError, expectedK
 
 interface UpdateEntityOptions {
   nodeId: string;
-  nodeContains: string;
+  nodeContains?: string;
   fieldKey: string;
   fieldValue: string;
 }
 
 export const updateEntity = ({ nodeId, nodeContains, fieldKey, fieldValue }: UpdateEntityOptions, callback?: () => void) => {
-  cy.contains(nodeId, nodeContains).should('exist').click();
+  if (!!nodeContains) {
+    cy.contains(nodeId, nodeContains).should('exist').click();
+  } else {
+    cy.get(nodeId).should('exist').click();
+  }
+
   cy.get(DATA_IDS.DRAWER).should('exist');
   cy.get(DATA_IDS.DRAWER_EDIT).click();
   cy.get(fieldKey).clear().type(fieldValue);

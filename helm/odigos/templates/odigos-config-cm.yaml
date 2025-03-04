@@ -18,6 +18,9 @@ data:
     {{- if .Values.ui.uiMode }}
     uiMode: {{ .Values.ui.uiMode }}
     {{- end }}
+    {{- if .Values.ui.uiPaginationLimit }}
+    uiPaginationLimit: {{ .Values.ui.uiPaginationLimit }}
+    {{- end }}
     {{- if .Values.ui.centralBackendURL }}
     centralBackendURL: {{ .Values.ui.centralBackendURL }}
     {{- end }}
@@ -99,4 +102,3 @@ data:
     {{- else }}
     {{- fail "Error: Invalid mountMethod. Supported values are 'k8s-host-path' and 'k8s-virtual-device'." }}
     {{- end }}
-    

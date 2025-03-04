@@ -15,7 +15,7 @@ spec:
   template:
     spec:
       containers:
-        - image: nodejs-unsupported-version:v0.0.1
+        - image: public.ecr.aws/odigos/nodejs-unsupported-version:v0.0.1
           name: nodejs-unsupported-version
           resources: {}
 status:
@@ -42,7 +42,7 @@ spec:
   template:
     spec:
       containers:
-        - image: nodejs-very-old-version:v0.0.1
+        - image: public.ecr.aws/odigos/nodejs-very-old-version:v0.0.1
           name: nodejs-very-old-version
 status:
   availableReplicas: 1
@@ -168,7 +168,7 @@ spec:
   template:
     spec:
       containers:
-        - image: cpp-http-server:v0.0.1
+        - image: public.ecr.aws/odigos/cpp-http-server:v0.0.1
           name: cpp-http-server
           resources: {}
 status:
@@ -195,7 +195,7 @@ spec:
   template:
     spec:
       containers:
-        - image: java-supported-version:v0.0.1
+        - image: public.ecr.aws/odigos/java-supported-version:v0.0.1
           name: java-supported-version
           ports:
             - containerPort: 3000
@@ -224,7 +224,7 @@ spec:
   template:
     spec:
       containers:
-        - image: java-azul:v0.0.1
+        - image: public.ecr.aws/odigos/java-azul:v0.0.1
           name: java-azul
           ports:
             - containerPort: 3000
@@ -253,7 +253,7 @@ spec:
   template:
     spec:
       containers:
-        - image: java-supported-docker-env:v0.0.1
+        - image: public.ecr.aws/odigos/java-supported-docker-env:v0.0.1
           name: java-supported-docker-env
           ports:
             - containerPort: 3000
@@ -282,7 +282,7 @@ spec:
   template:
     spec:
       containers:
-        - image: java-supported-manifest-env:v0.0.1
+        - image: public.ecr.aws/odigos/java-supported-manifest-env:v0.0.1
           name: java-supported-manifest-env
           ports:
             - containerPort: 3000
@@ -311,7 +311,7 @@ spec:
   template:
     spec:
       containers:
-        - image: java-latest-version:v0.0.1
+        - image: public.ecr.aws/odigos/java-latest-version:v0.0.1
           name: java-latest-version
           ports:
             - containerPort: 3000
@@ -340,7 +340,7 @@ spec:
   template:
     spec:
       containers:
-        - image: java-old-version:v0.0.1
+        - image: public.ecr.aws/odigos/java-old-version:v0.0.1
           name: java-old-version
           ports:
             - containerPort: 3000
@@ -369,7 +369,7 @@ spec:
   template:
     spec:
       containers:
-        - image: python-latest-version:v0.0.1
+        - image: public.ecr.aws/odigos/python-latest-version:v0.0.1
           name: python-latest-version
 status:
   availableReplicas: 1
@@ -395,7 +395,7 @@ spec:
   template:
     spec:
       containers:
-        - image: python-alpine:v0.0.1
+        - image: public.ecr.aws/odigos/python-alpine:v0.0.1
           name: python-alpine
 status:
   availableReplicas: 1
@@ -421,7 +421,7 @@ spec:
   template:
     spec:
       containers:
-        - image: python-not-supported:v0.0.1
+        - image: public.ecr.aws/odigos/python-not-supported:v0.0.1
           name: python-not-supported
 status:
   availableReplicas: 1
@@ -447,7 +447,7 @@ spec:
   template:
     spec:
       containers:
-        - image: python-min-version:v0.0.1
+        - image: public.ecr.aws/odigos/python-min-version:v0.0.1
           name: python-min-version
 status:
   availableReplicas: 1
@@ -473,7 +473,7 @@ spec:
   template:
     spec:
       containers:
-        - image: dotnet8-musl:v0.0.1
+        - image: public.ecr.aws/odigos/dotnet8-musl:v0.0.1
           name: dotnet8-musl
 status:
   availableReplicas: 1
@@ -499,7 +499,7 @@ spec:
   template:
     spec:
       containers:
-        - image: dotnet6-musl:v0.0.1
+        - image: public.ecr.aws/odigos/dotnet6-musl:v0.0.1
           name: dotnet6-musl
 status:
   availableReplicas: 1
@@ -525,7 +525,7 @@ spec:
   template:
     spec:
       containers:
-        - image: dotnet8-glibc:v0.0.1
+        - image: public.ecr.aws/odigos/dotnet8-glibc:v0.0.1
           name: dotnet8-glibc
 status:
   availableReplicas: 1
@@ -551,7 +551,7 @@ spec:
   template:
     spec:
       containers:
-        - image: dotnet6-glibc:v0.0.1
+        - image: public.ecr.aws/odigos/dotnet6-glibc:v0.0.1
           name: dotnet6-glibc
 status:
   availableReplicas: 1
